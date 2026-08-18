@@ -1,6 +1,4 @@
-﻿using Facilityges.Controller;
-using Facilityges.Model;
-using SitioBase.Controller;
+﻿using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
@@ -86,8 +84,8 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
                             || p == (int)SitioBase.SitioBase.Perfil.Soporte
                             || p == (int)SitioBase.SitioBase.Perfil.Gerente_Comercial))
                             Perfiles = "3,4,5,6,7";
-                        else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
-                            Perfiles = "4,5,6,7";
+                        //else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
+                        //    Perfiles = "4,5,6,7";
 
                         perfil.Perfiles = Perfiles;
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);

@@ -16,8 +16,8 @@ namespace SitioBase
 
             htmlToPdfConverter.LicenseKey = ConfigurationManager.AppSettings.Get("PdfConverterLicenseKey");
 
-            htmlToPdfConverter.PdfDocumentInfo.AuthorName = "WorkGes";
-            htmlToPdfConverter.PdfDocumentInfo.Title = "WorkGes";
+            htmlToPdfConverter.PdfDocumentInfo.AuthorName = "SIGMA";
+            htmlToPdfConverter.PdfDocumentInfo.Title = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Subject = "";
             htmlToPdfConverter.PdfDocumentInfo.CreatedDate = DateTime.Now;
             htmlToPdfConverter.PdfDocumentOptions.LeftMargin = 30;
@@ -52,8 +52,8 @@ namespace SitioBase
 
             htmlToPdfConverter.LicenseKey = ConfigurationManager.AppSettings.Get("PdfConverterLicenseKey");
             
-            htmlToPdfConverter.PdfDocumentInfo.AuthorName = "WorkGes";
-            htmlToPdfConverter.PdfDocumentInfo.Title = "WorkGes";
+            htmlToPdfConverter.PdfDocumentInfo.AuthorName = "SIGMA";
+            htmlToPdfConverter.PdfDocumentInfo.Title = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Subject = "";
             htmlToPdfConverter.PdfDocumentInfo.CreatedDate = DateTime.Now;
             htmlToPdfConverter.PdfDocumentOptions.LeftMargin = 30;

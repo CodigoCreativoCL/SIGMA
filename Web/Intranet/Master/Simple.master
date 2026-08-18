@@ -66,20 +66,9 @@
         <div>
             <!--Inicio ScriptManager-->
             <div>
-                <script type="text/javascript">
-                    window.ClarityData = {
-                        idUsuario: '<%= SitioBase.Session.UsuarioId() %>',
-                        nombreUsuario: '<%= SitioBase.Session.UsuarioNombreCompleto().Replace("'", "\\'") %>',
-                        ipUsuario: '<%= SitioBase.Session.RemoteHost() %>'
-                    };
-                </script>
-                <!-- Google tag (gtag.js) -->
-                <script async src="https://www.googletagmanager.com/gtag/js?id=G-8TTQG9J7KW"></script>
                 <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
                     EnableScriptGlobalization="true" EnableScriptLocalization="true">
                     <Scripts>
-                        <asp:ScriptReference Path="~/Js/Clarity.js" />
-                        <asp:ScriptReference Path="~/Js/Google-analytics.js" />
                         <asp:ScriptReference Path="~/Js/jquery-1.11.3.min.js" />
                         <asp:ScriptReference Path="~/Js/jquery-1.8.2.min.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />

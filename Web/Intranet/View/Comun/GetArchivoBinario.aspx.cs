@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
-using Facilityges.Model;
-using Facilityges.Controller;
+using SitioBase.Model;
+using SitioBase.Controller;
 
 public partial class View_Comun_GetArchivoBinario : System.Web.UI.Page
 {

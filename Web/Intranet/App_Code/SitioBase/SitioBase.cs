@@ -21,10 +21,6 @@ namespace SitioBase
             root = 1,
             Soporte = 2,
             Gerente_Comercial = 3,
-            Coordinador = 4,
-            Supervisor = 5,
-            Administrativo_Cliente = 6,
-            Administrador_Cliente = 7
         }
 
 
@@ -248,86 +244,6 @@ namespace SitioBase
             return valor;
         }
 
-        public static Respuesta MaterialApoyo(byte[] binarioArchivo, string nombreArchivo, string contenedor = "", bool remplazarArchivo = false, string rutaAnteriorArchivo = "")
-        {
-            Respuesta respuesta = new Respuesta();
-
-            try
-            {
-                // Evita cache de navegador en respuesta HTTP, con el fin de remplazar la imagen y visualizar la nueva correctamente.
-                HttpContext.Current.Response.Cache.SetCacheability(HttpCacheability.NoCache);
-                HttpContext.Current.Response.Cache.SetNoStore();
-                HttpContext.Current.Response.Cache.SetExpires(DateTime.UtcNow.AddDays(-1));
-
-                // 0. Ruta de Capsulas
-                string rutaCapsulas = HttpContext.Current.Server.MapPath(ConfigurationManager.AppSettings["MaterialApoyo"]);
-
-                // 1. Normalizar contenedor y construir ruta base (unificar separadores,eliminar caracteres innecesarios)
-                string contenedorNormalizado = (contenedor ?? string.Empty).Replace("/", "\\").TrimStart('~', '\\');
-                string rutaBase = string.IsNullOrEmpty(contenedorNormalizado) ? rutaCapsulas : Path.Combine(rutaCapsulas, contenedorNormalizado);
-
-                // 2. Crear todas las carpetas intermedias necesarias
-                if (!Directory.Exists(rutaBase))
-                    Directory.CreateDirectory(rutaBase);
-
-                // 3. Eliminar archivo anterior si corresponde
-                if (remplazarArchivo && !string.IsNullOrEmpty(rutaAnteriorArchivo))
-                {
-                    try
-                    {
-                        string rutaAnteriorNormalizada = rutaAnteriorArchivo.Replace("/", "\\").TrimStart('~', '\\');
-                        string fullPathAnterior = HttpContext.Current.Server.MapPath("~/" + rutaAnteriorNormalizada);
-
-                        if (File.Exists(fullPathAnterior))
-                            File.Delete(fullPathAnterior);
-                    }
-                    catch (Exception exDel)
-                    {
-                        respuesta.codigo = -1;
-                        respuesta.error = true;
-                        respuesta.detalle = exDel.Message;
-                        return respuesta;
-                    }
-                }
-
-                // 4. Crear o reemplazar el nuevo archivo
-                string rutaNueva = Path.Combine(rutaBase, nombreArchivo);
-
-                // Normaliza el path final por seguridad
-                rutaNueva = Path.GetFullPath(rutaNueva);
-
-                if (File.Exists(rutaNueva))
-                {
-                    if (remplazarArchivo)
-                    {
-                        File.Delete(rutaNueva);
-                        File.WriteAllBytes(rutaNueva, binarioArchivo);
-                    }
-                    else
-                    {
-                        respuesta.codigo = -1;
-                        respuesta.error = true;
-                        respuesta.detalle = "El archivo ya existe en el directorio.";
-                        return respuesta;
-                    }
-                }
-                else
-                {
-                    File.WriteAllBytes(rutaNueva, binarioArchivo);
-                }
-
-                respuesta.codigo = 0;
-                respuesta.error = false;
-                respuesta.detalle = "";
-            }
-            catch (Exception e)
-            {
-                respuesta.codigo = -1;
-                respuesta.error = true;
-                respuesta.detalle = e.Message;
-            }
-
-            return respuesta;
-        }
+       
     }
 }

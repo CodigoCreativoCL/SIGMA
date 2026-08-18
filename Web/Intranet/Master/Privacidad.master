@@ -649,7 +649,7 @@
         <header class="prv-nav">
             <div class="prv-nav-inner">
                 <a class="prv-nav-brand" href='<%= ResolveUrl("~/Login.aspx") %>'>
-                    <img src='<%= ResolveUrl("~/Imagen/logo_facilityges.png") %>' alt="FacilityGes" />
+                    <img src='<%= ResolveUrl("~/Imagen/logo_SitioBase.png") %>' alt="SitioBase" />
                 </a>
                 <nav class="prv-nav-links">
                     <a class="active" href='<%= ResolveUrl("~/Privacidad/Privacidad.aspx") %>'>Aplicaciones</a>
@@ -684,7 +684,7 @@
         <footer class="prv-footer">
             <div class="prv-footer-inner">
                 <div class="prv-footer-brand">
-                    <img src='<%= ResolveUrl("~/Imagen/logo_facilityges.png") %>' alt="FacilityGes" />
+                    <img src='<%= ResolveUrl("~/Imagen/logo_SitioBase.png") %>' alt="SitioBase" />
                     <span class="prv-footer-copy">© <%= DateTime.Now.Year %> Todos los derechos reservados.</span>
                 </div>
                 <div class="prv-footer-links">

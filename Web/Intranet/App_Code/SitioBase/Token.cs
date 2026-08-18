@@ -116,7 +116,7 @@ namespace SitioBase
 
                         SqlCommand cmd = new SqlCommand();
                         cmd.CommandText = "SEGURIDAD_SEL_MENUS_PERMISO";
-                        if (!string.IsNullOrEmpty(perfil)) cmd.Parameters.AddWithValue("@PERFIL", perfil); //perfil.Substring(0, perfil.Length - 2));
+                        if (!string.IsNullOrEmpty(perfil)) cmd.Parameters.AddWithValue("@PERFIL", perfil); 
                         cmd.Parameters.AddWithValue("@MENU", menuPerfil.mpe_menu);
 
                         using (SqlDataReader dr = Conexion.GetDataReader(cmd))

@@ -8,7 +8,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <title>FacilityGes</title>
+    <title>SIGMA</title>
     <link href="../Imagen/fav.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
 
     <!-- Bootstrap Css -->
@@ -18,7 +18,6 @@
     <link href="../Css/Adminto/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
 
     <!-- App Css-->
-    <%--<link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />--%>
     <link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />
     <link rel="stylesheet" type="text/css" href="../Css/MaterialApoyo/materialApoyo.css?v=5" />
 
@@ -75,20 +74,9 @@
     <form id="form1" runat="server">
         <!--Inicio ScriptManager-->
         <div>
-            <script type="text/javascript">
-                window.ClarityData = {
-                    idUsuario: '<%= SitioBase.Session.UsuarioId() %>',
-                    nombreUsuario: '<%= SitioBase.Session.UsuarioNombreCompleto().Replace("'", "\\'") %>',
-                    ipUsuario: '<%= SitioBase.Session.RemoteHost() %>'
-                };
-            </script>
-            <!-- Google tag (gtag.js) -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-8TTQG9J7KW"></script>
             <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
                 EnableScriptGlobalization="true" EnableScriptLocalization="true">
                 <Scripts>
-                    <asp:ScriptReference Path="~/Js/Clarity.js" />
-                    <asp:ScriptReference Path="~/Js/Google-analytics.js" />
                     <asp:ScriptReference Path="~/Js/jquery-1.11.3.min.js" />
                     <asp:ScriptReference Path="~/Js/jquery-1.8.2.min.js" />
                     <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
@@ -188,22 +176,6 @@
             <div class="navbar-custom">
                 <ul class="list-unstyled topnav-menu float-right mb-0">
                     <li class="dropdown notification-list">
-                        <asp:Panel class="capsulas-dropdown" ID="capsulasMenuContainer" runat="server" ClientIDMode="Static">
-                            <a class="capsulas-toggle nav-link dropdown-toggle waves-effect" id="btnCapsulas" title="Ver Material de Apoyo">
-                                <i class="fe-info"></i>
-                            </a>
-                            <div class="capsulas-content" id="menuCapsulas">
-                                <div class="capsulas-header">
-                                    <i class="fe-info"></i>
-                                    <span>Material de Apoyo</span>
-                                </div>
-                                <div class="capsulas-lista">
-                                    <asp:PlaceHolder ID="ltlCapsulas" runat="server" />
-                                </div>
-                            </div>
-                        </asp:Panel>
-                    </li>
-                    <li class="dropdown notification-list">
                         <a class="nav-link dropdown-toggle nav-user mr-0 waves-effect" data-toggle="dropdown" href="#" role="button" aria-haspopup="false" aria-expanded="false">
                             <span class="nav-user-info">
                                 <span class="nav-user-name">
@@ -244,7 +216,7 @@
                 <div class="logo-box">
                     <a href='<%=ResolveUrl("~/Default.aspx") %>' class="logo logo-dark text-center">
                         <span class="logo-lg">
-                            <asp:Image ID="imgLogo" runat="server" Height="70" Width="50" ImageUrl="~/Imagen/logo_facilityges.png?V2" />
+                            <asp:Image ID="imgLogo" runat="server" Height="70" Width="50" ImageUrl="~/Imagen/logo_SitioBase.png?V2" />
                         </span>
                         <span class="logo-sm">
                             <asp:Image ID="imgLogo1" runat="server" Height="24" ImageUrl="~/Imagen/fav.ico" />
@@ -252,7 +224,7 @@
                     </a>
                     <a href='<%=ResolveUrl("~/Default.aspx") %>' class="logo logo-light text-center">
                         <span class="logo-lg">
-                            <asp:Image ID="imgLogo2" runat="server" Width="200" ImageUrl="~/Imagen/logo_facilityges.png?V2" />
+                            <asp:Image ID="imgLogo2" runat="server" Width="200" ImageUrl="~/Imagen/logo_SitioBase.png?V2" />
                         </span>
                         <span class="logo-sm">
                             <asp:Image ID="imgLogo3" runat="server" Height="24" ImageUrl="~/Imagen/fav.ico" />
@@ -406,21 +378,7 @@
 
             <asp:ContentPlaceHolder ID="chpScript" runat="server">
             </asp:ContentPlaceHolder>
-            <script type="text/javascript">
-                //Microsoft Clearity
-                var IdUsuario = '<%=SitioBase.Session.UsuarioId()%>';
-                var NombreUsuario = '<%=SitioBase.Session.UsuarioNombreCompleto()%>';
-                var IpUsuario = '<%=SitioBase.Session.RemoteHost()%>';
-                (function (c, l, a, r, i, t, y) {
-                    c[a] = c[a] || function () { (c[a].q = c[a].q || []).push(arguments) };
-                    t = l.createElement(r); t.async = 1; t.src = "https://www.clarity.ms/tag/" + i;
-                    y = l.getElementsByTagName(r)[0]; y.parentNode.insertBefore(t, y);
-                    window.clarity("set", "userId", IdUsuario + '|' + NombreUsuario + '|' + IpUsuario);
-                    window.clarity("set", "ip", IpUsuario);
-                    window.clarity("set", "id_usuario", IdUsuario);
-                    window.clarity("set", "nombre_usuario", NombreUsuario);
-                })(window, document, "clarity", "script", "mchsz4ju1q");
-            </script>
+          
         </div>
     </form>
 </body>

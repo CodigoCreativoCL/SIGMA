@@ -83,30 +83,6 @@ namespace SitioBase
             }
         }
 
-        public static string UsuarioRut()
-        {
-            if (Session1 != null && Session1["usu_rut"] != null)
-            {
-                return HttpContext.Current.Session["usu_rut"].ToString();
-            }
-            else
-            {
-                return "";
-            }
-        }
-
-        public static string UsuarioRutDv()
-        {
-            if (Session1 != null && Session1["usu_dv"] != null)
-            {
-                return HttpContext.Current.Session["usu_dv"].ToString();
-            }
-            else
-            {
-                return "";
-            }
-        }
-
         public static string UsuarioPerfil()
         {
             if (Session1 != null && Session1["usu_perfil"] != null)
@@ -181,17 +157,6 @@ namespace SitioBase
             }
         }
 
-        public static string UsuarioArea()
-        {
-            if (Session1 != null && Session1["usu_area"] != null)
-            {
-                return HttpContext.Current.Session["usu_area"].ToString();
-            }
-            else
-            {
-                return "";
-            }
-        }
 
         public static string UsuarioCambioPassword()
         {

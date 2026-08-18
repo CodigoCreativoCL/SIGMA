@@ -1,5 +1,5 @@
-﻿using Facilityges.Controller;
-using Facilityges.Model;
+﻿using SitioBase.Controller;
+using SitioBase.Model;
 using SitioBase.Controller;
 using SitioBase.Model;
 using System;
@@ -95,8 +95,8 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
             || p == (int)SitioBase.SitioBase.Perfil.Soporte
             || p == (int)SitioBase.SitioBase.Perfil.Gerente_Comercial))
             wucUsuarios.Perfiles = "3,4,5,6,7";
-        else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
-            wucUsuarios.Perfiles = "4,5,6,7";
+        //else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
+        //    wucUsuarios.Perfiles = "4,5,6,7";
 
         wucChecklist.IdCliente = IdCliente;
         wucChecklist.ReadOnly = ReadOnly;

@@ -81,21 +81,10 @@
     <form id="form1" runat="server" style="height: 100%; margin: 0px">
         <div>
             <!--Inicio ScriptManager-->
-        <div>
-            <script type="text/javascript">
-                window.ClarityData = {
-                    idUsuario: '<%= SitioBase.Session.UsuarioId() %>',
-                    nombreUsuario: '<%= SitioBase.Session.UsuarioNombreCompleto().Replace("'", "\\'") %>',
-                    ipUsuario: '<%= SitioBase.Session.RemoteHost() %>'
-                };
-            </script>
-            <!-- Google tag (gtag.js) -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-8TTQG9J7KW"></script>
-            <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
-                EnableScriptGlobalization="true" EnableScriptLocalization="true">
-                <Scripts>
-                    <asp:ScriptReference Path="~/Js/Clarity.js" />
-                    <asp:ScriptReference Path="~/Js/Google-analytics.js" />
+            <div>
+                <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
+                    EnableScriptGlobalization="true" EnableScriptLocalization="true">
+                    <Scripts>
                         <asp:ScriptReference Path="~/Js/jquery-1.11.3.min.js" />
                         <asp:ScriptReference Path="~/Js/Library.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
@@ -179,8 +168,12 @@
                                     <span class="up-label-caps">SINCRONIZANDO DATOS</span>
                                     <div class="up-timer">
                                         Tiempo de Carga:
-                                        <span class="up-bold"><label id="lblModalMinutos">0</label> Minutos</span>
-                                        <span class="up-bold"><label id="lblModalSegundos">0</label> Segundos</span>
+                                        <span class="up-bold">
+                                            <label id="lblModalMinutos">0</label>
+                                            Minutos</span>
+                                        <span class="up-bold">
+                                            <label id="lblModalSegundos">0</label>
+                                            Segundos</span>
                                     </div>
                                 </div>
                                 <div class="up-progress-track">
