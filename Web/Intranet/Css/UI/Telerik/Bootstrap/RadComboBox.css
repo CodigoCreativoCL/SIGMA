@@ -1,0 +1,113 @@
+﻿/* =============================================================
+   FACILITYGES - RadComboBox2 (skin Bootstrap)
+   Estilo "M3 Expressive": el contenedor exterior (.RadComboBox_Bootstrap)
+   es la unica "caja" (borde + radio + fondo). La tabla interna, el input
+   y la celda de la flecha quedan sin borde/fondo propio para evitar el
+   efecto de "caja doble" del render clasico (table-based).
+   Paleta: ver --fg-m3-* en LookAndFeel/v2/01-Variables.css.
+   ============================================================= */
+
+.RadComboBox_Bootstrap {
+    font: 15px/1.42857143 "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    font-family: var(--fg-font-family) !important;
+    height: 44px !important;
+    border: 1.5px solid var(--fg-m3-outline) !important;
+    border-radius: var(--fg-m3-radius) !important;
+    background-color: var(--fg-m3-surface) !important;
+    color: var(--fg-m3-text-primary) !important;
+    overflow: hidden !important;
+    transition: border-color 150ms ease, box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.RadComboBox_Bootstrap.rcbFocused,
+.RadComboBox_Bootstrap .rcbFocused,
+.RadComboBox_Bootstrap:focus-within {
+    border-color: var(--fg-m3-primary) !important; 
+    background-color: #ffffff !important;
+    box-shadow: 0 0 0 3px rgba(0, 74, 133, .15) !important;
+}
+
+/* ---- Tabla interna: sin caja propia, hereda el alto del contenedor ---- */
+.RadComboBox_Bootstrap table,
+.RadComboBox_Bootstrap .rcbInner,
+.RadComboBox_Bootstrap tbody,
+.RadComboBox_Bootstrap tr {
+    height: 100% !important;
+    width: 100% !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+.RadComboBox_Bootstrap .rcbInputCell {
+    border: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    box-shadow: none !important;
+}
+
+/* ---- Interior del combo (input de texto) ---- */
+.RadComboBox_Bootstrap .rcbInputCell input,
+.RadComboBox_Bootstrap .rcbInput {
+    height: 100% !important;
+    width: 100% !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    color: var(--fg-m3-text-primary) !important;
+    box-shadow: none !important;
+}
+
+    .RadComboBox_Bootstrap .rcbInput::placeholder {
+        color: var(--fg-m3-text-hint) !important;
+    }
+
+/* ---- Celda/boton de la flecha: sin borde ni fondo propio (solo icono) ---- */
+.RadComboBox_Bootstrap .rcbArrowCell,
+.RadComboBox_Bootstrap .rcbArrowCell a,
+.RadComboBox_Bootstrap .rcbArrowCellRight {
+    background-color: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+}
+
+.RadComboBox_Bootstrap.rcbDisabled,
+.RadComboBox_Bootstrap .rcbDisabled {
+    background-color: var(--fg-m3-chip-bg) !important;
+    opacity: .6 !important;
+}
+
+.rcbSlide {
+    border-radius: var(--fg-m3-radius) !important;
+    overflow: hidden !important;
+}
+
+/* ---- Dropdown ---- */
+.RadComboBoxDropDown_Bootstrap {
+    border-color: var(--fg-m3-outline) !important;
+    border-radius: var(--fg-m3-radius) !important;
+    box-shadow: 0 4px 16px rgba(24, 28, 32, .10) !important;
+    overflow: hidden !important;
+}
+
+.rcbList {
+    font: 15px/1.42857143 "Helvetica Neue", Helvetica, Arial, sans-serif !important;
+    font-family: var(--fg-font-family) !important;
+    background-color: #ffffff;
+    padding: 4px !important;
+}
+
+
+.rcbHovered {
+    background-color: var(--fg-m3-primary-container) !important;
+    color: var(--fg-m3-on-primary-container) !important;
+}
+
+/* Estado activo / seleccionado (DESIGN.md: ACTIVE #9CF1F2) */
+.rcbSelected {
+    padding: 10px 14px !important;
+    border-radius: 8px !important;
+    background-color: var(--fg-m3-secondary-container) !important;
+    color: var(--fg-m3-on-secondary-container) !important;
+}

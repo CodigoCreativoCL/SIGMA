@@ -1,0 +1,245 @@
+ox:function(_67){
+if(!_67){
+throw Error.argumentNull("element");
+}
+var box={top:$telerik.getPadding(_67,Telerik.Web.BoxSide.Top),right:$telerik.getPadding(_67,Telerik.Web.BoxSide.Right),bottom:$telerik.getPadding(_67,Telerik.Web.BoxSide.Bottom),left:$telerik.getPadding(_67,Telerik.Web.BoxSide.Left)};
+box.horizontal=box.left+box.right;
+box.vertical=box.top+box.bottom;
+return box;
+},getBorderBox:function(_69){
+if(!_69){
+throw Error.argumentNull("element");
+}
+var box={top:$telerik.getBorderWidth(_69,Telerik.Web.BoxSide.Top),right:$telerik.getBorderWidth(_69,Telerik.Web.BoxSide.Right),bottom:$telerik.getBorderWidth(_69,Telerik.Web.BoxSide.Bottom),left:$telerik.getBorderWidth(_69,Telerik.Web.BoxSide.Left)};
+box.horizontal=box.left+box.right;
+box.vertical=box.top+box.bottom;
+return box;
+},isBorderVisible:function(_6b,_6c){
+if(!_6b){
+throw Error.argumentNull("element");
+}
+if(_6c<Telerik.Web.BoxSide.Top||_6c>Telerik.Web.BoxSide.Left){
+throw Error.argumentOutOfRange(String.format(Sys.Res.enumInvalidValue,_6c,"Telerik.Web.BoxSide"));
+}
+var _6d=$telerik._borderStyleNames[_6c];
+var _6e=$telerik.getCurrentStyle(_6b,_6d);
+return _6e!="none";
+},getMargin:function(_6f,_70){
+if(!_6f){
+throw Error.argumentNull("element");
+}
+if(_70<Telerik.Web.BoxSide.Top||_70>Telerik.Web.BoxSide.Left){
+throw Error.argumentOutOfRange(String.format(Sys.Res.enumInvalidValue,_70,"Telerik.Web.BoxSide"));
+}
+var _71=$telerik._marginWidthNames[_70];
+var _72=$telerik.getCurrentStyle(_6f,_71);
+try{
+return $telerik.parsePadding(_72);
+}
+catch(ex){
+return 0;
+}
+},getBorderWidth:function(_73,_74){
+if(!_73){
+throw Error.argumentNull("element");
+}
+if(_74<Telerik.Web.BoxSide.Top||_74>Telerik.Web.BoxSide.Left){
+throw Error.argumentOutOfRange(String.format(Sys.Res.enumInvalidValue,_74,"Telerik.Web.BoxSide"));
+}
+if(!$telerik.isBorderVisible(_73,_74)){
+return 0;
+}
+var _75=$telerik._borderWidthNames[_74];
+var _76=$telerik.getCurrentStyle(_73,_75);
+return $telerik.parseBorderWidth(_76);
+},getPadding:function(_77,_78){
+if(!_77){
+throw Error.argumentNull("element");
+}
+if(_78<Telerik.Web.BoxSide.Top||_78>Telerik.Web.BoxSide.Left){
+throw Error.argumentOutOfRange(String.format(Sys.Res.enumInvalidValue,_78,"Telerik.Web.BoxSide"));
+}
+var _79=$telerik._paddingWidthNames[_78];
+var _7a=$telerik.getCurrentStyle(_77,_79);
+return $telerik.parsePadding(_7a);
+},parseBorderWidth:function(_7b){
+if(_7b){
+switch(_7b){
+case "thin":
+case "medium":
+case "thick":
+return $telerik._borderThicknesses[_7b];
+case "inherit":
+return 0;
+}
+var _7c=$telerik.parseUnit(_7b);
+return _7c.size;
+}
+return 0;
+},parsePadding:function(_7d){
+if(_7d){
+if(_7d=="auto"||_7d=="inherit"){
+return 0;
+}
+var _7e=$telerik.parseUnit(_7d);
+return _7e.size;
+}
+return 0;
+},parseUnit:function(_7f){
+if(!_7f){
+throw Error.argumentNull("value");
+}
+_7f=_7f.trim().toLowerCase();
+var l=_7f.length;
+var s=-1;
+for(var i=0;i<l;i++){
+var ch=_7f.substr(i,1);
+if((ch<"0"||ch>"9")&&ch!="-"&&ch!="."&&ch!=","){
+break;
+}
+s=i;
+}
+if(s==-1){
+throw Error.create("No digits");
+}
+var _84;
+var _85;
+if(s<(l-1)){
+_84=_7f.substring(s+1).trim();
+}else{
+_84="px";
+}
+_85=parseFloat(_7f.substr(0,s+1));
+if(_84=="px"){
+_85=Math.floor(_85);
+}
+return {size:_85,type:_84};
+},containsPoint:function(_86,x,y){
+return x>=_86.x&&x<=(_86.x+_86.width)&&y>=_86.y&&y<=(_86.y+_86.height);
+},isDescendant:function(_89,_8a){
+for(var n=_8a.parentNode;n!=null;n=n.parentNode){
+if(n==_89){
+return true;
+}
+}
+return false;
+},isDescendantOrSelf:function(_8c,_8d){
+if(_8c===_8d){
+return true;
+}
+return $telerik.isDescendant(_8c,_8d);
+},setOuterHeight:function(_8e,_8f){
+if(_8f<=0||_8f==""){
+_8e.style.height="";
+}else{
+_8e.style.height=_8f+"px";
+var _90=_8e.offsetHeight-_8f;
+var _91=_8f-_90;
+if(_91>0){
+_8e.style.height=_91+"px";
+}else{
+_8e.style.height="";
+}
+}
+},setOpacity:function(_92,_93){
+if(!_92){
+throw Error.argumentNull("element");
+}
+try{
+if(_92.filters){
+var _94=_92.filters;
+var _95=true;
+if(_94.length!==0){
+var _96=_94["DXImageTransform.Microsoft.Alpha"];
+if(_96){
+_95=false;
+_96.opacity=_93*100;
+}
+}
+if(_95){
+_92.style.filter="progid:DXImageTransform.Microsoft.Alpha(opacity="+(_93*100)+")";
+}
+}else{
+_92.style.opacity=_93;
+}
+}
+catch(ex){
+}
+},getOpacity:function(_97){
+if(!_97){
+throw Error.argumentNull("element");
+}
+var _98=false;
+var _99;
+try{
+if(_97.filters){
+var _9a=_97.filters;
+if(_9a.length!==0){
+var _9b=_9a["DXImageTransform.Microsoft.Alpha"];
+if(_9b){
+_99=_9b.opacity/100;
+_98=true;
+}
+}
+}else{
+_99=$telerik.getCurrentStyle(_97,"opacity",1);
+_98=true;
+}
+}
+catch(ex){
+}
+if(_98===false){
+return 1;
+}
+return parseFloat(_99);
+},addCssClasses:function(_9c,_9d){
+for(var i=0;i<_9d.length;i++){
+Sys.UI.DomElement.addCssClass(_9c,_9d[i]);
+}
+},removeCssClasses:function(_9f,_a0){
+for(var i=0;i<_a0.length;i++){
+Sys.UI.DomElement.removeCssClass(_9f,_a0[i]);
+}
+},setOuterWidth:function(_a2,_a3){
+if(_a3<=0||_a3==""){
+_a2.style.width="";
+}else{
+_a2.style.width=_a3+"px";
+var _a4=_a2.offsetWidth-_a3;
+var _a5=_a3-_a4;
+if(_a5>0){
+_a2.style.width=_a5+"px";
+}else{
+_a2.style.width="";
+}
+}
+},getScrollOffset:function(_a6,_a7){
+var _a8=0;
+var top=0;
+var _aa=_a6;
+while(_aa!=null&&_aa.scrollLeft!=null){
+_a8+=$telerik.getCorrectScrollLeft(_aa);
+top+=_aa.scrollTop;
+if(!_a7||(_aa==document.body&&(_aa.scrollLeft!=0||_aa.scrollTop!=0))){
+break;
+}
+_aa=_aa.parentNode;
+}
+return {x:_a8,y:top};
+},getElementByClassName:function(_ab,_ac,_ad){
+var _ae=null;
+if(_ad){
+_ae=_ab.getElementsByTagName(_ad);
+}else{
+_ae=_ab.getElementsByTagName("*");
+}
+for(var i=0,_b0=_ae.length;i<_b0;i++){
+var _b1=_ae[i];
+if(Sys.UI.DomElement.containsCssClass(_b1,_ac)){
+return _b1;
+}
+}
+return null;
+},addExternalHandler:function(_b2,_b3,_b4){
+if(_b2.addEventListener){
+_b

@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+
+    <PropertyGroup>
+        <TelerikLicensingTaskArchitecture Condition="$(TelerikLicensingTaskArchitecture) == ''">*</TelerikLicensingTaskArchitecture>
+        <TelerikLicensingTaskRuntime Condition="$(TelerikLicensingTaskRuntime) == ''">*</TelerikLicensingTaskRuntime>
+        <TelerikLicensingTaskFactory Condition="$(TelerikLicensingTaskFactory) == ''">TaskHostFactory</TelerikLicensingTaskFactory>
+
+        <!-- Set to "false" to stop the code generation for Telerik licenses, and embed them manually. -->
+        <TelerikLicenseGen Condition="$(TelerikLicenseGen) == ''">true</TelerikLicenseGen>
+
+        <!-- Set to "false" to disable ZeroDepsMetadataReader fallback for .NET Framework < 4.6.2 compatibility -->
+        <TelerikZeroDepsMetadataReader Condition="$(TelerikZeroDepsMetadataReader) == ''">true</TelerikZeroDepsMetadataReader>
+
+        <!-- Set to "true" to force using ZeroDepsMetadataReader for all Telerik assemblies without trying MetadataReader first -->
+        <TelerikForceZeroDepsMetadataReader Condition="$(TelerikForceZeroDepsMetadataReader) == ''">false</TelerikForceZeroDepsMetadataReader>
+
+        <TelerikLicensingVerbosity Condition="$(TelerikLicensingVerbosity) == ''">Normal</TelerikLicensingVerbosity>
+        <!-- <TelerikLicensingVerbosity>Quiet</TelerikLicensingVerbosity> -->
+        <!-- <TelerikLicensingVerbosity>Verbose</TelerikLicensingVerbosity> -->
+    </PropertyGroup>
+
+    <UsingTask 
+        TaskName="Telerik.Licensing.Tasks.ResolveTelerikProducts"
+        AssemblyFile="$(MSBuildThisFileDirectory)..\tasks\netstandard2.0\Telerik.Licensing.Tasks.dll"
+        Architecture="$(TelerikLicensingTaskArchitecture)"
+        Runtime="$(TelerikLicensingTaskRuntime)"
+        TaskFactory="$(TelerikLicensingTaskFactory)" />
+
+	<Target
+			Condition="$(ImportXamlTargets)!='true' Or !$(MSBuildProjectName.EndsWith('_wpftmp'))"
+			Name="ResolveTelerikReferences"
+			DependsOnTargets="ResolveReferences"
+			BeforeTargets="CoreCompile">
+		<ResolveTelerikProducts
+				OutputPath="$(OutputPath)"
+				IntermediateOutputPath="$(IntermediateOutputPath)"
+				MSBuildProjectName="$(MSBuildProjectName)"
+				MSBuildProjectDirectory="$(MSBuildProjectDirectory)"
+				MSBuildProjectExtension="$(MSBuildProjectExtension)"
+				Language="$(Language)"
+				Platform="$(Platform)"
+				TargetFramework="$(TargetFramework)"
+				TargetFrameworkVersion="$(TargetFrameworkVersion)"
+				TargetFrameworks="$(TargetFrameworks)"
+				VisualStudioVersion="$(VisualStudioVersion)"
+				UsingMicrosoftNETSdk="$(UsingMicrosoftNETSdk)"
+				UsingMicrosoftNETSdkRazor="$(UsingMicrosoftNETSdkRazor)"
+				UsingMicrosoftNETSdkWeb="$(UsingMicrosoftNETSdkWeb)"
+				ImportXamlTargets="$(ImportXamlTargets)"
+				OutputType="$(OutputType)"
+				UseMaui="$(UseMaui)"
+				UseTelerikTheming="$(UseTelerikTheming)"
+				NuGetPackageRoot="$(NuGetPackageRoot)"
+				PackageReferences="@(PackageReference)"
+				ReferencePaths="@(ReferencePath)"
+				TelerikLicensingVerbosity="$(TelerikLicensingVerbosity)"
+				TelerikLicenseGen="$(TelerikLicenseGen)"
+				TelerikLicenseDate="$(TelerikLicenseDate)"
+				TelerikLicensingAlias="$(TelerikLicensingAlias)"
+				TelerikLicensingStrict="$(TelerikLicensingStrict)"
+				TelerikZeroDepsMetadataReader="$(TelerikZeroDepsMetadataReader)"
+				TelerikForceZeroDepsMetadataReader="$(TelerikForceZeroDepsMetadataReader)">
+			<Output TaskParameter="TelerikRuntimeLicense" ItemName="GeneratedCompile" />
+			<Output TaskParameter="TelerikRuntimeLicense" ItemName="FileWrites" />
+		</ResolveTelerikProducts>
+		<ItemGroup>
+			<PostGeneratedCompile Include="@(Compile)" />
+			<Compile Remove="@(Compile)" />
+			<Compile Include="@(GeneratedCompile);@(PostGeneratedCompile)" />
+		</ItemGroup>
+	</Target>
+</Project>

@@ -1,0 +1,733 @@
+﻿<%@ Master Language="C#" CodeFile="Privacidad.master.cs" Inherits="Master_Privacidad" %>
+
+<!DOCTYPE html>
+<html lang="es">
+<head runat="server">
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <title>Política de Privacidad</title>
+
+    <link rel="shortcut icon" href="../Imagen/fav.ico" />
+
+    <!-- Solo Bootstrap base + icons; sin app.min.css (pisa tipografía y colores del hero) -->
+    <link href="../Css/Adminto/assets/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="../Css/Adminto/assets/css/icons.min.css"     rel="stylesheet" />
+
+    <style>
+        /* ─── Paleta y variables ─────────────────────────────────── */
+        :root {
+            --prv-primary: #395da8;
+            --prv-primary-container: #4a72c2;
+            --prv-secondary: #73a6c8;
+            --prv-on-primary: #ffffff;
+            --prv-primary-fixed: #dde6f5;
+            --prv-on-primary-fixed: #1f3a73;
+            --prv-surface: #f8f9fb;
+            --prv-surface-container-lowest: #ffffff;
+            --prv-surface-container-low: #f1f4f9;
+            --prv-surface-container: #e6ecf5;
+            --prv-surface-container-high: #d9e2f0;
+            --prv-surface-container-highest: #c9d6ea;
+            --prv-on-surface: #20242b;
+            --prv-on-surface-variant: #5d6063;
+            --prv-outline: #8a8a8b;
+            --prv-outline-variant: #d4d4d5;
+            --prv-error: #ba1a1a;
+            --prv-error-container: #ffdad6;
+            --prv-radius: 12px;
+            --prv-radius-lg: 16px;
+        }
+
+        /* ─── Reset ──────────────────────────────────────────────── */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { height: 100%; }
+
+        /*
+         * Sticky-footer en 3 niveles:
+         *   html (100%) → body (flex col, min-height 100%) → #form1 (flex:1) → .prv-main (flex:1 0 auto)
+         * body no puede tener height:100% fijo porque impide que crezca más allá del viewport.
+         */
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--prv-surface);
+            color: var(--prv-on-surface);
+            min-height: 100%;          /* crece con el contenido; no se corta */
+            display: flex;
+            flex-direction: column;
+            line-height: 1.6;
+            font-size: 15px;
+        }
+
+        /* WebForms inserta <form> entre body y el contenido real.
+         * flex: 1 0 auto → crece para llenar body; 0 impide que se encoja. */
+        #form1 {
+            display: flex;
+            flex-direction: column;
+            flex: 1 0 auto;
+            min-height: 100vh;         /* garantía mínima aunque body falle */
+        }
+
+        /* ─── Barra de navegación ─────────────────────────────────── */
+        .prv-nav {
+            background: var(--prv-surface-container-lowest);
+            border-bottom: 1px solid var(--prv-outline-variant);
+            height: 64px;
+            position: sticky;
+            top: 0;
+            z-index: 200;
+            flex-shrink: 0;
+            padding: 0 48px;
+        }
+
+        .prv-nav-inner {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 1200px;
+            height: 100%;
+            margin: 0 auto;
+            gap: 24px;
+        }
+
+        .prv-nav-brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-decoration: none !important;
+            white-space: nowrap;
+        }
+        .prv-nav-brand img {
+            height: 40px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+
+        .prv-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            flex: 1;
+            margin-left: 16px;
+        }
+        .prv-nav-links a {
+            font-size: 0.875rem;
+            font-weight: 500;
+            color: var(--prv-on-surface-variant) !important;
+            text-decoration: none !important;
+            padding-bottom: 4px;
+            border-bottom: 2px solid transparent;
+            transition: color .15s, border-color .15s;
+            white-space: nowrap;
+        }
+        .prv-nav-links a:hover,
+        .prv-nav-links a.active {
+            color: var(--prv-primary) !important;
+        }
+        .prv-nav-links a.active {
+            border-bottom-color: var(--prv-primary);
+        }
+
+        .prv-nav-login {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #fff !important;
+            background: var(--prv-primary);
+            border-radius: 8px;
+            padding: 8px 20px;
+            text-decoration: none !important;
+            transition: opacity .15s;
+            white-space: nowrap;
+        }
+        .prv-nav-login:hover {
+            opacity: .85;
+            color: #fff !important;
+            text-decoration: none !important;
+        }
+
+        /* ─── Hero ────────────────────────────────────────────────── */
+        .prv-hero {
+            padding: 56px 48px;
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            flex-shrink: 0;
+        }
+
+        .prv-hero-center {
+            text-align: center;
+            max-width: 720px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* Badge pill arriba del título */
+        .prv-hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: var(--prv-primary-fixed);
+            border-radius: 100px;
+            padding: 6px 18px;
+            margin-bottom: 22px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--prv-on-primary-fixed) !important;
+        }
+        .prv-hero-badge i {
+            color: var(--prv-primary) !important;
+            font-size: 0.85rem;
+        }
+
+        /* Título y texto del hero */
+        .prv-hero h1,
+        .prv-hero .prv-hero-title {
+            font-size: clamp(1.8rem, 4vw, 3rem) !important;
+            font-weight: 800 !important;
+            color: var(--prv-on-surface) !important;
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+            margin-bottom: 16px;
+        }
+
+        .prv-hero p,
+        .prv-hero .prv-hero-sub {
+            font-size: 1.02rem !important;
+            color: var(--prv-on-surface-variant) !important;
+            max-width: 620px;
+            margin: 0 auto;
+            line-height: 1.65;
+        }
+
+        /* ─── Hero de detalle de módulo ─────────────────────────────── */
+        .prv-hero-detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            gap: 24px;
+            flex-wrap: wrap;
+            border-bottom: 1px solid var(--prv-outline-variant);
+            padding-bottom: 32px;
+        }
+        .prv-hero-detail-row .prv-hero-title { margin-bottom: 8px; }
+
+        .prv-breadcrumb {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--prv-on-surface-variant) !important;
+            font-size: 0.78rem;
+            margin-bottom: 16px;
+        }
+        .prv-breadcrumb a {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        .prv-breadcrumb a:hover { color: var(--prv-primary) !important; }
+        .prv-breadcrumb i { font-size: 0.6rem; color: var(--prv-outline) !important; }
+        .prv-breadcrumb span { color: var(--prv-primary) !important; font-weight: 600; }
+
+        .prv-hero-meta-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--prv-on-surface-variant) !important;
+            font-size: 0.85rem !important;
+            max-width: none !important;
+            margin: 0 !important;
+        }
+        .prv-hero-meta-row i { color: var(--prv-outline) !important; }
+
+        /* ─── Badges ─────────────────────────────────────────────── */
+        .prv-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 18px;
+            border-radius: 100px;
+            font-size: 0.78rem;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+        .prv-badge-success {
+            background: var(--prv-surface-container-high);
+            color: var(--prv-primary) !important;
+        }
+        .prv-badge-success i { color: var(--prv-primary) !important; }
+
+        /* ─── Contenido principal ─────────────────────────────────── */
+        .prv-main {
+            flex: 1 0 auto;               /* crece para empujar el footer; 0 auto = nunca encoge */
+            max-width: 1200px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 8px 48px 64px;
+        }
+
+        /* ─── Texto introductorio centrado (vista índice) ─────────── */
+        .prv-lead {
+            max-width: 720px;
+            margin: 0 auto 16px;
+            text-align: center;
+            color: var(--prv-on-surface-variant);
+            font-size: 0.95rem;
+            line-height: 1.75;
+        }
+
+        .prv-apps-label {
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: var(--prv-on-surface-variant);
+            margin: 40px 0 16px;
+        }
+
+        /* ─── Grid de apps (vista índice) ────────────────────────── */
+        .prv-app-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .prv-app-card {
+            position: relative;
+            overflow: hidden;
+            background: var(--prv-surface-container-lowest);
+            border: 1px solid var(--prv-outline-variant);
+            border-radius: var(--prv-radius-lg);
+            padding: 32px;
+            text-decoration: none !important;
+            color: var(--prv-on-surface) !important;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 24px;
+            transition: border-color .2s ease, box-shadow .25s ease, transform .2s ease;
+        }
+        .prv-app-card::after {
+            content: '';
+            position: absolute;
+            top: 0; right: 0;
+            width: 120px; height: 120px;
+            background: var(--prv-surface-container-low);
+            border-radius: 0 0 0 999px;
+            transform: translate(40px, -40px);
+            transition: background .2s ease;
+        }
+        .prv-app-card:hover {
+            border-color: var(--prv-primary);
+            box-shadow: 0 12px 28px rgba(57, 93, 168, 0.16);
+            transform: translateY(-3px);
+            color: var(--prv-on-surface) !important;
+            text-decoration: none !important;
+        }
+        .prv-app-card:hover::after { background: var(--prv-primary-fixed); }
+
+        .prv-app-card-icon {
+            position: relative;
+            width: 56px;
+            height: 56px;
+            border-radius: 14px;
+            background: var(--prv-primary-fixed);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--prv-primary);
+            font-size: 1.5rem;
+            flex-shrink: 0;
+        }
+        .prv-app-card-title {
+            position: relative;
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: var(--prv-on-surface);
+            margin: 18px 0 10px;
+        }
+        .prv-app-card-desc {
+            position: relative;
+            color: var(--prv-on-surface-variant);
+            font-size: 0.875rem;
+            line-height: 1.7;
+        }
+        .prv-app-card-tags {
+            position: relative;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 18px;
+        }
+        .prv-tag {
+            background: var(--prv-surface-container-high);
+            color: var(--prv-on-surface-variant);
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 0.66rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .prv-app-card-cta {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--prv-primary);
+            font-weight: 600;
+            font-size: 0.85rem;
+        }
+        .prv-app-card-cta i { transition: transform .2s ease; }
+        .prv-app-card:hover .prv-app-card-cta i { transform: translateX(4px); }
+
+        /* ─── Vista de detalle: grid TOC + contenido ──────────────── */
+        .prv-detail-grid {
+            display: grid;
+            grid-template-columns: 260px 1fr;
+            gap: 48px;
+            align-items: flex-start;
+            margin-top: 40px;
+        }
+        .prv-detail-grid.prv-detail-grid-single {
+            grid-template-columns: 1fr;
+        }
+
+        .prv-toc {
+            position: sticky;
+            top: 88px;
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+        .prv-toc-label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            color: var(--prv-on-surface-variant);
+            margin-bottom: 10px;
+            padding-left: 14px;
+        }
+        .prv-toc-link {
+            display: block;
+            padding: 9px 14px;
+            border-radius: 8px;
+            color: var(--prv-on-surface-variant) !important;
+            text-decoration: none !important;
+            font-size: 0.85rem;
+            font-weight: 500;
+            border-left: 3px solid transparent;
+            transition: background .15s, color .15s, border-color .15s;
+        }
+        .prv-toc-link:hover {
+            background: var(--prv-surface-container-low);
+            color: var(--prv-primary) !important;
+            text-decoration: none !important;
+        }
+        .prv-toc-link.active {
+            background: var(--prv-surface-container-low);
+            color: var(--prv-primary) !important;
+            font-weight: 600;
+            border-left-color: var(--prv-primary);
+        }
+        .prv-toc-link.prv-toc-sub {
+            padding-left: 30px;
+            font-size: 0.8rem;
+        }
+
+        /* ─── Card de contenido (HTML del editor) ─────────────────── */
+        .prv-content {
+            background: var(--prv-surface-container-lowest);
+            border: 1px solid var(--prv-outline-variant);
+            border-radius: var(--prv-radius-lg);
+            padding: 40px 44px;
+            counter-reset: prv-section;
+        }
+        .prv-content h2 {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            font-size: 1.4rem;
+            font-weight: 700;
+            color: var(--prv-on-surface);
+            margin: 36px 0 18px;
+            scroll-margin-top: 90px;
+        }
+        .prv-content h2:first-child { margin-top: 0; }
+        .prv-content h2::before {
+            counter-increment: prv-section;
+            content: counter(prv-section);
+            flex-shrink: 0;
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: var(--prv-primary-container);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: 700;
+        }
+        .prv-content h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--prv-on-surface);
+            margin: 24px 0 10px;
+            scroll-margin-top: 90px;
+        }
+        .prv-content p {
+            color: var(--prv-on-surface-variant);
+            font-size: 0.95rem;
+            line-height: 1.8;
+            margin-bottom: 14px;
+        }
+        .prv-content ul, .prv-content ol {
+            padding-left: 22px;
+            margin-bottom: 14px;
+        }
+        .prv-content li {
+            color: var(--prv-on-surface-variant);
+            font-size: 0.95rem;
+            line-height: 1.75;
+            margin-bottom: 6px;
+        }
+        .prv-content a { color: var(--prv-secondary); }
+
+        /* ─── Llamado a la acción / contacto ──────────────────────── */
+        .prv-callout {
+            margin-top: 36px;
+            padding-top: 32px;
+            border-top: 1px solid var(--prv-outline-variant);
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+        .prv-callout-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 50%;
+            background: var(--prv-primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+            flex-shrink: 0;
+        }
+        .prv-callout-text h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--prv-on-surface);
+            margin-bottom: 4px;
+        }
+        .prv-callout-text p {
+            color: var(--prv-on-surface-variant);
+            font-size: 0.875rem;
+        }
+
+        /* ─── Caja informativa ────────────────────────────────────── */
+        .prv-info {
+            background: var(--prv-surface-container-low);
+            border: 1px solid var(--prv-outline-variant);
+            border-radius: var(--prv-radius);
+            padding: 14px 18px;
+            display: flex;
+            gap: 10px;
+            align-items: flex-start;
+            font-size: 0.84rem;
+            color: var(--prv-primary) !important;
+            line-height: 1.55;
+        }
+        .prv-info i {
+            color: var(--prv-secondary) !important;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* ─── Botón volver ────────────────────────────────────────── */
+        .prv-back-wrap { margin-top: 28px; }
+        .prv-back-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--prv-primary) !important;
+            border: 1.5px solid var(--prv-primary);
+            border-radius: 8px;
+            padding: 9px 22px;
+            text-decoration: none !important;
+            transition: background .15s, color .15s;
+        }
+        .prv-back-btn:hover {
+            background: var(--prv-primary);
+            color: #fff !important;
+            text-decoration: none !important;
+        }
+
+        /* ─── Footer ─────────────────────────────────────────────── */
+        .prv-footer {
+            background: var(--prv-surface-container-lowest);
+            border-top: 1px solid var(--prv-outline-variant);
+            flex-shrink: 0;
+        }
+        .prv-footer-inner {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px 48px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+        }
+        .prv-footer-brand {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .prv-footer-brand img {
+            height: 28px;
+            width: auto;
+            display: block;
+            object-fit: contain;
+        }
+        .prv-footer-copy {
+            font-size: 0.75rem;
+            color: var(--prv-on-surface-variant);
+            padding-left: 16px;
+            border-left: 1px solid var(--prv-outline-variant);
+        }
+        .prv-footer-links {
+            display: flex;
+            gap: 24px;
+            flex-wrap: wrap;
+        }
+        .prv-footer-links a {
+            font-size: 0.75rem;
+            color: var(--prv-on-surface-variant) !important;
+            text-decoration: none !important;
+        }
+        .prv-footer-links a:hover { color: var(--prv-primary) !important; }
+
+        /* ─── Responsive ──────────────────────────────────────────── */
+        @media (max-width: 991.98px) {
+            .prv-detail-grid { grid-template-columns: 1fr; }
+            .prv-toc { display: none; }
+        }
+        @media (max-width: 640px) {
+            .prv-nav { padding: 0 16px; }
+            .prv-nav-links { display: none; }
+            .prv-hero { padding: 40px 16px; }
+            .prv-main { padding: 4px 16px 48px; }
+            .prv-content { padding: 24px 20px; }
+            .prv-app-grid { grid-template-columns: 1fr; gap: 16px; }
+            .prv-footer-inner { padding: 20px 16px; justify-content: center; text-align: center; }
+        }
+    </style>
+
+    <!-- AjaxProgress CSS -->
+    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=1" rel="stylesheet" />
+
+    <asp:ContentPlaceHolder ID="cphHeder" runat="server" />
+</head>
+<body>
+    <form id="form1" runat="server">
+
+        <%-- Barra superior --%>
+        <header class="prv-nav">
+            <div class="prv-nav-inner">
+                <a class="prv-nav-brand" href='<%= ResolveUrl("~/Login.aspx") %>'>
+                    <img src='<%= ResolveUrl("~/Imagen/logo_facilityges.png") %>' alt="FacilityGes" />
+                </a>
+                <nav class="prv-nav-links">
+                    <a class="active" href='<%= ResolveUrl("~/Privacidad/Privacidad.aspx") %>'>Aplicaciones</a>
+                </nav>
+                <a class="prv-nav-login" href='<%= ResolveUrl("~/Login.aspx") %>'>
+                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                </a>
+            </div>
+        </header>
+
+        <%-- Hero dinámico  --%>
+        <section class="prv-hero">
+            <asp:ContentPlaceHolder ID="cphHero" runat="server">
+                <div class="prv-hero-center">
+                    <div class="prv-hero-badge">
+                        <i class="fas fa-user-shield"></i>Centro de Transparencia
+                    </div>
+                    <h1 class="prv-hero-title">Política de Privacidad</h1>
+                    <p class="prv-hero-sub">
+                        Información sobre el tratamiento de datos personales en nuestras aplicaciones.
+                    </p>
+                </div>
+            </asp:ContentPlaceHolder>
+        </section>
+
+        <%-- Cuerpo del contenido --%>
+        <main class="prv-main">
+            <asp:ContentPlaceHolder ID="cphBody" runat="server" />
+        </main>
+
+        <%-- Footer --%>
+        <footer class="prv-footer">
+            <div class="prv-footer-inner">
+                <div class="prv-footer-brand">
+                    <img src='<%= ResolveUrl("~/Imagen/logo_facilityges.png") %>' alt="FacilityGes" />
+                    <span class="prv-footer-copy">© <%= DateTime.Now.Year %> Todos los derechos reservados.</span>
+                </div>
+                <div class="prv-footer-links">
+                    <%--<a href="#">Aviso Legal</a>
+                    <a href="#">Términos de Servicio</a>
+                    <a href="#">Contacto</a>--%>
+                </div>
+            </div>
+        </footer>
+
+        <%-- Scripts mínimos --%>
+        <script src='<%= ResolveUrl("~/Css/Adminto/assets/js/vendor.min.js") %>'></script>
+
+        <%-- Scrollspy: resalta el item activo del TOC lateral según la sección visible --%>
+        <script>
+            (function () {
+                var links = document.querySelectorAll('.prv-toc-link[href^="#"]');
+                if (!links.length) return;
+
+                var sections = [];
+                links.forEach(function (link) {
+                    var target = document.getElementById(link.getAttribute('href').substring(1));
+                    if (target) sections.push({ link: link, target: target });
+                });
+                if (!sections.length) return;
+
+                var observer = new IntersectionObserver(function (entries) {
+                    entries.forEach(function (entry) {
+                        var match = sections.find(function (s) { return s.target === entry.target; });
+                        if (!match) return;
+                        if (entry.isIntersecting) {
+                            links.forEach(function (l) { l.classList.remove('active'); });
+                            match.link.classList.add('active');
+                        }
+                    });
+                }, { rootMargin: '-20% 0px -70% 0px', threshold: 0 });
+
+                sections.forEach(function (s) { observer.observe(s.target); });
+            })();
+        </script>
+
+        <asp:ContentPlaceHolder ID="chpScript" runat="server" />
+
+    </form>
+</body>
+</html>

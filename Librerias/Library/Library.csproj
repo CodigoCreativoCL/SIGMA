@@ -1,0 +1,278 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProductVersion>8.0.30703</ProductVersion>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectGuid>{4D125198-3E9F-4C36-9601-021ECD6740A6}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Library</RootNamespace>
+    <AssemblyName>Library</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <SccProjectName>SAK</SccProjectName>
+    <SccLocalPath>SAK</SccLocalPath>
+    <SccAuxPath>SAK</SccAuxPath>
+    <SccProvider>SAK</SccProvider>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="AjaxControlToolkit, Version=4.1.51116.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\AjaxControlToolkit.dll</HintPath>
+    </Reference>
+    <Reference Include="EPPlus">
+      <HintPath>Lib\EPPlus\EPPlus.dll</HintPath>
+    </Reference>
+    <Reference Include="EPPlus.Interfaces">
+      <HintPath>Lib\EPPlus\EPPlus.Interfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="EPPlus.System.Drawing">
+      <HintPath>Lib\EPPlus\EPPlus.System.Drawing.dll</HintPath>
+    </Reference>
+    <Reference Include="Ionic.Zip, Version=1.9.1.8, Culture=neutral, PublicKeyToken=edbe51ad942a3f5c, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Ionic.Zip.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.VisualBasic" />
+    <Reference Include="QRCoder, Version=1.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\CodigoQR\QRCoder.dll</HintPath>
+    </Reference>
+    <Reference Include="RJS.Web.WebControl.PopCalendar.Ajax.Net, Version=1.3.2990.16099, Culture=neutral, PublicKeyToken=5bac9568331177db, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\RJS.Web.WebControl.PopCalendar.Ajax.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Configuration" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Design" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Design" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Web.Extensions.Design" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="Microsoft.CSharp" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+    <Reference Include="Telerik.Licensing.Runtime">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Licensing.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Web.Design">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Web.Design.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Web.Device.Detection">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Web.Device.Detection.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Web.UI">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Web.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Web.UI.Skins">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Web.UI.Skins.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Documents.Core">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Windows.Documents.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Documents.Flow, Version=2026.1.210.462, Culture=neutral, PublicKeyToken=5803cfa389c90ce7, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Windows.Documents.Flow.dll</HintPath>
+    </Reference>
+    <Reference Include="Telerik.Windows.Zip">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\Telerik\Telerik.Windows.Zip.dll</HintPath>
+    </Reference>
+    <Reference Include="wnvhtmltopdf, Version=14.0.0.0, Culture=neutral, PublicKeyToken=b12703d35a33ff98, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>Lib\PDF\wnvhtmltopdf.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="CodigoBarrasQR\BarcodeGenerator.cs" />
+    <Compile Include="CodigoBarrasQR\CodigoBarras.cs" />
+    <Compile Include="CodigoBarrasQR\CodigoQR.cs" />
+    <Compile Include="Conexion.cs" />
+    <Compile Include="Tools\Url.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Tools\ClientScript.cs" />
+    <Compile Include="Tools\CodigosBarras.cs" />
+    <Compile Include="Tools\Crypto.cs" />
+    <Compile Include="Tools\Excel.cs" />
+    <Compile Include="Tools\Fomato.cs" />
+    <Compile Include="Tools\Respuesta.cs" />
+    <Compile Include="Web\UI\Jquery\Editor.cs" />
+    <Compile Include="Web\UI\Jquery\Modal.cs" />
+    <Compile Include="Web\UI\Telerik\RadCalendar2.cs" />
+    <Compile Include="Web\UI\Telerik\RadComboBox2.cs" />
+    <Compile Include="Web\UI\Telerik\RadComboCheckBox2.cs" />
+    <Compile Include="Web\UI\Telerik\RadNumericBox2.cs" />
+    <Compile Include="Web\UI\Telerik\RadTimePicker2.cs" />
+    <Compile Include="Web\UI\Telerik\RadDatePicker2.cs" />
+    <Compile Include="Web\UI\Telerik\RadEditor2.cs" />
+    <Compile Include="Web\UI\Telerik\RadGrid2.cs" />
+    <Compile Include="Web\UI\Telerik\RadMenu2.cs" />
+    <Compile Include="Web\UI\Telerik\RadPanelBar2.cs" />
+    <Compile Include="Web\UI\Telerik\RadScheduler2.cs" />
+    <Compile Include="Web\UI\Telerik\RadTabStrip2.cs" />
+    <Compile Include="Web\UI\Telerik\RadToolTip2.cs" />
+    <Compile Include="Web\UI\Telerik\RadUpload2.cs" />
+    <Compile Include="Web\UI\Telerik\RadWindow2.cs" />
+    <Compile Include="Web\UI\WebControls\Button.cs" />
+    <Compile Include="Web\UI\WebControls\Calendar.cs" />
+    <Compile Include="Web\UI\WebControls\Calendar2.cs" />
+    <Compile Include="Web\UI\WebControls\CheckBox2.cs" />
+    <Compile Include="Web\UI\WebControls\CodigoBarra.cs" />
+    <Compile Include="Web\UI\WebControls\ComboBox.cs" />
+    <Compile Include="Web\UI\WebControls\ComboBox2.cs" />
+    <Compile Include="Web\UI\WebControls\DateBox.cs" />
+    <Compile Include="Web\UI\WebControls\FileUpload2.cs" />
+    <Compile Include="Web\UI\WebControls\InputBox.cs" />
+    <Compile Include="Web\UI\WebControls\TextArea2.cs" />
+    <Compile Include="Web\UI\WebControls\TextBox.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Lib\AjaxControlToolkit\AjaxControlToolkit.dll" />
+    <Content Include="Lib\AjaxControlToolkit\AjaxControlToolkit.pdb" />
+    <Content Include="Lib\AjaxControlToolkit\ar\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\cs\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\de\ActionCenter.dll" />
+    <Content Include="Lib\AjaxControlToolkit\de\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\es\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\fr\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\he\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\hi\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\CodigoQR\QRCoder.dll" />
+    <Content Include="Lib\EditorWord\Mammoth.dll" />
+    <Content Include="Lib\Json\Newtonsoft.Json.dll" />
+    <Content Include="Lib\Json\Newtonsoft.Json.xml" />
+    <Content Include="Lib\PDF\wnvhtmltopdf.dll" />
+    <Content Include="Lib\PDF\wnvhtmltopdf.xml" />
+    <Content Include="Lib\Pechkin\Common.Logging.dll" />
+    <Content Include="Lib\Pechkin\libeay32.dll" />
+    <Content Include="Lib\Pechkin\libgcc_s_dw2-1.dll" />
+    <Content Include="Lib\Pechkin\mingwm10.dll" />
+    <Content Include="Lib\Pechkin\Pechkin.dll" />
+    <Content Include="Lib\Pechkin\Pechkin.pdb" />
+    <Content Include="Lib\Pechkin\ssleay32.dll" />
+    <Content Include="Lib\Pechkin\wkhtmltox0.dll" />
+    <Content Include="telerik-license.txt" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Buffers.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.CodeDom.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Collections.Immutable.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Management.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Memory.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Numerics.Vectors.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Reflection.Metadata.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll" />
+    <Content Include="Lib\Telerik\tasks\netstandard2.0\Telerik.Licensing.Tasks.dll" />
+    <Content Include="Lib\Telerik\Telerik.Licensing.Runtime.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.Design.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.Device.Detection.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.Device.Detection.xml" />
+    <Content Include="Lib\Telerik\Telerik.Web.UI.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.UI.Skins.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.UI.xml" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Documents.Core.dll" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Documents.Core.xml" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Documents.Flow.dll" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Documents.Flow.xml" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Zip.dll" />
+    <Content Include="Lib\Telerik\Telerik.Windows.Zip.xml" />
+    <Content Include="Lib\Zip\Ionic.Zip.dll" />
+    <Content Include="Lib\AjaxControlToolkit\it\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\ja\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\ko\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\nl\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\nl\LSA-License-ppdlic.xrm-ms" />
+    <Content Include="Lib\AjaxControlToolkit\pt\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\popCandendar\RJS.Web.WebControl.PopCalendar.Ajax.Net.dll" />
+    <Content Include="Lib\AjaxControlToolkit\ru\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\System.Web.Extensions.Design.dll" />
+    <Content Include="Lib\AjaxControlToolkit\System.Web.Extensions.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.UI.dll" />
+    <Content Include="Lib\Telerik\Telerik.Web.UI.Skins.dll" />
+    <Content Include="Lib\AjaxControlToolkit\tr-TR\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\tr-TR\HelpPaneProxy.dll" />
+    <Content Include="Lib\AjaxControlToolkit\zh-CHS\AjaxControlToolkit.resources.dll" />
+    <Content Include="Lib\AjaxControlToolkit\zh-CHS\Sentinel.v3.5Client.dll" />
+    <Content Include="Lib\AjaxControlToolkit\zh-CHS\WFServicesReg.exe" />
+    <Content Include="Lib\AjaxControlToolkit\zh-CHT\AjaxControlToolkit.resources.dll" />
+    <Content Include="Web\UI\Telerik\xml\BasicTools.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="obj\" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Lib\AjaxControlToolkit\cs\ActionCenter.dll.mui" />
+    <None Include="Lib\AjaxControlToolkit\cs\wldap32.dll.mui" />
+    <None Include="Lib\AjaxControlToolkit\de\dxgkrnl.sys.mui" />
+    <None Include="Lib\AjaxControlToolkit\es\ldifde.exe.mui" />
+    <None Include="Lib\AjaxControlToolkit\fr\Help.admx" />
+    <None Include="Lib\PDF\wnvinternal.dat" />
+    <None Include="Lib\Telerik\build\Telerik.Licensing.targets" />
+    <None Include="Lib\Telerik\tasks\netstandard2.0\Telerik.Licensing.Tasks.deps.json" />
+    <None Include="Lib\Zip\Ionic.Zip.dll.refresh" />
+    <None Include="Lib\AjaxControlToolkit\ko\lpksetup.exe.mui" />
+    <None Include="Lib\AjaxControlToolkit\ko\lpremove.exe.mui" />
+    <None Include="Lib\AjaxControlToolkit\pt\msprivs.dll.mui" />
+    <None Include="Lib\AjaxControlToolkit\ru\msprivs.dll.mui" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\AddInProcess.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\AddInProcess32.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\AddInUtil.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\csc.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\DataSvcUtil.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\default.win32manifest" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\EdmGen.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.Build.xsd">
+      <SubType>Designer</SubType>
+    </None>
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.Common.targets" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.Common.Tasks" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.CSharp.targets" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.Data.Entity.targets" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.VisualBasic.targets" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\Microsoft.WinFx.targets" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\msbuild.exe.config" />
+    <None Include="Lib\AjaxControlToolkit\zh-CHS\vbc.exe.config" />
+  </ItemGroup>
+  <ItemGroup>
+    <WCFMetadata Include="Service References\" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+  <Import Project="Lib\Telerik\build\Telerik.Licensing.targets" />
+</Project>
