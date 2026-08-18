@@ -1,10 +1,6 @@
 ﻿using SitioBase.Controller;
 using SitioBase.Model;
-using SitioBase.Controller;
-using SitioBase.Model;
 using System;
-using System.Collections.Generic;
-using System.IO;
 using Telerik.Web.UI;
 
 public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
