@@ -29,7 +29,18 @@
     <!-- Default CSS -->
     <link href="../Css/Default/Default.css?vrs=4" rel="stylesheet" />
 
+    
+    <!-- LookAndFeel CSS -->
+    <link href="../Css/LookAndFeel/Default.css?vrs=1" rel="stylesheet" />
 
+    <!-- LookAndFeel v2 (Relook colores) -->
+    <link href="../Css/LookAndFeel/v2/01-Variables.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/02-Sidebar.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/03-Botones.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/04-Grid.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/05-Telerik.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/06-General.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/v2/07-Topbar.css?vrs=1" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=5" rel="stylesheet" />
