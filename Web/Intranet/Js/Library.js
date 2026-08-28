@@ -150,10 +150,6 @@ function popup(url, w, h, name, winprops) {
     if (parseInt(navigator.appVersion) >= 4) { win.window.focus(); }
 }
 
-// Descarga de archivos via popup (GetArchivo.aspx / GetArchivoBinario.aspx)
-function Descargar(query, url) {
-    popup(url + "?query=" + query, "400", "200", "Archivos", "scrollbars=yes,resizable=yes");
-}
 
 //Validacion de Texbox y ComboBox
 function validaControl(sender, args) {

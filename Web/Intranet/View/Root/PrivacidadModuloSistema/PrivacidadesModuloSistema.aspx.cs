@@ -11,11 +11,6 @@ public partial class View_Root_PrivacidadModuloSistema_PrivacidadesModuloSistema
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_1063.Ver;   // Ajustar al menu correcto
-        Token.SecurityManagerVer(ver);
-        #endregion
     }
 
     protected void Page_PreRender(object sender, EventArgs e)

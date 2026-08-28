@@ -25,29 +25,6 @@ public partial class Login : System.Web.UI.Page
         Page.DataBind();
     }
 
-    protected void btnLogin_Click(object sender, EventArgs e)
-    {
-    }
-
-
-    protected void btnLoginEmpresa_Click(object sender, EventArgs e)
-    {
-        UsuarioController usuarioController = new UsuarioController();
-
-        Usuario usuario = new Usuario();
-        usuario.usu_login = txtLogin.Text;
-        usuario.usu_password = txtPassword.Text;
-        string ComputerName = Environment.MachineName;
-        Console.WriteLine("Computer Name: " + ComputerName);
-        Respuesta respuesta = usuarioController.GetUsuarioLogin(usuario);
-
-        if (!respuesta.error)
-        {
-            Response.Redirect("~/Default.aspx");
-        }
-        else
-            lblMensaje.Text = respuesta.detalle;
-    }
 }
 
 

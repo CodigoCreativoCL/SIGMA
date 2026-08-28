@@ -201,43 +201,55 @@ namespace SitioBase.Controller
             return menu;
         }
 
+        /// <summary>
+        /// Otorga o quita una FUNCION a un perfil.
+        ///
+        /// Escribe en Perfil_Permiso, que es de donde lee Token. Antes
+        /// escribia en Menu_Funcion_Perfil, que ya no lee nadie: marcar en
+        /// pantalla no tenia ningun efecto.
+        ///
+        /// Tampoco propaga hacia el menu padre. Ya no hace falta: el menu
+        /// lateral muestra un contenedor si alguno de sus hijos se muestra.
+        /// </summary>
         public Respuesta InsertMenuFuncionPerfil(MenuFuncionPerfil menuFuncionPerfil)
+        {
+            return GuardarAsignacion(menuFuncionPerfil.mfp_perfil, 0,
+                                     menuFuncionPerfil.mfp_menu_funcion,
+                                     menuFuncionPerfil.mfp_habilitado);
+        }
+
+        /// <summary>
+        /// Otorga o quita el acceso a una PAGINA -- lo que la grilla muestra
+        /// como "Ver". Es el permiso apuntado por Menus.mnu_permiso.
+        /// </summary>
+        private Respuesta GuardarAsignacion(int perfil, int menu, int funcion, bool otorgado)
         {
             Respuesta respuesta = new Respuesta();
 
+            if (!Token.TokenSeguridad()) return respuesta;
+
+            SqlCommand cmd = null;
             try
             {
-                SqlCommand cmdExecute = Conexion.GetCommand("SEGURIDAD_INS_MENU_FUNCION_PERFIL");
-                cmdExecute.Parameters.AddWithValue("@PERFIL", menuFuncionPerfil.mfp_perfil);
-                cmdExecute.Parameters.AddWithValue("@FUNCION", menuFuncionPerfil.mfp_menu_funcion);
-                cmdExecute.Parameters.AddWithValue("@HABILITADO", menuFuncionPerfil.mfp_habilitado);
-                cmdExecute.ExecuteNonQuery();
-                cmdExecute.Connection.Close();
+                cmd = Conexion.GetCommand("UPS_PERFIL_PERMISO");
+                cmd.Parameters.AddWithValue("@PERFIL", perfil);
+                cmd.Parameters.AddWithValue("@MENU", menu);
+                cmd.Parameters.AddWithValue("@FUNCION", funcion);
+                cmd.Parameters.AddWithValue("@OTORGADO", otorgado);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
 
                 respuesta.codigo = 0;
+                respuesta.detalle = otorgado ? "Permiso otorgado." : "Permiso retirado.";
                 respuesta.error = false;
 
-                if (menuFuncionPerfil.mfp_habilitado)
-                {
-                    Menus menuHijo = new Menus();
-                    menuHijo = GetMenuFuncion(menuFuncionPerfil);
-
-                    Menus menuPadre = GetMenuPadre(menuHijo);
-
-                    if ((menuPadre.mnu_id == menuHijo.mnu_padre) & menuPadre.mnu_id > 0)
-                    {
-                        MenuPerfil menuPerfilPadre = new MenuPerfil();
-                        menuPerfilPadre.mpe_menu = menuPadre.mnu_id;
-                        menuPerfilPadre.mpe_perfil = menuFuncionPerfil.mfp_perfil;
-                        menuPerfilPadre.mpe_habilitado = true;
-
-                        respuesta = InsertMenuPerfilTransaccion(menuPerfilPadre);
-                        InsertMenuPerfilPadre(menuPerfilPadre, menuPadre);
-                    }
-                }
+                // El permiso cambio: quien lo reciba tiene que releerlo.
+                Token.Refrescar();
             }
             catch (Exception ex)
             {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
                 respuesta.codigo = -1;
                 respuesta.detalle = ex.Message;
                 respuesta.error = true;
@@ -246,42 +258,17 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
+        /// <summary>
+        /// Otorga o quita el "Ver" de una pagina a un perfil.
+        ///
+        /// "Ver" ya no es una fila en Menu_Perfil: es el permiso que la
+        /// pagina declara en Menus.mnu_permiso. Otorgarlo es una fila en
+        /// Perfil_Permiso, que es lo unico que Token lee.
+        /// </summary>
         public Respuesta InsertMenuPerfil(MenuPerfil menuPerfil)
         {
-            Respuesta respuesta = new Respuesta();
-
-            try
-            {
-                respuesta = InsertMenuPerfilTransaccion(menuPerfil);
-
-                if (menuPerfil.mpe_habilitado)
-                {
-                    Menus menuHijo = new Menus();
-                    menuHijo.mnu_id = menuPerfil.mpe_menu;
-                    menuHijo = GetMenu(menuHijo);
-
-                    Menus menuPadre = GetMenuPadre(menuHijo);
-
-                    if ((menuPadre.mnu_id == menuHijo.mnu_padre) & menuPadre.mnu_id > 0)
-                    {
-                        MenuPerfil menuPerfilPadre = new MenuPerfil();
-                        menuPerfilPadre.mpe_menu = menuPadre.mnu_id;
-                        menuPerfilPadre.mpe_perfil = menuPerfil.mpe_perfil;
-                        menuPerfilPadre.mpe_habilitado = true;
-
-                        respuesta = InsertMenuPerfilTransaccion(menuPerfilPadre);
-                        InsertMenuPerfilPadre(menuPerfilPadre, menuPadre);
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                respuesta.codigo = -1;
-                respuesta.detalle = ex.Message;
-                respuesta.error = true;
-            }
-
-            return respuesta;
+            return GuardarAsignacion(menuPerfil.mpe_perfil, menuPerfil.mpe_menu, 0,
+                                     menuPerfil.mpe_habilitado);
         }
 
         public Respuesta InsertMenuPerfilPadre(MenuPerfil menuPerfilHijo, Menus menuHijo)

@@ -13,16 +13,8 @@ public partial class View_Clientes_Cliente_Instalaciones : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-        //#region SeguridadPagina
-        //MenuPerfil ver = new MenuPerfil();
-        //ver.mpe_menu = (int)SitioBase.Paginas.menu_42.Ver;
 
-        //SitioBase.Token.SecurityManagerVer(ver);
-        //MenuFuncion funCrearEditar = new MenuFuncion();
 
-        //funCrearEditar.mfu_id = (int)SitioBase.Paginas.menu_42.Crear_Editar;
-        //wucInstalaciones.ReadOnly = !SitioBase.Token.SecurityManager(funCrearEditar);
-        //#endregion
     }
 
     protected void Page_PreRender(object sender, EventArgs e)
@@ -44,19 +36,11 @@ public partial class View_Clientes_Cliente_Instalaciones : System.Web.UI.Page
                         Cliente cliente = new Cliente();
 
                         cliente.filtro_habilitado = true;
-                        //#region SeguridadPagina
-                        //MenuFuncion funVerTodoPaises = new MenuFuncion();
-                        //funVerTodoPaises.mfu_id = (int)SitioBase.Paginas.menu_42.Ver_Todo_Paises;
 
-                        //if (!SitioBase.Token.SecurityManager(funVerTodoPaises))
                         //    cliente.filtro_paises = SitioBase.Session.UsuarioIdPaises();
 
-                        //MenuFuncion funVerTodo = new MenuFuncion();
-                        //funVerTodo.mfu_id = (int)SitioBase.Paginas.menu_42.Ver_Todo;
 
-                        //if (!SitioBase.Token.SecurityManager(funVerTodo))
                         //    cliente.cli_usuario_creacion = int.Parse(SitioBase.Session.UsuarioId());
-                        //#endregion
                         if(int.Parse(SitioBase.Session.UsuarioTipoPerfil()) == 2)
                             cliente.tipo_perfil = int.Parse(SitioBase.Session.UsuarioTipoPerfil());
                         var clientes = clienteController.GetClientes(cliente);

@@ -96,9 +96,6 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
         //else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
         //    wucUsuarios.Perfiles = "4,5,6,7";
 
-        wucChecklist.IdCliente = IdCliente;
-        wucChecklist.ReadOnly = ReadOnly;
-
 
         wucInstalaciones.IdCliente = IdCliente;
         wucInstalaciones.ReadOnly = ReadOnly;

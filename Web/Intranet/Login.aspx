@@ -20,7 +20,7 @@
     <link href="Css/Login/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
     <!-- App Css-->
     <link href="Css/Login/assets/css/app.min.css" id="app-stylesheet" rel="stylesheet" type="text/css" />
-         
+
     <!-- SweetAlert CSS -->
     <link href="Css/SweetAlert/sweetalert.css" rel="stylesheet" />
     <link href="Css/SweetAlert/sweetalert2.min.css" rel="stylesheet" />
@@ -34,46 +34,10 @@
 <body class="fg-login-body">
     <form id="form" runat="server">
 
-        <div>
-            <div class="form-group">
-                <label for="<%= txtLogin.ClientID %>">Usuario</label>
-                <div class="fg-input-icon-wrapper">
-                    <i class="mdi mdi-account-outline fg-input-icon"></i>
-                    <asp:TextBox ID="txtLogin" runat="server" CssClass="form-control fg-input-with-icon" placeholder="Ingresa tu usuario" />
-                </div>
-            </div>
 
-            <div class="form-group">
-                <label for="<%= txtPassword.ClientID %>">Contraseña</label>
-                <div class="fg-password-wrapper fg-input-icon-wrapper">
-                    <i class="mdi mdi-lock-outline fg-input-icon"></i>
-                    <asp:TextBox ID="txtPassword" runat="server" CssClass="form-control fg-input-with-icon" placeholder="Ingresa tu contraseña" TextMode="Password" />
-                    <i class="mdi mdi-eye-outline fg-password-toggle" onclick="fgTogglePassword(this, '<%= txtPassword.ClientID %>')"></i>
-                </div>
-            </div>
 
-            <div class="form-group fg-login-options">
-                <label class="fg-checkbox-label" for="<%= chkRecordarme.ClientID %>">
-                    <asp:CheckBox ID="chkRecordarme" runat="server" />
-                    Recordarme
-                </label>
-            </div>
-
-            <div class="form-group text-center">
-                <asp:Label ID="lblMensaje" runat="server" CssClass="text-danger" />
-            </div>
-
-            <div class="form-group mb-0 text-center">
-                <asp:Button ID="btnLoginEmpresa" runat="server" Text="Ingresar" OnClick="btnLoginEmpresa_Click" CssClass="btn btn-primary btn-block" />
-            </div>
-
-        </div>
-
-        <asp:ScriptManager ID="ScriptManager2" runat="server"></asp:ScriptManager>
-
-        <script type="text/javascript">
-
-</script>
+        <asp:ScriptManager ID="ScriptManagerPrincipal" runat="server">
+        </asp:ScriptManager>
     </form>
 </body>
 </html>

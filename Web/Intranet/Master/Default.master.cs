@@ -11,6 +11,10 @@ public partial class Master_Default : System.Web.UI.MasterPage
         {
             Response.Redirect("~/Login.aspx");
         }
+
+        // El permiso de la pagina sale de su propia URL contra Menus.mnu_link.
+        // Por eso ninguna pagina bajo este master declara su permiso.
+        SitioBase.Token.ExigirPagina();
     }
 
     protected void Page_PreRender(object sender, EventArgs e)

@@ -29,11 +29,6 @@ public partial class View_Comercial_Clientes_ReasignacionCliente : System.Web.UI
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_31.Ver;
-        Token.SecurityManagerVer(ver);
-        #endregion
         if (!IsPostBack)
         {
             string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
