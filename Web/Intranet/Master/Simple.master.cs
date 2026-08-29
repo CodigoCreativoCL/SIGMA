@@ -9,6 +9,8 @@ public partial class Master_Simple : System.Web.UI.MasterPage
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Las ventanas de detalle tambien se autorizan por su URL.
+        SitioBase.Token.ExigirPagina();
       
 
     }

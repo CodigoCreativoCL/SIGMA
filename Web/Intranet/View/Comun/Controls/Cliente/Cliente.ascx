@@ -2,7 +2,6 @@
 <%@ Register Src="~/View/Comun/Controls/Cliente/Identidad.ascx" TagPrefix="wuc" TagName="Identidad" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Usuarios" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Instalaciones.ascx" TagPrefix="wuc" TagName="Instalaciones" %>
-<%@ Register Src="~/View/Comun/Controls/Cliente/Checklist/Checklist.ascx" TagPrefix="wuc" TagName="Checklist" %>
 
 <script type="text/javascript">
     function closeWindow() {
@@ -53,7 +52,6 @@
             <Tabs>
                 <rad:RadTab Text="Identidad" runat="server" PageViewID="rtvIdentidad" />
                 <rad:RadTab Text="Usuarios" runat="server" PageViewID="rtvUsuarios" />
-                <rad:RadTab Text="Checklist" runat="server" PageViewID="rtvChecklist" />
                 <rad:RadTab Text="Instalaciones" runat="server" PageViewID="rtvInstalaciones" />
             </Tabs>
         </rad:RadTabStrip2>
@@ -67,9 +65,6 @@
             <rad:RadPageView ID="rtvUsuarios" runat="server">
                 <div class="SubTitulos">Usuarios</div>
                 <wuc:Usuarios runat="server" ID="wucUsuarios" />
-            </rad:RadPageView>
-            <rad:RadPageView ID="rtvChecklist" runat="server">
-                <wuc:Checklist runat="server" ID="wucChecklist" />
             </rad:RadPageView>
             <rad:RadPageView ID="rtvInstalaciones" runat="server">
                 <wuc:Instalaciones runat="server" ID="wucInstalaciones" />

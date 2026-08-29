@@ -1,4 +1,5 @@
-﻿using SitioBase.Controller;
+﻿using SitioBase;
+using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
@@ -14,15 +15,8 @@ public partial class View_Comercial_Clientes : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
         #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)SitioBase.Paginas.menu_27.Ver;
-        
-        SitioBase.Token.SecurityManagerVer(ver);
 
 
-        wucClientes.VerTodoPaises = (int)SitioBase.Paginas.menu_27.Ver_Todo_Paises;
-        wucClientes.Ver_Todo = (int)SitioBase.Paginas.menu_27.Ver_Todo;
-        wucClientes.Crear_Editar = (int)SitioBase.Paginas.menu_27.Crear_Editar;
         wucClientes.Tipo_Perfil = 1;
         #endregion
     }

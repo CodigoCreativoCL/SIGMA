@@ -85,7 +85,7 @@
                 <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
                     EnableScriptGlobalization="true" EnableScriptLocalization="true">
                     <Scripts>
-                        <asp:ScriptReference Path="~/Js/jquery-1.11.3.min.js" />
+                        <asp:ScriptReference Path="~/Js/jquery-1.9.1.js" />
                         <asp:ScriptReference Path="~/Js/Library.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />

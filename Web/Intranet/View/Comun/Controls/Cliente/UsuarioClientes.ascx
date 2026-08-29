@@ -8,7 +8,7 @@
     <div class="row col-12">
         <div class="col-4">
             <div class="cliente-label">
-                <i class="fas fa-users"></i>
+                <i class="mdi mdi-account-group-outline"></i>
                 <span>Selección de Cliente</span>
             </div>
             <rad:RadComboBox2 ID="cboCliente" runat="server" OnLoad="LoadControls" Width="100%"

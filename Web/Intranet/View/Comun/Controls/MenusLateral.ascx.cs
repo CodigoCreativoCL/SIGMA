@@ -6,6 +6,21 @@ using System.Web.UI;
 using SitioBase.Controller;
 using SitioBase.Model;
 
+/// <summary>
+/// Menu lateral.
+///
+/// QUE CAMBIO
+///   Antes preguntaba por CADA NODO si el usuario tenia permiso, y cada
+///   pregunta era un viaje a la base: con 17 menus eran 17 consultas en
+///   cada render de cada pagina. Ahora Token cachea el set de permisos del
+///   usuario en la sesion, asi que estas verificaciones son lookups en
+///   memoria y el render no consulta nada.
+///
+///   Ademas los contenedores (mnu_link = '#') ya no necesitan permiso
+///   propio: se muestran solo si alguno de sus hijos se muestra. Asi no
+///   hay que mantener permisos de carpetas y no aparecen menus vacios que
+///   no llevan a ninguna parte.
+/// </summary>
 public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserControl
 {
     private MenusController menusController = new MenusController();
@@ -17,30 +32,21 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 
     protected void CargarMenus()
     {
-        Menus menu = new Menus();
-
-        List<Menus> menus = menusController.GetMenus(menu);
+        List<Menus> menus = menusController.GetMenus(new Menus());
         StringBuilder sbMenus = new StringBuilder();
-       
 
-        //Comienzo a leer solo los nodos padres
         foreach (Menus item in menus.Where(x => x.mnu_nivel == 1).OrderBy(x => x.mnu_orden))
         {
-            MenuPerfil menuPerfil = new MenuPerfil();
-            menuPerfil.mpe_menu = item.mnu_id;
+            if (!item.mnu_visible) continue;
 
-            if (SitioBase.Token.SecurityManagerPermisoMenu(menuPerfil))
-            {
-                if (item.mnu_visible)
-                {
-                    sbMenus.AppendLine("<li class='menu-title'>");
-                    sbMenus.AppendLine(item.mnu_nombre);
-                    sbMenus.AppendLine("</li>");
+            // Una seccion de nivel 1 es un titulo: solo vale si trae algo debajo.
+            string hijos = addMenu(menus, item.mnu_id, 1).ToString();
+            if (string.IsNullOrEmpty(hijos)) continue;
 
-                    int countNivel = 1;
-                    sbMenus.AppendLine(addMenu(menus, item.mnu_id, countNivel).ToString());
-                }
-            }
+            sbMenus.AppendLine("<li class='menu-title'>");
+            sbMenus.AppendLine(item.mnu_nombre);
+            sbMenus.AppendLine("</li>");
+            sbMenus.AppendLine(hijos);
         }
 
         LiteralControl lc = new LiteralControl();
@@ -54,54 +60,49 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 
         foreach (Menus item in menus.Where(x => x.mnu_padre == padre).OrderBy(x => x.mnu_orden))
         {
-            MenuPerfil menuPerfil = new MenuPerfil();
-            menuPerfil.mpe_menu = item.mnu_id;
+            if (!item.mnu_visible) continue;
 
-            if (SitioBase.Token.SecurityManagerPermisoMenu(menuPerfil))
+            if (item.mnu_link == "#")
             {
-                if (item.mnu_visible)
-                {
-                    if (item.mnu_link == "#")
-                    {
-                        sb.AppendLine("<li>");
-                        sb.AppendLine(" <a href='javascript: void(0);'>");
-                        sb.AppendLine("     <i class='" + item.mnu_icon +"'></i>");
-                        sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
-                        sb.AppendLine("     <span class='menu-arrow'></span>");
-                        sb.AppendLine(" </a>");
+                // Contenedor: se arma primero el contenido y si queda vacio
+                // no se dibuja. No se le pide permiso propio.
+                string hijos = addMenu(menus, item.mnu_id, 0).ToString();
+                if (string.IsNullOrEmpty(hijos)) continue;
 
-                        sb.AppendLine(" <ul class='nav-second-level' aria-expanded='false'>");
-                        sb.AppendLine(addMenu(menus, item.mnu_id, 0).ToString());
-                        sb.AppendLine(" </ul>");
-
-                        sb.AppendLine("</li>");
-                    }
-                    else 
-                    {
-                        sb.AppendLine("<li>");
-                        sb.AppendLine(" <a href='" + ResolveUrl(item.mnu_link) + "'>");
-
-                        if (countNivel == 0)
-                        {
-                            sb.AppendLine(item.mnu_nombre);
-                        }
-                        else
-                        {
-                            sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
-                            sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
-                        }
-                        sb.AppendLine(" </a>");
-
-                        sb.AppendLine(addMenu(menus, item.mnu_id, 1).ToString());
-
-                        sb.AppendLine("</li>");
-                    }
-                }
+                sb.AppendLine("<li>");
+                sb.AppendLine(" <a href='javascript: void(0);'>");
+                sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+                sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
+                sb.AppendLine("     <span class='menu-arrow'></span>");
+                sb.AppendLine(" </a>");
+                sb.AppendLine(" <ul class='nav-second-level' aria-expanded='false'>");
+                sb.AppendLine(hijos);
+                sb.AppendLine(" </ul>");
+                sb.AppendLine("</li>");
             }
+            else
+            {
+                // Pagina: aca si manda el permiso.
+                if (!SitioBase.Token.PuedeMenu(item.mnu_id)) continue;
 
+                sb.AppendLine("<li>");
+                sb.AppendLine(" <a href='" + ResolveUrl(item.mnu_link) + "'>");
+
+                if (countNivel == 0)
+                {
+                    sb.AppendLine(item.mnu_nombre);
+                }
+                else
+                {
+                    sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+                    sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
+                }
+                sb.AppendLine(" </a>");
+                sb.AppendLine(addMenu(menus, item.mnu_id, 1).ToString());
+                sb.AppendLine("</li>");
+            }
         }
 
         return sb;
     }
-
 }

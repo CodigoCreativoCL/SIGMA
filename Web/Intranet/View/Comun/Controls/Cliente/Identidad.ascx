@@ -15,7 +15,7 @@
 
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
     <ContentTemplate>
-        <wuc:PanelSinSeleccion runat="server" ID="wucPanelSinSeleccion" Icono="fas fa-building" Titulo="Seleccione un cliente"
+        <wuc:PanelSinSeleccion runat="server" ID="wucPanelSinSeleccion" Icono="mdi mdi-office-building-outline" Titulo="Seleccione un cliente"
             Descripcion="Para ver la identidad del cliente, primero seleccione un cliente en el panel superior." />
 
         <asp:Panel runat="server" ID="pnlContenido" CssClass="cliente-container identidad-card">
@@ -26,11 +26,11 @@
                 <div class="col-lg-3 col-md-3 col-xs-12 identidad-avatar-col">
                     <div class="identidad-avatar">
                         <div class="identidad-avatar-placeholder">
-                            <i class="fas fa-building"></i>
+                            <i class="mdi mdi-office-building-outline"></i>
                         </div>
                         <asp:Image ID="imgLogo" runat="server" CssClass="identidad-avatar-img" />
                         <asp:Panel ID="pnlLogo" runat="server" CssClass="identidad-avatar-upload">
-                            <i class="fas fa-camera"></i>
+                            <i class="mdi mdi-camera-outline"></i>
                             <asp:FileUpload ID="fldLogo" runat="server" CssClass="identidad-avatar-input" onchange="previsualizarLogo(this)" />
                         </asp:Panel>
                     </div>

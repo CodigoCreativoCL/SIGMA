@@ -30,7 +30,7 @@
 
 <asp:UpdatePanel runat="server" ID="udPanelContenedor" UpdateMode="Conditional">
     <ContentTemplate>
-        <wuc:PanelSinSeleccion runat="server" ID="wucPanelSinSeleccion" Icono="fas fa-users" Titulo="Seleccione un cliente"
+        <wuc:PanelSinSeleccion runat="server" ID="wucPanelSinSeleccion" Icono="mdi mdi-account-group-outline" Titulo="Seleccione un cliente"
             Descripcion="Para administrar los usuarios, primero seleccione un cliente en el panel superior." />
 
         <asp:Panel runat="server" ID="pnlContenido">
@@ -95,7 +95,7 @@
                                                     <asp:LinkButton ID="lnkDeshabilitar" runat="server" Text="Habilitar / Deshabilitar" CssClass="icono_eliminar" OnClick="lnkDeshabilitar_Click"
                                                         OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea habilitar/deshabilitar los registros seleccionados?');" Visible="false" />
 
-                                                    <asp:LinkButton ID="lnkCargaMasiva" runat="server" Text="Carga Masiva" CssClass="icono_descargar_excel" OnClick="lnkCargaMasiva_Click" Visible="false" />
+                                                    <asp:LinkButton ID="lnkCargaMasiva" runat="server" Text="Carga Masiva" CssClass="icono_carga_masiva" OnClick="lnkCargaMasiva_Click" Visible="false" />
 
 
                                                     <asp:LinkButton ID="lnkAsociar" runat="server" Text="Asociar" CssClass="icono_guardar" OnClick="lnkAsociar_Click" Visible="false" />

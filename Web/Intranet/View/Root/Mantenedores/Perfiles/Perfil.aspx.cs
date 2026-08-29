@@ -16,11 +16,6 @@ public partial class View_Sistema_Perfiles_Perfil : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_4.Ver;
-        Token.SecurityManagerVer(ver);
-        #endregion
         if (!IsPostBack)
         {
             string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
