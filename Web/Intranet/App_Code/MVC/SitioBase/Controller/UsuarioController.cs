@@ -225,11 +225,6 @@ namespace SitioBase.Controller
 
                             usuario.nombre_completo = usuario.usu_nombres + " " + usuario.usu_apellido_paterno + " " + usuario.usu_apellido_materno;
 
-                            if (dr["UFT_BINARIO"].ToString() != "")
-                                usuario.usu_foto = (byte[])dr["UFT_BINARIO"];
-
-                            usuario.usu_foto_extension = dr["UFT_EXTENSION"].ToString();
-
 
                         }
                     }

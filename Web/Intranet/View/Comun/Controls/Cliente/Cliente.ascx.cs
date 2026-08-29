@@ -73,7 +73,6 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
         {
             ragTab.Tabs[1].Visible = false;
             ragTab.Tabs[2].Visible = false;
-            ragTab.Tabs[3].Visible = false;
            
             IdCliente = wucIdentidad.IdCliente;
         }
@@ -93,9 +92,6 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
             || p == (int)SitioBase.SitioBase.Perfil.Soporte
             || p == (int)SitioBase.SitioBase.Perfil.Gerente_Comercial))
             wucUsuarios.Perfiles = "3,4,5,6,7";
-        //else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
-        //    wucUsuarios.Perfiles = "4,5,6,7";
-
 
         wucInstalaciones.IdCliente = IdCliente;
         wucInstalaciones.ReadOnly = ReadOnly;

@@ -32,8 +32,11 @@ public partial class Master_Default : System.Web.UI.MasterPage
             }
             else
             {
-                this.imgUsuario.ImageUrl = ResolveUrl("~/Imagen/usuario-de-perfil.png");
-                this.imgUsuarioLateral.ImageUrl = ResolveUrl("~/Imagen/usuario-de-perfil.png");
+                // El .png que se referenciaba aqui no existe en Imagen/: la
+                // imagen salia rota para todo usuario sin foto. Se reemplaza
+                // por un marcador SVG con los grises de la paleta.
+                this.imgUsuario.ImageUrl = ResolveUrl("~/Imagen/usuario-de-perfil.svg");
+                this.imgUsuarioLateral.ImageUrl = ResolveUrl("~/Imagen/usuario-de-perfil.svg");
             }
 
         }

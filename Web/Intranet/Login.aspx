@@ -2,42 +2,97 @@
 
 <!DOCTYPE html>
 <html lang="es">
-<head>
+<head runat="server">
     <meta charset="utf-8" />
-    <title>SIGMA</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta content="A fully featured admin theme which can be used to build CRM, CMS, etc." name="description" />
-    <meta content="Coderthemes" name="author" />
+    <title>Ingresar · SIGMA</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="SIGMA · Sistema Integrado de Gestión de Mantenimiento Industrial" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <!-- App favicon -->
-    <link href="Imagen/fav.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+    <meta name="theme-color" content="#0B0F1A" />
 
-    <!-- Bootstrap Css -->
-    <link href="Css/Login/assets/css/bootstrap.min.css" id="bootstrap-stylesheet" rel="stylesheet" type="text/css" />
-    <link href="Css/Adminto/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+    <!-- Favicon de marca -->
+    <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
 
-    <!-- Icons Css -->
-    <link href="Css/Login/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
-    <!-- App Css-->
-    <link href="Css/Login/assets/css/app.min.css" id="app-stylesheet" rel="stylesheet" type="text/css" />
-
-    <!-- SweetAlert CSS -->
+    <!-- SweetAlert: lo usa Tools.tools.ClientAlert -->
     <link href="Css/SweetAlert/sweetalert.css" rel="stylesheet" />
     <link href="Css/SweetAlert/sweetalert2.min.css" rel="stylesheet" />
 
-    <script src="Js/jquery-1.11.3.min.js"></script>
+    <!-- SIGMA: pantalla de acceso -->
+    <link href="Css/Login/sigma-login.css?vrs=1" rel="stylesheet" />
+
+    <script src="Js/jquery-1.9.1.js"></script>
     <script src="Css/SweetAlert/sweetalert2.min.js"></script>
-    <script src="Css/Login/assets/js/vendor.min.js"></script>
-    <script src="Css/Login/assets/js/app.min.js"></script>
     <script src="Js/Library.js"></script>
 </head>
-<body class="fg-login-body">
-    <form id="form" runat="server">
+<body class="sg-login">
+    <form id="form" runat="server" autocomplete="on">
+        <asp:ScriptManager ID="ScriptManagerPrincipal" runat="server" />
 
+        <div class="sg-login-layout">
 
+            <!-- ---------- Panel de marca ---------- -->
+            <aside class="sg-login-brand">
+                <div class="sg-brand-logo">
+                    <img src="Imagen/sigma-logo-horizontal-dark.svg"
+                         alt="SIGMA · Sistema Integrado de Gestión de Mantenimiento Industrial" />
+                </div>
 
-        <asp:ScriptManager ID="ScriptManagerPrincipal" runat="server">
-        </asp:ScriptManager>
+                <div class="sg-brand-copy">
+                    <h1>El mantenimiento industrial, bajo control.</h1>
+                    <p>
+                        Órdenes de trabajo, activos, checklists, inventario e indicadores
+                        en un solo lugar. Del escritorio a la planta, y de vuelta.
+                    </p>
+                    <ul class="sg-brand-points">
+                        <li>Trabajo planificado y correctivo en un mismo flujo</li>
+                        <li>Registro en terreno, incluso sin cobertura</li>
+                        <li>SIGMA AI para voz, predicción de fallas y recomendaciones</li>
+                    </ul>
+                </div>
+
+                <div class="sg-brand-footer">
+                    Código Creativo · SIGMA 2026
+                </div>
+            </aside>
+
+            <!-- ---------- Panel del formulario ---------- -->
+            <main class="sg-login-form-panel">
+                <asp:Panel ID="pnlLogin" runat="server" CssClass="sg-login-card" DefaultButton="btnLogin">
+
+                    <!-- Solo visible cuando el panel de marca se pliega -->
+                    <div class="sg-login-logo-compact">
+                        <img src="Imagen/sigma-logo-horizontal-light.svg" alt="SIGMA" />
+                    </div>
+
+                    <h2>Ingresar</h2>
+                    <p class="sg-sub">Usa las credenciales de tu cuenta SIGMA.</p>
+
+                    <asp:Panel ID="pnlError" runat="server" CssClass="sg-login-error" Visible="false">
+                        <asp:Literal ID="litError" runat="server" />
+                    </asp:Panel>
+
+                    <div class="sg-field">
+                        <asp:Label ID="lblCorreo" runat="server" AssociatedControlID="txtCorreo" Text="Correo" />
+                        <asp:TextBox ID="txtCorreo" runat="server" TextMode="SingleLine"
+                            placeholder="nombre@empresa.cl" autocomplete="username" />
+                    </div>
+
+                    <div class="sg-field">
+                        <asp:Label ID="lblPassword" runat="server" AssociatedControlID="txtPassword" Text="Contraseña" />
+                        <asp:TextBox ID="txtPassword" runat="server" TextMode="Password"
+                            placeholder="Tu contraseña" autocomplete="current-password" />
+                    </div>
+
+                    <asp:Button ID="btnLogin" runat="server" OnClick="btnLogin_Click"
+                        CssClass="sg-btn-login" Text="Iniciar sesión" />
+
+                    <p class="sg-login-foot">
+                        ¿Problemas para entrar? Contacta al administrador de tu planta.
+                    </p>
+                </asp:Panel>
+            </main>
+
+        </div>
     </form>
 </body>
 </html>
