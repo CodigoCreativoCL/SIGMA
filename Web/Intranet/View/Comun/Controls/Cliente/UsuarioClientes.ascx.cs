@@ -12,31 +12,11 @@ using Telerik.Web.UI;
 
 public partial class View_Comun_Controls_Cliente_UsuarioClientes : System.Web.UI.UserControl
 {
-    public int VerTodo
-    {
-        get { return Convert.ToInt32(ViewState["VerTodo"]); }
-        set { ViewState.Add("VerTodo", value); }
-    }
-
-    public int VerTodoPaises
-    {
-        get { return Convert.ToInt32(ViewState["VerTodoPaises"]); }
-        set { ViewState.Add("VerTodoPaises", value); }
-    }
-
-    private MenuFuncion permisoVerTodo = new MenuFuncion();
-
-    private MenuFuncion permisoVerTodoPaises = new MenuFuncion();
-
-    protected InformeController controller = new InformeController();
+protected InformeController controller = new InformeController();
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        // seteo permiso ver todo
-        permisoVerTodo.mfu_id = VerTodo;
-
-        // seteo permiso ver todos los paises
-        permisoVerTodoPaises.mfu_id = VerTodoPaises;
+        // Los permisos son codigos y se consultan directo con Token.Puede.
     }
 
     public void LoadControls(object sender, System.EventArgs e)
@@ -52,7 +32,7 @@ public partial class View_Comun_Controls_Cliente_UsuarioClientes : System.Web.UI
 
                         UsuarioCliente filtro = new UsuarioCliente();
 
-                        if (!Token.SecurityManager(permisoVerTodo))
+                        if (!Token.PuedeFuncion("Ver todo"))
                         {   
                             // si no tiene el permiso debo filtrar por los clientes del usuario
                             filtro.ucl_id = int.Parse(SitioBase.Session.UsuarioId());

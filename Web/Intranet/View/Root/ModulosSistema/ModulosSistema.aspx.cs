@@ -12,11 +12,6 @@ public partial class View_Root_ModulosSistema_ModulosSistema : System.Web.UI.Pag
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_1062.Ver;
-        Token.SecurityManagerVer(ver);
-        #endregion
     }
 
     protected void Page_PreRender(object sender, EventArgs e)

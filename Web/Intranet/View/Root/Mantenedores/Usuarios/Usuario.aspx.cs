@@ -17,11 +17,6 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_5.Ver;
-        Token.SecurityManagerVer(ver);
-        #endregion
         if (!IsPostBack)
         {
             //Recupero el query string

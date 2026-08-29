@@ -655,7 +655,7 @@
                     <a class="active" href='<%= ResolveUrl("~/Privacidad/Privacidad.aspx") %>'>Aplicaciones</a>
                 </nav>
                 <a class="prv-nav-login" href='<%= ResolveUrl("~/Login.aspx") %>'>
-                    <i class="fas fa-sign-in-alt"></i> Iniciar sesión
+                    <i class="mdi mdi-login"></i> Iniciar sesión
                 </a>
             </div>
         </header>
@@ -665,7 +665,7 @@
             <asp:ContentPlaceHolder ID="cphHero" runat="server">
                 <div class="prv-hero-center">
                     <div class="prv-hero-badge">
-                        <i class="fas fa-user-shield"></i>Centro de Transparencia
+                        <i class="mdi mdi-shield-account-outline"></i>Centro de Transparencia
                     </div>
                     <h1 class="prv-hero-title">Política de Privacidad</h1>
                     <p class="prv-hero-sub">

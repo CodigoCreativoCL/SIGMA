@@ -1,7 +1,5 @@
 ﻿using SitioBase.Controller;
 using SitioBase.Model;
-using SitioBase.Controller;
-using SitioBase.Model;
 using System;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -21,25 +19,7 @@ public partial class View_Comun_Controls_Cliente_Clientes : System.Web.UI.UserCo
         set { ViewState.Add("URLNuevoCliente", value); }
     }
 
-    public int VerTodoPaises
-    {
-        get { return Convert.ToInt32(ViewState["VerTodoPaises"]); }
-        set { ViewState.Add("VerTodoPaises", value); }
-    }
-
-    public int Ver_Todo
-    {
-        get { return Convert.ToInt32(ViewState["Ver_Todo"]); }
-        set { ViewState.Add("Ver_Todo", value); }
-    }
-
-    public int Crear_Editar
-    {
-        get { return Convert.ToInt32(ViewState["Crear_Editar"]); }
-        set { ViewState.Add("Crear_Editar", value); }
-    }
-
-    public int Tipo_Perfil
+public int Tipo_Perfil
     {
         get { return Convert.ToInt32(ViewState["Tipo_Perfil"]); }
         set { ViewState.Add("Tipo_Perfil", value); }
@@ -106,10 +86,8 @@ public partial class View_Comun_Controls_Cliente_Clientes : System.Web.UI.UserCo
         Cliente cliente = new Cliente();
 
         #region SeguridadPagina
-        MenuFuncion funVerTodoPaises = new MenuFuncion();
-        funVerTodoPaises.mfu_id = VerTodoPaises;
-
-        if (!SitioBase.Token.SecurityManager(funVerTodoPaises))
+        // Los permisos llegan como codigo desde la pagina contenedora.
+        if (!SitioBase.Token.PuedeFuncion("Ver todo paises"))
         {
             string pais_usuario = SitioBase.Session.UsuarioIdPaises();
             if(!string.IsNullOrEmpty(pais_usuario))
@@ -118,16 +96,10 @@ public partial class View_Comun_Controls_Cliente_Clientes : System.Web.UI.UserCo
                 cliente.filtro_paises = "0";
         }
 
-        MenuFuncion funVerTodo = new MenuFuncion();
-        funVerTodo.mfu_id = Ver_Todo;
-
-        if (!SitioBase.Token.SecurityManager(funVerTodo))
+        if (!SitioBase.Token.PuedeFuncion("Ver todo"))
             cliente.cli_usuario_creacion = int.Parse(SitioBase.Session.UsuarioId());
 
-        MenuFuncion funCrearEditar = new MenuFuncion();
-        funCrearEditar.mfu_id = Crear_Editar;
-
-        ReadOnly = !SitioBase.Token.SecurityManager(funCrearEditar);
+        ReadOnly = !SitioBase.Token.PuedeFuncion("Crear y editar");
         #endregion
 
         cliente.filtro = FiltroTexto;

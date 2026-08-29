@@ -24,12 +24,12 @@
 
         if (input.type === "password") {
             input.type = "text";
-            icono.classList.remove("fa-eye");
-            icono.classList.add("fa-eye-slash");
+            icono.classList.remove("mdi mdi-eye-outline");
+            icono.classList.add("mdi mdi-eye-off-outline");
         } else {
             input.type = "password";
-            icono.classList.remove("fa-eye-slash");
-            icono.classList.add("fa-eye");
+            icono.classList.remove("mdi mdi-eye-off-outline");
+            icono.classList.add("mdi mdi-eye-outline");
         }
     }
 
@@ -49,7 +49,7 @@
     <ContentTemplate>
         <div class="cliente-container identidad-card mb-3">
             <div class="cliente-label">
-                <i class="fas fa-user-circle"></i>
+                <i class="mdi mdi-account-circle-outline"></i>
                 <span>Información Personal</span>
             </div>
 
@@ -57,11 +57,11 @@
                 <div class="col-lg-3 col-md-3 col-xs-12 identidad-avatar-col identidad-avatar-col-divider">
                     <div class="identidad-avatar">
                         <div class="identidad-avatar-placeholder">
-                            <i class="fas fa-user"></i>
+                            <i class="mdi mdi-account-outline"></i>
                         </div>
                         <asp:Image ID="imgFoto" runat="server" CssClass="identidad-avatar-img" />
                         <asp:Panel ID="pnlFoto" runat="server" CssClass="identidad-avatar-upload">
-                            <i class="fas fa-camera"></i>
+                            <i class="mdi mdi-camera-outline"></i>
                             <asp:FileUpload ID="fldFoto" runat="server" CssClass="identidad-avatar-input" onchange="previsualizarFoto(this)" />
                         </asp:Panel>
                     </div>
@@ -85,7 +85,7 @@
                         <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
                             <label>Teléfono</label>
                             <div class="identidad-field-icon">
-                                <i class="fas fa-phone"></i>
+                                <i class="mdi mdi-phone-outline"></i>
                                 <WebControls:TextBox2 ID="txtTelefono" runat="server" MaxLength="20" />
                             </div>
                         </div>
@@ -157,7 +157,7 @@
 
         <asp:Panel ID="pnlClientes" runat="server" CssClass="cliente-container identidad-card identidad-card-cliente mb-3" Visible="false">
             <div class="cliente-label">
-                <i class="fas fa-building"></i>
+                <i class="mdi mdi-office-building-outline"></i>
                 <span>Clientes e Instalaciones Asociadas</span>
             </div>
 
@@ -173,7 +173,7 @@
                                 <asp:Repeater ID="rptInstalacionesCliente" runat="server">
                                     <ItemTemplate>
                                         <span class="identidad-tag">
-                                            <i class="fas fa-map-marker-alt"></i>
+                                            <i class="mdi mdi-map-marker-outline"></i>
                                             <%# Eval("Value") %>
                                         </span>
                                     </ItemTemplate>
@@ -191,7 +191,7 @@
         <div class="cliente-container identidad-card mb-3">
             <div class="cliente-label cliente-label-actions">
                 <div class="cliente-label-titulo">
-                    <i class="fas fa-lock"></i>
+                    <i class="mdi mdi-lock-outline"></i>
                     <span>Seguridad</span>
                 </div>
                 <div class="identidad-switch-row">
@@ -208,7 +208,7 @@
                     <label>Contraseña Actual</label>
                     <div class="identidad-password-field">
                         <WebControls:TextBox2 ID="txtPasswordVer" runat="server" TextMode="Password" Enabled="false" />
-                        <i class="fas fa-eye identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordVer.ClientID %>', this)"></i>
+                        <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordVer.ClientID %>', this)"></i>
                     </div>
                 </div>
             </div>
@@ -219,21 +219,21 @@
                         <label>Contraseña Actual(*):</label>
                         <div class="identidad-password-field">
                             <WebControls:TextBox2 ID="txtPasswordActual" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="fas fa-eye identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordActual.ClientID %>', this)"></i>
+                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordActual.ClientID %>', this)"></i>
                         </div>
                     </div>
                     <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
                         <label>Nueva Contraseña(*):</label>
                         <div class="identidad-password-field">
                             <WebControls:TextBox2 ID="txtPasswordNueva" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="fas fa-eye identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordNueva.ClientID %>', this)"></i>
+                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordNueva.ClientID %>', this)"></i>
                         </div>
                     </div>
                     <div class="form-group col-lg-4 col-md-6 col-xs-12 identidad-field">
                         <label>Confirmar Contraseña(*):</label>
                         <div class="identidad-password-field">
                             <WebControls:TextBox2 ID="txtPasswordConfirmar" runat="server" TextMode="Password" MaxLength="100" />
-                            <i class="fas fa-eye identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordConfirmar.ClientID %>', this)"></i>
+                            <i class="mdi mdi-eye-outline identidad-password-toggle" onclick="togglePasswordVisibility('<%= txtPasswordConfirmar.ClientID %>', this)"></i>
                             <asp:CompareValidator ID="cvPasswordConfirmar" runat="server"
                                 ControlToValidate="txtPasswordConfirmar"
                                 ControlToCompare="txtPasswordNueva"

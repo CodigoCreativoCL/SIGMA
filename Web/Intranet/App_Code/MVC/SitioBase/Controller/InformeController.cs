@@ -203,45 +203,6 @@ namespace SitioBase.Controller
             return listado;
         }
 
-        public List<Checklist> GetChecklistCBO(Checklist checkList)
-        {
-            List<Checklist> checkLists = new List<Checklist>();
-
-            if (Token.TokenSeguridad())
-            {
-                SqlCommand cmd = new SqlCommand();
-
-                try
-                {
-                    cmd.CommandText = "SEL_CHECKLIST";
-                    cmd.Parameters.AddWithValue("@CLIENTE", checkList.chk_cliente);
-
-                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
-                    {
-                        while (dr.Read())
-                        {
-                            checkList = new Checklist();
-
-                            checkList.chk_id = int.Parse(dr["CHK_ID"].ToString());
-                            checkList.chk_nombre = dr["CHK_NOMBRE"].ToString();
-
-                            checkLists.Add(checkList);
-                        }
-                    }
-
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-            }
-
-            return checkLists;
-        }
-
    
         public List<InformeUsuarioMarcacion> GetUsuarioCBO(ClienteUsuario filtro)
         {
@@ -282,41 +243,5 @@ namespace SitioBase.Controller
             return listado;
         }
 
-        // OBTENER BINARIO ARCHIVOS
-        public Archivo GetBinario(Archivo filtro)
-        {
-            Archivo item = new Archivo();
-
-            if (Token.TokenSeguridad())
-            {
-                SqlCommand cmd = new SqlCommand();
-
-                try
-                {
-                    cmd.CommandText = "SEL_ARCHIVOS_BINARIO";
-                    cmd.Parameters.AddWithValue("@ID", filtro.arc_archivo);
-
-                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
-                    {
-                        if (dr.Read())
-                        {
-                            item.arc_archivo = int.Parse(dr["ABI_ID"].ToString());
-                            item.abi_archivo = (byte[])dr["ABI_ARCHIVO_BINARIO"];
-                            item.arc_nombre_archivo = dr["ARC_NOMBRE_ARCHIVO"].ToString();
-                        }
-                    }
-
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-            }
-
-            return item;
-        }
     }
 }

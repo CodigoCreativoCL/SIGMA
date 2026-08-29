@@ -24,11 +24,6 @@ public partial class View_Comercial_Cliente : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
 
-        #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)Paginas.menu_27.Ver;
-        Token.SecurityManagerVer(ver);
-        #endregion
         wucCliente.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Sistema;
     }
     protected void Page_PreRender(object sender, EventArgs e)

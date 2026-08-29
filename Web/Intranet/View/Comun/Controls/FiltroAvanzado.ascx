@@ -81,7 +81,7 @@
             <a class="filtroToggle" role="button" data-toggle="collapse"
                 href="#buscador" aria-expanded="true" aria-controls="buscador"
                 onclick="fnExpandeFiltro('<%=divPersonalizado.ClientID %>', '<%=hdfExpanded.ClientID %>')">
-                <span class="fa fa-filter"></span>Busqueda Avanzada
+                <span class="mdi mdi-filter-variant"></span>Busqueda Avanzada
                     <asp:HiddenField ID="hdfExpanded" runat="server" Value="0" />
             </a>
         </div>

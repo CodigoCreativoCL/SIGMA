@@ -1,4 +1,5 @@
-﻿using SitioBase.Controller;
+﻿using SitioBase;
+using SitioBase.Controller;
 using SitioBase.Model;
 using SitioBase.Model;
 using System;
@@ -14,17 +15,11 @@ public partial class View_Clientes_Cliente_Identidad : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
         #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)SitioBase.Paginas.menu_40.Ver;
-
-        SitioBase.Token.SecurityManagerVer(ver);
         wucIdentidad.ReadOnly = true;
         wucIdentidad.RequiereSeleccion = true;
         #endregion
 
         #region SeguridadCliente
-        wucCliente.VerTodo = (int)SitioBase.Paginas.menu_40.Ver_Todo;
-        wucCliente.VerTodoPaises = (int)SitioBase.Paginas.menu_40.Ver_Todo_Paises;
         #endregion
     }
 

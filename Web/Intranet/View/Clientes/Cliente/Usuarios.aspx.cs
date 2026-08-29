@@ -1,4 +1,5 @@
-﻿using SitioBase.Controller;
+﻿using SitioBase;
+using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
@@ -13,14 +14,7 @@ public partial class View_Clientes_Cliente_Usuarios : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
         #region SeguridadPagina
-        MenuPerfil ver = new MenuPerfil();
-        ver.mpe_menu = (int)SitioBase.Paginas.menu_41.Ver;
-
-        SitioBase.Token.SecurityManagerVer(ver);
-        MenuFuncion funCrearEditar = new MenuFuncion();
-
-        funCrearEditar.mfu_id = (int)SitioBase.Paginas.menu_41.Crear_Editar;
-        //wucUsuarios.ReadOnly = !SitioBase.Token.SecurityManager(funCrearEditar);
+        wucUsuarios.ReadOnly = !Token.Puede("CREAR EDITAR CLIENTE USUARIOS");
 
         wucUsuarios.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
         string perfiles = SitioBase.SitioBase.Parametros("Asignar_Perfiles");
@@ -35,8 +29,6 @@ public partial class View_Clientes_Cliente_Usuarios : System.Web.UI.Page
         #endregion
 
         #region SeguridadCliente
-        wucCliente.VerTodo = (int)SitioBase.Paginas.menu_41.Ver_Todo;
-        wucCliente.VerTodoPaises = (int)SitioBase.Paginas.menu_41.Ver_Todo_Paises;
         #endregion
     }
 

@@ -341,7 +341,7 @@
                         <div class="cmu-card-body">
                             <div class="cmu-card-title-row">
                                 <span class="cmu-icon-circle cmu-icon-blue">
-                                    <i class="fas fa-info"></i>
+                                    <i class="mdi mdi-information-outline"></i>
                                 </span>
                                 <h3 class="cmu-section-title">Instrucciones</h3>
                             </div>
@@ -364,7 +364,7 @@
                             </ul>
                             <div class="cmu-warning-box">
                                 <div class="cmu-warning-title">
-                                    <i class="fas fa-exclamation-triangle"></i> Importante
+                                    <i class="mdi mdi-alert-outline"></i> Importante
                                 </div>
                                 <p class="cmu-warning-text">
                                     No modifique los encabezados de la plantilla ni cambie el formato de las celdas para evitar errores.
@@ -462,7 +462,7 @@
                                     <p class="cmu-action-label">1. Obtener Formato</p>
                                     <div class="cmu-download-box">
                                         <div class="cmu-download-icon">
-                                            <i class="fas fa-file-excel"></i>
+                                            <i class="mdi mdi-file-excel-outline"></i>
                                         </div>
                                         <p class="cmu-download-title">Plantilla de Usuarios</p>
                                         <p class="cmu-download-sub">Formato Excel (.xlsx)</p>
@@ -478,7 +478,7 @@
                                     <p class="cmu-action-label">2. Cargar Archivo</p>
                                     <div class="cmu-upload-box">
                                         <div class="cmu-upload-icon">
-                                            <i class="fas fa-cloud-upload-alt"></i>
+                                            <i class="mdi mdi-cloud-upload-outline"></i>
                                         </div>
                                         <p class="cmu-upload-title">Arrastre su archivo aqu&#237;</p>
                                         <p class="cmu-upload-sub">o haga clic para seleccionar desde su PC</p>
@@ -512,7 +512,7 @@
     <asp:Panel ID="pnlResultado" runat="server" Visible="false">
         <div class="cmu-result-card">
             <div class="cmu-result-header">
-                <i class="fas fa-check-circle"></i> Resultado de la Carga
+                <i class="mdi mdi-check-circle-outline"></i> Resultado de la Carga
             </div>
             <div class="cmu-result-body">
                 <div class="cmu-result-stats">
