@@ -26,7 +26,11 @@
 
     <!-- App Css-->
     <link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />
-    <link rel="stylesheet" type="text/css" href="../Css/MaterialApoyo/materialApoyo.css?v=5" />
+
+    <%-- Aqui se cargaba Css/MaterialApoyo/materialApoyo.css.
+         Esa carpeta se elimino con el resto de lo heredado de FacilityGes,
+         pero el <link> quedo: cada pagina del sitio pedia un archivo
+         inexistente y se llevaba un 404 en la consola. Se retira. --%>
 
 
     <!-- AjaxProgress CSS -->
@@ -51,6 +55,12 @@
            07-Topbar    -> sigma-layout.css
          Los archivos siguen en disco por si hay que volver atras. --%>
 
+    <!-- Material Design Icons 7.4.47, completo y fuera de Adminto.
+         El icons.min.css de Adminto declara la familia pero NO trae ni un
+         glifo: solo los modificadores. Con eso, TODO icono mdi del sitio
+         -incluidos los del menu lateral- salia vacio. -->
+    <link href="../Css/LookAndFeel/mdi/css/materialdesignicons.min.css?vrs=7" rel="stylesheet" />
+
     <!-- SIGMA: tokens de marca y tipografia Sora -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
@@ -58,7 +68,7 @@
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
-    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=4" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=6" rel="stylesheet" />
@@ -106,8 +116,17 @@
             <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
                 EnableScriptGlobalization="true" EnableScriptLocalization="true">
                 <Scripts>
-                    <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
+                    <%-- EL ORDEN IMPORTA. jQuery UI es un plugin de jQuery:
+                         lo primero que hace al cargarse es leer la variable
+                         jQuery. Estaba declarado ANTES que jQuery, asi que
+                         moria en su linea 19 con "jQuery is not defined" y
+                         el sitio se quedaba sin jQuery UI en todas las
+                         paginas. jQuery va primero. --%>
                     <asp:ScriptReference Path="~/Js/jquery-1.9.1.js" />
+                    <%-- $.browser, que jQuery 1.9 quito y jQuery UI 1.8 usa. Tiene
+                             que ir ENTRE los dos. --%>
+                        <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
+                        <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                     <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
                     <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                     <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
@@ -239,6 +258,16 @@
 
                 <ul class="sg-topbar-right">
 
+                    <!-- Cliente en sesion (HU-002).
+                         Deja siempre a la vista con que empresa se esta
+                         trabajando: sin esto, alguien que atiende a varias
+                         no tiene como saber donde esta cargando los datos.
+                         Solo es un enlace cuando hay mas de uno entre los
+                         que elegir. -->
+                    <li class="sg-cliente-actual">
+                        <asp:PlaceHolder ID="phCliente" runat="server" />
+                    </li>
+
                     <li>
                         <a href='<%=ResolveUrl("~/Default.aspx") %>' class="sg-icon-btn" title="Alertas">
                             <i class="mdi mdi-bell-outline"></i>
@@ -344,6 +373,16 @@
             <div class="content-page">
                 <div class="content">
                     <div class="container-fluid">
+
+                        <%-- Aviso de suscripcion (ANEXO F §6.6 · HU-193).
+                             Por vencer y en gracia se avisan; vencida no
+                             llega hasta aqui, porque SuscripcionAcceso.Exigir()
+                             ya redirigio a la pagina de renovacion. --%>
+                        <asp:Panel ID="pnlAvisoSuscripcion" runat="server" Visible="false" CssClass="sg-aviso-suscripcion">
+                            <i class="mdi mdi-calendar-alert"></i>
+                            <span><asp:Literal ID="litAvisoSuscripcion" runat="server" /></span>
+                            <asp:HyperLink ID="lnkVerSuscripcion" runat="server" NavigateUrl="~/Renovar.aspx">Ver mi suscripción</asp:HyperLink>
+                        </asp:Panel>
 
                         <!-- Encabezado de la pagina.
                              cphTitulo bajo aqui desde la topbar: en el diseño

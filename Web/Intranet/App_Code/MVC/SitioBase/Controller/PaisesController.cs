@@ -38,11 +38,21 @@ namespace SitioBase.Controller
 
                             pais.pai_id = int.Parse(dr["PAI_ID"].ToString());
                             pais.pai_nombres = dr["PAI_NOMBRE"].ToString();                            
-                            pais.pai_habilitado = bool.Parse(dr["PAI_HABILITADO"].ToString());
-                            pais.pai_usuario_creacion = int.Parse(dr["PAI_USUARIO_CREACION"].ToString());
-                            pais.pai_fecha_creacion = DateTime.Parse(dr["PAI_FECHA_CREACION"].ToString());
-                            pais.pai_usuario_actualizacion = int.Parse(dr["PAI_USUARIO_ACTUALIZACION"].ToString());
-                            pais.pai_fecha_actualizacion = DateTime.Parse(dr["PAI_FECHA_ACTUALIZACION"].ToString());
+                            /* Las columnas de auditoria de Paises son anulables:
+                                un int.Parse("") sobre ellas lanza FormatException y
+                                voltea la pantalla. Hoy no hay ninguna en NULL, pero
+                                el primer pais que se dé de alta y no se vuelva a
+                                editar deja las dos de actualizacion vacias. */
+                            if (dr["PAI_HABILITADO"] != DBNull.Value)
+                                pais.pai_habilitado = bool.Parse(dr["PAI_HABILITADO"].ToString());
+                            if (dr["PAI_USUARIO_CREACION"] != DBNull.Value)
+                                pais.pai_usuario_creacion = int.Parse(dr["PAI_USUARIO_CREACION"].ToString());
+                            if (dr["PAI_FECHA_CREACION"] != DBNull.Value)
+                                pais.pai_fecha_creacion = DateTime.Parse(dr["PAI_FECHA_CREACION"].ToString());
+                            if (dr["PAI_USUARIO_ACTUALIZACION"] != DBNull.Value)
+                                pais.pai_usuario_actualizacion = int.Parse(dr["PAI_USUARIO_ACTUALIZACION"].ToString());
+                            if (dr["PAI_FECHA_ACTUALIZACION"] != DBNull.Value)
+                                pais.pai_fecha_actualizacion = DateTime.Parse(dr["PAI_FECHA_ACTUALIZACION"].ToString());
 
                             paises.Add(pais);
                         }
@@ -80,13 +90,21 @@ namespace SitioBase.Controller
 
                             pais.pai_id = int.Parse(dr["PAI_ID"].ToString());
                             pais.pai_nombres = dr["PAI_NOMBRE"].ToString();
-                            pais.pai_hora = int.Parse(dr["PAI_HORA"].ToString());
                             pais.pai_suma_resta = dr["PAI_SUMA_RESTA"].ToString();
-                            pais.pai_habilitado = bool.Parse(dr["PAI_HABILITADO"].ToString());
-                            pais.pai_usuario_creacion = int.Parse(dr["PAI_USUARIO_CREACION"].ToString());
-                            pais.pai_fecha_creacion = DateTime.Parse(dr["PAI_FECHA_CREACION"].ToString());
-                            pais.pai_usuario_actualizacion = int.Parse(dr["PAI_USUARIO_ACTUALIZACION"].ToString());
-                            pais.pai_fecha_actualizacion = DateTime.Parse(dr["PAI_FECHA_ACTUALIZACION"].ToString());   
+
+                            // Mismo motivo que en GetPaises.
+                            if (dr["PAI_HORA"] != DBNull.Value)
+                                pais.pai_hora = int.Parse(dr["PAI_HORA"].ToString());
+                            if (dr["PAI_HABILITADO"] != DBNull.Value)
+                                pais.pai_habilitado = bool.Parse(dr["PAI_HABILITADO"].ToString());
+                            if (dr["PAI_USUARIO_CREACION"] != DBNull.Value)
+                                pais.pai_usuario_creacion = int.Parse(dr["PAI_USUARIO_CREACION"].ToString());
+                            if (dr["PAI_FECHA_CREACION"] != DBNull.Value)
+                                pais.pai_fecha_creacion = DateTime.Parse(dr["PAI_FECHA_CREACION"].ToString());
+                            if (dr["PAI_USUARIO_ACTUALIZACION"] != DBNull.Value)
+                                pais.pai_usuario_actualizacion = int.Parse(dr["PAI_USUARIO_ACTUALIZACION"].ToString());
+                            if (dr["PAI_FECHA_ACTUALIZACION"] != DBNull.Value)
+                                pais.pai_fecha_actualizacion = DateTime.Parse(dr["PAI_FECHA_ACTUALIZACION"].ToString());
                         }
                     }
                     cmd.Connection.Close();

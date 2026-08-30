@@ -87,6 +87,9 @@
                         CssClass="sg-btn-login" Text="Iniciar sesión" />
 
                     <p class="sg-login-foot">
+                        <asp:HyperLink ID="lnkRecuperar" runat="server"
+                            NavigateUrl="~/RecuperarClave.aspx" Text="Olvidé mi contraseña" />
+                        <br />
                         ¿Problemas para entrar? Contacta al administrador de tu planta.
                     </p>
                 </asp:Panel>

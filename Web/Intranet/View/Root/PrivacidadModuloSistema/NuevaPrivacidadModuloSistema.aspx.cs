@@ -24,7 +24,7 @@ public partial class View_Root_PrivacidadModuloSistema_NuevaPrivacidadModuloSist
             string queryStr = Request.QueryString["query"];
             if (!string.IsNullOrEmpty(queryStr))
             {
-                string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(queryStr)).Split('&');
+                string[] query = SitioBase.Querystring.Descifrar(queryStr).Split('&');
                 foreach (string arr in query)
                 {
                     string[] array = arr.Split('=');

@@ -19,8 +19,13 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="abrirClientes(0)" />
-                            <asp:LinkButton ID="lnkEliminar" runat="server" Text="Eliminar" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea eliminar los registros seleccionados?');" />
+                            <%-- "Dar de baja" y no "Eliminar": desde el bloque 52 el
+                                 cliente se deshabilita y no se borra nada. El rotulo
+                                 tiene que decir lo que pasa, o alguien confirma
+                                 creyendo que destruye y despues no entiende por que
+                                 el cliente sigue en los informes. --%>
+                            <asp:LinkButton ID="lnkEliminar" runat="server" Text="Dar de baja" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Dar de baja los clientes seleccionados? Dejarán de operar, pero su información se conserva.');" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

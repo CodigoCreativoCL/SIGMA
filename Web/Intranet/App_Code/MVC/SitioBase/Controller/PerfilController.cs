@@ -68,7 +68,10 @@ namespace SitioBase.Controller
                         perfil = new Perfil();
 
                         perfil.per_id = int.Parse(dr["PER_ID"].ToString());
-                        perfil.per_tipo = int.Parse(dr["PER_TIPO"].ToString());
+                        // per_tipo es anulable: sin guarda, un perfil con el
+                        // tipo vacio voltea la ficha en vez de abrirse.
+                        if (dr["PER_TIPO"] != DBNull.Value)
+                            perfil.per_tipo = int.Parse(dr["PER_TIPO"].ToString());
                         perfil.per_nombre = dr["PER_NOMBRE"].ToString();
                         perfil.per_descripcion = dr["PER_DESCRIPCION"].ToString();
                         perfil.per_habilitado = bool.Parse(dr["PER_HABILITADO"].ToString());

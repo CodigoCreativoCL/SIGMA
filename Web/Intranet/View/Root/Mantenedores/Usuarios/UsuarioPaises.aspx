@@ -20,7 +20,8 @@
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="cphBody" runat="server" >
-    <div class="SubTitulos">Asociar Paises</div>
+<div class="sigma-modal">
+    <h1 class="sigma-modal-title">Asociar Paises</h1>
     <asp:UpdatePanel runat="server" ID="udPanel"  UpdateMode="Conditional" >
         <ContentTemplate>
             <rad:RadGrid2 ID="Grid" runat="server">
@@ -31,8 +32,9 @@
             </rad:RadGrid2>
         </ContentTemplate>
     </asp:UpdatePanel>
-    <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-        <WebControls:PushButton ID="btnAsociar" runat="server" Text="Asociar" OnClick="btnAsociar_Click"/>
-        <WebControls:PushButton ID="btnCancelar" runat="server" Text="Cerrar" OnClientClick="closeWindow();" CssClass="ButtonCerrar" />
-    </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCancelar" runat="server" Text="Cerrar" OnClientClick="closeWindow();" CssClass="ButtonCerrar" />
+    <WebControls:PushButton ID="btnAsociar" runat="server" Text="Asociar" OnClick="btnAsociar_Click"/>
+</div>
+</div>
 </asp:Content>

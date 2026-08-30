@@ -41,7 +41,7 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
     {
         if (!IsPostBack)
         {
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -83,15 +83,18 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
         wucUsuarios.IdCliente = IdCliente;
         wucUsuarios.ReadOnly = ReadOnly;
 
-        int[] perfilesSesion = Array.ConvertAll(
-            SitioBase.Session.UsuarioPerfil().Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-            p => { int v; return int.TryParse(p.Trim(), out v) ? v : 0; });
+        /* Aqui habia un filtro por la lista de ids "3,4,5,6,7", que se
+           aplicaba cuando quien miraba era Root, Soporte o Gerente
+           Comercial. Esos ids eran perfiles de FacilityGes; en SIGMA el 3 es
+           Gerente Comercial, el 4 Bodeguero, el 5 Jefe de Mantenimiento, y
+           el 6 y el 7 no existen. O sea que a las cuentas de plataforma
+           -justamente las que administran al cliente- la pestana les
+           ocultaba a casi toda la gente de la empresa y les mostraba una
+           mezcla sin sentido.
 
-        if (Array.Exists(perfilesSesion, p =>
-               p == (int)SitioBase.SitioBase.Perfil.root
-            || p == (int)SitioBase.SitioBase.Perfil.Soporte
-            || p == (int)SitioBase.SitioBase.Perfil.Gerente_Comercial))
-            wucUsuarios.Perfiles = "3,4,5,6,7";
+           No se reemplaza por otra lista: el filtro por TIPO de perfil, que
+           ya viene puesto desde la pagina, hace lo correcto y no envejece
+           cuando un cliente crea un perfil propio. */
 
         wucInstalaciones.IdCliente = IdCliente;
         wucInstalaciones.ReadOnly = ReadOnly;
