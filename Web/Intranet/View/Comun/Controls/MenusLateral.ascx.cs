@@ -40,7 +40,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
             if (!item.mnu_visible) continue;
 
             // Una seccion de nivel 1 es un titulo: solo vale si trae algo debajo.
-            string hijos = addMenu(menus, item.mnu_id, 1).ToString();
+            string hijos = addMenu(menus, item.mnu_id, 1, 0).ToString();
             if (string.IsNullOrEmpty(hijos)) continue;
 
             sbMenus.AppendLine("<li class='menu-title'>");
@@ -54,7 +54,20 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
         phdMenus.Controls.Add(lc);
     }
 
-    protected StringBuilder addMenu(List<Menus> menus, int padre, int countNivel)
+    /// <summary>
+    /// Dibuja los hijos de un nodo.
+    ///
+    /// <paramref name="countNivel"/> decide si el item lleva icono: los que
+    /// cuelgan directo de un titulo si, los de un submenu no.
+    ///
+    /// <paramref name="profundidad"/> es otra cosa: cuenta cuantos submenus
+    /// llevamos abiertos, para nombrar el &lt;ul&gt; como Adminto espera
+    /// -nav-second-level el primero, nav-third-level de ahi para dentro-.
+    /// Antes todos los niveles salian como nav-second-level, asi que un
+    /// tercer nivel se dibujaba con la misma sangria que el segundo y no se
+    /// leia como algo que esta adentro.
+    /// </summary>
+    protected StringBuilder addMenu(List<Menus> menus, int padre, int countNivel, int profundidad)
     {
         StringBuilder sb = new StringBuilder();
 
@@ -66,16 +79,24 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
             {
                 // Contenedor: se arma primero el contenido y si queda vacio
                 // no se dibuja. No se le pide permiso propio.
-                string hijos = addMenu(menus, item.mnu_id, 0).ToString();
+                string hijos = addMenu(menus, item.mnu_id, 0, profundidad + 1).ToString();
                 if (string.IsNullOrEmpty(hijos)) continue;
+
+                string clase = profundidad == 0 ? "nav-second-level" : "nav-third-level";
 
                 sb.AppendLine("<li>");
                 sb.AppendLine(" <a href='javascript: void(0);'>");
-                sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+
+                // El icono, con el mismo criterio que las paginas: solo en el
+                // primer nivel. Un contenedor anidado con icono se leeria
+                // como si estuviera al mismo nivel que los de arriba.
+                if (countNivel != 0)
+                    sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+
                 sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
                 sb.AppendLine("     <span class='menu-arrow'></span>");
                 sb.AppendLine(" </a>");
-                sb.AppendLine(" <ul class='nav-second-level' aria-expanded='false'>");
+                sb.AppendLine(" <ul class='" + clase + "' aria-expanded='false'>");
                 sb.AppendLine(hijos);
                 sb.AppendLine(" </ul>");
                 sb.AppendLine("</li>");
@@ -98,7 +119,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                     sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
                 }
                 sb.AppendLine(" </a>");
-                sb.AppendLine(addMenu(menus, item.mnu_id, 1).ToString());
+                sb.AppendLine(addMenu(menus, item.mnu_id, 1, profundidad + 1).ToString());
                 sb.AppendLine("</li>");
             }
         }

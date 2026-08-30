@@ -22,6 +22,7 @@
 </asp:Content>
 
 <asp:Content ID="ContenHead" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">       
         <ContentTemplate>
             <div class="container-fluid">
@@ -31,11 +32,12 @@
                     </div>
                 </div>
             </div>
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center" style="margin-top:10px;">
-                    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" Width="102px"
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" Width="102px"
                         OnClientClick="closeWindow();"/>
-            </div>
+</div>
 
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
 </asp:Content>

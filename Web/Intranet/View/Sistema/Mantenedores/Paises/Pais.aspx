@@ -20,66 +20,53 @@
 </asp:Content>
 
 <asp:Content ID="ContenHead" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel"  UpdateMode="Conditional" >
         <ContentTemplate>
-            <div class="SubTitulos">Pais</div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>ID</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:Label ID="lblId" runat="server"></asp:Label>
-                </div>
-            </div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Nombre(*)</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
-                    <asp:CustomValidator ID="CustomValidator14" runat="server" 
-                        ControlToValidate="txtNombre" 
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl" 
-                        ValidationGroup="Pais" /> 
-                </div>
-            </div>
-             <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Diferencia(*):</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:RadioButton ID="rbtmas" runat="server" Text="+" GroupName="Diferencia" ValidationGroup="Pais"/>
-                    <asp:RadioButton ID="rbtmenos" runat="server" Text="-" GroupName="Diferencia" ValidationGroup="Pais"/>
-                </div>
-            </div>
-             <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Hora(*):</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtHora" runat="server" MaxLength="200" />
-                    <asp:CustomValidator ID="CustomValidator1" runat="server" 
-                        ControlToValidate="txtHora" 
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl" 
-                        ValidationGroup="Pais" /> 
-                </div>
-            </div>
-            
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Habilitado(*):</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" ValidationGroup="Pais"/>
-                    <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" ValidationGroup="Pais"/>
-                </div>
-            </div>
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Pais"/>
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();"/>
-            </div>
+    <h1 class="sigma-modal-title">Pais</h1>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>ID</label>
+        <asp:Label ID="lblId" runat="server"></asp:Label>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Nombre(*)</label>
+        <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
+        <asp:CustomValidator ID="CustomValidator14" runat="server"
+        ControlToValidate="txtNombre"
+        ValidateEmptyText="true"
+        ClientValidationFunction="validaControl"
+        ValidationGroup="Pais" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Diferencia(*):</label>
+        <div class="sigma-modal-opciones">
+        <asp:RadioButton ID="rbtmas" runat="server" Text="+" GroupName="Diferencia" ValidationGroup="Pais"/>
+        <asp:RadioButton ID="rbtmenos" runat="server" Text="-" GroupName="Diferencia" ValidationGroup="Pais"/>
+        </div>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Hora(*):</label>
+        <WebControls:TextBox2 ID="txtHora" runat="server" MaxLength="200" />
+        <asp:CustomValidator ID="CustomValidator1" runat="server"
+        ControlToValidate="txtHora"
+        ValidateEmptyText="true"
+        ClientValidationFunction="validaControl"
+        ValidationGroup="Pais" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Habilitado(*):</label>
+        <div class="sigma-modal-opciones">
+        <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" ValidationGroup="Pais"/>
+        <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" ValidationGroup="Pais"/>
+        </div>
+    </div>
+    </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();"/>
+    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Pais"/>
+</div>
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
 </asp:Content>

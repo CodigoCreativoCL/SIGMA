@@ -74,22 +74,21 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
                         ctrl.DataValueField = "per_id";
                         ctrl.DataTextField = "per_nombre";
 
-                        if (TipoPerfil > 0)
-                            perfil.tipo = TipoPerfil.ToString();
+                        /* Esta grilla lista usuarios DEL CLIENTE, asi que el
+                           filtro por perfil ofrece perfiles de tipo Cliente.
+                           Si la pantalla trae un TipoPerfil explicito se
+                           respeta; si no, el que corresponde es el 2.
 
-                        int[] perfilesSesion = Array.ConvertAll(
-                            SitioBase.Session.UsuarioPerfil().Split(new char[] { ',' }, StringSplitOptions.RemoveEmptyEntries),
-                            p => { int v; return int.TryParse(p.Trim(), out v) ? v : 0; });
+                           Antes, cuando el usuario en sesion era Root,
+                           Soporte o Gerente Comercial, se le inyectaba la
+                           lista fija "3,4,5,6,7". Esos ids eran los perfiles
+                           de FacilityGes y en SIGMA apuntan a otra cosa: el
+                           combo terminaba ofreciendo Gerente Comercial y
+                           Bodeguero mezclados, y omitiendo los perfiles
+                           operativos reales. */
+                        perfil.tipo = TipoPerfil > 0 ? TipoPerfil.ToString() : "2";
+                        perfil.filtro_habilitado = "1";
 
-                        if (Array.Exists(perfilesSesion, p =>
-                               p == (int)SitioBase.SitioBase.Perfil.root
-                            || p == (int)SitioBase.SitioBase.Perfil.Soporte
-                            || p == (int)SitioBase.SitioBase.Perfil.Gerente_Comercial))
-                            Perfiles = "3,4,5,6,7";
-                        //else if (Array.Exists(perfilesSesion, p => p == (int)SitioBase.SitioBase.Perfil.Coordinador))
-                        //    Perfiles = "4,5,6,7";
-
-                        perfil.Perfiles = Perfiles;
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
                         ctrl.DataBind();
 
@@ -166,37 +165,46 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
 
         Grid.DataBind();
 
-        if (!ReadOnly)
-        {
-            LinkButton lnkNuevo = (LinkButton)Grid.MasterTableView.GetItems(GridItemType.CommandItem)[0].FindControl("lnkNuevo");
-            LinkButton lnkDeshabilitar = (LinkButton)Grid.MasterTableView.GetItems(GridItemType.CommandItem)[0].FindControl("lnkDeshabilitar");
-            LinkButton lnkCargaMasiva = (LinkButton)Grid.MasterTableView.GetItems(GridItemType.CommandItem)[0].FindControl("lnkCargaMasiva");
+        if (!ReadOnly) PintarBotonera();
+    }
 
+    /// <summary>
+    /// Muestra los botones que corresponden al modo: crear gente nueva, o
+    /// asociar gente que ya existe.
+    ///
+    /// POR QUE COMPRUEBA QUE LA BARRA EXISTA
+    ///   Antes tomaba GetItems(CommandItem)[0] a secas, cinco veces. La
+    ///   barra de comandos NO siempre esta: no se dibuja cuando la grilla
+    ///   vive dentro de una pestana que no es la seleccionada -el
+    ///   RadMultiPage solo arma la pagina visible- ni cuando alguien dejo
+    ///   CommandItemDisplay en None. En esos casos el indice [0] reventaba
+    ///   con "Indice fuera de los limites de la matriz" y se llevaba puesta
+    ///   la pantalla entera, cuando lo unico que pasaba es que no habia
+    ///   botonera que configurar.
+    /// </summary>
+    protected void PintarBotonera()
+    {
+        GridItem[] comandos = Grid.MasterTableView.GetItems(GridItemType.CommandItem);
 
-            LinkButton lnkAsociar = (LinkButton)Grid.MasterTableView.GetItems(GridItemType.CommandItem)[0].FindControl("lnkAsociar");
-            LinkButton lnkDesasociar = (LinkButton)Grid.MasterTableView.GetItems(GridItemType.CommandItem)[0].FindControl("lnkDesasociar");
+        if (comandos == null || comandos.Length == 0) return;
 
-            if (Asociar)
-            {
-                lnkNuevo.Visible = false;
-                lnkDeshabilitar.Visible = false;
-                lnkCargaMasiva.Visible = false;
+        GridItem barra = comandos[0];
 
-                lnkAsociar.Visible = true;
-                lnkDesasociar.Visible = true;
+        LinkButton lnkNuevo = barra.FindControl("lnkNuevo") as LinkButton;
+        LinkButton lnkDeshabilitar = barra.FindControl("lnkDeshabilitar") as LinkButton;
+        LinkButton lnkCargaMasiva = barra.FindControl("lnkCargaMasiva") as LinkButton;
+        LinkButton lnkAsociar = barra.FindControl("lnkAsociar") as LinkButton;
+        LinkButton lnkDesasociar = barra.FindControl("lnkDesasociar") as LinkButton;
 
-            }
-            else
-            {
-                lnkNuevo.Visible = true;
-                lnkDeshabilitar.Visible = true;
-                lnkCargaMasiva.Visible = true;
+        /* Asociar es el modo "esta persona ya existe, sumala aqui"; el otro
+           es "crea una persona nueva". Los botones de un modo no tienen
+           sentido en el otro. */
+        if (lnkNuevo != null) lnkNuevo.Visible = !Asociar;
+        if (lnkDeshabilitar != null) lnkDeshabilitar.Visible = !Asociar;
+        if (lnkCargaMasiva != null) lnkCargaMasiva.Visible = !Asociar;
 
-                lnkAsociar.Visible = false;
-                lnkDesasociar.Visible = false;
-
-            }
-        }
+        if (lnkAsociar != null) lnkAsociar.Visible = Asociar;
+        if (lnkDesasociar != null) lnkDesasociar.Visible = Asociar;
     }
 
     protected void CargarDatos()

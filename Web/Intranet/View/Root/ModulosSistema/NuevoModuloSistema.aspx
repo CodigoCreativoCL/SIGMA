@@ -20,43 +20,38 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Módulo del Sistema</div>
+    <h1 class="sigma-modal-title">Módulo del Sistema</h1>
 
-            <div class="row col-lg-12 col-md-12 col-xs-12" id="divID" runat="server" visible="false">
-                <div class="col-lg-2 col-md-2 col-xs-2"><label>ID</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-10">
-                    <asp:Label ID="lblID" runat="server" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-3 col-md-3 col-xs-12"><label>Nombre(*):</label></div>
-                <div class="col-lg-9 col-md-9 col-xs-12">
-                    <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
-                    <asp:CustomValidator ID="cvNombre" runat="server"
-                        ControlToValidate="txtNombre"
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl"
-                        ValidationGroup="Modulo" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-3 col-md-3 col-xs-12"><label>Habilitado:</label></div>
-                <div class="col-lg-9 col-md-9 col-xs-12" style="padding-top:6px;">
-                    <asp:CheckBox ID="chkHabilitado" runat="server" Checked="true" />
-                </div>
-            </div>
-
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center mt-1">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Modulo" />
-                <WebControls:PushButton ID="btnCerrar"  runat="server" Text="Cerrar"  CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
-            </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field" id="divID" runat="server" visible="false">
+        <label>ID</label>
+        <asp:Label ID="lblID" runat="server" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Nombre(*):</label>
+        <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
+        <asp:CustomValidator ID="cvNombre" runat="server"
+        ControlToValidate="txtNombre"
+        ValidateEmptyText="true"
+        ClientValidationFunction="validaControl"
+        ValidationGroup="Modulo" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Habilitado:</label>
+        <asp:CheckBox ID="chkHabilitado" runat="server" Checked="true" />
+    </div>
+    </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar"  runat="server" Text="Cerrar"  CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Modulo" />
+</div>
         </ContentTemplate>
         <Triggers>
             <asp:PostBackTrigger ControlID="btnGuardar" />
         </Triggers>
     </asp:UpdatePanel>
+</div>
 </asp:Content>

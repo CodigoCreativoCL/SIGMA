@@ -44,18 +44,39 @@
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Asociar usuarios a la instalación</div>
-            <rad:RadGrid2 ID="Grid" runat="server">
-                <MasterTableView CommandItemDisplay="none" DataKeyNames="usu_id">
-                    <CommandItemTemplate>
-                        <wuc:Usuarios runat="server" ID="wucUsuarios" />
-                    </CommandItemTemplate>
-                </MasterTableView>
-            </rad:RadGrid2>
-            <br />
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Asociar" OnClick="btnGuardar_OnClick" ValidationGroup="Identidad" />
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+            <%-- Migrada al estandar sigma-modal (§5 del MD). No lleva
+                 sigma-modal-grid porque no es un formulario de campos: lo
+                 que se viene a hacer aqui es elegir gente de una lista. --%>
+            <div class="sigma-modal">
+
+                <%-- La pantalla sirve para dos cosas segun venga o no una
+                     planta en el querystring: autorizar gente EN UNA PLANTA,
+                     o afiliarla AL CLIENTE. El encabezado lo dice el
+                     code-behind; un texto fijo mentiria en uno de los dos. --%>
+                <div class="sigma-modal-eyebrow">
+                    <i class="mdi mdi-account-multiple-plus-outline"></i>
+                    <asp:Literal ID="litContexto" runat="server" />
+                </div>
+
+                <h1 class="sigma-modal-title"><asp:Literal ID="litTitulo" runat="server" /></h1>
+
+                <div class="sigma-modal-note">
+                    <asp:Literal ID="litNota" runat="server" />
+                </div>
+
+                <rad:RadGrid2 ID="Grid" runat="server">
+                    <MasterTableView CommandItemDisplay="none" DataKeyNames="usu_id">
+                        <CommandItemTemplate>
+                            <wuc:Usuarios runat="server" ID="wucUsuarios" />
+                        </CommandItemTemplate>
+                    </MasterTableView>
+                </rad:RadGrid2>
+
+                <div class="sigma-modal-actions">
+                    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+                    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Asociar" OnClick="btnGuardar_OnClick" ValidationGroup="Identidad" />
+                </div>
+
             </div>
 
         </ContentTemplate>

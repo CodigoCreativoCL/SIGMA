@@ -60,6 +60,25 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
                         ctrl.DataBind();
                         break;
 
+                    /* HU-010. Zona horaria, idioma y moneda son catalogos del
+                       sistema: se leen por el registro de catalogos, que
+                       devuelve siempre la misma forma sin importar que tabla
+                       haya detras. Asi no hace falta un Model y un Controller
+                       por cada uno.
+
+                       Se pasa cliente 0 a proposito: son catalogos del
+                       sistema, no admiten valores propios de nadie. */
+                    case "cboZonaHoraria":
+                        CargarCatalogo(ctrl, "ZONA_HORARIA", "Seleccione...");
+                        break;
+
+                    case "cboIdioma":
+                        CargarCatalogo(ctrl, "IDIOMA", "Seleccione...");
+                        break;
+
+                    case "cboMoneda":
+                        CargarCatalogo(ctrl, "MONEDA", "Seleccione...");
+                        break;
                 }
             }
         }
@@ -78,7 +97,75 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
             ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         }
 
+        // La etiqueta del identificador depende del país, así que se
+        // resuelve también al abrir y no solo al cambiar el combo.
+        EtiquetaIdentificador();
+
         udPanel.Update();
+    }
+
+    /// <summary>
+    /// Pone la etiqueta del identificador según el país elegido.
+    ///
+    /// SIGMA opera en cinco países y el documento tributario no se llama
+    /// igual en ninguno: RUT en Chile, RUC en Perú y Ecuador, CUIT en
+    /// Argentina. El nombre sale de la tabla Paises, no del código, así que
+    /// sumar un país es un INSERT.
+    /// </summary>
+    protected void EtiquetaIdentificador()
+    {
+        string etiqueta = "Identificación";
+
+        if (!string.IsNullOrEmpty(cboPais.SelectedValue))
+        {
+            System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_PAIS_IDENTIFICADOR";
+                cmd.Parameters.AddWithValue("@PAIS", int.Parse(cboPais.SelectedValue));
+
+                using (System.Data.SqlClient.SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read()) etiqueta = dr["ETIQUETA"].ToString();
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception ex)
+            {
+                // Si no se puede resolver, queda la etiqueta neutra: es
+                // preferible a dejar el formulario sin poder usarse.
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+        }
+
+        lblIdentificador.Text = etiqueta + "(*):";
+    }
+
+    protected void cboPais_SelectedIndexChanged(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
+    {
+        EtiquetaIdentificador();
+        udPanel.Update();
+    }
+
+    /// <summary>
+    /// Llena un combo desde el registro de catálogos.
+    /// El catálogo se identifica por su código, no por su id: el id puede
+    /// cambiar entre ambientes, el código no.
+    /// </summary>
+    private void CargarCatalogo(RadComboBox2 ctrl, string codigoCatalogo, string textoVacio)
+    {
+        CatalogoController controller = new CatalogoController();
+
+        ctrl.Items.Add(new RadComboBoxItem(textoVacio, ""));
+        ctrl.AppendDataBoundItems = true;
+        ctrl.DataSource = controller.GetValoresPorCodigo(codigoCatalogo, 0);
+        ctrl.DataValueField = "valor_id";
+        ctrl.DataTextField = "valor_nombre";
+        ctrl.DataBind();
     }
 
     protected void CargarDatos()
@@ -95,6 +182,15 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
             txtRazonSocial.Text = cliente.cli_razon_social;
             txtIdentificacion.Text = cliente.cli_identificador;
             cboPais.SelectedValue = cliente.cli_pais.ToString();
+
+            txtNombreFantasia.Text = cliente.cli_nombre_fantasia;
+
+            if (cliente.cli_zona_horaria != null)
+                cboZonaHoraria.SelectedValue = cliente.cli_zona_horaria.ToString();
+            if (cliente.cli_idioma != null)
+                cboIdioma.SelectedValue = cliente.cli_idioma.ToString();
+            if (cliente.cli_moneda != null)
+                cboMoneda.SelectedValue = cliente.cli_moneda.ToString();
 
             if (cliente.cli_logo != null)
                 imgLogo.ImageUrl = "data:image/jpeg;base64," + Convert.ToBase64String(cliente.cli_logo, 0, cliente.cli_logo.Length);
@@ -119,6 +215,10 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
             txtRazonSocial.Text = string.Empty;
             txtIdentificacion.Text = string.Empty;
             cboPais.SelectedValue = string.Empty;
+            txtNombreFantasia.Text = string.Empty;
+            cboZonaHoraria.SelectedValue = string.Empty;
+            cboIdioma.SelectedValue = string.Empty;
+            cboMoneda.SelectedValue = string.Empty;
             imgLogo.ImageUrl = string.Empty;
         }
     }
@@ -129,6 +229,11 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
         cboPais.ReadOnly = ReadOnly;
         txtIdentificacion.ReadOnly = ReadOnly;
         txtRazonSocial.ReadOnly = ReadOnly;
+
+        txtNombreFantasia.ReadOnly = ReadOnly;
+        cboZonaHoraria.ReadOnly = ReadOnly;
+        cboIdioma.ReadOnly = ReadOnly;
+        cboMoneda.ReadOnly = ReadOnly;
 
         rdbSi.Enabled = !ReadOnly;
         rdbNo.Enabled = !ReadOnly;
@@ -164,8 +269,23 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
                 cliente.cli_identificador = txtIdentificacion.Text;
                 cliente.cli_razon_social = txtRazonSocial.Text;
                 cliente.cli_pais = int.Parse(cboPais.SelectedValue);
+
+                // HU-010
+                cliente.cli_nombre_fantasia = txtNombreFantasia.Text.Trim();
+
+                if (!string.IsNullOrEmpty(cboZonaHoraria.SelectedValue))
+                    cliente.cli_zona_horaria = int.Parse(cboZonaHoraria.SelectedValue);
+                if (!string.IsNullOrEmpty(cboIdioma.SelectedValue))
+                    cliente.cli_idioma = int.Parse(cboIdioma.SelectedValue);
+                if (!string.IsNullOrEmpty(cboMoneda.SelectedValue))
+                    cliente.cli_moneda = int.Parse(cboMoneda.SelectedValue);
+
+                // El logotipo solo se toca cuando el formulario adjunto uno.
                 if (fldLogo.HasFile)
+                {
                     cliente.cli_logo = fldLogo.FileBytes;
+                    cliente.cambia_logo = true;
+                }
 
                 if (rdbSi.Checked == true)
                     cliente.cli_habilitado = true;

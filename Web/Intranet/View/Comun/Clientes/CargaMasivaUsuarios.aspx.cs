@@ -35,7 +35,7 @@ public partial class View_Comun_Clientes_CargaMasivaUsuarios : System.Web.UI.Pag
     {
         if (!IsPostBack)
         {
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -52,29 +52,59 @@ public partial class View_Comun_Clientes_CargaMasivaUsuarios : System.Web.UI.Pag
             }
         }
 
+        /* Los nombres de los perfiles se leen de la base.
+
+           Antes estaban escritos a mano en un diccionario -"Coordinador",
+           "Administrativo", "G. Comercial"- que eran los perfiles de
+           FacilityGes con ids 3 a 7. En SIGMA esos ids apuntan a otros
+           perfiles, asi que la pantalla mostraba nombres que no existen
+           junto a ids que si, y no habia forma de notarlo salvo leyendo.
+
+           Ademas se usaba rawPerfiles.Replace("3", ...) sobre la cadena
+           completa: en una lista como "3,13" eso reemplazaba tambien el 3
+           de dentro del 13 y dejaba texto corrupto. */
         string rawPerfiles = Perfiles;
 
-        lblPerfil.Text = rawPerfiles
-            .Replace("3", " ID: 3 - Gerente Comercial")
-            .Replace("4", " ID: 4 - Coordinador")
-            .Replace("5", " ID: 5 - Supervisor ")
-            .Replace("6", " ID: 6 - Administrador")
-            .Replace("7", " ID: 7 - Administrativo");
-
-        var perfilNombres = new Dictionary<string, string>
-        {
-            { "3", "G. Comercial" }, { "4", "Coordinador" }, { "5", "Supervisor" },
-            { "6", "Administrador" }, { "7", "Administrativo" }
-        };
-        var sbPerfiles = new StringBuilder();
+        List<string> ids = new List<string>();
         foreach (string idRaw in rawPerfiles.Split(new char[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries))
         {
             string id = idRaw.Trim();
-            string nombre = perfilNombres.ContainsKey(id) ? perfilNombres[id] : "Perfil " + id;
+            if (id != "" && !ids.Contains(id)) ids.Add(id);
+        }
+
+        Dictionary<string, string> perfilNombres = new Dictionary<string, string>();
+
+        if (ids.Count > 0)
+        {
+            PerfilController perfilController = new PerfilController();
+            Perfil filtro = new Perfil();
+            filtro.Perfiles = string.Join(",", ids.ToArray());
+
+            List<Perfil> encontrados = perfilController.ListoPerfiles(filtro);
+
+            if (encontrados != null)
+                foreach (Perfil p in encontrados)
+                    perfilNombres[p.per_id.ToString()] = p.per_nombre;
+        }
+
+        StringBuilder sbEtiqueta = new StringBuilder();
+        StringBuilder sbPerfiles = new StringBuilder();
+
+        foreach (string id in ids)
+        {
+            // Un id que ya no existe se muestra como tal en vez de
+            // inventarle un nombre: asi se nota que hay que corregirlo.
+            string nombre = perfilNombres.ContainsKey(id) ? perfilNombres[id] : "Perfil no encontrado";
+
+            if (sbEtiqueta.Length > 0) sbEtiqueta.Append(", ");
+            sbEtiqueta.AppendFormat("ID: {0} - {1}", id, nombre);
+
             sbPerfiles.AppendFormat(
                 "<div class=\"cmu-perfil-item\"><span class=\"cmu-perfil-nombre\">{0}</span><span class=\"cmu-perfil-id\">{1}</span></div>",
-                nombre, id);
+                Server.HtmlEncode(nombre), id);
         }
+
+        lblPerfil.Text = sbEtiqueta.ToString();
         litPerfiles.Text = sbPerfiles.ToString();
     }
 

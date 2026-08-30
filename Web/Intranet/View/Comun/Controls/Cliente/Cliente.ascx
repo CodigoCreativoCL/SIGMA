@@ -52,7 +52,7 @@
             <Tabs>
                 <rad:RadTab Text="Identidad" runat="server" PageViewID="rtvIdentidad" />
                 <rad:RadTab Text="Usuarios" runat="server" PageViewID="rtvUsuarios" />
-                <rad:RadTab Text="Instalaciones" runat="server" PageViewID="rtvInstalaciones" />
+                <rad:RadTab Text="Plantas" runat="server" PageViewID="rtvInstalaciones" />
             </Tabs>
         </rad:RadTabStrip2>
     </div>

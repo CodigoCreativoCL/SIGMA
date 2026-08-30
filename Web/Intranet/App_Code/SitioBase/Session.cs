@@ -205,5 +205,67 @@ namespace SitioBase
             }
         }
 
+        #region Cliente en sesion (HU-002)
+
+        /// <summary>
+        /// Cliente con el que la persona esta trabajando ahora.
+        ///
+        /// SIGMA es multicliente y casi todo lo que se consulta -plantas,
+        /// areas, centros de costo, grupos, especialidades- se filtra por
+        /// aqui. Devuelve 0 cuando todavia no se ha elegido uno, que es el
+        /// caso de quien pertenece a varios y aun no paso por el selector,
+        /// y tambien el del administrador de plataforma, que no pertenece a
+        /// ninguno.
+        /// </summary>
+        public static int ClienteId()
+        {
+            if (Session1 != null && Session1["cli_id"] != null)
+            {
+                int id;
+                if (int.TryParse(HttpContext.Current.Session["cli_id"].ToString(), out id))
+                    return id;
+            }
+
+            return 0;
+        }
+
+        public static string ClienteNombre()
+        {
+            if (Session1 != null && Session1["cli_nombre"] != null)
+            {
+                return HttpContext.Current.Session["cli_nombre"].ToString();
+            }
+            else
+            {
+                return "";
+            }
+        }
+
+        /// <summary>
+        /// Fija el cliente de trabajo.
+        ///
+        /// Limpia ademas los permisos cacheados: son distintos en cada
+        /// cliente -la misma persona puede ser supervisora en uno y tecnico
+        /// en otro- y si no se botaran, al cambiar de cliente seguiria
+        /// viendo los menus del anterior. Es el "ningun dato del cliente
+        /// anterior permanece en pantalla" del escenario 3 de HU-002.
+        /// </summary>
+        public static void SetCliente(int idCliente, string nombreCliente)
+        {
+            if (Session1 == null) return;
+
+            HttpContext.Current.Session["cli_id"] = idCliente;
+            HttpContext.Current.Session["cli_nombre"] = nombreCliente;
+
+            Token.Refrescar();
+
+            // El estado de suscripción cacheado es del cliente anterior:
+            // conservarlo dejaría entrar a uno vencido con la vigencia del
+            // otro, o bloquearía a uno al día.
+            SuscripcionAcceso.Refrescar();
+        }
+
+        #endregion
+
     }
 }

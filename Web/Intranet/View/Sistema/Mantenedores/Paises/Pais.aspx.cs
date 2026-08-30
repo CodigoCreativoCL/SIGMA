@@ -16,7 +16,7 @@ public partial class View_Sistema_Mantenedores_Pais : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {

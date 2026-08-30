@@ -21,7 +21,7 @@ public partial class View_Comun_Controls_Cliente_Instalaciones : System.Web.UI.U
     {
         if (!IsPostBack)
         {
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -52,7 +52,7 @@ public partial class View_Comun_Controls_Cliente_Instalaciones : System.Web.UI.U
             Grid.AddColumn("CIN_ID", "ID", Width: "6%");
             Grid.AddColumn("CIN_NOMBRE", "NOMBRE", Width: "38%");
             Grid.AddColumn("CIN_DESCRIPCION", "DESCRIPCIÓN", Width: "30%");
-            Grid.AddColumn("CIN_DIRECCION", "DIRECCION", Width: "30%");
+            Grid.AddColumn("CIN_DIRECCION", "DIRECCIÓN", Width: "30%");
             Grid.AddCheckboxColumn("CIN_HABILITADO", "HABILITADO");
         }
         Tools.tools.RegisterPostBackScript(Grid);
@@ -85,7 +85,10 @@ public partial class View_Comun_Controls_Cliente_Instalaciones : System.Web.UI.U
                 GridDataItem item = e.Item as GridDataItem;
                 string id = item.GetDataKeyValue("cin_id").ToString();
 
-                string query = Server.UrlEncode(Tools.Crypto.Encrypt("IdClienteInstalacion=" + id + "&ReadOnly=" + ReadOnly + "&IdCliente=" + IdCliente));
+                /* Planta.aspx lee "Id", no "IdClienteInstalacion": esta
+                   pestana dejo de abrir la ficha parcial y abre la completa,
+                   que es la unica que existe. */
+                string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id + "&IdCliente=" + IdCliente + "&ReadOnly=" + ReadOnly));
 
                 HyperLink Editar = new HyperLink();
                 Editar.ID = "lnkEditar" + id;
@@ -105,7 +108,7 @@ public partial class View_Comun_Controls_Cliente_Instalaciones : System.Web.UI.U
 
     protected void lnkNuevoClienteInstalacion_Click(object sender, EventArgs e)
     {
-        string query = Server.UrlEncode(Tools.Crypto.Encrypt("IdCliente=" + IdCliente + "&ReadOnly=" + ReadOnly));
+        string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&IdCliente=" + IdCliente + "&ReadOnly=" + ReadOnly));
         Tools.tools.ClientExecute("abrirClienteInstalacion('" + query + "')");
     }
 

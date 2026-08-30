@@ -48,7 +48,7 @@ public partial class View_Comun_Clientes_AsociarUsuario : System.Web.UI.Page
             Grid.AddColumn("PERFILES", "PERFIL");
 
             //Recupero el query string
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -81,7 +81,44 @@ public partial class View_Comun_Clientes_AsociarUsuario : System.Web.UI.Page
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
+        PintarEncabezado();
         CargarDatos();
+    }
+
+    /// <summary>
+    /// El encabezado del modal, que depende del modo.
+    ///
+    /// Con planta en el querystring se esta autorizando gente EN esa planta;
+    /// sin ella, se la esta afiliando al cliente. Son dos operaciones con
+    /// consecuencias distintas y conviene que la pantalla lo diga: el rotulo
+    /// heredado decia "instalacion" en los dos casos, y en el segundo no
+    /// habia ninguna instalacion de por medio.
+    /// </summary>
+    protected void PintarEncabezado()
+    {
+        if (IdClienteInstalacion > 0)
+        {
+            ClienteInstalacion planta = new ClienteInstalacion();
+            planta.cin_id = IdClienteInstalacion;
+            planta = new ClienteInstalacionController().GetClienteInstalacion(planta);
+
+            string nombre = planta != null && !string.IsNullOrEmpty(planta.cin_nombre)
+                ? planta.cin_nombre
+                : "";
+
+            litContexto.Text = "Planta" + (nombre != "" ? " &middot; " + Server.HtmlEncode(nombre) : "");
+            litTitulo.Text = "Autorizar personas en la planta";
+            litNota.Text = "Estar autorizado en una planta es lo que permite trabajar en ella: " +
+                           "ver sus activos, tomar sus órdenes y firmarlas. Solo aparecen las " +
+                           "personas que ya pertenecen a este cliente.";
+        }
+        else
+        {
+            litContexto.Text = "Cliente";
+            litTitulo.Text = "Asociar personas al cliente";
+            litNota.Text = "Asociar a alguien al cliente le da acceso a la empresa. " +
+                           "La autorización por planta se otorga aparte, desde cada planta.";
+        }
     }
 
     protected void CargarDatos()
@@ -132,9 +169,18 @@ public partial class View_Comun_Clientes_AsociarUsuario : System.Web.UI.Page
                         ctrl.AppendDataBoundItems = true;
                         ctrl.DataValueField = "per_id";
                         ctrl.DataTextField = "per_nombre";
-                        perfil.tipo = "1";
-                        string Perfiles = SitioBase.SitioBase.Parametros("Asignar_Perfiles");
-                        perfil.Perfiles = Perfiles;
+
+                        /* Perfiles de CLIENTE, no de sistema.
+                           Estaba fijo en "1", que es el tipo Sistema: la
+                           pantalla ofrecia Root, Soporte y Gerente Comercial
+                           -perfiles de la gente de SIGMA- para asignarselos a
+                           usuarios de la planta. Los perfiles operativos
+                           (Jefe, Planificador, Supervisor, Tecnico,
+                           Bodeguero) son tipo 2 y son los que corresponden
+                           aqui. */
+                        perfil.tipo = "2";
+                        perfil.filtro_habilitado = "1";
+
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
                         ctrl.DataBind();
 

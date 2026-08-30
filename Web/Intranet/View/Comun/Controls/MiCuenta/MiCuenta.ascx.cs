@@ -74,10 +74,20 @@ public partial class View_Comun_Controls_MiCuenta_MiCuenta : System.Web.UI.UserC
         rptClientes.DataSource = clientes;
         rptClientes.DataBind();
 
-        // TextBox con TextMode="Password" no renderiza el atributo "value"
-        // aunque se asigne Text (comportamiento estandar de ASP.NET por
-        // seguridad); se debe forzar via Attributes para poder mostrarla.
-        txtPasswordVer.Attributes["value"] = actual.usu_password;
+        /* Antes este campo mostraba la contraseña del usuario, forzando el
+           atributo "value" para saltarse la protección de ASP.NET.
+
+           Ya no se puede ni tiene sentido: desde el bloque 26 de base de
+           datos las contraseñas se guardan como hash SHA2-256 con sal, así
+           que lo único que se podría pintar aquí son 64 caracteres
+           hexadecimales. Y aunque se pudiera, dejar la contraseña legible en
+           el HTML de la página nunca fue una buena idea: cualquiera que
+           mirara el código fuente la veía.
+
+           El campo se deja en pantalla como marcador de "aquí hay una
+           contraseña", relleno con puntos. Para cambiarla está el switch de
+           al lado. */
+        txtPasswordVer.Attributes["value"] = "••••••••";
 
         if (actual.usu_foto != null)
             imgFoto.ImageUrl = "data:image/jpeg;base64," + Convert.ToBase64String(actual.usu_foto, 0, actual.usu_foto.Length);
@@ -139,11 +149,22 @@ public partial class View_Comun_Controls_MiCuenta_MiCuenta : System.Web.UI.UserC
                 }
             }
 
+            /* CAMBIO DE CONTRASEÑA (HU-005 escenario 1).
+
+               Ya no se compara en C# contra actual.usu_password: eso era una
+               comparación de texto plano y con el hash SHA2-256 del bloque
+               26 fallaría siempre, dejando a todo el mundo sin poder cambiar
+               su clave.
+
+               Ahora lo resuelve UPD_USUARIO_PASSWORD, que es quien puede:
+               tiene la sal para comparar la actual, aplica las reglas de
+               largo y composición, comprueba que no repita ninguna de las
+               tres anteriores y escribe el historial. */
             if (chkCambiarPassword.Checked)
             {
-                if (string.IsNullOrEmpty(txtPasswordActual.Text) || txtPasswordActual.Text != actual.usu_password)
+                if (string.IsNullOrEmpty(txtPasswordActual.Text))
                 {
-                    Tools.tools.ClientAlert("La contraseña actual no es correcta.", "alerta");
+                    Tools.tools.ClientAlert("Debe ingresar su contraseña actual.", "alerta");
                     return;
                 }
 
@@ -158,12 +179,33 @@ public partial class View_Comun_Controls_MiCuenta_MiCuenta : System.Web.UI.UserC
                     Tools.tools.ClientAlert("Las contraseñas no coinciden.", "alerta");
                     return;
                 }
+
+                CuentaController cuentaController = new CuentaController();
+                Respuesta cambio = cuentaController.CambiarMiClave(txtPasswordActual.Text, txtPasswordNueva.Text);
+
+                if (cambio.error)
+                {
+                    // El detalle viene del SP: contraseña actual incorrecta,
+                    // muy corta, sin letra o número, o repetida. Son los
+                    // mensajes que la persona necesita leer para corregir.
+                    Tools.tools.ClientAlert(cambio.detalle, "alerta");
+                    return;
+                }
             }
 
             Usuario usuario = new Usuario();
             usuario.usu_id = int.Parse(SitioBase.Session.UsuarioId());
             usuario.usu_login = actual.usu_login;
-            usuario.usu_password = chkCambiarPassword.Checked ? txtPasswordNueva.Text : actual.usu_password;
+
+            /* La contraseña NO viaja en este UPDATE.
+
+               Antes se reenviaba actual.usu_password, que hoy es el hash
+               almacenado. UPD_USUARIO lo habría vuelto a hashear y la
+               contraseña de la persona habría quedado inservible con solo
+               guardar su teléfono. Se manda null, que el SP interpreta como
+               "no toques la contraseña". */
+            usuario.usu_password = null;
+
             usuario.usu_nombres = actual.usu_nombres;
             usuario.usu_apellido_paterno = actual.usu_apellido_paterno;
             usuario.usu_apellido_materno = actual.usu_apellido_materno;
