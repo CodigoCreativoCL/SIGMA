@@ -1,0 +1,45 @@
+﻿using System;
+using System.Web;
+using System.Web.UI;
+using System.Web.UI.WebControls;
+using SitioBase;
+
+/// <summary>
+/// CODE-BEHIND DE LA PAGINA DE LISTADO DE PRODUCTO.
+///
+/// PATRON (ver PATRON_MVC.md seccion 7):
+///  - La pagina es el UNICO lugar donde se valida el permiso de entrada.
+///    Si el perfil no tiene la funcion "Ver" del menu, SecurityManagerVer
+///    redirige y la pagina ni siquiera se renderiza.
+///  - Ademas traduce los permisos del menu a propiedades del UserControl.
+///  - Regla del equipo: la seguridad SIEMPRE se declara en el .aspx.cs,
+///    nunca dentro del UserControl.
+///
+/// ARCHIVO GENERADO por 03-Generador.
+/// </summary>
+public partial class View_Inventario_Productos_Productos : System.Web.UI.Page
+{
+    protected void Page_Load(object sender, EventArgs e)
+    {
+        #region SeguridadPagina
+
+        // menu_12 es el identificador del menu de Productos en SitioBase.Paginas.
+        MenuPerfil ver = new MenuPerfil();
+        ver.mpe_menu = (int)SitioBase.Paginas.menu_12.Ver;
+
+        // Si el perfil no tiene el permiso, este metodo corta la ejecucion.
+        SitioBase.Token.SecurityManagerVer(ver);
+
+        #endregion
+
+        // Se le pasan al UserControl los ids de funcion que necesita para
+        // decidir que puede mostrar.
+    wucProductos.Ver_Todo = (int)SitioBase.Paginas.menu_12.Ver_Todo;
+    wucProductos.Crear_Editar = (int)SitioBase.Paginas.menu_12.Crear_Editar;
+    }
+
+    protected void Page_PreRender(object sender, EventArgs e)
+    {
+        // Se deja declarado aunque este vacio: es parte del esqueleto estandar.
+    }
+}
