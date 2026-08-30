@@ -1,0 +1,1228 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacitación · Patrones .NET — Equipo Código Creativo · SIGMA</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+<style>
+:root{
+  --bg:#0f1219; --bg2:#161b26; --bg3:#1d2330;
+  --line:#2a3242; --txt:#dfe4ee; --dim:#95a0b5;
+  --acc:#5aa9ff; --acc2:#7be0c0; --warn:#ffb454; --err:#ff7a85;
+  --sidebar:280px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);color:var(--txt);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  font-size:15px;line-height:1.65;
+}
+
+/* ---------- SIDEBAR ---------- */
+#sidebar{
+  position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;
+  background:var(--bg2);border-right:1px solid var(--line);
+  overflow-y:auto;padding:22px 0 60px;z-index:100;
+}
+#sidebar .brand{padding:0 20px 18px;border-bottom:1px solid var(--line);margin-bottom:14px}
+#sidebar .brand h1{font-size:15px;letter-spacing:.3px;color:#fff}
+#sidebar .brand p{font-size:11.5px;color:var(--dim);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+#sidebar .grp{padding:14px 20px 5px;font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);font-weight:700}
+#sidebar a{
+  display:block;padding:7px 20px;color:var(--txt);text-decoration:none;
+  font-size:13.5px;border-left:3px solid transparent;transition:.13s;
+}
+#sidebar a:hover{background:var(--bg3);color:#fff}
+#sidebar a.on{border-left-color:var(--acc);background:var(--bg3);color:var(--acc)}
+
+/* ---------- MAIN ---------- */
+main{margin-left:var(--sidebar);padding:44px 52px 120px;max-width:1120px}
+section{margin-bottom:64px;scroll-margin-top:24px}
+section>h2{
+  font-size:26px;color:#fff;margin-bottom:6px;padding-bottom:12px;
+  border-bottom:2px solid var(--line);
+}
+section>h2 .n{color:var(--acc);font-family:ui-monospace,Menlo,monospace;font-size:19px;margin-right:10px}
+.sub{color:var(--dim);font-size:13.5px;margin:8px 0 26px}
+h3{font-size:18px;color:var(--acc2);margin:32px 0 12px}
+h4{font-size:15px;color:#fff;margin:22px 0 9px}
+p{margin:11px 0}
+ul,ol{margin:11px 0 11px 24px}
+li{margin:5px 0}
+code{
+  background:var(--bg3);padding:2px 6px;border-radius:4px;
+  font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;color:var(--acc2);
+}
+pre{margin:14px 0;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+pre code{background:none;padding:16px 18px;display:block;font-size:12.9px;line-height:1.6;color:inherit;overflow-x:auto}
+a{color:var(--acc)}
+
+/* ---------- HERO ---------- */
+.hero{
+  background:linear-gradient(135deg,#1a2438,#141a26);
+  border:1px solid var(--line);border-radius:14px;padding:34px 36px;margin-bottom:52px;
+}
+.hero h1{font-size:29px;color:#fff;margin-bottom:8px}
+.hero p{color:var(--dim);font-size:15px;max-width:760px}
+.chips{margin-top:20px;display:flex;gap:9px;flex-wrap:wrap}
+.chip{
+  background:var(--bg3);border:1px solid var(--line);border-radius:20px;
+  padding:5px 14px;font-size:12.5px;color:var(--acc2);
+}
+
+/* ---------- CALLOUTS ---------- */
+.box{border-left:3px solid var(--acc);background:var(--bg2);padding:14px 18px;border-radius:0 8px 8px 0;margin:18px 0}
+.box.w{border-left-color:var(--warn)}
+.box.e{border-left-color:var(--err)}
+.box.g{border-left-color:var(--acc2)}
+.box b{color:#fff}
+.box .lbl{font-size:10.5px;text-transform:uppercase;letter-spacing:1.2px;font-weight:700;color:var(--acc);margin-bottom:5px;display:block}
+.box.w .lbl{color:var(--warn)} .box.e .lbl{color:var(--err)} .box.g .lbl{color:var(--acc2)}
+
+/* ---------- TABLES ---------- */
+table{width:100%;border-collapse:collapse;margin:18px 0;font-size:13.5px}
+th{background:var(--bg3);color:#fff;text-align:left;padding:10px 13px;border-bottom:2px solid var(--line);font-size:12.5px;text-transform:uppercase;letter-spacing:.6px}
+td{padding:9px 13px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:hover td{background:var(--bg2)}
+
+/* ---------- DIAGRAM ---------- */
+.flow{background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:26px;margin:22px 0}
+.layer{
+  background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+  padding:13px 18px;margin:0 auto;max-width:620px;text-align:center;
+}
+.layer .t{color:#fff;font-weight:600;font-size:14.5px}
+.layer .d{color:var(--dim);font-size:12.5px;margin-top:3px}
+.layer.l1{border-color:#4a7fbf} .layer.l2{border-color:#5aa9ff}
+.layer.l3{border-color:#7be0c0} .layer.l4{border-color:#ffb454} .layer.l5{border-color:#c98bdb}
+.arw{text-align:center;color:var(--dim);font-size:19px;line-height:1;margin:7px 0}
+.arw span{font-size:11.5px;display:block;color:var(--acc2);margin-top:2px}
+
+/* ---------- FILE CARDS ---------- */
+.files{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:13px;margin:20px 0}
+.file{background:var(--bg2);border:1px solid var(--line);border-radius:9px;padding:15px 17px}
+.file .p{font-family:ui-monospace,Menlo,monospace;font-size:12.4px;color:var(--acc);word-break:break-all;margin-bottom:6px}
+.file .r{color:var(--dim);font-size:12.8px}
+
+/* ---------- TABS ---------- */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:20px 0 0;flex-wrap:wrap}
+.tabs button{
+  background:none;border:none;border-bottom:2px solid transparent;
+  color:var(--dim);padding:9px 15px;cursor:pointer;font-size:13.2px;
+  font-family:inherit;transition:.13s;
+}
+.tabs button:hover{color:var(--txt)}
+.tabs button.on{color:var(--acc);border-bottom-color:var(--acc)}
+.pane{display:none} .pane.on{display:block}
+
+/* ---------- SEARCH ---------- */
+#bug{
+  width:100%;background:var(--bg2);border:1px solid var(--line);color:var(--txt);
+  padding:11px 15px;border-radius:8px;font-size:14px;font-family:inherit;margin:6px 0 4px;
+}
+#bug:focus{outline:none;border-color:var(--acc)}
+
+@media(max-width:900px){
+  #sidebar{position:static;width:100%;height:auto}
+  main{margin-left:0;padding:26px 20px 80px}
+}
+</style>
+</head>
+<body>
+
+<nav id="sidebar">
+  <div class="brand">
+    <h1>Patrones .NET</h1>
+    <p>Código Creativo · SIGMA</p>
+  </div>
+  <div class="grp">Inicio</div>
+  <a href="#intro" class="on">Presentación</a>
+  <a href="#agenda">Agenda</a>
+  <div class="grp">Sesión 1 — Arquitectura</div>
+  <a href="#mvc">No es ASP.NET MVC</a>
+  <a href="#capas">Las 4 capas</a>
+  <a href="#model">El Model</a>
+  <a href="#controller">El Controller</a>
+  <div class="grp">Sesión 2 — Base de datos</div>
+  <a href="#sp-nombres">Nomenclatura</a>
+  <a href="#sp-sel">SEL — query dinámica</a>
+  <a href="#sp-ins">INS — @ID OUTPUT</a>
+  <a href="#sp-upd">UPD — ISNULL</a>
+  <div class="grp">Sesión 3 — Controles</div>
+  <a href="#ctrl-regla">Regla de los wrappers</a>
+  <a href="#ctrl-grid">RadGrid2</a>
+  <a href="#ctrl-ciclo">Ciclo de vida</a>
+  <a href="#ctrl-combo">Combos y validación</a>
+  <div class="grp">Sesión 4 — Eventos y cierre</div>
+  <a href="#ev-eventos">ItemCreated vs DataBound</a>
+  <a href="#flujo">Flujo end-to-end</a>
+  <a href="#reglas">Las 10 reglas</a>
+  <a href="#errores">Diagnóstico de errores</a>
+  <a href="#ejercicio">Ejercicio final</a>
+</nav>
+
+<main>
+
+<!-- ============ INTRO ============ -->
+<section id="intro">
+  <div class="hero">
+    <h1>Patrones de desarrollo .NET</h1>
+    <p>Material de capacitación del equipo <b>Código Creativo</b> para el proyecto <b>SIGMA</b>.
+    Los patrones provienen del sistema <b>FacilityGes</b> (Grupo EXPRO) y son los que seguiremos
+    durante todo el semestre.</p>
+    <div class="chips">
+      <span class="chip">ASP.NET Web Forms</span>
+      <span class="chip">C#</span>
+      <span class="chip">SQL Server</span>
+      <span class="chip">Telerik RadControls</span>
+      <span class="chip">Stored Procedures</span>
+    </div>
+  </div>
+
+  <div class="box g">
+    <span class="lbl">Cómo usar este material</span>
+    Esta página es la versión navegable de las guías en <code>01-Guias/</code>.
+    El código de ejemplo completo está en <code>02-Ejemplo-Usuario/</code> y los patrones
+    originales sin editar en <code>00-Patrones-Originales/</code>.
+  </div>
+
+  <div class="box w">
+    <span class="lbl">Importante</span>
+    El código de ejemplo es <b>material de entrenamiento</b>: no compila por sí solo porque depende
+    de librerías del proyecto real (<code>SitioBase</code>, <code>WebControls</code>, wrappers de Telerik).
+    Está hecho para leerse y explicarse.
+  </div>
+</section>
+
+<!-- ============ AGENDA ============ -->
+<section id="agenda">
+  <h2><span class="n">00</span>Agenda</h2>
+  <table>
+    <tr><th>#</th><th>Sesión</th><th>Ejemplo en pantalla</th><th>Tiempo</th></tr>
+    <tr><td>1</td><td>Arquitectura y capas (Model / Controller)</td><td><code>Usuario.cs</code>, <code>UsuarioController.cs</code></td><td>45 min</td></tr>
+    <tr><td>2</td><td>Base de datos y Stored Procedures</td><td>los 5 <code>.sql</code></td><td>50 min</td></tr>
+    <tr><td>3</td><td>Controles de UI (Telerik + WebControls)</td><td><code>Usuarios.ascx</code>, <code>Identidad.ascx</code></td><td>50 min</td></tr>
+    <tr><td>4</td><td>Eventos de grilla + recorrido completo</td><td>todo</td><td>75 min</td></tr>
+  </table>
+  <div class="box">
+    <span class="lbl">Recomendación</span>
+    Hacer la sesión de <b>base de datos antes que las de UI</b>. Cuando el equipo entiende el
+    <code>WHERE 1=1</code> y el contrato de parámetros, el código del Controller deja de parecer arbitrario.
+  </div>
+
+  <h3>Archivos del ejemplo</h3>
+  <div class="files">
+    <div class="file"><div class="p">Model/Usuario.cs</div><div class="r">POCO con las columnas y los campos <code>filtro_*</code></div></div>
+    <div class="file"><div class="p">Controller/UsuarioController.cs</div><div class="r">Los 5 métodos estándar + baja lógica</div></div>
+    <div class="file"><div class="p">Controls/Usuario/Usuarios.ascx(.cs)</div><div class="r">Grid con columnas por código</div></div>
+    <div class="file"><div class="p">Controls/Usuario/Usuario.ascx(.cs)</div><div class="r">Contenedor de tabs (mínimo)</div></div>
+    <div class="file"><div class="p">Controls/Usuario/Identidad.ascx(.cs)</div><div class="r">El CRUD real de la pantalla</div></div>
+    <div class="file"><div class="p">Usuarios/Usuarios.aspx(.cs)</div><div class="r">Página listado + seguridad</div></div>
+    <div class="file"><div class="p">Usuarios/Usuario.aspx(.cs)</div><div class="r">Página formulario + descifrado</div></div>
+    <div class="file"><div class="p">BD/00..04_*.sql</div><div class="r">Tabla + SEL / INS / UPD / DEL</div></div>
+  </div>
+</section>
+
+<!-- ============ MVC ============ -->
+<section id="mvc">
+  <h2><span class="n">01</span>Lo primero: NO es ASP.NET MVC</h2>
+  <p class="sub">Guía completa: <code>01-Guias/GUIA_01_PATRON_MVC.md</code></p>
+
+  <p>Si alguien llega con la idea de ASP.NET MVC (rutas, <code>ActionResult</code>, Razor), va a escribir
+  código que no encaja con el resto del proyecto. Lo que tenemos es <b>Web Forms</b>.</p>
+
+  <table>
+    <tr><th>ASP.NET MVC "de verdad"</th><th>Lo que usamos nosotros</th></tr>
+    <tr><td>Ruta → Controller → Action → View</td><td>URL → archivo <code>.aspx</code> físico</td></tr>
+    <tr><td><code>ActionResult</code>, <code>return View(model)</code></td><td>Postback + <code>ViewState</code></td></tr>
+    <tr><td>Razor (<code>.cshtml</code>)</td><td><code>.aspx</code> / <code>.ascx</code> con controles de servidor</td></tr>
+    <tr><td>Controller = punto de entrada HTTP</td><td>Controller = <b>capa de acceso a datos</b></td></tr>
+  </table>
+
+  <div class="box e">
+    <span class="lbl">La idea clave</span>
+    En este proyecto <b>"Controller" no significa "controlador HTTP"</b>. Significa
+    <b>la clase que habla con la base de datos</b>. Es un <b>repositorio disfrazado de controller</b>.
+  </div>
+</section>
+
+<!-- ============ CAPAS ============ -->
+<section id="capas">
+  <h2><span class="n">02</span>Las 4 capas y quién habla con quién</h2>
+
+  <div class="flow">
+    <div class="layer l1"><div class="t">.aspx — Página</div><div class="d">Valida permisos · setea propiedades del control</div></div>
+    <div class="arw">↓<span>pasa ids de función del menú</span></div>
+    <div class="layer l2"><div class="t">.ascx — UserControl</div><div class="d">Grid o formulario · arma el Model de filtros</div></div>
+    <div class="arw">↓<span>entrega un Model</span></div>
+    <div class="layer l3"><div class="t">Controller — Sigma.Controller</div><div class="d">Token · parámetros condicionales · Conexion</div></div>
+    <div class="arw">↓<span>ejecuta el SP</span></div>
+    <div class="layer l4"><div class="t">Stored Procedure</div><div class="d">SEL_ · INS_ · UPD_ · DEL_</div></div>
+    <div class="arw">↓</div>
+    <div class="layer l5"><div class="t">Tabla SQL Server</div><div class="d">USUARIO, PERFIL, PAISES...</div></div>
+  </div>
+
+  <div class="box e">
+    <span class="lbl">Regla de oro — es la que más se rompe</span>
+    Cada capa habla <b>solo con la de abajo</b>. Una página nunca abre un <code>SqlConnection</code>.
+    Un <code>.ascx.cs</code> nunca escribe <code>SELECT</code>. Un Controller nunca sabe que existe un
+    <code>RadGrid2</code>. Un SP nunca sabe quién lo llamó.
+  </div>
+
+  <p>El <b>Model no es una capa</b>: es el <b>sobre</b> en el que viajan los datos. Cruza todas.</p>
+
+  <h3>Dónde va cada archivo</h3>
+<pre><code class="language-plaintext">Web/Intranet/
+├── App_Code/MVC/
+│   ├── Sigma/                        (nuestro dominio)
+│   │   ├── Controller/  &lt;Entidad&gt;Controller.cs
+│   │   └── Model/       &lt;Entidad&gt;.cs
+│   └── SitioBase/                    (Token, Session, Conexion, Respuesta)
+└── View/&lt;Modulo&gt;/
+    ├── &lt;SubModulo&gt;/
+    │   ├── &lt;Entidad&gt;s.aspx(.cs)      página LISTADO   (plural)
+    │   └── &lt;Entidad&gt;.aspx(.cs)       página FORMULARIO (singular)
+    └── Controls/&lt;Entidad&gt;/
+        ├── &lt;Entidad&gt;s.ascx(.cs)      grid
+        ├── &lt;Entidad&gt;.ascx(.cs)       contenedor de tabs
+        └── &lt;Tab&gt;.ascx(.cs)           un archivo por tab</code></pre>
+
+  <div class="box w">
+    <span class="lbl">Detalle que confunde a todos</span>
+    <code>Usuarios</code> (plural) = <b>listado</b>. <code>Usuario</code> (singular) = <b>formulario</b>.
+    Es la única diferencia entre los dos archivos, y está en todo el proyecto.
+  </div>
+</section>
+
+<!-- ============ MODEL ============ -->
+<section id="model">
+  <h2><span class="n">03</span>El Model</h2>
+  <p class="sub">Archivo: <code>02-Ejemplo-Usuario/App_Code/MVC/Sigma/Model/Usuario.cs</code></p>
+
+  <p>Una clase POCO. Propiedades y nada más: cero métodos, cero validaciones, cero lógica.</p>
+
+<pre><code class="language-csharp">[Serializable]
+public class Usuario
+{
+    // Columnas reales: nombre = columna EN MINÚSCULAS con prefijo de tabla
+    public int    usu_id      { get; set; }   // ← USU_ID
+    public string usu_nombres { get; set; }   // ← USU_NOMBRES
+    public int    usu_perfil  { get; set; }   // ← USU_PERFIL
+    public bool   usu_habilitado { get; set; }
+
+    // Campos del JOIN: para mostrar el nombre en vez del id
+    public string per_nombre { get; set; }
+    public string pai_nombre { get; set; }
+
+    // Campos de FILTRO: NO existen en la base de datos
+    public string filtro            { get; set; }
+    public bool?  filtro_habilitado { get; set; }
+    public int?   filtro_perfil     { get; set; }
+    public string filtro_paises     { get; set; }
+}</code></pre>
+
+  <h3>Las 4 reglas</h3>
+  <ol>
+    <li><code>[Serializable]</code> — el objeto viaja en <code>ViewState</code> y <code>Session</code>.</li>
+    <li><b>Nombre de propiedad = nombre de columna en minúsculas.</b> Sin <code>PascalCase</code>, sin nombres "bonitos".</li>
+    <li><b>Prefijo de 3 letras de la tabla.</b> <code>USUARIO</code> → <code>usu_</code>.</li>
+    <li>Los <code>filtro_*</code> <b>no existen en la BD</b>. Solo los lee el Controller.</li>
+  </ol>
+
+  <div class="box">
+    <span class="lbl">La pregunta que siempre sale: ¿por qué <code>bool?</code> y no <code>bool</code>?</span>
+    Con <code>bool</code> solo tienes dos estados. Con <code>bool?</code> tienes <b>tres</b>:<br>
+    <code>null</code> → no filtrar, traer todos &nbsp;·&nbsp;
+    <code>true</code> → solo habilitados &nbsp;·&nbsp;
+    <code>false</code> → solo deshabilitados<br>
+    Sin el <code>?</code> sería imposible expresar "traer todos".
+  </div>
+</section>
+
+<!-- ============ CONTROLLER ============ -->
+<section id="controller">
+  <h2><span class="n">04</span>El Controller</h2>
+  <p class="sub">Archivo: <code>02-Ejemplo-Usuario/App_Code/MVC/Sigma/Controller/UsuarioController.cs</code></p>
+
+  <p>La única clase del sistema autorizada a tocar la base de datos.</p>
+
+  <table>
+    <tr><th>Método</th><th>SP</th><th>Devuelve</th></tr>
+    <tr><td><code>GetUsuarios(filtro)</code></td><td><code>SEL_USUARIO</code></td><td><code>List&lt;Usuario&gt;</code></td></tr>
+    <tr><td><code>GetUsuario(u)</code></td><td><code>SEL_USUARIO</code> con <code>@ID</code></td><td><code>Usuario</code></td></tr>
+    <tr><td><code>InsertUsuario(u)</code></td><td><code>INS_USUARIO</code></td><td><code>Respuesta</code></td></tr>
+    <tr><td><code>UpdateUsuario(u)</code></td><td><code>UPD_USUARIO</code></td><td><code>Respuesta</code></td></tr>
+    <tr><td><code>DeleteUsuario(u)</code></td><td><code>DEL_USUARIO</code></td><td><code>Respuesta</code></td></tr>
+  </table>
+
+  <p><code>GetUsuarios</code> y <code>GetUsuario</code> llaman <b>al mismo SP</b>. No se crea un
+  <code>SEL_USUARIO_BY_ID</code>: si viene <code>@ID</code>, el SP filtra.</p>
+
+  <div class="tabs">
+    <button class="on" data-t="c1">Token de seguridad</button>
+    <button data-t="c2">Filtros condicionales</button>
+    <button data-t="c3">Respuesta</button>
+    <button data-t="c4">Auditoría</button>
+  </div>
+
+  <div class="pane on" id="c1">
+<pre><code class="language-csharp">public List&lt;Usuario&gt; GetUsuarios(Usuario usuario = null)
+{
+    List&lt;Usuario&gt; usuarios = new List&lt;Usuario&gt;();
+
+    if (Token.TokenSeguridad())     // ← PRIMERA LÍNEA DE TODO MÉTODO
+    {
+        // ... solo aquí se toca la BD
+    }
+
+    return usuarios;
+}</code></pre>
+    <p>Si la sesión expiró o el token no es válido, el bloque no se ejecuta. Es un
+    <b>cortafuegos</b>, no una validación de permisos.</p>
+    <div class="box w"><span class="lbl">Pregunta para el equipo</span>
+    ¿Qué pasa si se te olvida? La pantalla funciona igual… hasta que alguien llame con
+    la sesión caída y lea datos que no debería.</div>
+  </div>
+
+  <div class="pane" id="c2">
+<pre><code class="language-csharp">// NUNCA se agrega un parámetro incondicionalmente
+if (!string.IsNullOrEmpty(usuario.filtro))
+    cmd.Parameters.AddWithValue("@FILTRO", usuario.filtro);
+
+if (usuario.filtro_habilitado.HasValue)
+    cmd.Parameters.AddWithValue("@HABILITADO", usuario.filtro_habilitado.Value);</code></pre>
+    <div class="box e"><span class="lbl">Contrato de dos puntas</span>
+    Si el filtro no viene, el parámetro <b>no se agrega</b>, llega al SP como <code>NULL</code>,
+    y el <code>IF (@FILTRO IS NOT NULL)</code> del <code>WHERE</code> no concatena nada.
+    <b>El C# decide qué mandar, el SQL decide qué filtrar.</b> Si rompes un lado, el otro pierde sentido.</div>
+  </div>
+
+  <div class="pane" id="c3">
+<pre><code class="language-csharp">public class Respuesta
+{
+    public int    codigo  { get; set; }  // id generado, o -1 si hubo error
+    public string detalle { get; set; }  // mensaje para el USUARIO FINAL
+    public bool   error   { get; set; }
+}</code></pre>
+    <p>Un método de escritura <b>nunca</b> devuelve <code>void</code> ni <code>bool</code>.
+    Siempre <code>Respuesta</code>.</p>
+    <h4>El viaje de un mensaje de error</h4>
+<pre><code class="language-plaintext">RAISERROR('1.- Ya existe un usuario con el email "x".')   ← SQL
+       ↓ SqlException
+respuesta.detalle = ex.Message                            ← Controller
+       ↓
+Tools.tools.ClientAlert(respuesta.detalle, "alerta")      ← Pantalla
+       ↓
+El usuario ve el mensaje en un SweetAlert</code></pre>
+    <div class="box g"><span class="lbl">Consecuencia práctica</span>
+    Los mensajes del SP se escriben <b>pensando en el usuario final</b>: en español, claros,
+    sin jerga técnica. Nada de "FK violation on USU_PERFIL".</div>
+  </div>
+
+  <div class="pane" id="c4">
+<pre><code class="language-csharp">cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());</code></pre>
+    <p>El id del usuario que hace la operación <b>jamás</b> viene de la pantalla.
+    Se toma de la sesión del servidor. Si viniera de un campo oculto, cualquiera
+    podría falsificar la auditoría.</p>
+  </div>
+</section>
+
+<!-- ============ SP NOMBRES ============ -->
+<section id="sp-nombres">
+  <h2><span class="n">05</span>Base de datos — nomenclatura</h2>
+  <p class="sub">Guía completa: <code>01-Guias/GUIA_04_PATRON_SP.md</code></p>
+
+  <div class="box e">
+    <span class="lbl">Regla de oro</span>
+    <b>Nada de SQL en C#.</b> Todo el acceso a datos pasa por un Stored Procedure.
+  </div>
+
+  <p>Tres razones: <b>seguridad</b> (parámetros tipados, sin concatenación del usuario),
+  <b>mantenimiento</b> (cambiar una consulta = ejecutar un script, sin recompilar) y
+  <b>trazabilidad</b> (todo en un solo lugar auditable).</p>
+
+  <div class="box w">
+    <span class="lbl">Contrapunto honesto — alguien lo va a plantear en el CAPSTONE</span>
+    Este patrón tiene costos reales: la lógica queda partida entre dos repositorios, es más
+    difícil de testear unitariamente, y hoy la industria se movió bastante hacia ORMs
+    (Entity Framework, Dapper). Es una arquitectura de los 2000s que sigue siendo válida en
+    sistemas empresariales grandes con equipos de BD dedicados — que es el caso de FacilityGes.
+    Para SIGMA lo adoptamos <b>por consistencia con lo que el equipo ya sabe</b>.
+  </div>
+
+  <table>
+    <tr><th>Prefijo SP</th><th>Acción</th></tr>
+    <tr><td><code>SEL_</code></td><td>Consulta (listado <b>y</b> get by id)</td></tr>
+    <tr><td><code>INS_</code></td><td>Inserción</td></tr>
+    <tr><td><code>UPD_</code></td><td>Actualización</td></tr>
+    <tr><td><code>DEL_</code></td><td>Eliminación física</td></tr>
+    <tr><td><code>API_</code> / <code>FNC_</code></td><td>SP de API / funciones</td></tr>
+  </table>
+
+  <h3>Columnas: prefijo de 3 letras</h3>
+  <p><code>USUARIO</code> → <code>USU_ID</code>, <code>USU_NOMBRES</code> ·
+  <code>PERFIL</code> → <code>PER_ID</code> · <code>PAISES</code> → <code>PAI_ID</code></p>
+  <p>En SQL <b>MAYÚSCULAS</b>, en el Model C# <b>minúsculas</b>. Es la única transformación de
+  nombres del sistema.</p>
+  <p><b>Por qué el prefijo:</b> en un <code>SELECT</code> con tres <code>JOIN</code>,
+  <code>USU_NOMBRES</code> te dice de inmediato de qué tabla viene.</p>
+
+  <h3>Auditoría — en toda tabla, sin excepción</h3>
+<pre><code class="language-sql">USU_USUARIO_CREACION  INT
+USU_FECHA_CREACION    DATETIME
+USU_USUARIO_ACT       INT
+USU_FECHA_ACT         DATETIME
+USU_HABILITADO        BIT       -- baja lógica</code></pre>
+  <div class="box"><span class="lbl">Decisión para SIGMA</span>
+  En FacilityGes conviven <code>_ACT</code> y <code>_ACTUALIZACION</code>.
+  Para SIGMA <b>elegimos <code>_ACT</code></b> y lo usamos siempre. Definirlo ahora evita el desorden después.</div>
+</section>
+
+<!-- ============ SP SEL ============ -->
+<section id="sp-sel">
+  <h2><span class="n">06</span>SEL_ — la query dinámica</h2>
+
+  <p>El patrón más particular del proyecto: tres variables y un solo <code>EXEC</code>.</p>
+
+<pre><code class="language-sql">--SELECT
+BEGIN
+   DECLARE @SELECT VARCHAR(MAX)
+   SET @SELECT = 'SELECT DISTINCT USU_ID, USU_RUT, USU_NOMBRES, PER_NOMBRE '
+END
+
+--FROM
+BEGIN
+   DECLARE @FROM VARCHAR(MAX)
+   SET @FROM = ' FROM USUARIO
+                 INNER JOIN PERFIL ON USU_PERFIL = PER_ID '
+END
+
+--WHERE
+BEGIN
+   DECLARE @WHERE VARCHAR(MAX)
+   SET @WHERE = ' WHERE 1=1 '
+
+   IF (@ID IS NOT NULL) BEGIN
+       SET @WHERE = @WHERE + ' AND USU_ID = ' + LTRIM(@ID)
+   END
+
+   IF (@FILTRO IS NOT NULL) BEGIN
+       SET @WHERE = @WHERE + ' AND (USU_NOMBRES LIKE ''%' + LTRIM(@FILTRO) + '%'')'
+   END
+END
+
+--print(@SELECT + @FROM + @WHERE)
+EXEC(@SELECT + @FROM + @WHERE)</code></pre>
+
+  <div class="box g">
+    <span class="lbl">El truco del <code>WHERE 1=1</code></span>
+    <code>1=1</code> es siempre verdadero, así que no cambia el resultado. Su función es
+    <b>puramente sintáctica</b>: permite concatenar <code>AND ...</code> sin preguntar nunca
+    "¿es el primer filtro?". Sin él tendrías que llevar una bandera y decidir entre
+    <code>WHERE</code> y <code>AND</code> en cada bloque.
+  </div>
+
+  <h3>El contrato C# ↔ SQL — enseñar con los dos archivos abiertos</h3>
+<pre><code class="language-csharp">// UsuarioController.cs
+if (!string.IsNullOrEmpty(usuario.filtro))
+    cmd.Parameters.AddWithValue("@FILTRO", usuario.filtro);</code></pre>
+<pre><code class="language-sql">-- SEL_USUARIO.sql
+@FILTRO VARCHAR(MAX) = NULL      -- ← el "= NULL" es imprescindible
+...
+IF (@FILTRO IS NOT NULL) BEGIN
+    SET @WHERE = @WHERE + ' AND (...)'
+END</code></pre>
+
+  <div class="box e">
+    <span class="lbl">Por eso todos los filtros llevan <code>= NULL</code></span>
+    Si a uno se le olvida el <code>= NULL</code> y el C# no lo manda, el SP falla con
+    <i>"Procedure expects parameter which was not supplied"</i>.
+  </div>
+
+  <div class="box w">
+    <span class="lbl">Comillas dentro de comillas</span>
+    En T-SQL, dentro de un string una comilla simple se escribe <b>doblada</b>: <code>''</code>.
+    Como construimos SQL dentro de un string, hay que doblarlas. Se lee horrible; es el precio
+    de la query dinámica.
+  </div>
+
+  <div class="box g">
+    <span class="lbl">La herramienta de depuración del patrón</span>
+    El <code>--print(@SELECT + @FROM + @WHERE)</code> se deja siempre comentado.
+    Cuando algo falla: descomentas el <code>print</code>, comentas el <code>EXEC</code>,
+    y ves la query armada tal cual.
+  </div>
+</section>
+
+<!-- ============ SP INS ============ -->
+<section id="sp-ins">
+  <h2><span class="n">07</span>INS_ — insertar y devolver el id</h2>
+
+<pre><code class="language-sql">CREATE OR ALTER PROCEDURE [dbo].[INS_USUARIO]
+    @ID INT = NULL OUTPUT,      -- SIEMPRE primero
+    @EMAIL NVARCHAR(200),
+    @USUARIO INT                -- SIEMPRE último
+AS
+SET NOCOUNT ON
+
+-- 1. Validaciones FUERA de la transacción
+BEGIN
+    IF EXISTS (SELECT 1 FROM USUARIO WHERE USU_EMAIL = @EMAIL)
+    BEGIN
+        RAISERROR('1.- Ya existe un usuario con el email "%s".', 16, 1, @EMAIL)
+        RETURN -1
+    END
+END
+
+-- 2. Transacción
+BEGIN TRANSACTION
+    INSERT USUARIO (...) VALUES (...)
+    SET @ID = SCOPE_IDENTITY()
+
+    IF @@ROWCOUNT = 0 BEGIN
+        ROLLBACK TRANSACTION
+        EXEC INS_EXCEPCION @MSG = '3.- NO FUE POSIBLE INSERTAR EL USUARIO.',
+                           @VARIABLES = @VARIABLES
+        RETURN -1
+    END
+COMMIT TRANSACTION
+
+RETURN(0)</code></pre>
+
+  <div class="box e">
+    <span class="lbl">¿Por qué <code>SCOPE_IDENTITY()</code> y no <code>@@IDENTITY</code>?</span>
+    <code>@@IDENTITY</code> devuelve el último identity de la sesión, <b>incluyendo los que
+    generen los triggers</b>. Si mañana alguien agrega un trigger de auditoría a
+    <code>USUARIO</code>, te devolvería el id de la tabla de log en vez del usuario.
+    <code>SCOPE_IDENTITY()</code> se limita al ámbito actual. <b>Es un bug real y difícil de encontrar.</b>
+  </div>
+
+  <h3><code>RAISERROR</code> — anatomía</h3>
+<pre><code class="language-sql">RAISERROR('1.- Ya existe un usuario con el email "%s".', 16, 1, @EMAIL)
+--          └── mensaje con %s        severidad ─┘  │   └── valor de %s
+--                                            estado ┘</code></pre>
+  <ul>
+    <li><code>%s</code> es un marcador de sustitución, como <code>String.Format</code>.</li>
+    <li><b>16</b> = severidad "error corregible por el usuario". Es la que hace que .NET lance <code>SqlException</code>.</li>
+    <li>Los mensajes se <b>numeran</b> (<code>1.-</code>, <code>2.-</code>) para identificar qué validación falló.</li>
+  </ul>
+
+  <div class="box"><span class="lbl"><code>INS_EXCEPCION</code></span>
+  Escribe en una tabla de log. La regla de <code>@VARIABLES</code>: <b>tiene que permitir
+  reproducir la llamada</b>. Si el log dice solo "no se pudo insertar", no sirve de nada.</div>
+</section>
+
+<!-- ============ SP UPD ============ -->
+<section id="sp-upd">
+  <h2><span class="n">08</span>UPD_ — el truco de ISNULL</h2>
+
+<pre><code class="language-sql">UPDATE  USUARIO
+SET      USU_RUT         = ISNULL(@RUT,      USU_RUT)
+        ,USU_NOMBRES     = ISNULL(@NOMBRES,  USU_NOMBRES)
+        ,USU_PASSWORD    = ISNULL(@PASSWORD, USU_PASSWORD)
+        ,USU_HABILITADO  = ISNULL(@HABILITADO, USU_HABILITADO)
+        ,USU_USUARIO_ACT = @USUARIO
+        ,USU_FECHA_ACT   = GETDATE()
+WHERE   USU_ID = @ID</code></pre>
+
+  <p><code>ISNULL(@PARAM, columna_actual)</code> = <i>"si me mandaron el parámetro, úsalo;
+  si no, deja el valor que ya tenía"</i>.</p>
+
+  <div class="box g">
+    <span class="lbl">Esto habilita updates parciales con un solo SP</span>
+    El botón "Deshabilitar" del grid manda solo <code>@ID</code>, <code>@HABILITADO</code> y
+    <code>@USUARIO</code> — el resto queda intacto. <b>No hace falta un
+    <code>UPD_USUARIO_HABILITADO</code> aparte.</b>
+  </div>
+
+  <h4>El caso más elegante: la contraseña</h4>
+<pre><code class="language-csharp">// Solo se manda si el usuario escribió una nueva
+if (!string.IsNullOrEmpty(usuario.usu_password))
+    cmdExecute.Parameters.AddWithValue("@PASSWORD", usuario.usu_password);</code></pre>
+  <p>Sin <code>ISNULL</code> habría que traer la contraseña actual, mandarla de vuelta y
+  guardarla otra vez — con el riesgo de exponerla en el camino.</p>
+
+  <div class="box w">
+    <span class="lbl">La validación de unicidad cambia en el UPDATE</span>
+<pre style="margin:8px 0"><code class="language-sql">IF EXISTS (SELECT 1 FROM USUARIO WHERE USU_EMAIL = @EMAIL AND USU_ID &lt;&gt; @ID)</code></pre>
+    El <code>AND USU_ID &lt;&gt; @ID</code> es imprescindible: al editar sin cambiar el email,
+    el propio registro haría match y el SP diría "ya existe". <b>Se excluye a sí mismo.</b>
+  </div>
+
+  <h3>DEL_ — el que casi no se usa</h3>
+  <table>
+    <tr><th>Tipo de tabla</th><th>Baja</th></tr>
+    <tr><td>Maestro (<code>USUARIO</code>, <code>PERFIL</code>, <code>CLIENTE</code>)</td><td><b>Lógica</b>: <code>UPD_</code> con <code>HABILITADO = 0</code></td></tr>
+    <tr><td>Detalle / relación (<code>USUARIO_INSTALACION</code>)</td><td><b>Física</b>: <code>DEL_</code></td></tr>
+  </table>
+  <p>Por eso el <code>UsuarioController</code> expone <code>DeshabilitarUsuario()</code> y
+  es ése el que llama el botón del grid — no <code>DeleteUsuario()</code>.</p>
+</section>
+
+<!-- ============ CTRL REGLA ============ -->
+<section id="ctrl-regla">
+  <h2><span class="n">09</span>Controles — la regla de los wrappers</h2>
+  <p class="sub">Guía completa: <code>01-Guias/GUIA_02_PATRON_CONTROLES.md</code></p>
+
+  <div class="box e">
+    <span class="lbl">Regla que resume toda la sesión</span>
+    <b>Nunca uses el control nativo de ASP.NET si existe la versión del proyecto.</b>
+  </div>
+
+  <table>
+    <tr><th>No uses</th><th>Usa</th><th>Por qué</th></tr>
+    <tr><td><code>asp:TextBox</code></td><td><code>WebControls:TextBox2</code></td><td><code>form-control</code>, <code>ReadOnly</code>, <code>UpperCase</code></td></tr>
+    <tr><td><code>asp:DropDownList</code></td><td><code>rad:RadComboBox2</code></td><td>Filtro por texto, <code>dbValues()</code>/<code>SetValues()</code></td></tr>
+    <tr><td><code>asp:Button</code></td><td><code>WebControls:PushButton</code></td><td>Estilos M3, iconos</td></tr>
+    <tr><td><code>asp:GridView</code></td><td><code>rad:RadGrid2</code></td><td>Paginación, orden, helpers <code>AddColumn</code></td></tr>
+  </table>
+
+  <h3>¿Qué es el "2" del nombre?</h3>
+<pre><code class="language-plaintext">Telerik.Web.UI.RadGrid       (Telerik, comprado)
+        ↑ hereda
+Telerik.Web.UI.RadGrid2      (nuestro, en Librarias/Library/Web/UI/Telerik/)</code></pre>
+  <p>El wrapper aplica el skin Bootstrap, agrega helpers y <b>maneja <code>ReadOnly</code> de forma uniforme</b>.</p>
+
+  <div class="box g">
+    <span class="lbl">Lo importante de <code>ReadOnly</code></span>
+    Cuando pones <code>ReadOnly = true</code> en cualquier control del proyecto, el control
+    <b>renderiza un <code>&lt;span&gt;</code> con el valor y oculta el input</b>. No es un
+    <code>disabled</code> que se pueda quitar desde el inspector: <b>el input no existe en el HTML</b>.
+  </div>
+
+  <div class="box e">
+    <span class="lbl">La trampa del campo Password</span>
+    En un <code>TextBox2</code> con <code>TextMode="Password"</code>, <b>NO</b> uses
+    <code>ReadOnly = true</code>. Renderizaría un <code>&lt;span&gt;</code> con el texto:
+    <b>la contraseña en pantalla, sin máscara</b>. Usa <code>Enabled = false</code>.
+  </div>
+</section>
+
+<!-- ============ CTRL GRID ============ -->
+<section id="ctrl-grid">
+  <h2><span class="n">10</span>RadGrid2 — la grilla</h2>
+
+<pre><code class="language-xml">&lt;asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional"&gt;
+  &lt;ContentTemplate&gt;
+    &lt;rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="rgrUsuarios_ItemDataBound"&gt;
+      &lt;MasterTableView CommandItemDisplay="Top" DataKeyNames="usu_id"&gt;
+        &lt;CommandItemTemplate&gt;
+          &lt;asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo"
+              CssClass="icono_guardar" OnClientClick="abrirUsuario(0)" /&gt;
+          &lt;asp:LinkButton ID="lnkDeshabilitar" runat="server" Text="Deshabilitar"
+              CssClass="icono_eliminar" OnClick="lnkDeshabilitar_Click"
+              OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro?');" /&gt;
+        &lt;/CommandItemTemplate&gt;
+      &lt;/MasterTableView&gt;
+    &lt;/rad:RadGrid2&gt;
+  &lt;/ContentTemplate&gt;
+&lt;/asp:UpdatePanel&gt;</code></pre>
+
+  <p>Tres cosas que <b>siempre</b> van:</p>
+  <ol>
+    <li><b><code>UpdatePanel</code> con <code>UpdateMode="Conditional"</code>.</b> Sin esto, cada click recarga toda la página.</li>
+    <li><b><code>DataKeyNames</code>.</b> Lista de columnas que luego lees con <code>GetDataKeyValue()</code>.
+      Si no está aquí, <b>explota en tiempo de ejecución</b>. Error #1 de los que empiezan.</li>
+    <li><b><code>CommandItemDisplay="Top"</code> + <code>CommandItemTemplate</code>.</b> La barra de botones.</li>
+  </ol>
+
+  <h3>Las columnas se declaran en C#, no en el markup</h3>
+<pre><code class="language-csharp">if (!IsPostBack)          // ← SIN ESTO, LAS COLUMNAS SE DUPLICAN
+{
+    Grid.AddSelectColumn();                        // checkbox de selección
+    Grid.AddColumn("usu_id", "", Width: "3%");     // celda para el link Editar
+    Grid.AddColumn("usu_rut", "RUT", Width: "12%");
+    Grid.AddColumn("usu_nombres", "NOMBRES", Width: "20%");
+    Grid.AddCheckboxColumn("usu_habilitado", "HABILITADO");
+}</code></pre>
+
+  <div class="box w">
+    <span class="lbl">Síntoma clásico</span>
+    "El grid se me llena de columnas repetidas al hacer click" → falta el <code>if (!IsPostBack)</code>.
+  </div>
+
+  <p>Fíjate en la primera columna: título vacío, 3% de ancho. Esa celda existe <b>solo</b>
+  para meterle dentro el icono de editar en <code>ItemDataBound</code>.</p>
+
+  <h3><code>HyperLink</code> o <code>LinkButton</code>: cuál elegir</h3>
+  <table>
+    <tr><th>Necesito</th><th>Control</th><th>Postback</th></tr>
+    <tr><td><b>Navegar</b> a otra página / modal</td><td><code>HyperLink</code> + <code>onclick</code> JS</td><td>No</td></tr>
+    <tr><td><b>Ejecutar código de servidor</b></td><td><code>LinkButton</code> + evento <code>Command</code></td><td>Sí</td></tr>
+  </table>
+</section>
+
+<!-- ============ CICLO ============ -->
+<section id="ctrl-ciclo">
+  <h2><span class="n">11</span>El ciclo de vida — el concepto más importante</h2>
+
+  <div class="flow">
+    <div class="layer l1"><div class="t">Init</div></div>
+    <div class="arw">↓</div>
+    <div class="layer l2"><div class="t">Load</div><div class="d">❌ NO cargues datos aquí</div></div>
+    <div class="arw">↓</div>
+    <div class="layer l4"><div class="t">Eventos de los controles</div><div class="d">Click de Guardar, Eliminar, etc.</div></div>
+    <div class="arw">↓</div>
+    <div class="layer l3"><div class="t">PreRender</div><div class="d">✅ AQUÍ se cargan los datos</div></div>
+    <div class="arw">↓</div>
+    <div class="layer l5"><div class="t">Render</div><div class="d">Se genera el HTML</div></div>
+  </div>
+
+  <div class="box e">
+    <span class="lbl">Por qué <code>PreRender</code> y no <code>Load</code></span>
+    Si cargas en <code>Load</code>, cargas <b>antes</b> de que se ejecute el click de "Eliminar".
+    Resultado: <b>eliminas un registro y sigue apareciendo en pantalla</b> hasta que refrescas.
+    Si cargas en <code>PreRender</code>, ya pasó el evento y ves el dato actualizado.
+  </div>
+
+<pre><code class="language-csharp">protected void Page_PreRender(object sender, EventArgs e)
+{
+    if (!IsPostBack) { /* columnas */ }
+
+    if (ReadOnly)
+        Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
+
+    CargarGrid();
+    Grid.DataBind();
+    udPanel.Update();
+
+    Tools.tools.RegisterPostBackScript(Grid);   // habilita refresh() desde JS
+}</code></pre>
+
+  <h3>ViewState, no campos privados</h3>
+<pre><code class="language-csharp">// ✅ correcto: sobrevive al postback
+public bool ReadOnly
+{
+    get { return ViewState["ReadOnly"] == null ? false : (bool)ViewState["ReadOnly"]; }
+    set { ViewState["ReadOnly"] = value; }
+}
+
+// ❌ incorrecto: se pierde en cada postback
+private bool _readOnly;</code></pre>
+</section>
+
+<!-- ============ COMBOS ============ -->
+<section id="ctrl-combo">
+  <h2><span class="n">12</span>Combos y validación</h2>
+
+  <h3>El patrón <code>LoadControls</code></h3>
+  <p>Varios combos apuntan al <b>mismo método</b>, que se desambigua con un <code>switch</code>:</p>
+
+<pre><code class="language-csharp">public void LoadControls(object sender, EventArgs e)
+{
+    if (!IsPostBack)                       // ① sin esto, pierde la selección
+    {
+        if (sender is RadComboBox2)
+        {
+            RadComboBox2 ctrl = (RadComboBox2)sender;
+            switch (ctrl.ID)
+            {
+                case "cboPerfil":
+                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
+                    ctrl.AppendDataBoundItems = true;      // ② sin esto, se borra el item
+                    ctrl.DataSource = new PerfilController().GetPerfiles(filtro);
+                    ctrl.DataValueField = "per_id";        // ③ nombres del MODEL
+                    ctrl.DataTextField  = "per_nombre";
+                    ctrl.DataBind();
+                    break;
+            }
+        }
+    }
+}</code></pre>
+
+  <ol>
+    <li><b><code>if (!IsPostBack)</code></b> — síntoma si falta: "escojo un perfil, guardo, y el combo vuelve a Seleccione".</li>
+    <li><b><code>AppendDataBoundItems = true</code></b> — sin esto, <code>DataBind()</code> <b>borra</b> el item "Seleccione...".</li>
+    <li><b><code>DataValueField</code>/<code>DataTextField</code></b> son propiedades <b>del Model</b>. Un typo falla en runtime, no al compilar.</li>
+  </ol>
+  <p>Para seleccionar se usa <code>cboPerfil.SelectedValue = "3"</code> (el Value), nunca el Text.</p>
+
+  <h3>Validación</h3>
+<pre><code class="language-xml">&lt;WebControls:TextBox2 ID="txtEmail" runat="server" MaxLength="200" /&gt;
+&lt;asp:CustomValidator ID="cvEmail" runat="server"
+    ControlToValidate="txtEmail"
+    ValidateEmptyText="true"
+    ClientValidationFunction="validaControl"
+    ValidationGroup="Usuario" /&gt;          &lt;!-- ← mismo grupo --&gt;
+
+&lt;WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar"
+    OnClick="btnGuardar_Click" ValidationGroup="Usuario" /&gt;  &lt;!-- ← que aquí --&gt;</code></pre>
+
+  <div class="box e">
+    <span class="lbl">El bug más frustrante de esta capa</span>
+    Si el <code>ValidationGroup</code> no coincide, los validators <b>no se ejecutan</b> y el
+    formulario guarda vacío. <b>No hay error ni warning: falla en silencio.</b>
+  </div>
+
+  <div class="box w">
+    <span class="lbl">Y esta línea en <code>Page_PreRender</code></span>
+<pre style="margin:8px 0"><code class="language-csharp">ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);</code></pre>
+    Sin ella, el botón Guardar dentro de un <code>UpdatePanel</code> no dispara postback.
+    Síntoma: <b>"hago click en Guardar y no pasa absolutamente nada"</b>.
+  </div>
+
+  <h3><code>Bloqueo()</code> — el modo consulta en un solo lugar</h3>
+<pre><code class="language-csharp">protected void Bloqueo()
+{
+    txtRut.ReadOnly       = ReadOnly;
+    txtNombres.ReadOnly   = ReadOnly;
+    cboPerfil.ReadOnly    = ReadOnly;
+    chkHabilitado.Enabled = !ReadOnly;
+    txtPassword.Enabled   = !ReadOnly;   // ojo: Enabled, no ReadOnly
+    btnGuardar.Visible    = !ReadOnly;
+}</code></pre>
+  <p>Un solo método, llamado desde <code>Page_PreRender</code>. Nunca repartas los
+  <code>ReadOnly</code> por todo el archivo — cuando agregues un campo se te va a olvidar uno.</p>
+</section>
+
+<!-- ============ EVENTOS ============ -->
+<section id="ev-eventos">
+  <h2><span class="n">13</span>ItemCreated vs ItemDataBound</h2>
+  <p class="sub">Guía completa: <code>01-Guias/GUIA_03_PATRON_GRID_EVENTS.md</code></p>
+
+  <div class="box e">
+    <span class="lbl">Anunciarlo de entrada</span>
+    <b>En este proyecto NO usamos <code>OnItemCommand</code> del grid.</b> Es la forma "de manual"
+    de Telerik, la que aparece en toda la documentación oficial, y aquí no se usa.
+    Hay que decirlo explícitamente: el equipo va a buscar en Google, va a encontrar
+    <code>ItemCommand</code>, y va a introducir un patrón que no calza con el resto del código.
+  </div>
+
+  <h3>¿Por qué hacen falta DOS eventos y no uno?</h3>
+  <p>La pregunta que siempre aparece. La respuesta está en el ciclo de vida:</p>
+
+  <table>
+    <tr><th>Evento</th><th>Cuándo corre</th><th>¿Hay datos?</th><th>Responsabilidad</th></tr>
+    <tr><td><code>ItemCreated</code></td><td><b>Siempre</b>, en cada postback</td><td>No</td><td><b>Crear</b> el control</td></tr>
+    <tr><td><code>ItemDataBound</code></td><td>Solo con <code>DataBind()</code></td><td>Sí</td><td><b>Poner</b> los datos</td></tr>
+  </table>
+
+  <div class="box g">
+    <span class="lbl">La clave</span>
+    Para que un control dinámico dispare su evento después de un postback, tiene que haber sido
+    <b>creado antes de que ASP.NET procese el postback</b>. <code>ItemDataBound</code> corre
+    demasiado tarde: si creas el <code>LinkButton</code> ahí, <b>se ve pero al hacer click no pasa nada</b>.
+  </div>
+
+  <div class="tabs">
+    <button class="on" data-t="e1">ItemCreated</button>
+    <button data-t="e2">ItemDataBound</button>
+    <button data-t="e3">Handler Command</button>
+    <button data-t="e4">Navegar (HyperLink)</button>
+  </div>
+
+  <div class="pane on" id="e1">
+<pre><code class="language-csharp">protected void Grid_ItemCreated(object sender, GridItemEventArgs e)
+{
+    if (e.Item is GridDataItem)
+    {
+        GridDataItem item = (e.Item as GridDataItem);
+
+        LinkButton lnkDescarga = new LinkButton();
+        lnkDescarga.ID = "lnkDescarga";        // ① ID FIJO en todas las filas
+        lnkDescarga.CssClass = "icono_Descargar";
+        lnkDescarga.Command += new CommandEventHandler(lnkDescarga_Command);  // ② aquí
+
+        item["documentoFisico"].Controls.Add(lnkDescarga);                    // ④
+
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkDescarga);  // ③
+    }
+}</code></pre>
+    <ol>
+      <li><b>ID fijo</b>, el mismo en todas las filas. No es error: cada fila es un contenedor
+        distinto, y luego lo encuentras con <code>FindControl</code>.</li>
+      <li><b>La suscripción <code>Command +=</code> va AQUÍ</b>, no en <code>ItemDataBound</code>.</li>
+      <li><b><code>RegisterPostBackControl</code></b> es obligatorio dentro de un <code>UpdatePanel</code>.</li>
+      <li><b>La columna tiene que existir</b>: se crea con <code>AddTemplateColumn</code> en <code>Page_Load</code>.</li>
+    </ol>
+    <div class="box w"><span class="lbl">Bug real en FacilityGes</span>
+    En <code>OrdenesTrabajoDetalle.ascx.cs</code> el handler está suscrito en los dos eventos,
+    y por eso <b>se ejecuta dos veces por click</b>. No replicar.</div>
+  </div>
+
+  <div class="pane" id="e2">
+<pre><code class="language-csharp">protected void Grid_ItemDataBound(object sender, GridItemEventArgs e)
+{
+    // Solo filas de datos: ni encabezado, ni footer, ni paginador
+    if (e.Item.ItemType == GridItemType.AlternatingItem | e.Item.ItemType == GridItemType.Item)
+    {
+        if (e.Item is GridDataItem)
+        {
+            GridDataItem item = e.Item as GridDataItem;
+            string id = item.GetDataKeyValue("arc_archivo").ToString();
+
+            LinkButton lnk = (LinkButton)item["documentoFisico"].FindControl("lnkDescarga");
+            lnk.CommandName = id;      // ← el id de la fila viaja en CommandName
+        }
+    }
+}</code></pre>
+    <p>El truco central: <b>el id de la fila se guarda en <code>CommandName</code></b>. Es un uso
+    poco ortodoxo de la propiedad, pero es la convención del proyecto y está en todos lados.
+    Si necesitas un segundo dato, <code>CommandArgument</code> está libre.</p>
+    <p>Los dos <code>if</code> anidados no son paranoia: sin el primero, el código corre también
+    sobre el encabezado, el pie y el paginador, y revienta.</p>
+  </div>
+
+  <div class="pane" id="e3">
+<pre><code class="language-csharp">protected void lnkDescarga_Command(object sender, CommandEventArgs e)
+{
+    Archivo item = new Archivo();
+    item.arc_archivo = int.Parse(e.CommandName.ToString());   // el id que guardamos
+    item = controller.GetBinario(item);
+
+    HttpContext.Current.Response.Clear();
+    HttpContext.Current.Response.AddHeader("content-disposition",
+        "attachment; filename=" + item.arc_nombre_archivo);
+    HttpContext.Current.Response.BinaryWrite(item.abi_archivo);
+    HttpContext.Current.Response.End();
+}</code></pre>
+    <p>Firma siempre <code>(object sender, CommandEventArgs e)</code>. Lees
+    <code>e.CommandName</code>, conviertes, llamas al Controller, actúas.</p>
+  </div>
+
+  <div class="pane" id="e4">
+    <p>Es el camino que usa nuestro ejemplo <code>Usuario</code>. Solo necesita
+    <b><code>ItemDataBound</code></b>, porque un <code>HyperLink</code> no dispara postback:</p>
+<pre><code class="language-csharp">string id = item.GetDataKeyValue("usu_id").ToString();
+string query = Server.UrlEncode(
+    Tools.Crypto.Encrypt("IdUsuario=" + id + "&amp;ReadOnly=" + ReadOnly));
+
+HyperLink Editar = new HyperLink();
+Editar.ID = "lnkEditar" + id;          // aquí SÍ lleva el id: no hay FindControl después
+Editar.CssClass = "icono_Editar";
+Editar.NavigateUrl = "javascript:void(0)";
+Editar.Attributes.Add("onclick", "abrirUsuario('" + query + "')");
+
+item["usu_id"].Controls.Add(Editar);</code></pre>
+    <div class="box"><span class="lbl">Por qué se cifra el querystring</span>
+    Si la URL fuera <code>Usuario.aspx?IdUsuario=5</code>, cualquiera cambia el 5 por un 1 y abre
+    la ficha de otra persona.<br><br>
+    <b>Pregunta para el equipo:</b> ¿esto reemplaza validar permisos en el servidor?
+    <b>No.</b> Es una capa más. Por eso <code>Usuario.aspx.cs</code> igual vuelve a chequear
+    <code>Crear_Editar</code> después de descifrar. <b>Defensa en profundidad.</b></div>
+  </div>
+</section>
+
+<!-- ============ FLUJO ============ -->
+<section id="flujo">
+  <h2><span class="n">14</span>Flujo end-to-end</h2>
+  <p class="sub">Guía completa: <code>01-Guias/GUIA_05_FLUJO_END_TO_END.md</code> — hacer esta sesión con los archivos abiertos</p>
+
+  <div class="tabs">
+    <button class="on" data-t="f1">A · Abrir el listado</button>
+    <button data-t="f2">B · Guardar un usuario</button>
+  </div>
+
+  <div class="pane on" id="f1">
+<pre><code class="language-plaintext">Usuarios.aspx.cs      SecurityManagerVer → si no hay permiso, TERMINA AQUÍ
+                      pasa ids de función del menú al UserControl
+      ↓
+Usuarios.ascx.cs      arma columnas (!IsPostBack)
+                      CargarGrid(): la SEGURIDAD se convierte en FILTRO
+                          if (!SecurityManager(verTodoPaises))
+                              filtro.filtro_paises = Session.UsuarioIdPaises();
+      ↓
+UsuarioController     Token.TokenSeguridad()
+                      parámetros SOLO si vienen informados
+      ↓
+SEL_USUARIO           WHERE 1=1 + IFs → EXEC(@SELECT + @FROM + @WHERE)
+      ↓
+Tabla USUARIO
+      ↑
+DataReader → List&lt;Usuario&gt; → Grid.DataSource → ItemDataBound → HTML</code></pre>
+    <div class="box g"><span class="lbl">Idea a subrayar en el paso 3</span>
+    <b>La seguridad se aplica en la consulta, no ocultando filas después.</b> Si no puedes ver
+    todos los países, el CSV de tus países entra como filtro y el SP nunca te devuelve
+    usuarios de otros países.</div>
+    <div class="box"><span class="lbl">Y en el paso 7</span>
+    <code>per_nombre</code> no es columna de <code>USUARIO</code>: viene del
+    <code>INNER JOIN PERFIL</code>. Existe en el Model solo para que el grid muestre
+    "Administrador" en vez de "3".</div>
+  </div>
+
+  <div class="pane" id="f2">
+<pre><code class="language-plaintext">Click "Nuevo" → JS abrirUsuario(0) → Usuario.aspx?query=&lt;cifrado&gt;
+      ↓
+Usuario.aspx.cs       Tools.Crypto.Decrypt → "IdUsuario=5&amp;ReadOnly=False"
+                      SEGUNDA validación de permiso (defensa en profundidad)
+      ↓
+Usuario.ascx.cs       propaga ReadOnly / IdUsuario a los tabs  (~50 líneas, intencional)
+      ↓
+Identidad.ascx.cs     LoadControls (combos) + CargarDatos + Bloqueo
+      ↓
+[el usuario llena]    validaControl corre en el NAVEGADOR
+      ↓
+btnGuardar_Click      1. armar Model desde los controles
+                      2. validaciones de negocio
+                      3. IdUsuario &gt; 0 ? Update : Insert
+                      4. IdUsuario = respuesta.codigo   ← ¡CLAVE!
+      ↓
+UsuarioController     INS_USUARIO + @ID OUTPUT + Session.UsuarioId()
+      ↓
+INS_USUARIO           validar → TRANSACTION → SCOPE_IDENTITY → COMMIT
+      ↓
+Tabla USUARIO
+      ↑
+Respuesta → ClientAlert(detalle, "ok", true)</code></pre>
+    <div class="box e"><span class="lbl">El paso 4 merece énfasis</span>
+    Tras un alta exitosa se guarda el id devuelto en <code>IdUsuario</code>. Si el usuario vuelve
+    a hacer click en Guardar, ahora <code>IdUsuario &gt; 0</code> y se ejecuta un <b>Update</b>.
+    <b>Sin esta línea, cada click crea un registro nuevo.</b></div>
+    <h4>El camino del error</h4>
+<pre><code class="language-plaintext">RAISERROR en SQL
+      ↓ SqlException
+catch → respuesta.detalle = ex.Message; respuesta.error = true;
+      ↓
+Tools.tools.ClientAlert(respuesta.detalle, "alerta")
+      ↓
+SweetAlert: "1.- Ya existe un usuario con el email juan@x.cl."</code></pre>
+    <p><b>Un mensaje escrito en SQL termina, sin intermediarios, frente al usuario final.</b></p>
+  </div>
+</section>
+
+<!-- ============ REGLAS ============ -->
+<section id="reglas">
+  <h2><span class="n">15</span>Las 10 reglas del patrón</h2>
+  <ol style="font-size:15px">
+    <li><b>No es ASP.NET MVC.</b> Es WebForms; "Controller" = capa de acceso a datos.</li>
+    <li><b>Cada capa habla solo con la de abajo.</b> <code>.aspx</code> → <code>.ascx</code> → Controller → SP → tabla.</li>
+    <li><b>El Model es solo datos.</b> POCO <code>[Serializable]</code>, propiedades <code>&lt;pfx&gt;_&lt;columna&gt;</code> en minúsculas. Los <code>filtro_*</code> no existen en la BD.</li>
+    <li><b>Cero SQL en C#.</b> Todo pasa por <code>SEL_</code> / <code>INS_</code> / <code>UPD_</code> / <code>DEL_</code>.</li>
+    <li><b><code>Token.TokenSeguridad()</code></b> abre todo método del Controller.</li>
+    <li><b>Los parámetros de filtro se agregan solo si vienen informados.</b> Es el contrato con el <code>WHERE 1=1</code>.</li>
+    <li><b>Se carga en <code>Page_PreRender</code>, se guarda en el evento del botón.</b></li>
+    <li><b>Las propiedades públicas de un UserControl van en <code>ViewState</code></b>, nunca en campos privados.</li>
+    <li><b>Toda escritura devuelve <code>Respuesta</code></b> (<code>codigo</code>, <code>detalle</code>, <code>error</code>), y ese <code>detalle</code> llega al usuario final.</li>
+    <li><b>UTF-8 con BOM y CRLF</b> en todos los <code>.cs</code>, <code>.ascx</code>, <code>.aspx</code> y <code>.sql</code>.</li>
+  </ol>
+
+  <div class="box w">
+    <span class="lbl">El punto 10 no es cosmético</span>
+    Si el archivo se guarda en UTF-8 <b>sin</b> BOM, las tildes y las ñ se rompen al compilar en el servidor.
+  </div>
+</section>
+
+<!-- ============ ERRORES ============ -->
+<section id="errores">
+  <h2><span class="n">16</span>Diagnóstico de errores</h2>
+  <p class="sub">Escribe un síntoma para filtrar la tabla</p>
+  <input type="text" id="bug" placeholder="grid, combo, guardar, botón, update, columna...">
+  <table id="bugs">
+    <thead><tr><th>Síntoma</th><th>Causa</th><th>Solución</th></tr></thead>
+    <tbody>
+    <tr><td>Columnas duplicadas en el grid</td><td>Falta <code>if (!IsPostBack)</code> al agregar columnas</td><td>Envolver en <code>!IsPostBack</code></td></tr>
+    <tr><td><code>GetDataKeyValue</code> lanza excepción</td><td>Columna ausente en <code>DataKeyNames</code></td><td>Agregarla al <code>MasterTableView</code></td></tr>
+    <tr><td>El combo pierde la selección al guardar</td><td>Falta <code>if (!IsPostBack)</code> en <code>LoadControls</code></td><td>Agregarlo</td></tr>
+    <tr><td>Desaparece el item "Seleccione..."</td><td>Falta <code>AppendDataBoundItems = true</code></td><td>Agregarlo antes del <code>DataBind()</code></td></tr>
+    <tr><td>El botón Guardar no hace nada</td><td>Falta <code>RegisterPostBackControl(btnGuardar)</code></td><td>Agregarlo en <code>Page_PreRender</code></td></tr>
+    <tr><td>Guarda el formulario sin validar</td><td><code>ValidationGroup</code> distinto entre validators y botón</td><td>Unificar el nombre</td></tr>
+    <tr><td>El botón de la fila no dispara su evento</td><td>Se creó en <code>ItemDataBound</code></td><td>Crearlo en <code>ItemCreated</code></td></tr>
+    <tr><td>El handler se ejecuta dos veces</td><td><code>Command +=</code> suscrito en dos eventos</td><td>Suscribir solo en <code>ItemCreated</code></td></tr>
+    <tr><td><code>NullReferenceException</code> en <code>FindControl</code></td><td>El ID no coincide o la columna no existe</td><td>Revisar ID fijo y <code>AddTemplateColumn</code></td></tr>
+    <tr><td><code>IndexOutOfRange</code> en <code>GetItems(CommandItem)</code></td><td>Se llamó antes de <code>DataBind()</code></td><td>Mover después del <code>DataBind()</code></td></tr>
+    <tr><td>Elimino un registro y sigue en pantalla</td><td>Los datos se cargan en <code>Page_Load</code></td><td>Mover la carga a <code>Page_PreRender</code></td></tr>
+    <tr><td>"Procedure expects parameter @X"</td><td>Falta <code>= NULL</code> en la firma del SP</td><td>Agregarlo a todo filtro</td></tr>
+    <tr><td>El filtro no filtra nada</td><td>Falta el <code>IF (@X IS NOT NULL)</code></td><td>Envolver el <code>AND</code> en su <code>IF</code></td></tr>
+    <tr><td>Sintaxis incorrecta en la query dinámica</td><td>Comillas mal escapadas</td><td>Descomentar el <code>--print</code> y leer la query</td></tr>
+    <tr><td><code>@ID</code> vuelve en 0 tras el insert</td><td>Falta <code>Direction = Output</code> en C#</td><td>Agregarlo en el <code>AddWithValue</code></td></tr>
+    <tr><td>El update borra campos que no toqué</td><td>Se asignó <code>@PARAM</code> directo</td><td>Usar <code>ISNULL(@PARAM, columna)</code></td></tr>
+    <tr><td>"Ya existe" al editar sin cambiar nada</td><td>Falta <code>AND ID &lt;&gt; @ID</code></td><td>Excluir el propio registro</td></tr>
+    <tr><td>Id equivocado después de agregar un trigger</td><td>Se usó <code>@@IDENTITY</code></td><td>Usar <code>SCOPE_IDENTITY()</code></td></tr>
+    <tr><td>Se crea un registro nuevo en cada Guardar</td><td>Falta <code>IdUsuario = respuesta.codigo</code></td><td>Guardar el id devuelto tras el alta</td></tr>
+    <tr><td>Las tildes y ñ se rompen al compilar</td><td>Archivo guardado sin BOM</td><td>Guardar en UTF-8 <b>con</b> BOM</td></tr>
+    <tr><td>La contraseña se ve en pantalla</td><td>Se usó <code>ReadOnly</code> en un <code>TextBox2</code> Password</td><td>Usar <code>Enabled = false</code></td></tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ============ EJERCICIO ============ -->
+<section id="ejercicio">
+  <h2><span class="n">17</span>Ejercicio final</h2>
+
+  <p>En parejas, implementar la entidad <b><code>Perfil</code></b> completa, sin mirar el ejemplo
+  salvo para dudas puntuales. Es la entidad más simple del sistema y toca las 4 capas:
+  si sale sin ayuda, el patrón quedó.</p>
+
+  <div class="files">
+    <div class="file"><div class="p">Perfil.cs</div><div class="r"><code>per_id</code>, <code>per_nombre</code>, <code>per_descripcion</code>, <code>per_habilitado</code>, auditoría, <code>filtro</code>, <code>filtro_habilitado</code></div></div>
+    <div class="file"><div class="p">PerfilController.cs</div><div class="r"><code>GetPerfiles</code>, <code>GetPerfil</code>, <code>InsertPerfil</code>, <code>UpdatePerfil</code>, <code>DeshabilitarPerfil</code></div></div>
+    <div class="file"><div class="p">BD/00..04_*.sql</div><div class="r">Tabla + los 4 SP con encabezado estándar</div></div>
+    <div class="file"><div class="p">Controls/Perfil/*.ascx(.cs)</div><div class="r">Grid + formulario + tab Identidad</div></div>
+    <div class="file"><div class="p">Perfiles/*.aspx(.cs)</div><div class="r">Página listado + página formulario</div></div>
+  </div>
+
+  <h3>Criterios de revisión</h3>
+  <table>
+    <tr><th>#</th><th>Criterio</th></tr>
+    <tr><td>1</td><td>El Model no tiene métodos</td></tr>
+    <tr><td>2</td><td>Las propiedades siguen <code>per_&lt;columna&gt;</code> en minúsculas</td></tr>
+    <tr><td>3</td><td>Todo método del Controller abre con <code>Token.TokenSeguridad()</code></td></tr>
+    <tr><td>4</td><td>Los <code>Get</code> devuelven <code>List&lt;T&gt;</code>/<code>T</code>; las escrituras devuelven <code>Respuesta</code></td></tr>
+    <tr><td>5</td><td>Los parámetros de filtro se agregan condicionalmente</td></tr>
+    <tr><td>6</td><td>Los SP tienen encabezado estándar y <code>= NULL</code> en los filtros</td></tr>
+    <tr><td>7</td><td><code>INS_</code> usa <code>@ID OUTPUT</code> + <code>SCOPE_IDENTITY()</code></td></tr>
+    <tr><td>8</td><td><code>UPD_</code> usa <code>ISNULL(@PARAM, columna)</code></td></tr>
+    <tr><td>9</td><td>Las columnas del grid se agregan dentro de <code>!IsPostBack</code></td></tr>
+    <tr><td>10</td><td>La columna clave está en <code>DataKeyNames</code></td></tr>
+    <tr><td>11</td><td>El <code>ValidationGroup</code> coincide entre validators y botón</td></tr>
+    <tr><td>12</td><td>Hay un único método <code>Bloqueo()</code></td></tr>
+    <tr><td>13</td><td>Todos los archivos en UTF-8 con BOM</td></tr>
+  </table>
+
+  <div class="box g" style="margin-top:32px">
+    <span class="lbl">Siguiente paso</span>
+    Con el patrón interiorizado, arrancamos el proyecto real <b>SIGMA</b> en <code>C:\Capstone</code>.
+  </div>
+</section>
+
+</main>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+<script>
+// --- syntax highlight ---
+if (window.hljs) { hljs.highlightAll(); }
+
+// --- tabs ---
+document.querySelectorAll('.tabs').forEach(function(g){
+  g.addEventListener('click', function(ev){
+    var b = ev.target.closest('button'); if(!b) return;
+    var panes = [];
+    g.querySelectorAll('button').forEach(function(x){
+      x.classList.remove('on');
+      panes.push(document.getElementById(x.dataset.t));
+    });
+    b.classList.add('on');
+    panes.forEach(function(p){ if(p) p.classList.remove('on'); });
+    var target = document.getElementById(b.dataset.t);
+    if(target) target.classList.add('on');
+  });
+});
+
+// --- scrollspy ---
+var links = document.querySelectorAll('#sidebar a');
+var secs  = document.querySelectorAll('main section');
+function spy(){
+  var pos = window.scrollY + 140, cur = secs[0] ? secs[0].id : null;
+  secs.forEach(function(s){ if(s.offsetTop <= pos) cur = s.id; });
+  links.forEach(function(a){
+    a.classList.toggle('on', a.getAttribute('href') === '#' + cur);
+  });
+}
+window.addEventListener('scroll', spy); spy();
+
+// --- filtro de la tabla de errores ---
+var bug = document.getElementById('bug');
+if (bug) {
+  bug.addEventListener('input', function(){
+    var q = this.value.toLowerCase().trim();
+    document.querySelectorAll('#bugs tbody tr').forEach(function(tr){
+      tr.style.display = (!q || tr.textContent.toLowerCase().indexOf(q) > -1) ? '' : 'none';
+    });
+  });
+}
+</script>
+
+</body>
+</html>

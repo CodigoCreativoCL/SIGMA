@@ -1,0 +1,255 @@
+﻿<%@ master language="C#" autoeventwireup="true" inherits="Master_Publico, App_Web_mtenseij" %>
+
+<!DOCTYPE html>
+
+<html>
+<head runat="server">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <!-- Required meta tags -->
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <title>SecurityGes</title>
+    <link href="../Imagen/fav.ico" rel="shortcut icon" type="image/vnd.microsoft.icon" />
+
+    <!-- Bootstrap Css -->
+    <link href="../Css/Adminto/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- Icons Css -->
+    <link href="../Css/Adminto/assets/css/icons.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- App Css-->
+    <link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />
+
+    <!-- AjaxProgress CSS -->
+    <link href="../Css/AjaxProgress/cssUpdateProgress.css" rel="stylesheet" />
+    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=1" rel="stylesheet" />
+
+    <!-- Defualt CSS -->
+    <link href="../Css/Default/Default.css" rel="stylesheet" />
+
+    <!-- LookAndFeel CSS -->
+    <link href="../Css/LookAndFeel/Default.css" rel="stylesheet" />
+
+    <!-- Telerik CSS -->
+    <link href="../Css/UI/Telerik/Bootstrap/Grid.css" rel="stylesheet" />
+    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css" rel="stylesheet" />
+
+    <!-- WebControls CSS -->
+    <link href="../Css/UI/WebControls/calendar/CSS/Classic.css" rel="stylesheet" />
+    <link href="../Css/UI/WebControls/Button.css" rel="stylesheet" />
+    <link href="../Css/UI/WebControls/TextBox.css" rel="stylesheet" />
+
+    <!-- WebControls CSS -->
+    <link href="../Css/SweetAlert/sweetalert.css" rel="stylesheet" />
+
+    <!-- SweetAlert CSS -->
+    <link href="../Css/SweetAlert/sweetalert.css" rel="stylesheet" />
+    <link href="../Css/SweetAlert/sweetalert2.min.css" rel="stylesheet" />
+
+    <style>
+        .titulo {
+            padding-top: 20px;
+            padding-left: 30% !important;
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .contentenBody {
+            margin-top: 70px !important;
+        }
+
+        @media (max-width: 763px) {
+            .logo2 {
+                padding-left: 2px !important;
+                width: 30% !important;
+                display: inline !important;
+            }
+
+            .titulo {
+                width: 70% !important;
+                padding-top: 20px;
+                padding-left: 1% !important;
+                text-align: center;
+            }
+        }
+    </style>
+
+    <asp:ContentPlaceHolder ID="cphHeder" runat="server">
+    </asp:ContentPlaceHolder>
+</head>
+<body style="background-color: white;">
+    <form id="form1" runat="server" style="height: 100%; margin: 0px">
+        <div>
+            <!--Inicio ScriptManager-->
+            <div>
+                <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
+                    EnableScriptGlobalization="true" EnableScriptLocalization="true">
+                    <Scripts>
+                        <asp:ScriptReference Path="~/Js/jquery-1.9.1.js" />
+                        <asp:ScriptReference Path="~/Js/Library.js" />
+                        <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
+                        <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
+                        <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />
+                        <asp:ScriptReference Path="~/Css/UI/WebControls/calendar/PopCalendarFunctionsAjaxNet.js" />
+                        <asp:ScriptReference Path="~/Css/SweetAlert/sweetalert2.min.js" />
+                    </Scripts>
+                </asp:ScriptManager>
+                <script type="text/javascript" language="javascript">                
+                    Sys.WebForms.PageRequestManager.getInstance().add_endRequest(EndRequestHandler);
+                    function EndRequestHandler(sender, args) {
+                        if (args.get_error() != undefined) {
+                            var errorMessage;
+                            if (args.get_response().get_statusCode() == '500') {
+                                //args.set_errorHandled(true);
+                                //alert(args.get_error());          
+                            }
+                            else {
+                                // not my error so let the default behavior happen       
+                            }
+                        }
+                    }
+                </script>
+
+                <!--Inicio AjaxProgress-->
+                <asp:Panel ID="panelUpdateProgress" runat="server" CssClass="updateProgress">
+                    <asp:UpdateProgress ID="UpdateProg1" DisplayAfter="0" runat="server">
+                        <ProgressTemplate>
+                            <div class="up-card">
+                                <div class="up-spinner-wrap">
+                                    <div class="up-ring"></div>
+                                    <div class="up-svg-box">
+                                        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+                                            <defs>
+                                                <filter id="upGlow">
+                                                    <feGaussianBlur result="blur" stdDeviation="2" />
+                                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                                                </filter>
+                                            </defs>
+                                            <g transform="translate(200, 200)">
+                                                <circle cx="0" cy="0" fill="#004a80" r="12">
+                                                    <animate attributeName="r" dur="3s" repeatCount="indefinite" values="12;14;12" />
+                                                </circle>
+                                                <g opacity="0.6" stroke="#cfdaf2" stroke-width="1.5">
+                                                    <line x1="0" y1="0" x2="60" y2="-40">
+                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite" />
+                                                    </line>
+                                                    <line x1="0" y1="0" x2="-50" y2="-70">
+                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="25s" repeatCount="indefinite" />
+                                                    </line>
+                                                    <line x1="0" y1="0" x2="40" y2="80">
+                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="30s" repeatCount="indefinite" />
+                                                    </line>
+                                                    <line x1="0" y1="0" x2="-80" y2="30">
+                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="22s" repeatCount="indefinite" />
+                                                    </line>
+                                                </g>
+                                                <g>
+                                                    <circle fill="#4a90e2" filter="url(#upGlow)" r="8">
+                                                        <animateMotion dur="8s" path="M -100,0 A 100,100 0 1 1 100,0 A 100,100 0 1 1 -100,0" repeatCount="indefinite" />
+                                                    </circle>
+                                                    <circle fill="#004a80" opacity="0.8" r="6">
+                                                        <animateMotion dur="12s" path="M 0,-130 A 130,130 0 1 0 0,130 A 130,130 0 1 0 0,-130" repeatCount="indefinite" />
+                                                    </circle>
+                                                    <circle fill="#7baed4" r="10">
+                                                        <animateMotion dur="15s" path="M 150,0 A 150,150 0 1 1 -150,0 A 150,150 0 1 1 150,0" repeatCount="indefinite" />
+                                                    </circle>
+                                                </g>
+                                                <path d="M -100,0 L 0,-130 L 150,0 L 0,130 L -100,0 Z" fill="none" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
+                                                <path d="M 0,0 L -100,0 M 0,0 L 0,-130 M 0,0 L 150,0 M 0,0 L 0,130" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
+                                                <circle cx="0" cy="0" fill="none" r="0" stroke="#004a80" stroke-width="2">
+                                                    <animate attributeName="r" dur="4s" from="0" to="180" repeatCount="indefinite" />
+                                                    <animate attributeName="opacity" dur="4s" from="0.4" to="0" repeatCount="indefinite" />
+                                                </circle>
+                                            </g>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="up-text-area">
+                                    <span class="up-label-caps">SINCRONIZANDO DATOS</span>
+                                    <div class="up-timer">
+                                        Tiempo de Carga:
+                                        <span class="up-bold">
+                                            <label id="lblModalMinutos">0</label>
+                                            Minutos</span>
+                                        <span class="up-bold">
+                                            <label id="lblModalSegundos">0</label>
+                                            Segundos</span>
+                                    </div>
+                                </div>
+                                <div class="up-progress-track">
+                                    <div class="up-progress-fill"></div>
+                                </div>
+                            </div>
+                        </ProgressTemplate>
+                    </asp:UpdateProgress>
+                </asp:Panel>
+                <ajaxToolkit:ModalPopupExtender ID="ModalProgress" runat="server" TargetControlID="panelUpdateProgress"
+                    BackgroundCssClass="modalBackground" PopupControlID="panelUpdateProgress" />
+                <!--Fin AjaxProgress-->
+            </div>
+            <!--Fin ScriptManager-->
+
+            <!--Inicio Encabezado-->
+            <nav class="navbar navbar-expand-lg fixed-top navbar-custom sticky sticky-dark">
+                <div class="container-fluid">
+                    <div class="row col-lg-12 col-md-12 col-xs-12 ">
+                        <div class="col-lg-2 col-md-2 col-3 logo2">
+                            <asp:Image ID="imgLogo" runat="server" ImageUrl="~/Imagen/LogoGestionProyectos.png?V1" Height="60" AlternateText="" />
+                        </div>
+                        <div class="col-lg-10 col-md-10 col-9 titulo">
+                            <asp:ContentPlaceHolder ID="cphTitulo" runat="server">
+                            </asp:ContentPlaceHolder>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+            <!--Fin Encabezado-->
+
+            <!--Inicio Body-->
+            <div class="container-fluid contentenBody">
+                <div class="row card-box">
+                    <div class="table-responsive">
+                        <!--Incio Filtros -->
+                        <asp:UpdatePanel runat="server" ID="UpdatePanel1" UpdateMode="Conditional">
+                            <ContentTemplate>
+                                <asp:ContentPlaceHolder ID="cphFiltro" runat="server">
+                                </asp:ContentPlaceHolder>
+                            </ContentTemplate>
+                        </asp:UpdatePanel>
+                        <!--Fin Filtros -->
+                        <!--Incio Body -->
+                        <asp:UpdatePanel runat="server" ID="UpdatePanel2" UpdateMode="Conditional">
+                            <ContentTemplate>
+                                <asp:ContentPlaceHolder ID="cphBody" runat="server">
+                                </asp:ContentPlaceHolder>
+                            </ContentTemplate>
+                        </asp:UpdatePanel>
+                        <!--Fin Body -->
+                    </div>
+                </div>
+            </div>
+            <!--Fin Body-->
+
+            <!--Inicio Script-->
+            <div>
+                <script type="text/javascript" language="javascript">
+                    var ModalProgress = 'ctl00_ModalProgress';
+                </script>
+
+                <!-- Vendor js -->
+                <script src='<%=ResolveUrl("~/Css/Adminto/assets/js/vendor.min.js") %>'></script>
+
+                <!-- knob plugin -->
+                <script src='<%=ResolveUrl("~/Css/Adminto/assets/libs/jquery-knob/jquery.knob.min.js") %>'></script>
+
+                <!-- App js -->
+                <script src='<%=ResolveUrl("~/Css/Adminto/assets/js/app.min.js") %>'></script>
+
+                <asp:ContentPlaceHolder ID="cphScript" runat="server">
+                </asp:ContentPlaceHolder>
+            </div>
+            <!--Fin Script-->
+        </div>
+    </form>
+</body>
+</html>

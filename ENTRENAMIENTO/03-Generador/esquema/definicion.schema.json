@@ -1,0 +1,134 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Definicion de mantenedor (patron WebForms + MVC propio)",
+  "description": "Agrega \"$schema\": \"../esquema/definicion.schema.json\" en tu JSON para tener autocompletado y validacion en VS Code / Visual Studio.",
+  "type": "object",
+  "required": ["entidad", "columnas"],
+  "additionalProperties": true,
+
+  "properties": {
+    "proyecto": {
+      "type": "object",
+      "description": "Configuracion comun. Se puede extraer a un proyecto.json y pasarlo con --proyecto.",
+      "additionalProperties": false,
+      "properties": {
+        "baseDatos": { "type": "string", "default": "SIGMA", "description": "Nombre de la BD para el USE [..] de los scripts." },
+        "namespace": { "type": "string", "default": "Sigma", "description": "Namespace raiz: genera <ns>.Model y <ns>.Controller." },
+        "autor": { "type": "string", "description": "Va en el encabezado AUTHOR de cada SP." },
+        "master": { "type": "string", "default": "~/Master/Default.master" },
+        "rutaAppCode": { "type": "string", "default": "App_Code/MVC/Sigma" },
+        "rutaView": { "type": "string", "default": "View" },
+        "rutaBD": { "type": "string", "default": "BD" },
+        "rutaFiltroAvanzado": { "type": "string", "default": "~/View/Comun/Controls/FiltroAvanzado.ascx" },
+        "salida": { "type": "string", "description": "Carpeta de salida por defecto." },
+        "usingsExtra": { "type": "array", "items": { "type": "string" } },
+        "controles": {
+          "type": "object",
+          "description": "Tags de los controles. Cambialos si tu proyecto usa otros wrappers.",
+          "additionalProperties": { "type": "string" },
+          "properties": {
+            "texto": { "type": "string", "default": "WebControls:TextBox2" },
+            "textarea": { "type": "string", "default": "WebControls:TextArea2" },
+            "numero": { "type": "string", "default": "rad:RadNumericBox2" },
+            "combo": { "type": "string", "default": "rad:RadComboBox2" },
+            "check": { "type": "string", "default": "WebControls:CheckBox2" },
+            "fecha": { "type": "string", "default": "rad:RadDatePicker" },
+            "password": { "type": "string", "default": "WebControls:TextBox2" },
+            "boton": { "type": "string", "default": "WebControls:PushButton" },
+            "grid": { "type": "string", "default": "rad:RadGrid2" },
+            "tabstrip": { "type": "string", "default": "rad:RadTabStrip2" },
+            "multipage": { "type": "string", "default": "rad:RadMultiPage" },
+            "pageview": { "type": "string", "default": "rad:RadPageView" },
+            "tab": { "type": "string", "default": "rad:RadTab" }
+          }
+        }
+      }
+    },
+
+    "entidad": {
+      "type": "object",
+      "required": ["tabla"],
+      "additionalProperties": false,
+      "properties": {
+        "tabla": { "type": "string", "description": "Nombre de la tabla en MAYUSCULAS. Ej: PRODUCTO." },
+        "prefijo": { "type": "string", "maxLength": 5, "description": "Prefijo de columnas. Por defecto las 3 primeras letras de la tabla." },
+        "singular": { "type": "string", "description": "Nombre en codigo. Ej: Producto -> clase Model y ficha." },
+        "plural": { "type": "string", "description": "Ej: Productos -> listado y metodo GetProductos." },
+        "genero": { "type": "string", "enum": ["m", "f"], "description": "Concordancia de los mensajes: creado / creada. Se infiere si no se pone." },
+        "modulo": { "type": "string", "description": "Carpeta bajo View/. Ej: Inventario." },
+        "subModulo": { "type": "string", "description": "Carpeta de las paginas .aspx. Ej: Productos." },
+        "menu": { "type": "string", "default": "menu_1", "description": "Enum de SitioBase.Paginas usado para los permisos." },
+        "tituloListado": { "type": "string" },
+        "tituloFormulario": { "type": "string" },
+        "tab": { "type": "string", "default": "Identidad", "description": "Nombre del primer (y unico) tab generado." },
+        "tipo": { "type": "string", "enum": ["maestro", "detalle"], "default": "maestro", "description": "maestro -> baja logica (Deshabilitar). detalle -> DELETE fisico (Eliminar)." },
+        "auditoria": { "type": "boolean", "default": true, "description": "Agrega USUARIO_CREACION / FECHA_CREACION / USUARIO_ACT / FECHA_ACT." },
+        "habilitado": { "type": "boolean", "default": true, "description": "Agrega la columna HABILITADO y el filtro correspondiente." },
+        "seguridadPorPais": { "type": "boolean", "default": false, "description": "Agrega @PAISES al SEL y el bloque SeguridadPagina al listado." },
+        "columnaPais": { "type": "string", "default": "PAIS", "description": "Columna (sin prefijo) usada por seguridadPorPais." },
+        "orden": { "type": "string", "description": "ORDER BY del SEL. Por defecto la primera columna de busqueda." }
+      }
+    },
+
+    "columnas": {
+      "type": "array",
+      "minItems": 1,
+      "description": "NO declares ID, HABILITADO ni las columnas de auditoria: se agregan solas.",
+      "items": {
+        "type": "object",
+        "required": ["nombre"],
+        "additionalProperties": false,
+        "properties": {
+          "nombre": { "type": "string", "description": "Nombre SIN el prefijo. NOMBRE -> PRO_NOMBRE." },
+          "tipo": { "type": "string", "default": "NVARCHAR(200)", "description": "Tipo SQL con longitud. Ej: NVARCHAR(200), INT, DECIMAL(18,2), BIT, DATETIME." },
+          "requerido": { "type": "boolean", "default": false, "description": "true -> NOT NULL y parametro obligatorio en el INS." },
+          "etiqueta": { "type": "string", "description": "Texto del <label> en el formulario." },
+          "control": {
+            "type": "string",
+            "enum": ["texto", "textarea", "numero", "combo", "check", "fecha", "password", "ninguno"],
+            "description": "Se infiere del tipo si no se declara. 'combo' exige un bloque fk."
+          },
+          "controlId": { "type": "string", "description": "ID del control. Por defecto txt/cbo/chk/dtp + PascalCase." },
+          "grid": { "type": "boolean", "description": "Se muestra en el listado. Por defecto true salvo textarea/password." },
+          "gridAncho": { "type": "string", "description": "Ancho de la columna, ej. \"20%\". Si no se pone, se reparte automaticamente." },
+          "gridTitulo": { "type": "string", "description": "Encabezado de la columna. Por defecto la etiqueta en MAYUSCULAS." },
+          "busqueda": { "type": "boolean", "description": "Entra en el LIKE del @FILTRO. Por defecto true para textos cortos." },
+          "filtro": { "type": "boolean", "description": "Genera un parametro de filtro propio y un combo en la barra. Por defecto true para las FK." },
+          "unico": { "type": "boolean", "default": false, "description": "Genera indice UX_ y validacion RAISERROR en INS y UPD." },
+          "indice": { "type": "boolean", "description": "Genera indice IX_. Por defecto true para las FK." },
+          "defecto": { "description": "Valor DEFAULT en la tabla. Ej: 1, 0, 'GETDATE()'." },
+          "upperCase": { "type": "boolean", "default": false },
+          "lowerCase": { "type": "boolean", "default": false },
+          "icono": { "type": "string", "description": "Clase FontAwesome dentro del input. Ej: fa-phone." },
+          "anchoForm": { "type": "string", "description": "Clases bootstrap del campo. Por defecto col-lg-4 col-md-6 col-xs-12." },
+          "formulario": { "type": "boolean", "default": true, "description": "Aparece en el formulario." },
+          "soloLectura": { "type": "boolean", "default": false },
+          "fk": {
+            "type": "object",
+            "required": ["tabla"],
+            "additionalProperties": false,
+            "description": "Convierte la columna en FK: JOIN en el SP, combo en el formulario y columna de texto en el grid.",
+            "properties": {
+              "tabla": { "type": "string", "description": "Tabla referenciada, en MAYUSCULAS." },
+              "prefijo": { "type": "string", "description": "Prefijo de esa tabla. Por defecto sus 3 primeras letras." },
+              "columna": { "type": "string", "description": "PK de la tabla referenciada. Por defecto <PREFIJO>_ID." },
+              "columnaTexto": { "type": "string", "description": "Columna que se muestra. Por defecto <PREFIJO>_NOMBRE." },
+              "modelo": { "type": "string", "description": "Clase Model de esa tabla." },
+              "controller": { "type": "string", "description": "Clase Controller de esa tabla." },
+              "metodoLista": { "type": "string", "description": "Metodo que devuelve la lista para el combo." },
+              "propValor": { "type": "string", "description": "DataValueField del combo (propiedad del Model referenciado)." },
+              "propTexto": { "type": "string", "description": "DataTextField del combo (propiedad del Model referenciado)." },
+              "propDenormalizada": { "type": "string", "description": "Propiedad que se agrega a ESTE Model con el texto del JOIN. Por defecto columnaTexto en minusculas." },
+              "filtroHabilitado": {
+                "type": "string",
+                "enum": ["bool", "string", "none"],
+                "default": "bool",
+                "description": "Como se pide 'solo habilitados' al Controller referenciado."
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
