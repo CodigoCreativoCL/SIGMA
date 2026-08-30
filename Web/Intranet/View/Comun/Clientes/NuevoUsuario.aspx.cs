@@ -56,7 +56,7 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
         if (!IsPostBack)
         {
             //Recupero el query string
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -105,11 +105,12 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
                         PerfilController perfilController = new PerfilController();
                         perfil.filtro_habilitado = "1";
 
-                        //if (TipoPerfil == 2)
-                        //    perfil.tipo = "2";
-                        //else
-                        //    perfil.Perfiles = SitioBase.SitioBase.Parametros("Asignar_Perfiles");
-                        perfil.Perfiles = Perfiles;
+                        /* Este formulario crea usuarios DEL CLIENTE, asi que
+                           solo ofrece perfiles de tipo Cliente. El filtro
+                           estaba comentado y la lista salia con la whitelist
+                           de la propiedad Perfiles, que arrastraba perfiles
+                           de sistema. */
+                        perfil.tipo = "2";
                         ctrl.EmptyMessage = "Seleccione";
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
                         ctrl.DataValueField = "per_id";
@@ -158,7 +159,22 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
             lblID.Text = Id.ToString();
             textLogin.Text = clienteUsuario.usu_login;
             txtIdentificador.Text = clienteUsuario.usu_identificador;
-            textPassword.Text = clienteUsuario.usu_password;
+            /* La contrasena NO se arrastra a la ficha.
+
+               Antes se cargaba usu_password en el campo y volvia tal cual al
+               guardar. Con las claves hasheadas eso no puede funcionar: lo
+               guardado ya no es la contrasena sino su hash, y devolverlo
+               significaria volver a hashear el hash. De hecho asi se rompio
+               la cuenta de una persona: le pusieron "1", se guardo en claro,
+               y despues no entraba porque el login compara contra el hash.
+
+               Vacio significa "no la cambies"; con algo escrito, "cambiala a
+               esto". El validador de obligatorio se apaga al editar, porque
+               al editar ya no lo es. */
+            textPassword.Text = "";
+            litPassword.Text = "Contraseña";
+            litPasswordAyuda.Text = "<span class=\"sigma-modal-ayuda\">Déjala vacía para no cambiarla. Lo que escribas aquí reemplaza la actual.</span>";
+            CustomValidator4.Enabled = false;
             TextNombre.Text = clienteUsuario.usu_nombres;
             txtPaterno.Text = clienteUsuario.usu_apellido_paterno;
             TextMaterno.Text = clienteUsuario.usu_apellido_materno;
@@ -175,6 +191,9 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
             lblID.Text = "";
             textLogin.Text = "";
             textPassword.Text = "";
+            litPassword.Text = "Contraseña(*)";
+            litPasswordAyuda.Text = "";
+            CustomValidator4.Enabled = true;
             TextNombre.Text = "";
             txtPaterno.Text = "";
             TextMaterno.Text = "";
@@ -241,7 +260,8 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
 
                 clienteUsuario.usu_id = Id;
                 clienteUsuario.usu_login = textLogin.Text;
-                clienteUsuario.usu_password = textPassword.Text;
+                // Vacio = no cambiarla. El SP lo interpreta asi.
+                clienteUsuario.usu_password = textPassword.Text.Trim();
 
                 clienteUsuario.usu_identificador = txtIdentificador.Text;
                 clienteUsuario.usu_login = textLogin.Text;

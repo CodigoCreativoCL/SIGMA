@@ -38,6 +38,25 @@
     <link href="../Css/LookAndFeel/v2/06-General.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/v2/07-Topbar.css?vrs=1" rel="stylesheet" />
 
+    <!-- Material Design Icons 7.4.47, completo y fuera de Adminto.
+         El icons.min.css de Adminto declara la familia "Material Design
+         Icons" pero NO trae ni un glifo: solo los modificadores
+         (mdi-rotate-*, mdi-dark). Con eso, TODO icono mdi del sitio salia
+         vacio -no roto, vacio- y parecia un problema de permisos o de
+         datos. Este archivo trae los 7.448 y va DESPUES de icons.min.css
+         para que su @font-face gane. -->
+    <link href="../Css/LookAndFeel/mdi/css/materialdesignicons.min.css?vrs=7" rel="stylesheet" />
+
+    <!-- Marca SIGMA.
+         Este master es el de TODOS los modales y no cargaba ni los tokens
+         ni los componentes: cualquier clase de marca usada dentro de una
+         ficha no aplicaba, y las fichas se veian con el look heredado
+         mientras el resto del sitio ya estaba relookeado. Va DESPUES de v2
+         para que los tokens de marca ganen. -->
+    <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=3" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=1" rel="stylesheet" />
+
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=4" rel="stylesheet" />
     <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=1" rel="stylesheet" />
@@ -74,6 +93,10 @@
         </style>
     </asp:ContentPlaceHolder>
 </head>
+<%-- La clase sigma-modal-host era el gancho de la capa de compatibilidad
+     que adaptaba el markup heredado. Esa capa se retiro el 30-08-2026, con
+     las 20 fichas ya migradas a las clases .sigma-modal-* explicitas, asi
+     que el gancho no engancha nada y se va con ella. --%>
 <body style="background-color: white;">
     <form id="form1" runat="server" style="height: 100%; margin: 0px">
         <div>
@@ -82,8 +105,16 @@
                 <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
                     EnableScriptGlobalization="true" EnableScriptLocalization="true">
                     <Scripts>
-                        <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
+                        <%-- Mismo arreglo que en Default.master: jQuery UI es
+                             un plugin de jQuery y estaba declarado antes,
+                             asi que fallaba con "jQuery is not defined". Este
+                             master es el de todos los formularios modales, de
+                             modo que el error salia en cada uno. --%>
                         <asp:ScriptReference Path="~/Js/jquery-1.9.1.js" />
+                        <%-- $.browser, que jQuery 1.9 quito y jQuery UI 1.8 usa. Tiene
+                             que ir ENTRE los dos. --%>
+                        <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
+                        <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                         <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />

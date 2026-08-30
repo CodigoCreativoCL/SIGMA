@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/MiCuenta/MiCuenta.aspx" hash="fffffff3c3134113" filehash="4440ea75a854913b" flags="110000" assembly="App_Web_k5g1st0k" type="ASP.view_comun_micuenta_micuenta_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MiCuenta/MiCuenta.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MiCuenta/MiCuenta.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/MiCuenta/MiCuenta.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/MiCuenta/MiCuenta.aspx.cs" />
+    </filedeps>
+</preserve>

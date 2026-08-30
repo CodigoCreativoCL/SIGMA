@@ -224,7 +224,7 @@ public partial class View_Mantenedores_Accesos_Accesos : System.Web.UI.Page
     {
         try
         {
-            string[] query = Tools.Crypto.Decrypt(cadena).Split(';');
+            string[] query = SitioBase.Querystring.DescifrarCrudo(cadena).Split(';');
 
             int idPerfil = 0;
             int idFuncion = 0;

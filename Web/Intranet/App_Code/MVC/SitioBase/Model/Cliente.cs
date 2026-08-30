@@ -18,6 +18,25 @@ namespace SitioBase.Model
         public int cli_usuario_actualizacion { get; set; }
         public DateTime cli_fecha_actualizacion { get; set; }
         
+        // HU-010. Columnas agregadas en el bloque 25 de base de datos.
+        public string cli_nombre_fantasia { get; set; }
+        public int? cli_zona_horaria { get; set; }
+        public int? cli_idioma { get; set; }
+        public int? cli_moneda { get; set; }
+
+        // Nombres legibles que resuelve SEL_CLIENTE por JOIN
+        public string zho_nombre { get; set; }
+        public string idi_nombre { get; set; }
+        public string mon_nombre { get; set; }
+
+        /// <summary>
+        /// True solo cuando el formulario adjunto un logotipo nuevo.
+        ///
+        /// Sin esta bandera, guardar la ficha sin volver a subir la imagen
+        /// mandaba cli_logo en null y BORRABA el logo existente.
+        /// </summary>
+        public bool cambia_logo { get; set; }
+
         public string pai_nombre { get; set; }
         public string filtro { get; set; }
         public bool? filtro_habilitado { get; set; }

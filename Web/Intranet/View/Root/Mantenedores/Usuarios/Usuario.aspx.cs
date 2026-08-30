@@ -20,7 +20,7 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
         if (!IsPostBack)
         {
             //Recupero el query string
-            string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+            string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
             foreach (string arr in query)
             {
@@ -93,7 +93,22 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
             lblID.Text = Id.ToString();
             textLogin.Text = usuario.usu_login;
             txtIdentificador.Text = usuario.usu_identificador;
-            textPassword.Text = usuario.usu_password;
+            /* La contrasena NO se arrastra a la ficha.
+
+               Antes se cargaba usu_password en el campo y volvia tal cual al
+               guardar. Con las claves hasheadas eso no puede funcionar: lo
+               guardado ya no es la contrasena sino su hash, y devolverlo
+               significaria volver a hashear el hash. De hecho asi se rompio
+               la cuenta de una persona: le pusieron "1", se guardo en claro,
+               y despues no entraba porque el login compara contra el hash.
+
+               Vacio significa "no la cambies"; con algo escrito, "cambiala a
+               esto". El validador de obligatorio se apaga al editar, porque
+               al editar ya no lo es. */
+            textPassword.Text = "";
+            lblPass.Text = "Contraseña";
+            litPasswordAyuda.Text = "<span class=\"sigma-modal-ayuda\">Déjala vacía para no cambiarla. Lo que escribas aquí reemplaza la actual.</span>";
+            CustomValidator4.Enabled = false;
             TextNombre.Text = usuario.usu_nombres;
             txtPaterno.Text = usuario.usu_apellido_paterno;
             TextMaterno.Text = usuario.usu_apellido_materno;
@@ -161,7 +176,8 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
 
                 usuario.usu_id = Id;
                 usuario.usu_login = textLogin.Text;
-                usuario.usu_password = textPassword.Text;
+                // Vacio = no cambiarla.
+                usuario.usu_password = textPassword.Text.Trim();
                 usuario.usu_nombres = TextNombre.Text;
                 usuario.usu_apellido_paterno = txtPaterno.Text;
                 usuario.usu_apellido_materno = TextMaterno.Text;

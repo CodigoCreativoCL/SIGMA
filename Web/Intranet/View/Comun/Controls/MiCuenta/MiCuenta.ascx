@@ -157,8 +157,8 @@
 
         <asp:Panel ID="pnlClientes" runat="server" CssClass="cliente-container identidad-card identidad-card-cliente mb-3" Visible="false">
             <div class="cliente-label">
-                <i class="mdi mdi-office-building-outline"></i>
-                <span>Clientes e Instalaciones Asociadas</span>
+                <i class="mdi mdi-office-building"></i>
+                <span>Clientes y plantas asociadas</span>
             </div>
 
             <div class="identidad-clientes-list">
@@ -179,7 +179,7 @@
                                     </ItemTemplate>
                                 </asp:Repeater>
                                 <asp:Panel ID="pnlSinInstalaciones" runat="server" CssClass="identidad-tag identidad-tag-empty">
-                                    <span>Sin instalaciones asociadas</span>
+                                    <span>Sin plantas asociadas</span>
                                 </asp:Panel>
                             </div>
                         </div>

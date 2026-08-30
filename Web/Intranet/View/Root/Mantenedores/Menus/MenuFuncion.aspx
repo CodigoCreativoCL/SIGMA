@@ -19,12 +19,13 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Funciones de <asp:Label ID="lblMenu" runat="server" /></div>
+    <h1 class="sigma-modal-title">Funciones de <asp:Label ID="lblMenu" runat="server" /></h1>
 
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <p style="margin: 0 0 10px 0;">
+            <div class="sigma-modal-note">
+                <p style="margin: 0;">
                     Una función es una acción dentro de la página: ver todo, crear y editar.
                     Los controles la consultan por su <b>nombre</b>, no por un código, así que
                     el mismo control puesto en dos páginas distintas resuelve el permiso de cada una.
@@ -42,29 +43,30 @@
                 </MasterTableView>
             </rad:RadGrid2>
 
-            <div class="SubTitulos" style="margin-top: 15px;">Agregar una función</div>
+            <div class="sigma-modal-seccion">Agregar una función</div>
 
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Nombre(*)</label></div>
-                <div class="col-lg-4 col-md-4 col-xs-12">
-                    <rad:RadComboBox2 ID="cboNombre" runat="server" Width="90%" AllowCustomText="true">
-                        <Items>
-                            <rad:RadComboBoxItem Text="Ver todo" Value="Ver todo" />
-                            <rad:RadComboBoxItem Text="Ver todo paises" Value="Ver todo paises" />
-                            <rad:RadComboBoxItem Text="Crear y editar" Value="Crear y editar" />
-                        </Items>
-                    </rad:RadComboBox2>
-                </div>
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Permiso(*)</label></div>
-                <div class="col-lg-4 col-md-4 col-xs-12">
-                    <rad:RadComboBox2 ID="cboPermiso" runat="server" Width="90%" />
-                </div>
-            </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>Nombre(*)</label>
+        <rad:RadComboBox2 ID="cboNombre" runat="server" Width="90%" AllowCustomText="true">
+            <Items>
+                <rad:RadComboBoxItem Text="Ver todo" Value="Ver todo" />
+                <rad:RadComboBoxItem Text="Ver todo paises" Value="Ver todo paises" />
+                <rad:RadComboBoxItem Text="Crear y editar" Value="Crear y editar" />
+            </Items>
+        </rad:RadComboBox2>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Permiso(*)</label>
+        <rad:RadComboBox2 ID="cboPermiso" runat="server" Width="90%" />
+    </div>
+    </div>
 
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-                <WebControls:PushButton ID="btnAgregar" runat="server" Text="Agregar" OnClick="btnAgregar_Click" />
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
-            </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+    <WebControls:PushButton ID="btnAgregar" runat="server" Text="Agregar" OnClick="btnAgregar_Click" />
+</div>
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
 </asp:Content>

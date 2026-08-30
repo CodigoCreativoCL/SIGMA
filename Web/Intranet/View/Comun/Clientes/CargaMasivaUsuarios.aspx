@@ -324,7 +324,7 @@
 </asp:Content>
 
 <asp:Content ID="Content5" ContentPlaceHolderID="cphBody" runat="Server">
-
+<div class="sigma-modal">
     <rad:RadWindow2 ID="rwiProcesamiento" runat="server" Width="1000" Height="500" />
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
@@ -537,5 +537,5 @@
             </div>
         </div>
     </asp:Panel>
-
+</div>
 </asp:Content>

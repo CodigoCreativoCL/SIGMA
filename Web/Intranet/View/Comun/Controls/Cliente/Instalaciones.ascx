@@ -2,7 +2,7 @@
 <script type="text/javascript">
     function abrirClienteInstalacion(query) {
         var oWin = $find("<%=rwiDetalle.ClientID %>");
-             oWin.setUrl('<%=ResolveUrl("~/View/Comun/Clientes/NuevaInstalacion.aspx") %>?query=' + query);
+             oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query);
         oWin.show();
         //oWin.maximize();
         bloqueaScroll(false);
@@ -16,7 +16,7 @@
 <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
     <ContentTemplate>
-        <div class="SubTitulos">Instalaciones</div>
+        <div class="sigma-modal-seccion">Plantas</div>
         <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="rgrClienteInstalacion_ItemDataBound">
             <MasterTableView CommandItemDisplay="Top" DataKeyNames="cin_id">
                 <CommandItemTemplate>

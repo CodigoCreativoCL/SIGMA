@@ -41,14 +41,36 @@ namespace SitioBase.Controller
 
                             item.cli_id = int.Parse(dr["CLI_ID"].ToString());
                             item.cli_nombre = dr["CLI_NOMBRE"].ToString();
-                            item.cli_pais = int.Parse(dr["CLI_PAIS"].ToString());
+                            if (dr["CLI_PAIS"] != DBNull.Value)
+                                item.cli_pais = int.Parse(dr["CLI_PAIS"].ToString());
                             item.cli_razon_social = dr["CLI_RAZON_SOCIAL"].ToString();
                             item.cli_identificador = dr["CLI_IDENTIFICADOR"].ToString();
-                            item.cli_habilitado = bool.Parse(dr["CLI_HABILITADO"].ToString());
-                            item.cli_usuario_creacion = int.Parse(dr["CLI_USUARIO_CREACION"].ToString());
-                            item.cli_fecha_creacion = DateTime.Parse(dr["CLI_FECHA_CREACION"].ToString());
-                            item.cli_usuario_actualizacion = int.Parse(dr["CLI_USUARIO_ACTUALIZACION"].ToString());
-                            item.cli_fecha_actualizacion = DateTime.Parse(dr["CLI_FECHA_ACTUALIZACION"].ToString());
+                            if (dr["CLI_HABILITADO"] != DBNull.Value)
+                                item.cli_habilitado = bool.Parse(dr["CLI_HABILITADO"].ToString());
+                            /* Mismo motivo que en GetCliente: las columnas de
+                               auditoria de Cliente son anulables y un
+                               int.Parse("") lanza FormatException. */
+                            if (dr["CLI_USUARIO_CREACION"] != DBNull.Value)
+                                item.cli_usuario_creacion = int.Parse(dr["CLI_USUARIO_CREACION"].ToString());
+                            if (dr["CLI_FECHA_CREACION"] != DBNull.Value)
+                                item.cli_fecha_creacion = DateTime.Parse(dr["CLI_FECHA_CREACION"].ToString());
+                            if (dr["CLI_USUARIO_ACTUALIZACION"] != DBNull.Value)
+                                item.cli_usuario_actualizacion = int.Parse(dr["CLI_USUARIO_ACTUALIZACION"].ToString());
+                            if (dr["CLI_FECHA_ACTUALIZACION"] != DBNull.Value)
+                                item.cli_fecha_actualizacion = DateTime.Parse(dr["CLI_FECHA_ACTUALIZACION"].ToString());
+
+                            // HU-010
+                            item.cli_nombre_fantasia = dr["CLI_NOMBRE_FANTASIA"].ToString();
+                            item.zho_nombre = dr["ZHO_NOMBRE"].ToString();
+                            item.idi_nombre = dr["IDI_NOMBRE"].ToString();
+                            item.mon_nombre = dr["MON_NOMBRE"].ToString();
+
+                            if (dr["CLI_ZONA_HORARIA"] != DBNull.Value)
+                                item.cli_zona_horaria = int.Parse(dr["CLI_ZONA_HORARIA"].ToString());
+                            if (dr["CLI_IDIOMA"] != DBNull.Value)
+                                item.cli_idioma = int.Parse(dr["CLI_IDIOMA"].ToString());
+                            if (dr["CLI_MONEDA"] != DBNull.Value)
+                                item.cli_moneda = int.Parse(dr["CLI_MONEDA"].ToString());
                             item.pai_nombre = dr["PAI_NOMBRE"].ToString();
 
                             clientes.Add(item);
@@ -87,14 +109,37 @@ namespace SitioBase.Controller
 
                             cliente.cli_id = int.Parse(dr["CLI_ID"].ToString());
                             cliente.cli_nombre = dr["CLI_NOMBRE"].ToString();
-                            cliente.cli_pais = int.Parse(dr["CLI_PAIS"].ToString());
+                            if (dr["CLI_PAIS"] != DBNull.Value)
+                                cliente.cli_pais = int.Parse(dr["CLI_PAIS"].ToString());
                             cliente.cli_razon_social = dr["CLI_RAZON_SOCIAL"].ToString();
                             cliente.cli_identificador = dr["CLI_IDENTIFICADOR"].ToString();
-                            cliente.cli_habilitado = bool.Parse(dr["CLI_HABILITADO"].ToString());
-                            cliente.cli_usuario_creacion = int.Parse(dr["CLI_USUARIO_CREACION"].ToString());
-                            cliente.cli_fecha_creacion = DateTime.Parse(dr["CLI_FECHA_CREACION"].ToString());
-                            cliente.cli_usuario_actualizacion = int.Parse(dr["CLI_USUARIO_ACTUALIZACION"].ToString());
-                            cliente.cli_fecha_actualizacion = DateTime.Parse(dr["CLI_FECHA_ACTUALIZACION"].ToString());
+                            if (dr["CLI_HABILITADO"] != DBNull.Value)
+                                cliente.cli_habilitado = bool.Parse(dr["CLI_HABILITADO"].ToString());
+                            /* Las columnas de auditoria de Cliente son
+                               anulables: un int.Parse("") sobre ellas lanza
+                               FormatException y voltea la pantalla. Se
+                               comprueba DBNull antes de parsear. */
+                            if (dr["CLI_USUARIO_CREACION"] != DBNull.Value)
+                                cliente.cli_usuario_creacion = int.Parse(dr["CLI_USUARIO_CREACION"].ToString());
+                            if (dr["CLI_FECHA_CREACION"] != DBNull.Value)
+                                cliente.cli_fecha_creacion = DateTime.Parse(dr["CLI_FECHA_CREACION"].ToString());
+                            if (dr["CLI_USUARIO_ACTUALIZACION"] != DBNull.Value)
+                                cliente.cli_usuario_actualizacion = int.Parse(dr["CLI_USUARIO_ACTUALIZACION"].ToString());
+                            if (dr["CLI_FECHA_ACTUALIZACION"] != DBNull.Value)
+                                cliente.cli_fecha_actualizacion = DateTime.Parse(dr["CLI_FECHA_ACTUALIZACION"].ToString());
+
+                            // HU-010
+                            cliente.cli_nombre_fantasia = dr["CLI_NOMBRE_FANTASIA"].ToString();
+                            cliente.zho_nombre = dr["ZHO_NOMBRE"].ToString();
+                            cliente.idi_nombre = dr["IDI_NOMBRE"].ToString();
+                            cliente.mon_nombre = dr["MON_NOMBRE"].ToString();
+
+                            if (dr["CLI_ZONA_HORARIA"] != DBNull.Value)
+                                cliente.cli_zona_horaria = int.Parse(dr["CLI_ZONA_HORARIA"].ToString());
+                            if (dr["CLI_IDIOMA"] != DBNull.Value)
+                                cliente.cli_idioma = int.Parse(dr["CLI_IDIOMA"].ToString());
+                            if (dr["CLI_MONEDA"] != DBNull.Value)
+                                cliente.cli_moneda = int.Parse(dr["CLI_MONEDA"].ToString());
                             if (dr["CLI_LOGO"].ToString() != "") cliente.cli_logo = (byte[])dr["CLI_LOGO"];
                         }
                     }
@@ -130,8 +175,12 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@PAIS", cliente.cli_pais);
                     cmdExecute.Parameters.AddWithValue("@RAZON_SOCIAL", cliente.cli_razon_social);
                     cmdExecute.Parameters.AddWithValue("@IDENTIFICADOR", cliente.cli_identificador);
+                    cmdExecute.Parameters.AddWithValue("@NOMBRE_FANTASIA", (object)cliente.cli_nombre_fantasia ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@ZONA_HORARIA", (object)cliente.cli_zona_horaria ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@IDIOMA", (object)cliente.cli_idioma ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@MONEDA", (object)cliente.cli_moneda ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@HABILITADO", cliente.cli_habilitado);
-                    cmdExecute.Parameters.AddWithValue("@LOGO", cliente.cli_logo);
+                    cmdExecute.Parameters.AddWithValue("@LOGO", (object)cliente.cli_logo ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();
@@ -168,8 +217,16 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@PAIS", cliente.cli_pais);
                     cmdExecute.Parameters.AddWithValue("@RAZON_SOCIAL", cliente.cli_razon_social);
                     cmdExecute.Parameters.AddWithValue("@IDENTIFICADOR", cliente.cli_identificador);
+                    cmdExecute.Parameters.AddWithValue("@NOMBRE_FANTASIA", (object)cliente.cli_nombre_fantasia ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@ZONA_HORARIA", (object)cliente.cli_zona_horaria ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@IDIOMA", (object)cliente.cli_idioma ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@MONEDA", (object)cliente.cli_moneda ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@HABILITADO", cliente.cli_habilitado);
-                    cmdExecute.Parameters.AddWithValue("@LOGO", cliente.cli_logo);
+                    cmdExecute.Parameters.AddWithValue("@LOGO", (object)cliente.cli_logo ?? DBNull.Value);
+
+                    // Sin esto, guardar la ficha sin volver a subir la imagen
+                    // borraba el logotipo que ya tenia el cliente.
+                    cmdExecute.Parameters.AddWithValue("@CAMBIA_LOGO", cliente.cambia_logo);
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();
@@ -206,7 +263,12 @@ namespace SitioBase.Controller
                     cmdExecute.Connection.Close();
                     cmdExecute.Dispose();
 
-                    respuesta.detalle = "Cliente eliminado con éxito.";
+                    /* Desde el bloque 52 DEL_CLIENTE es una baja LOGICA:
+                       deshabilita al cliente y a sus afiliaciones, y no
+                       borra nada. Decir "eliminado" haria creer que la
+                       informacion se fue, y lo primero que hace alguien
+                       cuando cree eso es volver a cargarla. */
+                    respuesta.detalle = "Cliente dado de baja. Su información se conserva y puede volver a habilitarse.";
 
                 }
                 catch (Exception ex)

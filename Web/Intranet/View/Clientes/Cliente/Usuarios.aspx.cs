@@ -16,14 +16,15 @@ public partial class View_Clientes_Cliente_Usuarios : System.Web.UI.Page
         #region SeguridadPagina
         wucUsuarios.ReadOnly = !Token.Puede("CREAR EDITAR CLIENTE USUARIOS");
 
-        wucUsuarios.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
-        string perfiles = SitioBase.SitioBase.Parametros("Asignar_Perfiles");
+        /* Basta con el tipo. Antes ademas se filtraba por una lista de
+           ids que venia del parametro "Asignar_Perfiles" -que en la base se
+           llama ASIGNAR_PERFIL, asi que volvia vacia- y encima se quedaba
+           solo con los ids 6 y 7, que eran perfiles de FacilityGes y hoy no
+           existen: entre las dos cosas, el filtro no ofrecia ninguno.
 
-        wucUsuarios.Perfiles = string.Join(",",
-            perfiles
-                .Split(',')
-                .Where(p => p == "6" || p == "7")
-        );
+           Con el tipo, el perfil que un cliente cree manana aparece solo,
+           sin que nadie tenga que editar un parametro. */
+        wucUsuarios.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
         wucUsuarios.VerComboCliente = true;
 
         #endregion

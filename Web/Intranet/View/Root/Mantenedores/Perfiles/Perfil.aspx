@@ -21,65 +21,50 @@
 </asp:Content>
 
 <asp:Content ID="ContenHead" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Perfil</div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>ID</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:Label ID="lblId" runat="server"></asp:Label>
-                </div>
-            </div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Nombre(*)</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
-                    <asp:CustomValidator ID="CustomValidator14" runat="server"
-                        ControlToValidate="txtNombre"
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl"
-                        ValidationGroup="Perfil" />
-                </div>
-            </div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Tipo(*)</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <rad:RadComboBox2 ID="cboTipoPerfil" runat="server" OnLoad="LoadControls" Filter="Contains"/>
-                    <asp:CustomValidator ID="CustomValidator2" runat="server"
-                        ControlToValidate="cboTipoPerfil"
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl"
-                        ValidationGroup="Perfil" />
-                </div>
-            </div>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Descripción</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="8000" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12">
-                    <label>Habilitado(*):</label>
-                </div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" />
-                    <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" />
-                </div>
-            </div>
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Perfil" />
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow()" />
-            </div>
+    <h1 class="sigma-modal-title">Perfil</h1>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>ID</label>
+        <asp:Label ID="lblId" runat="server"></asp:Label>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Nombre(*)</label>
+        <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
+        <asp:CustomValidator ID="CustomValidator14" runat="server"
+        ControlToValidate="txtNombre"
+        ValidateEmptyText="true"
+        ClientValidationFunction="validaControl"
+        ValidationGroup="Perfil" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Tipo(*)</label>
+        <rad:RadComboBox2 ID="cboTipoPerfil" runat="server" OnLoad="LoadControls" Filter="Contains"/>
+        <asp:CustomValidator ID="CustomValidator2" runat="server"
+        ControlToValidate="cboTipoPerfil"
+        ValidateEmptyText="true"
+        ClientValidationFunction="validaControl"
+        ValidationGroup="Perfil" />
+    </div>
+    <div class="sigma-modal-field is-ancho">
+        <label>Descripción</label>
+        <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="8000" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Habilitado(*):</label>
+        <div class="sigma-modal-opciones">
+        <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" />
+        <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" />
+        </div>
+    </div>
+    </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow()" />
+    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Perfil" />
+</div>
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
 </asp:Content>

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 
 namespace SitioBase.Model
@@ -17,7 +17,17 @@ namespace SitioBase.Model
         public DateTime cai_fecha_actualizacion { get; set; }
         public int app_id { get; set; }
         public string app_nombre { get; set; }
-        public int app_tipo { get; set; }
+        /* app_tipo es una ETIQUETA de agrupacion -TERRENO, VOZ, CONSULTA-,
+           no un numero. Era int porque en el modelo heredado el 1 significaba
+           "funcionalidad base" y servia para bloquear el interruptor. Ese
+           concepto desaparecio: lo que no se puede apagar directamente no
+           esta en la lista. */
+        public string app_tipo { get; set; }
+
+        /* De que historia del backlog sale esta funcionalidad. No se muestra
+           al cliente; sirve para que dentro de un ano se sepa por que existe
+           la fila. */
+        public string app_origen { get; set; }
         public int cap_id { get; set; }
 
     }

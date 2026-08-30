@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx" hash="fffffff3c3134113" filehash="a098563bf4fee4f4" flags="110000" assembly="App_Web_nsrzkaoz" type="ASP.view_comercial_suscripciones_pago_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx.cs" />
+    </filedeps>
+</preserve>

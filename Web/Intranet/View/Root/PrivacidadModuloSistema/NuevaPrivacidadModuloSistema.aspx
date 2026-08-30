@@ -24,82 +24,73 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Política de Privacidad — Módulo del Sistema</div>
+    <h1 class="sigma-modal-title">Política de Privacidad — Módulo del Sistema</h1>
 
             <%-- ID (solo edición) --%>
-            <div class="row col-lg-12 col-md-12 col-xs-12" id="divID" runat="server" visible="false">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>ID</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-10">
-                    <asp:Label ID="lblID" runat="server" />
-                </div>
-            </div>
-
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field" id="divID" runat="server" visible="false">
+        <label>ID</label>
+        <asp:Label ID="lblID" runat="server" />
+    </div>
+    </div>
             <%-- Módulo del Sistema --%>
-            <div class="row col-lg-12 col-md-12 col-xs-12 mt-2">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Módulo (*):</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <rad:RadComboBox2 ID="cboModulo" runat="server" Width="100%"
-                        MarkFirstMatch="true" Filter="Contains" OnLoad="LoadControls" />
-                    <asp:CustomValidator ID="cvModulo" runat="server"
-                        ControlToValidate="cboModulo"
-                        ValidateEmptyText="true"
-                        ClientValidationFunction="validaControl"
-                        ErrorMessage="Seleccione un módulo."
-                        ValidationGroup="Privacidad" />
-                </div>
-            </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field is-ancho">
+        <label>Módulo (*):</label>
+        <rad:RadComboBox2 ID="cboModulo" runat="server" Width="100%"
+            MarkFirstMatch="true" Filter="Contains" OnLoad="LoadControls" />
+        <asp:CustomValidator ID="cvModulo" runat="server"
+            ControlToValidate="cboModulo"
+            ValidateEmptyText="true"
+            ClientValidationFunction="validaControl"
+            ErrorMessage="Seleccione un módulo."
+            ValidationGroup="Privacidad" />
+    </div>
+    </div>
 
             <%-- Editor HTML --%>
-            <div class="row col-lg-12 col-md-12 col-xs-12 mt-3">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Descripción (*):</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:Editor ID="txtDescripcion" runat="server" Width="100%" Height="420px" />
-                </div>
-            </div>
+    <div class="sigma-modal-seccion">Descripción (*)</div>
+    <WebControls:Editor ID="txtDescripcion" runat="server" Width="100%" Height="420px" />
 
             <%-- Auditoría --%>
             <asp:Panel ID="pnlAuditoria" runat="server" Visible="false" CssClass="prv-audit mt-3 col-lg-12">
                 <fieldset>
                     <legend>Auditoría</legend>
-                    <div class="row col-lg-12 col-md-12 col-xs-12">
-                        <div class="col-lg-3 col-md-3 col-xs-12"><label>Creado por</label></div>
-                        <div class="col-lg-9 col-md-9 col-xs-12">
-                            <asp:Label ID="lblUsuarioCreacion" runat="server" />
-                        </div>
-                    </div>
-                    <div class="row col-lg-12 col-md-12 col-xs-12">
-                        <div class="col-lg-3 col-md-3 col-xs-12"><label>Fecha creación</label></div>
-                        <div class="col-lg-9 col-md-9 col-xs-12">
-                            <asp:Label ID="lblFechaCreacion" runat="server" />
-                        </div>
-                    </div>
-                    <div class="row col-lg-12 col-md-12 col-xs-12">
-                        <div class="col-lg-3 col-md-3 col-xs-12"><label>Actualizado por</label></div>
-                        <div class="col-lg-9 col-md-9 col-xs-12">
-                            <asp:Label ID="lblUsuarioAct" runat="server" />
-                        </div>
-                    </div>
-                    <div class="row col-lg-12 col-md-12 col-xs-12">
-                        <div class="col-lg-3 col-md-3 col-xs-12"><label>Fecha actualización</label></div>
-                        <div class="col-lg-9 col-md-9 col-xs-12">
-                            <asp:Label ID="lblFechaAct" runat="server" />
-                        </div>
-                    </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>Creado por</label>
+        <asp:Label ID="lblUsuarioCreacion" runat="server" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Fecha creación</label>
+        <asp:Label ID="lblFechaCreacion" runat="server" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Actualizado por</label>
+        <asp:Label ID="lblUsuarioAct" runat="server" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Fecha actualización</label>
+        <asp:Label ID="lblFechaAct" runat="server" />
+    </div>
+    </div>
                 </fieldset>
             </asp:Panel>
 
             <%-- Botones --%>
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center mt-3">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar"
-                    OnClick="btnGuardar_Click" ValidationGroup="Privacidad" />
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar"
-                    CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
-            </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar"
+        CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar"
+        OnClick="btnGuardar_Click" ValidationGroup="Privacidad" />
+</div>
         </ContentTemplate>
         <Triggers>
             <asp:PostBackTrigger ControlID="btnGuardar" />
         </Triggers>
     </asp:UpdatePanel>
+</div>
 </asp:Content>
