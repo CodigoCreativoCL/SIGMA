@@ -1,0 +1,102 @@
+{
+  "$schema": "../esquema/definicion.schema.json",
+
+  "proyecto": {
+    "baseDatos": "SIGMA",
+    "namespace": "Sigma",
+    "autor": "EQUIPO CODIGO CREATIVO",
+    "master": "~/Master/Default.master",
+    "rutaAppCode": "App_Code/MVC/Sigma",
+    "rutaView": "View"
+  },
+
+  "entidad": {
+    "tabla": "PRODUCTO",
+    "prefijo": "PRO",
+    "singular": "Producto",
+    "plural": "Productos",
+    "modulo": "Inventario",
+    "subModulo": "Productos",
+    "menu": "menu_12",
+    "tituloListado": "Productos",
+    "tituloFormulario": "Ficha de Producto",
+    "tipo": "maestro",
+    "auditoria": true,
+    "habilitado": true,
+    "seguridadPorPais": false,
+    "orden": "PRO_NOMBRE"
+  },
+
+  "columnas": [
+    {
+      "nombre": "CODIGO",
+      "tipo": "NVARCHAR(20)",
+      "requerido": true,
+      "etiqueta": "Codigo",
+      "unico": true,
+      "upperCase": true,
+      "gridAncho": "10%"
+    },
+    {
+      "nombre": "NOMBRE",
+      "tipo": "NVARCHAR(200)",
+      "requerido": true,
+      "etiqueta": "Nombre",
+      "unico": true
+    },
+    {
+      "nombre": "DESCRIPCION",
+      "tipo": "NVARCHAR(MAX)",
+      "requerido": false,
+      "etiqueta": "Descripcion",
+      "control": "textarea"
+    },
+    {
+      "nombre": "CATEGORIA",
+      "tipo": "INT",
+      "requerido": true,
+      "etiqueta": "Categoria",
+      "fk": {
+        "tabla": "CATEGORIA",
+        "prefijo": "CAT",
+        "columna": "CAT_ID",
+        "columnaTexto": "CAT_NOMBRE",
+        "modelo": "Categoria",
+        "controller": "CategoriaController",
+        "metodoLista": "GetCategorias",
+        "filtroHabilitado": "bool"
+      }
+    },
+    {
+      "nombre": "PROVEEDOR",
+      "tipo": "INT",
+      "requerido": false,
+      "etiqueta": "Proveedor",
+      "fk": {
+        "tabla": "PROVEEDOR",
+        "prefijo": "PRV",
+        "modelo": "Proveedor",
+        "controller": "ProveedorController",
+        "metodoLista": "GetProveedores"
+      }
+    },
+    {
+      "nombre": "PRECIO",
+      "tipo": "DECIMAL(18,2)",
+      "requerido": true,
+      "etiqueta": "Precio"
+    },
+    {
+      "nombre": "STOCK",
+      "tipo": "INT",
+      "requerido": false,
+      "etiqueta": "Stock"
+    },
+    {
+      "nombre": "VENCIMIENTO",
+      "tipo": "DATETIME",
+      "requerido": false,
+      "etiqueta": "Vencimiento"
+    }
+  ]
+}

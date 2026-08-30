@@ -1,0 +1,215 @@
+.ClassicStyle
+{
+	background-color:#ffffff;
+}
+
+.ClassicStyle .TitleStyle
+{
+	/*background-color:#0000aa;*/
+    background-color:#f0f0f0;
+    padding:5px;
+}
+
+.ClassicStyle .TitleStyle table
+{
+	color:black;
+	font-family:arial;
+	font-size:11px;
+	font-weight:bold;  
+    text-transform:uppercase;
+}
+
+.ClassicStyle .TitleStyle td
+{
+	padding:2px;
+}
+
+.ClassicStyle .TitleStyle .DropDownStyle,
+.ClassicStyle .TitleStyle .DropDownOutStyle
+{
+	cursor:default;
+	/*border-style:solid;*/
+	border-width:1px;
+	/*border-color:#3366ff;*/
+    color:black;
+}
+.ClassicStyle .TitleStyle .DropDownOutStyle:hover{
+    color:black;
+
+}
+
+/*
+    .ClassicStyle .TitleStyle .DropDownOverStyle
+{
+	cursor:default;
+	border-style:solid;
+	border-width:1px;
+	border-color:#88aaff;
+}
+*/
+
+.ClassicStyle .TitleStyle .DropDownStyle img,
+.ClassicStyle .TitleStyle .DropDownOutStyle img,
+.ClassicStyle .TitleStyle .DropDownOverStyle img
+{
+    
+} 
+
+.ClassicStyle .TitleStyle .CloseButtonStyle
+{
+	width:15px;
+	height:13px;
+	border:0;
+}
+
+.ClassicStyle .BodyStyle
+{
+	font-family:verdana;
+	font-size:10px;
+}
+
+.ClassicStyle .BodyStyle .HeaderStyle
+{
+	font-weight:bold; 
+	padding:2px 3px 2px 3px;
+	cursor:default;
+	white-space:nowrap;  
+}
+
+.ClassicStyle .BodyStyle .DateStyle
+{
+	text-decoration:none;
+	color:#000000;
+	cursor:default;
+	padding:2px 0px 2px 4px; 
+	white-space:nowrap;
+}
+
+.ClassicStyle .BodyStyle .DaysOutOfMonthStyle
+{
+	color:#c0c0c0!important; 
+}
+
+.ClassicStyle .BodyStyle .WeekNumberStyle
+{
+	width:20px;
+	padding:0px;
+	text-align:center;
+}
+
+.ClassicStyle .BodyStyle .WeekendStyle
+{
+	color:#909090;
+}
+
+.ClassicStyle .BodyStyle .CurrentDateStyle
+{
+	font-weight:Bold;
+	color:#ff0000;
+}
+
+.ClassicStyle .BodyStyle .SpecialDayStyle
+{
+	background-color:#70ffd0;
+}
+
+.ClassicStyle .BodyStyle .HolidayStyle
+{
+	background-color: #8acbea;
+    border-radius: 100px;
+    color: white !important;
+}
+
+.ClassicStyle .BodyStyle .DisableDateStyle
+{
+	text-decoration:line-through;
+}
+
+
+.ClassicStyle .BodyStyle .DayOverStyle
+{
+
+}
+
+.ClassicStyle .TodayStyle
+{
+	cursor:default;
+	font-size:11px;
+	background-color:#f0f0f0;
+}
+
+.ClassicStyle .TodayStyle .TextStyle
+{
+	font-family:arial;
+	font-size:11px;
+	text-decoration:none;
+	color:#000000;
+	cursor:default;	
+}
+
+.ClassicStyle .ListStyle /* Month And Year List */
+{
+	font-family:arial; 
+	font-size:11px; 
+	background-color:#f0f0f0;
+    border-left: 1px solid grey !important;
+    border-right: 1px solid grey !important;
+    border-bottom: 1px solid grey !important;
+}
+
+.ClassicStyle .ListStyle .OptionStyle,
+.ClassicStyle .ListStyle .OptionOutStyle
+{
+
+}
+
+.ClassicStyle .ListStyle .OptionOverStyle
+{
+	background-color:#bdd0e0;
+}
+#popupSuperShadowRight{
+    display:none;
+}
+#popupSuperShadowBottom{
+    display:none;
+}
+#popupSuperHighLight0{
+    border:1px solid #f0f0f0 !important;
+}
+#popupSuperSpanLeft0 img ,#popupSuperSpanRight0 img, #popupSuperSpanMonth0 img, #popupSuperSpanYear0 img, #popupSuperSpanLeft1 img, #popupSuperSpanRight1 img, #popupSuperSpanMonth1 img, #popupSuperSpanYear1 img{
+    display:none;
+}
+#popupSuperSpanLeft0, #popupSuperSpanLeft1  {
+    background-image: url('Classic_Images/tri_left.png');
+    background-size:cover;
+}
+#popupSuperSpanRight0, #popupSuperSpanRight1{
+    background-image: url('Classic_Images/tri_right.png');
+    background-size:6px;
+    position:relative;
+    top:3px;
+    background-repeat:no-repeat;
+}
+#popupSuperSpanMonth0, #popupSuperSpanMonth1 img {
+    padding-right:10px;
+    background-image: url('Classic_Images/tri_down.png');
+    background-repeat:no-repeat;
+    background-position:right;
+    background-size:7px;
+}
+#popupSuperSpanYear0, #popupSuperSpanYear1{
+    padding-right:10px;
+    background-image: url('Classic_Images/tri_up.png');
+    background-repeat:no-repeat;
+    background-position:right;
+    background-size:7px;
+}
+.TitleStyle tbody td:last-child {
+    background-image: url('Classic_Images/close_calendar.png');
+    background-repeat:no-repeat;
+    background-position:right;
+    cursor:pointer;
+}
+.CloseButtonStyle{
+    opacity:0;
+}

@@ -1,0 +1,120 @@
+{
+  "$schema": "../esquema/definicion.schema.json",
+
+  "_nota": "Reproduce el mantenedor de 02-Ejemplo-Usuario. Sirve para comparar la salida del generador contra el codigo escrito a mano.",
+
+  "proyecto": {
+    "baseDatos": "SIGMA",
+    "namespace": "Sigma",
+    "autor": "EQUIPO CODIGO CREATIVO",
+    "master": "~/Master/Default.master",
+    "rutaAppCode": "App_Code/MVC/Sigma",
+    "rutaView": "View"
+  },
+
+  "entidad": {
+    "tabla": "USUARIO",
+    "prefijo": "USU",
+    "singular": "Usuario",
+    "plural": "Usuarios",
+    "modulo": "Seguridad",
+    "subModulo": "Usuarios",
+    "menu": "menu_5",
+    "tituloListado": "Usuarios",
+    "tituloFormulario": "Ficha de Usuario",
+    "tipo": "maestro",
+    "auditoria": true,
+    "habilitado": true,
+    "seguridadPorPais": true,
+    "columnaPais": "PAIS",
+    "orden": "USU_APELLIDOS, USU_NOMBRES"
+  },
+
+  "columnas": [
+    {
+      "nombre": "RUT",
+      "tipo": "NVARCHAR(12)",
+      "requerido": true,
+      "etiqueta": "RUT",
+      "unico": true,
+      "gridAncho": "12%"
+    },
+    {
+      "nombre": "NOMBRES",
+      "tipo": "NVARCHAR(200)",
+      "requerido": true,
+      "etiqueta": "Nombres",
+      "upperCase": true,
+      "gridAncho": "20%"
+    },
+    {
+      "nombre": "APELLIDOS",
+      "tipo": "NVARCHAR(200)",
+      "requerido": true,
+      "etiqueta": "Apellidos",
+      "upperCase": true,
+      "gridAncho": "20%"
+    },
+    {
+      "nombre": "EMAIL",
+      "tipo": "NVARCHAR(200)",
+      "requerido": true,
+      "etiqueta": "Email",
+      "unico": true,
+      "lowerCase": true,
+      "gridAncho": "22%"
+    },
+    {
+      "nombre": "TELEFONO",
+      "tipo": "NVARCHAR(20)",
+      "requerido": false,
+      "etiqueta": "Telefono",
+      "icono": "fa-phone",
+      "busqueda": false,
+      "grid": false
+    },
+    {
+      "nombre": "PASSWORD",
+      "tipo": "NVARCHAR(200)",
+      "requerido": true,
+      "etiqueta": "Contrasena",
+      "control": "password"
+    },
+    {
+      "nombre": "PERFIL",
+      "tipo": "INT",
+      "requerido": true,
+      "etiqueta": "Perfil",
+      "gridAncho": "13%",
+      "fk": {
+        "tabla": "PERFIL",
+        "prefijo": "PER",
+        "columna": "PER_ID",
+        "columnaTexto": "PER_NOMBRE",
+        "modelo": "Perfil",
+        "controller": "PerfilController",
+        "metodoLista": "GetPerfiles",
+        "filtroHabilitado": "bool"
+      }
+    },
+    {
+      "nombre": "PAIS",
+      "tipo": "INT",
+      "requerido": true,
+      "etiqueta": "Pais",
+      "gridAncho": "10%",
+      "filtro": false,
+      "fk": {
+        "tabla": "PAISES",
+        "prefijo": "PAI",
+        "columna": "PAI_ID",
+        "columnaTexto": "PAI_NOMBRE",
+        "modelo": "Paises",
+        "controller": "PaisesController",
+        "metodoLista": "GetPaises",
+        "propTexto": "pai_nombres",
+        "filtroHabilitado": "string"
+      }
+    }
+  ]
+}
