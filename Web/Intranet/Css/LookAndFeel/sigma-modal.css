@@ -1,0 +1,433 @@
+﻿/* =============================================================
+   SIGMA — Modal de detalle
+   =============================================================
+   El estandar de TODA ficha que se abre en un RadWindow2, nueva o
+   heredada. Reemplaza al patron anterior de "fieldset": filas de
+   label a la izquierda y control a la derecha, que en un modal
+   angosto se rompe y en uno ancho deja el label perdido a 30cm
+   del dato.
+
+   ANATOMIA
+
+     .sigma-modal                contenedor de la ficha
+       .sigma-modal-eyebrow      contexto: MODULO · CLIENTE
+       .sigma-modal-title        de que registro se trata
+       .sigma-modal-hero         banner: icono + chip de estado + resumen
+       .sigma-modal-grid         rejilla de campos, 2 columnas
+         .sigma-modal-field      un campo: label chico arriba, dato abajo
+       .sigma-modal-note         banda informativa al pie
+       .sigma-modal-actions      botones, alineados a la derecha
+
+   POR QUE EL LABEL VA ARRIBA Y CHICO
+     Porque el dato es lo que se viene a leer. Con el label a la
+     izquierda y del mismo tamano, la vista tiene que saltar en
+     zigzag para juntar cada par. Arriba y en gris, el ojo baja por
+     una sola columna de datos y el label solo se lee cuando hace
+     falta.
+
+   SOLO COLORES DE LA MARCA
+     Todo sale de las variables de sigma-brand.css. El degradado
+     --sg-gradient es acento y se usa UNA vez por pantalla, en el
+     tile del hero: repetido deja de ser acento.
+   ============================================================= */
+
+
+/* ---- Contenedor ---- */
+.sigma-modal {
+    padding: 4px 4px 8px;
+}
+
+
+/* ---- Encabezado ---- */
+.sigma-modal-eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    color: var(--fg-m3-primary);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .09em;
+    text-transform: uppercase;
+}
+
+.sigma-modal-title {
+    margin: 0 0 20px;
+    color: var(--fg-m3-text-primary);
+    font-size: 24px;
+    font-weight: 600;
+    letter-spacing: -.015em;
+    line-height: 1.25;
+}
+
+
+/* ---- Hero ----
+   El resumen que responde "que estoy mirando y como esta" antes de
+   que nadie lea un campo. */
+.sigma-modal-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: var(--sg-radius-lg);
+    background: linear-gradient(120deg, var(--sg-surface-subtle) 0%, #F3F1FF 100%);
+}
+
+.sigma-modal-hero-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 58px;
+    height: 58px;
+    border-radius: var(--sg-radius-md);
+    background: var(--sg-gradient);
+    color: #ffffff;
+    font-size: 28px;
+    box-shadow: var(--sg-shadow-card);
+}
+
+.sigma-modal-hero-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.sigma-modal-hero-titulo {
+    margin: 8px 0 4px;
+    color: var(--fg-m3-text-primary);
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.sigma-modal-hero-detalle {
+    margin: 0;
+    color: var(--fg-m3-text-secondary);
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+
+/* ---- Chip de estado del hero ----
+   Neutro por defecto. Los modificadores son los mismos nombres que
+   ya usan los chips de las grillas, para no tener dos vocabularios
+   de estado en el mismo sistema. */
+.sigma-modal-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 11px;
+    border-radius: var(--sg-radius-pill);
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-on-primary-container);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    white-space: nowrap;
+}
+
+.sigma-modal-chip.is-exito {
+    background-color: var(--sg-success-subtle);
+    color: var(--fg-m3-on-success-container);
+}
+
+.sigma-modal-chip.is-alerta {
+    background-color: var(--sg-danger-subtle);
+    color: var(--fg-m3-on-error-container);
+}
+
+.sigma-modal-chip.is-info {
+    background-color: var(--sg-info-subtle);
+    color: #1E3A8A;
+}
+
+.sigma-modal-chip.is-neutro {
+    background-color: var(--fg-m3-chip-bg);
+    color: var(--fg-m3-text-secondary);
+}
+
+
+/* ---- Rejilla de campos ----
+   auto-fit y no dos columnas fijas: el mismo modal se abre a 900px
+   en un escritorio y a 380px en un telefono, y una rejilla rigida
+   obliga a scroll horizontal, que en una ficha es inaceptable. */
+.sigma-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+/* Un campo que ocupa la fila completa: observaciones, textos largos. */
+.sigma-modal-grid > .is-ancho {
+    grid-column: 1 / -1;
+}
+
+
+/* ---- Campo ---- */
+.sigma-modal-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 14px 16px;
+    border: 1px solid var(--fg-m3-outline-variant);
+    border-radius: var(--sg-radius-md);
+    background-color: #ffffff;
+    transition: border-color var(--sg-duration-fast) var(--sg-easing);
+}
+
+.sigma-modal-field:focus-within {
+    border-color: var(--fg-m3-primary);
+}
+
+.sigma-modal-field > label,
+.sigma-modal-field .sigma-modal-label {
+    margin: 0;
+    color: var(--fg-m3-text-hint);
+    font-size: 11px;
+    font-weight: 500;
+    letter-spacing: .02em;
+}
+
+/* El dato, cuando es de solo lectura. */
+.sigma-modal-valor {
+    color: var(--fg-m3-text-primary);
+    font-size: 14.5px;
+    font-weight: 600;
+    line-height: 1.4;
+    word-break: break-word;
+}
+
+.sigma-modal-valor:empty::before {
+    content: "—";
+    color: var(--fg-m3-text-hint);
+    font-weight: 400;
+}
+
+/* Ayuda bajo un control editable. */
+.sigma-modal-ayuda {
+    color: var(--fg-m3-text-hint);
+    font-size: 11px;
+    line-height: 1.45;
+}
+
+/* Los controles del proyecto dentro de un campo ocupan el ancho. */
+.sigma-modal-field .RadComboBox,
+.sigma-modal-field input[type="text"],
+.sigma-modal-field textarea {
+    width: 100% !important;
+}
+
+
+/* ---- Grupo de radios / checkbox dentro de un campo ---- */
+.sigma-modal-opciones {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    min-height: 30px;
+}
+
+.sigma-modal-opciones input[type="radio"],
+.sigma-modal-opciones input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--fg-m3-primary);
+    cursor: pointer;
+}
+
+.sigma-modal-opciones label {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    cursor: pointer;
+}
+
+
+/* ---- Banda informativa ----
+   Para la regla de negocio que hay que saber ANTES de apretar el
+   boton, no despues de que la operacion falle. */
+.sigma-modal-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 14px 16px;
+    margin-bottom: 20px;
+    border-radius: var(--sg-radius-md);
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-on-primary-container);
+    font-size: 12px;
+    line-height: 1.55;
+}
+
+.sigma-modal-note > i {
+    flex-shrink: 0;
+    margin-top: 1px;
+    font-size: 17px;
+    color: var(--fg-m3-primary);
+}
+
+.sigma-modal-note strong {
+    font-weight: 600;
+}
+
+.sigma-modal-note.is-alerta {
+    background-color: var(--sg-danger-subtle);
+    color: var(--fg-m3-on-error-container);
+}
+
+.sigma-modal-note.is-alerta > i {
+    color: var(--fg-m3-error);
+}
+
+
+/* ---- Seccion dentro del modal ---- */
+.sigma-modal-seccion {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 4px 0 14px;
+    padding-top: 18px;
+    border-top: 1px solid var(--fg-m3-outline-variant);
+    color: var(--fg-m3-text-secondary);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .05em;
+    text-transform: uppercase;
+}
+
+.sigma-modal-seccion > i {
+    color: var(--fg-m3-secondary);
+    font-size: 15px;
+    text-transform: none;
+}
+
+
+/* ---- Acciones ----
+   A la DERECHA y no centradas: la accion principal se busca donde
+   termina la lectura. Y la principal va ultima, despues de Cerrar,
+   porque es la que se pulsa. */
+.sigma-modal-actions {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding-top: 18px;
+    border-top: 1px solid var(--fg-m3-outline-variant);
+}
+
+/* Texto explicativo a la izquierda de los botones. */
+.sigma-modal-actions-nota {
+    margin-right: auto;
+    color: var(--fg-m3-text-hint);
+    font-size: 11.5px;
+    line-height: 1.45;
+    max-width: 60%;
+}
+
+
+/* =============================================================
+   Matriz de contenido del plan (Plan.aspx)
+   =============================================================
+   Una fila por funcionalidad: casilla, nombre, y tope solo en las
+   cuatro de tipo LIMITE. Es una lista larga -25 filas- asi que va
+   compacta: en tarjetas separadas obligaria a un scroll enorme
+   para responder "que trae este plan".
+   ============================================================= */
+.sigma-plan-matriz {
+    border: 1px solid var(--fg-m3-outline-variant);
+    border-radius: var(--sg-radius-md);
+    overflow: hidden;
+    margin-bottom: 4px;
+}
+
+.sigma-plan-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 9px 14px;
+    border-bottom: 1px solid var(--fg-m3-outline-variant);
+    background-color: #ffffff;
+}
+
+.sigma-plan-fila:last-child {
+    border-bottom: none;
+}
+
+.sigma-plan-fila:hover {
+    background-color: var(--fg-m3-chip-bg);
+}
+
+.sigma-plan-check {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+}
+
+.sigma-plan-check input[type="checkbox"] {
+    width: 17px;
+    height: 17px;
+    accent-color: var(--fg-m3-primary);
+    cursor: pointer;
+}
+
+.sigma-plan-nombre {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--fg-m3-text-primary);
+    font-size: 13.5px;
+}
+
+.sigma-plan-tope {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 132px;
+    justify-content: flex-end;
+}
+
+.sigma-plan-tope input[type="text"] {
+    width: 96px !important;
+    text-align: right;
+}
+
+.sigma-plan-unidad {
+    color: var(--fg-m3-text-hint);
+    font-size: 11px;
+}
+
+@media (max-width: 600px) {
+    .sigma-plan-fila {
+        flex-wrap: wrap;
+    }
+
+    .sigma-plan-tope {
+        width: 100%;
+        justify-content: flex-start;
+        padding-left: 29px;
+    }
+}
+
+
+/* =============================================================
+   COMPATIBILIDAD — RETIRADA el 30-08-2026
+   =============================================================
+   Aqui vivia un bloque que adaptaba el markup heredado de las fichas
+   -.SubTitulos, .row.col-lg-12 con el label a la izquierda,
+   .form-col-center- para que se vieran con el look nuevo sin tocar
+   los .aspx.
+
+   Era una capa de transicion y esta es su fecha de vencimiento: las 20
+   fichas se migraron a las clases .sigma-modal-* explicitas, asi que ya
+   no hay nada que adaptar. Sostenerla de mas significaria que el patron
+   viejo sigue siendo valido y que la ficha 21 puede nacer con el.
+
+   Si aparece una pantalla con el patron viejo, lo correcto es migrarla,
+   no revivir esto. Queda en el historial del repositorio.
+   ============================================================= */

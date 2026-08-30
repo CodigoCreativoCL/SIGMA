@@ -1315,3 +1315,110 @@ body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-second-level
 .RadGrid .rgPager span {
     color: var(--sg-text-secondary) !important;
 }
+
+
+/* =============================================================
+   Suscripcion: aviso del encabezado y pantalla de renovacion.
+   ANEXO F 6.6 / HU-193.
+
+   El aviso vive arriba del titulo de la pagina, no en la topbar:
+   la topbar es fija y un banner ahi acompanaria toda la sesion
+   como ruido, mientras que aqui se lee una vez por pantalla y se
+   deja atras al hacer scroll.
+
+   Dos niveles, porque la accion es distinta: is-info recuerda
+   ("vence en 12 dias"), is-alerta apremia ("ya vencio, estas en
+   gracia"). Se apoyan en los mismos containers M3 que los chips,
+   asi que no introducen colores nuevos a la paleta.
+   ============================================================= */
+.sg-aviso-suscripcion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 18px;
+    margin-bottom: 16px;
+    border-radius: var(--fg-m3-radius-md, 12px);
+    border: 1px solid transparent;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sg-aviso-suscripcion > i {
+    font-size: 20px;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.sg-aviso-suscripcion > span {
+    flex: 1 1 auto;
+}
+
+.sg-aviso-suscripcion > a {
+    flex: 0 0 auto;
+    font-weight: 600;
+    text-decoration: underline;
+    color: inherit;
+}
+
+.sg-aviso-suscripcion.is-info {
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-on-primary-container);
+    border-color: var(--fg-m3-outline-variant);
+}
+
+.sg-aviso-suscripcion.is-alerta {
+    background-color: var(--fg-m3-error-container);
+    color: var(--fg-m3-on-error-container);
+    border-color: var(--fg-m3-error, #b3261e);
+}
+
+/* El estado, arriba de todo en Renovar.aspx. Es lo unico que la
+   persona vino a averiguar, asi que se muestra solo, sin competir
+   con la grilla de periodos. */
+.sg-renovar-estado {
+    padding-bottom: 18px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--fg-m3-outline-variant);
+}
+
+.sg-renovar-estado h2 {
+    margin: 12px 0 6px;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--sg-text-primary);
+}
+
+.sg-renovar-estado p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--sg-text-secondary);
+}
+
+/* La salida. Con la suscripcion caida esta es la unica pantalla
+   abierta, asi que el contacto tiene que estar a la vista y no
+   escondido en un pie de pagina. */
+.sg-renovar-contacto {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+}
+
+.sg-renovar-contacto > i {
+    font-size: 26px;
+    line-height: 1;
+    color: var(--fg-m3-primary, #6C5CFF);
+    flex: 0 0 auto;
+}
+
+.sg-renovar-contacto strong {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 15px;
+    color: var(--sg-text-primary);
+}
+
+.sg-renovar-contacto p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--sg-text-secondary);
+}

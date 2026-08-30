@@ -21,7 +21,7 @@ public partial class View_Root_Mantenedores_Menu : System.Web.UI.Page
         {
             if (Request.QueryString["query"] != null)
             {
-                string[] query = Tools.Crypto.Decrypt(Server.UrlDecode(Request.QueryString["query"].ToString())).Split('&');
+                string[] query = SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&');
 
                 foreach (string arr in query)
                 {

@@ -24,6 +24,13 @@ namespace SitioBase.Controller
                     cmd.CommandText = "SEL_CLIENTE_APP_INSTALACION";
                     cmd.Parameters.AddWithValue("@ID_INSTALACION", clienteAppInstalacion.cai_id_instalacion);
 
+                    /* El cliente decide QUE se ofrece: el SP solo lista las
+                       funcionalidades que su plan incluye. Sin este parametro
+                       el SP lo deduce de la planta, pero mandarlo evita una
+                       consulta y deja explicito de quien es el plan. */
+                    if (clienteAppInstalacion.id_cliente > 0)
+                        cmd.Parameters.AddWithValue("@CLIENTE", clienteAppInstalacion.id_cliente);
+
 
                     using (SqlDataReader dr = Conexion.GetDataReader(cmd))
                     {
@@ -33,7 +40,8 @@ namespace SitioBase.Controller
 
                             item.app_id = int.Parse(dr["APP_ID"].ToString());
                             item.app_nombre = (dr["APP_NOMBRE"].ToString());
-                            item.app_tipo = int.Parse(dr["APP_TIPO"].ToString());
+                            item.app_tipo = dr["APP_TIPO"].ToString();
+                            item.app_origen = dr["APP_ORIGEN"].ToString();
                             if (dr["CAP_HABILITADO"].ToString() != "") item.cai_habilitado = bool.Parse(dr["CAP_HABILITADO"].ToString());
                             clienteAppInstalacions.Add(item);
                         }

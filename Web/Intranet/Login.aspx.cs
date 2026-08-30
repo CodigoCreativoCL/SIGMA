@@ -9,6 +9,16 @@ public partial class Login : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
+            /* Viene rebotado por la compuerta de suscripción: eligió un
+               cliente con la suscripción caída y no es quien la administra.
+               Se le explica aquí, porque su sesión ya se cerró y no queda
+               ninguna pantalla del sistema donde decírselo. */
+            if (Request.QueryString["motivo"] == "suscripcion")
+            {
+                MostrarError("La suscripción de esa empresa no está vigente. " +
+                             "Contacta al administrador de tu empresa para regularizarla.");
+            }
+
             // El cursor arranca donde el usuario va a escribir.
             txtCorreo.Focus();
         }
@@ -48,7 +58,13 @@ public partial class Login : System.Web.UI.Page
             return;
         }
 
-        Response.Redirect("~/Default.aspx");
+        // HU-002. Adonde va depende de a cuantos clientes pertenece:
+        // con uno se elige solo y no ve el selector; con varios tiene que
+        // elegir antes de continuar.
+        ClienteSesionController clienteSesion = new ClienteSesionController();
+        string destino = clienteSesion.ResolverClienteInicial(respuesta.codigo);
+
+        Response.Redirect(destino);
     }
 
     private void MostrarError(string mensaje)

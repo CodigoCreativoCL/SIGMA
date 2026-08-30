@@ -43,13 +43,45 @@ public partial class View_Comun_Controls_Cliente_Instalaciones_ConfiguracionApp 
 
     protected void CargarDatos()
     {
-        ClienteAppInstalacion clienteAppInstalacion = new ClienteAppInstalacion();
-        clienteAppInstalacion.cai_id_instalacion = IdClienteInstalacion;
-        List<ClienteAppInstalacion> clienteAppInstalacions = new List<ClienteAppInstalacion>();
-        clienteAppInstalacions = clienteAppInstalacionController.GetClienteAppIntalaciones(clienteAppInstalacion);
-        rtpHtml.DataSource = clienteAppInstalacions;
+        ClienteAppInstalacion filtro = new ClienteAppInstalacion();
+        filtro.cai_id_instalacion = IdClienteInstalacion;
+        filtro.id_cliente = IdCliente;
+
+        List<ClienteAppInstalacion> lista =
+            clienteAppInstalacionController.GetClienteAppIntalaciones(filtro);
+
+        /* Lista vacia no es lo mismo que error, pero desde la pantalla se ven
+           igual: un recuadro en blanco con un boton Guardar debajo. Si el
+           plan del cliente no incluye ninguna funcionalidad de app, hay que
+           decirlo; y no tiene sentido ofrecer Guardar sobre cero filas. */
+        bool hay = lista != null && lista.Count > 0;
+
+        pnlSinFuncionalidades.Visible = !hay;
+        btnGuardar.Visible = hay && !ReadOnly;
+
+        rtpHtml.DataSource = hay ? lista : new List<ClienteAppInstalacion>();
         rtpHtml.DataBind();
         udPanel.Update();
+    }
+
+    /// <summary>
+    /// El ultimo grupo dibujado, para no repetir el encabezado en cada fila.
+    /// </summary>
+    private string _grupoAnterior = "";
+
+    /// <summary>
+    /// El codigo de agrupacion, en palabras. Se traduce aqui y no en la base
+    /// porque el codigo es lo estable y el rotulo es lo que se redacta.
+    /// </summary>
+    private string Legible(string tipo)
+    {
+        switch ((tipo ?? "").Trim().ToUpper())
+        {
+            case "TERRENO": return "En terreno";
+            case "VOZ": return "Voz e inclusión";
+            case "CONSULTA": return "Consultas";
+            default: return tipo;
+        }
     }
 
     protected void rtpHtml_ItemDataBound(object sender, RepeaterItemEventArgs e)
@@ -65,30 +97,33 @@ public partial class View_Comun_Controls_Cliente_Instalaciones_ConfiguracionApp 
             lblnombreapp.Text = DataBinder.Eval(e.Item.DataItem, "app_nombre").ToString();
             hdfId.Value = DataBinder.Eval(e.Item.DataItem, "app_id").ToString();
 
-            if (DataBinder.Eval(e.Item.DataItem, "cai_habilitado") != null)
+            /* Siempre viene con valor: el SP ya resolvio el efectivo -lo
+               configurado para esta planta, o el valor por defecto de la
+               funcionalidad si nunca se configuro-. Antes podia venir en
+               NULL y los dos radios quedaban apagados, sin decir cual regia. */
+            bool habilitado = DataBinder.Eval(e.Item.DataItem, "cai_habilitado") != null
+                && bool.Parse(DataBinder.Eval(e.Item.DataItem, "cai_habilitado").ToString());
+
+            rdbSi.Checked = habilitado;
+            rdbNo.Checked = !habilitado;
+
+            /* La etiqueta de grupo -TERRENO, VOZ, CONSULTA- ayuda a leer la
+               lista, pero solo la primera vez que aparece: repetirla en cada
+               fila la convierte en ruido. */
+            Literal litGrupo = (Literal)e.Item.FindControl("litGrupo");
+            string tipo = Convert.ToString(DataBinder.Eval(e.Item.DataItem, "app_tipo"));
+
+            if (litGrupo != null)
             {
-                bool habilitado = bool.Parse(DataBinder.Eval(e.Item.DataItem, "cai_habilitado").ToString());
+                litGrupo.Text = (tipo != _grupoAnterior)
+                    ? "<div class=\"sigma-modal-seccion\">" + Server.HtmlEncode(Legible(tipo)) + "</div>"
+                    : "";
 
-                if (habilitado)
-                    rdbSi.Checked = true;
-                else
-                    rdbNo.Checked = true;
-
+                _grupoAnterior = tipo;
             }
 
-            if (ReadOnly == true)
+            if (ReadOnly)
             {
-                rdbSi.Enabled = false;
-                rdbNo.Enabled = false;
-                btnGuardar.Visible = false;
-            }
-
-            //bloquea todas las funcionalidades Base
-            int app_tipo = int.Parse(DataBinder.Eval(e.Item.DataItem, "app_tipo").ToString());
-
-            if (app_tipo == 1)
-            {
-                rdbSi.Checked = true;
                 rdbSi.Enabled = false;
                 rdbNo.Enabled = false;
             }

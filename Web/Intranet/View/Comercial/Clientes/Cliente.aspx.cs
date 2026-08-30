@@ -24,7 +24,14 @@ public partial class View_Comercial_Cliente : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
 
-        wucCliente.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Sistema;
+        /* Perfiles de tipo CLIENTE.
+
+           Decia Sistema, que son Root, Soporte y Gerente Comercial: las
+           cuentas de nuestro equipo. Esta es la ficha comercial de una
+           empresa y su pestana Usuarios lista a SU gente, asi que el filtro
+           por perfil ofrecia justo a quienes no corresponde y a ninguno de
+           los que si. */
+        wucCliente.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
     }
     protected void Page_PreRender(object sender, EventArgs e)
     {

@@ -19,100 +19,79 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
+<div class="sigma-modal">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="SubTitulos">Menú</div>
+    <h1 class="sigma-modal-title">Menú</h1>
 
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>ID</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:Label ID="lblId" runat="server"></asp:Label>
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Nombre(*)</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="100" />
-                    <asp:CustomValidator ID="cvNombre" runat="server" ControlToValidate="txtNombre"
-                        ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Menu" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Descripción</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtDescripcion" runat="server" MaxLength="200" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Depende de</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <rad:RadComboBox2 ID="cboPadre" runat="server" Width="60%" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Nivel(*)</label></div>
-                <div class="col-lg-4 col-md-4 col-xs-12">
-                    <WebControls:TextBox2 ID="txtNivel" runat="server" MaxLength="2" />
-                </div>
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Orden(*)</label></div>
-                <div class="col-lg-4 col-md-4 col-xs-12">
-                    <WebControls:TextBox2 ID="txtOrden" runat="server" MaxLength="3" />
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Página</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtLink" runat="server" MaxLength="200" />
-                    <span style="font-size: 11px; color: #777;">
-                        Ruta tal cual, por ejemplo ~/View/Sistema/Mantenedores/Paises/Paises.aspx.
-                        Dejar en # si es una carpeta que solo agrupa otros menús.
-                    </span>
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Permiso</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <rad:RadComboBox2 ID="cboPermiso" runat="server" Width="60%" />
-                    <span style="font-size: 11px; color: #777;">
-                        Obligatorio cuando hay página. Es lo que se exige al abrirla.
-                    </span>
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Ícono</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <WebControls:TextBox2 ID="txtIcon" runat="server" MaxLength="100" />
-                    <span style="font-size: 11px; color: #777;">
-                        Clase de Material Design Icons, por ejemplo
-                        <b>mdi mdi-account-group-outline</b>. Todo el sitio usa MDI;
-                        no mezclar con Font Awesome.
-                    </span>
-                </div>
-            </div>
-
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-xs-12"><label>Visible(*)</label></div>
-                <div class="col-lg-10 col-md-10 col-xs-12">
-                    <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Visible" Checked="true" ValidationGroup="Menu" />
-                    <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Visible" ValidationGroup="Menu" />
-                    <span style="font-size: 11px; color: #777;">
-                        NO es una página que existe pero no aparece en el menú lateral,
-                        como las ventanas de detalle.
-                    </span>
-                </div>
-            </div>
-
-            <div class="col-lg-12 col-md-12 col-xs-12 form-col-center">
-                <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Menu" />
-                <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
-            </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>ID</label>
+        <asp:Label ID="lblId" runat="server"></asp:Label>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Nombre(*)</label>
+        <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="100" />
+        <asp:CustomValidator ID="cvNombre" runat="server" ControlToValidate="txtNombre"
+        ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Menu" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Descripción</label>
+        <WebControls:TextBox2 ID="txtDescripcion" runat="server" MaxLength="200" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Depende de</label>
+        <rad:RadComboBox2 ID="cboPadre" runat="server" Width="60%" />
+    </div>
+    </div>
+    <div class="sigma-modal-grid">
+    <div class="sigma-modal-field">
+        <label>Nivel(*)</label>
+        <WebControls:TextBox2 ID="txtNivel" runat="server" MaxLength="2" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Orden(*)</label>
+        <WebControls:TextBox2 ID="txtOrden" runat="server" MaxLength="3" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Página</label>
+        <WebControls:TextBox2 ID="txtLink" runat="server" MaxLength="200" />
+        <span class="sigma-modal-ayuda">
+        Ruta tal cual, por ejemplo ~/View/Sistema/Mantenedores/Paises/Paises.aspx.
+        Dejar en # si es una carpeta que solo agrupa otros menús.
+        </span>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Permiso</label>
+        <rad:RadComboBox2 ID="cboPermiso" runat="server" Width="60%" />
+        <span class="sigma-modal-ayuda">
+        Obligatorio cuando hay página. Es lo que se exige al abrirla.
+        </span>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Ícono</label>
+        <WebControls:TextBox2 ID="txtIcon" runat="server" MaxLength="100" />
+        <span class="sigma-modal-ayuda">
+        Clase de Material Design Icons, por ejemplo
+        <b>mdi mdi-account-group-outline</b>. Todo el sitio usa MDI;
+        no mezclar con Font Awesome.
+        </span>
+    </div>
+    <div class="sigma-modal-field">
+        <label>Visible(*)</label>
+        <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Visible" Checked="true" ValidationGroup="Menu" />
+        <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Visible" ValidationGroup="Menu" />
+        <span class="sigma-modal-ayuda">
+        NO es una página que existe pero no aparece en el menú lateral,
+        como las ventanas de detalle.
+        </span>
+    </div>
+    </div>
+<div class="sigma-modal-actions">
+    <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow();" />
+    <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Menu" />
+</div>
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
 </asp:Content>
