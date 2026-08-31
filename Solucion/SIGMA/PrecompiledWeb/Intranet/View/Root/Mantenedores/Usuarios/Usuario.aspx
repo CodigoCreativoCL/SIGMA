@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Usuarios_Usuario, App_Web_fxfeqo2s" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Usuarios_Usuario, App_Web_zilkot4z" %>
 
 <%@ Register TagPrefix="exp" TagName="UsuarioPerfil" Src="~/View/Root/Mantenedores/Usuarios/Controls/Perfiles.ascx" %>
 <%@ Register TagPrefix="exp" TagName="Paises" Src="~/View/Root/Mantenedores/Usuarios/Controls/Paises.ascx" %>

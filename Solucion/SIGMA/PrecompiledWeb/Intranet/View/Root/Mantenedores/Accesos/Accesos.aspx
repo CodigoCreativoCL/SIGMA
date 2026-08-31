@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Mantenedores_Accesos_Accesos, App_Web_a0bdp3lj" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Mantenedores_Accesos_Accesos, App_Web_5ykydjqy" %>
 
 <asp:Content ID="ContenHead" ContentPlaceHolderID="chpScript" runat="server">
     <link href="../../../Css/Formulario.css" rel="stylesheet" type="text/css" />

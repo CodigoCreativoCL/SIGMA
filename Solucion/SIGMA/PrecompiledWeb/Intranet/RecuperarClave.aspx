@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" autoeventwireup="true" inherits="RecuperarClave, App_Web_niiluyu0" %>
+﻿<%@ page language="C#" autoeventwireup="true" inherits="RecuperarClave, App_Web_bljzrotw" %>
 
 <!DOCTYPE html>
 <html lang="es">

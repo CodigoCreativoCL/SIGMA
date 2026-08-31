@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_ModulosSistema_NuevoModuloSistema, App_Web_ejfbsunh" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_ModulosSistema_NuevoModuloSistema, App_Web_hs0sgme1" %>
 
 <asp:Content ID="contentHeader" ContentPlaceHolderID="cphHeder" runat="server">
 </asp:Content>

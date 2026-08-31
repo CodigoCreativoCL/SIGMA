@@ -93,19 +93,23 @@ arreglarlas quince veces.
 
 ## 4. Endpoints
 
+33, en 13 controllers. Qué cubre y qué **no** cubre lo decide
+[`SIGMA_ALCANCE_APP.md`](SIGMA_ALCANCE_APP.md): solo lo que hacen en terreno
+los seis perfiles móviles.
+
 ```
 POST   /sesion                                HU-001  inicia sesión, devuelve JWT
+                                                      pasa @AMBITO = 2: el perfil
+                                                      de solo web no entra acá
 GET    /sesion                                        quién soy según el token
 DELETE /sesion                                HU-003  cerrar sesión
 
 GET    /cliente-usuarios/mis-clientes         HU-002  a qué clientes pertenezco
 POST   /cliente-usuarios/seleccionar          HU-002  elegir → token nuevo
 
+GET    /menus                                 HU-006  el árbol de la app, por permiso
 GET    /usuario-permisos                      HU-006  mis permisos (caché 60 s)
 GET    /usuario-permisos/tengo/{codigo}       HU-006  ¿tengo este permiso?
-
-GET    /catalogos                             HU-020  el registro de catálogos
-GET    /catalogos/{codigo}/valores            HU-020  los valores de uno
 
 GET,PUT /mi-perfil                            HU-005
 POST   /mi-perfil/password                    HU-005  exige la clave actual
@@ -113,20 +117,67 @@ POST   /mi-perfil/password                    HU-005  exige la clave actual
 POST   /usuario-recuperaciones                HU-004  pedir el enlace
 POST   /usuario-recuperaciones/restablecer    HU-004  usarlo
 
-CRUD   /clientes                              HU-010
-CRUD   /cliente-instalaciones                 HU-011  plantas
-CRUD   /instalacion-areas                     HU-012  áreas
-CRUD   /centros-costo                         HU-013
-CRUD   /cliente-usuarios                      HU-014
-CRUD   /perfiles                              HU-015
-CRUD   /grupo-trabajos                        HU-016
-CRUD   /usuario-especialidades                HU-017
-CRUD   /cliente-usuario-permisos              HU-007  permisos puntuales
-CRUD   /catalogo-valores                      HU-021
+-- lectura de referencia: lo que baja al dispositivo en HU-150 (Sprint 2).
+-- La escritura de estos tres es del Administrador del Cliente, desde la web.
+
+GET    /cliente-instalaciones                 HU-011  plantas
+GET    /cliente-instalaciones/{id}
+GET    /instalacion-areas                     HU-012  áreas
+GET    /instalacion-areas/{id}
+GET    /catalogos                             HU-020  el registro de catálogos
+GET    /catalogos/{codigo}/valores            HU-020  los valores de uno
+GET    /catalogo-valores                      HU-021
+GET    /catalogo-valores/{id}
+
+-- INVENTARIO · el modulo del bodeguero (Sprint 3, bloques 60 y 61)
+
+GET    /existencias                            HU-056  cuanto hay y donde esta
+                                                       ?alerta=true -> solo lo que
+                                                       esta fuera de umbral
+GET    /existencias/repuesto/{id}              HU-056  todas sus bodegas, sin paginar
+POST   /inventario-movimientos                 HU-054  ingreso
+                                               HU-055  entrega y devolucion
+                                               HU-057  ajuste, traslado y merma
+GET    /inventario-movimientos                 HU-057  historial, con FAMILIA
+GET    /inventario-movimientos/{id}
+GET    /repuestos                              HU-050  lectura de referencia (E2)
+GET    /repuestos/{id}
+GET    /repuestos/{id}/lotes                   HU-054  solo los vigentes
+GET    /bodegas                                HU-052  lectura de referencia (E2)
+GET    /bodegas/{id}
+GET    /bodegas/{id}/ubicaciones               HU-052
 ```
 
-`CRUD` = `GET` listado · `GET /{id}` detalle · `POST` alta · `PUT /{id}`
-edición · `DELETE /{id}` **baja lógica**.
+**Un solo POST para las tres historias de movimiento.** Del lado de la base
+son el mismo procedimiento con distinto tipo, y partirlo en la API crearía
+tres caminos que pueden divergir contra uno que no puede. El **permiso sí
+depende del tipo** y se resuelve antes de llamar al SP: entregar no es
+ajustar, y no todos los que entregan deberían poder corregir el conteo.
+
+**Es idempotente por `uuid`**, que lo genera el teléfono al *encolar* el
+movimiento, no al enviarlo: generado al enviar, cada reintento traería uno
+nuevo y la idempotencia no serviría de nada. Probado — dos llamadas con el
+mismo uuid devuelven el mismo id y el saldo se mueve una sola vez.
+
+**`/existencias` no se cachea, a propósito.** Es el dato que no puede estar
+viejo: un técnico que baja a buscar una pieza que ya no está perdió el viaje.
+Lo que sí viaja es `isa_fecha_ultimo_movimiento`, con la que la app puede
+decir *de cuándo* es lo que muestra sin conexión (HU-056 CA2).
+
+### Lo que ya no está
+
+`/clientes`, `/perfiles`, `/centros-costo`, `/grupo-trabajos`,
+`/usuario-especialidades`, `/cliente-usuario-permisos`, el CRUD de
+`/cliente-usuarios`, las escrituras de plantas, áreas y catálogos, y el
+`ValuesController` de la plantilla —que respondía en `.../API/values`—.
+
+Retirados el 31-08-2026 a `_RETIRADO/API/`, con su `LEEME.md`. No estaban
+rotos: no los consumía nadie. La web llama a los SP directo y esas historias
+son del Administrador del Cliente, que trabaja desde la web.
+
+**Antes de agregar un endpoint nuevo, comprobar contra el documento de alcance
+que alguno de los seis perfiles lo va a llamar.** Es la comprobación que no se
+hizo el 30-08 y costó 251 tareas de backlog.
 
 **Parámetros comunes de todo listado:** `?pagina=1&tamano=50&filtro=texto`.
 
@@ -350,8 +401,11 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
    que pueden salir**, con el nombre igual al del SP.
 2. Controller que herede de `ApiBase`, con `[RoutePrefix("recurso")]` **sin**
    `api/`.
-3. Cada endpoint dentro de `Ejecutar(() => { ... })`, con `ExigirUsuario()` y
-   `ExigirCliente()` según corresponda.
+3. Cada endpoint dentro de `Ejecutar(() => { ... })`, con **`ExigirPermiso("CODIGO")`**
+   —el mismo código que usa la web— y `ExigirCliente()` según corresponda.
+   `ExigirUsuario()` a secas solo sirve para lo propio del que llama
+   (mi perfil, mis permisos, mi menú): en todo lo demás deja el endpoint
+   abierto a cualquier token válido.
 4. Agregarlo al `API.csproj`.
 5. UTF-8 con BOM + compilar.
 
@@ -362,6 +416,11 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
 | Fecha | Qué se hizo |
 |---|---|
 | 30-08-2026 | **Nace la API del Sprint 1.** 14 controllers cubriendo las 17 historias, sobre una base transversal (`ErrorSql`, `ApiBase`, `Datos`, `Pagina`, `CacheCorta`, `SesionApi`) y JWT con usuario y cliente. Rutas sin `/api/`. Las firmas de los SPs verificadas contra `sys.parameters`; cuatro no existían. Compila en `exitcode=0`, **sin probar**. Las 55 tareas API quedan Terminada en el Sprint Backlog S1 |
+| 30-08-2026 | **El alcance, y el permiso que faltaba.** [`SIGMA_ALCANCE_APP.md`](SIGMA_ALCANCE_APP.md) fija qué cubre la API: solo lo que hacen los seis perfiles de terreno. De los 14 controllers, **7 rutas son de la app**, 4 son lectura que la app necesitará desde el Sprint 2, y el resto es excedente construido para historias solo web. Hallazgo: **ningún endpoint validaba permisos** —solo `ExigirUsuario()`, o sea que el token era válido—; nace `Utils/Permisos.cs` sobre `SEL_USUARIO_PERMISOS` con caché de 60 s, más `ExigirPermiso` / `ExigirAlgunPermiso` en `ApiBase`, y quedan **52 endpoints** con el suyo, respondiendo 403. Nace `MenusController` (`GET /menus`): la navegación de la app se resuelve por datos con `SEL_MENU_APP`, igual que la web. `POST /sesion` pasa `@AMBITO = 2` y maneja 403 y 402 explícitos: el Administrador del Cliente no entra a la app y el Técnico no entra a la web |
+
+| 31-08-2026 | **Retirados los endpoints que no van.** 7 controllers a `_RETIRADO/API/` y 4 recortados a sus `GET`: de **64 endpoints a 21**, en 9 controllers. Se fueron `/clientes`, `/perfiles`, `/centros-costo`, `/grupo-trabajos`, `/usuario-especialidades`, `/cliente-usuario-permisos`, el CRUD de `/cliente-usuarios` y el `ValuesController` de la plantilla de Visual Studio, que respondía en `.../API/values` por la ruta convencional. También los 16 DTOs que quedaron sin dueño. Nada estaba roto: no lo consumía nadie. Compila en `exitcode=0` |
+
+| 31-08-2026 | **El modulo del bodeguero (Sprint 3).** 4 controllers nuevos: `existencias`, `inventario-movimientos`, `repuestos` y `bodegas`. Un solo POST para ingreso, entrega, devolucion, ajuste, traslado y merma, con el **permiso resuelto por tipo**. `/repuestos` y `/bodegas` van solo en lectura por la excepcion **E2** del documento de alcance: son historias solo web, pero sin leerlas la app no puede ofrecer que mover ni a donde |
 
 ### Cómo actualizar este documento
 

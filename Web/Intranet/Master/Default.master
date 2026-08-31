@@ -65,7 +65,7 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=3" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=6" rel="stylesheet" />
 
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
@@ -128,6 +128,7 @@
                         <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                     <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
+                        <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                     <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                     <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
                     <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />

@@ -40,7 +40,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER CATALOGOS");
 
                 Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
 
@@ -72,7 +72,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER CATALOGOS");
                 ExigirTexto(codigo, "codigo");
 
                 Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
@@ -120,7 +120,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER CATALOGOS");
                 ExigirCliente();
 
                 if (catalogo <= 0 && string.IsNullOrEmpty(codigo))
@@ -155,7 +155,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER CATALOGOS");
                 ExigirCliente();
 
                 if (catalogo <= 0 && string.IsNullOrEmpty(codigo))
@@ -175,110 +175,6 @@ namespace API.Controllers
                 if (r == null || r.Count == 0) return NoEncontrado("El valor del catálogo");
 
                 return Ok(r[0]);
-            });
-        }
-
-        /// <summary>POST /catalogo-valores — alta.                  HU-021</summary>
-        [HttpPost]
-        [Route("")]
-        public IHttpActionResult Crear(CatalogoValorAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.nombre, "nombre");
-
-                if (dto.catalogo <= 0)
-                    throw new ArgumentException("Indique el catálogo al que se agrega el valor.");
-
-                int id = Datos.Ejecutar("INS_CATALOGO_VALOR",
-                    new Dictionary<string, object>
-                    {
-                        { "@CATALOGO", dto.catalogo },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@CODIGO", dto.codigo },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@ORDEN", dto.orden },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
-
-                CacheCorta.Botar("catvalores", SesionApi.UsuarioId(), SesionApi.ClienteId());
-
-                return Creado(id);
-            });
-        }
-
-        /// <summary>PUT /catalogo-valores/{id} — edición.           HU-021</summary>
-        [HttpPut]
-        [Route("{id:int}")]
-        public IHttpActionResult Editar(int id, CatalogoValorAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.nombre, "nombre");
-
-                if (dto.catalogo <= 0)
-                    throw new ArgumentException("Indique el catálogo del valor.");
-
-                Datos.Ejecutar("UPD_CATALOGO_VALOR",
-                    new Dictionary<string, object>
-                    {
-                        { "@CATALOGO", dto.catalogo },
-                        { "@VALOR_ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@ORDEN", dto.orden },
-                        { "@HABILITADO", dto.habilitado },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                CacheCorta.Botar("catvalores", SesionApi.UsuarioId(), SesionApi.ClienteId());
-
-                return Ok(new { id = id });
-            });
-        }
-
-        /// <summary>
-        /// DELETE /catalogo-valores/{id} — baja lógica.             HU-021
-        ///
-        /// No hay DEL_: la baja es el UPD_ con habilitado en false, que es
-        /// lo correcto. Un valor de catálogo ya usado por registros
-        /// existentes no se puede borrar sin dejarlos apuntando a nada;
-        /// deshabilitado deja de ofrecerse en los combos y los registros
-        /// viejos siguen mostrando lo que decían.
-        /// </summary>
-        [HttpDelete]
-        [Route("{id:int}")]
-        public IHttpActionResult Eliminar(int id, int catalogo = 0)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                if (catalogo <= 0)
-                    throw new ArgumentException("Indique el catálogo (?catalogo=).");
-
-                Datos.Ejecutar("UPD_CATALOGO_VALOR",
-                    new Dictionary<string, object>
-                    {
-                        { "@CATALOGO", catalogo },
-                        { "@VALOR_ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@HABILITADO", false },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                CacheCorta.Botar("catvalores", SesionApi.UsuarioId(), SesionApi.ClienteId());
-
-                return Ok(new { id = id, mensaje = "Valor deshabilitado." });
             });
         }
     }

@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_PanelSinSeleccion, App_Web_g3shpaus" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_PanelSinSeleccion, App_Web_z0qvuxay" %>
 <asp:PlaceHolder ID="phPanel" runat="server" Visible="false">
     <div class="panel-sin-seleccion">
         <div class="pss-icono">

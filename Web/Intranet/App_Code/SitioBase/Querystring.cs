@@ -87,6 +87,17 @@ namespace SitioBase
         ///
         /// Es el caso de lejos mas comun -Querystring.Entero(q, "Id")- y
         /// evita repetir el bucle de split en cada ficha.
+        ///
+        /// RECIBE EL VALOR **TAL COMO VIENE DE LA URL**, sin descifrar:
+        /// esta funcion llama a Descifrar por dentro.
+        ///
+        ///     BIEN  Entero(Request.QueryString["query"], "Id")
+        ///     MAL   Entero(Descifrar(Request.QueryString["query"]), "Id")
+        ///
+        /// La forma de abajo descifra dos veces. La segunda falla, y como
+        /// Descifrar no lanza, devuelve 0 **en silencio**: la ficha se abre
+        /// en blanco como si fuera un registro nuevo, sin ningun error.
+        /// Paso en las cuatro fichas del modulo de inventario.
         /// </summary>
         public static int Entero(object valor, string parametro)
         {

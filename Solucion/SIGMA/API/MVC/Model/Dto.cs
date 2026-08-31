@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace API.MVC.Model
 {
@@ -78,58 +79,6 @@ namespace API.MVC.Model
     }
 
 
-    /// <summary>Usuario del cliente (HU-014).</summary>
-    public class ClienteUsuarioDto
-    {
-        public int usu_id { get; set; }
-        public string usu_login { get; set; }
-        public string usu_identificador { get; set; }
-        public string usu_nombre { get; set; }
-        public string usu_apellido_paterno { get; set; }
-        public string usu_apellido_materno { get; set; }
-        public string usu_correo { get; set; }
-        public string usu_telefono { get; set; }
-        public bool usu_habilitado { get; set; }
-        public string PERFILES { get; set; }
-    }
-
-    public class ClienteUsuarioAltaDto
-    {
-        public string identificador { get; set; }
-        public string login { get; set; }
-        public string password { get; set; }
-        public string nombres { get; set; }
-        public string apellido_paterno { get; set; }
-        public string apellido_materno { get; set; }
-        public string telefono { get; set; }
-        public string correo { get; set; }
-        /// <summary>Ids de perfil separados por coma, como los espera el SP.</summary>
-        public string perfiles { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
-    /// <summary>Perfil y su matriz de permisos (HU-015).</summary>
-    public class PerfilDto
-    {
-        public int per_id { get; set; }
-        public string per_nombre { get; set; }
-        public string per_descripcion { get; set; }
-        public int per_tipo_perfil { get; set; }
-        public bool per_solo_ejecucion { get; set; }
-        public bool per_habilitado { get; set; }
-    }
-
-    public class PerfilAltaDto
-    {
-        public string nombre { get; set; }
-        public string descripcion { get; set; }
-        public int tipo { get; set; }
-        public bool solo_ejecucion { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
     /// <summary>Planta del cliente (HU-011).</summary>
     public class ClienteInstalacionDto
     {
@@ -174,135 +123,6 @@ namespace API.MVC.Model
         public string RUTA { get; set; }
     }
 
-    public class InstalacionAreaAltaDto
-    {
-        public int cliente_instalacion { get; set; }
-        public int? area_padre { get; set; }
-        public int? tipo { get; set; }
-        public string codigo { get; set; }
-        public string nombre { get; set; }
-        public string descripcion { get; set; }
-        public bool habilitado { get; set; }
-        public bool quita_padre { get; set; }
-    }
-
-
-    /// <summary>Cliente de SIGMA (HU-010).</summary>
-    public class ClienteDto
-    {
-        public int cli_id { get; set; }
-        public string cli_nombre { get; set; }
-        public string cli_razon_social { get; set; }
-        public string cli_identificador { get; set; }
-        public string cli_nombre_fantasia { get; set; }
-        public int? cli_pais { get; set; }
-        public string PAI_NOMBRE { get; set; }
-        public int? cli_zona_horaria { get; set; }
-        public int? cli_idioma { get; set; }
-        public int? cli_moneda { get; set; }
-        public bool cli_habilitado { get; set; }
-    }
-
-    public class ClienteAltaDto
-    {
-        public string nombre { get; set; }
-        public string razon_social { get; set; }
-        public string identificador { get; set; }
-        public string nombre_fantasia { get; set; }
-        public int pais { get; set; }
-        public int? zona_horaria { get; set; }
-        public int? idioma { get; set; }
-        public int? moneda { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
-    /// <summary>Especialidad y certificación de una persona (HU-017).</summary>
-    public class UsuarioEspecialidadDto
-    {
-        public int ues_id { get; set; }
-        public int ues_usuario { get; set; }
-        public int ues_cliente { get; set; }
-        public int ues_especialidad { get; set; }
-        public string ESP_NOMBRE { get; set; }
-        public int? ues_especialidad_nivel { get; set; }
-        public string ENL_NOMBRE { get; set; }
-        public string ues_certificacion { get; set; }
-        public DateTime? ues_fecha_vencimiento { get; set; }
-        public bool ues_habilitado { get; set; }
-        public string USU_NOMBRE { get; set; }
-        public string estado { get; set; }
-        public int? dias_para_vencer { get; set; }
-    }
-
-    public class UsuarioEspecialidadAltaDto
-    {
-        public int usuario_destino { get; set; }
-        public int especialidad { get; set; }
-        public int? nivel { get; set; }
-        public string certificacion { get; set; }
-        public DateTime? fecha_vencimiento { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
-    /// <summary>Permiso puntual de una persona (HU-007).</summary>
-    public class ClienteUsuarioPermisoDto
-    {
-        public int cpm_id { get; set; }
-        public int cpm_cliente_usuario { get; set; }
-        public int cpm_permiso { get; set; }
-        public string PRM_CODIGO { get; set; }
-        public string PRM_NOMBRE { get; set; }
-        public int? cpm_cliente_instalacion { get; set; }
-        public int? cpm_instalacion_area { get; set; }
-        public bool cpm_otorgado { get; set; }
-        public DateTime? cpm_fecha_inicio { get; set; }
-        public DateTime? cpm_fecha_fin { get; set; }
-        public string cpm_motivo { get; set; }
-        public bool cpm_habilitado { get; set; }
-    }
-
-    public class ClienteUsuarioPermisoAltaDto
-    {
-        public int cliente_usuario { get; set; }
-        public int permiso { get; set; }
-        public int? cliente_instalacion { get; set; }
-        public int? instalacion_area { get; set; }
-        public bool otorgado { get; set; }
-        public DateTime? fecha_inicio { get; set; }
-        public DateTime? fecha_fin { get; set; }
-        public string motivo { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
-    /// <summary>Grupo de trabajo (HU-016).</summary>
-    public class GrupoTrabajoDto
-    {
-        public int gtr_id { get; set; }
-        public int gtr_cliente { get; set; }
-        public int? gtr_cliente_instalacion { get; set; }
-        public string CIN_NOMBRE { get; set; }
-        public string gtr_codigo { get; set; }
-        public string gtr_nombre { get; set; }
-        public string gtr_descripcion { get; set; }
-        public int? gtr_especialidad { get; set; }
-        public string ESP_NOMBRE { get; set; }
-        public bool gtr_habilitado { get; set; }
-    }
-
-    public class GrupoTrabajoAltaDto
-    {
-        public int? cliente_instalacion { get; set; }
-        public string codigo { get; set; }
-        public string nombre { get; set; }
-        public string descripcion { get; set; }
-        public int? especialidad { get; set; }
-        public bool habilitado { get; set; }
-        public bool quita_planta { get; set; }
-    }
-
 
     /// <summary>Solicitud de recuperación de contraseña (HU-004).</summary>
     public class RecuperacionDto
@@ -341,40 +161,6 @@ namespace API.MVC.Model
         public bool valor_habilitado { get; set; }
     }
 
-    public class CatalogoValorAltaDto
-    {
-        public int catalogo { get; set; }
-        public string codigo { get; set; }
-        public string nombre { get; set; }
-        public string descripcion { get; set; }
-        public int? orden { get; set; }
-        public bool habilitado { get; set; }
-    }
-
-
-    /// <summary>Centro de costo (HU-013).</summary>
-    public class CentroCostoDto
-    {
-        public int cco_id { get; set; }
-        public int cco_cliente { get; set; }
-        public int? cco_centro_costo_padre { get; set; }
-        public string cco_codigo { get; set; }
-        public string cco_nombre { get; set; }
-        public bool cco_habilitado { get; set; }
-        public string PADRE_NOMBRE { get; set; }
-        public int NIVEL { get; set; }
-        public string RUTA { get; set; }
-    }
-
-    public class CentroCostoAltaDto
-    {
-        public int? centro_costo_padre { get; set; }
-        public string codigo { get; set; }
-        public string nombre { get; set; }
-        public bool habilitado { get; set; }
-        public bool quita_padre { get; set; }
-    }
-
 
     /// <summary>Mi perfil (HU-005).</summary>
     public class MiPerfilDto
@@ -399,5 +185,200 @@ namespace API.MVC.Model
     {
         public string password_actual { get; set; }
         public string password_nuevo { get; set; }
+    }
+
+
+    /// <summary>
+    /// Una fila del árbol de la app, tal como sale de SEL_MENU_APP
+    /// (HU-006, bloque 58).
+    ///
+    /// Los nombres son los de la columna porque así mapea Datos.Listar. Se
+    /// convierten a algo legible en MenuAppNodo antes de salir al JSON: la
+    /// app no tiene por qué conocer el prefijo mnu_.
+    /// </summary>
+    public class MenuAppFila
+    {
+        public int mnu_id { get; set; }
+        public string mnu_nombre { get; set; }
+        public string mnu_descripcion { get; set; }
+        public int mnu_nivel { get; set; }
+        public int? mnu_padre { get; set; }
+        public int mnu_orden { get; set; }
+        public string mnu_link { get; set; }
+        public string mnu_icon { get; set; }
+        public string mnu_ambito { get; set; }
+    }
+
+
+    /// <summary>
+    /// El árbol que consume Flutter para armar su navegación.
+    ///
+    /// Va anidado y no plano a propósito: plano obliga a cada consumidor a
+    /// reconstruir la jerarquía por su cuenta, y el día que haya dos
+    /// consumidores habrá dos reconstrucciones distintas.
+    /// </summary>
+    public class MenuAppNodo
+    {
+        public int id { get; set; }
+        public string nombre { get; set; }
+        public string descripcion { get; set; }
+        public int orden { get; set; }
+
+        /// <summary>Nombre de la ruta en Flutter (app://...). Null en un grupo.</summary>
+        public string ruta { get; set; }
+
+        public string icono { get; set; }
+        public List<MenuAppNodo> hijos { get; set; }
+    }
+
+
+    /* =====================================================================
+       INVENTARIO — el modulo del bodeguero (Sprint 3).
+
+       Solo lo que la app usa. HU-050 (maestro de repuestos), HU-052
+       (bodegas) y HU-053 (umbrales) son historias solo web y no tienen
+       endpoint: la web llama a los SP directo. Lo que si viaja es la
+       LECTURA de repuestos y bodegas, porque sin ella la app no puede
+       ofrecer que mover ni a donde.
+       ===================================================================== */
+
+    /// <summary>Repuesto del maestro, en lectura (HU-050 · referencia para la app).</summary>
+    public class RepuestoDto
+    {
+        public int rep_id { get; set; }
+        public string rep_codigo { get; set; }
+        public string rep_nombre { get; set; }
+        public string rep_fabricante { get; set; }
+        public string rep_modelo { get; set; }
+        public bool rep_controla_lote { get; set; }
+        public bool rep_es_consumible { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public decimal EXISTENCIA_TOTAL { get; set; }
+        public bool rep_habilitado { get; set; }
+    }
+
+    /// <summary>Bodega, en lectura (HU-052 · referencia para la app).</summary>
+    public class BodegaDto
+    {
+        public int bod_id { get; set; }
+        public string bod_codigo { get; set; }
+        public string bod_nombre { get; set; }
+        public int bod_cliente_instalacion { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public bool bod_habilitado { get; set; }
+    }
+
+    /// <summary>Ubicacion dentro de una bodega (HU-052 CA2).</summary>
+    public class BodegaUbicacionDto
+    {
+        public int bub_id { get; set; }
+        public int bub_bodega { get; set; }
+        public string bub_codigo { get; set; }
+        public string bub_nombre { get; set; }
+    }
+
+    /// <summary>
+    /// Un lote de un repuesto que los controla (HU-054 CA2).
+    ///
+    /// VENCIDO llega calculado por el SP: depende de la fecha de hoy, y una
+    /// columna con esa marca estaria mal la mitad del tiempo.
+    /// </summary>
+    public class RepuestoLoteDto
+    {
+        public int rlo_id { get; set; }
+        public int rlo_repuesto { get; set; }
+        public string rlo_codigo { get; set; }
+        public DateTime? rlo_fecha_ingreso { get; set; }
+        public DateTime? rlo_fecha_vencimiento { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public int VENCIDO { get; set; }
+    }
+
+
+    /// <summary>
+    /// La existencia de un repuesto en una bodega (HU-056).
+    ///
+    /// BAJO_MINIMO y SOBRE_MAXIMO llegan calculados por el SP. La app los
+    /// pinta, no los deduce: si cada consumidor comparara la cantidad
+    /// contra el umbral por su cuenta, el dia que la regla cambie -por
+    /// ejemplo, avisar en el punto de reposicion y no en el minimo- habria
+    /// que cambiarla en todos.
+    /// </summary>
+    public class InventarioSaldoDto
+    {
+        public int isa_id { get; set; }
+        public int isa_repuesto { get; set; }
+        public int isa_bodega { get; set; }
+        public decimal isa_cantidad { get; set; }
+        public decimal isa_cantidad_reservada { get; set; }
+        public decimal CANTIDAD_DISPONIBLE { get; set; }
+        public DateTime? isa_fecha_ultimo_movimiento { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public bool rep_controla_lote { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string BODEGA_CODIGO { get; set; }
+        public string BODEGA_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public decimal? rbs_stock_minimo { get; set; }
+        public decimal? rbs_stock_maximo { get; set; }
+        public int BAJO_MINIMO { get; set; }
+        public int SOBRE_MAXIMO { get; set; }
+        public string UBICACION_CODIGO { get; set; }
+    }
+
+    /// <summary>Un movimiento de inventario (HU-057 CA2).</summary>
+    public class InventarioMovimientoDto
+    {
+        public int imo_id { get; set; }
+        public Guid imo_uuid { get; set; }
+        public int imo_repuesto { get; set; }
+        public int imo_bodega { get; set; }
+        public decimal imo_cantidad { get; set; }
+        public decimal? imo_costo_unitario { get; set; }
+        public DateTime imo_fecha_movimiento_utc { get; set; }
+        public int? imo_orden_trabajo { get; set; }
+        public string imo_observacion { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int SIGNO { get; set; }
+
+        /// <summary>INGRESO · CONSUMO · AJUSTE · TRASLADO. HU-057 CA2.</summary>
+        public string FAMILIA { get; set; }
+
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string BODEGA_CODIGO { get; set; }
+        public string BODEGA_DESTINO_NOMBRE { get; set; }
+        public string UBICACION_CODIGO { get; set; }
+        public string LOTE_CODIGO { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+    }
+
+    /// <summary>
+    /// Lo que la app manda para registrar un movimiento
+    /// (HU-054 ingreso · HU-055 entrega y devolucion · HU-057 ajuste).
+    ///
+    /// EL UUID LO PONE EL TELEFONO
+    ///   Es lo que hace que un reintento no descuente dos veces. La app
+    ///   genera el uuid al ENCOLAR el movimiento, no al enviarlo: si lo
+    ///   generara al enviar, cada reintento traeria uno nuevo y la
+    ///   idempotencia no serviria de nada.
+    /// </summary>
+    public class MovimientoAltaDto
+    {
+        public int repuesto { get; set; }
+        public int bodega { get; set; }
+        public int tipo { get; set; }
+        public decimal cantidad { get; set; }
+        public int? ubicacion { get; set; }
+        public int? lote { get; set; }
+        public decimal? costo_unitario { get; set; }
+        public int? moneda { get; set; }
+        public int? orden_trabajo { get; set; }
+        public int? bodega_destino { get; set; }
+        public string observacion { get; set; }
+        public Guid? uuid { get; set; }
     }
 }

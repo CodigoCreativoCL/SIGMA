@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Comercial_Clientes_ReasignacionesClientes, App_Web_gahd0cg3" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Comercial_Clientes_ReasignacionesClientes, App_Web_tftk3qfs" %>
 <%@ Register TagPrefix="wuc" TagName="Clientes" Src="~/View/Comun/Controls/Cliente/Clientes.ascx" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="cphHeder" runat="Server">

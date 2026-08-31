@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comun_Procesamiento, App_Web_gvweby5p" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comun_Procesamiento, App_Web_cyyn5nr0" %>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="cphHeder" runat="server">
    

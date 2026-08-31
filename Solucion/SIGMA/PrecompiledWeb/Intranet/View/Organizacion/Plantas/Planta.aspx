@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Organizacion_Plantas_Planta, App_Web_rkydycl4" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Organizacion_Plantas_Planta, App_Web_bj22bbmm" %>
 
 <%@ Register Src="~/View/Comun/Controls/Cliente/Instalaciones/ConfiguracionApp.ascx" TagPrefix="wuc" TagName="ConfiguracionApp" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Responsables" %>

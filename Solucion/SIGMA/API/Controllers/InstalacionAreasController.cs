@@ -28,7 +28,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER AREAS");
                 ExigirCliente();
 
                 Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
@@ -55,7 +55,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER AREAS");
                 ExigirCliente();
 
                 List<InstalacionAreaDto> r = Datos.Listar<InstalacionAreaDto>("SEL_INSTALACION_AREA",
@@ -68,92 +68,6 @@ namespace API.Controllers
                 if (r == null || r.Count == 0) return NoEncontrado("El área");
 
                 return Ok(r[0]);
-            });
-        }
-
-        /// <summary>POST /instalacion-areas — alta.              HU-012</summary>
-        [HttpPost]
-        [Route("")]
-        public IHttpActionResult Crear(InstalacionAreaAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.nombre, "nombre");
-
-                if (dto.cliente_instalacion <= 0)
-                    throw new ArgumentException("Indique la planta a la que pertenece el área.");
-
-                int id = Datos.Ejecutar("INS_INSTALACION_AREA",
-                    new Dictionary<string, object>
-                    {
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@CLIENTE_INSTALACION", dto.cliente_instalacion },
-                        { "@AREA_PADRE", dto.area_padre },
-                        { "@INSTALACION_AREA_TIPO", dto.tipo },
-                        { "@CODIGO", dto.codigo },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
-
-                return Creado(id);
-            });
-        }
-
-        /// <summary>
-        /// PUT /instalacion-areas/{id} — edición.                HU-012
-        ///
-        /// quita_padre existe porque no se puede distinguir "no me mandaron
-        /// el padre" de "quiero dejarla sin padre" mirando solo un nulo: el
-        /// SP usa ISNULL para conservar lo que no viene. Sin esta bandera,
-        /// un área nunca podría subir a la raíz.
-        /// </summary>
-        [HttpPut]
-        [Route("{id:int}")]
-        public IHttpActionResult Editar(int id, InstalacionAreaAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.nombre, "nombre");
-
-                Datos.Ejecutar("UPD_INSTALACION_AREA",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@AREA_PADRE", dto.area_padre },
-                        { "@INSTALACION_AREA_TIPO", dto.tipo },
-                        { "@CODIGO", dto.codigo },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@HABILITADO", dto.habilitado },
-                        { "@QUITA_PADRE", dto.quita_padre },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                return Ok(new { id = id });
-            });
-        }
-
-        /// <summary>DELETE /instalacion-areas/{id} — baja.       HU-012</summary>
-        [HttpDelete]
-        [Route("{id:int}")]
-        public IHttpActionResult Eliminar(int id)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                Datos.Ejecutar("DEL_INSTALACION_AREA",
-                    new Dictionary<string, object> { { "@ID", id } });
-
-                return Ok(new { id = id, mensaje = "Área dada de baja." });
             });
         }
     }

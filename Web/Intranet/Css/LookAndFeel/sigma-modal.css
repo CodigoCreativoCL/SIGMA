@@ -147,38 +147,136 @@
     color: var(--fg-m3-text-secondary);
 }
 
-
-/* ---- Rejilla de campos ----
-   auto-fit y no dos columnas fijas: el mismo modal se abre a 900px
-   en un escritorio y a 380px en un telefono, y una rejilla rigida
-   obliga a scroll horizontal, que en una ficha es inaceptable. */
-.sigma-modal-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-    gap: 14px;
-    margin-bottom: 20px;
+/* Ambar: lo que pide atencion sin estar mal. Faltaba. */
+.sigma-modal-chip.is-advertencia {
+    background-color: var(--sg-warning-subtle);
+    color: #78350F;
 }
 
-/* Un campo que ocupa la fila completa: observaciones, textos largos. */
-.sigma-modal-grid > .is-ancho {
-    grid-column: 1 / -1;
+
+/* ---- Rejilla de campos ----
+   DOCE COLUMNAS Y NO auto-fit
+
+     auto-fit repartia el ancho solo, pero el ancho de un campo no es
+     una funcion del espacio disponible: es una funcion del DATO. Un ID
+     de tres digitos y un nombre de cuatrocientos caracteres no pueden
+     medir lo mismo, y con auto-fit median igual.
+
+     Peor: cualquier campo .is-ancho ocupaba la fila entera y cortaba
+     la que venia armandose. Con seis columnas en pantalla ancha, una
+     fila de "ID + Codigo" seguida de un "Nombre" ancho dejaba cuatro
+     columnas vacias a la derecha. Se perdia media pantalla por fila.
+
+     Ahora la rejilla tiene doce columnas fijas y cada campo declara
+     cuanto mide. Doce divide por 2, 3, 4 y 6, asi que casi cualquier
+     combinacion de campos cierra la fila exacta.
+   ============================================================= */
+.sigma-modal-grid {
+    display: grid;
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+    gap: 14px 16px;
+    margin-bottom: 4px;
+}
+
+/* Sin clase, un campo mide un tercio: tres por fila es lo que sirve
+   para la mayoria (un combo, una fecha, un monto). */
+.sigma-modal-grid > .sigma-modal-field { grid-column: span 4; }
+
+.sigma-modal-grid > .is-mini   { grid-column: span 2; }  /* ID, un numero corto   */
+.sigma-modal-grid > .is-chico  { grid-column: span 3; }  /* codigo, fecha, cantidad */
+.sigma-modal-grid > .is-medio  { grid-column: span 4; }  /* explicito, por claridad */
+.sigma-modal-grid > .is-mitad  { grid-column: span 6; }
+.sigma-modal-grid > .is-grande { grid-column: span 8; }
+.sigma-modal-grid > .is-ancho  { grid-column: 1 / -1; }  /* observaciones, textos largos */
+
+/* En un modal angosto doce columnas serian doce columnas de 20px.
+   Se pasa a seis, y lo que era un tercio pasa a ser la mitad. */
+@media (max-width: 1100px) {
+    .sigma-modal-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+    .sigma-modal-grid > .sigma-modal-field { grid-column: span 3; }
+    .sigma-modal-grid > .is-mini  { grid-column: span 2; }
+    .sigma-modal-grid > .is-chico { grid-column: span 2; }
+    .sigma-modal-grid > .is-grande,
+    .sigma-modal-grid > .is-mitad { grid-column: span 6; }
+}
+
+@media (max-width: 680px) {
+    .sigma-modal-grid { grid-template-columns: minmax(0, 1fr); }
+    .sigma-modal-grid > .sigma-modal-field,
+    .sigma-modal-grid > .is-mini,
+    .sigma-modal-grid > .is-chico,
+    .sigma-modal-grid > .is-medio,
+    .sigma-modal-grid > .is-mitad,
+    .sigma-modal-grid > .is-grande { grid-column: 1 / -1; }
 }
 
 
 /* ---- Campo ---- */
+/* SIN CAJA POR CAMPO
+
+     Cada campo era una tarjeta con borde y 14px de relleno, y adentro
+     iba un input que trae SU PROPIO borde. Dos bordes concentricos a
+     4px uno del otro: el ojo lee dos limites donde hay un solo campo,
+     y el relleno de la tarjeta sumaba 28px de alto a cada fila sin
+     aportar informacion.
+
+     El control ya se delimita solo. El rotulo arriba, el control
+     abajo, y el aire entre campos lo pone la rejilla. */
 .sigma-modal-field {
     display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 14px 16px;
-    border: 1px solid var(--fg-m3-outline-variant);
-    border-radius: var(--sg-radius-md);
-    background-color: #ffffff;
-    transition: border-color var(--sg-duration-fast) var(--sg-easing);
+    gap: 4px;
+    min-width: 0;
 }
 
-.sigma-modal-field:focus-within {
-    border-color: var(--fg-m3-primary);
+/* EL ROTULO MIDE SIEMPRE LO MISMO
+
+     Sin altura fija, un rotulo que envuelve a dos lineas empuja su
+     control hacia abajo y el de al lado no. La fila queda escalonada
+     y se lee como si algo se hubiera descuadrado. */
+.sigma-modal-field > label,
+.sigma-modal-field .sigma-modal-label {
+    height: 15px;
+    line-height: 15px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+/* Y EL CONTROL ARRANCA SIEMPRE A LA MISMA ALTURA
+
+     Una fila mezcla un input con borde, un combo, dos radios y un
+     valor de solo lectura. Cada uno traia su propia altura, asi que
+     ninguna fila quedaba alineada. Los cuatro miden 38px. */
+.sigma-modal-field > .sigma-modal-valor,
+.sigma-modal-field > .sigma-modal-opciones,
+.sigma-modal-field > input[type="text"],
+.sigma-modal-field > .RadComboBox {
+    min-height: 38px;
+}
+
+.sigma-modal-field > .sigma-modal-valor {
+    display: flex;
+    align-items: center;
+    padding-left: 10px;
+    border-left: 2px solid var(--sg-border);
+}
+
+/* Un campo de solo lectura pierde el borde del input y queda como
+   texto suelto al lado de uno editable. Se le pone la misma linea a
+   la izquierda que al valor: se lee como campo, y se distingue del
+   editable sin fingir que se puede escribir en el. */
+.sigma-modal-field input[readonly] {
+    padding-left: 10px !important;
+    border: 0 !important;
+    border-left: 2px solid var(--sg-border) !important;
+    border-radius: 0 !important;
+    background-color: transparent !important;
+    font-weight: 600;
+}
+
+.sigma-modal-field .sigma-modal-opciones {
+    align-items: center;
 }
 
 .sigma-modal-field > label,
@@ -225,7 +323,7 @@
     display: flex;
     align-items: center;
     gap: 20px;
-    min-height: 30px;
+    min-height: 38px;
 }
 
 .sigma-modal-opciones input[type="radio"],
@@ -431,3 +529,113 @@
    Si aparece una pantalla con el patron viejo, lo correcto es migrarla,
    no revivir esto. Queda en el historial del repositorio.
    ============================================================= */
+
+
+/* =============================================================
+   TRAZABILIDAD — el pie de toda ficha
+
+   Va abajo y en gris a proposito: es informacion de auditoria,
+   no del formulario. Arriba competiria con los campos que la
+   persona vino a llenar; abajo esta cuando se la busca.
+   ============================================================= */
+.sigma-auditoria {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--sg-border);
+    background-color: var(--sg-surface-subtle);
+    border-radius: var(--sg-radius-md);
+}
+
+.sigma-auditoria-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.sigma-auditoria-item i {
+    font-size: 17px;
+    line-height: 1.3;
+    color: var(--sg-text-muted);
+}
+
+.sigma-auditoria .rotulo {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--sg-text-muted);
+}
+
+.sigma-auditoria .valor {
+    display: block;
+    font-size: 12.5px;
+    color: var(--sg-text-secondary);
+}
+
+.sigma-auditoria .sin-dato {
+    font-style: italic;
+    color: var(--sg-text-muted);
+}
+
+
+/* =============================================================
+   SECCIONES DENTRO DE UN FORMULARIO
+
+   Un formulario de quince campos en una sola rejilla obliga a
+   leerlos todos para encontrar uno. Agrupados por lo que
+   significan —identificacion, fabricante, caracteristicas, vida
+   util— el ojo salta al grupo y despues al campo.
+
+   Es distinto de .sigma-modal-section, que separa BLOQUES de la
+   ficha (los umbrales, los lotes). Esto separa partes DE UN
+   MISMO formulario y por eso pesa menos: una linea y un rotulo,
+   sin caja ni fondo que compita con los campos.
+   ============================================================= */
+.sigma-form-seccion {
+    margin-top: 26px;
+}
+
+.sigma-form-seccion:first-of-type {
+    margin-top: 0;
+}
+
+/* EL ROTULO NO LLEVA LA LINEA
+
+     La llevaba, y la ayuda de la seccion quedaba DEBAJO de la linea,
+     o sea del lado de los campos: se leia como la ayuda del primer
+     campo y no del grupo. La linea pasa a cerrar el encabezado
+     completo (rotulo + ayuda), que es lo que separa de los campos. */
+.sigma-form-seccion > .titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--sg-text-secondary);
+}
+
+.sigma-form-seccion > .titulo i {
+    font-size: 15px;
+    color: var(--sg-purple);
+}
+
+/* La ayuda de la seccion entera, cuando hace falta explicar el
+   grupo y no cada campo. */
+.sigma-form-seccion > .ayuda {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: var(--sg-text-muted);
+}
+
+/* La unica linea de la seccion, arriba de los campos. */
+.sigma-form-seccion > .sigma-modal-grid {
+    padding-top: 14px;
+    border-top: 1px solid var(--sg-border);
+}
