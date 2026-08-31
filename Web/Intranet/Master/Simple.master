@@ -54,8 +54,8 @@
          mientras el resto del sitio ya estaba relookeado. Va DESPUES de v2
          para que los tokens de marca ganen. -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=3" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=6" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=4" rel="stylesheet" />
@@ -116,6 +116,7 @@
                         <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                         <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
+                        <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
                         <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />

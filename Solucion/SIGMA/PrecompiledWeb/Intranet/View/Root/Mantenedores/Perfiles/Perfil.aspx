@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Perfiles_Perfil, App_Web_kdodfh0l" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Perfiles_Perfil, App_Web_3xmscvgu" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">

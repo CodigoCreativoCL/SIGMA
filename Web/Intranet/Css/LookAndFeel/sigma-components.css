@@ -1195,16 +1195,25 @@ body {
    AddCheckboxColumn (Grid.css), con variantes de color tonal.
    ============================================================= */
 .grid-estado-chip {
-    display: inline-block;
-    padding: 4px 14px;
+    /* inline-flex y no inline-block: con inline-block el icono se apoya en
+       la linea base y hay que corregirlo con vertical-align, que da un
+       resultado distinto en cada chip segun su texto. Con flex, icono y
+       texto se centran solos y todos los chips se apoyan igual. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 4px 12px;
+    min-height: 24px;
     border-radius: var(--fg-m3-radius-pill);
     border: 1px solid transparent;
     font-size: 12px;
     font-weight: 700;
-    line-height: 1.4;
+    line-height: 1.2;
     text-transform: uppercase;
     letter-spacing: .4px;
     white-space: nowrap;
+    vertical-align: middle;
 }
 
 .grid-estado-chip.is-neutro {
@@ -1232,6 +1241,188 @@ body {
     background-color: var(--fg-m3-error-container);
     color: var(--fg-m3-on-error-container);
 }
+
+/* Ambar. Faltaba, y es el color que le corresponde a lo que no esta mal
+   pero pide atencion: sobrestock, un ajuste de inventario, una correccion.
+   Sin el, esos estados terminaban en rojo -que exagera- o sin color. */
+.grid-estado-chip.is-advertencia {
+    background-color: var(--sg-warning-subtle);
+    color: #78350F;
+}
+
+/* Icono dentro del chip. El color lo hereda; la separacion la pone el
+   gap del flex, no un margin. */
+.grid-estado-chip i {
+    font-size: 14px;
+    line-height: 1;
+}
+
+
+/* =============================================================
+   INVENTARIO — la existencia y su umbral
+
+   POR QUE UNA CELDA Y NO TRES COLUMNAS
+     La pregunta del bodeguero es "¿me alcanza?", y esa respuesta
+     sale de comparar existencia contra minimo. Repartidas en tres
+     columnas la comparacion la hace el ojo saltando de lado a
+     lado; juntas, se lee de una.
+   ============================================================= */
+.sigma-inv-cantidad {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    line-height: 1.25;
+}
+
+.sigma-inv-cantidad .valor {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;   /* las cifras alinean en columna */
+    color: var(--sg-text-primary);
+}
+
+.sigma-inv-cantidad .unidad {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    margin-left: 3px;
+}
+
+.sigma-inv-cantidad .rango {
+    font-size: 11px;
+    color: var(--sg-text-muted);
+    font-variant-numeric: tabular-nums;
+}
+
+/* El numero se pinta solo cuando esta fuera de rango. Pintarlo
+   siempre convierte el color en decoracion y deja de avisar. */
+.sigma-inv-cantidad.is-bajo .valor { color: var(--sg-danger); }
+.sigma-inv-cantidad.is-sobre .valor { color: var(--fg-warning-dark); }
+
+/* Cantidad con signo de un movimiento. Entra en verde, sale en
+   rojo: es la unica columna donde el signo importa mas que la
+   cifra. */
+.sigma-inv-signo {
+    font-size: 15px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
+.sigma-inv-signo.entra { color: var(--sg-success); }
+.sigma-inv-signo.sale  { color: var(--sg-danger); }
+
+.sigma-inv-signo .unidad {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    margin-left: 3px;
+}
+
+/* Texto secundario dentro de una celda: el motivo de un ajuste, la
+   bodega de destino de un traslado. */
+.sigma-inv-nota {
+    display: block;
+    font-size: 11px;
+    color: var(--sg-text-muted);
+    margin-top: 2px;
+    white-space: normal;
+}
+
+.sigma-inv-vacio {
+    color: var(--sg-text-muted);
+    font-style: italic;
+    font-size: 12px;
+}
+
+/* Las filas del inventario no miden todas lo mismo: un codigo largo parte
+   en dos lineas. Sin esto el chip se apoya arriba y la columna de estado se
+   ve escalonada aunque cada chip este bien. */
+.RadGrid .rgRow > td,
+.RadGrid .rgAltRow > td {
+    vertical-align: middle;
+}
+
+/* Dentro de un modal las grillas van mas apretadas: el ancho es la mitad y
+   el alto lo decide la ventana, asi que cada fila de mas obliga a
+   desplazar. */
+.sigma-modal .RadGrid .rgRow > td,
+.sigma-modal .RadGrid .rgAltRow > td {
+    padding-top: 6px;
+    padding-bottom: 6px;
+}
+
+.sigma-modal .sigma-inv-cantidad .valor { font-size: 14px; }
+
+
+/* =============================================================
+   LUPA + POPOVER — el detalle largo de una fila
+
+   POR QUE NO SE MUESTRA EN LA CELDA
+     El motivo de un ajuste es una frase, no un dato: "Conteo
+     fisico del 28-08: faltaban 5 pares respecto del sistema".
+     Puesta en la grilla estira la fila a seis lineas y empuja
+     fuera de pantalla lo que se venia a mirar, que son la
+     cantidad y el estado.
+
+   POR QUE NO ES UN title=""
+     El tooltip del navegador tarda un segundo en aparecer, se va
+     solo, y no se puede seleccionar el texto para copiarlo. Este
+     se abre al hacer clic y se queda hasta que se cierra.
+
+   POSITION FIXED, NO ABSOLUTE
+     La grilla tiene overflow propio. Con absolute el popover se
+     corta contra el borde de la tabla justo en las ultimas filas,
+     que son las mas consultadas.
+   ============================================================= */
+.sigma-inv-lupa {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    color: var(--sg-text-secondary);
+    cursor: pointer;
+    transition: background-color .15s, color .15s;
+}
+
+.sigma-inv-lupa:hover,
+.sigma-inv-lupa.is-abierta {
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-on-primary-container);
+}
+
+.sigma-inv-lupa i { font-size: 17px; line-height: 1; }
+
+.sigma-popover {
+    position: fixed;
+    z-index: 10050;
+    max-width: 340px;
+    padding: 12px 14px;
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    box-shadow: 0 10px 30px rgba(11, 15, 26, .16);
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--sg-text-primary);
+    display: none;
+}
+
+.sigma-popover.is-abierto { display: block; }
+
+.sigma-popover .titulo {
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--sg-text-muted);
+    margin-bottom: 6px;
+}
+
+.sigma-popover .linea { margin-top: 4px; }
+.sigma-popover .linea:first-of-type { margin-top: 0; }
 
 /* ── Sidebar colapsado: el flyout ──────────────────────────
    Estas reglas venian de FacilityGes pintando el flyout en cyan
@@ -1421,4 +1612,188 @@ body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-second-level
     margin: 0;
     font-size: 13px;
     color: var(--sg-text-secondary);
+}
+
+
+/* =============================================================
+   RadTabStrip — pestañas de ficha
+
+   Adaptado del RadTabStrip.css de Workges, con los colores de
+   SIGMA en vez de los azules de ese proyecto: el contenedor usa
+   la superficie suave de la marca y la pestaña activa el violeta
+   #6C5CFF, que es el mismo del botón primario y del ítem activo
+   del menú. Así "estar en" se lee igual en todo el sitio.
+
+   Se conservan los !important porque Telerik pinta estos mismos
+   selectores con especificidad alta y sin ellos gana su tema.
+
+   NO se usa el degradado que traía la referencia al final: en
+   SIGMA los rellenos de estado son planos. Un degradado en la
+   pestaña activa y plano en el botón de al lado se lee como dos
+   sistemas distintos.
+   ============================================================= */
+.RadTabStrip,
+.RadTabStrip_Default,
+.RadTabStripTop,
+.RadTabStripTop_Default {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.rtsLevel {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.rtsLevel1 {
+    background: transparent !important;
+    display: flex !important;
+    gap: 4px !important;
+}
+
+/* El riel: una sola caja suave que agrupa las pestañas. Sin ella
+   las píldoras flotan sueltas y no se leen como un grupo. */
+.rtsUL {
+    background: var(--sg-surface-subtle) !important;
+    border: 1px solid var(--sg-border) !important;
+    list-style: none !important;
+    padding: 5px !important;
+    margin: 0 0 14px 0 !important;
+    display: flex !important;
+    gap: 4px !important;
+    flex-wrap: wrap !important;
+    border-radius: var(--sg-radius-lg) !important;
+}
+
+.rtsLI {
+    background: transparent !important;
+    border: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    list-style: none !important;
+    display: inline-block !important;
+}
+
+.rtsFirst { margin-left: 0 !important; }
+.rtsLast { margin-right: 0 !important; }
+
+.rtsLink {
+    display: inline-block !important;
+    padding: 7px 18px !important;
+    background: transparent !important;
+    border: none !important;
+    border-radius: var(--sg-radius-pill) !important;
+    color: var(--sg-text-secondary) !important;
+    text-decoration: none !important;
+    font-family: var(--sg-font) !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    letter-spacing: .1px !important;
+    cursor: pointer !important;
+    transition: background-color .18s ease, color .18s ease !important;
+    white-space: nowrap !important;
+    box-sizing: border-box !important;
+    outline: none !important;
+    position: relative !important;
+    z-index: 1 !important;
+}
+
+.rtsLink:hover,
+.rtsLink.rtsAfter:hover {
+    background: var(--fg-m3-primary-container) !important;
+    color: var(--fg-m3-on-primary-container) !important;
+    z-index: 2 !important;
+}
+
+/* La activa: violeta de marca, texto blanco. Plano. */
+.rtsLink.rtsSelected,
+.rtsLink.rtsSelected:hover,
+div.RadTabStrip .rtsLevel .rtsLevel1 ul li a.rtsSelected {
+    background: var(--sg-purple) !important;
+    border: none !important;
+    color: #ffffff !important;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border-radius: var(--sg-radius-pill) !important;
+    z-index: 3 !important;
+}
+
+.rtsLink.rtsAfter {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Foco visible por teclado: la pestaña es navegable y sin esto no
+   se ve dónde está uno. */
+.rtsLink:focus-visible {
+    outline: 2px solid var(--sg-purple) !important;
+    outline-offset: 2px !important;
+}
+
+.rtsOut, .rtsIn, .rtsTxt {
+    display: block !important;
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+}
+
+.rtsTxt {
+    display: inline-block !important;
+    color: inherit !important;
+}
+
+/* Telerik pinta el link con su propio color en este selector. */
+div.RadTabStrip .rtsLevel .rtsLevel1 ul li a {
+    background: transparent !important;
+    border: none !important;
+    color: var(--sg-text-secondary) !important;
+}
+
+/* En un modal el riel va pegado al contenido: la ventana es chica
+   y cada píxel de margen se nota. */
+.sigma-modal .rtsUL {
+    margin-bottom: 10px !important;
+}
+
+@media (max-width: 768px) {
+    .rtsLink { padding: 6px 13px !important; font-size: 12px !important; }
+    .rtsLevel1, .rtsUL { gap: 3px !important; }
+}
+
+@media (max-width: 480px) {
+    .rtsLink { padding: 5px 11px !important; font-size: 11.5px !important; }
+    .rtsLevel1, .rtsUL { gap: 2px !important; }
+}
+
+
+/* =============================================================
+   ACCION DENTRO DE UNA FILA
+   Un lapiz por fila. Discreto hasta que se pasa por encima: si
+   compitiera con el dato, la grilla se leeria como una botonera.
+   ============================================================= */
+.sigma-grid-accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: var(--sg-radius-sm);
+    color: var(--sg-text-muted);
+    text-decoration: none;
+    transition: background-color var(--sg-duration-fast) var(--sg-easing),
+                color var(--sg-duration-fast) var(--sg-easing);
+}
+
+.sigma-grid-accion i { font-size: 17px; }
+
+.sigma-grid-accion:hover,
+.sigma-grid-accion:focus {
+    background-color: var(--sg-purple-soft, rgba(108, 92, 255, .10));
+    color: var(--sg-purple);
+    text-decoration: none;
 }

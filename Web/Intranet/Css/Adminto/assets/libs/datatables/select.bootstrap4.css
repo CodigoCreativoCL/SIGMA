@@ -1,4 +1,4 @@
-table.dataTable tbody > tr.selected,
+﻿table.dataTable tbody > tr.selected,
 table.dataTable tbody > tr > .selected {
   background-color: #0275d8;
 }

@@ -25,7 +25,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER PLANTAS");
                 ExigirCliente();
 
                 Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
@@ -50,7 +50,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("VER PLANTAS");
                 ExigirCliente();
 
                 List<ClienteInstalacionDto> r = Datos.Listar<ClienteInstalacionDto>("SEL_CLIENTE_INSTALACION",
@@ -63,98 +63,6 @@ namespace API.Controllers
                 if (r == null || r.Count == 0) return NoEncontrado("La planta");
 
                 return Ok(r[0]);
-            });
-        }
-
-        /// <summary>POST /cliente-instalaciones — alta.          HU-011</summary>
-        [HttpPost]
-        [Route("")]
-        public IHttpActionResult Crear(ClienteInstalacionAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.codigo, "codigo");
-                ExigirTexto(dto.nombre, "nombre");
-
-                ValidarCoordenadas(dto);
-
-                int id = Datos.Ejecutar("INS_CLIENTE_INSTALACION",
-                    new Dictionary<string, object>
-                    {
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@CODIGO", dto.codigo.Trim().ToUpperInvariant() },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@DIRECCION", dto.direccion },
-                        { "@ZONA_HORARIA", dto.zona_horaria },
-                        { "@LATITUD", dto.latitud },
-                        { "@LONGITUD", dto.longitud },
-                        { "@HABILITADO", dto.habilitado },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
-
-                return Creado(id);
-            });
-        }
-
-        /// <summary>PUT /cliente-instalaciones/{id} — edición.   HU-011</summary>
-        [HttpPut]
-        [Route("{id:int}")]
-        public IHttpActionResult Editar(int id, ClienteInstalacionAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.codigo, "codigo");
-                ExigirTexto(dto.nombre, "nombre");
-
-                ValidarCoordenadas(dto);
-
-                Datos.Ejecutar("UPD_CLIENTE_INSTALACION",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@CODIGO", dto.codigo.Trim().ToUpperInvariant() },
-                        { "@NOMBRE", dto.nombre.Trim() },
-                        { "@DESCRIPCION", dto.descripcion },
-                        { "@DIRECCION", dto.direccion },
-                        { "@ZONA_HORARIA", dto.zona_horaria },
-                        { "@LATITUD", dto.latitud },
-                        { "@LONGITUD", dto.longitud },
-                        { "@HABILITADO", dto.habilitado },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                return Ok(new { id = id });
-            });
-        }
-
-        /// <summary>
-        /// DELETE /cliente-instalaciones/{id} — baja lógica.     HU-011
-        /// </summary>
-        [HttpDelete]
-        [Route("{id:int}")]
-        public IHttpActionResult Eliminar(int id)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                Datos.Ejecutar("DEL_CLIENTE_INSTALACION",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                return Ok(new { id = id, mensaje = "Planta deshabilitada." });
             });
         }
 

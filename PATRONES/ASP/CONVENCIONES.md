@@ -215,3 +215,37 @@ Nunca dejar un `catch` vacío que oculte el error sin avisar al usuario.
 
 Debe terminar en `exitcode=0`. Los `warning CS0168` (variable de excepción no
 usada) son preexistentes y normales en estos proyectos.
+
+
+---
+
+## Parámetros `OUTPUT` que deciden "existe o no existe"
+
+**Se inicializan en `NULL` dentro del procedimiento. Siempre.**
+
+```sql
+SET @ID = NULL                      -- <- esta línea
+SELECT @ID = rbs_id FROM ... WHERE ...
+IF (@ID IS NULL) ... INSERT ... ELSE ... UPDATE ...
+```
+
+En SQL Server, un `SELECT @var = col FROM ... WHERE <sin filas>` **no toca la
+variable**: conserva lo que ya tenía. Y los controllers de la web crean el
+parámetro así:
+
+```csharp
+int id = 0;
+cmd.Parameters.AddWithValue("@ID", id).Direction = ParameterDirection.Output;
+```
+
+O sea que `@ID` **entra valiendo 0, no NULL**. Sin la línea de arriba, un
+UPSERT se va por la rama del `UPDATE ... WHERE id = 0`, afecta cero filas y
+**no da ningún error**: la pantalla dice que guardó y no guardó nada.
+
+Pasó en `UPS_REPUESTO_BODEGA_STOCK`, `INS_REPUESTO_LOTE` e
+`INS_INVENTARIO_MOVIMIENTO` (bloque **65**). En el tercero habría hecho que
+todo movimiento con `uuid` se descartara en silencio, que es justo la
+idempotencia de la que depende la app.
+
+Se detectó **sembrando datos de prueba**, no leyendo el código: ocho llamadas
+dejaron una sola fila.

@@ -51,7 +51,19 @@ namespace API.Controllers
                     new Dictionary<string, object>
                     {
                         { "@LOGIN", dto.login.Trim() },
-                        { "@PASSWORD", dto.password }
+                        { "@PASSWORD", dto.password },
+
+                        /* 2 = APP (bloque 58). Quien entra por acá está
+                           entrando a la aplicación móvil, y SEL_LOGIN
+                           rechaza al perfil que no opera en ella: el
+                           Administrador del Cliente configura desde la web
+                           y no tiene nada que hacer en el teléfono.
+
+                           El parámetro tiene DF 1 en el SP para que la web
+                           siga llamando con dos argumentos. Acá se pasa
+                           explícito porque el valor por defecto es
+                           justamente el que no corresponde. */
+                        { "@AMBITO", 2 }
                     });
 
                 if (r == null || r.Count == 0)
@@ -67,6 +79,21 @@ namespace API.Controllers
 
                 if (res.CODE == "401")
                     return Error(HttpStatusCode.Forbidden, res.MENSAJE);
+
+                /* 403: la cuenta existe y la clave estaba bien, pero no
+                   puede estar acá —sin perfil asignado, o con un perfil que
+                   solo opera en la web—. Se responde 403 y no 401 para que
+                   la app no borre la sesión y vuelva a pedir credenciales:
+                   reintentar no va a cambiar nada, y el mensaje del SP ya
+                   dice por dónde sí puede entrar. */
+                if (res.CODE == "403")
+                    return Error(HttpStatusCode.Forbidden, res.MENSAJE);
+
+                /* 402: la suscripción de la empresa no está vigente. El
+                   pago se regulariza desde la web; en el teléfono no hay
+                   nada que hacer más que mostrarlo. */
+                if (res.CODE == "402")
+                    return Error(HttpStatusCode.PaymentRequired, res.MENSAJE);
 
                 if (res.CODE != "200" || res.ID <= 0)
                     return Error(HttpStatusCode.Unauthorized, res.MENSAJE ?? "Correo o contraseña incorrectos.");

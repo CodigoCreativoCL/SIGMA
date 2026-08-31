@@ -1,0 +1,45 @@
+$kind: collection
+name: SIGMA API
+description: 'API REST del sistema SIGMA. Base URL: {{baseUrl}}. Autenticación JWT Bearer. Iniciar sesión en POST /sesion para obtener el token.'
+auth:
+  type: bearer
+  credentials:
+    - key: token
+      value: '{{token}}'
+variables:
+  - key: baseUrl
+    value: 'http://localhost/SIGMA/Servicio/API'
+  - key: token
+    value: ''
+  - key: login
+    value: 'admin'
+  - key: password
+    value: ''
+  - key: apiUsername
+    value: ''
+  - key: apiPassword
+    value: ''
+  - key: clienteId
+    value: '1'
+  - key: clienteUsuarioId
+    value: '1'
+  - key: instalacionId
+    value: '1'
+  - key: areaId
+    value: '1'
+  - key: centroCostoId
+    value: '1'
+  - key: perfilId
+    value: '1'
+  - key: permisoId
+    value: '1'
+  - key: grupoTrabajoId
+    value: '1'
+  - key: especialidadId
+    value: '1'
+  - key: valorId
+    value: '1'
+  - key: codigoCatalogo
+    value: 'TIPO_AREA'
+  - key: codigoPermiso
+    value: 'CLIENTES_VER'

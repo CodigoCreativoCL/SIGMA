@@ -8,173 +8,25 @@ using System.Web.Http;
 namespace API.Controllers
 {
     /// <summary>
-    /// Usuarios del cliente (HU-014) y selección de cliente (HU-002).
+    /// Selección de cliente al iniciar sesión (HU-002).
     ///
-    /// POR QUE LAS DOS COSAS EN EL MISMO RECURSO
-    ///   Porque las dos son sobre la relación usuario–cliente, que es lo
-    ///   que representa Cliente_Usuario. Elegir con qué cliente trabajar es
-    ///   escoger una de esas filas, no una entidad aparte.
+    /// QUE PASO CON EL CRUD DE USUARIOS DEL CLIENTE
+    ///   Estaba acá y se retiró el 31-08-2026. Dar de alta usuarios,
+    ///   asignarles perfil, plantas y especialidades es HU-014, y esa
+    ///   historia es del Administrador del Cliente, que trabaja desde la
+    ///   web. La web llama a los SP directo, así que esos cinco endpoints
+    ///   no los consumía nadie.
+    ///
+    ///   Quedó en _RETIRADO/API/ con el resto. Ver MD/SIGMA_ALCANCE_APP.md.
+    ///
+    /// POR QUE LA RUTA SIGUE SIENDO cliente-usuarios
+    ///   Porque elegir con qué cliente trabajar es escoger una fila de
+    ///   Cliente_Usuario: la afiliación de la persona a la empresa. El
+    ///   recurso es correcto aunque ahora solo tenga dos operaciones.
     /// </summary>
     [RoutePrefix("cliente-usuarios")]
     public class ClienteUsuariosController : ApiBase
     {
-        /// <summary>
-        /// GET /cliente-usuarios — listado con filtros y paginación.
-        ///                                                          HU-014
-        /// </summary>
-        [HttpGet]
-        [Route("")]
-        public IHttpActionResult Listar(int pagina = 1, int tamano = Pagina.TAMANO_DEFECTO,
-                                        string filtro = null, bool? habilitado = null)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
-
-                List<ClienteUsuarioDto> todo = Datos.Listar<ClienteUsuarioDto>("SEL_CLIENTE_USUARIO",
-                    new Dictionary<string, object>
-                    {
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@FILTRO", p.filtro },
-                        { "@HABILITADO", habilitado },
-                        // La foto es un binario grande y ningún listado la
-                        // usa: pedirla multiplicaría el peso de la respuesta
-                        // por nada.
-                        { "@DEVUELVE_FOTO", false }
-                    });
-
-                return Ok(Paginado<ClienteUsuarioDto>.Armar(todo, p));
-            });
-        }
-
-        /// <summary>GET /cliente-usuarios/{id} — detalle.        HU-014</summary>
-        [HttpGet]
-        [Route("{id:int}")]
-        public IHttpActionResult Detalle(int id)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                List<ClienteUsuarioDto> r = Datos.Listar<ClienteUsuarioDto>("SEL_CLIENTE_USUARIO",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@DEVUELVE_FOTO", false }
-                    });
-
-                /* El @CLIENTE va aunque se pida por id: sin él, cambiar el
-                   número de la URL devolvería usuarios de otro cliente. En
-                   un multicliente esa es la fuga más fácil de cometer. */
-                if (r == null || r.Count == 0) return NoEncontrado("El usuario");
-
-                return Ok(r[0]);
-            });
-        }
-
-        /// <summary>
-        /// POST /cliente-usuarios — alta.                        HU-014
-        /// </summary>
-        [HttpPost]
-        [Route("")]
-        public IHttpActionResult Crear(ClienteUsuarioAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.login, "login");
-                ExigirTexto(dto.nombres, "nombres");
-                ExigirTexto(dto.correo, "correo");
-
-                int id = Datos.Ejecutar("INS_CLIENTE_USUARIO",
-                    new Dictionary<string, object>
-                    {
-                        { "@IDENTIFICADOR", dto.identificador },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@LOGIN", dto.login.Trim() },
-                        { "@PASSWORD", dto.password },
-                        { "@NOMBRES", dto.nombres.Trim() },
-                        { "@APELLIDO_PATERNO", dto.apellido_paterno },
-                        { "@APELLIDO_MATERNO", dto.apellido_materno },
-                        { "@FONO1", dto.telefono },
-                        { "@CORREO", dto.correo.Trim() },
-                        { "@PERFILES", dto.perfiles },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
-
-                return Creado(id);
-            });
-        }
-
-        /// <summary>PUT /cliente-usuarios/{id} — edición.        HU-014</summary>
-        [HttpPut]
-        [Route("{id:int}")]
-        public IHttpActionResult Editar(int id, ClienteUsuarioAltaDto dto)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-                ExigirCuerpo(dto);
-                ExigirTexto(dto.login, "login");
-
-                Datos.Ejecutar("UPD_CLIENTE_USUARIO",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@IDENTIFICADOR", dto.identificador },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@LOGIN", dto.login.Trim() },
-                        { "@PASSWORD", dto.password },
-                        { "@NOMBRES", dto.nombres },
-                        { "@APELLIDO_PATERNO", dto.apellido_paterno },
-                        { "@APELLIDO_MATERNO", dto.apellido_materno },
-                        { "@FONO1", dto.telefono },
-                        { "@CORREO", dto.correo },
-                        { "@PERFILES", dto.perfiles },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                return Ok(new { id = id });
-            });
-        }
-
-        /// <summary>
-        /// DELETE /cliente-usuarios/{id} — baja LOGICA.          HU-014
-        ///
-        /// Desafilia del cliente, no borra la persona. Un usuario con
-        /// historial de órdenes o de marcaciones no se puede borrar sin
-        /// dejar ese historial apuntando a nadie.
-        /// </summary>
-        [HttpDelete]
-        [Route("{id:int}")]
-        public IHttpActionResult Eliminar(int id)
-        {
-            return Ejecutar(() =>
-            {
-                ExigirUsuario();
-                ExigirCliente();
-
-                Datos.Ejecutar("DEL_CLIENTE_USUARIO",
-                    new Dictionary<string, object>
-                    {
-                        { "@ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@USUARIO", SesionApi.UsuarioId() }
-                    });
-
-                return Ok(new { id = id, mensaje = "Usuario dado de baja del cliente." });
-            });
-        }
-
-
         /* ================================================================
            HU-002 — SELECCIONAR CLIENTE
            ================================================================ */

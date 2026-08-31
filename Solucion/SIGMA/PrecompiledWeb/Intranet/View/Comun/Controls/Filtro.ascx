@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Filtro, App_Web_g3shpaus" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Filtro, App_Web_z0qvuxay" %>
 
 <style>
     /* Barra de filtro simple, estilo "M3 Expressive" */
