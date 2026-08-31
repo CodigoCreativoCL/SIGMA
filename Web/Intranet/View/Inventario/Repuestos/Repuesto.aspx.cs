@@ -241,7 +241,9 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         bool puedeStock = Token.Puede("GESTIONAR STOCK");
 
         // El codigo solo se escribe al crear.
-        txtCodigo.ReadOnly = !puedeEditar || Id > 0;
+        /* Nunca se escribe a mano: lo genera el SP al crear, y despues
+               identifica el registro. */
+            txtCodigo.ReadOnly = true;
         txtNombre.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
         txtModelo.ReadOnly = !puedeEditar;
@@ -302,7 +304,20 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             RepuestoController controller = new RepuestoController();
 
             entidad.rep_id = Id;
-            entidad.rep_codigo = txtCodigo.Text.Trim();
+            /* ---- CODIGO AUTOMATICO ----
+               Al crear se manda AUTO y el SP lo genera como REP-<id>: el
+               codigo depende del ID, y el ID no existe hasta despues del
+               INSERT, asi que no hay forma de calcularlo antes.
+
+               AUTO y no vacio: el SP valida que el codigo venga ANTES de
+               insertar, asi que un vacio se rechaza con "indique el codigo".
+               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
+               reemplaza en cuanto conoce el ID.
+
+               Al editar viaja el que ya tiene. No se regenera nunca: el
+               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
+               etiqueta pegada apuntando a algo que no existe. */
+            entidad.rep_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.rep_nombre = txtNombre.Text.Trim();
             entidad.rep_fabricante = txtFabricante.Text.Trim();
             entidad.rep_modelo = txtModelo.Text.Trim();

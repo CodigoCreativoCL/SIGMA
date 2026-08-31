@@ -32,27 +32,34 @@
         <div class="sigma-modal-hero-chip"><asp:Literal ID="litChipEstado" runat="server" /></div>
     </div>
 
-    <div class="sigma-modal-section">
-        <div class="sigma-modal-section-title">
-            <i class="mdi mdi-warehouse"></i>
-            <span>Dónde está</span>
-        </div>
+    <%-- Pestañas y no secciones apiladas: dos grillas una debajo de otra
+         obligan a bajar para ver la segunda, y en una ventana modal eso
+         significa que la mitad de la ficha no se sabe que existe.
 
-        <rad:RadGrid2 ID="GridBodegas" runat="server" OnItemDataBound="GridBodegas_ItemDataBound">
-            <MasterTableView CommandItemDisplay="None" />
-        </rad:RadGrid2>
-    </div>
+         El hero se queda ARRIBA de las pestañas: es la identidad del
+         repuesto, no una de sus vistas. --%>
+    <rad:RadTabStrip2 ID="tabFicha" runat="server" MultiPageID="mpFicha" SelectedIndex="0">
+        <Tabs>
+            <rad:RadTab ID="tabDonde" Text="Dónde está" runat="server" PageViewID="pvDonde" />
+            <rad:RadTab ID="tabMovimientos" Text="Últimos movimientos" runat="server" PageViewID="pvMovimientos" />
+        </Tabs>
+    </rad:RadTabStrip2>
 
-    <div class="sigma-modal-section">
-        <div class="sigma-modal-section-title">
-            <i class="mdi mdi-history"></i>
-            <span>Últimos movimientos</span>
-        </div>
+    <rad:RadMultiPage ID="mpFicha" runat="server" SelectedIndex="0" Width="100%">
 
-        <rad:RadGrid2 ID="GridMovimientos" runat="server" OnItemDataBound="GridMovimientos_ItemDataBound">
-            <MasterTableView CommandItemDisplay="None" />
-        </rad:RadGrid2>
-    </div>
+        <rad:RadPageView ID="pvDonde" runat="server">
+            <rad:RadGrid2 ID="GridBodegas" runat="server" OnItemDataBound="GridBodegas_ItemDataBound">
+                <MasterTableView CommandItemDisplay="None" />
+            </rad:RadGrid2>
+        </rad:RadPageView>
+
+        <rad:RadPageView ID="pvMovimientos" runat="server">
+            <rad:RadGrid2 ID="GridMovimientos" runat="server" OnItemDataBound="GridMovimientos_ItemDataBound">
+                <MasterTableView CommandItemDisplay="None" />
+            </rad:RadGrid2>
+        </rad:RadPageView>
+
+    </rad:RadMultiPage>
 
     <div class="sigma-modal-actions">
         <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />

@@ -381,7 +381,20 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
             PlanComercialController controller = new PlanComercialController();
 
             entidad.plc_id = Id;
-            entidad.plc_codigo = txtCodigo.Text.Trim();
+            /* ---- CODIGO AUTOMATICO ----
+               Al crear se manda AUTO y el SP lo genera como PLC-<id>: el
+               codigo depende del ID, y el ID no existe hasta despues del
+               INSERT, asi que no hay forma de calcularlo antes.
+
+               AUTO y no vacio: el SP valida que el codigo venga ANTES de
+               insertar, asi que un vacio se rechaza con "indique el codigo".
+               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
+               reemplaza en cuanto conoce el ID.
+
+               Al editar viaja el que ya tiene. No se regenera nunca: el
+               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
+               etiqueta pegada apuntando a algo que no existe. */
+            entidad.plc_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.plc_nombre = txtNombre.Text.Trim();
             entidad.plc_descripcion = txtDescripcion.Text.Trim();
             entidad.plc_orden = LeerEntero(txtOrden.Text, "orden");
