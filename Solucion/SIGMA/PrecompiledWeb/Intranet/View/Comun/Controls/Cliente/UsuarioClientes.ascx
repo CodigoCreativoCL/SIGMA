@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_UsuarioClientes, App_Web_ggf4pkqo" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_UsuarioClientes, App_Web_hqhu5dfg" %>
 
 <style>
 

@@ -1,0 +1,96 @@
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Inventario_Repuestos_Repuestos, App_Web_5jlpag0f" %>
+
+<%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
+
+<asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+</asp:Content>
+
+<asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
+    <script type="text/javascript">
+        function abrirRepuesto(query) {
+            var oWin = $find("<%=rwiDetalle.ClientID %>");
+            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query);
+            oWin.show();
+        }
+
+        function refresh() {
+            __doPostBack("<%=Grid.ClientID %>", '')
+        }
+    </script>
+</asp:Content>
+
+<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
+    Inventario
+</asp:Content>
+
+<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">
+    Repuestos
+</asp:Content>
+
+<asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
+    El catálogo de la planta, para que todos nombren la misma pieza de la misma forma.
+</asp:Content>
+
+<asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
+    <wuc:Filtro runat="server" ID="wucFiltro">
+        <FiltroPersonalizado>
+            <div class="row col-lg-12 col-md-12 col-xs-12">
+                <div class="col-lg-2 col-md-2 col-12 d-flex align-items-center" style="gap: 32px;">
+                    <label for="cboLote" style="margin: 0;">Controla lote:</label>
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
+                    <rad:RadComboBox2 ID="cboLote" runat="server" Width="80%">
+                        <Items>
+                            <rad:RadComboBoxItem Text="Todos" Value="" />
+                            <rad:RadComboBoxItem Text="Sí" Value="1" />
+                            <rad:RadComboBoxItem Text="No" Value="0" />
+                        </Items>
+                    </rad:RadComboBox2>
+                </div>
+                <div class="col-lg-2 col-md-2 col-12 d-flex align-items-center" style="gap: 32px;">
+                    <label for="cboExistencia" style="margin: 0;">Existencia:</label>
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
+                    <rad:RadComboBox2 ID="cboExistencia" runat="server" Width="80%">
+                        <Items>
+                            <rad:RadComboBoxItem Text="Todos" Value="" />
+                            <rad:RadComboBoxItem Text="Con existencia" Value="1" />
+                            <rad:RadComboBoxItem Text="Sin existencia" Value="0" />
+                        </Items>
+                    </rad:RadComboBox2>
+                </div>
+            </div>
+        </FiltroPersonalizado>
+    </wuc:Filtro>
+</asp:Content>
+
+<asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
+    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="680" />
+
+    <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
+        <ContentTemplate>
+
+            <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
+                <MasterTableView CommandItemDisplay="Top" DataKeyNames="rep_id">
+                    <CommandItemTemplate>
+                        <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo repuesto" CssClass="icono_guardar" OnClientClick="abrirRepuesto(0)" />
+                        </div>
+                    </CommandItemTemplate>
+                </MasterTableView>
+            </rad:RadGrid2>
+
+            <div class="card-box" style="margin-top: 14px; font-size: 12px; color: #555;">
+                El buscador mira el <strong>código interno, el nombre, el fabricante y el modelo</strong>:
+                sirve el número grabado en la pieza, que muchas veces es lo único que se tiene a mano.<br />
+                <strong>Existencia</strong> es la suma de todas las bodegas, y debajo en cuántas está.
+                Para ver cuánto hay en cada una y sus umbrales, entre a la ficha o al listado de
+                <strong>Existencias</strong>.<br />
+                <span class="grid-estado-chip is-info"><i class="mdi mdi-barcode"></i>Lote</span>
+                marca los repuestos cuyo ingreso <strong>exige el número de lote</strong>: aceites,
+                filtros y todo lo que vence o hay que poder rastrear.
+            </div>
+
+        </ContentTemplate>
+    </asp:UpdatePanel>
+</asp:Content>

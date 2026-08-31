@@ -147,6 +147,12 @@
     color: var(--fg-m3-text-secondary);
 }
 
+/* Ambar: lo que pide atencion sin estar mal. Faltaba. */
+.sigma-modal-chip.is-advertencia {
+    background-color: var(--sg-warning-subtle);
+    color: #78350F;
+}
+
 
 /* ---- Rejilla de campos ----
    auto-fit y no dos columnas fijas: el mismo modal se abre a 900px
@@ -431,3 +437,103 @@
    Si aparece una pantalla con el patron viejo, lo correcto es migrarla,
    no revivir esto. Queda en el historial del repositorio.
    ============================================================= */
+
+
+/* =============================================================
+   TRAZABILIDAD — el pie de toda ficha
+
+   Va abajo y en gris a proposito: es informacion de auditoria,
+   no del formulario. Arriba competiria con los campos que la
+   persona vino a llenar; abajo esta cuando se la busca.
+   ============================================================= */
+.sigma-auditoria {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 28px;
+    margin-top: 18px;
+    padding: 12px 14px;
+    border-top: 1px solid var(--sg-border);
+    background-color: var(--sg-surface-subtle);
+    border-radius: var(--sg-radius-md);
+}
+
+.sigma-auditoria-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+}
+
+.sigma-auditoria-item i {
+    font-size: 17px;
+    line-height: 1.3;
+    color: var(--sg-text-muted);
+}
+
+.sigma-auditoria .rotulo {
+    display: block;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--sg-text-muted);
+}
+
+.sigma-auditoria .valor {
+    display: block;
+    font-size: 12.5px;
+    color: var(--sg-text-secondary);
+}
+
+.sigma-auditoria .sin-dato {
+    font-style: italic;
+    color: var(--sg-text-muted);
+}
+
+
+/* =============================================================
+   SECCIONES DENTRO DE UN FORMULARIO
+
+   Un formulario de quince campos en una sola rejilla obliga a
+   leerlos todos para encontrar uno. Agrupados por lo que
+   significan —identificacion, fabricante, caracteristicas, vida
+   util— el ojo salta al grupo y despues al campo.
+
+   Es distinto de .sigma-modal-section, que separa BLOQUES de la
+   ficha (los umbrales, los lotes). Esto separa partes DE UN
+   MISMO formulario y por eso pesa menos: una linea y un rotulo,
+   sin caja ni fondo que compita con los campos.
+   ============================================================= */
+.sigma-form-seccion {
+    margin-top: 18px;
+}
+
+.sigma-form-seccion:first-of-type {
+    margin-top: 0;
+}
+
+.sigma-form-seccion > .titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--sg-border);
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--sg-text-secondary);
+}
+
+.sigma-form-seccion > .titulo i {
+    font-size: 15px;
+    color: var(--sg-purple);
+}
+
+/* La ayuda de la seccion entera, cuando hace falta explicar el
+   grupo y no cada campo. */
+.sigma-form-seccion > .ayuda {
+    margin: -4px 0 10px 0;
+    font-size: 12px;
+    color: var(--sg-text-muted);
+}

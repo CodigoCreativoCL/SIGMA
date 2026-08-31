@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Identidad, App_Web_ggf4pkqo" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Identidad, App_Web_hqhu5dfg" %>
 <%@ Register Src="~/View/Comun/Controls/PanelSinSeleccion.ascx" TagPrefix="wuc" TagName="PanelSinSeleccion" %>
 
 <script type="text/javascript">

@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comercial_Suscripciones_Periodo, App_Web_q4im1csg" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comercial_Suscripciones_Periodo, App_Web_hcstghdl" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">

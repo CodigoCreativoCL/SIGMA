@@ -94,6 +94,7 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnDeclarar);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnVerificar);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnRechazar);
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnCorregir);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkComprobante);
 
         udPanel.Update();
@@ -225,6 +226,28 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
 
         pnlVerificar.Visible = pendiente && Token.Puede("VERIFICAR PAGOS SUSCRIPCION");
 
+        /* CORREGIR es otra cosa que verificar, y por eso otro panel y otro
+           permiso: lo hace quien declaró, no quien cuadra la cartola.
+
+           Se puede mientras el pago no esté verificado —1 DECLARADO,
+           2 EN REVISION, 4 RECHAZADO—. Con el pago ya verificado no: su
+           monto ya sumó al período y pudo extender la vigencia de la
+           suscripción, así que cambiarlo dejaría el saldo apoyado en una
+           cifra que ya no existe. El SP lo rechaza igual; esto solo evita
+           mostrar un formulario que va a fallar. */
+        bool corregible = (p.spa_estado == 1 || p.spa_estado == 2 || p.spa_estado == 4);
+
+        pnlCorregir.Visible = corregible && Token.Puede("DECLARAR PAGO SUSCRIPCION");
+        pnlCorregirRechazado.Visible = (p.spa_estado == 4);
+
+        if (pnlCorregir.Visible && !IsPostBack)
+        {
+            txtMontoCorregir.Text = p.spa_monto_declarado_clp.ToString("0");
+            txtFechaCorregir.Text = p.spa_fecha_transferencia.ToString("dd-MM-yyyy");
+            txtBancoCorregir.Text = p.spa_banco;
+            txtOperacionCorregir.Text = p.spa_numero_operacion;
+        }
+
         // Sin almacenamiento no hay de dónde bajar el comprobante.
         IAlmacenamiento almacenamiento = Almacenamiento.Actual();
 
@@ -295,6 +318,51 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
 
                 Tools.tools.ClientAlert(respuesta.detalle, "alerta");
             }
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Corrige lo que se declaró mal (T-2211).
+    ///
+    /// Los cuatro campos son opcionales: lo que se deja vacío no se toca.
+    /// El SP recibe NULL y aplica ISNULL(@X, columna). Mandar la fila entera
+    /// con lo que haya en pantalla es como UPD_CLIENTE_INSTALACION borró la
+    /// zona horaria de las plantas.
+    /// </summary>
+    protected void btnCorregir_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            SuscripcionPago entidad = new SuscripcionPago();
+            entidad.spa_id = Id;
+
+            if (!string.IsNullOrEmpty(txtMontoCorregir.Text.Trim()))
+            {
+                decimal monto = LeerMonto(txtMontoCorregir.Text, "monto transferido");
+
+                if (monto <= 0)
+                    throw new Exception("El monto transferido debe ser mayor que cero.");
+
+                entidad.spa_monto_declarado_clp = monto;
+            }
+
+            if (!string.IsNullOrEmpty(txtFechaCorregir.Text.Trim()))
+                entidad.spa_fecha_transferencia = LeerFecha(txtFechaCorregir.Text);
+
+            entidad.spa_banco = txtBancoCorregir.Text.Trim();
+            entidad.spa_numero_operacion = txtOperacionCorregir.Text.Trim();
+
+            SuscripcionPagoController controller = new SuscripcionPagoController();
+            Respuesta respuesta = controller.CorregirPago(entidad);
+
+            if (!respuesta.error)
+                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+            else
+                Tools.tools.ClientAlert(respuesta.detalle, "alerta");
         }
         catch (Exception ex)
         {

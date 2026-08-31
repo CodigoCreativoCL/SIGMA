@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Clientes_Cliente_Usuarios, App_Web_v54ilygn" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Clientes_Cliente_Usuarios, App_Web_izs5hkf5" %>
 
 <%@ Register Src="~/View/Comun/Controls/Cliente/UsuarioClientes.ascx" TagPrefix="wuc" TagName="Cliente" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Usuarios" %>

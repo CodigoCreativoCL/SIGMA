@@ -52,6 +52,14 @@ namespace API.Utils
             {
                 return operacion();
             }
+            catch (PermisoDenegadoException ex)
+            {
+                /* 403 y no 401: el token es válido, lo que falta es el
+                   permiso. Distinguirlos importa porque la app reacciona
+                   distinto —ante un 401 vuelve a pedir credenciales, ante
+                   un 403 no tiene nada que reintentar—. */
+                return Error(HttpStatusCode.Forbidden, ex.Message, true);
+            }
             catch (ArgumentException ex)
             {
                 // Validación del cuerpo antes de llegar a la base.
@@ -161,6 +169,49 @@ namespace API.Utils
             if (SesionApi.ClienteId() <= 0)
                 throw new ArgumentException(
                     "No hay cliente seleccionado. Use POST /cliente-usuarios/seleccionar.");
+        }
+
+        /// <summary>
+        /// Exige un permiso concreto, con el mismo código que usa la web.
+        ///
+        /// EL EQUIVALENTE DE Token.Puede(), QUE A LA API LE FALTABA
+        ///   Ocultar un botón en Flutter no impide llamar al endpoint: el
+        ///   teléfono es del usuario y el tráfico también. GET /menus dice
+        ///   qué pintar; esto es lo que autoriza.
+        ///
+        ///   Se llama ANTES de tocar la base. Un SP que rechaza también
+        ///   sirve, pero muchos de los heredados no validan permiso —dan
+        ///   por hecho que la web ya lo hizo— y confiar en eso es confiar en
+        ///   una comprobación que ocurre en otro proyecto.
+        /// </summary>
+        protected void ExigirPermiso(string codigo)
+        {
+            ExigirUsuario();
+
+            if (!Permisos.Tiene(codigo))
+                throw new PermisoDenegadoException(
+                    "Tu perfil no tiene el permiso '" + codigo + "'.");
+        }
+
+        /// <summary>
+        /// Exige cualquiera de varios permisos. Existe porque una misma
+        /// acción a veces la habilitan dos códigos distintos —ver lo propio
+        /// y ver todo— y pedir los dos dejaría fuera a quien solo tiene uno.
+        /// </summary>
+        protected void ExigirAlgunPermiso(params string[] codigos)
+        {
+            ExigirUsuario();
+
+            if (codigos != null)
+            {
+                foreach (string c in codigos)
+                {
+                    if (Permisos.Tiene(c)) return;
+                }
+            }
+
+            throw new PermisoDenegadoException(
+                "Tu perfil no tiene ninguno de los permisos requeridos para esta acción.");
         }
 
         protected void ExigirCuerpo(object dto)

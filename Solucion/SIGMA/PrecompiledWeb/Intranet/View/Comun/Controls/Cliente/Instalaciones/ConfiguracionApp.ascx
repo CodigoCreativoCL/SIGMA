@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Instalaciones_ConfiguracionApp, App_Web_ogj3jdtb" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Instalaciones_ConfiguracionApp, App_Web_qwajg0hq" %>
 
 
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">

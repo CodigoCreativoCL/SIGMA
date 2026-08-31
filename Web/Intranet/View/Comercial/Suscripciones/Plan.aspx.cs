@@ -389,6 +389,27 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
             entidad.plc_publico = rdbPublicoSi.Checked;
             entidad.plc_habilitado = (Id == 0) ? true : rdbSi.Checked;
 
+            /* DAR DE BAJA NO ES GUARDAR CON UN CAMPO EN 0 (T-2196)
+
+               Si se deja pasar por UPD_PLAN_COMERCIAL, deshabilitar es un
+               UPDATE que no comprueba nada: el plan cae aunque haya clientes
+               pagándolo, y sus precios y funcionalidades quedan habilitados
+               colgando de algo que ya no se vende.
+
+               DEL_PLAN_COMERCIAL es el camino con guarda. Va PRIMERO y, si
+               rechaza, no se guarda nada más: seguir con el UPD sería
+               entrar por la puerta que acabamos de cerrar. */
+            if (Id > 0 && rdbNo.Checked)
+            {
+                Respuesta baja = controller.DeletePlan(Id);
+
+                if (baja.error)
+                {
+                    Tools.tools.ClientAlert(baja.detalle, "alerta");
+                    return;
+                }
+            }
+
             Respuesta respuesta = (Id > 0)
                 ? controller.UpdatePlan(entidad)
                 : controller.InsertPlan(entidad);

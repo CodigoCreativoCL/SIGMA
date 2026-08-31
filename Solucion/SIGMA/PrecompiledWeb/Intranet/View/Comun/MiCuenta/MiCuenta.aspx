@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Comun_MiCuenta_MiCuenta, App_Web_soiuoxrs" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Comun_MiCuenta_MiCuenta, App_Web_etsv1gnw" %>
 
 <%@ Register Src="~/View/Comun/Controls/MiCuenta/MiCuenta.ascx" TagPrefix="wuc" TagName="MiCuenta" %>
 

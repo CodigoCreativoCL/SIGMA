@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_MiCuenta_MiCuenta, App_Web_qowc1aow" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_MiCuenta_MiCuenta, App_Web_33r3vvef" %>
 
 <script type="text/javascript">
     function previsualizarFoto(input) {

@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Sistema_Usuarios_Controls_Paises, App_Web_cfznawis" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Sistema_Usuarios_Controls_Paises, App_Web_deonikfi" %>
 
 <script type="text/javascript">
     function abrirPaises(query) {

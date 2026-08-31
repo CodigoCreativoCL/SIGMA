@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Catalogos_CatalogoValor, App_Web_olmmw4fg" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Sistema_Catalogos_CatalogoValor, App_Web_tgixxena" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">

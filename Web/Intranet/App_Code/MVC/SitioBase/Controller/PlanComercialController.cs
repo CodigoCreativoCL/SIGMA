@@ -226,6 +226,65 @@ namespace SitioBase.Controller
         }
 
 
+        /// <summary>
+        /// Da de baja el plan (T-2196, bloque 59).
+        ///
+        /// POR QUE NO ES UN UPD_PLAN_COMERCIAL CON @HABILITADO = 0
+        ///   Porque ese camino no comprueba nada. Deshabilitar desde la
+        ///   ficha un plan que un cliente está pagando lo deja apuntando a
+        ///   algo deshabilitado, y la próxima emisión de período no sabría
+        ///   qué cobrar. DEL_PLAN_COMERCIAL rechaza ese caso con el número
+        ///   de suscripciones que lo impiden.
+        ///
+        ///   Y arrastra las partes del plan: precios y funcionalidades se
+        ///   deshabilitan en la misma transacción. Dejarlas habilitadas
+        ///   colgando de un plan que ya no se vende es basura que después
+        ///   alguien lee como si valiera.
+        ///
+        /// El SP devuelve ID/CODE/MENSAJE; lo que rechaza llega por
+        /// RAISERROR y sale por el catch, como en el resto del proyecto.
+        /// </summary>
+        public Respuesta DeletePlan(int id)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmdExecute = null;
+
+                try
+                {
+                    cmdExecute = Conexion.GetCommand("DEL_PLAN_COMERCIAL");
+                    cmdExecute.Parameters.AddWithValue("@ID", id);
+                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                    string mensaje = "Plan dado de baja.";
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmdExecute))
+                    {
+                        if (dr.Read() && dr["MENSAJE"] != DBNull.Value)
+                            mensaje = dr["MENSAJE"].ToString();
+                    }
+
+                    cmdExecute.Connection.Close();
+
+                    respuesta.codigo = id;
+                    respuesta.detalle = mensaje;
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmdExecute != null && cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+
+            return respuesta;
+        }
+
+
         /* ================================================================
            PRECIOS
            ================================================================ */
