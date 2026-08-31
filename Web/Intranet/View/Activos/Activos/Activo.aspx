@@ -118,9 +118,10 @@
                 <label>Fabricante</label>
                 <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="200" />
             </div>
-            <div class="sigma-modal-field is-mini">
+            <div class="sigma-modal-field is-chico">
                 <label>Año fabricación</label>
-                <WebControls:TextBox2 ID="txtAnio" runat="server" MaxLength="4" />
+                <rad:RadComboBox2 ID="cboAnio" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <span class="sigma-modal-ayuda">Elija el año de la lista. Vacío indica sin dato.</span>
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Puesta en marcha</label>

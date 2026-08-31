@@ -140,6 +140,17 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                     break;
                 }
 
+            case "cboAnio":
+                {
+                    // Años del actual hacia atrás: la maquinaria industrial
+                    // rara vez es anterior a 1950. Elegir de una lista evita
+                    // tipeos como "20226" o un año futuro.
+                    ctrl.Items.Add(new RadComboBoxItem("Sin dato", ""));
+                    for (int anio = DateTime.Today.Year; anio >= 1950; anio--)
+                        ctrl.Items.Add(new RadComboBoxItem(anio.ToString(), anio.ToString()));
+                    break;
+                }
+
             case "cboPadre":
                 {
                     ActivoController controller = new ActivoController();
@@ -197,7 +208,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
             txtSerie.Text = entidad.act_numero_serie;
             txtFabricante.Text = entidad.act_fabricante;
-            if (entidad.act_anio_fabricacion != null) txtAnio.Text = entidad.act_anio_fabricacion.ToString();
+            if (entidad.act_anio_fabricacion != null) SeleccionarCombo(cboAnio, entidad.act_anio_fabricacion.Value);
             calPuestaMarcha.Value = entidad.act_fecha_puesta_marcha;
             txtDescripcion.Text = entidad.act_descripcion;
 
@@ -234,7 +245,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
-        txtAnio.ReadOnly = !puedeEditar;
+        cboAnio.ReadOnly = !puedeEditar;
         calPuestaMarcha.Enabled = puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
 
@@ -302,7 +313,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                 entidad.act_numero_serie = txtSerie.Text.Trim();
             if (!string.IsNullOrEmpty(txtFabricante.Text.Trim()))
                 entidad.act_fabricante = txtFabricante.Text.Trim();
-            entidad.act_anio_fabricacion = LeerAnio(txtAnio.Text);
+            if (!string.IsNullOrEmpty(cboAnio.SelectedValue))
+                entidad.act_anio_fabricacion = int.Parse(cboAnio.SelectedValue);
 
             // El calendario ya entrega un DateTime? válido; solo se rechaza
             // una fecha futura, que para una puesta en marcha no tiene sentido.
@@ -331,20 +343,5 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
         }
-    }
-
-    /// <summary>Año de fabricación opcional; si viene, tiene que ser plausible.</summary>
-    private int? LeerAnio(string texto)
-    {
-        if (string.IsNullOrEmpty(texto) || string.IsNullOrEmpty(texto.Trim())) return null;
-
-        int anio;
-        if (!int.TryParse(texto.Trim(), out anio))
-            throw new Exception("El año de fabricación no es válido.");
-
-        if (anio < 1900 || anio > DateTime.Today.Year)
-            throw new Exception("El año de fabricación está fuera de rango.");
-
-        return anio;
     }
 }
