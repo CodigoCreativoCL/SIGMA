@@ -46,6 +46,11 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
+        /* Escribe el archivo directo en la respuesta, y eso no sobrevive a un
+           postback asíncrono: el UpdatePanel espera un fragmento y recibe un
+           binario. */
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkDescargar);
+
         if (!Token.PuedeFuncion("Crear y editar"))
             Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
 
@@ -193,4 +198,56 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
 
         Grid.DataSource = lista;
     }
+
+    /// <summary>
+    /// El filtro que la descarga puede reproducir.
+    ///
+    /// SOLO EL TEXTO Y EL HABILITADO
+    ///   Los combos de lote y existencia los aplica la grilla EN MEMORIA
+    ///   sobre la lista ya traída —uno mira una columna, el otro un SUM que
+    ///   el SP calcula—, así que RPT_REPUESTO_EXCEL no los conoce. Antes de
+    ///   inventarles parámetros, la descarga dice lo que hace: baja lo que
+    ///   coincide con la búsqueda.
+    /// </summary>
+    protected Repuesto FiltroActual()
+    {
+        Repuesto filtro = new Repuesto();
+        filtro.filtro_habilitado = true;
+
+        if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
+
+        return filtro;
+    }
+
+    /// <summary>
+    /// Baja a Excel lo que se está viendo.
+    ///
+    /// Con el MISMO filtro de la pantalla: si alguien buscó "rodamiento" y
+    /// descarga, espera los rodamientos. Bajar el catálogo entero cuando la
+    /// pantalla muestra diez filas es una sorpresa desagradable, y con cinco
+    /// mil repuestos un archivo inútil.
+    /// </summary>
+    protected void lnkDescargar_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("VER REPUESTOS"))
+                throw new Exception("No tiene permiso para ver repuestos.");
+
+            RepuestoController controller = new RepuestoController();
+            controller.ExportarRepuestos(FiltroActual());
+        }
+        catch (System.Threading.ThreadAbortException)
+        {
+            /* Response.End() la lanza siempre: es cómo termina una descarga,
+               no un fallo. Se deja pasar para que no llegue al catch de abajo
+               y muestre una alerta sobre un archivo que sí se envió. */
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
 }

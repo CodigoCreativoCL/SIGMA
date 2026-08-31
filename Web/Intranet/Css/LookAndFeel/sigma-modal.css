@@ -251,8 +251,44 @@
 .sigma-modal-field > .sigma-modal-valor,
 .sigma-modal-field > .sigma-modal-opciones,
 .sigma-modal-field > input[type="text"],
+.sigma-modal-field > .sigma-modal-fecha,
 .sigma-modal-field > .RadComboBox {
     min-height: 38px;
+}
+
+/* EL CAMPO DE FECHA: EL ICONO A LA DERECHA DEL INPUT
+
+     El control Calendar (DateBox) renderiza el <input> y, como HERMANO,
+     el <a> con el icono del calendario del PopCalendar. Dentro del
+     .sigma-modal-field -que apila en columna- eso dejaba el icono DEBAJO
+     del input. Se envuelve el control en .sigma-modal-fecha, una fila,
+     para que el icono quede SIEMPRE a la derecha del input y pegado a el.
+     El input encoge (flex-shrink) para dejarle lugar al icono en vez de
+     empujarlo fuera de la celda; el icono nunca crece ni se parte. */
+.sigma-modal-fecha {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* El control fuerza width:95px !important en linea, que no alcanza para
+   "dd-mm-aaaa" y corta la fecha. Un width externo no vence a un !important
+   en linea, pero min-width si prevalece sobre width: con 120px el input
+   muestra la fecha completa y ademas no baja de ahi al encoger en el flex. */
+.sigma-modal-fecha input[type="text"] {
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    min-width: 140px;
+    min-height: 38px;
+}
+
+.sigma-modal-fecha a,
+.sigma-modal-fecha img,
+.sigma-modal-fecha input[type="image"],
+.sigma-modal-fecha button {
+    flex: 0 0 auto;
+    margin: 0;
+    vertical-align: middle;
 }
 
 .sigma-modal-field > .sigma-modal-valor {
@@ -638,4 +674,15 @@
 .sigma-form-seccion > .sigma-modal-grid {
     padding-top: 14px;
     border-top: 1px solid var(--sg-border);
+}
+
+
+/* La seccion tambien sirve fuera de un modal: la ficha del cliente
+   usa la rejilla Bootstrap heredada y sus columnas ya traen padding
+   lateral, asi que el rotulo necesita alinearse con ellas en vez de
+   pegarse al borde. */
+.row > .sigma-form-seccion,
+.col-12.sigma-form-seccion {
+    padding-left: 15px;
+    padding-right: 15px;
 }

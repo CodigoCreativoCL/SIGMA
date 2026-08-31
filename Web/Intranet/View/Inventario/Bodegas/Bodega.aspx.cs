@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
+using WebControls;
 
 /// <summary>
 /// Ficha de una bodega y sus ubicaciones (HU-052).
@@ -78,6 +79,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
     {
         CargarDatos();
         CargarUbicaciones();
+        CargarEtiquetas();
         Bloqueo();
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
@@ -129,20 +131,181 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
 
         if (Id == 0) return;
 
-        if (GridUbicaciones.Columns.Count == 0)
-        {
-            GridUbicaciones.AddColumn("BUB_CODIGO", "CÓDIGO", Width: "30%");
-            GridUbicaciones.AddColumn("BUB_NOMBRE", "NOMBRE", Width: "55%");
-            GridUbicaciones.AddTemplateColumn("EDITAR", "", "", Width: "15%",
-                                              ItemPosition: HorizontalAlign.Right, HederPosition: HorizontalAlign.Right);
-        }
-
         BodegaController controller = new BodegaController();
 
-        GridUbicaciones.DataSource = controller.GetUbicaciones(
+        List<BodegaUbicacion> lista = controller.GetUbicaciones(
             new BodegaUbicacion { bub_bodega = Id, filtro_habilitado = true });
 
-        GridUbicaciones.DataBind();
+        pnlSinUbicaciones.Visible = (lista == null || lista.Count == 0);
+
+        rptUbicaciones.DataSource = lista;
+        rptUbicaciones.DataBind();
+    }
+
+    protected void rptUbicaciones_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
+            return;
+
+        BodegaUbicacion u = (BodegaUbicacion)e.Item.DataItem;
+        bool editando = (u.bub_id == UbicacionId);
+        bool puedeEditar = Token.Puede("CREAR EDITAR BODEGAS");
+
+        /* El id viaja en el CommandArgument de cada botón: es el único dato
+           que el evento va a recibir, y sacarlo del índice de la fila se
+           rompe en cuanto la lista se reordena entre un clic y el otro. */
+        string id = u.bub_id.ToString();
+
+        LinkButton editar = (LinkButton)e.Item.FindControl("lnkEditar");
+        LinkButton guardar = (LinkButton)e.Item.FindControl("lnkGuardar");
+        LinkButton cancelar = (LinkButton)e.Item.FindControl("lnkCancelar");
+
+        editar.CommandArgument = id;
+        guardar.CommandArgument = id;
+        cancelar.CommandArgument = id;
+
+        Panel vista = (Panel)e.Item.FindControl("pnlVista");
+        Panel edicion = (Panel)e.Item.FindControl("pnlEdicion");
+
+        vista.Visible = !editando;
+        edicion.Visible = editando;
+
+        /* Mientras una fila se edita, el lápiz del resto desaparece: dos
+           filas abiertas a la vez dejarían dudando cuál se va a guardar. */
+        editar.Visible = (!editando && UbicacionId == 0 && puedeEditar);
+        guardar.Visible = editando;
+        cancelar.Visible = editando;
+
+        if (editando)
+        {
+            TextBox2 txt = (TextBox2)e.Item.FindControl("txtNombre");
+            txt.Text = u.bub_nombre;
+        }
+        else
+        {
+            Literal lit = (Literal)e.Item.FindControl("litNombre");
+            lit.Text = Server.HtmlEncode(u.bub_nombre);
+        }
+    }
+
+    protected void rptUbicaciones_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        try
+        {
+            int id = 0;
+            int.TryParse(Convert.ToString(e.CommandArgument), out id);
+
+            if (e.CommandName == "Cancelar")
+            {
+                UbicacionId = 0;
+            }
+            else if (e.CommandName == "Editar")
+            {
+                if (!Token.Puede("CREAR EDITAR BODEGAS"))
+                    throw new Exception("No tiene permiso para editar ubicaciones.");
+
+                UbicacionId = id;
+            }
+            else if (e.CommandName == "Guardar")
+            {
+                TextBox2 txt = (TextBox2)e.Item.FindControl("txtNombre");
+                string nombre = txt.Text.Trim();
+
+                if (nombre.Length == 0)
+                    throw new Exception("Indique el nombre de la ubicación.");
+
+                /* Solo viaja el nombre. El código identifica la ubicación y ya
+                   está impreso en la etiqueta del estante: cambiarlo dejaría
+                   las etiquetas pegadas apuntando a algo que no existe, así
+                   que no se ofrece siquiera. */
+                BodegaUbicacion entidad = new BodegaUbicacion();
+                entidad.bub_id = id;
+                entidad.bub_bodega = Id;
+                entidad.bub_nombre = nombre;
+                entidad.bub_habilitado = true;
+
+                BodegaController controller = new BodegaController();
+                Respuesta respuesta = controller.GuardarUbicacion(entidad);
+
+                if (respuesta.error)
+                {
+                    Tools.tools.ClientAlert(respuesta.detalle, "alerta");
+                    return;
+                }
+
+                UbicacionId = 0;
+                Tools.tools.ClientAlert(respuesta.detalle, "ok");
+            }
+
+            /* Page_PreRender vuelve a cargar la lista, así que no se recarga
+               acá: hacerlo dos veces por clic es trabajo de base repetido. */
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Los tres accesos de impresión.
+    ///
+    /// Van como onclick a una ventana emergente y no como postback porque lo
+    /// que abren es una pantalla que se imprime: dentro del modal, el
+    /// navegador imprimiría la ficha de la bodega en lugar de las etiquetas.
+    /// </summary>
+    protected void CargarEtiquetas()
+    {
+        /* Sin bodega guardada no hay nada que rotular, y las ubicaciones
+           todavía no existen. */
+        pnlEtiquetas.Visible = (Id > 0 && Token.Puede("IMPRIMIR ETIQUETAS"));
+
+        if (!pnlEtiquetas.Visible) return;
+
+        btnEtiquetaBodega.Attributes["onclick"] =
+            "return abrirEtiquetas('" + QueryEtiqueta("BODEGA") + "');";
+
+        btnEtiquetaUbicaciones.Attributes["onclick"] =
+            "return abrirEtiquetas('" + QueryEtiqueta("UBICACION") + "');";
+
+        /* La etiqueta con el repuesto solo tiene sentido si hay algo
+           guardado: en una bodega recién creada saldría una hoja en blanco y
+           el bodeguero creería que la impresión falló.
+
+           Deshabilitada dice POR QUE, en la nota de la propia tarjeta: una
+           opción apagada sin explicación se lee como que algo se rompió. */
+        if (HayExistencia())
+        {
+            btnEtiquetaConRepuesto.Attributes["onclick"] =
+                "return abrirEtiquetas('" + QueryEtiqueta("UBICACION_REPUESTO") + "');";
+        }
+        else
+        {
+            btnEtiquetaConRepuesto.Attributes["disabled"] = "disabled";
+            litNotaConRepuesto.Text = "Todavía no hay existencia registrada en esta bodega.";
+        }
+    }
+
+    /// <summary>
+    /// La etiqueta de bodega lleva el id de la bodega; las de ubicación se
+    /// acotan con @BODEGA para no imprimir los estantes de todas.
+    /// </summary>
+    protected string QueryEtiqueta(string origen)
+    {
+        string datos = "Origen=" + origen + "&Bodega=" + Id;
+
+        if (origen == "BODEGA") datos += "&Ids=" + Id;
+
+        return Server.UrlEncode(Tools.Crypto.Encrypt(datos));
+    }
+
+    protected bool HayExistencia()
+    {
+        InventarioController controller = new InventarioController();
+
+        List<InventarioSaldo> saldos = controller.GetSaldos(
+            new InventarioSaldo { isa_bodega = Id });
+
+        return (saldos != null && saldos.Count > 0);
     }
 
     protected void Bloqueo()
@@ -150,7 +313,9 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         bool puedeEditar = Token.Puede("CREAR EDITAR BODEGAS");
 
         // El codigo solo se escribe al crear: despues identifica la bodega.
-        txtCodigo.ReadOnly = !puedeEditar || Id > 0;
+        /* Nunca se escribe a mano: lo genera el SP al crear, y despues
+               identifica el registro. */
+            txtCodigo.ReadOnly = true;
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
@@ -159,8 +324,6 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
 
         btnGuardar.Visible = puedeEditar;
         btnAgregarUbicacion.Visible = puedeEditar;
-        ModoUbicacion();
-        txtUbiCodigo.ReadOnly = !puedeEditar;
         txtUbiNombre.ReadOnly = !puedeEditar;
     }
 
@@ -175,7 +338,20 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             BodegaController controller = new BodegaController();
 
             entidad.bod_id = Id;
-            entidad.bod_codigo = txtCodigo.Text.Trim();
+            /* ---- CODIGO AUTOMATICO ----
+               Al crear se manda AUTO y el SP lo genera como BOD-<id>: el
+               codigo depende del ID, y el ID no existe hasta despues del
+               INSERT, asi que no hay forma de calcularlo antes.
+
+               AUTO y no vacio: el SP valida que el codigo venga ANTES de
+               insertar, asi que un vacio se rechaza con "indique el codigo".
+               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
+               reemplaza en cuanto conoce el ID.
+
+               Al editar viaja el que ya tiene. No se regenera nunca: el
+               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
+               etiqueta pegada apuntando a algo que no existe. */
+            entidad.bod_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.bod_nombre = txtNombre.Text.Trim();
             entidad.bod_descripcion = txtDescripcion.Text.Trim();
             entidad.bod_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);
@@ -230,106 +406,31 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
     /// javascript porque la edición ocurre dentro del UpdatePanel: un
     /// enlace tendría que reconstruir el postback a mano.
     /// </summary>
-    protected void GridUbicaciones_ItemDataBound(object sender, GridItemEventArgs e)
-    {
-        if (!(e.Item is GridDataItem)) return;
-
-        GridDataItem item = (GridDataItem)e.Item;
-
-        if (!Token.Puede("CREAR EDITAR BODEGAS")) return;
-
-        LinkButton btn = new LinkButton();
-        btn.CommandName = "EditarUbicacion";
-        btn.CommandArgument = item.GetDataKeyValue("bub_id").ToString();
-        btn.CssClass = "sigma-grid-accion";
-        btn.ToolTip = "Editar esta ubicación";
-        btn.Text = "<i class=\"mdi mdi-pencil-outline\"></i>";
-
-        item["EDITAR"].Controls.Add(btn);
-    }
-
-    protected void GridUbicaciones_ItemCommand(object source, GridCommandEventArgs e)
-    {
-        if (e.CommandName != "EditarUbicacion") return;
-
-        try
-        {
-            int id = Convert.ToInt32(e.CommandArgument);
-
-            BodegaController controller = new BodegaController();
-
-            List<BodegaUbicacion> lista = controller.GetUbicaciones(
-                new BodegaUbicacion { bub_id = id, bub_bodega = Id });
-
-            if (lista == null || lista.Count == 0)
-                throw new Exception("La ubicación ya no existe.");
-
-            BodegaUbicacion u = lista[0];
-
-            UbicacionId       = u.bub_id;
-            txtUbiCodigo.Text = u.bub_codigo;
-            txtUbiNombre.Text = u.bub_nombre;
-
-            ModoUbicacion();
-            udPanel.Update();
-        }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message, "alerta");
-        }
-    }
-
-    protected void btnCancelarUbicacion_Click(object sender, EventArgs e)
-    {
-        LimpiarUbicacion();
-        udPanel.Update();
-    }
-
-    /// <summary>
-    /// El formulario dice lo que va a hacer. El mismo botón rotulado
-    /// siempre "Agregar" mientras se edita una fila existente promete un
-    /// alta y hace una modificación.
-    /// </summary>
-    protected void ModoUbicacion()
-    {
-        bool editando = UbicacionId > 0;
-
-        btnAgregarUbicacion.Text     = editando ? "Guardar ubicación" : "Agregar ubicación";
-        btnCancelarUbicacion.Visible = editando;
-
-        /* El código identifica la ubicación y ya está impreso en la
-           etiqueta del estante. Cambiarlo dejaría todas las etiquetas
-           pegadas apuntando a algo que ya no existe. */
-        txtUbiCodigo.ReadOnly = editando || !Token.Puede("CREAR EDITAR BODEGAS");
-    }
-
-    protected void LimpiarUbicacion()
-    {
-        UbicacionId       = 0;
-        txtUbiCodigo.Text = "";
-        txtUbiNombre.Text = "";
-        ModoUbicacion();
-    }
-
     protected void btnAgregarUbicacion_Click(object sender, EventArgs e)
     {
         try
         {
             if (Id == 0) throw new Exception("Primero guarde la bodega.");
 
-            if (string.IsNullOrEmpty(txtUbiCodigo.Text.Trim()))
-                throw new Exception("Indique el código de la ubicación.");
-
             BodegaUbicacion entidad = new BodegaUbicacion();
-            entidad.bub_id     = UbicacionId;
-            entidad.bub_bodega = Id;
-            entidad.bub_codigo = txtUbiCodigo.Text.Trim();
 
-            // Sin nombre, el codigo hace de nombre: obligar a escribir dos
-            // veces "PA-E3-N2" no agrega informacion.
-            entidad.bub_nombre = string.IsNullOrEmpty(txtUbiNombre.Text.Trim())
-                                 ? txtUbiCodigo.Text.Trim()
-                                 : txtUbiNombre.Text.Trim();
+            /* Cero SIEMPRE: este boton solo da de alta. Pasarle UbicacionId
+               haria que, con una fila abierta en edicion, "Agregar" guardara
+               sobre esa fila en vez de crear una nueva. */
+            entidad.bub_id     = 0;
+            entidad.bub_bodega = Id;
+            /* El código lo genera el SP como UBI-<id>. Va AUTO y no cadena
+               vacía porque el SP valida que el código venga ANTES de
+               insertar, y un vacío se rechazaría con "indique el código". */
+            entidad.bub_codigo = "AUTO";
+
+            /* El nombre pasa a ser obligatorio. Antes, sin nombre, el código
+               hacía de nombre; con el código generándose solo, eso daría una
+               ubicación llamada "AUTO". */
+            if (txtUbiNombre.Text.Trim().Length == 0)
+                throw new Exception("Indique el nombre de la ubicación.");
+
+            entidad.bub_nombre = txtUbiNombre.Text.Trim();
 
             entidad.bub_habilitado = true;
 
@@ -338,8 +439,8 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
 
             if (!respuesta.error)
             {
-                LimpiarUbicacion();
-                CargarUbicaciones();
+                UbicacionId = 0;
+                txtUbiNombre.Text = "";
                 Tools.tools.ClientAlert(respuesta.detalle, "ok");
             }
             else

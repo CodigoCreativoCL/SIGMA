@@ -226,7 +226,9 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR PLANTAS");
 
-        txtCodigo.ReadOnly = !puedeEditar;
+        /* Nunca se escribe a mano: lo genera el SP al crear, y despues
+               identifica el registro. */
+            txtCodigo.ReadOnly = true;
         txtNombre.ReadOnly = !puedeEditar;
         txtDireccion.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
@@ -270,7 +272,20 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
 
             entidad.cin_id = Id;
             entidad.cin_cliente = IdCliente;
-            entidad.cin_codigo = txtCodigo.Text.Trim();
+            /* ---- CODIGO AUTOMATICO ----
+               Al crear se manda AUTO y el SP lo genera como PLA-<id>: el
+               codigo depende del ID, y el ID no existe hasta despues del
+               INSERT, asi que no hay forma de calcularlo antes.
+
+               AUTO y no vacio: el SP valida que el codigo venga ANTES de
+               insertar, asi que un vacio se rechaza con "indique el codigo".
+               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
+               reemplaza en cuanto conoce el ID.
+
+               Al editar viaja el que ya tiene. No se regenera nunca: el
+               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
+               etiqueta pegada apuntando a algo que no existe. */
+            entidad.cin_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.cin_nombre = txtNombre.Text.Trim();
             entidad.cin_direccion = txtDireccion.Text.Trim();
             entidad.cin_descripcion = txtDescripcion.Text.Trim();
