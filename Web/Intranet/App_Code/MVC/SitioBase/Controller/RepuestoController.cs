@@ -3,6 +3,12 @@ using SitioBase.Model;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using OfficeOpenXml;
+using System.Web;
+using System.Text;
+using System.Linq;
+using System.IO;
+using System.Data;
 
 namespace SitioBase.Controller
 {
@@ -545,5 +551,307 @@ namespace SitioBase.Controller
 
             return respuesta;
         }
+
+        /* ================================================================
+           DESCARGA Y CARGA MASIVA
+           ================================================================ */
+
+        /// <summary>
+        /// Baja a Excel los repuestos que se están viendo.
+        ///
+        /// RESPETA EL FILTRO DE LA PANTALLA
+        ///   Si alguien buscó "rodamiento" y descarga, espera los rodamientos,
+        ///   no el catálogo entero. Bajar todo cuando la pantalla muestra diez
+        ///   filas es una sorpresa desagradable, y con cinco mil repuestos es
+        ///   además un archivo inútil.
+        /// </summary>
+        public void ExportarRepuestos(Repuesto filtro)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "RPT_REPUESTO_EXCEL";
+            cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+            if (filtro != null)
+            {
+                if (!string.IsNullOrEmpty(filtro.filtro))
+                    cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
+
+                if (filtro.filtro_habilitado != null)
+                    cmd.Parameters.AddWithValue("@HABILITADO", filtro.filtro_habilitado);
+            }
+
+            Entregar(Conexion.GetDataTable(cmd), "REPUESTOS");
+        }
+
+        /// <summary>
+        /// La planilla para cargar.
+        ///
+        /// LLEVA UNA SEGUNDA HOJA CON LAS UNIDADES VALIDAS
+        ///   Sin ella, quien la llena escribe "unidades", "un", "u." y cada
+        ///   una falla en la carga sin que se entienda por qué. La hoja dice
+        ///   exactamente qué escribir en la columna UNIDAD.
+        /// </summary>
+        public void PlantillaRepuestos()
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "RPT_REPUESTO_PLANTILLA";
+
+            DataTable plantilla = Conexion.GetDataTable(cmd);
+
+            SqlCommand cmdUni = new SqlCommand();
+            cmdUni.CommandText = "RPT_UNIDAD_MEDIDA_EXCEL";
+
+            DataTable unidades = Conexion.GetDataTable(cmdUni);
+
+            byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(plantilla, true);
+
+            using (ExcelPackage excel = new ExcelPackage())
+            {
+                using (MemoryStream stream = new MemoryStream(binario))
+                {
+                    excel.Load(stream);
+                }
+
+                ExcelWorksheet hoja = excel.Workbook.Worksheets.First();
+                hoja.Name = "REPUESTOS";
+                hoja.Columns.AutoFit();
+
+                /* El código va como texto: un código que empiece por ceros
+                   -0012-A- lo convertiría Excel en número y perdería los
+                   ceros, y ese ya no es el código que el usuario escribió. */
+                hoja.Cells["A:A"].Style.Numberformat.Format = "@";
+
+                ExcelWorksheet ayuda = excel.Workbook.Worksheets.Add("UNIDADES VALIDAS");
+                ayuda.Cells["A1"].LoadFromDataTable(unidades, true);
+                ayuda.Columns.AutoFit();
+
+                binario = excel.GetAsByteArray();
+            }
+
+            Entregar(binario, "PLANTILLA CARGA REPUESTOS");
+        }
+
+        /// <summary>
+        /// Carga los repuestos de una planilla, fila por fila.
+        ///
+        /// REUSA InsertRepuesto Y NO ESCRIBE SU PROPIO INSERT
+        ///   Con un INSERT propio, la carga masiva tendría que repetir cada
+        ///   validación del SP —código único, unidad que exista, lote— y esas
+        ///   copias se desincronizan a la primera regla nueva. Pasando por el
+        ///   mismo camino que la ficha, lo que se puede crear a mano es
+        ///   exactamente lo que se puede cargar en masa.
+        ///
+        /// UNA FILA MALA NO DETIENE LA CARGA
+        ///   Cada fila va en su propio try. Con cien repuestos, que la número
+        ///   40 tenga la unidad mal escrita no puede obligar a rehacer la
+        ///   planilla entera: se cargan 99 y se informa cuál falló y por qué.
+        /// </summary>
+        public Respuesta InsertRepuestosMasivo(byte[] archivo)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (!Token.TokenSeguridad()) return respuesta;
+
+            DataTable resultado = new DataTable();
+            resultado.Columns.Add("FILA", typeof(string));
+            resultado.Columns.Add("CODIGO", typeof(string));
+            resultado.Columns.Add("MOTIVO", typeof(string));
+
+            try
+            {
+                DataTable entrada = Tools.Excel.excelXLSX_ToDataTable(archivo, 1, 1, 14);
+
+                if (!entrada.Columns.Contains("NOMBRE") || !entrada.Columns.Contains("UNIDAD"))
+                {
+                    respuesta.error = true;
+                    respuesta.detalle = "La planilla no tiene las columnas NOMBRE y UNIDAD. " +
+                                        "Descargue la plantilla y trabaje sobre ella.";
+                    return respuesta;
+                }
+
+                /* Las unidades se leen UNA vez y se resuelven en memoria:
+                   consultar la base por cada fila serían mil viajes para
+                   traer siempre la misma tabla de veinte filas. */
+                Dictionary<string, int> unidades = new Dictionary<string, int>();
+
+                UnidadMedidaController umc = new UnidadMedidaController();
+
+                foreach (UnidadMedida u in umc.GetUnidades())
+                {
+                    string clave = u.ume_codigo.Trim().ToUpper();
+                    if (!unidades.ContainsKey(clave)) unidades.Add(clave, u.ume_id);
+                }
+
+                int cargados = 0;
+                int fallidos = 0;
+                int fila = 1;
+
+                foreach (DataRow row in entrada.Rows)
+                {
+                    fila++;
+
+                    string codigo = Columna(row, "CODIGO");
+                    string nombre = Columna(row, "NOMBRE");
+
+                    try
+                    {
+                        /* La fila de ejemplo de la plantilla se salta sola:
+                           da lo mismo si alguien olvida borrarla. */
+                        if (codigo.ToUpper().StartsWith("EJEMPLO")) continue;
+
+                        /* Una fila entera en blanco no es un error: es el
+                           final de lo que alguien escribió. */
+                        if (nombre.Length == 0 && codigo.Length == 0) continue;
+
+                        if (nombre.Length == 0)
+                            throw new Exception("Falta el nombre.");
+
+                        string unidad = Columna(row, "UNIDAD").ToUpper();
+
+                        if (unidad.Length == 0)
+                            throw new Exception("Falta la unidad de medida.");
+
+                        if (!unidades.ContainsKey(unidad))
+                            throw new Exception("La unidad \"" + unidad + "\" no existe. " +
+                                                "Vea la hoja UNIDADES VALIDAS de la plantilla.");
+
+                        Repuesto r = new Repuesto();
+
+                        /* Sin código en la planilla, lo genera el SP como
+                           REP-<id>: es el mismo comportamiento que la ficha. */
+                        r.rep_codigo = codigo.Length > 0 ? codigo : "AUTO";
+                        r.rep_nombre = nombre;
+                        r.rep_unidad_medida = unidades[unidad];
+                        r.rep_fabricante = Columna(row, "FABRICANTE");
+                        r.rep_modelo = Columna(row, "MODELO");
+                        r.rep_descripcion = Columna(row, "DESCRIPCION");
+
+                        r.rep_controla_lote = EsSi(row, "CONTROLA LOTE");
+                        r.rep_es_consumible = EsSi(row, "CONSUMIBLE");
+                        r.rep_es_reparable = EsSi(row, "REPARABLE");
+
+                        /* Sin la columna, habilitado: es lo que espera quien
+                           carga repuestos para empezar a usarlos. */
+                        r.rep_habilitado = !entrada.Columns.Contains("HABILITADO")
+                                           || Columna(row, "HABILITADO").Length == 0
+                                           || EsSi(row, "HABILITADO");
+
+                        r.rep_costo_referencia = Numero(row, "COSTO REFERENCIA");
+                        r.rep_vida_util_hora = Numero(row, "VIDA UTIL HORAS");
+                        r.rep_vida_util_ciclo = Numero(row, "VIDA UTIL CICLOS");
+
+                        decimal? dias = Numero(row, "VIDA UTIL DIAS");
+
+                        if (dias != null)
+                        {
+                            if (dias.Value != Math.Floor(dias.Value))
+                                throw new Exception("La vida útil en días tiene que ser un número entero.");
+
+                            r.rep_vida_util_dia = (int)dias.Value;
+                        }
+
+                        Respuesta uno = InsertRepuesto(r);
+
+                        if (uno.error) throw new Exception(uno.detalle);
+
+                        cargados++;
+                    }
+                    catch (Exception ex)
+                    {
+                        fallidos++;
+
+                        DataRow err = resultado.NewRow();
+                        err["FILA"] = fila.ToString();
+                        err["CODIGO"] = codigo.Length > 0 ? codigo : nombre;
+                        err["MOTIVO"] = ex.Message;
+                        resultado.Rows.Add(err);
+                    }
+                }
+
+                respuesta.cantidaCargada = cargados;
+                respuesta.cantidaError = fallidos;
+                respuesta.error = (fallidos > 0);
+                respuesta.table = resultado;
+                respuesta.detalle = cargados.ToString() + " repuesto(s) cargado(s).";
+            }
+            catch (Exception ex)
+            {
+                respuesta.error = true;
+                respuesta.detalle = "No se pudo leer la planilla: " + ex.Message;
+                respuesta.table = resultado;
+            }
+
+            return respuesta;
+        }
+
+        /* ---- Lectura tolerante de la planilla ----
+           Una planilla que pasó por manos humanas trae columnas que faltan,
+           espacios de más y celdas vacías. Preguntar por cada caso en cada
+           uso llenaría el método de ruido. */
+
+        private string Columna(DataRow row, string nombre)
+        {
+            if (!row.Table.Columns.Contains(nombre)) return "";
+            if (row[nombre] == null || row[nombre] == DBNull.Value) return "";
+
+            return row[nombre].ToString().Trim();
+        }
+
+        /// <summary>
+        /// SI/NO tolerante: acepta SI, S, 1, TRUE, X. Quien llena una planilla
+        /// escribe lo que le parece, y rechazar la fila por una "X" en vez de
+        /// un "SI" es hacerle perder el tiempo por nada.
+        /// </summary>
+        private bool EsSi(DataRow row, string nombre)
+        {
+            string v = Columna(row, nombre).ToUpper();
+
+            return (v == "SI" || v == "S" || v == "1" || v == "TRUE" || v == "X" || v == "SÍ");
+        }
+
+        private decimal? Numero(DataRow row, string nombre)
+        {
+            string v = Columna(row, nombre);
+
+            if (v.Length == 0) return null;
+
+            decimal d;
+
+            /* Se prueba con la cultura del servidor y con punto decimal: una
+               planilla puede venir de un Excel en inglés y "1500.50" no debe
+               volverse 150050. */
+            if (decimal.TryParse(v, out d)) return d;
+
+            if (decimal.TryParse(v, System.Globalization.NumberStyles.Any,
+                                 System.Globalization.CultureInfo.InvariantCulture, out d))
+                return d;
+
+            throw new Exception("\"" + v + "\" no es un número válido en " + nombre + ".");
+        }
+
+        /// <summary>
+        /// Manda el archivo al navegador. Un solo sitio para que la descarga y
+        /// la plantilla no terminen con encabezados distintos.
+        /// </summary>
+        private void Entregar(DataTable datos, string nombre)
+        {
+            Entregar(Tools.Excel.exportExcelXLSX_Bytes(datos, true), nombre);
+        }
+
+        private void Entregar(byte[] binario, string nombre)
+        {
+            string archivo = nombre + " " + DateTime.Now.ToString("dd-MM-yyyy");
+
+            HttpContext.Current.Response.Clear();
+            HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";
+            HttpContext.Current.Response.HeaderEncoding = Encoding.Default;
+            HttpContext.Current.Response.ContentEncoding = Encoding.Default;
+            HttpContext.Current.Response.AddHeader("content-disposition",
+                                                   "attachment; filename=" + archivo + ".xlsx");
+
+            HttpContext.Current.Response.BinaryWrite(binario);
+            HttpContext.Current.Response.End();
+        }
+
     }
 }

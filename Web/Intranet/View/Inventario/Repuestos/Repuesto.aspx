@@ -51,8 +51,9 @@
                         <asp:Label ID="lblId" runat="server"></asp:Label>
                     </div>
                     <div class="sigma-modal-field is-medio">
-                        <label>Código(*)</label>
+                        <label>Código</label>
                         <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
+                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>REP-</strong>más el número del registro.</span>
                         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Repuesto" />
                         <span class="sigma-modal-ayuda">Único dentro del cliente. No se puede cambiar después.</span>

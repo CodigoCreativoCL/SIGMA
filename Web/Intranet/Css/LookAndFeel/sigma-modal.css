@@ -675,3 +675,14 @@
     padding-top: 14px;
     border-top: 1px solid var(--sg-border);
 }
+
+
+/* La seccion tambien sirve fuera de un modal: la ficha del cliente
+   usa la rejilla Bootstrap heredada y sus columnas ya traen padding
+   lateral, asi que el rotulo necesita alinearse con ellas en vez de
+   pegarse al borde. */
+.row > .sigma-form-seccion,
+.col-12.sigma-form-seccion {
+    padding-left: 15px;
+    padding-right: 15px;
+}
