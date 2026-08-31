@@ -7,10 +7,18 @@
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
+        function abrirCargaMasiva() {
+            var oWin = $find("<%=rwiDetalle.ClientID %>");
+            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") %>');
+            oWin.show();
+            return false;
+        }
+
         function abrirRepuesto(query) {
             var oWin = $find("<%=rwiDetalle.ClientID %>");
             oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query);
             oWin.show();
+            return false;
         }
 
         function refresh() {
@@ -70,14 +78,36 @@
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
+            <%-- LAS ACCIONES VAN EN SU PROPIA BARRA, NO EN LA GRILLA
+
+                 Estaban en el CommandItemTemplate de RadGrid, y un control ahi
+                 dentro NO es un campo de la pagina: el code-behind no puede
+                 nombrarlo, asi que la descarga -que necesita su evento- no
+                 compilaba.
+
+                 Ademas las tres son la misma tarea -meter repuestos al catalogo
+                 o sacarlos- y juntas se eligen de un vistazo. --%>
+            <div class="sigma-acciones-barra">
+                <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sigma-accion is-primaria"
+                    OnClientClick="return abrirRepuesto(0);">
+                    <i class="mdi mdi-plus"></i><span>Nuevo repuesto</span>
+                </asp:LinkButton>
+
+                <asp:LinkButton ID="lnkDescargar" runat="server" CssClass="sigma-accion"
+                    OnClick="lnkDescargar_Click"
+                    ToolTip="Baja los repuestos que coinciden con la búsqueda">
+                    <i class="mdi mdi-file-excel-outline"></i><span>Descargar a Excel</span>
+                </asp:LinkButton>
+
+                <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sigma-accion"
+                    OnClientClick="return abrirCargaMasiva();"
+                    ToolTip="Dar de alta muchos repuestos desde una planilla">
+                    <i class="mdi mdi-upload-outline"></i><span>Carga masiva</span>
+                </asp:LinkButton>
+            </div>
+
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
-                <MasterTableView CommandItemDisplay="Top" DataKeyNames="rep_id">
-                    <CommandItemTemplate>
-                        <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo repuesto" CssClass="icono_guardar" OnClientClick="abrirRepuesto(0)" />
-                        </div>
-                    </CommandItemTemplate>
-                </MasterTableView>
+                <MasterTableView CommandItemDisplay="None" DataKeyNames="rep_id" />
             </rad:RadGrid2>
 
             <div class="card-box" style="margin-top: 14px; font-size: 12px; color: #555;">

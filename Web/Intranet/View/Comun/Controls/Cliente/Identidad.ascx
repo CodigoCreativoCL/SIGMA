@@ -42,6 +42,11 @@
 
                 <div class="col-lg-9 col-md-9 col-xs-12">
                     <div class="row col-12">
+                        <div class="col-12 sigma-form-seccion">
+                            <div class="titulo"><i class="mdi mdi-card-account-details-outline"></i>Identificación</div>
+                            <div class="ayuda">Cómo se llama la empresa y con qué número la identifica el Estado.</div>
+                        </div>
+
                         <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
                             <label>ID</label>
                             <div class="identidad-readonly-chip">
@@ -59,6 +64,11 @@
                                 ClientValidationFunction="validaControl"
                                 ValidationGroup="Cliente" />
                         </div>
+                        <div class="col-12 sigma-form-seccion">
+                            <div class="titulo"><i class="mdi mdi-earth"></i>Localización</div>
+                            <div class="ayuda">El país decide cómo se rotula la identificación —RUT en Chile, RUC en Perú, CUIT en Argentina— y en qué huso se leen las fechas.</div>
+                        </div>
+
                         <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
                             <label>País(*):</label>
                             <rad:RadComboBox2 ID="cboPais" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
@@ -127,6 +137,11 @@
                                 ValidateEmptyText="true"
                                 ClientValidationFunction="validaControl"
                                 ValidationGroup="Cliente" />
+                        </div>
+
+                        <div class="col-12 sigma-form-seccion">
+                            <div class="titulo"><i class="mdi mdi-toggle-switch-outline"></i>Estado</div>
+                            <div class="ayuda">Un cliente deshabilitado deja de operar: sus usuarios no entran.</div>
                         </div>
 
                         <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">

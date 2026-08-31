@@ -52,6 +52,7 @@
                     <div class="sigma-modal-field">
                         <label>Código (*)</label>
                         <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" UpperCase="true" />
+                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>PLC-</strong>más el número del registro.</span>
                         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Plan" />
                         <span class="sigma-modal-ayuda">

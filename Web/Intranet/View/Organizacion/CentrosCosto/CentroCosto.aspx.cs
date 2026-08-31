@@ -120,7 +120,9 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR CENTROS COSTO");
 
-        txtCodigo.ReadOnly = !puedeEditar;
+        /* Nunca se escribe a mano: lo genera el SP al crear, y despues
+               identifica el registro. */
+            txtCodigo.ReadOnly = true;
         txtNombre.ReadOnly = !puedeEditar;
         cboPadre.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
@@ -137,7 +139,20 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
 
             entidad.cco_id = Id;
             entidad.cco_cliente = SitioBase.Session.ClienteId();
-            entidad.cco_codigo = txtCodigo.Text.Trim();
+            /* ---- CODIGO AUTOMATICO ----
+               Al crear se manda AUTO y el SP lo genera como CCO-<id>: el
+               codigo depende del ID, y el ID no existe hasta despues del
+               INSERT, asi que no hay forma de calcularlo antes.
+
+               AUTO y no vacio: el SP valida que el codigo venga ANTES de
+               insertar, asi que un vacio se rechaza con "indique el codigo".
+               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
+               reemplaza en cuanto conoce el ID.
+
+               Al editar viaja el que ya tiene. No se regenera nunca: el
+               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
+               etiqueta pegada apuntando a algo que no existe. */
+            entidad.cco_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.cco_nombre = txtNombre.Text.Trim();
             entidad.cco_habilitado = rdbSi.Checked;
 

@@ -1,0 +1,308 @@
+﻿/* =============================================================
+   SIGMA — ESCANEO
+   -------------------------------------------------------------
+
+   PENSADA PARA UN TELEFONO EN LA MANO, DE PIE
+
+     No es una pantalla de escritorio que ademas se ve en el
+     movil: es al reves. El bodeguero esta frente a un estante,
+     con una mano ocupada y guantes puestos. Por eso el boton de
+     escanear es grande, el resultado son tarjetas y no una tabla
+     ancha, y la cantidad -que es el dato que se compara contra lo
+     que tiene en la mano- es lo mas grande de cada tarjeta.
+   ============================================================= */
+
+.esc-lector { margin-bottom: 18px; }
+
+.esc-acciones { display: flex; gap: 12px; }
+
+/* Un objetivo grande: se toca con guantes, a pulso, mirando el
+   estante y no la pantalla. */
+.esc-boton-camara {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    min-height: 56px;
+    padding: 14px 20px;
+    border: 0;
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-purple);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter var(--sg-duration-fast) var(--sg-easing);
+}
+
+.esc-boton-camara:hover,
+.esc-boton-camara:focus { filter: brightness(1.08); }
+.esc-boton-camara:active { filter: brightness(.94); }
+.esc-boton-camara i { font-size: 22px; }
+
+
+/* ---- El visor ---- */
+.esc-camara {
+    position: relative;
+    overflow: hidden;
+    margin-bottom: 12px;
+    border-radius: var(--sg-radius-md);
+    background-color: #000000;
+}
+
+.esc-camara video {
+    display: block;
+    width: 100%;
+    max-height: 60vh;
+    object-fit: cover;
+}
+
+/* La mira no recorta nada: el detector mira el cuadro entero.
+   Esta para que la persona sepa donde poner la etiqueta, que es
+   lo que hace que apunte bien a la primera. */
+.esc-mira {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 62%;
+    max-width: 260px;
+    aspect-ratio: 1 / 1;
+    transform: translate(-50%, -50%);
+    border: 3px solid rgba(255, 255, 255, .9);
+    border-radius: 14px;
+    box-shadow: 0 0 0 100vmax rgba(0, 0, 0, .35);
+    pointer-events: none;
+}
+
+.esc-cerrar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 42px;
+    height: 42px;
+    border: 0;
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, .55);
+    color: #ffffff;
+    font-size: 22px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+
+/* ---- Cuando la camara no se puede usar ---- */
+.esc-aviso {
+    margin-top: 12px;
+    padding: 14px 16px;
+    border-radius: var(--sg-radius-md);
+    background-color: rgba(245, 158, 11, .12);
+    border-left: 3px solid var(--sg-warning);
+    font-size: 13.5px;
+    line-height: 1.55;
+    color: var(--sg-text-secondary);
+}
+
+
+/* ---- Escribir el codigo a mano ---- */
+.esc-manual { margin-top: 14px; font-size: 13.5px; }
+
+.esc-manual > summary {
+    cursor: pointer;
+    color: var(--sg-text-muted);
+    padding: 6px 0;
+}
+
+.esc-manual-cuerpo {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding-top: 8px;
+}
+
+.esc-manual-cuerpo input[type="text"] { min-width: 180px; }
+
+.esc-pista {
+    flex-basis: 100%;
+    color: var(--sg-text-muted);
+    font-size: 12px;
+}
+
+
+/* ---- La cabecera del resultado ---- */
+.esc-cabecera {
+    padding: 16px 18px;
+    margin-bottom: 14px;
+    border-radius: var(--sg-radius-md);
+    background: linear-gradient(180deg, rgba(108, 92, 255, .10), rgba(108, 92, 255, .04));
+    border: 1px solid rgba(108, 92, 255, .22);
+}
+
+.esc-cabecera .tipo {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .6px;
+    text-transform: uppercase;
+    color: var(--sg-purple);
+}
+
+.esc-cabecera .codigo {
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.15;
+    color: var(--sg-text-primary);
+    word-break: break-word;
+}
+
+.esc-cabecera .nombre {
+    font-size: 15px;
+    color: var(--sg-text-primary);
+}
+
+.esc-cabecera .contexto {
+    margin-top: 2px;
+    font-size: 13px;
+    color: var(--sg-text-muted);
+}
+
+.esc-cabecera .total {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(108, 92, 255, .22);
+}
+
+.esc-cabecera .total .rotulo { font-size: 12px; color: var(--sg-text-muted); }
+
+.esc-cabecera .total .valor {
+    font-size: 22px;
+    font-weight: 800;
+    color: var(--sg-text-primary);
+}
+
+.esc-resumen {
+    margin-bottom: 10px;
+    font-size: 13px;
+    color: var(--sg-text-muted);
+}
+
+
+/* ---- Una linea del desglose ---- */
+.esc-tarjeta {
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    background-color: #ffffff;
+}
+
+.esc-tarjeta .fila-1 {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+}
+
+.esc-tarjeta .quien { flex: 1 1 auto; min-width: 0; }
+
+.esc-tarjeta .lugar {
+    display: inline-block;
+    margin-bottom: 4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    background-color: rgba(108, 92, 255, .10);
+    color: var(--sg-purple);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.esc-tarjeta .rep-codigo {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+}
+
+.esc-tarjeta .rep-nombre {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--sg-text-primary);
+}
+
+/* Lo mas grande de la tarjeta: es el numero que se compara contra
+   lo que se tiene en la mano. */
+.esc-tarjeta .cuanto { flex: 0 0 auto; text-align: right; }
+
+.esc-tarjeta .cuanto .valor {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--sg-text-primary);
+}
+
+.esc-tarjeta .cuanto .unidad { font-size: 12px; color: var(--sg-text-muted); }
+
+.esc-tarjeta .fila-2 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+.esc-tarjeta .fila-2:empty { display: none; }
+
+.esc-lote {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 11.5px;
+    font-weight: 600;
+    background-color: var(--sg-surface-soft, #f3f4f6);
+    color: var(--sg-text-secondary);
+}
+
+.esc-lote.is-alerta {
+    background-color: rgba(220, 38, 38, .12);
+    color: var(--sg-danger);
+}
+
+.esc-lote.is-advertencia {
+    background-color: rgba(245, 158, 11, .14);
+    color: #92610a;
+}
+
+.esc-ultimo { font-size: 11.5px; color: var(--sg-text-muted); }
+
+
+/* ---- Nada que mostrar ---- */
+.esc-vacio {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 16px 18px;
+    border: 1px dashed var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    color: var(--sg-text-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.esc-vacio i { font-size: 20px; color: var(--sg-warning); }
+
+
+/* ---- En pantalla ancha no se estira a lo bruto ----
+   Una tarjeta de 1800px con un nombre corto adentro se lee peor
+   que una de 700. */
+@media (min-width: 900px) {
+    .esc-lector,
+    .esc-cabecera,
+    .esc-resumen,
+    .esc-tarjeta,
+    .esc-vacio { max-width: 820px; }
+}
