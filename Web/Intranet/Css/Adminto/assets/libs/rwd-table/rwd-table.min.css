@@ -1,4 +1,4 @@
-/*!
+﻿/*!
  * Responsive Tables v5.3.3 (http://gergeo.se/RWD-Table-Patterns)
  * This is an awesome solution for responsive tables with complex data.
  * Authors: Nadan Gergeo <nadan@blimp.se> (www.blimp.se), Lucas Wiener <lucas@blimp.se> & "Maggie Wachs (www.filamentgroup.com)"

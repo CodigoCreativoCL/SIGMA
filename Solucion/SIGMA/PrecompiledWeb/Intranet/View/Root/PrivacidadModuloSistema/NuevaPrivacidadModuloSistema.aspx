@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_PrivacidadModuloSistema_NuevaPrivacidadModuloSistema, App_Web_jfnkgi2u" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_PrivacidadModuloSistema_NuevaPrivacidadModuloSistema, App_Web_ls3ttlj0" %>
 
 <asp:Content ID="contentHeader" ContentPlaceHolderID="cphHeder" runat="server">
     <style>

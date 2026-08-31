@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_Mantenedores_PermisosUsuario_PermisoUsuario, App_Web_xqj44kjz" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Root_Mantenedores_PermisosUsuario_PermisoUsuario, App_Web_2bx4bvxw" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">

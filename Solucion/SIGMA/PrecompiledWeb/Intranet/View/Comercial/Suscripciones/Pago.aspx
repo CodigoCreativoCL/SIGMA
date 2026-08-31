@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comercial_Suscripciones_Pago, App_Web_q4im1csg" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comercial_Suscripciones_Pago, App_Web_hcstghdl" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">
@@ -201,6 +201,61 @@
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma el rechazo de este pago?');" />
                             <WebControls:PushButton ID="btnVerificar" runat="server" Text="Verificar" OnClick="btnVerificar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma que este pago figura en la cartola?');" />
+                        </div>
+
+                    </asp:Panel>
+
+                    <%-- ================== CORRECCION (T-2211) ==================
+                         Corregir no es verificar. Esto arregla lo que quien
+                         declaró escribió mal; verificar es cotejarlo contra la
+                         cartola. Por eso son dos paneles y dos permisos.
+
+                         No aparece con el pago ya verificado: su monto ya sumó
+                         al período y pudo extender la vigencia. --%>
+                    <asp:Panel ID="pnlCorregir" runat="server" Visible="false" CssClass="sigma-modal-section">
+
+                        <div class="sigma-modal-section-title">
+                            <i class="mdi mdi-pencil-outline"></i>
+                            <span>Corregir lo declarado</span>
+                        </div>
+
+                        <asp:Panel ID="pnlCorregirRechazado" runat="server" Visible="false" CssClass="sigma-modal-note">
+                            <i class="mdi mdi-refresh"></i>
+                            <div>
+                                Este pago fue rechazado. Al corregirlo vuelve a quedar
+                                <strong>declarado</strong> y entra otra vez en la cola de verificación.
+                            </div>
+                        </asp:Panel>
+
+                        <div class="sigma-modal-grid">
+
+                            <div class="sigma-modal-field">
+                                <label>Monto transferido</label>
+                                <WebControls:TextBox2 ID="txtMontoCorregir" runat="server" MaxLength="14" />
+                                <span class="sigma-modal-ayuda">En pesos.</span>
+                            </div>
+
+                            <div class="sigma-modal-field">
+                                <label>Fecha de la transferencia</label>
+                                <WebControls:TextBox2 ID="txtFechaCorregir" runat="server" MaxLength="10" />
+                                <span class="sigma-modal-ayuda">Formato dd-mm-aaaa. No puede ser futura.</span>
+                            </div>
+
+                            <div class="sigma-modal-field">
+                                <label>Banco</label>
+                                <WebControls:TextBox2 ID="txtBancoCorregir" runat="server" MaxLength="100" />
+                            </div>
+
+                            <div class="sigma-modal-field">
+                                <label>N° de operación</label>
+                                <WebControls:TextBox2 ID="txtOperacionCorregir" runat="server" MaxLength="100" />
+                            </div>
+
+                        </div>
+
+                        <div class="sigma-modal-actions">
+                            <WebControls:PushButton ID="btnCorregir" runat="server" Text="Corregir" OnClick="btnCorregir_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma la corrección de este pago?');" />
                         </div>
 
                     </asp:Panel>

@@ -1,4 +1,4 @@
-﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Cliente, App_Web_j2qbhj3h" %>
+﻿<%@ control language="C#" autoeventwireup="true" inherits="View_Comun_Controls_Cliente_Cliente, App_Web_djqhalyw" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Identidad.ascx" TagPrefix="wuc" TagName="Identidad" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Usuarios" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Instalaciones.ascx" TagPrefix="wuc" TagName="Instalaciones" %>

@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comun_Clientes_InformeUsuarioMarcacionFoto, App_Web_gmat4w2s" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Simple.master" autoeventwireup="true" inherits="View_Comun_Clientes_InformeUsuarioMarcacionFoto, App_Web_gmrbtxiv" %>
 <asp:Content ID="Content2" ContentPlaceHolderID="cphHeder" runat="server">
 
 </asp:Content>

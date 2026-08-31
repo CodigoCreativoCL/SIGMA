@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Privacidad.master" autoeventwireup="true" inherits="Privacidad_Privacidad, App_Web_ed1q2fhp" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Privacidad.master" autoeventwireup="true" inherits="Privacidad_Privacidad, App_Web_tqvtprfg" %>
 
 <asp:Content ID="cHead" ContentPlaceHolderID="cphHeder" runat="server">
 </asp:Content>

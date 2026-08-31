@@ -1,4 +1,4 @@
-@keyframes dtb-spinner {
+﻿@keyframes dtb-spinner {
   100% {
     transform: rotate(360deg);
   }

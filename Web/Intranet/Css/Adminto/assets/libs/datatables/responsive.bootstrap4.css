@@ -1,4 +1,4 @@
-table.dataTable.dtr-inline.collapsed > tbody > tr > td.child,
+﻿table.dataTable.dtr-inline.collapsed > tbody > tr > td.child,
 table.dataTable.dtr-inline.collapsed > tbody > tr > th.child,
 table.dataTable.dtr-inline.collapsed > tbody > tr > td.dataTables_empty {
   cursor: default !important;

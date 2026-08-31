@@ -159,6 +159,78 @@ namespace SitioBase.Controller
         }
 
         /// <summary>
+        /// Corrige lo que quien declaró escribió mal (T-2211, bloque 59).
+        ///
+        /// NO ES VERIFICAR. Verificar coteja contra la cartola y mueve
+        /// saldos; esto arregla el monto, la fecha, el banco o el número de
+        /// operación de una declaración todavía sin resolver.
+        ///
+        /// EL PERÍODO NO VIAJA
+        ///   Mover un pago de un período a otro descuadra los dos: el que lo
+        ///   pierde y el que lo recibe. Es una operación aparte, con su
+        ///   propio recálculo. El SP tampoco lo acepta.
+        ///
+        /// LO QUE NO SE MANDA NO SE BORRA
+        ///   El SP usa ISNULL(@X, columna) en cada campo, así que un nulo
+        ///   significa "no lo toques". Es la lección de
+        ///   UPD_CLIENTE_INSTALACION, que escribía la fila entera y borraba
+        ///   la zona horaria y las coordenadas de la planta.
+        ///
+        /// Un pago ya VERIFICADO lo rechaza el SP: su monto ya sumó al
+        /// período y pudo extender la vigencia de la suscripción.
+        /// </summary>
+        public Respuesta CorregirPago(SuscripcionPago entidad)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmdExecute = null;
+
+                try
+                {
+                    cmdExecute = Conexion.GetCommand("UPD_SUSCRIPCION_PAGO");
+                    cmdExecute.Parameters.AddWithValue("@ID", entidad.spa_id);
+                    cmdExecute.Parameters.AddWithValue("@MONTO_DECLARADO",
+                        (entidad.spa_monto_declarado_clp > 0)
+                            ? (object)entidad.spa_monto_declarado_clp : DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@FECHA_TRANSFERENCIA",
+                        (entidad.spa_fecha_transferencia != DateTime.MinValue)
+                            ? (object)entidad.spa_fecha_transferencia : DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@BANCO",
+                        string.IsNullOrEmpty(entidad.spa_banco) ? DBNull.Value : (object)entidad.spa_banco);
+                    cmdExecute.Parameters.AddWithValue("@NUMERO_OPERACION",
+                        string.IsNullOrEmpty(entidad.spa_numero_operacion)
+                            ? DBNull.Value : (object)entidad.spa_numero_operacion);
+                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                    string mensaje = "Pago corregido.";
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmdExecute))
+                    {
+                        if (dr.Read() && dr["MENSAJE"] != DBNull.Value)
+                            mensaje = dr["MENSAJE"].ToString();
+                    }
+
+                    cmdExecute.Connection.Close();
+
+                    respuesta.codigo = entidad.spa_id;
+                    respuesta.detalle = mensaje;
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmdExecute != null && cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+
+            return respuesta;
+        }
+
+        /// <summary>
         /// Verifica o rechaza. Es la operación que mueve dinero en los
         /// papeles: el SP recalcula lo pagado del período sumando solo los
         /// pagos verificados, ajusta el estado del período y, si quedó

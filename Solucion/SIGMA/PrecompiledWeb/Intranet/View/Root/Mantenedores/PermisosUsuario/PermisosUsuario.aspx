@@ -1,4 +1,4 @@
-﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Root_Mantenedores_PermisosUsuario_PermisosUsuario, App_Web_xqj44kjz" %>
+﻿<%@ page language="C#" masterpagefile="~/Master/Default.master" autoeventwireup="true" inherits="View_Root_Mantenedores_PermisosUsuario_PermisosUsuario, App_Web_2bx4bvxw" %>
 
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
