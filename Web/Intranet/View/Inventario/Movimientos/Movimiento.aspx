@@ -100,7 +100,7 @@
                     </div>
                     <div class="sigma-modal-field">
                         <label>Vence el</label>
-                        <WebControls:TextBox2 ID="txtLoteVence" runat="server" MaxLength="10" />
+                        <WebControls:Calendar2 ID="txtLoteVence" runat="server" Width="100%" />
                         <span class="sigma-modal-ayuda">
                             Formato dd-mm-aaaa. Solo para el lote nuevo. Vacío si no vence.<br />
                             <strong>Sin fecha no hay forma de avisar</strong> que un lote venció, y es

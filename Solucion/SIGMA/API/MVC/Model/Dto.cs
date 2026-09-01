@@ -381,4 +381,78 @@ namespace API.MVC.Model
         public string observacion { get; set; }
         public Guid? uuid { get; set; }
     }
+
+
+    /* ================================================================
+       ESCANEO DE UNA ETIQUETA
+       ================================================================ */
+
+    /// <summary>
+    /// El lugar -o el repuesto- que se escaneo.
+    ///
+    /// Los tres SP de desglose devuelven la MISMA forma, asi que la app
+    /// dibuja una sola pantalla para bodega, estante y repuesto en vez de
+    /// tres. Las columnas que no aplican vienen nulas.
+    /// </summary>
+    public class DesgloseCabeceraDto
+    {
+        public int bub_id { get; set; }
+        public int bod_id { get; set; }
+        public int rep_id { get; set; }
+
+        public string bub_codigo { get; set; }
+        public string bub_nombre { get; set; }
+        public string bod_codigo { get; set; }
+        public string bod_nombre { get; set; }
+        public string rep_codigo { get; set; }
+        public string rep_nombre { get; set; }
+
+        public string PLANTA { get; set; }
+        public string UNIDAD { get; set; }
+        public decimal? TOTAL { get; set; }
+
+        public bool? bub_habilitado { get; set; }
+        public bool? bod_habilitado { get; set; }
+        public bool? rep_habilitado { get; set; }
+        public bool? rep_controla_lote { get; set; }
+    }
+
+    /// <summary>Una linea del desglose: un repuesto, en un sitio, de un lote.</summary>
+    public class DesgloseLineaDto
+    {
+        public int rep_id { get; set; }
+        public string rep_codigo { get; set; }
+        public string rep_nombre { get; set; }
+        public string rep_fabricante { get; set; }
+        public string rep_modelo { get; set; }
+
+        public string BODEGA { get; set; }
+        public string UBICACION { get; set; }
+        public string UBICACION_NOMBRE { get; set; }
+
+        public string UNIDAD { get; set; }
+        public decimal CANTIDAD { get; set; }
+        public decimal? COSTO_PROMEDIO { get; set; }
+
+        public string LOTE_CODIGO { get; set; }
+        public DateTime? LOTE_VENCE { get; set; }
+        public int? DIAS_PARA_VENCER { get; set; }
+
+        public DateTime? ULTIMO_MOVIMIENTO { get; set; }
+        public string ULTIMO_USUARIO { get; set; }
+    }
+
+    /// <summary>Lo que la app recibe al escanear.</summary>
+    public class EscaneoDto
+    {
+        /// <summary>UBI, BOD o REP: con esto la app rotula la pantalla.</summary>
+        public string tipo { get; set; }
+
+        public int id { get; set; }
+        public string token { get; set; }
+
+        public DesgloseCabeceraDto cabecera { get; set; }
+        public List<DesgloseLineaDto> lineas { get; set; }
+    }
+
 }

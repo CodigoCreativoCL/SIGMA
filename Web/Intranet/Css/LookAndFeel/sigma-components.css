@@ -1821,16 +1821,26 @@ div.RadTabStrip .rtsLevel .rtsLevel1 ul li a {
    ============================================================= */
 .sigma-opciones {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: 12px;
+    /* 300px y no 230: con 230 una pantalla ancha metia CINCO tarjetas y el
+       texto de cada una caia en cuatro lineas, que es justo lo que la
+       tarjeta venia a evitar. */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+/* Y no se estiran sin limite: una fila de siete tarjetas es un menu
+   horizontal, no un conjunto de opciones que se comparan. */
+.sigma-opciones.is-catalogo {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
+    justify-content: start;
 }
 
 .sigma-opcion {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
-    padding: 14px 16px;
+    padding: 18px 18px;
     border: 1px solid var(--sg-border);
     border-radius: var(--sg-radius-md);
     background-color: #ffffff;
