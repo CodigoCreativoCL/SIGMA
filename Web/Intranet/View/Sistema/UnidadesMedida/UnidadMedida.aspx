@@ -33,11 +33,9 @@
                 <asp:Label ID="lblId" runat="server"></asp:Label>
             </div>
             <div class="sigma-modal-field is-chico">
-                <label>Código(*)</label>
-                <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="20" UpperCase="true" />
-                <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
-                    ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Unidad" />
-                <span class="sigma-modal-ayuda">Único en todo el sistema.</span>
+                <label>Código</label>
+                <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="20" ReadOnly="true" />
+                <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>UNI-</strong> más el número.</span>
             </div>
             <div class="sigma-modal-field is-medio">
                 <label>Nombre(*)</label>

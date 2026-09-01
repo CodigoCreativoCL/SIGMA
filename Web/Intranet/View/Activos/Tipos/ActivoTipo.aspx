@@ -38,11 +38,9 @@
                 <asp:Label ID="lblId" runat="server"></asp:Label>
             </div>
             <div class="sigma-modal-field is-chico">
-                <label>Código(*)</label>
-                <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" UpperCase="true" />
-                <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
-                    ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Tipo" />
-                <span class="sigma-modal-ayuda">Único dentro del cliente.</span>
+                <label>Código</label>
+                <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" ReadOnly="true" />
+                <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>TIP-</strong> más el número.</span>
             </div>
             <div class="sigma-modal-field is-medio">
                 <label>Nombre(*)</label>

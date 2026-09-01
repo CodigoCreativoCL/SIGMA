@@ -124,7 +124,7 @@ public partial class View_Sistema_UnidadesMedida_UnidadMedida : System.Web.UI.Pa
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR UNIDADES MEDIDA");
 
-        txtCodigo.ReadOnly = !puedeEditar;
+        txtCodigo.ReadOnly = true;   // el código es automático (UNI-<id>)
         txtNombre.ReadOnly = !puedeEditar;
         txtSimbolo.ReadOnly = !puedeEditar;
         txtFactor.ReadOnly = !puedeEditar;
@@ -149,7 +149,7 @@ public partial class View_Sistema_UnidadesMedida_UnidadMedida : System.Web.UI.Pa
 
             entidad.ume_id = Id;
             entidad.ume_magnitud = int.Parse(cboMagnitud.SelectedValue);
-            entidad.ume_codigo = txtCodigo.Text.Trim();
+            entidad.ume_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";   // UNI-<id> lo genera el SP
             entidad.ume_nombre = txtNombre.Text.Trim();
             entidad.ume_simbolo = txtSimbolo.Text.Trim();
             entidad.ume_factor = LeerDecimal(txtFactor.Text, "factor") ?? 1m;
