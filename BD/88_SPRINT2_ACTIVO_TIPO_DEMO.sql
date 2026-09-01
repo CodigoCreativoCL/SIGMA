@@ -9,7 +9,7 @@ GO
 -- FECHA CREACION:  31-08-2026
 -- DESCRIPTION:     T-2226 DATOS DE PRUEBA DE ACTIVO_TIPO PARA EJERCITAR HU-030.
 -- =============================================
--- Va DESPUES de 80_SPRINT2_ACTIVO_TIPO.
+-- Va DESPUES de 87_SPRINT2_ACTIVO_TIPO.
 --
 -- Los 4 tipos globales (MOTOR, BOMBA, COMPRESOR, REDUCTOR) los sembro el
 -- bloque 75. Aqui se agregan tipos DEL CLIENTE Hamburgo (cli_id 1) con dos
@@ -74,5 +74,5 @@ UNION ALL
 SELECT 'tipos del cliente 1',   COUNT(*) FROM [dbo].[Activo_Tipo] WHERE ati_cliente = 1
 GO
 
-PRINT '81_SPRINT2_ACTIVO_TIPO_DEMO aplicado.'
+PRINT '88_SPRINT2_ACTIVO_TIPO_DEMO aplicado.'
 GO

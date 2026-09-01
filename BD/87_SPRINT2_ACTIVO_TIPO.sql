@@ -9,7 +9,7 @@ GO
 -- FECHA CREACION:  31-08-2026
 -- DESCRIPTION:     SPRINT 2 - HU-030 ADMINISTRAR TIPOS DE ACTIVO. SEL/INS/UPD/DEL_ACTIVO_TIPO.
 -- =============================================
--- Va DESPUES de 79_SPRINT2_ACTIVO_MEDIDOR_MENUS.
+-- Va DESPUES de 86 (bloques de Bryan). Requiere el nodo Activos del bloque 76.
 --
 -- QUE CUBRE (tareas del Sprint 2)
 --   T-2221  Revision del modelo Activo_Tipo: columnas, FK e indices.
@@ -450,5 +450,5 @@ RETURN(0)
 GO
 
 
-PRINT '80_SPRINT2_ACTIVO_TIPO aplicado: modelo revisado y SEL/INS/UPD/DEL_ACTIVO_TIPO.'
+PRINT '87_SPRINT2_ACTIVO_TIPO aplicado: modelo revisado y SEL/INS/UPD/DEL_ACTIVO_TIPO.'
 GO
