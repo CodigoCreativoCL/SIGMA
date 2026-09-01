@@ -68,14 +68,14 @@
                     <label for="txtDesde" style="margin: 0;">Desde:</label>
                 </div>
                 <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
-                    <WebControls:TextBox2 ID="txtDesde" runat="server" MaxLength="10" Width="80%" />
+                    <WebControls:Calendar2 ID="txtDesde" runat="server" Width="80%" />
                 </div>
 
                 <div class="col-lg-2 col-md-2 col-12 d-flex align-items-center" style="gap: 32px;">
                     <label for="txtHasta" style="margin: 0;">Hasta:</label>
                 </div>
                 <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
-                    <WebControls:TextBox2 ID="txtHasta" runat="server" MaxLength="10" Width="80%" />
+                    <WebControls:Calendar2 ID="txtHasta" runat="server" Width="80%" />
                 </div>
             </div>
         </FiltroPersonalizado>

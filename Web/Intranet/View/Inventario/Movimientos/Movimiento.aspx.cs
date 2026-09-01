@@ -280,21 +280,6 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     /// pasada: recibir un lote ya vencido pasa —llega tarde, o el proveedor
     /// mandó lo que le quedaba— y el sistema tiene que poder registrarlo
     /// para que alguien lo vea, no negarlo.
-    /// </summary>
-    private DateTime? LeerFechaVencimiento(string texto)
-    {
-        if (string.IsNullOrEmpty(texto) || string.IsNullOrEmpty(texto.Trim())) return null;
-
-        string[] formatos = new string[] { "dd-MM-yyyy", "dd/MM/yyyy", "yyyy-MM-dd" };
-
-        DateTime fecha;
-
-        if (!DateTime.TryParseExact(texto.Trim(), formatos, CultureInfo.InvariantCulture,
-                                    DateTimeStyles.None, out fecha))
-            throw new Exception("La fecha de vencimiento del lote no es válida. Use dd-mm-aaaa.");
-
-        return fecha;
-    }
 
     private decimal? LeerDecimal(string texto, string campo)
     {
@@ -382,7 +367,10 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                     nuevo.rlo_repuesto = repuesto;
                     nuevo.rlo_codigo = txtLoteNuevo.Text.Trim();
                     nuevo.rlo_fecha_ingreso = DateTime.Today;
-                    nuevo.rlo_fecha_vencimiento = LeerFechaVencimiento(txtLoteVence.Text);
+                    /* El calendario ya entrega la fecha validada: interpretarla
+                       de nuevo desde su texto seria volver a hacer -peor- lo
+                       que el control acaba de hacer bien. */
+                    nuevo.rlo_fecha_vencimiento = txtLoteVence.Value;
 
                     Respuesta lote = ctrlRep.InsertLote(nuevo);
 

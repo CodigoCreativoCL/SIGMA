@@ -1,0 +1,491 @@
+﻿/* =============================================================
+   SIGMA — NOTIFICACIONES
+   -------------------------------------------------------------
+
+   EL PUNTO CUENTA LO NO LEIDO, NO LO ABIERTO
+
+     Una alerta puede seguir abierta y ya vista: el bodeguero la
+     leyo y esta pidiendo el repuesto. Si el numero mostrara lo
+     abierto no bajaria nunca, y un badge que nunca baja deja de
+     significar "mira esto" y pasa a ser decoracion.
+   ============================================================= */
+
+/* ---- El punto de la campana ---- */
+.sg-notif { position: relative; }
+
+.sg-badge-dot {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background-color: var(--sg-danger, #DC2626);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 18px;
+    text-align: center;
+    box-shadow: 0 0 0 2px var(--sg-surface, #ffffff);
+}
+
+
+/* ---- El panel ---- */
+.sg-notif-panel {
+    width: 380px;
+    max-width: calc(100vw - 24px);
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: var(--sg-radius-md, 8px);
+    box-shadow: 0 12px 32px rgba(17, 17, 26, .12);
+}
+
+.sg-notif-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--sg-border, #e5e7eb);
+}
+
+.sg-notif-cabecera .titulo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sg-text-primary, #111827);
+}
+
+.sg-notif-leer {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--sg-purple, #6C5CFF);
+    text-decoration: none;
+}
+
+.sg-notif-leer:hover { text-decoration: underline; }
+
+/* Alto acotado: el panel es una mirada rapida, no la bandeja
+   completa. Si creciera con el contenido taparia la pantalla. */
+.sg-notif-cuerpo {
+    max-height: 420px;
+    overflow-y: auto;
+}
+
+
+/* ---- Una notificacion ---- */
+.sg-notif-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--sg-border, #e5e7eb);
+    text-decoration: none;
+    transition: background-color .15s ease;
+}
+
+.sg-notif-item:hover {
+    background-color: rgba(108, 92, 255, .05);
+    text-decoration: none;
+}
+
+/* Lo no leido pesa mas: un fondo tenue y el titulo mas oscuro. Es
+   lo que permite recorrer la lista sin leerla entera. */
+.sg-notif-item.is-nueva { background-color: rgba(108, 92, 255, .045); }
+.sg-notif-item.is-nueva .titulo { font-weight: 700; }
+
+.sg-notif-item .icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    width: 38px;
+    height: 38px;
+    border-radius: 10px;
+    font-size: 18px;
+    overflow: hidden;
+}
+
+/* El SVG de marca viene a 144px de lado. Sin acotarlo se dibuja a su
+   tamano natural y se come la fila entera: la caja lo limita, pero la
+   imagen de adentro tambien tiene que hacerlo. */
+.sg-notif-item .icono img {
+    width: 100%;
+    height: 100%;
+    display: block;
+    object-fit: contain;
+}
+
+/* El color lo pone la severidad, no el tipo: lo que decide si se
+   mira ahora es la gravedad, no de que modulo viene. */
+.sg-notif-item .icono.is-critica    { background-color: rgba(220, 38, 38, .14);  color: #b91c1c; }
+.sg-notif-item .icono.is-alta       { background-color: rgba(220, 38, 38, .10);  color: var(--sg-danger, #DC2626); }
+.sg-notif-item .icono.is-advertencia{ background-color: rgba(245, 158, 11, .14); color: #92610a; }
+.sg-notif-item .icono.is-baja       { background-color: rgba(37, 99, 235, .10);  color: var(--sg-info, #2563EB); }
+.sg-notif-item .icono.is-normal     { background-color: rgba(108, 92, 255, .10); color: var(--sg-purple, #6C5CFF); }
+
+.sg-notif-item .texto { flex: 1 1 auto; min-width: 0; }
+
+.sg-notif-item .titulo {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--sg-text-primary, #111827);
+}
+
+.sg-notif-item .detalle {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--sg-text-muted, #6b7280);
+}
+
+.sg-notif-item .cuando {
+    display: block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: var(--sg-text-muted, #6b7280);
+}
+
+.sg-notif-item .punto {
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin-top: 6px;
+    border-radius: 50%;
+    background-color: var(--sg-purple, #6C5CFF);
+}
+
+
+/* ---- Cuando no hay nada ---- */
+.sg-notif-vacio {
+    padding: 26px 24px 30px;
+    text-align: center;
+}
+
+/* EL SVG DE MARCA VA ACA.
+   El contenedor ya centra y acota el alto, asi que el svg solo
+   necesita su viewBox y medidas al 100%. El icono que hay ahora
+   es un relleno hasta que exista. */
+.sg-notif-ilustracion {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 140px;
+    margin-bottom: 14px;
+    color: var(--sg-purple, #6C5CFF);
+    opacity: .55;
+}
+
+.sg-notif-ilustracion svg,
+.sg-notif-ilustracion img {
+    width: auto;
+    height: 100%;
+    max-width: 100%;
+    display: block;
+}
+.sg-notif-ilustracion i   { font-size: 62px; }
+
+.sg-notif-vacio-titulo {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--sg-text-primary, #111827);
+}
+
+.sg-notif-vacio-texto {
+    margin-top: 4px;
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--sg-text-muted, #6b7280);
+}
+
+
+/* ---- El pie ---- */
+.sg-notif-pie {
+    padding: 11px 16px;
+    text-align: center;
+    border-top: 1px solid var(--sg-border, #e5e7eb);
+    background-color: var(--sg-surface-soft, #f7f7f9);
+}
+
+.sg-notif-pie a {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-purple, #6C5CFF);
+    text-decoration: none;
+}
+
+.sg-notif-pie a:hover { text-decoration: underline; }
+
+
+/* =============================================================
+   EL NUMERO EN EL MENU LATERAL
+   -------------------------------------------------------------
+
+   Es el mismo hallazgo que muestra la campana, visto desde donde
+   se resuelve: la campana dice "hay tres cosas", el menu dice
+   "las tres son de Existencias". Sin esto habria que abrir la
+   campana para saber adonde ir.
+   ============================================================= */
+.sg-menu-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    margin-left: 8px;
+    padding: 0 6px;
+    border-radius: 999px;
+    background-color: var(--sg-danger, #DC2626);
+    color: #ffffff;
+    font-size: 10.5px;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+}
+
+/* El numero, junto al nombre por la misma razon que el pulso: en el
+   borde derecho se lee como si fuera de otra fila. Solo lo llevan
+   las HOJAS; las carpetas laten. */
+#side-menu .sg-menu-badge {
+    margin-left: 9px;
+    margin-right: 0;
+    flex: 0 0 auto;
+}
+
+/* relative para que el pulso, que es absoluto, se ancle al enlace y
+   no a la pagina. */
+#side-menu a {
+    display: flex;
+    align-items: center;
+    position: relative;
+}
+
+#side-menu a > span:first-of-type { flex: 1 1 auto; }
+
+
+/* =============================================================
+   EL INDICADOR DEL MENU, COLOCADO
+   -------------------------------------------------------------
+
+   El dibujo y su animacion vienen del kit -.sigma-menu-alert en
+   sigma-indicators.css-. Lo unico que falta es DONDE va dentro de
+   la fila, que el kit no puede saber.
+
+   VA PEGADO AL TEXTO, NO AL BORDE DERECHO
+
+     Primero se mando al extremo -absoluto, a 30px- y ahi quedaba
+     rozando la flecha del desplegable, que el tema posiciona
+     tambien en absoluto. Dos elementos chicos juntos en la esquina
+     se leen como uno solo y ninguno se aprecia.
+
+     Junto al nombre se separa de la flecha por todo el ancho
+     sobrante de la fila, y de paso queda claro DE QUE item habla:
+     en el borde derecho podia parecer del menu de al lado.
+   ============================================================= */
+
+/* El nombre deja de estirarse: creciendo empujaba al indicador
+   contra el borde, que es justo lo que se quiere evitar. */
+#side-menu a > span:first-of-type { flex: 0 1 auto; }
+
+#side-menu .sigma-menu-alert {
+    position: static;
+    transform: none;
+    flex: 0 0 auto;
+    margin-left: 9px;
+}
+
+/* 20px y no 24: al lado de un texto de 13px, la medida del kit se
+   come la fila. Con brillo, porque el teal sobre el azul oscuro de
+   la barra necesita separarse del fondo. */
+#side-menu .sigma-menu-alert,
+#side-menu .sigma-menu-alert > img {
+    width: 20px;
+    height: 20px;
+}
+
+#side-menu .sigma-menu-alert > img {
+    filter: drop-shadow(0 0 6px rgba(0, 224, 194, .55));
+}
+
+/* En el modulo activo -fondo violeta- el teal pierde contraste, asi
+   que el halo pasa a blanco. */
+#side-menu .mm-active > a .sigma-menu-alert > img,
+#side-menu a.active .sigma-menu-alert > img {
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, .75));
+}
+
+
+/* =============================================================
+   LA BANDEJA COMPLETA, AGRUPADA POR CATEGORIA
+   -------------------------------------------------------------
+
+   Veinte avisos seguidos obligan a leerlos todos para saber si
+   hay algo de bodega. Agrupados, se mira el grupo que importa y
+   se ignora el resto; y cada grupo dice cuantos trae, asi que se
+   decide sin abrirlo.
+   ============================================================= */
+.sg-notif-grupo {
+    margin-bottom: 16px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: var(--sg-radius-md, 8px);
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.sg-notif-grupo > .cabecera {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--sg-border, #e5e7eb);
+    background-color: var(--sg-surface-soft, #f7f7f9);
+}
+
+.sg-notif-grupo > .cabecera .icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    background-color: rgba(108, 92, 255, .10);
+    color: var(--sg-purple, #6C5CFF);
+    font-size: 17px;
+}
+
+.sg-notif-grupo > .cabecera .nombre {
+    flex: 1 1 auto;
+    font-size: 13.5px;
+    font-weight: 700;
+    color: var(--sg-text-primary, #111827);
+}
+
+.sg-notif-grupo > .cabecera .cuenta {
+    min-width: 24px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    background-color: var(--sg-purple, #6C5CFF);
+    color: #ffffff;
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: center;
+}
+
+/* Dentro del grupo la fila no lleva borde inferior en la ultima:
+   el borde del grupo ya cierra. */
+.sg-notif-grupo .sg-notif-item:last-child { border-bottom: 0; }
+
+/* El rotulo de gravedad, a la derecha de cada fila. Se puede
+   recorrer la columna sin leer los titulos. */
+.sg-notif-sev {
+    flex: 0 0 auto;
+    align-self: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .2px;
+    text-transform: uppercase;
+}
+
+.sg-notif-sev.is-critica     { background-color: rgba(220, 38, 38, .16);  color: #991b1b; }
+.sg-notif-sev.is-alta        { background-color: rgba(220, 38, 38, .11);  color: var(--sg-danger, #DC2626); }
+.sg-notif-sev.is-advertencia { background-color: rgba(245, 158, 11, .16); color: #92610a; }
+.sg-notif-sev.is-baja        { background-color: rgba(37, 99, 235, .11);  color: var(--sg-info, #2563EB); }
+.sg-notif-sev.is-normal      { background-color: var(--sg-surface-soft, #f3f4f6); color: var(--sg-text-muted, #6b7280); }
+
+.sg-notif-cuenta {
+    margin-left: auto;
+    font-size: 12.5px;
+    color: var(--sg-text-muted, #6b7280);
+}
+
+/* En pantalla completa la ilustracion puede respirar mas que en
+   el panel del dropdown. */
+.sg-notif-vacio-pagina {
+    padding: 48px 24px 56px;
+    border: 1px dashed var(--sg-border, #e5e7eb);
+    border-radius: var(--sg-radius-md, 8px);
+    background-color: #ffffff;
+}
+
+.sg-notif-vacio-pagina .sg-notif-ilustracion { height: 180px; }
+
+@media (max-width: 700px) {
+    .sg-notif-sev { display: none; }
+}
+
+
+/* =============================================================
+   LA GRAVEDAD, DE UN VISTAZO
+   -------------------------------------------------------------
+
+   Al pasar a los SVG de marca las tres alertas se veian
+   identicas: un repuesto critico y uno sobre el maximo pedian la
+   misma atencion.
+
+   El icono dice DE DONDE viene el hallazgo; el color dice SI HAY
+   QUE MIRARLO AHORA. Son dos preguntas distintas y por eso van en
+   dos sitios distintos: el dibujo y la franja.
+   ============================================================= */
+
+/* La franja izquierda. Es lo que se recorre al bajar la lista sin
+   leer los titulos. */
+.sg-notif-item {
+    position: relative;
+    border-left: 3px solid transparent;
+}
+
+.sg-notif-item.sev-critica { border-left-color: #b91c1c; }
+.sg-notif-item.sev-alta    { border-left-color: var(--sg-danger, #DC2626); }
+.sg-notif-item.sev-advertencia { border-left-color: var(--sg-warning, #F59E0B); }
+.sg-notif-item.sev-baja    { border-left-color: var(--sg-info, #2563EB); }
+
+/* Lo critico sin leer lleva ademas un fondo tenue: es lo unico que
+   deberia poder distraer a alguien que estaba mirando otra cosa. */
+.sg-notif-item.sev-critica.is-nueva { background-color: rgba(185, 28, 28, .055); }
+.sg-notif-item.sev-alta.is-nueva    { background-color: rgba(220, 38, 38, .045); }
+
+/* El halo del icono acompana, sin taparlo: el SVG de marca tiene
+   sus propios colores y pintarle encima lo apagaria. */
+.sg-notif-item .icono { background-color: rgba(108, 92, 255, .08); }
+
+.sg-notif-item.sev-critica .icono { background-color: rgba(185, 28, 28, .12); }
+.sg-notif-item.sev-alta .icono    { background-color: rgba(220, 38, 38, .10); }
+.sg-notif-item.sev-advertencia .icono { background-color: rgba(245, 158, 11, .13); }
+.sg-notif-item.sev-baja .icono    { background-color: rgba(37, 99, 235, .10); }
+
+/* El rotulo, junto a la antiguedad. Solo aparece en lo que pide
+   accion: un "Normal" en cada fila le quitaria peso al que si. */
+.sg-notif-item .cuando .sev {
+    display: inline-block;
+    margin-left: 8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    vertical-align: 1px;
+}
+
+.sg-notif-item.sev-critica .cuando .sev {
+    background-color: rgba(185, 28, 28, .14);
+    color: #991b1b;
+}
+
+.sg-notif-item.sev-alta .cuando .sev {
+    background-color: rgba(220, 38, 38, .11);
+    color: var(--sg-danger, #DC2626);
+}
+
+/* Y el punto de sin leer toma el color de la gravedad: dos senales
+   que dicen cosas distintas -"es nuevo" y "es grave"- pero que se
+   leen juntas. */
+.sg-notif-item.sev-critica .punto { background-color: #b91c1c; }
+.sg-notif-item.sev-alta .punto    { background-color: var(--sg-danger, #DC2626); }
+.sg-notif-item.sev-advertencia .punto { background-color: var(--sg-warning, #F59E0B); }
