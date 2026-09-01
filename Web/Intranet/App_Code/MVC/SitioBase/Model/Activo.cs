@@ -59,7 +59,10 @@ namespace SitioBase.Model
     }
 
 
-    /// <summary>Tipo de activo (motor, bomba…). Global de SIGMA o del cliente.</summary>
+    /// <summary>
+    /// Tipo de activo (motor, bomba…), en árbol. Global de SIGMA
+    /// (ati_cliente nulo) o del cliente (HU-030).
+    /// </summary>
     [Serializable]
     public class ActivoTipo
     {
@@ -69,10 +72,26 @@ namespace SitioBase.Model
         public string ati_codigo { get; set; }
         public string ati_nombre { get; set; }
         public string ati_descripcion { get; set; }
+        public int? ati_orden { get; set; }
+        public DateTime? ati_fecha_creacion { get; set; }
+        public DateTime? ati_fecha_actualizacion { get; set; }
         public bool ati_habilitado { get; set; }
 
+        // Calculadas por SEL_ACTIVO_TIPO
+        public bool es_global { get; set; }
+        public string ambito { get { return es_global ? "SIGMA" : "Cliente"; } }
+        public string padre_nombre { get; set; }
+        public int nivel { get; set; }
+        public string ruta { get; set; }
+        public string usuario_creacion_nombre { get; set; }
+        public string usuario_actualizacion_nombre { get; set; }
+
+        // Filtros / combos
+        public string filtro { get; set; }
         public int filtro_cliente { get; set; }
         public bool? filtro_habilitado { get; set; }
+        public bool filtro_solo_raiz { get; set; }
+        public bool quita_padre { get; set; }
     }
 
 
