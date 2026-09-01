@@ -37,7 +37,7 @@ END
 INSERT INTO [dbo].[Menus] (mnu_nombre, mnu_descripcion, mnu_nivel, mnu_padre, mnu_orden,
                            mnu_link, mnu_visible, mnu_icon, mnu_permiso, mnu_ambito)
 SELECT  N'Ficha e historial', N'Ficha e historial de un activo (solo lectura)', 3, @RAIZ, 4,
-        N'~/View/Activos/Ficha/ActivoFicha.aspx', 1, N'mdi mdi-timeline-clock-outline',
+        N'~/View/Activos/Ficha/ActivoFicha.aspx', 1, N'mdi mdi-history',
         (SELECT prm_id FROM [dbo].[Permiso] WHERE prm_codigo = N'VER ACTIVOS'), 1
 WHERE NOT EXISTS (SELECT 1 FROM [dbo].[Menus] x
                    WHERE x.mnu_link COLLATE DATABASE_DEFAULT = N'~/View/Activos/Ficha/ActivoFicha.aspx')

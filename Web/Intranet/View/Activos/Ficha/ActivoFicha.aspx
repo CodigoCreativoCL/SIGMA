@@ -20,13 +20,13 @@
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
     <wuc:Filtro runat="server" ID="wucFiltro">
         <FiltroPersonalizado>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-4 col-md-6 col-xs-12">
-                    <label for="cboActivo">Activo</label>
+            <div class="row col-lg-12 col-md-12 col-xs-12 sigma-filtro">
+                <div class="col-lg-4 col-md-6 col-xs-12 sigma-filtro-campo">
+                    <label>Activo</label>
                     <rad:RadComboBox2 ID="cboActivo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                 </div>
-                <div class="col-lg-3 col-md-6 col-xs-12">
-                    <label for="cboTipo">Tipo de evento</label>
+                <div class="col-lg-3 col-md-6 col-xs-12 sigma-filtro-campo">
+                    <label>Tipo de evento</label>
                     <rad:RadComboBox2 ID="cboTipo" runat="server" Width="100%">
                         <Items>
                             <rad:RadComboBoxItem Text="Todos" Value="" />
@@ -36,15 +36,15 @@
                         </Items>
                     </rad:RadComboBox2>
                 </div>
-                <div class="col-lg-2 col-md-6 col-xs-12">
-                    <label for="calDesde">Desde</label>
-                    <WebControls:Calendar ID="calDesde" runat="server" />
+                <div class="col-lg-2 col-md-6 col-xs-12 sigma-filtro-campo">
+                    <label>Desde</label>
+                    <div class="sigma-filtro-fecha"><WebControls:Calendar ID="calDesde" runat="server" /></div>
                 </div>
-                <div class="col-lg-2 col-md-6 col-xs-12">
-                    <label for="calHasta">Hasta</label>
-                    <WebControls:Calendar ID="calHasta" runat="server" />
+                <div class="col-lg-2 col-md-6 col-xs-12 sigma-filtro-campo">
+                    <label>Hasta</label>
+                    <div class="sigma-filtro-fecha"><WebControls:Calendar ID="calHasta" runat="server" /></div>
                 </div>
-                <div class="col-lg-1 col-md-6 col-xs-12 d-flex align-items-end">
+                <div class="col-lg-1 col-md-6 col-xs-12 sigma-filtro-campo sigma-filtro-accion">
                     <WebControls:PushButton ID="btnBuscar" runat="server" Text="Buscar" OnClick="btnBuscar_Click" />
                 </div>
             </div>
@@ -81,7 +81,7 @@
             <%-- ====== HISTORIAL (CA2) ====== --%>
             <asp:Panel ID="pnlHistorial" runat="server" Visible="false">
                 <div class="sigma-form-seccion">
-                    <div class="titulo"><i class="mdi mdi-timeline-clock-outline"></i>Historial</div>
+                    <div class="titulo"><i class="mdi mdi-history"></i>Historial</div>
                 </div>
 
                 <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="rgrHistorial_ItemDataBound">
