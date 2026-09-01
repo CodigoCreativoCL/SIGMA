@@ -76,20 +76,32 @@ public partial class View_Comun_Impresion_CentroEtiquetas : System.Web.UI.Page
             if (Token.Puede(o.Permiso)) visibles.Add(o);
         }
 
-        bool hay = (visibles.Count > 0);
+        /* Se parten por ALCANCE y no por orden: el combo de bodega solo
+           afecta a los que se acotan a una, y ponerlos juntos es lo que hace
+           obvio a qué se aplica. */
+        List<EtiquetaOrigenItem> deBodega = new List<EtiquetaOrigenItem>();
+        List<EtiquetaOrigenItem> deCatalogo = new List<EtiquetaOrigenItem>();
 
-        pnlSinOrigenes.Visible = !hay;
-        rptOrigenes.Visible = hay;
-
-        /* El filtro de bodega solo si algún origen visible lo admite. */
-        bool porBodega = false;
         foreach (EtiquetaOrigenItem o in visibles)
-            if (o.eto_por_bodega && o.eto_habilitado) porBodega = true;
+        {
+            /* La bodega misma va con las de bodega aunque no se acote por el
+               combo: se imprime UNA, la elegida, y su sitio natural es ahí. */
+            if (o.eto_por_bodega || o.eto_codigo == EtiquetaOrigen.Bodega)
+                deBodega.Add(o);
+            else
+                deCatalogo.Add(o);
+        }
 
-        pnlBodega.Visible = porBodega;
+        pnlSinOrigenes.Visible = (visibles.Count == 0);
 
-        rptOrigenes.DataSource = visibles;
-        rptOrigenes.DataBind();
+        pnlGrupoBodega.Visible = (deBodega.Count > 0);
+        pnlGrupoCatalogo.Visible = (deCatalogo.Count > 0);
+
+        rptBodega.DataSource = deBodega;
+        rptBodega.DataBind();
+
+        rptCatalogo.DataSource = deCatalogo;
+        rptCatalogo.DataBind();
     }
 
     protected void rptOrigenes_ItemDataBound(object sender, RepeaterItemEventArgs e)

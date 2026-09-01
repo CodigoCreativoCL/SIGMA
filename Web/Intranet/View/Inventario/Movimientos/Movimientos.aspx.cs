@@ -266,11 +266,17 @@ public partial class View_Inventario_Movimientos_Movimientos : System.Web.UI.Pag
            resuelve el caso borde de "hasta": compara contra el dia SIGUIENTE,
            porque imo_fecha_movimiento_utc lleva hora y un <= a medianoche
            dejaria fuera todo lo del ultimo dia. */
-        TextBox2 txtDesde = (TextBox2)wucFiltro.FindControl("txtDesde");
-        TextBox2 txtHasta = (TextBox2)wucFiltro.FindControl("txtHasta");
+        /* Calendar2 y no TextBox2: los campos de fecha usan el calendario del
+           proyecto, y castearlos al tipo viejo tumbaba la pantalla con
+           "No se puede convertir un objeto de tipo WebControls.Calendar2".
 
-        if (txtDesde != null) filtro.filtro_desde = LeerFecha(txtDesde.Text, "desde");
-        if (txtHasta != null) filtro.filtro_hasta = LeerFecha(txtHasta.Text, "hasta");
+           Se lee su Value, que ya es DateTime: el control valida el formato al
+           elegir, así que no hay texto que interpretar ni error que explicar. */
+        Calendar2 txtDesde = wucFiltro.FindControl("txtDesde") as Calendar2;
+        Calendar2 txtHasta = wucFiltro.FindControl("txtHasta") as Calendar2;
+
+        if (txtDesde != null) filtro.filtro_desde = txtDesde.Value;
+        if (txtHasta != null) filtro.filtro_hasta = txtHasta.Value;
 
         Grid.DataSource = controller.GetMovimientos(filtro);
     }
@@ -279,20 +285,4 @@ public partial class View_Inventario_Movimientos_Movimientos : System.Web.UI.Pag
     /// Una fecha del filtro. Vacía es válida —significa "sin límite"— y una
     /// mal escrita se ignora en vez de voltear la pantalla: es un filtro,
     /// no un formulario que se está guardando.
-    /// </summary>
-    private DateTime? LeerFecha(string texto, string campo)
-    {
-        if (string.IsNullOrEmpty(texto) || string.IsNullOrEmpty(texto.Trim())) return null;
-
-        string[] formatos = new string[] { "dd-MM-yyyy", "dd/MM/yyyy", "yyyy-MM-dd" };
-
-        DateTime fecha;
-
-        if (!DateTime.TryParseExact(texto.Trim(), formatos,
-                                    System.Globalization.CultureInfo.InvariantCulture,
-                                    System.Globalization.DateTimeStyles.None, out fecha))
-            return null;
-
-        return fecha;
-    }
 }
