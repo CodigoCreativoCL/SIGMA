@@ -9,7 +9,7 @@ GO
 -- FECHA CREACION:  31-08-2026
 -- DESCRIPTION:     T-2233 REGISTRA LAS PANTALLAS DE ACTIVO_TIPO EN MENUS, CON PERMISO Y FUNCION.
 -- =============================================
--- Va DESPUES de 81_SPRINT2_ACTIVO_TIPO_DEMO.
+-- Va DESPUES de 88_SPRINT2_ACTIVO_TIPO_DEMO.
 --
 -- Las pantallas de tipos de activo cuelgan del nodo "Activos" (bloque 76).
 -- Sin fila en Menus la pantalla no se abre. La ficha va con mnu_orden 99 y
@@ -151,5 +151,5 @@ JOIN   [dbo].[Menus] m ON m.mnu_id = mf.mfu_menu
 WHERE  m.mnu_link COLLATE DATABASE_DEFAULT LIKE N'~/View/Activos/Tipos/%'
 GO
 
-PRINT '82_SPRINT2_ACTIVO_TIPO_MENUS aplicado.'
+PRINT '89_SPRINT2_ACTIVO_TIPO_MENUS aplicado.'
 GO

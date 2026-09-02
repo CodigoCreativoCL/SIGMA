@@ -130,7 +130,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
         // El activo no se cambia al editar: el medidor pertenece a su máquina.
         cboActivo.ReadOnly = !puedeEditar || Id > 0;
         cboUnidad.ReadOnly = !puedeEditar;
-        txtCodigo.ReadOnly = !puedeEditar;
+        txtCodigo.ReadOnly = true;   // el código es automático (MED-<id>)
         txtNombre.ReadOnly = !puedeEditar;
         txtValorActual.ReadOnly = !puedeEditar;
         txtValorReinicio.ReadOnly = !puedeEditar;
@@ -159,7 +159,9 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             entidad.ame_cliente = SitioBase.Session.ClienteId();
             entidad.ame_activo = int.Parse(cboActivo.SelectedValue);
             entidad.ame_unidad_medida = int.Parse(cboUnidad.SelectedValue);
-            entidad.ame_codigo = txtCodigo.Text.Trim();
+            // Al crear se manda AUTO y el SP genera MED-<id> tras el INSERT;
+            // al editar viaja el que ya tiene (no se regenera).
+            entidad.ame_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
             entidad.ame_nombre = txtNombre.Text.Trim();
             entidad.ame_valor_actual = LeerDecimal(txtValorActual.Text, "valor actual") ?? 0m;
             entidad.ame_valor_reinicio = LeerDecimal(txtValorReinicio.Text, "valor de reinicio");
