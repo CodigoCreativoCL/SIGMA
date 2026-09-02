@@ -91,6 +91,75 @@ namespace API.Utils
         }
 
         /// <summary>
+        /// Para los SP que devuelven CABECERA y DETALLE en una sola llamada.
+        ///
+        /// POR QUE NO SON DOS Listar SEGUIDOS
+        ///   Serian dos conexiones para contestar una sola pregunta, y entre
+        ///   una y otra el saldo puede cambiar: la cabecera dejaria de
+        ///   corresponder al detalle que se muestra debajo. Desde un telefono
+        ///   ademas son dos viajes de red donde alcanza uno.
+        /// </summary>
+        public static void ListarDos<TA, TB>(string sp, Dictionary<string, object> parametros,
+                                             out TA cabecera, out List<TB> detalle)
+            where TA : class, new()
+            where TB : new()
+        {
+            cabecera = null;
+            detalle = new List<TB>();
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = sp;
+
+            Agregar(cmd, parametros);
+
+            try
+            {
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read()) cabecera = Mapear<TA>(dr);
+
+                    if (dr.NextResult())
+                    {
+                        while (dr.Read()) detalle.Add(Mapear<TB>(dr));
+                    }
+                }
+            }
+            finally
+            {
+                Cerrar(cmd);
+            }
+        }
+
+        /// <summary>
+        /// Mapea la fila actual del lector a un objeto.
+        ///
+        /// Se armaba dentro de Listar; sacarlo permite reusarlo en ListarDos
+        /// sin copiar la logica de columnas y nulos, que es donde aparecen
+        /// las diferencias sutiles entre dos copias.
+        /// </summary>
+        private static T Mapear<T>(SqlDataReader dr) where T : new()
+        {
+            T item = new T();
+
+            Dictionary<string, PropertyInfo> mapa =
+                new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
+
+            foreach (PropertyInfo p in typeof(T).GetProperties())
+                if (p.CanWrite) mapa[p.Name] = p;
+
+            for (int i = 0; i < dr.FieldCount; i++)
+            {
+                PropertyInfo p;
+                if (!mapa.TryGetValue(dr.GetName(i), out p)) continue;
+
+                object valor = dr.IsDBNull(i) ? null : dr.GetValue(i);
+                Asignar(item, p, valor);
+            }
+
+            return item;
+        }
+
+        /// <summary>
         /// Ejecuta un INS_ / UPD_ / DEL_ y devuelve el @ID de salida si el
         /// SP lo declara.
         ///

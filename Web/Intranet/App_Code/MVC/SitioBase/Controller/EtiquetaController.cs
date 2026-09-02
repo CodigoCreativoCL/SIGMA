@@ -141,6 +141,17 @@ namespace SitioBase.Controller
         ///   dejaría de leerse a los pocos meses, que es justo cuando ya
         ///   nadie se acuerda de cómo se reimprimía.
         /// </summary>
+        /// <summary>
+        /// Un QR de cualquier texto, para quien lo necesite fuera de una
+        /// etiqueta. Lo usa la pantalla de escaneo para ofrecer "abra esto en
+        /// su telefono": el computador no tiene camara util, pero si puede
+        /// mostrar un codigo que el telefono lea.
+        /// </summary>
+        public string QrDeUrl(string url)
+        {
+            return GenerarQr(url);
+        }
+
         private string GenerarQr(string contenido)
         {
             try

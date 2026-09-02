@@ -27,11 +27,6 @@
     <!-- App Css-->
     <link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />
 
-    <%-- Aqui se cargaba Css/MaterialApoyo/materialApoyo.css.
-         Esa carpeta se elimino con el resto de lo heredado de FacilityGes,
-         pero el <link> quedo: cada pagina del sitio pedia un archivo
-         inexistente y se llevaba un 404 en la consola. Se retira. --%>
-
 
     <!-- AjaxProgress CSS -->
     <link href="../Css/AjaxProgress/cssUpdateProgress.css" rel="stylesheet" />
@@ -65,7 +60,7 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=6" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=7" rel="stylesheet" />
 
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
@@ -107,10 +102,59 @@
         </style>
     </asp:ContentPlaceHolder>
 
+    <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
 </head>
 
 <body data-sidebar="dark">
     <form id="form1" runat="server">
+
+        <%-- POR QUE ESTE SCRIPT VIVE ACA Y NO EN EL <head>
+
+             Estaba en el head y tumbaba el sitio entero con "La coleccion de
+             controles no puede modificarse porque el control contiene bloques
+             de codigo". Con <head runat="server">, cualquier control que se
+             agregue a la cabecera -y Telerik agrega los suyos- choca contra un
+             <%= %> presente ahi.
+
+             Es la misma regla que ya estaba escrita doce lineas mas arriba,
+             para el favicon. Dentro del form no hay problema. --%>
+        <%-- El contador se refresca solo: cada minuto pregunta si hay algo
+             nuevo y, del otro lado, ese mismo llamado dispara el detector si
+             al freno de la base le toca. Asi el modulo avisa sin depender de
+             que alguien apriete un boton. --%>
+        <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-alertas.js") %>?vrs=1"></script>
+        <script type="text/javascript">
+            sigmaAlertas.iniciar('<%=ResolveUrl("~/WebService/WsAlertas.asmx") %>', 60,
+                                 '<%=ResolveUrl("~/Imagen/sigma-ai/") %>');
+        </script>
+
+        <script type="text/javascript">
+        /* ABRIR EL REGISTRO DE UNA NOTIFICACION
+
+           Se abre en la misma ventana modal que usa el resto del sitio, y no
+           navegando: quien mira las notificaciones esta EN otra pantalla, y
+           sacarlo de ahi para ver un aviso le hace perder lo que estaba
+           haciendo. Al cerrar la ficha vuelve a donde estaba.
+
+           Sirve para cualquier tipo de alerta porque el destino viene en el
+           dato -alt_ficha_link y su id-, no en el javascript. */
+        function abrirNotificacion(url, query, id) {
+            /* Abrirla es haberla leido: el contador baja sin pedir nada mas.
+               Va ANTES de mostrar la ventana, porque despues el foco se lo
+               lleva el modal y el usuario ya no vuelve a mirar la campana. */
+            if (id && window.sigmaAlertas) sigmaAlertas.leer(id);
+
+            var oWin = $find("<%=rwiNotificacion.ClientID %>");
+            if (!oWin) return false;
+
+            oWin.setUrl(query ? url + "?query=" + query : url);
+            oWin.show();
+            return false;
+        }
+    </script>
+
         <!--Inicio ScriptManager-->
         <div>
             <asp:ScriptManager ID="ScriptManager1" runat="server" EnablePageMethods="true" AsyncPostBackTimeout="3600"
@@ -269,11 +313,105 @@
                         <asp:PlaceHolder ID="phCliente" runat="server" />
                     </li>
 
-                    <li>
-                        <a href='<%=ResolveUrl("~/Default.aspx") %>' class="sg-icon-btn" title="Alertas">
-                            <i class="mdi mdi-bell-outline"></i>
-                            <span class="sg-badge-dot">3</span>
+                    <!-- NOTIFICACIONES
+
+                         El numero era un "3" escrito a mano. Ahora sale de
+                         Alerta: lo que el sistema detecto y esta persona
+                         puede ver, segun su permiso.
+
+                         El punto cuenta lo NO LEIDO, no lo abierto. Una
+                         alerta puede seguir abierta y ya vista -el bodeguero
+                         la leyo y esta pidiendo el repuesto-; si el contador
+                         mostrara lo abierto no bajaria nunca y la gente
+                         dejaria de mirarlo. -->
+                    <!-- La ventana donde se abre el registro de la notificacion.
+                         Una sola para todas: el tipo de alerta dice que ficha
+                         cargar, asi que no hace falta una por modulo. -->
+                    <rad:RadWindow2 ID="rwiNotificacion" runat="server" Width="1000" Height="680" />
+
+                    <li class="dropdown notification-list sg-notif">
+                        <%-- La campana del kit de marca. Variante LIGHT porque la
+                             barra superior es clara: la dark lleva el borde del
+                             contador en navy y sobre blanco se ve un halo negro.
+
+                             El numero se queda en HTML y no dentro del svg, para
+                             que el servidor pueda actualizarlo sin tocar el
+                             vector. --%>
+                        <a class="dropdown-toggle sigma-notification sigma-notification--light"
+                           data-toggle="dropdown" href="#" role="button"
+                           aria-haspopup="false" aria-expanded="false"
+                           runat="server" id="lnkCampana">
+                            <img src='<%=ResolveUrl("~/Imagen/indicadores/sigma-notification-bell-light.svg") %>'
+                                 alt="" aria-hidden="true" />
+                            <asp:Literal ID="litBadgeAlertas" runat="server" />
                         </a>
+
+                        <div class="dropdown-menu dropdown-menu-right sg-notif-panel">
+
+                            <%-- MARCAR LEIDO OCURRE EN EL SERVIDOR
+
+                                 Antes lo hacia el sondeo por AJAX: se tocaba una
+                                 alerta y el javascript pedia al handler que la
+                                 marcara. Si esa peticion fallaba —o el handler no
+                                 respondia— NO PASABA NADA Y NADIE SE ENTERABA: el
+                                 contador se quedaba igual sin explicacion.
+
+                                 Ahora cada alerta es un LinkButton dentro de un
+                                 UpdatePanel: el clic va al servidor, marca, y el
+                                 panel y el contador se vuelven a dibujar con lo
+                                 que la base dice. Si algo falla, falla a la vista.
+
+                                 El sondeo sigue, pero solo para enterarse de lo
+                                 que llega mientras la pagina esta abierta. --%>
+                            <asp:UpdatePanel ID="udAlertas" runat="server" UpdateMode="Conditional">
+                                <ContentTemplate>
+
+                            <div class="sg-notif-cabecera">
+                                <span class="titulo">Alertas</span>
+                                <asp:LinkButton ID="lnkLeerTodo" runat="server" CssClass="sg-notif-leer"
+                                    OnClick="lnkLeerTodo_Click" Text="Marcar todo como leído" />
+                            </div>
+
+                            <div class="sg-notif-cuerpo">
+                                <asp:Repeater ID="rptAlertas" runat="server"
+                                    OnItemDataBound="rptAlertas_ItemDataBound"
+                                    OnItemCommand="rptAlertas_ItemCommand">
+                                    <ItemTemplate>
+                                        <asp:LinkButton ID="lnkItem" runat="server" CommandName="Abrir">
+                                            <asp:Literal ID="litItem" runat="server" />
+                                        </asp:LinkButton>
+                                    </ItemTemplate>
+                                </asp:Repeater>
+
+                                <!-- ============================================
+                                     ESPACIO PARA EL SVG DE SIGMA
+
+                                     Cuando no hay nada que avisar. Reemplace el
+                                     contenido de .sg-notif-ilustracion por el
+                                     <svg> de marca: el contenedor ya centra y
+                                     limita a 140px de alto, asi que el svg solo
+                                     necesita su viewBox y width/height al 100%.
+                                     ============================================ -->
+                                <asp:Panel ID="pnlSinAlertas" runat="server" Visible="false" CssClass="sg-notif-vacio">
+                                    <div class="sg-notif-ilustracion">
+                                        <img src='<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-status-realtime.svg") %>'
+                                             alt="" aria-hidden="true" />
+                                    </div>
+                                    <div class="sg-notif-vacio-titulo">Todo en orden</div>
+                                    <div class="sg-notif-vacio-texto">
+                                        No hay nada que revisar. Cuando algo se salga de sus
+                                        umbrales, aparecerá acá.
+                                    </div>
+                                </asp:Panel>
+                            </div>
+
+                            <div class="sg-notif-pie">
+                                <asp:HyperLink ID="lnkVerTodas" runat="server" Text="Ver todas" />
+                            </div>
+
+                                </ContentTemplate>
+                            </asp:UpdatePanel>
+                        </div>
                     </li>
 
                     <!-- Accion principal.

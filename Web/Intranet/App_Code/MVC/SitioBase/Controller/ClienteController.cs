@@ -90,6 +90,68 @@ namespace SitioBase.Controller
             return clientes;
         }
 
+        /// <summary>
+        /// Sube el logo a Blob y lo deja apuntado en el cliente (bloque 100).
+        ///
+        /// UN SP CHICO Y NO UPD_CLIENTE
+        ///   Poner un logo no es "editar el cliente": es una operacion con un
+        ///   solo dato. Meterla en UPD_CLIENTE habria obligado a tocar
+        ///   tambien INS_ y SEL_, y las tres equivalentes de Usuario.
+        ///
+        /// Devuelve el id de Archivo. Lanza si la subida falla: guardar
+        /// diciendo que salio bien cuando el logo no quedo es lo peor que
+        /// puede pasar aca.
+        /// </summary>
+        public int GuardarLogo(int idCliente, string nombreArchivo, byte[] contenido, string mime)
+        {
+            if (contenido == null || contenido.Length == 0)
+                throw new Exception("El archivo esta vacio.");
+
+            Archivo archivo = new Archivo();
+            archivo.arc_cliente = idCliente;
+            archivo.arc_archivo_categoria = 14;   // LOGO CLIENTE
+            archivo.arc_nombre_original = nombreArchivo;
+            archivo.arc_mime = mime;
+            archivo.contenido = contenido;
+
+            ArchivoController ctrlArchivo = new ArchivoController();
+            Respuesta subida = ctrlArchivo.InsertArchivo(archivo, "logo");
+
+            if (subida.error)
+                throw new Exception("No se pudo guardar el logo: " + subida.detalle);
+
+            Apuntar("UPD_CLIENTE_LOGO", idCliente, subida.codigo, false);
+
+            return subida.codigo;
+        }
+
+        /// <summary>Saca el logo. El blob queda: puede estar referenciado.</summary>
+        public void QuitarLogo(int idCliente)
+        {
+            Apuntar("UPD_CLIENTE_LOGO", idCliente, 0, true);
+        }
+
+        private void Apuntar(string sp, int idCliente, int idArchivo, bool quitar)
+        {
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand(sp);
+                cmd.Parameters.AddWithValue("@CLIENTE", idCliente);
+                cmd.Parameters.AddWithValue("@ARCHIVO", idArchivo > 0 ? (object)idArchivo : DBNull.Value);
+                cmd.Parameters.AddWithValue("@QUITAR", quitar);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                throw;
+            }
+        }
+
         public Cliente GetCliente(Cliente cliente)
         {
             if (Token.TokenSeguridad())
@@ -141,6 +203,12 @@ namespace SitioBase.Controller
                             if (dr["CLI_MONEDA"] != DBNull.Value)
                                 cliente.cli_moneda = int.Parse(dr["CLI_MONEDA"].ToString());
                             if (dr["CLI_LOGO"].ToString() != "") cliente.cli_logo = (byte[])dr["CLI_LOGO"];
+
+                            /* El logo ahora vive en Blob (bloque 100).
+                               cli_logo se sigue leyendo mientras la columna
+                               exista, pero esta vacia para todos. */
+                            if (dr["CLI_ARCHIVO_LOGO"] != DBNull.Value)
+                                cliente.cli_archivo_logo = int.Parse(dr["CLI_ARCHIVO_LOGO"].ToString());
                         }
                     }
                     cmd.Connection.Close();

@@ -1821,16 +1821,26 @@ div.RadTabStrip .rtsLevel .rtsLevel1 ul li a {
    ============================================================= */
 .sigma-opciones {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-    gap: 12px;
+    /* 300px y no 230: con 230 una pantalla ancha metia CINCO tarjetas y el
+       texto de cada una caia en cuatro lineas, que es justo lo que la
+       tarjeta venia a evitar. */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 14px;
+}
+
+/* Y no se estiran sin limite: una fila de siete tarjetas es un menu
+   horizontal, no un conjunto de opciones que se comparan. */
+.sigma-opciones.is-catalogo {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 380px));
+    justify-content: start;
 }
 
 .sigma-opcion {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
+    gap: 14px;
     width: 100%;
-    padding: 14px 16px;
+    padding: 18px 18px;
     border: 1px solid var(--sg-border);
     border-radius: var(--sg-radius-md);
     background-color: #ffffff;
@@ -2072,4 +2082,65 @@ div.RadTabStrip .rtsLevel .rtsLevel1 ul li a {
 .sigma-accion.is-primaria:focus {
     filter: brightness(1.08);
     color: #ffffff;
+}
+
+
+/* =========================================================================
+   FILTRO CON VARIOS CAMPOS (listados que filtran por combos y fechas)
+
+     Un filtro con combos y fechas quedaba disparejo: los combos ponen su
+     rotulo arriba y el control Calendar lo dejaba al lado con un input de
+     95px que cortaba la fecha. Esto alinea todo: rotulo arriba, control
+     abajo, misma altura, y el campo de fecha con su icono a la derecha del
+     input sin salirse.
+   ========================================================================= */
+.sigma-filtro-campo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.sigma-filtro-campo > label {
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 18px;
+}
+
+/* El combo ocupa el ancho de su columna. */
+.sigma-filtro-campo .RadComboBox {
+    width: 100% !important;
+}
+
+/* Campo de fecha: el input y el icono del calendario, en fila. El control
+   fuerza width:95px !important en linea (corta "dd-mm-aaaa"); un min-width
+   si prevalece sobre width, asi que 130px muestra la fecha entera. */
+.sigma-filtro-fecha {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+}
+
+.sigma-filtro-fecha input[type="text"] {
+    flex: 0 0 auto;
+    box-sizing: border-box;
+    min-width: 130px;
+    min-height: 38px;
+}
+
+.sigma-filtro-fecha a,
+.sigma-filtro-fecha img,
+.sigma-filtro-fecha input[type="image"],
+.sigma-filtro-fecha button {
+    flex: 0 0 auto;
+    margin: 0;
+    vertical-align: middle;
+}
+
+/* El boton del filtro se alinea al fondo, a la altura de los controles y
+   no de los rotulos. */
+.sigma-filtro-accion {
+    justify-content: flex-end;
 }

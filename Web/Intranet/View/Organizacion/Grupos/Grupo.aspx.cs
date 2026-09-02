@@ -119,9 +119,16 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
             {
                 while (dr.Read())
                 {
+                    /* El perfil y no el correo: armar un grupo de trabajo es
+                       decidir quién sabe hacer qué, y eso lo dice el perfil.
+                       El correo solo permitía comprobar que la persona
+                       existe, que no es lo que hay que decidir acá. */
+                    string perfiles = dr["PERFILES"].ToString();
+
                     GrupoTrabajoUsuario p = new GrupoTrabajoUsuario();
                     p.gtu_usuario = int.Parse(dr["USU_ID"].ToString());
-                    p.usu_nombre = dr["USU_NOMBRE"].ToString() + " · " + dr["USU_CORREO"].ToString();
+                    p.usu_nombre = dr["USU_NOMBRE"].ToString() + " · " +
+                                   (string.IsNullOrEmpty(perfiles) ? "sin perfil" : perfiles);
                     personas.Add(p);
                 }
             }
@@ -146,7 +153,11 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
         CargarDatos();
         Bloqueo();
 
+        /* La pestaña de integrantes existe siempre, pero mientras el grupo no
+           esté guardado muestra por qué no se puede usar todavía en vez de
+           quedar vacía. Una pestaña en blanco se lee como una pantalla rota. */
         pnlIntegrantes.Visible = Id > 0;
+        pnlSinGrupo.Visible = Id == 0;
 
         if (Id > 0)
         {

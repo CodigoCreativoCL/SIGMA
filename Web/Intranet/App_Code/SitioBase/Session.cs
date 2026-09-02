@@ -170,6 +170,20 @@ namespace SitioBase
             }
         }
 
+        /// <summary>
+        /// El id del Archivo con la foto del usuario, o 0.
+        ///
+        /// Lo pone el login. Es un id y no la imagen: la cabecera arma con el
+        /// una URL que el navegador cachea.
+        /// </summary>
+        public static int UsuarioArchivoFoto()
+        {
+            if (Session1 == null || HttpContext.Current.Session["usu_archivo_foto"] == null) return 0;
+
+            int id;
+            return int.TryParse(HttpContext.Current.Session["usu_archivo_foto"].ToString(), out id) ? id : 0;
+        }
+
         public static string UsuarioFoto()
         {
             if (Session1 != null && Session1["usu_foto"] != null)

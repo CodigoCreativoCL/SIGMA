@@ -214,12 +214,15 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\SampleDirection.cs" />
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
+    <Compile Include="Controllers\ActivoEstadosController.cs" />
+    <Compile Include="Controllers\ActivosController.cs" />
     <Compile Include="Controllers\CatalogosController.cs" />
     <Compile Include="Controllers\ClienteInstalacionesController.cs" />
     <Compile Include="Controllers\ClienteUsuariosController.cs" />
     <Compile Include="Controllers\InstalacionAreasController.cs" />
     <Compile Include="Controllers\MiPerfilController.cs" />
     <Compile Include="Controllers\MenusController.cs" />
+    <Compile Include="Controllers\AlertasController.cs" />
     <Compile Include="Controllers\BodegasController.cs" />
     <Compile Include="Controllers\ExistenciasController.cs" />
     <Compile Include="Controllers\InventarioMovimientosController.cs" />
@@ -228,6 +231,9 @@
     <Compile Include="Controllers\UsuarioPermisosController.cs" />
     <Compile Include="Controllers\UsuarioRecuperacionesController.cs" />
     <Compile Include="MVC\Model\Dto.cs" />
+    <Compile Include="Controllers\ArchivoController.cs" />
+    <Compile Include="Controllers\PermisosTrabajoController.cs" />
+    <Compile Include="Services\BlobService.cs" />
     <Compile Include="Utils\ApiBase.cs" />
     <Compile Include="Utils\CacheCorta.cs" />
     <Compile Include="Utils\Datos.cs" />
