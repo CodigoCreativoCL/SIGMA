@@ -41,6 +41,33 @@ namespace SitioBase.Model
         public string filtro { get; set; }
         public bool? filtro_habilitado { get; set; }
         public int filtro_activo { get; set; }
+
+        /// <summary>
+        /// Lo que se lee en un combo de componentes: "MOT-001 · Rodamiento
+        /// lado acople".
+        ///
+        /// EL ACTIVO VA DELANTE porque el nombre del componente se repite en
+        /// veinte máquinas —"rodamiento lado acople" está en todas— y sin la
+        /// máquina no se puede saber cuál se está eligiendo.
+        ///
+        /// SE CALCULA ACÁ Y NO EN EL SP: `SEL_ACTIVO_COMPONENTE` no devuelve
+        /// ninguna columna ETIQUETA. Una propiedad asignable que nadie llena
+        /// deja el desplegable con las filas en blanco, y eso se lee como una
+        /// pantalla rota en vez de como un dato que falta.
+        /// </summary>
+        public string etiqueta
+        {
+            get
+            {
+                string equipo = !string.IsNullOrEmpty(activo_codigo)
+                              ? activo_codigo
+                              : activo_nombre;
+
+                if (string.IsNullOrEmpty(equipo)) return aco_nombre;
+
+                return equipo + "  ·  " + aco_nombre;
+            }
+        }
     }
 
 

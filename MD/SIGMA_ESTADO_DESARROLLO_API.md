@@ -11,8 +11,8 @@
 > **Regla: cada vez que se cierre un bloque de trabajo, se actualiza este
 > archivo en el mismo cambio.**
 
-**Última actualización:** 30-08-2026
-**Estado:** construida y compilando · **no probada contra la base**
+**Última actualización:** 01-09-2026
+**Estado:** construida y compilando · **login (`POST /sesion`) probado contra la base; el resto sin probar**
 
 ---
 
@@ -324,6 +324,27 @@ El plural de perfiles es una inconsistencia heredada: `INS_` y `UPD_` están
 en singular. Se respeta el nombre real en vez de "corregirlo", que rompería
 la web.
 
+### La documentación del endpoint vive en los comentarios XML
+
+`POST /sesion` quedó documentado con `<summary>`, `<remarks>`, `<param>` y un
+`<response>` por cada código (200/401/402/403/423) en `SesionController`. Para
+que esas anotaciones salgan a un archivo, el `.csproj` activa
+`<DocumentationFile>bin\API.xml` con **`NoWarn 1591;1587`**:
+
+| Código | Por qué se silencia |
+|---|---|
+| **1591** | "Falta comentario XML" en los cientos de miembros aún sin documentar. Sin esto, activar el XML llena la compilación de avisos y parece que algo se rompió. |
+| **1587** | Los bloques `/** */` decorativos de `WebApiCustomMessageHandler` que el compilador confunde con documentación XML. |
+
+Esa decisión no se deduce del código: quien vuelva a tocar el `.csproj` podría
+quitar los `NoWarn` sin saber que reviven ~40 avisos inofensivos.
+
+**Falta el paso que necesita Visual Studio:** `Install-Package Swashbuckle` y
+apuntarlo a `bin/API.xml` con `c.IncludeXmlComments(...)`. Recién ahí `/swagger`
+renderiza lo anotado. No se hizo por consola porque el proyecto usa
+`packages.config` (sin `nuget.exe` a mano) y porque ver `/swagger` exige la app
+publicada en IIS.
+
 ---
 
 ## 6. Pendientes y cosas que hay que saber
@@ -336,12 +357,34 @@ la web.
 
 ### No verificado
 
-- **Nada se ha ejercitado contra la base.** La API compila en `exitcode=0` y
-  las firmas de los SPs están verificadas, pero compilar no es llamar.
-  Empezar por `POST /sesion`: de ahí salen los tokens del resto.
-- **Las 34 tareas de Pruebas y Documentación del Sprint 1 son de Catalina
-  Pescio** y siguen pendientes. Ninguna historia pasa de "En revisión" hasta
-  que estén.
+- **`POST /sesion` ya se ejercitó contra la base (01-09-2026)** y responde con
+  datos reales: 200 con token, 401, y 423 con bloqueo por intentos. El canal
+  `POST /sesion` → `SEL_LOGIN` → base funciona de extremo a extremo. **El resto
+  de los endpoints sigue sin llamarse.**
+- **Pendiente de verificar en la base:** el registro de último acceso (HU-001
+  CA1) y el registro en el log de excepciones (HU-001 CA2). Y **CA3** (cuenta
+  deshabilitada) no se ejecutó por falta de una cuenta de prueba.
+- **Las tareas de Pruebas y Documentación del Sprint 1 son de Catalina Pescio.**
+  T-1011 (pruebas de HU-001) quedó ejecutada y registrada en
+  [`SIGMA_PRUEBAS_S1.md`](SIGMA_PRUEBAS_S1.md); T-1012 (Swagger + este documento)
+  en curso. Ninguna historia pasa de "En revisión" hasta cerrarlas.
+
+### Defectos abiertos — hallados probando HU-001 (01-09-2026)
+
+- **`POST /sesion` (200) serializa los *backing fields*.** La respuesta sale con
+  claves `<token>k__BackingField` en vez de `token`, porque `SesionDto` está
+  marcado `[Serializable]`. Un cliente no puede leer el token por su nombre: el
+  login queda inutilizable de extremo a extremo pese al 200. Arreglo: quitar
+  `[Serializable]` de `SesionDto`. Los demás DTOs, sin ese atributo, salen
+  limpios.
+- **El 401 pierde el mensaje del controller.** El controller responde
+  `"Correo o contraseña incorrectos."`, pero el cliente recibe
+  `"Equivalent to HTTP status 401. Unauthorized indicates…"`. Causa ubicada:
+  `WebApiCustomMessageHandler` intercepta las respuestas por código y reemplaza
+  el cuerpo con esos textos canónicos en inglés (sus líneas ~170-600). Afecta
+  **solo a los 401** —el 423 conserva su cuerpo—. Habría que decidir si ese
+  handler se conserva y, si sí, que no pise los mensajes propios. HU-001 CA2 no
+  se cumple del todo hasta resolverlo.
 
 ### Deuda conocida
 
@@ -351,8 +394,10 @@ la web.
   (`Username` / `Password` en texto plano). Sirve para que un sistema se
   identifique, no una persona; el login de personas es `POST /sesion`. Habría
   que decidir si esa cuenta se conserva o se retira.
-- **No hay Swagger.** Está en las tareas de documentación de Catalina. El
-  proyecto trae el área `HelpPage` de plantilla, sin usar.
+- **Swagger a medio instalar.** El endpoint ya está documentado en el código y
+  el `.csproj` emite `bin/API.xml` (§5). Falta `Install-Package Swashbuckle` en
+  Visual Studio para que `/swagger` exista. El área `HelpPage` de plantilla
+  sigue sin usar.
 - **No hay límite de intentos por IP** en `/sesion` ni en
   `/usuario-recuperaciones`. El bloqueo por cuenta sí existe —lo hace
   `SEL_LOGIN` a los cinco intentos— pero nada impide probar mil correos
@@ -421,6 +466,10 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
 | 31-08-2026 | **Retirados los endpoints que no van.** 7 controllers a `_RETIRADO/API/` y 4 recortados a sus `GET`: de **64 endpoints a 21**, en 9 controllers. Se fueron `/clientes`, `/perfiles`, `/centros-costo`, `/grupo-trabajos`, `/usuario-especialidades`, `/cliente-usuario-permisos`, el CRUD de `/cliente-usuarios` y el `ValuesController` de la plantilla de Visual Studio, que respondía en `.../API/values` por la ruta convencional. También los 16 DTOs que quedaron sin dueño. Nada estaba roto: no lo consumía nadie. Compila en `exitcode=0` |
 
 | 31-08-2026 | **El modulo del bodeguero (Sprint 3).** 4 controllers nuevos: `existencias`, `inventario-movimientos`, `repuestos` y `bodegas`. Un solo POST para ingreso, entrega, devolucion, ajuste, traslado y merma, con el **permiso resuelto por tipo**. `/repuestos` y `/bodegas` van solo en lectura por la excepcion **E2** del documento de alcance: son historias solo web, pero sin leerlas la app no puede ofrecer que mover ni a donde |
+
+| 01-09-2026 | **HU-001 probada contra la base (T-1011).** Un caso por criterio de aceptación: CA1 (200 + token), CA2 (401), CA4 (423 con bloqueo y tiempo restante) ejecutados; CA3 pendiente por falta de una cuenta deshabilitada. **Primer ejercicio real contra la base:** el canal `POST /sesion` → `SEL_LOGIN` funciona de extremo a extremo. Dos defectos hallados —el 200 con *backing fields* y el 401 sin el mensaje propio (§6)—. Evidencia en [`SIGMA_PRUEBAS_S1.md`](SIGMA_PRUEBAS_S1.md); veredictos en la hoja *Criterios de aceptación* del Sprint Backlog S1 |
+
+| 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0`. Falta `Install-Package Swashbuckle` en Visual Studio para levantar `/swagger` |
 
 ### Cómo actualizar este documento
 

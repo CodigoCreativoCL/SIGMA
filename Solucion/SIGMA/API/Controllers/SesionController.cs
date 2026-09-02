@@ -34,9 +34,19 @@ namespace API.Controllers
     {
         /// <summary>
         /// POST /sesion — iniciar sesión.                        HU-001
-        ///
-        /// 200 con token · 401 credenciales malas · 423 cuenta bloqueada.
         /// </summary>
+        /// <remarks>
+        /// Recibe las credenciales, las valida contra <c>SEL_LOGIN</c> con
+        /// <c>@AMBITO = 2</c> (aplicación móvil) y, si entran, devuelve un token
+        /// JWT. Toda la regla —conteo de intentos, bloqueo, ámbito— vive en el
+        /// procedimiento, no acá.
+        /// </remarks>
+        /// <param name="dto">Credenciales: <c>login</c> (correo) y <c>password</c>.</param>
+        /// <response code="200">Acceso concedido. Devuelve token, usuario, cliente y minutos de expiración. Con más de un cliente el token sale sin cliente y <c>debe_elegir_cliente</c> es true (HU-002).</response>
+        /// <response code="401">Correo o contraseña incorrectos. El mismo mensaje para ambos casos: no revela cuál de los dos falló.</response>
+        /// <response code="402">La suscripción de la empresa no está vigente. El pago se regulariza desde la web.</response>
+        /// <response code="403">La cuenta existe y la clave es correcta, pero no opera en la app (sin perfil, o perfil solo web). Se responde 403 y no 401 para que la app no borre la sesión y reintente.</response>
+        /// <response code="423">Cuenta bloqueada por intentos fallidos. El mensaje informa el tiempo restante.</response>
         [HttpPost]
         [Route("")]
         public IHttpActionResult Iniciar(LoginDto dto)
