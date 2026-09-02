@@ -167,6 +167,59 @@ var sigmaAlertas = (function () {
     }
 
 
+    /* Baja los contadores AHORA, sin esperar al servidor.
+
+       El viaje tarda entre cien y quinientos milisegundos, y en ese rato el
+       usuario ya esta mirando la ficha que abrio. Si el numero baja recien
+       cuando vuelve la respuesta, lo que ve es un contador que no reacciono a
+       lo que acaba de hacer, y la conclusion razonable es que no funciono.
+
+       Es un adelanto, no una suposicion: la respuesta del servidor manda, y
+       cuando llega se reescriben los dos contadores con lo que diga. Si el
+       marcado fallo, el numero vuelve solo a donde estaba. */
+    function descontarUno() {
+        var enlace = document.querySelector('.sigma-notification');
+        var badge = enlace ? enlace.querySelector('.sigma-notification__count') : null;
+
+        if (badge) {
+            var n = parseInt(badge.textContent, 10);
+
+            /* "99+" no se puede descontar de a uno sin mentir: se deja como
+               esta y el servidor lo corrige en la respuesta. */
+            if (!isNaN(n) && badge.textContent.indexOf('+') < 0) badgeCampana(n - 1);
+        }
+
+        if (ultimasNoLeidas !== null && ultimasNoLeidas > 0) ultimasNoLeidas--;
+    }
+
+    /* El numero del menu al que pertenece la alerta que se acaba de abrir.
+
+       Sin esto la campana bajaba y el menu lateral se quedaba con el numero
+       viejo hasta el siguiente sondeo: dos contadores de la misma cosa
+       diciendo cifras distintas durante un minuto. */
+    function descontarMenu(href) {
+        if (!href) return;
+
+        var badges = document.querySelectorAll('#side-menu .sg-menu-badge');
+
+        for (var i = 0; i < badges.length; i++) {
+            var enlace = badges[i].closest ? badges[i].closest('a') : null;
+            if (!enlace) continue;
+
+            var propio = enlace.getAttribute('href') || '';
+            if (propio.indexOf(href) < 0 && href.indexOf(propio) < 0) continue;
+
+            var n = parseInt(badges[i].textContent, 10);
+            if (isNaN(n)) continue;
+
+            if (n > 1) badges[i].textContent = n - 1;
+            else badges[i].style.display = 'none';
+
+            return;
+        }
+    }
+
+
     /* ============================================================
        EL AVISO EMERGENTE
 
@@ -338,6 +391,47 @@ var sigmaAlertas = (function () {
         refrescar: function () {
             ultimasNoLeidas = null;
             preguntar();
+        },
+
+        /* ABRIR UNA ALERTA ES HABERLA LEIDO.
+
+           Lo llaman los tres sitios que abren la ficha de una alerta: el panel
+           de la campana, la pantalla de Alertas y el aviso emergente. Los tres
+           lo llamaban DESDE ANTES; lo que no existia era este metodo, asi que
+           el onclick moria con "sigmaAlertas.leer is not a function" -en
+           silencio, porque un error dentro de un onclick no detiene nada- y
+           ninguna alerta se marcaba nunca.
+
+           El id va en claro: UPD_ALERTA_LEER filtra por cliente, por usuario y
+           por el permiso del tipo, asi que no es una llave sino un numero que
+           el procedimiento valida. Y ya estaba impreso en el onclick de la
+           propia pagina. */
+        leer: function (id, href) {
+            if (!id || !URL || typeof jQuery === 'undefined') return;
+
+            descontarUno();
+            descontarMenu(href);
+
+            jQuery.ajax({
+                type: 'POST',
+                url: URL + '/Leer',
+                data: JSON.stringify({ datos: String(id) }),
+                contentType: 'application/json; charset=utf-8',
+                dataType: 'json',
+                success: function () {
+                    /* La cifra de verdad la tiene el servidor: el descuento de
+                       recien era para que la pantalla respondiera al toque. */
+                    ultimasNoLeidas = null;
+                    preguntar();
+                },
+                error: function () {
+                    /* Si fallo, el sondeo devuelve el numero a donde estaba.
+                       Se prefiere eso a dejar un contador adelantado que
+                       nadie corrige. */
+                    ultimasNoLeidas = null;
+                    preguntar();
+                }
+            });
         },
 
         ahora: preguntar,

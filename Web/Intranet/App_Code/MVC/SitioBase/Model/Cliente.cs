@@ -47,5 +47,15 @@ namespace SitioBase.Model
         public string filtro_pais { get; set; }
         public byte[] cli_logo { get; set; }
 
+        /// <summary>
+        /// El logo, ahora en Blob Storage (bloque 100).
+        ///
+        /// `cli_logo` queda muerta: era el binario DENTRO de SQL Server, y se
+        /// servia como data:base64 incrustado en el HTML, asi que el logo
+        /// viajaba entero en cada carga de pagina y ningun navegador lo podia
+        /// cachear. Ahora es un id de Archivo y la imagen se pide por URL.
+        /// </summary>
+        public int? cli_archivo_logo { get; set; }
+
     }
 }

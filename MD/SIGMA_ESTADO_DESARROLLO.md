@@ -15,6 +15,119 @@ contra la base; web construida y compilando (falta prueba en navegador)
 
 ---
 
+## Programación del mantenimiento — bloques 103 a 107 (01-09-2026)
+
+Las siete historias de programación del Sprint 3 (HU-070 a HU-076) tenían el
+modelo hecho —diez tablas, catálogos poblados— y **cero procedimientos**. Ahora
+tienen 23 SPs, una función, dos pantallas, el menú y los permisos.
+
+### Lo que quedó construido
+
+| Bloque | Qué |
+|---|---|
+| **101** | Se desplegó (estaba escrito y sin aplicar): `SEL/INS/UPD/DEL_PROCEDIMIENTO` + `SEL_VARIABLE_MEDICION`. Cierra la capa de datos de HU-061 y HU-062. |
+| **103** | CRUD de la cabecera `Programacion`. |
+| **104** | Detalle por tipo: fechas, calendario, intervalo, medidor. |
+| **105** | Exclusiones, condiciones, `SEL_ACTIVO_VARIABLE` mínimo, menú y permisos. |
+| **106** | `FNC_PROGRAMACION_FECHAS` + `SEL_PROGRAMACION_PROYECCION`. |
+| **107** | `SEL_PROGRAMACION_CATALOGO`: los ocho combos de la ficha en un SP. |
+
+Web: `View/Mantenimiento/Programaciones/Programaciones.aspx` y
+`Programacion.aspx`, más `Model/Programacion.cs` y `ProgramacionController.cs`.
+Compila con EXITCODE=0.
+
+API: `AlertasController` (HU-077, T-3956) con `GET /alertas`,
+`GET /alertas/resumen` y `POST /alertas/{id}/leer`. La API compila y genera
+`bin\API.dll`.
+
+### Una ficha y no cinco
+
+El backlog proponía CRUD y pantalla propia por tipo —`ProgramacionCalendario`,
+`ProgramacionMedidor`…—. El modelo dice otra cosa: `Programacion` es una
+cabecera y `pro_programacion_tipo` elige cuál de las cinco tablas de detalle
+aplica. Cinco pantallas serían las mismas cuatro secciones comunes copiadas
+—vigencia, tolerancias, zona horaria, política— y se desincronizarían.
+Quedó **un** CRUD y **una** ficha cuyo combo de tipo intercambia un panel.
+
+### Dos columnas que faltaban en el modelo
+
+- **`Programacion_Intervalo.pin_desde_ejecucion`** — los dos criterios de
+  HU-072 piden cosas opuestas: contar desde la última ejecución (#1) o desde
+  la fecha programada (#2, "un atraso no desplaza las siguientes"). No había
+  ninguna columna que dijera cuál. Sin ella HU-072 solo puede cumplir uno de
+  sus dos criterios.
+- **`Programacion_Exclusion.pxc_desplaza`** — HU-075 #2 quiere que el feriado
+  **corra** la fecha al siguiente día hábil guardando la original; #3 quiere
+  que la parada de planta **elimine** las fechas del período. Son efectos
+  distintos sobre la misma tabla.
+
+Las dos son aditivas y con default.
+
+### La proyección, que es lo que salva el sprint
+
+Los 21 criterios de las siete historias dicen "entonces **se genera la
+ocurrencia**". Y una ocurrencia no se puede insertar:
+`Plan_Mantenimiento_Ocurrencia.pmo_plan_mantenimiento_hito` es NOT NULL contra
+`Plan_Mantenimiento_Hito`, que es **HU-081 del Sprint 4** y tiene cero filas.
+
+`FNC_PROGRAMACION_FECHAS(@PROGRAMACION, @DESDE, @HASTA)` separa las dos
+mitades: **cuándo toca** se calcula y se prueba hoy; **qué se crea** es HU-076
+y espera al Sprint 4. Es el 80% del algoritmo de HU-076 escrito y verificado
+ahora, y el generador la va a llamar tal cual.
+
+Comprobado contra los criterios, con datos reales en la base:
+
+| Criterio | Resultado |
+|---|---|
+| HU-071 #1 semanal martes y jueves | 1, 6, 8, 13, 15, 20, 22, 27, 29 de enero 2026 |
+| HU-071 #2 último día del mes | 31-01, **28-02** (2026) y **29-02** (2028) |
+| HU-071 #3 último viernes | 30-01, 27-02, 27-03, 24-04 |
+| HU-072 #1 cada 90 días desde el 10-01 | 10-01, 10-04, 09-07, 07-10 |
+| HU-070 #1 cuatro fechas puntuales | las cuatro, independientes |
+| HU-075 #3 parada de planta | desaparecen 6, 8, 13 y 15 de enero |
+| HU-075 #2 feriado el viernes 30-01 | pasa a **lunes 02-02**, `FECHA_ORIGINAL = 30-01`, motivo "Feriado" |
+| Aislamiento entre clientes | el cliente 2 recibe "LA PROGRAMACION NO EXISTE PARA ESTE CLIENTE" |
+
+### Dos errores que aparecieron al probar
+
+1. **`SELECT @ID = col FROM …` no pone NULL cuando no hay filas**: deja la
+   variable como estaba. Como `@ID` es OUTPUT, entraba con el valor de la
+   llamada anterior y los tres `UPS_` actualizaban la fila de **otra**
+   programación. Se corrigió con `SET @ID = NULL` antes del SELECT.
+2. **El desplazamiento saltaba todos los fines de semana**, incluso sin
+   exclusiones: una programación diaria habría perdido cada sábado en
+   silencio. Ahora el fin de semana solo se salta cuando la fecha **ya venía
+   desplazada** por una exclusión.
+
+### Lo que sigue bloqueado, y por qué
+
+| Historia | Pts | Bloqueo |
+|---|--:|---|
+| **HU-074** condición | 5 | `Activo_Variable` tiene 0 filas y ningún mantenedor: es **HU-041, del Sprint 2**, todavía "Por hacer". El CRUD de condiciones está hecho; el combo va vacío hasta que se cierre. |
+| **HU-076** generación | 8 | Necesita `Plan_Mantenimiento_Hito` (HU-081, Sprint 4). |
+| **HU-151** sincronización | 13 | Cero tablas `Sincronizacion%`. Las tareas T-3005 y T-3006 de API dependen de eso. |
+
+### Decisiones que quedan para el equipo
+
+1. **`Programacion_Medidor.pme_activo_medidor` es NOT NULL**, así que la regla
+   "cada 500 horas" está obligada a nombrar UN horómetro. HU-073 #3 pide un
+   plan sobre cuatro blowers disparando con el horómetro de cada uno sin
+   crear cuatro programaciones, y eso sale de
+   `Plan_Mantenimiento_Activo.pac_activo_medidor`. Debería ser nullable.
+2. **No existe tabla de feriados.** HU-075 #2 habla de "excluyo los feriados"
+   como calendario nacional, y SIGMA es multipaís. Hoy se cargan a mano como
+   exclusiones con desplazamiento.
+3. **`Zona_Horaria` solo tiene Chile** (continental e Isla de Pascua). Un
+   cliente peruano no tiene zona que elegir.
+
+### Cuatro historias están hechas y marcadas "Por hacer"
+
+HU-051 (3 pts), HU-060 (5), HU-063 (3) y HU-064 (3) tienen sus SPs
+desplegados, sus pantallas en disco y sus filas en `Menus`, y sus tareas ya
+están en "Terminada". Lo que quedó viejo es el estado de la **historia**: son
+14 puntos que hoy cuentan como deuda y no lo son.
+
+
 ## 1. Qué es esto y dónde está
 
 SIGMA — Sistema Integrado de Gestión de Mantenimiento Industrial.
@@ -394,34 +507,71 @@ mismo.
 
 Esto es lo que más se pierde entre sesiones.
 
-### ⚠ DECISIÓN ABIERTA — las dos formas de preguntar por un permiso
+### Los permisos se preguntan de UNA sola forma — CERRADO (bloque 102)
 
-Hay **dos implementaciones** de *"¿este usuario tiene este permiso?"* y no
-responden lo mismo:
+Había **dos implementaciones** de *"¿este usuario tiene este permiso?"* y se
+contradecían **en los dos sentidos**. Medido contra la base antes de tocar
+nada:
 
-| | Perfiles que cuenta | Regla de Root | Quién la usa |
-|---|---|---|---|
-| `SEL_USUARIO_PERMISOS` | `Usuario_Perfil` **y** `Cliente_Usuario_Perfil` | sí | `Token.Puede` (web), `Permisos.Tiene` (API) |
-| `FNC_USUARIO_TIENE_PERMISO` | solo `Cliente_Usuario_Perfil` | sí, desde el bloque **62** | `SEL_MENU_APP`, `INS_CLIENTE_USUARIO_PERMISO` |
+| Caso | `SEL_USUARIO_PERMISOS` | `FNC_USUARIO_TIENE_PERMISO` |
+|---|--:|--:|
+| Marcela (Admin. del Cliente **solo en Hamburgo**) preguntando por un cliente **ajeno** | **34 permisos** | 0 |
+| Una cuenta de plataforma que no sea Root (Soporte, Gerente Comercial) | 32 permisos | **0** |
 
-El bloque 62 igualó **la regla de Root**, que era la que dejaba el árbol de
-la app vacío. La otra diferencia sigue abierta y **no se cerró a propósito**:
+La primera fila es un agujero de aislamiento entre clientes. La segunda es lo
+que dejaba el árbol de la app vacío para Soporte.
 
-`Usuario_Perfil` está poblado **en espejo** de `Cliente_Usuario_Perfil` desde
-el bloque 49, así que cada usuario de cliente tiene ahí su perfil. Si la
-función empezara a contar los perfiles globales, un usuario de Hamburgo
-resolvería sus permisos **en cualquier cliente**. Y al revés: si el SP dejara
-de contarlos, las cuentas de plataforma —Soporte, Gerente Comercial— se
-quedan sin nada, porque no tienen afiliación.
+**La causa es la misma:** el SP miraba `Usuario_Perfil` sin preguntarse de qué
+tipo era el perfil, y la función no lo miraba nunca.
 
-Hay que elegir una de las dos:
+#### La regla que se adoptó
 
-1. el SP deja de contar `Usuario_Perfil` **para los usuarios que sí tienen
-   afiliación**, y lo cuenta solo para las cuentas de plataforma; o
-2. el espejo deja de poblarse para los usuarios de cliente.
+> Un perfil en `Usuario_Perfil` otorga permisos **solo si es de plataforma**
+> (`per_tipo = 1`). Los de tipo Cliente que están ahí son el **espejo** del
+> bloque 49 —una copia para las pantallas heredadas— y una copia no otorga
+> nada: dentro de un cliente los permisos salen de `Cliente_Usuario_Perfil`
+> de **ese** cliente.
 
-Adivinar cuál y aplicarla en silencio es como se abren agujeros. Se decide
-antes de que la app tenga menús con permiso de verdad.
+Una sola frase, aplicada igual en las dos implementaciones, apoyada en un
+dato que ya existe en vez de en una lista que alguien tenga que mantener. Los
+datos la respaldan: hoy las tres cuentas de plataforma tienen perfil tipo 1 y
+cero afiliaciones, los siete usuarios de Hamburgo tienen tipo 2 y una, y **no
+hay ni un cruce**.
+
+#### Por qué no fue ninguna de las dos opciones que este documento proponía
+
+Ninguna arreglaba el segundo caso: la función seguía dejando sin permisos a
+Soporte y a Gerente Comercial. Había que tocar las dos puntas, no elegir una.
+
+Y **vaciar el espejo tampoco era viable**: `SEL_CLIENTE_USUARIO_ELEGIBLE`
+decide quién ve todos los clientes mirando `Usuario_Perfil`, y
+`SEL_CLIENTE_USUARIO` exige una fila ahí para listar a alguien. Vaciarlo
+rompe las dos.
+
+#### La tercera diferencia, que no estaba registrada
+
+La función exigía autorización vigente en la planta
+(`Cliente_Instalacion_Usuario`) y el SP no la miraba. Estaba **latente**
+—todos los llamadores pasan `@INSTALACION` en NULL— pero se activaba sola el
+día que la app pasara la planta. Se agregó al SP con la misma semántica.
+
+Con una excepción en ambas: **la autorización de planta alcanza a lo que
+viene del cliente, no a un permiso de plataforma.** Quien da soporte no está
+asignado a ninguna planta y nunca va a estarlo.
+
+#### Comprobado después del cambio
+
+| Caso | SP | Función |
+|---|--:|--:|
+| Marcela en **su** cliente | 34 | sí |
+| Marcela en un cliente **ajeno** | **0** | **no** |
+| Soporte (plataforma) | 32 | **sí** |
+| Root | 79 (todos) | sí |
+| Técnico en su cliente / con su planta | 15 | sí |
+| Técnico en una planta **ajena** | **0** | **no** |
+
+Y el árbol de la app: Root 58 nodos · Marcela 42 · Técnico 32 ·
+**Soporte 46, que antes daba 0**.
 
 
 ### Contraseñas en hash (bloque 26)
@@ -471,38 +621,139 @@ si el prevencionista necesita usuario — responderlo por el equipo no
 corresponde. Y contratista no es usuario: es `Proveedor` con
 `prv_es_contratista`.
 
-### Los archivos viven en Blob Storage, y todavía no se puede subir ninguno
+### Los archivos viven en Blob Storage — CONECTADO (01-09-2026)
 
 Decisión de Bryan (29-08): **todo archivo se almacena en Blob Storage**, y
-quien habla con Azure **no es este sitio** sino una API .NET aparte que
-además va a atender a la app móvil. Que la web y la app subieran por caminos
-distintos garantizaría que algún día un archivo quede en un contenedor que la
-otra no mira.
+quien habla con Azure **no es este sitio** sino la API .NET, que además
+atiende a la app móvil. Que la web y la app subieran por caminos distintos
+garantizaría que algún día un archivo quede en un contenedor que la otra no
+mira.
 
-Esa API se construye después. Mientras tanto:
+**Esa API ya existe.** Cuenta `sigmacodigocreativo`, contenedor `sigma`.
 
-- `IAlmacenamiento` (`App_Code/SitioBase/Almacenamiento.cs`) define subir,
-  descargar y eliminar. `AlmacenamientoApi` está **escrito completo** —es lo
-  que hay que enchufar— pero `Disponible` devuelve falso mientras
-  `AlmacenamientoApiUrl` conserve el texto `PENDIENTE`.
-- **No se escribe a disco local como provisorio, a propósito.** Un provisorio
-  que funciona es un provisorio que se queda: quedaría un comprobante de pago
-  en un disco que nadie respalda y que la app no puede leer. Es mejor que la
-  pantalla diga "todavía no se puede adjuntar" y que eso moleste.
-- `arc_ruta` guarda la **ruta del blob** (`contenedor/cliente/carpeta/nombre`),
-  no una URL firmada: una URL con token caduca y quedaría inservible guardada.
-- El nombre almacenado es un GUID. Dos personas suben `comprobante.pdf` el
-  mismo día y una pisaría a la otra; y un nombre elegido por quien sube es una
-  ruta elegida por quien sube. El original se conserva en
-  `arc_nombre_original`, que es donde sirve.
-- El estado de antivirus nace `PENDIENTE`, no `LIMPIO`: no hay antivirus
-  conectado y marcar limpio algo que nadie revisó sería mentirle al día en que
-  sí lo haya.
+#### Las dos piezas
 
-Contrato esperado de la API (ajustable, está en el comentario de la clase):
-`POST /archivo` con base64 → `{ruta, hash, tamano}` · `GET /archivo?ruta=` ·
-`DELETE /archivo?ruta=` · cabecera `X-Api-Key`.
+| Dónde | Qué |
+|---|---|
+| `API/Services/BlobService.cs` | Habla con Azure. Subir, leer, ver, actualizar, propiedades, borrar. |
+| `API/Controllers/ArchivoController.cs` | `POST /archivo` · `GET /archivo` · `GET /archivo/ver` · `GET /archivo/propiedades` · `PUT /archivo` · `DELETE /archivo` · `GET /archivo/estado` |
+| `Web/Intranet/App_Code/SitioBase/Services.cs` | **La única puerta de la web hacia la API.** Toda llamada pasa por acá. |
+| `Almacenamiento.cs` | Sigue implementando `IAlmacenamiento`, pero ahora **delega** en `Services`. Su `WebClient` propio se eliminó: dos clientes HTTP para el mismo servicio son dos sitios donde arreglar lo mismo. |
 
+#### REST y no el SDK de Azure
+
+`Azure.Storage.Blobs` obligaría a meter el paquete y sus dependencias en un
+proyecto .NET 4.8 que hoy no tiene ninguna, y lo que aporta —reintentos,
+streaming en bloques, paralelismo— es para escenarios que este módulo no
+tiene: se suben permisos y comprobantes, de pocos MB, de a uno. **Con un SAS
+la API REST no necesita firmar nada**: el token *es* la credencial. Son tres
+verbos HTTP.
+
+#### La estructura de carpetas
+
+```
+sigma / 0001-hamburgo / permisos-trabajo / 2026 / 09 / a1b2c3….pdf
+└cont┘ └── cliente ──┘ └──── módulo ────┘ └─ cuándo ─┘ └─ nombre ─┘
+```
+
+- **Id y nombre juntos.** Solo el id no dice de quién es nada al abrir el
+  portal de Azure; solo el nombre no sirve porque cambia y puede repetirse.
+  El id va delante y relleno a cuatro dígitos para que **ordene**: `0002`
+  antes que `0010`, cosa que `2` y `10` no hacen alfabéticamente.
+- **El cliente arriba del módulo**, porque el aislamiento entre empresas es
+  lo que no se puede equivocar: un SAS acotado a un prefijo deja fuera a las
+  demás de una sola regla.
+- **Año y mes** para que ninguna carpeta llegue a ser imposible de listar.
+- El nombre del archivo es un **GUID**: dos personas suben `permiso.pdf` el
+  mismo día. El original se conserva en `arc_nombre_original`.
+
+#### Ver un archivo tiene una lista blanca, y es una defensa real
+
+`GET /archivo/ver` devuelve el mime real con `inline` para que el navegador
+muestre el PDF sin descargarlo. **Solo para PDF, imágenes de mapa de bits y
+texto plano.**
+
+Servir `text/html` o `image/svg+xml` con `inline` desde nuestro dominio es
+ejecutar HTML y javascript **ajeno con nuestro origen**: quien suba un `.html`
+con un script puede leer lo que el navegador guarde para este sitio. Es XSS
+almacenado y el vector es exactamente "poder ver el archivo". Todo lo que no
+está en la lista sale como descarga, más `X-Content-Type-Options: nosniff`
+para que el navegador tampoco adivine.
+
+#### Actualizar conserva la ruta
+
+`PUT /archivo` reemplaza el contenido **sin cambiar la ruta**, porque
+`Archivo.arc_ruta` apunta ahí: una ruta nueva obligaría a actualizar también
+la fila, y entre una cosa y otra hay una ventana en la que la base apunta a
+un blob que ya no está. El costo es que se pierde la versión anterior; si
+hace falta conservarla, lo que corresponde es **activar el versionado del
+contenedor en Azure**, no inventar rutas.
+
+Y comprueba que la ruta exista antes: en Blob Storage un PUT sobre una ruta
+inexistente la **crea**, así que sin esa comprobación "actualizar" una ruta
+mal escrita dejaría un huérfano y quien lo pidió creería que actualizó el
+suyo.
+
+#### ⚠ El SAS que está configurado es más amplio de lo necesario
+
+El token del portal es de **cuenta completa**: `sp=rwdlacupiytfx` (leer,
+escribir, borrar, listar, y más) sobre `ss=bfqt` (blob, cola, tabla,
+archivos) con `srt=sco` (servicio, contenedor y objeto). Permite borrar
+**cualquier cosa de la cuenta**, no solo lo de este módulo.
+
+Para lo que la API hace basta un SAS **acotado al contenedor `sigma`** con
+`sp=rcwd` y `srt=co`. `BlobService.AsegurarContenedor` ya trata el 403 como
+"ya existe" justamente para poder funcionar con un SAS así.
+
+**Vence el 2027-03-01.** Ese día las subidas empiezan a fallar con 403 y el
+mensaje de Azure no dice que el token expiró.
+
+> **La clave `ServiciosApiKey` tiene que ser la misma en los dos
+> `Web.config`.** Si difieren, la API responde 401 y `Services.Traducir` lo
+> convierte en un mensaje que dice cuál revisar, en vez de un
+> "(401) No autorizado" que no indica nada.
+
+#### Un documento siempre se puede ver Y descargar — `wuc:Adjunto`
+
+Regla del 01-09-2026: **todo adjunto tiene que poder abrirse y bajarse.**
+Está escrito una vez, no en cada ficha:
+
+| Archivo | Qué hace |
+|---|---|
+| `View/Comun/Controls/Adjunto.ascx` | El control. Resuelve los **cuatro** estados: lo tiene (nombre, peso, *Ver*, *Descargar*) · no lo tiene y se puede subir · no se puede subir y dice por qué · no hay y es solo lectura. |
+| `View/Comun/Archivos/VerArchivo.aspx` | Entrega el binario, `inline` o `attachment` según el modo. |
+
+```aspx
+<wuc:Adjunto runat="server" ID="wucAdjunto" Modulo="permisos-trabajo" Categoria="13" />
+```
+```csharp
+wucAdjunto.Mostrar(entidad.ptr_archivo);   // al cargar
+int archivo = wucAdjunto.Guardar();        // al guardar; 0 si no eligió nada
+```
+
+**Lo que viaja es el id cifrado, nunca la ruta.** Si el navegador conociera
+`sigma/0001-hamburgo/…/x.pdf` podría pedir otra cambiando el texto. Llega un
+id, se resuelve contra la base —que dice de qué cliente es— y recién entonces
+se pide el archivo. Y se comprueba el cliente **otra vez** acá: adivinar un id
+correlativo es barato. Un archivo ajeno responde **404 y no 403**, porque
+decir "existe pero no es tuyo" confirma que ese id existe.
+
+**Ver y Descargar son `<a>`, no `LinkButton`.** Un `LinkButton` con
+`target="_blank"` pierde el postback y no abre nada; y un postback que escribe
+un binario rompe el `UpdatePanel`, que espera un fragmento y recibe un PDF.
+
+> **Pendiente:** `Pago.aspx` todavía tiene su propio bloque de adjunto, escrito
+> antes que el control. Funciona, pero solo ofrece descargar. Migrarlo a
+> `wuc:Adjunto` le agrega *Ver* y deja una sola implementación.
+
+#### Verificado contra Azure real (01-09-2026)
+
+Ciclo completo con la ruta definitiva: crear contenedor, subir, propiedades
+por `HEAD`, ver, actualizar, 404 en ruta inexistente, borrar. Los seis pasos
+correctos.
+
+**No verificado:** los endpoints de la API por HTTP —solo se probó el REST de
+Azure directamente— ni ninguna pantalla en el navegador.
 ### La clave de suscripción se ve una sola vez
 
 `INS_SUSCRIPCION` guarda el prefijo visible y **el hash del resto**. La ficha
@@ -588,6 +839,298 @@ por teléfono en soporte, y ahí una O y un cero son la misma letra.
 - **Sin fila configurada rige `app_por_defecto`**, y el SP ya devuelve el
   valor efectivo. Antes venía `NULL` y la pantalla dejaba los dos radios
   apagados, sin decir cuál estaba vigente.
+
+### Proveedores: módulo Terceros, y sin código automático (bloque 91)
+
+HU-060, primera historia construida de **EP-07**. Tres decisiones que un
+tercero no podría deducir del código:
+
+**Vive en un módulo nuevo, `Terceros`, no en Inventario.** La tabla existe
+desde las fundaciones y `Repuesto_Lote` apunta a ella, así que colgarla junto
+a Repuestos y Bodegas era lo cómodo. Pero la historia es de EP-07 —*"Terceros,
+procedimientos y permisos de trabajo"*— y habla de **contratistas**: tres de
+las cuatro tablas que dependen de `Proveedor` son de órdenes de trabajo.
+Ponerla en Inventario obligaría a mudarla en cuanto llegue HU-063, y un menú
+que cambia de sitio es un menú que la gente deja de encontrar. Ahí van a
+colgar después los permisos de trabajo (HU-063, HU-064) y el historial del
+proveedor (HU-065).
+
+**No lleva código automático, y es correcto.** El bloque 77 le puso
+`XXX-<id>` a los módulos con columna de código. `Proveedor` no la tiene y
+**no se le agrega**: una empresa ya tiene un identificador único y universal,
+que es su RUT, y `UX_PRV_CLIENTE_RUT` ya garantiza que no esté dos veces
+dentro de un cliente. Un `PRV-12` al lado sería un segundo nombre para lo
+mismo, y quien busque por uno no encontraría el otro. *La tarea T-3143 pedía
+"confirmar el índice único del código": no aplica a esta tabla.*
+
+**El RUT se valida con `FNC_IDENTIFICADOR_VALIDO(@PAIS, @RUT)`,** el mismo
+despachador por país del bloque 39, y la etiqueta del campo sale de
+`SEL_PAIS_IDENTIFICADOR`. Escribir una comprobación de módulo 11 acá sería
+correcta en un país de los cinco y rechazaría documentos buenos en los otros
+cuatro.
+
+> **Nombre de la pantalla.** Las tareas dicen `Proveedors.aspx` —plural
+> generado por plantilla—. Se creó **`Proveedores.aspx`**, que es el plural
+> real y la convención del resto del sitio (`Repuestos`, `Bodegas`).
+
+**Eliminar deshabilita, no borra.** Un proveedor con lotes recibidos o
+servicios contratados aparece en el historial de compra y en el gasto del
+año, que es justo lo que HU-065 va a leer. `DEL_PROVEEDOR` rechaza y dice
+**cuántos** registros dependen de él; el listado muestra esa cuenta en su
+propia columna para que se sepa antes de apretar el botón.
+
+### Compatibilidad de repuestos: una fila, un alcance (bloques 92 y 93)
+
+HU-051. Cuatro decisiones, y la primera es que **el texto de las tareas
+apuntaba a la tabla equivocada**.
+
+**T-3159 decía `Componente_Repuesto_Instalacion`. No es esa.** Esa tabla es
+el *historial* —qué pieza se montó dónde, con qué horómetro, por qué se
+retiró— y es lo que necesita **HU-058**. Lo que pide HU-051 —*"indicar en qué
+equipos o modelos aplica cada repuesto"*— es **`Repuesto_Compatibilidad`**,
+que existe desde el bloque 12 y estaba sin usar. La tarea también pedía
+"confirmar el índice único del código": esta tabla no tiene columna de código
+y no la necesita — no es algo que alguien nombre, es una afirmación.
+
+**Una fila declara un solo alcance.** `CK_RCO_ALCANCE` exige al menos uno de
+tipo/modelo/componente pero no impide los tres. Una fila con `tipo=BOMBA` y
+`modelo=NB 65-200` a la vez no se puede leer: ¿las bombas *más* ese modelo, o
+las bombas *que sean* ese modelo? Los SP exigen **exactamente uno**; si aplica
+a varios, son varias filas — y así se puede quitar una sin tocar la otra.
+
+**El borrado es físico, contra lo que pedía T-3163.** No hay
+`rco_habilitado` y no se agregó. Una compatibilidad es una afirmación de
+hecho: si está mal, está mal, no hay historia que preservar y **ninguna tabla
+la referencia**. Guardar una compatibilidad equivocada "deshabilitada" es
+dejar puesto justo el dato que la historia quiere evitar, esperando a que
+alguien la vuelva a encender.
+
+**El aislamiento va por el repuesto.** La tabla **no tiene `rco_cliente`**:
+la pertenencia sale de `rco_repuesto → Repuesto.rep_cliente`, y por eso todos
+los SP hacen ese JOIN. El alcance también se valida — un tipo o modelo de
+otro cliente se rechaza; los de `cliente NULL` son globales y sí se aceptan.
+
+> **Lo que sí se agregó al modelo:** `rco_usuario_actualizacion` y
+> `rco_fecha_actualizacion` (T-3162 pide un `UPD_`, y un `UPD_` sin "quién lo
+> cambió" en un sistema cuya premisa es la trazabilidad no se sostiene), más
+> `UX_RCO_ALCANCE` —nada impedía declarar dos veces lo mismo— y
+> `IX_RCO_INVERSO` para la consulta al revés, que es como la usa el técnico.
+
+**Bloque 93 — los combos que no existían.** `Activo_Modelo` y
+`Activo_Componente` están desde las fundaciones y **nunca se habían leído
+desde la aplicación**: no tenían ningún `SEL_`. Se crearon
+`SEL_ACTIVO_MODELO` y `SEL_ACTIVO_COMPONENTE`, solo de consulta — el
+mantenedor de esas entidades es del módulo de activos.
+
+> **Componentes: cero filas.** El alcance por componente está soportado de
+> punta a punta pero no se puede ejercitar todavía; la ficha lo dice en el
+> combo en vez de quedarse en blanco. Poblar `Activo_Componente` es del
+> módulo de activos. Los 3 `Activo_Modelo` de demo **sí** se crearon: sin
+> ellos el alcance por modelo —que la historia nombra explícitamente— no
+> tenía cómo probarse.
+
+### Permisos de trabajo: la tabla exige el documento (bloque 94)
+
+HU-063. **El hallazgo importante está en el esquema, no en el código:**
+
+```sql
+CK_PTR_AUTORIZADO: ptr_permiso_trabajo_estado <> 2 OR ptr_archivo IS NOT NULL
+```
+
+**Un permiso no puede quedar AUTORIZADO sin su documento adjunto.** Es
+exactamente lo que pide la historia —*"dejar constancia de que el trabajo se
+ejecutó con la autorización correspondiente"*—: la constancia **es** el papel
+firmado, no la fila.
+
+Y adjuntar está bloqueado: `Almacenamiento.Disponible` devuelve falso
+mientras `AlmacenamientoApiUrl` conserve `PENDIENTE`. Las dos cosas juntas
+significan que **hoy ningún permiso puede llegar a AUTORIZADO**. No es un
+defecto: es el modelo haciendo su trabajo contra una infraestructura que
+todavía no existe.
+
+Lo que sí funciona: registrar el permiso como **Solicitado** con su tipo,
+folio, vigencia, solicitante, orden y observación. Que es útil por sí solo.
+
+**Lo que se hizo para que esto no sorprenda a nadie:**
+
+- `INS_` y `UPD_` comprueban la regla **antes** que el CHECK y devuelven
+  *"UN PERMISO AUTORIZADO NECESITA EL DOCUMENTO FIRMADO ADJUNTO"*. Dejar que
+  saltara el constraint devuelve `The INSERT statement conflicted with the
+  CHECK constraint CK_PTR_AUTORIZADO`, que no le dice nada a quien está
+  llenando el formulario.
+- El listado y la ficha **preguntan por `Almacenamiento.Disponible`** y
+  muestran el motivo. El hueco del adjunto está conectado de punta a punta
+  —`ptr_archivo`, el `SEL_` devuelve nombre y peso, `SubirDocumento()` está
+  escrita— así que el día que la API exista basta cambiar el `Web.config`.
+- Los datos de prueba quedan **todos en Solicitado**, porque AUTORIZADO es
+  literalmente imposible de insertar hoy.
+
+**La situación se calcula, no se guarda.** El catálogo tiene un estado
+VENCIDO, pero un estado guardado envejece solo: un permiso que venció anoche
+seguiría diciendo AUTORIZADO hasta que alguien corriera un proceso. El `SEL_`
+devuelve `SITUACION` contra la fecha de hoy —VIGENTE, POR VENCER (7 días o
+menos), VENCIDO, CERRADO— que es lo que **HU-064** va a consumir sin poder
+quedar desactualizado.
+
+**El folio no lleva código automático.** `ptr_numero` guarda el número que
+trae el formulario de prevención. Meter un `PTR-12` ahí lo haría
+indistinguible del folio oficial, que es el dato por el que alguien busca.
+Es el mismo criterio que el RUT del proveedor (bloque 91).
+
+#### La API del módulo (bloque 96 · `PermisosTrabajoController`)
+
+`GET /permisos-trabajo` · `GET /permisos-trabajo/{id}` ·
+`POST /permisos-trabajo` · `PUT /permisos-trabajo/{id}` ·
+`GET /permisos-trabajo/tipos` · `GET /permisos-trabajo/estados`
+
+**El alta es idempotente por `uuid`, y hubo que agregar la columna.**
+`Permiso_Trabajo` **no tenía `ptr_uuid`**, así que la idempotencia que pedía
+T-3222 no era implementable: la única forma de distinguir un reintento de dos
+permisos legítimamente iguales es que el cliente traiga un identificador que
+él generó.
+
+Importa más acá que en otros módulos: el permiso se registra **en terreno**,
+con la red de una planta. La app manda, se corta, no sabe si llegó. Sin
+idempotencia quedan dos permisos para la misma faena y el prevencionista no
+sabe cuál firmó — y si el reintento fallara por una regla, la app mostraría un
+error por algo que **sí** se guardó.
+
+- El cortocircuito va **antes de toda validación**, como en
+  `INS_INVENTARIO_MOVIMIENTO`: un reintento no tiene por qué volver a pasar
+  reglas que ya pasó.
+- `SET @ID = NULL` explícito antes del `SELECT`: un `SELECT` sin filas **no
+  toca la variable**, y el llamador manda 0. Sin eso, *todo* permiso con uuid
+  respondería "ya estaba registrado" sin guardar nada. Es el error que ya se
+  cometió una vez.
+- `UX_PTR_UUID` es **único y filtrado**. Único porque es lo que de verdad
+  cierra la ventana entre el `SELECT` y el `INSERT` de dos peticiones
+  simultáneas; filtrado porque las filas existentes tienen uuid `NULL` y en un
+  índice único de SQL Server los `NULL` se comparan **iguales entre sí**.
+
+Verificado: dos llamadas con el mismo uuid → mismo id, **una sola fila**.
+
+> **Pendiente de HU-063:** `T-3227` (Móvil, de Bryan) y las dos de Catalina
+> (pruebas y documentación). **Nada de la API se ha ejercitado por HTTP**:
+> compila y los SP están probados, pero ningún endpoint se ha llamado.
+
+### Permisos vigentes: la regla vive en una función (bloques 97 y 98)
+
+HU-064. La situación —VIGENTE, POR VENCER, VENCIDO— **se calcula, no se
+guarda**: un estado guardado envejece solo, y un permiso que venció anoche
+seguiría diciendo AUTORIZADO hasta que alguien corriera un proceso.
+
+**`FNC_PERMISO_SITUACION` la define una sola vez.** El bloque 94 la había
+escrito dentro de `SEL_PERMISO_TRABAJO`, en un `CASE` repetido dos veces —una
+para devolverla, otra para poder filtrar por ella—. Al llegar
+`SEL_PERMISO_TRABAJO_VIGENTE` habrían quedado **cuatro copias**, y el día que
+alguien cambie el umbral tres se van a actualizar: la pantalla de alertas
+diría una cosa y la ficha otra, y las dos parecerían correctas.
+
+> En SQL Server 2019+ las funciones escalares se incorporan al plan
+> (*inlining*), así que no cuesta la llamada fila por fila que costaría en una
+> versión vieja.
+
+**El estado manda sobre el calendario.** Un permiso RECHAZADO o CERRADO no
+está vigente aunque su fecha no haya pasado. Uno sin fecha de fin no está
+vencido ni vigente: está **SIN VIGENCIA**, que es un dato incompleto y no una
+situación. Los dos quedan fuera de la pantalla de alerta, y por eso los datos
+de prueba incluyen uno de cada uno — sin ellos no se puede comprobar que **no**
+aparecen, que es la mitad del criterio de aceptación.
+
+**No hay paginación en el SP, a propósito.** T-3310 la pide, pero el proyecto
+pagina en C# con `Paginado<T>.Armar` y todos los listados de la API funcionan
+así. Un SP que pagine por su cuenta obligaría a mantener dos mecanismos.
+
+**La pantalla abre con tres números y son botones.** Alguien entra con una
+pregunta —"¿tengo algo vencido?"— y la respuesta cabe en un número; contar
+filas para saberlo es hacerle el trabajo al revés. El color va en el borde y
+el icono, **no en el número**: un "0" en rojo grande se lee como un problema,
+y cero vencidos es la buena noticia.
+
+### Limpieza: seis SP que no existían y el módulo de material de apoyo
+
+**827 líneas de código muerto eliminadas** (01-09-2026). Seis controladores
+heredados llamaban a procedimientos que **no existen en la base**:
+`SEL_FUNCION_MENU`, `SEL_MENU_MATERIAL_APOYO`,
+`SEL_MENU_MATERIAL_APOYO_ESTADISTICAS`, `SEL_NACIONALIDAD`, `SEL_SQLITE`,
+`SEL_USUARIO_GELOCALIZACION`.
+
+No daban error: los controladores atrapan la excepción y devuelven lista
+vacía, así que cualquiera que los llamara vería "no hay datos" en vez de "esto
+no está implementado".
+
+| Qué | Acción |
+|---|---|
+| `MenuMaterialApoyo{,Estadistica}Controller` + sus modelos | Borrados. No se usará material de apoyo. |
+| `NacionalidadController` + `Nacionalidad` | Borrados. Nadie los llamaba. |
+| `SqLiteController` + `SqLite` | Borrados. Nadie los llamaba. |
+| `AccesoController.GetMenuFuncion` | Borrado. El modelo `MenuFuncionPerfil` **se queda**: lo usa `Accesos.aspx.cs`. |
+| `ClienteUsuarioController.GetUsuariosGeolocalizacion` | Borrado. Nadie lo llamaba. |
+| `Default.master.cs` | Tenía `private MenuMaterialApoyoController menuCapsulaController = new …` **declarado y nunca usado**: un `new` en cada carga de página que no hacía nada. |
+
+La base **no tenía nada** de material de apoyo: ni tablas, ni SP, ni menús, ni
+permisos. Era solo C#.
+
+### El logo y la foto se fueron a Blob (bloque 100)
+
+Eran `varbinary(max)` dentro de SQL Server —`Cliente.cli_logo`,
+`Usuario.usu_foto`— y se servían como `data:image/jpeg;base64,…` **incrustado
+en el HTML**. Es decir: la imagen entera viajaba en **cada** carga de página
+—el avatar está en la cabecera de todas— y ningún navegador podía cachearla,
+porque no era un recurso sino texto dentro del documento.
+
+Ahora son un id de `Archivo` y la imagen se pide por URL a
+`VerArchivo.aspx`, que el navegador sí cachea.
+
+**No hubo nada que migrar**: cero clientes con logo, cero usuarios con foto,
+cero filas en `Cliente_Binario`. Se comprobó antes de escribir el bloque.
+
+**Dos SP chicos en vez de tocar nueve.** Poner un logo no es "editar el
+cliente": es una operación con un solo dato. `UPD_CLIENTE_LOGO` y
+`UPD_USUARIO_FOTO` hacen una cosa cada uno, y los nueve grandes —entre ellos
+los del camino de autenticación— quedaron intactos.
+
+Las columnas viejas **no se borraron**: están vacías y ya nadie las escribe,
+pero dropear es irreversible y `SEL_CLIENTE_USUARIO` todavía las nombra con
+su `@DEVUELVE_FOTO`. Quedan muertas y anotadas.
+
+#### ⚠ Rompí el SP del login, y así se evita
+
+Agregar la columna a los tres `SEL_` exigía tocar el texto de procedimientos
+que arman su SELECT dinámicamente. Dos intentos fallaron y **el segundo hizo
+daño**:
+
+1. **`CREATE` → `ALTER` con `STUFF`** sobre la primera aparición de `CREATE`.
+   La cabecera de `SEL_USUARIO` trae el comentario estándar de SSMS
+   `-- Create date: …`, así que `CHARINDEX` cayó **dentro del comentario** y
+   destrozó el encabezado. El error fue *"Incorrect syntax near 'date:'"*, que
+   no menciona por ningún lado el problema real.
+
+2. **`DROP` y después `CREATE`.** El `CREATE` de `SEL_CLIENTE_USUARIO` falló
+   —*"Invalid column name 'usu_archivo_foto'"*— porque ese SP arma un CTE
+   llamado `BASE` y la columna hay que agregarla en **dos** sitios: dentro del
+   CTE y en el SELECT final. Como el `DROP` ya se había ejecutado,
+   **`SEL_CLIENTE_USUARIO` quedó borrado — y es el procedimiento del login.**
+   Hubo que restaurarlo del bloque 49.
+
+> **La regla:** no se borra un objeto antes de saber que el reemplazo
+> compila. `scratchpad/parchar_sel.ps1` crea primero una copia con nombre
+> temporal; solo si ésa compila toca el procedimiento real, y si el original
+> dice `CREATE OR ALTER` ni siquiera necesita borrarlo.
+
+> **Y otra:** `` `u{001F} `` **no es un escape en PowerShell 5.1** — queda como
+> texto literal. Un `-split` con eso nunca separa. Se usa `[char]0x1F`. El
+> guard del script lo detectó y abortó sin tocar nada, que es como tenía que
+> comportarse.
+
+#### Verificado
+
+Las tres `SEL_` devuelven la columna nueva —`SEL_USUARIO` sólo con
+`@DEVUELVE_FOTO = 1`, que es como la llama el login— las dos columnas y los
+dos SP existen, y el sitio compila.
+
+**No verificado en navegador:** subir un logo, subir una foto, y que el avatar
+de la cabecera aparezca por URL.
 
 ### El bloqueo por suscripción (bloque D)
 
@@ -773,6 +1316,36 @@ es lo que HU-005 necesita. Queda anotado en la observación de la tarea.
 
 ### Deuda conocida
 
+- **Existencia atrapada en Bodega Central** (bloque 87 lo detectó, bloque 90
+  abrió la salida — 01-09-2026). Dos filas de `Inventario_Saldo` quedaron con
+  `isa_bodega_ubicacion = NULL` en una bodega que **sí** tiene ubicaciones.
+  Como la ubicación es obligatoria ahí (error 15), esas unidades **no se
+  podían sacar por ningún camino** — y la reubicación (tipo 9), que es
+  literalmente la operación "esto va a otro estante", tampoco servía: exigía
+  ubicación de **origen**, y el origen de lo atrapado es ninguna.
+
+  | Repuesto | Cantidad | Estado |
+  |---|---|---|
+  | `DEMO-ROD-6205` | 1,00 | **Resuelto.** Movimiento 63, reubicado a `PA-E1-N1` |
+  | `DEMO-FUS-NH1-100` | 4,00 | **Pendiente:** falta decidir el estante |
+
+  El rodamiento se pudo resolver porque el historial no dejaba duda: entró
+  por compra a `PA-E1-N1`, ahí siguen otras 2, y la unidad devuelta volvió
+  sin estante. Se corrigió **con un movimiento de reubicación**, no con un
+  `UPDATE`: la existencia es la consecuencia del libro, y una corrección sin
+  rastro es indistinguible de un error.
+
+  El fusible no tiene esa respuesta. Llegó por traslado desde el Pañol de
+  Sala Eléctrica y ninguna de las seis ubicaciones de Bodega Central es la
+  suya de forma evidente. Lo decide el bodeguero.
+
+  > **La causa se repite.** El traslado entre bodegas genera la entrada del
+  > otro lado **sin ubicación de destino** —así llegó el fusible—, así que
+  > esto vuelve a pasar cada vez que alguien traslada mercadería. El bloque
+  > 90 abre la salida; **cerrar la entrada sigue pendiente** y toca la
+  > pantalla: el formulario de traslado no tiene dónde pedir la ubicación de
+  > destino, así que exigirla hoy dejaría el traslado imposible de completar.
+
 - ~~**21 modales con el markup viejo**~~ **Cerrado (30-08).** Las 25 fichas
   están migradas a `sigma-modal-*` y la capa de compatibilidad se retiró,
   junto con la clase `sigma-modal-host` de `Simple.master`. Si aparece una
@@ -829,6 +1402,90 @@ es lo que HU-005 necesita. Queda anotado en la observación de la tarea.
 - Las pantallas de OT, activos, checklists y planes no existen (Sprint 3+).
 
 ### Trampas que ya costaron tiempo
+
+- **Un método de javascript que no existía, y nadie se enteró** (01-09-2026).
+  Tres sitios llamaban a `sigmaAlertas.leer(id)` para marcar una alerta como
+  vista al abrirla: el panel de la campana, la pantalla de Alertas y el aviso
+  emergente. **`sigma-alertas.js` nunca expuso ese método.** Un error dentro
+  de un `onclick` no detiene la navegación ni se ve en pantalla, así que la
+  ficha se abría igual y el contador simplemente no bajaba nunca.
+
+  El endpoint `WsAlertas/Leer` tampoco era llamable: pedía el id **cifrado**
+  y el javascript no tiene con qué cifrar. Se dejó en claro, que es lo
+  correcto acá —`UPD_ALERTA_LEER` filtra por cliente, usuario y permiso, así
+  que el id no es una llave— y además ya estaba impreso en el `onclick` de la
+  propia página.
+
+  > Un cifrado que impide usar el método y no impide nada más es una reja
+  > puesta en un sitio donde no hay puerta.
+
+- **`Page_PreRender` con `if (IsPostBack) return;` en un listado**
+  (01-09-2026). Es lo que hacía que los filtros de Alertas no filtraran. El
+  botón *Buscar* de `wucFiltro` es un `PushButton` **sin `OnClick`**: lo único
+  que provoca es el postback, y cada listado arma su lista en `PreRender`.
+  Al saltárselo, la página se redibujaba desde el ViewState con los datos de
+  antes: se elegía una categoría, parpadeaba y mostraba lo mismo. No fallaba
+  con un error, fallaba mostrando datos viejos.
+
+- **La pantalla mostraba una cifra y el SP validaba otra** (bloque 87,
+  01-09-2026). El movimiento de inventario decía *"Existencia actual:
+  340,00 L"* y al registrar respondía *"13.- EXISTENCIA INSUFICIENTE EN ESA
+  UBICACIÓN: HAY 0.00"*. Las dos cosas eran ciertas: el rótulo mostraba el
+  total de la **bodega** y `INS_INVENTARIO_MOVIMIENTO` valida contra el
+  **cubo** `(bodega, ubicación, lote)` desde el bloque 71.
+
+  Se sumaban dos defectos de la pantalla, no de la base:
+
+  1. El combo de ubicaciones ofrecía **las seis** de la bodega, incluidas las
+     vacías, sin decir cuál tenía existencia.
+  2. El lote **solo se pedía en el ingreso por compra**, así que toda salida
+     de un repuesto con lote mandaba `@LOTE = NULL` y consultaba el cubo
+     sin lote, que está en cero. Por la misma razón una **devolución** de un
+     repuesto con lote era imposible de completar: el SP la rechaza con el
+     error 7 y el formulario no ofrecía dónde elegirlo.
+
+  Corregido con `SEL_INVENTARIO_ORIGEN`: en una salida se elige **el cubo**
+  —un solo combo, con la cantidad y el lote en la etiqueta, ordenado por
+  vencimiento— en vez de armarlo entre dos campos que pueden no
+  corresponderse.
+
+  > **La regla:** un número junto a un campo tiene que ser el que se va a
+  > validar. Mostrar un agregado al lado de una decisión que se toma al
+  > detalle no ayuda: invita a confiar en él.
+
+- **`@@ROWCOUNT` se lee en la línea siguiente o no se lee** (bloque 89,
+  01-09-2026). El bloque 77 metió el código automático **entre** el `INSERT`
+  y su comprobación:
+
+  ```sql
+  INSERT ...
+  SET @ID = SCOPE_IDENTITY()
+  IF (@CODIGO = 'AUTO') UPDATE ... SET codigo = FNC_CODIGO_AUTOMATICO(...)
+  IF @@ROWCOUNT = 0 -> ROLLBACK
+  ```
+
+  `@@ROWCOUNT` es de la **última sentencia ejecutada**. Con un código escrito
+  a mano el `IF` no se cumple, **un `IF` que no se cumple deja `@@ROWCOUNT`
+  en 0**, y el procedimiento deshacía una inserción que había funcionado
+  reportando *"4.- NO FUE POSIBLE INSERTAR…"*.
+
+  Rompió **siete altas**: `INS_ACTIVO`, `INS_CENTRO_COSTO`,
+  `INS_CLIENTE_INSTALACION`, `INS_ESPECIALIDAD`, `INS_GRUPO_TRABAJO`,
+  `INS_INSTALACION_AREA`, `INS_PLAN_COMERCIAL`.
+
+  Con `'AUTO'` funcionaba **de casualidad** —el `UPDATE` se ejecutaba y dejaba
+  `@@ROWCOUNT` en 1—, y por eso el defecto no se vio al escribir el bloque 77:
+  apareció recién cuando alguien escribió un código a mano.
+
+  > **La regla:** `@@ROWCOUNT` y `@@ERROR` se leen en la línea siguiente o se
+  > capturan en una variable. Cualquier sentencia intermedia —incluido un `SET`
+  > o un `IF` que no se cumple— los reescribe.
+
+- **`DataTable.Load($rd)` consume todos los resultsets.** `ejecutar.ps1`
+  imprimía solo el primer `SELECT` de cada lote y los demás desaparecían sin
+  error, así que una prueba con varios `SELECT` parecía no haber corrido.
+  Para consultas usar `scratchpad/consulta.ps1`, que llena un `DataSet` con
+  `SqlDataAdapter` y los muestra todos.
 
 - **Los iconos MDI no se veían, y no era la versión.** `icons.min.css` de
   Adminto declara la familia `Material Design Icons` pero **no trae ni un
@@ -1068,6 +1725,8 @@ $t = [System.IO.File]::ReadAllText($p)
 
 | 31-08-2026 | **Sprint 2 · HU-030 — Administrar tipos de activo (Emilio, todas las tareas).** Tercera entidad del Sprint 2. `Activo_Tipo` es un **árbol** (`ati_activo_tipo_padre`) cuyas filas pueden ser **globales de SIGMA** (`ati_cliente` NULL) o **del cliente** — se construyó sobre la plantilla de `Centro_Costo`. **T-2221**: modelo revisado; el código es único **por cliente** (`UX_ATI_CLIENTE_CODIGO`), y como NULL e id de cliente son claves distintas, el cliente puede tener su propio "MOTOR" aunque exista el global. **Bloque 80** (T-2222–T-2225): se **amplió** `SEL_ACTIVO_TIPO` —el del bloque 74 solo servía al combo de la ficha de activo— a árbol con ruta/nivel, `@FILTRO` escapado, auditoría con nombre de usuario y una columna `ES_GLOBAL`, conservando los parámetros previos para no romper el combo; `INS_` valida código único por cliente y padre del mismo cliente o global; `UPD_` con `ISNULL`, validación de ciclo por CTE y **rechazo de editar un tipo global**; `DEL_` baja lógica que **rechaza si hay subtipos, activos o modelos** que usan el tipo. **Bloque 81** (T-2226): tipos del cliente Hamburgo en dos niveles (ROTATIVO → motor/bomba/ventilador; ESTATICO → intercambiador/estanque). **Bloque 82** (T-2233): pantallas `Tipos de activo` bajo el nodo Activos, permisos `VER TIPOS ACTIVO` / `CREAR EDITAR TIPOS ACTIVO`, `Menu_Funcion` y perfiles (el planificador es el dueño de HU-030). **Web** (T-2231, T-2232, T-2234): `ActivoTipos.aspx` (árbol con indentación por nivel y columna de ámbito SIGMA/Cliente) y `ActivoTipo.aspx` (ficha `sigma-modal-*`; un tipo global se abre en **solo lectura con aviso**, porque el SP lo rechaza igual); se ampliaron el modelo `ActivoTipo` y el `ActivoTipoController` (que ya existían para el combo) con la jerarquía, la auditoría y el CRUD. **Compila en `exitcode=0`; bloques 80–82 ejecutados y SPs probados en transacciones revertidas** (árbol correcto, duplicado por cliente rechazado, global no editable, DEL con subtipos rechazado, baja lógica). Queda pendiente la prueba en navegador (T-2235) |
 
+| 01-09-2026 | **Bloque 102 — los permisos se preguntan de una sola forma.** Se cierra la decisión que quedaba marcada con ⚠ desde el bloque 62. Las dos implementaciones se contradecían **en los dos sentidos**, medido: Marcela resolvía **34 permisos en un cliente ajeno** por el SP, y Soporte resolvía **0** por la función —árbol de app vacío—. Regla adoptada: un perfil en `Usuario_Perfil` otorga permisos **solo si es de plataforma** (`per_tipo = 1`); los de tipo Cliente son el espejo del bloque 49 y una copia no otorga nada. De paso se igualó una tercera diferencia que no estaba registrada: la autorización de planta, que la función exigía y el SP no |
+
 ### Cómo actualizar este documento
 
 Al cerrar un bloque de trabajo: agregar la fila en la bitácora, mover lo

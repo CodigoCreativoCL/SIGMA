@@ -27,11 +27,6 @@
     <!-- App Css-->
     <link href="../Css/Adminto/assets/css/app.min.css" rel="stylesheet" type="text/css" />
 
-    <%-- Aqui se cargaba Css/MaterialApoyo/materialApoyo.css.
-         Esa carpeta se elimino con el resto de lo heredado de FacilityGes,
-         pero el <link> quedo: cada pagina del sitio pedia un archivo
-         inexistente y se llevaba un 404 en la consola. Se retira. --%>
-
 
     <!-- AjaxProgress CSS -->
     <link href="../Css/AjaxProgress/cssUpdateProgress.css" rel="stylesheet" />

@@ -68,14 +68,18 @@
                     <label for="txtDesde" style="margin: 0;">Desde:</label>
                 </div>
                 <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
-                    <WebControls:Calendar2 ID="txtDesde" runat="server" Width="80%" />
+                    <div class="sigma-modal-fecha">
+                        <WebControls:Calendar2 ID="txtDesde" runat="server" Width="80%" />
+                    </div>
                 </div>
 
                 <div class="col-lg-2 col-md-2 col-12 d-flex align-items-center" style="gap: 32px;">
                     <label for="txtHasta" style="margin: 0;">Hasta:</label>
                 </div>
                 <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
-                    <WebControls:Calendar2 ID="txtHasta" runat="server" Width="80%" />
+                    <div class="sigma-modal-fecha">
+                        <WebControls:Calendar2 ID="txtHasta" runat="server" Width="80%" />
+                    </div>
                 </div>
             </div>
         </FiltroPersonalizado>

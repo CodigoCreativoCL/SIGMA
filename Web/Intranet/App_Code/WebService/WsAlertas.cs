@@ -86,9 +86,23 @@ public class WsAlertas : System.Web.Services.WebService
     /// <summary>
     /// Marca una alerta como leída.
     ///
-    /// El id viaja CIFRADO, como cualquier parámetro sensible del proyecto:
-    /// sin eso, cualquiera podría marcar como vistas las alertas de otro
-    /// desde la consola del navegador.
+    /// EL ID VIAJA EN CLARO, Y ES CORRECTO QUE ASI SEA
+    ///   Estaba cifrado "porque cualquiera podría marcar como vistas las
+    ///   alertas de otro desde la consola". Eso no era cierto y el cifrado no
+    ///   protegía nada:
+    ///
+    ///   · `UPD_ALERTA_LEER` filtra por `@CLIENTE`, por `@USUARIO` y por el
+    ///     permiso del tipo de alerta. Un id ajeno no marca nada, y lo que
+    ///     marca lo marca **para el usuario de la sesión**. El id no es una
+    ///     llave: es un número que el procedimiento valida.
+    ///
+    ///   · El id ya estaba a la vista en la propia página: el panel escribe
+    ///     `sigmaAlertas.leer(123)` en el `onclick`. Cifrar en el viaje lo
+    ///     que está impreso en el HTML no agrega ninguna reja.
+    ///
+    ///   Y sí tenía un costo: el javascript no tiene con qué cifrar, así que
+    ///   el método era **imposible de llamar** desde el navegador. Nadie lo
+    ///   llamaba; el cliente que lo iba a usar quedó a medio escribir.
     /// </summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
@@ -101,7 +115,7 @@ public class WsAlertas : System.Web.Services.WebService
             if (!Token.TokenSeguridad())
                 throw new Exception("La sesión expiró.");
 
-            string plano = Tools.Crypto.Decrypt(datos);
+            string plano = datos == null ? "" : datos;
 
             AlertaController controller = new AlertaController();
             int marcadas = 0;
