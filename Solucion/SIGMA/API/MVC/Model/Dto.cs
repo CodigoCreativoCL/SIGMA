@@ -124,6 +124,27 @@ namespace API.MVC.Model
     }
 
 
+    /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
+    public class ActivoFichaEventoDto
+    {
+        public DateTime? FECHA { get; set; }
+        public string TIPO_EVENTO { get; set; }
+        public string TITULO { get; set; }
+        public string DETALLE { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+    }
+
+
+    /// <summary>Solicitud de cambio de estado de un activo (HU-038).</summary>
+    public class ActivoEstadoAltaDto
+    {
+        public int activo { get; set; }
+        public int estado { get; set; }
+        public string motivo { get; set; }
+        public int? orden_trabajo { get; set; }
+    }
+
+
     /// <summary>Solicitud de recuperación de contraseña (HU-004).</summary>
     public class RecuperacionDto
     {

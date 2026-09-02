@@ -18,15 +18,41 @@ namespace SitioBase.Model
     public class UnidadMedida
     {
         public int ume_id { get; set; }
+        public int ume_magnitud { get; set; }
+        public int? ume_unidad_base { get; set; }
         public string ume_codigo { get; set; }
         public string ume_nombre { get; set; }
         public string ume_simbolo { get; set; }
+        public decimal ume_factor { get; set; }
+        public decimal ume_offset { get; set; }
+        public System.DateTime? ume_fecha_creacion { get; set; }
+        public System.DateTime? ume_fecha_actualizacion { get; set; }
         public bool ume_habilitado { get; set; }
 
+        // Calculadas por SEL_UNIDAD_MEDIDA
         public string magnitud_nombre { get; set; }
-
+        public string unidad_base_nombre { get; set; }
         /// <summary>"Kilogramo (kg)". La arma el SP, no la pantalla.</summary>
         public string etiqueta { get; set; }
+        public string usuario_creacion_nombre { get; set; }
+        public string usuario_actualizacion_nombre { get; set; }
+
+        // Filtros / combos (HU-040)
+        public string filtro { get; set; }
+        public int filtro_magnitud { get; set; }
+        public bool? filtro_habilitado { get; set; }
+        public bool quita_base { get; set; }
+    }
+
+
+    /// <summary>Magnitud física (tiempo, longitud, temperatura…) para el combo de HU-040.</summary>
+    [Serializable]
+    public class Magnitud
+    {
+        public int mag_id { get; set; }
+        public string mag_codigo { get; set; }
+        public string mag_nombre { get; set; }
+        public bool mag_habilitado { get; set; }
     }
 
 
