@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Impresion/CentroEtiquetas.aspx" hash="fffffff3c3134113" filehash="4bcfb849414b2f72" flags="110000" assembly="App_Web_o4ibqyic" type="ASP.view_comun_impresion_centroetiquetas_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Impresion/CentroEtiquetas.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Impresion/CentroEtiquetas.aspx.cs" />
+    </filedeps>
+</preserve>

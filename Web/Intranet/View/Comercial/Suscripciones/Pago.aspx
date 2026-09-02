@@ -1,4 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Simple.master" AutoEventWireup="true" CodeFile="Pago.aspx.cs" Inherits="View_Comercial_Suscripciones_Pago" %>
+<%@ Register TagPrefix="wuc" TagName="Adjunto" Src="~/View/Comun/Controls/Adjunto.ascx" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <script type="text/javascript">
@@ -135,12 +136,22 @@
                             <div class="sigma-modal-valor"><asp:Label ID="lblOperacion" runat="server" /></div>
                         </div>
 
-                        <div class="sigma-modal-field">
+                        <%-- El comprobante, con Ver y Descargar.
+
+                             Antes era un LinkButton que solo bajaba: para
+                             revisar una transferencia había que descargar el
+                             PDF, abrirlo y después borrarlo del escritorio.
+                             El control lo abre en una pestaña.
+
+                             Va en ReadOnly: un pago declarado no cambia de
+                             comprobante. Si el que se subió está mal, se
+                             rechaza el pago y se declara de nuevo. --%>
+                        <div class="sigma-modal-field is-ancho">
                             <span class="sigma-modal-label">Comprobante</span>
-                            <div class="sigma-modal-valor">
-                                <asp:LinkButton ID="lnkComprobante" runat="server" Text="Descargar" OnClick="lnkComprobante_Click" />
-                                <asp:Label ID="lblComprobante" runat="server" />
-                            </div>
+                            <wuc:Adjunto runat="server" ID="wucComprobante"
+                                Modulo="comprobantes-pago"
+                                Categoria="12"
+                                ReadOnly="true" />
                         </div>
 
                         <div class="sigma-modal-field is-ancho">

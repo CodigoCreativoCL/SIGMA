@@ -192,7 +192,11 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
             if (cliente.cli_moneda != null)
                 cboMoneda.SelectedValue = cliente.cli_moneda.ToString();
 
-            if (cliente.cli_logo != null)
+            /* El logo, por URL desde Blob (bloque 100). Se conserva la rama
+               de la base64 por si quedara algun logo viejo en la columna. */
+            if (cliente.cli_archivo_logo != null && cliente.cli_archivo_logo.Value > 0)
+                imgLogo.ImageUrl = SitioBase.UrlArchivo.Ver(cliente.cli_archivo_logo.Value);
+            else if (cliente.cli_logo != null)
                 imgLogo.ImageUrl = "data:image/jpeg;base64," + Convert.ToBase64String(cliente.cli_logo, 0, cliente.cli_logo.Length);
             else
                 imgLogo.ImageUrl = string.Empty;
@@ -283,7 +287,11 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
                 // El logotipo solo se toca cuando el formulario adjunto uno.
                 if (fldLogo.HasFile)
                 {
-                    cliente.cli_logo = fldLogo.FileBytes;
+                    /* Va a Blob, no a la base. El id queda apuntado por
+                       UPD_CLIENTE_LOGO; cli_logo ya no se escribe. */
+                    new ClienteController().GuardarLogo(cliente.cli_id, fldLogo.FileName,
+                                                        fldLogo.FileBytes,
+                                                        fldLogo.PostedFile.ContentType);
                     cliente.cambia_logo = true;
                 }
 

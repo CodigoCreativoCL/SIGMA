@@ -290,6 +290,16 @@ namespace SitioBase.Model
         public DateTime imo_fecha_movimiento_utc { get; set; }
         public int? imo_orden_trabajo { get; set; }
         public int? imo_bodega_destino { get; set; }
+
+        /// <summary>
+        /// A que estante va: lo usa la REUBICACION (tipo 9).
+        ///
+        /// La columna y el parametro del SP existen desde el bloque 72; lo que
+        /// faltaba era esta propiedad, y sin ella el tipo 9 estaba creado en la
+        /// base y era inalcanzable desde la web.
+        /// </summary>
+        public int? imo_bodega_ubicacion_destino { get; set; }
+
         public string imo_observacion { get; set; }
 
         // Calculadas por SEL_INVENTARIO_MOVIMIENTO
@@ -363,6 +373,120 @@ namespace SitioBase.Model
                 return rlo_codigo + "  ·  vence " +
                        rlo_fecha_vencimiento.Value.ToString("dd-MM-yyyy") +
                        (vencido ? "  (VENCIDO)" : "");
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// UN CUBO CON EXISTENCIA (bloque 87).
+    ///
+    /// La existencia no vive en la bodega: vive en
+    /// (bodega, ubicacion, lote). Esa es la llave contra la que
+    /// INS_INVENTARIO_MOVIMIENTO valida el saldo de una salida.
+    ///
+    /// La pantalla mostraba el total de la BODEGA y validaba contra el CUBO,
+    /// y por eso podia decir "hay 340" y despues "hay 0" sin contradecirse:
+    /// eran dos preguntas distintas. Esta clase es la respuesta a la
+    /// pregunta que el SP realmente hace.
+    /// </summary>
+    [Serializable]
+    public class InventarioOrigen
+    {
+        public int? ubicacion_id { get; set; }
+        public string ubicacion_codigo { get; set; }
+        public string ubicacion_nombre { get; set; }
+
+        public int? lote_id { get; set; }
+        public string lote_codigo { get; set; }
+        public DateTime? lote_vence { get; set; }
+        public bool lote_vencido { get; set; }
+
+        public decimal cantidad { get; set; }
+        public string unidad { get; set; }
+
+        /// <summary>
+        /// El valor que viaja en el combo. Los dos ids juntos porque el cubo
+        /// son los dos: elegir solo el estante no alcanza cuando en el mismo
+        /// estante hay dos lotes del mismo repuesto.
+        ///
+        /// Formato "ubicacion|lote", con vacio para el nulo.
+        /// </summary>
+        public string clave
+        {
+            get
+            {
+                return (ubicacion_id.HasValue ? ubicacion_id.Value.ToString() : "") + "|" +
+                       (lote_id.HasValue ? lote_id.Value.ToString() : "");
+            }
+        }
+
+        /// <summary>
+        /// Lo que se lee en el combo: donde esta, cuanto hay y de que lote.
+        ///
+        /// La cantidad va en la etiqueta a proposito. El bodeguero elige de
+        /// donde sacar; si tiene que abrir otra pantalla para saber cual de
+        /// los dos estantes alcanza, va a elegir al azar.
+        /// </summary>
+        public string etiqueta
+        {
+            get
+            {
+                string texto = string.IsNullOrEmpty(ubicacion_codigo)
+                             ? "Sin ubicación" : ubicacion_codigo;
+
+                texto += "  ·  " + cantidad.ToString("N2");
+                if (!string.IsNullOrEmpty(unidad)) texto += " " + unidad;
+
+                if (!string.IsNullOrEmpty(lote_codigo))
+                {
+                    texto += "  ·  lote " + lote_codigo;
+
+                    if (lote_vencido) texto += " (VENCIDO)";
+                    else if (lote_vence.HasValue)
+                        texto += " vence " + lote_vence.Value.ToString("dd-MM-yyyy");
+                }
+
+                return texto;
+            }
+        }
+    }
+
+
+    /// <summary>
+    /// UNA ORDEN DE TRABAJO ABIERTA, PARA EL COMBO (bloque 87).
+    ///
+    /// El campo era una caja de texto de 10 caracteres donde se escribia el
+    /// id a mano. El SP validaba que existiera (error 14), pero recien al
+    /// final: se llenaba el formulario entero para enterarse de que el
+    /// numero estaba mal.
+    /// </summary>
+    [Serializable]
+    public class OrdenTrabajoCombo
+    {
+        public int orden_id { get; set; }
+        public string correlativo { get; set; }
+        public string titulo { get; set; }
+        public string estado { get; set; }
+        public string activo_codigo { get; set; }
+        public string activo_nombre { get; set; }
+        public DateTime? fecha_programada { get; set; }
+
+        /// <summary>
+        /// "OT-1042 · Cambio de rodamiento · BOMBA-01".
+        ///
+        /// El correlativo solo no dice nada: nadie recuerda que era la 1042.
+        /// </summary>
+        public string etiqueta
+        {
+            get
+            {
+                string texto = correlativo;
+
+                if (!string.IsNullOrEmpty(titulo)) texto += "  ·  " + titulo;
+                if (!string.IsNullOrEmpty(activo_codigo)) texto += "  ·  " + activo_codigo;
+
+                return texto;
             }
         }
     }

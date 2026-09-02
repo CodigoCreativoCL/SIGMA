@@ -95,7 +95,6 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnVerificar);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnRechazar);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnCorregir);
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkComprobante);
 
         udPanel.Update();
     }
@@ -175,7 +174,6 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
         lblFecha.Text = p.spa_fecha_transferencia.ToString("dd-MM-yyyy");
         lblBanco.Text = p.spa_banco;
         lblOperacion.Text = p.spa_numero_operacion;
-        lblComprobante.Text = "";
 
         lblPeriodo.Text = (p.spe_fecha_inicio != null && p.spe_fecha_fin != null)
             ? p.spe_fecha_inicio.Value.ToString("dd-MM-yyyy") + " al " +
@@ -248,13 +246,10 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
             txtOperacionCorregir.Text = p.spa_numero_operacion;
         }
 
-        // Sin almacenamiento no hay de dónde bajar el comprobante.
-        IAlmacenamiento almacenamiento = Almacenamiento.Actual();
-
-        lnkComprobante.Visible = almacenamiento.Disponible;
-
-        if (!almacenamiento.Disponible)
-            lblComprobante.Text = "No disponible: el almacenamiento no está configurado.";
+        /* El comprobante: el control resuelve nombre, peso, Ver y Descargar,
+           y tambien el caso de que el almacenamiento no responda. Antes esto
+           era un LinkButton que solo bajaba el archivo. */
+        wucComprobante.Mostrar(p.spa_archivo);
     }
 
     protected void btnDeclarar_Click(object sender, EventArgs e)
@@ -420,41 +415,6 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
     /// Entrega el comprobante. El binario nunca estuvo en la base: se pide
     /// al almacenamiento en el momento.
     /// </summary>
-    protected void lnkComprobante_Click(object sender, EventArgs e)
-    {
-        try
-        {
-            SuscripcionPagoController pagos = new SuscripcionPagoController();
-            SuscripcionPago p = pagos.GetPago(new SuscripcionPago { spa_id = Id });
-
-            if (p == null || p.spa_archivo == 0)
-                throw new Exception("Este pago no tiene comprobante registrado.");
-
-            ArchivoController archivos = new ArchivoController();
-
-            Archivo archivo = archivos.GetArchivo(new Archivo { arc_id = p.spa_archivo });
-            byte[] contenido = archivos.Descargar(p.spa_archivo);
-
-            Response.Clear();
-            Response.ContentType = string.IsNullOrEmpty(archivo.arc_mime)
-                ? "application/octet-stream"
-                : archivo.arc_mime;
-            Response.AddHeader("Content-Disposition",
-                "attachment; filename=\"" + archivo.arc_nombre_original + "\"");
-            Response.BinaryWrite(contenido);
-            Response.End();
-        }
-        catch (System.Threading.ThreadAbortException)
-        {
-            // Response.End() siempre lanza esta. No es un error.
-            throw;
-        }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message, "alerta");
-        }
-    }
-
     /// <summary>
     /// Lee un monto en pesos aceptando puntos de miles y coma o punto
     /// decimal. Quien copie el monto desde la cartola lo va a traer con

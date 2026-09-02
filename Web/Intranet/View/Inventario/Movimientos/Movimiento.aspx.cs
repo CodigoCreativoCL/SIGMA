@@ -16,9 +16,20 @@ using Telerik.Web.UI;
 ///   Tres pantallas casi iguales serían tres sitios donde arreglar el mismo
 ///   error, y el bodeguero tendría que saber de antemano en cuál entra.
 ///
-///   Lo que cambia según el tipo son los campos que se piden: el lote solo
-///   al ingresar, la orden solo al consumir o devolver, la bodega de
-///   destino solo al trasladar, y el motivo obligatorio solo al ajustar.
+/// LA PANTALLA MENTIA SOBRE LA EXISTENCIA (corregido, bloque 87)
+///   Mostraba "Existencia actual: 340,00 L" —el total de la BODEGA— y
+///   después INS_INVENTARIO_MOVIMIENTO validaba contra el CUBO
+///   (bodega, ubicación, lote), que tenía 0. Las dos cifras eran ciertas y
+///   se contradecían, así que el rechazo parecía un error del sistema.
+///
+///   Ahora en una salida no se eligen ubicación y lote por separado: se
+///   elige EL CUBO, de una lista que solo trae los que tienen existencia,
+///   con la cantidad al lado. Es la misma llave contra la que el SP valida,
+///   así que lo que se ve y lo que se comprueba son lo mismo.
+///
+/// EL FORMULARIO SIGUE UN ORDEN
+///   Qué se hace → qué repuesto → de dónde sale → cuánto → contra qué
+///   orden → por qué. Cada paso decide qué muestra el siguiente.
 ///
 /// CON Id > 0 ES SOLO LECTURA
 ///   Un movimiento no se edita: es el registro de algo que pasó.
@@ -40,6 +51,15 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
            un registro nuevo. */
         if (!IsPostBack)
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+
+        /* El puente del escaneo: la cámara escribe el código leído en el
+           campo oculto y dispara el botón oculto. Es el mismo mecanismo de
+           Escanear.aspx, y se registra en cada carga porque el UpdatePanel
+           regenera el script del cliente. */
+        string enlace = "sigmaEscaneo.idCampo = '" + hdnLeido.ClientID + "';" +
+                        "sigmaEscaneo.idBoton = '" + btnLeido.ClientID + "';";
+
+        ScriptManager.RegisterStartupScript(this, GetType(), "escaneo-enlace", enlace, true);
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -71,6 +91,13 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                         ctrl.Items.Add(new RadComboBoxItem("Ajuste positivo (sobra en el conteo)", "4"));
                         ctrl.Items.Add(new RadComboBoxItem("Ajuste negativo (falta en el conteo)", "5"));
                         ctrl.Items.Add(new RadComboBoxItem("Traslado a otra bodega", "6"));
+
+                        /* La reubicacion existia en la base desde el bloque 71
+                           y no estaba en esta lista: el tipo 9 era inalcanzable
+                           desde la web, asi que mover una pieza de estante solo
+                           se podia hacer entrando por SQL. */
+                        ctrl.Items.Add(new RadComboBoxItem("Cambio de ubicación (mismo depósito)", "9"));
+
                         ctrl.Items.Add(new RadComboBoxItem("Merma", "8"));
                     }
 
@@ -127,8 +154,56 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
         return int.TryParse(cboTipo.SelectedValue, out tipo) ? tipo : 0;
     }
 
+    private int RepuestoElegido()
+    {
+        int rep;
+        return int.TryParse(cboRepuesto.SelectedValue, out rep) ? rep : 0;
+    }
+
+    private int BodegaElegida()
+    {
+        int bod;
+        return int.TryParse(cboBodega.SelectedValue, out bod) ? bod : 0;
+    }
+
     /// <summary>
-    /// Muestra solo los campos que el tipo elegido necesita.
+    /// Sale mercadería: el saldo tiene que alcanzar y hay que decir de qué
+    /// cubo se saca.
+    /// </summary>
+    private bool EsSalida(int tipo)
+    {
+        return tipo == InventarioController.SALIDA_CONSUMO
+            || tipo == InventarioController.AJUSTE_NEGATIVO
+            || tipo == InventarioController.TRASLADO_SALIDA
+            || tipo == InventarioController.MERMA;
+    }
+
+    private bool EsEntrada(int tipo)
+    {
+        return tipo == InventarioController.INGRESO_COMPRA
+            || tipo == InventarioController.DEVOLUCION
+            || tipo == InventarioController.AJUSTE_POSITIVO;
+    }
+
+    /// <summary>
+    /// Cambio de estante dentro del mismo depósito (tipo 9).
+    ///
+    /// No entra ni sale nada: el total de la bodega queda igual y lo único
+    /// que cambia es de qué cubo a qué cubo. Por eso pide las dos cosas —de
+    /// dónde sale y a dónde va— y no pide costo ni orden.
+    ///
+    /// El origen PUEDE no tener estante: es justamente lo que hay que poder
+    /// reparar cuando queda existencia suelta —un traslado que llegó sin
+    /// ubicación, o el resto de la reconstrucción de saldos del bloque 71—.
+    /// </summary>
+    private bool EsReubicacion(int tipo)
+    {
+        return tipo == 9;
+    }
+
+    /// <summary>
+    /// Muestra solo los campos que el tipo elegido necesita, y arma el
+    /// recorrido del formulario.
     ///
     /// Pedirlos todos siempre obligaría al bodeguero a decidir cuáles
     /// ignorar, y ese es justo el momento en que se llena el que no
@@ -138,12 +213,22 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     {
         int tipo = TipoElegido();
 
-        bool esEntrada = (tipo == InventarioController.INGRESO_COMPRA
-                          || tipo == InventarioController.DEVOLUCION);
+        bool esEntrada = EsEntrada(tipo);
+        bool esSalida = EsSalida(tipo);
+        bool esReubicacion = EsReubicacion(tipo);
 
         bool esAjuste = (tipo == InventarioController.AJUSTE_POSITIVO
                          || tipo == InventarioController.AJUSTE_NEGATIVO
                          || tipo == InventarioController.MERMA);
+
+        /* Mientras no se elija el tipo no se muestra nada más: los campos
+           que aparecerían no se sabe todavía cuáles son. */
+        pnlPaso2.Visible = (tipo > 0);
+        pnlPaso3.Visible = (tipo > 0);
+        pnlPaso4.Visible = (tipo > 0);
+        pnlPaso6.Visible = (tipo > 0);
+
+        litAyudaTipo.Text = AyudaDelTipo(tipo);
 
         pnlDestino.Visible = (tipo == InventarioController.TRASLADO_SALIDA);
 
@@ -153,8 +238,34 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
         // El costo solo tiene sentido cuando entra mercadería.
         pnlCosto.Visible = esEntrada;
 
-        // El lote se exige al ingresar un repuesto que lo controla.
-        pnlLote.Visible = (tipo == InventarioController.INGRESO_COMPRA) && RepuestoControlaLote();
+        /* SALIDA: se elige el cubo de origen, que ya trae el lote adentro.
+           ENTRADA: se elige el estante libremente, porque el punto es dejar
+           la mercadería donde todavía no hay nada.
+           REUBICACION: las dos cosas, porque mueve de un cubo a otro. */
+        pnlOrigen.Visible = esSalida || esReubicacion;
+        pnlUbicacion.Visible = esEntrada || esReubicacion;
+
+        litRotuloLugar.Text = esReubicacion ? "De qué estante a cuál"
+                            : esSalida ? "De dónde sale"
+                            : esEntrada ? "Dónde queda" : "Dónde";
+
+        litRotuloUbicacion.Text = (tipo == InventarioController.TRASLADO_SALIDA || esReubicacion)
+                                ? "Ubicación de destino" : "Ubicación";
+
+        /* El lote se pide en TODA entrada de un repuesto que lo controla, no
+           solo en el ingreso por compra: INS_INVENTARIO_MOVIMIENTO lo exige
+           con el error 7 para cualquier entrada. Antes solo se ofrecía en el
+           ingreso, así que una devolución de un repuesto con lote no tenía
+           forma de completarse. */
+        pnlLote.Visible = esEntrada && RepuestoControlaLote();
+
+        /* El lote NUEVO solo al comprar: una devolución devuelve algo que ya
+           salió, y un ajuste positivo corrige una cuenta de algo que ya
+           estaba. En los dos casos el lote existe. */
+        bool loteNuevo = (tipo == InventarioController.INGRESO_COMPRA);
+
+        txtLoteNuevo.Visible = loteNuevo;
+        txtLoteVence.Visible = loteNuevo;
 
         if (esAjuste)
         {
@@ -167,13 +278,52 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
             litRotuloMotivo.Text = "Observación";
             litAyudaMotivo.Text = "Opcional.";
         }
+
+        // El último paso lleva el número que le toca según haya orden o no.
+        litNumeroMotivo.Text = pnlOrden.Visible ? "6" : "5";
+
+        MostrarSaldo();
+    }
+
+    /// <summary>
+    /// Qué significa cada tipo, junto al combo.
+    ///
+    /// "Merma" y "Ajuste negativo" descuentan los dos, y cuál corresponde no
+    /// se deduce del nombre: la merma es pérdida física conocida, el ajuste
+    /// es una diferencia de conteo que nadie sabe explicar.
+    /// </summary>
+    private string AyudaDelTipo(int tipo)
+    {
+        switch (tipo)
+        {
+            case InventarioController.INGRESO_COMPRA:
+                return "Llegó mercadería del proveedor.";
+            case InventarioController.SALIDA_CONSUMO:
+                return "Se entregó a un técnico para consumirla.";
+            case InventarioController.DEVOLUCION:
+                return "Vuelve a bodega lo que se entregó y no se usó.";
+            case InventarioController.AJUSTE_POSITIVO:
+                return "El conteo físico encontró más de lo que decía el sistema.";
+            case InventarioController.AJUSTE_NEGATIVO:
+                return "El conteo físico encontró menos, y no se sabe por qué.";
+            case InventarioController.TRASLADO_SALIDA:
+                return "Se mueve a otra bodega. Genera solo la entrada del otro lado.";
+            case InventarioController.MERMA:
+                return "Se perdió y se sabe cómo: se rompió, se venció, se derramó.";
+            case 9:
+                return "Se cambia de estante dentro del mismo depósito. No entra ni sale nada: " +
+                       "el total de la bodega queda igual. Sirve además para guardar en su " +
+                       "sitio lo que quedó suelto, sin estante.";
+            default:
+                return "Elija qué pasó y la pantalla pide solo lo que ese caso necesita.";
+        }
     }
 
     private bool RepuestoControlaLote()
     {
-        int rep;
+        int rep = RepuestoElegido();
 
-        if (!int.TryParse(cboRepuesto.SelectedValue, out rep) || rep == 0) return false;
+        if (rep == 0) return false;
 
         RepuestoController controller = new RepuestoController();
         return controller.GetRepuesto(rep).rep_controla_lote;
@@ -182,18 +332,34 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     protected void cboTipo_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
     {
         AjustarSegunTipo();
+        CargarLotes();
+        CargarOrigenes();
+        CargarOrdenes();
+
+        /* Otra vez y al final: AjustarSegunTipo ya lo llamo, pero en ese
+           momento el combo de origen todavia tenia los cubos del tipo
+           anterior. La cifra del saldo tiene que salir de la lista recien
+           armada, no de la que se acaba de reemplazar. */
+        MostrarSaldo();
     }
 
     protected void cboRepuesto_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
     {
         AjustarSegunTipo();
         CargarLotes();
+        CargarOrigenes();
         MostrarSaldo();
     }
 
     protected void cboBodega_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
     {
         CargarUbicaciones();
+        CargarOrigenes();
+        MostrarSaldo();
+    }
+
+    protected void cboOrigen_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
+    {
         MostrarSaldo();
     }
 
@@ -201,14 +367,20 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     {
         if (!pnlLote.Visible) return;
 
-        int rep;
+        int rep = RepuestoElegido();
 
-        if (!int.TryParse(cboRepuesto.SelectedValue, out rep) || rep == 0) return;
+        if (rep == 0) return;
 
         RepuestoController controller = new RepuestoController();
 
         cboLote.Items.Clear();
-        cboLote.Items.Add(new RadComboBoxItem("Lote nuevo (escríbalo abajo)", ""));
+
+        /* Al comprar puede no haber lote todavía; en el resto de las
+           entradas el lote existe sí o sí, así que no se ofrece la salida
+           de "escríbalo abajo" que ahí no lleva a ninguna parte. */
+        cboLote.Items.Add(new RadComboBoxItem(
+            txtLoteNuevo.Visible ? "Lote nuevo (escríbalo al lado)" : "Seleccione...", ""));
+
         cboLote.AppendDataBoundItems = true;
 
         /* Se listan TODOS, no solo los vigentes. Un lote vencido que sigue en
@@ -223,12 +395,17 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
     protected void CargarUbicaciones()
     {
-        int bod;
+        int bod = BodegaElegida();
 
         cboUbicacion.Items.Clear();
-        cboUbicacion.Items.Add(new RadComboBoxItem("Sin ubicación", ""));
 
-        if (!int.TryParse(cboBodega.SelectedValue, out bod) || bod == 0) return;
+        /* En una reubicación el destino es obligatorio —es lo único que el
+           movimiento hace—, así que no se ofrece "sin ubicación": sería
+           ofrecer dejar la pieza exactamente igual de suelta que antes. */
+        cboUbicacion.Items.Add(new RadComboBoxItem(
+            EsReubicacion(TipoElegido()) ? "Seleccione..." : "Sin ubicación", ""));
+
+        if (bod == 0) return;
 
         BodegaController controller = new BodegaController();
 
@@ -241,18 +418,98 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     }
 
     /// <summary>
-    /// Muestra la existencia actual junto a la bodega.
+    /// Los cubos con existencia, para una salida (bloque 87).
     ///
-    /// Es lo que evita el rechazo por saldo insuficiente antes de que
-    /// ocurra: el SP lo va a rechazar igual, pero enterarse después de
-    /// llenar el formulario completo es peor.
+    /// Es la corrección del defecto: antes se ofrecían las seis ubicaciones
+    /// de la bodega, la mercadería estaba en una sola, y el bodeguero se
+    /// enteraba recién al registrar.
+    /// </summary>
+    protected void CargarOrigenes()
+    {
+        if (!pnlOrigen.Visible) return;
+
+        cboOrigen.Items.Clear();
+
+        int rep = RepuestoElegido();
+        int bod = BodegaElegida();
+
+        if (rep == 0 || bod == 0)
+        {
+            cboOrigen.Items.Add(new RadComboBoxItem("Elija primero el repuesto y la bodega", ""));
+            return;
+        }
+
+        InventarioController controller = new InventarioController();
+        List<InventarioOrigen> origenes = controller.GetOrigenes(rep, bod);
+
+        if (origenes == null || origenes.Count == 0)
+        {
+            cboOrigen.Items.Add(new RadComboBoxItem("No hay existencia de este repuesto en esta bodega", ""));
+            return;
+        }
+
+        /* Un solo origen se elige solo. Obligar a abrir un desplegable con
+           una sola opción es pedir un clic que no decide nada. */
+        if (origenes.Count > 1)
+            cboOrigen.Items.Add(new RadComboBoxItem("Seleccione...", ""));
+
+        foreach (InventarioOrigen o in origenes)
+            cboOrigen.Items.Add(new RadComboBoxItem(o.etiqueta, o.clave));
+
+        cboOrigen.SelectedIndex = 0;
+    }
+
+    /// <summary>
+    /// Las órdenes de trabajo abiertas (bloque 87).
+    ///
+    /// Mientras el módulo de órdenes no exista la lista viene vacía, y eso
+    /// se dice con todas sus letras. Un combo vacío sin explicación se lee
+    /// como que la pantalla se rompió.
+    /// </summary>
+    protected void CargarOrdenes()
+    {
+        if (!pnlOrden.Visible) return;
+
+        InventarioController controller = new InventarioController();
+        List<OrdenTrabajoCombo> ordenes = controller.GetOrdenesAbiertas();
+
+        cboOrden.Items.Clear();
+
+        if (ordenes == null || ordenes.Count == 0)
+        {
+            cboOrden.Items.Add(new RadComboBoxItem("No hay órdenes de trabajo abiertas", ""));
+            cboOrden.Enabled = false;
+
+            litAyudaOrden.Text = "El movimiento se registra igual, sin asociar a ninguna orden. " +
+                                 "Cuando existan órdenes abiertas aparecerán acá.";
+            return;
+        }
+
+        cboOrden.Enabled = true;
+        cboOrden.Items.Add(new RadComboBoxItem("Sin orden", ""));
+
+        foreach (OrdenTrabajoCombo o in ordenes)
+            cboOrden.Items.Add(new RadComboBoxItem(o.etiqueta, o.orden_id.ToString()));
+
+        litAyudaOrden.Text = "El consumo queda registrado en la orden con su costo. " +
+                             "Devolver reduce lo consumido.";
+    }
+
+    /// <summary>
+    /// LO QUE HAY, DICHO SIN CONTRADECIRSE.
+    ///
+    /// Dos cifras y no una, porque son dos preguntas distintas y confundirlas
+    /// fue el defecto: el total de la bodega es lo que hay en total, y el
+    /// saldo del cubo es contra lo que el SP realmente valida.
     /// </summary>
     protected void MostrarSaldo()
     {
-        int rep, bod;
+        litSaldo.Text = "";
 
-        if (!int.TryParse(cboRepuesto.SelectedValue, out rep) || rep == 0) return;
-        if (!int.TryParse(cboBodega.SelectedValue, out bod) || bod == 0) return;
+        int rep = RepuestoElegido();
+        int bod = BodegaElegida();
+
+        if (rep == 0 || bod == 0) return;
 
         InventarioController controller = new InventarioController();
 
@@ -261,25 +518,176 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
         if (saldos == null || saldos.Count == 0)
         {
-            litSaldo.Text = "Sin existencia registrada en esta bodega.";
+            litSaldo.Text = "<i class=\"mdi mdi-information-outline\"></i> " +
+                            "Sin existencia registrada en esta bodega.";
             return;
         }
 
         InventarioSaldo s = saldos[0];
 
-        litSaldo.Text = "Existencia actual: <strong>" + s.isa_cantidad.ToString("N2") + " " +
-                        Server.HtmlEncode(s.unidad_simbolo) + "</strong>" +
-                        (s.bajo_minimo ? " · bajo el mínimo" : "");
+        string texto = "<i class=\"mdi mdi-warehouse\"></i> En toda la bodega: <strong>" +
+                       s.isa_cantidad.ToString("N2") + " " +
+                       Server.HtmlEncode(s.unidad_simbolo) + "</strong>" +
+                       (s.bajo_minimo ? " · bajo el mínimo" : "");
+
+        /* En una salida lo que decide es el cubo elegido, no el total. Se
+           dice cuánto hay AHI, que es la cifra contra la que el SP va a
+           comparar la cantidad. */
+        if (pnlOrigen.Visible)
+        {
+            InventarioOrigen o = OrigenElegido();
+
+            if (o != null)
+            {
+                texto += "<span class=\"sep\">·</span><i class=\"mdi mdi-map-marker\"></i> " +
+                         "De donde va a salir: <strong>" + o.cantidad.ToString("N2") + " " +
+                         Server.HtmlEncode(o.unidad) + "</strong> en " +
+                         Server.HtmlEncode(string.IsNullOrEmpty(o.ubicacion_codigo)
+                                           ? "sin ubicación" : o.ubicacion_codigo) +
+                         (string.IsNullOrEmpty(o.lote_codigo)
+                          ? "" : ", lote " + Server.HtmlEncode(o.lote_codigo));
+            }
+        }
+
+        litSaldo.Text = texto;
     }
 
     /// <summary>
-    /// La fecha de vencimiento del lote nuevo. Opcional: hay repuestos que
-    /// no vencen.
+    /// El cubo elegido en el combo de origen, releído de la base.
     ///
-    /// Mismos formatos que el resto del sitio. NO se rechaza una fecha
-    /// pasada: recibir un lote ya vencido pasa —llega tarde, o el proveedor
-    /// mandó lo que le quedaba— y el sistema tiene que poder registrarlo
-    /// para que alguien lo vea, no negarlo.
+    /// Se relee en vez de guardarlo en ViewState porque entre que se abrió
+    /// el combo y se aprieta Registrar alguien pudo sacar mercadería, y
+    /// mostrar la cifra de hace un minuto sería volver al mismo problema.
+    /// </summary>
+    private InventarioOrigen OrigenElegido()
+    {
+        string clave = cboOrigen.SelectedValue;
+
+        if (string.IsNullOrEmpty(clave) || clave.IndexOf('|') < 0) return null;
+
+        InventarioController controller = new InventarioController();
+        List<InventarioOrigen> origenes = controller.GetOrigenes(RepuestoElegido(), BodegaElegida());
+
+        if (origenes == null) return null;
+
+        foreach (InventarioOrigen o in origenes)
+            if (o.clave == clave) return o;
+
+        return null;
+    }
+
+    /// <summary>
+    /// Llegó una lectura de la cámara.
+    ///
+    /// Se aceptan las tres etiquetas que tienen sentido acá:
+    ///   REP-  el repuesto
+    ///   UBI-  el estante, que además resuelve la bodega
+    ///   BOD-  la bodega
+    ///
+    /// La de un activo (ACT-) no se rechaza en silencio: se explica que esa
+    /// etiqueta es de una máquina y no de un lugar de bodega.
+    /// </summary>
+    protected void btnLeido_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            string leido = hdnLeido.Value;
+            hdnLeido.Value = "";
+
+            if (string.IsNullOrEmpty(leido) || leido.Trim().Length == 0) return;
+
+            EtiquetaController lector = new EtiquetaController();
+
+            string tipo;
+            int id;
+
+            if (!lector.Interpretar(leido, out tipo, out id))
+                throw new Exception("No se reconoce «" + leido.Trim() +
+                                    "». Escanee la etiqueta de un repuesto (REP-), " +
+                                    "de un estante (UBI-) o de una bodega (BOD-).");
+
+            if (tipo == "ACT")
+                throw new Exception("Esa es la etiqueta de un activo. Acá se espera la de " +
+                                    "un repuesto, un estante o una bodega.");
+
+            if (tipo == "REP") SeleccionarRepuesto(id);
+            else if (tipo == "BOD") SeleccionarBodega(id, 0);
+            else SeleccionarUbicacion(id);
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+        finally
+        {
+            /* Se olvida el último código para que volver a escanear la misma
+               etiqueta funcione: si alguien reintenta es porque quiere que
+               vuelva a pasar algo. */
+            ScriptManager.RegisterStartupScript(this, GetType(), "escaneo-olvidar",
+                                                "if(window.sigmaEscaneo) sigmaEscaneo.olvidar();", true);
+        }
+    }
+
+    private void SeleccionarRepuesto(int id)
+    {
+        RadComboBoxItem item = cboRepuesto.FindItemByValue(id.ToString());
+
+        if (item == null)
+            throw new Exception("Ese repuesto no está habilitado o no es de su empresa.");
+
+        item.Selected = true;
+
+        AjustarSegunTipo();
+        CargarLotes();
+        CargarOrigenes();
+        MostrarSaldo();
+    }
+
+    private void SeleccionarBodega(int id, int ubicacion)
+    {
+        RadComboBoxItem item = cboBodega.FindItemByValue(id.ToString());
+
+        if (item == null)
+            throw new Exception("Esa bodega no está habilitada o no es de su empresa.");
+
+        item.Selected = true;
+
+        CargarUbicaciones();
+        CargarOrigenes();
+
+        if (ubicacion > 0)
+        {
+            RadComboBoxItem ubi = cboUbicacion.FindItemByValue(ubicacion.ToString());
+            if (ubi != null) ubi.Selected = true;
+
+            /* En una salida el combo no lista ubicaciones sino cubos, y en
+               el mismo estante puede haber dos lotes. Se elige el primero
+               que corresponda a esa ubicación —el que vence antes, porque
+               así viene ordenado— y si hay otro el bodeguero lo cambia. */
+            foreach (RadComboBoxItem c in cboOrigen.Items)
+            {
+                if (c.Value.StartsWith(ubicacion.ToString() + "|"))
+                {
+                    c.Selected = true;
+                    break;
+                }
+            }
+        }
+
+        MostrarSaldo();
+    }
+
+    private void SeleccionarUbicacion(int id)
+    {
+        BodegaController controller = new BodegaController();
+
+        List<BodegaUbicacion> lista = controller.GetUbicaciones(new BodegaUbicacion { bub_id = id });
+
+        if (lista == null || lista.Count == 0)
+            throw new Exception("Ese estante no existe o no es de su empresa.");
+
+        SeleccionarBodega(lista[0].bub_bodega, id);
+    }
 
     private decimal? LeerDecimal(string texto, string campo)
     {
@@ -302,13 +710,12 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
             if (tipo == 0) throw new Exception("Indique qué movimiento va a registrar.");
 
-            int repuesto, bodega;
+            int repuesto = RepuestoElegido();
+            int bodega = BodegaElegida();
+            int aux;
 
-            if (!int.TryParse(cboRepuesto.SelectedValue, out repuesto) || repuesto == 0)
-                throw new Exception("Indique el repuesto.");
-
-            if (!int.TryParse(cboBodega.SelectedValue, out bodega) || bodega == 0)
-                throw new Exception("Indique la bodega.");
+            if (repuesto == 0) throw new Exception("Indique el repuesto.");
+            if (bodega == 0) throw new Exception("Indique la bodega.");
 
             decimal? cantidad = LeerDecimal(txtCantidad.Text, "cantidad");
 
@@ -323,10 +730,45 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
             entidad.imo_observacion = txtObservacion.Text.Trim();
             entidad.imo_costo_unitario = pnlCosto.Visible ? LeerDecimal(txtCosto.Text, "costo unitario") : null;
 
-            int aux;
+            /* SALIDA: la ubicación y el lote salen los dos del cubo elegido.
+               Mandarlos por separado fue lo que produjo el rechazo con "hay
+               340" en pantalla: se combinaba un estante con un lote que en
+               ese estante no estaba. */
+            if (pnlOrigen.Visible)
+            {
+                InventarioOrigen origen = OrigenElegido();
 
-            if (int.TryParse(cboUbicacion.SelectedValue, out aux) && aux > 0)
+                if (origen == null)
+                    throw new Exception("Indique de dónde sale. Si la lista está vacía, " +
+                                        "este repuesto no tiene existencia en esta bodega.");
+
+                if (origen.cantidad < cantidad.Value)
+                    throw new Exception("Ahí hay " + origen.cantidad.ToString("N2") + " " +
+                                        origen.unidad + " y se intenta sacar " +
+                                        cantidad.Value.ToString("N2") + ". " +
+                                        "Elija otro origen o baje la cantidad.");
+
+                entidad.imo_bodega_ubicacion = origen.ubicacion_id;
+                entidad.imo_repuesto_lote = origen.lote_id;
+
+                /* REUBICACION: el origen ya está resuelto arriba y acá se
+                   agrega a dónde va. Es el único tipo que usa los dos
+                   campos de ubicación a la vez. */
+                if (EsReubicacion(tipo))
+                {
+                    if (!int.TryParse(cboUbicacion.SelectedValue, out aux) || aux == 0)
+                        throw new Exception("Indique a qué ubicación se cambia.");
+
+                    if (origen.ubicacion_id.HasValue && origen.ubicacion_id.Value == aux)
+                        throw new Exception("La ubicación de destino es la misma de origen.");
+
+                    entidad.imo_bodega_ubicacion_destino = aux;
+                }
+            }
+            else if (int.TryParse(cboUbicacion.SelectedValue, out aux) && aux > 0)
+            {
                 entidad.imo_bodega_ubicacion = aux;
+            }
 
             if (pnlDestino.Visible)
             {
@@ -336,24 +778,20 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                 entidad.imo_bodega_destino = aux;
             }
 
-            if (pnlOrden.Visible && !string.IsNullOrEmpty(txtOrden.Text.Trim()))
-            {
-                if (!int.TryParse(txtOrden.Text.Trim(), out aux))
-                    throw new Exception("La orden de trabajo debe ser un número.");
-
+            if (pnlOrden.Visible && int.TryParse(cboOrden.SelectedValue, out aux) && aux > 0)
                 entidad.imo_orden_trabajo = aux;
-            }
 
-            /* El lote: si eligió uno existente va ese; si escribió un código
-               nuevo se crea antes del movimiento. Crearlo después dejaría un
-               movimiento apuntando a un lote que todavía no existe. */
+            /* El lote de una ENTRADA: si eligió uno existente va ese; si
+               escribió un código nuevo se crea antes del movimiento. Crearlo
+               después dejaría un movimiento apuntando a un lote que todavía
+               no existe. */
             if (pnlLote.Visible)
             {
                 if (int.TryParse(cboLote.SelectedValue, out aux) && aux > 0)
                 {
                     entidad.imo_repuesto_lote = aux;
                 }
-                else if (!string.IsNullOrEmpty(txtLoteNuevo.Text.Trim()))
+                else if (txtLoteNuevo.Visible && !string.IsNullOrEmpty(txtLoteNuevo.Text.Trim()))
                 {
                     RepuestoController ctrlRep = new RepuestoController();
 
@@ -379,9 +817,13 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
                     entidad.imo_repuesto_lote = lote.codigo;
                 }
-                else
+                else if (txtLoteNuevo.Visible)
                 {
                     throw new Exception("Este repuesto controla lote: elija uno o escriba el código del lote nuevo.");
+                }
+                else
+                {
+                    throw new Exception("Este repuesto controla lote: elija a qué lote entra.");
                 }
             }
 

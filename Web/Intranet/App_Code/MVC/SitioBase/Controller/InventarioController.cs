@@ -202,6 +202,130 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// De donde se puede sacar: los cubos (ubicacion, lote) con
+        /// existencia de un repuesto en una bodega (bloque 87).
+        ///
+        /// Es lo que la pantalla del movimiento tiene que ofrecer en una
+        /// salida. Ofrecer las seis ubicaciones de la bodega cuando la
+        /// mercaderia esta en una es hacer que el bodeguero adivine, y el
+        /// rechazo del SP llega despues de llenar todo el formulario.
+        /// </summary>
+        public List<InventarioOrigen> GetOrigenes(int repuesto, int bodega, bool soloConSaldo = true)
+        {
+            List<InventarioOrigen> lista = new List<InventarioOrigen>();
+
+            if (repuesto <= 0 || bodega <= 0) return lista;
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_INVENTARIO_ORIGEN";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@REPUESTO", repuesto);
+                    cmd.Parameters.AddWithValue("@BODEGA", bodega);
+                    cmd.Parameters.AddWithValue("@SOLO_CON_SALDO", soloConSaldo);
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            InventarioOrigen item = new InventarioOrigen();
+
+                            if (dr["UBICACION_ID"] != DBNull.Value)
+                                item.ubicacion_id = int.Parse(dr["UBICACION_ID"].ToString());
+                            if (dr["LOTE_ID"] != DBNull.Value)
+                                item.lote_id = int.Parse(dr["LOTE_ID"].ToString());
+                            if (dr["LOTE_VENCE"] != DBNull.Value)
+                                item.lote_vence = DateTime.Parse(dr["LOTE_VENCE"].ToString());
+
+                            item.ubicacion_codigo = dr["UBICACION_CODIGO"].ToString();
+                            item.ubicacion_nombre = dr["UBICACION_NOMBRE"].ToString();
+                            item.lote_codigo = dr["LOTE_CODIGO"].ToString();
+                            item.lote_vencido = (dr["LOTE_VENCIDO"].ToString() == "1"
+                                              || dr["LOTE_VENCIDO"].ToString() == "True");
+                            item.cantidad = decimal.Parse(dr["CANTIDAD"].ToString());
+                            item.unidad = dr["UNIDAD"].ToString();
+
+                            lista.Add(item);
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    if (cmd.Connection != null) cmd.Connection.Close();
+                    cmd.Dispose();
+                    lista = null;
+                }
+            }
+
+            return lista;
+        }
+
+
+        /// <summary>
+        /// Las ordenes de trabajo abiertas, para el combo del consumo
+        /// (bloque 87).
+        ///
+        /// Devuelve lista vacia mientras el modulo de ordenes no exista. La
+        /// pantalla lo dice con todas sus letras en vez de dejar un combo
+        /// vacio sin explicacion.
+        /// </summary>
+        public List<OrdenTrabajoCombo> GetOrdenesAbiertas(int activo = 0)
+        {
+            List<OrdenTrabajoCombo> lista = new List<OrdenTrabajoCombo>();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_ORDEN_TRABAJO_COMBO";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    if (activo > 0) cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            OrdenTrabajoCombo item = new OrdenTrabajoCombo();
+
+                            item.orden_id = int.Parse(dr["ORDEN_ID"].ToString());
+                            item.correlativo = dr["CORRELATIVO"].ToString();
+                            item.titulo = dr["TITULO"].ToString();
+                            item.estado = dr["ESTADO"].ToString();
+                            item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
+                            item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
+
+                            if (dr["FECHA_PROGRAMADA"] != DBNull.Value)
+                                item.fecha_programada = DateTime.Parse(dr["FECHA_PROGRAMADA"].ToString());
+
+                            lista.Add(item);
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    if (cmd.Connection != null) cmd.Connection.Close();
+                    cmd.Dispose();
+                    lista = null;
+                }
+            }
+
+            return lista;
+        }
+
+
         public List<InventarioMovimiento> GetMovimientos(InventarioMovimiento filtro = null)
         {
             List<InventarioMovimiento> lista = new List<InventarioMovimiento>();
@@ -328,6 +452,16 @@ namespace SitioBase.Controller
                         entidad.imo_orden_trabajo.HasValue ? (object)entidad.imo_orden_trabajo.Value : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@BODEGA_DESTINO",
                         entidad.imo_bodega_destino.HasValue ? (object)entidad.imo_bodega_destino.Value : DBNull.Value);
+
+                    /* La ubicacion de destino: la usa la REUBICACION (tipo 9).
+                       El parametro existe en el SP desde el bloque 72 y no se
+                       enviaba desde aca, asi que el tipo 9 estaba creado en la
+                       base y era inalcanzable desde la web: no habia forma de
+                       mover una pieza de estante sin entrar por SQL. */
+                    cmdExecute.Parameters.AddWithValue("@UBICACION_DESTINO",
+                        entidad.imo_bodega_ubicacion_destino.HasValue
+                            ? (object)entidad.imo_bodega_ubicacion_destino.Value : DBNull.Value);
+
                     cmdExecute.Parameters.AddWithValue("@OBSERVACION", (object)entidad.imo_observacion ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
 

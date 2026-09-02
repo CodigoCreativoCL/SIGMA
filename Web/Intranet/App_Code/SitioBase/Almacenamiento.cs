@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Security.Cryptography;
 using System.Text;
+using System.Web;
 using System.Web.Script.Serialization;
 
 namespace SitioBase
@@ -115,162 +116,89 @@ namespace SitioBase
 
 
     /// <summary>
-    /// Cliente de la API de servicios Azure.
+    /// Almacenamiento a traves de la API de servicios (Services.cs).
     ///
-    /// ESTADO: PREPARADO, NO CONECTADO.
-    ///   La API todavía no existe. El código de las tres operaciones está
-    ///   escrito completo -es lo que hay que enchufar cuando esté- pero
-    ///   Disponible devuelve falso mientras Web.config siga con el valor de
-    ///   marcador, y Subir se niega en vez de intentar.
+    /// ESTADO: CONECTADO.
+    ///   Hasta el 01-09 esta clase tenia su propio WebClient y su propia
+    ///   forma de armar la ruta. Eso se mudo entero a `Services.cs`, que es
+    ///   la unica puerta de la web hacia la API: dos clientes HTTP para el
+    ///   mismo servicio son dos sitios donde arreglar el mismo error el dia
+    ///   que cambie la autenticacion.
     ///
-    ///   No se escribe a disco local como sustituto provisorio. Un
-    ///   provisorio que funciona es un provisorio que se queda: quedaría un
-    ///   comprobante de pago en el disco de un servidor que nadie respalda
-    ///   y que la app móvil no puede leer. Es mejor que la pantalla diga
-    ///   "todavía no se puede adjuntar" y que eso duela hasta que la API
-    ///   esté.
+    ///   Lo que queda aca es la implementacion de IAlmacenamiento, para que
+    ///   ArchivoController y las pantallas que ya preguntan por `Disponible`
+    ///   sigan funcionando sin cambiar una linea.
     ///
-    /// CONTRATO ESPERADO (ajustar cuando la API se defina)
-    ///   POST   {url}/archivo    multipart o JSON con base64
-    ///                           -> { "ruta": "...", "hash": "...", "tamano": 0 }
-    ///   GET    {url}/archivo?ruta=...   -> el binario
-    ///   DELETE {url}/archivo?ruta=...
-    ///
-    ///   Autenticación por cabecera X-Api-Key. Si la API termina usando
-    ///   otra cosa, lo único que cambia es Preparar().
+    /// LA WEB NO CONOCE EL SAS
+    ///   Solo la API lo tiene. Rotarlo es tocar una configuracion y no dos.
     /// </summary>
     public class AlmacenamientoApi : IAlmacenamiento
     {
-        private const string MARCADOR = "PENDIENTE";
-
-        private string Url()
-        {
-            return ConfigurationManager.AppSettings["AlmacenamientoApiUrl"];
-        }
-
-        private string Clave()
-        {
-            return ConfigurationManager.AppSettings["AlmacenamientoApiKey"];
-        }
-
-        private string Contenedor()
-        {
-            string valor = ConfigurationManager.AppSettings["AlmacenamientoContenedor"];
-            return string.IsNullOrEmpty(valor) ? "sigma" : valor;
-        }
-
         public bool Disponible
         {
-            get
-            {
-                string url = Url();
-
-                if (string.IsNullOrEmpty(url)) return false;
-                if (url.IndexOf(MARCADOR, StringComparison.OrdinalIgnoreCase) >= 0) return false;
-
-                return true;
-            }
+            get { return Services.Disponible; }
         }
 
         public string Motivo
         {
-            get
-            {
-                if (Disponible) return "";
-
-                return "El almacenamiento de archivos todavía no está configurado. " +
-                       "La API de servicios Azure aún no existe y en Web.config " +
-                       "AlmacenamientoApiUrl sigue con su valor de marcador.";
-            }
+            get { return Services.Motivo; }
         }
 
         public ResultadoSubida Subir(int cliente, string carpeta, string nombreOriginal, byte[] contenido, string mime)
         {
-            if (contenido == null || contenido.Length == 0)
-                throw new Exception("El archivo está vacío.");
+            if (!Disponible) throw new Exception(Motivo);
 
-            if (!Disponible)
-                throw new Exception(Motivo);
-
-            string nombreAlmacenado = Almacenamiento.NombreAlmacenado(nombreOriginal);
-
-            /* La ruta la propone la web y la confirma la API. Se arma con el
-               cliente adentro para que un contenedor mal configurado no
-               termine mezclando comprobantes de dos empresas en la misma
-               carpeta. */
-            string ruta = Contenedor() + "/" + cliente.ToString() + "/" +
-                          (string.IsNullOrEmpty(carpeta) ? "otros" : carpeta) + "/" +
-                          nombreAlmacenado;
-
-            Dictionary<string, object> cuerpo = new Dictionary<string, object>();
-            cuerpo["ruta"] = ruta;
-            cuerpo["nombre_original"] = nombreOriginal;
-            cuerpo["mime"] = mime;
-            cuerpo["contenido_base64"] = Convert.ToBase64String(contenido);
-
-            JavaScriptSerializer js = new JavaScriptSerializer();
-            js.MaxJsonLength = 64 * 1024 * 1024;
-
-            string respuesta;
-
-            using (WebClient wc = Preparar())
-            {
-                wc.Headers[HttpRequestHeader.ContentType] = "application/json";
-                respuesta = wc.UploadString(Url().TrimEnd('/') + "/archivo", "POST", js.Serialize(cuerpo));
-            }
-
-            Dictionary<string, object> raiz = js.Deserialize<Dictionary<string, object>>(respuesta);
-
-            if (raiz == null || !raiz.ContainsKey("ruta"))
-                throw new Exception("El almacenamiento no devolvió la ruta del archivo.");
-
-            ResultadoSubida resultado = new ResultadoSubida();
-
-            resultado.ruta = Convert.ToString(raiz["ruta"]);
-            resultado.nombre_almacenado = nombreAlmacenado;
-            resultado.tamano = contenido.LongLength;
-            resultado.mime = mime;
-            resultado.extension = Path.GetExtension(nombreOriginal);
-
-            /* El hash se calcula acá aunque la API también lo devuelva: es
-               el del contenido que efectivamente se envió. */
-            resultado.hash = Almacenamiento.Hash(contenido);
-
-            return resultado;
+            return ServicioArchivos.Subir(cliente, NombreCliente(cliente), carpeta,
+                                          nombreOriginal, contenido, mime);
         }
 
         public byte[] Descargar(string ruta)
         {
             if (!Disponible) throw new Exception(Motivo);
-            if (string.IsNullOrEmpty(ruta)) throw new Exception("Falta la ruta del archivo.");
 
-            using (WebClient wc = Preparar())
-            {
-                return wc.DownloadData(Url().TrimEnd('/') + "/archivo?ruta=" + Uri.EscapeDataString(ruta));
-            }
+            return ServicioArchivos.Descargar(ruta);
         }
 
         public void Eliminar(string ruta)
         {
             if (!Disponible) throw new Exception(Motivo);
-            if (string.IsNullOrEmpty(ruta)) throw new Exception("Falta la ruta del archivo.");
 
-            using (WebClient wc = Preparar())
-            {
-                wc.UploadString(Url().TrimEnd('/') + "/archivo?ruta=" + Uri.EscapeDataString(ruta), "DELETE", "");
-            }
+            ServicioArchivos.Eliminar(ruta);
         }
 
-        private WebClient Preparar()
+        /// <summary>
+        /// El nombre del cliente, para que la carpeta se pueda leer.
+        ///
+        /// Se guarda en HttpContext.Items: subir tres adjuntos en la misma
+        /// peticion consultaria tres veces lo mismo. Si no se puede resolver
+        /// se devuelve vacio y la carpeta queda solo con el id, que es feo
+        /// pero correcto: mejor eso que fallar la subida por el nombre.
+        /// </summary>
+        private string NombreCliente(int cliente)
         {
-            WebClient wc = new WebClient();
+            string clave = "sigma-cliente-nombre-" + cliente;
 
-            wc.Encoding = Encoding.UTF8;
+            if (HttpContext.Current != null && HttpContext.Current.Items[clave] != null)
+                return Convert.ToString(HttpContext.Current.Items[clave]);
 
-            string clave = Clave();
-            if (!string.IsNullOrEmpty(clave)) wc.Headers["X-Api-Key"] = clave;
+            string nombre = "";
 
-            return wc;
+            try
+            {
+                global::SitioBase.Controller.ClienteController controller = new global::SitioBase.Controller.ClienteController();
+                global::SitioBase.Model.Cliente c = controller.GetCliente(
+                    new global::SitioBase.Model.Cliente { cli_id = cliente });
+
+                if (c != null) nombre = c.cli_nombre;
+            }
+            catch (Exception)
+            {
+                // Queda el id solo.
+            }
+
+            if (HttpContext.Current != null) HttpContext.Current.Items[clave] = nombre;
+
+            return nombre;
         }
     }
 }

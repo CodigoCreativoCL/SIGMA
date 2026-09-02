@@ -185,17 +185,30 @@
 .sigma-modal-grid > .is-mini   { grid-column: span 2; }  /* ID, un numero corto   */
 .sigma-modal-grid > .is-chico  { grid-column: span 3; }  /* codigo, fecha, cantidad */
 .sigma-modal-grid > .is-medio  { grid-column: span 4; }  /* explicito, por claridad */
+.sigma-modal-grid > .is-cinco  { grid-column: span 5; }  /* un grupo de casillas   */
 .sigma-modal-grid > .is-mitad  { grid-column: span 6; }
 .sigma-modal-grid > .is-grande { grid-column: span 8; }
 .sigma-modal-grid > .is-ancho  { grid-column: 1 / -1; }  /* observaciones, textos largos */
 
 /* En un modal angosto doce columnas serian doce columnas de 20px.
-   Se pasa a seis, y lo que era un tercio pasa a ser la mitad. */
+   Se pasa a seis, y lo que era un tercio pasa a ser la mitad.
+
+   is-medio Y is-cinco TAMBIEN SE REDEFINEN, Y ANTES NO
+
+     is-medio se quedaba en span 4 de 6 -dos tercios- mientras el campo
+     sin clase pasaba a span 3 -la mitad-. O sea que por debajo de 1100px
+     un campo "medio" era MAS ANCHO que uno normal, y una fila pensada
+     como 4+4+4 se partia en cualquier parte.
+
+     No daba error: daba una ficha descuadrada solo en pantallas chicas,
+     que es donde nadie mira al maquetar. */
 @media (max-width: 1100px) {
     .sigma-modal-grid { grid-template-columns: repeat(6, minmax(0, 1fr)); }
     .sigma-modal-grid > .sigma-modal-field { grid-column: span 3; }
     .sigma-modal-grid > .is-mini  { grid-column: span 2; }
     .sigma-modal-grid > .is-chico { grid-column: span 2; }
+    .sigma-modal-grid > .is-medio { grid-column: span 3; }
+    .sigma-modal-grid > .is-cinco,
     .sigma-modal-grid > .is-grande,
     .sigma-modal-grid > .is-mitad { grid-column: span 6; }
 }
@@ -289,6 +302,56 @@
     flex: 0 0 auto;
     margin: 0;
     vertical-align: middle;
+}
+
+/* NO ALCANZABA CON PONER EL CONTENEDOR EN FLEX
+
+     Envolver el control en .sigma-modal-fecha ordenaba el caso simple
+     —<input> y <a> como hermanos directos— pero el icono seguía cayendo
+     debajo en las fichas donde el control se renderiza envuelto: los dos
+     Calendar del proyecto son controles distintos, WebControls.Calendar es
+     un DateBox del PopCalendar y WebControls.Calendar2 es un RadDatePicker
+     de Telerik, y el segundo se dibuja dentro de una <table>.
+
+     Una tabla es un bloque: como hijo de un flex ocupa su propia línea y
+     arrastra el icono con ella, así que la fila se rompía igual. Estas
+     reglas no dependen de cuál de los dos sea: se aplanan los envoltorios
+     —tabla, fila, celda y <span> del RadInput— a elementos de línea, y
+     cualquier <br> que el control emita deja de cortar.
+
+     Se hace por estructura y no por clase de Telerik a propósito: las
+     clases de skin cambian entre versiones, y una hoja que depende de
+     ellas se rompe en la actualización sin avisar. */
+.sigma-modal-fecha > * {
+    flex: 0 0 auto;
+    vertical-align: middle;
+}
+
+.sigma-modal-fecha table,
+.sigma-modal-fecha tbody,
+.sigma-modal-fecha tr,
+.sigma-modal-fecha td,
+.sigma-modal-fecha > span {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    vertical-align: middle;
+}
+
+.sigma-modal-fecha br {
+    display: none;
+}
+
+/* El icono, del tamaño del campo y no del tamaño del gif. */
+.sigma-modal-fecha a img,
+.sigma-modal-fecha input[type="image"] {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
 }
 
 .sigma-modal-field > .sigma-modal-valor {
@@ -685,4 +748,286 @@
 .col-12.sigma-form-seccion {
     padding-left: 15px;
     padding-right: 15px;
+}
+
+
+/* ============================================================================
+   EL FORMULARIO COMO UN RECORRIDO (bloque 87)
+
+     El movimiento de inventario pedia siete campos en una sola rejilla, sin
+     decir cual dependia de cual. El tipo decide si hay lote, si hay orden y
+     si hay bodega de destino, pero estaba al mismo nivel que el resto.
+
+     El numero delante del rotulo dice que hay un orden y cual es. No es
+     decoracion: los pasos 2 en adelante aparecen recien cuando el paso 1
+     esta contestado.
+   ============================================================================ */
+
+.sigma-form-seccion > .titulo .paso {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--sg-purple);
+    color: #FFF;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0;
+    flex: 0 0 auto;
+}
+
+
+/* ============================================================================
+   EL BOTON DE ESCANEO, PEGADO A SU CAMPO
+
+     Va al lado del combo y no debajo, porque es otra forma de contestar el
+     MISMO campo, no un campo aparte. Debajo se leeria como un paso mas.
+   ============================================================================ */
+
+.sigma-campo-escaneo {
+    display: flex;
+    align-items: stretch;
+    gap: 6px;
+}
+
+.sigma-campo-escaneo > .RadComboBox,
+.sigma-campo-escaneo > span:first-child {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.sigma-btn-escaneo {
+    flex: 0 0 auto;
+    width: 38px;
+    border: 1px solid var(--sg-border);
+    border-radius: 8px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-purple);
+    cursor: pointer;
+    transition: background .15s ease, border-color .15s ease;
+}
+
+.sigma-btn-escaneo:hover {
+    background: #F3F1FF;
+    border-color: var(--sg-purple);
+}
+
+.sigma-btn-escaneo i {
+    font-size: 19px;
+    line-height: 1;
+}
+
+
+/* ============================================================================
+   LAS DOS CIFRAS DE LA EXISTENCIA
+
+     El total de la bodega y el saldo del cubo del que se va a sacar. Van
+     juntas y separadas por un punto porque responden preguntas distintas, y
+     confundirlas fue el defecto: la pantalla mostraba una y el procedimiento
+     validaba la otra.
+   ============================================================================ */
+
+.sigma-saldo-caja {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 6px;
+    min-height: 20px;
+    font-size: 12px;
+    color: var(--sg-text-secondary);
+}
+
+.sigma-saldo-caja:empty {
+    display: none;
+}
+
+.sigma-saldo-caja i {
+    font-size: 15px;
+    color: var(--sg-purple);
+}
+
+.sigma-saldo-caja .sep {
+    color: var(--sg-border);
+    margin: 0 4px;
+}
+
+.sigma-saldo-caja strong {
+    color: var(--sg-text-primary);
+}
+
+
+/* ============================================================================
+   EL DOCUMENTO ADJUNTO
+
+     Un archivo adjunto no es un dato mas del formulario: es la constancia de
+     algo. Se le da una caja propia para que se vea que esta —o que falta— sin
+     tener que leer.
+
+     Ver y Descargar son <a> de verdad y no botones: un LinkButton con target
+     _blank pierde el postback y no abre nada, y un postback que escribe un
+     binario rompe el UpdatePanel, que espera un fragmento y recibe un PDF.
+   ============================================================================ */
+
+.sigma-adjunto-archivo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    background: var(--sg-surface-subtle);
+    border: 1px solid var(--sg-border);
+    border-radius: 10px;
+}
+
+.sigma-adjunto-archivo > .icono {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    background: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    color: var(--sg-purple);
+}
+
+.sigma-adjunto-archivo > .icono i {
+    font-size: 18px;
+}
+
+.sigma-adjunto-archivo > .texto {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sigma-adjunto-archivo .nombre {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-text-primary);
+    /* Un nombre largo empujaria los botones fuera de la caja. */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigma-adjunto-archivo .meta {
+    font-size: 11px;
+    color: var(--sg-text-muted);
+}
+
+.sigma-adjunto-archivo > .acciones {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Sin adjunto: se dice, no se deja el hueco en blanco. Un espacio vacio se
+   lee como que la pantalla no termino de cargar. */
+.sigma-adjunto-vacio {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border: 1px dashed var(--sg-border);
+    border-radius: 10px;
+    font-size: 12px;
+    color: var(--sg-text-muted);
+}
+
+.sigma-adjunto-vacio i {
+    font-size: 17px;
+}
+
+@media (max-width: 640px) {
+    .sigma-adjunto-archivo {
+        flex-wrap: wrap;
+    }
+
+    .sigma-adjunto-archivo > .acciones {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
+
+/* ============================================================================
+   LOS TRES NUMEROS DE PERMISOS VIGENTES
+
+     Alguien entra a esa pantalla con una pregunta -"tengo algo vencido?"- y
+     la respuesta cabe en un numero. Contar filas para saberlo es hacerle el
+     trabajo al reves.
+
+     Son BOTONES y no cifras: quien ve un 3 en rojo quiere ver esos tres, no
+     leer la lista completa buscandolos.
+   ============================================================================ */
+
+.sg-resumen-permisos {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.sg-resumen-tarjeta {
+    flex: 1 1 160px;
+    display: flex !important;
+    flex-direction: column;
+    gap: 2px;
+    padding: 14px 18px;
+    border: 1px solid var(--sg-border);
+    border-left-width: 4px;
+    border-radius: 10px;
+    background: var(--sg-surface);
+    text-decoration: none !important;
+    transition: box-shadow .15s ease, transform .15s ease;
+}
+
+.sg-resumen-tarjeta:hover {
+    box-shadow: var(--sg-shadow-card);
+    transform: translateY(-1px);
+}
+
+.sg-resumen-tarjeta .numero {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--sg-text-primary);
+}
+
+.sg-resumen-tarjeta .rotulo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    color: var(--sg-text-secondary);
+}
+
+.sg-resumen-tarjeta .rotulo i {
+    font-size: 14px;
+}
+
+/* El color va en el borde y en el icono, no en el numero: un "0" en rojo
+   grande se lee como un problema, y cero vencidos es la buena noticia. */
+.sg-resumen-tarjeta.is-alerta       { border-left-color: var(--sg-danger); }
+.sg-resumen-tarjeta.is-alerta .rotulo i { color: var(--sg-danger); }
+
+.sg-resumen-tarjeta.is-advertencia  { border-left-color: var(--sg-warning); }
+.sg-resumen-tarjeta.is-advertencia .rotulo i { color: var(--sg-warning); }
+
+.sg-resumen-tarjeta.is-exito        { border-left-color: var(--sg-success); }
+.sg-resumen-tarjeta.is-exito .rotulo i { color: var(--sg-success); }
+
+@media (max-width: 640px) {
+    .sg-resumen-tarjeta {
+        flex: 1 1 100%;
+    }
 }

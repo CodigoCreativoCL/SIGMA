@@ -525,53 +525,6 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
-        // Listado de Usuarios no asignados a una Instalacion
-
-        public List<ClienteUsuario> GetUsuariosGeolocalizacion(ClienteUsuario usuario)
-        {
-            List<ClienteUsuario> usuarios = new List<ClienteUsuario>();
-
-            if (Token.TokenSeguridad())
-            {
-                SqlCommand cmd = new SqlCommand();
-
-                try
-                {
-                    cmd.CommandText = "SEL_USUARIO_GELOCALIZACION";
-                    if (usuario.usuario > 0) cmd.Parameters.AddWithValue("@USUARIO", usuario.usuario);
-                    if (!string.IsNullOrEmpty(usuario.filtro_paises)) cmd.Parameters.AddWithValue("@PAISES", usuario.filtro_paises);
-                    if (usuario.instalacion > 0) cmd.Parameters.AddWithValue("@INSTALACION", usuario.instalacion);
-                    if (!string.IsNullOrEmpty(usuario.filtro_cliente)) cmd.Parameters.AddWithValue("@FILTRO_CLIENTE", usuario.filtro_cliente);
-                    if (!string.IsNullOrEmpty(usuario.filtro_instalacion)) cmd.Parameters.AddWithValue("@FILTRO_INSTALACION", usuario.filtro_instalacion);
-
-                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
-                    {
-                        while (dr.Read())
-                        {
-                            usuario = new ClienteUsuario();
-
-                            usuario.ucl_id = int.Parse(dr["USU_ID"].ToString());
-                            usuario.nombre_completo = dr["USU_NOMBRE"].ToString() + " " + dr["USU_APELLIDO_PATERNO"].ToString() + " " +
-                                                        dr["USU_APELLIDO_MATERNO"].ToString();
-
-                            usuarios.Add(usuario);
-                        }
-                    }
-
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-                catch (Exception ex)
-                {
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-
-                    usuarios = null;
-                }
-            }
-
-            return usuarios;
-        }
 
 
         //Carga Masiva

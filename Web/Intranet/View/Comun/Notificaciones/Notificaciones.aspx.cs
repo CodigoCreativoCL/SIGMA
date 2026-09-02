@@ -37,18 +37,28 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        if (!IsPostBack)
-        {
-            CargarCategorias();
-            Cargar();
-        }
+        /* Las categorías se arman una vez: salen de las alertas que hay, y
+           esa lista no cambia mientras el usuario filtra. */
+        if (!IsPostBack) CargarCategorias();
     }
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
-        /* El buscador y los combos disparan el filtro por su cuenta; acá solo
-           hay que volver a armar la lista cuando eso pasa. */
-        if (IsPostBack) return;
+        /* LA LISTA SE ARMA SIEMPRE, TAMBIEN EN POSTBACK.
+
+           Acá estaba el defecto de "los combos no filtran": este método hacía
+           `if (IsPostBack) return;` confiando en que "el buscador y los combos
+           disparan el filtro por su cuenta". No lo hacen. El botón Buscar de
+           wucFiltro es un PushButton sin OnClick: lo único que provoca es el
+           postback, y cada listado del sitio arma su lista en PreRender
+           —Repuestos, Bodegas, Movimientos, todos—. Al saltarse ese paso, la
+           página volvía a dibujarse desde el ViewState con los datos de
+           antes: se elegía una categoría, la pantalla parpadeaba y mostraba
+           exactamente lo mismo.
+
+           No fallaba con un error: fallaba mostrando datos viejos, que es la
+           forma más difícil de notar. */
+        Cargar();
     }
 
     /// <summary>
@@ -174,16 +184,25 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
                hacer buscar es la mitad del trabajo. */
             string onclick;
 
+            /* El menú al que pertenece la alerta viaja junto al id para que el
+               número del menú lateral baje en el mismo instante que el de la
+               campana. Sin esto la campana bajaba y el menú se quedaba con la
+               cifra vieja hasta el siguiente sondeo: dos contadores de lo
+               mismo diciendo cosas distintas durante un minuto. */
+            string menu = string.IsNullOrEmpty(a.alt_menu_link)
+                        ? "" : ResolveUrl(a.alt_menu_link);
+
             if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
             {
                 string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
                 onclick = "return abrirFicha('" + ResolveUrl(a.FICHA_LINK) + "', '" +
-                          query + "', " + a.ale_id + ");";
+                          query + "', " + a.ale_id + ", '" + menu + "');";
             }
             else if (!string.IsNullOrEmpty(a.alt_menu_link))
             {
-                onclick = "if(window.sigmaAlertas) sigmaAlertas.leer(" + a.ale_id + ");" +
-                          " window.location='" + ResolveUrl(a.alt_menu_link) + "'; return false;";
+                onclick = "if(window.sigmaAlertas) sigmaAlertas.leer(" + a.ale_id +
+                          ", '" + menu + "');" +
+                          " window.location='" + menu + "'; return false;";
             }
             else
             {
