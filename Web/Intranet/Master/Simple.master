@@ -54,7 +54,7 @@
          mientras el resto del sitio ya estaba relookeado. Va DESPUES de v2
          para que los tokens de marca ganen. -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=9" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-modal.css?vrs=7" rel="stylesheet" />
 
     <!-- Telerik CSS -->

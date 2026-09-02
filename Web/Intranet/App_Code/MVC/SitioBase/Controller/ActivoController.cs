@@ -269,7 +269,11 @@ namespace SitioBase.Controller
                     {
                         if (filtro.ati_id > 0) cmd.Parameters.AddWithValue("@ID", filtro.ati_id);
                         if (filtro.filtro_cliente > 0) cmd.Parameters.AddWithValue("@CLIENTE", filtro.filtro_cliente);
+                        if (filtro.ati_activo_tipo_padre != null && filtro.ati_activo_tipo_padre > 0)
+                            cmd.Parameters.AddWithValue("@ACTIVO_TIPO_PADRE", filtro.ati_activo_tipo_padre);
+                        if (filtro.filtro_solo_raiz) cmd.Parameters.AddWithValue("@SOLO_RAIZ", true);
                         if (filtro.filtro_habilitado != null) cmd.Parameters.AddWithValue("@HABILITADO", filtro.filtro_habilitado);
+                        if (!string.IsNullOrEmpty(filtro.filtro)) cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
                     }
 
                     using (SqlDataReader dr = Conexion.GetDataReader(cmd))
@@ -280,10 +284,24 @@ namespace SitioBase.Controller
                             item.ati_id = int.Parse(dr["ATI_ID"].ToString());
                             if (dr["ATI_CLIENTE"] != DBNull.Value)
                                 item.ati_cliente = int.Parse(dr["ATI_CLIENTE"].ToString());
+                            if (dr["ATI_ACTIVO_TIPO_PADRE"] != DBNull.Value)
+                                item.ati_activo_tipo_padre = int.Parse(dr["ATI_ACTIVO_TIPO_PADRE"].ToString());
                             item.ati_codigo = dr["ATI_CODIGO"].ToString();
                             item.ati_nombre = dr["ATI_NOMBRE"].ToString();
                             item.ati_descripcion = dr["ATI_DESCRIPCION"].ToString();
+                            if (dr["ATI_ORDEN"] != DBNull.Value)
+                                item.ati_orden = int.Parse(dr["ATI_ORDEN"].ToString());
                             item.ati_habilitado = bool.Parse(dr["ATI_HABILITADO"].ToString());
+                            item.es_global = int.Parse(dr["ES_GLOBAL"].ToString()) == 1;
+                            item.padre_nombre = dr["PADRE_NOMBRE"].ToString();
+                            item.nivel = int.Parse(dr["NIVEL"].ToString());
+                            item.ruta = dr["RUTA"].ToString();
+                            item.usuario_creacion_nombre = dr["USUARIO_CREACION_NOMBRE"].ToString();
+                            item.usuario_actualizacion_nombre = dr["USUARIO_ACTUALIZACION_NOMBRE"].ToString();
+                            if (dr["ATI_FECHA_CREACION"] != DBNull.Value)
+                                item.ati_fecha_creacion = DateTime.Parse(dr["ATI_FECHA_CREACION"].ToString());
+                            if (dr["ATI_FECHA_ACTUALIZACION"] != DBNull.Value)
+                                item.ati_fecha_actualizacion = DateTime.Parse(dr["ATI_FECHA_ACTUALIZACION"].ToString());
                             lista.Add(item);
                         }
                     }
@@ -300,6 +318,125 @@ namespace SitioBase.Controller
             }
 
             return lista;
+        }
+
+        public ActivoTipo GetActivoTipo(int id)
+        {
+            List<ActivoTipo> lista = GetActivoTipos(new ActivoTipo { ati_id = id });
+            return (lista != null && lista.Count > 0) ? lista[0] : new ActivoTipo();
+        }
+
+        public Respuesta InsertActivoTipo(ActivoTipo entidad)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmdExecute = null;
+
+                try
+                {
+                    int id = 0;
+
+                    cmdExecute = Conexion.GetCommand("INS_ACTIVO_TIPO");
+                    cmdExecute.Parameters.AddWithValue("@ID", id).Direction = System.Data.ParameterDirection.Output;
+                    cmdExecute.Parameters.AddWithValue("@CLIENTE", entidad.ati_cliente ?? 0);
+                    cmdExecute.Parameters.AddWithValue("@ACTIVO_TIPO_PADRE", (object)entidad.ati_activo_tipo_padre ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@CODIGO", entidad.ati_codigo);
+                    cmdExecute.Parameters.AddWithValue("@NOMBRE", entidad.ati_nombre);
+                    cmdExecute.Parameters.AddWithValue("@DESCRIPCION", (object)entidad.ati_descripcion ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@ORDEN", (object)entidad.ati_orden ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmdExecute.ExecuteNonQuery();
+                    cmdExecute.Connection.Close();
+
+                    id = (int)cmdExecute.Parameters["@ID"].Value;
+
+                    respuesta.codigo = id;
+                    respuesta.detalle = "Tipo de activo creado con éxito.";
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmdExecute != null && cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+
+            return respuesta;
+        }
+
+        public Respuesta UpdateActivoTipo(ActivoTipo entidad)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmdExecute = null;
+
+                try
+                {
+                    cmdExecute = Conexion.GetCommand("UPD_ACTIVO_TIPO");
+                    cmdExecute.Parameters.AddWithValue("@ID", entidad.ati_id);
+                    cmdExecute.Parameters.AddWithValue("@ACTIVO_TIPO_PADRE", (object)entidad.ati_activo_tipo_padre ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@CODIGO", entidad.ati_codigo);
+                    cmdExecute.Parameters.AddWithValue("@NOMBRE", entidad.ati_nombre);
+                    cmdExecute.Parameters.AddWithValue("@DESCRIPCION", (object)entidad.ati_descripcion ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@ORDEN", (object)entidad.ati_orden ?? DBNull.Value);
+                    cmdExecute.Parameters.AddWithValue("@HABILITADO", entidad.ati_habilitado);
+                    cmdExecute.Parameters.AddWithValue("@QUITA_PADRE", entidad.quita_padre);
+                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmdExecute.ExecuteNonQuery();
+                    cmdExecute.Connection.Close();
+
+                    respuesta.codigo = entidad.ati_id;
+                    respuesta.detalle = "Tipo de activo actualizado con éxito.";
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmdExecute != null && cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+
+            return respuesta;
+        }
+
+        public Respuesta DeleteActivoTipo(ActivoTipo entidad)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmdExecute = null;
+
+                try
+                {
+                    cmdExecute = Conexion.GetCommand("DEL_ACTIVO_TIPO");
+                    cmdExecute.Parameters.AddWithValue("@ID", entidad.ati_id);
+                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmdExecute.ExecuteNonQuery();
+                    cmdExecute.Connection.Close();
+
+                    respuesta.codigo = entidad.ati_id;
+                    respuesta.detalle = "Tipo de activo dado de baja con éxito.";
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmdExecute != null && cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+
+            return respuesta;
         }
     }
 

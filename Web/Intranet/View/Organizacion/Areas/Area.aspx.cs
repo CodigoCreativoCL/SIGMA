@@ -17,6 +17,16 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
         set { ViewState["Id"] = value; }
     }
 
+    /// <summary>
+    /// El área de la que va a colgar esta, cuando se entró por "nueva
+    /// subárea" desde una rama del listado.
+    /// </summary>
+    public int Padre
+    {
+        get { return ViewState["Padre"] != null ? (int)ViewState["Padre"] : 0; }
+        set { ViewState["Padre"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack && Request.QueryString["query"] != null)
@@ -30,6 +40,17 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
                 {
                     case "Id":
                         Id = Int32.Parse(array[1].ToString());
+                        break;
+
+                    /* "Nueva subárea acá dentro": el listado ya sabe de qué
+                       rama cuelga, así que lo manda resuelto. Antes había que
+                       abrir "Nueva" y volver a buscar el padre en el
+                       desplegable, que es pedirle a alguien que escriba lo
+                       que estaba mirando un segundo antes. */
+                    case "Padre":
+                        int padre;
+                        if (int.TryParse(array[1].ToString(), out padre) && padre > 0)
+                            Padre = padre;
                         break;
                 }
             }
@@ -163,7 +184,27 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
         else
         {
             lblId.Text = "Nueva";
+
+            /* La planta se toma del padre: una subárea no puede estar en una
+               planta distinta de aquella de la que cuelga, y preguntarlo
+               sería ofrecer una respuesta incorrecta. */
+            if (Padre > 0)
+            {
+                InstalacionAreaController controller = new InstalacionAreaController();
+                InstalacionArea padre = controller.GetInstalacionArea(
+                    new InstalacionArea { iar_id = Padre });
+
+                if (padre != null && padre.iar_id > 0)
+                    cboPlanta.SelectedValue = padre.iar_cliente_instalacion.ToString();
+            }
+
             CargarAreasPadre();
+
+            if (Padre > 0)
+            {
+                RadComboBoxItem item = cboPadre.FindItemByValue(Padre.ToString());
+                if (item != null) item.Selected = true;
+            }
         }
     }
 

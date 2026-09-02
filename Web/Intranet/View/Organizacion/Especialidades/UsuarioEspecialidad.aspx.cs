@@ -59,9 +59,20 @@ public partial class View_Organizacion_Especialidades_UsuarioEspecialidad : Syst
             {
                 while (dr.Read())
                 {
-                    cboUsuario.Items.Add(new RadComboBoxItem(
-                        dr["USU_NOMBRE"].ToString() + " · " + dr["USU_CORREO"].ToString(),
-                        dr["USU_ID"].ToString()));
+                    /* El perfil y no el correo: acá se decide a quién se le
+                       asigna una especialidad, y el criterio es qué hace la
+                       persona. El correo queda en el tooltip, que es donde
+                       sirve para desempatar nombres repetidos. */
+                    string perfiles = dr["PERFILES"].ToString();
+
+                    RadComboBoxItem item = new RadComboBoxItem(
+                        dr["USU_NOMBRE"].ToString() + " · " +
+                        (string.IsNullOrEmpty(perfiles) ? "sin perfil" : perfiles),
+                        dr["USU_ID"].ToString());
+
+                    item.ToolTip = dr["USU_CORREO"].ToString();
+
+                    cboUsuario.Items.Add(item);
                 }
             }
 

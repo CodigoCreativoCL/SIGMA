@@ -58,29 +58,77 @@ var sigmaEscaneo = (function () {
         aviso.style.display = texto ? 'block' : 'none';
     }
 
-    /* Se comprueba ANTES de pedir la cámara. Pedirla y que falle deja al
-       usuario con un diálogo de permiso denegado y sin entender por qué. */
+    /* ESTA PANTALLA ES DEL TELEFONO
+
+         El escaneo con camara vive en la APP, donde el bodeguero la lleva
+         encima frente al estante. En la web existe por dos razones concretas:
+         teclear el codigo cuando la etiqueta esta rayada, y recibir el enlace
+         del QR si alguien lo abre en un computador.
+
+         Por eso en un escritorio no se ofrece la camara como si fuera a
+         funcionar: se dice para que sirve esta pantalla aca. Un boton grande
+         que casi siempre responde "este navegador no puede" ensena a la gente
+         a desconfiar de los botones. */
+    function esTelefono() {
+        return (navigator.maxTouchPoints > 0) ||
+               (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
+    }
+
+    /* Se comprueba ANTES de pedir la camara. Pedirla y que falle deja al
+       usuario con un dialogo de permiso denegado y sin entender por que. */
     function porQueNoSePuede() {
+        if (!esTelefono()) {
+            return 'El escaneo con c\u00e1mara es para el tel\u00e9fono: aqu\u00ed, en el ' +
+                   'computador, <strong>escriba el c\u00f3digo</strong> impreso en la ' +
+                   'etiqueta. Si abre el QR con la c\u00e1mara del tel\u00e9fono, tambi\u00e9n ' +
+                   'llega a esta misma pantalla ya resuelta.';
+        }
+
         if (!window.isSecureContext) {
-            return 'Para usar la cámara desde aquí, SIGMA tiene que abrirse con ' +
-                   '<strong>https</strong>. Mientras tanto: abra la cámara de su ' +
-                   'teléfono, apúntela a la etiqueta y toque el aviso que aparece ' +
-                   '— lleva a esta misma pantalla.';
+            return 'Para usar la c\u00e1mara desde aqu\u00ed, SIGMA tiene que abrirse con ' +
+                   '<strong>https</strong>. Mientras tanto: abra la c\u00e1mara de su ' +
+                   'tel\u00e9fono, ap\u00fantela a la etiqueta y toque el aviso que aparece ' +
+                   '\u2014 lleva a esta misma pantalla.';
         }
 
         if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
-            return 'Este navegador no permite usar la cámara. Abra la cámara de su ' +
-                   'teléfono y apúntela a la etiqueta.';
+            return 'Este navegador no permite usar la c\u00e1mara. Abra la c\u00e1mara de su ' +
+                   'tel\u00e9fono y ap\u00fantela a la etiqueta.';
         }
 
         if (typeof window.BarcodeDetector === 'undefined') {
-            return 'Este navegador no sabe leer códigos QR por su cuenta ' +
-                   '(le pasa al iPhone). Abra la cámara de su teléfono, apúntela a ' +
+            return 'Este navegador no sabe leer c\u00f3digos QR por su cuenta ' +
+                   '(le pasa al iPhone). Abra la c\u00e1mara de su tel\u00e9fono, ap\u00fantela a ' +
                    'la etiqueta y toque el aviso que aparece: lleva a esta misma ' +
                    'pantalla.';
         }
 
         return '';
+    }
+
+    /* Al cargar, la pantalla se acomoda al aparato.
+
+       En el telefono manda la camara: el boton grande arriba y el puente QR
+       -"abralo en su telefono"- no tiene sentido, porque ya se esta en el.
+
+       En el computador es al reves: la camara no puede leer una etiqueta
+       pegada en un estante, asi que se retira el boton, se explica por que, y
+       se ofrece el QR que lleva esta misma pantalla al bolsillo. */
+    function acomodar() {
+        elementos();
+
+        var puente = document.querySelector('.esc-puente');
+        var caminos = document.getElementById('escCaminos');
+
+        if (esTelefono()) {
+            if (puente) puente.style.display = 'none';
+            if (caminos) caminos.classList.add('es-telefono');
+            return;
+        }
+
+        if (boton) boton.style.display = 'none';
+
+        decir(porQueNoSePuede());
     }
 
     function iniciar() {
@@ -183,8 +231,14 @@ var sigmaEscaneo = (function () {
         if (document.hidden && buscando) detener();
     });
 
+    if (document.readyState === 'loading')
+        document.addEventListener('DOMContentLoaded', acomodar);
+    else
+        acomodar();
+
     return {
         iniciar: iniciar,
+        acomodar: acomodar,
         detener: detener,
         idCampo: '',
         idBoton: '',

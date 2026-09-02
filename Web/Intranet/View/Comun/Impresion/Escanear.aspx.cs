@@ -41,11 +41,50 @@ public partial class View_Comun_Impresion_Escanear : System.Web.UI.Page
 
         if (IsPostBack) return;
 
+        Puente();
+
         /* Este SÍ es un querystring en claro, a diferencia del resto del
            sitio, y es el único: es lo que trae el QR. */
         string leido = Request.QueryString["c"];
 
         if (!string.IsNullOrEmpty(leido)) Resolver(leido);
+    }
+
+    /// <summary>
+    /// El QR que lleva ESTA pantalla al teléfono.
+    ///
+    /// En un computador la cámara no sirve para leer una etiqueta pegada en un
+    /// estante: no se puede acercar el monitor al pasillo. Pero sí se puede
+    /// mostrar un código que el teléfono lea, y seguir ahí.
+    ///
+    /// Es el mismo truco que ya usan las etiquetas —el QR lleva una URL— pero
+    /// apuntando a la propia pantalla en vez de a un registro.
+    ///
+    /// SOLO EN ESCRITORIO
+    ///   En un teléfono ofrecer "ábralo en su teléfono" es absurdo, y el JS ya
+    ///   distingue el aparato; acá se genera igual y el CSS lo esconde, porque
+    ///   el servidor no sabe desde qué pantalla lo están mirando.
+    /// </summary>
+    protected void Puente()
+    {
+        try
+        {
+            string url = Request.Url.GetLeftPart(UriPartial.Authority) +
+                         ResolveUrl("~/View/Comun/Impresion/Escanear.aspx");
+
+            string qr = new EtiquetaController().QrDeUrl(url);
+
+            if (string.IsNullOrEmpty(qr)) return;
+
+            litQrPuente.Text = "<img src=\"" + qr + "\" alt=\"Abrir esta pantalla en el teléfono\" />";
+            pnlPuente.Visible = true;
+        }
+        catch (Exception)
+        {
+            /* Sin el QR la pantalla sigue sirviendo entera: es una comodidad,
+               no el camino. */
+            pnlPuente.Visible = false;
+        }
     }
 
     protected void btnLeido_Click(object sender, EventArgs e)

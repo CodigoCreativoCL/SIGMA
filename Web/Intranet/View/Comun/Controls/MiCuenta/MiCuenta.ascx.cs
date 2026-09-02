@@ -89,7 +89,13 @@ public partial class View_Comun_Controls_MiCuenta_MiCuenta : System.Web.UI.UserC
            al lado. */
         txtPasswordVer.Attributes["value"] = "••••••••";
 
-        if (actual.usu_foto != null)
+        /* La foto, por URL desde Blob (bloque 100). Se conserva la rama de
+           la base64 por si quedara alguna foto vieja en la columna. */
+        int idFoto = SitioBase.Session.UsuarioArchivoFoto();
+
+        if (idFoto > 0)
+            imgFoto.ImageUrl = SitioBase.UrlArchivo.Ver(idFoto);
+        else if (actual.usu_foto != null)
             imgFoto.ImageUrl = "data:image/jpeg;base64," + Convert.ToBase64String(actual.usu_foto, 0, actual.usu_foto.Length);
     }
 
@@ -214,11 +220,13 @@ public partial class View_Comun_Controls_MiCuenta_MiCuenta : System.Web.UI.UserC
             usuario.usu_identificador = actual.usu_identificador;
             usuario.usu_habilitado = actual.usu_habilitado;
 
+            /* La foto va a Blob y NO al UPD_USUARIO: GuardarFoto la sube, la
+               apunta con UPD_USUARIO_FOTO y refresca la sesion para que el
+               avatar de la cabecera cambie sin volver a entrar. */
             if (fldFoto.HasFile)
-            {
-                usuario.usu_foto = SitioBase.SitioBase.ReducirImagen(fldFoto.FileBytes, 100, 100);
-                usuario.usu_foto_extension = Path.GetExtension(fldFoto.FileName);
-            }
+                usuarioController.GuardarFoto(int.Parse(SitioBase.Session.UsuarioId()),
+                                              fldFoto.FileName, fldFoto.FileBytes,
+                                              fldFoto.PostedFile.ContentType);
 
             Respuesta respuesta = usuarioController.UpdateUsuario(usuario);
 

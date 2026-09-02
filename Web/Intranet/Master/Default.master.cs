@@ -1,12 +1,17 @@
 ﻿using SitioBase.Controller;
 using System;
+using System.Web.UI.WebControls;
+using System.Web.UI;
+using SitioBase.Model;
+using System.Collections.Generic;
+using System.Text;
 
 public partial class Master_Default : System.Web.UI.MasterPage
 {
-    private MenuMaterialApoyoController menuCapsulaController = new MenuMaterialApoyoController();
-
     protected void Page_Load(object sender, EventArgs e)
     {
+        CargarAlertas();
+
         if (!SitioBase.Token.TokenSeguridad())
         {
             Response.Redirect("~/Login.aspx");
@@ -39,7 +44,26 @@ public partial class Master_Default : System.Web.UI.MasterPage
             PintarClienteActual();
             PintarAvisoSuscripcion();
 
-            if (SitioBase.Session.UsuarioFoto() != null)
+            /* LA FOTO VIENE POR URL, NO INCRUSTADA (bloque 100).
+
+               Antes se emitia como data:image/jpeg;base64 dentro del HTML:
+               la imagen entera viajaba en CADA pagina —el avatar esta en la
+               cabecera de todas— y ningun navegador podia cachearla, porque
+               no era un recurso sino texto dentro del documento.
+
+               Con la URL el navegador la pide una vez. Se sigue aceptando la
+               base64 por si quedara alguna en sesion, pero ya nadie la
+               escribe. */
+            int idFoto = SitioBase.Session.UsuarioArchivoFoto();
+
+            if (idFoto > 0)
+            {
+                string url = SitioBase.UrlArchivo.Ver(idFoto);
+
+                this.imgUsuario.ImageUrl = url;
+                this.imgUsuarioLateral.ImageUrl = url;
+            }
+            else if (SitioBase.Session.UsuarioFoto() != null)
             {
                 string base64String = SitioBase.Session.UsuarioFoto();
 
@@ -152,6 +176,251 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         Response.Redirect("~/Login.aspx");
     }
+
+    /// <summary>
+    /// La campana y la bandeja.
+    ///
+    /// SE DIBUJA EN CADA PAGINA, ASI QUE TIENE QUE SER BARATO
+    ///   El resumen son dos consultas pequenas que el controlador cachea por
+    ///   peticion. La bandeja -que es mas cara- solo se arma si hay algo que
+    ///   mostrar: con cero alertas no se consulta la lista.
+    /// </summary>
+    protected void CargarAlertas()
+    {
+        /* El pie del panel no llevaba a ninguna parte. La bandeja completa
+           vive en su propia pantalla, agrupada por categoria. */
+        lnkVerTodas.NavigateUrl = ResolveUrl("~/View/Comun/Notificaciones/Notificaciones.aspx");
+
+        AlertaController controller = new AlertaController();
+        AlertaResumen resumen = controller.GetResumen();
+
+        /* El punto cuenta lo NO LEIDO. Sin no leidas no hay punto: un badge
+           permanente deja de significar "mira esto" y pasa a ser decoracion. */
+        litBadgeAlertas.Text = resumen.NoLeidas > 0
+            ? "<span class=\"sigma-notification__count\" aria-hidden=\"true\">" +
+              (resumen.NoLeidas > 99 ? "99+" : resumen.NoLeidas.ToString()) + "</span>"
+            : "";
+
+        lnkCampana.Attributes["aria-label"] = resumen.NoLeidas > 0
+            ? resumen.NoLeidas.ToString() + " alertas sin leer"
+            : "Alertas";
+
+        /* El modificador critico solo cuando lo hay: si todo se pintara rojo,
+           el rojo dejaria de querer decir algo. */
+        string clase = "dropdown-toggle sigma-notification sigma-notification--light";
+
+        List<Alerta> lista = resumen.Abiertas > 0
+                             ? controller.GetAlertas(true, 10)
+                             : new List<Alerta>();
+
+        foreach (Alerta a in lista)
+        {
+            if (a.LEIDA) continue;
+            if (a.sev_codigo != "CRITICA" && a.sev_codigo != "ALTA") continue;
+
+            clase += " sigma-notification--critical";
+            break;
+        }
+
+        lnkCampana.Attributes["class"] = clase;
+
+        pnlSinAlertas.Visible = (lista.Count == 0);
+        rptAlertas.Visible = (lista.Count > 0);
+
+        lnkLeerTodo.Visible = (resumen.NoLeidas > 0);
+
+        rptAlertas.DataSource = lista;
+        rptAlertas.DataBind();
+    }
+
+    protected void rptAlertas_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
+            return;
+
+        Alerta a = (Alerta)e.Item.DataItem;
+
+        LinkButton enlace = (LinkButton)e.Item.FindControl("lnkItem");
+        Literal lit = (Literal)e.Item.FindControl("litItem");
+
+        /* El id viaja en el comando: es lo unico que el evento va a recibir, y
+           sacarlo del indice de la fila se rompe si la lista cambia entre el
+           dibujo y el clic —que es justo lo que pasa cuando entra una alerta
+           nueva mientras el panel esta abierto—. */
+        enlace.CommandArgument = a.ale_id.ToString();
+
+        /* La gravedad va en la FILA, no solo en el icono: tine el borde
+           izquierdo, el halo y el rotulo. Al pasar a los SVG de marca se
+           perdio esa clase y las tres alertas se veian identicas — un stock
+           critico y uno sobre el maximo pedian la misma atencion. */
+        string sev = Clase(a.sev_codigo);
+
+        enlace.CssClass = "sg-notif-item " + sev + (a.LEIDA ? "" : " is-nueva");
+
+        StringBuilder sb = new StringBuilder();
+
+        sb.Append("<span class=\"icono\">");
+        sb.Append("<img src=\"" + ResolveUrl("~/Imagen/sigma-ai/" + IconoSigma(a.alt_codigo)) +
+                  "\" alt=\"\" aria-hidden=\"true\" /></span>");
+
+        sb.Append("<span class=\"texto\">");
+        sb.Append("<span class=\"titulo\">" + Server.HtmlEncode(a.ale_titulo) + "</span>");
+        sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
+
+        sb.Append("<span class=\"cuando\">" + Server.HtmlEncode(a.Antiguedad));
+
+        /* El rotulo de gravedad SOLO cuando pide accion. Poner "Normal" en
+           cada fila que no es grave llenaria la lista de una etiqueta que no
+           dice nada, y de paso le quitaria peso a la que si. */
+        if (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")
+            sb.Append("<span class=\"sev\">" + Server.HtmlEncode(a.sev_nombre) + "</span>");
+
+        sb.Append("</span></span>");
+
+        /* El punto de "sin leer" a la derecha, como en cualquier bandeja: se
+           recorre la columna de un vistazo. */
+        if (!a.LEIDA) sb.Append("<span class=\"punto\"></span>");
+
+        lit.Text = sb.ToString();
+    }
+
+    /// <summary>
+    /// Tocar una alerta: se marca leida y se abre su registro.
+    ///
+    /// EN EL SERVIDOR Y NO POR AJAX
+    ///   Antes lo hacia el sondeo: el javascript le pedia al handler que la
+    ///   marcara. Si esa peticion fallaba, no pasaba nada y nadie se enteraba
+    ///   — el contador se quedaba igual, sin explicacion. Acá el clic va al
+    ///   servidor, marca, y el panel se redibuja con lo que la base dice.
+    /// </summary>
+    protected void rptAlertas_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "Abrir") return;
+
+        try
+        {
+            int id = 0;
+            int.TryParse(Convert.ToString(e.CommandArgument), out id);
+
+            if (id <= 0) return;
+
+            AlertaController controller = new AlertaController();
+
+            controller.Leer(id);
+
+            /* A donde ir. Se busca entre las abiertas porque es de donde salio
+               la que se toco; si ya no esta —alguien la resolvio entretanto—
+               no se abre nada y el panel simplemente se actualiza. */
+            foreach (Alerta a in controller.GetAlertas(true, 50))
+            {
+                if (a.ale_id != id) continue;
+
+                if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
+                {
+                    string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
+
+                    ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
+                        "abrir-alerta",
+                        "abrirNotificacion('" + ResolveUrl(a.FICHA_LINK) + "','" + query + "');",
+                        true);
+                }
+                else if (!string.IsNullOrEmpty(a.alt_menu_link))
+                {
+                    Response.Redirect(ResolveUrl(a.alt_menu_link));
+                    return;
+                }
+
+                break;
+            }
+
+            CargarAlertas();
+            udAlertas.Update();
+            Refrescar();
+        }
+        catch (Exception)
+        {
+            /* Un fallo abriendo una alerta no puede tumbar la cabecera del
+               sitio, que se dibuja en todas las pantallas. */
+        }
+    }
+
+    /// <summary>
+    /// Le avisa al sondeo que los numeros cambiaron.
+    ///
+    /// El panel se redibujo con lo que la base dice, pero el javascript sigue
+    /// con el ultimo valor que vio: sin esto, su proxima consulta creeria que
+    /// el contador BAJO por si solo y, peor, si luego sube lo tomaria como
+    /// novedad y dispararia el aviso emergente por algo que ya se leyo.
+    /// </summary>
+    protected void Refrescar()
+    {
+        ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(), "refrescar-alertas",
+            "if(window.sigmaAlertas) sigmaAlertas.refrescar();", true);
+    }
+
+    /// <summary>
+    /// La clase de gravedad. Se traduce acá y no en el SP porque es decisión
+    /// de pantalla: la app va a pintar lo mismo de otra manera.
+    /// </summary>
+    protected string Clase(string codigo)
+    {
+        switch (codigo)
+        {
+            case "CRITICA": return "sev-critica";
+            case "ALTA": return "sev-alta";
+            case "ADVERTENCIA": return "sev-advertencia";
+            case "BAJA": return "sev-baja";
+        }
+
+        return "sev-normal";
+    }
+
+    /// <summary>
+    /// Qué ilustración de SIGMA le corresponde a cada tipo.
+    ///
+    /// NO TODO ES UNA PREDICCION
+    ///   El icono de predicción es para lo que SALE DE UN MODELO. Un stock bajo
+    ///   el mínimo es una resta contra un umbral que alguien escribió: llamarlo
+    ///   predicción le atribuiría al sistema una inteligencia que no usó, y el
+    ///   día que exista una predicción de verdad nadie la distinguiría.
+    ///
+    ///   Lo de umbrales va con "realtime", que es lo que efectivamente es:
+    ///   vigilancia continua de un valor.
+    /// </summary>
+    protected string IconoSigma(string tipo)
+    {
+        switch (tipo)
+        {
+            case "PREDICCION RIESGO":
+                return "sigma-ai-status-prediction.svg";
+
+            case "STOCK MINIMO":
+            case "STOCK MAXIMO":
+            case "MEDICION FUERA RANGO":
+            case "MEDIDOR SIN LECTURA":
+            case "LOTE VENCIDO":
+            case "LOTE POR VENCER":
+                return "sigma-ai-status-realtime.svg";
+
+            case "MEDIDOR PROXIMO MANTENIMIENTO":
+                return "sigma-ai-status-recommendation.svg";
+        }
+
+        return "sigma-ai-status-analyzing.svg";
+    }
+
+    protected void lnkLeerTodo_Click(object sender, EventArgs e)
+    {
+        new AlertaController().Leer();
+
+        /* Se redibuja el panel, no la pagina: recargar entera haria perder lo
+           que la persona estuviera haciendo detras, y lo unico que cambio son
+           el contador y los puntos. */
+        CargarAlertas();
+        udAlertas.Update();
+        Refrescar();
+    }
+
 
 }
 
