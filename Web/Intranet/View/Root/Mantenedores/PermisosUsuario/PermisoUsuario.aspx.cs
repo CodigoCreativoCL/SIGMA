@@ -60,9 +60,27 @@ public partial class View_Root_Mantenedores_PermisosUsuario_PermisoUsuario : Sys
             {
                 while (dr.Read())
                 {
-                    cboUsuario.Items.Add(new RadComboBoxItem(
-                        dr["USU_NOMBRE"].ToString() + " · " + dr["USU_CORREO"].ToString(),
-                        dr["USU_ID"].ToString()));
+                    /* EL PERFIL Y NO EL CORREO.
+
+                       Acá se decide si a esta persona le corresponde un
+                       permiso. El correo es un identificador: no dice nada
+                       sobre eso. El perfil sí —"Bodeguero", "Técnico de
+                       Mantenimiento"— y es exactamente el criterio con el
+                       que se toma la decisión.
+
+                       El correo no se pierde: queda en el tooltip del item,
+                       que es donde sirve —desempatar dos personas con el
+                       mismo nombre— y no estorba al leer la lista. */
+                    string perfiles = dr["PERFILES"].ToString();
+
+                    RadComboBoxItem item = new RadComboBoxItem(
+                        dr["USU_NOMBRE"].ToString() + " · " +
+                        (string.IsNullOrEmpty(perfiles) ? "sin perfil" : perfiles),
+                        dr["USU_ID"].ToString());
+
+                    item.ToolTip = dr["USU_CORREO"].ToString();
+
+                    cboUsuario.Items.Add(item);
                 }
             }
 

@@ -174,33 +174,6 @@ namespace SitioBase.Controller
             return menu;
         }
 
-        public Menus GetMenuFuncion(MenuFuncionPerfil menuFuncionPerfil)
-        {
-            Menus menu = new Menus();
-
-            try
-            {
-                SqlCommand cmd = new SqlCommand();
-                cmd.CommandText = "SEL_FUNCION_MENU";
-                cmd.Parameters.AddWithValue("@ID", menuFuncionPerfil.mfp_menu_funcion);
-
-                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
-                {
-                    while (dr.Read())
-                    {
-                        menu.mnu_id = Int32.Parse(dr["mnu_id"].ToString());
-                        menu.mnu_nombre = dr["mnu_nombre"].ToString();
-                        menu.mnu_padre = Int32.Parse(dr["mnu_padre"].ToString());
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-            }
-
-            return menu;
-        }
-
         /// <summary>
         /// Otorga o quita una FUNCION a un perfil.
         ///

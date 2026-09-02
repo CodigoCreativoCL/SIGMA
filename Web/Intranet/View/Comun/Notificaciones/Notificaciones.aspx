@@ -24,11 +24,11 @@
             <div class="row col-lg-12 col-md-12 col-xs-12">
                 <div class="col-lg-3 col-md-3 col-12 d-flex align-items-center" style="gap: 12px;">
                     <label for="cboCategoria" style="margin: 0;">Categoría:</label>
-                    <rad:RadComboBox2 ID="cboCategoria" runat="server" Width="100%" />
+                    <rad:RadComboBox2 ID="cboCategoria" runat="server" Width="100%" AutoPostBack="true" />
                 </div>
                 <div class="col-lg-3 col-md-3 col-12 d-flex align-items-center" style="gap: 12px;">
                     <label for="cboSeveridad" style="margin: 0;">Gravedad:</label>
-                    <rad:RadComboBox2 ID="cboSeveridad" runat="server" Width="100%">
+                    <rad:RadComboBox2 ID="cboSeveridad" runat="server" Width="100%" AutoPostBack="true">
                         <Items>
                             <rad:RadComboBoxItem Text="Todas" Value="" />
                             <rad:RadComboBoxItem Text="Crítica" Value="CRITICA" />
@@ -40,7 +40,7 @@
                 </div>
                 <div class="col-lg-3 col-md-3 col-12 d-flex align-items-center" style="gap: 12px;">
                     <label for="cboLectura" style="margin: 0;">Estado:</label>
-                    <rad:RadComboBox2 ID="cboLectura" runat="server" Width="100%">
+                    <rad:RadComboBox2 ID="cboLectura" runat="server" Width="100%" AutoPostBack="true">
                         <Items>
                             <rad:RadComboBoxItem Text="Abiertas" Value="ABIERTAS" Selected="true" />
                             <rad:RadComboBoxItem Text="Solo sin leer" Value="NUEVAS" />
@@ -57,9 +57,21 @@
     <script type="text/javascript">
         /* Se abre el registro en la misma ventana modal que usa el resto del
            sitio: quien revisa la bandeja quiere resolver sin perder la lista. */
-        function abrirFicha(url, query, id) {
-            /* Abrirla es haberla leido. */
-            if (id && window.sigmaAlertas) sigmaAlertas.leer(id);
+        function abrirFicha(url, query, id, menu) {
+            /* Abrirla es haberla leida: se marca ANTES de mostrar la ventana,
+               porque despues el foco se lo lleva el modal y el usuario ya no
+               vuelve a mirar los contadores.
+
+               menu es el enlace del modulo al que pertenece la alerta, para
+               que su numero en el menu lateral baje junto con la campana. */
+            if (id && window.sigmaAlertas) sigmaAlertas.leer(id, menu);
+
+            /* La fila se apaga en el acto. Volver de la ficha y encontrarla
+               todavia resaltada como nueva se lee como que no se registro. */
+            if (window.event && window.event.target && window.event.target.closest) {
+                var fila = window.event.target.closest('.sg-notif-item');
+                if (fila) fila.classList.remove('is-nueva');
+            }
 
             var oWin = $find("<%=rwiFicha.ClientID %>");
             if (!oWin) return false;

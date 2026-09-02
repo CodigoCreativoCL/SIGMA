@@ -96,6 +96,13 @@ namespace SitioBase.Controller
                             HttpContext.Current.Session["usu_foto"] = Convert.ToBase64String(byteFoto, 0, byteFoto.Length);
                         }
 
+                        /* La foto en Blob (bloque 100). Se guarda el ID, no
+                           la imagen: la cabecera arma una URL y el navegador
+                           la cachea, en vez de arrastrar el binario en cada
+                           pagina metido dentro del HTML. */
+                        if (dr["USU_ARCHIVO_FOTO"] != DBNull.Value)
+                            HttpContext.Current.Session["usu_archivo_foto"] = dr["USU_ARCHIVO_FOTO"].ToString();
+
                         respuesta.codigo = int.Parse(dr["USU_ID"].ToString());
                         respuesta.detalle = dr["USU_NOMBRE"].ToString() + " " + dr["USU_APELLIDO_PATERNO"].ToString() + " " + dr["USU_APELLIDO_MATERNO"].ToString();
                         respuesta.error = false;
@@ -789,5 +796,63 @@ namespace SitioBase.Controller
             return respuesta;
         }
         #endregion
+
+        /// <summary>
+        /// Sube la foto a Blob y la deja apuntada en el usuario (bloque 100).
+        ///
+        /// La imagen se reduce ANTES de subir: un avatar de 4 MB sacado con
+        /// el telefono se muestra en 100x100 px, asi que subirlo entero es
+        /// pagar el almacenamiento y el ancho de banda de algo que nadie va
+        /// a ver en ese tamano.
+        ///
+        /// Actualiza la sesion para que el cambio se vea sin volver a entrar.
+        /// </summary>
+        public int GuardarFoto(int idUsuario, string nombreArchivo, byte[] contenido, string mime)
+        {
+            if (contenido == null || contenido.Length == 0)
+                throw new Exception("El archivo esta vacio.");
+
+            byte[] chica = global::SitioBase.SitioBase.ReducirImagen(contenido, 400, 400);
+
+            Archivo archivo = new Archivo();
+            archivo.arc_cliente = Session.ClienteId();
+            archivo.arc_archivo_categoria = 15;   // FOTO USUARIO
+            archivo.arc_nombre_original = nombreArchivo;
+            archivo.arc_mime = mime;
+            archivo.contenido = chica != null && chica.Length > 0 ? chica : contenido;
+
+            ArchivoController ctrlArchivo = new ArchivoController();
+            Respuesta subida = ctrlArchivo.InsertArchivo(archivo, "foto");
+
+            if (subida.error)
+                throw new Exception("No se pudo guardar la foto: " + subida.detalle);
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("UPD_USUARIO_FOTO");
+                cmd.Parameters.AddWithValue("@USUARIO_DESTINO", idUsuario);
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ARCHIVO", subida.codigo);
+                cmd.Parameters.AddWithValue("@QUITAR", false);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                throw;
+            }
+
+            /* La cabecera pinta desde la sesion: sin esto el cambio no se ve
+               hasta volver a entrar. */
+            if (HttpContext.Current != null &&
+                Session.UsuarioId() == idUsuario.ToString())
+                HttpContext.Current.Session["usu_archivo_foto"] = subida.codigo.ToString();
+
+            return subida.codigo;
+        }
     }
 }

@@ -8,8 +8,6 @@ using System.Text;
 
 public partial class Master_Default : System.Web.UI.MasterPage
 {
-    private MenuMaterialApoyoController menuCapsulaController = new MenuMaterialApoyoController();
-
     protected void Page_Load(object sender, EventArgs e)
     {
         CargarAlertas();
@@ -46,7 +44,26 @@ public partial class Master_Default : System.Web.UI.MasterPage
             PintarClienteActual();
             PintarAvisoSuscripcion();
 
-            if (SitioBase.Session.UsuarioFoto() != null)
+            /* LA FOTO VIENE POR URL, NO INCRUSTADA (bloque 100).
+
+               Antes se emitia como data:image/jpeg;base64 dentro del HTML:
+               la imagen entera viajaba en CADA pagina —el avatar esta en la
+               cabecera de todas— y ningun navegador podia cachearla, porque
+               no era un recurso sino texto dentro del documento.
+
+               Con la URL el navegador la pide una vez. Se sigue aceptando la
+               base64 por si quedara alguna en sesion, pero ya nadie la
+               escribe. */
+            int idFoto = SitioBase.Session.UsuarioArchivoFoto();
+
+            if (idFoto > 0)
+            {
+                string url = SitioBase.UrlArchivo.Ver(idFoto);
+
+                this.imgUsuario.ImageUrl = url;
+                this.imgUsuarioLateral.ImageUrl = url;
+            }
+            else if (SitioBase.Session.UsuarioFoto() != null)
             {
                 string base64String = SitioBase.Session.UsuarioFoto();
 

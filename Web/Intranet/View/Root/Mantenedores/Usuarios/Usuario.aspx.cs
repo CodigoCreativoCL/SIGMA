@@ -114,10 +114,15 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
             TextMaterno.Text = usuario.usu_apellido_materno;
             Textfono.Text = usuario.usu_telefono;
             TextCorreo.Text = usuario.usu_correo;
-            if (usuario.usu_foto != null)
+            /* La foto, por URL desde Blob (bloque 100). Se conserva la rama
+               de la base64 por si quedara alguna foto vieja en la columna. */
+            if (usuario.usu_archivo_foto != null && usuario.usu_archivo_foto.Value > 0)
+            {
+                imgLogo.ImageUrl = SitioBase.UrlArchivo.Ver(usuario.usu_archivo_foto.Value);
+            }
+            else if (usuario.usu_foto != null)
             {
                 imgLogo.ImageUrl = "data:image/jpeg;base64," + Convert.ToBase64String(usuario.usu_foto, 0, usuario.usu_foto.Length);
-                //lnkAgregarFoto.CssClass = "editar-img";
             }
             if (usuario.usu_habilitado != null)
             {
@@ -190,11 +195,8 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
                 else
                     usuario.usu_habilitado = false;
 
-                if (fudLogo.HasFile)
-                {
-                    usuario.usu_foto = SitioBase.SitioBase.ReducirImagen(fudLogo.FileBytes, 100, 100);
-                    usuario.usu_foto_extension = Path.GetExtension(fudLogo.FileName);
-                }
+                /* La foto se guarda DESPUES de crear el usuario: en un alta
+                   todavia no hay id al que apuntarla. Ver mas abajo. */
                     
                 if (Id > 0)
                     respuesta = usuariosController.UpdateUsuario(usuario);
@@ -205,6 +207,32 @@ public partial class View_Sistema_Usuarios_Usuario : System.Web.UI.Page
 
                     wucUsuarioPerfil.IdUsuario = Id;
                     wucUsuarioPaises.IdUsuario = Id;
+                }
+
+                /* LA FOTO, DESPUES DE GUARDAR AL USUARIO.
+
+                   En un alta el id no existe hasta que InsertUsuario vuelve,
+                   y UPD_USUARIO_FOTO necesita a quien apuntarle. Por eso va
+                   aca y no arriba con el resto de los campos.
+
+                   Si la subida falla NO se dice que todo salio bien: el
+                   usuario quedo guardado —eso es cierto— pero se avisa que
+                   la foto no. Un "guardado con exito" con la foto perdida es
+                   lo que hace que alguien no vuelva a intentarlo. */
+                if (!respuesta.error && fudLogo.HasFile && Id > 0)
+                {
+                    try
+                    {
+                        usuariosController.GuardarFoto(Id, fudLogo.FileName,
+                                                       fudLogo.FileBytes,
+                                                       fudLogo.PostedFile.ContentType);
+                    }
+                    catch (Exception exFoto)
+                    {
+                        Tools.tools.ClientAlert("El usuario se guardó, pero la foto no: " +
+                                                exFoto.Message, "alerta");
+                        return;
+                    }
                 }
 
                 if (!respuesta.error)

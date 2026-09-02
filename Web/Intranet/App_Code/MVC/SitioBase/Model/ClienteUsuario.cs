@@ -21,6 +21,9 @@ namespace SitioBase.Model
         public bool? usu_habilitado { get; set; }
         public byte[] usu_foto { get; set; }
         public string usu_foto_extension { get; set; }
+
+        /// <summary>La foto en Blob Storage (bloque 100).</summary>
+        public int? usu_archivo_foto { get; set; }
         public bool devuelve_foto { get; set; }
         public string nombre_completo { get; set; }
         public string perfiles { get; set; }
