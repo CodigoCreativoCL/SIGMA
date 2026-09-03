@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/Mantenedores/Perfiles/Perfil.aspx" hash="fffffff3c3134113" filehash="217b6ff9f2db6bef" flags="110000" assembly="App_Web_omxkd4i2" type="ASP.view_root_mantenedores_perfiles_perfil_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Perfiles/Perfil.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Perfiles/Perfil.aspx.cs" />
-    </filedeps>
-</preserve>

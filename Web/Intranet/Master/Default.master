@@ -103,10 +103,10 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=14" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=18" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-listas.css?vrs=13" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
          reglas de Grid.css y Button.css que traen !important, y para
          ganarles hay que cargarla al final. --%>
@@ -132,7 +132,7 @@
              nuevo y, del otro lado, ese mismo llamado dispara el detector si
              al freno de la base le toca. Asi el modulo avisa sin depender de
              que alguien apriete un boton. --%>
-        <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-alertas.js") %>?vrs=1"></script>
+        <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-alertas.js") %>?vrs=2"></script>
         <script type="text/javascript">
             sigmaAlertas.iniciar('<%=ResolveUrl("~/WebService/WsAlertas.asmx") %>', 60,
                                  '<%=ResolveUrl("~/Imagen/sigma-ai/") %>');
@@ -323,23 +323,10 @@
 
                         <div class="dropdown-menu dropdown-menu-right sg-notif-panel" data-sg-notif-panel role="region" aria-label="Centro de notificaciones">
 
-                            <%-- MARCAR LEIDO OCURRE EN EL SERVIDOR
-
-                                 Antes lo hacia el sondeo por AJAX: se tocaba una
-                                 alerta y el javascript pedia al handler que la
-                                 marcara. Si esa peticion fallaba —o el handler no
-                                 respondia— NO PASABA NADA Y NADIE SE ENTERABA: el
-                                 contador se quedaba igual sin explicacion.
-
-                                 Ahora cada alerta es un LinkButton dentro de un
-                                 UpdatePanel: el clic va al servidor, marca, y el
-                                 panel y el contador se vuelven a dibujar con lo
-                                 que la base dice. Si algo falla, falla a la vista.
-
-                                 El sondeo sigue, pero solo para enterarse de lo
-                                 que llega mientras la pagina esta abierta. --%>
-                            <asp:UpdatePanel ID="udAlertas" runat="server" UpdateMode="Conditional">
-                                <ContentTemplate>
+                            <%-- La lectura ocurre por WsAlertas y el panel se
+                                 reconcilia con un GET AJAX. No hay LinkButton ni
+                                 UpdatePanel: abrir la campana nunca postea el
+                                 formulario de la pantalla que queda detrás. --%>
 
                             <div class="sg-notif-cabecera">
                                 <div>
@@ -348,8 +335,8 @@
                                     <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
                                 </div>
                                 <div class="sg-notif-cabecera-acciones">
-                                    <asp:LinkButton ID="lnkLeerTodo" runat="server" CssClass="sg-notif-leer"
-                                        OnClick="lnkLeerTodo_Click" Text="Marcar todo como leído" />
+                                    <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
+                                        data-sg-notif-leer-todo>Marcar todo como leído</button>
                                     <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
                                             aria-label="Cerrar centro de notificaciones">
                                         <i class="mdi mdi-close" aria-hidden="true"></i>
@@ -357,14 +344,36 @@
                                 </div>
                             </div>
 
+                            <%-- FILTRAR SIN SALIR DEL PANEL
+
+                                 La pregunta con la que se abre la campana es
+                                 "¿qué hay que no haya mirado?", y hasta ahora
+                                 había que deducirlo del fondo más tenue de
+                                 cada fila y del punto de la derecha.
+
+                                 No viaja al servidor: si cada fila está vista
+                                 o no ya viaja en la fila, así que filtra el
+                                 navegador y responde en el acto. --%>
+                            <div class="sg-notif-filtros" role="group"
+                                 aria-label="Filtrar notificaciones">
+                                <button type="button" class="sg-notif-filtro is-activo"
+                                        data-sg-notif-filtro="" aria-pressed="true">
+                                    Todas <span class="n"></span></button>
+                                <button type="button" class="sg-notif-filtro"
+                                        data-sg-notif-filtro="0" aria-pressed="false">
+                                    Sin ver <span class="n"></span></button>
+                                <button type="button" class="sg-notif-filtro"
+                                        data-sg-notif-filtro="1" aria-pressed="false">
+                                    Vistas <span class="n"></span></button>
+                            </div>
+
                             <div class="sg-notif-cuerpo">
                                 <asp:Repeater ID="rptAlertas" runat="server"
-                                    OnItemDataBound="rptAlertas_ItemDataBound"
-                                    OnItemCommand="rptAlertas_ItemCommand">
+                                    OnItemDataBound="rptAlertas_ItemDataBound">
                                     <ItemTemplate>
-                                        <asp:LinkButton ID="lnkItem" runat="server" CommandName="Abrir">
+                                        <button type="button" ID="lnkItem" runat="server">
                                             <asp:Literal ID="litItem" runat="server" />
-                                        </asp:LinkButton>
+                                        </button>
                                     </ItemTemplate>
                                 </asp:Repeater>
 
@@ -395,9 +404,6 @@
                                     Ver todas las notificaciones <i class="mdi mdi-arrow-right"></i>
                                 </asp:HyperLink>
                             </div>
-
-                                </ContentTemplate>
-                            </asp:UpdatePanel>
                         </div>
                     </li>
 
@@ -600,12 +606,12 @@
                  de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=2"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=4"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=4"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=5"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,
                  filtros, permisos y postbacks; agrega la lectura en drawer. --%>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-listas.js") %>?vrs=15"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-listas.js") %>?vrs=16"></script>
 
             <asp:ContentPlaceHolder ID="chpScript" runat="server">
             </asp:ContentPlaceHolder>

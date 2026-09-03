@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Periodo.aspx" hash="fffffff3c3134113" filehash="20d810a9fdabf32f" flags="110000" assembly="App_Web_iqwhzs23" type="ASP.view_comercial_suscripciones_periodo_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Periodo.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Periodo.aspx.cs" />
-    </filedeps>
-</preserve>

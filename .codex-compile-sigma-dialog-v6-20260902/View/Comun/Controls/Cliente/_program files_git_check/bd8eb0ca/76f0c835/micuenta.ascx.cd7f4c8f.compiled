@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Controls/MiCuenta/MiCuenta.ascx" hash="fffffff3c3134113" filehash="dab917f168a58d8d" flags="110000" assembly="App_Web_0qmnlhc2" type="ASP.view_comun_controls_micuenta_micuenta_ascx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MiCuenta/MiCuenta.ascx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MiCuenta/MiCuenta.ascx.cs" />
-    </filedeps>
-</preserve>

@@ -13,6 +13,8 @@
         '/view/terceros/permisostrabajo/permisotrabajovigentes.aspx',
         '/view/inventario/bodegas/bodegas.aspx',
         '/view/inventario/repuestos/repuestos.aspx',
+        '/view/inventario/existencias/existencias.aspx',
+        '/view/inventario/movimientos/movimientos.aspx',
         '/view/inventario/compatibilidades/repuestocompatibilidades.aspx',
         '/view/organizacion/plantas/plantas.aspx',
         '/view/organizacion/areas/areas.aspx',
@@ -36,7 +38,9 @@
         '/view/activos/activos/activos.aspx': 'ACTIVO',
         '/view/terceros/proveedores/proveedores.aspx': 'PROVEEDOR',
         '/view/inventario/bodegas/bodegas.aspx': 'BODEGA',
-        '/view/inventario/repuestos/repuestos.aspx': 'REPUESTO'
+        '/view/inventario/repuestos/repuestos.aspx': 'REPUESTO',
+        '/view/inventario/existencias/existencias.aspx': 'EXISTENCIA',
+        '/view/inventario/movimientos/movimientos.aspx': 'MOVIMIENTO'
     };
 
     var path = (window.location.pathname || '').toLowerCase();
@@ -316,6 +320,13 @@
     /* El id sale del onclick del enlace de editar, que ya lo lleva cifrado.
        El navegador no descifra nada: devuelve el mismo token que recibio. */
     function tokenDe(row) {
+        /* Existencias abre su ficha completa por REPUESTO, pero el drawer
+           necesita el isa_id que identifica la pareja repuesto/bodega. La
+           fila puede declarar ese segundo token sin cambiar el enlace que ya
+           usa la pantalla. */
+        var propio = row.getAttribute('data-sgx-token') || '';
+        if (propio) return propio;
+
         var edit = findEdit(row);
         if (!edit) return '';
 
@@ -355,12 +366,13 @@
                 var r;
                 try { r = JSON.parse(result.d); } catch (e) { r = null; }
 
-                if (!r || r.error || !r.filas || !r.filas.length) {
+                if (!r || r.error ||
+                    ((!r.filas || !r.filas.length) && (!r.historial || !r.historial.length))) {
                     caja.innerHTML = '';
                     return;
                 }
 
-                pintarFicha(caja, r.filas);
+                pintarFicha(caja, r.filas || [], r.historial || []);
             },
             error: function () {
                 if (fichaEnVuelo !== mia) return;
@@ -369,7 +381,7 @@
         });
     }
 
-    function pintarFicha(caja, filas) {
+    function pintarFicha(caja, filas, historial) {
         var html = '';
         var seccion = null;
 
@@ -388,6 +400,40 @@
         }
 
         if (seccion !== null) html += '</div>';
+
+        if (historial && historial.length) {
+            html += '<div class="sgx-historial"><h3>' +
+                    '<i class="mdi mdi-history" aria-hidden="true"></i>' +
+                    'Últimos movimientos</h3><div class="sgx-timeline">';
+
+            for (var j = 0; j < historial.length; j++) {
+                var h = historial[j];
+                var sentido = h.sentido === 'ENTRADA' ? 'entrada' :
+                              (h.sentido === 'SALIDA' ? 'salida' : 'neutro');
+                var signo = sentido === 'entrada' ? '+' : (sentido === 'salida' ? '−' : '');
+                var contexto = [];
+
+                if (h.ubicacion) contexto.push('<span><i class="mdi mdi-map-marker-outline"></i>' +
+                                                htmlEscape(h.ubicacion) + '</span>');
+                if (h.orden) contexto.push('<span><i class="mdi mdi-clipboard-text-outline"></i>OT ' +
+                                           htmlEscape(h.orden) + '</span>');
+
+                html += '<article class="sgx-timeline-item is-' + sentido +
+                        (h.esEste === '1' ? ' is-current' : '') + '">' +
+                        '<span class="sgx-timeline-dot" aria-hidden="true"></span>' +
+                        '<div class="sgx-timeline-top"><div class="sgx-timeline-identidad">' +
+                        (h.avatar || '') + '<div><strong>' + htmlEscape(h.tipo) + '</strong>' +
+                        '<span>' + htmlEscape(h.fecha) + ' · ' + htmlEscape(h.hora) + '</span></div></div>' +
+                        '<span class="sgx-timeline-cantidad">' + signo + htmlEscape(h.cantidad) + '</span></div>' +
+                        (h.usuario ? '<div class="sgx-timeline-usuario">' + htmlEscape(h.usuario) + '</div>' : '') +
+                        (h.motivo ? '<p>' + htmlEscape(h.motivo) + '</p>' : '') +
+                        (contexto.length ? '<div class="sgx-timeline-meta">' + contexto.join('') + '</div>' : '') +
+                        (h.esEste === '1' ? '<span class="sgx-timeline-actual">Movimiento seleccionado</span>' : '') +
+                        '</article>';
+            }
+
+            html += '</div></div>';
+        }
 
         caja.innerHTML = html;
     }
@@ -614,8 +660,11 @@
            panel tardaria en abrir y se sentiria trabado. */
         body += '<div class="sgx-drawer-ficha" data-sgx-ficha></div>';
 
+        var esSoloLectura = row.getAttribute('data-sgx-readonly') === '1';
         var actionsHtml = originalEdit
-            ? '<button type="button" data-sgx-action="edit"><i class="mdi mdi-pencil-outline"></i>Editar registro</button>'
+            ? '<button type="button" data-sgx-action="edit"><i class="mdi ' +
+              (esSoloLectura ? 'mdi-open-in-new' : 'mdi-pencil-outline') + '"></i>' +
+              (esSoloLectura ? 'Abrir ficha completa' : 'Editar registro') + '</button>'
             : '<p><i class="mdi mdi-eye-outline"></i> Este registro es de solo lectura.</p>';
 
         /* Se pide DESPUES de armar el cuerpo: el panel abre de inmediato con

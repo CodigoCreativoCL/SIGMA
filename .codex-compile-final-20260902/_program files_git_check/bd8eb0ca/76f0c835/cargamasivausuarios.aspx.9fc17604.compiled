@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Clientes/CargaMasivaUsuarios.aspx" hash="fffffff3c3134113" filehash="33ebb28f9160f132" flags="110000" assembly="App_Web_a1ag0u44" type="ASP.view_comun_clientes_cargamasivausuarios_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Clientes/CargaMasivaUsuarios.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Clientes/CargaMasivaUsuarios.aspx.cs" />
-    </filedeps>
-</preserve>

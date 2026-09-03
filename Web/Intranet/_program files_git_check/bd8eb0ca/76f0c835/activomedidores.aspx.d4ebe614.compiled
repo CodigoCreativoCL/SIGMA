@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Activos/Medidores/ActivoMedidores.aspx" hash="fffffff3c3134113" filehash="e97d1bf61b73bd7d" flags="110000" assembly="App_Web_r3oijxg2" type="ASP.view_activos_medidores_activomedidores_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Activos/Medidores/ActivoMedidores.aspx" hash="fffffff3c3134113" filehash="acff09e324ca4509" flags="110000" assembly="App_Web_lwajx3ib" type="ASP.view_activos_medidores_activomedidores_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
