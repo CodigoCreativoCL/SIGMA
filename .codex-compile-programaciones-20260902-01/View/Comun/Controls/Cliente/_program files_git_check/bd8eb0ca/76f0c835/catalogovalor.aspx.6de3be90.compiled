@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Sistema/Catalogos/CatalogoValor.aspx" hash="fffffff3c3134113" filehash="3c567ecc513a586c" flags="110000" assembly="App_Web_4tpv44cl" type="ASP.view_sistema_catalogos_catalogovalor_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Sistema/Catalogos/CatalogoValor.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Sistema/Catalogos/CatalogoValor.aspx.cs" />
-    </filedeps>
-</preserve>

@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Inventario/Existencias/Existencia.aspx" hash="fffffff3c3134113" filehash="679767b8277a7957" flags="110000" assembly="App_Web_lrhuqqwy" type="ASP.view_inventario_existencias_existencia_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Inventario/Existencias/Existencia.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Inventario/Existencias/Existencia.aspx.cs" />
-    </filedeps>
-</preserve>

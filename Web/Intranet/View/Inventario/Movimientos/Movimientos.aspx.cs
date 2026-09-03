@@ -136,6 +136,8 @@ public partial class View_Inventario_Movimientos_Movimientos : System.Web.UI.Pag
         ver.Attributes.Add("onclick", "abrirMovimiento('" + query + "')");
 
         item["IMO_ID"].Controls.Add(ver);
+        item.Attributes["data-sgx-token"] = query;
+        item.Attributes["data-sgx-readonly"] = "1";
 
         // ---- Qué pasó ----
         item["FAMILIA"].Controls.Add(new Literal { Text = Familia(m) });
@@ -281,8 +283,4 @@ public partial class View_Inventario_Movimientos_Movimientos : System.Web.UI.Pag
         Grid.DataSource = controller.GetMovimientos(filtro);
     }
 
-    /// <summary>
-    /// Una fecha del filtro. Vacía es válida —significa "sin límite"— y una
-    /// mal escrita se ignora en vez de voltear la pantalla: es un filtro,
-    /// no un formulario que se está guardando.
 }

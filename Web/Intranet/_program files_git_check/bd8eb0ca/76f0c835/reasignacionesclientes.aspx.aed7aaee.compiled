@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Clientes/ReasignacionesClientes.aspx" hash="fffffff3c3134113" filehash="3593f624c45693f3" flags="110000" assembly="App_Web_jpu0oy0a" type="ASP.view_comercial_clientes_reasignacionesclientes_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Clientes/ReasignacionesClientes.aspx" hash="fffffff3c3134113" filehash="359194b7c627ae75" flags="110000" assembly="App_Web_ds013q3v" type="ASP.view_comercial_clientes_reasignacionesclientes_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />

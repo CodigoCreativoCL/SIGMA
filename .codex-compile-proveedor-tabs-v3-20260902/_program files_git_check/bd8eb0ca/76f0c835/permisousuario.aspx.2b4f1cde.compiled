@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx" hash="fffffff3c3134113" filehash="ce042d5ad08321ad" flags="110000" assembly="App_Web_51iopgtf" type="ASP.view_root_mantenedores_permisosusuario_permisousuario_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx.cs" />
-    </filedeps>
-</preserve>
