@@ -8,11 +8,13 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPrivacidad(query) {
-            var oWin = $find("<%= rwiDetalle.ClientID %>");
-            if (!query) query = '';
-            oWin.setUrl('<%= ResolveUrl("~/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
-            oWin.set_title(!query ? 'Nueva Política de Privacidad' : 'Editar Política de Privacidad');
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%= ResolveUrl("~/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
+            oWin.set_title(!query ? 'Nueva Política de Privacidad' : 'Editar Política de Privacidad',
+                title: 'Nueva privacidad modulo sistema',
+                width: 1000,
+                initialHeight: 380
+            });
         }
         function refreshPrivacidades() {
             __doPostBack('<%= Grid.ClientID %>', '');
@@ -29,7 +31,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">

@@ -3,21 +3,30 @@
 <%@ Register Src="~/View/Comun/Controls/PanelSinSeleccion.ascx" TagPrefix="wuc" TagName="PanelSinSeleccion" %>
 <script type="text/javascript">
     function abrirUsuario(query) {
-        var oWin = $find("<%=rwiDetalle.ClientID %>");
-        oWin.setUrl('<%=ResolveUrl("~/View/Comun/Clientes/NuevoUsuario.aspx") %>?query=' + query);
-        oWin.show();
+        return SigmaModal.open({
+            url: '<%=ResolveUrl("~/View/Comun/Clientes/NuevoUsuario.aspx") %>?query=' + query,
+            title: 'Nuevo usuario',
+            width: 1000,
+            initialHeight: 380
+        });
     }
 
     function asociarUsuario(query) {
-        var oWin = $find("<%=rwiDetalle.ClientID %>");
-        oWin.setUrl('<%=ResolveUrl("~/View/Comun/Clientes/AsociarUsuario.aspx") %>?query=' + query);
-        oWin.show();
+        return SigmaModal.open({
+            url: '<%=ResolveUrl("~/View/Comun/Clientes/AsociarUsuario.aspx") %>?query=' + query,
+            title: 'Asociar usuario',
+            width: 1000,
+            initialHeight: 380
+        });
     }
 
     function cargaMasiva(query) {
-        var oWin = $find("<%=rwiDetalle.ClientID %>");
-        oWin.setUrl('<%=ResolveUrl("~/View/Comun/Clientes/CargaMasivaUsuarios.aspx") %>?query=' + query);
-        oWin.show();
+        return SigmaModal.open({
+            url: '<%=ResolveUrl("~/View/Comun/Clientes/CargaMasivaUsuarios.aspx") %>?query=' + query,
+            title: 'Carga masiva usuarios',
+            width: 1000,
+            initialHeight: 380
+        });
     }
 
 
@@ -26,7 +35,6 @@
     }
 </script>
 
-<rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
 
 <asp:UpdatePanel runat="server" ID="udPanelContenedor" UpdateMode="Conditional">
     <ContentTemplate>

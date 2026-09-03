@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" role="img" aria-labelledby="title desc">
+  <title id="title">Notificaciones SIGMA</title>
+  <desc id="desc">Campana de notificaciones para fondos claros con indicador animado.</desc>
+  <defs>
+    <linearGradient id="sigma-bell-light-gradient" x1="7" y1="6" x2="25" y2="27" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00BFAE"/>
+      <stop offset="0.48" stop-color="#2563EB"/>
+      <stop offset="0.76" stop-color="#6C5CFF"/>
+      <stop offset="1" stop-color="#FF4D9D"/>
+    </linearGradient>
+    <radialGradient id="sigma-bell-light-dot" cx="35%" cy="30%" r="70%">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="0.24" stop-color="#8E82FF"/>
+      <stop offset="1" stop-color="#6C5CFF"/>
+    </radialGradient>
+  </defs>
+  <style>
+    .sigma-bell-light-ring {
+      transform-box: view-box;
+      transform-origin: 24px 8px;
+      animation: sigma-bell-light-pulse 2s cubic-bezier(.2,.7,.35,1) infinite;
+    }
+    .sigma-bell-light-body { animation: sigma-bell-light-sway 5s ease-in-out infinite; transform-origin:16px 5px; }
+    @keyframes sigma-bell-light-pulse {
+      0% { opacity: .74; transform: scale(.35); stroke-width: 2px; }
+      75%, 100% { opacity: 0; transform: scale(1); stroke-width: .7px; }
+    }
+    @keyframes sigma-bell-light-sway {
+      0%, 88%, 100% { transform: rotate(0); }
+      91% { transform: rotate(-4deg); }
+      95% { transform: rotate(4deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .sigma-bell-light-ring, .sigma-bell-light-body { animation: none; }
+      .sigma-bell-light-ring { opacity: .2; }
+    }
+  </style>
+  <g class="sigma-bell-light-body" fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8.5 22.6h15c-1.9-1.9-2.7-4.2-2.7-7v-2.1a4.8 4.8 0 0 0-9.6 0v2.1c0 2.8-.8 5.1-2.7 7Z" stroke="url(#sigma-bell-light-gradient)" stroke-width="2.2"/>
+    <path d="M13.5 25.1c.55 1.25 1.35 1.9 2.5 1.9s1.95-.65 2.5-1.9" stroke="#0B0F1A" stroke-width="2.1"/>
+    <path d="M16 5.2v1.25" stroke="#0B0F1A" stroke-width="2"/>
+  </g>
+  <circle class="sigma-bell-light-ring" cx="24" cy="8" r="6" fill="none" stroke="#6C5CFF"/>
+  <circle cx="24" cy="8" r="3.25" fill="url(#sigma-bell-light-dot)" stroke="#FFFFFF" stroke-width="1.5"/>
+</svg>

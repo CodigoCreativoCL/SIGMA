@@ -132,44 +132,60 @@ public partial class View_Terceros_PermisosTrabajo_PermisoTrabajos : System.Web.
         HyperLink editar = new HyperLink();
         editar.ID = "lnkEditar" + item.ItemIndex;
         editar.CssClass = "icono_Editar";
+        editar.ToolTip = "Abrir detalle del permiso";
+        editar.Attributes["aria-label"] = "Abrir detalle del permiso " + Server.HtmlEncode(p.tipo_nombre);
         editar.NavigateUrl = "javascript:void(0)";
         editar.Attributes.Add("onclick", "abrirPermiso('" + query + "')");
 
         item["PTR_ID"].Controls.Add(editar);
 
         // ---- Qué permiso es ----
-        string permiso = "<strong>" + Server.HtmlEncode(p.tipo_nombre) + "</strong>";
+        string permiso = "<div class=\"sg-permit-identity\"><strong>" + Server.HtmlEncode(p.tipo_nombre) + "</strong>";
 
         if (!string.IsNullOrEmpty(p.ptr_numero))
-            permiso += "<br /><span style=\"color:#777;font-size:11px;\">Folio " +
+            permiso += "<span class=\"sg-permit-folio\"><i class=\"mdi mdi-identifier\"></i>Folio " +
                        Server.HtmlEncode(p.ptr_numero) + "</span>";
 
         if (!string.IsNullOrEmpty(p.orden_correlativo))
-            permiso += "<br /><span style=\"color:#999;font-size:11px;\">OT " +
-                       Server.HtmlEncode(p.orden_correlativo) + "</span>";
+            permiso += "<span class=\"sg-permit-work\"><i class=\"mdi mdi-clipboard-text-outline\"></i>OT " +
+                       Server.HtmlEncode(p.orden_correlativo) +
+                       (string.IsNullOrEmpty(p.orden_titulo) ? "" : " · " + Server.HtmlEncode(p.orden_titulo)) + "</span>";
+
+        permiso += "</div>";
 
         item["PERMISO"].Text = permiso;
 
         /* ---- Hasta cuándo ----
            El chip dice la situación y debajo va en palabras cuánto falta:
            "-5" obliga a interpretar el signo, "Venció hace 5 días" no. */
-        string vigencia = "<span class=\"grid-estado-chip " + p.situacion_clase + "\">" +
-                          Server.HtmlEncode(p.situacion) + "</span>" +
-                          "<br /><span style=\"font-size:11px;\">" +
-                          Server.HtmlEncode(p.vigencia_texto) + "</span>";
+        string iconoSituacion = p.situacion == "VENCIDO" ? "mdi-close-circle-outline" :
+                                 (p.situacion == "POR VENCER" ? "mdi-clock-alert-outline" : "mdi-check-circle-outline");
+        string vigencia = "<div class=\"sg-permit-vigencia\"><span class=\"grid-estado-chip " + p.situacion_clase + "\">" +
+                          "<i class=\"mdi " + iconoSituacion + "\"></i>" + Server.HtmlEncode(p.situacion) + "</span>" +
+                          "<strong>" + Server.HtmlEncode(p.vigencia_texto) + "</strong>";
 
         if (p.ptr_fecha_vigencia_fin_utc != null)
-            vigencia += "<br /><span style=\"color:#999;font-size:11px;\">hasta el " +
-                        p.ptr_fecha_vigencia_fin_utc.Value.ToString("dd-MM-yyyy") + "</span>";
+            vigencia += "<small><i class=\"mdi mdi-calendar-end\"></i>Hasta " +
+                        p.ptr_fecha_vigencia_fin_utc.Value.ToString("dd MMM yyyy") + "</small>";
+
+        vigencia += "</div>";
 
         item["VIGENCIA"].Text = vigencia;
 
         // ---- En qué estado está y quién lo pidió ----
-        string estado = Server.HtmlEncode(p.estado_nombre);
+        string estadoClase = p.estado_codigo == "SOLICITADO" ? " is-pending" :
+                             (p.estado_codigo == "AUTORIZADO" ? " is-approved" : "");
+        string estado = "<div class=\"sg-permit-context\"><span class=\"sg-permit-workflow" + estadoClase + "\">" +
+                        "<i class=\"mdi mdi-progress-check\"></i>" + Server.HtmlEncode(p.estado_nombre) + "</span>";
 
+        /* La cara del solicitante y no un icono generico. Un permiso lo pide
+           alguien, y en una lista de treinta la pregunta frecuente es "¿este
+           quien lo pidio?". El avatar responde sin leer. */
         if (!string.IsNullOrEmpty(p.solicitante_nombre))
-            estado += "<br /><span style=\"color:#777;font-size:11px;\">" +
-                      Server.HtmlEncode(p.solicitante_nombre) + "</span>";
+            estado += SitioBase.Avatar.CeldaUno(p.solicitante_id, p.solicitante_nombre,
+                                                p.solicitante_foto, "Solicitante");
+
+        estado += "</div>";
 
         item["ESTADO"].Text = estado;
 
@@ -190,5 +206,13 @@ public partial class View_Terceros_PermisosTrabajo_PermisoTrabajos : System.Web.
                 "<span class=\"grid-estado-chip is-advertencia\">" +
                 "<i class=\"mdi mdi-file-alert-outline\"></i>Sin documento</span>";
         }
+
+        /* `is-current` NO puede usarse aca: es la clase con la que el panel de
+           detalle marca la fila que esta abierta. Al ponersela a todas las
+           filas vigentes, el panel no tenia como distinguir cual estaba
+           mirando. Se llama `is-vigente`, que ademas dice lo que es. */
+        item.CssClass += " sg-permit-row " +
+                         (p.situacion == "VENCIDO" ? "is-overdue" :
+                          (p.situacion == "POR VENCER" ? "is-expiring" : "is-vigente"));
     }
 }

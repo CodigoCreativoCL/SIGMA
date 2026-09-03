@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Sistema/Catalogos/Catalogos.aspx" hash="fffffff3c3134113" filehash="d03fec5a3e9a8736" flags="110000" assembly="App_Web_o3knphuv" type="ASP.view_sistema_catalogos_catalogos_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Sistema/Catalogos/Catalogos.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Sistema/Catalogos/Catalogos.aspx.cs" />
+    </filedeps>
+</preserve>

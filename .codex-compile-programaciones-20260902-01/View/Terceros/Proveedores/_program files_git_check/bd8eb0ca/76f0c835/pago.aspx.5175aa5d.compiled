@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx" hash="fffffff3c3134113" filehash="293b050eeb1d356b" flags="110000" assembly="App_Web_dmvpea12" type="ASP.view_comercial_suscripciones_pago_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Pago.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Adjunto.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Adjunto.ascx.cs" />
+    </filedeps>
+</preserve>

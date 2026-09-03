@@ -1,0 +1,46 @@
+﻿body
+{
+}
+
+.modalBackground
+{
+	background-color: Gray;
+	filter: alpha(opacity=50);
+	opacity: 0.50;
+}
+
+
+
+.updateProgress {
+    /*width: 100%;
+    top: 250px !important;*/
+    background-color: #FFFFFF;
+    position: absolute;
+    top: 75%; /* Buscamos el centro horizontal (relativo) del navegador */
+    left: 75%; /* Buscamos el centro vertical (relativo) del navegador */
+    background-color: #FFFFFF;
+    position: absolute;
+    width: 350px;
+    height: 280px;
+    border-radius: 5px;
+}
+
+
+/*Se utiliza para la firma de contratos*/
+.updateProgressContato
+{
+    background-color: #FFFFFF;
+    position: absolute;
+    top: 75%; /* Buscamos el centro horizontal (relativo) del navegador */
+    left: 75%; /* Buscamos el centro vertical (relativo) del navegador */
+    
+    margin-top: -200px; /* Restamos la mitad de la altura del objeto con un margin-top */
+    margin-left: -300px; /* Restamos la mitad de la anchura del objeto con un margin-left */
+    
+    border-width: 1px;
+	border-style: solid;
+	background-color: #FFFFFF;
+	position: absolute;
+	width: 180px;
+	height: 75px;
+}

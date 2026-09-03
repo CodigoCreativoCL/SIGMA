@@ -1,0 +1,2265 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA — Ficha de programación
+   ----------------------------------------------------------------------------
+   Solo esta pantalla. Se enlaza UNA vez, desde la propia ficha: enlazarla
+   tambien en el Master la descargaria dos veces y cada regla apareceria
+   duplicada.
+   ============================================================================ */
+
+.sg-prog-modal { --sg-p: #6C5CFF; --sg-borde: rgba(17, 24, 39, .10); }
+
+/* ---------------------------------------------------------------- cabecera */
+.sg-prog-cab {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding-bottom: 16px;
+}
+
+.sg-prog-eyebrow {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #6b7280;
+}
+
+.sg-prog-titulo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin: 2px 0 4px;
+    font-size: 22px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sg-prog-id { font-size: 12px; font-weight: 600; color: #9ca3af; }
+.sg-prog-bajada { margin: 0; font-size: 13px; color: #6b7280; }
+
+.sg-prog-cab-acciones { display: flex; align-items: center; gap: 8px; }
+
+/* ------------------------------------------------------------------ botones */
+.sg-btn-principal,
+.sg-btn-secundario,
+.sg-btn-plano {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 16px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    text-decoration: none !important;
+    transition: filter .15s ease, background-color .15s ease;
+}
+
+.sg-btn-principal { background: var(--sg-p); color: #fff !important; }
+.sg-btn-principal:hover { filter: brightness(1.07); }
+
+.sg-btn-secundario { background: #fff; color: #374151 !important; border-color: var(--sg-borde); }
+.sg-btn-secundario:hover { background: #f9fafb; }
+
+.sg-btn-plano { background: transparent; color: #4b5563 !important; border-color: var(--sg-borde); }
+.sg-btn-plano:hover { background: #f9fafb; }
+.sg-btn-plano.is-bloque { width: 100%; }
+
+/* ------------------------------------------------------------------ stepper */
+.sg-pasos {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 0 18px;
+    overflow-x: auto;
+}
+
+.sg-paso {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #9ca3af !important;
+    text-decoration: none !important;
+    white-space: nowrap;
+    flex: 0 0 auto;
+}
+
+.sg-paso-bolita {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    background: #eef0f4;
+    color: #6b7280;
+    flex: 0 0 auto;
+}
+
+.sg-paso.is-activo { color: var(--sg-p) !important; background: rgba(108, 92, 255, .08); }
+.sg-paso.is-activo .sg-paso-bolita { background: var(--sg-p); color: #fff; }
+
+.sg-paso.is-listo { color: #374151 !important; }
+.sg-paso.is-listo .sg-paso-bolita { background: #dcfce7; color: #15803d; }
+
+/* Un paso con algo pendiente se ve, pero no grita: sigue siendo navegable. */
+.sg-paso.is-pendiente .sg-paso-bolita { background: #fef3c7; color: #b45309; }
+
+.sg-paso-linea { flex: 1 1 12px; min-width: 12px; height: 1px; background: #e5e7eb; }
+
+/* ------------------------------------------------------------- dos columnas */
+.sg-prog {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    gap: 18px;
+    align-items: start;
+}
+
+/* Solo el paso activo se ve. Los otros cinco SIGUEN EN EL DOM: si se
+   quitaran, sus campos no postearian y cambiar de paso borraria lo escrito. */
+.sg-paso-panel { display: none; }
+.sg-paso-panel.is-activo { display: block; }
+
+/* ----------------------------------------------------------------- tarjetas */
+.sg-tarjeta {
+    background: #fff;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 12px;
+}
+
+.sg-tarjeta-cab { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 14px; }
+
+.sg-letra {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: rgba(108, 92, 255, .10);
+    color: var(--sg-p);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.sg-letra.is-tenue { background: #f3f4f6; color: #6b7280; }
+.sg-tarjeta-titulo { font-size: 14px; font-weight: 700; color: #111827; }
+.sg-tarjeta-bajada { font-size: 12px; color: #6b7280; margin-top: 1px; }
+
+/* ------------------------------------------------------------------- campos
+
+   La grilla, los tramos y el campo de fecha NO se redefinen acá: ya viven en
+   sigma-modal.css y esa hoja resuelve cosas que costaron encontrar —el icono
+   del calendario que caía debajo del input, el width:95px !important del
+   control que corta la fecha—. Redefinirlas acá las perdería.
+
+   Lo de abajo es lo único propio de esta ficha.
+   ------------------------------------------------------------------------- */
+.sg-candado { display: inline-flex; align-items: center; gap: 4px; }
+
+.sigma-modal-rotulo {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+}
+
+.sg-conunidad { display: flex; align-items: center; gap: 6px; }
+.sg-conunidad .RadNumericBox { flex: 1 1 auto; }
+.sg-unidad { font-size: 12px; color: #6b7280; white-space: nowrap; }
+
+/* ---------------------------------------------------------------- segmentado */
+.sg-segmentado {
+    display: inline-flex;
+    gap: 2px;
+    padding: 3px;
+    background: #f3f4f6;
+    border-radius: 10px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.sg-seg {
+    padding: 7px 16px;
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6b7280 !important;
+    text-decoration: none !important;
+}
+
+.sg-seg:hover { color: #374151 !important; }
+.sg-seg.is-activa { background: var(--sg-p); color: #fff !important; }
+
+/* --------------------------------------------------------------------- chips */
+.sg-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.sg-chip {
+    padding: 6px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--sg-borde);
+    background: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #6b7280 !important;
+    text-decoration: none !important;
+    transition: background-color .12s ease, border-color .12s ease;
+}
+
+.sg-chip:hover { border-color: #c7c9d1; color: #374151 !important; }
+
+/* El marcado tiene que notarse SIN depender del color: lleva fondo, borde y
+   peso distintos, no solo un tono. */
+.sg-chip.is-marcado {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff !important;
+}
+
+.sg-chip:focus-visible,
+.sg-seg:focus-visible,
+.sg-paso:focus-visible,
+.sg-opcion:focus-visible { outline: 2px solid var(--sg-p); outline-offset: 2px; }
+
+/* ------------------------------------------------------------------ opciones */
+.sg-opciones { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 16px; }
+.sg-opciones.is-compacta { margin-bottom: 0; }
+
+/* Las excluyentes se ven como UNA decision: tarjetas que se eligen, no
+   radios sueltos repartidos por el formulario. */
+.sg-opcion {
+    flex: 1 1 200px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+    cursor: pointer;
+    text-decoration: none !important;
+    color: inherit !important;
+    transition: border-color .12s ease, background-color .12s ease;
+}
+
+.sg-opcion:hover { border-color: #c7c9d1; }
+
+.sg-opcion.is-elegida {
+    border-color: var(--sg-p);
+    background: rgba(108, 92, 255, .05);
+}
+
+.sg-opcion-marca {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid #d1d5db;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 auto;
+    margin-top: 1px;
+    font-size: 11px;
+    color: transparent;
+}
+
+.sg-opcion.is-elegida .sg-opcion-marca {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff;
+}
+
+.sg-opcion-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sg-opcion-t { font-size: 13px; font-weight: 600; color: #111827; }
+.sg-opcion-d { font-size: 11.5px; color: #6b7280; line-height: 1.4; }
+
+.sg-opcion-radio { align-items: center; }
+.sg-opcion-radio input[type="radio"] { margin: 0 2px 0 0; }
+
+/* -------------------------------------------------------------- interruptores */
+/* LA CAJA MEDIA 240px DE ALTO
+
+   Estaba como `flex: 1 1 240px` dentro de un flex EN COLUMNA, y en columna
+   ese 240px es la ALTURA, no el ancho. De ahi los dos rectangulos vacios de
+   la ventana de cumplimiento: no sobraba espaciado, sobraba caja.
+
+   El tramo va solo en la variante en fila, que es donde 240px si significa
+   ancho. */
+.sg-interruptores {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: stretch;
+}
+
+.sg-interruptores.is-fila { flex-direction: row; flex-wrap: wrap; gap: 10px; margin-top: 12px; }
+.sg-interruptores.is-fila > .sg-check { flex: 1 1 240px; }
+
+.sg-check {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 9px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: #fff;
+    cursor: pointer;
+}
+
+.sg-check-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.sg-check-t { font-size: 12.5px; font-weight: 600; color: #111827; line-height: 1.3; }
+.sg-check-d { font-size: 11px; color: #6b7280; line-height: 1.35; }
+.sg-switch { display: flex; gap: 6px; flex: 0 0 auto; padding-top: 1px; }
+
+/* --------------------------------------------------------------------- notas */
+
+.sg-resumen-linea {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+    padding: 10px 14px;
+    border-radius: 10px;
+    background: rgba(108, 92, 255, .06);
+    color: #4c3fd8;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+
+.sg-vacio {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    padding: 22px 16px;
+    border: 1px dashed #d8dae0;
+    border-radius: 12px;
+    color: #6b7280;
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+.sg-vacio i { font-size: 26px; color: #c7c9d1; }
+
+/* --------------------------------------------------------------------- tabla */
+.sg-tabla { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: 12.5px; }
+
+.sg-tabla th {
+    text-align: left;
+    padding: 9px 10px;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6b7280;
+    background: #f9fafb;
+    border-bottom: 1px solid var(--sg-borde);
+}
+
+.sg-tabla td { padding: 11px 10px; border-bottom: 1px solid #f1f2f4; color: #374151; }
+.sg-tabla tr:last-child td { border-bottom: 0; }
+.sg-tabla-acciones { width: 80px; text-align: right; }
+
+.sg-etiqueta {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.sg-etiqueta.is-info   { background: #e0f2fe; color: #0369a1; }
+.sg-etiqueta.is-alerta { background: #fef3c7; color: #b45309; }
+.sg-etiqueta.is-ok     { background: #dcfce7; color: #15803d; }
+.sg-etiqueta.is-off    { background: #f3f4f6; color: #6b7280; }
+
+.sg-icono-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-borde);
+    color: #6b7280 !important;
+    text-decoration: none !important;
+}
+
+.sg-icono-btn:hover { background: #f9fafb; }
+.sg-icono-btn.is-borrar:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626 !important; }
+
+/* ------------------------------------------------------------------- resumen */
+.sg-prog-resumen { position: sticky; top: 12px; }
+
+.sg-resumen-caja {
+    background: #fff;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    padding: 16px;
+}
+
+.sg-resumen-titulo { font-size: 13px; font-weight: 700; color: #111827; margin-bottom: 12px; }
+
+.sg-resumen-frase {
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sg-p);
+    line-height: 1.45;
+    margin-bottom: 14px;
+}
+
+.sg-resumen-dato {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-size: 12px;
+    color: #4b5563;
+    padding: 4px 0;
+    line-height: 1.45;
+}
+
+.sg-resumen-dato i { font-size: 14px; color: #9ca3af; flex: 0 0 auto; margin-top: 1px; }
+
+.sg-resumen-sub {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+    color: #6b7280;
+    margin: 14px 0 6px;
+}
+
+.sg-resumen-estado {
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+    margin-top: 14px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12px;
+    font-weight: 600;
+    line-height: 1.45;
+}
+
+.sg-resumen-estado.is-ok { background: #f0fdf4; color: #15803d; }
+.sg-resumen-estado.is-falta { background: #fffbeb; color: #92400e; font-weight: 500; }
+.sg-resumen-estado ul { margin: 4px 0 0; padding-left: 16px; }
+.sg-resumen-estado li { margin-bottom: 2px; }
+
+.sg-resumen-acciones { margin-top: 14px; display: flex; flex-direction: column; gap: 8px; }
+
+/* ----------------------------------------------------------------- revisión */
+.sg-revision { display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 0; margin: 0; }
+
+.sg-revision dt {
+    padding: 9px 0;
+    font-size: 12px;
+    color: #6b7280;
+    border-bottom: 1px solid #f1f2f4;
+}
+
+.sg-revision dd {
+    padding: 9px 0;
+    margin: 0;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #111827;
+    border-bottom: 1px solid #f1f2f4;
+}
+
+/* ------------------------------------------------------------------ nav pasos */
+.sg-prog-nav {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    padding-top: 4px;
+}
+
+.sg-prog-nav a:only-child { margin-left: auto; }
+
+/* --------------------------------------------------------------------------
+   Oculto para el ojo, VIVO para el navegador y el lector de pantalla.
+
+   No es display:none. Los combos y la lista de días originales siguen siendo
+   la fuente de verdad —los chips solo los mueven—, así que tienen que seguir
+   posteando su valor. Un display:none los dejaría fuera del formulario.
+   -------------------------------------------------------------------------- */
+.sg-oculto-accesible {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* ------------------------------------------------------------------- móvil */
+@media (max-width: 900px) {
+    .sg-prog { grid-template-columns: minmax(0, 1fr); }
+
+    /* En móvil el resumen va ARRIBA: es lo que orienta, y abajo del todo
+       nadie lo ve. */
+    .sg-prog-resumen { position: static; order: -1; }
+
+    .sg-prog-cab { flex-direction: column; }
+    .sg-prog-cab-acciones { width: 100%; }
+    .sg-prog-cab-acciones a, .sg-prog-cab-acciones input { flex: 1 1 auto; }
+
+    /* La tabla se vuelve fichas: cinco columnas no caben y el scroll
+       horizontal esconde justamente la de acciones. */
+    .sg-tabla thead { display: none; }
+    .sg-tabla, .sg-tabla tbody, .sg-tabla tr, .sg-tabla td { display: block; width: 100%; }
+
+    .sg-tabla tr {
+        border: 1px solid var(--sg-borde);
+        border-radius: 12px;
+        padding: 6px 10px;
+        margin-bottom: 10px;
+    }
+
+    .sg-tabla td { border: 0; padding: 6px 0; display: flex; justify-content: space-between; gap: 12px; }
+    .sg-tabla td::before { content: attr(data-rotulo); font-size: 11px; color: #6b7280; font-weight: 600; }
+    .sg-tabla-acciones { width: auto; text-align: left; }
+    .sg-revision { grid-template-columns: minmax(0, 1fr); }
+    .sg-revision dt { border-bottom: 0; padding-bottom: 0; }
+}
+
+
+/* ============================================================================
+   LA ACCION DE UNA SECCION VA SOLA Y A LA DERECHA
+
+   "Agregar exclusion" no es un campo: metido en la fila junto a Desde, Hasta
+   y Motivo competia con ellos y ademas quedaba a media altura, alineado con
+   nada.
+   ============================================================================ */
+.sg-fila-accion {
+    display: flex;
+    justify-content: flex-end;
+    padding-top: 2px;
+}
+
+/* ============================================================================
+   CANCELAR Y GUARDAR, LA MISMA FORMA
+
+   Cancelar es un PushButton con la clase ButtonCerrar del framework, que trae
+   su propio alto, su radio y su tipografia. Al lado de Guardar se veian como
+   botones de dos productos distintos.
+
+   Se igualan las MEDIDAS —alto, radio, tipografia, padding— y se deja que el
+   color siga distinguiendolos: la accion destructiva y la principal tienen
+   que verse hermanas en forma y distintas en peso, no al reves.
+   ============================================================================ */
+.sg-prog-cab-acciones input[type="submit"],
+.sg-prog-cab-acciones input[type="button"],
+.sg-prog-cab-acciones a {
+    height: 38px;
+    line-height: 1;
+    padding: 0 18px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    border: 1px solid transparent;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.sg-prog-cab-acciones .ButtonCerrar,
+.sg-prog-cab-acciones .sg-btn-plano {
+    background: #fff;
+    color: #4b5563;
+    border-color: var(--sg-borde);
+}
+
+.sg-prog-cab-acciones .ButtonCerrar:hover { background: #f9fafb; }
+
+.sg-prog-cab-acciones .sg-btn-principal {
+    background: var(--sg-p);
+    color: #fff;
+    border-color: var(--sg-p);
+}
+
+
+/* ============================================================================
+   EL INTERRUPTOR
+
+   Reemplaza al par de radios Si/No, que renderizaba como dos puntos identicos
+   sin etiqueta. Los radios siguen existiendo recortados fuera de vista: son
+   los que postean. Esto es su cara.
+   ============================================================================ */
+.sg-conmutador { align-items: center; }
+
+.sg-switch {
+    position: relative;
+    width: 38px;
+    height: 22px;
+    border-radius: 999px;
+    background: #d1d5db;
+    flex: 0 0 auto;
+    cursor: pointer;
+    transition: background-color .18s ease;
+}
+
+.sg-switch-bola {
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, .25);
+    transition: transform .18s ease;
+}
+
+.sg-conmutador.is-si .sg-switch { background: var(--sg-p); }
+.sg-conmutador.is-si .sg-switch-bola { transform: translateX(16px); }
+
+.sg-switch:focus-visible { outline: 2px solid var(--sg-p); outline-offset: 2px; }
+
+/* Encendido y apagado no se distinguen SOLO por color: la bola se mueve, y
+   ese desplazamiento se ve tambien sin percibir el tono. */
+.sg-conmutador.is-si .sg-check-t { color: #111827; }
+.sg-conmutador:not(.is-si) .sg-check-t { color: #6b7280; }
+
+
+/* ============================================================================
+   LA TABLA DE FECHAS Y LAS PROXIMAS EJECUCIONES
+   ============================================================================ */
+.sg-tabla-fechas { margin-top: 12px; }
+
+/* Una fecha ya pasada no es un error —sirve para registrar trabajo hecho—
+   pero tampoco es lo mismo que una futura: se atenua sin esconderse. */
+.sg-tabla tr.is-pasada td { color: #9ca3af; }
+
+.sg-tabla tr.is-editando td { background: rgba(108, 92, 255, .04); }
+
+.sg-input-linea {
+    width: 100%;
+    min-width: 90px;
+    padding: 5px 8px;
+    border: 1px solid var(--sg-p);
+    border-radius: 8px;
+    font-size: 12.5px;
+    font-family: inherit;
+    box-sizing: border-box;
+}
+
+.sg-input-linea:focus { outline: 2px solid rgba(108, 92, 255, .25); outline-offset: 0; }
+
+.sg-icono-btn.is-ok { color: #15803d !important; }
+.sg-icono-btn.is-ok:hover { background: #f0fdf4; border-color: #bbf7d0; }
+
+.sg-tabla-acciones .sg-icono-btn + .sg-icono-btn { margin-left: 4px; }
+
+/* ---- proximas ejecuciones (resumen lateral) ---- */
+.sg-proxima {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #374151;
+    padding: 3px 0;
+}
+
+.sg-proxima-punto {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--sg-p);
+    flex: 0 0 auto;
+}
+
+.sg-proxima.is-pasada { color: #9ca3af; }
+.sg-proxima.is-pasada .sg-proxima-punto { background: #d1d5db; }
+
+.sg-proxima-hora { color: #6b7280; margin-left: auto; font-size: 11px; }
+
+/* El motivo del desplazamiento va sangrado bajo su fecha: es una nota sobre
+   ELLA, no otra fecha de la lista. */
+.sg-proxima-nota {
+    font-size: 10.5px;
+    color: #b45309;
+    padding-left: 14px;
+    margin-bottom: 4px;
+    line-height: 1.35;
+}
+
+.sg-resumen-dato.is-tenue { color: #9ca3af; }
+
+
+/* ============================================================================
+   LOS RESPONSABLES ELEGIDOS
+
+   El combo decia "2 Seleccionados", que no dice quienes. Cada persona elegida
+   sale como un chip con su cara.
+   ============================================================================ */
+.sg-personas {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.sg-personas-vacio { font-size: 11.5px; color: #9ca3af; }
+
+.sg-persona {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 4px 3px 3px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 999px;
+    background: #fff;
+    font-size: 12.5px;
+    max-width: 100%;
+}
+
+.sg-persona-avatar {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+    object-fit: cover;
+    display: block;
+}
+
+/* Sin foto, las iniciales sobre color. El color sale del nombre —no al azar—
+   asi la misma persona se ve siempre igual y se reconoce sin leer. */
+.sg-persona-avatar.is-inicial {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
+.sg-persona-nombre {
+    color: #374151;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 190px;
+}
+
+.sg-persona-x {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    color: #9ca3af !important;
+    text-decoration: none !important;
+    font-size: 15px;
+    line-height: 1;
+    flex: 0 0 auto;
+}
+
+.sg-persona-x:hover { background: #fef2f2; color: #dc2626 !important; }
+.sg-persona-x:focus-visible { outline: 2px solid var(--sg-p); outline-offset: 1px; }
+
+
+/* ============================================================================
+   RESPONSABLES EN EL LISTADO
+
+   Antes eran solo avatares de 26px con -7px de solape: se leian como una
+   mancha, y habia que pasar el mouse por cada fila para saber quien era
+   quien. Ahora las caras van con el nombre al lado.
+
+   Los doce colores son LOS MISMOS que en la ficha: si alguien sale verde en
+   el listado y naranjo al abrir el detalle, el color deja de servir para
+   reconocerlo y pasa a confundir.
+   ============================================================================ */
+.sg-resp {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.sg-avatares { display: inline-flex; align-items: center; flex: 0 0 auto; }
+
+.sg-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .02em;
+
+    /* El anillo blanco es lo que separa una cara de la siguiente cuando se
+       superponen; sin el, tres avatares juntos son una sola forma. */
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px rgba(17, 24, 39, .06);
+    margin-right: -9px;
+    box-sizing: border-box;
+    cursor: default;
+    flex: 0 0 auto;
+}
+
+.sg-avatar:last-child { margin-right: 0; }
+
+.sg-avatar.is-mas {
+    background-color: #eef0f4;
+    color: #4b5563;
+    font-size: 10.5px;
+}
+
+.sg-avatar.is-grupo { background-color: #6C5CFF; }
+.sg-avatar.is-grupo i { font-size: 15px; }
+
+.sg-resp-txt {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    min-width: 0;
+}
+
+/* Una linea y con puntos suspensivos: un nombre partido a la mitad de una
+   palabra se lee peor que uno recortado con puntos. */
+.sg-resp-nombres {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.sg-resp-pie { font-size: 10.5px; color: #9ca3af; }
+
+/* SIN RESPONSABLE
+
+   Estaba en rojo. En una lista donde cuatro de cinco filas no tienen a nadie
+   asignado, el rojo pinta la pantalla de alarma y deja de significar algo.
+   Pastilla tenue con su icono: se distingue igual, sin gritar. */
+.sg-sinasignar {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1px dashed #d8dae0;
+    background: #fafafa;
+    color: #9ca3af;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.sg-sinasignar i { font-size: 14px; }
+
+
+/* ============================================================================
+   FECHAS PROGRAMADAS EN EL LISTADO
+   ============================================================================ */
+.sg-fechas { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sg-fechas-txt { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+
+.sg-fechas-prox { font-size: 12.5px; font-weight: 600; color: #374151; white-space: nowrap; }
+.sg-fechas-prox.is-nula { color: #b45309; }
+.sg-fechas-pie { font-size: 10.5px; color: #9ca3af; white-space: nowrap; }
+
+.sg-fechas-nota { font-size: 11.5px; color: #9ca3af; }
+.sg-fechas-nota.is-alerta { color: #c0392b; }
+
+/* La lupa del popover, con el icono de calendario: la lista de fechas no cabe
+   en la celda y el tooltip del navegador no deja copiarla ni leerla en varias
+   lineas. */
+.sg-fechas-ver {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-borde);
+    color: #6b7280 !important;
+    text-decoration: none !important;
+    flex: 0 0 auto;
+}
+
+.sg-fechas-ver:hover { background: #f9fafb; color: var(--sg-p) !important; }
+.sg-fechas-ver i { font-size: 15px; }
+
+
+/* ============================================================================
+   LA PASTILLA DEL TIPO DE PROGRAMACION
+
+   Los seis usaban el mismo azul: la pastilla decia "es un tipo" y nada mas,
+   y habia que leer la palabra completa en cada fila para distinguir un
+   calendario de un intervalo.
+
+   SON PARIENTES, NO SEMAFOROS
+     Misma saturacion baja, mismo peso, mismo tamaño. Lo unico que cambia es
+     el matiz. Si uno saliera rojo fuerte pareceria un estado de error y no
+     lo que es: una categoria.
+
+   Y el nombre sigue escrito adentro: el color acelera el escaneo, no lo
+   reemplaza.
+   ============================================================================ */
+.sg-tipo {
+    display: inline-block;
+    margin-top: 4px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* Calendario — indigo: es el mas usado, se queda con el color de la marca. */
+.sg-tipo.is-calendario { background: #eef2ff; color: #4338ca; }
+
+/* Intervalo de tiempo — celeste. */
+.sg-tipo.is-intervalo  { background: #e0f2fe; color: #0369a1; }
+
+/* Fecha unica — verde azulado: es puntual, no recurrente. */
+.sg-tipo.is-fecha      { background: #ccfbf1; color: #0f766e; }
+
+/* Por medidor — ambar: depende de una lectura, no de un calendario. */
+.sg-tipo.is-medidor    { background: #fef3c7; color: #b45309; }
+
+/* Por condicion — violeta. */
+.sg-tipo.is-condicion  { background: #f3e8ff; color: #7e22ce; }
+
+/* Abierta — rosa apagado. */
+.sg-tipo.is-abierta    { background: #fce7f3; color: #be185d; }
+
+/* Un tipo nuevo sin mapear: gris, no sin fondo. Sin fondo la pastilla se ve
+   como texto suelto y parece rota. */
+.sg-tipo.is-otro       { background: #f3f4f6; color: #4b5563; }
+
+/* ============================================================================
+   LISTADO MAESTRO–DETALLE · Programaciones.aspx
+   ============================================================================ */
+
+html.sgp-page .sg-page-head { display: none; }
+
+html.sgp-page .content-page .container-fluid {
+    max-width: none;
+    padding: 16px 14px 26px;
+}
+
+html.sgp-page .content-page .container-fluid > .row.card-box {
+    display: block;
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+}
+
+html.sgp-page .content-page .container-fluid > .row.card-box > .table-responsive {
+    overflow: visible;
+}
+
+html.sgp-modal-open,
+html.sgp-modal-open body { overflow: hidden; }
+
+.sgp-postback {
+    position: fixed !important;
+    width: 1px !important;
+    height: 1px !important;
+    overflow: hidden !important;
+    clip: rect(0 0 0 0) !important;
+    white-space: nowrap !important;
+}
+
+.sgp-shell {
+    --sgp-purple: #6c3cff;
+    --sgp-purple-dark: #5528ed;
+    --sgp-ink: #111827;
+    --sgp-text: #26334f;
+    --sgp-muted: #6f7c96;
+    --sgp-line: #dfe4ed;
+    --sgp-soft: #f6f7fb;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 16px;
+    align-items: start;
+    min-width: 0;
+    color: var(--sgp-text);
+}
+
+.sgp-shell:not(.has-drawer) {
+    grid-template-columns: minmax(0, 1fr) 0;
+    gap: 0;
+}
+
+.sgp-main { min-width: 0; }
+
+/* ---------------------------------------------------------------- cabecera */
+.sgp-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 22px;
+    min-height: 72px;
+    margin-bottom: 14px;
+}
+
+.sgp-eyebrow {
+    display: block;
+    margin-bottom: 1px;
+    color: #66728a;
+    font-size: 12px;
+    font-weight: 500;
+}
+
+.sgp-head h1 {
+    margin: 0;
+    color: #0b1020;
+    font-size: 27px;
+    font-weight: 750;
+    letter-spacing: -.035em;
+    line-height: 1.12;
+}
+
+.sgp-head p {
+    margin: 4px 0 0;
+    color: #526078;
+    font-size: 13px;
+    line-height: 1.35;
+}
+
+.sgp-head-actions {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 0 0 auto;
+}
+
+/* ---------------------------------------------------------------- botones */
+.sgp-button,
+.sgp-icon-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    padding: 0 14px;
+    border: 1px solid var(--sgp-line);
+    border-radius: 8px;
+    background: #fff;
+    color: #34415c !important;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 650;
+    line-height: 1;
+    text-decoration: none !important;
+    cursor: pointer;
+    transition: border-color .16s ease, background .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.sgp-button:hover,
+.sgp-icon-button:hover {
+    border-color: #cbd2df;
+    background: #f9fafc;
+}
+
+.sgp-button:focus-visible,
+.sgp-icon-button:focus-visible,
+.sgp-tabs button:focus-visible,
+.sgp-row-title:focus-visible,
+.sgp-stat:focus-visible,
+.sgp-row-more:focus-visible,
+.sgp-page-buttons button:focus-visible,
+.sgp-calendar-link:focus-visible {
+    outline: 2px solid rgba(108, 60, 255, .45);
+    outline-offset: 2px;
+}
+
+.sgp-button.is-primary {
+    border-color: transparent;
+    background: linear-gradient(135deg, #7242ff, #612df2);
+    color: #fff !important;
+    box-shadow: 0 7px 18px rgba(99, 47, 244, .18);
+}
+
+.sgp-button.is-primary:hover {
+    background: linear-gradient(135deg, #7b4dff, #5526e8);
+    box-shadow: 0 9px 22px rgba(99, 47, 244, .24);
+    transform: translateY(-1px);
+}
+
+.sgp-button.is-light { background: #fff; }
+.sgp-button.is-ghost { background: rgba(255, 255, 255, .76); }
+
+.sgp-button.is-danger {
+    border-color: #fecaca;
+    background: #fff;
+    color: #e22d2d !important;
+}
+
+.sgp-button.is-danger:hover { background: #fff5f5; border-color: #fca5a5; }
+
+.sgp-icon-button {
+    width: 40px;
+    min-width: 40px;
+    height: 40px;
+    min-height: 40px;
+    padding: 0;
+    font-size: 20px;
+}
+
+/* ---------------------------------------------------------------- métricas */
+.sgp-stats {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.sgp-stat {
+    display: grid;
+    grid-template-columns: 45px minmax(0, 1fr) 18px;
+    align-items: center;
+    gap: 13px;
+    min-height: 86px;
+    padding: 15px 16px;
+    border: 1px solid #dfe4ec;
+    border-radius: 11px;
+    background: rgba(255, 255, 255, .92);
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+    box-shadow: 0 3px 14px rgba(30, 41, 59, .025);
+    transition: border-color .16s ease, box-shadow .16s ease, transform .16s ease;
+}
+
+.sgp-stat:hover,
+.sgp-stat.is-active {
+    border-color: rgba(108, 60, 255, .28);
+    box-shadow: 0 8px 22px rgba(30, 41, 59, .065);
+    transform: translateY(-1px);
+}
+
+.sgp-stat-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    border-radius: 11px;
+    background: #f1edff;
+    color: #6c3cff;
+    font-size: 27px;
+}
+
+.sgp-stat.is-enabled .sgp-stat-icon { background: #eafaf2; color: #13a96b; }
+.sgp-stat.is-unassigned .sgp-stat-icon { background: #fff5e9; color: #ed8500; }
+.sgp-stat.is-exclusions .sgp-stat-icon { background: #f3edff; color: #7044ef; }
+
+.sgp-stat-copy {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.sgp-stat-copy strong {
+    color: #0d1425;
+    font-size: 22px;
+    font-weight: 750;
+    line-height: 1;
+}
+
+.sgp-stat-copy span {
+    margin-top: 5px;
+    color: #35425d;
+    font-size: 12.5px;
+    white-space: nowrap;
+}
+
+.sgp-stat-arrow { color: #385074; font-size: 21px; }
+
+/* ----------------------------------------------------------- tarjeta lista */
+.sgp-list-card {
+    position: relative;
+    overflow: visible;
+    border: 1px solid #dce2eb;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 5px 20px rgba(30, 41, 59, .03);
+}
+
+.sgp-list-tools {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 56px;
+    padding: 0 8px 0 10px;
+    border-bottom: 1px solid #e5e9f0;
+}
+
+.sgp-tabs {
+    display: flex;
+    align-self: stretch;
+    gap: 1px;
+    min-width: 0;
+}
+
+.sgp-tabs button {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 10px;
+    border: 0;
+    background: transparent;
+    color: #45536d;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 600;
+    white-space: nowrap;
+    cursor: pointer;
+}
+
+.sgp-tabs button::after {
+    content: '';
+    position: absolute;
+    right: 6px;
+    bottom: 0;
+    left: 6px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: transparent;
+}
+
+.sgp-tabs button:hover { color: #5f35ed; }
+.sgp-tabs button.is-active { color: #6332f5; }
+.sgp-tabs button.is-active::after { background: #6c3cff; }
+
+.sgp-tabs button span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 19px;
+    height: 19px;
+    padding: 0 5px;
+    border-radius: 10px;
+    background: #f0f1f5;
+    color: #68748b;
+    font-size: 10px;
+}
+
+.sgp-tabs button.is-active span { background: #f0ebff; color: #6941ed; }
+
+.sgp-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 0 0 auto;
+}
+
+.sgp-search {
+    position: relative;
+    display: block;
+    width: 215px;
+    margin: 0;
+}
+
+.sgp-search i {
+    position: absolute;
+    top: 50%;
+    left: 11px;
+    z-index: 1;
+    color: #60718d;
+    font-size: 17px;
+    transform: translateY(-50%);
+}
+
+.sgp-search input,
+.sgp-sort select,
+.sgp-filter-panel select,
+.sgp-page-size select {
+    width: 100%;
+    height: 34px;
+    border: 1px solid #d9e0ea;
+    border-radius: 7px;
+    background: #fff;
+    color: #33415b;
+    font-family: inherit;
+    font-size: 11.5px;
+}
+
+.sgp-search input { padding: 0 12px 0 34px; }
+.sgp-search input::placeholder { color: #8792a8; }
+
+.sgp-search input:focus,
+.sgp-sort select:focus,
+.sgp-filter-panel select:focus,
+.sgp-page-size select:focus {
+    outline: 0;
+    border-color: rgba(108, 60, 255, .6);
+    box-shadow: 0 0 0 3px rgba(108, 60, 255, .09);
+}
+
+.sgp-toolbar > .sgp-button { min-height: 34px; height: 34px; padding: 0 12px; }
+
+#sgpFilterCount {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    background: #6c3cff;
+    color: #fff;
+    font-size: 9px;
+}
+
+#sgpFilterCount[hidden] { display: none; }
+
+.sgp-filter-wrap { position: relative; }
+
+.sgp-filter-panel {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 90;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    width: 390px;
+    padding: 16px;
+    border: 1px solid #dce2eb;
+    border-radius: 11px;
+    background: #fff;
+    box-shadow: 0 18px 42px rgba(25, 34, 55, .16);
+}
+
+.sgp-filter-panel[hidden] { display: none; }
+
+.sgp-filter-head {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #edf0f4;
+}
+
+.sgp-filter-head strong { color: #182238; font-size: 13px; }
+.sgp-filter-head button { border: 0; background: transparent; color: #6840e9; font-size: 11px; cursor: pointer; }
+
+.sgp-filter-panel label {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin: 0;
+    color: #59667e;
+    font-size: 10.5px;
+    font-weight: 650;
+}
+
+.sgp-filter-panel select { padding: 0 9px; }
+
+.sgp-sort {
+    position: relative;
+    width: 164px;
+    margin: 0;
+}
+
+.sgp-sort select {
+    padding: 0 31px 0 11px;
+    appearance: none;
+    cursor: pointer;
+}
+
+.sgp-sort i {
+    position: absolute;
+    top: 50%;
+    right: 9px;
+    color: #55647e;
+    pointer-events: none;
+    transform: translateY(-50%);
+}
+
+/* --------------------------------------------------------------- selección */
+.sgp-selection {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    max-height: 0;
+    padding: 0 10px;
+    overflow: hidden;
+    border-bottom: 0 solid #ddd7ff;
+    background: linear-gradient(90deg, #f4f0ff, #faf8ff);
+    opacity: 0;
+    transition: max-height .2s ease, min-height .2s ease, opacity .15s ease, border-width .2s ease;
+}
+
+.sgp-selection.is-visible {
+    min-height: 46px;
+    max-height: 46px;
+    border-bottom-width: 1px;
+    opacity: 1;
+}
+
+.sgp-selection-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 4px;
+    background: #6c3cff;
+    color: #fff;
+    font-size: 12px;
+}
+
+.sgp-selection > strong { margin-right: auto; color: #302858; font-size: 11.5px; }
+.sgp-selection .sgp-button { min-height: 29px; height: 29px; padding: 0 11px; font-size: 10.5px; }
+.sgp-selection .is-selection { border-color: #d9d0ff; color: #6638f0 !important; }
+
+/* ------------------------------------------------------------------ tabla */
+.sgp-table-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+}
+
+.sgp-table {
+    width: 100%;
+    min-width: 970px;
+    border-collapse: collapse;
+    table-layout: fixed;
+    color: #26334d;
+    font-size: 11.5px;
+}
+
+.sgp-table th {
+    height: 33px;
+    padding: 0 12px;
+    border-bottom: 1px solid #dfe4eb;
+    background: linear-gradient(#fafbfc, #f6f7f9);
+    color: #3a4862;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.sgp-table th:nth-child(1) { width: 42px; }
+.sgp-table th:nth-child(2) { width: 22%; }
+.sgp-table th:nth-child(3) { width: 20%; }
+.sgp-table th:nth-child(4) { width: 15%; }
+.sgp-table th:nth-child(5) { width: 18%; }
+.sgp-table th:nth-child(6) { width: 14%; }
+.sgp-table th:nth-child(7) { width: 92px; }
+.sgp-table th:nth-child(8) { width: 50px; }
+
+.sgp-table td {
+    height: 58px;
+    padding: 9px 12px;
+    border-right: 1px solid #e3e7ed;
+    border-bottom: 1px solid #e3e7ed;
+    background: #fff;
+    vertical-align: middle;
+    transition: background .14s ease;
+}
+
+.sgp-table td:last-child { border-right: 0; }
+.sgp-row:hover td { background: #fbfaff; }
+
+.sgp-row.is-current td { background: #f7f4ff; }
+
+.sgp-row.is-current td:first-child {
+    box-shadow: inset 3px 0 0 #6c3cff;
+}
+
+.sgp-check-cell { padding-right: 5px !important; padding-left: 10px !important; text-align: center !important; }
+
+.sgp-table input[type="checkbox"] {
+    width: 14px;
+    height: 14px;
+    margin: 0;
+    accent-color: #6c3cff;
+    cursor: pointer;
+}
+
+.sgp-table input[type="checkbox"]:disabled { cursor: not-allowed; opacity: .32; }
+
+.sgp-row-title {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 5px;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-family: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sgp-row-title strong {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    color: #101828;
+    font-size: 11.5px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sgp-table .sg-tipo {
+    padding: 3px 7px;
+    font-size: 8.5px;
+    letter-spacing: .015em;
+}
+
+.sgp-rule-main,
+.sgp-next,
+.sgp-validity {
+    display: block;
+    color: #2f3c55;
+    line-height: 1.35;
+}
+
+.sgp-rule-note,
+.sgp-subline {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    color: #7b879c;
+    font-size: 9.5px;
+    line-height: 1.2;
+}
+
+.sgp-rule-note i { color: #6c3cff; font-size: 11px; }
+.sgp-rule-note.is-alert { color: #b96d08; }
+
+.sgp-muted { color: #8993a6; font-size: 10.5px; }
+.sgp-muted.is-alert { color: #b36b14; }
+
+.sgp-status {
+    display: inline-flex;
+    align-items: center;
+    min-height: 22px;
+    padding: 0 9px;
+    border-radius: 12px;
+    font-size: 9px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.sgp-status.is-enabled { background: #e4f8ec; color: #147a48; }
+.sgp-status.is-disabled { background: #f0f2f5; color: #707b8e; }
+
+.sgp-table .sg-resp { gap: 7px; }
+.sgp-table .sg-avatar { width: 24px; height: 24px; border-width: 2px; font-size: 8px; }
+.sgp-table .sg-avatar.is-grupo i { font-size: 12px; }
+.sgp-table .sg-resp-nombres { max-width: 122px; font-size: 10.5px; }
+.sgp-table .sg-resp-pie { display: none; }
+.sgp-table .sg-sinasignar { padding: 4px 8px; font-size: 9px; }
+
+.sgp-actions-cell { position: relative; text-align: center; }
+
+.sgp-row-more {
+    width: 30px;
+    height: 28px;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #4c5f7e;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.sgp-row-more:hover { background: #ebe7f8; color: #6333ef; }
+
+.sgp-empty-row td {
+    height: 235px;
+    border-right: 0;
+    text-align: center;
+}
+
+.sgp-empty-row td > * { display: block; margin-right: auto; margin-left: auto; }
+.sgp-empty-row i { margin-bottom: 8px; color: #a9b2c3; font-size: 34px; }
+.sgp-empty-row strong { color: #34415a; font-size: 13px; }
+.sgp-empty-row span { margin-top: 4px; color: #7f8a9d; font-size: 11px; }
+
+/* --------------------------------------------------------------- paginador */
+.sgp-pager {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    min-height: 48px;
+    padding: 6px 10px;
+    background: #fff;
+}
+
+.sgp-page-buttons,
+.sgp-page-buttons > span { display: flex; align-items: center; gap: 3px; }
+
+.sgp-page-buttons button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    padding: 0;
+    border: 1px solid #dfe4ec;
+    border-radius: 6px;
+    background: #fff;
+    color: #4e607d;
+    font-family: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.sgp-page-buttons button:hover:not(:disabled) { background: #f6f3ff; color: #6534f2; }
+.sgp-page-buttons button.is-active { border-color: #6c3cff; background: #6c3cff; color: #fff; }
+.sgp-page-buttons button:disabled { color: #c2c8d2; cursor: default; }
+
+.sgp-page-size {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    color: #637087;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
+
+.sgp-page-size select { width: 63px; padding: 0 8px; }
+.sgp-page-info { margin-left: auto; color: #35415a; font-size: 10.5px; white-space: nowrap; }
+
+/* -------------------------------------------------------------------- ayuda */
+.sgp-help {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 12px;
+    min-height: 62px;
+    margin-top: 16px;
+    padding: 11px 14px;
+    border: 1px solid #dce2eb;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, .7);
+}
+
+.sgp-help > span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #83b4ff;
+    border-radius: 50%;
+    color: #2374df;
+    font-size: 20px;
+}
+
+.sgp-help p { margin: 0; color: #5d687c; font-size: 10.5px; line-height: 1.35; }
+.sgp-help p strong { display: block; margin-bottom: 2px; color: #202b41; font-size: 11.5px; }
+
+.sgp-help button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: 0;
+    background: transparent;
+    color: #6c3cff;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+/* ------------------------------------------------------------ panel lateral */
+.sgp-drawer {
+    position: sticky;
+    top: 10px;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    height: calc(100vh - 96px);
+    min-height: 610px;
+    overflow: hidden;
+    border: 1px solid #dce2eb;
+    border-radius: 10px;
+    background: #fff;
+    opacity: 0;
+    transform: translateX(14px);
+    pointer-events: none;
+    box-shadow: 0 7px 26px rgba(30, 41, 59, .04);
+    transition: opacity .2s ease, transform .2s ease;
+}
+
+.sgp-drawer.is-open { opacity: 1; transform: translateX(0); pointer-events: auto; }
+
+.sgp-drawer-close {
+    position: absolute;
+    top: 15px;
+    right: 14px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #101827;
+    font-size: 22px;
+    cursor: pointer;
+}
+
+.sgp-drawer-close:hover { background: #f4f5f8; }
+
+.sgp-drawer-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 23px 18px 16px;
+    overflow-y: auto;
+}
+
+.sgp-drawer-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 24px;
+    color: #8b95a7;
+    text-align: center;
+}
+
+.sgp-drawer-placeholder i { margin-bottom: 12px; font-size: 38px; }
+.sgp-drawer-placeholder strong { color: #4a566e; font-size: 13px; }
+.sgp-drawer-placeholder span { max-width: 250px; margin-top: 5px; font-size: 11px; line-height: 1.5; }
+
+.sgp-drawer-badges { display: flex; align-items: center; gap: 7px; min-height: 23px; padding-right: 38px; }
+.sgp-drawer-badges .sg-tipo { padding: 4px 9px; font-size: 8.5px; }
+.sgp-drawer-badges .sgp-status { min-height: 21px; font-size: 8.5px; }
+
+.sgp-drawer-content h2 {
+    margin: 17px 0 3px;
+    color: #0c1220;
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -.025em;
+    line-height: 1.25;
+}
+
+.sgp-drawer-id {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #647087;
+    font-size: 10.5px;
+}
+
+.sgp-drawer-id strong { color: #4b5870; font-weight: 600; }
+
+.sgp-drawer-id button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    margin-left: 1px;
+    padding: 0;
+    border: 0;
+    border-radius: 5px;
+    background: transparent;
+    color: #405171;
+    cursor: pointer;
+}
+
+.sgp-drawer-id button:hover { background: #f0f2f6; }
+
+.sgp-drawer-rule {
+    display: grid;
+    grid-template-columns: 31px minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    margin: 20px 0 17px;
+    color: #172238;
+}
+
+.sgp-drawer-rule > i { color: #6c3cff; font-size: 23px; }
+.sgp-drawer-rule strong { font-size: 14px; font-weight: 550; line-height: 1.35; }
+
+.sgp-drawer-facts {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.sgp-drawer-facts::before {
+    content: '';
+    position: absolute;
+    top: 17px;
+    bottom: 17px;
+    left: 14px;
+    width: 1px;
+    background: #e4e8ee;
+}
+
+.sgp-drawer-fact {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    align-items: flex-start;
+    gap: 10px;
+    min-height: 47px;
+}
+
+.sgp-drawer-fact > i {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 29px;
+    height: 29px;
+    background: #fff;
+    color: #4c6387;
+    font-size: 17px;
+}
+
+.sgp-drawer-fact > div { min-width: 0; padding-top: 1px; }
+
+.sgp-drawer-fact > div > span:first-child {
+    display: block;
+    margin-bottom: 2px;
+    color: #778299;
+    font-size: 9.5px;
+}
+
+.sgp-drawer-fact > div > strong {
+    display: block;
+    color: #202c43;
+    font-size: 11px;
+    font-weight: 550;
+    line-height: 1.35;
+}
+
+.sgp-drawer-fact.is-assignment { min-height: 53px; }
+.sgp-drawer-fact .sg-resp { margin-top: 3px; }
+.sgp-drawer-fact .sg-avatar { width: 24px; height: 24px; font-size: 8px; }
+.sgp-drawer-fact .sg-resp-nombres { max-width: 205px; font-size: 10.5px; }
+.sgp-drawer-fact .sg-sinasignar { margin-top: 3px; padding: 4px 8px; font-size: 9px; }
+
+.sgp-upcoming { margin-top: 12px; }
+
+.sgp-upcoming h3 {
+    margin: 0 0 9px;
+    color: #26324a;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+
+.sgp-upcoming-row {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 27px;
+    color: #2e3a51;
+    font-size: 10.5px;
+}
+
+.sgp-upcoming-row > i { color: #53698b; font-size: 14px; }
+.sgp-upcoming-row em { color: #8b68e8; font-size: 8.5px; font-style: normal; }
+.sgp-upcoming-empty { margin: 0; color: #7b8699; font-size: 10.5px; line-height: 1.45; }
+
+.sgp-calendar-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin: 8px 0 0 24px;
+    padding: 4px 0;
+    border: 0;
+    background: transparent;
+    color: #6c3cff;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.sgp-drawer-actions {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 12px 10px 11px;
+    border-top: 1px solid #e4e8ef;
+    background: #fff;
+}
+
+.sgp-drawer-actions[hidden] { display: none; }
+.sgp-drawer-actions > .sgp-button { width: 100%; }
+.sgp-drawer-actions > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.sgp-drawer-actions > div .sgp-button { width: 100%; min-width: 0; padding: 0 8px; }
+
+/* -------------------------------------------------------------------- menús */
+.sgp-menu {
+    z-index: 120;
+    width: 190px;
+    padding: 6px;
+    border: 1px solid #dce2eb;
+    border-radius: 9px;
+    background: #fff;
+    box-shadow: 0 16px 38px rgba(24, 34, 53, .17);
+}
+
+.sgp-menu[hidden] { display: none; }
+.sgp-menu.is-header { position: absolute; top: calc(100% + 7px); right: 0; }
+.sgp-menu.is-row { position: fixed; }
+
+.sgp-menu button {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    width: 100%;
+    min-height: 34px;
+    padding: 0 9px;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    color: #344159;
+    font-family: inherit;
+    font-size: 11px;
+    text-align: left;
+    cursor: pointer;
+}
+
+.sgp-menu button:hover { background: #f5f3fb; }
+.sgp-menu button i { color: #60708a; font-size: 15px; }
+.sgp-menu button.is-danger { color: #d83232; }
+.sgp-menu button.is-danger i { color: #d83232; }
+
+/* ---------------------------------------------------------- calendario modal */
+.sgp-calendar-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 10050;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+}
+
+.sgp-calendar-modal[hidden] { display: none; }
+
+.sgp-calendar-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(11, 16, 31, .48);
+    backdrop-filter: blur(2px);
+}
+
+.sgp-calendar-dialog {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: min(680px, 100%);
+    max-height: min(760px, calc(100vh - 48px));
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .35);
+    border-radius: 15px;
+    background: #fff;
+    box-shadow: 0 30px 80px rgba(11, 16, 31, .28);
+    animation: sgpCalendarIn .2s ease-out;
+}
+
+@keyframes sgpCalendarIn {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.sgp-calendar-dialog > header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 19px 21px 15px;
+    border-bottom: 1px solid #e5e8ee;
+}
+
+.sgp-calendar-dialog > header span {
+    display: block;
+    margin-bottom: 2px;
+    color: #7550e6;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .075em;
+    text-transform: uppercase;
+}
+
+.sgp-calendar-dialog > header h2 { margin: 0; color: #111827; font-size: 19px; }
+
+.sgp-calendar-dialog > header button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: #f5f6f8;
+    color: #3d4960;
+    font-size: 20px;
+    cursor: pointer;
+}
+
+.sgp-calendar-content { min-height: 0; padding: 18px 21px 21px; overflow-y: auto; }
+
+.sgp-calendar-summary {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: #f7f5ff;
+}
+
+.sgp-calendar-summary > strong { color: #211a41; font-size: 12.5px; }
+.sgp-calendar-summary > p { margin: 1px 0 0; color: #6c6188; font-size: 10.5px; }
+
+.sgp-calendar-legend { display: flex; align-items: center; gap: 11px; flex-wrap: wrap; }
+.sgp-calendar-legend span { display: inline-flex; align-items: center; gap: 5px; color: #637087; font-size: 9px; }
+
+.sgp-calendar-legend i {
+    width: 8px;
+    height: 8px;
+    border: 2px solid #6c3cff;
+    border-radius: 50%;
+    background: #eee9ff;
+}
+
+.sgp-calendar-legend i.is-excluded { border-color: #e26a6a; background: #feecec; }
+.sgp-calendar-legend i.is-moved { border-color: #b07a13; background: #fff3cf; }
+
+.sgp-calendar-month {
+    margin-top: 14px;
+    overflow: hidden;
+    border: 1px solid #e1e5ec;
+    border-radius: 11px;
+}
+
+.sgp-calendar-month > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 43px;
+    padding: 8px 12px;
+    background: #fafbfc;
+    border-bottom: 1px solid #e8ebf0;
+}
+
+.sgp-calendar-month > header div { display: flex; align-items: center; gap: 8px; }
+.sgp-calendar-month > header strong { color: #253149; font-size: 12px; }
+
+.sgp-calendar-month > header span {
+    padding: 3px 7px;
+    border-radius: 9px;
+    background: #eee9ff;
+    color: #6437e7;
+    font-size: 9px;
+    font-weight: 650;
+}
+
+.sgp-calendar-month > header em { color: #7b8699; font-size: 9.5px; font-style: normal; }
+
+.sgp-calendar-days {
+    display: grid;
+    grid-template-columns: repeat(8, minmax(0, 1fr));
+    gap: 7px;
+    padding: 11px;
+}
+
+.sgp-calendar-day {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 52px;
+    border: 1px solid #ddd7ff;
+    border-radius: 8px;
+    background: #faf9ff;
+    color: #4c35a9;
+}
+
+.sgp-calendar-day small { color: #8176ac; font-size: 8px; font-weight: 650; text-transform: uppercase; }
+.sgp-calendar-day strong { margin-top: 1px; font-size: 16px; line-height: 1; }
+.sgp-calendar-day > span { margin-top: 3px; color: #786d9c; font-size: 8px; }
+
+.sgp-calendar-day > i {
+    position: absolute;
+    top: 3px;
+    right: 4px;
+    color: #9c6b0b;
+    font-size: 10px;
+}
+
+.sgp-calendar-day.is-moved { border-color: #f2d895; background: #fffaf0; color: #9c6500; }
+
+.sgp-calendar-day.is-excluded {
+    border-color: #f2caca;
+    background: #fff6f6;
+    color: #a94b4b;
+    text-decoration: line-through;
+    opacity: .78;
+}
+
+.sgp-calendar-day.is-excluded > i { color: #cf4f4f; }
+
+.sgp-calendar-reasons {
+    margin-top: 14px;
+    padding: 12px 13px;
+    border: 1px solid #f0d0d0;
+    border-radius: 10px;
+    background: #fff9f9;
+}
+
+.sgp-calendar-reasons h3 { margin: 0 0 8px; color: #8f3f3f; font-size: 11px; }
+
+.sgp-calendar-reasons > div {
+    display: grid;
+    grid-template-columns: 23px minmax(0, 1fr);
+    gap: 7px;
+    color: #a24d4d;
+}
+
+.sgp-calendar-reasons > div + div { margin-top: 7px; }
+.sgp-calendar-reasons > div > i { font-size: 16px; }
+.sgp-calendar-reasons p { margin: 0; }
+.sgp-calendar-reasons p strong { display: block; color: #7f3636; font-size: 10.5px; }
+.sgp-calendar-reasons p span { display: block; margin-top: 2px; color: #a25d5d; font-size: 9.5px; line-height: 1.4; }
+
+.sgp-calendar-limit { display: flex; gap: 6px; margin: 13px 0 0; color: #7b8699; font-size: 9.5px; }
+
+.sgp-calendar-dialog > footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    padding: 12px 20px;
+    border-top: 1px solid #e5e8ee;
+    background: #fafbfc;
+}
+
+.sgp-calendar-dialog > footer p { display: flex; align-items: center; gap: 6px; margin: 0; color: #778297; font-size: 9.5px; }
+.sgp-calendar-dialog > footer .sgp-button { min-width: 88px; }
+
+/* --------------------------------------------------------------- responsive */
+@media (max-width: 1480px) {
+    .sgp-tabs button { padding-right: 7px; padding-left: 7px; font-size: 10.5px; }
+    .sgp-search { width: 185px; }
+    .sgp-sort { width: 150px; }
+}
+
+@media (max-width: 1330px) {
+    .sgp-shell,
+    .sgp-shell:not(.has-drawer) { display: block; }
+
+    .sgp-drawer {
+        position: fixed;
+        top: 80px;
+        right: 14px;
+        bottom: 14px;
+        z-index: 1000;
+        width: 360px;
+        height: auto;
+        min-height: 0;
+        box-shadow: 0 22px 64px rgba(19, 28, 47, .22);
+        transform: translateX(calc(100% + 24px));
+    }
+
+    .sgp-drawer.is-open { transform: translateX(0); }
+}
+
+@media (max-width: 1120px) {
+    .sgp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .sgp-list-tools { align-items: stretch; flex-direction: column; padding: 0; }
+    .sgp-tabs { min-height: 48px; padding: 0 9px; overflow-x: auto; border-bottom: 1px solid #edf0f4; }
+    .sgp-toolbar { justify-content: flex-end; padding: 0 9px 9px; }
+    .sgp-search { width: min(300px, 100%); margin-right: auto; }
+}
+
+@media (max-width: 720px) {
+    html.sgp-page .content-page .container-fluid { padding: 12px 9px 22px; }
+
+    .sgp-head { align-items: flex-start; flex-direction: column; min-height: 0; margin-bottom: 15px; }
+    .sgp-head h1 { font-size: 24px; }
+    .sgp-head-actions { align-self: stretch; }
+    .sgp-head-actions .sgp-button { flex: 1 1 auto; }
+
+    .sgp-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+    .sgp-stat { grid-template-columns: 38px minmax(0, 1fr); min-height: 72px; padding: 10px; }
+    .sgp-stat-icon { width: 37px; height: 37px; font-size: 22px; }
+    .sgp-stat-copy strong { font-size: 19px; }
+    .sgp-stat-copy span { font-size: 10.5px; }
+    .sgp-stat-arrow { display: none; }
+
+    .sgp-toolbar { display: grid; grid-template-columns: minmax(0, 1fr) auto; }
+    .sgp-search { grid-column: 1 / -1; width: 100%; }
+    .sgp-sort { width: 100%; }
+    .sgp-filter-panel { position: fixed; top: auto; right: 9px; bottom: 9px; left: 9px; z-index: 1100; width: auto; }
+
+    .sgp-selection > strong { font-size: 10px; }
+    .sgp-selection .sgp-button span { display: none; }
+
+    .sgp-pager { align-items: flex-start; flex-wrap: wrap; }
+    .sgp-page-info { flex: 1 0 100%; margin-left: 0; }
+
+    .sgp-help { grid-template-columns: 34px minmax(0, 1fr); }
+    .sgp-help button { grid-column: 2; justify-self: start; padding: 0; }
+
+    .sgp-drawer { top: 72px; right: 8px; bottom: 8px; width: calc(100% - 16px); }
+
+    .sgp-calendar-modal { padding: 9px; }
+    .sgp-calendar-dialog { max-height: calc(100vh - 18px); border-radius: 12px; }
+    .sgp-calendar-summary { flex-direction: column; }
+    .sgp-calendar-days { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .sgp-calendar-dialog > footer p { display: none; }
+    .sgp-calendar-dialog > footer { justify-content: flex-end; }
+}

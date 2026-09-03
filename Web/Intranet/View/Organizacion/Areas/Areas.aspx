@@ -9,10 +9,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirArea(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Areas/Area.aspx") %>?query=' + query);
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Organizacion/Areas/Area.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nueva área' : 'Editar área',
+                width: 960,
+                initialHeight: 520
+            });
         }
 
         function refresh() {
@@ -113,8 +115,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="960" Height="520" />
-
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus áreas.</p>
     </asp:Panel>

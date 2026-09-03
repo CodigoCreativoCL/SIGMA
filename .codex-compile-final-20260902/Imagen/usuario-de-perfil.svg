@@ -1,0 +1,14 @@
+﻿<svg width="128" height="128" viewBox="0 0 128 128" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Usuario sin foto">
+  <!-- Avatar por defecto de SIGMA.
+       No es un logotipo: es un marcador de posicion construido solo con
+       los colores de la paleta, para cuando el usuario no cargo foto. -->
+  <defs>
+    <linearGradient id="sgAvatarBg" x1="0" y1="0" x2="128" y2="128" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#F3F5F8"/>
+      <stop offset="1" stop-color="#E2E8F0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="64" cy="64" r="64" fill="url(#sgAvatarBg)"/>
+  <circle cx="64" cy="49" r="20" fill="#94A3B8"/>
+  <path d="M64 76c-19.33 0-35 12.54-35 28v24h70v-24c0-15.46-15.67-28-35-28z" fill="#94A3B8"/>
+</svg>
