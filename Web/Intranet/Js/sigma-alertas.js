@@ -172,7 +172,7 @@ var sigmaAlertas = (function () {
     }
 
 
-    /* Baja los contadores AHORA, sin esperar al servidor.
+    /* Baja el punto de no leídas AHORA, sin esperar al servidor.
 
        El viaje tarda entre cien y quinientos milisegundos, y en ese rato el
        usuario ya esta mirando la ficha que abrio. Si el numero baja recien
@@ -182,45 +182,20 @@ var sigmaAlertas = (function () {
        Es un adelanto, no una suposicion: la respuesta del servidor manda, y
        cuando llega se reescriben los dos contadores con lo que diga. Si el
        marcado fallo, el numero vuelve solo a donde estaba. */
-    function descontarUno() {
-        /* YA NO DESCUENTA NADA.
+    function descontarUno(todos) {
+        var enlace = document.querySelector('.sigma-notification');
+        var badge = enlace ? enlace.querySelector('.sigma-notification__count') : null;
+        if (!badge) return;
 
-           Cuando el badge contaba no leidas, abrir una alerta lo bajaba
-           en el acto y era correcto. Ahora cuenta ACTIVAS: leer una
-           alerta no la resuelve, asi que el numero tiene que quedarse
-           donde esta. Descontarlo aqui haria que la campana llegara a
-           cero con la planta igual de mal, que es el defecto que este
-           cambio vino a corregir.
-
-           La funcion se conserva -la llaman leer() y el panel del
-           Master- para no repartir el cambio por tres archivos. */
-    }
-
-    /* El numero del menu al que pertenece la alerta que se acaba de abrir.
-
-       Sin esto la campana bajaba y el menu lateral se quedaba con el numero
-       viejo hasta el siguiente sondeo: dos contadores de la misma cosa
-       diciendo cifras distintas durante un minuto. */
-    function descontarMenu(href) {
-        if (!href) return;
-
-        var badges = document.querySelectorAll('#side-menu .sg-menu-badge');
-
-        for (var i = 0; i < badges.length; i++) {
-            var enlace = badges[i].closest ? badges[i].closest('a') : null;
-            if (!enlace) continue;
-
-            var propio = enlace.getAttribute('href') || '';
-            if (propio.indexOf(href) < 0 && href.indexOf(propio) < 0) continue;
-
-            var n = parseInt(badges[i].textContent, 10);
-            if (isNaN(n)) continue;
-
-            if (n > 1) badges[i].textContent = n - 1;
-            else badges[i].style.display = 'none';
-
+        var n = parseInt(badge.textContent, 10);
+        if (todos || isNaN(n) || n <= 1) {
+            badge.parentNode.removeChild(badge);
+            enlace.setAttribute('aria-label', 'Alertas');
             return;
         }
+
+        badge.textContent = n - 1;
+        enlace.setAttribute('aria-label', (n - 1) + ' alertas sin leer');
     }
 
 
@@ -287,7 +262,7 @@ var sigmaAlertas = (function () {
 
         if (enlace) {
             enlace.onclick = function () {
-                if (window.abrirNotificacion) window.abrirNotificacion(a.ficha, a.query);
+                if (window.abrirNotificacion) window.abrirNotificacion(a.ficha, a.query, a.id);
                 else window.location = a.ficha + '?query=' + a.query;
 
                 cerrarToast();
@@ -362,7 +337,9 @@ var sigmaAlertas = (function () {
 
                 ultimasActivas = r.abiertas;
 
-                badgeCampana(r.abiertas);
+                /* La campana dice qué NO se ha visto. Los contadores del menú
+                   siguen diciendo qué queda activo: son preguntas distintas. */
+                badgeCampana(r.noLeidas);
                 if (r.menus) badgesMenu(r.menus);
             },
             error: function () {
@@ -429,22 +406,29 @@ var sigmaAlertas = (function () {
            el procedimiento valida. Y ya estaba impreso en el onclick de la
            propia pagina. */
         leer: function (id, href) {
-            if (!id || !URL || typeof jQuery === 'undefined') return;
+            if (!URL || typeof jQuery === 'undefined') return null;
 
-            descontarUno();
-            descontarMenu(href);
+            var todos = id === null || typeof id === 'undefined' || id === '';
 
-            jQuery.ajax({
+            descontarUno(todos);
+
+            return jQuery.ajax({
                 type: 'POST',
                 url: URL + '/Leer',
-                data: JSON.stringify({ datos: String(id) }),
+                data: JSON.stringify({ datos: todos ? '' : String(id) }),
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
-                success: function () {
+                success: function (result) {
+                    var respuesta = null;
+                    try { respuesta = JSON.parse(result.d); }
+                    catch (e) { respuesta = { error: true }; }
+
                     /* La cifra de verdad la tiene el servidor: el descuento de
                        recien era para que la pantalla respondiera al toque. */
                     ultimasActivas = null;
                     preguntar();
+
+                    if (!respuesta.error) avisarLectura(respuesta);
                 },
                 error: function () {
                     /* Si fallo, el sondeo devuelve el numero a donde estaba.
@@ -459,4 +443,21 @@ var sigmaAlertas = (function () {
         ahora: preguntar,
         detener: detener
     };
+
+    function avisarLectura(respuesta) {
+        var evento;
+
+        try {
+            evento = new CustomEvent('sigma:alertas-actualizadas', {
+                detail: respuesta
+            });
+        }
+        catch (e) {
+            evento = document.createEvent('CustomEvent');
+            evento.initCustomEvent('sigma:alertas-actualizadas', true, true,
+                                    respuesta);
+        }
+
+        document.dispatchEvent(evento);
+    }
 })();

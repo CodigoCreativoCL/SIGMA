@@ -42,6 +42,7 @@
          refresco parcial. --%>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>'></script>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-animaciones.js?vrs=1") %>'></script>
+    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-notificaciones-cao.js?vrs=4") %>'></script>
 
     <script type="text/javascript">
         /* Se abre el registro relacionado en la misma ventana modal del
@@ -64,8 +65,11 @@
         }
 
         /* La ventana modal llama a refresh() al cerrarse: el registro pudo
-           cambiar y la bandeja tiene que enterarse. */
-        function refresh() { __doPostBack("<%=lnkRevisar.UniqueID %>", ""); }
+           cambiar y la bandeja tiene que enterarse. La recarga es un GET
+           AJAX del fragmento; no dispara __doPostBack. */
+        function refresh() {
+            if (window.sigmaNotificaciones) sigmaNotificaciones.refrescar();
+        }
 
         /* El icono de SIGMA AI para los avisos del modelo. Se resuelve en el
            servidor y se publica acá para que sigma-alertas.js —que es global y
@@ -133,8 +137,9 @@
          necesita mirar cuando entra un aviso. --%>
     <div id="sgToastHost" class="sg-toast-host" aria-live="polite"></div>
 
-    <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
-        <ContentTemplate>
+    <div id="sgCaoRoot" data-sg-cao
+         data-servicio='<%=ResolveUrl("~/WebService/WsAlertas.asmx") %>'
+         data-pagina='<%=Request.Path %>'>
 
             <%-- ============================================================
                  ESTADO EN TIEMPO REAL
@@ -146,10 +151,10 @@
                     <span>Monitoreo en tiempo real</span>
                 </span>
 
-                <asp:LinkButton ID="lnkRevisar" runat="server" CssClass="sg-cao-revisar"
-                    OnClick="lnkRevisar_Click" ToolTip="Vuelve a revisar los umbrales ahora">
+                <button type="button" id="lnkRevisar" class="sg-cao-revisar"
+                    data-sg-cao-action="revisar" title="Vuelve a revisar los umbrales ahora">
                     <i class="mdi mdi-refresh"></i><span>Revisar ahora</span>
-                </asp:LinkButton>
+                </button>
             </div>
 
             <%-- ============================================================
@@ -199,62 +204,60 @@
                         <div class="sg-cola-buscar">
                             <i class="mdi mdi-magnify"></i>
                             <asp:TextBox ID="txtBuscar" runat="server" CssClass="sg-input"
-                                placeholder="Buscar alertas..." AutoPostBack="true"
-                                OnTextChanged="Filtro_Changed" />
+                                data-sg-cao-filtro="texto" placeholder="Buscar alertas..." />
                         </div>
 
                         <%-- Filter="Contains" para poder escribir y acotar: con
                              doce tipos de alerta, desplegar y buscar con la vista
                              es mas lento que teclear tres letras. --%>
-                        <rad:RadComboBox2 ID="cboSeveridad" runat="server" CssClass="sg-select"
-                            Filter="Contains" MarkFirstMatch="true" Width="46%"
-                            AutoPostBack="true" OnSelectedIndexChanged="Combo_Changed">
-                            <Items>
-                                <rad:RadComboBoxItem Text="Toda gravedad" Value="" Selected="true" />
-                                <rad:RadComboBoxItem Text="Crítica" Value="CRITICA" />
-                                <rad:RadComboBoxItem Text="Alta" Value="ALTA" />
-                                <rad:RadComboBoxItem Text="Advertencia" Value="ADVERTENCIA" />
-                                <rad:RadComboBoxItem Text="Baja" Value="BAJA" />
-                            </Items>
-                        </rad:RadComboBox2>
+                        <asp:DropDownList ID="cboSeveridad" runat="server" CssClass="sg-select"
+                            data-sg-cao-filtro="severidad">
+                            <asp:ListItem Text="Toda gravedad" Value="" Selected="true" />
+                            <asp:ListItem Text="Crítica" Value="CRITICA" />
+                            <asp:ListItem Text="Alta" Value="ALTA" />
+                            <asp:ListItem Text="Advertencia" Value="ADVERTENCIA" />
+                            <asp:ListItem Text="Baja" Value="BAJA" />
+                        </asp:DropDownList>
 
-                        <rad:RadComboBox2 ID="cboTipo" runat="server" CssClass="sg-select"
-                            Filter="Contains" MarkFirstMatch="true" Width="46%"
-                            AutoPostBack="true" OnSelectedIndexChanged="Combo_Changed" />
+                        <asp:DropDownList ID="cboTipo" runat="server" CssClass="sg-select"
+                            data-sg-cao-filtro="tipo" />
+
+                        <%-- VISTO / SIN VER
+
+                             Es la pregunta que se hace al abrir la bandeja
+                             —"¿qué hay que no haya mirado?"— y hasta ahora
+                             había que deducirla del fondo tenue de cada fila.
+
+                             No viaja al servidor: el dato de si está leída ya
+                             viaja en la fila. Filtra el navegador. --%>
+                        <select class="sg-select" data-sg-cao-filtro="visto"
+                                aria-label="Filtrar por vistas o sin ver">
+                            <option value="">Vistas y sin ver</option>
+                            <option value="0">Solo sin ver</option>
+                            <option value="1">Solo vistas</option>
+                        </select>
                     </div>
 
-                    <%-- Las pestañas.
-
-                         EL ROTULO VA EN Text, NO ANIDADO DENTRO DEL LINKBUTTON.
-
-                         Estaban escritas con el texto y un <span> como hijos del
-                         LinkButton. En la primera carga se veian; en cuanto
-                         habia un postback asincrono el UpdatePanel volvia a
-                         dibujar su contenido y esos hijos estaticos no se
-                         reconstruian: las pestanas desaparecian.
-
-                         Con el rotulo en la propiedad Text —que el ViewState si
-                         conserva— el control se dibuja igual la primera vez y
-                         todas las siguientes. --%>
+                    <%-- Botones nativos: la pestaña solo cambia el estado del
+                         cliente y solicita el nuevo fragmento por AJAX. --%>
                     <div class="sg-tabs" role="tablist">
-                        <asp:LinkButton ID="tabActivas" runat="server" CssClass="sg-tab"
-                            CommandArgument="ACTIVAS" OnCommand="Tab_Command" CausesValidation="false" />
+                        <button type="button" id="tabActivas" runat="server" class="sg-tab"
+                            data-sg-cao-tab="ACTIVAS"></button>
 
-                        <asp:LinkButton ID="tabGestion" runat="server" CssClass="sg-tab"
-                            CommandArgument="GESTION" OnCommand="Tab_Command" CausesValidation="false" />
+                        <button type="button" id="tabGestion" runat="server" class="sg-tab"
+                            data-sg-cao-tab="GESTION"></button>
 
-                        <asp:LinkButton ID="tabResueltas" runat="server" CssClass="sg-tab"
-                            CommandArgument="RESUELTAS" OnCommand="Tab_Command" CausesValidation="false" />
+                        <button type="button" id="tabResueltas" runat="server" class="sg-tab"
+                            data-sg-cao-tab="RESUELTAS"></button>
                     </div>
 
-                    <div class="sg-cola-lista">
-                        <asp:Repeater ID="rptAlertas" runat="server" OnItemDataBound="rptAlertas_ItemDataBound"
-                            OnItemCommand="rptAlertas_ItemCommand">
+                    <div id="pnlCola" runat="server" class="sg-cola-lista">
+                        <asp:Repeater ID="rptAlertas" runat="server" OnItemDataBound="rptAlertas_ItemDataBound">
                             <ItemTemplate>
-                                <asp:LinkButton ID="lnkItem" runat="server" CommandName="Seleccionar"
-                                    CommandArgument='<%# Eval("ale_id") %>' CssClass="sg-alerta">
+                                <button type="button" id="lnkItem" runat="server" class="sg-alerta"
+                                    data-alerta-id='<%# Eval("ale_id") %>'>
                                     <asp:Literal ID="litItem" runat="server" />
-                                </asp:LinkButton>
+                                </button>
                             </ItemTemplate>
                         </asp:Repeater>
 
@@ -284,42 +287,36 @@
 
                     <asp:Panel ID="pnlDetalle" runat="server" Visible="false">
 
-                        <%-- ============================================================
-                             LAS ACCIONES VAN DECLARADAS, NO CREADAS A MANO
-
-                             Estaban construidas en el code-behind dentro de un
-                             PlaceHolder, y desde PreRender. Un control creado
-                             tan tarde se DIBUJA bien pero en el postback
-                             todavia no existe cuando ASP.NET reparte los
-                             eventos: los botones se veian y no hacian nada.
-
-                             Declarados aca existen desde el inicio del ciclo,
-                             el evento siempre encuentra su control, y lo unico
-                             que decide el code-behind es cuales se ven.
-                             ============================================================ --%>
+                            <%-- Las acciones mutan por ASMX y luego refrescan los
+                                 fragmentos de lista/detalle por GET AJAX. --%>
                         <div class="sg-det-cab">
                             <div class="sg-det-chips"><asp:Literal ID="litChips" runat="server" /></div>
 
                             <div class="sg-det-acciones">
-                                <asp:LinkButton ID="btnTomar" runat="server" CssClass="sg-btn sg-btn-primario"
-                                    OnClick="Tomar_Click" CausesValidation="false" Visible="false"
-                                    Text="&lt;i class='mdi mdi-hand-back-right-outline'&gt;&lt;/i&gt;&lt;span&gt;Tomar alerta&lt;/span&gt;" />
+                                <button type="button" ID="btnTomar" runat="server" class="sg-btn sg-btn-primario"
+                                    data-sg-cao-action="tomar" visible="false">
+                                    <i class="mdi mdi-hand-back-right-outline"></i><span>Tomar alerta</span>
+                                </button>
 
-                                <asp:LinkButton ID="btnGestionar" runat="server" CssClass="sg-btn"
-                                    OnClick="Gestionar_Click" CausesValidation="false" Visible="false"
-                                    Text="&lt;i class='mdi mdi-progress-wrench'&gt;&lt;/i&gt;&lt;span&gt;Iniciar gestión&lt;/span&gt;" />
+                                <button type="button" ID="btnGestionar" runat="server" class="sg-btn"
+                                    data-sg-cao-action="gestionar" visible="false">
+                                    <i class="mdi mdi-progress-wrench"></i><span>Iniciar gestión</span>
+                                </button>
 
-                                <asp:LinkButton ID="btnAsignar" runat="server" CssClass="sg-btn"
-                                    OnClick="Asignar_Click" CausesValidation="false" Visible="false"
-                                    Text="&lt;i class='mdi mdi-account-arrow-right-outline'&gt;&lt;/i&gt;&lt;span&gt;Asignar responsable&lt;/span&gt;" />
+                                <button type="button" ID="btnAsignar" runat="server" class="sg-btn"
+                                    data-sg-cao-action="asignar" visible="false">
+                                    <i class="mdi mdi-account-arrow-right-outline"></i><span>Asignar responsable</span>
+                                </button>
 
-                                <asp:LinkButton ID="btnResolver" runat="server" CssClass="sg-btn"
-                                    OnClick="Resolver_Click" CausesValidation="false" Visible="false"
-                                    Text="&lt;i class='mdi mdi-check-circle-outline'&gt;&lt;/i&gt;&lt;span&gt;Resolver&lt;/span&gt;" />
+                                <button type="button" ID="btnResolver" runat="server" class="sg-btn"
+                                    data-sg-cao-action="resolver" visible="false">
+                                    <i class="mdi mdi-check-circle-outline"></i><span>Resolver</span>
+                                </button>
 
-                                <asp:LinkButton ID="btnDescartar" runat="server" CssClass="sg-btn"
-                                    OnClick="Descartar_Click" CausesValidation="false" Visible="false"
-                                    Text="&lt;i class='mdi mdi-close-circle-outline'&gt;&lt;/i&gt;&lt;span&gt;Descartar&lt;/span&gt;" />
+                                <button type="button" ID="btnDescartar" runat="server" class="sg-btn"
+                                    data-sg-cao-action="descartar" visible="false">
+                                    <i class="mdi mdi-close-circle-outline"></i><span>Descartar</span>
+                                </button>
 
                                 <asp:HyperLink ID="lnkOrigen" runat="server" CssClass="sg-btn" Visible="false"
                                     NavigateUrl="javascript:void(0);"
@@ -330,20 +327,19 @@
                         <%-- Asignar responsable. Aparece al pedirlo, no siempre:
                              un combo permanente con veinte nombres compite con
                              lo que de verdad hay que mirar. --%>
-                        <asp:Panel ID="pnlAsignar" runat="server" Visible="false" CssClass="sg-cierre">
+                        <div id="pnlAsignar" class="sg-cierre" data-sg-cao-asignar hidden>
                             <label for="<%=cboResponsable.ClientID %>" class="sg-cierre-rotulo">
                                 ¿Quién se hace cargo?
                             </label>
-                            <rad:RadComboBox2 ID="cboResponsable" runat="server" CssClass="sg-select"
-                                Filter="Contains" MarkFirstMatch="true" Width="100%"
-                                EmptyMessage="Escriba para buscar…" />
+                            <asp:DropDownList ID="cboResponsable" runat="server" CssClass="sg-select"
+                                data-sg-cao-responsable />
                             <div class="sg-cierre-botones">
-                                <asp:LinkButton ID="btnAsignarConfirmar" runat="server" CssClass="sg-btn sg-btn-primario"
-                                    OnClick="btnAsignarConfirmar_Click" CausesValidation="false">Asignar</asp:LinkButton>
-                                <asp:LinkButton ID="btnAsignarCancelar" runat="server" CssClass="sg-btn"
-                                    OnClick="btnAsignarCancelar_Click" CausesValidation="false">Cancelar</asp:LinkButton>
+                                <button type="button" class="sg-btn sg-btn-primario"
+                                    data-sg-cao-action="asignar-confirmar">Asignar</button>
+                                <button type="button" class="sg-btn"
+                                    data-sg-cao-action="asignar-cancelar">Cancelar</button>
                             </div>
-                        </asp:Panel>
+                        </div>
 
                         <h2 class="sg-det-titulo"><asp:Literal ID="litTitulo" runat="server" /></h2>
                         <div class="sg-det-meta"><asp:Literal ID="litMeta" runat="server" /></div>
@@ -406,9 +402,8 @@
                                  cambia por el enlace a la OT cuando ya existe: no
                                  se ofrece generar dos veces lo mismo. --%>
                             <div class="sg-ai-pie">
-                                <asp:LinkButton ID="btnGenerarOt" runat="server" Visible="false"
-                                    CssClass="sg-ai-ot" OnClick="btnGenerarOt_Click"
-                                    Text="Generar orden de trabajo" />
+                                <button type="button" ID="btnGenerarOt" runat="server" visible="false"
+                                    class="sg-ai-ot" data-sg-cao-action="generar-ot">Generar orden de trabajo</button>
 
                                 <asp:Literal ID="litOrdenTrabajo" runat="server" />
                             </div>
@@ -440,25 +435,24 @@
                         </div>
 
                         <%-- ---- CERRAR CON MOTIVO ---- --%>
-                        <asp:Panel ID="pnlCierre" runat="server" Visible="false" CssClass="sg-cierre">
+                        <div id="pnlCierre" class="sg-cierre" data-sg-cao-cierre hidden>
                             <label for="<%=txtMotivo.ClientID %>" class="sg-cierre-rotulo">
-                                <asp:Literal ID="litCierreRotulo" runat="server" />
+                                <span data-sg-cao-cierre-rotulo></span>
                             </label>
                             <asp:TextBox ID="txtMotivo" runat="server" CssClass="sg-input sg-input-area"
-                                TextMode="MultiLine" Rows="2" MaxLength="1000" />
+                                data-sg-cao-motivo="1" TextMode="MultiLine" Rows="2" MaxLength="1000" />
                             <div class="sg-cierre-botones">
-                                <asp:LinkButton ID="lnkCierreConfirmar" runat="server" CssClass="sg-btn sg-btn-primario"
-                                    OnClick="lnkCierreConfirmar_Click">Confirmar</asp:LinkButton>
-                                <asp:LinkButton ID="lnkCierreCancelar" runat="server" CssClass="sg-btn"
-                                    OnClick="lnkCierreCancelar_Click" CausesValidation="false">Cancelar</asp:LinkButton>
+                                <button type="button" class="sg-btn sg-btn-primario"
+                                    data-sg-cao-action="cierre-confirmar">Confirmar</button>
+                                <button type="button" class="sg-btn"
+                                    data-sg-cao-action="cierre-cancelar">Cancelar</button>
                             </div>
-                        </asp:Panel>
+                        </div>
 
                     </asp:Panel>
                 </div>
             </div>
 
-        </ContentTemplate>
-    </asp:UpdatePanel>
+    </div>
 
 </asp:Content>

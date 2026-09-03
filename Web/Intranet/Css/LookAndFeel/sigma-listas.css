@@ -677,6 +677,126 @@ html.sgx-page .content-page .container-fluid > .row.card-box.sgx-host.has-drawer
     word-break: break-word;
 }
 
+/* ---------------------------------------------------------------- historial
+   Los movimientos son una secuencia, no otra lista de etiqueta/valor. La
+   linea conserva el orden temporal y el signo permite leer entradas y
+   salidas sin depender solo del color. */
+.sgx-historial {
+    margin-top: 18px;
+    padding-top: 15px;
+    border-top: 1px solid #e8ecf3;
+}
+
+.sgx-historial > h3 {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0 0 12px;
+    color: #778399;
+    font-size: 10.5px;
+    font-weight: 750;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.sgx-historial > h3 i { color: #6c3cff; font-size: 15px; }
+
+.sgx-timeline { position: relative; padding-left: 18px; }
+
+.sgx-timeline::before {
+    position: absolute;
+    top: 7px;
+    bottom: 8px;
+    left: 4px;
+    width: 2px;
+    border-radius: 999px;
+    background: #e5e9f1;
+    content: '';
+}
+
+.sgx-timeline-item {
+    position: relative;
+    margin-bottom: 9px;
+    padding: 10px;
+    border: 1px solid #e8ecf3;
+    border-radius: 9px;
+    background: #fbfcfe;
+}
+
+.sgx-timeline-item:last-child { margin-bottom: 0; }
+
+.sgx-timeline-item.is-current {
+    border-color: #cfc5ff;
+    background: #f8f6ff;
+    box-shadow: 0 0 0 2px rgba(108, 60, 255, .05);
+}
+
+.sgx-timeline-dot {
+    position: absolute;
+    top: 15px;
+    left: -18px;
+    width: 10px;
+    height: 10px;
+    border: 2px solid #fff;
+    border-radius: 50%;
+    background: #8995a8;
+    box-shadow: 0 0 0 1px #d7dde7;
+}
+
+.sgx-timeline-item.is-entrada .sgx-timeline-dot { background: #1f9d61; }
+.sgx-timeline-item.is-salida .sgx-timeline-dot { background: #d95252; }
+.sgx-timeline-item.is-current .sgx-timeline-dot { box-shadow: 0 0 0 2px #cfc5ff; }
+
+.sgx-timeline-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sgx-timeline-identidad { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sgx-timeline-identidad .sg-avatar { width: 27px; height: 27px; font-size: 9px; }
+.sgx-timeline-identidad > div { min-width: 0; }
+.sgx-timeline-identidad strong { display: block; color: #253047; font-size: 11.5px; line-height: 1.3; }
+.sgx-timeline-identidad span { display: block; margin-top: 2px; color: #8b95a7; font-size: 9.5px; }
+
+.sgx-timeline-cantidad {
+    flex: 0 0 auto;
+    color: #5e697d;
+    font-size: 11.5px;
+    font-weight: 750;
+    white-space: nowrap;
+}
+
+.sgx-timeline-item.is-entrada .sgx-timeline-cantidad { color: #19774a; }
+.sgx-timeline-item.is-salida .sgx-timeline-cantidad { color: #b83d3d; }
+
+.sgx-timeline-usuario { margin: 7px 0 0 35px; color: #66738a; font-size: 10.5px; }
+
+.sgx-timeline-item p {
+    margin: 8px 0 0;
+    color: #49556b;
+    font-size: 10.5px;
+    line-height: 1.45;
+}
+
+.sgx-timeline-meta { display: flex; flex-wrap: wrap; gap: 5px 10px; margin-top: 7px; }
+.sgx-timeline-meta span { color: #8490a4; font-size: 9.5px; }
+.sgx-timeline-meta i { margin-right: 3px; }
+
+.sgx-timeline-actual {
+    display: inline-flex;
+    margin-top: 8px;
+    padding: 3px 7px;
+    border-radius: 999px;
+    background: #e9e3ff;
+    color: #6234dc;
+    font-size: 8.5px;
+    font-weight: 750;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+
 
 /* ============================================================================
    EL RESPALDO DENTRO DEL PANEL

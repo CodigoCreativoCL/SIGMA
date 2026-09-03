@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Cliente.ascx" hash="fffffff3c3134113" filehash="eadc2917f0f5b336" flags="110000" assembly="App_Web_nvgprj25" type="ASP.view_comun_controls_cliente_cliente_ascx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Cliente.ascx" hash="fffffff3c3134113" filehash="8ba01b6cc931b4f0" flags="110000" assembly="App_Web_cnln1myx" type="ASP.view_comun_controls_cliente_cliente_ascx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Cliente.ascx" />
         <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Cliente.ascx.cs" />

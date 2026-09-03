@@ -497,28 +497,102 @@
        este. El input tambien abre al hacer clic, que es lo que la gente
        intenta primero.
        ------------------------------------------------------------------ */
-    function conectar(raiz) {
-        var disparadores = (raiz || document).querySelectorAll(
-            '.sigma-modal-fecha img, .sigma-modal-fecha a, .sigma-modal-fecha input[type="image"],' +
-            /* `.sigma-filtro-fecha` es el otro envoltorio que usa el sitio
-               —ActivoFicha—. Sin el, esos dos calendarios se quedaban con el
-               popup viejo y la pantalla tenia dos calendarios distintos. */
-            '.sigma-filtro-fecha img, .sigma-filtro-fecha a, .sigma-filtro-fecha input[type="image"],' +
-            '.filtroPersonalizado img, .filtroPersonalizado input[type="image"],' +
-            /* `Calendar2` NO es otra version de `Calendar`: hereda de
-               RadDatePicker, o sea es un calendario de Telerik completamente
-               distinto. Su disparador es `.rcCalPopup`. Sin cubrirlo, tres
-               pantallas —las de Movimientos— seguirian abriendo el calendario
-               de Telerik y el sitio tendria dos calendarios distintos. */
-            '.rcCalPopup, .RadPicker .rcCalPopup');
+    /* ======================================================================
+       EL DISPARADOR SE BUSCA POR ESTRUCTURA, NO POR ETIQUETA
 
-        Array.prototype.forEach.call(disparadores, function (dis) {
+       EL SINTOMA
+
+         Al hacer clic en el campo se abria el calendario de SIGMA, y al hacer
+         clic en el icono de al lado se abria el viejo. Dos calendarios
+         distintos en el mismo campo, segun donde se tocara.
+
+       LA CAUSA
+
+         La lista de disparadores nombraba etiquetas concretas: `img`, `a`,
+         `input[type=image]`. PopCalendar es un componente compilado de 2008 y
+         no siempre emite el mismo elemento -segun la version y la
+         configuracion puede salir un <button> o un <input type=button>-.
+         Cuando salia uno de esos, no lo tomaba nadie: el campo quedaba
+         conectado al calendario nuevo y el icono seguia con el viejo.
+
+       LA CORRECCION
+
+         Se recorre el ENVOLTORIO y se toma como disparador todo lo que sea
+         pulsable y no sea el campo de texto. Deja de importar que etiqueta
+         elija emitir el control.
+
+       Y SE CLONA ANTES DE CONECTAR
+
+         Quitar el atributo `onclick` solo desarma el manejador escrito en el
+         HTML. Si el control se engancho por codigo -`attachEvent` o
+         `addEventListener`- ese manejador no se puede quitar sin la
+         referencia a la funcion, que no tenemos.
+
+         Reemplazar el elemento por un clon de si mismo se lleva TODOS sus
+         escuchas de una vez: el clon es identico en aspecto y atributos, pero
+         nace sin nada conectado. Recien ahi se le pone el nuestro.
+       ====================================================================== */
+    var ENVOLTORIOS = '.sigma-modal-fecha, .sigma-filtro-fecha, .filtroPersonalizado, .RadPicker';
+
+    /* Pulsable y que no sea el campo donde se escribe la fecha. */
+    var PULSABLES = 'a, img, button, input[type="image"], input[type="button"], input[type="submit"], .rcCalPopup';
+
+    function disparadoresDe(raiz) {
+        var cajas = (raiz || document).querySelectorAll(ENVOLTORIOS);
+        var lista = [];
+
+        Array.prototype.forEach.call(cajas, function (caja) {
+            Array.prototype.forEach.call(caja.querySelectorAll(PULSABLES), function (el) {
+                /* El campo de texto no es un disparador: tiene su propio
+                   manejador mas abajo, y conectarle este ademas lo haria
+                   abrir y cerrar en el mismo clic. */
+                if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'hidden')) return;
+                lista.push(el);
+            });
+        });
+
+        /* Los de Telerik pueden vivir fuera de un envoltorio conocido. */
+        Array.prototype.forEach.call((raiz || document).querySelectorAll('.rcCalPopup'), function (el) {
+            if (lista.indexOf(el) < 0) lista.push(el);
+        });
+
+        return lista;
+    }
+
+    function conectar(raiz) {
+        var disparadores = disparadoresDe(raiz);
+
+        disparadores.forEach(function (dis) {
             if (dis.getAttribute('data-sgcal') === '1') return;
+
+            /* El de Telerik se deja como esta. Su calendario ya se apaga por
+               la API en `apagarTelerik()`, y el control guarda una referencia
+               a ESTE elemento: cambiarselo por un clon lo dejaria apuntando a
+               un nodo que ya no esta en la pagina, y con el se irian tambien
+               `set_selectedDate` y el resto del estado que las pantallas de
+               Movimientos necesitan para que la fecha sobreviva al postback. */
+            var esTelerik = dis.classList && dis.classList.contains('rcCalPopup');
+
+            /* El clon nace sin escuchas. Se reemplaza ANTES de marcarlo y de
+               conectarle nada, porque el clon es otro elemento. */
+            if (!esTelerik && dis.parentNode) {
+                var limpio = dis.cloneNode(true);
+                dis.parentNode.replaceChild(limpio, dis);
+                dis = limpio;
+            }
+
             dis.setAttribute('data-sgcal', '1');
 
-            /* El popup viejo se desconecta. */
+            /* Lo que quedaba escrito en el HTML. El `href` tambien: un
+               `javascript:` en un <a> se ejecuta al navegar, y eso es otra
+               forma de abrir el popup viejo. */
             dis.removeAttribute('onclick');
             dis.onclick = null;
+
+            if (dis.tagName === 'A') {
+                dis.removeAttribute('href');
+                dis.style.cursor = 'pointer';
+            }
 
             var campo = campoDe(dis);
             if (!campo) return;
@@ -568,17 +642,43 @@
 
     /* El input que le corresponde a un disparador: el hermano de texto mas
        cercano hacia atras, y si no, el primero de su contenedor. */
+    /* De que campo es este disparador.
+
+       Primero se prueba entre HERMANOS, que es el caso simple y el mas
+       seguro: si en una fila hay dos fechas -"Desde" y "Hasta"-, el icono de
+       cada una esta al lado de su propio campo, y buscar en el envoltorio
+       comun devolveria siempre el primero.
+
+       Recien si no hay hermano se sube al envoltorio. Eso cubre a los
+       controles que se dibujan dentro de una tabla, donde el icono y el
+       campo quedan en celdas distintas y por lo tanto no son hermanos. */
     function campoDe(dis) {
         var prev = dis.previousElementSibling;
 
         while (prev) {
             if (prev.tagName === 'INPUT' && prev.type === 'text') return prev;
+
+            var dentro = prev.querySelector && prev.querySelector('input[type="text"]');
+            if (dentro) return dentro;
+
             prev = prev.previousElementSibling;
         }
 
         var caja = dis.parentNode;
 
-        return caja ? caja.querySelector('input[type="text"]') : null;
+        while (caja && caja !== document) {
+            var campo = caja.querySelector && caja.querySelector('input[type="text"]');
+            if (campo) return campo;
+
+            /* No se sube mas alla del envoltorio: fuera de el, el primer
+               input de texto que aparezca puede ser el buscador de la
+               pantalla, y el calendario terminaria escribiendo ahi. */
+            if (caja.matches && caja.matches(ENVOLTORIOS)) break;
+
+            caja = caja.parentNode;
+        }
+
+        return null;
     }
 
     /* Telerik vuelve a enganchar su popup en cada refresco, asi que no basta

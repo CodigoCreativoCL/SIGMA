@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Periodo.aspx" hash="fffffff3c3134113" filehash="c61e90f97cd5a9cc" flags="110000" assembly="App_Web_05cvuucm" type="ASP.view_comercial_suscripciones_periodo_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Suscripciones/Periodo.aspx" hash="fffffff3c3134113" filehash="c4148667b28ddf6d" flags="110000" assembly="App_Web_fz15lii3" type="ASP.view_comercial_suscripciones_periodo_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
