@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="2" virtualPath="/C:/Program Files/Git/Check/WebService/WsProgramacion.asmx" hash="5dc1e70f" filehash="1c505e1a3cf4" flags="130000" assembly="App_Code" type="WsProgramacion">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/WebService/WsProgramacion.asmx" />
+    </filedeps>
+</preserve>

@@ -3,14 +3,18 @@
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-grupo.css?vrs=1") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirGrupo(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Grupos/Grupo.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Organizacion/Grupos/Grupo.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo grupo de trabajo' : 'Editar grupo de trabajo',
+                width: 1060,
+                initialHeight: 660
+            });
         }
 
         function refresh() {
@@ -59,7 +63,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1020" Height="640" />
 
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus grupos.</p>
@@ -71,7 +74,9 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="gtr_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="abrirGrupo(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sigma-accion is-primaria" OnClientClick="return abrirGrupo(0);">
+                                <i class="mdi mdi-plus"></i><span>Nuevo grupo</span>
+                            </asp:LinkButton>
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

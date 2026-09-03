@@ -1,0 +1,300 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA — El calendario del producto
+   ----------------------------------------------------------------------------
+
+   EL DETALLE QUE HACE LA DIFERENCIA: `tabular-nums`
+
+     En una fuente normal el "1" es mas angosto que el "8". En un parrafo eso
+     se agradece; en una cuadricula de fechas hace que las columnas bailen —la
+     semana del 11 al 17 queda visiblemente mas angosta que la del 20 al 26—.
+
+     `font-variant-numeric: tabular-nums` fuerza a que todos los digitos midan
+     lo mismo. Es la unica razon por la que una tabla de numeros se ve
+     ordenada, y no se nota hasta que falta.
+
+   HOY Y EL ELEGIDO SE DISTINGUEN POR FORMA, NO POR TONO
+
+     El dia elegido va relleno; hoy lleva un punto debajo. Si los dos fueran
+     dos intensidades del mismo morado, habria que compararlos entre si para
+     saber cual es cual —y con poca vision, no se distinguirian—.
+   ============================================================================ */
+
+.sg-cal {
+    position: fixed;
+    z-index: 10050;
+    width: 296px;
+    padding: 14px;
+    background: #fff;
+    border: 1px solid rgba(17, 24, 39, .08);
+    border-radius: 16px;
+
+    /* Dos sombras: una corta que define el borde y una larga y suave que lo
+       despega de la pagina. Una sola sombra grande se ve como una mancha. */
+    box-shadow: 0 2px 6px rgba(17, 24, 39, .06),
+                0 18px 44px rgba(17, 24, 39, .16);
+
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif);
+    user-select: none;
+
+    /* TODOS los numeros del panel, de ancho fijo. */
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+}
+
+/* ------------------------------------------------------------------ cabecera */
+.sg-cal-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+
+.sg-cal-mes {
+    flex: 1 1 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 10px;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -.01em;
+    cursor: pointer;
+}
+
+.sg-cal-mes:hover { background: rgba(108, 92, 255, .07); color: var(--sg-purple, #6C5CFF); }
+.sg-cal-mes i { font-size: 16px; opacity: .55; }
+
+.sg-cal-nav {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid rgba(17, 24, 39, .08);
+    border-radius: 10px;
+    background: #fff;
+    color: #4b5563;
+    cursor: pointer;
+    padding: 0;
+    flex: 0 0 auto;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.sg-cal-nav:hover {
+    background: rgba(108, 92, 255, .07);
+    border-color: rgba(108, 92, 255, .28);
+    color: var(--sg-purple, #6C5CFF);
+}
+
+.sg-cal-nav i { font-size: 18px; }
+
+/* -------------------------------------------------------------------- semana */
+.sg-cal-semana,
+.sg-cal-dias {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.sg-cal-semana { margin-bottom: 6px; }
+
+.sg-cal-semana span {
+    text-align: center;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .08em;
+    color: #a8afbd;
+    text-transform: uppercase;
+    padding: 2px 0;
+}
+
+/* --------------------------------------------------------------------- dias */
+.sg-cal-dia {
+    position: relative;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #374151;
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color .13s ease, color .13s ease, transform .1s ease;
+}
+
+.sg-cal-dia:hover { background: rgba(108, 92, 255, .10); color: var(--sg-purple, #6C5CFF); }
+.sg-cal-dia:active { transform: scale(.93); }
+
+.sg-cal-dia.is-vacio { visibility: hidden; cursor: default; }
+
+/* El fin de semana se atenua, NO se bloquea: en mantenimiento industrial se
+   trabaja sabado y domingo. */
+.sg-cal-dia.is-finde { color: #a8afbd; }
+
+/* HOY: un punto debajo del numero. No compite con el relleno del elegido, y
+   se sigue viendo cuando hoy ES el dia elegido. */
+.sg-cal-dia.is-hoy::after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--sg-purple, #6C5CFF);
+}
+
+.sg-cal-dia.is-elegido {
+    background: var(--sg-purple, #6C5CFF) !important;
+    color: #fff !important;
+    font-weight: 700;
+    box-shadow: 0 4px 12px rgba(108, 92, 255, .32);
+}
+
+.sg-cal-dia.is-elegido.is-hoy::after { background: #fff; }
+
+.sg-cal-dia:focus-visible {
+    outline: 2px solid var(--sg-purple, #6C5CFF);
+    outline-offset: 1px;
+}
+
+/* ------------------------------------------------- el salto de mes y de año */
+.sg-cal-saltos {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+}
+
+.sg-cal-salto {
+    height: 38px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 10px;
+    background: transparent;
+    color: #374151;
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    cursor: pointer;
+    padding: 0;
+    transition: background-color .13s ease, color .13s ease;
+}
+
+.sg-cal-salto:hover { background: rgba(108, 92, 255, .10); color: var(--sg-purple, #6C5CFF); }
+
+.sg-cal-salto.is-actual {
+    background: var(--sg-purple, #6C5CFF);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(108, 92, 255, .28);
+}
+
+/* ---------------------------------------------------------------------- pie */
+.sg-cal-pie {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(17, 24, 39, .07);
+}
+
+.sg-cal-accion {
+    flex: 1 1 auto;
+    height: 34px;
+    border: 1px solid rgba(17, 24, 39, .08);
+    border-radius: 10px;
+    background: #fff;
+    color: #374151;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease;
+}
+
+.sg-cal-accion:hover {
+    background: rgba(108, 92, 255, .07);
+    border-color: rgba(108, 92, 255, .28);
+    color: var(--sg-purple, #6C5CFF);
+}
+
+/* Limpiar borra: se distingue al tocarlo, pero en reposo no compite con
+   elegir un dia, que es a lo que se vino. */
+.sg-cal-accion.is-limpiar:hover {
+    background: #fef2f2;
+    color: #dc2626;
+    border-color: #fecaca;
+}
+
+@media (max-width: 420px) {
+    .sg-cal { width: calc(100vw - 24px); }
+}
+
+
+/* ============================================================================
+   EL CALENDARIO DE TELERIK, FUERA DE ESCENA
+
+   `Calendar2` hereda de RadDatePicker: es OTRO calendario, no otra version
+   del mismo. Sin esto, tres pantallas abrian el popup de Telerik y el sitio
+   mostraba dos calendarios distintos segun donde estuviera parado.
+
+   El popup se esconde en vez de desmontarlo: el control lo vuelve a crear en
+   cada refresco, y pelearle por JavaScript seria una carrera que a veces se
+   pierde.
+   ============================================================================ */
+.RadCalendarPopup,
+.RadPicker .rcCalPopup + .RadCalendar,
+div[id$="_calendar_wrapper"],
+div[id$="_popupButton_popup"] {
+    display: none !important;
+    visibility: hidden !important;
+}
+
+/* Su disparador se mantiene visible —es donde se hace clic— pero con el icono
+   de SIGMA, igual que el resto. */
+.RadPicker .rcCalPopup {
+    width: 0 !important;
+    height: 0 !important;
+    padding: 11px !important;
+    border: 0 !important;
+    box-sizing: content-box !important;
+    background-image: url("../UI/WebControls/calendar/Calendar.svg") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 22px 22px !important;
+    background-color: transparent !important;
+    cursor: pointer;
+    vertical-align: middle;
+    display: inline-block !important;
+}
+
+/* Y su campo, a la misma altura y radio que los demas. */
+.RadPicker input.riTextBox {
+    height: 42px !important;
+    min-width: 118px !important;
+    max-width: 118px !important;
+    padding: 0 12px !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    box-sizing: border-box !important;
+    font-variant-numeric: tabular-nums;
+}

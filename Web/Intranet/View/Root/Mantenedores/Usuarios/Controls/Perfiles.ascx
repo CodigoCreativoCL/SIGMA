@@ -2,9 +2,12 @@
 
 <script type="text/javascript">
     function abrirPerfil(query) {
-        var oWin = $find("<%=rwiDetalle.ClientID %>");
-        oWin.setUrl('<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/UsuarioPerfiles.aspx") %>?query=' + query);
-        oWin.show();
+        return SigmaModal.open({
+            url: '<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/UsuarioPerfiles.aspx") %>?query=' + query,
+            title: 'Usuario perfiles',
+            width: 1000,
+            initialHeight: 380
+        });
     }
     function refreshUsuarioPerfil() {
         __doPostBack("<%=Grid.ClientID %>", '')
@@ -12,7 +15,6 @@
 </script>
 
 
-<rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
     <ContentTemplate>
         <rad:RadGrid2 ID="Grid" runat="server">

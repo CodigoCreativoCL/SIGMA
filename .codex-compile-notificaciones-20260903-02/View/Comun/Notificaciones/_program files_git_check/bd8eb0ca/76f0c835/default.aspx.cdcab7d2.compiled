@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/Default.aspx" hash="fffffff3c3134113" filehash="79e689dd48c8ed8e" flags="110000" assembly="App_Web_hr3yhl3o" type="ASP.default_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Default.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/Default.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+    </filedeps>
+</preserve>

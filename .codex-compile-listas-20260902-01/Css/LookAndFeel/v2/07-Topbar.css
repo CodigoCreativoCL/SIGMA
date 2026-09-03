@@ -1,0 +1,117 @@
+﻿/* =============================================================
+   FACILITYGES - LOOK & FEEL v2
+   Relook de colores del TopAppBar (navbar-custom). Solo cambios
+   de color sobre los elementos existentes.
+   ============================================================= */
+
+.navbar-custom .nav-user:hover {
+    background-color: var(--fg-surface-variant) !important;
+}
+
+.navbar-custom .nav-user .mdi-chevron-down {
+    color: var(--fg-outline) !important;
+}
+
+/* -------------------------------------------------------------
+   Breadcrumb (modulo / seccion) + titulo de pagina
+   ------------------------------------------------------------- */
+.navbar-custom .topbar-title-box {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+    padding: 10px 20px 0 !important;
+}
+
+.navbar-custom .topbar-breadcrumb {
+    line-height: 1.2 !important;
+}
+
+.navbar-custom .breadcrumb-module,
+.navbar-custom .breadcrumb-section {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.06em !important;
+    text-transform: uppercase !important;
+}
+
+.navbar-custom .breadcrumb-module {
+    color: var(--fg-outline) !important;
+}
+
+.navbar-custom .breadcrumb-module:not(:empty)::after {
+    content: "/";
+    margin: 0 4px !important;
+    color: var(--fg-outline) !important;
+}
+
+.navbar-custom .breadcrumb-section {
+    color: var(--fg-secondary) !important;
+}
+
+.navbar-custom .topbar-title-box .page-title-main {
+    line-height: 1.3 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+/* -------------------------------------------------------------
+   Buscador centrado del topbar
+   ------------------------------------------------------------- */
+.navbar-custom .topbar-search-box {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform: translate(-50%, -50%) !important;
+    width: 100% !important;
+    max-width: 420px !important;
+}
+
+.navbar-custom .topbar-search-box .input-group-text {
+    background-color: var(--fg-surface) !important;
+    border-color: var(--fg-surface-variant) !important;
+    color: var(--fg-outline) !important;
+}
+
+.navbar-custom .topbar-search-box .form-control {
+    background-color: var(--fg-surface) !important;
+    border-color: var(--fg-surface-variant) !important;
+    border-left: 0 !important;
+    box-shadow: none !important;
+}
+
+.navbar-custom .topbar-search-box .form-control:focus {
+    box-shadow: none !important;
+    border-color: var(--fg-outline) !important;
+}
+
+/* -------------------------------------------------------------
+   Bloque de usuario (nombre + perfil en dos lineas) + avatar
+   ------------------------------------------------------------- */
+.navbar-custom .nav-user-info {
+    display: inline-block !important;
+    vertical-align: middle !important;
+    line-height: 1.2 !important;
+    text-align: right !important;
+    margin-right: 10px !important;
+}
+
+.navbar-custom .nav-user-name {
+    display: block !important;
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    text-transform: uppercase !important;
+    color: var(--fg-primary) !important;
+}
+
+.navbar-custom .nav-user-role {
+    display: block !important;
+    font-size: 11px !important;
+    color: var(--fg-outline) !important;
+}
+
+@media (max-width: 991.98px) {
+    .navbar-custom .topbar-search-box,
+    .navbar-custom .nav-user-info {
+        display: none !important;
+    }
+}

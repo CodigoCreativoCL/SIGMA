@@ -295,17 +295,23 @@
         function abrirTimer() {
             var fileUpload = $('#<%=fldDocumento.ClientID %>');
             if (fileUpload[0].files[0] != null) {
-                var oWin = $find("<%=rwiProcesamiento.ClientID %>");
-                oWin.setUrl('<%=ResolveUrl("~/View/Comun/Procesamiento.aspx") %>');
-                oWin.show();
+                return SigmaModal.open({
+                    url: '<%=ResolveUrl("~/View/Comun/Procesamiento.aspx") %>',
+                    title: 'Procesamiento',
+                    width: 1000,
+                    initialHeight: 500
+                });
                 bloqueaScroll(false);
             }
             return false;
         }
 
+        /* La ventana de procesamiento ahora la abre SigmaModal, asi que el
+           cierre tiene que ir por el mismo lado. El code-behind llama a esta
+           funcion al terminar la carga; con el $find viejo apuntaba a un
+           control que ya nadie abre y la ventana no se cerraba nunca. */
         function closeWindowProcesamiento() {
-            var oWin = $find("<%=rwiProcesamiento.ClientID %>");
-            if (oWin != null) oWin.close();
+            if (window.SigmaModal) SigmaModal.close();
         }
 
         $(document).ready(function () {
@@ -325,7 +331,6 @@
 
 <asp:Content ID="Content5" ContentPlaceHolderID="cphBody" runat="Server">
 <div class="sigma-modal">
-    <rad:RadWindow2 ID="rwiProcesamiento" runat="server" Width="1000" Height="500" />
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>

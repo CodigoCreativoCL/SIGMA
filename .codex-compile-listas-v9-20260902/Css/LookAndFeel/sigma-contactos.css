@@ -1,0 +1,225 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA — Contactos del cliente
+   ----------------------------------------------------------------------------
+   Se enlaza UNA vez, desde la pantalla que usa el control.
+
+   La grilla de campos NO se redefine aca: `sigma-modal-grid` /
+   `sigma-modal-field` ya existen en sigma-modal.css y resuelven cosas que
+   costaron encontrar. Aca va solo lo propio de esta lista.
+   ============================================================================ */
+
+.sg-ct { --sg-p: #6C5CFF; --sg-b: rgba(17, 24, 39, .10); }
+
+/* ---------------------------------------------------------------- encabezado */
+.sg-ct-cab {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.sg-ct-titulo { font-size: 15px; font-weight: 700; color: #111827; }
+.sg-ct-bajada { font-size: 12.5px; color: #6b7280; margin-top: 2px; max-width: 520px; }
+
+.sg-ct-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 38px;
+    padding: 0 16px;
+    border-radius: 10px;
+    border: 1px solid var(--sg-b);
+    background: #fff;
+    color: #374151 !important;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    box-sizing: border-box;
+    cursor: pointer;
+}
+
+.sg-ct-btn:hover { background: #f9fafb; }
+
+.sg-ct-btn.is-principal {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff !important;
+}
+
+/* El primario NO se apaga al pasar el mouse: se aclara. Un boton principal
+   que al hover queda blanco con texto blanco desaparece. */
+.sg-ct-btn.is-principal:hover { background: #7f52ff; }
+
+.sg-ct-req { color: #dc2626; font-weight: 700; }
+
+/* ---------------------------------------------------------------- formulario */
+.sg-ct-form {
+    background: #fbfaff;
+    border: 1px solid rgba(108, 92, 255, .22);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 18px;
+}
+
+.sg-ct-form-cab { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 14px; }
+
+.sg-ct-form-pie {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 16px;
+}
+
+.sg-ct-check { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
+.sg-ct-check-txt { display: flex; flex-direction: column; gap: 1px; }
+.sg-ct-check-t { font-size: 13px; font-weight: 600; color: #111827; }
+.sg-ct-check-d { font-size: 11.5px; color: #6b7280; line-height: 1.4; }
+
+/* --------------------------------------------------------------------- lista */
+.sg-ct-lista { display: flex; flex-direction: column; gap: 10px; }
+
+.sg-ct-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 13px 14px;
+    border: 1px solid var(--sg-b);
+    border-radius: 12px;
+    background: #fff;
+}
+
+/* El principal se distingue por el borde Y por su pastilla, no solo por
+   color: es el que se usa para las comunicaciones y confundirlo tiene
+   consecuencias. */
+.sg-ct-item.is-principal { border-color: rgba(108, 92, 255, .35); background: #fbfaff; }
+
+.sg-ct-avatar {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    flex: 0 0 auto;
+}
+
+.sg-ct-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1 1 auto; }
+
+.sg-ct-nombre {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: #111827;
+}
+
+.sg-ct-chip {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #4338ca;
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .03em;
+}
+
+.sg-ct-cargo { font-size: 11.5px; color: #9ca3af; }
+.sg-ct-vias { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 3px; }
+
+.sg-ct-vias a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 12px;
+    color: #4b5563 !important;
+    text-decoration: none !important;
+}
+
+.sg-ct-vias a:hover { color: var(--sg-p) !important; text-decoration: underline !important; }
+.sg-ct-vias i { font-size: 14px; color: #9ca3af; }
+
+.sg-ct-acciones { display: flex; gap: 6px; flex: 0 0 auto; }
+
+.sg-ct-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 9px;
+    border: 1px solid var(--sg-b);
+    color: #6b7280 !important;
+    text-decoration: none !important;
+}
+
+.sg-ct-icono:hover { background: #f9fafb; }
+.sg-ct-icono.is-borrar:hover { background: #fef2f2; border-color: #fecaca; color: #dc2626 !important; }
+
+/* --------------------------------------------------------------------- vacio */
+.sg-ct-vacio {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 22px 16px;
+    border: 1px dashed #d8dae0;
+    border-radius: 12px;
+    color: #6b7280;
+    font-size: 12.5px;
+    line-height: 1.55;
+}
+
+.sg-ct-vacio i { font-size: 30px; color: #c7c9d1; flex: 0 0 auto; }
+.sg-ct-vacio strong { color: #374151; }
+
+@media (max-width: 700px) {
+    .sg-ct-cab { flex-direction: column; }
+    .sg-ct-item { flex-wrap: wrap; }
+    .sg-ct-acciones { width: 100%; justify-content: flex-end; }
+}
+
+
+/* ============================================================================
+   LA FICHA DE IDENTIDAD, AL ESTANDAR
+
+   Usaba la grilla de Bootstrap con clases propias mientras el resto del
+   producto usa `sigma-modal-grid`. Dos sistemas de grilla en el mismo
+   producto es como se llega a que dos formularios que hacen lo mismo se vean
+   distintos.
+
+   Lo de abajo es solo el encabezado de seccion, que el estandar no trae.
+   ============================================================================ */
+.sg-id-seccion {
+    padding-top: 6px;
+    margin-top: 6px;
+    border-top: 1px solid rgba(17, 24, 39, .08);
+}
+
+/* La primera no lleva linea arriba: separaria de nada. */
+.sigma-modal-grid > .sg-id-seccion:first-child { border-top: 0; margin-top: 0; padding-top: 0; }
+
+.sg-id-seccion .titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+}
+
+.sg-id-seccion .titulo i { font-size: 17px; color: #6C5CFF; }
+.sg-id-seccion .ayuda { font-size: 12px; color: #6b7280; margin-top: 2px; line-height: 1.45; }
+
+/* El asterisco de obligatorio, con color propio: dentro del rotulo en gris
+   se pierde, y es justo lo que hay que ver antes de escribir. */
+.sg-id-req { color: #dc2626; font-weight: 700; }

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Organizacion/Areas/Area.aspx" hash="fffffff3c3134113" filehash="94c1317ecad7d0da" flags="110000" assembly="App_Web_t2hih3pf" type="ASP.view_organizacion_areas_area_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Organizacion/Areas/Area.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Organizacion/Areas/Area.aspx.cs" />
+    </filedeps>
+</preserve>

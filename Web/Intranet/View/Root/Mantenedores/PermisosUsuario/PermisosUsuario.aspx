@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPermiso(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx") %>?query=' + query,
+                title: 'Permiso usuario',
+                width: 960,
+                initialHeight: 600
+            });
         }
 
         function refresh() {
@@ -53,7 +56,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="960" Height="600" />
 
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para administrar sus permisos puntuales.</p>
@@ -67,7 +69,9 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="cpm_id, cpm_habilitado">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Otorgar permiso" CssClass="icono_guardar" OnClientClick="abrirPermiso(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sigma-accion is-primaria" OnClientClick="abrirPermiso(0)">
+                                <i class="mdi mdi-shield-key-outline"></i><span>Otorgar permiso</span>
+                            </asp:LinkButton>
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

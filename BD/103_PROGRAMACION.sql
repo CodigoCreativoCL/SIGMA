@@ -111,6 +111,46 @@ SET @HOY = CAST([dbo].[FNC_PAIS_HORA](@PAIS) AS DATE)
             p.pro_cumplimiento_politica,
             ISNULL(c.cpo_nombre, '')            AS CUMPLIMIENTO_POLITICA_NOMBRE,
             p.pro_genera_automaticamente,
+
+            /* ---- Alcance: donde se hace ----
+               Los tres niveles viajan juntos con su nombre resuelto, para que
+               la ficha no tenga que consultar tres catalogos solo para
+               escribir un encabezado. */
+            p.pro_cliente_instalacion,
+            ISNULL(ins.cin_nombre, '')          AS INSTALACION_NOMBRE,
+            p.pro_instalacion_area,
+            ISNULL(ar.iar_nombre, '')           AS AREA_NOMBRE,
+            p.pro_activo,
+            ISNULL(ac.act_codigo, '')           AS ACTIVO_CODIGO,
+            ISNULL(ac.act_nombre, '')           AS ACTIVO_NOMBRE,
+
+            /* ---- Asignacion: quien responde ---- */
+            /* Los responsables ya no son UNA columna: una programacion puede
+               tener varias personas sin que haya que inventarles una cuadrilla.
+               Se entregan armados —nombres para mostrar, ids para volver a
+               marcar en la ficha— y no con una segunda consulta por fila. */
+            RESPONSABLES = ISNULL(STUFF((
+                SELECT N', ' + u2.usu_nombre + N' ' + u2.usu_apellido_paterno
+                FROM   [dbo].[Programacion_Responsable] r2
+                JOIN   [dbo].[Usuario] u2 ON u2.usu_id = r2.prr_usuario
+                WHERE  r2.prr_programacion = p.pro_id
+                ORDER BY u2.usu_nombre, u2.usu_apellido_paterno
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 2, N''), N''),
+
+            /* MISMO ORDEN que RESPONSABLES, y por eso el JOIN: el listado
+               empareja nombre e id por posicion para pintar cada avatar de su
+               color. Sin este ORDER BY, el tercer nombre podia salir con el
+               color del primero. */
+            RESPONSABLES_IDS = ISNULL(STUFF((
+                SELECT N',' + CAST(r3.prr_usuario AS NVARCHAR(10))
+                FROM   [dbo].[Programacion_Responsable] r3
+                JOIN   [dbo].[Usuario] u3 ON u3.usu_id = r3.prr_usuario
+                WHERE  r3.prr_programacion = p.pro_id
+                ORDER BY u3.usu_nombre, u3.usu_apellido_paterno
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)'), 1, 1, N''), N''),
+            p.pro_grupo_trabajo,
+            ISNULL(gt.gtr_nombre, '')          AS GRUPO_NOMBRE,
+
             p.pro_habilitado,
             p.pro_usuario_creacion,
             p.pro_fecha_creacion,
@@ -166,6 +206,10 @@ SET @HOY = CAST([dbo].[FNC_PAIS_HORA](@PAIS) AS DATE)
     FROM    [dbo].[Programacion] p
     JOIN    [dbo].[Programacion_Tipo] t ON t.pti_id = p.pro_programacion_tipo
     LEFT JOIN [dbo].[Zona_Horaria] z ON z.zho_id = p.pro_zona_horaria
+    LEFT JOIN [dbo].[Cliente_Instalacion] ins ON ins.cin_id = p.pro_cliente_instalacion
+    LEFT JOIN [dbo].[Instalacion_Area] ar     ON ar.iar_id  = p.pro_instalacion_area
+    LEFT JOIN [dbo].[Activo] ac               ON ac.act_id  = p.pro_activo
+    LEFT JOIN [dbo].[Grupo_Trabajo] gt        ON gt.gtr_id  = p.pro_grupo_trabajo
     LEFT JOIN [dbo].[Cumplimiento_Politica] c ON c.cpo_id = p.pro_cumplimiento_politica
     LEFT JOIN [dbo].[Usuario] uc ON uc.usu_id = p.pro_usuario_creacion
     LEFT JOIN [dbo].[Usuario] ua ON ua.usu_id = p.pro_usuario_actualizacion
@@ -212,6 +256,15 @@ CREATE PROCEDURE [dbo].[INS_PROGRAMACION]
     @PERMITE_ATRASADA       BIT = 1,
     @CUMPLIMIENTO_POLITICA  INT = NULL,
     @GENERA_AUTOMATICAMENTE BIT = 1,
+
+    /* Alcance y asignacion. Todos opcionales: una programacion puede no
+       tener alcance declarado, y en ese caso la pantalla lo dice asi en vez
+       de inventarle una instalacion. */
+    @INSTALACION            INT = NULL,
+    @AREA                   INT = NULL,
+    @ACTIVO                 INT = NULL,
+    @GRUPO                 INT = NULL,
+
     @USUARIO                INT
 AS
 SET NOCOUNT ON
@@ -274,10 +327,29 @@ BEGIN
     RETURN -1
 END
 
+/* El activo tiene que vivir en la instalacion declarada. Sin esto se puede
+   programar el mantenimiento de un motor de Antofagasta diciendo que se hace
+   en Rancagua, y la orden saldria con la cuadrilla equivocada. */
+IF (@ACTIVO IS NOT NULL AND @INSTALACION IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM [dbo].[Activo]
+                     WHERE act_id = @ACTIVO AND act_cliente_instalacion = @INSTALACION))
+BEGIN
+    RAISERROR('8.- EL ACTIVO NO PERTENECE A LA INSTALACION SELECCIONADA.', 16, 1)
+    RETURN -1
+END
+
+/* Persona o grupo, no las dos: es la forma mas comun de que al final no
+   responda nadie, porque cada parte supone que contestaba la otra. */
+/* Las personas responsables NO se asignan aca: son varias y no caben en un
+   parametro de la cabecera. Van por UPS_PROGRAMACION_RESPONSABLE, que es el
+   que ademas valida que no haya personas y grupo a la vez. */
+
 BEGIN TRANSACTION
 
     INSERT INTO [dbo].[Programacion]
-        (pro_cliente, pro_programacion_tipo, pro_zona_horaria, pro_nombre,
+        (pro_cliente_instalacion, pro_instalacion_area, pro_activo,
+         pro_grupo_trabajo,
+         pro_cliente, pro_programacion_tipo, pro_zona_horaria, pro_nombre,
          pro_fecha_inicio, pro_fecha_fin,
          pro_tolerancia_antes_minuto, pro_tolerancia_despues_minuto,
          pro_permite_anticipada, pro_permite_atrasada,
@@ -285,7 +357,8 @@ BEGIN TRANSACTION
          pro_usuario_creacion, pro_fecha_creacion,
          pro_usuario_actualizacion, pro_fecha_actualizacion, pro_habilitado)
     VALUES
-        (@CLIENTE, @TIPO, @ZONA_HORARIA, @NOMBRE,
+        (@INSTALACION, @AREA, @ACTIVO, @GRUPO,
+         @CLIENTE, @TIPO, @ZONA_HORARIA, @NOMBRE,
          @FECHA_INICIO, @FECHA_FIN,
          ISNULL(@TOLERANCIA_ANTES, 0), ISNULL(@TOLERANCIA_DESPUES, 0),
          @PERMITE_ANTICIPADA, @PERMITE_ATRASADA,
@@ -346,6 +419,21 @@ CREATE PROCEDURE [dbo].[UPD_PROGRAMACION]
     @CUMPLIMIENTO_POLITICA  INT = NULL,
     @GENERA_AUTOMATICAMENTE BIT = NULL,
     @HABILITADO             BIT = NULL,
+
+    /* Alcance y asignacion.
+
+       Aca NULL no puede significar "no cambiar", porque NULL es tambien un
+       valor legitimo: quitarle el alcance a una programacion es una edicion
+       real. Por eso van con su propio interruptor: cuando viene en 1, los
+       cinco parametros mandan tal cual, NULL incluido. */
+    @APLICA_ALCANCE         BIT = 0,
+    @INSTALACION            INT = NULL,
+    @AREA                   INT = NULL,
+    @ACTIVO                 INT = NULL,
+
+    @APLICA_ASIGNACION      BIT = 0,
+    @GRUPO                 INT = NULL,
+
     @USUARIO                INT
 AS
 SET NOCOUNT ON
@@ -410,6 +498,27 @@ BEGIN
     RETURN -1
 END
 
+/* Las mismas dos reglas del INS: editar no puede ser una puerta trasera
+   para dejar la fila en un estado que el alta rechaza. */
+IF (@APLICA_ALCANCE = 1 AND @ACTIVO IS NOT NULL AND @INSTALACION IS NOT NULL
+    AND NOT EXISTS (SELECT 1 FROM [dbo].[Activo]
+                     WHERE act_id = @ACTIVO AND act_cliente_instalacion = @INSTALACION))
+BEGIN
+    RAISERROR('8.- EL ACTIVO NO PERTENECE A LA INSTALACION SELECCIONADA.', 16, 1)
+    RETURN -1
+END
+
+/* Poner un grupo con personas ya asignadas es la misma contradiccion que
+   antes atajaba el CHECK. Como ahora las personas viven en otra tabla, la
+   regla se comprueba aca. */
+IF (@APLICA_ASIGNACION = 1 AND @GRUPO IS NOT NULL
+    AND EXISTS (SELECT 1 FROM [dbo].[Programacion_Responsable]
+                 WHERE prr_programacion = @ID))
+BEGIN
+    RAISERROR('9.- LA PROGRAMACION YA TIENE PERSONAS ASIGNADAS: QUITELAS ANTES DE ASIGNAR UN GRUPO.', 16, 1)
+    RETURN -1
+END
+
 BEGIN TRANSACTION
 
     UPDATE [dbo].[Programacion]
@@ -424,6 +533,19 @@ BEGIN TRANSACTION
            pro_cumplimiento_politica      = @POLITICA,
            pro_genera_automaticamente     = ISNULL(@GENERA_AUTOMATICAMENTE, pro_genera_automaticamente),
            pro_habilitado                 = ISNULL(@HABILITADO, pro_habilitado),
+
+           /* Con el interruptor en 0 la columna no se toca; en 1 manda lo
+              que vino, NULL incluido, porque quitar el alcance es una
+              edicion tan valida como ponerlo. */
+           pro_cliente_instalacion        = CASE WHEN @APLICA_ALCANCE = 1
+                                                 THEN @INSTALACION ELSE pro_cliente_instalacion END,
+           pro_instalacion_area           = CASE WHEN @APLICA_ALCANCE = 1
+                                                 THEN @AREA ELSE pro_instalacion_area END,
+           pro_activo                     = CASE WHEN @APLICA_ALCANCE = 1
+                                                 THEN @ACTIVO ELSE pro_activo END,
+           pro_grupo_trabajo         = CASE WHEN @APLICA_ASIGNACION = 1
+                                                 THEN @GRUPO ELSE pro_grupo_trabajo END,
+
            pro_usuario_actualizacion      = @USUARIO,
            pro_fecha_actualizacion        = @AHORA
      WHERE pro_id = @ID AND pro_cliente = @CLIENTE

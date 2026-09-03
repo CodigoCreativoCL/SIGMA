@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirCentroCosto(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/CentrosCosto/CentroCosto.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Organizacion/CentrosCosto/CentroCosto.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo centro de costo' : 'Editar centro de costo',
+                width: 900,
+                initialHeight: 420
+            });
         }
 
         function refresh() {
@@ -54,8 +57,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="900" Height="420" />
-
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus centros de costo.</p>
     </asp:Panel>
@@ -66,7 +67,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="cco_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="abrirCentroCosto(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirCentroCosto(0);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Eliminar" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea eliminar los registros seleccionados?');" />
                         </div>

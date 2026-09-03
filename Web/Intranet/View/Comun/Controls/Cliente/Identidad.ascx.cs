@@ -272,6 +272,12 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
                 cliente.cli_nombre = txtNombre.Text;
                 cliente.cli_identificador = txtIdentificacion.Text;
                 cliente.cli_razon_social = txtRazonSocial.Text;
+                /* Sin país elegido, int.Parse("") lanza una excepción que
+                   el catch muestra como un volcado de pila entero. Se pide el
+                   dato, que es lo que hace falta. */
+                if (string.IsNullOrEmpty(cboPais.SelectedValue))
+                    throw new Exception("Indique el país del cliente.");
+
                 cliente.cli_pais = int.Parse(cboPais.SelectedValue);
 
                 // HU-010
@@ -308,15 +314,26 @@ public partial class View_Comun_Controls_Cliente_Identidad : System.Web.UI.UserC
                     IdCliente = respuesta.codigo;
                 }
 
+                /* EL ERROR DEL GUARDADO TAMBIÉN SE MUESTRA.
+
+                   Antes solo estaba la rama del éxito. El `else` de más abajo
+                   es de la validación de la IMAGEN, no del resultado de
+                   guardar: si el alta fallaba, no entraba a ninguna rama y la
+                   pantalla se quedaba muda. El botón parecía no hacer nada. */
                 if (!respuesta.error)
                     Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+                else
+                    Tools.tools.ClientAlert(respuesta.detalle, "alerta");
             }
             else
                 Tools.tools.ClientAlert(respuesta.detalle, "alerta");
         }
         catch (Exception ex)
         {
-            Tools.tools.ClientAlert(ex.ToString(), "error");
+            /* ex.Message y no ex.ToString(): lo segundo vuelca la traza
+               completa encima de la pantalla, que no le dice nada a quien la
+               está usando y de paso publica la estructura interna. */
+            Tools.tools.ClientAlert(ex.Message, "alerta");
         }
     }
 
