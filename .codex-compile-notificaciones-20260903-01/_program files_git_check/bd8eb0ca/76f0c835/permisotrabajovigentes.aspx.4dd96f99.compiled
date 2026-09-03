@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Terceros/PermisosTrabajo/PermisoTrabajoVigentes.aspx" hash="fffffff3c3134113" filehash="dd747e2c5f8de4a3" flags="110000" assembly="App_Web_wenwh1uw" type="ASP.view_terceros_permisostrabajo_permisotrabajovigentes_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Terceros/PermisosTrabajo/PermisoTrabajoVigentes.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Terceros/PermisosTrabajo/PermisoTrabajoVigentes.aspx.cs" />
+    </filedeps>
+</preserve>

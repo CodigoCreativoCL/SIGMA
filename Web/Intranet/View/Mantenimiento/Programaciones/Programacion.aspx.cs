@@ -4,6 +4,7 @@ using SitioBase.Model;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -65,7 +66,16 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
+        LeerEstadoDelCliente();
         PintarPaneles();
+
+        /* El stepper y el resumen se pintan DESPUÉS de los paneles: los dos
+           leen el estado ya resuelto del formulario, y hacerlo antes los
+           dejaría mostrando lo de la petición anterior. */
+        PintarPasos();
+        PintarChips();
+        PintarResumen();
+
         Bloqueo();
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
@@ -76,6 +86,10 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
     protected void CargarCombos()
     {
+        CargarHoras();
+        CargarHoras(cboNuevaHora);
+        CargarAlcance();
+
         ProgramacionController controller = new ProgramacionController();
 
         Llenar(cboTipo, controller.GetCatalogo("PROGRAMACION_TIPO"), false);
@@ -227,7 +241,7 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
             txtToleranciaDespues.Value = 0;
             chkPermiteAnticipada.Checked = true;
             chkPermiteAtrasada.Checked = true;
-            txtHoraLocal.Text = "08:00";
+            Seleccionar(cboHora, "08:00");
 
             if (cboTipo.Items.Count > 0)
             {
@@ -257,6 +271,37 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
         Seleccionar(cboTipo, p.pro_programacion_tipo.ToString());
         Seleccionar(cboZonaHoraria, p.pro_zona_horaria != null ? p.pro_zona_horaria.ToString() : "");
+
+        /* ---- Alcance ----
+
+           La instalación primero y las dependientes después: las áreas y los
+           activos que se cargan son los de ESA instalación, así que pedirlos
+           antes traería la lista de otra planta —o ninguna. */
+        Seleccionar(cboInstalacion, p.pro_cliente_instalacion != null
+            ? p.pro_cliente_instalacion.ToString() : "");
+
+        CargarDependientes();
+
+        Seleccionar(cboArea, p.pro_instalacion_area != null ? p.pro_instalacion_area.ToString() : "");
+        Seleccionar(cboActivo, p.pro_activo != null ? p.pro_activo.ToString() : "");
+
+        /* ---- Asignación ----
+
+           El modo sale del dato, no de un valor por omisión: si la
+           programación tenía un grupo, se abre en "grupo". */
+        if (!string.IsNullOrEmpty(p.RESPONSABLES_IDS))
+        {
+            ModoAsignacion = "persona";
+            MarcarResponsables(p.RESPONSABLES_IDS);
+        }
+        else if (p.pro_grupo_trabajo != null)
+        {
+            ModoAsignacion = "grupo";
+            Seleccionar(cboGrupo, p.pro_grupo_trabajo.ToString());
+        }
+        else
+            ModoAsignacion = "nadie";
+
         Seleccionar(cboPolitica, p.pro_cumplimiento_politica != null ? p.pro_cumplimiento_politica.ToString() : "");
 
         TipoCodigo = p.tipo_codigo;
@@ -278,7 +323,7 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
             txtIntervalo.Value = p.calendario.pca_intervalo;
 
             if (p.calendario.pca_hora_local != null)
-                txtHoraLocal.Text = p.calendario.pca_hora_local.Value.ToString(@"hh\:mm");
+                SeleccionarHora(p.calendario.pca_hora_local.Value);
 
             Seleccionar(cboDiaMes, p.calendario.pca_dia_mes != null ? p.calendario.pca_dia_mes.ToString() : "");
             Seleccionar(cboOrdinal, p.calendario.pca_semana_ordinal != null ? p.calendario.pca_semana_ordinal.ToString() : "");
@@ -455,10 +500,15 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
         // Dentro de calendario, cada frecuencia pide cosas distintas.
         string frec = FrecuenciaCodigo();
 
-        pnlDias.Visible = frec == "SEMANAL" || frec == "MENSUAL" || frec == "ANUAL";
-        pnlDiaMes.Visible = frec == "MENSUAL" || frec == "ANUAL";
-        pnlOrdinal.Visible = frec == "MENSUAL" || frec == "ANUAL";
-        pnlMes.Visible = frec == "ANUAL";
+        /* Se ESCONDEN, no se quitan.
+
+           Un control con Visible=false no llega al HTML, y entonces el
+           navegador no tiene qué mostrar cuando la persona cambia de
+           frecuencia: el campo simplemente no aparecería hasta recargar. */
+        Esconder(pnlDias, !AplicaCampo("DIAS"));
+        Esconder(pnlDiaMes, !AplicaCampo("DIAMES"));
+        Esconder(pnlOrdinal, !AplicaCampo("ORDINAL"));
+        Esconder(pnlMes, !AplicaCampo("MES"));
 
         // El tipo no se cambia después de guardar: el detalle ya no calzaría.
         cboTipo.Enabled = !existe;
@@ -485,7 +535,7 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
         bool puedeEditar = Token.PuedeFuncion("Crear y editar");
 
         txtNombre.ReadOnly = !puedeEditar;
-        txtHoraLocal.ReadOnly = !puedeEditar;
+        cboHora.Enabled = puedeEditar;
 
         cboTipo.Enabled = cboTipo.Enabled && puedeEditar;
         cboZonaHoraria.Enabled = puedeEditar;
@@ -565,6 +615,38 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
             if (!string.IsNullOrEmpty(cboZonaHoraria.SelectedValue))
                 entidad.pro_zona_horaria = int.Parse(cboZonaHoraria.SelectedValue);
 
+            /* ---- Alcance ----
+
+               Un área o un activo sin instalación dejan un alcance que nadie
+               sabe leer, y la base lo rechaza con CK_PRO_ALCANCE_JERARQUIA.
+               Se avisa acá para que el mensaje diga qué falta y no un error
+               de constraint. */
+            if (!string.IsNullOrEmpty(cboInstalacion.SelectedValue))
+            {
+                entidad.pro_cliente_instalacion = int.Parse(cboInstalacion.SelectedValue);
+
+                if (!string.IsNullOrEmpty(cboArea.SelectedValue))
+                    entidad.pro_instalacion_area = int.Parse(cboArea.SelectedValue);
+
+                if (!string.IsNullOrEmpty(cboActivo.SelectedValue))
+                    entidad.pro_activo = int.Parse(cboActivo.SelectedValue);
+            }
+            else if (!string.IsNullOrEmpty(cboArea.SelectedValue) ||
+                     !string.IsNullOrEmpty(cboActivo.SelectedValue))
+            {
+                throw new Exception("Alcance: indique la instalación antes del área o del activo.");
+            }
+
+            /* ---- Asignación ----
+
+               Solo se manda la del modo elegido. Mandar las dos hace que la
+               base rechace la fila entera, y con razón: persona y grupo a la
+               vez es como no asignar a nadie. */
+            /* Las personas NO viajan en la cabecera: son varias y viven en su
+               propia tabla. Se guardan después de tener el id, más abajo. */
+            if (ModoAsignacion == "grupo" && !string.IsNullOrEmpty(cboGrupo.SelectedValue))
+                entidad.pro_grupo_trabajo = int.Parse(cboGrupo.SelectedValue);
+
             if (!string.IsNullOrEmpty(cboPolitica.SelectedValue))
                 entidad.pro_cumplimiento_politica = int.Parse(cboPolitica.SelectedValue);
 
@@ -589,6 +671,29 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
             Id = respuesta.codigo;
 
+            /* Los responsables se guardan DESPUÉS de la cabecera porque
+               necesitan el id: en un alta, hasta acá no existía. Van a su
+               propia tabla —son varias personas— y el SP valida que no haya
+               personas y grupo a la vez. */
+            if (ModoAsignacion == "persona")
+            {
+                Respuesta rp = controller.GuardarResponsables(Id, ResponsablesMarcados());
+
+                if (rp.error)
+                {
+                    Tools.tools.ClientAlert(
+                        "La programación se guardó, pero los responsables no: " + rp.detalle, "alerta");
+                    return;
+                }
+            }
+            else
+            {
+                /* Con grupo o sin asignar, la lista de personas queda vacía:
+                   dejarla cargada haría que la programación tuviera dos
+                   responsables distintos según dónde se mire. */
+                controller.GuardarResponsables(Id, "");
+            }
+
             /* El detalle se guarda DESPUÉS de la cabecera y solo el de su
                tipo. Si falla, se avisa pero la cabecera ya quedó: es mejor
                que perder también lo que sí se pudo guardar. */
@@ -601,6 +706,16 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
                 return;
             }
 
+            /* Los combos se vuelven a llenar, no solo los datos.
+
+               CargarCombos() corría únicamente en el primer GET. Al volver de
+               un guardado, los ítems del combo se restauran desde el
+               ViewState pero SUS ATRIBUTOS NO —la foto, las iniciales, el
+               nombre corto— y los chips se dibujan justamente con eso: se
+               quedaban sin nada que mostrar. Rellenarlos acá los devuelve
+               completos, y CargarDatos() vuelve a marcar los que quedaron
+               guardados leyéndolos de la base. */
+            CargarCombos();
             CargarDatos();
 
             Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
@@ -622,8 +737,14 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
                     TimeSpan hora;
 
-                    if (!TimeSpan.TryParse(txtHoraLocal.Text.Trim(), out hora))
-                        throw new Exception("La hora debe tener el formato HH:MM.");
+                    /* Antes esto era un texto libre con TimeSpan.TryParse, que
+                       convierte "8" en OCHO DÍAS: aceptaba un valor imposible
+                       como hora del día y lo guardaba. Ahora la hora sale de
+                       una lista, así que lo único que queda por comprobar es
+                       que se haya elegido una. */
+                    if (!TimeSpan.TryParse(cboHora.SelectedValue, out hora) ||
+                        hora < TimeSpan.Zero || hora >= TimeSpan.FromDays(1))
+                        throw new Exception("Seleccione la hora de ejecución.");
 
                     ProgramacionCalendario c = new ProgramacionCalendario();
                     c.pca_programacion = Id;
@@ -631,13 +752,13 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
                     c.pca_intervalo = Math.Max(1, Entero(txtIntervalo.Value));
                     c.pca_hora_local = hora;
 
-                    if (pnlDiaMes.Visible && !string.IsNullOrEmpty(cboDiaMes.SelectedValue))
+                    if (AplicaCampo("DIAMES") && !string.IsNullOrEmpty(cboDiaMes.SelectedValue))
                         c.pca_dia_mes = int.Parse(cboDiaMes.SelectedValue);
 
-                    if (pnlOrdinal.Visible && !string.IsNullOrEmpty(cboOrdinal.SelectedValue))
+                    if (AplicaCampo("ORDINAL") && !string.IsNullOrEmpty(cboOrdinal.SelectedValue))
                         c.pca_semana_ordinal = int.Parse(cboOrdinal.SelectedValue);
 
-                    if (pnlMes.Visible && !string.IsNullOrEmpty(cboMes.SelectedValue))
+                    if (AplicaCampo("MES") && !string.IsNullOrEmpty(cboMes.SelectedValue))
                         c.pca_mes = int.Parse(cboMes.SelectedValue);
 
                     List<string> dias = new List<string>();
@@ -963,6 +1084,11 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
 
     protected void BindExclusiones(List<ProgramacionExclusion> lista)
     {
+        /* La tabla que se ve es el Repeater; la grilla sigue viva y oculta.
+           Se llenan las dos desde el mismo punto para que no puedan quedar
+           diciendo cosas distintas. */
+        BindExclusionesRepeater(lista);
+
         if (grdExclusiones.Columns.Count == 0)
         {
             grdExclusiones.AddColumn("PXC_ID", "", Width: "5%");
@@ -1031,6 +1157,974 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
         }
+    }
+
+    #endregion
+
+    #region Pasos, chips y resumen
+
+    /// <summary>
+    /// En qué paso está. Vive en ViewState y no en el cliente porque el
+    /// servidor es quien sabe si un paso quedó completo: un stepper pintado
+    /// solo con JavaScript no puede saber que al paso 4 le falta la hora.
+    /// </summary>
+    protected int Paso
+    {
+        get { return ViewState["Paso"] != null ? (int)ViewState["Paso"] : 1; }
+        set { ViewState["Paso"] = value < 1 ? 1 : (value > 6 ? 6 : value); }
+    }
+
+    /// <summary>persona | grupo | nadie.</summary>
+    protected string ModoAsignacion
+    {
+        get { return ViewState["ModoAsig"] != null ? (string)ViewState["ModoAsig"] : "nadie"; }
+        set { ViewState["ModoAsig"] = value; }
+    }
+
+    /// <summary>Una casilla del stepper. Pública: Eval() no ve tipos internos.</summary>
+    public class PasoItem
+    {
+        public int Numero { get; set; }
+        public string Titulo { get; set; }
+        public string Ayuda { get; set; }
+        public string Clase { get; set; }
+        public string Bolita { get; set; }
+    }
+
+    /// <summary>Un chip de día o de frecuencia.</summary>
+    public class ChipItem
+    {
+        public string Valor { get; set; }
+        public string Texto { get; set; }
+        public string Clase { get; set; }
+        public string Marcado { get; set; }
+        public string Id { get; set; }
+        public string Nombre { get; set; }
+    }
+
+    /// <summary>Una fila de la tabla de exclusiones.</summary>
+    public class ExclusionFila
+    {
+        public int Id { get; set; }
+        public string Desde { get; set; }
+        public string Hasta { get; set; }
+        public string Motivo { get; set; }
+        public string Efecto { get; set; }
+        public string EfectoClase { get; set; }
+    }
+
+    private static readonly string[] TITULOS_PASO = {
+        "Información general", "Alcance", "Asignación",
+        "Frecuencia", "Exclusiones", "Revisar"
+    };
+
+    /// <summary>
+    /// Qué le falta a cada paso. Devuelve vacío si está completo.
+    ///
+    /// Es lo que permite que el error diga QUÉ SECCIÓN hay que corregir en
+    /// vez de un "faltan datos" que obliga a recorrer las seis.
+    /// </summary>
+    protected string FaltaEnPaso(int numero)
+    {
+        switch (numero)
+        {
+            case 1:
+                if (string.IsNullOrEmpty(txtNombre.Text.Trim())) return "Falta el nombre.";
+                if (string.IsNullOrEmpty(cboTipo.SelectedValue)) return "Falta el tipo.";
+                if (calInicio.Value == null) return "Falta la fecha de inicio.";
+
+                if (calFin.Value != null && calInicio.Value != null &&
+                    calFin.Value.Value < calInicio.Value.Value)
+                    return "El término es anterior al inicio.";
+
+                return "";
+
+            case 2:
+                /* El alcance es opcional: una programación puede aplicar a
+                   toda la empresa. Lo que no se acepta es a medias. */
+                if (string.IsNullOrEmpty(cboInstalacion.SelectedValue) &&
+                    (!string.IsNullOrEmpty(cboArea.SelectedValue) ||
+                     !string.IsNullOrEmpty(cboActivo.SelectedValue)))
+                    return "Indique la instalación.";
+
+                return "";
+
+            case 3:
+                if (ModoAsignacion == "persona" && ResponsablesMarcados() == "")
+                    return "Elija al menos una persona.";
+
+                if (ModoAsignacion == "grupo" && string.IsNullOrEmpty(cboGrupo.SelectedValue))
+                    return "Falta el grupo de trabajo.";
+
+                return "";
+
+            case 4:
+                if (TipoCodigo == "CALENDARIO")
+                {
+                    if (string.IsNullOrEmpty(cboFrecuencia.SelectedValue)) return "Falta la frecuencia.";
+                    if (string.IsNullOrEmpty(cboHora.SelectedValue)) return "Falta la hora.";
+
+                    string f = FrecuenciaCodigo();
+
+                    if (f == "SEMANAL" && DiasMarcados().Count == 0)
+                        return "Elija al menos un día.";
+                }
+
+                if (TipoCodigo == "INTERVALO TIEMPO")
+                {
+                    if (txtCantidad.Value == null || txtCantidad.Value <= 0) return "Falta el intervalo.";
+                    if (string.IsNullOrEmpty(cboUnidadTiempo.SelectedValue)) return "Falta la unidad.";
+                }
+
+                if (TipoCodigo == "MEDIDOR")
+                {
+                    if (string.IsNullOrEmpty(cboMedidor.SelectedValue)) return "Falta el medidor.";
+                    if (txtCadaCantidad.Value == null || txtCadaCantidad.Value <= 0) return "Falta cada cuánto.";
+                }
+
+                return "";
+        }
+
+        return "";
+    }
+
+    protected void PintarPasos()
+    {
+        List<PasoItem> lista = new List<PasoItem>();
+
+        for (int n = 1; n <= 6; n++)
+        {
+            PasoItem it = new PasoItem();
+            it.Numero = n;
+            it.Titulo = TITULOS_PASO[n - 1];
+
+            string falta = FaltaEnPaso(n);
+            bool actual = (n == Paso);
+
+            /* Un paso se marca completo solo si YA SE PASÓ POR ÉL. Poner el
+               visto en el paso 5 cuando nadie lo ha abierto diría que está
+               revisado, y no lo está: está vacío. */
+            bool visitado = n < Paso;
+
+            it.Clase = "sg-paso" + (actual ? " is-activo" : "") +
+                       (visitado && falta == "" ? " is-listo" : "") +
+                       (falta != "" && (visitado || actual) ? " is-pendiente" : "");
+
+            it.Bolita = (visitado && falta == "") ? "✓" : n.ToString();
+            it.Ayuda = falta != "" ? falta : it.Titulo;
+
+            lista.Add(it);
+        }
+
+        rptPasos.DataSource = lista;
+        rptPasos.DataBind();
+
+        pnlPaso1.CssClass = "sg-paso-panel" + (Paso == 1 ? " is-activo" : "");
+        pnlPaso2.CssClass = "sg-paso-panel" + (Paso == 2 ? " is-activo" : "");
+        pnlPaso3.CssClass = "sg-paso-panel" + (Paso == 3 ? " is-activo" : "");
+        pnlPaso4.CssClass = "sg-paso-panel" + (Paso == 4 ? " is-activo" : "");
+        pnlPaso5.CssClass = "sg-paso-panel" + (Paso == 5 ? " is-activo" : "");
+        pnlPaso6.CssClass = "sg-paso-panel" + (Paso == 6 ? " is-activo" : "");
+
+        /* Los botones se ESCONDEN CON CSS y no con Visible: el JS los
+           necesita en el DOM para poder mostrarlos de nuevo sin postback. */
+        btnAnterior.Style["visibility"] = Paso > 1 ? "visible" : "hidden";
+        btnSiguiente.Style["visibility"] = Paso < 6 ? "visible" : "hidden";
+
+        /* Que el navegador arranque donde está el servidor. */
+        hfPaso.Value = Paso.ToString();
+        hfModo.Value = ModoAsignacion;
+        hfFrecuencia.Value = cboFrecuencia.SelectedValue ?? "";
+
+        litModo.Text = Id > 0 ? "Editar programación" : "Nueva programación";
+        litTitulo.Text = string.IsNullOrEmpty(txtNombre.Text.Trim())
+            ? "Programación" : Server.HtmlEncode(txtNombre.Text.Trim());
+
+        lblId.Visible = Id > 0;
+        litEstado.Text = Id > 0
+            ? (rdbSi.Checked
+               ? "<span class=\"sg-etiqueta is-ok\">Habilitada</span>"
+               : "<span class=\"sg-etiqueta is-off\">Deshabilitada</span>")
+            : "";
+
+        // Los pasos 2 y 3 dependen de columnas que solo existen desde el bloque 118.
+        /* Mismo motivo: si no se renderizan, elegir "Una persona" no puede
+           hacer aparecer el combo sin volver al servidor. */
+        Esconder(pnlPersona, ModoAsignacion != "persona");
+        Esconder(pnlGrupo, ModoAsignacion != "grupo");
+
+        btnModoPersona.CssClass = "sg-opcion" + (ModoAsignacion == "persona" ? " is-elegida" : "");
+        btnModoGrupo.CssClass = "sg-opcion" + (ModoAsignacion == "grupo" ? " is-elegida" : "");
+        btnModoNadie.CssClass = "sg-opcion" + (ModoAsignacion == "nadie" ? " is-elegida" : "");
+
+        pnlExclusionesBloqueadas.Visible = Id <= 0;
+    }
+
+    /// <summary>
+    /// Trae lo que el navegador dejó en los campos ocultos.
+    ///
+    /// La navegación entre pasos, el modo de asignación y la frecuencia se
+    /// mueven sin postback, así que en un guardado el ViewState del servidor
+    /// está desactualizado respecto de lo que la persona ve. Estos tres
+    /// campos son el puente; sin leerlos, guardar devolvería la ficha en el
+    /// paso 1 y con la frecuencia anterior.
+    /// </summary>
+    protected void LeerEstadoDelCliente()
+    {
+        /* SOLO EN POSTBACK.
+
+           Estos tres campos son lo que el NAVEGADOR movió sin volver al
+           servidor. En la primera carga todavía no movió nada: traen el valor
+           por omisión del markup, y "nadie" pisaba el "persona" que
+           CargarDatos() acababa de deducir de la base.
+
+           El síntoma era exacto: una programación con gente asignada abría en
+           "Sin asignar", y recién al hacer clic en Personas aparecían los
+           responsables. En la primera carga manda el servidor; desde el
+           primer postback en adelante, manda el navegador. */
+        if (!IsPostBack) return;
+
+        int n;
+        if (int.TryParse(hfPaso.Value, out n) && n >= 1 && n <= 6) Paso = n;
+
+        string modo = (hfModo.Value ?? "").Trim();
+        if (modo == "persona" || modo == "grupo" || modo == "nadie") ModoAsignacion = modo;
+
+        /* La frecuencia manda sobre el combo: es lo que la persona tocó. */
+        if (!string.IsNullOrEmpty(hfFrecuencia.Value) &&
+            hfFrecuencia.Value != cboFrecuencia.SelectedValue)
+            Seleccionar(cboFrecuencia, hfFrecuencia.Value);
+    }
+
+    /// <summary>
+    /// Esconde sin sacar del HTML.
+    ///
+    /// Visible=false no renderiza: el control desaparece del DOM y además
+    /// deja de postear su valor. Para todo lo que el navegador tiene que
+    /// poder mostrar u ocultar por su cuenta, la diferencia importa.
+    /// </summary>
+    private static void Esconder(System.Web.UI.WebControls.WebControl panel, bool esconder)
+    {
+        panel.Visible = true;
+        panel.Style["display"] = esconder ? "none" : "";
+    }
+
+    /// <summary>
+    /// Si la frecuencia elegida usa ese campo.
+    ///
+    /// Es la REGLA, no la pantalla. Antes el guardado preguntaba si el div
+    /// se veía, y eso solo funcionaba mientras esconder significara no
+    /// renderizar.
+    /// </summary>
+    protected bool AplicaCampo(string campo)
+    {
+        string f = FrecuenciaCodigo();
+
+        switch (campo)
+        {
+            case "DIAS":    return f == "SEMANAL" || f == "MENSUAL" || f == "ANUAL";
+            case "DIAMES":  return f == "MENSUAL" || f == "ANUAL";
+            case "ORDINAL": return f == "MENSUAL" || f == "ANUAL";
+            case "MES":     return f == "ANUAL";
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// El id de la programación, cifrado, para que el JS se lo devuelva al
+    /// web service.
+    ///
+    /// Cifrado y no en claro por lo mismo que los querystring del sitio: un
+    /// id de fila a la vista dentro de un POST invita a probar el de al lado.
+    /// El servicio igual comprueba que la fila sea del cliente de la sesión,
+    /// pero eso es la segunda barrera, no la primera.
+    /// </summary>
+    protected string IdCifrado()
+    {
+        return Id > 0 ? Tools.Crypto.Encrypt("Id=" + Id) : "";
+    }
+
+    protected void rptPasos_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "ir") return;
+
+        int n;
+        if (int.TryParse(e.CommandArgument.ToString(), out n)) Paso = n;
+    }
+
+    protected void btnAnterior_Click(object sender, EventArgs e) { Paso = Paso - 1; }
+    protected void btnSiguiente_Click(object sender, EventArgs e) { Paso = Paso + 1; }
+    protected void btnRevisar_Click(object sender, EventArgs e) { Paso = 6; }
+
+    #endregion
+
+    #region Chips
+
+    /// <summary>Los días marcados, por valor.</summary>
+    protected List<string> DiasMarcados()
+    {
+        List<string> l = new List<string>();
+
+        foreach (ListItem it in chkDias.Items)
+            if (it.Selected) l.Add(it.Value);
+
+        return l;
+    }
+
+    protected void PintarChips()
+    {
+        // ---- frecuencia ----
+        List<ChipItem> fs = new List<ChipItem>();
+
+        foreach (RadComboBoxItem it in cboFrecuencia.Items)
+        {
+            if (string.IsNullOrEmpty(it.Value)) continue;
+
+            ChipItem c = new ChipItem();
+            c.Id = it.Value;
+            c.Nombre = it.Text;
+            c.Clase = "sg-seg" + (it.Value == cboFrecuencia.SelectedValue ? " is-activa" : "");
+            fs.Add(c);
+        }
+
+        rptFrecuencias.DataSource = fs;
+        rptFrecuencias.DataBind();
+
+        // ---- días ----
+        List<ChipItem> ds = new List<ChipItem>();
+
+        foreach (ListItem it in chkDias.Items)
+        {
+            ChipItem c = new ChipItem();
+            c.Valor = it.Value;
+
+            /* Tres letras: "Lun" se reconoce de un vistazo y "Lunes" hace
+               que siete chips no quepan en una línea. */
+            c.Texto = it.Text.Length > 3 ? it.Text.Substring(0, 3) : it.Text;
+            c.Marcado = it.Selected ? "true" : "false";
+            c.Clase = "sg-chip" + (it.Selected ? " is-marcado" : "");
+            ds.Add(c);
+        }
+
+        rptDias.DataSource = ds;
+        rptDias.DataBind();
+
+        string frec = FrecuenciaCodigo();
+
+        litUnidadFrecuencia.Text =
+            frec == "DIARIA" ? "día(s)" :
+            frec == "SEMANAL" ? "semana(s)" :
+            frec == "MENSUAL" ? "mes(es)" :
+            frec == "ANUAL" ? "año(s)" : "";
+
+        /* Cuando los días no aplican se dice, en vez de dejar siete chips
+           que no hacen nada y parecen rotos. */
+        litDiasAyuda.Text = (frec == "MENSUAL" || frec == "ANUAL")
+            ? "<span class=\"sg-ayuda\">Opcional: combinado con la semana del mes.</span>"
+            : "";
+
+        Esconder(pnlDias, !AplicaCampo("DIAS"));
+
+        litReglaFrase.Text = Server.HtmlEncode(FraseRecurrencia());
+    }
+
+    protected void rptFrecuencias_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "frec") return;
+
+        Seleccionar(cboFrecuencia, e.CommandArgument.ToString());
+
+        /* Se llama al mismo manejador del combo y no se duplica su cuerpo:
+           el chip es otra forma de tocar el combo, no otra regla. */
+        cboFrecuencia_SelectedIndexChanged(cboFrecuencia, null);
+    }
+
+    protected void rptDias_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "dia") return;
+
+        string valor = e.CommandArgument.ToString();
+
+        foreach (ListItem it in chkDias.Items)
+            if (it.Value == valor) it.Selected = !it.Selected;
+    }
+
+    /// <summary>
+    /// La recurrencia en una frase legible: "Todos los lunes y miércoles a
+    /// las 09:00, excepto feriados".
+    ///
+    /// Se arma con lo que hay cargado. Si falta un dato, se omite esa parte
+    /// en vez de inventarla: media frase verdadera es útil, una frase
+    /// completa a medias inventar no lo es.
+    /// </summary>
+    protected string FraseRecurrencia()
+    {
+        string tipo = TipoCodigo;
+
+        if (tipo == "FECHA UNICA") return "En las fechas indicadas.";
+
+        if (tipo == "INTERVALO TIEMPO")
+        {
+            if (txtCantidad.Value == null || string.IsNullOrEmpty(cboUnidadTiempo.SelectedValue))
+                return "";
+
+            return "Cada " + ((int)txtCantidad.Value.Value) + " " +
+                   cboUnidadTiempo.Text.ToLower() + ".";
+        }
+
+        if (tipo == "MEDIDOR")
+        {
+            if (txtCadaCantidad.Value == null) return "";
+            return "Cada " + txtCadaCantidad.Value.Value.ToString("0.##") +
+                   " de " + cboMedidor.Text + ".";
+        }
+
+        if (tipo == "CONDICION") return "Cuando se cumplan las condiciones definidas.";
+
+        if (tipo != "CALENDARIO") return "";
+
+        string frec = FrecuenciaCodigo();
+        if (frec == "") return "";
+
+        int cada = txtIntervalo.Value != null ? (int)txtIntervalo.Value.Value : 1;
+        if (cada < 1) cada = 1;
+
+        StringBuilder b = new StringBuilder();
+
+        if (frec == "DIARIA")
+            b.Append(cada == 1 ? "Todos los días" : "Cada " + cada + " días");
+
+        else if (frec == "SEMANAL")
+        {
+            List<string> nombres = new List<string>();
+
+            foreach (ListItem it in chkDias.Items)
+                if (it.Selected) nombres.Add(it.Text.ToLower());
+
+            if (nombres.Count == 0) return "";
+
+            b.Append(cada == 1 ? "Todos los " : "Cada " + cada + " semanas los ");
+            b.Append(Unir(nombres));
+        }
+
+        else if (frec == "MENSUAL")
+        {
+            b.Append(cada == 1 ? "Cada mes" : "Cada " + cada + " meses");
+
+            if (!string.IsNullOrEmpty(cboDiaMes.SelectedValue))
+                b.Append(", el " + cboDiaMes.Text.ToLower());
+        }
+
+        else if (frec == "ANUAL")
+        {
+            b.Append(cada == 1 ? "Cada año" : "Cada " + cada + " años");
+
+            if (!string.IsNullOrEmpty(cboMes.SelectedValue))
+                b.Append(", en " + cboMes.Text.ToLower());
+
+            if (!string.IsNullOrEmpty(cboDiaMes.SelectedValue))
+                b.Append(" el " + cboDiaMes.Text.ToLower());
+        }
+
+        if (!string.IsNullOrEmpty(cboHora.SelectedValue))
+            b.Append(" a las " + cboHora.SelectedValue);
+
+        /* Las exclusiones solo se nombran si de verdad existen: decir
+           "excepto feriados" sin ninguna cargada sería una promesa falsa. */
+        if (_exclusiones > 0)
+            b.Append(", excepto " + _exclusiones +
+                     (_exclusiones == 1 ? " período excluido" : " períodos excluidos"));
+
+        b.Append('.');
+        return b.ToString();
+    }
+
+    private static string Unir(List<string> l)
+    {
+        if (l.Count == 0) return "";
+        if (l.Count == 1) return l[0];
+
+        return string.Join(", ", l.GetRange(0, l.Count - 1).ToArray()) + " y " + l[l.Count - 1];
+    }
+
+    #endregion
+
+    #region Horas y alcance
+
+    /// <summary>
+    /// La lista de horas, cada 15 minutos.
+    ///
+    /// El campo era un texto libre validado con TimeSpan.TryParse, que
+    /// convierte "8" en 8 DÍAS: aceptaba como hora del día algo que no lo es.
+    /// Una lista cerrada resuelve eso sin pedirle nada al usuario.
+    /// </summary>
+    protected void CargarHoras()
+    {
+        CargarHoras(cboHora);
+    }
+
+    /// <summary>La misma lista, para cualquier combo de hora de la ficha.</summary>
+    protected void CargarHoras(RadComboBox2 combo)
+    {
+        combo.Items.Clear();
+
+        /* La primera vacía: la hora de una fecha suelta es opcional, y sin
+           esta opción el combo obligaría a elegir una que nadie pidió. */
+        combo.Items.Add(new RadComboBoxItem("(sin hora)", ""));
+
+        for (int h = 0; h < 24; h++)
+            for (int m = 0; m < 60; m += 15)
+            {
+                string v = h.ToString("00") + ":" + m.ToString("00");
+                combo.Items.Add(new RadComboBoxItem(v, v));
+            }
+    }
+
+    /// <summary>
+    /// Deja seleccionada una hora guardada aunque no caiga en el cuarto de
+    /// hora: si un registro tiene 07:23 se agrega esa opción en vez de
+    /// reescribirle el dato a alguien que no pidió cambiarlo.
+    /// </summary>
+    protected void SeleccionarHora(TimeSpan hora)
+    {
+        string v = hora.ToString(@"hh\:mm");
+
+        if (cboHora.Items.FindItemByValue(v) == null)
+            cboHora.Items.Insert(0, new RadComboBoxItem(v, v));
+
+        Seleccionar(cboHora, v);
+    }
+
+    protected void CargarAlcance()
+    {
+        ProgramacionController c = new ProgramacionController();
+
+        Llenar(cboInstalacion, c.GetCatalogoAlcance("INSTALACION"), true);
+        LlenarPersonas(c.GetCatalogoAlcance("RESPONSABLE"));
+        
+
+        CargarDependientes();
+    }
+
+    /// <summary>Áreas y activos de la instalación elegida.</summary>
+    protected void CargarDependientes()
+    {
+        ProgramacionController c = new ProgramacionController();
+
+        int? inst = null;
+        int v;
+
+        if (int.TryParse(cboInstalacion.SelectedValue, out v)) inst = v;
+
+        Llenar(cboArea, c.GetCatalogoAlcance("AREA", inst), true);
+        Llenar(cboActivo, c.GetCatalogoAlcance("ACTIVO", inst), true);
+
+        /* Los grupos también dependen de la instalación: una cuadrilla de
+           otra planta es gente que no puede ir. */
+        Llenar(cboGrupo, c.GetGrupos(inst), true);
+    }
+
+    /// <summary>
+    /// El combo de personas, con su avatar.
+    ///
+    /// Cada opción lleva la foto y las iniciales como atributos. El navegador
+    /// los usa para dibujar el chip de quien se va marcando: sin eso, "2
+    /// seleccionados" no dice QUIÉNES, que es justo lo que hay que poder
+    /// revisar antes de guardar.
+    ///
+    /// No lleva la opción vacía: son casillas, y "(sin definir)" marcable no
+    /// significa nada.
+    /// </summary>
+    protected void LlenarPersonas(List<CatalogoItem> items)
+    {
+        cboResponsable.Items.Clear();
+
+        if (items == null) return;
+
+        foreach (CatalogoItem i in items)
+        {
+            RadComboBoxItem it = new RadComboBoxItem(i.nombre, i.id.ToString());
+
+            /* El código viene como "archivoFoto|INICIALES" desde el SP. */
+            string[] partes = (i.codigo ?? "").Split('|');
+
+            string foto = partes.Length > 0 ? partes[0] : "0";
+            string iniciales = partes.Length > 1 ? partes[1] : "";
+
+            int idFoto;
+
+            it.Attributes["data-foto"] =
+                (int.TryParse(foto, out idFoto) && idFoto > 0)
+                    ? SitioBase.UrlArchivo.Ver(idFoto)
+                    : "";
+
+            it.Attributes["data-ini"] = iniciales;
+
+            /* El nombre sin el perfil, para el chip: en un chip de 200px
+               "Marcela Aravena · Técnico de Mantenimiento" no cabe. */
+            int corte = i.nombre.IndexOf("  ·  ", StringComparison.Ordinal);
+            it.Attributes["data-nombre"] = corte > 0 ? i.nombre.Substring(0, corte) : i.nombre;
+
+            cboResponsable.Items.Add(it);
+        }
+    }
+
+    protected void cboInstalacion_SelectedIndexChanged(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
+    {
+        /* Cambiar de planta invalida el área y el equipo elegidos: no se
+           conservan "por si acaso", porque pertenecen a otra instalación. */
+        CargarDependientes();
+    }
+
+    /// <summary>Los ids marcados, separados por coma. Vacío si no hay ninguno.</summary>
+    protected string ResponsablesMarcados()
+    {
+        StringBuilder b = new StringBuilder();
+
+        foreach (RadComboBoxItem it in cboResponsable.Items)
+        {
+            if (!it.Checked || string.IsNullOrEmpty(it.Value)) continue;
+
+            if (b.Length > 0) b.Append(',');
+            b.Append(it.Value);
+        }
+
+        return b.ToString();
+    }
+
+    /// <summary>Los nombres marcados, para el resumen.</summary>
+    protected string NombresMarcados()
+    {
+        StringBuilder b = new StringBuilder();
+
+        foreach (RadComboBoxItem it in cboResponsable.Items)
+        {
+            if (!it.Checked || string.IsNullOrEmpty(it.Value)) continue;
+
+            if (b.Length > 0) b.Append(", ");
+            b.Append(it.Text);
+        }
+
+        return b.ToString();
+    }
+
+    protected void MarcarResponsables(string ids)
+    {
+        DesmarcarResponsables();
+
+        if (string.IsNullOrEmpty(ids)) return;
+
+        foreach (string id in ids.Split(','))
+        {
+            string v = id.Trim();
+            if (v == "") continue;
+
+            RadComboBoxItem it = cboResponsable.Items.FindItemByValue(v);
+            if (it != null) it.Checked = true;
+        }
+    }
+
+    protected void DesmarcarResponsables()
+    {
+        foreach (RadComboBoxItem it in cboResponsable.Items) it.Checked = false;
+    }
+
+    protected void ModoAsignacion_Click(object sender, EventArgs e)
+    {
+        LinkButton b = sender as LinkButton;
+        if (b == null) return;
+
+        ModoAsignacion = b.CommandName;
+
+        /* Al cambiar de modo se limpia el otro: la base rechaza tener los dos
+           y dejarlo cargado en silencio haría fallar el guardado sin que se
+           vea por qué. */
+        if (ModoAsignacion != "persona") DesmarcarResponsables();
+        if (ModoAsignacion != "grupo") Seleccionar(cboGrupo, "");
+    }
+
+    #endregion
+
+    #region Exclusiones
+
+    private int _exclusiones;
+
+    /// <summary>
+    /// La tabla como Repeater.
+    ///
+    /// Mismos comandos, mismo evento y mismo permiso que la RadGrid: lo que
+    /// cambia es que ahora se lee. La grilla sigue existiendo oculta para no
+    /// perder lo que ya sabía hacer.
+    /// </summary>
+    protected void BindExclusionesRepeater(List<ProgramacionExclusion> lista)
+    {
+        List<ExclusionFila> filas = new List<ExclusionFila>();
+
+        if (lista != null)
+            foreach (ProgramacionExclusion x in lista)
+            {
+                ExclusionFila f = new ExclusionFila();
+                f.Id = x.pxc_id;
+                f.Desde = x.pxc_fecha_inicio_utc.ToString("dd-MM-yyyy");
+                f.Hasta = x.pxc_fecha_fin_utc.ToString("dd-MM-yyyy");
+                f.Motivo = x.pxc_motivo ?? "";
+                f.Efecto = x.pxc_desplaza ? "Correr al siguiente hábil" : "No generar nada";
+                f.EfectoClase = x.pxc_desplaza ? "is-info" : "is-alerta";
+                filas.Add(f);
+            }
+
+        _exclusiones = filas.Count;
+
+        rptExclusiones.DataSource = filas;
+        rptExclusiones.DataBind();
+
+        rptExclusiones.Visible = filas.Count > 0;
+        pnlSinExclusiones.Visible = filas.Count == 0;
+    }
+
+    protected void rptExclusiones_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
+            return;
+
+        LinkButton borrar = e.Item.FindControl("btnEliminar") as LinkButton;
+        if (borrar == null) return;
+
+        /* El permiso se aplica acá y no solo al pintar la sección: esconder
+           el botón no es seguridad, pero mostrarlo a quien no puede es
+           prometerle algo que el servidor le va a negar. */
+        borrar.Visible = Token.PuedeFuncion("Crear y editar");
+
+        /* Una exclusión borrada por error no avisa: la programación vuelve a
+           generar trabajo el feriado y nadie se entera hasta que alguien
+           llega a la planta un 18 de septiembre. */
+        borrar.OnClientClick = "return confirmarBorrado('¿Eliminar esta exclusión? " +
+                               "La programación volverá a generar actividades en esas fechas.');";
+    }
+
+    protected void rptExclusiones_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "Eliminar") return;
+
+        if (!Token.PuedeFuncion("Crear y editar")) return;
+
+        int id;
+        if (!int.TryParse(e.CommandArgument.ToString(), out id)) return;
+
+        ProgramacionController c = new ProgramacionController();
+        Respuesta r = c.DeleteExclusion(id);
+
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+
+        if (!r.error) BindExclusionesRepeater(c.GetExclusiones(Id));
+    }
+
+    #endregion
+
+    #region Resumen
+
+    /// <summary>
+    /// El panel lateral. Todo lo que muestra sale de lo que hay cargado en el
+    /// formulario; ninguna línea está escrita a mano.
+    ///
+    /// Existe porque en el paso 5 ya nadie recuerda qué puso en el 1.
+    /// </summary>
+    protected void PintarResumen()
+    {
+        litResumenFrase.Text = Server.HtmlEncode(FraseRecurrencia());
+
+        StringBuilder b = new StringBuilder();
+
+        Dato(b, "mdi-tag-outline", cboTipo.Text);
+        Dato(b, "mdi-earth", cboZonaHoraria.Text);
+
+        if (calInicio.Value != null)
+            Dato(b, "mdi-calendar-start", "Desde " + calInicio.Value.Value.ToString("dd-MM-yyyy"));
+
+        Dato(b, "mdi-calendar-end", calFin.Value != null
+            ? "Hasta " + calFin.Value.Value.ToString("dd-MM-yyyy")
+            : "Sin fecha de término");
+
+        // Alcance y asignación: solo si se declararon.
+        if (!string.IsNullOrEmpty(cboInstalacion.SelectedValue))
+        {
+            string alcance = cboInstalacion.Text;
+
+            if (!string.IsNullOrEmpty(cboArea.SelectedValue)) alcance += "  ·  " + cboArea.Text;
+            if (!string.IsNullOrEmpty(cboActivo.SelectedValue)) alcance += "  ·  " + cboActivo.Text;
+
+            Dato(b, "mdi-map-marker-outline", alcance);
+        }
+
+        if (ModoAsignacion == "persona" && ResponsablesMarcados() != "")
+            Dato(b, "mdi-account-outline", NombresMarcados());
+        else if (ModoAsignacion == "grupo" && !string.IsNullOrEmpty(cboGrupo.SelectedValue))
+            Dato(b, "mdi-account-group-outline", cboGrupo.Text);
+
+        Dato(b, "mdi-robot-outline", rdbGeneraSi.Checked
+            ? "Generación automática" : "Generación manual");
+
+        if (_exclusiones > 0)
+            Dato(b, "mdi-calendar-remove", _exclusiones +
+                 (_exclusiones == 1 ? " exclusión configurada" : " exclusiones configuradas"));
+
+        litResumenDatos.Text = b.ToString();
+
+        PintarProximas();
+
+        // ---- el estado ----
+        List<string> faltas = new List<string>();
+
+        for (int n = 1; n <= 5; n++)
+        {
+            string f = FaltaEnPaso(n);
+            if (f != "") faltas.Add(TITULOS_PASO[n - 1] + ": " + f);
+        }
+
+        if (faltas.Count == 0)
+        {
+            litResumenEstado.Text =
+                "<div class=\"sg-resumen-estado is-ok\">" +
+                "<i class=\"mdi mdi-check-circle\"></i><span>Configuración válida</span></div>";
+        }
+        else
+        {
+            StringBuilder e = new StringBuilder();
+            e.Append("<div class=\"sg-resumen-estado is-falta\">");
+            e.Append("<i class=\"mdi mdi-alert-circle-outline\"></i>");
+            e.Append("<div><strong>Falta completar</strong><ul>");
+
+            foreach (string f in faltas)
+                e.Append("<li>" + Server.HtmlEncode(f) + "</li>");
+
+            e.Append("</ul></div></div>");
+            litResumenEstado.Text = e.ToString();
+        }
+
+        PintarRevision(faltas);
+    }
+
+    /// <summary>
+    /// Las próximas ejecuciones, en el resumen lateral.
+    ///
+    /// NO SON OCURRENCIAS: es el cálculo de FNC_PROGRAMACION_FECHAS. Sirve
+    /// para ver si la regla dice lo que uno cree que dice ANTES de que
+    /// empiece a generar trabajo de verdad.
+    ///
+    /// Solo existe sobre una programación guardada: el cálculo se hace en la
+    /// base, sobre la regla que ya está escrita, no sobre lo que hay en el
+    /// formulario sin confirmar.
+    /// </summary>
+    private void PintarProximas()
+    {
+        pnlResumenProximas.Visible = false;
+        litResumenProximas.Text = "";
+
+        if (Id <= 0) return;
+
+        List<ProgramacionProyeccion> fechas = new ProgramacionController().GetProyeccion(Id, 5);
+
+        if (fechas == null || fechas.Count == 0)
+        {
+            /* Una programación guardada que no proyecta ninguna fecha es un
+               dato, no un vacío: casi siempre significa que la vigencia ya
+               terminó o que la regla quedó incompleta. Decirlo evita que
+               alguien la dé por buena. */
+            pnlResumenProximas.Visible = true;
+            litResumenProximas.Text =
+                "<div class=\"sg-resumen-dato is-tenue\">" +
+                "<i class=\"mdi mdi-calendar-remove-outline\"></i>" +
+                "<span>Sin fechas próximas con esta regla.</span></div>";
+            return;
+        }
+
+        StringBuilder b = new StringBuilder();
+
+        foreach (ProgramacionProyeccion f in fechas)
+        {
+            b.Append("<div class=\"sg-proxima" + (f.es_pasada ? " is-pasada" : "") + "\">");
+            b.Append("<span class=\"sg-proxima-punto\"></span>");
+            b.Append("<span class=\"sg-proxima-fecha\">" + f.fecha.ToString("dd MMM yyyy") + "</span>");
+
+            if (f.fecha.TimeOfDay != TimeSpan.Zero)
+                b.Append("<span class=\"sg-proxima-hora\">" + f.fecha.ToString("HH:mm") + "</span>");
+
+            b.Append("</div>");
+
+            /* Si la fecha se corrió por una exclusión se dice por qué: una
+               fecha que no calza con la regla y no explica el motivo hace
+               dudar del cálculo entero. */
+            if (f.desplazada)
+            {
+                string desde = f.fecha_original != null
+                    ? f.fecha_original.Value.ToString("dd-MM") : "";
+
+                b.Append("<div class=\"sg-proxima-nota\">Corrida" +
+                         (desde != "" ? " desde el " + desde : "") +
+                         (string.IsNullOrEmpty(f.motivo) ? "" : ": " + Server.HtmlEncode(f.motivo)) +
+                         "</div>");
+            }
+        }
+
+        pnlResumenProximas.Visible = true;
+        litResumenProximas.Text = b.ToString();
+    }
+
+    private void Dato(StringBuilder b, string icono, string texto)
+    {
+        if (string.IsNullOrEmpty(texto)) return;
+
+        b.Append("<div class=\"sg-resumen-dato\"><i class=\"mdi " + icono + "\"></i>");
+        b.Append("<span>" + Server.HtmlEncode(texto) + "</span></div>");
+    }
+
+    /// <summary>El paso 6: esto es lo que se va a guardar.</summary>
+    private void PintarRevision(List<string> faltas)
+    {
+        StringBuilder b = new StringBuilder();
+
+        b.Append("<dl class=\"sg-revision\">");
+        Revision(b, "Nombre", txtNombre.Text.Trim());
+        Revision(b, "Tipo", cboTipo.Text);
+        Revision(b, "Recurrencia", FraseRecurrencia());
+        Revision(b, "Vigencia", (calInicio.Value != null ? calInicio.Value.Value.ToString("dd-MM-yyyy") : "—") +
+                                " → " + (calFin.Value != null ? calFin.Value.Value.ToString("dd-MM-yyyy") : "sin término"));
+        Revision(b, "Zona horaria", cboZonaHoraria.Text);
+
+        Revision(b, "Alcance", string.IsNullOrEmpty(cboInstalacion.SelectedValue)
+            ? "Sin alcance declarado"
+            : cboInstalacion.Text +
+              (string.IsNullOrEmpty(cboArea.SelectedValue) ? "" : "  ·  " + cboArea.Text) +
+              (string.IsNullOrEmpty(cboActivo.SelectedValue) ? "" : "  ·  " + cboActivo.Text));
+
+        Revision(b, "Responsable",
+            ModoAsignacion == "persona" ? NombresMarcados() :
+            ModoAsignacion == "grupo" ? cboGrupo.Text : "Sin asignar");
+
+        Revision(b, "Ventana",
+            "Antes " + (txtToleranciaAntes.Value != null ? ((int)txtToleranciaAntes.Value.Value).ToString() : "0") +
+            " min  ·  después " + (txtToleranciaDespues.Value != null ? ((int)txtToleranciaDespues.Value.Value).ToString() : "0") + " min");
+
+        Revision(b, "Exclusiones", _exclusiones == 0 ? "Ninguna" : _exclusiones.ToString());
+        b.Append("</dl>");
+
+        if (faltas.Count > 0)
+        {
+            b.Append("<div class=\"sg-nota is-aviso\"><i class=\"mdi mdi-alert-outline\"></i><div>");
+            b.Append("<strong>Hay pasos incompletos.</strong> Se puede guardar igual si el tipo lo permite, ");
+            b.Append("pero conviene revisar: ");
+            b.Append(Server.HtmlEncode(string.Join("  ·  ", faltas.ToArray())));
+            b.Append("</div></div>");
+        }
+
+        litRevision.Text = b.ToString();
+    }
+
+    private void Revision(StringBuilder b, string rotulo, string valor)
+    {
+        b.Append("<dt>" + Server.HtmlEncode(rotulo) + "</dt>");
+        b.Append("<dd>" + Server.HtmlEncode(string.IsNullOrEmpty(valor) ? "No disponible" : valor) + "</dd>");
     }
 
     #endregion

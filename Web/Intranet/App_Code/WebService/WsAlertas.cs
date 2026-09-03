@@ -155,6 +155,12 @@ public class WsAlertas : System.Web.Services.WebService
         d["severidad"] = a.sev_codigo;
         d["icono"] = IconoSigma(a.alt_codigo);
 
+        /* Para que el aviso pueda usar el icono de SIGMA AI SOLO cuando la
+           alerta salió del modelo. Sin este dato el toast tendría que
+           adivinarlo del nombre del tipo, que es texto que alguien puede
+           cambiar en el catálogo. */
+        d["esPrediccion"] = a.ES_PREDICCION;
+
         /* El destino ya cifrado: el JS no tiene con qué cifrar, y mandarle el
            id en claro para que arme la URL abriría un camino sin la reja que
            tiene el resto del sitio. */

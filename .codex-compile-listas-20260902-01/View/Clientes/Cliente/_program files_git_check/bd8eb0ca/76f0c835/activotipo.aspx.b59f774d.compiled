@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Activos/Tipos/ActivoTipo.aspx" hash="fffffff3c3134113" filehash="4b2e8c6bd10f6c8a" flags="110000" assembly="App_Web_5njjjzgj" type="ASP.view_activos_tipos_activotipo_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Activos/Tipos/ActivoTipo.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Activos/Tipos/ActivoTipo.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Auditoria.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Auditoria.ascx.cs" />
+    </filedeps>
+</preserve>

@@ -1,9 +1,12 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Instalaciones.ascx.cs" Inherits="View_Comun_Controls_Cliente_Instalaciones" %>
 <script type="text/javascript">
     function abrirClienteInstalacion(query) {
-        var oWin = $find("<%=rwiDetalle.ClientID %>");
-             oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query);
-        oWin.show();
+        return SigmaModal.open({
+            url: '<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query,
+            title: 'Planta',
+            width: 1000,
+            initialHeight: 380
+        });
         //oWin.maximize();
         bloqueaScroll(false);
     }
@@ -13,7 +16,6 @@
     }
 </script>
 
-<rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
 <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
     <ContentTemplate>
         <div class="sigma-modal-seccion">Plantas</div>

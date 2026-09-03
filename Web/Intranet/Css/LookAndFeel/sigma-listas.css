@@ -1,0 +1,782 @@
+﻿/* ============================================================================
+   SIGMA · vistas maestras con detalle lateral
+
+   Esta capa se activa solo en las rutas declaradas por sigma-listas.js. La
+   grilla Telerik sigue siendo la fuente de verdad: conserva paginacion,
+   seleccion, filtros, permisos y postbacks. El drawer es una lectura de la
+   fila activa, no una segunda fuente de datos.
+   ============================================================================ */
+
+html.sgx-page {
+    --sgx-purple: #6c3cff;
+    --sgx-purple-dark: #5528ed;
+    --sgx-ink: #111827;
+    --sgx-text: #26334f;
+    --sgx-muted: #6f7c96;
+    --sgx-line: #dfe4ed;
+    --sgx-soft: #f6f7fb;
+}
+
+html.sgx-page .content-page .container-fluid {
+    max-width: none;
+    padding: 16px 14px 26px;
+}
+
+html.sgx-page .sg-page-head {
+    min-height: 72px;
+    margin: 0 0 14px;
+    padding: 0;
+}
+
+html.sgx-page .sg-page-head h1 {
+    margin: 1px 0 0;
+    color: #0b1020;
+    font-size: 27px;
+    font-weight: 750;
+    letter-spacing: -.035em;
+    line-height: 1.12;
+}
+
+html.sgx-page .sg-page-head > :not(h1) {
+    color: #66728a;
+}
+
+html.sgx-page .content-page .container-fluid > .row.card-box.sgx-host {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 0;
+    align-items: start;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: grid-template-columns .2s ease, gap .2s ease;
+}
+
+html.sgx-page .content-page .container-fluid > .row.card-box.sgx-host.has-drawer {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 16px;
+}
+
+.sgx-host > .table-responsive {
+    min-width: 0;
+    overflow: visible;
+}
+
+/* ------------------------------------------------------------------ acciones */
+.sgx-page .sigma-acciones-barra,
+.sgx-page .sg-arbol-barra {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    min-height: 54px;
+    margin: 0 0 12px;
+    padding: 9px 10px;
+    border: 1px solid #e0e5ed;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(18, 27, 45, .025);
+}
+
+.sgx-page .sigma-accion,
+.sgx-page .RadGrid .rgCommandRow a,
+.sgx-page .RadGrid .rgCommandRow input[type="submit"] {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    min-height: 36px;
+    margin: 0 !important;
+    padding: 0 13px !important;
+    border: 1px solid #dbe1eb !important;
+    border-radius: 8px !important;
+    background-color: #fff !important;
+
+    /* NO se anula la imagen de fondo: ahi viven los iconos de los botones
+       —`background-image: none` los borraba en estas paginas y los dejaba
+       solo con texto—. Y se usa `background-color` en vez del atajo
+       `background`, porque el atajo tambien resetea la imagen. */
+    color: #34415c !important;
+    font-family: inherit !important;
+    font-size: 12px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+}
+
+/* El hover de las acciones SECUNDARIAS.
+
+   El `:not(.icono_guardar)` no es cosmetico: sin el, este selector alcanzaba
+   tambien al boton primario "Nuevo" —que es un LinkButton, o sea un <a>— y
+   como trae un selector de elemento de mas, le ganaba en especificidad a la
+   regla que lo pinta morado. El texto seguia blanco por la otra regla: el
+   boton quedaba blanco sobre blanco y no se leia que decia. */
+/* `background-color`, no el atajo: el atajo borraria el icono justo al pasar
+   el mouse, o sea desapareceria en el momento en que la persona lo esta
+   mirando. */
+.sgx-page .sigma-accion:not(.is-primaria):hover,
+.sgx-page .RadGrid .rgCommandRow a:not(.icono_guardar):hover {
+    background-color: #f8f9fc !important;
+    border-color: #cbd2df !important;
+}
+
+/* EL ATAJO `background` BORRA LA IMAGEN.
+
+   Aca decia `background: linear-gradient(...)`. El atajo resetea TODAS las
+   propiedades de fondo, incluida `background-image`, que es donde vive el
+   icono del boton. Peor aun: como el degradado pasa a ser la imagen de
+   fondo, el `background-size: 16px` pensado para el icono se lo aplicaba al
+   degradado, y el boton quedaba como un cuadradito morado de 16px sin texto
+   visible.
+
+   `background-color` en vez del atajo. El icono sobrevive. */
+.sgx-page .sigma-accion.is-primaria,
+.sgx-page .RadGrid .rgCommandRow .icono_guardar {
+    border-color: transparent !important;
+    background-color: #6C5CFF !important;
+    color: #fff !important;
+    box-shadow: 0 7px 18px rgba(99, 47, 244, .16) !important;
+}
+
+/* Y el primario mantiene su identidad al pasar el mouse: se aclara un poco,
+   no se apaga. */
+.sgx-page .sigma-accion.is-primaria:hover,
+.sgx-page .RadGrid .rgCommandRow .icono_guardar:hover {
+    background-color: #5847E8 !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 9px 22px rgba(99, 47, 244, .22) !important;
+}
+
+.sgx-page .sigma-accion i { font-size: 16px; }
+
+/* Las acciones de CommandItem dejan de vivir visualmente dentro de la tabla. */
+.sgx-page .RadGrid .rgCommandRow > td {
+    padding: 9px 10px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #e5e9f0 !important;
+    background: #fff !important;
+}
+
+/* -------------------------------------------------------------- seleccion */
+.sgx-selection {
+    display: none;
+    align-items: center;
+    gap: 11px;
+    min-height: 44px;
+    margin: 0 0 8px;
+    padding: 6px 10px;
+    border: 1px solid #ded6ff;
+    border-radius: 9px;
+    background: linear-gradient(100deg, #f7f4ff, #fbfaff);
+    color: #39217e;
+}
+
+.sgx-selection.is-visible { display: flex; }
+.sgx-selection > i { color: var(--sgx-purple); font-size: 17px; }
+.sgx-selection > strong { font-size: 11.5px; font-weight: 700; }
+.sgx-selection > span { flex: 1 1 auto; }
+
+.sgx-selection button {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 30px;
+    padding: 0 10px;
+    border: 1px solid #d8d0f5;
+    border-radius: 7px;
+    background: #fff;
+    color: #5130b4;
+    font-family: inherit;
+    font-size: 10.5px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.sgx-selection button.is-cancel { color: #67738a; }
+
+/* ------------------------------------------------------------------- grilla */
+.sgx-page .RadGrid {
+    position: relative;
+    width: 100% !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    border: 1px solid #dde3ec !important;
+    border-radius: 10px !important;
+    background: #fff !important;
+    box-shadow: 0 2px 6px rgba(18, 27, 45, .035) !important;
+}
+
+.sgx-page .RadGrid .rgMasterTable {
+    width: 100% !important;
+    min-width: 970px;
+    border-collapse: separate !important;
+    border-spacing: 0 !important;
+    table-layout: fixed;
+}
+
+.sgx-page .RadGrid .rgHeader,
+.sgx-page .RadGrid th.rgHeader {
+    height: 33px !important;
+    padding: 0 12px !important;
+    border: 0 !important;
+    border-bottom: 1px solid #dde3ec !important;
+    background: linear-gradient(180deg, #fafbfc, #f6f7f9) !important;
+    color: #46536a !important;
+    font-size: 10.5px !important;
+    font-weight: 700 !important;
+    letter-spacing: .012em !important;
+    line-height: 1.2 !important;
+    text-transform: none !important;
+    white-space: nowrap;
+}
+
+.sgx-page .RadGrid .rgHeader a { color: inherit !important; font: inherit !important; }
+
+.sgx-page .RadGrid .rgRow > td,
+.sgx-page .RadGrid .rgAltRow > td,
+.sgx-page .RadGrid .rgEditRow > td {
+    height: 58px;
+    padding: 9px 12px !important;
+    border: 0 !important;
+    border-right: 1px solid #e3e7ed !important;
+    border-bottom: 1px solid #e7eaf0 !important;
+    background: #fff !important;
+    color: #253149 !important;
+    font-size: 11.5px !important;
+    line-height: 1.42 !important;
+    vertical-align: middle !important;
+}
+
+.sgx-page .RadGrid .rgRow > td:last-child,
+.sgx-page .RadGrid .rgAltRow > td:last-child,
+.sgx-page .RadGrid .rgEditRow > td:last-child { border-right: 0 !important; }
+
+.sgx-page .RadGrid .rgAltRow > td { background: #fcfcfd !important; }
+
+.sgx-page .RadGrid tr.sgx-grid-spacer > td {
+    padding: 0 !important;
+    border: 0 !important;
+    background: #fff !important;
+}
+
+.sgx-page .RadGrid tr.sgx-detail-row {
+    cursor: pointer;
+    transition: background-color .15s ease, box-shadow .15s ease;
+}
+
+.sgx-page .RadGrid tr.sgx-detail-row:hover > td { background: #faf9ff !important; }
+
+.sgx-page .RadGrid tr.sgx-detail-row.is-current > td {
+    background: linear-gradient(90deg, #f7f4ff, #fbfaff) !important;
+}
+
+.sgx-page .RadGrid tr.sgx-detail-row.is-current > td:first-child {
+    box-shadow: inset 3px 0 0 var(--sgx-purple);
+}
+
+.sgx-page .RadGrid tr.sgx-detail-row:focus { outline: none; }
+.sgx-page .RadGrid tr.sgx-detail-row:focus-visible { box-shadow: inset 0 0 0 2px rgba(108,60,255,.45); }
+
+.sgx-page .RadGrid .sgx-detail-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 7px;
+    border: 0;
+    background: transparent;
+    color: #6b7690 !important;
+    font-family: inherit;
+    font-size: 18px;
+    text-decoration: none !important;
+    cursor: pointer;
+}
+
+.sgx-page .RadGrid .sgx-detail-trigger:hover { background: #eee9ff; color: #6134e4 !important; }
+.sgx-page .RadGrid .sgx-detail-trigger:focus-visible { outline: 2px solid rgba(108,60,255,.42); outline-offset: 1px; }
+
+/* El enlace original sigue vivo para el boton Editar del drawer, pero ya no
+   se presenta como accion de fila: en la fila la lupa significa detalle. */
+.sgx-page .RadGrid .sgx-original-edit { display: none !important; }
+
+.sgx-page .RadGrid input[type="checkbox"] {
+    width: 15px;
+    height: 15px;
+    accent-color: var(--sgx-purple);
+    cursor: pointer;
+}
+
+.sgx-page .RadGrid .rgPager > td {
+    min-height: 46px;
+    padding: 7px 10px !important;
+    border: 0 !important;
+    background: #fff !important;
+    color: #59667d !important;
+}
+
+.sgx-page .RadGrid .rgPagerButton,
+.sgx-page .RadGrid .rgPageFirst,
+.sgx-page .RadGrid .rgPagePrev,
+.sgx-page .RadGrid .rgPageNext,
+.sgx-page .RadGrid .rgPageLast,
+.sgx-page .RadGrid .rgNumPart a {
+    min-width: 29px !important;
+    height: 29px !important;
+    margin: 0 2px !important;
+    border: 1px solid #e0e4eb !important;
+    border-radius: 7px !important;
+    background-color: #fff !important;
+    color: #526078 !important;
+    box-shadow: none !important;
+}
+
+.sgx-page .RadGrid .rgNumPart a.rgCurrentPage,
+.sgx-page .RadGrid .rgNumPart a:hover {
+    border-color: var(--sgx-purple) !important;
+    background: linear-gradient(135deg, #7242ff, #612df2) !important;
+    color: #fff !important;
+}
+
+/* --------------------------------------------------------- arbol de areas */
+.sgx-page .sg-arbol {
+    overflow: hidden;
+    border: 1px solid #dde3ec;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 2px 6px rgba(18, 27, 45, .035);
+}
+
+.sgx-page .sg-arbol-fila {
+    min-height: 58px;
+    border-bottom-color: #e7eaf0;
+    cursor: pointer;
+}
+
+.sgx-page .sg-arbol-fila:hover { background: #faf9ff; }
+.sgx-page .sg-arbol-fila.is-current { background: linear-gradient(90deg, #f7f4ff, #fbfaff); box-shadow: inset 3px 0 0 var(--sgx-purple); }
+
+/* ------------------------------------------------------------------ drawer */
+.sgx-drawer {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    width: 360px;
+    height: var(--sgx-drawer-height, calc(100vh - 102px));
+    min-height: 0;
+    margin-top: var(--sgx-drawer-offset, 0);
+    overflow: hidden;
+    border: 1px solid #dde3ec;
+    border-radius: 10px;
+    background: #fff;
+    box-shadow: 0 3px 12px rgba(18, 27, 45, .055);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateX(12px);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+.sgx-host.has-drawer .sgx-drawer {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateX(0);
+}
+
+@media (min-width: 1331px) {
+    .sgx-host:not(.has-drawer) .sgx-drawer {
+        width: 0;
+        border-width: 0;
+    }
+}
+
+.sgx-drawer-close {
+    position: absolute;
+    top: 13px;
+    right: 13px;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 31px;
+    height: 31px;
+    padding: 0;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    color: #263149;
+    font-size: 21px;
+    cursor: pointer;
+}
+
+.sgx-drawer-close:hover { background: #f2f3f6; }
+
+/* El relleno de ARRIBA se mudo a la cabecera. Ver el bloque de
+   `.sgx-drawer-head` mas abajo: mientras vivio aca, dejaba una franja
+   transparente de 20px sobre la cabecera fija por la que se veian pasar las
+   filas al desplazar. */
+.sgx-drawer-content { min-height: 0; padding: 0 19px 12px; overflow-y: auto; }
+
+.sgx-drawer-content {
+    scrollbar-width: thin;
+    scrollbar-color: #c8ced8 transparent;
+}
+
+.sgx-drawer-content::-webkit-scrollbar { width: 6px; }
+.sgx-drawer-content::-webkit-scrollbar-track { background: transparent; }
+.sgx-drawer-content::-webkit-scrollbar-thumb { border-radius: 999px; background: #c8ced8; }
+
+.sgx-drawer-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 19px;
+    margin: 0 38px 13px 0;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: #eee9ff;
+    color: #6032df;
+    font-size: 9px;
+    font-weight: 750;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+}
+
+.sgx-drawer h2 {
+    margin: 0;
+    color: #111827;
+    font-size: 19px;
+    font-weight: 750;
+    letter-spacing: -.02em;
+    line-height: 1.26;
+}
+
+.sgx-drawer-subtitle { margin: 5px 0 17px; color: #7a8598; font-size: 10.5px; }
+
+.sgx-drawer-state {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin: 0 0 15px;
+    padding: 4px 9px;
+    border-radius: 999px;
+    background: #e2f7ea;
+    color: #257446;
+    font-size: 9.5px;
+    font-weight: 700;
+}
+
+.sgx-drawer-state.is-muted { background: #f0f2f5; color: #68758a; }
+.sgx-drawer-state.is-warning { background: #fff3d7; color: #9a6410; }
+.sgx-drawer-state.is-danger { background: #feeaea; color: #b74040; }
+
+.sgx-drawer-fields { margin-top: 4px; }
+
+.sgx-drawer-field {
+    display: grid;
+    grid-template-columns: 29px minmax(0, 1fr);
+    gap: 9px;
+    padding: 11px 0;
+    border-top: 1px solid #edf0f4;
+}
+
+.sgx-drawer-field:first-child { border-top: 0; }
+.sgx-drawer-field > i { color: #596b8a; font-size: 17px; line-height: 1.15; }
+.sgx-drawer-field label { display: block; margin: 0 0 3px; color: #7d879a; font-size: 9.5px; }
+.sgx-drawer-field .value { color: #263149; font-size: 11.5px; line-height: 1.45; word-break: break-word; }
+.sgx-drawer-field .value strong { color: #1c2639; }
+
+.sgx-drawer-actions {
+    margin-top: auto;
+    padding: 12px 10px;
+    border-top: 1px solid #e5e8ee;
+    background: #fcfcfd;
+}
+
+.sgx-drawer-actions button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    width: 100%;
+    min-height: 37px;
+    padding: 0 13px;
+    border: 1px solid transparent;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #7242ff, #612df2);
+    color: #fff;
+    font-family: inherit;
+    font-size: 11.5px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+.sgx-drawer-actions p { margin: 0; padding: 3px 5px; color: #7b8699; font-size: 10px; text-align: center; }
+
+/* --------------------------------------------------------------- responsive */
+@media (max-width: 1330px) {
+    html.sgx-page .content-page .container-fluid > .row.card-box.sgx-host,
+    html.sgx-page .content-page .container-fluid > .row.card-box.sgx-host.has-drawer { display: block; }
+
+    .sgx-drawer {
+        position: fixed;
+        top: 80px;
+        right: 14px;
+        bottom: 14px;
+        z-index: 1000;
+        height: auto;
+        min-height: 0;
+        margin-top: 0;
+        box-shadow: 0 22px 64px rgba(19, 28, 47, .22);
+        transform: translateX(calc(100% + 26px));
+    }
+
+    .sgx-host.has-drawer .sgx-drawer { transform: translateX(0); }
+}
+
+@media (max-width: 720px) {
+    html.sgx-page .content-page .container-fluid { padding: 12px 9px 22px; }
+    html.sgx-page .sg-page-head h1 { font-size: 24px; }
+    .sgx-page .sigma-acciones-barra,
+    .sgx-page .sg-arbol-barra { align-items: stretch; flex-wrap: wrap; }
+    .sgx-selection > span { display: none; }
+    .sgx-selection button span { display: none; }
+    .sgx-drawer { top: 72px; right: 8px; bottom: 8px; width: calc(100% - 16px); }
+    .sgx-page .RadGrid .rgMasterTable { min-width: 820px; }
+}
+
+
+/* ============================================================================
+   LA CABECERA DEL DRAWER NO SE MUEVE
+
+   Al desplazar los campos, el titulo se iba con ellos y se perdia de que
+   registro se estaba mirando. Ahora el contenido corre por debajo.
+
+   El fondo es opaco a proposito: sin el, los campos se ven pasar POR DEBAJO
+   del texto de la cabecera y se lee todo encimado.
+   ============================================================================ */
+/* ----------------------------------------------------------------------
+   LA CABECERA SE QUEDA, DE VERDAD
+
+   Ya era `position: sticky`, y aun asi al desplazar se veia asomar una fila
+   por encima del titulo. No era la cabecera moviendose: era el hueco que
+   quedaba ARRIBA de ella.
+
+   El contenedor tenia `padding: 20px 19px 12px`. Una cabecera pegada con
+   `top: 0` se pega al borde del contenedor, pero esos 20px de relleno
+   siguen siendo parte de lo que se desplaza y no los tapa nadie. Por esa
+   franja transparente se veia pasar el contenido: parecia que la cabecera
+   se estaba yendo.
+
+   El relleno de arriba pasa a la cabecera, que asi cubre desde el borde
+   mismo. Y los margenes negativos a los lados hacen que su fondo blanco
+   llegue hasta las orillas: sin ellos quedaria el mismo problema, pero en
+   las dos franjas laterales.
+   ---------------------------------------------------------------------- */
+.sgx-drawer-head {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    background: #fff;
+    margin: 0 -19px 4px;
+    padding: 18px 19px 12px;
+    border-bottom: 1px solid #e9edf4;
+}
+
+/* El boton de cerrar queda por encima de la cabecera fija. */
+.sgx-drawer-close { z-index: 4; }
+
+/* El desplazamiento vive en el contenido, no en el panel: si lo tuviera el
+   panel, la cabecera se iria igual porque estaria dentro de lo que se
+   desplaza. */
+.sgx-drawer-content {
+    overflow-y: auto;
+    max-height: 100%;
+}
+
+/* ============================================================================
+   LOS BOTONES DE LA BARRA: EL HUECO DEL ICONO
+
+   Aca se ponia `padding: 0 13px !important` sobre todos los <a> de la barra
+   de comandos. Ese selector le gana en especificidad al de sigma-botones.css,
+   asi que el icono quedaba dibujado a 16px y el texto arrancaba a 13px: uno
+   encima del otro.
+
+   Se corrige DONDE ESTA EL CONFLICTO, en vez de agregar otra capa que le
+   gane. La reserva del hueco tiene que viajar siempre junto al icono.
+   ============================================================================ */
+.sgx-page .RadGrid .rgCommandRow a.icono_guardar,
+.sgx-page .RadGrid .rgCommandRow a.icono_eliminar,
+.sgx-page .RadGrid .rgCommandRow a.icono_imprimir,
+.sgx-page .RadGrid .rgCommandRow a.icono_excel,
+.sgx-page .RadGrid .rgCommandRow a.icono_carga_masiva,
+.sgx-page .RadGrid .rgCommandRow a.icono_dowload,
+.sgx-page .RadGrid .rgCommandRow input.icono_guardar,
+.sgx-page .RadGrid .rgCommandRow input.icono_eliminar {
+    padding-left: 38px !important;
+    padding-right: 16px !important;
+    background-position: 14px center !important;
+    background-size: 16px 16px !important;
+    background-repeat: no-repeat !important;
+    min-height: 38px !important;
+    height: 38px !important;
+}
+
+
+/* ============================================================================
+   LA FICHA AMPLIADA DEL PANEL
+
+   Lo que la grilla no muestra. Va agrupada por seccion —Ubicacion, Ficha
+   tecnica, Operacion— porque una lista plana de doce pares obliga a leerlos
+   todos para encontrar uno.
+   ============================================================================ */
+.sgx-drawer-ficha { margin-top: 4px; }
+
+.sgx-ficha-cargando {
+    padding: 10px 0;
+    font-size: 12px;
+    color: #98a1b3;
+}
+
+.sgx-ficha-seccion { margin-top: 16px; }
+
+.sgx-ficha-seccion h3 {
+    margin: 0 0 8px;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    color: #98a1b3;
+}
+
+.sgx-ficha-fila {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 0;
+    border-bottom: 1px solid #f1f3f8;
+}
+
+.sgx-ficha-fila:last-child { border-bottom: 0; }
+
+.sgx-ficha-fila .e { font-size: 12px; color: #7b8598; flex: 0 0 auto; }
+
+/* El valor a la derecha y alineado a la derecha: la vista baja por una sola
+   columna en vez de saltar en zigzag para juntar cada par. */
+.sgx-ficha-fila .v {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #1f2937;
+    text-align: right;
+    word-break: break-word;
+}
+
+
+/* ============================================================================
+   EL RESPALDO DENTRO DEL PANEL
+
+   La miniatura va con `object-fit: cover` y alto fijo: los documentos
+   fotografiados vienen en cualquier proporcion —de un celular vertical a un
+   escaner apaisado— y dejarlos a su tamaño natural haria saltar el largo del
+   panel de una fila a otra.
+
+   Es un recorte, no la vista completa: para eso esta el enlace, que abre el
+   original en otra pestaña.
+   ============================================================================ */
+.sgx-drawer-adjunto {
+    margin-top: 14px;
+    padding-top: 13px;
+    border-top: 1px solid #edf0f5;
+}
+
+.sgx-drawer-adjunto-rotulo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 9px;
+    color: #7a8598;
+    font-size: 9.5px;
+    font-weight: 800;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.sgx-drawer-adjunto-foto {
+    display: block;
+    overflow: hidden;
+    border: 1px solid #e3e8f0;
+    border-radius: 10px;
+    background: #f6f8fb;
+    line-height: 0;
+}
+
+.sgx-drawer-adjunto-foto img {
+    width: 100%;
+    height: 150px;
+    object-fit: cover;
+    transition: transform .25s ease;
+}
+
+.sgx-drawer-adjunto-foto:hover img { transform: scale(1.03); }
+
+.sgx-drawer-adjunto-ficha {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 10px;
+    border: 1px solid #e3e8f0;
+    border-radius: 10px;
+    background: #fbfcfe;
+}
+
+.sgx-drawer-adjunto-ficha.is-bajo-foto {
+    margin-top: -1px;
+    border-top-left-radius: 0;
+    border-top-right-radius: 0;
+}
+
+.sgx-drawer-adjunto-ficha > i { flex: 0 0 auto; color: #6C5CFF; font-size: 24px; }
+
+.sgx-drawer-adjunto-ficha > div { flex: 1 1 auto; min-width: 0; }
+
+.sgx-drawer-adjunto-ficha strong {
+    display: block;
+    overflow: hidden;
+    color: #26324a;
+    font-size: 11.5px;
+    font-weight: 650;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sgx-drawer-adjunto-ficha span { color: #8592a8; font-size: 10px; }
+
+/* El boton de bajar: tamaño de dedo, y separado del enlace de la miniatura
+   para que ver y descargar no sean el mismo clic. */
+.sgx-drawer-adjunto-ficha > a {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e3e8f0;
+    border-radius: 9px;
+    background: #fff;
+    color: #4b5870;
+    font-size: 17px;
+    text-decoration: none;
+    transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.sgx-drawer-adjunto-ficha > a:hover {
+    border-color: #c7bcff;
+    background: #f5f2ff;
+    color: #6C5CFF;
+}

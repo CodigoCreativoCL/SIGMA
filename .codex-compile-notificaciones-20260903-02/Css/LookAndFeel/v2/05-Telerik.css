@@ -1,0 +1,56 @@
+﻿/* =============================================================
+   FACILITYGES - LOOK & FEEL v2
+   Relook de controles Telerik (RadWindow + RadTabStrip2) alineado
+   al estilo "M3 Expressive" (--fg-m3-* en 01-Variables.css).
+   ============================================================= */
+/* ---- RadTabStrip2 ----
+   Tabs M3: texto secundario, hover tonal y estado seleccionado con
+   el color ACTIVE del design system (#9CF1F2). */
+.RadTabStrip_Bootstrap.rtsHorizontal .rtsUL {
+    border-bottom: 1px solid var(--fg-m3-outline) !important;
+}
+
+.RadTabStrip_Bootstrap .rtsLI {
+    background: none !important;
+    border: 0 !important;
+    margin: 0 4px -1px 0 !important;
+}
+
+.RadTabStrip_Bootstrap .rtsLink {
+    background: none !important;
+    border: 0 !important;
+    border-bottom: 3px solid transparent !important;
+    border-radius: var(--fg-m3-radius) var(--fg-m3-radius) 0 0 !important;
+    padding: 12px 20px !important;
+    transition: background-color 150ms ease, color 150ms ease, border-color 150ms ease !important;
+}
+
+.RadTabStrip_Bootstrap .rtsTxt {
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: var(--fg-m3-text-secondary) !important;
+}
+
+.RadTabStrip_Bootstrap .rtsLI.rtsHovered .rtsLink,
+.RadTabStrip_Bootstrap .rtsLI .rtsLink:hover {
+    background-color: var(--fg-m3-chip-bg) !important;
+}
+
+    .RadTabStrip_Bootstrap .rtsLI.rtsHovered .rtsTxt,
+    .RadTabStrip_Bootstrap .rtsLI .rtsLink:hover .rtsTxt {
+        color: var(--fg-m3-primary) !important;
+    }
+
+/* Tab seleccionado "clean": sin relleno, solo subrayado primario */
+.RadTabStrip_Bootstrap .rtsLI.rtsSelected .rtsLink {
+    background-color: transparent !important;
+    border-bottom-color: var(--fg-m3-primary) !important;
+}
+
+.RadTabStrip_Bootstrap .rtsLI.rtsSelected .rtsTxt {
+    color: var(--fg-m3-primary) !important;
+}
+.RadTabStrip_Bootstrap {
+    color: #333;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI" !important;
+}

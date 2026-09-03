@@ -1,0 +1,9 @@
+﻿/* =============================================================
+   FACILITYGES - LOOK & FEEL v2
+   El relook completo de RadGrid2 (botones de comando, iconos por
+   fila, cabecera, filas y paginador) se aplica directamente en
+   Css/UI/Telerik/Bootstrap/Grid.css usando las variables definidas
+   en 01-Variables.css. Este archivo se mantiene vacio para no
+   duplicar esas reglas (se carga antes que Grid.css, por lo que
+   cualquier regla aqui quedaria sobrescrita).
+   ============================================================= */

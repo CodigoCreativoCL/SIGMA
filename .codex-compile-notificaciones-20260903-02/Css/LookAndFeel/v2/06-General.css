@@ -1,0 +1,1161 @@
+﻿/* =============================================================
+   FACILITYGES - LOOK & FEEL v2
+   Relook general (v2 de Css/Default/Default.css): superficies,
+   fieldsets, leyendas, titulos y topbar, alineado al estilo
+   "M3 Expressive" (--fg-m3-* en 01-Variables.css): superficies
+   tonales limpias, bordes sutiles y sin sombras pesadas.
+   ============================================================= */
+
+/* ---- Fieldsets / Leyendas ---- */
+fieldset {
+    border: 1px solid var(--fg-m3-outline-variant) !important;
+    border-radius: var(--fg-m3-radius) !important;
+    padding: 16px !important;
+}
+
+legend {
+    color: var(--fg-m3-primary) !important;
+    font-weight: 600 !important;
+}
+
+.DescripcionTitulo {
+    color: var(--fg-m3-primary) !important;
+}
+
+.SubTitulos {
+    color: var(--fg-m3-on-primary-container) !important;
+    font-weight: 600 !important;
+}
+
+/* ---- Labels de formulario ---- */
+label {
+    color: var(--fg-m3-text-secondary) !important;
+    font-weight: 600;
+}
+
+/* ---- Topbar ---- */
+.navbar-custom {
+    background-color: #ffffff !important;
+}
+
+.navbar-custom .page-title-main {
+    color: var(--fg-primary) !important;
+}
+
+.navbar-custom .pro-user-name {
+    color: var(--fg-primary) !important;
+}
+
+/* ---- Contenido ----
+   Sin !important: las paginas que se abren dentro de un RadWindow
+   (Simple.master) traen background-color blanco inline y deben
+   quedar blancas; solo la app principal usa la superficie tonal. */
+body {
+    background-color: var(--fg-m3-surface);
+    color: var(--fg-m3-text-primary);
+    font-family: var(--fg-font-family) !important;
+}
+
+/* ---- Card-box principal del contenido de la pagina ----
+   Superficie M3: radio 16px + borde sutil, sin sombras fuertes. */
+.card-box {
+    margin-top: 24px !important;
+    padding: 24px !important;
+    background-color: #ffffff !important;
+    border: 0.2px solid #dae0e8 !important;
+    border-radius: var(--fg-m3-radius-lg) !important;
+    box-shadow: none !important;
+}
+
+/* Barra de filtro (Filtro.ascx / FiltroAvanzado.ascx): version
+   compacta del card-box. */
+.card-box.filtro {
+    margin-top: 16px !important;
+    margin-bottom: 8px !important;
+    padding: 16px !important;
+}
+
+/* ---- TextBox2 / TextArea2 (form-control) ----
+   El relook "M3 Expressive" (altura, radio, color de borde y foco)
+   se aplica directamente en Css/UI/WebControls/TextBox.css usando
+   las variables --fg-m3-* definidas en 01-Variables.css. Este
+   bloque se mantiene vacio para no duplicar esas reglas (este
+   archivo se carga antes que TextBox.css, por lo que cualquier
+   regla aqui quedaria sobrescrita). ---- */
+
+/* ---- Selector de Cliente (UsuarioClientes.ascx) ----
+   Card M3: encabezado (icono + titulo) y el RadComboBox2 debajo,
+   con la misma logica visual que la tarjeta "Seleccion de Cliente"
+   del formulario de Identidad. ---- */
+.cliente-container {
+    background-color: #ffffff;
+    border: 1px solid var(--fg-m3-outline-variant);
+    border-radius: var(--fg-m3-radius-lg);
+    padding: 16px;
+}
+
+.cliente-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 12px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--fg-m3-outline-variant);
+    color: var(--fg-m3-text-primary);
+    font-weight: 600;
+    font-size: 15px;
+}
+
+    .cliente-label i {
+        color: var(--fg-m3-secondary);
+        font-size: 18px;
+    }
+
+/* =============================================================
+   Simple.master): cada campo es un .row.col-lg-12.col-md-12.col-xs-12
+   con una columna de label y una columna de control. Se agrega
+   espacio vertical entre filas consecutivas y se alinea el label
+   con el alto de los controles M3 (44px).
+   ============================================================= */
+.row.col-lg-12.col-md-12.col-xs-12 + .row.col-lg-12.col-md-12.col-xs-12 {
+    margin-top: 6px !important;
+}
+
+.row.col-lg-12.col-md-12.col-xs-12 > div > label:only-child {
+    padding-top: 10px !important;
+    margin-bottom: 0;
+}
+
+/* =============================================================
+   Identidad.ascx: tarjeta "Identidad" del formulario de Cliente
+   (logo/avatar + datos basicos). Reutiliza .cliente-container +
+   .cliente-label como tarjeta/encabezado (mismo patron que
+   UsuarioClientes.ascx).
+   ============================================================= */
+.identidad-card {
+    padding: 24px;
+}
+
+.identidad-field {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 24px;
+}
+
+.identidad-field > label {
+    margin-bottom: 0;
+}
+
+.identidad-field-spacer {
+    display: none;
+}
+
+@media (min-width: 992px) {
+    .identidad-field-spacer {
+        display: block;
+    }
+}
+
+.identidad-readonly-chip {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    padding: 0 16px;
+    background-color: var(--fg-m3-chip-bg);
+    border: 1px solid var(--fg-m3-outline-variant);
+    border-radius: var(--fg-m3-radius);
+    color: var(--fg-m3-text-primary);
+    font-weight: 600;
+}
+
+/* ---- Variantes del chip de solo lectura (paneles "Detalle") ----
+   Multilinea: textos largos (Comentario/Descripcion). Accion: chip
+   clickeable (p.ej. "Ver archivos adjuntos"). ---- */
+.identidad-readonly-chip-multiline {
+    align-items: flex-start;
+    min-height: 88px;
+    padding: 12px 16px;
+    white-space: normal;
+    line-height: 1.5;
+    font-weight: 400;
+}
+
+.identidad-readonly-chip-action {
+    gap: 8px;
+    cursor: pointer;
+    color: var(--fg-m3-primary);
+    text-decoration: none;
+    transition: background-color 150ms ease, border-color 150ms ease;
+}
+
+.identidad-readonly-chip-action:hover {
+    background-color: var(--fg-m3-primary-container);
+    border-color: var(--fg-m3-primary);
+    text-decoration: none;
+    color: var(--fg-m3-primary);
+}
+
+/* =============================================================
+   MiCuenta.ascx: separador de seccion "Datos de la cuenta" +
+   grilla compacta de chips de solo lectura (mas pequenos que
+   .identidad-readonly-chip, para datos secundarios del usuario).
+   ============================================================= */
+.identidad-section-divider {
+    margin: 8px 0 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--fg-m3-outline-variant);
+    color: var(--fg-m3-text-hint);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+.identidad-readonly-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 12px;
+}
+
+.identidad-readonly-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.identidad-readonly-item-wide {
+    grid-column: span 2;
+}
+
+.identidad-readonly-item > label {
+    margin-bottom: 0;
+    color: var(--fg-m3-text-hint);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.identidad-readonly-chip-sm {
+    display: flex;
+    align-items: center;
+    min-height: 36px;
+    padding: 0 12px;
+    background-color: var(--fg-m3-chip-bg);
+    border: 1px solid var(--fg-m3-outline-variant);
+    border-radius: var(--fg-m3-radius);
+    color: var(--fg-m3-text-primary);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+.identidad-readonly-chip-action i {
+    font-size: 18px;
+}
+
+/* ---- Avatar / logo del cliente ---- */
+.identidad-avatar-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    text-align: center;
+    margin-bottom: 24px;
+}
+
+.identidad-avatar {
+    position: relative;
+    width: 160px;
+    height: 160px;
+}
+
+.identidad-avatar-placeholder,
+.identidad-avatar-img {
+    position: absolute;
+    inset: 0;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    border: 2px dashed var(--fg-m3-outline-variant);
+}
+
+.identidad-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--fg-m3-chip-bg);
+    color: var(--fg-m3-outline);
+    font-size: 48px;
+}
+
+.identidad-avatar-img {
+    object-fit: cover;
+    background-color: var(--fg-m3-chip-bg);
+}
+
+.identidad-avatar-img[src=""] {
+    display: none;
+}
+
+.identidad-avatar-upload {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background-color: var(--fg-m3-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .2);
+    overflow: hidden;
+    transition: background-color 150ms ease;
+}
+
+.identidad-avatar-upload:hover {
+    background-color: var(--fg-m3-secondary-hover);
+}
+
+.identidad-avatar-upload i {
+    color: var(--fg-m3-on-secondary);
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.identidad-avatar-upload .identidad-avatar-input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.identidad-avatar-caption {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.identidad-avatar-caption span {
+    color: var(--fg-m3-text-primary);
+    font-weight: 600;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+
+.identidad-avatar-caption small {
+    color: var(--fg-m3-text-hint);
+    font-size: 12px;
+}
+
+/* ---- Grupo de radios "Habilitado" ---- */
+.identidad-radio-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 44px;
+}
+
+.identidad-radio-group input[type="radio"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--fg-m3-secondary);
+    cursor: pointer;
+}
+
+.identidad-radio-group label {
+    display: inline-flex;
+    align-items: center;
+    margin: 0 24px 0 0;
+    cursor: pointer;
+}
+
+/* ---- Barra de acciones (Cancelar / Guardar) ---- */
+.identidad-actions {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin-top: 8px;
+    padding-top: 24px;
+    border-top: 1px solid var(--fg-m3-outline-variant);
+}
+
+/* =============================================================
+   PanelSinSeleccion.ascx: estado vacio "Seleccione un cliente"
+   mostrado en los informes y mantenedores cuando aun no se ha
+   elegido un cliente en UsuarioClientes.ascx (wucCliente).
+   ============================================================= */
+.panel-sin-seleccion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 56px 24px;
+    margin: 16px 0;
+    background-color: var(--fg-m3-chip-bg);
+    border: 1.5px dashed var(--fg-m3-outline-variant);
+    border-radius: var(--fg-m3-radius-lg);
+    text-align: center;
+}
+
+.panel-sin-seleccion .pss-icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-primary);
+    font-size: 26px;
+}
+
+.panel-sin-seleccion .pss-titulo {
+    margin: 0;
+    color: var(--fg-m3-text-primary);
+    font-weight: 700;
+    font-size: 15px;
+}
+
+.panel-sin-seleccion .pss-descripcion {
+    margin: 0;
+    max-width: 360px;
+    color: var(--fg-m3-text-hint);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* =============================================================
+   MiCuenta.ascx: card tonal "Clientes e Instalaciones Asociadas"
+   (solo lectura). Reutiliza .cliente-container + .cliente-label,
+   con un tinte de fondo M3 (primary-container) para diferenciarla
+   del resto de tarjetas blancas.
+   ============================================================= */
+.identidad-card-cliente {
+    background-color: var(--fg-m3-primary-container);
+    border-color: var(--fg-m3-primary);
+}
+
+.identidad-card-cliente .cliente-label {
+    border-bottom-color: rgba(0, 29, 54, .15);
+    color: var(--fg-m3-on-primary-container);
+}
+
+.identidad-card-cliente .cliente-label i {
+    color: var(--fg-m3-on-primary-container);
+}
+
+/* ---- Lista de clientes (Repeater rptClientes) ---- */
+.identidad-clientes-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.identidad-cliente-card {
+    padding: 12px 16px;
+    background-color: rgba(255, 255, 255, .55);
+    border: 1px solid rgba(0, 29, 54, .15);
+    border-radius: var(--fg-m3-radius);
+}
+
+.identidad-cliente-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.identidad-cliente-id {
+    flex: 0 0 auto;
+    padding: 2px 8px;
+    background-color: rgba(255, 255, 255, .65);
+    border-radius: var(--fg-m3-radius-pill);
+    color: var(--fg-m3-on-primary-container);
+    font-weight: 700;
+    font-size: 12px;
+}
+
+.identidad-cliente-nombre {
+    color: var(--fg-m3-on-primary-container);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+/* ---- Tags de instalaciones por cliente ---- */
+.identidad-instalaciones-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+.identidad-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 10px;
+    background-color: rgba(255, 255, 255, .65);
+    border-radius: var(--fg-m3-radius-pill);
+    color: var(--fg-m3-on-primary-container);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.identidad-tag i {
+    font-size: 11px;
+}
+
+.identidad-tag-empty {
+    background-color: transparent;
+    color: var(--fg-m3-text-hint);
+    font-style: italic;
+    font-weight: 400;
+}
+
+/* =============================================================
+   MiCuenta.ascx: campo "Contraseña actual" con icono de mostrar/
+   ocultar (fa-eye / fa-eye-slash) superpuesto al input.
+   ============================================================= */
+.identidad-password-field {
+    position: relative;
+}
+
+.identidad-password-field .form-control {
+    padding-right: 44px !important;
+}
+
+.identidad-password-toggle {
+    position: absolute;
+    top: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--fg-m3-text-hint);
+    cursor: pointer;
+    transition: color 150ms ease;
+}
+
+.identidad-password-toggle:hover {
+    color: var(--fg-m3-primary);
+}
+
+.identidad-password-field .form-control:disabled {
+    background-color: var(--fg-m3-chip-bg) !important;
+    color: var(--fg-m3-text-primary) !important;
+    -webkit-text-fill-color: var(--fg-m3-text-primary);
+    opacity: 1;
+    cursor: default;
+}
+
+/* =============================================================
+   MiCuenta.ascx: switch "Cambiar contraseña" + contenedor
+   expandible (.identidad-collapse) con el formulario de cambio
+   de contraseña (transicion max-height/opacity, sin recarga).
+   ============================================================= */
+.identidad-switch-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 44px;
+    color: var(--fg-m3-text-primary);
+    font-weight: 600;
+    font-size: 14px;
+}
+
+.identidad-switch {
+    position: relative;
+    display: inline-flex;
+    flex: 0 0 auto;
+    width: 44px;
+    height: 26px;
+    margin: 0;
+    cursor: pointer;
+}
+
+.identidad-switch input[type="checkbox"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.identidad-switch-slider {
+    position: absolute;
+    inset: 0;
+    background-color: var(--fg-m3-outline-variant);
+    border-radius: var(--fg-m3-radius-pill);
+    transition: background-color 200ms ease;
+}
+
+.identidad-switch-slider::before {
+    content: "";
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 20px;
+    height: 20px;
+    background-color: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .2);
+    transition: transform 200ms ease;
+}
+
+.identidad-switch input[type="checkbox"]:checked ~ .identidad-switch-slider {
+    background-color: var(--fg-m3-secondary);
+}
+
+.identidad-switch input[type="checkbox"]:checked ~ .identidad-switch-slider::before {
+    transform: translateX(18px);
+}
+
+.identidad-collapse {
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    transition: max-height 350ms ease, opacity 250ms ease, margin-top 350ms ease;
+}
+
+.identidad-collapse.is-open {
+    max-height: 500px;
+    opacity: 1;
+    margin-top: 16px;
+}
+
+/* =============================================================
+   MiCuenta.ascx: separador vertical entre el avatar y los campos
+   editables (solo en escritorio, donde ambas columnas comparten
+   fila).
+   ============================================================= */
+@media (min-width: 992px) {
+    .identidad-avatar-col-divider {
+        border-right: 1px solid var(--fg-m3-outline-variant);
+        padding-right: 24px;
+    }
+}
+
+/* ---- Campo con icono dentro del input (Telefono) ---- */
+.identidad-field-icon {
+    position: relative;
+}
+
+.identidad-field-icon i {
+    position: absolute;
+    top: 0;
+    left: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    color: var(--fg-m3-text-hint);
+    pointer-events: none;
+}
+
+.identidad-field-icon .form-control {
+    padding-left: 44px !important;
+}
+
+/* ---- Encabezado de tarjeta con accion a la derecha (switch
+   "Cambiar contraseña" en la card "Seguridad") ---- */
+.cliente-label-actions {
+    justify-content: space-between;
+}
+
+.cliente-label-titulo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* =============================================================
+   IngresoDetalle.ascx v3 – bento layout
+   Header grande (avatar 160px + nombre + badges) +
+   body (panel lateral | mapa Google Maps) + footer Cerrar.
+   ============================================================= */
+
+.ingreso-detalle-card {
+    background: #fff;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ── Header ── */
+.ingreso-detalle-header {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    padding: 22px 24px;
+    border-bottom: 1px solid #e2e8f0;
+    background: #fff;
+}
+
+.ingreso-detalle-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+}
+
+.ingreso-detalle-avatar {
+    position: relative;
+    width: 160px;
+    height: 160px;
+    border-radius: 14px;
+    overflow: hidden;
+    background-color: var(--fg-m3-chip-bg);
+    border: 4px solid #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+    cursor: pointer;
+}
+
+.ingreso-detalle-avatar-dot {
+    position: absolute;
+    bottom: -4px;
+    right: -4px;
+    width: 22px;
+    height: 22px;
+    background-color: #15803d;
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 1px 4px rgba(0,0,0,.2);
+}
+
+.ingreso-detalle-avatar-placeholder,
+.ingreso-detalle-avatar-img {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+}
+.ingreso-detalle-avatar-placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 60px;
+    color: var(--fg-m3-text-hint);
+}
+.ingreso-detalle-avatar-img { object-fit: cover; }
+.ingreso-detalle-avatar-img[src=""] { display: none; }
+
+.ingreso-detalle-header-info { flex: 1; min-width: 0; }
+
+.ingreso-detalle-nombre {
+    font-size: 22px;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0 0 10px;
+    letter-spacing: -.01em;
+}
+
+.ingreso-detalle-header-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.ingreso-detalle-estado-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+}
+.ingreso-detalle-estado-badge.is-activo {
+    background-color: rgba(21,128,61,.1);
+    color: #15803d;
+}
+.ingreso-detalle-estado-badge.is-salida {
+    background-color: rgba(100,116,139,.1);
+    color: #64748b;
+}
+
+.ingreso-detalle-id-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 12px;
+    background-color: #f1f5f9;
+    color: #475569;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 11px;
+}
+
+/* ── Body ── */
+.ingreso-detalle-body {
+    display: flex;
+    flex: 1;
+    min-height: 380px;
+}
+
+.ingreso-detalle-info-panel {
+    width: 280px;
+    flex-shrink: 0;
+    padding: 18px 16px;
+    border-right: 1px solid #e2e8f0;
+    background: #fafbfd;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+/* Sección de dato */
+.ingreso-detalle-data-section { display: flex; flex-direction: column; gap: 6px; }
+
+.ingreso-detalle-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+    color: #64748b;
+    margin: 0;
+}
+
+/* Chip tipo (Entrada/Salida) */
+.ingreso-detalle-chip-tipo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+}
+.ingreso-detalle-chip-tipo.is-entrada {
+    background-color: rgba(37,99,235,.05);
+    border-color: rgba(37,99,235,.1);
+}
+.ingreso-detalle-chip-tipo.is-salida {
+    background-color: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+.ingreso-detalle-tipo-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.ingreso-detalle-chip-tipo.is-entrada .ingreso-detalle-tipo-icon {
+    background-color: #2563eb;
+    color: #fff;
+}
+.ingreso-detalle-chip-tipo.is-salida .ingreso-detalle-tipo-icon {
+    background-color: #64748b;
+    color: #fff;
+}
+/* ocultar icono contrario */
+.ingreso-detalle-chip-tipo.is-entrada .ingreso-detalle-tipo-icon-salida { display: none; }
+.ingreso-detalle-chip-tipo.is-salida  .ingreso-detalle-tipo-icon-entrada { display: none; }
+
+.ingreso-detalle-tipo-nombre {
+    font-size: 15px;
+    font-weight: 700;
+    color: #0f172a;
+}
+
+/* Fila valor (hora / fecha) */
+.ingreso-detalle-valor-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    color: #0f172a;
+    min-height: 40px;
+}
+.ingreso-detalle-valor-icon { color: #64748b; font-size: 14px; flex-shrink: 0; }
+
+/* Coordenadas con floating label */
+.ingreso-detalle-coord-group { display: flex; flex-direction: column; gap: 10px; }
+
+.ingreso-detalle-coord-box {
+    position: relative;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    background: #f8fafc;
+    padding: 8px 10px 6px;
+}
+.ingreso-detalle-coord-float-label {
+    position: absolute;
+    top: -8px;
+    left: 10px;
+    background: #f8fafc;
+    padding: 0 4px;
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: #64748b;
+}
+.ingreso-detalle-coord-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+}
+.ingreso-detalle-coord-value {
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: #1e293b;
+}
+.ingreso-detalle-coord-copy {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px 4px;
+    color: #94a3b8;
+    font-size: 12px;
+    border-radius: 4px;
+    transition: color .15s, background .15s;
+}
+.ingreso-detalle-coord-copy:hover { color: #2563eb; background: rgba(37,99,235,.07); }
+
+/* GPS status – fondo del panel izquierdo */
+.ingreso-detalle-gps-status {
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 12px;
+    background: rgba(21,128,61,.05);
+    border: 1px solid rgba(21,128,61,.15);
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: #15803d;
+}
+
+/* ── Panel mapa ── */
+.ingreso-detalle-map-panel {
+    flex: 1;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 380px;
+}
+
+/* Badge GPS flotante sobre el mapa */
+.ingreso-detalle-gps-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 10;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 12px;
+    background-color: #15803d;
+    color: #fff;
+    border-radius: 20px;
+    font-weight: 700;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+}
+
+.ingreso-detalle-chip-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #fff;
+    flex-shrink: 0;
+    animation: ingreso-detalle-pulse 1.6s infinite;
+}
+
+@keyframes ingreso-detalle-pulse {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: .3; }
+}
+
+.ingreso-detalle-gps-status i { animation: ingreso-detalle-pulse 1.6s infinite; }
+
+.ingreso-detalle-map { flex: 1; min-height: 380px; }
+
+/* ── Footer ── */
+.ingreso-detalle-footer {
+    background: #f8fafc;
+    padding: 12px 20px;
+    display: flex;
+    justify-content: flex-end;
+    border-top: 1px solid #e2e8f0;
+}
+
+/* ── Lightbox foto ── */
+.ingreso-detalle-foto-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,29,54,.75);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.ingreso-detalle-foto-overlay.is-open { display: flex; }
+.ingreso-detalle-foto-grande {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,.35);
+}
+.ingreso-detalle-foto-close {
+    position: absolute;
+    top: 24px; right: 32px;
+    width: 40px; height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255,255,255,.15);
+    color: #fff;
+    border-radius: 50%;
+    font-size: 18px;
+    cursor: pointer;
+}
+.ingreso-detalle-foto-close:hover { background-color: rgba(255,255,255,.3); }
+
+@media (max-width: 820px) {
+    .ingreso-detalle-body { flex-direction: column; }
+    .ingreso-detalle-info-panel { width: 100%; border-right: none; border-bottom: 1px solid #e2e8f0; }
+    .ingreso-detalle-map-panel { min-height: 300px; }
+    .ingreso-detalle-avatar { width: 100px; height: 100px; }
+    .ingreso-detalle-nombre { font-size: 18px; }
+}
+
+/* ---- Lightbox: previsualizacion de imagenes adjuntas (Archivos) ---- */
+.archivo-imagen-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 29, 54, .75);
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+
+.archivo-imagen-overlay.is-open {
+    display: flex;
+}
+
+.archivo-imagen-grande {
+    max-width: 90vw;
+    max-height: 90vh;
+    border-radius: var(--fg-m3-radius-lg);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, .35);
+}
+
+.archivo-imagen-close {
+    position: absolute;
+    top: 24px;
+    right: 32px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, .15);
+    color: #ffffff;
+    border-radius: var(--fg-m3-radius-pill);
+    font-size: 18px;
+    cursor: pointer;
+}
+
+.archivo-imagen-close:hover {
+    background-color: rgba(255, 255, 255, .3);
+}
+
+/* =============================================================
+   Chips de estado en grids de informes (AddTemplateColumn).
+   Pill M3 reutilizable para columnas tipo ESTADO/IMPORTANCIA/
+   CATEGORIA: misma forma que el chip Activo/Inactivo de
+   AddCheckboxColumn (Grid.css), con variantes de color tonal.
+   ============================================================= */
+.grid-estado-chip {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: var(--fg-m3-radius-pill);
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.4;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    white-space: nowrap;
+}
+
+.grid-estado-chip.is-neutro {
+    background-color: var(--fg-m3-chip-bg);
+    border-color: var(--fg-m3-outline-variant);
+    color: var(--fg-m3-text-secondary);
+}
+
+.grid-estado-chip.is-info {
+    background-color: var(--fg-m3-primary-container);
+    color: var(--fg-m3-on-primary-container);
+}
+
+.grid-estado-chip.is-acento {
+    background-color: var(--fg-m3-secondary-container);
+    color: var(--fg-m3-on-secondary-container);
+}
+
+.grid-estado-chip.is-exito {
+    background-color: var(--fg-m3-success-container);
+    color: var(--fg-m3-on-success-container);
+}
+
+.grid-estado-chip.is-alerta {
+    background-color: var(--fg-m3-error-container);
+    color: var(--fg-m3-on-error-container);
+}
+
+/* ── Sidebar: ítem activo en cyan (solo modo enlarged) ───── */
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu > ul > li > a.active,
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu > ul > li.mm-active > a,
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-second-level > li > a.active,
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-second-level > li.mm-active > a {
+    background-color: #06b6d4 !important;
+    color: #fff !important;
+    border-right-color: #fff !important;
+}
+
+/* ── Sidebar: hover en cyan sólido (solo modo enlarged) ───── */
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu > ul > li:hover > a {
+    background-color: #0e7490 !important;
+    color: #cffafe !important;
+}
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-second-level > li > a:hover,
+body.enlarged[data-sidebar=dark] .left-side-menu #sidebar-menu .nav-thrid-level > li > a:hover {
+    background-color: #0e7490 !important;
+    color: #cffafe !important;
+}

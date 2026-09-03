@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/Mantenedores/Accesos/Accesos.aspx" hash="fffffff3c3134113" filehash="832e18ed3331fb1b" flags="110000" assembly="App_Web_tynffjmo" type="ASP.view_root_mantenedores_accesos_accesos_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Accesos/Accesos.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Accesos/Accesos.aspx.cs" />
+    </filedeps>
+</preserve>

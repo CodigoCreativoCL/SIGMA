@@ -1,0 +1,19 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comercial/Clientes/ReasignacionCliente.aspx" hash="fffffff3c3134113" filehash="8d8ca0cd45463b7b" flags="110000" assembly="App_Web_vn4y02b3" type="ASP.view_comercial_clientes_reasignacioncliente_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Clientes/ReasignacionCliente.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comercial/Clientes/ReasignacionCliente.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Identidad.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Identidad.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Usuarios.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Usuarios.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/PanelSinSeleccion.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/PanelSinSeleccion.ascx.cs" />
+    </filedeps>
+</preserve>

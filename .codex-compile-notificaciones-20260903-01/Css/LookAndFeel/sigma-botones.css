@@ -1,0 +1,711 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA — Los botones del sitio, en un solo lugar
+   ----------------------------------------------------------------------------
+
+   POR QUE UNA HOJA Y NO 40 VISTAS
+
+     Las clases de boton ya estaban repartidas por el sitio: `icono_guardar`
+     en 31 vistas, `ButtonCerrar` en 50, `icono_eliminar` en 22. Estandarizar
+     editando cada vista serian 100 ediciones y la garantia de que la numero
+     101 nazca distinta.
+
+     Se redefinen las clases QUE YA SE USAN. Ninguna vista cambia, y una
+     pantalla nueva que use `icono_guardar` sale bien sin que nadie se lo
+     explique.
+
+   ESTA HOJA VA AL FINAL
+
+     Redefine reglas de Grid.css y Button.css que traen `!important`. Para
+     ganarles hay que cargarla despues y repetir el `!important`; no es
+     elegante, pero la alternativa es editar hojas de terceros que se
+     reemplazan al actualizar el kit.
+
+   LO QUE ESTA HOJA NO TOCA
+
+     `.sigma-accion` —el boton de las vistas nuevas— ya esta definido en
+     sigma-components.css y ya cumple el estandar: 12px de radio y su icono
+     en el markup. Redefinirlo aca fue un error: dos hojas peleando por el
+     mismo boton es como se llega a que uno salga pastilla y el otro cuadrado,
+     y a que el "+" salga dos veces.
+
+     Aca viven SOLO las clases heredadas que no tenian estandar.
+
+   LA JERARQUIA
+
+     Una accion principal por pantalla —crear—, y todo lo demas por debajo.
+     Cuando dos botones gritan igual, ninguno de los dos dirige la vista.
+   ============================================================================ */
+
+/* ============================================================================
+   1. LA ACCION PRINCIPAL — "Nuevo"
+
+   Morado de marca. Con texto blanco da 4.55:1, que pasa el minimo de 4.5.
+   ============================================================================ */
+.icono_guardar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 20px !important;
+    vertical-align: middle !important;
+    background-color: var(--sg-purple, #6C5CFF) !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 6px 16px rgba(108, 92, 255, .22) !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: background-color .18s ease, box-shadow .18s ease, transform .1s ease;
+}
+
+/* NO se agrega ningun "+" desde CSS.
+
+   Las vistas nuevas ya traen su icono en el markup —<i class="mdi mdi-plus">—
+   y las viejas lo traen como imagen de fondo. Agregarlo tambien desde aca
+   producia DOS simbolos en el mismo boton: "+ + Nuevo proveedor".
+
+   El icono es del markup o del sprite; esta hoja solo se ocupa de la forma y
+   el color. */
+
+.icono_guardar:hover {
+    background-color: var(--sg-purple-hover, #5847E8) !important;
+    color: #fff !important;
+    box-shadow: 0 8px 20px rgba(108, 92, 255, .30) !important;
+}
+
+.icono_guardar:active { transform: scale(.98); }
+
+/* ============================================================================
+   2. BUSCAR — el tono que contrasta
+
+   Estaba del MISMO morado que "Nuevo": dos botones distintos que se veian
+   igual, y ninguno de los dos dirigia la vista.
+
+   Primero se probo en teal, y quedaba chillon al lado del morado. Ahora va en
+   la TINTA de la marca:
+
+       navy #0B0F1A + blanco   =  19.13:1   (el minimo es 4.5)
+       navy contra el morado   =   4.20:1   se distingue sin competir
+
+   El teal se descarto ademas por otra razon: con texto blanco daba 2.32:1, o
+   sea no se leia. Habria necesitado tinta oscura, y entonces la lupa blanca
+   del sprite tampoco se veia.
+   ============================================================================ */
+.ButtonFilter {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 26px !important;
+
+    background-color: var(--sg-navy, #0B0F1A) !important;
+    color: #fff !important;
+    border: 0 !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    vertical-align: middle !important;
+    transition: background-color .18s ease, transform .1s ease;
+}
+
+.ButtonFilter:hover {
+    background-color: #1c2537 !important;
+    color: #fff !important;
+}
+
+.ButtonFilter:active { transform: scale(.98); }
+
+/* ============================================================================
+   3. SECUNDARIO — "Cerrar", "Cancelar"
+
+   Contorno neutro. Es la salida, no una accion que compita con guardar.
+   ============================================================================ */
+.ButtonCerrar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 20px !important;
+    vertical-align: middle !important;
+    background-color: #fff !important;
+    color: #374151 !important;
+    border: 1px solid rgba(17, 24, 39, .12) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    text-decoration: none !important;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+
+.ButtonCerrar:hover {
+    background-color: #f9fafb !important;
+    border-color: rgba(17, 24, 39, .22) !important;
+    color: #374151 !important;
+}
+
+/* ============================================================================
+   4. ELIMINAR — destructivo, pero no a gritos
+
+   Contorno rojo y no relleno: en una barra donde "Nuevo" es la accion que se
+   usa a diario, un boton rojo macizo al lado atrae el clic equivocado. Se
+   pone rojo pleno recien al pasar el mouse, cuando ya hay intencion.
+   ============================================================================ */
+.icono_eliminar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 18px !important;
+    vertical-align: middle !important;
+    background-color: #fff !important;
+    color: #dc2626 !important;
+    border: 1px solid #fecaca !important;
+
+    /* El icono y su hueco los fija el bloque comun del final. */
+    border-radius: var(--sg-radius-md, 12px) !important;
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    line-height: 1.2 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+    transition: background-color .18s ease, border-color .18s ease;
+}
+
+.icono_eliminar:hover {
+    background-color: #fef2f2 !important;
+    border-color: #dc2626 !important;
+    color: #dc2626 !important;
+}
+
+/* ============================================================================
+   5. LOS OTROS DE LA BARRA — imprimir, excel, carga masiva
+
+   Mismo cuerpo que el secundario. Antes cada uno traia su propio color de
+   fondo —naranjo, verde— y una barra con cuatro botones de cuatro colores no
+   tiene jerarquia: tiene ruido.
+   ============================================================================ */
+.icono_imprimir,
+.icono_excel,
+.icono_carga_masiva,
+.icono_dowload {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    gap: 7px;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 18px !important;
+    vertical-align: middle !important;
+    background-color: #fff !important;
+    color: #374151 !important;
+    border: 1px solid rgba(17, 24, 39, .12) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    font-family: var(--sg-font, 'Sora', 'Inter', system-ui, sans-serif) !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.icono_imprimir:hover,
+.icono_excel:hover,
+.icono_carga_masiva:hover,
+.icono_dowload:hover {
+    background-color: #f9fafb !important;
+    border-color: rgba(17, 24, 39, .22) !important;
+    color: #374151 !important;
+}
+
+/* Deshabilitado: se ve apagado y el cursor lo dice antes del clic. */
+.icono_guardar:disabled,
+.ButtonFilter:disabled,
+.ButtonCerrar:disabled,
+.icono_eliminar:disabled {
+    opacity: .5 !important;
+    cursor: not-allowed;
+    box-shadow: none !important;
+}
+
+/* El foco por teclado se ve SIEMPRE: quien navega con Tab necesita saber
+   donde esta parado, y el outline del navegador se pierde sobre estos
+   fondos. */
+.icono_guardar:focus-visible,
+.ButtonFilter:focus-visible,
+.ButtonCerrar:focus-visible,
+.icono_eliminar:focus-visible {
+    outline: 2px solid var(--sg-purple, #6C5CFF) !important;
+    outline-offset: 2px !important;
+}
+
+@media (max-width: 640px) {
+    /* En pantalla angosta los botones de barra ocupan el ancho: apretar un
+       pill de 90px con el pulgar falla mas de lo que parece. */
+    .icono_guardar,
+    .ButtonFilter,
+    .icono_eliminar { width: 100%; }
+}
+
+
+/* ============================================================================
+   LA BARRA DE BOTONES
+
+   En una misma barra conviven <a> (LinkButton) y <input type="submit">
+   (PushButton). Los dos elementos NO se apoyan igual sobre la linea base, y
+   por eso se veian corridos uno respecto del otro aunque midieran lo mismo.
+
+   `height` fijo mas `vertical-align: middle` los empareja sin depender de
+   cual sea el elemento.
+   ============================================================================ */
+.rgCommandRow a,
+.rgCommandRow input[type="submit"],
+.filtro a.ButtonFilter,
+.filtro input[type="submit"],
+.sigma-modal-actions a,
+.sigma-modal-actions input[type="submit"] {
+    vertical-align: middle !important;
+}
+
+/* OJO: NADA DE display:flex SOBRE .rgCommandCell.
+
+   Es un <td>. Al cambiarle el display deja de ser celda de tabla, la fila
+   colapsa y los botones se apilan encima del encabezado de la grilla —que es
+   exactamente lo que paso—.
+
+   La separacion se resuelve con margen entre botones, sin tocar el modelo de
+   tabla que la grilla necesita para funcionar. */
+.rgCommandRow .rgCommandCell > a,
+.rgCommandRow .rgCommandCell > input[type="submit"] {
+    margin-right: 8px;
+    margin-bottom: 4px;
+}
+
+/* La barra de filtro SI es un div, ahi flex no rompe nada. */
+.filtro .col-auto {
+    display: flex !important;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* ============================================================================
+   LA BARRA DE BUSQUEDA
+
+   Tenia tres piezas con tres alturas y tres radios: el chip de "Busqueda
+   avanzada", el campo y el boton. Alineadas por el flujo de Bootstrap, cada
+   una se apoyaba donde le tocaba.
+
+   Las tres al mismo alto y al mismo radio, y la fila centrada. Es la
+   diferencia entre una barra y tres cosas puestas cerca.
+   ============================================================================ */
+/* OJO CON EL `:not(.filtroPersonalizado)`.
+
+   El panel de busqueda avanzada TAMBIEN es un `.filtro > .row` —lleva las dos
+   clases, `row` y `filtroPersonalizado`— y se esconde con un
+   `style="display:none"` en linea.
+
+   Un `display:flex !important` le gana al estilo en linea, asi que esta regla
+   lo forzaba visible y no habia forma de cerrarlo: el boton lo escondia y el
+   CSS lo volvia a mostrar en el mismo instante. Ese era el "se cierra y se
+   abre solo".
+
+   La barra de busqueda si necesita el flex; el panel plegable no. */
+.filtro > .row:not(.filtroPersonalizado) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.filtro .col,
+.filtro .col-auto { padding-left: 0 !important; padding-right: 0 !important; }
+
+/* El campo ocupa lo que sobra; los otros dos, lo suyo. */
+.filtro .col { flex: 1 1 240px; min-width: 0; }
+
+.filtro input[type="text"],
+.filtro .filtroToggle,
+.filtro .ButtonFilter {
+    height: 42px !important;
+    min-height: 42px !important;
+    box-sizing: border-box !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+}
+
+.filtro input[type="text"] {
+    width: 100% !important;
+    padding: 0 14px !important;
+}
+
+/* El chip deja de ser pastilla y se alinea con el resto. */
+.filtro .filtroToggle {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 7px;
+    padding: 0 16px !important;
+    white-space: nowrap;
+    text-decoration: none !important;
+}
+
+@media (max-width: 640px) {
+    /* En angosto cada pieza toma el ancho completo: apretadas en una fila
+       quedan de 60px y no se puede escribir en el campo. */
+    .filtro .col,
+    .filtro .col-auto { flex: 1 1 100% !important; }
+    .filtro .filtroToggle,
+    .filtro .ButtonFilter { width: 100%; justify-content: center; }
+}
+
+
+/* ============================================================================
+   CADA BOTON CON SU ICONO
+   ----------------------------------------------------------------------------
+
+   POR QUE COMO IMAGEN DE FONDO Y NO CON ::before
+
+     `PushButton` renderiza <input type="submit">, y un <input> NO TIENE
+     CONTENIDO: el ::before no se renderiza nunca. Un icono puesto asi
+     aparecia en los LinkButton y desaparecia en los PushButton, o sea el
+     mismo boton se veia distinto segun la pantalla.
+
+     La imagen de fondo funciona en los dos.
+
+   POR QUE EL SVG VA EN LINEA Y NO COMO ARCHIVO
+
+     La tinta tiene que cambiar segun el fondo del boton: blanca sobre el
+     morado y sobre el azul, oscura sobre el blanco, roja en el de eliminar.
+     Un .png no se puede recolorear —el de "Nuevo" era justamente un PNG—;
+     un SVG en linea lleva su color escrito.
+
+   EL HUECO SE RESERVA SIEMPRE
+
+     `padding-left: 40px` va junto con cada icono. Si se cambia el padding y
+     se olvida esta reserva, el texto se monta encima del icono. Ya paso dos
+     veces: con Buscar y con Carga Masiva.
+
+   OJO: LAS VISTAS NUEVAS NO ENTRAN ACA
+
+     `.sigma-accion` trae su icono en el markup (<i class="mdi ...">). Darle
+     tambien uno de fondo produce dos iconos en el mismo boton.
+   ============================================================================ */
+.icono_guardar,
+.ButtonFilter,
+.ButtonCerrar,
+.icono_eliminar,
+.icono_imprimir,
+.icono_excel,
+.icono_carga_masiva,
+.icono_dowload {
+    background-repeat: no-repeat !important;
+    background-position: 16px center !important;
+    background-size: 17px 17px !important;
+    padding-left: 42px !important;
+    padding-right: 20px !important;
+}
+
+/* NUEVO — un mas, blanco sobre el morado.
+   Reemplaza al icon_agregar2.png: un raster no se puede recolorear ni se ve
+   nitido en pantalla de alta densidad. */
+.icono_guardar {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round'%3E%3Cpath d='M12 5v14M5 12h14'/%3E%3C/svg%3E") !important;
+}
+
+/* BUSCAR — la lupa, blanca sobre el azul oscuro.
+
+   Esta la habia QUITADO por error: como el fondo era claro, una lupa blanca
+   no se veia. Al pasar el boton a tinta oscura, el icono blanco original es
+   exactamente el que corresponde. */
+.ButtonFilter {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.2' stroke-linecap='round'%3E%3Ccircle cx='11' cy='11' r='7'/%3E%3Cpath d='M20 20l-3.5-3.5'/%3E%3C/svg%3E") !important;
+}
+
+/* CERRAR / CANCELAR — una equis gris sobre el fondo blanco. */
+.ButtonCerrar {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23404850' stroke-width='2.2' stroke-linecap='round'%3E%3Cpath d='M18 6L6 18M6 6l12 12'/%3E%3C/svg%3E") !important;
+}
+
+/* ELIMINAR — el tacho, en el mismo rojo del texto. Un icono gris en un boton
+   rojo se lee como si el icono no fuera parte del boton. */
+.icono_eliminar {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23dc2626' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6'/%3E%3C/svg%3E") !important;
+}
+
+/* IMPRIMIR */
+.icono_imprimir {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9V2h12v7M6 18H4v-6h16v6h-2'/%3E%3Crect x='6' y='14' width='12' height='8'/%3E%3C/svg%3E") !important;
+}
+
+/* EXCEL / EXPORTAR */
+.icono_excel {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z'/%3E%3Cpolyline points='14 2 14 8 20 8'/%3E%3Cpath d='M9 13l6 6M15 13l-6 6'/%3E%3C/svg%3E") !important;
+}
+
+/* CARGA MASIVA — una flecha que sube: es subir un archivo, no bajarlo. */
+.icono_carga_masiva {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='17 8 12 3 7 8'/%3E%3Cpath d='M12 3v12'/%3E%3C/svg%3E") !important;
+}
+
+/* DESCARGAR — la misma flecha, al reves. Que se distingan entre si importa:
+   subir y bajar estan siempre en la misma barra. */
+.icono_dowload {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23374151' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4'/%3E%3Cpolyline points='7 10 12 15 17 10'/%3E%3Cpath d='M12 15V3'/%3E%3C/svg%3E") !important;
+}
+
+/* En angosto el boton ocupa el ancho: el icono se queda a la izquierda y el
+   texto centrado se veria corrido, asi que se centra el conjunto. */
+@media (max-width: 640px) {
+    .icono_guardar,
+    .ButtonFilter,
+    .icono_eliminar {
+        background-position: calc(50% - 60px) center !important;
+    }
+}
+
+
+/* ============================================================================
+   EL FILTRO AVANZADO
+
+   Cada pantalla arma sus campos con columnas de Bootstrap: la etiqueta en una
+   columna de 2 y el combo al 80% de otra de 4. Eso deja la etiqueta lejos de
+   su control y los pares apretados unos contra otros.
+
+   No se editan las 40 vistas: se ordena aca, y una pantalla nueva que use el
+   mismo control sale bien sin que nadie se lo explique.
+   ============================================================================ */
+.filtroPersonalizado {
+    padding-top: 14px !important;
+    margin-top: 14px !important;
+    border-top: 1px solid rgba(17, 24, 39, .08);
+}
+
+/* Cada fila de campos: en linea, centrada, y QUE PUEDA BAJAR DE RENGLON.
+
+   Antes los combos iban con ancho fijo y las columnas con `flex: 0 0 auto`:
+   nada podia encogerse, asi que con cinco pares la fila se pasaba del ancho
+   de la pantalla y los ultimos quedaban cortados afuera.
+
+   Ahora el combo puede encoger hasta 160px y la fila baja de renglon cuando
+   no alcanza. */
+/* Solo las filas DE ADENTRO del panel. El panel mismo se queda con el
+   display que le pone el boton de abrir y cerrar. */
+.filtroPersonalizado > .row,
+.filtroPersonalizado .row {
+    display: flex !important;
+    align-items: center !important;
+    flex-wrap: wrap !important;
+    gap: 12px 18px;
+    margin: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+}
+
+/* La etiqueta se encoge a su texto para quedar PEGADA a su control; el
+   control puede crecer y encoger. */
+.filtroPersonalizado [class*="col-"] {
+    flex: 0 1 auto !important;
+    width: auto !important;
+    max-width: 100% !important;
+    min-width: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}
+
+.filtroPersonalizado label {
+    margin: 0 !important;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #374151;
+    white-space: nowrap;
+}
+
+/* Los combos, a la misma altura que el resto de la barra y con un ancho
+   minimo que deje leer la opcion elegida. El Width="80%" en linea los dejaba
+   de distinto ancho en cada pantalla. */
+.filtroPersonalizado .RadComboBox,
+.filtroPersonalizado input[type="text"] {
+    width: 200px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    height: 42px !important;
+    box-sizing: border-box;
+}
+
+.filtroPersonalizado .RadComboBox .rcbInputCell,
+.filtroPersonalizado .RadComboBox input {
+    height: 40px !important;
+    line-height: 40px !important;
+}
+
+@media (max-width: 640px) {
+    /* En angosto cada par ocupa la fila: apretados en linea, el combo queda
+       de 90px y no se lee la opcion. */
+    .filtroPersonalizado > .row,
+    .filtroPersonalizado .row { gap: 10px; }
+
+    .filtroPersonalizado .RadComboBox,
+    .filtroPersonalizado input[type="text"] { width: 100% !important; }
+}
+
+
+/* ============================================================================
+   EL CALENDARIO — un solo icono en todo el sitio
+
+   El control `Calendar` es un componente compilado (PopCalendar) que emite su
+   propio boton con un GIF de 2008: un cuadrito gris de 16px que no es de la
+   marca, se ve borroso en pantalla densa y no se puede recolorear.
+
+   No se puede cambiar el HTML que emite el control, pero SI lo que se dibuja.
+   `content: url()` reemplaza la imagen entera; el `background` de respaldo
+   cubre el caso de que el disparador no sea un <img> sino un <a> o un
+   <input type="image">, que segun la pantalla puede ser cualquiera de los
+   tres.
+
+   El SVG vive junto al control —Css/UI/WebControls/calendar/Calendar.svg—
+   para que quede claro a que pertenece.
+   ============================================================================ */
+/* LA CAJA A CERO Y EL ICONO EN EL RELLENO.
+
+   `content: url()` reemplaza la imagen de un <img>, pero NO la de un
+   <input type="image">: es un elemento reemplazado y el navegador sigue
+   pintando su `src`. Segun la pantalla el disparador es un <img>, un <a> o
+   un <input type="image">, asi que hacia falta una tecnica que sirva para
+   los tres.
+
+   Con `width` y `height` en 0 el mapa de bits original se queda sin caja
+   donde pintarse, y el relleno de 11px crea un cuadro de 22px donde se
+   dibuja el fondo. Funciona igual en los tres elementos. */
+.sigma-modal-fecha img,
+.sigma-modal-fecha input[type="image"],
+.sigma-modal-fecha a,
+.sigma-filtro-fecha img,
+.sigma-filtro-fecha input[type="image"],
+.sigma-filtro-fecha a,
+.filtroPersonalizado img,
+.filtroPersonalizado input[type="image"],
+.filtroPersonalizado a[href*="javascript"],
+.filtro img,
+.filtro input[type="image"] {
+    width: 0 !important;
+    height: 0 !important;
+    padding: 11px !important;
+    border: 0 !important;
+    box-sizing: content-box !important;
+    background-image: url("../UI/WebControls/calendar/Calendar.svg") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 22px 22px !important;
+    background-color: transparent !important;
+    cursor: pointer;
+    vertical-align: middle;
+    display: inline-block !important;
+    opacity: .9;
+    transition: opacity .15s ease;
+}
+
+.sigma-modal-fecha img:hover,
+.sigma-modal-fecha input[type="image"]:hover,
+.filtroPersonalizado img:hover,
+.filtroPersonalizado input[type="image"]:hover { opacity: 1; }
+
+/* ---- EL CAMPO DE FECHA, PAREJO EN TODAS LAS PANTALLAS ----
+
+   El control fuerza `width:95px !important` en linea. Un `width` externo no
+   le gana a un `!important` en linea, pero `min-width` SI prevalece: con
+   150px la fecha completa cabe y el campo deja de medir distinto segun donde
+   este. */
+.sigma-modal-fecha input[type="text"],
+.filtroPersonalizado input[type="text"] {
+    min-width: 150px !important;
+    height: 42px !important;
+    box-sizing: border-box !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
+    padding: 0 12px !important;
+}
+
+/* El icono, pegado a su campo y separado del siguiente par. */
+.filtroPersonalizado .sigma-modal-fecha,
+.filtroPersonalizado [class*="col-"] > img,
+.filtroPersonalizado [class*="col-"] > input[type="image"] {
+    margin-left: 6px !important;
+}
+
+
+/* ============================================================================
+   EL CAMPO DE FECHA MIDE LO QUE MIDE UNA FECHA
+
+   Estaba tan ancho como un combo —200px— para mostrar "dd-mm-aaaa". Diez
+   caracteres en un campo del doble de largo se leen como un campo a medio
+   llenar, y ademas empujaban el resto de la fila fuera de la pantalla.
+
+   118px es el ancho del texto completo mas su relleno: la fecha entra justa
+   y el icono queda pegado, no flotando a diez centimetros.
+   ============================================================================ */
+.sigma-modal-fecha,
+.sigma-filtro-fecha {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
+
+.sigma-modal-fecha input[type="text"],
+.sigma-filtro-fecha input[type="text"],
+.filtroPersonalizado .sigma-modal-fecha input[type="text"] {
+    /* El control fuerza `width` en linea con !important; `min-width` si le
+       gana, y `max-width` lo acota por arriba. Entre los dos queda fijo. */
+    min-width: 118px !important;
+    max-width: 118px !important;
+    width: 118px !important;
+    flex: 0 0 118px !important;
+    height: 42px !important;
+    padding: 0 12px !important;
+    box-sizing: border-box !important;
+    text-align: left;
+}
+
+/* La columna que lo contiene deja de reservar un tercio de la fila. */
+.filtroPersonalizado [class*="col-"]:has(.sigma-modal-fecha) {
+    flex: 0 0 auto !important;
+    width: auto !important;
+}
+
+/* Respaldo para navegadores sin :has() — el gap en linea de la vista es lo
+   que separaba de mas. */
+.filtroPersonalizado [class*="col-"] { gap: 8px !important; }
+
+
+/* ============================================================================
+   EL PANEL ABIERTO
+
+   El display del panel lo maneja el boton —lo pone en '' o en 'none'—, asi
+   que aca NO se toca. Lo unico que se define es como se ordena su contenido
+   cuando esta visible, y eso va sin `!important` para no volver a ganarle al
+   estilo en linea que lo esconde.
+   ============================================================================ */
+.filtroPersonalizado {
+    flex-wrap: wrap;
+    align-items: center;
+}

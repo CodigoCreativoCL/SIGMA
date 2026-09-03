@@ -5,6 +5,7 @@ using System.Web.UI;
 using SitioBase.Model;
 using System.Collections.Generic;
 using System.Text;
+using System.Web.Script.Serialization;
 
 public partial class Master_Default : System.Web.UI.MasterPage
 {
@@ -209,9 +210,15 @@ public partial class Master_Default : System.Web.UI.MasterPage
            el rojo dejaria de querer decir algo. */
         string clase = "dropdown-toggle sigma-notification sigma-notification--light";
 
-        List<Alerta> lista = resumen.Abiertas > 0
-                             ? controller.GetAlertas(true, 10)
-                             : new List<Alerta>();
+        /* La bandeja muestra también las últimas resueltas: una alerta leída
+           no es lo mismo que una cerrada, y sin ese contexto ambos estados
+           parecían desaparecer. El SP conserva el orden operacional. */
+        List<Alerta> lista = controller.GetAlertas(false, 12);
+        if (lista == null) lista = new List<Alerta>();
+
+        litPanelResumen.Text = "<strong>" + resumen.Abiertas +
+                               (resumen.Abiertas == 1 ? " activa" : " activas") + "</strong> · " +
+                               resumen.NoLeidas + (resumen.NoLeidas == 1 ? " nueva" : " nuevas");
 
         foreach (Alerta a in lista)
         {
@@ -255,7 +262,14 @@ public partial class Master_Default : System.Web.UI.MasterPage
            critico y uno sobre el maximo pedian la misma atencion. */
         string sev = Clase(a.sev_codigo);
 
-        enlace.CssClass = "sg-notif-item " + sev + (a.LEIDA ? "" : " is-nueva");
+        enlace.CssClass = "sg-notif-item " + sev +
+                          (a.LEIDA ? " is-leida" : " is-nueva") +
+                          (a.Activa ? " is-activa" : " is-resuelta") +
+                          (a.ES_PREDICCION ? " is-ai" : "");
+        enlace.Attributes["aria-label"] = (a.LEIDA ? "" : "Nueva. ") +
+                                           Server.HtmlEncode(a.ale_titulo) + ". " +
+                                           Server.HtmlEncode(a.aet_nombre);
+        enlace.Attributes["data-sg-notif-close"] = "1";
 
         StringBuilder sb = new StringBuilder();
 
@@ -267,7 +281,19 @@ public partial class Master_Default : System.Web.UI.MasterPage
         sb.Append("<span class=\"titulo\">" + Server.HtmlEncode(a.ale_titulo) + "</span>");
         sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
 
-        sb.Append("<span class=\"cuando\">" + Server.HtmlEncode(a.Antiguedad));
+        string contexto = !string.IsNullOrEmpty(a.ACTIVO_NOMBRE) ? a.ACTIVO_NOMBRE :
+                          (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? "Repuesto " + a.REPUESTO_CODIGO :
+                           (!string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : a.INSTALACION_NOMBRE));
+        if (!string.IsNullOrEmpty(contexto))
+            sb.Append("<span class=\"contexto\"><i class=\"mdi mdi-map-marker-radius-outline\"></i>" +
+                      Server.HtmlEncode(contexto) + "</span>");
+
+        sb.Append("<span class=\"cuando\"><span>" + Server.HtmlEncode(a.Antiguedad) + "</span>");
+
+        sb.Append("<span class=\"sg-notif-state\">" + Server.HtmlEncode(a.aet_nombre) + "</span>");
+
+        if (!a.LEIDA) sb.Append("<span class=\"sg-notif-state is-new\">Nueva</span>");
+        if (a.ES_PREDICCION) sb.Append("<span class=\"sg-notif-ai\">SIGMA AI</span>");
 
         /* El rotulo de gravedad SOLO cuando pide accion. Poner "Normal" en
            cada fila que no es grave llenaria la lista de una etiqueta que no
@@ -275,7 +301,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
         if (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")
             sb.Append("<span class=\"sev\">" + Server.HtmlEncode(a.sev_nombre) + "</span>");
 
-        sb.Append("</span></span>");
+        sb.Append("</span><span class=\"sg-notif-action\">Revisar <i class=\"mdi mdi-arrow-right\"></i></span></span>");
 
         /* El punto de "sin leer" a la derecha, como en cualquier bandeja: se
            recorre la columna de un vistazo. */
@@ -306,42 +332,77 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
             AlertaController controller = new AlertaController();
 
-            controller.Leer(id);
+            /* El destino se resuelve ANTES de marcar como leída. Leer no
+               debería cambiar la cola, pero hacerlo en este orden evita que
+               una implementación futura del SP haga desaparecer justo el
+               registro que necesitamos abrir. */
+            Alerta seleccionada = null;
 
-            /* A donde ir. Se busca entre las abiertas porque es de donde salio
-               la que se toco; si ya no esta —alguien la resolvio entretanto—
-               no se abre nada y el panel simplemente se actualiza. */
-            foreach (Alerta a in controller.GetAlertas(true, 50))
+            foreach (Alerta a in controller.GetAlertas(false, 50))
             {
-                if (a.ale_id != id) continue;
-
-                if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
-                {
-                    string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
-
-                    ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
-                        "abrir-alerta",
-                        "abrirNotificacion('" + ResolveUrl(a.FICHA_LINK) + "','" + query + "');",
-                        true);
-                }
-                else if (!string.IsNullOrEmpty(a.alt_menu_link))
-                {
-                    Response.Redirect(ResolveUrl(a.alt_menu_link));
-                    return;
-                }
-
-                break;
+                if (a.ale_id == id) { seleccionada = a; break; }
             }
 
+            controller.Leer(id);
             CargarAlertas();
             udAlertas.Update();
             Refrescar();
+
+            if (seleccionada != null &&
+                !string.IsNullOrEmpty(seleccionada.FICHA_LINK) &&
+                seleccionada.FICHA_ID != null && seleccionada.FICHA_ID > 0)
+            {
+                string query = Server.UrlEncode(
+                    Tools.Crypto.Encrypt("Id=" + seleccionada.FICHA_ID.Value));
+
+                /* JavaScriptSerializer genera literales JS válidos también
+                   si mañana una ruta contiene comillas u otros caracteres.
+                   Concatenar la ruta entre comillas simples dejaba el script
+                   completo inválido en ese caso. */
+                JavaScriptSerializer js = new JavaScriptSerializer();
+                string abrir = "abrirNotificacion(" +
+                               js.Serialize(ResolveUrl(seleccionada.FICHA_LINK)) + "," +
+                               js.Serialize(query) + ");";
+
+                ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
+                    "abrir-alerta-" + id, abrir, true);
+            }
+            else if (seleccionada != null && !string.IsNullOrEmpty(seleccionada.alt_menu_link))
+            {
+                /* false evita ThreadAbortException: ese aborto caía en el
+                   catch de abajo y transformaba una navegación válida en un
+                   falso mensaje de error. */
+                Response.Redirect(ResolveUrl(seleccionada.alt_menu_link), false);
+                Context.ApplicationInstance.CompleteRequest();
+                return;
+            }
+            else
+            {
+                RegistrarAvisoNotificacion(
+                    "Esta notificación no tiene un registro relacionado configurado.");
+            }
         }
         catch (Exception)
         {
-            /* Un fallo abriendo una alerta no puede tumbar la cabecera del
-               sitio, que se dibuja en todas las pantallas. */
+            /* La cabecera no se cae por un fallo aislado, pero tampoco lo
+               escondemos: antes el catch vacío hacía que un clic roto se
+               pareciera a un elemento sin acción. */
+            RegistrarAvisoNotificacion(
+                "No fue posible abrir el detalle. Intenta nuevamente.");
         }
+    }
+
+    /// <summary>Muestra un error acotado sin abandonar la pantalla actual.</summary>
+    protected void RegistrarAvisoNotificacion(string mensaje)
+    {
+        string texto = new JavaScriptSerializer().Serialize(mensaje);
+        string script = "if(window.sigmaToast){" +
+                        "sigmaToast('No se pudo abrir la notificación'," + texto +
+                        ",'',true,'alerta-sin-destino');" +
+                        "}else{window.alert(" + texto + ");}";
+
+        ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
+            "aviso-alerta-" + Guid.NewGuid().ToString("N"), script, true);
     }
 
     /// <summary>

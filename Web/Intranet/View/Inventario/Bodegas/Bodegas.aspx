@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirBodega(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Bodegas/Bodega.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Inventario/Bodegas/Bodega.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nueva bodega' : 'Editar bodega',
+                width: 960,
+                initialHeight: 640
+            });
         }
 
         function refresh() {
@@ -60,8 +63,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="960" Height="640" />
-
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
@@ -69,7 +70,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="bod_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva bodega" CssClass="icono_guardar" OnClientClick="abrirBodega(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva bodega" CssClass="icono_guardar" OnClientClick="return abrirBodega(0);" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

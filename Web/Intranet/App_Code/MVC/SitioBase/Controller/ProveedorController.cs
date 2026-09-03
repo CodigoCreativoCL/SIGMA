@@ -124,6 +124,119 @@ namespace SitioBase.Controller
             return lista[0];
         }
 
+        /// <summary>
+        /// Los servicios que prestó el proveedor, con los adjuntos de sus
+        /// órdenes de trabajo.
+        ///
+        /// Vienen en dos resultados y se arman acá: los archivos son de la
+        /// ORDEN, no de la línea de servicio, así que traerlos repetidos
+        /// dentro de cada servicio sería traer el doble para mostrar lo mismo.
+        /// Se agrupan por orden y se reparten.
+        /// </summary>
+        public List<ProveedorServicio> GetServicios(int idProveedor)
+        {
+            List<ProveedorServicio> lista = new List<ProveedorServicio>();
+
+            if (!Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_PROVEEDOR_SERVICIO");
+                cmd.Parameters.AddWithValue("@PROVEEDOR", idProveedor);
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                Dictionary<int, List<ProveedorAdjunto>> porOrden =
+                    new Dictionary<int, List<ProveedorAdjunto>>();
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ProveedorServicio x = new ProveedorServicio();
+
+                        x.ots_id = int.Parse(dr["ots_id"].ToString());
+                        x.ots_orden_trabajo = int.Parse(dr["ots_orden_trabajo"].ToString());
+                        x.OT_NUMERO = dr["OT_NUMERO"].ToString();
+                        x.OT_TITULO = dr["OT_TITULO"].ToString();
+                        x.OT_ESTADO = dr["OT_ESTADO"].ToString();
+                        x.TIPO_NOMBRE = dr["TIPO_NOMBRE"].ToString();
+                        x.ots_descripcion = dr["ots_descripcion"].ToString();
+
+                        if (dr["ots_cantidad"] != DBNull.Value)
+                            x.ots_cantidad = decimal.Parse(dr["ots_cantidad"].ToString());
+
+                        if (dr["ots_monto_unitario"] != DBNull.Value)
+                            x.ots_monto_unitario = decimal.Parse(dr["ots_monto_unitario"].ToString());
+
+                        if (dr["ots_monto"] != DBNull.Value)
+                            x.ots_monto = decimal.Parse(dr["ots_monto"].ToString());
+
+                        x.MONEDA_NOMBRE = dr["MONEDA_NOMBRE"].ToString();
+                        x.ots_documento_referencia = dr["ots_documento_referencia"].ToString();
+
+                        if (dr["ots_fecha_servicio_utc"] != DBNull.Value)
+                            x.ots_fecha_servicio_utc = DateTime.Parse(dr["ots_fecha_servicio_utc"].ToString());
+
+                        if (dr["ots_fecha_documento"] != DBNull.Value)
+                            x.ots_fecha_documento = DateTime.Parse(dr["ots_fecha_documento"].ToString());
+
+                        x.ADJUNTOS = int.Parse(dr["ADJUNTOS"].ToString());
+                        x.ADJUNTOS_RETENIDOS = int.Parse(dr["ADJUNTOS_RETENIDOS"].ToString());
+
+                        lista.Add(x);
+                    }
+
+                    // ---- segundo resultado: los archivos ----
+                    if (dr.NextResult())
+                    {
+                        while (dr.Read())
+                        {
+                            ProveedorAdjunto a = new ProveedorAdjunto();
+
+                            a.arc_id = int.Parse(dr["arc_id"].ToString());
+                            a.avi_orden_trabajo = int.Parse(dr["avi_orden_trabajo"].ToString());
+                            a.arc_nombre_original = dr["arc_nombre_original"].ToString();
+                            a.arc_extension = dr["arc_extension"].ToString();
+                            a.arc_mime = dr["arc_mime"].ToString();
+
+                            if (dr["arc_byte"] != DBNull.Value)
+                                a.arc_byte = long.Parse(dr["arc_byte"].ToString());
+
+                            if (dr["arc_fecha_creacion"] != DBNull.Value)
+                                a.arc_fecha_creacion = DateTime.Parse(dr["arc_fecha_creacion"].ToString());
+
+                            a.CATEGORIA = dr["CATEGORIA"].ToString();
+                            a.ANTIVIRUS = dr["ANTIVIRUS"].ToString();
+                            a.avi_titulo = dr["avi_titulo"].ToString();
+
+                            if (!porOrden.ContainsKey(a.avi_orden_trabajo))
+                                porOrden[a.avi_orden_trabajo] = new List<ProveedorAdjunto>();
+
+                            porOrden[a.avi_orden_trabajo].Add(a);
+                        }
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+
+                /* Cada servicio recibe los archivos de SU orden. Dos servicios
+                   de la misma OT comparten la lista, que es justamente lo que
+                   pasa en la realidad. */
+                foreach (ProveedorServicio x in lista)
+                    if (porOrden.ContainsKey(x.ots_orden_trabajo))
+                        x.Adjuntos = porOrden[x.ots_orden_trabajo];
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+
+            return lista;
+        }
+
         public Respuesta InsertProveedor(Proveedor entidad)
         {
             Respuesta respuesta = new Respuesta();

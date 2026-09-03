@@ -49,6 +49,12 @@ namespace SitioBase.Model
         public string estado_nombre { get; set; }
         public string estado_codigo { get; set; }
         public string solicitante_nombre { get; set; }
+
+        /* Para dibujar su avatar: el id decide el color, la foto la reemplaza
+           cuando existe. Ver `SitioBase.Avatar`. */
+        public int solicitante_id { get; set; }
+        public int solicitante_foto { get; set; }
+
         public string usuario_creacion_nombre { get; set; }
         public string usuario_actualizacion_nombre { get; set; }
         public string orden_correlativo { get; set; }
@@ -149,13 +155,30 @@ namespace SitioBase.Model
         public string estado_nombre { get; set; }
         public string estado_codigo { get; set; }
         public string solicitante_nombre { get; set; }
+
+        /* Para dibujar su avatar: el id decide el color, la foto la reemplaza
+           cuando existe. Ver `SitioBase.Avatar`. */
+        public int solicitante_id { get; set; }
+        public int solicitante_foto { get; set; }
+
         public string orden_correlativo { get; set; }
+        public string orden_titulo { get; set; }
+        public string instalacion_nombre { get; set; }
+        public string activo_codigo { get; set; }
+        public string activo_nombre { get; set; }
 
         /// <summary>
         /// Si tiene el documento firmado. Un permiso vigente SIN documento
         /// no acredita nada, y en terreno eso importa tanto como la fecha.
         /// </summary>
         public bool tiene_documento { get; set; }
+
+        /* Con que se llama el respaldo y de que tipo es. El panel de detalle
+           decide con esto si lo muestra como imagen o lo ofrece para bajar. */
+        public string archivo_nombre_vig { get; set; }
+        public string archivo_extension_vig { get; set; }
+        public string archivo_mime { get; set; }
+        public long archivo_byte_vig { get; set; }
 
         public int? dias_restantes { get; set; }
 

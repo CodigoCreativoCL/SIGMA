@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Sistema/UnidadesMedida/UnidadMedidas.aspx" hash="fffffff3c3134113" filehash="8fbc9f3972eb38f7" flags="110000" assembly="App_Web_nbyclvc4" type="ASP.view_sistema_unidadesmedida_unidadmedidas_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/FiltroAvanzado.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/MenusLateral.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Sistema/UnidadesMedida/UnidadMedidas.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Sistema/UnidadesMedida/UnidadMedidas.aspx.cs" />
+    </filedeps>
+</preserve>

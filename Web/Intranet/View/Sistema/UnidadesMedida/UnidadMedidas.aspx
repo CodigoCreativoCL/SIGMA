@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirUnidad(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Sistema/UnidadesMedida/UnidadMedida.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Sistema/UnidadesMedida/UnidadMedida.aspx") %>?query=' + query,
+                title: 'Unidad medida',
+                width: 820,
+                initialHeight: 560
+            });
         }
         function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
     </script>
@@ -48,7 +51,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="820" Height="560" />
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>

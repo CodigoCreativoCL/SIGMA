@@ -3,15 +3,18 @@
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-permisos-lista.css?vrs=2") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPermiso(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Terceros/PermisosTrabajo/PermisoTrabajo.aspx") %>?query=' + query);
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Terceros/PermisosTrabajo/PermisoTrabajo.aspx") %>?query=' + query,
+                title: 'Permiso de trabajo vigente',
+                width: 1040,
+                initialHeight: 660
+            });
         }
 
         function refresh() {
@@ -65,8 +68,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="660" />
-
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
@@ -111,9 +112,11 @@
                 <span class="sg-arbol-cuenta"><asp:Literal ID="litCuenta" runat="server" /></span>
             </div>
 
+            <div class="sg-permit-list-shell">
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
                 <MasterTableView CommandItemDisplay="None" DataKeyNames="ptr_id" />
             </rad:RadGrid2>
+            </div>
 
             <asp:Panel ID="pnlVacio" runat="server" Visible="false" CssClass="sg-arbol-vacio">
                 <i class="mdi mdi-shield-check-outline"></i>

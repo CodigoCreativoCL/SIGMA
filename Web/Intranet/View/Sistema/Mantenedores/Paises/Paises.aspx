@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPais(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-             oWin.setUrl('<%=ResolveUrl("~/View/Sistema/Mantenedores/Paises/Pais.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Sistema/Mantenedores/Paises/Pais.aspx") %>?query=' + query,
+                title: 'Pais',
+                width: 1000,
+                initialHeight: 380
+            });
         }
 
         function refresh() {
@@ -49,7 +52,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="rgrPaises_ItemDataBound">

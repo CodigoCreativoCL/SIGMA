@@ -1,5 +1,6 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Cliente.ascx.cs" Inherits="View_Comun_Controls_Cliente_Cliente" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Identidad.ascx" TagPrefix="wuc" TagName="Identidad" %>
+<%@ Register Src="~/View/Comun/Controls/Cliente/Contactos.ascx" TagPrefix="wuc" TagName="Contactos" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Usuarios" %>
 <%@ Register Src="~/View/Comun/Controls/Cliente/Instalaciones.ascx" TagPrefix="wuc" TagName="Instalaciones" %>
 
@@ -51,6 +52,7 @@
             Orientation="VerticalLeft" Skin="Bootstrap" RenderMode="Lightweight" SelectedIndex="0">
             <Tabs>
                 <rad:RadTab Text="Identidad" runat="server" PageViewID="rtvIdentidad" />
+                <rad:RadTab Text="Contactos" runat="server" PageViewID="rtvContactos" />
                 <rad:RadTab Text="Usuarios" runat="server" PageViewID="rtvUsuarios" />
                 <rad:RadTab Text="Plantas" runat="server" PageViewID="rtvInstalaciones" />
             </Tabs>
@@ -61,6 +63,9 @@
         <rad:RadMultiPage ID="MultiPage" runat="server" SelectedIndex="0">
             <rad:RadPageView ID="rtvIdentidad" runat="server">
                 <wuc:Identidad runat="server" ID="wucIdentidad" />
+            </rad:RadPageView>
+            <rad:RadPageView ID="rtvContactos" runat="server">
+                <wuc:Contactos runat="server" ID="wucContactos" />
             </rad:RadPageView>
             <rad:RadPageView ID="rtvUsuarios" runat="server">
                 <div class="SubTitulos">Usuarios</div>

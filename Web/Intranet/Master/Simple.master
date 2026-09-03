@@ -21,7 +21,7 @@
 
     <!-- AjaxProgress CSS -->
     <link href="../Css/AjaxProgress/cssUpdateProgress.css" rel="stylesheet" />
-    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=2" rel="stylesheet" />
 
     <!-- Default CSS -->
     <link href="../Css/Default/Default.css?vrs=3" rel="stylesheet" />
@@ -55,7 +55,8 @@
          para que los tokens de marca ganen. -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=8" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=4" rel="stylesheet" />
@@ -63,13 +64,20 @@
 
     <!-- WebControls CSS -->
     <link href="../Css/UI/WebControls/calendar/CSS/Classic.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/UI/WebControls/Button.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/UI/WebControls/Button.css?vrs=2" rel="stylesheet" />
     <link href="../Css/UI/WebControls/TextBox.css?vrs=1" rel="stylesheet" />
     <link href="../Css/UI/WebControls/CheckBox.css?vrs=1" rel="stylesheet" />
 
     <!-- SweetAlert CSS -->
+    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert.css?vrs=2" rel="stylesheet" />
     <link href="../Css/SweetAlert/sweetalert2.min.css?vrs=2" rel="stylesheet" />
+    <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
+         reglas de Grid.css y Button.css que traen !important, y para
+         ganarles hay que cargarla al final. --%>
+    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=15" rel="stylesheet" />
+    <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
+    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=2" rel="stylesheet" />
 
     <asp:ContentPlaceHolder ID="cphHeder" runat="server">
         <style>
@@ -121,6 +129,17 @@
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
                         <asp:ScriptReference Path="~/Css/AjaxProgress/jsUpdateProgress.js" />
                         <asp:ScriptReference Path="~/Css/UI/WebControls/calendar/PopCalendarFunctionsAjaxNet.js" />
+                        <%-- El modal de SIGMA. Va tambien en este master porque una ficha
+                             que ya esta DENTRO de un modal puede abrir otro —la carga
+                             masiva de usuarios lo hace—, y el componente soporta
+                             instancias anidadas. Sin esto, esa llamada revienta con
+                             "SigmaModal is not defined". --%>
+                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=2" />
+                        <%-- GSAP va ANTES del calendario: el componente
+                             comprueba `window.gsap` y si no esta, se abre sin
+                             animacion. En los modales quedaba sin ella. --%>
+                        <asp:ScriptReference Path="~/Js/gsap/gsap.min.js" />
+                        <asp:ScriptReference Path="~/Js/sigma-calendario.js" />
                         <asp:ScriptReference Path="~/Css/SweetAlert/sweetalert2.min.js" />
                     </Scripts>
                 </asp:ScriptManager>
@@ -129,59 +148,21 @@
                     <asp:UpdateProgress ID="UpdateProg1" DisplayAfter="0" runat="server">
                         <ProgressTemplate>
                             <div class="up-card">
-                                <div class="up-spinner-wrap">
-                                    <div class="up-ring"></div>
-                                    <div class="up-svg-box">
-                                        <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                                            <defs>
-                                                <filter id="upGlow">
-                                                    <feGaussianBlur result="blur" stdDeviation="2" />
-                                                    <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                                </filter>
-                                            </defs>
-                                            <g transform="translate(200, 200)">
-                                                <circle cx="0" cy="0" fill="#004a80" r="12">
-                                                    <animate attributeName="r" dur="3s" repeatCount="indefinite" values="12;14;12" />
-                                                </circle>
-                                                <g opacity="0.6" stroke="#cfdaf2" stroke-width="1.5">
-                                                    <line x1="0" y1="0" x2="60" y2="-40">
-                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite" />
-                                                    </line>
-                                                    <line x1="0" y1="0" x2="-50" y2="-70">
-                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="25s" repeatCount="indefinite" />
-                                                    </line>
-                                                    <line x1="0" y1="0" x2="40" y2="80">
-                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="30s" repeatCount="indefinite" />
-                                                    </line>
-                                                    <line x1="0" y1="0" x2="-80" y2="30">
-                                                        <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="22s" repeatCount="indefinite" />
-                                                    </line>
-                                                </g>
-                                                <g>
-                                                    <circle fill="#4a90e2" filter="url(#upGlow)" r="8">
-                                                        <animateMotion dur="8s" path="M -100,0 A 100,100 0 1 1 100,0 A 100,100 0 1 1 -100,0" repeatCount="indefinite" />
-                                                    </circle>
-                                                    <circle fill="#004a80" opacity="0.8" r="6">
-                                                        <animateMotion dur="12s" path="M 0,-130 A 130,130 0 1 0 0,130 A 130,130 0 1 0 0,-130" repeatCount="indefinite" />
-                                                    </circle>
-                                                    <circle fill="#7baed4" r="10">
-                                                        <animateMotion dur="15s" path="M 150,0 A 150,150 0 1 1 -150,0 A 150,150 0 1 1 150,0" repeatCount="indefinite" />
-                                                    </circle>
-                                                </g>
-                                                <path d="M -100,0 L 0,-130 L 150,0 L 0,130 L -100,0 Z" fill="none" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
-                                                <path d="M 0,0 L -100,0 M 0,0 L 0,-130 M 0,0 L 150,0 M 0,0 L 0,130" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
-                                                <circle cx="0" cy="0" fill="none" r="0" stroke="#004a80" stroke-width="2">
-                                                    <animate attributeName="r" dur="4s" from="0" to="180" repeatCount="indefinite" />
-                                                    <animate attributeName="opacity" dur="4s" from="0.4" to="0" repeatCount="indefinite" />
-                                                </circle>
-                                            </g>
-                                        </svg>
-                                    </div>
+                                <div class="up-brand-stage" aria-hidden="true">
+                                    <svg class="up-vector-trails" viewBox="0 0 160 150">
+                                        <path d="M52 124C38 96 68 87 57 57C51 41 58 25 71 13" />
+                                        <path d="M82 128C68 102 92 89 83 65C77 48 85 31 97 18" />
+                                        <path d="M108 123C98 101 121 91 113 69C107 52 116 40 126 30" />
+                                    </svg>
+                                    <span class="up-particle is-1"></span><span class="up-particle is-2"></span>
+                                    <span class="up-particle is-3"></span><span class="up-particle is-4"></span>
+                                    <span class="up-particle is-5"></span><span class="up-particle is-6"></span>
+                                    <img class="up-logo" src="<%=ResolveUrl("~/Imagen/sigma-isotipo-gradient.svg") %>" alt="" />
                                 </div>
                                 <div class="up-text-area">
-                                    <span class="up-label-caps">SINCRONIZANDO DATOS</span>
+                                    <span class="up-label-caps">PROCESANDO EN SIGMA</span>
                                     <div class="up-timer">
-                                        Tiempo de Carga:
+                                        Tiempo transcurrido:
                                         <span class="up-bold">
                                             <label id="lblModalMinutos">0</label>
                                             Minutos</span>

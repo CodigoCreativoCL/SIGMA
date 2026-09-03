@@ -8,15 +8,21 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirMenu(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Root/Mantenedores/Menus/Menu.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Root/Mantenedores/Menus/Menu.aspx") %>?query=' + query,
+                title: 'Menu',
+                width: 1000,
+                initialHeight: 560
+            });
         }
 
         function abrirFunciones(query) {
-            var oWin = $find("<%=rwiFunciones.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Root/Mantenedores/Menus/MenuFuncion.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Root/Mantenedores/Menus/MenuFuncion.aspx") %>?query=' + query,
+                title: 'Menu funcion',
+                width: 1000,
+                initialHeight: 520
+            });
         }
 
         function refresh() {
@@ -34,8 +40,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="560" />
-    <rad:RadWindow2 ID="rwiFunciones" runat="server" Width="1000" Height="520" />
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
             <div class="row col-lg-12 col-md-12 col-xs-12">

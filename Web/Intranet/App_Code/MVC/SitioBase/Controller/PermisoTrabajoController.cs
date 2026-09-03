@@ -117,6 +117,8 @@ namespace SitioBase.Controller
                             item.estado_nombre = dr["ESTADO_NOMBRE"].ToString();
                             item.estado_codigo = dr["ESTADO_CODIGO"].ToString();
                             item.solicitante_nombre = dr["SOLICITANTE_NOMBRE"].ToString();
+                            item.solicitante_id = int.Parse(dr["SOLICITANTE_ID"].ToString());
+                            item.solicitante_foto = int.Parse(dr["SOLICITANTE_FOTO"].ToString());
                             item.usuario_creacion_nombre = dr["USUARIO_CREACION_NOMBRE"].ToString();
                             item.usuario_actualizacion_nombre = dr["USUARIO_ACTUALIZACION_NOMBRE"].ToString();
                             item.orden_correlativo = dr["ORDEN_CORRELATIVO"].ToString();
@@ -311,7 +313,17 @@ namespace SitioBase.Controller
                             item.estado_nombre = dr["ESTADO_NOMBRE"].ToString();
                             item.estado_codigo = dr["ESTADO_CODIGO"].ToString();
                             item.solicitante_nombre = dr["SOLICITANTE_NOMBRE"].ToString();
+                            item.solicitante_id = int.Parse(dr["SOLICITANTE_ID"].ToString());
+                            item.solicitante_foto = int.Parse(dr["SOLICITANTE_FOTO"].ToString());
+                            item.archivo_nombre_vig = dr["ARCHIVO_NOMBRE"].ToString();
+                            item.archivo_extension_vig = dr["ARCHIVO_EXTENSION"].ToString();
+                            item.archivo_mime = dr["ARCHIVO_MIME"].ToString();
+                            item.archivo_byte_vig = long.Parse(dr["ARCHIVO_BYTE"].ToString());
                             item.orden_correlativo = dr["ORDEN_CORRELATIVO"].ToString();
+                            item.orden_titulo = dr["ORDEN_TITULO"].ToString();
+                            item.instalacion_nombre = dr["INSTALACION_NOMBRE"].ToString();
+                            item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
+                            item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
                             item.situacion = dr["SITUACION"].ToString();
 
                             item.tiene_documento = (dr["TIENE_DOCUMENTO"].ToString() == "1"
