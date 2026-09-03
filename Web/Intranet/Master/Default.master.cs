@@ -1,6 +1,7 @@
 ﻿using SitioBase.Controller;
 using System;
 using System.Web.UI.WebControls;
+using System.Web.UI.HtmlControls;
 using System.Web.UI;
 using SitioBase.Model;
 using System.Collections.Generic;
@@ -247,14 +248,19 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         Alerta a = (Alerta)e.Item.DataItem;
 
-        LinkButton enlace = (LinkButton)e.Item.FindControl("lnkItem");
+        HtmlButton enlace = (HtmlButton)e.Item.FindControl("lnkItem");
         Literal lit = (Literal)e.Item.FindControl("litItem");
 
-        /* El id viaja en el comando: es lo unico que el evento va a recibir, y
-           sacarlo del indice de la fila se rompe si la lista cambia entre el
-           dibujo y el clic —que es justo lo que pasa cuando entra una alerta
-           nueva mientras el panel esta abierto—. */
-        enlace.CommandArgument = a.ale_id.ToString();
+        /* El id y el destino viajan como datos del boton. El clic no dispara
+           el ciclo de pagina: WsAlertas marca la lectura y el modal se abre
+           con el token cifrado que preparo el servidor. */
+        enlace.Attributes["data-alerta-id"] = a.ale_id.ToString();
+
+        /* Si esta vista o no, como dato de la fila: con eso el filtro del
+           panel trabaja sin ir al servidor. Es la misma informacion que ya se
+           usa para pintarla —la clase `is-nueva`—, pero en un atributo, que es
+           lo que se puede consultar sin depender de como se vea. */
+        enlace.Attributes["data-visto"] = a.LEIDA ? "1" : "0";
 
         /* La gravedad va en la FILA, no solo en el icono: tine el borde
            izquierdo, el halo y el rotulo. Al pasar a los SVG de marca se
@@ -262,14 +268,38 @@ public partial class Master_Default : System.Web.UI.MasterPage
            critico y uno sobre el maximo pedian la misma atencion. */
         string sev = Clase(a.sev_codigo);
 
-        enlace.CssClass = "sg-notif-item " + sev +
-                          (a.LEIDA ? " is-leida" : " is-nueva") +
-                          (a.Activa ? " is-activa" : " is-resuelta") +
-                          (a.ES_PREDICCION ? " is-ai" : "");
+        enlace.Attributes["class"] = "sg-notif-item " + sev +
+                                     (a.LEIDA ? " is-leida" : " is-nueva") +
+                                     (a.Activa ? " is-activa" : " is-resuelta") +
+                                     (a.ES_PREDICCION ? " is-ai" : "");
         enlace.Attributes["aria-label"] = (a.LEIDA ? "" : "Nueva. ") +
                                            Server.HtmlEncode(a.ale_titulo) + ". " +
                                            Server.HtmlEncode(a.aet_nombre);
         enlace.Attributes["data-sg-notif-close"] = "1";
+
+        JavaScriptSerializer js = new JavaScriptSerializer();
+
+        if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
+        {
+            string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
+
+            enlace.Attributes["onclick"] = "return abrirNotificacion(" +
+                js.Serialize(ResolveUrl(a.FICHA_LINK)) + "," +
+                js.Serialize(query) + "," + a.ale_id + ");";
+        }
+        else if (!string.IsNullOrEmpty(a.alt_menu_link))
+        {
+            enlace.Attributes["onclick"] =
+                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
+                "window.location.href=" + js.Serialize(ResolveUrl(a.alt_menu_link)) + ";return false;";
+        }
+        else
+        {
+            enlace.Attributes["onclick"] =
+                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
+                "window.alert('Esta notificación no tiene un registro relacionado configurado.');" +
+                "return false;";
+        }
 
         StringBuilder sb = new StringBuilder();
 
@@ -308,115 +338,6 @@ public partial class Master_Default : System.Web.UI.MasterPage
         if (!a.LEIDA) sb.Append("<span class=\"punto\"></span>");
 
         lit.Text = sb.ToString();
-    }
-
-    /// <summary>
-    /// Tocar una alerta: se marca leida y se abre su registro.
-    ///
-    /// EN EL SERVIDOR Y NO POR AJAX
-    ///   Antes lo hacia el sondeo: el javascript le pedia al handler que la
-    ///   marcara. Si esa peticion fallaba, no pasaba nada y nadie se enteraba
-    ///   — el contador se quedaba igual, sin explicacion. Acá el clic va al
-    ///   servidor, marca, y el panel se redibuja con lo que la base dice.
-    /// </summary>
-    protected void rptAlertas_ItemCommand(object source, RepeaterCommandEventArgs e)
-    {
-        if (e.CommandName != "Abrir") return;
-
-        try
-        {
-            int id = 0;
-            int.TryParse(Convert.ToString(e.CommandArgument), out id);
-
-            if (id <= 0) return;
-
-            AlertaController controller = new AlertaController();
-
-            /* El destino se resuelve ANTES de marcar como leída. Leer no
-               debería cambiar la cola, pero hacerlo en este orden evita que
-               una implementación futura del SP haga desaparecer justo el
-               registro que necesitamos abrir. */
-            Alerta seleccionada = null;
-
-            foreach (Alerta a in controller.GetAlertas(false, 50))
-            {
-                if (a.ale_id == id) { seleccionada = a; break; }
-            }
-
-            controller.Leer(id);
-            CargarAlertas();
-            udAlertas.Update();
-            Refrescar();
-
-            if (seleccionada != null &&
-                !string.IsNullOrEmpty(seleccionada.FICHA_LINK) &&
-                seleccionada.FICHA_ID != null && seleccionada.FICHA_ID > 0)
-            {
-                string query = Server.UrlEncode(
-                    Tools.Crypto.Encrypt("Id=" + seleccionada.FICHA_ID.Value));
-
-                /* JavaScriptSerializer genera literales JS válidos también
-                   si mañana una ruta contiene comillas u otros caracteres.
-                   Concatenar la ruta entre comillas simples dejaba el script
-                   completo inválido en ese caso. */
-                JavaScriptSerializer js = new JavaScriptSerializer();
-                string abrir = "abrirNotificacion(" +
-                               js.Serialize(ResolveUrl(seleccionada.FICHA_LINK)) + "," +
-                               js.Serialize(query) + ");";
-
-                ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
-                    "abrir-alerta-" + id, abrir, true);
-            }
-            else if (seleccionada != null && !string.IsNullOrEmpty(seleccionada.alt_menu_link))
-            {
-                /* false evita ThreadAbortException: ese aborto caía en el
-                   catch de abajo y transformaba una navegación válida en un
-                   falso mensaje de error. */
-                Response.Redirect(ResolveUrl(seleccionada.alt_menu_link), false);
-                Context.ApplicationInstance.CompleteRequest();
-                return;
-            }
-            else
-            {
-                RegistrarAvisoNotificacion(
-                    "Esta notificación no tiene un registro relacionado configurado.");
-            }
-        }
-        catch (Exception)
-        {
-            /* La cabecera no se cae por un fallo aislado, pero tampoco lo
-               escondemos: antes el catch vacío hacía que un clic roto se
-               pareciera a un elemento sin acción. */
-            RegistrarAvisoNotificacion(
-                "No fue posible abrir el detalle. Intenta nuevamente.");
-        }
-    }
-
-    /// <summary>Muestra un error acotado sin abandonar la pantalla actual.</summary>
-    protected void RegistrarAvisoNotificacion(string mensaje)
-    {
-        string texto = new JavaScriptSerializer().Serialize(mensaje);
-        string script = "if(window.sigmaToast){" +
-                        "sigmaToast('No se pudo abrir la notificación'," + texto +
-                        ",'',true,'alerta-sin-destino');" +
-                        "}else{window.alert(" + texto + ");}";
-
-        ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
-            "aviso-alerta-" + Guid.NewGuid().ToString("N"), script, true);
-    }
-
-    /// <summary>
-    /// Le avisa al sondeo que los numeros cambiaron.
-    ///
-    /// El panel se redibujo con lo que la base dice, pero el javascript sigue
-    /// con el ultimo valor que vio: sin esto, su proxima consulta creeria que
-    /// el contador BAJO por si solo y, peor, si luego sube lo tomaria como
-    /// novedad y dispararia el aviso emergente por algo que ya se leyo.
-    /// </summary>
-    protected void Refrescar()
-    {
-        ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(), "refrescar-alertas",
-            "if(window.sigmaAlertas) sigmaAlertas.refrescar();", true);
     }
 
     /// <summary>
@@ -469,19 +390,6 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         return "sigma-ai-status-analyzing.svg";
     }
-
-    protected void lnkLeerTodo_Click(object sender, EventArgs e)
-    {
-        new AlertaController().Leer();
-
-        /* Se redibuja el panel, no la pagina: recargar entera haria perder lo
-           que la persona estuviera haciendo detras, y lo unico que cambio son
-           el contador y los puntos. */
-        CargarAlertas();
-        udAlertas.Update();
-        Refrescar();
-    }
-
 
 }
 

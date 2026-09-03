@@ -35,6 +35,8 @@ public class WsDetalle : System.Web.Services.WebService
     {
         Dictionary<string, object> r = new Dictionary<string, object>();
         List<Dictionary<string, string>> filas = new List<Dictionary<string, string>>();
+        List<Dictionary<string, string>> historial = new List<Dictionary<string, string>>();
+        SqlCommand cmd = null;
 
         try
         {
@@ -45,8 +47,13 @@ public class WsDetalle : System.Web.Services.WebService
 
             if (id <= 0) throw new Exception("Registro no identificado.");
 
-            SqlCommand cmd = Conexion.GetCommand("SEL_DETALLE_FICHA");
-            cmd.Parameters.AddWithValue("@ENTIDAD", (entidad ?? "").ToUpper());
+            string tipo = (entidad ?? "").ToUpper();
+            bool esInventario = tipo == "EXISTENCIA" || tipo == "MOVIMIENTO";
+
+            cmd = Conexion.GetCommand(esInventario
+                ? "SEL_DETALLE_INVENTARIO"
+                : "SEL_DETALLE_FICHA");
+            cmd.Parameters.AddWithValue("@ENTIDAD", tipo);
             cmd.Parameters.AddWithValue("@ID", id);
 
             /* El cliente sale de la SESIÓN, nunca del navegador: si viniera de
@@ -67,10 +74,41 @@ public class WsDetalle : System.Web.Services.WebService
                     f["valor"] = dr["VALOR"].ToString();
                     filas.Add(f);
                 }
-            }
 
-            cmd.Connection.Close();
-            cmd.Dispose();
+                /* Existencias y movimientos devuelven, ademas de los pares
+                   de la ficha, una segunda tabla con los ocho movimientos
+                   recientes. Se consume en el mismo viaje para que abrir el
+                   drawer no haga una consulta por cada bloque visual. */
+                if (esInventario && dr.NextResult())
+                {
+                    while (dr.Read())
+                    {
+                        Dictionary<string, string> h = new Dictionary<string, string>();
+                        h["fecha"] = dr["FECHA"].ToString();
+                        h["hora"] = dr["HORA"].ToString();
+                        h["tipo"] = dr["TIPO"].ToString();
+                        h["sentido"] = dr["SENTIDO"].ToString();
+                        h["cantidad"] = dr["CANTIDAD"].ToString();
+                        h["usuario"] = dr["USUARIO"].ToString();
+                        h["motivo"] = dr["MOTIVO"].ToString();
+                        h["orden"] = dr["ORDEN_TRABAJO"].ToString();
+                        h["ubicacion"] = dr["UBICACION"].ToString();
+                        h["esEste"] = Convert.ToBoolean(dr["ES_ESTE"]) ? "1" : "0";
+
+                        int usuarioId;
+                        int usuarioFoto;
+
+                        if (!int.TryParse(dr["USUARIO_ID"].ToString(), out usuarioId)) usuarioId = -1;
+                        if (!int.TryParse(dr["USUARIO_FOTO"].ToString(), out usuarioFoto)) usuarioFoto = 0;
+
+                        h["avatar"] = string.IsNullOrEmpty(h["usuario"])
+                            ? Avatar.SinAsignar("Sin usuario")
+                            : Avatar.Persona(usuarioId, h["usuario"], usuarioFoto);
+
+                        historial.Add(h);
+                    }
+                }
+            }
 
             r["error"] = false;
         }
@@ -79,8 +117,17 @@ public class WsDetalle : System.Web.Services.WebService
             r["error"] = true;
             r["detalle"] = ex.Message;
         }
+        finally
+        {
+            if (cmd != null)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+        }
 
         r["filas"] = filas;
+        r["historial"] = historial;
 
         return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(r);
     }

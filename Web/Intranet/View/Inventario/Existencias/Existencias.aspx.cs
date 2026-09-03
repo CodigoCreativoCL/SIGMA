@@ -117,6 +117,13 @@ public partial class View_Inventario_Existencias_Existencias : System.Web.UI.Pag
         item["REPUESTO_CODIGO"].Text = "";
         item["REPUESTO_CODIGO"].Controls.Add(ver);
 
+        /* La ficha completa se abre por repuesto; el drawer, en cambio,
+           necesita distinguir el saldo de ESTA bodega. Se le entrega su
+           propio token cifrado en la fila y el navegador nunca ve el id. */
+        item.Attributes["data-sgx-token"] = Server.UrlEncode(
+            Tools.Crypto.Encrypt("Id=" + f.isa_id));
+        item.Attributes["data-sgx-readonly"] = "1";
+
         // ---- Ubicación: vacío no se entiende, "sin registrar" sí ----
         if (string.IsNullOrEmpty(f.ubicacion_codigo))
             item["UBICACION_CODIGO"].Text =

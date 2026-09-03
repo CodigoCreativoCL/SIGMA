@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Clientes/Cliente/Identidad.aspx" hash="fffffff3c3134113" filehash="e47c85094812f000" flags="110000" assembly="App_Web_oq01oszh" type="ASP.view_clientes_cliente_identidad_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Clientes/Cliente/Identidad.aspx" hash="fffffff3c3134113" filehash="eb11b8bf1e954b12" flags="110000" assembly="App_Web_3hpuifxi" type="ASP.view_clientes_cliente_identidad_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master" />
         <filedep name="/C:/Program Files/Git/Check/Master/Default.master.cs" />
