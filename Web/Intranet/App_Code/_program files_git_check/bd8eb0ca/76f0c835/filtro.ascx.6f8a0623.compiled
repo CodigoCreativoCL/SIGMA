@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Controls/Filtro.ascx" hash="fffffff3c3134113" filehash="9dc672049a5f0ebc" flags="110000" assembly="App_Web_c1q2omvs" type="ASP.view_comun_controls_filtro_ascx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Filtro.ascx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Filtro.ascx.cs" />
-    </filedeps>
-</preserve>

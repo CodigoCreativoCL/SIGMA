@@ -217,6 +217,14 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.act_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.act_fecha_actualizacion);
+
+            // Vista previa de la imagen actual, si la tiene.
+            int idImagen = new ActivoImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
+            if (idImagen > 0)
+            {
+                imgActual.Src = UrlArchivo.Ver(idImagen);
+                pnlImagenActual.Visible = true;
+            }
         }
         else
         {
@@ -332,7 +340,13 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             if (!respuesta.error)
             {
                 Id = respuesta.codigo;
-                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+
+                // La imagen es opcional: si se eligió una, se sube y se enlaza
+                // como imagen de referencia del activo. Un fallo aquí no anula
+                // el guardado del activo; solo avisa.
+                string avisoImg = GuardarImagen(Id);
+
+                Tools.tools.ClientAlert(respuesta.detalle + avisoImg, "ok", true);
             }
             else
             {
@@ -342,6 +356,53 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         catch (Exception ex)
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Sube la imagen elegida (si la hay) y la deja como imagen del activo.
+    /// Devuelve "" si todo fue bien o no había imagen, o un aviso si falló la
+    /// carga —sin echar abajo el guardado del activo, que ya está hecho—.
+    /// </summary>
+    private string GuardarImagen(int activo)
+    {
+        if (activo <= 0) return "";
+
+        bool haySubida = fuImagen != null && fuImagen.HasFile;
+
+        // Sin imagen nueva: si marcó "quitar la imagen actual", se desvincula.
+        if (!haySubida)
+        {
+            if (chkQuitarImagen != null && chkQuitarImagen.Checked)
+                new ActivoImagenController().DesvincularImagen(activo);
+            return "";
+        }
+
+        try
+        {
+            byte[] contenido = fuImagen.FileBytes;
+            if (contenido == null || contenido.Length == 0) return "";
+
+            Archivo arc = new Archivo();
+            arc.arc_cliente = SitioBase.Session.ClienteId();
+            arc.arc_archivo_categoria = 10;   // REFERENCIA (imagen de referencia)
+            arc.arc_nombre_original = System.IO.Path.GetFileName(fuImagen.FileName);
+            arc.arc_mime = fuImagen.PostedFile != null ? fuImagen.PostedFile.ContentType : null;
+            arc.contenido = contenido;
+
+            Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
+            if (r.error || r.codigo <= 0)
+                return " (la imagen no se pudo guardar: " + r.detalle + ")";
+
+            int vin = new ActivoImagenController().VincularImagen(activo, r.codigo);
+            if (vin < 0)
+                return " (la imagen se subió pero no se pudo enlazar al activo)";
+
+            return "";
+        }
+        catch (Exception ex)
+        {
+            return " (la imagen no se pudo guardar: " + ex.Message + ")";
         }
     }
 }

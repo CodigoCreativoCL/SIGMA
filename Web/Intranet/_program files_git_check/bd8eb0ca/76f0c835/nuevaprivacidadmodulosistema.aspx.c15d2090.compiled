@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx" hash="fffffff3c3134113" filehash="100d5061f5a29dd6" flags="110000" assembly="App_Web_c4pmy0xc" type="ASP.view_root_privacidadmodulosistema_nuevaprivacidadmodulosistema_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx.cs" />
-    </filedeps>
-</preserve>
