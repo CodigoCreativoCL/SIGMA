@@ -30,7 +30,7 @@
 
     <!-- AjaxProgress CSS -->
     <link href="../Css/AjaxProgress/cssUpdateProgress.css" rel="stylesheet" />
-    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/AjaxProgress/UpdateProgress.css?vrs=2" rel="stylesheet" />
 
     <!-- Default CSS -->
     <link href="../Css/Default/Default.css?vrs=4" rel="stylesheet" />
@@ -61,7 +61,7 @@
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=7" rel="stylesheet" />
-
+    <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
 
@@ -71,7 +71,7 @@
 
     <!-- WebControls CSS -->
     <link href="../Css/UI/WebControls/calendar/CSS/Classic.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/UI/WebControls/Button.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/UI/WebControls/Button.css?vrs=3" rel="stylesheet" />
     <link href="../Css/UI/WebControls/TextBox.css?vrs=1" rel="stylesheet" />
     <link href="../Css/UI/WebControls/CheckBox.css?vrs=1" rel="stylesheet" />
 
@@ -103,8 +103,16 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=14" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-listas.css?vrs=13" rel="stylesheet" />
+    <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
+         reglas de Grid.css y Button.css que traen !important, y para
+         ganarles hay que cargarla al final. --%>
+    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=15" rel="stylesheet" />
+    <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
+    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=2" rel="stylesheet" />
 </head>
 
 <body data-sidebar="dark">
@@ -146,11 +154,17 @@
                lleva el modal y el usuario ya no vuelve a mirar la campana. */
             if (id && window.sigmaAlertas) sigmaAlertas.leer(id);
 
-            var oWin = $find("<%=rwiNotificacion.ClientID %>");
-            if (!oWin) return false;
+            /* El modal de SIGMA, igual que en el resto del sitio. La
+               comprobacion de existencia ya no hace falta: el componente se
+               crea al primer uso, no es un control que pueda no haberse
+               renderizado. */
+            SigmaModal.open({
+                url: query ? url + "?query=" + query : url,
+                title: 'Detalle de la alerta',
+                width: 1000,
+                initialHeight: 680
+            });
 
-            oWin.setUrl(query ? url + "?query=" + query : url);
-            oWin.show();
             return false;
         }
     </script>
@@ -171,7 +185,7 @@
                              que ir ENTRE los dos. --%>
                         <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
-                    <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
+                    <asp:ScriptReference Path="~/Js/Library.js?vrs=9" />
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                     <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                     <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />
@@ -186,59 +200,21 @@
                 <asp:UpdateProgress ID="UpdateProg1" DisplayAfter="0" runat="server">
                     <ProgressTemplate>
                         <div class="up-card">
-                            <div class="up-spinner-wrap">
-                                <div class="up-ring"></div>
-                                <div class="up-svg-box">
-                                    <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
-                                        <defs>
-                                            <filter id="upGlow">
-                                                <feGaussianBlur result="blur" stdDeviation="2" />
-                                                <feComposite in="SourceGraphic" in2="blur" operator="over" />
-                                            </filter>
-                                        </defs>
-                                        <g transform="translate(200, 200)">
-                                            <circle cx="0" cy="0" fill="#004a80" r="12">
-                                                <animate attributeName="r" dur="3s" repeatCount="indefinite" values="12;14;12" />
-                                            </circle>
-                                            <g opacity="0.6" stroke="#cfdaf2" stroke-width="1.5">
-                                                <line x1="0" y1="0" x2="60" y2="-40">
-                                                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="20s" repeatCount="indefinite" />
-                                                </line>
-                                                <line x1="0" y1="0" x2="-50" y2="-70">
-                                                    <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="25s" repeatCount="indefinite" />
-                                                </line>
-                                                <line x1="0" y1="0" x2="40" y2="80">
-                                                    <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="30s" repeatCount="indefinite" />
-                                                </line>
-                                                <line x1="0" y1="0" x2="-80" y2="30">
-                                                    <animateTransform attributeName="transform" type="rotate" from="0" to="-360" dur="22s" repeatCount="indefinite" />
-                                                </line>
-                                            </g>
-                                            <g>
-                                                <circle fill="#4a90e2" filter="url(#upGlow)" r="8">
-                                                    <animateMotion dur="8s" path="M -100,0 A 100,100 0 1 1 100,0 A 100,100 0 1 1 -100,0" repeatCount="indefinite" />
-                                                </circle>
-                                                <circle fill="#004a80" opacity="0.8" r="6">
-                                                    <animateMotion dur="12s" path="M 0,-130 A 130,130 0 1 0 0,130 A 130,130 0 1 0 0,-130" repeatCount="indefinite" />
-                                                </circle>
-                                                <circle fill="#7baed4" r="10">
-                                                    <animateMotion dur="15s" path="M 150,0 A 150,150 0 1 1 -150,0 A 150,150 0 1 1 150,0" repeatCount="indefinite" />
-                                                </circle>
-                                            </g>
-                                            <path d="M -100,0 L 0,-130 L 150,0 L 0,130 L -100,0 Z" fill="none" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
-                                            <path d="M 0,0 L -100,0 M 0,0 L 0,-130 M 0,0 L 150,0 M 0,0 L 0,130" opacity="0.3" stroke="#cfdaf2" stroke-width="1" />
-                                            <circle cx="0" cy="0" fill="none" r="0" stroke="#004a80" stroke-width="2">
-                                                <animate attributeName="r" dur="4s" from="0" to="180" repeatCount="indefinite" />
-                                                <animate attributeName="opacity" dur="4s" from="0.4" to="0" repeatCount="indefinite" />
-                                            </circle>
-                                        </g>
-                                    </svg>
-                                </div>
+                            <div class="up-brand-stage" aria-hidden="true">
+                                <svg class="up-vector-trails" viewBox="0 0 160 150">
+                                    <path d="M52 124C38 96 68 87 57 57C51 41 58 25 71 13" />
+                                    <path d="M82 128C68 102 92 89 83 65C77 48 85 31 97 18" />
+                                    <path d="M108 123C98 101 121 91 113 69C107 52 116 40 126 30" />
+                                </svg>
+                                <span class="up-particle is-1"></span><span class="up-particle is-2"></span>
+                                <span class="up-particle is-3"></span><span class="up-particle is-4"></span>
+                                <span class="up-particle is-5"></span><span class="up-particle is-6"></span>
+                                <img class="up-logo" src="<%=ResolveUrl("~/Imagen/sigma-isotipo-gradient.svg") %>" alt="" />
                             </div>
                             <div class="up-text-area">
-                                <span class="up-label-caps">SINCRONIZANDO DATOS</span>
+                                <span class="up-label-caps">PROCESANDO EN SIGMA</span>
                                 <div class="up-timer">
-                                    Tiempo de Carga:
+                                    Tiempo transcurrido:
                                     <span class="up-bold">
                                         <label id="lblModalMinutos">0</label>
                                         Minutos</span>
@@ -327,7 +303,6 @@
                     <!-- La ventana donde se abre el registro de la notificacion.
                          Una sola para todas: el tipo de alerta dice que ficha
                          cargar, asi que no hace falta una por modulo. -->
-                    <rad:RadWindow2 ID="rwiNotificacion" runat="server" Width="1000" Height="680" />
 
                     <li class="dropdown notification-list sg-notif">
                         <%-- La campana del kit de marca. Variante LIGHT porque la
@@ -346,7 +321,7 @@
                             <asp:Literal ID="litBadgeAlertas" runat="server" />
                         </a>
 
-                        <div class="dropdown-menu dropdown-menu-right sg-notif-panel">
+                        <div class="dropdown-menu dropdown-menu-right sg-notif-panel" data-sg-notif-panel role="region" aria-label="Centro de notificaciones">
 
                             <%-- MARCAR LEIDO OCURRE EN EL SERVIDOR
 
@@ -367,9 +342,19 @@
                                 <ContentTemplate>
 
                             <div class="sg-notif-cabecera">
-                                <span class="titulo">Alertas</span>
-                                <asp:LinkButton ID="lnkLeerTodo" runat="server" CssClass="sg-notif-leer"
-                                    OnClick="lnkLeerTodo_Click" Text="Marcar todo como leído" />
+                                <div>
+                                    <span class="sg-notif-eyebrow">Centro de notificaciones</span>
+                                    <span class="titulo">Actividad que requiere atención</span>
+                                    <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
+                                </div>
+                                <div class="sg-notif-cabecera-acciones">
+                                    <asp:LinkButton ID="lnkLeerTodo" runat="server" CssClass="sg-notif-leer"
+                                        OnClick="lnkLeerTodo_Click" Text="Marcar todo como leído" />
+                                    <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
+                                            aria-label="Cerrar centro de notificaciones">
+                                        <i class="mdi mdi-close" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="sg-notif-cuerpo">
@@ -406,7 +391,9 @@
                             </div>
 
                             <div class="sg-notif-pie">
-                                <asp:HyperLink ID="lnkVerTodas" runat="server" Text="Ver todas" />
+                                <asp:HyperLink ID="lnkVerTodas" runat="server">
+                                    Ver todas las notificaciones <i class="mdi mdi-arrow-right"></i>
+                                </asp:HyperLink>
                             </div>
 
                                 </ContentTemplate>
@@ -607,6 +594,18 @@
                     });
                 });
             </script>
+
+            <%-- Modal propio SIGMA. Las fichas siguen siendo paginas WebForms,
+                 pero el marco, el responsive y el ciclo de vida ya no dependen
+                 de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=2"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=4"></script>
+
+            <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,
+                 filtros, permisos y postbacks; agrega la lectura en drawer. --%>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-listas.js") %>?vrs=15"></script>
 
             <asp:ContentPlaceHolder ID="chpScript" runat="server">
             </asp:ContentPlaceHolder>

@@ -34,4 +34,14 @@ namespace SitioBase.Model
         public bool? filtro_habilitado { get; set; }
         public bool quita_planta { get; set; }
     }
+
+    [Serializable]
+    public class GrupoEspecialidadResumen
+    {
+        public int esp_id { get; set; }
+        public string esp_nombre { get; set; }
+        public int cantidad { get; set; }
+        public bool es_predominante { get; set; }
+        public bool es_empate { get; set; }
+    }
 }

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx" hash="fffffff3c3134113" filehash="9416e287a7e2c632" flags="110000" assembly="App_Web_tchz45m5" type="ASP.view_inventario_compatibilidades_repuestocompatibilidad_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx" hash="fffffff3c3134113" filehash="a6bba9583b22db7d" flags="110000" assembly="App_Web_yhmafa2u" type="ASP.view_inventario_compatibilidades_repuestocompatibilidad_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />

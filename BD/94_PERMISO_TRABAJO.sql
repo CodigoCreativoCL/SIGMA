@@ -213,6 +213,16 @@ SET @HOY = [dbo].[FNC_PAIS_HORA]((SELECT cli_pais FROM [dbo].[Cliente] WHERE cli
                 es.pte_codigo                       AS ESTADO_CODIGO,
 
                 ISNULL(so.usu_nombre + ' ' + so.usu_apellido_paterno, '') AS SOLICITANTE_NOMBRE,
+            /* La identidad del solicitante, no solo su nombre.
+
+                   El listado dibuja su avatar, y un avatar necesita dos cosas que
+                   un nombre no trae: el ID -de donde sale su color, que es lo que
+                   permite reconocerlo de una pantalla a otra- y la foto si la
+                   subio. Sin el id, el color tendria que salir del nombre, y un
+                   hash de letras da colores repetidos: con los siete usuarios
+                   reales del cliente daba solo cuatro. */
+                ISNULL(so.usu_id, 0) AS SOLICITANTE_ID,
+                ISNULL(so.usu_archivo_foto, 0) AS SOLICITANTE_FOTO,
                 ISNULL(uc.usu_nombre + ' ' + uc.usu_apellido_paterno, '') AS USUARIO_CREACION_NOMBRE,
                 ISNULL(ua.usu_nombre + ' ' + ua.usu_apellido_paterno, '') AS USUARIO_ACTUALIZACION_NOMBRE,
 

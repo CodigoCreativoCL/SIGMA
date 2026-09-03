@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Organizacion/CentrosCosto/CentroCosto.aspx" hash="fffffff3c3134113" filehash="d9129335077ef1a3" flags="110000" assembly="App_Web_iejrklwv" type="ASP.view_organizacion_centroscosto_centrocosto_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Organizacion/CentrosCosto/CentroCosto.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Organizacion/CentrosCosto/CentroCosto.aspx.cs" />
+    </filedeps>
+</preserve>

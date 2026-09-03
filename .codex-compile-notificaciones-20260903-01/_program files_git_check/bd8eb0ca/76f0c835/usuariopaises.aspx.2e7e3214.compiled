@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/UsuarioPaises.aspx" hash="fffffff3c3134113" filehash="98bc142fc5971886" flags="110000" assembly="App_Web_tdfda0ax" type="ASP.view_root_mantenedores_usuarios_usuariopaises_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/UsuarioPaises.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/UsuarioPaises.aspx.cs" />
+    </filedeps>
+</preserve>

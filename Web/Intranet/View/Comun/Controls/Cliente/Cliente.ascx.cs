@@ -71,14 +71,25 @@ public partial class View_Comun_Controls_Cliente_Cliente : System.Web.UI.UserCon
     {
         if (IdCliente == 0)
         {
-            ragTab.Tabs[1].Visible = false;
-            ragTab.Tabs[2].Visible = false;
-           
+            /* Sin cliente guardado solo se puede ver la identidad: contactos,
+               usuarios y plantas cuelgan de un id que todavía no existe.
+
+               Se ocultan TODAS menos la primera, en vez de nombrarlas por
+               índice. Antes decía Tabs[1] y Tabs[2]; al agregar Contactos en
+               medio, esos índices pasaron a apuntar a otras pestañas y
+               Plantas quedaba visible sin cliente. La intención sobrevive a
+               que alguien agregue una pestaña más; los índices no. */
+            for (int i = 1; i < ragTab.Tabs.Count; i++)
+                ragTab.Tabs[i].Visible = false;
+
             IdCliente = wucIdentidad.IdCliente;
         }
 
         wucIdentidad.IdCliente = IdCliente;
         wucIdentidad.ReadOnly = ReadOnly;
+
+        wucContactos.IdCliente = IdCliente;
+        wucContactos.ReadOnly = ReadOnly;
 
         wucUsuarios.IdCliente = IdCliente;
         wucUsuarios.ReadOnly = ReadOnly;

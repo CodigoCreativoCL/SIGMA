@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/RecuperarClave.aspx" hash="fffffff3c3134113" filehash="2c894b2c2bbef5a1" flags="110000" assembly="App_Web_khgfqzgi" type="ASP.recuperarclave_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/RecuperarClave.aspx" />
+        <filedep name="/C:/Program Files/Git/Check/RecuperarClave.aspx.cs" />
+    </filedeps>
+</preserve>

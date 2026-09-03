@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirEspecialidad(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Especialidades/UsuarioEspecialidad.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Organizacion/Especialidades/UsuarioEspecialidad.aspx") %>?query=' + query,
+                title: 'Usuario especialidad',
+                width: 900,
+                initialHeight: 480
+            });
         }
 
         function refresh() {
@@ -59,7 +62,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="900" Height="480" />
 
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus especialidades.</p>
@@ -77,9 +79,13 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="ues_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Registrar" CssClass="icono_guardar" OnClientClick="abrirEspecialidad(0)" />
-                            <asp:LinkButton ID="lnkEliminar" runat="server" Text="Eliminar" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea eliminar los registros seleccionados?');" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sigma-accion is-primaria" OnClientClick="abrirEspecialidad(0)">
+                                <i class="mdi mdi-certificate-outline"></i><span>Registrar especialidad</span>
+                            </asp:LinkButton>
+                            <asp:LinkButton ID="lnkEliminar" runat="server" CssClass="sigma-accion is-peligro" OnClick="lnkEliminar_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea eliminar los registros seleccionados?');">
+                                <i class="mdi mdi-trash-can-outline"></i><span>Eliminar</span>
+                            </asp:LinkButton>
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

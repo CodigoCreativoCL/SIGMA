@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/Master/Simple.master" hash="fffffff3c3134113" filehash="f687b2916a4d913b" flags="110000" assembly="App_Web_o00ayw1h" type="ASP.master_simple_master">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
+    </filedeps>
+</preserve>

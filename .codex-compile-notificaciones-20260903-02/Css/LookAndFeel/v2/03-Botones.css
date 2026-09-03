@@ -1,0 +1,9 @@
+﻿/* =============================================================
+   FACILITYGES - LOOK & FEEL v2
+   El relook "M3 Expressive" de los botones (WebControls:PushButton)
+   se aplica directamente en Css/UI/WebControls/Button.css usando
+   las variables --fg-m3-* definidas en 01-Variables.css. Este
+   archivo se mantiene vacio para no duplicar esas reglas (se carga
+   antes que Button.css, por lo que cualquier regla aqui quedaria
+   sobrescrita).
+   ============================================================= */

@@ -35,6 +35,87 @@ namespace SitioBase.Model
         public bool pro_genera_automaticamente { get; set; }
         public bool pro_habilitado { get; set; }
 
+        #region Alcance y asignación
+
+        /// <summary>
+        /// Dónde se hace, de lo general a lo particular: planta, área y
+        /// equipo. Los tres son opcionales y se pueden llenar por niveles.
+        ///
+        /// Antes no existían: la tabla decía cuándo y cada cuánto, pero no
+        /// dónde. Una regla que genera trabajo sin decir en qué instalación
+        /// se hace no es una programación, es un recordatorio — y la orden
+        /// que salga de ella va a exigir la instalación de todos modos.
+        /// </summary>
+        public int? pro_cliente_instalacion { get; set; }
+        public string INSTALACION_NOMBRE { get; set; }
+
+        public int? pro_instalacion_area { get; set; }
+        public string AREA_NOMBRE { get; set; }
+
+        public int? pro_activo { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+
+        /// <summary>
+        /// Quién responde: una persona O un GRUPO DE TRABAJO, nunca los dos.
+        ///
+        /// Un grupo de trabajo es la cuadrilla —personas concretas, con líder
+        /// y especialidad—, no un perfil de seguridad. Asignarle una
+        /// programación a un perfil sería asignársela a todos los que tengan
+        /// ese permiso, incluidos los de otra planta.
+        ///
+        /// Las dos a la vez es la forma más común de que al final no responda
+        /// nadie. La base lo impide con CK_PRO_RESPONSABLE_UNICO.
+        /// </summary>
+        /// <summary>
+        /// Los nombres, ya armados: "Ana Pérez, Luis Soto".
+        ///
+        /// Una programación puede tener VARIAS personas sin que haya que
+        /// inventarles una cuadrilla. Antes era una sola columna, y para
+        /// asignarle el trabajo a tres técnicos había que crear un grupo:
+        /// nacían cuadrillas de un solo uso que después nadie mantenía, y el
+        /// catálogo de grupos dejaba de significar nada.
+        /// </summary>
+        public string RESPONSABLES { get; set; }
+
+        /// <summary>Los ids, separados por coma, para volver a marcarlos en la ficha.</summary>
+        public string RESPONSABLES_IDS { get; set; }
+
+        public int? pro_grupo_trabajo { get; set; }
+        public string GRUPO_NOMBRE { get; set; }
+
+        /// <summary>Cómo leer el alcance en una línea.</summary>
+        public string AlcanceTexto
+        {
+            get
+            {
+                if (pro_cliente_instalacion == null) return "";
+
+                string t = INSTALACION_NOMBRE ?? "";
+
+                if (!string.IsNullOrEmpty(AREA_NOMBRE)) t += "  ·  " + AREA_NOMBRE;
+
+                if (!string.IsNullOrEmpty(ACTIVO_CODIGO))
+                    t += "  ·  " + ACTIVO_CODIGO +
+                         (string.IsNullOrEmpty(ACTIVO_NOMBRE) ? "" : " " + ACTIVO_NOMBRE);
+
+                return t;
+            }
+        }
+
+        /// <summary>Quién responde, o vacío si no se asignó.</summary>
+        public string AsignacionTexto
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(RESPONSABLES)) return RESPONSABLES;
+                if (!string.IsNullOrEmpty(GRUPO_NOMBRE)) return GRUPO_NOMBRE;
+                return "";
+            }
+        }
+
+        #endregion
+
         public int pro_usuario_creacion { get; set; }
         public DateTime? pro_fecha_creacion { get; set; }
         public int? pro_usuario_actualizacion { get; set; }
@@ -244,6 +325,18 @@ namespace SitioBase.Model
         public bool desplazada { get; set; }
         public string motivo { get; set; }
         public bool es_pasada { get; set; }
+
+        /// <summary>
+        /// La fecha existía en la regla pero una exclusión de tipo "no generar
+        /// nada" —la parada de planta— la tapó.
+        ///
+        /// La función la calculaba y después la tiraba con un WHERE: la lista
+        /// salía con días faltantes y nada que explicara por qué, así que
+        /// había que ir a la pestaña de exclusiones y cruzar a mano. Ahora
+        /// viene marcada, con el motivo.
+        /// </summary>
+        public bool descartada { get; set; }
+
         public string tipo_codigo { get; set; }
     }
 }

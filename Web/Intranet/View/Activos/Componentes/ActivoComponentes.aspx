@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirComponente(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo componente' : 'Editar componente',
+                width: 1040,
+                initialHeight: 620
+            });
         }
         function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
     </script>
@@ -42,8 +45,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="620" />
-
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus componentes.</p>
     </asp:Panel>
@@ -54,7 +55,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="aco_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="abrirComponente(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirComponente(0);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Dar de baja" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea dar de baja los componentes seleccionados?');" />
                         </div>

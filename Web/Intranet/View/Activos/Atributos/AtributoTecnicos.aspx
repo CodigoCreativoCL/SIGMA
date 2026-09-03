@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirAtributo(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Activos/Atributos/AtributoTecnico.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Atributos/AtributoTecnico.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo atributo técnico' : 'Editar atributo técnico',
+                width: 860,
+                initialHeight: 580
+            });
         }
         function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
     </script>
@@ -42,8 +45,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="820" Height="580" />
-
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus atributos.</p>
     </asp:Panel>
@@ -54,7 +55,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="ate_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="abrirAtributo(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirAtributo(0);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Dar de baja" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea dar de baja los atributos seleccionados?');" />
                         </div>

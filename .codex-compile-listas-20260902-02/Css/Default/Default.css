@@ -1,0 +1,78 @@
+﻿fieldset {
+    padding: .35em .625em .75em !important;
+    /*margin: 0 2px;*/
+    border: 1px solid #c0c0c0 !important;
+    width: 100% !important;
+}
+
+legend {
+    padding: 0 !important;
+    border: 0 !important;
+    width: auto !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+}
+
+
+.Button {
+    font-family: Roboto,sans-serif;
+    background-color: #20a6cf;
+    line-height: 10px;
+    font-size: 15px;
+    color: #fff !important;
+    border: 0px;
+    padding: 18px 24px;
+}
+
+.Button:hover {
+    background-color: #1a83a3 !important;
+    color: #fff !important;
+}
+
+.ButtonCerrar {
+    font-family: Roboto,sans-serif;
+    background-color: #6c757d;
+    line-height: 10px;
+    font-size: 15px;
+    color: #fff !important;
+    border: 0px;
+    padding: 18px 24px;
+}
+
+.ButtonCerrar:hover {
+    background-color: #4a5157 !important;
+    color: #fff !important;
+}
+
+.icono_dowload {
+    background-repeat: no-repeat;
+    background-image: url('../../Imagen/download.png');
+    background-position: 0px;
+    background-repeat: no-repeat;
+    padding-top: 4px !important;
+    padding-left: 20px;
+    font-size: 17px;
+    text-decoration: underline;
+}
+
+.icono_problema {
+    font-family: Roboto,sans-serif;
+    font-size: 16px;
+    color: white;
+    margin: 5px;
+    padding-left: 20px;
+    background-image: url('../../Imagen/icono_warning.png');
+    background-repeat: no-repeat;
+}
+
+.icono_ver_usuario:before {
+    content: "\f06e";
+    color: #53b4c7;
+    margin: 5px;
+    font-size: 15px;
+}
+
+.DescripcionTitulo{
+    font-size:20px;
+    font-weight:bold;
+}

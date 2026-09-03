@@ -8,11 +8,13 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirModulo(query) {
-            var oWin = $find("<%= rwiDetalle.ClientID %>");
-            if (!query) query = '';
-            oWin.setUrl('<%= ResolveUrl("~/View/Root/ModulosSistema/NuevoModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
-            oWin.set_title(!query ? 'Nuevo Módulo' : 'Editar Módulo');
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%= ResolveUrl("~/View/Root/ModulosSistema/NuevoModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
+            oWin.set_title(!query ? 'Nuevo Módulo' : 'Editar Módulo',
+                title: 'Nuevo modulo sistema',
+                width: 1000,
+                initialHeight: 380
+            });
         }
         function refreshModulos() {
             __doPostBack('<%= Grid.ClientID %>', '');
@@ -43,7 +45,6 @@
 
 </asp:Content>
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
