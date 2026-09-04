@@ -47,6 +47,23 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
     /// <summary>Los tipos del cliente, leidos una vez por peticion.</summary>
     private List<RepuestoTipo> _tipos;
 
+    /// <summary>
+    /// La portada de cada repuesto: id del repuesto -> id del archivo.
+    ///
+    /// Se pide UNA vez por peticion, no una por fila. Con trescientos
+    /// repuestos, preguntarla por fila serian trescientas consultas para
+    /// dibujar una pagina.
+    /// </summary>
+    private Dictionary<int, int> _portadas;
+
+    private Dictionary<int, int> Portadas()
+    {
+        if (_portadas == null)
+            _portadas = new RepuestoFotoController().GetPortadas();
+
+        return _portadas;
+    }
+
     private List<RepuestoTipo> Tipos()
     {
         if (_tipos == null)
@@ -160,7 +177,33 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
         if (marca.Length > 0)
             nombre += "<span class=\"sigma-inv-nota\">" + Server.HtmlEncode(marca) + "</span>";
 
-        item["REPUESTO"].Controls.Add(new Literal { Text = nombre });
+        /* LA MINIATURA
+
+           Un repuesto se reconoce por su forma antes que por su nombre: entre
+           "Rodamiento 6205" y "Rodamiento 6308" la foto decide en un vistazo y
+           el texto obliga a leer cuatro digitos.
+
+           El que no tiene foto lleva un recuadro con su icono, no un hueco:
+           una columna donde unas filas traen imagen y otras nada se ve rota, y
+           ademas el recuadro invita a cargarla.
+
+           `loading="lazy"`: con veinticinco filas por pagina, pedir las
+           veinticinco imagenes de golpe retrasa lo que si hay que leer. */
+        int archivo;
+        bool tieneFoto = Portadas().TryGetValue(r.rep_id, out archivo);
+
+        string celda = "<div class=\"sg-rep-fila\">";
+
+        celda += tieneFoto
+            ? "<span class=\"sg-rep-thumb\"><img src=\"" +
+              Server.HtmlEncode(SitioBase.UrlArchivo.Ver(archivo)) +
+              "\" alt=\"\" loading=\"lazy\" /></span>"
+            : "<span class=\"sg-rep-thumb is-vacia\" title=\"Sin foto\">" +
+              "<i class=\"mdi mdi-image-outline\"></i></span>";
+
+        celda += "<span class=\"sg-rep-nombre\">" + nombre + "</span></div>";
+
+        item["REPUESTO"].Controls.Add(new Literal { Text = celda });
 
         // ---- Características ----
         item["ATRIBUTOS"].Controls.Add(new Literal { Text = Atributos(r) });

@@ -4,6 +4,7 @@ using SitioBase.Model;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -88,6 +89,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
+        CargarGaleria();
+
         CargarDatos();
         CargarUmbrales();
         CargarLotes();
@@ -252,6 +255,156 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         }
 
         item["VENCE"].Controls.Add(new Literal { Text = html });
+    }
+
+    /* ======================================================================
+       LA GALERIA
+
+       Solo se dibuja cuando el repuesto YA existe: una foto necesita algo a
+       lo que colgarse, y un subidor en una ficha sin guardar promete algo que
+       no puede cumplir.
+
+       El <img> apunta a `VerArchivo.aspx` con el id CIFRADO. No se incrusta
+       la imagen en el HTML: asi el navegador la cachea entre aperturas de la
+       ficha, y el HTML de una galeria de ocho fotos no pesa ocho fotos.
+       ====================================================================== */
+    protected void CargarGaleria()
+    {
+        pnlGaleria.Visible = Id > 0;
+
+        if (Id <= 0) return;
+
+        bool puedeEditar = Token.Puede("CREAR EDITAR REPUESTOS");
+
+        fupFoto.Visible = puedeEditar;
+        lnkAgregarFoto.Visible = puedeEditar;
+
+        List<RepuestoFoto> fotos = new RepuestoFotoController().GetFotos(Id);
+
+        rptFotos.DataSource = fotos;
+        rptFotos.DataBind();
+
+        rptFotos.Visible = fotos.Count > 0;
+        pnlSinFotos.Visible = fotos.Count == 0;
+    }
+
+    protected void rptFotos_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item &&
+            e.Item.ItemType != ListItemType.AlternatingItem) return;
+
+        RepuestoFoto f = e.Item.DataItem as RepuestoFoto;
+
+        if (f == null) return;
+
+        bool puedeEditar = Token.Puede("CREAR EDITAR REPUESTOS");
+
+        LinkButton portada = (LinkButton)e.Item.FindControl("lnkPortada");
+        LinkButton quitar = (LinkButton)e.Item.FindControl("lnkQuitarFoto");
+
+        if (portada != null)
+        {
+            portada.CommandArgument = f.vinculo.ToString();
+
+            /* La que ya es portada no ofrece "hacer portada": un boton que no
+               cambia nada es una invitacion a preguntarse si funciono. */
+            portada.Visible = puedeEditar && !f.es_portada;
+            ScriptManager.GetCurrent(Page).RegisterPostBackControl(portada);
+        }
+
+        if (quitar != null)
+        {
+            quitar.CommandArgument = f.vinculo.ToString();
+            quitar.Visible = puedeEditar;
+            quitar.OnClientClick = "if (!ConfirSweetAlert(this, \'\', \'¿Quitar esta foto de la galería?\')) return false;";
+            ScriptManager.GetCurrent(Page).RegisterPostBackControl(quitar);
+        }
+
+        Literal lit = (Literal)e.Item.FindControl("litFoto");
+
+        if (lit == null) return;
+
+        string alt = string.IsNullOrEmpty(f.titulo) ? f.nombre : f.titulo;
+
+        StringBuilder b = new StringBuilder();
+
+        /* La miniatura enlaza al original en otra pestaña: el recorte sirve
+           para reconocerla, y para mirarla de verdad hace falta el tamaño
+           completo. */
+        b.Append("<a class=\"sg-galeria-foto\" href=\"" +
+                 Server.HtmlEncode(SitioBase.UrlArchivo.Ver(f.archivo)) +
+                 "\" target=\"_blank\" rel=\"noopener\" title=\"Ver en tamaño completo\">");
+
+        b.Append("<img src=\"" + Server.HtmlEncode(SitioBase.UrlArchivo.Ver(f.archivo)) +
+                 "\" alt=\"" + Server.HtmlEncode(alt) + "\" loading=\"lazy\" />");
+
+        if (f.es_portada)
+            b.Append("<span class=\"sg-galeria-portada\"><i class=\"mdi mdi-star\"></i>Portada</span>");
+
+        b.Append("</a>");
+
+        b.Append("<div class=\"sg-galeria-pie\" title=\"" + Server.HtmlEncode(f.nombre) + "\">" +
+                 Server.HtmlEncode(f.nombre) + "</div>");
+
+        lit.Text = b.ToString();
+    }
+
+    protected void rptFotos_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR REPUESTOS"))
+            {
+                Tools.tools.ClientAlert("No tiene permisos para editar las fotos.", "alerta");
+                return;
+            }
+
+            int vinculo;
+
+            if (!int.TryParse(Convert.ToString(e.CommandArgument), out vinculo)) return;
+
+            RepuestoFotoController controller = new RepuestoFotoController();
+            Respuesta respuesta;
+
+            if (e.CommandName == "quitar") respuesta = controller.Quitar(vinculo);
+            else if (e.CommandName == "portada") respuesta = controller.HacerPortada(vinculo);
+            else return;
+
+            Tools.tools.ClientAlert(respuesta.detalle, respuesta.error ? "alerta" : "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "error");
+        }
+    }
+
+    protected void lnkAgregarFoto_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR REPUESTOS"))
+            {
+                Tools.tools.ClientAlert("No tiene permisos para agregar fotos.", "alerta");
+                return;
+            }
+
+            if (!fupFoto.HasFile)
+            {
+                Tools.tools.ClientAlert("Elija una imagen.", "alerta");
+                return;
+            }
+
+            RepuestoFotoController controller = new RepuestoFotoController();
+
+            Respuesta respuesta = controller.Agregar(Id, fupFoto.FileBytes,
+                fupFoto.FileName, fupFoto.PostedFile.ContentType, null);
+
+            Tools.tools.ClientAlert(respuesta.detalle, respuesta.error ? "alerta" : "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "error");
+        }
     }
 
     protected void Bloqueo()
