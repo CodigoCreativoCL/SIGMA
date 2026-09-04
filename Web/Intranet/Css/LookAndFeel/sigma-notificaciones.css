@@ -74,6 +74,65 @@
 }
 
 
+/* ============================================================================
+   ERAN ENLACES, AHORA SON BOTONES
+
+   QUE PASO
+
+     Al pasar el centro de alertas y el panel de la campana a AJAX, los
+     `LinkButton` -que salen como <a>- se reemplazaron por <button> nativos: la
+     pestaña y la alerta ya no navegan a ninguna parte, solo cambian el estado
+     del cliente y piden el fragmento nuevo. Es lo correcto para lo que hacen y
+     ademas es lo accesible: un boton se activa con Espacio y un enlace no.
+
+     Pero esta hoja estaba escrita para <a>, que no trae estilo propio. Un
+     <button> si: el navegador le pone borde, fondo gris, tipografia del
+     sistema, texto CENTRADO y ancho ajustado al contenido. De golpe cada
+     alerta de la cola aparecio como una cajita gris con el texto al medio, y
+     las pestañas como tres botones de formulario.
+
+   POR QUE EL SELECTOR ES SOLO LA CLASE, SIN `button` DELANTE
+
+     Escrito `button.sg-alerta` tendria MAS especificidad que `.sg-alerta`, y
+     entonces este `border: 0` le ganaria al `border-bottom` que cada pieza
+     declara mas abajo: la lista quedaria sin sus separadores y la pestaña
+     activa sin su subrayado. Habria que ir deshaciendo el reset pieza por
+     pieza.
+
+     Con la clase sola la especificidad es la misma, asi que gana la que viene
+     despues. Este bloque va PRIMERO y solo tiene que ganarle al estilo del
+     navegador, cosa que cualquier regla de autor hace por definicion.
+   ============================================================================ */
+.sg-notif-item,
+.sg-alerta,
+.sg-tab,
+.sg-cao-revisar,
+.sg-btn,
+.sg-toast-cerrar {
+    margin: 0;
+    border: 0;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Solo la fila de la bandeja y la de la cola ocupan el ancho completo. Las
+   pestañas y los botones de accion van en fila: al 100% se apilarian uno
+   debajo de otro.
+
+   `.sg-btn` y `.sg-cao-revisar` se suman a la lista de arriba porque tambien
+   dejaron de ser <a> al pasar la pantalla a AJAX. `.sg-btn` vuelve a
+   declarar su borde y su fondo mas abajo, asi que recupera su aspecto de
+   boton; lo que gana con el reset es la tipografia de la aplicacion en vez de
+   la del sistema operativo. */
+.sg-notif-item,
+.sg-alerta { width: 100%; }
+
+
 /* ---- Una notificacion ---- */
 .sg-notif-item {
     display: flex;
@@ -117,13 +176,11 @@
     object-fit: contain;
 }
 
-/* El color lo pone la severidad, no el tipo: lo que decide si se
-   mira ahora es la gravedad, no de que modulo viene. */
-.sg-notif-item .icono.is-critica    { background-color: rgba(220, 38, 38, .14);  color: #b91c1c; }
-.sg-notif-item .icono.is-alta       { background-color: rgba(220, 38, 38, .10);  color: var(--sg-danger, #DC2626); }
-.sg-notif-item .icono.is-advertencia{ background-color: rgba(245, 158, 11, .14); color: #92610a; }
-.sg-notif-item .icono.is-baja       { background-color: rgba(37, 99, 235, .10);  color: var(--sg-info, #2563EB); }
-.sg-notif-item .icono.is-normal     { background-color: rgba(108, 92, 255, .10); color: var(--sg-purple, #6C5CFF); }
+/* EL ICONO NO SE TIÑE. Aca habia cinco fondos segun la gravedad. El simbolo
+   de SIGMA ya trae sus propios colores -turquesa, azul, morado, rosa- y
+   ponerlo sobre un cuadrado de color lo apaga: dos fondos, uno encima del
+   otro. La gravedad la dice la pastilla con su palabra, que se lee sin tener
+   que aprenderse un codigo de colores. */
 
 .sg-notif-item .texto { flex: 1 1 auto; min-width: 0; }
 
@@ -450,14 +507,16 @@
 .sg-notif-item.sev-critica.is-nueva { background-color: rgba(185, 28, 28, .055); }
 .sg-notif-item.sev-alta.is-nueva    { background-color: rgba(220, 38, 38, .045); }
 
-/* El halo del icono acompana, sin taparlo: el SVG de marca tiene
-   sus propios colores y pintarle encima lo apagaria. */
-.sg-notif-item .icono { background-color: rgba(108, 92, 255, .08); }
+/* ESTAS TRES ERAN EL ROJO Y EL AMARILLO PASTEL QUE NO SE IBAN.
 
-.sg-notif-item.sev-critica .icono { background-color: rgba(185, 28, 28, .12); }
-.sg-notif-item.sev-alta .icono    { background-color: rgba(220, 38, 38, .10); }
-.sg-notif-item.sev-advertencia .icono { background-color: rgba(245, 158, 11, .13); }
-.sg-notif-item.sev-baja .icono    { background-color: rgba(37, 99, 235, .10); }
+   Apuntaban a `.sg-notif-item.sev-critica .icono`, que son DOS clases mas un
+   descendiente: especificidad (0,3,0). Las reglas que intentaban limpiarlo mas
+   abajo apuntaban a `.sg-notif-item .icono`, (0,2,0), asi que perdian por mas
+   que vinieran despues. Estar al final no sirve de nada contra un selector mas
+   especifico.
+
+   Se borran de raiz en vez de taparse con una septima regla mas especifica
+   todavia. */
 
 /* El rotulo, junto a la antiguedad. Solo aparece en lo que pide
    accion: un "Normal" en cada fila le quitaria peso al que si. */
@@ -597,8 +656,6 @@
 .sg-notif-item .icono {
     width: 40px;
     height: 40px;
-    border-radius: 12px;
-    background: #f0edff;
 }
 .sg-notif-item .icono img { width: 29px; height: 29px; }
 .sg-notif-item .titulo { padding-right: 8px; color: #20293b; font-size: 11px; line-height: 1.32; }
@@ -953,7 +1010,27 @@
     color: var(--sg-text-primary);
 }
 
-.sg-select { flex: 1 1 46%; width: auto; }
+/* La flecha del sistema operativo se cambia por una propia. La nativa cambia
+   de forma, tamaño y color en cada plataforma -en Windows es un triangulo
+   relleno, en macOS dos chevrones- y al lado de los otros controles del panel
+   se lee como un campo prestado de otra pantalla.
+
+   `padding-right` reserva el hueco: sin el, un texto largo pasa por debajo de
+   la flecha. */
+.sg-select {
+    flex: 1 1 46%;
+    width: auto;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Edge dibuja su propia flecha ADEMAS de la nuestra. */
+.sg-select::-ms-expand { display: none; }
 .sg-input-area { min-height: 62px; resize: vertical; }
 
 .sg-input:focus, .sg-select:focus {
@@ -1609,3 +1686,487 @@
     .sg-anillo { width: 108px; height: 108px; }
     .sg-anillo-txt .n { font-size: 22px; }
 }
+
+
+/* ============================================================================
+   EL ESQUELETO DEL DETALLE
+
+   POR QUE UN ESQUELETO Y NO UNA RUEDITA
+
+     Una ruedita girando dice "espere" y nada mas. El esqueleto dice ademas
+     QUE va a llegar: chips arriba, un titulo ancho, dos lineas de texto, una
+     tarjeta. El ojo ya ubica donde va cada cosa, y cuando entra el contenido
+     no hay salto -las piezas aparecen donde ya estaba mirando-.
+
+   LAS BARRAS NO MIDEN TODAS LO MISMO
+
+     Un bloque de barras iguales se lee como una tabla. Los largos desparejos
+     se leen como texto, que es lo que de verdad viene.
+
+   EL BRILLO VA DE IZQUIERDA A DERECHA Y ES LENTO
+
+     1,4 segundos. Mas rapido parece que algo esta fallando; sin movimiento,
+     parece que la pantalla se colgo.
+   ============================================================================ */
+.sg-esq {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.sg-esq-fila { display: flex; gap: 8px; }
+
+.sg-esq-chip,
+.sg-esq-barra,
+.sg-esq-bloque {
+    display: block;
+    border-radius: 7px;
+
+    /* El brillo es un degradado mas ancho que el elemento, desplazandose. Con
+       `background-size: 200%` hay de donde correr sin que se vea el borde de
+       la textura. */
+    background: linear-gradient(100deg,
+                #eef0f5 30%, #f7f8fb 48%, #eef0f5 66%);
+    background-size: 220% 100%;
+    animation: sg-esq-brillo 1.4s ease-in-out infinite;
+}
+
+.sg-esq-chip { width: 96px; height: 22px; border-radius: 999px; }
+.sg-esq-chip.is-corto { width: 64px; }
+
+.sg-esq-barra { width: 100%; height: 12px; }
+.sg-esq-barra.is-titulo { width: 72%; height: 24px; border-radius: 9px; }
+.sg-esq-barra.is-meta { width: 54%; height: 11px; }
+.sg-esq-barra.is-medio { width: 84%; }
+.sg-esq-barra.is-corto { width: 38%; height: 14px; }
+
+.sg-esq-caja {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 6px;
+    padding: 16px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: var(--sg-radius-md, 12px);
+}
+
+.sg-esq-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.sg-esq-bloque { height: 86px; border-radius: 10px; }
+
+@keyframes sg-esq-brillo {
+    from { background-position: 140% 0; }
+    to   { background-position: -40% 0; }
+}
+
+/* Quien pidio menos movimiento ve el esqueleto quieto. Sigue cumpliendo su
+   funcion -decir que forma tiene lo que viene-, que no depende del brillo. */
+@media (prefers-reduced-motion: reduce) {
+    .sg-esq-chip,
+    .sg-esq-barra,
+    .sg-esq-bloque { animation: none; }
+}
+
+
+/* ============================================================================
+   EL PANEL, EN SILENCIO
+
+   QUE PASABA
+
+     Cada fila traia CINCO señales de color a la vez: el borde izquierdo teñido
+     por gravedad, el fondo del icono teñido por gravedad, la pastilla de
+     estado, la de "nueva", la de gravedad y el degradado de SIGMA AI. Seis
+     colores compitiendo en 88 pixeles de alto. Cuando todo grita, no se
+     escucha nada: la fila critica se veia igual de cargada que un stock bajo.
+
+   LA REGLA
+
+     Una sola señal de color por fila, y solo cuando hay algo que decidir.
+     Todo lo demas en escala de grises. El titulo -que es lo unico que hay que
+     leer- pasa a ser lo mas oscuro de la fila, que es como se lee primero.
+
+   EL BORDE DE COLOR SE VA
+
+     Era la señal mas ruidosa y la menos precisa: una barra vertical de 3px no
+     dice CUAL es la gravedad sin aprenderse el codigo de colores. La pastilla
+     con la palabra lo dice sin que haya que aprender nada, y con poca vision
+     tambien.
+
+   ESTA HOJA VA AL FINAL A PROPOSITO
+
+     Redefine reglas que estan mas arriba en este mismo archivo. Van juntas y
+     comentadas en un bloque en vez de repartidas: asi el criterio se lee
+     completo y el dia que haya que volver atras, se saca el bloque entero.
+   ============================================================================ */
+
+/* ---- Fuera todos los bordes de gravedad ---- */
+.sg-notif-item,
+.sg-notif-item.is-ai,
+.sg-notif-item.is-resuelta,
+.sg-notif-item.sev-critica,
+.sg-notif-item.sev-alta,
+.sg-notif-item.sev-advertencia {
+    border-left: 0;
+    padding-left: 14px !important;
+}
+
+/* El icono ya no tiene caja de ningun tono: ver "EL ICONO SIN CAJA" mas
+   abajo. Aca hubo un gris claro, que fue el paso intermedio entre el fondo
+   teñido por gravedad y no tener fondo. */
+
+/* ---- El titulo manda ---- */
+.sg-notif-item .titulo {
+    color: #141b28;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.sg-notif-item.is-nueva .titulo { font-weight: 750; }
+
+.sg-notif-item .detalle { color: #7b8496; }
+
+/* ---- Las pastillas, todas iguales y calladas ---- */
+.sg-notif-state,
+.sg-notif-item .cuando .sev {
+    margin-left: 0;
+    padding: 2px 7px;
+    border: 1px solid #e6e9f0;
+    border-radius: 999px;
+    background: transparent;
+    color: #79839a;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+/* "Nueva" no lleva color: ya lo dice el punto de la derecha y el titulo mas
+   oscuro. Tres señales para el mismo dato es una de mas. */
+.sg-notif-state.is-new,
+.sg-notif-item.is-resuelta .sg-notif-state {
+    border-color: #e6e9f0;
+    background: transparent;
+    color: #79839a;
+}
+
+/* ---- LA UNICA señal de color: la gravedad que pide accion ----
+   Solo CRITICA y ALTA llegan aca -el code-behind no emite la pastilla para
+   las demas-, y son justamente las dos que hacen que alguien deje lo que
+   esta haciendo. */
+.sg-notif-item.sev-critica .cuando .sev {
+    border-color: #f0c4cb;
+    background: #fdf2f4;
+    color: #a32a3d;
+}
+
+.sg-notif-item.sev-alta .cuando .sev {
+    border-color: #f4d3bd;
+    background: #fef6f1;
+    color: #a2551f;
+}
+
+/* ---- SIGMA AI: la marca, no un degradado ----
+   El degradado de tres colores era el elemento mas llamativo de la fila, y lo
+   que anuncia no es urgente: es de donde salio el aviso. Ahora va el simbolo
+   de SIGMA AI en chico con su nombre al lado, en la misma pastilla neutra que
+   el resto. Se reconoce por la marca, que es de lo que se trata. */
+.sg-notif-ai {
+    gap: 4px;
+    padding: 2px 8px 2px 4px;
+    border: 1px solid #ded7fb;
+    border-radius: 999px;
+    background: #f8f6ff;
+    color: #5b45c8;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.sg-notif-ai::before {
+    content: "";
+    width: 13px;
+    height: 13px;
+    background-image: url("../../Imagen/sigma-ai/sigma-ai-symbol-gradient.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    flex: 0 0 auto;
+}
+
+/* ---- El punto de sin leer, de un solo color ----
+   Teñirlo por gravedad lo hacia decir dos cosas a la vez: "no lo has visto" y
+   "es grave". Dice la primera, que es la suya. */
+.sg-notif-item .punto,
+.sg-notif-item.sev-critica .punto,
+.sg-notif-item.sev-alta .punto,
+.sg-notif-item.sev-advertencia .punto {
+    background-color: var(--sg-purple, #6C5CFF);
+}
+
+/* ---- Resuelta: se apaga entera, sin borde ---- */
+.sg-notif-item.is-resuelta { opacity: .62; }
+.sg-notif-item.is-resuelta .icono { filter: grayscale(1); opacity: .8; }
+
+/* ---- La separacion entre filas, mas tenue ---- */
+.sg-notif-item { border-bottom-color: #f0f2f6; }
+
+/* ---- "Revisar" deja de gritar ----
+   Estaba en morado fuerte y en negrita en TODAS las filas: seis enlaces
+   morados apilados pesaban mas que los titulos. Se enciende al pasar por
+   encima, que es cuando importa. */
+.sg-notif-action { color: #8590a5; font-weight: 700; }
+.sg-notif-item:hover .sg-notif-action { color: var(--sg-purple, #6C5CFF); }
+
+
+/* ============================================================================
+   EL DIBUJO NO SE VEIA PORQUE EL ARCHIVO ES CASI TODO MARGEN
+
+   LA MEDICION
+
+     `sigma-ai-status-*.svg` declara un `viewBox` de 144x144, pero el trazo
+     vive entre x=38..93 e y=36..94. Son unos 56 de 144: el dibujo ocupa el
+     39% del lienzo y el 61% restante es aire.
+
+     Dentro de una caja de 40px, con `object-fit: contain`, el navegador
+     encaja el LIENZO -no el dibujo-. Resultado: la marca se dibujaba a unos
+     15px. Por eso se veia diminuta y desvaida, y no porque el color fuera
+     tenue.
+
+   LA CORRECCION
+
+     Se agranda la imagen dentro de la caja y se recorta el aire sobrante con
+     `overflow: hidden`, que la caja ya tenia. Con factor 1.8 el trazo pasa de
+     ~15px a ~28px en una caja de 40: ocupa el 70%, que es lo que hace que se
+     lea como un simbolo y no como una mancha.
+
+     Se escala en vez de editar los SVG: son los archivos de marca y los usan
+     tambien la app y los correos. Cambiarles el `viewBox` aca los
+     desalinearia con el resto.
+
+   Aca hubo tambien una caja con borde y un tono de marca para las
+   predicciones. Se quito entera: ver "EL ICONO SIN CAJA" mas abajo.
+   ============================================================================ */
+.sg-notif-item .icono img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform-origin: center;
+}
+
+
+/* ============================================================================
+   CADA SVG, ENCUADRADO EN SU CAJA
+
+   POR QUE HAY UN NUMERO POR ARCHIVO Y NO UNO SOLO
+
+     Se midio el trazo real de cada uno -no el `viewBox`, que declara el
+     lienzo- y resultaron muy distintos entre si:
+
+     status-prediction          trazo 58% del lienzo   corrimiento  -4.3%,   9.9%   escala 1.35
+     status-analyzing           trazo 73% del lienzo   corrimiento   4.2%,   8.3%   escala 1.07
+     status-realtime            trazo 94% del lienzo   corrimiento   0.0%,   0.0%   escala 0.83
+     status-recommendation      trazo 61% del lienzo   corrimiento  -5.7%,  11.3%   escala 1.28
+     symbol-gradient            trazo 48% del lienzo   corrimiento  -1.2%,  -0.8%   escala 1.64
+
+     `realtime` casi llena su lienzo y `prediction` ocupa poco mas de la
+     mitad. Un factor unico, cualquiera que sea, deja a unos diminutos y
+     desborda a otros: con 1.8 el destello de `prediction` se salia por la
+     esquina y `realtime` se salia por los cuatro lados.
+
+   Y ADEMAS SE CORRIGE EL CENTRO
+
+     `prediction` y `recommendation` no estan centrados en su lienzo: el
+     destello de la esquina superior derecha corre el trazo hacia arriba y a
+     la derecha. `transform: scale` agranda desde el centro del ELEMENTO, asi
+     que sin corregirlo el dibujo crece hacia afuera por un lado y deja un
+     hueco por el otro. El corrimiento lo lleva al centro antes de escalar.
+
+   LOS NUMEROS ESTAN CALCULADOS, NO PROBADOS
+
+     Salen de medir los limites del trazo y resolver que escala lo deja
+     ocupando el 78% de la caja. El dia que cambie un SVG de marca, se vuelve
+     a medir y salen otros; no hay que ajustarlos a ojo.
+
+     Se miden los archivos en vez de editarlos porque son los originales de
+     marca y los usan tambien la app y los correos: cambiarles el `viewBox`
+     los desalinearia con el resto del producto.
+   ============================================================================ */
+
+/* El encuadre por omision, para cualquier icono que no este en la lista. */
+.sg-notif-item .icono img { transform: none; }
+
+.sg-notif-item .icono img[src*="status-prediction"],
+.sg-notif-item .icono svg[data-sg-icono="status-prediction"] {
+    transform: translate(-4.34%, 9.90%) scale(1.35);
+}
+
+.sg-notif-item .icono img[src*="status-analyzing"],
+.sg-notif-item .icono svg[data-sg-icono="status-analyzing"] {
+    transform: translate(4.17%, 8.33%) scale(1.07);
+}
+
+.sg-notif-item .icono img[src*="status-realtime"],
+.sg-notif-item .icono svg[data-sg-icono="status-realtime"] {
+    transform: translate(0.00%, 0.00%) scale(0.83);
+}
+
+.sg-notif-item .icono img[src*="status-recommendation"],
+.sg-notif-item .icono svg[data-sg-icono="status-recommendation"] {
+    transform: translate(-5.73%, 11.28%) scale(1.28);
+}
+
+.sg-notif-item .icono img[src*="symbol-gradient"],
+.sg-notif-item .icono svg[data-sg-icono="symbol-gradient"] {
+    transform: translate(-1.17%, -0.78%) scale(1.64);
+}
+
+
+/* ============================================================================
+   EL ICONO SIN CAJA
+
+   La caja teñida era un envoltorio alrededor de un dibujo que ya trae sus
+   propios colores: el simbolo de SIGMA es un grafo de nodos turquesa, azul,
+   morado y rosa. Ponerlo sobre un cuadrado de color lo apagaba —dos fondos,
+   uno encima del otro— y de paso hacia que seis filas seguidas se vieran como
+   seis pastillas iguales.
+
+   Sin caja, lo que se ve es el simbolo. Y como no hay borde que respetar, el
+   dibujo puede ocupar mas espacio del que le dejaba el cuadrado.
+   ============================================================================ */
+.sg-notif-item .icono,
+.sg-notif-item .icono.is-critica,
+.sg-notif-item .icono.is-alta,
+.sg-notif-item .icono.is-advertencia,
+.sg-notif-item .icono.is-baja,
+.sg-notif-item .icono.is-normal,
+.sg-notif-item.is-ai .icono,
+.sg-notif-item.is-resuelta .icono,
+.sg-notif-item.is-resuelta.is-ai .icono {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+
+    /* `visible` para que el trazo pueda respirar al animarse: al aparecer, los
+       nodos crecen un poco por encima de su tamaño final y con `hidden` se
+       recortarian contra el borde de la caja. */
+    overflow: visible;
+}
+
+.sg-notif-item .icono svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* Resuelta: el simbolo se apaga, no se enmarca. */
+.sg-notif-item.is-resuelta .icono { filter: grayscale(1); opacity: .45; }
+
+
+/* ============================================================================
+   EL FILTRO: UN SEGMENTADO, NO TRES BOTONES
+
+   POR QUE SALIAN APILADOS
+
+     `.sg-notif-panel > div { flex-direction: column }` alcanza a CUALQUIER div
+     hijo directo del panel, y el de los filtros lo es. Ese selector lleva una
+     clase y un elemento -(0,1,1)- contra la clase sola de `.sg-notif-filtros`
+     -(0,1,0)-, asi que ganaba y apilaba los tres botones a lo alto,
+     comiendose un tercio del panel.
+
+     Se nombra el contenedor con su padre para igualar la especificidad y
+     declarar la direccion a proposito, en vez de confiar en el orden.
+
+   POR QUE UN SEGMENTADO Y NO TRES PASTILLAS SUELTAS
+
+     Tres pastillas con borde propio se leen como tres acciones
+     independientes, y estas son EXCLUYENTES: elegir una apaga las otras. El
+     segmentado -una sola pista con la opcion activa en relieve- dice eso con
+     la forma: hay un carril, y algo esta puesto en una de sus posiciones.
+
+     Ademas ocupa una linea en vez de tres, que en un desplegable de 430px de
+     ancho es la diferencia entre ver dos alertas o cuatro.
+
+   Y LLEVA LOS NUMEROS
+
+     Un filtro que dice "Sin ver" y al tocarlo no muestra nada hizo perder un
+     clic. Con el numero al lado se sabe ANTES si vale la pena.
+   ============================================================================ */
+.sg-notif-panel > .sg-notif-filtros {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    margin: 0 14px 8px;
+    padding: 3px;
+    border-radius: 999px;
+    background: #f2f3f7;
+}
+
+.sg-notif-filtro {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #79839a;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.sg-notif-filtro:hover { color: #4a5568; }
+
+/* La activa se levanta del carril: fondo blanco y una sombra corta. Es la
+   misma metafora del interruptor deslizante, y se entiende sin leer. */
+.sg-notif-filtro.is-activo {
+    background: #fff;
+    color: #2b3548;
+    box-shadow: 0 1px 2px rgba(20, 30, 54, .10),
+                0 0 0 1px rgba(20, 30, 54, .04);
+}
+
+/* El numero: tinta mas clara para que no compita con la palabra. En la
+   pestaña activa se oscurece, porque ahi si es el dato que se esta mirando. */
+.sg-notif-filtro .n {
+    color: #a3adbf;
+    font-size: 9.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-notif-filtro.is-activo .n { color: #6b7688; }
+
+/* Una opcion sin nada que mostrar no se esconde -desaparecer opciones mueve
+   las otras de lugar- pero deja de invitar. */
+.sg-notif-filtro.is-vacia { opacity: .45; }
+
+
+/* ============================================================================
+   POR QUE `hidden` NO ALCANZABA PARA ESCONDER UNA FILA
+
+   Los dos filtros -el del panel de la campana y el del centro de alertas-
+   esconden filas poniendoles el atributo `hidden`. Y no pasaba nada: se
+   marcaba la opcion, cambiaban los numeros, y la lista seguia completa.
+
+   La causa es una regla del navegador contra una regla nuestra. `hidden`
+   funciona porque la hoja de estilos POR DEFECTO del navegador trae
+   `[hidden] { display: none }`. Pero esa hoja pierde SIEMPRE contra cualquier
+   declaracion de autor, sin importar la especificidad. Y las dos filas
+   declaran su display: `.sg-notif-item` lo hace con `display: grid !important`
+   y `.sg-alerta` con `display: flex`. Cualquiera de las dos gana, asi que el
+   atributo quedaba puesto y sin efecto.
+
+   Con estas reglas el `hidden` vuelve a significar lo que dice. Se escriben
+   una sola vez y aca, en vez de que cada filtro recuerde apagar el display a
+   mano: el dia que alguien agregue una tercera lista, `hidden` ya funciona.
+   ============================================================================ */
+.sg-notif-item[hidden],
+.sg-alerta[hidden],
+.sg-notif-filtro[hidden] { display: none !important; }

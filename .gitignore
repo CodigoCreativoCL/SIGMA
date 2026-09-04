@@ -361,3 +361,6 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+# Artefactos de compilacion de Visual Studio (no van al repo)
+_program files_git_check/
+.codex-compile-*/

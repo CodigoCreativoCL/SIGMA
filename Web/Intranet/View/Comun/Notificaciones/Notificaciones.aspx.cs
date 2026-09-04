@@ -6,8 +6,8 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
 using System.Web.UI;
+using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
-using Telerik.Web.UI;
 
 /// <summary>
 /// Centro de Acción Operacional.
@@ -48,24 +48,6 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
         set { ViewState["Tab"] = value; }
     }
 
-    /// <summary>
-    /// Cuando el usuario pidió cerrar la alerta: RESUELTA o DESCARTADA. El
-    /// panel de motivo se muestra ANTES de ejecutar, porque descartar sin
-    /// motivo deja una alerta cerrada que nadie puede explicar después.
-    /// </summary>
-    public string ModoCierre
-    {
-        get { return ViewState["ModoCierre"] != null ? (string)ViewState["ModoCierre"] : ""; }
-        set { ViewState["ModoCierre"] = value; }
-    }
-
-    /// <summary>Si el panel para elegir responsable está abierto.</summary>
-    public bool MostrarAsignar
-    {
-        get { return ViewState["MostrarAsignar"] != null && (bool)ViewState["MostrarAsignar"]; }
-        set { ViewState["MostrarAsignar"] = value; }
-    }
-
     private AlertaResumen _resumen;
     private List<Alerta> _lista;
 
@@ -73,7 +55,27 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        if (!IsPostBack) CargarTipos();
+        if (!IsPostBack)
+        {
+            CargarTipos();
+
+            /* Los refrescos del cliente son GET AJAX. El servidor vuelve a
+               dibujar solo los fragmentos con este estado en la query; no
+               necesita ViewState ni un ciclo de postback para recordar qué
+               se está mirando. */
+            if (Request.QueryString["sgAjax"] == "1")
+            {
+                string tab = (Request.QueryString["tab"] ?? "ACTIVAS").ToUpper();
+                Tab = tab == "GESTION" || tab == "RESUELTAS" ? tab : "ACTIVAS";
+
+                int alerta;
+                if (int.TryParse(Request.QueryString["alerta"], out alerta)) AlertaId = alerta;
+
+                txtBuscar.Text = Request.QueryString["filtro"] ?? "";
+                Seleccionar(cboSeveridad, Request.QueryString["severidad"]);
+                Seleccionar(cboTipo, Request.QueryString["tipo"]);
+            }
+        }
     }
 
     protected void Page_PreRender(object sender, EventArgs e)
@@ -87,7 +89,14 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
         CargarCola();
         CargarDetalle();
 
-        udPanel.Update();
+    }
+
+    private static void Seleccionar(ListControl control, string valor)
+    {
+        if (control == null || string.IsNullOrEmpty(valor)) return;
+
+        ListItem item = control.Items.FindByValue(valor);
+        if (item != null) control.SelectedValue = valor;
     }
 
     #region Cola
@@ -100,7 +109,7 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
     protected void CargarTipos()
     {
         cboTipo.Items.Clear();
-        cboTipo.Items.Add(new RadComboBoxItem("Todo tipo", ""));
+        cboTipo.Items.Add(new ListItem("Todo tipo", ""));
 
         List<Alerta> todas = new AlertaController().GetAlertas(false, 500);
 
@@ -111,7 +120,7 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
             if (vistos.Contains(a.alt_codigo)) continue;
 
             vistos.Add(a.alt_codigo);
-            cboTipo.Items.Add(new RadComboBoxItem(a.alt_nombre, a.alt_codigo));
+            cboTipo.Items.Add(new ListItem(a.alt_nombre, a.alt_codigo));
         }
     }
 
@@ -152,13 +161,13 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
         /* El rótulo se arma acá, no en el marcado: dentro del LinkButton los
            hijos estáticos no sobreviven al re-dibujo del UpdatePanel y las
            pestañas desaparecían al primer postback. */
-        tabActivas.Text = Pestana("Activas", r.Abiertas);
-        tabGestion.Text = Pestana("En gestión", r.EnGestion);
-        tabResueltas.Text = Pestana("Resueltas", 0);
+        tabActivas.InnerHtml = Pestana("Activas", r.Abiertas);
+        tabGestion.InnerHtml = Pestana("En gestión", r.EnGestion);
+        tabResueltas.InnerHtml = Pestana("Resueltas", 0);
 
-        tabActivas.CssClass = "sg-tab" + (Tab == "ACTIVAS" ? " is-activa" : "");
-        tabGestion.CssClass = "sg-tab" + (Tab == "GESTION" ? " is-activa" : "");
-        tabResueltas.CssClass = "sg-tab" + (Tab == "RESUELTAS" ? " is-activa" : "");
+        tabActivas.Attributes["class"] = "sg-tab" + (Tab == "ACTIVAS" ? " is-activa" : "");
+        tabGestion.Attributes["class"] = "sg-tab" + (Tab == "GESTION" ? " is-activa" : "");
+        tabResueltas.Attributes["class"] = "sg-tab" + (Tab == "RESUELTAS" ? " is-activa" : "");
     }
 
     /// <summary>El rótulo de una pestaña, con su contador cuando hay algo.</summary>
@@ -311,6 +320,13 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
                 : "No hay alertas con estos filtros.";
         }
 
+        /* El SP corta en 300. Mientras no se llegue a ese tope, lo que esta
+           en pantalla es TODO lo que hay, y el navegador puede filtrar por su
+           cuenta sabiendo que no se pierde nada. Si se llego al tope, filtrar
+           en el navegador podria esconder coincidencias que quedaron fuera:
+           ahi si hace falta volver a preguntar. */
+        pnlCola.Attributes["data-sg-cao-tope"] = lista.Count >= 300 ? "1" : "0";
+
         rptAlertas.DataSource = lista;
         rptAlertas.DataBind();
     }
@@ -321,12 +337,44 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
             return;
 
         Alerta a = (Alerta)e.Item.DataItem;
-        LinkButton lnk = (LinkButton)e.Item.FindControl("lnkItem");
+        HtmlButton lnk = (HtmlButton)e.Item.FindControl("lnkItem");
         Literal lit = (Literal)e.Item.FindControl("litItem");
 
-        lnk.CssClass = "sg-alerta " + ClaseSeveridad(a.sev_codigo) +
-                       (a.ale_id == AlertaId ? " is-seleccionada" : "") +
-                       (a.LEIDA ? "" : " is-nueva");
+        lnk.Attributes["class"] = "sg-alerta " + ClaseSeveridad(a.sev_codigo) +
+                                  (a.ale_id == AlertaId ? " is-seleccionada" : "") +
+                                  (a.LEIDA ? "" : " is-nueva");
+
+        /* ------------------------------------------------------------------
+           CON QUE SE FILTRA ESTA FILA
+
+           Van como datos de la propia fila para que el navegador pueda
+           filtrar SIN ir al servidor. Antes cada tecla del buscador y cada
+           cambio de combo disparaba una peticion que devolvia la pagina
+           entera: la lista ya estaba en pantalla y se pedia de nuevo para
+           mostrar un subconjunto de si misma.
+
+           El texto va en minusculas y ya armado -titulo, descripcion,
+           contexto, tipo y responsable-: normalizarlo en cada tecla, por cada
+           fila, es trabajo que se puede hacer una sola vez aca.
+           ------------------------------------------------------------------ */
+        lnk.Attributes["data-sev"] = a.sev_codigo ?? "";
+        lnk.Attributes["data-tipo"] = a.alt_codigo ?? "";
+        lnk.Attributes["data-visto"] = a.LEIDA ? "1" : "0";
+
+        /* Todo lo buscable junto. Se incluyen los CUATRO campos de contexto y
+           no solo el primero: quien busca "Bodega Central" espera encontrar
+           una alerta de un repuesto que está ahí, aunque en la fila se muestre
+           el código del repuesto y no el nombre de la bodega. */
+        lnk.Attributes["data-buscar"] = (
+            (a.ale_titulo ?? "") + " " +
+            (a.ale_descripcion ?? "") + " " +
+            (a.ACTIVO_CODIGO ?? "") + " " +
+            (a.ACTIVO_NOMBRE ?? "") + " " +
+            (a.REPUESTO_CODIGO ?? "") + " " +
+            (a.BODEGA_NOMBRE ?? "") + " " +
+            (a.INSTALACION_NOMBRE ?? "") + " " +
+            (a.alt_nombre ?? "") + " " +
+            (a.RESPONSABLE_NOMBRE ?? "")).ToLower();
 
         StringBuilder sb = new StringBuilder();
 
@@ -387,25 +435,6 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
         sb.Append("</span>");
 
         lit.Text = sb.ToString();
-    }
-
-    protected void rptAlertas_ItemCommand(object source, RepeaterCommandEventArgs e)
-    {
-        if (e.CommandName != "Seleccionar") return;
-
-        int id;
-        if (!int.TryParse(e.CommandArgument.ToString(), out id)) return;
-
-        AlertaId = id;
-        ModoCierre = "";
-        MostrarAsignar = false;
-
-        /* Abrir la alerta la marca LEÍDA y nada más. No la reconoce, no la
-           resuelve: eso es explícito y pasa por otro botón. */
-        new AlertaController().Leer(id);
-
-        _resumen = null;
-        _lista = null;
     }
 
     #endregion
@@ -486,7 +515,6 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
         CargarLinea(a);
         CargarAcciones(a);
         CargarResponsables(a);
-        CargarCierre();
     }
 
     /// <summary>Una pastilla del encabezado: icono y dato, sin puntos sueltos.</summary>
@@ -754,31 +782,6 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
     }
 
     /// <summary>
-    /// Genera la orden y deja la alerta en gestión. El SP hace las dos cosas
-    /// en una transacción y no crea una segunda si ya existía.
-    /// </summary>
-    protected void btnGenerarOt_Click(object sender, EventArgs e)
-    {
-        if (AlertaId == 0) return;
-
-        Respuesta r = new AlertaController().GenerarOrdenTrabajo(AlertaId);
-
-        if (r.error)
-        {
-            Tools.tools.ClientAlert(r.detalle, "alerta");
-            return;
-        }
-
-        /* Generar la orden dejó la alerta EN GESTIÓN, así que el resumen y la
-           lista que quedaron en memoria ya no valen: sin botarlos, los
-           contadores seguirían mostrando lo de antes de apretar el botón. */
-        _resumen = null;
-        _lista = null;
-
-        Tools.tools.ClientAlert(r.detalle, "ok");
-    }
-
-    /// <summary>
     /// La acción recomendada. Sale del modelo cuando existe; si no, del tipo
     /// de alerta, que es una regla del negocio y no una invención.
     /// </summary>
@@ -897,12 +900,10 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
     /// </summary>
     protected void CargarResponsables(Alerta a)
     {
-        pnlAsignar.Visible = MostrarAsignar;
-
-        if (!MostrarAsignar || cboResponsable.Items.Count > 0) return;
+        if (cboResponsable.Items.Count > 0) return;
 
         cboResponsable.Items.Clear();
-        cboResponsable.Items.Add(new RadComboBoxItem("(elija a quién)", ""));
+        cboResponsable.Items.Add(new ListItem("(elija a quién)", ""));
 
         try
         {
@@ -938,7 +939,7 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
                     if (!string.IsNullOrEmpty(u.perfiles))
                         nombre += "  ·  " + u.perfiles;
 
-                    cboResponsable.Items.Add(new RadComboBoxItem(nombre, u.usu_id.ToString()));
+                    cboResponsable.Items.Add(new ListItem(nombre, u.usu_id.ToString()));
                 }
             }
 
@@ -951,159 +952,6 @@ public partial class View_Comun_Notificaciones_Notificaciones : System.Web.UI.Pa
                el guardado con un mensaje claro. Tumbar la pantalla entera por
                un desplegable sería desproporcionado. */
         }
-    }
-
-    protected void CargarCierre()
-    {
-        pnlCierre.Visible = !string.IsNullOrEmpty(ModoCierre);
-
-        if (!pnlCierre.Visible) return;
-
-        litCierreRotulo.Text = ModoCierre == "DESCARTADA"
-            ? "¿Por qué se descarta? El motivo es obligatorio."
-            : "¿Qué se hizo para resolverla?";
-    }
-
-    #endregion
-
-    #region Acciones
-
-    protected void Tomar_Click(object sender, EventArgs e) { Mover("RECONOCIDA", null); }
-    protected void Gestionar_Click(object sender, EventArgs e) { Mover("EN GESTION", null); }
-
-    protected void Resolver_Click(object sender, EventArgs e)
-    {
-        MostrarAsignar = false;
-        ModoCierre = "RESUELTA";
-        txtMotivo.Text = "";
-    }
-
-    protected void Descartar_Click(object sender, EventArgs e)
-    {
-        MostrarAsignar = false;
-        ModoCierre = "DESCARTADA";
-        txtMotivo.Text = "";
-    }
-
-    protected void Asignar_Click(object sender, EventArgs e)
-    {
-        MostrarAsignar = true;
-        ModoCierre = "";
-    }
-
-    protected void btnAsignarCancelar_Click(object sender, EventArgs e)
-    {
-        MostrarAsignar = false;
-    }
-
-    protected void btnAsignarConfirmar_Click(object sender, EventArgs e)
-    {
-        if (AlertaId == 0) return;
-
-        int responsable;
-
-        if (!int.TryParse(cboResponsable.SelectedValue, out responsable) || responsable <= 0)
-        {
-            Tools.tools.ClientAlert("Elija a quién se le asigna.", "alerta");
-            return;
-        }
-
-        Respuesta r = new AlertaController().AsignarResponsable(AlertaId, responsable);
-
-        if (r.error)
-        {
-            Tools.tools.ClientAlert(r.detalle, "alerta");
-            return;
-        }
-
-        MostrarAsignar = false;
-
-        _resumen = null;
-        _lista = null;
-
-        Tools.tools.ClientAlert(r.detalle, "ok");
-    }
-
-    protected void lnkCierreCancelar_Click(object sender, EventArgs e)
-    {
-        ModoCierre = "";
-        txtMotivo.Text = "";
-    }
-
-    protected void lnkCierreConfirmar_Click(object sender, EventArgs e)
-    {
-        string motivo = txtMotivo.Text.Trim();
-
-        /* Se valida acá y otra vez en el SP. Lo de acá es cortesía —decirlo
-           antes del viaje—; lo del servidor es lo que de verdad impide
-           cerrar una alerta sin dejar constancia. */
-        if (ModoCierre == "DESCARTADA" && motivo.Length < 5)
-        {
-            Tools.tools.ClientAlert("Indique el motivo del descarte.", "alerta");
-            return;
-        }
-
-        Mover(ModoCierre, motivo);
-    }
-
-    protected void Mover(string estado, string motivo)
-    {
-        if (AlertaId == 0) return;
-
-        Respuesta r = new AlertaController().CambiarEstado(AlertaId, estado, motivo);
-
-        if (r.error)
-        {
-            Tools.tools.ClientAlert(r.detalle, "alerta");
-            return;
-        }
-
-        ModoCierre = "";
-        MostrarAsignar = false;
-        txtMotivo.Text = "";
-
-        _resumen = null;
-        _lista = null;
-
-        Tools.tools.ClientAlert(r.detalle, "ok");
-    }
-
-    protected void Tab_Command(object sender, CommandEventArgs e)
-    {
-        Tab = e.CommandArgument.ToString();
-        ModoCierre = "";
-        MostrarAsignar = false;
-
-        _lista = null;
-    }
-
-    protected void Filtro_Changed(object sender, EventArgs e)
-    {
-        _lista = null;
-    }
-
-    /// <summary>
-    /// El SelectedIndexChanged de RadComboBox trae su propio tipo de
-    /// argumentos: no se puede reusar el manejador del cuadro de texto.
-    /// </summary>
-    protected void Combo_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
-    {
-        _lista = null;
-    }
-
-    /// <summary>
-    /// Vuelve a revisar los umbrales. Existe porque hoy nadie dispara el
-    /// detector solo: sin este botón la lista muestra lo que se detectó la
-    /// última vez que alguien lo corrió, y no hay forma de saberlo.
-    /// </summary>
-    protected void lnkRevisar_Click(object sender, EventArgs e)
-    {
-        new AlertaController().Detectar(true);
-
-        _resumen = null;
-        _lista = null;
-
-        Tools.tools.ClientAlert("Revisión hecha.", "ok");
     }
 
     #endregion

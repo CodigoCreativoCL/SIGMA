@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Archivos/VerArchivo.aspx" hash="fffffff3c3134113" filehash="7199eed4acd2b137" flags="110000" assembly="App_Web_3jtvjxdd" type="ASP.view_comun_archivos_verarchivo_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Archivos/VerArchivo.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Archivos/VerArchivo.aspx.cs" />
-    </filedeps>
-</preserve>

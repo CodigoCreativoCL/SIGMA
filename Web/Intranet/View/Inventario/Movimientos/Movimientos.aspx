@@ -99,7 +99,7 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkIngreso" runat="server" Text="Registrar ingreso"
-                                CssClass="icono_guardar" OnClientClick="abrirMovimiento(0)" />
+                                CssClass="icono_guardar" OnClientClick="abrirMovimiento(0); return false;" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>
