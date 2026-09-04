@@ -11,8 +11,8 @@
 > **Regla: cada vez que se cierre un bloque de trabajo, se actualiza este
 > archivo en el mismo cambio.**
 
-**Última actualización:** 01-09-2026
-**Estado:** construida y compilando · **login (`POST /sesion`) probado contra la base; el resto sin probar**
+**Última actualización:** 03-09-2026
+**Estado:** construida y compilando · **login (`POST /sesion`) probado contra la base; el resto sin probar** · **Swagger en vivo** en `/swagger`
 
 ---
 
@@ -339,11 +339,15 @@ que esas anotaciones salgan a un archivo, el `.csproj` activa
 Esa decisión no se deduce del código: quien vuelva a tocar el `.csproj` podría
 quitar los `NoWarn` sin saber que reviven ~40 avisos inofensivos.
 
-**Falta el paso que necesita Visual Studio:** `Install-Package Swashbuckle` y
-apuntarlo a `bin/API.xml` con `c.IncludeXmlComments(...)`. Recién ahí `/swagger`
-renderiza lo anotado. No se hizo por consola porque el proyecto usa
-`packages.config` (sin `nuget.exe` a mano) y porque ver `/swagger` exige la app
-publicada en IIS.
+**Swagger instalado y verificado (03-09-2026).** `Install-Package Swashbuckle
+5.6.0` en el proyecto **API** (una vez que se corrigió: se había instalado por
+error en `Intranet`), con `c.IncludeXmlComments(...)` apuntando a `bin/API.xml`
+en `App_Start/SwaggerConfig.cs`. `/swagger` responde en vivo bajo
+`http://localhost/SIGMA/Servicio/API/swagger` —ASP.NET recicló la app sola al
+cambiar el `bin`, sin republicar— y `POST /sesion` sale con sus cinco respuestas
+documentadas. `TokenValidationHandler` **no** bloquea las rutas de Swagger:
+deja pasar la petición sin token (no la rechaza), así que no hubo que abrir
+nada.
 
 ---
 
@@ -394,10 +398,6 @@ publicada en IIS.
   (`Username` / `Password` en texto plano). Sirve para que un sistema se
   identifique, no una persona; el login de personas es `POST /sesion`. Habría
   que decidir si esa cuenta se conserva o se retira.
-- **Swagger a medio instalar.** El endpoint ya está documentado en el código y
-  el `.csproj` emite `bin/API.xml` (§5). Falta `Install-Package Swashbuckle` en
-  Visual Studio para que `/swagger` exista. El área `HelpPage` de plantilla
-  sigue sin usar.
 - **No hay límite de intentos por IP** en `/sesion` ni en
   `/usuario-recuperaciones`. El bloqueo por cuenta sí existe —lo hace
   `SEL_LOGIN` a los cinco intentos— pero nada impide probar mil correos
@@ -469,7 +469,11 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
 
 | 01-09-2026 | **HU-001 probada contra la base (T-1011).** Un caso por criterio de aceptación: CA1 (200 + token), CA2 (401), CA4 (423 con bloqueo y tiempo restante) ejecutados; CA3 pendiente por falta de una cuenta deshabilitada. **Primer ejercicio real contra la base:** el canal `POST /sesion` → `SEL_LOGIN` funciona de extremo a extremo. Dos defectos hallados —el 200 con *backing fields* y el 401 sin el mensaje propio (§6)—. Evidencia en [`SIGMA_PRUEBAS_S1.md`](SIGMA_PRUEBAS_S1.md); veredictos en la hoja *Criterios de aceptación* del Sprint Backlog S1 |
 
-| 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0`. Falta `Install-Package Swashbuckle` en Visual Studio para levantar `/swagger` |
+| 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0` |
+
+| 03-09-2026 | **Swagger instalado y `/swagger` en vivo (T-1012 cerrada).** `Install-Package Swashbuckle 5.6.0` en **API** —primero se había ido por error a `Intranet`, se limpió— y `IncludeXmlComments` sobre `bin/API.xml`. `swagger/docs/v1` responde 200 y `POST /sesion` sale con sus 5 respuestas; 43 endpoints en total tras el merge. **Newtonsoft de Intranet:** el sitio no usa Json.NET, así que quitar la pila que arrastró el mal-instalado no lo afecta. |
+
+| 03-09-2026 | **Integrados 30 commits del remoto (Sprint 2) + seguridad.** Merge de `origin/CatalinaPescio`: nuevos controllers de activos, alertas, escaneo y permisos de trabajo, y `Web.config` de Intranet resuelto a la versión del equipo (Servicios API en vez del Blob PENDIENTE). Actualizado `Microsoft.Bcl.Memory` 9.0.0 → **9.0.14** por **CVE-2026-26127** (DoS al decodificar Base64Url malformado, ruta que ejercita cada validación de JWT). API compila en `exitcode=0`. |
 
 ### Cómo actualizar este documento
 
