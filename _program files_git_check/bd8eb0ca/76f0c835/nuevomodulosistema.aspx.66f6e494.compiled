@@ -1,9 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/ModulosSistema/NuevoModuloSistema.aspx" hash="fffffff3c3134113" filehash="9d4913b5edc806e2" flags="110000" assembly="App_Web_slqo2okl" type="ASP.view_root_modulossistema_nuevomodulosistema_aspx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master" />
-        <filedep name="/C:/Program Files/Git/Check/Master/Simple.master.cs" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/ModulosSistema/NuevoModuloSistema.aspx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/ModulosSistema/NuevoModuloSistema.aspx.cs" />
-    </filedeps>
-</preserve>
