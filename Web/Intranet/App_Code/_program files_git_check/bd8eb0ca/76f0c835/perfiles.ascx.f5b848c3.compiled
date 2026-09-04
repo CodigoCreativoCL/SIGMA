@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/Controls/Perfiles.ascx" hash="fffffff3c3134113" filehash="56ec9c88a838a9a6" flags="110000" assembly="App_Web_igqjmpmb" type="ASP.view_root_mantenedores_usuarios_controls_perfiles_ascx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/Controls/Perfiles.ascx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Root/Mantenedores/Usuarios/Controls/Perfiles.ascx.cs" />
-    </filedeps>
-</preserve>

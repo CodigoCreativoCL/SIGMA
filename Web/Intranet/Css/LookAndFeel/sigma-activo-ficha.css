@@ -1,0 +1,193 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA — Ficha e historial del activo (HU-037)
+   ----------------------------------------------------------------------------
+   Vista 360° del activo: encabezado con estado, tarjeta de resumen con imagen
+   y métricas, pestañas, línea de tiempo y panel lateral (ficha técnica +
+   acciones). Se enlaza SOLO desde esta pantalla.
+   ============================================================================ */
+
+.sigma-af { --af-p: #6C5CFF; --af-borde: rgba(17, 24, 39, .10); --af-tenue: #6b7280; }
+
+/* ----------------------------------------------- selector de activo (arriba) */
+.sigma-af-selector {
+    display: flex; align-items: center; gap: 14px;
+    background: #fff; border: 1px solid rgba(17, 24, 39, .10); border-radius: 16px;
+    padding: 14px 18px; margin-bottom: 18px;
+}
+.sigma-af-selector-ico {
+    width: 42px; height: 42px; border-radius: 12px; flex: 0 0 auto;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(108, 92, 255, .10); color: #6C5CFF; font-size: 22px;
+}
+.sigma-af-selector-campo { flex: 1 1 auto; min-width: 0; max-width: 520px; }
+.sigma-af-selector-campo label {
+    display: block; font-size: 11px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .04em; color: #6b7280; margin-bottom: 5px;
+}
+.sigma-af-selector-campo .RadComboBox { width: 100% !important; }
+
+/* estado inicial (sin activo elegido) */
+.sigma-af-inicial {
+    background: #fff; border: 1px dashed rgba(17, 24, 39, .16); border-radius: 16px;
+    padding: 46px 20px; text-align: center; color: #6b7280;
+}
+.sigma-af-inicial i { display: block; font-size: 40px; color: #cbd5e1; margin-bottom: 10px; }
+.sigma-af-inicial p { margin: 0; font-size: 13px; }
+
+/* filtros del historial */
+.sigma-af-tools-filtros { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sigma-af-fecha { min-width: 130px; }
+.sigma-af-fecha .RadInput { width: 100% !important; }
+
+/* -------------------------------------------------------------- encabezado */
+.sigma-af-hero {
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 16px; flex-wrap: wrap; margin-bottom: 16px;
+}
+.sigma-af-hero h1 {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    margin: 0 0 4px; font-size: 24px; font-weight: 700; color: #0f172a;
+}
+.sigma-af-hero h1 .sep { color: #cbd5e1; font-weight: 400; }
+.sigma-af-bajada { margin: 0; font-size: 13px; color: var(--af-tenue); }
+.sigma-af-hero-acc { display: flex; gap: 10px; flex-wrap: wrap; }
+
+.sigma-af-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    padding: 9px 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+    text-decoration: none !important; cursor: pointer; border: 1px solid transparent;
+}
+.sigma-af-btn.is-plano { background: #fff; color: #374151 !important; border-color: var(--af-borde); }
+.sigma-af-btn.is-plano:hover { background: #f8fafc; }
+.sigma-af-btn.is-primario { background: var(--af-p); color: #fff !important; }
+.sigma-af-btn.is-primario:hover { filter: brightness(1.07); }
+
+/* ------------------------------------------------------------------ badges */
+.sigma-af-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 4px 11px; border-radius: 999px; font-size: 12px; font-weight: 600;
+}
+.sigma-af-badge::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.sigma-af-badge.is-verde { background: #dcfce7; color: #15803d; }
+.sigma-af-badge.is-amarillo { background: #fef3c7; color: #b45309; }
+.sigma-af-badge.is-rojo { background: #fee2e2; color: #b91c1c; }
+.sigma-af-badge.is-gris { background: #f1f5f9; color: #475569; }
+
+/* --------------------------------------------------------- tarjeta resumen */
+.sigma-af-resumen {
+    display: grid; grid-template-columns: 260px 1fr; gap: 22px;
+    background: #fff; border: 1px solid var(--af-borde); border-radius: 16px;
+    padding: 18px; margin-bottom: 18px; align-items: center;
+}
+.sigma-af-foto {
+    aspect-ratio: 1 / 1; border-radius: 14px; overflow: hidden;
+    background: linear-gradient(150deg, #7c6cff, #a78bfa);
+    display: flex; align-items: center; justify-content: center;
+}
+.sigma-af-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sigma-af-foto .sigma-af-motor { width: 66%; height: 66%; opacity: .95; }
+
+.sigma-af-ident h2 { margin: 0 0 12px; font-size: 26px; font-weight: 800; color: #0f172a; letter-spacing: .5px; }
+.sigma-af-ident-filas { display: grid; gap: 8px; }
+.sigma-af-ident-filas .fila { display: flex; align-items: center; gap: 9px; font-size: 13px; color: #334155; }
+.sigma-af-ident-filas .fila i { color: var(--af-p); font-size: 17px; }
+
+.sigma-af-tiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-top: 18px; }
+.sigma-af-tile {
+    border: 1px solid var(--af-borde); border-radius: 13px; padding: 14px;
+    text-align: center; background: #fcfcfd;
+}
+.sigma-af-tile .ico {
+    width: 34px; height: 34px; margin: 0 auto 8px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(108, 92, 255, .10); color: var(--af-p); font-size: 19px;
+}
+.sigma-af-tile .rot { font-size: 11px; color: var(--af-tenue); text-transform: uppercase; letter-spacing: .04em; }
+.sigma-af-tile .val { margin-top: 3px; font-size: 15px; font-weight: 700; color: #0f172a; }
+.sigma-af-tile .val.is-verde { color: #15803d; }
+.sigma-af-tile .val.is-rojo { color: #b91c1c; }
+
+/* --------------------------------------------------------------- dos columnas */
+.sigma-af-cuerpo { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 18px; align-items: start; }
+@media (max-width: 1000px) {
+    .sigma-af-resumen { grid-template-columns: 1fr; }
+    .sigma-af-cuerpo { grid-template-columns: 1fr; }
+    .sigma-af-panel { position: static !important; }
+}
+
+/* ------------------------------------------------------------------- pestañas */
+.sigma-af-tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--af-borde); margin-bottom: 16px; overflow-x: auto; }
+.sigma-af-tab {
+    padding: 10px 14px; font-size: 13px; font-weight: 600; color: var(--af-tenue);
+    background: none; border: none; border-bottom: 2px solid transparent; cursor: pointer;
+    white-space: nowrap;
+}
+.sigma-af-tab:hover { color: #334155; }
+.sigma-af-tab.is-activa { color: var(--af-p); border-bottom-color: var(--af-p); }
+.sigma-af-pane { display: none; }
+.sigma-af-pane.is-activa { display: block; }
+
+.sigma-af-card { background: #fff; border: 1px solid var(--af-borde); border-radius: 16px; padding: 18px; }
+.sigma-af-card h3 { margin: 0 0 14px; font-size: 15px; font-weight: 700; color: #0f172a; }
+
+.sigma-af-vacio { padding: 26px; text-align: center; color: var(--af-tenue); font-size: 13px; }
+.sigma-af-vacio i { display: block; font-size: 34px; color: #cbd5e1; margin-bottom: 8px; }
+
+/* tabla simple para las pestañas (componentes, medidores, atributos) */
+.sigma-af-tabla { border: 1px solid var(--af-borde); border-radius: 12px; overflow: hidden; }
+.sigma-af-tabla .fila {
+    display: grid; grid-template-columns: 1.2fr 2fr 1.4fr 1.2fr; gap: 12px;
+    padding: 11px 14px; font-size: 13px; color: #334155; border-top: 1px solid #eef2f7; align-items: center;
+}
+.sigma-af-tabla .fila:first-child { border-top: none; }
+.sigma-af-tabla .fila.cab { background: #f8fafc; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+.sigma-af-tabla .fila span { overflow: hidden; text-overflow: ellipsis; }
+
+/* ------------------------------------------------------------ línea de tiempo */
+.sigma-af-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
+.sigma-af-timeline::before {
+    content: ""; position: absolute; left: 6px; top: 4px; bottom: 4px; width: 2px; background: #eef2f7;
+}
+.sigma-af-ev { position: relative; padding: 0 0 20px 26px; }
+.sigma-af-ev:last-child { padding-bottom: 2px; }
+.sigma-af-ev::before {
+    content: ""; position: absolute; left: 0; top: 3px; width: 14px; height: 14px;
+    border-radius: 50%; border: 3px solid #fff; background: #94a3b8; box-shadow: 0 0 0 1px #e2e8f0;
+}
+.sigma-af-ev.is-estado::before { background: #22c55e; }
+.sigma-af-ev.is-posicion::before { background: #6C5CFF; }
+.sigma-af-ev.is-medicion::before { background: #f59e0b; }
+.sigma-af-ev .ev-cab { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sigma-af-ev .ev-fecha { font-size: 12px; color: var(--af-tenue); }
+.sigma-af-ev .ev-chip { font-size: 11px; font-weight: 700; color: #475569; background: #f1f5f9; border-radius: 6px; padding: 2px 8px; }
+.sigma-af-ev .ev-titulo { margin: 4px 0 1px; font-size: 14px; font-weight: 600; color: #0f172a; }
+.sigma-af-ev .ev-detalle { font-size: 12.5px; color: var(--af-tenue); }
+.sigma-af-ev .ev-usuario { font-size: 11.5px; color: #94a3b8; margin-top: 3px; display: inline-flex; align-items: center; gap: 5px; }
+
+.sigma-af-tools { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+
+/* -------------------------------------------------------------- panel lateral */
+.sigma-af-panel { position: sticky; top: 12px; display: grid; gap: 14px; }
+.sigma-af-panel .caja { background: #fff; border: 1px solid var(--af-borde); border-radius: 16px; padding: 16px; }
+.sigma-af-panel h3 { margin: 0 0 12px; font-size: 13px; font-weight: 700; color: #0f172a; }
+.sigma-af-ft { display: grid; gap: 10px; }
+.sigma-af-ft .fila { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-size: 12.5px; }
+.sigma-af-ft .fila .k { display: inline-flex; align-items: center; gap: 7px; color: var(--af-tenue); }
+.sigma-af-ft .fila .k i { color: var(--af-p); font-size: 15px; }
+.sigma-af-ft .fila .v { font-weight: 600; color: #0f172a; text-align: right; }
+.sigma-af-ft .fila .v.is-verde { color: #15803d; }
+.sigma-af-ft .fila .v.is-rojo { color: #b91c1c; }
+
+.sigma-af-acc { display: grid; gap: 8px; }
+.sigma-af-acc a {
+    display: flex; align-items: center; gap: 9px; padding: 10px 12px;
+    border: 1px solid var(--af-borde); border-radius: 10px; font-size: 12.5px; font-weight: 600;
+    color: #334155 !important; text-decoration: none !important; background: #fff;
+}
+.sigma-af-acc a:hover { background: #f8fafc; border-color: #cbd5e1; }
+.sigma-af-acc a i { color: var(--af-p); font-size: 17px; }
+.sigma-af-acc a.is-primario { background: var(--af-p); color: #fff !important; border-color: var(--af-p); }
+.sigma-af-acc a.is-primario i { color: #fff; }
+.sigma-af-acc a .chev { margin-left: auto; color: #cbd5e1; }
