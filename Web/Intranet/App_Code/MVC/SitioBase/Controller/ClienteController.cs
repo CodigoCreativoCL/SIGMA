@@ -225,11 +225,127 @@ namespace SitioBase.Controller
             return cliente;
         }
 
+        /// <summary>
+        /// La ficha corporativa: los datos, los catálogos ya resueltos, los
+        /// conteos y quién la creó.
+        ///
+        /// Todo en una consulta. Antes la pantalla mostraba `cli_pais` —un
+        /// número— y para escribir "Chile" había que ir a buscar cuatro
+        /// catálogos por separado desde acá.
+        /// </summary>
+        public ClienteFicha GetFicha(int idCliente)
+        {
+            ClienteFicha f = null;
+
+            if (!Token.TokenSeguridad()) return null;
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_CLIENTE_FICHA");
+                cmd.Parameters.AddWithValue("@CLIENTE", idCliente);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        f = new ClienteFicha();
+
+                        f.cli_id = int.Parse(dr["cli_id"].ToString());
+                        f.cli_nombre = dr["cli_nombre"].ToString();
+                        f.cli_razon_social = dr["cli_razon_social"].ToString();
+                        f.cli_nombre_fantasia = dr["cli_nombre_fantasia"].ToString();
+                        f.cli_identificador = dr["cli_identificador"].ToString();
+
+                        /* cli_habilitado es NULLable en la tabla. Un cliente
+                           sin el dato NO se asume habilitado: el estado es
+                           justo lo que decide si su gente puede entrar. */
+                        f.cli_habilitado = dr["cli_habilitado"] != DBNull.Value &&
+                                           Convert.ToBoolean(dr["cli_habilitado"]);
+
+                        if (dr["cli_archivo_logo"] != DBNull.Value)
+                            f.cli_archivo_logo = int.Parse(dr["cli_archivo_logo"].ToString());
+
+                        if (dr["cli_pais"] != DBNull.Value)
+                            f.cli_pais = int.Parse(dr["cli_pais"].ToString());
+
+                        f.PAIS_NOMBRE = dr["PAIS_NOMBRE"].ToString();
+                        f.IDENTIFICADOR_ROTULO = dr["IDENTIFICADOR_ROTULO"].ToString();
+
+                        if (dr["cli_zona_horaria"] != DBNull.Value)
+                            f.cli_zona_horaria = int.Parse(dr["cli_zona_horaria"].ToString());
+
+                        f.ZONA_HORARIA_NOMBRE = dr["ZONA_HORARIA_NOMBRE"].ToString();
+
+                        if (dr["cli_idioma"] != DBNull.Value)
+                            f.cli_idioma = int.Parse(dr["cli_idioma"].ToString());
+
+                        f.IDIOMA_NOMBRE = dr["IDIOMA_NOMBRE"].ToString();
+
+                        if (dr["cli_moneda"] != DBNull.Value)
+                            f.cli_moneda = int.Parse(dr["cli_moneda"].ToString());
+
+                        f.MONEDA_NOMBRE = dr["MONEDA_NOMBRE"].ToString();
+
+                        f.USUARIOS = int.Parse(dr["USUARIOS"].ToString());
+                        f.INSTALACIONES = int.Parse(dr["INSTALACIONES"].ToString());
+
+                        f.CONFIGURACION_COMPLETA = Convert.ToBoolean(dr["CONFIGURACION_COMPLETA"]);
+                        f.CONFIGURACION_FALTA = dr["CONFIGURACION_FALTA"].ToString();
+
+                        if (dr["cli_usuario_creacion"] != DBNull.Value)
+                            f.cli_usuario_creacion = int.Parse(dr["cli_usuario_creacion"].ToString());
+
+                        if (dr["cli_fecha_creacion"] != DBNull.Value)
+                            f.cli_fecha_creacion = DateTime.Parse(dr["cli_fecha_creacion"].ToString());
+
+                        f.USUARIO_CREACION_NOMBRE = dr["USUARIO_CREACION_NOMBRE"].ToString();
+
+                        if (dr["cli_usuario_actualizacion"] != DBNull.Value)
+                            f.cli_usuario_actualizacion = int.Parse(dr["cli_usuario_actualizacion"].ToString());
+
+                        if (dr["cli_fecha_actualizacion"] != DBNull.Value)
+                            f.cli_fecha_actualizacion = DateTime.Parse(dr["cli_fecha_actualizacion"].ToString());
+
+                        f.USUARIO_ACTUALIZACION_NOMBRE = dr["USUARIO_ACTUALIZACION_NOMBRE"].ToString();
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                f = null;
+            }
+
+            return f;
+        }
+
         public Respuesta InsertCliente(Cliente cliente)
         {
             Respuesta respuesta = new Respuesta();
 
-            if (Token.TokenSeguridad())
+            /* SIN SESIÓN VÁLIDA SE DICE, NO SE CALLA.
+
+               `Respuesta` nace con error = false, que es el valor por
+               omisión de un bool. Cuando esta guarda daba false, el
+               método devolvía esa respuesta intacta —sin error, sin
+               detalle, con código 0— y la pantalla la leía como éxito:
+               mostraba un aviso vacío y no había guardado nada.
+
+               Es la peor forma de fallar: la que se ve igual que
+               funcionar. */
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.error = true;
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesión no es válida o expiró. Vuelva a iniciar sesión.";
+                return respuesta;
+            }
+
             {
                 SqlCommand cmdExecute = null;
 
@@ -248,7 +364,18 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@IDIOMA", (object)cliente.cli_idioma ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@MONEDA", (object)cliente.cli_moneda ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@HABILITADO", cliente.cli_habilitado);
-                    cmdExecute.Parameters.AddWithValue("@LOGO", (object)cliente.cli_logo ?? DBNull.Value);
+                    /* AddWithValue CON DBNull INFIERE nvarchar.
+
+                       `cli_logo` es varbinary(max). Cuando el cliente no trae
+                       logo —que es lo normal desde que el archivo va a Blob y
+                       esta columna quedó sin uso— el parámetro salía tipado
+                       como nvarchar y SQL Server rechazaba la sentencia
+                       entera con "Implicit conversion from data type nvarchar
+                       to varbinary(max) is not allowed".
+
+                       El tipo se declara, no se adivina. */
+                    SqlParameter pLogo = cmdExecute.Parameters.Add("@LOGO", System.Data.SqlDbType.VarBinary, -1);
+                    pLogo.Value = (object)cliente.cli_logo ?? DBNull.Value;
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();
@@ -290,7 +417,18 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@IDIOMA", (object)cliente.cli_idioma ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@MONEDA", (object)cliente.cli_moneda ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@HABILITADO", cliente.cli_habilitado);
-                    cmdExecute.Parameters.AddWithValue("@LOGO", (object)cliente.cli_logo ?? DBNull.Value);
+                    /* AddWithValue CON DBNull INFIERE nvarchar.
+
+                       `cli_logo` es varbinary(max). Cuando el cliente no trae
+                       logo —que es lo normal desde que el archivo va a Blob y
+                       esta columna quedó sin uso— el parámetro salía tipado
+                       como nvarchar y SQL Server rechazaba la sentencia
+                       entera con "Implicit conversion from data type nvarchar
+                       to varbinary(max) is not allowed".
+
+                       El tipo se declara, no se adivina. */
+                    SqlParameter pLogo = cmdExecute.Parameters.Add("@LOGO", System.Data.SqlDbType.VarBinary, -1);
+                    pLogo.Value = (object)cliente.cli_logo ?? DBNull.Value;
 
                     // Sin esto, guardar la ficha sin volver a subir la imagen
                     // borraba el logotipo que ya tenia el cliente.
@@ -311,6 +449,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
             return respuesta;
         }
@@ -347,6 +497,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
             return respuesta;
         }        

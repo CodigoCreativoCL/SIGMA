@@ -194,7 +194,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             Activo entidad = controller.GetActivo(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.act_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo", entidad.act_codigo);
             txtNombre.Text = entidad.act_nombre;
 
             SeleccionarCombo(cboTipo, entidad.act_activo_tipo);
@@ -217,6 +217,14 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.act_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.act_fecha_actualizacion);
+
+            // Vista previa de la imagen actual, si la tiene.
+            int idImagen = new ActivoImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
+            if (idImagen > 0)
+            {
+                imgActual.Src = UrlArchivo.Ver(idImagen);
+                pnlImagenActual.Visible = true;
+            }
         }
         else
         {
@@ -241,7 +249,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
@@ -298,7 +307,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.act_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.act_codigo = SitioBase.CodigoModulo.Componer("Activo", txtCodigo.Text);
             entidad.act_nombre = txtNombre.Text.Trim();
             entidad.act_habilitado = rdbSi.Checked;
 
@@ -332,7 +341,13 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             if (!respuesta.error)
             {
                 Id = respuesta.codigo;
-                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+
+                // La imagen es opcional: si se eligió una, se sube y se enlaza
+                // como imagen de referencia del activo. Un fallo aquí no anula
+                // el guardado del activo; solo avisa.
+                string avisoImg = GuardarImagen(Id);
+
+                Tools.tools.ClientAlert(respuesta.detalle + avisoImg, "ok", true);
             }
             else
             {
@@ -342,6 +357,53 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         catch (Exception ex)
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Sube la imagen elegida (si la hay) y la deja como imagen del activo.
+    /// Devuelve "" si todo fue bien o no había imagen, o un aviso si falló la
+    /// carga —sin echar abajo el guardado del activo, que ya está hecho—.
+    /// </summary>
+    private string GuardarImagen(int activo)
+    {
+        if (activo <= 0) return "";
+
+        bool haySubida = fuImagen != null && fuImagen.HasFile;
+
+        // Sin imagen nueva: si marcó "quitar la imagen actual", se desvincula.
+        if (!haySubida)
+        {
+            if (chkQuitarImagen != null && chkQuitarImagen.Checked)
+                new ActivoImagenController().DesvincularImagen(activo);
+            return "";
+        }
+
+        try
+        {
+            byte[] contenido = fuImagen.FileBytes;
+            if (contenido == null || contenido.Length == 0) return "";
+
+            Archivo arc = new Archivo();
+            arc.arc_cliente = SitioBase.Session.ClienteId();
+            arc.arc_archivo_categoria = 10;   // REFERENCIA (imagen de referencia)
+            arc.arc_nombre_original = System.IO.Path.GetFileName(fuImagen.FileName);
+            arc.arc_mime = fuImagen.PostedFile != null ? fuImagen.PostedFile.ContentType : null;
+            arc.contenido = contenido;
+
+            Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
+            if (r.error || r.codigo <= 0)
+                return " (la imagen no se pudo guardar: " + r.detalle + ")";
+
+            int vin = new ActivoImagenController().VincularImagen(activo, r.codigo);
+            if (vin < 0)
+                return " (la imagen se subió pero no se pudo enlazar al activo)";
+
+            return "";
+        }
+        catch (Exception ex)
+        {
+            return " (la imagen no se pudo guardar: " + ex.Message + ")";
         }
     }
 }

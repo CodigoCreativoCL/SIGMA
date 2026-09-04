@@ -6,9 +6,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirValor(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Sistema/Catalogos/CatalogoValor.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Sistema/Catalogos/CatalogoValor.aspx") %>?query=' + query,
+                title: 'Catalogo valor',
+                width: 900,
+                initialHeight: 480
+            });
         }
 
         function refresh() {
@@ -30,7 +33,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="900" Height="480" />
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>

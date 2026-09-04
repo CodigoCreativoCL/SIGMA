@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrir(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/Usuario.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/Usuario.aspx") %>?query=' + query,
+                title: 'Usuario',
+                width: 1000,
+                initialHeight: 380
+            });
         }
         function refresh() {
             __doPostBack("<%=udPanel.ClientID %>", '')
@@ -58,7 +61,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="380" />
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">

@@ -123,11 +123,21 @@ public class WsAlertas : System.Web.Services.WebService
             /* Puede venir una o varias: al abrir el panel se marcan las que se
                mostraron, y son hasta diez. Una llamada por cada una serían
                diez viajes para lo que cabe en uno. */
-            foreach (string parte in plano.Split(','))
+            if (string.IsNullOrWhiteSpace(plano))
             {
-                int id;
-                if (int.TryParse(parte.Trim(), out id) && id > 0)
-                    marcadas += controller.Leer(id);
+                /* Sin ids significa "todo lo visible para esta sesión". El
+                   procedimiento vuelve a filtrar por cliente, usuario y
+                   permiso; no se confía en la lista que tenía el navegador. */
+                marcadas = controller.Leer();
+            }
+            else
+            {
+                foreach (string parte in plano.Split(','))
+                {
+                    int id;
+                    if (int.TryParse(parte.Trim(), out id) && id > 0)
+                        marcadas += controller.Leer(id);
+                }
             }
 
             respuesta.error = false;
@@ -143,6 +153,73 @@ public class WsAlertas : System.Web.Services.WebService
         return Serializar(respuesta);
     }
 
+    /// <summary>Fuerza una nueva revisión de umbrales sin postback.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Revisar()
+    {
+        Respuesta respuesta = SesionValida();
+        if (respuesta.error) return Serializar(respuesta);
+
+        try
+        {
+            new AlertaController().Detectar(true);
+            respuesta.error = false;
+            respuesta.detalle = "Revisión hecha.";
+        }
+        catch (Exception ex)
+        {
+            respuesta.error = true;
+            respuesta.detalle = ex.Message;
+        }
+
+        return Serializar(respuesta);
+    }
+
+    /// <summary>Reconoce, gestiona o cierra una alerta desde el CAO.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CambiarEstado(int alerta, string estado, string motivo)
+    {
+        Respuesta respuesta = SesionValida();
+        if (!respuesta.error)
+            respuesta = new AlertaController().CambiarEstado(alerta, estado, motivo);
+
+        return Serializar(respuesta);
+    }
+
+    /// <summary>Asigna una alerta a un usuario habilitado del cliente.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Asignar(int alerta, int responsable)
+    {
+        Respuesta respuesta = SesionValida();
+        if (!respuesta.error)
+            respuesta = new AlertaController().AsignarResponsable(alerta, responsable);
+
+        return Serializar(respuesta);
+    }
+
+    /// <summary>Genera la OT predictiva vinculada, de manera idempotente.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GenerarOrden(int alerta)
+    {
+        Respuesta respuesta = SesionValida();
+        if (!respuesta.error)
+            respuesta = new AlertaController().GenerarOrdenTrabajo(alerta);
+
+        return Serializar(respuesta);
+    }
+
+    private Respuesta SesionValida()
+    {
+        Respuesta respuesta = new Respuesta();
+        respuesta.error = !Token.TokenSeguridad();
+        respuesta.detalle = respuesta.error ? "La sesión expiró." : "";
+        return respuesta;
+    }
+
     /// <summary>Lo que el aviso emergente necesita para dibujarse.</summary>
     private Dictionary<string, object> Aviso(Alerta a)
     {
@@ -154,6 +231,12 @@ public class WsAlertas : System.Web.Services.WebService
         d["detalle"] = a.ale_descripcion;
         d["severidad"] = a.sev_codigo;
         d["icono"] = IconoSigma(a.alt_codigo);
+
+        /* Para que el aviso pueda usar el icono de SIGMA AI SOLO cuando la
+           alerta salió del modelo. Sin este dato el toast tendría que
+           adivinarlo del nombre del tipo, que es texto que alguien puede
+           cambiar en el catálogo. */
+        d["esPrediccion"] = a.ES_PREDICCION;
 
         /* El destino ya cifrado: el JS no tiene con qué cifrar, y mandarle el
            id en claro para que arme la URL abriría un camino sin la reja que

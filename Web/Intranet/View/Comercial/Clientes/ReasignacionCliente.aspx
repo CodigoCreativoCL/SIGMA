@@ -3,6 +3,10 @@
 <%@ Register Src="~/View/Comun/Controls/Cliente/Usuarios.ascx" TagPrefix="wuc" TagName="Usuarios" %>
 
 <asp:Content ID="Content1" ContentPlaceHolderID="cphHeder" runat="Server">
+    <%-- Esta pantalla también usa Identidad.ascx, que ahora se dibuja con la
+         grilla estándar. Sin esta hoja los encabezados de sección de la ficha
+         quedarían sin estilo acá. --%>
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-contactos.css?vrs=1") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="chpScript" runat="server">

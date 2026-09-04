@@ -1,0 +1,437 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA - Los tipos de repuesto
+
+   POR QUE TARJETAS Y NO UNA TABLA
+
+     Una tabla ordena columnas comparables. Un cliente tiene entre cinco y
+     quince categorias y de cada una interesan cuatro cosas: como se llama,
+     su codigo, cuantos repuestos tiene y en que posicion sale su pestaña.
+     Nadie ordena categorias por descripcion.
+
+     La grilla ademas traeria su paginador -"Registros por pagina: 25" debajo
+     de seis filas- y su cabecera en mayusculas, que es mucho aparato para
+     una lista corta.
+   ============================================================================ */
+
+.sg-tipos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-tipo {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 14px;
+    border: 1px solid #e4e9f1;
+    border-radius: 13px;
+    background: #fff;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.sg-tipo:hover {
+    border-color: #cfd7e6;
+    box-shadow: 0 4px 14px rgba(30, 43, 71, .06);
+}
+
+/* El orden, al frente y en un cuadrito. Es lo que decide la posicion de la
+   pestaña en el listado de repuestos: sin verlo, no hay forma de saber por
+   que una categoria salio antes que otra. */
+.sg-tipo-orden {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #f2f3f7;
+    color: #6b7484;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-tipo-datos { flex: 1 1 auto; min-width: 0; }
+
+.sg-tipo-nombre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.sg-tipo-nombre strong { color: #1d2739; font-size: 13px; font-weight: 650; }
+
+/* El codigo en pastilla y en tinta clara: identifica, pero no es lo que se
+   lee primero. */
+.sg-tipo-codigo {
+    padding: 2px 8px;
+    border: 1px solid #e6e9f0;
+    border-radius: 999px;
+    color: #79839a;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.sg-tipo-desc {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #7b8496;
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sg-tipo-pie {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    color: #8592a8;
+    font-size: 10.5px;
+}
+
+.sg-tipo-pie i { font-size: 13px; }
+
+.sg-tipo-acciones { flex: 0 0 auto; display: flex; gap: 6px; }
+
+/* Neutras en reposo. En una lista donde cada fila lleva un boton de borrar,
+   diez botones rojos harian ver la pantalla como una zona de peligro. */
+.sg-tipo-accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e4e9f1;
+    border-radius: 9px;
+    background: #fff;
+    color: #8592a8;
+    font-size: 17px;
+    text-decoration: none;
+    transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.sg-tipo-accion:hover {
+    border-color: #c7bcff;
+    background: #f5f2ff;
+    color: #6C5CFF;
+    text-decoration: none;
+}
+
+.sg-tipo-accion.is-peligro:hover {
+    border-color: #f0b6bf;
+    background: #fdf0f2;
+    color: #b03546;
+}
+
+.sg-tipos-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 38px 20px;
+    border: 1px dashed #dde3ec;
+    border-radius: 13px;
+    background: #fbfcfe;
+    text-align: center;
+}
+
+.sg-tipos-vacio i { margin-bottom: 4px; color: #b8c1d1; font-size: 36px; }
+.sg-tipos-vacio strong { color: #46536b; font-size: 13px; }
+.sg-tipos-vacio span { color: #8592a8; font-size: 11.5px; }
+
+@media (max-width: 640px) {
+    .sg-tipo { flex-wrap: wrap; }
+    .sg-tipo-acciones { width: 100%; justify-content: flex-end; }
+}
+
+
+/* ============================================================================
+   LAS PESTAÑAS DEL LISTADO DE REPUESTOS
+
+   Son un carril horizontal que desplaza si no caben: un cliente puede tener
+   quince categorias y envolverlas en dos lineas mueve la grilla de sitio cada
+   vez que se filtra. Desplazando, la posicion de la tabla no cambia nunca.
+
+   EL NUMERO VA EN CADA UNA
+
+     Un filtro que al tocarlo no muestra nada ya hizo perder un clic. Con el
+     numero al lado se sabe antes si vale la pena entrar.
+
+   LA VACIA SE APAGA, NO SE ESCONDE
+
+     Esconderla correria las demas de lugar y se terminaria tocando la
+     equivocada. Y "Sin clasificar" en cero es justamente la señal de que el
+     maestro quedo clasificado: escondida, no habria forma de saberlo.
+   ============================================================================ */
+.sg-rep-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    border-bottom: 1px solid #e6e9f0;
+    scrollbar-width: thin;
+}
+
+.sg-rep-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 13px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #79839a;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+}
+
+.sg-rep-tab:hover { color: #34415c; text-decoration: none; }
+
+.sg-rep-tab.is-activa {
+    border-bottom-color: var(--sg-purple, #6C5CFF);
+    color: var(--sg-purple, #6C5CFF);
+    font-weight: 700;
+}
+
+.sg-rep-tab .n {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #f2f3f7;
+    color: #8592a8;
+    font-size: 10.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-rep-tab.is-activa .n {
+    background: #efeaff;
+    color: var(--sg-purple, #6C5CFF);
+}
+
+.sg-rep-tab.is-vacia { opacity: .5; }
+
+
+/* ---------------------------------------------------- asignacion en lote
+
+   Aparece sola cuando hay algo marcado. Permanente seria una fila mas de
+   ruido en una pantalla que casi siempre se usa para buscar, no para
+   clasificar. */
+.sg-rep-asignar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 13px;
+    border: 1px solid #ded6ff;
+    border-radius: 11px;
+    background: linear-gradient(100deg, #f7f4ff, #fbfaff);
+    color: #39217e;
+}
+
+.sg-rep-asignar > i { color: var(--sg-purple, #6C5CFF); font-size: 19px; }
+.sg-rep-asignar strong { font-size: 12.5px; }
+.sg-rep-asignar > span { color: #6b6291; font-size: 12px; }
+.sg-rep-asignar .sigma-accion { margin-left: auto; }
+
+@media (max-width: 640px) {
+    .sg-rep-asignar .sigma-accion { margin-left: 0; width: 100%; justify-content: center; }
+}
+
+
+/* ============================================================================
+   LA GALERIA DEL REPUESTO
+
+   LAS MINIATURAS SON CUADRADAS Y RECORTAN
+
+     Las fotos vienen de celulares y escaneres: verticales, apaisadas, de
+     cualquier proporcion. Dejandolas a su tamaño natural, la fila salta de
+     alto en cada imagen y la cuadricula deja de leerse como una cuadricula.
+
+     `object-fit: cover` recorta lo que sobra en vez de deformar. Estirar una
+     pieza a un cuadrado la haria irreconocible, que es justo lo contrario de
+     para que esta la foto.
+   ============================================================================ */
+.sg-galeria {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+    gap: 10px;
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-galeria-item {
+    position: relative;
+    border: 1px solid #e4e9f1;
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.sg-galeria-item:hover {
+    border-color: #cfd7e6;
+    box-shadow: 0 4px 14px rgba(30, 43, 71, .08);
+}
+
+.sg-galeria-foto { display: block; position: relative; line-height: 0; }
+
+.sg-galeria-foto img {
+    width: 100%;
+    height: 112px;
+    object-fit: cover;
+    display: block;
+    background: #f4f5f9;
+    transition: transform .25s ease;
+}
+
+.sg-galeria-item:hover .sg-galeria-foto img { transform: scale(1.04); }
+
+/* La portada se marca sobre la imagen: en una cuadricula, un distintivo
+   fuera de la foto se pierde. */
+.sg-galeria-portada {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border-radius: 999px;
+    background: rgba(15, 20, 32, .72);
+    color: #fff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+    line-height: 1.3;
+    backdrop-filter: blur(3px);
+}
+
+.sg-galeria-portada i { font-size: 11px; color: #ffc94d; }
+
+.sg-galeria-pie {
+    padding: 7px 9px;
+    overflow: hidden;
+    color: #79839a;
+    font-size: 10px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Las acciones aparecen al pasar el mouse: permanentes, tapan la foto que se
+   vino a mirar. En pantalla tactil no hay hover, asi que ahi se quedan
+   siempre visibles -ver la consulta de medios de abajo-. */
+.sg-galeria-acciones {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    display: flex;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity .16s ease;
+}
+
+.sg-galeria-item:hover .sg-galeria-acciones,
+.sg-galeria-item:focus-within .sg-galeria-acciones { opacity: 1; }
+
+.sg-galeria-accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .94);
+    color: #4b5870;
+    font-size: 15px;
+    text-decoration: none;
+    box-shadow: 0 1px 4px rgba(15, 20, 32, .2);
+}
+
+.sg-galeria-accion:hover { background: #fff; color: var(--sg-purple, #6C5CFF); text-decoration: none; }
+.sg-galeria-accion.is-peligro:hover { color: #b03546; }
+
+@media (hover: none) {
+    .sg-galeria-acciones { opacity: 1; }
+}
+
+/* ------------------------------------------------------------- subir una */
+.sg-galeria-alta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+}
+
+.sg-galeria-file {
+    flex: 1 1 220px;
+    min-width: 0;
+    padding: 8px 10px;
+    border: 1px dashed #dde3ec;
+    border-radius: var(--sg-radius-md, 12px);
+    background: #fbfcfe;
+    font-size: 12px;
+}
+
+.sg-galeria-vacia {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 12px;
+    padding: 22px 16px;
+    border: 1px dashed #dde3ec;
+    border-radius: 12px;
+    background: #fbfcfe;
+    color: #8592a8;
+    font-size: 12px;
+    justify-content: center;
+}
+
+.sg-galeria-vacia i { font-size: 22px; color: #b8c1d1; }
+
+
+/* ======================================================= EN EL LISTADO
+
+   Un repuesto se reconoce por su forma antes que por su nombre: entre
+   "Rodamiento 6205" y "Rodamiento 6308" la foto decide en un vistazo y el
+   texto obliga a leer cuatro digitos.
+
+   El que no tiene foto lleva el recuadro con su icono, no un hueco: una
+   columna donde unas filas traen imagen y otras nada se ve rota. */
+.sg-rep-fila { display: flex; align-items: center; gap: 10px; min-width: 0; }
+
+.sg-rep-thumb {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #e6e9f0;
+    border-radius: 9px;
+    background: #f7f8fb;
+    overflow: hidden;
+}
+
+.sg-rep-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-rep-thumb.is-vacia { color: #c2cad8; font-size: 19px; }
+
+.sg-rep-nombre { min-width: 0; }

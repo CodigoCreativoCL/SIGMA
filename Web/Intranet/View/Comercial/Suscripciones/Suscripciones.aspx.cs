@@ -95,15 +95,33 @@ public partial class View_Comercial_Suscripciones_Suscripciones : System.Web.UI.
 
         Suscripcion s = lista[0];
 
-        string chip = "<span class=\"grid-estado-chip " + ChipDeEstado(s.estado) + "\">" +
-                      TextoEstado(s.estado) + "</span> ";
+        /* SIN FECHA DE TERMINO NO ESTA "VENCIDA": NO HA EMPEZADO.
+
+           `FNC_SUSCRIPCION_VIGENTE` devuelve VENCIDA cuando `sus_fecha_fin`
+           es NULL, y para el acceso eso es correcto: sin pago no hay
+           vigencia. Pero la palabra manda a buscar un pago que caduco cuando
+           lo que hay es un cobro que nadie pago todavia.
+
+           Se corrige la ETIQUETA, no la regla: el permiso de operar sigue
+           saliendo del mismo bit y la funcion compartida con la API no se
+           toca. */
+        bool sinActivar = s.sus_fecha_fin == null;
+
+        string chip = sinActivar
+            ? "<span class=\"grid-estado-chip is-advertencia\">Sin activar</span> "
+            : "<span class=\"grid-estado-chip " + ChipDeEstado(s.estado) + "\">" +
+              TextoEstado(s.estado) + "</span> ";
 
         string detalle;
 
-        if (s.sus_fecha_fin == null)
+        if (sinActivar)
         {
-            detalle = "Todavía no se ha emitido ningún período, así que la suscripción existe pero " +
-                      "no habilita nada. Cobrar es lo que la pone en marcha.";
+            /* No se afirma que NO haya periodo emitido: puede haberlo, emitido
+               y sin pagar, que es el caso normal apenas se cobra. Lo que es
+               cierto en los dos casos es que no hay ninguno PAGADO. */
+            detalle = "No hay ningún período pagado, así que la suscripción existe pero todavía " +
+                      "no habilita nada. La pone en marcha el primer pago verificado, que es " +
+                      "el que le fija la fecha de término.";
         }
         else if (s.dias_restantes != null && s.dias_restantes >= 0)
         {
@@ -147,6 +165,8 @@ public partial class View_Comercial_Suscripciones_Suscripciones : System.Web.UI.
                     : "";
 
                 Label lblEstado = new Label();
+                /* Misma correccion que arriba: sin fecha de termino la
+                   suscripcion no vencio, no empezo. */
                 lblEstado.Text = TextoEstado(estado);
                 lblEstado.CssClass = "grid-estado-chip " + ChipDeEstado(estado);
                 item["estadoChip"].Controls.Add(lblEstado);

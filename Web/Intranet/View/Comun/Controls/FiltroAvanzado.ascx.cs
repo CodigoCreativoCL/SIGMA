@@ -32,9 +32,28 @@ public partial class Comun_Controls_FiltroAvanzado : System.Web.UI.UserControl
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
-        ScriptManager.RegisterStartupScript(this, this.GetType(), "FiltroAvanzado_" + this.ClientID,
-            "Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function(s,a){expandeFiltro(true,'" + divPersonalizado.ClientID + "','" + hdfExpanded.ClientID + "');});",
-            true);
+        /* EL MANEJADOR SE REGISTRA UNA SOLA VEZ.
+
+           Antes se hacia `add_endRequest(...)` en cada PreRender, y PreRender
+           corre en CADA refresco parcial: despues de diez postbacks habia diez
+           manejadores encima, los diez llamando a lo mismo. Es una fuga que
+           ademas multiplica el trabajo en cada refresco.
+
+           La bandera en `window` sobrevive a los refrescos parciales —la
+           pagina no se recarga— asi que basta con preguntar si ya se hizo. */
+        string idPanel = divPersonalizado.ClientID;
+        string idFlag = hdfExpanded.ClientID;
+
+        string script =
+            "if (!window.__sgFiltro_" + this.ClientID + ") {" +
+            "  window.__sgFiltro_" + this.ClientID + " = true;" +
+            "  Sys.WebForms.PageRequestManager.getInstance().add_endRequest(" +
+            "    function(s,a){ expandeFiltro(true,'" + idPanel + "','" + idFlag + "'); });" +
+            "}" +
+            "expandeFiltro(true,'" + idPanel + "','" + idFlag + "');";
+
+        ScriptManager.RegisterStartupScript(this, this.GetType(),
+            "FiltroAvanzado_" + this.ClientID, script, true);
     }
 
 }

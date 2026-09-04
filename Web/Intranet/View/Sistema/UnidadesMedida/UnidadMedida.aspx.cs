@@ -91,7 +91,7 @@ public partial class View_Sistema_UnidadesMedida_UnidadMedida : System.Web.UI.Pa
             UnidadMedida u = controller.GetUnidad(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = u.ume_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Unidad_Medida", u.ume_codigo);
             txtNombre.Text = u.ume_nombre;
             txtSimbolo.Text = u.ume_simbolo;
             txtFactor.Text = u.ume_factor.ToString("0.######", CultureInfo.InvariantCulture);
@@ -124,7 +124,8 @@ public partial class View_Sistema_UnidadesMedida_UnidadMedida : System.Web.UI.Pa
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR UNIDADES MEDIDA");
 
-        txtCodigo.ReadOnly = true;   // el código es automático (UNI-<id>)
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Unidad_Medida");
+        txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSimbolo.ReadOnly = !puedeEditar;
         txtFactor.ReadOnly = !puedeEditar;
@@ -149,7 +150,7 @@ public partial class View_Sistema_UnidadesMedida_UnidadMedida : System.Web.UI.Pa
 
             entidad.ume_id = Id;
             entidad.ume_magnitud = int.Parse(cboMagnitud.SelectedValue);
-            entidad.ume_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";   // UNI-<id> lo genera el SP
+            entidad.ume_codigo = SitioBase.CodigoModulo.Componer("Unidad_Medida", txtCodigo.Text);   // UNI-<id> lo genera el SP
             entidad.ume_nombre = txtNombre.Text.Trim();
             entidad.ume_simbolo = txtSimbolo.Text.Trim();
             entidad.ume_factor = LeerDecimal(txtFactor.Text, "factor") ?? 1m;

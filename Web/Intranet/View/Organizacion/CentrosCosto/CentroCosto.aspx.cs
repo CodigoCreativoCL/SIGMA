@@ -101,7 +101,7 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
             CentroCosto entidad = controller.GetCentroCosto(new CentroCosto { cco_id = Id });
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.cco_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Centro_Costo", entidad.cco_codigo);
             txtNombre.Text = entidad.cco_nombre;
 
             if (entidad.cco_centro_costo_padre != null)
@@ -122,7 +122,8 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
 
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Centro_Costo");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         cboPadre.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
@@ -152,7 +153,7 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.cco_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.cco_codigo = SitioBase.CodigoModulo.Componer("Centro_Costo", txtCodigo.Text);
             entidad.cco_nombre = txtNombre.Text.Trim();
             entidad.cco_habilitado = rdbSi.Checked;
 

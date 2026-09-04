@@ -9,32 +9,16 @@ using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
-/// Ficha e historial de un activo, solo lectura (HU-037).
-///
-/// Muestra la ficha del activo elegido (CA1) y su línea de tiempo (CA2):
-/// cambios de estado, de posición y mediciones, unidos por SEL_ACTIVO_FICHA,
-/// con filtros por tipo de evento y rango de fechas. SIEMPRE se filtra por el
-/// cliente en sesión: un activo es de una empresa, y el SP rechaza el de otra.
+/// Ficha e historial de un activo, solo lectura (HU-037). Vista 360°: encabezado
+/// con estado, tarjeta de resumen con imagen y métricas, pestañas, línea de
+/// tiempo y panel lateral. SIEMPRE se filtra por el cliente en sesión.
 /// </summary>
 public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 {
-    // Tope de eventos que la grilla trae de una vez; la paginación fina la
-    // hace RadGrid sobre este conjunto. El SP soporta paginación real para la
-    // API; en la web basta con esto para los volúmenes del sprint.
     private const int TOPE_EVENTOS = 200;
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        if (!IsPostBack)
-        {
-            Grid.AddColumn("FECHA", "FECHA", Width: "16%");
-            Grid.AddColumn("TIPO_EVENTO", "TIPO", Width: "14%");
-            Grid.AddColumn("TITULO", "EVENTO", Width: "34%");
-            Grid.AddColumn("DETALLE", "DETALLE", Width: "24%");
-            Grid.AddColumn("USUARIO_NOMBRE", "USUARIO", Width: "12%");
-        }
-
-        Tools.tools.RegisterPostBackScript(Grid);
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -67,17 +51,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         udPanel.Update();
     }
 
-    protected void btnBuscar_Click(object sender, EventArgs e)
-    {
-        // El postback ya recarga en PreRender; el handler existe para que el
-        // botón dispare el ciclo.
-    }
+    protected void btnBuscar_Click(object sender, EventArgs e) { }
+
+    // Al elegir un activo, el postback recarga la ficha en PreRender: no hay
+    // que apretar ningún botón.
+    protected void cboActivo_SelectedIndexChanged(object sender, EventArgs e) { }
 
     protected int ActivoSeleccionado()
     {
-        RadComboBox2 cbo = (RadComboBox2)wucFiltro.FindControl("cboActivo");
         int id;
-        if (cbo != null && int.TryParse(cbo.SelectedValue, out id)) return id;
+        if (cboActivo != null && int.TryParse(cboActivo.SelectedValue, out id)) return id;
         return 0;
     }
 
@@ -87,95 +70,229 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         pnlSinActivo.Visible = (activo == 0);
         pnlFicha.Visible = (activo > 0);
-        pnlHistorial.Visible = (activo > 0);
-
         if (activo == 0) return;
 
-        CargarFicha(activo);
-        CargarHistorial(activo);
-    }
-
-    /// <summary>La ficha del activo (CA1): datos que devuelve SEL_ACTIVO.</summary>
-    protected void CargarFicha(int activo)
-    {
         ActivoController controller = new ActivoController();
         Activo a = controller.GetActivo(activo);
 
-        // GetActivo no filtra por cliente; se verifica que sea del cliente en
-        // sesión para no mostrar la ficha de otra empresa.
+        // GetActivo no filtra por cliente; se verifica para no mostrar la ficha
+        // de otra empresa.
         if (a == null || a.act_id == 0 || a.act_cliente != SitioBase.Session.ClienteId())
         {
             pnlFicha.Visible = false;
-            pnlHistorial.Visible = false;
             pnlSinActivo.Visible = true;
             return;
         }
 
-        lblCodigo.Text = a.act_codigo;
-        lblNombre.Text = a.act_nombre;
-        lblPlanta.Text = a.planta_nombre;
-        lblArea.Text = string.IsNullOrEmpty(a.area_nombre) ? "—" : a.area_nombre;
-        lblTipo.Text = a.tipo_nombre;
-        lblEstado.Text = a.estado_nombre;
-        lblCriticidad.Text = a.criticidad_nombre;
+        CargarFicha(a);
+        CargarHistorial(activo);
+    }
+
+    protected void CargarFicha(Activo a)
+    {
+        string codigo = Server.HtmlEncode(a.act_codigo);
+        string nombre = Server.HtmlEncode(a.act_nombre);
+        string tipo = Server.HtmlEncode(string.IsNullOrEmpty(a.tipo_nombre) ? "—" : a.tipo_nombre);
+        string planta = Server.HtmlEncode(string.IsNullOrEmpty(a.planta_nombre) ? "—" : a.planta_nombre);
+        string area = Server.HtmlEncode(string.IsNullOrEmpty(a.area_nombre) ? "—" : a.area_nombre);
+        string estado = Server.HtmlEncode(string.IsNullOrEmpty(a.estado_nombre) ? "—" : a.estado_nombre);
+        string critic = Server.HtmlEncode(string.IsNullOrEmpty(a.criticidad_nombre) ? "—" : a.criticidad_nombre);
+
+        // Encabezado
+        litHeroCodigo.Text = codigo;
+        litHeroNombre.Text = nombre;
+        litBadges.Text = BadgeEstado(a.act_activo_estado, estado) + BadgeCriticidad(critic);
+
+        // Tarjeta resumen
+        litIdentCodigo.Text = codigo;
+        litTipo.Text = tipo;
+        litPlanta.Text = planta;
+        litArea.Text = area;
+        litImagen.Text = ImagenActivo(a.act_id);
+
+        // Métricas
+        litTileEstado.Text = "<span class=\"" + ClaseColorEstado(a.act_activo_estado) + "\">" + estado + "</span>";
+        litTileCriticidad.Text = "<span class=\"" + ClaseColorCriticidad(critic) + "\">" + critic + "</span>";
+
+        // Panel lateral — ficha técnica
+        litFtCodigo.Text = codigo;
+        litFtTipo.Text = tipo;
+        litFtPlanta.Text = planta;
+        litFtArea.Text = area;
+        litFtEstado.Text = "<span class=\"" + ClaseColorEstado(a.act_activo_estado) + "\">" + estado + "</span>";
+        litFtCriticidad.Text = "<span class=\"" + ClaseColorCriticidad(critic) + "\">" + critic + "</span>";
+
+        // Resumen (pestaña)
+        string desc = string.IsNullOrEmpty(a.act_descripcion) ? "Sin descripción registrada." : Server.HtmlEncode(a.act_descripcion);
+        StringBuilder r = new StringBuilder();
+        r.Append("<p style=\"margin:0 0 12px;color:#475569;font-size:13px;line-height:1.6;\">" + desc + "</p>");
+        if (!string.IsNullOrEmpty(a.act_numero_serie))
+            r.Append("<div style=\"font-size:12.5px;color:#64748b;\"><strong>N° de serie:</strong> " + Server.HtmlEncode(a.act_numero_serie) + "</div>");
+        if (!string.IsNullOrEmpty(a.act_fabricante))
+            r.Append("<div style=\"font-size:12.5px;color:#64748b;margin-top:4px;\"><strong>Fabricante:</strong> " + Server.HtmlEncode(a.act_fabricante) + "</div>");
+        litResumen.Text = r.ToString();
+
+        // Enlaces de acción
+        string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.act_id));
+        string urlEditar = ResolveUrl("~/View/Activos/Activos/Activo.aspx");
+        string onclickEditar = "return SigmaModal.open({url:'" + urlEditar + "?query=" + q + "', title:'Editar activo', width:960, initialHeight:620});";
+        hlEditar.Attributes["onclick"] = onclickEditar;
+        hlAccEditar.Attributes["onclick"] = onclickEditar;
+
+        hlComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
+        hlAccComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
+        hlMedidores.NavigateUrl = ResolveUrl("~/View/Activos/Medidores/ActivoMedidores.aspx");
+        hlAccCambiar.NavigateUrl = ResolveUrl("~/View/Activos/Estado/ActivoEstado.aspx");
+        hlAtributos.NavigateUrl = ResolveUrl("~/View/Activos/Atributos/AtributoTecnicos.aspx");
+        hlGenerarOT.NavigateUrl = ResolveUrl("~/Default.aspx");
+        hlAccOT.NavigateUrl = ResolveUrl("~/Default.aspx");
+
+        CargarTabs(a);
+    }
+
+    /// <summary>
+    /// Carga las pestañas centralizadas del activo: componentes, medidores y
+    /// atributos técnicos del tipo. Solo lectura (el ABM completo se abre con
+    /// "Gestionar"). Reutiliza los controllers de cada módulo.
+    /// </summary>
+    protected void CargarTabs(Activo a)
+    {
+        int cliente = SitioBase.Session.ClienteId();
+
+        // Componentes del activo
+        var lc = new ActivoComponenteController().GetComponentes(new ActivoComponente
+        { aco_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
+        if (lc == null) lc = new System.Collections.Generic.List<ActivoComponente>();
+        rptComponentes.DataSource = lc; rptComponentes.DataBind();
+        pnlSinComponentes.Visible = (lc.Count == 0);
+
+        // Medidores del activo
+        var lm = new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor
+        { ame_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
+        if (lm == null) lm = new System.Collections.Generic.List<ActivoMedidor>();
+        rptMedidores.DataSource = lm; rptMedidores.DataBind();
+        pnlSinMedidores.Visible = (lm.Count == 0);
+
+        // Atributos técnicos del TIPO del activo
+        var la = new AtributoTecnicoController().GetAtributos(new AtributoTecnico
+        { filtro_cliente = cliente, filtro_activo_tipo = a.act_activo_tipo, filtro_habilitado = true });
+        if (la == null) la = new System.Collections.Generic.List<AtributoTecnico>();
+        rptAtributos.DataSource = la; rptAtributos.DataBind();
+        pnlSinAtributos.Visible = (la.Count == 0);
     }
 
     protected void CargarHistorial(int activo)
     {
         int total;
-        Grid.DataSource = LeerHistorial(activo, out total);
-        Grid.DataBind();
+        List<ActivoFichaEvento> datos = LeerHistorial(activo, out total);
+        if (datos == null) datos = new List<ActivoFichaEvento>();
+
+        rptHistorial.DataSource = datos;
+        rptHistorial.DataBind();
+
+        pnlSinEventos.Visible = (datos.Count == 0);
+        litEventos.Text = datos.Count.ToString();
+
+        // Último evento = el más reciente (la lista viene ordenada desc).
+        if (datos.Count > 0 && datos[0].fecha.HasValue)
+            litUltimoEvento.Text = datos[0].fecha.Value.ToString("dd MMM yyyy");
+        else
+            litUltimoEvento.Text = "—";
     }
 
     private List<ActivoFichaEvento> LeerHistorial(int activo, out int total)
     {
-        RadComboBox2 cboTipoCtrl = (RadComboBox2)wucFiltro.FindControl("cboTipo");
-        WebControls.Calendar calDesdeCtrl = (WebControls.Calendar)wucFiltro.FindControl("calDesde");
-        WebControls.Calendar calHastaCtrl = (WebControls.Calendar)wucFiltro.FindControl("calHasta");
-
-        string tipo = (cboTipoCtrl != null) ? cboTipoCtrl.SelectedValue : "";
-        DateTime? desde = (calDesdeCtrl != null) ? calDesdeCtrl.Value : null;
-        DateTime? hasta = (calHastaCtrl != null) ? calHastaCtrl.Value : null;
+        string tipo = (cboTipo != null) ? cboTipo.SelectedValue : "";
+        DateTime? desde = (calDesde != null) ? calDesde.Value : null;
+        DateTime? hasta = (calHasta != null) ? calHasta.Value : null;
 
         ActivoFichaController controller = new ActivoFichaController();
         return controller.GetHistorial(activo, SitioBase.Session.ClienteId(), tipo,
                                        desde, hasta, true, 1, TOPE_EVENTOS, out total);
     }
 
-    protected void rgrHistorial_ItemDataBound(object sender, GridItemEventArgs e)
+    /* ---- Helpers de presentación (usados por el Repeater y la ficha) ---- */
+
+    public string FechaLarga(object f)
     {
-        if (!(e.Item is GridDataItem)) return;
-        GridDataItem item = (GridDataItem)e.Item;
-
-        // La fecha se muestra dd-MM-yyyy HH:mm.
-        object f = DataBinder.Eval(item.DataItem, "fecha");
-        if (f != null && f != DBNull.Value)
-            item["FECHA"].Text = Convert.ToDateTime(f).ToString("dd-MM-yyyy HH:mm");
-
-        // Un color por familia de evento, para leer la línea de un vistazo.
-        object t = DataBinder.Eval(item.DataItem, "tipo_evento");
-        string tipo = t == null ? "" : t.ToString();
-        string etiqueta = tipo == "ESTADO" ? "Estado"
-                        : tipo == "POSICION" ? "Posición"
-                        : tipo == "MEDICION" ? "Medición" : tipo;
-        item["TIPO_EVENTO"].Text = etiqueta;
+        if (f == null || f == DBNull.Value) return "";
+        DateTime d = Convert.ToDateTime(f);
+        return d.ToString("dd MMM yyyy") + " · " + d.ToString("HH:mm");
     }
 
-    /// <summary>
-    /// Exporta el historial completo del activo a Excel. Se usa el truco
-    /// clásico de una tabla HTML con content-type de Excel: no agrega
-    /// dependencias y abre bien en Excel y LibreOffice.
-    /// </summary>
+    public string TipoEtiqueta(object t)
+    {
+        string tipo = t == null ? "" : t.ToString();
+        return tipo == "ESTADO" ? "Estado"
+             : tipo == "POSICION" ? "Posición"
+             : tipo == "MEDICION" ? "Medición" : tipo;
+    }
+
+    public string TipoClase(object t)
+    {
+        string tipo = t == null ? "" : t.ToString();
+        return tipo == "ESTADO" ? "is-estado"
+             : tipo == "POSICION" ? "is-posicion"
+             : tipo == "MEDICION" ? "is-medicion" : "";
+    }
+
+    private string BadgeEstado(int idEstado, string texto)
+    {
+        string color = idEstado == 1 ? "is-verde"
+                     : (idEstado == 2 || idEstado == 4) ? "is-amarillo"
+                     : (idEstado == 3 || idEstado == 5 || idEstado == 6) ? "is-rojo" : "is-gris";
+        return "<span class=\"sigma-af-badge " + color + "\">" + texto + "</span>";
+    }
+
+    private string ClaseColorEstado(int idEstado)
+    {
+        return idEstado == 1 ? "val is-verde"
+             : (idEstado == 3 || idEstado == 5 || idEstado == 6) ? "val is-rojo" : "val";
+    }
+
+    private bool EsCritica(string critic)
+    {
+        string c = (critic ?? "").ToUpperInvariant();
+        return c.Contains("CRÍT") || c.Contains("CRIT") || c.Contains("ALTA");
+    }
+
+    private string BadgeCriticidad(string critic)
+    {
+        string color = EsCritica(critic) ? "is-rojo"
+                     : (critic ?? "").ToUpperInvariant().Contains("MEDIA") ? "is-amarillo" : "is-gris";
+        return "<span class=\"sigma-af-badge " + color + "\">Criticidad " + critic + "</span>";
+    }
+
+    private string ClaseColorCriticidad(string critic)
+    {
+        return EsCritica(critic) ? "val is-rojo" : "val";
+    }
+
+    private string ImagenActivo(int activo)
+    {
+        ActivoImagenController c = new ActivoImagenController();
+        int idArchivo = c.GetImagenId(activo, SitioBase.Session.ClienteId());
+        if (idArchivo > 0)
+            return "<img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(idArchivo)) + "\" alt=\"Imagen del activo\" />";
+
+        // Sin imagen: ilustración de respaldo (gráfico de un equipo).
+        return "<svg class=\"sigma-af-motor\" viewBox=\"0 0 64 64\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\">"
+             + "<rect x=\"10\" y=\"24\" width=\"30\" height=\"20\" rx=\"3\" fill=\"#ffffff\" opacity=\".92\"/>"
+             + "<rect x=\"40\" y=\"29\" width=\"12\" height=\"10\" rx=\"2\" fill=\"#ffffff\" opacity=\".75\"/>"
+             + "<circle cx=\"25\" cy=\"34\" r=\"7\" fill=\"#7c6cff\"/>"
+             + "<circle cx=\"25\" cy=\"34\" r=\"2.6\" fill=\"#ffffff\"/>"
+             + "<rect x=\"14\" y=\"44\" width=\"26\" height=\"4\" rx=\"2\" fill=\"#ffffff\" opacity=\".6\"/>"
+             + "<path d=\"M52 20l3 3M52 48l3-3\" stroke=\"#ffffff\" stroke-width=\"2\" stroke-linecap=\"round\" opacity=\".7\"/>"
+             + "</svg>";
+    }
+
+    /// <summary>Exporta el historial completo del activo a Excel (tabla HTML).</summary>
     protected void lnkExportar_Click(object sender, EventArgs e)
     {
         try
         {
             int activo = ActivoSeleccionado();
-            if (activo == 0)
-            {
-                Tools.tools.ClientAlert("Elija un activo primero.");
-                return;
-            }
+            if (activo == 0) { Tools.tools.ClientAlert("Elija un activo primero."); return; }
 
             int total;
             List<ActivoFichaEvento> datos = LeerHistorial(activo, out total);
@@ -207,13 +324,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             Response.Flush();
             Response.End();
         }
-        catch (System.Threading.ThreadAbortException)
-        {
-            // Response.End lanza esta excepción por diseño; se ignora.
-        }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message);
-        }
+        catch (System.Threading.ThreadAbortException) { }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message); }
     }
 }

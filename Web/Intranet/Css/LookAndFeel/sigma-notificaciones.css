@@ -74,6 +74,65 @@
 }
 
 
+/* ============================================================================
+   ERAN ENLACES, AHORA SON BOTONES
+
+   QUE PASO
+
+     Al pasar el centro de alertas y el panel de la campana a AJAX, los
+     `LinkButton` -que salen como <a>- se reemplazaron por <button> nativos: la
+     pestaña y la alerta ya no navegan a ninguna parte, solo cambian el estado
+     del cliente y piden el fragmento nuevo. Es lo correcto para lo que hacen y
+     ademas es lo accesible: un boton se activa con Espacio y un enlace no.
+
+     Pero esta hoja estaba escrita para <a>, que no trae estilo propio. Un
+     <button> si: el navegador le pone borde, fondo gris, tipografia del
+     sistema, texto CENTRADO y ancho ajustado al contenido. De golpe cada
+     alerta de la cola aparecio como una cajita gris con el texto al medio, y
+     las pestañas como tres botones de formulario.
+
+   POR QUE EL SELECTOR ES SOLO LA CLASE, SIN `button` DELANTE
+
+     Escrito `button.sg-alerta` tendria MAS especificidad que `.sg-alerta`, y
+     entonces este `border: 0` le ganaria al `border-bottom` que cada pieza
+     declara mas abajo: la lista quedaria sin sus separadores y la pestaña
+     activa sin su subrayado. Habria que ir deshaciendo el reset pieza por
+     pieza.
+
+     Con la clase sola la especificidad es la misma, asi que gana la que viene
+     despues. Este bloque va PRIMERO y solo tiene que ganarle al estilo del
+     navegador, cosa que cualquier regla de autor hace por definicion.
+   ============================================================================ */
+.sg-notif-item,
+.sg-alerta,
+.sg-tab,
+.sg-cao-revisar,
+.sg-btn,
+.sg-toast-cerrar {
+    margin: 0;
+    border: 0;
+    background-color: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+}
+
+/* Solo la fila de la bandeja y la de la cola ocupan el ancho completo. Las
+   pestañas y los botones de accion van en fila: al 100% se apilarian uno
+   debajo de otro.
+
+   `.sg-btn` y `.sg-cao-revisar` se suman a la lista de arriba porque tambien
+   dejaron de ser <a> al pasar la pantalla a AJAX. `.sg-btn` vuelve a
+   declarar su borde y su fondo mas abajo, asi que recupera su aspecto de
+   boton; lo que gana con el reset es la tipografia de la aplicacion en vez de
+   la del sistema operativo. */
+.sg-notif-item,
+.sg-alerta { width: 100%; }
+
+
 /* ---- Una notificacion ---- */
 .sg-notif-item {
     display: flex;
@@ -117,13 +176,11 @@
     object-fit: contain;
 }
 
-/* El color lo pone la severidad, no el tipo: lo que decide si se
-   mira ahora es la gravedad, no de que modulo viene. */
-.sg-notif-item .icono.is-critica    { background-color: rgba(220, 38, 38, .14);  color: #b91c1c; }
-.sg-notif-item .icono.is-alta       { background-color: rgba(220, 38, 38, .10);  color: var(--sg-danger, #DC2626); }
-.sg-notif-item .icono.is-advertencia{ background-color: rgba(245, 158, 11, .14); color: #92610a; }
-.sg-notif-item .icono.is-baja       { background-color: rgba(37, 99, 235, .10);  color: var(--sg-info, #2563EB); }
-.sg-notif-item .icono.is-normal     { background-color: rgba(108, 92, 255, .10); color: var(--sg-purple, #6C5CFF); }
+/* EL ICONO NO SE TIÑE. Aca habia cinco fondos segun la gravedad. El simbolo
+   de SIGMA ya trae sus propios colores -turquesa, azul, morado, rosa- y
+   ponerlo sobre un cuadrado de color lo apaga: dos fondos, uno encima del
+   otro. La gravedad la dice la pastilla con su palabra, que se lee sin tener
+   que aprenderse un codigo de colores. */
 
 .sg-notif-item .texto { flex: 1 1 auto; min-width: 0; }
 
@@ -450,14 +507,16 @@
 .sg-notif-item.sev-critica.is-nueva { background-color: rgba(185, 28, 28, .055); }
 .sg-notif-item.sev-alta.is-nueva    { background-color: rgba(220, 38, 38, .045); }
 
-/* El halo del icono acompana, sin taparlo: el SVG de marca tiene
-   sus propios colores y pintarle encima lo apagaria. */
-.sg-notif-item .icono { background-color: rgba(108, 92, 255, .08); }
+/* ESTAS TRES ERAN EL ROJO Y EL AMARILLO PASTEL QUE NO SE IBAN.
 
-.sg-notif-item.sev-critica .icono { background-color: rgba(185, 28, 28, .12); }
-.sg-notif-item.sev-alta .icono    { background-color: rgba(220, 38, 38, .10); }
-.sg-notif-item.sev-advertencia .icono { background-color: rgba(245, 158, 11, .13); }
-.sg-notif-item.sev-baja .icono    { background-color: rgba(37, 99, 235, .10); }
+   Apuntaban a `.sg-notif-item.sev-critica .icono`, que son DOS clases mas un
+   descendiente: especificidad (0,3,0). Las reglas que intentaban limpiarlo mas
+   abajo apuntaban a `.sg-notif-item .icono`, (0,2,0), asi que perdian por mas
+   que vinieran despues. Estar al final no sirve de nada contra un selector mas
+   especifico.
+
+   Se borran de raiz en vez de taparse con una septima regla mas especifica
+   todavia. */
 
 /* El rotulo, junto a la antiguedad. Solo aparece en lo que pide
    accion: un "Normal" en cada fila le quitaria peso al que si. */
@@ -489,3 +548,1625 @@
 .sg-notif-item.sev-critica .punto { background-color: #b91c1c; }
 .sg-notif-item.sev-alta .punto    { background-color: var(--sg-danger, #DC2626); }
 .sg-notif-item.sev-advertencia .punto { background-color: var(--sg-warning, #F59E0B); }
+
+/* =============================================================
+   BANDEJA COMPACTA DEL MASTER — estados explícitos y foco operativo
+   ============================================================= */
+.sg-notif-panel {
+    width: min(430px, calc(100vw - 24px)) !important;
+    max-height: calc(100vh - 82px);
+    max-height: calc(100dvh - 82px);
+    overflow: hidden;
+    padding: 0 !important;
+    border: 1px solid #dce3ed !important;
+    border-radius: 17px !important;
+    background: rgba(255, 255, 255, .985) !important;
+    box-shadow: 0 22px 55px rgba(20, 30, 54, .2) !important;
+    backdrop-filter: blur(16px);
+}
+.sg-notif-panel > div {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    max-height: inherit;
+}
+.sg-notif-cabecera {
+    align-items: flex-start;
+    padding: 16px 17px 13px;
+    border-bottom: 1px solid #e3e8f0;
+    background: linear-gradient(135deg, #fbfaff 0%, #f7fbff 100%);
+}
+.sg-notif-cabecera > div { min-width: 0; }
+.sg-notif-cabecera-acciones {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 6px;
+    align-items: center;
+}
+.sg-notif-cerrar {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    border: 1px solid #dfe4ed;
+    border-radius: 10px;
+    color: #4f5c72;
+    background: #fff;
+    font-size: 19px;
+    line-height: 1;
+}
+.sg-notif-cerrar:hover,
+.sg-notif-cerrar:focus { color: #5e41e7; border-color: #c9befd; outline: none; background: #f7f5ff; }
+.sg-notif-eyebrow {
+    display: block;
+    color: #6a4ff2;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+}
+.sg-notif-cabecera .titulo { display: block; margin-top: 2px; color: #172034; font-size: 14px; line-height: 1.25; }
+.sg-notif-resumen { display: block; margin-top: 4px; color: #778196; font-size: 10px; }
+.sg-notif-resumen strong { color: #334057; }
+.sg-notif-leer {
+    flex: 0 0 auto;
+    margin-top: 2px;
+    padding: 5px 7px;
+    border-radius: 8px;
+    color: #6345e9 !important;
+    background: #f0edff;
+    font-size: 9px;
+    font-weight: 800;
+}
+.sg-notif-cuerpo {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: min(62vh, 510px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #c9c1f6 transparent;
+    scrollbar-width: thin;
+}
+.sg-notif-cuerpo::-webkit-scrollbar { width: 6px; }
+.sg-notif-cuerpo::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
+.sg-notif-item {
+    position: relative;
+    display: grid !important;
+    grid-template-columns: 42px minmax(0, 1fr) 7px;
+    gap: 11px;
+    align-items: start;
+    min-height: 88px;
+    padding: 12px 14px !important;
+    border-left: 3px solid transparent;
+    background: #fff;
+    text-decoration: none !important;
+}
+.sg-notif-item:hover,
+.sg-notif-item:focus { background: #f8f9ff !important; outline: none; box-shadow: inset 0 0 0 2px rgba(101, 72, 242, .11); }
+.sg-notif-item.is-nueva { background: #fbfaff; }
+.sg-notif-item.is-resuelta { opacity: .76; border-left-color: #b7c0cf; }
+.sg-notif-item.is-resuelta .icono { filter: grayscale(.35); }
+.sg-notif-item.is-ai { border-left-color: #6f4cf6; }
+.sg-notif-item.sev-critica { border-left-color: #c53a50; }
+.sg-notif-item.sev-alta { border-left-color: #df5f39; }
+.sg-notif-item.sev-advertencia { border-left-color: #dda12e; }
+.sg-notif-item .icono {
+    width: 40px;
+    height: 40px;
+}
+.sg-notif-item .icono img { width: 29px; height: 29px; }
+.sg-notif-item .titulo { padding-right: 8px; color: #20293b; font-size: 11px; line-height: 1.32; }
+.sg-notif-item .detalle {
+    display: -webkit-box;
+    overflow: hidden;
+    margin-top: 2px;
+    color: #69758a;
+    font-size: 10px;
+    line-height: 1.35;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+.sg-notif-item .contexto {
+    display: flex;
+    gap: 4px;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 4px;
+    color: #59657a;
+    font-size: 9px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-notif-item .cuando { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; margin-top: 6px; color: #7c8799; font-size: 9px; }
+.sg-notif-state,
+.sg-notif-ai {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    border-radius: 999px;
+    color: #5f6a7f;
+    background: #edf0f5;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: .025em;
+    text-transform: uppercase;
+}
+.sg-notif-state.is-new { color: #5536db; background: #ebe6ff; }
+.sg-notif-item.is-resuelta .sg-notif-state { color: #39704f; background: #e5f4eb; }
+.sg-notif-ai { color: #fff; background: linear-gradient(120deg, #12c7d0, #6550f4 58%, #d338a6); }
+.sg-notif-action { display: inline-flex; gap: 3px; align-items: center; margin-top: 7px; color: #6040e7; font-size: 9px; font-weight: 800; }
+.sg-notif-item .punto { align-self: start; margin-top: 5px; }
+.sg-notif-pie { padding: 10px 14px; border-top: 1px solid #e3e8f0; background: #fbfcfe; }
+.sg-notif-pie a { display: flex; gap: 5px; align-items: center; justify-content: center; color: #5c3de4; font-size: 10px; font-weight: 800; }
+
+/* En tablet la campana puede quedar cerca del borde izquierdo cuando el
+   menú lateral se colapsa. Anclar el dropdown a la campana lo sacaba del
+   viewport; desde acá se ancla a la pantalla. */
+@media (max-width: 1100px) {
+    .sg-notif-panel {
+        position: fixed !important;
+        top: 68px !important;
+        right: 12px !important;
+        bottom: auto !important;
+        left: auto !important;
+        width: min(430px, calc(100vw - 24px)) !important;
+        max-height: calc(100vh - 80px);
+        max-height: calc(100dvh - 80px);
+        transform: none !important;
+        z-index: 1060 !important;
+    }
+    .sg-notif-cerrar { display: inline-flex; }
+}
+
+/* En móvil funciona como una superficie completa debajo de la topbar. No
+   depende del ancho ni de la posición del icono y deja el pie siempre a la
+   vista mientras solo la lista hace scroll. */
+@media (max-width: 600px) {
+    .sg-notif-panel {
+        top: 58px !important;
+        right: 6px !important;
+        bottom: 6px !important;
+        left: 6px !important;
+        width: auto !important;
+        max-width: none !important;
+        max-height: none !important;
+        border-radius: 16px !important;
+    }
+    .sg-notif-panel > div { height: 100%; max-height: none; }
+    .sg-notif-cabecera { gap: 8px; padding: 13px 12px 11px; }
+    .sg-notif-cabecera .titulo { font-size: 13px; }
+    .sg-notif-leer { min-height: 36px; padding: 8px; white-space: nowrap; }
+    .sg-notif-cuerpo { max-height: none; }
+    .sg-notif-item {
+        grid-template-columns: 38px minmax(0, 1fr) 7px;
+        gap: 9px;
+        min-height: 82px;
+        padding: 11px 10px !important;
+    }
+    .sg-notif-item .icono { width: 37px; height: 37px; }
+    .sg-notif-item .icono img { width: 27px; height: 27px; }
+    .sg-notif-pie { flex: 0 0 auto; padding: 12px; }
+    .sg-notif-pie a { min-height: 28px; font-size: 11px; }
+}
+
+@media (max-width: 390px) {
+    .sg-notif-eyebrow { display: none; }
+    .sg-notif-resumen { margin-top: 2px; }
+    .sg-notif-leer { max-width: 92px; white-space: normal; line-height: 1.15; }
+}
+
+
+/* =============================================================
+   CENTRO DE ACCION OPERACIONAL
+   -------------------------------------------------------------
+
+   Se AGREGA al final: las clases sg-notif-* de arriba las usa el
+   panel de la campana del Master y siguen intactas. Reescribir
+   este archivo habria dejado la campana sin estilos en TODAS las
+   pantallas del sitio, no solo en esta.
+
+   Todos los colores salen de los tokens de sigma-brand.css. Los
+   estados -critica, alta, advertencia- usan la paleta operativa,
+   que NO es la identidad: el morado de SIGMA queda para la accion
+   principal y el degradado para lo que sale del modelo.
+   ============================================================= */
+
+/* ---- Estado en tiempo real ---- */
+.sg-cao-estado {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 18px;
+}
+
+.sg-cao-vivo {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 14px 6px 8px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-pill);
+    background-color: var(--sg-surface);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-text-secondary);
+}
+
+.sg-cao-vivo-icono { width: 26px; height: 26px; }
+
+/* El pulso va FUERA del svg: el archivo de marca no se toca. */
+@media (prefers-reduced-motion: no-preference) {
+    .sg-cao-vivo-icono { animation: sgPulso 2.4s var(--sg-easing) infinite; }
+}
+
+@keyframes sgPulso {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .55; transform: scale(.88); }
+}
+
+.sg-cao-revisar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    text-decoration: none;
+}
+
+.sg-cao-revisar:hover, .sg-cao-revisar:focus { color: var(--sg-purple); }
+
+/* ---- Los cinco indicadores ---- */
+.sg-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(168px, 1fr));
+    gap: 14px;
+    margin-bottom: 20px;
+}
+
+.sg-kpi {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 15px 17px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-surface);
+    box-shadow: var(--sg-shadow-card);
+}
+
+/* Icono a la izquierda y la cifra al lado, no encima: asi la fila superior
+   se lee de un vistazo -"24 activas"- en vez de en dos saltos. */
+.sg-kpi-fila { display: flex; align-items: center; gap: 12px; }
+
+.sg-kpi-icono {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex: none;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--sg-radius-md);
+    background-color: rgba(108, 92, 255, .10);
+    color: var(--sg-purple);
+    font-size: 21px;
+}
+
+.sg-kpi-texto { display: flex; flex-direction: column; min-width: 0; }
+
+/* El pie: comparacion a la izquierda, curva a la derecha. */
+.sg-kpi-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 26px;
+}
+
+.sg-kpi-var {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-kpi-var.is-sube { color: var(--sg-danger); }
+.sg-kpi-var.is-baja { color: var(--sg-success); }
+
+/* La curva toma el color del indicador. Ancho flexible para que la tarjeta
+   pueda estrecharse sin deformar el trazo. */
+.sg-spark {
+    width: 96px;
+    max-width: 55%;
+    height: 26px;
+    flex: none;
+    color: var(--sg-purple);
+    opacity: .85;
+}
+
+.sg-kpi.is-critica .sg-spark { color: var(--sg-danger); }
+.sg-kpi.is-gestion .sg-spark { color: var(--sg-info); }
+.sg-kpi.is-alerta  .sg-spark { color: #EA580C; }
+.sg-kpi.is-ai      .sg-spark { color: var(--sg-purple); }
+
+.sg-kpi.is-critica .sg-kpi-icono { background-color: var(--sg-danger-subtle);  color: var(--sg-danger); }
+.sg-kpi.is-gestion .sg-kpi-icono { background-color: var(--sg-info-subtle);    color: var(--sg-info); }
+.sg-kpi.is-alerta  .sg-kpi-icono { background-color: var(--sg-warning-subtle); color: #B45309; }
+/* La de IA lleva el simbolo de marca sobre fondo claro: el degradado ya
+   esta DENTRO del svg, y ponerlo tambien de fondo lo borraba. */
+.sg-kpi.is-ai      .sg-kpi-icono { background-color: rgba(108, 92, 255, .08); }
+/* El cuadro es de 44px: a 26 el simbolo quedaba flotando dentro de su
+   propio fondo. 34 lo deja con el mismo aire que los iconos de fuente de las
+   otras cuatro tarjetas, que es lo que hace que la fila se lea pareja. */
+.sg-kpi-marca { width: 34px; height: 34px; display: block; }
+
+.sg-kpi-valor {
+    display: block;
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    color: var(--sg-text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-kpi-rotulo {
+    display: block;
+    margin-top: 1px;
+    font-size: 12.5px;
+    color: var(--sg-text-muted);
+}
+
+/* ---- Maestro / detalle ---- */
+.sg-cao {
+    display: grid;
+    grid-template-columns: minmax(320px, 420px) 1fr;
+    gap: 16px;
+
+    /* ------------------------------------------------------------------
+       LAS DOS COLUMNAS MIDEN LO MISMO, Y LA PAGINA DESPLAZA DE CORRIDO
+
+       Antes decia `align-items: start`: cada panel media lo que media su
+       contenido. La cola crecia y el detalle se quedaba en su minimo, asi
+       que sin una alerta elegida quedaba una caja corta flotando al lado de
+       una larga. Se leia como que faltaba algo.
+
+       `stretch` —el valor por omision— hace que ambos llenen la fila y midan
+       igual.
+
+       LO QUE NO SE HACE: ACOTAR EL ALTO
+
+         Se probo poniendole un tope al contenedor para que cada panel
+         desplazara por dentro. Emparejaba los altos, pero metia una barra de
+         desplazamiento propia dentro de la pagina: dos barras, una adentro
+         de la otra, y la rueda del mouse haciendo una cosa u otra segun
+         donde estuviera el puntero. Se saco. La pagina desplaza como
+         cualquier otra pagina.
+       ------------------------------------------------------------------ */
+    align-items: stretch;
+}
+
+.sg-cao > .sg-cola,
+.sg-cao > .sg-detalle {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+@media (max-width: 1100px) {
+    .sg-cao { grid-template-columns: 1fr; }
+}
+
+.sg-cola, .sg-detalle {
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-surface);
+    box-shadow: var(--sg-shadow-card);
+}
+
+.sg-cola-cab {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 16px 16px 12px;
+}
+
+.sg-cola-titulo {
+    flex: 1 1 100%;
+    margin: 0 0 4px;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--sg-text-primary);
+}
+
+.sg-cola-buscar { position: relative; flex: 1 1 100%; }
+
+.sg-cola-buscar .mdi {
+    position: absolute;
+    left: 11px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--sg-text-muted);
+    font-size: 16px;
+    pointer-events: none;
+}
+
+.sg-cola-buscar .sg-input { padding-left: 32px; }
+
+.sg-input, .sg-select {
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 11px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface);
+    font-family: var(--sg-font);
+    font-size: 13px;
+    color: var(--sg-text-primary);
+}
+
+/* La flecha del sistema operativo se cambia por una propia. La nativa cambia
+   de forma, tamaño y color en cada plataforma -en Windows es un triangulo
+   relleno, en macOS dos chevrones- y al lado de los otros controles del panel
+   se lee como un campo prestado de otra pantalla.
+
+   `padding-right` reserva el hueco: sin el, un texto largo pasa por debajo de
+   la flecha. */
+.sg-select {
+    flex: 1 1 46%;
+    width: auto;
+    padding-right: 30px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%236b7280' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* Edge dibuja su propia flecha ADEMAS de la nuestra. */
+.sg-select::-ms-expand { display: none; }
+.sg-input-area { min-height: 62px; resize: vertical; }
+
+.sg-input:focus, .sg-select:focus {
+    outline: 2px solid var(--sg-purple);
+    outline-offset: 1px;
+    border-color: var(--sg-purple);
+}
+
+/* ---- Pestanas ---- */
+.sg-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 0 16px;
+    border-bottom: 1px solid var(--sg-border);
+}
+
+.sg-tab {
+    padding: 9px 12px;
+    border-bottom: 2px solid transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    text-decoration: none;
+}
+
+.sg-tab:hover, .sg-tab:focus { color: var(--sg-text-primary); text-decoration: none; }
+
+.sg-tab.is-activa {
+    color: var(--sg-purple);
+    border-bottom-color: var(--sg-purple);
+}
+
+.sg-tab-n {
+    display: inline-block;
+    min-width: 18px;
+    margin-left: 4px;
+    padding: 1px 5px;
+    border-radius: var(--sg-radius-pill);
+    background-color: var(--sg-surface-subtle);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---- Una alerta de la cola ---- */
+/* La cola crece con sus alertas, sin barra propia. Tenia `max-height: 620px`
+   con `overflow-y: auto`: con quince alertas aparecia una segunda barra de
+   desplazamiento dentro de la pagina, y la rueda del mouse desplazaba la
+   lista o la pagina segun donde estuviera el puntero. */
+.sg-cola-lista { flex: 1 1 auto; min-height: 0; }
+
+.sg-alerta {
+    position: relative;
+    display: flex;
+    gap: 10px;
+    padding: 13px 16px 13px 0;
+    border-bottom: 1px solid var(--sg-border);
+    text-decoration: none;
+    color: inherit;
+}
+
+.sg-alerta:hover, .sg-alerta:focus {
+    background-color: var(--sg-surface-subtle);
+    text-decoration: none;
+    color: inherit;
+}
+
+.sg-alerta:focus { outline: 2px solid var(--sg-purple); outline-offset: -2px; }
+
+.sg-alerta.is-seleccionada { background-color: rgba(108, 92, 255, .06); }
+
+/* La barra de gravedad es color Y posicion: quien no distingue el
+   rojo del ambar igual ve el chip con el texto al lado. */
+.sg-alerta-barra { width: 3px; border-radius: 0 2px 2px 0; background-color: var(--sg-border-strong); }
+
+.sg-alerta.is-critica     .sg-alerta-barra { background-color: var(--sg-danger); }
+.sg-alerta.is-alta        .sg-alerta-barra { background-color: #EA580C; }
+.sg-alerta.is-advertencia .sg-alerta-barra { background-color: var(--sg-warning); }
+.sg-alerta.is-baja        .sg-alerta-barra { background-color: var(--sg-info); }
+
+.sg-alerta-cuerpo { flex: 1; min-width: 0; }
+
+.sg-alerta-fila1 {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sg-alerta-titulo {
+    font-size: 13.5px;
+    font-weight: 600;
+    line-height: 1.35;
+    color: var(--sg-text-primary);
+}
+
+.sg-alerta.is-nueva .sg-alerta-titulo { font-weight: 700; }
+
+.sg-alerta-contexto,
+.sg-alerta-pie {
+    display: block;
+    margin-top: 4px;
+    font-size: 11.5px;
+    color: var(--sg-text-muted);
+}
+
+.sg-alerta-pie { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; }
+.sg-alerta-cuando { margin-left: auto; }
+/* El distintivo de SIGMA AI en la fila: marca + palabra, con el degradado
+   de la marca de fondo. Solo un icono de 20px al lado de otros chips no se
+   leia como "esto lo encontro el modelo": se leia como un adorno. */
+.sg-alerta-ai {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 8px 2px 4px;
+    border-radius: var(--sg-radius-pill);
+    background: linear-gradient(135deg, rgba(0,224,194,.14) 0%, rgba(108,92,255,.16) 60%, rgba(255,77,157,.14) 100%);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    color: var(--sg-text-primary);
+    white-space: nowrap;
+}
+
+.sg-alerta-ai img { height: 16px; width: 16px; }
+
+.sg-alerta-veces {
+    padding: 0 5px;
+    border-radius: var(--sg-radius-pill);
+    background-color: var(--sg-surface-subtle);
+    font-weight: 600;
+}
+
+/* ---- Chips ---- */
+.sg-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    border-radius: var(--sg-radius-pill);
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    white-space: nowrap;
+}
+
+.sg-chip.is-critica     { background-color: var(--sg-danger-subtle);  color: var(--sg-danger); }
+.sg-chip.is-alta        { background-color: #FFEDD5;                  color: #C2410C; }
+.sg-chip.is-advertencia { background-color: var(--sg-warning-subtle); color: #B45309; }
+.sg-chip.is-baja        { background-color: var(--sg-info-subtle);    color: var(--sg-info); }
+.sg-chip.is-normal      { background-color: var(--sg-surface-subtle); color: var(--sg-text-muted); }
+.sg-chip.is-estado      { background-color: var(--sg-surface-subtle); color: var(--sg-text-secondary); font-weight: 600; }
+.sg-chip.is-sinresp     { background-color: var(--sg-warning-subtle); color: #B45309; }
+
+/* ---- Detalle ---- */
+.sg-detalle { padding: 18px 20px 22px; min-height: 420px; }
+
+.sg-det-cab {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sg-det-chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.sg-det-acciones { display: flex; gap: 8px; flex-wrap: wrap; }
+
+.sg-det-titulo {
+    margin: 12px 0 6px;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--sg-text-primary);
+}
+
+.sg-det-meta {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    font-size: 12.5px;
+    color: var(--sg-text-muted);
+}
+
+.sg-det-sep { width: 3px; height: 3px; border-radius: 50%; background-color: var(--sg-border-strong); }
+.sg-det-descripcion { margin-top: 16px; font-size: 13.5px; color: var(--sg-text-secondary); }
+
+.sg-umbral {
+    display: flex;
+    gap: 22px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface-subtle);
+}
+
+.sg-umbral span {
+    display: flex;
+    flex-direction: column;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--sg-text-primary);
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-umbral b {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-text-muted);
+    text-transform: uppercase;
+    letter-spacing: .04em;
+}
+
+/* ---- Botones ---- */
+.sg-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-text-secondary);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.sg-btn:hover, .sg-btn:focus {
+    border-color: var(--sg-border-strong);
+    color: var(--sg-text-primary);
+    text-decoration: none;
+}
+
+.sg-btn:focus { outline: 2px solid var(--sg-purple); outline-offset: 1px; }
+
+.sg-btn-primario {
+    border-color: var(--sg-purple);
+    background-color: var(--sg-purple);
+    color: #ffffff;
+}
+
+.sg-btn-primario:hover, .sg-btn-primario:focus {
+    background-color: var(--sg-purple-hover);
+    border-color: var(--sg-purple-hover);
+    color: #ffffff;
+}
+
+/* ---- SIGMA AI ---- */
+.sg-ai {
+    position: relative;
+    margin-top: 18px;
+    padding: 16px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-surface-subtle);
+    overflow: hidden;
+}
+
+.sg-ai-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.sg-ai-logo { height: 34px; }
+.sg-ai-cuando { font-size: 11.5px; color: var(--sg-text-muted); }
+
+/* Alineacion del icono con el rotulo cuando el svg crecio. */
+.sg-ai-tarjeta-cab { min-height: 30px; }
+
+.sg-ai-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; }
+
+.sg-ai-tarjeta {
+    padding: 14px;
+    border: 1px solid var(--sg-border);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface);
+}
+
+.sg-ai-tarjeta-cab {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--sg-text-primary);
+}
+
+.sg-ai-icono { width: 30px; height: 30px; flex: none; }
+.sg-ai-texto { font-size: 12.5px; line-height: 1.55; color: var(--sg-text-secondary); }
+
+.sg-ai-prob .n { display: block; font-size: 30px; font-weight: 700; line-height: 1; color: var(--sg-purple); }
+.sg-ai-prob .t, .sg-ai-vida .t { display: block; margin-top: 3px; font-size: 11.5px; color: var(--sg-text-muted); }
+.sg-ai-vida { margin-top: 12px; }
+.sg-ai-vida .n { display: block; font-size: 18px; font-weight: 700; color: var(--sg-text-primary); }
+
+.sg-ai-nodato { font-size: 12.5px; font-style: italic; color: var(--sg-text-muted); }
+
+.sg-factor {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--sg-border);
+    font-size: 12.5px;
+}
+
+.sg-factor:last-child { border-bottom: 0; }
+.sg-factor-nombre { color: var(--sg-text-secondary); }
+.sg-factor-valor { font-weight: 700; color: var(--sg-text-primary); font-variant-numeric: tabular-nums; }
+
+.sg-ai-analizando {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px dashed var(--sg-border-strong);
+    border-radius: var(--sg-radius-md);
+    font-size: 13px;
+    color: var(--sg-text-muted);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .sg-ai-analizando .sg-ai-icono { animation: sgPulso 1.6s var(--sg-easing) infinite; }
+}
+
+/* ---- Accion recomendada ---- */
+.sg-reco {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--sg-border);
+    border-left: 3px solid var(--sg-purple);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface);
+}
+
+.sg-reco-icono { width: 34px; height: 34px; flex: none; }
+.sg-reco-titulo { font-size: 12.5px; font-weight: 700; color: var(--sg-text-primary); margin-bottom: 3px; }
+.sg-reco-texto { font-size: 13px; line-height: 1.5; color: var(--sg-text-secondary); }
+
+/* ---- Linea de tiempo ---- */
+.sg-linea { margin-top: 20px; }
+
+.sg-linea-titulo {
+    margin-bottom: 10px;
+    font-size: 12.5px;
+    font-weight: 700;
+    color: var(--sg-text-primary);
+}
+
+.sg-hito { display: flex; gap: 10px; padding-bottom: 12px; }
+
+.sg-hito-punto {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    margin-top: 4px;
+    border-radius: 50%;
+    background-color: var(--sg-purple);
+    box-shadow: 0 0 0 3px rgba(108, 92, 255, .14);
+}
+
+.sg-hito-estado { display: block; font-size: 13px; font-weight: 600; color: var(--sg-text-primary); }
+.sg-hito-meta { display: block; font-size: 11.5px; color: var(--sg-text-muted); }
+.sg-hito-motivo { display: block; margin-top: 3px; font-size: 12.5px; color: var(--sg-text-secondary); }
+
+/* ---- Cierre con motivo ---- */
+.sg-cierre {
+    margin-top: 18px;
+    padding: 14px 16px;
+    border: 1px solid var(--sg-border-strong);
+    border-radius: var(--sg-radius-sm);
+    background-color: var(--sg-surface-subtle);
+}
+
+.sg-cierre-rotulo {
+    display: block;
+    margin-bottom: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-text-primary);
+}
+
+.sg-cierre-botones { display: flex; gap: 8px; margin-top: 10px; }
+
+/* ---- Vacio ---- */
+.sg-vacio { padding: 40px 24px; text-align: center; }
+
+/* El "Elija una alerta" se centra en el panel en vez de colgar de arriba con
+   un relleno fijo. Ahora que el detalle mide lo mismo que la cola, un
+   `padding-top` de 90px lo dejaba en el tercio superior de una caja alta. */
+.sg-vacio-alto {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
+    padding-top: 40px;
+}
+
+@media (max-width: 1100px) {
+    .sg-vacio-alto { display: block; padding-top: 90px; }
+}
+.sg-vacio-marca { width: 92px; height: 92px; opacity: .38; margin-bottom: 16px; }
+.sg-vacio-titulo { font-size: 15px; font-weight: 700; color: var(--sg-text-primary); }
+.sg-vacio-texto { margin-top: 4px; font-size: 13px; color: var(--sg-text-muted); }
+
+/* ---- Toast ----
+   Dentro del contenido, no sobre la topbar: ahi taparia el selector
+   de cliente y la campana, que es justo lo que la persona necesita
+   mirar cuando entra un aviso. */
+.sg-toast-host {
+    position: absolute;
+    top: 14px;
+    right: 20px;
+    z-index: 90;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.sg-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 11px;
+    width: 340px;
+    max-width: calc(100vw - 40px);
+    padding: 13px 14px;
+    border-radius: var(--sg-radius-md);
+    background-color: var(--sg-navy);
+    color: var(--sg-dark-text-primary);
+    box-shadow: var(--sg-shadow-elevated);
+    opacity: 0;
+    transform: translateY(-8px);
+    transition: opacity var(--sg-duration-base) var(--sg-easing),
+                transform var(--sg-duration-base) var(--sg-easing);
+    pointer-events: auto;
+}
+
+.sg-toast.is-visible { opacity: 1; transform: translateY(0); }
+.sg-toast.is-critico { border-left: 3px solid var(--sg-danger); }
+.sg-toast-icono { width: 36px; height: 36px; flex: none; }
+.sg-toast-cuerpo { flex: 1; min-width: 0; }
+.sg-toast-titulo { font-size: 13px; font-weight: 700; }
+.sg-toast-texto { margin-top: 2px; font-size: 12px; color: var(--sg-dark-text-secondary); }
+
+.sg-toast-cerrar {
+    flex: none;
+    padding: 0 2px;
+    border: 0;
+    background: none;
+    color: var(--sg-dark-text-secondary);
+    font-size: 19px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.sg-toast-cerrar:hover, .sg-toast-cerrar:focus { color: #ffffff; }
+.sg-toast:focus { outline: 2px solid var(--sg-teal); outline-offset: 2px; }
+
+@media (prefers-reduced-motion: reduce) {
+    .sg-toast { transition: none; }
+}
+
+
+/* ===========================================================================
+   LA TARJETA DE ANALISIS PREDICTIVO
+
+   El titulo a la izquierda y la marca del modelo a la DERECHA: lo que manda
+   es el numero, no de donde salio.
+   =========================================================================== */
+.sg-ai-riesgo-card .sg-ai-tarjeta-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.sg-ai-riesgo-card .sg-ai-icono { width: 20px; height: 20px; flex: 0 0 auto; }
+
+/* El anillo a la izquierda, la vida util a la derecha. */
+.sg-ai-riesgo {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* ---- El anillo ---- */
+.sg-anillo {
+    position: relative;
+    width: 132px;
+    height: 132px;
+    flex: 0 0 auto;
+}
+
+.sg-anillo-svg { width: 100%; height: 100%; display: block; }
+
+/* El texto va ENCIMA del anillo y centrado: el numero es lo que se lee
+   primero y el rotulo lo explica sin competirle. */
+.sg-anillo-txt {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1.15;
+}
+
+.sg-anillo-txt .n {
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--sg-danger, #E63946);
+}
+
+.sg-anillo-txt .t {
+    font-size: 10px;
+    color: #6b7280;
+    margin-top: 2px;
+}
+
+/* ---- Vida util ---- */
+.sg-ai-vida {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.sg-ai-vida .t { font-size: 12px; color: #6b7280; }
+
+.sg-ai-vida .n {
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--sg-danger, #E63946);
+}
+
+/* ===========================================================================
+   LA CURVA DE RIESGO
+
+   Escala fija 0..100: una escala que se ajusta sola haria ver un paso de 2%
+   a 5% igual de dramatico que uno de 10% a 90%.
+   =========================================================================== */
+.sg-curva {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+}
+
+.sg-curva-y {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #9ca3af;
+    height: 74px;
+    flex: 0 0 auto;
+    text-align: right;
+}
+
+.sg-curva-plot { flex: 1 1 auto; min-width: 0; }
+
+.sg-curva-svg {
+    width: 100%;
+    height: 74px;
+    display: block;
+    /* El area se apoya en la linea de abajo: sin esto el relleno queda
+       flotando y se lee como una nube en vez de como un acumulado. */
+    border-bottom: 1px solid rgba(0, 0, 0, .08);
+}
+
+.sg-curva-x {
+    display: flex;
+    justify-content: space-between;
+    font-size: 9px;
+    color: #9ca3af;
+    margin-top: 3px;
+}
+
+.sg-curva-x span { flex: 1 1 0; text-align: center; }
+.sg-curva-x span:first-child { text-align: left; }
+.sg-curva-x span:last-child { text-align: right; }
+
+/* ===========================================================================
+   DE LA PREDICCION AL ENCARGO
+
+   El unico boton del panel que escribe algo. Va al pie y separado del resto
+   para que no se confunda con las tarjetas de lectura.
+   =========================================================================== */
+.sg-ai-pie {
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(0, 0, 0, .06);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.sg-ai-ot {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 9px 16px;
+    border-radius: var(--sg-radius-md, 10px);
+    background: var(--sg-gradient, linear-gradient(135deg, #6C5CFF, #22D3EE));
+    color: #ffffff !important;
+    font-size: 13px;
+    font-weight: 600;
+    text-decoration: none !important;
+    border: 0;
+    transition: filter .15s ease, transform .15s ease;
+}
+
+.sg-ai-ot:hover { filter: brightness(1.06); transform: translateY(-1px); }
+
+.sg-ai-ot::before {
+    font-family: "Material Design Icons";
+    content: "\F0415";   /* mdi-plus */
+    font-size: 15px;
+    line-height: 1;
+}
+
+/* Ya generada: deja de ser una accion y pasa a ser un hecho. */
+.sg-ai-ot-hecha {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #15803d;
+}
+
+.sg-ai-ot-hecha i { font-size: 16px; }
+
+@media (max-width: 640px) {
+    .sg-ai-riesgo { gap: 14px; }
+    .sg-anillo { width: 108px; height: 108px; }
+    .sg-anillo-txt .n { font-size: 22px; }
+}
+
+
+/* ============================================================================
+   EL ESQUELETO DEL DETALLE
+
+   POR QUE UN ESQUELETO Y NO UNA RUEDITA
+
+     Una ruedita girando dice "espere" y nada mas. El esqueleto dice ademas
+     QUE va a llegar: chips arriba, un titulo ancho, dos lineas de texto, una
+     tarjeta. El ojo ya ubica donde va cada cosa, y cuando entra el contenido
+     no hay salto -las piezas aparecen donde ya estaba mirando-.
+
+   LAS BARRAS NO MIDEN TODAS LO MISMO
+
+     Un bloque de barras iguales se lee como una tabla. Los largos desparejos
+     se leen como texto, que es lo que de verdad viene.
+
+   EL BRILLO VA DE IZQUIERDA A DERECHA Y ES LENTO
+
+     1,4 segundos. Mas rapido parece que algo esta fallando; sin movimiento,
+     parece que la pantalla se colgo.
+   ============================================================================ */
+.sg-esq {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 4px 0;
+}
+
+.sg-esq-fila { display: flex; gap: 8px; }
+
+.sg-esq-chip,
+.sg-esq-barra,
+.sg-esq-bloque {
+    display: block;
+    border-radius: 7px;
+
+    /* El brillo es un degradado mas ancho que el elemento, desplazandose. Con
+       `background-size: 200%` hay de donde correr sin que se vea el borde de
+       la textura. */
+    background: linear-gradient(100deg,
+                #eef0f5 30%, #f7f8fb 48%, #eef0f5 66%);
+    background-size: 220% 100%;
+    animation: sg-esq-brillo 1.4s ease-in-out infinite;
+}
+
+.sg-esq-chip { width: 96px; height: 22px; border-radius: 999px; }
+.sg-esq-chip.is-corto { width: 64px; }
+
+.sg-esq-barra { width: 100%; height: 12px; }
+.sg-esq-barra.is-titulo { width: 72%; height: 24px; border-radius: 9px; }
+.sg-esq-barra.is-meta { width: 54%; height: 11px; }
+.sg-esq-barra.is-medio { width: 84%; }
+.sg-esq-barra.is-corto { width: 38%; height: 14px; }
+
+.sg-esq-caja {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 6px;
+    padding: 16px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: var(--sg-radius-md, 12px);
+}
+
+.sg-esq-cols {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+}
+
+.sg-esq-bloque { height: 86px; border-radius: 10px; }
+
+@keyframes sg-esq-brillo {
+    from { background-position: 140% 0; }
+    to   { background-position: -40% 0; }
+}
+
+/* Quien pidio menos movimiento ve el esqueleto quieto. Sigue cumpliendo su
+   funcion -decir que forma tiene lo que viene-, que no depende del brillo. */
+@media (prefers-reduced-motion: reduce) {
+    .sg-esq-chip,
+    .sg-esq-barra,
+    .sg-esq-bloque { animation: none; }
+}
+
+
+/* ============================================================================
+   EL PANEL, EN SILENCIO
+
+   QUE PASABA
+
+     Cada fila traia CINCO señales de color a la vez: el borde izquierdo teñido
+     por gravedad, el fondo del icono teñido por gravedad, la pastilla de
+     estado, la de "nueva", la de gravedad y el degradado de SIGMA AI. Seis
+     colores compitiendo en 88 pixeles de alto. Cuando todo grita, no se
+     escucha nada: la fila critica se veia igual de cargada que un stock bajo.
+
+   LA REGLA
+
+     Una sola señal de color por fila, y solo cuando hay algo que decidir.
+     Todo lo demas en escala de grises. El titulo -que es lo unico que hay que
+     leer- pasa a ser lo mas oscuro de la fila, que es como se lee primero.
+
+   EL BORDE DE COLOR SE VA
+
+     Era la señal mas ruidosa y la menos precisa: una barra vertical de 3px no
+     dice CUAL es la gravedad sin aprenderse el codigo de colores. La pastilla
+     con la palabra lo dice sin que haya que aprender nada, y con poca vision
+     tambien.
+
+   ESTA HOJA VA AL FINAL A PROPOSITO
+
+     Redefine reglas que estan mas arriba en este mismo archivo. Van juntas y
+     comentadas en un bloque en vez de repartidas: asi el criterio se lee
+     completo y el dia que haya que volver atras, se saca el bloque entero.
+   ============================================================================ */
+
+/* ---- Fuera todos los bordes de gravedad ---- */
+.sg-notif-item,
+.sg-notif-item.is-ai,
+.sg-notif-item.is-resuelta,
+.sg-notif-item.sev-critica,
+.sg-notif-item.sev-alta,
+.sg-notif-item.sev-advertencia {
+    border-left: 0;
+    padding-left: 14px !important;
+}
+
+/* El icono ya no tiene caja de ningun tono: ver "EL ICONO SIN CAJA" mas
+   abajo. Aca hubo un gris claro, que fue el paso intermedio entre el fondo
+   teñido por gravedad y no tener fondo. */
+
+/* ---- El titulo manda ---- */
+.sg-notif-item .titulo {
+    color: #141b28;
+    font-size: 11.5px;
+    font-weight: 600;
+}
+
+.sg-notif-item.is-nueva .titulo { font-weight: 750; }
+
+.sg-notif-item .detalle { color: #7b8496; }
+
+/* ---- Las pastillas, todas iguales y calladas ---- */
+.sg-notif-state,
+.sg-notif-item .cuando .sev {
+    margin-left: 0;
+    padding: 2px 7px;
+    border: 1px solid #e6e9f0;
+    border-radius: 999px;
+    background: transparent;
+    color: #79839a;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+/* "Nueva" no lleva color: ya lo dice el punto de la derecha y el titulo mas
+   oscuro. Tres señales para el mismo dato es una de mas. */
+.sg-notif-state.is-new,
+.sg-notif-item.is-resuelta .sg-notif-state {
+    border-color: #e6e9f0;
+    background: transparent;
+    color: #79839a;
+}
+
+/* ---- LA UNICA señal de color: la gravedad que pide accion ----
+   Solo CRITICA y ALTA llegan aca -el code-behind no emite la pastilla para
+   las demas-, y son justamente las dos que hacen que alguien deje lo que
+   esta haciendo. */
+.sg-notif-item.sev-critica .cuando .sev {
+    border-color: #f0c4cb;
+    background: #fdf2f4;
+    color: #a32a3d;
+}
+
+.sg-notif-item.sev-alta .cuando .sev {
+    border-color: #f4d3bd;
+    background: #fef6f1;
+    color: #a2551f;
+}
+
+/* ---- SIGMA AI: la marca, no un degradado ----
+   El degradado de tres colores era el elemento mas llamativo de la fila, y lo
+   que anuncia no es urgente: es de donde salio el aviso. Ahora va el simbolo
+   de SIGMA AI en chico con su nombre al lado, en la misma pastilla neutra que
+   el resto. Se reconoce por la marca, que es de lo que se trata. */
+.sg-notif-ai {
+    gap: 4px;
+    padding: 2px 8px 2px 4px;
+    border: 1px solid #ded7fb;
+    border-radius: 999px;
+    background: #f8f6ff;
+    color: #5b45c8;
+    font-size: 8.5px;
+    font-weight: 700;
+    letter-spacing: .04em;
+}
+
+.sg-notif-ai::before {
+    content: "";
+    width: 13px;
+    height: 13px;
+    background-image: url("../../Imagen/sigma-ai/sigma-ai-symbol-gradient.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+    flex: 0 0 auto;
+}
+
+/* ---- El punto de sin leer, de un solo color ----
+   Teñirlo por gravedad lo hacia decir dos cosas a la vez: "no lo has visto" y
+   "es grave". Dice la primera, que es la suya. */
+.sg-notif-item .punto,
+.sg-notif-item.sev-critica .punto,
+.sg-notif-item.sev-alta .punto,
+.sg-notif-item.sev-advertencia .punto {
+    background-color: var(--sg-purple, #6C5CFF);
+}
+
+/* ---- Resuelta: se apaga entera, sin borde ---- */
+.sg-notif-item.is-resuelta { opacity: .62; }
+.sg-notif-item.is-resuelta .icono { filter: grayscale(1); opacity: .8; }
+
+/* ---- La separacion entre filas, mas tenue ---- */
+.sg-notif-item { border-bottom-color: #f0f2f6; }
+
+/* ---- "Revisar" deja de gritar ----
+   Estaba en morado fuerte y en negrita en TODAS las filas: seis enlaces
+   morados apilados pesaban mas que los titulos. Se enciende al pasar por
+   encima, que es cuando importa. */
+.sg-notif-action { color: #8590a5; font-weight: 700; }
+.sg-notif-item:hover .sg-notif-action { color: var(--sg-purple, #6C5CFF); }
+
+
+/* ============================================================================
+   EL DIBUJO NO SE VEIA PORQUE EL ARCHIVO ES CASI TODO MARGEN
+
+   LA MEDICION
+
+     `sigma-ai-status-*.svg` declara un `viewBox` de 144x144, pero el trazo
+     vive entre x=38..93 e y=36..94. Son unos 56 de 144: el dibujo ocupa el
+     39% del lienzo y el 61% restante es aire.
+
+     Dentro de una caja de 40px, con `object-fit: contain`, el navegador
+     encaja el LIENZO -no el dibujo-. Resultado: la marca se dibujaba a unos
+     15px. Por eso se veia diminuta y desvaida, y no porque el color fuera
+     tenue.
+
+   LA CORRECCION
+
+     Se agranda la imagen dentro de la caja y se recorta el aire sobrante con
+     `overflow: hidden`, que la caja ya tenia. Con factor 1.8 el trazo pasa de
+     ~15px a ~28px en una caja de 40: ocupa el 70%, que es lo que hace que se
+     lea como un simbolo y no como una mancha.
+
+     Se escala en vez de editar los SVG: son los archivos de marca y los usan
+     tambien la app y los correos. Cambiarles el `viewBox` aca los
+     desalinearia con el resto.
+
+   Aca hubo tambien una caja con borde y un tono de marca para las
+   predicciones. Se quito entera: ver "EL ICONO SIN CAJA" mas abajo.
+   ============================================================================ */
+.sg-notif-item .icono img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    transform-origin: center;
+}
+
+
+/* ============================================================================
+   CADA SVG, ENCUADRADO EN SU CAJA
+
+   POR QUE HAY UN NUMERO POR ARCHIVO Y NO UNO SOLO
+
+     Se midio el trazo real de cada uno -no el `viewBox`, que declara el
+     lienzo- y resultaron muy distintos entre si:
+
+     status-prediction          trazo 58% del lienzo   corrimiento  -4.3%,   9.9%   escala 1.35
+     status-analyzing           trazo 73% del lienzo   corrimiento   4.2%,   8.3%   escala 1.07
+     status-realtime            trazo 94% del lienzo   corrimiento   0.0%,   0.0%   escala 0.83
+     status-recommendation      trazo 61% del lienzo   corrimiento  -5.7%,  11.3%   escala 1.28
+     symbol-gradient            trazo 48% del lienzo   corrimiento  -1.2%,  -0.8%   escala 1.64
+
+     `realtime` casi llena su lienzo y `prediction` ocupa poco mas de la
+     mitad. Un factor unico, cualquiera que sea, deja a unos diminutos y
+     desborda a otros: con 1.8 el destello de `prediction` se salia por la
+     esquina y `realtime` se salia por los cuatro lados.
+
+   Y ADEMAS SE CORRIGE EL CENTRO
+
+     `prediction` y `recommendation` no estan centrados en su lienzo: el
+     destello de la esquina superior derecha corre el trazo hacia arriba y a
+     la derecha. `transform: scale` agranda desde el centro del ELEMENTO, asi
+     que sin corregirlo el dibujo crece hacia afuera por un lado y deja un
+     hueco por el otro. El corrimiento lo lleva al centro antes de escalar.
+
+   LOS NUMEROS ESTAN CALCULADOS, NO PROBADOS
+
+     Salen de medir los limites del trazo y resolver que escala lo deja
+     ocupando el 78% de la caja. El dia que cambie un SVG de marca, se vuelve
+     a medir y salen otros; no hay que ajustarlos a ojo.
+
+     Se miden los archivos en vez de editarlos porque son los originales de
+     marca y los usan tambien la app y los correos: cambiarles el `viewBox`
+     los desalinearia con el resto del producto.
+   ============================================================================ */
+
+/* El encuadre por omision, para cualquier icono que no este en la lista. */
+.sg-notif-item .icono img { transform: none; }
+
+.sg-notif-item .icono img[src*="status-prediction"],
+.sg-notif-item .icono svg[data-sg-icono="status-prediction"] {
+    transform: translate(-4.34%, 9.90%) scale(1.35);
+}
+
+.sg-notif-item .icono img[src*="status-analyzing"],
+.sg-notif-item .icono svg[data-sg-icono="status-analyzing"] {
+    transform: translate(4.17%, 8.33%) scale(1.07);
+}
+
+.sg-notif-item .icono img[src*="status-realtime"],
+.sg-notif-item .icono svg[data-sg-icono="status-realtime"] {
+    transform: translate(0.00%, 0.00%) scale(0.83);
+}
+
+.sg-notif-item .icono img[src*="status-recommendation"],
+.sg-notif-item .icono svg[data-sg-icono="status-recommendation"] {
+    transform: translate(-5.73%, 11.28%) scale(1.28);
+}
+
+.sg-notif-item .icono img[src*="symbol-gradient"],
+.sg-notif-item .icono svg[data-sg-icono="symbol-gradient"] {
+    transform: translate(-1.17%, -0.78%) scale(1.64);
+}
+
+
+/* ============================================================================
+   EL ICONO SIN CAJA
+
+   La caja teñida era un envoltorio alrededor de un dibujo que ya trae sus
+   propios colores: el simbolo de SIGMA es un grafo de nodos turquesa, azul,
+   morado y rosa. Ponerlo sobre un cuadrado de color lo apagaba —dos fondos,
+   uno encima del otro— y de paso hacia que seis filas seguidas se vieran como
+   seis pastillas iguales.
+
+   Sin caja, lo que se ve es el simbolo. Y como no hay borde que respetar, el
+   dibujo puede ocupar mas espacio del que le dejaba el cuadrado.
+   ============================================================================ */
+.sg-notif-item .icono,
+.sg-notif-item .icono.is-critica,
+.sg-notif-item .icono.is-alta,
+.sg-notif-item .icono.is-advertencia,
+.sg-notif-item .icono.is-baja,
+.sg-notif-item .icono.is-normal,
+.sg-notif-item.is-ai .icono,
+.sg-notif-item.is-resuelta .icono,
+.sg-notif-item.is-resuelta.is-ai .icono {
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 0;
+    background: none;
+
+    /* `visible` para que el trazo pueda respirar al animarse: al aparecer, los
+       nodos crecen un poco por encima de su tamaño final y con `hidden` se
+       recortarian contra el borde de la caja. */
+    overflow: visible;
+}
+
+.sg-notif-item .icono svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+/* Resuelta: el simbolo se apaga, no se enmarca. */
+.sg-notif-item.is-resuelta .icono { filter: grayscale(1); opacity: .45; }
+
+
+/* ============================================================================
+   EL FILTRO: UN SEGMENTADO, NO TRES BOTONES
+
+   POR QUE SALIAN APILADOS
+
+     `.sg-notif-panel > div { flex-direction: column }` alcanza a CUALQUIER div
+     hijo directo del panel, y el de los filtros lo es. Ese selector lleva una
+     clase y un elemento -(0,1,1)- contra la clase sola de `.sg-notif-filtros`
+     -(0,1,0)-, asi que ganaba y apilaba los tres botones a lo alto,
+     comiendose un tercio del panel.
+
+     Se nombra el contenedor con su padre para igualar la especificidad y
+     declarar la direccion a proposito, en vez de confiar en el orden.
+
+   POR QUE UN SEGMENTADO Y NO TRES PASTILLAS SUELTAS
+
+     Tres pastillas con borde propio se leen como tres acciones
+     independientes, y estas son EXCLUYENTES: elegir una apaga las otras. El
+     segmentado -una sola pista con la opcion activa en relieve- dice eso con
+     la forma: hay un carril, y algo esta puesto en una de sus posiciones.
+
+     Ademas ocupa una linea en vez de tres, que en un desplegable de 430px de
+     ancho es la diferencia entre ver dos alertas o cuatro.
+
+   Y LLEVA LOS NUMEROS
+
+     Un filtro que dice "Sin ver" y al tocarlo no muestra nada hizo perder un
+     clic. Con el numero al lado se sabe ANTES si vale la pena.
+   ============================================================================ */
+.sg-notif-panel > .sg-notif-filtros {
+    display: flex;
+    flex-direction: row;
+    gap: 2px;
+    margin: 0 14px 8px;
+    padding: 3px;
+    border-radius: 999px;
+    background: #f2f3f7;
+}
+
+.sg-notif-filtro {
+    flex: 1 1 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 4px;
+    border: 0;
+    border-radius: 999px;
+    background: transparent;
+    color: #79839a;
+    font-family: inherit;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .02em;
+    cursor: pointer;
+    transition: background-color .16s ease, color .16s ease, box-shadow .16s ease;
+}
+
+.sg-notif-filtro:hover { color: #4a5568; }
+
+/* La activa se levanta del carril: fondo blanco y una sombra corta. Es la
+   misma metafora del interruptor deslizante, y se entiende sin leer. */
+.sg-notif-filtro.is-activo {
+    background: #fff;
+    color: #2b3548;
+    box-shadow: 0 1px 2px rgba(20, 30, 54, .10),
+                0 0 0 1px rgba(20, 30, 54, .04);
+}
+
+/* El numero: tinta mas clara para que no compita con la palabra. En la
+   pestaña activa se oscurece, porque ahi si es el dato que se esta mirando. */
+.sg-notif-filtro .n {
+    color: #a3adbf;
+    font-size: 9.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-notif-filtro.is-activo .n { color: #6b7688; }
+
+/* Una opcion sin nada que mostrar no se esconde -desaparecer opciones mueve
+   las otras de lugar- pero deja de invitar. */
+.sg-notif-filtro.is-vacia { opacity: .45; }
+
+
+/* ============================================================================
+   POR QUE `hidden` NO ALCANZABA PARA ESCONDER UNA FILA
+
+   Los dos filtros -el del panel de la campana y el del centro de alertas-
+   esconden filas poniendoles el atributo `hidden`. Y no pasaba nada: se
+   marcaba la opcion, cambiaban los numeros, y la lista seguia completa.
+
+   La causa es una regla del navegador contra una regla nuestra. `hidden`
+   funciona porque la hoja de estilos POR DEFECTO del navegador trae
+   `[hidden] { display: none }`. Pero esa hoja pierde SIEMPRE contra cualquier
+   declaracion de autor, sin importar la especificidad. Y las dos filas
+   declaran su display: `.sg-notif-item` lo hace con `display: grid !important`
+   y `.sg-alerta` con `display: flex`. Cualquiera de las dos gana, asi que el
+   atributo quedaba puesto y sin efecto.
+
+   Con estas reglas el `hidden` vuelve a significar lo que dice. Se escriben
+   una sola vez y aca, en vez de que cada filtro recuerde apagar el display a
+   mano: el dia que alguien agregue una tercera lista, `hidden` ya funciona.
+   ============================================================================ */
+.sg-notif-item[hidden],
+.sg-alerta[hidden],
+.sg-notif-filtro[hidden] { display: none !important; }

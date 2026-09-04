@@ -1,0 +1,428 @@
+@charset "utf-8";
+
+/* ============================================================================
+   SIGMA Dialog
+   Marco modal propio para las fichas WebForms. El contenido sigue viviendo en
+   su pagina/iframe: el marco, el foco, el responsive y el cierre ya no dependen
+   de Telerik RadWindow.
+   ============================================================================ */
+
+html.sigma-dialog-locked,
+html.sigma-dialog-locked body {
+    overflow: hidden !important;
+}
+
+.sigma-dialog[hidden] { display: none !important; }
+
+.sigma-dialog {
+    --sigma-dialog-width: 960px;
+    position: fixed;
+    inset: 0;
+    z-index: 2147482000;
+    display: grid;
+    place-items: center;
+    padding: clamp(10px, 2.2vw, 28px);
+    box-sizing: border-box;
+    font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+.sigma-dialog__backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    padding: 0;
+    background:
+        radial-gradient(circle at 78% 12%, rgba(34, 211, 238, .13), transparent 26%),
+        radial-gradient(circle at 20% 82%, rgba(108, 44, 255, .18), transparent 32%),
+        rgba(7, 12, 29, .62);
+    -webkit-backdrop-filter: blur(8px) saturate(115%);
+    backdrop-filter: blur(8px) saturate(115%);
+    opacity: 0;
+    transition: opacity .18s ease;
+}
+
+.sigma-dialog__surface {
+    position: relative;
+    width: min(var(--sigma-dialog-width), calc(100vw - clamp(20px, 4.4vw, 56px)));
+    max-height: calc(100dvh - clamp(20px, 4.4vw, 56px));
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, .68);
+    border-radius: 22px;
+    background: #fff;
+    box-shadow:
+        0 32px 90px rgba(2, 6, 23, .34),
+        0 8px 28px rgba(76, 29, 149, .14),
+        inset 0 1px 0 rgba(255, 255, 255, .92);
+    opacity: 0;
+    transform: translateY(16px) scale(.982);
+    transition: opacity .18s ease, transform .22s cubic-bezier(.2, .8, .2, 1);
+}
+
+.sigma-dialog.is-open .sigma-dialog__backdrop { opacity: 1; }
+.sigma-dialog.is-open .sigma-dialog__surface {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.sigma-dialog__bar {
+    position: relative;
+    z-index: 3;
+    height: 54px;
+    min-height: 54px;
+    flex: 0 0 54px;
+    display: flex !important;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 0 12px 0 17px;
+    box-sizing: border-box;
+    border-bottom: 1px solid #e8ebf2;
+    background:
+        linear-gradient(90deg, rgba(108, 44, 255, .055), rgba(34, 211, 238, .025) 48%, #fff 82%);
+    cursor: grab;
+    user-select: none;
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+.sigma-dialog.is-dragging .sigma-dialog__bar { cursor: grabbing; }
+
+/* El chrome nunca depende del estado del iframe. Incluso si una carga o una
+   salida interrumpe el timeline, titulo y controles siguen disponibles. */
+.sigma-dialog__identity,
+.sigma-dialog__controls {
+    opacity: 1 !important;
+    visibility: visible !important;
+    transform: none !important;
+}
+
+.sigma-dialog__identity {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 11px;
+}
+
+.sigma-dialog__mark {
+    width: 28px;
+    height: 32px;
+    flex: 0 0 28px;
+    background: url("../../Imagen/sigma-isotipo-gradient.svg") center / contain no-repeat;
+    filter: drop-shadow(0 5px 8px rgba(83, 50, 229, .19));
+}
+
+.sigma-dialog__heading { min-width: 0; }
+
+.sigma-dialog__title-line {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.sigma-dialog__eyebrow {
+    display: block;
+    margin-bottom: 1px;
+    color: #7666e9;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: .13em;
+    text-transform: uppercase;
+}
+
+.sigma-dialog__title {
+    min-width: 0;
+    flex: 1 1 auto;
+    display: block;
+    max-width: min(62vw, 760px);
+    overflow: hidden;
+    color: #11182d;
+    font-size: 13px;
+    line-height: 1.25;
+    font-weight: 750;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sigma-dialog__record-id {
+    flex: 0 0 auto;
+    padding: 2px 7px;
+    border: 1px solid #ddd7ff;
+    border-radius: 999px;
+    color: #6248e7;
+    background: #f3f0ff;
+    font-size: 9px;
+    line-height: 1.35;
+    font-weight: 800;
+    letter-spacing: .04em;
+    white-space: nowrap;
+}
+
+.sigma-dialog__record-id[hidden] { display: none !important; }
+
+.sigma-dialog__controls {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.sigma-dialog__controls button {
+    width: 36px;
+    height: 36px;
+    flex: 0 0 36px;
+    display: inline-grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid transparent;
+    border-radius: 11px;
+    color: #526078;
+    background: transparent;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease, background-color .15s ease, transform .15s ease;
+}
+
+.sigma-dialog__controls button:hover {
+    color: #4d31df;
+    border-color: #ded9ff;
+    background: #f5f3ff;
+    transform: rotate(3deg);
+}
+
+.sigma-dialog__controls button:focus-visible {
+    outline: 3px solid rgba(108, 44, 255, .22);
+    outline-offset: 2px;
+}
+
+.sigma-dialog__controls svg { width: 18px; height: 18px; }
+.sigma-dialog__controls .is-restore { display: none; }
+.sigma-dialog.is-maximized .sigma-dialog__controls .is-maximize { display: none; }
+.sigma-dialog.is-maximized .sigma-dialog__controls .is-restore { display: block; }
+
+.sigma-dialog__viewport {
+    position: relative;
+    flex: 0 1 auto;
+    min-height: 0;
+    overflow: hidden;
+    background: #fff;
+}
+
+.sigma-dialog__frame {
+    display: block;
+    width: 100%;
+    height: 420px;
+    max-height: calc(100dvh - clamp(74px, 8vw, 110px));
+    border: 0;
+    background: #fff;
+    opacity: 0;
+    transition: opacity .16s ease;
+}
+
+.sigma-dialog.is-maximized { padding: 8px; }
+.sigma-dialog.is-maximized .sigma-dialog__surface {
+    width: calc(100vw - 16px);
+    height: calc(100dvh - 16px);
+    max-height: none;
+    border-radius: 15px;
+}
+.sigma-dialog.is-maximized .sigma-dialog__viewport { flex: 1 1 auto; }
+.sigma-dialog.is-maximized .sigma-dialog__frame { height: 100% !important; max-height: none; }
+
+.sigma-dialog.is-minimized {
+    display: block;
+    padding: 0;
+    pointer-events: none;
+}
+.sigma-dialog.is-minimized .sigma-dialog__backdrop { display: none; }
+.sigma-dialog.is-minimized .sigma-dialog__surface {
+    position: fixed;
+    right: var(--sigma-dialog-dock-right, 16px);
+    bottom: var(--sigma-dialog-dock-bottom, 16px);
+    width: min(var(--sigma-dialog-dock-width, 360px), calc(100vw - 32px));
+    height: 54px;
+    min-height: 54px;
+    max-height: 54px;
+    pointer-events: auto;
+    border-radius: 15px;
+    box-shadow: 0 18px 50px rgba(11, 18, 38, .26), 0 5px 16px rgba(89, 48, 213, .18);
+    cursor: pointer;
+    transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+.sigma-dialog.is-minimized .sigma-dialog__surface:hover {
+    border-color: rgba(109, 76, 255, .4);
+    box-shadow: 0 21px 58px rgba(11, 18, 38, .3), 0 7px 20px rgba(89, 48, 213, .24);
+    transform: translateY(-2px);
+}
+.sigma-dialog.is-minimized .sigma-dialog__bar { border-bottom: 0; cursor: pointer; }
+.sigma-dialog.is-minimized .sigma-dialog__viewport { display: none; }
+.sigma-dialog.is-minimized [data-sigma-dialog-action="popout"] { display: none; }
+
+.sigma-dialog.is-ready .sigma-dialog__frame { opacity: 1; }
+
+.sigma-dialog__loading {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: block;
+    min-height: 210px;
+    color: #68738a;
+    background: #fbfbfe;
+    transition: opacity .16s ease, visibility .16s ease;
+}
+
+.sigma-dialog.is-ready .sigma-dialog__loading {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.sigma-dialog__skeleton {
+    position: absolute;
+    inset: 0;
+    padding: clamp(18px, 3vw, 34px);
+    box-sizing: border-box;
+    opacity: .88;
+    overflow: hidden;
+}
+
+.sigma-dialog__skeleton i,
+.sigma-dialog__skeleton b,
+.sigma-dialog__skeleton em {
+    display: block;
+    border-radius: 8px;
+    background: linear-gradient(100deg, #ececf4 24%, #f8f8fc 42%, #e9e8f6 60%);
+    background-size: 260% 100%;
+    animation: sigma-dialog-shimmer 1.35s ease-in-out infinite;
+}
+
+.sigma-dialog__sk-head {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    margin-bottom: 24px;
+}
+
+.sigma-dialog__sk-head > i { width: 42px; height: 42px; border-radius: 13px; }
+.sigma-dialog__sk-head > span { display: grid; flex: 1; gap: 8px; }
+.sigma-dialog__sk-head b:first-child { width: 36%; height: 13px; }
+.sigma-dialog__sk-head b:last-child { width: 58%; height: 9px; }
+.sigma-dialog__sk-head > em { width: 116px; height: 36px; }
+
+.sigma-dialog__sk-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(190px, 27%);
+    gap: 18px;
+}
+
+.sigma-dialog__sk-main { display: grid; gap: 15px; }
+.sigma-dialog__sk-main section,
+.sigma-dialog__sk-grid aside {
+    min-height: 150px;
+    padding: 18px;
+    border: 1px solid #ededf5;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, .75);
+}
+
+.sigma-dialog__sk-main section > b { width: 31%; height: 13px; margin-bottom: 15px; }
+.sigma-dialog__sk-main section > i { width: 67%; height: 9px; margin: 10px 0; }
+.sigma-dialog__sk-main section > i:nth-child(3) { width: 45%; }
+.sigma-dialog__sk-main section > span { display: grid; grid-template-columns: repeat(3, 1fr); gap: 11px; margin-top: 19px; }
+.sigma-dialog__sk-main section > span em { height: 38px; }
+.sigma-dialog__sk-grid aside b { width: 64%; height: 14px; margin-bottom: 22px; }
+.sigma-dialog__sk-grid aside i { width: 100%; height: 10px; margin: 14px 0; }
+.sigma-dialog__sk-grid aside i:nth-of-type(2) { width: 78%; }
+.sigma-dialog__sk-grid aside i:nth-of-type(3) { width: 88%; }
+.sigma-dialog__sk-grid aside em { height: 38px; margin-top: 28px; }
+
+.sigma-dialog__loading-brand {
+    position: absolute;
+    z-index: 3;
+    right: clamp(20px, 3vw, 38px);
+    bottom: clamp(18px, 2.5vw, 30px);
+    width: 78px;
+    height: 84px;
+    display: grid;
+    place-items: center;
+    border-radius: 24px;
+    background: linear-gradient(155deg, rgba(255, 255, 255, .96), rgba(246, 243, 255, .88));
+    box-shadow: 0 15px 42px rgba(73, 45, 174, .18), inset 0 0 0 1px rgba(119, 91, 238, .13);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+}
+
+.sigma-dialog__loader {
+    position: relative;
+    z-index: 2;
+    width: 44px;
+    height: 51px;
+    display: block;
+    background: url("../../Imagen/sigma-isotipo-gradient.svg") center / contain no-repeat;
+    filter: drop-shadow(0 12px 17px rgba(69, 43, 203, .25));
+}
+
+.sigma-dialog__particle {
+    position: absolute;
+    z-index: 1;
+    left: 50%;
+    top: auto;
+    bottom: 17px;
+    width: 6px;
+    height: 6px;
+    margin: -3px;
+    border-radius: 50%;
+    background: #5e4bea;
+    box-shadow: 0 0 13px currentColor;
+}
+
+.sigma-dialog__particle.is-2,
+.sigma-dialog__particle.is-5,
+.sigma-dialog__particle.is-8,
+.sigma-dialog__particle.is-11 { width: 5px; height: 5px; color: #20cde5; background: #20cde5; }
+.sigma-dialog__particle.is-3,
+.sigma-dialog__particle.is-6,
+.sigma-dialog__particle.is-9,
+.sigma-dialog__particle.is-12 { width: 4px; height: 4px; color: #a34cf5; background: #a34cf5; }
+
+@keyframes sigma-dialog-shimmer {
+    0% { background-position: 110% 0; }
+    100% { background-position: -110% 0; }
+}
+
+@media (max-width: 680px) {
+    .sigma-dialog { padding: 0; place-items: stretch; }
+
+    .sigma-dialog__surface {
+        width: 100vw;
+        max-height: 100dvh;
+        height: 100dvh;
+        border: 0;
+        border-radius: 0;
+    }
+
+    .sigma-dialog__bar {
+        height: 52px;
+        flex-basis: 52px;
+        padding-left: 13px;
+    }
+
+    .sigma-dialog__title { max-width: calc(100vw - 116px); }
+    .sigma-dialog__viewport { flex: 1 1 auto; }
+    .sigma-dialog__frame { height: 100% !important; max-height: none; }
+    .sigma-dialog__sk-grid { grid-template-columns: minmax(0, 1fr); }
+    .sigma-dialog__sk-grid aside { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .sigma-dialog__backdrop,
+    .sigma-dialog__surface,
+    .sigma-dialog__frame,
+    .sigma-dialog__loading { transition: none; }
+    .sigma-dialog__skeleton i,
+    .sigma-dialog__skeleton b,
+    .sigma-dialog__skeleton em { animation-duration: 2.4s; }
+}

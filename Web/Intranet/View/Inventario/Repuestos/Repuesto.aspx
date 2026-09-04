@@ -2,6 +2,9 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <%-- La galeria comparte hoja con los tipos de repuesto: son del mismo
+         modulo y separarlas seria un archivo mas por dos bloques. --%>
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-repuesto-tipos.css?vrs=1") %>' rel="stylesheet" />
     <script type="text/javascript">
         function getRadWindow() {
             var oWindow = null;
@@ -52,8 +55,14 @@
                     </div>
                     <div class="sigma-modal-field is-medio">
                         <label>Código</label>
-                        <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
-                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>REP-</strong>más el número del registro.</span>
+                        <%-- El prefijo lo pone el sistema y no se puede tocar; el resto
+                             lo escribe quien crea el registro. Van juntos en una sola
+                             caja para que se lea como UN codigo y no como dos campos. --%>
+                        <div class="sg-codigo">
+                            <span class="sg-codigo-prefijo"><asp:Literal ID="litPrefijo" runat="server" /></span>
+                            <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
+                        </div>
+                        <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
                         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Repuesto" />
                         <span class="sigma-modal-ayuda">Único dentro del cliente. No se puede cambiar después.</span>
@@ -71,6 +80,26 @@
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Repuesto" />
                         <span class="sigma-modal-ayuda">No se puede cambiar si el repuesto tiene existencia.</span>
                     </div>
+                    <%-- LA CATEGORIA
+
+                         Opcional a proposito. Obligarla dejaria fuera a los
+                         repuestos que ya existen y forzaria a inventar una
+                         categoria antes de poder cargar el primero. Sin tipo,
+                         el repuesto cae en "Sin clasificar", que es cierto y
+                         no estorba.
+
+                         Para clasificar un maestro que ya existe no se usa
+                         esta ficha: en el listado se marcan varios y se les
+                         asigna el tipo de una vez. --%>
+                    <div class="sigma-modal-field is-chico">
+                        <label>Tipo de repuesto</label>
+                        <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                        <span class="sigma-modal-ayuda">
+                            Agrupa el repuesto en su pestaña del listado. Vacío queda como
+                            <em>Sin clasificar</em>.
+                        </span>
+                    </div>
+
                     <div class="sigma-modal-field is-chico">
                         <label>Habilitado(*)</label>
                         <div class="sigma-modal-opciones">
@@ -215,6 +244,63 @@
                         <span class="sigma-modal-ayuda">Cuándo pedir. Opcional.</span>
                     </div>
                 </div>
+
+                <%-- ============================================================
+     LA GALERIA
+
+     Solo aparece cuando el repuesto YA existe: una foto necesita algo
+     a lo que colgarse, y un subidor en una ficha sin guardar promete
+     algo que no puede cumplir.
+
+     La portada es la primera, no una marcada con una bandera. Una
+     columna "es portada" obligaria a garantizar que solo una la tenga
+     -y a arreglarlo cuando dos la tuvieran-; con el orden, esa
+     situacion no existe.
+     ============================================================ --%>
+                <asp:Panel ID="pnlGaleria" runat="server" Visible="false" CssClass="sigma-form-seccion">
+                    <div class="titulo"><i class="mdi mdi-image-multiple-outline"></i>Fotos del repuesto</div>
+
+                    <div class="sg-galeria-alta">
+                        <asp:FileUpload ID="fupFoto" runat="server" CssClass="sg-galeria-file" accept="image/*" />
+                        <asp:LinkButton ID="lnkAgregarFoto" runat="server" CssClass="sigma-accion is-primaria"
+                            OnClick="lnkAgregarFoto_Click" CausesValidation="false">
+                            <i class="mdi mdi-image-plus"></i><span>Agregar foto</span>
+                        </asp:LinkButton>
+                        <span class="sigma-modal-ayuda">
+                            Solo imágenes. La primera queda de portada y es la que se ve en el listado.
+                        </span>
+                    </div>
+
+                    <asp:Repeater ID="rptFotos" runat="server"
+                        OnItemDataBound="rptFotos_ItemDataBound" OnItemCommand="rptFotos_ItemCommand">
+                        <HeaderTemplate>
+                            <ul class="sg-galeria">
+                        </HeaderTemplate>
+                        <ItemTemplate>
+                            <li class="sg-galeria-item">
+                                <asp:Literal ID="litFoto" runat="server" />
+                                <div class="sg-galeria-acciones">
+                                    <asp:LinkButton ID="lnkPortada" runat="server" CommandName="portada"
+                                        CssClass="sg-galeria-accion" ToolTip="Hacer portada" CausesValidation="false">
+                                        <i class="mdi mdi-star-outline" aria-hidden="true"></i>
+                                    </asp:LinkButton>
+                                    <asp:LinkButton ID="lnkQuitarFoto" runat="server" CommandName="quitar"
+                                        CssClass="sg-galeria-accion is-peligro" ToolTip="Quitar" CausesValidation="false">
+                                        <i class="mdi mdi-trash-can-outline" aria-hidden="true"></i>
+                                    </asp:LinkButton>
+                                </div>
+                            </li>
+                        </ItemTemplate>
+                        <FooterTemplate>
+                            </ul>
+                        </FooterTemplate>
+                    </asp:Repeater>
+
+                    <asp:Panel ID="pnlSinFotos" runat="server" Visible="false" CssClass="sg-galeria-vacia">
+                        <i class="mdi mdi-image-off-outline" aria-hidden="true"></i>
+                        <span>Sin fotos. La primera que agregue será la portada.</span>
+                    </asp:Panel>
+                </asp:Panel>
 
                 <div class="sigma-modal-actions">
                     <WebControls:PushButton ID="btnGuardarUmbral" runat="server" Text="Guardar umbrales" OnClick="btnGuardarUmbral_Click" />

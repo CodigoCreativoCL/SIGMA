@@ -135,3 +135,153 @@
 .updateProgress img {
     display: none !important;
 }
+
+/* ============================================================================
+   IDENTIDAD SIGMA 2026
+   El bloque anterior se conserva por compatibilidad con pantallas antiguas;
+   estas reglas son la implementacion compartida por ambos master actuales.
+   ============================================================================ */
+.modalBackground {
+    position: fixed !important;
+    inset: 0 !important;
+    background: radial-gradient(circle at 50% 56%, rgba(103, 69, 238, .16), transparent 31%), rgba(7, 12, 29, .50) !important;
+    -webkit-backdrop-filter: blur(5px) saturate(112%);
+    backdrop-filter: blur(5px) saturate(112%);
+}
+
+.updateProgress {
+    position: fixed !important;
+    top: 50% !important;
+    left: 50% !important;
+    z-index: 2147482600 !important;
+    width: min(340px, calc(100vw - 32px)) !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 22px 24px 20px !important;
+    overflow: visible !important;
+    box-sizing: border-box !important;
+    border: 1px solid rgba(255, 255, 255, .76) !important;
+    border-radius: 22px !important;
+    background: linear-gradient(155deg, rgba(255, 255, 255, .98), rgba(248, 246, 255, .98)) !important;
+    box-shadow: 0 28px 80px rgba(7, 12, 29, .30), 0 8px 24px rgba(78, 45, 186, .16) !important;
+    transform: translate(-50%, -50%) !important;
+}
+
+.up-brand-stage {
+    position: relative;
+    width: 164px;
+    height: 154px;
+    margin: -8px auto 5px;
+    isolation: isolate;
+}
+
+.updateProgress .up-logo {
+    position: absolute;
+    z-index: 3;
+    left: 50%;
+    bottom: 4px;
+    display: block !important;
+    width: 62px;
+    height: 72px;
+    object-fit: contain;
+    filter: drop-shadow(0 13px 17px rgba(73, 43, 203, .25));
+    transform: translateX(-50%);
+    animation: up-logo-breathe 1.8s ease-in-out infinite;
+}
+
+.up-vector-trails {
+    position: absolute;
+    z-index: 1;
+    inset: 0;
+    display: block;
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.up-vector-trails path {
+    fill: none;
+    stroke: #6d4bea;
+    stroke-width: 1.7;
+    stroke-linecap: round;
+    stroke-dasharray: 12 22;
+    opacity: .30;
+    animation: up-vector-rise 1.35s linear infinite;
+}
+
+.up-vector-trails path:nth-child(2) { stroke: #18bfd4; animation-delay: -.42s; }
+.up-vector-trails path:nth-child(3) { stroke: #a33ee9; animation-delay: -.76s; }
+
+.up-particle {
+    --up-x: 0px;
+    --up-y: -92px;
+    position: absolute;
+    z-index: 2;
+    left: 50%;
+    bottom: 48px;
+    width: 6px;
+    height: 6px;
+    margin-left: -3px;
+    border-radius: 50%;
+    color: #6245ec;
+    background: currentColor;
+    box-shadow: 0 0 12px currentColor;
+    opacity: 0;
+    animation: up-particle-fire 1.22s ease-out infinite;
+}
+
+.up-particle.is-1 { --up-x: -34px; --up-y: -82px; animation-delay: -.12s; }
+.up-particle.is-2 { --up-x: -18px; --up-y: -116px; width: 4px; height: 4px; color: #16c9d6; animation-delay: -.72s; }
+.up-particle.is-3 { --up-x: -5px; --up-y: -96px; color: #8c42ef; animation-delay: -.36s; }
+.up-particle.is-4 { --up-x: 12px; --up-y: -124px; width: 5px; height: 5px; color: #20d1cf; animation-delay: -.91s; }
+.up-particle.is-5 { --up-x: 28px; --up-y: -89px; width: 4px; height: 4px; color: #b33ee5; animation-delay: -.54s; }
+.up-particle.is-6 { --up-x: 38px; --up-y: -109px; color: #416ff1; animation-delay: -1.08s; }
+
+.up-label-caps {
+    color: #6848e6;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .12em;
+}
+
+.up-timer { color: #657087; font-size: 12px; line-height: 19px; }
+.up-bold { color: #1e2940; font-weight: 700; }
+
+.up-progress-track { height: 5px; background: #e6e3f5; }
+.up-progress-fill {
+    width: 42%;
+    background: linear-gradient(90deg, #16cad3, #426cf0 52%, #7d38ef);
+    box-shadow: 0 0 14px rgba(98, 69, 236, .32);
+    animation: up-progress-travel 1.45s cubic-bezier(.45, 0, .2, 1) infinite;
+}
+
+@keyframes up-logo-breathe {
+    0%, 100% { transform: translateX(-50%) translateY(1px) scale(.97); }
+    50% { transform: translateX(-50%) translateY(-3px) scale(1.02); }
+}
+
+@keyframes up-vector-rise { to { stroke-dashoffset: -68; } }
+
+@keyframes up-particle-fire {
+    0% { opacity: 0; transform: translate(0, 8px) scale(.35); }
+    18% { opacity: .96; }
+    64% { opacity: .56; }
+    100% { opacity: 0; transform: translate(var(--up-x), var(--up-y)) scale(1.12); }
+}
+
+@keyframes up-progress-travel {
+    0% { transform: translateX(-115%); }
+    70%, 100% { transform: translateX(275%); }
+}
+
+@media (max-width: 480px) {
+    .updateProgress { padding: 18px 20px !important; border-radius: 18px !important; }
+    .up-brand-stage { transform: scale(.90); margin-top: -16px; margin-bottom: -3px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .updateProgress .up-logo,
+    .up-vector-trails path,
+    .up-particle,
+    .up-progress-fill { animation-duration: 2.8s; }
+}

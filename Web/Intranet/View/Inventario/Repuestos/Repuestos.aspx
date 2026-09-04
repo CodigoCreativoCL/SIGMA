@@ -3,22 +3,27 @@
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-repuesto-tipos.css?vrs=1") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirCargaMasiva() {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") %>');
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") %>',
+                title: 'Carga masiva de repuestos',
+                width: 1080,
+                initialHeight: 680
+            });
         }
 
         function abrirRepuesto(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query);
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo repuesto' : 'Editar repuesto',
+                width: 1040,
+                initialHeight: 680
+            });
         }
 
         function refresh() {
@@ -73,8 +78,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="680" />
-
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
@@ -105,6 +108,54 @@
                     <i class="mdi mdi-upload-outline"></i><span>Carga masiva</span>
                 </asp:LinkButton>
             </div>
+
+            <%-- ============================================================
+                 LAS PESTAÑAS POR CATEGORIA
+
+                 Se dibujan con un Repeater sobre los tipos que definio el
+                 cliente, mas dos fijas: "Todos" al principio y "Sin
+                 clasificar" al final.
+
+                 "Sin clasificar" no se esconde cuando esta vacia: es
+                 justamente la pestaña que hay que vaciar, y verla en cero es
+                 la señal de que el maestro quedo clasificado. Escondida, no
+                 habria forma de saber que faltan repuestos por clasificar.
+
+                 Cada pestaña trae su numero. Un filtro que al tocarlo no
+                 muestra nada ya hizo perder un clic.
+                 ============================================================ --%>
+            <div class="sg-rep-tabs" role="tablist">
+                <asp:Repeater ID="rptTabs" runat="server" OnItemCommand="rptTabs_ItemCommand"
+                    OnItemDataBound="rptTabs_ItemDataBound">
+                    <ItemTemplate>
+                        <asp:LinkButton ID="lnkTab" runat="server" CommandName="tab"
+                            CssClass="sg-rep-tab" CausesValidation="false" />
+                    </ItemTemplate>
+                </asp:Repeater>
+            </div>
+
+            <%-- ============================================================
+                 ASIGNAR EL TIPO A VARIOS DE UNA VEZ
+
+                 Clasificar un maestro que ya existe es el caso real: con
+                 trescientos repuestos, abrirlos de a uno no lo hace nadie y
+                 las pestañas nunca llegan a servir.
+
+                 La barra aparece sola cuando hay algo marcado: permanente
+                 seria una fila mas de ruido en una pantalla que casi siempre
+                 se usa para buscar, no para clasificar.
+                 ============================================================ --%>
+            <asp:Panel ID="pnlAsignar" runat="server" Visible="false" CssClass="sg-rep-asignar">
+                <i class="mdi mdi-checkbox-marked-circle-outline" aria-hidden="true"></i>
+                <strong><asp:Literal ID="litMarcados" runat="server" /></strong>
+                <span>Asignarles el tipo:</span>
+                <rad:RadComboBox2 ID="cboTipoLote" runat="server" OnLoad="LoadControls"
+                    Filter="Contains" Width="220px" />
+                <asp:LinkButton ID="lnkAsignar" runat="server" CssClass="sigma-accion is-primaria"
+                    OnClick="lnkAsignar_Click" CausesValidation="false">
+                    <i class="mdi mdi-tag-multiple-outline"></i><span>Asignar</span>
+                </asp:LinkButton>
+            </asp:Panel>
 
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
                 <MasterTableView CommandItemDisplay="None" DataKeyNames="rep_id" />

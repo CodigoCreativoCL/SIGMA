@@ -1,7 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Instalaciones/ConfiguracionApp.ascx" hash="fffffff3c3134113" filehash="1cfc2a5e85d4fbc5" flags="110000" assembly="App_Web_tnb1bhez" type="ASP.view_comun_controls_cliente_instalaciones_configuracionapp_ascx">
-    <filedeps>
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Instalaciones/ConfiguracionApp.ascx" />
-        <filedep name="/C:/Program Files/Git/Check/View/Comun/Controls/Cliente/Instalaciones/ConfiguracionApp.ascx.cs" />
-    </filedeps>
-</preserve>

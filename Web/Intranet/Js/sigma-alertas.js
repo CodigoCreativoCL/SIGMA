@@ -39,7 +39,12 @@ var sigmaAlertas = (function () {
     var MS = 60000;               /* Un minuto. Ver el comentario de arriba. */
     var timer = null;
     var pidiendo = false;
-    var ultimasNoLeidas = null;   /* null = todavia no se ha preguntado */
+    /* Cuenta ALERTAS ACTIVAS -nueva, reconocida, en gestion-, no las no
+       leidas. Un jefe que abrio las doce alertas de la manana y no resolvio
+       ninguna tenia la campana en cero con la planta igual de mal: el numero
+       decia "ya miraste" cuando la pregunta es "que falta por resolver".
+       null = todavia no se ha preguntado. */
+    var ultimasActivas = null;
     var toastAbierto = 0;
     var sonido = null;
 
@@ -167,7 +172,7 @@ var sigmaAlertas = (function () {
     }
 
 
-    /* Baja los contadores AHORA, sin esperar al servidor.
+    /* Baja el punto de no leídas AHORA, sin esperar al servidor.
 
        El viaje tarda entre cien y quinientos milisegundos, y en ese rato el
        usuario ya esta mirando la ficha que abrio. Si el numero baja recien
@@ -177,46 +182,20 @@ var sigmaAlertas = (function () {
        Es un adelanto, no una suposicion: la respuesta del servidor manda, y
        cuando llega se reescriben los dos contadores con lo que diga. Si el
        marcado fallo, el numero vuelve solo a donde estaba. */
-    function descontarUno() {
+    function descontarUno(todos) {
         var enlace = document.querySelector('.sigma-notification');
         var badge = enlace ? enlace.querySelector('.sigma-notification__count') : null;
+        if (!badge) return;
 
-        if (badge) {
-            var n = parseInt(badge.textContent, 10);
-
-            /* "99+" no se puede descontar de a uno sin mentir: se deja como
-               esta y el servidor lo corrige en la respuesta. */
-            if (!isNaN(n) && badge.textContent.indexOf('+') < 0) badgeCampana(n - 1);
-        }
-
-        if (ultimasNoLeidas !== null && ultimasNoLeidas > 0) ultimasNoLeidas--;
-    }
-
-    /* El numero del menu al que pertenece la alerta que se acaba de abrir.
-
-       Sin esto la campana bajaba y el menu lateral se quedaba con el numero
-       viejo hasta el siguiente sondeo: dos contadores de la misma cosa
-       diciendo cifras distintas durante un minuto. */
-    function descontarMenu(href) {
-        if (!href) return;
-
-        var badges = document.querySelectorAll('#side-menu .sg-menu-badge');
-
-        for (var i = 0; i < badges.length; i++) {
-            var enlace = badges[i].closest ? badges[i].closest('a') : null;
-            if (!enlace) continue;
-
-            var propio = enlace.getAttribute('href') || '';
-            if (propio.indexOf(href) < 0 && href.indexOf(propio) < 0) continue;
-
-            var n = parseInt(badges[i].textContent, 10);
-            if (isNaN(n)) continue;
-
-            if (n > 1) badges[i].textContent = n - 1;
-            else badges[i].style.display = 'none';
-
+        var n = parseInt(badge.textContent, 10);
+        if (todos || isNaN(n) || n <= 1) {
+            badge.parentNode.removeChild(badge);
+            enlace.setAttribute('aria-label', 'Alertas');
             return;
         }
+
+        badge.textContent = n - 1;
+        enlace.setAttribute('aria-label', (n - 1) + ' alertas sin leer');
     }
 
 
@@ -234,6 +213,24 @@ var sigmaAlertas = (function () {
        ============================================================ */
     function mostrarToast(a) {
         if (!a) return;
+
+        /* CUANDO EL CENTRO DE ACCION OPERACIONAL ESTA ABIERTO, EL AVISO ES SUYO.
+
+           Esa pantalla dibuja el toast DENTRO del contenido: puesto sobre la
+           topbar taparia el selector de cliente y la campana, que es justo lo
+           que la persona necesita mirar cuando entra un aviso.
+
+           Se delega en vez de duplicar. Si un dia cambia el texto o el orden
+           de los datos del aviso, cambia en un solo lugar. */
+        if (window.sigmaToast) {
+            var iconoAi = a.esPrediccion && window.sigmaToastIconoAi
+                        ? window.sigmaToastIconoAi
+                        : (RUTA_SVG ? RUTA_SVG + a.icono : '');
+
+            window.sigmaToast(a.titulo, a.detalle, iconoAi,
+                              (a.severidad || '') === 'CRITICA', a.id);
+            return;
+        }
 
         cerrarToast();
 
@@ -265,7 +262,7 @@ var sigmaAlertas = (function () {
 
         if (enlace) {
             enlace.onclick = function () {
-                if (window.abrirNotificacion) window.abrirNotificacion(a.ficha, a.query);
+                if (window.abrirNotificacion) window.abrirNotificacion(a.ficha, a.query, a.id);
                 else window.location = a.ficha + '?query=' + a.query;
 
                 cerrarToast();
@@ -335,11 +332,13 @@ var sigmaAlertas = (function () {
                 if (r.error) return;
 
                 /* Solo si SUBIO, y nunca en la primera respuesta. */
-                if (ultimasNoLeidas !== null && r.noLeidas > ultimasNoLeidas && r.nueva)
+                if (ultimasActivas !== null && r.abiertas > ultimasActivas && r.nueva)
                     mostrarToast(r.nueva);
 
-                ultimasNoLeidas = r.noLeidas;
+                ultimasActivas = r.abiertas;
 
+                /* La campana dice qué NO se ha visto. Los contadores del menú
+                   siguen diciendo qué queda activo: son preguntas distintas. */
                 badgeCampana(r.noLeidas);
                 if (r.menus) badgesMenu(r.menus);
             },
@@ -386,10 +385,10 @@ var sigmaAlertas = (function () {
 
         /* Para despues de marcar leido en el servidor: los numeros ya
            cambiaron y el sondeo no tiene por que esperar un minuto. Se pone
-           ultimasNoLeidas en null para que este cambio -que baja el contador-
+           ultimasActivas en null para que este cambio -que baja el contador-
            no dispare el aviso emergente. */
         refrescar: function () {
-            ultimasNoLeidas = null;
+            ultimasActivas = null;
             preguntar();
         },
 
@@ -407,28 +406,35 @@ var sigmaAlertas = (function () {
            el procedimiento valida. Y ya estaba impreso en el onclick de la
            propia pagina. */
         leer: function (id, href) {
-            if (!id || !URL || typeof jQuery === 'undefined') return;
+            if (!URL || typeof jQuery === 'undefined') return null;
 
-            descontarUno();
-            descontarMenu(href);
+            var todos = id === null || typeof id === 'undefined' || id === '';
 
-            jQuery.ajax({
+            descontarUno(todos);
+
+            return jQuery.ajax({
                 type: 'POST',
                 url: URL + '/Leer',
-                data: JSON.stringify({ datos: String(id) }),
+                data: JSON.stringify({ datos: todos ? '' : String(id) }),
                 contentType: 'application/json; charset=utf-8',
                 dataType: 'json',
-                success: function () {
+                success: function (result) {
+                    var respuesta = null;
+                    try { respuesta = JSON.parse(result.d); }
+                    catch (e) { respuesta = { error: true }; }
+
                     /* La cifra de verdad la tiene el servidor: el descuento de
                        recien era para que la pantalla respondiera al toque. */
-                    ultimasNoLeidas = null;
+                    ultimasActivas = null;
                     preguntar();
+
+                    if (!respuesta.error) avisarLectura(respuesta);
                 },
                 error: function () {
                     /* Si fallo, el sondeo devuelve el numero a donde estaba.
                        Se prefiere eso a dejar un contador adelantado que
                        nadie corrige. */
-                    ultimasNoLeidas = null;
+                    ultimasActivas = null;
                     preguntar();
                 }
             });
@@ -437,4 +443,21 @@ var sigmaAlertas = (function () {
         ahora: preguntar,
         detener: detener
     };
+
+    function avisarLectura(respuesta) {
+        var evento;
+
+        try {
+            evento = new CustomEvent('sigma:alertas-actualizadas', {
+                detail: respuesta
+            });
+        }
+        catch (e) {
+            evento = document.createEvent('CustomEvent');
+            evento.initCustomEvent('sigma:alertas-actualizadas', true, true,
+                                    respuesta);
+        }
+
+        document.dispatchEvent(evento);
+    }
 })();

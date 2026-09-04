@@ -79,7 +79,13 @@
 
                         <div class="sigma-modal-field">
                             <label>Fecha de la transferencia (*)</label>
-                            <WebControls:TextBox2 ID="txtFecha" runat="server" MaxLength="10" />
+                            <%-- El envoltorio es lo que `sigma-calendario.js`
+                                 reconoce; el boton es su disparador. --%>
+                            <div class="sigma-modal-fecha">
+                                <WebControls:TextBox2 ID="txtFecha" runat="server" MaxLength="10" />
+                                <button type="button" class="sg-fecha-icono" tabindex="-1"
+                                        aria-label="Abrir calendario"></button>
+                            </div>
                             <asp:CustomValidator ID="cvFecha" runat="server" ControlToValidate="txtFecha"
                                 ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Pago" />
                             <span class="sigma-modal-ayuda">Formato dd-mm-aaaa.</span>
@@ -209,9 +215,9 @@
 
                         <div class="sigma-modal-actions">
                             <WebControls:PushButton ID="btnRechazar" runat="server" Text="Rechazar" CssClass="ButtonCerrar" OnClick="btnRechazar_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma el rechazo de este pago?');" />
+                                OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma el rechazo de este pago?')) return false;" />
                             <WebControls:PushButton ID="btnVerificar" runat="server" Text="Verificar" OnClick="btnVerificar_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma que este pago figura en la cartola?');" />
+                                OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma que este pago figura en la cartola?')) return false;" />
                         </div>
 
                     </asp:Panel>
@@ -248,7 +254,11 @@
 
                             <div class="sigma-modal-field">
                                 <label>Fecha de la transferencia</label>
-                                <WebControls:TextBox2 ID="txtFechaCorregir" runat="server" MaxLength="10" />
+                                <div class="sigma-modal-fecha">
+                                    <WebControls:TextBox2 ID="txtFechaCorregir" runat="server" MaxLength="10" />
+                                    <button type="button" class="sg-fecha-icono" tabindex="-1"
+                                            aria-label="Abrir calendario"></button>
+                                </div>
                                 <span class="sigma-modal-ayuda">Formato dd-mm-aaaa. No puede ser futura.</span>
                             </div>
 
@@ -266,7 +276,7 @@
 
                         <div class="sigma-modal-actions">
                             <WebControls:PushButton ID="btnCorregir" runat="server" Text="Corregir" OnClick="btnCorregir_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma la corrección de este pago?');" />
+                                OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma la corrección de este pago?')) return false;" />
                         </div>
 
                     </asp:Panel>

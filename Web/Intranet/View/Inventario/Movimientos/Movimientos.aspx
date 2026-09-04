@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirMovimiento(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Inventario/Movimientos/Movimiento.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Inventario/Movimientos/Movimiento.aspx") %>?query=' + query,
+                title: 'Movimiento',
+                width: 960,
+                initialHeight: 660
+            });
         }
 
         function refresh() {
@@ -87,7 +90,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="960" Height="660" />
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
@@ -97,7 +99,7 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkIngreso" runat="server" Text="Registrar ingreso"
-                                CssClass="icono_guardar" OnClientClick="abrirMovimiento(0)" />
+                                CssClass="icono_guardar" OnClientClick="abrirMovimiento(0); return false;" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

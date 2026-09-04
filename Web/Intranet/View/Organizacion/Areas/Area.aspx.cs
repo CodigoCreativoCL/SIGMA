@@ -171,7 +171,7 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
             if (entidad.iar_area_padre != null)
                 cboPadre.SelectedValue = entidad.iar_area_padre.ToString();
 
-            txtCodigo.Text = entidad.iar_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Instalacion_Area", entidad.iar_codigo);
             txtNombre.Text = entidad.iar_nombre;
             txtDescripcion.Text = entidad.iar_descripcion;
 
@@ -217,7 +217,8 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
         cboTipo.ReadOnly = !puedeEditar;
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Instalacion_Area");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
@@ -259,7 +260,7 @@ public partial class View_Organizacion_Areas_Area : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.iar_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.iar_codigo = SitioBase.CodigoModulo.Componer("Instalacion_Area", txtCodigo.Text);
             entidad.iar_nombre = txtNombre.Text.Trim();
             entidad.iar_descripcion = txtDescripcion.Text.Trim();
             entidad.iar_habilitado = rdbSi.Checked;

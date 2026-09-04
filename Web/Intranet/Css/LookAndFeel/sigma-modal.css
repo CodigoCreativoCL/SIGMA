@@ -37,6 +37,22 @@
     padding: 4px 4px 8px;
 }
 
+/* SigmaModal ya comunica la accion en su barra. Al embeber una ficha se
+   elimina el segundo titulo de pagina y el contenido comienza en el resumen
+   o en la primera seccion: una sola jerarquia, no una pagina dentro de otra. */
+html.sigma-dialog-child .sigma-modal {
+    padding-top: 14px;
+}
+
+html.sigma-dialog-child .sigma-modal .sigma-modal-eyebrow,
+html.sigma-dialog-child .sigma-modal .sigma-modal-title {
+    display: none;
+}
+
+html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
+    margin-top: 0;
+}
+
 
 /* ---- Encabezado ---- */
 .sigma-modal-eyebrow {
@@ -1030,4 +1046,107 @@
     .sg-resumen-tarjeta {
         flex: 1 1 100%;
     }
+}
+
+
+/* ============================================================================
+   EL CODIGO: PREFIJO FIJO + LO QUE ESCRIBE EL CLIENTE
+
+   Se dibujan pegados y dentro de un solo marco para que se lean como UN
+   codigo. Separados por un espacio parecerian dos campos distintos, y la
+   pregunta seria si hay que escribir el guion.
+
+   El prefijo va sobre fondo gris y sin borde propio: se ve que es parte del
+   campo pero que no se puede tocar. Es la misma convencion que usa un
+   selector de pais delante de un telefono.
+   ============================================================================ */
+.sg-codigo {
+    display: flex;
+    align-items: stretch;
+    min-width: 0;
+    border: 1px solid var(--sg-border, #dfe3eb);
+    border-radius: var(--sg-radius-md, 12px);
+    background: #fff;
+    overflow: hidden;
+}
+
+/* El foco se pinta en el GRUPO, no en el input: si solo se encendiera el
+   input, el prefijo quedaria fuera del recuadro y se veria como si el campo
+   empezara a la mitad. */
+.sg-codigo:focus-within {
+    border-color: var(--sg-purple, #6C5CFF);
+    box-shadow: 0 0 0 3px rgba(108, 92, 255, .12);
+}
+
+.sg-codigo-prefijo {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    padding: 0 10px;
+    border-right: 1px solid var(--sg-border, #dfe3eb);
+    background: #f4f5f9;
+    color: #5b6478;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: .03em;
+    white-space: nowrap;
+    user-select: none;
+}
+
+/* Un modulo sin prefijo configurado no dibuja el bloque gris ni su linea:
+   el campo queda como uno normal en vez de mostrar un separador suelto. */
+.sg-codigo-prefijo:empty { display: none; }
+
+/* El input pierde su marco: el del grupo ya lo tiene. Con los dos, se veia
+   una caja dentro de otra. */
+.sg-codigo input[type="text"] {
+    flex: 1 1 auto;
+    min-width: 0;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    outline: none !important;
+}
+
+/* Al editar, el codigo ya no se toca: se apaga entero para que se note que
+   no es un campo en blanco esperando texto. */
+.sg-codigo input[readonly] { background: #f8f9fb !important; color: #6b7484; }
+
+
+/* ----------------------------------------------------------- disparador suelto
+
+   Los campos de fecha que NO son un control `Calendar` -son un TextBox y se
+   tecleaba la fecha a mano- llevan este boton al lado. `sigma-calendario.js`
+   lo reconoce como disparador por estar dentro de `.sigma-modal-fecha`, asi
+   que abre el mismo calendario que el resto del sitio.
+
+   `type="button"` en el markup, y ademas se le quita todo el aspecto nativo:
+   sin eso, dentro de un formulario se veria como un boton gris de Windows.  */
+.sg-fecha-icono {
+    flex: 0 0 auto;
+    width: 42px;
+    height: 42px;
+    padding: 0;
+    border: 1px solid var(--sg-border, #dfe3eb);
+    border-radius: var(--sg-radius-md, 12px);
+    background-color: #fff;
+    background-image: url("../UI/WebControls/calendar/Calendar.svg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: 21px 21px;
+    cursor: pointer;
+    -webkit-appearance: none;
+    appearance: none;
+    transition: border-color .15s ease, background-color .15s ease;
+}
+
+.sg-fecha-icono:hover {
+    border-color: var(--sg-purple, #6C5CFF);
+    background-color: #f7f5ff;
+}
+
+.sg-fecha-icono:focus-visible {
+    outline: 2px solid var(--sg-purple, #6C5CFF);
+    outline-offset: 1px;
 }

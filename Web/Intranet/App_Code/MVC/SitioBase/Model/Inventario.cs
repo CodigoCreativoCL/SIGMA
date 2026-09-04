@@ -127,7 +127,15 @@ namespace SitioBase.Model
         public string rep_descripcion { get; set; }
         public bool rep_es_reparable { get; set; }
         public bool rep_es_consumible { get; set; }
-        public bool rep_controla_lote { get; set; }
+/* La categoria del repuesto. Admite 0 -sin clasificar-: obligarla dejaria
+           fuera a los repuestos que ya existen y forzaria a inventar una
+           categoria antes de poder cargar el primero. */
+        public int rep_repuesto_tipo { get; set; }
+
+        /// <summary>Nombre del tipo, resuelto por SEL_REPUESTO.</summary>
+        public string repuesto_tipo_nombre { get; set; }
+
+                public bool rep_controla_lote { get; set; }
         public decimal? rep_costo_referencia { get; set; }
         public int? rep_moneda { get; set; }
 

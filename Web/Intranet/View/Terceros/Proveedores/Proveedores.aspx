@@ -8,10 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirProveedor(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Terceros/Proveedores/Proveedor.aspx") %>?query=' + query);
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Terceros/Proveedores/Proveedor.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo proveedor' : 'Editar proveedor',
+                width: 1000,
+                initialHeight: 640
+            });
         }
 
         function refresh() {
@@ -66,8 +68,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="640" />
-
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 

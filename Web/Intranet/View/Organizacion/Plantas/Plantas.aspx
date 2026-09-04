@@ -8,9 +8,12 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPlanta(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nueva planta' : 'Editar planta',
+                width: 960,
+                initialHeight: 560
+            });
         }
 
         function refresh() {
@@ -54,8 +57,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="960" Height="560" />
-
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para trabajar con sus plantas.</p>
     </asp:Panel>
@@ -66,7 +67,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="cin_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva" CssClass="icono_guardar" OnClientClick="abrirPlanta(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva" CssClass="icono_guardar" OnClientClick="return abrirPlanta(0);" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

@@ -26,6 +26,11 @@ namespace SitioBase.Model
         public string usu_nombre { get; set; }
         public string usu_correo { get; set; }
         public string usu_identificador { get; set; }
+
+        /* Id del archivo con su foto; 0 si no tiene. Decide si el avatar
+           muestra la foto o las iniciales. */
+        public int usu_archivo_foto { get; set; }
+        public string especialidades { get; set; }
         public string gtr_nombre { get; set; }
         public string estado { get; set; }
 

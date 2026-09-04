@@ -93,6 +93,41 @@ namespace SitioBase.Controller
             return (lista != null && lista.Count > 0) ? lista[0] : new GrupoTrabajo();
         }
 
+        public List<GrupoEspecialidadResumen> GetResumenEspecialidades(int grupo)
+        {
+            List<GrupoEspecialidadResumen> lista = new List<GrupoEspecialidadResumen>();
+            if (!Token.TokenSeguridad() || grupo <= 0) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "SEL_GRUPO_TRABAJO_ESPECIALIDAD_RESUMEN";
+                cmd.Parameters.AddWithValue("@GRUPO", grupo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        lista.Add(new GrupoEspecialidadResumen
+                        {
+                            esp_id = int.Parse(dr["ESP_ID"].ToString()),
+                            esp_nombre = dr["ESP_NOMBRE"].ToString(),
+                            cantidad = int.Parse(dr["CANTIDAD"].ToString()),
+                            es_predominante = bool.Parse(dr["ES_PREDOMINANTE"].ToString()),
+                            es_empate = bool.Parse(dr["ES_EMPATE"].ToString())
+                        });
+                    }
+                }
+            }
+            finally
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
         public Respuesta InsertGrupoTrabajo(GrupoTrabajo entidad)
         {
             Respuesta respuesta = new Respuesta();
@@ -125,11 +160,24 @@ namespace SitioBase.Controller
                 }
                 catch (Exception ex)
                 {
-                    cmdExecute.Connection.Close();
+                    if (cmdExecute != null && cmdExecute.Connection != null)
+                        cmdExecute.Connection.Close();
                     respuesta.codigo = -1;
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -164,11 +212,24 @@ namespace SitioBase.Controller
                 }
                 catch (Exception ex)
                 {
-                    cmdExecute.Connection.Close();
+                    if (cmdExecute != null && cmdExecute.Connection != null)
+                        cmdExecute.Connection.Close();
                     respuesta.codigo = -1;
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -212,6 +273,8 @@ namespace SitioBase.Controller
                             item.usu_nombre = dr["USU_NOMBRE"].ToString();
                             item.usu_correo = dr["USU_CORREO"].ToString();
                             item.usu_identificador = dr["USU_IDENTIFICADOR"].ToString();
+                            item.usu_archivo_foto = int.Parse(dr["USU_ARCHIVO_FOTO"].ToString());
+                            item.especialidades = dr["ESPECIALIDADES"].ToString();
                             item.gtr_nombre = dr["GTR_NOMBRE"].ToString();
                             item.estado = dr["ESTADO"].ToString();
 
@@ -269,11 +332,24 @@ namespace SitioBase.Controller
                 }
                 catch (Exception ex)
                 {
-                    cmdExecute.Connection.Close();
+                    if (cmdExecute != null && cmdExecute.Connection != null)
+                        cmdExecute.Connection.Close();
                     respuesta.codigo = -1;
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -305,11 +381,24 @@ namespace SitioBase.Controller
                 }
                 catch (Exception ex)
                 {
-                    cmdExecute.Connection.Close();
+                    if (cmdExecute != null && cmdExecute.Connection != null)
+                        cmdExecute.Connection.Close();
                     respuesta.codigo = -1;
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -336,11 +425,24 @@ namespace SitioBase.Controller
                 }
                 catch (Exception ex)
                 {
-                    cmdExecute.Connection.Close();
+                    if (cmdExecute != null && cmdExecute.Connection != null)
+                        cmdExecute.Connection.Close();
                     respuesta.codigo = -1;
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;

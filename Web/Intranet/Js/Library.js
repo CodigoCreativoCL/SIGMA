@@ -389,24 +389,45 @@ function OnClientShow(sender) {
     bloqueaScroll(false);
     oWin = sender;
     OnModal();
+
+    /* El iframe de Telerik termina de medir su contenido despues de Show.
+       Un segundo centrado evita que la ventana quede corrida al completarse
+       ese layout asincrono. */
+    window.setTimeout(function () {
+        if (oWin && (!oWin.isVisible || oWin.isVisible())) OnModal();
+    }, 80);
 }
 
 function OnModal() {
+
+    if (!oWin) return;
 
     //Obtengo los tamaños originales
     var winWidth = $("#" + oWin.get_id()).attr("widthOriginal");
     var winHeight = $("#" + oWin.get_id()).attr("heightOriginal");
 
+    /* Algunas versiones del control no imprimen widthOriginal/heightOriginal.
+       Se toma entonces el primer tamano declarado por la pagina y se guarda,
+       para que redimensionar el navegador no convierta todos los formularios
+       en ventanas al 95% sin necesidad. */
+    var bounds = oWin.getWindowBounds ? oWin.getWindowBounds() : null;
+    var originalWidth = parseInt(winWidth, 10);
+    var originalHeight = parseInt(winHeight, 10);
+
+    if (isNaN(originalWidth) && bounds) originalWidth = parseInt(bounds.width, 10);
+    if (isNaN(originalHeight) && bounds) originalHeight = parseInt(bounds.height, 10);
+
     //Obtengo resolucion Actual
     var width = $(window).width();
     var height = $(window).height();
 
-    var newWidth = Math.round(((parseInt(width) / 100) * 95));
-    var newHeight = Math.round(((parseInt(height) / 100) * 95));
+    var maxWidth = Math.max(320, Math.round(parseInt(width, 10) * 0.95));
+    var maxHeight = Math.max(420, Math.round(parseInt(height, 10) * 0.95));
+    var newWidth = isNaN(originalWidth) ? maxWidth : Math.min(originalWidth, maxWidth);
+    var newHeight = isNaN(originalHeight) ? maxHeight : Math.min(originalHeight, maxHeight);
 
     oWin.setSize(newWidth, newHeight);
-    var position = "center";
-    oWin[position]();
+    oWin.center();
 }
 
 function soloLetras(e) {

@@ -106,6 +106,23 @@ namespace SitioBase.Controller
                             item.usuario_creacion_nombre = dr["USUARIO_CREACION_NOMBRE"].ToString();
                             item.usuario_actualizacion_nombre = dr["USUARIO_ACTUALIZACION_NOMBRE"].ToString();
 
+                            /* Alcance y asignación. Se leen con tolerancia
+                               —comprobando que la columna venga— porque este
+                               mismo mapeador sirve al listado y a la ficha, y
+                               un SP que todavía no las devuelva no tiene por
+                               qué reventar la pantalla entera. */
+                            item.pro_cliente_instalacion = EnteroNulo(dr, "pro_cliente_instalacion");
+                            item.INSTALACION_NOMBRE      = TextoCol(dr, "INSTALACION_NOMBRE");
+                            item.pro_instalacion_area    = EnteroNulo(dr, "pro_instalacion_area");
+                            item.AREA_NOMBRE             = TextoCol(dr, "AREA_NOMBRE");
+                            item.pro_activo              = EnteroNulo(dr, "pro_activo");
+                            item.ACTIVO_CODIGO           = TextoCol(dr, "ACTIVO_CODIGO");
+                            item.ACTIVO_NOMBRE           = TextoCol(dr, "ACTIVO_NOMBRE");
+                            item.RESPONSABLES            = TextoCol(dr, "RESPONSABLES");
+                            item.RESPONSABLES_IDS        = TextoCol(dr, "RESPONSABLES_IDS");
+                            item.pro_grupo_trabajo       = EnteroNulo(dr, "pro_grupo_trabajo");
+                            item.GRUPO_NOMBRE            = TextoCol(dr, "GRUPO_NOMBRE");
+
                             item.detalle = dr["DETALLE"].ToString();
                             item.exclusiones = int.Parse(dr["EXCLUSIONES"].ToString());
                             item.ocurrencias = int.Parse(dr["OCURRENCIAS"].ToString());
@@ -182,6 +199,12 @@ namespace SitioBase.Controller
                     cmd.Parameters.AddWithValue("@PERMITE_ATRASADA", entidad.pro_permite_atrasada);
                     cmd.Parameters.AddWithValue("@CUMPLIMIENTO_POLITICA", (object)entidad.pro_cumplimiento_politica ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@GENERA_AUTOMATICAMENTE", entidad.pro_genera_automaticamente);
+
+                    cmd.Parameters.AddWithValue("@INSTALACION", (object)entidad.pro_cliente_instalacion ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@AREA", (object)entidad.pro_instalacion_area ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ACTIVO", (object)entidad.pro_activo ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@GRUPO", (object)entidad.pro_grupo_trabajo ?? DBNull.Value);
+
                     cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
 
                     cmd.ExecuteNonQuery();
@@ -198,6 +221,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -216,6 +251,20 @@ namespace SitioBase.Controller
                     cmd = Conexion.GetCommand("UPD_PROGRAMACION");
                     cmd.Parameters.AddWithValue("@ID", entidad.pro_id);
                     cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                    /* Los interruptores. En el UPD, NULL no puede significar
+                       "no cambiar" para estas cinco: quitarle el alcance a una
+                       programación es una edición real, no una omisión. La
+                       ficha manda siempre los dos en 1 porque siempre trae el
+                       estado completo del formulario. */
+                    cmd.Parameters.AddWithValue("@APLICA_ALCANCE", true);
+                    cmd.Parameters.AddWithValue("@INSTALACION", (object)entidad.pro_cliente_instalacion ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@AREA", (object)entidad.pro_instalacion_area ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ACTIVO", (object)entidad.pro_activo ?? DBNull.Value);
+
+                    cmd.Parameters.AddWithValue("@APLICA_ASIGNACION", true);
+                    cmd.Parameters.AddWithValue("@GRUPO", (object)entidad.pro_grupo_trabajo ?? DBNull.Value);
+
                     cmd.Parameters.AddWithValue("@NOMBRE", (object)entidad.pro_nombre ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@FECHA_INICIO", (object)entidad.pro_fecha_inicio ?? DBNull.Value);
 
@@ -254,6 +303,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -265,6 +326,145 @@ namespace SitioBase.Controller
         public Respuesta DeleteProgramacion(int id)
         {
             return Ejecutar("DEL_PROGRAMACION", id, "Programación eliminada con éxito.");
+        }
+
+        /// <summary>
+        /// Crea una copia editable de la programación completa: cabecera,
+        /// regla, responsables y exclusiones. La copia nace habilitada y con
+        /// "(copia)" en el nombre para que nunca se confunda con el original.
+        ///
+        /// Los procedimientos de cada detalle conservan sus propias barreras
+        /// por cliente. Si uno falla, la cabecera recién creada se da de baja
+        /// para no dejar una programación incompleta generando trabajo.
+        /// </summary>
+        public Respuesta DuplicarProgramacion(int id)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.error = true;
+                respuesta.codigo = -1;
+                respuesta.detalle = "No fue posible validar la sesión.";
+                return respuesta;
+            }
+
+            Programacion origen = GetProgramacion(id);
+
+            if (origen == null || origen.pro_id == 0)
+            {
+                respuesta.error = true;
+                respuesta.codigo = -1;
+                respuesta.detalle = "La programación no existe para este cliente.";
+                return respuesta;
+            }
+
+            string baseNombre = (origen.pro_nombre ?? "Programación").Trim();
+            if (baseNombre.Length > 192) baseNombre = baseNombre.Substring(0, 192).TrimEnd();
+
+            origen.pro_nombre = baseNombre + " (copia)";
+
+            Respuesta cabecera = InsertProgramacion(origen);
+            if (cabecera.error) return cabecera;
+
+            int nuevoId = cabecera.codigo;
+
+            try
+            {
+                if (origen.pro_grupo_trabajo == null && !string.IsNullOrEmpty(origen.RESPONSABLES_IDS))
+                    VerificarCopia(GuardarResponsables(nuevoId, origen.RESPONSABLES_IDS), "los responsables");
+
+                switch (origen.tipo_codigo)
+                {
+                    case "CALENDARIO":
+                        if (origen.calendario != null)
+                        {
+                            origen.calendario.pca_programacion = nuevoId;
+                            VerificarCopia(SaveCalendario(origen.calendario), "la regla de calendario");
+                        }
+                        break;
+
+                    case "INTERVALO TIEMPO":
+                        if (origen.intervalo != null)
+                        {
+                            origen.intervalo.pin_programacion = nuevoId;
+                            VerificarCopia(SaveIntervalo(origen.intervalo), "la regla de intervalo");
+                        }
+                        break;
+
+                    case "MEDIDOR":
+                        if (origen.medidor != null)
+                        {
+                            origen.medidor.pme_programacion = nuevoId;
+                            VerificarCopia(SaveMedidor(origen.medidor), "la regla de medidor");
+                        }
+                        break;
+
+                    case "FECHA UNICA":
+                        if (origen.fechas != null)
+                            foreach (ProgramacionFecha fecha in origen.fechas)
+                            {
+                                ProgramacionFecha copia = new ProgramacionFecha();
+                                copia.pfe_programacion = nuevoId;
+                                copia.pfe_fecha = fecha.pfe_fecha;
+                                copia.pfe_hora = fecha.pfe_hora;
+                                copia.pfe_incluida = fecha.pfe_incluida;
+                                VerificarCopia(InsertFecha(copia), "las fechas programadas");
+                            }
+                        break;
+
+                    case "CONDICION":
+                        if (origen.condiciones != null)
+                            foreach (ProgramacionCondicion condicion in origen.condiciones)
+                            {
+                                ProgramacionCondicion copia = new ProgramacionCondicion();
+                                copia.pco_programacion = nuevoId;
+                                copia.pco_activo_variable = condicion.pco_activo_variable;
+                                copia.pco_operador_comparacion = condicion.pco_operador_comparacion;
+                                copia.pco_umbral = condicion.pco_umbral;
+                                copia.pco_umbral_hasta = condicion.pco_umbral_hasta;
+                                copia.pco_duracion_minima_minuto = condicion.pco_duracion_minima_minuto;
+                                copia.pco_severidad = condicion.pco_severidad;
+                                VerificarCopia(InsertCondicion(copia), "las condiciones");
+                            }
+                        break;
+                }
+
+                if (origen.lista_exclusiones != null)
+                    foreach (ProgramacionExclusion exclusion in origen.lista_exclusiones)
+                    {
+                        ProgramacionExclusion copia = new ProgramacionExclusion();
+                        copia.pxc_programacion = nuevoId;
+                        copia.pxc_fecha_inicio_utc = exclusion.pxc_fecha_inicio_utc;
+                        copia.pxc_fecha_fin_utc = exclusion.pxc_fecha_fin_utc;
+                        copia.pxc_motivo = exclusion.pxc_motivo;
+                        copia.pxc_desplaza = exclusion.pxc_desplaza;
+                        VerificarCopia(InsertExclusion(copia), "las exclusiones");
+                    }
+
+                respuesta.codigo = nuevoId;
+                respuesta.error = false;
+                respuesta.detalle = "Programación duplicada con éxito.";
+            }
+            catch (Exception ex)
+            {
+                Respuesta baja = DeleteProgramacion(nuevoId);
+                respuesta.codigo = -1;
+                respuesta.error = true;
+                respuesta.detalle = "No fue posible completar la copia: " + ex.Message;
+
+                if (baja.error)
+                    respuesta.detalle += " La copia incompleta quedó registrada; deshabilítela antes de usarla.";
+            }
+
+            return respuesta;
+        }
+
+        private static void VerificarCopia(Respuesta respuesta, string parte)
+        {
+            if (respuesta == null || respuesta.error)
+                throw new Exception("No se pudieron copiar " + parte + ". " +
+                                    (respuesta == null ? "" : respuesta.detalle));
         }
 
         #endregion
@@ -366,6 +566,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -451,6 +663,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -544,6 +768,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -627,6 +863,74 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
+        /// <summary>
+        /// Corrige una fecha existente.
+        ///
+        /// No es un borrar + insertar: eso cambiaría el pfe_id, y el pfe_id
+        /// es lo que cuelga la ocurrencia. Corregir el día se convertiría en
+        /// borrar el trabajo de un día y crear otro distinto.
+        /// </summary>
+        public Respuesta UpdateFecha(ProgramacionFecha entidad)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+
+                try
+                {
+                    cmd = Conexion.GetCommand("UPD_PROGRAMACION_FECHA");
+                    cmd.Parameters.AddWithValue("@ID", entidad.pfe_id);
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@FECHA", entidad.pfe_fecha);
+                    cmd.Parameters.AddWithValue("@HORA", (object)entidad.pfe_hora ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@INCLUIDA", entidad.pfe_incluida);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+
+                    respuesta.codigo = entidad.pfe_id;
+                    respuesta.detalle = "Fecha actualizada con éxito.";
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -659,6 +963,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -763,6 +1079,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -865,6 +1193,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -911,6 +1251,7 @@ namespace SitioBase.Controller
                             item.desplazada = Convert.ToBoolean(dr["DESPLAZADA"]);
                             item.motivo = dr["MOTIVO"].ToString();
                             item.es_pasada = Convert.ToBoolean(dr["ES_PASADA"]);
+                            item.descartada = dr["DESCARTADA"] != DBNull.Value && Convert.ToBoolean(dr["DESCARTADA"]);
                             item.tipo_codigo = dr["TIPO_CODIGO"].ToString();
 
                             lista.Add(item);
@@ -1022,5 +1363,177 @@ namespace SitioBase.Controller
 
             return respuesta;
         }
-    }
+    
+        /// <summary>
+        /// Reemplaza la lista completa de personas responsables.
+        ///
+        /// Se manda el estado final y no un "agregar uno / quitar uno": el
+        /// diferencial obligaría a que la pantalla supiera qué había antes,
+        /// que son más viajes y más formas de quedar desincronizado.
+        ///
+        /// El SP filtra a las personas que no son de este cliente y rechaza
+        /// la operación si la programación ya tiene un grupo: personas O
+        /// cuadrilla, nunca las dos.
+        /// </summary>
+        public Respuesta GuardarResponsables(int programacion, string idsSeparadosPorComa)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.error = true;
+                respuesta.detalle = "Sesión no válida.";
+                return respuesta;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("UPS_PROGRAMACION_RESPONSABLE");
+                cmd.Parameters.AddWithValue("@PROGRAMACION", programacion);
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@USUARIOS", (object)(idsSeparadosPorComa ?? "") ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+
+                respuesta.codigo = programacion;
+                respuesta.detalle = "Responsables actualizados.";
+                respuesta.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                respuesta.codigo = -1;
+                respuesta.detalle = ex.Message;
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
+        #region Alcance
+
+        /// <summary>Existe la columna en este resultado.</summary>
+        private static bool Hay(SqlDataReader dr, string columna)
+        {
+            for (int i = 0; i < dr.FieldCount; i++)
+                if (string.Equals(dr.GetName(i), columna, StringComparison.OrdinalIgnoreCase))
+                    return true;
+
+            return false;
+        }
+
+        private static int? EnteroNulo(SqlDataReader dr, string columna)
+        {
+            if (!Hay(dr, columna) || dr[columna] == DBNull.Value) return null;
+
+            int v;
+            return int.TryParse(dr[columna].ToString(), out v) ? (int?)v : null;
+        }
+
+        private static string TextoCol(SqlDataReader dr, string columna)
+        {
+            if (!Hay(dr, columna) || dr[columna] == DBNull.Value) return "";
+            return dr[columna].ToString();
+        }
+
+        /// <summary>
+        /// Instalaciones, áreas, activos, usuarios y perfiles del cliente.
+        ///
+        /// Va contra un SP distinto del catálogo general a propósito: estos
+        /// cinco son POR CLIENTE, y mezclarlos con los que no lo son es cómo
+        /// se termina mostrándole a una empresa las instalaciones de otra.
+        ///
+        /// <paramref name="padre"/> encadena: las áreas de una instalación,
+        /// los activos de esa misma instalación.
+        /// </summary>
+        public List<CatalogoItem> GetCatalogoAlcance(string catalogo, int? padre = null)
+        {
+            List<CatalogoItem> lista = new List<CatalogoItem>();
+
+            if (!Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_PROGRAMACION_CATALOGO_ALCANCE");
+                cmd.Parameters.AddWithValue("@CATALOGO", catalogo);
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@PADRE", padre == null ? (object)DBNull.Value : padre.Value);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        CatalogoItem c = new CatalogoItem();
+                        c.id = int.Parse(dr["ID"].ToString());
+                        c.codigo = dr["CODIGO"].ToString();
+                        c.nombre = dr["NOMBRE"].ToString();
+                        lista.Add(c);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+
+            return lista;
+        }
+
+
+        /// <summary>
+        /// Las cuadrillas del cliente.
+        ///
+        /// SP propio y no una rama del catálogo de alcance porque los grupos
+        /// se filtran además por instalación: ofrecerle a alguien la cuadrilla
+        /// de otra planta es ofrecerle gente que no puede ir.
+        /// </summary>
+        public List<CatalogoItem> GetGrupos(int? instalacion = null)
+        {
+            List<CatalogoItem> lista = new List<CatalogoItem>();
+
+            if (!Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_PROGRAMACION_CATALOGO_GRUPO");
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@PADRE",
+                    instalacion == null ? (object)DBNull.Value : instalacion.Value);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        CatalogoItem c = new CatalogoItem();
+                        c.id = int.Parse(dr["ID"].ToString());
+                        c.codigo = dr["CODIGO"].ToString();
+                        c.nombre = dr["NOMBRE"].ToString();
+                        lista.Add(c);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+
+            return lista;
+        }
+
+        #endregion
+}
 }

@@ -1,10 +1,12 @@
 ﻿using SitioBase.Controller;
 using System;
 using System.Web.UI.WebControls;
+using System.Web.UI.HtmlControls;
 using System.Web.UI;
 using SitioBase.Model;
 using System.Collections.Generic;
 using System.Text;
+using System.Web.Script.Serialization;
 
 public partial class Master_Default : System.Web.UI.MasterPage
 {
@@ -209,9 +211,15 @@ public partial class Master_Default : System.Web.UI.MasterPage
            el rojo dejaria de querer decir algo. */
         string clase = "dropdown-toggle sigma-notification sigma-notification--light";
 
-        List<Alerta> lista = resumen.Abiertas > 0
-                             ? controller.GetAlertas(true, 10)
-                             : new List<Alerta>();
+        /* La bandeja muestra también las últimas resueltas: una alerta leída
+           no es lo mismo que una cerrada, y sin ese contexto ambos estados
+           parecían desaparecer. El SP conserva el orden operacional. */
+        List<Alerta> lista = controller.GetAlertas(false, 12);
+        if (lista == null) lista = new List<Alerta>();
+
+        litPanelResumen.Text = "<strong>" + resumen.Abiertas +
+                               (resumen.Abiertas == 1 ? " activa" : " activas") + "</strong> · " +
+                               resumen.NoLeidas + (resumen.NoLeidas == 1 ? " nueva" : " nuevas");
 
         foreach (Alerta a in lista)
         {
@@ -240,14 +248,19 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         Alerta a = (Alerta)e.Item.DataItem;
 
-        LinkButton enlace = (LinkButton)e.Item.FindControl("lnkItem");
+        HtmlButton enlace = (HtmlButton)e.Item.FindControl("lnkItem");
         Literal lit = (Literal)e.Item.FindControl("litItem");
 
-        /* El id viaja en el comando: es lo unico que el evento va a recibir, y
-           sacarlo del indice de la fila se rompe si la lista cambia entre el
-           dibujo y el clic —que es justo lo que pasa cuando entra una alerta
-           nueva mientras el panel esta abierto—. */
-        enlace.CommandArgument = a.ale_id.ToString();
+        /* El id y el destino viajan como datos del boton. El clic no dispara
+           el ciclo de pagina: WsAlertas marca la lectura y el modal se abre
+           con el token cifrado que preparo el servidor. */
+        enlace.Attributes["data-alerta-id"] = a.ale_id.ToString();
+
+        /* Si esta vista o no, como dato de la fila: con eso el filtro del
+           panel trabaja sin ir al servidor. Es la misma informacion que ya se
+           usa para pintarla —la clase `is-nueva`—, pero en un atributo, que es
+           lo que se puede consultar sin depender de como se vea. */
+        enlace.Attributes["data-visto"] = a.LEIDA ? "1" : "0";
 
         /* La gravedad va en la FILA, no solo en el icono: tine el borde
            izquierdo, el halo y el rotulo. Al pasar a los SVG de marca se
@@ -255,7 +268,38 @@ public partial class Master_Default : System.Web.UI.MasterPage
            critico y uno sobre el maximo pedian la misma atencion. */
         string sev = Clase(a.sev_codigo);
 
-        enlace.CssClass = "sg-notif-item " + sev + (a.LEIDA ? "" : " is-nueva");
+        enlace.Attributes["class"] = "sg-notif-item " + sev +
+                                     (a.LEIDA ? " is-leida" : " is-nueva") +
+                                     (a.Activa ? " is-activa" : " is-resuelta") +
+                                     (a.ES_PREDICCION ? " is-ai" : "");
+        enlace.Attributes["aria-label"] = (a.LEIDA ? "" : "Nueva. ") +
+                                           Server.HtmlEncode(a.ale_titulo) + ". " +
+                                           Server.HtmlEncode(a.aet_nombre);
+        enlace.Attributes["data-sg-notif-close"] = "1";
+
+        JavaScriptSerializer js = new JavaScriptSerializer();
+
+        if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
+        {
+            string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
+
+            enlace.Attributes["onclick"] = "return abrirNotificacion(" +
+                js.Serialize(ResolveUrl(a.FICHA_LINK)) + "," +
+                js.Serialize(query) + "," + a.ale_id + ");";
+        }
+        else if (!string.IsNullOrEmpty(a.alt_menu_link))
+        {
+            enlace.Attributes["onclick"] =
+                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
+                "window.location.href=" + js.Serialize(ResolveUrl(a.alt_menu_link)) + ";return false;";
+        }
+        else
+        {
+            enlace.Attributes["onclick"] =
+                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
+                "window.alert('Esta notificación no tiene un registro relacionado configurado.');" +
+                "return false;";
+        }
 
         StringBuilder sb = new StringBuilder();
 
@@ -267,7 +311,19 @@ public partial class Master_Default : System.Web.UI.MasterPage
         sb.Append("<span class=\"titulo\">" + Server.HtmlEncode(a.ale_titulo) + "</span>");
         sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
 
-        sb.Append("<span class=\"cuando\">" + Server.HtmlEncode(a.Antiguedad));
+        string contexto = !string.IsNullOrEmpty(a.ACTIVO_NOMBRE) ? a.ACTIVO_NOMBRE :
+                          (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? "Repuesto " + a.REPUESTO_CODIGO :
+                           (!string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : a.INSTALACION_NOMBRE));
+        if (!string.IsNullOrEmpty(contexto))
+            sb.Append("<span class=\"contexto\"><i class=\"mdi mdi-map-marker-radius-outline\"></i>" +
+                      Server.HtmlEncode(contexto) + "</span>");
+
+        sb.Append("<span class=\"cuando\"><span>" + Server.HtmlEncode(a.Antiguedad) + "</span>");
+
+        sb.Append("<span class=\"sg-notif-state\">" + Server.HtmlEncode(a.aet_nombre) + "</span>");
+
+        if (!a.LEIDA) sb.Append("<span class=\"sg-notif-state is-new\">Nueva</span>");
+        if (a.ES_PREDICCION) sb.Append("<span class=\"sg-notif-ai\">SIGMA AI</span>");
 
         /* El rotulo de gravedad SOLO cuando pide accion. Poner "Normal" en
            cada fila que no es grave llenaria la lista de una etiqueta que no
@@ -275,87 +331,13 @@ public partial class Master_Default : System.Web.UI.MasterPage
         if (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")
             sb.Append("<span class=\"sev\">" + Server.HtmlEncode(a.sev_nombre) + "</span>");
 
-        sb.Append("</span></span>");
+        sb.Append("</span><span class=\"sg-notif-action\">Revisar <i class=\"mdi mdi-arrow-right\"></i></span></span>");
 
         /* El punto de "sin leer" a la derecha, como en cualquier bandeja: se
            recorre la columna de un vistazo. */
         if (!a.LEIDA) sb.Append("<span class=\"punto\"></span>");
 
         lit.Text = sb.ToString();
-    }
-
-    /// <summary>
-    /// Tocar una alerta: se marca leida y se abre su registro.
-    ///
-    /// EN EL SERVIDOR Y NO POR AJAX
-    ///   Antes lo hacia el sondeo: el javascript le pedia al handler que la
-    ///   marcara. Si esa peticion fallaba, no pasaba nada y nadie se enteraba
-    ///   — el contador se quedaba igual, sin explicacion. Acá el clic va al
-    ///   servidor, marca, y el panel se redibuja con lo que la base dice.
-    /// </summary>
-    protected void rptAlertas_ItemCommand(object source, RepeaterCommandEventArgs e)
-    {
-        if (e.CommandName != "Abrir") return;
-
-        try
-        {
-            int id = 0;
-            int.TryParse(Convert.ToString(e.CommandArgument), out id);
-
-            if (id <= 0) return;
-
-            AlertaController controller = new AlertaController();
-
-            controller.Leer(id);
-
-            /* A donde ir. Se busca entre las abiertas porque es de donde salio
-               la que se toco; si ya no esta —alguien la resolvio entretanto—
-               no se abre nada y el panel simplemente se actualiza. */
-            foreach (Alerta a in controller.GetAlertas(true, 50))
-            {
-                if (a.ale_id != id) continue;
-
-                if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
-                {
-                    string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
-
-                    ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(),
-                        "abrir-alerta",
-                        "abrirNotificacion('" + ResolveUrl(a.FICHA_LINK) + "','" + query + "');",
-                        true);
-                }
-                else if (!string.IsNullOrEmpty(a.alt_menu_link))
-                {
-                    Response.Redirect(ResolveUrl(a.alt_menu_link));
-                    return;
-                }
-
-                break;
-            }
-
-            CargarAlertas();
-            udAlertas.Update();
-            Refrescar();
-        }
-        catch (Exception)
-        {
-            /* Un fallo abriendo una alerta no puede tumbar la cabecera del
-               sitio, que se dibuja en todas las pantallas. */
-        }
-    }
-
-    /// <summary>
-    /// Le avisa al sondeo que los numeros cambiaron.
-    ///
-    /// El panel se redibujo con lo que la base dice, pero el javascript sigue
-    /// con el ultimo valor que vio: sin esto, su proxima consulta creeria que
-    /// el contador BAJO por si solo y, peor, si luego sube lo tomaria como
-    /// novedad y dispararia el aviso emergente por algo que ya se leyo.
-    /// </summary>
-    protected void Refrescar()
-    {
-        ScriptManager.RegisterStartupScript(udAlertas, udAlertas.GetType(), "refrescar-alertas",
-            "if(window.sigmaAlertas) sigmaAlertas.refrescar();", true);
     }
 
     /// <summary>
@@ -408,19 +390,6 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         return "sigma-ai-status-analyzing.svg";
     }
-
-    protected void lnkLeerTodo_Click(object sender, EventArgs e)
-    {
-        new AlertaController().Leer();
-
-        /* Se redibuja el panel, no la pagina: recargar entera haria perder lo
-           que la persona estuviera haciendo detras, y lo unico que cambio son
-           el contador y los puntos. */
-        CargarAlertas();
-        udAlertas.Update();
-        Refrescar();
-    }
-
 
 }
 

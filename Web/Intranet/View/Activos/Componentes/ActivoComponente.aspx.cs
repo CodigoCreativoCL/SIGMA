@@ -151,7 +151,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             ActivoComponente x = c.GetComponente(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = x.aco_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo_Componente", x.aco_codigo);
             txtNombre.Text = x.aco_nombre;
             txtDescripcion.Text = x.aco_descripcion;
             calInstalacion.Value = x.aco_fecha_instalacion;
@@ -188,7 +188,8 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
 
         cboActivo.ReadOnly = !puedeEditar || Id > 0;   // el activo no se cambia al editar
-        txtCodigo.ReadOnly = true;   // el código es automático (COM-<id>)
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Componente");
+        txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         calInstalacion.Enabled = puedeEditar;
@@ -221,7 +222,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             x.aco_componente_tipo = int.Parse(cboTipo.SelectedValue);
             x.aco_activo_componente_estado = int.Parse(cboEstado.SelectedValue);
             x.aco_criticidad_nivel = int.Parse(cboCriticidad.SelectedValue);
-            x.aco_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";   // COM-<id> lo genera el SP
+            x.aco_codigo = SitioBase.CodigoModulo.Componer("Activo_Componente", txtCodigo.Text);   // COM-<id> lo genera el SP
             x.aco_nombre = txtNombre.Text.Trim();
             x.aco_habilitado = rdbSi.Checked;
 

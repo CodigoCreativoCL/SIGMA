@@ -1,7 +1,7 @@
 ﻿/* =============================================================
    SitioBase - Botones (WebControls:PushButton)
-   Estilo "M3 Expressive": botones grandes, forma de pildora,
-   jerarquia Filled / Tonal / Outlined + colores semanticos e
+   Base compartida de botones: jerarquia Filled / Tonal / Outlined,
+   geometria SIGMA y colores semanticos e
    iconografia funcional (SVG inline via background-image, ya que
    PushButton renderiza <input> y no admite ::before).
    Paleta: ver --fg-m3-* en LookAndFeel/v2/01-Variables.css.
@@ -20,7 +20,7 @@
     background-color: var(--fg-m3-primary) !important;
     color: var(--fg-m3-on-primary) !important;
     border: 0 !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;
@@ -67,7 +67,7 @@
     background-color: var(--fg-m3-chip-bg) !important;
     color: var(--fg-m3-text-secondary) !important;
     border: 1.5px solid var(--fg-m3-outline) !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;
@@ -94,7 +94,7 @@
     background-color: var(--fg-m3-primary-container) !important;
     color: var(--fg-m3-on-primary-container) !important;
     border: 0 !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;
@@ -120,7 +120,7 @@
     background-color: var(--fg-m3-success) !important;
     color: var(--fg-m3-on-success) !important;
     border: 0 !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;
@@ -146,7 +146,7 @@
     background-color: var(--fg-warning) !important;
     color: var(--fg-on-warning) !important;
     border: 0 !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;
@@ -172,7 +172,7 @@
     background-color: var(--fg-m3-error) !important;
     color: var(--fg-m3-on-error) !important;
     border: 0 !important;
-    border-radius: var(--fg-m3-radius-pill) !important;
+    border-radius: var(--sg-radius-md, 12px) !important;
     box-shadow: none !important;
     cursor: pointer;
     transition: background-color 200ms ease, color 200ms ease, box-shadow 200ms ease, transform 100ms ease;

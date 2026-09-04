@@ -2144,3 +2144,100 @@ div.RadTabStrip .rtsLevel .rtsLevel1 ul li a {
 .sigma-filtro-accion {
     justify-content: flex-end;
 }
+
+
+/* ============================================================================
+   EL AVISO DE ClientAlert
+
+   El HTML lo arma `Tools.tools.ClientAlert` con clases de Bootstrap -`modal`,
+   `modal-dialog`, `modal-content`-. El CSS de Bootstrap SI esta cargado, pero
+   deja `.modal` en `display:none` y espera que su JavaScript le ponga la
+   clase que lo muestra. Como ese JavaScript no esta -ver
+   `Js/sigma-alerta-modal.js`-, aca se define que significa "abierto".
+
+   Se aprovecha para que el aviso se vea como SIGMA y no como Bootstrap 2013:
+   fondo oscurecido, tarjeta centrada, esquinas del producto.
+   ============================================================================ */
+#myModal.sg-aviso-abierto {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    z-index: 10600;
+    padding: 16px;
+    background: rgba(15, 20, 32, .46);
+    backdrop-filter: blur(2px);
+    overflow-y: auto;
+    animation: sg-aviso-fondo .16s ease-out;
+}
+
+#myModal.sg-aviso-abierto .modal-dialog {
+    max-width: 420px;
+    margin: 10vh auto;
+    animation: sg-aviso-entra .22s cubic-bezier(.2, .8, .2, 1);
+}
+
+#myModal.sg-aviso-abierto .modal-content {
+    border: 1px solid rgba(17, 24, 39, .08);
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 2px 8px rgba(17, 24, 39, .08),
+                0 24px 60px rgba(17, 24, 39, .22);
+    overflow: hidden;
+}
+
+#myModal .modal-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 22px 22px 0;
+    border: 0;
+}
+
+#myModal .modal-body {
+    padding: 6px 22px 18px;
+    color: #46536b;
+    font-size: 13.5px;
+    line-height: 1.5;
+    text-align: center;
+}
+
+#myModal .modal-body p { margin: 0; }
+
+#myModal .modal-footer {
+    display: flex;
+    justify-content: center;
+    padding: 0 22px 20px;
+    border: 0;
+}
+
+/* El boton del aviso: uno solo y centrado. Los tres tonos vienen del tipo
+   -ok, alerta, error- y los define sweetalert.css. */
+#myModal .modal-footer button {
+    min-width: 128px;
+    padding: 9px 18px;
+    border: 0;
+    border-radius: var(--sg-radius-md, 12px);
+    font-family: inherit;
+    font-size: 13px;
+    font-weight: 650;
+    cursor: pointer;
+}
+
+/* Mientras hay un aviso, la pagina de atras no se desplaza: el aviso pide una
+   respuesta, y dejar mover el fondo invita a ignorarlo. */
+body.sg-aviso-bloqueado { overflow: hidden; }
+
+@keyframes sg-aviso-fondo {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes sg-aviso-entra {
+    from { opacity: 0; transform: translateY(-12px) scale(.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    #myModal.sg-aviso-abierto,
+    #myModal.sg-aviso-abierto .modal-dialog { animation: none; }
+}

@@ -62,6 +62,8 @@ namespace SitioBase.Controller
                             item.rep_es_reparable = bool.Parse(dr["REP_ES_REPARABLE"].ToString());
                             item.rep_es_consumible = bool.Parse(dr["REP_ES_CONSUMIBLE"].ToString());
                             item.rep_controla_lote = bool.Parse(dr["REP_CONTROLA_LOTE"].ToString());
+                            item.rep_repuesto_tipo = int.Parse(dr["REPUESTO_TIPO"].ToString());
+                            item.repuesto_tipo_nombre = dr["REPUESTO_TIPO_NOMBRE"].ToString();
                             item.rep_habilitado = bool.Parse(dr["REP_HABILITADO"].ToString());
 
                             // Anulables: se comprueban antes de convertir.
@@ -114,6 +116,63 @@ namespace SitioBase.Controller
             return (lista != null && lista.Count > 0) ? lista[0] : new Repuesto();
         }
 
+        /// <summary>
+        /// Le pone el mismo tipo a varios repuestos de una vez.
+        ///
+        /// POR QUÉ EN LOTE
+        ///   Clasificar un maestro que ya existe es el caso real: una planta
+        ///   con trescientos repuestos tiene que ponerles tipo a todos. Uno
+        ///   por uno son trescientas fichas abiertas, y nadie lo va a hacer:
+        ///   el campo queda vacío y las pestañas no sirven.
+        /// </summary>
+        /// <param name="tipo">0 desclasifica.</param>
+        /// <param name="ids">Ids separados por coma.</param>
+        public Respuesta AsignarTipo(int tipo, string ids)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+
+                try
+                {
+                    cmd = Conexion.GetCommand("UPS_REPUESTO_TIPO_ASIGNAR");
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@REPUESTO_TIPO", tipo > 0 ? (object)tipo : DBNull.Value);
+                    cmd.Parameters.AddWithValue("@IDS", ids ?? "");
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                    object r = cmd.ExecuteScalar();
+                    cmd.Connection.Close();
+
+                    int n = 0;
+                    if (r != null && r != DBNull.Value) int.TryParse(r.ToString(), out n);
+
+                    respuesta.codigo = n;
+                    respuesta.detalle = n == 1
+                        ? "1 repuesto actualizado."
+                        : n + " repuestos actualizados.";
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+            else
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
         public Respuesta InsertRepuesto(Repuesto entidad)
         {
             Respuesta respuesta = new Respuesta();
@@ -138,6 +197,10 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@ES_REPARABLE", entidad.rep_es_reparable);
                     cmdExecute.Parameters.AddWithValue("@ES_CONSUMIBLE", entidad.rep_es_consumible);
                     cmdExecute.Parameters.AddWithValue("@CONTROLA_LOTE", entidad.rep_controla_lote);
+                    /* 0 significa "sin clasificar" y viaja como NULL: la
+                       columna admite nulo y 0 no es un id valido. */
+                    cmdExecute.Parameters.AddWithValue("@REPUESTO_TIPO",
+                        entidad.rep_repuesto_tipo > 0 ? (object)entidad.rep_repuesto_tipo : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@COSTO_REFERENCIA",
                         entidad.rep_costo_referencia.HasValue ? (object)entidad.rep_costo_referencia.Value : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@MONEDA",
@@ -172,6 +235,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -197,6 +272,10 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@ES_REPARABLE", entidad.rep_es_reparable);
                     cmdExecute.Parameters.AddWithValue("@ES_CONSUMIBLE", entidad.rep_es_consumible);
                     cmdExecute.Parameters.AddWithValue("@CONTROLA_LOTE", entidad.rep_controla_lote);
+                    /* 0 significa "sin clasificar" y viaja como NULL: la
+                       columna admite nulo y 0 no es un id valido. */
+                    cmdExecute.Parameters.AddWithValue("@REPUESTO_TIPO",
+                        entidad.rep_repuesto_tipo > 0 ? (object)entidad.rep_repuesto_tipo : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@COSTO_REFERENCIA",
                         entidad.rep_costo_referencia.HasValue ? (object)entidad.rep_costo_referencia.Value : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@MONEDA",
@@ -217,6 +296,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -257,6 +348,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -382,6 +485,18 @@ namespace SitioBase.Controller
                     respuesta.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
 
             return respuesta;
         }
@@ -414,6 +529,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;
@@ -547,6 +674,18 @@ namespace SitioBase.Controller
                     respuesta.detalle = ex.Message;
                     respuesta.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
             }
 
             return respuesta;

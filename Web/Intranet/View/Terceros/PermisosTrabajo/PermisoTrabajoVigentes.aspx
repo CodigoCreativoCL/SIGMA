@@ -3,15 +3,18 @@
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-permisos-lista.css?vrs=2") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPermiso(query) {
-            var oWin = $find("<%=rwiDetalle.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Terceros/PermisosTrabajo/PermisoTrabajo.aspx") %>?query=' + query);
-            oWin.show();
-            return false;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Terceros/PermisosTrabajo/PermisoTrabajo.aspx") %>?query=' + query,
+                title: 'Permiso de trabajo vigente',
+                width: 1040,
+                initialHeight: 660
+            });
         }
 
         function refresh() {
@@ -65,8 +68,6 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-    <rad:RadWindow2 ID="rwiDetalle" runat="server" Width="1000" Height="660" />
-
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
@@ -75,24 +76,26 @@
                  Alguien entra a esta pantalla con una pregunta —"¿tengo algo
                  vencido?"— y la respuesta cabe en un número. Que tenga que
                  contar filas para saberlo es hacerle el trabajo al revés. --%>
+            <%-- EL CONTENIDO DE LAS TARJETAS SE ARMA EN EL SERVIDOR
+
+                 Estaban con el numero y el rotulo como controles HIJOS -dos
+                 <span> con un <asp:Literal> dentro-. Un LinkButton dibuja su
+                 `Text` si tiene algo y, si no, dibuja sus hijos: o sea que lo
+                 que se ve dependia de que el arbol de controles se
+                 reconstruyera igual en cada postback parcial. Al tocar una
+                 tarjeta, las tres quedaban vacias.
+
+                 Ahora `Text` se asigna desde el code-behind. Es una cadena:
+                 no hay arbol que reconstruir ni Literal que encontrar. --%>
             <div class="sg-resumen-permisos">
-                <asp:LinkButton ID="lnkVencidos" runat="server" CssClass="sg-resumen-tarjeta is-alerta"
-                    OnClick="lnkVencidos_Click" ToolTip="Ver solo los vencidos">
-                    <span class="numero"><asp:Literal ID="litVencidos" runat="server" Text="0" /></span>
-                    <span class="rotulo"><i class="mdi mdi-close-circle-outline"></i>Vencidos</span>
-                </asp:LinkButton>
+                <asp:LinkButton ID="lnkVencidos" runat="server"
+                    OnClick="lnkVencidos_Click" ToolTip="Ver solo los vencidos" />
 
-                <asp:LinkButton ID="lnkPorVencer" runat="server" CssClass="sg-resumen-tarjeta is-advertencia"
-                    OnClick="lnkPorVencer_Click" ToolTip="Ver solo los que están por vencer">
-                    <span class="numero"><asp:Literal ID="litPorVencer" runat="server" Text="0" /></span>
-                    <span class="rotulo"><i class="mdi mdi-clock-alert-outline"></i>Por vencer</span>
-                </asp:LinkButton>
+                <asp:LinkButton ID="lnkPorVencer" runat="server"
+                    OnClick="lnkPorVencer_Click" ToolTip="Ver solo los que están por vencer" />
 
-                <asp:LinkButton ID="lnkVigentes" runat="server" CssClass="sg-resumen-tarjeta is-exito"
-                    OnClick="lnkVigentes_Click" ToolTip="Ver todos">
-                    <span class="numero"><asp:Literal ID="litVigentes" runat="server" Text="0" /></span>
-                    <span class="rotulo"><i class="mdi mdi-check-circle-outline"></i>Vigentes</span>
-                </asp:LinkButton>
+                <asp:LinkButton ID="lnkVigentes" runat="server"
+                    OnClick="lnkVigentes_Click" ToolTip="Ver todos" />
             </div>
 
             <div class="sigma-acciones-barra">
@@ -111,9 +114,11 @@
                 <span class="sg-arbol-cuenta"><asp:Literal ID="litCuenta" runat="server" /></span>
             </div>
 
+            <div class="sg-permit-list-shell">
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound">
                 <MasterTableView CommandItemDisplay="None" DataKeyNames="ptr_id" />
             </rad:RadGrid2>
+            </div>
 
             <asp:Panel ID="pnlVacio" runat="server" Visible="false" CssClass="sg-arbol-vacio">
                 <i class="mdi mdi-shield-check-outline"></i>

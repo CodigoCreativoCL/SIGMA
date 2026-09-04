@@ -66,7 +66,18 @@ RETURNS @R TABLE
     FECHA           DATETIME    NOT NULL,
     FECHA_ORIGINAL  DATETIME    NULL,
     DESPLAZADA      BIT         NOT NULL,
-    MOTIVO          NVARCHAR(400) NULL
+    MOTIVO          NVARCHAR(400) NULL,
+
+    /* LAS EXCLUIDAS TAMBIEN SALEN
+
+       Antes se calculaban —la parada de planta marca DESCARTADA— y despues
+       se tiraban con un WHERE. El resultado era una lista de fechas donde
+       simplemente faltaban dias, sin nada que explicara por que: quien la
+       miraba tenia que ir a la pestaña de exclusiones y cruzar a mano.
+
+       Ahora se devuelven marcadas. Quien consulta decide si las muestra; lo
+       que no puede es no enterarse de que existen. */
+    DESCARTADA      BIT         NOT NULL DEFAULT 0
 )
 AS
 BEGIN
@@ -279,15 +290,19 @@ BEGIN
     SELECT TOP 5000 FECHA, 0, 0 FROM @CRUDO ORDER BY FECHA
 
     /* #3 -parada de planta-: la fecha simplemente no existe. */
+    /* Se guarda tambien el MOTIVO. Una fecha excluida sin decir por que
+       obliga a ir a buscar cual de las exclusiones la tapo. */
     UPDATE w
-       SET DESCARTADA = 1
+       SET DESCARTADA = 1,
+           MOTIVO = ISNULL(w.MOTIVO, x.pxc_motivo)
       FROM @W w
-     WHERE EXISTS (SELECT 1 FROM [dbo].[Programacion_Exclusion] e
-                    WHERE e.pxc_programacion = @PROGRAMACION
-                      AND e.pxc_habilitado = 1
-                      AND e.pxc_desplaza = 0
-                      AND w.FECHA >= e.pxc_fecha_inicio_utc
-                      AND w.FECHA <= e.pxc_fecha_fin_utc)
+     CROSS APPLY (SELECT TOP 1 e.pxc_motivo
+                    FROM [dbo].[Programacion_Exclusion] e
+                   WHERE e.pxc_programacion = @PROGRAMACION
+                     AND e.pxc_habilitado = 1
+                     AND e.pxc_desplaza = 0
+                     AND w.FECHA >= e.pxc_fecha_inicio_utc
+                     AND w.FECHA <= e.pxc_fecha_fin_utc) x
 
     /* #2 -feriado-: se corre al siguiente dia habil y se guarda la original.
        Se itera porque el dia siguiente puede caer en otro feriado o en fin
@@ -344,11 +359,10 @@ BEGIN
     END
 
     /* Una fecha desplazada puede haber salido de la ventana de vigencia. */
-    INSERT INTO @R (FECHA, FECHA_ORIGINAL, DESPLAZADA, MOTIVO)
-    SELECT w.FECHA, w.FECHA_ORIGINAL, w.DESPLAZADA, w.MOTIVO
+    INSERT INTO @R (FECHA, FECHA_ORIGINAL, DESPLAZADA, MOTIVO, DESCARTADA)
+    SELECT w.FECHA, w.FECHA_ORIGINAL, w.DESPLAZADA, w.MOTIVO, w.DESCARTADA
       FROM @W w
-     WHERE w.DESCARTADA = 0
-       AND (@FIN IS NULL OR CAST(w.FECHA AS DATE) <= @FIN)
+     WHERE (@FIN IS NULL OR CAST(w.FECHA AS DATE) <= @FIN)
      ORDER BY w.FECHA
 
     RETURN
@@ -409,6 +423,7 @@ IF (@TOP > 500) SET @TOP = 500
 
     SELECT TOP (@TOP)
            f.FECHA,
+           f.DESCARTADA,
            f.FECHA_ORIGINAL,
            f.DESPLAZADA,
            f.MOTIVO,

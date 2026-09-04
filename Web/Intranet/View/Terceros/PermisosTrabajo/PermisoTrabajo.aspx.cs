@@ -143,6 +143,11 @@ public partial class View_Terceros_PermisosTrabajo_PermisoTrabajo : System.Web.U
         AjustarEstado();
         Bloqueo();
 
+        bool tieneDocumento = wucAdjunto.IdArchivo > 0 || wucAdjunto.HayArchivoNuevo;
+        hidTieneDocumento.Value = tieneDocumento ? "1" : "0";
+        pnlFlujo.Attributes["data-documento"] = tieneDocumento ? "1" : "0";
+        pnlFlujo.Attributes["data-registro-id"] = Id.ToString();
+
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();
     }

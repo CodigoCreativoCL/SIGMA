@@ -41,22 +41,22 @@
                 </div>
 
                 <div class="col-lg-9 col-md-9 col-xs-12">
-                    <div class="row col-12">
-                        <div class="col-12 sigma-form-seccion">
+                    <div class="sigma-modal-grid">
+                        <div class="sigma-modal-field is-ancho sg-id-seccion">
                             <div class="titulo"><i class="mdi mdi-card-account-details-outline"></i>Identificación</div>
                             <div class="ayuda">Cómo se llama la empresa y con qué número la identifica el Estado.</div>
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
+                        <div class="sigma-modal-field is-medio">
                             <label>ID</label>
                             <div class="identidad-readonly-chip">
                                 <asp:Label ID="lblId" runat="server"></asp:Label>
                             </div>
                         </div>
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field identidad-field-spacer"></div>
+                        
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Nombre(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Nombre <span class="sg-id-req">*</span></label>
                             <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
                             <asp:CustomValidator ID="CustomValidator3" runat="server"
                                 ControlToValidate="txtNombre"
@@ -64,13 +64,13 @@
                                 ClientValidationFunction="validaControl"
                                 ValidationGroup="Cliente" />
                         </div>
-                        <div class="col-12 sigma-form-seccion">
+                        <div class="sigma-modal-field is-ancho sg-id-seccion">
                             <div class="titulo"><i class="mdi mdi-earth"></i>Localización</div>
                             <div class="ayuda">El país decide cómo se rotula la identificación —RUT en Chile, RUC en Perú, CUIT en Argentina— y en qué huso se leen las fechas.</div>
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>País(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>País <span class="sg-id-req">*</span></label>
                             <rad:RadComboBox2 ID="cboPais" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
                                 AutoPostBack="true" OnSelectedIndexChanged="cboPais_SelectedIndexChanged" />
                             <asp:CustomValidator ID="CustomValidator6" runat="server"
@@ -80,7 +80,7 @@
                                 ValidationGroup="Cliente" />
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
+                        <div class="sigma-modal-field is-medio">
                             <%-- La etiqueta la pone el país: RUT en Chile, RUC en Perú,
                                  CUIT en Argentina. Antes decía siempre "Identificacion". --%>
                             <asp:Label ID="lblIdentificador" runat="server" AssociatedControlID="txtIdentificacion" Text="Identificación(*):" />
@@ -91,8 +91,8 @@
                                 ClientValidationFunction="validaControl"
                                 ValidationGroup="Cliente" />
                         </div>
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Razon Social(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Razon Social <span class="sg-id-req">*</span></label>
                             <WebControls:TextBox2 ID="txtRazonSocial" runat="server" MaxLength="200" />
                             <asp:CustomValidator ID="CustomValidator1" runat="server"
                                 ControlToValidate="txtRazonSocial"
@@ -104,13 +104,13 @@
                         <%-- Campos que agrega HU-010. Todos salen de
                              catalogos del sistema y se leen por el registro
                              de catalogos, no con un controller por cada uno. --%>
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Nombre de fantasía:</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Nombre de fantasía</label>
                             <WebControls:TextBox2 ID="txtNombreFantasia" runat="server" MaxLength="200" />
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Zona horaria(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Zona horaria <span class="sg-id-req">*</span></label>
                             <rad:RadComboBox2 ID="cboZonaHoraria" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                             <asp:CustomValidator ID="cvZonaHoraria" runat="server"
                                 ControlToValidate="cboZonaHoraria"
@@ -119,8 +119,8 @@
                                 ValidationGroup="Cliente" />
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Idioma(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Idioma <span class="sg-id-req">*</span></label>
                             <rad:RadComboBox2 ID="cboIdioma" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                             <asp:CustomValidator ID="cvIdioma" runat="server"
                                 ControlToValidate="cboIdioma"
@@ -129,8 +129,8 @@
                                 ValidationGroup="Cliente" />
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Moneda(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Moneda <span class="sg-id-req">*</span></label>
                             <rad:RadComboBox2 ID="cboMoneda" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                             <asp:CustomValidator ID="cvMoneda" runat="server"
                                 ControlToValidate="cboMoneda"
@@ -139,13 +139,13 @@
                                 ValidationGroup="Cliente" />
                         </div>
 
-                        <div class="col-12 sigma-form-seccion">
+                        <div class="sigma-modal-field is-ancho sg-id-seccion">
                             <div class="titulo"><i class="mdi mdi-toggle-switch-outline"></i>Estado</div>
                             <div class="ayuda">Un cliente deshabilitado deja de operar: sus usuarios no entran.</div>
                         </div>
 
-                        <div class="form-group col-lg-6 col-md-6 col-xs-12 identidad-field">
-                            <label>Habilitado(*):</label>
+                        <div class="sigma-modal-field is-medio">
+                            <label>Habilitado <span class="sg-id-req">*</span></label>
                             <div class="identidad-radio-group">
                                 <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" ValidationGroup="Cliente" />
                                 <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" ValidationGroup="Cliente" />
