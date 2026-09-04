@@ -141,10 +141,44 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         hlComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
         hlAccComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
+        hlMedidores.NavigateUrl = ResolveUrl("~/View/Activos/Medidores/ActivoMedidores.aspx");
         hlAccCambiar.NavigateUrl = ResolveUrl("~/View/Activos/Estado/ActivoEstado.aspx");
         hlAtributos.NavigateUrl = ResolveUrl("~/View/Activos/Atributos/AtributoTecnicos.aspx");
         hlGenerarOT.NavigateUrl = ResolveUrl("~/Default.aspx");
         hlAccOT.NavigateUrl = ResolveUrl("~/Default.aspx");
+
+        CargarTabs(a);
+    }
+
+    /// <summary>
+    /// Carga las pestañas centralizadas del activo: componentes, medidores y
+    /// atributos técnicos del tipo. Solo lectura (el ABM completo se abre con
+    /// "Gestionar"). Reutiliza los controllers de cada módulo.
+    /// </summary>
+    protected void CargarTabs(Activo a)
+    {
+        int cliente = SitioBase.Session.ClienteId();
+
+        // Componentes del activo
+        var lc = new ActivoComponenteController().GetComponentes(new ActivoComponente
+        { aco_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
+        if (lc == null) lc = new System.Collections.Generic.List<ActivoComponente>();
+        rptComponentes.DataSource = lc; rptComponentes.DataBind();
+        pnlSinComponentes.Visible = (lc.Count == 0);
+
+        // Medidores del activo
+        var lm = new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor
+        { ame_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
+        if (lm == null) lm = new System.Collections.Generic.List<ActivoMedidor>();
+        rptMedidores.DataSource = lm; rptMedidores.DataBind();
+        pnlSinMedidores.Visible = (lm.Count == 0);
+
+        // Atributos técnicos del TIPO del activo
+        var la = new AtributoTecnicoController().GetAtributos(new AtributoTecnico
+        { filtro_cliente = cliente, filtro_activo_tipo = a.act_activo_tipo, filtro_habilitado = true });
+        if (la == null) la = new System.Collections.Generic.List<AtributoTecnico>();
+        rptAtributos.DataSource = la; rptAtributos.DataBind();
+        pnlSinAtributos.Visible = (la.Count == 0);
     }
 
     protected void CargarHistorial(int activo)

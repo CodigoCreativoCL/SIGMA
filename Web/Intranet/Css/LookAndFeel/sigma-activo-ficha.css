@@ -135,6 +135,16 @@
 .sigma-af-vacio { padding: 26px; text-align: center; color: var(--af-tenue); font-size: 13px; }
 .sigma-af-vacio i { display: block; font-size: 34px; color: #cbd5e1; margin-bottom: 8px; }
 
+/* tabla simple para las pestañas (componentes, medidores, atributos) */
+.sigma-af-tabla { border: 1px solid var(--af-borde); border-radius: 12px; overflow: hidden; }
+.sigma-af-tabla .fila {
+    display: grid; grid-template-columns: 1.2fr 2fr 1.4fr 1.2fr; gap: 12px;
+    padding: 11px 14px; font-size: 13px; color: #334155; border-top: 1px solid #eef2f7; align-items: center;
+}
+.sigma-af-tabla .fila:first-child { border-top: none; }
+.sigma-af-tabla .fila.cab { background: #f8fafc; font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: .03em; }
+.sigma-af-tabla .fila span { overflow: hidden; text-overflow: ellipsis; }
+
 /* ------------------------------------------------------------ línea de tiempo */
 .sigma-af-timeline { list-style: none; margin: 0; padding: 0; position: relative; }
 .sigma-af-timeline::before {

@@ -116,9 +116,9 @@
                             <button type="button" class="sigma-af-tab" data-tab="resumen">Resumen</button>
                             <button type="button" class="sigma-af-tab is-activa" data-tab="historial">Historial</button>
                             <button type="button" class="sigma-af-tab" data-tab="componentes">Componentes</button>
-                            <button type="button" class="sigma-af-tab" data-tab="mantenimiento">Mantenimiento</button>
-                            <button type="button" class="sigma-af-tab" data-tab="documentos">Documentos</button>
+                            <button type="button" class="sigma-af-tab" data-tab="medidores">Medidores</button>
                             <button type="button" class="sigma-af-tab" data-tab="atributos">Atributos técnicos</button>
+                            <button type="button" class="sigma-af-tab" data-tab="documentos">Documentos</button>
                         </div>
 
                         <%-- RESUMEN --%>
@@ -177,18 +177,79 @@
 
                         <%-- COMPONENTES --%>
                         <div class="sigma-af-pane" data-pane="componentes">
-                            <div class="sigma-af-card sigma-af-vacio">
-                                <i class="mdi mdi-puzzle-outline"></i>
-                                Los componentes de este activo se administran en su propia pantalla.
-                                <div style="margin-top:12px;"><asp:HyperLink ID="hlComponentes" runat="server" CssClass="sigma-af-btn is-plano"><i class="mdi mdi-open-in-new"></i> Abrir componentes</asp:HyperLink></div>
+                            <div class="sigma-af-card">
+                                <div class="sigma-af-tools">
+                                    <h3 style="margin:0;">Componentes del activo</h3>
+                                    <asp:HyperLink ID="hlComponentes" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                </div>
+                                <asp:Panel ID="pnlSinComponentes" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-puzzle-outline"></i> Este activo aún no tiene componentes registrados.
+                                </asp:Panel>
+                                <div class="sigma-af-tabla">
+                                    <asp:Repeater ID="rptComponentes" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Componente</span><span>Tipo</span><span>Estado</span></div></HeaderTemplate>
+                                        <ItemTemplate>
+                                            <div class="fila">
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_codigo"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("estado_nombre"))) %></span>
+                                            </div>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </div>
                             </div>
                         </div>
 
-                        <%-- MANTENIMIENTO --%>
-                        <div class="sigma-af-pane" data-pane="mantenimiento">
-                            <div class="sigma-af-card sigma-af-vacio">
-                                <i class="mdi mdi-wrench-outline"></i>
-                                El detalle de mantenimiento del activo estará disponible próximamente.
+                        <%-- MEDIDORES --%>
+                        <div class="sigma-af-pane" data-pane="medidores">
+                            <div class="sigma-af-card">
+                                <div class="sigma-af-tools">
+                                    <h3 style="margin:0;">Medidores del activo</h3>
+                                    <asp:HyperLink ID="hlMedidores" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                </div>
+                                <asp:Panel ID="pnlSinMedidores" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-gauge"></i> Este activo aún no tiene medidores configurados.
+                                </asp:Panel>
+                                <div class="sigma-af-tabla">
+                                    <asp:Repeater ID="rptMedidores" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Medidor</span><span>Valor actual</span><span>Unidad</span></div></HeaderTemplate>
+                                        <ItemTemplate>
+                                            <div class="fila">
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("ame_codigo"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("ame_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("ame_valor_actual"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad_nombre"))) %></span>
+                                            </div>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </div>
+                            </div>
+                        </div>
+
+                        <%-- ATRIBUTOS --%>
+                        <div class="sigma-af-pane" data-pane="atributos">
+                            <div class="sigma-af-card">
+                                <div class="sigma-af-tools">
+                                    <h3 style="margin:0;">Atributos técnicos del tipo</h3>
+                                    <asp:HyperLink ID="hlAtributos" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                </div>
+                                <asp:Panel ID="pnlSinAtributos" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-format-list-bulleted-type"></i> El tipo de este activo aún no tiene atributos técnicos definidos.
+                                </asp:Panel>
+                                <div class="sigma-af-tabla">
+                                    <asp:Repeater ID="rptAtributos" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Atributo</span><span>Tipo de dato</span><span>Unidad</span></div></HeaderTemplate>
+                                        <ItemTemplate>
+                                            <div class="fila">
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_codigo"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_dato_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad_nombre"))) %></span>
+                                            </div>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </div>
                             </div>
                         </div>
 
@@ -197,15 +258,6 @@
                             <div class="sigma-af-card sigma-af-vacio">
                                 <i class="mdi mdi-folder-outline"></i>
                                 Aún no hay documentos adjuntos a este activo.
-                            </div>
-                        </div>
-
-                        <%-- ATRIBUTOS --%>
-                        <div class="sigma-af-pane" data-pane="atributos">
-                            <div class="sigma-af-card sigma-af-vacio">
-                                <i class="mdi mdi-format-list-bulleted-type"></i>
-                                Los atributos técnicos se definen por tipo de activo en su propia pantalla.
-                                <div style="margin-top:12px;"><asp:HyperLink ID="hlAtributos" runat="server" CssClass="sigma-af-btn is-plano"><i class="mdi mdi-open-in-new"></i> Abrir atributos técnicos</asp:HyperLink></div>
                             </div>
                         </div>
                     </div>
