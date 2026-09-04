@@ -100,8 +100,29 @@
                             El monto queda congelado y el período no se puede editar después.
                         </span>
                         <WebControls:PushButton ID="btnCerrarEmitir" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />
+                        <%-- OJO CON EL `return` EN UN BOTON QUE VALIDA
+
+                             Este boton lleva `ValidationGroup`, y por eso
+                             ASP.NET le agrega su propio
+                             `WebForm_DoPostBackWithOptions(...)` AL FINAL del
+                             atributo onclick, detras de lo que se escriba
+                             aca.
+
+                             Estaba escrito `return ConfirSweetAlert(...)`, y
+                             un `return` corta la ejecucion de todo lo que
+                             viene despues: tanto al cancelar como al
+                             CONFIRMAR. Por eso se apretaba SI y no pasaba
+                             nada, y el periodo no se emitia nunca.
+
+                             Con el `if` solo se corta cuando hay que cortar;
+                             al confirmar, la ejecucion sigue hasta el script
+                             de postback que puso ASP.NET.
+
+                             El resto de los 33 usos de ConfirSweetAlert del
+                             sitio no llevan ValidationGroup, asi que no
+                             tienen script detras y con `return` funcionan. --%>
                         <WebControls:PushButton ID="btnEmitir" runat="server" Text="Emitir" OnClick="btnEmitir_Click" ValidationGroup="Periodo"
-                            OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma la emisión? El monto queda congelado y el período no se puede editar después.');" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma la emisión? El monto queda congelado y el período no se puede editar después.')) return false;" />
                     </div>
 
                 </asp:Panel>

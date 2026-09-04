@@ -55,6 +55,22 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                     ctrl.DataBind();
                     break;
 
+                case "cboTipo":
+
+                    /* Solo los habilitados: un tipo apagado no se puede
+                       elegir, aunque los repuestos que ya lo tienen lo
+                       conserven. */
+                    RepuestoTipoController ctrlTipo = new RepuestoTipoController();
+
+                    ctrl.Items.Add(new RadComboBoxItem("Sin clasificar", ""));
+                    ctrl.AppendDataBoundItems = true;
+                    ctrl.DataSource = ctrlTipo.GetRepuestoTipos(
+                        new RepuestoTipo { filtro_habilitado = true });
+                    ctrl.DataValueField = "rti_id";
+                    ctrl.DataTextField = "rti_nombre";
+                    ctrl.DataBind();
+                    break;
+
                 case "cboBodega":
 
                     BodegaController ctrlBodega = new BodegaController();
@@ -93,7 +109,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             Repuesto entidad = controller.GetRepuesto(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.rep_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Repuesto", entidad.rep_codigo);
             txtNombre.Text = entidad.rep_nombre;
             txtFabricante.Text = entidad.rep_fabricante;
             txtModelo.Text = entidad.rep_modelo;
@@ -111,6 +127,9 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
             if (entidad.rep_unidad_medida > 0)
                 cboUnidad.SelectedValue = entidad.rep_unidad_medida.ToString();
+
+                if (entidad.rep_repuesto_tipo > 0)
+                    cboTipo.SelectedValue = entidad.rep_repuesto_tipo.ToString();
 
             rdbLoteSi.Checked = entidad.rep_controla_lote;
             rdbLoteNo.Checked = !entidad.rep_controla_lote;
@@ -243,13 +262,15 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         // El codigo solo se escribe al crear.
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Repuesto");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
         txtModelo.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtCosto.ReadOnly = !puedeEditar;
         cboUnidad.ReadOnly = !puedeEditar;
+        cboTipo.ReadOnly = !puedeEditar;
         txtVidaHora.ReadOnly = !puedeEditar;
         txtVidaDia.ReadOnly = !puedeEditar;
         txtVidaCiclo.ReadOnly = !puedeEditar;
@@ -317,12 +338,17 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.rep_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.rep_codigo = SitioBase.CodigoModulo.Componer("Repuesto", txtCodigo.Text);
             entidad.rep_nombre = txtNombre.Text.Trim();
             entidad.rep_fabricante = txtFabricante.Text.Trim();
             entidad.rep_modelo = txtModelo.Text.Trim();
             entidad.rep_descripcion = txtDescripcion.Text.Trim();
             entidad.rep_unidad_medida = int.Parse(cboUnidad.SelectedValue);
+
+            /* Vacio es "sin clasificar": 0 viaja como NULL a la base. */
+            int tipo;
+            entidad.rep_repuesto_tipo =
+                int.TryParse(cboTipo.SelectedValue, out tipo) ? tipo : 0;
             entidad.rep_costo_referencia = LeerDecimal(txtCosto.Text, "costo de referencia");
 
             /* Vida util esperada. Las tres son opcionales y pueden convivir:

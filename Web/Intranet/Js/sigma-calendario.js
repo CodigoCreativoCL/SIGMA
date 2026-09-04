@@ -484,10 +484,48 @@
         if (e.keyCode === 27) cerrar();
     });
 
-    /* Al desplazar la pagina el panel quedaria flotando lejos de su campo:
-       se cierra en vez de perseguirlo. */
-    window.addEventListener('scroll', cerrar, true);
-    window.addEventListener('resize', cerrar);
+    /* ==================================================================
+       AL DESPLAZAR O REDIMENSIONAR, EL PANEL SE REUBICA. NO SE CIERRA.
+
+       EL SINTOMA
+
+         Dentro de una ventana modal, el calendario se abria y a los pocos
+         milisegundos desaparecia solo.
+
+       LA CAUSA
+
+         Aca decia `cerrar`. Y el modal de SIGMA mide el alto de su contenido
+         para ajustar el iframe: cuando algo cambia en el DOM de adentro,
+         vuelve a medir y le cambia la altura. Abrir el calendario AGREGA un
+         nodo, o sea dispara esa medicion, o sea cambia el alto del iframe, o
+         sea el iframe emite `resize`... y el calendario se cerraba a si
+         mismo. Se abria por el clic y se cerraba por haberse abierto.
+
+       LA CORRECCION
+
+         El motivo de cerrar era que el panel quedaria flotando lejos de su
+         campo. Pero eso se arregla moviendolo, no escondiendolo: se vuelve a
+         anclar al campo y sigue abierto, que es lo que la persona pidio al
+         hacer clic.
+
+         Solo se cierra si el campo dejo de estar a la vista -por ejemplo si
+         se desplazo hasta sacarlo de la pantalla-: ahi el panel ya no tiene
+         a que apuntar.
+       ================================================================== */
+    function seguirAlCampo() {
+        if (!panel || panel.style.display === 'none' || !campoActivo) return;
+
+        /* Si el campo ya no esta en pantalla, el panel no tiene anclaje. */
+        var r = campoActivo.getBoundingClientRect();
+        var fuera = r.bottom < 0 || r.top > (window.innerHeight || 0) ||
+                    r.right < 0 || r.left > (window.innerWidth || 0);
+
+        if (fuera) cerrar();
+        else ubicar(campoActivo);
+    }
+
+    window.addEventListener('scroll', seguirAlCampo, true);
+    window.addEventListener('resize', seguirAlCampo);
 
     /* ------------------------------------------------------------------
        CONECTAR LOS CAMPOS

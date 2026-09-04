@@ -1,0 +1,255 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA - Los tipos de repuesto
+
+   POR QUE TARJETAS Y NO UNA TABLA
+
+     Una tabla ordena columnas comparables. Un cliente tiene entre cinco y
+     quince categorias y de cada una interesan cuatro cosas: como se llama,
+     su codigo, cuantos repuestos tiene y en que posicion sale su pestaña.
+     Nadie ordena categorias por descripcion.
+
+     La grilla ademas traeria su paginador -"Registros por pagina: 25" debajo
+     de seis filas- y su cabecera en mayusculas, que es mucho aparato para
+     una lista corta.
+   ============================================================================ */
+
+.sg-tipos {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.sg-tipo {
+    display: flex;
+    align-items: center;
+    gap: 13px;
+    padding: 12px 14px;
+    border: 1px solid #e4e9f1;
+    border-radius: 13px;
+    background: #fff;
+    transition: border-color .16s ease, box-shadow .16s ease;
+}
+
+.sg-tipo:hover {
+    border-color: #cfd7e6;
+    box-shadow: 0 4px 14px rgba(30, 43, 71, .06);
+}
+
+/* El orden, al frente y en un cuadrito. Es lo que decide la posicion de la
+   pestaña en el listado de repuestos: sin verlo, no hay forma de saber por
+   que una categoria salio antes que otra. */
+.sg-tipo-orden {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: #f2f3f7;
+    color: #6b7484;
+    font-size: 13px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-tipo-datos { flex: 1 1 auto; min-width: 0; }
+
+.sg-tipo-nombre {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+}
+
+.sg-tipo-nombre strong { color: #1d2739; font-size: 13px; font-weight: 650; }
+
+/* El codigo en pastilla y en tinta clara: identifica, pero no es lo que se
+   lee primero. */
+.sg-tipo-codigo {
+    padding: 2px 8px;
+    border: 1px solid #e6e9f0;
+    border-radius: 999px;
+    color: #79839a;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .03em;
+}
+
+.sg-tipo-desc {
+    margin-top: 3px;
+    overflow: hidden;
+    color: #7b8496;
+    font-size: 11.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sg-tipo-pie {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    color: #8592a8;
+    font-size: 10.5px;
+}
+
+.sg-tipo-pie i { font-size: 13px; }
+
+.sg-tipo-acciones { flex: 0 0 auto; display: flex; gap: 6px; }
+
+/* Neutras en reposo. En una lista donde cada fila lleva un boton de borrar,
+   diez botones rojos harian ver la pantalla como una zona de peligro. */
+.sg-tipo-accion {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid #e4e9f1;
+    border-radius: 9px;
+    background: #fff;
+    color: #8592a8;
+    font-size: 17px;
+    text-decoration: none;
+    transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.sg-tipo-accion:hover {
+    border-color: #c7bcff;
+    background: #f5f2ff;
+    color: #6C5CFF;
+    text-decoration: none;
+}
+
+.sg-tipo-accion.is-peligro:hover {
+    border-color: #f0b6bf;
+    background: #fdf0f2;
+    color: #b03546;
+}
+
+.sg-tipos-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 38px 20px;
+    border: 1px dashed #dde3ec;
+    border-radius: 13px;
+    background: #fbfcfe;
+    text-align: center;
+}
+
+.sg-tipos-vacio i { margin-bottom: 4px; color: #b8c1d1; font-size: 36px; }
+.sg-tipos-vacio strong { color: #46536b; font-size: 13px; }
+.sg-tipos-vacio span { color: #8592a8; font-size: 11.5px; }
+
+@media (max-width: 640px) {
+    .sg-tipo { flex-wrap: wrap; }
+    .sg-tipo-acciones { width: 100%; justify-content: flex-end; }
+}
+
+
+/* ============================================================================
+   LAS PESTAÑAS DEL LISTADO DE REPUESTOS
+
+   Son un carril horizontal que desplaza si no caben: un cliente puede tener
+   quince categorias y envolverlas en dos lineas mueve la grilla de sitio cada
+   vez que se filtra. Desplazando, la posicion de la tabla no cambia nunca.
+
+   EL NUMERO VA EN CADA UNA
+
+     Un filtro que al tocarlo no muestra nada ya hizo perder un clic. Con el
+     numero al lado se sabe antes si vale la pena entrar.
+
+   LA VACIA SE APAGA, NO SE ESCONDE
+
+     Esconderla correria las demas de lugar y se terminaria tocando la
+     equivocada. Y "Sin clasificar" en cero es justamente la señal de que el
+     maestro quedo clasificado: escondida, no habria forma de saberlo.
+   ============================================================================ */
+.sg-rep-tabs {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 12px;
+    padding-bottom: 2px;
+    overflow-x: auto;
+    border-bottom: 1px solid #e6e9f0;
+    scrollbar-width: thin;
+}
+
+.sg-rep-tab {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 13px;
+    border: 0;
+    border-bottom: 2px solid transparent;
+    background: transparent;
+    color: #79839a;
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+    cursor: pointer;
+    transition: color .15s ease, border-color .15s ease;
+}
+
+.sg-rep-tab:hover { color: #34415c; text-decoration: none; }
+
+.sg-rep-tab.is-activa {
+    border-bottom-color: var(--sg-purple, #6C5CFF);
+    color: var(--sg-purple, #6C5CFF);
+    font-weight: 700;
+}
+
+.sg-rep-tab .n {
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #f2f3f7;
+    color: #8592a8;
+    font-size: 10.5px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.sg-rep-tab.is-activa .n {
+    background: #efeaff;
+    color: var(--sg-purple, #6C5CFF);
+}
+
+.sg-rep-tab.is-vacia { opacity: .5; }
+
+
+/* ---------------------------------------------------- asignacion en lote
+
+   Aparece sola cuando hay algo marcado. Permanente seria una fila mas de
+   ruido en una pantalla que casi siempre se usa para buscar, no para
+   clasificar. */
+.sg-rep-asignar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 10px 13px;
+    border: 1px solid #ded6ff;
+    border-radius: 11px;
+    background: linear-gradient(100deg, #f7f4ff, #fbfaff);
+    color: #39217e;
+}
+
+.sg-rep-asignar > i { color: var(--sg-purple, #6C5CFF); font-size: 19px; }
+.sg-rep-asignar strong { font-size: 12.5px; }
+.sg-rep-asignar > span { color: #6b6291; font-size: 12px; }
+.sg-rep-asignar .sigma-accion { margin-left: auto; }
+
+@media (max-width: 640px) {
+    .sg-rep-asignar .sigma-accion { margin-left: 0; width: 100%; justify-content: center; }
+}

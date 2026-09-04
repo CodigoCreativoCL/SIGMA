@@ -194,7 +194,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             Activo entidad = controller.GetActivo(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.act_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo", entidad.act_codigo);
             txtNombre.Text = entidad.act_nombre;
 
             SeleccionarCombo(cboTipo, entidad.act_activo_tipo);
@@ -249,7 +249,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
@@ -306,7 +307,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.act_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.act_codigo = SitioBase.CodigoModulo.Componer("Activo", txtCodigo.Text);
             entidad.act_nombre = txtNombre.Text.Trim();
             entidad.act_habilitado = rdbSi.Checked;
 

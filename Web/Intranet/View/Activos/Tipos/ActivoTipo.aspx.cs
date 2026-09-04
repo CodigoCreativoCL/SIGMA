@@ -88,7 +88,7 @@ public partial class View_Activos_Tipos_ActivoTipo : System.Web.UI.Page
             EsGlobal = entidad.es_global;
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.ati_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo_Tipo", entidad.ati_codigo);
             txtNombre.Text = entidad.ati_nombre;
             txtDescripcion.Text = entidad.ati_descripcion;
             if (entidad.ati_orden != null) txtOrden.Text = entidad.ati_orden.ToString();
@@ -117,7 +117,8 @@ public partial class View_Activos_Tipos_ActivoTipo : System.Web.UI.Page
         pnlGlobal.Visible = EsGlobal;
         bool puedeEditar = Token.Puede("CREAR EDITAR TIPOS ACTIVO") && !EsGlobal;
 
-        txtCodigo.ReadOnly = true;   // el código es automático (TIP-<id>)
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Tipo");
+        txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtOrden.ReadOnly = !puedeEditar;
@@ -140,7 +141,7 @@ public partial class View_Activos_Tipos_ActivoTipo : System.Web.UI.Page
 
             entidad.ati_id = Id;
             entidad.ati_cliente = SitioBase.Session.ClienteId();
-            entidad.ati_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";   // TIP-<id> lo genera el SP
+            entidad.ati_codigo = SitioBase.CodigoModulo.Componer("Activo_Tipo", txtCodigo.Text);   // TIP-<id> lo genera el SP
             entidad.ati_nombre = txtNombre.Text.Trim();
             entidad.ati_habilitado = rdbSi.Checked;
 

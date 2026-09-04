@@ -108,6 +108,18 @@ namespace SitioBase.Controller
                     r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
+            }
             return r;
         }
 
@@ -137,6 +149,18 @@ namespace SitioBase.Controller
                     r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
             }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
+            }
             return r;
         }
 
@@ -160,6 +184,18 @@ namespace SitioBase.Controller
                     if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
                     r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
+            }
+            else
+            {
+                /* SIN SESION NO SE FINGE EXITO.
+            
+                   `new Respuesta()` nace con `error = false` y `detalle` en nulo.
+                   Sin este bloque, cuando no hay sesion el metodo devolvia ese
+                   objeto tal cual y la pantalla lo leia como "guardado con
+                   exito": alerta vacia y ni una fila escrita. */
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
             }
             return r;
         }

@@ -42,8 +42,14 @@
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Código</label>
-                <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" ReadOnly="true" />
-                <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>MED-</strong> más el número.</span>
+                <%-- El prefijo lo pone el sistema y no se puede tocar; el resto
+                     lo escribe quien crea el registro. Van juntos en una sola
+                     caja para que se lea como UN codigo y no como dos campos. --%>
+                <div class="sg-codigo">
+                    <span class="sg-codigo-prefijo"><asp:Literal ID="litPrefijo" runat="server" /></span>
+                    <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" ReadOnly="true" />
+                </div>
+                <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
             </div>
             <div class="sigma-modal-field is-medio">
                 <label>Nombre(*)</label>

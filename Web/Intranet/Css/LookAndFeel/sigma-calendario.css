@@ -291,8 +291,10 @@ div[id$="_popupButton_popup"] {
 /* Y su campo, a la misma altura y radio que los demas. */
 .RadPicker input.riTextBox {
     height: 42px !important;
-    min-width: 118px !important;
-    max-width: 118px !important;
+    /* Mismo criterio que en sigma-botones.css: diez caracteres de la fuente
+       real, no una medida en pixeles que se rompe al cambiarla. */
+    min-width: calc(10ch + 34px) !important;
+    max-width: calc(10ch + 34px) !important;
     padding: 0 12px !important;
     border-radius: var(--sg-radius-md, 12px) !important;
     box-sizing: border-box !important;

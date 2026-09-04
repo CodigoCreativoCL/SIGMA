@@ -89,7 +89,7 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
             AtributoTecnico x = c.GetAtributo(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = x.ate_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Atributo_Tecnico", x.ate_codigo);
             txtNombre.Text = x.ate_nombre;
             txtOrden.Text = x.ate_orden != null ? x.ate_orden.ToString() : "";
             EsGlobal = x.es_global;
@@ -122,7 +122,8 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
 
         pnlGlobal.Visible = EsGlobal;
 
-        txtCodigo.ReadOnly = true;   // el código es automático (ATR-<id>)
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Atributo_Tecnico");
+        txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtOrden.ReadOnly = !puedeEditar;
         cboTipo.ReadOnly = !puedeEditar;
@@ -148,7 +149,7 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
             x.ate_id = Id;
             x.ate_cliente = SitioBase.Session.ClienteId();
             x.ate_tipo_dato = int.Parse(cboTipoDato.SelectedValue);
-            x.ate_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";   // ATR-<id> lo genera el SP
+            x.ate_codigo = SitioBase.CodigoModulo.Componer("Atributo_Tecnico", txtCodigo.Text);   // ATR-<id> lo genera el SP
             x.ate_nombre = txtNombre.Text.Trim();
             x.ate_habilitado = rdbSi.Checked;
 

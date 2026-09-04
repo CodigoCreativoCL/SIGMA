@@ -98,7 +98,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             Bodega entidad = controller.GetBodega(Id);
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.bod_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Bodega", entidad.bod_codigo);
             txtNombre.Text = entidad.bod_nombre;
             txtDescripcion.Text = entidad.bod_descripcion;
 
@@ -315,7 +315,8 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         // El codigo solo se escribe al crear: despues identifica la bodega.
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Bodega");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
@@ -351,7 +352,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.bod_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.bod_codigo = SitioBase.CodigoModulo.Componer("Bodega", txtCodigo.Text);
             entidad.bod_nombre = txtNombre.Text.Trim();
             entidad.bod_descripcion = txtDescripcion.Text.Trim();
             entidad.bod_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);

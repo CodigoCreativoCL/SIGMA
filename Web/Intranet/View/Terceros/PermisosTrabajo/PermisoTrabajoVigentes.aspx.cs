@@ -118,9 +118,12 @@ public partial class View_Terceros_PermisosTrabajo_PermisoTrabajoVigentes : Syst
             else vigentes++;
         }
 
-        litVencidos.Text = vencidos.ToString();
-        litPorVencer.Text = porVencer.ToString();
-        litVigentes.Text = vigentes.ToString();
+        /* El contenido va en `Text` y no en controles hijos: ver el comentario
+           del markup. Se arma aca una sola vez y las tres tarjetas quedan
+           iguales por construccion. */
+        lnkVencidos.Text  = Tarjeta(vencidos,  "mdi-close-circle-outline", "Vencidos");
+        lnkPorVencer.Text = Tarjeta(porVencer, "mdi-clock-alert-outline",  "Por vencer");
+        lnkVigentes.Text  = Tarjeta(vigentes,  "mdi-check-circle-outline", "Vigentes");
 
         // Lo que se muestra, según la tarjeta que se haya tocado.
         List<PermisoVigente> lista;
@@ -304,6 +307,20 @@ public partial class View_Terceros_PermisosTrabajo_PermisoTrabajoVigentes : Syst
         if (bytes < 1024 * 1024) return (bytes / 1024d).ToString("0.#") + " KB";
 
         return (bytes / (1024d * 1024d)).ToString("0.#") + " MB";
+    }
+
+    /// <summary>
+    /// El interior de una tarjeta: el número arriba y el rótulo con su icono
+    /// debajo.
+    ///
+    /// El número NO se escapa porque es un entero contado acá mismo; el
+    /// rótulo y el icono son constantes de esta pantalla. Nada de esto viene
+    /// del usuario ni de la base.
+    /// </summary>
+    private static string Tarjeta(int numero, string icono, string rotulo)
+    {
+        return "<span class=\"numero\">" + numero + "</span>" +
+               "<span class=\"rotulo\"><i class=\"mdi " + icono + "\"></i>" + rotulo + "</span>";
     }
 
     protected void lnkVencidos_Click(object sender, EventArgs e) { Situacion = "VENCIDO"; }

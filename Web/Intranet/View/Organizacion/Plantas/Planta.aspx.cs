@@ -150,7 +150,7 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
             ClienteInstalacion entidad = controller.GetClienteInstalacion(new ClienteInstalacion { cin_id = Id });
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.cin_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Cliente_Instalacion", entidad.cin_codigo);
             txtNombre.Text = entidad.cin_nombre;
             txtDireccion.Text = entidad.cin_direccion;
             txtDescripcion.Text = entidad.cin_descripcion;
@@ -228,7 +228,8 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
 
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Cliente_Instalacion");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDireccion.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
@@ -285,7 +286,7 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.cin_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.cin_codigo = SitioBase.CodigoModulo.Componer("Cliente_Instalacion", txtCodigo.Text);
             entidad.cin_nombre = txtNombre.Text.Trim();
             entidad.cin_direccion = txtDireccion.Text.Trim();
             entidad.cin_descripcion = txtDescripcion.Text.Trim();

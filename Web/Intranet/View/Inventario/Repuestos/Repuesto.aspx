@@ -52,8 +52,14 @@
                     </div>
                     <div class="sigma-modal-field is-medio">
                         <label>Código</label>
-                        <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
-                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>REP-</strong>más el número del registro.</span>
+                        <%-- El prefijo lo pone el sistema y no se puede tocar; el resto
+                             lo escribe quien crea el registro. Van juntos en una sola
+                             caja para que se lea como UN codigo y no como dos campos. --%>
+                        <div class="sg-codigo">
+                            <span class="sg-codigo-prefijo"><asp:Literal ID="litPrefijo" runat="server" /></span>
+                            <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
+                        </div>
+                        <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
                         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Repuesto" />
                         <span class="sigma-modal-ayuda">Único dentro del cliente. No se puede cambiar después.</span>
@@ -71,6 +77,26 @@
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Repuesto" />
                         <span class="sigma-modal-ayuda">No se puede cambiar si el repuesto tiene existencia.</span>
                     </div>
+                    <%-- LA CATEGORIA
+
+                         Opcional a proposito. Obligarla dejaria fuera a los
+                         repuestos que ya existen y forzaria a inventar una
+                         categoria antes de poder cargar el primero. Sin tipo,
+                         el repuesto cae en "Sin clasificar", que es cierto y
+                         no estorba.
+
+                         Para clasificar un maestro que ya existe no se usa
+                         esta ficha: en el listado se marcan varios y se les
+                         asigna el tipo de una vez. --%>
+                    <div class="sigma-modal-field is-chico">
+                        <label>Tipo de repuesto</label>
+                        <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                        <span class="sigma-modal-ayuda">
+                            Agrupa el repuesto en su pestaña del listado. Vacío queda como
+                            <em>Sin clasificar</em>.
+                        </span>
+                    </div>
+
                     <div class="sigma-modal-field is-chico">
                         <label>Habilitado(*)</label>
                         <div class="sigma-modal-opciones">

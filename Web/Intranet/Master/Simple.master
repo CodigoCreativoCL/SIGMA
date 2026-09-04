@@ -54,7 +54,7 @@
          mientras el resto del sitio ya estaba relookeado. Va DESPUES de v2
          para que los tokens de marca ganen. -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=11" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-modal.css?vrs=8" rel="stylesheet" />
 
@@ -75,9 +75,9 @@
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
          reglas de Grid.css y Button.css que traen !important, y para
          ganarles hay que cargarla al final. --%>
-    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=15" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=16" rel="stylesheet" />
     <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
-    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
 
     <asp:ContentPlaceHolder ID="cphHeder" runat="server">
         <style>
@@ -124,6 +124,9 @@
                         <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                         <asp:ScriptReference Path="~/Js/Library.js?vrs=8" />
+                        <%-- Define `.modal()`, que ClientAlert necesita y Bootstrap JS no
+                             esta para dar. Va DESPUES de Library.js, que es quien lo usa. --%>
+                        <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js" />
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                         <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                         <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />

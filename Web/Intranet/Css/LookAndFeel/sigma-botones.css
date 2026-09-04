@@ -754,11 +754,22 @@
 .sigma-filtro-fecha input[type="text"],
 .filtroPersonalizado .sigma-modal-fecha input[type="text"] {
     /* El control fuerza `width` en linea con !important; `min-width` si le
-       gana, y `max-width` lo acota por arriba. Entre los dos queda fijo. */
-    min-width: 118px !important;
-    max-width: 118px !important;
-    width: 118px !important;
-    flex: 0 0 118px !important;
+       gana, y `max-width` lo acota por arriba. Entre los dos queda fijo.
+
+       EL ANCHO SE MIDE EN CARACTERES, NO EN PIXELES
+
+         Estuvo en 118px, que descontado el relleno deja 94px de texto: con la
+         tipografia del producto, `23-09-2026` no entra y la fecha se ve
+         cortada contra los bordes.
+
+         `ch` es el ancho del caracter "0" en la fuente que se este usando de
+         verdad, asi que `10ch` son los diez caracteres de dd-mm-aaaa midan lo
+         que midan. Otro numero fijo volveria a romperse en cuanto cambie la
+         fuente o su tamaño. */
+    min-width: calc(10ch + 34px) !important;
+    max-width: calc(10ch + 34px) !important;
+    width: calc(10ch + 34px) !important;
+    flex: 0 0 auto !important;
     height: 42px !important;
     padding: 0 12px !important;
     box-sizing: border-box !important;

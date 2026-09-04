@@ -27,10 +27,43 @@ using Telerik.Web.UI;
 /// </summary>
 public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
 {
+    /// <summary>
+    /// Que pestaña se esta mirando.
+    ///
+    ///   -1  todas
+    ///    0  sin clasificar
+    ///   >0  el id del tipo
+    ///
+    /// Vive en ViewState y no en la sesion: es una decision de ESTA pantalla
+    /// y de este momento. En la sesion, quien volviera mañana se encontraria
+    /// filtrado por una categoria que ya no recuerda haber elegido.
+    /// </summary>
+    public int TipoTab
+    {
+        get { return ViewState["TipoTab"] != null ? (int)ViewState["TipoTab"] : -1; }
+        set { ViewState["TipoTab"] = value; }
+    }
+
+    /// <summary>Los tipos del cliente, leidos una vez por peticion.</summary>
+    private List<RepuestoTipo> _tipos;
+
+    private List<RepuestoTipo> Tipos()
+    {
+        if (_tipos == null)
+            _tipos = new RepuestoTipoController().GetRepuestoTipos(
+                new RepuestoTipo { filtro_habilitado = true });
+
+        return _tipos;
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
         {
+            /* La casilla de seleccion habilita la asignacion en lote: sin
+               ella habria que abrir trescientas fichas para clasificar el
+               maestro. */
+            Grid.AddSelectColumn();
             Grid.AddColumn("REP_ID", "", Width: "3%");
             Grid.AddColumn("REP_CODIGO", "CÓDIGO", Width: "15%");
 
@@ -44,6 +77,27 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
         Tools.tools.RegisterPostBackScript(Grid);
     }
 
+    /// <summary>
+    /// El combo de tipos de la barra de asignacion.
+    /// </summary>
+    public void LoadControls(object sender, EventArgs e)
+    {
+        if (IsPostBack || !(sender is RadComboBox2)) return;
+
+        RadComboBox2 ctrl = (RadComboBox2)sender;
+
+        if (ctrl.ID != "cboTipoLote") return;
+
+        /* "Sin clasificar" tambien es una opcion: sirve para deshacer una
+           asignacion equivocada sin tener que elegir otro tipo cualquiera. */
+        ctrl.Items.Add(new RadComboBoxItem("Sin clasificar", "0"));
+        ctrl.AppendDataBoundItems = true;
+        ctrl.DataSource = Tipos();
+        ctrl.DataValueField = "rti_id";
+        ctrl.DataTextField = "rti_nombre";
+        ctrl.DataBind();
+    }
+
     protected void Page_PreRender(object sender, EventArgs e)
     {
         /* Escribe el archivo directo en la respuesta, y eso no sobrevive a un
@@ -54,8 +108,18 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
         if (!Token.PuedeFuncion("Crear y editar"))
             Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
 
+        CargarTabs();
         CargarGrid();
         Grid.DataBind();
+
+        /* La barra aparece sola cuando hay algo marcado. Permanente seria una
+           fila mas de ruido en una pantalla que casi siempre se usa para
+           buscar, no para clasificar. */
+        int marcados = Grid.SelectedIndexes.Count;
+
+        pnlAsignar.Visible = marcados > 0 && Token.Puede("CREAR EDITAR REPUESTOS");
+        litMarcados.Text = marcados == 1 ? "1 repuesto marcado" : marcados + " repuestos marcados";
+
         udPanel.Update();
     }
 
@@ -158,6 +222,148 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
              + "</div>";
     }
 
+    /// <summary>
+    /// Las pestañas: "Todos", una por tipo, y "Sin clasificar" al final.
+    ///
+    /// "SIN CLASIFICAR" NO SE ESCONDE CUANDO ESTA VACIA
+    ///   Es justamente la pestaña que hay que vaciar, y verla en cero es la
+    ///   señal de que el maestro quedo clasificado. Escondida, no habria forma
+    ///   de saber si faltan repuestos por clasificar.
+    /// </summary>
+    protected void CargarTabs()
+    {
+        List<Repuesto> todos = ListaBase();
+
+        List<object> tabs = new List<object>();
+
+        tabs.Add(new object[] { -1, "Todos", todos.Count });
+
+        foreach (RepuestoTipo t in Tipos())
+        {
+            int n = 0;
+
+            foreach (Repuesto r in todos)
+                if (r.rep_repuesto_tipo == t.rti_id) n++;
+
+            tabs.Add(new object[] { t.rti_id, t.rti_nombre, n });
+        }
+
+        int sin = 0;
+
+        foreach (Repuesto r in todos)
+            if (r.rep_repuesto_tipo <= 0) sin++;
+
+        tabs.Add(new object[] { 0, "Sin clasificar", sin });
+
+        rptTabs.DataSource = tabs;
+        rptTabs.DataBind();
+    }
+
+    protected void rptTabs_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType != ListItemType.Item &&
+            e.Item.ItemType != ListItemType.AlternatingItem) return;
+
+        object[] d = e.Item.DataItem as object[];
+
+        if (d == null) return;
+
+        LinkButton b = (LinkButton)e.Item.FindControl("lnkTab");
+
+        if (b == null) return;
+
+        int id = (int)d[0];
+
+        b.CommandArgument = id.ToString();
+
+        /* El contenido va en `Text` y no en controles hijos: un LinkButton
+           dibuja sus hijos solo cuando `Text` esta vacio, y eso depende de que
+           el arbol se reconstruya igual en cada postback parcial. Ya paso con
+           las tarjetas de permisos y quedaron en blanco. */
+        b.Text = Server.HtmlEncode((string)d[1]) +
+                 "<span class=\"n\">" + (int)d[2] + "</span>";
+
+        b.CssClass = "sg-rep-tab" + (TipoTab == id ? " is-activa" : "") +
+                     ((int)d[2] == 0 && TipoTab != id ? " is-vacia" : "");
+    }
+
+    protected void rptTabs_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "tab") return;
+
+        int id;
+
+        if (!int.TryParse(Convert.ToString(e.CommandArgument), out id)) return;
+
+        TipoTab = id;
+
+        /* Cambiar de pestaña limpia lo marcado: lo que estaba seleccionado ya
+           no se ve, y asignarle un tipo a filas invisibles es la clase de cosa
+           que despues nadie entiende. */
+        Grid.SelectedIndexes.Clear();
+    }
+
+    /// <summary>
+    /// La lista SIN el filtro de pestaña: es la que cuentan las pestañas.
+    ///
+    /// Si contaran sobre la lista ya filtrada, cada pestaña mostraria su
+    /// propio total y las demas en cero.
+    /// </summary>
+    protected List<Repuesto> ListaBase()
+    {
+        RepuestoController controller = new RepuestoController();
+
+        Repuesto filtro = new Repuesto();
+        filtro.filtro_habilitado = true;
+
+        if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
+
+        List<Repuesto> lista = controller.GetRepuestos(filtro);
+
+        return lista ?? new List<Repuesto>();
+    }
+
+    protected void lnkAsignar_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR REPUESTOS"))
+            {
+                Tools.tools.ClientAlert("No tiene permisos para clasificar repuestos.", "alerta");
+                return;
+            }
+
+            if (Grid.SelectedIndexes.Count == 0)
+            {
+                Tools.tools.ClientAlert("Marque al menos un repuesto.", "alerta");
+                return;
+            }
+
+            List<string> ids = new List<string>();
+
+            foreach (string indice in Grid.SelectedIndexes)
+            {
+                Telerik.Web.UI.DataKey k = Grid.MasterTableView.DataKeyValues[int.Parse(indice)];
+                ids.Add(k["rep_id"].ToString());
+            }
+
+            int tipo;
+
+            if (!int.TryParse(cboTipoLote.SelectedValue, out tipo)) tipo = 0;
+
+            RepuestoController controller = new RepuestoController();
+            Respuesta respuesta = controller.AsignarTipo(tipo, string.Join(",", ids.ToArray()));
+
+            if (!respuesta.error) Grid.SelectedIndexes.Clear();
+
+            Tools.tools.ClientAlert(respuesta.detalle, respuesta.error ? "alerta" : "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "error");
+        }
+    }
+
     protected void CargarGrid()
     {
         RepuestoController controller = new RepuestoController();
@@ -193,6 +399,19 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
             lista = lista.FindAll(delegate(Repuesto r)
             {
                 return con ? r.existencia_total > 0 : r.existencia_total <= 0;
+            });
+        }
+
+        /* La pestaña filtra al final, sobre la lista ya acotada por el
+           buscador y los combos: asi "Rodamientos" muestra los rodamientos
+           QUE ADEMAS coinciden con lo que se busco, y no todos. */
+        if (TipoTab >= 0)
+        {
+            int tab = TipoTab;
+
+            lista = lista.FindAll(delegate(Repuesto r)
+            {
+                return tab == 0 ? r.rep_repuesto_tipo <= 0 : r.rep_repuesto_tipo == tab;
             });
         }
 

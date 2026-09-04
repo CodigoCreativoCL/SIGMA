@@ -227,7 +227,7 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
             PlanComercial p = controller.GetPlan(new PlanComercial { plc_id = Id });
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = p.plc_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Plan_Comercial", p.plc_codigo);
             txtNombre.Text = p.plc_nombre;
             txtDescripcion.Text = p.plc_descripcion;
             txtOrden.Text = p.plc_orden.ToString();
@@ -293,6 +293,7 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
         btnFijarPrecio.Visible = puedeEditar;
 
         // El codigo se escribe una sola vez, al crear.
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Plan_Comercial");
         txtCodigo.ReadOnly = (Id > 0) || !puedeEditar;
     }
 
@@ -394,7 +395,7 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.plc_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.plc_codigo = SitioBase.CodigoModulo.Componer("Plan_Comercial", txtCodigo.Text);
             entidad.plc_nombre = txtNombre.Text.Trim();
             entidad.plc_descripcion = txtDescripcion.Text.Trim();
             entidad.plc_orden = LeerEntero(txtOrden.Text, "orden");

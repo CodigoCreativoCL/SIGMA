@@ -167,7 +167,7 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
             GrupoTrabajo entidad = controller.GetGrupoTrabajo(new GrupoTrabajo { gtr_id = Id });
 
             lblId.Text = Id.ToString();
-            txtCodigo.Text = entidad.gtr_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Grupo_Trabajo", entidad.gtr_codigo);
             txtNombre.Text = entidad.gtr_nombre;
             txtDescripcion.Text = entidad.gtr_descripcion;
 
@@ -312,7 +312,8 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
 
         /* Nunca se escribe a mano: lo genera el SP al crear, y despues
                identifica el registro. */
-            txtCodigo.ReadOnly = true;
+            litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Grupo_Trabajo");
+            txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
@@ -363,7 +364,7 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
                Al editar viaja el que ya tiene. No se regenera nunca: el
                codigo esta impreso en su etiqueta, y cambiarlo dejaria la
                etiqueta pegada apuntando a algo que no existe. */
-            entidad.gtr_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.gtr_codigo = SitioBase.CodigoModulo.Componer("Grupo_Trabajo", txtCodigo.Text);
             entidad.gtr_nombre = txtNombre.Text.Trim();
             entidad.gtr_descripcion = txtDescripcion.Text.Trim();
             entidad.gtr_habilitado = rdbSi.Checked;

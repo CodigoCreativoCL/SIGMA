@@ -165,7 +165,7 @@
                             Si es una subida, se cobra la diferencia hoy mismo.
                         </span>
                         <WebControls:PushButton ID="btnCambiarPlan" runat="server" Text="Cambiar de plan" OnClick="btnCambiarPlan_Click"
-                            OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma el cambio de plan? Si es una subida, se cobra la diferencia hoy mismo.');" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma el cambio de plan? Si es una subida, se cobra la diferencia hoy mismo.')) return false;" />
                     </div>
 
                 </asp:Panel>
@@ -203,7 +203,7 @@
 
                     <div class="sigma-modal-actions">
                         <WebControls:PushButton ID="btnReemitirKey" runat="server" Text="Reemitir clave" CssClass="ButtonCerrar" OnClick="btnReemitirKey_Click"
-                            OnClientClick="return ConfirSweetAlert(this, '', '¿Reemitir la clave? La actual deja de servir inmediatamente.');" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Reemitir la clave? La actual deja de servir inmediatamente.')) return false;" />
                     </div>
 
                 </asp:Panel>

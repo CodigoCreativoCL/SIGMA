@@ -60,7 +60,7 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
@@ -110,9 +110,9 @@
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
          reglas de Grid.css y Button.css que traen !important, y para
          ganarles hay que cargarla al final. --%>
-    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=15" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-botones.css?vrs=16" rel="stylesheet" />
     <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
-    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=2" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
 </head>
 
 <body data-sidebar="dark">
@@ -186,6 +186,9 @@
                         <asp:ScriptReference Path="~/Js/jquery-browser-shim.js" />
                         <asp:ScriptReference Path="~/Js/jquery-ui-1.8rc3.custom.min.js" />
                     <asp:ScriptReference Path="~/Js/Library.js?vrs=9" />
+                    <%-- Define `.modal()`, que ClientAlert necesita y Bootstrap JS no
+                         esta para dar. Va DESPUES de Library.js, que es quien lo usa. --%>
+                    <asp:ScriptReference Path="~/Js/sigma-alerta-modal.js" />
                         <asp:ScriptReference Path="~/Js/sigma-popover.js?vrs=1" />
                     <asp:ScriptReference Path="~/Js/highcharts/highcharts.js" />
                     <asp:ScriptReference Path="~/Js/highcharts/highchartTable-min.js" />

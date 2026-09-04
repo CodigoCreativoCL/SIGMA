@@ -45,8 +45,14 @@
     </div>
     <div class="sigma-modal-field">
         <label>Código</label>
-        <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
-                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>ARE-</strong>más el número del registro.</span>
+        <%-- El prefijo lo pone el sistema y no se puede tocar; el resto
+             lo escribe quien crea el registro. Van juntos en una sola
+             caja para que se lea como UN codigo y no como dos campos. --%>
+        <div class="sg-codigo">
+            <span class="sg-codigo-prefijo"><asp:Literal ID="litPrefijo" runat="server" /></span>
+            <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="100" UpperCase="true" />
+        </div>
+                        <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
         ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Area" />
         <span class="sigma-modal-ayuda">Mayúsculas sin espacios. Único dentro de la planta.</span>

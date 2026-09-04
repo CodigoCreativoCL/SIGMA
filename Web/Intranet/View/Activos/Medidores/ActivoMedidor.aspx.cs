@@ -96,7 +96,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             lblId.Text = Id.ToString();
             SeleccionarCombo(cboActivo, entidad.ame_activo);
             SeleccionarCombo(cboUnidad, entidad.ame_unidad_medida);
-            txtCodigo.Text = entidad.ame_codigo;
+            txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo_Medidor", entidad.ame_codigo);
             txtNombre.Text = entidad.ame_nombre;
             txtValorActual.Text = entidad.ame_valor_actual.ToString("0.##", CultureInfo.InvariantCulture);
             if (entidad.ame_valor_reinicio != null)
@@ -130,7 +130,8 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
         // El activo no se cambia al editar: el medidor pertenece a su máquina.
         cboActivo.ReadOnly = !puedeEditar || Id > 0;
         cboUnidad.ReadOnly = !puedeEditar;
-        txtCodigo.ReadOnly = true;   // el código es automático (MED-<id>)
+        litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Medidor");
+        txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtValorActual.ReadOnly = !puedeEditar;
         txtValorReinicio.ReadOnly = !puedeEditar;
@@ -161,7 +162,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             entidad.ame_unidad_medida = int.Parse(cboUnidad.SelectedValue);
             // Al crear se manda AUTO y el SP genera MED-<id> tras el INSERT;
             // al editar viaja el que ya tiene (no se regenera).
-            entidad.ame_codigo = (Id > 0) ? txtCodigo.Text.Trim() : "AUTO";
+            entidad.ame_codigo = SitioBase.CodigoModulo.Componer("Activo_Medidor", txtCodigo.Text);
             entidad.ame_nombre = txtNombre.Text.Trim();
             entidad.ame_valor_actual = LeerDecimal(txtValorActual.Text, "valor actual") ?? 0m;
             entidad.ame_valor_reinicio = LeerDecimal(txtValorReinicio.Text, "valor de reinicio");

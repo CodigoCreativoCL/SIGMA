@@ -51,8 +51,14 @@
 
                     <div class="sigma-modal-field">
                         <label>Código (*)</label>
-                        <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" UpperCase="true" />
-                        <span class="sigma-modal-ayuda">Se genera solo al guardar: <strong>PLC-</strong>más el número del registro.</span>
+                        <%-- El prefijo lo pone el sistema y no se puede tocar; el resto
+                             lo escribe quien crea el registro. Van juntos en una sola
+                             caja para que se lea como UN codigo y no como dos campos. --%>
+                        <div class="sg-codigo">
+                            <span class="sg-codigo-prefijo"><asp:Literal ID="litPrefijo" runat="server" /></span>
+                            <WebControls:TextBox2 ID="txtCodigo" runat="server" MaxLength="50" UpperCase="true" />
+                        </div>
+                        <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
                         <asp:CustomValidator ID="cvCodigo" runat="server" ControlToValidate="txtCodigo"
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Plan" />
                         <span class="sigma-modal-ayuda">
@@ -172,7 +178,7 @@
 
                     <div class="sigma-modal-actions">
                         <WebControls:PushButton ID="btnFijarPrecio" runat="server" Text="Fijar precio" OnClick="btnFijarPrecio_Click"
-                            OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma el precio? El vigente se cierra y este pasa a regir.');" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma el precio? El vigente se cierra y este pasa a regir.')) return false;" />
                     </div>
 
                     <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="rgrPrecios_ItemDataBound">
@@ -225,7 +231,7 @@
                             Cambiar esto afecta a <strong>todos</strong> los clientes en este plan.
                         </span>
                         <WebControls:PushButton ID="btnGuardarContenido" runat="server" Text="Guardar contenido" OnClick="btnGuardarContenido_Click"
-                            OnClientClick="return ConfirSweetAlert(this, '', '¿Confirma? Afecta a todos los clientes que estén en este plan.');" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Confirma? Afecta a todos los clientes que estén en este plan.')) return false;" />
                     </div>
 
                 </asp:Panel>
