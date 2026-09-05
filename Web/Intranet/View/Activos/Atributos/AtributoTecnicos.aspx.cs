@@ -2,15 +2,16 @@
 using SitioBase.Controller;
 using SitioBase.Model;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
-/// Listado de atributos técnicos (HU-032). El SEL trae los del cliente MAS los
-/// globales de la plataforma; estos se ven pero no se editan ni se dan de baja
-/// desde aquí (se marcan "Global" y sin lápiz). Filtra siempre por el cliente
-/// en sesión.
+/// Listado de atributos técnicos (HU-032), tabla plana con el tipo de equipo
+/// como columna. El SEL trae los del cliente MÁS los globales de la plataforma
+/// (estos se ven pero no se editan aquí). Filtra siempre por el cliente en sesión.
 /// </summary>
 public partial class View_Activos_Atributos_AtributoTecnicos : System.Web.UI.Page
 {
@@ -20,11 +21,11 @@ public partial class View_Activos_Atributos_AtributoTecnicos : System.Web.UI.Pag
         {
             Grid.AddSelectColumn();
             Grid.AddColumn("ate_id", "", Width: "4%");
+            Grid.AddColumn("TIPO_NOMBRE", "TIPO DE ACTIVO", Width: "18%");
             Grid.AddColumn("ATE_CODIGO", "CÓDIGO", Width: "10%");
             Grid.AddColumn("ATE_NOMBRE", "ATRIBUTO", Width: "22%");
-            Grid.AddColumn("TIPO_NOMBRE", "TIPO DE ACTIVO", Width: "18%");
-            Grid.AddColumn("TIPO_DATO_NOMBRE", "TIPO DE DATO", Width: "12%");
-            Grid.AddColumn("UNIDAD_NOMBRE", "UNIDAD", Width: "10%");
+            Grid.AddColumn("TIPO_DATO_NOMBRE", "TIPO DE DATO", Width: "13%");
+            Grid.AddColumn("UNIDAD_NOMBRE", "UNIDAD", Width: "12%");
             Grid.AddColumn("es_global", "ORIGEN", Width: "10%");
             Grid.AddCheckboxColumn("ATE_HABILITADO", "HABILITADO");
         }
@@ -59,7 +60,9 @@ public partial class View_Activos_Atributos_AtributoTecnicos : System.Web.UI.Pag
         if (cboHabilitado != null && cboHabilitado.SelectedValue != "")
             filtro.filtro_habilitado = cboHabilitado.SelectedValue == "1";
 
-        Grid.DataSource = controller.GetAtributos(filtro);
+        List<AtributoTecnico> lista = controller.GetAtributos(filtro) ?? new List<AtributoTecnico>();
+        // Agrupados visualmente: se ordenan por tipo y luego por el atributo.
+        Grid.DataSource = lista.OrderBy(a => a.tipo_nombre).ThenBy(a => a.ate_id).ToList();
     }
 
     protected void rgrAtributos_ItemDataBound(object sender, GridItemEventArgs e)
@@ -74,9 +77,7 @@ public partial class View_Activos_Atributos_AtributoTecnicos : System.Web.UI.Pag
 
                 item["es_global"].Text = esGlobal ? "Global" : "Del cliente";
 
-                // Los atributos globales de la plataforma no se editan aquí: se
-                // muestran sin lápiz (si igual se marcan para baja, el SP los
-                // rechaza con un mensaje claro).
+                // Los atributos globales de la plataforma no se editan aquí.
                 if (esGlobal) return;
 
                 string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id));

@@ -23,6 +23,9 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         set { ViewState["Id"] = value; }
     }
 
+    // Modelo a preseleccionar al abrir en edición (solo el primer render).
+    private string _modeloEditar = null;
+
     protected void Page_Load(object sender, EventArgs e)
     {
         // Querystring.Entero recibe el valor TAL COMO VIENE de la URL:
@@ -179,9 +182,52 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
     protected void Page_PreRender(object sender, EventArgs e)
     {
         CargarDatos();
+        CargarModelos();   // depende del tipo ya seleccionado por CargarDatos
         Bloqueo();
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();
+    }
+
+    // Al cambiar el tipo, el postback recarga y CargarModelos ofrece solo los
+    // modelos de ese tipo.
+    protected void cboTipo_SelectedIndexChanged(object sender, EventArgs e) { }
+
+    // Al elegir un modelo, se hereda su fabricante (el modelo manda la marca).
+    protected void cboModelo_SelectedIndexChanged(object sender, EventArgs e)
+    {
+        int idModelo;
+        if (int.TryParse(cboModelo.SelectedValue, out idModelo) && idModelo > 0)
+        {
+            ActivoModelo m = new ActivoModeloController().GetModelo(idModelo);
+            if (m != null && !string.IsNullOrEmpty(m.amo_fabricante))
+                txtFabricante.Text = m.amo_fabricante;
+        }
+    }
+
+    /// <summary>
+    /// Llena el combo de modelos con los del TIPO elegido (más los globales),
+    /// preservando la selección entre postbacks. Sin tipo, el combo va vacío.
+    /// </summary>
+    protected void CargarModelos()
+    {
+        string sel = string.IsNullOrEmpty(_modeloEditar) ? cboModelo.SelectedValue : _modeloEditar;
+
+        cboModelo.Items.Clear();
+        cboModelo.Items.Add(new RadComboBoxItem("Sin modelo", ""));
+        cboModelo.AppendDataBoundItems = true;
+
+        int tipo;
+        if (int.TryParse(cboTipo.SelectedValue, out tipo) && tipo > 0)
+        {
+            List<ActivoModelo> l = new ActivoModeloController().GetModelos(new ActivoModelo
+            { filtro_cliente = SitioBase.Session.ClienteId(), filtro_activo_tipo = tipo, filtro_habilitado = true });
+            if (l != null)
+                foreach (ActivoModelo m in l)
+                    cboModelo.Items.Add(new RadComboBoxItem(m.etiqueta, m.amo_id.ToString()));
+        }
+
+        RadComboBoxItem it = cboModelo.FindItemByValue(sel);
+        if (it != null) it.Selected = true;
     }
 
     protected void CargarDatos()
@@ -205,6 +251,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             if (entidad.act_instalacion_area != null) SeleccionarCombo(cboArea, entidad.act_instalacion_area.Value);
             if (entidad.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, entidad.act_centro_costo.Value);
             if (entidad.act_activo_padre != null) SeleccionarCombo(cboPadre, entidad.act_activo_padre.Value);
+            // El modelo lo selecciona CargarModelos (corre después y ya conoce el tipo).
+            if (entidad.act_activo_modelo != null) _modeloEditar = entidad.act_activo_modelo.Value.ToString();
 
             txtSerie.Text = entidad.act_numero_serie;
             txtFabricante.Text = entidad.act_fabricante;
@@ -259,6 +307,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
         txtDescripcion.ReadOnly = !puedeEditar;
 
         cboTipo.ReadOnly = !puedeEditar;
+        cboModelo.ReadOnly = !puedeEditar;
         cboEstado.ReadOnly = !puedeEditar;
         cboCriticidad.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
@@ -311,6 +360,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
             entidad.act_nombre = txtNombre.Text.Trim();
             entidad.act_habilitado = rdbSi.Checked;
 
+            if (!string.IsNullOrEmpty(cboModelo.SelectedValue))
+                entidad.act_activo_modelo = int.Parse(cboModelo.SelectedValue);
             if (!string.IsNullOrEmpty(cboArea.SelectedValue))
                 entidad.act_instalacion_area = int.Parse(cboArea.SelectedValue);
             if (!string.IsNullOrEmpty(cboCentroCosto.SelectedValue))

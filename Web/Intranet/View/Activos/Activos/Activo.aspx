@@ -68,6 +68,18 @@
             var input = document.getElementById('fuImagen');
             if (input) { input.value = ''; sigmaPrevImg(input); }
         }
+
+        // Crear un modelo al vuelo, sin ir al catálogo. Abre la ficha de modelo
+        // en un modal; al cerrarla, refresh() recarga la lista de modelos.
+        function nuevoModelo() {
+            var url = '<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=0';
+            var M = (window.parent && window.parent.SigmaModal) ? window.parent.SigmaModal : window.SigmaModal;
+            if (M && M.open) { M.open({ url: url, title: 'Nuevo modelo', width: 820, initialHeight: 560 }); }
+            else { window.open(url, '_blank'); }
+            return false;
+        }
+        // La invoca el modal de modelo al cerrarse: recarga el combo de modelos.
+        function refresh() { __doPostBack('', ''); }
     </script>
 </asp:Content>
 
@@ -106,9 +118,19 @@
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Tipo(*)</label>
-                <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
+                    OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
+            </div>
+            <div class="sigma-modal-field is-medio">
+                <label>Modelo</label>
+                <rad:RadComboBox2 ID="cboModelo" runat="server" AutoPostBack="true"
+                    OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%" />
+                <span class="sigma-modal-ayuda">
+                    Elija primero el tipo. ¿No está el modelo?
+                    <a href="javascript:void(0)" onclick="nuevoModelo()" style="color:#6C5CFF;font-weight:600;">+ Nuevo modelo</a>
+                </span>
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Estado(*)</label>
