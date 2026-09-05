@@ -38,11 +38,23 @@
     <wuc:Filtro runat="server" ID="wucFiltro">
         <FiltroPersonalizado>
             <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-2 col-md-2 col-12 d-flex align-items-center" style="gap: 32px;">
-                    <label for="cboHabilitado" style="margin: 0;">Habilitado:</label>
+                <div class="col-lg-4 col-md-4 col-xs-12">
+                    <label for="cboPlanta" style="display:block; margin:0 0 4px;">Planta:</label>
+                    <rad:RadComboBox2 ID="cboPlanta" runat="server" Width="100%" AutoPostBack="true" />
                 </div>
-                <div class="col-lg-4 col-md-4 col-xs-12 d-flex align-items-center" style="gap: 32px;">
-                    <rad:RadComboBox2 ID="cboHabilitado" runat="server" Width="60%">
+                <div class="col-lg-4 col-md-4 col-xs-12">
+                    <label for="cboArea" style="display:block; margin:0 0 4px;">Área:</label>
+                    <rad:RadComboBox2 ID="cboArea" runat="server" Width="100%" AutoPostBack="true" />
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12">
+                    <label for="cboLinea" style="display:block; margin:0 0 4px;">Línea:</label>
+                    <rad:RadComboBox2 ID="cboLinea" runat="server" Width="100%" AutoPostBack="true" />
+                </div>
+            </div>
+            <div class="row col-lg-12 col-md-12 col-xs-12" style="margin-top:10px;">
+                <div class="col-lg-4 col-md-4 col-xs-12">
+                    <label for="cboHabilitado" style="display:block; margin:0 0 4px;">Habilitado:</label>
+                    <rad:RadComboBox2 ID="cboHabilitado" runat="server" Width="100%">
                         <Items>
                             <rad:RadComboBoxItem Text="Todos" Value="" />
                             <rad:RadComboBoxItem Text="Si" Value="1" />
@@ -50,7 +62,6 @@
                         </Items>
                     </rad:RadComboBox2>
                 </div>
-                <div class="col-lg-6 col-md-6 col-xs-12 d-flex align-items-center"></div>
             </div>
         </FiltroPersonalizado>
     </wuc:Filtro>

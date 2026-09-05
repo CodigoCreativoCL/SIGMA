@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/RestablecerClave.aspx" hash="fffffff3c3134113" filehash="15f748b93faf8126" flags="110000" assembly="App_Web_lbqfa5ad" type="ASP.restablecerclave_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/RestablecerClave.aspx" />
+        <filedep name="/C:/Program Files/Git/Intranet/RestablecerClave.aspx.cs" />
+    </filedeps>
+</preserve>

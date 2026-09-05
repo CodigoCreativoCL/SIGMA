@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Organizacion/Grupos/Grupo.aspx" hash="fffffff3c3134113" filehash="57ed78e3e8e74ef1" flags="110000" assembly="App_Web_x4hw5ifj" type="ASP.view_organizacion_grupos_grupo_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Organizacion/Grupos/Grupo.aspx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Organizacion/Grupos/Grupo.aspx.cs" />
+    </filedeps>
+</preserve>

@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Activos/Componentes/ActivoComponentes.aspx" hash="fffffff3c3134113" filehash="f5eed28b170cd3c4" flags="110000" assembly="App_Web_0urr30y5" type="ASP.view_activos_componentes_activocomponentes_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Default.master" />
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Default.master.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Activos/Componentes/ActivoComponentes.aspx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Activos/Componentes/ActivoComponentes.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/FiltroAvanzado.ascx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/FiltroAvanzado.ascx.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/MenusLateral.ascx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/MenusLateral.ascx.cs" />
+    </filedeps>
+</preserve>

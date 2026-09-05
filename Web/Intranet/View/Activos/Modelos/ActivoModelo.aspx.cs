@@ -3,7 +3,9 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
@@ -52,9 +54,42 @@ public partial class View_Activos_Modelos_ActivoModelo : System.Web.UI.Page
     protected void Page_PreRender(object sender, EventArgs e)
     {
         CargarDatos();
+        CargarArchivos();
         Bloqueo();
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();
+    }
+
+    /// <summary>URL para ver/descargar un archivo del modelo.</summary>
+    public string VerUrl(int idArchivo) { return UrlArchivo.Ver(idArchivo); }
+
+    /// <summary>Lista los archivos adjuntos del modelo (edición).</summary>
+    protected void CargarArchivos()
+    {
+        List<ModeloArchivo> l = new ActivoModeloArchivoController().GetArchivos(Id, SitioBase.Session.ClienteId());
+        if (l == null) l = new List<ModeloArchivo>();
+        rptArchivos.DataSource = l;
+        rptArchivos.DataBind();
+    }
+
+    /// <summary>El "Quitar" hace postback completo (el form es multipart por el uploader).</summary>
+    protected void rptArchivos_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+            foreach (Control ctl in e.Item.Controls)
+                if (ctl is LinkButton)
+                    ScriptManager.GetCurrent(Page).RegisterPostBackControl((LinkButton)ctl);
+    }
+
+    protected void rptArchivos_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName == "quitar")
+        {
+            int idArchivo;
+            if (int.TryParse(Convert.ToString(e.CommandArgument), out idArchivo) && Id > 0)
+                new ActivoModeloArchivoController().Desvincular(Id, idArchivo);
+            CargarArchivos();
+        }
     }
 
     protected void CargarDatos()
@@ -105,7 +140,44 @@ public partial class View_Activos_Modelos_ActivoModelo : System.Web.UI.Page
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
 
+        pnlSubir.Visible = puedeEditar;   // el uploader solo si puede editar (los archivos igual se ven)
+
         btnGuardar.Visible = puedeEditar;
+    }
+
+    /// <summary>
+    /// Sube los archivos elegidos (opcional, varios) y los enlaza al modelo.
+    /// Reutiliza el sistema Archivo (Azure). PDF -> DOCUMENTO, imagen -> REFERENCIA.
+    /// </summary>
+    private void GuardarArchivos(int modelo)
+    {
+        if (modelo <= 0 || fuModelo == null || !fuModelo.HasFiles) return;
+
+        foreach (System.Web.HttpPostedFile f in fuModelo.PostedFiles)
+        {
+            if (f == null || f.ContentLength == 0) continue;
+            try
+            {
+                byte[] contenido;
+                using (MemoryStream ms = new MemoryStream()) { f.InputStream.CopyTo(ms); contenido = ms.ToArray(); }
+                if (contenido.Length == 0) continue;
+
+                string mime = f.ContentType ?? "";
+                bool esImagen = mime.StartsWith("image", StringComparison.OrdinalIgnoreCase);
+
+                Archivo arc = new Archivo();
+                arc.arc_cliente = SitioBase.Session.ClienteId();
+                arc.arc_archivo_categoria = esImagen ? 10 : 9;   // 10 REFERENCIA / 9 DOCUMENTO
+                arc.arc_nombre_original = Path.GetFileName(f.FileName);
+                arc.arc_mime = mime;
+                arc.contenido = contenido;
+
+                Respuesta r = new ArchivoController().InsertArchivo(arc, "modelos");
+                if (!r.error && r.codigo > 0)
+                    new ActivoModeloArchivoController().Vincular(modelo, r.codigo);
+            }
+            catch (Exception) { /* un archivo que falla no anula el guardado del modelo */ }
+        }
     }
 
     protected void btnGuardar_Click(object sender, EventArgs e)
@@ -133,6 +205,7 @@ public partial class View_Activos_Modelos_ActivoModelo : System.Web.UI.Page
             if (!r.error)
             {
                 Id = r.codigo;
+                GuardarArchivos(Id);   // sube los adjuntos elegidos (opcional)
                 Tools.tools.ClientAlert(r.detalle, "ok", true);
             }
             else

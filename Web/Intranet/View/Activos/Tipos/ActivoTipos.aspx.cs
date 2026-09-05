@@ -20,8 +20,9 @@ public partial class View_Activos_Tipos_ActivoTipos : System.Web.UI.Page
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();
-            Grid.AddColumn("ATI_ID", "", Width: "3%");
-            Grid.AddColumn("ATI_CODIGO", "CÓDIGO", Width: "18%");
+            Grid.AddColumn("ATI_ID", "", Width: "4%");     // lupa (editar)
+            Grid.AddColumn("nivel", "", Width: "4%");        // columna propia del chevron (reusa el campo nivel)
+            Grid.AddColumn("ATI_CODIGO", "CÓDIGO", Width: "16%");
             Grid.AddColumn("ATI_NOMBRE", "NOMBRE", Width: "30%");
             Grid.AddColumn("PADRE_NOMBRE", "DEPENDE DE", Width: "22%");
             Grid.AddColumn("AMBITO", "ÁMBITO", Width: "12%");
@@ -76,6 +77,14 @@ public partial class View_Activos_Tipos_ActivoTipos : System.Web.UI.Page
 
                 string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id));
 
+                int nivel = 1;
+                object valorNivel = DataBinder.Eval(item.DataItem, "nivel");
+                if (valorNivel != null) int.TryParse(valorNivel.ToString(), out nivel);
+
+                item.Attributes["data-nivel"] = nivel.ToString();
+                item.Attributes["data-tipoid"] = id;
+
+                // La lupa (editar) en su columna.
                 HyperLink Editar = new HyperLink();
                 Editar.ID = "lnkEditar" + id;
                 Editar.CssClass = "icono_Editar";
@@ -83,12 +92,23 @@ public partial class View_Activos_Tipos_ActivoTipos : System.Web.UI.Page
                 Editar.Attributes.Add("onclick", "abrirActivoTipo('" + query + "')");
                 item["ati_id"].Controls.Add(Editar);
 
-                // Indentación por nivel: convierte la lista plana en jerarquía.
-                int nivel = 1;
-                object valorNivel = DataBinder.Eval(item.DataItem, "nivel");
-                if (valorNivel != null) int.TryParse(valorNivel.ToString(), out nivel);
-                if (nivel > 1)
-                    item["ati_nombre"].Style["padding-left"] = ((nivel - 1) * 22) + "px";
+                // El chevron en SU PROPIA columna (reemplaza el número de nivel).
+                // El JS lo enciende solo si el tipo tiene hijos.
+                TableCell celdaBtn = item["nivel"];
+                celdaBtn.HorizontalAlign = HorizontalAlign.Center;
+                celdaBtn.Text = "<span class=\"sigma-tree-btn\"></span>";
+
+                // En la columna Nombre queda el conector └ (para los hijos) + el
+                // nombre indentado por nivel. El botón ya no vive aquí.
+                TableCell celda = item["ati_nombre"];
+                celda.Style["padding-left"] = "0";
+                int indent = (nivel - 1) * 28;
+                string elbow = nivel > 1 ? "<span class=\"sigma-tree-elbow\"></span>" : "";
+                celda.Text =
+                    "<span class=\"sigma-tree-item\" style=\"padding-left:" + indent + "px\">" +
+                        elbow +
+                        "<span class=\"sigma-tree-nom\">" + celda.Text + "</span>" +
+                    "</span>";
             }
         }
     }

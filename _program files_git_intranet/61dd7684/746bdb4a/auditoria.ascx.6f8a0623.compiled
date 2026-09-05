@@ -1,0 +1,7 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Comun/Controls/Auditoria.ascx" hash="fffffff3c3134113" filehash="1e2461dd7ee6e0b4" flags="110000" assembly="App_Web_b5cjht0d" type="ASP.view_comun_controls_auditoria_ascx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/Auditoria.ascx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/Auditoria.ascx.cs" />
+    </filedeps>
+</preserve>

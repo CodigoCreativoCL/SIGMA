@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Activos/Modelos/ActivoModelo.aspx" hash="fffffff3c3134113" filehash="59c01b43e4a2c100" flags="110000" assembly="App_Web_4nymh0sd" type="ASP.view_activos_modelos_activomodelo_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Activos/Modelos/ActivoModelo.aspx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Activos/Modelos/ActivoModelo.aspx.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/Auditoria.ascx" />
+        <filedep name="/C:/Program Files/Git/Intranet/View/Comun/Controls/Auditoria.ascx.cs" />
+    </filedeps>
+</preserve>

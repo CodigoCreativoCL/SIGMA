@@ -33,6 +33,7 @@ namespace SitioBase.Controller
                         if (filtro.act_id > 0) cmd.Parameters.AddWithValue("@ID", filtro.act_id);
                         if (filtro.act_cliente > 0) cmd.Parameters.AddWithValue("@CLIENTE", filtro.act_cliente);
                         if (filtro.filtro_cliente_instalacion > 0) cmd.Parameters.AddWithValue("@CLIENTE_INSTALACION", filtro.filtro_cliente_instalacion);
+                        if (filtro.filtro_instalacion_area > 0) cmd.Parameters.AddWithValue("@INSTALACION_AREA", filtro.filtro_instalacion_area);
                         if (filtro.filtro_activo_tipo > 0) cmd.Parameters.AddWithValue("@ACTIVO_TIPO", filtro.filtro_activo_tipo);
                         if (filtro.filtro_activo_estado > 0) cmd.Parameters.AddWithValue("@ACTIVO_ESTADO", filtro.filtro_activo_estado);
                         if (filtro.act_activo_padre != null && filtro.act_activo_padre > 0)

@@ -1,0 +1,9 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/Privacidad/Privacidad.aspx" hash="fffffff3c3134113" filehash="e8f1926731b1599a" flags="110000" assembly="App_Web_3vzhloe5" type="ASP.privacidad_privacidad_aspx">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Privacidad.master" />
+        <filedep name="/C:/Program Files/Git/Intranet/Master/Privacidad.master.cs" />
+        <filedep name="/C:/Program Files/Git/Intranet/Privacidad/Privacidad.aspx" />
+        <filedep name="/C:/Program Files/Git/Intranet/Privacidad/Privacidad.aspx.cs" />
+    </filedeps>
+</preserve>
