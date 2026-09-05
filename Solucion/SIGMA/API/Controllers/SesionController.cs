@@ -115,6 +115,7 @@ namespace API.Controllers
                 sesion.usuario = res.ID;
                 sesion.login = dto.login.Trim();
                 sesion.expira_minutos = Minutos();
+                sesion.nombre = NombreDe(res.ID);
 
                 /* Con un solo cliente se entra directo: obligar a elegir
                    dentro de una lista de un elemento es un paso de más.
@@ -194,6 +195,46 @@ namespace API.Controllers
                     cliente = SesionApi.ClienteId()
                 });
             });
+        }
+
+        /// <summary>
+        /// El nombre de pila y el apellido de quien entró, para que la app
+        /// pueda saludar sin una segunda llamada.
+        ///
+        /// El campo existía en SesionDto desde el 30-08 y **nunca se
+        /// llenaba**: salía null en toda respuesta de login. Se detectó
+        /// ejercitando el endpoint por HTTP el 04-09-2026.
+        ///
+        /// Puede devolver null a propósito: SEL_CLIENTE_USUARIO excluye los
+        /// perfiles Root y Soporte —son cuentas de la plataforma, no gente
+        /// de un cliente—, así que esas cuentas entran sin nombre. La fuente
+        /// autoritativa del perfil sigue siendo GET /mi-perfil.
+        ///
+        /// Y no revienta el login si falla: quedarse sin saludo es molesto;
+        /// quedarse sin entrar, no.
+        /// </summary>
+        private static string NombreDe(int usuario)
+        {
+            try
+            {
+                List<MiPerfilDto> r = Datos.Listar<MiPerfilDto>("SEL_CLIENTE_USUARIO",
+                    new Dictionary<string, object>
+                    {
+                        { "@ID", usuario },
+                        { "@DEVUELVE_FOTO", false }
+                    });
+
+                if (r == null || r.Count == 0) return null;
+
+                string nombre = (r[0].usu_nombre ?? string.Empty).Trim();
+                string apellido = (r[0].usu_apellido_paterno ?? string.Empty).Trim();
+
+                return (nombre + " " + apellido).Trim();
+            }
+            catch
+            {
+                return null;
+            }
         }
 
         internal static List<ClienteElegibleDto> ClientesDe(int usuario)
