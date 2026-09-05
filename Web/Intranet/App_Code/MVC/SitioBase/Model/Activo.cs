@@ -54,6 +54,7 @@ namespace SitioBase.Model
         public string filtro { get; set; }
         public bool? filtro_habilitado { get; set; }
         public int filtro_cliente_instalacion { get; set; }
+        public int filtro_instalacion_area { get; set; }
         public int filtro_activo_tipo { get; set; }
         public int filtro_activo_estado { get; set; }
     }

@@ -22,7 +22,7 @@
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Activos</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Atributos técnicos</asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Qué datos técnicos (potencia, voltaje…) describe cada tipo de activo.
+    Los datos técnicos que describen cada tipo de equipo (potencia, voltaje, capacidad…). Se definen una vez por tipo y aplican a todos sus activos.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
