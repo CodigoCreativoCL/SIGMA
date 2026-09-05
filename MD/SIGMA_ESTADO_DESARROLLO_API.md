@@ -11,8 +11,10 @@
 > **Regla: cada vez que se cierre un bloque de trabajo, se actualiza este
 > archivo en el mismo cambio.**
 
-**Última actualización:** 01-09-2026
-**Estado:** construida y compilando · **login (`POST /sesion`) probado contra la base; el resto sin probar**
+**Última actualización:** 04-09-2026
+**Estado:** construida, compilando y **ejercitada por HTTP**: 33 endpoints
+llamados con token real, los cinco defectos que encontró ese ejercicio
+corregidos y verificados (§6)
 
 ---
 
@@ -93,7 +95,12 @@ arreglarlas quince veces.
 
 ## 4. Endpoints
 
-33, en 13 controllers. Qué cubre y qué **no** cubre lo decide
+**52, en 20 controllers** (contados el 04-09-2026 leyendo los `RoutePrefix` y
+`Route` uno por uno). La lista de abajo es la del Sprint 1 y el inventario;
+faltan las de activos, permisos de trabajo, alertas, escaneo y archivos, que
+sí están en [`SIGMA_APP_FLUTTER.md`](SIGMA_APP_FLUTTER.md) §6.
+
+Qué cubre y qué **no** cubre lo decide
 [`SIGMA_ALCANCE_APP.md`](SIGMA_ALCANCE_APP.md): solo lo que hacen en terreno
 los seis perfiles móviles.
 
@@ -324,6 +331,38 @@ El plural de perfiles es una inconsistencia heredada: `INS_` y `UPD_` están
 en singular. Se respeta el nombre real en vez de "corregirlo", que rompería
 la web.
 
+### El handler de la plantilla se retiró entero, no se ajustó
+
+`WebApiCustomMessageHandler` reemplazaba el cuerpo de 46 códigos por la
+descripción canónica del código HTTP, en inglés. Se podría haber excluido el
+401 y seguir. No se hizo: **cambiar un mensaje que dice qué pasó por uno que
+describe el código no aporta nada en ningún caso**, y mantenerlo obligaba a
+recordar la lista de códigos que sí hay que dejar pasar. Está en
+`_RETIRADO/API/Utils/` con la tabla de lo que rompía.
+
+### El Authorization acepta tres formas, y eso es a propósito
+
+`Bearer` es el estándar (RFC 6750) y es lo que usa la app, curl y Postman.
+`Base` es herencia de la API de FacilityGes, donde el cliente MAUI lo mandaba
+así; se conserva para no romper a nadie. Y se acepta el token pelado por la
+misma razón.
+
+Lo que **no** se conserva es tratar un token mal formado como 500: es 401. Un
+500 hace que la app reintente; un 401 hace que renueve la sesión, que es lo
+que corresponde.
+
+### `ListarConTotal` para los `SEL_` que paginan en SQL
+
+`Datos.Listar` manda todos los parámetros como entrada. Un SP con un `OUTPUT`
+obligatorio —`SEL_ACTIVO_FICHA` y su `@TOTAL`— hace que SQL Server rechace la
+llamada entera. Por eso existe `Datos.ListarConTotal`, que lo declara como
+salida y **lo lee después de cerrar el lector**: SQL Server llena los
+parámetros de salida recién cuando terminó de enviar los resultados, y leerlo
+antes devuelve null, que se ve como «no hay nada» en vez de como un error.
+
+Es el camino para los `SEL_` que vayan migrando a paginar en SQL (§5, la deuda
+de la paginación en memoria).
+
 ### La documentación del endpoint vive en los comentarios XML
 
 `POST /sesion` quedó documentado con `<summary>`, `<remarks>`, `<param>` y un
@@ -355,12 +394,30 @@ publicada en IIS.
   token, pero el correo no sale, así que HU-004 no se puede completar. Es el
   mismo bloqueante que tiene la web.
 
+### Verificado por HTTP el 04-09-2026
+
+Se llamaron **33 endpoints** con token real (usuario `cristian.munoz@hamburgo.cl`,
+Técnico de Mantenimiento). Resultado:
+
+| | |
+|---|---|
+| Responden 200 con datos correctos | `/sesion` (POST y GET), `/menus`, `/usuario-permisos` y `/tengo/{codigo}`, `/cliente-usuarios/mis-clientes`, `/mi-perfil`, `/catalogos`, `/repuestos`, `/existencias`, `/inventario-movimientos`, `/permisos-trabajo` y sus `/tipos` y `/estados`, `/alertas` y `/resumen`, `/cliente-instalaciones`, `/instalacion-areas` |
+| 403 correcto, con su mensaje | `/bodegas` ×3 — «Tu perfil no tiene el permiso 'VER BODEGAS'». El técnico no es bodeguero |
+| 400 correcto, con su mensaje | `/catalogo-valores` sin indicar catálogo; `/escaneo` con un código que no existe |
+| 404 correcto | Los detalles por id, porque **la base no tiene datos operativos** |
+
+**La base tiene la estructura pero no los datos.** `Cliente_Instalacion`,
+`Instalacion_Area`, `Activo`, `Repuesto`, `Bodega`, `Inventario_Saldo` y
+`Alerta` están **en cero**; sí hay 1 cliente, 11 usuarios, 82 catálogos y 9
+menús de ámbito APP. Los endpoints responden bien: no hay nada que devolver.
+El bloque `37_SPRINT1_DATOS_DEMO` **actualiza** una planta que espera encontrar
+en vez de insertarla, así que nunca creó ninguna.
+
 ### No verificado
 
-- **`POST /sesion` ya se ejercitó contra la base (01-09-2026)** y responde con
-  datos reales: 200 con token, 401, y 423 con bloqueo por intentos. El canal
-  `POST /sesion` → `SEL_LOGIN` → base funciona de extremo a extremo. **El resto
-  de los endpoints sigue sin llamarse.**
+- Los **POST/PUT/DELETE** de escritura (`/inventario-movimientos`,
+  `/activo-estados`, `/permisos-trabajo`, `/mi-perfil`). Sin datos maestros no
+  hay contra qué escribir.
 - **Pendiente de verificar en la base:** el registro de último acceso (HU-001
   CA1) y el registro en el log de excepciones (HU-001 CA2). Y **CA3** (cuenta
   deshabilitada) no se ejecutó por falta de una cuenta de prueba.
@@ -369,22 +426,43 @@ publicada en IIS.
   [`SIGMA_PRUEBAS_S1.md`](SIGMA_PRUEBAS_S1.md); T-1012 (Swagger + este documento)
   en curso. Ninguna historia pasa de "En revisión" hasta cerrarlas.
 
-### Defectos abiertos — hallados probando HU-001 (01-09-2026)
+### Los cinco defectos que encontró el ejercicio por HTTP — corregidos el 04-09-2026
 
-- **`POST /sesion` (200) serializa los *backing fields*.** La respuesta sale con
-  claves `<token>k__BackingField` en vez de `token`, porque `SesionDto` está
-  marcado `[Serializable]`. Un cliente no puede leer el token por su nombre: el
-  login queda inutilizable de extremo a extremo pese al 200. Arreglo: quitar
-  `[Serializable]` de `SesionDto`. Los demás DTOs, sin ese atributo, salen
-  limpios.
-- **El 401 pierde el mensaje del controller.** El controller responde
-  `"Correo o contraseña incorrectos."`, pero el cliente recibe
-  `"Equivalent to HTTP status 401. Unauthorized indicates…"`. Causa ubicada:
-  `WebApiCustomMessageHandler` intercepta las respuestas por código y reemplaza
-  el cuerpo con esos textos canónicos en inglés (sus líneas ~170-600). Afecta
-  **solo a los 401** —el 423 conserva su cuerpo—. Habría que decidir si ese
-  handler se conserva y, si sí, que no pise los mensajes propios. HU-001 CA2 no
-  se cumple del todo hasta resolverlo.
+Los dos primeros venían anotados del 01-09; los otros tres aparecieron al
+llamar la API con un cliente HTTP normal, que es algo que nunca se había hecho.
+**Los cinco están corregidos, compilados y verificados contra la base.**
+
+| # | Defecto | Alcance real | Arreglo |
+|---:|---|---|---|
+| 1 | `POST /sesion` (200) serializaba los *backing fields*: `<token>k__BackingField` en vez de `token` | El login era inutilizable pese al 200 | Se quitó `[Serializable]` de `SesionDto` |
+| 2 | El handler de plantilla reemplazaba el cuerpo de las respuestas | **46 códigos**, no solo el 401: se llevaba el `{id}` de todo **201**, y los mensajes de 400, 402, 403, 404 y 409 | `WebApiCustomMessageHandler` **retirado** (§5) |
+| 3 | `TokenValidationHandler` solo recortaba el prefijo `Base `, no `Bearer ` | **Todo endpoint autenticado respondía 500 con cuerpo vacío** desde cualquier cliente estándar | Acepta `Bearer`, `Base` y el token pelado; token mal formado ahora es 401, no 500 (§5) |
+| 4 | `Conexion` relanzaba con `new Exception(ex.Message)` **sin encadenar** | `ErrorSql` no encontraba la `SqlException`: **ninguna regla de negocio de un `SEL_` se traducía**, todas caían en 500 | `new Exception(ex.Message, ex)` en las 6 ocurrencias |
+| 5 | `EscaneoController.cs` **no estaba en el `API.csproj`** | `GET /escaneo` respondía "No HTTP resource was found": el controller nunca se compiló | Agregado al `.csproj` |
+
+Y uno menor, del mismo ejercicio: `SesionDto.nombre` **nunca se llenaba** —salía
+`null` en toda respuesta de login—. Ahora lo resuelve `SesionController.NombreDe`.
+
+**El 2 explica por qué el 423 parecía la excepción.** El handler comparaba
+contra el enum `HttpStatusCode`, y `(HttpStatusCode)423` no está en él: por eso
+al probar HU-001 el 401 salía en inglés y el 423 conservaba su mensaje. No era
+que afectara solo a los 401; era que el 423 se salvaba de casualidad.
+
+**El 4 es el que más tapaba.** `GET /activos/{id}/ficha` respondía 500 genérico;
+con el encadenado puesto, el mismo llamado responde
+`403 · "EL ACTIVO NO PERTENECE A ESTE CLIENTE."`, que es lo que el SP venía
+diciendo desde el principio.
+
+### Defectos abiertos
+
+- **`GET /escaneo` responde `{"Message": ...}`**, no el
+  `{ codigo, mensaje, esDeNegocio }` de `ApiBase.Error`. El cliente ya tolera
+  las dos formas, pero el endpoint debería usar la del proyecto.
+- **`GET /mi-perfil` devuelve 404 para Root y Soporte.** No es del endpoint:
+  `SEL_CLIENTE_USUARIO` excluye a propósito los perfiles 1 y 2 —son cuentas de
+  plataforma, no gente de un cliente—. Pero Root sí puede entrar a la app
+  (`per_ambito` AMBOS), así que entra y no tiene perfil que mostrar. Decidir si
+  Root deja de entrar a la app o si el endpoint responde algo mínimo.
 
 ### Deuda conocida
 
@@ -471,6 +549,8 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
 
 | 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0`. Falta `Install-Package Swashbuckle` en Visual Studio para levantar `/swagger` |
 
+| 04-09-2026 | **Bloque 0 de la app: la API ejercitada por HTTP, y cinco defectos corregidos.** Primera vez que se llama la API desde un cliente externo. El hallazgo mayor: `TokenValidationHandler` solo recortaba el prefijo `Base `, así que con el `Bearer` estándar el token se validaba con el prefijo pegado y **todo endpoint autenticado respondía 500 con cuerpo vacío** — ninguno había funcionado nunca desde curl, Postman o la app. Los otros cuatro: el `[Serializable]` de `SesionDto` (el token salía como `<token>k__BackingField`); el `WebApiCustomMessageHandler` de plantilla, que pisaba el cuerpo de **46 códigos** —incluido el `{id}` de todo 201— y quedó **retirado** a `_RETIRADO/API/Utils/`; `Conexion` relanzando con `new Exception(ex.Message)` **sin encadenar**, por lo que `ErrorSql` no encontraba la `SqlException` y **ninguna regla de negocio de un `SEL_` se traducía** (con el arreglo, `GET /activos/{id}/ficha` pasó de 500 genérico a `403 · "EL ACTIVO NO PERTENECE A ESTE CLIENTE."`); y `EscaneoController.cs` **ausente del `API.csproj`**, o sea nunca compilado. Se agregó `Datos.ListarConTotal` para los `SEL_` con `@TOTAL OUTPUT`, y `SesionController.NombreDe` para llenar el `nombre` que salía null. **33 endpoints llamados con token real**: 200 donde corresponde, 403 con su mensaje donde el técnico no tiene el permiso, 400 y 404 correctos (§6). Compila `exitcode=0`. **Hallazgo de datos**: la base tiene la estructura pero `Cliente_Instalacion`, `Instalacion_Area`, `Activo`, `Repuesto`, `Bodega`, `Inventario_Saldo` y `Alerta` están en cero |
+| 04-09-2026 | **La sábana de datos y los INS de terreno (HU-150, HU-043, HU-044).** **Bloque 140**: `API_SEL_APP_SABANA_DATOS`, el paquete que baja al teléfono, con el patrón de `API_2_SEL_USUARIO_SABANA_DATOS` de FacilityGes —un `@TIPO` por bloque, los JOIN de seguridad adentro, `ORDER BY` explícito porque SQLite no conserva el orden de inserción— más `@DESDE` para pedir solo lo que cambió. Nueve bloques: el 0 es el **manifiesto** (cuántas filas trae cada uno, para una barra de progreso real) y del 1 al 8 los datos. La lista de plantas autorizadas se resuelve **una vez** en una tabla variable y la usan todos los bloques: repetir el encadenado de seguridad ocho veces es repetirlo mal la octava. **Bloque 141**: `API_INS_ACTIVO_MEDIDOR_LECTURA` y `API_INS_ACTIVO_MEDICION`, idempotentes por `uuid` con la comprobación **antes** de validar —un reintento no tiene por qué volver a pasar reglas que ya pasó—; la lectura rechaza un valor menor al anterior salvo que se declare reinicio, y actualiza `ame_valor_actual` **solo si es más nueva**, para que una lectura vieja encolada sin señal no retroceda el contador; la medición guarda el valor **y su equivalente canónico** para poder comparar series donde alguien midió en °C y otro en K. **Bloque 142**: los permisos `REGISTRAR LECTURA` y `REGISTRAR MEDICION`, asignados por **nombre de perfil** y no por id —los ids de `Perfiles` tienen saltos— a técnico, supervisor, jefe y planificador; no al bodeguero ni al prevencionista, que no capturan. **API**: `SincronizacionController` (`GET /sincronizacion` y `/{tipo}`) y `CapturaTerrenoController` (`POST /captura/lecturas` y `/mediciones`), más `Datos.Conjunto/Filas/Escalar` para los SP de varios resultados. Compila `exitcode=0` y **probado por HTTP**: el manifiesto devuelve los 8 bloques, el bloque 3 trae los 82 catálogos, el 6 los cuatro resultados, el bloque inexistente da 400 con su mensaje, y la captura pasó de 403 por permiso faltante a 403 por regla del SP con el texto real. **52 → 56 endpoints** |
 ### Cómo actualizar este documento
 
 Al cerrar un bloque: agregar la fila en la bitácora, mover lo hecho de §6 a
