@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Activos/Componentes/ActivoComponente.aspx" hash="fffffff3c3134113" filehash="cd161aca1f186cda" flags="110000" assembly="App_Web_0urr30y5" type="ASP.view_activos_componentes_activocomponente_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Activos/Componentes/ActivoComponente.aspx" hash="fffffff3c3134113" filehash="cd161aca1f186cda" flags="110000" assembly="App_Web_nvgoeuxw" type="ASP.view_activos_componentes_activocomponente_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />

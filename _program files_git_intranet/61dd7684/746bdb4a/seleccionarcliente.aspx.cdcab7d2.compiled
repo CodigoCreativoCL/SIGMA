@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/SeleccionarCliente.aspx" hash="fffffff3c3134113" filehash="3d037fc2d610ffe" flags="110000" assembly="App_Web_lbqfa5ad" type="ASP.seleccionarcliente_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/SeleccionarCliente.aspx" hash="fffffff3c3134113" filehash="3d037fc2d610ffe" flags="110000" assembly="App_Web_34vt3drj" type="ASP.seleccionarcliente_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />

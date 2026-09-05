@@ -19,26 +19,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        if (!IsPostBack)
+        {
+            // Columnas de la lista de resultados (la lupa se agrega en ItemDataBound).
+            gridResultados.AddColumn("ACT_ID", "", Width: "4%");
+            gridResultados.AddColumn("ACT_CODIGO", "CÓDIGO", Width: "13%");
+            gridResultados.AddColumn("ACT_NOMBRE", "NOMBRE", Width: "30%");
+            gridResultados.AddColumn("TIPO_NOMBRE", "TIPO", Width: "17%");
+            gridResultados.AddColumn("AREA_NOMBRE", "ÁREA / LÍNEA", Width: "18%");
+            gridResultados.AddColumn("ESTADO_NOMBRE", "ESTADO", Width: "18%");
+        }
+
+        Tools.tools.RegisterPostBackScript(gridResultados);
     }
 
-    public void LoadControls(object sender, EventArgs e)
-    {
-        if (IsPostBack || !(sender is RadComboBox2)) return;
-
-        RadComboBox2 ctrl = (RadComboBox2)sender;
-        if (ctrl.ID != "cboActivo") return;
-
-        ActivoController controller = new ActivoController();
-        List<Activo> lista = controller.GetActivos(
-            new Activo { act_cliente = SitioBase.Session.ClienteId() });
-
-        ctrl.Items.Add(new RadComboBoxItem("Seleccione un activo...", ""));
-        ctrl.AppendDataBoundItems = true;
-
-        if (lista != null)
-            foreach (Activo a in lista)
-                ctrl.Items.Add(new RadComboBoxItem(a.act_codigo + " — " + a.act_nombre, a.act_id.ToString()));
-    }
+    // Ya no se usa (el combo de activo se reemplazó por la lista de resultados).
+    public void LoadControls(object sender, EventArgs e) { }
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
@@ -47,20 +43,167 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         udPanel.Visible = hayCliente;
         if (!hayCliente) return;
 
-        Cargar();
+        ConfigurarUbicacion();     // cascada Planta -> Área -> Línea
+
+        int activo = ActivoSeleccionado();
+        if (activo > 0)
+        {
+            // Hay un equipo elegido: se muestra su ficha 360°.
+            pnlLista.Visible = false;
+            pnlSinActivo.Visible = false;
+            Cargar();
+        }
+        else
+        {
+            // Sin equipo elegido: se muestra la lista que se va acotando al filtrar.
+            pnlFicha.Visible = false;
+            CargarResultados();
+        }
+
         udPanel.Update();
+    }
+
+    private RadComboBox2 Cbo(string id) { return (RadComboBox2)wucFiltro.FindControl(id); }
+
+    private void Seleccionar(RadComboBox2 cbo, string valor)
+    {
+        RadComboBoxItem item = cbo.FindItemByValue(valor ?? "");
+        if (item == null) item = cbo.Items.Count > 0 ? cbo.Items[0] : null;
+        if (item != null) item.Selected = true;
+    }
+
+    /// <summary>
+    /// Cascada Planta -> Área -> Línea (mismo comportamiento que el listado de
+    /// Activos): el hijo siempre corresponde al padre; si el padre cambia, el
+    /// hijo se resetea a "Todas".
+    /// </summary>
+    protected void ConfigurarUbicacion()
+    {
+        RadComboBox2 cboPlanta = Cbo("cboPlanta");
+        RadComboBox2 cboArea = Cbo("cboArea");
+        RadComboBox2 cboLinea = Cbo("cboLinea");
+        if (cboPlanta == null || cboArea == null || cboLinea == null) return;
+
+        int cliente = SitioBase.Session.ClienteId();
+
+        string selP = cboPlanta.SelectedValue;
+        string selA = cboArea.SelectedValue;
+        string selL = cboLinea.SelectedValue;
+
+        List<ClienteInstalacion> plantas =
+            new ClienteInstalacionController().GetClienteInstalaciones(new ClienteInstalacion { cin_cliente = cliente })
+            ?? new List<ClienteInstalacion>();
+
+        List<InstalacionArea> areas =
+            new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true })
+            ?? new List<InstalacionArea>();
+
+        // ---- PLANTA ----
+        cboPlanta.Items.Clear();
+        cboPlanta.Items.Add(new RadComboBoxItem("Todas las plantas", ""));
+        foreach (ClienteInstalacion p in plantas)
+            cboPlanta.Items.Add(new RadComboBoxItem(p.cin_nombre, p.cin_id.ToString()));
+
+        if (string.IsNullOrEmpty(selP) && plantas.Count == 1)
+            selP = plantas[0].cin_id.ToString();
+        Seleccionar(cboPlanta, selP);
+        selP = cboPlanta.SelectedValue;
+        int plantaId; int.TryParse(selP, out plantaId);
+
+        // ---- ÁREA ----
+        cboArea.Items.Clear();
+        cboArea.Items.Add(new RadComboBoxItem("Todas las áreas", ""));
+        if (plantaId > 0)
+            foreach (InstalacionArea a in areas)
+                if (a.iar_cliente_instalacion == plantaId && (a.iar_area_padre == null || a.iar_area_padre == 0))
+                    cboArea.Items.Add(new RadComboBoxItem(a.iar_nombre, a.iar_id.ToString()));
+
+        if (cboArea.FindItemByValue(selA) == null) selA = "";
+        Seleccionar(cboArea, selA);
+        selA = cboArea.SelectedValue;
+        int areaId; int.TryParse(selA, out areaId);
+
+        // ---- LÍNEA ----
+        cboLinea.Items.Clear();
+        cboLinea.Items.Add(new RadComboBoxItem("Todas las líneas", ""));
+        if (areaId > 0)
+            foreach (InstalacionArea a in areas)
+                if (a.iar_area_padre == areaId)
+                    cboLinea.Items.Add(new RadComboBoxItem(a.iar_nombre, a.iar_id.ToString()));
+
+        if (cboLinea.FindItemByValue(selL) == null) selL = "";
+        Seleccionar(cboLinea, selL);
+    }
+
+    /// <summary>Activos que caen dentro de la ubicación + texto de búsqueda.</summary>
+    private List<Activo> FiltrarActivos()
+    {
+        Activo filtro = new Activo { act_cliente = SitioBase.Session.ClienteId() };
+
+        RadComboBox2 cboLinea = Cbo("cboLinea");
+        RadComboBox2 cboArea = Cbo("cboArea");
+        RadComboBox2 cboPlanta = Cbo("cboPlanta");
+        RadComboBox2 cboHabilitado = Cbo("cboHabilitado");
+
+        string vL = cboLinea != null ? cboLinea.SelectedValue : "";
+        string vA = cboArea != null ? cboArea.SelectedValue : "";
+        string vP = cboPlanta != null ? cboPlanta.SelectedValue : "";
+
+        int id;
+        if (!string.IsNullOrEmpty(vL) && int.TryParse(vL, out id)) filtro.filtro_instalacion_area = id;
+        else if (!string.IsNullOrEmpty(vA) && int.TryParse(vA, out id)) filtro.filtro_instalacion_area = id;
+        else if (!string.IsNullOrEmpty(vP) && int.TryParse(vP, out id)) filtro.filtro_cliente_instalacion = id;
+
+        // Texto de la barra "Buscar..." (mismo componente que Activos).
+        if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
+
+        if (cboHabilitado != null && cboHabilitado.SelectedValue != "")
+            filtro.filtro_habilitado = cboHabilitado.SelectedValue == "1";
+
+        return new ActivoController().GetActivos(filtro) ?? new List<Activo>();
+    }
+
+    /// <summary>Puebla la lista de resultados; se acota al filtrar.</summary>
+    protected void CargarResultados()
+    {
+        List<Activo> lista = FiltrarActivos();
+
+        gridResultados.DataSource = lista;
+        gridResultados.DataBind();
+
+        pnlLista.Visible = lista.Count > 0;
+        pnlSinActivo.Visible = lista.Count == 0;
+    }
+
+    /// <summary>Inyecta la lupa y hace la fila clickeable (abre la ficha).</summary>
+    protected void gridResultados_ItemDataBound(object sender, GridItemEventArgs e)
+    {
+        if (e.Item is GridDataItem)
+        {
+            GridDataItem item = (GridDataItem)e.Item;
+            string id = item.GetDataKeyValue("act_id").ToString();
+            string sel = "document.getElementById('" + hdnActivo.ClientID + "').value='" + id + "';__doPostBack('','');";
+
+            HyperLink ver = new HyperLink();
+            ver.CssClass = "icono_Editar";
+            ver.NavigateUrl = "javascript:void(0)";
+            ver.Attributes.Add("onclick", sel);
+            item["act_id"].Controls.Add(ver);
+
+            item.Attributes["onclick"] = sel;
+            item.Style["cursor"] = "pointer";
+        }
     }
 
     protected void btnBuscar_Click(object sender, EventArgs e) { }
 
-    // Al elegir un activo, el postback recarga la ficha en PreRender: no hay
-    // que apretar ningún botón.
-    protected void cboActivo_SelectedIndexChanged(object sender, EventArgs e) { }
+    /// <summary>"Volver a la lista": limpia el activo elegido.</summary>
+    protected void btnVolver_Click(object sender, EventArgs e) { hdnActivo.Value = "0"; }
 
     protected int ActivoSeleccionado()
     {
         int id;
-        if (cboActivo != null && int.TryParse(cboActivo.SelectedValue, out id)) return id;
+        if (hdnActivo != null && int.TryParse(hdnActivo.Value, out id)) return id;
         return 0;
     }
 
@@ -68,7 +211,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         int activo = ActivoSeleccionado();
 
-        pnlSinActivo.Visible = (activo == 0);
         pnlFicha.Visible = (activo > 0);
         if (activo == 0) return;
 
@@ -80,7 +222,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (a == null || a.act_id == 0 || a.act_cliente != SitioBase.Session.ClienteId())
         {
             pnlFicha.Visible = false;
-            pnlSinActivo.Visible = true;
+            hdnActivo.Value = "0";
+            CargarResultados();   // vuelve a mostrar la lista
             return;
         }
 
