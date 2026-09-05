@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Sistema/Catalogos/CatalogoValor.aspx" hash="fffffff3c3134113" filehash="189f65b74a16ca36" flags="110000" assembly="App_Web_24i0eg1l" type="ASP.view_sistema_catalogos_catalogovalor_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Sistema/Catalogos/CatalogoValor.aspx" hash="fffffff3c3134113" filehash="189f65b74a16ca36" flags="110000" assembly="App_Web_23cepfjd" type="ASP.view_sistema_catalogos_catalogovalor_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />

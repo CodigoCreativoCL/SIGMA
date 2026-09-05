@@ -29,6 +29,16 @@ public partial class View_Activos_Tipos_ActivoTipos : System.Web.UI.Page
             Grid.AddCheckboxColumn("ATI_HABILITADO", "HABILITADO");
         }
 
+        // Es un ÁRBOL: las filas deben quedar en su orden jerárquico (padre y
+        // luego sus hijos, por ruta). Ordenar por columna o paginar rompería
+        // ese orden y la indentación/dependencias se desarmarían. Por eso se
+        // desactiva el ordenamiento y el paginado (se fuerza aquí para que no
+        // lo reponga el wrapper del RadGrid).
+        Grid.AllowSorting = false;
+        Grid.MasterTableView.AllowSorting = false;
+        Grid.AllowPaging = false;
+        Grid.MasterTableView.AllowPaging = false;
+
         Tools.tools.RegisterPostBackScript(Grid);
     }
 

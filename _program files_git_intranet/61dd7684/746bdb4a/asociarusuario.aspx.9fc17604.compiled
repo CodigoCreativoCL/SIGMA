@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Comun/Clientes/AsociarUsuario.aspx" hash="fffffff3c3134113" filehash="bbc0aa65e9729975" flags="110000" assembly="App_Web_fxcm4vx5" type="ASP.view_comun_clientes_asociarusuario_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Comun/Clientes/AsociarUsuario.aspx" hash="fffffff3c3134113" filehash="bbc0aa65e9729975" flags="110000" assembly="App_Web_mcusc452" type="ASP.view_comun_clientes_asociarusuario_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master" />
         <filedep name="/C:/Program Files/Git/Intranet/Master/Simple.master.cs" />

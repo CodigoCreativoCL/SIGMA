@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
-<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Comun/Notificaciones/Notificaciones.aspx" hash="fffffff3c3134113" filehash="7fb993d4f7d9b9e0" flags="110000" assembly="App_Web_ghg3rhu5" type="ASP.view_comun_notificaciones_notificaciones_aspx">
+<preserve resultType="3" virtualPath="/C:/Program Files/Git/Intranet/View/Comun/Notificaciones/Notificaciones.aspx" hash="fffffff3c3134113" filehash="7fb993d4f7d9b9e0" flags="110000" assembly="App_Web_enk3cypy" type="ASP.view_comun_notificaciones_notificaciones_aspx">
     <filedeps>
         <filedep name="/C:/Program Files/Git/Intranet/Master/Default.master" />
         <filedep name="/C:/Program Files/Git/Intranet/Master/Default.master.cs" />

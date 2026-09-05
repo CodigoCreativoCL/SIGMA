@@ -22,7 +22,7 @@
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Activos</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Modelos de activo</asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    El catálogo de modelos (fabricante y modelo) que puede tener cada tipo de activo.
+    El fabricante y modelo de cada tipo de equipo (marca + modelo). Un mismo modelo se reutiliza en todos los activos iguales.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
