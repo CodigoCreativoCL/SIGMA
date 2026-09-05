@@ -91,6 +91,135 @@ namespace API.Utils
         }
 
         /// <summary>
+        /// Igual que <see cref="Listar{T}"/>, pero para los SEL_ que paginan
+        /// en SQL y devuelven el total en un parámetro de salida.
+        ///
+        /// POR QUE HIZO FALTA
+        ///   SEL_ACTIVO_FICHA declara @TOTAL INT OUTPUT y, al ser obligatorio,
+        ///   SQL Server rechaza la llamada que no lo manda: "expects parameter
+        ///   '@TOTAL', which was not supplied". El controller lo omitía y
+        ///   GET /activos/{id}/ficha respondía 500 en cada llamada. Se detectó
+        ///   ejercitando la API por HTTP el 04-09-2026.
+        ///
+        ///   Agregar el parámetro de salida al diccionario común no alcanza:
+        ///   <c>Agregar</c> los manda todos como entrada, y un parámetro de
+        ///   salida enviado como entrada sigue faltando.
+        ///
+        /// EL TOTAL SE LEE DESPUES DE CERRAR EL LECTOR
+        ///   SQL Server llena los parámetros de salida recién cuando terminó
+        ///   de enviar los resultados. Leerlo con el DataReader abierto
+        ///   devuelve null, y ese null se ve como "no hay nada" en vez de como
+        ///   un error.
+        /// </summary>
+        public static List<T> ListarConTotal<T>(string sp, Dictionary<string, object> parametros,
+                                                out int total, string parametroTotal = "@TOTAL") where T : new()
+        {
+            List<T> lista = new List<T>();
+            total = 0;
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = sp;
+
+            Agregar(cmd, parametros);
+            cmd.Parameters.Add(parametroTotal, SqlDbType.Int).Direction = ParameterDirection.Output;
+
+            try
+            {
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read()) lista.Add(Mapear<T>(dr));
+                }
+
+                object v = cmd.Parameters[parametroTotal].Value;
+                if (v != null && v != DBNull.Value) total = Convert.ToInt32(v);
+            }
+            finally
+            {
+                Cerrar(cmd);
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Ejecuta un SP que devuelve VARIOS resultados y los entrega crudos.
+        ///
+        /// POR QUE NO SE MAPEA A DTO
+        ///   La sábana de datos (HU-150) devuelve ocho bloques distintos, con
+        ///   forma distinta cada uno, y la app los guarda tal cual en su
+        ///   SQLite. Declarar ocho DTOs para volver a serializarlos a JSON
+        ///   sería escribir dos veces la misma lista de columnas y tener que
+        ///   tocar la API cada vez que un bloque suma un campo.
+        ///
+        ///   Acá las columnas viajan como las nombró el SP. Es exactamente lo
+        ///   que la app necesita: el nombre de la columna ES el contrato.
+        /// </summary>
+        public static DataSet Conjunto(string sp, Dictionary<string, object> parametros)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = sp;
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            Agregar(cmd, parametros);
+
+            DataSet ds = new DataSet();
+
+            using (SqlConnection cn = new SqlConnection(Conexion.GetConnectionString()))
+            {
+                cmd.Connection = cn;
+                cn.Open();
+
+                using (SqlDataAdapter da = new SqlDataAdapter(cmd))
+                {
+                    da.Fill(ds);
+                }
+            }
+
+            return ds;
+        }
+
+        /// <summary>
+        /// Un resultado del conjunto, como lista de diccionarios.
+        ///
+        /// El DBNull se convierte a null: serializado tal cual, Json.NET
+        /// escribe un objeto vacío `{}` en vez de `null` y el cliente no
+        /// puede distinguir "sin valor" de "objeto raro".
+        /// </summary>
+        public static List<Dictionary<string, object>> Filas(DataSet ds, int indice)
+        {
+            List<Dictionary<string, object>> lista = new List<Dictionary<string, object>>();
+
+            if (ds == null || ds.Tables.Count <= indice) return lista;
+
+            DataTable t = ds.Tables[indice];
+
+            foreach (DataRow r in t.Rows)
+            {
+                Dictionary<string, object> fila = new Dictionary<string, object>();
+
+                foreach (DataColumn c in t.Columns)
+                    fila[c.ColumnName] = r.IsNull(c) ? null : r[c];
+
+                lista.Add(fila);
+            }
+
+            return lista;
+        }
+
+        /// <summary>Un valor suelto de un resultado de una sola fila.</summary>
+        public static object Escalar(DataSet ds, int indice, string columna)
+        {
+            if (ds == null || ds.Tables.Count <= indice) return null;
+
+            DataTable t = ds.Tables[indice];
+
+            if (t.Rows.Count == 0 || !t.Columns.Contains(columna)) return null;
+
+            DataRow r = t.Rows[0];
+            return r.IsNull(columna) ? null : r[columna];
+        }
+
+        /// <summary>
         /// Para los SP que devuelven CABECERA y DETALLE en una sola llamada.
         ///
         /// POR QUE NO SON DOS Listar SEGUIDOS

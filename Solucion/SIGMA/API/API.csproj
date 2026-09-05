@@ -225,6 +225,10 @@
     <Compile Include="Controllers\AlertasController.cs" />
     <Compile Include="Controllers\BodegasController.cs" />
     <Compile Include="Controllers\ExistenciasController.cs" />
+    <Compile Include="Controllers\SincronizacionController.cs" />
+    <Compile Include="Controllers\DispositivosController.cs" />
+    <Compile Include="Controllers\CapturaTerrenoController.cs" />
+    <Compile Include="Controllers\EscaneoController.cs" />
     <Compile Include="Controllers\InventarioMovimientosController.cs" />
     <Compile Include="Controllers\RepuestosController.cs" />
     <Compile Include="Controllers\SesionController.cs" />
@@ -252,7 +256,6 @@
     <Compile Include="Utils\Respuesta.cs" />
     <Compile Include="Utils\TokenGenerator.cs" />
     <Compile Include="Utils\TokenValidationHandler.cs" />
-    <Compile Include="Utils\WebApiCustomMessageHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Areas\HelpPage\HelpPage.css" />
