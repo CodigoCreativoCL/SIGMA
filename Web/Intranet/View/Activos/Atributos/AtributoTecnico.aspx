@@ -62,11 +62,6 @@
                 <span class="sigma-modal-ayuda">Cómo se captura el valor (número, texto…).</span>
             </div>
             <div class="sigma-modal-field is-chico">
-                <label>Unidad de medida</label>
-                <rad:RadComboBox2 ID="cboUnidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">kW, V, l/min… Opcional.</span>
-            </div>
-            <div class="sigma-modal-field is-chico">
                 <label>Orden</label>
                 <WebControls:TextBox2 ID="txtOrden" runat="server" MaxLength="4" />
                 <span class="sigma-modal-ayuda">En qué posición se muestra. Opcional.</span>

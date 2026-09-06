@@ -30,14 +30,11 @@ public partial class View_Activos_Tipos_ActivoTipos : System.Web.UI.Page
         }
 
         // Es un ÁRBOL: las filas deben quedar en su orden jerárquico (padre y
-        // luego sus hijos, por ruta). Ordenar por columna o paginar rompería
-        // ese orden y la indentación/dependencias se desarmarían. Por eso se
-        // desactiva el ordenamiento y el paginado (se fuerza aquí para que no
-        // lo reponga el wrapper del RadGrid).
+        // luego sus hijos). Lo que rompería la jerarquía es ORDENAR por columna,
+        // así que solo se desactiva el ordenamiento. El paginado se deja como los
+        // demás listados (paginador visible, 25 por página por defecto).
         Grid.AllowSorting = false;
         Grid.MasterTableView.AllowSorting = false;
-        Grid.AllowPaging = false;
-        Grid.MasterTableView.AllowPaging = false;
 
         Tools.tools.RegisterPostBackScript(Grid);
     }

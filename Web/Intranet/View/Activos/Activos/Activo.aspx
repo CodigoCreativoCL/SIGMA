@@ -16,8 +16,24 @@
         .sigma-img-btn i { font-size: 17px; }
         .sigma-img-name { font-size: 12.5px; color: #475569; word-break: break-all; }
         .sigma-img-quitar { font-size: 12px; color: #b91c1c; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
+        .sigma-doc-lista { display: grid; gap: 8px; margin-bottom: 10px; }
+        .sigma-doc { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #e5e7eb; border-radius: 10px; font-size: 13px; color: #334155; }
+        .sigma-doc > i { font-size: 18px; color: #6C5CFF; }
+        .sigma-doc .nom { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .sigma-doc .ver { color: #6C5CFF !important; font-weight: 600; text-decoration: none; }
+        .sigma-doc .quitar { color: #b91c1c !important; font-weight: 600; text-decoration: none; }
     </style>
     <script type="text/javascript">
+        // Muestra los nombres de los documentos elegidos (aún sin subir).
+        function sigmaDocsNombres(input) {
+            var d = document.getElementById('sigmaDocsLista');
+            if (!d) return;
+            if (input.files && input.files.length) {
+                var n = [];
+                for (var i = 0; i < input.files.length; i++) n.push(input.files[i].name);
+                d.textContent = '▸ ' + n.join('  ·  ');
+            } else { d.textContent = ''; }
+        }
         function getRadWindow() {
             var oWindow = null;
             if (window.radWindow) oWindow = window.radWindow;
@@ -80,6 +96,37 @@
         }
         // La invoca el modal de modelo al cerrarse: recarga el combo de modelos.
         function refresh() { __doPostBack('', ''); }
+
+        // Opciones de unidad (para las filas nuevas), armadas en el servidor.
+        var ND_UNIT_OPTIONS = '<option value="">— sin unidad</option><%= BuildUnidadOptions() %>';
+        // Agrega una fila nueva de dato técnico (nombre + unidad + valor).
+        function ndAgregar() {
+            var cont = document.getElementById('ndContainer');
+            if (!cont) return;
+            var row = document.createElement('div');
+            row.className = 'nd-row';
+            row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:8px;';
+            row.innerHTML =
+                '<input type="text" name="nd_nombre" placeholder="Nombre (ej. Potencia)" style="flex:1;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />' +
+                '<select name="nd_unidad" style="width:150px;padding:9px 8px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">' + ND_UNIT_OPTIONS + '</select>' +
+                '<input type="text" name="nd_valor" placeholder="Valor" style="width:120px;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />' +
+                '<a href="javascript:void(0)" onclick="this.closest(\'.nd-row\').remove()" style="color:#b91c1c;font-weight:700;text-decoration:none;padding:0 6px;">✕</a>';
+            cont.appendChild(row);
+            var inp = row.querySelector('input[name="nd_nombre"]');
+            if (inp) inp.focus();
+        }
+
+        // Quita un dato ya guardado: vacía su valor (al Guardar se elimina del activo)
+        // y oculta la fila para dar feedback. El campo del tipo se conserva.
+        function ndQuitarDato(a) {
+            var field = a.closest('.sigma-modal-field');
+            if (!field) return;
+            var txt = field.querySelector('input[type="text"]');
+            var sel = field.querySelector('select');
+            if (txt) txt.value = '';
+            if (sel) sel.selectedIndex = 0;
+            field.style.display = 'none';
+        }
     </script>
 </asp:Content>
 
@@ -235,6 +282,70 @@
                 </asp:Panel>
             </div>
         </div>
+    </div>
+
+    <%-- ============ DATOS TÉCNICOS (nombre · unidad · valor, propios del activo) ============ --%>
+    <asp:Panel ID="pnlDatosTecnicos" runat="server" CssClass="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-tune-variant"></i>Datos técnicos</div>
+
+        <%-- Datos ya definidos (del tipo): editar valor + unidad. --%>
+        <div class="sigma-modal-grid">
+            <asp:Repeater ID="rptDatos" runat="server" OnItemDataBound="rptDatos_ItemDataBound">
+                <ItemTemplate>
+                    <div class="sigma-modal-field is-grande">
+                        <label><%# Server.HtmlEncode(Convert.ToString(Eval("ate_nombre"))) %></label>
+                        <asp:HiddenField runat="server" ID="hdnAte" Value='<%# Eval("ate_id") %>' />
+                        <div style="display:flex;gap:6px;align-items:center;">
+                            <asp:TextBox runat="server" ID="txtValor" Text='<%# Eval("valor_edit") %>' MaxLength="200"
+                                style="flex:1;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />
+                            <asp:DropDownList runat="server" ID="ddlUnidad"
+                                style="width:150px;padding:9px 8px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;" />
+                            <a href="javascript:void(0)" onclick="ndQuitarDato(this)" title="Quitar este dato"
+                               style="color:#b91c1c;font-weight:700;text-decoration:none;padding:0 6px;">✕</a>
+                        </div>
+                    </div>
+                </ItemTemplate>
+            </asp:Repeater>
+        </div>
+
+        <%-- Datos nuevos (se agregan al vuelo; quedan también en Atributos técnicos del tipo). --%>
+        <div id="ndContainer"></div>
+        <a href="javascript:void(0)" onclick="ndAgregar()" class="sigma-img-btn"
+           style="display:inline-flex;align-items:center;gap:7px;margin-top:6px;">
+            <i class="mdi mdi-plus"></i> Agregar dato
+        </a>
+        <span class="sigma-modal-ayuda">Nombre + unidad + valor. Lo que agregues aquí también queda como campo del tipo (Atributos técnicos).</span>
+    </asp:Panel>
+
+    <%-- ============ DOCUMENTOS (opcional, varios PDF/archivos) ============ --%>
+    <div class="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-paperclip"></i>Documentos</div>
+
+        <%-- Documentos ya cargados (edición): ver / quitar. --%>
+        <asp:Repeater ID="rptArchivos" runat="server" OnItemCommand="rptArchivos_ItemCommand" OnItemDataBound="rptArchivos_ItemDataBound">
+            <HeaderTemplate><div class="sigma-doc-lista"></HeaderTemplate>
+            <ItemTemplate>
+                <div class="sigma-doc">
+                    <i class='mdi <%# (bool)Eval("es_imagen") ? "mdi-image-outline" : "mdi-file-document-outline" %>'></i>
+                    <span class="nom"><%# Server.HtmlEncode(Convert.ToString(Eval("arc_nombre"))) %></span>
+                    <asp:HyperLink runat="server" Target="_blank" CssClass="ver"
+                        NavigateUrl='<%# VerUrl((int)Eval("arc_id")) %>'><i class="mdi mdi-open-in-new"></i> Ver</asp:HyperLink>
+                    <asp:LinkButton runat="server" CssClass="quitar" CommandName="quitar" CommandArgument='<%# Eval("arc_id") %>'
+                        OnClientClick="return confirm('¿Quitar este documento del activo?');"><i class="mdi mdi-close-circle-outline"></i> Quitar</asp:LinkButton>
+                </div>
+            </ItemTemplate>
+            <FooterTemplate></div></FooterTemplate>
+        </asp:Repeater>
+
+        <asp:Panel ID="pnlSubirDocs" runat="server">
+            <label for="fuDocs" class="sigma-img-btn" style="display:inline-flex;align-items:center;gap:7px;margin-top:6px;">
+                <i class="mdi mdi-upload"></i> Agregar documentos
+            </label>
+            <asp:FileUpload ID="fuDocs" runat="server" AllowMultiple="true" ClientIDMode="Static"
+                accept=".pdf,image/*" onchange="sigmaDocsNombres(this)" style="display:none;" />
+            <span id="sigmaDocsLista" style="display:block;margin-top:6px;font-size:12px;color:#475569;"></span>
+            <span class="sigma-modal-ayuda">Opcional. Manuales, planos, certificados… PDF o imágenes; puede subir varios a la vez.</span>
+        </asp:Panel>
     </div>
 
     <wuc:Auditoria runat="server" ID="wucAuditoria" />

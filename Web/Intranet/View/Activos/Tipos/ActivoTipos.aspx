@@ -24,6 +24,8 @@
         // Las filas vienen ordenadas jerárquicamente (padre y luego sus hijos)
         // y cada una trae data-nivel. Un tipo "tiene hijos" si la fila siguiente
         // es de un nivel mayor; a esos se les muestra el caret y se pueden plegar.
+        // Arranca COLAPSADO: solo se ven las raíces; al presionar el caret se
+        // despliegan sus hijos directos (los nietos siguen cerrados).
         function sigmaArbolTipos() {
             var rows = Array.prototype.slice.call(document.querySelectorAll('tr[data-nivel]'));
             for (var i = 0; i < rows.length; i++) {
@@ -31,12 +33,13 @@
                 var next = rows[i + 1];
                 var tieneHijos = next && parseInt(next.getAttribute('data-nivel'), 10) > nivel;
                 var btn = rows[i].querySelector('.sigma-tree-btn');
-                rows[i].style.display = '';
+                rows[i].style.display = nivel > 1 ? 'none' : 'table-row';   // colapsado: solo raíces
+                rows[i].setAttribute('data-abierto', '0');
                 if (!btn) continue;
                 if (tieneHijos) {
-                    btn.classList.add('is-parent', 'is-open');
+                    btn.classList.add('is-parent');
+                    btn.classList.remove('is-open');
                     rows[i].classList.add('es-padre');
-                    rows[i].setAttribute('data-abierto', '1');
                     (function (idx, lvl, r, b) {
                         b.onclick = function (ev) { ev.stopPropagation(); sigmaToggleTipo(rows, idx, lvl, r, b); };
                         r.style.cursor = 'pointer';
@@ -56,14 +59,23 @@
             var abrir = row.getAttribute('data-abierto') !== '1';
             row.setAttribute('data-abierto', abrir ? '1' : '0');
             btn.classList.toggle('is-open', abrir);
-            for (var j = idx + 1; j < rows.length; j++) {
-                var n = parseInt(rows[j].getAttribute('data-nivel'), 10);
-                if (n <= nivel) break;
-                rows[j].style.display = abrir ? '' : 'none';
-                if (abrir) {
-                    rows[j].setAttribute('data-abierto', '1');
+            var j, n;
+            if (abrir) {
+                // Mostrar solo los hijos DIRECTOS (nivel+1); los nietos siguen colapsados.
+                for (j = idx + 1; j < rows.length; j++) {
+                    n = parseInt(rows[j].getAttribute('data-nivel'), 10);
+                    if (n <= nivel) break;
+                    if (n === nivel + 1) rows[j].style.display = 'table-row';
+                }
+            } else {
+                // Cerrar: ocultar TODOS los descendientes y dejarlos colapsados.
+                for (j = idx + 1; j < rows.length; j++) {
+                    n = parseInt(rows[j].getAttribute('data-nivel'), 10);
+                    if (n <= nivel) break;
+                    rows[j].style.display = 'none';
+                    rows[j].setAttribute('data-abierto', '0');
                     var b2 = rows[j].querySelector('.sigma-tree-btn');
-                    if (b2) b2.classList.add('is-open');
+                    if (b2) b2.classList.remove('is-open');
                 }
             }
         }
@@ -74,6 +86,15 @@
         window.setTimeout(sigmaArbolTipos, 400);
     </script>
     <style type="text/css">
+        /* La grilla es un ÁRBOL que crece al desplegar: no debe recortar en alto
+           (la base la deja con overflow-y:hidden). Se fuerza a crecer con su
+           contenido para que el scroll de la página alcance todas las filas. */
+        .sgx-page .RadGrid { overflow-y: visible !important; height: auto !important; }
+        .sgx-page .RadGrid .rgDataDiv,
+        .sgx-page .RadGrid .rgMasterTable { height: auto !important; max-height: none !important; overflow: visible !important; }
+        /* Colapsado desde el render (evita el parpadeo): los hijos (nivel > 1)
+           nacen ocultos por CSS; el JS los muestra con display:table-row al abrir. */
+        tr[data-nivel]:not([data-nivel="1"]) { display: none; }
         .sigma-tree-item { display: flex; align-items: center; gap: 6px; }
         /* Conector de rama (└) para los hijos. */
         .sigma-tree-elbow { width: 18px; height: 16px; flex: 0 0 auto; border-left: 2px solid #c7d2fe; border-bottom: 2px solid #c7d2fe; border-bottom-left-radius: 8px; margin: -10px 2px 0 6px; align-self: flex-start; }

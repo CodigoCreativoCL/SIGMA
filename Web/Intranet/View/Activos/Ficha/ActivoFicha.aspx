@@ -149,7 +149,7 @@
                         <div class="sigma-af-tabs">
                             <button type="button" class="sigma-af-tab" data-tab="resumen">Resumen</button>
                             <button type="button" class="sigma-af-tab is-activa" data-tab="historial">Historial</button>
-                            <button type="button" class="sigma-af-tab" data-tab="componentes">Componentes</button>
+                            <button type="button" class="sigma-af-tab" data-tab="repuestos">Repuestos</button>
                             <button type="button" class="sigma-af-tab" data-tab="medidores">Medidores</button>
                             <button type="button" class="sigma-af-tab" data-tab="atributos">Atributos técnicos</button>
                             <button type="button" class="sigma-af-tab" data-tab="documentos">Documentos</button>
@@ -209,25 +209,25 @@
                             </div>
                         </div>
 
-                        <%-- COMPONENTES --%>
-                        <div class="sigma-af-pane" data-pane="componentes">
+                        <%-- REPUESTOS (compatibles con el activo, por su tipo/modelo) --%>
+                        <div class="sigma-af-pane" data-pane="repuestos">
                             <div class="sigma-af-card">
                                 <div class="sigma-af-tools">
-                                    <h3 style="margin:0;">Componentes del activo</h3>
-                                    <asp:HyperLink ID="hlComponentes" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                    <h3 style="margin:0;">Repuestos del activo</h3>
+                                    <asp:HyperLink ID="hlRepuestos" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
                                 </div>
-                                <asp:Panel ID="pnlSinComponentes" runat="server" Visible="false" CssClass="sigma-af-vacio">
-                                    <i class="mdi mdi-puzzle-outline"></i> Este activo aún no tiene componentes registrados.
+                                <asp:Panel ID="pnlSinRepuestos" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-package-variant-closed"></i> Este activo aún no tiene repuestos asignados. Asígnalos en Inventario → Compatibilidades.
                                 </asp:Panel>
                                 <div class="sigma-af-tabla">
-                                    <asp:Repeater ID="rptComponentes" runat="server">
-                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Componente</span><span>Tipo</span><span>Estado</span></div></HeaderTemplate>
+                                    <asp:Repeater ID="rptRepuestos" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Repuesto</span><span>Fabricante</span><span>Modelo</span></div></HeaderTemplate>
                                         <ItemTemplate>
                                             <div class="fila">
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_codigo"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("estado_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_codigo"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_fabricante"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_modelo"))) %></span>
                                             </div>
                                         </ItemTemplate>
                                     </asp:Repeater>
@@ -273,13 +273,13 @@
                                 </asp:Panel>
                                 <div class="sigma-af-tabla">
                                     <asp:Repeater ID="rptAtributos" runat="server">
-                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Atributo</span><span>Tipo de dato</span><span>Unidad</span></div></HeaderTemplate>
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Atributo</span><span>Valor</span><span>Unidad</span></div></HeaderTemplate>
                                         <ItemTemplate>
                                             <div class="fila">
                                                 <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_codigo"))) %></span>
                                                 <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_dato_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad_nombre"))) %></span>
+                                                <span><%# string.IsNullOrEmpty(Convert.ToString(Eval("valor_edit"))) ? "—" : Server.HtmlEncode(Convert.ToString(Eval("valor_edit"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad"))) %></span>
                                             </div>
                                         </ItemTemplate>
                                     </asp:Repeater>
@@ -314,7 +314,7 @@
                             <h3>Acciones rápidas</h3>
                             <div class="sigma-af-acc">
                                 <asp:HyperLink ID="hlAccEditar" runat="server" NavigateUrl="javascript:void(0)"><i class="mdi mdi-pencil-outline"></i>Editar ficha<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
-                                <asp:HyperLink ID="hlAccComponentes" runat="server"><i class="mdi mdi-puzzle-outline"></i>Ver componentes<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
+                                <asp:HyperLink ID="hlAccRepuestos" runat="server"><i class="mdi mdi-package-variant-closed"></i>Ver repuestos<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                                 <asp:HyperLink ID="hlAccCambiar" runat="server"><i class="mdi mdi-swap-horizontal"></i>Cambiar estado<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                                 <asp:HyperLink ID="hlAccOT" runat="server" CssClass="is-primario"><i class="mdi mdi-plus-circle-outline"></i>Generar OT<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                             </div>

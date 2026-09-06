@@ -282,8 +282,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hlEditar.Attributes["onclick"] = onclickEditar;
         hlAccEditar.Attributes["onclick"] = onclickEditar;
 
-        hlComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
-        hlAccComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
+        hlRepuestos.NavigateUrl = ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidades.aspx");
+        hlAccRepuestos.NavigateUrl = ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidades.aspx");
         hlMedidores.NavigateUrl = ResolveUrl("~/View/Activos/Medidores/ActivoMedidores.aspx");
         hlAccCambiar.NavigateUrl = ResolveUrl("~/View/Activos/Estado/ActivoEstado.aspx");
         hlAtributos.NavigateUrl = ResolveUrl("~/View/Activos/Atributos/AtributoTecnicos.aspx");
@@ -302,12 +302,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         int cliente = SitioBase.Session.ClienteId();
 
-        // Componentes del activo
-        var lc = new ActivoComponenteController().GetComponentes(new ActivoComponente
-        { aco_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
-        if (lc == null) lc = new System.Collections.Generic.List<ActivoComponente>();
-        rptComponentes.DataSource = lc; rptComponentes.DataBind();
-        pnlSinComponentes.Visible = (lc.Count == 0);
+        // Repuestos del activo (compatibles por su tipo / modelo)
+        var lr = new ActivoRepuestoController().GetRepuestos(a.act_id, cliente);
+        if (lr == null) lr = new System.Collections.Generic.List<ActivoRepuesto>();
+        rptRepuestos.DataSource = lr; rptRepuestos.DataBind();
+        pnlSinRepuestos.Visible = (lr.Count == 0);
 
         // Medidores del activo
         var lm = new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor
@@ -316,10 +315,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         rptMedidores.DataSource = lm; rptMedidores.DataBind();
         pnlSinMedidores.Visible = (lm.Count == 0);
 
-        // Atributos técnicos del TIPO del activo
-        var la = new AtributoTecnicoController().GetAtributos(new AtributoTecnico
-        { filtro_cliente = cliente, filtro_activo_tipo = a.act_activo_tipo, filtro_habilitado = true });
-        if (la == null) la = new System.Collections.Generic.List<AtributoTecnico>();
+        // Atributos técnicos del activo, con su VALOR (los campos vienen del tipo)
+        var la = new ActivoAtributoController().GetValores(a.act_id, cliente);
+        if (la == null) la = new System.Collections.Generic.List<ActivoAtributoValor>();
         rptAtributos.DataSource = la; rptAtributos.DataBind();
         pnlSinAtributos.Visible = (la.Count == 0);
     }
