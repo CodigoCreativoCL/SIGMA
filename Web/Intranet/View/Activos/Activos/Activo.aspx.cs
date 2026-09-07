@@ -4,6 +4,7 @@ using SitioBase.Model;
 using System;
 using System.Collections.Generic;
 using System.Web.UI;
+using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
@@ -183,9 +184,185 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
     {
         CargarDatos();
         CargarModelos();   // depende del tipo ya seleccionado por CargarDatos
+        // Las secciones nuevas van blindadas: si algo falla, no debe colgar ni
+        // romper el modal del activo.
+        try { CargarArchivos(); } catch { }        // documentos adjuntos
+        try { CargarDatosTecnicos(); } catch { }   // valores de atributos (edición)
         Bloqueo();
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();
+    }
+
+    /// <summary>URL para ver/descargar un documento del activo.</summary>
+    public string VerUrl(int idArchivo) { return UrlArchivo.Ver(idArchivo); }
+
+    /// <summary>
+    /// Datos técnicos del activo: los atributos de su tipo con su valor. Solo en
+    /// edición (el activo ya existe). Se enlaza una vez (!IsPostBack) para que los
+    /// valores tecleados sobrevivan el postback de Guardar.
+    /// </summary>
+    private System.Collections.Generic.List<UnidadMedida> _unidades;
+    private string _unidadOptionsCache;
+
+    /// <summary>Unidades cargadas una sola vez por request (evita consultas repetidas).</summary>
+    private System.Collections.Generic.List<UnidadMedida> Unidades()
+    {
+        if (_unidades == null)
+            _unidades = new UnidadMedidaController().GetUnidades()
+                        ?? new System.Collections.Generic.List<UnidadMedida>();
+        return _unidades;
+    }
+
+    /// <summary>Opciones &lt;option&gt; de unidad para las filas nuevas (plantilla JS).</summary>
+    public string BuildUnidadOptions()
+    {
+        if (_unidadOptionsCache != null) return _unidadOptionsCache;
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        foreach (UnidadMedida u in Unidades())
+        {
+            string txt = u.ume_nombre + (string.IsNullOrEmpty(u.ume_simbolo) ? "" : " (" + u.ume_simbolo + ")");
+            sb.Append("<option value=\"").Append(u.ume_id).Append("\">")
+              .Append(Server.HtmlEncode(txt)).Append("</option>");
+        }
+        _unidadOptionsCache = sb.ToString();
+        return _unidadOptionsCache;
+    }
+
+    protected void CargarDatosTecnicos()
+    {
+        pnlDatosTecnicos.Visible = true;   // siempre: se pueden agregar datos nuevos
+        if (IsPostBack) return;
+
+        System.Collections.Generic.List<ActivoAtributoValor> l = Id > 0
+            ? new ActivoAtributoController().GetValores(Id, SitioBase.Session.ClienteId())
+            : null;
+        if (l == null) l = new System.Collections.Generic.List<ActivoAtributoValor>();
+        rptDatos.DataSource = l;
+        rptDatos.DataBind();
+    }
+
+    /// <summary>Llena el combo de unidad de cada fila y selecciona la actual.</summary>
+    protected void rptDatos_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (!(e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)) return;
+
+        ActivoAtributoValor a = e.Item.DataItem as ActivoAtributoValor;
+        DropDownList ddl = e.Item.FindControl("ddlUnidad") as DropDownList;
+        if (ddl == null) return;
+
+        ddl.Items.Add(new ListItem("— sin unidad", ""));
+        foreach (UnidadMedida u in Unidades())
+        {
+            string txt = u.ume_nombre + (string.IsNullOrEmpty(u.ume_simbolo) ? "" : " (" + u.ume_simbolo + ")");
+            ddl.Items.Add(new ListItem(txt, u.ume_id.ToString()));
+        }
+
+        if (a != null && a.unidad_id > 0)
+        {
+            ListItem sel = ddl.Items.FindByValue(a.unidad_id.ToString());
+            if (sel != null) sel.Selected = true;
+        }
+    }
+
+    /// <summary>Graba el valor + unidad de cada atributo (lee los inputs del repeater).</summary>
+    private void GuardarDatosTecnicos(int activo)
+    {
+        if (activo <= 0) return;
+        ActivoAtributoController c = new ActivoAtributoController();
+
+        // Datos existentes (del tipo): valor + unidad.
+        foreach (RepeaterItem it in rptDatos.Items)
+        {
+            HiddenField h = it.FindControl("hdnAte") as HiddenField;
+            TextBox t = it.FindControl("txtValor") as TextBox;
+            DropDownList ddl = it.FindControl("ddlUnidad") as DropDownList;
+            int ate, uni = 0;
+            if (h != null && t != null && int.TryParse(h.Value, out ate))
+            {
+                if (ddl != null) int.TryParse(ddl.SelectedValue, out uni);
+                c.GrabarDato(activo, ate, null, uni, t.Text);
+            }
+        }
+
+        // Datos nuevos (filas agregadas al vuelo): nombre + unidad + valor.
+        // Se busca-o-crea el atributo en el tipo (aparece también en el catálogo).
+        string[] noms = Request.Form.GetValues("nd_nombre");
+        string[] unis = Request.Form.GetValues("nd_unidad");
+        string[] vals = Request.Form.GetValues("nd_valor");
+        if (noms != null)
+            for (int i = 0; i < noms.Length; i++)
+            {
+                string nom = (noms[i] ?? "").Trim();
+                if (nom == "") continue;   // la plantilla vacía y filas sin nombre se omiten
+                int uni = 0; if (unis != null && i < unis.Length) int.TryParse(unis[i], out uni);
+                string val = (vals != null && i < vals.Length) ? vals[i] : "";
+                c.GrabarDato(activo, 0, nom, uni, val);
+            }
+    }
+
+    /// <summary>Lista los documentos adjuntos del activo (edición).</summary>
+    protected void CargarArchivos()
+    {
+        System.Collections.Generic.List<ActivoArchivo> l =
+            new ActivoArchivoController().GetArchivos(Id, SitioBase.Session.ClienteId());
+        if (l == null) l = new System.Collections.Generic.List<ActivoArchivo>();
+        rptArchivos.DataSource = l;
+        rptArchivos.DataBind();
+    }
+
+    /// <summary>El "Quitar" hace postback completo (el form es multipart por el uploader).</summary>
+    protected void rptArchivos_ItemDataBound(object sender, RepeaterItemEventArgs e)
+    {
+        if (e.Item.ItemType == ListItemType.Item || e.Item.ItemType == ListItemType.AlternatingItem)
+            foreach (Control ctl in e.Item.Controls)
+                if (ctl is LinkButton)
+                    ScriptManager.GetCurrent(Page).RegisterPostBackControl((LinkButton)ctl);
+    }
+
+    protected void rptArchivos_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName == "quitar")
+        {
+            int idArchivo;
+            if (int.TryParse(Convert.ToString(e.CommandArgument), out idArchivo) && Id > 0)
+                new ActivoArchivoController().Desvincular(Id, idArchivo);
+            CargarArchivos();
+        }
+    }
+
+    /// <summary>
+    /// Sube los documentos elegidos (opcional, varios) y los enlaza al activo.
+    /// Reutiliza el sistema Archivo (Azure). PDF -> DOCUMENTO, imagen -> REFERENCIA.
+    /// </summary>
+    private void GuardarArchivos(int activo)
+    {
+        if (activo <= 0 || fuDocs == null || !fuDocs.HasFiles) return;
+
+        foreach (System.Web.HttpPostedFile f in fuDocs.PostedFiles)
+        {
+            if (f == null || f.ContentLength == 0) continue;
+            try
+            {
+                byte[] contenido;
+                using (System.IO.MemoryStream ms = new System.IO.MemoryStream()) { f.InputStream.CopyTo(ms); contenido = ms.ToArray(); }
+                if (contenido.Length == 0) continue;
+
+                string mime = f.ContentType ?? "";
+                bool esImagen = mime.StartsWith("image", StringComparison.OrdinalIgnoreCase);
+
+                Archivo arc = new Archivo();
+                arc.arc_cliente = SitioBase.Session.ClienteId();
+                arc.arc_archivo_categoria = esImagen ? 10 : 9;   // 10 REFERENCIA / 9 DOCUMENTO
+                arc.arc_nombre_original = System.IO.Path.GetFileName(f.FileName);
+                arc.arc_mime = mime;
+                arc.contenido = contenido;
+
+                Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
+                if (!r.error && r.codigo > 0)
+                    new ActivoArchivoController().Vincular(activo, r.codigo);
+            }
+            catch (Exception) { /* un archivo que falla no anula el guardado del activo */ }
+        }
     }
 
     // Al cambiar el tipo, el postback recarga y CargarModelos ofrece solo los
@@ -397,6 +574,8 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                 // como imagen de referencia del activo. Un fallo aquí no anula
                 // el guardado del activo; solo avisa.
                 string avisoImg = GuardarImagen(Id);
+                GuardarArchivos(Id);        // documentos adjuntos (opcional, varios)
+                GuardarDatosTecnicos(Id);   // valores de atributos técnicos
 
                 Tools.tools.ClientAlert(respuesta.detalle + avisoImg, "ok", true);
             }
