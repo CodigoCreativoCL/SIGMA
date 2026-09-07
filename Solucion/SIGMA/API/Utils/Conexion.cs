@@ -67,7 +67,9 @@ public class Conexion
                 sqlConnection.Close();
                 sqlConnection.Dispose();
             }
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
 
     }
@@ -94,7 +96,9 @@ public class Conexion
                 sqlConnection.Close();
                 sqlConnection.Dispose();
             }
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
 
     }
@@ -115,7 +119,9 @@ public class Conexion
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
     }
 
@@ -144,7 +150,9 @@ public class Conexion
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
     }
 
@@ -165,7 +173,9 @@ public class Conexion
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
     }
 
@@ -190,7 +200,9 @@ public class Conexion
         }
         catch (Exception ex)
         {
-            throw new Exception(ex.Message);
+            throw new Exception(ex.Message, ex);   /* El "ex" del segundo argumento no es adorno:
+                                                  sin el, ErrorSql no encuentra la SqlException
+                                                  y toda regla de negocio de un SP se ve como 500. */
         }
     }
 

@@ -24,8 +24,18 @@ namespace API.MVC.Model
        ===================================================================== */
 
 
-    /// <summary>Lo que devuelve un login correcto (HU-001).</summary>
-    [Serializable]
+    /// <summary>
+    /// Lo que devuelve un login correcto (HU-001).
+    ///
+    /// SIN [Serializable], y no es un olvido. Con ese atributo, Json.NET
+    /// serializa los *backing fields* de las propiedades automáticas y la
+    /// respuesta sale con claves como "&lt;token&gt;k__BackingField" en vez de
+    /// "token": el cliente no puede leer el token por su nombre y el login
+    /// queda inutilizable pese al 200. Se detectó probando HU-001 el
+    /// 01-09-2026 y se corrigió el 04-09-2026.
+    ///
+    /// Ningún otro DTO de este archivo lo lleva. No agregarlo.
+    /// </summary>
     public class SesionDto
     {
         public int usuario { get; set; }
@@ -123,6 +133,62 @@ namespace API.MVC.Model
         public string RUTA { get; set; }
     }
 
+
+    /// <summary>
+    /// La cabecera de un activo (HU-037).
+    ///
+    /// Existe porque `/activos/{id}/ficha` devuelve los EVENTOS, no el activo:
+    /// la app llegaba a la pantalla de ficha sin nombre, tipo ni criticidad y
+    /// tenia que recibirlos por parametro desde donde la abrieron. Detectado
+    /// al conectar la app el 04-09-2026.
+    /// </summary>
+    public class ActivoDto
+    {
+        public int act_id { get; set; }
+        public string act_codigo { get; set; }
+        public string act_nombre { get; set; }
+        public string act_numero_serie { get; set; }
+        public string act_fabricante { get; set; }
+        public int? act_anio_fabricacion { get; set; }
+        public DateTime? act_fecha_puesta_marcha { get; set; }
+        public string act_descripcion { get; set; }
+        public bool act_habilitado { get; set; }
+
+        public int act_cliente_instalacion { get; set; }
+        public int? act_instalacion_area { get; set; }
+        public int act_activo_tipo { get; set; }
+        public int? act_activo_modelo { get; set; }
+        public int act_activo_estado { get; set; }
+        public int act_criticidad_nivel { get; set; }
+
+        /* Resueltos por el SP. La app los muestra tal cual: hacer que el
+           telefono cruce cinco catalogos para pintar una pantalla es trabajo
+           que el servidor ya hizo. */
+        public string PLANTA_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public string CRITICIDAD_NOMBRE { get; set; }
+        public string CENTRO_COSTO_NOMBRE { get; set; }
+        public string PADRE_CODIGO { get; set; }
+        public string PADRE_NOMBRE { get; set; }
+    }
+
+    /// <summary>
+    /// El token FCM de un dispositivo (HU-077).
+    ///
+    /// `token` identifica al TELEFONO, no a la persona. Si el tecnico y el
+    /// supervisor usan el mismo aparato, el token pasa del uno al otro — por
+    /// eso el UPS reasigna en vez de duplicar. Sin eso, el segundo en entrar
+    /// recibiria las alertas del primero.
+    /// </summary>
+    public class DispositivoDto
+    {
+        public string token { get; set; }
+        public string dispositivo { get; set; }
+        public string app_version { get; set; }
+        public string plataforma { get; set; }
+    }
 
     /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
     public class ActivoFichaEventoDto
@@ -387,6 +453,61 @@ namespace API.MVC.Model
     ///   generara al enviar, cada reintento traeria uno nuevo y la
     ///   idempotencia no serviria de nada.
     /// </summary>
+    /// <summary>
+    /// La lectura de un medidor tomada en terreno (HU-043).
+    ///
+    /// `fecha_lectura_utc` la manda la app y es la de CAPTURA, no la del
+    /// envio: una lectura tomada a las 09:00 y enviada a las 18:00 es de las
+    /// 09:00. Sin ella, todo lo capturado sin señal quedaria fechado en el
+    /// momento en que volvio la cobertura.
+    ///
+    /// `uuid` lo genera el telefono AL ENCOLAR. Es lo que hace que un
+    /// reintento por timeout no grabe la lectura dos veces.
+    /// </summary>
+    public class LecturaAltaDto
+    {
+        public int activo_medidor { get; set; }
+        public decimal valor { get; set; }
+        public DateTime? fecha_lectura_utc { get; set; }
+
+        /// <summary>
+        /// El medidor se puso en cero. Hay que declararlo: sin esta marca, un
+        /// valor menor que el anterior se rechaza — o el medidor se reinicio,
+        /// o alguien tecleo mal, y el servidor no puede adivinar cual.
+        /// </summary>
+        public bool es_reinicio { get; set; }
+
+        public int? orden_trabajo { get; set; }
+        public string observacion { get; set; }
+
+        /// <summary>Teclado, voz, escaneo. Por omision, teclado.</summary>
+        public int? entrada_modo { get; set; }
+
+        public Guid? uuid { get; set; }
+    }
+
+    /// <summary>Una medicion de condicion tomada en terreno (HU-044).</summary>
+    public class MedicionAltaDto
+    {
+        public int activo_variable { get; set; }
+        public decimal valor { get; set; }
+        public DateTime? fecha_medicion_utc { get; set; }
+
+        /// <summary>
+        /// En que unidad se midio. Si no viene, es la de la variable: la que
+        /// la pantalla mostro al lado del campo. El SP guarda ademas el valor
+        /// convertido a la unidad base, para poder comparar series donde
+        /// alguien midio en °C y otro en K.
+        /// </summary>
+        public int? unidad_medida { get; set; }
+
+        public int? activo_componente { get; set; }
+        public int? orden_trabajo { get; set; }
+        public string observacion { get; set; }
+        public int? entrada_modo { get; set; }
+        public Guid? uuid { get; set; }
+    }
+
     public class MovimientoAltaDto
     {
         public int repuesto { get; set; }

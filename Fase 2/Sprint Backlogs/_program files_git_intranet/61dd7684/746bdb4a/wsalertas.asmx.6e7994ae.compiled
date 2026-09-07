@@ -1,0 +1,6 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<preserve resultType="2" virtualPath="/C:/Program Files/Git/Intranet/WebService/WsAlertas.asmx" hash="5dc1e70f" filehash="34b682b4c6a" flags="130000" assembly="App_Code" type="WsAlertas">
+    <filedeps>
+        <filedep name="/C:/Program Files/Git/Intranet/WebService/WsAlertas.asmx" />
+    </filedeps>
+</preserve>

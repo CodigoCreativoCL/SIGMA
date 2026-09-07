@@ -52,20 +52,27 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
                 }
             case "cboTipoDato":
                 {
+                    // Etiquetas claras con ejemplo (el catalogo base es tecnico).
                     TipoDatoController c = new TipoDatoController();
                     ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetTiposDato(new TipoDato { filtro_habilitado = true });
-                    ctrl.DataValueField = "tda_id"; ctrl.DataTextField = "tda_nombre"; ctrl.DataBind();
-                    break;
-                }
-            case "cboUnidad":
-                {
-                    UnidadMedidaController c = new UnidadMedidaController();
-                    ctrl.Items.Add(new RadComboBoxItem("Sin unidad", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetUnidades();
-                    ctrl.DataValueField = "ume_id"; ctrl.DataTextField = "ume_nombre"; ctrl.DataBind();
+                    List<TipoDato> tds = c.GetTiposDato(new TipoDato { filtro_habilitado = true });
+                    if (tds != null)
+                        foreach (TipoDato d in tds)
+                        {
+                            string etq;
+                            switch ((d.tda_codigo ?? "").ToUpper())
+                            {
+                                case "TEXTO":      etq = "Texto (ej. eléctrico)"; break;
+                                case "ENTERO":     etq = "Número entero (ej. 20)"; break;
+                                case "DECIMAL":    etq = "Número con decimales (ej. 12,5)"; break;
+                                case "BIT":        etq = "Sí / No (tiene o no)"; break;
+                                case "FECHA":      etq = "Fecha"; break;
+                                case "FECHA HORA": etq = "Fecha y hora"; break;
+                                case "HORA":       etq = "Hora"; break;
+                                default:           etq = d.tda_nombre; break;
+                            }
+                            ctrl.Items.Add(new RadComboBoxItem(etq, d.tda_id.ToString()));
+                        }
                     break;
                 }
         }
@@ -96,7 +103,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
 
             SeleccionarCombo(cboTipoDato, x.ate_tipo_dato);
             if (x.ate_activo_tipo != null) SeleccionarCombo(cboTipo, x.ate_activo_tipo.Value);
-            if (x.ate_unidad_medida != null) SeleccionarCombo(cboUnidad, x.ate_unidad_medida.Value);
 
             rdbSi.Checked = x.ate_habilitado;
             rdbNo.Checked = !x.ate_habilitado;
@@ -128,7 +134,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
         txtOrden.ReadOnly = !puedeEditar;
         cboTipo.ReadOnly = !puedeEditar;
         cboTipoDato.ReadOnly = !puedeEditar;
-        cboUnidad.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
 
@@ -154,7 +159,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
             x.ate_habilitado = rdbSi.Checked;
 
             if (!string.IsNullOrEmpty(cboTipo.SelectedValue)) x.ate_activo_tipo = int.Parse(cboTipo.SelectedValue);
-            if (!string.IsNullOrEmpty(cboUnidad.SelectedValue)) x.ate_unidad_medida = int.Parse(cboUnidad.SelectedValue);
 
             int orden;
             if (int.TryParse(txtOrden.Text.Trim(), out orden)) x.ate_orden = orden;

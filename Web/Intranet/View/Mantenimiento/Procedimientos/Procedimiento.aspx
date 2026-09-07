@@ -6,7 +6,7 @@
     <%-- Esta hoja es de esta ficha y de ninguna otra: se enlaza SOLO acá, no
          en el Master, para no descargarla dos veces. Mismo lenguaje visual que
          la ficha de programación. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-procedimiento.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-procedimiento.css?vrs=2") %>' rel="stylesheet" />
 
     <script type="text/javascript">
         function getRadWindow() {
@@ -42,10 +42,6 @@
             <p class="sg-proc-bajada">
                 La receta de un trabajo: se escribe una vez y se reutiliza en cada plan y cada orden que la necesite.
             </p>
-        </div>
-        <div class="sg-proc-cab-acciones">
-            <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />
-            <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar procedimiento" OnClick="btnGuardar_Click" ValidationGroup="Proc" />
         </div>
     </div>
 
@@ -153,6 +149,16 @@
                 <li><i class="mdi mdi-earth"></i><span>Los procedimientos <strong>globales</strong> son del sistema: se usan pero no se editan desde aquí.</span></li>
             </ul>
         </aside>
+    </div>
+
+    <%-- ---------------------------------------------------------------
+         PIE: acciones al final (Cerrar / Guardar)
+         --------------------------------------------------------------- --%>
+    <div class="sg-proc-footer">
+        <div class="sg-proc-cab-acciones">
+            <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />
+            <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar procedimiento" OnClick="btnGuardar_Click" ValidationGroup="Proc" />
+        </div>
     </div>
 
         </ContentTemplate>
