@@ -75,21 +75,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
                         }
                     break;
                 }
-            case "cboUnidad":
-                {
-                    // Se muestra el nombre con su simbolo, ej. "Kilogramo (kg)".
-                    UnidadMedidaController c = new UnidadMedidaController();
-                    ctrl.Items.Add(new RadComboBoxItem("Sin unidad", ""));
-                    List<UnidadMedida> us = c.GetUnidades();
-                    if (us != null)
-                        foreach (UnidadMedida u in us)
-                        {
-                            string txt = u.ume_nombre +
-                                (string.IsNullOrEmpty(u.ume_simbolo) ? "" : " (" + u.ume_simbolo + ")");
-                            ctrl.Items.Add(new RadComboBoxItem(txt, u.ume_id.ToString()));
-                        }
-                    break;
-                }
         }
     }
 
@@ -118,7 +103,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
 
             SeleccionarCombo(cboTipoDato, x.ate_tipo_dato);
             if (x.ate_activo_tipo != null) SeleccionarCombo(cboTipo, x.ate_activo_tipo.Value);
-            if (x.ate_unidad_medida != null) SeleccionarCombo(cboUnidad, x.ate_unidad_medida.Value);
 
             rdbSi.Checked = x.ate_habilitado;
             rdbNo.Checked = !x.ate_habilitado;
@@ -150,7 +134,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
         txtOrden.ReadOnly = !puedeEditar;
         cboTipo.ReadOnly = !puedeEditar;
         cboTipoDato.ReadOnly = !puedeEditar;
-        cboUnidad.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
 
@@ -176,7 +159,6 @@ public partial class View_Activos_Atributos_AtributoTecnico : System.Web.UI.Page
             x.ate_habilitado = rdbSi.Checked;
 
             if (!string.IsNullOrEmpty(cboTipo.SelectedValue)) x.ate_activo_tipo = int.Parse(cboTipo.SelectedValue);
-            if (!string.IsNullOrEmpty(cboUnidad.SelectedValue)) x.ate_unidad_medida = int.Parse(cboUnidad.SelectedValue);
 
             int orden;
             if (int.TryParse(txtOrden.Text.Trim(), out orden)) x.ate_orden = orden;
