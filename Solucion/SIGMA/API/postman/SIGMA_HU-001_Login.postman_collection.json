@@ -1,0 +1,250 @@
+{
+  "info": {
+    "_postman_id": "341e3b2f-2c25-4235-a9c3-f70c2d6531cc",
+    "name": "SIGMA · HU-001 Login (Pruebas T-1011)",
+    "description": "Pruebas del endpoint POST /sesion (HU-001 — Iniciar sesión en SIGMA). Un request por criterio de aceptación, con assertions que codifican el criterio.\n\nAl correrla: CA1 y CA2 marcan en rojo los dos defectos conocidos (respuesta 200 con backing fields; 401 sin el mensaje propio), y CA4 pasa en verde. CA3 queda omitido hasta contar con una cuenta deshabilitada.\n\nVariables: baseUrl, loginOk/passwordOk (cuenta habilitada), passwordBad (clave incorrecta), loginDeshabilitado (para CA3).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "HU-001 · Iniciar sesión",
+      "item": [
+        {
+          "name": "CA1 · Credenciales válidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CA1 \\u00b7 Responde HTTP 200 (acceso concedido)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"CA1 \\u00b7 Devuelve un token JWT\", function () {",
+                  "    // Un JWT viaja como xxx.yyy.zzz en Base64Url",
+                  "    pm.expect(pm.response.text()).to.match(/eyJ[\\w-]+\\.[\\w-]+\\.[\\w-]+/);",
+                  "});",
+                  "pm.test(\"CA1 \\u00b7 [Defecto 1] la propiedad se llama 'token', no un backing field\", function () {",
+                  "    var b = pm.response.json();",
+                  "    pm.expect(b, \"la respuesta expone <token>k__BackingField en vez de token\").to.have.property('token');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginOk}}\",\n  \"password\": \"{{passwordOk}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sesion"
+              ]
+            },
+            "description": "Login correcto. Espera 200 y un token JWT. El test de 'token' limpio falla y documenta el Defecto 1 (backing fields)."
+          },
+          "response": []
+        },
+        {
+          "name": "CA2 · Credenciales inválidas",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"CA2 \\u00b7 Responde HTTP 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "pm.test(\"CA2 \\u00b7 [Defecto 2] el mensaje es 'Correo o contrase\\u00f1a incorrectos'\", function () {",
+                  "    pm.expect(pm.response.text()).to.include('Correo o contrase\\u00f1a incorrectos');",
+                  "});",
+                  "pm.test(\"CA2 \\u00b7 El mensaje no revela cu\\u00e1l campo fall\\u00f3\", function () {",
+                  "    var t = pm.response.text().toLowerCase();",
+                  "    pm.expect(t).to.not.include('usuario inexistente');",
+                  "    pm.expect(t).to.not.include('correo no registrado');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginOk}}\",\n  \"password\": \"{{passwordBad}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sesion"
+              ]
+            },
+            "description": "Clave incorrecta. Espera 401. El test del mensaje falla y documenta el Defecto 2 (el 401 no entrega el mensaje propio)."
+          },
+          "response": []
+        },
+        {
+          "name": "CA3 · Cuenta deshabilitada",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Requiere la cuenta de prueba DESHABILITADA (ver script SQL: test.ca3@sigma.cl).",
+                  "pm.test(\"CA3 \\u00b7 No inicia sesi\\u00f3n con cuenta deshabilitada\", function () {",
+                  "    pm.expect(pm.response.code, 'no debe ser 200').to.not.eql(200);",
+                  "    pm.expect(pm.response.text(), 'no debe entregar token').to.not.match(/eyJ[\\w-]+\\.[\\w-]+\\.[\\w-]+/);",
+                  "});",
+                  "pm.test(\"CA3 \\u00b7 Muestra 'Su cuenta no est\\u00e1 habilitada. Contacte al administrador'\", function () {",
+                  "    // Si falla con un texto gen\\u00e9rico en ingl\\u00e9s, el Defecto 2 tambi\\u00e9n afecta al 403.",
+                  "    pm.expect(pm.response.text()).to.include('no est\\u00e1 habilitada');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginDeshabilitado}}\",\n  \"password\": \"{{passwordDeshab}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sesion"
+              ]
+            },
+            "description": "Usa la cuenta de prueba deshabilitada (test.ca3@sigma.cl). Espera que NO inicie sesión y muestre 'Su cuenta no está habilitada'."
+          },
+          "response": []
+        },
+        {
+          "name": "CA4 · Bloqueo por intentos fallidos",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Ejecutar este request 5 veces seguidas (o con el Collection Runner, 5 iteraciones):",
+                  "// los primeros intentos responden 401 y, superado el umbral, 423 con el tiempo restante.",
+                  "pm.test(\"CA4 \\u00b7 Bloqueo por intentos fallidos (423 con tiempo restante)\", function () {",
+                  "    if (pm.response.code === 423) {",
+                  "        pm.expect(pm.response.text()).to.include('bloqueada');",
+                  "        pm.expect(pm.response.text(), 'debe informar el tiempo restante').to.match(/\\d+\\s*minuto/);",
+                  "    } else {",
+                  "        pm.expect(pm.response.code, 'a\\u00fan no bloqueada: repetir hasta gatillar el bloqueo').to.eql(401);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"login\": \"{{loginOk}}\",\n  \"password\": \"{{passwordBad}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/sesion",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "sesion"
+              ]
+            },
+            "description": "Ejecutar 5 veces seguidas (o 5 iteraciones en el Runner). Tras el umbral responde 423 con el tiempo restante."
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost/SIGMA/Servicio/API"
+    },
+    {
+      "key": "loginOk",
+      "value": "catalina@codigocreativo.cl"
+    },
+    {
+      "key": "passwordOk",
+      "value": "1"
+    },
+    {
+      "key": "passwordBad",
+      "value": "clave_incorrecta_xyz"
+    },
+    {
+      "key": "loginDeshabilitado",
+      "value": "test.ca3@sigma.cl"
+    },
+    {
+      "key": "passwordDeshab",
+      "value": "Test1234"
+    }
+  ]
+}

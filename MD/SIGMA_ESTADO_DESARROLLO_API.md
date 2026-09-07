@@ -378,11 +378,15 @@ que esas anotaciones salgan a un archivo, el `.csproj` activa
 Esa decisión no se deduce del código: quien vuelva a tocar el `.csproj` podría
 quitar los `NoWarn` sin saber que reviven ~40 avisos inofensivos.
 
-**Falta el paso que necesita Visual Studio:** `Install-Package Swashbuckle` y
-apuntarlo a `bin/API.xml` con `c.IncludeXmlComments(...)`. Recién ahí `/swagger`
-renderiza lo anotado. No se hizo por consola porque el proyecto usa
-`packages.config` (sin `nuget.exe` a mano) y porque ver `/swagger` exige la app
-publicada en IIS.
+**Swagger instalado y verificado (03-09-2026).** `Install-Package Swashbuckle
+5.6.0` en el proyecto **API** (una vez que se corrigió: se había instalado por
+error en `Intranet`), con `c.IncludeXmlComments(...)` apuntando a `bin/API.xml`
+en `App_Start/SwaggerConfig.cs`. `/swagger` responde en vivo bajo
+`http://localhost/SIGMA/Servicio/API/swagger` —ASP.NET recicló la app sola al
+cambiar el `bin`, sin republicar— y `POST /sesion` sale con sus cinco respuestas
+documentadas. `TokenValidationHandler` **no** bloquea las rutas de Swagger:
+deja pasar la petición sin token (no la rechaza), así que no hubo que abrir
+nada.
 
 ---
 
@@ -472,10 +476,6 @@ diciendo desde el principio.
   (`Username` / `Password` en texto plano). Sirve para que un sistema se
   identifique, no una persona; el login de personas es `POST /sesion`. Habría
   que decidir si esa cuenta se conserva o se retira.
-- **Swagger a medio instalar.** El endpoint ya está documentado en el código y
-  el `.csproj` emite `bin/API.xml` (§5). Falta `Install-Package Swashbuckle` en
-  Visual Studio para que `/swagger` exista. El área `HelpPage` de plantilla
-  sigue sin usar.
 - **No hay límite de intentos por IP** en `/sesion` ni en
   `/usuario-recuperaciones`. El bloqueo por cuenta sí existe —lo hace
   `SEL_LOGIN` a los cinco intentos— pero nada impide probar mil correos
@@ -547,7 +547,11 @@ curl http://localhost/SIGMA/Servicio/API/usuario-permisos -H "Authorization: Bea
 
 | 01-09-2026 | **HU-001 probada contra la base (T-1011).** Un caso por criterio de aceptación: CA1 (200 + token), CA2 (401), CA4 (423 con bloqueo y tiempo restante) ejecutados; CA3 pendiente por falta de una cuenta deshabilitada. **Primer ejercicio real contra la base:** el canal `POST /sesion` → `SEL_LOGIN` funciona de extremo a extremo. Dos defectos hallados —el 200 con *backing fields* y el 401 sin el mensaje propio (§6)—. Evidencia en [`SIGMA_PRUEBAS_S1.md`](SIGMA_PRUEBAS_S1.md); veredictos en la hoja *Criterios de aceptación* del Sprint Backlog S1 |
 
-| 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0`. Falta `Install-Package Swashbuckle` en Visual Studio para levantar `/swagger` |
+| 01-09-2026 | **Endpoint documentado para Swagger (T-1012).** `POST /sesion` con `<summary>`, `<remarks>`, `<param>` y un `<response>` por cada código; el `.csproj` activa `bin/API.xml` con `NoWarn 1591;1587` (§5). Compila en `exitcode=0` |
+
+| 03-09-2026 | **Swagger instalado y `/swagger` en vivo (T-1012 cerrada).** `Install-Package Swashbuckle 5.6.0` en **API** —primero se había ido por error a `Intranet`, se limpió— y `IncludeXmlComments` sobre `bin/API.xml`. `swagger/docs/v1` responde 200 y `POST /sesion` sale con sus 5 respuestas; 43 endpoints en total tras el merge. **Newtonsoft de Intranet:** el sitio no usa Json.NET, así que quitar la pila que arrastró el mal-instalado no lo afecta. |
+
+| 03-09-2026 | **Integrados 30 commits del remoto (Sprint 2) + seguridad.** Merge de `origin/CatalinaPescio`: nuevos controllers de activos, alertas, escaneo y permisos de trabajo, y `Web.config` de Intranet resuelto a la versión del equipo (Servicios API en vez del Blob PENDIENTE). Actualizado `Microsoft.Bcl.Memory` 9.0.0 → **9.0.14** por **CVE-2026-26127** (DoS al decodificar Base64Url malformado, ruta que ejercita cada validación de JWT). API compila en `exitcode=0`. |
 
 | 04-09-2026 | **Bloque 0 de la app: la API ejercitada por HTTP, y cinco defectos corregidos.** Primera vez que se llama la API desde un cliente externo. El hallazgo mayor: `TokenValidationHandler` solo recortaba el prefijo `Base `, así que con el `Bearer` estándar el token se validaba con el prefijo pegado y **todo endpoint autenticado respondía 500 con cuerpo vacío** — ninguno había funcionado nunca desde curl, Postman o la app. Los otros cuatro: el `[Serializable]` de `SesionDto` (el token salía como `<token>k__BackingField`); el `WebApiCustomMessageHandler` de plantilla, que pisaba el cuerpo de **46 códigos** —incluido el `{id}` de todo 201— y quedó **retirado** a `_RETIRADO/API/Utils/`; `Conexion` relanzando con `new Exception(ex.Message)` **sin encadenar**, por lo que `ErrorSql` no encontraba la `SqlException` y **ninguna regla de negocio de un `SEL_` se traducía** (con el arreglo, `GET /activos/{id}/ficha` pasó de 500 genérico a `403 · "EL ACTIVO NO PERTENECE A ESTE CLIENTE."`); y `EscaneoController.cs` **ausente del `API.csproj`**, o sea nunca compilado. Se agregó `Datos.ListarConTotal` para los `SEL_` con `@TOTAL OUTPUT`, y `SesionController.NombreDe` para llenar el `nombre` que salía null. **33 endpoints llamados con token real**: 200 donde corresponde, 403 con su mensaje donde el técnico no tiene el permiso, 400 y 404 correctos (§6). Compila `exitcode=0`. **Hallazgo de datos**: la base tiene la estructura pero `Cliente_Instalacion`, `Instalacion_Area`, `Activo`, `Repuesto`, `Bodega`, `Inventario_Saldo` y `Alerta` están en cero |
 | 04-09-2026 | **La sábana de datos y los INS de terreno (HU-150, HU-043, HU-044).** **Bloque 140**: `API_SEL_APP_SABANA_DATOS`, el paquete que baja al teléfono, con el patrón de `API_2_SEL_USUARIO_SABANA_DATOS` de FacilityGes —un `@TIPO` por bloque, los JOIN de seguridad adentro, `ORDER BY` explícito porque SQLite no conserva el orden de inserción— más `@DESDE` para pedir solo lo que cambió. Nueve bloques: el 0 es el **manifiesto** (cuántas filas trae cada uno, para una barra de progreso real) y del 1 al 8 los datos. La lista de plantas autorizadas se resuelve **una vez** en una tabla variable y la usan todos los bloques: repetir el encadenado de seguridad ocho veces es repetirlo mal la octava. **Bloque 141**: `API_INS_ACTIVO_MEDIDOR_LECTURA` y `API_INS_ACTIVO_MEDICION`, idempotentes por `uuid` con la comprobación **antes** de validar —un reintento no tiene por qué volver a pasar reglas que ya pasó—; la lectura rechaza un valor menor al anterior salvo que se declare reinicio, y actualiza `ame_valor_actual` **solo si es más nueva**, para que una lectura vieja encolada sin señal no retroceda el contador; la medición guarda el valor **y su equivalente canónico** para poder comparar series donde alguien midió en °C y otro en K. **Bloque 142**: los permisos `REGISTRAR LECTURA` y `REGISTRAR MEDICION`, asignados por **nombre de perfil** y no por id —los ids de `Perfiles` tienen saltos— a técnico, supervisor, jefe y planificador; no al bodeguero ni al prevencionista, que no capturan. **API**: `SincronizacionController` (`GET /sincronizacion` y `/{tipo}`) y `CapturaTerrenoController` (`POST /captura/lecturas` y `/mediciones`), más `Datos.Conjunto/Filas/Escalar` para los SP de varios resultados. Compila `exitcode=0` y **probado por HTTP**: el manifiesto devuelve los 8 bloques, el bloque 3 trae los 82 catálogos, el 6 los cuatro resultados, el bloque inexistente da 400 con su mensaje, y la captura pasó de 403 por permiso faltante a 403 por regla del SP con el texto real. **52 → 56 endpoints** |
