@@ -62,6 +62,18 @@
 
 .sg-proc-cab-acciones { display: flex; align-items: center; gap: 8px; }
 
+/* -------------------------------------------------------------------- pie */
+/* Las acciones (Cerrar / Guardar) van AL FINAL de la ficha, alineadas a la
+   derecha y separadas del contenido por una línea. */
+.sg-proc-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--sg-borde);
+}
+
 /* ------------------------------------------------------------------ botones */
 .sg-proc-cab-acciones input[type="submit"],
 .sg-proc-cab-acciones input[type="button"],
