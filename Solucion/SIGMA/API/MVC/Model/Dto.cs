@@ -411,6 +411,12 @@ namespace API.MVC.Model
         public int estado { get; set; }
         public string motivo { get; set; }
         public int? orden_trabajo { get; set; }
+
+        /* El uuid nace en el telefono AL ENCOLAR, no al enviar. Es lo que deja
+           que un reintento cuyo primer intento si llego no vuelva a chocar con
+           "el activo ya esta en ese estado": el SP corta antes de las reglas y
+           devuelve el mismo tramo. Opcional — la web no lo manda. */
+        public Guid? uuid { get; set; }
     }
 
 

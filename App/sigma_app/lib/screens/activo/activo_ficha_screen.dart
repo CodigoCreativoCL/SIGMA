@@ -88,10 +88,18 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
       tipo: 'ESTADO_ACTIVO',
       titulo: 'Estado de ${a.act_codigo}',
       detalle: elegido.motivo,
-      endpoint: '${ApiConstants.activos}/${a.act_id}/estado',
+      /* LA RUTA ES /activo-estados, NO /activos/{id}/estado
+
+         Esa segunda no existe: ActivosController es solo lectura. Cada cambio
+         de estado se encolaba contra un 404 y se quedaba dando vueltas en
+         Pendientes sin que la pantalla lo dijera —confirmaba contra el disco,
+         que es justo lo que hace util al outbox y lo que aca lo volvia mudo.
+         Los nombres del cuerpo son los de ActivoEstadoAltaDto. */
+      endpoint: ApiConstants.activoEstados,
       cuerpo: {
-        'act_activo_estado': elegido.estado,
-        'observacion': elegido.motivo,
+        'activo': a.act_id,
+        'estado': elegido.estado,
+        'motivo': elegido.motivo,
       },
     );
     SyncService.instance.despacharAhora();
