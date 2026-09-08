@@ -76,7 +76,22 @@ namespace SitioBase.Controller
         /// significa "todas": rotular la estantería completa de una vez es el
         /// caso normal, no la excepción.
         /// </summary>
-        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega, string urlBase)
+        /// <summary>
+        /// EL QR LLEVA EL CODIGO, NO UNA URL
+        ///
+        /// Antes guardaba la direccion completa de Escanear.aspx con el token
+        /// pegado. La razon era que la camara nativa de cualquier telefono
+        /// pudiera abrirla sin instalar nada, y no era mala, pero el lector que
+        /// de verdad se usa en planta es el de la app: ahi el QR compite con la
+        /// etiqueta impresa y el codigo pelado gana. Es mas corto -menos
+        /// modulos, mas tolerante a la suciedad y al roce del estante-, no
+        /// depende del host, y es exactamente lo mismo que se teclea a mano
+        /// cuando la etiqueta esta rayada.
+        ///
+        /// Las etiquetas YA IMPRESAS siguen sirviendo: Interpretar(), aca y en
+        /// la API, acepta las dos formas.
+        /// </summary>
+        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega)
         {
             List<Etiqueta> lista = new List<Etiqueta>();
 
@@ -110,7 +125,7 @@ namespace SitioBase.Controller
                         item.Detalle = dr["DETALLE"].ToString();
                         item.Pie = dr["PIE"].ToString();
 
-                        item.QrDataUri = GenerarQr(urlBase + item.Token);
+                        item.QrDataUri = GenerarQr(item.Token);
 
                         lista.Add(item);
                     }

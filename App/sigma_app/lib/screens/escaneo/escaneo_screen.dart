@@ -552,7 +552,11 @@ class _Encontrado extends StatelessWidget {
 
   String get _titulo {
     final c = escaneo.cabecera;
-    return c?.rep_nombre ?? c?.bub_nombre ?? c?.bod_nombre ?? codigo;
+    return c?.act_nombre ??
+        c?.rep_nombre ??
+        c?.bub_nombre ??
+        c?.bod_nombre ??
+        codigo;
   }
 
   String get _ruta {
@@ -564,17 +568,25 @@ class _Encontrado extends StatelessWidget {
     ].where((s) => (s ?? '').isNotEmpty).join(' › ');
   }
 
+  /* LOS TIPOS SON DE TRES LETRAS, NO PALABRAS
+
+     El servidor devuelve `ACT`, `REP`, `BOD` y `UBI` —los mismos prefijos que
+     imprime SEL_ETIQUETA en la etiqueta— y aca se comparaba contra 'ACTIVO',
+     'REPUESTO', 'BODEGA' y 'UBICACION'. Ninguna calzaba nunca: TODO escaneo
+     caia en el comodin, se pintaba el icono generico de QR y el boton para
+     abrir no aparecia. Por eso escanear no llevaba a ninguna parte, y no solo
+     con los activos. */
   IconData get _icono => switch (escaneo.tipo.toUpperCase()) {
-    'ACTIVO' => Icons.view_in_ar_outlined,
-    'REPUESTO' => Icons.inventory_2_outlined,
-    'BODEGA' => Icons.warehouse_outlined,
-    'UBICACION' => Icons.place_outlined,
+    'ACT' => Icons.view_in_ar_outlined,
+    'REP' => Icons.inventory_2_outlined,
+    'BOD' => Icons.warehouse_outlined,
+    'UBI' => Icons.place_outlined,
     _ => Icons.qr_code_2,
   };
 
   Widget? _destino() => switch (escaneo.tipo.toUpperCase()) {
-    'ACTIVO' => ActivoFichaScreen(activoId: escaneo.id),
-    'REPUESTO' || 'BODEGA' || 'UBICACION' => const ExistenciasScreen(),
+    'ACT' => ActivoFichaScreen(activoId: escaneo.id),
+    'REP' || 'BOD' || 'UBI' => const ExistenciasScreen(),
     _ => null,
   };
 

@@ -62,11 +62,12 @@ Van primero porque son cosas rotas, no cosas nuevas.
 
 ---
 
-## Bloque 2 — QR y escaneo
+## Bloque 2 — QR y escaneo — CERRADO
 
 Encargo del 08-09-2026. **Son dos defectos distintos con una causa común.**
 
-- [ ] **2.1 · El QR de la web lleva una URL, y debe llevar el código.**
+- [x] **2.1 · El QR de la web lleva una URL, y debe llevar el código.** Hecho:
+  `GenerarQr(item.Token)`. La intranet compila con `aspnet_compiler`, 0 errores.
   `EtiquetaController.GetEtiquetas` hace `GenerarQr(urlBase + item.Token)`. Debe
   generar **solo el token** (`ACT-33`, `REP-12`, `UBI-17`, `BOD-4`), que es lo
   que la app sabe leer. **Aplica a todas las etiquetas**, no solo a activos.
@@ -74,7 +75,10 @@ Encargo del 08-09-2026. **Son dos defectos distintos con una causa común.**
   API— acepta las dos formas, así que las etiquetas ya impresas con URL siguen
   funcionando. El cambio es solo en lo que se genera de aquí en adelante.
 
-- [ ] **2.2 · Escanear un activo no abre su ficha y revienta en rojo.**
+- [x] **2.2 · Escanear un activo no abre su ficha.** Hecho, y eran **dos**
+  causas: la API rechazaba `ACT`, y la app comparaba los tipos contra palabras
+  completas cuando el servidor manda tres letras — así que **ningún** escaneo
+  abría nada, tampoco los repuestos. Los cuatro tipos probados por HTTP.
   **Causa raíz encontrada:** `SEL_ETIQUETA` sí emite tokens `ACT-<id>`, pero
   `EscaneoController.Resolver` solo tiene rama para `UBI` y `BOD`; **todo lo
   demás cae en `SEL_REPUESTO_DESGLOSE`**. Un `ACT-33` termina consultando el

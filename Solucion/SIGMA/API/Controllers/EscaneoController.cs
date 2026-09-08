@@ -1,4 +1,4 @@
-using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
 using System.Collections.Generic;
@@ -54,6 +54,48 @@ namespace API.Controllers
                     return BadRequest("No se reconoce «" + (c ?? "") + "». " +
                                       "Escanee la etiqueta otra vez, o escriba el código " +
                                       "impreso, por ejemplo UBI-17.");
+
+                /* UN ACTIVO NO SE DESGLOSA, SE ABRE
+
+                   Los otros tres tipos preguntan «qué hay adentro» y por eso
+                   pasan por un SP de desglose. Un equipo no tiene nada adentro
+                   que contar: lo único que hace falta es confirmar que es de
+                   este cliente y devolver con qué identificarlo, para que la
+                   app abra la ficha que ya existe en el módulo de activos.
+
+                   El cliente sale del token: un id de otra empresa devuelve
+                   404, no la ficha ajena. */
+                if (tipo == "ACT")
+                {
+                    ExigirPermiso("VER ACTIVOS");
+
+                    List<ActivoDto> act = Datos.Listar<ActivoDto>("SEL_ACTIVO",
+                        new Dictionary<string, object>
+                        {
+                            { "@ID", id },
+                            { "@CLIENTE", SesionApi.ClienteId() }
+                        });
+
+                    if (act == null || act.Count == 0)
+                        return Content(System.Net.HttpStatusCode.NotFound,
+                                       new { mensaje = "Esa etiqueta no corresponde a " +
+                                                       "ningún equipo de su empresa." });
+
+                    return Ok(new EscaneoDto
+                    {
+                        tipo = "ACT",
+                        id = id,
+                        token = "ACT-" + id,
+                        cabecera = new DesgloseCabeceraDto
+                        {
+                            act_id = act[0].act_id,
+                            act_codigo = act[0].act_codigo,
+                            act_nombre = act[0].act_nombre,
+                            PLANTA = act[0].PLANTA_NOMBRE
+                        },
+                        lineas = new List<DesgloseLineaDto>()
+                    });
+                }
 
                 string sp;
                 string parametro;
@@ -127,16 +169,23 @@ namespace API.Controllers
                 return false;
             }
 
-            /* ACT no entra: un activo no es un lugar con existencia adentro, y
-               su ficha la sirve el módulo de activos. Devolver acá una
-               pantalla vacía sería peor que decir que no. */
-            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP");
+            /* ACT SÍ ENTRA, Y ANTES NO
+
+               El razonamiento original —«un activo no es un lugar con
+               existencia adentro»— era correcto sobre el DESGLOSE y equivocado
+               sobre el escaneo: SEL_ETIQUETA imprime etiquetas `ACT-<id>` para
+               los equipos, así que había QR en la planta que esta ruta
+               rechazaba con «no se reconoce». Lo que hacía falta no era el
+               desglose del activo, sino decirle a la app qué se leyó para que
+               abra su ficha. Eso es lo que hace ahora. */
+            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT");
         }
 
         private string Articulo(string tipo)
         {
             if (tipo == "UBI") return "ninguna ubicación";
             if (tipo == "BOD") return "ninguna bodega";
+            if (tipo == "ACT") return "ningún equipo";
             return "ningún repuesto";
         }
     }

@@ -641,11 +641,11 @@ class BodegaUbicacion {
   }
 
   factory BodegaUbicacion.fromJson(Map<String, dynamic> j) => BodegaUbicacion(
-        bub_id: _i(j['bub_id']),
-        bub_bodega: _i(j['bub_bodega']),
-        bub_codigo: _sN(j['bub_codigo']),
-        bub_nombre: _sN(j['bub_nombre']),
-      );
+    bub_id: _i(j['bub_id']),
+    bub_bodega: _i(j['bub_bodega']),
+    bub_codigo: _sN(j['bub_codigo']),
+    bub_nombre: _sN(j['bub_nombre']),
+  );
 }
 
 class EscaneoCabecera {
@@ -658,6 +658,9 @@ class EscaneoCabecera {
     this.PLANTA,
     this.UNIDAD,
     this.TOTAL,
+    this.act_id,
+    this.act_codigo,
+    this.act_nombre,
   });
 
   final String? rep_codigo;
@@ -669,6 +672,12 @@ class EscaneoCabecera {
   final String? UNIDAD;
   final double? TOTAL;
 
+  /// Con qué identificar el equipo escaneado. Los otros tipos hablan de
+  /// existencias; un activo no tiene nada adentro que contar.
+  final int? act_id;
+  final String? act_codigo;
+  final String? act_nombre;
+
   factory EscaneoCabecera.fromJson(Map<String, dynamic> j) => EscaneoCabecera(
     rep_codigo: _sN(j['rep_codigo']),
     rep_nombre: _sN(j['rep_nombre']),
@@ -678,6 +687,9 @@ class EscaneoCabecera {
     PLANTA: _sN(j['PLANTA']),
     UNIDAD: _sN(j['UNIDAD']),
     TOTAL: _dN(j['TOTAL']),
+    act_id: _iN(j['act_id']),
+    act_codigo: _sN(j['act_codigo']),
+    act_nombre: _sN(j['act_nombre']),
   );
 }
 

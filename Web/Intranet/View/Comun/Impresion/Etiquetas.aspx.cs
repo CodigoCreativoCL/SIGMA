@@ -78,22 +78,9 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
 
         EtiquetaController controller = new EtiquetaController();
 
-        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega, UrlBaseEscaneo());
+        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega);
 
         Mostrar(lista);
-    }
-
-    /// <summary>
-    /// El QR guarda la URL COMPLETA y no solo el token, porque el teléfono de
-    /// cualquiera tiene que poder abrirla sin instalar nada: la cámara nativa
-    /// lee el QR y abre esa dirección.
-    /// </summary>
-    protected string UrlBaseEscaneo()
-    {
-        string autoridad = Request.Url.GetLeftPart(UriPartial.Authority);
-        string ruta = ResolveUrl("~/View/Comun/Impresion/Escanear.aspx");
-
-        return autoridad + ruta + "?c=";
     }
 
     protected bool PuedeVerOrigen()

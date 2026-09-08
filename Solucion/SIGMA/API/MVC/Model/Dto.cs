@@ -765,6 +765,18 @@ namespace API.MVC.Model
         public bool? bub_habilitado { get; set; }
         public bool? bod_habilitado { get; set; }
         public bool? rep_habilitado { get; set; }
+
+        /* EL ACTIVO ESCANEADO
+
+           Los campos de arriba los llenan los SP de desglose, que hablan de
+           existencias. Un activo no tiene existencia adentro: lo que hace
+           falta es el codigo y el nombre para que la tarjeta del escaneo diga
+           QUE se leyo antes de abrir su ficha. Se agregan aca y no en un DTO
+           aparte porque la app ya sabe leer esta cabecera; un segundo tipo la
+           obligaria a decidir cual mirar antes de saber que escaneo. */
+        public int act_id { get; set; }
+        public string act_codigo { get; set; }
+        public string act_nombre { get; set; }
         public bool? rep_controla_lote { get; set; }
     }
 
