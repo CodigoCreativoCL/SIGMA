@@ -908,14 +908,23 @@ class _Pie extends StatelessWidget {
           ),
           if (!puedeFinalizar) ...[
             const SizedBox(width: 9),
-            Tooltip(
-              message:
-                  'Faltan ${ficha.obligatoriosPendientes} pasos obligatorios',
-              child: SgBotonIcono(Icons.info_outline,
-                  fondo: context.sg.up,
-                  color: context.sg.tinta2,
-                  lado: 52,
-                  tamano: 21),
+            // Con `Tooltip` solo, el mensaje pedía mantener pulsado: en un
+            // teléfono nadie lo descubre, y el botón se sentía muerto. Ahora
+            // responde al toque, que es lo que se intenta primero.
+            Builder(
+              builder: (c) => SgBotonIcono(
+                Icons.info_outline,
+                fondo: context.sg.up,
+                color: context.sg.tinta2,
+                lado: 52,
+                tamano: 21,
+                onTap: () => ScaffoldMessenger.of(c).showSnackBar(
+                  SnackBar(
+                    content: Text('Faltan ${ficha.obligatoriosPendientes} '
+                        'pasos obligatorios para poder finalizar.'),
+                  ),
+                ),
+              ),
             ),
           ],
         ],

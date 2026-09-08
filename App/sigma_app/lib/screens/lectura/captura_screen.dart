@@ -9,6 +9,7 @@ import '../../services/sync_service.dart';
 import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
+import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 
@@ -350,7 +351,7 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
             }),
           ),
           const SizedBox(height: 13),
-          const _Fotos(),
+          _Fotos(activoId: widget.activoId),
           const SizedBox(height: 8),
         ],
       ),
@@ -685,78 +686,24 @@ class _Observacion extends StatelessWidget {
 /// sube— sería peor que no tenerlo: el técnico creería que la evidencia quedó
 /// registrada. La tira está y dice qué falta.
 class _Fotos extends StatelessWidget {
-  const _Fotos();
+  const _Fotos({required this.activoId});
+
+  final int activoId;
 
   @override
   Widget build(BuildContext context) {
-    final sg = context.sg;
+    /* LA FOTO SE CUELGA DEL ACTIVO, NO DE LA LECTURA
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        const SgRotuloCampo('Fotografías'),
-        const SizedBox(height: 9),
-        Row(
-          children: [
-            _Cuadro(
-              icono: Icons.photo_camera_outlined,
-              texto: 'Cámara',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text(
-                        'La evidencia fotográfica llega en el siguiente bloque.')),
-              ),
-            ),
-            const SizedBox(width: 9),
-            _Cuadro(
-              icono: Icons.photo_library_outlined,
-              texto: 'Galería',
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                    content: Text(
-                        'La evidencia fotográfica llega en el siguiente bloque.')),
-              ),
-            ),
-            const Spacer(),
-            Text('Opcional', style: sora(12, 500, color: sg.tinta3)),
-          ],
-        ),
-      ],
-    );
-  }
-}
+       Los dos cuadros de acá mostraban «la evidencia fotográfica llega en el
+       siguiente bloque»: eran botones que se veían habilitados y no hacían
+       nada.
 
-class _Cuadro extends StatelessWidget {
-  const _Cuadro({required this.icono, required this.texto, this.onTap});
-
-  final IconData icono;
-  final String texto;
-  final VoidCallback? onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final sg = context.sg;
-
-    return Material(
-      color: sg.up,
-      borderRadius: BorderRadius.circular(16),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: SizedBox(
-          width: 74,
-          height: 74,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(icono, size: 22, color: sg.acentoTexto),
-              const SizedBox(height: 4),
-              Text(texto, style: sora(11, 600, color: sg.tinta3)),
-            ],
-          ),
-        ),
-      ),
-    );
+       No pueden colgarse de la lectura porque **todavía no existe**: se
+       encola y el servidor le pone id al recibirla. Se cuelgan del activo,
+       que sí tiene id y es lo correcto de todos modos — una foto tomada al
+       registrar una vibración documenta el equipo, y sirve la próxima vez que
+       alguien lo mire, no solo para esta lectura. */
+    return SgEvidencias(destino: 'ACTIVO', destinoId: activoId);
   }
 }
 

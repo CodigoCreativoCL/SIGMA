@@ -2,11 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+import '../../constants/api_constants.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
+import '../../services/outbox_service.dart';
+import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../lectura/captura_screen.dart';
@@ -37,6 +41,71 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   int _foto = 0;
   int _pestana = 0;
 
+  /// La hoja de fotos del equipo.
+  ///
+  /// Va como hoja y no como pantalla: sacar una foto es un acto momentáneo
+  /// sobre la ficha que se está mirando, y al cerrarla se tiene que volver
+  /// exactamente al mismo sitio.
+  Future<void> _fotos(Activo? a) async {
+    if (a == null) return;
+
+    await showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _HojaFotos(activo: a),
+    );
+
+    if (!mounted) return;
+    // La portada puede haber cambiado: la ficha vuelve a pedirla.
+    ref.invalidate(activoProvider(widget.activoId));
+  }
+
+  /// Cambiar el estado del activo — HU-038.
+  ///
+  /// El motivo es **obligatorio**: un equipo que pasa a fuera de servicio sin
+  /// decir por qué obliga a preguntarle a quien lo movió, y en un turno de
+  /// noche esa persona ya se fue.
+  Future<void> _cambiarEstado(Activo? a) async {
+    if (a == null) return;
+
+    final elegido = await showModalBottomSheet<({int estado, String motivo})>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _HojaEstado(activo: a),
+    );
+    if (elegido == null || !mounted) return;
+
+    final mensajero = ScaffoldMessenger.of(context);
+
+    /* SE ENCOLA, NO SE ENVIA
+
+       Igual que una lectura: la pantalla confirma contra lo que ya esta en
+       disco. Cambiar el estado de un equipo se hace delante del equipo, y ahi
+       casi nunca hay señal. */
+    await OutboxService.instance.encolar(
+      tipo: 'ESTADO_ACTIVO',
+      titulo: 'Estado de ${a.act_codigo}',
+      detalle: elegido.motivo,
+      endpoint: '${ApiConstants.activos}/${a.act_id}/estado',
+      cuerpo: {
+        'act_activo_estado': elegido.estado,
+        'observacion': elegido.motivo,
+      },
+    );
+    SyncService.instance.despacharAhora();
+
+    if (!mounted) return;
+    ref.invalidate(activoProvider(widget.activoId));
+    ref.invalidate(fichaActivoProvider(widget.activoId));
+    mensajero.showSnackBar(SnackBar(
+      content: Text(SyncService.instance.enLinea.value
+          ? 'Estado cambiado.'
+          : 'Guardado en el teléfono. Se envía al volver la señal.'),
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
@@ -58,11 +127,23 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
                   onTap: () => _capturar(activo.valueOrNull)),
             ),
             const SizedBox(width: 9),
+            // Los dos se dibujaban sin `onTap`: se veian habilitados y no
+            // hacian nada. Un boton muerto es peor que uno ausente, porque se
+            // toca una vez, no pasa nada, y a partir de ahi no se confia en
+            // ninguno de la barra.
             SgBotonIcono(Icons.photo_camera_outlined,
-                fondo: sg.up, color: sg.tinta, lado: 52, tamano: 21),
+                fondo: sg.up,
+                color: sg.tinta,
+                lado: 52,
+                tamano: 21,
+                onTap: () => _fotos(activo.valueOrNull)),
             const SizedBox(width: 9),
             SgBotonIcono(Icons.swap_vert,
-                fondo: sg.up, color: sg.tinta, lado: 52, tamano: 21),
+                fondo: sg.up,
+                color: sg.tinta,
+                lado: 52,
+                tamano: 21,
+                onTap: () => _cambiarEstado(activo.valueOrNull)),
           ],
         ),
       ),
@@ -557,4 +638,185 @@ class _Historial extends ConsumerWidget {
       ),
     );
   }
+}
+
+
+/// La hoja de fotos de un activo.
+class _HojaFotos extends StatelessWidget {
+  const _HojaFotos({required this.activo});
+
+  final Activo activo;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: sg.fondo,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const _Agarradera(),
+              const SizedBox(height: 14),
+              Text('Fotos de ${activo.act_codigo}',
+                  style: sora(17, 600, color: sg.tinta)),
+              const SizedBox(height: 4),
+              Text(activo.act_nombre,
+                  style: sora(13, 500, color: sg.tinta3),
+                  overflow: TextOverflow.ellipsis),
+              const SizedBox(height: 14),
+              SgEvidencias(destino: 'ACTIVO', destinoId: activo.act_id),
+              const SgBarraGestos(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// La hoja de cambio de estado — HU-038.
+class _HojaEstado extends ConsumerStatefulWidget {
+  const _HojaEstado({required this.activo});
+
+  final Activo activo;
+
+  @override
+  ConsumerState<_HojaEstado> createState() => _HojaEstadoState();
+}
+
+class _HojaEstadoState extends ConsumerState<_HojaEstado> {
+  final _motivo = TextEditingController();
+  int? _elegido;
+
+  @override
+  void dispose() {
+    _motivo.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    final estados = ref.watch(estadosActivoProvider);
+
+    return Container(
+      decoration: BoxDecoration(
+        color: sg.fondo,
+        borderRadius:
+            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+      ),
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.only(
+            left: 16,
+            right: 16,
+            top: 12,
+            // El teclado tapa el botón al escribir el motivo si no se le suma
+            // su alto: la hoja sube con él.
+            bottom: 16 + MediaQuery.viewInsetsOf(context).bottom,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const _Agarradera(),
+                const SizedBox(height: 14),
+                Text('Cambiar el estado',
+                    style: sora(17, 600, color: sg.tinta)),
+                const SizedBox(height: 4),
+                Text('${widget.activo.act_codigo} · ahora en '
+                    '${widget.activo.ESTADO_NOMBRE ?? "sin estado"}',
+                    style: sora(13, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis),
+                const SizedBox(height: 14),
+                estados.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (e, _) => SgAviso(
+                    'No se pudieron cargar los estados.',
+                    icono: Icons.error_outline,
+                    color: sg.rojoTexto,
+                  ),
+                  data: (lista) => Column(
+                    children: [
+                      for (final e in lista)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 8),
+                          child: SgFila(
+                            texto: e.ctv_nombre,
+                            icono: _elegido == e.ctv_id
+                                ? Icons.radio_button_checked
+                                : Icons.radio_button_unchecked,
+                            colorIcono: _elegido == e.ctv_id
+                                ? sg.primarioTexto
+                                : sg.tinta3,
+                            onTap: () => setState(() => _elegido = e.ctv_id),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 6),
+                const SgRotuloCampo('Motivo'),
+                const SizedBox(height: 8),
+                SgCampo(
+                  controlador: _motivo,
+                  icono: Icons.notes,
+                  hint: 'Por qué cambia de estado',
+                  lineas: 2,
+                  onCambio: (_) => setState(() {}),
+                ),
+                const SizedBox(height: 14),
+                SgBoton(
+                  'Guardar el cambio',
+                  icono: Icons.check,
+                  // Sin motivo no se guarda: un equipo fuera de servicio sin
+                  // explicación obliga a preguntarle a quien lo movió, y en un
+                  // turno de noche esa persona ya se fue.
+                  onTap: (_elegido != null && _motivo.text.trim().isNotEmpty)
+                      ? () => Navigator.of(context).pop((
+                            estado: _elegido!,
+                            motivo: _motivo.text.trim(),
+                          ))
+                      : null,
+                ),
+                const SgBarraGestos(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// La agarradera de una hoja: 44×4 sobre el indicador.
+class _Agarradera extends StatelessWidget {
+  const _Agarradera();
+
+  @override
+  Widget build(BuildContext context) => Center(
+        child: Container(
+          width: 44,
+          height: 4,
+          decoration: BoxDecoration(
+            color: context.sg.indicador,
+            borderRadius: BorderRadius.circular(SgRadius.pill),
+          ),
+        ),
+      );
 }
