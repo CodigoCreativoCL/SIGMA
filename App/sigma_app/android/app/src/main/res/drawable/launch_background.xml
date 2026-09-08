@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    La pantalla de arranque: lo que Android dibuja ANTES de que exista Flutter.
+
+    No es el splash de la app —ese lo dibuja `SplashScreen` en Dart, con su
+    barra de progreso real—. Este tapa el hueco entre que se toca el icono y
+    que el motor arranca; si no estuviera, ese instante seria un rectangulo
+    blanco, y sobre el tema oscuro se ve como un destello.
+
+    Por eso el fondo es el mismo `#0B0F1A` del splash de Dart: los dos tienen
+    que ser indistinguibles o el arranque parpadea.
+-->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@color/ic_launcher_background" />
+    <item>
+        <bitmap
+            android:gravity="center"
+            android:src="@drawable/splash_sigma" />
+    </item>
+</layer-list>

@@ -1,0 +1,5 @@
+# `flutter test` sin argumentos solo recorre `test/`, así que la herramienta de
+# `tool/` queda fuera de la suite por su ubicación y no hace falta excluirla.
+# Se ejecuta a mano cuando cambia la marca:
+#
+#   flutter test tool/generar_iconos_test.dart
