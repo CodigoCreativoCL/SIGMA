@@ -9,6 +9,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'nuevo_permiso_screen.dart';
 
 /// Qué se está mirando en la bandeja.
 enum FiltroTrabajo { hoy, prioritarios, todos }
@@ -43,6 +44,8 @@ class PermisosTrabajoScreen extends ConsumerWidget {
     final datos = ref.watch(permisosTrabajoProvider);
     final filtro = ref.watch(filtroTrabajoProvider);
     final busqueda = ref.watch(busquedaTrabajoProvider).trim().toLowerCase();
+    final puedePedir =
+        ref.watch(tienePermisoProvider('REGISTRAR PERMISO TRABAJO'));
 
     final todos = datos.valueOrNull?.datos ?? const <PermisoTrabajo>[];
     final hoy = todos.where(_venceHoy).toList();
@@ -59,6 +62,34 @@ class PermisosTrabajoScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: sg.fondo,
+      /* PEDIR UN PERMISO SE HACE DESDE ACA — HU-063
+
+         La pantalla solo dejaba mirar los que ya existian, asi que la unica
+         forma de pedir uno era volver al escritorio: justo lo que hace que el
+         papel se llene despues de trabajar. El boton flota para quedar a la
+         misma distancia del pulgar aunque la lista crezca. */
+      /* El boton se muestra solo a quien puede: la API exige
+         REGISTRAR PERMISO TRABAJO y lo tienen 4 de los perfiles. Ofrecerlo a
+         los demas seria prometer algo que termina en 403 despues de llenar el
+         formulario. */
+      floatingActionButton: !puedePedir
+          ? null
+          : FloatingActionButton.extended(
+        heroTag: 'permiso',
+        backgroundColor: sg.primario,
+        foregroundColor: Colors.white,
+        icon: const Icon(Icons.add),
+        label: Text('Solicitar', style: sora(14, 600, color: Colors.white)),
+        onPressed: () async {
+          final ok = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const NuevoPermisoScreen()),
+          );
+          if (ok == true) {
+            ref.invalidate(permisosTrabajoProvider);
+            ref.invalidate(permisosVigentesProvider);
+          }
+        },
+      ),
       body: SafeArea(
         bottom: false,
         child: Column(

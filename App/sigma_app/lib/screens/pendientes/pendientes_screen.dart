@@ -233,6 +233,8 @@ class _Fila extends StatelessWidget {
         'MEDICION' => Icons.straighten,
         'MOVIMIENTO' => Icons.archive_outlined,
         'ESTADO_ACTIVO' => Icons.published_with_changes,
+        'PERMISO_TRABAJO' => Icons.assignment_turned_in_outlined,
+        'BITACORA' => Icons.edit_note,
         _ => Icons.upload_file_outlined,
       };
 
