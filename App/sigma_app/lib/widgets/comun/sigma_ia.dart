@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
+import 'sigma_radar.dart';
 import 'sigma_v3.dart';
 
 /// La tarjeta de SIGMA AI.
@@ -79,16 +80,53 @@ class SgTarjetaIa extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      /* UNA SOLA MARCA, Y QUE SE MUEVA
+
+                         Acá iban DOS: el símbolo de estado y, al lado, el
+                         distintivo de SIGMA AI. Son la misma marca dicha dos
+                         veces en cuatro centímetros — se leía como si fueran
+                         dos productos.
+
+                         Queda el radar: el mismo símbolo con un barrido
+                         debajo. SIGMA AI no es una pantalla que se consulta,
+                         es algo que está mirando todo el rato y avisa cuando
+                         encuentra algo; un logotipo quieto dice «acá hay una
+                         función», un barrido dice «esto está trabajando
+                         ahora», que es lo que justifica el sitio que ocupa
+                         esta tarjeta en el Inicio. */
                       Row(
                         children: [
-                          SgSimboloIa(simbolo, lado: 34),
-                          const SizedBox(width: 11),
-                          const SgBadgeIa(alto: 18),
-                          const Spacer(),
-                          if (badge != null)
+                          SgRadarIa(simbolo: simbolo, lado: 46, activo: accion != null),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text('SIGMA AI',
+                                    style: sora(13, 700,
+                                        color: sg.acentoTexto,
+                                        espaciado: 0.6)),
+                                const SizedBox(height: 2),
+                                Text(
+                                  // Lo que está haciendo, no lo que es: la
+                                  // diferencia entre una etiqueta y una señal
+                                  // de vida.
+                                  accion == null
+                                      ? 'Sin datos que analizar'
+                                      : 'Analizando tendencias',
+                                  style: sora(11, 500, color: sg.tinta3),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (badge != null) ...[
+                            const SizedBox(width: 8),
                             SgBadge(badge!,
                                 color: colorBadge ?? sg.rojoTexto,
                                 chico: true),
+                          ],
                         ],
                       ),
                       const SizedBox(height: 12),
