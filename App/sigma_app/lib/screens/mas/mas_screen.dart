@@ -51,46 +51,6 @@ final rutasApp = <String, WidgetBuilder>{
   'app://contexto': (_) => const SeleccionContextoScreen(),
 };
 
-/// Las rutas del menú de esta persona que la app sabe abrir, en el orden en
-/// que las mandó el servidor.
-///
-/// Se cruzan las dos listas y no se confía en ninguna sola: el servidor dice
-/// **qué puede ver**, y `rutasApp` dice **qué sabe dibujar la app**. Una ruta
-/// autorizada sin pantalla no se ofrece —abriría un hueco—, y una pantalla que
-/// existe sin autorización tampoco —terminaría en 403—.
-List<String> _conRuta(List<MenuNodo> menu, Iterable<String> conocidas) {
-  final salida = <String>[];
-
-  void recorrer(List<MenuNodo> nodos) {
-    for (final n in nodos) {
-      final r = n.ruta;
-      if (r != null && conocidas.contains(r) && !salida.contains(r)) {
-        salida.add(r);
-      }
-      if (n.hijos.isNotEmpty) recorrer(n.hijos);
-    }
-  }
-
-  recorrer(menu);
-  return salida;
-}
-
-/// El nombre que le puso el administrador en `Menus`. Si el servidor no lo
-/// manda, la ruta sirve de respaldo antes que una fila sin texto.
-String _nombre(List<MenuNodo> menu, String ruta) {
-  String? encontrado;
-
-  void recorrer(List<MenuNodo> nodos) {
-    for (final n in nodos) {
-      if (n.ruta == ruta && (n.nombre).isNotEmpty) encontrado ??= n.nombre;
-      if (n.hijos.isNotEmpty) recorrer(n.hijos);
-    }
-  }
-
-  recorrer(menu);
-  return encontrado ?? ruta.replaceFirst('app://', '');
-}
-
 /// El quinto destino de la barra: todo lo que no cabe en los otros cuatro.
 ///
 /// ## Por qué existe
@@ -118,14 +78,22 @@ class MasScreen extends ConsumerWidget {
        listarlos en «Más» daria dos caminos al mismo sitio, y el segundo enseña
        que el primero no era el bueno. */
     const yaVisible = {
+      // En la barra inferior y en la rejilla del inicio.
       'app://inicio',
       'app://escaneo',
       'app://alertas',
+      // En la bandeja «Mi trabajo», con sus pestañas.
       'app://permisos-trabajo',
       'app://ordenes-trabajo',
       'app://tareas',
       'app://checklist',
       'app://bitacora',
+      /* Y en ESTA misma pantalla: «Mi perfil» es la tarjeta de arriba y
+         «Sincronización» es la primera fila de «Este teléfono». Listarlas otra
+         vez mas abajo era pedirle a la persona que eligiera entre dos filas
+         que llevan al mismo sitio. */
+      'app://mi-perfil',
+      'app://sincronizacion',
     };
 
     /* Solo lo que se puede abrir de verdad.
@@ -215,34 +183,6 @@ class MasScreen extends ConsumerWidget {
              Ahora el rótulo de cada fila y su ícono siguen siendo de la app
              —el servidor manda rutas, no diseño— pero **qué filas existen lo
              decide el menú de esta persona**. ---- */
-          if (_conRuta(menu, rutasApp.keys).isNotEmpty) ...[
-            const SgRotulo('Trabajo'),
-            const SizedBox(height: 10),
-            SgBloque(
-              filas: [
-                for (final ruta in _conRuta(menu, rutasApp.keys))
-                  SgFila(
-                    icono: _icono(ruta),
-                    iconoWidget: ruta == 'app://sigma-ai'
-                        ? const SgIconoIaApp()
-                        : null,
-                    texto: _nombre(menu, ruta),
-                    chevron: true,
-                    onTap: () {
-                      unawaited(
-                        ref.read(sincronizacionProvider.notifier).asegurar(),
-                      );
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: rutasApp[ruta]!),
-                      );
-                    },
-                  ),
-              ],
-            ),
-            const SizedBox(height: 20),
-          ],
-
           // ---- Los datos de este teléfono ----
           const SgRotulo('Este teléfono'),
           const SizedBox(height: 10),

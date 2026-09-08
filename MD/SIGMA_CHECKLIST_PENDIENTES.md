@@ -19,14 +19,15 @@ Regla para todos: **ningún botón ni acción puede quedar sin hacer algo.**
 
 ---
 
-## Bloque 1 — Defectos abiertos (§3.1.5 del traspaso)
+## Bloque 1 — Defectos abiertos (§3.1.5 del traspaso) — CERRADO
 
 Van primero porque son cosas rotas, no cosas nuevas.
 
-- [ ] **1.1 · Consumir repuesto falla por la ubicación.**
-  `POST /ordenes-trabajo/{id}/repuestos` → 400 «ESTA BODEGA TIENE UBICACIONES».
-  `HojaRepuesto` no la pregunta. `GET /bodegas/{id}/ubicaciones` ya existe y
-  nadie lo llama: pedirla solo cuando la bodega la exija.
+- [x] **1.1 · Consumir repuesto falla por la ubicación.** Hecho. La hoja pide
+  el estante **solo cuando la bodega tiene**, y el botón no responde hasta
+  elegirlo: más vale que no se pueda enviar a que el servidor lo rechace
+  después de llenarlo todo. Probado por HTTP contra la bodega 12: sin
+  ubicación → 400; con la 28 → `{"otr_id":14}`.
 
 - [x] **1.2 · Los chips de la bandeja se desbordan 81 px.** Hecho: fila
   scrollable en órdenes y en permisos.
@@ -45,16 +46,19 @@ Van primero porque son cosas rotas, no cosas nuevas.
   `entrada_bitacora_screen.dart:64` revienta tras el `await`. Falta
   `if (!mounted) return;`. **Barrer todas las pantallas** buscando lo mismo.
 
-- [ ] **1.5 · Tres botones inertes.**
-  Micrófono de búsqueda en `existencias_screen.dart:210` y en
-  `permisos_trabajo_screen.dart:292` — el dictado ya está resuelto en
-  `mostrarPanelVoz`, es cablearlo. Biométrico en `login_screen.dart:238` — o se
-  implementa o se quita.
+- [x] **1.5 · Tres botones inertes.** Los dos micrófonos, cableados a
+  `mostrarPanelVoz`. El biométrico, **quitado**: no era cableable —falta
+  `local_auth` y, sobre todo, decidir qué se guarda en el teléfono para
+  reabrir la sesión con la huella, que no es una decisión técnica. Ya no queda
+  ningún botón que se disculpe en toda la app.
 
-- [ ] **1.6 · «Más»: menús repetidos.**
-  `yaVisible` se aplica solo a «Mi menú» y no a «Trabajo», así que todo lo de
-  una sale también en la otra. Aplicarlo a las dos.
-  *(El rediseño «más corporativo» va en el bloque 5: hay que preguntarlo.)*
+- [x] **1.6 · «Más»: menús repetidos.** Hecho. La sección «Trabajo» era
+  `_conRuta` **sin filtrar** —las 10 rutas—, así que repetía las 6 de la barra
+  y la bandeja **y** las 4 de «Mi menú». Se elimina, y `yaVisible` suma
+  `mi-perfil` y `sincronizacion`, que ya tienen su sitio en esta misma
+  pantalla. «Mi menú» queda con 2 filas y ninguna repetida: SIGMA AI y
+  Existencias.
+  *(El rediseño «más corporativo» sigue en el bloque 5: hay que preguntarlo.)*
 
 ---
 

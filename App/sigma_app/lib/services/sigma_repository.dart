@@ -830,6 +830,18 @@ class SigmaRepository {
     return Paginado.desde(j, RepuestoOrden.fromJson).datos;
   }
 
+  /// Los estantes de una bodega — `GET /bodegas/{id}/ubicaciones`.
+  ///
+  /// Sin paginar a proposito: una bodega tiene decenas de ubicaciones, no
+  /// miles, y llenan un selector de una sola vez.
+  Future<List<BodegaUbicacion>> ubicacionesDeBodega(int bodegaId) async {
+    final j = await _api.get('${ApiConstants.bodegas}/$bodegaId/ubicaciones');
+    final datos = (j is List) ? j : ((j is Map && j['datos'] is List) ? j['datos'] as List : const []);
+    return datos
+        .map((e) => BodegaUbicacion.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+  }
+
   /// Consumo o devolucion de repuesto (HU-116). **Mueve el inventario**: el SP
   /// hace las dos escrituras en una transaccion, asi que la bodega y la orden
   /// no pueden discrepar.

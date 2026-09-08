@@ -612,6 +612,42 @@ class Escaneo {
   );
 }
 
+/// Un estante dentro de una bodega — `GET /bodegas/{id}/ubicaciones`.
+///
+/// Cuando la bodega tiene ubicaciones, decir de cual sale el repuesto **no es
+/// opcional**: sin eso el saldo por ubicacion queda sin dueño y el proximo que
+/// vaya a buscar la pieza no sabe a que estante ir. El SP lo rechaza con
+/// «ESTA BODEGA TIENE UBICACIONES: INDIQUE DE CUAL SALE O A CUAL ENTRA».
+class BodegaUbicacion {
+  const BodegaUbicacion({
+    required this.bub_id,
+    required this.bub_bodega,
+    this.bub_codigo,
+    this.bub_nombre,
+  });
+
+  final int bub_id;
+  final int bub_bodega;
+  final String? bub_codigo;
+  final String? bub_nombre;
+
+  /// Lo que se pinta en el chip: el codigo manda porque es lo que esta escrito
+  /// en el estante.
+  String get etiqueta {
+    final c = (bub_codigo ?? '').trim();
+    final n = (bub_nombre ?? '').trim();
+    if (c.isNotEmpty && n.isNotEmpty) return '$c · $n';
+    return c.isNotEmpty ? c : (n.isNotEmpty ? n : 'Ubicacion $bub_id');
+  }
+
+  factory BodegaUbicacion.fromJson(Map<String, dynamic> j) => BodegaUbicacion(
+        bub_id: _i(j['bub_id']),
+        bub_bodega: _i(j['bub_bodega']),
+        bub_codigo: _sN(j['bub_codigo']),
+        bub_nombre: _sN(j['bub_nombre']),
+      );
+}
+
 class EscaneoCabecera {
   const EscaneoCabecera({
     this.rep_codigo,

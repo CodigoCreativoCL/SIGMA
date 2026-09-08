@@ -237,18 +237,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         cargando: _cargando,
         onTap: _entrar,
       ),
-      const SizedBox(height: 16),
-      SgBoton(
-        'Ingresar con huella',
-        icono: Icons.fingerprint,
-        primario: false,
-        colorIcono: sg.acentoTexto,
-        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('El acceso biométrico llega más adelante.'),
-          ),
-        ),
-      ),
+      /* SIN BOTON DE HUELLA, POR AHORA
+
+         Estaba dibujado y lo unico que hacia era disculparse: «el acceso
+         biometrico llega mas adelante». Un boton que no hace nada enseña a
+         desconfiar del resto de la pantalla.
+
+         Y no es cableable como los microfonos de busqueda. Falta la
+         dependencia local_auth y, sobre todo, una decision que no es tecnica:
+         que se guarda en el telefono para poder reabrir la sesion con la
+         huella. Guardar la contraseña en el dispositivo es justo lo que un
+         sistema con datos de planta no deberia hacer a la ligera.
+
+         Vuelve cuando se decida eso. Mientras tanto la sesion ya se persiste,
+         asi que reabrir la app no pide credenciales de nuevo. */
     ],
   );
 }

@@ -23,6 +23,9 @@ typedef ConsumoRepuesto = ({
   int repuesto,
   int bodega,
   double cantidad,
+  /// El estante. Nulo solo cuando la bodega no tiene ninguno: si los tiene, la
+  /// hoja no deja enviar sin elegirlo.
+  int? ubicacion,
   String nombre,
 });
 
@@ -260,6 +263,16 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
   RepuestoOrden? _elegido;
   String _filtro = '';
 
+  /// El estante del que sale la pieza.
+  ///
+  /// **Obligatorio cuando la bodega tiene ubicaciones.** Sin esto el consumo
+  /// respondia 400 —«ESTA BODEGA TIENE UBICACIONES: INDIQUE DE CUAL SALE O A
+  /// CUAL ENTRA»— y en una bodega con estantes, que es lo normal, fallaba
+  /// siempre. Se reinicia al cambiar de pieza: dos repuestos rara vez viven en
+  /// el mismo estante, y arrastrar el anterior seria descontar del sitio
+  /// equivocado sin que nadie lo note.
+  int? _ubicacion;
+
   /// El último código leído que no calzó con nada. Se muestra tal cual: si la
   /// etiqueta dice «REP-6205» y no aparece, hay que poder ver QUÉ se leyó para
   /// saber si el problema es la etiqueta, la bodega o el escáner.
@@ -279,6 +292,23 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
   static String _num(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toString();
+
+  /// Falso mientras la bodega tenga estantes y no se haya elegido uno, y
+  /// tambien mientras la lista viaja: hasta que llegue no se sabe si hara
+  /// falta, y habilitar el boton antes seria invitar al 400.
+  bool get _puedeConsumir {
+    if (_elegido == null) return false;
+
+    final estantes = ref.watch(ubicacionesBodegaProvider(_elegido!.isa_bodega));
+
+    return estantes.when(
+      // Sin poder preguntar —sin señal— se deja pasar: el servidor decide, y
+      // bloquear aqui dejaria el consumo imposible en el peor momento.
+      error: (_, _) => true,
+      loading: () => false,
+      data: (lista) => lista.isEmpty || _ubicacion != null,
+    );
+  }
 
   /// Leer la etiqueta y elegir la pieza sin teclear.
   ///
@@ -321,6 +351,7 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
       _noEncontrado = null;
       _elegido = calza.first;
+      _ubicacion = null;
       // Se filtra a esa pieza para que quede sola en pantalla: tras escanear,
       // ver una lista de veinte con una marcada obliga a buscarla otra vez.
       _buscar.text = calza.first.REPUESTO_CODIGO;
@@ -469,7 +500,10 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                                 chico: true,
                               )
                             : null,
-                        onTap: () => setState(() => _elegido = x),
+                        onTap: () => setState(() {
+                          _elegido = x;
+                          _ubicacion = null;
+                        }),
                       ),
                     ],
                   );
@@ -478,6 +512,20 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
             },
           ),
         ),
+        /* DE QUE ESTANTE SALE
+
+           Solo aparece cuando la bodega de la pieza elegida tiene estantes: en
+           una bodega de un solo hueco, preguntarlo es un tramite. Cuando los
+           tiene, el SP no deja pasar el consumo sin el, y con razon: el saldo
+           por ubicacion quedaria sin dueño y el proximo que vaya a buscar la
+           pieza no sabria a que estante ir. */
+        if (_elegido != null)
+          _Estante(
+            bodegaId: _elegido!.isa_bodega,
+            elegida: _ubicacion,
+            onElegir: (v) => setState(() => _ubicacion = v),
+          ),
+
         const SizedBox(height: 14),
         const SgRotuloCampo('Cantidad'),
         const SizedBox(height: 8),
@@ -500,12 +548,21 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
         SgBoton(
           'Consumir',
           icono: Icons.check,
-          onTap: (_elegido == null || _cuanto == null || sobrepasa)
+          /* Si la bodega tiene estantes y no se eligio ninguno, el boton no
+             responde: mas vale que no se pueda enviar a que el servidor lo
+             rechace despues de haberlo llenado todo. Mientras la lista de
+             estantes viaja, tampoco: no se sabe todavia si hara falta. */
+          onTap:
+              (_elegido == null ||
+                  _cuanto == null ||
+                  sobrepasa ||
+                  !_puedeConsumir)
               ? null
               : () => Navigator.of(context).pop((
                   repuesto: _elegido!.isa_repuesto,
                   bodega: _elegido!.isa_bodega,
                   cantidad: _cuanto!,
+                  ubicacion: _ubicacion,
                   nombre: _elegido!.REPUESTO_NOMBRE,
                 )),
         ),
@@ -579,6 +636,88 @@ class HojaRecurso extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// El estante del que sale la pieza.
+///
+/// Se dibuja solo, y solo si la bodega tiene estantes: en una bodega de un
+/// hueco preguntarlo es un trámite. Cuando los tiene, el SP no deja pasar el
+/// consumo sin él.
+class _Estante extends ConsumerWidget {
+  const _Estante({
+    required this.bodegaId,
+    required this.elegida,
+    required this.onElegir,
+  });
+
+  final int bodegaId;
+  final int? elegida;
+  final ValueChanged<int?> onElegir;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sg = context.sg;
+    final estantes = ref.watch(ubicacionesBodegaProvider(bodegaId));
+
+    return estantes.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.only(top: 14),
+        child: Center(
+          child: SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+
+      /* Sin señal no se puede saber si la bodega tiene estantes. Se dice, y no
+         se bloquea: el servidor decide. Callar aquí dejaría al técnico
+         mirando un botón muerto sin entender por qué. */
+      error: (_, _) => Padding(
+        padding: const EdgeInsets.only(top: 14),
+        child: SgAviso(
+          'No se pudo leer los estantes de esta bodega. Si tiene, el servidor '
+          'va a pedir de cuál sale.',
+          icono: Icons.cloud_off_outlined,
+          color: sg.ambarTexto,
+        ),
+      ),
+
+      data: (lista) {
+        if (lista.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 14),
+            const SgRotuloCampo('De qué estante sale'),
+            const SizedBox(height: 4),
+            Text(
+              'Esta bodega tiene ${lista.length} ubicaciones. Sin decir cuál, '
+              'el saldo queda sin dueño.',
+              style: sora(12, 500, color: sg.tinta3, alto: 1.45),
+            ),
+            const SizedBox(height: 9),
+            SizedBox(
+              height: 36,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                itemCount: lista.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => SgChip(
+                  lista[i].etiqueta,
+                  elegido: elegida == lista[i].bub_id,
+                  onTap: () => onElegir(lista[i].bub_id),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

@@ -216,6 +216,9 @@ class RecursosOrdenVista extends ConsumerWidget {
         'repuesto': elegido.repuesto,
         'bodega': elegido.bodega,
         'cantidad': elegido.cantidad,
+        // Obligatoria cuando la bodega tiene estantes. La hoja no deja enviar
+        // sin ella en ese caso, asi que aca solo se pasa lo que ya se eligio.
+        'ubicacion': elegido.ubicacion,
         'es_devolucion': false,
       });
       if (!context.mounted) return;

@@ -10,6 +10,8 @@ import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'ficha_repuesto_screen.dart';
 import 'hoja_ajuste.dart';
+import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_voz.dart';
 
 /// Existencias de bodega — HU-067 y siguientes.
 ///
@@ -201,15 +203,36 @@ class _Buscador extends StatelessWidget {
                 ),
               ),
             ),
+            /* DICTAR LA BUSQUEDA — EL BOTON YA NO ES UN ADORNO
+
+               Decia «llega mas adelante» y el dictado estaba resuelto
+               desde hace tiempo en mostrarPanelVoz: era cablearlo. Y en
+               terreno es donde mas sirve, porque teclear «REP-6205» con
+               guantes de nitrilo es justo lo que se falla.
+
+               No se filtra al vuelo mientras se habla: se escribe el
+               texto ya interpretado y se dispara la busqueda una vez. */
             SgBotonIcono(
               Icons.mic_none,
               color: sg.primarioTexto,
               tamano: 20,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('El dictado por voz llega más adelante.'),
-                ),
-              ),
+              onTap: () async {
+                final campos = await mostrarPanelVoz(
+                  context,
+                  titulo: 'Buscar un repuesto',
+                  interpretar: (t) => [
+                    CampoDictado(
+                      clave: 'busqueda',
+                      rotulo: 'Buscar',
+                      valor: InterpreteVoz.normalizar(t),
+                    ),
+                  ],
+                );
+                if (campos == null || campos.isEmpty) return;
+                final texto = campos.first.valor;
+                escribirDictado(controlador, texto);
+                onCambio(texto);
+              },
             ),
           ],
         ),

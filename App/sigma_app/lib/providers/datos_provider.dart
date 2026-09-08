@@ -286,6 +286,12 @@ final prediccionProvider = FutureProvider.family<PrediccionFicha, int>(
   (ref, id) => _repo.prediccion(id),
 );
 
+/// Los estantes de una bodega. `family` por bodega: la hoja de consumo solo
+/// pregunta por la que tiene el repuesto delante.
+final ubicacionesBodegaProvider =
+    FutureProvider.family<List<BodegaUbicacion>, int>(
+        (ref, bodegaId) => _repo.ubicacionesDeBodega(bodegaId));
+
 // ---- Favoritos marcados en esta sesión ----
 
 /// Lo que la persona acaba de marcar o desmarcar, por entidad.

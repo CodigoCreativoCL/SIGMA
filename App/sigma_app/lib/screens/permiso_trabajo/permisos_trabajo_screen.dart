@@ -10,6 +10,8 @@ import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'nuevo_permiso_screen.dart';
+import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_voz.dart';
 
 /// Qué se está mirando en la bandeja.
 enum FiltroTrabajo { hoy, prioritarios, todos }
@@ -296,15 +298,29 @@ class _FiltrosState extends ConsumerState<_Filtros> {
                       ),
                     ),
                   ),
+                  // Mismo caso que la busqueda de existencias: el dictado ya
+                  // estaba resuelto y el boton solo se disculpaba.
                   SgBotonIcono(
                     Icons.mic_none,
                     color: sg.primarioTexto,
                     tamano: 20,
-                    onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('El dictado por voz llega más adelante.'),
-                      ),
-                    ),
+                    onTap: () async {
+                      final campos = await mostrarPanelVoz(
+                        context,
+                        titulo: 'Buscar un permiso',
+                        interpretar: (t) => [
+                          CampoDictado(
+                            clave: 'busqueda',
+                            rotulo: 'Buscar',
+                            valor: InterpreteVoz.normalizar(t),
+                          ),
+                        ],
+                      );
+                      if (campos == null || campos.isEmpty) return;
+                      final texto = campos.first.valor;
+                      escribirDictado(_buscar, texto);
+                      widget.onBuscar(texto);
+                    },
                   ),
                 ],
               ),
