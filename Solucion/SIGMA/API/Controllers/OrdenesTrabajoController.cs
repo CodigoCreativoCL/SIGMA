@@ -237,12 +237,20 @@ namespace API.Controllers
                 ExigirPermiso("EJECUTAR ORDEN TRABAJO");
                 ExigirCliente();
 
+                /* LOS NOMBRES SON LOS QUE DECLARA EL SP, NO LOS DEL DTO
+
+                   Iban @OTR_ID y @RESULTADO; el SP declara @ORDEN_TRABAJO y
+                   @OBSERVACION. SQL Server rechaza la llamada entera —"expects
+                   parameter '@ORDEN_TRABAJO', which was not supplied"— asi que
+                   **ninguna orden se podia finalizar**. Se detecto cruzando los
+                   71 `Datos.Ejecutar` de los controllers contra sys.parameters
+                   el 07-09-2026. */
                 Datos.Ejecutar("UPD_ORDEN_TRABAJO_FINALIZAR",
                     new Dictionary<string, object>
                     {
-                        { "@OTR_ID", id },
+                        { "@ORDEN_TRABAJO", id },
                         { "@USUARIO", SesionApi.UsuarioId() },
-                        { "@RESULTADO", dto == null ? null : dto.resultado }
+                        { "@OBSERVACION", dto == null ? null : dto.resultado }
                     });
 
                 return Ok(new { otr_id = id });
