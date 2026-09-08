@@ -8,6 +8,8 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../bitacora/entrada_bitacora_screen.dart';
+import '../bitacora/nueva_entrada_screen.dart';
 import '../checklist/checklist_screen.dart';
 import '../ordenes/ordenes_screen.dart';
 import '../tareas/tareas_screen.dart';
@@ -350,6 +352,38 @@ class _Bitacora extends ConsumerWidget {
     final sg = context.sg;
     final entradas = ref.watch(bitacoraProvider);
 
+    /* EL BOTON DE ESCRIBIR VA FLOTANDO, NO AL FINAL DE LA LISTA
+
+       La bitácora crece hacia abajo y lo último es lo más viejo: un botón al
+       final de la lista se aleja un poco más cada día. Flotando queda a la
+       misma distancia del pulgar siempre, que es lo que hace que se use. */
+    return Stack(
+      children: [
+        Positioned.fill(child: _linea(context, ref, sg, entradas)),
+        Positioned(
+          right: 16,
+          bottom: 16 + MediaQuery.paddingOf(context).bottom,
+          child: FloatingActionButton.extended(
+            heroTag: 'bitacora',
+            backgroundColor: sg.primario,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.edit_note),
+            label: Text('Anotar', style: sora(14, 600, color: Colors.white)),
+            onPressed: () async {
+              final ok = await Navigator.of(context).push<bool>(
+                MaterialPageRoute(
+                    builder: (_) => const NuevaEntradaScreen()),
+              );
+              if (ok == true) ref.invalidate(bitacoraProvider);
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _linea(BuildContext context, WidgetRef ref, dynamic sg,
+      AsyncValue<List<BitacoraEntrada>> entradas) {
     return EstadoAsync<List<BitacoraEntrada>>(
       valor: entradas,
       onReintentar: () => ref.invalidate(bitacoraProvider),
@@ -374,6 +408,9 @@ class _Bitacora extends ConsumerWidget {
 
             return SgCard(
               padding: const EdgeInsets.all(14),
+              onTap: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
+              )),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [

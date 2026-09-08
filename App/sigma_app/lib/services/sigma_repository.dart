@@ -604,6 +604,39 @@ class SigmaRepository {
     return Paginado.desde(j, BitacoraEntrada.fromJson).datos;
   }
 
+  Future<List<BitacoraTipo>> tiposBitacora() async {
+    final j = await _api.get('${ApiConstants.bitacora}/tipos');
+    return Paginado.desde(j, BitacoraTipo.fromJson).datos;
+  }
+
+  Future<BitacoraFicha> entradaBitacora(int id) async {
+    final j = await _api.get('${ApiConstants.bitacora}/$id');
+    return BitacoraFicha.fromJson((j as Map).cast<String, dynamic>());
+  }
+
+  /// Escribir en la bitácora. **Se encola**, como toda captura de terreno: se
+  /// escribe delante del equipo y ahí casi nunca hay señal.
+  Future<void> escribirBitacora(Map<String, dynamic> cuerpo) =>
+      OutboxService.instance.encolar(
+        tipo: 'BITACORA',
+        titulo: 'Bitácora: ${cuerpo['titulo']}',
+        detalle: '${cuerpo['texto']}',
+        endpoint: ApiConstants.bitacora,
+        cuerpo: cuerpo,
+        uuid: '${cuerpo['uuid']}',
+      );
+
+  /// Corregir una entrada. **No reemplaza el texto**: se apila encima, y el
+  /// original sigue guardado. El motivo es obligatorio.
+  Future<void> rectificarBitacora(int id, String texto, String motivo) =>
+      _api.post('${ApiConstants.bitacora}/$id/rectificaciones', {
+        'texto': texto,
+        'motivo': motivo,
+      });
+
+  Future<void> comentarBitacora(int id, Map<String, dynamic> cuerpo) =>
+      _api.post('${ApiConstants.bitacora}/$id/comentarios', cuerpo);
+
   // ---- Compartir un trabajo ----
 
   /// Con quién se puede compartir: los asignados a esa instalación.

@@ -1730,6 +1730,125 @@ class BitacoraEntrada {
       );
 }
 
+/// Un tipo de entrada de bitácora: incidente, observación, cambio de turno.
+class BitacoraTipo {
+  const BitacoraTipo({
+    required this.bti_id,
+    required this.bti_nombre,
+    this.bti_codigo,
+  });
+
+  final int bti_id;
+  final String bti_nombre;
+  final String? bti_codigo;
+
+  /// El único tipo que exige severidad: sin ella, el turno siguiente no puede
+  /// saber qué mirar primero.
+  bool get esIncidente => (bti_codigo ?? '').toUpperCase() == 'INCIDENTE';
+
+  factory BitacoraTipo.fromJson(Map<String, dynamic> j) => BitacoraTipo(
+        bti_id: _i(j['bti_id']),
+        bti_nombre: _s(j['bti_nombre']),
+        bti_codigo: _sN(j['bti_codigo']),
+      );
+}
+
+/// Una corrección apilada sobre una entrada.
+///
+/// **No reemplaza el texto**: se apila encima. Lo que se escribió primero
+/// sigue guardado, y por eso la bitácora sirve como registro y no como un
+/// documento que cada uno deja como le conviene.
+class BitacoraRectificacion {
+  const BitacoraRectificacion({
+    required this.bre_id,
+    required this.bre_texto_rectificado,
+    required this.bre_motivo,
+    required this.bre_fecha_creacion,
+    this.USUARIO_NOMBRE,
+  });
+
+  final int bre_id;
+  final String bre_texto_rectificado;
+
+  /// Obligatorio. Sin él nadie puede saber después si el texto cambió porque
+  /// estaba mal escrito, porque se supo algo nuevo, o porque a alguien no le
+  /// gustó cómo sonaba.
+  final String bre_motivo;
+
+  final DateTime bre_fecha_creacion;
+  final String? USUARIO_NOMBRE;
+
+  factory BitacoraRectificacion.fromJson(Map<String, dynamic> j) =>
+      BitacoraRectificacion(
+        bre_id: _i(j['bre_id']),
+        bre_texto_rectificado: _s(j['bre_texto_rectificado']),
+        bre_motivo: _s(j['bre_motivo']),
+        bre_fecha_creacion: _f(j['bre_fecha_creacion']) ?? DateTime.now(),
+        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+      );
+}
+
+/// Un comentario en el hilo de una entrada.
+class BitacoraComentario {
+  const BitacoraComentario({
+    required this.bco_id,
+    required this.bco_texto,
+    required this.bco_fecha_creacion,
+    this.USUARIO_NOMBRE,
+    this.POR_VOZ = false,
+  });
+
+  final int bco_id;
+  final String bco_texto;
+  final DateTime bco_fecha_creacion;
+  final String? USUARIO_NOMBRE;
+  final bool POR_VOZ;
+
+  factory BitacoraComentario.fromJson(Map<String, dynamic> j) =>
+      BitacoraComentario(
+        bco_id: _i(j['bco_id']),
+        bco_texto: _s(j['bco_texto']),
+        bco_fecha_creacion: _f(j['bco_fecha_creacion']) ?? DateTime.now(),
+        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+        POR_VOZ: _b(j['POR_VOZ']),
+      );
+}
+
+/// La ficha de una entrada: lo que se escribió, lo que vale hoy, y el hilo.
+class BitacoraFicha {
+  const BitacoraFicha({
+    required this.entrada,
+    required this.TEXTO_ORIGINAL,
+    this.rectificaciones = const [],
+    this.comentarios = const [],
+  });
+
+  final BitacoraEntrada entrada;
+
+  /// Lo que se escribió la primera vez. La pantalla lo muestra **siempre**,
+  /// aunque haya rectificaciones encima: esconderlo convertiría la corrección
+  /// en una edición, que es justo lo que una bitácora no puede permitir.
+  final String TEXTO_ORIGINAL;
+
+  final List<BitacoraRectificacion> rectificaciones;
+  final List<BitacoraComentario> comentarios;
+
+  factory BitacoraFicha.fromJson(Map<String, dynamic> j) => BitacoraFicha(
+        entrada: BitacoraEntrada.fromJson(j),
+        TEXTO_ORIGINAL: _s(j['TEXTO_ORIGINAL']).isEmpty
+            ? _s(j['bit_texto'])
+            : _s(j['TEXTO_ORIGINAL']),
+        rectificaciones: ((j['rectificaciones'] as List?) ?? const [])
+            .map((e) => BitacoraRectificacion.fromJson(
+                (e as Map).cast<String, dynamic>()))
+            .toList(),
+        comentarios: ((j['comentarios'] as List?) ?? const [])
+            .map((e) =>
+                BitacoraComentario.fromJson((e as Map).cast<String, dynamic>()))
+            .toList(),
+      );
+}
+
 /// Un repuesto con saldo, marcando si **sirve para el equipo** de la orden.
 ///
 /// ## Por qué se marca y no se filtra

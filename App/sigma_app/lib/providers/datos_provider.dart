@@ -223,6 +223,12 @@ final bitacoraProvider = FutureProvider<List<BitacoraEntrada>>((ref) {
   return _repo.bitacora(instalacion: instalacion?.cin_id);
 });
 
+final tiposBitacoraProvider =
+    FutureProvider<List<BitacoraTipo>>((ref) => _repo.tiposBitacora());
+
+final entradaBitacoraProvider = FutureProvider.family<BitacoraFicha, int>(
+    (ref, id) => _repo.entradaBitacora(id));
+
 // ---- SIGMA AI (HU-173, HU-175) ----
 
 final prediccionesProvider = FutureProvider<List<Prediccion>>((ref) {
