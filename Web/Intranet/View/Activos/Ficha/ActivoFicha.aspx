@@ -1,5 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="ActivoFicha.aspx.cs" Inherits="View_Activos_Ficha_ActivoFicha" %>
 
+<%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
+
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-activo-ficha.css?vrs=2") %>' rel="stylesheet" />
     <script type="text/javascript">
@@ -25,6 +27,37 @@
     Toda la vida de un equipo en una sola pantalla.
 </asp:Content>
 
+<asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
+    <wuc:Filtro runat="server" ID="wucFiltro">
+        <FiltroPersonalizado>
+            <div class="row col-lg-12 col-md-12 col-xs-12">
+                <div class="col-lg-3 col-md-3 col-xs-12">
+                    <label for="cboPlanta" style="display:block; margin:0 0 4px;">Planta:</label>
+                    <rad:RadComboBox2 ID="cboPlanta" runat="server" Width="100%" AutoPostBack="true" />
+                </div>
+                <div class="col-lg-3 col-md-3 col-xs-12">
+                    <label for="cboArea" style="display:block; margin:0 0 4px;">Área:</label>
+                    <rad:RadComboBox2 ID="cboArea" runat="server" Width="100%" AutoPostBack="true" />
+                </div>
+                <div class="col-lg-3 col-md-3 col-xs-12">
+                    <label for="cboLinea" style="display:block; margin:0 0 4px;">Línea:</label>
+                    <rad:RadComboBox2 ID="cboLinea" runat="server" Width="100%" AutoPostBack="true" />
+                </div>
+                <div class="col-lg-3 col-md-3 col-xs-12">
+                    <label for="cboHabilitado" style="display:block; margin:0 0 4px;">Habilitado:</label>
+                    <rad:RadComboBox2 ID="cboHabilitado" runat="server" Width="100%">
+                        <Items>
+                            <rad:RadComboBoxItem Text="Todos" Value="" />
+                            <rad:RadComboBoxItem Text="Si" Value="1" />
+                            <rad:RadComboBoxItem Text="No" Value="0" />
+                        </Items>
+                    </rad:RadComboBox2>
+                </div>
+            </div>
+        </FiltroPersonalizado>
+    </wuc:Filtro>
+</asp:Content>
+
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
         <p>Seleccione un cliente en el encabezado para consultar sus activos.</p>
@@ -33,20 +66,18 @@
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
-            <%-- ====== SELECTOR DE ACTIVO (integrado, autocarga) ====== --%>
-            <div class="sigma-af-selector">
-                <span class="sigma-af-selector-ico"><i class="mdi mdi-cog-outline"></i></span>
-                <div class="sigma-af-selector-campo">
-                    <label>Activo</label>
-                    <rad:RadComboBox2 ID="cboActivo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboActivo_SelectedIndexChanged" Filter="Contains" Width="100%"
-                        EmptyMessage="Escriba o elija un activo…" />
-                </div>
-            </div>
+            <asp:HiddenField ID="hdnActivo" runat="server" Value="0" />
 
-            <asp:Panel ID="pnlSinActivo" runat="server" Visible="true" CssClass="sigma-af-inicial">
-                <i class="mdi mdi-gesture-tap"></i>
-                <p>Elija un activo arriba para ver su ficha completa y su historial.</p>
+            <%-- ====== LISTA DE RESULTADOS (se actualiza al filtrar; clic para abrir la ficha) ====== --%>
+            <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sigma-af-lista" style="margin-top:14px;">
+                <rad:RadGrid2 ID="gridResultados" runat="server" OnItemDataBound="gridResultados_ItemDataBound">
+                    <MasterTableView DataKeyNames="act_id" />
+                </rad:RadGrid2>
+            </asp:Panel>
+
+            <asp:Panel ID="pnlSinActivo" runat="server" Visible="false" CssClass="sigma-af-inicial">
+                <i class="mdi mdi-magnify"></i>
+                <p>No hay equipos que coincidan con el filtro. Ajusta la búsqueda o la ubicación.</p>
             </asp:Panel>
 
             <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sigma-af">
@@ -63,6 +94,9 @@
                         <p class="sigma-af-bajada">Vista 360° del activo, su configuración y trazabilidad operacional.</p>
                     </div>
                     <div class="sigma-af-hero-acc">
+                        <asp:LinkButton ID="btnVolver" runat="server" CssClass="sigma-af-btn is-plano" OnClick="btnVolver_Click">
+                            <i class="mdi mdi-arrow-left"></i> Volver a la lista
+                        </asp:LinkButton>
                         <asp:HyperLink ID="hlEditar" runat="server" CssClass="sigma-af-btn is-plano" NavigateUrl="javascript:void(0)">
                             <i class="mdi mdi-pencil-outline"></i> Editar activo
                         </asp:HyperLink>
@@ -115,7 +149,7 @@
                         <div class="sigma-af-tabs">
                             <button type="button" class="sigma-af-tab" data-tab="resumen">Resumen</button>
                             <button type="button" class="sigma-af-tab is-activa" data-tab="historial">Historial</button>
-                            <button type="button" class="sigma-af-tab" data-tab="componentes">Componentes</button>
+                            <button type="button" class="sigma-af-tab" data-tab="repuestos">Repuestos</button>
                             <button type="button" class="sigma-af-tab" data-tab="medidores">Medidores</button>
                             <button type="button" class="sigma-af-tab" data-tab="atributos">Atributos técnicos</button>
                             <button type="button" class="sigma-af-tab" data-tab="documentos">Documentos</button>
@@ -175,25 +209,25 @@
                             </div>
                         </div>
 
-                        <%-- COMPONENTES --%>
-                        <div class="sigma-af-pane" data-pane="componentes">
+                        <%-- REPUESTOS (compatibles con el activo, por su tipo/modelo) --%>
+                        <div class="sigma-af-pane" data-pane="repuestos">
                             <div class="sigma-af-card">
                                 <div class="sigma-af-tools">
-                                    <h3 style="margin:0;">Componentes del activo</h3>
-                                    <asp:HyperLink ID="hlComponentes" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                    <h3 style="margin:0;">Repuestos del activo</h3>
+                                    <asp:HyperLink ID="hlRepuestos" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
                                 </div>
-                                <asp:Panel ID="pnlSinComponentes" runat="server" Visible="false" CssClass="sigma-af-vacio">
-                                    <i class="mdi mdi-puzzle-outline"></i> Este activo aún no tiene componentes registrados.
+                                <asp:Panel ID="pnlSinRepuestos" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-package-variant-closed"></i> Este activo aún no tiene repuestos asignados. Asígnalos en Inventario → Compatibilidades.
                                 </asp:Panel>
                                 <div class="sigma-af-tabla">
-                                    <asp:Repeater ID="rptComponentes" runat="server">
-                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Componente</span><span>Tipo</span><span>Estado</span></div></HeaderTemplate>
+                                    <asp:Repeater ID="rptRepuestos" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Repuesto</span><span>Fabricante</span><span>Modelo</span></div></HeaderTemplate>
                                         <ItemTemplate>
                                             <div class="fila">
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_codigo"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("estado_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_codigo"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_fabricante"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("rep_modelo"))) %></span>
                                             </div>
                                         </ItemTemplate>
                                     </asp:Repeater>
@@ -239,13 +273,13 @@
                                 </asp:Panel>
                                 <div class="sigma-af-tabla">
                                     <asp:Repeater ID="rptAtributos" runat="server">
-                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Atributo</span><span>Tipo de dato</span><span>Unidad</span></div></HeaderTemplate>
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Atributo</span><span>Valor</span><span>Unidad</span></div></HeaderTemplate>
                                         <ItemTemplate>
                                             <div class="fila">
                                                 <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_codigo"))) %></span>
                                                 <span><%# Server.HtmlEncode(Convert.ToString(Eval("ate_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_dato_nombre"))) %></span>
-                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad_nombre"))) %></span>
+                                                <span><%# string.IsNullOrEmpty(Convert.ToString(Eval("valor_edit"))) ? "—" : Server.HtmlEncode(Convert.ToString(Eval("valor_edit"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("unidad"))) %></span>
                                             </div>
                                         </ItemTemplate>
                                     </asp:Repeater>
@@ -280,7 +314,7 @@
                             <h3>Acciones rápidas</h3>
                             <div class="sigma-af-acc">
                                 <asp:HyperLink ID="hlAccEditar" runat="server" NavigateUrl="javascript:void(0)"><i class="mdi mdi-pencil-outline"></i>Editar ficha<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
-                                <asp:HyperLink ID="hlAccComponentes" runat="server"><i class="mdi mdi-puzzle-outline"></i>Ver componentes<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
+                                <asp:HyperLink ID="hlAccRepuestos" runat="server"><i class="mdi mdi-package-variant-closed"></i>Ver repuestos<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                                 <asp:HyperLink ID="hlAccCambiar" runat="server"><i class="mdi mdi-swap-horizontal"></i>Cambiar estado<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                                 <asp:HyperLink ID="hlAccOT" runat="server" CssClass="is-primario"><i class="mdi mdi-plus-circle-outline"></i>Generar OT<span class="chev"><i class="mdi mdi-chevron-right"></i></span></asp:HyperLink>
                             </div>

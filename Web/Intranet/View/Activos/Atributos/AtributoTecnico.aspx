@@ -43,7 +43,7 @@
                 <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
             </div>
             <div class="sigma-modal-field is-medio">
-                <label>Nombre(*)</label>
+                <label>Atributo(*)</label>
                 <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
                 <asp:CustomValidator ID="cvNombre" runat="server" ControlToValidate="txtNombre"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Atr" />
@@ -60,11 +60,6 @@
                 <asp:CustomValidator ID="cvTipoDato" runat="server" ControlToValidate="cboTipoDato"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Atr" />
                 <span class="sigma-modal-ayuda">Cómo se captura el valor (número, texto…).</span>
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Unidad de medida</label>
-                <rad:RadComboBox2 ID="cboUnidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">kW, V, l/min… Opcional.</span>
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Orden</label>

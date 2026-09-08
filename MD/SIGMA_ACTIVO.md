@@ -38,6 +38,58 @@ estados, órdenes de trabajo y planes.
 
 ---
 
+## 1.1 El proceso de alta de un equipo (paso a paso)
+
+> Fuente: `SIGMA_MODELO_LOGICO_v2` (líneas 114, 201, 1001, 1014-1016) y
+> `SIGMA_ANEXO_A_CATALOGOS_v3` (línea 160). Este es **el orden correcto** para
+> registrar un equipo y evita la confusión más común: mezclar **equipo** con
+> **pieza**.
+
+### Los tres niveles (no confundirlos)
+| Nivel | Qué es | Catálogo / tabla | Ejemplo |
+|---|---|---|---|
+| **Ubicación** | Dónde está instalado (jerárquico) | `Cliente_Instalacion → Instalacion_Area` | Hamburgo S.A. → Panadería → Línea 1 |
+| **Tipo de activo** | La **clase de MÁQUINA** (jerárquico, corrige CLASIFICACIÓN 1/2) | `Activo_Tipo` | Panificación → **Modeladora** |
+| **Modelo de activo** | Fabricante + modelo **de esa máquina** (opcional) | `Activo_Modelo` | Fritsch — *(modelo)* |
+| **Componente / pieza** | Lo que va **dentro** de la máquina | `Activo_Componente` + `Componente_Tipo` | Motor, Sensor, Rodamiento, Polea… |
+
+> ⚠️ **Un MOTOR, un SENSOR, un RODAMIENTO son PIEZAS** (`Componente_Tipo`:
+> `1 MOTOR · 9 SENSOR · 3 RODAMIENTO …`), **no** tipos de máquina y **no**
+> `Activo_Modelo`. La marca/modelo de una pieza (p. ej. un motorreductor
+> "SEW W30 DT71D4/TH") va **en el componente** (`aco_nombre` + `aco_descripcion`),
+> no como modelo de máquina.
+
+### Orden de captura
+1. **Ubicación** — que exista la planta y su área: *Cliente → Instalaciones*
+   (`Cliente_Instalacion`, y `Instalacion_Area` jerárquica: Área → Línea).
+2. **Tipo de máquina** — que exista el `Activo_Tipo` del equipo (p. ej.
+   *Panificación → Modeladora*): *Configuración de activos → Tipos de activo*.
+3. **Modelo** *(opcional)* — si conoces fabricante+modelo de la máquina, créalo
+   en *Modelos de activo* (atado a ese tipo) y así se reutiliza en planes y
+   compatibilidad de repuestos.
+4. **Alta del activo** — *Activos → Nuevo*: nombre, **Tipo** (paso 2), Modelo
+   (paso 3, opcional), **Planta/Área** (paso 1), criticidad, estado, N° de serie.
+   El **código es automático** (`ACT-<id>`).
+5. **Despiece** — en la *Ficha 360° → pestaña Componentes* agregas las piezas
+   (motor, sensor, rodamiento, polín…), cada una con su `Componente_Tipo`.
+
+### Ejemplo trabajado (dato real cargado)
+```
+Hamburgo S.A. (planta)  →  Panadería (área)  →  Línea 1 (línea)
+   └─ Modeladora            tipo: Modeladora (bajo Panificación) · marca: Fritsch   [ACT-33]
+        ├─ Motor        → Motorreductor SEW W30 DT71D4/TH   (placa en su descripción)
+        ├─ Sensor       → Sensor de posición
+        ├─ Rodamiento   → Rodamiento eje motriz
+        └─ Otro         → Polín transportador
+```
+> Scripts de esta carga: `BD/136`–`BD/140`.
+> **Pendiente conocido**: una pieza aún **no tiene adjunto propio de archivos**
+> (no existe `avi_activo_componente`). El catálogo/foto/placa de una pieza es una
+> HU futura (*adjuntos a componentes*); hoy solo el **activo** y el **modelo de
+> máquina** guardan archivos.
+
+---
+
 ## 2. Todo lo que "cuelga" del activo
 
 | Entidad | Tabla | Relación | Pantalla actual |
