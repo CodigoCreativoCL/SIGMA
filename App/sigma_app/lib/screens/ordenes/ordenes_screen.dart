@@ -31,7 +31,15 @@ final busquedaOrdenProvider = StateProvider<String>((ref) => '');
 /// técnico que terminó antes tome trabajo en vez de irse, que es la diferencia
 /// entre una bandeja y una lista.
 class OrdenesScreen extends ConsumerStatefulWidget {
-  const OrdenesScreen({super.key});
+  const OrdenesScreen({super.key, this.embebida = false});
+
+  /// Dibujada DENTRO de «Mi trabajo», sin su propio `Scaffold` ni su barra.
+  ///
+  /// La misma lista sirve en los dos sitios —la bandeja y su acceso directo—
+  /// y por eso no se duplica: dos copias de la tarjeta serían dos sitios donde
+  /// arreglar el mismo defecto.
+  final bool embebida;
+
 
   @override
   ConsumerState<OrdenesScreen> createState() => _OrdenesScreenState();
@@ -98,7 +106,9 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
         bottom: false,
         child: Column(
           children: [
-            _Cabecera(),
+            // La cabecera propia se va cuando está embebida: la bandeja
+            // ya dijo «Mi trabajo» y no hace falta repetirlo debajo.
+            if (!widget.embebida) _Cabecera(),
             _Filtros(
               buscar: _buscar,
               pestana: _pestana,

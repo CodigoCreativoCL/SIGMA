@@ -583,6 +583,27 @@ class SigmaRepository {
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
+  // ---- Bitácora de planta (HU-130, HU-131) ----
+
+  /// La línea de tiempo de la planta.
+  ///
+  /// Ordenada por la fecha del **evento** y no la de creación: una entrada
+  /// escrita sin señal a las tres de la mañana y subida a las nueve pertenece
+  /// a la noche, y ponerla a las nueve descoloca el relato del turno.
+  Future<List<BitacoraEntrada>> bitacora({
+    int? instalacion,
+    bool soloAtencion = false,
+    int pagina = 1,
+  }) async {
+    final j = await _api.get(ApiConstants.bitacora, query: {
+      'pagina': pagina,
+      'tamano': 30,
+      'instalacion': ?instalacion,
+      if (soloAtencion) 'atencion': true,
+    });
+    return Paginado.desde(j, BitacoraEntrada.fromJson).datos;
+  }
+
   // ---- Compartir un trabajo ----
 
   /// Con quién se puede compartir: los asignados a esa instalación.

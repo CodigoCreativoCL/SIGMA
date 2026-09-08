@@ -211,6 +211,13 @@ final evidenciasProvider =
     FutureProvider.family<List<Evidencia>, (String, int)>(
         (ref, k) => _repo.evidencias(k.$1, k.$2));
 
+// ---- Bitácora de planta (HU-130, HU-131) ----
+
+final bitacoraProvider = FutureProvider<List<BitacoraEntrada>>((ref) {
+  final instalacion = ref.watch(instalacionProvider);
+  return _repo.bitacora(instalacion: instalacion?.cin_id);
+});
+
 // ---- SIGMA AI (HU-173, HU-175) ----
 
 final prediccionesProvider = FutureProvider<List<Prediccion>>((ref) {

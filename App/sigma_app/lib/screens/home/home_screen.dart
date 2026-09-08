@@ -19,7 +19,7 @@ import '../sigma_ai/sigma_ai_screen.dart';
 import '../alertas/alertas_screen.dart';
 import '../escaneo/escaneo_screen.dart';
 import '../mas/mas_screen.dart';
-import '../ordenes/ordenes_screen.dart';
+import '../trabajo/mi_trabajo_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
@@ -117,7 +117,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icono: Icons.assignment_outlined,
             texto: 'Mi trabajo',
             contador: ref.watch(ordenesTrabajoProvider).valueOrNull?.length ?? 0,
-            onTap: () => irA(context, const OrdenesScreen()),
+            // La bandeja única en vez de la lista de órdenes: tareas,
+            // pautas y bitácora dejan de estar escondidas en «Más».
+            onTap: () => irA(context, const MiTrabajoScreen()),
           ),
           SgDestino(
             icono: Icons.notifications_outlined,

@@ -15,13 +15,11 @@ import '../alertas/alertas_screen.dart';
 import '../escaneo/escaneo_screen.dart';
 import '../inventario/existencias_screen.dart';
 import '../pendientes/pendientes_screen.dart';
-import '../checklist/checklist_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
-import '../tareas/tareas_screen.dart';
-import '../ordenes/ordenes_screen.dart';
 import '../perfil/mi_perfil_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
+import '../trabajo/mi_trabajo_screen.dart';
 import '../sincronizacion/sincronizacion_screen.dart';
 
 /// El mapa de `app://…` a pantalla.
@@ -38,15 +36,61 @@ final rutasApp = <String, WidgetBuilder>{
   'app://escaneo': (_) => const EscaneoScreen(),
   'app://existencias': (_) => const ExistenciasScreen(),
   'app://permisos-trabajo': (_) => const PermisosTrabajoScreen(),
-  'app://ordenes-trabajo': (_) => const OrdenesScreen(),
-  'app://checklist': (_) => const ChecklistScreen(),
-  'app://tareas': (_) => const TareasScreen(),
+  // Los cuatro tipos abren la MISMA bandeja, cada uno en su pestaña. Así una
+  // ruta que el administrador registre en `Menus` sigue funcionando, y no
+  // aterriza en una pantalla distinta de la que se ve desde la barra.
+  'app://ordenes-trabajo': (_) =>
+      const MiTrabajoScreen(inicial: TipoTrabajo.ordenes),
+  'app://checklist': (_) => const MiTrabajoScreen(inicial: TipoTrabajo.pautas),
+  'app://tareas': (_) => const MiTrabajoScreen(inicial: TipoTrabajo.tareas),
+  'app://bitacora': (_) =>
+      const MiTrabajoScreen(inicial: TipoTrabajo.bitacora),
   'app://sigma-ai': (_) => const SigmaAiScreen(),
   'app://alertas': (_) => const AlertasScreen(),
   'app://sincronizacion': (_) => const SincronizacionScreen(),
   'app://pendientes': (_) => const PendientesScreen(),
   'app://contexto': (_) => const SeleccionContextoScreen(),
 };
+
+/// Las rutas del menú de esta persona que la app sabe abrir, en el orden en
+/// que las mandó el servidor.
+///
+/// Se cruzan las dos listas y no se confía en ninguna sola: el servidor dice
+/// **qué puede ver**, y `rutasApp` dice **qué sabe dibujar la app**. Una ruta
+/// autorizada sin pantalla no se ofrece —abriría un hueco—, y una pantalla que
+/// existe sin autorización tampoco —terminaría en 403—.
+List<String> _conRuta(List<MenuNodo> menu, Iterable<String> conocidas) {
+  final salida = <String>[];
+
+  void recorrer(List<MenuNodo> nodos) {
+    for (final n in nodos) {
+      final r = n.ruta;
+      if (r != null && conocidas.contains(r) && !salida.contains(r)) {
+        salida.add(r);
+      }
+      if (n.hijos.isNotEmpty) recorrer(n.hijos);
+    }
+  }
+
+  recorrer(menu);
+  return salida;
+}
+
+/// El nombre que le puso el administrador en `Menus`. Si el servidor no lo
+/// manda, la ruta sirve de respaldo antes que una fila sin texto.
+String _nombre(List<MenuNodo> menu, String ruta) {
+  String? encontrado;
+
+  void recorrer(List<MenuNodo> nodos) {
+    for (final n in nodos) {
+      if (n.ruta == ruta && (n.nombre).isNotEmpty) encontrado ??= n.nombre;
+      if (n.hijos.isNotEmpty) recorrer(n.hijos);
+    }
+  }
+
+  recorrer(menu);
+  return encontrado ?? ruta.replaceFirst('app://', '');
+}
 
 /// El quinto destino de la barra: todo lo que no cabe en los otros cuatro.
 ///
@@ -68,11 +112,21 @@ class MasScreen extends ConsumerWidget {
     final menu = ref.watch(menuProvider).valueOrNull ?? const <MenuNodo>[];
 
     // Lo que ya tiene su sitio en la barra o en la rejilla no se repite acá.
+    /* Lo que ya tiene sitio propio no se repite acá.
+
+       A la barra inferior y a la rejilla se suman ahora los cuatro tipos de
+       la bandeja «Mi trabajo»: ordenes, tareas, pautas y bitacora. Volver a
+       listarlos en «Más» daria dos caminos al mismo sitio, y el segundo enseña
+       que el primero no era el bueno. */
     const yaVisible = {
       'app://inicio',
       'app://escaneo',
       'app://alertas',
       'app://permisos-trabajo',
+      'app://ordenes-trabajo',
+      'app://tareas',
+      'app://checklist',
+      'app://bitacora',
     };
 
     /* Solo lo que se puede abrir de verdad.
@@ -136,67 +190,44 @@ class MasScreen extends ConsumerWidget {
           ),
           const SizedBox(height: 20),
 
-          // ---- Lo que la app hace sola ----
-          const SgRotulo('Trabajo'),
-          const SizedBox(height: 10),
-          SgBloque(
-            filas: [
-              SgFila(
-                icono: Icons.assignment_outlined,
-                texto: 'Mis órdenes de trabajo',
-                chevron: true,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const OrdenesScreen())),
-              ),
-              SgFila(
-                icono: Icons.fact_check_outlined,
-                texto: 'Pautas de inspección',
-                chevron: true,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const ChecklistScreen())),
-              ),
-              SgFila(
-                icono: Icons.task_alt,
-                texto: 'Mis tareas',
-                chevron: true,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const TareasScreen())),
-              ),
-              SgFila(
-                iconoWidget: const SgIconoIaApp(),
-                texto: 'Análisis de SIGMA AI',
-                chevron: true,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const SigmaAiScreen())),
-              ),
-              SgFila(
-                icono: Icons.warehouse_outlined,
-                texto: 'Existencias de bodega',
-                chevron: true,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const ExistenciasScreen())),
-              ),
-              SgFila(
-                icono: Icons.assignment_turned_in_outlined,
-                texto: 'Permisos de trabajo',
-                chevron: true,
-                onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const PermisosTrabajoScreen())),
-              ),
-              SgFila(
-                icono: Icons.qr_code_scanner,
-                texto: 'Escanear un código',
-                chevron: true,
-                onTap: () => Navigator.push(context,
-                    MaterialPageRoute(builder: (_) => const EscaneoScreen())),
-              ),
-            ],
-          ),
-          const SizedBox(height: 20),
+          /* ---- Trabajo: LO QUE EL SERVIDOR AUTORIZA, NO UNA LISTA EN DART
+
+             Estas filas estaban escritas a mano y se dibujaban para todos:
+             un bodeguero veía «Mis órdenes de trabajo» y un técnico veía
+             «Existencias», tuvieran o no el permiso. Al tocarlas, el servidor
+             respondía 403 — un botón que siempre falla es un botón roto.
+
+             Y es exactamente lo que la arquitectura prohíbe: «el menú se arma
+             desde `GET /menus`, jamás una lista en Dart» (Arquitectura §7).
+             Con dos modelos de permisos, el día que se revoque uno la web lo
+             esconde y el teléfono no.
+
+             Ahora el rótulo de cada fila y su ícono siguen siendo de la app
+             —el servidor manda rutas, no diseño— pero **qué filas existen lo
+             decide el menú de esta persona**. ---- */
+          if (_conRuta(menu, rutasApp.keys).isNotEmpty) ...[
+            const SgRotulo('Trabajo'),
+            const SizedBox(height: 10),
+            SgBloque(
+              filas: [
+                for (final ruta in _conRuta(menu, rutasApp.keys))
+                  SgFila(
+                    icono: _icono(ruta),
+                    iconoWidget:
+                        ruta == 'app://sigma-ai' ? const SgIconoIaApp() : null,
+                    texto: _nombre(menu, ruta),
+                    chevron: true,
+                    onTap: () {
+                      unawaited(
+                          ref.read(sincronizacionProvider.notifier).asegurar());
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: rutasApp[ruta]!));
+                    },
+                  ),
+              ],
+            ),
+            const SizedBox(height: 20),
+          ],
 
           // ---- Los datos de este teléfono ----
           const SgRotulo('Este teléfono'),

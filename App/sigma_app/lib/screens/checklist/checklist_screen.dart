@@ -21,7 +21,15 @@ import 'ejecucion_checklist_screen.dart';
 /// **«Continuar»** y abre esa ejecución. Empezar otra perdería lo caminado, y
 /// en una ronda eso significa volver a recorrer la planta.
 class ChecklistScreen extends ConsumerWidget {
-  const ChecklistScreen({super.key});
+  const ChecklistScreen({super.key, this.embebida = false});
+
+  /// Dibujada DENTRO de «Mi trabajo», sin su propio `Scaffold` ni su barra.
+  ///
+  /// La misma lista sirve en los dos sitios —la bandeja y su acceso directo—
+  /// y por eso no se duplica: dos copias de la tarjeta serían dos sitios donde
+  /// arreglar el mismo defecto.
+  final bool embebida;
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -30,7 +38,12 @@ class ChecklistScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: sg.fondo,
-      appBar: SgBarra(
+      // Embebida en «Mi trabajo» no lleva barra propia: la bandeja ya
+      // puso el título y las pestañas, y dos cabeceras seguidas se comen
+      // media pantalla en un teléfono.
+      appBar: embebida
+          ? null
+          : SgBarra(
         'Pautas de hoy',
         tamanoTitulo: 23,
         acciones: [

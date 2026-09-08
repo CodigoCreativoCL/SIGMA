@@ -29,7 +29,15 @@ import 'tarea_ficha_screen.dart';
 /// Si la calculara la app, dos teléfonos con distinta hora dirían cosas
 /// distintas sobre la misma tarea.
 class TareasScreen extends ConsumerWidget {
-  const TareasScreen({super.key});
+  const TareasScreen({super.key, this.embebida = false});
+
+  /// Dibujada DENTRO de «Mi trabajo», sin su propio `Scaffold` ni su barra.
+  ///
+  /// La misma lista sirve en los dos sitios —la bandeja y su acceso directo—
+  /// y por eso no se duplica: dos copias de la tarjeta serían dos sitios donde
+  /// arreglar el mismo defecto.
+  final bool embebida;
+
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +46,12 @@ class TareasScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: sg.fondo,
-      appBar: SgBarra(
+      // Embebida en «Mi trabajo» no lleva barra propia: la bandeja ya
+      // puso el título y las pestañas, y dos cabeceras seguidas se comen
+      // media pantalla en un teléfono.
+      appBar: embebida
+          ? null
+          : SgBarra(
         'Mis tareas',
         tamanoTitulo: 23,
         acciones: [

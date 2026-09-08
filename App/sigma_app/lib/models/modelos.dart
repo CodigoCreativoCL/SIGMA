@@ -1642,6 +1642,94 @@ class Paginado<T> {
   }
 }
 
+/// Una entrada de la bitácora de planta (HU-130, HU-131).
+///
+/// ## Por qué hay dos textos
+///
+/// `bit_texto` es lo que se escribió la primera vez y **no cambia jamás**;
+/// `TEXTO_VIGENTE` es lo que vale hoy —la última rectificación, o el original
+/// si no hubo—. Una bitácora que se puede editar en su sitio deja de servir
+/// como registro: lo que se corrige se apila encima, no borra lo anterior.
+class BitacoraEntrada {
+  const BitacoraEntrada({
+    required this.bit_id,
+    required this.bit_titulo,
+    required this.TEXTO_VIGENTE,
+    required this.bit_fecha_evento_utc,
+    this.bit_turno,
+    this.bit_requiere_atencion = false,
+    this.TIPO_NOMBRE,
+    this.SEVERIDAD_CODIGO,
+    this.SEVERIDAD_NOMBRE,
+    this.ACTIVO_ID,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.AREA_NOMBRE,
+    this.USUARIO_NOMBRE,
+    this.POR_VOZ = false,
+    this.COMENTARIOS = 0,
+    this.RECTIFICACIONES = 0,
+    this.EVIDENCIAS = 0,
+  });
+
+  final int bit_id;
+  final String bit_titulo;
+  final String TEXTO_VIGENTE;
+
+  /// La fecha del **evento**, no la de creación: una entrada escrita sin señal
+  /// a las tres de la mañana y subida a las nueve pertenece a la noche.
+  final DateTime bit_fecha_evento_utc;
+
+  final String? bit_turno;
+  final bool bit_requiere_atencion;
+  final String? TIPO_NOMBRE;
+  final String? SEVERIDAD_CODIGO;
+  final String? SEVERIDAD_NOMBRE;
+  final int? ACTIVO_ID;
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+  final String? AREA_NOMBRE;
+  final String? USUARIO_NOMBRE;
+  final bool POR_VOZ;
+  final int COMENTARIOS;
+
+  /// Cuántas veces se corrigió. La pantalla lo usa para marcarla
+  /// «rectificada» sin pedir la lista completa.
+  final int RECTIFICACIONES;
+
+  final int EVIDENCIAS;
+
+  bool get rectificada => RECTIFICACIONES > 0;
+
+  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
+      .where((s) => (s ?? '').isNotEmpty)
+      .join(' · ');
+
+  factory BitacoraEntrada.fromJson(Map<String, dynamic> j) => BitacoraEntrada(
+        bit_id: _i(j['bit_id']),
+        bit_titulo: _s(j['bit_titulo']),
+        TEXTO_VIGENTE: _s(j['TEXTO_VIGENTE']).isEmpty
+            ? _s(j['bit_texto'])
+            : _s(j['TEXTO_VIGENTE']),
+        bit_fecha_evento_utc:
+            _f(j['bit_fecha_evento_utc']) ?? DateTime.now().toUtc(),
+        bit_turno: _sN(j['bit_turno']),
+        bit_requiere_atencion: _b(j['bit_requiere_atencion']),
+        TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+        SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
+        SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
+        ACTIVO_ID: (j['ACTIVO_ID'] as num?)?.toInt(),
+        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+        ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+        POR_VOZ: _b(j['POR_VOZ']),
+        COMENTARIOS: _i(j['COMENTARIOS']),
+        RECTIFICACIONES: _i(j['RECTIFICACIONES']),
+        EVIDENCIAS: _i(j['EVIDENCIAS']),
+      );
+}
+
 /// Alguien de la misma instalación con quien se puede compartir un trabajo.
 ///
 /// La lista sale de `Cliente_Instalacion_Usuario`, la misma regla que las
