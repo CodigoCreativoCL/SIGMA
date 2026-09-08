@@ -172,6 +172,20 @@ namespace API.MVC.Model
         public string CENTRO_COSTO_NOMBRE { get; set; }
         public string PADRE_CODIGO { get; set; }
         public string PADRE_NOMBRE { get; set; }
+
+        /* LAS FOTOS VAN COMO RUTA DE BLOB, NO COMO ID NI COMO BYTES
+
+           La web resuelve un archivo por su id contra VerArchivo.aspx; la app
+           no tiene esa pagina y pide el binario por ruta
+           (GET /archivo/ver?ruta=). Sin estos dos campos el telefono no sabia
+           donde estaba la foto y dibujaba el marcador de "sin imagen" en
+           activos que si la tienen.
+
+           Y van rutas y no bytes: una ficha con la foto incrustada en base64
+           pesa lo mismo con o sin senal, y en una planta se abre la ficha
+           mucho mas seguido de lo que cambia la foto. */
+        public string FOTO_RUTA { get; set; }
+        public List<string> FOTOS { get; set; }
     }
 
     /// <summary>
@@ -188,6 +202,22 @@ namespace API.MVC.Model
         public string dispositivo { get; set; }
         public string app_version { get; set; }
         public string plataforma { get; set; }
+    }
+
+    /// <summary>
+    /// Una foto de un activo, tal como la devuelve `API_SEL_ACTIVO_FOTO`.
+    ///
+    /// Es interno del controller: lo que sale al cliente son las rutas dentro
+    /// de `ActivoDto`. Publicar el mime y el nombre original del archivo no le
+    /// sirve a la app —que solo va a pedir el binario— y expone como se llama
+    /// el archivo que subió alguien.
+    /// </summary>
+    public class ActivoFotoDto
+    {
+        public string ARC_RUTA { get; set; }
+        public string ARC_MIME { get; set; }
+        public string ARC_NOMBRE { get; set; }
+        public bool ES_PORTADA { get; set; }
     }
 
     /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
@@ -796,6 +826,903 @@ namespace API.MVC.Model
     {
         public int ABIERTAS { get; set; }
         public int NO_LEIDAS { get; set; }
+    }
+
+
+    // =======================================================================
+    //  BITACORA DE PLANTA                                  HU-130 y HU-131
+    // =======================================================================
+
+    /// <summary>
+    /// Una entrada en la linea de tiempo.
+    ///
+    /// Trae `bit_texto` -lo que se escribio- y `TEXTO_VIGENTE` -lo que vale
+    /// hoy, si hubo rectificaciones-. Los dos, siempre: el original no se pisa
+    /// nunca y la pantalla tiene que poder mostrarlo.
+    /// </summary>
+    public class BitacoraEntradaDto
+    {
+        public int bit_id { get; set; }
+        public Guid bit_uuid { get; set; }
+        public string bit_titulo { get; set; }
+
+        /// <summary>Lo que se escribio la primera vez. No cambia jamas.</summary>
+        public string bit_texto { get; set; }
+
+        /// <summary>Lo que vale hoy: la ultima rectificacion, o el original.</summary>
+        public string TEXTO_VIGENTE { get; set; }
+
+        public DateTime bit_fecha_evento_utc { get; set; }
+        public string bit_turno { get; set; }
+        public bool bit_requiere_atencion { get; set; }
+        public bool bit_offline_creado { get; set; }
+        public int TIPO_ID { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int? SEVERIDAD_ID { get; set; }
+        public string SEVERIDAD_CODIGO { get; set; }
+        public string SEVERIDAD_NOMBRE { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string INSTALACION_NOMBRE { get; set; }
+        public int? ORDEN_TRABAJO_ID { get; set; }
+        public int? ORDEN_CORRELATIVO { get; set; }
+        public int USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime bit_fecha_creacion { get; set; }
+        public bool POR_VOZ { get; set; }
+        public int COMENTARIOS { get; set; }
+
+        /// <summary>Cuantas veces se corrigio. La pantalla lo usa para marcar
+        /// «rectificada» sin pedir la lista completa.</summary>
+        public int RECTIFICACIONES { get; set; }
+
+        public int EVIDENCIAS { get; set; }
+
+        /// <summary>Del `COUNT(*) OVER ()` del SP: el total sin paginar.</summary>
+        public int TOTAL { get; set; }
+    }
+
+    public class BitacoraFichaDto
+    {
+        public int bit_id { get; set; }
+        public Guid bit_uuid { get; set; }
+        public string bit_titulo { get; set; }
+
+        /// <summary>Lo que se escribio la primera vez. La pantalla lo muestra
+        /// siempre, aunque haya rectificaciones encima.</summary>
+        public string TEXTO_ORIGINAL { get; set; }
+
+        public string TEXTO_VIGENTE { get; set; }
+        public DateTime bit_fecha_evento_utc { get; set; }
+        public string bit_turno { get; set; }
+        public bool bit_requiere_atencion { get; set; }
+        public bool bit_offline_creado { get; set; }
+        public DateTime? bit_fecha_sincronizacion_utc { get; set; }
+        public int TIPO_ID { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int? SEVERIDAD_ID { get; set; }
+        public string SEVERIDAD_NOMBRE { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string INSTALACION_NOMBRE { get; set; }
+        public int? ORDEN_TRABAJO_ID { get; set; }
+        public int? ORDEN_CORRELATIVO { get; set; }
+        public int? ALERTA_ID { get; set; }
+        public int USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime bit_fecha_creacion { get; set; }
+
+        public bool POR_VOZ { get; set; }
+        public string TEXTO_DICTADO { get; set; }
+        public decimal? DICTADO_CONFIANZA { get; set; }
+        public bool DICTADO_CORREGIDO { get; set; }
+        public int EVIDENCIAS { get; set; }
+
+        public List<BitacoraComentarioDto> comentarios { get; set; }
+        public List<BitacoraRectificacionDto> rectificaciones { get; set; }
+    }
+
+    /// <summary>
+    /// Una correccion. NO reemplaza al original: se apila encima.
+    /// `bre_motivo` es obligatorio y por eso viene siempre.
+    /// </summary>
+    public class BitacoraRectificacionDto
+    {
+        public int bre_id { get; set; }
+        public string bre_texto_rectificado { get; set; }
+        public string bre_motivo { get; set; }
+        public int USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime bre_fecha_creacion { get; set; }
+    }
+
+    public class BitacoraComentarioDto
+    {
+        public int bco_id { get; set; }
+        public int? PADRE_ID { get; set; }
+        public string bco_texto { get; set; }
+        public bool POR_VOZ { get; set; }
+        public string TEXTO_DICTADO { get; set; }
+        public bool DICTADO_CORREGIDO { get; set; }
+        public int USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime bco_fecha_creacion { get; set; }
+    }
+
+    public class BitacoraTipoDto
+    {
+        public int bti_id { get; set; }
+        public string bti_codigo { get; set; }
+        public string bti_nombre { get; set; }
+        public string bti_icono { get; set; }
+        public int? bti_orden { get; set; }
+    }
+
+    public class BitacoraAltaDto
+    {
+        /// <summary>Generado al **empezar a escribir**, no al enviar: un
+        /// reintento de la cola no puede dejar el turno contado dos veces.</summary>
+        public Guid uuid { get; set; }
+
+        public int instalacion { get; set; }
+        public int tipo { get; set; }
+        public string texto { get; set; }
+        public string titulo { get; set; }
+        public int? area { get; set; }
+        public int? activo { get; set; }
+        public int? componente { get; set; }
+        public int? orden_trabajo { get; set; }
+
+        /// <summary>Cuando paso, no cuando se envio. Una entrada escrita sin
+        /// senal a las tres de la manana pertenece a la noche.</summary>
+        public DateTime? fecha_evento { get; set; }
+
+        public string turno { get; set; }
+        public bool requiere_atencion { get; set; }
+
+        /// <summary>Obligatoria si el tipo es INCIDENTE: sin ella el turno
+        /// siguiente no puede saber que mirar primero.</summary>
+        public int? severidad { get; set; }
+
+        public decimal? latitud { get; set; }
+        public decimal? longitud { get; set; }
+        public bool offline { get; set; }
+
+        public Guid? dictado_uuid { get; set; }
+        public string texto_dictado { get; set; }
+        public decimal? dictado_confianza { get; set; }
+        public int? dictado_segundos { get; set; }
+        public Guid? dispositivo { get; set; }
+    }
+
+    public class BitacoraRectificacionAltaDto
+    {
+        public string texto { get; set; }
+
+        /// <summary>Obligatorio. Sin el, nadie puede saber despues si el texto
+        /// cambio porque estaba mal escrito, porque se supo algo nuevo, o
+        /// porque a alguien no le gusto como sonaba.</summary>
+        public string motivo { get; set; }
+    }
+
+    public class BitacoraComentarioAltaDto
+    {
+        public string texto { get; set; }
+        public int? padre { get; set; }
+        public Guid? dictado_uuid { get; set; }
+        public string texto_dictado { get; set; }
+        public decimal? dictado_confianza { get; set; }
+        public int? dictado_segundos { get; set; }
+        public Guid? dispositivo { get; set; }
+    }
+
+    // =====================================================================
+    // ORDENES DE TRABAJO (HU-110, HU-113, HU-114, HU-119, HU-121)
+    // =====================================================================
+
+    /// <summary>
+    /// Una orden en la bandeja o en la ficha.
+    ///
+    /// SITUACION Y PASOS VIENEN CALCULADOS
+    ///   El SP resuelve VENCIDA / VENCE HOY / EN PLAZO y cuenta los pasos
+    ///   listos. El telefono no resta fechas ni cuenta filas: si lo hiciera,
+    ///   dos aparatos con distinta hora darian veredictos distintos sobre la
+    ///   misma orden.
+    /// </summary>
+    public class OrdenTrabajoDto
+    {
+        public int otr_id { get; set; }
+        public Guid otr_uuid { get; set; }
+        public int otr_correlativo { get; set; }
+
+        /// <summary>"OT-1176". Lo arma el SP para que web y app lo escriban igual.</summary>
+        public string OT_NUMERO { get; set; }
+
+        public string otr_titulo { get; set; }
+        public string otr_descripcion { get; set; }
+        public string otr_notas { get; set; }
+        public string otr_resultado { get; set; }
+
+        public DateTime? otr_fecha_evento_utc { get; set; }
+        public DateTime? otr_fecha_programada_utc { get; set; }
+        public DateTime? otr_fecha_inicio_real_utc { get; set; }
+        public DateTime? otr_fecha_fin_real_utc { get; set; }
+        public int? otr_duracion_estimada_minuto { get; set; }
+        public int? otr_duracion_real_minuto { get; set; }
+        public bool otr_requiere_permiso { get; set; }
+
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_CODIGO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public int PRIORIDAD_ID { get; set; }
+        public string PRIORIDAD_CODIGO { get; set; }
+        public string PRIORIDAD_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public string ESTRATEGIA_NOMBRE { get; set; }
+
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+
+        public int? RESPONSABLE_ID { get; set; }
+        public string RESPONSABLE_NOMBRE { get; set; }
+
+        public int PASOS_TOTAL { get; set; }
+        public int PASOS_LISTOS { get; set; }
+
+        /// <summary>VENCIDA, VENCE HOY, EN PLAZO o SIN PLAZO. Lo decide el SP.</summary>
+        public string SITUACION { get; set; }
+        public int? DIAS_RESTANTES { get; set; }
+
+        public bool ES_MIA { get; set; }
+        public string PERMISO_NUMERO { get; set; }
+        public DateTime? otr_fecha_actualizacion { get; set; }
+    }
+
+    /// <summary>Un paso de la orden. El resultado sale del catalogo Resultado_Paso.</summary>
+    public class OrdenTrabajoPasoDto
+    {
+        public int otp_id { get; set; }
+        public int otp_orden_trabajo { get; set; }
+        public int otp_orden { get; set; }
+        public string otp_nombre { get; set; }
+        public string otp_descripcion { get; set; }
+        public bool otp_obligatorio { get; set; }
+
+        /// <summary>1 CONFORME, 2 NO CONFORME, 3 NO APLICA, 4 PENDIENTE.</summary>
+        public int RESULTADO_ID { get; set; }
+        public string RESULTADO_CODIGO { get; set; }
+        public string RESULTADO_NOMBRE { get; set; }
+
+        public string OBSERVACION { get; set; }
+        public int? EJECUTOR_ID { get; set; }
+        public string EJECUTOR_NOMBRE { get; set; }
+        public DateTime? otp_fecha_ejecucion_utc { get; set; }
+    }
+
+    public class OrdenTrabajoAsignadoDto
+    {
+        public int ota_id { get; set; }
+        public int? USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public bool ota_es_responsable { get; set; }
+        public string ROL_NOMBRE { get; set; }
+        public DateTime? ota_fecha_asignacion_utc { get; set; }
+        public DateTime? ota_fecha_aceptacion_utc { get; set; }
+    }
+
+    /// <summary>
+    /// La ficha completa en UNA respuesta.
+    ///
+    /// Cabecera, pasos y asignados juntos: son tres consultas para el servidor
+    /// y un solo viaje de red para el telefono, que es lo que importa con
+    /// senal de bodega.
+    /// </summary>
+    public class OrdenTrabajoFichaDto
+    {
+        public OrdenTrabajoDto orden { get; set; }
+        public List<OrdenTrabajoPasoDto> pasos { get; set; }
+        public List<OrdenTrabajoAsignadoDto> asignados { get; set; }
+    }
+
+    /// <summary>El alta desde terreno. Idempotente por uuid.</summary>
+    public class OrdenTrabajoAltaDto
+    {
+        /// <summary>
+        /// Lo genera el telefono AL ENCOLAR, no al enviar. Generado al enviar,
+        /// cada reintento traeria uno nuevo y la idempotencia no serviria.
+        /// </summary>
+        public Guid uuid { get; set; }
+
+        public int instalacion { get; set; }
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+        public int? activo { get; set; }
+        public int? area { get; set; }
+
+        /// <summary>1 PREVENTIVA, 2 CORRECTIVA, 3 PREDICTIVA.</summary>
+        public int? tipo { get; set; }
+        public int? estrategia { get; set; }
+
+        /// <summary>1 BAJA, 2 MEDIA, 3 ALTA, 4 CRITICA.</summary>
+        public int? prioridad { get; set; }
+
+        /// <summary>
+        /// Cuando ocurrio de verdad, no cuando se registro. Una OT abierta
+        /// tres horas despues de la falla no puede mentir sobre cuando paro
+        /// la maquina.
+        /// </summary>
+        public DateTime? fecha_evento_utc { get; set; }
+
+        public bool requiere_permiso { get; set; }
+
+        /// <summary>Un paso por linea. Entran en la misma transaccion que la OT.</summary>
+        public string pasos { get; set; }
+
+        public int? entrada_modo { get; set; }
+    }
+
+    /// <summary>El resultado de un paso.</summary>
+    public class PasoResultadoDto
+    {
+        /// <summary>1 CONFORME, 2 NO CONFORME, 3 NO APLICA.</summary>
+        public int resultado { get; set; }
+
+        public string observacion { get; set; }
+        public int? entrada_modo { get; set; }
+    }
+
+    public class OrdenTrabajoFinDto
+    {
+        public string resultado { get; set; }
+    }
+
+    // =====================================================================
+    // CHECKLIST EN TERRENO (HU-095)
+    // =====================================================================
+
+    /// <summary>Una pauta pendiente en la bandeja del tecnico.</summary>
+    public class ChecklistPendienteDto
+    {
+        public int coc_id { get; set; }
+        public Guid coc_uuid { get; set; }
+        public int VERSION_ID { get; set; }
+        public int VERSION_NUMERO { get; set; }
+        public string PLANTILLA_CODIGO { get; set; }
+        public string PLANTILLA_NOMBRE { get; set; }
+        public string PLANTILLA_DESCRIPCION { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public DateTime? coc_fecha_programada_utc { get; set; }
+        public DateTime? coc_fecha_limite_utc { get; set; }
+
+        /// <summary>VENCIDA, VENCE HOY, EN PLAZO o SIN PLAZO. Lo decide el SP.</summary>
+        public string SITUACION { get; set; }
+
+        public int ITEM_TOTAL { get; set; }
+
+        /// <summary>
+        /// Si ya hay un borrador de esta persona, la app lo RETOMA en vez de
+        /// empezar otro: una pauta a medias que se rehace pierde lo caminado.
+        /// </summary>
+        public int? EJECUCION_BORRADOR { get; set; }
+    }
+
+    public class ChecklistItemDto
+    {
+        public int cpi_id { get; set; }
+        public string cpi_codigo { get; set; }
+        public string cpi_texto { get; set; }
+        public string cpi_ayuda { get; set; }
+        public int cpi_orden { get; set; }
+        public bool cpi_obligatorio { get; set; }
+        public bool cpi_permite_comentario { get; set; }
+        public bool cpi_requiere_evidencia { get; set; }
+        public bool cpi_genera_medicion { get; set; }
+
+        /// <summary>Como se lee la pregunta en voz alta (seccion 2 del kit).</summary>
+        public string cpi_pregunta_voz { get; set; }
+
+        public int TIPO_ID { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public int? SECCION_ID { get; set; }
+        public string SECCION_NOMBRE { get; set; }
+        public int? SECCION_ORDEN { get; set; }
+
+        /// <summary>
+        /// El rango viaja con el item para que la app avise EN EL MOMENTO,
+        /// aunque el veredicto que queda grabado lo ponga el servidor.
+        /// </summary>
+        public decimal? civ_valor_minimo { get; set; }
+        public decimal? civ_valor_maximo { get; set; }
+        public string civ_mensaje { get; set; }
+        public bool? civ_requiere_comentario_fuera_rango { get; set; }
+        public bool? civ_genera_hallazgo { get; set; }
+    }
+
+    public class ChecklistOpcionDto
+    {
+        public int cio_id { get; set; }
+        public int ITEM_ID { get; set; }
+        public string cio_codigo { get; set; }
+        public string cio_texto { get; set; }
+        public decimal? cio_valor { get; set; }
+        public int cio_orden { get; set; }
+
+        /// <summary>
+        /// Aqui vive el significado: a «¿Hay fugas?» la conforme es NO, a
+        /// «¿Opera sin ruidos?» es SI. No se puede adivinar del valor.
+        /// </summary>
+        public bool cio_es_conforme { get; set; }
+
+        public bool cio_requiere_comentario { get; set; }
+    }
+
+    public class ChecklistPlantillaDto
+    {
+        public List<ChecklistItemDto> items { get; set; }
+        public List<ChecklistOpcionDto> opciones { get; set; }
+    }
+
+    public class ChecklistEjecucionDto
+    {
+        public int cej_id { get; set; }
+        public Guid cej_uuid { get; set; }
+        public int? OCURRENCIA_ID { get; set; }
+        public int VERSION_ID { get; set; }
+        public string PLANTILLA_NOMBRE { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public DateTime cej_fecha_inicio_utc { get; set; }
+        public DateTime? cej_fecha_fin_utc { get; set; }
+        public int? cej_duracion_minuto { get; set; }
+        public int? cej_item_total { get; set; }
+        public int? cej_item_respondido { get; set; }
+        public int? cej_item_no_conforme { get; set; }
+        public string cej_observacion { get; set; }
+        public bool cej_offline_creado { get; set; }
+
+        public List<ChecklistRespuestaDto> respuestas { get; set; }
+    }
+
+    public class ChecklistRespuestaDto
+    {
+        public int cer_id { get; set; }
+        public int ITEM_ID { get; set; }
+        public string cer_valor_texto { get; set; }
+        public decimal? cer_valor_numero { get; set; }
+        public bool? cer_valor_booleano { get; set; }
+        public DateTime? cer_valor_fecha { get; set; }
+        public bool cer_fuera_rango { get; set; }
+        public bool cer_no_aplica { get; set; }
+        public string cer_comentario { get; set; }
+        public int? cer_entrada_modo { get; set; }
+        public DateTime cer_fecha_respuesta_utc { get; set; }
+    }
+
+    public class ChecklistEjecucionAltaDto
+    {
+        /// <summary>Lo genera el telefono AL ENCOLAR, no al enviar.</summary>
+        public Guid uuid { get; set; }
+
+        public int? ocurrencia { get; set; }
+        public int? version { get; set; }
+        public int? activo { get; set; }
+        public string dispositivo { get; set; }
+
+        /// <summary>Si se abrio sin senal. Queda en cej_offline_creado.</summary>
+        public bool offline { get; set; }
+    }
+
+    public class ChecklistRespuestaAltaDto
+    {
+        public int item { get; set; }
+        public string valor_texto { get; set; }
+        public decimal? valor_numero { get; set; }
+        public bool? valor_booleano { get; set; }
+        public DateTime? valor_fecha { get; set; }
+
+        /// <summary>
+        /// Cuenta como respuesta para poder cerrar: no todo item corresponde a
+        /// todo equipo, y obligar a inventar un valor es peor.
+        /// </summary>
+        public bool no_aplica { get; set; }
+
+        public string comentario { get; set; }
+        public int? entrada_modo { get; set; }
+    }
+
+    public class ChecklistRespuestaResultadoDto
+    {
+        public int cer_id { get; set; }
+        public bool fuera_rango { get; set; }
+        public string mensaje { get; set; }
+    }
+
+    public class ChecklistCierreDto
+    {
+        public string observacion { get; set; }
+    }
+
+
+    // =======================================================================
+    //  TAREAS EN TERRENO                                    HU-103 y HU-104
+    // =======================================================================
+
+    public class TareaPendienteDto
+    {
+        public int toc_id { get; set; }
+        public Guid toc_uuid { get; set; }
+        public int TAREA_ID { get; set; }
+        public string TAREA_CODIGO { get; set; }
+        public string tar_titulo { get; set; }
+        public string tar_descripcion { get; set; }
+        public int? tar_duracion_estimada_minuto { get; set; }
+        public bool tar_requiere_evidencia { get; set; }
+        public string PRIORIDAD_CODIGO { get; set; }
+        public string PRIORIDAD_NOMBRE { get; set; }
+        public int PRIORIDAD_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_CODIGO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public DateTime? toc_fecha_programada_utc { get; set; }
+        public DateTime? toc_fecha_limite_utc { get; set; }
+        public int? ORDEN_TRABAJO_ID { get; set; }
+
+        /// <summary>VENCIDA, VENCE HOY, EN PLAZO o SIN PLAZO. Lo decide el SP.</summary>
+        public string SITUACION { get; set; }
+
+        public int COMENTARIOS { get; set; }
+
+        /// <summary>
+        /// Si viene, esta persona dejo una ejecucion a medio hacer y hay que
+        /// retomar **esa**, no abrir otra.
+        /// </summary>
+        public int? EJECUCION_ABIERTA { get; set; }
+    }
+
+    public class TareaDto
+    {
+        public int toc_id { get; set; }
+        public string TAREA_CODIGO { get; set; }
+        public string tar_titulo { get; set; }
+        public string tar_descripcion { get; set; }
+        public bool tar_requiere_evidencia { get; set; }
+        public int? tar_duracion_estimada_minuto { get; set; }
+        public string PRIORIDAD_NOMBRE { get; set; }
+        public int PRIORIDAD_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public DateTime? toc_fecha_limite_utc { get; set; }
+        public string toc_observacion { get; set; }
+        public int? EJECUCION_ID { get; set; }
+        public DateTime? tej_fecha_inicio_utc { get; set; }
+        public DateTime? tej_fecha_fin_utc { get; set; }
+        public int? tej_duracion_minuto { get; set; }
+        public string tej_resultado { get; set; }
+        public bool? tej_conforme { get; set; }
+
+        /// <summary>Cuantas fotos lleva. La app lo necesita para saber si
+        /// puede ofrecer «Listo» o si todavia falta la evidencia.</summary>
+        public int EVIDENCIAS { get; set; }
+
+        public List<TareaComentarioDto> comentarios { get; set; }
+    }
+
+    /// <summary>
+    /// Empezar y cerrar viajan en el mismo cuerpo. Son un solo acto en
+    /// terreno: si fueran dos envios, la cola podria entregar el cierre antes
+    /// que su apertura y eso no tiene arreglo.
+    /// </summary>
+    public class TareaEjecucionDto
+    {
+        public Guid uuid { get; set; }
+        public int ocurrencia { get; set; }
+        public bool finalizar { get; set; }
+
+        /// <summary>Si es false, `resultado` es obligatorio: una tarea que no
+        /// se hizo y no dice por que es indistinguible de una olvidada.</summary>
+        public bool? conforme { get; set; }
+
+        public string resultado { get; set; }
+        public int? minutos { get; set; }
+        public string dispositivo { get; set; }
+        public bool offline { get; set; }
+    }
+
+    public class TareaEjecucionResultadoDto
+    {
+        public int tej_id { get; set; }
+
+        /// <summary>El envio ya habia llegado. No es un error: es la cola
+        /// reintentando, y la respuesta correcta es la misma de la vez que
+        /// si llego.</summary>
+        public bool YA_ESTABA { get; set; }
+    }
+
+    public class TareaComentarioDto
+    {
+        public int tco_id { get; set; }
+        public int? PADRE_ID { get; set; }
+        public string tco_texto { get; set; }
+        public bool POR_VOZ { get; set; }
+
+        /// <summary>Lo que entendio el telefono, antes de que la persona lo
+        /// corrigiera. Vale la pena guardarlo: es la unica forma de saber si
+        /// dictar sirve en una sala de maquinas.</summary>
+        public string TEXTO_DICTADO { get; set; }
+
+        public decimal? DICTADO_CONFIANZA { get; set; }
+        public bool DICTADO_CORREGIDO { get; set; }
+        public int USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime tco_fecha_creacion { get; set; }
+    }
+
+    public class TareaComentarioAltaDto
+    {
+        /// <summary>Lo que la persona dio por bueno.</summary>
+        public string texto { get; set; }
+
+        public int? padre { get; set; }
+
+        /// <summary>Si vino de un dictado: el uuid lo genera el telefono al
+        /// terminar de hablar, no al enviar.</summary>
+        public Guid? dictado_uuid { get; set; }
+
+        /// <summary>Lo crudo. Cuando no se corrigio nada es igual a `texto`, y
+        /// esta bien que lo sea: importa poder ver cuando **no** lo fue.</summary>
+        public string texto_dictado { get; set; }
+
+        public decimal? dictado_confianza { get; set; }
+        public int? dictado_segundos { get; set; }
+        public int? dictado_intentos { get; set; }
+        public Guid? dispositivo { get; set; }
+    }
+
+
+    // =======================================================================
+    //  EVIDENCIA FOTOGRAFICA
+    // =======================================================================
+
+    /// <summary>
+    /// Lo que manda el telefono al subir una foto.
+    ///
+    /// El `uuid` se genera al **sacar** la foto, no al enviarla: una foto
+    /// tomada sin senal se reintenta varias veces, y sin esto la tarea
+    /// quedaria con la misma foto cuatro veces.
+    /// </summary>
+    public class EvidenciaAltaDto
+    {
+        public Guid uuid { get; set; }
+
+        /// <summary>TAREA · ORDEN · PASO · RESPUESTA · FALLA · HALLAZGO · ACTIVO</summary>
+        public string destino { get; set; }
+
+        public int destino_id { get; set; }
+
+        /// <summary>De `Archivo_Categoria`. 5 = DURANTE, que es lo que saca
+        /// alguien parado frente a la maquina.</summary>
+        public int categoria { get; set; }
+
+        public string nombre { get; set; }
+        public string mime { get; set; }
+        public string contenido_base64 { get; set; }
+        public int? ancho { get; set; }
+        public int? alto { get; set; }
+        public decimal? latitud { get; set; }
+        public decimal? longitud { get; set; }
+        public DateTime? captura_utc { get; set; }
+        public string dispositivo { get; set; }
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+    }
+
+    public class EvidenciaDto
+    {
+        public int arc_id { get; set; }
+        public Guid arc_uuid { get; set; }
+
+        /// <summary>La ruta del blob, no los bytes: el telefono pide cada
+        /// imagen por `/archivo/ver` y la cachea.</summary>
+        public string arc_ruta { get; set; }
+
+        public string arc_nombre_original { get; set; }
+        public string arc_mime { get; set; }
+        public long arc_byte { get; set; }
+        public int? arc_ancho_pixel { get; set; }
+        public int? arc_alto_pixel { get; set; }
+        public DateTime? arc_fecha_captura_utc { get; set; }
+        public string CATEGORIA_CODIGO { get; set; }
+        public string CATEGORIA_NOMBRE { get; set; }
+        public int? avi_orden { get; set; }
+        public string avi_titulo { get; set; }
+        public string avi_descripcion { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public DateTime arc_fecha_creacion { get; set; }
+    }
+
+
+    // =======================================================================
+    //  SIGMA AI                                            HU-173 y HU-175
+    // =======================================================================
+
+    /// <summary>
+    /// Una prediccion vigente, como se ve en el panel.
+    ///
+    /// `pre_probabilidad` NO es «probabilidad de falla»: es la parte del
+    /// intervalo de cruce que cae dentro del horizonte del modelo. El modelo no
+    /// ha visto ninguna falla y no puede afirmar nada sobre fallas; lo que si
+    /// puede es decir cuando una variable medida cruza un limite declarado, y
+    /// con cuanta incertidumbre.
+    /// </summary>
+    public class PrediccionDto
+    {
+        public int pre_id { get; set; }
+        public Guid pre_uuid { get; set; }
+        public int ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string INSTALACION_NOMBRE { get; set; }
+
+        /// <summary>Ruta del blob. La app la pide por `/archivo/ver` y la cachea.</summary>
+        public string ACTIVO_FOTO { get; set; }
+
+        public string VARIABLE_NOMBRE { get; set; }
+        public string UNIDAD { get; set; }
+        public decimal? VALOR_ACTUAL { get; set; }
+        public decimal? VALOR_CRITICO { get; set; }
+        public decimal? VALOR_ADVERTENCIA { get; set; }
+
+        public int? pre_dia_restante { get; set; }
+        public DateTime? pre_fecha_evento_estimada_utc { get; set; }
+        public decimal? pre_probabilidad { get; set; }
+
+        /// <summary>El R2 del ajuste. Que tan bien la recta describe las lecturas.</summary>
+        public decimal? pre_confianza { get; set; }
+
+        public decimal? DIA_MINIMO { get; set; }
+        public decimal? DIA_MAXIMO { get; set; }
+        public int? SEVERIDAD_ID { get; set; }
+        public string SEVERIDAD_CODIGO { get; set; }
+        public string SEVERIDAD_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public DateTime pre_fecha_calculo_utc { get; set; }
+        public string MODELO_NOMBRE { get; set; }
+        public int? MODELO_VERSION { get; set; }
+
+        /// <summary>Sin alerta la prediccion no se puede convertir en orden: no
+        /// llego al umbral en que el modelo pide que se le crea.</summary>
+        public int? ALERTA_ID { get; set; }
+
+        public int? ORDEN_TRABAJO_ID { get; set; }
+        public int? ORDEN_CORRELATIVO { get; set; }
+    }
+
+    public class PrediccionFichaDto : PrediccionDto
+    {
+        public string MODELO_DESCRIPCION { get; set; }
+        public string MODELO_ALGORITMO { get; set; }
+        public string MODELO_FORMATO { get; set; }
+        public string MODELO_OBJETIVO { get; set; }
+        public int? MODELO_HORIZONTE { get; set; }
+        public DateTime? pre_fecha_vigencia_hasta_utc { get; set; }
+        public string pre_motivo_descarte { get; set; }
+        public string REVISADA_POR { get; set; }
+        public DateTime? pre_fecha_revision_utc { get; set; }
+        public int EVIDENCIAS { get; set; }
+
+        public List<PrediccionRazonDto> razones { get; set; }
+        public List<PrediccionDatoDto> datos { get; set; }
+        public List<PrediccionPuntoDto> serie { get; set; }
+    }
+
+    /// <summary>
+    /// Una de las tres razones. Cada una nombra el numero del que sale: una
+    /// razon que no se puede verificar no ayuda a decidir si desarmar una
+    /// maquina.
+    /// </summary>
+    public class PrediccionRazonDto
+    {
+        public int pex_orden { get; set; }
+        public string pex_texto { get; set; }
+
+        /// <summary>AUMENTA o DISMINUYE, cuando corresponde.</summary>
+        public string pex_direccion { get; set; }
+
+        public decimal? pex_valor_observado { get; set; }
+        public decimal? pex_valor_referencia { get; set; }
+        public string CARACTERISTICA { get; set; }
+    }
+
+    public class PrediccionDatoDto
+    {
+        public string cmo_codigo { get; set; }
+        public string cmo_etiqueta { get; set; }
+        public string cmo_descripcion { get; set; }
+        public decimal? pcr_valor { get; set; }
+        public string pcr_valor_texto { get; set; }
+
+        /// <summary>El dato no se midio: se relleno. Se muestra distinto,
+        /// porque una prediccion sobre datos imputados vale menos.</summary>
+        public bool pcr_imputado { get; set; }
+    }
+
+    public class PrediccionPuntoDto
+    {
+        public DateTime FECHA { get; set; }
+        public decimal VALOR { get; set; }
+    }
+
+    /// <summary>
+    /// Un equipo vigilado que no produjo prediccion, y por que.
+    ///
+    /// SIN LECTURAS · FALTAN LECTURAS · SIN SENALES. El vacio es informacion:
+    /// un panel sin nada no distingue «nadie mide este equipo» de «se mide y
+    /// esta tranquilo», y son cosas muy distintas.
+    /// </summary>
+    public class VigiladoDto
+    {
+        public int ava_id { get; set; }
+        public int ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string VARIABLE_NOMBRE { get; set; }
+        public string UNIDAD { get; set; }
+        public decimal? VALOR_ADVERTENCIA { get; set; }
+        public decimal? VALOR_CRITICO { get; set; }
+        public int? CADA_HORAS { get; set; }
+        public int LECTURAS { get; set; }
+        public DateTime? ULTIMA_UTC { get; set; }
+        public decimal? ULTIMO_VALOR { get; set; }
+        public int? HORAS_SIN_LECTURA { get; set; }
+
+        /// <summary>Lleva mas tiempo sin medirse del que declara su frecuencia
+        /// esperada. No esta vigilado: esta abandonado.</summary>
+        public bool ATRASADA { get; set; }
+
+        public string MOTIVO { get; set; }
+    }
+
+    public class PrediccionRevisionDto
+    {
+        public bool aceptar { get; set; }
+
+        /// <summary>Obligatorio al descartar. Sin el, nadie puede aprender
+        /// despues si el modelo se equivoco o si la decision fue otra.</summary>
+        public string motivo { get; set; }
+    }
+
+    public class PrediccionRevisionResultadoDto
+    {
+        public int pre_id { get; set; }
+        public bool YA_ESTABA { get; set; }
     }
 
 }

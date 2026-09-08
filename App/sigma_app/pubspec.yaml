@@ -1,0 +1,59 @@
+name: sigma_app
+description: "SIGMA — Gestión de mantenimiento industrial. App de terreno."
+publish_to: "none"
+version: 0.1.0+1
+
+environment:
+  sdk: ^3.11.0
+
+# Cada paquete lleva el motivo por el que está.
+# Uno sin motivo escrito no entra. Ver MD/SIGMA_APP_README.md §7.
+dependencies:
+  flutter:
+    sdk: flutter
+
+  flutter_riverpod: ^2.6.1      # estado y dependencias
+  http: ^1.6.0                  # cliente HTTP; ApiClient es una clase, no hace falta Dio
+  shared_preferences: ^2.5.5    # sesión, tema, marcas simples
+  intl: ^0.20.2                 # fechas y números en es_CL
+  device_info_plus: ^11.2.0     # nombre del dispositivo y marca (guía OEM)
+  path_provider: ^2.1.5         # carpeta de caché de imágenes del Blob Storage
+  sqflite: ^2.4.1               # base local: sin esto la app no sirve sin señal
+  path: ^1.9.0                  # armar la ruta del .db
+  connectivity_plus: ^7.1.0     # disparar la cola en la transición offline->online
+  flutter_svg: ^2.0.17          # el logotipo de marca y los íconos de SIGMA AI, que son vectoriales
+  mobile_scanner: ^7.4.0        # QR de posición y de activo (HU-154, HU-067)
+  speech_to_text: ^7.4.0        # dictado por campo y panel global de voz (§2 del kit)
+  image_picker: ^1.1.2          # evidencia fotográfica (HU-103 y las que vengan)
+  cupertino_icons: ^1.0.8
+
+  # `flutter_image_compress` NO va: image_picker ya recorta y recomprime con
+  # maxWidth e imageQuality, y eso alcanza para una foto de evidencia. Una
+  # dependencia nativa más es una más que puede romper el build de Android.
+  #
+  # Se agregan cuando entre el bloque que las necesita:
+  #   firebase_core + firebase_messaging + flutter_local_notifications -> push
+  #   permission_handler, package_info_plus
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/
+
+  # Sora va como asset y NO por google_fonts: una app de terreno no puede
+  # depender de que haya red para tener tipografía.
+  #
+  # Es la **variable**, un solo archivo con el eje `wght` de 100 a 800. Por eso
+  # los estilos se piden con `fontVariations` y no solo con `fontWeight`: sin
+  # la variación, Flutter dibuja el peso 400 y redondea el resto a mano, y el
+  # 600 del kit se ve idéntico al 500.
+  fonts:
+    - family: Sora
+      fonts:
+        - asset: assets/fonts/Sora-VariableFont_wght.ttf

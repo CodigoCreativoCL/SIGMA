@@ -1,6 +1,7 @@
 ﻿using API.Services;
 using API.Utils;
 using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.IO;
 using System.Linq;
@@ -204,7 +205,7 @@ namespace API.Controllers
         {
             try
             {
-                ExigirClave();
+                ExigirClaveOSesion(ruta);
 
                 BlobService blob = new BlobService();
 
@@ -481,16 +482,92 @@ namespace API.Controllers
 
         public class ClaveInvalidaException : Exception { }
 
+        /// <summary>
+        /// Deja pasar a la web (clave de servicio) **o** a una persona con
+        /// sesión, y a esta última solo para un archivo de SU cliente.
+        ///
+        /// POR QUE HIZO FALTA
+        ///
+        ///   `/archivo/ver` nació para la web, que es un servidor y manda
+        ///   `X-Api-Key`. La app manda el JWT de la persona, así que **toda**
+        ///   imagen que pedía respondía 401 y las fichas se veían con el
+        ///   marcador de "sin foto" teniéndola. Se detectó el 07-09-2026.
+        ///
+        /// POR QUE NO BASTA CON "TIENE TOKEN VALIDO"
+        ///
+        ///   La ruta la escribe quien llama y es texto libre: aceptar
+        ///   cualquier ruta con cualquier token deja que un técnico de una
+        ///   empresa lea los archivos de otra tanteando rutas. SIGMA es
+        ///   multicliente y eso es una fuga entre clientes, no un detalle.
+        ///
+        ///   Por eso la ruta tiene que estar **registrada en `Archivo` a
+        ///   nombre del cliente del token**. Un blob que exista en el
+        ///   contenedor pero no en la tabla no se entrega.
+        ///
+        ///   La clave de servicio no pasa por esa comprobación a propósito:
+        ///   la web sirve archivos de administración —logos, comprobantes de
+        ///   suscripción— que no cuelgan de un cliente en contexto.
+        /// </summary>
+        private void ExigirClaveOSesion(string ruta)
+        {
+            if (HayClaveDeServicio()) return;
+
+            int cliente = SesionApi.ClienteId();
+
+            if (!SesionApi.HayUsuario() || cliente <= 0)
+                throw new ClaveInvalidaException();
+
+            if (string.IsNullOrEmpty(ruta))
+                throw new ClaveInvalidaException();
+
+            List<ArchivoRutaDto> r = Datos.Listar<ArchivoRutaDto>("API_SEL_ARCHIVO_RUTA",
+                new Dictionary<string, object>
+                {
+                    { "@RUTA", ruta },
+                    { "@CLIENTE", cliente }
+                });
+
+            /* El mismo error que una clave inválida, y no un 404: distinguir
+               "no es tuyo" de "no existe" convierte este endpoint en una
+               forma de averiguar qué archivos tiene otro cliente. */
+            if (r == null || r.Count == 0)
+                throw new ClaveInvalidaException();
+        }
+
+        /// <summary>Una fila de `API_SEL_ARCHIVO_RUTA`.</summary>
+        private class ArchivoRutaDto
+        {
+            public int ARC_ID { get; set; }
+            public string ARC_RUTA { get; set; }
+            public string ARC_MIME { get; set; }
+        }
+
         private void ExigirClave()
+        {
+            if (!HayClaveDeServicio()) throw new ClaveInvalidaException();
+        }
+
+        /// <summary>
+        /// True si el encabezado `X-Api-Key` trae la clave de servicio.
+        ///
+        /// Se separó de [ExigirClave] para poder preguntarlo sin que lance:
+        /// `/archivo/ver` acepta también un token de sesión, y con la versión
+        /// que tiraba excepción no había forma de intentar la segunda vía.
+        /// </summary>
+        private bool HayClaveDeServicio()
         {
             string esperada = ConfigurationManager.AppSettings["ServiciosApiKey"];
 
             /* Sin clave configurada NO se abre el endpoint: se cierra. Un
                servicio que se vuelve público porque falta una línea de
-               configuración es la forma más silenciosa de quedar expuesto. */
+               configuración es la forma más silenciosa de quedar expuesto.
+
+               Devolver false y no lanzar mantiene esa regla —quien viene por
+               clave de servicio queda fuera igual— sin cerrarle la puerta a
+               la persona con sesión, que se autentica por otro camino. */
             if (string.IsNullOrEmpty(esperada) ||
                 esperada.IndexOf("PENDIENTE", StringComparison.OrdinalIgnoreCase) >= 0)
-                throw new ClaveInvalidaException();
+                return false;
 
             string recibida = null;
 
@@ -499,8 +576,7 @@ namespace API.Controllers
             if (Request.Headers.TryGetValues("X-Api-Key", out valores))
                 recibida = valores.FirstOrDefault();
 
-            if (!IgualEnTiempoConstante(esperada, recibida))
-                throw new ClaveInvalidaException();
+            return IgualEnTiempoConstante(esperada, recibida);
         }
 
         /// <summary>

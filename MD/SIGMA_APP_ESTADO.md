@@ -12,7 +12,7 @@
 > **Regla: cada vez que se cierre un bloque de trabajo, se actualiza este
 > archivo en el mismo cambio.**
 
-**Última actualización:** 04-09-2026
+**Última actualización:** 07-09-2026
 **Estado:** bloques 0 a 7 hechos · **las 10 pantallas contra endpoints
 reales, la base local y la cola de salida funcionando**, y la sábana de datos
 construida y probada en el servidor · `flutter analyze` limpio, 12 tests verdes
@@ -163,6 +163,9 @@ Se va llenando. ✅ hecho · 🟡 hecho a medias, con lo que falta anotado · �
 | Pendientes de envío | ✅ pantalla + badge en el Home, con el motivo del rechazo |
 | Conectividad reactiva | ✅ `SyncService` despacha en la transición offline→online, debounce 2 s |
 | Alertas y push (HU-077) | 🟡 bandeja y badge desde `GET /alertas`; **falta la tabla y el servicio FCM** |
+| Dictado por voz (Anexo E) | ✅ el panel reparte por `clave` y **los valores llegan a los campos**; cifras en palabras y punto decimal |
+| Fotos de activos y repuestos | ✅ `GET /archivo/ver` acepta el token de sesión y `GET /activos/{id}` devuelve las rutas |
+| Lectura sin conexión (HU-151) | ✅ los listados de la sábana se leen de `cache_datos` cuando no hay señal |
 
 ---
 
@@ -191,12 +194,18 @@ Cosas que impiden avanzar, no que lo hacen incómodo.
    `GET /sincronizacion` y el SP `API_SEL_APP_SABANA_DATOS`. Bajar los
    catálogos con los endpoints paginados actuales son decenas de viajes.
 
-4. **No existe `Usuario_App_Dispositivo`.** Sin ella no hay push, y HU-077 en
+4. **El bloque 158 de la base todavía no está aplicado.** `API_SEL_ACTIVO_FOTO`
+   y `API_SEL_ARCHIVO_RUTA` están escritos y la API ya los llama, pero hasta
+   que se ejecute `BD/158_SPRINT3_ACTIVO_FOTO_APP.sql` contra la base, la
+   ficha de activo responde error y las fotos siguen sin verse. Es una
+   ejecución, no un desarrollo.
+
+5. **No existe `Usuario_App_Dispositivo`.** Sin ella no hay push, y HU-077 en
    la app queda en consulta manual.
 
-5. **SMTP sin configurar.** Bloquea HU-004 en la app igual que en la web.
+6. **SMTP sin configurar.** Bloquea HU-004 en la app igual que en la web.
 
-6. **La base no tiene datos operativos.** `Cliente_Instalacion`,
+7. **La base no tiene datos operativos.** `Cliente_Instalacion`,
    `Instalacion_Area`, `Activo`, `Repuesto`, `Bodega`, `Inventario_Saldo` y
    `Alerta` están en cero; sí hay 1 cliente, 11 usuarios, 82 catálogos y 9
    menús de ámbito APP. No bloquea construir pantallas —el login, el menú y los
@@ -367,6 +376,7 @@ curl -X POST http://localhost/SIGMA/Servicio/API/sesion -H "Content-Type: applic
 | 04-09-2026 | **Bloque 0 y andamiaje de la app.** La API se ejercitó por HTTP por primera vez y aparecieron **tres defectos que nadie podía ver sin llamarla**, además de los dos ya anotados. El mayor: `TokenValidationHandler` solo reconocía el prefijo `Base `, así que con el `Bearer` estándar **todo endpoint autenticado respondía 500 con cuerpo vacío**. También: el handler de plantilla pisaba el cuerpo de 46 códigos —incluido el `{id}` de todo 201—, `Conexion` relanzaba sin encadenar la `SqlException` (por eso **ninguna regla de negocio de un `SEL_` se traducía**), y `EscaneoController.cs` no estaba en el `API.csproj`. Los cinco corregidos y verificados; detalle en `SIGMA_ESTADO_DESARROLLO_API.md` §6. **33 endpoints llamados con el token de un técnico real.** Con eso destrabado nació **`App/sigma_app`**: tokens de marca, tema oscuro, `ApiClient` con `ApiException` tipada (401 ≠ 403 ≠ 409 ≠ red), `SesionService` con el JWT persistido, `sesionProvider`, pantalla de login y un Home que **arma el menú desde `GET /menus`**. `flutter analyze` → `No issues found!` y 6 tests verdes. **Hallazgo**: la base tiene la estructura pero cero plantas, áreas, activos, repuestos, bodegas y alertas (§6.6) |
 | 04-09-2026 | **Las 10 pantallas del brandkit, contra la API real.** Se rehízo el tema con la paleta exacta del kit (`#0F131E` de lienzo, `#48FCDD` de acento) y la tipografía **Sora variable** —un solo `.ttf` con el eje `wght`, pedido con `fontVariations`, no cuatro archivos—. Nacen `modelos.dart` (16 modelos calcados de los DTOs de la API), `sigma_repository.dart` (un método por endpoint) y `datos_provider.dart` (los `FutureProvider` que observa la UI). **Ningún texto de dato quedó en duro**: existencias, permisos de trabajo, alertas, menú, perfil, clientes, escaneo y ficha de activo salen de sus endpoints, con esqueleto de carga, estado vacío y el **mensaje del servidor** en el error. La sincronización (03) descarga los siete bloques de verdad y muestra el avance real. El movimiento de bodega (13) hace `POST /inventario-movimientos` con **`uuid` generado al abrir la pantalla** y trata el 409 como éxito. **Dos correcciones de dominio que pidió Bryan**: las fotos de activos, repuestos y componentes **no se empaquetan** —se piden a Blob Storage con `SigmaImagen`/`ImagenService`, con caché en disco y memoria y deduplicación—; y se quitaron los rótulos de telemetría IoT del mockup porque **no hay sensores**: las mediciones las toma una persona con la app, así que la ficha dice de cuándo es el dato y quién lo tomó. `flutter analyze` → `No issues found!`, 12 tests verdes |
 | 04-09-2026 | **Lo que hace que la app sirva en una planta: no perder trabajo.** Nace la base local `sigma_local.db` —caché de lo que baja, con su fecha, y la tabla `outbox`— y sobre ella `OutboxService`: toda escritura se guarda **en disco antes** de intentar la red y la pantalla confirma con eso, no esperando al servidor. El `uuid` se genera **al encolar**; el **409 se trata como éxito** porque es el duplicado del reintento; y **nada se descarta por cantidad de intentos** — solo un veredicto del servidor saca un ítem de la cola. `SyncService` despacha al abrir la app y en la transición offline→online, con debounce de 2 s porque la conectividad de Android parpadea. La pantalla de **pendientes** muestra lo que espera y lo rechazado **con el motivo tal como lo dijo el servidor**, y deja reintentar o corregir: sin ella la cola es una caja negra. Del lado del servidor se construyó la **sábana de datos** (bloque 140) y los **INS de captura** (141) con sus permisos (142) — detalle en `SIGMA_ESTADO_DESARROLLO_API.md`. La pantalla de lectura ya escribe de verdad, con el interruptor de reinicio que el SP exige. Y el **logotipo pasó a ser el SVG oficial** de `Web/Intranet/Imagen` en variante *dark*, no una reinterpretación dibujada a mano |
+| 07-09-2026 | **Tres defectos que hacían inservible lo que ya estaba construido.** (1) **El dictado no llegaba a los campos**: el micrófono grande de la pantalla de captura tenía `onValor: (_) {}` —descartaba la transcripción entera— y el de «Resultado» de la orden se dibujaba sin `onVoz`, o sea muerto. `SgMicrofonoCampo` solo podía devolver `campos.first`, así que una frase de terreno con cifra **y** observación nunca podía llenar los dos; ahora hay `onCampos` y la pantalla reparte por `clave`. El intérprete tampoco entendía `8.4` —el punto decimal que devuelve Android aunque se dicte «coma»: guardaba **8**— ni los números en palabras, que era el caso de «dicté y no puso nada». (2) **Ningún activo mostraba foto teniéndola**, por dos causas independientes: `GET /archivo/ver` exigía la clave de servicio `X-Api-Key`, así que **toda** imagen que pedía la app respondía 401; y `ActivoDto` no traía ninguna ruta de blob, así que el teléfono ni sabía qué pedir. Se abrió el endpoint al token de sesión **con comprobación de propiedad** —la ruta tiene que estar registrada en `Archivo` a nombre del cliente del token, o un técnico podría leer archivos de otra empresa tanteando rutas— y nació `API_SEL_ACTIVO_FOTO` (bloque 158). (3) **La sábana se bajaba y no se leía**: `cache_datos` se llenaba desde el primer día y ninguna pantalla lo consultaba, así que la app descargaba todo lo necesario para trabajar sin señal y sin señal no mostraba nada. Nace `cache_datos.dart` y el repositorio elige origen: sin señal va directo al disco —sin gastar quince segundos de timeout por pantalla—, con señal manda el servidor, y **un 403 sigue siendo un 403**, no se tapa con datos viejos. De rendimiento: `jsonDecode`/`jsonEncode` de los bloques grandes salen del hilo de la interfaz, la pantalla de existencias dejó de pedir dos veces la misma consulta, y las fotos que dan 404/401 no se vuelven a pedir. `flutter analyze` → `No issues found!`, **59 tests verdes**, y la API compila con 0 errores |
 ### Cómo actualizar este documento
 
 Al cerrar un bloque: agregar la fila en la bitácora, marcar el módulo en §5,
