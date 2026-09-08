@@ -144,7 +144,7 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ---
 
-## Bloque 5 — Imagen y avatar
+## Bloque 5 — Imagen y avatar — CERRADO
 
 - [x] **5.1 · La card de SIGMA AI en el Home no muestra la foto del activo.**
   La cadena estaba bien —`/predicciones` trae `ACTIVO_FOTO` y `/archivo/ver` la
@@ -162,10 +162,16 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
   `GET /mi-perfil` traen la ruta del blob; los cinco sitios donde aparece el
   avatar la pasan cuando la tienen.
 
-- [ ] **5.4 · «Más» más corporativo e intuitivo.**
-  **Preguntar antes de rediseñar.** «Más corporativo» puede ser la marca más
-  presente (logo, color de cabecera) o agrupar por módulo como la intranet: son
-  dos pantallas distintas.
+- [x] **5.4 · «Más» más corporativo e intuitivo.** Resuelto el 08-09-2026:
+  Bryan pidió la opción que cumpliera con el negocio. **Se descartó agrupar por
+  módulo como la intranet** —la app tiene ~10 pantallas y «Mi menú» quedó con 2
+  filas: encabezados de módulo sobre dos elementos son burocracia, y esa
+  jerarquía resuelve un problema de escala que la app no tiene—. Se hizo lo
+  otro, pero no por decoración: **el contexto pasa a protagonista**. SIGMA es
+  multi-cliente y multi-planta, y registrar con la planta equivocada deja el
+  dato mal en un sistema auditado. La marca va en la cabecera, el perfil a la
+  vista, y «Cambiar de contexto» sube de tercera fila de «Este teléfono» a
+  tarjeta propia con aviso cuando falta la planta.
 
 ---
 
