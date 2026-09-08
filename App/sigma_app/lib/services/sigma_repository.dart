@@ -454,16 +454,26 @@ class SigmaRepository {
 
   /// Telefono e idioma, nada mas. El nombre y el correo identifican a la
   /// persona dentro del cliente y se cambian en la web, con permiso.
+  ///
+  /// LOS NOMBRES SON LOS DEL DTO, NO LOS DE LA TABLA
+  ///   `MiPerfilEdicionDto` recibe `telefono` e `idioma`. Se mandaba
+  ///   `usu_telefono`, que es como se llama la COLUMNA: el binder no
+  ///   encontraba la propiedad, la dejaba en null, y `UPD_USUARIO_MI_PERFIL`
+  ///   asigna `usu_telefono = @TELEFONO` sin ISNULL. Es decir que guardar el
+  ///   telefono lo BORRABA, y la pantalla decia "guardado".
   Future<void> actualizarPerfil({String? telefono, int? idioma}) =>
       _api.put(ApiConstants.miPerfil, {
-        'usu_telefono': ?telefono,
-        'usu_idioma': ?idioma,
+        'telefono': ?telefono,
+        'idioma': ?idioma,
       });
 
   /// La actual se pide **siempre**, incluso con la sesion abierta: el telefono
   /// desbloqueado y sin dueno encima de una mesa es el caso normal en planta.
+  ///
+  /// Va por POST: la ruta esta declarada `[HttpPost]`. Con PUT la peticion
+  /// moria en 405 y nadie podia cambiar su clave desde la app.
   Future<void> cambiarPassword(String actual, String nueva) =>
-      _api.put(ApiConstants.miPassword, {
+      _api.post(ApiConstants.miPassword, {
         'password_actual': actual,
         'password_nuevo': nueva,
       });
