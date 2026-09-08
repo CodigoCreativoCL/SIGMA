@@ -40,6 +40,30 @@ namespace API.Controllers
         /// </summary>
         private const int MaxBytes = 12 * 1024 * 1024;
 
+        /* UN VIDEO NO CABE EN LO QUE CABE UNA FOTO
+
+           Doce megas alcanzan de sobra para una foto de terreno y para una nota
+           de voz de varios minutos, pero no para un video: treinta segundos de
+           camara de telefono pasan facil de veinte megas, y rechazarlo despues
+           de haberlo subido por la red de una planta es el peor momento para
+           decirlo.
+
+           Cuarenta y ocho megas en base64 son unos sesenta y cuatro, y
+           Web.config admite doscientos (maxRequestLength=204800 KB), asi que el
+           tope de la infraestructura no se toca. */
+        private const int MaxBytesVideo = 48 * 1024 * 1024;
+
+        /// <summary>
+        /// El tope segun lo que se sube. Un video puede pesar cuatro veces mas
+        /// que una foto.
+        /// </summary>
+        private static int TopeDe(string mime)
+        {
+            return (mime ?? "").ToLowerInvariant().StartsWith("video/")
+                ? MaxBytesVideo
+                : MaxBytes;
+        }
+
         /// <summary>
         /// Cada destino se cubre con el permiso de lo que se está haciendo.
         /// Un permiso propio de «subir fotos» sería una llave paralela: quien
@@ -55,7 +79,13 @@ namespace API.Controllers
                 { "RESPUESTA", "EJECUTAR CHECKLIST" },
                 { "HALLAZGO",  "EJECUTAR CHECKLIST" },
                 { "FALLA",     "EJECUTAR ORDEN TRABAJO" },
-                { "ACTIVO",    "VER ACTIVOS" }
+                { "ACTIVO",    "VER ACTIVOS" },
+
+                /* La anotacion de bitacora tambien lleva evidencia, y es donde
+                   mas hace falta: se escribe delante de la fuga, no despues.
+                   `avi_bitacora` existia desde el principio; lo que faltaba
+                   era esta linea y la rama de los dos SP (BD/198). */
+                { "BITACORA",  "REGISTRAR BITACORA" }
             };
 
         /// <summary>
@@ -79,8 +109,11 @@ namespace API.Controllers
 
                 ExigirPermiso(permiso);
 
+                // «Archivo» y no «foto»: por acá entran tambien notas de voz
+                // y videos, y un mensaje que habla de fotos manda a buscar el
+                // problema donde no está.
                 if (string.IsNullOrEmpty(dto.contenido_base64))
-                    return BadRequest("La foto está vacía.");
+                    return BadRequest("El archivo está vacío.");
 
                 byte[] contenido;
                 try
@@ -96,10 +129,13 @@ namespace API.Controllers
                 }
 
                 if (contenido.Length == 0)
-                    return BadRequest("La foto está vacía.");
+                    return BadRequest("El archivo está vacío.");
 
-                if (contenido.Length > MaxBytes)
-                    return BadRequest("La foto pesa demasiado. El máximo son 12 MB.");
+                int tope = TopeDe(dto.mime);
+
+                if (contenido.Length > tope)
+                    return BadRequest("El archivo pesa demasiado. El máximo son " +
+                                      (tope / (1024 * 1024)) + " MB.");
 
                 BlobService blob = new BlobService();
 
@@ -195,6 +231,31 @@ namespace API.Controllers
                 case "image/png": return "png";
                 case "image/webp": return "webp";
                 case "image/heic": return "heic";
+
+                /* AUDIO Y VIDEO
+
+                   La extension importa: el navegador y el reproductor del
+                   telefono eligen el decodificador por ella cuando el servidor
+                   de blobs no manda un Content-Type util, y un .jpg que en
+                   realidad es un .m4a no se abre en ninguna parte.
+
+                   m4a y mp4 son lo que graban Android y iOS por omision; los
+                   demas entran porque un archivo elegido de la galeria puede
+                   venir de cualquier sitio. */
+                case "audio/mp4":
+                case "audio/m4a":
+                case "audio/x-m4a": return "m4a";
+                case "audio/aac": return "aac";
+                case "audio/mpeg": return "mp3";
+                case "audio/ogg": return "ogg";
+                case "audio/wav":
+                case "audio/x-wav": return "wav";
+
+                case "video/mp4": return "mp4";
+                case "video/quicktime": return "mov";
+                case "video/3gpp": return "3gp";
+                case "video/webm": return "webm";
+
                 default: return "jpg";
             }
         }

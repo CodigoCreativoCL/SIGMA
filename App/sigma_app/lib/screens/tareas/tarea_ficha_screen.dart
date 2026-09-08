@@ -91,6 +91,10 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
                 destinoId: t.EJECUCION_ID!,
                 obligatoria: t.tar_requiere_evidencia,
                 puedeAgregar: !t.cerrada,
+                // Mismo criterio que la bitacora: en una tarea se relata lo que
+                // se encontro, y a veces se oye antes de verse.
+                conAudio: true,
+                conVideo: true,
                 onCambio: () =>
                     ref.invalidate(tareaProvider(widget.ocurrenciaId)),
               ),

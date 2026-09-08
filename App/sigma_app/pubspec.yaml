@@ -26,6 +26,7 @@ dependencies:
   speech_to_text: ^7.4.0        # dictado por campo y panel global de voz (§2 del kit)
   image_picker: ^1.1.2          # evidencia fotográfica (HU-103 y las que vengan)
   cupertino_icons: ^1.0.8
+  record: ^6.2.1                # nota de voz de bitacora y tarea (HU-140)
 
   # `flutter_image_compress` NO va: image_picker ya recorta y recomprime con
   # maxWidth e imageQuality, y eso alcanza para una foto de evidencia. Una

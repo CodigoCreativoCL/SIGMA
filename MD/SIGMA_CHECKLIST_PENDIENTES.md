@@ -122,7 +122,7 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ---
 
-## Bloque 4 — Lo levantado el 08-09 (§3.2 del traspaso)
+## Bloque 4 — Lo levantado el 08-09 (§3.2 del traspaso) — CERRADO
 
 - [x] **4.1 · Sumar compañero.** Hecho: filtro por perfil en el SP (`BD/196`),
   avatar con foto o iniciales, agrupado por oficio —perfil de respaldo— y campo
@@ -135,7 +135,12 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
   `SigmaRepository.perfilesDeTerreno`, `Companero.grupo` y
   `agruparCompaneros()` son una sola fuente para las dos hojas.
 
-- [ ] **4.4 · Bitácora y Tareas: audio, imágenes y video al Blob Storage.**
+- [x] **4.4 · Bitácora y Tareas: audio, imágenes y video al Blob Storage.**
+  Hecho. `BD/198` abre el destino `BITACORA` en los dos SP de evidencia
+  —`avi_bitacora` ya existía—; la API acepta mimes de audio y video con un tope
+  propio para video (48 MB contra 12); la app graba nota de voz (`record`, AAC
+  64 kbps mono) y video (`image_picker`, 1 min). Probado por HTTP: `.m4a` y
+  `.mp4` subidos a la entrada 4 y listados con su mime.
 
 ---
 

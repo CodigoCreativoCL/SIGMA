@@ -6,7 +6,15 @@ import 'package:image_picker/image_picker.dart';
 
 import 'outbox_service.dart';
 
-/// Una foto sacada en terreno, todavía sin enviar.
+/// Qué clase de evidencia es. Decide el ícono, el tope de peso en el servidor
+/// y con qué se abre en el teléfono.
+enum ClaseEvidencia { foto, audio, video }
+
+/// Una evidencia capturada en terreno, todavía sin enviar.
+///
+/// Se sigue llamando `FotoTomada` porque es el nombre que usan las cinco
+/// pantallas que la reciben, y renombrarlo tocaría todas para no ganar nada;
+/// pero ya no es solo una foto: también una nota de voz o un video.
 class FotoTomada {
   const FotoTomada({
     required this.uuid,
@@ -14,6 +22,9 @@ class FotoTomada {
     required this.bytes,
     this.ancho,
     this.alto,
+    this.clase = ClaseEvidencia.foto,
+    this.mime = 'image/jpeg',
+    this.segundos,
   });
 
   /// Generado al **sacar** la foto, no al enviarla. Una foto tomada sin señal
@@ -25,6 +36,20 @@ class FotoTomada {
   final int bytes;
   final int? ancho;
   final int? alto;
+
+  final ClaseEvidencia clase;
+
+  /// El mime real. Antes se mandaba `image/jpeg` en duro: para un .m4a eso
+  /// significa que el servidor le pone extensión .jpg y después no lo abre
+  /// nada.
+  final String mime;
+
+  /// Cuánto dura, si es audio o video. Para pintarlo en la miniatura: una nota
+  /// de voz sin duración obliga a abrirla para saber si son diez segundos o
+  /// tres minutos.
+  final int? segundos;
+
+  bool get esFoto => clase == ClaseEvidencia.foto;
 }
 
 /// Sacar fotos de evidencia.
@@ -37,12 +62,19 @@ class FotoTomada {
 /// que lo que queda en la cola de salida ya es pequeño —importante, porque esa
 /// cola espera en el teléfono hasta que haya señal, a veces horas—.
 ///
-/// ## El audio no se guarda, la foto sí
+/// ## El audio del DICTADO no se guarda; la nota de voz sí
 ///
-/// Son cosas distintas y conviene decirlo: la voz se transcribe y se descarta
-/// porque el texto sirve igual y grabar a la gente trabajando es una carga de
-/// privacidad innecesaria. La foto **es** la evidencia; sin ella no queda nada
-/// que mirar después.
+/// Son dos cosas distintas y la diferencia importa. Cuando alguien **dicta**
+/// para llenar un campo, la voz se transcribe y se descarta: el texto sirve
+/// igual y guardar la grabación sería una carga de privacidad sin uso.
+///
+/// Una **nota de voz** adjuntada a propósito a una entrada de bitácora o a una
+/// tarea es lo contrario: es evidencia, la persona decidió dejarla, y a veces
+/// dice lo que un texto no —el ruido del rodamiento, por ejemplo—. Esa se
+/// sube y se conserva, igual que la foto.
+///
+/// El límite es quién decide: el dictado lo descarta la app, la nota la guarda
+/// porque se la pidieron.
 class EvidenciaService {
   EvidenciaService._();
 
@@ -127,6 +159,36 @@ class EvidenciaService {
     );
   }
 
+  /// Graba un video con la cámara.
+  ///
+  /// Un minuto de tope: no es un documental, es «mira cómo suena esto girando».
+  /// Y el tope del servidor son 48 MB, que un video largo pasa sin esfuerzo.
+  Future<FotoTomada?> grabarVideo() => _video(ImageSource.camera);
+
+  /// Elige un video de la galería.
+  Future<FotoTomada?> elegirVideo() => _video(ImageSource.gallery);
+
+  Future<FotoTomada?> _video(ImageSource origen) async {
+    final XFile? x = await _selector.pickVideo(
+      source: origen,
+      maxDuration: const Duration(minutes: 1),
+    );
+
+    if (x == null) return null;
+
+    final archivo = File(x.path);
+
+    return FotoTomada(
+      uuid: OutboxService.nuevoUuid(),
+      archivo: archivo,
+      bytes: await archivo.length(),
+      clase: ClaseEvidencia.video,
+      // Lo que graban Android y iOS por omisión. La galería puede traer otra
+      // cosa, y para eso está el mapa de extensiones del servidor.
+      mime: x.path.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4',
+    );
+  }
+
   /// El cuerpo que espera `POST /evidencias`.
   ///
   /// Va en base64 y no como multipart porque la cola de salida guarda cuerpos
@@ -149,7 +211,9 @@ class EvidenciaService {
       'destino_id': destinoId,
       'categoria': categoria,
       'nombre': foto.archivo.uri.pathSegments.last,
-      'mime': 'image/jpeg',
+      // El mime REAL. En duro era 'image/jpeg', asi que un .m4a llegaba al
+      // servidor como foto, se guardaba con extension .jpg y no lo abria nada.
+      'mime': foto.mime,
       'contenido_base64': base64Encode(datos),
       'captura_utc': DateTime.now().toUtc().toIso8601String(),
       'titulo': ?titulo,

@@ -12,6 +12,7 @@ import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_evidencia.dart';
 
 /// La ficha de una entrada de bitácora — HU-131.
 ///
@@ -311,6 +312,26 @@ class _EntradaBitacoraScreenState extends ConsumerState<EntradaBitacoraScreen> {
                     ),
                   ],
                 ),
+              ),
+
+              /* LA EVIDENCIA DE UNA ANOTACION
+
+                 Foto, nota de voz y video. Los tres, porque una entrada de
+                 bitacora es un relato y hay cosas que el texto no lleva: el
+                 ruido de un rodamiento o el golpeteo de una bomba se entienden
+                 en treinta segundos de audio y no en un parrafo.
+
+                 `avi_bitacora` existia en la base desde el principio; lo que
+                 faltaba era la rama de @DESTINO en los dos SP (BD/198) y esta
+                 pantalla. */
+              const SizedBox(height: 14),
+              SgEvidencias(
+                destino: 'BITACORA',
+                destinoId: widget.entradaId,
+                conAudio: true,
+                conVideo: true,
+                onCambio: () =>
+                    ref.invalidate(entradaBitacoraProvider(widget.entradaId)),
               ),
 
               /* EL ORIGINAL SIGUE A LA VISTA
