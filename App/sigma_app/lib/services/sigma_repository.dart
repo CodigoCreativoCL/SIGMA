@@ -582,6 +582,22 @@ class SigmaRepository {
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
+  // ---- Favoritos ----
+
+  /// Marca o desmarca, y devuelve **cómo quedó**.
+  ///
+  /// Un solo endpoint que alterna, y no un alta y una baja: la estrella es un
+  /// interruptor y la app no sabe si el favorito ya estaba. Con dos endpoints,
+  /// dos toques rápidos pueden cruzarse y dejar el estado invertido respecto
+  /// de lo que muestra la pantalla.
+  Future<bool> alternarFavorito(String entidad, int id) async {
+    final j = await _api.post(ApiConstants.favoritos, {
+      'entidad': entidad,
+      'entidad_id': id,
+    });
+    return (j is Map && j['es_favorito'] == true);
+  }
+
   // ---- SIGMA AI (HU-173, HU-175) ----
 
   Future<List<Prediccion>> predicciones({int? instalacion}) async {

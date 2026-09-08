@@ -4,11 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/sync_service.dart';
+import '../../services/api_client.dart';
+import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../../widgets/comun/sigma_voz.dart';
 import 'orden_ficha_screen.dart';
 
 final busquedaOrdenProvider = StateProvider<String>((ref) => '');
@@ -60,13 +63,31 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     final listaMias = mias.valueOrNull ?? const <OrdenTrabajo>[];
     final hoy = listaMias.where(_apremia).toList();
 
+    final favoritas = listaMias.where((o) => o.ES_FAVORITO).toList();
+
     var visibles = switch (_pestana) {
       0 => hoy,
       1 => listaMias,
+      3 => favoritas,
       _ => disponibles.valueOrNull ?? const <OrdenTrabajo>[],
     };
     if (filtro.isNotEmpty) {
       visibles = visibles.where((o) => _coincide(o, filtro)).toList();
+    }
+
+    /* LO FIJADO VA ARRIBA, EN TODAS LAS PESTAÑAS
+
+       Es lo que hace útil a la estrella: si el favorito solo se viera dentro
+       de su propio filtro, habría que acordarse de cambiar de pestaña para
+       encontrarlo, y entonces marcarlo no ahorra nada.
+
+       Se ordena con `sort` estable sobre una copia: el orden que trae el
+       servidor —lo más urgente primero— se conserva dentro de cada grupo. */
+    if (_pestana != 3) {
+      visibles = [...visibles]..sort((a, b) {
+          if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
+          return a.ES_FAVORITO ? -1 : 1;
+        });
     }
 
     final fuente = _pestana == 2 ? disponibles : mias;
@@ -81,6 +102,7 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
             _Filtros(
               buscar: _buscar,
               pestana: _pestana,
+              favoritos: favoritas.length,
               hoy: hoy.length,
               mias: listaMias.length,
               disponibles: (disponibles.valueOrNull ?? const []).length,
@@ -197,6 +219,7 @@ class _Filtros extends StatelessWidget {
   const _Filtros({
     required this.buscar,
     required this.pestana,
+    required this.favoritos,
     required this.hoy,
     required this.mias,
     required this.disponibles,
@@ -206,6 +229,9 @@ class _Filtros extends StatelessWidget {
 
   final TextEditingController buscar;
   final int pestana;
+
+  /// Cuántas fijó esta persona. Cero esconde el chip.
+  final int favoritos;
   final int hoy;
   final int mias;
   final int disponibles;
@@ -251,14 +277,18 @@ class _Filtros extends StatelessWidget {
                       ),
                     ),
                   ),
-                  SgBotonIcono(Icons.mic_none,
-                      color: sg.primarioTexto,
-                      tamano: 20,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'El dictado en la búsqueda llega más adelante.')),
-                          )),
+                  // Dictar la búsqueda: un código como «MOT-001» con guantes
+                  // es donde más se falla al teclear, y buscarlo mal devuelve
+                  // una lista vacía que parece que la orden no existe.
+                  SgMicrofonoCampo(
+                    rotulo: 'Buscar',
+                    soloTexto: true,
+                    lado: 40,
+                    onValor: (v) {
+                      buscar.text = v;
+                      onBuscar(v);
+                    },
+                  ),
                 ],
               ),
             ),
@@ -282,6 +312,16 @@ class _Filtros extends StatelessWidget {
                   colorContador: SgColor.verde,
                   elegido: pestana == 2,
                   onTap: () => onPestana(2)),
+              // El chip de favoritos solo aparece cuando hay alguno: un filtro
+              // que siempre da cero ocupa sitio y enseña a ignorar la fila.
+              if (favoritos > 0) ...[
+                const SizedBox(width: 8),
+                _Chip('★ Míos',
+                    contador: favoritos,
+                    colorContador: SgColor.ambar,
+                    elegido: pestana == 3,
+                    onTap: () => onPestana(3)),
+              ],
             ],
           ),
         ],
@@ -438,8 +478,19 @@ class _Tarjeta extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text('${orden.OT_NUMERO} · ${orden.otr_titulo}',
-                        style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(
+                              '${orden.OT_NUMERO} · ${orden.otr_titulo}',
+                              style: sora(16, 600,
+                                  color: sg.tinta, alto: 1.35)),
+                        ),
+                        const SizedBox(width: 6),
+                        _Estrella(orden: orden),
+                      ],
+                    ),
                     // Qué equipo es, antes de dónde está: en una bandeja
                     // de doce órdenes eso es lo que se busca primero.
                     if (orden.activo.isNotEmpty) ...[
@@ -545,6 +596,77 @@ class _Tarjeta extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+
+/// La estrella que fija una orden arriba de la bandeja.
+///
+/// ## Por qué se pinta antes de que responda el servidor
+///
+/// Tocar una estrella y esperar medio segundo a que se encienda se siente
+/// roto, y con señal de planta ese medio segundo son tres. Se pinta al
+/// instante y, si el servidor dice otra cosa, se corrige — que es lo que casi
+/// nunca pasa y, cuando pasa, la persona ve la verdad.
+///
+/// ## Por qué no se invalida la lista entera
+///
+/// `ref.invalidate` volvería a pedir la bandeja completa y la reordenaría
+/// **bajo el dedo**: la orden que se acaba de marcar saltaría a la primera
+/// posición y la siguiente que se quiere marcar ya no está donde estaba. El
+/// reordenamiento se aplica al volver a entrar.
+class _Estrella extends ConsumerStatefulWidget {
+  const _Estrella({required this.orden});
+
+  final OrdenTrabajo orden;
+
+  @override
+  ConsumerState<_Estrella> createState() => _EstrellaState();
+}
+
+class _EstrellaState extends ConsumerState<_Estrella> {
+  bool? _local;
+  bool _ocupado = false;
+
+  bool get _marcada => _local ?? widget.orden.ES_FAVORITO;
+
+  Future<void> _alternar() async {
+    if (_ocupado) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    final antes = _marcada;
+
+    setState(() {
+      _local = !antes;
+      _ocupado = true;
+    });
+
+    try {
+      final ahora = await SigmaRepository.instance
+          .alternarFavorito('ORDEN', widget.orden.otr_id);
+      if (!mounted) return;
+      setState(() => _local = ahora);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      // Se devuelve al estado real: una estrella encendida que el servidor no
+      // guardó es una mentira que se descubre al reabrir la app.
+      setState(() => _local = antes);
+      mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return SgBotonIcono(
+      _marcada ? Icons.star : Icons.star_border,
+      color: _marcada ? sg.ambarTexto : sg.tinta3,
+      lado: 34,
+      tamano: 20,
+      onTap: _alternar,
     );
   }
 }

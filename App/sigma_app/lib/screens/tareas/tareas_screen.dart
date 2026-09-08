@@ -5,6 +5,8 @@ import 'package:intl/intl.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/sync_service.dart';
+import '../../services/api_client.dart';
+import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../theme/sigma_tokens.dart';
@@ -62,7 +64,21 @@ class TareasScreen extends ConsumerWidget {
           detalle: 'Las tareas se programan desde la web. Cuando te toque una, '
               'aparece acá y se puede hacer sin señal.',
         ),
-        child: (lista) => RefreshIndicator(
+        child: (sinOrdenar) {
+          /* LO FIJADO VA ARRIBA
+
+             Es lo que hace útil a la estrella: si el favorito solo se viera
+             dentro de su propio filtro habría que ir a buscarlo, y entonces
+             marcarlo no ahorra nada.
+
+             `sort` sobre una copia y estable: el orden que trae el servidor
+             —lo más urgente primero— se conserva dentro de cada grupo. */
+          final lista = [...sinOrdenar]..sort((a, b) {
+              if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
+              return a.ES_FAVORITO ? -1 : 1;
+            });
+
+          return RefreshIndicator(
           onRefresh: () async => ref.invalidate(tareasPendientesProvider),
           child: ListView.separated(
             padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
@@ -78,7 +94,8 @@ class TareasScreen extends ConsumerWidget {
               },
             ),
           ),
-        ),
+        );
+        },
       ),
     );
   }
@@ -168,8 +185,21 @@ class _Tarjeta extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(tarea.tar_titulo,
-                        style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: Text(tarea.tar_titulo,
+                              style: sora(16, 600,
+                                  color: sg.tinta, alto: 1.35)),
+                        ),
+                        const SizedBox(width: 6),
+                        // El mismo gesto que en las órdenes: una estrella que
+                        // significa lo mismo en las dos bandejas, y no dos
+                        // formas de fijar según dónde se esté.
+                        _Estrella(tarea: tarea),
+                      ],
+                    ),
                     // Qué equipo, y después dónde está.
                     if (tarea.activo.isNotEmpty) ...[
                       const SizedBox(height: 5),
@@ -253,4 +283,61 @@ class _Renglon extends StatelessWidget {
           ),
         ],
       );
+}
+
+
+/// La estrella de una tarea. Ver `_Estrella` de la bandeja de órdenes: mismo
+/// comportamiento —se pinta al instante y se corrige si el servidor discrepa—
+/// porque es el mismo gesto.
+class _Estrella extends ConsumerStatefulWidget {
+  const _Estrella({required this.tarea});
+
+  final TareaPendiente tarea;
+
+  @override
+  ConsumerState<_Estrella> createState() => _EstrellaState();
+}
+
+class _EstrellaState extends ConsumerState<_Estrella> {
+  bool? _local;
+  bool _ocupado = false;
+
+  bool get _marcada => _local ?? widget.tarea.ES_FAVORITO;
+
+  Future<void> _alternar() async {
+    if (_ocupado) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    final antes = _marcada;
+
+    setState(() {
+      _local = !antes;
+      _ocupado = true;
+    });
+
+    try {
+      final ahora = await SigmaRepository.instance
+          .alternarFavorito('TAREA', widget.tarea.toc_id);
+      if (!mounted) return;
+      setState(() => _local = ahora);
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      setState(() => _local = antes);
+      mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } finally {
+      if (mounted) setState(() => _ocupado = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return SgBotonIcono(
+      _marcada ? Icons.star : Icons.star_border,
+      color: _marcada ? sg.ambarTexto : sg.tinta3,
+      lado: 34,
+      tamano: 20,
+      onTap: _alternar,
+    );
+  }
 }

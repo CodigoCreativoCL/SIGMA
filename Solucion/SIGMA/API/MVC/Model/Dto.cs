@@ -307,6 +307,20 @@ namespace API.MVC.Model
         public List<OrdenTrabajoRepuestoDto> repuestos { get; set; }
     }
 
+    /// <summary>Lo que la app manda al tocar la estrella.</summary>
+    public class FavoritoDto
+    {
+        /// <summary>ORDEN · TAREA · ACTIVO</summary>
+        public string entidad { get; set; }
+        public int entidad_id { get; set; }
+    }
+
+    /// <summary>Como quedo el favorito despues de alternarlo.</summary>
+    public class FavoritoResultadoDto
+    {
+        public bool ES_FAVORITO { get; set; }
+    }
+
     /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
     public class ActivoFichaEventoDto
     {
@@ -1166,6 +1180,13 @@ namespace API.MVC.Model
            del mismo equipo. */
         public string ACTIVO_FOTO { get; set; }
         public string POSICION_CODIGO { get; set; }
+
+        /// <summary>
+        /// Si esta persona lo fijo arriba de su bandeja. Viaja DENTRO del
+        /// listado y no en una consulta aparte: pedirlo por separado haria que
+        /// las estrellas se encendieran de a una sobre una lista ya dibujada.
+        /// </summary>
+        public bool ES_FAVORITO { get; set; }
         public string PLANTA_NOMBRE { get; set; }
         public string AREA_NOMBRE { get; set; }
 
@@ -1494,6 +1515,13 @@ namespace API.MVC.Model
            del mismo equipo. */
         public string ACTIVO_FOTO { get; set; }
         public string POSICION_CODIGO { get; set; }
+
+        /// <summary>
+        /// Si esta persona lo fijo arriba de su bandeja. Viaja DENTRO del
+        /// listado y no en una consulta aparte: pedirlo por separado haria que
+        /// las estrellas se encendieran de a una sobre una lista ya dibujada.
+        /// </summary>
+        public bool ES_FAVORITO { get; set; }
         public string AREA_NOMBRE { get; set; }
         public int ESTADO_ID { get; set; }
         public string ESTADO_CODIGO { get; set; }
@@ -1536,6 +1564,13 @@ namespace API.MVC.Model
            del mismo equipo. */
         public string ACTIVO_FOTO { get; set; }
         public string POSICION_CODIGO { get; set; }
+
+        /// <summary>
+        /// Si esta persona lo fijo arriba de su bandeja. Viaja DENTRO del
+        /// listado y no en una consulta aparte: pedirlo por separado haria que
+        /// las estrellas se encendieran de a una sobre una lista ya dibujada.
+        /// </summary>
+        public bool ES_FAVORITO { get; set; }
         public string AREA_NOMBRE { get; set; }
         public int ESTADO_ID { get; set; }
         public string ESTADO_NOMBRE { get; set; }

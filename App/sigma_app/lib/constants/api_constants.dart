@@ -109,6 +109,10 @@ abstract final class ApiConstants {
   /// `archivoVer` y la cachea.
   static const String evidencias = '/evidencias';
 
+  /// El interruptor de la estrella. **No hay un listado**: el favorito viaja
+  /// como `ES_FAVORITO` dentro del listado que la persona ya está mirando.
+  static const String favoritos = '/favoritos';
+
   // ---- SIGMA AI (HU-173, HU-175) ----
 
   /// `GET` el panel de predicciones vigentes; `/vigilados` los equipos que se

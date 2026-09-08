@@ -710,6 +710,7 @@ class OrdenTrabajo {
     this.ACTIVO_NOMBRE,
     this.ACTIVO_FOTO,
     this.POSICION_CODIGO,
+    this.ES_FAVORITO = false,
     this.PLANTA_NOMBRE,
     this.AREA_NOMBRE,
     this.RESPONSABLE_ID,
@@ -772,6 +773,13 @@ class OrdenTrabajo {
   /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
   final String? ACTIVO_FOTO;
   final String? POSICION_CODIGO;
+
+  /// Si esta persona lo fijó arriba de su bandeja.
+  ///
+  /// Viaja **dentro** del listado y no en una consulta aparte: pedirlo por
+  /// separado haría que las estrellas se encendieran de a una sobre una lista
+  /// ya dibujada.
+  final bool ES_FAVORITO;
   final String? PLANTA_NOMBRE;
   final String? AREA_NOMBRE;
 
@@ -836,6 +844,7 @@ class OrdenTrabajo {
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
         ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
         POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+        ES_FAVORITO: _b(j['ES_FAVORITO']),
         PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         RESPONSABLE_ID:
@@ -2133,6 +2142,7 @@ class TareaPendiente {
     this.ACTIVO_NOMBRE,
     this.ACTIVO_FOTO,
     this.POSICION_CODIGO,
+    this.ES_FAVORITO = false,
     this.AREA_NOMBRE,
     this.ESTADO_NOMBRE,
     this.toc_fecha_limite_utc,
@@ -2167,6 +2177,13 @@ class TareaPendiente {
   /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
   final String? ACTIVO_FOTO;
   final String? POSICION_CODIGO;
+
+  /// Si esta persona lo fijó arriba de su bandeja.
+  ///
+  /// Viaja **dentro** del listado y no en una consulta aparte: pedirlo por
+  /// separado haría que las estrellas se encendieran de a una sobre una lista
+  /// ya dibujada.
+  final bool ES_FAVORITO;
   final String? AREA_NOMBRE;
   final String? ESTADO_NOMBRE;
   final DateTime? toc_fecha_limite_utc;
@@ -2208,6 +2225,7 @@ class TareaPendiente {
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
         ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
         POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+        ES_FAVORITO: _b(j['ES_FAVORITO']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
         toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
@@ -2285,6 +2303,7 @@ class Tarea {
     this.ACTIVO_NOMBRE,
     this.ACTIVO_FOTO,
     this.POSICION_CODIGO,
+    this.ES_FAVORITO = false,
     this.AREA_NOMBRE,
     this.ESTADO_ID = 1,
     this.ESTADO_NOMBRE,
@@ -2324,6 +2343,13 @@ class Tarea {
   /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
   final String? ACTIVO_FOTO;
   final String? POSICION_CODIGO;
+
+  /// Si esta persona lo fijó arriba de su bandeja.
+  ///
+  /// Viaja **dentro** del listado y no en una consulta aparte: pedirlo por
+  /// separado haría que las estrellas se encendieran de a una sobre una lista
+  /// ya dibujada.
+  final bool ES_FAVORITO;
   final String? AREA_NOMBRE;
   final int ESTADO_ID;
   final String? ESTADO_NOMBRE;
@@ -2372,6 +2398,7 @@ class Tarea {
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
         ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
         POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+        ES_FAVORITO: _b(j['ES_FAVORITO']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         ESTADO_ID: _i(j['ESTADO_ID'], 1),
         ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
