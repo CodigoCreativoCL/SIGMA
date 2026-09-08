@@ -89,7 +89,7 @@ Encargo del 08-09-2026. **Son dos defectos distintos con una causa común.**
 
 ---
 
-## Bloque 3 — Permisos por perfil (transversal)
+## Bloque 3 — Permisos por perfil (transversal) — CERRADO
 
 > «no deben llegarle alertas al técnico de tipo bodega de inventario. Lo mismo
 > con el bodeguero: no deben llegarle notificaciones de OT. Lo mismo con los
@@ -100,21 +100,25 @@ Encargo del 08-09-2026. **Son dos defectos distintos con una causa común.**
 Es una regla transversal, no una pantalla. Va antes que las mejoras porque
 cambia qué ve cada quien.
 
-- [ ] **3.1 · Alertas filtradas por perfil.** Que `GET /alertas` no devuelva
+- [x] **3.1 · Alertas filtradas por perfil.** Hecho en `BD/194` y `BD/195`. Que `GET /alertas` no devuelva
   alertas de inventario a quien no tiene permiso de inventario, ni de OT a quien
   no tiene el de OT. **En el servidor**, no ocultando en la app: ocultar en el
   cliente deja el dato viajando.
 
-- [ ] **3.2 · Menús por permiso.** Revisar `Menus` y `Menu_Perfil` contra lo que
+- [x] **3.2 · Menús por permiso.** El jefe y el planificador pierden el CRUD de
+  repuestos y los movimientos; el menú «Movimientos» pasa a exigir GESTIONAR
+  STOCK. Verificado: los tres perfiles reciben **403** al intentar un ajuste. Revisar `Menus` y `Menu_Perfil` contra lo que
   cada perfil puede hacer de verdad. El CRUD de repuestos y los movimientos de
   inventario son del bodeguero.
 
-- [ ] **3.3 · Barrido.** Una vez definida la regla, comprobarla en toda pantalla
+- [x] **3.3 · Barrido.** El menú de la app ya es dirigido por datos
+  (`mnu_permiso`) y difiere por perfil sin tocar código. Una vez definida la regla, comprobarla en toda pantalla
   que liste algo: bandeja, existencias, alertas, «Más» y la rejilla del Home.
 
-**Pregunta abierta:** ¿el jefe de mantenimiento debe *ver* el inventario aunque
-no pueda modificarlo? «Ver existencias» y «ajustar inventario» ya son permisos
-distintos en la base; hay que decidir cuál lleva cada perfil.
+**Resuelto el 08-09-2026:** el jefe **ve pero no toca**. Conserva VER
+EXISTENCIAS y VER REPUESTOS —planificar sin saber si hay repuestos es planificar
+a ciegas— y pierde CREAR EDITAR REPUESTOS, AJUSTAR INVENTARIO, GESTIONAR STOCK,
+REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ---
 
