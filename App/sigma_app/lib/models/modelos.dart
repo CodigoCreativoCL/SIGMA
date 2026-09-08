@@ -499,6 +499,11 @@ class Alerta {
     this.LEIDA = 0,
     this.MINUTOS = 0,
     this.ale_fecha_deteccion_utc,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.COMPONENTE_NOMBRE,
+    this.REPUESTO_NOMBRE,
+    this.FOTO_RUTA,
   });
 
   final int ale_id;
@@ -527,6 +532,41 @@ class Alerta {
   final int MINUTOS;
   final DateTime? ale_fecha_deteccion_utc;
 
+  /* DE QUE HABLA LA ALERTA
+
+     El SP lo devolvia desde el principio y el DTO de la API no lo declaraba,
+     asi que nunca llego al telefono: la bandeja mostraba diez filas con el
+     mismo icono de campana y habia que leerlas todas para saber de que equipo
+     hablaba cada una. En una bandeja se mira, no se lee. */
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+  final String? COMPONENTE_NOMBRE;
+  final String? REPUESTO_NOMBRE;
+
+  /// La ruta del blob de la foto de lo que le pasa. Nula si no hay ninguna, y
+  /// entonces se pinta el icono del tipo.
+  final String? FOTO_RUTA;
+
+  /// Con qué identificar la alerta en una línea: el equipo, la pieza montada o
+  /// el repuesto. Vacío si no cuelga de nada, que pasa con las de sistema.
+  String get sobreQue {
+    final c = (COMPONENTE_NOMBRE ?? '').trim();
+    if (c.isNotEmpty) {
+      final a = (ACTIVO_CODIGO ?? '').trim();
+      // El componente sin su equipo no ubica a nadie: «Rodamiento delantero»
+      // hay uno en cada máquina de la planta.
+      return a.isEmpty ? c : '$a · $c';
+    }
+
+    final a = (ACTIVO_NOMBRE ?? '').trim();
+    if (a.isNotEmpty) {
+      final cod = (ACTIVO_CODIGO ?? '').trim();
+      return cod.isEmpty ? a : '$cod · $a';
+    }
+
+    return (REPUESTO_NOMBRE ?? '').trim();
+  }
+
   bool get leida => LEIDA == 1;
 
   /// "hace 12 min", "hace 3 h", "ayer".
@@ -551,6 +591,11 @@ class Alerta {
     LEIDA: _i(j['LEIDA']),
     MINUTOS: _i(j['MINUTOS']),
     ale_fecha_deteccion_utc: _f(j['ale_fecha_deteccion_utc']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    COMPONENTE_NOMBRE: _sN(j['COMPONENTE_NOMBRE']),
+    REPUESTO_NOMBRE: _sN(j['REPUESTO_NOMBRE']),
+    FOTO_RUTA: _sN(j['FOTO_RUTA']),
   );
 }
 

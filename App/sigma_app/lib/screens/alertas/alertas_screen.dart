@@ -8,6 +8,7 @@ import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../constants/api_constants.dart';
 import '../../services/outbox_service.dart';
@@ -378,6 +379,21 @@ class _Tarjeta extends StatelessWidget {
     _ => (sg.azulTexto, Icons.info_outline, 'Informativo'),
   };
 
+  /// El icono de la LINEA de identidad: que clase de cosa es, no que le pasa.
+  ///
+  /// Se distingue del icono grande a proposito: aquel dice el tipo de alerta
+  /// —y su color, la severidad—; este dice si hablamos de un equipo, de una
+  /// pieza montada o de un repuesto de bodega.
+  IconData get _iconoSujeto {
+    if ((alerta.COMPONENTE_NOMBRE ?? '').trim().isNotEmpty) {
+      return Icons.settings_outlined;
+    }
+    if ((alerta.ACTIVO_NOMBRE ?? '').trim().isNotEmpty) {
+      return Icons.view_in_ar_outlined;
+    }
+    return Icons.inventory_2_outlined;
+  }
+
   IconData get _iconoTipo {
     final t = '${alerta.alt_nombre ?? ''} ${alerta.FICHA_LINK ?? ''}'
         .toLowerCase();
@@ -420,12 +436,38 @@ class _Tarjeta extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SgIconoCuadro(
-                _iconoTipo,
-                color: color,
-                lado: 44,
-                tamanoIcono: 22,
-              ),
+              /* LA FOTO DE LO QUE PASA, Y SI NO HAY, EL ICONO
+
+                 Diez filas con el mismo icono de campana no distinguen nada:
+                 hay que leerlas todas para encontrar la del horno. Con la foto
+                 del equipo se reconoce de un vistazo, que es para lo que sirve
+                 una bandeja.
+
+                 Cuando no hay foto NO se deja un marco vacio —eso se lee como
+                 «no cargo» y hace dudar del resto—: se pinta el icono del tipo
+                 de alerta, con su color de severidad, que es lo que habia
+                 antes y sigue diciendo algo. */
+              if ((alerta.FOTO_RUTA ?? '').isEmpty)
+                SgIconoCuadro(
+                  _iconoTipo,
+                  color: color,
+                  lado: 44,
+                  tamanoIcono: 22,
+                )
+              else
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(SgRadius.icono48),
+                  child: SigmaImagen(
+                    ruta: alerta.FOTO_RUTA,
+                    ancho: 44,
+                    alto: 44,
+                    radio: SgRadius.icono48,
+                    // En la bandeja el toque es para abrir la alerta, no para
+                    // mirar la foto en grande.
+                    ampliable: false,
+                    iconoVacio: _iconoTipo,
+                  ),
+                ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -462,6 +504,28 @@ class _Tarjeta extends StatelessWidget {
                         alto: 1.35,
                       ),
                     ),
+                    /* DE QUE EQUIPO HABLA
+
+                       El titulo dice QUE pasa —«Temperatura sobre el limite»—
+                       y no DONDE. Sin esto habia que abrir la alerta para
+                       saberlo, y con doce en la bandeja eso son doce toques
+                       para encontrar la que importa. */
+                    if (alerta.sobreQue.isNotEmpty) ...[
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Icon(_iconoSujeto, size: 13, color: sg.tinta3),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              alerta.sobreQue,
+                              style: sora(12, 600, color: sg.tinta3),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     if ((alerta.ale_descripcion ?? '').isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(

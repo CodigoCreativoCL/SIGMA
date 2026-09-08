@@ -146,10 +146,16 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ## Bloque 5 — Imagen y avatar
 
-- [ ] **5.1 · La card de SIGMA AI en el Home no muestra la foto del activo.**
+- [x] **5.1 · La card de SIGMA AI en el Home no muestra la foto del activo.**
+  La cadena estaba bien —`/predicciones` trae `ACTIVO_FOTO` y `/archivo/ver` la
+  sirve, probado—: lo que fallaba era el caso **sin** foto, que pintaba un marco
+  de imagen vacío. Ahora va el icono del equipo.
 
-- [ ] **5.2 · En alertas debe verse la foto del activo, repuesto o componente**,
-  y si no hay, un icono como respaldo.
+- [x] **5.2 · En alertas debe verse la foto del activo, repuesto o componente**,
+  y si no hay, un icono como respaldo. Hecho. `SEL_ALERTA` ya devolvía la
+  identidad y **`AlertaDto` no la declaraba**, así que se tiraba en silencio;
+  `BD/199` agrega además `FOTO_RUTA`. La tarjeta muestra la foto, o el icono
+  del tipo, y una línea que dice de qué equipo habla.
 
 - [x] **5.3 · El avatar del usuario: foto, y si no hay, las iniciales estilo
   Teams.** Hecho en `SgAvatar`, con color estable por persona. `BD/197` y

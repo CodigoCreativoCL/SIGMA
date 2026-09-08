@@ -1029,6 +1029,36 @@ namespace API.MVC.Model
         public decimal? ale_valor_observado { get; set; }
         public decimal? ale_valor_umbral { get; set; }
 
+        /* DE QUE HABLA LA ALERTA
+
+           SEL_ALERTA devolvia ACTIVO_CODIGO, ACTIVO_NOMBRE y REPUESTO_CODIGO
+           desde el principio y este DTO no las declaraba: Datos.Listar mapea por
+           nombre de columna y descarta EN SILENCIO lo que el DTO no tiene, sin
+           dar error. Asi que la identidad viajaba desde la base y se tiraba en
+           el camino, y la bandeja de alertas mostraba diez filas iguales con el
+           mismo icono de campana.
+
+           Es la misma clase de fallo que el mime en duro de la evidencia: nada
+           avisa, y solo se ve mirando la respuesta. */
+        public int? ale_activo { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+
+        public int? ale_activo_componente { get; set; }
+        public string COMPONENTE_CODIGO { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public string BODEGA_NOMBRE { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de la foto de lo que le pasa: el activo, el activo
+        /// padre si es un componente, o el repuesto. Nula si no hay ninguna, y
+        /// ahi la app pinta el icono del tipo en vez de un marco vacio.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
+
         public int LEIDA { get; set; }
 
         /// <summary>Cuanto lleva abierta. La app la ordena por esto.</summary>

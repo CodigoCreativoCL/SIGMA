@@ -573,8 +573,20 @@ class _BloqueIa extends ConsumerWidget {
         if (p.pre_dia_restante != null) ('${p.pre_dia_restante} d', 'faltan'),
         if (p.margenDias != null) ('± ${p.margenDias} d', 'margen'),
       ],
-      miniatura: p.ACTIVO_FOTO == null
-          ? const SgFoto(lado: 52, radio: 15)
+      /* SIN FOTO, EL ICONO DEL EQUIPO; NO UN MARCO VACIO
+
+         El marcador de imagen generico se lee como «esto no cargo», y en la
+         tarjeta mas visible del Inicio eso hace dudar del resto. Un icono de
+         equipo dice lo que hay: es un activo, y no tiene foto cargada.
+
+         La foto SI llega cuando existe —ACTIVO_FOTO viene en /predicciones y
+         /archivo/ver la sirve—; lo que faltaba era este caso. */
+      miniatura: (p.ACTIVO_FOTO ?? '').isEmpty
+          ? const SgFoto(
+              lado: 52,
+              radio: 15,
+              icono: Icons.view_in_ar_outlined,
+            )
           : SigmaImagen(ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
       accion: () => Navigator.of(context).push(
         MaterialPageRoute(
