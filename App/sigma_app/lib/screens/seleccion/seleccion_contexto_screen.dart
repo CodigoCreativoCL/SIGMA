@@ -11,6 +11,7 @@ import '../../services/sesion_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 
 /// Los clientes a los que pertenece quien entró.
@@ -310,18 +311,32 @@ class _FilaCliente extends StatelessWidget {
       onTap: cargando ? null : onTap,
       child: Row(
         children: [
-          Container(
-            width: 48,
-            height: 48,
-            decoration: BoxDecoration(
-              color: elegido ? sg.tinte(sg.acentoTexto) : sg.up,
-              borderRadius: BorderRadius.circular(SgRadius.icono48),
+          // El logo de la empresa cuando lo hay, y las iniciales cuando no.
+          // La inicial no es un respaldo pobre: es lo que se ve mientras nadie
+          // haya subido el logo desde la web, y una empresa recién dada de
+          // alta no tiene por qué verse rota.
+          if (cliente.logoRuta != null)
+            SigmaImagen(
+              ruta: cliente.logoRuta,
+              ancho: 48,
+              alto: 48,
+              radio: SgRadius.icono48,
+              ajuste: BoxFit.contain,
+              iconoVacio: Icons.business_outlined,
+            )
+          else
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: elegido ? sg.tinte(sg.acentoTexto) : sg.up,
+                borderRadius: BorderRadius.circular(SgRadius.icono48),
+              ),
+              alignment: Alignment.center,
+              child: Text(_iniciales,
+                  style: sora(16, 700,
+                      color: elegido ? sg.acentoTexto : sg.tinta2)),
             ),
-            alignment: Alignment.center,
-            child: Text(_iniciales,
-                style: sora(16, 700,
-                    color: elegido ? sg.acentoTexto : sg.tinta2)),
-          ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(

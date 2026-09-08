@@ -74,6 +74,14 @@ namespace API.MVC.Model
     {
         public int cli_id { get; set; }
         public string cli_nombre { get; set; }
+
+        /// <summary>
+        /// La ruta de blob del logo de la empresa, para la pantalla de
+        /// contexto. Viaja en la misma consulta y no en una aparte: pedirlo
+        /// despues haria que los logos aparecieran saltando sobre unas
+        /// tarjetas ya dibujadas.
+        /// </summary>
+        public string LOGO_RUTA { get; set; }
     }
 
     public class SeleccionarClienteDto

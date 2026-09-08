@@ -87,14 +87,25 @@ class SesionModel {
 
 /// Un cliente al que pertenece la persona (HU-002).
 class ClienteElegibleModel {
-  const ClienteElegibleModel({required this.id, required this.nombre});
+  const ClienteElegibleModel({
+    required this.id,
+    required this.nombre,
+    this.logoRuta,
+  });
 
   final int id;
   final String nombre;
+
+  /// La ruta de blob del logo de la empresa. Nula mientras nadie lo haya
+  /// cargado desde la web: la tarjeta muestra entonces la inicial.
+  final String? logoRuta;
 
   factory ClienteElegibleModel.fromJson(Map<String, dynamic> j) =>
       ClienteElegibleModel(
         id: (j['cli_id'] as num?)?.toInt() ?? 0,
         nombre: j['cli_nombre'] as String? ?? '',
+        logoRuta: (j['LOGO_RUTA'] as String?)?.trim().isEmpty ?? true
+            ? null
+            : j['LOGO_RUTA'] as String?,
       );
 }
