@@ -55,7 +55,7 @@ class SigmaAiScreen extends ConsumerWidget {
             ref.invalidate(vigiladosProvider);
           },
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 28)),
             children: [
               if (lista.isEmpty)
                 const _SinPredicciones()

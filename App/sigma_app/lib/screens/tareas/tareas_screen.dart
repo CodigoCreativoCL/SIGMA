@@ -63,7 +63,7 @@ class TareasScreen extends ConsumerWidget {
         child: (lista) => RefreshIndicator(
           onRefresh: () async => ref.invalidate(tareasPendientesProvider),
           child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
             itemCount: lista.length,
             separatorBuilder: (_, _) => const SizedBox(height: 11),
             itemBuilder: (_, i) => _Tarjeta(

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- El lienzo de la marca, el mismo `#0B0F1A` del kit. Va como color y no
+         como degradado: el fondo de un icono adaptativo se desplaza con el
+         parallax del lanzador, y un degradado se ve cortado al moverse. -->
+    <color name="ic_launcher_background">#0B0F1A</color>
+</resources>

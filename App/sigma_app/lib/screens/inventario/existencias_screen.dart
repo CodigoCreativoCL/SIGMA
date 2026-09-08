@@ -109,7 +109,7 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                   ref.invalidate(existenciasEnAlertaProvider);
                 },
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
                   itemCount: p.datos.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 11),
                   itemBuilder: (_, i) => _Tarjeta(saldo: p.datos[i]),

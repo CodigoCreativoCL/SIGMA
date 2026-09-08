@@ -49,7 +49,7 @@ class MiPerfilScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(miPerfilProvider),
         child: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 20, 16, 16)),
           children: [
             EstadoAsync<MiPerfil>(
               valor: perfil,

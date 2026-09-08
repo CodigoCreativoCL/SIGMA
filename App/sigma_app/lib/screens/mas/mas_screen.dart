@@ -85,7 +85,7 @@ class MasScreen extends ConsumerWidget {
       backgroundColor: sg.fondo,
       appBar: const SgBarra('Más', tamanoTitulo: 23),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 8, 16, 24)),
         children: [
           // ---- Quién soy y dónde estoy ----
           SgCard(

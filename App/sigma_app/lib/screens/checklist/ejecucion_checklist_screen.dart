@@ -249,7 +249,7 @@ class _Cuerpo extends StatelessWidget {
         _Progreso(ejecucion: ejecucion),
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 8)),
             children: [
               for (final i in items) ...[
                 if (i.SECCION_NOMBRE != null &&

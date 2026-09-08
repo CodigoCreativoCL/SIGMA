@@ -111,7 +111,7 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
             primario: false, onTap: () => Navigator.maybePop(context)),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
         children: [
           SgTitulo(enviado
               ? 'Te enviamos un enlace\nal correo registrado'

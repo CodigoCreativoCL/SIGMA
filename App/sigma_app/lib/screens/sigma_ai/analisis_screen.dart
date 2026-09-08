@@ -51,7 +51,7 @@ class AnalisisScreen extends ConsumerWidget {
         valor: ficha,
         onReintentar: () => ref.invalidate(prediccionProvider(prediccionId)),
         child: (p) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 28)),
           children: [
             _Titular(p: p),
             const SizedBox(height: 12),

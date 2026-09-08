@@ -69,7 +69,7 @@ class PendientesScreen extends ConsumerWidget {
                 items.where((i) => i.estado == EstadoItem.rechazado).length;
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
               children: [
                 const _AvisoSinSenal(),
                 Padding(

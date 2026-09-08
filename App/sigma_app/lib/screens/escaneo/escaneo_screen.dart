@@ -102,7 +102,7 @@ class _EscaneoScreenState extends ConsumerState<EscaneoScreen> {
                 ] else
                   Expanded(
                     child: SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
+                      padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 20, 16, 0)),
                       child: _Resultado(
                         codigo: codigo,
                         onOtro: () =>

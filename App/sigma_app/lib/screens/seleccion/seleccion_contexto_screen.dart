@@ -115,7 +115,7 @@ class _SeleccionContextoScreenState
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 10, 16, 8)),
         children: [
           const SgTitulo('¿Dónde vas a\ntrabajar hoy?'),
           const SizedBox(height: 20),

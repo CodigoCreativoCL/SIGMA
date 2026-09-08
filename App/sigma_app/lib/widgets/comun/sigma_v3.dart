@@ -1319,6 +1319,33 @@ class SgPie extends StatelessWidget {
       );
 }
 
+/// El margen de siempre, **más lo que ocupa la barra del sistema**.
+///
+/// ## El problema que resuelve
+///
+/// Los artboards del kit terminan en un margen fijo —24, 28— porque un diseño
+/// no tiene barra de navegación. Un teléfono sí: gestos o tres botones, entre
+/// 24 y 48 dp que se dibujan **encima** de la app. Con el margen fijo, lo
+/// último de cada pantalla queda debajo de esa barra y no hay forma de
+/// alcanzarlo: el scroll ya llegó al final. En la ficha de análisis eso
+/// escondía los botones de «Reconocer» y «Descartar».
+///
+/// ## Por qué `padding` y no `viewPadding`
+///
+/// `MediaQuery.paddingOf` ya viene descontado de lo que el `Scaffold`
+/// resolvió por su cuenta: en una pantalla con `SgPie` o barra inferior vale
+/// cero, porque esa barra ya está por encima del sistema. Con `viewPadding`
+/// —el inset crudo— esas pantallas sumarían el espacio dos veces y quedaría
+/// un hueco vacío al final.
+///
+/// Se aplica al **contenido del scroll**, no al widget: así la lista sigue
+/// dibujándose por debajo de la barra —que es lo que se espera— pero se puede
+/// desplazar hasta ver el último elemento completo.
+extension SgMargenSistema on BuildContext {
+  EdgeInsets conBarraSistema(EdgeInsets base) =>
+      base.copyWith(bottom: base.bottom + MediaQuery.paddingOf(this).bottom);
+}
+
 /// La barra de gestos de Android, que el kit dibuja al pie de cada pantalla.
 class SgBarraGestos extends StatelessWidget {
   const SgBarraGestos({super.key, this.color});

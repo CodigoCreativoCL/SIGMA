@@ -95,7 +95,7 @@ class PermisosTrabajoScreen extends ConsumerWidget {
                     ref.invalidate(permisosVigentesProvider);
                   },
                   child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
                     itemCount: visibles.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 11),
                     itemBuilder: (_, i) => _Tarjeta(

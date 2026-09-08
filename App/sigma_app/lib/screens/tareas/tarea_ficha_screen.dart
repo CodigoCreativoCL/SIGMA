@@ -60,7 +60,7 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
         valor: tarea,
         onReintentar: () => ref.invalidate(tareaProvider(widget.ocurrenciaId)),
         child: (t) => ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 28)),
           children: [
             _Cabecera(tarea: t),
             const SizedBox(height: 12),

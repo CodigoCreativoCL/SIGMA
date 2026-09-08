@@ -119,7 +119,7 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
                     ref.invalidate(ordenesDisponiblesProvider);
                   },
                   child: ListView.separated(
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
                     itemCount: visibles.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 11),
                     itemBuilder: (_, i) => _Tarjeta(

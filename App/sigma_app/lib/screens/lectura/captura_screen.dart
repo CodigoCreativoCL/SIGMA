@@ -264,7 +264,7 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
         children: [
           _Activo(
             nombre: widget.activoNombre,

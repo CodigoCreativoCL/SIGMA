@@ -65,7 +65,7 @@ class _SincronizacionScreenState extends ConsumerState<SincronizacionScreen> {
         ),
       ),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
         children: [
           _Cabecera(termino: e.termino, fallidos: e.fallidos),
           const SizedBox(height: 20),

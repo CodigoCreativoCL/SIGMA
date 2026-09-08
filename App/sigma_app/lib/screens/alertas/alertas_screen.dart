@@ -163,7 +163,7 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
                   ref.invalidate(resumenAlertasProvider);
                 },
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
                   itemCount: visibles.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 11),
                   itemBuilder: (_, i) => _Tarjeta(

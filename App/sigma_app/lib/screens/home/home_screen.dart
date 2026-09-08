@@ -141,7 +141,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: RefreshIndicator(
                 onRefresh: _recargar,
                 child: ListView(
-                  padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
                   children: const [
                     _ChipsEstado(),
                     SizedBox(height: 14),
