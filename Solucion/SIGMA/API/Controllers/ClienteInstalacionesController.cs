@@ -30,13 +30,26 @@ namespace API.Controllers
 
                 Pagina p = new Pagina { pagina = pagina, tamano = tamano, filtro = filtro };
 
-                List<ClienteInstalacionDto> todo = Datos.Listar<ClienteInstalacionDto>("SEL_CLIENTE_INSTALACION",
+                /* SOLO LAS PLANTAS A LAS QUE ESTA PERSONA ESTA ASIGNADA
+
+                   Antes se llamaba a SEL_CLIENTE_INSTALACION, que es el
+                   listado de la web y devuelve TODAS las plantas del cliente.
+                   En la app eso deja elegir contexto en una planta donde la
+                   persona no trabaja, y cuyos activos la sincronizacion nunca
+                   le baja — la pantalla queda ofreciendo algo que despues
+                   aparece vacio.
+
+                   API_SEL_APP_INSTALACION aplica la MISMA regla que usa la
+                   sabana para armar @PLANTAS, asi los dos caminos no se pueden
+                   contradecir. Sin asignacion devuelve cero filas, que es lo
+                   correcto: pertenecer al cliente no es estar asignado a una
+                   planta. */
+                List<ClienteInstalacionDto> todo = Datos.Listar<ClienteInstalacionDto>("API_SEL_APP_INSTALACION",
                     new Dictionary<string, object>
                     {
-                        // El SP lo declara varchar: recibe el id como texto.
-                        { "@CLIENTE", SesionApi.ClienteId().ToString() },
-                        { "@FILTRO", p.filtro },
-                        { "@HABILITADO", habilitado }
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@FILTRO", p.filtro }
                     });
 
                 return Ok(Paginado<ClienteInstalacionDto>.Armar(todo, p));
@@ -53,11 +66,15 @@ namespace API.Controllers
                 ExigirPermiso("VER PLANTAS");
                 ExigirCliente();
 
-                List<ClienteInstalacionDto> r = Datos.Listar<ClienteInstalacionDto>("SEL_CLIENTE_INSTALACION",
+                /* El detalle usa el MISMO filtro que el listado. Si no, una
+                   planta que no aparece en la lista se puede abrir igual
+                   escribiendo su id, y la restriccion seria decorativa. */
+                List<ClienteInstalacionDto> r = Datos.Listar<ClienteInstalacionDto>("API_SEL_APP_INSTALACION",
                     new Dictionary<string, object>
                     {
-                        { "@ID", id },
-                        { "@CLIENTE", SesionApi.ClienteId().ToString() }
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@ID", id }
                     });
 
                 if (r == null || r.Count == 0) return NoEncontrado("La planta");
