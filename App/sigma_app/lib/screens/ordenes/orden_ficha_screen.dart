@@ -368,8 +368,18 @@ class _Hero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    /* EL ALTO DEL ARTBOARD ES DE CONTENIDO, NO DE PANTALLA
+
+       El `SafeArea` de adentro aparta la barra de estado, pero la apartaba
+       DENTRO de un alto fijo: en un teléfono con barra alta —o con la fuente
+       del sistema agrandada— al contenido le quedaban 274 menos el inset y
+       la columna desbordaba, con la franja amarilla de overflow encima de la
+       foto del activo.
+
+       Sumar el inset al alto conserva los 200 dp que pide el kit por debajo de
+       la barra, que es donde el diseño los midió. */
     return SizedBox(
-      height: 200,
+      height: 200 + MediaQuery.paddingOf(context).top,
       child: Stack(
         fit: StackFit.expand,
         children: [

@@ -166,8 +166,18 @@ class _Hero extends StatelessWidget {
   Widget build(BuildContext context) {
     final fotos = _fotos;
 
+    /* EL ALTO DEL ARTBOARD ES DE CONTENIDO, NO DE PANTALLA
+
+       El `SafeArea` de adentro aparta la barra de estado, pero la apartaba
+       DENTRO de un alto fijo: en un teléfono con barra alta —o con la fuente
+       del sistema agrandada— al contenido le quedaban 274 menos el inset y
+       la columna desbordaba, con la franja amarilla de overflow encima de la
+       foto del activo.
+
+       Sumar el inset al alto conserva los 274 dp que pide el kit por debajo de
+       la barra, que es donde el diseño los midió. */
     return SizedBox(
-      height: 274,
+      height: 274 + MediaQuery.paddingOf(context).top,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -186,6 +196,10 @@ class _Hero extends StatelessWidget {
               ruta: fotos[indice.clamp(0, fotos.length - 1)],
               radio: 0,
               ajuste: BoxFit.cover,
+              // Ampliada, una foto sin rótulo no dice de qué equipo es.
+              titulo: [activo.act_codigo, activo.act_nombre]
+                  .where((t) => t.isNotEmpty)
+                  .join(' · '),
             ),
           // Dos velos: arriba para que se lean los botones, abajo para que se
           // lea el título. Sin ellos, una foto clara los borra a los dos.

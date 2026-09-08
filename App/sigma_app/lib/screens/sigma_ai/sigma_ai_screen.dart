@@ -33,15 +33,14 @@ class SigmaAiScreen extends ConsumerWidget {
 
     return Scaffold(
       backgroundColor: sg.fondo,
-      appBar: SgBarra(
+      // El logotipo firma la barra, y el distintivo de la derecha se va: eran
+      // DOS marcas de SIGMA AI en la misma línea —el nombre escrito con la
+      // tipografía de la app y el badge—, que es justo lo que una identidad
+      // propia no debe hacer. `titulo` se conserva como etiqueta para el
+      // lector de pantalla, que no puede leer un SVG.
+      appBar: const SgBarra(
         'SIGMA AI',
-        tamanoTitulo: 23,
-        acciones: const [
-          Padding(
-            padding: EdgeInsets.only(right: 12),
-            child: Center(child: SgBadgeIa(alto: 20)),
-          ),
-        ],
+        tituloWidget: SgLogoIa(alto: 26),
       ),
       body: EstadoAsync<List<Prediccion>>(
         valor: predicciones,

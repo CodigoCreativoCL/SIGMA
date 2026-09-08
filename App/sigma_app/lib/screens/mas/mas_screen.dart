@@ -75,10 +75,24 @@ class MasScreen extends ConsumerWidget {
       'app://permisos-trabajo',
     };
 
+    /* Solo lo que se puede abrir de verdad.
+
+       Antes entraba todo lo que el servidor mandara y las rutas sin pantalla
+       se dibujaban en gris con un aviso al tocarlas. La intencion era buena
+       —«avisar que falta una pantalla es mejor que abrir una en blanco»— pero
+       en la practica el menu se llenaba de filas muertas que solo sirven para
+       decir que no sirven, y la persona las toca una vez, lee el aviso y
+       vuelve a tocarlas la semana siguiente.
+
+       Que una ruta registrada en `Menus` no tenga pantalla es un asunto de
+       quien construye la app, no de quien la usa: se ve en el log de la ruta
+       que no resolvio, no en la cara del tecnico. */
     final extra = <MenuNodo>[
       for (final n in menu)
-        ...(n.hijos.isEmpty ? [n] : n.hijos)
-            .where((h) => h.ruta != null && !yaVisible.contains(h.ruta)),
+        ...(n.hijos.isEmpty ? [n] : n.hijos).where((h) =>
+            h.ruta != null &&
+            !yaVisible.contains(h.ruta) &&
+            rutasApp[h.ruta] != null),
     ];
 
     return Scaffold(
@@ -149,7 +163,7 @@ class MasScreen extends ConsumerWidget {
                     MaterialPageRoute(builder: (_) => const TareasScreen())),
               ),
               SgFila(
-                icono: Icons.auto_awesome_outlined,
+                iconoWidget: const SgIconoIaApp(),
                 texto: 'Análisis de SIGMA AI',
                 chevron: true,
                 onTap: () => Navigator.push(context,
@@ -240,17 +254,10 @@ class MasScreen extends ConsumerWidget {
                     icono: _icono(h.ruta),
                     texto: h.nombre,
                     detalle: h.descripcion,
-                    colorTexto:
-                        rutasApp[h.ruta] == null ? sg.tinta3 : null,
                     chevron: true,
                     onTap: () {
-                      final destino = rutasApp[h.ruta];
-                      if (destino == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                            content: Text('«${h.nombre}» todavía no tiene '
-                                'pantalla en la app.')));
-                        return;
-                      }
+                      // No puede ser nulo: la lista ya filtro lo que no abre.
+                      final destino = rutasApp[h.ruta]!;
                       /* Entrar a un menu refresca la sabana.
 
                          `asegurar` no hace nada si no hay señal o si ya

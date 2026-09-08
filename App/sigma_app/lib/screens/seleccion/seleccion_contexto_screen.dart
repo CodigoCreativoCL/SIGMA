@@ -323,6 +323,9 @@ class _FilaCliente extends StatelessWidget {
               radio: SgRadius.icono48,
               ajuste: BoxFit.contain,
               iconoVacio: Icons.business_outlined,
+              // Un logotipo es identidad, no contenido: ampliarlo no muestra
+              // nada que no se vea ya.
+              ampliable: false,
             )
           else
             Container(

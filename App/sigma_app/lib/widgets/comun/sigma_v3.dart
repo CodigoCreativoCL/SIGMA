@@ -830,6 +830,7 @@ class SgFila extends StatelessWidget {
   const SgFila({
     super.key,
     this.icono,
+    this.iconoWidget,
     required this.texto,
     this.detalle,
     this.valor,
@@ -842,6 +843,11 @@ class SgFila extends StatelessWidget {
   });
 
   final IconData? icono;
+
+  /// Un ícono dibujado en vez de uno de Material: lo usan las filas de una
+  /// marca propia, como SIGMA AI.
+  final Widget? iconoWidget;
+
   final String texto;
 
   /// La segunda línea, en tinta3.
@@ -869,7 +875,10 @@ class SgFila extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          if (icono != null) ...[
+          if (iconoWidget != null) ...[
+            SizedBox(width: 21, height: 21, child: iconoWidget),
+            const SizedBox(width: 13),
+          ] else if (icono != null) ...[
             Icon(icono, size: 21, color: colorIcono ?? sg.tinta3),
             const SizedBox(width: 13),
           ],
@@ -1249,9 +1258,15 @@ class SgBarra extends StatelessWidget implements PreferredSizeWidget {
     this.acciones = const [],
     this.tamanoTitulo = 17,
     this.onVolver,
+    this.tituloWidget,
   });
 
   final String titulo;
+
+  /// Un título dibujado, no escrito: lo usa SIGMA AI para firmar con su
+  /// logotipo. Cuando va, [titulo] queda solo como etiqueta de accesibilidad
+  /// —un lector de pantalla no puede leer un SVG—.
+  final Widget? tituloWidget;
   final bool conVolver;
   final List<Widget> acciones;
   final double tamanoTitulo;
@@ -1280,9 +1295,15 @@ class SgBarra extends StatelessWidget implements PreferredSizeWidget {
               const SizedBox(width: 4),
             ],
             Expanded(
-              child: Text(titulo,
-                  style: sora(tamanoTitulo, 600, color: sg.tinta),
-                  overflow: TextOverflow.ellipsis),
+              child: tituloWidget == null
+                  ? Text(titulo,
+                      style: sora(tamanoTitulo, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis)
+                  : Semantics(
+                      label: titulo,
+                      child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: tituloWidget)),
             ),
             ...acciones,
           ],
@@ -1611,6 +1632,44 @@ class SgBadgeIa extends StatelessWidget {
             ? 'assets/images/sigma-ai-badge-dark.svg'
             : 'assets/images/sigma-ai-badge-light.svg',
         height: alto,
+      );
+}
+
+/// El logotipo horizontal de SIGMA AI: símbolo y palabra.
+///
+/// Es el que va donde antes decía «SIGMA AI» escrito con la tipografía de la
+/// app. Un producto con identidad propia se firma con su logotipo, no con su
+/// nombre en texto: el texto lo escribe cualquiera, y al lado del distintivo
+/// se leían como dos marcas distintas en la misma barra.
+class SgLogoIa extends StatelessWidget {
+  const SgLogoIa({super.key, this.alto = 24});
+  final double alto;
+
+  @override
+  Widget build(BuildContext context) => SvgPicture.asset(
+        context.sg.esOscuro
+            ? 'assets/images/sigma-ai-logo-horizontal-dark.svg'
+            : 'assets/images/sigma-ai-logo-horizontal-light.svg',
+        height: alto,
+      );
+}
+
+/// El ícono de aplicación de SIGMA AI, para una fila de menú.
+///
+/// Reemplaza a la estrellita genérica de Material: SIGMA AI es un producto con
+/// su propia identidad dentro de la app, y con un ícono del sistema se leía
+/// como una función más.
+class SgIconoIaApp extends StatelessWidget {
+  const SgIconoIaApp({super.key, this.lado = 24});
+  final double lado;
+
+  @override
+  Widget build(BuildContext context) => SvgPicture.asset(
+        context.sg.esOscuro
+            ? 'assets/images/sigma-ai-app-icon-dark.svg'
+            : 'assets/images/sigma-ai-app-icon-light.svg',
+        width: lado,
+        height: lado,
       );
 }
 
