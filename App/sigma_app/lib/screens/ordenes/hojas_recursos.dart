@@ -23,6 +23,7 @@ typedef ConsumoRepuesto = ({
   int repuesto,
   int bodega,
   double cantidad,
+
   /// El estante. Nulo solo cuando la bodega no tiene ninguno: si los tiene, la
   /// hoja no deja enviar sin elegirlo.
   int? ubicacion,
@@ -56,11 +57,40 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
   Companero? _elegido;
   int _minutos = 60;
 
+  /// Lo escrito en el campo de minutos. Arranca en 60, que es el atajo del
+  /// medio y el caso mas comun.
+  final _minutosTexto = TextEditingController(text: '60');
+
   /// La especialidad por la que se está filtrando. Nula = todas.
   ///
   /// Se filtra por id y no por texto: un acento o una mayúscula rompen la
   /// comparación, y «Eléctrico» se escribe de dos formas según el teclado.
   int? _especialidad;
+
+  @override
+  void dispose() {
+    _minutosTexto.dispose();
+    super.dispose();
+  }
+
+  /// Que le pasa a los minutos escritos, en castellano, o nulo si estan bien.
+  ///
+  /// Los dos limites los hace cumplir `API_INS_ORDEN_TRABAJO_MANO_OBRA`; se
+  /// repiten aca solo para AVISAR antes de enviar, no para decidir. Si el SP
+  /// cambia de opinion, manda el SP.
+  String? get _minutosMalos {
+    final t = _minutosTexto.text.trim();
+    if (t.isEmpty) return 'Escribe cuántos minutos estuvo.';
+
+    final n = int.tryParse(t);
+    if (n == null) return 'Los minutos van en números enteros.';
+    if (n <= 0) return 'Tiene que ser más de cero minutos.';
+    if (n > 1440) {
+      return 'Un tramo no puede pasar de 24 horas (1440 minutos). Si de '
+          'verdad fueron más, van en dos tramos.';
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -167,27 +197,53 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                 );
               }
 
+              /* AGRUPADA POR OFICIO, Y POR PERFIL CUANDO NO HAY OFICIO
+
+                 En una lista plana de doce personas hay que leer la fila de
+                 cada una para encontrar al electrico. Agrupada, se va al grupo
+                 y se elige. `Companero.grupo` decide el encabezado —oficio si
+                 lo tiene, perfil si no— y vive en el modelo porque las dos
+                 hojas agrupan igual. */
+              final grupos = agruparCompaneros(lista);
+              final filas = <Widget>[];
+
+              for (final g in grupos.entries) {
+                filas.add(_Encabezado(g.key, cuantos: g.value.length));
+                for (final c in g.value) {
+                  final elegido = _elegido?.usu_id == c.usu_id;
+                  filas.add(
+                    SgFila(
+                      texto: c.NOMBRE,
+                      // El OFICIO manda sobre el perfil: para un acople
+                      // eléctrico se suma al eléctrico, y «Técnico de
+                      // Mantenimiento» no dice si lo es. El perfil queda de
+                      // respaldo mientras las especialidades no estén cargadas.
+                      detalle: c.ESPECIALIDADES ?? c.PERFIL_NOMBRE,
+                      // Su foto, y si no tiene, sus iniciales.
+                      iconoWidget: SgAvatar(
+                        c.iniciales,
+                        id: c.usu_id,
+                        lado: 34,
+                        ruta: c.FOTO_RUTA,
+                      ),
+                      derecha: Icon(
+                        elegido
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: elegido ? sg.primarioTexto : sg.tinta3,
+                      ),
+                      onTap: () => setState(() => _elegido = c),
+                    ),
+                  );
+                }
+              }
+
               return ListView.separated(
                 shrinkWrap: true,
-                itemCount: lista.length,
+                itemCount: filas.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (_, i) {
-                  final c = lista[i];
-                  final elegido = _elegido?.usu_id == c.usu_id;
-                  return SgFila(
-                    texto: c.NOMBRE,
-                    // El OFICIO manda sobre el perfil: para un acople
-                    // eléctrico se suma al eléctrico, y «Técnico de
-                    // Mantenimiento» no dice si lo es. El perfil queda de
-                    // respaldo mientras las especialidades no estén cargadas.
-                    detalle: c.ESPECIALIDADES ?? c.PERFIL_NOMBRE,
-                    icono: elegido
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
-                    onTap: () => setState(() => _elegido = c),
-                  );
-                },
+                itemBuilder: (_, i) => filas[i],
               );
             },
           ),
@@ -195,9 +251,14 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
         const SizedBox(height: 14),
         const SgRotulo('Cuánto estuvo'),
         const SizedBox(height: 9),
-        // Cuatro tramos redondos en vez de dos relojes: nadie recuerda el
-        // minuto exacto en que llegó un compañero, y pedirlo obliga a inventar
-        // una precisión que no existe.
+        /* LOS ATAJOS SIGUEN, PERO YA NO SON EL TECHO
+
+           Los cuatro tramos redondos se quedan porque casi siempre aciertan:
+           nadie recuerda el minuto exacto en que llegó un compañero. Pero eran
+           lo ÚNICO que había, y el mayor era 4 h: un trabajo de seis horas no
+           se podía registrar, aunque el SP acepta hasta 24.
+
+           Ahora los chips solo rellenan el campo, y el campo manda. */
         Row(
           children: [
             for (final m in const [30, 60, 120, 240]) ...[
@@ -205,18 +266,46 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                 child: SgChip(
                   m < 60 ? '$m min' : '${m ~/ 60} h',
                   elegido: _minutos == m,
-                  onTap: () => setState(() => _minutos = m),
+                  onTap: () => setState(() {
+                    _minutos = m;
+                    _minutosTexto.text = '$m';
+                  }),
                 ),
               ),
               if (m != 240) const SizedBox(width: 8),
             ],
           ],
         ),
+        const SizedBox(height: 10),
+        SgCampo(
+          controlador: _minutosTexto,
+          icono: Icons.timer_outlined,
+          hint: '60',
+          teclado: TextInputType.number,
+          rotulo: 'Minutos',
+          onCambio: (v) => setState(() {
+            final n = int.tryParse(v.trim());
+            if (n != null) _minutos = n;
+          }),
+        ),
+        /* Los dos límites los hace cumplir el SP —rechaza 0 o negativo y
+           rechaza más de 1440—, y se avisan ACÁ para no descubrirlo después de
+           haber elegido a la persona. El de 24 h no es un capricho: un tramo
+           de treinta horas es un error de fecha, y grabarlo arruina el MTTR
+           del activo por meses. */
+        if (_minutosMalos != null) ...[
+          const SizedBox(height: 10),
+          SgAviso(
+            _minutosMalos!,
+            icono: Icons.error_outline,
+            color: sg.rojoTexto,
+          ),
+        ],
         const SizedBox(height: 14),
         SgBoton(
           'Sumar al trabajo',
           icono: Icons.person_add_alt,
-          onTap: _elegido == null
+          onTap: (_elegido == null || _minutosMalos != null)
               ? null
               : () {
                   final ahora = DateTime.now();
@@ -718,6 +807,55 @@ class _Estante extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Agrupa a los compañeros por su [Companero.grupo], conservando el orden que
+/// trajo el servidor dentro de cada grupo.
+///
+/// Vive fuera de las dos hojas porque las dos agrupan igual: dos copias de esta
+/// función se separan el día que alguien toque una.
+Map<String, List<Companero>> agruparCompaneros(List<Companero> lista) {
+  final salida = <String, List<Companero>>{};
+
+  for (final c in lista) {
+    salida.putIfAbsent(c.grupo, () => <Companero>[]).add(c);
+  }
+
+  /* Los grupos, por nombre. El servidor ordena a las PERSONAS y ese orden se
+     conserva dentro de cada grupo; el orden de los grupos lo decide la app
+     porque el servidor no sabe cómo se van a agrupar. */
+  final claves = salida.keys.toList()..sort();
+  return {for (final k in claves) k: salida[k]!};
+}
+
+/// El encabezado de un grupo, con cuántos hay debajo.
+class _Encabezado extends StatelessWidget {
+  const _Encabezado(this.texto, {required this.cuantos});
+
+  final String texto;
+  final int cuantos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2, left: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              texto.toUpperCase(),
+              style: sora(11, 700, color: sg.tinta3, espaciado: 0.6),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('$cuantos', style: sora(11, 600, color: sg.tinta3)),
+        ],
+      ),
     );
   }
 }

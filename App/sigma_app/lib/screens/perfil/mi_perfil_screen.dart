@@ -143,7 +143,7 @@ class _Cabecera extends StatelessWidget {
 
     return Row(
       children: [
-        SgAvatar(p.iniciales, id: p.usu_id, lado: 76),
+        SgAvatar(p.iniciales, id: p.usu_id, lado: 76, ruta: p.FOTO_RUTA),
         const SizedBox(width: 14),
         Expanded(
           child: Column(

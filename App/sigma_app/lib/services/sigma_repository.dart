@@ -673,16 +673,35 @@ class SigmaRepository {
   // ---- Compartir un trabajo ----
 
   /// Con quién se puede compartir: los asignados a esa instalación.
-  Future<List<Companero>> companeros(int instalacion, {String? filtro}) async {
+  /// Quienes pueden estar en un trabajo, en esta instalacion.
+  ///
+  /// [perfiles] son los ids de perfil que se aceptan. Sin ellos el SP devuelve
+  /// a TODOS los usuarios de la planta —el gerente comercial y el
+  /// administrador incluidos, que no van a estar delante de la maquina—, asi
+  /// que las dos hojas pasan siempre [perfilesDeTerreno].
+  Future<List<Companero>> companeros(
+    int instalacion, {
+    String? filtro,
+    List<int>? perfiles,
+  }) async {
     final j = await _api.get(
       '${ApiConstants.compartir}/companeros',
       query: {
         'instalacion': instalacion,
         if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+        if (perfiles != null && perfiles.isNotEmpty)
+          'perfiles': perfiles.join(','),
       },
     );
     return Paginado.desde(j, Companero.fromJson).datos;
   }
+
+  /// Los perfiles que pisan la planta, decididos con Bryan el 08-09-2026:
+  /// Tecnico (13), Bodeguero (4), Planificador (11) y Supervisor (12).
+  ///
+  /// Valen para las DOS hojas —sumar compañero y compartir—, asi que viven acá
+  /// y no repetidos en cada pantalla.
+  static const List<int> perfilesDeTerreno = [13, 4, 11, 12];
 
   /// Deja el aviso en la bandeja del compañero. El **título lo arma el SP**:
   /// «Ramiro te compartió OT-1» tiene que decir lo mismo venga del teléfono
@@ -836,9 +855,13 @@ class SigmaRepository {
   /// miles, y llenan un selector de una sola vez.
   Future<List<BodegaUbicacion>> ubicacionesDeBodega(int bodegaId) async {
     final j = await _api.get('${ApiConstants.bodegas}/$bodegaId/ubicaciones');
-    final datos = (j is List) ? j : ((j is Map && j['datos'] is List) ? j['datos'] as List : const []);
+    final datos = (j is List)
+        ? j
+        : ((j is Map && j['datos'] is List) ? j['datos'] as List : const []);
     return datos
-        .map((e) => BodegaUbicacion.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) => BodegaUbicacion.fromJson((e as Map).cast<String, dynamic>()),
+        )
         .toList();
   }
 

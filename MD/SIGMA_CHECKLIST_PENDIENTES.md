@@ -124,16 +124,16 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ## Bloque 4 — Lo levantado el 08-09 (§3.2 del traspaso)
 
-- [ ] **4.1 · Sumar compañero.** Filtrar por perfil, mostrar foto y
-  especialidad, agrupar, y **minutos a mano** (hoy topa en 4 h y el SP acepta
-  24). Perfiles ya decididos: Técnico (13), Bodeguero (4), Planificador (11),
-  Supervisor (12).
+- [x] **4.1 · Sumar compañero.** Hecho: filtro por perfil en el SP (`BD/196`),
+  avatar con foto o iniciales, agrupado por oficio —perfil de respaldo— y campo
+  de minutos con aviso de los dos límites que el SP hace cumplir (0 y 1440).
 
-- [ ] **4.2 · Compartir.** Mismo criterio y mismos perfiles, agrupado por perfil
-  y especialidad.
+- [x] **4.2 · Compartir.** Hecho, con la misma función de agrupamiento y el
+  mismo avatar.
 
-- [ ] **4.3 · Resolver 4.1 y 4.2 una sola vez.** Las dos hojas usan el mismo SP:
-  una sola fuente, no dos consultas parecidas.
+- [x] **4.3 · Resolver 4.1 y 4.2 una sola vez.** Hecho:
+  `SigmaRepository.perfilesDeTerreno`, `Companero.grupo` y
+  `agruparCompaneros()` son una sola fuente para las dos hojas.
 
 - [ ] **4.4 · Bitácora y Tareas: audio, imágenes y video al Blob Storage.**
 
@@ -146,8 +146,10 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 - [ ] **5.2 · En alertas debe verse la foto del activo, repuesto o componente**,
   y si no hay, un icono como respaldo.
 
-- [ ] **5.3 · El avatar del usuario: foto, y si no hay, las iniciales estilo
-  Teams.** En **todos** los lugares donde aparezca.
+- [x] **5.3 · El avatar del usuario: foto, y si no hay, las iniciales estilo
+  Teams.** Hecho en `SgAvatar`, con color estable por persona. `BD/197` y
+  `GET /mi-perfil` traen la ruta del blob; los cinco sitios donde aparece el
+  avatar la pasan cuando la tienen.
 
 - [ ] **5.4 · «Más» más corporativo e intuitivo.**
   **Preguntar antes de rediseñar.** «Más corporativo» puede ser la marca más

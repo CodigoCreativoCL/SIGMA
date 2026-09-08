@@ -210,6 +210,7 @@ class _Cabecera extends ConsumerWidget {
             perfil?.iniciales ?? (primero.isEmpty ? '?' : primero[0]),
             id: sesion.usuario,
             lado: 46,
+            ruta: perfil?.FOTO_RUTA,
           ),
           const SizedBox(width: 12),
           Expanded(

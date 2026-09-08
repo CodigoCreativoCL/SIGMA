@@ -121,6 +121,7 @@ class MiPerfil {
     this.usu_correo,
     this.usu_telefono,
     this.PERFILES,
+    this.FOTO_RUTA,
   });
 
   final int usu_id;
@@ -131,6 +132,10 @@ class MiPerfil {
   final String? usu_correo;
   final String? usu_telefono;
   final String? PERFILES;
+
+  /// La ruta del blob de su foto. Nula mientras no haya cargado ninguna, y
+  /// entonces el avatar pinta las iniciales.
+  final String? FOTO_RUTA;
 
   String get nombreCompleto => [
     usu_nombre,
@@ -156,6 +161,7 @@ class MiPerfil {
     usu_correo: _sN(j['usu_correo']),
     usu_telefono: _sN(j['usu_telefono']),
     PERFILES: _sN(j['PERFILES']),
+    FOTO_RUTA: _sN(j['FOTO_RUTA']),
   );
 }
 
@@ -2034,6 +2040,8 @@ class Companero {
     required this.NOMBRE,
     this.LOGIN,
     this.PERFIL_NOMBRE,
+    this.PERFIL_ID,
+    this.FOTO_RUTA,
     this.ESPECIALIDADES,
     this.especialidades = const [],
   });
@@ -2043,6 +2051,14 @@ class Companero {
   final String? LOGIN;
   final String? PERFIL_NOMBRE;
 
+  /// El id del perfil. Se agrupa por él y no por el nombre: agrupar por texto
+  /// se rompe con un acento o una mayúscula.
+  final int? PERFIL_ID;
+
+  /// La ruta del blob de su foto, si tiene. Nula mientras nadie haya cargado
+  /// una, y entonces se pintan las [iniciales].
+  final String? FOTO_RUTA;
+
   /// «Mecánico · Eléctrico»: lo que sabe hacer, para leerlo en la fila.
   final String? ESPECIALIDADES;
 
@@ -2050,6 +2066,24 @@ class Companero {
   /// mayúscula rompen la comparación, y la especialidad del tramo tiene que
   /// viajar como id de verdad.
   final List<int> especialidades;
+
+  /// Con qué encabezar su grupo: el oficio si lo tiene declarado, y el perfil
+  /// si no.
+  ///
+  /// Se decide acá y no en cada hoja porque las dos —sumar compañero y
+  /// compartir— agrupan igual, y dos copias de esta regla se separan el día que
+  /// alguien toque una.
+  ///
+  /// **Hoy `Usuario_Especialidad` está vacía**, así que en la práctica todos
+  /// caen en su perfil. Eso no es un fallo del código: es el dato que falta, y
+  /// se carga desde la web.
+  String get grupo {
+    final e = (ESPECIALIDADES ?? '').trim();
+    if (e.isNotEmpty) return e;
+    return (PERFIL_NOMBRE ?? '').trim().isEmpty
+        ? 'Sin especialidad'
+        : PERFIL_NOMBRE!.trim();
+  }
 
   /// Las iniciales, para el avatar cuando no hay foto.
   String get iniciales {
@@ -2066,6 +2100,8 @@ class Companero {
     NOMBRE: _s(j['NOMBRE']),
     LOGIN: _sN(j['LOGIN']),
     PERFIL_NOMBRE: _sN(j['PERFIL_NOMBRE']),
+    PERFIL_ID: _iN(j['PERFIL_ID']),
+    FOTO_RUTA: _sN(j['FOTO_RUTA']),
     ESPECIALIDADES: _sN(j['ESPECIALIDADES']),
     especialidades: _s(
       j['ESPECIALIDAD_IDS'],

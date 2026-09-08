@@ -290,7 +290,8 @@ final prediccionProvider = FutureProvider.family<PrediccionFicha, int>(
 /// pregunta por la que tiene el repuesto delante.
 final ubicacionesBodegaProvider =
     FutureProvider.family<List<BodegaUbicacion>, int>(
-        (ref, bodegaId) => _repo.ubicacionesDeBodega(bodegaId));
+      (ref, bodegaId) => _repo.ubicacionesDeBodega(bodegaId),
+    );
 
 // ---- Favoritos marcados en esta sesión ----
 

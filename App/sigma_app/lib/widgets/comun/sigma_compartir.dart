@@ -7,13 +7,18 @@ import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import 'sigma_v3.dart';
+import '../../screens/ordenes/hojas_recursos.dart';
 
 /// Con quién se puede compartir, en esta instalación.
 ///
 /// Se pide por instalación y no una vez por sesión: la persona puede cambiar
 /// de planta en el día, y la lista de quién está ahí cambia con ella.
 final companerosProvider = FutureProvider.family<List<Companero>, int>(
-  (ref, instalacion) => SigmaRepository.instance.companeros(instalacion),
+  (ref, instalacion) => SigmaRepository.instance.companeros(
+    instalacion,
+    // Sin esto salian tambien el gerente comercial y el administrador.
+    perfiles: SigmaRepository.perfilesDeTerreno,
+  ),
 );
 
 /// La hoja de compartir un trabajo con un compañero.
@@ -207,16 +212,35 @@ class _HojaCompartirState extends ConsumerState<HojaCompartir> {
                       );
                     }
 
+                    /* AGRUPADA POR OFICIO, Y POR PERFIL CUANDO NO HAY OFICIO
+
+                       Mismo criterio y misma funcion que la hoja de sumar
+                       compañero: `agruparCompaneros`. Compartir con la persona
+                       equivocada y sumar a la equivocada son el mismo error,
+                       asi que la lista se lee igual en las dos. */
+                    final filas = <Widget>[];
+
+                    for (final g in agruparCompaneros(visibles).entries) {
+                      filas.add(
+                        _EncabezadoGrupo(g.key, cuantos: g.value.length),
+                      );
+                      for (final c in g.value) {
+                        filas.add(
+                          _FilaCompanero(
+                            companero: c,
+                            enviando: _enviando == c.usu_id,
+                            bloqueado: _enviando != null,
+                            onTap: () => _compartirCon(c),
+                          ),
+                        );
+                      }
+                    }
+
                     return ListView.separated(
                       shrinkWrap: true,
-                      itemCount: visibles.length,
+                      itemCount: filas.length,
                       separatorBuilder: (_, _) => const SizedBox(height: 8),
-                      itemBuilder: (_, i) => _FilaCompanero(
-                        companero: visibles[i],
-                        enviando: _enviando == visibles[i].usu_id,
-                        bloqueado: _enviando != null,
-                        onTap: () => _compartirCon(visibles[i]),
-                      ),
+                      itemBuilder: (_, i) => filas[i],
                     );
                   },
                 ),
@@ -252,18 +276,14 @@ class _FilaCompanero extends StatelessWidget {
       onTap: bloqueado ? null : onTap,
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
-              color: sg.tinte(sg.primario),
-              borderRadius: BorderRadius.circular(SgRadius.icono48),
-            ),
-            alignment: Alignment.center,
-            child: Text(
-              companero.iniciales,
-              style: sora(15, 700, color: sg.primarioTexto),
-            ),
+          // Su foto si la hay, y si no las iniciales sobre el color estable
+          // de esa persona. Antes eran iniciales siempre, todas del mismo
+          // color: ocho filas identicas donde habia que leer el nombre.
+          SgAvatar(
+            companero.iniciales,
+            id: companero.usu_id,
+            lado: 42,
+            ruta: companero.FOTO_RUTA,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -275,12 +295,14 @@ class _FilaCompanero extends StatelessWidget {
                   style: sora(15, 600, color: sg.tinta),
                   overflow: TextOverflow.ellipsis,
                 ),
-                if ((companero.PERFIL_NOMBRE ?? '').isNotEmpty) ...[
+                if (companero.grupo.isNotEmpty) ...[
                   const SizedBox(height: 2),
-                  // El perfil importa: para un acople eléctrico se busca al
-                  // eléctrico, no al primero de la lista.
+                  /* El OFICIO manda sobre el perfil: para un acople electrico
+                     se busca al electrico, y «Tecnico de Mantenimiento» no
+                     dice si lo es. `grupo` ya resuelve ese respaldo, y es el
+                     mismo criterio con que se agrupa arriba. */
                   Text(
-                    companero.PERFIL_NOMBRE!,
+                    companero.grupo,
                     style: sora(12, 500, color: sg.tinta3),
                     overflow: TextOverflow.ellipsis,
                   ),
@@ -300,6 +322,42 @@ class _FilaCompanero extends StatelessWidget {
             )
           else
             Icon(Icons.send_outlined, size: 20, color: sg.primarioTexto),
+        ],
+      ),
+    );
+  }
+}
+
+/// El encabezado de un grupo en la hoja de compartir.
+///
+/// Es gemelo del de `hojas_recursos.dart` a propósito: allá es privado de esa
+/// pantalla, y exportarlo obligaría a que una hoja dependiera del layout de la
+/// otra. Lo que **sí** se comparte es la regla de agrupamiento —
+/// `agruparCompaneros` y `Companero.grupo`—, que es donde estaría el error si
+/// las dos se separaran.
+class _EncabezadoGrupo extends StatelessWidget {
+  const _EncabezadoGrupo(this.texto, {required this.cuantos});
+
+  final String texto;
+  final int cuantos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2, left: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              texto.toUpperCase(),
+              style: sora(11, 700, color: sg.tinta3, espaciado: 0.6),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('$cuantos', style: sora(11, 600, color: sg.tinta3)),
         ],
       ),
     );

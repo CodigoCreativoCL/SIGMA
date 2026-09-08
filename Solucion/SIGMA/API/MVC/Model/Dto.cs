@@ -351,6 +351,20 @@ namespace API.MVC.Model
         public string PERFIL_NOMBRE { get; set; }
 
         /// <summary>
+        /// El id del perfil. La app agrupa por el, no por el nombre: agrupar
+        /// por texto se rompe con un acento o una mayuscula.
+        /// </summary>
+        public int? PERFIL_ID { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de la foto, como la del activo. No el binario: una
+        /// lista de veinte personas serian veinte fotos en el mismo JSON, en
+        /// una red de planta. Nula mientras nadie tenga foto cargada, y ahi la
+        /// app pinta las iniciales.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
+
+        /// <summary>
         /// «Mecanico · Electrico»: lo que sabe hacer, para leerlo en la fila.
         ///
         /// Un trabajo lo hacen dos personas de oficios distintos —uno desmonta
@@ -469,6 +483,19 @@ namespace API.MVC.Model
         public string usu_correo { get; set; }
         public string usu_telefono { get; set; }
         public string PERFILES { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de su foto. Nula mientras no haya cargado ninguna,
+        /// y ahi el avatar pinta las iniciales.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
+    }
+
+    /// <summary>Lo que devuelve `API_SEL_APP_USUARIO_FOTO`.</summary>
+    public class UsuarioFotoDto
+    {
+        public int usu_id { get; set; }
+        public string FOTO_RUTA { get; set; }
     }
 
     public class MiPerfilEdicionDto

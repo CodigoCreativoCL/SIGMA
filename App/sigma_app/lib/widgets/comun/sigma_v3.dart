@@ -20,6 +20,7 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
+import 'sigma_imagen.dart';
 
 /// El anillo del v3: `0 0 0 <ancho>px <color>`, por fuera y sin desenfoque.
 List<BoxShadow> anillo(Color color, {double ancho = 2}) => [
@@ -721,33 +722,77 @@ class SgIconoCuadro extends StatelessWidget {
 /// paleta que `SitioBase.Avatar` en la web**. Si saliera de un hash del
 /// nombre, la misma persona sería de un color en el navegador y de otro en el
 /// teléfono, y el color dejaría de servir para reconocerla.
+/// El avatar de una persona: su foto si la hay, y si no las iniciales.
+///
+/// ## Por qué las iniciales y no un muñeco gris
+///
+/// En una lista de compañeros el icono genérico repetido ocho veces no
+/// distingue a nadie: hay que leer el nombre de todos para encontrar a uno. Las
+/// iniciales sobre un color estable por persona —`AppColors.avatarDe(id)`— se
+/// reconocen de un vistazo, que es cómo funcionan Teams, Slack y el resto. El
+/// color sale del id y no del azar, así que la misma persona es siempre del
+/// mismo color en toda la app.
+///
+/// ## Por qué la foto va por [ruta] y no como bytes
+///
+/// Vive en el Blob Storage y la baja `SigmaImagen`, que la cachea y deduplica.
+/// Mandar el binario dentro del JSON de la lista serían veinte fotos en una
+/// sola respuesta, en la red de una planta.
 class SgAvatar extends StatelessWidget {
-  const SgAvatar(this.iniciales, {super.key, this.id = 0, this.lado = 46});
+  const SgAvatar(
+    this.iniciales, {
+    super.key,
+    this.id = 0,
+    this.lado = 46,
+    this.ruta,
+  });
 
   final String iniciales;
   final int id;
   final double lado;
 
+  /// La ruta del blob de la foto. Nula o vacía deja las iniciales.
+  final String? ruta;
+
   @override
-  Widget build(BuildContext context) => Container(
-    width: lado,
-    height: lado,
-    decoration: BoxDecoration(
-      color: AppColors.avatarDe(id),
-      shape: BoxShape.circle,
-    ),
-    alignment: Alignment.center,
-    child: Text(
-      iniciales,
-      style: sora(
-        lado * 0.33,
-        700,
-        color: const Color(0xFFF8FAFC),
-        espaciado: lado * -0.008,
-        tabular: true,
+  Widget build(BuildContext context) {
+    final conFoto = (ruta ?? '').trim().isNotEmpty;
+
+    if (conFoto) {
+      return ClipOval(
+        child: SigmaImagen(
+          ruta: ruta,
+          ancho: lado,
+          alto: lado,
+          radio: lado / 2,
+          // Dentro de una lista no se amplía: el toque de la fila es para
+          // elegir a la persona, no para mirarle la cara.
+          ampliable: false,
+          iconoVacio: Icons.person_outline,
+        ),
+      );
+    }
+
+    return Container(
+      width: lado,
+      height: lado,
+      decoration: BoxDecoration(
+        color: AppColors.avatarDe(id),
+        shape: BoxShape.circle,
       ),
-    ),
-  );
+      alignment: Alignment.center,
+      child: Text(
+        iniciales,
+        style: sora(
+          lado * 0.33,
+          700,
+          color: const Color(0xFFF8FAFC),
+          espaciado: lado * -0.008,
+          tabular: true,
+        ),
+      ),
+    );
+  }
 }
 
 /// El cuadro de una foto que vive en el Blob Storage.

@@ -139,6 +139,7 @@ class MasScreen extends ConsumerWidget {
                   perfil?.iniciales ?? '?',
                   id: sesion.usuario,
                   lado: 48,
+                  ruta: perfil?.FOTO_RUTA,
                 ),
                 const SizedBox(width: 14),
                 Expanded(
