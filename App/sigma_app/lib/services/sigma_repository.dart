@@ -720,6 +720,21 @@ class SigmaRepository {
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
+  /// Lo que se puede consumir contra esta orden, **con la compatibilidad
+  /// marcada**.
+  ///
+  /// No se reusa `/existencias`: aquel listado es de la planta y no sabe nada
+  /// de esta orden. La pregunta acá es «de lo que hay en bodega, qué le calza
+  /// a ESTE equipo».
+  Future<List<RepuestoOrden>> repuestosDeOrden(int ordenId,
+      {String? filtro}) async {
+    final j = await _api.get(
+      '${ApiConstants.ordenesTrabajo}/$ordenId/repuestos-disponibles',
+      query: {if (filtro != null && filtro.isNotEmpty) 'filtro': filtro},
+    );
+    return Paginado.desde(j, RepuestoOrden.fromJson).datos;
+  }
+
   /// Consumo o devolucion de repuesto (HU-116). **Mueve el inventario**: el SP
   /// hace las dos escrituras en una transaccion, asi que la bodega y la orden
   /// no pueden discrepar.

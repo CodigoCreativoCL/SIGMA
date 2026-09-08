@@ -1730,6 +1730,51 @@ class BitacoraEntrada {
       );
 }
 
+/// Un repuesto con saldo, marcando si **sirve para el equipo** de la orden.
+///
+/// ## Por qué se marca y no se filtra
+///
+/// Una compatibilidad que nadie declaró no significa que la pieza no sirva:
+/// significa que no se anotó. En terreno, a las tres de la mañana, hay que
+/// poder usar lo que hay. La app avisa; la persona decide.
+class RepuestoOrden {
+  const RepuestoOrden({
+    required this.isa_id,
+    required this.isa_repuesto,
+    required this.isa_bodega,
+    required this.REPUESTO_CODIGO,
+    required this.REPUESTO_NOMBRE,
+    required this.CANTIDAD_DISPONIBLE,
+    this.UNIDAD_SIMBOLO,
+    this.BODEGA_NOMBRE,
+    this.ES_COMPATIBLE = false,
+  });
+
+  final int isa_id;
+  final int isa_repuesto;
+  final int isa_bodega;
+  final String REPUESTO_CODIGO;
+  final String REPUESTO_NOMBRE;
+  final double CANTIDAD_DISPONIBLE;
+  final String? UNIDAD_SIMBOLO;
+  final String? BODEGA_NOMBRE;
+
+  /// Declarado compatible con el tipo, el modelo o un componente del activo.
+  final bool ES_COMPATIBLE;
+
+  factory RepuestoOrden.fromJson(Map<String, dynamic> j) => RepuestoOrden(
+        isa_id: _i(j['isa_id']),
+        isa_repuesto: _i(j['isa_repuesto']),
+        isa_bodega: _i(j['isa_bodega']),
+        REPUESTO_CODIGO: _s(j['REPUESTO_CODIGO']),
+        REPUESTO_NOMBRE: _s(j['REPUESTO_NOMBRE']),
+        CANTIDAD_DISPONIBLE: _d(j['CANTIDAD_DISPONIBLE']),
+        UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+        BODEGA_NOMBRE: _sN(j['BODEGA_NOMBRE']),
+        ES_COMPATIBLE: _b(j['ES_COMPATIBLE']),
+      );
+}
+
 /// Alguien de la misma instalación con quien se puede compartir un trabajo.
 ///
 /// La lista sale de `Cliente_Instalacion_Usuario`, la misma regla que las
@@ -1741,12 +1786,22 @@ class Companero {
     required this.NOMBRE,
     this.LOGIN,
     this.PERFIL_NOMBRE,
+    this.ESPECIALIDADES,
+    this.especialidades = const [],
   });
 
   final int usu_id;
   final String NOMBRE;
   final String? LOGIN;
   final String? PERFIL_NOMBRE;
+
+  /// «Mecánico · Eléctrico»: lo que sabe hacer, para leerlo en la fila.
+  final String? ESPECIALIDADES;
+
+  /// Los mismos, como ids. Se filtra por id y no por texto: un acento o una
+  /// mayúscula rompen la comparación, y la especialidad del tramo tiene que
+  /// viajar como id de verdad.
+  final List<int> especialidades;
 
   /// Las iniciales, para el avatar cuando no hay foto.
   String get iniciales {
@@ -1763,6 +1818,12 @@ class Companero {
         NOMBRE: _s(j['NOMBRE']),
         LOGIN: _sN(j['LOGIN']),
         PERFIL_NOMBRE: _sN(j['PERFIL_NOMBRE']),
+        ESPECIALIDADES: _sN(j['ESPECIALIDADES']),
+        especialidades: _s(j['ESPECIALIDAD_IDS'])
+            .split(',')
+            .map((x) => int.tryParse(x.trim()))
+            .whereType<int>()
+            .toList(),
       );
 }
 

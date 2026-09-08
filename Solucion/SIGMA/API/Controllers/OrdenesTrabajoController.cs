@@ -319,6 +319,40 @@ namespace API.Controllers
         }
 
         /// <summary>
+        /// GET /ordenes-trabajo/{id}/repuestos-disponibles — que se puede
+        /// consumir, y que de eso SIRVE para el equipo.
+        ///
+        /// POR QUE NO SE REUSA /existencias
+        ///
+        ///   Aquel listado es de la planta y no sabe nada de esta orden. La
+        ///   pregunta acá es otra: «de lo que hay en bodega, que le calza a
+        ///   ESTE equipo». Un rodamiento 6205 y uno 6310 se ven casi iguales
+        ///   en una lista, y el que se equivoca lo descubre abajo, con el
+        ///   equipo abierto y la pieza que no calza en la mano.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/repuestos-disponibles")]
+        public IHttpActionResult RepuestosDisponibles(int id, string filtro = null)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("EJECUTAR ORDEN TRABAJO");
+                ExigirCliente();
+
+                List<RepuestoOrdenDto> r = Datos.Listar<RepuestoOrdenDto>(
+                    "API_SEL_APP_REPUESTO_ORDEN",
+                    new Dictionary<string, object>
+                    {
+                        { "@OTR_ID", id },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@FILTRO", filtro }
+                    });
+
+                return Ok(r ?? new List<RepuestoOrdenDto>());
+            });
+        }
+
+        /// <summary>
         /// POST /ordenes-trabajo/{id}/repuestos — consume o devuelve. HU-116
         ///
         /// **Mueve el inventario.** Registrar el consumo sin descontar del

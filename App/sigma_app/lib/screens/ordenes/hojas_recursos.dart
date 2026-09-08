@@ -10,7 +10,12 @@ import '../../widgets/comun/sigma_compartir.dart';
 import '../../widgets/comun/sigma_v3.dart';
 
 /// Lo que devuelve la hoja de compañero.
-typedef TramoCompanero = ({Companero quien, DateTime desde, DateTime hasta});
+typedef TramoCompanero = ({
+  Companero quien,
+  DateTime desde,
+  DateTime hasta,
+  int? especialidad,
+});
 
 /// Lo que devuelve la hoja de repuesto.
 typedef ConsumoRepuesto = ({
@@ -47,6 +52,12 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
   Companero? _elegido;
   int _minutos = 60;
 
+  /// La especialidad por la que se está filtrando. Nula = todas.
+  ///
+  /// Se filtra por id y no por texto: un acento o una mayúscula rompen la
+  /// comparación, y «Eléctrico» se escribe de dos formas según el teclado.
+  int? _especialidad;
+
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
@@ -58,6 +69,62 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
       children: [
         const SgRotulo('Quién participó'),
         const SizedBox(height: 9),
+
+        /* FILTRAR POR OFICIO, NO POR NOMBRE
+
+           Un trabajo lo hacen dos personas de oficios distintos: el mecánico
+           desmonta y el eléctrico desconecta. En una planta donde no se conoce
+           a todos, buscar «quién es eléctrico» es la pregunta real; buscar por
+           nombre exige saber la respuesta de antemano.
+
+           Los chips salen de las especialidades que la gente de ESTA planta
+           tiene de verdad, no del catálogo entero: un filtro que siempre da
+           cero ocupa sitio y enseña a ignorar la fila. Hoy la tabla
+           `Usuario_Especialidad` está vacía, así que no se dibuja ninguno —y
+           el día que se cargue aparecen solos, sin tocar la app—. */
+        companeros.maybeWhen(
+          data: (lista) {
+            final oficios = <int, String>{};
+            for (final c in lista) {
+              final nombres = (c.ESPECIALIDADES ?? '').split(' · ');
+              for (var i = 0; i < c.especialidades.length; i++) {
+                if (i < nombres.length && nombres[i].trim().isNotEmpty) {
+                  oficios[c.especialidades[i]] = nombres[i].trim();
+                }
+              }
+            }
+
+            if (oficios.isEmpty) return const SizedBox.shrink();
+
+            final ids = oficios.keys.toList()
+              ..sort((a, b) => oficios[a]!.compareTo(oficios[b]!));
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                height: 34,
+                child: ListView.separated(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: ids.length + 1,
+                  separatorBuilder: (_, _) => const SizedBox(width: 8),
+                  itemBuilder: (_, i) {
+                    if (i == 0) {
+                      return SgChip('Todos',
+                          elegido: _especialidad == null,
+                          onTap: () => setState(() => _especialidad = null));
+                    }
+                    final id = ids[i - 1];
+                    return SgChip(oficios[id]!,
+                        elegido: _especialidad == id,
+                        onTap: () => setState(() => _especialidad = id));
+                  },
+                ),
+              ),
+            );
+          },
+          orElse: () => const SizedBox.shrink(),
+        ),
+
         ConstrainedBox(
           constraints:
               BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.3),
@@ -73,33 +140,47 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
               icono: Icons.error_outline,
               color: sg.rojoTexto,
             ),
-            data: (lista) => lista.isEmpty
-                ? SgAviso(
-                    'No hay nadie más asignado a esta planta. Las asignaciones '
-                    'se hacen desde la web.',
-                    icono: Icons.person_off_outlined,
-                    color: sg.tinta2,
-                  )
-                : ListView.separated(
-                    shrinkWrap: true,
-                    itemCount: lista.length,
-                    separatorBuilder: (_, _) => const SizedBox(height: 8),
-                    itemBuilder: (_, i) {
-                      final c = lista[i];
-                      final elegido = _elegido?.usu_id == c.usu_id;
-                      return SgFila(
-                        texto: c.NOMBRE,
-                        // El perfil importa: para un acople eléctrico se suma
-                        // al eléctrico, no al primero de la lista.
-                        detalle: c.PERFIL_NOMBRE,
-                        icono: elegido
-                            ? Icons.radio_button_checked
-                            : Icons.radio_button_unchecked,
-                        colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
-                        onTap: () => setState(() => _elegido = c),
-                      );
-                    },
-                  ),
+            data: (todos) {
+              final lista = _especialidad == null
+                  ? todos
+                  : todos
+                      .where((c) => c.especialidades.contains(_especialidad))
+                      .toList();
+
+              if (lista.isEmpty) {
+                return SgAviso(
+                  todos.isEmpty
+                      ? 'No hay nadie más asignado a esta planta. Las '
+                          'asignaciones se hacen desde la web.'
+                      : 'Nadie de esta planta tiene esa especialidad.',
+                  icono: Icons.person_off_outlined,
+                  color: sg.tinta2,
+                );
+              }
+
+              return ListView.separated(
+                shrinkWrap: true,
+                itemCount: lista.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (_, i) {
+                  final c = lista[i];
+                  final elegido = _elegido?.usu_id == c.usu_id;
+                  return SgFila(
+                    texto: c.NOMBRE,
+                    // El OFICIO manda sobre el perfil: para un acople
+                    // eléctrico se suma al eléctrico, y «Técnico de
+                    // Mantenimiento» no dice si lo es. El perfil queda de
+                    // respaldo mientras las especialidades no estén cargadas.
+                    detalle: c.ESPECIALIDADES ?? c.PERFIL_NOMBRE,
+                    icono: elegido
+                        ? Icons.radio_button_checked
+                        : Icons.radio_button_unchecked,
+                    colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
+                    onTap: () => setState(() => _elegido = c),
+                  );
+                },
+              );
+            },
           ),
         ),
         const SizedBox(height: 14),
@@ -134,6 +215,13 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                     quien: _elegido!,
                     desde: ahora.subtract(Duration(minutes: _minutos)),
                     hasta: ahora,
+                    // Con qué oficio participó. Si no se filtró, la primera
+                    // que tenga: un tramo sin especialidad no se puede costear
+                    // después, porque la tarifa depende del oficio.
+                    especialidad: _especialidad ??
+                        (_elegido!.especialidades.isEmpty
+                            ? null
+                            : _elegido!.especialidades.first),
                   ));
                 },
         ),
@@ -151,7 +239,9 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
 /// técnico a buscar algo que no está, y ese viaje perdido es exactamente lo
 /// que la app existe para evitar.
 class HojaRepuesto extends ConsumerStatefulWidget {
-  const HojaRepuesto({super.key});
+  const HojaRepuesto({super.key, required this.ordenId});
+
+  final int ordenId;
 
   @override
   ConsumerState<HojaRepuesto> createState() => _HojaRepuestoState();
@@ -160,7 +250,7 @@ class HojaRepuesto extends ConsumerStatefulWidget {
 class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
   final _buscar = TextEditingController();
   final _cantidad = TextEditingController(text: '1');
-  InventarioSaldo? _elegido;
+  RepuestoOrden? _elegido;
   String _filtro = '';
 
   @override
@@ -181,7 +271,7 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
-    final existencias = ref.watch(existenciasProvider);
+    final disponibles = ref.watch(repuestosOrdenProvider(widget.ordenId));
 
     // Pasarse del saldo lo rechaza el SP igual, pero avisar antes ahorra el
     // viaje de red y explica por qué: el número está a la vista.
@@ -204,7 +294,7 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
         ConstrainedBox(
           constraints: BoxConstraints(
               maxHeight: MediaQuery.sizeOf(context).height * 0.28),
-          child: existencias.when(
+          child: disponibles.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
               child: Center(child: CircularProgressIndicator()),
@@ -216,17 +306,15 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
               icono: Icons.error_outline,
               color: sg.rojoTexto,
             ),
-            data: (p) {
-              // Solo lo que tiene saldo: una fila en cero es una pieza que no
-              // se puede consumir, y ofrecerla solo sirve para fallar.
-              final visibles = p.datos
-                  .where((x) =>
-                      x.CANTIDAD_DISPONIBLE > 0 &&
-                      (_filtro.isEmpty ||
+            data: (lista) {
+              final visibles = _filtro.isEmpty
+                  ? lista
+                  : lista
+                      .where((x) =>
                           '${x.REPUESTO_CODIGO} ${x.REPUESTO_NOMBRE}'
                               .toLowerCase()
-                              .contains(_filtro)))
-                  .toList();
+                              .contains(_filtro))
+                      .toList();
 
               if (visibles.isEmpty) {
                 return SgAviso(
@@ -238,6 +326,10 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                 );
               }
 
+              // El servidor ya las ordenó con lo compatible primero. La app no
+              // vuelve a ordenar: dos criterios de orden terminan discrepando.
+              final compatibles = visibles.where((x) => x.ES_COMPATIBLE).length;
+
               return ListView.separated(
                 shrinkWrap: true,
                 itemCount: visibles.length,
@@ -245,16 +337,45 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                 itemBuilder: (_, i) {
                   final x = visibles[i];
                   final elegido = _elegido?.isa_id == x.isa_id;
-                  return SgFila(
-                    texto: '${x.REPUESTO_CODIGO} · ${x.REPUESTO_NOMBRE}',
-                    detalle: '${_num(x.CANTIDAD_DISPONIBLE)} '
-                        '${x.UNIDAD_SIMBOLO ?? ''} · '
-                        '${x.BODEGA_NOMBRE ?? 'bodega'}',
-                    icono: elegido
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
-                    onTap: () => setState(() => _elegido = x),
+
+                  // La primera que NO es compatible abre el grupo de abajo, y
+                  // solo si antes hubo alguna que sí: sin compatibilidades
+                  // declaradas, un aviso sobre la lista entera no dice nada.
+                  final abreOtros =
+                      compatibles > 0 && !x.ES_COMPATIBLE && i == compatibles;
+
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      if (abreOtros) ...[
+                        const SizedBox(height: 6),
+                        SgAviso(
+                          'De aquí abajo no está declarado que sirvan para '
+                          'este equipo. Puede que sirvan igual.',
+                          icono: Icons.info_outline,
+                          color: sg.tinta2,
+                          tenido: true,
+                        ),
+                        const SizedBox(height: 10),
+                      ],
+                      SgFila(
+                        texto: '${x.REPUESTO_CODIGO} · ${x.REPUESTO_NOMBRE}',
+                        detalle: '${_num(x.CANTIDAD_DISPONIBLE)} '
+                            '${x.UNIDAD_SIMBOLO ?? ''} · '
+                            '${x.BODEGA_NOMBRE ?? 'bodega'}',
+                        icono: elegido
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
+                        derecha: x.ES_COMPATIBLE
+                            ? SgBadge('Compatible',
+                                color: sg.verdeTexto,
+                                icono: Icons.verified_outlined,
+                                chico: true)
+                            : null,
+                        onTap: () => setState(() => _elegido = x),
+                      ),
+                    ],
                   );
                 },
               );

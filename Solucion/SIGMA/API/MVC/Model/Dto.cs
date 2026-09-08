@@ -321,6 +321,27 @@ namespace API.MVC.Model
         public bool ES_FAVORITO { get; set; }
     }
 
+    /// <summary>
+    /// Un repuesto con saldo en la planta de la orden, marcando si SIRVE para
+    /// el equipo.
+    ///
+    /// Se marca y no se filtra: una compatibilidad que nadie declaro no
+    /// significa que la pieza no sirva, significa que no se anoto — y en
+    /// terreno, a las tres de la mañana, hay que poder usar lo que hay.
+    /// </summary>
+    public class RepuestoOrdenDto
+    {
+        public int isa_id { get; set; }
+        public int isa_repuesto { get; set; }
+        public int isa_bodega { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string BODEGA_NOMBRE { get; set; }
+        public decimal CANTIDAD_DISPONIBLE { get; set; }
+        public bool ES_COMPATIBLE { get; set; }
+    }
+
     /// <summary>Un compañero con quien se puede compartir (HU nueva).</summary>
     public class CompaneroDto
     {
@@ -328,6 +349,22 @@ namespace API.MVC.Model
         public string NOMBRE { get; set; }
         public string LOGIN { get; set; }
         public string PERFIL_NOMBRE { get; set; }
+
+        /// <summary>
+        /// «Mecanico · Electrico»: lo que sabe hacer, para leerlo en la fila.
+        ///
+        /// Un trabajo lo hacen dos personas de oficios distintos —uno desmonta
+        /// y otro desconecta— y al sumar a alguien hay que poder buscarlo por
+        /// eso, no por su nombre.
+        /// </summary>
+        public string ESPECIALIDADES { get; set; }
+
+        /// <summary>
+        /// Los mismos, como ids separados por coma. Es lo que la app usa para
+        /// filtrar y para mandar `@ESPECIALIDAD` al registrar el tramo:
+        /// filtrar por texto se rompe con un acento o una mayuscula.
+        /// </summary>
+        public string ESPECIALIDAD_IDS { get; set; }
     }
 
     /// <summary>Lo que la app manda al compartir un trabajo.</summary>

@@ -172,6 +172,7 @@ class RecursosOrdenVista extends ConsumerWidget {
         'fecha_inicio_utc': elegido.desde.toUtc().toIso8601String(),
         'fecha_fin_utc': elegido.hasta.toUtc().toIso8601String(),
         'usuario_tramo': elegido.quien.usu_id,
+        'especialidad': elegido.especialidad,
         'observacion': 'Participó en el trabajo.',
       });
       ref.invalidate(recursosOrdenProvider(ordenId));
@@ -196,7 +197,7 @@ class RecursosOrdenVista extends ConsumerWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (_) => const HojaRepuesto(),
+      builder: (_) => HojaRepuesto(ordenId: ordenId),
     );
 
     if (elegido == null || !context.mounted) return;
@@ -209,6 +210,10 @@ class RecursosOrdenVista extends ConsumerWidget {
         'es_devolucion': false,
       });
       ref.invalidate(recursosOrdenProvider(ordenId));
+      // El saldo cambió: la próxima vez que se abra la hoja tiene que
+      // mostrar lo que queda, no lo que había.
+      ref.invalidate(repuestosOrdenProvider(ordenId));
+      ref.invalidate(existenciasProvider);
       mensajero.showSnackBar(
           SnackBar(content: Text('${elegido.nombre} consumido.')));
     } on ApiException catch (e) {

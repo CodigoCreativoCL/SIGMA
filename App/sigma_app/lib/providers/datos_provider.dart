@@ -165,6 +165,11 @@ final ordenTrabajoProvider = FutureProvider.family<OrdenTrabajoFicha, int>(
 final recursosOrdenProvider = FutureProvider.family<RecursosOrden, int>(
     (ref, id) => _repo.recursosOrden(id));
 
+/// Lo que se puede consumir contra una orden, con la compatibilidad marcada.
+final repuestosOrdenProvider =
+    FutureProvider.family<List<RepuestoOrden>, int>(
+        (ref, ordenId) => _repo.repuestosDeOrden(ordenId));
+
 // ---- Permisos de trabajo ----
 
 final permisosTrabajoProvider =

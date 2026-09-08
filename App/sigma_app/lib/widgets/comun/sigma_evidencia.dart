@@ -55,7 +55,8 @@ class SgEvidencias extends ConsumerStatefulWidget {
   ConsumerState<SgEvidencias> createState() => _SgEvidenciasState();
 }
 
-class _SgEvidenciasState extends ConsumerState<SgEvidencias> {
+class _SgEvidenciasState extends ConsumerState<SgEvidencias>
+    with WidgetsBindingObserver {
   /// Las que están viajando ahora. Se muestran junto a las guardadas para que
   /// la tira no parpadee ni se vacíe entre el obturador y la respuesta.
   final List<FotoTomada> _subiendo = [];
@@ -64,6 +65,42 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias> {
   /// una foto que se saca y desaparece de la pantalla se lee como que no se
   /// guardó, y el técnico la vuelve a sacar.
   final List<FotoTomada> _enCola = [];
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    // También al montar: si la app murió con la cámara abierta, vuelve por
+    // este camino y no por el de `resumed`.
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _recuperarPerdida());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState estado) {
+    if (estado == AppLifecycleState.resumed) _recuperarPerdida();
+  }
+
+  /// La foto que Android se quedó a medio camino.
+  ///
+  /// Mientras la cámara está en primer plano el sistema puede **matar la app**
+  /// para liberar memoria. Al volver, el `Future` que esperaba la foto ya no
+  /// existe y se veía como que la foto se sacó y desapareció del panel — que
+  /// es exactamente lo que se reportó desde terreno.
+  ///
+  /// La foto sí quedó en disco: lo único que se perdió fue quién la esperaba.
+  Future<void> _recuperarPerdida() async {
+    final foto = await EvidenciaService.instance.recuperarPerdida();
+    if (foto == null || !mounted) return;
+
+    await _subir(foto);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -146,11 +183,23 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias> {
   }
 
   Future<void> _agregar({required bool desdeCamara}) async {
-    final mensajero = ScaffoldMessenger.of(context);
     final servicio = EvidenciaService.instance;
 
     final foto = desdeCamara ? await servicio.tomar() : await servicio.elegir();
     if (foto == null || !mounted) return;
+
+    await _subir(foto);
+  }
+
+  /// Sube la foto, o la encola si no hay señal.
+  ///
+  /// Está separado de [_agregar] porque hay **dos formas de llegar acá**: la
+  /// normal —se sacó la foto y el `Future` volvió— y la recuperada, cuando
+  /// Android mató la app con la cámara abierta. Las dos terminan igual, y
+  /// duplicar este camino sería duplicar también el encolado sin señal.
+  Future<void> _subir(FotoTomada foto) async {
+    final mensajero = ScaffoldMessenger.of(context);
+    final servicio = EvidenciaService.instance;
 
     setState(() => _subiendo.add(foto));
 

@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 
 import 'outbox_service.dart';
@@ -61,6 +62,49 @@ class EvidenciaService {
   /// foto ya está sacada —con la cámara de la planta, o antes de abrir la
   /// app— y obligar a repetirla es pedirle a alguien que vuelva a subir.
   Future<FotoTomada?> elegir() => _obtener(ImageSource.gallery);
+
+  /// Recupera la foto que Android se quedó a medio camino.
+  ///
+  /// ## Por qué hace falta
+  ///
+  /// Mientras la cámara está en primer plano, Android puede **matar la app**
+  /// para liberar memoria —un teléfono de terreno con la cámara abierta es
+  /// justo cuando más apretado va—. Al volver, la app arranca de nuevo, el
+  /// `Future` de `pickImage` que estaba esperando ya no existe y la foto se
+  /// pierde: se ve como que se sacó y desapareció del panel.
+  ///
+  /// No es un caso raro ni un defecto de esta app: `image_picker` lo documenta
+  /// y expone `retrieveLostData` justamente para esto. La foto **sí quedó** en
+  /// el disco del sistema; lo único que se perdió fue quién la estaba
+  /// esperando.
+  ///
+  /// Devuelve `null` cuando no hay nada que recuperar, que es lo normal.
+  Future<FotoTomada?> recuperarPerdida() async {
+    try {
+      final LostDataResponse perdida = await _selector.retrieveLostData();
+
+      if (perdida.isEmpty) return null;
+
+      final x = perdida.file;
+      if (x == null) {
+        // Hubo un error del sistema, no una foto a medias.
+        debugPrint('[Evidencia] Dato perdido sin archivo: ${perdida.exception}');
+        return null;
+      }
+
+      final archivo = File(x.path);
+      if (!await archivo.exists()) return null;
+
+      return FotoTomada(
+        uuid: OutboxService.nuevoUuid(),
+        archivo: archivo,
+        bytes: await archivo.length(),
+      );
+    } catch (e) {
+      debugPrint('[Evidencia] No se pudo recuperar la foto perdida: $e');
+      return null;
+    }
+  }
 
   Future<FotoTomada?> _obtener(ImageSource origen) async {
     final XFile? x = await _selector.pickImage(
