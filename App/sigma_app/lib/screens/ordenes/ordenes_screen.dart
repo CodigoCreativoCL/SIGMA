@@ -7,6 +7,7 @@ import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'orden_ficha_screen.dart';
 
@@ -387,8 +388,21 @@ class _Tarjeta extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SgFoto(
-                  lado: 60, radio: 17, icono: Icons.build_circle_outlined),
+              // La foto del equipo, que es lo que hace reconocer el trabajo
+              // sin abrirlo. Tres órdenes del mismo activo comparten una sola
+              // descarga: `ImagenService` deduplica por ruta y la deja en
+              // disco. Sin foto cargada queda el hueco del kit, no un error.
+              if ((orden.ACTIVO_FOTO ?? '').isEmpty)
+                const SgFoto(
+                    lado: 60, radio: 17, icono: Icons.build_circle_outlined)
+              else
+                SigmaImagen(
+                  ruta: orden.ACTIVO_FOTO,
+                  ancho: 60,
+                  alto: 60,
+                  radio: 17,
+                  titulo: orden.activo,
+                ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -426,6 +440,25 @@ class _Tarjeta extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text('${orden.OT_NUMERO} · ${orden.otr_titulo}',
                         style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                    // Qué equipo es, antes de dónde está: en una bandeja
+                    // de doce órdenes eso es lo que se busca primero.
+                    if (orden.activo.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          Icon(Icons.view_in_ar_outlined,
+                              size: 14, color: sg.tinta2),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              orden.activo,
+                              style: sora(12, 600, color: sg.tinta2),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                     const SizedBox(height: 6),
                     Row(
                       children: [

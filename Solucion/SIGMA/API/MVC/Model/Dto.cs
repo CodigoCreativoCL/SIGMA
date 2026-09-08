@@ -1156,6 +1156,16 @@ namespace API.MVC.Model
         public int? ACTIVO_ID { get; set; }
         public string ACTIVO_CODIGO { get; set; }
         public string ACTIVO_NOMBRE { get; set; }
+
+        /* LA FOTO Y LA LINEA, PARA RECONOCER EL TRABAJO SIN ABRIRLO
+
+           En una bandeja de doce ordenes, el nombre del activo no basta:
+           puede haber cinco motores iguales y solo uno esta en la Linea 3.
+           La foto es lo que hace que se reconozca de un vistazo, y la ruta
+           de blob deja que la app la cachee una vez para las tres ordenes
+           del mismo equipo. */
+        public string ACTIVO_FOTO { get; set; }
+        public string POSICION_CODIGO { get; set; }
         public string PLANTA_NOMBRE { get; set; }
         public string AREA_NOMBRE { get; set; }
 
@@ -1468,6 +1478,16 @@ namespace API.MVC.Model
         public int PRIORIDAD_ID { get; set; }
         public string ACTIVO_CODIGO { get; set; }
         public string ACTIVO_NOMBRE { get; set; }
+
+        /* LA FOTO Y LA LINEA, PARA RECONOCER EL TRABAJO SIN ABRIRLO
+
+           En una bandeja de doce ordenes, el nombre del activo no basta:
+           puede haber cinco motores iguales y solo uno esta en la Linea 3.
+           La foto es lo que hace que se reconozca de un vistazo, y la ruta
+           de blob deja que la app la cachee una vez para las tres ordenes
+           del mismo equipo. */
+        public string ACTIVO_FOTO { get; set; }
+        public string POSICION_CODIGO { get; set; }
         public string AREA_NOMBRE { get; set; }
         public int ESTADO_ID { get; set; }
         public string ESTADO_CODIGO { get; set; }
@@ -1500,6 +1520,16 @@ namespace API.MVC.Model
         public int PRIORIDAD_ID { get; set; }
         public string ACTIVO_CODIGO { get; set; }
         public string ACTIVO_NOMBRE { get; set; }
+
+        /* LA FOTO Y LA LINEA, PARA RECONOCER EL TRABAJO SIN ABRIRLO
+
+           En una bandeja de doce ordenes, el nombre del activo no basta:
+           puede haber cinco motores iguales y solo uno esta en la Linea 3.
+           La foto es lo que hace que se reconozca de un vistazo, y la ruta
+           de blob deja que la app la cachee una vez para las tres ordenes
+           del mismo equipo. */
+        public string ACTIVO_FOTO { get; set; }
+        public string POSICION_CODIGO { get; set; }
         public string AREA_NOMBRE { get; set; }
         public int ESTADO_ID { get; set; }
         public string ESTADO_NOMBRE { get; set; }

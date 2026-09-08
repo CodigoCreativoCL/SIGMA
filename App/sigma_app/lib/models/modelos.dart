@@ -708,6 +708,8 @@ class OrdenTrabajo {
     this.ACTIVO_ID,
     this.ACTIVO_CODIGO,
     this.ACTIVO_NOMBRE,
+    this.ACTIVO_FOTO,
+    this.POSICION_CODIGO,
     this.PLANTA_NOMBRE,
     this.AREA_NOMBRE,
     this.RESPONSABLE_ID,
@@ -755,6 +757,21 @@ class OrdenTrabajo {
   final int? ACTIVO_ID;
   final String? ACTIVO_CODIGO;
   final String? ACTIVO_NOMBRE;
+
+  /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
+  /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
+  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
+      .where((s) => (s ?? '').isNotEmpty)
+      .join(' · ');
+
+  /// La foto del activo y la línea donde está montado.
+  ///
+  /// En una bandeja de doce órdenes el nombre no basta: puede haber cinco
+  /// motores iguales y solo uno está en la Línea 3. La foto llega como **ruta
+  /// de blob**, así que tres órdenes del mismo equipo comparten una sola
+  /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
+  final String? ACTIVO_FOTO;
+  final String? POSICION_CODIGO;
   final String? PLANTA_NOMBRE;
   final String? AREA_NOMBRE;
 
@@ -781,7 +798,10 @@ class OrdenTrabajo {
       PASOS_TOTAL == 0 ? 0 : (PASOS_LISTOS / PASOS_TOTAL).clamp(0, 1);
 
   /// «MOT-001 · Envasado» con lo que venga.
-  String get ubicacion => [ACTIVO_CODIGO, AREA_NOMBRE, PLANTA_NOMBRE]
+  /// «Quilicura › Envasado › L3-P02». La **línea** entra acá porque es lo que
+  /// distingue dos equipos iguales; el código del activo ya no, porque ahora
+  /// se muestra en su propia fila junto al nombre.
+  String get ubicacion => [PLANTA_NOMBRE, AREA_NOMBRE, POSICION_CODIGO]
       .where((s) => (s ?? '').isNotEmpty)
       .join(' · ');
 
@@ -814,6 +834,8 @@ class OrdenTrabajo {
         ACTIVO_ID: j['ACTIVO_ID'] == null ? null : _i(j['ACTIVO_ID']),
         ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
         PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         RESPONSABLE_ID:
@@ -2109,6 +2131,8 @@ class TareaPendiente {
     this.PRIORIDAD_ID = 2,
     this.ACTIVO_CODIGO,
     this.ACTIVO_NOMBRE,
+    this.ACTIVO_FOTO,
+    this.POSICION_CODIGO,
     this.AREA_NOMBRE,
     this.ESTADO_NOMBRE,
     this.toc_fecha_limite_utc,
@@ -2128,6 +2152,21 @@ class TareaPendiente {
   final int PRIORIDAD_ID;
   final String? ACTIVO_CODIGO;
   final String? ACTIVO_NOMBRE;
+
+  /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
+  /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
+  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
+      .where((s) => (s ?? '').isNotEmpty)
+      .join(' · ');
+
+  /// La foto del activo y la línea donde está montado.
+  ///
+  /// En una bandeja de doce órdenes el nombre no basta: puede haber cinco
+  /// motores iguales y solo uno está en la Línea 3. La foto llega como **ruta
+  /// de blob**, así que tres órdenes del mismo equipo comparten una sola
+  /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
+  final String? ACTIVO_FOTO;
+  final String? POSICION_CODIGO;
   final String? AREA_NOMBRE;
   final String? ESTADO_NOMBRE;
   final DateTime? toc_fecha_limite_utc;
@@ -2147,7 +2186,9 @@ class TareaPendiente {
   bool get empezada => EJECUCION_ABIERTA != null;
   bool get critica => PRIORIDAD_ID >= 4;
 
-  String get donde => [ACTIVO_CODIGO, ACTIVO_NOMBRE, AREA_NOMBRE]
+  /// Dónde está: área y **línea**. El equipo ya no entra acá porque se
+  /// muestra identificado en su propia fila.
+  String get donde => [AREA_NOMBRE, POSICION_CODIGO]
       .where((s) => (s ?? '').isNotEmpty)
       .join(' · ');
 
@@ -2165,6 +2206,8 @@ class TareaPendiente {
         PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
         ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
         toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
@@ -2240,6 +2283,8 @@ class Tarea {
     this.PRIORIDAD_ID = 2,
     this.ACTIVO_CODIGO,
     this.ACTIVO_NOMBRE,
+    this.ACTIVO_FOTO,
+    this.POSICION_CODIGO,
     this.AREA_NOMBRE,
     this.ESTADO_ID = 1,
     this.ESTADO_NOMBRE,
@@ -2264,6 +2309,21 @@ class Tarea {
   final int PRIORIDAD_ID;
   final String? ACTIVO_CODIGO;
   final String? ACTIVO_NOMBRE;
+
+  /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
+  /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
+  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
+      .where((s) => (s ?? '').isNotEmpty)
+      .join(' · ');
+
+  /// La foto del activo y la línea donde está montado.
+  ///
+  /// En una bandeja de doce órdenes el nombre no basta: puede haber cinco
+  /// motores iguales y solo uno está en la Línea 3. La foto llega como **ruta
+  /// de blob**, así que tres órdenes del mismo equipo comparten una sola
+  /// descarga —`ImagenService` deduplica por ruta y la guarda en disco—.
+  final String? ACTIVO_FOTO;
+  final String? POSICION_CODIGO;
   final String? AREA_NOMBRE;
   final int ESTADO_ID;
   final String? ESTADO_NOMBRE;
@@ -2291,7 +2351,9 @@ class Tarea {
   bool get faltaEvidencia => tar_requiere_evidencia && EVIDENCIAS == 0;
   bool get critica => PRIORIDAD_ID >= 4;
 
-  String get donde => [ACTIVO_CODIGO, ACTIVO_NOMBRE, AREA_NOMBRE]
+  /// Dónde está: área y **línea**. El equipo ya no entra acá porque se
+  /// muestra identificado en su propia fila.
+  String get donde => [AREA_NOMBRE, POSICION_CODIGO]
       .where((s) => (s ?? '').isNotEmpty)
       .join(' · ');
 
@@ -2308,6 +2370,8 @@ class Tarea {
         PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
         ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
         ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
         AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
         ESTADO_ID: _i(j['ESTADO_ID'], 1),
         ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),

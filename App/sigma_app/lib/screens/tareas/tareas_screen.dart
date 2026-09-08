@@ -7,6 +7,8 @@ import '../../providers/datos_provider.dart';
 import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../theme/sigma_tokens.dart';
+import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'tarea_ficha_screen.dart';
 
@@ -117,14 +119,26 @@ class _Tarjeta extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SgIconoCuadro(
-                tarea.tar_requiere_evidencia
-                    ? Icons.photo_camera_outlined
-                    : Icons.task_alt,
-                color: tarea.vencida ? sg.rojoTexto : sg.acentoTexto,
-                lado: 44,
-                tamanoIcono: 22,
-              ),
+              // La foto del equipo cuando la hay; el ícono de la tarea
+              // cuando no. Sin activo asociado —una ronda de limpieza— el
+              // ícono es lo correcto: no hay equipo que reconocer.
+              if ((tarea.ACTIVO_FOTO ?? '').isNotEmpty)
+                SigmaImagen(
+                  ruta: tarea.ACTIVO_FOTO,
+                  ancho: 44,
+                  alto: 44,
+                  radio: SgRadius.icono48,
+                  titulo: tarea.activo,
+                )
+              else
+                SgIconoCuadro(
+                  tarea.tar_requiere_evidencia
+                      ? Icons.photo_camera_outlined
+                      : Icons.task_alt,
+                  color: tarea.vencida ? sg.rojoTexto : sg.acentoTexto,
+                  lado: 44,
+                  tamanoIcono: 22,
+                ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -156,6 +170,15 @@ class _Tarjeta extends StatelessWidget {
                     const SizedBox(height: 6),
                     Text(tarea.tar_titulo,
                         style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                    // Qué equipo, y después dónde está.
+                    if (tarea.activo.isNotEmpty) ...[
+                      const SizedBox(height: 5),
+                      _Renglon(
+                        icono: Icons.view_in_ar_outlined,
+                        texto: tarea.activo,
+                        color: sg.tinta2,
+                      ),
+                    ],
                     if (tarea.donde.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       _Renglon(

@@ -46,12 +46,49 @@ void main() {
           isTrue);
     });
 
-    test('el dónde junta lo que hay y no deja separadores sueltos', () {
-      final t = TareaPendiente.fromJson(
-          {...base(), 'ACTIVO_CODIGO': 'ACT-34', 'AREA_NOMBRE': 'Linea 1'});
+    test('el dónde es UBICACIÓN, no el equipo', () {
+      // El código del activo salió de acá el 08-09-2026: la tarjeta muestra
+      // el equipo identificado en su propia fila, y repetirlo en la línea de
+      // ubicación gastaba el ancho que necesita la línea de montaje.
+      final t = TareaPendiente.fromJson({
+        ...base(),
+        'ACTIVO_CODIGO': 'ACT-34',
+        'AREA_NOMBRE': 'Envasado',
+        'POSICION_CODIGO': 'L3-P02',
+      });
 
-      expect(t.donde, 'ACT-34 · Linea 1');
+      expect(t.donde, 'Envasado · L3-P02');
+      expect(t.donde, isNot(contains('ACT-34')));
+    });
+
+    test('el dónde junta lo que hay y no deja separadores sueltos', () {
+      final t =
+          TareaPendiente.fromJson({...base(), 'AREA_NOMBRE': 'Linea 1'});
+
+      expect(t.donde, 'Linea 1');
       expect(TareaPendiente.fromJson(base()).donde, '');
+    });
+
+    test('el equipo se identifica con código y nombre', () {
+      final t = TareaPendiente.fromJson({
+        ...base(),
+        'ACTIVO_CODIGO': 'MOT-001',
+        'ACTIVO_NOMBRE': 'Motor principal',
+      });
+
+      expect(t.activo, 'MOT-001 · Motor principal');
+
+      // Sin activo asociado —una ronda de limpieza— la fila no se dibuja.
+      expect(TareaPendiente.fromJson(base()).activo, '');
+    });
+
+    test('la foto del activo llega como ruta de blob', () {
+      // Ruta, no bytes: tres tareas del mismo equipo comparten una descarga.
+      final t = TareaPendiente.fromJson(
+          {...base(), 'ACTIVO_FOTO': 'sigma/1/activos/mot-001.jpg'});
+
+      expect(t.ACTIVO_FOTO, 'sigma/1/activos/mot-001.jpg');
+      expect(TareaPendiente.fromJson(base()).ACTIVO_FOTO, isNull);
     });
   });
 
