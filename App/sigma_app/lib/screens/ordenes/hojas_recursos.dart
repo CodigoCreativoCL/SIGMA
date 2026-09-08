@@ -7,6 +7,7 @@ import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/sigma_compartir.dart';
+import '../../widgets/comun/sigma_lector.dart';
 import '../../widgets/comun/sigma_v3.dart';
 
 /// Lo que devuelve la hoja de compañero.
@@ -253,6 +254,11 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
   RepuestoOrden? _elegido;
   String _filtro = '';
 
+  /// El último código leído que no calzó con nada. Se muestra tal cual: si la
+  /// etiqueta dice «REP-6205» y no aparece, hay que poder ver QUÉ se leyó para
+  /// saber si el problema es la etiqueta, la bodega o el escáner.
+  String? _noEncontrado;
+
   @override
   void dispose() {
     _buscar.dispose();
@@ -267,6 +273,51 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
   static String _num(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toString();
+
+  /// Leer la etiqueta y elegir la pieza sin teclear.
+  ///
+  /// ## Por qué se resuelve contra la lista ya cargada
+  ///
+  /// Preguntarle al servidor qué es ese código sería un viaje de red delante
+  /// del estante, donde casi nunca hay señal. La lista de lo que hay en esta
+  /// bodega **ya está en la pantalla**: el código solo tiene que encontrarla.
+  ///
+  /// Se compara con el código y también con el nombre, y sin distinguir
+  /// mayúsculas: las etiquetas de una planta las imprimieron cuatro personas
+  /// distintas en diez años.
+  Future<void> _escanear() async {
+    final leido = await SgLector.abrir(
+      context,
+      titulo: 'Escanear el repuesto',
+      ayuda: 'Apunta a la etiqueta del estante o de la caja',
+    );
+
+    if (leido == null || !mounted) return;
+
+    final codigo = leido.trim().toLowerCase();
+    final lista = ref.read(repuestosOrdenProvider(widget.ordenId)).valueOrNull ??
+        const <RepuestoOrden>[];
+
+    final calza = lista.where((x) =>
+        x.REPUESTO_CODIGO.toLowerCase() == codigo ||
+        x.REPUESTO_NOMBRE.toLowerCase() == codigo);
+
+    setState(() {
+      if (calza.isEmpty) {
+        // No se limpia la lista: lo que se buscaba a mano sigue ahí, y el
+        // aviso explica que el código no dio con nada.
+        _noEncontrado = leido.trim();
+        return;
+      }
+
+      _noEncontrado = null;
+      _elegido = calza.first;
+      // Se filtra a esa pieza para que quede sola en pantalla: tras escanear,
+      // ver una lista de veinte con una marcada obliga a buscarla otra vez.
+      _buscar.text = calza.first.REPUESTO_CODIGO;
+      _filtro = calza.first.REPUESTO_CODIGO.toLowerCase();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,12 +335,41 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
       detalle: 'Descuenta de la bodega y queda anotado en la orden, en una '
           'sola operación.',
       children: [
-        SgCampo(
-          controlador: _buscar,
-          icono: Icons.search,
-          hint: 'Buscar por código o nombre',
-          onCambio: (v) => setState(() => _filtro = v.toLowerCase().trim()),
+        Row(
+          children: [
+            Expanded(
+              child: SgCampo(
+                controlador: _buscar,
+                icono: Icons.search,
+                hint: 'Buscar por código o nombre',
+                onCambio: (v) =>
+                    setState(() => _filtro = v.toLowerCase().trim()),
+              ),
+            ),
+            const SizedBox(width: 9),
+            // Escanear la etiqueta del estante. Con guantes de nitrilo, un
+            // «REP-6205» tecleado es donde más se falla, y un código mal
+            // escrito devuelve una lista vacía que parece que la pieza no
+            // existe.
+            SgBotonIcono(
+              Icons.qr_code_scanner,
+              fondo: sg.tinte(sg.primario),
+              color: sg.primarioTexto,
+              lado: 52,
+              tamano: 22,
+              onTap: _escanear,
+            ),
+          ],
         ),
+        if (_noEncontrado != null) ...[
+          const SizedBox(height: 10),
+          SgAviso(
+            'Se leyó «$_noEncontrado» y no hay ninguna pieza con ese código '
+            'con saldo en esta planta.',
+            icono: Icons.search_off,
+            color: sg.ambarTexto,
+          ),
+        ],
         const SizedBox(height: 12),
         ConstrainedBox(
           constraints: BoxConstraints(
