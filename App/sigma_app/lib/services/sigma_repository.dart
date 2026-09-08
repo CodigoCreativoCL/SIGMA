@@ -689,9 +689,13 @@ class SigmaRepository {
     return (j is Map) ? j.cast<String, dynamic>() : <String, dynamic>{};
   }
 
-  Future<void> cerrarChecklist(int ejecucionId, {String? observacion}) =>
+  /// Cierra la pauta. Los `minutos` son los que **midió el cronómetro**, con
+  /// las pausas descontadas; sin ellos el servidor calcula la diferencia
+  /// contra la hora de inicio, que cuenta como trabajo el rato que se esperó.
+  Future<void> cerrarChecklist(int ejecucionId,
+          {String? observacion, int? minutos}) =>
       _api.post('${ApiConstants.checklistEjecuciones}/$ejecucionId/cerrar',
-          {'observacion': observacion});
+          {'observacion': observacion, 'minutos': minutos});
 
   // ---- Ordenes de trabajo (HU-110, 113, 114, 119, 121) ----
 

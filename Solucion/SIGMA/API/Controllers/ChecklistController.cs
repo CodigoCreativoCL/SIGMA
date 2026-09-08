@@ -214,6 +214,7 @@ namespace API.Controllers
                     {
                         { "@CEJ_ID", id },
                         { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@MINUTOS", dto == null ? null : (object)dto.minutos },
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@OBSERVACION", dto == null ? null : dto.observacion }
                     });

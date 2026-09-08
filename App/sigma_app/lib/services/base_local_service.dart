@@ -38,7 +38,7 @@ class BaseLocalService {
   BaseLocalService._();
   static final BaseLocalService instance = BaseLocalService._();
 
-  static const _version = 1;
+  static const _version = 2;
   static const _archivo = 'sigma_local.db';
 
   Database? _db;
@@ -55,6 +55,7 @@ class BaseLocalService {
         // Escalones acumulativos, uno por versión. El comentario de cada uno
         // dice POR QUÉ cambió, no qué cambió: el qué ya lo dice el SQL.
         if (anterior < 1) await _v1(d);
+        if (anterior < 2) await _v2(d);
       },
     );
   }
@@ -115,6 +116,80 @@ class BaseLocalService {
         total       INTEGER NOT NULL DEFAULT 0
       )
     ''');
+  }
+
+  /// v2 — los tramos del cronómetro.
+  ///
+  /// ## Por qué en disco y no en memoria
+  ///
+  /// Un turno dura ocho horas y el teléfono se bloquea, se queda sin batería,
+  /// se cierra la app o suena una llamada. Un cronómetro en memoria pierde el
+  /// tiempo trabajado en cualquiera de esas cuatro, y el técnico se entera al
+  /// final, cuando ya no puede reconstruirlo.
+  ///
+  /// ## Por qué TRAMOS y no un contador
+  ///
+  /// Guardar «llevo 43 minutos» obliga a escribir en disco todo el rato y aun
+  /// así pierde el tramo en curso si el proceso muere. Un tramo con su inicio
+  /// —y su fin cuando se pausa— se escribe **dos veces por tramo** y el tiempo
+  /// se calcula al leer: si la app muere con el cronómetro corriendo, al
+  /// volver sigue contando desde el inicio real, que es lo que de verdad pasó.
+  ///
+  /// Y son los mismos tramos que después alimentan la mano de obra de una OT:
+  /// no hay que inventar un segundo registro del mismo hecho.
+  Future<void> _v2(Database d) async {
+    await d.execute('''
+      CREATE TABLE IF NOT EXISTS cronometro (
+        id          INTEGER PRIMARY KEY AUTOINCREMENT,
+        entidad     TEXT    NOT NULL,
+        entidad_id  INTEGER NOT NULL,
+        inicio      TEXT    NOT NULL,
+        fin         TEXT
+      )
+    ''');
+
+    // Se consulta siempre por entidad, y el tramo abierto es el ultimo.
+    await d.execute('CREATE INDEX IF NOT EXISTS ix_cronometro_entidad '
+        'ON cronometro (entidad, entidad_id, id)');
+  }
+
+  // ----------------------------------------------------------- cronómetro --
+
+  /// Los tramos de algo, en orden.
+  Future<List<Map<String, dynamic>>> tramos(String entidad, int id) async {
+    final d = await db;
+    return d.query('cronometro',
+        where: 'entidad = ? AND entidad_id = ?',
+        whereArgs: [entidad, id],
+        orderBy: 'id ASC');
+  }
+
+  Future<void> abrirTramo(String entidad, int id) async {
+    final d = await db;
+    await d.insert('cronometro', {
+      'entidad': entidad,
+      'entidad_id': id,
+      'inicio': DateTime.now().toIso8601String(),
+    });
+  }
+
+  /// Cierra el tramo abierto, si lo hay. Es idempotente: pausar dos veces no
+  /// puede restar tiempo ni dejar dos tramos abiertos.
+  Future<void> cerrarTramo(String entidad, int id) async {
+    final d = await db;
+    await d.update(
+      'cronometro',
+      {'fin': DateTime.now().toIso8601String()},
+      where: 'entidad = ? AND entidad_id = ? AND fin IS NULL',
+      whereArgs: [entidad, id],
+    );
+  }
+
+  /// Al cerrar la gestión: los tramos ya se enviaron dentro de ella.
+  Future<void> borrarTramos(String entidad, int id) async {
+    final d = await db;
+    await d.delete('cronometro',
+        where: 'entidad = ? AND entidad_id = ?', whereArgs: [entidad, id]);
   }
 
   // ---------------------------------------------------------------- caché --

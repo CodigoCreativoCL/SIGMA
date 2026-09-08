@@ -5,12 +5,14 @@ import 'package:intl/intl.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/api_client.dart';
+import '../../services/cronometro_service.dart';
 import '../../services/outbox_service.dart';
 import '../../services/sigma_repository.dart';
 import '../../services/sync_service.dart';
 import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_cronometro.dart';
 import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
@@ -116,6 +118,10 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
         'finalizar': false,
         'offline': !SyncService.instance.enLinea.value,
       });
+      // El cronómetro arranca con la tarea, no con la pantalla: lo que se
+      // quiere medir es el trabajo, y la ficha se abre muchas veces antes.
+      await CronometroService.instance.iniciar('TAREA', t.toc_id);
+
       if (!mounted) return;
       setState(() => _empezada = true);
       ref.invalidate(tareaProvider(widget.ocurrenciaId));
@@ -131,6 +137,10 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
 
+    // El cronómetro se detiene ANTES de mandar: si sigue corriendo mientras
+    // viaja el cierre, el tiempo que suma es el de la red, no el del trabajo.
+    final medidos = await CronometroService.instance.detener('TAREA', t.toc_id);
+
     try {
       await SigmaRepository.instance.guardarEjecucionTarea({
         'uuid': _uuid,
@@ -138,9 +148,14 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
         'finalizar': true,
         'conforme': conforme,
         'resultado': resultado.trim().isEmpty ? null : resultado.trim(),
-        'minutos': minutos,
+        'minutos': medidos > 0 ? medidos : minutos,
         'offline': !SyncService.instance.enLinea.value,
       });
+
+      // Los tramos ya viajaron dentro del cierre: dejarlos haría que reabrir
+      // la ficha mostrara un cronómetro con el tiempo de la tarea anterior.
+      await CronometroService.instance.limpiar('TAREA', t.toc_id);
+
       if (!mounted) return;
       ref.invalidate(tareasPendientesProvider);
       navegador.pop();
@@ -326,89 +341,108 @@ class _EjecucionState extends State<_Ejecucion> {
     // de cerrar algo que honestamente no ocurrió.
     final faltaFoto = _conforme == true && t.faltaEvidencia;
 
-    return SgCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const SgRotulo('¿CÓMO TERMINÓ?'),
-          const SizedBox(height: 10),
-          Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        // El tiempo va arriba de todo: es lo que se mira MIENTRAS se trabaja.
+        // El cierre es lo que se mira al final, y ponerlo primero obligaba a
+        // desplazar la pantalla para ver cuánto se lleva.
+        SgCronometro(entidad: 'TAREA', entidadId: t.toc_id),
+        const SizedBox(height: 12),
+        SgCard(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: SgChip('Se hizo',
-                    elegido: _conforme == true,
-                    icono: Icons.check,
-                    onTap: () => setState(() => _conforme = true)),
+              const SgRotulo('¿CÓMO TERMINÓ?'),
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: SgChip('Se hizo',
+                        elegido: _conforme == true,
+                        icono: Icons.check,
+                        onTap: () => setState(() => _conforme = true)),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: SgChip('No se pudo',
+                        elegido: _conforme == false,
+                        icono: Icons.close,
+                        onTap: () => setState(() => _conforme = false)),
+                  ),
+                ],
               ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: SgChip('No se pudo',
-                    elegido: _conforme == false,
-                    icono: Icons.close,
-                    onTap: () => setState(() => _conforme = false)),
-              ),
+              if (_conforme != null) ...[
+                const SizedBox(height: 14),
+                SgRotuloCampo(_conforme == false
+                    ? '¿Por qué no se pudo?'
+                    : 'Observación (opcional)'),
+                const SizedBox(height: 7),
+                SgCampo(
+                  controlador: _resultado,
+                  lineas: 3,
+                  hint: _conforme == false
+                      ? 'La bomba estaba en producción, no se pudo detener…'
+                      : 'Todo normal',
+                  onCambio: (_) => setState(() {}),
+                  sufijo: SgMicrofonoCampo(
+                    rotulo: _conforme == false ? 'Motivo' : 'Observación',
+                    soloTexto: true,
+                    lado: 38,
+                    onValor: (v) => setState(() => _resultado.text = v),
+                  ),
+                ),
+                if (faltaMotivo) ...[
+                  const SizedBox(height: 10),
+                  SgAviso(
+                    'Una tarea que no se hizo y no dice por qué es igual a una '
+                    'olvidada. Escribe qué pasó, aunque sea corto.',
+                    icono: Icons.edit_note,
+                    color: sg.ambarTexto,
+                    tenido: true,
+                  ),
+                ],
+                if (faltaFoto) ...[
+                  const SizedBox(height: 10),
+                  SgAviso(
+                    'Esta tarea pide una foto. Sácala más arriba y después cierra.',
+                    icono: Icons.photo_camera_outlined,
+                    color: sg.ambarTexto,
+                    tenido: true,
+                  ),
+                ],
+                const SizedBox(height: 14),
+                SgBoton(
+                  _conforme == false ? 'Registrar como no realizada' : 'Listo',
+                  icono: _conforme == false ? Icons.report_outlined : Icons.check,
+                  color: _conforme == false ? sg.ambarTexto : null,
+                  onTap: (faltaMotivo || faltaFoto)
+                      ? null
+                      : () => widget.onCerrar(
+                          _conforme!, _resultado.text, _minutos(t)),
+                ),
+              ],
             ],
           ),
-          if (_conforme != null) ...[
-            const SizedBox(height: 14),
-            SgRotuloCampo(_conforme == false
-                ? '¿Por qué no se pudo?'
-                : 'Observación (opcional)'),
-            const SizedBox(height: 7),
-            SgCampo(
-              controlador: _resultado,
-              lineas: 3,
-              hint: _conforme == false
-                  ? 'La bomba estaba en producción, no se pudo detener…'
-                  : 'Todo normal',
-              onCambio: (_) => setState(() {}),
-              sufijo: SgMicrofonoCampo(
-                rotulo: _conforme == false ? 'Motivo' : 'Observación',
-                soloTexto: true,
-                lado: 38,
-                onValor: (v) => setState(() => _resultado.text = v),
-              ),
-            ),
-            if (faltaMotivo) ...[
-              const SizedBox(height: 10),
-              SgAviso(
-                'Una tarea que no se hizo y no dice por qué es igual a una '
-                'olvidada. Escribe qué pasó, aunque sea corto.',
-                icono: Icons.edit_note,
-                color: sg.ambarTexto,
-                tenido: true,
-              ),
-            ],
-            if (faltaFoto) ...[
-              const SizedBox(height: 10),
-              SgAviso(
-                'Esta tarea pide una foto. Sácala más arriba y después cierra.',
-                icono: Icons.photo_camera_outlined,
-                color: sg.ambarTexto,
-                tenido: true,
-              ),
-            ],
-            const SizedBox(height: 14),
-            SgBoton(
-              _conforme == false ? 'Registrar como no realizada' : 'Listo',
-              icono: _conforme == false ? Icons.report_outlined : Icons.check,
-              color: _conforme == false ? sg.ambarTexto : null,
-              onTap: (faltaMotivo || faltaFoto)
-                  ? null
-                  : () => widget.onCerrar(
-                      _conforme!, _resultado.text, _minutos(t)),
-            ),
-          ],
-        ],
-      ),
+        ),
+      ],
     );
   }
 
   /// Los minutos que se ven en el teléfono. El servidor los recalcula si no
   /// vienen; mandarlos sirve para el caso sin señal, donde el reloj del envío
   /// no dice nada de cuándo se hizo el trabajo.
+  ///
+  /// **Manda el cronómetro cuando lo hay**, porque descuenta las pausas: si se
+  /// esperó cuarenta minutos una pieza, esos cuarenta no son trabajo y contar
+  /// desde la hora de inicio los sumaría. La diferencia contra el reloj queda
+  /// de respaldo para la tarea empezada en otro teléfono, donde acá no hay
+  /// tramos que leer.
   int? _minutos(Tarea t) {
+    final c = CronometroService.instance.estado('TAREA', t.toc_id).value;
+    if (c.empezado) return c.minutos;
+
     final inicio = t.tej_fecha_inicio_utc;
     if (inicio == null) return null;
     final m = DateTime.now().toUtc().difference(inicio).inMinutes;

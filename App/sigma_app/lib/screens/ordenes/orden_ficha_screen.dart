@@ -5,11 +5,13 @@ import 'package:intl/intl.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/api_client.dart';
+import '../../services/cronometro_service.dart';
 import '../../services/sigma_repository.dart';
 import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_cronometro.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'recursos_orden.dart';
@@ -110,10 +112,15 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
             _Pie(
               ficha: f,
               ocupado: _ocupado,
-              onTomar: () => _accion(
-                  () => SigmaRepository.instance
-                      .tomarOrdenTrabajo(widget.ordenId),
-                  'Orden tomada. Queda a tu nombre.'),
+              // Tomar la orden es empezar a trabajarla: el cronómetro
+              // arranca ahí, y no al abrir la ficha —que se abre muchas veces
+              // antes de bajar al equipo—.
+              onTomar: () => _accion(() async {
+                await SigmaRepository.instance
+                    .tomarOrdenTrabajo(widget.ordenId);
+                await CronometroService.instance
+                    .iniciar('ORDEN', widget.ordenId);
+              }, 'Orden tomada. Queda a tu nombre.'),
               onPasos: () => setState(() => _pestana = 1),
               onFinalizar: () => _confirmarFin(f),
             ),
@@ -132,6 +139,16 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
     return [
       _Progreso(ficha: f),
       const SizedBox(height: 13),
+
+      /* EL TIEMPO SOLO EXISTE MIENTRAS LA ORDEN ESTA EN EJECUCION
+
+         En una orden abierta que nadie tomo no hay nada que cronometrar, y un
+         cronometro en cero invita a tocar «Continuar» y a empezar a contar un
+         trabajo que todavia no empezo. */
+      if (o.enEjecucion) ...[
+        SgCronometro(entidad: 'ORDEN', entidadId: o.otr_id),
+        const SizedBox(height: 13),
+      ],
       if ((o.otr_descripcion ?? '').isNotEmpty) ...[
         SgCard(
           padding: EdgeInsets.zero,
@@ -348,11 +365,48 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
     control.dispose();
     if (si != true || !mounted) return;
 
+    /* EL TIEMPO MEDIDO SE REGISTRA COMO MANO DE OBRA
+
+       Es para lo que sirve cronometrar: sin este paso el numero se ve en
+       pantalla, se cierra la orden y se pierde — y «cuanto tomo de verdad» es
+       justo el dato que ninguna planificacion tiene.
+
+       Va ANTES de finalizar porque el SP de mano de obra exige la orden en
+       ejecucion: al reves, el tramo se rechazaria.
+
+       Si falla, la orden se finaliza igual y se avisa. Perder el tramo es
+       malo; dejar una orden a medio finalizar porque no se pudo anotar el
+       tiempo es peor. */
+    final minutos =
+        await CronometroService.instance.detener('ORDEN', widget.ordenId);
+
+    if (minutos > 0) {
+      try {
+        await SigmaRepository.instance.registrarManoObra(widget.ordenId, {
+          'fecha_inicio_utc': DateTime.now()
+              .toUtc()
+              .subtract(Duration(minutes: minutos))
+              .toIso8601String(),
+          'fecha_fin_utc': DateTime.now().toUtc().toIso8601String(),
+          'minutos': minutos,
+          'es_hora_extra': false,
+          'observacion': 'Medido por la app, con las pausas descontadas.',
+        });
+      } on ApiException catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+              content: Text('No se pudo anotar el tiempo: ${e.mensaje}')));
+        }
+      }
+    }
+
     await _accion(
       () => SigmaRepository.instance.finalizarOrdenTrabajo(widget.ordenId,
           resultado: texto.isEmpty ? null : texto),
       'Orden finalizada. Queda en espera de cierre.',
     );
+
+    await CronometroService.instance.limpiar('ORDEN', widget.ordenId);
   }
 
   static final _fecha = DateFormat('dd-MM HH:mm', 'es');

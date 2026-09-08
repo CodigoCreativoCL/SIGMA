@@ -5,11 +5,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/api_client.dart';
+import '../../services/cronometro_service.dart';
 import '../../services/sigma_repository.dart';
 import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_cronometro.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 
@@ -158,9 +160,15 @@ class _EjecucionChecklistScreenState
     final navegador = Navigator.of(context);
     setState(() => _ocupado = true);
 
+    // Se detiene antes de mandar: si sigue corriendo mientras viaja el
+    // cierre, lo que suma es el tiempo de la red, no el de la ronda.
+    final minutos =
+        await CronometroService.instance.detener('CHECKLIST', widget.ejecucionId);
+
     try {
       await SigmaRepository.instance.cerrarChecklist(widget.ejecucionId,
-          observacion: obs.isEmpty ? null : obs);
+          observacion: obs.isEmpty ? null : obs, minutos: minutos);
+      await CronometroService.instance.limpiar('CHECKLIST', widget.ejecucionId);
       ref.invalidate(checklistPendientesProvider);
       mensajero.showSnackBar(const SnackBar(content: Text('Pauta enviada.')));
       navegador.pop(true);
@@ -170,6 +178,18 @@ class _EjecucionChecklistScreenState
     } finally {
       if (mounted) setState(() => _ocupado = false);
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    /* Abrir la ejecución ES empezar la ronda: el checklist no tiene un botón
+       de «comenzar» porque la ejecución ya se creó al elegir la pauta. Por eso
+       el cronómetro arranca acá, y no en un botón que no existe.
+
+       `iniciar` es idempotente, así que volver a abrir la pantalla no abre un
+       segundo tramo ni hace correr el tiempo al doble. */
+    CronometroService.instance.iniciar('CHECKLIST', widget.ejecucionId);
   }
 
   @override
@@ -247,6 +267,11 @@ class _Cuerpo extends StatelessWidget {
     return Column(
       children: [
         _Progreso(ejecucion: ejecucion),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: SgCronometro(
+              entidad: 'CHECKLIST', entidadId: ejecucion.cej_id),
+        ),
         Expanded(
           child: ListView(
             padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 8)),

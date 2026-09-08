@@ -1456,6 +1456,12 @@ namespace API.MVC.Model
     public class ChecklistCierreDto
     {
         public string observacion { get; set; }
+        /// <summary>
+        /// Los minutos que midio la app, descontando las pausas. Opcional: sin
+        /// el, el SP calcula la diferencia contra la hora de inicio como
+        /// siempre — que cuenta como trabajo el rato que se espero una pieza.
+        /// </summary>
+        public int? minutos { get; set; }
     }
 
 
