@@ -239,11 +239,23 @@ namespace API.Controllers
 
         internal static List<ClienteElegibleDto> ClientesDe(int usuario)
         {
-            List<ClienteElegibleDto> lista = Datos.Listar<ClienteElegibleDto>("SEL_CLIENTE",
+            /* SEL_CLIENTE NO FILTRA POR USUARIO, AUNQUE LO DECLARE
+
+               Llamandolo con el usuario de un tecnico de Hamburgo devolvia
+               tambien CCU: su @USUARIO cuelga de un LEFT JOIN heredado de la
+               web y no restringe nada. La pantalla de contexto de la app
+               ofrecia entrar a la empresa de otro.
+
+               No era un agujero —`Seleccionar` revalida la pertenencia antes
+               de emitir el token— pero si una fuga: la lista decia que
+               empresas existen en el sistema.
+
+               `API_SEL_APP_CLIENTE` filtra por `Cliente_Usuario` y de paso
+               trae el logo, que es lo que dibuja la pantalla de contexto. */
+            List<ClienteElegibleDto> lista = Datos.Listar<ClienteElegibleDto>("API_SEL_APP_CLIENTE",
                 new Dictionary<string, object>
                 {
-                    { "@USUARIO", usuario },
-                    { "@HABILITADO", true }
+                    { "@USUARIO", usuario }
                 });
 
             return lista ?? new List<ClienteElegibleDto>();

@@ -22,7 +22,6 @@ namespace API.Controllers
     public class ActivosController : ApiBase
     {
         /// <summary>
-        /// <summary>
         /// GET /activos/{id} — la cabecera del activo.            HU-037
         ///
         /// POR QUE HIZO FALTA
@@ -54,7 +53,44 @@ namespace API.Controllers
 
                 if (r == null || r.Count == 0) return NoEncontrado("El activo");
 
-                return Ok(r[0]);
+                ActivoDto activo = r[0];
+
+                /* LAS FOTOS SE PEGAN ACA Y NO EN SEL_ACTIVO
+
+                   SEL_ACTIVO arma su consulta con SQL dinamico y lo usan
+                   tambien los listados de la web: un JOIN mas a
+                   Archivo_Vinculo le costaria a toda pantalla que liste
+                   activos, para un dato que solo mira la ficha.
+
+                   Sin esto la app recibia el activo sin ninguna ruta de
+                   blob y pintaba el marcador de "sin imagen" en equipos que
+                   si tienen foto cargada desde la web. */
+                List<ActivoFotoDto> fotos = Datos.Listar<ActivoFotoDto>("API_SEL_ACTIVO_FOTO",
+                    new Dictionary<string, object>
+                    {
+                        { "@ACTIVO", id },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+
+                activo.FOTOS = new List<string>();
+
+                if (fotos != null)
+                {
+                    for (int i = 0; i < fotos.Count; i++)
+                    {
+                        if (string.IsNullOrEmpty(fotos[i].ARC_RUTA)) continue;
+
+                        activo.FOTOS.Add(fotos[i].ARC_RUTA);
+
+                        /* La portada es la de referencia, y el SP ya las
+                           ordena con esa primera. Si el activo tiene fotos
+                           pero ninguna marcada, la primera hace de portada:
+                           mejor una foto del equipo que ninguna. */
+                        if (activo.FOTO_RUTA == null) activo.FOTO_RUTA = fotos[i].ARC_RUTA;
+                    }
+                }
+
+                return Ok(activo);
             });
         }
 
