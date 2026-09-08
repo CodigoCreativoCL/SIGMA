@@ -109,6 +109,9 @@ abstract final class ApiConstants {
   /// `archivoVer` y la cachea.
   static const String evidencias = '/evidencias';
 
+  /// Compartir un trabajo con un compañero, y sumarse al de otro.
+  static const String compartir = '/compartir';
+
   /// El interruptor de la estrella. **No hay un listado**: el favorito viaja
   /// como `ES_FAVORITO` dentro del listado que la persona ya está mirando.
   static const String favoritos = '/favoritos';

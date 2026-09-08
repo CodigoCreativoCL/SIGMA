@@ -488,7 +488,15 @@ class _Tarjeta extends StatelessWidget {
                                   color: sg.tinta, alto: 1.35)),
                         ),
                         const SizedBox(width: 6),
-                        _Estrella(orden: orden),
+                        _Estrella(
+                          // La clave es del REGISTRO, no de la posición: la
+                          // lista se reordena —los favoritos suben— y sin ella
+                          // Flutter reutiliza el estado de la fila que estaba
+                          // ahí antes, así que la estrella encendida se queda
+                          // en el sitio en vez de seguir a su orden.
+                          key: ValueKey(orden.otr_id),
+                          orden: orden,
+                        ),
                       ],
                     ),
                     // Qué equipo es, antes de dónde está: en una bandeja
@@ -617,7 +625,7 @@ class _Tarjeta extends StatelessWidget {
 /// posición y la siguiente que se quiere marcar ya no está donde estaba. El
 /// reordenamiento se aplica al volver a entrar.
 class _Estrella extends ConsumerStatefulWidget {
-  const _Estrella({required this.orden});
+  const _Estrella({super.key, required this.orden});
 
   final OrdenTrabajo orden;
 

@@ -321,6 +321,41 @@ namespace API.MVC.Model
         public bool ES_FAVORITO { get; set; }
     }
 
+    /// <summary>Un compañero con quien se puede compartir (HU nueva).</summary>
+    public class CompaneroDto
+    {
+        public int usu_id { get; set; }
+        public string NOMBRE { get; set; }
+        public string LOGIN { get; set; }
+        public string PERFIL_NOMBRE { get; set; }
+    }
+
+    /// <summary>Lo que la app manda al compartir un trabajo.</summary>
+    public class CompartirAltaDto
+    {
+        public int destinatario { get; set; }
+
+        /// <summary>ORDEN · TAREA · ACTIVO</summary>
+        public string entidad { get; set; }
+        public int entidad_id { get; set; }
+
+        /// <summary>Opcional: «necesito una mano con el acople».</summary>
+        public string mensaje { get; set; }
+
+        /// <summary>
+        /// Generado al ENCOLAR en el telefono. Sin el, un reintento sin señal
+        /// dejaria cuatro avisos iguales en la bandeja del compañero.
+        /// </summary>
+        public Guid? uuid { get; set; }
+    }
+
+    /// <summary>Sumarse a una orden como participante.</summary>
+    public class UnirmeDto
+    {
+        public int orden_trabajo { get; set; }
+        public Guid? uuid { get; set; }
+    }
+
     /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
     public class ActivoFichaEventoDto
     {

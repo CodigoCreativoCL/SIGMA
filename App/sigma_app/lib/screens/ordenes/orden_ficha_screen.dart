@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
+import '../../providers/sesion_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/cronometro_service.dart';
 import '../../services/sigma_repository.dart';
@@ -11,7 +12,9 @@ import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_compartir.dart';
 import '../../widgets/comun/sigma_cronometro.dart';
+import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'recursos_orden.dart';
@@ -83,7 +86,12 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
             Expanded(
               child: CustomScrollView(
                 slivers: [
-                  SliverToBoxAdapter(child: _Hero(orden: f.orden)),
+                  SliverToBoxAdapter(
+                    child: _Hero(
+                      orden: f.orden,
+                      onCompartir: () => _compartir(f.orden),
+                    ),
+                  ),
                   SliverToBoxAdapter(
                     child: _Pestanas(
                       activa: _pestana,
@@ -302,6 +310,42 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
     ];
   }
 
+  /// Compartir la orden con un compañero de la planta.
+  ///
+  /// ## Por qué esto y no el «compartir» del sistema
+  ///
+  /// El icono de compartir del kit sugería mandar un enlace por WhatsApp. Eso
+  /// saca el trabajo de SIGMA: el compañero recibe un texto que no puede
+  /// abrir, y nada queda registrado. Acá compartir **deja el aviso dentro de
+  /// la app**, y quien lo recibe puede sumarse al trabajo desde ahí.
+  Future<void> _compartir(OrdenTrabajo o) async {
+    final instalacion = ref.read(instalacionProvider);
+    final mensajero = ScaffoldMessenger.of(context);
+
+    if (instalacion == null) {
+      mensajero.showSnackBar(const SnackBar(
+          content: Text('Elige una planta antes de compartir.')));
+      return;
+    }
+
+    final enviado = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => HojaCompartir(
+        instalacionId: instalacion.cin_id,
+        entidad: 'ORDEN',
+        entidadId: o.otr_id,
+        que: '${o.OT_NUMERO} · ${o.otr_titulo}',
+      ),
+    );
+
+    if (enviado == true && mounted) {
+      mensajero.showSnackBar(
+          const SnackBar(content: Text('Compartido. Le llega como alerta.')));
+    }
+  }
+
   Future<void> _confirmarFin(OrdenTrabajoFicha f) async {
     final sg = context.sg;
     final control = TextEditingController();
@@ -415,8 +459,12 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
 // ─────────────────────────────────────────────────────────────── HERO ──
 
 class _Hero extends StatelessWidget {
-  const _Hero({required this.orden});
+  const _Hero({required this.orden, required this.onCompartir});
+
   final OrdenTrabajo orden;
+
+  /// La resuelve la pantalla, que es quien tiene `ref`: el hero solo dibuja.
+  final VoidCallback onCompartir;
 
   static const _tinta = Color(0xFFF8FAFC);
 
@@ -432,23 +480,49 @@ class _Hero extends StatelessWidget {
 
        Sumar el inset al alto conserva los 200 dp que pide el kit por debajo de
        la barra, que es donde el diseño los midió. */
-    return SizedBox(
-      height: 200 + MediaQuery.paddingOf(context).top,
-      child: Stack(
-        fit: StackFit.expand,
-        children: [
-          const DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Color(0xFF141E2F), Color(0xFF0C121F)],
-              ),
-            ),
-          ),
-          // Un solo velo de arriba abajo: el hero de la OT es más bajo que el
-          // del activo y dos velos lo dejarían casi negro entero.
-          const DecoratedBox(
+    /* EL HERO CRECE CON SU CONTENIDO, NO AL REVES
+
+       Tenia alto FIJO y un `Spacer` dentro. Un `Spacer` no puede achicarse por
+       debajo de cero: en cuanto los chips ocupan dos lineas —o el sistema esta
+       con la fuente agrandada, que en terreno es lo habitual— la columna pide
+       mas de lo que hay y sale la franja de overflow encima de la foto.
+       Sumarle el alto de la barra de estado tapaba el caso comun y no la
+       causa.
+
+       Ahora el `Stack` se dimensiona por su hijo no posicionado —la columna—,
+       con un minimo para que el hero no se desplome cuando hay poco que
+       decir. El fondo va en `Positioned.fill`, que se estira a lo que salga. */
+    final foto = orden.ACTIVO_FOTO;
+
+    return Stack(
+      children: [
+        // La foto del equipo cuando la hay; el degradado del kit cuando no.
+        // Es lo que hace reconocer la maquina antes de leer una palabra.
+        Positioned.fill(
+          child: (foto ?? '').isEmpty
+              ? const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [Color(0xFF141E2F), Color(0xFF0C121F)],
+                    ),
+                  ),
+                )
+              : SigmaImagen(
+                  ruta: foto,
+                  radio: 0,
+                  ajuste: BoxFit.cover,
+                  // No se amplia desde acá: el hero es fondo, y tocarlo
+                  // compite con los botones que lleva encima. La foto se
+                  // amplia desde la ficha del activo, donde es el contenido.
+                  ampliable: false,
+                ),
+        ),
+        // Un solo velo de arriba abajo: el hero de la OT es más bajo que el
+        // del activo y dos velos lo dejarían casi negro entero.
+        const Positioned.fill(
+          child: DecoratedBox(
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -458,8 +532,14 @@ class _Hero extends StatelessWidget {
               ),
             ),
           ),
-          SafeArea(
+        ),
+        ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: 200 + MediaQuery.paddingOf(context).top,
+          ),
+          child: SafeArea(
             child: Column(
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(
@@ -471,12 +551,13 @@ class _Hero extends StatelessWidget {
                         _Vidrio(Icons.arrow_back,
                             onTap: () => Navigator.maybePop(context)),
                         const Spacer(),
-                        _Vidrio(Icons.share_outlined),
+                        _Vidrio(Icons.share_outlined, onTap: onCompartir),
                       ],
                     ),
                   ),
                 ),
-                const Spacer(),
+                // Separación mínima; el `ConstrainedBox` reparte lo que sobre.
+                const SizedBox(height: 44),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 13),
                   child: Column(
@@ -522,8 +603,8 @@ class _Hero extends StatelessWidget {
               ],
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

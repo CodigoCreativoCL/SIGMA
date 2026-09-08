@@ -217,6 +217,7 @@
     <Compile Include="Controllers\ActivoEstadosController.cs" />
     <Compile Include="Controllers\ActivosController.cs" />
     <Compile Include="Controllers\FavoritosController.cs" />
+    <Compile Include="Controllers\CompartirController.cs" />
     <Compile Include="Controllers\OrdenesTrabajoController.cs" />
     <Compile Include="Controllers\ChecklistController.cs" />
     <Compile Include="Controllers\TareasController.cs" />

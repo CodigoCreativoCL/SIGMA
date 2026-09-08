@@ -197,7 +197,15 @@ class _Tarjeta extends StatelessWidget {
                         // El mismo gesto que en las órdenes: una estrella que
                         // significa lo mismo en las dos bandejas, y no dos
                         // formas de fijar según dónde se esté.
-                        _Estrella(tarea: tarea),
+                        _Estrella(
+                          // La clave es del REGISTRO, no de la posición: la
+                          // lista se reordena —los favoritos suben— y sin ella
+                          // Flutter reutiliza el estado de la fila que estaba
+                          // ahí antes, así que la estrella encendida se queda
+                          // en el sitio en vez de seguir a su orden.
+                          key: ValueKey(tarea.toc_id),
+                          tarea: tarea,
+                        ),
                       ],
                     ),
                     // Qué equipo, y después dónde está.
@@ -290,7 +298,7 @@ class _Renglon extends StatelessWidget {
 /// comportamiento —se pinta al instante y se corrige si el servidor discrepa—
 /// porque es el mismo gesto.
 class _Estrella extends ConsumerStatefulWidget {
-  const _Estrella({required this.tarea});
+  const _Estrella({super.key, required this.tarea});
 
   final TareaPendiente tarea;
 

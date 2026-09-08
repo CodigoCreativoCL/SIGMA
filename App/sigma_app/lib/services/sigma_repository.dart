@@ -2,6 +2,7 @@ import '../constants/api_constants.dart';
 import '../models/modelos.dart';
 import 'api_client.dart';
 import 'cache_datos.dart';
+import 'outbox_service.dart';
 import 'sync_service.dart';
 
 /// El único sitio que sabe qué endpoint corresponde a cada cosa.
@@ -579,6 +580,46 @@ class SigmaRepository {
   /// Sube una foto. Idempotente por el uuid que el telefono genero al sacarla.
   Future<int> subirEvidencia(Map<String, dynamic> cuerpo) async {
     final j = await _api.post(ApiConstants.evidencias, cuerpo);
+    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
+  }
+
+  // ---- Compartir un trabajo ----
+
+  /// Con quién se puede compartir: los asignados a esa instalación.
+  Future<List<Companero>> companeros(int instalacion, {String? filtro}) async {
+    final j = await _api.get('${ApiConstants.compartir}/companeros', query: {
+      'instalacion': instalacion,
+      if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+    });
+    return Paginado.desde(j, Companero.fromJson).datos;
+  }
+
+  /// Deja el aviso en la bandeja del compañero. El **título lo arma el SP**:
+  /// «Ramiro te compartió OT-1» tiene que decir lo mismo venga del teléfono
+  /// de quien sea.
+  Future<int> compartir({
+    required int destinatario,
+    required String entidad,
+    required int entidadId,
+    String? mensaje,
+  }) async {
+    final j = await _api.post(ApiConstants.compartir, {
+      'destinatario': destinatario,
+      'entidad': entidad,
+      'entidad_id': entidadId,
+      'mensaje': mensaje,
+      'uuid': OutboxService.nuevoUuid(),
+    });
+    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
+  }
+
+  /// Sumarse a una orden como participante. Abre un tramo de mano de obra en
+  /// cero: unirse es decir «voy para allá», no «ya trabajé veinte minutos».
+  Future<int> unirmeAOrden(int ordenId) async {
+    final j = await _api.post('${ApiConstants.compartir}/unirme', {
+      'orden_trabajo': ordenId,
+      'uuid': OutboxService.nuevoUuid(),
+    });
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 

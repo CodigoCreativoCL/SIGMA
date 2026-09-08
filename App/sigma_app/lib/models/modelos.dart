@@ -1642,6 +1642,42 @@ class Paginado<T> {
   }
 }
 
+/// Alguien de la misma instalación con quien se puede compartir un trabajo.
+///
+/// La lista sale de `Cliente_Instalacion_Usuario`, la misma regla que las
+/// plantas y el contexto: compartir con quien no trabaja en esa planta es
+/// mandarle un aviso sobre un equipo que no puede tocar.
+class Companero {
+  const Companero({
+    required this.usu_id,
+    required this.NOMBRE,
+    this.LOGIN,
+    this.PERFIL_NOMBRE,
+  });
+
+  final int usu_id;
+  final String NOMBRE;
+  final String? LOGIN;
+  final String? PERFIL_NOMBRE;
+
+  /// Las iniciales, para el avatar cuando no hay foto.
+  String get iniciales {
+    final p = NOMBRE.split(RegExp(r'\s+')).where((x) => x.isNotEmpty).toList();
+    if (p.isEmpty) return '?';
+    if (p.length == 1) {
+      return p.first.substring(0, p.first.length < 2 ? 1 : 2).toUpperCase();
+    }
+    return (p.first[0] + p[1][0]).toUpperCase();
+  }
+
+  factory Companero.fromJson(Map<String, dynamic> j) => Companero(
+        usu_id: _i(j['usu_id']),
+        NOMBRE: _s(j['NOMBRE']),
+        LOGIN: _sN(j['LOGIN']),
+        PERFIL_NOMBRE: _sN(j['PERFIL_NOMBRE']),
+      );
+}
+
 /// Una foto ya guardada.
 ///
 /// Trae la **ruta** del blob y no los bytes: la pantalla la pide después por
