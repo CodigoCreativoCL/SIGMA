@@ -4,12 +4,14 @@ import 'package:intl/intl.dart';
 
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
+import '../../providers/sesion_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'hojas_recursos.dart';
 
 /// 6.5–6.6 · Recursos de la orden — HU-115 y HU-116.
 ///
@@ -67,12 +69,27 @@ class RecursosOrdenVista extends ConsumerWidget {
             ],
           if (puedeEditar) ...[
             const SizedBox(height: 3),
-            SgBoton('Registrar mi tiempo',
-                icono: Icons.more_time,
-                primario: false,
-                alto: 44,
-                tamanoTexto: 14,
-                onTap: () => _registrarTiempo(context, ref)),
+            Row(
+              children: [
+                Expanded(
+                  child: SgBoton('Registrar mi tiempo',
+                      icono: Icons.more_time,
+                      primario: false,
+                      alto: 44,
+                      tamanoTexto: 14,
+                      onTap: () => _registrarTiempo(context, ref)),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: SgBoton('Sumar compañero',
+                      icono: Icons.person_add_alt,
+                      primario: false,
+                      alto: 44,
+                      tamanoTexto: 14,
+                      onTap: () => _sumarCompanero(context, ref)),
+                ),
+              ],
+            ),
           ],
 
           const SizedBox(height: 22),
@@ -92,6 +109,15 @@ class RecursosOrdenVista extends ConsumerWidget {
               _FilaRepuesto(linea: p),
               const SizedBox(height: 11),
             ],
+          if (puedeEditar) ...[
+            const SizedBox(height: 3),
+            SgBoton('Consumir un repuesto',
+                icono: Icons.inventory_2_outlined,
+                primario: false,
+                alto: 44,
+                tamanoTexto: 14,
+                onTap: () => _consumirRepuesto(context, ref)),
+          ],
           const SizedBox(height: 8),
         ],
       ),
@@ -108,6 +134,89 @@ class RecursosOrdenVista extends ConsumerWidget {
 
   /// El registro del tramo.
   ///
+  /// Sumar a un compañero que participó — HU-115.
+  ///
+  /// ## Por qué el tramo es de OTRA persona
+  ///
+  /// Un motor pesado no lo saca uno solo. Hoy el que registra el trabajo es el
+  /// único que aparece, así que la orden termina firmada por uno aunque la
+  /// hicieron dos, y las horas de la planta salen a la mitad de lo que fueron.
+  ///
+  /// `@USUARIO_TRAMO` ya existía en el SP: era la pieza que faltaba usar.
+  ///
+  /// ## Por qué no reasigna la orden
+  ///
+  /// El responsable no cambia: quien se suma **participa**. Reasignarla le
+  /// quitaría el trabajo a quien lo pidió.
+  Future<void> _sumarCompanero(BuildContext context, WidgetRef ref) async {
+    final instalacion = ref.read(instalacionProvider);
+    final mensajero = ScaffoldMessenger.of(context);
+
+    if (instalacion == null) {
+      mensajero.showSnackBar(const SnackBar(
+          content: Text('Elige una planta antes de sumar a alguien.')));
+      return;
+    }
+
+    final elegido = await showModalBottomSheet<TramoCompanero>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => HojaCompanero(instalacionId: instalacion.cin_id),
+    );
+
+    if (elegido == null || !context.mounted) return;
+
+    try {
+      await SigmaRepository.instance.registrarManoObra(ordenId, {
+        'fecha_inicio_utc': elegido.desde.toUtc().toIso8601String(),
+        'fecha_fin_utc': elegido.hasta.toUtc().toIso8601String(),
+        'usuario_tramo': elegido.quien.usu_id,
+        'observacion': 'Participó en el trabajo.',
+      });
+      ref.invalidate(recursosOrdenProvider(ordenId));
+      mensajero.showSnackBar(SnackBar(
+          content: Text('${elegido.quien.NOMBRE} quedó como participante.')));
+    } on ApiException catch (e) {
+      mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    }
+  }
+
+  /// Consumir un repuesto contra la orden — HU-116.
+  ///
+  /// **Mueve el inventario**: el SP hace las dos escrituras en una
+  /// transacción, así que la bodega y la orden no pueden discrepar. Por eso no
+  /// se encola: un consumo que sale de la cola horas después descontaría un
+  /// saldo que ya cambió, y el técnico que fue a buscar la pieza se encuentra
+  /// con que no está.
+  Future<void> _consumirRepuesto(BuildContext context, WidgetRef ref) async {
+    final mensajero = ScaffoldMessenger.of(context);
+
+    final elegido = await showModalBottomSheet<ConsumoRepuesto>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const HojaRepuesto(),
+    );
+
+    if (elegido == null || !context.mounted) return;
+
+    try {
+      await SigmaRepository.instance.moverRepuestoOrden(ordenId, {
+        'repuesto': elegido.repuesto,
+        'bodega': elegido.bodega,
+        'cantidad': elegido.cantidad,
+        'es_devolucion': false,
+      });
+      ref.invalidate(recursosOrdenProvider(ordenId));
+      mensajero.showSnackBar(
+          SnackBar(content: Text('${elegido.nombre} consumido.')));
+    } on ApiException catch (e) {
+      // «No hay saldo suficiente» lo dice el SP y es accionable.
+      mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    }
+  }
+
   /// Se propone **desde el inicio real de la orden hasta ahora**, que es el
   /// caso normal: el técnico registra al terminar. Escribir dos horas a mano
   /// con guantes es donde más se falla.
