@@ -62,7 +62,9 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
         valor: tarea,
         onReintentar: () => ref.invalidate(tareaProvider(widget.ocurrenciaId)),
         child: (t) => ListView(
-          padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 28)),
+          padding: context.conBarraSistema(
+            const EdgeInsets.fromLTRB(16, 12, 16, 28),
+          ),
           children: [
             _Cabecera(tarea: t),
             const SizedBox(height: 12),
@@ -133,7 +135,11 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
   }
 
   Future<void> _cerrar(
-      Tarea t, bool conforme, String resultado, int? minutos) async {
+    Tarea t,
+    bool conforme,
+    String resultado,
+    int? minutos,
+  ) async {
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
 
@@ -159,8 +165,13 @@ class _TareaFichaScreenState extends ConsumerState<TareaFichaScreen> {
       if (!mounted) return;
       ref.invalidate(tareasPendientesProvider);
       navegador.pop();
-      mensajero.showSnackBar(SnackBar(
-          content: Text(conforme ? 'Tarea cerrada.' : 'Quedó registrada como no realizada.')));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            conforme ? 'Tarea cerrada.' : 'Quedó registrada como no realizada.',
+          ),
+        ),
+      );
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
@@ -204,19 +215,27 @@ class _Cabecera extends StatelessWidget {
               if (tarea.TAREA_CODIGO != null)
                 SgBadge(tarea.TAREA_CODIGO!, color: sg.tinta2, chico: true),
               if (tarea.critica)
-                SgBadge(tarea.PRIORIDAD_NOMBRE ?? 'Crítica',
-                    color: sg.rojoTexto, icono: Icons.priority_high, chico: true),
+                SgBadge(
+                  tarea.PRIORIDAD_NOMBRE ?? 'Crítica',
+                  color: sg.rojoTexto,
+                  icono: Icons.priority_high,
+                  chico: true,
+                ),
               if (tarea.cerrada)
-                SgBadge(tarea.ESTADO_NOMBRE ?? 'Cerrada',
-                    color: tarea.tej_conforme == false
-                        ? sg.ambarTexto
-                        : sg.verdeTexto,
-                    chico: true),
+                SgBadge(
+                  tarea.ESTADO_NOMBRE ?? 'Cerrada',
+                  color: tarea.tej_conforme == false
+                      ? sg.ambarTexto
+                      : sg.verdeTexto,
+                  chico: true,
+                ),
             ],
           ),
           const SizedBox(height: 8),
-          Text(tarea.tar_titulo,
-              style: sora(20, 600, color: sg.tinta, alto: 1.3)),
+          Text(
+            tarea.tar_titulo,
+            style: sora(20, 600, color: sg.tinta, alto: 1.3),
+          ),
           if (tarea.donde.isNotEmpty) ...[
             const SizedBox(height: 8),
             Row(
@@ -224,7 +243,10 @@ class _Cabecera extends StatelessWidget {
                 Icon(Icons.place_outlined, size: 15, color: sg.tinta3),
                 const SizedBox(width: 6),
                 Expanded(
-                  child: Text(tarea.donde, style: sora(13, 500, color: sg.tinta2)),
+                  child: Text(
+                    tarea.donde,
+                    style: sora(13, 500, color: sg.tinta2),
+                  ),
                 ),
               ],
             ),
@@ -235,8 +257,10 @@ class _Cabecera extends StatelessWidget {
               children: [
                 Icon(Icons.schedule, size: 15, color: sg.tinta3),
                 const SizedBox(width: 6),
-                Text('Hasta el ${_fecha.format(limite)}',
-                    style: sora(13, 500, color: sg.tinta2)),
+                Text(
+                  'Hasta el ${_fecha.format(limite)}',
+                  style: sora(13, 500, color: sg.tinta2),
+                ),
               ],
             ),
           ],
@@ -318,16 +342,22 @@ class _EjecucionState extends State<_Ejecucion> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text('Cuando llegues al equipo, empieza la tarea.',
-                style: sora(14, 500, color: sg.tinta2, alto: 1.5)),
+            Text(
+              'Cuando llegues al equipo, empieza la tarea.',
+              style: sora(14, 500, color: sg.tinta2, alto: 1.5),
+            ),
             const SizedBox(height: 6),
-            Text('Se registra la hora de inicio para saber cuánto toma de verdad.',
-                style: sora(12, 500, color: sg.tinta3, alto: 1.5)),
+            Text(
+              'Se registra la hora de inicio para saber cuánto toma de verdad.',
+              style: sora(12, 500, color: sg.tinta3, alto: 1.5),
+            ),
             const SizedBox(height: 14),
-            SgBoton('Empezar tarea',
-                icono: Icons.play_arrow,
-                cargando: widget.empezando,
-                onTap: widget.onEmpezar),
+            SgBoton(
+              'Empezar tarea',
+              icono: Icons.play_arrow,
+              cargando: widget.empezando,
+              onTap: widget.onEmpezar,
+            ),
           ],
         ),
       );
@@ -359,25 +389,31 @@ class _EjecucionState extends State<_Ejecucion> {
               Row(
                 children: [
                   Expanded(
-                    child: SgChip('Se hizo',
-                        elegido: _conforme == true,
-                        icono: Icons.check,
-                        onTap: () => setState(() => _conforme = true)),
+                    child: SgChip(
+                      'Se hizo',
+                      elegido: _conforme == true,
+                      icono: Icons.check,
+                      onTap: () => setState(() => _conforme = true),
+                    ),
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: SgChip('No se pudo',
-                        elegido: _conforme == false,
-                        icono: Icons.close,
-                        onTap: () => setState(() => _conforme = false)),
+                    child: SgChip(
+                      'No se pudo',
+                      elegido: _conforme == false,
+                      icono: Icons.close,
+                      onTap: () => setState(() => _conforme = false),
+                    ),
                   ),
                 ],
               ),
               if (_conforme != null) ...[
                 const SizedBox(height: 14),
-                SgRotuloCampo(_conforme == false
-                    ? '¿Por qué no se pudo?'
-                    : 'Observación (opcional)'),
+                SgRotuloCampo(
+                  _conforme == false
+                      ? '¿Por qué no se pudo?'
+                      : 'Observación (opcional)',
+                ),
                 const SizedBox(height: 7),
                 SgCampo(
                   controlador: _resultado,
@@ -415,12 +451,17 @@ class _EjecucionState extends State<_Ejecucion> {
                 const SizedBox(height: 14),
                 SgBoton(
                   _conforme == false ? 'Registrar como no realizada' : 'Listo',
-                  icono: _conforme == false ? Icons.report_outlined : Icons.check,
+                  icono: _conforme == false
+                      ? Icons.report_outlined
+                      : Icons.check,
                   color: _conforme == false ? sg.ambarTexto : null,
                   onTap: (faltaMotivo || faltaFoto)
                       ? null
                       : () => widget.onCerrar(
-                          _conforme!, _resultado.text, _minutos(t)),
+                          _conforme!,
+                          _resultado.text,
+                          _minutos(t),
+                        ),
                 ),
               ],
             ],
@@ -468,18 +509,26 @@ class _Cerrada extends StatelessWidget {
         children: [
           Row(
             children: [
-              SgIconoCuadro(ok ? Icons.check : Icons.report_outlined,
-                  color: color, lado: 40, tamanoIcono: 20),
+              SgIconoCuadro(
+                ok ? Icons.check : Icons.report_outlined,
+                color: color,
+                lado: 40,
+                tamanoIcono: 20,
+              ),
               const SizedBox(width: 11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(ok ? 'Se hizo' : 'No se pudo hacer',
-                        style: sora(15, 600, color: sg.tinta)),
+                    Text(
+                      ok ? 'Se hizo' : 'No se pudo hacer',
+                      style: sora(15, 600, color: sg.tinta),
+                    ),
                     if (tarea.tej_duracion_minuto != null)
-                      Text('Tomó ${tarea.tej_duracion_minuto} min',
-                          style: sora(12, 500, color: sg.tinta3)),
+                      Text(
+                        'Tomó ${tarea.tej_duracion_minuto} min',
+                        style: sora(12, 500, color: sg.tinta3),
+                      ),
                   ],
                 ),
               ),
@@ -487,8 +536,10 @@ class _Cerrada extends StatelessWidget {
           ),
           if ((tarea.tej_resultado ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(tarea.tej_resultado!,
-                style: sora(14, 500, color: sg.tinta2, alto: 1.5)),
+            Text(
+              tarea.tej_resultado!,
+              style: sora(14, 500, color: sg.tinta2, alto: 1.5),
+            ),
           ],
         ],
       ),
@@ -548,21 +599,27 @@ class _HiloState extends State<_Hilo> {
               const SgRotulo('COMENTARIOS'),
               const Spacer(),
               if (widget.comentarios.isNotEmpty)
-                Text('${widget.comentarios.length}',
-                    style: sora(12, 600, color: sg.tinta3)),
+                Text(
+                  '${widget.comentarios.length}',
+                  style: sora(12, 600, color: sg.tinta3),
+                ),
             ],
           ),
           const SizedBox(height: 12),
           if (widget.comentarios.isEmpty)
-            Text('Nadie ha comentado todavía.',
-                style: sora(13, 500, color: sg.tinta3))
+            Text(
+              'Nadie ha comentado todavía.',
+              style: sora(13, 500, color: sg.tinta3),
+            )
           else
             for (final c in raiz) ...[
               _Comentario(
                 comentario: c,
                 onResponder: () => setState(() => _respondiendoA = c.tco_id),
               ),
-              for (final r in widget.comentarios.where((x) => x.PADRE_ID == c.tco_id))
+              for (final r in widget.comentarios.where(
+                (x) => x.PADRE_ID == c.tco_id,
+              ))
                 Padding(
                   padding: const EdgeInsets.only(left: 22),
                   child: _Comentario(comentario: r),
@@ -651,13 +708,17 @@ class _Comentario extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(quien,
-                          style: sora(13, 600, color: sg.tinta),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        quien,
+                        style: sora(13, 600, color: sg.tinta),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     const SizedBox(width: 7),
-                    Text(_cuando.format(comentario.tco_fecha_creacion.toLocal()),
-                        style: sora(11, 500, color: sg.tinta3)),
+                    Text(
+                      _cuando.format(comentario.tco_fecha_creacion.toLocal()),
+                      style: sora(11, 500, color: sg.tinta3),
+                    ),
                     if (comentario.POR_VOZ) ...[
                       const SizedBox(width: 6),
                       Icon(Icons.mic, size: 12, color: sg.tinta3),
@@ -665,8 +726,10 @@ class _Comentario extends StatelessWidget {
                   ],
                 ),
                 const SizedBox(height: 3),
-                Text(comentario.tco_texto,
-                    style: sora(14, 500, color: sg.tinta2, alto: 1.5)),
+                Text(
+                  comentario.tco_texto,
+                  style: sora(14, 500, color: sg.tinta2, alto: 1.5),
+                ),
                 if (onResponder != null) ...[
                   const SizedBox(height: 5),
                   SgEnlace('Responder', onTap: onResponder!),
@@ -724,7 +787,11 @@ class _Redactor extends StatelessWidget {
             padding: const EdgeInsets.only(bottom: 8),
             child: Row(
               children: [
-                Icon(Icons.subdirectory_arrow_right, size: 15, color: sg.tinta3),
+                Icon(
+                  Icons.subdirectory_arrow_right,
+                  size: 15,
+                  color: sg.tinta3,
+                ),
                 const SizedBox(width: 6),
                 Text('Respondiendo', style: sora(12, 600, color: sg.tinta3)),
                 const Spacer(),
@@ -802,9 +869,10 @@ class _MicroComentario extends StatelessWidget {
                 crudo = t;
                 return [
                   CampoDictado(
-                      clave: 'texto',
-                      rotulo: 'Comentario',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'texto',
+                    rotulo: 'Comentario',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ];
               },
             );

@@ -43,8 +43,7 @@ final rutasApp = <String, WidgetBuilder>{
       const MiTrabajoScreen(inicial: TipoTrabajo.ordenes),
   'app://checklist': (_) => const MiTrabajoScreen(inicial: TipoTrabajo.pautas),
   'app://tareas': (_) => const MiTrabajoScreen(inicial: TipoTrabajo.tareas),
-  'app://bitacora': (_) =>
-      const MiTrabajoScreen(inicial: TipoTrabajo.bitacora),
+  'app://bitacora': (_) => const MiTrabajoScreen(inicial: TipoTrabajo.bitacora),
   'app://sigma-ai': (_) => const SigmaAiScreen(),
   'app://alertas': (_) => const AlertasScreen(),
   'app://sincronizacion': (_) => const SincronizacionScreen(),
@@ -143,35 +142,46 @@ class MasScreen extends ConsumerWidget {
        que no resolvio, no en la cara del tecnico. */
     final extra = <MenuNodo>[
       for (final n in menu)
-        ...(n.hijos.isEmpty ? [n] : n.hijos).where((h) =>
-            h.ruta != null &&
-            !yaVisible.contains(h.ruta) &&
-            rutasApp[h.ruta] != null),
+        ...(n.hijos.isEmpty ? [n] : n.hijos).where(
+          (h) =>
+              h.ruta != null &&
+              !yaVisible.contains(h.ruta) &&
+              rutasApp[h.ruta] != null,
+        ),
     ];
 
     return Scaffold(
       backgroundColor: sg.fondo,
       appBar: const SgBarra('Más', tamanoTitulo: 23),
       body: ListView(
-        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 8, 16, 24)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        ),
         children: [
           // ---- Quién soy y dónde estoy ----
           SgCard(
             padding: const EdgeInsets.all(15),
-            onTap: () => Navigator.push(context,
-                MaterialPageRoute(builder: (_) => const MiPerfilScreen())),
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const MiPerfilScreen()),
+            ),
             child: Row(
               children: [
-                SgAvatar(perfil?.iniciales ?? '?',
-                    id: sesion.usuario, lado: 48),
+                SgAvatar(
+                  perfil?.iniciales ?? '?',
+                  id: sesion.usuario,
+                  lado: 48,
+                ),
                 const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(perfil?.nombreCompleto ?? sesion.saludo,
-                          style: sora(17, 600, color: sg.tinta),
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        perfil?.nombreCompleto ?? sesion.saludo,
+                        style: sora(17, 600, color: sg.tinta),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       const SizedBox(height: 3),
                       Text(
                         [
@@ -213,15 +223,19 @@ class MasScreen extends ConsumerWidget {
                 for (final ruta in _conRuta(menu, rutasApp.keys))
                   SgFila(
                     icono: _icono(ruta),
-                    iconoWidget:
-                        ruta == 'app://sigma-ai' ? const SgIconoIaApp() : null,
+                    iconoWidget: ruta == 'app://sigma-ai'
+                        ? const SgIconoIaApp()
+                        : null,
                     texto: _nombre(menu, ruta),
                     chevron: true,
                     onTap: () {
                       unawaited(
-                          ref.read(sincronizacionProvider.notifier).asegurar());
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: rutasApp[ruta]!));
+                        ref.read(sincronizacionProvider.notifier).asegurar(),
+                      );
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: rutasApp[ruta]!),
+                      );
                     },
                   ),
               ],
@@ -240,9 +254,11 @@ class MasScreen extends ConsumerWidget {
                 detalle: 'Bajar los datos de la instalación',
                 chevron: true,
                 onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const SincronizacionScreen())),
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SincronizacionScreen(),
+                  ),
+                ),
               ),
               ValueListenableBuilder<int>(
                 valueListenable: OutboxService.instance.pendientes,
@@ -250,14 +266,12 @@ class MasScreen extends ConsumerWidget {
                   icono: Icons.cloud_upload_outlined,
                   texto: 'Pendientes de envío',
                   colorIcono: n > 0 ? sg.ambarTexto : null,
-                  derecha: n == 0
-                      ? null
-                      : SgContador(n, color: SgColor.ambar),
+                  derecha: n == 0 ? null : SgContador(n, color: SgColor.ambar),
                   chevron: true,
                   onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                          builder: (_) => const PendientesScreen())),
+                    context,
+                    MaterialPageRoute(builder: (_) => const PendientesScreen()),
+                  ),
                 ),
               ),
               SgFila(
@@ -266,9 +280,11 @@ class MasScreen extends ConsumerWidget {
                 detalle: 'Cliente e instalación',
                 chevron: true,
                 onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const SeleccionContextoScreen())),
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SeleccionContextoScreen(),
+                  ),
+                ),
               ),
             ],
           ),
@@ -297,10 +313,13 @@ class MasScreen extends ConsumerWidget {
                          Y no se espera: la pantalla abre ahora y los datos se
                          actualizan debajo. */
                       unawaited(
-                          ref.read(sincronizacionProvider.notifier).asegurar());
+                        ref.read(sincronizacionProvider.notifier).asegurar(),
+                      );
 
                       Navigator.push(
-                          context, MaterialPageRoute(builder: destino));
+                        context,
+                        MaterialPageRoute(builder: destino),
+                      );
                     },
                   ),
               ],
@@ -314,11 +333,11 @@ class MasScreen extends ConsumerWidget {
   }
 
   static IconData _icono(String? ruta) => switch (ruta) {
-        'app://mi-perfil' => Icons.person_outline,
-        'app://existencias' => Icons.warehouse_outlined,
-        'app://permisos-trabajo' => Icons.assignment_turned_in_outlined,
-        'app://sincronizacion' => Icons.sync,
-        'app://pendientes' => Icons.cloud_upload_outlined,
-        _ => Icons.widgets_outlined,
-      };
+    'app://mi-perfil' => Icons.person_outline,
+    'app://existencias' => Icons.warehouse_outlined,
+    'app://permisos-trabajo' => Icons.assignment_turned_in_outlined,
+    'app://sincronizacion' => Icons.sync,
+    'app://pendientes' => Icons.cloud_upload_outlined,
+    _ => Icons.widgets_outlined,
+  };
 }

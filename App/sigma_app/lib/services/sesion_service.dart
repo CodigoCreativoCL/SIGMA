@@ -128,8 +128,9 @@ class AuthService {
   /// HU-002. Cambiar de cliente exige un token nuevo: el servidor revalida la
   /// pertenencia contra la base sin confiar en el id que llega.
   Future<SesionModel> seleccionarCliente(int clienteId) async {
-    final j = await ApiClient.instance
-        .post(ApiConstants.seleccionarCliente, {'cliente': clienteId});
+    final j = await ApiClient.instance.post(ApiConstants.seleccionarCliente, {
+      'cliente': clienteId,
+    });
 
     final sesion = SesionModel.fromJson(j as Map<String, dynamic>);
     await SesionService.instance.guardar(sesion);

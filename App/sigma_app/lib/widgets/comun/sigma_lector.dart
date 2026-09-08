@@ -33,13 +33,12 @@ class SgLector extends StatefulWidget {
     BuildContext context, {
     required String titulo,
     String? ayuda,
-  }) =>
-      showModalBottomSheet<String>(
-        context: context,
-        isScrollControlled: true,
-        backgroundColor: Colors.transparent,
-        builder: (_) => SgLector(titulo: titulo, ayuda: ayuda),
-      );
+  }) => showModalBottomSheet<String>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => SgLector(titulo: titulo, ayuda: ayuda),
+  );
 
   @override
   State<SgLector> createState() => _SgLectorState();
@@ -88,8 +87,9 @@ class _SgLectorState extends State<SgLector> {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       clipBehavior: Clip.antiAlias,
       child: SafeArea(
@@ -115,21 +115,27 @@ class _SgLectorState extends State<SgLector> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(widget.titulo,
-                            style: sora(17, 600, color: sg.tinta)),
+                        Text(
+                          widget.titulo,
+                          style: sora(17, 600, color: sg.tinta),
+                        ),
                         if ((widget.ayuda ?? '').isNotEmpty) ...[
                           const SizedBox(height: 3),
-                          Text(widget.ayuda!,
-                              style: sora(12, 500, color: sg.tinta3)),
+                          Text(
+                            widget.ayuda!,
+                            style: sora(12, 500, color: sg.tinta3),
+                          ),
                         ],
                       ],
                     ),
                   ),
-                  SgBotonIcono(Icons.close,
-                      fondo: sg.up,
-                      color: sg.tinta,
-                      tamano: 20,
-                      onTap: () => Navigator.of(context).maybePop()),
+                  SgBotonIcono(
+                    Icons.close,
+                    fondo: sg.up,
+                    color: sg.tinta,
+                    tamano: 20,
+                    onTap: () => Navigator.of(context).maybePop(),
+                  ),
                 ],
               ),
             ),

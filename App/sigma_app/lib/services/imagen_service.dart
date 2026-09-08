@@ -98,13 +98,16 @@ class ImagenService {
     }
 
     try {
-      final r = await http.get(
-        Uri.parse(urlDe(ruta)),
-        headers: {
-          if (ApiClient.instance.token != null)
-            HttpHeaders.authorizationHeader: 'Bearer ${ApiClient.instance.token}',
-        },
-      ).timeout(const Duration(seconds: 20));
+      final r = await http
+          .get(
+            Uri.parse(urlDe(ruta)),
+            headers: {
+              if (ApiClient.instance.token != null)
+                HttpHeaders.authorizationHeader:
+                    'Bearer ${ApiClient.instance.token}',
+            },
+          )
+          .timeout(const Duration(seconds: 20));
 
       if (r.statusCode != 200 || r.bodyBytes.isEmpty) {
         debugPrint('[ImagenService] $ruta -> ${r.statusCode}');
@@ -121,12 +124,12 @@ class ImagenService {
       _recordar(ruta, r.bodyBytes);
       if (archivo != null) {
         // Sin await: que la pantalla no espere a que el disco termine.
-        unawaited(archivo.writeAsBytes(r.bodyBytes).catchError(
-              (Object e) {
-                debugPrint('[ImagenService] No se pudo cachear $ruta: $e');
-                return archivo;
-              },
-            ));
+        unawaited(
+          archivo.writeAsBytes(r.bodyBytes).catchError((Object e) {
+            debugPrint('[ImagenService] No se pudo cachear $ruta: $e');
+            return archivo;
+          }),
+        );
       }
       return r.bodyBytes;
     } catch (e) {

@@ -90,5 +90,124 @@ void main() {
       expect(planta.cin_id, 4);
       expect(planta.cin_nombre, 'Planta Quilicura');
     });
+
+    test('CierreMotivo — el cierre de OT tiene que poder hacerse sin señal',
+        () {
+      // Tal como lo devuelve `API_SEL_APP_SABANA_DATOS` con @TIPO = 9.
+      final motivo = CierreMotivo.fromJson(CacheDatos.conClavesTolerantes({
+        'OCM_ID': 2,
+        'OCM_CODIGO': 'SIN HALLAZGO',
+        'OCM_NOMBRE': 'Sin hallazgo, no requirió intervención',
+        'OCM_ORDEN': 2,
+      }));
+
+      expect(motivo.ocm_id, 2);
+      expect(motivo.ocm_codigo, 'SIN HALLAZGO');
+      expect(motivo.ocm_nombre, 'Sin hallazgo, no requirió intervención');
+      expect(motivo.ocm_orden, 2);
+    });
+  });
+
+  group('CatalogoValor lee los nombres del DTO', () {
+    /* POR QUE ESTO ES UNA PRUEBA
+
+       `GET /catalogo-valores` devuelve `valor_id` y `valor_nombre` —las
+       propiedades de `CatalogoValorDto`—, no `ctv_id` y `ctv_nombre`, que son
+       las columnas. Leyendo las de la columna cada valor llegaba con id 0 y
+       nombre vacío, y el selector de estado del activo pintaba filas en blanco
+       que además comparaban 0 contra 0: ninguna se podía elegir.
+
+       No falla, no revienta y `analyze` no lo ve. Solo se ve abriendo la hoja. */
+
+    test('la respuesta del endpoint llega completa', () {
+      final v = CatalogoValor.fromJson({
+        'valor_id': 3,
+        'valor_codigo': 'ALTA',
+        'valor_nombre': 'Alta',
+        'valor_orden': 3,
+      });
+
+      expect(v.ctv_id, 3);
+      expect(v.ctv_codigo, 'ALTA');
+      expect(v.ctv_nombre, 'Alta');
+      expect(v.ctv_orden, 3);
+    });
+
+    test('la forma de la columna sigue sirviendo', () {
+      final v = CatalogoValor.fromJson({
+        'ctv_id': 3,
+        'ctv_nombre': 'Alta',
+      });
+
+      expect(v.ctv_id, 3);
+      expect(v.ctv_nombre, 'Alta');
+    });
+
+    test('un valor sin nombre no puede colarse como chip vacío', () {
+      // El caso que se veía en pantalla: id 0 y texto vacío.
+      final v = CatalogoValor.fromJson({'otra_cosa': 1});
+
+      expect(v.ctv_id, 0);
+      expect(v.ctv_nombre, isEmpty);
+    });
+  });
+
+  group('Un valor de catálogo sabe de qué catálogo es', () {
+    test('la fila de la sábana trae su catálogo', () {
+      // Tal como la devuelve el segundo resultado del bloque 3.
+      final v = CatalogoValor.fromJson(CacheDatos.conClavesTolerantes({
+        'CATALOGO_CODIGO': 'ACTIVO_ESTADO',
+        'VALOR_ID': 3,
+        'VALOR_CODIGO': 'DETENIDO',
+        'VALOR_NOMBRE': 'Detenido',
+        'VALOR_ORDEN': 3,
+      }));
+
+      expect(v.CATALOGO_CODIGO, 'ACTIVO_ESTADO');
+      expect(v.ctv_id, 3);
+      expect(v.ctv_nombre, 'Detenido');
+    });
+
+    test('la respuesta del endpoint no lo trae, y no hace falta', () {
+      // Ahí ya viene filtrado por catálogo, así que separar no es problema.
+      final v = CatalogoValor.fromJson({'valor_id': 3, 'valor_nombre': 'Alta'});
+      expect(v.CATALOGO_CODIGO, isNull);
+    });
+  });
+
+  group('El nombre de la entidad guardada', () {
+    /* POR QUE ESTO ES UNA PRUEBA Y NO UN COMENTARIO
+
+       La sincronización numera con sufijo `_0`, `_1`… SOLO los bloques que
+       traen varios resultados; el que trae uno se guarda con el código pelado.
+       Equivocarse no rompe nada: `CacheDatos.lista` devuelve vacío y la
+       pantalla se ve como si no hubiera datos. Es el error más caro de
+       encontrar, porque no falla. */
+
+    /// La misma regla que aplica `SincronizacionNotifier` al guardar.
+    String entidadDe(String codigo, int cuantosResultados, int indice) =>
+        cuantosResultados == 1 ? codigo : '${codigo}_$indice';
+
+    test('un bloque de un solo resultado va sin sufijo', () {
+      expect(entidadDe('ORDENES_TRABAJO', 1, 0), CacheDatos.motivosCierre);
+    });
+
+    test('uno de varios resultados sí lo lleva', () {
+      expect(entidadDe('PERMISOS_TRABAJO', 2, 0), CacheDatos.permisosTipos);
+      expect(entidadDe('PERMISOS_TRABAJO', 2, 1), CacheDatos.permisosEstados);
+    });
+
+    test('el bloque de inventario trae cuatro y los separa', () {
+      expect(entidadDe('INVENTARIO', 4, 0), CacheDatos.repuestos);
+      expect(entidadDe('INVENTARIO', 4, 1), CacheDatos.bodegas);
+    });
+
+    test('catalogos pasó de uno a dos resultados y cambió de nombre', () {
+      /* El dia que el bloque 3 sumo los VALORES, su primer resultado dejo de
+         llamarse `CATALOGOS` y paso a `CATALOGOS_0`. Si la constante se hubiera
+         quedado atras, las cabeceras se leerian vacias sin fallar. */
+      expect(entidadDe('CATALOGOS', 2, 0), CacheDatos.catalogos);
+      expect(entidadDe('CATALOGOS', 2, 1), CacheDatos.catalogoValores);
+    });
   });
 }

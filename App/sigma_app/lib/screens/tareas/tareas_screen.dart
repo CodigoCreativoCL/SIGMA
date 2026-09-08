@@ -38,7 +38,6 @@ class TareasScreen extends ConsumerWidget {
   /// arreglar el mismo defecto.
   final bool embebida;
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
@@ -52,21 +51,24 @@ class TareasScreen extends ConsumerWidget {
       appBar: embebida
           ? null
           : SgBarra(
-        'Mis tareas',
-        tamanoTitulo: 23,
-        acciones: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: ValueListenableBuilder<bool>(
-              valueListenable: SyncService.instance.enLinea,
-              builder: (_, enLinea, _) => enLinea
-                  ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+              'Mis tareas',
+              tamanoTitulo: 23,
+              acciones: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: SyncService.instance.enLinea,
+                    builder: (_, enLinea, _) => enLinea
+                        ? const SizedBox.shrink()
+                        : SgBadge(
+                            'Sin conexión',
+                            color: sg.tinta2,
+                            icono: Icons.cloud_off_outlined,
+                          ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
       body: EstadoAsync<List<TareaPendiente>>(
         valor: pendientes,
         onReintentar: () => ref.invalidate(tareasPendientesProvider),
@@ -74,7 +76,8 @@ class TareasScreen extends ConsumerWidget {
         vacio: const EstadoVacio(
           icono: Icons.task_alt,
           titulo: 'No tienes tareas pendientes',
-          detalle: 'Las tareas se programan desde la web. Cuando te toque una, '
+          detalle:
+              'Las tareas se programan desde la web. Cuando te toque una, '
               'aparece acá y se puede hacer sin señal.',
         ),
         child: (sinOrdenar) {
@@ -86,28 +89,36 @@ class TareasScreen extends ConsumerWidget {
 
              `sort` sobre una copia y estable: el orden que trae el servidor
              —lo más urgente primero— se conserva dentro de cada grupo. */
-          final lista = [...sinOrdenar]..sort((a, b) {
+          final lista = [...sinOrdenar]
+            ..sort((a, b) {
               if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
               return a.ES_FAVORITO ? -1 : 1;
             });
 
           return RefreshIndicator(
-          onRefresh: () async => ref.invalidate(tareasPendientesProvider),
-          child: ListView.separated(
-            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
-            itemCount: lista.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 11),
-            itemBuilder: (_, i) => _Tarjeta(
-              tarea: lista[i],
-              onAbrir: () async {
-                await Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => TareaFichaScreen(ocurrenciaId: lista[i].toc_id),
-                ));
-                ref.invalidate(tareasPendientesProvider);
-              },
+            onRefresh: () async => ref.invalidate(tareasPendientesProvider),
+            child: ListView.separated(
+              padding: context.conBarraSistema(
+                const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              ),
+              itemCount: lista.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 11),
+              itemBuilder: (_, i) => _Tarjeta(
+                tarea: lista[i],
+                onAbrir: () async {
+                  await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) =>
+                          TareaFichaScreen(ocurrenciaId: lista[i].toc_id),
+                    ),
+                  );
+                  // La ficha pudo tardar y la bandeja pudo cerrarse detras.
+                  if (!context.mounted) return;
+                  ref.invalidate(tareasPendientesProvider);
+                },
+              ),
             ),
-          ),
-        );
+          );
         },
       ),
     );
@@ -136,8 +147,8 @@ class _Tarjeta extends StatelessWidget {
     final colorPlazo = tarea.vencida
         ? sg.rojoTexto
         : tarea.venceHoy
-            ? sg.ambarTexto
-            : sg.tinta3;
+        ? sg.ambarTexto
+        : sg.tinta3;
 
     return SgCard(
       padding: const EdgeInsets.all(14),
@@ -181,20 +192,26 @@ class _Tarjeta extends StatelessWidget {
                         if (tarea.vencida)
                           SgBadge('Vencida', color: sg.rojoTexto, chico: true),
                         if (tarea.critica)
-                          SgBadge(tarea.PRIORIDAD_NOMBRE ?? 'Crítica',
-                              color: sg.rojoTexto,
-                              icono: Icons.priority_high,
-                              chico: true),
+                          SgBadge(
+                            tarea.PRIORIDAD_NOMBRE ?? 'Crítica',
+                            color: sg.rojoTexto,
+                            icono: Icons.priority_high,
+                            chico: true,
+                          ),
                         if (tarea.empezada)
-                          SgBadge('Empezada',
-                              color: sg.ambarTexto,
-                              icono: Icons.play_arrow,
-                              chico: true),
+                          SgBadge(
+                            'Empezada',
+                            color: sg.ambarTexto,
+                            icono: Icons.play_arrow,
+                            chico: true,
+                          ),
                         if (tarea.COMENTARIOS > 0)
-                          SgBadge('${tarea.COMENTARIOS}',
-                              color: sg.tinta2,
-                              icono: Icons.chat_bubble_outline,
-                              chico: true),
+                          SgBadge(
+                            '${tarea.COMENTARIOS}',
+                            color: sg.tinta2,
+                            icono: Icons.chat_bubble_outline,
+                            chico: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -202,9 +219,10 @@ class _Tarjeta extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Expanded(
-                          child: Text(tarea.tar_titulo,
-                              style: sora(16, 600,
-                                  color: sg.tinta, alto: 1.35)),
+                          child: Text(
+                            tarea.tar_titulo,
+                            style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                          ),
                         ),
                         const SizedBox(width: 6),
                         // El mismo gesto que en las órdenes: una estrella que
@@ -250,7 +268,8 @@ class _Tarjeta extends StatelessWidget {
                       const SizedBox(height: 4),
                       _Renglon(
                         icono: Icons.timer_outlined,
-                        texto: 'Toma unos ${tarea.tar_duracion_estimada_minuto} min',
+                        texto:
+                            'Toma unos ${tarea.tar_duracion_estimada_minuto} min',
                         color: sg.tinta3,
                       ),
                     ],
@@ -275,7 +294,8 @@ class _Tarjeta extends StatelessWidget {
 
   String _plazo(DateTime limite) {
     final hoy = DateTime.now();
-    final mismoDia = limite.year == hoy.year &&
+    final mismoDia =
+        limite.year == hoy.year &&
         limite.month == hoy.month &&
         limite.day == hoy.day;
 
@@ -286,7 +306,11 @@ class _Tarjeta extends StatelessWidget {
 }
 
 class _Renglon extends StatelessWidget {
-  const _Renglon({required this.icono, required this.texto, required this.color});
+  const _Renglon({
+    required this.icono,
+    required this.texto,
+    required this.color,
+  });
 
   final IconData icono;
   final String texto;
@@ -294,18 +318,19 @@ class _Renglon extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        children: [
-          Icon(icono, size: 14, color: color),
-          const SizedBox(width: 5),
-          Expanded(
-            child: Text(texto,
-                style: sora(12, 500, color: color),
-                overflow: TextOverflow.ellipsis),
-          ),
-        ],
-      );
+    children: [
+      Icon(icono, size: 14, color: color),
+      const SizedBox(width: 5),
+      Expanded(
+        child: Text(
+          texto,
+          style: sora(12, 500, color: color),
+          overflow: TextOverflow.ellipsis,
+        ),
+      ),
+    ],
+  );
 }
-
 
 /// La estrella de una tarea. Ver `_Estrella` de la bandeja de órdenes: mismo
 /// comportamiento —se pinta al instante y se corrige si el servidor discrepa—
@@ -336,8 +361,10 @@ class _EstrellaState extends ConsumerState<_Estrella> {
     });
 
     try {
-      final ahora = await SigmaRepository.instance
-          .alternarFavorito('TAREA', widget.tarea.toc_id);
+      final ahora = await SigmaRepository.instance.alternarFavorito(
+        'TAREA',
+        widget.tarea.toc_id,
+      );
       if (!mounted) return;
       setState(() => _local = ahora);
     } on ApiException catch (e) {

@@ -42,26 +42,26 @@ class SesionModel {
   }
 
   factory SesionModel.fromJson(Map<String, dynamic> j) => SesionModel(
-        usuario: (j['usuario'] as num?)?.toInt() ?? 0,
-        login: j['login'] as String? ?? '',
-        nombre: j['nombre'] as String?,
-        cliente: (j['cliente'] as num?)?.toInt() ?? 0,
-        clienteNombre: j['cliente_nombre'] as String? ?? '',
-        token: j['token'] as String? ?? '',
-        expiraMinutos: (j['expira_minutos'] as num?)?.toInt() ?? 0,
-        debeElegirCliente: j['debe_elegir_cliente'] as bool? ?? false,
-      );
+    usuario: (j['usuario'] as num?)?.toInt() ?? 0,
+    login: j['login'] as String? ?? '',
+    nombre: j['nombre'] as String?,
+    cliente: (j['cliente'] as num?)?.toInt() ?? 0,
+    clienteNombre: j['cliente_nombre'] as String? ?? '',
+    token: j['token'] as String? ?? '',
+    expiraMinutos: (j['expira_minutos'] as num?)?.toInt() ?? 0,
+    debeElegirCliente: j['debe_elegir_cliente'] as bool? ?? false,
+  );
 
   Map<String, dynamic> toJson() => {
-        'usuario': usuario,
-        'login': login,
-        'nombre': nombre,
-        'cliente': cliente,
-        'cliente_nombre': clienteNombre,
-        'token': token,
-        'expira_minutos': expiraMinutos,
-        'debe_elegir_cliente': debeElegirCliente,
-      };
+    'usuario': usuario,
+    'login': login,
+    'nombre': nombre,
+    'cliente': cliente,
+    'cliente_nombre': clienteNombre,
+    'token': token,
+    'expira_minutos': expiraMinutos,
+    'debe_elegir_cliente': debeElegirCliente,
+  };
 
   SesionModel copyWith({
     int? usuario,
@@ -72,17 +72,16 @@ class SesionModel {
     String? token,
     int? expiraMinutos,
     bool? debeElegirCliente,
-  }) =>
-      SesionModel(
-        usuario: usuario ?? this.usuario,
-        login: login ?? this.login,
-        nombre: nombre ?? this.nombre,
-        cliente: cliente ?? this.cliente,
-        clienteNombre: clienteNombre ?? this.clienteNombre,
-        token: token ?? this.token,
-        expiraMinutos: expiraMinutos ?? this.expiraMinutos,
-        debeElegirCliente: debeElegirCliente ?? this.debeElegirCliente,
-      );
+  }) => SesionModel(
+    usuario: usuario ?? this.usuario,
+    login: login ?? this.login,
+    nombre: nombre ?? this.nombre,
+    cliente: cliente ?? this.cliente,
+    clienteNombre: clienteNombre ?? this.clienteNombre,
+    token: token ?? this.token,
+    expiraMinutos: expiraMinutos ?? this.expiraMinutos,
+    debeElegirCliente: debeElegirCliente ?? this.debeElegirCliente,
+  );
 }
 
 /// Un cliente al que pertenece la persona (HU-002).

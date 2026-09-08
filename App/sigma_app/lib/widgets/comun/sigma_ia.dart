@@ -96,17 +96,26 @@ class SgTarjetaIa extends StatelessWidget {
                          esta tarjeta en el Inicio. */
                       Row(
                         children: [
-                          SgRadarIa(simbolo: simbolo, lado: 46, activo: accion != null),
+                          SgRadarIa(
+                            simbolo: simbolo,
+                            lado: 46,
+                            activo: accion != null,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('SIGMA AI',
-                                    style: sora(13, 700,
-                                        color: sg.acentoTexto,
-                                        espaciado: 0.6)),
+                                Text(
+                                  'SIGMA AI',
+                                  style: sora(
+                                    13,
+                                    700,
+                                    color: sg.acentoTexto,
+                                    espaciado: 0.6,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   // Lo que está haciendo, no lo que es: la
@@ -123,9 +132,11 @@ class SgTarjetaIa extends StatelessWidget {
                           ),
                           if (badge != null) ...[
                             const SizedBox(width: 8),
-                            SgBadge(badge!,
-                                color: colorBadge ?? sg.rojoTexto,
-                                chico: true),
+                            SgBadge(
+                              badge!,
+                              color: colorBadge ?? sg.rojoTexto,
+                              chico: true,
+                            ),
                           ],
                         ],
                       ),
@@ -140,12 +151,16 @@ class SgTarjetaIa extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(titulo,
-                                    style: sora(16, 600, color: sg.tinta)),
+                                Text(
+                                  titulo,
+                                  style: sora(16, 600, color: sg.tinta),
+                                ),
                                 const SizedBox(height: 3),
-                                Text(detalle,
-                                    style: sora(12, 500, color: sg.tinta2),
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  detalle,
+                                  style: sora(12, 500, color: sg.tinta2),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),
@@ -167,14 +182,19 @@ class SgTarjetaIa extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: SgBoton(textoAccion,
-                                  alto: 44, tamanoTexto: 14, onTap: accion),
+                              child: SgBoton(
+                                textoAccion,
+                                alto: 44,
+                                tamanoTexto: 14,
+                                onTap: accion,
+                              ),
                             ),
                             if (accionSecundaria != null) ...[
                               const SizedBox(width: 8),
                               _BotonVidrio(
-                                  texto: textoAccionSecundaria,
-                                  onTap: accionSecundaria!),
+                                texto: textoAccionSecundaria,
+                                onTap: accionSecundaria!,
+                              ),
                             ],
                           ],
                         ),
@@ -214,8 +234,10 @@ class _Cifra extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(dato.$1,
-              style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true)),
+          Text(
+            dato.$1,
+            style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true),
+          ),
           const SizedBox(height: 2),
           Text(dato.$2, style: sora(11, 500, color: sg.tinta2)),
         ],
@@ -283,8 +305,10 @@ class SgIaSinDatos extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SIGMA AI sin análisis para esta planta',
-                    style: sora(15, 600, color: sg.tinta2)),
+                Text(
+                  'SIGMA AI sin análisis para esta planta',
+                  style: sora(15, 600, color: sg.tinta2),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   motivo ??

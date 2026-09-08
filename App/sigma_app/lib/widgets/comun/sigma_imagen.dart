@@ -118,9 +118,11 @@ class _SigmaImagenState extends State<SigmaImagen> {
         alignment: Alignment.center,
         child: _cargando
             ? null
-            : Icon(widget.iconoVacio,
+            : Icon(
+                widget.iconoVacio,
                 color: sg.tinta3,
-                size: ((widget.alto ?? 48) * 0.34).clamp(16, 36)),
+                size: ((widget.alto ?? 48) * 0.34).clamp(16, 36),
+              ),
       );
     }
 
@@ -142,8 +144,11 @@ class _SigmaImagenState extends State<SigmaImagen> {
         PageRouteBuilder<void>(
           opaque: false,
           barrierColor: Colors.black87,
-          pageBuilder: (_, _, _) =>
-              _Visor(bytes: _bytes!, titulo: widget.titulo, etiqueta: widget.ruta!),
+          pageBuilder: (_, _, _) => _Visor(
+            bytes: _bytes!,
+            titulo: widget.titulo,
+            etiqueta: widget.ruta!,
+          ),
           transitionsBuilder: (_, a, _, hijo) =>
               FadeTransition(opacity: a, child: hijo),
         ),
@@ -235,16 +240,16 @@ class _BotonVisor extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Material(
-        color: Colors.black45,
-        shape: const CircleBorder(),
-        clipBehavior: Clip.antiAlias,
-        child: InkWell(
-          onTap: onTap,
-          child: SizedBox(
-            width: 40,
-            height: 40,
-            child: Icon(icono, color: Colors.white, size: 22),
-          ),
-        ),
-      );
+    color: Colors.black45,
+    shape: const CircleBorder(),
+    clipBehavior: Clip.antiAlias,
+    child: InkWell(
+      onTap: onTap,
+      child: SizedBox(
+        width: 40,
+        height: 40,
+        child: Icon(icono, color: Colors.white, size: 22),
+      ),
+    ),
+  );
 }

@@ -20,14 +20,11 @@ final _repo = SigmaRepository.instance;
 
 // ---- Identidad ----
 
-final miPerfilProvider =
-    FutureProvider<MiPerfil>((ref) => _repo.miPerfil());
+final miPerfilProvider = FutureProvider<MiPerfil>((ref) => _repo.miPerfil());
 
-final menuProvider =
-    FutureProvider<List<MenuNodo>>((ref) => _repo.menus());
+final menuProvider = FutureProvider<List<MenuNodo>>((ref) => _repo.menus());
 
-final permisosProvider =
-    FutureProvider<Set<String>>((ref) => _repo.permisos());
+final permisosProvider = FutureProvider<Set<String>>((ref) => _repo.permisos());
 
 /// ¿Tengo este permiso? Se resuelve contra el conjunto ya cargado, sin otra
 /// llamada por cada botón.
@@ -38,33 +35,32 @@ final tienePermisoProvider = Provider.family<bool, String>((ref, codigo) {
 
 // ---- Lo que baja al dispositivo ----
 
-final plantasProvider =
-    FutureProvider<Paginado<ClienteInstalacion>>((ref) => _repo.plantas());
-
-final areasProvider =
-    FutureProvider<Paginado<InstalacionArea>>((ref) => _repo.areas());
-
-final catalogosProvider =
-    FutureProvider<Paginado<Catalogo>>((ref) => _repo.catalogos());
+final plantasProvider = FutureProvider<Paginado<ClienteInstalacion>>(
+  (ref) => _repo.plantas(),
+);
 
 /// Los valores de un catálogo, por su código.
 final valoresCatalogoProvider =
     FutureProvider.family<List<CatalogoValor>, String>(
-        (ref, codigo) => _repo.valoresDe(codigo));
+      (ref, codigo) => _repo.valoresDe(codigo),
+    );
 
 /// Los estados a los que se puede mover un activo (HU-038).
-final estadosActivoProvider =
-    FutureProvider<List<CatalogoValor>>((ref) => _repo.valoresDe('ACTIVO_ESTADO'));
+final estadosActivoProvider = FutureProvider<List<CatalogoValor>>(
+  (ref) => _repo.valoresDe('ACTIVO_ESTADO'),
+);
 
 /// La cabecera de un activo (HU-037).
-final activoProvider =
-    FutureProvider.family<Activo, int>((ref, id) => _repo.activo(id));
+final activoProvider = FutureProvider.family<Activo, int>(
+  (ref, id) => _repo.activo(id),
+);
 
 // ---- Activos ----
 
 final fichaActivoProvider =
     FutureProvider.family<Paginado<ActivoFichaEvento>, int>(
-        (ref, id) => _repo.fichaActivo(id));
+      (ref, id) => _repo.fichaActivo(id),
+    );
 
 // ---- Inventario ----
 
@@ -109,36 +105,46 @@ final existenciasEnAlertaProvider = FutureProvider<int>((ref) async {
   return (await _repo.existencias(soloAlerta: true)).total;
 });
 
-final repuestosProvider =
-    FutureProvider<Paginado<Repuesto>>((ref) => _repo.repuestos());
+/// La cabecera de la ficha del repuesto (vista 10.3).
+final repuestoProvider = FutureProvider.family<Repuesto, int>(
+  (ref, id) => _repo.repuesto(id),
+);
 
-final repuestoProvider =
-    FutureProvider.family<Repuesto, int>((ref, id) => _repo.repuesto(id));
+/// Dónde está un repuesto y cuánto hay en cada bodega.
+///
+/// Va aparte de [existenciasProvider]: aquel es **una fila por bodega** de toda
+/// la planta y responde «qué está bajo mínimo»; éste es un repuesto y responde
+/// «dónde lo encuentro». Sin paginar, porque un repuesto no vive en doscientas
+/// bodegas.
+final saldosRepuestoProvider =
+    FutureProvider.family<List<InventarioSaldo>, int>(
+      (ref, id) => _repo.saldosDeRepuesto(id),
+    );
 
+/// Los lotes de un repuesto, para la ficha. Solo se piden si el repuesto
+/// controla lote.
 final lotesProvider = FutureProvider.family<List<RepuestoLote>, int>(
-    (ref, repuesto) => _repo.lotesDe(repuesto));
-
-final bodegasProvider =
-    FutureProvider<Paginado<Bodega>>((ref) => _repo.bodegas());
-
-final movimientosProvider =
-    FutureProvider<Paginado<InventarioMovimiento>>((ref) => _repo.movimientos());
+  (ref, repuesto) => _repo.lotesDe(repuesto),
+);
 
 // ---- Checklist ----
 
-final checklistPendientesProvider =
-    FutureProvider<List<ChecklistPendiente>>((ref) {
+final checklistPendientesProvider = FutureProvider<List<ChecklistPendiente>>((
+  ref,
+) {
   final instalacion = ref.watch(instalacionProvider);
   return _repo.checklistPendientes(instalacion: instalacion?.cin_id);
 });
 
 final checklistPlantillaProvider =
     FutureProvider.family<ChecklistPlantilla, int>(
-        (ref, version) => _repo.checklistPlantilla(version));
+      (ref, version) => _repo.checklistPlantilla(version),
+    );
 
 final checklistEjecucionProvider =
     FutureProvider.family<ChecklistEjecucion, int>(
-        (ref, id) => _repo.checklistEjecucion(id));
+      (ref, id) => _repo.checklistEjecucion(id),
+    );
 
 // ---- Ordenes de trabajo ----
 
@@ -154,67 +160,100 @@ final ordenesTrabajoProvider = FutureProvider<List<OrdenTrabajo>>((ref) {
 /// Las disponibles para tomar. Va aparte de la bandeja porque el chip
 /// "Disponibles" muestra su contador aunque se este mirando otra pestana.
 final ordenesDisponiblesProvider = FutureProvider<List<OrdenTrabajo>>(
-    (ref) => _repo.ordenesTrabajo(ambito: 2));
+  (ref) => _repo.ordenesTrabajo(ambito: 2),
+);
 
 final ordenTrabajoProvider = FutureProvider.family<OrdenTrabajoFicha, int>(
-    (ref, id) => _repo.ordenTrabajo(id));
+  (ref, id) => _repo.ordenTrabajo(id),
+);
 
 /// La mano de obra y los repuestos de una orden. Van juntos porque la pantalla
 /// de recursos los muestra en la misma vista: pedirlos aparte serian dos
 /// viajes de red para dibujar una sola pantalla.
 final recursosOrdenProvider = FutureProvider.family<RecursosOrden, int>(
-    (ref, id) => _repo.recursosOrden(id));
+  (ref, id) => _repo.recursosOrden(id),
+);
+
+/// Los motivos con que se puede cerrar una OT (HU-120).
+///
+/// Se pide al abrir la hoja de cierre y no al arrancar la app: son seis filas
+/// que solo mira quien tiene `CERRAR OT`, y bajarlas para todos seria trafico
+/// que la mayoria nunca usa.
+final motivosCierreProvider = FutureProvider<List<CierreMotivo>>(
+  (ref) => _repo.motivosCierre(),
+);
 
 /// Lo que se puede consumir contra una orden, con la compatibilidad marcada.
-final repuestosOrdenProvider =
-    FutureProvider.family<List<RepuestoOrden>, int>(
-        (ref, ordenId) => _repo.repuestosDeOrden(ordenId));
+final repuestosOrdenProvider = FutureProvider.family<List<RepuestoOrden>, int>(
+  (ref, ordenId) => _repo.repuestosDeOrden(ordenId),
+);
 
 // ---- Permisos de trabajo ----
 
-final permisosTrabajoProvider =
-    FutureProvider<Paginado<PermisoTrabajo>>((ref) => _repo.permisosTrabajo());
+final permisosTrabajoProvider = FutureProvider<Paginado<PermisoTrabajo>>(
+  (ref) => _repo.permisosTrabajo(),
+);
 
-final permisosVigentesProvider =
-    FutureProvider<Paginado<PermisoTrabajo>>((ref) => _repo.permisosVigentes());
+final permisosVigentesProvider = FutureProvider<Paginado<PermisoTrabajo>>(
+  (ref) => _repo.permisosVigentes(),
+);
 
-final tiposPermisoProvider =
-    FutureProvider<List<ItemCatalogo>>((ref) => _repo.tiposPermiso());
+final tiposPermisoProvider = FutureProvider<List<ItemCatalogo>>(
+  (ref) => _repo.tiposPermiso(),
+);
 
-final estadosPermisoProvider =
-    FutureProvider<List<ItemCatalogo>>((ref) => _repo.estadosPermiso());
+/// Los estados por los que se puede filtrar la bandeja de permisos.
+///
+/// Bajan en la sábana, así que los chips aparecen también sin señal — que es
+/// cuando más se usa la bandeja.
+final estadosPermisoProvider = FutureProvider<List<ItemCatalogo>>(
+  (ref) => _repo.estadosPermiso(),
+);
+
+/// El estado por el que se está filtrando. `null` = cualquiera.
+///
+/// Guarda el **código** —`AUTORIZADO`— y no el nombre: el nombre es el texto
+/// que se muestra y alguien puede reescribirlo desde la web, con o sin acento,
+/// y ahí la comparación deja de calzar. El código es la identidad de la fila, y
+/// por eso el SP lo devuelve aparte del nombre. Tampoco es el id, porque
+/// `GET /permisos-trabajo` no lo trae.
+final estadoPermisoProvider = StateProvider<String?>((ref) => null);
 
 // ---- Alertas ----
 
-final alertasProvider =
-    FutureProvider<Paginado<Alerta>>((ref) => _repo.alertas());
+final alertasProvider = FutureProvider<Paginado<Alerta>>(
+  (ref) => _repo.alertas(),
+);
 
 /// El badge de la campana. Cuenta **no leídas**, no abiertas: un badge que
 /// nunca baja deja de significar "mira esto".
-final resumenAlertasProvider =
-    FutureProvider<AlertaResumen>((ref) => _repo.resumenAlertas());
+final resumenAlertasProvider = FutureProvider<AlertaResumen>(
+  (ref) => _repo.resumenAlertas(),
+);
 
 // ---- Escaneo ----
 
 final escaneoProvider = FutureProvider.family<Escaneo, String>(
-    (ref, codigo) => _repo.escanear(codigo));
+  (ref, codigo) => _repo.escanear(codigo),
+);
 
 // ---- Tareas en terreno (HU-103, HU-104) ----
 
-final tareasPendientesProvider =
-    FutureProvider<List<TareaPendiente>>((ref) {
+final tareasPendientesProvider = FutureProvider<List<TareaPendiente>>((ref) {
   final instalacion = ref.watch(instalacionProvider);
   return _repo.tareasPendientes(instalacion: instalacion?.cin_id);
 });
 
-final tareaProvider =
-    FutureProvider.family<Tarea, int>((ref, id) => _repo.tarea(id));
+final tareaProvider = FutureProvider.family<Tarea, int>(
+  (ref, id) => _repo.tarea(id),
+);
 
 /// Las fotos de algo. La familia es `destino|id` porque Riverpod necesita una
 /// clave con igualdad por valor y un record de dos campos la da gratis.
 final evidenciasProvider =
     FutureProvider.family<List<Evidencia>, (String, int)>(
-        (ref, k) => _repo.evidencias(k.$1, k.$2));
+      (ref, k) => _repo.evidencias(k.$1, k.$2),
+    );
 
 // ---- Bitácora de planta (HU-130, HU-131) ----
 
@@ -223,11 +262,13 @@ final bitacoraProvider = FutureProvider<List<BitacoraEntrada>>((ref) {
   return _repo.bitacora(instalacion: instalacion?.cin_id);
 });
 
-final tiposBitacoraProvider =
-    FutureProvider<List<BitacoraTipo>>((ref) => _repo.tiposBitacora());
+final tiposBitacoraProvider = FutureProvider<List<BitacoraTipo>>(
+  (ref) => _repo.tiposBitacora(),
+);
 
 final entradaBitacoraProvider = FutureProvider.family<BitacoraFicha, int>(
-    (ref, id) => _repo.entradaBitacora(id));
+  (ref, id) => _repo.entradaBitacora(id),
+);
 
 // ---- SIGMA AI (HU-173, HU-175) ----
 
@@ -242,4 +283,40 @@ final vigiladosProvider = FutureProvider<List<Vigilado>>((ref) {
 });
 
 final prediccionProvider = FutureProvider.family<PrediccionFicha, int>(
-    (ref, id) => _repo.prediccion(id));
+  (ref, id) => _repo.prediccion(id),
+);
+
+// ---- Favoritos marcados en esta sesión ----
+
+/// Lo que la persona acaba de marcar o desmarcar, por entidad.
+///
+/// ## Por qué existe en vez de invalidar la lista
+///
+/// `ref.invalidate(ordenesTrabajoProvider)` volvería a pedir la bandeja y la
+/// reordenaría **bajo el dedo**: la orden recién marcada saltaría a la primera
+/// posición y la siguiente que se quiere marcar ya no está donde estaba.
+///
+/// Pero sin nada, el contador del chip «★ Míos» y su filtro se quedaban con el
+/// `ES_FAVORITO` que trajo el servidor, así que la estrella se encendía y no
+/// servía para nada hasta recargar a mano.
+///
+/// Esta capa resuelve las dos: la lista **no se vuelve a pedir** —el orden no
+/// se mueve— y el contador y el filtro sí ven el cambio, porque consultan
+/// [esFavorito] en vez del campo crudo.
+class FavoritosLocales extends Notifier<Map<(String, int), bool>> {
+  @override
+  Map<(String, int), bool> build() => const {};
+
+  void marcar(String entidad, int id, bool valor) {
+    state = {...state, (entidad, id): valor};
+  }
+
+  /// El valor de la sesión si lo hay; si no, el que trajo el servidor.
+  bool resuelto(String entidad, int id, bool delServidor) =>
+      state[(entidad, id)] ?? delServidor;
+}
+
+final favoritosLocalesProvider =
+    NotifierProvider<FavoritosLocales, Map<(String, int), bool>>(
+      FavoritosLocales.new,
+    );

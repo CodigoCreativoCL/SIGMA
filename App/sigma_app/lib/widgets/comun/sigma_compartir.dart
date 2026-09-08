@@ -12,9 +12,9 @@ import 'sigma_v3.dart';
 ///
 /// Se pide por instalación y no una vez por sesión: la persona puede cambiar
 /// de planta en el día, y la lista de quién está ahí cambia con ella.
-final companerosProvider =
-    FutureProvider.family<List<Companero>, int>((ref, instalacion) =>
-        SigmaRepository.instance.companeros(instalacion));
+final companerosProvider = FutureProvider.family<List<Companero>, int>(
+  (ref, instalacion) => SigmaRepository.instance.companeros(instalacion),
+);
 
 /// La hoja de compartir un trabajo con un compañero.
 ///
@@ -98,8 +98,9 @@ class _HojaCompartirState extends ConsumerState<HojaCompartir> {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -127,13 +128,17 @@ class _HojaCompartirState extends ConsumerState<HojaCompartir> {
                 ),
               ),
               const SizedBox(height: 15),
-              Text('Compartir con un compañero',
-                  style: sora(17, 600, color: sg.tinta)),
+              Text(
+                'Compartir con un compañero',
+                style: sora(17, 600, color: sg.tinta),
+              ),
               const SizedBox(height: 4),
-              Text(widget.que,
-                  style: sora(13, 500, color: sg.tinta3),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                widget.que,
+                style: sora(13, 500, color: sg.tinta3),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 14),
 
               SgCampo(
@@ -186,15 +191,16 @@ class _HojaCompartirState extends ConsumerState<HojaCompartir> {
                     final visibles = _filtro.isEmpty
                         ? lista
                         : lista
-                            .where((c) =>
-                                c.NOMBRE.toLowerCase().contains(_filtro))
-                            .toList();
+                              .where(
+                                (c) => c.NOMBRE.toLowerCase().contains(_filtro),
+                              )
+                              .toList();
 
                     if (visibles.isEmpty) {
                       return SgAviso(
                         lista.isEmpty
                             ? 'No hay nadie más asignado a esta planta. '
-                                'Las asignaciones se hacen desde la web.'
+                                  'Las asignaciones se hacen desde la web.'
                             : 'Nadie coincide con esa búsqueda.',
                         icono: Icons.person_off_outlined,
                         color: sg.tinta2,
@@ -254,24 +260,30 @@ class _FilaCompanero extends StatelessWidget {
               borderRadius: BorderRadius.circular(SgRadius.icono48),
             ),
             alignment: Alignment.center,
-            child: Text(companero.iniciales,
-                style: sora(15, 700, color: sg.primarioTexto)),
+            child: Text(
+              companero.iniciales,
+              style: sora(15, 700, color: sg.primarioTexto),
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(companero.NOMBRE,
-                    style: sora(15, 600, color: sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  companero.NOMBRE,
+                  style: sora(15, 600, color: sg.tinta),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if ((companero.PERFIL_NOMBRE ?? '').isNotEmpty) ...[
                   const SizedBox(height: 2),
                   // El perfil importa: para un acople eléctrico se busca al
                   // eléctrico, no al primero de la lista.
-                  Text(companero.PERFIL_NOMBRE!,
-                      style: sora(12, 500, color: sg.tinta3),
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    companero.PERFIL_NOMBRE!,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ],
             ),
@@ -282,7 +294,9 @@ class _FilaCompanero extends StatelessWidget {
               width: 20,
               height: 20,
               child: CircularProgressIndicator(
-                  strokeWidth: 2, color: sg.primarioTexto),
+                strokeWidth: 2,
+                color: sg.primarioTexto,
+              ),
             )
           else
             Icon(Icons.send_outlined, size: 20, color: sg.primarioTexto),

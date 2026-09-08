@@ -23,7 +23,7 @@ typedef ConsumoRepuesto = ({
   int repuesto,
   int bodega,
   double cantidad,
-  String nombre
+  String nombre,
 });
 
 /// Elegir a quién se suma al trabajo y cuánto estuvo — HU-115.
@@ -110,14 +110,18 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
                     if (i == 0) {
-                      return SgChip('Todos',
-                          elegido: _especialidad == null,
-                          onTap: () => setState(() => _especialidad = null));
+                      return SgChip(
+                        'Todos',
+                        elegido: _especialidad == null,
+                        onTap: () => setState(() => _especialidad = null),
+                      );
                     }
                     final id = ids[i - 1];
-                    return SgChip(oficios[id]!,
-                        elegido: _especialidad == id,
-                        onTap: () => setState(() => _especialidad = id));
+                    return SgChip(
+                      oficios[id]!,
+                      elegido: _especialidad == id,
+                      onTap: () => setState(() => _especialidad = id),
+                    );
                   },
                 ),
               ),
@@ -127,8 +131,9 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
         ),
 
         ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.3),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+          ),
           child: companeros.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -145,14 +150,14 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
               final lista = _especialidad == null
                   ? todos
                   : todos
-                      .where((c) => c.especialidades.contains(_especialidad))
-                      .toList();
+                        .where((c) => c.especialidades.contains(_especialidad))
+                        .toList();
 
               if (lista.isEmpty) {
                 return SgAviso(
                   todos.isEmpty
                       ? 'No hay nadie más asignado a esta planta. Las '
-                          'asignaciones se hacen desde la web.'
+                            'asignaciones se hacen desde la web.'
                       : 'Nadie de esta planta tiene esa especialidad.',
                   icono: Icons.person_off_outlined,
                   color: sg.tinta2,
@@ -219,7 +224,8 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                     // Con qué oficio participó. Si no se filtró, la primera
                     // que tenga: un tramo sin especialidad no se puede costear
                     // después, porque la tarifa depende del oficio.
-                    especialidad: _especialidad ??
+                    especialidad:
+                        _especialidad ??
                         (_elegido!.especialidades.isEmpty
                             ? null
                             : _elegido!.especialidades.first),
@@ -295,12 +301,15 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
     if (leido == null || !mounted) return;
 
     final codigo = leido.trim().toLowerCase();
-    final lista = ref.read(repuestosOrdenProvider(widget.ordenId)).valueOrNull ??
+    final lista =
+        ref.read(repuestosOrdenProvider(widget.ordenId)).valueOrNull ??
         const <RepuestoOrden>[];
 
-    final calza = lista.where((x) =>
-        x.REPUESTO_CODIGO.toLowerCase() == codigo ||
-        x.REPUESTO_NOMBRE.toLowerCase() == codigo);
+    final calza = lista.where(
+      (x) =>
+          x.REPUESTO_CODIGO.toLowerCase() == codigo ||
+          x.REPUESTO_NOMBRE.toLowerCase() == codigo,
+    );
 
     setState(() {
       if (calza.isEmpty) {
@@ -326,13 +335,15 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
     // Pasarse del saldo lo rechaza el SP igual, pero avisar antes ahorra el
     // viaje de red y explica por qué: el número está a la vista.
-    final sobrepasa = _elegido != null &&
+    final sobrepasa =
+        _elegido != null &&
         _cuanto != null &&
         _cuanto! > _elegido!.CANTIDAD_DISPONIBLE;
 
     return HojaRecurso(
       titulo: 'Consumir un repuesto',
-      detalle: 'Descuenta de la bodega y queda anotado en la orden, en una '
+      detalle:
+          'Descuenta de la bodega y queda anotado en la orden, en una '
           'sola operación.',
       children: [
         Row(
@@ -373,7 +384,8 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
         const SizedBox(height: 12),
         ConstrainedBox(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.28),
+            maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+          ),
           child: disponibles.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -390,11 +402,12 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
               final visibles = _filtro.isEmpty
                   ? lista
                   : lista
-                      .where((x) =>
-                          '${x.REPUESTO_CODIGO} ${x.REPUESTO_NOMBRE}'
+                        .where(
+                          (x) => '${x.REPUESTO_CODIGO} ${x.REPUESTO_NOMBRE}'
                               .toLowerCase()
-                              .contains(_filtro))
-                      .toList();
+                              .contains(_filtro),
+                        )
+                        .toList();
 
               if (visibles.isEmpty) {
                 return SgAviso(
@@ -440,7 +453,8 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                       ],
                       SgFila(
                         texto: '${x.REPUESTO_CODIGO} · ${x.REPUESTO_NOMBRE}',
-                        detalle: '${_num(x.CANTIDAD_DISPONIBLE)} '
+                        detalle:
+                            '${_num(x.CANTIDAD_DISPONIBLE)} '
                             '${x.UNIDAD_SIMBOLO ?? ''} · '
                             '${x.BODEGA_NOMBRE ?? 'bodega'}',
                         icono: elegido
@@ -448,10 +462,12 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                             : Icons.radio_button_unchecked,
                         colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
                         derecha: x.ES_COMPATIBLE
-                            ? SgBadge('Compatible',
+                            ? SgBadge(
+                                'Compatible',
                                 color: sg.verdeTexto,
                                 icono: Icons.verified_outlined,
-                                chico: true)
+                                chico: true,
+                              )
                             : null,
                         onTap: () => setState(() => _elegido = x),
                       ),
@@ -487,11 +503,11 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
           onTap: (_elegido == null || _cuanto == null || sobrepasa)
               ? null
               : () => Navigator.of(context).pop((
-                    repuesto: _elegido!.isa_repuesto,
-                    bodega: _elegido!.isa_bodega,
-                    cantidad: _cuanto!,
-                    nombre: _elegido!.REPUESTO_NOMBRE,
-                  )),
+                  repuesto: _elegido!.isa_repuesto,
+                  bodega: _elegido!.isa_bodega,
+                  cantidad: _cuanto!,
+                  nombre: _elegido!.REPUESTO_NOMBRE,
+                )),
         ),
       ],
     );
@@ -518,8 +534,9 @@ class HojaRecurso extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -550,8 +567,10 @@ class HojaRecurso extends StatelessWidget {
                 const SizedBox(height: 15),
                 Text(titulo, style: sora(17, 600, color: sg.tinta)),
                 const SizedBox(height: 4),
-                Text(detalle,
-                    style: sora(13, 500, color: sg.tinta3, alto: 1.45)),
+                Text(
+                  detalle,
+                  style: sora(13, 500, color: sg.tinta3, alto: 1.45),
+                ),
                 const SizedBox(height: 15),
                 ...children,
                 const SgBarraGestos(),

@@ -90,8 +90,9 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
     final navegador = Navigator.of(context);
 
     if (instalacion == null) {
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Elige una planta antes de escribir.')));
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Elige una planta antes de escribir.')),
+      );
       return;
     }
 
@@ -117,20 +118,24 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
       });
 
       SyncService.instance.despacharAhora();
+      if (!mounted) return;
       ref.invalidate(bitacoraProvider);
 
       if (!mounted) return;
       navegador.pop(true);
-      mensajero.showSnackBar(SnackBar(
-        content: Text(SyncService.instance.enLinea.value
-            ? 'Anotado en la bitácora.'
-            : 'Guardado en el teléfono. Se envía al volver la señal.'),
-      ));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            SyncService.instance.enLinea.value
+                ? 'Anotado en la bitácora.'
+                : 'Guardado en el teléfono. Se envía al volver la señal.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      mensajero.showSnackBar(
-          SnackBar(content: Text('No se pudo guardar: $e')));
+      mensajero.showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
     }
   }
 
@@ -159,8 +164,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ),
         ],
@@ -174,8 +182,9 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
         ),
       ),
       body: ListView(
-        padding:
-            context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        ),
         children: [
           if (widget.activoNombre != null) ...[
             SgCard(
@@ -185,9 +194,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                   Icon(Icons.view_in_ar_outlined, size: 19, color: sg.tinta2),
                   const SizedBox(width: 11),
                   Expanded(
-                    child: Text(widget.activoNombre!,
-                        style: sora(14, 600, color: sg.tinta),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      widget.activoNombre!,
+                      style: sora(14, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -212,9 +223,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
               runSpacing: 8,
               children: [
                 for (final t in lista)
-                  SgChip(t.bti_nombre,
-                      elegido: _tipo == t.bti_id,
-                      onTap: () => setState(() => _tipo = t.bti_id)),
+                  SgChip(
+                    t.bti_nombre,
+                    elegido: _tipo == t.bti_id,
+                    onTap: () => setState(() => _tipo = t.bti_id),
+                  ),
               ],
             ),
           ),
@@ -236,9 +249,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                 runSpacing: 8,
                 children: [
                   for (final v in lista)
-                    SgChip(v.ctv_nombre,
-                        elegido: _severidad == v.ctv_id,
-                        onTap: () => setState(() => _severidad = v.ctv_id)),
+                    SgChip(
+                      v.ctv_nombre,
+                      elegido: _severidad == v.ctv_id,
+                      onTap: () => setState(() => _severidad = v.ctv_id),
+                    ),
                 ],
               ),
             ),
@@ -270,9 +285,10 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                 titulo: 'Qué pasó',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'texto',
-                      rotulo: 'Qué pasó',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'texto',
+                    rotulo: 'Qué pasó',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -329,7 +345,14 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
     );
     if (hora == null || !mounted) return;
 
-    setState(() => _cuando =
-        DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute));
+    setState(
+      () => _cuando = DateTime(
+        dia.year,
+        dia.month,
+        dia.day,
+        hora.hour,
+        hora.minute,
+      ),
+    );
   }
 }

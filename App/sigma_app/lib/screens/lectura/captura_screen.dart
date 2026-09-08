@@ -118,7 +118,9 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
         widget.valorAnterior != null &&
         n < widget.valorAnterior! &&
         !_esReinicio) {
-      final ant = NumberFormat.decimalPattern('es_CL').format(widget.valorAnterior);
+      final ant = NumberFormat.decimalPattern(
+        'es_CL',
+      ).format(widget.valorAnterior);
       return 'La lectura anterior era $ant. Un medidor acumulativo no baja: '
           'revisa el número o marca que el medidor se reinició.';
     }
@@ -156,7 +158,8 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
       await OutboxService.instance.encolar(
         tipo: esLectura ? 'LECTURA' : 'MEDICION',
         titulo: '$que · ${widget.activoCodigo ?? widget.activoNombre}',
-        detalle: '${_valor.text.trim()}${widget.unidad == null ? '' : ' ${widget.unidad}'}',
+        detalle:
+            '${_valor.text.trim()}${widget.unidad == null ? '' : ' ${widget.unidad}'}',
         endpoint: esLectura ? ApiConstants.lecturas : ApiConstants.mediciones,
         cuerpo: {
           'act_id': widget.activoId,
@@ -177,17 +180,23 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
       // Se intenta enviar sin que la pantalla espere.
       SyncService.instance.despacharAhora();
 
-      mensajero.showSnackBar(SnackBar(
-        content: Text(SyncService.instance.enLinea.value
-            ? 'Guardado y enviado.'
-            : 'Guardado en el teléfono. Se envía al volver la señal.'),
-      ));
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            SyncService.instance.enLinea.value
+                ? 'Guardado y enviado.'
+                : 'Guardado en el teléfono. Se envía al volver la señal.',
+          ),
+        ),
+      );
       navegador.pop(true);
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
       mensajero.showSnackBar(
-          SnackBar(content: Text('No se pudo guardar en el teléfono: $e')));
+        SnackBar(content: Text('No se pudo guardar en el teléfono: $e')),
+      );
     }
   }
 
@@ -265,7 +274,9 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
         ),
       ),
       body: ListView(
-        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        ),
         children: [
           _Activo(
             nombre: widget.activoNombre,
@@ -282,11 +293,17 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    SgBadge('Obligatorio',
-                        color: sg.rojoTexto, icono: Icons.star_outline),
+                    SgBadge(
+                      'Obligatorio',
+                      color: sg.rojoTexto,
+                      icono: Icons.star_outline,
+                    ),
                     if (widget.medidorNombre != null)
-                      SgBadge(widget.medidorNombre!,
-                          color: sg.azulTexto, icono: Icons.speed_outlined),
+                      SgBadge(
+                        widget.medidorNombre!,
+                        color: sg.azulTexto,
+                        icono: Icons.speed_outlined,
+                      ),
                   ],
                 ),
                 const SizedBox(height: 14),
@@ -294,8 +311,13 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
                   esLectura
                       ? 'Lectura de ${widget.medidorNombre ?? "medidor"}'
                       : 'Medición de condición',
-                  style: sora(20, 700, color: sg.tinta, alto: 1.35,
-                      espaciado: -0.4),
+                  style: sora(
+                    20,
+                    700,
+                    color: sg.tinta,
+                    alto: 1.35,
+                    espaciado: -0.4,
+                  ),
                 ),
                 const SizedBox(height: 14),
                 const SgRotuloCampo('Valor medido'),
@@ -329,9 +351,11 @@ class _CapturaScreenState extends ConsumerState<CapturaScreen> {
                 ],
                 if (esLectura && widget.permiteReinicio) ...[
                   const SizedBox(height: 4),
-                  SgCasilla('El medidor se reinició',
-                      marcada: _esReinicio,
-                      onCambio: (v) => setState(() => _esReinicio = v)),
+                  SgCasilla(
+                    'El medidor se reinició',
+                    marcada: _esReinicio,
+                    onCambio: (v) => setState(() => _esReinicio = v),
+                  ),
                 ],
               ],
             ),
@@ -381,15 +405,20 @@ class _Activo extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  [codigo, nombre].where((s) => (s ?? '').isNotEmpty).join(' · '),
+                  [
+                    codigo,
+                    nombre,
+                  ].where((s) => (s ?? '').isNotEmpty).join(' · '),
                   style: sora(15, 600, color: sg.tinta),
                   overflow: TextOverflow.ellipsis,
                 ),
                 if ((ubicacion ?? '').isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(ubicacion!,
-                      style: sora(12, 500, color: sg.tinta3),
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    ubicacion!,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ],
             ),
@@ -475,12 +504,19 @@ class _CampoValorState extends State<_CampoValor> {
                 // Teclado numérico con coma: en Chile el decimal es coma y el
                 // teclado de texto obligaría a buscarla entre los símbolos.
                 keyboardType: const TextInputType.numberWithOptions(
-                    decimal: true, signed: false),
+                  decimal: true,
+                  signed: false,
+                ),
                 inputFormatters: [
                   FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]')),
                 ],
-                style: sora(28, 700,
-                    color: sg.tinta, espaciado: -0.56, tabular: true),
+                style: sora(
+                  28,
+                  700,
+                  color: sg.tinta,
+                  espaciado: -0.56,
+                  tabular: true,
+                ),
                 cursorColor: sg.primario,
                 decoration: InputDecoration(
                   isDense: true,
@@ -535,15 +571,18 @@ class _Anterior extends StatelessWidget {
           Icon(Icons.history, size: 17, color: sg.tinta3),
           const SizedBox(width: 9),
           Expanded(
-            child: Text('Lectura anterior',
-                style: sora(13, 500, color: sg.tinta2)),
+            child: Text(
+              'Lectura anterior',
+              style: sora(13, 500, color: sg.tinta2),
+            ),
           ),
-          Text('${f.format(valor)}${unidad == null ? '' : ' $unidad'}',
-              style: sora(13, 600, color: sg.tinta2, tabular: true)),
+          Text(
+            '${f.format(valor)}${unidad == null ? '' : ' $unidad'}',
+            style: sora(13, 600, color: sg.tinta2, tabular: true),
+          ),
           if (delta != null && delta > 0) ...[
             const SizedBox(width: 8),
-            SgBadge('+${f.format(delta)}',
-                color: sg.verdeTexto, chico: true),
+            SgBadge('+${f.format(delta)}', color: sg.verdeTexto, chico: true),
           ],
         ],
       ),
@@ -582,8 +621,9 @@ class _FechaEvento extends StatelessWidget {
               lastDate: DateTime.now(),
             );
             if (d == null) return;
-            onCambio(DateTime(
-                d.year, d.month, d.day, cuando.hour, cuando.minute));
+            onCambio(
+              DateTime(d.year, d.month, d.day, cuando.hour, cuando.minute),
+            );
           },
           borderRadius: BorderRadius.circular(SgRadius.bloque),
           child: DecoratedBox(
@@ -600,12 +640,17 @@ class _FechaEvento extends StatelessWidget {
               ),
               child: Row(
                 children: [
-                  Icon(Icons.calendar_month_outlined,
-                      size: 20, color: sg.tinta3),
+                  Icon(
+                    Icons.calendar_month_outlined,
+                    size: 20,
+                    color: sg.tinta3,
+                  ),
                   const SizedBox(width: 11),
                   Expanded(
-                    child: Text(texto,
-                        style: sora(15, 500, color: sg.tinta, tabular: true)),
+                    child: Text(
+                      texto,
+                      style: sora(15, 500, color: sg.tinta, tabular: true),
+                    ),
                   ),
                   Icon(Icons.expand_more, size: 20, color: sg.tinta3),
                 ],
@@ -715,13 +760,13 @@ class _Nota extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(Icons.warning_amber, size: 17, color: color),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(texto, style: sora(13, 500, color: color, alto: 1.45)),
-          ),
-        ],
-      );
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Icon(Icons.warning_amber, size: 17, color: color),
+      const SizedBox(width: 8),
+      Expanded(
+        child: Text(texto, style: sora(13, 500, color: color, alto: 1.45)),
+      ),
+    ],
+  );
 }

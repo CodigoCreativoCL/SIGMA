@@ -50,10 +50,7 @@ class RecursosOrdenVista extends ConsumerWidget {
       child: (r) => Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          SgRotuloConAccion(
-            'Mano de obra',
-            accion: _horas(r.minutosTotales),
-          ),
+          SgRotuloConAccion('Mano de obra', accion: _horas(r.minutosTotales)),
           const SizedBox(height: 10),
           if (r.manoObra.isEmpty)
             SgAviso(
@@ -72,31 +69,32 @@ class RecursosOrdenVista extends ConsumerWidget {
             Row(
               children: [
                 Expanded(
-                  child: SgBoton('Registrar mi tiempo',
-                      icono: Icons.more_time,
-                      primario: false,
-                      alto: 44,
-                      tamanoTexto: 14,
-                      onTap: () => _registrarTiempo(context, ref)),
+                  child: SgBoton(
+                    'Registrar mi tiempo',
+                    icono: Icons.more_time,
+                    primario: false,
+                    alto: 44,
+                    tamanoTexto: 14,
+                    onTap: () => _registrarTiempo(context, ref),
+                  ),
                 ),
                 const SizedBox(width: 9),
                 Expanded(
-                  child: SgBoton('Sumar compañero',
-                      icono: Icons.person_add_alt,
-                      primario: false,
-                      alto: 44,
-                      tamanoTexto: 14,
-                      onTap: () => _sumarCompanero(context, ref)),
+                  child: SgBoton(
+                    'Sumar compañero',
+                    icono: Icons.person_add_alt,
+                    primario: false,
+                    alto: 44,
+                    tamanoTexto: 14,
+                    onTap: () => _sumarCompanero(context, ref),
+                  ),
                 ),
               ],
             ),
           ],
 
           const SizedBox(height: 22),
-          SgRotuloConAccion(
-            'Repuestos',
-            accion: '${r.repuestos.length}',
-          ),
+          SgRotuloConAccion('Repuestos', accion: '${r.repuestos.length}'),
           const SizedBox(height: 10),
           if (r.repuestos.isEmpty)
             SgAviso(
@@ -111,12 +109,14 @@ class RecursosOrdenVista extends ConsumerWidget {
             ],
           if (puedeEditar) ...[
             const SizedBox(height: 3),
-            SgBoton('Consumir un repuesto',
-                icono: Icons.inventory_2_outlined,
-                primario: false,
-                alto: 44,
-                tamanoTexto: 14,
-                onTap: () => _consumirRepuesto(context, ref)),
+            SgBoton(
+              'Consumir un repuesto',
+              icono: Icons.inventory_2_outlined,
+              primario: false,
+              alto: 44,
+              tamanoTexto: 14,
+              onTap: () => _consumirRepuesto(context, ref),
+            ),
           ],
           const SizedBox(height: 8),
         ],
@@ -153,11 +153,15 @@ class RecursosOrdenVista extends ConsumerWidget {
     final mensajero = ScaffoldMessenger.of(context);
 
     if (instalacion == null) {
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Elige una planta antes de sumar a alguien.')));
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('Elige una planta antes de sumar a alguien.'),
+        ),
+      );
       return;
     }
 
+    if (!context.mounted) return;
     final elegido = await showModalBottomSheet<TramoCompanero>(
       context: context,
       isScrollControlled: true,
@@ -175,9 +179,13 @@ class RecursosOrdenVista extends ConsumerWidget {
         'especialidad': elegido.especialidad,
         'observacion': 'Participó en el trabajo.',
       });
+      if (!context.mounted) return;
       ref.invalidate(recursosOrdenProvider(ordenId));
-      mensajero.showSnackBar(SnackBar(
-          content: Text('${elegido.quien.NOMBRE} quedó como participante.')));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text('${elegido.quien.NOMBRE} quedó como participante.'),
+        ),
+      );
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
@@ -193,6 +201,7 @@ class RecursosOrdenVista extends ConsumerWidget {
   Future<void> _consumirRepuesto(BuildContext context, WidgetRef ref) async {
     final mensajero = ScaffoldMessenger.of(context);
 
+    if (!context.mounted) return;
     final elegido = await showModalBottomSheet<ConsumoRepuesto>(
       context: context,
       isScrollControlled: true,
@@ -209,13 +218,15 @@ class RecursosOrdenVista extends ConsumerWidget {
         'cantidad': elegido.cantidad,
         'es_devolucion': false,
       });
+      if (!context.mounted) return;
       ref.invalidate(recursosOrdenProvider(ordenId));
       // El saldo cambió: la próxima vez que se abra la hoja tiene que
       // mostrar lo que queda, no lo que había.
       ref.invalidate(repuestosOrdenProvider(ordenId));
       ref.invalidate(existenciasProvider);
       mensajero.showSnackBar(
-          SnackBar(content: Text('${elegido.nombre} consumido.')));
+        SnackBar(content: Text('${elegido.nombre} consumido.')),
+      );
     } on ApiException catch (e) {
       // «No hay saldo suficiente» lo dice el SP y es accionable.
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
@@ -230,6 +241,7 @@ class RecursosOrdenVista extends ConsumerWidget {
     var inicio = ahora.subtract(const Duration(hours: 1));
     var fin = ahora;
 
+    if (!context.mounted) return;
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -252,9 +264,12 @@ class RecursosOrdenVista extends ConsumerWidget {
         'fecha_inicio_utc': inicio.toUtc().toIso8601String(),
         'fecha_fin_utc': fin.toUtc().toIso8601String(),
       });
+      if (!context.mounted) return;
       ref.invalidate(recursosOrdenProvider(ordenId));
       ref.invalidate(ordenTrabajoProvider(ordenId));
-      mensajero.showSnackBar(const SnackBar(content: Text('Tiempo registrado.')));
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Tiempo registrado.')),
+      );
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
@@ -292,9 +307,13 @@ class _FilaManoObra extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(tramo.USUARIO_NOMBRE ?? tramo.PROVEEDOR_NOMBRE ?? 'Sin nombre',
-                    style: sora(15, 600, color: sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  tramo.USUARIO_NOMBRE ??
+                      tramo.PROVEEDOR_NOMBRE ??
+                      'Sin nombre',
+                  style: sora(15, 600, color: sg.tinta),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 3),
                 Row(
                   children: [
@@ -322,8 +341,10 @@ class _FilaManoObra extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(tramo.duracion,
-                  style: sora(16, 700, color: sg.tinta, alto: 1, tabular: true)),
+              Text(
+                tramo.duracion,
+                style: sora(16, 700, color: sg.tinta, alto: 1, tabular: true),
+              ),
               const SizedBox(height: 3),
               Text(
                 fin == null
@@ -354,27 +375,37 @@ class _FilaRepuesto extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       child: Row(
         children: [
-          SgIconoCuadro(Icons.inventory_2_outlined,
-              color: sg.acentoTexto, lado: 42, tamanoIcono: 21),
+          SgIconoCuadro(
+            Icons.inventory_2_outlined,
+            color: sg.acentoTexto,
+            lado: 42,
+            tamanoIcono: 21,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(linea.REPUESTO_NOMBRE,
-                    style: sora(15, 600, color: sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  linea.REPUESTO_NOMBRE,
+                  style: sora(15, 600, color: sg.tinta),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 3),
                 Row(
                   children: [
-                    Text(linea.REPUESTO_CODIGO,
-                        style: sora(12, 600, color: sg.acentoTexto)),
+                    Text(
+                      linea.REPUESTO_CODIGO,
+                      style: sora(12, 600, color: sg.acentoTexto),
+                    ),
                     if ((linea.LOTE_CODIGO ?? '').isNotEmpty) ...[
                       Text(' · ', style: sora(12, 500, color: sg.tinta3)),
                       Flexible(
-                        child: Text('Lote ${linea.LOTE_CODIGO}',
-                            style: sora(12, 500, color: sg.tinta3),
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          'Lote ${linea.LOTE_CODIGO}',
+                          style: sora(12, 500, color: sg.tinta3),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ],
@@ -384,18 +415,22 @@ class _FilaRepuesto extends StatelessWidget {
                 if (devuelto) ...[
                   const SizedBox(height: 6),
                   SgBadge(
-                      '${_n.format(linea.ore_cantidad_devuelta)} devuelto'
-                      '${(linea.ore_cantidad_devuelta ?? 0) == 1 ? "" : "s"}',
-                      color: sg.azulTexto,
-                      icono: Icons.undo,
-                      chico: true),
+                    '${_n.format(linea.ore_cantidad_devuelta)} devuelto'
+                    '${(linea.ore_cantidad_devuelta ?? 0) == 1 ? "" : "s"}',
+                    color: sg.azulTexto,
+                    icono: Icons.undo,
+                    chico: true,
+                  ),
                 ],
               ],
             ),
           ),
           const SizedBox(width: 10),
-          SgCifra(_n.format(linea.neto),
-              unidad: linea.UNIDAD_SIMBOLO, tamano: 18),
+          SgCifra(
+            _n.format(linea.neto),
+            unidad: linea.UNIDAD_SIMBOLO,
+            tamano: 18,
+          ),
         ],
       ),
     );
@@ -434,8 +469,9 @@ class _HojaTiempoState extends State<_HojaTiempo> {
     return Container(
       decoration: BoxDecoration(
         color: sg.card,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -456,8 +492,10 @@ class _HojaTiempoState extends State<_HojaTiempo> {
                 ),
               ),
               const SizedBox(height: 16),
-              Text('Mi tiempo en esta orden',
-                  style: sora(20, 600, color: sg.tinta)),
+              Text(
+                'Mi tiempo en esta orden',
+                style: sora(20, 600, color: sg.tinta),
+              ),
               const SizedBox(height: 6),
               Text(
                 'El tramo queda registrado como un hecho. Si te equivocas, se '
@@ -486,36 +524,45 @@ class _HojaTiempoState extends State<_HojaTiempo> {
               ),
               const SizedBox(height: 16),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
+                ),
                 decoration: BoxDecoration(
                   color: valido ? sg.up : sg.tinte(sg.rojoTexto),
                   borderRadius: BorderRadius.circular(SgRadius.bloque),
                 ),
                 child: Row(
                   children: [
-                    Icon(valido ? Icons.timer_outlined : Icons.error_outline,
-                        size: 19,
-                        color: valido ? sg.acentoTexto : sg.rojoTexto),
+                    Icon(
+                      valido ? Icons.timer_outlined : Icons.error_outline,
+                      size: 19,
+                      color: valido ? sg.acentoTexto : sg.rojoTexto,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         _minutos <= 0
                             ? 'El término tiene que ser posterior al inicio.'
                             : _minutos > 1440
-                                ? 'El tramo supera las 24 horas. Revisa las horas.'
-                                : 'Se registrarán ${_texto(_minutos)}.',
-                        style: sora(13, 600,
-                            color: valido ? sg.tinta : sg.rojoTexto),
+                            ? 'El tramo supera las 24 horas. Revisa las horas.'
+                            : 'Se registrarán ${_texto(_minutos)}.',
+                        style: sora(
+                          13,
+                          600,
+                          color: valido ? sg.tinta : sg.rojoTexto,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               const SizedBox(height: 18),
-              SgBoton('Registrar',
-                  icono: Icons.check,
-                  onTap: valido ? () => Navigator.pop(context, true) : null),
+              SgBoton(
+                'Registrar',
+                icono: Icons.check,
+                onTap: valido ? () => Navigator.pop(context, true) : null,
+              ),
               const SgBarraGestos(),
             ],
           ),
@@ -533,8 +580,7 @@ class _HojaTiempoState extends State<_HojaTiempo> {
     if (t == null) return;
 
     setState(() {
-      final nuevo =
-          DateTime(base.year, base.month, base.day, t.hour, t.minute);
+      final nuevo = DateTime(base.year, base.month, base.day, t.hour, t.minute);
       if (esInicio) {
         _inicio = nuevo;
       } else {
@@ -587,8 +633,10 @@ class _Reloj extends StatelessWidget {
                 color: sg.campo,
                 borderRadius: BorderRadius.circular(SgRadius.campo),
               ),
-              child: Text(valor,
-                  style: sora(22, 700, color: sg.tinta, tabular: true)),
+              child: Text(
+                valor,
+                style: sora(22, 700, color: sg.tinta, tabular: true),
+              ),
             ),
           ),
         ),

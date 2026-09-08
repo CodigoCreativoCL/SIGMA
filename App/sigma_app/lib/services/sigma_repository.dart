@@ -82,7 +82,9 @@ class SigmaRepository {
   }
 
   Future<Paginado<T>> _deCache<T>(
-      String entidad, T Function(Map<String, dynamic>) desde) async {
+    String entidad,
+    T Function(Map<String, dynamic>) desde,
+  ) async {
     final l = await CacheDatos.lista<T>(entidad, desde);
     return Paginado(datos: l, total: l.length, paginas: l.isEmpty ? 0 : 1);
   }
@@ -146,8 +148,10 @@ class SigmaRepository {
         entidad: CacheDatos.organizacion,
         desde: ClienteInstalacion.fromJson,
         red: () async {
-          final j = await _api.get(ApiConstants.clienteInstalaciones,
-              query: {'pagina': pagina, 'tamano': 50});
+          final j = await _api.get(
+            ApiConstants.clienteInstalaciones,
+            query: {'pagina': pagina, 'tamano': 50},
+          );
           return Paginado.desde(j, ClienteInstalacion.fromJson);
         },
       );
@@ -157,8 +161,10 @@ class SigmaRepository {
         entidad: CacheDatos.areas,
         desde: InstalacionArea.fromJson,
         red: () async {
-          final j = await _api.get(ApiConstants.instalacionAreas,
-              query: {'pagina': pagina, 'tamano': 50});
+          final j = await _api.get(
+            ApiConstants.instalacionAreas,
+            query: {'pagina': pagina, 'tamano': 50},
+          );
           return Paginado.desde(j, InstalacionArea.fromJson);
         },
       );
@@ -168,14 +174,15 @@ class SigmaRepository {
         entidad: CacheDatos.catalogos,
         desde: Catalogo.fromJson,
         red: () async {
-          final j = await _api.get(ApiConstants.catalogos,
-              query: {'pagina': pagina, 'tamano': 50});
+          final j = await _api.get(
+            ApiConstants.catalogos,
+            query: {'pagina': pagina, 'tamano': 50},
+          );
           return Paginado.desde(j, Catalogo.fromJson);
         },
       );
 
   // ---- Activos (Sprint 2) ----
-
 
   Future<Paginado<ActivoFichaEvento>> fichaActivo(int id) async {
     final j = await _api.get('${ApiConstants.activos}/$id/ficha');
@@ -198,12 +205,15 @@ class SigmaRepository {
       entidad: CacheDatos.existencias,
       desde: InventarioSaldo.fromJson,
       red: () async {
-        final j = await _api.get(ApiConstants.existencias, query: {
-          'pagina': pagina,
-          'tamano': 50,
-          if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
-          if (soloAlerta) 'alerta': true,
-        });
+        final j = await _api.get(
+          ApiConstants.existencias,
+          query: {
+            'pagina': pagina,
+            'tamano': 50,
+            if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+            if (soloAlerta) 'alerta': true,
+          },
+        );
         return Paginado.desde(j, InventarioSaldo.fromJson);
       },
     );
@@ -214,13 +224,15 @@ class SigmaRepository {
     // app dejó de responder.
     if (SyncService.instance.enLinea.value) return p;
 
-    final filtrada =
-        p.datos.where((s) => _calzaExistencia(s, filtro, soloAlerta)).toList();
+    final filtrada = p.datos
+        .where((s) => _calzaExistencia(s, filtro, soloAlerta))
+        .toList();
 
     return Paginado(
-        datos: filtrada,
-        total: filtrada.length,
-        paginas: filtrada.isEmpty ? 0 : 1);
+      datos: filtrada,
+      total: filtrada.length,
+      paginas: filtrada.isEmpty ? 0 : 1,
+    );
   }
 
   bool _calzaExistencia(InventarioSaldo s, String? filtro, bool soloAlerta) {
@@ -228,7 +240,9 @@ class SigmaRepository {
     if (filtro == null || filtro.trim().isEmpty) return true;
 
     final t = filtro.trim().toLowerCase();
-    return '${s.REPUESTO_CODIGO} ${s.REPUESTO_NOMBRE}'.toLowerCase().contains(t);
+    return '${s.REPUESTO_CODIGO} ${s.REPUESTO_NOMBRE}'.toLowerCase().contains(
+      t,
+    );
   }
 
   Future<Paginado<Repuesto>> repuestos({int pagina = 1, String? filtro}) =>
@@ -236,11 +250,14 @@ class SigmaRepository {
         entidad: CacheDatos.repuestos,
         desde: Repuesto.fromJson,
         red: () async {
-          final j = await _api.get(ApiConstants.repuestos, query: {
-            'pagina': pagina,
-            'tamano': 50,
-            if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
-          });
+          final j = await _api.get(
+            ApiConstants.repuestos,
+            query: {
+              'pagina': pagina,
+              'tamano': 50,
+              if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+            },
+          );
           return Paginado.desde(j, Repuesto.fromJson);
         },
       );
@@ -250,11 +267,25 @@ class SigmaRepository {
     return Repuesto.fromJson(j as Map<String, dynamic>);
   }
 
-  /// Solo los lotes vigentes: entregar de un lote vencido es el error que esta
-  /// pantalla tiene que hacer imposible.
+  /// Los lotes de un repuesto, para la ficha (vista 10.3).
+  ///
+  /// El vencido **viene marcado por el servidor** (`VENCIDO`) y no se deduce
+  /// comparando fechas en el teléfono: dos aparatos con distinta hora darían
+  /// veredictos distintos sobre el mismo lote, y entregar de uno vencido es el
+  /// error que la ficha tiene que hacer difícil.
   Future<List<RepuestoLote>> lotesDe(int repuesto) async {
     final j = await _api.get('${ApiConstants.repuestos}/$repuesto/lotes');
     return Paginado.desde(j, RepuestoLote.fromJson).datos;
+  }
+
+  /// Todas las bodegas donde hay este repuesto — `GET /existencias/repuesto/{id}`.
+  ///
+  /// Sin paginar, como lo entrega la API: un repuesto no vive en doscientas
+  /// bodegas, y paginarlo obligaría a la ficha a juntar páginas para mostrar
+  /// una sola pantalla.
+  Future<List<InventarioSaldo>> saldosDeRepuesto(int repuesto) async {
+    final j = await _api.get('${ApiConstants.existencias}/repuesto/$repuesto');
+    return Paginado.desde(j, InventarioSaldo.fromJson).datos;
   }
 
   Future<Paginado<Bodega>> bodegas({int pagina = 1}) =>
@@ -262,64 +293,37 @@ class SigmaRepository {
         entidad: CacheDatos.bodegas,
         desde: Bodega.fromJson,
         red: () async {
-          final j = await _api.get(ApiConstants.bodegas,
-              query: {'pagina': pagina, 'tamano': 50});
+          final j = await _api.get(
+            ApiConstants.bodegas,
+            query: {'pagina': pagina, 'tamano': 50},
+          );
           return Paginado.desde(j, Bodega.fromJson);
         },
       );
 
   Future<Paginado<InventarioMovimiento>> movimientos({int pagina = 1}) async {
-    final j = await _api.get(ApiConstants.inventarioMovimientos,
-        query: {'pagina': pagina, 'tamano': 50});
+    final j = await _api.get(
+      ApiConstants.inventarioMovimientos,
+      query: {'pagina': pagina, 'tamano': 50},
+    );
     return Paginado.desde(j, InventarioMovimiento.fromJson);
-  }
-
-  /// Un solo POST para ingreso, entrega, devolución, ajuste, traslado y merma:
-  /// del lado de la base son el mismo procedimiento con distinto tipo.
-  ///
-  /// El `uuid` lo genera el teléfono **al encolar**, no al enviar: generado al
-  /// enviar, cada reintento traería uno nuevo y la idempotencia no serviría
-  /// de nada.
-  Future<int> registrarMovimiento({
-    required String uuid,
-    required int repuesto,
-    required int bodega,
-    required int tipo,
-    required double cantidad,
-    int? ubicacion,
-    int? lote,
-    int? ordenTrabajo,
-    int? bodegaDestino,
-    String? observacion,
-  }) async {
-    final j = await _api.post(ApiConstants.inventarioMovimientos, {
-      'uuid': uuid,
-      'repuesto': repuesto,
-      'bodega': bodega,
-      'tipo': tipo,
-      'cantidad': cantidad,
-      // Los nulos NO se envían: el SP usa "@X IS NULL OR ...", así que
-      // omitir es no filtrar. Mandar null explícito significaría "bórralo".
-      'ubicacion': ?ubicacion,
-      'lote': ?lote,
-      'orden_trabajo': ?ordenTrabajo,
-      'bodega_destino': ?bodegaDestino,
-      'observacion': ?observacion,
-    });
-    return ((j as Map<String, dynamic>?)?['id'] as num?)?.toInt() ?? 0;
   }
 
   // ---- Permisos de trabajo ----
 
   Future<Paginado<PermisoTrabajo>> permisosTrabajo({int pagina = 1}) async {
-    final j = await _api.get(ApiConstants.permisosTrabajo,
-        query: {'pagina': pagina, 'tamano': 50});
+    final j = await _api.get(
+      ApiConstants.permisosTrabajo,
+      query: {'pagina': pagina, 'tamano': 50},
+    );
     return Paginado.desde(j, PermisoTrabajo.fromJson);
   }
 
   Future<Paginado<PermisoTrabajo>> permisosVigentes({int pagina = 1}) async {
-    final j = await _api.get('${ApiConstants.permisosTrabajo}/vigentes',
-        query: {'pagina': pagina, 'tamano': 50});
+    final j = await _api.get(
+      '${ApiConstants.permisosTrabajo}/vigentes',
+      query: {'pagina': pagina, 'tamano': 50},
+    );
     return Paginado.desde(j, PermisoTrabajo.fromJson);
   }
 
@@ -327,33 +331,38 @@ class SigmaRepository {
   /// año y sin ellos los chips de la pantalla de permisos quedan vacíos. Son
   /// justo lo que tiene sentido leer del disco sin señal.
   Future<List<ItemCatalogo>> tiposPermiso() => _conRespaldo<ItemCatalogo>(
-        entidad: CacheDatos.permisosTipos,
-        desde: (m) => ItemCatalogo.desde(m, 'PTT'),
-        red: () async {
-          final j = await _api.get('${ApiConstants.permisosTrabajo}/tipos');
-          return Paginado.desde(j, (m) => ItemCatalogo.desde(m, 'PTT')).datos;
-        },
-      );
+    entidad: CacheDatos.permisosTipos,
+    desde: (m) => ItemCatalogo.desde(m, 'PTT'),
+    red: () async {
+      final j = await _api.get('${ApiConstants.permisosTrabajo}/tipos');
+      return Paginado.desde(j, (m) => ItemCatalogo.desde(m, 'PTT')).datos;
+    },
+  );
 
+  /// Los estados de un permiso de trabajo, para el filtro de la bandeja.
+  ///
+  /// Bajan en la sábana (bloque 8), así que los chips también salen sin señal.
   Future<List<ItemCatalogo>> estadosPermiso() => _conRespaldo<ItemCatalogo>(
-        entidad: CacheDatos.permisosEstados,
-        desde: (m) => ItemCatalogo.desde(m, 'PTE'),
-        red: () async {
-          final j = await _api.get('${ApiConstants.permisosTrabajo}/estados');
-          return Paginado.desde(j, (m) => ItemCatalogo.desde(m, 'PTE')).datos;
-        },
-      );
+    entidad: CacheDatos.permisosEstados,
+    desde: (m) => ItemCatalogo.desde(m, 'PTE'),
+    red: () async {
+      final j = await _api.get('${ApiConstants.permisosTrabajo}/estados');
+      return Paginado.desde(j, (m) => ItemCatalogo.desde(m, 'PTE')).datos;
+    },
+  );
 
   // ---- Alertas (HU-077) ----
 
   /// La bandeja **sale del servidor**, no del teléfono: SIGMA ya detecta los
   /// hallazgos con `GEN_ALERTA_*`. Una bandeja local sería una segunda verdad.
-  Future<Paginado<Alerta>> alertas({int pagina = 1, bool soloAbiertas = true}) async {
-    final j = await _api.get(ApiConstants.alertas, query: {
-      'pagina': pagina,
-      'tamano': 50,
-      'soloAbiertas': soloAbiertas,
-    });
+  Future<Paginado<Alerta>> alertas({
+    int pagina = 1,
+    bool soloAbiertas = true,
+  }) async {
+    final j = await _api.get(
+      ApiConstants.alertas,
+      query: {'pagina': pagina, 'tamano': 50, 'soloAbiertas': soloAbiertas},
+    );
     return Paginado.desde(j, Alerta.fromJson);
   }
 
@@ -373,19 +382,11 @@ class SigmaRepository {
 
   // ---- Mi perfil: lo que la persona SÍ puede cambiar (HU-005) ----
 
-
-
   // ---- Recuperar contraseña (HU-004) ----
-
-
 
   // ---- Cambiar el estado de un activo (HU-038) ----
 
-
-
   // ---- Sincronizacion descendente (HU-150) ----
-
-
 
   // ---- Captura en terreno (HU-043, HU-044) ----
   //
@@ -418,24 +419,66 @@ class SigmaRepository {
   /// ruta— y por eso la ficha offline muestra el activo completo sin imagen,
   /// en vez de un hueco esperando una descarga que no puede ocurrir.
   Future<Activo> activo(int id) => _unoConRespaldo<Activo>(
-        entidad: CacheDatos.activos,
-        desde: Activo.fromJson,
-        columna: 'act_id',
-        valor: id,
-        red: () async {
-          final j = await _api.get('${ApiConstants.activos}/$id');
-          return Activo.fromJson(j as Map<String, dynamic>);
-        },
-      );
+    entidad: CacheDatos.activos,
+    desde: Activo.fromJson,
+    columna: 'act_id',
+    valor: id,
+    red: () async {
+      final j = await _api.get('${ApiConstants.activos}/$id');
+      return Activo.fromJson(j as Map<String, dynamic>);
+    },
+  );
 
   /// Los valores de un catalogo, por su codigo.
+  /// Los valores de un catálogo, **con respaldo en disco**.
+  ///
+  /// ## Por qué no basta con pedirlos
+  ///
+  /// Sin señal, una hoja de chips de catálogo se quedaba sin ninguna opción, y
+  /// hay dos donde eso **bloquea**: cambiar el estado de un activo (HU-038) y
+  /// la severidad de la bitácora. Las dos capturas se hacen delante del equipo,
+  /// que es justo donde no hay señal.
+  ///
+  /// ## Por qué se filtra acá y no en la consulta
+  ///
+  /// El endpoint devuelve un catálogo; la sábana baja **todos** en una sola
+  /// entidad, porque son cientos de filas y ochenta consultas para guardarlas
+  /// por separado no valen la pena. `CATALOGO_CODIGO` viaja en cada fila y es
+  /// lo que las separa al leerlas.
   Future<List<CatalogoValor>> valoresDe(String codigo) async {
-    final j = await _api.get(ApiConstants.catalogoValores,
-        query: {'codigo': codigo, 'tamano': 200});
-    final datos = (j is Map && j['datos'] is List) ? j['datos'] as List : (j as List?) ?? const [];
-    return datos
-        .map((e) => CatalogoValor.fromJson(e as Map<String, dynamic>))
-        .toList();
+    Future<List<CatalogoValor>> deDisco() async {
+      final todos = await CacheDatos.lista<CatalogoValor>(
+        CacheDatos.catalogoValores,
+        CatalogoValor.fromJson,
+      );
+      return todos
+          .where(
+            (v) =>
+                (v.CATALOGO_CODIGO ?? '').toUpperCase() == codigo.toUpperCase(),
+          )
+          .toList();
+    }
+
+    if (!SyncService.instance.enLinea.value) return deDisco();
+
+    try {
+      final j = await _api.get(
+        ApiConstants.catalogoValores,
+        query: {'codigo': codigo, 'tamano': 200},
+      );
+      final datos = (j is Map && j['datos'] is List)
+          ? j['datos'] as List
+          : (j as List?) ?? const [];
+      return datos
+          .map((e) => CatalogoValor.fromJson(e as Map<String, dynamic>))
+          .toList();
+    } on ApiException catch (e) {
+      // Un 403 sigue siendo un 403: no se tapa con datos viejos.
+      if (!e.esDeRed) rethrow;
+      final local = await deDisco();
+      if (local.isEmpty) rethrow;
+      return local;
+    }
   }
 
   // ---- Mi perfil: lo que la persona SI puede cambiar (HU-005) ----
@@ -449,22 +492,20 @@ class SigmaRepository {
   ///   encontraba la propiedad, la dejaba en null, y `UPD_USUARIO_MI_PERFIL`
   ///   asigna `usu_telefono = @TELEFONO` sin ISNULL. Es decir que guardar el
   ///   telefono lo BORRABA, y la pantalla decia "guardado".
-  Future<void> actualizarPerfil({String? telefono, int? idioma}) =>
-      _api.put(ApiConstants.miPerfil, {
-        'telefono': ?telefono,
-        'idioma': ?idioma,
-      });
+  Future<void> actualizarPerfil({String? telefono, int? idioma}) => _api.put(
+    ApiConstants.miPerfil,
+    {'telefono': ?telefono, 'idioma': ?idioma},
+  );
 
   /// La actual se pide **siempre**, incluso con la sesion abierta: el telefono
   /// desbloqueado y sin dueno encima de una mesa es el caso normal en planta.
   ///
   /// Va por POST: la ruta esta declarada `[HttpPost]`. Con PUT la peticion
   /// moria en 405 y nadie podia cambiar su clave desde la app.
-  Future<void> cambiarPassword(String actual, String nueva) =>
-      _api.post(ApiConstants.miPassword, {
-        'password_actual': actual,
-        'password_nuevo': nueva,
-      });
+  Future<void> cambiarPassword(String actual, String nueva) => _api.post(
+    ApiConstants.miPassword,
+    {'password_actual': actual, 'password_nuevo': nueva},
+  );
 
   /// Responde lo mismo exista o no el correo: si la respuesta cambiara, este
   /// formulario seria una forma de averiguar que correos estan registrados
@@ -472,11 +513,10 @@ class SigmaRepository {
   Future<void> pedirRecuperacion(String correo) =>
       _api.post(ApiConstants.recuperacion, {'correo': correo});
 
-  Future<void> restablecer(String token, String passwordNuevo) =>
-      _api.post(ApiConstants.restablecer, {
-        'token': token,
-        'password_nuevo': passwordNuevo,
-      });
+  Future<void> restablecer(String token, String passwordNuevo) => _api.post(
+    ApiConstants.restablecer,
+    {'token': token, 'password_nuevo': passwordNuevo},
+  );
 
   // ---- La sabana de datos (HU-150) ----
 
@@ -494,15 +534,17 @@ class SigmaRepository {
   /// Un bloque de la sabana. Devuelve **una lista por resultado**: el bloque
   /// de inventario trae repuestos, bodegas, ubicaciones y tipos en cuatro
   /// conjuntos, y mezclarlos los volveria inseparables al leerlos.
-  Future<List<List<Map<String, dynamic>>>> bloque(int tipo,
-      {DateTime? desde}) async {
-    final j = await _api.get('${ApiConstants.sincronizacion}/$tipo', query: {
-      if (desde != null) 'desde': desde.toUtc().toIso8601String(),
-    });
+  Future<List<List<Map<String, dynamic>>>> bloque(
+    int tipo, {
+    DateTime? desde,
+  }) async {
+    final j = await _api.get(
+      '${ApiConstants.sincronizacion}/$tipo',
+      query: {if (desde != null) 'desde': desde.toUtc().toIso8601String()},
+    );
 
-    List<Map<String, dynamic>> filas(List cruda) => cruda
-        .map((e) => (e as Map).cast<String, dynamic>())
-        .toList();
+    List<Map<String, dynamic>> filas(List cruda) =>
+        cruda.map((e) => (e as Map).cast<String, dynamic>()).toList();
 
     if (j is List) {
       // Puede venir una lista de listas o una lista de filas.
@@ -515,24 +557,13 @@ class SigmaRepository {
     return const [];
   }
 
-  // ---- Captura en terreno ----
-
-  Future<int> registrarLectura(Map<String, dynamic> cuerpo) async {
-    final j = await _api.post(ApiConstants.lecturas, cuerpo);
-    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
-  }
-
-  Future<int> registrarMedicion(Map<String, dynamic> cuerpo) async {
-    final j = await _api.post(ApiConstants.mediciones, cuerpo);
-    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
-  }
-
   // ---- Tareas en terreno (HU-103, HU-104) ----
 
   Future<List<TareaPendiente>> tareasPendientes({int? instalacion}) async {
-    final j = await _api.get(ApiConstants.tareas, query: {
-      'instalacion': ?instalacion,
-    });
+    final j = await _api.get(
+      ApiConstants.tareas,
+      query: {'instalacion': ?instalacion},
+    );
     if (j is! List) return const [];
     return j
         .map((e) => TareaPendiente.fromJson((e as Map).cast<String, dynamic>()))
@@ -551,7 +582,8 @@ class SigmaRepository {
   /// reintento traeria uno nuevo y abriria una segunda ejecucion de algo que
   /// se hizo una sola vez.
   Future<Map<String, dynamic>> guardarEjecucionTarea(
-      Map<String, dynamic> cuerpo) async {
+    Map<String, dynamic> cuerpo,
+  ) async {
     final j = await _api.post(ApiConstants.tareasEjecuciones, cuerpo);
     return (j is Map) ? j.cast<String, dynamic>() : <String, dynamic>{};
   }
@@ -565,10 +597,10 @@ class SigmaRepository {
   // ---- Evidencia fotografica ----
 
   Future<List<Evidencia>> evidencias(String destino, int destinoId) async {
-    final j = await _api.get(ApiConstants.evidencias, query: {
-      'destino': destino,
-      'destino_id': '$destinoId',
-    });
+    final j = await _api.get(
+      ApiConstants.evidencias,
+      query: {'destino': destino, 'destino_id': '$destinoId'},
+    );
     if (j is! List) return const [];
     return j
         .map((e) => Evidencia.fromJson((e as Map).cast<String, dynamic>()))
@@ -593,12 +625,15 @@ class SigmaRepository {
     bool soloAtencion = false,
     int pagina = 1,
   }) async {
-    final j = await _api.get(ApiConstants.bitacora, query: {
-      'pagina': pagina,
-      'tamano': 30,
-      'instalacion': ?instalacion,
-      if (soloAtencion) 'atencion': true,
-    });
+    final j = await _api.get(
+      ApiConstants.bitacora,
+      query: {
+        'pagina': pagina,
+        'tamano': 30,
+        'instalacion': ?instalacion,
+        if (soloAtencion) 'atencion': true,
+      },
+    );
     return Paginado.desde(j, BitacoraEntrada.fromJson).datos;
   }
 
@@ -639,10 +674,13 @@ class SigmaRepository {
 
   /// Con quién se puede compartir: los asignados a esa instalación.
   Future<List<Companero>> companeros(int instalacion, {String? filtro}) async {
-    final j = await _api.get('${ApiConstants.compartir}/companeros', query: {
-      'instalacion': instalacion,
-      if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
-    });
+    final j = await _api.get(
+      '${ApiConstants.compartir}/companeros',
+      query: {
+        'instalacion': instalacion,
+        if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+      },
+    );
     return Paginado.desde(j, Companero.fromJson).datos;
   }
 
@@ -667,10 +705,20 @@ class SigmaRepository {
 
   /// Sumarse a una orden como participante. Abre un tramo de mano de obra en
   /// cero: unirse es decir «voy para allá», no «ya trabajé veinte minutos».
-  Future<int> unirmeAOrden(int ordenId) async {
+  /// Sumarse a una orden que alguien compartió — la otra mitad de HU-115.
+  ///
+  /// Abre un tramo de mano de obra **en cero**: unirse es decir «voy para
+  /// allá», no «ya trabajé veinte minutos». El tiempo lo pone después el
+  /// cronómetro.
+  ///
+  /// **El `uuid` entra por parámetro y no se genera acá.** La pantalla lo crea
+  /// una vez y lo reusa si tiene que encolar: generado adentro, cada reintento
+  /// traería uno nuevo y el compañero aparecería dos veces en la mano de obra
+  /// de la orden — que es justo el caso del timeout.
+  Future<int> unirmeAOrden(int ordenId, {required String uuid}) async {
     final j = await _api.post('${ApiConstants.compartir}/unirme', {
       'orden_trabajo': ordenId,
-      'uuid': OutboxService.nuevoUuid(),
+      'uuid': uuid,
     });
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
@@ -694,9 +742,10 @@ class SigmaRepository {
   // ---- SIGMA AI (HU-173, HU-175) ----
 
   Future<List<Prediccion>> predicciones({int? instalacion}) async {
-    final j = await _api.get(ApiConstants.predicciones, query: {
-      'instalacion': ?instalacion,
-    });
+    final j = await _api.get(
+      ApiConstants.predicciones,
+      query: {'instalacion': ?instalacion},
+    );
     if (j is! List) return const [];
     return j
         .map((e) => Prediccion.fromJson((e as Map).cast<String, dynamic>()))
@@ -707,9 +756,10 @@ class SigmaRepository {
   /// relleno**: un panel vacio no distingue «nadie mide este equipo» de «se
   /// mide y esta tranquilo», y son cosas muy distintas.
   Future<List<Vigilado>> vigilados({int? instalacion}) async {
-    final j = await _api.get('${ApiConstants.predicciones}/vigilados', query: {
-      'instalacion': ?instalacion,
-    });
+    final j = await _api.get(
+      '${ApiConstants.predicciones}/vigilados',
+      query: {'instalacion': ?instalacion},
+    );
     if (j is! List) return const [];
     return j
         .map((e) => Vigilado.fromJson((e as Map).cast<String, dynamic>()))
@@ -725,15 +775,22 @@ class SigmaRepository {
 
   /// Reconocer o descartar. Descartar **exige motivo**: sin el, nadie puede
   /// aprender despues si el modelo se equivoco o si la decision fue otra.
-  Future<void> revisarPrediccion(int id,
-          {required bool aceptar, String? motivo}) =>
-      _api.post('${ApiConstants.predicciones}/$id/revision',
-          {'aceptar': aceptar, 'motivo': motivo});
+  Future<void> revisarPrediccion(
+    int id, {
+    required bool aceptar,
+    String? motivo,
+  }) => _api.post('${ApiConstants.predicciones}/$id/revision', {
+    'aceptar': aceptar,
+    'motivo': motivo,
+  });
 
   /// Abre la OT predictiva. Solo si la prediccion genero alerta: bajo el
   /// umbral el modelo no pide que se le crea todavia.
   Future<int> ordenDesdePrediccion(int id) async {
-    final j = await _api.post('${ApiConstants.predicciones}/$id/orden-trabajo', {});
+    final j = await _api.post(
+      '${ApiConstants.predicciones}/$id/orden-trabajo',
+      {},
+    );
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
@@ -745,9 +802,14 @@ class SigmaRepository {
 
   /// Un tramo de mano de obra (HU-115). No hay edicion: la tabla es
   /// append-only y una correccion se hace agregando otro tramo.
-  Future<int> registrarManoObra(int ordenId, Map<String, dynamic> cuerpo) async {
-    final j = await _api
-        .post('${ApiConstants.ordenesTrabajo}/$ordenId/mano-obra', cuerpo);
+  Future<int> registrarManoObra(
+    int ordenId,
+    Map<String, dynamic> cuerpo,
+  ) async {
+    final j = await _api.post(
+      '${ApiConstants.ordenesTrabajo}/$ordenId/mano-obra',
+      cuerpo,
+    );
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
@@ -757,8 +819,10 @@ class SigmaRepository {
   /// No se reusa `/existencias`: aquel listado es de la planta y no sabe nada
   /// de esta orden. La pregunta acá es «de lo que hay en bodega, qué le calza
   /// a ESTE equipo».
-  Future<List<RepuestoOrden>> repuestosDeOrden(int ordenId,
-      {String? filtro}) async {
+  Future<List<RepuestoOrden>> repuestosDeOrden(
+    int ordenId, {
+    String? filtro,
+  }) async {
     final j = await _api.get(
       '${ApiConstants.ordenesTrabajo}/$ordenId/repuestos-disponibles',
       query: {if (filtro != null && filtro.isNotEmpty) 'filtro': filtro},
@@ -774,14 +838,19 @@ class SigmaRepository {
 
   // ---- Checklist en terreno (HU-095) ----
 
-  Future<List<ChecklistPendiente>> checklistPendientes({int? instalacion}) async {
-    final j = await _api.get(ApiConstants.checklistPendientes, query: {
-      'instalacion': ?instalacion,
-    });
+  Future<List<ChecklistPendiente>> checklistPendientes({
+    int? instalacion,
+  }) async {
+    final j = await _api.get(
+      ApiConstants.checklistPendientes,
+      query: {'instalacion': ?instalacion},
+    );
     if (j is! List) return const [];
     return j
-        .map((e) =>
-            ChecklistPendiente.fromJson((e as Map).cast<String, dynamic>()))
+        .map(
+          (e) =>
+              ChecklistPendiente.fromJson((e as Map).cast<String, dynamic>()),
+        )
         .toList();
   }
 
@@ -807,19 +876,27 @@ class SigmaRepository {
   /// Responder es un UPSERT por (ejecucion, item): volver a responder
   /// actualiza. Devuelve si quedo fuera de rango y el mensaje de la pauta.
   Future<Map<String, dynamic>> responderChecklist(
-      int ejecucionId, Map<String, dynamic> cuerpo) async {
+    int ejecucionId,
+    Map<String, dynamic> cuerpo,
+  ) async {
     final j = await _api.post(
-        '${ApiConstants.checklistEjecuciones}/$ejecucionId/respuestas', cuerpo);
+      '${ApiConstants.checklistEjecuciones}/$ejecucionId/respuestas',
+      cuerpo,
+    );
     return (j is Map) ? j.cast<String, dynamic>() : <String, dynamic>{};
   }
 
   /// Cierra la pauta. Los `minutos` son los que **midió el cronómetro**, con
   /// las pausas descontadas; sin ellos el servidor calcula la diferencia
   /// contra la hora de inicio, que cuenta como trabajo el rato que se esperó.
-  Future<void> cerrarChecklist(int ejecucionId,
-          {String? observacion, int? minutos}) =>
-      _api.post('${ApiConstants.checklistEjecuciones}/$ejecucionId/cerrar',
-          {'observacion': observacion, 'minutos': minutos});
+  Future<void> cerrarChecklist(
+    int ejecucionId, {
+    String? observacion,
+    int? minutos,
+  }) => _api.post('${ApiConstants.checklistEjecuciones}/$ejecucionId/cerrar', {
+    'observacion': observacion,
+    'minutos': minutos,
+  });
 
   // ---- Ordenes de trabajo (HU-110, 113, 114, 119, 121) ----
 
@@ -833,11 +910,14 @@ class SigmaRepository {
     int? instalacion,
     DateTime? desde,
   }) async {
-    final j = await _api.get(ApiConstants.ordenesTrabajo, query: {
-      'ambito': ambito,
-      'instalacion': ?instalacion,
-      if (desde != null) 'desde': desde.toUtc().toIso8601String(),
-    });
+    final j = await _api.get(
+      ApiConstants.ordenesTrabajo,
+      query: {
+        'ambito': ambito,
+        'instalacion': ?instalacion,
+        if (desde != null) 'desde': desde.toUtc().toIso8601String(),
+      },
+    );
     if (j is! List) return const [];
     return j
         .map((e) => OrdenTrabajo.fromJson((e as Map).cast<String, dynamic>()))
@@ -852,11 +932,6 @@ class SigmaRepository {
 
   /// El alta desde terreno. **Idempotente por uuid**, que la app genera al
   /// encolar y no al enviar.
-  Future<int> crearOrdenTrabajo(Map<String, dynamic> cuerpo) async {
-    final j = await _api.post(ApiConstants.ordenesTrabajo, cuerpo);
-    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
-  }
-
   /// Hacerse cargo. Un 409 significa que otro llego primero, no un fallo.
   Future<void> tomarOrdenTrabajo(int id) =>
       _api.post('${ApiConstants.ordenesTrabajo}/$id/tomar', null);
@@ -868,17 +943,33 @@ class SigmaRepository {
     required int resultado,
     String? observacion,
     int entradaModo = 1,
-  }) =>
-      _api.post('${ApiConstants.ordenesTrabajoPasos}/$pasoId', {
-        'resultado': resultado,
-        'observacion': observacion,
-        'entrada_modo': entradaModo,
-      });
+  }) => _api.post('${ApiConstants.ordenesTrabajoPasos}/$pasoId', {
+    'resultado': resultado,
+    'observacion': observacion,
+    'entrada_modo': entradaModo,
+  });
 
   /// Finalizar deja la orden EN ESPERA DE CIERRE, no cerrada: el cierre es
   /// del planificador, y esa separacion es la que hace que el registro sirva
   /// como respaldo.
-  Future<void> finalizarOrdenTrabajo(int id, {String? resultado}) =>
-      _api.post('${ApiConstants.ordenesTrabajo}/$id/finalizar',
-          {'resultado': resultado});
+  Future<void> finalizarOrdenTrabajo(int id, {String? resultado}) => _api.post(
+    '${ApiConstants.ordenesTrabajo}/$id/finalizar',
+    {'resultado': resultado},
+  );
+
+  /// Los motivos con que se puede cerrar una OT (HU-120).
+  ///
+  /// **Con respaldo en disco.** El cierre es una acción de terreno: el
+  /// supervisor la cierra donde esté, y ahí puede no haber señal. Pedidos solo
+  /// por red, sin conexión la hoja no mostraba ningún chip y no se podía
+  /// cerrar — el encolado sí funcionaba offline, pero no se llegaba a él.
+  /// Bajan en el bloque 9 de la sábana, como los tipos de permiso en el 8.
+  Future<List<CierreMotivo>> motivosCierre() => _conRespaldo<CierreMotivo>(
+    entidad: CacheDatos.motivosCierre,
+    desde: CierreMotivo.fromJson,
+    red: () async {
+      final j = await _api.get('${ApiConstants.ordenesTrabajo}/motivos-cierre');
+      return Paginado.desde(j, CierreMotivo.fromJson).datos;
+    },
+  );
 }

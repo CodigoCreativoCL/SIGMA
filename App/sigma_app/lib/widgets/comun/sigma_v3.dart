@@ -23,8 +23,8 @@ import '../../theme/sigma_tokens.dart';
 
 /// El anillo del v3: `0 0 0 <ancho>px <color>`, por fuera y sin desenfoque.
 List<BoxShadow> anillo(Color color, {double ancho = 2}) => [
-      BoxShadow(color: color, spreadRadius: ancho, blurRadius: 0),
-    ];
+  BoxShadow(color: color, spreadRadius: ancho, blurRadius: 0),
+];
 
 // ───────────────────────────────────────────────────────────── BOTONES ──
 
@@ -105,27 +105,35 @@ class SgBoton extends StatelessWidget {
                       width: 22,
                       height: 22,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2.4, color: tinta),
+                        strokeWidth: 2.4,
+                        color: tinta,
+                      ),
                     )
                   : Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         if (icono != null && !iconoAlFinal) ...[
-                          Icon(icono,
-                              size: tamanoTexto + 5,
-                              color: colorIcono ?? tinta),
+                          Icon(
+                            icono,
+                            size: tamanoTexto + 5,
+                            color: colorIcono ?? tinta,
+                          ),
                           const SizedBox(width: 8),
                         ],
                         Flexible(
-                          child: Text(texto,
-                              style: sora(tamanoTexto, 600, color: tinta),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            texto,
+                            style: sora(tamanoTexto, 600, color: tinta),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                         if (icono != null && iconoAlFinal) ...[
                           const SizedBox(width: 8),
-                          Icon(icono,
-                              size: tamanoTexto + 3,
-                              color: colorIcono ?? tinta),
+                          Icon(
+                            icono,
+                            size: tamanoTexto + 3,
+                            color: colorIcono ?? tinta,
+                          ),
                         ],
                       ],
                     ),
@@ -222,8 +230,10 @@ class SgBotonNotificacion extends StatelessWidget {
                   boxShadow: anillo(sobre ?? sg.fondo),
                 ),
                 alignment: Alignment.center,
-                child: Text(contador > 99 ? '99+' : '$contador',
-                    style: sora(11, 700, color: Colors.white)),
+                child: Text(
+                  contador > 99 ? '99+' : '$contador',
+                  style: sora(11, 700, color: Colors.white),
+                ),
               ),
             ),
         ],
@@ -250,9 +260,10 @@ class SgRotuloCampo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
-    return Text(texto,
-        style: sora(13, 600,
-            color: enfocado ? sg.primarioTexto : sg.tinta2));
+    return Text(
+      texto,
+      style: sora(13, 600, color: enfocado ? sg.primarioTexto : sg.tinta2),
+    );
   }
 }
 
@@ -266,16 +277,19 @@ class SgRotulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        texto.toUpperCase(),
-        style: sora(13, 600,
-            color: color ?? context.sg.tinta3, espaciado: 1.1),
-      );
+    texto.toUpperCase(),
+    style: sora(13, 600, color: color ?? context.sg.tinta3, espaciado: 1.1),
+  );
 }
 
 /// La cabecera de sección con una acción a la derecha: «MEDIDORES · Ver los 2».
 class SgRotuloConAccion extends StatelessWidget {
-  const SgRotuloConAccion(this.texto,
-      {super.key, required this.accion, this.onTap});
+  const SgRotuloConAccion(
+    this.texto, {
+    super.key,
+    required this.accion,
+    this.onTap,
+  });
 
   final String texto;
   final String accion;
@@ -292,8 +306,7 @@ class SgRotuloConAccion extends StatelessWidget {
           borderRadius: BorderRadius.circular(SgRadius.unidad),
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-            child: Text(accion,
-                style: sora(13, 600, color: sg.primarioTexto)),
+            child: Text(accion, style: sora(13, 600, color: sg.primarioTexto)),
           ),
         ),
       ],
@@ -311,12 +324,15 @@ class SgTitulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Text(
-        texto,
-        style: sora(tamano, 700,
-            color: color ?? context.sg.tinta,
-            alto: 1.2,
-            espaciado: tamano * -0.02),
-      );
+    texto,
+    style: sora(
+      tamano,
+      700,
+      color: color ?? context.sg.tinta,
+      alto: 1.2,
+      espaciado: tamano * -0.02,
+    ),
+  );
 }
 
 /// La píldora de unidad: la clase `.u` del kit.
@@ -326,8 +342,12 @@ class SgTitulo extends StatelessWidget {
 /// caja evita que el ojo la lea como parte del número, y el monoespaciado la
 /// alinea entre filas de una lista.
 class SgUnidad extends StatelessWidget {
-  const SgUnidad(this.texto,
-      {super.key, this.grande = false, this.dentro = false});
+  const SgUnidad(
+    this.texto, {
+    super.key,
+    this.grande = false,
+    this.dentro = false,
+  });
 
   final String texto;
 
@@ -348,8 +368,7 @@ class SgUnidad extends StatelessWidget {
           : const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
         color: dentro ? Colors.white.withValues(alpha: 0.10) : sg.up2,
-        borderRadius:
-            BorderRadius.circular(grande ? 9 : SgRadius.unidad),
+        borderRadius: BorderRadius.circular(grande ? 9 : SgRadius.unidad),
       ),
       child: Text(
         texto,
@@ -360,9 +379,7 @@ class SgUnidad extends StatelessWidget {
           height: 1.35,
           fontWeight: FontWeight.w600,
           letterSpacing: 0.06 * (grande ? 13 : 11),
-          color: dentro
-              ? estilo.color?.withValues(alpha: 0.92)
-              : sg.tinta2,
+          color: dentro ? estilo.color?.withValues(alpha: 0.92) : sg.tinta2,
         ),
       ),
     );
@@ -386,21 +403,26 @@ class SgCifra extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Row(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Text(valor,
-              style: sora(tamano, 700,
-                  color: color ?? context.sg.tinta,
-                  alto: 1,
-                  espaciado: tamano * -0.025,
-                  tabular: true)),
-          if (unidad != null) ...[
-            const SizedBox(width: 6),
-            SgUnidad(unidad!, grande: tamano >= 24),
-          ],
-        ],
-      );
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.center,
+    children: [
+      Text(
+        valor,
+        style: sora(
+          tamano,
+          700,
+          color: color ?? context.sg.tinta,
+          alto: 1,
+          espaciado: tamano * -0.025,
+          tabular: true,
+        ),
+      ),
+      if (unidad != null) ...[
+        const SizedBox(width: 6),
+        SgUnidad(unidad!, grande: tamano >= 24),
+      ],
+    ],
+  );
 }
 
 // ────────────────────────────────────────────────────────────── BADGES ──
@@ -461,8 +483,7 @@ class SgBadge extends StatelessWidget {
               Container(
                 width: 7,
                 height: 7,
-                decoration:
-                    BoxDecoration(color: color, shape: BoxShape.circle),
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
               ),
               const SizedBox(width: 6),
             ] else if (icono != null) ...[
@@ -470,9 +491,11 @@ class SgBadge extends StatelessWidget {
               const SizedBox(width: 6),
             ],
             Flexible(
-              child: Text(texto,
-                  style: sora(12, 600, color: tinta),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                texto,
+                style: sora(12, 600, color: tinta),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
             if (unidad != null) ...[
               const SizedBox(width: 5),
@@ -544,8 +567,13 @@ class SgChip extends StatelessWidget {
 /// El contador sólido: 20 de alto, o 17 cuando va montado en la barra
 /// inferior.
 class SgContador extends StatelessWidget {
-  const SgContador(this.n,
-      {super.key, required this.color, this.chico = false, this.sobre});
+  const SgContador(
+    this.n, {
+    super.key,
+    required this.color,
+    this.chico = false,
+    this.sobre,
+  });
 
   final int n;
   final Color color;
@@ -568,8 +596,7 @@ class SgContador extends StatelessWidget {
         boxShadow: sobre == null ? null : anillo(sobre!),
       ),
       alignment: Alignment.center,
-      child: Text('$n',
-          style: sora(chico ? 10 : 11, 700, color: Colors.white)),
+      child: Text('$n', style: sora(chico ? 10 : 11, 700, color: Colors.white)),
     );
   }
 }
@@ -703,19 +730,24 @@ class SgAvatar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: lado,
-        height: lado,
-        decoration: BoxDecoration(
-          color: AppColors.avatarDe(id),
-          shape: BoxShape.circle,
-        ),
-        alignment: Alignment.center,
-        child: Text(iniciales,
-            style: sora(lado * 0.33, 700,
-                color: const Color(0xFFF8FAFC),
-                espaciado: lado * -0.008,
-                tabular: true)),
-      );
+    width: lado,
+    height: lado,
+    decoration: BoxDecoration(
+      color: AppColors.avatarDe(id),
+      shape: BoxShape.circle,
+    ),
+    alignment: Alignment.center,
+    child: Text(
+      iniciales,
+      style: sora(
+        lado * 0.33,
+        700,
+        color: const Color(0xFFF8FAFC),
+        espaciado: lado * -0.008,
+        tabular: true,
+      ),
+    ),
+  );
 }
 
 /// El cuadro de una foto que vive en el Blob Storage.
@@ -751,10 +783,10 @@ class SgFoto extends StatelessWidget {
         color: sg.foto,
         borderRadius: BorderRadius.circular(radio),
       ),
-      child: child ??
+      child:
+          child ??
           Center(
-            child: Icon(icono,
-                size: (ancho ?? lado) * 0.34, color: sg.tinta3),
+            child: Icon(icono, size: (ancho ?? lado) * 0.34, color: sg.tinta3),
           ),
     );
   }
@@ -871,7 +903,9 @@ class SgFila extends StatelessWidget {
     final sg = context.sg;
 
     final fila = Container(
-      constraints: BoxConstraints(minHeight: detalle == null ? alto : SgMedida.filaAlta),
+      constraints: BoxConstraints(
+        minHeight: detalle == null ? alto : SgMedida.filaAlta,
+      ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
@@ -887,15 +921,22 @@ class SgFila extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(texto,
-                    style: sora(15, detalle == null ? 500 : 600,
-                        color: colorTexto ?? sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  texto,
+                  style: sora(
+                    15,
+                    detalle == null ? 500 : 600,
+                    color: colorTexto ?? sg.tinta,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (detalle != null) ...[
                   const SizedBox(height: 2),
-                  Text(detalle!,
-                      style: sora(12, 500, color: sg.tinta3),
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    detalle!,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ],
             ),
@@ -903,10 +944,12 @@ class SgFila extends StatelessWidget {
           if (valor != null) ...[
             const SizedBox(width: 10),
             Flexible(
-              child: Text(valor!,
-                  textAlign: TextAlign.right,
-                  style: sora(15, 500, color: sg.tinta),
-                  overflow: TextOverflow.ellipsis),
+              child: Text(
+                valor!,
+                textAlign: TextAlign.right,
+                style: sora(15, 500, color: sg.tinta),
+                overflow: TextOverflow.ellipsis,
+              ),
             ),
           ],
           if (derecha != null) ...[const SizedBox(width: 10), derecha!],
@@ -1026,15 +1069,15 @@ class _SgCampoState extends State<SgCampo> {
       validator: (_) => widget.validador?.call(widget.controlador.text),
       builder: (estado) {
         final hayError = estado.hasError;
-        final acento =
-            hayError ? sg.rojoTexto : (_enfocado ? sg.primarioTexto : sg.tinta3);
+        final acento = hayError
+            ? sg.rojoTexto
+            : (_enfocado ? sg.primarioTexto : sg.tinta3);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             if (widget.rotulo != null) ...[
-              SgRotuloCampo(widget.rotulo!,
-                  enfocado: _enfocado && !hayError),
+              SgRotuloCampo(widget.rotulo!, enfocado: _enfocado && !hayError),
               const SizedBox(height: 8),
             ],
             DecoratedBox(
@@ -1056,7 +1099,9 @@ class _SgCampoState extends State<SgCampo> {
                       : SgMedida.campo,
                 ),
                 padding: EdgeInsets.only(
-                    left: 16, right: (widget.sufijo != null || widget.conVoz) ? 6 : 16),
+                  left: 16,
+                  right: (widget.sufijo != null || widget.conVoz) ? 6 : 16,
+                ),
                 decoration: BoxDecoration(
                   color: widget.habilitado ? sg.campo : sg.up,
                   borderRadius: BorderRadius.circular(SgRadius.campo),
@@ -1069,7 +1114,8 @@ class _SgCampoState extends State<SgCampo> {
                     if (widget.icono != null) ...[
                       Padding(
                         padding: EdgeInsets.only(
-                            top: widget.lineas > 1 ? 18 : 0),
+                          top: widget.lineas > 1 ? 18 : 0,
+                        ),
                         child: Icon(widget.icono, size: 20, color: acento),
                       ),
                       const SizedBox(width: 12),
@@ -1092,8 +1138,12 @@ class _SgCampoState extends State<SgCampo> {
                           widget.onCambio?.call(v);
                           if (hayError) estado.validate();
                         },
-                        style: sora(widget.tamanoTexto, widget.pesoTexto,
-                            color: sg.tinta, espaciado: widget.espaciadoTexto),
+                        style: sora(
+                          widget.tamanoTexto,
+                          widget.pesoTexto,
+                          color: sg.tinta,
+                          espaciado: widget.espaciadoTexto,
+                        ),
                         cursorColor: sg.primario,
                         decoration: InputDecoration(
                           isDense: true,
@@ -1102,18 +1152,24 @@ class _SgCampoState extends State<SgCampo> {
                           focusedBorder: InputBorder.none,
                           disabledBorder: InputBorder.none,
                           contentPadding: EdgeInsets.symmetric(
-                              vertical: widget.lineas > 1 ? 18 : 0),
+                            vertical: widget.lineas > 1 ? 18 : 0,
+                          ),
                           hintText: widget.hint,
-                          hintStyle: sora(widget.tamanoTexto, 500,
-                              color: sg.tinta3),
+                          hintStyle: sora(
+                            widget.tamanoTexto,
+                            500,
+                            color: sg.tinta3,
+                          ),
                         ),
                       ),
                     ),
                     if (widget.conVoz)
-                      SgBotonIcono(Icons.mic_none,
-                          color: sg.tinta2,
-                          tamano: 21,
-                          onTap: widget.onVoz),
+                      SgBotonIcono(
+                        Icons.mic_none,
+                        color: sg.tinta2,
+                        tamano: 21,
+                        onTap: widget.onVoz,
+                      ),
                     ?widget.sufijo,
                   ],
                 ),
@@ -1127,8 +1183,10 @@ class _SgCampoState extends State<SgCampo> {
                   Icon(Icons.error_outline, size: 17, color: sg.rojoTexto),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(estado.errorText!,
-                        style: sora(14, 500, color: sg.rojoTexto, alto: 1.4)),
+                    child: Text(
+                      estado.errorText!,
+                      style: sora(14, 500, color: sg.rojoTexto, alto: 1.4),
+                    ),
                   ),
                 ],
               ),
@@ -1144,8 +1202,12 @@ class _SgCampoState extends State<SgCampo> {
 
 /// La casilla del kit: `mdi-checkbox-marked` en morado, texto 14/500 en tinta2.
 class SgCasilla extends StatelessWidget {
-  const SgCasilla(this.texto,
-      {super.key, required this.marcada, required this.onCambio});
+  const SgCasilla(
+    this.texto, {
+    super.key,
+    required this.marcada,
+    required this.onCambio,
+  });
 
   final String texto;
   final bool marcada;
@@ -1163,8 +1225,11 @@ class SgCasilla extends StatelessWidget {
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(marcada ? Icons.check_box : Icons.check_box_outline_blank,
-                size: 19, color: marcada ? sg.primario : sg.tinta3),
+            Icon(
+              marcada ? Icons.check_box : Icons.check_box_outline_blank,
+              size: 19,
+              color: marcada ? sg.primario : sg.tinta3,
+            ),
             const SizedBox(width: 7),
             Text(texto, style: sora(14, 500, color: sg.tinta2)),
           ],
@@ -1184,14 +1249,16 @@ class SgEnlace extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(SgRadius.unidad),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
-          child: Text(texto,
-              style: sora(tamano, 600, color: context.sg.primarioTexto)),
-        ),
-      );
+    onTap: onTap,
+    borderRadius: BorderRadius.circular(SgRadius.unidad),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6, horizontal: 2),
+      child: Text(
+        texto,
+        style: sora(tamano, 600, color: context.sg.primarioTexto),
+      ),
+    ),
+  );
 }
 
 /// El aviso dentro de una tarjeta: ícono + texto 13/1.55.
@@ -1236,9 +1303,10 @@ class SgAviso extends StatelessWidget {
           Icon(icono, size: 20, color: c),
           const SizedBox(width: 12),
           Expanded(
-            child: Text(texto,
-                style: sora(13, 500,
-                    color: tenido ? c : sg.tinta2, alto: 1.55)),
+            child: Text(
+              texto,
+              style: sora(13, 500, color: tenido ? c : sg.tinta2, alto: 1.55),
+            ),
           ),
         ],
       ),
@@ -1288,22 +1356,28 @@ class SgBarra extends StatelessWidget implements PreferredSizeWidget {
         child: Row(
           children: [
             if (conVolver) ...[
-              SgBotonIcono(Icons.arrow_back,
-                  color: sg.tinta,
-                  tamano: 22,
-                  onTap: onVolver ?? () => Navigator.maybePop(context)),
+              SgBotonIcono(
+                Icons.arrow_back,
+                color: sg.tinta,
+                tamano: 22,
+                onTap: onVolver ?? () => Navigator.maybePop(context),
+              ),
               const SizedBox(width: 4),
             ],
             Expanded(
               child: tituloWidget == null
-                  ? Text(titulo,
+                  ? Text(
+                      titulo,
                       style: sora(tamanoTitulo, 600, color: sg.tinta),
-                      overflow: TextOverflow.ellipsis)
+                      overflow: TextOverflow.ellipsis,
+                    )
                   : Semantics(
                       label: titulo,
                       child: Align(
-                          alignment: Alignment.centerLeft,
-                          child: tituloWidget)),
+                        alignment: Alignment.centerLeft,
+                        child: tituloWidget,
+                      ),
+                    ),
             ),
             ...acciones,
           ],
@@ -1322,22 +1396,21 @@ class SgPie extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ColoredBox(
-        color: context.sg.fondo,
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: child,
-              ),
-              if (conGestos) const SgBarraGestos(),
-            ],
+    color: context.sg.fondo,
+    child: SafeArea(
+      top: false,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            child: child,
           ),
-        ),
-      );
+          if (conGestos) const SgBarraGestos(),
+        ],
+      ),
+    ),
+  );
 }
 
 /// El margen de siempre, **más lo que ocupa la barra del sistema**.
@@ -1375,18 +1448,18 @@ class SgBarraGestos extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        height: SgMedida.barraGestos,
-        child: Center(
-          child: Container(
-            width: 134,
-            height: 5,
-            decoration: BoxDecoration(
-              color: color ?? context.sg.indicador,
-              borderRadius: BorderRadius.circular(SgRadius.pill),
-            ),
-          ),
+    height: SgMedida.barraGestos,
+    child: Center(
+      child: Container(
+        width: 134,
+        height: 5,
+        decoration: BoxDecoration(
+          color: color ?? context.sg.indicador,
+          borderRadius: BorderRadius.circular(SgRadius.pill),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 // ────────────────────────────────────────────────────── BARRA INFERIOR ──
@@ -1505,15 +1578,22 @@ class _Destino extends StatelessWidget {
                     color: activo ? sg.tinte(sg.acentoTexto) : null,
                     borderRadius: BorderRadius.circular(SgRadius.pill),
                   ),
-                  child: Icon(d.icono,
-                      size: 21, color: activo ? sg.acentoTexto : sg.tinta3),
+                  child: Icon(
+                    d.icono,
+                    size: 21,
+                    color: activo ? sg.acentoTexto : sg.tinta3,
+                  ),
                 ),
                 if (d.contador > 0)
                   Positioned(
                     top: 1,
                     right: 6,
-                    child: SgContador(d.contador,
-                        color: sg.primario, chico: true, sobre: sg.card),
+                    child: SgContador(
+                      d.contador,
+                      color: sg.primario,
+                      chico: true,
+                      sobre: sg.card,
+                    ),
                   )
                 else if (d.punto)
                   Positioned(
@@ -1532,9 +1612,14 @@ class _Destino extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 4),
-            Text(d.texto,
-                style: sora(11, activo ? 600 : 500,
-                    color: activo ? sg.tinta : sg.tinta2)),
+            Text(
+              d.texto,
+              style: sora(
+                11,
+                activo ? 600 : 500,
+                color: activo ? sg.tinta : sg.tinta2,
+              ),
+            ),
           ],
         ),
       ),
@@ -1601,9 +1686,9 @@ class SgIsotipo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        'assets/images/sigma-isotipo-gradient.svg',
-        height: alto,
-      );
+    'assets/images/sigma-isotipo-gradient.svg',
+    height: alto,
+  );
 }
 
 /// El logotipo tipográfico, que **sí** cambia: la versión oscura está pensada
@@ -1614,11 +1699,11 @@ class SgWordmark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        context.sg.esOscuro
-            ? 'assets/images/sigma-wordmark-dark.svg'
-            : 'assets/images/sigma-wordmark-light.svg',
-        height: alto,
-      );
+    context.sg.esOscuro
+        ? 'assets/images/sigma-wordmark-dark.svg'
+        : 'assets/images/sigma-wordmark-light.svg',
+    height: alto,
+  );
 }
 
 /// El distintivo de SIGMA AI.
@@ -1628,11 +1713,11 @@ class SgBadgeIa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        context.sg.esOscuro
-            ? 'assets/images/sigma-ai-badge-dark.svg'
-            : 'assets/images/sigma-ai-badge-light.svg',
-        height: alto,
-      );
+    context.sg.esOscuro
+        ? 'assets/images/sigma-ai-badge-dark.svg'
+        : 'assets/images/sigma-ai-badge-light.svg',
+    height: alto,
+  );
 }
 
 /// El logotipo horizontal de SIGMA AI: símbolo y palabra.
@@ -1647,11 +1732,11 @@ class SgLogoIa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        context.sg.esOscuro
-            ? 'assets/images/sigma-ai-logo-horizontal-dark.svg'
-            : 'assets/images/sigma-ai-logo-horizontal-light.svg',
-        height: alto,
-      );
+    context.sg.esOscuro
+        ? 'assets/images/sigma-ai-logo-horizontal-dark.svg'
+        : 'assets/images/sigma-ai-logo-horizontal-light.svg',
+    height: alto,
+  );
 }
 
 /// El ícono de aplicación de SIGMA AI, para una fila de menú.
@@ -1665,12 +1750,12 @@ class SgIconoIaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        context.sg.esOscuro
-            ? 'assets/images/sigma-ai-app-icon-dark.svg'
-            : 'assets/images/sigma-ai-app-icon-light.svg',
-        width: lado,
-        height: lado,
-      );
+    context.sg.esOscuro
+        ? 'assets/images/sigma-ai-app-icon-dark.svg'
+        : 'assets/images/sigma-ai-app-icon-light.svg',
+    width: lado,
+    height: lado,
+  );
 }
 
 /// Los cuatro símbolos de estado de SIGMA AI.
@@ -1697,10 +1782,10 @@ class SgSimboloIa extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SvgPicture.asset(
-        'assets/images/${cual.archivo}.svg',
-        width: lado,
-        height: lado,
-      );
+    'assets/images/${cual.archivo}.svg',
+    width: lado,
+    height: lado,
+  );
 }
 
 /// El halo radial de las pantallas de acceso.
@@ -1708,11 +1793,7 @@ class SgSimboloIa extends StatelessWidget {
 /// Va **detrás** del contenido y no captura toques: es atmósfera, no
 /// superficie.
 class SgHalo extends StatelessWidget {
-  const SgHalo({
-    super.key,
-    this.arriba = true,
-    this.abajo = false,
-  });
+  const SgHalo({super.key, this.arriba = true, this.abajo = false});
 
   final bool arriba;
   final bool abajo;
@@ -1773,11 +1854,11 @@ class _Circulo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: lado,
-        height: lado,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: RadialGradient(colors: colores, stops: paradas),
-        ),
-      );
+    width: lado,
+    height: lado,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      gradient: RadialGradient(colors: colores, stops: paradas),
+    ),
+  );
 }

@@ -28,11 +28,13 @@ import 'package:sqflite/sqflite.dart';
 ///     publicadas**: hay teléfonos con esa versión.
 /// Fuera de la clase porque `compute` solo acepta funciones de nivel superior:
 /// lo que cruza a otro isolate no puede arrastrar un `this`.
-List<Map<String, dynamic>> _decodificar(List<String> filas) =>
-    [for (final f in filas) jsonDecode(f) as Map<String, dynamic>];
+List<Map<String, dynamic>> _decodificar(List<String> filas) => [
+  for (final f in filas) jsonDecode(f) as Map<String, dynamic>,
+];
 
-List<String> _codificar(List<Map<String, dynamic>> filas) =>
-    [for (final f in filas) jsonEncode(f)];
+List<String> _codificar(List<Map<String, dynamic>> filas) => [
+  for (final f in filas) jsonEncode(f),
+];
 
 class BaseLocalService {
   BaseLocalService._();
@@ -92,7 +94,8 @@ class BaseLocalService {
     // antiguo. Una entrega registrada antes que su corrección tiene que
     // llegar antes.
     await d.execute(
-        'CREATE INDEX IF NOT EXISTS ix_outbox_cola ON outbox (estado, agrupador, id)');
+      'CREATE INDEX IF NOT EXISTS ix_outbox_cola ON outbox (estado, agrupador, id)',
+    );
 
     // ---- Lo que baja al dispositivo ----
     //
@@ -149,8 +152,10 @@ class BaseLocalService {
     ''');
 
     // Se consulta siempre por entidad, y el tramo abierto es el ultimo.
-    await d.execute('CREATE INDEX IF NOT EXISTS ix_cronometro_entidad '
-        'ON cronometro (entidad, entidad_id, id)');
+    await d.execute(
+      'CREATE INDEX IF NOT EXISTS ix_cronometro_entidad '
+      'ON cronometro (entidad, entidad_id, id)',
+    );
   }
 
   // ----------------------------------------------------------- cronómetro --
@@ -158,10 +163,12 @@ class BaseLocalService {
   /// Los tramos de algo, en orden.
   Future<List<Map<String, dynamic>>> tramos(String entidad, int id) async {
     final d = await db;
-    return d.query('cronometro',
-        where: 'entidad = ? AND entidad_id = ?',
-        whereArgs: [entidad, id],
-        orderBy: 'id ASC');
+    return d.query(
+      'cronometro',
+      where: 'entidad = ? AND entidad_id = ?',
+      whereArgs: [entidad, id],
+      orderBy: 'id ASC',
+    );
   }
 
   Future<void> abrirTramo(String entidad, int id) async {
@@ -188,8 +195,11 @@ class BaseLocalService {
   /// Al cerrar la gestión: los tramos ya se enviaron dentro de ella.
   Future<void> borrarTramos(String entidad, int id) async {
     final d = await db;
-    await d.delete('cronometro',
-        where: 'entidad = ? AND entidad_id = ?', whereArgs: [entidad, id]);
+    await d.delete(
+      'cronometro',
+      where: 'entidad = ? AND entidad_id = ?',
+      whereArgs: [entidad, id],
+    );
   }
 
   // ---------------------------------------------------------------- caché --
@@ -219,23 +229,19 @@ class BaseLocalService {
       await t.delete('cache_datos', where: 'entidad = ?', whereArgs: [entidad]);
       final lote = t.batch();
       for (var i = 0; i < filas.length; i++) {
-        lote.insert(
-          'cache_datos',
-          {
-            'entidad': entidad,
-            'clave': claveDe(filas[i]),
-            'json': codificadas[i],
-            'sync_fecha': ahora,
-          },
-          conflictAlgorithm: ConflictAlgorithm.replace,
-        );
+        lote.insert('cache_datos', {
+          'entidad': entidad,
+          'clave': claveDe(filas[i]),
+          'json': codificadas[i],
+          'sync_fecha': ahora,
+        }, conflictAlgorithm: ConflictAlgorithm.replace);
       }
       await lote.commit(noResult: true);
-      await t.insert(
-        'cache_meta',
-        {'entidad': entidad, 'sync_fecha': ahora, 'total': filas.length},
-        conflictAlgorithm: ConflictAlgorithm.replace,
-      );
+      await t.insert('cache_meta', {
+        'entidad': entidad,
+        'sync_fecha': ahora,
+        'total': filas.length,
+      }, conflictAlgorithm: ConflictAlgorithm.replace);
     });
   }
 
@@ -246,8 +252,12 @@ class BaseLocalService {
 
   Future<List<Map<String, dynamic>>> leerLista(String entidad) async {
     final d = await db;
-    final filas = await d.query('cache_datos',
-        columns: ['json'], where: 'entidad = ?', whereArgs: [entidad]);
+    final filas = await d.query(
+      'cache_datos',
+      columns: ['json'],
+      where: 'entidad = ?',
+      whereArgs: [entidad],
+    );
 
     final crudo = [for (final f in filas) f['json'] as String];
 
@@ -263,8 +273,12 @@ class BaseLocalService {
   /// cuando no hay señal.
   Future<DateTime?> fechaDe(String entidad) async {
     final d = await db;
-    final f = await d.query('cache_meta',
-        where: 'entidad = ?', whereArgs: [entidad], limit: 1);
+    final f = await d.query(
+      'cache_meta',
+      where: 'entidad = ?',
+      whereArgs: [entidad],
+      limit: 1,
+    );
     if (f.isEmpty) return null;
     return DateTime.tryParse(f.first['sync_fecha'] as String);
   }
@@ -273,15 +287,22 @@ class BaseLocalService {
 
   Future<int> encolar(Map<String, dynamic> item) async {
     final d = await db;
-    return d.insert('outbox', item,
-        conflictAlgorithm: ConflictAlgorithm.ignore);
+    return d.insert(
+      'outbox',
+      item,
+      conflictAlgorithm: ConflictAlgorithm.ignore,
+    );
   }
 
   /// Lo pendiente, en orden de captura.
   Future<List<Map<String, dynamic>>> pendientes() async {
     final d = await db;
-    return d.query('outbox',
-        where: 'estado = ?', whereArgs: ['pendiente'], orderBy: 'id ASC');
+    return d.query(
+      'outbox',
+      where: 'estado = ?',
+      whereArgs: ['pendiente'],
+      orderBy: 'id ASC',
+    );
   }
 
   Future<List<Map<String, dynamic>>> todosLosItems() async {
@@ -297,7 +318,8 @@ class BaseLocalService {
   Future<int> contarPendientes() async {
     final d = await db;
     final r = await d.rawQuery(
-        "SELECT COUNT(*) c FROM outbox WHERE estado IN ('pendiente','rechazado')");
+      "SELECT COUNT(*) c FROM outbox WHERE estado IN ('pendiente','rechazado')",
+    );
     return (r.first['c'] as num?)?.toInt() ?? 0;
   }
 

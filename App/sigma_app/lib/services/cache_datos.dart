@@ -32,7 +32,18 @@ abstract final class CacheDatos {
   /// escribe — un error que no falla, solo devuelve vacío.
   static const organizacion = 'ORGANIZACION';
   static const areas = 'AREAS';
-  static const catalogos = 'CATALOGOS';
+
+  /// Las cabeceras de los catálogos.
+  ///
+  /// **Con sufijo `_0` desde que el bloque 3 trae también los valores.** La
+  /// sincronización numera los resultados solo cuando hay más de uno, así que
+  /// el día que se agregó el segundo, esta entidad cambió de nombre. Dejarla
+  /// como `CATALOGOS` no habría fallado: habría devuelto vacío.
+  static const catalogos = 'CATALOGOS_0';
+
+  /// Los valores de TODOS los catálogos, con el código de su catálogo en cada
+  /// fila. Es lo que hace que los chips de catálogo existan sin señal.
+  static const catalogoValores = 'CATALOGOS_1';
   static const activos = 'ACTIVOS';
   static const medidores = 'MEDICION_0';
   static const repuestos = 'INVENTARIO_0';
@@ -40,6 +51,15 @@ abstract final class CacheDatos {
   static const existencias = 'EXISTENCIAS';
   static const permisosTipos = 'PERMISOS_TRABAJO_0';
   static const permisosEstados = 'PERMISOS_TRABAJO_1';
+
+  /// Los motivos de cierre de OT (HU-120). Bajan con la sábana porque el
+  /// cierre es una acción de terreno: pedidos por red, sin señal la hoja no
+  /// muestra ningún chip y no se puede cerrar.
+  /// Sin sufijo `_0`: la sincronización solo numera los bloques que traen
+  /// VARIOS resultados, y éste trae uno. Con el sufijo la lectura no falla,
+  /// devuelve vacío — y la hoja de cierre se quedaría sin chips sin decir
+  /// por qué.
+  static const motivosCierre = 'ORDENES_TRABAJO';
 
   static final _base = BaseLocalService.instance;
 

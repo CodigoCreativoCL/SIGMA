@@ -9,14 +9,19 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../../constants/api_constants.dart';
+import '../../services/outbox_service.dart';
+import '../../services/sync_service.dart';
 import '../activo/activo_ficha_screen.dart';
 import '../inventario/existencias_screen.dart';
+import '../ordenes/orden_ficha_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 
 enum FiltroAlerta { todas, noLeidas, criticas }
 
-final filtroAlertaProvider =
-    StateProvider<FiltroAlerta>((ref) => FiltroAlerta.todas);
+final filtroAlertaProvider = StateProvider<FiltroAlerta>(
+  (ref) => FiltroAlerta.todas,
+);
 
 /// Alertas — HU-077.
 ///
@@ -37,15 +42,93 @@ class AlertasScreen extends ConsumerStatefulWidget {
 class _AlertasScreenState extends ConsumerState<AlertasScreen> {
   bool _marcando = false;
 
+  /// La alerta cuyo «Sumarme» está en curso. Es el id y no un bool porque en
+  /// pantalla hay varias tarjetas y el spinner tiene que ir en la que se tocó.
+  int? _sumandose;
+
+  /// Sumarse al trabajo que un compañero compartió — HU-115.
+  ///
+  /// ## Se intenta primero y se encola si falla la red
+  ///
+  /// Es el mismo trato que reciben las fotos en `sigma_evidencia.dart`, y por
+  /// la misma razón: con señal, el compañero necesita saber **ahora** que
+  /// quedó sumado —va a caminar hasta la máquina—, y una confirmación que
+  /// llega del servidor es la única que no miente. Sin señal la captura no se
+  /// pierde: entra a la cola.
+  ///
+  /// Un error que **no** es de red no se encola. Un 403 —sin `EJECUTAR ORDEN
+  /// TRABAJO`— o un 400 —la orden ya se cerró— no mejoran reintentando, y
+  /// guardarlos sería dejar en la cola algo que va a fallar para siempre.
+  ///
+  /// El `uuid` nace acá y se reusa al encolar: `API_INS_ORDEN_TRABAJO_MANO_OBRA`
+  /// corta por él (BD/188), así que el reintento del timeout no deja al
+  /// compañero dos veces en la mano de obra de la orden.
+  Future<void> _sumarme(Alerta alerta) async {
+    if (_sumandose != null) return;
+
+    final mensajero = ScaffoldMessenger.of(context);
+    final uuid = OutboxService.nuevoUuid();
+
+    setState(() => _sumandose = alerta.ale_id);
+
+    try {
+      await SigmaRepository.instance.unirmeAOrden(alerta.FICHA_ID, uuid: uuid);
+
+      await _marcarLeida(alerta.ale_id);
+      if (!mounted) return;
+      ref.invalidate(ordenTrabajoProvider(alerta.FICHA_ID));
+      ref.invalidate(recursosOrdenProvider(alerta.FICHA_ID));
+      ref.invalidate(ordenesTrabajoProvider);
+
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('Te sumaste al trabajo. Queda tu tramo abierto.'),
+        ),
+      );
+    } on ApiException catch (e) {
+      if (!e.esDeRed) {
+        if (!mounted) return;
+        setState(() => _sumandose = null);
+        mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+        return;
+      }
+
+      await OutboxService.instance.encolar(
+        tipo: 'UNIRME',
+        titulo: 'Sumarse a un trabajo',
+        detalle: alerta.ale_titulo,
+        endpoint: '${ApiConstants.compartir}/unirme',
+        uuid: uuid,
+        cuerpo: {'orden_trabajo': alerta.FICHA_ID},
+      );
+      SyncService.instance.despacharAhora();
+
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Guardado en el teléfono. Se envía al volver la '
+            'señal.',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _sumandose = null);
+    }
+  }
+
   Future<void> _marcarLeida(int id) async {
     try {
       await SigmaRepository.instance.marcarAlertaLeida(id);
+      if (!mounted) return;
       ref.invalidate(alertasProvider);
       ref.invalidate(resumenAlertasProvider);
     } on ApiException catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.mensaje)));
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(e.mensaje)));
       }
     }
   }
@@ -67,15 +150,21 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
         fallo++;
       }
     }
+    if (!mounted) return;
     ref.invalidate(alertasProvider);
     ref.invalidate(resumenAlertasProvider);
 
     if (!mounted) return;
     setState(() => _marcando = false);
     if (fallo > 0) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-          content: Text('$fallo ${fallo == 1 ? "alerta" : "alertas"} no se '
-              'pudo marcar. Se reintenta al recargar.')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            '$fallo ${fallo == 1 ? "alerta" : "alertas"} no se '
+            'pudo marcar. Se reintenta al recargar.',
+          ),
+        ),
+      );
     }
   }
 
@@ -84,6 +173,13 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
     final sg = context.sg;
     final alertas = ref.watch(alertasProvider);
     final filtro = ref.watch(filtroAlertaProvider);
+
+    // Esconder el botón no autoriza nada —el endpoint vuelve a exigirlo— pero
+    // evita ofrecer una acción que terminaría en un 403 que quien la tocó no
+    // puede corregir desde el teléfono.
+    final puedeEjecutar = ref.watch(
+      tienePermisoProvider('EJECUTAR ORDEN TRABAJO'),
+    );
 
     final todas = alertas.valueOrNull?.datos ?? const <Alerta>[];
     final noLeidas = todas.where((a) => !a.leida).length;
@@ -106,14 +202,18 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
             const Padding(
               padding: EdgeInsets.only(right: 14),
               child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(strokeWidth: 2.2)),
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(strokeWidth: 2.2),
+              ),
             )
           else if (noLeidas > 0)
-            SgBotonIcono(Icons.done_all,
-                fondo: sg.up, color: sg.tinta,
-                onTap: () => _marcarTodas(todas)),
+            SgBotonIcono(
+              Icons.done_all,
+              fondo: sg.up,
+              color: sg.tinta,
+              onTap: () => _marcarTodas(todas),
+            ),
         ],
       ),
       body: Column(
@@ -122,20 +222,26 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
             child: Row(
               children: [
-                SgChip('Todas',
-                    elegido: filtro == FiltroAlerta.todas,
-                    onTap: () => _filtrar(FiltroAlerta.todas)),
+                SgChip(
+                  'Todas',
+                  elegido: filtro == FiltroAlerta.todas,
+                  onTap: () => _filtrar(FiltroAlerta.todas),
+                ),
                 const SizedBox(width: 8),
-                SgChip('No leídas',
-                    elegido: filtro == FiltroAlerta.noLeidas,
-                    contador: noLeidas,
-                    onTap: () => _filtrar(FiltroAlerta.noLeidas)),
+                SgChip(
+                  'No leídas',
+                  elegido: filtro == FiltroAlerta.noLeidas,
+                  contador: noLeidas,
+                  onTap: () => _filtrar(FiltroAlerta.noLeidas),
+                ),
                 const SizedBox(width: 8),
-                SgChip('Críticas',
-                    elegido: filtro == FiltroAlerta.criticas,
-                    contador: criticas,
-                    colorContador: SgColor.rojo,
-                    onTap: () => _filtrar(FiltroAlerta.criticas)),
+                SgChip(
+                  'Críticas',
+                  elegido: filtro == FiltroAlerta.criticas,
+                  contador: criticas,
+                  colorContador: SgColor.rojo,
+                  onTap: () => _filtrar(FiltroAlerta.criticas),
+                ),
               ],
             ),
           ),
@@ -153,7 +259,8 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
                   FiltroAlerta.noLeidas => 'Ya leíste todas',
                   FiltroAlerta.criticas => 'Ninguna crítica',
                 },
-                detalle: 'Las alertas las genera el servidor cuando detecta un '
+                detalle:
+                    'Las alertas las genera el servidor cuando detecta un '
                     'hallazgo: stock bajo mínimo, permiso por vencer o medidor '
                     'sin lectura.',
               ),
@@ -163,16 +270,34 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
                   ref.invalidate(resumenAlertasProvider);
                 },
                 child: ListView.separated(
-                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
+                  padding: context.conBarraSistema(
+                    const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  ),
                   itemCount: visibles.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 11),
-                  itemBuilder: (_, i) => _Tarjeta(
-                    alerta: visibles[i],
-                    conAcciones: i == 0 &&
-                        !visibles[i].leida &&
-                        _destino(visibles[i]) != null,
-                    onLeer: () => _marcarLeida(visibles[i].ale_id),
-                  ),
+                  itemBuilder: (_, i) {
+                    final a = visibles[i];
+
+                    /* LA COMPARTIDA SIEMPRE TRAE SUS ACCIONES
+
+                       El resto de las alertas muestra los botones solo en la
+                       primera sin leer, para no dejar una pared de botones.
+                       En un trabajo compartido eso deja sin salida a la que
+                       quedó tercera: en las demás la acción es MIRAR y la
+                       tarjeta entera ya es tocable, pero acá la acción es
+                       sumarse, y esa no está en ningún otro sitio. */
+                    return _Tarjeta(
+                      alerta: a,
+                      conAcciones:
+                          a.esCompartida ||
+                          (i == 0 && !a.leida && _destino(a) != null),
+                      onLeer: () => _marcarLeida(a.ale_id),
+                      onSumarme: a.esCompartida && puedeEjecutar
+                          ? () => _sumarme(a)
+                          : null,
+                      sumandose: _sumandose == a.ale_id,
+                    );
+                  },
                 ),
               ),
             ),
@@ -211,31 +336,51 @@ Widget? _destino(Alerta a) {
   return null;
 }
 
+/// A dónde lleva la alerta de un trabajo compartido.
+///
+/// Va aparte de [_destino] porque **no se decide por `FICHA_LINK`**: esa
+/// columna es la ruta de la intranet y la página web de la orden no existe
+/// todavía, así que el tipo COMPARTIDO la tiene en NULL. Se distingue por el
+/// código del tipo, que es la identidad de la fila y no un texto que alguien
+/// pueda reescribir.
+Widget? _destinoCompartida(Alerta a) =>
+    a.esCompartida ? OrdenFichaScreen(ordenId: a.FICHA_ID) : null;
+
 class _Tarjeta extends StatelessWidget {
   const _Tarjeta({
     required this.alerta,
     required this.conAcciones,
     required this.onLeer,
+    required this.onSumarme,
+    this.sumandose = false,
   });
 
   final Alerta alerta;
   final bool conAcciones;
   final VoidCallback onLeer;
 
+  /// Sumarse al trabajo que un compañero compartió. Nulo si esta persona no
+  /// tiene `EJECUTAR ORDEN TRABAJO`: sin ese permiso el endpoint responde 403
+  /// y el botón sería una promesa que la app no puede cumplir.
+  final VoidCallback? onSumarme;
+
+  final bool sumandose;
+
   /// El color y el ícono los decide la severidad que guardó el SP. La pantalla
   /// no reinterpreta la gravedad: solo la pinta.
-  (Color, IconData, String) _severidad(AppColors sg) =>
-      switch (alerta.sev_codigo.toUpperCase()) {
-        'CRITICA' || 'CRÍTICA' => (sg.rojoTexto, Icons.error_outline, 'Crítica'),
-        'ALTA' => (sg.rojoTexto, Icons.error_outline, 'Alta'),
-        'ADVERTENCIA' => (sg.ambarTexto, Icons.warning_amber, 'Advertencia'),
-        'BAJA' => (sg.azulTexto, Icons.info_outline, 'Baja'),
-        _ => (sg.azulTexto, Icons.info_outline, 'Informativo'),
-      };
+  (Color, IconData, String) _severidad(AppColors sg) => switch (alerta
+      .sev_codigo
+      .toUpperCase()) {
+    'CRITICA' || 'CRÍTICA' => (sg.rojoTexto, Icons.error_outline, 'Crítica'),
+    'ALTA' => (sg.rojoTexto, Icons.error_outline, 'Alta'),
+    'ADVERTENCIA' => (sg.ambarTexto, Icons.warning_amber, 'Advertencia'),
+    'BAJA' => (sg.azulTexto, Icons.info_outline, 'Baja'),
+    _ => (sg.azulTexto, Icons.info_outline, 'Informativo'),
+  };
 
   IconData get _iconoTipo {
-    final t =
-        '${alerta.alt_nombre ?? ''} ${alerta.FICHA_LINK ?? ''}'.toLowerCase();
+    final t = '${alerta.alt_nombre ?? ''} ${alerta.FICHA_LINK ?? ''}'
+        .toLowerCase();
     if (t.contains('stock') ||
         t.contains('existencia') ||
         t.contains('repuesto')) {
@@ -246,6 +391,7 @@ class _Tarjeta extends StatelessWidget {
       return Icons.speed_outlined;
     }
     if (t.contains('activo')) return Icons.view_in_ar_outlined;
+    if (alerta.esCompartida) return Icons.groups_outlined;
     return Icons.notifications_outlined;
   }
 
@@ -254,7 +400,7 @@ class _Tarjeta extends StatelessWidget {
     final sg = context.sg;
     final (color, iconoSev, nombreSev) = _severidad(sg);
     final leida = alerta.leida;
-    final destino = _destino(alerta);
+    final destino = _destinoCompartida(alerta) ?? _destino(alerta);
 
     // Leída, la tarjeta **pierde la superficie**: se queda en el lienzo con el
     // texto un nivel más bajo. Es lo que separa «pendiente» de «ya visto» sin
@@ -274,8 +420,12 @@ class _Tarjeta extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SgIconoCuadro(_iconoTipo,
-                  color: color, lado: 44, tamanoIcono: 22),
+              SgIconoCuadro(
+                _iconoTipo,
+                color: color,
+                lado: 44,
+                tamanoIcono: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -285,28 +435,43 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         SgBadge(nombreSev, color: color, icono: iconoSev),
                         const Spacer(),
-                        Text(alerta.hace,
-                            style: sora(13, 500, color: sg.tinta3)),
+                        Text(
+                          alerta.hace,
+                          style: sora(13, 500, color: sg.tinta3),
+                        ),
                         if (!leida) ...[
                           const SizedBox(width: 8),
                           Container(
                             width: 8,
                             height: 8,
                             decoration: BoxDecoration(
-                                color: sg.primario, shape: BoxShape.circle),
+                              color: sg.primario,
+                              shape: BoxShape.circle,
+                            ),
                           ),
                         ],
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(alerta.ale_titulo,
-                        style: sora(17, 600,
-                            color: leida ? sg.tinta2 : sg.tinta, alto: 1.35)),
+                    Text(
+                      alerta.ale_titulo,
+                      style: sora(
+                        17,
+                        600,
+                        color: leida ? sg.tinta2 : sg.tinta,
+                        alto: 1.35,
+                      ),
+                    ),
                     if ((alerta.ale_descripcion ?? '').isNotEmpty) ...[
                       const SizedBox(height: 4),
-                      Text(alerta.ale_descripcion!,
-                          style: sora(14, 500,
-                              color: leida ? sg.tinta3 : sg.tinta2)),
+                      Text(
+                        alerta.ale_descripcion!,
+                        style: sora(
+                          14,
+                          500,
+                          color: leida ? sg.tinta3 : sg.tinta2,
+                        ),
+                      ),
                     ],
                   ],
                 ),
@@ -323,16 +488,43 @@ class _Tarjeta extends StatelessWidget {
                     icono: _iconoTipo,
                     alto: 44,
                     tamanoTexto: 14,
+                    primario: !alerta.esCompartida,
                     onTap: () {
                       onLeer();
-                      Navigator.push(context,
-                          MaterialPageRoute(builder: (_) => destino));
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => destino),
+                      );
                     },
                   ),
                 ),
                 const SizedBox(width: 9),
-                SgBotonIcono(Icons.done,
-                    fondo: sg.up, color: sg.tinta, onTap: onLeer),
+
+                /* SUMARSE ES LA ACCION DE ESTA ALERTA, NO ABRIRLA
+
+                   En una alerta de stock la acción es mirar; en un trabajo
+                   compartido es **ir**. El compañero comparte porque necesita
+                   una mano, así que sumarse va de principal y abrir la orden
+                   queda de secundaria. Sin este botón el aviso decía «Rodrigo
+                   te compartió OT-1176» y no llevaba a ninguna parte. */
+                if (alerta.esCompartida && onSumarme != null)
+                  Expanded(
+                    child: SgBoton(
+                      'Sumarme',
+                      icono: Icons.person_add_alt,
+                      alto: 44,
+                      tamanoTexto: 14,
+                      cargando: sumandose,
+                      onTap: onSumarme,
+                    ),
+                  )
+                else
+                  SgBotonIcono(
+                    Icons.done,
+                    fondo: sg.up,
+                    color: sg.tinta,
+                    onTap: onLeer,
+                  ),
               ],
             ),
           ],
@@ -342,6 +534,7 @@ class _Tarjeta extends StatelessWidget {
   }
 
   static String _textoAccion(Alerta a) {
+    if (a.esCompartida) return 'Abrir la orden';
     final link = (a.FICHA_LINK ?? '').toLowerCase();
     if (link.contains('activo')) return 'Ver el activo';
     if (link.contains('permiso')) return 'Ver el permiso';

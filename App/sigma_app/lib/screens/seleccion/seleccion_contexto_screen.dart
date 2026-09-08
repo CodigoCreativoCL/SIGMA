@@ -16,7 +16,8 @@ import '../../widgets/comun/sigma_v3.dart';
 
 /// Los clientes a los que pertenece quien entró.
 final misClientesProvider = FutureProvider<List<ClienteElegibleModel>>(
-    (ref) => AuthService.instance.misClientes());
+  (ref) => AuthService.instance.misClientes(),
+);
 
 /// El texto del buscador de contexto.
 final busquedaContextoProvider = StateProvider<String>((ref) => '');
@@ -82,6 +83,7 @@ class _SeleccionContextoScreenState
         menuProvider,
         permisosProvider,
       ]) {
+        if (!mounted) return;
         ref.invalidate(p);
       }
     } on ApiException catch (e) {
@@ -116,7 +118,9 @@ class _SeleccionContextoScreenState
         ),
       ),
       body: ListView(
-        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 10, 16, 8)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 10, 16, 8),
+        ),
         children: [
           const SgTitulo('¿Dónde vas a\ntrabajar hoy?'),
           const SizedBox(height: 20),
@@ -143,7 +147,7 @@ class _SeleccionContextoScreenState
                   : 'Ningún cliente coincide',
               detalle: filtro.isEmpty
                   ? 'El Administrador del Cliente te tiene que afiliar antes '
-                      'de que puedas operar en terreno.'
+                        'de que puedas operar en terreno.'
                   : 'Prueba con otra parte del nombre.',
             ),
             child: (lista) => Column(
@@ -169,8 +173,11 @@ class _SeleccionContextoScreenState
           const SgRotulo('Instalación'),
           const SizedBox(height: 12),
           if (!sesion.tieneCliente)
-            SgAviso('Elige primero el cliente.',
-                icono: Icons.arrow_upward, color: sg.tinta2)
+            SgAviso(
+              'Elige primero el cliente.',
+              icono: Icons.arrow_upward,
+              color: sg.tinta2,
+            )
           else
             EstadoAsync<Paginado<ClienteInstalacion>>(
               valor: plantas,
@@ -185,7 +192,7 @@ class _SeleccionContextoScreenState
                     : 'Ninguna instalación coincide',
                 detalle: filtro.isEmpty
                     ? 'Tu perfil no tiene plantas asignadas en este cliente. '
-                        'Pídeselo al administrador de tu empresa.'
+                          'Pídeselo al administrador de tu empresa.'
                     : 'Prueba con otra parte del nombre.',
               ),
               child: (p) => Column(
@@ -209,20 +216,24 @@ class _SeleccionContextoScreenState
   }
 
   List<ClienteElegibleModel> _filtrarClientes(
-          List<ClienteElegibleModel> l, String f) =>
-      f.isEmpty
-          ? l
-          : l.where((c) => c.nombre.toLowerCase().contains(f)).toList();
+    List<ClienteElegibleModel> l,
+    String f,
+  ) => f.isEmpty
+      ? l
+      : l.where((c) => c.nombre.toLowerCase().contains(f)).toList();
 
   List<ClienteInstalacion> _filtrarPlantas(
-          List<ClienteInstalacion> l, String f) =>
-      f.isEmpty
-          ? l
-          : l
-              .where((i) =>
+    List<ClienteInstalacion> l,
+    String f,
+  ) => f.isEmpty
+      ? l
+      : l
+            .where(
+              (i) =>
                   i.cin_nombre.toLowerCase().contains(f) ||
-                  (i.cin_direccion ?? '').toLowerCase().contains(f))
-              .toList();
+                  (i.cin_direccion ?? '').toLowerCase().contains(f),
+            )
+            .toList();
 }
 
 /// El buscador de 52 en píldora. Es el único campo del kit con radio 999, y
@@ -336,18 +347,25 @@ class _FilaCliente extends StatelessWidget {
                 borderRadius: BorderRadius.circular(SgRadius.icono48),
               ),
               alignment: Alignment.center,
-              child: Text(_iniciales,
-                  style: sora(16, 700,
-                      color: elegido ? sg.acentoTexto : sg.tinta2)),
+              child: Text(
+                _iniciales,
+                style: sora(
+                  16,
+                  700,
+                  color: elegido ? sg.acentoTexto : sg.tinta2,
+                ),
+              ),
             ),
           const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(cliente.nombre,
-                    style: sora(17, 600, color: sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  cliente.nombre,
+                  style: sora(17, 600, color: sg.tinta),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 3),
                 Text(
                   instalaciones == null
@@ -361,9 +379,10 @@ class _FilaCliente extends StatelessWidget {
           const SizedBox(width: 10),
           if (cargando)
             const SizedBox(
-                width: 23,
-                height: 23,
-                child: CircularProgressIndicator(strokeWidth: 2.4))
+              width: 23,
+              height: 23,
+              child: CircularProgressIndicator(strokeWidth: 2.4),
+            )
           else if (elegido)
             Icon(Icons.check_circle, size: 23, color: sg.primario)
           else
@@ -402,36 +421,46 @@ class _FilaInstalacion extends ConsumerWidget {
       onTap: onTap,
       child: Row(
         children: [
-          Icon(Icons.factory,
-              size: 25, color: elegida ? sg.acentoTexto : sg.tinta3),
+          Icon(
+            Icons.factory,
+            size: 25,
+            color: elegida ? sg.acentoTexto : sg.tinta3,
+          ),
           const SizedBox(width: 13),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(instalacion.cin_nombre,
-                    style: sora(16, 600, color: sg.tinta),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  instalacion.cin_nombre,
+                  style: sora(16, 600, color: sg.tinta),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 if (elegida && alDia)
-                  SgBadge('Datos al día',
-                      color: sg.verdeTexto,
-                      icono: Icons.cloud_done_outlined,
-                      chico: true)
+                  SgBadge(
+                    'Datos al día',
+                    color: sg.verdeTexto,
+                    icono: Icons.cloud_done_outlined,
+                    chico: true,
+                  )
                 else if ((instalacion.cin_direccion ?? '').isNotEmpty)
-                  Text(instalacion.cin_direccion!,
-                      style: sora(13, 500, color: sg.tinta3),
-                      overflow: TextOverflow.ellipsis)
+                  Text(
+                    instalacion.cin_direccion!,
+                    style: sora(13, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  )
                 else
-                  Text('Toca para elegirla',
-                      style: sora(13, 500, color: sg.tinta3)),
+                  Text(
+                    'Toca para elegirla',
+                    style: sora(13, 500, color: sg.tinta3),
+                  ),
               ],
             ),
           ),
           if (elegida) ...[
             const SizedBox(width: 10),
-            const Icon(Icons.check_circle,
-                size: 21, color: SgColor.tealSolido),
+            const Icon(Icons.check_circle, size: 21, color: SgColor.tealSolido),
           ],
         ],
       ),

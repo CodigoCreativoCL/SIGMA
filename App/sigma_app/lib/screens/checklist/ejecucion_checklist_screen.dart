@@ -78,15 +78,16 @@ class _EjecucionChecklistScreenState
     try {
       final r = await SigmaRepository.instance
           .responderChecklist(widget.ejecucionId, {
-        'item': item.cpi_id,
-        'valor_texto': texto,
-        'valor_numero': numero,
-        'valor_booleano': booleano,
-        'no_aplica': noAplica,
-        'comentario': comentario,
-        'entrada_modo': porVoz ? 2 : 1,
-      });
+            'item': item.cpi_id,
+            'valor_texto': texto,
+            'valor_numero': numero,
+            'valor_booleano': booleano,
+            'no_aplica': noAplica,
+            'comentario': comentario,
+            'entrada_modo': porVoz ? 2 : 1,
+          });
 
+      if (!mounted) return;
       ref.invalidate(checklistEjecucionProvider(widget.ejecucionId));
 
       // El servidor dice si quedó fuera de rango y por qué. Se muestra su
@@ -94,13 +95,15 @@ class _EjecucionChecklistScreenState
       // la pauta.
       if (r['fuera_rango'] == true) {
         final msg = '${r['mensaje'] ?? ''}'.trim();
-        mensajero.showSnackBar(SnackBar(
-          backgroundColor: tinteAmbar,
-          content: Text(
-            msg.isEmpty ? 'Queda registrado como hallazgo.' : msg,
-            style: sora(14, 600, color: ambar),
+        mensajero.showSnackBar(
+          SnackBar(
+            backgroundColor: tinteAmbar,
+            content: Text(
+              msg.isEmpty ? 'Queda registrado como hallazgo.' : msg,
+              style: sora(14, 600, color: ambar),
+            ),
           ),
-        ));
+        );
       }
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
@@ -113,6 +116,7 @@ class _EjecucionChecklistScreenState
     final sg = context.sg;
     final control = TextEditingController();
 
+    if (!mounted) return;
     final si = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
@@ -124,7 +128,7 @@ class _EjecucionChecklistScreenState
             Text(
               e.cej_item_no_conforme > 0
                   ? 'Quedan ${e.cej_item_no_conforme} respuestas fuera de norma. '
-                      'Se envían igual: eso es el hallazgo.'
+                        'Se envían igual: eso es el hallazgo.'
                   : 'Todo conforme. Una vez enviada no se puede modificar.',
               style: sora(14, 500, color: sg.tinta2, alto: 1.5),
             ),
@@ -145,8 +149,10 @@ class _EjecucionChecklistScreenState
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child:
-                Text('Enviar', style: sora(15, 600, color: sg.primarioTexto)),
+            child: Text(
+              'Enviar',
+              style: sora(15, 600, color: sg.primarioTexto),
+            ),
           ),
         ],
       ),
@@ -162,13 +168,19 @@ class _EjecucionChecklistScreenState
 
     // Se detiene antes de mandar: si sigue corriendo mientras viaja el
     // cierre, lo que suma es el tiempo de la red, no el de la ronda.
-    final minutos =
-        await CronometroService.instance.detener('CHECKLIST', widget.ejecucionId);
+    final minutos = await CronometroService.instance.detener(
+      'CHECKLIST',
+      widget.ejecucionId,
+    );
 
     try {
-      await SigmaRepository.instance.cerrarChecklist(widget.ejecucionId,
-          observacion: obs.isEmpty ? null : obs, minutos: minutos);
+      await SigmaRepository.instance.cerrarChecklist(
+        widget.ejecucionId,
+        observacion: obs.isEmpty ? null : obs,
+        minutos: minutos,
+      );
       await CronometroService.instance.limpiar('CHECKLIST', widget.ejecucionId);
+      if (!mounted) return;
       ref.invalidate(checklistPendientesProvider);
       mensajero.showSnackBar(const SnackBar(content: Text('Pauta enviada.')));
       navegador.pop(true);
@@ -242,7 +254,8 @@ class _Cuerpo extends StatelessWidget {
     bool noAplica,
     String? comentario,
     bool porVoz,
-  }) onResponder;
+  })
+  onResponder;
   final VoidCallback onCerrar;
 
   @override
@@ -259,7 +272,9 @@ class _Cuerpo extends StatelessWidget {
     }
 
     final faltanObligatorios = items
-        .where((i) => i.cpi_obligatorio && ejecucion.respuestaDe(i.cpi_id) == null)
+        .where(
+          (i) => i.cpi_obligatorio && ejecucion.respuestaDe(i.cpi_id) == null,
+        )
         .length;
 
     String? seccionPrevia;
@@ -270,23 +285,29 @@ class _Cuerpo extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
           child: SgCronometro(
-              entidad: 'CHECKLIST', entidadId: ejecucion.cej_id),
+            entidad: 'CHECKLIST',
+            entidadId: ejecucion.cej_id,
+          ),
         ),
         Expanded(
           child: ListView(
-            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 8)),
+            padding: context.conBarraSistema(
+              const EdgeInsets.fromLTRB(16, 14, 16, 8),
+            ),
             children: [
               for (final i in items) ...[
                 if (i.SECCION_NOMBRE != null &&
                     i.SECCION_NOMBRE != seccionPrevia) ...[
                   if (seccionPrevia != null) const SizedBox(height: 8),
-                  Builder(builder: (_) {
-                    seccionPrevia = i.SECCION_NOMBRE;
-                    return Padding(
-                      padding: const EdgeInsets.only(bottom: 10),
-                      child: SgRotulo(i.SECCION_NOMBRE!),
-                    );
-                  }),
+                  Builder(
+                    builder: (_) {
+                      seccionPrevia = i.SECCION_NOMBRE;
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: SgRotulo(i.SECCION_NOMBRE!),
+                      );
+                    },
+                  ),
                 ],
                 _Item(
                   item: i,
@@ -315,8 +336,12 @@ class _Cuerpo extends StatelessWidget {
           )
         else
           SgPie(
-            child: SgBoton('Pauta enviada',
-                icono: Icons.lock_outline, primario: false, onTap: null),
+            child: SgBoton(
+              'Pauta enviada',
+              icono: Icons.lock_outline,
+              primario: false,
+              onTap: null,
+            ),
           ),
       ],
     );
@@ -345,8 +370,10 @@ class _Progreso extends StatelessWidget {
               const Spacer(),
               if (ejecucion.cej_item_no_conforme > 0)
                 SgBadge(
-                    '${ejecucion.cej_item_no_conforme} fuera de norma',
-                    color: sg.ambarTexto, chico: true),
+                  '${ejecucion.cej_item_no_conforme} fuera de norma',
+                  color: sg.ambarTexto,
+                  chico: true,
+                ),
             ],
           ),
           const SizedBox(height: 9),
@@ -359,8 +386,9 @@ class _Progreso extends StatelessWidget {
                   widthFactor: ejecucion.avance,
                   child: Container(
                     height: 6,
-                    decoration:
-                        const BoxDecoration(gradient: SgColor.gradiente),
+                    decoration: const BoxDecoration(
+                      gradient: SgColor.gradiente,
+                    ),
                   ),
                 ),
               ],
@@ -395,7 +423,8 @@ class _Item extends StatefulWidget {
     bool noAplica,
     String? comentario,
     bool porVoz,
-  }) onResponder;
+  })
+  onResponder;
 
   @override
   State<_Item> createState() => _ItemState();
@@ -443,14 +472,18 @@ class _ItemState extends State<_Item> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(widget.item.cpi_texto,
-                      style: sora(14, 500, color: sg.tinta2)),
+                  Text(
+                    widget.item.cpi_texto,
+                    style: sora(14, 500, color: sg.tinta2),
+                  ),
                   const SizedBox(height: 3),
                   Row(
                     children: [
                       Flexible(
-                        child: Text(_resumen(r),
-                            style: sora(14, 600, color: sg.tinta)),
+                        child: Text(
+                          _resumen(r),
+                          style: sora(14, 600, color: sg.tinta),
+                        ),
                       ),
                       if (r.porVoz) ...[
                         const SizedBox(width: 7),
@@ -460,8 +493,10 @@ class _ItemState extends State<_Item> {
                   ),
                   if ((r.cer_comentario ?? '').isNotEmpty) ...[
                     const SizedBox(height: 3),
-                    Text(r.cer_comentario!,
-                        style: sora(13, 500, color: sg.tinta3, alto: 1.4)),
+                    Text(
+                      r.cer_comentario!,
+                      style: sora(13, 500, color: sg.tinta3, alto: 1.4),
+                    ),
                   ],
                 ],
               ),
@@ -480,8 +515,10 @@ class _ItemState extends State<_Item> {
             Icon(Icons.radio_button_unchecked, size: 20, color: sg.tinta3),
             const SizedBox(width: 12),
             Expanded(
-              child: Text(widget.item.cpi_texto,
-                  style: sora(14, 500, color: sg.tinta2)),
+              child: Text(
+                widget.item.cpi_texto,
+                style: sora(14, 500, color: sg.tinta2),
+              ),
             ),
             if (widget.item.cpi_obligatorio)
               Icon(Icons.star, size: 14, color: sg.rojoTexto),
@@ -502,20 +539,26 @@ class _ItemState extends State<_Item> {
             runSpacing: 8,
             children: [
               if (widget.item.cpi_obligatorio)
-                SgBadge('Obligatorio',
-                    color: sg.rojoTexto, icono: Icons.star_outline),
+                SgBadge(
+                  'Obligatorio',
+                  color: sg.rojoTexto,
+                  icono: Icons.star_outline,
+                ),
               if (widget.item.hayRango)
                 SgBadge(_rango(), color: sg.azulTexto, chico: true),
             ],
           ),
           const SizedBox(height: 14),
-          Text(widget.item.cpi_texto,
-              style: sora(19, 700, color: sg.tinta, alto: 1.35,
-                  espaciado: -0.38)),
+          Text(
+            widget.item.cpi_texto,
+            style: sora(19, 700, color: sg.tinta, alto: 1.35, espaciado: -0.38),
+          ),
           if ((widget.item.cpi_ayuda ?? '').isNotEmpty) ...[
             const SizedBox(height: 6),
-            Text(widget.item.cpi_ayuda!,
-                style: sora(13, 500, color: sg.tinta3, alto: 1.5)),
+            Text(
+              widget.item.cpi_ayuda!,
+              style: sora(13, 500, color: sg.tinta3, alto: 1.5),
+            ),
           ],
           const SizedBox(height: 16),
           _captura(sg),
@@ -539,20 +582,24 @@ class _ItemState extends State<_Item> {
                 _Secundario(
                   'No aplica',
                   onTap: widget.habilitado
-                      ? () => widget.onResponder(widget.item,
+                      ? () => widget.onResponder(
+                          widget.item,
                           noAplica: true,
-                          comentario: _texto(_comentario))
+                          comentario: _texto(_comentario),
+                        )
                       : null,
                 ),
                 const SizedBox(width: 9),
               ],
               if (widget.item.esNumero || widget.item.esTexto)
                 Expanded(
-                  child: SgBoton('Guardar',
-                      icono: Icons.check,
-                      alto: 44,
-                      tamanoTexto: 14,
-                      onTap: widget.habilitado ? _guardar : null),
+                  child: SgBoton(
+                    'Guardar',
+                    icono: Icons.check,
+                    alto: 44,
+                    tamanoTexto: 14,
+                    onTap: widget.habilitado ? _guardar : null,
+                  ),
                 ),
             ],
           ),
@@ -573,36 +620,46 @@ class _ItemState extends State<_Item> {
       return Row(
         children: [
           Expanded(
-            child: SgBoton('Sí',
-                icono: Icons.check,
-                alto: 52,
-                tamanoTexto: 16,
-                color: si?.cio_es_conforme == false
-                    ? sg.tinte(sg.ambarTexto)
-                    : null,
-                colorTexto: si?.cio_es_conforme == false ? sg.ambarTexto : null,
-                colorIcono: si?.cio_es_conforme == false ? sg.ambarTexto : null,
-                onTap: widget.habilitado
-                    ? () => widget.onResponder(widget.item,
-                        booleano: true, comentario: _texto(_comentario))
-                    : null),
+            child: SgBoton(
+              'Sí',
+              icono: Icons.check,
+              alto: 52,
+              tamanoTexto: 16,
+              color: si?.cio_es_conforme == false
+                  ? sg.tinte(sg.ambarTexto)
+                  : null,
+              colorTexto: si?.cio_es_conforme == false ? sg.ambarTexto : null,
+              colorIcono: si?.cio_es_conforme == false ? sg.ambarTexto : null,
+              onTap: widget.habilitado
+                  ? () => widget.onResponder(
+                      widget.item,
+                      booleano: true,
+                      comentario: _texto(_comentario),
+                    )
+                  : null,
+            ),
           ),
           const SizedBox(width: 9),
           Expanded(
-            child: SgBoton('No',
-                icono: Icons.close,
-                alto: 52,
-                tamanoTexto: 16,
-                primario: no?.cio_es_conforme == true,
-                color: no?.cio_es_conforme == false
-                    ? sg.tinte(sg.ambarTexto)
-                    : null,
-                colorTexto: no?.cio_es_conforme == false ? sg.ambarTexto : null,
-                colorIcono: no?.cio_es_conforme == false ? sg.ambarTexto : null,
-                onTap: widget.habilitado
-                    ? () => widget.onResponder(widget.item,
-                        booleano: false, comentario: _texto(_comentario))
-                    : null),
+            child: SgBoton(
+              'No',
+              icono: Icons.close,
+              alto: 52,
+              tamanoTexto: 16,
+              primario: no?.cio_es_conforme == true,
+              color: no?.cio_es_conforme == false
+                  ? sg.tinte(sg.ambarTexto)
+                  : null,
+              colorTexto: no?.cio_es_conforme == false ? sg.ambarTexto : null,
+              colorIcono: no?.cio_es_conforme == false ? sg.ambarTexto : null,
+              onTap: widget.habilitado
+                  ? () => widget.onResponder(
+                      widget.item,
+                      booleano: false,
+                      comentario: _texto(_comentario),
+                    )
+                  : null,
+            ),
           ),
         ],
       );
@@ -613,18 +670,23 @@ class _ItemState extends State<_Item> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           for (final o in widget.opciones) ...[
-            SgBoton(o.cio_texto,
-                icono: o.cio_es_conforme
-                    ? Icons.check_circle_outline
-                    : Icons.warning_amber,
-                alto: 48,
-                tamanoTexto: 15,
-                primario: false,
-                colorIcono: o.cio_es_conforme ? sg.verdeTexto : sg.ambarTexto,
-                onTap: widget.habilitado
-                    ? () => widget.onResponder(widget.item,
-                        texto: o.cio_codigo, comentario: _texto(_comentario))
-                    : null),
+            SgBoton(
+              o.cio_texto,
+              icono: o.cio_es_conforme
+                  ? Icons.check_circle_outline
+                  : Icons.warning_amber,
+              alto: 48,
+              tamanoTexto: 15,
+              primario: false,
+              colorIcono: o.cio_es_conforme ? sg.verdeTexto : sg.ambarTexto,
+              onTap: widget.habilitado
+                  ? () => widget.onResponder(
+                      widget.item,
+                      texto: o.cio_codigo,
+                      comentario: _texto(_comentario),
+                    )
+                  : null,
+            ),
             const SizedBox(height: 8),
           ],
         ],
@@ -640,9 +702,7 @@ class _ItemState extends State<_Item> {
           DecoratedBox(
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(SgRadius.campo),
-              boxShadow: fuera
-                  ? anillo(SgColor.ambar, ancho: 1.5)
-                  : sg.e1,
+              boxShadow: fuera ? anillo(SgColor.ambar, ancho: 1.5) : sg.e1,
             ),
             child: Container(
               height: 64,
@@ -659,19 +719,30 @@ class _ItemState extends State<_Item> {
                       enabled: widget.habilitado,
                       onChanged: (_) => setState(() {}),
                       keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true, signed: true),
+                        decimal: true,
+                        signed: true,
+                      ),
                       inputFormatters: [
                         FilteringTextInputFormatter.allow(RegExp(r'[0-9.,-]')),
                       ],
-                      style: sora(28, 700,
-                          color: sg.tinta, espaciado: -0.56, tabular: true),
+                      style: sora(
+                        28,
+                        700,
+                        color: sg.tinta,
+                        espaciado: -0.56,
+                        tabular: true,
+                      ),
                       cursorColor: sg.primario,
                       decoration: InputDecoration(
                         isDense: true,
                         border: InputBorder.none,
                         hintText: '0,0',
-                        hintStyle:
-                            sora(28, 700, color: sg.tinta3, tabular: true),
+                        hintStyle: sora(
+                          28,
+                          700,
+                          color: sg.tinta3,
+                          tabular: true,
+                        ),
                       ),
                     ),
                   ),
@@ -731,9 +802,10 @@ class _ItemState extends State<_Item> {
       titulo: widget.item.cpi_pregunta_voz ?? widget.item.cpi_texto,
       interpretar: (t) => [
         CampoDictado(
-            clave: 'texto',
-            rotulo: widget.item.cpi_texto,
-            valor: InterpreteVoz.normalizar(t)),
+          clave: 'texto',
+          rotulo: widget.item.cpi_texto,
+          valor: InterpreteVoz.normalizar(t),
+        ),
       ],
     );
     if (campos == null || campos.isEmpty) return;
@@ -747,14 +819,22 @@ class _ItemState extends State<_Item> {
     if (widget.item.esNumero) {
       final n = _numero;
       if (n == null) return;
-      widget.onResponder(widget.item,
-          numero: n, comentario: _texto(_comentario), porVoz: _porVoz);
+      widget.onResponder(
+        widget.item,
+        numero: n,
+        comentario: _texto(_comentario),
+        porVoz: _porVoz,
+      );
       return;
     }
     final t = _valor.text.trim();
     if (t.isEmpty) return;
-    widget.onResponder(widget.item,
-        texto: t, comentario: _texto(_comentario), porVoz: _porVoz);
+    widget.onResponder(
+      widget.item,
+      texto: t,
+      comentario: _texto(_comentario),
+      porVoz: _porVoz,
+    );
   }
 
   String? _texto(TextEditingController c) {
@@ -768,12 +848,15 @@ class _ItemState extends State<_Item> {
     if (i.civ_valor_minimo != null && i.civ_valor_maximo != null) {
       return 'Esperado ${_n(i.civ_valor_minimo!)} – ${_n(i.civ_valor_maximo!)}$u';
     }
-    if (i.civ_valor_maximo != null) return 'Máximo ${_n(i.civ_valor_maximo!)}$u';
+    if (i.civ_valor_maximo != null) {
+      return 'Máximo ${_n(i.civ_valor_maximo!)}$u';
+    }
     return 'Mínimo ${_n(i.civ_valor_minimo!)}$u';
   }
 
-  static String _n(double v) =>
-      v == v.roundToDouble() ? '${v.round()}' : v.toString().replaceAll('.', ',');
+  static String _n(double v) => v == v.roundToDouble()
+      ? '${v.round()}'
+      : v.toString().replaceAll('.', ',');
 
   String _resumen(ChecklistRespuesta r) {
     if (r.cer_no_aplica) return 'No aplica';

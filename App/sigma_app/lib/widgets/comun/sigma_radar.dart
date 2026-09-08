@@ -149,10 +149,7 @@ class _PintorRadar extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: angulo - arco,
         endAngle: angulo,
-        colors: [
-          color.withValues(alpha: 0),
-          color.withValues(alpha: 0.30),
-        ],
+        colors: [color.withValues(alpha: 0), color.withValues(alpha: 0.30)],
         transform: GradientRotation(angulo - arco),
       ).createShader(Rect.fromCircle(center: centro, radius: radio));
 

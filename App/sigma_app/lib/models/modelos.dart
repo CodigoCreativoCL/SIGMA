@@ -80,12 +80,12 @@ class InstalacionArea {
   final int NIVEL;
 
   factory InstalacionArea.fromJson(Map<String, dynamic> j) => InstalacionArea(
-        iar_id: _i(j['iar_id']),
-        iar_nombre: _s(j['iar_nombre']),
-        iar_codigo: _sN(j['iar_codigo']),
-        RUTA: _sN(j['RUTA']),
-        NIVEL: _i(j['NIVEL']),
-      );
+    iar_id: _i(j['iar_id']),
+    iar_nombre: _s(j['iar_nombre']),
+    iar_codigo: _sN(j['iar_codigo']),
+    RUTA: _sN(j['RUTA']),
+    NIVEL: _i(j['NIVEL']),
+  );
 }
 
 /// `GET /catalogos`
@@ -103,13 +103,12 @@ class Catalogo {
   final String? ctl_modulo;
 
   factory Catalogo.fromJson(Map<String, dynamic> j) => Catalogo(
-        ctl_id: _i(j['ctl_id']),
-        ctl_codigo: _s(j['ctl_codigo']),
-        ctl_nombre: _s(j['ctl_nombre']),
-        ctl_modulo: _sN(j['ctl_modulo']),
-      );
+    ctl_id: _i(j['ctl_id']),
+    ctl_codigo: _s(j['ctl_codigo']),
+    ctl_nombre: _s(j['ctl_nombre']),
+    ctl_modulo: _sN(j['ctl_modulo']),
+  );
 }
-
 
 /// `GET /mi-perfil`
 class MiPerfil {
@@ -133,8 +132,10 @@ class MiPerfil {
   final String? usu_telefono;
   final String? PERFILES;
 
-  String get nombreCompleto =>
-      [usu_nombre, usu_apellido_paterno].where((s) => (s ?? '').isNotEmpty).join(' ');
+  String get nombreCompleto => [
+    usu_nombre,
+    usu_apellido_paterno,
+  ].where((s) => (s ?? '').isNotEmpty).join(' ');
 
   /// Las iniciales del avatar de la barra superior.
   String get iniciales {
@@ -147,15 +148,15 @@ class MiPerfil {
   }
 
   factory MiPerfil.fromJson(Map<String, dynamic> j) => MiPerfil(
-        usu_id: _i(j['usu_id']),
-        usu_login: _s(j['usu_login']),
-        usu_nombre: _s(j['usu_nombre']),
-        usu_apellido_paterno: _sN(j['usu_apellido_paterno']),
-        usu_apellido_materno: _sN(j['usu_apellido_materno']),
-        usu_correo: _sN(j['usu_correo']),
-        usu_telefono: _sN(j['usu_telefono']),
-        PERFILES: _sN(j['PERFILES']),
-      );
+    usu_id: _i(j['usu_id']),
+    usu_login: _s(j['usu_login']),
+    usu_nombre: _s(j['usu_nombre']),
+    usu_apellido_paterno: _sN(j['usu_apellido_paterno']),
+    usu_apellido_materno: _sN(j['usu_apellido_materno']),
+    usu_correo: _sN(j['usu_correo']),
+    usu_telefono: _sN(j['usu_telefono']),
+    PERFILES: _sN(j['PERFILES']),
+  );
 }
 
 /// Un nodo del menú. `GET /menus`
@@ -181,15 +182,15 @@ class MenuNodo {
   final List<MenuNodo> hijos;
 
   factory MenuNodo.fromJson(Map<String, dynamic> j) => MenuNodo(
-        id: _i(j['id']),
-        nombre: _s(j['nombre']),
-        descripcion: _sN(j['descripcion']),
-        ruta: _sN(j['ruta']),
-        icono: _sN(j['icono']),
-        hijos: ((j['hijos'] as List?) ?? const [])
-            .map((e) => MenuNodo.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    id: _i(j['id']),
+    nombre: _s(j['nombre']),
+    descripcion: _sN(j['descripcion']),
+    ruta: _sN(j['ruta']),
+    icono: _sN(j['icono']),
+    hijos: ((j['hijos'] as List?) ?? const [])
+        .map((e) => MenuNodo.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 /// Cuánto hay de un repuesto y dónde. `GET /existencias`
@@ -236,28 +237,28 @@ class InventarioSaldo {
 
   /// Dónde está, armado con lo que venga: bodega, pasillo/estante y planta.
   String get ubicacion => [
-        BODEGA_NOMBRE,
-        UBICACION_CODIGO,
-        PLANTA_NOMBRE,
-      ].where((s) => (s ?? '').isNotEmpty).join(' · ');
+    BODEGA_NOMBRE,
+    UBICACION_CODIGO,
+    PLANTA_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory InventarioSaldo.fromJson(Map<String, dynamic> j) => InventarioSaldo(
-        isa_id: _i(j['isa_id']),
-        isa_repuesto: _i(j['isa_repuesto']),
-        isa_bodega: _i(j['isa_bodega']),
-        CANTIDAD_DISPONIBLE: _d(j['CANTIDAD_DISPONIBLE']),
-        REPUESTO_CODIGO: _s(j['REPUESTO_CODIGO']),
-        REPUESTO_NOMBRE: _s(j['REPUESTO_NOMBRE']),
-        UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
-        BODEGA_NOMBRE: _sN(j['BODEGA_NOMBRE']),
-        PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
-        UBICACION_CODIGO: _sN(j['UBICACION_CODIGO']),
-        rbs_stock_minimo: _dN(j['rbs_stock_minimo']),
-        rbs_stock_maximo: _dN(j['rbs_stock_maximo']),
-        BAJO_MINIMO: _i(j['BAJO_MINIMO']),
-        SOBRE_MAXIMO: _i(j['SOBRE_MAXIMO']),
-        isa_fecha_ultimo_movimiento: _f(j['isa_fecha_ultimo_movimiento']),
-      );
+    isa_id: _i(j['isa_id']),
+    isa_repuesto: _i(j['isa_repuesto']),
+    isa_bodega: _i(j['isa_bodega']),
+    CANTIDAD_DISPONIBLE: _d(j['CANTIDAD_DISPONIBLE']),
+    REPUESTO_CODIGO: _s(j['REPUESTO_CODIGO']),
+    REPUESTO_NOMBRE: _s(j['REPUESTO_NOMBRE']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    BODEGA_NOMBRE: _sN(j['BODEGA_NOMBRE']),
+    PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
+    UBICACION_CODIGO: _sN(j['UBICACION_CODIGO']),
+    rbs_stock_minimo: _dN(j['rbs_stock_minimo']),
+    rbs_stock_maximo: _dN(j['rbs_stock_maximo']),
+    BAJO_MINIMO: _i(j['BAJO_MINIMO']),
+    SOBRE_MAXIMO: _i(j['SOBRE_MAXIMO']),
+    isa_fecha_ultimo_movimiento: _f(j['isa_fecha_ultimo_movimiento']),
+  );
 }
 
 /// `GET /repuestos`
@@ -286,15 +287,15 @@ class Repuesto {
       [rep_fabricante, rep_modelo].where((s) => (s ?? '').isNotEmpty).join(' ');
 
   factory Repuesto.fromJson(Map<String, dynamic> j) => Repuesto(
-        rep_id: _i(j['rep_id']),
-        rep_codigo: _s(j['rep_codigo']),
-        rep_nombre: _s(j['rep_nombre']),
-        rep_fabricante: _sN(j['rep_fabricante']),
-        rep_modelo: _sN(j['rep_modelo']),
-        UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
-        EXISTENCIA_TOTAL: _d(j['EXISTENCIA_TOTAL']),
-        rep_controla_lote: _b(j['rep_controla_lote']),
-      );
+    rep_id: _i(j['rep_id']),
+    rep_codigo: _s(j['rep_codigo']),
+    rep_nombre: _s(j['rep_nombre']),
+    rep_fabricante: _sN(j['rep_fabricante']),
+    rep_modelo: _sN(j['rep_modelo']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    EXISTENCIA_TOTAL: _d(j['EXISTENCIA_TOTAL']),
+    rep_controla_lote: _b(j['rep_controla_lote']),
+  );
 }
 
 /// `GET /repuestos/{id}/lotes`
@@ -316,12 +317,12 @@ class RepuestoLote {
   bool get vencido => VENCIDO == 1;
 
   factory RepuestoLote.fromJson(Map<String, dynamic> j) => RepuestoLote(
-        rlo_id: _i(j['rlo_id']),
-        rlo_codigo: _s(j['rlo_codigo']),
-        rlo_fecha_ingreso: _f(j['rlo_fecha_ingreso']),
-        rlo_fecha_vencimiento: _f(j['rlo_fecha_vencimiento']),
-        VENCIDO: _i(j['VENCIDO']),
-      );
+    rlo_id: _i(j['rlo_id']),
+    rlo_codigo: _s(j['rlo_codigo']),
+    rlo_fecha_ingreso: _f(j['rlo_fecha_ingreso']),
+    rlo_fecha_vencimiento: _f(j['rlo_fecha_vencimiento']),
+    VENCIDO: _i(j['VENCIDO']),
+  );
 }
 
 /// `GET /bodegas`
@@ -339,11 +340,11 @@ class Bodega {
   final String? PLANTA_NOMBRE;
 
   factory Bodega.fromJson(Map<String, dynamic> j) => Bodega(
-        bod_id: _i(j['bod_id']),
-        bod_codigo: _s(j['bod_codigo']),
-        bod_nombre: _s(j['bod_nombre']),
-        PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
-      );
+    bod_id: _i(j['bod_id']),
+    bod_codigo: _s(j['bod_codigo']),
+    bod_nombre: _s(j['bod_nombre']),
+    PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
+  );
 }
 
 /// `GET /inventario-movimientos`
@@ -440,33 +441,38 @@ class PermisoTrabajo {
   final bool TIENE_DOCUMENTO;
 
   factory PermisoTrabajo.fromJson(Map<String, dynamic> j) => PermisoTrabajo(
-        ptr_id: _i(j['ptr_id']),
-        ptr_numero: _s(j['ptr_numero']),
-        TIPO_NOMBRE: _s(j['TIPO_NOMBRE']),
-        ESTADO_NOMBRE: _s(j['ESTADO_NOMBRE']),
-        ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
-        SITUACION: _sN(j['SITUACION']),
-        DIAS_RESTANTES: _iN(j['DIAS_RESTANTES']),
-        SOLICITANTE_NOMBRE: _sN(j['SOLICITANTE_NOMBRE']),
-        ORDEN_CORRELATIVO: _sN(j['ORDEN_CORRELATIVO']),
-        ORDEN_TITULO: _sN(j['ORDEN_TITULO']),
-        ptr_observacion: _sN(j['ptr_observacion']),
-        ptr_fecha_vigencia_inicio_utc: _f(j['ptr_fecha_vigencia_inicio_utc']),
-        ptr_fecha_vigencia_fin_utc: _f(j['ptr_fecha_vigencia_fin_utc']),
-        TIENE_DOCUMENTO: _b(j['TIENE_DOCUMENTO']),
-      );
+    ptr_id: _i(j['ptr_id']),
+    ptr_numero: _s(j['ptr_numero']),
+    TIPO_NOMBRE: _s(j['TIPO_NOMBRE']),
+    ESTADO_NOMBRE: _s(j['ESTADO_NOMBRE']),
+    ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
+    SITUACION: _sN(j['SITUACION']),
+    DIAS_RESTANTES: _iN(j['DIAS_RESTANTES']),
+    SOLICITANTE_NOMBRE: _sN(j['SOLICITANTE_NOMBRE']),
+    ORDEN_CORRELATIVO: _sN(j['ORDEN_CORRELATIVO']),
+    ORDEN_TITULO: _sN(j['ORDEN_TITULO']),
+    ptr_observacion: _sN(j['ptr_observacion']),
+    ptr_fecha_vigencia_inicio_utc: _f(j['ptr_fecha_vigencia_inicio_utc']),
+    ptr_fecha_vigencia_fin_utc: _f(j['ptr_fecha_vigencia_fin_utc']),
+    TIENE_DOCUMENTO: _b(j['TIENE_DOCUMENTO']),
+  );
 }
 
 /// `GET /permisos-trabajo/tipos` y `/estados`
 class ItemCatalogo {
-  const ItemCatalogo({required this.id, required this.codigo, required this.nombre});
+  const ItemCatalogo({
+    required this.id,
+    required this.codigo,
+    required this.nombre,
+  });
 
   final int id;
   final String codigo;
   final String nombre;
 
   /// Los SP de permisos devuelven las columnas en MAYÚSCULAS con prefijo.
-  factory ItemCatalogo.desde(Map<String, dynamic> j, String pfx) => ItemCatalogo(
+  factory ItemCatalogo.desde(Map<String, dynamic> j, String pfx) =>
+      ItemCatalogo(
         id: _i(j['${pfx}_ID']),
         codigo: _s(j['${pfx}_CODIGO']),
         nombre: _s(j['${pfx}_NOMBRE']),
@@ -481,6 +487,7 @@ class Alerta {
     required this.sev_codigo,
     this.ale_descripcion,
     this.alt_nombre,
+    this.alt_codigo,
     this.FICHA_LINK,
     this.FICHA_ID = 0,
     this.LEIDA = 0,
@@ -492,6 +499,17 @@ class Alerta {
   final String ale_titulo;
   final String? ale_descripcion;
   final String? alt_nombre;
+
+  /// El código del tipo, tal como lo guarda `Alerta_Tipo`.
+  ///
+  /// Se distingue por él y no por el título: el nombre es texto que alguien
+  /// puede reescribir desde la web —y con un acento distinto la comparación
+  /// deja de calzar—, mientras que el código es la identidad de la fila.
+  final String? alt_codigo;
+
+  /// Si es el aviso de un trabajo que un compañero compartió (HU-115).
+  bool get esCompartida =>
+      (alt_codigo ?? '').toUpperCase() == 'COMPARTIDO' && FICHA_ID > 0;
 
   /// NORMAL · BAJA · ADVERTENCIA · ALTA · CRÍTICA.
   /// El SP guarda cuán grave es; la pantalla decide de qué color se ve.
@@ -516,17 +534,18 @@ class Alerta {
   }
 
   factory Alerta.fromJson(Map<String, dynamic> j) => Alerta(
-        ale_id: _i(j['ale_id']),
-        ale_titulo: _s(j['ale_titulo']),
-        ale_descripcion: _sN(j['ale_descripcion']),
-        alt_nombre: _sN(j['alt_nombre']),
-        sev_codigo: _s(j['sev_codigo'], 'NORMAL'),
-        FICHA_LINK: _sN(j['FICHA_LINK']),
-        FICHA_ID: _i(j['FICHA_ID']),
-        LEIDA: _i(j['LEIDA']),
-        MINUTOS: _i(j['MINUTOS']),
-        ale_fecha_deteccion_utc: _f(j['ale_fecha_deteccion_utc']),
-      );
+    ale_id: _i(j['ale_id']),
+    ale_titulo: _s(j['ale_titulo']),
+    ale_descripcion: _sN(j['ale_descripcion']),
+    alt_nombre: _sN(j['alt_nombre']),
+    alt_codigo: _sN(j['alt_codigo']),
+    sev_codigo: _s(j['sev_codigo'], 'NORMAL'),
+    FICHA_LINK: _sN(j['FICHA_LINK']),
+    FICHA_ID: _i(j['FICHA_ID']),
+    LEIDA: _i(j['LEIDA']),
+    MINUTOS: _i(j['MINUTOS']),
+    ale_fecha_deteccion_utc: _f(j['ale_fecha_deteccion_utc']),
+  );
 }
 
 /// `GET /alertas/resumen`
@@ -536,12 +555,9 @@ class AlertaResumen {
   final int ABIERTAS;
   final int NO_LEIDAS;
 
-  factory AlertaResumen.fromJson(Map<String, dynamic> j) => AlertaResumen(
-        ABIERTAS: _i(j['ABIERTAS']),
-        NO_LEIDAS: _i(j['NO_LEIDAS']),
-      );
+  factory AlertaResumen.fromJson(Map<String, dynamic> j) =>
+      AlertaResumen(ABIERTAS: _i(j['ABIERTAS']), NO_LEIDAS: _i(j['NO_LEIDAS']));
 }
-
 
 /// Un evento del historial de un activo. `GET /activos/{id}/ficha`
 class ActivoFichaEvento {
@@ -585,15 +601,15 @@ class Escaneo {
   final List<EscaneoLinea> lineas;
 
   factory Escaneo.fromJson(Map<String, dynamic> j) => Escaneo(
-        tipo: _s(j['tipo']),
-        id: _i(j['id']),
-        cabecera: j['cabecera'] is Map<String, dynamic>
-            ? EscaneoCabecera.fromJson(j['cabecera'] as Map<String, dynamic>)
-            : null,
-        lineas: ((j['lineas'] as List?) ?? const [])
-            .map((e) => EscaneoLinea.fromJson(e as Map<String, dynamic>))
-            .toList(),
-      );
+    tipo: _s(j['tipo']),
+    id: _i(j['id']),
+    cabecera: j['cabecera'] is Map<String, dynamic>
+        ? EscaneoCabecera.fromJson(j['cabecera'] as Map<String, dynamic>)
+        : null,
+    lineas: ((j['lineas'] as List?) ?? const [])
+        .map((e) => EscaneoLinea.fromJson(e as Map<String, dynamic>))
+        .toList(),
+  );
 }
 
 class EscaneoCabecera {
@@ -618,15 +634,15 @@ class EscaneoCabecera {
   final double? TOTAL;
 
   factory EscaneoCabecera.fromJson(Map<String, dynamic> j) => EscaneoCabecera(
-        rep_codigo: _sN(j['rep_codigo']),
-        rep_nombre: _sN(j['rep_nombre']),
-        bod_nombre: _sN(j['bod_nombre']),
-        bub_codigo: _sN(j['bub_codigo']),
-        bub_nombre: _sN(j['bub_nombre']),
-        PLANTA: _sN(j['PLANTA']),
-        UNIDAD: _sN(j['UNIDAD']),
-        TOTAL: _dN(j['TOTAL']),
-      );
+    rep_codigo: _sN(j['rep_codigo']),
+    rep_nombre: _sN(j['rep_nombre']),
+    bod_nombre: _sN(j['bod_nombre']),
+    bub_codigo: _sN(j['bub_codigo']),
+    bub_nombre: _sN(j['bub_nombre']),
+    PLANTA: _sN(j['PLANTA']),
+    UNIDAD: _sN(j['UNIDAD']),
+    TOTAL: _dN(j['TOTAL']),
+  );
 }
 
 class EscaneoLinea {
@@ -655,21 +671,18 @@ class EscaneoLinea {
   final DateTime? ULTIMO_MOVIMIENTO;
 
   factory EscaneoLinea.fromJson(Map<String, dynamic> j) => EscaneoLinea(
-        rep_codigo: _s(j['rep_codigo']),
-        rep_nombre: _s(j['rep_nombre']),
-        CANTIDAD: _d(j['CANTIDAD']),
-        BODEGA: _sN(j['BODEGA']),
-        UBICACION: _sN(j['UBICACION']),
-        UNIDAD: _sN(j['UNIDAD']),
-        LOTE_CODIGO: _sN(j['LOTE_CODIGO']),
-        DIAS_PARA_VENCER: _iN(j['DIAS_PARA_VENCER']),
-        ULTIMO_USUARIO: _sN(j['ULTIMO_USUARIO']),
-        ULTIMO_MOVIMIENTO: _f(j['ULTIMO_MOVIMIENTO']),
-      );
+    rep_codigo: _s(j['rep_codigo']),
+    rep_nombre: _s(j['rep_nombre']),
+    CANTIDAD: _d(j['CANTIDAD']),
+    BODEGA: _sN(j['BODEGA']),
+    UBICACION: _sN(j['UBICACION']),
+    UNIDAD: _sN(j['UNIDAD']),
+    LOTE_CODIGO: _sN(j['LOTE_CODIGO']),
+    DIAS_PARA_VENCER: _iN(j['DIAS_PARA_VENCER']),
+    ULTIMO_USUARIO: _sN(j['ULTIMO_USUARIO']),
+    ULTIMO_MOVIMIENTO: _f(j['ULTIMO_MOVIMIENTO']),
+  );
 }
-
-
-
 
 // ═══════════════════════════════════════════════ ORDENES DE TRABAJO ══
 
@@ -761,9 +774,10 @@ class OrdenTrabajo {
 
   /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
   /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
-  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get activo => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   /// La foto del activo y la línea donde está montado.
   ///
@@ -809,58 +823,88 @@ class OrdenTrabajo {
   /// «Quilicura › Envasado › L3-P02». La **línea** entra acá porque es lo que
   /// distingue dos equipos iguales; el código del activo ya no, porque ahora
   /// se muestra en su propia fila junto al nombre.
-  String get ubicacion => [PLANTA_NOMBRE, AREA_NOMBRE, POSICION_CODIGO]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get ubicacion => [
+    PLANTA_NOMBRE,
+    AREA_NOMBRE,
+    POSICION_CODIGO,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory OrdenTrabajo.fromJson(Map<String, dynamic> j) => OrdenTrabajo(
-        otr_id: _i(j['otr_id']),
-        otr_uuid: _sN(j['otr_uuid']),
-        otr_correlativo: _i(j['otr_correlativo']),
-        OT_NUMERO: _s(j['OT_NUMERO']),
-        otr_titulo: _s(j['otr_titulo']),
-        otr_descripcion: _sN(j['otr_descripcion']),
-        otr_notas: _sN(j['otr_notas']),
-        otr_resultado: _sN(j['otr_resultado']),
-        otr_fecha_evento_utc: _f(j['otr_fecha_evento_utc']),
-        otr_fecha_programada_utc: _f(j['otr_fecha_programada_utc']),
-        otr_fecha_inicio_real_utc: _f(j['otr_fecha_inicio_real_utc']),
-        otr_fecha_fin_real_utc: _f(j['otr_fecha_fin_real_utc']),
-        otr_duracion_estimada_minuto:
-            j['otr_duracion_estimada_minuto'] == null
-                ? null
-                : _i(j['otr_duracion_estimada_minuto']),
-        otr_requiere_permiso: _b(j['otr_requiere_permiso']),
-        ESTADO_ID: _i(j['ESTADO_ID'], 1),
-        ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
-        PRIORIDAD_CODIGO: _sN(j['PRIORIDAD_CODIGO']),
-        PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
-        TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
-        ESTRATEGIA_NOMBRE: _sN(j['ESTRATEGIA_NOMBRE']),
-        ACTIVO_ID: j['ACTIVO_ID'] == null ? null : _i(j['ACTIVO_ID']),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
-        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
-        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
-        ES_FAVORITO: _b(j['ES_FAVORITO']),
-        PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        RESPONSABLE_ID:
-            j['RESPONSABLE_ID'] == null ? null : _i(j['RESPONSABLE_ID']),
-        RESPONSABLE_NOMBRE: _sN(j['RESPONSABLE_NOMBRE']),
-        PASOS_TOTAL: _i(j['PASOS_TOTAL']),
-        PASOS_LISTOS: _i(j['PASOS_LISTOS']),
-        SITUACION: _sN(j['SITUACION']),
-        DIAS_RESTANTES:
-            j['DIAS_RESTANTES'] == null ? null : _i(j['DIAS_RESTANTES']),
-        ES_MIA: _b(j['ES_MIA']),
-        PERMISO_NUMERO: _sN(j['PERMISO_NUMERO']),
-      );
+    otr_id: _i(j['otr_id']),
+    otr_uuid: _sN(j['otr_uuid']),
+    otr_correlativo: _i(j['otr_correlativo']),
+    OT_NUMERO: _s(j['OT_NUMERO']),
+    otr_titulo: _s(j['otr_titulo']),
+    otr_descripcion: _sN(j['otr_descripcion']),
+    otr_notas: _sN(j['otr_notas']),
+    otr_resultado: _sN(j['otr_resultado']),
+    otr_fecha_evento_utc: _f(j['otr_fecha_evento_utc']),
+    otr_fecha_programada_utc: _f(j['otr_fecha_programada_utc']),
+    otr_fecha_inicio_real_utc: _f(j['otr_fecha_inicio_real_utc']),
+    otr_fecha_fin_real_utc: _f(j['otr_fecha_fin_real_utc']),
+    otr_duracion_estimada_minuto: j['otr_duracion_estimada_minuto'] == null
+        ? null
+        : _i(j['otr_duracion_estimada_minuto']),
+    otr_requiere_permiso: _b(j['otr_requiere_permiso']),
+    ESTADO_ID: _i(j['ESTADO_ID'], 1),
+    ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
+    PRIORIDAD_CODIGO: _sN(j['PRIORIDAD_CODIGO']),
+    PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
+    TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+    ESTRATEGIA_NOMBRE: _sN(j['ESTRATEGIA_NOMBRE']),
+    ACTIVO_ID: j['ACTIVO_ID'] == null ? null : _i(j['ACTIVO_ID']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+    POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+    ES_FAVORITO: _b(j['ES_FAVORITO']),
+    PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    RESPONSABLE_ID: j['RESPONSABLE_ID'] == null
+        ? null
+        : _i(j['RESPONSABLE_ID']),
+    RESPONSABLE_NOMBRE: _sN(j['RESPONSABLE_NOMBRE']),
+    PASOS_TOTAL: _i(j['PASOS_TOTAL']),
+    PASOS_LISTOS: _i(j['PASOS_LISTOS']),
+    SITUACION: _sN(j['SITUACION']),
+    DIAS_RESTANTES: j['DIAS_RESTANTES'] == null
+        ? null
+        : _i(j['DIAS_RESTANTES']),
+    ES_MIA: _b(j['ES_MIA']),
+    PERMISO_NUMERO: _sN(j['PERMISO_NUMERO']),
+  );
 }
 
 /// Un paso de la orden.
+/// Un motivo de cierre — `GET /ordenes-trabajo/motivos-cierre`.
+///
+/// No viene escrito en la app: los motivos son un dato de la empresa y se
+/// habilitan desde la web. Una lista quemada acá obliga a publicar una versión
+/// nueva cada vez que cambie, y mientras tanto deja al supervisor eligiendo un
+/// motivo que el servidor ya rechaza.
+class CierreMotivo {
+  const CierreMotivo({
+    required this.ocm_id,
+    required this.ocm_nombre,
+    this.ocm_codigo,
+    this.ocm_orden,
+  });
+
+  final int ocm_id;
+  final String ocm_nombre;
+  final String? ocm_codigo;
+  final int? ocm_orden;
+
+  factory CierreMotivo.fromJson(Map<String, dynamic> j) => CierreMotivo(
+    ocm_id: _i(j['ocm_id']),
+    ocm_nombre: _s(j['ocm_nombre']),
+    ocm_codigo: _sN(j['ocm_codigo']),
+    ocm_orden: _iN(j['ocm_orden']),
+  );
+}
+
 class OrdenTrabajoPaso {
   const OrdenTrabajoPaso({
     required this.otp_id,
@@ -895,20 +939,19 @@ class OrdenTrabajoPaso {
   bool get conforme => RESULTADO_ID == 1;
   bool get noConforme => RESULTADO_ID == 2;
 
-  factory OrdenTrabajoPaso.fromJson(Map<String, dynamic> j) =>
-      OrdenTrabajoPaso(
-        otp_id: _i(j['otp_id']),
-        otp_orden: _i(j['otp_orden']),
-        otp_nombre: _s(j['otp_nombre']),
-        otp_descripcion: _sN(j['otp_descripcion']),
-        otp_obligatorio: _b(j['otp_obligatorio'], true),
-        RESULTADO_ID: _i(j['RESULTADO_ID'], 4),
-        RESULTADO_CODIGO: _sN(j['RESULTADO_CODIGO']),
-        RESULTADO_NOMBRE: _sN(j['RESULTADO_NOMBRE']),
-        OBSERVACION: _sN(j['OBSERVACION']),
-        EJECUTOR_NOMBRE: _sN(j['EJECUTOR_NOMBRE']),
-        otp_fecha_ejecucion_utc: _f(j['otp_fecha_ejecucion_utc']),
-      );
+  factory OrdenTrabajoPaso.fromJson(Map<String, dynamic> j) => OrdenTrabajoPaso(
+    otp_id: _i(j['otp_id']),
+    otp_orden: _i(j['otp_orden']),
+    otp_nombre: _s(j['otp_nombre']),
+    otp_descripcion: _sN(j['otp_descripcion']),
+    otp_obligatorio: _b(j['otp_obligatorio'], true),
+    RESULTADO_ID: _i(j['RESULTADO_ID'], 4),
+    RESULTADO_CODIGO: _sN(j['RESULTADO_CODIGO']),
+    RESULTADO_NOMBRE: _sN(j['RESULTADO_NOMBRE']),
+    OBSERVACION: _sN(j['OBSERVACION']),
+    EJECUTOR_NOMBRE: _sN(j['EJECUTOR_NOMBRE']),
+    otp_fecha_ejecucion_utc: _f(j['otp_fecha_ejecucion_utc']),
+  );
 }
 
 class OrdenTrabajoAsignado {
@@ -954,21 +997,23 @@ class OrdenTrabajoFicha {
   int get obligatoriosPendientes =>
       pasos.where((p) => p.pendiente && p.otp_obligatorio).length;
 
-  factory OrdenTrabajoFicha.fromJson(Map<String, dynamic> j) =>
-      OrdenTrabajoFicha(
-        orden: OrdenTrabajo.fromJson(
-            (j['orden'] as Map).cast<String, dynamic>()),
-        pasos: ((j['pasos'] as List?) ?? const [])
-            .map((e) => OrdenTrabajoPaso.fromJson(
-                (e as Map).cast<String, dynamic>()))
-            .toList(),
-        asignados: ((j['asignados'] as List?) ?? const [])
-            .map((e) => OrdenTrabajoAsignado.fromJson(
-                (e as Map).cast<String, dynamic>()))
-            .toList(),
-      );
+  factory OrdenTrabajoFicha.fromJson(
+    Map<String, dynamic> j,
+  ) => OrdenTrabajoFicha(
+    orden: OrdenTrabajo.fromJson((j['orden'] as Map).cast<String, dynamic>()),
+    pasos: ((j['pasos'] as List?) ?? const [])
+        .map(
+          (e) => OrdenTrabajoPaso.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList(),
+    asignados: ((j['asignados'] as List?) ?? const [])
+        .map(
+          (e) =>
+              OrdenTrabajoAsignado.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList(),
+  );
 }
-
 
 /// Un tramo de mano de obra en la orden. `GET /ordenes-trabajo/{id}/recursos`
 ///
@@ -1014,18 +1059,18 @@ class ManoObra {
   }
 
   factory ManoObra.fromJson(Map<String, dynamic> j) => ManoObra(
-        omo_id: _i(j['omo_id']),
-        omo_minuto: _i(j['omo_minuto']),
-        omo_fecha_inicio_utc:
-            _f(j['omo_fecha_inicio_utc']) ?? DateTime.now().toUtc(),
-        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
-        ESPECIALIDAD_NOMBRE: _sN(j['ESPECIALIDAD_NOMBRE']),
-        PROVEEDOR_NOMBRE: _sN(j['PROVEEDOR_NOMBRE']),
-        omo_fecha_fin_utc: _f(j['omo_fecha_fin_utc']),
-        omo_es_hora_extra: _b(j['omo_es_hora_extra']),
-        omo_observacion: _sN(j['omo_observacion']),
-        ORIGEN: _sN(j['ORIGEN']),
-      );
+    omo_id: _i(j['omo_id']),
+    omo_minuto: _i(j['omo_minuto']),
+    omo_fecha_inicio_utc:
+        _f(j['omo_fecha_inicio_utc']) ?? DateTime.now().toUtc(),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    ESPECIALIDAD_NOMBRE: _sN(j['ESPECIALIDAD_NOMBRE']),
+    PROVEEDOR_NOMBRE: _sN(j['PROVEEDOR_NOMBRE']),
+    omo_fecha_fin_utc: _f(j['omo_fecha_fin_utc']),
+    omo_es_hora_extra: _b(j['omo_es_hora_extra']),
+    omo_observacion: _sN(j['omo_observacion']),
+    ORIGEN: _sN(j['ORIGEN']),
+  );
 }
 
 /// Un repuesto consumido en la orden.
@@ -1093,20 +1138,20 @@ class RecursosOrden {
   final List<ManoObra> manoObra;
   final List<OrdenTrabajoRepuesto> repuestos;
 
-  int get minutosTotales =>
-      manoObra.fold<int>(0, (a, m) => a + m.omo_minuto);
+  int get minutosTotales => manoObra.fold<int>(0, (a, m) => a + m.omo_minuto);
 
   factory RecursosOrden.fromJson(Map<String, dynamic> j) => RecursosOrden(
-        manoObra: ((j['mano_obra'] as List?) ?? const [])
-            .map((e) => ManoObra.fromJson((e as Map).cast<String, dynamic>()))
-            .toList(),
-        repuestos: ((j['repuestos'] as List?) ?? const [])
-            .map((e) => OrdenTrabajoRepuesto.fromJson(
-                (e as Map).cast<String, dynamic>()))
-            .toList(),
-      );
+    manoObra: ((j['mano_obra'] as List?) ?? const [])
+        .map((e) => ManoObra.fromJson((e as Map).cast<String, dynamic>()))
+        .toList(),
+    repuestos: ((j['repuestos'] as List?) ?? const [])
+        .map(
+          (e) =>
+              OrdenTrabajoRepuesto.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList(),
+  );
 }
-
 
 // ═════════════════════════════════════════════════════════ CHECKLIST ══
 
@@ -1156,9 +1201,11 @@ class ChecklistPendiente {
   bool get vencida => (SITUACION ?? '').toUpperCase() == 'VENCIDA';
   bool get empezada => EJECUCION_BORRADOR != null;
 
-  String get donde => [ACTIVO_CODIGO, ACTIVO_NOMBRE, AREA_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get donde => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+    AREA_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory ChecklistPendiente.fromJson(Map<String, dynamic> j) =>
       ChecklistPendiente(
@@ -1250,28 +1297,31 @@ class ChecklistItem {
   }
 
   factory ChecklistItem.fromJson(Map<String, dynamic> j) => ChecklistItem(
-        cpi_id: _i(j['cpi_id']),
-        cpi_texto: _s(j['cpi_texto']),
-        TIPO_ID: _i(j['TIPO_ID'], 1),
-        cpi_codigo: _sN(j['cpi_codigo']),
-        cpi_ayuda: _sN(j['cpi_ayuda']),
-        cpi_orden: _i(j['cpi_orden']),
-        cpi_obligatorio: _b(j['cpi_obligatorio']),
-        cpi_permite_comentario: _b(j['cpi_permite_comentario'], true),
-        cpi_requiere_evidencia: _b(j['cpi_requiere_evidencia']),
-        cpi_pregunta_voz: _sN(j['cpi_pregunta_voz']),
-        TIPO_CODIGO: _sN(j['TIPO_CODIGO']),
-        UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
-        SECCION_ID: j['SECCION_ID'] == null ? null : _i(j['SECCION_ID']),
-        SECCION_NOMBRE: _sN(j['SECCION_NOMBRE']),
-        civ_valor_minimo:
-            j['civ_valor_minimo'] == null ? null : _d(j['civ_valor_minimo']),
-        civ_valor_maximo:
-            j['civ_valor_maximo'] == null ? null : _d(j['civ_valor_maximo']),
-        civ_mensaje: _sN(j['civ_mensaje']),
-        civ_requiere_comentario_fuera_rango:
-            _b(j['civ_requiere_comentario_fuera_rango']),
-      );
+    cpi_id: _i(j['cpi_id']),
+    cpi_texto: _s(j['cpi_texto']),
+    TIPO_ID: _i(j['TIPO_ID'], 1),
+    cpi_codigo: _sN(j['cpi_codigo']),
+    cpi_ayuda: _sN(j['cpi_ayuda']),
+    cpi_orden: _i(j['cpi_orden']),
+    cpi_obligatorio: _b(j['cpi_obligatorio']),
+    cpi_permite_comentario: _b(j['cpi_permite_comentario'], true),
+    cpi_requiere_evidencia: _b(j['cpi_requiere_evidencia']),
+    cpi_pregunta_voz: _sN(j['cpi_pregunta_voz']),
+    TIPO_CODIGO: _sN(j['TIPO_CODIGO']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    SECCION_ID: j['SECCION_ID'] == null ? null : _i(j['SECCION_ID']),
+    SECCION_NOMBRE: _sN(j['SECCION_NOMBRE']),
+    civ_valor_minimo: j['civ_valor_minimo'] == null
+        ? null
+        : _d(j['civ_valor_minimo']),
+    civ_valor_maximo: j['civ_valor_maximo'] == null
+        ? null
+        : _d(j['civ_valor_maximo']),
+    civ_mensaje: _sN(j['civ_mensaje']),
+    civ_requiere_comentario_fuera_rango: _b(
+      j['civ_requiere_comentario_fuera_rango'],
+    ),
+  );
 }
 
 /// Una opción de un ítem.
@@ -1299,14 +1349,14 @@ class ChecklistOpcion {
   final bool cio_requiere_comentario;
 
   factory ChecklistOpcion.fromJson(Map<String, dynamic> j) => ChecklistOpcion(
-        cio_id: _i(j['cio_id']),
-        ITEM_ID: _i(j['ITEM_ID']),
-        cio_codigo: _s(j['cio_codigo']),
-        cio_texto: _s(j['cio_texto']),
-        cio_orden: _i(j['cio_orden']),
-        cio_es_conforme: _b(j['cio_es_conforme'], true),
-        cio_requiere_comentario: _b(j['cio_requiere_comentario']),
-      );
+    cio_id: _i(j['cio_id']),
+    ITEM_ID: _i(j['ITEM_ID']),
+    cio_codigo: _s(j['cio_codigo']),
+    cio_texto: _s(j['cio_texto']),
+    cio_orden: _i(j['cio_orden']),
+    cio_es_conforme: _b(j['cio_es_conforme'], true),
+    cio_requiere_comentario: _b(j['cio_requiere_comentario']),
+  );
 }
 
 /// La pauta completa: ítems y opciones en una respuesta.
@@ -1327,12 +1377,15 @@ class ChecklistPlantilla {
   factory ChecklistPlantilla.fromJson(Map<String, dynamic> j) =>
       ChecklistPlantilla(
         items: ((j['items'] as List?) ?? const [])
-            .map((e) =>
-                ChecklistItem.fromJson((e as Map).cast<String, dynamic>()))
+            .map(
+              (e) => ChecklistItem.fromJson((e as Map).cast<String, dynamic>()),
+            )
             .toList(),
         opciones: ((j['opciones'] as List?) ?? const [])
-            .map((e) =>
-                ChecklistOpcion.fromJson((e as Map).cast<String, dynamic>()))
+            .map(
+              (e) =>
+                  ChecklistOpcion.fromJson((e as Map).cast<String, dynamic>()),
+            )
             .toList(),
       );
 }
@@ -1370,16 +1423,18 @@ class ChecklistRespuesta {
         cer_id: _i(j['cer_id']),
         ITEM_ID: _i(j['ITEM_ID']),
         cer_valor_texto: _sN(j['cer_valor_texto']),
-        cer_valor_numero:
-            j['cer_valor_numero'] == null ? null : _d(j['cer_valor_numero']),
+        cer_valor_numero: j['cer_valor_numero'] == null
+            ? null
+            : _d(j['cer_valor_numero']),
         cer_valor_booleano: j['cer_valor_booleano'] == null
             ? null
             : _b(j['cer_valor_booleano']),
         cer_fuera_rango: _b(j['cer_fuera_rango']),
         cer_no_aplica: _b(j['cer_no_aplica']),
         cer_comentario: _sN(j['cer_comentario']),
-        cer_entrada_modo:
-            j['cer_entrada_modo'] == null ? null : _i(j['cer_entrada_modo']),
+        cer_entrada_modo: j['cer_entrada_modo'] == null
+            ? null
+            : _i(j['cer_entrada_modo']),
       );
 }
 
@@ -1443,16 +1498,14 @@ class ChecklistEjecucion {
         cej_item_no_conforme: _i(j['cej_item_no_conforme']),
         cej_observacion: _sN(j['cej_observacion']),
         respuestas: ((j['respuestas'] as List?) ?? const [])
-            .map((e) =>
-                ChecklistRespuesta.fromJson((e as Map).cast<String, dynamic>()))
+            .map(
+              (e) => ChecklistRespuesta.fromJson(
+                (e as Map).cast<String, dynamic>(),
+              ),
+            )
             .toList(),
       );
 }
-
-
-
-
-
 
 /// La cabecera de un activo. `GET /activos/{id}`
 ///
@@ -1514,32 +1567,34 @@ class Activo {
       [act_fabricante, act_modelo].where((s) => (s ?? '').isNotEmpty).join(' ');
 
   /// «Quilicura › Envasado › Linea 3», con lo que venga.
-  String get ruta => [PLANTA_NOMBRE, AREA_NOMBRE, POSICION_CODIGO]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' \u203a ');
+  String get ruta => [
+    PLANTA_NOMBRE,
+    AREA_NOMBRE,
+    POSICION_CODIGO,
+  ].where((s) => (s ?? '').isNotEmpty).join(' \u203a ');
 
   factory Activo.fromJson(Map<String, dynamic> j) => Activo(
-        act_id: _i(j['act_id']),
-        act_codigo: _s(j['act_codigo']),
-        act_nombre: _s(j['act_nombre']),
-        act_numero_serie: _sN(j['act_numero_serie']),
-        act_fabricante: _sN(j['act_fabricante']),
-        act_modelo: _sN(j['act_modelo']),
-        act_activo_estado: _i(j['act_activo_estado']),
-        PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
-        TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
-        CRITICIDAD_NOMBRE: _sN(j['CRITICIDAD_NOMBRE']),
-        PADRE_CODIGO: _sN(j['PADRE_CODIGO']),
-        FOTO_RUTA: _sN(j['FOTO_RUTA']),
-        FOTOS: ((j['FOTOS'] as List?) ?? const [])
-            .map((e) => e is Map ? _s(e['ruta']) : _s(e))
-            .where((e) => e.isNotEmpty)
-            .toList(),
-      );
+    act_id: _i(j['act_id']),
+    act_codigo: _s(j['act_codigo']),
+    act_nombre: _s(j['act_nombre']),
+    act_numero_serie: _sN(j['act_numero_serie']),
+    act_fabricante: _sN(j['act_fabricante']),
+    act_modelo: _sN(j['act_modelo']),
+    act_activo_estado: _i(j['act_activo_estado']),
+    PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+    TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    ESTADO_CODIGO: _sN(j['ESTADO_CODIGO']),
+    CRITICIDAD_NOMBRE: _sN(j['CRITICIDAD_NOMBRE']),
+    PADRE_CODIGO: _sN(j['PADRE_CODIGO']),
+    FOTO_RUTA: _sN(j['FOTO_RUTA']),
+    FOTOS: ((j['FOTOS'] as List?) ?? const [])
+        .map((e) => e is Map ? _s(e['ruta']) : _s(e))
+        .where((e) => e.isNotEmpty)
+        .toList(),
+  );
 }
 
 /// Un medidor del activo: horometro, contador de ciclos, odometro.
@@ -1568,15 +1623,15 @@ class ActivoMedidor {
   final bool ame_permite_reinicio;
 
   factory ActivoMedidor.fromJson(Map<String, dynamic> j) => ActivoMedidor(
-        ame_id: _i(j['ame_id']),
-        ame_nombre: _s(j['ame_nombre']),
-        UNIDAD: _sN(j['UNIDAD']),
-        ame_valor_actual: _d(j['ame_valor_actual']),
-        DIAS_SIN_LECTURA: j['DIAS_SIN_LECTURA'] == null
-            ? null
-            : _i(j['DIAS_SIN_LECTURA']),
-        ame_permite_reinicio: _b(j['ame_permite_reinicio']),
-      );
+    ame_id: _i(j['ame_id']),
+    ame_nombre: _s(j['ame_nombre']),
+    UNIDAD: _sN(j['UNIDAD']),
+    ame_valor_actual: _d(j['ame_valor_actual']),
+    DIAS_SIN_LECTURA: j['DIAS_SIN_LECTURA'] == null
+        ? null
+        : _i(j['DIAS_SIN_LECTURA']),
+    ame_permite_reinicio: _b(j['ame_permite_reinicio']),
+  );
 }
 
 /// Un valor de catalogo. `GET /catalogo-valores?codigo=`
@@ -1586,6 +1641,7 @@ class CatalogoValor {
     required this.ctv_nombre,
     this.ctv_codigo,
     this.ctv_orden = 0,
+    this.CATALOGO_CODIGO,
   });
 
   final int ctv_id;
@@ -1593,12 +1649,31 @@ class CatalogoValor {
   final String? ctv_codigo;
   final int ctv_orden;
 
+  /// De qué catálogo es este valor — `ACTIVO_ESTADO`, `SEVERIDAD`…
+  ///
+  /// Solo viene **del disco**: la sábana baja los valores de todos los
+  /// catálogos juntos y sin esto no se podrían separar. Por la red no hace
+  /// falta, porque `GET /catalogo-valores?codigo=X` ya devuelve uno solo.
+  final String? CATALOGO_CODIGO;
+
+  /// **`valor_*` primero, `ctv_*` de respaldo.**
+  ///
+  /// `CatalogoValorDto` expone `valor_id` y `valor_nombre`; `ctv_*` son los
+  /// nombres de la COLUMNA. Leyendo solo los de la columna, cada valor llegaba
+  /// con id 0 y nombre vacío: el selector de estado del activo pintaba filas
+  /// en blanco y ninguna se podía elegir, porque todas comparaban 0 contra 0.
+  ///
+  /// Es el mismo desajuste que borró el teléfono en `MiPerfilEdicionDto`, y la
+  /// misma regla: **los nombres del cuerpo son los del DTO, no los de la
+  /// columna**. Se aceptan las dos formas para que la fila que venga del disco
+  /// —donde manda el nombre de la columna— siga sirviendo.
   factory CatalogoValor.fromJson(Map<String, dynamic> j) => CatalogoValor(
-        ctv_id: _i(j['ctv_id']),
-        ctv_nombre: _s(j['ctv_nombre']),
-        ctv_codigo: _sN(j['ctv_codigo']),
-        ctv_orden: _i(j['ctv_orden']),
-      );
+    ctv_id: _i(j['valor_id'] ?? j['ctv_id']),
+    ctv_nombre: _s(j['valor_nombre'] ?? j['ctv_nombre']),
+    ctv_codigo: _sN(j['valor_codigo'] ?? j['ctv_codigo']),
+    ctv_orden: _i(j['valor_orden'] ?? j['ctv_orden']),
+    CATALOGO_CODIGO: _sN(j['CATALOGO_CODIGO'] ?? j['catalogo_codigo']),
+  );
 }
 
 /// paginas, datos}`.
@@ -1701,33 +1776,34 @@ class BitacoraEntrada {
 
   bool get rectificada => RECTIFICACIONES > 0;
 
-  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get activo => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory BitacoraEntrada.fromJson(Map<String, dynamic> j) => BitacoraEntrada(
-        bit_id: _i(j['bit_id']),
-        bit_titulo: _s(j['bit_titulo']),
-        TEXTO_VIGENTE: _s(j['TEXTO_VIGENTE']).isEmpty
-            ? _s(j['bit_texto'])
-            : _s(j['TEXTO_VIGENTE']),
-        bit_fecha_evento_utc:
-            _f(j['bit_fecha_evento_utc']) ?? DateTime.now().toUtc(),
-        bit_turno: _sN(j['bit_turno']),
-        bit_requiere_atencion: _b(j['bit_requiere_atencion']),
-        TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
-        SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
-        SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
-        ACTIVO_ID: (j['ACTIVO_ID'] as num?)?.toInt(),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
-        POR_VOZ: _b(j['POR_VOZ']),
-        COMENTARIOS: _i(j['COMENTARIOS']),
-        RECTIFICACIONES: _i(j['RECTIFICACIONES']),
-        EVIDENCIAS: _i(j['EVIDENCIAS']),
-      );
+    bit_id: _i(j['bit_id']),
+    bit_titulo: _s(j['bit_titulo']),
+    TEXTO_VIGENTE: _s(j['TEXTO_VIGENTE']).isEmpty
+        ? _s(j['bit_texto'])
+        : _s(j['TEXTO_VIGENTE']),
+    bit_fecha_evento_utc:
+        _f(j['bit_fecha_evento_utc']) ?? DateTime.now().toUtc(),
+    bit_turno: _sN(j['bit_turno']),
+    bit_requiere_atencion: _b(j['bit_requiere_atencion']),
+    TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+    SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
+    SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
+    ACTIVO_ID: (j['ACTIVO_ID'] as num?)?.toInt(),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    POR_VOZ: _b(j['POR_VOZ']),
+    COMENTARIOS: _i(j['COMENTARIOS']),
+    RECTIFICACIONES: _i(j['RECTIFICACIONES']),
+    EVIDENCIAS: _i(j['EVIDENCIAS']),
+  );
 }
 
 /// Un tipo de entrada de bitácora: incidente, observación, cambio de turno.
@@ -1747,10 +1823,10 @@ class BitacoraTipo {
   bool get esIncidente => (bti_codigo ?? '').toUpperCase() == 'INCIDENTE';
 
   factory BitacoraTipo.fromJson(Map<String, dynamic> j) => BitacoraTipo(
-        bti_id: _i(j['bti_id']),
-        bti_nombre: _s(j['bti_nombre']),
-        bti_codigo: _sN(j['bti_codigo']),
-      );
+    bti_id: _i(j['bti_id']),
+    bti_nombre: _s(j['bti_nombre']),
+    bti_codigo: _sN(j['bti_codigo']),
+  );
 }
 
 /// Una corrección apilada sobre una entrada.
@@ -1834,19 +1910,24 @@ class BitacoraFicha {
   final List<BitacoraComentario> comentarios;
 
   factory BitacoraFicha.fromJson(Map<String, dynamic> j) => BitacoraFicha(
-        entrada: BitacoraEntrada.fromJson(j),
-        TEXTO_ORIGINAL: _s(j['TEXTO_ORIGINAL']).isEmpty
-            ? _s(j['bit_texto'])
-            : _s(j['TEXTO_ORIGINAL']),
-        rectificaciones: ((j['rectificaciones'] as List?) ?? const [])
-            .map((e) => BitacoraRectificacion.fromJson(
-                (e as Map).cast<String, dynamic>()))
-            .toList(),
-        comentarios: ((j['comentarios'] as List?) ?? const [])
-            .map((e) =>
-                BitacoraComentario.fromJson((e as Map).cast<String, dynamic>()))
-            .toList(),
-      );
+    entrada: BitacoraEntrada.fromJson(j),
+    TEXTO_ORIGINAL: _s(j['TEXTO_ORIGINAL']).isEmpty
+        ? _s(j['bit_texto'])
+        : _s(j['TEXTO_ORIGINAL']),
+    rectificaciones: ((j['rectificaciones'] as List?) ?? const [])
+        .map(
+          (e) => BitacoraRectificacion.fromJson(
+            (e as Map).cast<String, dynamic>(),
+          ),
+        )
+        .toList(),
+    comentarios: ((j['comentarios'] as List?) ?? const [])
+        .map(
+          (e) =>
+              BitacoraComentario.fromJson((e as Map).cast<String, dynamic>()),
+        )
+        .toList(),
+  );
 }
 
 /// Un repuesto con saldo, marcando si **sirve para el equipo** de la orden.
@@ -1882,16 +1963,16 @@ class RepuestoOrden {
   final bool ES_COMPATIBLE;
 
   factory RepuestoOrden.fromJson(Map<String, dynamic> j) => RepuestoOrden(
-        isa_id: _i(j['isa_id']),
-        isa_repuesto: _i(j['isa_repuesto']),
-        isa_bodega: _i(j['isa_bodega']),
-        REPUESTO_CODIGO: _s(j['REPUESTO_CODIGO']),
-        REPUESTO_NOMBRE: _s(j['REPUESTO_NOMBRE']),
-        CANTIDAD_DISPONIBLE: _d(j['CANTIDAD_DISPONIBLE']),
-        UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
-        BODEGA_NOMBRE: _sN(j['BODEGA_NOMBRE']),
-        ES_COMPATIBLE: _b(j['ES_COMPATIBLE']),
-      );
+    isa_id: _i(j['isa_id']),
+    isa_repuesto: _i(j['isa_repuesto']),
+    isa_bodega: _i(j['isa_bodega']),
+    REPUESTO_CODIGO: _s(j['REPUESTO_CODIGO']),
+    REPUESTO_NOMBRE: _s(j['REPUESTO_NOMBRE']),
+    CANTIDAD_DISPONIBLE: _d(j['CANTIDAD_DISPONIBLE']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    BODEGA_NOMBRE: _sN(j['BODEGA_NOMBRE']),
+    ES_COMPATIBLE: _b(j['ES_COMPATIBLE']),
+  );
 }
 
 /// Alguien de la misma instalación con quien se puede compartir un trabajo.
@@ -1933,17 +2014,15 @@ class Companero {
   }
 
   factory Companero.fromJson(Map<String, dynamic> j) => Companero(
-        usu_id: _i(j['usu_id']),
-        NOMBRE: _s(j['NOMBRE']),
-        LOGIN: _sN(j['LOGIN']),
-        PERFIL_NOMBRE: _sN(j['PERFIL_NOMBRE']),
-        ESPECIALIDADES: _sN(j['ESPECIALIDADES']),
-        especialidades: _s(j['ESPECIALIDAD_IDS'])
-            .split(',')
-            .map((x) => int.tryParse(x.trim()))
-            .whereType<int>()
-            .toList(),
-      );
+    usu_id: _i(j['usu_id']),
+    NOMBRE: _s(j['NOMBRE']),
+    LOGIN: _sN(j['LOGIN']),
+    PERFIL_NOMBRE: _sN(j['PERFIL_NOMBRE']),
+    ESPECIALIDADES: _sN(j['ESPECIALIDADES']),
+    especialidades: _s(
+      j['ESPECIALIDAD_IDS'],
+    ).split(',').map((x) => int.tryParse(x.trim())).whereType<int>().toList(),
+  );
 }
 
 /// Una foto ya guardada.
@@ -1989,22 +2068,24 @@ class Evidencia {
       (arc_fecha_captura_utc ?? arc_fecha_creacion).toLocal();
 
   factory Evidencia.fromJson(Map<String, dynamic> j) => Evidencia(
-        arc_id: _i(j['arc_id']),
-        arc_ruta: _s(j['arc_ruta']),
-        arc_nombre_original: _sN(j['arc_nombre_original']),
-        arc_mime: _sN(j['arc_mime']),
-        arc_byte: _i(j['arc_byte']),
-        arc_ancho_pixel:
-            j['arc_ancho_pixel'] == null ? null : _i(j['arc_ancho_pixel']),
-        arc_alto_pixel:
-            j['arc_alto_pixel'] == null ? null : _i(j['arc_alto_pixel']),
-        arc_fecha_captura_utc: _f(j['arc_fecha_captura_utc']),
-        CATEGORIA_CODIGO: _sN(j['CATEGORIA_CODIGO']),
-        CATEGORIA_NOMBRE: _sN(j['CATEGORIA_NOMBRE']),
-        avi_titulo: _sN(j['avi_titulo']),
-        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
-        arc_fecha_creacion: _f(j['arc_fecha_creacion']) ?? DateTime.now(),
-      );
+    arc_id: _i(j['arc_id']),
+    arc_ruta: _s(j['arc_ruta']),
+    arc_nombre_original: _sN(j['arc_nombre_original']),
+    arc_mime: _sN(j['arc_mime']),
+    arc_byte: _i(j['arc_byte']),
+    arc_ancho_pixel: j['arc_ancho_pixel'] == null
+        ? null
+        : _i(j['arc_ancho_pixel']),
+    arc_alto_pixel: j['arc_alto_pixel'] == null
+        ? null
+        : _i(j['arc_alto_pixel']),
+    arc_fecha_captura_utc: _f(j['arc_fecha_captura_utc']),
+    CATEGORIA_CODIGO: _sN(j['CATEGORIA_CODIGO']),
+    CATEGORIA_NOMBRE: _sN(j['CATEGORIA_NOMBRE']),
+    avi_titulo: _sN(j['avi_titulo']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    arc_fecha_creacion: _f(j['arc_fecha_creacion']) ?? DateTime.now(),
+  );
 }
 
 // ===========================================================================
@@ -2099,9 +2180,10 @@ class Prediccion {
   bool get descartada => ESTADO_ID == 4;
   bool get tieneOrden => ORDEN_TRABAJO_ID != null;
 
-  String get donde => [ACTIVO_CODIGO, AREA_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get donde => [
+    ACTIVO_CODIGO,
+    AREA_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   /// El margen del intervalo, en días. Se muestra como «±4 d» porque un plazo
   /// sin margen se lee como una fecha comprometida, y esto es una estimación.
@@ -2111,39 +2193,43 @@ class Prediccion {
   }
 
   factory Prediccion.fromJson(Map<String, dynamic> j) => Prediccion(
-        pre_id: _i(j['pre_id']),
-        ACTIVO_ID: _i(j['ACTIVO_ID']),
-        ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        INSTALACION_NOMBRE: _sN(j['INSTALACION_NOMBRE']),
-        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
-        VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
-        UNIDAD: _sN(j['UNIDAD']),
-        VALOR_ACTUAL: _dN(j['VALOR_ACTUAL']),
-        VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
-        VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
-        pre_dia_restante:
-            j['pre_dia_restante'] == null ? null : _i(j['pre_dia_restante']),
-        pre_fecha_evento_estimada_utc: _f(j['pre_fecha_evento_estimada_utc']),
-        pre_probabilidad: _dN(j['pre_probabilidad']),
-        pre_confianza: _dN(j['pre_confianza']),
-        DIA_MINIMO: _dN(j['DIA_MINIMO']),
-        DIA_MAXIMO: _dN(j['DIA_MAXIMO']),
-        SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
-        SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
-        ESTADO_ID: _i(j['ESTADO_ID'], 1),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        pre_fecha_calculo_utc: _f(j['pre_fecha_calculo_utc']) ?? DateTime.now(),
-        MODELO_NOMBRE: _sN(j['MODELO_NOMBRE']),
-        MODELO_VERSION:
-            j['MODELO_VERSION'] == null ? null : _i(j['MODELO_VERSION']),
-        ALERTA_ID: j['ALERTA_ID'] == null ? null : _i(j['ALERTA_ID']),
-        ORDEN_TRABAJO_ID:
-            j['ORDEN_TRABAJO_ID'] == null ? null : _i(j['ORDEN_TRABAJO_ID']),
-        ORDEN_CORRELATIVO:
-            j['ORDEN_CORRELATIVO'] == null ? null : _i(j['ORDEN_CORRELATIVO']),
-      );
+    pre_id: _i(j['pre_id']),
+    ACTIVO_ID: _i(j['ACTIVO_ID']),
+    ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    INSTALACION_NOMBRE: _sN(j['INSTALACION_NOMBRE']),
+    ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+    VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
+    UNIDAD: _sN(j['UNIDAD']),
+    VALOR_ACTUAL: _dN(j['VALOR_ACTUAL']),
+    VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
+    VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
+    pre_dia_restante: j['pre_dia_restante'] == null
+        ? null
+        : _i(j['pre_dia_restante']),
+    pre_fecha_evento_estimada_utc: _f(j['pre_fecha_evento_estimada_utc']),
+    pre_probabilidad: _dN(j['pre_probabilidad']),
+    pre_confianza: _dN(j['pre_confianza']),
+    DIA_MINIMO: _dN(j['DIA_MINIMO']),
+    DIA_MAXIMO: _dN(j['DIA_MAXIMO']),
+    SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
+    SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
+    ESTADO_ID: _i(j['ESTADO_ID'], 1),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    pre_fecha_calculo_utc: _f(j['pre_fecha_calculo_utc']) ?? DateTime.now(),
+    MODELO_NOMBRE: _sN(j['MODELO_NOMBRE']),
+    MODELO_VERSION: j['MODELO_VERSION'] == null
+        ? null
+        : _i(j['MODELO_VERSION']),
+    ALERTA_ID: j['ALERTA_ID'] == null ? null : _i(j['ALERTA_ID']),
+    ORDEN_TRABAJO_ID: j['ORDEN_TRABAJO_ID'] == null
+        ? null
+        : _i(j['ORDEN_TRABAJO_ID']),
+    ORDEN_CORRELATIVO: j['ORDEN_CORRELATIVO'] == null
+        ? null
+        : _i(j['ORDEN_CORRELATIVO']),
+  );
 }
 
 /// Una de las tres razones. Cada una nombra el número del que sale: una razón
@@ -2168,13 +2254,13 @@ class PrediccionRazon {
   bool get sube => (pex_direccion ?? '') == 'AUMENTA';
 
   factory PrediccionRazon.fromJson(Map<String, dynamic> j) => PrediccionRazon(
-        pex_orden: _i(j['pex_orden']),
-        pex_texto: _s(j['pex_texto']),
-        pex_direccion: _sN(j['pex_direccion']),
-        pex_valor_observado: _dN(j['pex_valor_observado']),
-        pex_valor_referencia: _dN(j['pex_valor_referencia']),
-        CARACTERISTICA: _sN(j['CARACTERISTICA']),
-      );
+    pex_orden: _i(j['pex_orden']),
+    pex_texto: _s(j['pex_texto']),
+    pex_direccion: _sN(j['pex_direccion']),
+    pex_valor_observado: _dN(j['pex_valor_observado']),
+    pex_valor_referencia: _dN(j['pex_valor_referencia']),
+    CARACTERISTICA: _sN(j['CARACTERISTICA']),
+  );
 }
 
 /// Un dato que entró en el cálculo.
@@ -2199,13 +2285,13 @@ class PrediccionDato {
   final bool pcr_imputado;
 
   factory PrediccionDato.fromJson(Map<String, dynamic> j) => PrediccionDato(
-        cmo_codigo: _s(j['cmo_codigo']),
-        cmo_etiqueta: _s(j['cmo_etiqueta']),
-        cmo_descripcion: _sN(j['cmo_descripcion']),
-        pcr_valor: _dN(j['pcr_valor']),
-        pcr_valor_texto: _sN(j['pcr_valor_texto']),
-        pcr_imputado: j['pcr_imputado'] == true,
-      );
+    cmo_codigo: _s(j['cmo_codigo']),
+    cmo_etiqueta: _s(j['cmo_etiqueta']),
+    cmo_descripcion: _sN(j['cmo_descripcion']),
+    pcr_valor: _dN(j['pcr_valor']),
+    pcr_valor_texto: _sN(j['pcr_valor_texto']),
+    pcr_imputado: j['pcr_imputado'] == true,
+  );
 }
 
 /// Un punto de la serie medida.
@@ -2216,9 +2302,9 @@ class PrediccionPunto {
   final double VALOR;
 
   factory PrediccionPunto.fromJson(Map<String, dynamic> j) => PrediccionPunto(
-        FECHA: _f(j['FECHA']) ?? DateTime.now(),
-        VALOR: _dN(j['VALOR']) ?? 0,
-      );
+    FECHA: _f(j['FECHA']) ?? DateTime.now(),
+    VALOR: _dN(j['VALOR']) ?? 0,
+  );
 }
 
 /// La ficha completa — la vista 14.2.
@@ -2287,53 +2373,58 @@ class PrediccionFicha extends Prediccion {
   bool get hayCurva => serie.length > 1;
 
   factory PrediccionFicha.fromJson(Map<String, dynamic> j) => PrediccionFicha(
-        pre_id: _i(j['pre_id']),
-        ACTIVO_ID: _i(j['ACTIVO_ID']),
-        ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        INSTALACION_NOMBRE: _sN(j['INSTALACION_NOMBRE']),
-        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
-        VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
-        UNIDAD: _sN(j['UNIDAD']),
-        VALOR_ACTUAL: _dN(j['VALOR_ACTUAL']),
-        VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
-        VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
-        pre_dia_restante:
-            j['pre_dia_restante'] == null ? null : _i(j['pre_dia_restante']),
-        pre_fecha_evento_estimada_utc: _f(j['pre_fecha_evento_estimada_utc']),
-        pre_probabilidad: _dN(j['pre_probabilidad']),
-        pre_confianza: _dN(j['pre_confianza']),
-        DIA_MINIMO: _dN(j['DIA_MINIMO']),
-        DIA_MAXIMO: _dN(j['DIA_MAXIMO']),
-        SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
-        SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
-        ESTADO_ID: _i(j['ESTADO_ID'], 1),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        pre_fecha_calculo_utc: _f(j['pre_fecha_calculo_utc']) ?? DateTime.now(),
-        MODELO_NOMBRE: _sN(j['MODELO_NOMBRE']),
-        MODELO_VERSION:
-            j['MODELO_VERSION'] == null ? null : _i(j['MODELO_VERSION']),
-        ALERTA_ID: j['ALERTA_ID'] == null ? null : _i(j['ALERTA_ID']),
-        ORDEN_TRABAJO_ID:
-            j['ORDEN_TRABAJO_ID'] == null ? null : _i(j['ORDEN_TRABAJO_ID']),
-        ORDEN_CORRELATIVO:
-            j['ORDEN_CORRELATIVO'] == null ? null : _i(j['ORDEN_CORRELATIVO']),
-        MODELO_DESCRIPCION: _sN(j['MODELO_DESCRIPCION']),
-        MODELO_ALGORITMO: _sN(j['MODELO_ALGORITMO']),
-        MODELO_FORMATO: _sN(j['MODELO_FORMATO']),
-        MODELO_OBJETIVO: _sN(j['MODELO_OBJETIVO']),
-        MODELO_HORIZONTE:
-            j['MODELO_HORIZONTE'] == null ? null : _i(j['MODELO_HORIZONTE']),
-        pre_fecha_vigencia_hasta_utc: _f(j['pre_fecha_vigencia_hasta_utc']),
-        pre_motivo_descarte: _sN(j['pre_motivo_descarte']),
-        REVISADA_POR: _sN(j['REVISADA_POR']),
-        pre_fecha_revision_utc: _f(j['pre_fecha_revision_utc']),
-        EVIDENCIAS: _i(j['EVIDENCIAS']),
-        razones: _lista(j['razones'], PrediccionRazon.fromJson),
-        datos: _lista(j['datos'], PrediccionDato.fromJson),
-        serie: _lista(j['serie'], PrediccionPunto.fromJson),
-      );
+    pre_id: _i(j['pre_id']),
+    ACTIVO_ID: _i(j['ACTIVO_ID']),
+    ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    INSTALACION_NOMBRE: _sN(j['INSTALACION_NOMBRE']),
+    ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+    VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
+    UNIDAD: _sN(j['UNIDAD']),
+    VALOR_ACTUAL: _dN(j['VALOR_ACTUAL']),
+    VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
+    VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
+    pre_dia_restante: j['pre_dia_restante'] == null
+        ? null
+        : _i(j['pre_dia_restante']),
+    pre_fecha_evento_estimada_utc: _f(j['pre_fecha_evento_estimada_utc']),
+    pre_probabilidad: _dN(j['pre_probabilidad']),
+    pre_confianza: _dN(j['pre_confianza']),
+    DIA_MINIMO: _dN(j['DIA_MINIMO']),
+    DIA_MAXIMO: _dN(j['DIA_MAXIMO']),
+    SEVERIDAD_CODIGO: _sN(j['SEVERIDAD_CODIGO']),
+    SEVERIDAD_NOMBRE: _sN(j['SEVERIDAD_NOMBRE']),
+    ESTADO_ID: _i(j['ESTADO_ID'], 1),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    pre_fecha_calculo_utc: _f(j['pre_fecha_calculo_utc']) ?? DateTime.now(),
+    MODELO_NOMBRE: _sN(j['MODELO_NOMBRE']),
+    MODELO_VERSION: j['MODELO_VERSION'] == null
+        ? null
+        : _i(j['MODELO_VERSION']),
+    ALERTA_ID: j['ALERTA_ID'] == null ? null : _i(j['ALERTA_ID']),
+    ORDEN_TRABAJO_ID: j['ORDEN_TRABAJO_ID'] == null
+        ? null
+        : _i(j['ORDEN_TRABAJO_ID']),
+    ORDEN_CORRELATIVO: j['ORDEN_CORRELATIVO'] == null
+        ? null
+        : _i(j['ORDEN_CORRELATIVO']),
+    MODELO_DESCRIPCION: _sN(j['MODELO_DESCRIPCION']),
+    MODELO_ALGORITMO: _sN(j['MODELO_ALGORITMO']),
+    MODELO_FORMATO: _sN(j['MODELO_FORMATO']),
+    MODELO_OBJETIVO: _sN(j['MODELO_OBJETIVO']),
+    MODELO_HORIZONTE: j['MODELO_HORIZONTE'] == null
+        ? null
+        : _i(j['MODELO_HORIZONTE']),
+    pre_fecha_vigencia_hasta_utc: _f(j['pre_fecha_vigencia_hasta_utc']),
+    pre_motivo_descarte: _sN(j['pre_motivo_descarte']),
+    REVISADA_POR: _sN(j['REVISADA_POR']),
+    pre_fecha_revision_utc: _f(j['pre_fecha_revision_utc']),
+    EVIDENCIAS: _i(j['EVIDENCIAS']),
+    razones: _lista(j['razones'], PrediccionRazon.fromJson),
+    datos: _lista(j['datos'], PrediccionDato.fromJson),
+    serie: _lista(j['serie'], PrediccionPunto.fromJson),
+  );
 }
 
 /// Un equipo vigilado que no produjo predicción, y por qué.
@@ -2388,39 +2479,39 @@ class Vigilado {
   bool get tranquilo => MOTIVO == 'SIN SENALES';
 
   String get explicacion => switch (MOTIVO) {
-        'SIN LECTURAS' => 'Nadie lo ha medido todavía.',
-        'FALTAN LECTURAS' =>
-          'Van $LECTURAS lecturas. Con menos de cuatro no se puede ver una tendencia.',
-        _ => 'Se mide y no muestra señales de alza.',
-      };
+    'SIN LECTURAS' => 'Nadie lo ha medido todavía.',
+    'FALTAN LECTURAS' =>
+      'Van $LECTURAS lecturas. Con menos de cuatro no se puede ver una tendencia.',
+    _ => 'Se mide y no muestra señales de alza.',
+  };
 
   factory Vigilado.fromJson(Map<String, dynamic> j) => Vigilado(
-        ava_id: _i(j['ava_id']),
-        ACTIVO_ID: _i(j['ACTIVO_ID']),
-        ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
-        UNIDAD: _sN(j['UNIDAD']),
-        VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
-        VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
-        CADA_HORAS: j['CADA_HORAS'] == null ? null : _i(j['CADA_HORAS']),
-        LECTURAS: _i(j['LECTURAS']),
-        ULTIMA_UTC: _f(j['ULTIMA_UTC']),
-        ULTIMO_VALOR: _dN(j['ULTIMO_VALOR']),
-        HORAS_SIN_LECTURA: j['HORAS_SIN_LECTURA'] == null
-            ? null
-            : _i(j['HORAS_SIN_LECTURA']),
-        ATRASADA: j['ATRASADA'] == true,
-        MOTIVO: _sN(j['MOTIVO']),
-      );
+    ava_id: _i(j['ava_id']),
+    ACTIVO_ID: _i(j['ACTIVO_ID']),
+    ACTIVO_NOMBRE: _s(j['ACTIVO_NOMBRE']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    VARIABLE_NOMBRE: _sN(j['VARIABLE_NOMBRE']),
+    UNIDAD: _sN(j['UNIDAD']),
+    VALOR_ADVERTENCIA: _dN(j['VALOR_ADVERTENCIA']),
+    VALOR_CRITICO: _dN(j['VALOR_CRITICO']),
+    CADA_HORAS: j['CADA_HORAS'] == null ? null : _i(j['CADA_HORAS']),
+    LECTURAS: _i(j['LECTURAS']),
+    ULTIMA_UTC: _f(j['ULTIMA_UTC']),
+    ULTIMO_VALOR: _dN(j['ULTIMO_VALOR']),
+    HORAS_SIN_LECTURA: j['HORAS_SIN_LECTURA'] == null
+        ? null
+        : _i(j['HORAS_SIN_LECTURA']),
+    ATRASADA: j['ATRASADA'] == true,
+    MOTIVO: _sN(j['MOTIVO']),
+  );
 }
 
 /// Convierte una lista JSON con el mapeador que se le pase.
 List<T> _lista<T>(dynamic v, T Function(Map<String, dynamic>) mapear) =>
     (v is List)
-        ? v.map((e) => mapear((e as Map).cast<String, dynamic>())).toList()
-        : const [];
+    ? v.map((e) => mapear((e as Map).cast<String, dynamic>())).toList()
+    : const [];
 
 // ===========================================================================
 //  TAREAS EN TERRENO                                       HU-103 y HU-104
@@ -2469,9 +2560,10 @@ class TareaPendiente {
 
   /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
   /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
-  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get activo => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   /// La foto del activo y la línea donde está montado.
   ///
@@ -2509,35 +2601,37 @@ class TareaPendiente {
 
   /// Dónde está: área y **línea**. El equipo ya no entra acá porque se
   /// muestra identificado en su propia fila.
-  String get donde => [AREA_NOMBRE, POSICION_CODIGO]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get donde => [
+    AREA_NOMBRE,
+    POSICION_CODIGO,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory TareaPendiente.fromJson(Map<String, dynamic> j) => TareaPendiente(
-        toc_id: _i(j['toc_id']),
-        tar_titulo: _s(j['tar_titulo']),
-        TAREA_CODIGO: _sN(j['TAREA_CODIGO']),
-        tar_descripcion: _sN(j['tar_descripcion']),
-        tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
-            ? null
-            : _i(j['tar_duracion_estimada_minuto']),
-        tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
-        PRIORIDAD_CODIGO: _sN(j['PRIORIDAD_CODIGO']),
-        PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
-        PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
-        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
-        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
-        ES_FAVORITO: _b(j['ES_FAVORITO']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
-        SITUACION: _sN(j['SITUACION']),
-        COMENTARIOS: _i(j['COMENTARIOS']),
-        EJECUCION_ABIERTA:
-            j['EJECUCION_ABIERTA'] == null ? null : _i(j['EJECUCION_ABIERTA']),
-      );
+    toc_id: _i(j['toc_id']),
+    tar_titulo: _s(j['tar_titulo']),
+    TAREA_CODIGO: _sN(j['TAREA_CODIGO']),
+    tar_descripcion: _sN(j['tar_descripcion']),
+    tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
+        ? null
+        : _i(j['tar_duracion_estimada_minuto']),
+    tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
+    PRIORIDAD_CODIGO: _sN(j['PRIORIDAD_CODIGO']),
+    PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
+    PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+    POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+    ES_FAVORITO: _b(j['ES_FAVORITO']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
+    SITUACION: _sN(j['SITUACION']),
+    COMENTARIOS: _i(j['COMENTARIOS']),
+    EJECUCION_ABIERTA: j['EJECUCION_ABIERTA'] == null
+        ? null
+        : _i(j['EJECUCION_ABIERTA']),
+  );
 }
 
 /// Un comentario del hilo.
@@ -2577,19 +2671,19 @@ class TareaComentario {
   bool get esRespuesta => PADRE_ID != null;
 
   factory TareaComentario.fromJson(Map<String, dynamic> j) => TareaComentario(
-        tco_id: _i(j['tco_id']),
-        tco_texto: _s(j['tco_texto']),
-        tco_fecha_creacion: _f(j['tco_fecha_creacion']) ?? DateTime.now(),
-        PADRE_ID: j['PADRE_ID'] == null ? null : _i(j['PADRE_ID']),
-        POR_VOZ: j['POR_VOZ'] == true,
-        TEXTO_DICTADO: _sN(j['TEXTO_DICTADO']),
-        DICTADO_CONFIANZA: j['DICTADO_CONFIANZA'] == null
-            ? null
-            : (j['DICTADO_CONFIANZA'] as num).toDouble(),
-        DICTADO_CORREGIDO: j['DICTADO_CORREGIDO'] == true,
-        USUARIO_ID: _i(j['USUARIO_ID']),
-        USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
-      );
+    tco_id: _i(j['tco_id']),
+    tco_texto: _s(j['tco_texto']),
+    tco_fecha_creacion: _f(j['tco_fecha_creacion']) ?? DateTime.now(),
+    PADRE_ID: j['PADRE_ID'] == null ? null : _i(j['PADRE_ID']),
+    POR_VOZ: j['POR_VOZ'] == true,
+    TEXTO_DICTADO: _sN(j['TEXTO_DICTADO']),
+    DICTADO_CONFIANZA: j['DICTADO_CONFIANZA'] == null
+        ? null
+        : (j['DICTADO_CONFIANZA'] as num).toDouble(),
+    DICTADO_CORREGIDO: j['DICTADO_CORREGIDO'] == true,
+    USUARIO_ID: _i(j['USUARIO_ID']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+  );
 }
 
 /// La tarea abierta, con su ejecución y su hilo.
@@ -2635,9 +2729,10 @@ class Tarea {
 
   /// «MOT-001 · Motor principal línea 3». Vacío si la orden no cuelga de un
   /// activo —una limpieza general, por ejemplo—, y ahí la tarjeta lo dice.
-  String get activo => [ACTIVO_CODIGO, ACTIVO_NOMBRE]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get activo => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   /// La foto del activo y la línea donde está montado.
   ///
@@ -2683,44 +2778,48 @@ class Tarea {
 
   /// Dónde está: área y **línea**. El equipo ya no entra acá porque se
   /// muestra identificado en su propia fila.
-  String get donde => [AREA_NOMBRE, POSICION_CODIGO]
-      .where((s) => (s ?? '').isNotEmpty)
-      .join(' · ');
+  String get donde => [
+    AREA_NOMBRE,
+    POSICION_CODIGO,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
 
   factory Tarea.fromJson(Map<String, dynamic> j) => Tarea(
-        toc_id: _i(j['toc_id']),
-        tar_titulo: _s(j['tar_titulo']),
-        TAREA_CODIGO: _sN(j['TAREA_CODIGO']),
-        tar_descripcion: _sN(j['tar_descripcion']),
-        tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
-        tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
-            ? null
-            : _i(j['tar_duracion_estimada_minuto']),
-        PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
-        PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
-        ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
-        ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
-        ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
-        POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
-        ES_FAVORITO: _b(j['ES_FAVORITO']),
-        AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
-        ESTADO_ID: _i(j['ESTADO_ID'], 1),
-        ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
-        toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
-        EJECUCION_ID: j['EJECUCION_ID'] == null ? null : _i(j['EJECUCION_ID']),
-        tej_fecha_inicio_utc: _f(j['tej_fecha_inicio_utc']),
-        tej_fecha_fin_utc: _f(j['tej_fecha_fin_utc']),
-        tej_duracion_minuto: j['tej_duracion_minuto'] == null
-            ? null
-            : _i(j['tej_duracion_minuto']),
-        tej_resultado: _sN(j['tej_resultado']),
-        tej_conforme: j['tej_conforme'] as bool?,
-        EVIDENCIAS: _i(j['EVIDENCIAS']),
-        comentarios: (j['comentarios'] is List)
-            ? (j['comentarios'] as List)
-                .map((e) => TareaComentario.fromJson(
-                    (e as Map).cast<String, dynamic>()))
-                .toList()
-            : const [],
-      );
+    toc_id: _i(j['toc_id']),
+    tar_titulo: _s(j['tar_titulo']),
+    TAREA_CODIGO: _sN(j['TAREA_CODIGO']),
+    tar_descripcion: _sN(j['tar_descripcion']),
+    tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
+    tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
+        ? null
+        : _i(j['tar_duracion_estimada_minuto']),
+    PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
+    PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    ACTIVO_FOTO: _sN(j['ACTIVO_FOTO']),
+    POSICION_CODIGO: _sN(j['POSICION_CODIGO']),
+    ES_FAVORITO: _b(j['ES_FAVORITO']),
+    AREA_NOMBRE: _sN(j['AREA_NOMBRE']),
+    ESTADO_ID: _i(j['ESTADO_ID'], 1),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    toc_fecha_limite_utc: _f(j['toc_fecha_limite_utc']),
+    EJECUCION_ID: j['EJECUCION_ID'] == null ? null : _i(j['EJECUCION_ID']),
+    tej_fecha_inicio_utc: _f(j['tej_fecha_inicio_utc']),
+    tej_fecha_fin_utc: _f(j['tej_fecha_fin_utc']),
+    tej_duracion_minuto: j['tej_duracion_minuto'] == null
+        ? null
+        : _i(j['tej_duracion_minuto']),
+    tej_resultado: _sN(j['tej_resultado']),
+    tej_conforme: j['tej_conforme'] as bool?,
+    EVIDENCIAS: _i(j['EVIDENCIAS']),
+    comentarios: (j['comentarios'] is List)
+        ? (j['comentarios'] as List)
+              .map(
+                (e) => TareaComentario.fromJson(
+                  (e as Map).cast<String, dynamic>(),
+                ),
+              )
+              .toList()
+        : const [],
+  );
 }

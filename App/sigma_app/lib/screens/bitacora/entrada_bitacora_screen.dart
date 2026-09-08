@@ -35,8 +35,7 @@ class EntradaBitacoraScreen extends ConsumerStatefulWidget {
       _EntradaBitacoraScreenState();
 }
 
-class _EntradaBitacoraScreenState
-    extends ConsumerState<EntradaBitacoraScreen> {
+class _EntradaBitacoraScreenState extends ConsumerState<EntradaBitacoraScreen> {
   final _comentario = TextEditingController();
   bool _enviando = false;
 
@@ -56,11 +55,22 @@ class _EntradaBitacoraScreenState
     setState(() => _enviando = true);
 
     try {
-      await SigmaRepository.instance
-          .comentarBitacora(widget.entradaId, {'texto': texto});
+      await SigmaRepository.instance.comentarBitacora(widget.entradaId, {
+        'texto': texto,
+      });
+      /* CAPTURAR EL MENSAJERO NO BASTA: HAY QUE SEGUIR MONTADO
+
+         El `mensajero` se toma antes del await, que es correcto y evita el
+         `context` cruzado. Pero si la pantalla se cerro mientras la peticion
+         viajaba —lo normal con señal de planta: se envia y se sale—, al volver
+         se tocaba `ref` y un ScaffoldMessenger cuyo arbol ya no existe, y la
+         app reventaba con «Looking up a deactivated widget's ancestor is
+         unsafe». */
+      if (!mounted) return;
       _comentario.clear();
       ref.invalidate(entradaBitacoraProvider(widget.entradaId));
     } on ApiException catch (e) {
+      if (!mounted) return;
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     } finally {
       if (mounted) setState(() => _enviando = false);
@@ -72,6 +82,7 @@ class _EntradaBitacoraScreenState
     final motivo = TextEditingController();
     final sg = context.sg;
 
+    if (!mounted) return;
     final ok = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -81,7 +92,8 @@ class _EntradaBitacoraScreenState
           decoration: BoxDecoration(
             color: sg.fondo,
             borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(SgRadius.hoja)),
+              top: Radius.circular(SgRadius.hoja),
+            ),
           ),
           child: SafeArea(
             top: false,
@@ -108,8 +120,10 @@ class _EntradaBitacoraScreenState
                       ),
                     ),
                     const SizedBox(height: 15),
-                    Text('Rectificar la anotación',
-                        style: sora(17, 600, color: sg.tinta)),
+                    Text(
+                      'Rectificar la anotación',
+                      style: sora(17, 600, color: sg.tinta),
+                    ),
                     const SizedBox(height: 4),
                     Text(
                       'El texto original NO se borra: queda debajo con esta '
@@ -143,7 +157,8 @@ class _EntradaBitacoraScreenState
                       // después si el texto cambió porque estaba mal escrito,
                       // porque se supo algo nuevo, o porque a alguien no le
                       // gustó cómo sonaba.
-                      onTap: (texto.text.trim().isEmpty ||
+                      onTap:
+                          (texto.text.trim().isEmpty ||
                               motivo.text.trim().isEmpty)
                           ? null
                           : () => Navigator.of(c).pop(true),
@@ -168,10 +183,12 @@ class _EntradaBitacoraScreenState
     final mensajero = ScaffoldMessenger.of(context);
     try {
       await SigmaRepository.instance.rectificarBitacora(widget.entradaId, t, m);
+      if (!mounted) return;
       ref.invalidate(entradaBitacoraProvider(widget.entradaId));
       ref.invalidate(bitacoraProvider);
       mensajero.showSnackBar(
-          const SnackBar(content: Text('Corrección guardada.')));
+        const SnackBar(content: Text('Corrección guardada.')),
+      );
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
@@ -194,8 +211,9 @@ class _EntradaBitacoraScreenState
           final corregida = f.rectificaciones.isNotEmpty;
 
           return ListView(
-            padding: context
-                .conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 24)),
+            padding: context.conBarraSistema(
+              const EdgeInsets.fromLTRB(16, 14, 16, 24),
+            ),
             children: [
               SgCard(
                 padding: const EdgeInsets.all(16),
@@ -207,37 +225,58 @@ class _EntradaBitacoraScreenState
                       runSpacing: 6,
                       children: [
                         if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(e.TIPO_NOMBRE!, color: sg.tinta2, chico: true),
+                          SgBadge(
+                            e.TIPO_NOMBRE!,
+                            color: sg.tinta2,
+                            chico: true,
+                          ),
                         if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(e.SEVERIDAD_NOMBRE!,
-                              color: sg.ambarTexto, chico: true),
+                          SgBadge(
+                            e.SEVERIDAD_NOMBRE!,
+                            color: sg.ambarTexto,
+                            chico: true,
+                          ),
                         if (e.bit_requiere_atencion)
-                          SgBadge('Requiere atención',
-                              color: sg.rojoTexto,
-                              icono: Icons.priority_high,
-                              chico: true),
+                          SgBadge(
+                            'Requiere atención',
+                            color: sg.rojoTexto,
+                            icono: Icons.priority_high,
+                            chico: true,
+                          ),
                         if (e.POR_VOZ)
-                          SgBadge('Dictada',
-                              color: sg.tinta3, icono: Icons.mic, chico: true),
+                          SgBadge(
+                            'Dictada',
+                            color: sg.tinta3,
+                            icono: Icons.mic,
+                            chico: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(e.bit_titulo,
-                        style: sora(19, 700, color: sg.tinta, alto: 1.3)),
+                    Text(
+                      e.bit_titulo,
+                      style: sora(19, 700, color: sg.tinta, alto: 1.3),
+                    ),
                     const SizedBox(height: 8),
-                    Text(e.TEXTO_VIGENTE,
-                        style: sora(14, 500, color: sg.tinta2, alto: 1.55)),
+                    Text(
+                      e.TEXTO_VIGENTE,
+                      style: sora(14, 500, color: sg.tinta2, alto: 1.55),
+                    ),
                     const SizedBox(height: 12),
                     Row(
                       children: [
                         Icon(Icons.schedule, size: 14, color: sg.tinta3),
                         const SizedBox(width: 5),
-                        Text(_fecha.format(e.bit_fecha_evento_utc.toLocal()),
-                            style: sora(12, 500, color: sg.tinta3)),
+                        Text(
+                          _fecha.format(e.bit_fecha_evento_utc.toLocal()),
+                          style: sora(12, 500, color: sg.tinta3),
+                        ),
                         if ((e.bit_turno ?? '').isNotEmpty) ...[
                           const SizedBox(width: 8),
-                          Text('· turno ${e.bit_turno}',
-                              style: sora(12, 500, color: sg.tinta3)),
+                          Text(
+                            '· turno ${e.bit_turno}',
+                            style: sora(12, 500, color: sg.tinta3),
+                          ),
                         ],
                       ],
                     ),
@@ -245,24 +284,31 @@ class _EntradaBitacoraScreenState
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          Icon(Icons.person_outline,
-                              size: 14, color: sg.tinta3),
+                          Icon(
+                            Icons.person_outline,
+                            size: 14,
+                            color: sg.tinta3,
+                          ),
                           const SizedBox(width: 5),
                           Expanded(
-                            child: Text(e.USUARIO_NOMBRE!,
-                                style: sora(12, 500, color: sg.tinta3),
-                                overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              e.USUARIO_NOMBRE!,
+                              style: sora(12, 500, color: sg.tinta3),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
                     ],
                     const SizedBox(height: 14),
-                    SgBoton('Rectificar',
-                        icono: Icons.history_edu,
-                        primario: false,
-                        alto: 44,
-                        tamanoTexto: 14,
-                        onTap: () => _rectificar(f)),
+                    SgBoton(
+                      'Rectificar',
+                      icono: Icons.history_edu,
+                      primario: false,
+                      alto: 44,
+                      tamanoTexto: 14,
+                      onTap: () => _rectificar(f),
+                    ),
                   ],
                 ),
               ),
@@ -278,12 +324,16 @@ class _EntradaBitacoraScreenState
                 const SizedBox(height: 10),
                 SgCard(
                   padding: const EdgeInsets.all(14),
-                  child: Text(f.TEXTO_ORIGINAL,
-                      style: sora(13, 500, color: sg.tinta3, alto: 1.5)),
+                  child: Text(
+                    f.TEXTO_ORIGINAL,
+                    style: sora(13, 500, color: sg.tinta3, alto: 1.5),
+                  ),
                 ),
                 const SizedBox(height: 14),
-                SgRotuloConAccion('Correcciones',
-                    accion: '${f.rectificaciones.length}'),
+                SgRotuloConAccion(
+                  'Correcciones',
+                  accion: '${f.rectificaciones.length}',
+                ),
                 const SizedBox(height: 10),
                 for (final r in f.rectificaciones) ...[
                   SgCard(
@@ -291,11 +341,15 @@ class _EntradaBitacoraScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(r.bre_texto_rectificado,
-                            style: sora(13, 500, color: sg.tinta2, alto: 1.5)),
+                        Text(
+                          r.bre_texto_rectificado,
+                          style: sora(13, 500, color: sg.tinta2, alto: 1.5),
+                        ),
                         const SizedBox(height: 8),
-                        Text('Motivo: ${r.bre_motivo}',
-                            style: sora(12, 600, color: sg.ambarTexto)),
+                        Text(
+                          'Motivo: ${r.bre_motivo}',
+                          style: sora(12, 600, color: sg.ambarTexto),
+                        ),
                         const SizedBox(height: 5),
                         Text(
                           '${r.USUARIO_NOMBRE ?? ''} · '
@@ -310,8 +364,10 @@ class _EntradaBitacoraScreenState
               ],
 
               const SizedBox(height: 18),
-              SgRotuloConAccion('Comentarios',
-                  accion: '${f.comentarios.length}'),
+              SgRotuloConAccion(
+                'Comentarios',
+                accion: '${f.comentarios.length}',
+              ),
               const SizedBox(height: 10),
               if (f.comentarios.isEmpty)
                 SgAviso(
@@ -327,8 +383,10 @@ class _EntradaBitacoraScreenState
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(c.bco_texto,
-                            style: sora(13, 500, color: sg.tinta, alto: 1.5)),
+                        Text(
+                          c.bco_texto,
+                          style: sora(13, 500, color: sg.tinta, alto: 1.5),
+                        ),
                         const SizedBox(height: 6),
                         Row(
                           children: [
@@ -364,23 +422,26 @@ class _EntradaBitacoraScreenState
                     titulo: 'Comentario',
                     interpretar: (t) => [
                       CampoDictado(
-                          clave: 'texto',
-                          rotulo: 'Comentario',
-                          valor: InterpreteVoz.normalizar(t)),
+                        clave: 'texto',
+                        rotulo: 'Comentario',
+                        valor: InterpreteVoz.normalizar(t),
+                      ),
                     ],
                   );
                   if (campos == null || campos.isEmpty) return;
-                  setState(() =>
-                      escribirDictado(_comentario, campos.first.valor));
+                  setState(
+                    () => escribirDictado(_comentario, campos.first.valor),
+                  );
                 },
               ),
               const SizedBox(height: 10),
-              SgBoton('Comentar',
-                  icono: Icons.send,
-                  alto: 46,
-                  cargando: _enviando,
-                  onTap:
-                      _comentario.text.trim().isEmpty ? null : _comentar),
+              SgBoton(
+                'Comentar',
+                icono: Icons.send,
+                alto: 46,
+                cargando: _enviando,
+                onTap: _comentario.text.trim().isEmpty ? null : _comentar,
+              ),
             ],
           );
         },

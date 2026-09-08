@@ -80,8 +80,11 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     });
 
     try {
-      await AuthService.instance
-          .iniciar(_login.text, _password.text, recordar: _recordarme);
+      await AuthService.instance.iniciar(
+        _login.text,
+        _password.text,
+        recordar: _recordarme,
+      );
 
       /* EL TOKEN DE `POST /sesion` NO SIEMPRE TRAE CLIENTE
 
@@ -94,12 +97,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       // La sábana baja en segundo plano: la persona ya puede usar la app
       // mientras llega, y sin esto `cache_datos` se quedaba vacía y la app
       // no servía sin señal.
-      unawaited(ref.read(sincronizacionProvider.notifier).asegurar(forzar: true));
+      unawaited(
+        ref.read(sincronizacionProvider.notifier).asegurar(forzar: true),
+      );
 
       if (!mounted) return;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (_) => const HomeScreen()),
-      );
+      Navigator.of(
+        context,
+      ).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
     } on ApiException catch (e) {
       // El mensaje del servidor se muestra tal cual: está redactado para
       // leerse y dice qué hacer. Lo único que decide la app es **de qué
@@ -173,72 +178,79 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   Widget _formulario(AppColors sg, bool malCredencial) => Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      SgCampo(
+        controlador: _login,
+        rotulo: 'Correo',
+        icono: Icons.email_outlined,
+        hint: 'nombre@empresa.cl',
+        teclado: TextInputType.emailAddress,
+        validador: (v) =>
+            (v == null || v.trim().isEmpty) ? 'Escribe tu correo' : null,
+      ),
+      const SizedBox(height: 16),
+      SgCampo(
+        controlador: _password,
+        rotulo: 'Contraseña',
+        // Con error de credenciales el candado se abre: es el mismo gesto
+        // que hace el kit al cambiar el ícono a `lock-alert`.
+        icono: malCredencial ? Icons.lock_open_outlined : Icons.lock_outline,
+        oculto: _oculta,
+        espaciadoTexto: _oculta ? 3 : null,
+        tamanoTexto: _oculta ? 19 : 16,
+        pesoTexto: _oculta ? 600 : 500,
+        onSubmit: (_) => _entrar(),
+        sufijo: SgBotonIcono(
+          _oculta ? Icons.visibility_outlined : Icons.visibility_off_outlined,
+          color: sg.tinta2,
+          onTap: () => setState(() => _oculta = !_oculta),
+        ),
+        validador: (v) {
+          if (v == null || v.isEmpty) return 'Escribe tu contraseña';
+          return malCredencial ? _error : null;
+        },
+      ),
+      const SizedBox(height: 16),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          SgCampo(
-            controlador: _login,
-            rotulo: 'Correo',
-            icono: Icons.email_outlined,
-            hint: 'nombre@empresa.cl',
-            teclado: TextInputType.emailAddress,
-            validador: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Escribe tu correo' : null,
+          SgCasilla(
+            'Recordarme',
+            marcada: _recordarme,
+            onCambio: (v) => setState(() => _recordarme = v),
           ),
-          const SizedBox(height: 16),
-          SgCampo(
-            controlador: _password,
-            rotulo: 'Contraseña',
-            // Con error de credenciales el candado se abre: es el mismo gesto
-            // que hace el kit al cambiar el ícono a `lock-alert`.
-            icono: malCredencial ? Icons.lock_open_outlined : Icons.lock_outline,
-            oculto: _oculta,
-            espaciadoTexto: _oculta ? 3 : null,
-            tamanoTexto: _oculta ? 19 : 16,
-            pesoTexto: _oculta ? 600 : 500,
-            onSubmit: (_) => _entrar(),
-            sufijo: SgBotonIcono(
-              _oculta ? Icons.visibility_outlined : Icons.visibility_off_outlined,
-              color: sg.tinta2,
-              onTap: () => setState(() => _oculta = !_oculta),
+          SgEnlace(
+            '¿Olvidaste tu contraseña?',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => const RecuperarClaveScreen()),
             ),
-            validador: (v) {
-              if (v == null || v.isEmpty) return 'Escribe tu contraseña';
-              return malCredencial ? _error : null;
-            },
           ),
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              SgCasilla('Recordarme',
-                  marcada: _recordarme,
-                  onCambio: (v) => setState(() => _recordarme = v)),
-              SgEnlace('¿Olvidaste tu contraseña?',
-                  onTap: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const RecuperarClaveScreen()),
-                      )),
-            ],
-          ),
-          const SizedBox(height: 16),
-          SgBoton('Ingresar',
-              icono: Icons.arrow_forward,
-              iconoAlFinal: true,
-              cargando: _cargando,
-              onTap: _entrar),
-          const SizedBox(height: 16),
-          SgBoton('Ingresar con huella',
-              icono: Icons.fingerprint,
-              primario: false,
-              colorIcono: sg.acentoTexto,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content:
-                            Text('El acceso biométrico llega más adelante.')),
-                  )),
         ],
-      );
+      ),
+      const SizedBox(height: 16),
+      SgBoton(
+        'Ingresar',
+        icono: Icons.arrow_forward,
+        iconoAlFinal: true,
+        cargando: _cargando,
+        onTap: _entrar,
+      ),
+      const SizedBox(height: 16),
+      SgBoton(
+        'Ingresar con huella',
+        icono: Icons.fingerprint,
+        primario: false,
+        colorIcono: sg.acentoTexto,
+        onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('El acceso biométrico llega más adelante.'),
+          ),
+        ),
+      ),
+    ],
+  );
 }
 
 /// Los tres estados que no son «escribiste mal».
@@ -256,21 +268,25 @@ class _TarjetaFalla extends StatelessWidget {
 
     final (IconData icono, Color color, String titulo) = switch (falla) {
       _Falla.bloqueada => (
-          Icons.lock_clock,
-          sg.rojoTexto,
-          'Cuenta bloqueada temporalmente'
-        ),
+        Icons.lock_clock,
+        sg.rojoTexto,
+        'Cuenta bloqueada temporalmente',
+      ),
       _Falla.deshabilitada => (
-          Icons.person_off_outlined,
-          sg.tinta2,
-          'Cuenta deshabilitada'
-        ),
+        Icons.person_off_outlined,
+        sg.tinta2,
+        'Cuenta deshabilitada',
+      ),
       _Falla.suscripcion => (
-          Icons.credit_card_off_outlined,
-          sg.ambarTexto,
-          'Suscripción vencida'
-        ),
-      _Falla.credenciales => (Icons.error_outline, sg.rojoTexto, 'No se pudo entrar'),
+        Icons.credit_card_off_outlined,
+        sg.ambarTexto,
+        'Suscripción vencida',
+      ),
+      _Falla.credenciales => (
+        Icons.error_outline,
+        sg.rojoTexto,
+        'No se pudo entrar',
+      ),
     };
 
     return SgCard(
@@ -280,14 +296,16 @@ class _TarjetaFalla extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SgIconoCuadro(icono,
-                  color: color,
-                  lado: 44,
-                  tamanoIcono: 22,
-                  // La deshabilitada no es una alarma: es un hecho
-                  // administrativo, y pintarla de rojo la haría parecer un
-                  // fallo del teléfono.
-                  fondo: falla == _Falla.deshabilitada ? sg.up2 : null),
+              SgIconoCuadro(
+                icono,
+                color: color,
+                lado: 44,
+                tamanoIcono: 22,
+                // La deshabilitada no es una alarma: es un hecho
+                // administrativo, y pintarla de rojo la haría parecer un
+                // fallo del teléfono.
+                fondo: falla == _Falla.deshabilitada ? sg.up2 : null,
+              ),
               const SizedBox(width: 13),
               Expanded(
                 child: Column(
@@ -295,8 +313,10 @@ class _TarjetaFalla extends StatelessWidget {
                   children: [
                     Text(titulo, style: sora(17, 600, color: sg.tinta)),
                     const SizedBox(height: 7),
-                    Text(mensaje,
-                        style: sora(13, 500, color: sg.tinta2, alto: 1.55)),
+                    Text(
+                      mensaje,
+                      style: sora(13, 500, color: sg.tinta2, alto: 1.55),
+                    ),
                   ],
                 ),
               ),
@@ -318,7 +338,8 @@ class _TarjetaFalla extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (_) => const PendientesScreen()),
+                          builder: (_) => const PendientesScreen(),
+                        ),
                       ),
                     ),
             ),
@@ -339,15 +360,15 @@ class _AvisoCola extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<int>(
-        valueListenable: OutboxService.instance.pendientes,
-        builder: (_, n, _) => n == 0
-            ? const SizedBox.shrink()
-            : SgAviso(
-                'Tienes $n ${n == 1 ? "registro guardado" : "registros guardados"} '
-                'en este teléfono. Se conservan y se enviarán cuando vuelvas a '
-                'entrar con conexión.',
-                icono: Icons.cloud_sync_outlined,
-                color: context.sg.acentoTexto,
-              ),
-      );
+    valueListenable: OutboxService.instance.pendientes,
+    builder: (_, n, _) => n == 0
+        ? const SizedBox.shrink()
+        : SgAviso(
+            'Tienes $n ${n == 1 ? "registro guardado" : "registros guardados"} '
+            'en este teléfono. Se conservan y se enviarán cuando vuelvas a '
+            'entrar con conexión.',
+            icono: Icons.cloud_sync_outlined,
+            color: context.sg.acentoTexto,
+          ),
+  );
 }

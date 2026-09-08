@@ -25,15 +25,14 @@ Future<List<CampoDictado>?> mostrarPanelVoz(
   BuildContext context, {
   required String titulo,
   required List<CampoDictado> Function(String texto) interpretar,
-}) =>
-    showModalBottomSheet<List<CampoDictado>>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      isDismissible: false,
-      enableDrag: false,
-      builder: (_) => _PanelVoz(titulo: titulo, interpretar: interpretar),
-    );
+}) => showModalBottomSheet<List<CampoDictado>>(
+  context: context,
+  isScrollControlled: true,
+  backgroundColor: Colors.transparent,
+  isDismissible: false,
+  enableDrag: false,
+  builder: (_) => _PanelVoz(titulo: titulo, interpretar: interpretar),
+);
 
 class _PanelVoz extends StatefulWidget {
   const _PanelVoz({required this.titulo, required this.interpretar});
@@ -71,14 +70,16 @@ class _PanelVozState extends State<_PanelVoz> {
       builder: (_, estado, _) => ValueListenableBuilder<String>(
         valueListenable: _voz.texto,
         builder: (_, texto, _) {
-          final campos =
-              texto.trim().isEmpty ? const <CampoDictado>[] : widget.interpretar(texto);
+          final campos = texto.trim().isEmpty
+              ? const <CampoDictado>[]
+              : widget.interpretar(texto);
 
           return Container(
             decoration: BoxDecoration(
               color: sg.card,
-              borderRadius:
-                  const BorderRadius.vertical(top: Radius.circular(30)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(30),
+              ),
             ),
             child: SafeArea(
               top: false,
@@ -158,17 +159,17 @@ class _Cabecera extends StatelessWidget {
 
     final (String titulo, String detalle) = switch (estado) {
       EstadoVoz.escuchando => (
-          'Escuchando…',
-          'Habla con normalidad. Toca detener al terminar.'
-        ),
+        'Escuchando…',
+        'Habla con normalidad. Toca detener al terminar.',
+      ),
       EstadoVoz.transcrito => (
-          'Listo',
-          'Revisa lo que entendió antes de aplicarlo.'
-        ),
+        'Listo',
+        'Revisa lo que entendió antes de aplicarlo.',
+      ),
       EstadoVoz.noDisponible => (
-          'Sin dictado',
-          motivo ?? 'Este teléfono no tiene reconocimiento de voz.'
-        ),
+        'Sin dictado',
+        motivo ?? 'Este teléfono no tiene reconocimiento de voz.',
+      ),
       _ => ('Preparando el micrófono…', 'Un momento.'),
     };
 
@@ -194,17 +195,18 @@ class _Cabecera extends StatelessWidget {
             children: [
               Text(titulo, style: sora(17, 600, color: sg.tinta)),
               const SizedBox(height: 3),
-              Text(detalle,
-                  style: sora(12, 500, color: sg.tinta3, alto: 1.4)),
+              Text(detalle, style: sora(12, 500, color: sg.tinta3, alto: 1.4)),
             ],
           ),
         ),
         const SizedBox(width: 10),
-        SgBotonIcono(Icons.close,
-            fondo: sg.up,
-            color: sg.tinta,
-            tamano: 20,
-            onTap: () => Navigator.of(context).pop()),
+        SgBotonIcono(
+          Icons.close,
+          fondo: sg.up,
+          color: sg.tinta,
+          tamano: 20,
+          onTap: () => Navigator.of(context).pop(),
+        ),
       ],
     );
   }
@@ -223,7 +225,19 @@ class _Onda extends StatelessWidget {
 
   /// Alturas de reposo, para que la onda no sea una línea plana.
   static const _base = [
-    0.22, 0.44, 0.70, 1.00, 0.62, 0.86, 0.38, 0.56, 0.74, 0.30, 0.48, 0.26, 0.18
+    0.22,
+    0.44,
+    0.70,
+    1.00,
+    0.62,
+    0.86,
+    0.38,
+    0.56,
+    0.74,
+    0.30,
+    0.48,
+    0.26,
+    0.18,
   ];
 
   @override
@@ -247,8 +261,7 @@ class _Onda extends StatelessWidget {
                     end: escuchando
                         // El centro reacciona más que los extremos: así la
                         // onda se lee como una voz y no como un ecualizador.
-                        ? (_base[i] * (0.28 + nivel * 0.85))
-                            .clamp(0.14, 1.0)
+                        ? (_base[i] * (0.28 + nivel * 0.85)).clamp(0.14, 1.0)
                         : _base[i] * 0.35,
                   ),
                   builder: (_, alto, _) => FractionallySizedBox(
@@ -295,13 +308,14 @@ class _Transcripcion extends StatelessWidget {
               Expanded(child: SgRotulo('Transcripción', color: sg.tinta3)),
               Icon(Icons.edit_outlined, size: 14, color: sg.primarioTexto),
               const SizedBox(width: 6),
-              Text('Editable al aplicar',
-                  style: sora(12, 600, color: sg.primarioTexto)),
+              Text(
+                'Editable al aplicar',
+                style: sora(12, 600, color: sg.primarioTexto),
+              ),
             ],
           ),
           const SizedBox(height: 8),
-          Text('“$texto”',
-              style: sora(15, 500, color: sg.tinta, alto: 1.6)),
+          Text('“$texto”', style: sora(15, 500, color: sg.tinta, alto: 1.6)),
         ],
       ),
     );
@@ -328,9 +342,7 @@ class _Campos extends StatelessWidget {
           for (var i = 0; i < campos.length; i++)
             DecoratedBox(
               decoration: BoxDecoration(
-                border: i == 0
-                    ? null
-                    : Border(top: BorderSide(color: sg.div)),
+                border: i == 0 ? null : Border(top: BorderSide(color: sg.div)),
               ),
               child: _FilaCampo(campo: campos[i]),
             ),
@@ -369,8 +381,10 @@ class _FilaCampo extends StatelessWidget {
                 children: [
                   Text(campo.rotulo, style: sora(14, 500, color: sg.tinta2)),
                   const SizedBox(height: 3),
-                  Text(campo.valor,
-                      style: sora(14, 500, color: sg.tinta, alto: 1.45)),
+                  Text(
+                    campo.valor,
+                    style: sora(14, 500, color: sg.tinta, alto: 1.45),
+                  ),
                 ],
               ),
             ),
@@ -388,10 +402,12 @@ class _FilaCampo extends StatelessWidget {
             Icon(icono, size: 19, color: color),
             const SizedBox(width: 11),
             Expanded(
-                child: Text(campo.rotulo,
-                    style: sora(14, 500, color: sg.tinta2))),
-            Text(campo.valor,
-                style: sora(14, 600, color: sg.tinta, tabular: true)),
+              child: Text(campo.rotulo, style: sora(14, 500, color: sg.tinta2)),
+            ),
+            Text(
+              campo.valor,
+              style: sora(14, 600, color: sg.tinta, tabular: true),
+            ),
             if (campo.unidad != null) ...[
               const SizedBox(width: 6),
               SgUnidad(campo.unidad!),
@@ -428,30 +444,41 @@ class _Acciones extends StatelessWidget {
     final escuchando = estado == EstadoVoz.escuchando;
 
     if (estado == EstadoVoz.noDisponible) {
-      return SgBoton('Escribir a mano',
-          icono: Icons.keyboard_outlined,
-          primario: false,
-          onTap: () => Navigator.of(context).pop());
+      return SgBoton(
+        'Escribir a mano',
+        icono: Icons.keyboard_outlined,
+        primario: false,
+        onTap: () => Navigator.of(context).pop(),
+      );
     }
 
     return Row(
       children: [
         Expanded(
           child: escuchando
-              ? SgBoton('Detener',
+              ? SgBoton(
+                  'Detener',
                   icono: Icons.stop_circle_outlined,
                   color: sg.tinte(sg.rojoTexto),
                   colorTexto: sg.rojoTexto,
                   colorIcono: sg.rojoTexto,
-                  onTap: onDetener)
-              : SgBoton('Aplicar valores',
+                  onTap: onDetener,
+                )
+              : SgBoton(
+                  'Aplicar valores',
                   icono: Icons.check,
-                  onTap: hayCampos ? onAplicar : null),
+                  onTap: hayCampos ? onAplicar : null,
+                ),
         ),
         const SizedBox(width: 9),
-        SgBotonIcono(Icons.restart_alt,
-            fondo: sg.up, color: sg.tinta, lado: 52, tamano: 21,
-            onTap: onReintentar),
+        SgBotonIcono(
+          Icons.restart_alt,
+          fondo: sg.up,
+          color: sg.tinta,
+          lado: 52,
+          tamano: 21,
+          onTap: onReintentar,
+        ),
       ],
     );
   }
@@ -496,8 +523,10 @@ class SgMicrofonoCampo extends StatelessWidget {
     this.unidadEsperada,
     this.soloTexto = false,
     this.lado = 44,
-  }) : assert(onValor != null || onCampos != null,
-            'Un micrófono sin destino no sirve de nada.');
+  }) : assert(
+         onValor != null || onCampos != null,
+         'Un micrófono sin destino no sirve de nada.',
+       );
 
   final String rotulo;
 
@@ -533,12 +562,16 @@ class SgMicrofonoCampo extends StatelessWidget {
               interpretar: (t) => soloTexto
                   ? [
                       CampoDictado(
-                          clave: 'texto',
-                          rotulo: rotulo,
-                          valor: InterpreteVoz.normalizar(t))
+                        clave: 'texto',
+                        rotulo: rotulo,
+                        valor: InterpreteVoz.normalizar(t),
+                      ),
                     ]
-                  : InterpreteVoz.paraMedicion(t,
-                      rotulo: rotulo, unidadEsperada: unidadEsperada),
+                  : InterpreteVoz.paraMedicion(
+                      t,
+                      rotulo: rotulo,
+                      unidadEsperada: unidadEsperada,
+                    ),
             );
             if (campos == null || campos.isEmpty) return;
 
@@ -557,8 +590,11 @@ class SgMicrofonoCampo extends StatelessWidget {
               onValor!(principal.valor);
             }
           },
-          child: Icon(Icons.mic,
-              size: max(18, lado * 0.45), color: sg.primarioTexto),
+          child: Icon(
+            Icons.mic,
+            size: max(18, lado * 0.45),
+            color: sg.primarioTexto,
+          ),
         ),
       ),
     );

@@ -107,11 +107,17 @@ class AppColors extends ThemeExtension<AppColors> {
   List<BoxShadow> get e1 => esOscuro
       ? const [
           BoxShadow(
-              color: Color(0xB3000000), blurRadius: 10, offset: Offset(0, 2)),
+            color: Color(0xB3000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
         ]
       : const [
           BoxShadow(
-              color: Color(0x120B0F1A), blurRadius: 3, offset: Offset(0, 1)),
+            color: Color(0x120B0F1A),
+            blurRadius: 3,
+            offset: Offset(0, 1),
+          ),
         ];
 
   /// La sombra de nivel 2: lo que tiene que despegarse —el hero, la tarjeta
@@ -119,11 +125,17 @@ class AppColors extends ThemeExtension<AppColors> {
   List<BoxShadow> get e2 => esOscuro
       ? const [
           BoxShadow(
-              color: Color(0xBF000000), blurRadius: 30, offset: Offset(0, 12)),
+            color: Color(0xBF000000),
+            blurRadius: 30,
+            offset: Offset(0, 12),
+          ),
         ]
       : const [
           BoxShadow(
-              color: Color(0x380B0F1A), blurRadius: 26, offset: Offset(0, 12)),
+            color: Color(0x380B0F1A),
+            blurRadius: 26,
+            offset: Offset(0, 12),
+          ),
         ];
 
   static const oscuro = AppColors(
@@ -216,8 +228,7 @@ class AppColors extends ThemeExtension<AppColors> {
 
 /// El atajo de toda pantalla: `context.sg`.
 extension SgContexto on BuildContext {
-  AppColors get sg =>
-      Theme.of(this).extension<AppColors>() ?? AppColors.oscuro;
+  AppColors get sg => Theme.of(this).extension<AppColors>() ?? AppColors.oscuro;
 }
 
 /// Un estilo de Sora.
@@ -234,20 +245,19 @@ TextStyle sora(
   double? espaciado,
   bool tabular = false,
   TextDecoration? decoracion,
-}) =>
-    TextStyle(
-      fontFamily: 'Sora',
-      fontSize: tamano,
-      fontWeight: FontWeight.values[(peso ~/ 100) - 1],
-      fontVariations: [FontVariation('wght', peso.toDouble())],
-      color: color,
-      height: alto,
-      letterSpacing: espaciado,
-      decoration: decoracion,
-      // Cifras de ancho fijo. Sin esto, un contador que sube de 46 a 47 mueve
-      // todo lo que tiene al lado cada vez que cambia.
-      fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
-    );
+}) => TextStyle(
+  fontFamily: 'Sora',
+  fontSize: tamano,
+  fontWeight: FontWeight.values[(peso ~/ 100) - 1],
+  fontVariations: [FontVariation('wght', peso.toDouble())],
+  color: color,
+  height: alto,
+  letterSpacing: espaciado,
+  decoration: decoracion,
+  // Cifras de ancho fijo. Sin esto, un contador que sube de 46 a 47 mueve
+  // todo lo que tiene al lado cada vez que cambia.
+  fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
+);
 
 /// El tema de SIGMA, en sus dos modos.
 ///
@@ -306,8 +316,9 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         modalBarrierColor: sg.scrim,
         shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SgRadius.hoja),
+          ),
         ),
       ),
       dialogTheme: DialogThemeData(

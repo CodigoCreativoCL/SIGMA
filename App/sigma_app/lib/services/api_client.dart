@@ -105,12 +105,12 @@ class ApiClient {
   void cerrar() => _cliente.close();
 
   Map<String, String> _headers() => {
-        HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
-        HttpHeaders.acceptHeader: 'application/json',
-        // "Bearer" es el estándar. La API acepta además "Base" por herencia
-        // de FacilityGes, pero acá se usa el correcto.
-        if (token != null) HttpHeaders.authorizationHeader: 'Bearer $token',
-      };
+    HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
+    HttpHeaders.acceptHeader: 'application/json',
+    // "Bearer" es el estándar. La API acepta además "Base" por herencia
+    // de FacilityGes, pero acá se usa el correcto.
+    if (token != null) HttpHeaders.authorizationHeader: 'Bearer $token',
+  };
 
   /// Las lecturas se reintentan una vez ante un fallo de red.
   ///
@@ -143,8 +143,12 @@ class ApiClient {
 
   Future<dynamic> delete(String ruta) => _enviar('DELETE', ruta);
 
-  Future<dynamic> _enviar(String metodo, String ruta,
-      {Object? cuerpo, Map<String, dynamic>? query}) async {
+  Future<dynamic> _enviar(
+    String metodo,
+    String ruta, {
+    Object? cuerpo,
+    Map<String, dynamic>? query,
+  }) async {
     if (!ApiConstants.configurada) {
       throw const ApiException(
         'La app no tiene configurado el servidor. Falta API_BASE_URL '
@@ -187,16 +191,20 @@ class ApiClient {
 
       final http.Response r = switch (metodo) {
         'GET' => await _cliente.get(uri, headers: cabeceras).timeout(tiempo),
-        'POST' => await _cliente
-            .post(uri, headers: cabeceras, body: cuerpoJson)
-            .timeout(tiempo),
-        'PUT' => await _cliente
-            .put(uri, headers: cabeceras, body: cuerpoJson)
-            .timeout(tiempo),
+        'POST' =>
+          await _cliente
+              .post(uri, headers: cabeceras, body: cuerpoJson)
+              .timeout(tiempo),
+        'PUT' =>
+          await _cliente
+              .put(uri, headers: cabeceras, body: cuerpoJson)
+              .timeout(tiempo),
         'DELETE' =>
           await _cliente.delete(uri, headers: cabeceras).timeout(tiempo),
-        _ => throw ApiException('Método no soportado: $metodo',
-            esDeNegocio: false),
+        _ => throw ApiException(
+          'Método no soportado: $metodo',
+          esDeNegocio: false,
+        ),
       };
 
       if (ApiConstants.logHttp) debugPrint('[ApiClient] ${r.statusCode}');
@@ -210,8 +218,10 @@ class ApiClient {
       rethrow;
     } catch (e) {
       // Timeout entra por acá. Es transitorio: quien llame decide reintentar.
-      throw ApiException('No se pudo contactar al servidor.',
-          esDeNegocio: false);
+      throw ApiException(
+        'No se pudo contactar al servidor.',
+        esDeNegocio: false,
+      );
     }
   }
 

@@ -111,21 +111,27 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
       );
 
       SyncService.instance.despacharAhora();
+      if (!mounted) return;
       ref.invalidate(permisosTrabajoProvider);
       ref.invalidate(permisosVigentesProvider);
 
       if (!mounted) return;
       navegador.pop(true);
-      mensajero.showSnackBar(SnackBar(
-        content: Text(SyncService.instance.enLinea.value
-            ? 'Permiso solicitado.'
-            : 'Guardado en el teléfono. Se envía al volver la señal.'),
-      ));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            SyncService.instance.enLinea.value
+                ? 'Permiso solicitado.'
+                : 'Guardado en el teléfono. Se envía al volver la señal.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      mensajero
-          .showSnackBar(SnackBar(content: Text('No se pudo registrar: $e')));
+      mensajero.showSnackBar(
+        SnackBar(content: Text('No se pudo registrar: $e')),
+      );
     }
   }
 
@@ -145,8 +151,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ),
         ],
@@ -160,8 +169,9 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
         ),
       ),
       body: ListView(
-        padding:
-            context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        ),
         children: [
           if (widget.ordenNumero != null) ...[
             SgCard(
@@ -171,9 +181,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                   Icon(Icons.assignment_outlined, size: 19, color: sg.tinta2),
                   const SizedBox(width: 11),
                   Expanded(
-                    child: Text('OT ${widget.ordenNumero}',
-                        style: sora(14, 600, color: sg.tinta),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      'OT ${widget.ordenNumero}',
+                      style: sora(14, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -199,9 +211,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
               runSpacing: 8,
               children: [
                 for (final t in lista)
-                  SgChip(t.nombre,
-                      elegido: _tipo == t.id,
-                      onTap: () => setState(() => _tipo = t.id)),
+                  SgChip(
+                    t.nombre,
+                    elegido: _tipo == t.id,
+                    onTap: () => setState(() => _tipo = t.id),
+                  ),
               ],
             ),
           ),
@@ -222,9 +236,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                 titulo: 'Número del permiso',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'numero',
-                      rotulo: 'Número',
-                      valor: InterpreteVoz.normalizar(t).toUpperCase()),
+                    clave: 'numero',
+                    rotulo: 'Número',
+                    valor: InterpreteVoz.normalizar(t).toUpperCase(),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -284,9 +299,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                 titulo: 'Observación',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'observacion',
-                      rotulo: 'Observación',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'observacion',
+                    rotulo: 'Observación',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -323,8 +339,13 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
     );
     if (hora == null || !mounted) return;
 
-    final elegido =
-        DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
+    final elegido = DateTime(
+      dia.year,
+      dia.month,
+      dia.day,
+      hora.hour,
+      hora.minute,
+    );
 
     setState(() {
       if (inicio) {

@@ -38,10 +38,7 @@ class SigmaAiScreen extends ConsumerWidget {
       // tipografía de la app y el badge—, que es justo lo que una identidad
       // propia no debe hacer. `titulo` se conserva como etiqueta para el
       // lector de pantalla, que no puede leer un SVG.
-      appBar: const SgBarra(
-        'SIGMA AI',
-        tituloWidget: SgLogoIa(alto: 26),
-      ),
+      appBar: const SgBarra('SIGMA AI', tituloWidget: SgLogoIa(alto: 26)),
       body: EstadoAsync<List<Prediccion>>(
         valor: predicciones,
         onReintentar: () {
@@ -54,7 +51,9 @@ class SigmaAiScreen extends ConsumerWidget {
             ref.invalidate(vigiladosProvider);
           },
           child: ListView(
-            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 28)),
+            padding: context.conBarraSistema(
+              const EdgeInsets.fromLTRB(16, 12, 16, 28),
+            ),
             children: [
               if (lista.isEmpty)
                 const _SinPredicciones()
@@ -65,10 +64,7 @@ class SigmaAiScreen extends ConsumerWidget {
                 ),
                 const SizedBox(height: 10),
                 for (final p in lista) ...[
-                  _Tarjeta(
-                    p: p,
-                    onAbrir: () => _abrir(context, p),
-                  ),
+                  _Tarjeta(p: p, onAbrir: () => _abrir(context, p)),
                   const SizedBox(height: 11),
                 ],
               ],
@@ -88,10 +84,9 @@ class SigmaAiScreen extends ConsumerWidget {
     );
   }
 
-  void _abrir(BuildContext context, Prediccion p) =>
-      Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => AnalisisScreen(prediccionId: p.pre_id),
-      ));
+  void _abrir(BuildContext context, Prediccion p) => Navigator.of(context).push(
+    MaterialPageRoute(builder: (_) => AnalisisScreen(prediccionId: p.pre_id)),
+  );
 }
 
 // ============================================================================
@@ -113,8 +108,10 @@ class _SinPredicciones extends StatelessWidget {
               const SgSimboloIa(SgIconoIa.analizando, lado: 32),
               const SizedBox(width: 11),
               Expanded(
-                child: Text('Nada que anunciar hoy',
-                    style: sora(16, 600, color: sg.tinta)),
+                child: Text(
+                  'Nada que anunciar hoy',
+                  style: sora(16, 600, color: sg.tinta),
+                ),
               ),
             ],
           ),
@@ -153,8 +150,8 @@ class _Tarjeta extends StatelessWidget {
     final color = p.critica
         ? sg.rojoTexto
         : p.alta
-            ? sg.ambarTexto
-            : sg.acentoTexto;
+        ? sg.ambarTexto
+        : sg.acentoTexto;
 
     return SgCard(
       padding: const EdgeInsets.all(14),
@@ -168,13 +165,18 @@ class _Tarjeta extends StatelessWidget {
             children: [
               if (p.ACTIVO_FOTO != null)
                 SigmaImagen(
-                    ruta: p.ACTIVO_FOTO!,
-                    ancho: 52,
-                    alto: 52,
-                    radio: SgRadius.campo)
+                  ruta: p.ACTIVO_FOTO!,
+                  ancho: 52,
+                  alto: 52,
+                  radio: SgRadius.campo,
+                )
               else
-                SgIconoCuadro(Icons.precision_manufacturing_outlined,
-                    color: color, lado: 52, tamanoIcono: 24),
+                SgIconoCuadro(
+                  Icons.precision_manufacturing_outlined,
+                  color: color,
+                  lado: 52,
+                  tamanoIcono: 24,
+                ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -185,21 +187,31 @@ class _Tarjeta extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         if (p.SEVERIDAD_NOMBRE != null)
-                          SgBadge(p.SEVERIDAD_NOMBRE!,
-                              color: color, chico: true),
+                          SgBadge(
+                            p.SEVERIDAD_NOMBRE!,
+                            color: color,
+                            chico: true,
+                          ),
                         if (p.tieneOrden)
-                          SgBadge('OT ${p.ORDEN_CORRELATIVO}',
-                              color: sg.verdeTexto,
-                              icono: Icons.assignment_turned_in_outlined,
-                              chico: true),
+                          SgBadge(
+                            'OT ${p.ORDEN_CORRELATIVO}',
+                            color: sg.verdeTexto,
+                            icono: Icons.assignment_turned_in_outlined,
+                            chico: true,
+                          ),
                         if (p.revisada && !p.tieneOrden)
-                          SgBadge(p.ESTADO_NOMBRE ?? 'Revisada',
-                              color: sg.tinta2, chico: true),
+                          SgBadge(
+                            p.ESTADO_NOMBRE ?? 'Revisada',
+                            color: sg.tinta2,
+                            chico: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(p.ACTIVO_NOMBRE,
-                        style: sora(15, 600, color: sg.tinta, alto: 1.3)),
+                    Text(
+                      p.ACTIVO_NOMBRE,
+                      style: sora(15, 600, color: sg.tinta, alto: 1.3),
+                    ),
                     if (p.donde.isNotEmpty)
                       Text(p.donde, style: sora(11, 500, color: sg.tinta3)),
                   ],
@@ -213,12 +225,14 @@ class _Tarjeta extends StatelessWidget {
             p.pre_dia_restante == null
                 ? '${p.VARIABLE_NOMBRE ?? 'La variable'} en alza'
                 : '${p.VARIABLE_NOMBRE ?? 'La variable'} llega al límite '
-                    'en ${p.pre_dia_restante} días',
+                      'en ${p.pre_dia_restante} días',
             style: sora(14, 600, color: sg.tinta2, alto: 1.4),
           ),
           const SizedBox(height: 3),
-          Text('si la tendencia se mantiene',
-              style: sora(11, 500, color: sg.tinta3)),
+          Text(
+            'si la tendencia se mantiene',
+            style: sora(11, 500, color: sg.tinta3),
+          ),
 
           const SizedBox(height: 11),
           Row(
@@ -284,15 +298,16 @@ class _Barra extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.baseline,
           textBaseline: TextBaseline.alphabetic,
           children: [
-            Text(_num(actual),
-                style: sora(17, 600, color: sg.tinta, tabular: true)),
+            Text(
+              _num(actual),
+              style: sora(17, 600, color: sg.tinta, tabular: true),
+            ),
             if (unidad.isNotEmpty) ...[
               const SizedBox(width: 3),
               SgUnidad(unidad),
             ],
             const SizedBox(width: 6),
-            Text('de ${_num(critico)}',
-                style: sora(11, 500, color: sg.tinta3)),
+            Text('de ${_num(critico)}', style: sora(11, 500, color: sg.tinta3)),
           ],
         ),
         const SizedBox(height: 6),
@@ -329,8 +344,9 @@ class _Vigilados extends StatelessWidget {
   Widget build(BuildContext context) {
     final sg = context.sg;
 
-    final sinDatos =
-        lista.where((v) => v.sinLecturas || v.faltanLecturas).toList();
+    final sinDatos = lista
+        .where((v) => v.sinLecturas || v.faltanLecturas)
+        .toList();
     final tranquilos = lista.where((v) => v.tranquilo).toList();
     final atrasados = tranquilos.where((v) => v.ATRASADA).toList();
 
@@ -343,9 +359,7 @@ class _Vigilados extends StatelessWidget {
           SgCard(
             padding: const EdgeInsets.symmetric(vertical: 4),
             child: Column(
-              children: [
-                for (final v in sinDatos) _Fila(v: v, alerta: true),
-              ],
+              children: [for (final v in sinDatos) _Fila(v: v, alerta: true)],
             ),
           ),
           const SizedBox(height: 9),
@@ -376,7 +390,7 @@ class _Vigilados extends StatelessWidget {
               atrasados.length == 1
                   ? 'Uno de ellos lleva más tiempo sin medirse del que debería.'
                   : '${atrasados.length} de ellos llevan más tiempo sin '
-                      'medirse del que deberían.',
+                        'medirse del que deberían.',
               icono: Icons.schedule,
               color: sg.ambarTexto,
               tenido: true,
@@ -416,20 +430,26 @@ class _Fila extends StatelessWidget {
                 Row(
                   children: [
                     Flexible(
-                      child: Text(v.ACTIVO_NOMBRE,
-                          style: sora(13, 600, color: sg.tinta),
-                          overflow: TextOverflow.ellipsis),
+                      child: Text(
+                        v.ACTIVO_NOMBRE,
+                        style: sora(13, 600, color: sg.tinta),
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     ),
                     if (v.VARIABLE_NOMBRE != null) ...[
                       const SizedBox(width: 6),
-                      Text('· ${v.VARIABLE_NOMBRE}',
-                          style: sora(11, 500, color: sg.tinta3)),
+                      Text(
+                        '· ${v.VARIABLE_NOMBRE}',
+                        style: sora(11, 500, color: sg.tinta3),
+                      ),
                     ],
                   ],
                 ),
                 const SizedBox(height: 2),
-                Text(v.explicacion,
-                    style: sora(11, 500, color: sg.tinta3, alto: 1.4)),
+                Text(
+                  v.explicacion,
+                  style: sora(11, 500, color: sg.tinta3, alto: 1.4),
+                ),
               ],
             ),
           ),

@@ -72,8 +72,7 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
     WidgetsBinding.instance.addObserver(this);
     // También al montar: si la app murió con la cámara abierta, vuelve por
     // este camino y no por el de `resumed`.
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _recuperarPerdida());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recuperarPerdida());
   }
 
   @override
@@ -121,8 +120,10 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
               SgRotulo(widget.obligatoria ? 'FOTO OBLIGATORIA' : 'FOTOS'),
               const Spacer(),
               if (!vacio)
-                Text('${fotos.length + _subiendo.length + _enCola.length}',
-                    style: sora(12, 600, color: sg.tinta3)),
+                Text(
+                  '${fotos.length + _subiendo.length + _enCola.length}',
+                  style: sora(12, 600, color: sg.tinta3),
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -132,9 +133,12 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
               widget.obligatoria
                   ? 'Esta tarea pide una foto antes de cerrarla.'
                   : 'Una foto ahorra tener que explicar después qué se encontró.',
-              style: sora(13, 500,
-                  color: widget.obligatoria ? sg.ambarTexto : sg.tinta3,
-                  alto: 1.45),
+              style: sora(
+                13,
+                500,
+                color: widget.obligatoria ? sg.ambarTexto : sg.tinta3,
+                alto: 1.45,
+              ),
             )
           else
             SizedBox(
@@ -252,8 +256,11 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
         _subiendo.remove(foto);
         _enCola.add(foto);
       });
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Sin señal: la foto queda guardada y se envía sola.')));
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('Sin señal: la foto queda guardada y se envía sola.'),
+        ),
+      );
     }
   }
 }
@@ -265,15 +272,10 @@ class _Miniatura extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 92,
-        height: 92,
-        child: SigmaImagen(
-          ruta: ruta,
-          ancho: 92,
-          alto: 92,
-          radio: SgRadius.campo,
-        ),
-      );
+    width: 92,
+    height: 92,
+    child: SigmaImagen(ruta: ruta, ancho: 92, alto: 92, radio: SgRadius.campo),
+  );
 }
 
 /// La que todavía va en camino: se ve la foto real del teléfono con un velo y
@@ -307,8 +309,7 @@ class _EnCola extends StatelessWidget {
               right: 5,
               bottom: 5,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: sg.scrim,
                   borderRadius: BorderRadius.circular(SgRadius.pill),
@@ -316,8 +317,7 @@ class _EnCola extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.cloud_off_outlined,
-                        size: 12, color: sg.tinta2),
+                    Icon(Icons.cloud_off_outlined, size: 12, color: sg.tinta2),
                     const SizedBox(width: 4),
                     Text('En cola', style: sora(10, 600, color: sg.tinta2)),
                   ],
@@ -355,7 +355,9 @@ class _Subiendo extends StatelessWidget {
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.4, color: sg.primarioTexto),
+                  strokeWidth: 2.4,
+                  color: sg.primarioTexto,
+                ),
               ),
             ),
           ],

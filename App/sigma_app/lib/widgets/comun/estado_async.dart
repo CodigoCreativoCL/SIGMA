@@ -112,14 +112,18 @@ class _Error extends StatelessWidget {
         children: [
           Icon(icono, size: 30, color: color),
           const SizedBox(height: 12),
-          Text(mensaje,
-              textAlign: TextAlign.center,
-              style: sora(14, 500, color: color, alto: 1.5)),
+          Text(
+            mensaje,
+            textAlign: TextAlign.center,
+            style: sora(14, 500, color: color, alto: 1.5),
+          ),
           if (esRed) ...[
             const SizedBox(height: 6),
-            Text('Se muestra lo último que se descargó.',
-                textAlign: TextAlign.center,
-                style: sora(12.5, 400, color: sg.tinta3)),
+            Text(
+              'Se muestra lo último que se descargó.',
+              textAlign: TextAlign.center,
+              style: sora(12.5, 400, color: sg.tinta3),
+            ),
           ],
           // Ante un 403 no se ofrece reintentar: el permiso no va a aparecer
           // solo, y un botón que siempre falla es un botón roto.
@@ -168,21 +172,22 @@ class EstadoVacio extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
-              color: sg.up,
-              shape: BoxShape.circle,
-            ),
+            decoration: BoxDecoration(color: sg.up, shape: BoxShape.circle),
             child: Icon(icono, size: 28, color: sg.tinta3),
           ),
           const SizedBox(height: 16),
-          Text(titulo,
-              textAlign: TextAlign.center,
-              style: sora(16, 700, color: sg.tinta)),
+          Text(
+            titulo,
+            textAlign: TextAlign.center,
+            style: sora(16, 700, color: sg.tinta),
+          ),
           if (detalle != null) ...[
             const SizedBox(height: 8),
-            Text(detalle!,
-                textAlign: TextAlign.center,
-                style: sora(13.5, 400, color: sg.tinta2, alto: 1.5)),
+            Text(
+              detalle!,
+              textAlign: TextAlign.center,
+              style: sora(13.5, 400, color: sg.tinta2, alto: 1.5),
+            ),
           ],
           if (accion != null) ...[const SizedBox(height: 20), accion!],
         ],

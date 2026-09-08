@@ -88,7 +88,9 @@ class EvidenciaService {
       final x = perdida.file;
       if (x == null) {
         // Hubo un error del sistema, no una foto a medias.
-        debugPrint('[Evidencia] Dato perdido sin archivo: ${perdida.exception}');
+        debugPrint(
+          '[Evidencia] Dato perdido sin archivo: ${perdida.exception}',
+        );
         return null;
       }
 

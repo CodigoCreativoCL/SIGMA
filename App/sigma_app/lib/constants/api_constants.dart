@@ -7,11 +7,15 @@ abstract final class ApiConstants {
   /// publicada bajo ese segmento y repetirlo daría `.../API/api/sesion`.
   static const String baseUrl = String.fromEnvironment('API_BASE_URL');
 
-  static const int timeoutSegundos =
-      int.fromEnvironment('TIMEOUT_SEGUNDOS', defaultValue: 15);
+  static const int timeoutSegundos = int.fromEnvironment(
+    'TIMEOUT_SEGUNDOS',
+    defaultValue: 15,
+  );
 
-  static const bool logHttp =
-      bool.fromEnvironment('LOG_HTTP', defaultValue: true);
+  static const bool logHttp = bool.fromEnvironment(
+    'LOG_HTTP',
+    defaultValue: true,
+  );
 
   /// Un baseUrl vacío tiene que **fallar temprano y con un mensaje claro**, no
   /// producir peticiones sin host que se ven como un error de red.
@@ -40,7 +44,8 @@ abstract final class ApiConstants {
 
   /// Los valores de un catálogo: `/catalogos/{codigo}/valores`.
   /// El de estados de activo es `ACTIVO_ESTADO`.
-  static String valoresDeCatalogo(String codigo) => '/catalogos/$codigo/valores';
+  static String valoresDeCatalogo(String codigo) =>
+      '/catalogos/$codigo/valores';
 
   // ---- Inventario (Sprint 3) ----
   static const String existencias = '/existencias';

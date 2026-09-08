@@ -21,8 +21,9 @@ class SesionNotifier extends Notifier<SesionModel> {
   }
 }
 
-final sesionProvider =
-    NotifierProvider<SesionNotifier, SesionModel>(SesionNotifier.new);
+final sesionProvider = NotifierProvider<SesionNotifier, SesionModel>(
+  SesionNotifier.new,
+);
 
 /// La instalación en contexto.
 ///

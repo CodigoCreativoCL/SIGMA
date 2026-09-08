@@ -17,6 +17,7 @@ import '../../widgets/comun/sigma_cronometro.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import 'hoja_cierre.dart';
 import 'recursos_orden.dart';
 
 /// 6.3 · Ficha de OT y 6.4 · Ejecución de pasos — HU-113, HU-114, HU-119.
@@ -58,6 +59,7 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
 
     try {
       await que();
+      if (!mounted) return;
       ref.invalidate(ordenTrabajoProvider(widget.ordenId));
       ref.invalidate(ordenesTrabajoProvider);
       ref.invalidate(ordenesDisponiblesProvider);
@@ -80,7 +82,8 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
       backgroundColor: sg.fondo,
       body: EstadoAsync<OrdenTrabajoFicha>(
         valor: ficha,
-        onReintentar: () => ref.invalidate(ordenTrabajoProvider(widget.ordenId)),
+        onReintentar: () =>
+            ref.invalidate(ordenTrabajoProvider(widget.ordenId)),
         child: (f) => Column(
           children: [
             Expanded(
@@ -106,11 +109,11 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
                         0 => _resumen(f),
                         1 => _pasos(f),
                         _ => [
-                              RecursosOrdenVista(
-                                ordenId: widget.ordenId,
-                                puedeEditar: f.orden.enEjecucion,
-                              ),
-                            ],
+                          RecursosOrdenVista(
+                            ordenId: widget.ordenId,
+                            puedeEditar: f.orden.enEjecucion,
+                          ),
+                        ],
                       },
                     ),
                   ),
@@ -120,17 +123,26 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
             _Pie(
               ficha: f,
               ocupado: _ocupado,
+              // Esconder el botón no autoriza nada: el servidor vuelve a
+              // exigir `CERRAR OT` en el endpoint. Esto solo evita ofrecer
+              // una acción que terminaría en un 403 que nadie puede
+              // corregir desde el teléfono.
+              puedeCerrar: ref.watch(tienePermisoProvider('CERRAR OT')),
               // Tomar la orden es empezar a trabajarla: el cronómetro
               // arranca ahí, y no al abrir la ficha —que se abre muchas veces
               // antes de bajar al equipo—.
               onTomar: () => _accion(() async {
-                await SigmaRepository.instance
-                    .tomarOrdenTrabajo(widget.ordenId);
-                await CronometroService.instance
-                    .iniciar('ORDEN', widget.ordenId);
+                await SigmaRepository.instance.tomarOrdenTrabajo(
+                  widget.ordenId,
+                );
+                await CronometroService.instance.iniciar(
+                  'ORDEN',
+                  widget.ordenId,
+                );
               }, 'Orden tomada. Queda a tu nombre.'),
               onPasos: () => setState(() => _pestana = 1),
               onFinalizar: () => _confirmarFin(f),
+              onCerrar: () => HojaCierre.abrir(context, f.orden),
             ),
           ],
         ),
@@ -169,8 +181,10 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(15, 0, 15, 14),
-                child: Text(o.otr_descripcion!,
-                    style: sora(14, 500, color: sg.tinta, alto: 1.55)),
+                child: Text(
+                  o.otr_descripcion!,
+                  style: sora(14, 500, color: sg.tinta, alto: 1.55),
+                ),
               ),
             ],
           ),
@@ -222,15 +236,21 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
           padding: const EdgeInsets.all(14),
           child: Row(
             children: [
-              SgIconoCuadro(Icons.engineering,
-                  color: sg.ambarTexto, lado: 44, tamanoIcono: 22),
+              SgIconoCuadro(
+                Icons.engineering,
+                color: sg.ambarTexto,
+                lado: 44,
+                tamanoIcono: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Permiso requerido',
-                        style: sora(15, 600, color: sg.tinta)),
+                    Text(
+                      'Permiso requerido',
+                      style: sora(15, 600, color: sg.tinta),
+                    ),
                     const SizedBox(height: 4),
                     SgBadge(
                       o.PERMISO_NUMERO ?? 'Sin permiso emitido',
@@ -276,7 +296,8 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
         EstadoVacio(
           icono: Icons.checklist,
           titulo: 'Esta orden no tiene pasos',
-          detalle: 'Se puede finalizar igual: no todo trabajo correctivo '
+          detalle:
+              'Se puede finalizar igual: no todo trabajo correctivo '
               'viene con una pauta.',
         ),
       ];
@@ -323,11 +344,14 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
     final mensajero = ScaffoldMessenger.of(context);
 
     if (instalacion == null) {
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Elige una planta antes de compartir.')));
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Elige una planta antes de compartir.')),
+      );
       return;
     }
 
+    if (!mounted) return;
     final enviado = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
@@ -342,7 +366,8 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
 
     if (enviado == true && mounted) {
       mensajero.showSnackBar(
-          const SnackBar(content: Text('Compartido. Le llega como alerta.')));
+        const SnackBar(content: Text('Compartido. Le llega como alerta.')),
+      );
     }
   }
 
@@ -350,11 +375,14 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
     final sg = context.sg;
     final control = TextEditingController();
 
+    if (!mounted) return;
     final si = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text('¿Finalizar la orden?',
-            style: sora(18, 600, color: sg.tinta)),
+        title: Text(
+          '¿Finalizar la orden?',
+          style: sora(18, 600, color: sg.tinta),
+        ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -381,9 +409,10 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
                   titulo: 'Resultado',
                   interpretar: (t) => [
                     CampoDictado(
-                        clave: 'texto',
-                        rotulo: 'Resultado',
-                        valor: InterpreteVoz.normalizar(t)),
+                      clave: 'texto',
+                      rotulo: 'Resultado',
+                      valor: InterpreteVoz.normalizar(t),
+                    ),
                   ],
                 );
                 if (campos == null || campos.isEmpty) return;
@@ -399,7 +428,10 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
           ),
           TextButton(
             onPressed: () => Navigator.pop(c, true),
-            child: Text('Finalizar', style: sora(15, 600, color: sg.primarioTexto)),
+            child: Text(
+              'Finalizar',
+              style: sora(15, 600, color: sg.primarioTexto),
+            ),
           ),
         ],
       ),
@@ -421,8 +453,10 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
        Si falla, la orden se finaliza igual y se avisa. Perder el tramo es
        malo; dejar una orden a medio finalizar porque no se pudo anotar el
        tiempo es peor. */
-    final minutos =
-        await CronometroService.instance.detener('ORDEN', widget.ordenId);
+    final minutos = await CronometroService.instance.detener(
+      'ORDEN',
+      widget.ordenId,
+    );
 
     if (minutos > 0) {
       try {
@@ -438,15 +472,20 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
         });
       } on ApiException catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-              content: Text('No se pudo anotar el tiempo: ${e.mensaje}')));
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No se pudo anotar el tiempo: ${e.mensaje}'),
+            ),
+          );
         }
       }
     }
 
     await _accion(
-      () => SigmaRepository.instance.finalizarOrdenTrabajo(widget.ordenId,
-          resultado: texto.isEmpty ? null : texto),
+      () => SigmaRepository.instance.finalizarOrdenTrabajo(
+        widget.ordenId,
+        resultado: texto.isEmpty ? null : texto,
+      ),
       'Orden finalizada. Queda en espera de cierre.',
     );
 
@@ -527,7 +566,11 @@ class _Hero extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [Color(0xD605070E), Color(0x3305070E), Color(0xF205070E)],
+                colors: [
+                  Color(0xD605070E),
+                  Color(0x3305070E),
+                  Color(0xF205070E),
+                ],
                 stops: [0.0, 0.4, 1.0],
               ),
             ),
@@ -548,8 +591,10 @@ class _Hero extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 12),
                     child: Row(
                       children: [
-                        _Vidrio(Icons.arrow_back,
-                            onTap: () => Navigator.maybePop(context)),
+                        _Vidrio(
+                          Icons.arrow_back,
+                          onTap: () => Navigator.maybePop(context),
+                        ),
                         const Spacer(),
                         _Vidrio(Icons.share_outlined, onTap: onCompartir),
                       ],
@@ -568,34 +613,46 @@ class _Hero extends StatelessWidget {
                         runSpacing: 6,
                         children: [
                           if ((orden.PRIORIDAD_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(orden.PRIORIDAD_NOMBRE!,
-                                color: orden.PRIORIDAD_ID >= 4
-                                    ? SgColor.oscuroRojoTexto
-                                    : SgColor.oscuroAmbarTexto),
+                            _ChipHero(
+                              orden.PRIORIDAD_NOMBRE!,
+                              color: orden.PRIORIDAD_ID >= 4
+                                  ? SgColor.oscuroRojoTexto
+                                  : SgColor.oscuroAmbarTexto,
+                            ),
                           if ((orden.TIPO_NOMBRE ?? '').isNotEmpty)
                             _ChipHero(orden.TIPO_NOMBRE!, color: _tinta),
                           if ((orden.ESTADO_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(orden.ESTADO_NOMBRE!,
-                                color: orden.enEjecucion
-                                    ? SgColor.oscuroAmbarTexto
-                                    : SgColor.teal,
-                                icono: orden.enEjecucion
-                                    ? Icons.build
-                                    : Icons.folder_open),
+                            _ChipHero(
+                              orden.ESTADO_NOMBRE!,
+                              color: orden.enEjecucion
+                                  ? SgColor.oscuroAmbarTexto
+                                  : SgColor.teal,
+                              icono: orden.enEjecucion
+                                  ? Icons.build
+                                  : Icons.folder_open,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      Text('${orden.OT_NUMERO} · ${orden.otr_titulo}',
-                          style: sora(21, 700,
-                              color: _tinta, alto: 1.25, espaciado: -0.42),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        '${orden.OT_NUMERO} · ${orden.otr_titulo}',
+                        style: sora(
+                          21,
+                          700,
+                          color: _tinta,
+                          alto: 1.25,
+                          espaciado: -0.42,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       if (orden.ubicacion.isNotEmpty) ...[
                         const SizedBox(height: 6),
-                        Text(orden.ubicacion,
-                            style: sora(13, 500,
-                                color: const Color(0xFFA8B2C3)),
-                            overflow: TextOverflow.ellipsis),
+                        Text(
+                          orden.ubicacion,
+                          style: sora(13, 500, color: const Color(0xFFA8B2C3)),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ],
                     ],
                   ),
@@ -616,18 +673,18 @@ class _Vidrio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 44,
-        height: 44,
-        child: Material(
-          color: const Color(0xCC111827),
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
-          ),
-        ),
-      );
+    width: 44,
+    height: 44,
+    child: Material(
+      color: const Color(0xCC111827),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
+      ),
+    ),
+  );
 }
 
 class _ChipHero extends StatelessWidget {
@@ -639,23 +696,23 @@ class _ChipHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: SgMedida.badge,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.22),
-          borderRadius: BorderRadius.circular(SgRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icono != null) ...[
-              Icon(icono, size: 13, color: color),
-              const SizedBox(width: 6),
-            ],
-            Text(texto, style: sora(12, 600, color: color)),
-          ],
-        ),
-      );
+    height: SgMedida.badge,
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.22),
+      borderRadius: BorderRadius.circular(SgRadius.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icono != null) ...[
+          Icon(icono, size: 13, color: color),
+          const SizedBox(width: 6),
+        ],
+        Text(texto, style: sora(12, 600, color: color)),
+      ],
+    ),
+  );
 }
 
 class _Pestanas extends StatelessWidget {
@@ -698,9 +755,14 @@ class _Pestanas extends StatelessWidget {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Text(titulos[i],
-                          style: sora(13, i == activa ? 600 : 500,
-                              color: i == activa ? sg.tinta : sg.tinta2)),
+                      Text(
+                        titulos[i],
+                        style: sora(
+                          13,
+                          i == activa ? 600 : 500,
+                          color: i == activa ? sg.tinta : sg.tinta2,
+                        ),
+                      ),
                       if (i == 1 && pendientes > 0) ...[
                         const SizedBox(width: 7),
                         SgContador(pendientes, color: sg.primario),
@@ -735,8 +797,10 @@ class _Progreso extends StatelessWidget {
           Row(
             children: [
               Expanded(child: SgRotulo('Progreso general')),
-              Text('${(o.avance * 100).round()} %',
-                  style: sora(15, 700, color: sg.tinta, tabular: true)),
+              Text(
+                '${(o.avance * 100).round()} %',
+                style: sora(15, 700, color: sg.tinta, tabular: true),
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -749,8 +813,9 @@ class _Progreso extends StatelessWidget {
                   widthFactor: o.avance,
                   child: Container(
                     height: 8,
-                    decoration:
-                        const BoxDecoration(gradient: SgColor.gradiente),
+                    decoration: const BoxDecoration(
+                      gradient: SgColor.gradiente,
+                    ),
                   ),
                 ),
               ],
@@ -763,15 +828,22 @@ class _Progreso extends StatelessWidget {
               runSpacing: 7,
               children: [
                 if (listos > 0)
-                  SgBadge('$listos ${listos == 1 ? "paso listo" : "pasos listos"}',
-                      color: sg.verdeTexto),
+                  SgBadge(
+                    '$listos ${listos == 1 ? "paso listo" : "pasos listos"}',
+                    color: sg.verdeTexto,
+                  ),
                 if (ficha.pendientes > 0)
-                  SgBadge('${ficha.pendientes} pendiente'
-                      '${ficha.pendientes == 1 ? "" : "s"}',
-                      color: sg.ambarTexto),
+                  SgBadge(
+                    '${ficha.pendientes} pendiente'
+                    '${ficha.pendientes == 1 ? "" : "s"}',
+                    color: sg.ambarTexto,
+                  ),
                 if (o.otr_duracion_estimada_minuto != null)
-                  SgBadge(_duracion(o.otr_duracion_estimada_minuto!),
-                      color: sg.tinta2, icono: Icons.timer_outlined),
+                  SgBadge(
+                    _duracion(o.otr_duracion_estimada_minuto!),
+                    color: sg.tinta2,
+                    icono: Icons.timer_outlined,
+                  ),
               ],
             ),
           ],
@@ -801,7 +873,7 @@ class _Paso extends StatefulWidget {
   final bool activo;
   final bool habilitado;
   final void Function(int resultado, String? observacion, bool porVoz)
-      onCompletar;
+  onCompletar;
 
   @override
   State<_Paso> createState() => _PasoState();
@@ -828,8 +900,8 @@ class _PasoState extends State<_Paso> {
       final (color, icono) = p.conforme
           ? (sg.verdeTexto, Icons.check_circle)
           : p.noConforme
-              ? (sg.rojoTexto, Icons.cancel)
-              : (sg.tinta3, Icons.remove_circle_outline);
+          ? (sg.rojoTexto, Icons.cancel)
+          : (sg.tinta3, Icons.remove_circle_outline);
 
       return SgCard(
         padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 13),
@@ -844,12 +916,16 @@ class _PasoState extends State<_Paso> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('${p.otp_orden} · ${p.otp_nombre}',
-                      style: sora(14, 500, color: sg.tinta2)),
+                  Text(
+                    '${p.otp_orden} · ${p.otp_nombre}',
+                    style: sora(14, 500, color: sg.tinta2),
+                  ),
                   if ((p.OBSERVACION ?? '').isNotEmpty) ...[
                     const SizedBox(height: 3),
-                    Text(p.OBSERVACION!,
-                        style: sora(13, 500, color: sg.tinta3, alto: 1.4)),
+                    Text(
+                      p.OBSERVACION!,
+                      style: sora(13, 500, color: sg.tinta3, alto: 1.4),
+                    ),
                   ],
                 ],
               ),
@@ -857,7 +933,9 @@ class _PasoState extends State<_Paso> {
             if (p.otp_fecha_ejecucion_utc != null) ...[
               const SizedBox(width: 8),
               Text(
-                DateFormat('HH:mm').format(p.otp_fecha_ejecucion_utc!.toLocal()),
+                DateFormat(
+                  'HH:mm',
+                ).format(p.otp_fecha_ejecucion_utc!.toLocal()),
                 style: sora(12, 500, color: sg.tinta3, tabular: true),
               ),
             ],
@@ -875,8 +953,10 @@ class _PasoState extends State<_Paso> {
             Icon(Icons.radio_button_unchecked, size: 20, color: sg.tinta3),
             const SizedBox(width: 12),
             Expanded(
-              child: Text('${p.otp_orden} · ${p.otp_nombre}',
-                  style: sora(14, 500, color: sg.tinta2)),
+              child: Text(
+                '${p.otp_orden} · ${p.otp_nombre}',
+                style: sora(14, 500, color: sg.tinta2),
+              ),
             ),
             if (p.otp_obligatorio)
               Icon(Icons.star, size: 14, color: sg.rojoTexto),
@@ -897,19 +977,25 @@ class _PasoState extends State<_Paso> {
             runSpacing: 8,
             children: [
               if (p.otp_obligatorio)
-                SgBadge('Obligatorio',
-                    color: sg.rojoTexto, icono: Icons.star_outline),
+                SgBadge(
+                  'Obligatorio',
+                  color: sg.rojoTexto,
+                  icono: Icons.star_outline,
+                ),
               SgBadge('Paso ${p.otp_orden}', color: sg.azulTexto),
             ],
           ),
           const SizedBox(height: 14),
-          Text(p.otp_nombre,
-              style: sora(20, 700, color: sg.tinta, alto: 1.35,
-                  espaciado: -0.4)),
+          Text(
+            p.otp_nombre,
+            style: sora(20, 700, color: sg.tinta, alto: 1.35, espaciado: -0.4),
+          ),
           if ((p.otp_descripcion ?? '').isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(p.otp_descripcion!,
-                style: sora(14, 500, color: sg.tinta2, alto: 1.5)),
+            Text(
+              p.otp_descripcion!,
+              style: sora(14, 500, color: sg.tinta2, alto: 1.5),
+            ),
           ],
           const SizedBox(height: 14),
           SgCampo(
@@ -925,9 +1011,10 @@ class _PasoState extends State<_Paso> {
                 titulo: 'Observación',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'texto',
-                      rotulo: 'Observación',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'texto',
+                    rotulo: 'Observación',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -949,28 +1036,34 @@ class _PasoState extends State<_Paso> {
             Row(
               children: [
                 Expanded(
-                  child: SgBoton('Conforme',
-                      icono: Icons.check,
-                      alto: 44,
-                      tamanoTexto: 14,
-                      onTap: () => _completar(1)),
+                  child: SgBoton(
+                    'Conforme',
+                    icono: Icons.check,
+                    alto: 44,
+                    tamanoTexto: 14,
+                    onTap: () => _completar(1),
+                  ),
                 ),
                 const SizedBox(width: 9),
                 Expanded(
-                  child: SgBoton('No conforme',
-                      icono: Icons.close,
-                      alto: 44,
-                      tamanoTexto: 14,
-                      color: sg.tinte(sg.rojoTexto),
-                      colorTexto: sg.rojoTexto,
-                      colorIcono: sg.rojoTexto,
-                      onTap: () => _completar(2)),
+                  child: SgBoton(
+                    'No conforme',
+                    icono: Icons.close,
+                    alto: 44,
+                    tamanoTexto: 14,
+                    color: sg.tinte(sg.rojoTexto),
+                    colorTexto: sg.rojoTexto,
+                    colorIcono: sg.rojoTexto,
+                    onTap: () => _completar(2),
+                  ),
                 ),
                 const SizedBox(width: 9),
-                SgBotonIcono(Icons.block,
-                    fondo: sg.up,
-                    color: sg.tinta2,
-                    onTap: () => _completar(3)),
+                SgBotonIcono(
+                  Icons.block,
+                  fondo: sg.up,
+                  color: sg.tinta2,
+                  onTap: () => _completar(3),
+                ),
               ],
             ),
         ],
@@ -989,20 +1082,46 @@ class _Pie extends StatelessWidget {
   const _Pie({
     required this.ficha,
     required this.ocupado,
+    required this.puedeCerrar,
     required this.onTomar,
     required this.onPasos,
     required this.onFinalizar,
+    required this.onCerrar,
   });
 
   final OrdenTrabajoFicha ficha;
   final bool ocupado;
+
+  /// Si esta persona tiene `CERRAR OT`. Sin él, una orden en espera de cierre
+  /// se ve igual que hoy: un botón apagado que dice en qué estado está.
+  final bool puedeCerrar;
+
   final VoidCallback onTomar;
   final VoidCallback onPasos;
   final VoidCallback onFinalizar;
+  final VoidCallback onCerrar;
 
   @override
   Widget build(BuildContext context) {
     final o = ficha.orden;
+
+    /* EN ESPERA DE CIERRE EL PIE DEPENDE DE QUIEN MIRA — HU-120
+
+       Al técnico que la finalizó no le queda nada que hacer y el pie se lo
+       dice. Al jefe de mantenimiento, al supervisor y al planificador —los
+       tres que tienen `CERRAR OT`— les queda exactamente una acción, y es
+       esta pantalla la que la ofrece: sin el botón tendrían que ir a la web a
+       cerrar algo que acaban de revisar en el teléfono. */
+    if (o.ESTADO_ID == 3 && puedeCerrar) {
+      return SgPie(
+        child: SgBoton(
+          'Cerrar',
+          icono: Icons.check_circle_outline,
+          cargando: ocupado,
+          onTap: onCerrar,
+        ),
+      );
+    }
 
     if (o.ESTADO_ID >= 3) {
       return SgPie(
@@ -1055,8 +1174,10 @@ class _Pie extends StatelessWidget {
                 tamano: 21,
                 onTap: () => ScaffoldMessenger.of(c).showSnackBar(
                   SnackBar(
-                    content: Text('Faltan ${ficha.obligatoriosPendientes} '
-                        'pasos obligatorios para poder finalizar.'),
+                    content: Text(
+                      'Faltan ${ficha.obligatoriosPendientes} '
+                      'pasos obligatorios para poder finalizar.',
+                    ),
                   ),
                 ),
               ),

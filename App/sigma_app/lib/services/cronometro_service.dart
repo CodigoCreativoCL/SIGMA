@@ -37,7 +37,10 @@ class Cronometro {
   }
 
   static const cero = Cronometro(
-      transcurrido: Duration.zero, corriendo: false, tramos: 0);
+    transcurrido: Duration.zero,
+    corriendo: false,
+    tramos: 0,
+  );
 }
 
 /// El cronómetro de una gestión en terreno: tarea, checklist u orden.
@@ -139,7 +142,10 @@ class CronometroService {
       if (total.isNegative) total = Duration.zero;
 
       return Cronometro(
-          transcurrido: total, corriendo: corriendo, tramos: filas.length);
+        transcurrido: total,
+        corriendo: corriendo,
+        tramos: filas.length,
+      );
     } catch (e) {
       debugPrint('[Cronometro] No se pudo leer $entidad/$id: $e');
       return Cronometro.cero;
@@ -149,8 +155,10 @@ class CronometroService {
   Future<void> _refrescar(String entidad, int id) async {
     final c = await _leer(entidad, id);
     final k = _clave(entidad, id);
-    _estados.putIfAbsent(k, () => ValueNotifier<Cronometro>(Cronometro.cero))
-        .value = c;
+    _estados
+            .putIfAbsent(k, () => ValueNotifier<Cronometro>(Cronometro.cero))
+            .value =
+        c;
 
     // El reloj de un segundo solo existe mientras corre: dejarlo vivo con el
     // cronómetro pausado gasta batería para repintar el mismo número.

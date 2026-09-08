@@ -46,17 +46,16 @@ class Bloque {
     int? filas,
     int? total,
     String? error,
-  }) =>
-      Bloque(
-        numero: numero,
-        codigo: codigo,
-        nombre: nombre,
-        icono: icono,
-        estado: estado ?? this.estado,
-        filas: filas ?? this.filas,
-        total: total ?? this.total,
-        error: error ?? this.error,
-      );
+  }) => Bloque(
+    numero: numero,
+    codigo: codigo,
+    nombre: nombre,
+    icono: icono,
+    estado: estado ?? this.estado,
+    filas: filas ?? this.filas,
+    total: total ?? this.total,
+    error: error ?? this.error,
+  );
 }
 
 class SincronizacionEstado {
@@ -85,9 +84,9 @@ class SincronizacionEstado {
   double get avance => bloques.isEmpty
       ? 0
       : bloques
-              .map((b) => b.estado == EstadoBloque.listo ? 1.0 : b.avance)
-              .reduce((a, b) => a + b) /
-          bloques.length;
+                .map((b) => b.estado == EstadoBloque.listo ? 1.0 : b.avance)
+                .reduce((a, b) => a + b) /
+            bloques.length;
 
   int get porcentaje => (avance * 100).round();
   int get filasTotales => bloques.fold<int>(0, (a, b) => a + b.filas);
@@ -97,13 +96,12 @@ class SincronizacionEstado {
     bool? corriendo,
     bool? termino,
     DateTime? fechaCorte,
-  }) =>
-      SincronizacionEstado(
-        bloques: bloques ?? this.bloques,
-        corriendo: corriendo ?? this.corriendo,
-        termino: termino ?? this.termino,
-        fechaCorte: fechaCorte ?? this.fechaCorte,
-      );
+  }) => SincronizacionEstado(
+    bloques: bloques ?? this.bloques,
+    corriendo: corriendo ?? this.corriendo,
+    termino: termino ?? this.termino,
+    fechaCorte: fechaCorte ?? this.fechaCorte,
+  );
 }
 
 /// La carga descendente (HU-150): baja el paquete y **lo guarda en SQLite**.
@@ -145,6 +143,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'INVENTARIO': 'REP_ID',
     'EXISTENCIAS': 'ISA_ID',
     'PERMISOS_TRABAJO': 'PTT_ID',
+    'ORDENES_TRABAJO': 'OCM_ID',
   };
 
   static const _iconos = <String, String>{
@@ -156,6 +155,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'INVENTARIO': 'inventory',
     'EXISTENCIAS': 'stock',
     'PERMISOS_TRABAJO': 'assignment',
+    'ORDENES_TRABAJO': 'assignment',
   };
 
   /// Cuándo terminó la última sincronización automática.
@@ -279,20 +279,26 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
         }
 
         _marcar(
-            i,
-            (b) => b.copyWith(
-                estado: EstadoBloque.listo,
-                filas: guardadas,
-                total: b.total == 0 ? (guardadas == 0 ? 1 : guardadas) : b.total));
+          i,
+          (b) => b.copyWith(
+            estado: EstadoBloque.listo,
+            filas: guardadas,
+            total: b.total == 0 ? (guardadas == 0 ? 1 : guardadas) : b.total,
+          ),
+        );
       } on ApiException catch (e) {
         // El mensaje del servidor se conserva: un 403 dice qué permiso falta,
         // y eso es accionable. "Error de sincronización" no lo es.
-        _marcar(i,
-            (b) => b.copyWith(estado: EstadoBloque.fallido, error: e.mensaje));
+        _marcar(
+          i,
+          (b) => b.copyWith(estado: EstadoBloque.fallido, error: e.mensaje),
+        );
       } catch (e) {
         debugPrint('[Sincronizacion] Bloque ${bloques[i].codigo}: $e');
         _marcar(
-            i, (b) => b.copyWith(estado: EstadoBloque.fallido, error: '$e'));
+          i,
+          (b) => b.copyWith(estado: EstadoBloque.fallido, error: '$e'),
+        );
       }
     }
 
@@ -303,7 +309,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     // bloque nunca se completara.
     if (corte != null && state.fallidos == 0) {
       await _base.guardarLista('_corte', [
-        {'fecha': corte.toIso8601String()}
+        {'fecha': corte.toIso8601String()},
       ], (_) => 'corte');
     }
 
@@ -329,4 +335,5 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
 
 final sincronizacionProvider =
     NotifierProvider<SincronizacionNotifier, SincronizacionEstado>(
-        SincronizacionNotifier.new);
+      SincronizacionNotifier.new,
+    );

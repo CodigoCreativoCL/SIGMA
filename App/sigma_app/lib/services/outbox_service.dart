@@ -48,24 +48,24 @@ class ItemCola {
   final int? idServidor;
 
   factory ItemCola.desde(Map<String, dynamic> f) => ItemCola(
-        id: (f['id'] as num).toInt(),
-        uuid: f['uuid'] as String,
-        tipo: f['tipo'] as String,
-        titulo: f['titulo'] as String,
-        detalle: f['detalle'] as String?,
-        estado: switch (f['estado'] as String?) {
-          'enviado' => EstadoItem.enviado,
-          'rechazado' => EstadoItem.rechazado,
-          _ => EstadoItem.pendiente,
-        },
-        fechaCaptura:
-            DateTime.tryParse(f['fecha_captura'] as String? ?? '') ??
-                DateTime.now(),
-        intentos: (f['intentos'] as num?)?.toInt() ?? 0,
-        ultimoError: f['ultimo_error'] as String?,
-        ultimoCodigo: (f['ultimo_codigo'] as num?)?.toInt(),
-        idServidor: (f['id_servidor'] as num?)?.toInt(),
-      );
+    id: (f['id'] as num).toInt(),
+    uuid: f['uuid'] as String,
+    tipo: f['tipo'] as String,
+    titulo: f['titulo'] as String,
+    detalle: f['detalle'] as String?,
+    estado: switch (f['estado'] as String?) {
+      'enviado' => EstadoItem.enviado,
+      'rechazado' => EstadoItem.rechazado,
+      _ => EstadoItem.pendiente,
+    },
+    fechaCaptura:
+        DateTime.tryParse(f['fecha_captura'] as String? ?? '') ??
+        DateTime.now(),
+    intentos: (f['intentos'] as num?)?.toInt() ?? 0,
+    ultimoError: f['ultimo_error'] as String?,
+    ultimoCodigo: (f['ultimo_codigo'] as num?)?.toInt(),
+    idServidor: (f['id_servidor'] as num?)?.toInt(),
+  );
 }
 
 /// La cola de salida (HU-151).
@@ -175,11 +175,11 @@ class OutboxService {
   Future<void> _enviarUno(Map<String, dynamic> f) async {
     final id = (f['id'] as num).toInt();
     final intentos = ((f['intentos'] as num?)?.toInt() ?? 0) + 1;
-    final cuerpo = jsonDecode(f['cuerpo_json'] as String) as Map<String, dynamic>;
+    final cuerpo =
+        jsonDecode(f['cuerpo_json'] as String) as Map<String, dynamic>;
 
     try {
-      final r = await ApiClient.instance
-          .post(f['endpoint'] as String, cuerpo);
+      final r = await ApiClient.instance.post(f['endpoint'] as String, cuerpo);
 
       await _base.actualizarItem(id, {
         'estado': 'enviado',
@@ -204,8 +204,8 @@ class OutboxService {
       }
 
       // Regla de negocio, sin permiso o no existe: reintentar no lo arregla.
-      final definitivo = e.codigo != null &&
-          const [400, 403, 404, 422].contains(e.codigo);
+      final definitivo =
+          e.codigo != null && const [400, 403, 404, 422].contains(e.codigo);
 
       await _base.actualizarItem(id, {
         'estado': definitivo ? 'rechazado' : 'pendiente',

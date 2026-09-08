@@ -47,8 +47,7 @@ class SyncService {
       _online = _hayRed(await Connectivity().checkConnectivity());
       enLinea.value = _online;
 
-      _suscripcion =
-          Connectivity().onConnectivityChanged.listen(_alCambiar);
+      _suscripcion = Connectivity().onConnectivityChanged.listen(_alCambiar);
 
       if (_online) unawaited(OutboxService.instance.despachar());
     } catch (e) {

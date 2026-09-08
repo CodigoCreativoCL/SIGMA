@@ -128,6 +128,7 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
       );
 
       SyncService.instance.despacharAhora();
+      if (!mounted) return;
       ref.invalidate(existenciasProvider);
 
       if (!mounted) return;

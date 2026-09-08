@@ -49,6 +49,7 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   Future<void> _fotos(Activo? a) async {
     if (a == null) return;
 
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -69,6 +70,7 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   Future<void> _cambiarEstado(Activo? a) async {
     if (a == null) return;
 
+    if (!mounted) return;
     final elegido = await showModalBottomSheet<({int estado, String motivo})>(
       context: context,
       isScrollControlled: true,
@@ -107,11 +109,15 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
     if (!mounted) return;
     ref.invalidate(activoProvider(widget.activoId));
     ref.invalidate(fichaActivoProvider(widget.activoId));
-    mensajero.showSnackBar(SnackBar(
-      content: Text(SyncService.instance.enLinea.value
-          ? 'Estado cambiado.'
-          : 'Guardado en el teléfono. Se envía al volver la señal.'),
-    ));
+    mensajero.showSnackBar(
+      SnackBar(
+        content: Text(
+          SyncService.instance.enLinea.value
+              ? 'Estado cambiado.'
+              : 'Guardado en el teléfono. Se envía al volver la señal.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -125,33 +131,39 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
         child: Row(
           children: [
             Expanded(
-              child: SgBoton('Registrar condición',
-                  icono: Icons.speed_outlined,
-                  // Medicion y no lectura: una lectura necesita saber **de que
-                  // medidor** es, y los medidores bajan en el bloque MEDICION
-                  // de la sabana, no por un endpoint propio. Desde la ficha se
-                  // registra la condicion del activo; la lectura se abre desde
-                  // el medidor, que es donde su identidad esta.
-                  onTap: () => _capturar(activo.valueOrNull)),
+              child: SgBoton(
+                'Registrar condición',
+                icono: Icons.speed_outlined,
+                // Medicion y no lectura: una lectura necesita saber **de que
+                // medidor** es, y los medidores bajan en el bloque MEDICION
+                // de la sabana, no por un endpoint propio. Desde la ficha se
+                // registra la condicion del activo; la lectura se abre desde
+                // el medidor, que es donde su identidad esta.
+                onTap: () => _capturar(activo.valueOrNull),
+              ),
             ),
             const SizedBox(width: 9),
             // Los dos se dibujaban sin `onTap`: se veian habilitados y no
             // hacian nada. Un boton muerto es peor que uno ausente, porque se
             // toca una vez, no pasa nada, y a partir de ahi no se confia en
             // ninguno de la barra.
-            SgBotonIcono(Icons.photo_camera_outlined,
-                fondo: sg.up,
-                color: sg.tinta,
-                lado: 52,
-                tamano: 21,
-                onTap: () => _fotos(activo.valueOrNull)),
+            SgBotonIcono(
+              Icons.photo_camera_outlined,
+              fondo: sg.up,
+              color: sg.tinta,
+              lado: 52,
+              tamano: 21,
+              onTap: () => _fotos(activo.valueOrNull),
+            ),
             const SizedBox(width: 9),
-            SgBotonIcono(Icons.swap_vert,
-                fondo: sg.up,
-                color: sg.tinta,
-                lado: 52,
-                tamano: 21,
-                onTap: () => _cambiarEstado(activo.valueOrNull)),
+            SgBotonIcono(
+              Icons.swap_vert,
+              fondo: sg.up,
+              color: sg.tinta,
+              lado: 52,
+              tamano: 21,
+              onTap: () => _cambiarEstado(activo.valueOrNull),
+            ),
           ],
         ),
       ),
@@ -205,22 +217,21 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   }
 
   List<Widget> _ficha(Activo a) => [
-        _Cifras(activo: a),
-        const SizedBox(height: 13),
-        SgBloque(
-          filas: [
-            if ((a.TIPO_NOMBRE ?? '').isNotEmpty)
-              SgFila(texto: 'Tipo', valor: a.TIPO_NOMBRE!, alto: 50),
-            if (a.marcaModelo.isNotEmpty)
-              SgFila(texto: 'Marca y modelo', valor: a.marcaModelo, alto: 50),
-            if ((a.act_numero_serie ?? '').isNotEmpty)
-              SgFila(
-                  texto: 'N.º de serie', valor: a.act_numero_serie!, alto: 50),
-            if ((a.PADRE_CODIGO ?? '').isNotEmpty)
-              SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
-          ],
-        ),
-      ];
+    _Cifras(activo: a),
+    const SizedBox(height: 13),
+    SgBloque(
+      filas: [
+        if ((a.TIPO_NOMBRE ?? '').isNotEmpty)
+          SgFila(texto: 'Tipo', valor: a.TIPO_NOMBRE!, alto: 50),
+        if (a.marcaModelo.isNotEmpty)
+          SgFila(texto: 'Marca y modelo', valor: a.marcaModelo, alto: 50),
+        if ((a.act_numero_serie ?? '').isNotEmpty)
+          SgFila(texto: 'N.º de serie', valor: a.act_numero_serie!, alto: 50),
+        if ((a.PADRE_CODIGO ?? '').isNotEmpty)
+          SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
+      ],
+    ),
+  ];
 }
 
 /// El hero de 274 con la foto, los velos y las miniaturas.
@@ -286,9 +297,10 @@ class _Hero extends StatelessWidget {
               radio: 0,
               ajuste: BoxFit.cover,
               // Ampliada, una foto sin rótulo no dice de qué equipo es.
-              titulo: [activo.act_codigo, activo.act_nombre]
-                  .where((t) => t.isNotEmpty)
-                  .join(' · '),
+              titulo: [
+                activo.act_codigo,
+                activo.act_nombre,
+              ].where((t) => t.isNotEmpty).join(' · '),
             ),
           // Dos velos: arriba para que se lean los botones, abajo para que se
           // lea el título. Sin ellos, una foto clara los borra a los dos.
@@ -304,8 +316,10 @@ class _Hero extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        _BotonVidrio(Icons.arrow_back,
-                            onTap: () => Navigator.maybePop(context)),
+                        _BotonVidrio(
+                          Icons.arrow_back,
+                          onTap: () => Navigator.maybePop(context),
+                        ),
                         const Spacer(),
                         _BotonVidrio(Icons.star_outline),
                         const SizedBox(width: 8),
@@ -326,32 +340,46 @@ class _Hero extends StatelessWidget {
                         children: [
                           _ChipHero(activo.act_codigo, color: SgColor.teal),
                           if ((activo.ESTADO_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(activo.ESTADO_NOMBRE!,
-                                color: SgColor.oscuroVerdeTexto,
-                                icono: Icons.check_circle),
+                            _ChipHero(
+                              activo.ESTADO_NOMBRE!,
+                              color: SgColor.oscuroVerdeTexto,
+                              icono: Icons.check_circle,
+                            ),
                           if ((activo.CRITICIDAD_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(activo.CRITICIDAD_NOMBRE!,
-                                color: SgColor.oscuroAmbarTexto,
-                                icono: Icons.local_fire_department),
+                            _ChipHero(
+                              activo.CRITICIDAD_NOMBRE!,
+                              color: SgColor.oscuroAmbarTexto,
+                              icono: Icons.local_fire_department,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Text(activo.act_nombre,
-                          style: sora(24, 700, color: _tinta, alto: 1.2),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        activo.act_nombre,
+                        style: sora(24, 700, color: _tinta, alto: 1.2),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       if (activo.ruta.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.place_outlined,
-                                size: 16, color: Color(0xFFA8B2C3)),
+                            const Icon(
+                              Icons.place_outlined,
+                              size: 16,
+                              color: Color(0xFFA8B2C3),
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(activo.ruta,
-                                  style: sora(13, 500,
-                                      color: const Color(0xFFA8B2C3)),
-                                  overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                activo.ruta,
+                                style: sora(
+                                  13,
+                                  500,
+                                  color: const Color(0xFFA8B2C3),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -370,8 +398,9 @@ class _Hero extends StatelessWidget {
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  boxShadow:
-                                      i == indice ? anillo(SgColor.teal) : null,
+                                  boxShadow: i == indice
+                                      ? anillo(SgColor.teal)
+                                      : null,
                                 ),
                                 child: SigmaImagen(
                                   ruta: fotos[i],
@@ -402,23 +431,23 @@ class _Velo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Align(
-        alignment: arriba ? Alignment.topCenter : Alignment.bottomCenter,
-        child: IgnorePointer(
-          child: Container(
-            height: arriba ? 120 : 150,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: arriba ? Alignment.topCenter : Alignment.bottomCenter,
-                end: arriba ? Alignment.bottomCenter : Alignment.topCenter,
-                colors: [
-                  Color(arriba ? 0xD905070E : 0xEB05070E),
-                  const Color(0x0005070E),
-                ],
-              ),
-            ),
+    alignment: arriba ? Alignment.topCenter : Alignment.bottomCenter,
+    child: IgnorePointer(
+      child: Container(
+        height: arriba ? 120 : 150,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: arriba ? Alignment.topCenter : Alignment.bottomCenter,
+            end: arriba ? Alignment.bottomCenter : Alignment.topCenter,
+            colors: [
+              Color(arriba ? 0xD905070E : 0xEB05070E),
+              const Color(0x0005070E),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _BotonVidrio extends StatelessWidget {
@@ -428,18 +457,18 @@ class _BotonVidrio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 44,
-        height: 44,
-        child: Material(
-          color: const Color(0xD1111827),
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
-          ),
-        ),
-      );
+    width: 44,
+    height: 44,
+    child: Material(
+      color: const Color(0xD1111827),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
+      ),
+    ),
+  );
 }
 
 class _ChipHero extends StatelessWidget {
@@ -451,23 +480,23 @@ class _ChipHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: SgMedida.badge,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.20),
-          borderRadius: BorderRadius.circular(SgRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icono != null) ...[
-              Icon(icono, size: 13, color: color),
-              const SizedBox(width: 6),
-            ],
-            Text(texto, style: sora(12, 600, color: color)),
-          ],
-        ),
-      );
+    height: SgMedida.badge,
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.20),
+      borderRadius: BorderRadius.circular(SgRadius.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icono != null) ...[
+          Icon(icono, size: 13, color: color),
+          const SizedBox(width: 6),
+        ],
+        Text(texto, style: sora(12, 600, color: color)),
+      ],
+    ),
+  );
 }
 
 /// Las pestañas del kit: subrayado de 2 en morado sobre `card`.
@@ -507,8 +536,11 @@ class _Pestanas extends StatelessWidget {
                   child: Text(
                     _titulos[i],
                     textAlign: TextAlign.center,
-                    style: sora(14, i == activa ? 600 : 500,
-                        color: i == activa ? sg.tinta : sg.tinta2),
+                    style: sora(
+                      14,
+                      i == activa ? 600 : 500,
+                      color: i == activa ? sg.tinta : sg.tinta2,
+                    ),
                   ),
                 ),
               ),
@@ -530,8 +562,7 @@ class _Cifras extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventos =
-        ref.watch(fichaActivoProvider(activo.act_id)).valueOrNull;
+    final eventos = ref.watch(fichaActivoProvider(activo.act_id)).valueOrNull;
 
     return Row(
       children: [
@@ -595,11 +626,18 @@ class _Cifra extends StatelessWidget {
         children: [
           Icon(icono, size: 18, color: sg.acentoTexto),
           const SizedBox(height: 5),
-          Text(valor,
-              style: sora(pequeno ? 14 : 21, 700,
-                  color: sg.tinta, alto: 1, tabular: true),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            valor,
+            style: sora(
+              pequeno ? 14 : 21,
+              700,
+              color: sg.tinta,
+              alto: 1,
+              tabular: true,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 5),
           Text(rotulo, style: sora(11, 500, color: sg.tinta3)),
         ],
@@ -627,7 +665,8 @@ class _Historial extends ConsumerWidget {
       vacio: const EstadoVacio(
         icono: Icons.history,
         titulo: 'Sin historial',
-        detalle: 'Cuando este activo tenga intervenciones registradas, van a '
+        detalle:
+            'Cuando este activo tenga intervenciones registradas, van a '
             'aparecer acá en orden.',
       ),
       child: (p) => SgBloque(
@@ -648,7 +687,6 @@ class _Historial extends ConsumerWidget {
   }
 }
 
-
 /// La hoja de fotos de un activo.
 class _HojaFotos extends StatelessWidget {
   const _HojaFotos({required this.activo});
@@ -662,8 +700,9 @@ class _HojaFotos extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -675,12 +714,16 @@ class _HojaFotos extends StatelessWidget {
             children: [
               const _Agarradera(),
               const SizedBox(height: 14),
-              Text('Fotos de ${activo.act_codigo}',
-                  style: sora(17, 600, color: sg.tinta)),
+              Text(
+                'Fotos de ${activo.act_codigo}',
+                style: sora(17, 600, color: sg.tinta),
+              ),
               const SizedBox(height: 4),
-              Text(activo.act_nombre,
-                  style: sora(13, 500, color: sg.tinta3),
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                activo.act_nombre,
+                style: sora(13, 500, color: sg.tinta3),
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 14),
               SgEvidencias(destino: 'ACTIVO', destinoId: activo.act_id),
               const SgBarraGestos(),
@@ -720,8 +763,9 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -741,13 +785,17 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
               children: [
                 const _Agarradera(),
                 const SizedBox(height: 14),
-                Text('Cambiar el estado',
-                    style: sora(17, 600, color: sg.tinta)),
+                Text(
+                  'Cambiar el estado',
+                  style: sora(17, 600, color: sg.tinta),
+                ),
                 const SizedBox(height: 4),
-                Text('${widget.activo.act_codigo} · ahora en '
-                    '${widget.activo.ESTADO_NOMBRE ?? "sin estado"}',
-                    style: sora(13, 500, color: sg.tinta3),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  '${widget.activo.act_codigo} · ahora en '
+                  '${widget.activo.ESTADO_NOMBRE ?? "sin estado"}',
+                  style: sora(13, 500, color: sg.tinta3),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 14),
                 estados.when(
                   loading: () => const Padding(
@@ -796,10 +844,9 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
                   // explicación obliga a preguntarle a quien lo movió, y en un
                   // turno de noche esa persona ya se fue.
                   onTap: (_elegido != null && _motivo.text.trim().isNotEmpty)
-                      ? () => Navigator.of(context).pop((
-                            estado: _elegido!,
-                            motivo: _motivo.text.trim(),
-                          ))
+                      ? () => Navigator.of(
+                          context,
+                        ).pop((estado: _elegido!, motivo: _motivo.text.trim()))
                       : null,
                 ),
                 const SgBarraGestos(),
@@ -818,13 +865,13 @@ class _Agarradera extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Container(
-          width: 44,
-          height: 4,
-          decoration: BoxDecoration(
-            color: context.sg.indicador,
-            borderRadius: BorderRadius.circular(SgRadius.pill),
-          ),
-        ),
-      );
+    child: Container(
+      width: 44,
+      height: 4,
+      decoration: BoxDecoration(
+        color: context.sg.indicador,
+        borderRadius: BorderRadius.circular(SgRadius.pill),
+      ),
+    ),
+  );
 }

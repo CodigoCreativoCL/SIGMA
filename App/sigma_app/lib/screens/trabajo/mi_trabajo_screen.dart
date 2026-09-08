@@ -19,20 +19,20 @@ enum TipoTrabajo { todo, ordenes, tareas, pautas, bitacora }
 
 extension _Rotulo on TipoTrabajo {
   String get texto => switch (this) {
-        TipoTrabajo.todo => 'Todo',
-        TipoTrabajo.ordenes => 'Órdenes',
-        TipoTrabajo.tareas => 'Tareas',
-        TipoTrabajo.pautas => 'Pautas',
-        TipoTrabajo.bitacora => 'Bitácora',
-      };
+    TipoTrabajo.todo => 'Todo',
+    TipoTrabajo.ordenes => 'Órdenes',
+    TipoTrabajo.tareas => 'Tareas',
+    TipoTrabajo.pautas => 'Pautas',
+    TipoTrabajo.bitacora => 'Bitácora',
+  };
 
   IconData get icono => switch (this) {
-        TipoTrabajo.todo => Icons.inbox_outlined,
-        TipoTrabajo.ordenes => Icons.build_circle_outlined,
-        TipoTrabajo.tareas => Icons.task_alt,
-        TipoTrabajo.pautas => Icons.checklist_rtl,
-        TipoTrabajo.bitacora => Icons.menu_book_outlined,
-      };
+    TipoTrabajo.todo => Icons.inbox_outlined,
+    TipoTrabajo.ordenes => Icons.build_circle_outlined,
+    TipoTrabajo.tareas => Icons.task_alt,
+    TipoTrabajo.pautas => Icons.checklist_rtl,
+    TipoTrabajo.bitacora => Icons.menu_book_outlined,
+  };
 }
 
 /// **Mi trabajo**: todo lo que hay que hacer, en un solo sitio.
@@ -77,10 +77,7 @@ class _MiTrabajoScreenState extends ConsumerState<MiTrabajoScreen> {
         bottom: false,
         child: Column(
           children: [
-            _Cabecera(
-              tipo: _tipo,
-              onTipo: (t) => setState(() => _tipo = t),
-            ),
+            _Cabecera(tipo: _tipo, onTipo: (t) => setState(() => _tipo = t)),
             Expanded(
               child: switch (_tipo) {
                 // Cada tipo reusa su propia lista: la bandeja los reúne, no
@@ -116,8 +113,10 @@ class _Cabecera extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-          child: Text('Mi trabajo',
-              style: sora(23, 700, color: sg.tinta, espaciado: -0.46)),
+          child: Text(
+            'Mi trabajo',
+            style: sora(23, 700, color: sg.tinta, espaciado: -0.46),
+          ),
         ),
         SizedBox(
           height: 40,
@@ -174,12 +173,12 @@ class _Pestana extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icono,
-                  size: 17, color: elegida ? Colors.white : sg.tinta2),
+              Icon(icono, size: 17, color: elegida ? Colors.white : sg.tinta2),
               const SizedBox(width: 7),
-              Text(texto,
-                  style: sora(14, 600,
-                      color: elegida ? Colors.white : sg.tinta2)),
+              Text(
+                texto,
+                style: sora(14, 600, color: elegida ? Colors.white : sg.tinta2),
+              ),
             ],
           ),
         ),
@@ -208,30 +207,34 @@ class _Todo extends ConsumerWidget {
     // la app, dos teléfonos con distinta hora darían veredictos distintos
     // sobre la misma orden.
     final ordenesHoy = ordenes
-        .where((o) => const {'VENCIDA', 'VENCE HOY'}
-            .contains((o.SITUACION ?? '').toUpperCase()))
+        .where(
+          (o) => const {
+            'VENCIDA',
+            'VENCE HOY',
+          }.contains((o.SITUACION ?? '').toUpperCase()),
+        )
         .toList();
     final tareasHoy = tareas.where((t) => t.vencida).toList();
 
-    final vacio =
-        ordenesHoy.isEmpty && tareasHoy.isEmpty && pautas.isEmpty;
+    final vacio = ordenesHoy.isEmpty && tareasHoy.isEmpty && pautas.isEmpty;
 
     if (vacio) {
       return const EstadoVacio(
         icono: Icons.check_circle_outline,
         titulo: 'Nada apremia ahora',
-        detalle: 'Lo que vence hoy o está vencido aparece acá. Mira las '
+        detalle:
+            'Lo que vence hoy o está vencido aparece acá. Mira las '
             'pestañas para el resto de tu carga.',
       );
     }
 
     return ListView(
-      padding:
-          context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 24)),
+      padding: context.conBarraSistema(
+        const EdgeInsets.fromLTRB(16, 14, 16, 24),
+      ),
       children: [
         if (ordenesHoy.isNotEmpty) ...[
-          _Grupo(
-              texto: 'Órdenes que apremian', cuantas: ordenesHoy.length),
+          _Grupo(texto: 'Órdenes que apremian', cuantas: ordenesHoy.length),
           for (final o in ordenesHoy) ...[
             _Resumen(
               icono: Icons.build_circle_outlined,
@@ -283,9 +286,9 @@ class _Grupo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: SgRotuloConAccion(texto, accion: '$cuantas'),
-      );
+    padding: const EdgeInsets.only(bottom: 10),
+    child: SgRotuloConAccion(texto, accion: '$cuantas'),
+  );
 }
 
 /// Una fila de «Todo»: lo justo para decidir si se abre.
@@ -318,15 +321,19 @@ class _Resumen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(titulo,
-                    style: sora(15, 600, color: sg.tinta),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  titulo,
+                  style: sora(15, 600, color: sg.tinta),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 if (detalle.isNotEmpty) ...[
                   const SizedBox(height: 3),
-                  Text(detalle,
-                      style: sora(12, 500, color: sg.tinta3),
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    detalle,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ],
               ],
             ),
@@ -371,9 +378,9 @@ class _Bitacora extends ConsumerWidget {
             label: Text('Anotar', style: sora(14, 600, color: Colors.white)),
             onPressed: () async {
               final ok = await Navigator.of(context).push<bool>(
-                MaterialPageRoute(
-                    builder: (_) => const NuevaEntradaScreen()),
+                MaterialPageRoute(builder: (_) => const NuevaEntradaScreen()),
               );
+              if (!context.mounted) return;
               if (ok == true) ref.invalidate(bitacoraProvider);
             },
           ),
@@ -382,8 +389,12 @@ class _Bitacora extends ConsumerWidget {
     );
   }
 
-  Widget _linea(BuildContext context, WidgetRef ref, dynamic sg,
-      AsyncValue<List<BitacoraEntrada>> entradas) {
+  Widget _linea(
+    BuildContext context,
+    WidgetRef ref,
+    dynamic sg,
+    AsyncValue<List<BitacoraEntrada>> entradas,
+  ) {
     return EstadoAsync<List<BitacoraEntrada>>(
       valor: entradas,
       onReintentar: () => ref.invalidate(bitacoraProvider),
@@ -391,26 +402,31 @@ class _Bitacora extends ConsumerWidget {
       vacio: const EstadoVacio(
         icono: Icons.menu_book_outlined,
         titulo: 'La bitácora está en blanco',
-        detalle: 'Acá queda lo que pasó en la planta: una fuga, un ruido '
+        detalle:
+            'Acá queda lo que pasó en la planta: una fuga, un ruido '
             'raro, un equipo que se detuvo. Se escribe desde el terreno.',
       ),
       child: (lista) => RefreshIndicator(
         onRefresh: () async => ref.invalidate(bitacoraProvider),
         child: ListView.separated(
-          padding: context
-              .conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 24)),
+          padding: context.conBarraSistema(
+            const EdgeInsets.fromLTRB(16, 14, 16, 24),
+          ),
           itemCount: lista.length,
           separatorBuilder: (_, _) => const SizedBox(height: 11),
           itemBuilder: (_, i) {
             final e = lista[i];
-            final grave = (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
+            final grave =
+                (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
                 (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'CRITICA';
 
             return SgCard(
               padding: const EdgeInsets.all(14),
-              onTap: () => Navigator.of(context).push(MaterialPageRoute(
-                builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
-              )),
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
+                ),
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -421,53 +437,73 @@ class _Bitacora extends ConsumerWidget {
                       if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
                         SgBadge(e.TIPO_NOMBRE!, color: sg.tinta2, chico: true),
                       if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
-                        SgBadge(e.SEVERIDAD_NOMBRE!,
-                            color: grave ? sg.rojoTexto : sg.ambarTexto,
-                            chico: true),
+                        SgBadge(
+                          e.SEVERIDAD_NOMBRE!,
+                          color: grave ? sg.rojoTexto : sg.ambarTexto,
+                          chico: true,
+                        ),
                       if (e.bit_requiere_atencion)
-                        SgBadge('Requiere atención',
-                            color: sg.rojoTexto,
-                            icono: Icons.priority_high,
-                            chico: true),
+                        SgBadge(
+                          'Requiere atención',
+                          color: sg.rojoTexto,
+                          icono: Icons.priority_high,
+                          chico: true,
+                        ),
                       // Rectificada, no editada: el texto original sigue
                       // guardado debajo. Marcarlo es lo que hace que la
                       // bitácora sirva como registro.
                       if (e.rectificada)
-                        SgBadge('Rectificada',
-                            color: sg.azulTexto,
-                            icono: Icons.history_edu,
-                            chico: true),
+                        SgBadge(
+                          'Rectificada',
+                          color: sg.azulTexto,
+                          icono: Icons.history_edu,
+                          chico: true,
+                        ),
                       if (e.POR_VOZ)
-                        SgBadge('Dictada',
-                            color: sg.tinta3, icono: Icons.mic, chico: true),
+                        SgBadge(
+                          'Dictada',
+                          color: sg.tinta3,
+                          icono: Icons.mic,
+                          chico: true,
+                        ),
                     ],
                   ),
                   const SizedBox(height: 8),
-                  Text(e.bit_titulo,
-                      style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                  Text(
+                    e.bit_titulo,
+                    style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                  ),
                   const SizedBox(height: 5),
-                  Text(e.TEXTO_VIGENTE,
-                      style: sora(13, 500, color: sg.tinta2, alto: 1.5),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis),
+                  Text(
+                    e.TEXTO_VIGENTE,
+                    style: sora(13, 500, color: sg.tinta2, alto: 1.5),
+                    maxLines: 4,
+                    overflow: TextOverflow.ellipsis,
+                  ),
                   const SizedBox(height: 9),
                   Row(
                     children: [
                       Icon(Icons.schedule, size: 13, color: sg.tinta3),
                       const SizedBox(width: 5),
-                      Text(_fecha.format(e.bit_fecha_evento_utc.toLocal()),
-                          style: sora(12, 500, color: sg.tinta3)),
+                      Text(
+                        _fecha.format(e.bit_fecha_evento_utc.toLocal()),
+                        style: sora(12, 500, color: sg.tinta3),
+                      ),
                       if ((e.bit_turno ?? '').isNotEmpty) ...[
                         const SizedBox(width: 8),
-                        Text('· turno ${e.bit_turno}',
-                            style: sora(12, 500, color: sg.tinta3)),
+                        Text(
+                          '· turno ${e.bit_turno}',
+                          style: sora(12, 500, color: sg.tinta3),
+                        ),
                       ],
                       const Spacer(),
                       if ((e.USUARIO_NOMBRE ?? '').isNotEmpty)
                         Flexible(
-                          child: Text(e.USUARIO_NOMBRE!,
-                              style: sora(12, 500, color: sg.tinta3),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            e.USUARIO_NOMBRE!,
+                            style: sora(12, 500, color: sg.tinta3),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                     ],
                   ),
@@ -475,13 +511,18 @@ class _Bitacora extends ConsumerWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.view_in_ar_outlined,
-                            size: 13, color: sg.tinta3),
+                        Icon(
+                          Icons.view_in_ar_outlined,
+                          size: 13,
+                          color: sg.tinta3,
+                        ),
                         const SizedBox(width: 5),
                         Expanded(
-                          child: Text(e.activo,
-                              style: sora(12, 500, color: sg.tinta3),
-                              overflow: TextOverflow.ellipsis),
+                          child: Text(
+                            e.activo,
+                            style: sora(12, 500, color: sg.tinta3),
+                            overflow: TextOverflow.ellipsis,
+                          ),
                         ),
                       ],
                     ),

@@ -69,9 +69,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (ref.read(instalacionProvider) != null) return;
     if (!ref.read(sesionProvider).tieneCliente) return;
 
-    final plantas = await ref.read(plantasProvider.future).catchError(
-          (_) => const Paginado<ClienteInstalacion>(datos: []),
-        );
+    final plantas = await ref
+        .read(plantasProvider.future)
+        .catchError((_) => const Paginado<ClienteInstalacion>(datos: []));
     if (!mounted) return;
 
     // Con una sola instalación no se pregunta: preguntar por algo que no tiene
@@ -93,6 +93,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       existenciasEnAlertaProvider,
       permisosVigentesProvider,
     ]) {
+      if (!mounted) return;
       ref.invalidate(p);
     }
   }
@@ -116,7 +117,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SgDestino(
             icono: Icons.assignment_outlined,
             texto: 'Mi trabajo',
-            contador: ref.watch(ordenesTrabajoProvider).valueOrNull?.length ?? 0,
+            contador:
+                ref.watch(ordenesTrabajoProvider).valueOrNull?.length ?? 0,
             // La bandeja única en vez de la lista de órdenes: tareas,
             // pautas y bitácora dejan de estar escondidas en «Más».
             onTap: () => irA(context, const MiTrabajoScreen()),
@@ -143,7 +145,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: RefreshIndicator(
                 onRefresh: _recargar,
                 child: ListView(
-                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+                  padding: context.conBarraSistema(
+                    const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                  ),
                   children: const [
                     _ChipsEstado(),
                     SizedBox(height: 14),
@@ -284,15 +288,20 @@ class _ChipsEstado extends ConsumerWidget {
                   child: InkWell(
                     onTap: () => irA(context, const PendientesScreen()),
                     borderRadius: BorderRadius.circular(SgRadius.pill),
-                    child: SgBadge('$n en cola',
-                        color: sg.ambarTexto,
-                        icono: Icons.cloud_upload_outlined),
+                    child: SgBadge(
+                      '$n en cola',
+                      color: sg.ambarTexto,
+                      icono: Icons.cloud_upload_outlined,
+                    ),
                   ),
                 ),
         ),
         if (corte != null)
-          SgBadge(DateFormat('HH:mm').format(corte.toLocal()),
-              color: sg.tinta2, icono: Icons.check_circle_outline),
+          SgBadge(
+            DateFormat('HH:mm').format(corte.toLocal()),
+            color: sg.tinta2,
+            icono: Icons.check_circle_outline,
+          ),
       ],
     );
   }
@@ -346,15 +355,22 @@ class _Jornada extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(permisos.hasValue ? '$vigentes' : '—',
-                      style: sora(44, 700,
-                          color: sg.tinta,
-                          alto: 1,
-                          espaciado: -1.32,
-                          tabular: true)),
+                  Text(
+                    permisos.hasValue ? '$vigentes' : '—',
+                    style: sora(
+                      44,
+                      700,
+                      color: sg.tinta,
+                      alto: 1,
+                      espaciado: -1.32,
+                      tabular: true,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Text('/ $total',
-                      style: sora(20, 600, color: sg.tinta3, alto: 1)),
+                  Text(
+                    '/ $total',
+                    style: sora(20, 600, color: sg.tinta3, alto: 1),
+                  ),
                 ],
               ),
               const SizedBox(width: 16),
@@ -364,8 +380,10 @@ class _Jornada extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('permisos al día',
-                          style: sora(13, 500, color: sg.tinta2)),
+                      Text(
+                        'permisos al día',
+                        style: sora(13, 500, color: sg.tinta2),
+                      ),
                       const SizedBox(height: 7),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(SgRadius.pill),
@@ -377,7 +395,8 @@ class _Jornada extends ConsumerWidget {
                               child: Container(
                                 height: 8,
                                 decoration: const BoxDecoration(
-                                    gradient: SgColor.gradiente),
+                                  gradient: SgColor.gradiente,
+                                ),
                               ),
                             ),
                           ],
@@ -396,11 +415,17 @@ class _Jornada extends ConsumerWidget {
               runSpacing: 7,
               children: [
                 if (vencidos > 0)
-                  SgBadge('$vencidos ${vencidos == 1 ? "vencido" : "vencidos"}',
-                      color: sg.rojoTexto, icono: Icons.error_outline),
+                  SgBadge(
+                    '$vencidos ${vencidos == 1 ? "vencido" : "vencidos"}',
+                    color: sg.rojoTexto,
+                    icono: Icons.error_outline,
+                  ),
                 if (porVencer > 0)
-                  SgBadge('$porVencer por vencer',
-                      color: sg.ambarTexto, icono: Icons.schedule),
+                  SgBadge(
+                    '$porVencer por vencer',
+                    color: sg.ambarTexto,
+                    icono: Icons.schedule,
+                  ),
                 if (vigentes > 0)
                   SgBadge('$vigentes vigentes', color: sg.azulTexto),
               ],
@@ -428,8 +453,11 @@ class _Siguiente extends ConsumerWidget {
         ref.watch(permisosVigentesProvider).valueOrNull?.datos ?? const [];
     if (lista.isEmpty) return const SizedBox.shrink();
 
-    final ordenados = [...lista]..sort((a, b) =>
-        (a.DIAS_RESTANTES ?? 9999).compareTo(b.DIAS_RESTANTES ?? 9999));
+    final ordenados = [...lista]
+      ..sort(
+        (a, b) =>
+            (a.DIAS_RESTANTES ?? 9999).compareTo(b.DIAS_RESTANTES ?? 9999),
+      );
     final p = ordenados.first;
 
     return SgCard(
@@ -443,15 +471,18 @@ class _Siguiente extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SgBadge('Siguiente sugerido',
-                    color: sg.primarioTexto,
-                    icono: Icons.arrow_forward,
-                    chico: true),
+                SgBadge(
+                  'Siguiente sugerido',
+                  color: sg.primarioTexto,
+                  icono: Icons.arrow_forward,
+                  chico: true,
+                ),
                 const SizedBox(height: 5),
                 Text(
-                  [p.ptr_numero, p.ORDEN_TITULO ?? p.TIPO_NOMBRE]
-                      .where((s) => s.isNotEmpty)
-                      .join(' · '),
+                  [
+                    p.ptr_numero,
+                    p.ORDEN_TITULO ?? p.TIPO_NOMBRE,
+                  ].where((s) => s.isNotEmpty).join(' · '),
                   style: sora(16, 600, color: sg.tinta),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -474,8 +505,10 @@ class _Siguiente extends ConsumerWidget {
           Container(
             width: 44,
             height: 44,
-            decoration:
-                BoxDecoration(color: sg.primario, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: sg.primario,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
           ),
         ],
@@ -514,9 +547,9 @@ class _BloqueIa extends ConsumerWidget {
         motivo: sinDatos == 0
             ? null
             : sinDatos == 1
-                ? 'Hay un equipo vigilado que nadie ha medido todavía.'
-                : 'Hay $sinDatos equipos vigilados que nadie ha medido '
-                    'todavía.',
+            ? 'Hay un equipo vigilado que nadie ha medido todavía.'
+            : 'Hay $sinDatos equipos vigilados que nadie ha medido '
+                  'todavía.',
       );
     }
 
@@ -528,29 +561,29 @@ class _BloqueIa extends ConsumerWidget {
       detalle: p.pre_dia_restante == null
           ? 'La $variable viene en alza.'
           : 'La $variable llega al límite del equipo en unos '
-              '${p.pre_dia_restante} días, si la tendencia se mantiene.',
+                '${p.pre_dia_restante} días, si la tendencia se mantiene.',
       badge: p.SEVERIDAD_NOMBRE,
       colorBadge: p.critica
           ? sg.rojoTexto
           : p.alta
-              ? sg.ambarTexto
-              : sg.acentoTexto,
+          ? sg.ambarTexto
+          : sg.acentoTexto,
       cifras: [
-        if (p.pre_dia_restante != null)
-          ('${p.pre_dia_restante} d', 'faltan'),
+        if (p.pre_dia_restante != null) ('${p.pre_dia_restante} d', 'faltan'),
         if (p.margenDias != null) ('± ${p.margenDias} d', 'margen'),
       ],
       miniatura: p.ACTIVO_FOTO == null
           ? const SgFoto(lado: 52, radio: 15)
-          : SigmaImagen(
-              ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
-      accion: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => AnalisisScreen(prediccionId: p.pre_id),
-      )),
+          : SigmaImagen(ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
+      accion: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AnalisisScreen(prediccionId: p.pre_id),
+        ),
+      ),
       textoAccionSecundaria: 'Ver todo',
-      accionSecundaria: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => const SigmaAiScreen(),
-      )),
+      accionSecundaria: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const SigmaAiScreen())),
     );
   }
 }
@@ -591,9 +624,7 @@ class _ResumenAlertas extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  noLeidas == 0
-                      ? 'Todo revisado'
-                      : '$noLeidas sin leer',
+                  noLeidas == 0 ? 'Todo revisado' : '$noLeidas sin leer',
                   style: sora(12, 500, color: sg.tinta3),
                 ),
               ],
@@ -626,15 +657,21 @@ class _Cola extends StatelessWidget {
               onTap: () => irA(context, const PendientesScreen()),
               child: Row(
                 children: [
-                  SgIconoCuadro(Icons.cloud_upload_outlined,
-                      color: sg.ambarTexto, lado: 42, tamanoIcono: 21),
+                  SgIconoCuadro(
+                    Icons.cloud_upload_outlined,
+                    color: sg.ambarTexto,
+                    lado: 42,
+                    tamanoIcono: 21,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Pendientes de envío',
-                            style: sora(16, 600, color: sg.tinta)),
+                        Text(
+                          'Pendientes de envío',
+                          style: sora(16, 600, color: sg.tinta),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           n == 1
