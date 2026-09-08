@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'hoja_ajuste.dart';
 
 /// Existencias de bodega — HU-067 y siguientes.
 ///
@@ -43,6 +44,7 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
     final sg = context.sg;
     final datos = ref.watch(existenciasProvider);
     final soloAlerta = ref.watch(filtroExistenciasProvider);
+    final puedeAjustar = ref.watch(tienePermisoProvider('AJUSTAR INVENTARIO'));
     final total = ref.watch(existenciasTotalProvider).valueOrNull;
     final enAlerta = ref.watch(existenciasEnAlertaProvider).valueOrNull;
 
@@ -57,28 +59,31 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
               children: [
                 _Buscador(
                   controlador: _buscar,
-                  onCambio: (v) => ref
-                      .read(busquedaExistenciasProvider.notifier)
-                      .state = v,
+                  onCambio: (v) =>
+                      ref.read(busquedaExistenciasProvider.notifier).state = v,
                 ),
                 const SizedBox(height: 11),
                 Row(
                   children: [
-                    SgChip('Todas',
-                        elegido: !soloAlerta,
-                        contador: total,
-                        colorContador: sg.tinta3,
-                        onTap: () => ref
-                            .read(filtroExistenciasProvider.notifier)
-                            .state = false),
+                    SgChip(
+                      'Todas',
+                      elegido: !soloAlerta,
+                      contador: total,
+                      colorContador: sg.tinta3,
+                      onTap: () =>
+                          ref.read(filtroExistenciasProvider.notifier).state =
+                              false,
+                    ),
                     const SizedBox(width: 8),
-                    SgChip('Bajo mínimo',
-                        elegido: soloAlerta,
-                        contador: enAlerta,
-                        colorContador: SgColor.rojo,
-                        onTap: () => ref
-                            .read(filtroExistenciasProvider.notifier)
-                            .state = true),
+                    SgChip(
+                      'Bajo mínimo',
+                      elegido: soloAlerta,
+                      contador: enAlerta,
+                      colorContador: SgColor.rojo,
+                      onTap: () =>
+                          ref.read(filtroExistenciasProvider.notifier).state =
+                              true,
+                    ),
                   ],
                 ),
               ],
@@ -98,9 +103,9 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                     : 'Sin existencias registradas',
                 detalle: soloAlerta
                     ? 'Todos los repuestos de esta instalación están sobre su '
-                        'stock mínimo.'
+                          'stock mínimo.'
                     : 'Las existencias se cargan desde la web al recibir un '
-                        'repuesto en bodega.',
+                          'repuesto en bodega.',
               ),
               child: (p) => RefreshIndicator(
                 onRefresh: () async {
@@ -109,10 +114,24 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                   ref.invalidate(existenciasEnAlertaProvider);
                 },
                 child: ListView.separated(
-                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
+                  padding: context.conBarraSistema(
+                    const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                  ),
                   itemCount: p.datos.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 11),
-                  itemBuilder: (_, i) => _Tarjeta(saldo: p.datos[i]),
+                  itemBuilder: (contexto, i) => _Tarjeta(
+                    saldo: p.datos[i],
+                    /* AJUSTAR ES TOCAR LA TARJETA — HU-057
+
+                       El bodeguero cuenta en el pasillo con la lista abierta:
+                       el ajuste tiene que salir de la fila que esta mirando,
+                       no de un menu aparte donde habria que volver a buscar la
+                       pieza. Sin el permiso la tarjeta no responde, porque la
+                       API exige AJUSTAR INVENTARIO. */
+                    onTap: !puedeAjustar
+                        ? null
+                        : () => HojaAjuste.abrir(contexto, p.datos[i]),
+                  ),
                 ),
               ),
             ),
@@ -164,14 +183,16 @@ class _Buscador extends StatelessWidget {
                 ),
               ),
             ),
-            SgBotonIcono(Icons.mic_none,
-                color: sg.primarioTexto,
-                tamano: 20,
-                onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('El dictado por voz llega más adelante.')),
-                    )),
+            SgBotonIcono(
+              Icons.mic_none,
+              color: sg.primarioTexto,
+              tamano: 20,
+              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('El dictado por voz llega más adelante.'),
+                ),
+              ),
+            ),
           ],
         ),
       ),
@@ -180,9 +201,10 @@ class _Buscador extends StatelessWidget {
 }
 
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({required this.saldo});
+  const _Tarjeta({required this.saldo, this.onTap});
 
   final InventarioSaldo saldo;
+  final VoidCallback? onTap;
 
   static final _n = NumberFormat.decimalPattern('es_CL');
 
@@ -193,48 +215,61 @@ class _Tarjeta extends StatelessWidget {
     final (Color color, String? etiqueta) = saldo.bajoMinimo
         ? (sg.rojoTexto, 'Bajo mínimo')
         : saldo.sobreMaximo
-            ? (sg.ambarTexto, 'Sobre máximo')
-            : (sg.verdeTexto, null);
+        ? (sg.ambarTexto, 'Sobre máximo')
+        : (sg.verdeTexto, null);
 
     return SgCard(
       padding: const EdgeInsets.all(14),
+      onTap: onTap,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          SgIconoCuadro(Icons.inventory_2_outlined,
-              color: color, lado: 44, tamanoIcono: 22),
+          SgIconoCuadro(
+            Icons.inventory_2_outlined,
+            color: color,
+            lado: 44,
+            tamanoIcono: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(saldo.REPUESTO_NOMBRE,
-                    style: sora(16, 600, color: sg.tinta, alto: 1.35),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  saldo.REPUESTO_NOMBRE,
+                  style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    Text(saldo.REPUESTO_CODIGO,
-                        style: sora(12, 600, color: sg.acentoTexto)),
+                    Text(
+                      saldo.REPUESTO_CODIGO,
+                      style: sora(12, 600, color: sg.acentoTexto),
+                    ),
                     if (saldo.ubicacion.isNotEmpty) ...[
                       Text(' · ', style: sora(12, 500, color: sg.tinta3)),
                       Expanded(
-                        child: Text(saldo.ubicacion,
-                            style: sora(12, 500, color: sg.tinta3),
-                            overflow: TextOverflow.ellipsis),
+                        child: Text(
+                          saldo.ubicacion,
+                          style: sora(12, 500, color: sg.tinta3),
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
                     ],
                   ],
                 ),
                 if (etiqueta != null) ...[
                   const SizedBox(height: 8),
-                  SgBadge(etiqueta,
-                      color: color,
-                      icono: Icons.error_outline,
-                      chico: true,
-                      unidad: saldo.rbs_stock_minimo == null
-                          ? null
-                          : 'min ${_n.format(saldo.rbs_stock_minimo)}'),
+                  SgBadge(
+                    etiqueta,
+                    color: color,
+                    icono: Icons.error_outline,
+                    chico: true,
+                    unidad: saldo.rbs_stock_minimo == null
+                        ? null
+                        : 'min ${_n.format(saldo.rbs_stock_minimo)}',
+                  ),
                 ],
               ],
             ),
