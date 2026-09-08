@@ -364,3 +364,8 @@ FodyWeavers.xsd
 # Artefactos de compilacion de Visual Studio (no van al repo)
 _program files_git_check/
 .codex-compile-*/
+
+# Precompilado de la intranet (salida de build, no fuente).
+# Se despliega compilando, no clonando: versionarlo eran 294 MB de DLL
+# que cambiaban de nombre en cada publicacion y ensuciaban todo diff.
+_program files_git_intranet/
