@@ -40,6 +40,15 @@ class ApiException implements Exception {
   /// que llegó dos veces: se trata como enviado, no como error.
   bool get duplicado => codigo == 409;
 
+  /// El token es válido pero **no lleva cliente**, así que casi todo endpoint
+  /// responde 400 «No hay cliente seleccionado».
+  ///
+  /// Es un estado de la sesión, no un fallo: se arregla eligiendo cliente, no
+  /// reintentando ni volviendo a entrar. Mostrarlo como un error cualquiera
+  /// dejaba a la persona mirando «400» en cada pantalla sin saber qué hacer.
+  bool get faltaCliente =>
+      codigo == 400 && mensaje.toLowerCase().contains('cliente seleccionado');
+
   @override
   String toString() => 'ApiException($codigo): $mensaje';
 }
@@ -55,6 +64,24 @@ class ApiClient {
 
   /// El JWT de la sesión. Lo pone `SesionService`; nadie más lo escribe.
   String? token;
+
+  /// El cliente que lleva **ese** token. Lo pone `SesionService` junto con él.
+  ///
+  /// Se guarda acá, y no se consulta a `SesionService`, para no invertir la
+  /// dependencia: el servicio de sesión usa este cliente HTTP, y al revés
+  /// serían dos archivos importándose entre sí.
+  int cliente = 0;
+
+  /// Los endpoints que **no** necesitan cliente en contexto.
+  ///
+  /// Son los de entrar y los de elegir a quién se entra. Todo lo demás está
+  /// acotado por cliente en el SP y responde 400 sin él.
+  static const _sinCliente = <String>[
+    '/sesion',
+    '/cliente-usuarios',
+    '/usuario-recuperaciones',
+    '/mi-perfil',
+  ];
 
   /// **Un solo cliente HTTP para toda la app**, y no uno por petición.
   ///
@@ -126,6 +153,24 @@ class ApiClient {
       );
     }
 
+    /* EL TOKEN SE COMPRUEBA ACA, UNA VEZ, Y NO EN CADA ENDPOINT
+
+       Con la sesión iniciada pero sin cliente elegido —al entrar teniendo
+       varias empresas, o al retomar una sesión guardada— el token es válido y
+       el servidor contesta 400 «No hay cliente seleccionado» a todo. La
+       pantalla mostraba ese 400 como si fuera un fallo del servidor, y encima
+       gastaba un viaje de red por cada provider para recibir el mismo no.
+
+       Cortarlo acá es una sola comprobación para los 52 endpoints, y deja a
+       la app en condiciones de mandar a elegir cliente en vez de mostrar un
+       número. */
+    if (token != null && cliente <= 0 && !_noNecesitaCliente(ruta)) {
+      throw const ApiException(
+        'No hay cliente seleccionado. Use POST /cliente-usuarios/seleccionar.',
+        codigo: 400,
+      );
+    }
+
     var uri = Uri.parse('${ApiConstants.baseUrl}$ruta');
     if (query != null && query.isNotEmpty) {
       uri = uri.replace(
@@ -169,6 +214,9 @@ class ApiClient {
           esDeNegocio: false);
     }
   }
+
+  bool _noNecesitaCliente(String ruta) =>
+      _sinCliente.any((r) => ruta == r || ruta.startsWith('$r/'));
 
   /// A partir de este tamaño, decodificar en el hilo de la interfaz se nota.
   ///

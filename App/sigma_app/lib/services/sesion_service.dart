@@ -63,6 +63,9 @@ class SesionService {
 
       sesion = SesionModel.fromJson(jsonDecode(crudo) as Map<String, dynamic>);
       ApiClient.instance.token = sesion.token;
+      // El cliente viaja con el token y se restaura con él: si no, al retomar
+      // la sesión el cliente HTTP creería que no hay ninguno elegido.
+      ApiClient.instance.cliente = sesion.cliente;
       return sesion.autenticado;
     } catch (e) {
       debugPrint('[SesionService] No se pudo leer la sesión: $e');
@@ -73,6 +76,7 @@ class SesionService {
   Future<void> guardar(SesionModel nueva) async {
     sesion = nueva;
     ApiClient.instance.token = nueva.token;
+    ApiClient.instance.cliente = nueva.cliente;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_clave, jsonEncode(nueva.toJson()));
@@ -84,6 +88,7 @@ class SesionService {
   Future<void> limpiar() async {
     sesion = const SesionModel();
     ApiClient.instance.limpiarToken();
+    ApiClient.instance.cliente = 0;
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_clave);
@@ -129,6 +134,36 @@ class AuthService {
     final sesion = SesionModel.fromJson(j as Map<String, dynamic>);
     await SesionService.instance.guardar(sesion);
     return sesion;
+  }
+
+  /// Deja la sesión **en condiciones de operar**: con cliente en el token.
+  ///
+  /// ## Por qué hace falta
+  ///
+  /// El token de `POST /sesion` no siempre trae cliente. Sin él, todo endpoint
+  /// acotado por cliente responde 400 y la app se veía «conectada» mostrando
+  /// errores en cada pantalla: el síntoma era «hay señal y no carga nada».
+  ///
+  /// Pasa en dos momentos y los dos son normales:
+  ///
+  ///   · al **entrar**, si la persona pertenece a varias empresas;
+  ///   · al **retomar** una sesión guardada que se cerró antes de elegir.
+  ///
+  /// ## Qué hace
+  ///
+  /// Si hay un solo cliente posible, **lo elige solo**: obligar a tocar un
+  /// botón para confirmar la única opción que existe no protege de nada. Con
+  /// varios, devuelve `false` y quien llama manda a la pantalla de selección.
+  ///
+  /// Devuelve `true` cuando la sesión ya puede pedir datos.
+  Future<bool> asegurarCliente() async {
+    if (SesionService.instance.sesion.tieneCliente) return true;
+
+    final clientes = await misClientes();
+    if (clientes.length != 1) return false;
+
+    await seleccionarCliente(clientes.first.id);
+    return SesionService.instance.sesion.tieneCliente;
   }
 
   Future<List<ClienteElegibleModel>> misClientes() async {

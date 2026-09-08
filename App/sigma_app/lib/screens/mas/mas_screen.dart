@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../models/modelos.dart';
+import '../../providers/sincronizacion_provider.dart';
 import '../../providers/datos_provider.dart';
 import '../../providers/sesion_provider.dart';
 import '../../services/outbox_service.dart';
@@ -248,6 +251,16 @@ class MasScreen extends ConsumerWidget {
                                 'pantalla en la app.')));
                         return;
                       }
+                      /* Entrar a un menu refresca la sabana.
+
+                         `asegurar` no hace nada si no hay señal o si ya
+                         corrio hace menos de tres minutos, asi que pasar de
+                         Ordenes a Activos y volver no dispara tres descargas.
+                         Y no se espera: la pantalla abre ahora y los datos se
+                         actualizan debajo. */
+                      unawaited(
+                          ref.read(sincronizacionProvider.notifier).asegurar());
+
                       Navigator.push(
                           context, MaterialPageRoute(builder: destino));
                     },

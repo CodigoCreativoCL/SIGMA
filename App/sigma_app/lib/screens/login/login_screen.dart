@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/sesion_provider.dart';
+import '../../providers/sincronizacion_provider.dart';
 import '../../services/api_client.dart';
 import '../../services/outbox_service.dart';
 import '../../services/sesion_service.dart';
@@ -79,7 +82,20 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     try {
       await AuthService.instance
           .iniciar(_login.text, _password.text, recordar: _recordarme);
+
+      /* EL TOKEN DE `POST /sesion` NO SIEMPRE TRAE CLIENTE
+
+         Sin cliente, todo endpoint acotado responde 400 y el Home se llenaba
+         de errores con la señal perfecta. Si la persona tiene una sola
+         empresa se elige sola; con varias, el Home la manda a elegir. */
+      await AuthService.instance.asegurarCliente();
       sesion.refrescar();
+
+      // La sábana baja en segundo plano: la persona ya puede usar la app
+      // mientras llega, y sin esto `cache_datos` se quedaba vacía y la app
+      // no servía sin señal.
+      unawaited(ref.read(sincronizacionProvider.notifier).asegurar(forzar: true));
+
       if (!mounted) return;
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const HomeScreen()),

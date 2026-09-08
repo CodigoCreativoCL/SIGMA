@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/sesion_provider.dart';
+import '../../providers/sincronizacion_provider.dart';
 import '../../services/outbox_service.dart';
+import '../../services/sesion_service.dart';
 import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
@@ -69,7 +73,10 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
       _decir('Se entrará con lo que haya en el teléfono', 0.85);
     }
 
-    if (widget.haySesion) ref.read(sesionProvider.notifier).refrescar();
+    if (widget.haySesion) {
+      ref.read(sesionProvider.notifier).refrescar();
+      await _prepararSesion();
+    }
 
     // Un mínimo en pantalla: si la base abre en 40 ms, el splash aparece y
     // desaparece como un parpadeo, que se lee como un fallo gráfico.
@@ -89,6 +96,38 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
             FadeTransition(opacity: animacion, child: hijo),
       ),
     );
+  }
+
+  /// Deja la sesión retomada lista para pedir datos, y **baja la sábana**.
+  ///
+  /// ## Por qué acá y no en la primera pantalla
+  ///
+  /// Al retomar una sesión guardada pasaban dos cosas y ninguna se veía:
+  ///
+  ///   1. Si el token no traía cliente, todo endpoint respondía 400 y el Home
+  ///      se llenaba de errores con la señal perfecta.
+  ///   2. **La sábana no se bajaba nunca.** `cache_datos` solo se llenaba si
+  ///      alguien abría a mano la pantalla de Sincronización, así que la app
+  ///      se quedaba sin datos locales y sin conexión no mostraba nada.
+  ///
+  /// Va en el splash porque es el único sitio por el que se pasa siempre,
+  /// tanto al entrar como al retomar.
+  ///
+  /// **No bloquea la entrada.** La descarga se dispara y la app sigue: hacer
+  /// esperar a la persona a que bajen nueve bloques para ver el Home es la
+  /// diferencia entre abrir en un segundo y abrir en veinte.
+  Future<void> _prepararSesion() async {
+    try {
+      _decir('Comprobando tu sesión…', 0.9);
+      final listo = await AuthService.instance.asegurarCliente();
+      if (!listo) return; // pertenece a varias empresas: elige en el Home
+
+      // Sin `await`: baja en segundo plano mientras la app ya se usa.
+      unawaited(ref.read(sincronizacionProvider.notifier).asegurar());
+    } catch (e) {
+      // Sin red se entra igual, con lo que haya en el teléfono.
+      debugPrint('[Splash] Sesión sin preparar: $e');
+    }
   }
 
   void _decir(String texto, double avance) {
