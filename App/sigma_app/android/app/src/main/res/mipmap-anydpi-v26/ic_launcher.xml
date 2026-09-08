@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    El icono adaptativo (Android 8 en adelante).
+
+    El lanzador recorta la forma que quiera el fabricante —circulo, cuadrado
+    redondeado, gota— sobre un lienzo de 108 dp del que solo los 72 dp
+    centrales estan garantizados. Por eso el isotipo va en una capa aparte y
+    ocupado al 42 %: si fuera al borde, un launcher circular le cortaria las
+    puntas.
+
+    Los PNG por densidad los genera `tool/generar_iconos_test.dart` desde los
+    SVG oficiales de la marca. No se editan a mano.
+-->
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <background android:drawable="@color/ic_launcher_background" />
+    <foreground android:drawable="@mipmap/ic_launcher_foreground" />
+    <monochrome android:drawable="@mipmap/ic_launcher_foreground" />
+</adaptive-icon>

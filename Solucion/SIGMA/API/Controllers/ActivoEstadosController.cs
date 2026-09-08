@@ -45,6 +45,7 @@ namespace API.Controllers
                         { "@NUEVO_ESTADO", dto.estado },
                         { "@MOTIVO", dto.motivo },
                         { "@ORDEN_TRABAJO", dto.orden_trabajo },
+                        { "@UUID", dto.uuid },
                         { "@USUARIO", SesionApi.UsuarioId() }
                     }, true);
 
