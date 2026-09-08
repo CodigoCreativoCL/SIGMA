@@ -428,18 +428,6 @@ class SigmaRepository {
         },
       );
 
-  Future<int> cambiarEstadoActivo({
-    required int activoId,
-    required int estado,
-    String? observacion,
-  }) async {
-    final j = await _api.post('${ApiConstants.activos}/$activoId/estado', {
-      'act_activo_estado': estado,
-      'observacion': observacion,
-    });
-    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : activoId;
-  }
-
   /// Los valores de un catalogo, por su codigo.
   Future<List<CatalogoValor>> valoresDe(String codigo) async {
     final j = await _api.get(ApiConstants.catalogoValores,
