@@ -1,4 +1,4 @@
-﻿﻿using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
 using System.Collections.Generic;
@@ -237,14 +237,6 @@ namespace API.Controllers
                 ExigirPermiso("EJECUTAR ORDEN TRABAJO");
                 ExigirCliente();
 
-                /* LOS NOMBRES SON LOS QUE DECLARA EL SP, NO LOS DEL DTO
-
-                   Iban @OTR_ID y @RESULTADO; el SP declara @ORDEN_TRABAJO y
-                   @OBSERVACION. SQL Server rechaza la llamada entera —"expects
-                   parameter '@ORDEN_TRABAJO', which was not supplied"— asi que
-                   **ninguna orden se podia finalizar**. Se detecto cruzando los
-                   71 `Datos.Ejecutar` de los controllers contra sys.parameters
-                   el 07-09-2026. */
                 Datos.Ejecutar("UPD_ORDEN_TRABAJO_FINALIZAR",
                     new Dictionary<string, object>
                     {
@@ -255,6 +247,133 @@ namespace API.Controllers
 
                 return Ok(new { otr_id = id });
             });
+        }
+
+        /// <summary>
+        /// GET /ordenes-trabajo/{id}/recursos — mano de obra y repuestos.
+        ///
+        /// Los dos en una respuesta: en la ficha se miran juntos —cuánto se
+        /// trabajó y qué se usó— y separarlos serían dos viajes de red para
+        /// pintar una sola pestaña.
+        /// </summary>
+        /// <response code="200">Mano de obra y repuestos de la orden.</response>
+        /// <response code="403">La orden no está en una planta autorizada.</response>
+        [HttpGet]
+        [Route("{id:int}/recursos")]
+        public IHttpActionResult Recursos(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+
+                List<ManoObraDto> mano = Datos.Listar<ManoObraDto>(
+                    "API_SEL_ORDEN_TRABAJO_RECURSO", ParametrosRecurso(id, 1));
+
+                List<OrdenTrabajoRepuestoDto> repuestos =
+                    Datos.Listar<OrdenTrabajoRepuestoDto>(
+                        "API_SEL_ORDEN_TRABAJO_RECURSO", ParametrosRecurso(id, 2));
+
+                return Ok(new RecursosDto { mano_obra = mano, repuestos = repuestos });
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/mano-obra — registra un tramo. HU-115
+        ///
+        /// Sin mano de obra no hay MTTR ni carga por persona. El tramo es un
+        /// **hecho**: la tabla no tiene baja lógica y este endpoint no tiene
+        /// edición — una corrección se hace agregando otro tramo.
+        /// </summary>
+        /// <response code="201">Registrado. Devuelve el id.</response>
+        /// <response code="400">El término es anterior al inicio, o el tramo supera 24 h.</response>
+        [HttpPost]
+        [Route("{id:int}/mano-obra")]
+        public IHttpActionResult ManoObra(int id, ManoObraAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("EJECUTAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+
+                int nuevo = Datos.Ejecutar("API_INS_ORDEN_TRABAJO_MANO_OBRA",
+                    new Dictionary<string, object>
+                    {
+                        { "@OTR_ID", id },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@FECHA_INICIO", dto.fecha_inicio_utc },
+                        { "@FECHA_FIN", dto.fecha_fin_utc },
+                        { "@MINUTOS", dto.minutos },
+                        { "@ESPECIALIDAD", dto.especialidad },
+                        { "@ES_HORA_EXTRA", dto.es_hora_extra },
+                        { "@OBSERVACION", dto.observacion },
+                        // De quién es el tramo. Nulo = de quien lo registra,
+                        // que es el caso normal en terreno.
+                        { "@USUARIO_TRAMO", dto.usuario_tramo }
+                    }, true);
+
+                return Creado(nuevo);
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/repuestos — consume o devuelve. HU-116
+        ///
+        /// **Mueve el inventario.** Registrar el consumo sin descontar del
+        /// saldo dejaría la bodega mintiendo: el sistema diría que hay diez
+        /// rodamientos y en el estante habría nueve. Las dos escrituras
+        /// ocurren en la misma transacción del SP de inventario.
+        ///
+        /// `es_devolucion` invierte el gesto: el técnico sacó tres y usó dos,
+        /// y el tercero vuelve al estante. Sin eso, el activo carga un costo
+        /// que no tuvo y la bodega tiene una unidad fantasma.
+        /// </summary>
+        /// <response code="200">Movido. Devuelve el acumulado de la línea.</response>
+        /// <response code="400">Sin saldo suficiente, o la bodega exige ubicación.</response>
+        [HttpPost]
+        [Route("{id:int}/repuestos")]
+        public IHttpActionResult Repuestos(int id, OrdenTrabajoRepuestoAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("EJECUTAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+
+                Datos.Ejecutar("API_INS_ORDEN_TRABAJO_REPUESTO",
+                    new Dictionary<string, object>
+                    {
+                        { "@OTR_ID", id },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@REPUESTO", dto.repuesto },
+                        { "@BODEGA", dto.bodega },
+                        { "@CANTIDAD", dto.cantidad },
+                        { "@UBICACION", dto.ubicacion },
+                        { "@LOTE", dto.lote },
+                        { "@ES_DEVOLUCION", dto.es_devolucion },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@UUID", dto.uuid }
+                    });
+
+                return Ok(new { otr_id = id });
+            });
+        }
+
+        /// <summary>
+        /// Los parámetros de las consultas de recursos.
+        /// </summary>
+        private Dictionary<string, object> ParametrosRecurso(int id, int tipo)
+        {
+            return new Dictionary<string, object>
+            {
+                { "@USUARIO", SesionApi.UsuarioId() },
+                { "@CLIENTE", SesionApi.ClienteId() },
+                { "@OTR_ID", id },
+                { "@TIPO", tipo }
+            };
         }
 
         /// <summary>

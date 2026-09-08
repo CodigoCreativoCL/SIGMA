@@ -228,6 +228,85 @@ namespace API.MVC.Model
         public bool ES_PORTADA { get; set; }
     }
 
+    /// <summary>Un tramo de trabajo. Append-only: la tabla no tiene baja logica.</summary>
+    public class ManoObraDto
+    {
+        public int omo_id { get; set; }
+        public int? USUARIO_ID { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public string ESPECIALIDAD_NOMBRE { get; set; }
+        public string PROVEEDOR_NOMBRE { get; set; }
+        public DateTime omo_fecha_inicio_utc { get; set; }
+        public DateTime? omo_fecha_fin_utc { get; set; }
+        public int omo_minuto { get; set; }
+        public bool omo_es_hora_extra { get; set; }
+        public string omo_observacion { get; set; }
+
+        /// <summary>INTERNA o EXTERNA. Lo decide de donde viene la persona.</summary>
+        public string ORIGEN { get; set; }
+    }
+
+    public class ManoObraAltaDto
+    {
+        public DateTime fecha_inicio_utc { get; set; }
+        public DateTime? fecha_fin_utc { get; set; }
+
+        /// <summary>Alternativa a la hora de termino, para registrar a mano.</summary>
+        public int? minutos { get; set; }
+
+        public int? especialidad { get; set; }
+        public bool es_hora_extra { get; set; }
+        public string observacion { get; set; }
+
+        /// <summary>De quien es el tramo. Nulo = de quien lo registra.</summary>
+        public int? usuario_tramo { get; set; }
+    }
+
+    public class OrdenTrabajoRepuestoDto
+    {
+        public int ore_id { get; set; }
+        public int REPUESTO_ID { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string LOTE_CODIGO { get; set; }
+        public decimal? ore_cantidad_planificada { get; set; }
+        public decimal? ore_cantidad_reservada { get; set; }
+        public decimal? ore_cantidad_consumida { get; set; }
+        public decimal? ore_cantidad_devuelta { get; set; }
+        public decimal? ore_costo_unitario { get; set; }
+        public string ore_observacion { get; set; }
+    }
+
+    public class OrdenTrabajoRepuestoAltaDto
+    {
+        public int repuesto { get; set; }
+        public int bodega { get; set; }
+        public decimal cantidad { get; set; }
+
+        /// <summary>
+        /// Obligatoria cuando la bodega tiene ubicaciones: sin decir de que
+        /// estante sale, el saldo por ubicacion queda sin dueno y nadie puede
+        /// ir a buscar el repuesto.
+        /// </summary>
+        public int? ubicacion { get; set; }
+
+        public int? lote { get; set; }
+
+        /// <summary>Invierte el gesto: lo que sobro vuelve al estante.</summary>
+        public bool es_devolucion { get; set; }
+
+        public string observacion { get; set; }
+        public Guid? uuid { get; set; }
+    }
+
+    /// <summary>Mano de obra y repuestos juntos: en la ficha se miran juntos.</summary>
+    public class RecursosDto
+    {
+        public List<ManoObraDto> mano_obra { get; set; }
+        public List<OrdenTrabajoRepuestoDto> repuestos { get; set; }
+    }
+
     /// <summary>Un evento de la línea de tiempo de un activo (HU-037).</summary>
     public class ActivoFichaEventoDto
     {
