@@ -1381,6 +1381,49 @@ namespace API.MVC.Model
         public string resultado { get; set; }
     }
 
+    /// <summary>
+    /// El cierre de la orden — HU-120.
+    ///
+    /// FINALIZAR Y CERRAR NO SON LO MISMO
+    ///   El tecnico finaliza y la orden queda EN ESPERA DE CIERRE; cerrarla es
+    ///   del jefe de mantenimiento, el supervisor o el planificador. Esa
+    ///   separacion es la que hace que el registro sirva de respaldo: el que
+    ///   hizo el trabajo no es el que certifica que quedo hecho.
+    ///
+    /// LAS REGLAS VIVEN EN EL SP
+    ///   Quien puede cerrar, el estado 3 previo, el motivo habilitado y el
+    ///   bloqueo por permiso de trabajo sin autorizar los hace cumplir
+    ///   UPD_ORDEN_TRABAJO_CERRAR. Repetirlos aca daria dos verdades que se
+    ///   separan el dia que una de las dos cambie.
+    /// </summary>
+    public class CierreOrdenDto
+    {
+        /// <summary>
+        /// El motivo, del catalogo Orden_Trabajo_Cierre_Motivo. No es un texto
+        /// libre: «trabajo realizado» escrito de cinco formas no agrupa en un
+        /// informe.
+        /// </summary>
+        public int motivo { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>
+        /// Lo genera el telefono AL ENCOLAR, no al enviar. Sin el, el reintento
+        /// de un cierre que si entro fallaria con «la OT no esta en espera de
+        /// cierre» — por haber funcionado.
+        /// </summary>
+        public Guid? uuid { get; set; }
+    }
+
+    /// <summary>Un motivo de cierre del catalogo.</summary>
+    public class CierreMotivoDto
+    {
+        public int ocm_id { get; set; }
+        public string ocm_codigo { get; set; }
+        public string ocm_nombre { get; set; }
+        public int? ocm_orden { get; set; }
+    }
+
     // =====================================================================
     // CHECKLIST EN TERRENO (HU-095)
     // =====================================================================

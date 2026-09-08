@@ -74,6 +74,21 @@ namespace API.Controllers
         /// variables; el 6, repuestos, bodegas, ubicaciones y tipos de
         /// movimiento— porque van juntos o la app tiene que cruzarlos sola.
         /// </summary>
+        /// <summary>
+        /// El ultimo bloque que declara el manifiesto de
+        /// <c>API_SEL_APP_SABANA_DATOS</c>.
+        ///
+        /// ESTE NUMERO Y EL SP TIENEN QUE MOVERSE JUNTOS
+        ///   El manifiesto lo arma el SP y este rango vive aca, asi que son
+        ///   dos verdades sobre lo mismo. Agregar un bloque al SP sin subir
+        ///   este numero da el peor de los fallos: el manifiesto anuncia el
+        ///   bloque, la app lo pide, recibe 400 y lo marca fallido — y como la
+        ///   fecha de corte solo se guarda cuando NINGUN bloque falla, se
+        ///   rompe el incremental de TODOS los demas. Paso al agregar el
+        ///   bloque 9 (motivos de cierre, HU-120).
+        /// </summary>
+        private const int BLOQUE_MAXIMO = 9;
+
         [HttpGet]
         [Route("{tipo:int}")]
         public IHttpActionResult Bloque(int tipo, DateTime? desde = null,
@@ -84,7 +99,7 @@ namespace API.Controllers
                 ExigirUsuario();
                 ExigirCliente();
 
-                if (tipo < 1 || tipo > 8)
+                if (tipo < 1 || tipo > BLOQUE_MAXIMO)
                     return Error(System.Net.HttpStatusCode.BadRequest,
                         "El bloque pedido no existe. Consulta GET /sincronizacion.");
 

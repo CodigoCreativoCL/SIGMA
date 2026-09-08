@@ -250,6 +250,91 @@ namespace API.Controllers
         }
 
         /// <summary>
+        /// POST /ordenes-trabajo/{id}/cerrar — el cierre.           HU-120
+        ///
+        /// EL CIERRE ES DE OTRO, Y POR ESO EXISTE
+        ///   El tecnico finaliza; cierran el jefe de mantenimiento, el
+        ///   supervisor y el planificador. Que el que ejecuta no sea el que
+        ///   certifica es lo que hace que el registro valga como respaldo.
+        ///
+        /// SE AUTORIZA POR PERMISO, NO POR NOMBRE DE PERFIL
+        ///   `CERRAR OT` lo tienen hoy esos tres cargos, y el dia que un
+        ///   cliente llame distinto a los suyos la regla sigue funcionando.
+        ///   Comparar contra la cadena "Supervisor de Mantenimiento" seria
+        ///   correcto hasta el primer cliente que escriba "Jefe de Turno".
+        ///
+        /// LAS REGLAS NO SE REPITEN ACA
+        ///   La jerarquia, el estado 3 previo, el motivo habilitado y el
+        ///   bloqueo por permiso de trabajo sin autorizar los hace cumplir
+        ///   `UPD_ORDEN_TRABAJO_CERRAR`. Sus RAISERROR los traduce `ErrorSql`
+        ///   al codigo HTTP: escribir validaciones gemelas en C# daria dos
+        ///   verdades que se separan el dia que una de las dos cambie.
+        ///
+        /// IDEMPOTENTE POR `uuid`
+        ///   El cierre se encola como toda captura de terreno. El SP corta por
+        ///   uuid ANTES de validar, asi que el reintento de un cierre que si
+        ///   entro responde lo mismo en vez de fallar con «la OT no esta en
+        ///   espera de cierre» — es decir, en vez de fallar por haber
+        ///   funcionado.
+        /// </summary>
+        /// <response code="200">Cerrada, o ya lo estaba con ese uuid.</response>
+        /// <response code="400">No esta en espera de cierre, el motivo no existe, o hay un permiso de trabajo sin autorizar.</response>
+        /// <response code="403">Sin el permiso de cerrar ordenes.</response>
+        [HttpPost]
+        [Route("{id:int}/cerrar")]
+        public IHttpActionResult Cerrar(int id, CierreOrdenDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CERRAR OT");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                Datos.Ejecutar("UPD_ORDEN_TRABAJO_CERRAR",
+                    new Dictionary<string, object>
+                    {
+                        { "@ORDEN_TRABAJO", id },
+                        // Del token, nunca del cuerpo: `otr_usuario_cierre` es
+                        // quien firma el cierre, y una firma que llega por el
+                        // cuerpo la escribe cualquiera con un token valido.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CIERRE_MOTIVO", dto.motivo },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@UUID", dto.uuid }
+                    });
+
+                return Ok(new { otr_id = id });
+            });
+        }
+
+        /// <summary>
+        /// GET /ordenes-trabajo/motivos-cierre — el catalogo de la hoja.
+        ///
+        /// La app no trae los seis motivos escritos adentro: son un dato de la
+        /// empresa y se habilitan desde la web. Una lista quemada en el
+        /// telefono obliga a publicar una version nueva cada vez que cambie, y
+        /// mientras tanto deja al supervisor eligiendo un motivo que el SP ya
+        /// rechaza.
+        /// </summary>
+        /// <response code="200">Los motivos habilitados, en su orden.</response>
+        /// <response code="403">Sin el permiso de cerrar ordenes.</response>
+        [HttpGet]
+        [Route("motivos-cierre")]
+        public IHttpActionResult MotivosCierre()
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CERRAR OT");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<CierreMotivoDto>(
+                    "API_SEL_ORDEN_TRABAJO_CIERRE_MOTIVO",
+                    new Dictionary<string, object> { { "@HABILITADO", true } }));
+            });
+        }
+
+        /// <summary>
         /// GET /ordenes-trabajo/{id}/recursos — mano de obra y repuestos.
         ///
         /// Los dos en una respuesta: en la ficha se miran juntos —cuánto se
