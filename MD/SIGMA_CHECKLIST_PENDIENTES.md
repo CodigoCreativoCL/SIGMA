@@ -365,11 +365,31 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ### 6.11 · La card de SIGMA AI
 
-- [ ] **Convertirla en slider**, cambiando con animación sutil entre los
-      análisis y las OT no finalizadas.
-- [ ] **Más información de impacto** para que el usuario le haga caso.
+- [x] **Convertirla en slider.** `_CarruselIa`: pasa sola cada 8 s con
+      `easeInOutCubic`, y **se detiene mientras se toca** —que se mueva bajo el
+      dedo es la forma más rápida de abrir la ficha equivocada—. Ocho segundos
+      y no tres: hay que poder LEER la tarjeta antes de que cambie, y una que
+      se va mientras se lee enseña a ignorarla. Alto fijo para que no salte
+      entre páginas de distinto largo.
+
+      Las páginas son los cuatro análisis más graves y **una de OT sin
+      terminar** (estados 2 y 3, verificado contra la API): una recién abierta
+      que nadie tomó no es «sin terminar», es «sin empezar».
+- [x] **Más información de impacto.** Se suman el **valor actual contra el
+      límite** —«82 °C de 95 °C»—, que convierte el aviso en algo comprobable
+      mirando el equipo en vez de una afirmación que hay que creer, y **dónde
+      está** (código y área): un plazo sin sitio obliga a buscar el activo
+      antes de poder hacer nada.
+
+      **La probabilidad se sigue sin pintar**, a propósito: no es probabilidad
+      de falla sino certeza del modelo sobre su horizonte, y esa frase cabe en
+      la ficha, no en una tarjeta. Un «87 %» sin la frase termina repitiéndose
+      en una reunión significando otra cosa.
 - [ ] **Notificación al celular con sonido de predicción** cuando llegue una
-      alerta nueva de SIGMA AI. *(Depende de push/FCM, HU-077.)*
+      alerta nueva de SIGMA AI. **Bloqueado por push/FCM (HU-077)**: sin el
+      registro del token en `POST /dispositivos` y Firebase montado no hay por
+      dónde entregarla. Es lo único de este punto que queda, y no es trabajo de
+      la card sino del bloque de notificaciones.
 
 ---
 

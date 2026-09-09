@@ -23,6 +23,7 @@ import '../trabajo/mi_trabajo_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
+import 'dart:async';
 
 /// Navega empujando una pantalla sobre la actual.
 Future<T?> irA<T>(BuildContext c, Widget p) =>
@@ -547,10 +548,26 @@ class _BloqueIa extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sg = context.sg;
-    final p = ref.watch(prediccionDestacadaProvider);
+    final predicciones =
+        ref.watch(prediccionesProvider).valueOrNull ?? const [];
+    final ordenes = ref.watch(ordenesTrabajoProvider).valueOrNull ?? const [];
 
-    if (p == null) {
+    /* LAS OT SIN TERMINAR TAMBIEN SON UNA TARJETA
+
+       Bryan pidió que el carrusel alternara entre los análisis y «OT no
+       finalizadas». No es un adorno: una predicción dice qué VA a pasar y una
+       OT abierta dice qué está pasando ya, y las dos compiten por el mismo
+       rato de la persona. Verlas en el mismo sitio es lo que permite decidir
+       cuál atender primero.
+
+       Se cuentan las que están en ejecución o esperando cierre —estado 2 y 3—:
+       una recién abierta que nadie ha tomado no es «sin terminar», es «sin
+       empezar», y la bandeja ya la muestra. */
+    final sinTerminar = ordenes
+        .where((o) => o.ESTADO_ID == 2 || o.ESTADO_ID == 3)
+        .toList();
+
+    if (predicciones.isEmpty && sinTerminar.isEmpty) {
       final sinDatos = ref.watch(vigiladosSinDatosProvider);
 
       // «No hay análisis» no significa lo mismo si además nadie mide nada: lo
@@ -560,12 +577,172 @@ class _BloqueIa extends ConsumerWidget {
             ? null
             : sinDatos == 1
             ? 'Hay un equipo vigilado que nadie ha medido todavía.'
-            : 'Hay $sinDatos equipos vigilados que nadie ha medido '
-                  'todavía.',
+            : 'Hay $sinDatos equipos vigilados que nadie ha medido todavía.',
       );
     }
 
+    return _CarruselIa(
+      predicciones: predicciones.take(4).toList(),
+      sinTerminar: sinTerminar,
+    );
+  }
+}
+
+/// El carrusel de SIGMA AI: los análisis y las OT sin terminar, uno a uno.
+///
+/// ## Por qué pasa solo
+///
+/// La tarjeta ocupa el sitio más visible del Inicio y antes mostraba una sola
+/// predicción: la más grave. Las otras tres existían y nadie las veía salvo
+/// que entrara a «Ver todo», que es un toque que casi nadie da.
+///
+/// Pasando sola, en ocho segundos se ven las cuatro sin hacer nada. Ocho y no
+/// tres: hay que poder LEER la tarjeta —dos líneas y dos cifras— antes de que
+/// cambie, y una que se va mientras se lee enseña a ignorarla.
+///
+/// ## Por qué se detiene al tocarla
+///
+/// Porque quien la toca está eligiendo mirar esa, y que se le mueva debajo del
+/// dedo es la forma más rápida de abrir la ficha equivocada.
+class _CarruselIa extends StatefulWidget {
+  const _CarruselIa({required this.predicciones, required this.sinTerminar});
+
+  final List<Prediccion> predicciones;
+  final List<OrdenTrabajo> sinTerminar;
+
+  @override
+  State<_CarruselIa> createState() => _CarruselIaState();
+}
+
+class _CarruselIaState extends State<_CarruselIa> {
+  final _paginas = PageController();
+  Timer? _reloj;
+  int _actual = 0;
+
+  /// Se detiene mientras se toca y no vuelve a arrancar hasta que se suelta:
+  /// ver la nota de la clase.
+  bool _detenido = false;
+
+  int get _cuantas =>
+      widget.predicciones.length + (widget.sinTerminar.isEmpty ? 0 : 1);
+
+  @override
+  void initState() {
+    super.initState();
+    if (_cuantas > 1) {
+      _reloj = Timer.periodic(const Duration(seconds: 8), (_) => _siguiente());
+    }
+  }
+
+  @override
+  void dispose() {
+    _reloj?.cancel();
+    _paginas.dispose();
+    super.dispose();
+  }
+
+  void _siguiente() {
+    if (!mounted || _detenido || !_paginas.hasClients) return;
+
+    _paginas.animateToPage(
+      (_actual + 1) % _cuantas,
+      // Lenta y con `easeInOutCubic`: el movimiento tiene que leerse como que
+      // la tarjeta se está cambiando sola, no como que alguien la deslizó.
+      duration: const Duration(milliseconds: 620),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Listener(
+      onPointerDown: (_) => _detenido = true,
+      onPointerUp: (_) => _detenido = false,
+      onPointerCancel: (_) => _detenido = false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          /* ALTO FIJO Y NO `shrinkWrap`
+
+             Un PageView mide la página que está mostrando, así que con alto
+             libre la tarjeta daría un salto cada vez que una predicción tenga
+             una línea más que la anterior. Un salto de veinte píxeles bajo el
+             dedo, en el Inicio, se siente como un fallo. */
+          SizedBox(
+            height: 254,
+            child: PageView.builder(
+              controller: _paginas,
+              itemCount: _cuantas,
+              onPageChanged: (i) => setState(() => _actual = i),
+              itemBuilder: (_, i) => i < widget.predicciones.length
+                  ? _TarjetaPrediccion(prediccion: widget.predicciones[i])
+                  : _TarjetaSinTerminar(ordenes: widget.sinTerminar),
+            ),
+          ),
+          if (_cuantas > 1) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < _cuantas; i++) ...[
+                  // El punto activo es una barra y no un círculo más grande:
+                  // se distingue de un vistazo incluso con la pantalla sucia.
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOut,
+                    width: i == _actual ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: i == _actual ? sg.acentoTexto : sg.up,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  if (i < _cuantas - 1) const SizedBox(width: 5),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Una predicción en la tarjeta de SIGMA AI.
+///
+/// ## Qué se dice y qué no
+///
+/// «32 d» sale de resolver una ecuación sobre lecturas reales y se puede
+/// verificar. La **probabilidad no se pinta**: no es probabilidad de falla,
+/// es cuánta certeza tiene el modelo de que el cruce caiga dentro de su
+/// horizonte, y esa frase cabe en la ficha y no en una tarjeta. Poner el
+/// número sin la frase es exactamente cómo un «87 %» termina repitiéndose en
+/// una reunión como si significara otra cosa.
+///
+/// El «± 4 d» del margen va al lado a propósito: un plazo sin margen se lee
+/// como una fecha comprometida, y esto es una estimación.
+///
+/// ## Lo que se agregó
+///
+/// El **valor actual contra el límite** —«82 °C de 95 °C»—: es lo que convierte
+/// el aviso en algo que se puede comprobar mirando el equipo, en vez de una
+/// afirmación que hay que creer. Y **dónde está**, porque un plazo sin sitio
+/// obliga a buscar el activo antes de poder hacer nada.
+class _TarjetaPrediccion extends StatelessWidget {
+  const _TarjetaPrediccion({required this.prediccion});
+
+  final Prediccion prediccion;
+
+  static final _n = NumberFormat.decimalPattern('es_CL');
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    final p = prediccion;
     final variable = (p.VARIABLE_NOMBRE ?? 'La variable').toLowerCase();
+    final unidad = p.UNIDAD ?? '';
 
     return SgTarjetaIa(
       simbolo: SgIconoIa.prediccion,
@@ -580,18 +757,21 @@ class _BloqueIa extends ConsumerWidget {
           : p.alta
           ? sg.ambarTexto
           : sg.acentoTexto,
+      pie: _donde(p),
       cifras: [
         if (p.pre_dia_restante != null) ('${p.pre_dia_restante} d', 'faltan'),
         if (p.margenDias != null) ('± ${p.margenDias} d', 'margen'),
+        // Comprobable mirando el equipo, que es lo que lo hace creíble.
+        if (p.VALOR_ACTUAL != null && p.VALOR_CRITICO != null)
+          (
+            '${_n.format(p.VALOR_ACTUAL)}$unidad',
+            'de ${_n.format(p.VALOR_CRITICO)}$unidad',
+          ),
       ],
       /* SIN FOTO, EL ICONO DEL EQUIPO; NO UN MARCO VACIO
 
          El marcador de imagen generico se lee como «esto no cargo», y en la
-         tarjeta mas visible del Inicio eso hace dudar del resto. Un icono de
-         equipo dice lo que hay: es un activo, y no tiene foto cargada.
-
-         La foto SI llega cuando existe —ACTIVO_FOTO viene en /predicciones y
-         /archivo/ver la sirve—; lo que faltaba era este caso. */
+         tarjeta mas visible del Inicio eso hace dudar del resto. */
       miniatura: (p.ACTIVO_FOTO ?? '').isEmpty
           ? const SgFoto(lado: 52, radio: 15, icono: Icons.view_in_ar_outlined)
           : SigmaImagen(ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
@@ -604,6 +784,70 @@ class _BloqueIa extends ConsumerWidget {
       accionSecundaria: () => Navigator.of(
         context,
       ).push(MaterialPageRoute(builder: (_) => const SigmaAiScreen())),
+    );
+  }
+
+  /// Dónde está el equipo. Un plazo sin sitio obliga a buscarlo antes de poder
+  /// hacer nada con el aviso.
+  String? _donde(Prediccion p) {
+    final partes = [
+      p.ACTIVO_CODIGO,
+      p.AREA_NOMBRE,
+    ].where((s) => (s ?? '').trim().isNotEmpty).map((s) => s!.trim()).toList();
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
+}
+
+/// La página de las OT que están empezadas y sin cerrar.
+class _TarjetaSinTerminar extends StatelessWidget {
+  const _TarjetaSinTerminar({required this.ordenes});
+
+  final List<OrdenTrabajo> ordenes;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    final cuantas = ordenes.length;
+    final enEspera = ordenes.where((o) => o.ESTADO_ID == 3).length;
+
+    return SgTarjetaIa(
+      simbolo: SgIconoIa.prediccion,
+      titulo: cuantas == 1
+          ? 'Tienes un trabajo sin terminar'
+          : 'Tienes $cuantas trabajos sin terminar',
+      detalle: enEspera == 0
+          ? 'Están empezados y todavía no se cierran. Lo que no se cierra no '
+                'entra en el historial del equipo.'
+          : enEspera == 1
+          ? 'Uno ya está esperando cierre: el técnico terminó y falta que '
+                'alguien lo firme.'
+          : '$enEspera ya están esperando cierre: el técnico terminó y falta '
+                'que alguien los firme.',
+      badge: enEspera > 0 ? 'Esperan cierre' : null,
+      colorBadge: sg.ambarTexto,
+      pie: ordenes.first.OT_NUMERO,
+      cifras: [
+        ('$cuantas', cuantas == 1 ? 'abierto' : 'abiertos'),
+        if (enEspera > 0) ('$enEspera', 'por cerrar'),
+      ],
+      miniatura: (ordenes.first.ACTIVO_FOTO ?? '').isEmpty
+          ? const SgFoto(
+              lado: 52,
+              radio: 15,
+              icono: Icons.build_circle_outlined,
+            )
+          : SigmaImagen(
+              ruta: ordenes.first.ACTIVO_FOTO!,
+              ancho: 52,
+              alto: 52,
+              radio: 15,
+            ),
+      textoAccion: 'Ver mi trabajo',
+      accion: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const MiTrabajoScreen(inicial: TipoTrabajo.ordenes),
+        ),
+      ),
     );
   }
 }

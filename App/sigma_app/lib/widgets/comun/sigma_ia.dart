@@ -32,6 +32,7 @@ class SgTarjetaIa extends StatelessWidget {
     this.textoAccion = 'Ver análisis',
     this.accionSecundaria,
     this.textoAccionSecundaria = 'Tomar',
+    this.pie,
   });
 
   final SgIconoIa simbolo;
@@ -46,6 +47,11 @@ class SgTarjetaIa extends StatelessWidget {
   final List<(String, String)> cifras;
 
   final Widget? miniatura;
+
+  /// Una línea pequeña bajo el detalle: **dónde está** lo que se está
+  /// diciendo. Un plazo sin sitio obliga a buscar el equipo antes de poder
+  /// hacer nada con el aviso.
+  final String? pie;
 
   final VoidCallback? accion;
   final String textoAccion;
@@ -159,8 +165,38 @@ class SgTarjetaIa extends StatelessWidget {
                                 Text(
                                   detalle,
                                   style: sora(12, 500, color: sg.tinta2),
+                                  // Dos lineas: el detalle de una prediccion
+                                  // no cabe en una y cortarlo a la mitad deja
+                                  // la frase sin el «si la tendencia se
+                                  // mantiene», que es la salvedad que la hace
+                                  // honesta.
+                                  maxLines: 2,
                                   overflow: TextOverflow.ellipsis,
                                 ),
+                                if ((pie ?? '').isNotEmpty) ...[
+                                  const SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.place_outlined,
+                                        size: 12,
+                                        color: sg.tinta3,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          pie!,
+                                          style: sora(
+                                            11,
+                                            600,
+                                            color: sg.tinta3,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
