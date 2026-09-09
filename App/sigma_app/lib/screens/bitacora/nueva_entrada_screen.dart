@@ -11,6 +11,7 @@ import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import 'entrada_bitacora_screen.dart';
 
 /// Escribir en la bitácora de planta — HU-130.
 ///
@@ -117,18 +118,40 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
         if (_porVoz) 'texto_dictado': _texto.text.trim(),
       });
 
-      SyncService.instance.despacharAhora();
+      /* Y AHORA LA FOTO, LA VOZ O EL VIDEO
+
+         La evidencia cuelga de un id, y hasta que el servidor lo asigne no hay
+         de qué colgarla. Esta pantalla no puede ofrecer adjuntar —y por eso no
+         lo ofrece, en vez de fingirlo—: lo que hace es despachar, esperar unos
+         segundos a que la entrada llegue, y abrir su ficha, que sí tiene el
+         bloque de evidencia.
+
+         Sin señal no hay id, y se dice tal cual. La entrada no se pierde: sale
+         cuando vuelva la cobertura, y la evidencia se adjunta entonces. */
+      final id = await OutboxService.instance.despacharYEsperar(_uuid);
+
       if (!mounted) return;
       ref.invalidate(bitacoraProvider);
 
-      if (!mounted) return;
+      if (id != null && id > 0) {
+        // `pushReplacement`: volver atrás desde la ficha tiene que llevar a la
+        // bandeja, no al formulario que se acaba de enviar.
+        await navegador.pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EntradaBitacoraScreen(entradaId: id),
+          ),
+        );
+        return;
+      }
+
       navegador.pop(true);
       mensajero.showSnackBar(
         SnackBar(
           content: Text(
             SyncService.instance.enLinea.value
                 ? 'Anotado en la bitácora.'
-                : 'Guardado en el teléfono. Se envía al volver la señal.',
+                : 'Guardado en el teléfono. Se envía al volver la señal, y '
+                      'ahí podrás agregarle fotos o una nota de voz.',
           ),
         ),
       );

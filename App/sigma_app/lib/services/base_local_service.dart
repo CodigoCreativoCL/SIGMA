@@ -359,6 +359,22 @@ class BaseLocalService {
   /// archivo dejaria la evidencia a merced de que Android limpie la cache
   /// antes de que haya señal —y en una planta eso son horas—: se perderia
   /// justo lo que la cola existe para no perder.
+  /// Un item por su uuid, sin el cuerpo.
+  ///
+  /// Se usa para saber si ya llegó al servidor y con qué id: `SELECT *` aquí
+  /// tendría el mismo problema de tamaño que el resto.
+  Future<Map<String, dynamic>?> itemPorUuid(String uuid) async {
+    final d = await db;
+    final r = await d.query(
+      'outbox',
+      columns: _columnasLigeras,
+      where: 'uuid = ?',
+      whereArgs: [uuid],
+      limit: 1,
+    );
+    return r.isEmpty ? null : r.first;
+  }
+
   Future<String?> cuerpoDe(int id) async {
     final d = await db;
 

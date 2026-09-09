@@ -389,11 +389,17 @@ class _Bitacora extends ConsumerWidget {
             icon: const Icon(Icons.edit_note),
             label: Text('Anotar', style: sora(14, 600, color: Colors.white)),
             onPressed: () async {
-              final ok = await Navigator.of(context).push<bool>(
+              await Navigator.of(context).push<bool>(
                 MaterialPageRoute(builder: (_) => const NuevaEntradaScreen()),
               );
               if (!context.mounted) return;
-              if (ok == true) ref.invalidate(bitacoraProvider);
+              /* Se invalida SIEMPRE, no solo con `true`.
+
+                 Escribir una entrada ahora puede terminar en su ficha en vez
+                 de volver acá con un resultado, y en ese camino no llega
+                 ningún `true`: sin esto la bandeja se quedaba sin la entrada
+                 que se acababa de escribir. */
+              ref.invalidate(bitacoraProvider);
             },
           ),
         ),

@@ -148,6 +148,45 @@ class OutboxService {
     return id;
   }
 
+  /// El id que le dio el servidor a lo que se encoló con este [uuid].
+  ///
+  /// Nulo mientras siga en la cola. Lo usa quien necesita **seguir trabajando
+  /// sobre lo que acaba de crear** —adjuntar una foto a la entrada de bitácora
+  /// recién escrita, por ejemplo—: la evidencia cuelga de un id, y hasta que
+  /// el servidor lo asigne no hay de qué colgarla.
+  Future<int?> idServidorDe(String uuid) async {
+    final f = await _base.itemPorUuid(uuid);
+    return (f?['id_servidor'] as num?)?.toInt();
+  }
+
+  /// Despacha y espera hasta [espera] a que ESTE uuid tenga id del servidor.
+  ///
+  /// ## Por qué se espera, si la cola es asíncrona
+  ///
+  /// Porque hay un caso en que no basta con «quedó guardado»: cuando lo
+  /// siguiente que la persona quiere hacer es adjuntarle algo. Esperar un
+  /// segundo y llevarla a la ficha es mucho mejor que darle por terminado y
+  /// que descubra sola que la foto se quedó sin sitio.
+  ///
+  /// Con señal esto son milisegundos. Sin señal devuelve null enseguida y la
+  /// pantalla lo dice, que es la respuesta correcta: no hay id todavía.
+  Future<int?> despacharYEsperar(
+    String uuid, {
+    Duration espera = const Duration(seconds: 6),
+  }) async {
+    await despachar();
+
+    final limite = DateTime.now().add(espera);
+
+    while (DateTime.now().isBefore(limite)) {
+      final id = await idServidorDe(uuid);
+      if (id != null && id > 0) return id;
+      await Future<void>.delayed(const Duration(milliseconds: 250));
+    }
+
+    return idServidorDe(uuid);
+  }
+
   Future<List<ItemCola>> listar() async {
     final filas = await _base.todosLosItems();
     return filas.map(ItemCola.desde).toList();

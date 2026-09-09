@@ -303,12 +303,23 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.8 · La bitácora no guarda nada
+### 6.8 · La bitácora no guarda nada — CERRADO
 
-- [ ] **No guarda la entrada, ni imagen, ni voz, ni video, y no aparece en su
-      tab.** **Muy probablemente es el 6.2**: la entrada se encola y el
-      despachador está caído por el `CursorWindow`. Arreglar 6.2 primero y
-      volver a probar; si sigue, mirar el filtro del tab de bitácora.
+- [x] **No guarda la entrada, ni imagen, ni voz, ni video, y no aparece en su
+      tab.** Eran **dos cosas**, no una.
+
+      **La entrada:** era el 6.2. Se encolaba bien y el despachador estaba
+      caído, así que nunca llegaba. Comprobado por HTTP que la API sí las
+      guarda y las lista —4 entradas con `instalacion=3`, la del usuario—.
+
+      **La multimedia:** `NuevaEntradaScreen` **no tenía dónde adjuntar nada**,
+      y no era un olvido resoluble ahí: la evidencia cuelga de un id y hasta
+      que el servidor lo asigna no hay de qué colgarla. Ahora al guardar se
+      despacha, se esperan unos segundos al id y se abre la ficha —que sí
+      tiene el bloque de foto, voz y video— con `pushReplacement`, para que
+      volver atrás lleve a la bandeja y no al formulario ya enviado. Sin
+      señal se dice tal cual: la entrada sale cuando vuelva la cobertura y la
+      evidencia se adjunta entonces.
 
 ---
 
