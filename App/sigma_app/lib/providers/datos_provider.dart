@@ -143,6 +143,20 @@ final lecturasProvider = FutureProvider.family<List<Lectura>, int>((ref, id) {
   return _repo.lecturasDe(id, desde: rango.desde);
 });
 
+/// Las firmas de una orden — vista 6.7.
+final validacionesProvider = FutureProvider.family<List<Validacion>, int>(
+  (ref, id) => _repo.validaciones(id),
+);
+
+final tiposValidacionProvider = FutureProvider<List<ItemCatalogo>>(
+  (ref) => _repo.tiposValidacion(),
+);
+
+/// Lo que subí yo — vista 13.2.
+final misEvidenciasProvider = FutureProvider<List<EvidenciaMia>>(
+  (ref) => _repo.misEvidencias(),
+);
+
 // ---- Inventario ----
 
 /// El filtro de la pantalla de existencias: `null` = todas, `true` = solo lo

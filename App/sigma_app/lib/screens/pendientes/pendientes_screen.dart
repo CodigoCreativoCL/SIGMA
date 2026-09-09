@@ -8,6 +8,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'conflicto_screen.dart';
 
 final colaProvider = FutureProvider<List<ItemCola>>(
   (ref) => OutboxService.instance.listar(),
@@ -270,6 +271,18 @@ class _Fila extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       elegida: rechazado,
       colorAnillo: SgColor.rojo,
+      /* SOLO LA RECHAZADA SE ABRE — vista 15.2
+
+         La que está en cola no tiene nada que contar: se va sola en cuanto
+         haya señal. La rechazada sí, y lo que hay dentro es lo que esta
+         tarjeta no alcanza a decir: qué significa el código que devolvió el
+         servidor y qué fue exactamente lo que se capturó. */
+      onTap: !rechazado
+          ? null
+          : () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ConflictoScreen(item: item)),
+            ),
       child: Column(
         children: [
           Row(

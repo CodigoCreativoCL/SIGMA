@@ -756,6 +756,81 @@ class SigmaRepository {
     return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
   }
 
+  /// Todo lo que subió el usuario — vista 13.2.
+  ///
+  /// La vuelta al revés de [evidencias], que responde «qué fotos tiene esta
+  /// tarea». Esta responde «se subieron mis fotos», que es la pregunta que se
+  /// hace al terminar un turno sin señal.
+  Future<List<EvidenciaMia>> misEvidencias({int dias = 30}) async {
+    final j = await _api.get(
+      '${ApiConstants.evidencias}/mias',
+      query: {'dias': dias, 'tamano': 100},
+    );
+    return Paginado.desde(j, EvidenciaMia.fromJson).datos;
+  }
+
+  // ---- Firmas y validaciones de una orden (vista 6.7, HU-118) ----
+
+  /// Las firmas de una orden, de la más nueva a la más vieja.
+  ///
+  /// El orden lo pone el SP y no la pantalla: cuando hay dos validaciones del
+  /// mismo tipo —una rechazada y después una aprobada— la que manda es la
+  /// última, y tiene que ser la primera que se ve. La anterior sigue ahí.
+  Future<List<Validacion>> validaciones(int orden) async {
+    final j = await _api.get(
+      '${ApiConstants.ordenesTrabajo}/$orden/validaciones',
+    );
+    final datos = (j is List) ? j : const [];
+    return datos
+        .map((e) => Validacion.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+  }
+
+  Future<List<ItemCatalogo>> tiposValidacion() async {
+    final j = await _api.get('${ApiConstants.ordenesTrabajo}/tipos-validacion');
+    final datos = (j is List) ? j : const [];
+    return datos
+        .map(
+          (e) => ItemCatalogo.desde((e as Map).cast<String, dynamic>(), 'VAT'),
+        )
+        .toList();
+  }
+
+  /// Firmar. **Se encola**, como toda captura de terreno.
+  ///
+  /// ## Por qué la firma viaja dentro del mismo envío
+  ///
+  /// Se podría subir el PNG por `/evidencias` y después mandar su id, pero eso
+  /// son **dos** peticiones que la cola no puede encolar juntas: sin señal, la
+  /// primera entraría y la segunda no, y quedaría una firma huérfana sin
+  /// validación. Un solo envío, un solo `uuid`, un solo reintento.
+  ///
+  /// ## Por qué el dibujo es opcional
+  ///
+  /// Lo que siempre queda es **quién** validó y **cuándo**, y eso sale del
+  /// token y del reloj del servidor. El dibujo es prueba adicional, no la
+  /// validación misma.
+  Future<void> firmarOrden(
+    int orden, {
+    required int tipo,
+    required bool aprobada,
+    String? observacion,
+    String? firmaBase64,
+  }) => OutboxService.instance.encolar(
+    tipo: 'VALIDACION',
+    titulo: 'Firma de la orden $orden',
+    detalle: aprobada ? 'Aprobada' : 'Rechazada',
+    endpoint: '${ApiConstants.ordenesTrabajo}/$orden/validaciones',
+    cuerpo: {
+      'tipo': tipo,
+      // Las palabras son las de la base: `CK_OTV_RESULTADO` solo admite
+      // APROBADO y RECHAZADO, y traducir acá evitaría que el SP rebote.
+      'resultado': aprobada ? 'APROBADO' : 'RECHAZADO',
+      'observacion': observacion,
+      'firma_base64': firmaBase64,
+    },
+  );
+
   // ---- Bitácora de planta (HU-130, HU-131) ----
 
   /// La línea de tiempo de la planta.

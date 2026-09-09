@@ -290,6 +290,91 @@ class OutboxService {
     await despachar();
   }
 
+  /// El archivo de una evidencia que sigue en la cola — vista 13.2.
+  ///
+  /// ## Por qué hay que leer el cuerpo entero
+  ///
+  /// La cola guarda el archivo en base64 **dentro** del cuerpo JSON, que es lo
+  /// que la hace autosuficiente: si guardara la ruta del archivo, Android
+  /// podría limpiar la caché antes de que haya señal y se perdería justo lo
+  /// que la cola existe para no perder.
+  ///
+  /// El precio es este: para ver la miniatura hay que leer el cuerpo completo,
+  /// por trozos de 256 KB. Se acepta porque solo se paga al abrir el centro de
+  /// evidencias y sobre una cola que en la práctica tiene unos pocos ítems.
+  ///
+  /// Devuelve null si el ítem no existe o no trae archivo.
+  Future<Uint8List?> archivoDe(int id) async {
+    final crudo = await _base.cuerpoDe(id);
+    if (crudo == null || crudo.isEmpty) return null;
+
+    try {
+      final cuerpo = jsonDecode(crudo);
+      if (cuerpo is! Map) return null;
+
+      final b64 = cuerpo['contenido_base64'];
+      if (b64 is! String || b64.isEmpty) return null;
+
+      return base64Decode(b64);
+    } catch (e) {
+      // Un cuerpo ilegible no puede tumbar la pantalla que existe justamente
+      // para revisar la cola.
+      debugPrint('[Outbox] No se pudo leer el archivo de $id: $e');
+      return null;
+    }
+  }
+
+  /// El cuerpo encolado, ya decodificado — vista 15.2.
+  ///
+  /// Sin el archivo: `contenido_base64` puede pesar megas y ninguna pantalla
+  /// que muestre «qué capturé» necesita los bytes, solo saber que hay un
+  /// archivo y cuánto pesa.
+  Future<Map<String, dynamic>?> datosDe(int id) async {
+    final crudo = await _base.cuerpoDe(id);
+    if (crudo == null || crudo.isEmpty) return null;
+
+    try {
+      final cuerpo = jsonDecode(crudo);
+      if (cuerpo is! Map) return null;
+
+      final copia = <String, dynamic>{};
+      cuerpo.forEach((k, v) {
+        if (k == 'contenido_base64') {
+          // El tamaño sí interesa; el contenido, no. base64 abulta un tercio.
+          if (v is String) copia['_bytes_archivo'] = (v.length * 3) ~/ 4;
+          return;
+        }
+        copia['$k'] = v;
+      });
+      return copia;
+    } catch (e) {
+      debugPrint('[Outbox] No se pudo leer el cuerpo de $id: $e');
+      return null;
+    }
+  }
+
+  /// De qué cuelga una evidencia en cola, en palabras.
+  ///
+  /// El destino viaja en el cuerpo (`destino` y `destino_id`) porque es lo que
+  /// el servidor necesita. Acá se traduce a algo legible para que la lista no
+  /// diga «TAREA 412».
+  Future<(String, int)?> destinoDe(int id) async {
+    final crudo = await _base.cuerpoDe(id);
+    if (crudo == null || crudo.isEmpty) return null;
+
+    try {
+      final cuerpo = jsonDecode(crudo);
+      if (cuerpo is! Map) return null;
+      final destino = cuerpo['destino'];
+      final destinoId = cuerpo['destino_id'];
+      if (destino is! String) return null;
+      return (destino, destinoId is num ? destinoId.toInt() : 0);
+    } catch (e) {
+      debugPrint('[Outbox] No se pudo leer el destino de $id: $e');
+      return null;
+    }
+  }
+
   Future<void> descartar(int id) async {
     await _base.actualizarItem(id, {'estado': 'enviado'});
     await _refrescarContador();

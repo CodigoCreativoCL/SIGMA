@@ -3272,3 +3272,122 @@ class GaleriaFoto {
     AUTOR_NOMBRE: _sN(j['AUTOR_NOMBRE']),
   );
 }
+
+/// Una evidencia que subió el usuario, con el registro del que cuelga
+/// — vista 13.2.
+///
+/// El destino viaja **resuelto** desde el servidor —«Orden de trabajo» +
+/// «OT-2026-0031»— y no como id: de poco sirve saber que la foto cuelga del
+/// destino 412, y traducirlo en el teléfono obligaría a bajar cuatro listados
+/// enteros para cuatro números.
+class EvidenciaMia {
+  const EvidenciaMia({
+    required this.ARC_ID,
+    required this.ARC_RUTA,
+    this.ARC_UUID,
+    this.ARC_NOMBRE,
+    this.ARC_MIME,
+    this.ARC_BYTE = 0,
+    this.FECHA_CAPTURA_UTC,
+    this.FECHA_SUBIDA,
+    this.CATEGORIA_NOMBRE,
+    this.DESCRIPCION,
+    this.DESTINO_TIPO,
+    this.DESTINO_TEXTO,
+    this.DESTINO_ID,
+  });
+
+  final int ARC_ID;
+  final String ARC_RUTA;
+  final String? ARC_UUID;
+  final String? ARC_NOMBRE;
+  final String? ARC_MIME;
+  final int ARC_BYTE;
+  final DateTime? FECHA_CAPTURA_UTC;
+  final DateTime? FECHA_SUBIDA;
+  final String? CATEGORIA_NOMBRE;
+  final String? DESCRIPCION;
+  final String? DESTINO_TIPO;
+  final String? DESTINO_TEXTO;
+  final int? DESTINO_ID;
+
+  bool get esImagen => (ARC_MIME ?? '').startsWith('image/');
+  bool get esVideo => (ARC_MIME ?? '').startsWith('video/');
+  bool get esAudio => (ARC_MIME ?? '').startsWith('audio/');
+
+  factory EvidenciaMia.fromJson(Map<String, dynamic> j) => EvidenciaMia(
+    ARC_ID: _i(j['ARC_ID']),
+    ARC_RUTA: _s(j['ARC_RUTA']),
+    ARC_UUID: _sN(j['ARC_UUID']),
+    ARC_NOMBRE: _sN(j['ARC_NOMBRE']),
+    ARC_MIME: _sN(j['ARC_MIME']),
+    ARC_BYTE: _i(j['ARC_BYTE']),
+    FECHA_CAPTURA_UTC: _f(j['FECHA_CAPTURA_UTC']),
+    FECHA_SUBIDA: _f(j['FECHA_SUBIDA']),
+    CATEGORIA_NOMBRE: _sN(j['CATEGORIA_NOMBRE']),
+    DESCRIPCION: _sN(j['DESCRIPCION']),
+    DESTINO_TIPO: _sN(j['DESTINO_TIPO']),
+    DESTINO_TEXTO: _sN(j['DESTINO_TEXTO']),
+    DESTINO_ID: j['DESTINO_ID'] == null ? null : _i(j['DESTINO_ID']),
+  );
+}
+
+/// Una firma o validación de una orden — vista 6.7 (HU-118).
+///
+/// `Orden_Trabajo_Validacion` es de **solo agregar**: firmar dos veces deja
+/// dos filas. Eso es lo que pide la vista —«nueva validación sin eliminar el
+/// registro anterior»— y es lo único defendible en una auditoría: una firma
+/// que se puede reemplazar no prueba nada.
+class Validacion {
+  const Validacion({
+    required this.OTV_ID,
+    required this.OTV_ORDEN_TRABAJO,
+    required this.OTV_VALIDACION_TIPO,
+    required this.OTV_RESULTADO,
+    this.TIPO_CODIGO,
+    this.TIPO_NOMBRE,
+    this.OTV_USUARIO = 0,
+    this.USUARIO_NOMBRE,
+    this.USUARIO_IDENTIFICADOR,
+    this.OTV_FECHA_UTC,
+    this.OTV_OBSERVACION,
+    this.FIRMA_RUTA,
+  });
+
+  final int OTV_ID;
+  final int OTV_ORDEN_TRABAJO;
+  final int OTV_VALIDACION_TIPO;
+  final String? TIPO_CODIGO;
+  final String? TIPO_NOMBRE;
+  final int OTV_USUARIO;
+  final String? USUARIO_NOMBRE;
+  final String? USUARIO_IDENTIFICADOR;
+
+  /// APROBADO o RECHAZADO. **Las palabras las pone la base**, no la app:
+  /// `CK_OTV_RESULTADO` solo admite esas dos.
+  final String OTV_RESULTADO;
+
+  final DateTime? OTV_FECHA_UTC;
+  final String? OTV_OBSERVACION;
+
+  /// La ruta del blob de la firma manuscrita. Nula si se firmó sin dibujarla:
+  /// no toda validación la exige.
+  final String? FIRMA_RUTA;
+
+  bool get aprobada => OTV_RESULTADO.toUpperCase() == 'APROBADO';
+
+  factory Validacion.fromJson(Map<String, dynamic> j) => Validacion(
+    OTV_ID: _i(j['OTV_ID']),
+    OTV_ORDEN_TRABAJO: _i(j['OTV_ORDEN_TRABAJO']),
+    OTV_VALIDACION_TIPO: _i(j['OTV_VALIDACION_TIPO']),
+    TIPO_CODIGO: _sN(j['TIPO_CODIGO']),
+    TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+    OTV_USUARIO: _i(j['OTV_USUARIO']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    USUARIO_IDENTIFICADOR: _sN(j['USUARIO_IDENTIFICADOR']),
+    OTV_RESULTADO: _s(j['OTV_RESULTADO']),
+    OTV_FECHA_UTC: _f(j['OTV_FECHA_UTC']),
+    OTV_OBSERVACION: _sN(j['OTV_OBSERVACION']),
+    FIRMA_RUTA: _sN(j['FIRMA_RUTA']),
+  );
+}

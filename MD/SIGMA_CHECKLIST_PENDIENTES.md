@@ -521,12 +521,176 @@ la cola de abajo.
 
 ---
 
+## Bloque 8 — Las seis vistas que faltaban del v3
+
+Todas las que quedaban bloqueadas. **El v3 queda completo.** Base, API y app:
+seis scripts (202 a 207), tres controladores y nueve pantallas.
+
+### 8.1 · Componentes — 8.1 a 8.4 — CERRADO
+
+- [x] `Archivo_Vinculo` tenía una columna por cada cosa a la que se cuelga un
+      archivo —OT, falla, repuesto, activo— y el componente era el único que
+      faltaba: la galería 8.4 **no tenía dónde existir**. Se agregó con su FK
+      y un índice **filtrado**, porque casi ningún vínculo es de un componente.
+- [x] `API_SEL_ACTIVO_COMPONENTE_FICHA`: instalación, lecturas, fallas, OT,
+      repuestos, sustituciones y bitácora, en una sola línea de tiempo.
+- [x] **No** se escribió SP nuevo para el listado ni la ficha:
+      `SEL_ACTIVO_COMPONENTE` ya recibe `@ACTIVO` y `@FILTRO` y lo usa la web.
+- [x] La ficha del activo ganó la pestaña **Componentes** que pedía 7.3.
+- [x] Menú `app://componentes` (BD/205), para el caso que la pestaña no puede
+      resolver: se tiene el código de una pieza y no se sabe de qué equipo es.
+
+**Lo que NO trae, y por qué:** los cambios de estado del componente. El
+componente guarda su estado en una columna **sin historial**, y deducirlos de
+`aco_fecha_actualizacion` diría «cambio de estado» cada vez que alguien
+corrigió una falta de ortografía en el nombre. Es base que falta, no pantalla.
+
+- [ ] **Historial de estado del componente**: hace falta una tabla
+      `Activo_Componente_Estado_Historial`, como la que ya tiene el activo.
+
+### 8.2 · Historial de lecturas — 9.2 — CERRADO
+
+- [x] `API_SEL_ACTIVO_MEDIDOR_LECTURA` calcula el incremento con `LAG()`
+      **sobre la serie completa, no sobre el rango pedido**: filtrando primero,
+      la primera lectura del tramo saldría sin incremento y «desde junio»
+      pintaría un mes vacío que en realidad tuvo 600 horas.
+- [x] Un reinicio devuelve incremento **NULL, no cero**: no se sabe cuánto
+      corrió, y cero diría que no corrió.
+- [x] El gráfico dibuja el **incremento** y no el acumulado —7.500 h no
+      significan nada y una recta que sube tampoco— y destaca el salto que
+      supera el doble del promedio, que es el «salto no razonable» de 9.1.
+      Dibujado a mano: una librería de gráficos traería su tema propio a una
+      app donde todo color sale de `context.sg`.
+- [x] Los umbrales salen de `Programacion_Medidor` —«cada 500 h desde 0»— y no
+      de una tabla de umbrales que habría que inventar. Es el umbral real del
+      negocio y ya lo mantiene alguien. **Sin programación configurada la
+      pantalla no dibuja líneas**: dice que no hay ninguna, que es distinto de
+      decir que todo va bien.
+- [x] Se llega desde el medidor del componente **y desde el activo**. Lo
+      segundo lo encontró `auditar_muertos.py`: `medidoresProvider` no lo
+      observaba nadie, y detrás había un hueco real —un equipo sin componentes
+      no tenía ningún camino a sus lecturas—.
+
+### 8.3 · Galerías — 7.4, 8.4 y 10.4 — CERRADO
+
+- [x] **Una pantalla y no tres.** Las tres especificaciones piden lo mismo
+      —cuadrícula cronológica, fecha, autor, observación, zoom— y solo cambia
+      de dónde salen las fotos.
+- [x] `API_SEL_ACTIVO_FOTO` ganó fecha de captura, autor y observación: una
+      galería sin eso no responde «cómo estaba esto en marzo», que es la única
+      pregunta que se le hace. Y nació su gemelo `API_SEL_REPUESTO_FOTO`.
+- [x] La fecha es la de **captura**, no la de subida: en terreno se fotografía
+      sin señal y se sube al volver, y ordenar por la de subida cuenta la
+      historia en el orden equivocado.
+- [x] Agrupa por mes. Las fotos sin fecha van en su propio grupo al final: una
+      foto sin fecha no es una foto de hoy, y ponerla ahí sería inventarle una.
+
+### 8.4 · Centro de evidencias — 13.2 — CERRADO
+
+- [x] Responde **«¿se subieron mis fotos?»**. Hasta ahora la única forma de
+      saberlo era abrir una por una las órdenes, tareas y bitácoras donde se
+      sacaron.
+- [x] `API_SEL_EVIDENCIA_MIAS` filtra por usuario —la vuelta al revés de
+      `API_SEL_EVIDENCIA`, que filtra por destino— y devuelve el destino
+      **resuelto en palabras**: «Orden de trabajo · OT-31», no «destino 412».
+- [x] Las dos listas juntas: lo que falta subir y lo que ya está. Separarlas
+      obligaría a mirar en dos sitios para responder una sola pregunta.
+- [x] El componente pasó a ser destino válido de evidencia (BD/206): la
+      galería podía **ver** fotos de una pieza y no se podía subir ninguna.
+
+**Lo que NO tiene, y por qué:** barra de progreso por archivo. La evidencia se
+manda en un solo POST con el contenido en base64 —no hay carga por trozos que
+medir— y dibujar una barra que avanza sola sería inventar información. Se dice
+lo que se sabe: cuánto pesa, cuántos intentos lleva y qué contestó el servidor.
+
+Tampoco se muestra «pendiente de revisión»: `arc_archivo_antivirus_estado`
+existe y `API_INS_EVIDENCIA` lo deja siempre en 1 = Pendiente, pero **no hay
+proceso que lo mueva a Limpio**. Mostrarlo pondría esa alarma en el 100 % de
+los archivos para siempre.
+
+- [ ] **Antivirus de archivos**: existe la columna y el catálogo, no el
+      proceso. Cuando exista, la pantalla lo pinta.
+
+### 8.5 · Conflicto de sincronización — 15.2 — CERRADO, con una advertencia
+
+**SIGMA no versiona registros.** No hay columna de versión ni bloqueo
+optimista, así que la comparación campo a campo «versión local contra versión
+del servidor» que pide la especificación **no se puede hacer sin mentir**.
+
+Lo que sí existe, y es el conflicto real de terreno: el servidor se movió
+mientras el teléfono estaba sin señal, y el envío queda **rechazado**. La
+pantalla pone lo capturado frente a lo que contestó el servidor, traduce el
+código a algo que se entienda —«el registro ya no existe», «una regla del
+negocio lo impide»— y deja decidir.
+
+- [x] El 409 no llega nunca a esta pantalla: es el reintento que llegó dos
+      veces y la cola lo marca como enviado. Es literalmente el «no mostrar
+      conflicto si los datos son equivalentes» de la especificación, resuelto
+      antes de que nadie tenga que mirarlo.
+- [x] Dos opciones y no tres: reintentar y descartar. **No hay «editar y
+      reenviar»**: cambiar acá el valor de una lectura tomada en terreno
+      convertiría el registro en algo que nadie midió, y ese registro es el que
+      después se audita.
+- [ ] **Decisión para Bryan:** si se quiere el diff real de dos versiones, hay
+      que agregar versión o marca de tiempo a las tablas que se editan y que
+      los SP de UPDATE la comprueben. Es trabajo de base y toca todo lo que se
+      escribe, no solo la app.
+
+### 8.6 · Firmas — 6.7 (HU-118) — CERRADO
+
+**El traspaso decía «no existe tabla ni ruta». La mitad era falsa:**
+`Orden_Trabajo_Validacion` existe desde el modelo original y responde punto por
+punto —tipo, firmante, resultado, fecha, motivo y archivo de firma—, y
+`Validacion_Tipo` ya traía cargados aceptación, validación y ejecución.
+
+- [x] Lo que faltaba: `otv_uuid` con índice único **filtrado**, los dos SP, el
+      permiso `VALIDAR ORDEN TRABAJO` —otorgado a los mismos cuatro perfiles
+      que pueden `CERRAR OT`— y las tres rutas.
+- [x] «Nueva validación sin eliminar la anterior» sale gratis: la tabla es de
+      solo agregar. Firmar dos veces deja dos filas; la más nueva se ve
+      primera y la anterior queda atenuada debajo. Una firma que se puede
+      reemplazar no prueba nada.
+- [x] La firma manuscrita se dibuja con `CustomPainter` y sale en **PNG con
+      fondo transparente**: en JPEG cada curva sale con halo, y un fondo blanco
+      pegado se ve como un parche en modo oscuro.
+- [x] **La firma viaja dentro del mismo envío**, no en dos. Subir el PNG por
+      `/evidencias` y después mandar su id son dos peticiones que la cola no
+      puede encolar juntas: sin señal entraría la primera y no la segunda, y
+      quedaría una firma huérfana. Un envío, un uuid, un reintento.
+- [x] El dibujo es **opcional**: lo que siempre queda es quién firmó y cuándo,
+      y eso sale del token y del reloj del servidor. Exigirlo dejaría sin
+      firmar a quien esté con guantes gruesos, que es media planta.
+
+**Un error que quedó anotado en el propio script:** el SP validaba «ACEPTADA»
+y «RECHAZADA» —las palabras de la especificación— mientras la tabla ya traía
+`CK_OTV_RESULTADO`, que solo admite `APROBADO` y `RECHAZADO`. Todos los INSERT
+rebotaban. La regla vive en el CHECK; el SP ahora traduce en vez de competir.
+
+### 8.7 · Datos de prueba
+
+`Activo_Componente`, `Activo_Medidor` y `Activo_Medidor_Lectura` estaban en
+**cero**, así que las pantallas no se podían ni mirar: una lista vacía se ve
+igual estando bien que estando rota.
+`BD/_SEMILLA_COMPONENTES_Y_LECTURAS.sql` mete tres componentes con estados y
+criticidades distintas, un horómetro y doce lecturas mensuales con un mes de
+parada y un salto grande. Es idempotente y va con guion bajo porque **no es
+una migración**.
+
+- [ ] **`INS_ACTIVO_MEDIDOR` no recibe `@ACTIVO_COMPONENTE`**, aunque la
+      columna existe y la usa la ficha del componente. Hoy no hay forma de
+      colgar un medidor de un componente desde ningún SP: ni la web puede. La
+      semilla lo hace con un UPDATE directo porque son datos de prueba.
+- [ ] Quedan en la base, como datos de prueba: el permiso `PT-2026-0001` y las
+      firmas de la OT 14. **Dime si los borro.**
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
       significa que el sitio levante.
 - [ ] `flutter analyze lib` limpio.
-- [ ] `flutter test` — hoy 93 verdes.
+- [ ] `flutter test` — hoy 100 verdes.
 - [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
       `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
       `no_consumidas.py`.
@@ -544,8 +708,10 @@ la cola de abajo.
 No se han olvidado; están fuera de este encargo hasta que Bryan diga.
 
 - Push / notificaciones (HU-077): falta solo el lado Flutter.
-- Diseño v3: quedan **7** vistas, todas bloqueadas por una decisión previa.
-  El detalle está en el bloque 7.
+- Diseño v3: **completo**. Las ~40 vistas de la especificación están
+  construidas. Lo que queda anotado no son vistas sino base que falta:
+  historial de estado del componente, antivirus de archivos, versionado para
+  el diff real de 15.2 y `@ACTIVO_COMPONENTE` en `INS_ACTIVO_MEDIDOR`.
 - `Repuesto_Compatibilidad` y `Usuario_Especialidad` están vacías: el código
   está hecho, pero sin datos el badge «Compatible» y los chips de especialidad
   no aparecen nunca. **Se cargan desde la web, no programando.**

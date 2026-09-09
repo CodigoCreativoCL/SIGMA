@@ -548,6 +548,88 @@ namespace API.MVC.Model
         public string REF_TEXTO { get; set; }
     }
 
+    // --------------------------------------------------------------- 6.7 --
+
+    /// <summary>
+    /// Una firma o validacion de una orden — vista 6.7 (HU-118).
+    ///
+    /// La tabla `Orden_Trabajo_Validacion` es de SOLO AGREGAR: firmar dos
+    /// veces deja dos filas. Eso es lo que pide la vista —«nueva validacion
+    /// sin eliminar el registro anterior»— y ademas lo unico defendible en
+    /// una auditoria: una firma que se puede reemplazar no prueba nada.
+    /// </summary>
+    public class ValidacionDto
+    {
+        public int OTV_ID { get; set; }
+        public int OTV_ORDEN_TRABAJO { get; set; }
+        public int OTV_VALIDACION_TIPO { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int OTV_USUARIO { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public string USUARIO_IDENTIFICADOR { get; set; }
+        public string OTV_RESULTADO { get; set; }
+        public DateTime? OTV_FECHA_UTC { get; set; }
+        public string OTV_OBSERVACION { get; set; }
+
+        /// <summary>La ruta del blob de la firma manuscrita. Nula si se firmo
+        /// sin dibujarla: no toda validacion la exige.</summary>
+        public string FIRMA_RUTA { get; set; }
+    }
+
+    /// <summary>Lo que manda el telefono al firmar.</summary>
+    public class ValidacionAltaDto
+    {
+        /// <summary>Lo genera el telefono AL ENCOLAR, no al enviar: es lo que
+        /// hace que un reintento sin señal no firme dos veces.</summary>
+        public Guid uuid { get; set; }
+
+        public int tipo { get; set; }
+
+        /// <summary>ACEPTADA o RECHAZADA. Lo valida el SP.</summary>
+        public string resultado { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>La firma manuscrita en PNG, en base64. Opcional.</summary>
+        public string firma_base64 { get; set; }
+    }
+
+    /// <summary>Un tipo de validacion: aceptacion, ejecucion, validacion.</summary>
+    public class ValidacionTipoDto
+    {
+        public int VAT_ID { get; set; }
+        public string VAT_CODIGO { get; set; }
+        public string VAT_NOMBRE { get; set; }
+        public int? VAT_ORDEN { get; set; }
+    }
+
+    /// <summary>
+    /// Una evidencia que subio el usuario, con el registro del que cuelga
+    /// — vista 13.2.
+    ///
+    /// El destino viaja RESUELTO —«Orden de trabajo» + «OT-2026-0031»— y no
+    /// como id: de poco sirve saber que la foto cuelga del destino 412, y
+    /// traducirlo en el telefono obligaria a bajar cuatro listados enteros
+    /// para cuatro numeros.
+    /// </summary>
+    public class EvidenciaMiaDto
+    {
+        public int ARC_ID { get; set; }
+        public string ARC_UUID { get; set; }
+        public string ARC_RUTA { get; set; }
+        public string ARC_NOMBRE { get; set; }
+        public string ARC_MIME { get; set; }
+        public long ARC_BYTE { get; set; }
+        public DateTime? FECHA_CAPTURA_UTC { get; set; }
+        public DateTime? FECHA_SUBIDA { get; set; }
+        public string CATEGORIA_NOMBRE { get; set; }
+        public string DESCRIPCION { get; set; }
+        public string DESTINO_TIPO { get; set; }
+        public string DESTINO_TEXTO { get; set; }
+        public int? DESTINO_ID { get; set; }
+    }
+
     /// <summary>
     /// Una foto de una galeria — vistas 7.4, 8.4 y 10.4.
     ///

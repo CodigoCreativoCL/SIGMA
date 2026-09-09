@@ -85,7 +85,13 @@ namespace API.Controllers
                    mas hace falta: se escribe delante de la fuga, no despues.
                    `avi_bitacora` existia desde el principio; lo que faltaba
                    era esta linea y la rama de los dos SP (BD/198). */
-                { "BITACORA",  "REGISTRAR BITACORA" }
+                { "BITACORA",  "REGISTRAR BITACORA" },
+
+                /* El componente se sumo con las vistas 8.x: `avi_activo_
+                   componente` la creo BD/202 para la galeria y BD/206
+                   completo los dos SP. Sin esta linea se podian VER las fotos
+                   de una pieza y no se podia subir ninguna. */
+                { "COMPONENTE", "VER COMPONENTES" }
             };
 
         /// <summary>
@@ -253,7 +259,13 @@ namespace API.Controllers
         /// con el id —«0001»—, que es feo pero sigue aislando, que es lo que
         /// de verdad importa.
         /// </summary>
-        private static string NombreDelCliente()
+        /// <summary>
+        /// Publico y estatico porque tambien lo necesita la firma de una
+        /// orden (HU-118): la ruta del blob lleva la carpeta de la empresa, y
+        /// resolver el nombre dos veces en dos sitios terminaria dando dos
+        /// carpetas distintas para el mismo cliente.
+        /// </summary>
+        public static string NombreDelCliente()
         {
             int cliente = SesionApi.ClienteId();
             if (cliente <= 0) return "";
@@ -319,6 +331,50 @@ namespace API.Controllers
 
                 default: return "jpg";
             }
+        }
+        /// <summary>
+        /// GET /evidencias/mias — todo lo que subi yo.        Vista 13.2
+        ///
+        /// LA VUELTA AL REVES DE `Listar`
+        ///   Aquel responde «que fotos tiene esta tarea»; este, «se subieron
+        ///   mis fotos». Hoy la unica forma de saberlo es abrir una por una
+        ///   las ordenes, tareas y bitacoras donde se sacaron: quien
+        ///   fotografio veinte cosas en un turno sin señal no tiene manera de
+        ///   comprobar que llegaron, y se entera de que falto una cuando
+        ///   alguien se la reclama.
+        ///
+        /// SIN PERMISO DE DESTINO
+        ///   Porque el filtro es el propio usuario: son SUS archivos. Exigir
+        ///   el permiso de cada destino dejaria a alguien sin poder comprobar
+        ///   una foto que el mismo subio cuando si lo tenia.
+        /// </summary>
+        [HttpGet]
+        [Route("mias")]
+        public IHttpActionResult Mias(int dias = 30, int pagina = 1,
+                                      int tamano = Pagina.TAMANO_DEFECTO)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirCliente();
+
+                Pagina p = new Pagina { pagina = pagina, tamano = tamano };
+
+                // @TOTAL es parametro de SALIDA obligatorio: omitirlo hace que
+                // SQL Server rechace la llamada entera.
+                int totalSql;
+                List<EvidenciaMiaDto> todo = Datos.ListarConTotal<EvidenciaMiaDto>(
+                    "API_SEL_EVIDENCIA_MIAS",
+                    new Dictionary<string, object>
+                    {
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@DIAS", dias },
+                        { "@PAGINA", 1 },
+                        { "@TAMANO", 200 }
+                    }, out totalSql);
+
+                return Ok(Paginado<EvidenciaMiaDto>.Armar(todo, p));
+            });
         }
     }
 }

@@ -15,6 +15,7 @@ import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../componente/ficha_componente_screen.dart';
 import '../galeria/galeria_screen.dart';
+import '../medidor/historial_lecturas_screen.dart';
 import '../lectura/captura_screen.dart';
 
 /// Ficha de activo — HU-037.
@@ -235,6 +236,14 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
           SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
       ],
     ),
+    const SizedBox(height: 13),
+    /* LOS MEDIDORES DEL EQUIPO — la puerta a 9.2
+
+       No basta con los del componente. `INS_ACTIVO_MEDIDOR` ni siquiera
+       recibe el componente, asi que en la practica **casi todos los medidores
+       cuelgan del activo**: sin esta lista, un equipo sin componentes no
+       tenia ningun camino a su historial de lecturas. */
+    _Medidores(activoId: a.act_id),
     const SizedBox(height: 13),
     /* LA GALERIA, APARTE DE LAS FOTOS DEL HERO
 
@@ -681,6 +690,63 @@ class _Componentes extends ConsumerWidget {
       },
     );
   }
+}
+
+/// Los medidores del equipo, cada uno con su ultima lectura.
+///
+/// Se dibuja solo si hay: un rotulo «Medidores» sobre una lista vacia ocupa
+/// sitio para decir que no hay nada, y la mayoria de los equipos no tienen.
+class _Medidores extends ConsumerWidget {
+  const _Medidores({required this.activoId});
+
+  final int activoId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final datos = ref.watch(medidoresProvider(activoId));
+
+    return datos.maybeWhen(
+      orElse: () => const SizedBox.shrink(),
+      data: (lista) {
+        if (lista.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SgRotulo('Medidores'),
+            const SizedBox(height: 9),
+            SgBloque(
+              filas: [
+                for (final m in lista)
+                  SgFila(
+                    icono: Icons.speed_outlined,
+                    texto: m.AME_NOMBRE,
+                    detalle: m.UNIDAD_NOMBRE,
+                    valor: m.AME_VALOR_ACTUAL == null
+                        ? '—'
+                        : '${_sinCeros(m.AME_VALOR_ACTUAL!)} '
+                                  '${m.UNIDAD_SIMBOLO ?? ''}'
+                              .trim(),
+                    chevron: true,
+                    alto: 56,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            HistorialLecturasScreen(medidorId: m.AME_ID),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static String _sinCeros(double v) =>
+      v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 }
 
 /// La rejilla de tres cifras.

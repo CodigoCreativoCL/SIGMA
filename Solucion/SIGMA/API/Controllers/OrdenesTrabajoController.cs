@@ -1,7 +1,9 @@
 ﻿using API.MVC.Model;
 using API.Utils;
 using System;
+using API.Services;
 using System.Collections.Generic;
+using System.Net;
 using System.Web.Http;
 
 namespace API.Controllers
@@ -507,6 +509,182 @@ namespace API.Controllers
                 { "@TIPO", tipo },
                 { "@OTR_ID", id }
             };
+        }
+        // ------------------------------------------------------------ 6.7 --
+
+        /// <summary>
+        /// GET /ordenes-trabajo/{id}/validaciones — las firmas.     Vista 6.7
+        ///
+        /// LA MAS NUEVA PRIMERO
+        ///   Cuando hay dos validaciones del mismo tipo —una rechazada y
+        ///   despues una aceptada— la que manda es la ultima. La anterior
+        ///   sigue ahi, debajo: la tabla es de solo agregar y ninguna firma se
+        ///   borra, porque una firma que se puede reemplazar no prueba nada.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/validaciones")]
+        public IHttpActionResult Validaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<ValidacionDto>("API_SEL_ORDEN_TRABAJO_VALIDACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@ORDEN", id },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    }));
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/validaciones — firmar.        HU-118
+        ///
+        /// LA FIRMA VIAJA EN EL MISMO ENVIO, NO EN DOS
+        ///   Se podria subir el PNG por /evidencias y despues mandar el id,
+        ///   pero eso son DOS peticiones que la cola de salida no puede
+        ///   encolar juntas: sin señal, la primera entraria y la segunda no, y
+        ///   quedaria una firma huerfana sin validacion. Un solo envio, un
+        ///   solo uuid, un solo reintento.
+        ///
+        /// EL DIBUJO ES OPCIONAL
+        ///   No toda validacion se firma a mano; lo que siempre queda es
+        ///   QUIEN valido y CUANDO, que sale del token y del reloj del
+        ///   servidor. El dibujo es prueba adicional, no la validacion misma.
+        /// </summary>
+        /// <response code="201">Firmada, o la que ya estaba si era un reenvío.</response>
+        /// <response code="400">Tipo o resultado inválido, o rechazo sin motivo.</response>
+        [HttpPost]
+        [Route("{id:int}/validaciones")]
+        public IHttpActionResult Validar(int id, ValidacionAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VALIDAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                if (dto.uuid == Guid.Empty)
+                    return BadRequest("Falta el identificador del envío.");
+
+                int? archivoFirma = null;
+
+                if (!string.IsNullOrEmpty(dto.firma_base64))
+                {
+                    byte[] contenido;
+                    try
+                    {
+                        contenido = Convert.FromBase64String(dto.firma_base64);
+                    }
+                    catch (FormatException)
+                    {
+                        return BadRequest("La firma no es base64 válido.");
+                    }
+
+                    if (contenido.Length == 0)
+                        return BadRequest("La firma está vacía.");
+
+                    // Un trazo de firma en PNG pesa decenas de kilobytes. Un
+                    // megabyte es holgado, y el tope evita que por acá entre
+                    // una foto disfrazada de firma.
+                    if (contenido.Length > 1024 * 1024)
+                        return BadRequest("La firma pesa demasiado.");
+
+                    BlobService blob = new BlobService();
+
+                    if (!blob.Disponible)
+                        return Content(HttpStatusCode.ServiceUnavailable,
+                            new ErrorApi { codigo = 503, mensaje = blob.Motivo, esDeNegocio = false });
+
+                    string almacenado = dto.uuid.ToString("N") + ".png";
+
+                    /* La misma regla de rutas que la evidencia, y por el mismo
+                       motivo: con el cliente arriba, un SAS acotado a un
+                       prefijo deja fuera a las demas empresas con una sola
+                       regla. Se reusa RutaArchivo para que no haya dos maneras
+                       de armar la misma ruta. */
+                    string ruta = RutaArchivo.Armar(
+                        "sigma",
+                        SesionApi.ClienteId(),
+                        EvidenciasController.NombreDelCliente(),
+                        "firmas",
+                        almacenado,
+                        DateTime.Now);
+
+                    ResultadoBlob subido = blob.Subir(ruta, contenido, "image/png");
+
+                    /* Se registra como evidencia de la orden, con categoria
+                       FIRMA (8). Dos cosas de una: el Archivo queda creado
+                       -que es lo que otv_archivo_firma necesita- y la firma
+                       pasa a formar parte del expediente de la orden, que es
+                       donde tiene que estar cuando alguien audite el cierre.
+
+                       El uuid es el mismo del envio, asi que un reintento
+                       tampoco duplica el archivo: API_INS_EVIDENCIA devuelve
+                       el que ya estaba. */
+                    archivoFirma = Datos.Ejecutar("API_INS_EVIDENCIA",
+                        new Dictionary<string, object>
+                        {
+                            { "@UUID", dto.uuid },
+                            { "@USUARIO", SesionApi.UsuarioId() },
+                            { "@CLIENTE", SesionApi.ClienteId() },
+                            { "@DESTINO", "ORDEN" },
+                            { "@DESTINO_ID", id },
+                            { "@CATEGORIA", 8 },
+                            { "@NOMBRE_ORIGINAL", almacenado },
+                            { "@NOMBRE_ALMACENADO", almacenado },
+                            { "@RUTA", subido.ruta },
+                            { "@MIME", "image/png" },
+                            { "@EXTENSION", "png" },
+                            { "@BYTE", subido.tamano },
+                            { "@HASH", subido.hash },
+                            { "@CAPTURA_UTC", DateTime.UtcNow },
+                            { "@TITULO", "Firma" }
+                        }, true);
+                }
+
+                int otv = Datos.Ejecutar("API_INS_ORDEN_TRABAJO_VALIDACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@UUID", dto.uuid },
+                        { "@ORDEN", id },
+                        { "@VALIDACION_TIPO", dto.tipo },
+                        { "@RESULTADO", dto.resultado },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@ARCHIVO_FIRMA", archivoFirma },
+                        // Del token, nunca del cuerpo: quien firma es quien
+                        // esta en sesion, y una firma que llega por el cuerpo
+                        // la escribe cualquiera con un token valido.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    }, true);
+
+                return Creado(otv);
+            });
+        }
+
+        /// <summary>
+        /// GET /ordenes-trabajo/tipos-validacion — el catalogo de la hoja.
+        ///
+        /// Como los motivos de cierre: los tres tipos son un dato de la base y
+        /// no una lista quemada en el telefono, que obligaria a publicar una
+        /// version nueva cada vez que cambien.
+        /// </summary>
+        [HttpGet]
+        [Route("tipos-validacion")]
+        public IHttpActionResult TiposValidacion()
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<ValidacionTipoDto>("SEL_VALIDACION_TIPO",
+                    new Dictionary<string, object> { { "@HABILITADO", true } }));
+            });
         }
     }
 }

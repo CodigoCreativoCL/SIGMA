@@ -20,6 +20,7 @@ import '../perfil/mi_perfil_screen.dart';
 import '../accesibilidad/accesibilidad_screen.dart';
 import '../activo/activos_screen.dart';
 import '../componente/componentes_screen.dart';
+import '../evidencias/centro_evidencias_screen.dart';
 import '../inventario/bodegas_screen.dart';
 import '../inventario/repuestos_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
@@ -295,6 +296,24 @@ class MasScreen extends ConsumerWidget {
                   context,
                   MaterialPageRoute(
                     builder: (_) => const AccesibilidadScreen(),
+                  ),
+                ),
+              ),
+              /* MIS EVIDENCIAS, JUNTO A PENDIENTES
+
+                 Son la misma preocupacion —«¿llego lo que capture?»— vista
+                 desde dos lados: Pendientes mira la cola entera, esto mira los
+                 archivos y ademas los que YA estan en el servidor, que es lo
+                 que la cola no puede responder porque los borra al enviarlos. */
+              SgFila(
+                icono: Icons.perm_media_outlined,
+                texto: 'Mis evidencias',
+                detalle: 'Fotos, audios y videos que capturé',
+                chevron: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const CentroEvidenciasScreen(),
                   ),
                 ),
               ),

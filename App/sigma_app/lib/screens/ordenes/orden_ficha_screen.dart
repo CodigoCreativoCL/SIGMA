@@ -19,6 +19,7 @@ import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'hoja_cierre.dart';
+import 'hoja_firma.dart';
 import 'recursos_orden.dart';
 
 /// 6.3 · Ficha de OT y 6.4 · Ejecución de pasos — HU-113, HU-114, HU-119.
@@ -285,6 +286,15 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
           ],
         ),
       ],
+      /* LAS FIRMAS, AL FINAL DEL RESUMEN — vista 6.7
+
+         Van acá y no en una pestaña propia porque la pregunta «¿quién validó
+         esto?» aparece cuando se está decidiendo si cerrar la orden, no como
+         un capítulo aparte. Una cuarta pestaña ademas dejaria las cuatro
+         apretadas en un teléfono de cinco pulgadas. */
+      const SizedBox(height: 18),
+      BloqueFirmas(ordenId: widget.ordenId),
+
       const SizedBox(height: 8),
     ];
   }

@@ -746,35 +746,28 @@ cuenta.
 
 Así que HU-077 es **FCM en el cliente**, no un bloque de base y API.
 
-### Diseño v3 — quedan 7 vistas
+### Diseño v3 — COMPLETO (09-09-2026)
 
-De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 33 hechas.
-**Las que tenían endpoint ya están todas construidas** (09-09-2026):
+Las ~40 vistas de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` están
+construidas. Las últimas seis —componentes 8.1 a 8.4, historial de lecturas
+9.2, galerías 7.4/8.4/10.4, centro de evidencias 13.2, conflicto de
+sincronización 15.2 y firmas 6.7— salieron con su base y su API: scripts BD/202
+a BD/207, los controladores `ComponentesController` y `MedidoresController`, y
+las rutas de firmas y de evidencias propias. El detalle de cada decisión está
+en el bloque 8 del checklist.
 
-- 6.2 Nueva OT correctiva (HU-110), 10.3 ficha del repuesto
-- 10.2 listado de repuestos, 10.5–10.8 bodegas y ubicaciones
-- 10.9–10.12 ingreso, entrega, devolución y traslado, en **una sola hoja** con
-  el enum `TipoMovimiento` (ids 1/2/3/6): cada tipo declara su permiso y si
-  resta stock, y la ficha del repuesto ofrece solo los que el perfil tiene
-- 11.2 ficha del permiso: el color lo manda `SITUACION` y no `ESTADO_CODIGO`,
-  porque un permiso AUTORIZADO pero VENCIDO no puede leerse en verde
-- 7.2 equipos de la planta, que no estaba en la lista y hacía falta: el escáner
-  sirve estando delante del equipo, esta pantalla sirve para encontrarlo. Sale
-  de la sábana y se registró con `BD/201_APP_MENU_ACTIVOS.sql`
+**Lo que queda no son vistas, es base que falta**, y cada una está anotada
+donde corresponde:
 
-**Sin endpoint** (hay que construir API y base primero):
-
-- 6.7 Firmas (HU-118) — no existe tabla ni ruta
-- 8.1–8.4 Componentes: listado, ficha, historial y galería. La ficha del activo
-  tampoco tiene el tab Componentes que pide 7.3 (hoy solo Ficha e Historial)
-- 9.2 Historial de lecturas con gráfico de tendencia y umbrales
-- 7.4 y 10.4 Galerías: cuadrícula cronológica con filtros
-- 13.2 Centro de evidencias
-- 15.2 Conflicto de sincronización (versión local contra versión del servidor)
-**16.2 Accesibilidad ya está** (09-09-2026): ocho de los diez ajustes, cada uno
-con efecto real. Falta solo la lectura en voz alta, que exige un motor TTS y
-decidir qué se lee —una OT entera no se escucha—. El detalle, en el bloque 7.5
-del checklist.
+- El componente **no tiene historial de estado** (falta una tabla como la del
+  activo), así que su línea de tiempo no puede mostrar cambios de estado.
+- **No hay antivirus**: la columna y el catálogo existen, el proceso no, y por
+  eso el centro de evidencias no muestra «pendiente de revisión».
+- **SIGMA no versiona registros**, así que 15.2 compara lo capturado contra la
+  respuesta del servidor, no dos versiones del mismo registro. El diff real
+  exige versión o marca de tiempo en las tablas que se editan.
+- **`INS_ACTIVO_MEDIDOR` no recibe `@ACTIVO_COMPONENTE`**: hoy ningún SP puede
+  colgar un medidor de un componente.
 
 ### Datos, no código
 
