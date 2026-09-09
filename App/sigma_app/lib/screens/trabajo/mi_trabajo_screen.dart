@@ -13,6 +13,9 @@ import '../bitacora/nueva_entrada_screen.dart';
 import '../checklist/checklist_screen.dart';
 import '../ordenes/ordenes_screen.dart';
 import '../tareas/tareas_screen.dart';
+import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_voz.dart';
+import '../../services/buscador.dart';
 
 /// Qué se está mirando en la bandeja.
 enum TipoTrabajo { todo, ordenes, tareas, pautas, bitacora }
@@ -78,6 +81,15 @@ class _MiTrabajoScreenState extends ConsumerState<MiTrabajoScreen> {
         child: Column(
           children: [
             _Cabecera(tipo: _tipo, onTipo: (t) => setState(() => _tipo = t)),
+            /* UN BUSCADOR PARA LAS CUATRO PESTAÑAS
+
+               Ordenes tenia el suyo y tareas, pautas y bitacora no tenian
+               ninguno: no habia forma de encontrar una tarea de la semana
+               pasada mas que bajando la lista. Aca es uno solo, arriba, que
+               vale para la pestaña que este abierta —incluida «Todo»—, y por
+               eso escribe en `busquedaTrabajoAppProvider` en vez de en cuatro
+               estados sueltos que habria que mantener en fase. */
+            const _BuscadorBandeja(),
             Expanded(
               child: switch (_tipo) {
                 // Cada tipo reusa su propia lista: la bandeja los reúne, no
@@ -406,132 +418,203 @@ class _Bitacora extends ConsumerWidget {
             'Acá queda lo que pasó en la planta: una fuga, un ruido '
             'raro, un equipo que se detuvo. Se escribe desde el terreno.',
       ),
-      child: (lista) => RefreshIndicator(
-        onRefresh: () async => ref.invalidate(bitacoraProvider),
-        child: ListView.separated(
-          padding: context.conBarraSistema(
-            const EdgeInsets.fromLTRB(16, 14, 16, 24),
-          ),
-          itemCount: lista.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 11),
-          itemBuilder: (_, i) {
-            final e = lista[i];
-            final grave =
-                (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
-                (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'CRITICA';
+      child: (todas) {
+        // El mismo buscador de arriba, para las cuatro pestañas.
+        final buscado = ref.watch(busquedaBandejaProvider);
+        final lista = todas
+            .where(
+              (e) => coincideBusqueda(buscado, [
+                e.bit_titulo,
+                e.TEXTO_VIGENTE,
+                e.TIPO_NOMBRE,
+                e.ACTIVO_NOMBRE,
+              ]),
+            )
+            .toList();
 
-            return SgCard(
-              padding: const EdgeInsets.all(14),
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
+        return RefreshIndicator(
+          onRefresh: () async => ref.invalidate(bitacoraProvider),
+          child: ListView.separated(
+            padding: context.conBarraSistema(
+              const EdgeInsets.fromLTRB(16, 14, 16, 24),
+            ),
+            itemCount: lista.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 11),
+            itemBuilder: (_, i) {
+              final e = lista[i];
+              final grave =
+                  (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
+                  (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'CRITICA';
+
+              return SgCard(
+                padding: const EdgeInsets.all(14),
+                onTap: () => Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
+                  ),
                 ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
-                        SgBadge(e.TIPO_NOMBRE!, color: sg.tinta2, chico: true),
-                      if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
-                        SgBadge(
-                          e.SEVERIDAD_NOMBRE!,
-                          color: grave ? sg.rojoTexto : sg.ambarTexto,
-                          chico: true,
-                        ),
-                      if (e.bit_requiere_atencion)
-                        SgBadge(
-                          'Requiere atención',
-                          color: sg.rojoTexto,
-                          icono: Icons.priority_high,
-                          chico: true,
-                        ),
-                      // Rectificada, no editada: el texto original sigue
-                      // guardado debajo. Marcarlo es lo que hace que la
-                      // bitácora sirva como registro.
-                      if (e.rectificada)
-                        SgBadge(
-                          'Rectificada',
-                          color: sg.azulTexto,
-                          icono: Icons.history_edu,
-                          chico: true,
-                        ),
-                      if (e.POR_VOZ)
-                        SgBadge(
-                          'Dictada',
-                          color: sg.tinta3,
-                          icono: Icons.mic,
-                          chico: true,
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    e.bit_titulo,
-                    style: sora(16, 600, color: sg.tinta, alto: 1.35),
-                  ),
-                  const SizedBox(height: 5),
-                  Text(
-                    e.TEXTO_VIGENTE,
-                    style: sora(13, 500, color: sg.tinta2, alto: 1.5),
-                    maxLines: 4,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 9),
-                  Row(
-                    children: [
-                      Icon(Icons.schedule, size: 13, color: sg.tinta3),
-                      const SizedBox(width: 5),
-                      Text(
-                        _fecha.format(e.bit_fecha_evento_utc.toLocal()),
-                        style: sora(12, 500, color: sg.tinta3),
-                      ),
-                      if ((e.bit_turno ?? '').isNotEmpty) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          '· turno ${e.bit_turno}',
-                          style: sora(12, 500, color: sg.tinta3),
-                        ),
-                      ],
-                      const Spacer(),
-                      if ((e.USUARIO_NOMBRE ?? '').isNotEmpty)
-                        Flexible(
-                          child: Text(
-                            e.USUARIO_NOMBRE!,
-                            style: sora(12, 500, color: sg.tinta3),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                    ],
-                  ),
-                  if (e.activo.isNotEmpty) ...[
-                    const SizedBox(height: 6),
-                    Row(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
                       children: [
-                        Icon(
-                          Icons.view_in_ar_outlined,
-                          size: 13,
-                          color: sg.tinta3,
-                        ),
-                        const SizedBox(width: 5),
-                        Expanded(
-                          child: Text(
-                            e.activo,
-                            style: sora(12, 500, color: sg.tinta3),
-                            overflow: TextOverflow.ellipsis,
+                        if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
+                          SgBadge(
+                            e.TIPO_NOMBRE!,
+                            color: sg.tinta2,
+                            chico: true,
                           ),
-                        ),
+                        if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
+                          SgBadge(
+                            e.SEVERIDAD_NOMBRE!,
+                            color: grave ? sg.rojoTexto : sg.ambarTexto,
+                            chico: true,
+                          ),
+                        if (e.bit_requiere_atencion)
+                          SgBadge(
+                            'Requiere atención',
+                            color: sg.rojoTexto,
+                            icono: Icons.priority_high,
+                            chico: true,
+                          ),
+                        // Rectificada, no editada: el texto original sigue
+                        // guardado debajo. Marcarlo es lo que hace que la
+                        // bitácora sirva como registro.
+                        if (e.rectificada)
+                          SgBadge(
+                            'Rectificada',
+                            color: sg.azulTexto,
+                            icono: Icons.history_edu,
+                            chico: true,
+                          ),
+                        if (e.POR_VOZ)
+                          SgBadge(
+                            'Dictada',
+                            color: sg.tinta3,
+                            icono: Icons.mic,
+                            chico: true,
+                          ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      e.bit_titulo,
+                      style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                    ),
+                    const SizedBox(height: 5),
+                    Text(
+                      e.TEXTO_VIGENTE,
+                      style: sora(13, 500, color: sg.tinta2, alto: 1.5),
+                      maxLines: 4,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 9),
+                    Row(
+                      children: [
+                        Icon(Icons.schedule, size: 13, color: sg.tinta3),
+                        const SizedBox(width: 5),
+                        Text(
+                          _fecha.format(e.bit_fecha_evento_utc.toLocal()),
+                          style: sora(12, 500, color: sg.tinta3),
+                        ),
+                        if ((e.bit_turno ?? '').isNotEmpty) ...[
+                          const SizedBox(width: 8),
+                          Text(
+                            '· turno ${e.bit_turno}',
+                            style: sora(12, 500, color: sg.tinta3),
+                          ),
+                        ],
+                        const Spacer(),
+                        if ((e.USUARIO_NOMBRE ?? '').isNotEmpty)
+                          Flexible(
+                            child: Text(
+                              e.USUARIO_NOMBRE!,
+                              style: sora(12, 500, color: sg.tinta3),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                      ],
+                    ),
+                    if (e.activo.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.view_in_ar_outlined,
+                            size: 13,
+                            color: sg.tinta3,
+                          ),
+                          const SizedBox(width: 5),
+                          Expanded(
+                            child: Text(
+                              e.activo,
+                              style: sora(12, 500, color: sg.tinta3),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
-                ],
+                ),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+}
+
+/// El campo de búsqueda de la bandeja, con dictado.
+class _BuscadorBandeja extends ConsumerStatefulWidget {
+  const _BuscadorBandeja();
+
+  @override
+  ConsumerState<_BuscadorBandeja> createState() => _BuscadorBandejaState();
+}
+
+class _BuscadorBandejaState extends ConsumerState<_BuscadorBandeja> {
+  final _campo = TextEditingController();
+
+  @override
+  void dispose() {
+    _campo.dispose();
+    super.dispose();
+  }
+
+  void _escribir(String v) =>
+      ref.read(busquedaBandejaProvider.notifier).state = v;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: SgCampo(
+        controlador: _campo,
+        icono: Icons.search,
+        hint: 'Número, título, equipo o área',
+        conVoz: true,
+        onCambio: _escribir,
+        onVoz: () async {
+          final campos = await mostrarPanelVoz(
+            context,
+            titulo: 'Buscar en mi trabajo',
+            interpretar: (t) => [
+              CampoDictado(
+                clave: 'busqueda',
+                rotulo: 'Buscar',
+                valor: InterpreteVoz.normalizar(t),
               ),
-            );
-          },
-        ),
+            ],
+          );
+          if (campos == null || campos.isEmpty) return;
+          final texto = campos.first.valor;
+          setState(() => escribirDictado(_campo, texto));
+          _escribir(texto);
+        },
       ),
     );
   }

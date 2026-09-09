@@ -69,6 +69,17 @@ final fichaActivoProvider =
 final filtroExistenciasProvider = StateProvider<bool>((ref) => false);
 final busquedaExistenciasProvider = StateProvider<String>((ref) => '');
 
+/// Lo que se busca en la bandeja «Mi trabajo». **Uno solo para las cuatro
+/// pestañas** —órdenes, tareas, pautas y bitácora— y también para la de
+/// «Todo».
+///
+/// Vive acá y no dentro de la bandeja por dos razones: las cuatro listas que
+/// lo leen son pantallas distintas, y ponerlo en una de ellas obligaría a las
+/// otras tres a importarla —un ciclo—; y porque la pregunta es la misma en las
+/// cuatro, así que cuatro estados sueltos habría que mantenerlos en fase o
+/// explicar por qué lo escrito se pierde al cambiar de pestaña.
+final busquedaBandejaProvider = StateProvider<String>((ref) => '');
+
 final existenciasProvider = FutureProvider<Paginado<InventarioSaldo>>((ref) {
   final soloAlerta = ref.watch(filtroExistenciasProvider);
   final filtro = ref.watch(busquedaExistenciasProvider);

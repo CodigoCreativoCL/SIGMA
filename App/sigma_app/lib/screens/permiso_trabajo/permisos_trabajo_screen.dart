@@ -10,6 +10,7 @@ import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'nuevo_permiso_screen.dart';
+import '../../services/buscador.dart';
 import '../../services/voz_service.dart';
 import '../../widgets/comun/sigma_voz.dart';
 
@@ -182,14 +183,15 @@ class PermisosTrabajoScreen extends ConsumerWidget {
     return s == 'VENCIDO' || s == 'POR VENCER';
   }
 
-  static bool _coincide(PermisoTrabajo p, String f) => [
+  /// Misma tolerancia que la bandeja de órdenes: ver `coincideBusqueda`.
+  static bool _coincide(PermisoTrabajo p, String f) => coincideBusqueda(f, [
     p.ptr_numero,
     p.TIPO_NOMBRE,
     p.ESTADO_NOMBRE,
-    p.ORDEN_CORRELATIVO ?? '',
-    p.ORDEN_TITULO ?? '',
-    p.SOLICITANTE_NOMBRE ?? '',
-  ].any((s) => s.toLowerCase().contains(f));
+    p.ORDEN_CORRELATIVO,
+    p.ORDEN_TITULO,
+    p.SOLICITANTE_NOMBRE,
+  ]);
 }
 
 class _Cabecera extends StatelessWidget {

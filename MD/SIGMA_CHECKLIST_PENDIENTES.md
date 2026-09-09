@@ -271,13 +271,19 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.5 · Buscadores que encuentren de verdad
+### 6.5 · Buscadores que encuentren de verdad — CERRADO
 
-- [ ] **Coincidencia tolerante:** decir «ot4» debe encontrar `OT-04` y `OT-4`;
-      un trozo del nombre debe filtrar. Normalizar por los dos lados —sin
-      guiones, sin ceros a la izquierda, sin tildes, sin mayúsculas— y buscar
-      por partes.
-- [ ] **En los cuatro:** órdenes, tareas, bitácora y pautas.
+- [x] **Coincidencia tolerante.** Hecho en `lib/services/buscador.dart`:
+      normaliza los dos lados —minúsculas, tildes, separadores y ceros a la
+      izquierda de cada número— y exige **todos** los términos, no cualquiera.
+      `ot4` encuentra `OT-04`, `OT-4`, `OT 04` y `ot/4`. Siete tests propios.
+      La `ñ` **se conserva**: «caña» y «cana» son cosas distintas.
+- [x] **En los cuatro:** órdenes, tareas, bitácora y pautas. Y era peor de lo
+      reportado: **tareas, pautas y bitácora no tenían buscador ninguno**.
+      Ahora «Mi trabajo» tiene **una sola caja arriba** que vale para las
+      cuatro pestañas y para «Todo»; órdenes embebida esconde la suya y lee esa
+      misma, para que la misma búsqueda no funcione en tres sitios y en uno
+      no.
 
 ---
 

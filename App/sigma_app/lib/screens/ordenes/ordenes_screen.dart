@@ -5,6 +5,7 @@ import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/sync_service.dart';
 import '../../services/api_client.dart';
+import '../../services/buscador.dart';
 import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
@@ -67,7 +68,18 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     final mias = ref.watch(ordenesTrabajoProvider);
     final disponibles = ref.watch(ordenesDisponiblesProvider);
 
-    final filtro = ref.watch(busquedaOrdenProvider).trim().toLowerCase();
+    /* DENTRO DE LA BANDEJA MANDA EL BUSCADOR DE LA BANDEJA
+
+       «Mi trabajo» tiene una sola caja arriba que vale para las cuatro
+       pestañas. Si acá se siguiera leyendo el estado propio, escribir en esa
+       caja filtraría tareas y pautas pero no órdenes, y nadie entendería por
+       qué la misma búsqueda funciona en tres sitios y en uno no.
+
+       Suelta —abierta desde su acceso directo— sigue usando el suyo, que es el
+       que llena su propia barra. */
+    final filtro = widget.embebida
+        ? ref.watch(busquedaBandejaProvider)
+        : ref.watch(busquedaOrdenProvider);
     final listaMias = mias.valueOrNull ?? const <OrdenTrabajo>[];
     final hoy = listaMias.where(_apremia).toList();
 
@@ -163,6 +175,9 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
             // ya dijo «Mi trabajo» y no hace falta repetirlo debajo.
             if (!widget.embebida) _Cabecera(),
             _Filtros(
+              // Embebida no dibuja su propia caja: la de la bandeja ya está
+              // arriba y dos buscadores en la misma pantalla es una de más.
+              sinBuscador: widget.embebida,
               buscar: _buscar,
               pestana: _pestana,
               favoritos: favoritas.length,
@@ -244,13 +259,16 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     return s == 'VENCIDA' || s == 'VENCE HOY';
   }
 
-  static bool _coincide(OrdenTrabajo o, String f) => [
+  /// Antes era un `contains` en minúsculas: «ot4» no encontraba `OT-04`, que
+  /// es justo lo que sale de dictar «ot cuatro». Ahora normaliza los dos lados
+  /// —tildes, separadores y ceros a la izquierda— y exige todos los términos.
+  static bool _coincide(OrdenTrabajo o, String f) => coincideBusqueda(f, [
     o.OT_NUMERO,
     o.otr_titulo,
-    o.ACTIVO_CODIGO ?? '',
-    o.ACTIVO_NOMBRE ?? '',
-    o.AREA_NOMBRE ?? '',
-  ].any((s) => s.toLowerCase().contains(f));
+    o.ACTIVO_CODIGO,
+    o.ACTIVO_NOMBRE,
+    o.AREA_NOMBRE,
+  ]);
 }
 
 class _Cabecera extends StatelessWidget {
@@ -297,6 +315,7 @@ class _Filtros extends StatelessWidget {
     required this.disponibles,
     required this.onPestana,
     required this.onBuscar,
+    this.sinBuscador = false,
   });
 
   final TextEditingController buscar;
@@ -310,6 +329,9 @@ class _Filtros extends StatelessWidget {
   final ValueChanged<int> onPestana;
   final ValueChanged<String> onBuscar;
 
+  /// Dentro de la bandeja la caja de búsqueda ya está arriba: aquí sobra.
+  final bool sinBuscador;
+
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
@@ -319,52 +341,53 @@ class _Filtros extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(SgRadius.pill),
-              boxShadow: sg.e1,
-            ),
-            child: Container(
-              height: 52,
-              padding: const EdgeInsets.only(left: 18, right: 8),
+          if (!sinBuscador)
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: sg.campo,
                 borderRadius: BorderRadius.circular(SgRadius.pill),
+                boxShadow: sg.e1,
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, size: 21, color: sg.tinta3),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: TextField(
-                      controller: buscar,
-                      onChanged: onBuscar,
-                      style: sora(16, 500, color: sg.tinta),
-                      cursorColor: sg.primario,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        border: InputBorder.none,
-                        hintText: 'OT, activo, código o ubicación',
-                        hintStyle: sora(16, 500, color: sg.tinta3),
+              child: Container(
+                height: 52,
+                padding: const EdgeInsets.only(left: 18, right: 8),
+                decoration: BoxDecoration(
+                  color: sg.campo,
+                  borderRadius: BorderRadius.circular(SgRadius.pill),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, size: 21, color: sg.tinta3),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: TextField(
+                        controller: buscar,
+                        onChanged: onBuscar,
+                        style: sora(16, 500, color: sg.tinta),
+                        cursorColor: sg.primario,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: 'OT, activo, código o ubicación',
+                          hintStyle: sora(16, 500, color: sg.tinta3),
+                        ),
                       ),
                     ),
-                  ),
-                  // Dictar la búsqueda: un código como «MOT-001» con guantes
-                  // es donde más se falla al teclear, y buscarlo mal devuelve
-                  // una lista vacía que parece que la orden no existe.
-                  SgMicrofonoCampo(
-                    rotulo: 'Buscar',
-                    soloTexto: true,
-                    lado: 40,
-                    onValor: (v) {
-                      buscar.text = v;
-                      onBuscar(v);
-                    },
-                  ),
-                ],
+                    // Dictar la búsqueda: un código como «MOT-001» con guantes
+                    // es donde más se falla al teclear, y buscarlo mal devuelve
+                    // una lista vacía que parece que la orden no existe.
+                    SgMicrofonoCampo(
+                      rotulo: 'Buscar',
+                      soloTexto: true,
+                      lado: 40,
+                      onValor: (v) {
+                        buscar.text = v;
+                        onBuscar(v);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 11),
           /* LA FILA DE CHIPS SCROLLEA — SI NO, EL CUARTO NO EXISTE
 

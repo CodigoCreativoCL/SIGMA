@@ -13,6 +13,7 @@ import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'tarea_ficha_screen.dart';
+import '../../services/buscador.dart';
 
 /// Tareas en terreno · la bandeja — HU-103.
 ///
@@ -89,11 +90,28 @@ class TareasScreen extends ConsumerWidget {
 
              `sort` sobre una copia y estable: el orden que trae el servidor
              —lo más urgente primero— se conserva dentro de cada grupo. */
-          final lista = [...sinOrdenar]
-            ..sort((a, b) {
-              if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
-              return a.ES_FAVORITO ? -1 : 1;
-            });
+          /* EL BUSCADOR DE LA BANDEJA TAMBIEN FILTRA ACA
+
+             Antes no habia forma de encontrar una tarea mas que bajando la
+             lista. Se lee el mismo estado que ordenes y pautas: una sola caja
+             arriba vale para la pestaña que este abierta. */
+          final buscado = ref.watch(busquedaBandejaProvider);
+
+          final lista =
+              [
+                ...sinOrdenar.where(
+                  (t) => coincideBusqueda(buscado, [
+                    t.TAREA_CODIGO,
+                    t.tar_titulo,
+                    t.ACTIVO_CODIGO,
+                    t.ACTIVO_NOMBRE,
+                    t.AREA_NOMBRE,
+                  ]),
+                ),
+              ]..sort((a, b) {
+                if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
+                return a.ES_FAVORITO ? -1 : 1;
+              });
 
           return RefreshIndicator(
             onRefresh: () async => ref.invalidate(tareasPendientesProvider),

@@ -12,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'ejecucion_checklist_screen.dart';
+import '../../services/buscador.dart';
 
 /// Checklist en terreno · la bandeja — HU-095.
 ///
@@ -72,20 +73,35 @@ class ChecklistScreen extends ConsumerWidget {
               'Las rondas se programan desde la web. Cuando te toque una, '
               'aparece acá y se puede llenar sin señal.',
         ),
-        child: (lista) => RefreshIndicator(
-          onRefresh: () async => ref.invalidate(checklistPendientesProvider),
-          child: ListView.separated(
-            padding: context.conBarraSistema(
-              const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: (todas) {
+          // El mismo buscador de la bandeja: ver la nota en tareas_screen.
+          final buscado = ref.watch(busquedaBandejaProvider);
+          final lista = todas
+              .where(
+                (p) => coincideBusqueda(buscado, [
+                  p.PLANTILLA_NOMBRE,
+                  p.PLANTILLA_CODIGO,
+                  p.ACTIVO_CODIGO,
+                  p.ACTIVO_NOMBRE,
+                ]),
+              )
+              .toList();
+
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(checklistPendientesProvider),
+            child: ListView.separated(
+              padding: context.conBarraSistema(
+                const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              ),
+              itemCount: lista.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 11),
+              itemBuilder: (_, i) => _Tarjeta(
+                pauta: lista[i],
+                onAbrir: () => _abrir(context, ref, lista[i]),
+              ),
             ),
-            itemCount: lista.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 11),
-            itemBuilder: (_, i) => _Tarjeta(
-              pauta: lista[i],
-              onAbrir: () => _abrir(context, ref, lista[i]),
-            ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
