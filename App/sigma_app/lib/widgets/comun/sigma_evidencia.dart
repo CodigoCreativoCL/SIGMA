@@ -16,6 +16,7 @@ import 'sigma_imagen.dart';
 import 'sigma_v3.dart';
 import 'dart:async';
 import '../../services/nota_voz_service.dart';
+import 'sigma_reproductor.dart';
 
 /// Las fotos de evidencia de algo.
 ///
@@ -323,12 +324,22 @@ class _Miniatura extends StatelessWidget {
        eso es un hueco roto en la fila. Una nota de voz se representa con lo
        unico que se puede saber de ella sin abrirla —que es audio— y por eso
        importa que el servidor guarde el mime de verdad. */
-    if (mime.startsWith('audio/')) {
-      return const _Tarjeta(icono: Icons.graphic_eq, texto: 'Nota de voz');
-    }
+    if (mime.startsWith('audio/') || mime.startsWith('video/')) {
+      final esVideo = mime.startsWith('video/');
 
-    if (mime.startsWith('video/')) {
-      return const _Tarjeta(icono: Icons.play_circle_outline, texto: 'Video');
+      return _Tarjeta(
+        icono: esVideo ? Icons.play_circle_outline : Icons.graphic_eq,
+        texto: esVideo ? 'Video' : 'Nota de voz',
+        // Se toca y suena. Antes era una tarjeta muerta: decia que habia una
+        // nota de voz y no habia forma de escucharla, que es peor que no
+        // mostrarla.
+        onTap: () => SgReproductor.abrir(
+          context,
+          ruta: evidencia.arc_ruta,
+          mime: evidencia.arc_mime,
+          titulo: evidencia.arc_nombre_original,
+        ),
+      );
     }
 
     return SizedBox(
@@ -346,29 +357,37 @@ class _Miniatura extends StatelessWidget {
 
 /// La casilla de una evidencia que no es una imagen.
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({required this.icono, required this.texto});
+  const _Tarjeta({required this.icono, required this.texto, this.onTap});
 
   final IconData icono;
   final String texto;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
 
-    return Container(
-      width: 92,
-      height: 92,
-      decoration: BoxDecoration(
-        color: sg.campo,
-        borderRadius: BorderRadius.circular(SgRadius.campo),
-      ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(icono, size: 26, color: sg.tinta2),
-          const SizedBox(height: 6),
-          Text(texto, style: sora(11, 600, color: sg.tinta3)),
-        ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 92,
+        height: 92,
+        decoration: BoxDecoration(
+          color: sg.campo,
+          borderRadius: BorderRadius.circular(SgRadius.campo),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icono, size: 26, color: sg.tinta2),
+            const SizedBox(height: 6),
+            Text(texto, style: sora(11, 600, color: sg.tinta3)),
+            if (onTap != null) ...[
+              const SizedBox(height: 3),
+              Text('tocar', style: sora(9, 600, color: sg.tinta3)),
+            ],
+          ],
+        ),
       ),
     );
   }

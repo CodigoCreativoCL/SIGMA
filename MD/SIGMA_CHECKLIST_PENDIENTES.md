@@ -239,15 +239,32 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.3 · Multimedia
+### 6.3 · Multimedia — CERRADO
 
-- [ ] **Reductor de tamaño para toda imagen.** Hoy solo lo hace `image_picker`
-      al capturar (1600 px, calidad 82). Una imagen **elegida de la galería**
-      pasa por el mismo camino, pero una que llegue por otra vía no. Revisar y
-      dejar el reductor en un solo sitio.
-- [ ] **Poder escuchar el audio** subido a una bitácora o tarea.
-- [ ] **Poder reproducir el video.** Hoy la miniatura es una tarjeta con icono
-      y no abre nada. Necesita dependencia de reproductor.
+- [x] **Reductor de tamaño para toda imagen.** Y había un hueco real:
+      **`recuperarPerdida()` no pasaba por él**. Cuando Android mata la app con
+      la cámara abierta, `retrieveLostData` devuelve el archivo del disco del
+      sistema y **no garantiza** que lleve aplicados el ancho y la calidad que
+      se pidieron: una foto de cuatro megas entraba a la cola, que es
+      exactamente lo que la hace pesada.
+
+      Ahora todo pasa por `_comoEvidencia()`, con `flutter_image_compress`. Se
+      comprueba antes de recomprimir —por debajo de 800 KB se deja tal cual—
+      porque recomprimir un JPEG ya comprimido pierde calidad sin ganar
+      tamaño. Y con `autoCorrectionAngle`, o media planta sale de lado.
+- [x] **Poder escuchar el audio.** `SgReproductor`: la tarjeta de la nota de
+      voz **se toca y suena**. Antes era una tarjeta muerta —decía que había una
+      nota y no había forma de escucharla, que es peor que no mostrarla—.
+- [x] **Poder reproducir el video.** Mismo reproductor. **Se transmite, no se
+      descarga**: un video de treinta segundos son veinte megas y bajarlo
+      entero antes de mostrar nada deja a la persona mirando una rueda con la
+      pieza en la mano. Los dos reproductores aceptan cabeceras, así que el
+      blob va con el mismo token: `/archivo/ver` valida que la ruta sea del
+      cliente, y esa comprobación no se salta.
+
+      Sin `chewie`: los controles que hacen falta son dos, y un paquete de
+      controles trae pantalla completa, velocidad y subtítulos que habría que
+      apagar.
 
 ---
 

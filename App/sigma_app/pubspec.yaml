@@ -27,6 +27,9 @@ dependencies:
   image_picker: ^1.1.2          # evidencia fotográfica (HU-103 y las que vengan)
   cupertino_icons: ^1.0.8
   record: ^6.2.1                # nota de voz de bitacora y tarea (HU-140)
+  just_audio: ^0.10.6            # escuchar la nota de voz de una bitacora o tarea
+  video_player: ^2.11.1          # reproducir el video de evidencia
+  flutter_image_compress: ^2.5.1 # el reductor por el que pasa TODA imagen
 
   # `flutter_image_compress` NO va: image_picker ya recorta y recomprime con
   # maxWidth e imageQuality, y eso alcanza para una foto de evidencia. Una
