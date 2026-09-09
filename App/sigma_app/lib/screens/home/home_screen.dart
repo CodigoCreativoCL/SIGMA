@@ -582,11 +582,7 @@ class _BloqueIa extends ConsumerWidget {
          La foto SI llega cuando existe —ACTIVO_FOTO viene en /predicciones y
          /archivo/ver la sirve—; lo que faltaba era este caso. */
       miniatura: (p.ACTIVO_FOTO ?? '').isEmpty
-          ? const SgFoto(
-              lado: 52,
-              radio: 15,
-              icono: Icons.view_in_ar_outlined,
-            )
+          ? const SgFoto(lado: 52, radio: 15, icono: Icons.view_in_ar_outlined)
           : SigmaImagen(ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
       accion: () => Navigator.of(context).push(
         MaterialPageRoute(

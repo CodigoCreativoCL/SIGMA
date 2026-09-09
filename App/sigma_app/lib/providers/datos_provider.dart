@@ -105,6 +105,24 @@ final existenciasEnAlertaProvider = FutureProvider<int>((ref) async {
   return (await _repo.existencias(soloAlerta: true)).total;
 });
 
+/// El catálogo de repuestos — vista 10.2.
+///
+/// Con respaldo en disco, como todo catálogo: cambia una vez al mes y se
+/// consulta delante del estante, donde no hay señal.
+final repuestosProvider = FutureProvider<Paginado<Repuesto>>(
+  (ref) => _repo.repuestos(),
+);
+
+/// Las bodegas de la planta — vista 10.5.
+final bodegasProvider = FutureProvider<Paginado<Bodega>>(
+  (ref) => _repo.bodegas(),
+);
+
+/// Una bodega — vista 10.6.
+final bodegaProvider = FutureProvider.family<Bodega, int>(
+  (ref, id) => _repo.bodega(id),
+);
+
 /// La cabecera de la ficha del repuesto (vista 10.3).
 final repuestoProvider = FutureProvider.family<Repuesto, int>(
   (ref, id) => _repo.repuesto(id),

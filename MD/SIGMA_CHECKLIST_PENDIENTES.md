@@ -175,6 +175,157 @@ REGISTRAR INGRESO REPUESTO y ENTREGAR REPUESTO. Lo mismo el planificador.
 
 ---
 
+## Bloque 6 — Reporte de Bryan del 08-09-2026 (tarde)
+
+Probando la app. Lo que está **[x]** ya se corrigió en esta sesión; lo demás
+lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
+
+---
+
+### 6.0 · Blob Storage sin cliente — CORREGIDO
+
+- [x] **Lo que sube la app no se guardaba a nivel de cliente.**
+  La API armaba `"sigma/" + destino + "/" + archivo`; la intranet usa
+  `RutaArchivo.Armar` → `sigma/0001-hamburgo-sa/<modulo>/2026/09/<archivo>`.
+  Dos estructuras en el mismo contenedor, y una mezclando empresas.
+
+  **No es orden, es aislamiento:** con el cliente arriba, un SAS acotado a un
+  prefijo deja fuera a las demás empresas con una sola regla; sin él no hay
+  prefijo que acotar. Nace `API/Services/RutaArchivo.cs` con la misma regla que
+  la web —copiada, no referenciada: la intranet es un sitio con App_Code y la
+  API un ensamblado aparte; si la regla cambia, cambia en los dos—.
+
+  Verificado: `sigma/0001-hamburgo-sa/bitacora/2026/09/3aa3…png`.
+
+  **Pendiente de decisión:** los archivos ya subidos con la ruta vieja siguen
+  donde están y se encuentran (su ruta vive en `Archivo.arc_ruta`). Moverlos es
+  una migración —copiar en Azure y actualizar la columna—. **¿Se migran?**
+
+---
+
+### 6.1 · Escaneo QR
+
+- [ ] **Pantalla roja al escanear.** Reproducir y cazar la excepción. En esta
+      sesión se arreglaron dos causas de que no abriera nada (rama `ACT` en la
+      API y los tipos de tres letras en la app) pero **no** se llegó a ver el
+      error rojo.
+- [x] **No deja escanear otra vez: queda pegado lo anterior.** Corregido.
+      `codigoEscaneadoProvider` es global y sobrevivía a salir de la pantalla,
+      así que al volver se veía lo último leído — y como `_alDetectar` no pisa
+      lo que ya hay, **la cámara quedaba muda**. Ahora se limpia al entrar, en
+      un `postFrameCallback` para no escribir durante el build.
+- [x] **Escanear un repuesto debe abrir la ficha del repuesto.** Corregido:
+      `REP` → `FichaRepuestoScreen` y `BOD` → `FichaBodegaScreen`. `UBI` se
+      queda en existencias porque su contenido ya se ve en la tarjeta del
+      resultado.
+
+---
+
+### 6.2 · El outbox no envía — y es la causa del 6.8
+
+- [x] **`Row too big to fit into CursorWindow`.** Corregido.
+      **Causa encontrada:** `base_local_service.dart:310` hace
+      `SELECT * FROM outbox … LIMIT 200`, y `*` incluye `cuerpo_json`, que
+      desde que se suben fotos, audio y video contiene el base64 completo. Una
+      sola fila puede pesar megas y el `CursorWindow` de Android son 2 MB.
+      `pendientesDeEnvio()` (línea 300) tiene el mismo `SELECT *`, así que
+      **revienta también el despachador**: por eso no sale nada de la cola.
+      **Arreglo:** las dos consultas dejan de traer `cuerpo_json`
+      (`_columnasLigeras`), y el despachador lo pide aparte con `cuerpoDe()`,
+      que lo lee **por trozos de 256 KB con `substr`** — el límite es por FILA,
+      así que pedir solo esa columna tampoco alcanzaba. El base64 sigue en la
+      base a propósito: guardar solo la ruta dejaría la evidencia a merced de
+      que Android limpie la caché antes de que haya señal.
+
+---
+
+### 6.3 · Multimedia
+
+- [ ] **Reductor de tamaño para toda imagen.** Hoy solo lo hace `image_picker`
+      al capturar (1600 px, calidad 82). Una imagen **elegida de la galería**
+      pasa por el mismo camino, pero una que llegue por otra vía no. Revisar y
+      dejar el reductor en un solo sitio.
+- [ ] **Poder escuchar el audio** subido a una bitácora o tarea.
+- [ ] **Poder reproducir el video.** Hoy la miniatura es una tarjeta con icono
+      y no abre nada. Necesita dependencia de reproductor.
+
+---
+
+### 6.4 · Retomar la app
+
+- [ ] **Al volver no toma bien la planta y el cliente seleccionados**, y los
+      datos deben recargarse siempre al retomar.
+- [ ] **Pantalla de carga al abrir/retomar:** logo de SIGMA con animación de
+      figuras geométricas al estilo Google.
+
+---
+
+### 6.5 · Buscadores que encuentren de verdad
+
+- [ ] **Coincidencia tolerante:** decir «ot4» debe encontrar `OT-04` y `OT-4`;
+      un trozo del nombre debe filtrar. Normalizar por los dos lados —sin
+      guiones, sin ceros a la izquierda, sin tildes, sin mayúsculas— y buscar
+      por partes.
+- [ ] **En los cuatro:** órdenes, tareas, bitácora y pautas.
+
+---
+
+### 6.6 · Trabajar con lo del día
+
+- [ ] **Ventana móvil de 24 h**, no «desde ayer»: si son las 21:50, lo de las
+      21:50 de ayer hacia acá.
+- [ ] **Agrupar los registros** con estilo tipo *fieldset*, en su versión más
+      moderna.
+
+---
+
+### 6.7 · «Órdenes que apremian» no se entiende
+
+- [ ] Cambiar el nombre y explicarlo. Hoy `_apremia` mezcla vencimiento y
+      prioridad en un solo concepto sin decir cuál.
+
+---
+
+### 6.8 · La bitácora no guarda nada
+
+- [ ] **No guarda la entrada, ni imagen, ni voz, ni video, y no aparece en su
+      tab.** **Muy probablemente es el 6.2**: la entrada se encola y el
+      despachador está caído por el `CursorWindow`. Arreglar 6.2 primero y
+      volver a probar; si sigue, mirar el filtro del tab de bitácora.
+
+---
+
+### 6.9 · Favoritos y compartir sin respuesta
+
+- [ ] **El botón de favoritos no anima.** Hoy solo cambia el ícono. Debe
+      animarse o al menos cambiar de color.
+- [ ] **Lo mismo el de compartir.**
+
+---
+
+### 6.10 · Campos obligatorios
+
+- [ ] **Etiqueta de obligatorio** en los inputs que lo son.
+- [ ] **Borde rojo** al guardar con el campo vacío. Limpio, sin gritar.
+
+---
+
+### 6.11 · La card de SIGMA AI
+
+- [ ] **Convertirla en slider**, cambiando con animación sutil entre los
+      análisis y las OT no finalizadas.
+- [ ] **Más información de impacto** para que el usuario le haga caso.
+- [ ] **Notificación al celular con sonido de predicción** cuando llegue una
+      alerta nueva de SIGMA AI. *(Depende de push/FCM, HU-077.)*
+
+---
+
+### 6.12 · Skeletonizer
+
+- [ ] **Mejorar el esqueleto de carga de las vistas:** limpio y moderno.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

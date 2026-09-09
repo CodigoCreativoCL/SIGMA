@@ -299,6 +299,8 @@ class BaseLocalService {
     final d = await db;
     return d.query(
       'outbox',
+      // Sin `cuerpo_json`: ver [_columnasLigeras].
+      columns: _columnasLigeras,
       where: 'estado = ?',
       whereArgs: ['pendiente'],
       orderBy: 'id ASC',
@@ -307,7 +309,78 @@ class BaseLocalService {
 
   Future<List<Map<String, dynamic>>> todosLosItems() async {
     final d = await db;
-    return d.query('outbox', orderBy: 'id DESC', limit: 200);
+    return d.query(
+      'outbox',
+      columns: _columnasLigeras,
+      orderBy: 'id DESC',
+      limit: 200,
+    );
+  }
+
+  /* NUNCA `SELECT *` SOBRE outbox
+
+     `cuerpo_json` lleva el base64 de la foto, del audio o del video, asi que
+     una sola fila puede pesar megas. El CursorWindow de Android son 2 MB y
+     revienta con «Row too big to fit into CursorWindow», que tumbaba las DOS
+     cosas: la pantalla de Pendientes y —peor— el despachador, asi que la cola
+     dejaba de salir entera y parecia que la bitacora no guardaba nada.
+
+     Ninguna de las dos consultas necesita el cuerpo: la pantalla pinta titulo,
+     estado e intentos, y el despachador lo pide aparte con [cuerpoDe]. */
+  static const List<String> _columnasLigeras = [
+    'id',
+    'uuid',
+    'tipo',
+    'titulo',
+    'detalle',
+    'endpoint',
+    'metodo',
+    'agrupador',
+    'estado',
+    'intentos',
+    'ultimo_error',
+    'ultimo_codigo',
+    'id_servidor',
+    'fecha_captura',
+    'fecha_envio',
+  ];
+
+  /// El cuerpo de un item, leido POR TROZOS.
+  ///
+  /// ## Por que no se lee de una
+  ///
+  /// El limite del CursorWindow es por FILA: un cuerpo de doce megas no cabe
+  /// aunque se pida solo esa columna y esa fila. `substr` lo devuelve en
+  /// pedazos de 256 KB, que si caben, y se pegan aca.
+  ///
+  /// ## Por que el base64 sigue viviendo en la base
+  ///
+  /// Porque la cola tiene que ser autosuficiente. Guardar solo la ruta del
+  /// archivo dejaria la evidencia a merced de que Android limpie la cache
+  /// antes de que haya señal —y en una planta eso son horas—: se perderia
+  /// justo lo que la cola existe para no perder.
+  Future<String?> cuerpoDe(int id) async {
+    final d = await db;
+
+    const trozo = 256 * 1024;
+    final buffer = StringBuffer();
+
+    for (var desde = 1; ; desde += trozo) {
+      final r = await d.rawQuery(
+        'SELECT substr(cuerpo_json, ?, ?) AS parte FROM outbox WHERE id = ?',
+        [desde, trozo, id],
+      );
+
+      if (r.isEmpty) return desde == 1 ? null : buffer.toString();
+
+      final parte = r.first['parte'] as String?;
+      if (parte == null || parte.isEmpty) break;
+
+      buffer.write(parte);
+      if (parte.length < trozo) break;
+    }
+
+    return buffer.toString();
   }
 
   Future<void> actualizarItem(int id, Map<String, dynamic> cambios) async {

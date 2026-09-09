@@ -9,6 +9,8 @@ import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../activo/activo_ficha_screen.dart';
 import '../inventario/existencias_screen.dart';
+import '../inventario/ficha_bodega_screen.dart';
+import '../inventario/ficha_repuesto_screen.dart';
 
 /// El código que se está resolviendo. Vacío = todavía no se leyó nada.
 final codigoEscaneadoProvider = StateProvider<String>((ref) => '');
@@ -54,6 +56,26 @@ class _EscaneoScreenState extends ConsumerState<EscaneoScreen> {
       BarcodeFormat.ean13,
     ],
   );
+
+  @override
+  void initState() {
+    super.initState();
+
+    /* SE ENTRA SIEMPRE A LA CAMARA, NO AL RESULTADO ANTERIOR
+
+       `codigoEscaneadoProvider` es global —lo escribe tambien el buscador
+       manual— y sobrevive a salir de esta pantalla. Sin esto, volver a
+       Escanear mostraba pegado lo ultimo que se leyo la vez pasada, y como
+       `_alDetectar` no pisa lo que ya hay, la camara quedaba muda: no habia
+       forma de escanear otra cosa sin tocar «Escanear otro».
+
+       Se limpia despues del primer cuadro para no reconstruir durante el
+       build, que es lo que Riverpod prohibe. */
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      ref.read(codigoEscaneadoProvider.notifier).state = '';
+    });
+  }
 
   @override
   void dispose() {
@@ -584,9 +606,26 @@ class _Encontrado extends StatelessWidget {
     _ => Icons.qr_code_2,
   };
 
+  /* CADA COSA ABRE LO SUYO
+
+     `REP` iba a la lista completa de existencias, o sea que despues de
+     escanear la etiqueta de una pieza habia que volver a buscarla a mano. El
+     escaneo existe justo para no teclear: lleva a la ficha de ESE repuesto.
+
+     `BOD` y `UBI` siguen en existencias porque la pregunta ahi es «que hay
+     dentro», y eso ya se ve en la propia tarjeta del resultado con su
+     desglose. */
   Widget? _destino() => switch (escaneo.tipo.toUpperCase()) {
     'ACT' => ActivoFichaScreen(activoId: escaneo.id),
-    'REP' || 'BOD' || 'UBI' => const ExistenciasScreen(),
+    'REP' => FichaRepuestoScreen(
+      repuestoId: escaneo.id,
+      nombreConocido: escaneo.cabecera?.rep_nombre,
+    ),
+    'BOD' => FichaBodegaScreen(
+      bodegaId: escaneo.id,
+      nombreConocido: escaneo.cabecera?.bod_nombre,
+    ),
+    'UBI' => const ExistenciasScreen(),
     _ => null,
   };
 

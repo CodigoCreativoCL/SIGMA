@@ -17,6 +17,8 @@ import '../inventario/existencias_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
 import '../perfil/mi_perfil_screen.dart';
+import '../inventario/bodegas_screen.dart';
+import '../inventario/repuestos_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
 import '../trabajo/mi_trabajo_screen.dart';
@@ -35,6 +37,11 @@ final rutasApp = <String, WidgetBuilder>{
   'app://mi-perfil': (_) => const MiPerfilScreen(),
   'app://escaneo': (_) => const EscaneoScreen(),
   'app://existencias': (_) => const ExistenciasScreen(),
+  // El CATALOGO —una fila por pieza— frente a las existencias —una fila por
+  // bodega—. Responden preguntas distintas: «existe esto y con que codigo»
+  // frente a «que esta bajo minimo».
+  'app://repuestos': (_) => const RepuestosScreen(),
+  'app://bodegas': (_) => const BodegasScreen(),
   'app://permisos-trabajo': (_) => const PermisosTrabajoScreen(),
   // Los cuatro tipos abren la MISMA bandeja, cada uno en su pestaña. Así una
   // ruta que el administrador registre en `Menus` sigue funcionando, y no

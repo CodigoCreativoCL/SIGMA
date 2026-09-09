@@ -149,7 +149,28 @@ namespace API.Controllers
                 // los días.
                 string extension = Extension(dto.mime);
                 string almacenado = dto.uuid.ToString("N") + "." + extension;
-                string ruta = "sigma/" + dto.destino.ToLowerInvariant() + "/" + almacenado;
+
+                /* LA RUTA LLEVA EL CLIENTE, COMO LA DE LA WEB
+
+                   Antes era «sigma/bitacora/archivo.m4a»: sin cliente, todas
+                   las empresas mezcladas en la misma carpeta. La intranet
+                   guarda bajo la carpeta de la empresa desde siempre, asi que
+                   ademas eran dos estructuras distintas en el mismo
+                   contenedor.
+
+                   No es orden, es aislamiento: con el cliente arriba, un SAS
+                   acotado a un prefijo deja fuera a las demas empresas con una
+                   sola regla. Sin el no hay prefijo que acotar.
+
+                   Lo ya subido no se mueve: su ruta vive en Archivo.arc_ruta y
+                   se sigue encontrando donde esta. */
+                string ruta = RutaArchivo.Armar(
+                    "sigma",
+                    SesionApi.ClienteId(),
+                    NombreDelCliente(),
+                    dto.destino.ToLowerInvariant(),
+                    almacenado,
+                    DateTime.Now);
 
                 ResultadoBlob subido = blob.Subir(ruta, contenido, dto.mime);
 
@@ -224,6 +245,46 @@ namespace API.Controllers
         /// un nombre lo escribe quien llama y puede traer cualquier cosa,
         /// incluido un `.aspx`.
         /// </summary>
+        /// <summary>
+        /// El nombre de la empresa del token, para la carpeta legible.
+        ///
+        /// Se consulta y se cachea corto: se usa en cada subida y es un dato
+        /// que no cambia en el dia. Si no se puede leer, la carpeta queda solo
+        /// con el id —«0001»—, que es feo pero sigue aislando, que es lo que
+        /// de verdad importa.
+        /// </summary>
+        private static string NombreDelCliente()
+        {
+            int cliente = SesionApi.ClienteId();
+            if (cliente <= 0) return "";
+
+            try
+            {
+                return CacheCorta.Obtener(
+                    CacheCorta.Clave("clientenombre", 0, cliente, ""),
+                    () =>
+                    {
+                        List<ClienteElegibleDto> r = Datos.Listar<ClienteElegibleDto>(
+                            "API_SEL_APP_CLIENTE",
+                            new Dictionary<string, object>
+                            {
+                                { "@USUARIO", SesionApi.UsuarioId() }
+                            });
+
+                        if (r == null) return "";
+
+                        for (int i = 0; i < r.Count; i++)
+                            if (r[i].cli_id == cliente) return r[i].cli_nombre ?? "";
+
+                        return "";
+                    });
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
         private static string Extension(string mime)
         {
             switch ((mime ?? "").ToLowerInvariant())

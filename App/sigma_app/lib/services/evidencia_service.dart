@@ -185,7 +185,9 @@ class EvidenciaService {
       clase: ClaseEvidencia.video,
       // Lo que graban Android y iOS por omisión. La galería puede traer otra
       // cosa, y para eso está el mapa de extensiones del servidor.
-      mime: x.path.toLowerCase().endsWith('.mov') ? 'video/quicktime' : 'video/mp4',
+      mime: x.path.toLowerCase().endsWith('.mov')
+          ? 'video/quicktime'
+          : 'video/mp4',
     );
   }
 

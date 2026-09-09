@@ -246,6 +246,7 @@
     <Compile Include="Controllers\ArchivoController.cs" />
     <Compile Include="Controllers\PermisosTrabajoController.cs" />
     <Compile Include="Services\BlobService.cs" />
+    <Compile Include="Services\RutaArchivo.cs" />
     <Compile Include="Utils\ApiBase.cs" />
     <Compile Include="Utils\CacheCorta.cs" />
     <Compile Include="Utils\Datos.cs" />

@@ -267,6 +267,12 @@ class SigmaRepository {
     return Repuesto.fromJson(j as Map<String, dynamic>);
   }
 
+  /// Una bodega — vista 10.6.
+  Future<Bodega> bodega(int id) async {
+    final j = await _api.get('${ApiConstants.bodegas}/$id');
+    return Bodega.fromJson(j as Map<String, dynamic>);
+  }
+
   /// Los lotes de un repuesto, para la ficha (vista 10.3).
   ///
   /// El vencido **viene marcado por el servidor** (`VENCIDO`) y no se deduce

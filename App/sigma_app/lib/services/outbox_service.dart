@@ -175,8 +175,24 @@ class OutboxService {
   Future<void> _enviarUno(Map<String, dynamic> f) async {
     final id = (f['id'] as num).toInt();
     final intentos = ((f['intentos'] as num?)?.toInt() ?? 0) + 1;
-    final cuerpo =
-        jsonDecode(f['cuerpo_json'] as String) as Map<String, dynamic>;
+
+    /* El cuerpo se pide APARTE y por trozos: con el base64 de una foto adentro
+       no cabe en el CursorWindow de Android, y el `SELECT *` de antes tumbaba
+       el despacho entero. */
+    final crudo = await _base.cuerpoDe(id);
+
+    if (crudo == null || crudo.isEmpty) {
+      // Sin cuerpo no hay nada que enviar, y reintentarlo cada vez seria un
+      // bucle silencioso. Se marca para que se vea en Pendientes.
+      await _base.actualizarItem(id, {
+        'estado': 'rechazado',
+        'intentos': intentos,
+        'ultimo_error': 'El contenido guardado se perdió.',
+      });
+      return;
+    }
+
+    final cuerpo = jsonDecode(crudo) as Map<String, dynamic>;
 
     try {
       final r = await ApiClient.instance.post(f['endpoint'] as String, cuerpo);
