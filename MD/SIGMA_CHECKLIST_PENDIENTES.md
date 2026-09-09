@@ -685,12 +685,51 @@ una migración**.
 
 ---
 
+## Bloque 9 — La tarjeta de SIGMA AI se desbordaba en el Inicio
+
+Reportado con captura: «BOTTOM OVERFLOWED BY 59 PIXELS» sobre las cifras de la
+predicción. **Eran dos errores a la vez, y el segundo era el de fondo.**
+
+- [x] **La cifra se partía en dos líneas.** «6,35 mm/s» no cabe a tamaño 20 en
+      un tercio del ancho de un teléfono. Ahora se encoge —`scaleDown`, no
+      `ellipsis`: media cifra es peor que una cifra chica, porque la cifra es
+      lo que se viene a leer— y el valor va separado de su unidad, que estaba
+      pegado («6,35mm/s» no es un número, son dos cosas juntas).
+- [x] **El alto del carrusel estaba mal desde el principio: decía 254 y la
+      tarjeta ocupa 297.** Ese número no salió de ninguna medición; funcionaba
+      de casualidad mientras las predicciones traían dos cifras y no tres.
+- [x] **El título se partía en dos líneas en teléfonos angostos**, y eso hacía
+      la tarjeta 23 px más alta *solo en los aparatos chicos*. Un alto fijo que
+      depende del ancho es un desbordamiento esperando al teléfono más barato
+      de la planta. Va a una línea, como el detalle.
+- [x] **El alto sigue al tamaño de texto del usuario.** Con el ajuste de
+      accesibilidad en Máximo (1,5×, vista 16.2) todo lo de dentro crece: un
+      alto fijo habría vuelto a reventar el Inicio sin que nadie tocara nada.
+      Ese error lo introduje yo al construir 16.2 y no lo vi hasta esta
+      captura.
+- [x] La cifra también crece con ese ajuste. Antes de esto habría sido lo único
+      de la tarjeta que **no** crecía, justo lo que hay que poder leer.
+- [x] `test/tarjeta_ia_test.dart`: cuatro casos —tres cifras con unidad, una
+      cifra larguísima, un nombre largo en un teléfono de 320 dp y el texto en
+      Máximo— que fallan si la tarjeta vuelve a crecer. **El próximo
+      desbordamiento se ve en `flutter test`, no en el teléfono de un
+      técnico.**
+
+**Lo que dejó como lección:** una constante de alto sin una prueba que la
+sostenga es una bomba de tiempo, y el ajuste de tamaño de texto que se agregó
+en 16.2 la activó en toda la app. Quedan por revisar los demás altos fijos.
+
+- [ ] Barrer los `SizedBox(height: …)` que envuelvan contenido de texto y
+      escalarlos igual, o probarlos como este.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
       significa que el sitio levante.
 - [ ] `flutter analyze lib` limpio.
-- [ ] `flutter test` — hoy 100 verdes.
+- [ ] `flutter test` — hoy 104 verdes.
 - [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
       `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
       `no_consumidas.py`.

@@ -160,6 +160,18 @@ class SgTarjetaIa extends StatelessWidget {
                                 Text(
                                   titulo,
                                   style: sora(16, 600, color: sg.tinta),
+                                  /* UNA LINEA, COMO EL DETALLE
+
+                                     El titulo es el nombre de un equipo y al
+                                     lado tiene el badge, asi que el sitio es
+                                     el que es. Sin tope, en un telefono
+                                     angosto se partia en dos y la tarjeta
+                                     crecia 23 px **solo en esos telefonos**:
+                                     el carrusel tiene alto fijo, y un alto
+                                     que depende del ancho es un desbordamiento
+                                     esperando al aparato mas chico. */
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                                 const SizedBox(height: 3),
                                 Text(
@@ -270,12 +282,43 @@ class _Cifra extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            dato.$1,
-            style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true),
+          /* LA CIFRA SE ENCOGE, NO SE PARTE
+
+             Son tres recuadros repartiéndose el ancho, y el tercero es el que
+             lleva unidades: «6,35 mm/s» no cabe a tamaño 20 en un tercio de un
+             teléfono angosto. Sin esto se iba a dos líneas, la fila crecía y
+             la tarjeta reventaba su alto —59 px de overflow en el Inicio—.
+
+             `scaleDown` y no `ellipsis`: media cifra —«6,3…»— es peor que una
+             cifra chica, porque la cifra es justamente lo que se viene a leer.
+             Y no se encoge nunca por debajo de lo necesario: con texto corto
+             se sigue viendo a 20. */
+          SizedBox(
+            /* EL ALTO SIGUE AL AJUSTE DE ACCESIBILIDAD
+
+               24 es lo que ocupa la cifra a tamaño normal. Dejarlo fijo haría
+               que la cifra —lo único que se viene a leer de esta tarjeta— sea
+               lo único que NO crece cuando alguien sube el tamaño del texto
+               (vista 16.2). */
+            height: MediaQuery.textScalerOf(context).scale(24),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                dato.$1,
+                maxLines: 1,
+                softWrap: false,
+                style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true),
+              ),
+            ),
           ),
           const SizedBox(height: 2),
-          Text(dato.$2, style: sora(11, 500, color: sg.tinta2)),
+          Text(
+            dato.$2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sora(11, 500, color: sg.tinta2),
+          ),
         ],
       ),
     );

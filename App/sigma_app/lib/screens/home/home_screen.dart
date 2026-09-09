@@ -683,8 +683,21 @@ class _CarruselIaState extends State<_CarruselIa> {
              libre la tarjeta daría un salto cada vez que una predicción tenga
              una línea más que la anterior. Un salto de veinte píxeles bajo el
              dedo, en el Inicio, se siente como un fallo. */
+          /* 297, Y ES UN NUMERO MEDIDO
+
+             Antes decia 254 y la tarjeta se desbordaba por 59 px en el Inicio.
+             254 no salio de ninguna parte: la tarjeta de SIGMA AI con sus tres
+             cifras, su pie y sus dos botones ocupa 297 a cualquier ancho -se
+             midio con `test/tarjeta_ia_test.dart`, que ademas falla si vuelve
+             a crecer-.
+
+             Y se escala con el tamaño de texto del usuario, porque con el
+             ajuste de accesibilidad en Maximo (1,5x, vista 16.2) todo lo de
+             dentro crece y un alto fijo volveria a reventar sin que nadie haya
+             tocado el Inicio. El factor sobra un poco -los espaciados no
+             crecen- y sobrar es exactamente lo que se quiere de un alto. */
           SizedBox(
-            height: 254,
+            height: MediaQuery.textScalerOf(context).scale(297),
             child: PageView.builder(
               controller: _paginas,
               itemCount: _cuantas,
@@ -777,8 +790,10 @@ class _TarjetaPrediccion extends StatelessWidget {
         // Comprobable mirando el equipo, que es lo que lo hace creíble.
         if (p.VALOR_ACTUAL != null && p.VALOR_CRITICO != null)
           (
-            '${_n.format(p.VALOR_ACTUAL)}$unidad',
-            'de ${_n.format(p.VALOR_CRITICO)}$unidad',
+            // Con espacio: «6,35mm/s» no es un número, son dos cosas pegadas,
+            // y a la hora de leerlo de reojo eso cuesta.
+            '${_n.format(p.VALOR_ACTUAL)}${unidad.isEmpty ? '' : ' $unidad'}',
+            'de ${_n.format(p.VALOR_CRITICO)}${unidad.isEmpty ? '' : ' $unidad'}',
           ),
       ],
       /* SIN FOTO, EL ICONO DEL EQUIPO; NO UN MARCO VACIO

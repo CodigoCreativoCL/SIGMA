@@ -38,7 +38,11 @@ void main() {
       expect(acc.enSilencio(alas(21, 59)), isFalse);
       expect(acc.enSilencio(alas(22)), isTrue);
       expect(acc.enSilencio(alas(23, 30)), isTrue);
-      expect(acc.enSilencio(alas(0, 1)), isTrue, reason: 'pasada la medianoche');
+      expect(
+        acc.enSilencio(alas(0, 1)),
+        isTrue,
+        reason: 'pasada la medianoche',
+      );
       expect(acc.enSilencio(alas(6, 59)), isTrue);
       expect(acc.enSilencio(alas(7)), isFalse);
       expect(acc.enSilencio(alas(13)), isFalse, reason: 'de día no calla');

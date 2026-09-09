@@ -11,7 +11,10 @@ import 'package:sigma_app/services/cache_datos.dart';
 void main() {
   group('Claves tolerantes', () {
     test('el mismo valor se lee en los dos casos', () {
-      final f = CacheDatos.conClavesTolerantes({'ACT_ID': 7, 'act_codigo': 'MOT-001'});
+      final f = CacheDatos.conClavesTolerantes({
+        'ACT_ID': 7,
+        'act_codigo': 'MOT-001',
+      });
 
       expect(f['ACT_ID'], 7);
       expect(f['act_id'], 7);
@@ -39,21 +42,23 @@ void main() {
   group('Una fila de la sábana se mapea con el mismo fromJson', () {
     test('Activo', () {
       // Tal como lo devuelve `API_SEL_APP_SABANA_DATOS` con @TIPO = 4.
-      final activo = Activo.fromJson(CacheDatos.conClavesTolerantes({
-        'ACT_ID': 33,
-        'ACT_CODIGO': 'MOT-001',
-        'ACT_NOMBRE': 'Motor principal linea 3',
-        'ACT_NUMERO_SERIE': 'WEG-99812',
-        'ACT_FABRICANTE': 'WEG',
-        'ACT_ACTIVO_ESTADO': 2,
-        'PLANTA_NOMBRE': 'Quilicura',
-        'AREA_NOMBRE': 'Envasado',
-        'POSICION_CODIGO': 'L3-P02',
-        'TIPO_NOMBRE': 'Motor electrico',
-        'ESTADO_NOMBRE': 'Operativo',
-        'ESTADO_CODIGO': 'OPERATIVO',
-        'CRITICIDAD_NOMBRE': 'Alta',
-      }));
+      final activo = Activo.fromJson(
+        CacheDatos.conClavesTolerantes({
+          'ACT_ID': 33,
+          'ACT_CODIGO': 'MOT-001',
+          'ACT_NOMBRE': 'Motor principal linea 3',
+          'ACT_NUMERO_SERIE': 'WEG-99812',
+          'ACT_FABRICANTE': 'WEG',
+          'ACT_ACTIVO_ESTADO': 2,
+          'PLANTA_NOMBRE': 'Quilicura',
+          'AREA_NOMBRE': 'Envasado',
+          'POSICION_CODIGO': 'L3-P02',
+          'TIPO_NOMBRE': 'Motor electrico',
+          'ESTADO_NOMBRE': 'Operativo',
+          'ESTADO_CODIGO': 'OPERATIVO',
+          'CRITICIDAD_NOMBRE': 'Alta',
+        }),
+      );
 
       expect(activo.act_id, 33);
       expect(activo.act_codigo, 'MOT-001');
@@ -68,11 +73,13 @@ void main() {
     });
 
     test('ClienteInstalacion', () {
-      final planta = ClienteInstalacion.fromJson(CacheDatos.conClavesTolerantes({
-        'CIN_ID': 4,
-        'CIN_NOMBRE': 'Planta Quilicura',
-        'CIN_CODIGO': 'QUI',
-      }));
+      final planta = ClienteInstalacion.fromJson(
+        CacheDatos.conClavesTolerantes({
+          'CIN_ID': 4,
+          'CIN_NOMBRE': 'Planta Quilicura',
+          'CIN_CODIGO': 'QUI',
+        }),
+      );
 
       expect(planta.cin_id, 4);
       expect(planta.cin_nombre, 'Planta Quilicura');
@@ -82,30 +89,36 @@ void main() {
     test('la respuesta del endpoint, en minúsculas, sigue funcionando', () {
       // La misma función tiene que servir para la red: si no, habría dos
       // modelos del mismo dato y se desincronizarían.
-      final planta = ClienteInstalacion.fromJson(CacheDatos.conClavesTolerantes({
-        'cin_id': 4,
-        'cin_nombre': 'Planta Quilicura',
-      }));
+      final planta = ClienteInstalacion.fromJson(
+        CacheDatos.conClavesTolerantes({
+          'cin_id': 4,
+          'cin_nombre': 'Planta Quilicura',
+        }),
+      );
 
       expect(planta.cin_id, 4);
       expect(planta.cin_nombre, 'Planta Quilicura');
     });
 
-    test('CierreMotivo — el cierre de OT tiene que poder hacerse sin señal',
-        () {
-      // Tal como lo devuelve `API_SEL_APP_SABANA_DATOS` con @TIPO = 9.
-      final motivo = CierreMotivo.fromJson(CacheDatos.conClavesTolerantes({
-        'OCM_ID': 2,
-        'OCM_CODIGO': 'SIN HALLAZGO',
-        'OCM_NOMBRE': 'Sin hallazgo, no requirió intervención',
-        'OCM_ORDEN': 2,
-      }));
+    test(
+      'CierreMotivo — el cierre de OT tiene que poder hacerse sin señal',
+      () {
+        // Tal como lo devuelve `API_SEL_APP_SABANA_DATOS` con @TIPO = 9.
+        final motivo = CierreMotivo.fromJson(
+          CacheDatos.conClavesTolerantes({
+            'OCM_ID': 2,
+            'OCM_CODIGO': 'SIN HALLAZGO',
+            'OCM_NOMBRE': 'Sin hallazgo, no requirió intervención',
+            'OCM_ORDEN': 2,
+          }),
+        );
 
-      expect(motivo.ocm_id, 2);
-      expect(motivo.ocm_codigo, 'SIN HALLAZGO');
-      expect(motivo.ocm_nombre, 'Sin hallazgo, no requirió intervención');
-      expect(motivo.ocm_orden, 2);
-    });
+        expect(motivo.ocm_id, 2);
+        expect(motivo.ocm_codigo, 'SIN HALLAZGO');
+        expect(motivo.ocm_nombre, 'Sin hallazgo, no requirió intervención');
+        expect(motivo.ocm_orden, 2);
+      },
+    );
   });
 
   group('CatalogoValor lee los nombres del DTO', () {
@@ -134,10 +147,7 @@ void main() {
     });
 
     test('la forma de la columna sigue sirviendo', () {
-      final v = CatalogoValor.fromJson({
-        'ctv_id': 3,
-        'ctv_nombre': 'Alta',
-      });
+      final v = CatalogoValor.fromJson({'ctv_id': 3, 'ctv_nombre': 'Alta'});
 
       expect(v.ctv_id, 3);
       expect(v.ctv_nombre, 'Alta');
@@ -155,13 +165,15 @@ void main() {
   group('Un valor de catálogo sabe de qué catálogo es', () {
     test('la fila de la sábana trae su catálogo', () {
       // Tal como la devuelve el segundo resultado del bloque 3.
-      final v = CatalogoValor.fromJson(CacheDatos.conClavesTolerantes({
-        'CATALOGO_CODIGO': 'ACTIVO_ESTADO',
-        'VALOR_ID': 3,
-        'VALOR_CODIGO': 'DETENIDO',
-        'VALOR_NOMBRE': 'Detenido',
-        'VALOR_ORDEN': 3,
-      }));
+      final v = CatalogoValor.fromJson(
+        CacheDatos.conClavesTolerantes({
+          'CATALOGO_CODIGO': 'ACTIVO_ESTADO',
+          'VALOR_ID': 3,
+          'VALOR_CODIGO': 'DETENIDO',
+          'VALOR_NOMBRE': 'Detenido',
+          'VALOR_ORDEN': 3,
+        }),
+      );
 
       expect(v.CATALOGO_CODIGO, 'ACTIVO_ESTADO');
       expect(v.ctv_id, 3);

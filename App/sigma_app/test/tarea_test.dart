@@ -9,12 +9,12 @@ import 'package:sigma_app/models/modelos.dart';
 void main() {
   group('TareaPendiente', () {
     Map<String, dynamic> base() => {
-          'toc_id': 5,
-          'tar_titulo': 'Revisar nivel de aceite del reductor',
-          'TAREA_CODIGO': 'TAR-001',
-          'PRIORIDAD_ID': 2,
-          'SITUACION': 'EN PLAZO',
-        };
+      'toc_id': 5,
+      'tar_titulo': 'Revisar nivel de aceite del reductor',
+      'TAREA_CODIGO': 'TAR-001',
+      'PRIORIDAD_ID': 2,
+      'SITUACION': 'EN PLAZO',
+    };
 
     test('la situación viene del SP y la app no la recalcula', () {
       // Una fecha límite futura con SITUACION VENCIDA tiene que salir vencida:
@@ -23,8 +23,10 @@ void main() {
       final t = TareaPendiente.fromJson({
         ...base(),
         'SITUACION': 'VENCIDA',
-        'toc_fecha_limite_utc':
-            DateTime.now().toUtc().add(const Duration(days: 3)).toIso8601String(),
+        'toc_fecha_limite_utc': DateTime.now()
+            .toUtc()
+            .add(const Duration(days: 3))
+            .toIso8601String(),
       });
 
       expect(t.vencida, isTrue);
@@ -40,10 +42,14 @@ void main() {
     });
 
     test('crítica es 4, y alta no lo es', () {
-      expect(TareaPendiente.fromJson({...base(), 'PRIORIDAD_ID': 3}).critica,
-          isFalse);
-      expect(TareaPendiente.fromJson({...base(), 'PRIORIDAD_ID': 4}).critica,
-          isTrue);
+      expect(
+        TareaPendiente.fromJson({...base(), 'PRIORIDAD_ID': 3}).critica,
+        isFalse,
+      );
+      expect(
+        TareaPendiente.fromJson({...base(), 'PRIORIDAD_ID': 4}).critica,
+        isTrue,
+      );
     });
 
     test('el dónde es UBICACIÓN, no el equipo', () {
@@ -62,8 +68,7 @@ void main() {
     });
 
     test('el dónde junta lo que hay y no deja separadores sueltos', () {
-      final t =
-          TareaPendiente.fromJson({...base(), 'AREA_NOMBRE': 'Linea 1'});
+      final t = TareaPendiente.fromJson({...base(), 'AREA_NOMBRE': 'Linea 1'});
 
       expect(t.donde, 'Linea 1');
       expect(TareaPendiente.fromJson(base()).donde, '');
@@ -84,8 +89,10 @@ void main() {
 
     test('la foto del activo llega como ruta de blob', () {
       // Ruta, no bytes: tres tareas del mismo equipo comparten una descarga.
-      final t = TareaPendiente.fromJson(
-          {...base(), 'ACTIVO_FOTO': 'sigma/1/activos/mot-001.jpg'});
+      final t = TareaPendiente.fromJson({
+        ...base(),
+        'ACTIVO_FOTO': 'sigma/1/activos/mot-001.jpg',
+      });
 
       expect(t.ACTIVO_FOTO, 'sigma/1/activos/mot-001.jpg');
       expect(TareaPendiente.fromJson(base()).ACTIVO_FOTO, isNull);
@@ -94,10 +101,10 @@ void main() {
 
   group('Tarea', () {
     Map<String, dynamic> base() => {
-          'toc_id': 5,
-          'tar_titulo': 'Purgar condensado',
-          'ESTADO_ID': 3,
-        };
+      'toc_id': 5,
+      'tar_titulo': 'Purgar condensado',
+      'ESTADO_ID': 3,
+    };
 
     test('en ejecución es tener una abierta, no solo haberla tenido', () {
       final abierta = Tarea.fromJson({...base(), 'EJECUCION_ID': 9});
@@ -114,8 +121,11 @@ void main() {
     test('no realizada también está cerrada', () {
       // Estado 5 es NO REALIZADA. Es un desenlace distinto de COMPLETADA, pero
       // la tarea igual se acabó: la pantalla no puede volver a ofrecer cerrarla.
-      final t = Tarea.fromJson(
-          {...base(), 'ESTADO_ID': 5, 'tej_conforme': false});
+      final t = Tarea.fromJson({
+        ...base(),
+        'ESTADO_ID': 5,
+        'tej_conforme': false,
+      });
 
       expect(t.cerrada, isTrue);
       expect(t.tej_conforme, isFalse);

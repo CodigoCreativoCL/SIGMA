@@ -135,11 +135,17 @@ void main() {
     test('Paginado acepta el objeto y la lista pelada', () {
       // Hay endpoints que devuelven {datos:[...]} y otros un array: /menus y
       // /repuestos/{id}/lotes son arrays.
-      final objeto = Paginado.desde(
-        const {'total': 2, 'pagina': 1, 'datos': [{'ctl_id': 1}, {'ctl_id': 2}]},
-        Catalogo.fromJson,
-      );
-      final lista = Paginado.desde(const [{'ctl_id': 7}], Catalogo.fromJson);
+      final objeto = Paginado.desde(const {
+        'total': 2,
+        'pagina': 1,
+        'datos': [
+          {'ctl_id': 1},
+          {'ctl_id': 2},
+        ],
+      }, Catalogo.fromJson);
+      final lista = Paginado.desde(const [
+        {'ctl_id': 7},
+      ], Catalogo.fromJson);
 
       expect(objeto.datos.length, 2);
       expect(objeto.total, 2);
