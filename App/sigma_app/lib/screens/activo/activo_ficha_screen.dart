@@ -13,6 +13,8 @@ import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../componente/ficha_componente_screen.dart';
+import '../galeria/galeria_screen.dart';
 import '../lectura/captura_screen.dart';
 
 /// Ficha de activo — HU-037.
@@ -188,9 +190,11 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
               sliver: SliverList.list(
-                children: _pestana == 0
-                    ? _ficha(a)
-                    : [_Historial(activoId: widget.activoId)],
+                children: switch (_pestana) {
+                  0 => _ficha(a),
+                  1 => [_Componentes(activo: a)],
+                  _ => [_Historial(activoId: widget.activoId)],
+                },
               ),
             ),
           ],
@@ -230,6 +234,27 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
         if ((a.PADRE_CODIGO ?? '').isNotEmpty)
           SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
       ],
+    ),
+    const SizedBox(height: 13),
+    /* LA GALERIA, APARTE DE LAS FOTOS DEL HERO
+
+       El hero muestra las fotos; la galeria (7.4) muestra CUANDO se tomo cada
+       una y quien. Son dos preguntas distintas: «como es este equipo» la
+       responde el hero de un vistazo, y «como estaba en marzo» solo la
+       responde la galeria. */
+    SgBoton(
+      a.FOTOS.isEmpty ? 'Galería (sin fotos)' : 'Galería · ${a.FOTOS.length}',
+      icono: Icons.photo_library_outlined,
+      primario: false,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GaleriaScreen(
+            titulo: a.act_nombre,
+            origen: OrigenGaleria.activo(a.act_id),
+          ),
+        ),
+      ),
     ),
   ];
 }
@@ -506,7 +531,13 @@ class _Pestanas extends StatelessWidget {
   final int activa;
   final ValueChanged<int> onCambio;
 
-  static const _titulos = ['Ficha', 'Historial'];
+  /* TRES PESTANAS Y NO DOS
+
+     «Componentes» la pide 7.3 y faltaba: la ficha decia que es el equipo y
+     que le paso, pero no de que esta hecho, que es la pregunta que aparece
+     cuando algo falla —no se cambia «la modeladora», se cambia el rodamiento
+     del lado motor—. */
+  static const _titulos = ['Ficha', 'Componentes', 'Historial'];
 
   @override
   Widget build(BuildContext context) {
@@ -547,6 +578,107 @@ class _Pestanas extends StatelessWidget {
             ),
         ],
       ),
+    );
+  }
+}
+
+/// La pestaña «Componentes» — lo que 7.3 pedía y faltaba.
+///
+/// Muestra las piezas del equipo con su estado, y **las que piden atención
+/// arriba**: en un equipo de veinte componentes, las dos degradadas son las
+/// que importan cuando se baja con una falla en la mano. Ordenarlas por
+/// código dejaría la información útil en el medio de la lista.
+class _Componentes extends ConsumerWidget {
+  const _Componentes({required this.activo});
+
+  final Activo activo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sg = context.sg;
+    final datos = ref.watch(componentesProvider(activo.act_id));
+
+    return EstadoAsync<Paginado<Componente>>(
+      valor: datos,
+      onReintentar: () => ref.invalidate(componentesProvider(activo.act_id)),
+      child: (p) {
+        if (p.datos.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: SgAviso(
+              'Este equipo no tiene componentes registrados. Se cargan '
+              'desde la web.',
+              icono: Icons.category_outlined,
+              color: sg.tinta2,
+            ),
+          );
+        }
+
+        final orden = [...p.datos]
+          ..sort((a, b) {
+            if (a.enObservacion != b.enObservacion) {
+              return a.enObservacion ? -1 : 1;
+            }
+            return a.ACO_CODIGO.compareTo(b.ACO_CODIGO);
+          });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final c in orden) ...[
+              SgCard(
+                padding: const EdgeInsets.all(13),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        FichaComponenteScreen(componenteId: c.ACO_ID),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SgIconoCuadro(
+                      Icons.settings_outlined,
+                      color: c.enObservacion ? sg.ambarTexto : sg.primarioTexto,
+                      lado: 42,
+                      tamanoIcono: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.ACO_NOMBRE,
+                            style: sora(14, 600, color: sg.tinta),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            [
+                              c.ACO_CODIGO,
+                              c.POSICION_NOMBRE ?? '',
+                            ].where((s) => s.isNotEmpty).join(' · '),
+                            style: sora(11, 500, color: sg.tinta3),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if ((c.ESTADO_NOMBRE ?? '').isNotEmpty)
+                      SgBadge(
+                        c.ESTADO_NOMBRE!,
+                        color: c.enObservacion ? sg.ambarTexto : sg.verdeTexto,
+                        chico: true,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 9),
+            ],
+          ],
+        );
+      },
     );
   }
 }

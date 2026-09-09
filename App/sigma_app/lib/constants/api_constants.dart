@@ -42,6 +42,12 @@ abstract final class ApiConstants {
   static const String activos = '/activos';
   static const String activoEstados = '/activo-estados';
 
+  /// Componentes (vistas 8.1 a 8.4) y medidores (9.1 y 9.2). Los dos cuelgan
+  /// de un activo pero tienen ruta propia: `?activo=` los filtra, y sin el
+  /// parámetro son la búsqueda global que pide 8.1.
+  static const String componentes = '/componentes';
+  static const String medidores = '/medidores';
+
   /// Los valores de un catálogo: `/catalogos/{codigo}/valores`.
   /// El de estados de activo es `ACTIVO_ESTADO`.
   static String valoresDeCatalogo(String codigo) =>

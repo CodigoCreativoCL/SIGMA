@@ -229,6 +229,7 @@
     <Compile Include="Controllers\ClienteUsuariosController.cs" />
     <Compile Include="Controllers\InstalacionAreasController.cs" />
     <Compile Include="Controllers\MiPerfilController.cs" />
+    <Compile Include="Controllers\MedidoresController.cs" />
     <Compile Include="Controllers\MenusController.cs" />
     <Compile Include="Controllers\AlertasController.cs" />
     <Compile Include="Controllers\BodegasController.cs" />
@@ -236,6 +237,7 @@
     <Compile Include="Controllers\SincronizacionController.cs" />
     <Compile Include="Controllers\DispositivosController.cs" />
     <Compile Include="Controllers\CapturaTerrenoController.cs" />
+    <Compile Include="Controllers\ComponentesController.cs" />
     <Compile Include="Controllers\EscaneoController.cs" />
     <Compile Include="Controllers\InventarioMovimientosController.cs" />
     <Compile Include="Controllers\RepuestosController.cs" />

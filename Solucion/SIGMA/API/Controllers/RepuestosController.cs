@@ -114,5 +114,32 @@ namespace API.Controllers
                 return Ok(r ?? new List<RepuestoLoteDto>());
             });
         }
+        /// <summary>
+        /// GET /repuestos/{id}/galeria — las fotos de la pieza.    Vista 10.4
+        ///
+        /// Producto, empaque, etiqueta y estado fisico: lo que 10.4 pide para
+        /// reconocer la pieza correcta en el estante. La ficha del catalogo
+        /// dice como se llama; esto dice como se ve, que es lo que resuelve
+        /// entregar la equivocada.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/galeria")]
+        public IHttpActionResult Galeria(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER REPUESTOS");
+                ExigirCliente();
+
+                List<GaleriaFotoDto> fotos = Datos.Listar<GaleriaFotoDto>("API_SEL_REPUESTO_FOTO",
+                    new Dictionary<string, object>
+                    {
+                        { "@REPUESTO", id },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+
+                return Ok(fotos ?? new List<GaleriaFotoDto>());
+            });
+        }
     }
 }

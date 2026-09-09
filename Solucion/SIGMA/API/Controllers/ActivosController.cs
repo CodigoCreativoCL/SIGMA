@@ -146,5 +146,35 @@ namespace API.Controllers
                 return Ok(Paginado<ActivoFichaEventoDto>.Armar(todo, p));
             });
         }
+        /// <summary>
+        /// GET /activos/{id}/galeria — las fotos con su ficha.      Vista 7.4
+        ///
+        /// Separado de la cabecera porque devuelve mas por foto —fecha de
+        /// captura, autor y observacion— y eso solo lo mira quien abre la
+        /// galeria. La ficha se conforma con las rutas.
+        ///
+        /// La fecha es la de CAPTURA, no la de subida: en terreno se
+        /// fotografia sin señal y se sube al volver, y ordenar por la de
+        /// subida cuenta la historia en el orden equivocado.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/galeria")]
+        public IHttpActionResult Galeria(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ACTIVOS");
+                ExigirCliente();
+
+                List<GaleriaFotoDto> fotos = Datos.Listar<GaleriaFotoDto>("API_SEL_ACTIVO_FOTO",
+                    new Dictionary<string, object>
+                    {
+                        { "@ACTIVO", id },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+
+                return Ok(fotos ?? new List<GaleriaFotoDto>());
+            });
+        }
     }
 }

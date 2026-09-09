@@ -189,6 +189,118 @@ class SigmaRepository {
     return Paginado.desde(j, ActivoFichaEvento.fromJson);
   }
 
+  // ---- Componentes y medidores (vistas 8.x y 9.2) ----
+
+  /// Los componentes de un equipo, o de toda la planta si `activo` es nulo.
+  ///
+  /// **No sale de la sábana y no tiene respaldo en disco**, a diferencia de
+  /// los activos. No es un olvido: la sábana baja lo que se necesita
+  /// *delante del equipo y sin señal* —la orden, la pauta, el activo— y la
+  /// lista de componentes se mira antes de bajar, con señal. Meterla en la
+  /// sábana engordaría la descarga de todos para un caso que no la necesita.
+  ///
+  /// La consecuencia se dice en la pantalla en vez de esconderse: sin señal,
+  /// la lista no está.
+  Future<Paginado<Componente>> componentes({
+    int? activo,
+    String? filtro,
+    int pagina = 1,
+  }) async {
+    final j = await _api.get(
+      ApiConstants.componentes,
+      query: {
+        'pagina': pagina,
+        'tamano': 50,
+        'activo': ?activo,
+        if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+      },
+    );
+    return Paginado.desde(j, Componente.fromJson);
+  }
+
+  /// La ficha de un componente — vista 8.2. Trae fotos y medidores.
+  Future<Componente> componente(int id) async {
+    final j = await _api.get('${ApiConstants.componentes}/$id');
+    return Componente.fromJson(j as Map<String, dynamic>);
+  }
+
+  /// La línea de tiempo del componente — vista 8.3.
+  Future<Paginado<ComponenteEvento>> fichaComponente(
+    int id, {
+    String? tipo,
+  }) async {
+    final j = await _api.get(
+      '${ApiConstants.componentes}/$id/ficha',
+      query: {if (tipo != null && tipo.isNotEmpty) 'tipo': tipo},
+    );
+    return Paginado.desde(j, ComponenteEvento.fromJson);
+  }
+
+  /// Las fotos del componente con su ficha — vista 8.4.
+  Future<List<GaleriaFoto>> galeriaComponente(int id) =>
+      _galeria('${ApiConstants.componentes}/$id/galeria');
+
+  /// Las fotos de un activo con su ficha — vista 7.4.
+  Future<List<GaleriaFoto>> galeriaActivo(int id) =>
+      _galeria('${ApiConstants.activos}/$id/galeria');
+
+  /// Las fotos de un repuesto — vista 10.4.
+  Future<List<GaleriaFoto>> galeriaRepuesto(int id) =>
+      _galeria('${ApiConstants.repuestos}/$id/galeria');
+
+  /// Las tres galerías devuelven la misma forma, así que se leen igual.
+  /// Repetir el `map` tres veces sería tres sitios donde equivocarse.
+  Future<List<GaleriaFoto>> _galeria(String ruta) async {
+    final j = await _api.get(ruta);
+    final datos = (j is List) ? j : const [];
+    return datos
+        .map((e) => GaleriaFoto.fromJson((e as Map).cast<String, dynamic>()))
+        .toList();
+  }
+
+  /// Los medidores de un equipo — la puerta de entrada de 9.2.
+  Future<List<Medidor>> medidoresDe(int activo) async {
+    final j = await _api.get(
+      ApiConstants.medidores,
+      query: {'activo': activo, 'tamano': 50},
+    );
+    return Paginado.desde(j, Medidor.fromJson).datos;
+  }
+
+  /// Un medidor con sus umbrales.
+  Future<Medidor> medidor(int id) async {
+    final j = await _api.get('${ApiConstants.medidores}/$id');
+    return Medidor.fromJson(j as Map<String, dynamic>);
+  }
+
+  /// El historial de lecturas — vista 9.2.
+  ///
+  /// Vienen **ascendentes y con el incremento ya calculado**: es una serie
+  /// para un gráfico, y la resta la hace el SP. Que la hiciera el teléfono
+  /// daría un incremento equivocado en la primera fila de cada página —no
+  /// tiene contra qué restarse— y obligaría a la web a repetir la misma
+  /// cuenta.
+  Future<List<Lectura>> lecturasDe(
+    int medidor, {
+    DateTime? desde,
+    DateTime? hasta,
+  }) async {
+    String d(DateTime f) =>
+        '${f.year.toString().padLeft(4, '0')}-'
+        '${f.month.toString().padLeft(2, '0')}-'
+        '${f.day.toString().padLeft(2, '0')}';
+
+    final j = await _api.get(
+      '${ApiConstants.medidores}/$medidor/lecturas',
+      query: {
+        'tamano': 500,
+        if (desde != null) 'desde': d(desde),
+        if (hasta != null) 'hasta': d(hasta),
+      },
+    );
+    return Paginado.desde(j, Lectura.fromJson).datos;
+  }
+
   // ---- Inventario (Sprint 3) ----
 
   /// `?alerta=true` trae solo lo que está fuera de umbral.

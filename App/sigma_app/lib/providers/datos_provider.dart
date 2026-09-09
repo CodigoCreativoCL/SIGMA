@@ -62,6 +62,87 @@ final fichaActivoProvider =
       (ref, id) => _repo.fichaActivo(id),
     );
 
+// ---- Componentes y medidores (vistas 8.x y 9.2) ----
+
+/// Los componentes de un equipo — vista 8.1.
+///
+/// `.family` sobre el id del activo: la lista de un equipo no sirve para
+/// otro, y compartir un solo provider haría que abrir el segundo mostrara
+/// por un instante las piezas del primero.
+final componentesProvider = FutureProvider.family<Paginado<Componente>, int?>(
+  (ref, activo) => _repo.componentes(activo: activo),
+);
+
+/// La ficha de un componente — vista 8.2.
+final componenteProvider = FutureProvider.family<Componente, int>(
+  (ref, id) => _repo.componente(id),
+);
+
+/// Su línea de tiempo — vista 8.3.
+final fichaComponenteProvider =
+    FutureProvider.family<Paginado<ComponenteEvento>, int>(
+      (ref, id) => _repo.fichaComponente(id),
+    );
+
+/// Las tres galerías — vistas 7.4, 8.4 y 10.4.
+///
+/// Tres providers y no uno con un discriminador: el id 12 de un activo y el
+/// id 12 de un repuesto son cosas distintas, y un `.family` sobre un solo
+/// entero las confundiría en la caché de Riverpod.
+final galeriaComponenteProvider = FutureProvider.family<List<GaleriaFoto>, int>(
+  (ref, id) => _repo.galeriaComponente(id),
+);
+
+final galeriaActivoProvider = FutureProvider.family<List<GaleriaFoto>, int>(
+  (ref, id) => _repo.galeriaActivo(id),
+);
+
+final galeriaRepuestoProvider = FutureProvider.family<List<GaleriaFoto>, int>(
+  (ref, id) => _repo.galeriaRepuesto(id),
+);
+
+/// Los medidores de un equipo — la puerta de 9.2.
+final medidoresProvider = FutureProvider.family<List<Medidor>, int>(
+  (ref, activo) => _repo.medidoresDe(activo),
+);
+
+/// Un medidor con sus umbrales.
+final medidorProvider = FutureProvider.family<Medidor, int>(
+  (ref, id) => _repo.medidor(id),
+);
+
+/// El tramo que se está mirando en el historial de lecturas.
+///
+/// Vive fuera de la pantalla porque el provider de lecturas lo observa: al
+/// cambiar el rango se vuelve a pedir la serie, en vez de bajarla entera y
+/// recortarla en el teléfono.
+enum RangoLecturas {
+  tresMeses('3 meses', 90),
+  seisMeses('6 meses', 180),
+  unAno('1 año', 365),
+  todo('Todo', 0);
+
+  const RangoLecturas(this.rotulo, this.dias);
+
+  final String rotulo;
+
+  /// 0 = sin límite.
+  final int dias;
+
+  DateTime? get desde =>
+      dias == 0 ? null : DateTime.now().subtract(Duration(days: dias));
+}
+
+final rangoLecturasProvider = StateProvider<RangoLecturas>(
+  (ref) => RangoLecturas.seisMeses,
+);
+
+/// El historial de lecturas — vista 9.2.
+final lecturasProvider = FutureProvider.family<List<Lectura>, int>((ref, id) {
+  final rango = ref.watch(rangoLecturasProvider);
+  return _repo.lecturasDe(id, desde: rango.desde);
+});
+
 // ---- Inventario ----
 
 /// El filtro de la pantalla de existencias: `null` = todas, `true` = solo lo

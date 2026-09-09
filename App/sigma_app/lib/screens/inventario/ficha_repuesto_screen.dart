@@ -7,6 +7,7 @@ import '../../providers/datos_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../galeria/galeria_screen.dart';
 import 'hoja_ajuste.dart';
 import '../ordenes/hojas_recursos.dart';
 import 'hoja_movimiento.dart';
@@ -82,6 +83,28 @@ class FichaRepuestoScreen extends ConsumerWidget {
               ),
               children: [
                 _Cabecera(repuesto: r),
+                const SizedBox(height: 12),
+
+                /* LA GALERIA DE LA PIEZA — vista 10.4
+
+                   La ficha dice cómo se llama; la galería dice cómo se ve, y
+                   eso es lo que evita entregar la pieza equivocada. Producto,
+                   empaque, etiqueta y estado físico, con quién la fotografió
+                   y cuándo. */
+                SgBoton(
+                  'Fotos de la pieza',
+                  icono: Icons.photo_library_outlined,
+                  primario: false,
+                  onTap: () => Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GaleriaScreen(
+                        titulo: r.rep_nombre,
+                        origen: OrigenGaleria.repuesto(r.rep_id),
+                      ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 16),
 
                 const SgRotulo('Dónde está'),

@@ -19,6 +19,7 @@ import '../sigma_ai/sigma_ai_screen.dart';
 import '../perfil/mi_perfil_screen.dart';
 import '../accesibilidad/accesibilidad_screen.dart';
 import '../activo/activos_screen.dart';
+import '../componente/componentes_screen.dart';
 import '../inventario/bodegas_screen.dart';
 import '../inventario/repuestos_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
@@ -47,6 +48,9 @@ final rutasApp = <String, WidgetBuilder>{
   // Los equipos por nombre o por area: lo que el escaner no resuelve, porque
   // el escaner sirve estando DELANTE del equipo.
   'app://activos': (_) => const ActivosScreen(),
+  // Sin `activoId`: desde el menu es la busqueda global de 8.1, la que sirve
+  // cuando se tiene el codigo de una pieza y NO se sabe de que equipo es.
+  'app://componentes': (_) => const ComponentesScreen(),
   'app://permisos-trabajo': (_) => const PermisosTrabajoScreen(),
   // Los cuatro tipos abren la MISMA bandeja, cada uno en su pestaña. Así una
   // ruta que el administrador registre en `Menus` sigue funcionando, y no
@@ -349,6 +353,10 @@ class MasScreen extends ConsumerWidget {
     'app://permisos-trabajo' => Icons.assignment_turned_in_outlined,
     'app://sincronizacion' => Icons.sync,
     'app://pendientes' => Icons.cloud_upload_outlined,
+    'app://activos' => Icons.view_in_ar_outlined,
+    'app://componentes' => Icons.settings_outlined,
+    'app://repuestos' => Icons.inventory_2_outlined,
+    'app://bodegas' => Icons.warehouse_outlined,
     _ => Icons.widgets_outlined,
   };
 }

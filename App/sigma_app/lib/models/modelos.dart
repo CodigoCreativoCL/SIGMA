@@ -2952,3 +2952,323 @@ class Tarea {
         : const [],
   );
 }
+
+// ─────────────────────────────────────────── COMPONENTES Y MEDIDORES ──
+
+/// Un componente de un activo — vistas 8.1 y 8.2.
+///
+/// Los nombres son los de `SEL_ACTIVO_COMPONENTE`, que es el mismo SP que usa
+/// la web. Renombrarlos al pasar por la app obligaría a traducir mentalmente
+/// la misma columna en cada capa.
+class Componente {
+  const Componente({
+    required this.ACO_ID,
+    required this.ACO_ACTIVO,
+    required this.ACO_CODIGO,
+    required this.ACO_NOMBRE,
+    this.ACO_COMPONENTE_PADRE,
+    this.ACO_FECHA_INSTALACION,
+    this.ACO_DESCRIPCION,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.TIPO_NOMBRE,
+    this.ESTADO_NOMBRE,
+    this.CRITICIDAD_NOMBRE,
+    this.POSICION_NOMBRE,
+    this.PADRE_NOMBRE,
+    this.FOTO_RUTA,
+    this.FOTOS = const [],
+    this.MEDIDORES = const [],
+  });
+
+  final int ACO_ID;
+  final int ACO_ACTIVO;
+  final String ACO_CODIGO;
+  final String ACO_NOMBRE;
+  final int? ACO_COMPONENTE_PADRE;
+  final DateTime? ACO_FECHA_INSTALACION;
+  final String? ACO_DESCRIPCION;
+
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+  final String? TIPO_NOMBRE;
+  final String? ESTADO_NOMBRE;
+  final String? CRITICIDAD_NOMBRE;
+  final String? POSICION_NOMBRE;
+  final String? PADRE_NOMBRE;
+
+  final String? FOTO_RUTA;
+  final List<String> FOTOS;
+
+  /// Los medidores del componente: las horas o ciclos de uso que pide 8.2.
+  /// Vacío en el listado, que no los pide.
+  final List<Medidor> MEDIDORES;
+
+  /// ¿Está pidiendo atención?
+  ///
+  /// Lo decide el **nombre del estado que manda la base**, no un id fijo en el
+  /// teléfono: los estados son catálogo y un cliente puede tener los suyos.
+  bool get enObservacion {
+    final e = (ESTADO_NOMBRE ?? '').toLowerCase();
+    return e.contains('degrad') ||
+        e.contains('observ') ||
+        e.contains('fuera') ||
+        e.contains('baja');
+  }
+
+  factory Componente.fromJson(Map<String, dynamic> j) => Componente(
+    ACO_ID: _i(j['ACO_ID']),
+    ACO_ACTIVO: _i(j['ACO_ACTIVO']),
+    ACO_CODIGO: _s(j['ACO_CODIGO']),
+    ACO_NOMBRE: _s(j['ACO_NOMBRE']),
+    ACO_COMPONENTE_PADRE: j['ACO_COMPONENTE_PADRE'] == null
+        ? null
+        : _i(j['ACO_COMPONENTE_PADRE']),
+    ACO_FECHA_INSTALACION: _f(j['ACO_FECHA_INSTALACION']),
+    ACO_DESCRIPCION: _sN(j['ACO_DESCRIPCION']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    TIPO_NOMBRE: _sN(j['TIPO_NOMBRE']),
+    ESTADO_NOMBRE: _sN(j['ESTADO_NOMBRE']),
+    CRITICIDAD_NOMBRE: _sN(j['CRITICIDAD_NOMBRE']),
+    POSICION_NOMBRE: _sN(j['POSICION_NOMBRE']),
+    PADRE_NOMBRE: _sN(j['PADRE_NOMBRE']),
+    FOTO_RUTA: _sN(j['FOTO_RUTA']),
+    FOTOS: (j['FOTOS'] is List)
+        ? (j['FOTOS'] as List)
+              .map((e) => _s(e))
+              .where((s) => s.isNotEmpty)
+              .toList()
+        : const [],
+    MEDIDORES: (j['MEDIDORES'] is List)
+        ? (j['MEDIDORES'] as List)
+              .map((e) => Medidor.fromJson((e as Map).cast<String, dynamic>()))
+              .toList()
+        : const [],
+  );
+}
+
+/// Un evento de la línea de tiempo del componente — vista 8.3.
+class ComponenteEvento {
+  const ComponenteEvento({
+    required this.TITULO,
+    this.FECHA,
+    this.TIPO_EVENTO,
+    this.DETALLE,
+    this.USUARIO_NOMBRE,
+    this.REF_ID,
+    this.REF_TEXTO,
+  });
+
+  final String TITULO;
+  final DateTime? FECHA;
+  final String? TIPO_EVENTO;
+  final String? DETALLE;
+  final String? USUARIO_NOMBRE;
+
+  /// El id del registro que causó el evento —la OT, la falla, el repuesto—.
+  /// Sin él la fila se puede leer pero no se puede abrir.
+  final int? REF_ID;
+  final String? REF_TEXTO;
+
+  factory ComponenteEvento.fromJson(Map<String, dynamic> j) => ComponenteEvento(
+    TITULO: _s(j['TITULO']),
+    FECHA: _f(j['FECHA']),
+    TIPO_EVENTO: _sN(j['TIPO_EVENTO']),
+    DETALLE: _sN(j['DETALLE']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    REF_ID: j['REF_ID'] == null ? null : _i(j['REF_ID']),
+    REF_TEXTO: _sN(j['REF_TEXTO']),
+  );
+}
+
+/// Un medidor y su último valor.
+class Medidor {
+  const Medidor({
+    required this.AME_ID,
+    required this.AME_ACTIVO,
+    required this.AME_CODIGO,
+    required this.AME_NOMBRE,
+    this.AME_ACTIVO_COMPONENTE,
+    this.AME_VALOR_ACTUAL,
+    this.AME_FECHA_VALOR_ACTUAL_UTC,
+    this.AME_PERMITE_REINICIO = false,
+    this.UNIDAD_NOMBRE,
+    this.UNIDAD_SIMBOLO,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.UMBRALES = const [],
+  });
+
+  final int AME_ID;
+  final int AME_ACTIVO;
+  final String AME_CODIGO;
+  final String AME_NOMBRE;
+  final int? AME_ACTIVO_COMPONENTE;
+  final double? AME_VALOR_ACTUAL;
+  final DateTime? AME_FECHA_VALOR_ACTUAL_UTC;
+  final bool AME_PERMITE_REINICIO;
+  final String? UNIDAD_NOMBRE;
+  final String? UNIDAD_SIMBOLO;
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+
+  /// A cuánto toca la próxima mantención. Vacío es lo normal: solo lo tienen
+  /// los medidores con una programación configurada.
+  final List<MedidorUmbral> UMBRALES;
+
+  factory Medidor.fromJson(Map<String, dynamic> j) => Medidor(
+    AME_ID: _i(j['AME_ID']),
+    AME_ACTIVO: _i(j['AME_ACTIVO']),
+    AME_CODIGO: _s(j['AME_CODIGO']),
+    AME_NOMBRE: _s(j['AME_NOMBRE']),
+    AME_ACTIVO_COMPONENTE: j['AME_ACTIVO_COMPONENTE'] == null
+        ? null
+        : _i(j['AME_ACTIVO_COMPONENTE']),
+    AME_VALOR_ACTUAL: _dN(j['AME_VALOR_ACTUAL']),
+    AME_FECHA_VALOR_ACTUAL_UTC: _f(j['AME_FECHA_VALOR_ACTUAL_UTC']),
+    AME_PERMITE_REINICIO: _b(j['AME_PERMITE_REINICIO']),
+    UNIDAD_NOMBRE: _sN(j['UNIDAD_NOMBRE']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    UMBRALES: (j['UMBRALES'] is List)
+        ? (j['UMBRALES'] as List)
+              .map(
+                (e) =>
+                    MedidorUmbral.fromJson((e as Map).cast<String, dynamic>()),
+              )
+              .toList()
+        : const [],
+  );
+}
+
+/// El próximo hito de mantención de un medidor — el «umbral» de 9.2.
+class MedidorUmbral {
+  const MedidorUmbral({
+    required this.PME_ID,
+    this.PROGRAMACION_NOMBRE,
+    this.CADA_CANTIDAD,
+    this.AVISO_ANTICIPACION,
+    this.VALOR_ACTUAL,
+    this.PROXIMO_UMBRAL,
+    this.AVISO_DESDE,
+    this.FALTA,
+  });
+
+  final int PME_ID;
+  final String? PROGRAMACION_NOMBRE;
+  final double? CADA_CANTIDAD;
+  final double? AVISO_ANTICIPACION;
+  final double? VALOR_ACTUAL;
+  final double? PROXIMO_UMBRAL;
+  final double? AVISO_DESDE;
+
+  /// Cuánto falta para el hito. Negativo = ya se pasó.
+  final double? FALTA;
+
+  /// ¿Ya entró en la franja de aviso?
+  bool get avisando {
+    final a = AVISO_DESDE, v = VALOR_ACTUAL;
+    if (a == null || v == null) return false;
+    return v >= a;
+  }
+
+  factory MedidorUmbral.fromJson(Map<String, dynamic> j) => MedidorUmbral(
+    PME_ID: _i(j['PME_ID']),
+    PROGRAMACION_NOMBRE: _sN(j['PROGRAMACION_NOMBRE']),
+    CADA_CANTIDAD: _dN(j['CADA_CANTIDAD']),
+    AVISO_ANTICIPACION: _dN(j['AVISO_ANTICIPACION']),
+    VALOR_ACTUAL: _dN(j['VALOR_ACTUAL']),
+    PROXIMO_UMBRAL: _dN(j['PROXIMO_UMBRAL']),
+    AVISO_DESDE: _dN(j['AVISO_DESDE']),
+    FALTA: _dN(j['FALTA']),
+  );
+}
+
+/// Una lectura de medidor — vista 9.2.
+class Lectura {
+  const Lectura({
+    required this.AML_ID,
+    required this.VALOR_ACUMULADO,
+    this.FECHA_LECTURA_UTC,
+    this.INCREMENTO,
+    this.ES_REINICIO = false,
+    this.OBSERVACION,
+    this.ORDEN_TRABAJO,
+    this.ORDEN_CORRELATIVO,
+    this.MODO_NOMBRE,
+    this.ORIGEN_NOMBRE,
+    this.CALIDAD_NOMBRE,
+    this.USUARIO_NOMBRE,
+  });
+
+  final int AML_ID;
+  final double VALOR_ACUMULADO;
+  final DateTime? FECHA_LECTURA_UTC;
+
+  /// Cuánto corrió desde la lectura anterior. **Lo calcula el SP.**
+  ///
+  /// Nulo en la primera lectura y en un reinicio: no hay contra qué restar, y
+  /// un cero ahí diría «no corrió», que es distinto de «no se sabe».
+  final double? INCREMENTO;
+
+  final bool ES_REINICIO;
+  final String? OBSERVACION;
+  final int? ORDEN_TRABAJO;
+  final String? ORDEN_CORRELATIVO;
+  final String? MODO_NOMBRE;
+  final String? ORIGEN_NOMBRE;
+  final String? CALIDAD_NOMBRE;
+  final String? USUARIO_NOMBRE;
+
+  factory Lectura.fromJson(Map<String, dynamic> j) => Lectura(
+    AML_ID: _i(j['AML_ID']),
+    VALOR_ACUMULADO: _d(j['VALOR_ACUMULADO']),
+    FECHA_LECTURA_UTC: _f(j['FECHA_LECTURA_UTC']),
+    INCREMENTO: _dN(j['INCREMENTO']),
+    ES_REINICIO: _b(j['ES_REINICIO']),
+    OBSERVACION: _sN(j['OBSERVACION']),
+    ORDEN_TRABAJO: j['ORDEN_TRABAJO'] == null ? null : _i(j['ORDEN_TRABAJO']),
+    ORDEN_CORRELATIVO: _sN(j['ORDEN_CORRELATIVO']),
+    MODO_NOMBRE: _sN(j['MODO_NOMBRE']),
+    ORIGEN_NOMBRE: _sN(j['ORIGEN_NOMBRE']),
+    CALIDAD_NOMBRE: _sN(j['CALIDAD_NOMBRE']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+  );
+}
+
+/// Una foto de una galería — vistas 7.4, 8.4 y 10.4.
+///
+/// Lleva quién y cuándo porque una galería sin fecha ni autor es un muro de
+/// fotos que no sirve para nada: la pregunta que se le hace es cómo estaba
+/// esto en marzo, no qué fotos hay.
+class GaleriaFoto {
+  const GaleriaFoto({
+    required this.ARC_RUTA,
+    this.ARC_MIME,
+    this.ARC_NOMBRE,
+    this.ES_PORTADA = false,
+    this.DESCRIPCION,
+    this.FECHA_CAPTURA_UTC,
+    this.AUTOR_NOMBRE,
+  });
+
+  final String ARC_RUTA;
+  final String? ARC_MIME;
+  final String? ARC_NOMBRE;
+  final bool ES_PORTADA;
+  final String? DESCRIPCION;
+  final DateTime? FECHA_CAPTURA_UTC;
+  final String? AUTOR_NOMBRE;
+
+  factory GaleriaFoto.fromJson(Map<String, dynamic> j) => GaleriaFoto(
+    ARC_RUTA: _s(j['ARC_RUTA']),
+    ARC_MIME: _sN(j['ARC_MIME']),
+    ARC_NOMBRE: _sN(j['ARC_NOMBRE']),
+    ES_PORTADA: _b(j['ES_PORTADA']),
+    DESCRIPCION: _sN(j['DESCRIPCION']),
+    FECHA_CAPTURA_UTC: _f(j['FECHA_CAPTURA_UTC']),
+    AUTOR_NOMBRE: _sN(j['AUTOR_NOMBRE']),
+  );
+}

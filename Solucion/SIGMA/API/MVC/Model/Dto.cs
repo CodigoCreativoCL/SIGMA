@@ -418,6 +418,154 @@ namespace API.MVC.Model
     }
 
 
+    // ---------------------------------------------------------------- 8.x --
+
+    /// <summary>
+    /// Un componente de un activo — vistas 8.1 y 8.2.
+    ///
+    /// Los nombres son los que devuelve SEL_ACTIVO_COMPONENTE, que es el
+    /// mismo SP que usa la web: no se renombra nada al pasar por la API,
+    /// porque un alias distinto en cada capa obliga a traducir mentalmente
+    /// tres veces la misma columna.
+    /// </summary>
+    public class ComponenteDto
+    {
+        public int ACO_ID { get; set; }
+        public int ACO_ACTIVO { get; set; }
+        public int? ACO_COMPONENTE_PADRE { get; set; }
+        public int ACO_COMPONENTE_TIPO { get; set; }
+        public int? ACO_COMPONENTE_POSICION { get; set; }
+        public int ACO_CRITICIDAD_NIVEL { get; set; }
+        public int ACO_ACTIVO_COMPONENTE_ESTADO { get; set; }
+        public string ACO_CODIGO { get; set; }
+        public string ACO_NOMBRE { get; set; }
+        public DateTime? ACO_FECHA_INSTALACION { get; set; }
+        public string ACO_DESCRIPCION { get; set; }
+        public bool ACO_HABILITADO { get; set; }
+
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public string CRITICIDAD_NOMBRE { get; set; }
+        public string POSICION_NOMBRE { get; set; }
+        public string PADRE_NOMBRE { get; set; }
+
+        /* Se pegan en el controller, no en el SP: SEL_ACTIVO_COMPONENTE lo
+           usan tambien las grillas de la web, y un JOIN mas a Archivo_Vinculo
+           le costaria a toda pantalla que liste componentes para un dato que
+           solo mira la ficha. Mismo criterio que ActivoDto. */
+        public string FOTO_RUTA { get; set; }
+        public List<string> FOTOS { get; set; }
+
+        /// <summary>Los medidores del componente: las horas o ciclos de uso
+        /// que pide 8.2. Nulo en el listado, que no los necesita.</summary>
+        public List<MedidorDto> MEDIDORES { get; set; }
+
+        /// <summary>Alertas activas sobre el componente (8.1).</summary>
+        public int ALERTAS { get; set; }
+    }
+
+    /// <summary>Un medidor y su ultimo valor. De SEL_ACTIVO_MEDIDOR.</summary>
+    public class MedidorDto
+    {
+        public int AME_ID { get; set; }
+        public int AME_ACTIVO { get; set; }
+        public int? AME_ACTIVO_COMPONENTE { get; set; }
+        public string AME_CODIGO { get; set; }
+        public string AME_NOMBRE { get; set; }
+        public decimal? AME_VALOR_ACTUAL { get; set; }
+        public DateTime? AME_FECHA_VALOR_ACTUAL_UTC { get; set; }
+        public bool AME_PERMITE_REINICIO { get; set; }
+        public string UNIDAD_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+
+        /// <summary>A cuanto toca la proxima mantencion. Nulo en los
+        /// listados, que no la necesitan.</summary>
+        public List<MedidorUmbralDto> UMBRALES { get; set; }
+    }
+
+    /// <summary>
+    /// El proximo hito de mantencion de un medidor — el «umbral» de 9.2.
+    ///
+    /// No sale de una tabla de umbrales, que no existe, sino de la
+    /// programacion: «cada 500 h desde 0» con el medidor en 7.500 da 8.000.
+    /// Es el umbral real del negocio y ya lo mantiene alguien.
+    /// </summary>
+    public class MedidorUmbralDto
+    {
+        public int PME_ID { get; set; }
+        public string PROGRAMACION_NOMBRE { get; set; }
+        public decimal? CADA_CANTIDAD { get; set; }
+        public decimal? AVISO_ANTICIPACION { get; set; }
+        public decimal? VALOR_ACTUAL { get; set; }
+        public decimal? PROXIMO_UMBRAL { get; set; }
+        public decimal? AVISO_DESDE { get; set; }
+        public decimal? FALTA { get; set; }
+    }
+
+    /// <summary>
+    /// Una lectura de medidor — vista 9.2.
+    ///
+    /// INCREMENTO viene calculado del SP y puede ser nulo: la primera lectura
+    /// no tiene contra que restarse, y una marcada como reinicio tampoco. Un
+    /// cero ahi seria mentira -diria «no corrio»- cuando lo cierto es que no
+    /// se sabe.
+    /// </summary>
+    public class LecturaDto
+    {
+        public int AML_ID { get; set; }
+        public DateTime? FECHA_LECTURA_UTC { get; set; }
+        public decimal VALOR_ACUMULADO { get; set; }
+        public decimal? INCREMENTO { get; set; }
+        public bool ES_REINICIO { get; set; }
+        public string OBSERVACION { get; set; }
+        public int? ORDEN_TRABAJO { get; set; }
+        public string ORDEN_CORRELATIVO { get; set; }
+        public string MODO_NOMBRE { get; set; }
+        public string ORIGEN_NOMBRE { get; set; }
+        public string CALIDAD_NOMBRE { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+    }
+
+    /// <summary>
+    /// Un evento de la linea de tiempo del componente — vista 8.3.
+    ///
+    /// Es ActivoFichaEventoDto mas REF_ID y REF_TEXTO: el historial del
+    /// componente lleva a la OT, a la falla o al repuesto que lo causo, y
+    /// sin el id la fila se puede leer pero no se puede abrir.
+    /// </summary>
+    public class ComponenteFichaEventoDto
+    {
+        public DateTime? FECHA { get; set; }
+        public string TIPO_EVENTO { get; set; }
+        public string TITULO { get; set; }
+        public string DETALLE { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public int? REF_ID { get; set; }
+        public string REF_TEXTO { get; set; }
+    }
+
+    /// <summary>
+    /// Una foto de una galeria — vistas 7.4, 8.4 y 10.4.
+    ///
+    /// Lleva quien y cuando porque una galeria sin fecha ni autor es un
+    /// muro de fotos que no se puede usar para nada: la pregunta que se le
+    /// hace es «como estaba esto en marzo», no «que fotos hay».
+    /// </summary>
+    public class GaleriaFotoDto
+    {
+        public string ARC_RUTA { get; set; }
+        public string ARC_MIME { get; set; }
+        public string ARC_NOMBRE { get; set; }
+        public bool ES_PORTADA { get; set; }
+        public string DESCRIPCION { get; set; }
+        public DateTime? FECHA_CAPTURA_UTC { get; set; }
+        public string AUTOR_NOMBRE { get; set; }
+    }
+
     /// <summary>Solicitud de cambio de estado de un activo (HU-038).</summary>
     public class ActivoEstadoAltaDto
     {
