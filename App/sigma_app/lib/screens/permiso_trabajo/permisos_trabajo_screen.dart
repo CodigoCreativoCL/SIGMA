@@ -13,6 +13,7 @@ import 'nuevo_permiso_screen.dart';
 import '../../services/buscador.dart';
 import '../../services/voz_service.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import 'ficha_permiso_screen.dart';
 
 /// Qué se está mirando en la bandeja.
 enum FiltroTrabajo { hoy, prioritarios, todos }
@@ -541,6 +542,15 @@ class _Tarjeta extends StatelessWidget {
 
     return SgCard(
       padding: const EdgeInsets.all(14),
+      // La ficha responde «¿puedo trabajar?», que es para lo que se abre.
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FichaPermisoScreen(
+            permisoId: permiso.ptr_id,
+            numeroConocido: permiso.ptr_numero,
+          ),
+        ),
+      ),
       elevada: destacada,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

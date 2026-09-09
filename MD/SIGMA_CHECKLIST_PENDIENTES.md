@@ -421,15 +421,74 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
+## Bloque 7 — Las vistas del diseño v3 que faltaban (§4 del traspaso)
+
+De las 14 sin construir, quedan **8**. Las seis cerradas se listan con lo que
+se decidió en cada una, porque la decisión es lo que no se ve en el código.
+
+### 7.1 · Repuestos y bodegas — CERRADO
+
+- [x] **10.2 Buscador de repuestos** (`repuestos_screen.dart`). Busca con
+      `coincideBusqueda`, así que «rod 12» encuentra `ROD-0012`. Sale de la
+      sábana: el catálogo ya baja al teléfono.
+- [x] **10.5 Bodegas** (`bodegas_screen.dart`) y **10.6–10.8 ficha de bodega**
+      (`ficha_bodega_screen.dart`): existencias, estantes y el movimiento.
+- [x] **10.9–10.12 hoja de movimiento** (`hoja_movimiento.dart`), una sola hoja
+      con el enum `TipoMovimiento` (ids 1/2/3/6) en vez de cuatro pantallas
+      casi iguales. Cada tipo declara **su** permiso y si `resta` stock, y
+      `_HojaAcciones` de la ficha del repuesto ofrece solo los movimientos que
+      el perfil tiene. El bodeguero no ve «Ajuste» si no puede ajustar.
+- [x] El selector de estante dejó de ser privado de una pantalla:
+      `_Estante` → `SelectorEstante`, reusado por la hoja.
+
+### 7.2 · Ficha del permiso de trabajo — CERRADO
+
+- [x] **11.2** (`ficha_permiso_screen.dart`). El color de la cabecera lo manda
+      `SITUACION`, **no** `ESTADO_CODIGO`: un permiso AUTORIZADO pero VENCIDO
+      no puede leerse en verde, y el cruce estado × vigencia lo hace el SP.
+      Verificado por HTTP: el permiso 10 vuelve `SOLICITADO` con situación
+      `POR VENCER` y `DIAS_RESTANTES = 0` — el caso exacto que separa los dos
+      campos.
+- [x] No se autoriza desde el teléfono: `CK_PTR_AUTORIZADO` no deja un permiso
+      autorizado sin su adjunto, y ofrecer el botón sería ofrecer un camino que
+      la base rechaza. La pantalla lo dice en vez de callarlo.
+
+### 7.3 · Equipos de la planta — CERRADO
+
+- [x] **7.2** (`activos_screen.dart`), con filtro por área y la misma búsqueda
+      tolerante. Sale de la sábana porque no hay `GET /activos` y no hace falta
+      inventarlo. Si la sábana no se bajó, la lista sale vacía **y lo explica**.
+- [x] `BD/201_APP_MENU_ACTIVOS.sql` aplicado: registrar la pantalla fue un
+      INSERT en `Menus`, no código. El menú del jefe ya devuelve 13 rutas
+      `app://`, con `activos`, `bodegas` y `repuestos`.
+
+### 7.4 · Lo que queda (8 vistas)
+
+Ninguna se puede construir sin decidir algo primero:
+
+- [ ] **6.7 Firmas** (HU-118): no hay tabla ni ruta. Es diseño de base, no de
+      pantalla.
+- [ ] **8.1–8.4 Componentes**: sin endpoints. Cuatro vistas de una sola HU.
+- [ ] **9.2 Historial de lecturas**: sin endpoint de listado.
+- [ ] **7.4 / 10.4 Galerías** y **13.2 Centro de evidencias**: dependen de que
+      se resuelva el 6.0 (¿se migran los blobs ya subidos con la ruta vieja?).
+- [ ] **15.2 Conflicto de sincronización**: hoy el 409 se trata como éxito, así
+      que la pantalla no tiene qué mostrar todavía.
+- [x] **16.2 Accesibilidad**: es solo cliente, se puede construir cuando Bryan
+      lo pida.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
       significa que el sitio levante.
 - [ ] `flutter analyze lib` limpio.
-- [ ] `flutter test` — hoy 78 verdes.
-- [ ] Las **cuatro** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
-      `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py`.
-- [ ] Probar por HTTP contra `http://192.168.1.38/SIGMA/Servicio/API`.
+- [ ] `flutter test` — hoy 89 verdes.
+- [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
+      `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
+      `no_consumidas.py`.
+- [ ] Probar por HTTP contra `http://192.168.1.7/SIGMA/Servicio/API`.
       Entran con `Sigma2026`: `rodrigo.quezada@hamburgo.cl`,
       `paula.barriga@hamburgo.cl`, `emilio.fuentes@hamburgo.cl`.
 - [ ] Actualizar `MD/SIGMA_APP_ESTADO.md` y `MD/SIGMA_TRASPASO_SESION.md`.
@@ -443,7 +502,8 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 No se han olvidado; están fuera de este encargo hasta que Bryan diga.
 
 - Push / notificaciones (HU-077): falta solo el lado Flutter.
-- Diseño v3: 14 vistas sin construir (§4 del traspaso).
+- Diseño v3: quedan **8** vistas, todas bloqueadas por una decisión previa.
+  El detalle está en el bloque 7.
 - `Repuesto_Compatibilidad` y `Usuario_Especialidad` están vacías: el código
   está hecho, pero sin datos el badge «Compatible» y los chips de especialidad
   no aparecen nunca. **Se cargan desde la web, no programando.**

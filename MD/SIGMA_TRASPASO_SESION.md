@@ -25,7 +25,7 @@ leer nada más. Lo primero de la sección 3 es lo que sigue.
 `Solucion/SIGMA/API/Web.config`, no se escribe en ningún otro lado.
 
 **IIS sirve la API directamente desde la carpeta del proyecto** en
-`http://192.168.1.38/SIGMA/Servicio/API`: compilar *es* desplegar.
+`http://192.168.1.7/SIGMA/Servicio/API`: compilar *es* desplegar.
 
 ### Comandos que se usan siempre
 
@@ -746,19 +746,21 @@ cuenta.
 
 Así que HU-077 es **FCM en el cliente**, no un bloque de base y API.
 
-### Diseño v3 — 14 vistas sin construir
+### Diseño v3 — quedan 8 vistas
 
-De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 26 hechas.
+De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 32 hechas.
+**Las que tenían endpoint ya están todas construidas** (09-09-2026):
 
-**Con endpoint disponible** (solo falta pantalla):
-
-- 6.2 Nueva OT correctiva (HU-110) — `POST /ordenes-trabajo`
-- 10.3 Ficha del repuesto — `GET /existencias/repuesto/{id}`
-- 10.5–10.8 Bodegas y ubicaciones — `GET /bodegas`, `/bodegas/{id}/ubicaciones`
-- 10.9–10.12 Ingreso, entrega, devolución y traslado — `POST /inventario-movimientos`
-  con tipos 1, 2, 3 y 6 (el ajuste, tipos 4 y 5, ya está hecho)
-- 11.2 Ficha del permiso — `GET /permisos-trabajo/{id}`
-- 10.2 Listado de repuestos — `GET /repuestos`
+- 6.2 Nueva OT correctiva (HU-110), 10.3 ficha del repuesto
+- 10.2 listado de repuestos, 10.5–10.8 bodegas y ubicaciones
+- 10.9–10.12 ingreso, entrega, devolución y traslado, en **una sola hoja** con
+  el enum `TipoMovimiento` (ids 1/2/3/6): cada tipo declara su permiso y si
+  resta stock, y la ficha del repuesto ofrece solo los que el perfil tiene
+- 11.2 ficha del permiso: el color lo manda `SITUACION` y no `ESTADO_CODIGO`,
+  porque un permiso AUTORIZADO pero VENCIDO no puede leerse en verde
+- 7.2 equipos de la planta, que no estaba en la lista y hacía falta: el escáner
+  sirve estando delante del equipo, esta pantalla sirve para encontrarlo. Sale
+  de la sábana y se registró con `BD/201_APP_MENU_ACTIVOS.sql`
 
 **Sin endpoint** (hay que construir API y base primero):
 
@@ -769,7 +771,8 @@ De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 26 hechas.
 - 7.4 y 10.4 Galerías: cuadrícula cronológica con filtros
 - 13.2 Centro de evidencias
 - 15.2 Conflicto de sincronización (versión local contra versión del servidor)
-- 16.2 Accesibilidad: tamaño de texto, alto contraste, movimiento reducido
+- 16.2 Accesibilidad: tamaño de texto, alto contraste, movimiento reducido.
+  Es la única que **no** depende de la API: se puede construir cuando Bryan lo pida
 
 ### Datos, no código
 

@@ -116,6 +116,14 @@ final existenciasEnAlertaProvider = FutureProvider<int>((ref) async {
   return (await _repo.existencias(soloAlerta: true)).total;
 });
 
+/// Los activos de la planta — vista 7.2. Salen de la sábana: no hay endpoint
+/// de listado, y no hace falta.
+final activosProvider = FutureProvider<List<Activo>>((ref) {
+  // Se rehace al cambiar de planta: los activos de Renca no son los de Maipú.
+  ref.watch(instalacionProvider);
+  return _repo.activos();
+});
+
 /// El catálogo de repuestos — vista 10.2.
 ///
 /// Con respaldo en disco, como todo catálogo: cambia una vez al mes y se
@@ -225,6 +233,11 @@ final permisosTrabajoProvider = FutureProvider<Paginado<PermisoTrabajo>>(
 
 final permisosVigentesProvider = FutureProvider<Paginado<PermisoTrabajo>>(
   (ref) => _repo.permisosVigentes(),
+);
+
+/// La ficha de un permiso — vista 11.2.
+final permisoProvider = FutureProvider.family<PermisoTrabajo, int>(
+  (ref, id) => _repo.permiso(id),
 );
 
 final tiposPermisoProvider = FutureProvider<List<ItemCatalogo>>(

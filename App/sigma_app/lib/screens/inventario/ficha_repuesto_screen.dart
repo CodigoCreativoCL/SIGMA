@@ -8,6 +8,8 @@ import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'hoja_ajuste.dart';
+import '../ordenes/hojas_recursos.dart';
+import 'hoja_movimiento.dart';
 
 /// 10.3 · Ficha del repuesto.
 ///
@@ -200,8 +202,6 @@ class _FilaBodega extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final puedeAjustar = ref.watch(tienePermisoProvider('AJUSTAR INVENTARIO'));
-
     final (Color color, String? etiqueta) = saldo.bajoMinimo
         ? (sg.rojoTexto, 'Bajo mínimo')
         : saldo.sobreMaximo
@@ -216,7 +216,9 @@ class _FilaBodega extends ConsumerWidget {
          abierta y el ajuste sale de la fila que está mirando. Si llegó a la
          ficha buscando dónde estaba la pieza, obligarlo a volver al listado
          para corregir el saldo sería un viaje de ida y vuelta por nada. */
-      onTap: !puedeAjustar ? null : () => HojaAjuste.abrir(context, saldo),
+      /* Y ahora los cuatro movimientos, no solo el ajuste: la hoja de acciones
+         ofrece lo que ESTA persona puede hacer, y nada mas. */
+      onTap: () => _HojaAcciones.abrir(context, saldo),
       child: Row(
         children: [
           SgIconoCuadro(
@@ -363,6 +365,85 @@ class _Lotes extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// Qué se puede hacer con esta pieza en esta bodega.
+///
+/// ## Por qué una hoja y no cinco botones en la fila
+///
+/// Son cinco acciones —ingresar, entregar, devolver, trasladar y ajustar— y
+/// caben cero en una fila de lista. Puestas en una hoja se leen con su nombre
+/// entero y su explicación de una línea, que es lo que evita registrar una
+/// devolución donde correspondía un ingreso.
+///
+/// ## Por qué solo se muestra lo que la persona puede
+///
+/// Cada movimiento pide su permiso —el bodeguero los tiene todos, el jefe de
+/// mantenimiento ninguno desde `BD/194`—. Ofrecer los cinco y responder 403 al
+/// final del formulario es el peor momento para decirlo; una hoja con dos
+/// opciones y no cinco además se decide más rápido.
+class _HojaAcciones extends ConsumerWidget {
+  const _HojaAcciones({required this.saldo});
+
+  final InventarioSaldo saldo;
+
+  static Future<void> abrir(BuildContext context, InventarioSaldo saldo) =>
+      showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => _HojaAcciones(saldo: saldo),
+      );
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final puedeAjustar = ref.watch(tienePermisoProvider('AJUSTAR INVENTARIO'));
+
+    final movimientos = [
+      for (final t in TipoMovimiento.values)
+        if (ref.watch(tienePermisoProvider(t.permiso))) t,
+    ];
+
+    if (movimientos.isEmpty && !puedeAjustar) {
+      return HojaRecurso(
+        titulo: saldo.BODEGA_NOMBRE ?? 'Bodega',
+        detalle: 'Puedes ver el saldo, pero mover inventario es del bodeguero.',
+        children: const [],
+      );
+    }
+
+    return HojaRecurso(
+      titulo: saldo.BODEGA_NOMBRE ?? 'Bodega',
+      detalle: '${saldo.REPUESTO_CODIGO} · ${saldo.REPUESTO_NOMBRE}',
+      children: [
+        for (final t in movimientos)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 9),
+            child: SgFila(
+              icono: t.icono,
+              texto: t.titulo,
+              detalle: t.detalle,
+              chevron: true,
+              onTap: () async {
+                Navigator.of(context).pop();
+                await HojaMovimiento.abrir(context, saldo: saldo, tipo: t);
+              },
+            ),
+          ),
+        if (puedeAjustar)
+          SgFila(
+            icono: Icons.tune,
+            texto: 'Ajustar existencia',
+            detalle: 'Contar en el pasillo y cuadrar el saldo.',
+            chevron: true,
+            onTap: () async {
+              Navigator.of(context).pop();
+              await HojaAjuste.abrir(context, saldo);
+            },
+          ),
+      ],
     );
   }
 }

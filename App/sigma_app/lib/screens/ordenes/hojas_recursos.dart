@@ -609,7 +609,7 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
            por ubicacion quedaria sin dueño y el proximo que vaya a buscar la
            pieza no sabria a que estante ir. */
         if (_elegido != null)
-          _Estante(
+          SelectorEstante(
             bodegaId: _elegido!.isa_bodega,
             elegida: _ubicacion,
             onElegir: (v) => setState(() => _ubicacion = v),
@@ -733,9 +733,14 @@ class HojaRecurso extends StatelessWidget {
 ///
 /// Se dibuja solo, y solo si la bodega tiene estantes: en una bodega de un
 /// hueco preguntarlo es un trámite. Cuando los tiene, el SP no deja pasar el
-/// consumo sin él.
-class _Estante extends ConsumerWidget {
-  const _Estante({
+/// movimiento sin él.
+///
+/// **Público a propósito.** Lo usan la hoja de consumo y la de movimientos, y
+/// duplicarlo serían dos sitios donde arreglar el mismo defecto el día que la
+/// regla del estante cambie.
+class SelectorEstante extends ConsumerWidget {
+  const SelectorEstante({
+    super.key,
     required this.bodegaId,
     required this.elegida,
     required this.onElegir,

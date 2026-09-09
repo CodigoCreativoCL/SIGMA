@@ -17,6 +17,7 @@ import '../inventario/existencias_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
 import '../perfil/mi_perfil_screen.dart';
+import '../activo/activos_screen.dart';
 import '../inventario/bodegas_screen.dart';
 import '../inventario/repuestos_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
@@ -42,6 +43,9 @@ final rutasApp = <String, WidgetBuilder>{
   // frente a «que esta bajo minimo».
   'app://repuestos': (_) => const RepuestosScreen(),
   'app://bodegas': (_) => const BodegasScreen(),
+  // Los equipos por nombre o por area: lo que el escaner no resuelve, porque
+  // el escaner sirve estando DELANTE del equipo.
+  'app://activos': (_) => const ActivosScreen(),
   'app://permisos-trabajo': (_) => const PermisosTrabajoScreen(),
   // Los cuatro tipos abren la MISMA bandeja, cada uno en su pestaña. Así una
   // ruta que el administrador registre en `Menus` sigue funcionando, y no

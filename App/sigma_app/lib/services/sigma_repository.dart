@@ -333,6 +333,17 @@ class SigmaRepository {
     return Paginado.desde(j, PermisoTrabajo.fromJson);
   }
 
+  /// Un permiso — vista 11.2.
+  ///
+  /// Sin respaldo en disco a proposito: lo que se mira aca es si HABILITA a
+  /// trabajar, y esa respuesta cambia con la hora. Un permiso vigente guardado
+  /// ayer puede estar vencido hoy, y responder que si con dato viejo es la
+  /// clase de error que este endpoint existe para evitar.
+  Future<PermisoTrabajo> permiso(int id) async {
+    final j = await _api.get('${ApiConstants.permisosTrabajo}/$id');
+    return PermisoTrabajo.fromJson(j as Map<String, dynamic>);
+  }
+
   /// Los tipos y estados son **catálogo**, no movimiento: cambian una vez al
   /// año y sin ellos los chips de la pantalla de permisos quedan vacíos. Son
   /// justo lo que tiene sentido leer del disco sin señal.
@@ -411,6 +422,20 @@ class SigmaRepository {
   }
 
   // ---- Activos: la cabecera y el cambio de estado (HU-037, HU-038) ----
+
+  /// Los activos de la planta — vista 7.2.
+  ///
+  /// ## Por que sale SOLO del telefono
+  ///
+  /// **No hay `GET /activos`**: `ActivosController` expone la ficha y su
+  /// historial, no un listado. Y no hace falta inventarlo: los activos ya
+  /// bajan enteros en la sabana, que es como la app trabaja sin señal.
+  ///
+  /// Eso tiene una consecuencia que la pantalla dice en vez de esconder: **si
+  /// la sabana no se ha bajado, la lista sale vacia**. Callarlo dejaria a
+  /// alguien creyendo que la planta no tiene equipos.
+  Future<List<Activo>> activos() =>
+      CacheDatos.lista<Activo>(CacheDatos.activos, Activo.fromJson);
 
   /// La cabecera de un activo.
   ///
