@@ -627,11 +627,24 @@ class _CarruselIaState extends State<_CarruselIa> {
       widget.predicciones.length + (widget.sinTerminar.isEmpty ? 0 : 1);
 
   @override
-  void initState() {
-    super.initState();
-    if (_cuantas > 1) {
-      _reloj = Timer.periodic(const Duration(seconds: 8), (_) => _siguiente());
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    /* CON MOVIMIENTO REDUCIDO NO AVANZA SOLO
+
+       Una tarjeta que se cambia sola cada ocho segundos es exactamente lo que
+       el ajuste existe para evitar, y no se pierde nada: los puntos siguen
+       ahí y se desliza con el dedo. Lo que desaparece es el movimiento que
+       nadie pidió. */
+    final quieto = MediaQuery.disableAnimationsOf(context);
+    final debe = _cuantas > 1 && !quieto;
+
+    if (!debe) {
+      _reloj?.cancel();
+      _reloj = null;
+      return;
     }
+    _reloj ??= Timer.periodic(const Duration(seconds: 8), (_) => _siguiente());
   }
 
   @override

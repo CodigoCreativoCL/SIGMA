@@ -62,19 +62,27 @@ class _SgRadarIaState extends State<SgRadarIa>
   );
 
   @override
-  void initState() {
-    super.initState();
-    if (widget.activo) _c.repeat();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _ajustar();
   }
 
   @override
   void didUpdateWidget(SgRadarIa anterior) {
     super.didUpdateWidget(anterior);
     if (widget.activo == anterior.activo) return;
-    // Detenerlo no es un detalle: una animación en bucle impide que Flutter
-    // deje la pantalla quieta, y el Inicio se mira muchas veces en un turno de
-    // ocho horas.
-    widget.activo ? _c.repeat() : _c.stop();
+    _ajustar();
+  }
+
+  /// Gira solo si hay algo que esperar **y** el movimiento no está reducido.
+  ///
+  /// Detenerlo no es un detalle: una animación en bucle impide que Flutter
+  /// deje la pantalla quieta, y el Inicio se mira muchas veces en un turno de
+  /// ocho horas.
+  void _ajustar() {
+    final debe = widget.activo && !MediaQuery.disableAnimationsOf(context);
+    if (debe == _c.isAnimating) return;
+    debe ? _c.repeat() : _c.stop();
   }
 
   @override

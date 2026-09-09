@@ -746,9 +746,9 @@ cuenta.
 
 Así que HU-077 es **FCM en el cliente**, no un bloque de base y API.
 
-### Diseño v3 — quedan 8 vistas
+### Diseño v3 — quedan 7 vistas
 
-De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 32 hechas.
+De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 33 hechas.
 **Las que tenían endpoint ya están todas construidas** (09-09-2026):
 
 - 6.2 Nueva OT correctiva (HU-110), 10.3 ficha del repuesto
@@ -771,8 +771,10 @@ De las ~40 de `MD/SIGMA-APP-Especificacion-Vistas-UI-UX.md` hay 32 hechas.
 - 7.4 y 10.4 Galerías: cuadrícula cronológica con filtros
 - 13.2 Centro de evidencias
 - 15.2 Conflicto de sincronización (versión local contra versión del servidor)
-- 16.2 Accesibilidad: tamaño de texto, alto contraste, movimiento reducido.
-  Es la única que **no** depende de la API: se puede construir cuando Bryan lo pida
+**16.2 Accesibilidad ya está** (09-09-2026): ocho de los diez ajustes, cada uno
+con efecto real. Falta solo la lectura en voz alta, que exige un motor TTS y
+decidir qué se lee —una OT entera no se escucha—. El detalle, en el bloque 7.5
+del checklist.
 
 ### Datos, no código
 

@@ -69,6 +69,16 @@ class _SgEsqueletoState extends State<SgEsqueleto>
   Widget build(BuildContext context) {
     final sg = context.sg;
 
+    /* CON MOVIMIENTO REDUCIDO, EL ESQUELETO NO BARRE
+
+       Y sigue sirviendo: lo que dice «esto todavía no llegó» es la silueta
+       —la forma de la fila sin contenido—, no el brillo que la cruza. El
+       barrido solo agrega vida, y para quien tiene trastorno vestibular una
+       banda que cruza la pantalla cada 1,4 s no es vida, es mareo. */
+    final quieto = MediaQuery.disableAnimationsOf(context);
+    if (quieto && _c.isAnimating) _c.stop();
+    if (!quieto && !_c.isAnimating) _c.repeat();
+
     return AnimatedBuilder(
       animation: _c,
       builder: (_, _) => Column(
@@ -86,6 +96,7 @@ class _SgEsqueletoState extends State<SgEsqueleto>
               fondo: sg.card,
               brillo: sg.up,
               hueso: sg.up,
+              conBarrido: !quieto,
             ),
             const SizedBox(height: 12),
           ],
@@ -105,6 +116,7 @@ class _Silueta extends StatelessWidget {
     required this.fondo,
     required this.brillo,
     required this.hueso,
+    this.conBarrido = true,
   });
 
   final double alto;
@@ -115,6 +127,9 @@ class _Silueta extends StatelessWidget {
   final Color fondo;
   final Color brillo;
   final Color hueso;
+
+  /// Falso con movimiento reducido: quedan las siluetas quietas.
+  final bool conBarrido;
 
   @override
   Widget build(BuildContext context) {
@@ -165,24 +180,25 @@ class _Silueta extends StatelessWidget {
              es interactivo, pero la fila que lo sustituye sí, y dejar un
              widget capturando gestos ahí sería un toque perdido justo cuando
              llegan los datos—. */
-          Positioned.fill(
-            child: IgnorePointer(
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(-1 + t * 3, -0.4),
-                    end: Alignment(-0.4 + t * 3, 0.4),
-                    colors: [
-                      brillo.withValues(alpha: 0),
-                      brillo.withValues(alpha: 0.55),
-                      brillo.withValues(alpha: 0),
-                    ],
-                    stops: const [0, 0.5, 1],
+          if (conBarrido)
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment(-1 + t * 3, -0.4),
+                      end: Alignment(-0.4 + t * 3, 0.4),
+                      colors: [
+                        brillo.withValues(alpha: 0),
+                        brillo.withValues(alpha: 0.55),
+                        brillo.withValues(alpha: 0),
+                      ],
+                      stops: const [0, 0.5, 1],
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );

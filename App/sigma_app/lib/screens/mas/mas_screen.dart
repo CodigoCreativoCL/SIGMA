@@ -17,6 +17,7 @@ import '../inventario/existencias_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
 import '../perfil/mi_perfil_screen.dart';
+import '../accesibilidad/accesibilidad_screen.dart';
 import '../activo/activos_screen.dart';
 import '../inventario/bodegas_screen.dart';
 import '../inventario/repuestos_screen.dart';
@@ -270,6 +271,26 @@ class MasScreen extends ConsumerWidget {
                   onTap: () => Navigator.push(
                     context,
                     MaterialPageRoute(builder: (_) => const PendientesScreen()),
+                  ),
+                ),
+              ),
+              /* ACCESIBILIDAD VA EN «ESTE TELEFONO», Y NO EN EL MENU DEL
+                 SERVIDOR
+
+                 Porque no es una pantalla del negocio: no depende de un
+                 permiso ni cambia nada del cliente. Registrarla en `Menus`
+                 obligaria a darle un permiso a algo que todos deben poder
+                 abrir, incluido quien todavia no ve bien la pantalla en la que
+                 tendria que buscarla. */
+              SgFila(
+                icono: Icons.accessibility_new,
+                texto: 'Accesibilidad',
+                detalle: 'Texto, contraste, tema y avisos',
+                chevron: true,
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AccesibilidadScreen(),
                   ),
                 ),
               ),

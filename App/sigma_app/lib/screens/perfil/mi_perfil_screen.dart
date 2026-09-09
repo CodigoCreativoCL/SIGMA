@@ -6,14 +6,13 @@ import '../../providers/datos_provider.dart';
 import '../../providers/sesion_provider.dart';
 import '../../providers/sincronizacion_provider.dart';
 import '../../services/api_client.dart';
-import '../../services/preferencias_service.dart';
 import '../../services/sigma_repository.dart';
 import '../../services/sync_service.dart';
-import '../../services/tema_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../accesibilidad/accesibilidad_screen.dart';
 import '../login/login_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
 
@@ -362,15 +361,21 @@ class _Aplicacion extends StatelessWidget {
         chevron: true,
         onTap: () => _cambiarPassword(context),
       ),
-      const SgFila(
-        icono: Icons.notifications_none,
-        texto: 'Notificaciones',
-        derecha: _SwitchAvisos(),
-      ),
-      const SgFila(
-        icono: Icons.dark_mode_outlined,
-        texto: 'Tema',
-        derecha: _SelectorTema(),
+      /* LOS AJUSTES DE COMO SE VE YA NO VIVEN ACA
+
+         El tema y el aviso estaban sueltos en esta lista, y el tamano del
+         texto y el contraste habrian sido dos filas mas de lo mismo. Ahora hay
+         una sola puerta: quien busca «que se vea mejor» encuentra todo junto
+         en vez de la mitad. */
+      SgFila(
+        icono: Icons.accessibility_new,
+        texto: 'Accesibilidad',
+        detalle: 'Texto, contraste, tema y avisos',
+        chevron: true,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AccesibilidadScreen()),
+        ),
       ),
     ],
   );
@@ -585,95 +590,6 @@ class _HojaFormularioState extends State<_HojaFormulario> {
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SwitchAvisos extends StatelessWidget {
-  const _SwitchAvisos();
-
-  @override
-  Widget build(BuildContext context) {
-    final sg = context.sg;
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: PreferenciasService.instance.avisos,
-      builder: (_, activo, _) => Switch.adaptive(
-        value: activo,
-        activeThumbColor: Colors.white,
-        activeTrackColor: sg.primario,
-        inactiveTrackColor: sg.up2,
-        onChanged: PreferenciasService.instance.cambiarAvisos,
-      ),
-    );
-  }
-}
-
-/// El selector de modo, en la píldora segmentada del kit.
-///
-/// Tres opciones y no dos: **Auto** existe porque quien tiene el teléfono en
-/// cambio automático espera que la app lo siga. Pero el de fábrica es
-/// **Oscuro**: la app se usa en planta, y dejar que Android decida haría que
-/// el técnico entre en claro solo porque nunca tocó ese ajuste.
-class _SelectorTema extends StatelessWidget {
-  const _SelectorTema();
-
-  static const _opciones = [
-    (modo: ThemeMode.dark, texto: 'Oscuro', icono: Icons.dark_mode_outlined),
-    (modo: ThemeMode.light, texto: 'Claro', icono: Icons.light_mode_outlined),
-    (modo: ThemeMode.system, texto: 'Auto', icono: Icons.brightness_auto),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final sg = context.sg;
-
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: TemaService.instance.modo,
-      builder: (_, actual, _) => Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: sg.up,
-          borderRadius: BorderRadius.circular(SgRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final o in _opciones)
-              InkWell(
-                onTap: () => TemaService.instance.cambiar(o.modo),
-                borderRadius: BorderRadius.circular(SgRadius.pill),
-                child: Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 9),
-                  decoration: BoxDecoration(
-                    color: actual == o.modo ? sg.primario : null,
-                    borderRadius: BorderRadius.circular(SgRadius.pill),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        o.icono,
-                        size: 14,
-                        color: actual == o.modo ? Colors.white : sg.tinta2,
-                      ),
-                      const SizedBox(width: 5),
-                      Text(
-                        o.texto,
-                        style: sora(
-                          12,
-                          600,
-                          color: actual == o.modo ? Colors.white : sg.tinta2,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-          ],
         ),
       ),
     );

@@ -34,9 +34,17 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.esqueleto2,
     required this.foto,
     required this.scrim,
+    this.altoContraste = false,
   });
 
   final bool esOscuro;
+
+  /// El modo de alto contraste está puesto.
+  ///
+  /// Lo miran los pocos widgets donde el contraste no se arregla cambiando un
+  /// color: `SgCard` dibuja contorno, porque una tarjeta sin borde se apoya
+  /// en la sombra y la sombra es lo primero que desaparece para quien ve poco.
+  final bool altoContraste;
 
   /// El lienzo de la pantalla.
   final Color fondo;
@@ -190,6 +198,52 @@ class AppColors extends ThemeExtension<AppColors> {
     scrim: SgColor.claroScrim,
   );
 
+  /// El mismo juego, subido de contraste — vista 16.2 (HU-161).
+  ///
+  /// ## Qué se toca y qué no
+  ///
+  /// **No se invierte nada ni se cambia de identidad.** SIGMA sigue siendo
+  /// SIGMA: el morado es el morado. Lo que cambia es lo que separa una cosa
+  /// de otra, que es donde el contraste falla:
+  ///
+  /// - El fondo y la tarjeta se van a los extremos, para que el escalón entre
+  ///   lienzo y superficie no dependa de dos grises casi iguales.
+  /// - `tinta2` y `tinta3` suben hasta casi `tinta`. Los metadatos al 40 % son
+  ///   lo primero que se pierde, y ahí van la fecha, el código y el área.
+  /// - `div` y `linea` se marcan de verdad.
+  /// - El texto de estado se aclara en oscuro y se oscurece en claro: el rojo
+  ///   de «vencido» tiene que leerse como rojo, no como un naranja apagado.
+  ///
+  /// La sombra deja de ser el único apoyo de la tarjeta —`SgCard` le pone
+  /// contorno—, que es la única regla del v3 que este modo rompe, y la rompe
+  /// a sabiendas: «nada lleva borde» supone que se ve la sombra.
+  AppColors get contrastado => AppColors(
+    esOscuro: esOscuro,
+    altoContraste: true,
+    fondo: esOscuro ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+    card: esOscuro ? const Color(0xFF14141B) : const Color(0xFFFFFFFF),
+    up: esOscuro ? const Color(0xFF23232E) : const Color(0xFFE6E8EF),
+    up2: esOscuro ? const Color(0xFF2E2E3C) : const Color(0xFFD5D8E2),
+    campo: esOscuro ? const Color(0xFF1A1A23) : const Color(0xFFFFFFFF),
+    div: esOscuro ? const Color(0xFF4A4A5A) : const Color(0xFF9AA0B0),
+    linea: esOscuro ? const Color(0xFF6E6E82) : const Color(0xFF5A6070),
+    tinta: esOscuro ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+    tinta2: esOscuro ? const Color(0xFFE4E4EC) : const Color(0xFF1E2230),
+    tinta3: esOscuro ? const Color(0xFFC3C3D2) : const Color(0xFF3A4050),
+    primario: primario,
+    primarioTexto: esOscuro ? const Color(0xFFC4B5FD) : const Color(0xFF4C1D95),
+    acentoTexto: esOscuro ? const Color(0xFF7DE8DC) : const Color(0xFF0B4F49),
+    rojoTexto: esOscuro ? const Color(0xFFFFA9A0) : const Color(0xFF8C1D18),
+    ambarTexto: esOscuro ? const Color(0xFFFFD27A) : const Color(0xFF6B4300),
+    verdeTexto: esOscuro ? const Color(0xFF8FE9A8) : const Color(0xFF0A5A26),
+    azulTexto: esOscuro ? const Color(0xFF9EC6FF) : const Color(0xFF0B3E8C),
+    indicador: indicador,
+    esqueleto: esqueleto,
+    esqueleto2: esqueleto2,
+    foto: foto,
+    scrim: esOscuro ? const Color(0xE6000000) : const Color(0x99000000),
+  );
+
   /// Doce tonos para el avatar, elegidos por `id % 12`.
   ///
   /// La misma paleta y el mismo criterio que `SitioBase.Avatar` en la web: si
@@ -270,8 +324,10 @@ TextStyle sora(
 /// donde el fondo es un gris azulado —no blanco— para que las tarjetas
 /// blancas se separen **sin borde**, que es la regla del v3.
 abstract final class AppTheme {
-  static ThemeData oscuro() => _construir(AppColors.oscuro);
-  static ThemeData claro() => _construir(AppColors.claro);
+  static ThemeData oscuro({bool contraste = false}) =>
+      _construir(contraste ? AppColors.oscuro.contrastado : AppColors.oscuro);
+  static ThemeData claro({bool contraste = false}) =>
+      _construir(contraste ? AppColors.claro.contrastado : AppColors.claro);
 
   static ThemeData _construir(AppColors sg) {
     final base = sg.esOscuro ? ThemeData.dark() : ThemeData.light();

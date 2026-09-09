@@ -679,7 +679,14 @@ class SgCard extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: radios,
         boxShadow: [
-          if (elegida) ...anillo(colorAnillo ?? sg.primario),
+          if (elegida)
+            ...anillo(colorAnillo ?? sg.primario)
+          // En alto contraste la tarjeta lleva contorno. El v3 dice que nada
+          // lo lleva, y eso supone que la sombra se ve: es lo primero que
+          // desaparece para quien ve poco, y sin ella la tarjeta se funde con
+          // el lienzo. Es la única regla del kit que ese modo rompe.
+          else if (sg.altoContraste)
+            ...anillo(sg.linea, ancho: 1),
           if (!sinSombra) ...(elegida || elevada ? sg.e2 : sg.e1),
         ],
       ),

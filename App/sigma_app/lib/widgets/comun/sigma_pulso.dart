@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../services/accesibilidad_service.dart';
+
 /// Envuelve un icono para que **responda** al tocarlo: rebota y vibra.
 ///
 /// ## Por qué hace falta
@@ -79,7 +81,22 @@ class _SgPulsoState extends State<SgPulso> with SingleTickerProviderStateMixin {
     // La vibración va ANTES de la petición: confirma el gesto, no el
     // resultado. Si esperara a la respuesta llegaría medio segundo tarde y ya
     // no serviría de acuse.
-    unawaited(HapticFeedback.selectionClick());
+    //
+    // Se puede apagar (vista 16.2): con el teléfono en el bolsillo del overol
+    // la vibración constante molesta más de lo que confirma.
+    if (AccesibilidadService.instance.haptica.value) {
+      unawaited(HapticFeedback.selectionClick());
+    }
+
+    /* CON MOVIMIENTO REDUCIDO NO REBOTA, Y ADEMAS RESPONDE ANTES
+
+       El rebote son 110 ms de espera antes de llamar a `onTap`. Sin rebote no
+       hay nada que esperar, así que la acción sale de inmediato en vez de
+       arrastrar una pausa que ya no significa nada. */
+    if (MediaQuery.disableAnimationsOf(context)) {
+      widget.onTap!();
+      return;
+    }
 
     await _c.forward();
     if (!mounted) return;

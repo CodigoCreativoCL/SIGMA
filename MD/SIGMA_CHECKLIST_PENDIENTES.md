@@ -462,7 +462,7 @@ se decidió en cada una, porque la decisión es lo que no se ve en el código.
       INSERT en `Menus`, no código. El menú del jefe ya devuelve 13 rutas
       `app://`, con `activos`, `bodegas` y `repuestos`.
 
-### 7.4 · Lo que queda (8 vistas)
+### 7.4 · Lo que queda (7 vistas)
 
 Ninguna se puede construir sin decidir algo primero:
 
@@ -474,8 +474,50 @@ Ninguna se puede construir sin decidir algo primero:
       se resuelva el 6.0 (¿se migran los blobs ya subidos con la ruta vieja?).
 - [ ] **15.2 Conflicto de sincronización**: hoy el 409 se trata como éxito, así
       que la pantalla no tiene qué mostrar todavía.
-- [x] **16.2 Accesibilidad**: es solo cliente, se puede construir cuando Bryan
-      lo pida.
+### 7.5 · Accesibilidad — CERRADO salvo la lectura en voz alta
+
+**16.2** (`accesibilidad_screen.dart` + `accesibilidad_service.dart`). Ocho de
+los diez ajustes que pide la especificación, y **cada uno cambia algo de
+verdad**: no hay interruptores decorativos.
+
+- [x] **Tamaño del texto** en cuatro pasos, tope 1.5. Se aplica una sola vez en
+      el `builder` de `MaterialApp`, así que vale también para lo que abre el
+      `Navigator`. Se ignora el factor de Android a propósito: multiplicarlo
+      con el nuestro corta texto sin que nadie entienda de dónde salió.
+- [x] **Alto contraste**: `AppColors.contrastado` empuja fondo y tarjeta a los
+      extremos y sube `tinta2`/`tinta3` —los metadatos al 40 % son lo primero
+      que se pierde—. `SgCard` dibuja contorno, que es la única regla del v3
+      («nada lleva borde») que este modo rompe, y la rompe a sabiendas: sin
+      sombra visible la tarjeta se funde con el lienzo.
+- [x] **Tema** claro/oscuro/auto, **mudado** desde «Mi perfil». Era el mismo
+      ajuste en dos sitios.
+- [x] **Movimiento reducido**, que viaja en `MediaQuery.disableAnimations` —la
+      bandera que Flutter ya tiene— y no en un provider nuestro: así la miran
+      también los widgets del framework, y ninguna animación se queda girando
+      por olvido. Lo respetan `SgCargando` (figura quieta, y el mensaje pasa a
+      ser obligatorio porque entonces es él quien dice que está trabajando),
+      `SgEsqueleto` (siluetas sin barrido), `SgRadarIa`, `SgPulso` (además
+      responde antes: sin rebote no hay 110 ms que esperar) y el carrusel de
+      SIGMA AI, que deja de avanzar solo.
+- [x] **Confirmación háptica**, con `SgPulso` consultándola antes de vibrar.
+- [x] **Avisos** del teléfono, mudado también desde «Mi perfil».
+- [x] **Horario de silencio**, que **cruza la medianoche** —22:00 a 07:00 es el
+      caso normal, no el raro—. La regla vive en `enSilencio()`, no en el
+      llamador, y tiene cuatro pruebas: una comparación ingenua callaría de día
+      y sonaría de noche. Todavía no calla nada porque nada suena: lo consumirá
+      HU-077.
+- [x] **Persistentes por usuario**: la clave es `sigma_acc_<usuario>_<campo>` y
+      se releen al entrar y al salir. El teléfono de planta pasa de turno en
+      turno, y heredar la letra grande del turno anterior se lee como que la
+      app se descompuso.
+
+**Lo que quedó fuera, y por qué:** «lectura en voz alta» y «velocidad de
+lectura». Exigen un motor TTS (`flutter_tts`, dependencia nueva) y, sobre todo,
+**decidir qué se lee**: una OT entera no se escucha, y leer solo el título no
+sirve de nada. No es trabajo de esta pantalla sino de las que leerían. Está en
+la cola de abajo.
+
+- [ ] **Lectura en voz alta y velocidad** (HU-162, la mitad que falta).
 
 ---
 
@@ -484,7 +526,7 @@ Ninguna se puede construir sin decidir algo primero:
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
       significa que el sitio levante.
 - [ ] `flutter analyze lib` limpio.
-- [ ] `flutter test` — hoy 89 verdes.
+- [ ] `flutter test` — hoy 93 verdes.
 - [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
       `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
       `no_consumidas.py`.
@@ -502,7 +544,7 @@ Ninguna se puede construir sin decidir algo primero:
 No se han olvidado; están fuera de este encargo hasta que Bryan diga.
 
 - Push / notificaciones (HU-077): falta solo el lado Flutter.
-- Diseño v3: quedan **8** vistas, todas bloqueadas por una decisión previa.
+- Diseño v3: quedan **7** vistas, todas bloqueadas por una decisión previa.
   El detalle está en el bloque 7.
 - `Repuesto_Compatibilidad` y `Usuario_Especialidad` están vacías: el código
   está hecho, pero sin datos el badge «Compatible» y los chips de especialidad

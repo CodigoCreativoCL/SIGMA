@@ -68,6 +68,20 @@ class _SgCargandoState extends State<SgCargando>
   Widget build(BuildContext context) {
     final sg = context.sg;
 
+    /* CON MOVIMIENTO REDUCIDO, LA FIGURA SE QUEDA QUIETA
+
+       Y entonces el que dice que la app está trabajando es el texto, por eso
+       acá abajo el mensaje deja de ser opcional y cae a «Cargando…» si no
+       venía ninguno. Dejar solo un hexágono inmóvil sería una pantalla que no
+       explica nada. */
+    final quieto = MediaQuery.disableAnimationsOf(context);
+    if (quieto && _c.isAnimating) _c.stop();
+    if (!quieto && !_c.isAnimating) _c.repeat();
+
+    final mensaje = quieto
+        ? ((widget.mensaje ?? '').isEmpty ? 'Cargando…' : widget.mensaje!)
+        : (widget.mensaje ?? '');
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -80,7 +94,9 @@ class _SgCargandoState extends State<SgCargando>
             animation: _c,
             builder: (_, _) => CustomPaint(
               painter: _PintorFigura(
-                avance: _c.value,
+                // Quieto se pinta el hexágono formado —el último paso del
+                // ciclo—, que es la figura más estable de las cuatro.
+                avance: quieto ? 0.75 : _c.value,
                 lados: _lados,
                 color: sg.acentoTexto,
                 colorTenue: sg.tinte(sg.primario),
@@ -88,10 +104,10 @@ class _SgCargandoState extends State<SgCargando>
             ),
           ),
         ),
-        if ((widget.mensaje ?? '').isNotEmpty) ...[
+        if (mensaje.isNotEmpty) ...[
           const SizedBox(height: 18),
           Text(
-            widget.mensaje!,
+            mensaje,
             textAlign: TextAlign.center,
             style: sora(13, 500, color: sg.tinta3, alto: 1.45),
           ),

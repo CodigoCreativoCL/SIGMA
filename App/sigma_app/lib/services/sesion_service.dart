@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_constants.dart';
 import '../models/sesion_model.dart';
+import 'accesibilidad_service.dart';
 import 'api_client.dart';
 
 /// El almacén de la sesión: en memoria, y respaldado en disco.
@@ -110,9 +111,21 @@ class SesionService {
   }
 
   Future<void> guardar(SesionModel nueva) async {
+    final cambioDePersona = nueva.usuario != sesion.usuario;
     sesion = nueva;
     ApiClient.instance.token = nueva.token;
     ApiClient.instance.cliente = nueva.cliente;
+
+    /* LOS AJUSTES DE ACCESIBILIDAD SIGUEN A LA PERSONA
+
+       El telefono de planta se pasa de turno en turno. Sin esto, quien entra
+       hereda el tamano de letra y el contraste del turno anterior y cree que
+       la app se descompuso. Se releen solo cuando cambia el usuario: volver a
+       guardar la misma sesion —al elegir cliente, por ejemplo— no tiene por
+       que tocarlos. */
+    if (cambioDePersona) {
+      await AccesibilidadService.instance.cargar(nueva.usuario);
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_clave, jsonEncode(nueva.toJson()));
@@ -123,6 +136,8 @@ class SesionService {
 
   Future<void> limpiar() async {
     sesion = const SesionModel();
+    // De vuelta a los de fabrica: la pantalla de login no es de nadie.
+    await AccesibilidadService.instance.cargar(0);
     ApiClient.instance.limpiarToken();
     ApiClient.instance.cliente = 0;
     try {
