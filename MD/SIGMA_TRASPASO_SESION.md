@@ -797,6 +797,91 @@ repuesto no aparece nunca y los chips de especialidad salen vacíos.
 
 ---
 
+## 5.5 · Sesión del 08-09-2026 (tarde) — lo que se cerró y lo que quedó
+
+**El detalle vive en `MD/SIGMA_CHECKLIST_PENDIENTES.md`.** Esta sección es el
+resumen para retomar: qué se cerró, qué se aprendió, y qué está abierto.
+
+### Se cerraron seis bloques del checklist
+
+- **Bloque 0** · Nueve endpoints respondían 400: ocho SP no declaraban
+  `@ID OUTPUT` (`BD/193`). Los ocho ejercitados por HTTP.
+- **Bloque 1** · Ubicación al consumir repuesto, chips inalcanzables, favoritos
+  que no avisaban, un crash de `mounted`, tres botones inertes y los menús
+  repetidos de «Más».
+- **Bloque 2** · El QR lleva el código y no la URL; escanear abre la ficha.
+- **Bloque 3** · Alertas y menús por ámbito (`BD/194`, `BD/195`).
+- **Bloque 4** · Compañeros filtrados por perfil con foto y oficio (`BD/196`,
+  `BD/197`), y nota de voz, video y foto en bitácora y tarea (`BD/198`).
+- **Bloque 5** · Foto en alertas (`BD/199`), avatar con iniciales, y «Más» con
+  el contexto como protagonista.
+
+Y del **bloque 6** —el reporte de la tarde— van cerrados el Blob por cliente,
+la cola que no enviaba y el escaneo que quedaba pegado.
+
+### Scripts de base de esta sesión
+
+`BD/193` a `BD/200`, **todos aplicados y verificados**. Los de la sesión de la
+mañana eran `BD/189` a `BD/192`.
+
+### Cuatro cosas aprendidas que valen para la próxima sesión
+
+1. **Los volcados de `OBJECT_DEFINITION` van con `sqlcmd -u -o`.** Sin eso
+   sqlcmd degrada a la codepage de la consola, los acentos llegan ya perdidos,
+   y regenerar un SP desde ese volcado **escribe la basura en la base**. Casi
+   pasó con `SEL_ALERTA`, que además ya venía dañado de antes y se reparó.
+
+2. **Comprobar mojibake con colación binaria.** `LIKE N'%…%'` con la colación
+   por defecto da falsos positivos: marcó como dañados once SP que estaban
+   limpios. Con `COLLATE Latin1_General_BIN2` la respuesta es la de verdad.
+
+3. **`Datos.Listar` descarta en silencio lo que el DTO no declara.** Fue la
+   causa de que la bandeja de alertas no supiera de qué equipo hablaba: el SP
+   devolvía la identidad desde el principio. Nada avisa; solo se ve mirando la
+   respuesta.
+
+4. **Nunca `SELECT *` sobre `outbox`.** `cuerpo_json` lleva el base64 de fotos,
+   audio y video: una fila puede pesar megas y el `CursorWindow` de Android son
+   2 MB. Y el límite es **por fila**, así que pedir solo esa columna tampoco
+   basta: hay que leerla por trozos con `substr`.
+
+### Auditorías: ahora son seis
+
+A las cuatro de antes se suman dos que nacieron esta sesión, en
+`C:\Capstone\_scratch\`:
+
+- `auditar_id_output.py` — SP llamados con `devuelveId: true` que no declaran
+  `@ID OUTPUT`. Cada uno es un endpoint que responde 400.
+- `barrer_mounted.py` — uso de la UI tras un `await` sin comprobar `mounted`.
+  En un `State` la guarda es `mounted`; en un `ConsumerWidget` o
+  `StatelessWidget`, `context.mounted`.
+
+Las seis salen en cero. Correrlas antes de cerrar cualquier bloque.
+
+### La IP de la máquina cambió
+
+La API estaba en `192.168.1.38` y pasó a **`192.168.1.7`**. Si un día deja de
+responder —`HTTP 000`—, comprobar con `ipconfig` antes de buscar el problema en
+el código: pasó esta sesión y parecía que el rebuild había tumbado el sitio.
+El `.env.dev.json` de la app **ya está en la IP nueva**.
+
+### Lo que queda abierto
+
+El **bloque 6** del checklist, con la causa ya anotada donde la encontré:
+escaneo (pantalla roja), multimedia (reductor, reproducir audio y video),
+retomar la app, buscadores tolerantes, ventana de 24 h, «órdenes que apremian»,
+bitácora, animaciones de favorito y compartir, campos obligatorios, la card de
+SIGMA AI como slider y el skeletonizer.
+
+Más atrás: **push/FCM (HU-077)** y las **12 vistas del v3** que faltan —dos se
+construyeron esta sesión, catálogo de repuestos y bodegas—.
+
+**Decisión pendiente de Bryan:** ¿se migran a la carpeta del cliente los
+archivos que ya se subieron con la ruta vieja? Hoy siguen donde están y se
+encuentran; moverlos es copiar en Azure y actualizar `Archivo.arc_ruta`.
+
+---
+
 ## 6. Estado de git
 
 | Rama | Commit | Contenido |
