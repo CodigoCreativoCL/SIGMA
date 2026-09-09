@@ -73,8 +73,9 @@ class _SeleccionContextoScreenState
       sesion.refrescar();
 
       // El token cambió: todo lo acotado por cliente hay que volver a pedirlo,
-      // y la instalación anterior es de otra empresa.
-      instalacion.state = null;
+      // y la instalación anterior es de otra empresa. Se olvida también la
+      // recordada: restaurarla al arrancar la pondría en la empresa nueva.
+      instalacion.elegir(null);
       for (final p in [
         plantasProvider,
         existenciasProvider,
@@ -202,7 +203,7 @@ class _SeleccionContextoScreenState
                       instalacion: i,
                       elegida: i.cin_id == elegida?.cin_id,
                       onTap: () =>
-                          ref.read(instalacionProvider.notifier).state = i,
+                          ref.read(instalacionProvider.notifier).elegir(i),
                     ),
                     const SizedBox(height: 12),
                   ],

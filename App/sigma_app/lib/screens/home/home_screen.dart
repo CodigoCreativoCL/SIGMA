@@ -74,10 +74,21 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
         .catchError((_) => const Paginado<ClienteInstalacion>(datos: []));
     if (!mounted) return;
 
+    /* PRIMERO, LA QUE SE ESTABA USANDO
+
+       Si Android mató la app mientras estaba en segundo plano, al volver se
+       retoma donde se dejó en vez de preguntar de nuevo o —peor— quedarse sin
+       planta y mostrar listados vacíos.
+
+       `restaurar` comprueba contra las plantas AUTORIZADAS: a alguien le
+       pueden haber quitado una desde la web mientras la app estaba cerrada, y
+       devolverle esa sería dejarlo trabajando donde ya no le corresponde. */
+    if (ref.read(instalacionProvider.notifier).restaurar(plantas.datos)) return;
+
     // Con una sola instalación no se pregunta: preguntar por algo que no tiene
     // alternativa es un trámite, no una decisión.
     if (plantas.datos.length == 1) {
-      ref.read(instalacionProvider.notifier).state = plantas.datos.first;
+      ref.read(instalacionProvider.notifier).elegir(plantas.datos.first);
       return;
     }
     if (plantas.datos.isEmpty) return;

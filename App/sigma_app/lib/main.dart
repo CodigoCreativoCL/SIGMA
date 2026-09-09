@@ -10,6 +10,7 @@ import 'services/preferencias_service.dart';
 import 'services/sesion_service.dart';
 import 'services/tema_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/comun/sigma_al_retomar.dart';
 
 /// El orden de este arranque importa, y cada paso está donde está por una
 /// razón. Ver `MD/SIGMA_APP_ARQUITECTURA.md` §9.
@@ -71,7 +72,12 @@ class SigmaApp extends StatelessWidget {
         themeMode: modo,
         theme: AppTheme.claro(),
         darkTheme: AppTheme.oscuro(),
-        home: SplashScreen(haySesion: haySesion),
+        /* AL VOLVER DEL SEGUNDO PLANO, SE PONE AL DIA
+
+           Android mata las apps en segundo plano sin avisar. Al volver, SIGMA
+           se reconstruia con la sesion pero con los datos de hace horas: se
+           veian listas viejas sin nada que dijera que lo eran. */
+        home: SgAlRetomar(child: SplashScreen(haySesion: haySesion)),
       ),
     );
   }

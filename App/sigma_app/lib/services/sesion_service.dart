@@ -27,6 +27,7 @@ class SesionService {
   String dispositivo = '';
 
   static const _claveLogin = 'sigma_ultimo_login';
+  static const _claveInstalacion = 'sigma_instalacion';
 
   /// El correo con el que se entro la ultima vez, para rellenarlo solo.
   ///
@@ -36,6 +37,40 @@ class SesionService {
   /// cambio, no abre nada por si mismo y ahorra el campo mas largo de
   /// escribir con guantes.
   String? ultimoLogin;
+
+  /// La planta con la que se estaba trabajando.
+  ///
+  /// ## Por que SI se persiste, si antes no
+  ///
+  /// El comentario de `instalacionProvider` decia que perderla al reiniciar
+  /// era «un inconveniente menor». No lo es: la sabana se descarga POR PLANTA
+  /// y media app filtra por ella, asi que sin planta los listados bajan
+  /// vacios. Al retomar la app despues de que Android la matara —lo normal si
+  /// se deja en segundo plano un rato— la persona veia todo vacio sin
+  /// entender por que, o peor, volvia a elegir sin darse cuenta de que habia
+  /// estado mirando una pantalla sin contexto.
+  ///
+  /// ## Por que solo el id
+  ///
+  /// El nombre y la direccion los trae `plantas()`, que ya viaja en la sabana.
+  /// Guardar el objeto entero seria una segunda copia que envejece: si desde
+  /// la web renombran la planta, la del telefono seguiria diciendo el nombre
+  /// viejo hasta que alguien la vuelva a elegir.
+  int? instalacionRecordada;
+
+  Future<void> recordarInstalacion(int? id) async {
+    instalacionRecordada = id;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (id == null) {
+        await prefs.remove(_claveInstalacion);
+      } else {
+        await prefs.setInt(_claveInstalacion, id);
+      }
+    } catch (e) {
+      debugPrint('[SesionService] No se pudo recordar la planta: $e');
+    }
+  }
 
   Future<void> recordarLogin(String? login) async {
     ultimoLogin = login;
@@ -57,6 +92,7 @@ class SesionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       ultimoLogin = prefs.getString(_claveLogin);
+      instalacionRecordada = prefs.getInt(_claveInstalacion);
 
       final crudo = prefs.getString(_clave);
       if (crudo == null || crudo.isEmpty) return false;

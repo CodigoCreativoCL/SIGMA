@@ -101,7 +101,7 @@ class MiPerfilScreen extends ConsumerWidget {
       if (!context.mounted) return;
       ref.invalidate(p);
     }
-    ref.read(instalacionProvider.notifier).state = null;
+    ref.read(instalacionProvider.notifier).elegir(null);
 
     nav.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),

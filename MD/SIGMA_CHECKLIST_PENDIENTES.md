@@ -253,10 +253,21 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ### 6.4 · Retomar la app
 
-- [ ] **Al volver no toma bien la planta y el cliente seleccionados**, y los
-      datos deben recargarse siempre al retomar.
-- [ ] **Pantalla de carga al abrir/retomar:** logo de SIGMA con animación de
-      figuras geométricas al estilo Google.
+- [x] **Al volver no toma bien la planta y el cliente seleccionados**, y los
+      datos deben recargarse siempre al retomar. Corregido.
+      **Causa:** `instalacionProvider` era un `StateProvider` en memoria —su
+      comentario decía que perderla al reiniciar era «un inconveniente menor»,
+      y no lo era: la sábana baja **por planta**—. Ahora el id se persiste y
+      `restaurar()` lo repone **comprobando contra las plantas autorizadas**:
+      a alguien le pueden haber quitado una desde la web mientras la app estaba
+      cerrada. Y `SgAlRetomar` envuelve la app y llama a `asegurar()` en cada
+      `resumed`.
+- [x] **Pantalla de carga al abrir/retomar:** logo de SIGMA con animación de
+      figuras geométricas al estilo Google. Hecho: `SgCargando` dibuja el
+      isotipo y un polígono que muta de 3 a 6 lados **interpolando vértices**
+      —cambiar de golpe parpadea, y un parpadeo en una carga se lee como un
+      error—. Se pinta, no es un GIF, para tomar el color del tema en claro y
+      en oscuro. Tapa opaco: dejar la lista vieja a la vista invita a tocarla.
 
 ---
 
