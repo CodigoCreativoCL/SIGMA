@@ -16,6 +16,7 @@ import '../tareas/tareas_screen.dart';
 import '../../services/voz_service.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import '../../services/buscador.dart';
+import '../../widgets/comun/sigma_fieldset.dart';
 
 /// Qué se está mirando en la bandeja.
 enum TipoTrabajo { todo, ordenes, tareas, pautas, bitacora }
@@ -253,65 +254,58 @@ class _Todo extends ConsumerWidget {
         const EdgeInsets.fromLTRB(16, 14, 16, 24),
       ),
       children: [
-        if (ordenesHoy.isNotEmpty) ...[
-          _Grupo(
-            texto: 'Órdenes vencidas o que vencen hoy',
-            cuantas: ordenesHoy.length,
-          ),
-          for (final o in ordenesHoy) ...[
-            _Resumen(
-              icono: Icons.build_circle_outlined,
-              color: o.vencida ? sg.rojoTexto : sg.ambarTexto,
-              titulo: '${o.OT_NUMERO} · ${o.otr_titulo}',
-              detalle: o.activo.isEmpty ? o.ubicacion : o.activo,
-              foto: o.ACTIVO_FOTO,
-            ),
-            const SizedBox(height: 10),
+        SgFieldset(
+          titulo: 'Órdenes vencidas o que vencen hoy',
+          cuantas: ordenesHoy.length,
+          color: sg.rojoTexto,
+          children: [
+            for (final o in ordenesHoy) ...[
+              _Resumen(
+                icono: Icons.build_circle_outlined,
+                color: o.vencida ? sg.rojoTexto : sg.ambarTexto,
+                titulo: '${o.OT_NUMERO} · ${o.otr_titulo}',
+                detalle: o.activo.isEmpty ? o.ubicacion : o.activo,
+                foto: o.ACTIVO_FOTO,
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
-          const SizedBox(height: 6),
-        ],
-        if (tareasHoy.isNotEmpty) ...[
-          _Grupo(texto: 'Tareas vencidas', cuantas: tareasHoy.length),
-          for (final t in tareasHoy) ...[
-            _Resumen(
-              icono: Icons.task_alt,
-              color: sg.rojoTexto,
-              titulo: t.tar_titulo,
-              detalle: t.activo.isEmpty ? t.donde : t.activo,
-              foto: t.ACTIVO_FOTO,
-            ),
-            const SizedBox(height: 10),
+        ),
+        SgFieldset(
+          titulo: 'Tareas vencidas',
+          cuantas: tareasHoy.length,
+          color: sg.rojoTexto,
+          children: [
+            for (final t in tareasHoy) ...[
+              _Resumen(
+                icono: Icons.task_alt,
+                color: sg.rojoTexto,
+                titulo: t.tar_titulo,
+                detalle: t.activo.isEmpty ? t.donde : t.activo,
+                foto: t.ACTIVO_FOTO,
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
-          const SizedBox(height: 6),
-        ],
-        if (pautas.isNotEmpty) ...[
-          _Grupo(texto: 'Pautas pendientes de hoy', cuantas: pautas.length),
-          for (final p in pautas) ...[
-            _Resumen(
-              icono: Icons.checklist_rtl,
-              color: sg.acentoTexto,
-              titulo: p.PLANTILLA_NOMBRE,
-              detalle: p.donde,
-            ),
-            const SizedBox(height: 10),
+        ),
+        SgFieldset(
+          titulo: 'Pautas pendientes de hoy',
+          cuantas: pautas.length,
+          children: [
+            for (final p in pautas) ...[
+              _Resumen(
+                icono: Icons.checklist_rtl,
+                color: sg.acentoTexto,
+                titulo: p.PLANTILLA_NOMBRE,
+                detalle: p.donde,
+              ),
+              const SizedBox(height: 10),
+            ],
           ],
-        ],
+        ),
       ],
     );
   }
-}
-
-class _Grupo extends StatelessWidget {
-  const _Grupo({required this.texto, required this.cuantas});
-
-  final String texto;
-  final int cuantas;
-
-  @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.only(bottom: 10),
-    child: SgRotuloConAccion(texto, accion: '$cuantas'),
-  );
 }
 
 /// Una fila de «Todo»: lo justo para decidir si se abre.
@@ -449,138 +443,171 @@ class _Bitacora extends ConsumerWidget {
             )
             .toList();
 
+        /* PARTIDA POR TIEMPO, CON VENTANA MOVIL
+
+           «Lo del dia» no es «desde medianoche»: un turno de noche empieza a
+           las 22:00, y a las 00:01 lo trabajado hace veinte minutos pasaria a
+           «ayer» y desapareceria de la vista de quien lo esta haciendo. La
+           ventana sigue a la persona: a las 21:50, «hoy» es desde las 21:50 de
+           ayer.
+
+           Se AGRUPA, no se filtra. Esconder lo anterior dejaria fuera una fuga
+           anotada anteanoche que sigue sin resolverse, y una bitacora que
+           oculta parte de su relato no sirve de bitacora. Lo reciente va
+           primero y lo demas queda debajo, alcanzable. */
+        final ahora = DateTime.now();
+        final recientes = <BitacoraEntrada>[];
+        final antes = <BitacoraEntrada>[];
+
+        for (final e in lista) {
+          final tramo = TramoTiempo.de(
+            e.bit_fecha_evento_utc.toLocal(),
+            ahora: ahora,
+          );
+          (tramo == TramoTiempo.ultimas24 ? recientes : antes).add(e);
+        }
+
         return RefreshIndicator(
           onRefresh: () async => ref.invalidate(bitacoraProvider),
-          child: ListView.separated(
+          child: ListView(
             padding: context.conBarraSistema(
               const EdgeInsets.fromLTRB(16, 14, 16, 24),
             ),
-            itemCount: lista.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 11),
-            itemBuilder: (_, i) {
-              final e = lista[i];
-              final grave =
-                  (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
-                  (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'CRITICA';
-
-              return SgCard(
-                padding: const EdgeInsets.all(14),
-                onTap: () => Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
-                  ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final grupo in [
+                (TramoTiempo.ultimas24, recientes),
+                (TramoTiempo.anteriores, antes),
+              ])
+                SgFieldset(
+                  titulo: grupo.$1.titulo,
+                  cuantas: grupo.$2.length,
+                  color: grupo.$1 == TramoTiempo.ultimas24
+                      ? sg.acentoTexto
+                      : null,
                   children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(
-                            e.TIPO_NOMBRE!,
-                            color: sg.tinta2,
-                            chico: true,
-                          ),
-                        if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(
-                            e.SEVERIDAD_NOMBRE!,
-                            color: grave ? sg.rojoTexto : sg.ambarTexto,
-                            chico: true,
-                          ),
-                        if (e.bit_requiere_atencion)
-                          SgBadge(
-                            'Requiere atención',
-                            color: sg.rojoTexto,
-                            icono: Icons.priority_high,
-                            chico: true,
-                          ),
-                        // Rectificada, no editada: el texto original sigue
-                        // guardado debajo. Marcarlo es lo que hace que la
-                        // bitácora sirva como registro.
-                        if (e.rectificada)
-                          SgBadge(
-                            'Rectificada',
-                            color: sg.azulTexto,
-                            icono: Icons.history_edu,
-                            chico: true,
-                          ),
-                        if (e.POR_VOZ)
-                          SgBadge(
-                            'Dictada',
-                            color: sg.tinta3,
-                            icono: Icons.mic,
-                            chico: true,
-                          ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      e.bit_titulo,
-                      style: sora(16, 600, color: sg.tinta, alto: 1.35),
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      e.TEXTO_VIGENTE,
-                      style: sora(13, 500, color: sg.tinta2, alto: 1.5),
-                      maxLines: 4,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 9),
-                    Row(
-                      children: [
-                        Icon(Icons.schedule, size: 13, color: sg.tinta3),
-                        const SizedBox(width: 5),
-                        Text(
-                          _fecha.format(e.bit_fecha_evento_utc.toLocal()),
-                          style: sora(12, 500, color: sg.tinta3),
-                        ),
-                        if ((e.bit_turno ?? '').isNotEmpty) ...[
-                          const SizedBox(width: 8),
-                          Text(
-                            '· turno ${e.bit_turno}',
-                            style: sora(12, 500, color: sg.tinta3),
-                          ),
-                        ],
-                        const Spacer(),
-                        if ((e.USUARIO_NOMBRE ?? '').isNotEmpty)
-                          Flexible(
-                            child: Text(
-                              e.USUARIO_NOMBRE!,
-                              style: sora(12, 500, color: sg.tinta3),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                      ],
-                    ),
-                    if (e.activo.isNotEmpty) ...[
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.view_in_ar_outlined,
-                            size: 13,
-                            color: sg.tinta3,
-                          ),
-                          const SizedBox(width: 5),
-                          Expanded(
-                            child: Text(
-                              e.activo,
-                              style: sora(12, 500, color: sg.tinta3),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
+                    for (final e in grupo.$2) ...[
+                      _tarjeta(context, e),
+                      const SizedBox(height: 11),
                     ],
                   ],
                 ),
-              );
-            },
+            ],
           ),
         );
       },
+    );
+  }
+
+  /// Una entrada de la bitácora.
+  Widget _tarjeta(BuildContext context, BitacoraEntrada e) {
+    final sg = context.sg;
+
+    final grave =
+        (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'ALTA' ||
+        (e.SEVERIDAD_CODIGO ?? '').toUpperCase() == 'CRITICA';
+
+    return SgCard(
+      padding: const EdgeInsets.all(14),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => EntradaBitacoraScreen(entradaId: e.bit_id),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: [
+              if ((e.TIPO_NOMBRE ?? '').isNotEmpty)
+                SgBadge(e.TIPO_NOMBRE!, color: sg.tinta2, chico: true),
+              if ((e.SEVERIDAD_NOMBRE ?? '').isNotEmpty)
+                SgBadge(
+                  e.SEVERIDAD_NOMBRE!,
+                  color: grave ? sg.rojoTexto : sg.ambarTexto,
+                  chico: true,
+                ),
+              if (e.bit_requiere_atencion)
+                SgBadge(
+                  'Requiere atención',
+                  color: sg.rojoTexto,
+                  icono: Icons.priority_high,
+                  chico: true,
+                ),
+              // Rectificada, no editada: el texto original sigue
+              // guardado debajo. Marcarlo es lo que hace que la
+              // bitácora sirva como registro.
+              if (e.rectificada)
+                SgBadge(
+                  'Rectificada',
+                  color: sg.azulTexto,
+                  icono: Icons.history_edu,
+                  chico: true,
+                ),
+              if (e.POR_VOZ)
+                SgBadge(
+                  'Dictada',
+                  color: sg.tinta3,
+                  icono: Icons.mic,
+                  chico: true,
+                ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(e.bit_titulo, style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+          const SizedBox(height: 5),
+          Text(
+            e.TEXTO_VIGENTE,
+            style: sora(13, 500, color: sg.tinta2, alto: 1.5),
+            maxLines: 4,
+            overflow: TextOverflow.ellipsis,
+          ),
+          const SizedBox(height: 9),
+          Row(
+            children: [
+              Icon(Icons.schedule, size: 13, color: sg.tinta3),
+              const SizedBox(width: 5),
+              Text(
+                _fecha.format(e.bit_fecha_evento_utc.toLocal()),
+                style: sora(12, 500, color: sg.tinta3),
+              ),
+              if ((e.bit_turno ?? '').isNotEmpty) ...[
+                const SizedBox(width: 8),
+                Text(
+                  '· turno ${e.bit_turno}',
+                  style: sora(12, 500, color: sg.tinta3),
+                ),
+              ],
+              const Spacer(),
+              if ((e.USUARIO_NOMBRE ?? '').isNotEmpty)
+                Flexible(
+                  child: Text(
+                    e.USUARIO_NOMBRE!,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+            ],
+          ),
+          if (e.activo.isNotEmpty) ...[
+            const SizedBox(height: 6),
+            Row(
+              children: [
+                Icon(Icons.view_in_ar_outlined, size: 13, color: sg.tinta3),
+                const SizedBox(width: 5),
+                Expanded(
+                  child: Text(
+                    e.activo,
+                    style: sora(12, 500, color: sg.tinta3),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

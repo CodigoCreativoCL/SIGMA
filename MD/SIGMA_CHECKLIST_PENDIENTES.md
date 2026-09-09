@@ -287,12 +287,23 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.6 · Trabajar con lo del día
+### 6.6 · Trabajar con lo del día — CERRADO
 
-- [ ] **Ventana móvil de 24 h**, no «desde ayer»: si son las 21:50, lo de las
-      21:50 de ayer hacia acá.
-- [ ] **Agrupar los registros** con estilo tipo *fieldset*, en su versión más
-      moderna.
+- [x] **Ventana móvil de 24 h.** `TramoTiempo` en `sigma_fieldset.dart`, con
+      cuatro tests. El caso que la justifica: a las 00:30, lo de las 23:00
+      **sigue siendo de hoy** — con el día del calendario, un turno de noche ve
+      desaparecer a medianoche lo que acaba de hacer.
+
+      **Se AGRUPA, no se filtra.** Esconder lo anterior dejaría fuera una fuga
+      anotada anteanoche que sigue sin resolverse, y una bitácora que oculta
+      parte de su relato no sirve de bitácora. Lo reciente va primero y lo
+      demás queda debajo, alcanzable.
+- [x] **Agrupar los registros con estilo fieldset.** `SgFieldset`: el título
+      montado sobre el canto, con el fondo detrás para que parezca que
+      interrumpe el marco. El marco es **una superficie tenue, no una línea**,
+      porque el v3 construye la jerarquía con superficies. Un rótulo suelto
+      dice dónde empieza un grupo pero no dónde termina; el fieldset cierra.
+      Aplicado a la bitácora y a las tres secciones de «Todo».
 
 ---
 
@@ -362,9 +373,14 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.12 · Skeletonizer
+### 6.12 · Skeletonizer — CERRADO
 
-- [ ] **Mejorar el esqueleto de carga de las vistas:** limpio y moderno.
+- [x] **Mejorar el esqueleto de carga.** `SgEsqueleto`: la **silueta** de lo
+      que viene —cuadro de icono, título largo, subtítulo corto— con un brillo
+      que barre, desfasado por fila. Eran tres rectángulos grises que decían
+      «espera» y nada más; ahora la vista **no salta** al llegar los datos,
+      porque lo que había ya ocupaba ese sitio. Sin paquete: `shimmer` trae su
+      propio sistema de temas y acá los colores salen de los tokens del v3.
 
 ---
 

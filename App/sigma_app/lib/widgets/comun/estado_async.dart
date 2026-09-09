@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../services/api_client.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
+import 'sigma_esqueleto.dart';
 
 /// Dibuja los tres estados que puede tener cualquier dato que venga de la API,
 /// para que las diez pantallas los resuelvan igual.
@@ -55,27 +56,23 @@ class EstadoAsync<T> extends StatelessWidget {
   }
 }
 
+/// Lo que se ve mientras cargan los datos.
+///
+/// Eran tres rectángulos grises: decían «espera» y nada más. Ahora es la
+/// SILUETA de lo que viene —cuadro de icono, título, subtítulo— con un brillo
+/// que barre. Así, cuando llegan los datos la vista no salta: lo que había ya
+/// ocupaba ese sitio. Ver `SgEsqueleto`.
 class _Cargando extends StatelessWidget {
   const _Cargando({required this.alto});
   final double alto;
 
   @override
   Widget build(BuildContext context) {
-    final sg = context.sg;
-    return Column(
-      children: [
-        for (var i = 0; i < 3; i++) ...[
-          Container(
-            height: alto / 3.4,
-            decoration: BoxDecoration(
-              color: sg.card,
-              borderRadius: BorderRadius.circular(SgRadius.card),
-            ),
-          ),
-          const SizedBox(height: 12),
-        ],
-      ],
-    );
+    // El alto que pide quien lo usa se reparte entre tres siluetas; 78 es lo
+    // que mide una tarjeta de lista de verdad, y por debajo de eso la silueta
+    // deja de parecerse a lo que sustituye.
+    final altoFila = (alto / 3.2).clamp(64.0, 96.0);
+    return SgEsqueleto(alto: altoFila);
   }
 }
 
