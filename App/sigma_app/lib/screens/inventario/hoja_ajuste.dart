@@ -69,6 +69,13 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
 
   bool _guardando = false;
 
+  /// Ver la nota en `nueva_entrada_screen`: se marca lo que falta en vez de
+  /// apagar el botón.
+  bool _intento = false;
+
+  String? _obligatorio(String? v) =>
+      !_intento || (v ?? '').trim().isNotEmpty ? null : 'Falta completar esto.';
+
   @override
   void dispose() {
     _contado.dispose();
@@ -100,8 +107,14 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
   String _fmt(double v) => _n.format(v);
 
   Future<void> _guardar() async {
+    if (_guardando) return;
+
     final d = _diferencia;
-    if (d == null || d == 0 || !_completo) return;
+
+    if (d == null || d == 0 || !_completo) {
+      setState(() => _intento = true);
+      return;
+    }
 
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
@@ -183,7 +196,7 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
         ),
 
         const SizedBox(height: 14),
-        const SgRotuloCampo('Cuántos hay'),
+        const SgRotuloCampo('Cuántos hay', obligatorio: true),
         const SizedBox(height: 4),
         Text(
           'El sistema dice ${_fmt(_sistema)}${unidad.isEmpty ? '' : ' $unidad'}. '
@@ -193,6 +206,7 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
         const SizedBox(height: 9),
         SgCampo(
           controlador: _contado,
+          validador: _obligatorio,
           icono: Icons.pin_outlined,
           hint: _fmt(_sistema),
           autoenfoque: true,
@@ -227,10 +241,11 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
         ],
 
         const SizedBox(height: 14),
-        const SgRotuloCampo('Por qué'),
+        const SgRotuloCampo('Por qué', obligatorio: true),
         const SizedBox(height: 8),
         SgCampo(
           controlador: _motivo,
+          validador: _obligatorio,
           icono: Icons.notes,
           hint: 'Conteo cíclico del pasillo 3',
           lineas: 2,
@@ -258,7 +273,7 @@ class _HojaAjusteState extends ConsumerState<HojaAjuste> {
           'Registrar el ajuste',
           icono: Icons.check,
           cargando: _guardando,
-          onTap: _completo ? _guardar : null,
+          onTap: _guardar,
         ),
       ],
     );

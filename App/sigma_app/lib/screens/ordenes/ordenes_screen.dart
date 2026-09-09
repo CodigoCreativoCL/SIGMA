@@ -11,6 +11,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_imagen.dart';
+import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'nueva_orden_screen.dart';
@@ -81,7 +82,7 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
         ? ref.watch(busquedaBandejaProvider)
         : ref.watch(busquedaOrdenProvider);
     final listaMias = mias.valueOrNull ?? const <OrdenTrabajo>[];
-    final hoy = listaMias.where(_apremia).toList();
+    final hoy = listaMias.where(_vencidaODeHoy).toList();
 
     /* EL FAVORITO SE RESUELVE CONTRA LO MARCADO EN ESTA SESION
 
@@ -202,7 +203,7 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
                       : Icons.assignment_turned_in_outlined,
                   titulo: switch (_pestana) {
                     _ when filtro.isNotEmpty => 'Nada coincide',
-                    0 => 'Nada apremia hoy',
+                    0 => 'Nada vencido ni para hoy',
                     1 => 'No tienes órdenes asignadas',
                     _ => 'No hay trabajo disponible',
                   },
@@ -253,8 +254,10 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     ref.invalidate(ordenesDisponiblesProvider);
   }
 
-  /// Lo que no puede esperar: vencido o vence hoy.
-  static bool _apremia(OrdenTrabajo o) {
+  /// Vencida o vence hoy. **La situación la decide el SP**, no la pantalla: si
+  /// la calculara la app, dos teléfonos con distinta hora darían veredictos
+  /// distintos sobre la misma orden.
+  static bool _vencidaODeHoy(OrdenTrabajo o) {
     final s = (o.SITUACION ?? '').toUpperCase();
     return s == 'VENCIDA' || s == 'VENCE HOY';
   }
@@ -405,8 +408,13 @@ class _Filtros extends StatelessWidget {
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.zero,
               children: [
+                /* «Vencen hoy» y no «Hoy»
+
+                   «Hoy» se lee como «las de hoy» y este chip trae tambien las
+                   ATRASADAS, que son las que de verdad importan. Un rotulo que
+                   describe mal lo que filtra hace dudar de si falta algo. */
                 _Chip(
-                  'Hoy',
+                  'Vencen hoy',
                   contador: hoy,
                   colorContador: SgColor.rojo,
                   elegido: pestana == 0,
@@ -820,12 +828,32 @@ class _EstrellaState extends ConsumerState<_Estrella> {
   Widget build(BuildContext context) {
     final sg = context.sg;
 
-    return SgBotonIcono(
-      _marcada ? Icons.star : Icons.star_border,
-      color: _marcada ? sg.ambarTexto : sg.tinta3,
-      lado: 34,
-      tamano: 20,
+    /* LA ESTRELLA RESPONDE AL TOQUE
+
+       Antes solo cambiaba de icono: veinte pixeles que en terreno, con guantes
+       y a contraluz, se pierden. Quien no esta seguro de haber tocado vuelve a
+       tocar, y en un favorito eso lo DESMARCA.
+
+       Ahora rebota y vibra al tocar —acuse del gesto, no del resultado— y el
+       relleno entra con una transicion en vez de aparecer de golpe. */
+    return SgPulso(
       onTap: _alternar,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        transitionBuilder: (hijo, animacion) => ScaleTransition(
+          scale: animacion,
+          child: FadeTransition(opacity: animacion, child: hijo),
+        ),
+        child: SgBotonIcono(
+          // La `key` es lo que hace que el switcher vea DOS iconos distintos y
+          // anime entre ellos; sin ella cambia el color y no pasa nada.
+          key: ValueKey(_marcada),
+          _marcada ? Icons.star : Icons.star_border,
+          color: _marcada ? sg.ambarTexto : sg.tinta3,
+          lado: 34,
+          tamano: 20,
+        ),
+      ),
     );
   }
 }

@@ -15,6 +15,7 @@ import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_compartir.dart';
 import '../../widgets/comun/sigma_cronometro.dart';
 import '../../widgets/comun/sigma_imagen.dart';
+import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'hoja_cierre.dart';
@@ -672,16 +673,22 @@ class _Vidrio extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-    width: 44,
-    height: 44,
-    child: Material(
-      color: const Color(0xCC111827),
-      shape: const CircleBorder(),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
+  Widget build(BuildContext context) => SgPulso(
+    onTap: onTap,
+    child: SizedBox(
+      width: 44,
+      height: 44,
+      child: Material(
+        color: const Color(0xCC111827),
+        shape: const CircleBorder(),
+        clipBehavior: Clip.antiAlias,
+        // El InkWell se queda por el destello, que sobre vidrio oscuro es lo
+        // unico que se ve; el rebote lo pone SgPulso. El toque lo maneja el
+        // pulso, asi que aca va nulo para no dispararlo dos veces.
+        child: InkWell(
+          onTap: onTap == null ? null : () {},
+          child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
+        ),
       ),
     ),
   );

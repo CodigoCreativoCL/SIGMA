@@ -199,11 +199,19 @@ class _Pestana extends StatelessWidget {
   }
 }
 
-/// «Todo»: lo que apremia de cada tipo, junto.
+/// «Todo»: lo vencido y lo que vence hoy, de los tres tipos juntos.
 ///
 /// No es la suma de las cuatro listas —eso sería una lista de cien— sino **lo
-/// que vence hoy o está vencido**, que es la pregunta que se hace alguien al
-/// llegar a la planta. Para ver el resto de un tipo está su pestaña.
+/// que vence hoy o ya está vencido**, que es la pregunta que se hace alguien
+/// al llegar a la planta. Para ver el resto de un tipo está su pestaña.
+///
+/// ## Por qué los rótulos dicen la regla y no «apremia»
+///
+/// Decían «Órdenes que apremian» y Bryan reportó que no se entendía, con
+/// razón: «apremiar» es un juicio, y quien lee una bandeja necesita saber el
+/// CRITERIO —qué entró acá y qué no— para confiar en que no se le queda nada
+/// fuera. «Vencidas o vencen hoy» se explica solo y además es exactamente lo
+/// que hace el filtro.
 class _Todo extends ConsumerWidget {
   const _Todo();
 
@@ -233,10 +241,10 @@ class _Todo extends ConsumerWidget {
     if (vacio) {
       return const EstadoVacio(
         icono: Icons.check_circle_outline,
-        titulo: 'Nada apremia ahora',
+        titulo: 'Nada vence hoy',
         detalle:
-            'Lo que vence hoy o está vencido aparece acá. Mira las '
-            'pestañas para el resto de tu carga.',
+            'Acá aparece solo lo vencido y lo que vence hoy. El resto de tu '
+            'carga está en las pestañas.',
       );
     }
 
@@ -246,7 +254,10 @@ class _Todo extends ConsumerWidget {
       ),
       children: [
         if (ordenesHoy.isNotEmpty) ...[
-          _Grupo(texto: 'Órdenes que apremian', cuantas: ordenesHoy.length),
+          _Grupo(
+            texto: 'Órdenes vencidas o que vencen hoy',
+            cuantas: ordenesHoy.length,
+          ),
           for (final o in ordenesHoy) ...[
             _Resumen(
               icono: Icons.build_circle_outlined,
@@ -274,7 +285,7 @@ class _Todo extends ConsumerWidget {
           const SizedBox(height: 6),
         ],
         if (pautas.isNotEmpty) ...[
-          _Grupo(texto: 'Pautas pendientes', cuantas: pautas.length),
+          _Grupo(texto: 'Pautas pendientes de hoy', cuantas: pautas.length),
           for (final p in pautas) ...[
             _Resumen(
               icono: Icons.checklist_rtl,

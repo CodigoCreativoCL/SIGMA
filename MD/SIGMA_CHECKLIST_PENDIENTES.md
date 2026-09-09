@@ -296,10 +296,14 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.7 · «Órdenes que apremian» no se entiende
+### 6.7 · «Órdenes que apremian» no se entiende — CERRADO
 
-- [ ] Cambiar el nombre y explicarlo. Hoy `_apremia` mezcla vencimiento y
-      prioridad en un solo concepto sin decir cuál.
+- [x] Hecho. El criterio era correcto —`SITUACION` es `VENCIDA` o `VENCE HOY`,
+      y **lo decide el SP**— pero el nombre no lo decía: «apremiar» es un
+      juicio, y quien lee una bandeja necesita el CRITERIO para confiar en que
+      no se le queda nada fuera. Ahora los rótulos dicen la regla: «Órdenes
+      vencidas o que vencen hoy», «Nada vence hoy», y el chip pasa de «Hoy»
+      —que se lee como «las de hoy» y escondía las atrasadas— a «Vencen hoy».
 
 ---
 
@@ -323,18 +327,28 @@ lleva anotada la causa cuando ya la encontré, para no volver a investigarla.
 
 ---
 
-### 6.9 · Favoritos y compartir sin respuesta
+### 6.9 · Favoritos y compartir sin respuesta — CERRADO
 
-- [ ] **El botón de favoritos no anima.** Hoy solo cambia el ícono. Debe
-      animarse o al menos cambiar de color.
-- [ ] **Lo mismo el de compartir.**
+- [x] **El botón de favoritos no anima.** Hecho con `SgPulso`: rebota al tocar
+      y vibra (`selectionClick`), y la estrella entra con `AnimatedSwitcher`.
+      El acuse va **antes** de la petición: confirma el gesto, no el resultado.
+- [x] **Lo mismo el de compartir**, y los demás botones de vidrio de la ficha
+      de OT, que usan el mismo `_Vidrio`.
 
 ---
 
-### 6.10 · Campos obligatorios
+### 6.10 · Campos obligatorios — CERRADO
 
-- [ ] **Etiqueta de obligatorio** en los inputs que lo son.
-- [ ] **Borde rojo** al guardar con el campo vacío. Limpio, sin gritar.
+- [x] **Etiqueta de obligatorio.** `SgRotuloCampo(obligatorio: true)` escribe
+      la palabra, no un asterisco: en un teléfono con guantes un punto de tres
+      píxeles no se ve, y la leyenda «los campos con * son obligatorios» no
+      existe en esta app.
+- [x] **Marca roja al guardar con el campo vacío.** Con **anillo**, no borde:
+      el kit v3 dice «nada lleva borde» y marca la selección con anillo, así
+      que se hace en su idioma. `SgCampo` ya lo tenía; lo que faltaba era otra
+      cosa: **el botón se apagaba**, y un botón gris no dice CUÁL de los tres
+      campos falta. Ahora responde siempre y al tocarlo marca lo que falta.
+      Aplicado en bitácora, permiso de trabajo y ajuste de existencia.
 
 ---
 

@@ -253,17 +253,46 @@ class SgBotonNotificacion extends StatelessWidget {
 /// encabezado de sección, y las versalitas lo hacían competir con el rótulo de
 /// bloque que sí las lleva.
 class SgRotuloCampo extends StatelessWidget {
-  const SgRotuloCampo(this.texto, {super.key, this.enfocado = false});
+  const SgRotuloCampo(
+    this.texto, {
+    super.key,
+    this.enfocado = false,
+    this.obligatorio = false,
+  });
 
   final String texto;
   final bool enfocado;
 
+  /// Marca el campo como obligatorio.
+  ///
+  /// ## Por qué la palabra y no un asterisco
+  ///
+  /// El asterisco es una convención de formularios de escritorio que se
+  /// aprende una vez y se olvida; en un teléfono, con guantes, es un punto de
+  /// tres píxeles. «Obligatorio» escrito no se puede malinterpretar y no
+  /// depende de que alguien haya visto antes la leyenda «los campos con * son
+  /// obligatorios», que en esta app no existe.
+  final bool obligatorio;
+
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
-    return Text(
+    final rotulo = Text(
       texto,
       style: sora(13, 600, color: enfocado ? sg.primarioTexto : sg.tinta2),
+    );
+
+    if (!obligatorio) return rotulo;
+
+    return Row(
+      children: [
+        Flexible(child: rotulo),
+        const SizedBox(width: 8),
+        Text(
+          'obligatorio',
+          style: sora(11, 600, color: sg.tinta3, espaciado: 0.3),
+        ),
+      ],
     );
   }
 }
@@ -1111,6 +1140,17 @@ class _SgCampoState extends State<SgCampo> {
     final sg = context.sg;
 
     final campo = FormField<String>(
+      /* SE VALIDA EN CADA RECONSTRUCCION, NO SOLO DENTRO DE UN Form
+
+         Sin esto el validador solo corre cuando alguien llama a
+         `Form.validate()`, y en esta app casi ningun formulario esta dentro de
+         un `Form`: la pantalla decide cuando marcar y repinta. Con `always` el
+         anillo rojo aparece en cuanto el validador empieza a devolver un
+         mensaje, que es justo el gesto de «guardar con algo vacio».
+
+         No molesta antes de tiempo porque el que decide es el validador: las
+         pantallas devuelven null mientras no se haya intentado guardar. */
+      autovalidateMode: AutovalidateMode.always,
       validator: (_) => widget.validador?.call(widget.controlador.text),
       builder: (estado) {
         final hayError = estado.hasError;

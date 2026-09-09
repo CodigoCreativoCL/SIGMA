@@ -68,6 +68,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
 
   bool _guardando = false;
 
+  /// Enciende la validación. Antes del primer intento no hay nada rojo:
+  /// regañar un formulario que ni se ha empezado a llenar es de mal gusto.
+  bool _intento = false;
+
   @override
   void dispose() {
     _numero.dispose();
@@ -80,7 +84,12 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
   bool get _completo => _tipo != null && !_vigenciaAlReves;
 
   Future<void> _guardar() async {
-    if (!_completo || _guardando) return;
+    if (_guardando) return;
+
+    if (!_completo) {
+      setState(() => _intento = true);
+      return;
+    }
 
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
@@ -165,7 +174,8 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
           'Registrar la solicitud',
           icono: Icons.assignment_turned_in_outlined,
           cargando: _guardando,
-          onTap: _completo ? _guardar : null,
+          // Responde siempre: apagado no dice QUE falta.
+          onTap: _guardar,
         ),
       ),
       body: ListView(
@@ -194,6 +204,14 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
           ],
 
           const SgRotulo('Qué tipo de permiso'),
+          if (_intento && _tipo == null) ...[
+            const SizedBox(height: 8),
+            SgAviso(
+              'Elige qué tipo de permiso se está pidiendo.',
+              icono: Icons.error_outline,
+              color: sg.rojoTexto,
+            ),
+          ],
           const SizedBox(height: 9),
           tipos.when(
             loading: () => const Padding(

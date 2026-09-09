@@ -61,6 +61,21 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
   bool _porVoz = false;
   bool _guardando = false;
 
+  /* SE MARCA LO QUE FALTA, NO SE APAGA EL BOTON
+
+     El boton estaba deshabilitado hasta tener todo, y eso deja a la persona
+     mirando un boton gris sin saber QUE falta: en una pantalla con tipo,
+     titulo y texto hay que adivinar cual de los tres. Ahora el boton responde
+     siempre y al tocarlo, si falta algo, se marca en rojo lo que falta.
+
+     `_intento` enciende la validacion. Antes del primer toque no hay nada
+     rojo: pintar de rojo un formulario que ni se ha empezado a llenar es
+     regañar antes de tiempo. */
+  bool _intento = false;
+
+  String? _obligatorio(String? v) =>
+      !_intento || (v ?? '').trim().isNotEmpty ? null : 'Falta completar esto.';
+
   @override
   void dispose() {
     _titulo.dispose();
@@ -84,7 +99,14 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
       _texto.text.trim().isNotEmpty;
 
   Future<void> _guardar() async {
-    if (!_completo || _guardando) return;
+    if (_guardando) return;
+
+    if (!_completo) {
+      // Enciende la validación y deja que el árbol se repinte: los campos
+      // vacíos quedan con su anillo rojo y el tipo, si falta, con su aviso.
+      setState(() => _intento = true);
+      return;
+    }
 
     final instalacion = ref.read(instalacionProvider);
     final mensajero = ScaffoldMessenger.of(context);
@@ -144,6 +166,7 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
         return;
       }
 
+      // Sin id: sigue en la cola. Se vuelve y se dice qué pasó.
       navegador.pop(true);
       mensajero.showSnackBar(
         SnackBar(
@@ -201,7 +224,7 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
           'Guardar en la bitácora',
           icono: Icons.check,
           cargando: _guardando,
-          onTap: _completo ? _guardar : null,
+          onTap: _guardar,
         ),
       ),
       body: ListView(
@@ -230,6 +253,14 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
           ],
 
           const SgRotulo('Qué tipo de anotación'),
+          if (_intento && _tipo == null) ...[
+            const SizedBox(height: 8),
+            SgAviso(
+              'Elige de qué tipo es la anotación.',
+              icono: Icons.error_outline,
+              color: sg.rojoTexto,
+            ),
+          ],
           const SizedBox(height: 9),
           tipos.when(
             loading: () => const Padding(
@@ -283,20 +314,22 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
           ],
 
           const SizedBox(height: 16),
-          const SgRotuloCampo('En una línea'),
+          const SgRotuloCampo('En una línea', obligatorio: true),
           const SizedBox(height: 8),
           SgCampo(
             controlador: _titulo,
             icono: Icons.short_text,
             hint: 'Fuga en la brida del cabezal',
+            validador: _obligatorio,
             onCambio: (_) => setState(() {}),
           ),
 
           const SizedBox(height: 14),
-          const SgRotuloCampo('Qué pasó'),
+          const SgRotuloCampo('Qué pasó', obligatorio: true),
           const SizedBox(height: 8),
           SgCampo(
             controlador: _texto,
+            validador: _obligatorio,
             icono: Icons.notes,
             hint: 'Lo que viste, oíste o tocaste',
             lineas: 4,
