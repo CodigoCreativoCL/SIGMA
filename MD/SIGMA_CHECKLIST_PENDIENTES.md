@@ -717,10 +717,48 @@ predicción. **Eran dos errores a la vez, y el segundo era el de fondo.**
 
 **Lo que dejó como lección:** una constante de alto sin una prueba que la
 sostenga es una bomba de tiempo, y el ajuste de tamaño de texto que se agregó
-en 16.2 la activó en toda la app. Quedan por revisar los demás altos fijos.
+en 16.2 la activó en toda la app.
 
-- [ ] Barrer los `SizedBox(height: …)` que envuelvan contenido de texto y
-      escalarlos igual, o probarlos como este.
+### 9.1 · El barrido de los demás altos fijos — CERRADO
+
+`auditar_altos.py` encontró **50 altos en duro con texto cerca**. La mayoría
+son legítimos —un separador de 1 px, el riel de una barra de progreso, un
+avatar, el visor de la cámara— y se descartaron a mano: crecerlos solo
+desordenaría la pantalla. **Veintiuno sí envolvían texto** y se escalaron.
+
+- [x] `context.alto(base)` en el sistema de diseño: un solo concepto, escrito
+      a mano en cada sitio. **No se aplica solo**, y eso es deliberado: no todo
+      alto envuelve texto, y un escalado automático crecería el avatar y el
+      visor de la cámara.
+- [x] En el kit, que arregla de una vez toda la app: `SgChip`, `SgBadge` en sus
+      dos tamaños, `SgBoton` en sus dos altos y `SgContador`.
+- [x] Los **rieles de chips** de siete pantallas: un `SizedBox` fijo con una
+      fila de chips dentro. Si el riel no crece al paso del chip, el chip
+      crecido se recorta contra su borde.
+- [x] Los cuatro campos de búsqueda, las cabeceras de «Mi trabajo» y de
+      permisos, las píldoras del escáner y el cuadro de evidencia.
+- [x] `test/altos_escalados_test.dart`: ocho casos que **miden**.
+
+**La primera versión de esa prueba no servía y estuvo en verde un rato.**
+Miraba `takeException()`, como la de la tarjeta de SIGMA AI, pero ahí el
+desbordamiento era de un `Column` dentro de una caja fija —eso Flutter lo
+denuncia— y un `Container(height: 28)` con un texto de 30 **recorta en
+silencio**. Se descubrió devolviendo el `SgChip` a su alto en duro: la prueba
+seguía pasando. Ahora mide el alto a 1,0 y a 1,5 y exige que haya crecido; se
+volvió a comprobar con el error puesto, y falla.
+
+**Lo que quedó fuera, y por qué:**
+
+- El visor de la cámara (`sigma_lector.dart`, 260) tiene un texto de error
+  dentro que sí podría recortarse con la letra al máximo. Crecer el visor es
+  peor: es una ventana a la cámara, no una caja de texto.
+- **Con la letra en Máximo, un chip de texto largo mide 344 px de ancho.** En
+  la app viven dentro de rieles que hacen scroll, así que no se ve; pero un
+  chip así puesto en una fila fija se saldría por el costado. Es otro problema
+  —de ancho, no de alto— y no se tocó.
+
+- [ ] Revisar los anchos con la letra en Máximo, que es el mismo problema
+      girado 90 grados y todavía sin mirar.
 
 ---
 
@@ -729,7 +767,7 @@ en 16.2 la activó en toda la app. Quedan por revisar los demás altos fijos.
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
       significa que el sitio levante.
 - [ ] `flutter analyze lib` limpio.
-- [ ] `flutter test` — hoy 104 verdes.
+- [ ] `flutter test` — hoy 112 verdes.
 - [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
       `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
       `no_consumidas.py`.

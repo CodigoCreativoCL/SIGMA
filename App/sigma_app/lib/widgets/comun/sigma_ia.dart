@@ -342,7 +342,7 @@ class _BotonVidrio extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 44,
+          height: context.alto(44),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           child: Text(texto, style: sora(14, 600, color: sg.tinta)),

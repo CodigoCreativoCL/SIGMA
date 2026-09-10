@@ -88,10 +88,20 @@ class _HojaCompartirState extends ConsumerState<HojaCompartir> {
       navegador.pop(true);
     } on ApiException catch (e) {
       if (!mounted) return;
-      setState(() => _enviando = null);
       // El mensaje del servidor va tal cual: «esa persona no está asignada a
       // la instalación del trabajo» dice qué pasó y qué hacer.
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
+    } catch (e) {
+      if (!mounted) return;
+      mensajero.showSnackBar(SnackBar(content: Text('No se pudo compartir: $e')));
+    } finally {
+      /* SIEMPRE SE SUELTA, PASE LO QUE PASE
+
+         `_enviando` bloquea TODAS las filas mientras hay un envío en curso, y
+         antes solo se limpiaba en el `catch` de `ApiException`. Cualquier otro
+         error —y sin señal los hay— lo dejaba puesto para siempre: la hoja
+         quedaba con todo deshabilitado y sin forma de salir. */
+      if (mounted) setState(() => _enviando = null);
     }
   }
 

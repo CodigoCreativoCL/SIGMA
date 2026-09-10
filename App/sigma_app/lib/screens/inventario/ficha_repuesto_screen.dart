@@ -6,6 +6,7 @@ import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../galeria/galeria_screen.dart';
 import 'hoja_ajuste.dart';
@@ -105,6 +106,24 @@ class FichaRepuestoScreen extends ConsumerWidget {
                     ),
                   ),
                 ),
+                /* SUBIR, NO SOLO MIRAR
+
+                   La galería de arriba deja VER las fotos de la pieza y no
+                   había forma de agregar ninguna: solo podían entrar por la
+                   web, que es al revés de lo útil — quien tiene el repuesto en
+                   la mano es el bodeguero, en el pasillo.
+
+                   Un rodamiento 6205 y uno 6310 se ven casi iguales en una
+                   lista; la foto del empaque real es lo que evita bajar al
+                   equipo con la pieza que no calza. */
+                const SizedBox(height: 12),
+                SgEvidencias(
+                  destino: 'REPUESTO',
+                  destinoId: r.rep_id,
+                  conAudio: true,
+                  conVideo: true,
+                ),
+
                 const SizedBox(height: 16),
 
                 const SgRotulo('Dónde está'),

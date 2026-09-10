@@ -324,7 +324,8 @@ class _PildoraAyuda extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 34,
+    // La pildora del escaner lleva texto encima de la camara.
+    height: context.alto(34),
     padding: const EdgeInsets.symmetric(horizontal: 14),
     decoration: BoxDecoration(
       color: const Color(0xD1111827),
@@ -730,7 +731,7 @@ class _ChipOscuro extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-    height: 24,
+    height: context.alto(24),
     padding: const EdgeInsets.symmetric(horizontal: 9),
     decoration: BoxDecoration(
       color: color.withValues(alpha: 0.15),

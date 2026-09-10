@@ -702,16 +702,45 @@ class SigmaRepository {
 
   // ---- Tareas en terreno (HU-103, HU-104) ----
 
-  Future<List<TareaPendiente>> tareasPendientes({int? instalacion}) async {
+  /// Las tareas asignadas, **con respaldo en disco**.
+  ///
+  /// Bajan en el bloque 10 de la sábana. Sin esto, sin señal la bandeja salía
+  /// vacía: responder una tarea ya se encolaba, pero encolar no sirve de nada
+  /// si no se puede llegar a la pantalla.
+  /// Las **cerradas**: completadas y no realizadas.
+  ///
+  /// Va por red y sin respaldo en disco, a diferencia de las pendientes: es
+  /// historial, se mira de vez en cuando y no se captura nada sobre ellas. La
+  /// sábana baja lo que hace falta para TRABAJAR sin señal, y llenar el
+  /// teléfono con lo ya terminado gasta espacio en lo que no se va a usar.
+  Future<List<TareaPendiente>> tareasCerradas({int? instalacion}) async {
     final j = await _api.get(
       ApiConstants.tareas,
-      query: {'instalacion': ?instalacion},
+      query: {'instalacion': ?instalacion, 'cerradas': true},
     );
     if (j is! List) return const [];
     return j
         .map((e) => TareaPendiente.fromJson((e as Map).cast<String, dynamic>()))
         .toList();
   }
+
+  Future<List<TareaPendiente>> tareasPendientes({int? instalacion}) =>
+      _conRespaldo<TareaPendiente>(
+        entidad: CacheDatos.tareas,
+        desde: TareaPendiente.fromJson,
+        red: () async {
+          final j = await _api.get(
+            ApiConstants.tareas,
+            query: {'instalacion': ?instalacion},
+          );
+          if (j is! List) return const [];
+          return j
+              .map(
+                (e) => TareaPendiente.fromJson((e as Map).cast<String, dynamic>()),
+              )
+              .toList();
+        },
+      );
 
   /// La ficha trae el hilo en la misma respuesta: la pantalla no se puede
   /// dibujar sin el, y pedirlo aparte serian dos viajes para una sola vista.
@@ -724,18 +753,46 @@ class SigmaRepository {
   /// genera al **empezar** y no al enviar: si se generara al enviar, un
   /// reintento traeria uno nuevo y abriria una segunda ejecucion de algo que
   /// se hizo una sola vez.
-  Future<Map<String, dynamic>> guardarEjecucionTarea(
-    Map<String, dynamic> cuerpo,
-  ) async {
-    final j = await _api.post(ApiConstants.tareasEjecuciones, cuerpo);
-    return (j is Map) ? j.cast<String, dynamic>() : <String, dynamic>{};
+  /// **Se encola**, como toda captura de terreno.
+  ///
+  /// Empezar y cerrar una tarea se hacen delante del equipo, que es donde no
+  /// hay señal. El `uuid` lo genera la ficha **al empezar** y el mismo viaja en
+  /// el cierre, así que el SP corta por él: un reintento no abre una segunda
+  /// ejecución de algo que se hizo una sola vez.
+  ///
+  /// No devuelve el id del servidor —cuando se encola todavía no existe— y la
+  /// ficha no lo usaba: solo invalida sus providers.
+  Future<void> guardarEjecucionTarea(Map<String, dynamic> cuerpo) {
+    final cerrar = cuerpo['finalizar'] == true;
+    return OutboxService.instance.encolar(
+      tipo: 'TAREA',
+      titulo: cerrar ? 'Cierre de tarea' : 'Inicio de tarea',
+      detalle: cerrar
+          ? (cuerpo['conforme'] == false ? 'No realizada' : 'Realizada')
+          : null,
+      endpoint: ApiConstants.tareasEjecuciones,
+      uuid: '${cuerpo['uuid']}',
+      cuerpo: cuerpo,
+      // Empezar y cerrar comparten uuid a propósito, así que se distinguen por
+      // el agrupador: sin él, el segundo pisaría al primero en la cola.
+      agrupador: cerrar ? 'tarea-cierre-${cuerpo['ocurrencia']}' : null,
+    );
   }
 
   /// El dictado, si lo hubo, viaja en el mismo cuerpo: un comentario y su
   /// dictado son un solo acto, y en dos envios la cola podria dejar uno sin
   /// el otro.
+  /// **Se encola.** Un comentario se escribe junto al equipo igual que el
+  /// cierre, y perderlo por falta de señal es perder lo único que explica por
+  /// qué la tarea quedó como quedó.
   Future<void> comentarTarea(int ocurrencia, Map<String, dynamic> cuerpo) =>
-      _api.post('${ApiConstants.tareas}/$ocurrencia/comentarios', cuerpo);
+      OutboxService.instance.encolar(
+        tipo: 'COMENTARIO_TAREA',
+        titulo: 'Comentario de tarea',
+        detalle: '${cuerpo['texto'] ?? ''}',
+        endpoint: '${ApiConstants.tareas}/$ocurrencia/comentarios',
+        cuerpo: cuerpo,
+      );
 
   // ---- Evidencia fotografica ----
 
@@ -855,9 +912,43 @@ class SigmaRepository {
     return Paginado.desde(j, BitacoraEntrada.fromJson).datos;
   }
 
+  /// Los tipos de entrada de bitácora, **con respaldo en disco**.
+  ///
+  /// Sin señal la hoja no mostraba ningún tipo y el tipo es obligatorio: se
+  /// podía escribir el texto y no se podía guardar. Escribir en la bitácora ya
+  /// se encolaba; faltaba poder llenar el formulario.
+  ///
+  /// El respaldo sale de `BITACORA_TIPO`, que es un catálogo del sistema y baja
+  /// en el bloque 3 de la sábana desde `BD/192`. No hace falta bloque propio.
   Future<List<BitacoraTipo>> tiposBitacora() async {
-    final j = await _api.get('${ApiConstants.bitacora}/tipos');
-    return Paginado.desde(j, BitacoraTipo.fromJson).datos;
+    Future<List<BitacoraTipo>> deDisco() async {
+      final todos = await CacheDatos.lista<CatalogoValor>(
+        CacheDatos.catalogoValores,
+        CatalogoValor.fromJson,
+      );
+      return todos
+          .where((v) => (v.CATALOGO_CODIGO ?? '').toUpperCase() == 'BITACORA_TIPO')
+          .map(
+            (v) => BitacoraTipo(
+              bti_id: v.ctv_id,
+              bti_nombre: v.ctv_nombre,
+              bti_codigo: v.ctv_codigo,
+            ),
+          )
+          .toList();
+    }
+
+    if (!SyncService.instance.enLinea.value) return deDisco();
+
+    try {
+      final j = await _api.get('${ApiConstants.bitacora}/tipos');
+      return Paginado.desde(j, BitacoraTipo.fromJson).datos;
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      final local = await deDisco();
+      if (local.isEmpty) rethrow;
+      return local;
+    }
   }
 
   Future<BitacoraFicha> entradaBitacora(int id) async {
@@ -924,20 +1015,50 @@ class SigmaRepository {
   /// Deja el aviso en la bandeja del compañero. El **título lo arma el SP**:
   /// «Ramiro te compartió OT-1» tiene que decir lo mismo venga del teléfono
   /// de quien sea.
-  Future<int> compartir({
+  /// **Intenta, y si falla la red encola.**
+  ///
+  /// Con señal el compañero tiene que enterarse ahora —va a caminar hasta la
+  /// máquina— y una confirmación del servidor es la única que no miente. Sin
+  /// señal no se pierde: entra a la cola y sale sola al volver la señal.
+  ///
+  /// Un error que **no** es de red no se encola: «esa persona no está asignada
+  /// a la instalación» no mejora reintentando, y guardarlo sería dejar en la
+  /// cola algo que va a fallar para siempre.
+  ///
+  /// El `uuid` nace **acá** y se reusa al encolar: `INS_APP_COMPARTIR` corta
+  /// por él, así que el reintento no manda el aviso dos veces.
+  Future<void> compartir({
     required int destinatario,
     required String entidad,
     required int entidadId,
     String? mensaje,
   }) async {
-    final j = await _api.post(ApiConstants.compartir, {
+    final uuid = OutboxService.nuevoUuid();
+    final cuerpo = {
       'destinatario': destinatario,
       'entidad': entidad,
       'entidad_id': entidadId,
       'mensaje': mensaje,
-      'uuid': OutboxService.nuevoUuid(),
-    });
-    return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
+      'uuid': uuid,
+    };
+
+    Future<void> encolar() => OutboxService.instance.encolar(
+      tipo: 'COMPARTIR',
+      titulo: 'Compartir un trabajo',
+      detalle: mensaje,
+      endpoint: ApiConstants.compartir,
+      uuid: uuid,
+      cuerpo: cuerpo,
+    );
+
+    if (!SyncService.instance.enLinea.value) return encolar();
+
+    try {
+      await _api.post(ApiConstants.compartir, cuerpo);
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      await encolar();
+    }
   }
 
   /// Sumarse a una orden como participante. Abre un tramo de mano de obra en

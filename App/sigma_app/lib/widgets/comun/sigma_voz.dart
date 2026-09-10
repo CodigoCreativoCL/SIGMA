@@ -394,7 +394,8 @@ class _FilaCampo extends StatelessWidget {
     }
 
     return SizedBox(
-      height: 52,
+      // La fila lleva el rotulo y el valor dictado: los dos son texto.
+      height: context.alto(52),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 14),
         child: Row(

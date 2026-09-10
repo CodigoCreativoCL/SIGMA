@@ -222,6 +222,52 @@ namespace API.Controllers
         }
 
         /// <summary>
+        /// POST /ordenes-trabajo/{id}/pasos — anota lo que se hizo.
+        ///
+        /// EL HUECO QUE TAPA
+        ///   `Orden_Trabajo_Paso` tenia UPD y no INS: se podian MARCAR los
+        ///   pasos que alguien definio antes y no agregar ninguno. Una
+        ///   correctiva abierta en terreno nace sin pauta, asi que el tecnico
+        ///   se quedaba sin sitio donde registrar el trabajo.
+        ///
+        /// POR QUE UN PASO Y NO UN CAMPO DE NOTAS
+        ///   El modelo ya tiene el concepto: accion, resultado, ejecutor y
+        ///   hora, y `Archivo_Vinculo` sabe colgarle evidencia con destino
+        ///   PASO. Un texto libre en la cabecera seria decir lo mismo sin
+        ///   ejecutor, sin hora y sin fotos.
+        /// </summary>
+        /// <response code="201">Anotado, o el que ya existia con ese uuid.</response>
+        /// <response code="400">Sin texto, o la orden ya esta cerrada.</response>
+        [HttpPost]
+        [Route("{id:int}/pasos")]
+        public IHttpActionResult AgregarPaso(int id, PasoAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("EJECUTAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+
+                int nuevo = Datos.Ejecutar("API_INS_ORDEN_TRABAJO_PASO",
+                    new Dictionary<string, object>
+                    {
+                        { "@OTR_ID", id },
+                        // Del token: `otp_usuario_ejecutor` es quien firma que
+                        // el trabajo se hizo.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@NOMBRE", dto.nombre },
+                        { "@DESCRIPCION", dto.descripcion },
+                        { "@RESULTADO_PASO", dto.resultado },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@UUID", dto.uuid }
+                    }, true);
+
+                return Creado(nuevo);
+            });
+        }
+
+        /// <summary>
         /// POST /ordenes-trabajo/{id}/finalizar — el técnico terminó. HU-119
         ///
         /// Deja la orden EN ESPERA DE CIERRE, no CERRADA: el cierre es del

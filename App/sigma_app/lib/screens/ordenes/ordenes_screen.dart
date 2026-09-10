@@ -280,7 +280,9 @@ class _Cabecera extends StatelessWidget {
     final sg = context.sg;
 
     return SizedBox(
-      height: 60,
+      // Un titulo de 23 en una caja de 60: con la letra en Maximo son 34,5 y
+      // la caja se queda corta.
+      height: context.alto(60),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -351,7 +353,8 @@ class _Filtros extends StatelessWidget {
                 boxShadow: sg.e1,
               ),
               child: Container(
-                height: 52,
+                // El campo de busqueda es texto.
+                height: context.alto(52),
                 padding: const EdgeInsets.only(left: 18, right: 8),
                 decoration: BoxDecoration(
                   color: sg.campo,
@@ -403,7 +406,9 @@ class _Filtros extends StatelessWidget {
              del largo de las etiquetas: el dia que se agregue un quinto filtro
              o que la traduccion alargue una palabra, sigue alcanzable. */
           SizedBox(
-            height: 36,
+            // Crece con el chip. El scroll resolvió el ancho; sin esto el
+            // alto seguía en duro y recortaba la letra crecida.
+            height: context.alto(36),
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.zero,
@@ -485,7 +490,7 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SgRadius.pill),
       child: Container(
-        height: 34,
+        height: context.alto(34),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: elegido ? sg.primario : sg.up,
@@ -498,7 +503,7 @@ class _Chip extends StatelessWidget {
             if (contador > 0) ...[
               const SizedBox(width: 7),
               Container(
-                height: 19,
+                height: context.alto(19),
                 constraints: const BoxConstraints(minWidth: 19),
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(

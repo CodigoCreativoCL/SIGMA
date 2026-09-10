@@ -42,7 +42,19 @@ class TareasScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final pendientes = ref.watch(tareasPendientesProvider);
+    /* PENDIENTES O CERRADAS, LA MISMA PANTALLA
+
+       Una tarea desaparecía de la app en cuanto se cerraba: no había forma de
+       comprobar que quedó registrada, ni de mirar qué se le hizo a una máquina
+       la semana pasada. Y sin eso, el técnico que cierra sin señal no tiene
+       cómo confirmar que su trabajo llegó.
+
+       Es la misma tarjeta y la misma consulta con un filtro distinto, así que
+       son dos chips y no dos pantallas. */
+    final verCerradas = ref.watch(verTareasCerradasProvider);
+    final pendientes = ref.watch(
+      verCerradas ? tareasCerradasProvider : tareasPendientesProvider,
+    );
 
     return Scaffold(
       backgroundColor: sg.fondo,
@@ -74,12 +86,16 @@ class TareasScreen extends ConsumerWidget {
         valor: pendientes,
         onReintentar: () => ref.invalidate(tareasPendientesProvider),
         estaVacio: (l) => l.isEmpty,
-        vacio: const EstadoVacio(
+        vacio: EstadoVacio(
           icono: Icons.task_alt,
-          titulo: 'No tienes tareas pendientes',
-          detalle:
-              'Las tareas se programan desde la web. Cuando te toque una, '
-              'aparece acá y se puede hacer sin señal.',
+          titulo: verCerradas
+              ? 'Todavía no has cerrado ninguna'
+              : 'No tienes tareas pendientes',
+          detalle: verCerradas
+              ? 'Acá van quedando las que completes o marques como no '
+                    'realizadas.'
+              : 'Las tareas se programan desde la web. Cuando te toque una, '
+                    'aparece acá y se puede hacer sin señal.',
         ),
         child: (sinOrdenar) {
           /* LO FIJADO VA ARRIBA
@@ -114,27 +130,39 @@ class TareasScreen extends ConsumerWidget {
               });
 
           return RefreshIndicator(
-            onRefresh: () async => ref.invalidate(tareasPendientesProvider),
+            onRefresh: () async => ref.invalidate(
+              verCerradas ? tareasCerradasProvider : tareasPendientesProvider,
+            ),
             child: ListView.separated(
               padding: context.conBarraSistema(
                 const EdgeInsets.fromLTRB(16, 12, 16, 24),
               ),
-              itemCount: lista.length,
+              // Uno más: la fila de chips va DENTRO de la lista para que se
+              // desplace con ella. Fija arriba se come alto de pantalla en un
+              // teléfono, que es donde esto se usa.
+              itemCount: lista.length + 1,
               separatorBuilder: (_, _) => const SizedBox(height: 11),
-              itemBuilder: (_, i) => _Tarjeta(
-                tarea: lista[i],
-                onAbrir: () async {
-                  await Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (_) =>
-                          TareaFichaScreen(ocurrenciaId: lista[i].toc_id),
+              itemBuilder: (_, i) => i == 0
+                  ? const _Filtros()
+                  : _Tarjeta(
+                      tarea: lista[i - 1],
+                      onAbrir: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => TareaFichaScreen(
+                              ocurrenciaId: lista[i - 1].toc_id,
+                            ),
+                          ),
+                        );
+                        // La ficha pudo tardar y la bandeja cerrarse detrás.
+                        if (!context.mounted) return;
+                        ref.invalidate(
+                          verCerradas
+                              ? tareasCerradasProvider
+                              : tareasPendientesProvider,
+                        );
+                      },
                     ),
-                  );
-                  // La ficha pudo tardar y la bandeja pudo cerrarse detras.
-                  if (!context.mounted) return;
-                  ref.invalidate(tareasPendientesProvider);
-                },
-              ),
             ),
           );
         },
@@ -404,6 +432,47 @@ class _EstrellaState extends ConsumerState<_Estrella> {
       lado: 34,
       tamano: 20,
       onTap: _alternar,
+    );
+  }
+}
+
+
+/// Pendientes o cerradas.
+///
+/// Riel horizontal y no `Row`: con la letra en Máximo dos chips con contador no
+/// caben en un teléfono angosto, y el segundo quedaría fuera de la pantalla sin
+/// recibir toques — que es exactamente lo que pasó en la bandeja de órdenes.
+class _Filtros extends ConsumerWidget {
+  const _Filtros();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final verCerradas = ref.watch(verTareasCerradasProvider);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: SizedBox(
+        height: context.alto(36),
+        child: ListView(
+          scrollDirection: Axis.horizontal,
+          padding: EdgeInsets.zero,
+          children: [
+            SgChip(
+              'Pendientes',
+              elegido: !verCerradas,
+              onTap: () =>
+                  ref.read(verTareasCerradasProvider.notifier).state = false,
+            ),
+            const SizedBox(width: 8),
+            SgChip(
+              'Cerradas',
+              elegido: verCerradas,
+              onTap: () =>
+                  ref.read(verTareasCerradasProvider.notifier).state = true,
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

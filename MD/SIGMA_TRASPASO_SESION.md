@@ -62,6 +62,15 @@ Están en `C:\Capstone\_scratch\`:
   `sys.parameters` de los **67 SP**.
 - `auditar_muertos.py` — métodos del repositorio que ninguna pantalla llama,
   providers que nadie observa, y escrituras que se saltan el outbox.
+- **Al agregar un bloque a la sábana hay que subir `BLOQUE_MAXIMO`** en
+  `SincronizacionController`. Ya falló dos veces: el manifiesto anuncia el
+  bloque, la app lo pide, recibe 400 y lo marca fallido — y como la fecha de
+  corte solo se guarda si **ningún** bloque falla, se rompe el incremental de
+  todos los demás. Hoy va en **10**.
+- `auditar_anchos.py` y `auditar_rieles.py` — el ancho, que es el alto girado
+  90 grados. La segunda busca chips en un `Row` que no puede crecer ni
+  desplazarse, y **tiene que quedar en cero**: ahí es donde la franja amarilla
+  y negra deja un filtro sin recibir toques.
 - `auditar_id_output.py` — **la más importante hoy**: los SP que el controller
   llama con `devuelveId: true` y no declaran `@ID OUTPUT`. Cada uno es un
   endpoint que responde 400 y no hace nada. Hoy salen **ocho**; tiene que quedar
@@ -721,6 +730,22 @@ falta es: un parámetro de perfiles, dos columnas de foto en el SELECT, una rama
 de `@DESTINO`, un mapa de mimes y un campo de texto. El trabajo grande de verdad
 es el de la app —grabar audio y video— y el bloqueante real es de **datos**:
 `Usuario_Especialidad` vacía.
+
+---
+
+## 3.3 · Lo que queda al 09-09-2026
+
+Medido contra el código, no contra una lista.
+
+| Qué | Estado |
+|---|---|
+| **«Más» corporativo** | La duplicación tiene causa localizada (§3.1.5 punto 7): `yaVisible` se aplica solo a «Mi menú» y no a «Trabajo». Quitarla es directo. Lo «corporativo» **hay que preguntárselo a Bryan**: puede ser la marca más presente o agrupar por módulo como la intranet, y son dos pantallas distintas |
+| **Push (HU-077)** | Solo el cliente. El servidor está completo: tabla, MERGE por token, DELETE al cerrar sesión y dos SEL. Falta `firebase` en `pubspec` —hoy comentado en la línea 39—, `google-services.json` y llamar a `POST`/`DELETE /dispositivos` |
+| **Datos vacíos** | `Usuario_Especialidad` y `Repuesto_Compatibilidad` siguen en **0 filas**. Agrupar por especialidad y el badge «Compatible» no aparecen hasta que se carguen **desde la web** — no es código |
+
+**Cerrado y verificado hoy**, por si la lista vieja engaña: sumar compañero y
+compartir (perfiles, foto, agrupación y minutos a mano), bitácora con audio,
+imagen y video, y el mojibake del separador de especialidades.
 
 ---
 

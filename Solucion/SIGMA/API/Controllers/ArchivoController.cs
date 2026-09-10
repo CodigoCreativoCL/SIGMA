@@ -214,11 +214,65 @@ namespace API.Controllers
 
                 ContenidoBlob leido = blob.Leer(ruta);
 
+                bool seguroInline = EsSeguroInline(leido.mime);
+
                 HttpResponseMessage respuesta = new HttpResponseMessage(HttpStatusCode.OK);
 
-                respuesta.Content = new ByteArrayContent(leido.contenido);
+                /* RANGOS PARA LO QUE SE REPRODUCE
 
-                bool seguroInline = EsSeguroInline(leido.mime);
+                   ExoPlayer -el motor de `video_player` en Android- pide el
+                   MP4 por trozos: primero la cabecera para saber cuanto dura,
+                   despues lo demas. Sin `Accept-Ranges` da por hecho que el
+                   servidor no sabe, se traga los seis megas antes de pintar
+                   nada y adelantar es imposible.
+
+                   Solo para audio y video: una foto se pide entera y una vez,
+                   y responder 206 a algo que nadie pidio por partes complica
+                   la cache sin ganar nada. */
+                RangeHeaderValue rango = Request.Headers.Range;
+                bool porTrozos = EsMedia(leido.mime) && rango != null
+                                 && rango.Ranges != null && rango.Ranges.Count == 1;
+
+                if (porTrozos)
+                {
+                    long total = leido.contenido.LongLength;
+                    RangeItemHeaderValue pedido = rango.Ranges.First();
+
+                    long desde = pedido.From ?? 0;
+                    long hasta = pedido.To ?? (total - 1);
+
+                    if (hasta > total - 1) hasta = total - 1;
+
+                    if (desde > hasta || desde >= total)
+                    {
+                        /* Un rango imposible es 416 y NO un 200 con el archivo
+                           entero: devolver todo ante un rango malo hace que el
+                           reproductor crea que recibio lo que pidio y pinte
+                           basura. */
+                        respuesta.StatusCode = HttpStatusCode.RequestedRangeNotSatisfiable;
+                        respuesta.Content = new ByteArrayContent(new byte[0]);
+                        respuesta.Content.Headers.TryAddWithoutValidation(
+                            "Content-Range", "bytes */" + total.ToString());
+                        return respuesta;
+                    }
+
+                    int largo = (int)(hasta - desde + 1);
+                    byte[] trozo = new byte[largo];
+                    Array.Copy(leido.contenido, desde, trozo, 0, largo);
+
+                    respuesta.StatusCode = HttpStatusCode.PartialContent;
+                    respuesta.Content = new ByteArrayContent(trozo);
+                    respuesta.Content.Headers.TryAddWithoutValidation(
+                        "Content-Range",
+                        "bytes " + desde + "-" + hasta + "/" + total);
+                }
+                else
+                {
+                    respuesta.Content = new ByteArrayContent(leido.contenido);
+                }
+
+                if (EsMedia(leido.mime))
+                    respuesta.Headers.TryAddWithoutValidation("Accept-Ranges", "bytes");
 
                 respuesta.Content.Headers.ContentType =
                     new MediaTypeHeaderValue(seguroInline ? leido.mime : "application/octet-stream");
@@ -459,12 +513,43 @@ namespace API.Controllers
         /// javascript. Servirlos inline desde nuestro dominio es XSS
         /// almacenado, y el archivo lo subió un usuario.
         /// </summary>
+        /// <summary>
+        /// Lo que se puede servir para verse EN EL SITIO, sin descargarse.
+        ///
+        /// POR QUE HAY UNA LISTA Y NO SE DEVUELVE EL MIME GUARDADO
+        ///   Un `text/html` servido inline se EJECUTA en el navegador con el
+        ///   dominio de SIGMA. La lista existe para eso, y por eso lo que no
+        ///   esta en ella sale como `application/octet-stream` y adjunto.
+        ///
+        /// POR QUE ENTRAN AUDIO Y VIDEO
+        ///   No son ejecutables: un `video/mp4` no puede correr script. Y sin
+        ///   ellos el reproductor de la app no funcionaba — `video_player` y
+        ///   `just_audio` reciben `application/octet-stream` y no saben que
+        ///   hacer con el, asi que la nota de voz y el video de evidencia se
+        ///   veian como un archivo para bajar en vez de algo para escuchar o
+        ///   mirar. Estaban subiendose bien y no habia forma de abrirlos.
+        /// </summary>
         private static readonly string[] MIMES_INLINE = new string[]
         {
             "application/pdf",
             "image/jpeg", "image/png", "image/gif", "image/webp", "image/bmp",
-            "text/plain"
+            "image/heic",
+            "text/plain",
+
+            /* Audio: `m4a` viaja con dos nombres segun quien lo grabe. */
+            "audio/mp4", "audio/m4a", "audio/x-m4a", "audio/aac",
+            "audio/mpeg", "audio/ogg", "audio/wav", "audio/webm",
+
+            "video/mp4", "video/quicktime", "video/webm", "video/3gpp"
         };
+
+        /// <summary>Si el contenido es audio o video, que es lo que se
+        /// reproduce y por tanto lo unico que necesita rangos.</summary>
+        private static bool EsMedia(string mime)
+        {
+            string m = (mime ?? "").ToLowerInvariant();
+            return m.StartsWith("audio/") || m.StartsWith("video/");
+        }
 
         private static bool EsSeguroInline(string mime)
         {

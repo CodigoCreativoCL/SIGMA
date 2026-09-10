@@ -136,7 +136,8 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: SizedBox(
-                height: 34,
+                // Al mismo paso que el chip que lleva dentro.
+                height: context.alto(34),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: ids.length + 1,
@@ -796,7 +797,8 @@ class SelectorEstante extends ConsumerWidget {
             ),
             const SizedBox(height: 9),
             SizedBox(
-              height: 36,
+              // Al mismo paso que el chip que lleva dentro.
+              height: context.alto(36),
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 padding: EdgeInsets.zero,

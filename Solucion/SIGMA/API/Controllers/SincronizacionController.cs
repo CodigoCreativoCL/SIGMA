@@ -87,7 +87,7 @@ namespace API.Controllers
         ///   rompe el incremental de TODOS los demas. Paso al agregar el
         ///   bloque 9 (motivos de cierre, HU-120).
         /// </summary>
-        private const int BLOQUE_MAXIMO = 9;
+        private const int BLOQUE_MAXIMO = 10;
 
         [HttpGet]
         [Route("{tipo:int}")]

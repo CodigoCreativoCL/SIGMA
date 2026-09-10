@@ -748,7 +748,12 @@ class _Fotos extends StatelessWidget {
        que sí tiene id y es lo correcto de todos modos — una foto tomada al
        registrar una vibración documenta el equipo, y sirve la próxima vez que
        alguien lo mire, no solo para esta lectura. */
-    return SgEvidencias(destino: 'ACTIVO', destinoId: activoId);
+    return SgEvidencias(
+      destino: 'ACTIVO',
+      destinoId: activoId,
+      conAudio: true,
+      conVideo: true,
+    );
   }
 }
 

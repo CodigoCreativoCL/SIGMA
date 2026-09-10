@@ -6,6 +6,7 @@ import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
+import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../galeria/galeria_screen.dart';
@@ -280,6 +281,23 @@ class _Ficha extends StatelessWidget {
               ),
             ),
           ),
+        ),
+
+        /* SUBIR, NO SOLO MIRAR
+
+           La galeria de arriba deja VER las fotos de la pieza y no habia forma
+           de agregar ninguna: `avi_activo_componente` existe desde BD/202, los
+           dos SP la contemplan desde BD/206 y el controller ya conoce el
+           destino COMPONENTE. Lo unico que faltaba era este widget.
+
+           Con audio y video como el resto: el ruido de un rodamiento es
+           justamente lo que distingue una pieza gastada de una sana. */
+        const SizedBox(height: 16),
+        SgEvidencias(
+          destino: 'COMPONENTE',
+          destinoId: c.ACO_ID,
+          conAudio: true,
+          conVideo: true,
         ),
       ],
     );

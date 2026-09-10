@@ -122,7 +122,9 @@ class _ActivosScreenState extends ConsumerState<ActivosScreen> {
                     children: [
                       if (areas.length > 1) ...[
                         SizedBox(
-                          height: 36,
+                          // Al mismo paso que el chip que lleva dentro: si el riel no crece, el
+                          //    chip crecido se recorta.
+                          height: context.alto(36),
                           child: ListView(
                             scrollDirection: Axis.horizontal,
                             padding: const EdgeInsets.symmetric(horizontal: 16),

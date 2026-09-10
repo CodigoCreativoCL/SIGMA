@@ -68,7 +68,8 @@ class HistorialLecturasScreen extends ConsumerWidget {
 
               const SizedBox(height: 16),
               SizedBox(
-                height: 34,
+                // Al mismo paso que el chip que lleva dentro.
+                height: context.alto(34),
                 child: ListView(
                   scrollDirection: Axis.horizontal,
                   children: [
@@ -455,9 +456,12 @@ class _Fila extends StatelessWidget {
               children: [
                 Row(
                   children: [
-                    Text(
-                      '${_n(l.VALOR_ACUMULADO)} $u',
-                      style: sora(15, 600, color: sg.tinta, tabular: true),
+                    Flexible(
+                      child: Text(
+                        '${_n(l.VALOR_ACUMULADO)} $u',
+                        overflow: TextOverflow.ellipsis,
+                        style: sora(15, 600, color: sg.tinta, tabular: true),
+                      ),
                     ),
                     if (l.ES_REINICIO) ...[
                       const SizedBox(width: 8),

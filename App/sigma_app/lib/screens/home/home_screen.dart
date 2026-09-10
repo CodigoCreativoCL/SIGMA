@@ -13,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/sigma_ia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
+import '../../widgets/comun/sigma_esqueleto.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../sigma_ai/analisis_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
@@ -280,7 +281,16 @@ class _ChipsEstado extends ConsumerWidget {
     final sg = context.sg;
     final corte = ref.watch(sincronizacionProvider).fechaCorte;
 
-    return Row(
+    /* WRAP Y NO ROW
+
+       Son dos insignias de estado en la cabecera del Inicio. Con la letra en
+       Máximo «Sin señal» y «3 en cola» no caben juntas en un teléfono angosto
+       y la cabecera se desborda. Bajar la segunda de línea se lee; recortarla
+       contra el borde, no. */
+    return Wrap(
+      spacing: 0,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         ValueListenableBuilder<bool>(
           valueListenable: SyncService.instance.enLinea,
@@ -336,6 +346,20 @@ class _Jornada extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
     final permisos = ref.watch(permisosVigentesProvider);
+
+    /* MIENTRAS CARGA, LA SILUETA — NO LOS CEROS
+
+       Con `valueOrNull ?? 0` esta tarjeta se pintaba entera y al instante
+       diciendo «0 vigentes, 0 vencidos», y un segundo después saltaba a los
+       números de verdad. Un cero que no es un cero es peor que una espera: se
+       lee, se cree, y quien mira ya decidió que hoy no tiene nada.
+
+       La silueta ocupa el mismo sitio que la tarjeta, así que cuando llegan
+       los datos nada se mueve. */
+    if (permisos.isLoading && !permisos.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 132, conIcono: false);
+    }
+
     final lista = permisos.valueOrNull?.datos ?? const <PermisoTrabajo>[];
     final total = permisos.valueOrNull?.total ?? 0;
 
@@ -462,8 +486,19 @@ class _Siguiente extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final lista =
-        ref.watch(permisosVigentesProvider).valueOrNull?.datos ?? const [];
+    final permisos = ref.watch(permisosVigentesProvider);
+
+    /* CARGANDO NO ES «NO HAY NADA»
+
+       Este bloque se esconde cuando la lista está vacía, y mientras carga
+       también lo está: la pantalla se dibujaba sin él y un segundo después
+       aparecía empujando todo lo de abajo. La silueta reserva el sitio para
+       que nada salte. */
+    if (permisos.isLoading && !permisos.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 84);
+    }
+
+    final lista = permisos.valueOrNull?.datos ?? const [];
     if (lista.isEmpty) return const SizedBox.shrink();
 
     final ordenados = [...lista]
@@ -886,7 +921,15 @@ class _ResumenAlertas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final r = ref.watch(resumenAlertasProvider).valueOrNull;
+    final resumen = ref.watch(resumenAlertasProvider);
+
+    // Sin esto la tarjeta decía «0 alertas» durante el primer segundo, y cero
+    // alertas es justo la respuesta que hace que nadie la abra.
+    if (resumen.isLoading && !resumen.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 62, conCifra: true);
+    }
+
+    final r = resumen.valueOrNull;
     final abiertas = r?.ABIERTAS ?? 0;
     final noLeidas = r?.NO_LEIDAS ?? 0;
 

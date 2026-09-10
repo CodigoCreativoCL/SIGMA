@@ -440,6 +440,17 @@ class PermisoTrabajo {
   final int? DIAS_RESTANTES;
   final String? SOLICITANTE_NOMBRE;
   final String? ORDEN_CORRELATIVO;
+
+  /// Si el permiso cuelga de una orden de verdad.
+  ///
+  /// El SP devuelve **`0`, no NULL**, cuando no hay ninguna, así que preguntar
+  /// por vacío no alcanza: «0» no está vacío, y el bloque «Para qué trabajo»
+  /// se dibujaba con un cero suelto que no dice nada.
+  bool get tieneOrden {
+    final c = (ORDEN_CORRELATIVO ?? '').trim();
+    return c.isNotEmpty && c != '0';
+  }
+
   final String? ORDEN_TITULO;
   final String? ptr_observacion;
   final DateTime? ptr_fecha_vigencia_inicio_utc;
@@ -2631,7 +2642,7 @@ class Vigilado {
     HORAS_SIN_LECTURA: j['HORAS_SIN_LECTURA'] == null
         ? null
         : _i(j['HORAS_SIN_LECTURA']),
-    ATRASADA: j['ATRASADA'] == true,
+    ATRASADA: _b(j['ATRASADA']),
     MOTIVO: _sN(j['MOTIVO']),
   );
 }
@@ -2743,7 +2754,8 @@ class TareaPendiente {
     tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
         ? null
         : _i(j['tar_duracion_estimada_minuto']),
-    tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
+    // `_b` y no `== true`: desde el disco un bit llega como 1.
+    tar_requiere_evidencia: _b(j['tar_requiere_evidencia']),
     PRIORIDAD_CODIGO: _sN(j['PRIORIDAD_CODIGO']),
     PRIORIDAD_NOMBRE: _sN(j['PRIORIDAD_NOMBRE']),
     PRIORIDAD_ID: _i(j['PRIORIDAD_ID'], 2),
@@ -2917,7 +2929,8 @@ class Tarea {
     tar_titulo: _s(j['tar_titulo']),
     TAREA_CODIGO: _sN(j['TAREA_CODIGO']),
     tar_descripcion: _sN(j['tar_descripcion']),
-    tar_requiere_evidencia: j['tar_requiere_evidencia'] == true,
+    // `_b` y no `== true`: desde el disco un bit llega como 1.
+    tar_requiere_evidencia: _b(j['tar_requiere_evidencia']),
     tar_duracion_estimada_minuto: j['tar_duracion_estimada_minuto'] == null
         ? null
         : _i(j['tar_duracion_estimada_minuto']),

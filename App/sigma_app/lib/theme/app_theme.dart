@@ -283,6 +283,28 @@ class AppColors extends ThemeExtension<AppColors> {
 /// El atajo de toda pantalla: `context.sg`.
 extension SgContexto on BuildContext {
   AppColors get sg => Theme.of(this).extension<AppColors>() ?? AppColors.oscuro;
+
+  /// Un alto fijo que envuelve texto, escalado con el texto.
+  ///
+  /// ## Por qué hace falta un atajo para esto
+  ///
+  /// El kit trabaja con altos exactos —el chip mide 28, el botón 52— y eso es
+  /// lo que hace que la app se vea pareja. Pero un alto exacto alrededor de un
+  /// texto es una promesa que el texto no cumple: crece con el ajuste de
+  /// accesibilidad (vista 16.2), y entonces el número deja de alcanzar y el
+  /// widget se desborda **sin que nadie haya tocado esa pantalla**.
+  ///
+  /// Pasó en la tarjeta de SIGMA AI del Inicio, y no era la única: casi todo
+  /// chip, píldora y botón del kit tenía el mismo alto en duro.
+  ///
+  /// ## Por qué no se escala todo
+  ///
+  /// Porque no todo alto envuelve texto. Un separador de 1, el riel de una
+  /// barra de progreso, un avatar o el visor de la cámara miden lo que miden y
+  /// crecerlos solo desordenaría la pantalla. Este atajo se usa **donde
+  /// adentro hay una letra**, y por eso se escribe a mano en cada sitio en vez
+  /// de aplicarse solo.
+  double alto(double base) => MediaQuery.textScalerOf(this).scale(base);
 }
 
 /// Un estilo de Sora.

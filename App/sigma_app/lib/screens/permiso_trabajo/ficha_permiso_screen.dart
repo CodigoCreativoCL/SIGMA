@@ -70,7 +70,13 @@ class FichaPermisoScreen extends ConsumerWidget {
                     const SizedBox(height: 16),
                     _Vigencia(permiso: p, formato: _fecha),
 
-                    if ((p.ORDEN_CORRELATIVO ?? '').isNotEmpty) ...[
+                    /* «0» NO ES UNA ORDEN
+
+                       Un permiso sin OT trae el correlativo en 0, y el bloque
+                       se dibujaba igual mostrando un «0» suelto bajo el rótulo
+                       «Para qué trabajo». No decía nada y hacía dudar del
+                       resto de la ficha. */
+                    if (p.tieneOrden) ...[
                       const SizedBox(height: 16),
                       const SgRotulo('Para qué trabajo'),
                       const SizedBox(height: 10),

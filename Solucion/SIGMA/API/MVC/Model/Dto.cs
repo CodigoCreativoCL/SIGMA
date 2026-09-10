@@ -1675,6 +1675,34 @@ namespace API.MVC.Model
         public int? entrada_modo { get; set; }
     }
 
+    /// <summary>
+    /// Lo que el tecnico anota que hizo — un paso agregado sobre la marcha.
+    ///
+    /// POR QUE EXISTE
+    ///   Una correctiva abierta en terreno nace SIN pasos, asi que hasta ahora
+    ///   el tecnico no tenia donde registrar el trabajo salvo el cuadro de
+    ///   «Resultado» del cierre: una sola caja, al final, cuando ya se olvido
+    ///   la mitad.
+    /// </summary>
+    public class PasoAltaDto
+    {
+        /// <summary>Que se hizo. Es lo unico obligatorio.</summary>
+        public string nombre { get; set; }
+
+        public string descripcion { get; set; }
+
+        /// <summary>
+        /// 1 CONFORME, 2 NO CONFORME, 3 NO APLICA. Nulo deja el paso
+        /// pendiente, que sirve de recordatorio de lo que falta.
+        /// </summary>
+        public int? resultado { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>Nace en el telefono AL ENCOLAR.</summary>
+        public Guid? uuid { get; set; }
+    }
+
     public class OrdenTrabajoFinDto
     {
         public string resultado { get; set; }
@@ -2104,7 +2132,16 @@ namespace API.MVC.Model
 
         /// <summary>De `Archivo_Categoria`. 5 = DURANTE, que es lo que saca
         /// alguien parado frente a la maquina.</summary>
-        public int categoria { get; set; }
+        /// <summary>
+        /// La categoria del archivo. **Anulable a proposito**: siendo `int` a
+        /// secas, un cuerpo que no la trae la manda como **0**, y 0 no existe
+        /// en `Archivo_Categoria` — el INSERT moria con una violacion de clave
+        /// foranea que le llegaba al cliente como texto de SQL Server.
+        ///
+        /// Nula deja que el SP ponga la suya (5, DURANTE). `Datos.Ejecutar`
+        /// omite los nulos justamente para eso.
+        /// </summary>
+        public int? categoria { get; set; }
 
         public string nombre { get; set; }
         public string mime { get; set; }

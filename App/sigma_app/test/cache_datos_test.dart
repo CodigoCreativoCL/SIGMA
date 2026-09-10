@@ -187,6 +187,73 @@ void main() {
     });
   });
 
+  group('Sin señal se puede trabajar', () {
+    /* LO QUE ESTO PROTEGE
+
+       Responder una tarea y escribir en la bitácora ya se encolaban. Lo que
+       faltaba era LLEGAR a la pantalla: la bandeja de tareas y los tipos de
+       bitácora se pedían por red, así que sin señal salían vacíos y no había
+       nada que responder ni con qué guardar. Encolar no sirve si la lectura
+       que lo precede no es offline. */
+
+    test('una tarea de la sábana se lee con el mismo fromJson', () {
+      // Tal como la devuelve el bloque 10, que delega en API_SEL_TAREA.
+      final t = TareaPendiente.fromJson(CacheDatos.conClavesTolerantes({
+        'toc_id': 5,
+        'tar_titulo': 'Purgar condensado de la linea de vapor',
+        'TAREA_CODIGO': 'TAR-014',
+        'PRIORIDAD_ID': 4,
+        'PRIORIDAD_NOMBRE': 'Crítica',
+        'ACTIVO_CODIGO': 'ACT-41',
+        'tar_requiere_evidencia': 1,
+        'ES_FAVORITO': 0,
+      }));
+
+      expect(t.toc_id, 5);
+      expect(t.TAREA_CODIGO, 'TAR-014');
+      expect(t.PRIORIDAD_NOMBRE, 'Crítica');
+      expect(t.ACTIVO_CODIGO, 'ACT-41');
+    });
+
+    test('un bit del disco llega como 1, no como true', () {
+      /* Es el error que no falla: `j['x'] == true` da FALSO para un 1, así que
+         una tarea que exige evidencia dejaría de exigirla solo sin señal. */
+      final conUno = TareaPendiente.fromJson({
+        'toc_id': 1,
+        'tar_titulo': 'x',
+        'tar_requiere_evidencia': 1,
+      });
+      final conBool = TareaPendiente.fromJson({
+        'toc_id': 1,
+        'tar_titulo': 'x',
+        'tar_requiere_evidencia': true,
+      });
+
+      expect(conUno.tar_requiere_evidencia, isTrue);
+      expect(conBool.tar_requiere_evidencia, isTrue);
+    });
+
+    test('los tipos de bitácora salen del catálogo que ya está en el disco',
+        () {
+      // `tiposBitacora()` los arma desde BITACORA_TIPO del bloque 3.
+      final v = CatalogoValor.fromJson(CacheDatos.conClavesTolerantes({
+        'CATALOGO_CODIGO': 'BITACORA_TIPO',
+        'VALOR_ID': 2,
+        'VALOR_CODIGO': 'INCIDENTE',
+        'VALOR_NOMBRE': 'Incidente',
+      }));
+
+      expect(v.CATALOGO_CODIGO, 'BITACORA_TIPO');
+      final tipo = BitacoraTipo(
+        bti_id: v.ctv_id,
+        bti_nombre: v.ctv_nombre,
+        bti_codigo: v.ctv_codigo,
+      );
+      expect(tipo.bti_id, 2);
+      expect(tipo.esIncidente, isTrue);
+    });
+  });
+
   group('El nombre de la entidad guardada', () {
     /* POR QUE ESTO ES UNA PRUEBA Y NO UN COMENTARIO
 
@@ -212,6 +279,10 @@ void main() {
     test('el bloque de inventario trae cuatro y los separa', () {
       expect(entidadDe('INVENTARIO', 4, 0), CacheDatos.repuestos);
       expect(entidadDe('INVENTARIO', 4, 1), CacheDatos.bodegas);
+    });
+
+    test('el bloque de tareas trae uno solo y va sin sufijo', () {
+      expect(entidadDe('TAREAS', 1, 0), CacheDatos.tareas);
     });
 
     test('catalogos pasó de uno a dos resultados y cambió de nombre', () {

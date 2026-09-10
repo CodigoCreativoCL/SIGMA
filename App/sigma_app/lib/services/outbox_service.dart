@@ -196,19 +196,37 @@ class OutboxService {
   ///
   /// Reentrante seguro: si ya hay un despacho corriendo, este llamado no hace
   /// nada. Dos despachos en paralelo enviarían el mismo ítem dos veces.
-  Future<void> despachar() async {
-    if (_despachando) return;
+  /// Despacha lo pendiente. **Devuelve `false` si ya había un despacho en
+  /// curso** y por eso no hizo nada.
+  ///
+  /// Antes devolvía `void` y salía en silencio, así que «Reintentar» durante un
+  /// despacho largo —una foto de varios MB— se veía exactamente igual que un
+  /// botón roto: se toca y no pasa nada. Quien lo mira concluye que la cola no
+  /// funciona, y en realidad estaba trabajando.
+  Future<bool> despachar() async {
+    if (_despachando) return false;
     _despachando = true;
 
     try {
       final pend = await _base.pendientes();
       for (final f in pend) {
-        await _enviarUno(f);
+        /* CADA UNO EN SU PROPIO try
+
+           `_enviarUno` ya atrapa lo suyo, pero cualquier grieta que se le
+           escape no puede llevarse por delante a los que vienen detrás: el
+           registro grande que falla no tiene por qué dejar sin enviar a los
+           cinco pequeños que estaban después en la fila. */
+        try {
+          await _enviarUno(f);
+        } catch (e) {
+          debugPrint('[Outbox] ${f['id']} no se pudo despachar: $e');
+        }
       }
     } finally {
       _despachando = false;
       await _refrescarContador();
     }
+    return true;
   }
 
   Future<void> _enviarUno(Map<String, dynamic> f) async {
@@ -217,8 +235,28 @@ class OutboxService {
 
     /* El cuerpo se pide APARTE y por trozos: con el base64 de una foto adentro
        no cabe en el CursorWindow de Android, y el `SELECT *` de antes tumbaba
-       el despacho entero. */
-    final crudo = await _base.cuerpoDe(id);
+       el despacho entero.
+
+       DENTRO DE UN try, Y ESA ES LA PARTE QUE FALTABA
+
+         Leerlo seguía pudiendo lanzar —una foto de 6 MB contra el
+         CursorWindow—, y como esta línea estaba FUERA de todo `try`, la
+         excepción subía hasta el `for` de `despachar()` y **mataba el
+         despacho entero**: los ítems se quedaban en «En cola», sin error que
+         mostrar porque nunca se llegó a escribir ninguno, y «Reintentar»
+         repetía el mismo choque contra el mismo ítem. La cola entera quedaba
+         rehén del primero que no se pudiera leer. */
+    String? crudo;
+    try {
+      crudo = await _base.cuerpoDe(id);
+    } catch (e) {
+      await _base.actualizarItem(id, {
+        'estado': 'pendiente',
+        'intentos': intentos,
+        'ultimo_error': 'No se pudo leer lo guardado: $e',
+      });
+      return;
+    }
 
     if (crudo == null || crudo.isEmpty) {
       // Sin cuerpo no hay nada que enviar, y reintentarlo cada vez seria un

@@ -44,6 +44,10 @@ abstract final class CacheDatos {
   /// Los valores de TODOS los catálogos, con el código de su catálogo en cada
   /// fila. Es lo que hace que los chips de catálogo existan sin señal.
   static const catalogoValores = 'CATALOGOS_1';
+
+  /// Las tareas asignadas. Sin esto, sin señal la bandeja salía vacía y el
+  /// técnico caminaba hasta el equipo sin saber qué le tocaba.
+  static const tareas = 'TAREAS';
   static const activos = 'ACTIVOS';
   static const medidores = 'MEDICION_0';
   static const repuestos = 'INVENTARIO_0';

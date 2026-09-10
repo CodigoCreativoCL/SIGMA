@@ -221,29 +221,40 @@ class _AlertasScreenState extends ConsumerState<AlertasScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 14),
-            child: Row(
-              children: [
-                SgChip(
-                  'Todas',
-                  elegido: filtro == FiltroAlerta.todas,
-                  onTap: () => _filtrar(FiltroAlerta.todas),
-                ),
-                const SizedBox(width: 8),
-                SgChip(
-                  'No leídas',
-                  elegido: filtro == FiltroAlerta.noLeidas,
-                  contador: noLeidas,
-                  onTap: () => _filtrar(FiltroAlerta.noLeidas),
-                ),
-                const SizedBox(width: 8),
-                SgChip(
-                  'Críticas',
-                  elegido: filtro == FiltroAlerta.criticas,
-                  contador: criticas,
-                  colorContador: SgColor.rojo,
-                  onTap: () => _filtrar(FiltroAlerta.criticas),
-                ),
-              ],
+            /* RIEL Y NO FILA, POR LO MISMO QUE LA BANDEJA
+
+               Con la letra en Máximo estos tres chips no caben en 360 dp y la
+               fila se desborda: el tercero —«Críticas», el que más importa—
+               queda fuera de la pantalla y sin recibir toques. El riel no
+               depende del ancho del teléfono ni del largo de la traducción. */
+            child: SizedBox(
+              height: context.alto(36),
+              child: ListView(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                children: [
+                  SgChip(
+                    'Todas',
+                    elegido: filtro == FiltroAlerta.todas,
+                    onTap: () => _filtrar(FiltroAlerta.todas),
+                  ),
+                  const SizedBox(width: 8),
+                  SgChip(
+                    'No leídas',
+                    elegido: filtro == FiltroAlerta.noLeidas,
+                    contador: noLeidas,
+                    onTap: () => _filtrar(FiltroAlerta.noLeidas),
+                  ),
+                  const SizedBox(width: 8),
+                  SgChip(
+                    'Críticas',
+                    elegido: filtro == FiltroAlerta.criticas,
+                    contador: criticas,
+                    colorContador: SgColor.rojo,
+                    onTap: () => _filtrar(FiltroAlerta.criticas),
+                  ),
+                ],
+              ),
             ),
           ),
           Expanded(
@@ -477,9 +488,15 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         SgBadge(nombreSev, color: color, icono: iconoSev),
                         const Spacer(),
-                        Text(
-                          alerta.hace,
-                          style: sora(13, 500, color: sg.tinta3),
+                        /* Con la letra crecida «Advertencia» y «hace 3 días»
+                           no caben juntas. Cede la antigüedad: la severidad es
+                           lo que decide si la alerta se mira ahora. */
+                        Flexible(
+                          child: Text(
+                            alerta.hace,
+                            overflow: TextOverflow.ellipsis,
+                            style: sora(13, 500, color: sg.tinta3),
+                          ),
                         ),
                         if (!leida) ...[
                           const SizedBox(width: 8),

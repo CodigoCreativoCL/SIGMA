@@ -19,6 +19,7 @@ import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
 import 'hoja_cierre.dart';
+import 'hoja_paso.dart';
 import 'hoja_firma.dart';
 import 'recursos_orden.dart';
 
@@ -301,16 +302,43 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
 
   // -------------------------------------------------------------- PASOS ----
 
+  /// Anotar lo que se hizo. Se ofrece con pasos y sin ellos: una pauta cubre
+  /// lo previsto, y lo que aparece al abrir la máquina nunca está previsto.
+  Widget _botonAnotar(OrdenTrabajoFicha f) => SgBoton(
+    'Anotar lo que hiciste',
+    icono: Icons.edit_note,
+    primario: f.pasos.isEmpty,
+    onTap: !f.orden.enEjecucion
+        ? null
+        : () async {
+            final ok = await HojaPaso.abrir(
+              context,
+              widget.ordenId,
+              f.orden.OT_NUMERO,
+            );
+            if (ok) ref.invalidate(ordenTrabajoProvider(widget.ordenId));
+          },
+  );
+
   List<Widget> _pasos(OrdenTrabajoFicha f) {
     if (f.pasos.isEmpty) {
-      return const [
-        EstadoVacio(
+      /* SIN PASOS NO PUEDE SER UNA PANTALLA MUERTA
+
+         Decía «esta orden no tiene pasos, se puede finalizar igual» y ahí
+         terminaba: el técnico no tenía dónde registrar lo que hizo hasta el
+         cuadro de «Resultado» del cierre —una sola caja, al final, cuando ya
+         se olvidó la mitad—. Y eso no es un trámite: es lo que el turno
+         siguiente necesita para no repetir el diagnóstico. */
+      return [
+        const EstadoVacio(
           icono: Icons.checklist,
           titulo: 'Esta orden no tiene pasos',
           detalle:
-              'Se puede finalizar igual: no todo trabajo correctivo '
-              'viene con una pauta.',
+              'No todo trabajo correctivo viene con una pauta. Anota lo que '
+              'vayas haciendo y queda con tu nombre y la hora.',
         ),
+        const SizedBox(height: 14),
+        _botonAnotar(f),
       ];
     }
 
@@ -338,6 +366,9 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
         ),
         const SizedBox(height: 11),
       ],
+      // También con pauta: lo que aparece al abrir la máquina no estaba en
+      // ella, y es justo lo que hay que dejar escrito.
+      _botonAnotar(f),
       const SizedBox(height: 4),
     ];
   }

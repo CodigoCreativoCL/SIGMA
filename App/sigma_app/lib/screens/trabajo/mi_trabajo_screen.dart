@@ -126,13 +126,41 @@ class _Cabecera extends ConsumerWidget {
       children: [
         Padding(
           padding: const EdgeInsets.fromLTRB(16, 10, 16, 12),
-          child: Text(
-            'Mi trabajo',
-            style: sora(23, 700, color: sg.tinta, espaciado: -0.46),
+          child: Row(
+            children: [
+              /* LA FLECHA, SOLO SI HAY A DONDE VOLVER
+
+                 Esta pantalla se abre desde la barra de abajo, así que la
+                 única salida era el gesto del sistema — que no se ve. Quien no
+                 lo conoce se queda encerrado en la bandeja.
+
+                 `canPop` porque también se usa embebida dentro de otra
+                 pantalla: una flecha que no lleva a ninguna parte es peor que
+                 ninguna. */
+              if (Navigator.of(context).canPop()) ...[
+                SgBotonIcono(
+                  Icons.arrow_back,
+                  fondo: sg.up,
+                  color: sg.tinta,
+                  lado: 40,
+                  tamano: 21,
+                  onTap: () => Navigator.of(context).maybePop(),
+                ),
+                const SizedBox(width: 12),
+              ],
+              Expanded(
+                child: Text(
+                  'Mi trabajo',
+                  style: sora(23, 700, color: sg.tinta, espaciado: -0.46),
+                ),
+              ),
+            ],
           ),
         ),
         SizedBox(
-          height: 40,
+          // El riel crece con la pestaña: si no, la letra en Máximo recorta
+          // el texto contra el borde de arriba y de abajo.
+          height: context.alto(40),
           child: ListView.separated(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16),

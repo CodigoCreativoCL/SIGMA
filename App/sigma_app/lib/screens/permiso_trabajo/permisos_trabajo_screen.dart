@@ -201,7 +201,9 @@ class _Cabecera extends StatelessWidget {
     final sg = context.sg;
 
     return SizedBox(
-      height: 60,
+      // Un titulo grande en una caja fija: con la letra en Maximo se queda
+      //    corta.
+      height: context.alto(60),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
@@ -277,7 +279,8 @@ class _FiltrosState extends ConsumerState<_Filtros> {
               boxShadow: sg.e1,
             ),
             child: Container(
-              height: 52,
+              // El campo de busqueda es texto.
+              height: context.alto(52),
               padding: const EdgeInsets.only(left: 18, right: 8),
               decoration: BoxDecoration(
                 color: sg.campo,
@@ -335,7 +338,8 @@ class _FiltrosState extends ConsumerState<_Filtros> {
              salia de la pantalla sin recibir toques. Los chips de estado, mas
              abajo, ya scrolleaban. */
           SizedBox(
-            height: 36,
+            // Igual que su gemelo de la bandeja de órdenes.
+            height: context.alto(36),
             child: ListView(
               scrollDirection: Axis.horizontal,
               padding: EdgeInsets.zero,
@@ -419,7 +423,8 @@ class _ChipsEstado extends ConsumerWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 9),
       child: SizedBox(
-        height: 30,
+        // Al mismo paso que el chip que lleva dentro.
+        height: context.alto(30),
         child: ListView.separated(
           scrollDirection: Axis.horizontal,
           itemCount: conAlgo.length + 1,
@@ -480,7 +485,7 @@ class _ChipFiltro extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SgRadius.pill),
       child: Container(
-        height: 34,
+        height: context.alto(34),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: elegido ? sg.primario : sg.up,
@@ -493,7 +498,7 @@ class _ChipFiltro extends StatelessWidget {
             if (contador != null && contador! > 0) ...[
               const SizedBox(width: 7),
               Container(
-                height: 19,
+                height: context.alto(19),
                 constraints: const BoxConstraints(minWidth: 19),
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(

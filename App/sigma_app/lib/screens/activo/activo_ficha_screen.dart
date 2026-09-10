@@ -923,7 +923,12 @@ class _HojaFotos extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 14),
-              SgEvidencias(destino: 'ACTIVO', destinoId: activo.act_id),
+              SgEvidencias(
+                destino: 'ACTIVO',
+                destinoId: activo.act_id,
+                conAudio: true,
+                conVideo: true,
+              ),
               const SgBarraGestos(),
             ],
           ),

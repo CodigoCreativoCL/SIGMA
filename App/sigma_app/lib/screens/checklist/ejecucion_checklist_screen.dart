@@ -368,11 +368,15 @@ class _Progreso extends StatelessWidget {
                 style: sora(13, 600, color: sg.tinta2, tabular: true),
               ),
               const Spacer(),
+              // «12 fuera de norma» con la letra crecida no cabe junto al
+              // avance: la insignia cede y recorta antes que desbordar la fila.
               if (ejecucion.cej_item_no_conforme > 0)
-                SgBadge(
-                  '${ejecucion.cej_item_no_conforme} fuera de norma',
-                  color: sg.ambarTexto,
-                  chico: true,
+                Flexible(
+                  child: SgBadge(
+                    '${ejecucion.cej_item_no_conforme} fuera de norma',
+                    color: sg.ambarTexto,
+                    chico: true,
+                  ),
                 ),
             ],
           ),
@@ -893,7 +897,7 @@ class _Secundario extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 44,
+          height: context.alto(44),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           child: Text(texto, style: sora(14, 600, color: sg.tinta2)),

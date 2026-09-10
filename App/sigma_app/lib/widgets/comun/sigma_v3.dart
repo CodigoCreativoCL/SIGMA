@@ -78,7 +78,9 @@ class SgBoton extends StatelessWidget {
     final tinta = colorTexto ?? (primario ? Colors.white : sg.tinta);
 
     return SizedBox(
-      height: alto,
+      // El boton es texto dentro de una pildora: 52 -o 44 en tarjeta- se
+      // quedan cortos en cuanto la letra crece.
+      height: context.alto(alto),
       width: double.infinity,
       child: DecoratedBox(
         decoration: BoxDecoration(
@@ -222,7 +224,8 @@ class SgBotonNotificacion extends StatelessWidget {
               top: 0,
               right: 0,
               child: Container(
-                height: 20,
+                // La cifra del contador tambien crece con el texto.
+                height: context.alto(20),
                 constraints: const BoxConstraints(minWidth: 20),
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
@@ -498,7 +501,7 @@ class SgBadge extends StatelessWidget {
     final tinta = solido ? SgColor.navy : color;
 
     return Container(
-      height: chico ? SgMedida.badgeChico : SgMedida.badge,
+      height: context.alto(chico ? SgMedida.badgeChico : SgMedida.badge),
       padding: EdgeInsets.symmetric(horizontal: chico ? 9 : 10),
       decoration: BoxDecoration(
         color: solido ? color : sg.tinte(color),
@@ -569,7 +572,9 @@ class SgChip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SgRadius.pill),
       child: Container(
-        height: SgMedida.chip,
+        // El chip lleva texto: su alto crece con el texto. Con el ajuste en
+        // Maximo, 28 px dejan de dar para una letra de 12 escalada a 18.
+        height: context.alto(SgMedida.chip),
         padding: const EdgeInsets.symmetric(horizontal: 11),
         decoration: BoxDecoration(
           color: elegido ? sg.tinte(sg.acentoTexto) : sg.up,
@@ -614,7 +619,9 @@ class SgContador extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final alto = chico ? 17.0 : 20.0;
+    // La cifra es texto: el contador crece con ella. `minWidth` va con el
+    // mismo alto para que la pildora siga siendo un circulo con un digito.
+    final alto = context.alto(chico ? 17.0 : 20.0);
 
     return Container(
       height: alto,
@@ -997,7 +1004,19 @@ class SgFila extends StatelessWidget {
             Icon(icono, size: 21, color: colorIcono ?? sg.tinta3),
             const SizedBox(width: 13),
           ],
-          Expanded(
+          /* EL ROTULO CEDE ANTE EL VALOR, NO AL REVES
+
+             Con `Expanded` el rótulo y el valor se repartían el ancho mitad y
+             mitad, así que «09-09-2026 · 08:00» no cabía en su mitad y salía
+             «09-09-2026 · 0…»: la hora, que es justo lo que se viene a mirar
+             en una vigencia, era lo que se perdía.
+
+             `loose` cuando hay valor: el rótulo ocupa lo que necesita —son
+             palabras cortas y conocidas, «Desde», «Tipo»— y el resto es para
+             el dato, que es el que varía. Sin valor sigue siendo `tight`, que
+             es lo que alinea el chevrón a la derecha. */
+          Flexible(
+            fit: valor == null ? FlexFit.tight : FlexFit.loose,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisSize: MainAxisSize.min,

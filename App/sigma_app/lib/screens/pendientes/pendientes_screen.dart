@@ -202,7 +202,7 @@ class _BotonReintentar extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 36,
+          height: context.alto(36),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -255,6 +255,10 @@ class _Fila extends StatelessWidget {
     'CIERRE_OT' => Icons.check_circle_outline,
     'UNIRME' => Icons.person_add_alt,
     'ORDEN_TRABAJO' => Icons.build_outlined,
+    'COMPARTIR' => Icons.ios_share,
+    'PASO' => Icons.edit_note,
+    'TAREA' => Icons.task_alt,
+    'COMENTARIO_TAREA' => Icons.mode_comment_outlined,
     _ => Icons.upload_file_outlined,
   };
 
@@ -323,7 +327,14 @@ class _Fila extends StatelessWidget {
               ),
             ],
           ),
-          if (rechazado) ...[
+          /* UN «EN COLA» QUE LLEVA HORAS FALLANDO NO SE VEIA
+
+             El motivo solo se pintaba en los rechazados. Un ítem que reintenta
+             y choca cada vez sigue en «pendiente», así que se quedaba días
+             mostrando «En cola» sin una palabra de por qué — y desde fuera eso
+             se lee como que la cola no funciona, cuando en realidad está
+             gritando algo que nadie le dejó decir. */
+          if (rechazado || (item.ultimoError ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
             // El motivo tal como lo dijo el servidor. Un «error al enviar»
             // genérico no le dice al bodeguero qué corregir; «la cantidad

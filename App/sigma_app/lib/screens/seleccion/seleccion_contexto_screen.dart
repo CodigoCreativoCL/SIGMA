@@ -255,7 +255,8 @@ class _Buscador extends StatelessWidget {
         boxShadow: sg.e1,
       ),
       child: Container(
-        height: 52,
+        // El campo de busqueda es texto.
+        height: context.alto(52),
         padding: const EdgeInsets.symmetric(horizontal: 18),
         decoration: BoxDecoration(
           color: sg.campo,

@@ -381,6 +381,18 @@ final tareasPendientesProvider = FutureProvider<List<TareaPendiente>>((ref) {
   return _repo.tareasPendientes(instalacion: instalacion?.cin_id);
 });
 
+/// Qué se está mirando en la bandeja de tareas: lo abierto o lo ya cerrado.
+final verTareasCerradasProvider = StateProvider<bool>((ref) => false);
+
+/// Las tareas ya cerradas — completadas y no realizadas.
+///
+/// Sin esto una tarea desaparecía de la app en cuanto se cerraba: no había
+/// forma de comprobar que quedó registrada.
+final tareasCerradasProvider = FutureProvider<List<TareaPendiente>>((ref) {
+  final instalacion = ref.watch(instalacionProvider);
+  return _repo.tareasCerradas(instalacion: instalacion?.cin_id);
+});
+
 final tareaProvider = FutureProvider.family<Tarea, int>(
   (ref, id) => _repo.tarea(id),
 );

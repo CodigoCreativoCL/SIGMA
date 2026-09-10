@@ -248,7 +248,7 @@ class _Pildora extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 34,
+          height: context.alto(34),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           child: Text(texto, style: sora(14, 600, color: sg.tinta)),

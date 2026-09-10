@@ -50,10 +50,14 @@ class SgEvidencias extends ConsumerStatefulWidget {
 
   /// Ofrece grabar una nota de voz.
   ///
-  /// No se enciende en todas partes: en un paso de checklist lo que hace falta
-  /// es la foto del estado, y un botón de más obliga a decidir algo que no
-  /// aporta. Se enciende donde alguien relata —bitácora y tarea—, que es donde
-  /// el ruido de un rodamiento dice lo que el texto no.
+  /// **Encendido en todos los módulos** por decisión de Bryan (09-09-2026): el
+  /// ruido de un rodamiento dice lo que el texto no, y quien está frente al
+  /// equipo no debería tener que acordarse de en qué pantalla sí se puede
+  /// grabar y en cuál no.
+  ///
+  /// Sigue siendo una bandera y no algo fijo: un paso de pauta que solo pide
+  /// «foto del manómetro» no gana nada con tres botones, y el día que aparezca
+  /// esa pantalla se apaga ahí sin tocar el resto.
   final bool conAudio;
 
   /// Ofrece grabar o adjuntar un video. Mismo criterio.
@@ -328,7 +332,7 @@ class _Miniatura extends StatelessWidget {
       final esVideo = mime.startsWith('video/');
 
       return _Tarjeta(
-        icono: esVideo ? Icons.play_circle_outline : Icons.graphic_eq,
+        esVideo: esVideo,
         texto: esVideo ? 'Video' : 'Nota de voz',
         // Se toca y suena. Antes era una tarjeta muerta: decia que habia una
         // nota de voz y no habia forma de escucharla, que es peor que no
@@ -356,10 +360,22 @@ class _Miniatura extends StatelessWidget {
 }
 
 /// La casilla de una evidencia que no es una imagen.
+///
+/// ## Por qué no es un recuadro gris con una palabra debajo
+///
+/// Antes lo era, y decía «tocar» en letra chica bajo el rótulo. Esa palabra es
+/// una instrucción, y una instrucción en la interfaz suele ser la confesión de
+/// que el elemento no se explica solo: al lado de tres fotos, un cuadro gris
+/// con texto no parece algo que se pueda abrir.
+///
+/// Ahora se parece a lo que es. El **triángulo de reproducir sobre un disco**
+/// es el gesto que todo el mundo reconoce, y el color lo separa de una foto sin
+/// que haya que leer nada: el video en morado de la marca, la nota de voz en el
+/// verde del acento. El rótulo queda de apoyo, no de explicación.
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({required this.icono, required this.texto, this.onTap});
+  const _Tarjeta({required this.esVideo, required this.texto, this.onTap});
 
-  final IconData icono;
+  final bool esVideo;
   final String texto;
   final VoidCallback? onTap;
 
@@ -367,25 +383,56 @@ class _Tarjeta extends StatelessWidget {
   Widget build(BuildContext context) {
     final sg = context.sg;
 
+    // El video toma el morado de la marca y el audio el verde del acento: dos
+    // cosas distintas que no se distinguían cuando las dos eran grises.
+    final color = esVideo ? sg.primarioTexto : sg.acentoTexto;
+
     return GestureDetector(
       onTap: onTap,
       child: Container(
         width: 92,
-        height: 92,
+        // El ancho no cambia -es una cuadrícula, todas las celdas miden igual-
+        // pero el alto tiene que dar para la letra crecida.
+        height: context.alto(92),
         decoration: BoxDecoration(
-          color: sg.campo,
+          color: sg.tinte(color),
           borderRadius: BorderRadius.circular(SgRadius.campo),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icono, size: 26, color: sg.tinta2),
-            const SizedBox(height: 6),
-            Text(texto, style: sora(11, 600, color: sg.tinta3)),
-            if (onTap != null) ...[
-              const SizedBox(height: 3),
-              Text('tocar', style: sora(9, 600, color: sg.tinta3)),
-            ],
+            /* EL DISCO CON EL TRIANGULO, Y NO UN ICONO SUELTO
+
+               Es el mismo gesto del reproductor de cualquier teléfono: sobre
+               una superficie llena, en el color del tipo. Un icono plano sobre
+               un fondo plano se lee como una etiqueta; esto se lee como un
+               botón. */
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(
+                esVideo ? Icons.play_arrow_rounded : Icons.graphic_eq_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 7),
+            /* EL ROTULO CEDE, EL CUADRO NO
+
+               Con la letra en Máximo «Nota de voz» se sale por el costado del
+               cuadro, que mide lo que mide. Se le deja bajar de línea, que es
+               lo que el alto escalado ya permite. */
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                texto,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: sora(11, 600, color: color),
+              ),
+            ),
           ],
         ),
       ),

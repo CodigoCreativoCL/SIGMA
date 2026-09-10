@@ -103,9 +103,19 @@ class _RepuestosScreenState extends ConsumerState<RepuestosScreen> {
                             setState(() => _soloConSaldo = !_soloConSaldo),
                       ),
                       const Spacer(),
-                      Text(
-                        _resumen(datos.valueOrNull?.datos),
-                        style: sora(12, 600, color: sg.tinta3),
+                      /* EL RESUMEN ES EL QUE SOBRA
+
+                         No es un riel: el chip es la acción y el resumen es
+                         información de apoyo. Con la letra crecida el `Spacer`
+                         se queda en cero y la fila desborda, así que el que
+                         cede es el texto, no el chip. */
+                      Flexible(
+                        child: Text(
+                          _resumen(datos.valueOrNull?.datos),
+                          overflow: TextOverflow.ellipsis,
+                          textAlign: TextAlign.end,
+                          style: sora(12, 600, color: sg.tinta3),
+                        ),
                       ),
                     ],
                   ),

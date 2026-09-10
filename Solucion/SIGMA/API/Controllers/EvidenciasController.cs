@@ -91,7 +91,16 @@ namespace API.Controllers
                    componente` la creo BD/202 para la galeria y BD/206
                    completo los dos SP. Sin esta linea se podian VER las fotos
                    de una pieza y no se podia subir ninguna. */
-                { "COMPONENTE", "VER COMPONENTES" }
+                { "COMPONENTE", "VER COMPONENTES" },
+
+                /* La foto de la pieza la saca quien la tiene en la mano: el
+                   bodeguero, en el pasillo. Hasta ahora solo podia entrar por
+                   la web, que es justo al reves de lo util — un rodamiento
+                   6205 y uno 6310 se ven casi iguales en una lista, y la foto
+                   del empaque real es lo que evita bajar al equipo con la que
+                   no calza. `avi_repuesto` existia; faltaba la rama de los dos
+                   SP (BD/211) y esta linea. */
+                { "REPUESTO",   "VER REPUESTOS" }
             };
 
         /// <summary>

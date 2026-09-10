@@ -66,28 +66,35 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                       ref.read(busquedaExistenciasProvider.notifier).state = v,
                 ),
                 const SizedBox(height: 11),
-                Row(
-                  children: [
-                    SgChip(
-                      'Todas',
-                      elegido: !soloAlerta,
-                      contador: total,
-                      colorContador: sg.tinta3,
-                      onTap: () =>
-                          ref.read(filtroExistenciasProvider.notifier).state =
-                              false,
-                    ),
-                    const SizedBox(width: 8),
-                    SgChip(
-                      'Bajo mínimo',
-                      elegido: soloAlerta,
-                      contador: enAlerta,
-                      colorContador: SgColor.rojo,
-                      onTap: () =>
-                          ref.read(filtroExistenciasProvider.notifier).state =
-                              true,
-                    ),
-                  ],
+                // Riel: «Bajo mínimo» con su contador y la letra crecida no
+                // cabe junto a «Todas» en un teléfono angosto.
+                SizedBox(
+                  height: context.alto(36),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      SgChip(
+                        'Todas',
+                        elegido: !soloAlerta,
+                        contador: total,
+                        colorContador: sg.tinta3,
+                        onTap: () =>
+                            ref.read(filtroExistenciasProvider.notifier).state =
+                                false,
+                      ),
+                      const SizedBox(width: 8),
+                      SgChip(
+                        'Bajo mínimo',
+                        elegido: soloAlerta,
+                        contador: enAlerta,
+                        colorContador: SgColor.rojo,
+                        onTap: () =>
+                            ref.read(filtroExistenciasProvider.notifier).state =
+                                true,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -179,7 +186,9 @@ class _Buscador extends StatelessWidget {
         boxShadow: sg.e1,
       ),
       child: Container(
-        height: 52,
+        // El campo de busqueda es texto: si no crece, la letra grande se
+        // recorta justo donde hay que leer lo que se escribio.
+        height: context.alto(52),
         padding: const EdgeInsets.only(left: 18, right: 8),
         decoration: BoxDecoration(
           color: sg.campo,
