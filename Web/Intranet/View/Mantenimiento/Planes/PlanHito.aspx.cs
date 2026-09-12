@@ -28,6 +28,17 @@ public partial class View_Mantenimiento_Planes_PlanHito : System.Web.UI.Page
         set { ViewState["Id"] = value; }
     }
 
+    /// <summary>
+    /// El plan desde el que se abrio este modal. Viene cifrado en el query
+    /// desde el centro de operaciones: el combo queda fijo en el, para no
+    /// pedir elegir un plan que ya se eligio al entrar.
+    /// </summary>
+    public int Plan
+    {
+        get { return ViewState["Plan"] != null ? (int)ViewState["Plan"] : 0; }
+        set { ViewState["Plan"] = value; }
+    }
+
     /// <summary>Al editar, la version ya no esta en borrador: solo lectura.</summary>
     private bool VersionCerrada
     {
@@ -48,6 +59,9 @@ public partial class View_Mantenimiento_Planes_PlanHito : System.Web.UI.Page
                 {
                     case "Id":
                         Id = Int32.Parse(array[1].ToString());
+                        break;
+                    case "Plan":
+                        Plan = Int32.Parse(array[1].ToString());
                         break;
                 }
             }
@@ -192,6 +206,7 @@ public partial class View_Mantenimiento_Planes_PlanHito : System.Web.UI.Page
         else
         {
             lblId.Text = "Nuevo";
+            if (Plan > 0) Seleccionar(cboPlan, Plan.ToString());
         }
     }
 
@@ -211,7 +226,10 @@ public partial class View_Mantenimiento_Planes_PlanHito : System.Web.UI.Page
 
         // El plan no se cambia al editar: mover un hito de plan es borrarlo
         // de uno y crearlo en otro, y eso se hace asi, a la vista.
-        cboPlan.ReadOnly = Id > 0 || !puedeEditar;
+        // Fijo con Enabled y no con ReadOnly: un RadComboBox ReadOnly no
+        // renderiza sus items y validaControl se cae al recorrerlos.
+        cboPlan.Enabled = !(Id > 0 || Plan > 0);
+        cboPlan.ReadOnly = !puedeEditar;
         txtCodigo.ReadOnly = !puedeEditar;
         txtNombre.ReadOnly = !puedeEditar;
         txtOrden.ReadOnly = !puedeEditar;

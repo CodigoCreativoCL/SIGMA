@@ -7,13 +7,13 @@
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
+        /* EL PLAN NO SE ABRE EN MODAL: SE ENTRA A EL
+           El plan es el centro de operaciones -ficha, hitos y equipos en
+           una pantalla con pestañas-, y eso no cabe en una ventana sobre
+           el listado. Se navega y se vuelve con «Volver al listado». */
         function abrirPlanMantenimiento(query) {
-            return SigmaModal.open({
-                url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimiento.aspx") %>?query=' + query,
-                title: String(query) === '0' ? 'Nuevo plan de mantenimiento' : 'Editar plan de mantenimiento',
-                width: 960,
-                initialHeight: 620
-            });
+            location.href = '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimiento.aspx") %>' + (String(query) === '0' ? '' : '?query=' + query);
+            return false;
         }
 
         function refresh() {

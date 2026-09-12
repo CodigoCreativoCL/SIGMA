@@ -32,7 +32,9 @@ GO
 DECLARE @CLIENTE INT = 1
 DECLARE @USUARIO INT = (SELECT TOP 1 usu_id FROM [dbo].[Usuario] WHERE usu_login = 'rodrigo.quezada@hamburgo.cl')
 DECLARE @PLANTA  INT = (SELECT TOP 1 cin_id FROM [dbo].[Cliente_Instalacion] WHERE cin_cliente = @CLIENTE ORDER BY cin_id)
-DECLARE @TIPO    INT = (SELECT TOP 1 ati_id FROM [dbo].[Activo_Tipo] WHERE ISNULL(ati_cliente, @CLIENTE) = @CLIENTE AND ati_habilitado = 1 ORDER BY ati_id)
+-- El plan de hornos es de tipo Horno: los ACT-34/ACT-40 que se le asocian
+-- despues son hornos y el INS_PLAN_ACTIVO revisa el alcance.
+DECLARE @TIPO    INT = (SELECT TOP 1 ati_id FROM [dbo].[Activo_Tipo] WHERE ISNULL(ati_cliente, @CLIENTE) = @CLIENTE AND ati_habilitado = 1 AND ati_nombre LIKE 'Horno%' ORDER BY ati_id)
 DECLARE @ID INT
 
 IF (@USUARIO IS NULL OR @PLANTA IS NULL)

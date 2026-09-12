@@ -1,4 +1,4 @@
-# SIGMA — Checklist de pendientes
+﻿# SIGMA — Checklist de pendientes
 
 **Abierto:** 08-09-2026 · **Rama:** `BryanChavez`
 
@@ -854,7 +854,8 @@ El caso «usuario sin permiso», con los usuarios de Hamburgo:
 ### 10.2 · HU-081 Definir los hitos de un plan — CERRADO
 
 `BD/213_PLAN_MANTENIMIENTO_HITO.sql`, `PlanHito.cs`, `PlanHitoController.cs`,
-`View/Mantenimiento/Planes/PlanHitos.aspx` y `PlanHito.aspx`.
+`PlanHito.aspx` (modal). El listado `PlanHitos.aspx` **ya no existe**: los
+hitos son la pestaña *Hitos* del centro de operaciones (10.4).
 
 - [x] **T-4018 modelo:** `UX_PMH_VERSION_CODIGO` dice que el código del hito
       es único **dentro de la versión**, no dentro del cliente como decía la
@@ -897,6 +898,74 @@ rechazando el UPD. `aspnet_compiler` exit 0.
 
 **La IP de la API volvió a cambiar** (ahora `192.168.1.31`); `localhost`
 sirve igual y es lo que conviene usar.
+
+### 10.3 · HU-083 Asociar equipos a un plan — CERRADO
+
+`BD/214_PLAN_MANTENIMIENTO_ACTIVO.sql`, `PlanActivo.cs`, `PlanActivoController.cs`,
+`PlanActivo.aspx` (modal) y `_SEMILLA_PLAN_ACTIVOS.sql`.
+
+- [x] **T-4095 modelo:** `Plan_Mantenimiento_Activo` no tiene `habilitado`
+      ni auditoría de actualización: es un **vínculo**, no una entidad. Por
+      eso el DEL es **físico** (quitar un equipo del plan es quitarlo, no
+      apagarlo) y solo sobre un borrador; rechaza si ese equipo ya generó
+      ocurrencias con el plan.
+- [x] **T-4097 INS:** valida que el equipo sea del cliente, que quepa en el
+      **alcance** del plan (planta, tipo y modelo, si el plan los acota), que
+      componente y medidor sean de ese equipo, y que no esté repetido. El
+      combo de la ficha **no** filtra por alcance a propósito: sería repetir
+      en C# la regla del SP, y el mensaje del SP («5.- EL ACTIVO ACT-35 NO ES
+      DEL TIPO AL QUE ESTÁ ACOTADO EL PLAN») explica más que un combo que
+      esconde equipos sin decir por qué.
+- [x] **T-4099 semilla:** hornos L1 y L2 al plan de hornos; la modeladora con
+      su motor y su horómetro al plan de seguridad. La semilla de planes
+      apuntaba al **primer tipo por id** (Panificación) y el INS rechazaba
+      los hornos: ahora busca el tipo por nombre.
+- [x] **T-4105 ficha:** plan y equipo se fijan al editar; lo que se edita es
+      sobre qué componente y con qué medidor. Un `RadComboBox` con
+      `ReadOnly` **no renderiza sus ítems** y `validaControl` se cae al
+      recorrerlos —el Guardar moría en silencio—; los combos fijos van con
+      `Enabled = false`, como en `Area.aspx.cs`.
+
+### 10.4 · El plan como centro de operaciones — CERRADO
+
+Bryan, 12-09-2026: «centralizar todo en planes de mantenimiento … en un
+único menú el cual tenga tabs de todo lo relevante al plan; será el centro
+de operaciones», en `Default.master`.
+
+`BD/215_PLAN_MANTENIMIENTO_CENTRO.sql`, `PlanMantenimiento.aspx(.cs)`
+reescrito, `PlanMantenimientos.aspx` navega en vez de abrir modal,
+`PlanHito.aspx.cs` / `PlanActivo.aspx.cs` leen `Plan` del query cifrado.
+Borrados `PlanHitos.aspx(.cs)` y `PlanActivos.aspx(.cs)`.
+
+- [x] **Un solo menú:** «Planes de mantenimiento». El 215 borra las filas de
+      `Menus` / `Menu_Funcion` de los listados sueltos, deja los detalles
+      (99, invisibles) y compacta el orden del padre. La fila de Emilio
+      (Pautas de inspección) queda donde estaba.
+- [x] **La ficha en `Default.master`** con pestañas Ficha / Hitos / Equipos.
+      Un plan nuevo **esconde** las pestañas de hitos y equipos —no hay
+      versión todavía—; al guardar redirige a sí misma con el id y aparecen.
+      Título y subtítulo del layout llevan código, nombre, alcance y versión.
+      Carga `sigma-modal.css` a mano porque el master no lo trae.
+- [x] **Los modales reciben el plan** en el query cifrado (`Id=0&Plan=<n>`),
+      lo preseleccionan y lo fijan. Al cerrar refrescan **solo la grilla que
+      los abrió** (`gridPendiente`), sin cambiar de pestaña.
+- [x] **`Menu_Funcion` en la ficha:** `Token.PuedeFuncion` mira la página
+      actual, y los botones de las grillas ahora viven en ella.
+
+**Verificado en el navegador (Rodrigo):** menú lateral sin las entradas
+sueltas; entrar a `PMA-HORNOS-L1` muestra las tres pestañas con sus grillas;
+«Asociar equipo» abre con el plan fijo, rechaza la Revolvedora con el mensaje
+del SP y asocia `ACT-41 Horno L3` refrescando la pestaña Equipos al cerrar;
+«Nuevo plan» sin pestañas → Guardar → centro con id 5 y pestañas; «Nuevo
+hito» con el plan fijo; «Volver al listado». Negativos: Cristián Muñoz
+(Técnico, Hamburgo) rechazado en el login por ámbito; URL directa sin sesión
+→ Login. `aspnet_compiler` exit 0. Datos de prueba revertidos (plan 5 y
+ACT-41).
+
+- [ ] Sigue faltando un usuario web **sin** `VER PLANES MANTENIMIENTO` con
+      clave conocida (Ximena Leiva, Bodeguero) para el negativo de permiso.
+- [ ] Emilio (Checklist / Pautas de inspección): **pendiente, no se toca**
+      hasta que Bryan lo pida.
 
 ---
 
