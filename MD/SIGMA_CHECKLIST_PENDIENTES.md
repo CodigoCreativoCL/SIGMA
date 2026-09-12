@@ -851,6 +851,50 @@ El caso «usuario sin permiso», con los usuarios de Hamburgo:
 - [ ] Quedan en la base como prueba: los planes 1–4 (`PMA-HORNOS-L1`, `PMA-2`,
       `PMA-ANTIGUO`, `PMA-PRUEBA-WEB`). Los dos últimos están deshabilitados.
 
+### 10.2 · HU-081 Definir los hitos de un plan — CERRADO
+
+`BD/213_PLAN_MANTENIMIENTO_HITO.sql`, `PlanHito.cs`, `PlanHitoController.cs`,
+`View/Mantenimiento/Planes/PlanHitos.aspx` y `PlanHito.aspx`.
+
+- [x] **T-4018 modelo:** `UX_PMH_VERSION_CODIGO` dice que el código del hito
+      es único **dentro de la versión**, no dentro del cliente como decía la
+      plantilla de la tarea. Tiene sentido: dos versiones del mismo plan
+      tendrán un `LUB-500` cada una. El SP valida contra lo que dice el
+      índice. Los CHECK de orden y duración se traducen a mensajes antes de
+      que rebote la tabla; la regla vive en la tabla.
+- [x] **T-4020 INS:** recibe el **plan**, no la versión, y le cuelga el hito a
+      su borrador. Pedirle al usuario que elija la versión sería pedirle que
+      entienda una tabla que existe por trazabilidad, no por él. Sin borrador,
+      rechaza y dice qué hacer. Sin orden, va al final.
+- [x] **T-4021 UPD / T-4022 DEL:** **solo sobre un borrador**. Una versión
+      publicada ya está generando mantenciones; cambiarle un hito por debajo
+      es cambiar lo que se comprometió. El DEL es lógico y rechaza si el hito
+      generó ocurrencias o tiene actividades.
+- [x] **T-4023 semilla:** `_SEMILLA_PLAN_HITOS.sql`. `Programacion` estaba en
+      **cero** —un hito sin programación no se guarda—, así que crea una
+      mensual por sus propios SP y dos hitos: uno normal y un overhaul con
+      parada, para que las marcas de la grilla tengan algo que marcar.
+- [x] **T-4028 listado:** chip de versión, programación con su tipo debajo
+      («Intervalo de tiempo»), y parada/overhaul como marcas y no como dos
+      columnas de SI/NO.
+- [x] **T-4029 ficha:** tres secciones. El combo de plan solo ofrece los que
+      tienen borrador al crear. Si la versión ya no está en borrador, la ficha
+      lo dice **arriba** y bloquea los campos: enterarse al apretar Guardar es
+      la peor forma. Los números se validan con mensaje propio, porque «abc»
+      en la duración es un tipeo y el error de SQL no lo explica.
+- [x] **T-4030 / T-4031:** mismos permisos que el plan —los hitos son su
+      contenido, y un permiso aparte se otorgaría siempre junto con el otro—.
+      Menú justo después de Planes; `Menu_Funcion` con las dos funciones.
+
+**Verificado en el navegador:** los cuatro combos poblados desde la base
+(planes deshabilitados excluidos), el tipeo en duración rechazado con
+mensaje, `REC-SEG` creado sobre el borrador de `PMA-2`, y con la v1 de hornos
+publicada a la fuerza: el candado en la ficha, sin botón Guardar, y el SP
+rechazando el UPD. `aspnet_compiler` exit 0.
+
+- [ ] Quedan como prueba: la programación «Mensual (semilla)» y tres hitos
+      (`LUB-MENSUAL`, `OVH-QUEMADOR`, `REC-SEG`).
+
 **La IP de la API volvió a cambiar** (ahora `192.168.1.31`); `localhost`
 sirve igual y es lo que conviene usar.
 
