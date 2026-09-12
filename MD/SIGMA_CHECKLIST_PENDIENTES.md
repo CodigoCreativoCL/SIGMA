@@ -762,6 +762,100 @@ volvió a comprobar con el error puesto, y falla.
 
 ---
 
+## Bloque 10 — Web y API: el backlog del 12-09-2026
+
+Bryan pasó la lista de tareas de la hoja del sprint y pidió hacer **solo las
+que no chocan con Catalina ni con Emilio**. Se revisaron sus ramas antes de
+tocar nada:
+
+- **Emilio** tiene el módulo **Checklist** de la web entero
+  (`View/Mantenimiento/Checklist/*`, sus BD/189–194, los controladores
+  `ChecklistPlantilla/Estructura`) y metió **Swagger** en la API
+  (`SwaggerConfig.cs`, `API.csproj`, `Web.config`). Las filas 2180–2182 de
+  `Menus` que apuntan a archivos inexistentes en esta rama son suyas.
+- **Catalina** no tiene nada fuera del Excel del backlog.
+
+**Se toman:** HU-080, 081, 083, 085 (planes de mantenimiento: nadie toca
+`Plan_Mantenimiento*`) y HU-102, 104 (tareas: no hay páginas web de Tarea en
+ninguna rama; la API de comentarios `/tareas/{id}/comentarios` ya existe y es
+código compartido).
+
+**No se toman:** HU-095, 096, 097, 093 (checklist, de Emilio); las tareas de
+«documentar en Swagger» de cualquier HU (`SwaggerConfig.cs` es suyo); y la
+validación con la PO, que no la puede hacer una sesión.
+
+**Para el día del merge:** los números de BD chocan —Emilio usa 189–194 y esta
+rama también, con archivos distintos; no es conflicto de git pero deja dos
+«193»— y `API.csproj`/`Web.config` los tocamos ambos (él Swagger, yo
+controladores): conflicto textual, resoluble.
+
+### 10.1 · HU-080 Crear un plan de mantenimiento — CERRADO
+
+`BD/212_PLAN_MANTENIMIENTO.sql`, `PlanMantenimiento.cs`,
+`PlanMantenimientoController.cs`, `View/Mantenimiento/Planes/*`.
+
+- [x] **T-4001 modelo:** `UX_PMA_CLIENTE_CODIGO` confirma el código único por
+      cliente. Lo importante que salió de revisarlo: entre el plan y sus hitos
+      hay una tabla intermedia, `Plan_Mantenimiento_Version` (Borrador /
+      Publicado / Retirado, HU-084). **Los hitos y los activos cuelgan de la
+      versión, no del plan.**
+- [x] **T-4003 INS:** por eso **crea la versión 1 en borrador en la misma
+      transacción**. Un plan que naciera solo no tendría dónde recibir su
+      primer hito, y haría falta un botón «crear versión» que nadie sabe que
+      hay que apretar antes.
+- [x] **T-4002 SEL:** devuelve la auditoría con nombre —una auditoría que solo
+      se lee por SSMS no sirve— y la versión que manda (la publicada si hay;
+      si no, la última) con sus conteos de hitos y equipos.
+- [x] **T-4004 UPD:** `ISNULL` para lo que la ficha no manda, y banderas
+      `@QUITA_*` para los combos opcionales: vacío al editar significa
+      «quítalo», y sin la bandera el ISNULL conservaría el valor viejo en
+      silencio. Quitar el tipo quita también el modelo.
+- [x] **T-4005 DEL:** baja lógica. Rechaza si el plan ya generó ocurrencias
+      (es historia: hay OT que nacieron de él) o si tiene versión publicada.
+      Los tres mensajes dicen qué hacer, no solo que no.
+- [x] **T-4006 semilla:** `_SEMILLA_PLANES_MANTENIMIENTO.sql`, por el SP y no
+      por INSERT, para que nazcan con versión como los reales. Tres casos:
+      acotado con código escrito, sin alcance con código automático, y uno
+      deshabilitado para que el filtro tenga que esconder algo.
+- [x] **T-4011 listado:** grilla con chip de versión, filtro de planta desde la
+      base y «cualquiera» donde un vacío no se entiende.
+- [x] **T-4012 ficha:** dos secciones, código con prefijo `PMA-` de
+      `Modulo_Codigo`, cascada tipo → modelo, versión de solo lectura y
+      `wuc:Auditoria`.
+- [x] **T-4013 menú:** listado y ficha en `Menus`, con `Menu_Funcion` «Crear y
+      editar» y «Eliminar». **Después de Programaciones y Procedimientos**: un
+      hito apunta a una programación, así que quien entra por primera vez tiene
+      que haber pasado por ahí antes.
+- [x] **T-4014 seguridad:** permisos `VER` y `CREAR EDITAR PLANES
+      MANTENIMIENTO` a los cuatro perfiles que ya manejan programaciones. El
+      cliente sale de la sesión; el SP además valida que planta y modelo sean
+      de ese cliente.
+
+**Verificado en el navegador** (`http://localhost/SIGMA/Intranet`, Rodrigo):
+listar → filtrar → crear (`PMA-PRUEBA-WEB`, nació con v1 borrador) → editar
+(Renca · Horno · Diosna, la cascada tipo→modelo sobrevivió al postback) →
+eliminar. Y por SQL las tres reglas del SP: código duplicado rechazado,
+versión publicada rechazada, borrador deshabilitado. `aspnet_compiler` exit 0.
+
+El caso «usuario sin permiso», con los usuarios de Hamburgo:
+
+- **Técnico** (Cristián Muñoz): la web lo frena en el login —«Tu perfil
+  trabaja desde la aplicación móvil, no desde la web»—. Es la puerta
+  correcta para ese rol: ni llega a la pantalla.
+- **Usuario de web sin el permiso** (Ximena Leiva, Bodeguero): quedó
+  verificado en datos, no en pantalla. No tiene `VER PLANES MANTENIMIENTO` y
+  `ExigirPagina()` la mandaría a `Default.aspx` por la misma ruta que
+  protege todo el sitio. Su clave no es la de prueba, así que no se pudo
+  mirar. **Si Bryan se la restablece desde la web, se prueba en un minuto.**
+
+- [ ] Quedan en la base como prueba: los planes 1–4 (`PMA-HORNOS-L1`, `PMA-2`,
+      `PMA-ANTIGUO`, `PMA-PRUEBA-WEB`). Los dos últimos están deshabilitados.
+
+**La IP de la API volvió a cambiar** (ahora `192.168.1.31`); `localhost`
+sirve igual y es lo que conviene usar.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
@@ -771,7 +865,7 @@ volvió a comprobar con el error puesto, y falla.
 - [ ] Las **cinco** auditorías de `C:\Capstone\_scratch\`: `auditar_rutas.py`,
       `auditar_sp.py`, `auditar_muertos.py`, `auditar_id_output.py` y
       `no_consumidas.py`.
-- [ ] Probar por HTTP contra `http://192.168.1.7/SIGMA/Servicio/API`.
+- [ ] Probar por HTTP contra `http://localhost/SIGMA/Servicio/API`.
       Entran con `Sigma2026`: `rodrigo.quezada@hamburgo.cl`,
       `paula.barriga@hamburgo.cl`, `emilio.fuentes@hamburgo.cl`.
 - [ ] Actualizar `MD/SIGMA_APP_ESTADO.md` y `MD/SIGMA_TRASPASO_SESION.md`.
