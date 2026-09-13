@@ -245,6 +245,26 @@
                 <div class="sigma-modal-field is-chico" style="align-self:flex-end;">
                     <WebControls:PushButton ID="btnFiltrarCal" runat="server" Text="Aplicar" OnClick="btnFiltrarCal_Click" CausesValidation="false" />
                 </div>
+                <div class="sigma-modal-field is-chico">
+                    <label>Solo con parada</label>
+                    <div class="sigma-modal-opciones">
+                        <asp:CheckBox ID="chkSoloParada" runat="server" Text="SI" />
+                    </div>
+                </div>
+                <div class="sigma-modal-field is-chico">
+                    <label>Generar hacia adelante</label>
+                    <rad:RadComboBox2 ID="cboHorizonte" runat="server" Width="100%">
+                        <Items>
+                            <rad:RadComboBoxItem Text="30 días" Value="30" />
+                            <rad:RadComboBoxItem Text="90 días" Value="90" Selected="true" />
+                            <rad:RadComboBoxItem Text="180 días" Value="180" />
+                            <rad:RadComboBoxItem Text="1 año" Value="365" />
+                        </Items>
+                    </rad:RadComboBox2>
+                </div>
+            </div>
+            <div style="margin:0 0 10px;">
+                <asp:Literal ID="litSemanas" runat="server" />
             </div>
 
             <div style="margin:0 0 10px;">
@@ -259,6 +279,8 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="pmo_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="btnGenerarOcurrencias" runat="server" Text="Generar ocurrencias" CssClass="icono_excel" OnClick="btnGenerarOcurrencias_Click" CausesValidation="false"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar las ocurrencias que faltan de la versión publicada en el horizonte elegido? Las que ya existen no se duplican.');" />
                             <asp:LinkButton ID="lnkGenerarOT" runat="server" Text="Generar órdenes de trabajo" CssClass="icono_guardar" OnClick="lnkGenerarOT_Click" CausesValidation="false"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Generar una orden de trabajo por cada ocurrencia seleccionada? Las que ya tienen orden se informan y no se duplican.');" />
                             <asp:LinkButton ID="lnkDescargarCal" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargarCal_Click" CausesValidation="false" />

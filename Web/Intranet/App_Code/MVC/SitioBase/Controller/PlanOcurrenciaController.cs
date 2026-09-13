@@ -172,6 +172,62 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
+        /// <summary>
+        /// HU-076: genera las ocurrencias que faltan del plan (o de todos) en el
+        /// horizonte. El SP es idempotente; el detalle resume que se genero.
+        /// </summary>
+        public Respuesta GenerarOcurrencias(int? plan, int horizonteDias)
+        {
+            return Generar("GEN_PLAN_OCURRENCIAS", "@PLAN", plan, horizonteDias,
+                dr => dr["PLAN_CODIGO"] + " · " + dr["HITO_CODIGO"] + ": " + dr["GENERADAS"] + " en " + dr["EQUIPOS"] + " equipo(s)");
+        }
+
+        internal static Respuesta Generar(string sp, string parametroEntidad, int? entidad, int horizonteDias, Func<SqlDataReader, string> linea)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+                try
+                {
+                    cmd = Conexion.GetCommand(sp);
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue(parametroEntidad, (object)entidad ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@HORIZONTE_DIA", horizonteDias);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.Parameters.AddWithValue("@GENERADAS", 0).Direction = ParameterDirection.Output;
+
+                    StringBuilder sb = new StringBuilder();
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                        while (dr.Read()) sb.Append("<br/>· ").Append(linea(dr));
+                    cmd.Connection.Close();
+
+                    int n = cmd.Parameters["@GENERADAS"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@GENERADAS"].Value;
+                    respuesta.codigo = n;
+                    respuesta.detalle = n == 0
+                        ? "No había ocurrencias nuevas que generar en los próximos " + horizonteDias + " días."
+                        : n + " ocurrencia(s) generada(s) para los próximos " + horizonteDias + " días." + sb;
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+            else
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
         /// <summary>Los mismos parametros para consultar y para exportar. El cliente va SIEMPRE desde la sesion.</summary>
         private static void Filtrar(SqlCommand cmd, PlanOcurrencia filtro)
         {

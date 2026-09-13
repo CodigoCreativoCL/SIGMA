@@ -3,6 +3,7 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -633,9 +634,39 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         return f;
     }
 
+    /// <summary>
+    /// Carga por semana (HU-085 criterio 3): horas estimadas de lo que cae en
+    /// cada semana ISO del periodo, con lo que hay abierto. Se calcula aqui
+    /// sobre la lista ya traida: es una suma, no otra consulta.
+    /// </summary>
+    private string CargaPorSemana(List<PlanOcurrencia> lista)
+    {
+        SortedDictionary<string, int> minutos = new SortedDictionary<string, int>();
+        System.Globalization.Calendar cal = System.Globalization.CultureInfo.InvariantCulture.Calendar;
+        foreach (PlanOcurrencia o in lista)
+        {
+            if (o.situacion == "CERRADA") continue;
+            int semana = cal.GetWeekOfYear(o.fecha_programada, System.Globalization.CalendarWeekRule.FirstFourDayWeek, DayOfWeek.Monday);
+            string clave = o.fecha_programada.Year + "-S" + semana.ToString("00");
+            int m; minutos.TryGetValue(clave, out m);
+            minutos[clave] = m + (o.duracion_estimada_minuto ?? 0);
+        }
+        if (minutos.Count == 0) return "";
+
+        StringBuilder sb = new StringBuilder("<span class=\"sigma-inv-vacio\">Horas estimadas por semana (abiertas):</span> ");
+        foreach (KeyValuePair<string, int> kv in minutos)
+            sb.Append("<span class=\"grid-estado-chip is-neutro\">" + kv.Key + " · " + (kv.Value / 60.0).ToString("0.#") + " h</span> ");
+        return sb.ToString();
+    }
+
     private void CargarCalendario()
     {
         List<PlanOcurrencia> lista = new PlanOcurrenciaController().GetCalendario(FiltroCalendario()) ?? new List<PlanOcurrencia>();
+
+        // «Solo con parada» (HU-085 criterio 2) se aplica sobre lo traido: es una marca del hito.
+        if (chkSoloParada.Checked) lista = lista.FindAll(o => o.requiere_parada);
+
+        litSemanas.Text = CargaPorSemana(lista);
 
         GridCalendario.DataSource = lista;
         GridCalendario.DataBind();
@@ -649,6 +680,8 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             if (lnk != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnk);
             Control gen = it.FindControl("lnkGenerarOT");
             if (gen != null) gen.Visible = puedeGenerar;
+            Control ocu = it.FindControl("btnGenerarOcurrencias");
+            if (ocu != null) ocu.Visible = Token.Puede("CREAR EDITAR PLANES MANTENIMIENTO");
         }
 
         litResumenCal.Text = ResumenCalendario(lista);
@@ -791,6 +824,29 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
         }
+    }
+
+    /// <summary>HU-076: el generador a mano desde el plan; el mismo SP que usara el job nocturno.</summary>
+    protected void btnGenerarOcurrencias_Click(object sender, EventArgs e)
+    {
+        Pestana(tabCalendario, pvCalendario);
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR PLANES MANTENIMIENTO"))
+                throw new Exception("No tiene permiso para generar ocurrencias.");
+
+            int horizonte;
+            if (!int.TryParse(cboHorizonte.SelectedValue, out horizonte)) horizonte = 90;
+
+            Respuesta r = new PlanOcurrenciaController().GenerarOcurrencias(Id, horizonte);
+            if (r.error) { Tools.tools.ClientAlert(r.detalle, "alerta"); return; }
+
+            pnlResultadoOT.Visible = true;
+            litResultadoOT.Text = "<strong>Generación de ocurrencias</strong><br/>" + r.detalle;
+            CargarCalendario();
+            Tools.tools.ClientAlert(r.codigo + " ocurrencia(s) generada(s).", "ok");
+        }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
     }
 
     protected void lnkDescargarCal_Click(object sender, EventArgs e)

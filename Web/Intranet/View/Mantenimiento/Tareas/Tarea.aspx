@@ -174,6 +174,8 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkNuevaProgramacion" runat="server" Text="Programar" CssClass="icono_guardar" OnClientClick="return abrirTareaProgramacion(queryNuevaProgramacion);" />
+                            <asp:LinkButton ID="lnkGenerarOcurrencias" runat="server" Text="Generar ocurrencias (90 días)" CssClass="icono_excel" OnClick="lnkGenerarOcurrencias_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar las ocurrencias que faltan de esta tarea para los próximos 90 días? Las que ya existen no se duplican.');" />
                             <asp:LinkButton ID="lnkQuitarProgramacion" runat="server" Text="Quitar" CssClass="icono_eliminar" OnClick="lnkQuitarProgramacion_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Quitar las programaciones seleccionadas? La tarea deja de generar por ellas.');" />
                         </div>

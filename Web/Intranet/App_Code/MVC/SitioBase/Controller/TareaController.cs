@@ -264,6 +264,13 @@ namespace SitioBase.Controller
             }, false, e.tpr_id);
         }
 
+        /// <summary>HU-076 para tareas: las ocurrencias que faltan de la tarea (o de todas) en el horizonte.</summary>
+        public Respuesta GenerarOcurrencias(int? tarea, int horizonteDias)
+        {
+            return PlanOcurrenciaController.Generar("GEN_TAREA_OCURRENCIAS", "@TAREA", tarea, horizonteDias,
+                dr => dr["TAREA_CODIGO"] + " · " + dr["PROGRAMACION_NOMBRE"] + ": " + dr["GENERADAS"]);
+        }
+
         #endregion
 
         #region Tarea_Comentario

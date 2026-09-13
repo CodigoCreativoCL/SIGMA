@@ -328,6 +328,20 @@ public partial class View_Mantenimiento_Tareas_Tarea : System.Web.UI.Page
         catch (Exception ex) { Tools.tools.ClientAlert(ex.Message); }
     }
 
+    protected void lnkGenerarOcurrencias_Click(object sender, EventArgs e)
+    {
+        Pestana(tabProgramaciones, pvProgramaciones);
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR TAREAS"))
+                throw new Exception("No tiene permiso para generar ocurrencias.");
+
+            Respuesta r = new TareaController().GenerarOcurrencias(Id, 90);
+            Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+        }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
+    }
+
     #endregion
 
     #region Comentarios (HU-104)

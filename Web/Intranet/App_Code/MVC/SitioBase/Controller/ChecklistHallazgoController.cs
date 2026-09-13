@@ -156,6 +156,64 @@ namespace SitioBase.Controller
             HttpContext.Current.Response.End();
         }
 
+        /// <summary>Convierte el hallazgo en una orden (origen HALLAZGO CHECKLIST). Idempotente: devuelve la que ya tenia.</summary>
+        public Respuesta GenerarOrden(int hallazgo)
+        {
+            Respuesta respuesta = new Respuesta();
+            if (!Token.TokenSeguridad()) { respuesta.error = true; respuesta.codigo = -1; respuesta.detalle = "La sesion no es valida o expiro."; return respuesta; }
+
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("INS_ORDEN_TRABAJO_HALLAZGO");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@HALLAZGO", hallazgo);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                int correlativo = 0; bool yaExistia = false;
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                    if (dr.Read()) { correlativo = int.Parse(dr["OTR_CORRELATIVO"].ToString()); yaExistia = (bool)dr["YA_EXISTIA"]; }
+                cmd.Connection.Close();
+
+                respuesta.codigo = cmd.Parameters["@ID"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@ID"].Value;
+                respuesta.detalle = "OT-" + correlativo + (yaExistia ? " (ya existía)" : " generada");
+                respuesta.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                respuesta.codigo = -1; respuesta.detalle = ex.Message; respuesta.error = true;
+            }
+            return respuesta;
+        }
+
+        /// <summary>Descarta con motivo (el SP exige al menos 10 caracteres) y deja quien y cuando.</summary>
+        public Respuesta Descartar(int hallazgo, string motivo)
+        {
+            Respuesta respuesta = new Respuesta();
+            if (!Token.TokenSeguridad()) { respuesta.error = true; respuesta.codigo = -1; respuesta.detalle = "La sesion no es valida o expiro."; return respuesta; }
+
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("UPD_CHECKLIST_HALLAZGO_DESCARTAR");
+                cmd.Parameters.AddWithValue("@ID", hallazgo);
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@MOTIVO", motivo ?? "");
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+                respuesta.codigo = hallazgo; respuesta.detalle = "Hallazgo descartado."; respuesta.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                respuesta.codigo = -1; respuesta.detalle = ex.Message; respuesta.error = true;
+            }
+            return respuesta;
+        }
+
         /// <summary>El cliente va SIEMPRE desde la sesion: lo de otra empresa no se ve aunque se conozca el id.</summary>
         private static void Filtrar(SqlCommand cmd, ChecklistHallazgo f)
         {

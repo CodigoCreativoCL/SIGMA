@@ -52,10 +52,24 @@
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
+            <div class="sigma-modal-grid" style="margin:0 0 8px;">
+                <div class="sigma-modal-field is-ancho">
+                    <label>Motivo del descarte (al menos 10 caracteres; solo para «Descartar»)</label>
+                    <WebControls:TextBox2 ID="txtMotivo" runat="server" MaxLength="1000" />
+                </div>
+            </div>
+            <asp:Panel ID="pnlResultado" runat="server" Visible="false" CssClass="sigma-modal-note" style="margin:0 0 10px;">
+                <i class="mdi mdi-clipboard-check-outline"></i>
+                <div><asp:Literal ID="litResultado" runat="server" /></div>
+            </asp:Panel>
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound" AllowPaging="true" PageSize="50">
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="cha_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="lnkGenerarOT" runat="server" Text="Generar orden de trabajo" CssClass="icono_guardar" OnClick="lnkGenerarOT_Click" CausesValidation="false"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar una orden de trabajo por cada hallazgo seleccionado? Quedan enlazados y salen de la bandeja.');" />
+                            <asp:LinkButton ID="lnkDescartar" runat="server" Text="Descartar con motivo" CssClass="icono_eliminar" OnClick="lnkDescartar_Click" CausesValidation="false"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Descartar los hallazgos seleccionados con el motivo escrito arriba? Queda registrado quién y cuándo.');" />
                             <asp:LinkButton ID="lnkDescargar" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargar_Click" CausesValidation="false" />
                         </div>
                     </CommandItemTemplate>

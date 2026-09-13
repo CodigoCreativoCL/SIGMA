@@ -22,6 +22,7 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
     {
         if (!IsPostBack)
         {
+            Grid.AddSelectColumn();
             Grid.AddTemplateColumn("FECHA", "", "FECHA", Width: "10%");
             Grid.AddTemplateColumn("SEVERIDAD", "", "SEVERIDAD", Width: "9%");
             Grid.AddColumn("CHA_TITULO", "HALLAZGO", Width: "22%");
@@ -48,10 +49,14 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
         CargarGrid();
         Grid.DataBind();
 
+        // Resolver (orden o descarte) exige la funcion de escritura de la pagina: CREAR ORDEN TRABAJO.
+        bool puedeResolver = Token.PuedeFuncion("Crear y editar");
         foreach (GridItem it in Grid.MasterTableView.GetItems(GridItemType.CommandItem))
         {
             Control lnk = it.FindControl("lnkDescargar");
             if (lnk != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnk);
+            Control g = it.FindControl("lnkGenerarOT"); if (g != null) g.Visible = puedeResolver;
+            Control d = it.FindControl("lnkDescartar"); if (d != null) d.Visible = puedeResolver;
         }
 
         udPanel.Update();
@@ -182,6 +187,46 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
             case "ERROR":      return "<span class=\"grid-estado-chip is-alerta\"><i class=\"mdi mdi-alert-circle\"></i>" + nombre + "</span>";
             default:           return "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-close-circle-outline\"></i>" + (nombre ?? "") + "</span>";
         }
+    }
+
+    /// <summary>Criterio 2: la orden nace con origen hallazgo, el hallazgo queda enlazado y sale de la bandeja.</summary>
+    protected void lnkGenerarOT_Click(object sender, EventArgs e)
+    {
+        Resolver("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().GenerarOrden(id));
+    }
+
+    /// <summary>Criterio 3: descarte con motivo de al menos 10 caracteres; el SP lo exige y registra quien y cuando.</summary>
+    protected void lnkDescartar_Click(object sender, EventArgs e)
+    {
+        string motivo = txtMotivo.Text.Trim();
+        Resolver("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().Descartar(id, motivo));
+        if (pnlResultado.Visible && !litResultado.Text.Contains("is-alerta")) txtMotivo.Text = "";
+    }
+
+    private void Resolver(string permiso, Func<int, Respuesta> accion)
+    {
+        try
+        {
+            if (!Token.Puede(permiso)) throw new Exception("No tiene permiso para resolver hallazgos.");
+            if (Grid.SelectedIndexes.Count == 0) { Tools.tools.ClientAlert("Seleccione al menos un hallazgo."); return; }
+
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            int ok = 0, malos = 0;
+            foreach (string indice in Grid.SelectedIndexes)
+            {
+                GridDataItem fila = (GridDataItem)Grid.MasterTableView.Items[Int32.Parse(indice)];
+                int id = Int32.Parse(Grid.MasterTableView.DataKeyValues[Int32.Parse(indice)]["cha_id"].ToString());
+                Respuesta r = accion(id);
+                string etiqueta = Server.HtmlEncode(fila["CHA_TITULO"].Text);
+                if (r.error) { malos++; sb.Append("<div><span class=\"grid-estado-chip is-alerta\">rechazado</span> " + etiqueta + " — " + Server.HtmlEncode(r.detalle) + "</div>"); }
+                else { ok++; sb.Append("<div><span class=\"grid-estado-chip is-exito\">" + Server.HtmlEncode(r.detalle) + "</span> " + etiqueta + "</div>"); }
+            }
+
+            pnlResultado.Visible = true;
+            litResultado.Text = "<strong>" + ok + " resuelto(s) · " + malos + " rechazado(s)</strong>" + sb;
+            Tools.tools.ClientAlert(ok + " hallazgo(s) resuelto(s).", malos > 0 ? "alerta" : "ok");
+        }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
     }
 
     protected void lnkDescargar_Click(object sender, EventArgs e)
