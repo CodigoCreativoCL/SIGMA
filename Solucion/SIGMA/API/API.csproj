@@ -247,6 +247,7 @@
     <Compile Include="MVC\Model\Dto.cs" />
     <Compile Include="Controllers\ArchivoController.cs" />
     <Compile Include="Controllers\PermisosTrabajoController.cs" />
+    <Compile Include="Controllers\PlanOcurrenciasController.cs" />
     <Compile Include="Services\BlobService.cs" />
     <Compile Include="Services\RutaArchivo.cs" />
     <Compile Include="Utils\ApiBase.cs" />

@@ -2340,4 +2340,77 @@ namespace API.MVC.Model
         public bool YA_ESTABA { get; set; }
     }
 
+
+    // ---------------- HU-076 · HU-087 · HU-111 ----------------
+
+    public class PlanOcurrenciaDto
+    {
+        public int PMO_ID { get; set; }
+        public Guid PMO_UUID { get; set; }
+        public DateTime FECHA_PROGRAMADA { get; set; }
+        public DateTime? FECHA_LIMITE { get; set; }
+        public DateTime? FECHA_DISPONIBLE { get; set; }
+        public string MES { get; set; }
+        public int PLAN_ID { get; set; }
+        public string PLAN_CODIGO { get; set; }
+        public string PLAN_NOMBRE { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public int HITO_ID { get; set; }
+        public string HITO_CODIGO { get; set; }
+        public string HITO_NOMBRE { get; set; }
+        public bool ES_OVERHAUL { get; set; }
+        public bool REQUIERE_PARADA { get; set; }
+        public int? DURACION_ESTIMADA_MINUTO { get; set; }
+        public int ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_CODIGO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        /// <summary>CERRADA · VENCIDA · ATRASADA · DISPONIBLE · FUTURA, derivada al consultar.</summary>
+        public string SITUACION { get; set; }
+        public int DIAS_RESTANTES { get; set; }
+        public int FUE_REPROGRAMADA { get; set; }
+        public int? ORDEN_TRABAJO_ID { get; set; }
+        public int? ORDEN_TRABAJO_CORRELATIVO { get; set; }
+        public string ORDEN_TRABAJO_TITULO { get; set; }
+        public int TOTAL { get; set; }
+    }
+
+    public class PlanOcurrenciaGenerarDto
+    {
+        /// <summary>Vacio: todos los planes publicados del cliente.</summary>
+        public int? plan { get; set; }
+        /// <summary>Dias hacia adelante; 90 si no se indica, tope 730.</summary>
+        public int? horizonte_dia { get; set; }
+        /// <summary>true respeta pro_genera_automaticamente (lo que usa el job).</summary>
+        public bool solo_automaticas { get; set; }
+    }
+
+    public class PlanOcurrenciaGeneradaDto
+    {
+        public string PLAN_CODIGO { get; set; }
+        public string HITO_CODIGO { get; set; }
+        public int EQUIPOS { get; set; }
+        public int GENERADAS { get; set; }
+        public DateTime? PRIMERA { get; set; }
+        public DateTime? ULTIMA { get; set; }
+    }
+
+    public class PlanOcurrenciaGeneracionDto
+    {
+        public int generadas { get; set; }
+        public int horizonte_dia { get; set; }
+        public List<PlanOcurrenciaGeneradaDto> detalle { get; set; }
+    }
+
+    public class OrdenDesdeOcurrenciaDto
+    {
+        public int OTR_ID { get; set; }
+        public int OTR_CORRELATIVO { get; set; }
+        public bool YA_EXISTIA { get; set; }
+    }
+
 }
