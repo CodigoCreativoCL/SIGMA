@@ -1111,6 +1111,68 @@ versión, es su trazabilidad).
       su chip). Con muchas versiones va a crecer; un filtro «solo la que
       manda» es mejora, no bloqueo.
 
+### 10.9 · Cierre de todo lo de Bryan (12-09-2026, segunda mitad)
+
+Bryan: «completemos todo lo de Bryan y marquemos los excels» · «revisa el
+sprint 5 … asígnate lo de plan/tareas» · «revisa sprint 1, 2 y 3 … lo
+bloqueado que dependía de otro sprint».
+
+**HU-111 (S5, tomada por Bryan) — generar OT desde la ocurrencia.**
+`BD/220`: `INS_ORDEN_TRABAJO_OCURRENCIA` en una transacción con
+`XACT_ABORT` (orden origen PLAN + historial + un paso por actividad con el
+texto **copiado** —o el hito como único paso si HU-082 aún no cargó
+actividades— + repuestos planificados + ocurrencia EN EJECUCIÓN con
+historial); idempotente (`YA_EXISTIA`). Generación **masiva** desde la
+pestaña Calendario con resultado por fila. API `POST /plan-ocurrencias/{id}/orden`.
+
+**HU-076 (S3, estaba Bloqueada; tomada por Bryan) — el generador.**
+`BD/222`: `GEN_PLAN_OCURRENCIAS` / `GEN_TAREA_OCURRENCIAS` sobre
+`FNC_PROGRAMACION_FECHAS`, solo versiones publicadas, idempotentes por los
+dos índices únicos, marca de agua en `Programacion_Generacion`. Botón en el
+centro del plan (horizonte 30/90/180/365) y en la tarea; API
+`POST /plan-ocurrencias/generar` (`solo_automaticas` para el job nocturno,
+**que no existe todavía**: hay que agendar la llamada).
+
+**HU-096 — bandeja de hallazgos.** `BD/221` (SEL parametrizado con la
+respuesta que lo originó, índices, Excel, permiso `VER HALLAZGOS`) y
+`BD/223` (`INS_ORDEN_TRABAJO_HALLAZGO` origen HALLAZGO CHECKLIST y
+`UPD_CHECKLIST_HALLAZGO_DESCARTAR` con motivo ≥ 10). Verificado: motivo
+corto rechazado; OT-11 generada y el hallazgo salió de pendientes.
+
+**HU-085 completada:** filtro «solo con parada» y **horas estimadas por
+semana** (criterios 2 y 3).
+
+**HU-041 (S2, sin dueño; bloqueaba HU-074 del S3) — variables de
+condición.** `BD/224`: SEL completo + INS/UPD/DEL con umbrales en orden;
+mantenedor `View/Activos/Variables/` junto a Medidores. **Decisión
+HU-073 #3:** `Programacion_Medidor.pme_activo_medidor` pasa a NULL; con
+NULL el horómetro lo aporta cada equipo del plan (`pac_activo_medidor`).
+`_SEMILLA_PROGRAMACION_CONDICION.sql` desbloquea T-3261 (HU-074).
+
+**Pruebas por HTTP (`_scratch/probar_hu_bryan.py`, Cristián Muñoz):**
+HU-095 (abrir idempotente, obligatorios faltantes → 400 «Faltan 4 items»,
+fuera de rango con mensaje, cierre con conteos), HU-103 (finalizar con
+duración y ejecutor; reintento → `YA_ESTABA`), HU-104 (raíz + anidada;
+vacío → 400), HU-140 (evidencia con lat/long y captura; reintento no
+duplica; antivirus PENDIENTE). Todo OK.
+
+**Excels marcados:** S4 (81 tareas Terminada, 10 Bloqueada por
+desarrollos de Catalina/Emilio; 12 historias de Bryan En revisión; 30
+criterios Sí), S3 (HU-076 Terminada/En revisión, T-3261, HU-073/074
+observadas), S5 (HU-111 reasignada a Bryan y Terminada), S2 (HU-041
+tomada y Terminada). Los libros quedan con `fullCalcOnLoad`: Excel
+recalcula las fórmulas al abrir (LibreOffice no está en esta máquina).
+
+- [ ] **Job nocturno** que llame `GEN_PLAN_OCURRENCIAS` /
+      `GEN_TAREA_OCURRENCIAS` con `@SOLO_AUTOMATICAS = 1` (SQL Agent o
+      tarea programada contra `POST /plan-ocurrencias/generar`).
+- [ ] Generación **por medidor** (HU-073 #1/#2) y **por condición**
+      (HU-074 #1-#3): el disparo ocurre al registrar la lectura/medición,
+      no por fecha. No construido.
+- [ ] HU-004 sigue bloqueada por SMTP (infra, no código).
+- [ ] No verificados (quedan en «No» en los Excels): HU-081 #1/#3, HU-083
+      #2/#3, HU-084 #4, HU-095 #4, HU-102 #2, HU-103 #2.
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado
