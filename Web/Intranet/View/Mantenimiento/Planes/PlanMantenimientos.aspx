@@ -16,6 +16,15 @@
             return false;
         }
 
+        function abrirCargaMasiva() {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/CargaMasivaPlanes.aspx") %>',
+                title: 'Carga masiva de planes',
+                width: 860,
+                initialHeight: 640
+            });
+        }
+
         function refresh() {
             __doPostBack("<%=Grid.ClientID %>", '')
         }
@@ -70,6 +79,7 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirPlanMantenimiento(0);" />
+                            <asp:LinkButton ID="lnkCargaMasiva" runat="server" Text="Carga masiva" CssClass="icono_excel" OnClientClick="return abrirCargaMasiva();" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Eliminar" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea eliminar los planes seleccionados? Un plan con mantenciones generadas no se puede eliminar.');" />
                         </div>

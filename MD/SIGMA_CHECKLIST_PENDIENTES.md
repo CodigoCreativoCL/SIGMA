@@ -967,6 +967,72 @@ ACT-41).
 - [ ] Emilio (Checklist / Pautas de inspección): **pendiente, no se toca**
       hasta que Bryan lo pida.
 
+### 10.5 · HU-085 Calendario del plan — CERRADO
+
+`BD/216_PLAN_CALENDARIO.sql`, `_SEMILLA_PLAN_CALENDARIO.sql`,
+`PlanOcurrencia.cs`, `PlanOcurrenciaController.cs`, pestaña **Calendario**
+en `PlanMantenimiento.aspx`.
+
+- [x] **T-4212 modelo:** `Plan_Mantenimiento_Ocurrencia` no tiene código
+      —es (hito, equipo, fecha)—, así que el «único por código» de la
+      plantilla no aplica. **Restricción que hay que saber:**
+      `UX_PMO_PROGRAMACION_ACTIVO_FECHA` hace que dos hitos del mismo plan
+      **no puedan compartir programación** sobre el mismo equipo: el segundo
+      choca al generar. La semilla de hitos le dio al overhaul su propia
+      programación «Semestral (semilla)». HU-076 (generador) tiene que
+      respetarlo.
+- [x] **T-4213 SP:** `SEL_PLAN_CALENDARIO` sin SQL armado, filtros por
+      parámetro, `OFFSET/FETCH` y `TOTAL` en cada fila. La **situación**
+      (cerrada / vencida / atrasada / disponible / futura) se deriva contra
+      hoy, no se guarda. Fechas en UTC tal como están: se mira a día.
+- [x] **T-4214 índices:** `IX_PMO_CLIENTE_FECHA` e `IX_PMO_ACTIVO_FECHA`;
+      el que había partía por estado y un calendario no filtra por estado.
+- [x] **T-4215 semilla:** publica la v1 de `PMA-HORNOS-L1` (sin borrador no
+      se genera) y llena 2026 con `FNC_PROGRAMACION_FECHAS` hito × equipo:
+      28 ocurrencias, las pasadas completadas y una omitida. **Efecto:** los
+      hitos y equipos de hornos quedan de solo lectura (v1 publicada); PMA-2
+      sigue en borrador para probar edición.
+- [x] **T-4218 pantalla:** como **pestaña del centro**, no como página
+      suelta (todo centralizado en Planes). Filtros año / mes / equipo del
+      plan / estado, línea de resumen por situación, grilla con marcas y
+      límite, y **Descargar Excel** con el mismo filtro (`RPT_PLAN_CALENDARIO_EXCEL`).
+- [x] **T-4219 seguridad:** cliente siempre desde la sesión en el
+      controlador; descarga exige `VER PLANES MANTENIMIENTO`.
+
+**Verificado en el navegador (Rodrigo):** 28 ocurrencias del año con 18
+cerradas · 2 vencidas · 2 disponibles · 6 futuras; filtro Septiembre → 4;
+la pestaña se mantiene tras filtrar; descarga entrega `CALENDARIO
+PMA-HORNOS-L1 <fecha>.xlsx`. `aspnet_compiler` exit 0.
+
+### 10.6 · Carga masiva de planes completos — CERRADO
+
+Bryan, 12-09-2026: «debo poder hacer cargas masivas también de planes de
+mantenimientos completos».
+
+`PlanMantenimientoCargaController.cs`, `CargaMasivaPlanes.aspx(.cs)`
+(modal desde el listado, botón «Carga masiva»), `BD/217` (fila de menú,
+99/invisible). **Sin SP nuevo.**
+
+- [x] **Un libro, tres hojas** cruzadas por el código del plan: PLANES,
+      HITOS, EQUIPOS; más hojas de ayuda (plantas, planificadores, tipos y
+      modelos, programaciones, unidades, tipos y prioridades de OT, equipos)
+      con los valores tal como hay que escribirlos.
+- [x] **Reusa los INS de las fichas** fila por fila: las mismas reglas
+      (código único, alcance del equipo, solo sobre borrador) y los mismos
+      mensajes. Los hitos y equipos pueden apuntar a un plan ya existente.
+- [x] **Nombres resueltos en memoria** una sola vez (diccionarios).
+- [x] **Una fila mala no detiene la carga**: el resultado dice hoja, fila,
+      código y motivo.
+
+**Verificado en el navegador:** planilla de prueba con 2 planes (uno con
+código AUTO), 3 hitos y 4 equipos → 6 cargados, 3 rechazados con motivo
+(«La programación "Cada luna llena" no existe», «5.- EL ACTIVO ACT-35 NO ES
+DEL TIPO…», «El plan "NOEXISTE" no existe ni viene en la hoja PLANES»).
+Datos de prueba revertidos.
+
+- [ ] Pendiente (mío, después): validar la subida por tamaño/extension en
+      el servidor más allá del `.xlsx` (hoy igual que Repuestos).
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado

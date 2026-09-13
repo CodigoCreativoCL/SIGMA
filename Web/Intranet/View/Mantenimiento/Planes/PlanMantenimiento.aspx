@@ -81,6 +81,7 @@
             <rad:RadTab ID="tabFicha" Text="Ficha" runat="server" PageViewID="pvFicha" />
             <rad:RadTab ID="tabHitos" Text="Hitos" runat="server" PageViewID="pvHitos" />
             <rad:RadTab ID="tabEquipos" Text="Equipos" runat="server" PageViewID="pvEquipos" />
+            <rad:RadTab ID="tabCalendario" Text="Calendario" runat="server" PageViewID="pvCalendario" />
         </Tabs>
     </rad:RadTabStrip2>
 
@@ -206,6 +207,54 @@
                             <asp:LinkButton ID="lnkNuevoActivo" runat="server" Text="Asociar equipo" CssClass="icono_guardar" OnClientClick="return abrirPlanActivo(queryNuevoActivo);" />
                             <asp:LinkButton ID="lnkEliminarActivo" runat="server" Text="Quitar" CssClass="icono_eliminar" OnClick="lnkEliminarActivo_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Quitar los equipos seleccionados del plan?');" />
+                        </div>
+                    </CommandItemTemplate>
+                </MasterTableView>
+            </rad:RadGrid2>
+        </rad:RadPageView>
+
+        <%-- ============================== CALENDARIO ============================== --%>
+        <rad:RadPageView ID="pvCalendario" runat="server">
+            <div class="sigma-modal-note" style="margin:10px 0 12px;">
+                <i class="mdi mdi-calendar-month-outline"></i>
+                <div>
+                    <strong>Cuándo le toca a cada equipo.</strong> Cada fila es un hito sobre un equipo en
+                    una fecha. La <em>situación</em> se calcula contra hoy: vencida, atrasada, disponible o
+                    futura. Solo lectura: las genera la versión publicada y las cierra la orden de trabajo.
+                </div>
+            </div>
+
+            <div class="sigma-modal-grid" style="margin-bottom:10px;">
+                <div class="sigma-modal-field is-mini">
+                    <label>Año</label>
+                    <rad:RadComboBox2 ID="cboAnio" runat="server" Width="100%" />
+                </div>
+                <div class="sigma-modal-field is-chico">
+                    <label>Mes</label>
+                    <rad:RadComboBox2 ID="cboMes" runat="server" Width="100%" />
+                </div>
+                <div class="sigma-modal-field is-medio">
+                    <label>Equipo</label>
+                    <rad:RadComboBox2 ID="cboActivoCal" runat="server" Filter="Contains" Width="100%" />
+                </div>
+                <div class="sigma-modal-field is-chico">
+                    <label>Estado</label>
+                    <rad:RadComboBox2 ID="cboEstadoCal" runat="server" Width="100%" />
+                </div>
+                <div class="sigma-modal-field is-chico" style="align-self:flex-end;">
+                    <WebControls:PushButton ID="btnFiltrarCal" runat="server" Text="Aplicar" OnClick="btnFiltrarCal_Click" CausesValidation="false" />
+                </div>
+            </div>
+
+            <div style="margin:0 0 10px;">
+                <asp:Literal ID="litResumenCal" runat="server" />
+            </div>
+
+            <rad:RadGrid2 ID="GridCalendario" runat="server" OnItemDataBound="GridCalendario_ItemDataBound" AllowPaging="true" PageSize="50">
+                <MasterTableView CommandItemDisplay="Top" DataKeyNames="pmo_id">
+                    <CommandItemTemplate>
+                        <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="lnkDescargarCal" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargarCal_Click" CausesValidation="false" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

@@ -31,7 +31,7 @@ GO
 DECLARE @CLIENTE INT = 1
 DECLARE @USUARIO INT = (SELECT TOP 1 usu_id FROM [dbo].[Usuario] WHERE usu_login = 'rodrigo.quezada@hamburgo.cl')
 DECLARE @PLAN    INT = (SELECT pma_id FROM [dbo].[Plan_Mantenimiento] WHERE pma_cliente = @CLIENTE AND pma_codigo = 'PMA-HORNOS-L1')
-DECLARE @PROG    INT, @ID INT
+DECLARE @PROG    INT, @PROG6 INT, @ID INT
 
 IF (@PLAN IS NULL OR @USUARIO IS NULL)
 BEGIN
@@ -62,6 +62,33 @@ BEGIN
 END
 
 -- ---------------------------------------------------------------------------
+-- Otra programacion para el overhaul: cada 6 meses
+--
+--   Dos hitos del mismo plan NO pueden compartir programacion: la ocurrencia
+--   es unica por (programacion, equipo, fecha) -UX_PMO_PROGRAMACION_ACTIVO_
+--   FECHA- y el segundo hito chocaria con el primero al generar. Un
+--   overhaul mensual tampoco tenia sentido.
+-- ---------------------------------------------------------------------------
+SET @PROG6 = (SELECT TOP 1 pro_id FROM [dbo].[Programacion] WHERE pro_cliente = @CLIENTE AND pro_nombre = N'Semestral (semilla)')
+
+IF (@PROG6 IS NULL)
+BEGIN
+    EXEC [dbo].[INS_PROGRAMACION]
+         @ID = @PROG6 OUTPUT, @CLIENTE = @CLIENTE, @TIPO = 4,   -- INTERVALO TIEMPO
+         @NOMBRE = N'Semestral (semilla)', @FECHA_INICIO = '2026-01-01', @FECHA_FIN = NULL,
+         @ZONA_HORARIA = 1, @TOLERANCIA_ANTES = 10080, @TOLERANCIA_DESPUES = 20160,
+         @PERMITE_ANTICIPADA = 1, @PERMITE_ATRASADA = 1, @CUMPLIMIENTO_POLITICA = 1,
+         @GENERA_AUTOMATICAMENTE = 1, @INSTALACION = NULL, @AREA = NULL, @ACTIVO = NULL, @GRUPO = NULL,
+         @USUARIO = @USUARIO
+
+    EXEC [dbo].[UPS_PROGRAMACION_INTERVALO]
+         @ID = @ID OUTPUT, @PROGRAMACION = @PROG6, @CLIENTE = @CLIENTE,
+         @UNIDAD_TIEMPO = 5,   -- MES
+         @CANTIDAD = 6, @FECHA_ANCLA_UTC = '2026-03-15', @DESDE_EJECUCION = 0,
+         @USUARIO = @USUARIO
+END
+
+-- ---------------------------------------------------------------------------
 -- Dos hitos sobre el borrador del plan de hornos
 -- ---------------------------------------------------------------------------
 IF NOT EXISTS (SELECT 1 FROM [dbo].[Plan_Mantenimiento_Hito] h
@@ -79,7 +106,7 @@ IF NOT EXISTS (SELECT 1 FROM [dbo].[Plan_Mantenimiento_Hito] h
                JOIN [dbo].[Plan_Mantenimiento_Version] v ON v.pmv_id = h.pmh_plan_mantenimiento_version
                WHERE v.pmv_plan_mantenimiento = @PLAN AND h.pmh_codigo = 'OVH-QUEMADOR')
     EXEC [dbo].[INS_PLAN_HITO]
-         @ID = @ID OUTPUT, @CLIENTE = @CLIENTE, @PLAN = @PLAN, @PROGRAMACION = @PROG,
+         @ID = @ID OUTPUT, @CLIENTE = @CLIENTE, @PLAN = @PLAN, @PROGRAMACION = @PROG6,
          @CODIGO = N'OVH-QUEMADOR', @NOMBRE = N'Overhaul del quemador',
          @ORDEN = 2, @DURACION_ESTIMADA_MINUTO = 480,
          @ES_OVERHAUL = 1, @REQUIERE_PARADA = 1,

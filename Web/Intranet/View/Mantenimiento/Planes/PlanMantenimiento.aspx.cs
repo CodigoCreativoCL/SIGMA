@@ -88,10 +88,21 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             GridActivos.AddColumn("TIPO_NOMBRE", "TIPO", Width: "11%");
             GridActivos.AddColumn("COMPONENTE_NOMBRE", "COMPONENTE", Width: "15%");
             GridActivos.AddColumn("MEDIDOR_NOMBRE", "MEDIDOR", Width: "12%");
+
+            GridCalendario.AddTemplateColumn("FECHA", "", "FECHA", Width: "11%");
+            GridCalendario.AddColumn("HITO_CODIGO", "HITO", Width: "11%");
+            GridCalendario.AddColumn("HITO_NOMBRE", "", Width: "20%");
+            GridCalendario.AddColumn("ACTIVO_CODIGO", "EQUIPO", Width: "8%");
+            GridCalendario.AddColumn("ACTIVO_NOMBRE", "", Width: "14%");
+            GridCalendario.AddColumn("COMPONENTE_NOMBRE", "COMPONENTE", Width: "10%");
+            GridCalendario.AddTemplateColumn("MARCAS", "", "", Width: "9%");
+            GridCalendario.AddTemplateColumn("SITUACION", "", "SITUACIÓN", Width: "9%");
+            GridCalendario.AddTemplateColumn("OT", "", "OT", Width: "8%");
         }
 
         Tools.tools.RegisterPostBackScript(GridHitos);
         Tools.tools.RegisterPostBackScript(GridActivos);
+        Tools.tools.RegisterPostBackScript(GridCalendario);
     }
 
     #region Combos de la ficha
@@ -199,6 +210,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         bool conPlan = Id > 0;
         tabHitos.Visible = conPlan;
         tabEquipos.Visible = conPlan;
+        tabCalendario.Visible = conPlan;
 
         if (conPlan)
         {
@@ -217,6 +229,9 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             GridActivos.DataSource = new PlanActivoController().GetPlanActivos(
                 new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id });
             GridActivos.DataBind();
+
+            ConfigurarFiltrosCalendario();
+            CargarCalendario();
         }
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
@@ -402,6 +417,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     protected void lnkEliminarHito_Click(object sender, EventArgs e)
     {
+        Pestana(tabHitos, pvHitos);
         Eliminar(GridHitos, "pmh_id", id => new PlanHitoController().DeletePlanHito(new PlanHito { pmh_id = id }));
     }
 
@@ -438,7 +454,208 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     protected void lnkEliminarActivo_Click(object sender, EventArgs e)
     {
+        Pestana(tabEquipos, pvEquipos);
         Eliminar(GridActivos, "pac_id", id => new PlanActivoController().DeletePlanActivo(new PlanActivo { pac_id = id }));
+    }
+
+    #endregion
+
+    #region Calendario (HU-085)
+
+    /// <summary>
+    /// Los combos del calendario se arman una vez. El año en curso y «todo
+    /// el año» son el arranque: es la pregunta de la historia, «que le toca
+    /// a la planta este año».
+    /// </summary>
+    private void ConfigurarFiltrosCalendario()
+    {
+        if (IsPostBack) return;
+
+        int anio = DateTime.Now.Year;
+        for (int a = anio - 1; a <= anio + 2; a++)
+            cboAnio.Items.Add(new RadComboBoxItem(a.ToString(), a.ToString()) { Selected = a == anio });
+
+        cboMes.Items.Add(new RadComboBoxItem("Todo el año", ""));
+        string[] meses = { "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre" };
+        for (int m = 1; m <= 12; m++) cboMes.Items.Add(new RadComboBoxItem(meses[m - 1], m.ToString()));
+
+        // Solo los equipos de este plan: elegir uno de otra planta daria una
+        // lista vacia sin explicar por que.
+        cboActivoCal.Items.Add(new RadComboBoxItem("Todos los equipos", ""));
+        List<PlanActivo> activos = new PlanActivoController().GetPlanActivos(
+            new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id });
+        if (activos != null)
+        {
+            HashSet<int> vistos = new HashSet<int>();
+            foreach (PlanActivo a in activos)
+                if (vistos.Add(a.pac_activo))
+                    cboActivoCal.Items.Add(new RadComboBoxItem(a.activo_codigo + " — " + a.activo_nombre, a.pac_activo.ToString()));
+        }
+
+        // Plan_Ocurrencia_Estado es un catalogo fijo del bloque 14 (BD/14_PLANES).
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Cualquier estado", ""));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Pendiente", "1"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Disponible", "2"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("En ejecución", "3"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Completada", "4"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Omitida", "5"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Cancelada", "6"));
+        cboEstadoCal.Items.Add(new RadComboBoxItem("Reprogramada", "7"));
+    }
+
+    /// <summary>El mismo filtro para la grilla y para la descarga.</summary>
+    private PlanOcurrencia FiltroCalendario()
+    {
+        PlanOcurrencia f = new PlanOcurrencia { filtro_plan = Id };
+
+        int anio, mes;
+        if (!int.TryParse(cboAnio.SelectedValue, out anio) || anio < 2000) anio = DateTime.Now.Year;
+        int.TryParse(cboMes.SelectedValue, out mes);
+
+        if (mes >= 1 && mes <= 12)
+        {
+            f.filtro_desde = new DateTime(anio, mes, 1);
+            f.filtro_hasta = f.filtro_desde.Value.AddMonths(1).AddDays(-1);
+        }
+        else
+        {
+            f.filtro_desde = new DateTime(anio, 1, 1);
+            f.filtro_hasta = new DateTime(anio, 12, 31);
+        }
+
+        int activo, estado;
+        if (int.TryParse(cboActivoCal.SelectedValue, out activo) && activo > 0) f.filtro_activo = activo;
+        if (int.TryParse(cboEstadoCal.SelectedValue, out estado) && estado > 0) f.filtro_estado = estado;
+
+        return f;
+    }
+
+    private void CargarCalendario()
+    {
+        List<PlanOcurrencia> lista = new PlanOcurrenciaController().GetCalendario(FiltroCalendario()) ?? new List<PlanOcurrencia>();
+
+        GridCalendario.DataSource = lista;
+        GridCalendario.DataBind();
+
+        // El boton de descarga es un postback completo: entrega un archivo.
+        foreach (GridItem it in GridCalendario.MasterTableView.GetItems(GridItemType.CommandItem))
+        {
+            Control lnk = it.FindControl("lnkDescargarCal");
+            if (lnk != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnk);
+        }
+
+        litResumenCal.Text = ResumenCalendario(lista);
+    }
+
+    /// <summary>
+    /// Una linea con los totales por situacion, para leer el año sin
+    /// recorrer la grilla: «28 ocurrencias · 18 cerradas · 2 vencidas · …».
+    /// </summary>
+    private string ResumenCalendario(List<PlanOcurrencia> lista)
+    {
+        if (lista.Count == 0)
+            return "<span class=\"sigma-inv-vacio\">Sin ocurrencias en el período. Se generan al publicar la versión.</span>";
+
+        int cerradas = 0, vencidas = 0, atrasadas = 0, disponibles = 0, futuras = 0;
+        foreach (PlanOcurrencia o in lista)
+            switch (o.situacion)
+            {
+                case "CERRADA": cerradas++; break;
+                case "VENCIDA": vencidas++; break;
+                case "ATRASADA": atrasadas++; break;
+                case "DISPONIBLE": disponibles++; break;
+                default: futuras++; break;
+            }
+
+        string r = "<strong>" + lista.Count + "</strong> " + (lista.Count == 1 ? "ocurrencia" : "ocurrencias");
+        if (cerradas > 0)    r += " · " + ChipSituacion("CERRADA", cerradas + " cerradas");
+        if (vencidas > 0)    r += " · " + ChipSituacion("VENCIDA", vencidas + " vencidas");
+        if (atrasadas > 0)   r += " · " + ChipSituacion("ATRASADA", atrasadas + " atrasadas");
+        if (disponibles > 0) r += " · " + ChipSituacion("DISPONIBLE", disponibles + " disponibles");
+        if (futuras > 0)     r += " · " + ChipSituacion("FUTURA", futuras + " futuras");
+        return r;
+    }
+
+    protected void GridCalendario_ItemDataBound(object sender, GridItemEventArgs e)
+    {
+        if (e.Item.ItemType != GridItemType.AlternatingItem && e.Item.ItemType != GridItemType.Item) return;
+        if (!(e.Item is GridDataItem)) return;
+
+        GridDataItem item = e.Item as GridDataItem;
+        PlanOcurrencia o = item.DataItem as PlanOcurrencia;
+        if (o == null) return;
+
+        string[] dias = { "dom", "lun", "mar", "mié", "jue", "vie", "sáb" };
+        string fecha = "<strong>" + o.fecha_programada.ToString("dd-MM-yyyy") + "</strong> <span class=\"sigma-inv-vacio\">" + dias[(int)o.fecha_programada.DayOfWeek] + "</span>";
+        if (o.fue_reprogramada) fecha += " <i class=\"mdi mdi-calendar-refresh\" title=\"Reprogramada\"></i>";
+        item["FECHA"].Controls.Add(new Literal { Text = fecha });
+
+        if (string.IsNullOrEmpty(o.componente_nombre))
+            item["COMPONENTE_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">equipo completo</span>";
+
+        string marcas = "";
+        if (o.requiere_parada) marcas += "<span class=\"grid-estado-chip is-alerta\" title=\"Requiere parada\"><i class=\"mdi mdi-power\"></i>Parada</span> ";
+        if (o.es_overhaul) marcas += "<span class=\"grid-estado-chip is-advertencia\" title=\"Overhaul\"><i class=\"mdi mdi-wrench\"></i>Overhaul</span>";
+        item["MARCAS"].Controls.Add(new Literal { Text = marcas });
+
+        string situacion = o.situacion == "CERRADA" ? ChipSituacion("CERRADA", o.estado_nombre) : ChipSituacion(o.situacion, null);
+        if (o.situacion != "CERRADA" && o.fecha_limite != null)
+            situacion += "<br/><span class=\"sigma-inv-vacio\">límite " + o.fecha_limite.Value.ToString("dd-MM") + "</span>";
+        item["SITUACION"].Controls.Add(new Literal { Text = situacion });
+
+        item["OT"].Controls.Add(new Literal
+        {
+            Text = o.orden_trabajo_correlativo != null
+                 ? "<span title=\"" + Server.HtmlEncode(o.orden_trabajo_titulo ?? "") + "\">OT-" + o.orden_trabajo_correlativo + "</span>"
+                 : "<span class=\"sigma-inv-vacio\">—</span>"
+        });
+    }
+
+    private static string ChipSituacion(string situacion, string texto)
+    {
+        switch (situacion)
+        {
+            case "CERRADA":    return "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-check\"></i>" + (texto ?? "Cerrada") + "</span>";
+            case "VENCIDA":    return "<span class=\"grid-estado-chip is-alerta\"><i class=\"mdi mdi-alert-circle-outline\"></i>" + (texto ?? "Vencida") + "</span>";
+            case "ATRASADA":   return "<span class=\"grid-estado-chip is-advertencia\"><i class=\"mdi mdi-clock-alert-outline\"></i>" + (texto ?? "Atrasada") + "</span>";
+            case "DISPONIBLE": return "<span class=\"grid-estado-chip is-exito\"><i class=\"mdi mdi-play-circle-outline\"></i>" + (texto ?? "Disponible") + "</span>";
+            default:           return "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-calendar-blank-outline\"></i>" + (texto ?? "Futura") + "</span>";
+        }
+    }
+
+    /// <summary>Page_PreRender recarga con el filtro nuevo; aqui solo se sostiene la pestaña.</summary>
+    protected void btnFiltrarCal_Click(object sender, EventArgs e) { Pestana(tabCalendario, pvCalendario); }
+
+    /// <summary>
+    /// Un postback desde una pestaña tiene que volver a esa pestaña. El
+    /// tabstrip no lo hace solo cuando las pestañas se muestran y esconden
+    /// en PreRender, asi que se fija a mano.
+    /// </summary>
+    private void Pestana(RadTab tab, RadPageView vista)
+    {
+        tab.Selected = true;
+        vista.Selected = true;
+    }
+
+    protected void lnkDescargarCal_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("VER PLANES MANTENIMIENTO"))
+                throw new Exception("No tiene permiso para ver planes de mantenimiento.");
+
+            PlanMantenimiento plan = new PlanMantenimientoController().GetPlanMantenimiento(new PlanMantenimiento { pma_id = Id });
+            new PlanOcurrenciaController().ExportarCalendario(FiltroCalendario(), plan.pma_codigo);
+        }
+        catch (System.Threading.ThreadAbortException)
+        {
+            /* Response.End() la lanza siempre: es como termina una descarga, no un fallo. */
+            throw;
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
     }
 
     #endregion
