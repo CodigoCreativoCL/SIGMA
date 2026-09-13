@@ -1033,6 +1033,51 @@ Datos de prueba revertidos.
 - [ ] Pendiente (mío, después): validar la subida por tamaño/extension en
       el servidor más allá del `.xlsx` (hoy igual que Repuestos).
 
+### 10.7 · HU-102 Tarea recurrente + HU-104 Comentarios (web) — CERRADO
+
+`BD/218_TAREA.sql`, `_SEMILLA_TAREAS.sql`, `Model/Tarea.cs` (Tarea,
+TareaProgramacion, TareaComentario), `TareaController.cs`,
+`View/Mantenimiento/Tareas/Tareas.aspx` (listado), `Tarea.aspx` (centro en
+Default.master: Ficha / Programaciones / Comentarios) y
+`TareaProgramacion.aspx` (modal). Un solo menú: **Tareas recurrentes**.
+
+- [x] **T-4283 modelo:** `Tarea` solo la leía la app: **no había forma de
+      crearla desde la web**, así que HU-102 arranca por `SEL/INS/UPD/DEL_TAREA`
+      (código `TAR-` automático vía `Modulo_Codigo`). `Tarea_Programacion`
+      es única por (tarea, programación); responsable y grupo opcionales,
+      como dice la tabla —no se inventó la regla «al menos uno»—.
+- [x] **T-4284/85/86 SP:** `INS_TAREA_PROGRAMACION` (revive una apagada en
+      vez de chocar con el índice), `UPD` (solo quién la hace; cambiar la
+      programación es quitar y agregar), `DEL` lógico. `DEL_TAREA` rechaza
+      con ocurrencias pendientes y apaga sus programaciones.
+- [x] **HU-104 web:** `SEL_TAREA_COMENTARIO` (hilo por tarea u ocurrencia) e
+      `INS_TAREA_COMENTARIO`. Append-only como el modelo: se responde, no
+      se edita. Desde la web no se exige pertenecer a la planta (eso es del
+      técnico en `API_INS_TAREA_COMENTARIO`): se exige `COMENTAR TAREA` y
+      que la ocurrencia sea del cliente. Mismo reintento tolerado (mismo
+      texto, mismo usuario, 5 minutos).
+- [x] **Pantallas:** listado con prioridad como chip y pendientes; centro
+      con ficha (planta → área y equipo en cascada), programaciones (grilla
+      + modal con la tarea fija) y **el hilo dibujado como conversación**
+      (tarjeta por ocurrencia, respuestas con sangría, «Responder» y
+      «Comentar»), no como grilla.
+- [x] **Permisos:** `VER TAREAS` / `CREAR EDITAR TAREAS` a los perfiles de
+      programaciones; `COMENTAR TAREA` (ya existía, ámbito app) también a
+      los que editan.
+
+**Verificado en el navegador (Rodrigo):** listado; TAR-001 con hilo real
+(Cristián por voz, Marcela respondiendo); respuesta publicada desde la web
+y visible con sangría; «Programar» con la tarea fija y el modal refresca la
+grilla; tarea nueva con «abc» en duración → rechazo con mensaje; con 15 →
+TAR-6 creada (AUTO) y redirigida al centro. `aspnet_compiler` exit 0.
+Datos de prueba revertidos; semilla: TAR-001 mensual con Rodrigo, TAR-005
+semestral sin responsable.
+
+- [ ] Sin generador (HU-076) ninguna programación de tarea produce
+      ocurrencias nuevas; las que hay son de la demo de la app.
+- [ ] `Tarea_Categoria` está vacía y no tiene mantenedor: la ficha no la
+      ofrece (el SP sí la acepta).
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado
