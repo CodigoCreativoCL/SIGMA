@@ -98,11 +98,20 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             GridCalendario.AddTemplateColumn("MARCAS", "", "", Width: "9%");
             GridCalendario.AddTemplateColumn("SITUACION", "", "SITUACIÓN", Width: "9%");
             GridCalendario.AddTemplateColumn("OT", "", "OT", Width: "8%");
+
+            GridVersiones.AddTemplateColumn("VERSION", "", "VERSIÓN", Width: "14%");
+            GridVersiones.AddColumn("HITOS", "HITOS", Width: "7%");
+            GridVersiones.AddColumn("ACTIVOS", "EQUIPOS", Width: "7%");
+            GridVersiones.AddColumn("OCURRENCIAS", "OCURR.", Width: "7%");
+            GridVersiones.AddTemplateColumn("PUBLICACION", "", "PUBLICADA", Width: "22%");
+            GridVersiones.AddTemplateColumn("CREACION", "", "CREADA", Width: "20%");
+            GridVersiones.AddColumn("PMV_OBSERVACION", "OBSERVACIÓN", Width: "23%");
         }
 
         Tools.tools.RegisterPostBackScript(GridHitos);
         Tools.tools.RegisterPostBackScript(GridActivos);
         Tools.tools.RegisterPostBackScript(GridCalendario);
+        Tools.tools.RegisterPostBackScript(GridVersiones);
     }
 
     #region Combos de la ficha
@@ -211,6 +220,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         tabHitos.Visible = conPlan;
         tabEquipos.Visible = conPlan;
         tabCalendario.Visible = conPlan;
+        tabVersiones.Visible = conPlan;
 
         if (conPlan)
         {
@@ -232,6 +242,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
             ConfigurarFiltrosCalendario();
             CargarCalendario();
+            CargarVersiones();
         }
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
@@ -260,9 +271,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             rdbSi.Checked = entidad.pma_habilitado;
             rdbNo.Checked = !entidad.pma_habilitado;
 
-            litVersion.Text = TextoVersion(entidad);
-            litTitulo.Text = Server.HtmlEncode(entidad.pma_codigo + " · " + entidad.pma_nombre);
-            litSubtitulo.Text = Server.HtmlEncode(Resumen(entidad));
+            Cabecera(entidad);
 
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.pma_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.pma_fecha_actualizacion);
@@ -274,6 +283,14 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             litSubtitulo.Text = "Guarde la ficha y aparecerán las pestañas de hitos y equipos.";
             litVersion.Text = "<span class=\"sigma-modal-ayuda\">Se crea la versión 1 en borrador al guardar.</span>";
         }
+    }
+
+    /// <summary>Titulo, subtitulo y linea de version. Se vuelve a pintar cuando cambia la version que manda.</summary>
+    private void Cabecera(PlanMantenimiento entidad)
+    {
+        litVersion.Text = TextoVersion(entidad);
+        litTitulo.Text = Server.HtmlEncode(entidad.pma_codigo + " · " + entidad.pma_nombre);
+        litSubtitulo.Text = Server.HtmlEncode(Resumen(entidad));
     }
 
     private string TextoVersion(PlanMantenimiento p)
@@ -456,6 +473,91 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     {
         Pestana(tabEquipos, pvEquipos);
         Eliminar(GridActivos, "pac_id", id => new PlanActivoController().DeletePlanActivo(new PlanActivo { pac_id = id }));
+    }
+
+    #endregion
+
+    #region Versiones (HU-084)
+
+    private void CargarVersiones()
+    {
+        List<PlanVersion> lista = new PlanVersionController().GetPlanVersiones(
+            new PlanVersion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id }) ?? new List<PlanVersion>();
+
+        bool hayBorrador = lista.Exists(v => v.pmv_plan_version_estado == 1);
+        bool puedeEscribir = Token.PuedeFuncion("Crear y editar");
+
+        GridVersiones.DataSource = lista;
+        GridVersiones.DataBind();
+
+        if (!puedeEscribir)
+            GridVersiones.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
+
+        /* Solo se ofrece lo que aplica: con un borrador abierto se publica;
+           sin borrador se abre uno. Ofrecer los dos siempre es ofrecer uno
+           que el SP va a rechazar. */
+        foreach (GridItem it in GridVersiones.MasterTableView.GetItems(GridItemType.CommandItem))
+        {
+            Control nueva = it.FindControl("lnkNuevaVersion");
+            Control publicar = it.FindControl("lnkPublicar");
+            if (nueva != null) nueva.Visible = !hayBorrador;
+            if (publicar != null) publicar.Visible = hayBorrador;
+            // Postback completo: la cabecera (titulo y version) esta fuera del UpdatePanel.
+            if (nueva != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(nueva);
+            if (publicar != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(publicar);
+        }
+    }
+
+    protected void GridVersiones_ItemDataBound(object sender, GridItemEventArgs e)
+    {
+        if (e.Item.ItemType != GridItemType.AlternatingItem && e.Item.ItemType != GridItemType.Item) return;
+        if (!(e.Item is GridDataItem)) return;
+
+        GridDataItem item = e.Item as GridDataItem;
+        PlanVersion v = item.DataItem as PlanVersion;
+        if (v == null) return;
+
+        item["VERSION"].Controls.Add(new Literal { Text = ChipVersion(v.pmv_numero, v.estado_codigo) });
+
+        string pub = "";
+        if (v.pmv_fecha_publicacion != null)
+            pub = v.pmv_fecha_publicacion.Value.ToString("dd-MM-yyyy HH:mm") + "<br/><span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(v.usuario_publicacion_nombre) + "</span>";
+        if (v.pmv_fecha_retiro != null)
+            pub += "<br/><span class=\"sigma-inv-vacio\">retirada " + v.pmv_fecha_retiro.Value.ToString("dd-MM-yyyy") + "</span>";
+        if (pub.Length == 0) pub = "<span class=\"sigma-inv-vacio\">—</span>";
+        item["PUBLICACION"].Controls.Add(new Literal { Text = pub });
+
+        item["CREACION"].Controls.Add(new Literal
+        {
+            Text = (v.pmv_fecha_creacion == null ? "" : v.pmv_fecha_creacion.Value.ToString("dd-MM-yyyy HH:mm"))
+                 + "<br/><span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(v.usuario_creacion_nombre) + "</span>"
+        });
+    }
+
+    protected void lnkNuevaVersion_Click(object sender, EventArgs e)
+    {
+        Pestana(tabVersiones, pvVersiones);
+        Respuesta r = new PlanVersionController().AbrirVersionNueva(Id, txtObservacionVersion.Text.Trim());
+        if (!r.error) { txtObservacionVersion.Text = ""; Cabecera(new PlanMantenimientoController().GetPlanMantenimiento(new PlanMantenimiento { pma_id = Id })); }
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+    }
+
+    protected void lnkPublicar_Click(object sender, EventArgs e)
+    {
+        Pestana(tabVersiones, pvVersiones);
+        List<PlanVersion> lista = new PlanVersionController().GetPlanVersiones(
+            new PlanVersion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id }) ?? new List<PlanVersion>();
+        PlanVersion borrador = lista.Find(v => v.pmv_plan_version_estado == 1);
+
+        if (borrador == null)
+        {
+            Tools.tools.ClientAlert("Este plan no tiene un borrador que publicar.", "alerta");
+            return;
+        }
+
+        Respuesta r = new PlanVersionController().Publicar(borrador.pmv_id, txtObservacionVersion.Text.Trim());
+        if (!r.error) { txtObservacionVersion.Text = ""; Cabecera(new PlanMantenimientoController().GetPlanMantenimiento(new PlanMantenimiento { pma_id = Id })); }
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
     }
 
     #endregion

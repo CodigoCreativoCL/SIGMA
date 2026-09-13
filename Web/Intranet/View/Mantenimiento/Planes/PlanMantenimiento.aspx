@@ -82,6 +82,7 @@
             <rad:RadTab ID="tabHitos" Text="Hitos" runat="server" PageViewID="pvHitos" />
             <rad:RadTab ID="tabEquipos" Text="Equipos" runat="server" PageViewID="pvEquipos" />
             <rad:RadTab ID="tabCalendario" Text="Calendario" runat="server" PageViewID="pvCalendario" />
+            <rad:RadTab ID="tabVersiones" Text="Versiones" runat="server" PageViewID="pvVersiones" />
         </Tabs>
     </rad:RadTabStrip2>
 
@@ -255,6 +256,38 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkDescargarCal" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargarCal_Click" CausesValidation="false" />
+                        </div>
+                    </CommandItemTemplate>
+                </MasterTableView>
+            </rad:RadGrid2>
+        </rad:RadPageView>
+
+        <%-- =============================== VERSIONES =============================== --%>
+        <rad:RadPageView ID="pvVersiones" runat="server">
+            <div class="sigma-modal-note" style="margin:10px 0 12px;">
+                <i class="mdi mdi-source-branch"></i>
+                <div>
+                    <strong>Lo que se edita es siempre un borrador.</strong> Publicar congela los hitos y equipos
+                    de esa versión y retira la publicada anterior. Para cambiar un plan publicado se abre una
+                    versión nueva: nace como copia de la vigente y se edita desde las pestañas Hitos y Equipos.
+                </div>
+            </div>
+
+            <div class="sigma-modal-grid" style="margin-bottom:10px;">
+                <div class="sigma-modal-field is-ancho">
+                    <label>Observación (qué cambia en esta versión)</label>
+                    <WebControls:TextBox2 ID="txtObservacionVersion" runat="server" MaxLength="1000" />
+                </div>
+            </div>
+
+            <rad:RadGrid2 ID="GridVersiones" runat="server" OnItemDataBound="GridVersiones_ItemDataBound">
+                <MasterTableView CommandItemDisplay="Top" DataKeyNames="pmv_id">
+                    <CommandItemTemplate>
+                        <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="lnkNuevaVersion" runat="server" Text="Abrir versión nueva" CssClass="icono_guardar" OnClick="lnkNuevaVersion_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Abrir una versión nueva en borrador, copiando los hitos y equipos de la vigente?');" />
+                            <asp:LinkButton ID="lnkPublicar" runat="server" Text="Publicar el borrador" CssClass="icono_excel" OnClick="lnkPublicar_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Publicar el borrador? Sus hitos y equipos quedan congelados y la versión publicada anterior se retira.');" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

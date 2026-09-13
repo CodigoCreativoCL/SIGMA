@@ -1078,6 +1078,39 @@ semestral sin responsable.
 - [ ] `Tarea_Categoria` está vacía y no tiene mantenedor: la ficha no la
       ofrece (el SP sí la acepta).
 
+### 10.8 · HU-084 Publicar una versión del plan — CERRADO (pruebas + lo que faltaba)
+
+En el backlog solo tenía pruebas y documentación: el `UPD_PLAN_MANTENIMIENTO_VERSION_PUBLICAR`
+del bloque 14 ya existía. Pero **no había forma de abrir la versión
+siguiente** ni pantalla que publicara, así que la historia no se podía
+ejercitar. `BD/219_PLAN_VERSION.sql`, `PlanVersion.cs`,
+`PlanVersionController.cs`, pestaña **Versiones** en el centro.
+
+- [x] `SEL_PLAN_VERSION` (versiones con hitos, equipos y ocurrencias
+      contados), `INS_PLAN_VERSION_NUEVA` (abre v(n+1) en borrador **como
+      copia de la vigente**: hitos, sus actividades si existen, y equipos;
+      rechaza si ya hay un borrador —la tabla no lo impide, pero dos
+      borradores no tienen sentido—) y `UPD_PLAN_VERSION_PUBLICAR` (delgado
+      sobre el del bloque 14, agrega observación y mensajes numerados).
+- [x] Pestaña Versiones: grilla con chip de estado, publicación y retiro;
+      se ofrece **solo la acción que aplica** (Publicar si hay borrador,
+      Abrir versión nueva si no). Son postback completo: la cabecera (título
+      y versión) está fuera del UpdatePanel y se repinta.
+
+**Casos ejecutados (criterios de HU-084):** publicar el borrador → queda
+PUBLICADA con fecha y usuario y la anterior RETIRADA con fecha; abrir
+versión nueva → v(n+1) BORRADOR con los mismos hitos y equipos; abrir una
+segunda con borrador vigente → rechazo «2.- EL PLAN YA TIENE UNA VERSIÓN EN
+BORRADOR»; publicar sin borrador → botón no ofrecido y SP rechaza; la
+ficha de un hito de versión publicada muestra el candado (10.2). Estado
+final de `PMA-HORNOS-L1`: v1 y v2 retiradas, v3 publicada (28 ocurrencias
+siguen colgando de los hitos de v1: las ocurrencias no se mueven de
+versión, es su trazabilidad).
+
+- [ ] La grilla Hitos muestra los hitos de **todas** las versiones (con
+      su chip). Con muchas versiones va a crecer; un filtro «solo la que
+      manda» es mejora, no bloqueo.
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado
