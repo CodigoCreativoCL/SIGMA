@@ -89,6 +89,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             GridActivos.AddColumn("COMPONENTE_NOMBRE", "COMPONENTE", Width: "15%");
             GridActivos.AddColumn("MEDIDOR_NOMBRE", "MEDIDOR", Width: "12%");
 
+            GridCalendario.AddSelectColumn();
             GridCalendario.AddTemplateColumn("FECHA", "", "FECHA", Width: "11%");
             GridCalendario.AddColumn("HITO_CODIGO", "HITO", Width: "11%");
             GridCalendario.AddColumn("HITO_NOMBRE", "", Width: "20%");
@@ -640,10 +641,14 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         GridCalendario.DataBind();
 
         // El boton de descarga es un postback completo: entrega un archivo.
+        // Generar ordenes exige el permiso de crear OT, ademas de editar planes.
+        bool puedeGenerar = Token.Puede("CREAR ORDEN TRABAJO");
         foreach (GridItem it in GridCalendario.MasterTableView.GetItems(GridItemType.CommandItem))
         {
             Control lnk = it.FindControl("lnkDescargarCal");
             if (lnk != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnk);
+            Control gen = it.FindControl("lnkGenerarOT");
+            if (gen != null) gen.Visible = puedeGenerar;
         }
 
         litResumenCal.Text = ResumenCalendario(lista);
@@ -737,6 +742,55 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     {
         tab.Selected = true;
         vista.Selected = true;
+    }
+
+    /// <summary>
+    /// HU-111: una orden por cada ocurrencia seleccionada. El SP decide -y
+    /// devuelve la existente si ya la tenia-, aqui solo se informa el
+    /// resultado de cada una (criterio 3): que se genero, que ya existia y
+    /// que rebota y por que. Una que rebota no detiene a las demas.
+    /// </summary>
+    protected void lnkGenerarOT_Click(object sender, EventArgs e)
+    {
+        Pestana(tabCalendario, pvCalendario);
+        try
+        {
+            if (!Token.Puede("CREAR ORDEN TRABAJO"))
+                throw new Exception("No tiene permiso para crear órdenes de trabajo.");
+
+            if (GridCalendario.SelectedIndexes.Count == 0)
+            {
+                Tools.tools.ClientAlert("Seleccione al menos una ocurrencia.");
+                return;
+            }
+
+            PlanOcurrenciaController controller = new PlanOcurrenciaController();
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+            int generadas = 0, existentes = 0, rechazadas = 0;
+
+            foreach (string indice in GridCalendario.SelectedIndexes)
+            {
+                GridDataItem fila = (GridDataItem)GridCalendario.MasterTableView.Items[Int32.Parse(indice)];
+                int ocurrencia = Int32.Parse(GridCalendario.MasterTableView.DataKeyValues[Int32.Parse(indice)]["pmo_id"].ToString());
+                string etiqueta = Server.HtmlEncode(fila["HITO_CODIGO"].Text + " · " + fila["ACTIVO_CODIGO"].Text);
+
+                Respuesta r = controller.GenerarOrden(ocurrencia);
+                if (r.error) { rechazadas++; sb.Append("<div><span class=\"grid-estado-chip is-alerta\">rechazada</span> " + etiqueta + " — " + Server.HtmlEncode(r.detalle) + "</div>"); }
+                else if (r.detalle.Contains("ya existía")) { existentes++; sb.Append("<div><span class=\"grid-estado-chip is-neutro\">" + Server.HtmlEncode(r.detalle) + "</span> " + etiqueta + "</div>"); }
+                else { generadas++; sb.Append("<div><span class=\"grid-estado-chip is-exito\">" + Server.HtmlEncode(r.detalle) + "</span> " + etiqueta + "</div>"); }
+            }
+
+            pnlResultadoOT.Visible = true;
+            litResultadoOT.Text = "<strong>" + generadas + " generada" + (generadas == 1 ? "" : "s") + " · " + existentes + " ya existía" + (existentes == 1 ? "" : "n")
+                                + " · " + rechazadas + " rechazada" + (rechazadas == 1 ? "" : "s") + "</strong>" + sb.ToString();
+
+            CargarCalendario();
+            Tools.tools.ClientAlert(generadas + " orden(es) generada(s).", rechazadas > 0 ? "alerta" : "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
     }
 
     protected void lnkDescargarCal_Click(object sender, EventArgs e)

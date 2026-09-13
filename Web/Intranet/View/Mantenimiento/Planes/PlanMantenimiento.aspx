@@ -250,11 +250,17 @@
             <div style="margin:0 0 10px;">
                 <asp:Literal ID="litResumenCal" runat="server" />
             </div>
+            <asp:Panel ID="pnlResultadoOT" runat="server" Visible="false" CssClass="sigma-modal-note" style="margin:0 0 12px;">
+                <i class="mdi mdi-clipboard-check-outline"></i>
+                <div><asp:Literal ID="litResultadoOT" runat="server" /></div>
+            </asp:Panel>
 
             <rad:RadGrid2 ID="GridCalendario" runat="server" OnItemDataBound="GridCalendario_ItemDataBound" AllowPaging="true" PageSize="50">
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="pmo_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
+                            <asp:LinkButton ID="lnkGenerarOT" runat="server" Text="Generar órdenes de trabajo" CssClass="icono_guardar" OnClick="lnkGenerarOT_Click" CausesValidation="false"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar una orden de trabajo por cada ocurrencia seleccionada? Las que ya tienen orden se informan y no se duplican.');" />
                             <asp:LinkButton ID="lnkDescargarCal" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargarCal_Click" CausesValidation="false" />
                         </div>
                     </CommandItemTemplate>

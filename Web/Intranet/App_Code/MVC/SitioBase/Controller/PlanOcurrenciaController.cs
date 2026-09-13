@@ -118,6 +118,60 @@ namespace SitioBase.Controller
             HttpContext.Current.Response.End();
         }
 
+        /// <summary>
+        /// Genera la orden de trabajo de una ocurrencia (HU-111). Las reglas
+        /// viven en el SP: si la ocurrencia ya tiene orden devuelve esa
+        /// (YA_EXISTIA), asi que la generacion masiva puede reintentar.
+        /// </summary>
+        public Respuesta GenerarOrden(int ocurrencia)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+
+                try
+                {
+                    cmd = Conexion.GetCommand("INS_ORDEN_TRABAJO_OCURRENCIA");
+                    cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@OCURRENCIA", ocurrencia);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+
+                    int correlativo = 0; bool yaExistia = false;
+                    using (SqlDataReader dr = cmd.ExecuteReader())
+                    {
+                        if (dr.Read())
+                        {
+                            correlativo = int.Parse(dr["OTR_CORRELATIVO"].ToString());
+                            yaExistia = (bool)dr["YA_EXISTIA"];
+                        }
+                    }
+                    cmd.Connection.Close();
+
+                    respuesta.codigo = cmd.Parameters["@ID"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@ID"].Value;
+                    respuesta.detalle = "OT-" + correlativo + (yaExistia ? " (ya existía)" : " generada");
+                    respuesta.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    respuesta.codigo = -1;
+                    respuesta.detalle = ex.Message;
+                    respuesta.error = true;
+                }
+            }
+            else
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
         /// <summary>Los mismos parametros para consultar y para exportar. El cliente va SIEMPRE desde la sesion.</summary>
         private static void Filtrar(SqlCommand cmd, PlanOcurrencia filtro)
         {
