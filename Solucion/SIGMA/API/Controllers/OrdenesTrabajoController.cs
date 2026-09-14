@@ -732,5 +732,75 @@ namespace API.Controllers
                     new Dictionary<string, object> { { "@HABILITADO", true } }));
             });
         }
+            #region Asignacion (HU-112)
+
+        /// <summary>GET /ordenes-trabajo/{id}/asignaciones — quién la ejecuta: responsable y apoyos.</summary>
+        [HttpGet]
+        [Route("{id:int}/asignaciones")]
+        public IHttpActionResult Asignaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+                return Ok(Datos.Listar<OrdenTrabajoAsignacionDto>("SEL_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object> { { "@CLIENTE", SesionApi.ClienteId() }, { "@ORDEN", id } }));
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/asignaciones — un técnico o una empresa externa, uno de los dos.
+        ///
+        /// Un único responsable: si ya había otro, pasa a apoyo (lo decide el SP).
+        /// Si la orden pide una especialidad que el técnico no tiene, se asigna igual
+        /// y vuelve ADVERTENCIA con el texto; el consumidor decide si lo muestra.
+        /// </summary>
+        /// <response code="200">OTA_ID y ADVERTENCIA (null si no la hay).</response>
+        /// <response code="400">Ni técnico ni proveedor, los dos a la vez, proveedor no contratista, o la orden está cerrada.</response>
+        [HttpPost]
+        [Route("{id:int}/asignaciones")]
+        public IHttpActionResult Asignar(int id, OrdenTrabajoAsignacionAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CREAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                List<OrdenTrabajoAsignadaDto> r = Datos.Listar<OrdenTrabajoAsignadaDto>("INS_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@ORDEN", id },
+                        { "@USUARIO_ASIG", dto.usuario },
+                        { "@PROVEEDOR", dto.proveedor },
+                        { "@GRUPO_TRABAJO", dto.grupo_trabajo },
+                        { "@ES_RESPONSABLE", dto.es_responsable },
+                        { "@ROL_EJECUCION", dto.rol_ejecucion },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@USUARIO", SesionApi.UsuarioId() }
+                    });
+                return Ok(r.Count > 0 ? r[0] : new OrdenTrabajoAsignadaDto());
+            });
+        }
+
+        /// <summary>DELETE /ordenes-trabajo/asignaciones/{id} — quita una asignación (baja lógica).</summary>
+        [HttpDelete]
+        [Route("asignaciones/{id:int}")]
+        public IHttpActionResult QuitarAsignacion(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CREAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                Datos.Ejecutar("DEL_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object> { { "@ID", id }, { "@CLIENTE", SesionApi.ClienteId() }, { "@USUARIO", SesionApi.UsuarioId() } });
+                return Ok(new { ota_id = id });
+            });
+        }
+
+        #endregion
     }
 }

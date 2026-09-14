@@ -2413,4 +2413,221 @@ namespace API.MVC.Model
         public bool YA_EXISTIA { get; set; }
     }
 
+    // ======================= Sprint 5 · OT web, fallas, indisponibilidad =======================
+
+    public class OrdenTrabajoAsignacionDto
+    {
+        public int OTA_ID { get; set; }
+        public int OTA_ORDEN_TRABAJO { get; set; }
+        public int? OTA_USUARIO { get; set; }
+        public int? OTA_PROVEEDOR { get; set; }
+        public int? OTA_GRUPO_TRABAJO { get; set; }
+        public bool OTA_ES_RESPONSABLE { get; set; }
+        public int? OTA_ROL_EJECUCION { get; set; }
+        public DateTime? OTA_FECHA_ASIGNACION_UTC { get; set; }
+        public DateTime? OTA_FECHA_ACEPTACION_UTC { get; set; }
+        public string OTA_OBSERVACION { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public string PROVEEDOR_NOMBRE { get; set; }
+        public string GRUPO_NOMBRE { get; set; }
+        public string ROL_CODIGO { get; set; }
+        public string ROL_NOMBRE { get; set; }
+        public string ASIGNADO_POR_NOMBRE { get; set; }
+        public string ESPECIALIDADES { get; set; }
+    }
+
+    public class OrdenTrabajoAsignacionAltaDto
+    {
+        /// <summary>Técnico del cliente. Excluyente con proveedor.</summary>
+        public int? usuario { get; set; }
+        /// <summary>Empresa externa; tiene que ser contratista. Excluyente con usuario.</summary>
+        public int? proveedor { get; set; }
+        public int? grupo_trabajo { get; set; }
+        /// <summary>true: pasa a ser EL responsable; el anterior queda como apoyo.</summary>
+        public bool es_responsable { get; set; }
+        public int? rol_ejecucion { get; set; }
+        public string observacion { get; set; }
+    }
+
+    public class OrdenTrabajoAsignadaDto
+    {
+        public int OTA_ID { get; set; }
+        /// <summary>Texto si la orden pide una especialidad que el técnico no tiene; null si no.</summary>
+        public string ADVERTENCIA { get; set; }
+    }
+
+    public class FallaDto
+    {
+        public int FAL_ID { get; set; }
+        public Guid FAL_UUID { get; set; }
+        public int FAL_ACTIVO { get; set; }
+        public int? FAL_ACTIVO_COMPONENTE { get; set; }
+        public int? FAL_FALLA_SINTOMA { get; set; }
+        public int FAL_CRITICIDAD_NIVEL { get; set; }
+        public string FAL_TITULO { get; set; }
+        public string FAL_DESCRIPCION { get; set; }
+        public string FAL_CONSECUENCIA { get; set; }
+        public int? FAL_ACTIVO_ESTADO_POSTERIOR { get; set; }
+        public bool FAL_DETUVO_PRODUCCION { get; set; }
+        public DateTime? FAL_FECHA_DETECCION_UTC { get; set; }
+        public DateTime? FAL_FECHA_SOLUCION_UTC { get; set; }
+        public int? FAL_USUARIO_REPORTA { get; set; }
+        public DateTime? FAL_FECHA_CREACION { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public int ACTIVO_INSTALACION { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public string SINTOMA_NOMBRE { get; set; }
+        public string CRITICIDAD_CODIGO { get; set; }
+        public string CRITICIDAD_NOMBRE { get; set; }
+        public string ESTADO_POSTERIOR_NOMBRE { get; set; }
+        public string REPORTA_NOMBRE { get; set; }
+        public int DIAGNOSTICOS { get; set; }
+        public int ACCIONES { get; set; }
+        public int ACCIONES_PROVISORIAS { get; set; }
+        public int ORDENES { get; set; }
+        public int? ULTIMA_OT_CORRELATIVO { get; set; }
+        public int INDISPONIBILIDADES { get; set; }
+        /// <summary>Reparaciones provisorias del mismo equipo (todas sus fallas). Dos o más: equipo que pide atención.</summary>
+        public int PROVISORIAS_DEL_EQUIPO { get; set; }
+    }
+
+    public class FallaAltaDto
+    {
+        public int activo { get; set; }
+        public int? componente { get; set; }
+        public int? sintoma { get; set; }
+        /// <summary>1 BAJA, 2 MEDIA, 3 ALTA, 4 CRITICA. Vacío: MEDIA.</summary>
+        public int? criticidad { get; set; }
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+        public string consecuencia { get; set; }
+        /// <summary>Activo_Estado al que pasa el equipo (2 con observación, 3 detenido, 5 fuera de servicio). Vacío: no cambia.</summary>
+        public int? estado_posterior { get; set; }
+        public bool detuvo_produccion { get; set; }
+        /// <summary>Vacío: ahora.</summary>
+        public DateTime? fecha_deteccion_utc { get; set; }
+    }
+
+    public class FallaEdicionDto
+    {
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+        public string consecuencia { get; set; }
+        public int? criticidad { get; set; }
+        public bool? detuvo_produccion { get; set; }
+    }
+
+    public class FallaDiagnosticoDto
+    {
+        public int FDI_ID { get; set; }
+        public int FDI_FALLA { get; set; }
+        public int? FDI_FALLA_MODO { get; set; }
+        public int? FDI_FALLA_CAUSA { get; set; }
+        public int? FDI_DIAGNOSTICO_METODO { get; set; }
+        public string FDI_DESCRIPCION { get; set; }
+        public bool FDI_ES_DEFINITIVO { get; set; }
+        public decimal? FDI_CONFIANZA { get; set; }
+        public DateTime? FDI_FECHA_DIAGNOSTICO_UTC { get; set; }
+        public string MODO_NOMBRE { get; set; }
+        public string CAUSA_NOMBRE { get; set; }
+        public string METODO_NOMBRE { get; set; }
+        public string DIAGNOSTICA_NOMBRE { get; set; }
+    }
+
+    public class FallaDiagnosticoAltaDto
+    {
+        public int? modo { get; set; }
+        public int? causa { get; set; }
+        /// <summary>Diagnostico_Metodo: 1 inspección visual … 9 análisis con IA.</summary>
+        public int? metodo { get; set; }
+        public string descripcion { get; set; }
+        public bool es_definitivo { get; set; }
+        /// <summary>0..100.</summary>
+        public decimal? confianza { get; set; }
+    }
+
+    public class FallaAccionDto
+    {
+        public int FAC_ID { get; set; }
+        public int FAC_FALLA { get; set; }
+        public int? FAC_FALLA_DIAGNOSTICO { get; set; }
+        public int? FAC_ORDEN_TRABAJO { get; set; }
+        public string FAC_DESCRIPCION { get; set; }
+        public bool FAC_ES_DEFINITIVA { get; set; }
+        public DateTime? FAC_FECHA_ACCION_UTC { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string EJECUTA_NOMBRE { get; set; }
+    }
+
+    public class FallaAccionAltaDto
+    {
+        public int? diagnostico { get; set; }
+        /// <summary>Solo una orden generada desde esta falla.</summary>
+        public int? orden_trabajo { get; set; }
+        public string descripcion { get; set; }
+        /// <summary>true resuelve la falla (fija la fecha de solución).</summary>
+        public bool es_definitiva { get; set; }
+        public DateTime? fecha_accion_utc { get; set; }
+    }
+
+    public class FallaOrdenDto
+    {
+        /// <summary>Orden_Trabajo_Estrategia; vacío: 3 EMERGENCIA.</summary>
+        public int? estrategia { get; set; }
+        public DateTime? fecha_programada_utc { get; set; }
+        public int? duracion_estimada_minuto { get; set; }
+        public bool requiere_permiso { get; set; }
+    }
+
+    public class ActivoIndisponibilidadDto
+    {
+        public int AIN_ID { get; set; }
+        public int AIN_ACTIVO { get; set; }
+        public int? AIN_ORDEN_TRABAJO { get; set; }
+        public int? AIN_FALLA { get; set; }
+        public DateTime AIN_FECHA_INICIO_UTC { get; set; }
+        public DateTime? AIN_FECHA_FIN_UTC { get; set; }
+        public int? AIN_MINUTO { get; set; }
+        public bool AIN_PLANIFICADA { get; set; }
+        public bool AIN_DETUVO_PRODUCCION { get; set; }
+        public int? AIN_INDISPONIBILIDAD_MOTIVO { get; set; }
+        public string AIN_MOTIVO { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string MOTIVO_NOMBRE { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string FALLA_TITULO { get; set; }
+        /// <summary>Con término, los minutos guardados; abierta, los que corren hasta ahora.</summary>
+        public int MINUTOS_ACUMULADOS { get; set; }
+        public string USUARIO_CREACION_NOMBRE { get; set; }
+    }
+
+    public class ActivoIndisponibilidadAltaDto
+    {
+        public int activo { get; set; }
+        public int? orden_trabajo { get; set; }
+        public int? falla { get; set; }
+        public DateTime fecha_inicio_utc { get; set; }
+        /// <summary>Vacío: sigue detenido.</summary>
+        public DateTime? fecha_fin_utc { get; set; }
+        public bool planificada { get; set; }
+        public bool detuvo_produccion { get; set; }
+        /// <summary>Indisponibilidad_Motivo: 1 mantenimiento planificado, 2 falla, 3 espera de repuesto, 4 espera de técnico, 5 causa externa, 6 parada de producción.</summary>
+        public int? motivo_catalogo { get; set; }
+        /// <summary>Obligatorio si no hay motivo de catálogo.</summary>
+        public string motivo { get; set; }
+    }
+
+    public class ActivoIndisponibilidadEdicionDto
+    {
+        public DateTime? fecha_fin_utc { get; set; }
+        public bool? planificada { get; set; }
+        public bool? detuvo_produccion { get; set; }
+        public int? motivo_catalogo { get; set; }
+        public string motivo { get; set; }
+        public bool? habilitado { get; set; }
+    }
 }

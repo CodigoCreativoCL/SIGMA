@@ -1173,6 +1173,119 @@ recalcula las fórmulas al abrir (LibreOffice no está en esta máquina).
 - [ ] No verificados (quedan en «No» en los Excels): HU-081 #1/#3, HU-083
       #2/#3, HU-084 #4, HU-095 #4, HU-102 #2, HU-103 #2.
 
+### 10.10 · Sprint 5, lo más complejo: el ciclo de la OT en la web (14-09-2026)
+
+Bryan: «del sprint 5 asígname a Bryan Chávez las funcionalidades más
+complejas y realicémoslas». Tomadas HU-110 (8), HU-123 (8), HU-112 (5),
+HU-120 (5), HU-124 (5) y HU-122 (3): 39 puntos que cierran el ciclo
+falla → orden → asignación → parada del equipo → cierre.
+
+**Modelo de pantallas.** Dos centros más sobre `Default.master`, con el
+mismo esquema del plan y la tarea: `Ordenes/OrdenTrabajo.aspx` (Ficha /
+Asignación / Pasos / Indisponibilidad / Cierre) y `Fallas/Falla.aspx`
+(Ficha / Diagnósticos / Acciones / Indisponibilidad). Modales sobre
+`Simple.master` para asignar (`OrdenTrabajoAsignacion.aspx`) y para la
+indisponibilidad (`Fallas/ActivoIndisponibilidad.aspx`, se abre desde la
+orden y desde la falla con equipo/orden/falla cifrados en el query). Los
+listados `OrdenTrabajos.aspx` y `Fallas.aspx` son los únicos menús
+visibles; el resto son fichas (99).
+
+**`BD/225_ORDEN_TRABAJO_WEB.sql`** — 18 SP + permisos + menús. Decisiones:
+
+- **HU-110.** `INS_ORDEN_TRABAJO` (web) exige área cuando no hay equipo;
+  registro posterior = `otr_registro_posterior` + `otr_fecha_ocurrencia`
+  (cuándo pasó) distinta de la de creación (#3); origen MANUAL, o FALLA si
+  viene `@FALLA`; correlativo por cliente con UPDLOCK. Dónde y el registro
+  posterior se fijan al crear. El alta desde el teléfono
+  (`API_INS_ORDEN_TRABAJO`) no se tocó.
+- **HU-112.** `INS_ORDEN_TRABAJO_ASIGNACION`: técnico **o** empresa
+  externa (que tiene que ser contratista); **un único responsable** — al
+  nombrar otro, el anterior pasa a apoyo (`UX_OTA_RESPONSABLE` filtrado);
+  si la orden pide una especialidad que el técnico no tiene se asigna igual
+  y vuelve `ADVERTENCIA` en el result set (`Usuario_Especialidad` está
+  vacía, así que hoy nunca advierte). Notifica si existe `INS_NOTIFICACION`.
+- **HU-120.** `UPD_ORDEN_TRABAJO_CERRAR_WEB`: jerarquía por
+  `FNC_USUARIO_PUEDE_CERRAR_OT` (permiso `CERRAR OT`: perfiles 12, 1, 5,
+  11 — el técnico 13 no); motivos 1-3 exigen EN ESPERA DE CIERRE;
+  DUPLICADA / ANULADA / NO APLICA cierran desde cualquier estado y
+  conservan el correlativo; «Trabajo realizado» exige resultado ≥ 5
+  caracteres. Si la OT vino de una ocurrencia del plan la marca COMPLETADA
+  u OMITIDA. **El cierre del teléfono (`UPD_ORDEN_TRABAJO_CERRAR`) sigue
+  exigiendo espera de cierre para todos los motivos**: anular desde
+  ABIERTA hoy es sólo web.
+- **HU-122.** No hay SP aparte: `SEL_ORDEN_TRABAJO` con `@ESTADO = 3`
+  ordena por antigüedad y devuelve `DIAS_ESPERA_CIERRE` y
+  `PERMISOS_PENDIENTES`. En `OrdenTrabajos.aspx` ese estado activa el
+  cierre masivo con motivo común: cada orden se cierra por su cuenta y el
+  resultado se muestra por fila (probado: 2 cerradas, 1 queda).
+- **HU-123.** Diagnósticos y acciones son hilos (INS, nunca UPD). Un solo
+  diagnóstico definitivo: marcar uno desmarca los anteriores. La primera
+  acción **definitiva** fija `fal_fecha_solucion_utc`; las provisorias
+  mantienen la falla abierta. `PROVISORIAS_DEL_EQUIPO` cuenta las
+  provisorias de todas las fallas del mismo equipo: ≥ 2 pinta el aviso
+  «equipo que pide atención». El estado posterior (#4) se registra con
+  `ACTIVO_CAMBIAR_ESTADO` (historial del activo) **solo si difiere del
+  actual**: una segunda falla sobre un equipo ya detenido se guarda sin
+  error. `Falla_Sintoma/Modo/Causa` siguen vacíos: se aceptan, no se exigen.
+  «Generar orden correctiva» abre una correctiva de EMERGENCIA con
+  prioridad = criticidad de la falla y la redirige a la orden nueva.
+- **HU-124.** Minutos calculados en el SP de inicio a término; abierta (sin
+  término) `MINUTOS_ACUMULADOS` corre contra la hora del servidor.
+  Planificada / no planificada es la marca del indicador. Orden y falla
+  opcionales (un corte de energía no tiene ninguna). Motivo: catálogo
+  `Indisponibilidad_Motivo` (1-6) o texto libre, uno de los dos.
+- Permiso nuevo **`REGISTRAR FALLA`** (perfiles 5, 11, 12, 13);
+  `VER/CREAR ORDEN TRABAJO` pasan a ámbito 3. `Menu_Funcion` «Crear y
+  editar» y «Cerrar» en las páginas de órdenes; «Crear y editar» en fallas.
+
+**API.** `FallasController` (`/fallas`: GET, GET {id}, POST, PUT {id},
+GET/POST `{id}/diagnosticos`, GET/POST `{id}/acciones`, POST `{id}/orden`),
+`IndisponibilidadesController` (`/activo-indisponibilidades`: GET, GET
+{id}, POST, PUT {id}) y en `OrdenesTrabajoController` GET/POST
+`{id}/asignaciones` y DELETE `asignaciones/{id}`. DTOs al final de
+`Dto.cs`. El permiso de lectura es `VER ORDENES TRABAJO` (en plural: así
+está en `Permiso`).
+
+**Pruebas.** SP: OT-13 (área, anulada), OT-14 (registro posterior,
+cambio de responsable, técnico rechazado, cierre normal). Navegador con
+Rodrigo: F-1 sobre ACT-34 (quedó Detenido, con historial) → diagnóstico
+definitivo → acción provisoria (cabecera «reparada de forma provisoria»)
+→ OT-15 desde la falla → asignación de Cristián por modal (grilla
+refrescada) → indisponibilidad 210 min → cerrar OT-15 abierta con «Trabajo
+realizado» rechazado por el SP con su mensaje → bandeja con días de espera
+→ cierre masivo OT-3 y OT-4. HTTP (`_scratch/probar_ot_s5.py`): 23 casos
+OK — F-5/OT-17 por API, un solo definitivo, técnico 403 al cerrar, usuario
+y proveedor a la vez 400, responsable único `[(11,True),(12,False)]`,
+105 min calculados, término anterior al inicio 400, falla resuelta no
+abre otra orden. **La prueba negativa web con Cristián no se pudo hacer
+porque los técnicos entran solo por la app (ámbito 2)**: la cobertura
+negativa es el SP + la API (403) + la función «Cerrar» ligada a
+`CERRAR OT`. Marcela y Ximena ya no entran con `Sigma2026`.
+
+**Hallazgos de entorno, no de código.**
+- En este IIS local **DELETE y PUT devuelven 404 de IIS (StaticFile)**
+  también para `/sesion` y `/dispositivos`, que ya existían. El
+  `Web.config` ya quita WebDAV; hay que revisar el sitio padre
+  (`applicationHost.config`) con permisos de administrador. Hasta entonces
+  `DELETE asignaciones/{id}` y `PUT /activo-indisponibilidades/{id}` se
+  validan por SP y desde la web.
+- `PushButton` + `ConfirSweetAlert` no postea (ya visto en 10.7): el botón
+  de cierre pasó a `LinkButton`.
+
+**Excel S5:** 78 tareas de estas seis historias a Bryan y Terminada, 4
+quedan «Por hacer» a su nombre porque son de la app (T-5011, T-5901,
+T-5175, T-5190: consumo Flutter, los endpoints están); historias En
+revisión; 21 criterios Sí.
+
+- [ ] Pantallas Flutter de falla, reasignación e indisponibilidad (los
+      endpoints están).
+- [ ] Decidir si el cierre del teléfono también permite anular desde
+      cualquier estado (hoy sólo la web).
+- [ ] Cargar `Usuario_Especialidad` para que la advertencia de HU-112 #4
+      se vea alguna vez.
+- [ ] Impresión de la OT (HU-125) y servicios contratados (HU-117) no se
+      tomaron.
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado
