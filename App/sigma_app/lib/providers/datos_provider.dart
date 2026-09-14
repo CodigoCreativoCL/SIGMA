@@ -476,3 +476,41 @@ final favoritosLocalesProvider =
     NotifierProvider<FavoritosLocales, Map<(String, int), bool>>(
       FavoritosLocales.new,
     );
+
+// ---- Fallas, indisponibilidad y asignación (Sprint 5) ----
+
+/// true solo abiertas (lo normal en terreno), false resueltas, null todas.
+final filtroFallasProvider = StateProvider<bool?>((ref) => true);
+
+final fallasProvider = FutureProvider<List<Falla>>((ref) {
+  final instalacion = ref.watch(instalacionProvider);
+  final abiertas = ref.watch(filtroFallasProvider);
+  return _repo.fallas(instalacion: instalacion?.cin_id, abiertas: abiertas);
+});
+
+final fallaProvider = FutureProvider.family<Falla, int>(
+  (ref, id) => _repo.falla(id),
+);
+
+final diagnosticosProvider = FutureProvider.family<List<FallaDiagnostico>, int>(
+  (ref, falla) => _repo.diagnosticosDe(falla),
+);
+
+final accionesFallaProvider = FutureProvider.family<List<FallaAccion>, int>(
+  (ref, falla) => _repo.accionesDe(falla),
+);
+
+/// Por orden o por falla: `('ORDEN', id)` / `('FALLA', id)` / `('ACTIVO', id)`.
+final indisponibilidadesProvider =
+    FutureProvider.family<List<Indisponibilidad>, (String, int)>((ref, clave) {
+      final (origen, id) = clave;
+      return _repo.indisponibilidades(
+        orden: origen == 'ORDEN' ? id : null,
+        falla: origen == 'FALLA' ? id : null,
+        activo: origen == 'ACTIVO' ? id : null,
+      );
+    });
+
+final asignacionesProvider = FutureProvider.family<List<AsignacionOrden>, int>(
+  (ref, orden) => _repo.asignacionesDe(orden),
+);

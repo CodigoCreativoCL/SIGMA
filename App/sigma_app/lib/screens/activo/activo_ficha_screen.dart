@@ -14,6 +14,7 @@ import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../componente/ficha_componente_screen.dart';
+import '../fallas/nueva_falla_screen.dart';
 import '../galeria/galeria_screen.dart';
 import '../medidor/historial_lecturas_screen.dart';
 import '../lectura/captura_screen.dart';
@@ -251,6 +252,34 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
        una y quien. Son dos preguntas distintas: «como es este equipo» la
        responde el hero de un vistazo, y «como estaba en marzo» solo la
        responde la galeria. */
+    /* REGISTRAR UNA FALLA — HU-123
+
+       Desde el equipo y no solo desde el menú: la falla se anota frente a la
+       máquina, y ahí la ficha del activo es la pantalla que ya está abierta.
+       El permiso lo vuelve a exigir el servidor. */
+    if (ref.watch(tienePermisoProvider('REGISTRAR FALLA'))) ...[
+      SgBoton(
+        'Registrar una falla',
+        icono: Icons.report_problem_outlined,
+        primario: false,
+        onTap: () async {
+          final ok = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NuevaFallaScreen(
+                activoId: a.act_id,
+                activoNombre: '${a.act_codigo} · ${a.act_nombre}',
+              ),
+            ),
+          );
+          if (ok == true && mounted) {
+            ref.invalidate(activoProvider(widget.activoId));
+            ref.invalidate(fichaActivoProvider(widget.activoId));
+          }
+        },
+      ),
+      const SizedBox(height: 10),
+    ],
     SgBoton(
       a.FOTOS.isEmpty ? 'Galería (sin fotos)' : 'Galería · ${a.FOTOS.length}',
       icono: Icons.photo_library_outlined,

@@ -1,4 +1,4 @@
-using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
 using System.Collections.Generic;
@@ -86,7 +86,8 @@ namespace API.Controllers
                     { "@DETUVO_PRODUCCION", dto.detuvo_produccion },
                     { "@MOTIVO_CATALOGO", dto.motivo_catalogo },
                     { "@MOTIVO", dto.motivo },
-                    { "@USUARIO", SesionApi.UsuarioId() }
+                    { "@USUARIO", SesionApi.UsuarioId() },
+                    { "@UUID", dto.uuid }
                 }, true);
                 return Creado(id);
             });

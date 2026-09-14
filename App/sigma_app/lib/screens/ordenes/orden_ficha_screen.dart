@@ -18,7 +18,10 @@ import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import '../fallas/falla_ficha_screen.dart';
+import 'hoja_asignar.dart';
 import 'hoja_cierre.dart';
+import 'hoja_indisponibilidad.dart';
 import 'hoja_paso.dart';
 import 'hoja_firma.dart';
 import 'recursos_orden.dart';
@@ -158,6 +161,8 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
   List<Widget> _resumen(OrdenTrabajoFicha f) {
     final sg = context.sg;
     final o = f.orden;
+    final puedeAsignar = ref.watch(tienePermisoProvider('CREAR ORDEN TRABAJO'));
+    final puedeParada = ref.watch(tienePermisoProvider('REGISTRAR FALLA'));
 
     return [
       _Progreso(ficha: f),
@@ -270,10 +275,34 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
         ),
       ],
 
-      if (f.asignados.isNotEmpty) ...[
-        const SizedBox(height: 13),
+      /* QUIEN LA EJECUTA — HU-112
+
+         El equipo se ve siempre; asignar o reasignar lo puede quien tiene
+         `CREAR ORDEN TRABAJO` mientras la orden no esté cerrada. El servidor
+         lo vuelve a exigir: esconder el enlace no autoriza nada. */
+      const SizedBox(height: 13),
+      SgRotuloConAccion(
+        'Equipo',
+        accion: puedeAsignar && o.ESTADO_ID < 4
+            ? (f.asignados.isEmpty ? 'Asignar' : 'Reasignar')
+            : '',
+        onTap: puedeAsignar && o.ESTADO_ID < 4
+            ? () async {
+                final ok = await HojaAsignar.abrir(context, o);
+                if (ok) ref.invalidate(ordenTrabajoProvider(widget.ordenId));
+              }
+            : null,
+      ),
+      const SizedBox(height: 8),
+      if (f.asignados.isEmpty)
+        SgAviso(
+          'Sin asignar. La toma quien la va a trabajar, o la asigna un '
+          'supervisor.',
+          icono: Icons.person_off_outlined,
+          color: sg.tinta2,
+        )
+      else
         SgBloque(
-          rotulo: 'Equipo',
           filas: [
             for (final a in f.asignados)
               SgFila(
@@ -286,6 +315,27 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
               ),
           ],
         ),
+
+      /* CUANTO ESTUVO DETENIDO EL EQUIPO — HU-124
+
+         Solo si la orden cuelga de un equipo: una orden sobre un área no
+         detiene ninguna máquina en particular. */
+      if (o.ACTIVO_ID != null) ...[
+        const SizedBox(height: 18),
+        SgRotuloConAccion(
+          'Cuánto estuvo detenido',
+          accion: puedeParada && o.ESTADO_ID < 4 ? 'Registrar' : '',
+          onTap: puedeParada && o.ESTADO_ID < 4
+              ? () => HojaIndisponibilidad.abrir(
+                  context,
+                  activoId: o.ACTIVO_ID!,
+                  activoNombre: o.activo,
+                  ordenId: o.otr_id,
+                )
+              : null,
+        ),
+        const SizedBox(height: 8),
+        BloqueIndisponibilidad(clave: ('ORDEN', widget.ordenId)),
       ],
       /* LAS FIRMAS, AL FINAL DEL RESUMEN — vista 6.7
 
@@ -523,13 +573,24 @@ class _OrdenFichaScreenState extends ConsumerState<OrdenFichaScreen> {
       }
     }
 
-    await _accion(
-      () => SigmaRepository.instance.finalizarOrdenTrabajo(
+    // HU-119 #3: sin mano de obra el servidor deja finalizar y avisa. El
+    // aviso se muestra en vez del «finalizada» a secas, para que no pase
+    // desapercibido que la orden quedó sin duración real.
+    String? advertencia;
+    await _accion(() async {
+      advertencia = await SigmaRepository.instance.finalizarOrdenTrabajo(
         widget.ordenId,
         resultado: texto.isEmpty ? null : texto,
-      ),
-      'Orden finalizada. Queda en espera de cierre.',
-    );
+      );
+    }, 'Orden finalizada. Queda en espera de cierre.');
+    if (advertencia != null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(advertencia!),
+          duration: const Duration(seconds: 6),
+        ),
+      );
+    }
 
     await CronometroService.instance.limpiar('ORDEN', widget.ordenId);
   }

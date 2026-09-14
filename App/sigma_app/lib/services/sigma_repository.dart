@@ -736,7 +736,8 @@ class SigmaRepository {
           if (j is! List) return const [];
           return j
               .map(
-                (e) => TareaPendiente.fromJson((e as Map).cast<String, dynamic>()),
+                (e) =>
+                    TareaPendiente.fromJson((e as Map).cast<String, dynamic>()),
               )
               .toList();
         },
@@ -927,7 +928,9 @@ class SigmaRepository {
         CatalogoValor.fromJson,
       );
       return todos
-          .where((v) => (v.CATALOGO_CODIGO ?? '').toUpperCase() == 'BITACORA_TIPO')
+          .where(
+            (v) => (v.CATALOGO_CODIGO ?? '').toUpperCase() == 'BITACORA_TIPO',
+          )
           .map(
             (v) => BitacoraTipo(
               bti_id: v.ctv_id,
@@ -1326,10 +1329,17 @@ class SigmaRepository {
   /// Finalizar deja la orden EN ESPERA DE CIERRE, no cerrada: el cierre es
   /// del planificador, y esa separacion es la que hace que el registro sirva
   /// como respaldo.
-  Future<void> finalizarOrdenTrabajo(int id, {String? resultado}) => _api.post(
-    '${ApiConstants.ordenesTrabajo}/$id/finalizar',
-    {'resultado': resultado},
-  );
+  ///
+  /// Devuelve la **advertencia** del servidor (HU-119 #3: finalizada sin
+  /// mano de obra) o null. Los obligatorios pendientes los rechaza el SP con
+  /// sus nombres; la pantalla apaga el botón, pero la regla vive allá.
+  Future<String?> finalizarOrdenTrabajo(int id, {String? resultado}) async {
+    final j = await _api.post('${ApiConstants.ordenesTrabajo}/$id/finalizar', {
+      'resultado': resultado,
+    });
+    final a = (j is Map) ? j['advertencia'] : null;
+    return (a is String && a.trim().isNotEmpty) ? a : null;
+  }
 
   /// Los motivos con que se puede cerrar una OT (HU-120).
   ///
@@ -1346,4 +1356,94 @@ class SigmaRepository {
       return Paginado.desde(j, CierreMotivo.fromJson).datos;
     },
   );
+
+  // ---- Fallas, indisponibilidad y asignación (Sprint 5) ----
+
+  /// Las fallas de la planta. `abiertas`: true sin solución, false resueltas,
+  /// null todas. Sin respaldo en disco: la falla es de hoy, no un catálogo.
+  Future<List<Falla>> fallas({
+    int? instalacion,
+    int? activo,
+    bool? abiertas,
+    String? filtro,
+  }) async {
+    final j = await _api.get(
+      ApiConstants.fallas,
+      query: {
+        'instalacion': ?instalacion,
+        'activo': ?activo,
+        'abiertas': ?abiertas,
+        if (filtro != null && filtro.isNotEmpty) 'filtro': filtro,
+      },
+    );
+    return Paginado.desde(j, Falla.fromJson).datos;
+  }
+
+  Future<Falla> falla(int id) async {
+    final j = await _api.get('${ApiConstants.fallas}/$id');
+    return Falla.fromJson((j as Map).cast<String, dynamic>());
+  }
+
+  Future<List<FallaDiagnostico>> diagnosticosDe(int falla) async {
+    final j = await _api.get('${ApiConstants.fallas}/$falla/diagnosticos');
+    return Paginado.desde(j, FallaDiagnostico.fromJson).datos;
+  }
+
+  Future<List<FallaAccion>> accionesDe(int falla) async {
+    final j = await _api.get('${ApiConstants.fallas}/$falla/acciones');
+    return Paginado.desde(j, FallaAccion.fromJson).datos;
+  }
+
+  /// La correctiva de emergencia de la falla. **Intenta, y si falla la red
+  /// encola**: con señal el técnico quiere abrir la orden ahora y verla; sin
+  /// señal queda en la cola y la orden aparece al volver.
+  ///
+  /// No es idempotente por uuid del lado del SP (`INS_ORDEN_TRABAJO` es el de
+  /// la web), así que con señal se hace **una** llamada directa: si el
+  /// servidor respondió, la orden existe. Devuelve el id, o 0 si quedó encolada.
+  Future<int> ordenDesdeFalla(Falla f) async {
+    final ruta = '${ApiConstants.fallas}/${f.FAL_ID}/orden';
+    Future<void> encolar() => OutboxService.instance.encolar(
+      tipo: 'ORDEN_TRABAJO',
+      titulo: 'Orden correctiva de ${f.codigo}',
+      detalle: f.FAL_TITULO,
+      endpoint: ruta,
+      uuid: OutboxService.nuevoUuid(),
+      cuerpo: const {},
+    );
+
+    if (!SyncService.instance.enLinea.value) {
+      await encolar();
+      return 0;
+    }
+    try {
+      final j = await _api.post(ruta, const {});
+      return (j is Map && j['id'] is num) ? (j['id'] as num).toInt() : 0;
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      await encolar();
+      return 0;
+    }
+  }
+
+  /// Los periodos de detención de un equipo, una orden o una falla.
+  Future<List<Indisponibilidad>> indisponibilidades({
+    int? activo,
+    int? orden,
+    int? falla,
+  }) async {
+    final j = await _api.get(
+      ApiConstants.indisponibilidades,
+      query: {'activo': ?activo, 'orden': ?orden, 'falla': ?falla},
+    );
+    return Paginado.desde(j, Indisponibilidad.fromJson).datos;
+  }
+
+  /// Quién ejecuta la orden: responsable y apoyos (HU-112).
+  Future<List<AsignacionOrden>> asignacionesDe(int orden) async {
+    final j = await _api.get(
+      '${ApiConstants.ordenesTrabajo}/$orden/asignaciones',
+    );
+    return Paginado.desde(j, AsignacionOrden.fromJson).datos;
+  }
 }

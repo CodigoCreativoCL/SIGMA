@@ -23,6 +23,7 @@ import '../componente/componentes_screen.dart';
 import '../evidencias/centro_evidencias_screen.dart';
 import '../inventario/bodegas_screen.dart';
 import '../inventario/repuestos_screen.dart';
+import '../fallas/fallas_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
 import '../trabajo/mi_trabajo_screen.dart';
@@ -53,6 +54,7 @@ final rutasApp = <String, WidgetBuilder>{
   // cuando se tiene el codigo de una pieza y NO se sabe de que equipo es.
   'app://componentes': (_) => const ComponentesScreen(),
   'app://permisos-trabajo': (_) => const PermisosTrabajoScreen(),
+  'app://fallas': (_) => const FallasScreen(),
   // Los cuatro tipos abren la MISMA bandeja, cada uno en su pestaña. Así una
   // ruta que el administrador registre en `Menus` sigue funcionando, y no
   // aterriza en una pantalla distinta de la que se ve desde la barra.
@@ -370,6 +372,7 @@ class MasScreen extends ConsumerWidget {
     'app://mi-perfil' => Icons.person_outline,
     'app://existencias' => Icons.warehouse_outlined,
     'app://permisos-trabajo' => Icons.assignment_turned_in_outlined,
+    'app://fallas' => Icons.report_problem_outlined,
     'app://sincronizacion' => Icons.sync,
     'app://pendientes' => Icons.cloud_upload_outlined,
     'app://activos' => Icons.view_in_ar_outlined,

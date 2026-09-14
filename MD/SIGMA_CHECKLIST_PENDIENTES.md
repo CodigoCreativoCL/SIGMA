@@ -1286,6 +1286,51 @@ revisión; 21 criterios Sí.
 - [ ] Impresión de la OT (HU-125) y servicios contratados (HU-117) no se
       tomaron.
 
+### 10.11 · Sprint 5, la app: todo lo de OT a nombre de Bryan (14-09-2026)
+
+Bryan: «del sprint 5 asígname todo lo correspondiente a las OTs, haz la APP».
+
+**Lo que ya estaba y se verificó** (HU-113 tomar, HU-114 pasos, HU-115 mano de
+obra, HU-116 repuestos, HU-118 firmas, HU-119 finalizar, HU-121 bandeja): las
+pantallas existían de sesiones anteriores; hoy se corrieron sus criterios por
+HTTP (`_scratch/probar_ot_app.py`, 32 casos OK con Cristián y Rodrigo) y
+salieron tres defectos, todos en el servidor:
+
+- **HU-119 #2 no se cumplía**: `UPD_ORDEN_TRABAJO_FINALIZAR` dejaba pasar
+  obligatorios pendientes; la app solo apagaba el botón. `BD/227` la lleva
+  al SP (rechaza nombrando los pasos), guarda `otr_resultado` y
+  `otr_fecha_fin_real_utc`, y devuelve `ADVERTENCIA` sin mano de obra (#3).
+- **HU-116**: el técnico no podía elegir estante (`GET /bodegas/{id}/ubicaciones`
+  exigía `VER BODEGAS`); ahora acepta `EJECUTAR ORDEN TRABAJO`.
+- **HU-115 #3**: ejecutante inválido → FK cruda; ahora mensaje (BD/227).
+
+**Lo nuevo en la app** (HU-123, HU-112, HU-124 y la mitad app de HU-110):
+`screens/fallas/` (listado, nueva, ficha con diagnósticos / acciones / parada
+/ abrir correctiva), `ordenes/hoja_asignar.dart`, `ordenes/hoja_indisponibilidad.dart`,
+bloques «Equipo» y «Cuánto estuvo detenido» en la ficha de la OT, «Registrar
+una falla» en la ficha del activo, menú `app://fallas` (BD/226). Modelos
+`Falla`, `FallaDiagnostico`, `FallaAccion`, `Indisponibilidad`,
+`AsignacionOrden`; providers y repositorio; iconos de la cola.
+
+**Idempotencia (BD/226)**: `INS_FALLA`, `INS_FALLA_DIAGNOSTICO`,
+`INS_FALLA_ACCION`, `INS_ACTIVO_INDISPONIBILIDAD` e
+`INS_ORDEN_TRABAJO_ASIGNACION` reciben `@UUID` (último, opcional: la web no
+cambia) con corte antes de validar; columnas `fdi_uuid`, `fac_uuid`,
+`ain_uuid`, `ota_uuid` con índices únicos filtrados. Probado: el mismo uuid
+devuelve el mismo id.
+
+**Excel S5**: 76 tareas más a Bryan y Terminada; T-5244/T-5245 (pantallas
+web de firmas) quedan Por hacer; criterios en «No»: HU-114 #5 (offline no
+re-probado hoy), HU-121 #2, HU-116 #2 (horómetro de la pieza sin datos),
+HU-115 #2 (proveedor sin datos). 14 historias de OT En revisión.
+
+- [ ] Probar el flujo nuevo en el teléfono (emulador): falla → OT → asignar →
+      parada; hoy se verificó por HTTP y con `analyze`/tests.
+- [ ] Pantallas web de firmas (T-5244/5245) si la PO las quiere fuera de la
+      ficha de la OT.
+- [ ] `Usuario_Especialidad` sigue vacía: la advertencia de HU-112 #4 no
+      aparece nunca.
+
 ---
 
 ## Antes de dar cualquier bloque por cerrado

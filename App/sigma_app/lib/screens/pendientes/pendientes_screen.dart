@@ -259,6 +259,11 @@ class _Fila extends StatelessWidget {
     'PASO' => Icons.edit_note,
     'TAREA' => Icons.task_alt,
     'COMENTARIO_TAREA' => Icons.mode_comment_outlined,
+    'FALLA' => Icons.report_problem_outlined,
+    'DIAGNOSTICO' => Icons.search_outlined,
+    'ACCION_FALLA' => Icons.handyman_outlined,
+    'INDISPONIBILIDAD' => Icons.power_off_outlined,
+    'ASIGNACION_OT' => Icons.person_add_alt,
     _ => Icons.upload_file_outlined,
   };
 

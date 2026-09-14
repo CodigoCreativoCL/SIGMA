@@ -158,5 +158,116 @@ void main() {
       expect(Alerta.fromJson(const {'MINUTOS': 180}).hace, 'hace 3 h');
       expect(Alerta.fromJson(const {'MINUTOS': 1500}).hace, 'ayer');
     });
+    // ---- Sprint 5: el ciclo de la OT en terreno ----
+
+    test('la situación de una falla se deriva al mirar, no viaja', () {
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+        }).situacion,
+        'Abierta',
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'DIAGNOSTICOS': 1,
+        }).situacion,
+        'Diagnosticada',
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'DIAGNOSTICOS': 1,
+          'ACCIONES_PROVISORIAS': 2,
+        }).situacion,
+        'Provisoria',
+      );
+      final r = Falla.fromJson(const {
+        'FAL_ID': 1,
+        'FAL_ACTIVO': 1,
+        'FAL_TITULO': 'x',
+        'ACCIONES_PROVISORIAS': 2,
+        'FAL_FECHA_SOLUCION_UTC': '2026-09-14T19:00:00',
+      });
+      expect(r.situacion, 'Resuelta');
+      expect(r.resuelta, isTrue);
+      expect(r.codigo, 'F-1');
+    });
+
+    test('dos provisorias del equipo es un equipo que pide atención', () {
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'PROVISORIAS_DEL_EQUIPO': 1,
+        }).equipoConHistorial,
+        isFalse,
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'PROVISORIAS_DEL_EQUIPO': 2,
+        }).equipoConHistorial,
+        isTrue,
+      );
+    });
+
+    test(
+      'la indisponibilidad lee los minutos del servidor y los dice en horas',
+      () {
+        final abierta = Indisponibilidad.fromJson(const {
+          'AIN_ID': 1,
+          'AIN_ACTIVO': 40,
+          'AIN_FECHA_INICIO_UTC': '2026-09-14T08:00:00',
+          'MINUTOS_ACUMULADOS': 45,
+        });
+        expect(abierta.abierta, isTrue);
+        expect(abierta.duracion, '45 min');
+        final cerrada = Indisponibilidad.fromJson(const {
+          'AIN_ID': 2,
+          'AIN_ACTIVO': 40,
+          'AIN_FECHA_INICIO_UTC': '2026-09-14T08:00:00',
+          'AIN_FECHA_FIN_UTC': '2026-09-14T11:30:00',
+          'AIN_MINUTO': 210,
+          'MINUTOS_ACUMULADOS': 210,
+        });
+        expect(cerrada.abierta, isFalse);
+        expect(cerrada.duracion, '3 h 30 min');
+      },
+    );
+
+    test(
+      'la asignación distingue técnico de empresa externa y lee la advertencia',
+      () {
+        final t = AsignacionOrden.fromJson(const {
+          'OTA_ID': 1,
+          'OTA_USUARIO': 11,
+          'USUARIO_NOMBRE': 'Cristián',
+          'OTA_ES_RESPONSABLE': true,
+        });
+        expect(t.esExterna, isFalse);
+        expect(t.quien, 'Cristián');
+        expect(t.conAdvertencia, isFalse);
+        final e = AsignacionOrden.fromJson(const {
+          'OTA_ID': 2,
+          'OTA_PROVEEDOR': 3,
+          'PROVEEDOR_NOMBRE': 'Frío Sur',
+          'OTA_OBSERVACION':
+              'Advertencia: la orden pide la especialidad ELÉCTRICA',
+        });
+        expect(e.esExterna, isTrue);
+        expect(e.quien, 'Frío Sur');
+        expect(e.conAdvertencia, isTrue);
+      },
+    );
   });
 }

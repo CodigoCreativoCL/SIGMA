@@ -275,7 +275,8 @@ namespace API.Controllers
         /// el registro sirva como respaldo.
         /// </summary>
         /// <response code="200">Finalizada. Queda en espera de cierre.</response>
-        /// <response code="400">Faltan pasos obligatorios, o ya no estaba en ejecución.</response>
+        /// <response code="200">Finalizada; `advertencia` con texto si no hubo mano de obra (HU-119 #3).</response>
+        /// <response code="400">Faltan pasos obligatorios (los nombra), o ya no estaba en ejecución.</response>
         [HttpPost]
         [Route("{id:int}/finalizar")]
         public IHttpActionResult Finalizar(int id, OrdenTrabajoFinDto dto)
@@ -285,7 +286,9 @@ namespace API.Controllers
                 ExigirPermiso("EJECUTAR ORDEN TRABAJO");
                 ExigirCliente();
 
-                Datos.Ejecutar("UPD_ORDEN_TRABAJO_FINALIZAR",
+                // HU-119 #3: sin mano de obra el SP deja finalizar y avisa; la
+                // advertencia viaja en el result set y la app la muestra.
+                List<OrdenTrabajoFinalizadaDto> r = Datos.Listar<OrdenTrabajoFinalizadaDto>("UPD_ORDEN_TRABAJO_FINALIZAR",
                     new Dictionary<string, object>
                     {
                         { "@ORDEN_TRABAJO", id },
@@ -293,7 +296,7 @@ namespace API.Controllers
                         { "@OBSERVACION", dto == null ? null : dto.resultado }
                     });
 
-                return Ok(new { otr_id = id });
+                return Ok(new { otr_id = id, advertencia = r.Count > 0 ? r[0].ADVERTENCIA : null });
             });
         }
 
@@ -779,7 +782,8 @@ namespace API.Controllers
                         { "@ES_RESPONSABLE", dto.es_responsable },
                         { "@ROL_EJECUCION", dto.rol_ejecucion },
                         { "@OBSERVACION", dto.observacion },
-                        { "@USUARIO", SesionApi.UsuarioId() }
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@UUID", dto.uuid }
                     });
                 return Ok(r.Count > 0 ? r[0] : new OrdenTrabajoAsignadaDto());
             });

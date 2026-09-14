@@ -82,7 +82,13 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirPermiso("VER BODEGAS");
+                /* HU-116: el técnico que consume un repuesto contra su orden
+                   tiene que decir DE QUÉ ESTANTE sale (el SP lo exige cuando
+                   la bodega tiene ubicaciones), y el técnico no tiene VER
+                   BODEGAS. Probado el 14-09-2026: 403 acá dejaba el consumo
+                   sin camino desde el teléfono. Leer los estantes de una
+                   bodega no revela nada que el consumo no exponga ya. */
+                ExigirAlgunPermiso("VER BODEGAS", "EJECUTAR ORDEN TRABAJO");
                 ExigirCliente();
 
                 List<BodegaUbicacionDto> r = Datos.Listar<BodegaUbicacionDto>("SEL_BODEGA_UBICACION",

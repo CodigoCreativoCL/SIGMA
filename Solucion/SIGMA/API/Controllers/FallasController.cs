@@ -1,4 +1,4 @@
-using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
 using System.Collections.Generic;
@@ -96,7 +96,8 @@ namespace API.Controllers
                     { "@ESTADO_POSTERIOR", dto.estado_posterior },
                     { "@DETUVO_PRODUCCION", dto.detuvo_produccion },
                     { "@FECHA_DETECCION_UTC", dto.fecha_deteccion_utc },
-                    { "@USUARIO", SesionApi.UsuarioId() }
+                    { "@USUARIO", SesionApi.UsuarioId() },
+                    { "@UUID", dto.uuid }
                 }, true);
 
                 return Creado(id);
@@ -166,7 +167,8 @@ namespace API.Controllers
                     { "@DESCRIPCION", dto.descripcion ?? "" },
                     { "@ES_DEFINITIVO", dto.es_definitivo },
                     { "@CONFIANZA", dto.confianza },
-                    { "@USUARIO", SesionApi.UsuarioId() }
+                    { "@USUARIO", SesionApi.UsuarioId() },
+                    { "@UUID", dto.uuid }
                 }, true);
                 return Creado(nuevo);
             });
@@ -207,7 +209,8 @@ namespace API.Controllers
                     { "@DESCRIPCION", dto.descripcion ?? "" },
                     { "@ES_DEFINITIVA", dto.es_definitiva },
                     { "@FECHA_ACCION_UTC", dto.fecha_accion_utc },
-                    { "@USUARIO", SesionApi.UsuarioId() }
+                    { "@USUARIO", SesionApi.UsuarioId() },
+                    { "@UUID", dto.uuid }
                 }, true);
                 return Creado(nuevo);
             });

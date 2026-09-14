@@ -2415,6 +2415,15 @@ namespace API.MVC.Model
 
     // ======================= Sprint 5 · OT web, fallas, indisponibilidad =======================
 
+    public class OrdenTrabajoFinalizadaDto
+    {
+        public int ORDEN_TRABAJO { get; set; }
+        public int ESTADO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        /// <summary>HU-119 #3: texto cuando se finalizó sin mano de obra; null si hubo.</summary>
+        public string ADVERTENCIA { get; set; }
+    }
+
     public class OrdenTrabajoAsignacionDto
     {
         public int OTA_ID { get; set; }
@@ -2438,6 +2447,8 @@ namespace API.MVC.Model
 
     public class OrdenTrabajoAsignacionAltaDto
     {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
         /// <summary>Técnico del cliente. Excluyente con proveedor.</summary>
         public int? usuario { get; set; }
         /// <summary>Empresa externa; tiene que ser contratista. Excluyente con usuario.</summary>
@@ -2495,6 +2506,8 @@ namespace API.MVC.Model
 
     public class FallaAltaDto
     {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
         public int activo { get; set; }
         public int? componente { get; set; }
         public int? sintoma { get; set; }
@@ -2538,6 +2551,8 @@ namespace API.MVC.Model
 
     public class FallaDiagnosticoAltaDto
     {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
         public int? modo { get; set; }
         public int? causa { get; set; }
         /// <summary>Diagnostico_Metodo: 1 inspección visual … 9 análisis con IA.</summary>
@@ -2563,6 +2578,8 @@ namespace API.MVC.Model
 
     public class FallaAccionAltaDto
     {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
         public int? diagnostico { get; set; }
         /// <summary>Solo una orden generada desde esta falla.</summary>
         public int? orden_trabajo { get; set; }
@@ -2607,6 +2624,8 @@ namespace API.MVC.Model
 
     public class ActivoIndisponibilidadAltaDto
     {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
         public int activo { get; set; }
         public int? orden_trabajo { get; set; }
         public int? falla { get; set; }

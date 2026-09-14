@@ -138,4 +138,11 @@ abstract final class ApiConstants {
   /// `POST /bitacora/{id}/rectificaciones` corrige **sin borrar**: la entrada
   /// original queda y encima se apila la version corregida con su motivo.
   static const String bitacora = '/bitacora';
+
+  /// Fallas y su diagnóstico (HU-123). La OT correctiva nace de acá con
+  /// `POST /fallas/{id}/orden`.
+  static const String fallas = '/fallas';
+
+  /// Cuánto estuvo detenido un equipo (HU-124). Con o sin orden y falla.
+  static const String indisponibilidades = '/activo-indisponibilidades';
 }

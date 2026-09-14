@@ -3404,3 +3404,325 @@ class Validacion {
     FIRMA_RUTA: _sN(j['FIRMA_RUTA']),
   );
 }
+
+// ===========================================================================
+// Sprint 5 · el ciclo de la OT en terreno: falla, indisponibilidad, asignación
+// ===========================================================================
+
+/// Una falla del equipo. `GET /fallas`, `GET /fallas/{id}`
+///
+/// **La situación se deriva al mirar**, no viaja como estado: resuelta si
+/// tiene fecha de solución, provisoria si hay acciones provisorias y no está
+/// resuelta, diagnosticada si hay diagnósticos, abierta en otro caso. Es la
+/// misma regla que usa la web, así que las dos pantallas dicen lo mismo.
+class Falla {
+  const Falla({
+    required this.FAL_ID,
+    required this.FAL_ACTIVO,
+    required this.FAL_TITULO,
+    this.FAL_UUID,
+    this.FAL_ACTIVO_COMPONENTE,
+    this.FAL_CRITICIDAD_NIVEL = 2,
+    this.FAL_DESCRIPCION,
+    this.FAL_CONSECUENCIA,
+    this.FAL_ACTIVO_ESTADO_POSTERIOR,
+    this.FAL_DETUVO_PRODUCCION = false,
+    this.FAL_FECHA_DETECCION_UTC,
+    this.FAL_FECHA_SOLUCION_UTC,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.ACTIVO_INSTALACION = 0,
+    this.PLANTA_NOMBRE,
+    this.COMPONENTE_NOMBRE,
+    this.CRITICIDAD_CODIGO,
+    this.CRITICIDAD_NOMBRE,
+    this.ESTADO_POSTERIOR_NOMBRE,
+    this.REPORTA_NOMBRE,
+    this.DIAGNOSTICOS = 0,
+    this.ACCIONES = 0,
+    this.ACCIONES_PROVISORIAS = 0,
+    this.ORDENES = 0,
+    this.ULTIMA_OT_CORRELATIVO,
+    this.INDISPONIBILIDADES = 0,
+    this.PROVISORIAS_DEL_EQUIPO = 0,
+  });
+
+  final int FAL_ID;
+  final String? FAL_UUID;
+  final int FAL_ACTIVO;
+  final int? FAL_ACTIVO_COMPONENTE;
+
+  /// 1 BAJA, 2 MEDIA, 3 ALTA, 4 CRITICA.
+  final int FAL_CRITICIDAD_NIVEL;
+  final String FAL_TITULO;
+  final String? FAL_DESCRIPCION;
+  final String? FAL_CONSECUENCIA;
+  final int? FAL_ACTIVO_ESTADO_POSTERIOR;
+  final bool FAL_DETUVO_PRODUCCION;
+  final DateTime? FAL_FECHA_DETECCION_UTC;
+  final DateTime? FAL_FECHA_SOLUCION_UTC;
+
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+  final int ACTIVO_INSTALACION;
+  final String? PLANTA_NOMBRE;
+  final String? COMPONENTE_NOMBRE;
+  final String? CRITICIDAD_CODIGO;
+  final String? CRITICIDAD_NOMBRE;
+  final String? ESTADO_POSTERIOR_NOMBRE;
+  final String? REPORTA_NOMBRE;
+
+  final int DIAGNOSTICOS;
+  final int ACCIONES;
+  final int ACCIONES_PROVISORIAS;
+  final int ORDENES;
+  final int? ULTIMA_OT_CORRELATIVO;
+  final int INDISPONIBILIDADES;
+
+  /// Reparaciones provisorias del mismo equipo, contando todas sus fallas.
+  /// Dos o más es un equipo que pide un diagnóstico de fondo, no otro parche.
+  final int PROVISORIAS_DEL_EQUIPO;
+
+  String get codigo => 'F-$FAL_ID';
+  bool get resuelta => FAL_FECHA_SOLUCION_UTC != null;
+  bool get equipoConHistorial => PROVISORIAS_DEL_EQUIPO >= 2;
+
+  String get activo => [
+    ACTIVO_CODIGO,
+    ACTIVO_NOMBRE,
+  ].where((s) => (s ?? '').isNotEmpty).join(' · ');
+
+  /// ABIERTA · DIAGNOSTICADA · PROVISORIA · RESUELTA, derivada al mirar.
+  String get situacion => resuelta
+      ? 'Resuelta'
+      : ACCIONES_PROVISORIAS > 0
+      ? 'Provisoria'
+      : DIAGNOSTICOS > 0
+      ? 'Diagnosticada'
+      : 'Abierta';
+
+  factory Falla.fromJson(Map<String, dynamic> j) => Falla(
+    FAL_ID: _i(j['FAL_ID']),
+    FAL_UUID: _sN(j['FAL_UUID']),
+    FAL_ACTIVO: _i(j['FAL_ACTIVO']),
+    FAL_ACTIVO_COMPONENTE: (j['FAL_ACTIVO_COMPONENTE'] as num?)?.toInt(),
+    FAL_CRITICIDAD_NIVEL: _i(j['FAL_CRITICIDAD_NIVEL'], 2),
+    FAL_TITULO: _s(j['FAL_TITULO']),
+    FAL_DESCRIPCION: _sN(j['FAL_DESCRIPCION']),
+    FAL_CONSECUENCIA: _sN(j['FAL_CONSECUENCIA']),
+    FAL_ACTIVO_ESTADO_POSTERIOR: (j['FAL_ACTIVO_ESTADO_POSTERIOR'] as num?)
+        ?.toInt(),
+    FAL_DETUVO_PRODUCCION: _b(j['FAL_DETUVO_PRODUCCION']),
+    FAL_FECHA_DETECCION_UTC: _f(j['FAL_FECHA_DETECCION_UTC']),
+    FAL_FECHA_SOLUCION_UTC: _f(j['FAL_FECHA_SOLUCION_UTC']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    ACTIVO_INSTALACION: _i(j['ACTIVO_INSTALACION']),
+    PLANTA_NOMBRE: _sN(j['PLANTA_NOMBRE']),
+    COMPONENTE_NOMBRE: _sN(j['COMPONENTE_NOMBRE']),
+    CRITICIDAD_CODIGO: _sN(j['CRITICIDAD_CODIGO']),
+    CRITICIDAD_NOMBRE: _sN(j['CRITICIDAD_NOMBRE']),
+    ESTADO_POSTERIOR_NOMBRE: _sN(j['ESTADO_POSTERIOR_NOMBRE']),
+    REPORTA_NOMBRE: _sN(j['REPORTA_NOMBRE']),
+    DIAGNOSTICOS: _i(j['DIAGNOSTICOS']),
+    ACCIONES: _i(j['ACCIONES']),
+    ACCIONES_PROVISORIAS: _i(j['ACCIONES_PROVISORIAS']),
+    ORDENES: _i(j['ORDENES']),
+    ULTIMA_OT_CORRELATIVO: (j['ULTIMA_OT_CORRELATIVO'] as num?)?.toInt(),
+    INDISPONIBILIDADES: _i(j['INDISPONIBILIDADES']),
+    PROVISORIAS_DEL_EQUIPO: _i(j['PROVISORIAS_DEL_EQUIPO']),
+  );
+}
+
+/// Un diagnóstico de la falla. `GET /fallas/{id}/diagnosticos`
+///
+/// Un solo definitivo por falla: marcar uno desmarca los anteriores, que se
+/// conservan como historia. Es append-only, no se edita.
+class FallaDiagnostico {
+  const FallaDiagnostico({
+    required this.FDI_ID,
+    required this.FDI_DESCRIPCION,
+    this.FDI_ES_DEFINITIVO = false,
+    this.FDI_CONFIANZA,
+    this.FDI_FECHA_DIAGNOSTICO_UTC,
+    this.METODO_NOMBRE,
+    this.DIAGNOSTICA_NOMBRE,
+  });
+
+  final int FDI_ID;
+  final String FDI_DESCRIPCION;
+  final bool FDI_ES_DEFINITIVO;
+  final double? FDI_CONFIANZA;
+  final DateTime? FDI_FECHA_DIAGNOSTICO_UTC;
+  final String? METODO_NOMBRE;
+  final String? DIAGNOSTICA_NOMBRE;
+
+  factory FallaDiagnostico.fromJson(Map<String, dynamic> j) => FallaDiagnostico(
+    FDI_ID: _i(j['FDI_ID']),
+    FDI_DESCRIPCION: _s(j['FDI_DESCRIPCION']),
+    FDI_ES_DEFINITIVO: _b(j['FDI_ES_DEFINITIVO']),
+    FDI_CONFIANZA: _dN(j['FDI_CONFIANZA']),
+    FDI_FECHA_DIAGNOSTICO_UTC: _f(j['FDI_FECHA_DIAGNOSTICO_UTC']),
+    METODO_NOMBRE: _sN(j['METODO_NOMBRE']),
+    DIAGNOSTICA_NOMBRE: _sN(j['DIAGNOSTICA_NOMBRE']),
+  );
+}
+
+/// Qué se hizo con la falla. `GET /fallas/{id}/acciones`
+///
+/// Provisoria mantiene la falla abierta; la primera definitiva la resuelve
+/// (fija la fecha de solución). Lo decide el SP.
+class FallaAccion {
+  const FallaAccion({
+    required this.FAC_ID,
+    required this.FAC_DESCRIPCION,
+    this.FAC_ES_DEFINITIVA = false,
+    this.FAC_FECHA_ACCION_UTC,
+    this.OT_CORRELATIVO,
+    this.EJECUTA_NOMBRE,
+  });
+
+  final int FAC_ID;
+  final String FAC_DESCRIPCION;
+  final bool FAC_ES_DEFINITIVA;
+  final DateTime? FAC_FECHA_ACCION_UTC;
+  final int? OT_CORRELATIVO;
+  final String? EJECUTA_NOMBRE;
+
+  factory FallaAccion.fromJson(Map<String, dynamic> j) => FallaAccion(
+    FAC_ID: _i(j['FAC_ID']),
+    FAC_DESCRIPCION: _s(j['FAC_DESCRIPCION']),
+    FAC_ES_DEFINITIVA: _b(j['FAC_ES_DEFINITIVA']),
+    FAC_FECHA_ACCION_UTC: _f(j['FAC_FECHA_ACCION_UTC']),
+    OT_CORRELATIVO: (j['OT_CORRELATIVO'] as num?)?.toInt(),
+    EJECUTA_NOMBRE: _sN(j['EJECUTA_NOMBRE']),
+  );
+}
+
+/// Un periodo en que el equipo estuvo detenido.
+/// `GET /activo-indisponibilidades`
+///
+/// Los minutos los calcula el servidor de inicio a término; abierta (sin
+/// término) `MINUTOS_ACUMULADOS` corre contra la hora del servidor.
+class Indisponibilidad {
+  const Indisponibilidad({
+    required this.AIN_ID,
+    required this.AIN_ACTIVO,
+    required this.AIN_FECHA_INICIO_UTC,
+    this.AIN_ORDEN_TRABAJO,
+    this.AIN_FALLA,
+    this.AIN_FECHA_FIN_UTC,
+    this.AIN_MINUTO,
+    this.AIN_PLANIFICADA = false,
+    this.AIN_DETUVO_PRODUCCION = false,
+    this.AIN_INDISPONIBILIDAD_MOTIVO,
+    this.AIN_MOTIVO,
+    this.ACTIVO_CODIGO,
+    this.ACTIVO_NOMBRE,
+    this.MOTIVO_NOMBRE,
+    this.OT_CORRELATIVO,
+    this.FALLA_TITULO,
+    this.MINUTOS_ACUMULADOS = 0,
+  });
+
+  final int AIN_ID;
+  final int AIN_ACTIVO;
+  final int? AIN_ORDEN_TRABAJO;
+  final int? AIN_FALLA;
+  final DateTime AIN_FECHA_INICIO_UTC;
+  final DateTime? AIN_FECHA_FIN_UTC;
+  final int? AIN_MINUTO;
+  final bool AIN_PLANIFICADA;
+  final bool AIN_DETUVO_PRODUCCION;
+  final int? AIN_INDISPONIBILIDAD_MOTIVO;
+  final String? AIN_MOTIVO;
+  final String? ACTIVO_CODIGO;
+  final String? ACTIVO_NOMBRE;
+  final String? MOTIVO_NOMBRE;
+  final int? OT_CORRELATIVO;
+  final String? FALLA_TITULO;
+  final int MINUTOS_ACUMULADOS;
+
+  bool get abierta => AIN_FECHA_FIN_UTC == null;
+
+  /// «3 h 30 min», o «45 min».
+  String get duracion {
+    final h = MINUTOS_ACUMULADOS ~/ 60;
+    final m = MINUTOS_ACUMULADOS % 60;
+    return h == 0 ? '$m min' : '$h h $m min';
+  }
+
+  factory Indisponibilidad.fromJson(Map<String, dynamic> j) => Indisponibilidad(
+    AIN_ID: _i(j['AIN_ID']),
+    AIN_ACTIVO: _i(j['AIN_ACTIVO']),
+    AIN_ORDEN_TRABAJO: (j['AIN_ORDEN_TRABAJO'] as num?)?.toInt(),
+    AIN_FALLA: (j['AIN_FALLA'] as num?)?.toInt(),
+    AIN_FECHA_INICIO_UTC: _f(j['AIN_FECHA_INICIO_UTC']) ?? DateTime.now(),
+    AIN_FECHA_FIN_UTC: _f(j['AIN_FECHA_FIN_UTC']),
+    AIN_MINUTO: (j['AIN_MINUTO'] as num?)?.toInt(),
+    AIN_PLANIFICADA: _b(j['AIN_PLANIFICADA']),
+    AIN_DETUVO_PRODUCCION: _b(j['AIN_DETUVO_PRODUCCION']),
+    AIN_INDISPONIBILIDAD_MOTIVO: (j['AIN_INDISPONIBILIDAD_MOTIVO'] as num?)
+        ?.toInt(),
+    AIN_MOTIVO: _sN(j['AIN_MOTIVO']),
+    ACTIVO_CODIGO: _sN(j['ACTIVO_CODIGO']),
+    ACTIVO_NOMBRE: _sN(j['ACTIVO_NOMBRE']),
+    MOTIVO_NOMBRE: _sN(j['MOTIVO_NOMBRE']),
+    OT_CORRELATIVO: (j['OT_CORRELATIVO'] as num?)?.toInt(),
+    FALLA_TITULO: _sN(j['FALLA_TITULO']),
+    MINUTOS_ACUMULADOS: _i(j['MINUTOS_ACUMULADOS']),
+  );
+}
+
+/// Quién ejecuta la orden. `GET /ordenes-trabajo/{id}/asignaciones`
+///
+/// Un técnico **o** una empresa externa; un único responsable por orden y
+/// el resto apoyos. Lo decide el SP al asignar.
+class AsignacionOrden {
+  const AsignacionOrden({
+    required this.OTA_ID,
+    this.OTA_USUARIO,
+    this.OTA_PROVEEDOR,
+    this.OTA_ES_RESPONSABLE = false,
+    this.OTA_FECHA_ASIGNACION_UTC,
+    this.OTA_OBSERVACION,
+    this.USUARIO_NOMBRE,
+    this.PROVEEDOR_NOMBRE,
+    this.ROL_NOMBRE,
+    this.ASIGNADO_POR_NOMBRE,
+    this.ESPECIALIDADES,
+  });
+
+  final int OTA_ID;
+  final int? OTA_USUARIO;
+  final int? OTA_PROVEEDOR;
+  final bool OTA_ES_RESPONSABLE;
+  final DateTime? OTA_FECHA_ASIGNACION_UTC;
+  final String? OTA_OBSERVACION;
+  final String? USUARIO_NOMBRE;
+  final String? PROVEEDOR_NOMBRE;
+  final String? ROL_NOMBRE;
+  final String? ASIGNADO_POR_NOMBRE;
+  final String? ESPECIALIDADES;
+
+  bool get esExterna => OTA_PROVEEDOR != null;
+  String get quien => USUARIO_NOMBRE ?? PROVEEDOR_NOMBRE ?? 'Sin nombre';
+
+  /// El SP deja la advertencia de especialidad dentro de la observación.
+  bool get conAdvertencia =>
+      (OTA_OBSERVACION ?? '').toLowerCase().contains('especialidad');
+
+  factory AsignacionOrden.fromJson(Map<String, dynamic> j) => AsignacionOrden(
+    OTA_ID: _i(j['OTA_ID']),
+    OTA_USUARIO: (j['OTA_USUARIO'] as num?)?.toInt(),
+    OTA_PROVEEDOR: (j['OTA_PROVEEDOR'] as num?)?.toInt(),
+    OTA_ES_RESPONSABLE: _b(j['OTA_ES_RESPONSABLE']),
+    OTA_FECHA_ASIGNACION_UTC: _f(j['OTA_FECHA_ASIGNACION_UTC']),
+    OTA_OBSERVACION: _sN(j['OTA_OBSERVACION']),
+    USUARIO_NOMBRE: _sN(j['USUARIO_NOMBRE']),
+    PROVEEDOR_NOMBRE: _sN(j['PROVEEDOR_NOMBRE']),
+    ROL_NOMBRE: _sN(j['ROL_NOMBRE']),
+    ASIGNADO_POR_NOMBRE: _sN(j['ASIGNADO_POR_NOMBRE']),
+    ESPECIALIDADES: _sN(j['ESPECIALIDADES']),
+  );
+}
