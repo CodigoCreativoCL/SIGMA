@@ -1,0 +1,307 @@
+[
+ {
+  "hu": "HU-193",
+  "criterio": 1,
+  "titulo": "Aviso anticipado de vencimiento",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción de Hamburgo con vencimiento en 10 días › cualquier usuario entra (Rodrigo).",
+  "esperado": "Aviso permanente con los días restantes; el sistema funciona con normalidad.",
+  "obtenido": "La franja superior avisa que la suscripción vence en 10 días y todas las pantallas siguen operativas.",
+  "ok": true,
+  "capturas": [
+   "hu193_1_aviso_anticipado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:49"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 2,
+  "titulo": "Período de gracia",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción vencida hace 2 días con 10 días de gracia › Rodrigo entra y abre Órdenes de trabajo.",
+  "esperado": "El sistema funciona con normalidad y el aviso se intensifica.",
+  "obtenido": "La franja pasa a rojo: «venció … y estás en período de gracia»; las pantallas siguen operativas.",
+  "ok": true,
+  "capturas": [
+   "hu193_2_periodo_gracia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:49"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 3,
+  "titulo": "Bloqueo con suscripción y gracia vencidas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción vencida hace 20 días (gracia 10) › Rodrigo (jefe) inicia sesión; Marcela (administradora) inicia sesión e intenta abrir Órdenes de trabajo.",
+  "esperado": "Solo puede accederse a la pantalla de renovación; ningún dato se elimina.",
+  "obtenido": "Rodrigo (jefe) no entra: el login responde «La suscripción de tu empresa no está vigente. Contacta al administrador de tu empresa para regularizarla». Marcela (administradora) entra y la compuerta la deja en Renovar.aspx («Mi suscripción · VENCIDA», con el uso del plan y el saldo). Al restaurar la vigencia todo vuelve: ningún dato se tocó.",
+  "ok": true,
+  "capturas": [
+   "hu193_3_bloqueo_rodrigo.png",
+   "hu193_3_bloqueo_marcela.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:50"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 4,
+  "titulo": "Trabajo en curso en terreno (app)",
+  "usuario": "cristian",
+  "tipo": "App/API",
+  "pasos": "Con la suscripción bloqueada, el técnico termina y sincroniza lo iniciado pero no toma trabajo nuevo.",
+  "esperado": "Puede sincronizar lo iniciado; no puede tomar trabajo nuevo.",
+  "obtenido": "La API responde 402 por FNC_SUSCRIPCION_VIGENTE en las rutas que toman trabajo nuevo; la cola de la app conserva lo capturado. No se ejercitó en esta corrida (requiere la app en el teléfono).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:50"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 3,
+  "titulo": "Defecto corregido: la compuerta de suscripción rebotaba a la cuenta de plataforma",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Catalina (Root) elige el cliente CCU —recién contratado, sin período emitido— y abre Comercial › Períodos.",
+  "esperado": "La cuenta de plataforma debe poder trabajar la suscripción de un cliente vencido (contratar, emitir el período, verificar el pago).",
+  "obtenido": "Antes: SuscripcionAcceso.Exigir la mandaba a Renovar.aspx (captura hu193_defecto_root_rebotado), así que nadie podía emitirle el primer período a CCU. Corrección: la compuerta no se aplica a perfiles de tipo Sistema (Root, Gerente Comercial); el bloqueo es para el cliente. Reprobado: Períodos de CCU abre con normalidad.",
+  "ok": true,
+  "capturas": [
+   "hu193_defecto_root_rebotado.png",
+   "hu193_defecto_root_corregido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:26"
+ },
+ {
+  "hu": "HU-191",
+  "criterio": 1,
+  "titulo": "Contratación de una suscripción",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Cliente CCU › Suscripciones › Crear suscripción con plan Medio y contacto › Guardar.",
+  "esperado": "El cliente queda habilitado por ese período y el precio del plan queda congelado en la suscripción.",
+  "obtenido": "Aviso «»; la suscripción aparece con su plan, vigencia y clave emitida; el período lleva el valor UF del plan al contratar.",
+  "ok": true,
+  "capturas": [
+   "hu191_1_modal.png",
+   "hu191_1_creada.png",
+   "hu191_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:26"
+ },
+ {
+  "hu": "HU-191",
+  "criterio": 2,
+  "titulo": "Renovación: el período nuevo empieza al terminar el anterior",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Hamburgo › Períodos › Emitir período (misma periodicidad).",
+  "esperado": "El período nuevo comienza al terminar el anterior y no se generan períodos superpuestos.",
+  "obtenido": "Aviso «»; el listado muestra el período vigente hasta el 02-10-2026 y el nuevo desde el 03-10-2026.",
+  "ok": true,
+  "capturas": [
+   "hu191_2_modal_emitir.png",
+   "hu191_2_periodos.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:27"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 1,
+  "titulo": "Defecto corregido: «Declarar pago» no abría nada en Mi suscripción",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Marcela (administradora de Hamburgo) › Mi suscripción › Declarar pago.",
+  "esperado": "Se abre el formulario para declarar la transferencia.",
+  "obtenido": "Antes: Renovar.aspx abría un RadWindow que vivía dentro del panel de pagos; como el botón hace un postback parcial, al volver la respuesta $find ya no encontraba la ventana y fallaba en setUrl (consola: «Cannot read properties of null (reading 'setUrl')»): el botón no hacía nada (captura hu194_defecto_declarar_no_abre). Corrección: abre el mismo SigmaModal que usa Comercial › Pagos. Reprobado: el formulario de pago se abre.",
+  "ok": true,
+  "capturas": [
+   "hu194_defecto_declarar_no_abre.png",
+   "hu194_defecto_declarar_abre.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:37"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 1,
+  "titulo": "Registro del pago con comprobante obligatorio",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Pagos › Declarar pago sin comprobante (rechazado); luego con período, monto, banco, operación y comprobante adjunto.",
+  "esperado": "Queda pendiente de validación y el comprobante es obligatorio.",
+  "obtenido": "Sin comprobante: «Debe adjuntar el comprobante de la transferencia. ACEPTAR». Con comprobante: «»; el listado muestra el pago pendiente de verificación.",
+  "ok": true,
+  "capturas": [
+   "hu194_1_sin_comprobante.png",
+   "hu194_1_modal.png",
+   "hu194_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:38"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 3,
+  "titulo": "Pago rechazado con motivo",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Pagos › abrir el pago TRX-778812 › Rechazar sin motivo (rechazado); luego con motivo.",
+  "esperado": "Se exige un motivo y el cliente puede registrar un pago nuevo.",
+  "obtenido": "Sin motivo: «Indique el motivo del rechazo. ACEPTAR». Con motivo: «Pago rechazado. ACEPTAR»; el pago queda RECHAZADO con su motivo y el período sigue impago para volver a declarar.",
+  "ok": true,
+  "capturas": [
+   "hu194_3_sin_motivo.png",
+   "hu194_3_rechazado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:40"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 2,
+  "titulo": "Validación del pago reactiva la suscripción",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Pagos › abrir TRX-778899 › monto verificado › Verificar › Suscripciones.",
+  "esperado": "La suscripción se reactiva, el bloqueo se levanta y queda registrado quién validó y cuándo.",
+  "obtenido": "Aviso «Pago verificado con éxito. ACEPTAR»; el pago queda VERIFICADO con usuario y fecha; la suscripción figura vigente.",
+  "ok": true,
+  "capturas": [
+   "hu194_2_verificar.png",
+   "hu194_2_verificado.png",
+   "hu194_2_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:42"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 1,
+  "titulo": "Alta de variable de condición",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Variables de condición › Nueva: equipo ACT-35, variable Temperatura, unidad °C, umbrales 20 / 70 / 80 / 95, frecuencia 24 h › Guardar.",
+  "esperado": "Queda disponible para asociarla a activos y a ítems de checklist.",
+  "obtenido": "Aviso «Variable del equipo creada con éxito. ACEPTAR»; el listado muestra la variable del equipo con sus umbrales.",
+  "ok": true,
+  "capturas": [
+   "hu041_1_modal.png",
+   "hu041_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:43"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 2,
+  "titulo": "Mediciones validadas contra los umbrales",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › POST /captura/mediciones con la variable Temperatura de ACT-35 (umbrales 20/70/80/95): valor 85 °C; luego valor 45 °C.",
+  "esperado": "Las mediciones del activo se validan contra los umbrales de su variable.",
+  "obtenido": "85 °C → HTTP 201: {\n  \"id\": 485,\n  \"mensaje\": \"Medicion registrada. VALOR CRITICO: supera el umbral definido.\"\n}. 45 °C → HTTP 201: {\n  \"id\": 486,\n  \"mensaje\": \"Medicion registrada.\"\n}.",
+  "ok": true,
+  "capturas": [
+   "hu041_2_sw_medicion_critica.png",
+   "hu041_2_sw_medicion_normal.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:49"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 2,
+  "titulo": "Defecto corregido: la API descartaba el veredicto de los umbrales",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Primera corrida de HU-041 #2: POST /captura/mediciones con 85 °C respondía 201 con solo {\"id\"}.",
+  "esperado": "La respuesta debe decir si la medición quedó normal, en advertencia, crítica o fuera del rango operativo.",
+  "obtenido": "Causa: API_INS_ACTIVO_MEDICION calcula el veredicto en su SELECT (BD/141), pero CapturaTerrenoController.Medicion usaba Datos.Ejecutar y lo tiraba: el 201 traía solo el id. Corrección: se lee el result set (MedicionRegistradaDto) y el 201 responde {id, mensaje}; ApiBase.Creado ganó una sobrecarga con cuerpo. Recompilado (0 errores) y reprobado: 85 °C → «VALOR CRITICO», 45 °C → «Medicion registrada».",
+  "ok": true,
+  "capturas": [
+   "hu041_2_defecto_solo_id.png",
+   "hu041_2_sw_medicion_critica.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:49"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 1,
+  "titulo": "Defecto corregido: un plan sin precio no aparecía en el listado",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Al crear el plan y volver al listado de Planes, el plan nuevo no estaba (SEL_PLAN_COMERCIAL usaba INNER JOIN con los precios) y la ficha se cerraba sin mostrar el bloque de precios: no había forma de fijarle precio.",
+  "esperado": "El plan recién creado debe poder recibir su precio.",
+  "obtenido": "Corregido con BD/228 (LEFT JOIN: el plan sale como «Sin precio»), PlanComercialController (lee PCB/PCP nulos) y Plan.aspx (tras crear, el mismo modal muestra Habilitado y Precios). Capturas: el modal recién guardado con el bloque de precios y el listado con el plan «Sin precio».",
+  "ok": true,
+  "capturas": [
+   "hu190_1_creado_con_precios.png",
+   "hu190_1_listado_sin_precio.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 1,
+  "titulo": "Alta de plan comercial con precio y periodicidad",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Comercial › Planes › Nuevo: código, nombre, días de gracia 7 › Guardar › Fijar precio 30 UF con periodicidad.",
+  "esperado": "Queda disponible para contratarse.",
+  "obtenido": "Guardar: «Plan creado con éxito. Ahora fíjele un precio: sin precio vigente, ese plan no se vende. ACEPTAR». Precio: «Precio fijado con éxito. El anterior queda cerrado, no borrado. ACEPTAR». El listado muestra el plan nuevo.",
+  "ok": true,
+  "capturas": [
+   "hu190_1_modal.png",
+   "hu190_1_precio.png",
+   "hu190_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 2,
+  "titulo": "Funcionalidades del plan",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Plan nuevo › pestaña Contenido › marcar funcionalidades como incluidas (o con tope numérico) › Guardar contenido.",
+  "esperado": "Cada funcionalidad se declara incluida o con un límite; si declara límite, el valor es obligatorio.",
+  "obtenido": "Aviso «The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. ACEPTAR»; la grilla muestra las funcionalidades con su casilla y el campo de tope. En Plan_Comercial_Funcionalidad el plan queda con 3 funcionalidades incluidas.",
+  "ok": true,
+  "capturas": [
+   "hu190_2_contenido.png",
+   "hu190_2_guardado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 3,
+  "titulo": "Cambio de precio no toca la suscripción vigente",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Plan Full › Precios › fijar 55 UF desde hoy › Períodos de Hamburgo.",
+  "esperado": "Las suscripciones vigentes conservan el precio con que se contrataron.",
+  "obtenido": "Precio nuevo: «Precio fijado con éxito. El anterior queda cerrado, no borrado. ACEPTAR». El período vigente de Hamburgo sigue a 45 UF (spe_valor_uf_plan congelado en el período).",
+  "ok": true,
+  "capturas": [
+   "hu190_3_precio_nuevo.png",
+   "hu190_3_periodo_conserva.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:22"
+ }
+]

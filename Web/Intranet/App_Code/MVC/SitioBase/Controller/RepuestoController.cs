@@ -211,14 +211,6 @@ namespace SitioBase.Controller
                         entidad.rep_vida_util_dia.HasValue ? (object)entidad.rep_vida_util_dia.Value : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@VIDA_UTIL_CICLO",
                         entidad.rep_vida_util_ciclo.HasValue ? (object)entidad.rep_vida_util_ciclo.Value : DBNull.Value);
-                    // Vacio significa borrar solo si la ficha lo dice.
-                    cmdExecute.Parameters.AddWithValue("@LIMPIA_VIDA_UTIL", entidad.limpia_vida_util);
-                    cmdExecute.Parameters.AddWithValue("@VIDA_UTIL_HORA",
-                        entidad.rep_vida_util_hora.HasValue ? (object)entidad.rep_vida_util_hora.Value : DBNull.Value);
-                    cmdExecute.Parameters.AddWithValue("@VIDA_UTIL_DIA",
-                        entidad.rep_vida_util_dia.HasValue ? (object)entidad.rep_vida_util_dia.Value : DBNull.Value);
-                    cmdExecute.Parameters.AddWithValue("@VIDA_UTIL_CICLO",
-                        entidad.rep_vida_util_ciclo.HasValue ? (object)entidad.rep_vida_util_ciclo.Value : DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();

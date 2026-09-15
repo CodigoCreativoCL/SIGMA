@@ -2415,6 +2415,16 @@ namespace API.MVC.Model
 
     // ======================= Sprint 5 · OT web, fallas, indisponibilidad =======================
 
+    /// <summary>
+    /// Lo que devuelve API_INS_ACTIVO_MEDICION: el id y el veredicto contra
+    /// los umbrales de la variable (HU-041 #2).
+    /// </summary>
+    public class MedicionRegistradaDto
+    {
+        public int ID { get; set; }
+        public string MENSAJE { get; set; }
+    }
+
     public class OrdenTrabajoFinalizadaDto
     {
         public int ORDEN_TRABAJO { get; set; }

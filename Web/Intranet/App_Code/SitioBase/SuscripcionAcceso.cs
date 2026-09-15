@@ -132,6 +132,17 @@ namespace SitioBase
             // Sin cliente en sesión no hay suscripción que exigir.
             if (Session.ClienteId() == 0) return;
 
+            /* Las cuentas de plataforma (perfil de tipo Sistema: Root,
+               Gerente Comercial) SÍ llevan cliente en sesión: lo eligen en
+               SeleccionarCliente para trabajarle la suscripción. Si la
+               compuerta las atajara, quien tiene que contratar, emitir el
+               período o verificar el pago de un cliente vencido sería
+               justo quien no puede entrar (encontrado en las pruebas de
+               HU-191, 15-09-2026: Root elegía CCU, recién contratada y sin
+               período, y rebotaba a Renovar.aspx). El bloqueo es para el
+               cliente, no para quien lo administra. */
+            if (Session.UsuarioTipoPerfil() == "1") return;
+
             string pagina = Token.PaginaActual();
             if (string.IsNullOrEmpty(pagina) || EXENTAS.Contains(pagina)) return;
 

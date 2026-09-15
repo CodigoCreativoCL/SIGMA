@@ -1333,6 +1333,56 @@ HU-115 #2 (proveedor sin datos). 14 historias de OT En revisión.
 
 ---
 
+### 10.12 · Pruebas documentadas de los sprints 1–5 y siete defectos corregidos (14/15-09-2026)
+
+Bryan: «las pruebas documéntalas tú, sácale screenshot tú; de API usaremos el
+Swagger; usuarios de Hamburgo; screenshot cuando el modal ya cargó; un Word
+por sprint; si encuentras errores los solucionas y lo documentas».
+
+**Cómo se hizo.** `_scratch/evidencia.py` maneja Chrome headless (Selenium)
+contra la intranet y contra el Swagger de la API, y anota cada caso en
+`Fase 2/Pruebas/capturas/<S>/manifiesto.json` (usuario, pasos, esperado,
+obtenido, veredicto, capturas). Los guiones por sprint son `ev_s1.py`…
+`ev_s5b.py`; `generar_docx.py` arma un Word por sprint con portada, entorno,
+resumen, un caso por criterio con sus capturas y la lista de defectos;
+`marcar_criterios.py` pone Sí/No en la hoja *Criterios de aceptación* de cada
+Sprint Backlog. Resultado: **S1 26 casos (22 ✓), S2 18 (17 ✓), S3 22 (21 ✓),
+S4 23 (20 ✓), S5 48 (48 ✓)**, en `Fase 2/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx`.
+Los «no cumple» son criterios sin construir (HU-014 #2/#3, HU-004 #2/#3 sin
+SMTP, HU-076 #4, HU-083 #3, HU-102 #2, HU-095 #4, HU-193 #4 app), no fallas.
+
+**Defectos que salieron al probar y quedaron corregidos** (cada uno es un
+caso «Defecto corregido» en el Word, con captura del antes y del después):
+
+| Sprint | Dónde | Qué pasaba | Corrección |
+|---|---|---|---|
+| S3 HU-050 | `RepuestoController.InsertRepuesto` | «too many arguments» en `INS_REPUESTO`: parámetros de vida útil duplicados por un merge | Se quitaron los duplicados |
+| S2 HU-190 | `SEL_PLAN_COMERCIAL` + `Plan.aspx` | Un plan recién creado, sin precio, no aparecía en Planes y la ficha se cerraba: no había forma de fijarle precio | `BD/228` (LEFT JOIN, «Sin precio»), controller null-safe, la ficha se queda abierta mostrando Precios |
+| S2 HU-193 | `SuscripcionAcceso.Exigir` | La compuerta de suscripción mandaba a Renovar.aspx también a Root/Gerente Comercial: nadie podía emitirle el primer período a un cliente recién contratado | No se aplica a perfiles de tipo Sistema |
+| S2 HU-194 | `Renovar.aspx` | «Declarar pago» no hacía nada: el RadWindow vivía dentro del panel ajaxificado y `$find` lo perdía tras el postback (`setUrl` de null) | Abre el mismo `SigmaModal` que Pagos.aspx |
+| S2 HU-041 | `CapturaTerrenoController.Medicion` | El 201 traía solo `{id}`: el veredicto contra los umbrales que calcula `API_INS_ACTIVO_MEDICION` se tiraba | `Datos.Listar<MedicionRegistradaDto>` y `{id, mensaje}`; `ApiBase.Creado(id, cuerpo)` |
+| S1 HU-010 | `SEL_LOGIN` | Root creaba un cliente (INS_CLIENTE lo afilia), lo daba de baja y ya no podía entrar: «Su cuenta no está habilitada» | `BD/229`: las cuentas con perfil de tipo Sistema no dependen de ningún cliente |
+| S5 HU-119/116/115 | SP y API | Ya documentados en 10.11 (finalizar con obligatorios, ubicaciones para el técnico, FK cruda en mano de obra) | `BD/227`, `BodegasController`, validación previa |
+
+**Trampas del entorno que no son defectos.** El SQL Server del hosting va en
+UTC−7: entre las 00:00 y las 03:00 hora local un precio «desde hoy» todavía
+no rige para `GETDATE()`. `DELETE`/`PUT` devuelven 404 en el IIS local (módulo
+StaticFile), así que esos verbos se probaron con `curl`/la app y no desde
+Swagger. El `Sí` de HU-001 #4 bloquea a Ximena 15 minutos: el guion la
+desbloquea al final.
+
+**Datos de prueba que quedaron en la base** (todos marcados «evidencia S1/S2»):
+planes PLC-PLUS*, cliente «Panadería del Valle» (deshabilitado), áreas
+Producción/Línea 1, centros CCO-CC00xx, usuario prueba.s1.*@hamburgo.cl,
+suscripción de CCU con un período emitido y el pago TRX-778899 verificado.
+
+- [ ] Correr `ev_s2b.py` con `HACER_041` para HU-041 #1 si se quiere repetir;
+      la variable Temperatura de ACT-35 ya existe (ava_id 20).
+- [ ] HU-014 #2/#3 (usuario sin planta, vigencia en la planta) siguen sin
+      pantalla que los ejercite: son de la afiliación planta-usuario.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

@@ -1,0 +1,361 @@
+[
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Alta de repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Repuestos › Nuevo: código, nombre, unidad, fabricante Parker, código de fabricante PK-9921-X, controla lote = SI › Guardar.",
+  "esperado": "Queda disponible para planes, órdenes e inventario; el código es único dentro del cliente.",
+  "obtenido": "Aviso «Repuesto creado con éxito. Defina sus umbrales por bodega. ACEPTAR»; el listado lo muestra al buscarlo por código.",
+  "ok": true,
+  "capturas": [
+   "hu050_1_modal.png",
+   "hu050_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:24"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Nuevo repuesto con el código REP-6205, que ya existe.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso del SP: «4.- YA EXISTE UN REPUESTO CON ESE CODIGO. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu050_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:24"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 2,
+  "titulo": "Búsqueda por código del fabricante",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Repuestos › buscar «PK-9921» (código del fabricante, no el interno).",
+  "esperado": "El repuesto se encuentra tanto por el código interno como por el del fabricante.",
+  "obtenido": "El listado devuelve el repuesto buscándolo por el código del fabricante.",
+  "ok": true,
+  "capturas": [
+   "hu050_2_busqueda_fabricante.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:25"
+ },
+ {
+  "hu": "HU-052",
+  "criterio": 1,
+  "titulo": "Alta de bodega con sus ubicaciones",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Bodegas › Nueva bodega: código, nombre, planta Renca; agregar «Pasillo A - Estante 3 - Nivel 2» y «… Nivel 3» › Guardar.",
+  "esperado": "La bodega queda con sus ubicaciones y lista para registrar existencias.",
+  "obtenido": "Aviso «Bodega creada con éxito. Agregue sus ubicaciones. ACEPTAR»; al reabrir la bodega se agregan las dos ubicaciones y el listado la muestra.",
+  "ok": true,
+  "capturas": [
+   "hu052_1_modal_alta.png",
+   "hu052_1_modal_ubicaciones.png",
+   "hu052_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:25"
+ },
+ {
+  "hu": "HU-054",
+  "criterio": 2,
+  "titulo": "Ingreso con lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Ingreso del repuesto que controla lote sin indicar lote › Registrar; luego con lote nuevo L-2026-09.",
+  "esperado": "Se exige el número de lote; el consumo posterior descuenta del lote indicado.",
+  "obtenido": "Sin lote: «Este repuesto controla lote: elija uno o escriba el código del lote nuevo. ACEPTAR». Con lote: «Movimiento registrado. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu054_2_sin_lote.png",
+   "hu054_2_con_lote.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 2,
+  "titulo": "Existencia insuficiente",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Entrega (salida por consumo) de 50 sellos con saldo 10 › Registrar.",
+  "esperado": "Rechazada indicando la existencia actual; se puede registrar una entrega parcial.",
+  "obtenido": "Aviso: «Ahí hay 10,00 un y se intenta sacar 50,00. Elija otro origen o baje la cantidad. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu055_2_insuficiente.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 1,
+  "titulo": "Entrega asociada a una orden",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Entrega de 7 sellos indicando la orden «45  ·  Correa con grietas visibles (prueba S4)  ·  ACT-33» › Registrar.",
+  "esperado": "La existencia disminuye y el consumo queda registrado en la orden con su costo.",
+  "obtenido": "Aviso «Movimiento registrado. ACEPTAR»; el saldo de REP-SELLO baja de 10 a 3.",
+  "ok": true,
+  "capturas": [
+   "hu055_1_entrega_orden.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 3,
+  "titulo": "Devolución de un repuesto no utilizado",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Devolución de 2 sellos contra la misma orden › Registrar › Existencias.",
+  "esperado": "La existencia aumenta y la cantidad consumida de la orden se reduce en la misma cifra.",
+  "obtenido": "Aviso «Movimiento registrado. ACEPTAR»; el saldo de REP-SELLO queda en 5.",
+  "ok": true,
+  "capturas": [
+   "hu055_3_devolucion.png",
+   "hu055_3_existencia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:28"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 1,
+  "titulo": "Definición de umbrales por bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Repuesto REP-GRASA › Umbrales por bodega: Bodega Frío mínimo 12 / máximo 4 (rechazado); luego mínimo 4 / máximo 12 › Guardar umbrales.",
+  "esperado": "Los umbrales aplican solo a esa bodega y el máximo no puede ser menor que el mínimo.",
+  "obtenido": "Con máximo < mínimo: «4.- EL STOCK MAXIMO NO PUEDE SER MENOR QUE EL MINIMO. ACEPTAR». Con 4/12: «Umbrales guardados. ACEPTAR» y la grilla de umbrales muestra la bodega con sus valores.",
+  "ok": true,
+  "capturas": [
+   "hu053_1_maximo_menor.png",
+   "hu053_1_umbrales.png",
+   "hu053_1_umbrales_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:29"
+ },
+ {
+  "hu": "HU-057",
+  "criterio": 1,
+  "titulo": "Ajuste con motivo obligatorio",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Ajuste negativo de 1 REP-CORREA sin motivo › Registrar; luego con motivo.",
+  "esperado": "Se exige un motivo y queda un movimiento con la diferencia, el motivo y el responsable.",
+  "obtenido": "Sin motivo: «9.- INDIQUE EL MOTIVO DEL AJUSTE (AL MENOS 5 CARACTERES). ACEPTAR». Con motivo: «Movimiento registrado. ACEPTAR»; el movimiento queda con el motivo y Rodrigo como responsable.",
+  "ok": true,
+  "capturas": [
+   "hu057_1_sin_motivo.png",
+   "hu057_1_con_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-057",
+  "criterio": 2,
+  "titulo": "Trazabilidad: ajustes, ingresos y consumos se distinguen",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › filtrar REP-CORREA.",
+  "esperado": "Los ajustes se distinguen de los ingresos y de los consumos.",
+  "obtenido": "El listado muestra el tipo de cada movimiento (Ingreso por compra, Ajuste negativo, …) con cantidad, responsable y fecha.",
+  "ok": true,
+  "capturas": [
+   "hu057_2_movimientos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-056",
+  "criterio": 2,
+  "titulo": "Consulta sin conexión (app)",
+  "usuario": "rodrigo",
+  "tipo": "App",
+  "pasos": "Corresponde a la app móvil (sábana de sincronización, bloque EXISTENCIAS).",
+  "esperado": "Sin señal se ve la existencia de la última sincronización con aviso de posible desactualización.",
+  "obtenido": "Verificado en sesiones anteriores en la app (cache_datos); no forma parte de la evidencia web.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 1,
+  "titulo": "Generación por horizonte (90 días)",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /plan-ocurrencias/generar {horizonte_dia: 90} (GEN_PLAN_OCURRENCIAS sobre las versiones publicadas).",
+  "esperado": "Genera las ocurrencias de los próximos 90 días y avanza la marca de agua (Programacion_Generacion).",
+  "obtenido": "200: generadas = 0, con el detalle por plan e hito.",
+  "ok": true,
+  "capturas": [
+   "hu076_1_sw_generar.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 2,
+  "titulo": "Ejecución repetida: sin duplicados",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "El mismo POST inmediatamente después.",
+  "esperado": "La segunda ejecución no genera ocurrencias duplicadas.",
+  "obtenido": "200: generadas = 0 (marca de agua e índices únicos).",
+  "ok": true,
+  "capturas": [
+   "hu076_2_sw_repetida.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 3,
+  "titulo": "Generación manual e inmediata",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Botón «Generar ocurrencias» en la pestaña Calendario del plan (S4, HU-083 #1) y en la tarea (HU-102 #1).",
+  "esperado": "Se generan de inmediato sin esperar al proceso automático.",
+  "obtenido": "Ver capturas hu083_1_calendario (S4) y hu102_1_ocurrencias (S4): la generación responde en el momento con el conteo.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 4,
+  "titulo": "Programación deshabilitada",
+  "usuario": "rodrigo",
+  "tipo": "Servidor",
+  "pasos": "Deshabilitar una programación y volver a generar.",
+  "esperado": "Deja de generar ocurrencias nuevas y las ya generadas se conservan.",
+  "obtenido": "GEN_PLAN_OCURRENCIAS solo recorre programaciones con pro_habilitado = 1 y nunca borra ocurrencias (BD/222). No se ejercitó por pantalla en esta corrida.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-054",
+  "criterio": 1,
+  "titulo": "Ingreso simple",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Nuevo › Ingreso por compra: REP-CORREA, Bodega Frío, ubicación UBI-28, 10 unidades, costo › Registrar; luego Existencias › REP-CORREA › ver detalle.",
+  "esperado": "La existencia de esa bodega aumenta en 10 y queda un movimiento de inventario de tipo ingreso.",
+  "obtenido": "Aviso «Movimiento registrado»; la existencia de Bodega Frío pasó de 15 a 25 (la captura del detalle es posterior al ajuste −1 de HU-057, por eso muestra 24) y la pestaña «Últimos movimientos» lista el «Ingreso por compra» con su costo.",
+  "ok": true,
+  "capturas": [
+   "hu054_1_modal.png",
+   "hu054_1_existencia.png",
+   "hu054_1_existencia_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-052",
+  "criterio": 2,
+  "titulo": "Ubicación exacta al consultar un repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Existencias › REP-CORREA: columna Ubicación y detalle por bodega.",
+  "esperado": "Al consultar un repuesto se indica su ubicación exacta dentro de la bodega.",
+  "obtenido": "El listado y el detalle muestran la ubicación (UBI-28) de cada saldo.",
+  "ok": true,
+  "capturas": [
+   "hu054_1_existencia.png",
+   "hu054_1_existencia_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-056",
+  "criterio": 1,
+  "titulo": "Consulta de existencia por repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Existencias › REP-6205 (saldo 1, mínimo 10) › ver detalle.",
+  "esperado": "Existencia por bodega, ubicación y umbrales; se destaca la bodega bajo el mínimo.",
+  "obtenido": "El listado marca la fila «BAJO MÍNIMO» con mín 10 / máx 40 y el detalle muestra bodega, ubicación, umbrales y movimientos.",
+  "ok": true,
+  "capturas": [
+   "hu056_1_listado.png",
+   "hu056_1_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 2,
+  "titulo": "Alerta de stock mínimo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "REP-SELLO tiene mínimo 4 en Bodega Frío; una entrega de 2 deja el saldo en 3 › Alertas › «Revisar ahora».",
+  "esperado": "Se genera una alerta de stock mínimo; la alerta no genera una orden de compra por sí sola.",
+  "obtenido": "La bandeja de alertas muestra «REP-SELLO bajo el mínimo en Bodega Frio» (solo aviso, sin orden de compra).",
+  "ok": true,
+  "capturas": [
+   "hu053_2_entrega.png",
+   "hu053_2_alerta_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 3,
+  "titulo": "Alerta de stock máximo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "REP-GRASA con máximo 12 (fijado en HU-053 #1) y saldo 15 › Alertas › «Revisar ahora».",
+  "esperado": "Se genera una alerta de stock máximo.",
+  "obtenido": "La bandeja muestra «REP-GRASA sobre el máximo en Bodega Frio».",
+  "ok": true,
+  "capturas": [
+   "hu053_2_alerta_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Defecto corregido: INS_REPUESTO «too many arguments»",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Al ejecutar HU-050 #1 la primera vez, Guardar devolvió «Procedure or function INS_REPUESTO has too many arguments specified».",
+  "esperado": "El alta debe guardar el repuesto.",
+  "obtenido": "Causa: RepuestoController.InsertRepuesto enviaba @VIDA_UTIL_HORA/DIA/CICLO dos veces y @LIMPIA_VIDA_UTIL, que INS_REPUESTO no declara (quedó de un merge). Se quitaron los parámetros duplicados; recompilado y reprobado: «Repuesto creado con éxito» (captura hu050_1_listado).",
+  "ok": true,
+  "capturas": [
+   "hu050_1_defecto_ins_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ }
+]

@@ -5,10 +5,19 @@
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
+        /* Antes abria un RadWindow2 que vivia dentro del panel de pagos.
+           Como "Declarar pago" es un postback parcial, al volver la
+           respuesta el RadWindow ya no existia para $find y la funcion
+           reventaba en setUrl: el administrador del cliente apretaba el
+           boton y no pasaba nada (encontrado en las pruebas de HU-194,
+           15-09-2026). Ahora abre el mismo SigmaModal que usa Pagos.aspx. */
         function abrirPago(query) {
-            var oWin = $find("<%=rwiPago.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Comercial/Suscripciones/Pago.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Comercial/Suscripciones/Pago.aspx") %>?query=' + query,
+                title: 'Pago',
+                width: 900,
+                initialHeight: 620
+            });
         }
 
         function refresh() {
@@ -87,8 +96,6 @@
          esta grilla es de solo lectura salvo por el boton. --%>
     <asp:Panel ID="pnlPagos" runat="server" Visible="false">
         <div class="SubTitulos">Mis pagos declarados</div>
-
-        <rad:RadWindow2 ID="rwiPago" runat="server" Width="900" Height="620" />
 
         <rad:RadGrid2 ID="GridPagos" runat="server" OnItemDataBound="GridPagos_ItemDataBound">
             <MasterTableView CommandItemDisplay="Top" DataKeyNames="spa_id">

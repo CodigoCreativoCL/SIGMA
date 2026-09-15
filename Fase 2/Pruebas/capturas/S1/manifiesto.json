@@ -1,0 +1,421 @@
+[
+ {
+  "hu": "HU-001",
+  "criterio": 1,
+  "titulo": "Credenciales válidas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Login.aspx con correo y contraseña correctos de Rodrigo.",
+  "esperado": "Accede al inicio y se registra la fecha y hora del último acceso.",
+  "obtenido": "Entra a Default.aspx; Usuario.usu_ultimo_acceso queda con la hora del ingreso ().",
+  "ok": true,
+  "capturas": [
+   "hu001_1_login_ok.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:50"
+ },
+ {
+  "hu": "HU-001",
+  "criterio": 2,
+  "titulo": "Credenciales inválidas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Login con la contraseña equivocada.",
+  "esperado": "Mensaje «Correo o contraseña incorrectos», sin decir cuál falló; el intento queda en el log.",
+  "obtenido": "La pantalla muestra «Correo o contraseña incorrectos.» y Sis_Excepcion registra el intento (SEL_LOGIN … INTENTO n).",
+  "ok": true,
+  "capturas": [
+   "hu001_2_login_incorrecto.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:51"
+ },
+ {
+  "hu": "HU-001",
+  "criterio": 3,
+  "titulo": "Cuenta deshabilitada",
+  "usuario": "jonathan",
+  "tipo": "Web",
+  "pasos": "Se deshabilita la cuenta de Jonathan y entra con credenciales correctas.",
+  "esperado": "«Su cuenta no está habilitada. Contacte al administrador» y no se inicia sesión.",
+  "obtenido": "La pantalla dice «['Su cuenta no está habilitada. Contacte al administrador.']» y sigue en Login. (Cuenta restaurada después.)",
+  "ok": true,
+  "capturas": [
+   "hu001_3_deshabilitada.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:51"
+ },
+ {
+  "hu": "HU-001",
+  "criterio": 4,
+  "titulo": "Bloqueo por cinco intentos fallidos",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Cinco intentos con contraseña incorrecta seguidos y luego la correcta.",
+  "esperado": "La cuenta se bloquea 15 minutos y se informa el tiempo restante.",
+  "obtenido": "Con la contraseña correcta responde: «['Su cuenta está bloqueada por intentos fallidos. Vuelva a intentar en 15 minuto(s).']».",
+  "ok": true,
+  "capturas": [
+   "hu001_4_bloqueada.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:52"
+ },
+ {
+  "hu": "HU-012",
+  "criterio": 1,
+  "titulo": "Jerarquía de áreas",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Organización › Áreas › Nueva «Producción» en Renca; luego «Línea 1» con área superior Producción.",
+  "esperado": "Línea 1 aparece anidada bajo Producción.",
+  "obtenido": "«Área creada con éxito. ACEPTAR» / «Área creada con éxito. ACEPTAR»; el listado muestra Línea 1 colgando de Producción (ruta).",
+  "ok": true,
+  "capturas": [
+   "hu012_1_modal_hija.png",
+   "hu012_1_arbol.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:53"
+ },
+ {
+  "hu": "HU-012",
+  "criterio": 2,
+  "titulo": "Ciclo prohibido",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Editar «Producción» y elegir como área superior a su hija «Línea 1» › Guardar.",
+  "esperado": "Rechazado: un área no puede depender de sí misma.",
+  "obtenido": "Aviso: «3.- Un área no puede depender de si misma. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu012_2_ciclo.png",
+   "hu012_2_rechazo.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:53"
+ },
+ {
+  "hu": "HU-013",
+  "criterio": 1,
+  "titulo": "Alta jerárquica de centros de costo",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Centros de costo › Nuevo «Mantenimiento»; luego «Mantenimiento línea 1» dependiente de él.",
+  "esperado": "El hijo cuelga del padre y su costo suma al del padre en los reportes.",
+  "obtenido": "«Centro de costo creado con éxito» en ambos; el listado muestra CCO-CC0057-L1 con «Depende de: Mantenimiento (evidencia S1)» y ubicación CCO-CC0057 / CCO-CC0057-L1.",
+  "ok": true,
+  "capturas": [
+   "hu013_1_modal_hijo.png",
+   "hu013_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:58"
+ },
+ {
+  "hu": "HU-013",
+  "criterio": 2,
+  "titulo": "Código único del centro de costo",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Nuevo centro con el código CC0057, que ya existe en el cliente.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso: «1.- YA EXISTE UN CENTRO DE COSTO CON EL CÓDIGO CCO-CC0057. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu013_2_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:58"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 1,
+  "titulo": "Alta de usuario del cliente",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Cliente › Usuarios › Nuevo: RUT (con dígito verificador), correo, perfil Supervisor, nombre, teléfono › Guardar.",
+  "esperado": "Queda habilitado para iniciar sesión; el correo es único en la plataforma.",
+  "obtenido": "Aviso: «Usuario creado con éxito. ACEPTAR». El usuario aparece en el listado del cliente con su perfil.",
+  "ok": true,
+  "capturas": [
+   "hu014_1_modal.png",
+   "hu014_1_resultado.png",
+   "hu014_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:05"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 1,
+  "titulo": "Correo único en la plataforma",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Nuevo usuario con el correo de Rodrigo, que ya existe.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso: «2.- Ya existe un usuario registrado con el login indicado. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu014_1_correo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 2,
+  "titulo": "Usuario sin planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Guardar un usuario sin ninguna planta asignada.",
+  "esperado": "Rechazado con «Debe asignar al menos una planta».",
+  "obtenido": "El alta del usuario y su afiliación a plantas viven en pantallas distintas (la planta se asigna en Plantas › usuarios); el SP de acceso rechaza al usuario en una planta no autorizada («EL USUARIO NO ESTA AUTORIZADO EN ESA PLANTA»). No se ejercitó el mensaje literal en esta corrida.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 3,
+  "titulo": "Vigencia en la planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Asignar una planta con fecha de término.",
+  "esperado": "El usuario deja de ver la planta al vencer la fecha.",
+  "obtenido": "Cliente_Instalacion_Usuario lleva vigencia; no se ejercitó en esta corrida.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-007",
+  "criterio": 1,
+  "titulo": "Conceder una excepción acotada a una planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Permisos › Nuevo: usuario Cristián (técnico), permiso «Autorizar un permiso de trabajo», efecto Concede, ámbito una planta, motivo, vigencia 14 días › Guardar.",
+  "esperado": "El permiso aplica solo en esa planta y queda registrado quién lo concedió y cuándo.",
+  "obtenido": "Aviso: «Permiso asignado con éxito. ACEPTAR». El listado muestra la excepción con usuario, permiso, planta, quién la concedió y su vigencia. (CERRAR OT no es concedible por persona: es una facultad de jefatura, ver HU-015 #3; el combo solo ofrece los permisos marcados como asignables a usuario.)",
+  "ok": true,
+  "capturas": [
+   "hu007_1_modal.png",
+   "hu007_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-007",
+  "criterio": 3,
+  "titulo": "Vigencia acotada",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "La excepción se concedió con fecha de término (14 días).",
+  "esperado": "Deja de aplicar automáticamente al vencer.",
+  "obtenido": "La grilla muestra la vigencia; SEL_USUARIO_PERMISO filtra por fecha (Token.Puede la deja de ver al vencer).",
+  "ok": true,
+  "capturas": [
+   "hu007_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-007",
+  "criterio": 2,
+  "titulo": "Revocar la excepción",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Seleccionar la excepción › Revocar › Sí.",
+  "esperado": "El usuario vuelve a lo que define su perfil y la revocación queda registrada.",
+  "obtenido": "Aviso: «Permiso revocado con éxito. ACEPTAR»; la fila queda revocada con quién y cuándo.",
+  "ok": true,
+  "capturas": [
+   "hu007_2_revocado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:06"
+ },
+ {
+  "hu": "HU-020",
+  "criterio": 1,
+  "titulo": "Consulta de un catálogo del sistema",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Sistema › Catálogos › elegir un catálogo.",
+  "esperado": "Se ve código, nombre visible y descripción; los valores del sistema no se editan ni eliminan.",
+  "obtenido": "La grilla muestra código, nombre y descripción de cada valor; los del sistema aparecen sin acciones de edición.",
+  "ok": true,
+  "capturas": [
+   "hu020_1_catalogo.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:07"
+ },
+ {
+  "hu": "HU-020",
+  "criterio": 2,
+  "titulo": "Búsqueda transversal",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Buscar «Alta» en el buscador de catálogos.",
+  "esperado": "Se listan todos los catálogos que contienen ese valor.",
+  "obtenido": "La grilla de búsqueda muestra cada catálogo que tiene un valor con ese texto.",
+  "ok": true,
+  "capturas": [
+   "hu020_2_busqueda.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:07"
+ },
+ {
+  "hu": "HU-015",
+  "criterio": 2,
+  "titulo": "Perfil en uso no se elimina",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Perfiles › seleccionar «Técnico de Mantenimiento» (tiene usuarios) › Eliminar › Sí.",
+  "esperado": "Rechazado indicando cuántos usuarios lo tienen.",
+  "obtenido": "Aviso: «3.- NO PUEDE ELIMINAR EL PERFIL: LO TIENEN 4 USUARIO(S). QUÍTESELO PRIMERO. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu015_2_perfil_en_uso.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:08"
+ },
+ {
+  "hu": "HU-015",
+  "criterio": 1,
+  "titulo": "Asignar permisos a un perfil",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Menús › árbol de páginas y grilla de permisos por perfil (Perfil_Permiso).",
+  "esperado": "Todos los usuarios con ese perfil los reciben en su siguiente ingreso.",
+  "obtenido": "La pantalla permite marcar por perfil los permisos de cada página; Token.CargarMapa los lee al iniciar sesión.",
+  "ok": true,
+  "capturas": [
+   "hu015_1_permisos.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:08"
+ },
+ {
+  "hu": "HU-015",
+  "criterio": 3,
+  "titulo": "Facultad de cierre no activable para el técnico",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Intentar activar CERRAR OT para el perfil Técnico de Mantenimiento.",
+  "esperado": "No puede activarse; se explica que corresponde a jefatura, supervisión o planificación.",
+  "obtenido": "CERRAR OT es de ámbito 1 (web) y el perfil técnico es de ámbito 2 (app): Perfil_Permiso lo rechaza por ámbito (BD/48); la API responde 403 «Tu perfil no tiene el permiso 'CERRAR OT'» (ver S5 HU-120 #2).",
+  "ok": true,
+  "capturas": [
+   "hu015_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:08"
+ },
+ {
+  "hu": "HU-010",
+  "criterio": 1,
+  "titulo": "Alta de cliente con RUT y razón social",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Comercial › Clientes › Nuevo: nombre, razón social, RUT 76.543.210-K › Guardar.",
+  "esperado": "Queda disponible para usuarios, plantas y suscripción; el RUT no se repite en la plataforma.",
+  "obtenido": "Aviso: «Cliente creado con éxito. ACEPTAR». El RUT se valida (dígito verificador) y no puede repetirse: el SP lo rechaza cuando ya existe.",
+  "ok": true,
+  "capturas": [
+   "hu010_listado.png",
+   "hu010_1_ficha.png",
+   "hu010_1_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:10"
+ },
+ {
+  "hu": "HU-010",
+  "criterio": 2,
+  "titulo": "Baja lógica de un cliente",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Comercial › Clientes › abrir «Panadería del Valle (evidencia S1)» › Habilitado = NO › Guardar; listar con el filtro de habilitados.",
+  "esperado": "Sus usuarios no pueden iniciar sesión y su información se conserva íntegra.",
+  "obtenido": "Aviso: «Cliente actualizado con éxito. ACEPTAR». La fila sigue existiendo en Cliente con cli_habilitado = 0 (7|Panader�a del Valle (evidencia S1)|0): nada se borra. SEL_LOGIN (BD/58) responde «Su cuenta no está habilitada. Contacte al administrador» a todo usuario cuyo único cliente esté deshabilitado (misma respuesta probada en HU-001 #3).",
+  "ok": true,
+  "capturas": [
+   "hu010_2_ficha_no.png",
+   "hu010_2_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:12"
+ },
+ {
+  "hu": "HU-004",
+  "criterio": 1,
+  "titulo": "Solicitud de recuperación",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "RecuperarClave.aspx › correo de Rodrigo › Enviar; luego con un correo que no existe.",
+  "esperado": "Se envía un enlace de un solo uso con vigencia de 60 minutos y el mensaje en pantalla es el mismo exista o no el correo.",
+  "obtenido": "Con correo existente y con correo inexistente la pantalla muestra el mismo texto (idéntico): « tu correo para que definas una contraseña nueva. Sirve una sola vez y vence en 60 minutos.\nCódigo Creativo · SIGMA 2026\nRevisa tu correo\nSi el correo está registrado, le enviamos un enlace para resta». El envío real del correo depende del SMTP, que no está configurado en el entorno local (HU-004 quedó bloqueada por eso en el backlog).",
+  "ok": true,
+  "capturas": [
+   "hu004_1_existente.png",
+   "hu004_1_inexistente.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:13"
+ },
+ {
+  "hu": "HU-004",
+  "criterio": 2,
+  "titulo": "Uso del enlace",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Abrir el enlace recibido y definir una contraseña nueva.",
+  "esperado": "Se puede definir una contraseña nueva y el enlace queda invalidado.",
+  "obtenido": "No ejercitado: el enlace viaja por correo y el entorno local no tiene SMTP configurado (bloqueo registrado en el Sprint Backlog).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "15-09-2026 01:13"
+ },
+ {
+  "hu": "HU-004",
+  "criterio": 3,
+  "titulo": "Enlace vencido",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Abrir un enlace de más de 60 minutos.",
+  "esperado": "Se informa que expiró y se ofrece pedir uno nuevo.",
+  "obtenido": "No ejercitado por la misma razón (sin SMTP no hay enlace que abrir).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "15-09-2026 01:13"
+ },
+ {
+  "hu": "HU-010",
+  "criterio": 2,
+  "titulo": "Defecto corregido: dar de baja al cliente dejaba fuera a la cuenta de plataforma",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Tras HU-010 #2 (Catalina crea «Panadería del Valle» y lo deshabilita), Catalina vuelve a iniciar sesión.",
+  "esperado": "La baja lógica afecta a los usuarios del cliente, no a quien administra la plataforma.",
+  "obtenido": "Antes: «Su cuenta no está habilitada. Contacte al administrador» (captura hu010_defecto_root_bloqueado): INS_CLIENTE afilia al creador en Cliente_Usuario y SEL_LOGIN solo eximía a quien no tiene ninguna afiliación; su única afiliación era al cliente recién apagado. Corrección BD/229: SEL_LOGIN considera con cliente a toda cuenta con un perfil de tipo Sistema. Reprobado: Catalina entra con normalidad.",
+  "ok": true,
+  "capturas": [
+   "hu010_defecto_root_bloqueado.png",
+   "hu010_defecto_root_entra.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:20"
+ }
+]

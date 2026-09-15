@@ -1,0 +1,379 @@
+[
+ {
+  "hu": "HU-080",
+  "criterio": 1,
+  "titulo": "Alta de plan: versión 1 en borrador",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Planes de mantenimiento › Nuevo › código PMA-EV…, nombre, planta Renca, tipo Amasadora › Guardar › pestaña Versiones.",
+  "esperado": "Se crea la versión 1 en estado borrador y el código es único dentro del cliente.",
+  "obtenido": "La ficha se abre como centro (Ficha / Hitos / Equipos / Calendario / Versiones); Versiones muestra la v1 «Borrador».",
+  "ok": true,
+  "capturas": [
+   "hu080_1_formulario.png",
+   "hu080_1_ficha.png",
+   "hu080_1_versiones.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:22"
+ },
+ {
+  "hu": "HU-080",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nuevo plan con el código PMA-HORNOS-L1, que ya existe. Guardar.",
+  "esperado": "Rechazado: el código es único dentro del cliente.",
+  "obtenido": "Aviso del SP: «2.- YA EXISTE UN PLAN CON EL CÓDIGO PMA-HORNOS-L1. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu080_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:22"
+ },
+ {
+  "hu": "HU-080",
+  "criterio": 2,
+  "titulo": "Plan acotado a un tipo: solo equipos de ese tipo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Plan acotado al tipo Amasadora (las revolvedoras) › Equipos › Asociar equipo: primero un Horno (ACT-34), luego una Revolvedora (ACT-35).",
+  "esperado": "Solo se aceptan equipos del tipo (o modelo) al que está acotado el plan.",
+  "obtenido": "El horno se rechaza: «5.- EL ACTIVO ACT-34 NO ES DEL TIPO AL QUE ESTÁ ACOTADO EL PLAN. ACEPTAR»; la revolvedora queda asociada («Equipo asociado al plan con éxito. ACEPTAR»).",
+  "ok": true,
+  "capturas": [
+   "hu080_2_modal_otro_tipo.png",
+   "hu080_2_rechazo.png",
+   "hu080_2_equipo_asociado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 2,
+  "titulo": "Hito sin programación: rechazado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Hitos › Nuevo hito con código y nombre pero sin elegir «Cada cuánto» › Guardar.",
+  "esperado": "La operación es rechazada: el hito debe tener una recurrencia definida.",
+  "obtenido": "El validador marca la programación como obligatoria y el formulario no se envía; el SP además exige @PROGRAMACION.",
+  "ok": true,
+  "capturas": [
+   "hu081_2_sin_programacion.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 1,
+  "titulo": "Alta de hito con programación",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mismo hito con «Cada cuánto = Mensual (semilla)», requiere parada = SI › Guardar.",
+  "esperado": "El hito queda ligado a su programación; las ocurrencias las genera el generador (HU-076) a partir de ella.",
+  "obtenido": "Aviso «Hito creado con éxito. ACEPTAR»; la grilla de hitos muestra LUB-500 con su programación.",
+  "ok": true,
+  "capturas": [
+   "hu081_1_modal.png",
+   "hu081_1_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 1,
+  "titulo": "Varios equipos: una ocurrencia por cada uno",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Equipos › asociar ACT-35, ACT-43 y ACT-44 › Versiones › Publicar el borrador › Calendario › Generar ocurrencias (90 días).",
+  "esperado": "El plan genera ocurrencias independientes para cada equipo.",
+  "obtenido": "Publicación: «Versión publicada. La anterior quedó retirada. ACEPTAR»; generación: «9 ocurrencia(s) generada(s). ACEPTAR». El calendario muestra una fila por equipo y mes.",
+  "ok": true,
+  "capturas": [
+   "hu083_1_equipos.png",
+   "hu083_1_calendario.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:24"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 3,
+  "titulo": "Activo ya cubierto por otro plan",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Asociar un equipo que ya está en otro plan vigente del mismo tipo.",
+  "esperado": "Se advierte cuál es el otro plan y se permite continuar.",
+  "obtenido": "No construido: el SP solo rechaza el equipo repetido dentro de la misma versión (error 9). Queda en «No» en el backlog.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 18:24"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 1,
+  "titulo": "Vista del calendario anual",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "PMA-HORNOS-L1 › Calendario › año 2027, todo el año.",
+  "esperado": "Ocurrencias por mes con su equipo y su hito; filtros por planta, área, equipo y tipo de trabajo.",
+  "obtenido": "La grilla lista mes a mes las ocurrencias con hito, equipo y estado; filtros de año, mes, equipo y estado.",
+  "ok": true,
+  "capturas": [
+   "hu085_1_calendario_anual.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:24"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 2,
+  "titulo": "Solo trabajos que requieren parada",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Calendario › «Solo con parada» = SI › Aplicar.",
+  "esperado": "Se muestran solo las ocurrencias de hitos que requieren parada.",
+  "obtenido": "2 filas, todas del hito OVH-QUEMADOR (requiere parada).",
+  "ok": true,
+  "capturas": [
+   "hu085_2_solo_parada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 3,
+  "titulo": "Carga estimada por semana",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Calendario › bloque «Horas estimadas por semana».",
+  "esperado": "Se ve la cantidad de horas estimadas por semana.",
+  "obtenido": "El bloque bajo los filtros lista cada semana con sus horas (duración estimada de los hitos).",
+  "ok": true,
+  "capturas": [
+   "hu085_3_horas_semana.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 1,
+  "titulo": "Bandeja de hallazgos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Hallazgos de inspección (estado Pendiente).",
+  "esperado": "Hallazgos pendientes con equipo, severidad, foto y días de espera, ordenados por severidad y antigüedad.",
+  "obtenido": "La grilla muestra severidad, equipo, días de espera y la respuesta que lo originó.",
+  "ok": true,
+  "capturas": [
+   "hu096_1_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 3,
+  "titulo": "Descartar con motivo de al menos 10 caracteres",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Seleccionar «Guarda de seguridad suelta» › motivo «corto» › Descartar; luego con un motivo completo.",
+  "esperado": "Se exige un motivo de al menos 10 caracteres y queda registrado quién lo descartó y cuándo.",
+  "obtenido": "Con «corto» el panel de resultado marca RECHAZADO: «3.- INDIQUE EL MOTIVO DEL DESCARTE (AL MENOS 10 CARACTERES)» (0 resueltos). Con el motivo completo: «1 hallazgo(s) resuelto(s)» y el hallazgo sale de la bandeja con quién y cuándo lo descartó.",
+  "ok": true,
+  "capturas": [
+   "hu096_3_motivo_corto.png",
+   "hu096_3_descartado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 2,
+  "titulo": "Convertir un hallazgo en orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Seleccionar «Correa con grietas visibles» › Generar orden de trabajo › Sí.",
+  "esperado": "La orden nace con origen «hallazgo de checklist», el hallazgo queda enlazado y sale de la bandeja.",
+  "obtenido": "Aviso «1 hallazgo(s) resuelto(s). ACEPTAR»; el hallazgo desaparece de pendientes y la orden queda con origen HALLAZGO CHECKLIST.",
+  "ok": true,
+  "capturas": [
+   "hu096_2_seleccion.png",
+   "hu096_2_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-102",
+  "criterio": 1,
+  "titulo": "Programación de la tarea y sus ocurrencias",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Tareas recurrentes › Nueva tarea › Guardar › Programaciones › Programar (Mensual) › Generar ocurrencias (90 días).",
+  "esperado": "Se generan ocurrencias según la recurrencia definida.",
+  "obtenido": "Programación: «Tarea programada con éxito. ACEPTAR». Generación: «3 ocurrencia(s) generada(s) para los próximos 90 días. · TAR-EV1822 · Mensual (semilla): 3 ACEPTAR». La pestaña lista la programación y sus ocurrencias generadas.",
+  "ok": true,
+  "capturas": [
+   "hu102_1_formulario.png",
+   "hu102_1_modal_programacion.png",
+   "hu102_1_ocurrencias.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-102",
+  "criterio": 2,
+  "titulo": "Programación de fecha única con varias fechas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Requiere una programación de tipo fecha única con cuatro fechas.",
+  "esperado": "Cuatro ocurrencias independientes, cada una con su ejecución y evidencias.",
+  "obtenido": "No verificado: la base demo no tiene programaciones de fecha única con varias fechas (el generador las soporta vía FNC_PROGRAMACION_FECHAS).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-104",
+  "criterio": 1,
+  "titulo": "Comentario en el hilo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "TAR-001 › Comentarios › Comentar en una ocurrencia › Publicar.",
+  "esperado": "Queda con mi nombre y la fecha y no puede editarse ni eliminarse.",
+  "obtenido": "Aviso «Elija en qué ocurrencia comentar: «Comentar» en la tarjeta o «Responder» en un comentario. ACEPTAR»; el hilo muestra el comentario con «Rodrigo Quezada» y la fecha; no hay acciones de editar ni borrar.",
+  "ok": true,
+  "capturas": [
+   "hu104_1_escribiendo.png",
+   "hu104_1_publicado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-104",
+  "criterio": 2,
+  "titulo": "Respuesta anidada",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "En un comentario › Responder › Publicar.",
+  "esperado": "La respuesta se muestra anidada bajo el comentario original.",
+  "obtenido": "Aviso «Comentario publicado. ACEPTAR»; la respuesta aparece con sangría bajo el comentario al que responde.",
+  "ok": true,
+  "capturas": [
+   "hu104_2_respuesta_anidada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 5,
+  "titulo": "Ejecución sin conexión: la apertura es idempotente",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /checklist/ejecuciones con offline=true y uuid; repetir el mismo POST (reintento al recuperar señal).",
+  "esperado": "Queda guardado en el dispositivo y al sincronizar no se duplica; el servidor revalida.",
+  "obtenido": "201 y 201: el reintento devuelve el mismo id 7. La definición sincronizada (plantilla con umbrales) es GET /checklist/plantillas/{version}.",
+  "ok": true,
+  "capturas": [
+   "hu095_sw_pendientes.png",
+   "hu095_sw_plantilla.png",
+   "hu095_sw_abrir.png",
+   "hu095_5_sw_reintento.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 2,
+  "titulo": "Ítem obligatorio sin responder",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /checklist/ejecuciones/{id}/cerrar sin haber respondido.",
+  "esperado": "Se indica cuál falta y no se permite finalizar.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"Faltan 4 items obligatorios por responder.\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu095_2_sw_cerrar_incompleto.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 3,
+  "titulo": "Valor fuera de rango se marca con su mensaje",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST respuestas con un valor sobre el umbral crítico del ítem numérico.",
+  "esperado": "El ítem se marca fuera de rango con el mensaje configurado (y exige foto si así está definido).",
+  "obtenido": "La respuesta devuelve fuera_rango = true con la severidad y el mensaje del umbral.",
+  "ok": true,
+  "capturas": [
+   "hu095_sw_resp_2.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 1,
+  "titulo": "Ejecución completa",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Responder todos los obligatorios y POST cerrar; GET /checklist/ejecuciones/{id}.",
+  "esperado": "La ejecución queda con fecha de inicio y término y se calculan respondidos y no conformes.",
+  "obtenido": "cerrar → 200; la ejecución muestra fechas y contadores.",
+  "ok": true,
+  "capturas": [
+   "hu095_1_sw_cerrar.png",
+   "hu095_1_sw_ejecucion.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 4,
+  "titulo": "Unidad distinta a la esperada",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Registrar un valor en PSI en un ítem que espera bar.",
+  "esperado": "Se guarda el valor y la unidad ingresados; la comparación usa el valor convertido.",
+  "obtenido": "No construido en esta versión (la respuesta no lleva unidad). Queda en «No» en el backlog.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 2,
+  "titulo": "Horómetro por activo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Equipos › abrir un equipo del plan: campo «Medidor» propio de cada equipo (pac_activo_medidor).",
+  "esperado": "Cada equipo dispara según su propio uso (su horómetro), no un medidor único del plan.",
+  "obtenido": "El modal del equipo del plan ofrece componente y medidor propios del equipo; con la decisión HU-073 #3 (BD/224) el horómetro lo aporta cada equipo. La generación por lectura de medidor no está construida (pendiente HU-073).",
+  "ok": true,
+  "capturas": [
+   "hu083_2_medidor_por_equipo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:02"
+ }
+]

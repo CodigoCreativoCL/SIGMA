@@ -100,6 +100,17 @@ namespace API.Utils
         /// </summary>
         protected IHttpActionResult Creado(int id)
         {
+            return Creado(id, new { id = id });
+        }
+
+        /// <summary>
+        /// 201 con un cuerpo propio, para cuando la creacion tiene algo mas
+        /// que decir ademas del id: la medicion de condicion devuelve el
+        /// veredicto contra los umbrales (HU-041 #2), que el SP calcula y
+        /// no tiene sentido tirar a la basura en el camino al telefono.
+        /// </summary>
+        protected IHttpActionResult Creado(int id, object cuerpo)
+        {
             Uri destino;
 
             try
@@ -116,10 +127,10 @@ namespace API.Utils
             {
                 // Un Location mal formado no puede tumbar una creación que
                 // ya ocurrió: se responde 201 sin él.
-                return Content(HttpStatusCode.Created, new { id = id });
+                return Content(HttpStatusCode.Created, cuerpo);
             }
 
-            return Created(destino, new { id = id });
+            return Created(destino, cuerpo);
         }
 
         protected IHttpActionResult Error(HttpStatusCode codigo, string mensaje, bool esDeNegocio = true)

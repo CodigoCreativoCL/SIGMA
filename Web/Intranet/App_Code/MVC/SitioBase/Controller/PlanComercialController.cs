@@ -65,12 +65,22 @@ namespace SitioBase.Controller
                                 item.plc_orden = int.Parse(dr["PLC_ORDEN"].ToString());
                             item.plc_habilitado = bool.Parse(dr["PLC_HABILITADO"].ToString());
 
-                            item.pcb_id = int.Parse(dr["PCB_ID"].ToString());
-                            item.pcb_codigo = dr["PCB_CODIGO"].ToString();
-                            item.pcb_nombre = dr["PCB_NOMBRE"].ToString();
+                            /* Un plan recien creado no tiene precio todavia (BD/228:
+                               el SEL hace LEFT JOIN para que igual aparezca en el
+                               listado y se le pueda fijar). */
+                            if (dr["PCB_ID"] != DBNull.Value)
+                            {
+                                item.pcb_id = int.Parse(dr["PCB_ID"].ToString());
+                                item.pcb_codigo = dr["PCB_CODIGO"].ToString();
+                                item.pcb_nombre = dr["PCB_NOMBRE"].ToString();
+                            }
+                            else item.pcb_nombre = "Sin precio";
 
-                            item.pcp_id = int.Parse(dr["PCP_ID"].ToString());
-                            item.pcp_valor_uf = decimal.Parse(dr["PCP_VALOR_UF"].ToString());
+                            if (dr["PCP_ID"] != DBNull.Value)
+                            {
+                                item.pcp_id = int.Parse(dr["PCP_ID"].ToString());
+                                item.pcp_valor_uf = decimal.Parse(dr["PCP_VALOR_UF"].ToString());
+                            }
                             if (dr["PCP_DESCUENTO_PORCENTAJE"] != DBNull.Value)
                                 item.pcp_descuento_porcentaje = decimal.Parse(dr["PCP_DESCUENTO_PORCENTAJE"].ToString());
                             if (dr["MONTO_CLP_REFERENCIAL"] != DBNull.Value)
