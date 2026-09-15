@@ -575,7 +575,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     {
         if (IsPostBack) return;
 
-        int anio = DateTime.Now.Year;
+        int anio = global::SitioBase.Hora.Ahora.Year;
         for (int a = anio - 1; a <= anio + 2; a++)
             cboAnio.Items.Add(new RadComboBoxItem(a.ToString(), a.ToString()) { Selected = a == anio });
 
@@ -613,7 +613,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         PlanOcurrencia f = new PlanOcurrencia { filtro_plan = Id };
 
         int anio, mes;
-        if (!int.TryParse(cboAnio.SelectedValue, out anio) || anio < 2000) anio = DateTime.Now.Year;
+        if (!int.TryParse(cboAnio.SelectedValue, out anio) || anio < 2000) anio = global::SitioBase.Hora.Ahora.Year;
         int.TryParse(cboMes.SelectedValue, out mes);
 
         if (mes >= 1 && mes <= 12)

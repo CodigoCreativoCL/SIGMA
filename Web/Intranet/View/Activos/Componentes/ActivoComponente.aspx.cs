@@ -230,7 +230,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (!string.IsNullOrEmpty(cboPadre.SelectedValue)) x.aco_componente_padre = int.Parse(cboPadre.SelectedValue);
             if (!string.IsNullOrEmpty(txtDescripcion.Text.Trim())) x.aco_descripcion = txtDescripcion.Text.Trim();
 
-            if (calInstalacion.Value != null && calInstalacion.Value.Value.Date > DateTime.Today)
+            if (calInstalacion.Value != null && calInstalacion.Value.Value.Date > global::SitioBase.Hora.Hoy)
                 throw new Exception("La fecha de instalación no puede ser futura.");
             x.aco_fecha_instalacion = calInstalacion.Value;
 

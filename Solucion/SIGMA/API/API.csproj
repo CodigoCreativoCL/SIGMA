@@ -269,6 +269,7 @@
     <Compile Include="Utils\ApiBase.cs" />
     <Compile Include="Utils\CacheCorta.cs" />
     <Compile Include="Utils\Datos.cs" />
+    <Compile Include="Utils\Hora.cs" />
     <Compile Include="Utils\ErrorSql.cs" />
     <Compile Include="Utils\Pagina.cs" />
     <Compile Include="Utils\Permisos.cs" />

@@ -235,7 +235,7 @@ public partial class View_Mantenimiento_Programaciones_Programacion : System.Web
         if (Id == 0)
         {
             lblId.Text = "Nuevo";
-            calInicio.Value = DateTime.Today;
+            calInicio.Value = global::SitioBase.Hora.Hoy;
             txtIntervalo.Value = 1;
             txtToleranciaAntes.Value = 0;
             txtToleranciaDespues.Value = 0;

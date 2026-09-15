@@ -528,7 +528,7 @@ namespace SitioBase.Controller
 
         private static void Entregar(byte[] binario, string nombre)
         {
-            string archivo = nombre + " " + DateTime.Now.ToString("dd-MM-yyyy");
+            string archivo = nombre + " " + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");
             HttpContext.Current.Response.Clear();
             HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";
             HttpContext.Current.Response.HeaderEncoding = Encoding.Default;

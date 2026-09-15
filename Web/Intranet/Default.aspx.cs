@@ -22,6 +22,6 @@ public partial class _Default : System.Web.UI.Page
         litNombre.Text = Server.HtmlEncode(nombre);
 
         CultureInfo es = CultureInfo.GetCultureInfo("es-CL");
-        litFecha.Text = DateTime.Now.ToString("dddd, d 'de' MMMM", es).ToUpper(es);
+        litFecha.Text = global::SitioBase.Hora.Ahora.ToString("dddd, d 'de' MMMM", es).ToUpper(es);
     }
 }

@@ -73,11 +73,11 @@ public partial class View_Mantenimiento_Planes_CargaMasivaPlanes : System.Web.UI
                                     "Si lo guardó como .xls o .csv, vuelva a guardarlo " +
                                     "como libro de Excel.");
 
-            DateTime inicio = DateTime.Now;
+            DateTime inicio = global::SitioBase.Hora.Ahora;
 
             Respuesta respuesta = new PlanMantenimientoCargaController().Cargar(fldArchivo.FileBytes);
 
-            TimeSpan duro = DateTime.Now - inicio;
+            TimeSpan duro = global::SitioBase.Hora.Ahora - inicio;
 
             /* Si no leyó ni una fila, no hay resultado que mostrar: es un
                problema con el archivo, no con su contenido. */

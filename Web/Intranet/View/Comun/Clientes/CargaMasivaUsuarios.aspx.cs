@@ -120,7 +120,7 @@ public partial class View_Comun_Clientes_CargaMasivaUsuarios : System.Web.UI.Pag
 
         if (fldDocumento.HasFile)
         {
-            DateTime ProcesoInicio = DateTime.Now;
+            DateTime ProcesoInicio = global::SitioBase.Hora.Ahora;
             Respuesta respuesta = new Respuesta();
             System.Threading.Thread.Sleep(1000);
 
@@ -133,7 +133,7 @@ public partial class View_Comun_Clientes_CargaMasivaUsuarios : System.Web.UI.Pag
 
             respuesta = clienteUsuarioController.InsertUsuariosMasivo(clienteUsuario);
 
-            DateTime PorcesoTermino = DateTime.Now;
+            DateTime PorcesoTermino = global::SitioBase.Hora.Ahora;
 
             TimeSpan TiempoProcesoTotal = PorcesoTermino - ProcesoInicio;
 

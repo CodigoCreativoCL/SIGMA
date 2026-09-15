@@ -525,7 +525,7 @@ namespace SitioBase
             string nombreAlmacenado = Almacenamiento.NombreAlmacenado(nombreOriginal);
 
             string ruta = RutaArchivo.Armar(Contenedor(), cliente, clienteNombre,
-                                            modulo, nombreAlmacenado, DateTime.Now);
+                                            modulo, nombreAlmacenado, global::SitioBase.Hora.Ahora);
 
             Dictionary<string, object> cuerpo = new Dictionary<string, object>();
 

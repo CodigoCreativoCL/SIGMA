@@ -150,7 +150,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
                     // rara vez es anterior a 1950. Elegir de una lista evita
                     // tipeos como "20226" o un año futuro.
                     ctrl.Items.Add(new RadComboBoxItem("Sin dato", ""));
-                    for (int anio = DateTime.Today.Year; anio >= 1950; anio--)
+                    for (int anio = global::SitioBase.Hora.Hoy.Year; anio >= 1950; anio--)
                         ctrl.Items.Add(new RadComboBoxItem(anio.ToString(), anio.ToString()));
                     break;
                 }
@@ -555,7 +555,7 @@ public partial class View_Activos_Activos_Activo : System.Web.UI.Page
 
             // El calendario ya entrega un DateTime? válido; solo se rechaza
             // una fecha futura, que para una puesta en marcha no tiene sentido.
-            if (calPuestaMarcha.Value != null && calPuestaMarcha.Value.Value.Date > DateTime.Today)
+            if (calPuestaMarcha.Value != null && calPuestaMarcha.Value.Value.Date > global::SitioBase.Hora.Hoy)
                 throw new Exception("La fecha de puesta en marcha no puede ser futura.");
             entidad.act_fecha_puesta_marcha = calPuestaMarcha.Value;
 

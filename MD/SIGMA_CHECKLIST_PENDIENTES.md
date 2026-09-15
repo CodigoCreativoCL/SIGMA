@@ -1383,6 +1383,31 @@ suscripción de CCU con un período emitido y el pago TRX-778899 verificado.
 
 ---
 
+### 10.13 · La hora de la base es la de Santiago (15-09-2026)
+
+Bryan: «arregla el UTC, debe ser la hora de Chile actual de Santiago».
+
+El SQL Server del hosting corre en UTC−7, así que `GETDATE()` iba cuatro
+horas atrás de Chile: entre las 20:00 y las 24:00 la base creía que era el
+día anterior (un precio comercial «desde hoy» no regía; las fechas de
+auditoría que no pasaban por `FNC_PAIS_HORA` quedaban atrasadas).
+
+- **`BD/230_HORA_SANTIAGO.sql`** — `FNC_AHORA()` (`SYSDATETIMEOFFSET() AT
+  TIME ZONE 'Pacific SA Standard Time'`, horario de verano incluido) y la
+  recreación de los **125 módulos** que todavía llamaban `GETDATE()` con
+  `[dbo].[FNC_AHORA]()` en su lugar, más los **155 DEFAULT** de auditoría.
+  El script lo genera `_scratch/gen_230.py` leyendo `sys.sql_modules`, es
+  idempotente, y `GETUTCDATE()` (columnas `*_utc` de la app) no se toca.
+  `FNC_PAIS_HORA(@PAIS)` sigue siendo el reloj de cada cliente.
+- **Web y API**: `SitioBase.Hora` / `API.Utils.Hora` (`Ahora`, `Hoy`) y los
+  36 usos de `DateTime.Now`/`Today` reemplazados (`global::SitioBase.Hora`
+  porque dentro del namespace `SitioBase` hay una clase con ese nombre).
+- Regla para lo que venga: en SQL **nunca `GETDATE()`**, siempre
+  `FNC_AHORA()` o `FNC_PAIS_HORA(@PAIS)`; en C# **nunca `DateTime.Now`**,
+  siempre `Hora.Ahora`/`Hora.Hoy`.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

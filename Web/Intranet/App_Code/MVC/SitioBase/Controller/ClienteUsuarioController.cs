@@ -608,7 +608,7 @@ namespace SitioBase.Controller
             cmd.Parameters.AddWithValue("@CLIENTE", usuario.ucl_id_cliente);
             cmd.Parameters.AddWithValue("@PERFILES", usuario.perfiles);
 
-            string filename = "CARGA MASIVA USUARIO " + DateTime.Now.ToShortDateString();
+            string filename = "CARGA MASIVA USUARIO " + global::SitioBase.Hora.Ahora.ToShortDateString();
             var binario = Tools.Excel.exportExcelXLSX_Bytes(Conexion.GetDataTable(cmd), true);
 
             #region FORMATEO DOCUMENTO

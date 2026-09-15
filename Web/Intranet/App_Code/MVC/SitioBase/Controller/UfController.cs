@@ -50,7 +50,7 @@ namespace SitioBase.Controller
                 HttpContext ctx = HttpContext.Current;
                 if (ctx == null || ctx.Application == null) return;
 
-                string hoy = DateTime.Today.ToString("yyyy-MM-dd");
+                string hoy = global::SitioBase.Hora.Hoy.ToString("yyyy-MM-dd");
 
                 if (ctx.Application[CLAVE_ULTIMO_DIA] != null &&
                     ctx.Application[CLAVE_ULTIMO_DIA].ToString() == hoy)
@@ -238,7 +238,7 @@ namespace SitioBase.Controller
             try
             {
                 cmd = Conexion.GetCommand("INS_VALOR_UF_ARRASTRE");
-                cmd.Parameters.AddWithValue("@FECHA", DateTime.Today);
+                cmd.Parameters.AddWithValue("@FECHA", global::SitioBase.Hora.Hoy);
                 cmd.Parameters.AddWithValue("@USUARIO", 1);
                 cmd.Parameters.AddWithValue("@ESCRITO", false).Direction = System.Data.ParameterDirection.Output;
                 cmd.ExecuteNonQuery();

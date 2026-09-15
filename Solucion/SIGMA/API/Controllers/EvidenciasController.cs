@@ -185,7 +185,7 @@ namespace API.Controllers
                     NombreDelCliente(),
                     dto.destino.ToLowerInvariant(),
                     almacenado,
-                    DateTime.Now);
+                    Hora.Ahora);
 
                 ResultadoBlob subido = blob.Subir(ruta, contenido, dto.mime);
 

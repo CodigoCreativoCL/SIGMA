@@ -804,7 +804,7 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                     RepuestoLote nuevo = new RepuestoLote();
                     nuevo.rlo_repuesto = repuesto;
                     nuevo.rlo_codigo = txtLoteNuevo.Text.Trim();
-                    nuevo.rlo_fecha_ingreso = DateTime.Today;
+                    nuevo.rlo_fecha_ingreso = global::SitioBase.Hora.Hoy;
                     /* El calendario ya entrega la fecha validada: interpretarla
                        de nuevo desde su texto seria volver a hacer -peor- lo
                        que el control acaba de hacer bien. */

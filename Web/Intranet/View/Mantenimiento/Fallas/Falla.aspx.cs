@@ -157,7 +157,7 @@ public partial class View_Mantenimiento_Fallas_Falla : System.Web.UI.Page
             lblId.Text = "Nueva";
             litTitulo.Text = "Registrar una falla";
             litSubtitulo.Text = "Guarde la ficha y aparecerán diagnósticos, acciones e indisponibilidad.";
-            txtFechaDeteccion.Text = DateTime.Now.ToString("dd-MM-yyyy HH:mm");
+            txtFechaDeteccion.Text = global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm");
         }
     }
 

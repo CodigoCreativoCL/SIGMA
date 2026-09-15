@@ -19,7 +19,7 @@ namespace SitioBase
             htmlToPdfConverter.PdfDocumentInfo.AuthorName = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Title = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Subject = "";
-            htmlToPdfConverter.PdfDocumentInfo.CreatedDate = DateTime.Now;
+            htmlToPdfConverter.PdfDocumentInfo.CreatedDate = global::SitioBase.Hora.Ahora;
             htmlToPdfConverter.PdfDocumentOptions.LeftMargin = 30;
             htmlToPdfConverter.PdfDocumentOptions.RightMargin = 30;
             htmlToPdfConverter.PdfDocumentOptions.TopMargin = 30;
@@ -55,7 +55,7 @@ namespace SitioBase
             htmlToPdfConverter.PdfDocumentInfo.AuthorName = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Title = "SIGMA";
             htmlToPdfConverter.PdfDocumentInfo.Subject = "";
-            htmlToPdfConverter.PdfDocumentInfo.CreatedDate = DateTime.Now;
+            htmlToPdfConverter.PdfDocumentInfo.CreatedDate = global::SitioBase.Hora.Ahora;
             htmlToPdfConverter.PdfDocumentOptions.LeftMargin = 30;
             htmlToPdfConverter.PdfDocumentOptions.RightMargin = 30;
             htmlToPdfConverter.PdfDocumentOptions.TopMargin = 30;

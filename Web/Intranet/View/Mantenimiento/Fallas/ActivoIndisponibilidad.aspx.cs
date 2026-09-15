@@ -90,7 +90,7 @@ public partial class View_Mantenimiento_Fallas_ActivoIndisponibilidad : System.W
             if (Activo > 0) Seleccionar(cboActivo, Activo.ToString());
             if (Falla > 0) Seleccionar(cboMotivo, "2");
             else if (Orden > 0) Seleccionar(cboMotivo, "1");
-            txtInicio.Text = DateTime.Now.ToString("dd-MM-yyyy HH:mm");
+            txtInicio.Text = global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm");
         }
     }
 

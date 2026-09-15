@@ -74,7 +74,7 @@ namespace SitioBase.Controller
                 if (filtro.usuario > 0) cmd.Parameters.AddWithValue("@USUARIO", filtro.usuario);
                 if (filtro.id_cliente > 0) cmd.Parameters.AddWithValue("@CLIENTE", filtro.id_cliente);
 
-                string filename = "Informe Ingresos " + DateTime.Now;
+                string filename = "Informe Ingresos " + global::SitioBase.Hora.Ahora;
                 Tools.Excel.exportExcelXLSX(Conexion.GetDataTable(cmd), filename, true);
             }
         }

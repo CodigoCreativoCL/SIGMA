@@ -661,7 +661,7 @@ namespace API.Controllers
                         EvidenciasController.NombreDelCliente(),
                         "firmas",
                         almacenado,
-                        DateTime.Now);
+                        Hora.Ahora);
 
                     ResultadoBlob subido = blob.Subir(ruta, contenido, "image/png");
 

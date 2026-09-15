@@ -107,7 +107,7 @@ namespace SitioBase.Controller
 
             DataTable datos = Conexion.GetDataTable(cmd);
             byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(datos, true);
-            string archivo = "CALENDARIO " + (string.IsNullOrEmpty(sufijo) ? "" : sufijo + " ") + DateTime.Now.ToString("dd-MM-yyyy");
+            string archivo = "CALENDARIO " + (string.IsNullOrEmpty(sufijo) ? "" : sufijo + " ") + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");
 
             HttpContext.Current.Response.Clear();
             HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";

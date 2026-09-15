@@ -78,7 +78,7 @@ namespace SitioBase
             int cliente = Session.ClienteId();
             if (cliente == 0) return null;
 
-            string hoy = DateTime.Today.ToString("yyyy-MM-dd");
+            string hoy = global::SitioBase.Hora.Hoy.ToString("yyyy-MM-dd");
 
             if (ctx.Session[CLAVE_ESTADO] != null
                 && ctx.Session[CLAVE_DIA] != null
