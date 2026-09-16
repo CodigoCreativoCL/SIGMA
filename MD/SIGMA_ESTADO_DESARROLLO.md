@@ -1098,6 +1098,7 @@ $t = [System.IO.File]::ReadAllText($p)
 | 15-09-2026 | **Sprint 2 · Posiciones funcionales (HU-033/034/154).** `BD/231`: SP del mantenedor, ocupar/liberar con historial de periodos e idempotencia por uuid, etiqueta `POS-` en el centro de etiquetas, permisos y menú. Web `View/Activos/Posiciones/*`, API `PosicionesController` + escaneo `POS-`, app: escanear una posición abre el equipo que la ocupa o permite ponerle uno. Etiquetas: códigos largos ya no se parten. Checklist §10.14 |
 | 16-09-2026 | **Las posiciones bajan en la sábana (`BD/232`, bloque 11).** Sin señal, escanear `POS-`/`ACT-` se resuelve desde el teléfono con la fecha de la última sincronización (HU-154 #2). `BLOQUE_MAXIMO` = 11 |
 | 16-09-2026 | **Sprint 2 · HU-045 serie histórica de una variable.** `BD/233` (serie en la unidad de la variable con el nivel del SP, resumen, origen ORDEN TRABAJO al medir con OT) y `ActivoVariableSerie.aspx` con Highcharts: banda normal, umbrales, puntos destacados y el origen de cada dato al tocarlo. Checklist §10.15 |
+| 16-09-2026 | **Sprint 2 · HU-192 Mi suscripción.** «Qué incluye tu plan» (incluido / no incluido) y aviso «Cerca del límite» al 80 % del tope en `Renovar.aspx`. Checklist §10.16 |
 
 ### Cómo actualizar este documento
 

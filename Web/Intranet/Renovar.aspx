@@ -78,10 +78,30 @@
          el que se está preguntando por qué no puede crear una planta más. --%>
     <asp:Panel ID="pnlLimites" runat="server" Visible="false">
         <div class="SubTitulos">Uso de tu plan</div>
+        <%-- HU-192 #2: cuando un limite pasa del 80 % se dice arriba, antes de
+             que la persona tenga que leer la grilla fila por fila. --%>
+        <asp:Literal ID="litAvisoLimites" runat="server" />
         <rad:RadGrid2 ID="GridLimites" runat="server" OnItemDataBound="GridLimites_ItemDataBound">
             <MasterTableView CommandItemDisplay="None" DataKeyNames="fun_codigo">
             </MasterTableView>
         </rad:RadGrid2>
+        <br />
+    </asp:Panel>
+
+    <%-- HU-192 #1: que incluye el plan. Lo que se tiene y lo que no, en dos
+         listas: es la pregunta que se hace antes de decidir si subir de plan. --%>
+    <asp:Panel ID="pnlIncluye" runat="server" Visible="false">
+        <div class="SubTitulos">Qué incluye tu plan</div>
+        <div class="sg-renovar-incluye">
+            <div>
+                <div class="sg-renovar-incluye-titulo"><i class="mdi mdi-check-circle"></i>Incluido</div>
+                <asp:Literal ID="litIncluidas" runat="server" />
+            </div>
+            <div>
+                <div class="sg-renovar-incluye-titulo is-no"><i class="mdi mdi-minus-circle-outline"></i>No incluido en tu plan</div>
+                <asp:Literal ID="litNoIncluidas" runat="server" />
+            </div>
+        </div>
         <br />
     </asp:Panel>
 

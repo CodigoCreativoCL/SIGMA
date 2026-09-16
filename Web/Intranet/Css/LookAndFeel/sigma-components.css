@@ -2241,3 +2241,41 @@ body.sg-aviso-bloqueado { overflow: hidden; }
     #myModal.sg-aviso-abierto,
     #myModal.sg-aviso-abierto .modal-dialog { animation: none; }
 }
+
+/* ---- Mi suscripcion: que incluye el plan (HU-192 #1) ---- */
+.sg-renovar-incluye {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px 28px;
+    margin-top: 6px;
+}
+.sg-renovar-incluye-titulo {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .4px;
+    text-transform: uppercase;
+    color: #1b7f3b;
+    margin-bottom: 6px;
+}
+.sg-renovar-incluye-titulo i { margin-right: 6px; }
+.sg-renovar-incluye-titulo.is-no { color: #6b7280; }
+.sg-renovar-incluye-item {
+    padding: 6px 0;
+    border-bottom: 1px dashed #e5e7eb;
+    font-size: 14px;
+}
+.sg-renovar-incluye-item.is-vacio { color: #6b7280; border-bottom: 0; }
+
+/* Aviso del 80 % en "Uso de tu plan" (HU-192 #2). */
+.sg-renovar-aviso {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 10px 14px;
+    margin-bottom: 10px;
+    border-radius: 12px;
+    background: #fff7e0;
+    color: #6b4b00;
+    border: 1px solid #f0d78a;
+}
+.sg-renovar-aviso > i { font-size: 20px; color: #b7791f; }

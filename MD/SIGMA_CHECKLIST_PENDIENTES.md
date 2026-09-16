@@ -1482,6 +1482,24 @@ lo mostrara: la ficha de la variable solo contaba las mediciones.
 
 ---
 
+### 10.16 · Sprint 2 · HU-192 Consultar mi suscripción (16-09-2026)
+
+`Renovar.aspx` («Mi suscripción») ya mostraba estado, plan, vigencia, días
+y el uso del plan; faltaban dos cosas del criterio:
+
+- **Qué incluye tu plan** (#1): bloque nuevo con las funcionalidades de
+  inclusión del plan contratado en dos listas (incluido / no incluido),
+  desde `SEL_PLAN_FUNCIONALIDAD` con la excepción por cliente; los límites
+  numéricos no se repiten porque ya están en «Uso de tu plan».
+- **Aviso al 80 %** (#2): la fila del límite pasa a «Cerca del límite» y
+  arriba de la grilla sale «Estás cerca del límite en máximo de activos
+  (20 de 24)». Para la evidencia se dejó a Hamburgo un tope de 24 activos
+  como excepción por cliente (`UPS_PLAN_FUNCIONALIDAD @CLIENTE = 1`).
+- `sigma-modal.css` **no carga en las páginas del master Default** (solo en
+  los modales): los estilos del aviso van en `sigma-components.css` (`vrs=9`).
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

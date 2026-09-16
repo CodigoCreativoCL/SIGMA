@@ -487,5 +487,37 @@
   ],
   "detalle": "",
   "fecha": "16-09-2026 00:29"
+ },
+ {
+  "hu": "HU-192",
+  "criterio": 1,
+  "titulo": "Estado de la suscripción",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Mi suscripción (Renovar.aspx) como administradora de Hamburgo.",
+  "esperado": "Se ve el plan contratado, la vigencia, los días restantes y las funcionalidades incluidas.",
+  "obtenido": "La página muestra el estado VIGENTE con «Quedan N días de vigencia», el plan Full, la fecha «Vigente hasta», el saldo pendiente, los períodos, el uso del plan y el bloque nuevo «Qué incluye tu plan» con lo incluido y lo no incluido.",
+  "ok": true,
+  "capturas": [
+   "hu192_1_mi_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:31"
+ },
+ {
+  "hu": "HU-192",
+  "criterio": 2,
+  "titulo": "Consumo frente a los límites",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Hamburgo tiene un tope negociado de 24 activos y 20 registrados (83 %) › Mi suscripción › Uso de tu plan.",
+  "esperado": "Se ve cuántos activos hay respecto del límite y se advierte al superar el 80 %.",
+  "obtenido": "La fila «Máximo de activos» muestra 20 en uso, tope 24, 4 disponibles y el chip «Cerca del límite»; arriba de la grilla el aviso «Estás cerca del límite en máximo de activos (20 de 24)».",
+  "ok": true,
+  "capturas": [
+   "hu192_1_mi_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:31"
  }
 ]

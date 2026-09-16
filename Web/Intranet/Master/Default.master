@@ -60,7 +60,7 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=9" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />

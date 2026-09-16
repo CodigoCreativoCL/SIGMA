@@ -265,6 +265,49 @@ public partial class Renovar : System.Web.UI.Page
         GridLimites.DataSource = limites;
         GridLimites.DataBind();
         pnlLimites.Visible = true;
+
+        /* HU-192 #2: aviso cuando algun limite pasa del 80 %. Se calcula
+           contra tope y consumo, que ya vienen del SP. */
+        List<string> cerca = new List<string>();
+        foreach (ClienteLimite l in limites)
+            if (l.tope != null && l.tope > 0 && l.consumo / l.tope.Value >= 0.8m)
+                cerca.Add(l.fun_nombre.ToLower() + " (" + l.consumo.ToString("0.##") + " de " + l.tope.Value.ToString("0.##") + ")");
+
+        litAvisoLimites.Text = cerca.Count == 0 ? "" :
+            "<div class=\"sg-renovar-aviso\"><i class=\"mdi mdi-alert-outline\"></i><div>" +
+            "<strong>Estás cerca del límite</strong> en " + string.Join(", ", cerca.ToArray()) +
+            ". Cuando lo alcances no podrás crear más; si necesitas ampliarlo, cambia de plan o contáctanos.</div></div>";
+
+        PintarIncluye();
+    }
+
+    /// <summary>
+    /// HU-192 #1: las funcionalidades del plan contratado, incluidas y no
+    /// incluidas. Los limites numericos ya estan en la grilla de arriba, asi
+    /// que aqui van solo las de inclusion.
+    /// </summary>
+    protected void PintarIncluye()
+    {
+        SuscripcionEstadoCliente estado = SitioBase.SuscripcionAcceso.Estado();
+        if (estado == null || estado.SinSuscripcion || estado.plan_comercial == null) return;
+
+        PlanComercialController controller = new PlanComercialController();
+        List<PlanFuncionalidad> lista = controller.GetFuncionalidades(estado.plan_comercial.Value, estado.cliente);
+        if (lista == null || lista.Count == 0) return;
+
+        System.Text.StringBuilder si = new System.Text.StringBuilder();
+        System.Text.StringBuilder no = new System.Text.StringBuilder();
+
+        foreach (PlanFuncionalidad f in lista)
+        {
+            if (f.pcf_tipo == 2 || (f.fun_codigo ?? "").StartsWith("LIMITE ")) continue;   // los topes ya estan en "Uso de tu plan"
+            string item = "<div class=\"sg-renovar-incluye-item\">" + Server.HtmlEncode(f.fun_nombre) + "</div>";
+            if (f.pcf_incluida) si.Append(item); else no.Append(item);
+        }
+
+        litIncluidas.Text = si.Length > 0 ? si.ToString() : "<div class=\"sg-renovar-incluye-item is-vacio\">—</div>";
+        litNoIncluidas.Text = no.Length > 0 ? no.ToString() : "<div class=\"sg-renovar-incluye-item is-vacio\">Tu plan incluye todo.</div>";
+        pnlIncluye.Visible = true;
     }
 
     protected void GridLimites_ItemDataBound(object sender, GridItemEventArgs e)
@@ -278,6 +321,13 @@ public partial class Renovar : System.Web.UI.Page
                 string estado = DataBinder.Eval(item.DataItem, "estado") != null
                     ? DataBinder.Eval(item.DataItem, "estado").ToString()
                     : "";
+
+                /* HU-192 #2: al 80 % del tope el chip avisa antes de llegar
+                   al limite. */
+                decimal? tope = DataBinder.Eval(item.DataItem, "tope") as decimal?;
+                decimal consumo = DataBinder.Eval(item.DataItem, "consumo") is decimal ? (decimal)DataBinder.Eval(item.DataItem, "consumo") : 0;
+                if (estado == "DISPONIBLE" && tope != null && tope > 0 && consumo / tope.Value >= 0.8m)
+                    estado = "CERCA DEL LIMITE";
 
                 Label lbl = new Label();
                 lbl.Text = Legible(estado);
@@ -302,6 +352,7 @@ public partial class Renovar : System.Web.UI.Page
             case "NO INCLUIDA": return "No incluida";
             case "SIN TOPE": return "Sin tope";
             case "AL LIMITE": return "Al límite";
+            case "CERCA DEL LIMITE": return "Cerca del límite";
             default: return "Disponible";
         }
     }
@@ -311,6 +362,7 @@ public partial class Renovar : System.Web.UI.Page
         switch (estado)
         {
             case "AL LIMITE": return "is-alerta";
+            case "CERCA DEL LIMITE": return "is-advertencia";
             case "NO INCLUIDA": return "is-neutro";
             case "SIN TOPE": return "is-acento";
             case "SIN SUSCRIPCION": return "is-neutro";
