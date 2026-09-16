@@ -723,6 +723,11 @@ class EscaneoCabecera {
     this.act_id,
     this.act_codigo,
     this.act_nombre,
+    this.pos_id,
+    this.pos_codigo,
+    this.pos_nombre,
+    this.AREA,
+    this.pos_libre = false,
   });
 
   final String? rep_codigo;
@@ -740,6 +745,15 @@ class EscaneoCabecera {
   final String? act_codigo;
   final String? act_nombre;
 
+  /// Escaneo de una posición funcional (`POS-`, HU-154). El QR pegado en la
+  /// sala codifica el LUGAR; `act_*` es el equipo que lo ocupa hoy y
+  /// `pos_libre` dice que no hay ninguno: ahí la app ofrece poner uno.
+  final int? pos_id;
+  final String? pos_codigo;
+  final String? pos_nombre;
+  final String? AREA;
+  final bool pos_libre;
+
   factory EscaneoCabecera.fromJson(Map<String, dynamic> j) => EscaneoCabecera(
     rep_codigo: _sN(j['rep_codigo']),
     rep_nombre: _sN(j['rep_nombre']),
@@ -752,6 +766,11 @@ class EscaneoCabecera {
     act_id: _iN(j['act_id']),
     act_codigo: _sN(j['act_codigo']),
     act_nombre: _sN(j['act_nombre']),
+    pos_id: _iN(j['pos_id']),
+    pos_codigo: _sN(j['pos_codigo']),
+    pos_nombre: _sN(j['pos_nombre']),
+    AREA: _sN(j['AREA']),
+    pos_libre: j['pos_libre'] == true,
   );
 }
 

@@ -1408,6 +1408,45 @@ auditoría que no pasaban por `FNC_PAIS_HORA` quedaban atrasadas).
 
 ---
 
+### 10.14 · Sprint 2 · Posiciones funcionales: HU-033, HU-034 y HU-154 (15-09-2026)
+
+Estaban las tablas (bloque 11) y `Activo.act_activo_posicion`, pero sin SP,
+sin pantalla, sin etiqueta y sin escaneo: las tres tablas vacías.
+
+- **`BD/231_ACTIVO_POSICION.sql`** — `SEL/INS/UPD/DEL_ACTIVO_POSICION`
+  (código `POS-` automático por `Modulo_Codigo`, único por cliente, área de
+  la misma planta, baja lógica si ya tuvo equipo), `UPD_ACTIVO_POSICION_OCUPAR`
+  (cierra el periodo del ocupante anterior y el del equipo si venía de otra
+  posición; idempotente por `aph_uuid`) y `_LIBERAR`,
+  `SEL_ACTIVO_POSICION_HISTORIAL` (con las fechas también en hora de
+  Santiago), `SEL_ACTIVO_POSICION_MOTIVO`; rama `POSICION` en `SEL_ETIQUETA`
+  (parche dinámico como el bloque 76) y tarjeta en `Etiqueta_Origen`;
+  permisos `VER POSICIONES` / `CREAR EDITAR POSICIONES`, menú Activos ›
+  Posiciones, `Menu_Funcion`, perfiles 1/5/10/11 escriben, 4/12/13 ven.
+- **Web** — `View/Activos/Posiciones/Posiciones.aspx` (filtros planta/área/
+  ocupación, chip Libre/equipo, «Imprimir etiquetas» masivo: las marcadas o
+  todas las del filtro) y `Posicion.aspx` (pestañas Datos y Ocupación:
+  asignar/dejar libre + historial; etiqueta individual). `ActivoPosicion`
+  modelo y controller. `Etiquetas.aspx` conoce el origen.
+- **API** — `PosicionesController` (`GET /posiciones`, `/{id}`,
+  `/{id}/historial`, `POST /{id}/ocupar`) y `GET /escaneo?c=POS-<id>` que
+  devuelve el equipo que ocupa la posición o `pos_libre`.
+- **App** — `escaneo_screen` entiende `POS`: abre la ficha del equipo que la
+  ocupa (HU-154 #1) o, si está vacía, «Poner un equipo aquí» →
+  `HojaOcuparPosicion` (equipos de la sábana, se encola con uuid) (#3); el 404
+  del servidor se muestra tal cual (#4). 127 tests.
+- **Etiquetas**: un código de 8 caracteres (`POS-CB22`) se partía en dos
+  líneas y sacaba el pie de la etiqueta; los umbrales de `Escala()` bajaron a
+  6/9/14 y el detalle va en una línea con puntos suspensivos.
+
+- [ ] HU-154 #2 (escaneo sin señal): las posiciones no bajan en la sábana;
+      la ficha del activo sí abre local, pero resolver `POS→activo` sin red
+      requiere un bloque de posiciones en `SincronizacionController`.
+- [ ] La ocupación desde la web no pide OT ni permite «traslado» explícito;
+      el motivo lo decide el SP (inicial/reemplazo) salvo que se elija.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

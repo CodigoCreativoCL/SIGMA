@@ -303,5 +303,152 @@
   ],
   "detalle": "",
   "fecha": "15-09-2026 01:22"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 1,
+  "titulo": "Alta de posición",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Posiciones › Nueva posición: código CB22, nombre, planta Renca, área Línea 3, crítica › Guardar.",
+  "esperado": "Queda disponible para asignarle un activo y su código es único dentro del cliente.",
+  "obtenido": "Aviso: «Posición creada con éxito. ACEPTAR». El listado muestra la posición «Libre» en su planta y área.",
+  "ok": true,
+  "capturas": [
+   "hu033_1_modal.png",
+   "hu033_1_guardada.png",
+   "hu033_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:23"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nueva posición con el código CB22, que ya existe.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso: «4.- YA EXISTE UNA POSICIÓN CON EL CÓDIGO POS-CB22 EN ESTE CLIENTE. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu033_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:23"
+ },
+ {
+  "hu": "HU-034",
+  "criterio": 1,
+  "titulo": "Impresión individual",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de CB22 › Imprimir etiqueta › «Etiqueta de esta posición».",
+  "esperado": "Se genera un documento imprimible con el QR, el código de posición y el nombre; el contenido codificado es el código de posición.",
+  "obtenido": "Se abre la hoja de impresión con una etiqueta: QR (token POS-2), código CB22, nombre, área y el equipo que la ocupa hoy como detalle.",
+  "ok": true,
+  "capturas": [
+   "hu034_1_etiqueta.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:24"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 1,
+  "titulo": "Escaneo con conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /escaneo?c=POS-2 (el QR de CB22, ocupada por ACT-33).",
+  "esperado": "Se abre la ficha del activo que la ocupa; se ve estado, criticidad, componentes y órdenes abiertas.",
+  "obtenido": "HTTP 200: tipo POS, pos_codigo CB22, área y planta, pos_libre=false y act_id/act_codigo del equipo que la ocupa; la app abre con eso ActivoFichaScreen (estado, criticidad, componentes y OT abiertas).",
+  "ok": true,
+  "capturas": [
+   "hu154_1_sw_pos_ocupada.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 3,
+  "titulo": "Posición sin activo asignado",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /escaneo?c=POS-3 (posición vacía); luego, como Rodrigo, POST /posiciones/3/ocupar con ACT-34.",
+  "esperado": "Se ofrece registrar un activo en esa posición.",
+  "obtenido": "Escaneo → HTTP 200 con pos_libre=true (la app muestra «Poner un equipo aquí»). Ocupar → HTTP 200: {\n  \"APH_ID\": 6,\n  \"POSICION\": 3,\n  \"ACTIVO\": 34\n}.",
+  "ok": true,
+  "capturas": [
+   "hu154_3_sw_pos_libre.png",
+   "hu154_3_sw_ocupar.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 4,
+  "titulo": "Código no reconocido",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /escaneo?c=POS-99999 (una posición que no es de la instalación).",
+  "esperado": "Se informa que el código no pertenece a esta instalación.",
+  "obtenido": "HTTP 404: {\n  \"mensaje\": \"Ese código no corresponde a ninguna posición de esta instalación.\"\n}",
+  "ok": true,
+  "capturas": [
+   "hu154_4_sw_pos_ajena.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 2,
+  "titulo": "Escaneo sin conexión",
+  "usuario": "cristian",
+  "tipo": "App",
+  "pasos": "Escanear el QR de una posición sin señal.",
+  "esperado": "La ficha se abre desde los datos locales y se indica la última sincronización.",
+  "obtenido": "La ficha del activo ya abre desde la sábana local (HU-150/151); la resolución POS→activo sin señal requiere que las posiciones bajen en la sábana, lo que no está construido. No ejercitado en esta corrida (requiere el teléfono).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 2,
+  "titulo": "Historial de ocupación",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de CB22 › Ocupación › poner ACT-35 (instalación inicial); luego poner ACT-33 (reemplazo).",
+  "esperado": "Se ven ambos periodos con inicio y término; el vigente no tiene término.",
+  "obtenido": "«Equipo asignado a la posición» en ambos casos. El historial muestra ACT-35 con inicio y término y ACT-33 vigente (sin término); Activo.act_activo_posicion apunta a ACT-33. En BD (UTC): ACT-35 | 2026-09-16 02:23 -> 2026-09-16 02:23 ; ACT-33 | 2026-09-16 02:23 -> vigente.",
+  "ok": true,
+  "capturas": [
+   "hu033_2_asignar_a.png",
+   "hu033_2_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:43"
+ },
+ {
+  "hu": "HU-034",
+  "criterio": 2,
+  "titulo": "Impresión masiva",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Posiciones › filtrar planta Renca y área Línea 3 › Imprimir etiquetas (sin marcar ninguna: salen todas las del filtro).",
+  "esperado": "Un único documento con una etiqueta por posición.",
+  "obtenido": "La hoja trae 3 etiquetas en un solo documento, una por posición del área, cada una con su QR, su código, el área y el equipo actual.",
+  "ok": true,
+  "capturas": [
+   "hu034_2_listado_area.png",
+   "hu034_2_etiquetas_area.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:44"
  }
 ]

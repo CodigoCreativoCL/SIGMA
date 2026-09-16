@@ -137,6 +137,11 @@
 .etq .detalle {
     font-weight: 700;
     color: #000000;
+    /* Una linea: en la etiqueta de posicion es "ACT-33 · Modeladora L1",
+       y si se parte en dos se lleva el pie fuera de la etiqueta. */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 

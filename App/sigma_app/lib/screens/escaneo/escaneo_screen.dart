@@ -11,6 +11,7 @@ import '../activo/activo_ficha_screen.dart';
 import '../inventario/existencias_screen.dart';
 import '../inventario/ficha_bodega_screen.dart';
 import '../inventario/ficha_repuesto_screen.dart';
+import 'hoja_ocupar_posicion.dart';
 
 /// El código que se está resolviendo. Vacío = todavía no se leyó nada.
 final codigoEscaneadoProvider = StateProvider<String>((ref) => '');
@@ -573,8 +574,11 @@ class _Encontrado extends StatelessWidget {
   static const _tinta = Color(0xFFF8FAFC);
   static const _tinta3 = Color(0xFF64748B);
 
+  bool get _esPosicion => escaneo.tipo.toUpperCase() == 'POS';
+
   String get _titulo {
     final c = escaneo.cabecera;
+    if (_esPosicion) return c?.pos_nombre ?? codigo;
     return c?.act_nombre ??
         c?.rep_nombre ??
         c?.bub_nombre ??
@@ -586,6 +590,7 @@ class _Encontrado extends StatelessWidget {
     final c = escaneo.cabecera;
     return [
       c?.PLANTA,
+      c?.AREA,
       c?.bod_nombre,
       c?.bub_nombre,
     ].where((s) => (s ?? '').isNotEmpty).join(' › ');
@@ -604,6 +609,7 @@ class _Encontrado extends StatelessWidget {
     'REP' => Icons.inventory_2_outlined,
     'BOD' => Icons.warehouse_outlined,
     'UBI' => Icons.place_outlined,
+    'POS' => Icons.pin_drop_outlined,
     _ => Icons.qr_code_2,
   };
 
@@ -616,8 +622,16 @@ class _Encontrado extends StatelessWidget {
      `BOD` y `UBI` siguen en existencias porque la pregunta ahi es «que hay
      dentro», y eso ya se ve en la propia tarjeta del resultado con su
      desglose. */
+  /* UNA POSICIÓN ABRE EL EQUIPO QUE LA OCUPA (HU-154 #1)
+
+     El QR pegado en la sala es de la posición, no de la máquina. Si hay un
+     equipo puesto, se abre SU ficha; si está vacía no hay ficha que abrir y
+     el botón cambia a «poner un equipo aquí» (#3). */
   Widget? _destino() => switch (escaneo.tipo.toUpperCase()) {
     'ACT' => ActivoFichaScreen(activoId: escaneo.id),
+    'POS' when (escaneo.cabecera?.act_id ?? 0) > 0 => ActivoFichaScreen(
+      activoId: escaneo.cabecera!.act_id!,
+    ),
     'REP' => FichaRepuestoScreen(
       repuestoId: escaneo.id,
       nombreConocido: escaneo.cabecera?.rep_nombre,
@@ -659,7 +673,8 @@ class _Encontrado extends StatelessWidget {
                   Row(
                     children: [
                       _ChipOscuro(
-                        escaneo.cabecera?.rep_codigo ??
+                        escaneo.cabecera?.pos_codigo ??
+                            escaneo.cabecera?.rep_codigo ??
                             escaneo.cabecera?.bub_codigo ??
                             codigo,
                         color: SgColor.teal,
@@ -699,8 +714,36 @@ class _Encontrado extends StatelessWidget {
             ),
           ],
         ),
+        if (_esPosicion) ...[
+          const SizedBox(height: 10),
+          Text(
+            escaneo.cabecera?.pos_libre == true
+                ? 'Posición sin equipo asignado.'
+                : 'Equipo instalado: ${escaneo.cabecera?.act_codigo ?? ''} · ${escaneo.cabecera?.act_nombre ?? ''}',
+            style: sora(13, 500, color: _tinta3, alto: 1.4),
+          ),
+        ],
         const SizedBox(height: 14),
-        if (destino != null)
+        if (_esPosicion && escaneo.cabecera?.pos_libre == true)
+          SgBoton(
+            'Poner un equipo aquí',
+            icono: Icons.add_location_alt_outlined,
+            onTap: () async {
+              final a = await HojaOcuparPosicion.abrir(
+                context,
+                escaneo.cabecera!,
+              );
+              if (a != null && context.mounted) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ActivoFichaScreen(activoId: a.act_id),
+                  ),
+                );
+              }
+            },
+          )
+        else if (destino != null)
           SgBoton(
             'Abrir ficha',
             icono: Icons.arrow_forward,

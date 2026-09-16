@@ -71,6 +71,7 @@ abstract final class ApiConstants {
   static const String alertas = '/alertas';
   static const String alertasResumen = '/alertas/resumen';
   static const String escaneo = '/escaneo';
+  static const String posiciones = '/posiciones';
 
   // ---- Carga descendente: la sabana de datos (HU-150) ----
 

@@ -1017,6 +1017,13 @@ namespace API.MVC.Model
 
         public string PLANTA { get; set; }
         public string UNIDAD { get; set; }
+
+        /// <summary>Escaneo de una posición (POS-): el lugar, y si está libre. act_* trae el equipo que la ocupa hoy.</summary>
+        public int pos_id { get; set; }
+        public string pos_codigo { get; set; }
+        public string pos_nombre { get; set; }
+        public string AREA { get; set; }
+        public bool pos_libre { get; set; }
         public decimal? TOTAL { get; set; }
 
         public bool? bub_habilitado { get; set; }
@@ -2630,6 +2637,68 @@ namespace API.MVC.Model
         /// <summary>Con término, los minutos guardados; abierta, los que corren hasta ahora.</summary>
         public int MINUTOS_ACUMULADOS { get; set; }
         public string USUARIO_CREACION_NOMBRE { get; set; }
+    }
+
+    /// <summary>Una posición funcional (SEL_ACTIVO_POSICION, BD/231). ACTIVO_* es el equipo que la ocupa hoy; null si está libre.</summary>
+    public class ActivoPosicionDto
+    {
+        public int APO_ID { get; set; }
+        public int APO_CLIENTE_INSTALACION { get; set; }
+        public int APO_INSTALACION_AREA { get; set; }
+        public int? APO_ACTIVO_TIPO { get; set; }
+        public string APO_CODIGO { get; set; }
+        public string APO_NOMBRE { get; set; }
+        public bool APO_CRITICA { get; set; }
+        public string APO_DESCRIPCION { get; set; }
+        public bool APO_HABILITADO { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string AREA_CODIGO { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public DateTime? OCUPADA_DESDE_UTC { get; set; }
+        public int PERIODOS { get; set; }
+    }
+
+    public class ActivoPosicionHistorialDto
+    {
+        public int APH_ID { get; set; }
+        public int APH_ACTIVO_POSICION { get; set; }
+        public int APH_ACTIVO { get; set; }
+        public DateTime APH_FECHA_INICIO_UTC { get; set; }
+        public DateTime? APH_FECHA_FIN_UTC { get; set; }
+        public int? APH_ACTIVO_POSICION_MOTIVO { get; set; }
+        public int? APH_ORDEN_TRABAJO { get; set; }
+        public string APH_OBSERVACION { get; set; }
+        public string POSICION_CODIGO { get; set; }
+        public string POSICION_NOMBRE { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string MOTIVO_NOMBRE { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public bool VIGENTE { get; set; }
+        public int DIAS { get; set; }
+    }
+
+    public class ActivoPosicionOcuparDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar.</summary>
+        public Guid? uuid { get; set; }
+        public int activo { get; set; }
+        /// <summary>Activo_Posicion_Motivo: 1 instalación inicial, 2 reemplazo, 3 respaldo temporal, 4 overhaul, 5 baja, 6 traslado. Vacío: el SP decide (inicial o reemplazo).</summary>
+        public int? motivo { get; set; }
+        public string observacion { get; set; }
+        public int? orden_trabajo { get; set; }
+    }
+
+    public class ActivoPosicionOcupadaDto
+    {
+        public int APH_ID { get; set; }
+        public int POSICION { get; set; }
+        public int ACTIVO { get; set; }
     }
 
     public class ActivoIndisponibilidadAltaDto

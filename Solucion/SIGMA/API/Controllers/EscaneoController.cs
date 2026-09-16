@@ -97,6 +97,52 @@ namespace API.Controllers
                     });
                 }
 
+                /* UNA POSICIÓN ABRE LO QUE HAY EN ELLA (HU-154)
+
+                   El QR pegado en la sala dice POS-<id>. Se resuelve la
+                   posición y se devuelve el equipo que la ocupa hoy para que
+                   la app abra su ficha (#1). Si está vacía se dice, y la app
+                   ofrece poner un equipo (#3). Un id de otra empresa da 404
+                   con el motivo: «no pertenece a esta instalación» (#4). */
+                if (tipo == "POS")
+                {
+                    ExigirPermiso("VER POSICIONES");
+
+                    List<ActivoPosicionDto> pos = Datos.Listar<ActivoPosicionDto>("SEL_ACTIVO_POSICION",
+                        new Dictionary<string, object>
+                        {
+                            { "@ID", id },
+                            { "@CLIENTE", SesionApi.ClienteId() }
+                        });
+
+                    if (pos == null || pos.Count == 0)
+                        return Content(System.Net.HttpStatusCode.NotFound,
+                                       new { mensaje = "Ese código no corresponde a ninguna " +
+                                                       "posición de esta instalación." });
+
+                    ActivoPosicionDto p = pos[0];
+
+                    return Ok(new EscaneoDto
+                    {
+                        tipo = "POS",
+                        id = id,
+                        token = "POS-" + id,
+                        cabecera = new DesgloseCabeceraDto
+                        {
+                            pos_id = p.APO_ID,
+                            pos_codigo = p.APO_CODIGO,
+                            pos_nombre = p.APO_NOMBRE,
+                            AREA = p.AREA_NOMBRE,
+                            PLANTA = p.PLANTA_NOMBRE,
+                            pos_libre = p.ACTIVO_ID == null,
+                            act_id = p.ACTIVO_ID ?? 0,
+                            act_codigo = p.ACTIVO_CODIGO,
+                            act_nombre = p.ACTIVO_NOMBRE
+                        },
+                        lineas = new List<DesgloseLineaDto>()
+                    });
+                }
+
                 string sp;
                 string parametro;
 
@@ -178,7 +224,7 @@ namespace API.Controllers
                rechazaba con «no se reconoce». Lo que hacía falta no era el
                desglose del activo, sino decirle a la app qué se leyó para que
                abra su ficha. Eso es lo que hace ahora. */
-            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT");
+            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT" || tipo == "POS");
         }
 
         private string Articulo(string tipo)
@@ -186,6 +232,7 @@ namespace API.Controllers
             if (tipo == "UBI") return "ninguna ubicación";
             if (tipo == "BOD") return "ninguna bodega";
             if (tipo == "ACT") return "ningún equipo";
+            if (tipo == "POS") return "ninguna posición";
             return "ningún repuesto";
         }
     }

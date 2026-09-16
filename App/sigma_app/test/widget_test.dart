@@ -269,5 +269,41 @@ void main() {
         expect(e.conAdvertencia, isTrue);
       },
     );
+
+    test('el escaneo de una posición dice si está libre y qué equipo la ocupa', () {
+      final libre = Escaneo.fromJson(const {
+        'tipo': 'POS',
+        'id': 7,
+        'cabecera': {
+          'pos_id': 7,
+          'pos_codigo': 'CB01',
+          'pos_nombre': 'Blower 1',
+          'AREA': 'Sala de blowers',
+          'PLANTA': 'Renca',
+          'pos_libre': true,
+          'act_id': 0,
+        },
+        'lineas': [],
+      });
+      expect(libre.tipo, 'POS');
+      expect(libre.cabecera?.pos_codigo, 'CB01');
+      expect(libre.cabecera?.pos_libre, isTrue);
+      expect(libre.cabecera?.AREA, 'Sala de blowers');
+
+      final ocupada = Escaneo.fromJson(const {
+        'tipo': 'POS',
+        'id': 7,
+        'cabecera': {
+          'pos_id': 7,
+          'pos_codigo': 'CB01',
+          'pos_libre': false,
+          'act_id': 35,
+          'act_codigo': 'ACT-35',
+          'act_nombre': 'Revolvedora 1',
+        },
+      });
+      expect(ocupada.cabecera?.pos_libre, isFalse);
+      expect(ocupada.cabecera?.act_id, 35);
+    });
   });
 }

@@ -1,7 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Simple.master" AutoEventWireup="true" CodeFile="Etiquetas.aspx.cs" Inherits="View_Comun_Impresion_Etiquetas" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="../../../Css/LookAndFeel/sigma-impresion.css?vrs=1" rel="stylesheet" />
+    <link href="../../../Css/LookAndFeel/sigma-impresion.css?vrs=2" rel="stylesheet" />
 
     <%-- El tamaño de página depende del formato elegido, y @page no se puede
          condicionar por clase: se emite desde el servidor. --%>

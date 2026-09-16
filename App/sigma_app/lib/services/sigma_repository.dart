@@ -533,6 +533,44 @@ class SigmaRepository {
     return Escaneo.fromJson(j as Map<String, dynamic>);
   }
 
+  /// Poner un equipo en una posición vacía (HU-154 #3). Se encola con uuid:
+  /// `UPD_ACTIVO_POSICION_OCUPAR` es idempotente por él, así que el reintento
+  /// del teléfono no abre un segundo periodo. Con señal se intenta de
+  /// inmediato para que la ficha se abra ya con el equipo puesto.
+  Future<void> ocuparPosicion({
+    required int posicion,
+    required int activo,
+    required String posicionCodigo,
+    required String activoCodigo,
+    String? observacion,
+  }) async {
+    final uuid = OutboxService.nuevoUuid();
+    final ruta = '${ApiConstants.posiciones}/$posicion/ocupar';
+    final cuerpo = {
+      'uuid': uuid,
+      'activo': activo,
+      if ((observacion ?? '').isNotEmpty) 'observacion': observacion,
+    };
+
+    Future<void> encolar() => OutboxService.instance.encolar(
+      tipo: 'POSICION',
+      titulo: 'Equipo $activoCodigo en la posición $posicionCodigo',
+      detalle: observacion ?? '',
+      endpoint: ruta,
+      uuid: uuid,
+      cuerpo: cuerpo,
+    );
+
+    if (!SyncService.instance.enLinea.value) return encolar();
+
+    try {
+      await _api.post(ruta, cuerpo);
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      await encolar();
+    }
+  }
+
   // ---- Activos: la cabecera y el cambio de estado (HU-037, HU-038) ----
 
   /// Los activos de la planta — vista 7.2.
