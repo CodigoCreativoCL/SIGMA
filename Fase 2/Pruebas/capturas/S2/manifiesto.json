@@ -453,5 +453,39 @@
   ],
   "detalle": "",
   "fecha": "16-09-2026 00:04"
+ },
+ {
+  "hu": "HU-045",
+  "criterio": 1,
+  "titulo": "Gráfico de tendencia",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Variables de condición › icono de serie en «Temperatura · ACT-34» (últimos 90 días).",
+  "esperado": "Gráfico de línea con la banda de valores normales sombreada; los puntos fuera de umbral se destacan.",
+  "obtenido": "La página muestra la cabecera (equipo, variable, unidad, umbrales), el resumen (14 mediciones, 5 fuera de umbral) y el gráfico: banda «Normal» sombreada bajo el umbral de advertencia, bandas de advertencia y crítico con sus líneas, y los 5 puntos en advertencia en amarillo y más grandes. Abajo, la tabla del rango con el nivel de cada medición.",
+  "ok": true,
+  "capturas": [
+   "hu045_1_variables.png",
+   "hu045_1_serie.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 00:29"
+ },
+ {
+  "hu": "HU-045",
+  "criterio": 2,
+  "titulo": "Origen del dato",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "En la serie de ACT-34, tocar el punto medido durante la orden; en la serie de Corriente · ACT-33, tocar el punto que salió de un checklist.",
+  "esperado": "Se indica quién lo registró, cuándo y si provino de un checklist o de una orden.",
+  "obtenido": "Panel del punto de ACT-34: «VALOR · 82,5 °C ADVERTENCIA · CUÁNDO · 15-09-2026 17:10 · QUIÉN LO REGISTRÓ · Cristián Muñoz · ORIGEN · Orden de trabajo · Voz · Orden OT-34 · CALIDAD · Válida · OBSERVACIÓN · Medida durante la OT-34 con el horno en régi». Panel del punto de ACT-33: «VALOR · 27,6 A NORMAL · CUÁNDO · 08-09-2026 02:59 · QUIÉN LO REGISTRÓ · Cristián Muñoz · ORIGEN · Checklist · Teclado · Ejecución de checklist #7 · CALIDAD · Válida».",
+  "ok": true,
+  "capturas": [
+   "hu045_2_punto_orden.png",
+   "hu045_2_punto_checklist.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 00:29"
  }
 ]

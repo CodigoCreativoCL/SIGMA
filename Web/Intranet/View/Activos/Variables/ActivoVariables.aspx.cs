@@ -19,7 +19,7 @@ public partial class View_Activos_Variables_ActivoVariables : System.Web.UI.Page
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();
-            Grid.AddColumn("AVA_ID", "", Width: "3%");
+            Grid.AddColumn("AVA_ID", "", Width: "5%");
             Grid.AddColumn("ACTIVO_CODIGO", "EQUIPO", Width: "9%");
             Grid.AddColumn("ACTIVO_NOMBRE", "", Width: "16%");
             Grid.AddColumn("COMPONENTE_NOMBRE", "COMPONENTE", Width: "12%");
@@ -95,6 +95,16 @@ public partial class View_Activos_Variables_ActivoVariables : System.Web.UI.Page
         Editar.NavigateUrl = "javascript:void(0)";
         Editar.Attributes.Add("onclick", "abrirActivoVariable('" + query + "')");
         item["ava_id"].Controls.Add(Editar);
+
+        /* HU-045: la serie historica. Es una pagina, no un modal: un grafico
+           de noventa dias necesita el ancho completo. */
+        HyperLink Serie = new HyperLink();
+        Serie.ID = "lnkSerie" + id;
+        Serie.CssClass = "icono_Editar";
+        Serie.ToolTip = "Ver la serie histórica";
+        Serie.Text = "<i class=\"mdi mdi-chart-line\"></i>";
+        Serie.NavigateUrl = ResolveUrl("~/View/Activos/Variables/ActivoVariableSerie.aspx") + "?query=" + query;
+        item["ava_id"].Controls.Add(Serie);
 
         if (string.IsNullOrEmpty(v.componente_nombre)) item["COMPONENTE_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">equipo completo</span>";
         if (v.ava_frecuencia_esperada_hora == null) item["AVA_FRECUENCIA_ESPERADA_HORA"].Text = "<span class=\"sigma-inv-vacio\">—</span>";

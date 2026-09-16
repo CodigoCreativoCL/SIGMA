@@ -52,6 +52,46 @@ namespace SitioBase.Model
         public bool quita_critico { get; set; }
         public bool quita_frecuencia { get; set; }
     }
+    /// <summary>Un punto de la serie de una variable (SEL_ACTIVO_MEDICION_SERIE, HU-045).</summary>
+    [Serializable]
+    public class MedicionSerie
+    {
+        public int amd_id { get; set; }
+        public DateTime fecha_utc { get; set; }
+        /// <summary>La misma fecha en hora de Santiago, para mostrar.</summary>
+        public DateTime fecha { get; set; }
+        /// <summary>En la unidad de la variable, que es la de los umbrales.</summary>
+        public decimal valor { get; set; }
+        public decimal valor_original { get; set; }
+        public string unidad_original { get; set; }
+        /// <summary>NORMAL, ADVERTENCIA, CRITICO o FUERA_RANGO, calculado por el SP.</summary>
+        public string nivel { get; set; }
+        public string calidad { get; set; }
+        public string origen_codigo { get; set; }
+        public string origen { get; set; }
+        public string entrada { get; set; }
+        public int? orden_trabajo { get; set; }
+        public int? ot_correlativo { get; set; }
+        public int? checklist_ejecucion { get; set; }
+        public string observacion { get; set; }
+        public string usuario_nombre { get; set; }
+        public DateTime? fecha_registro_utc { get; set; }
+    }
+
+    /// <summary>Lo que la cabecera de la serie dice antes del grafico.</summary>
+    [Serializable]
+    public class MedicionSerieResumen
+    {
+        public int puntos { get; set; }
+        public int criticos { get; set; }
+        public int advertencias { get; set; }
+        public int fuera_rango { get; set; }
+        public decimal? valor_minimo { get; set; }
+        public decimal? valor_maximo { get; set; }
+        public decimal? promedio { get; set; }
+        public decimal? ultimo_valor { get; set; }
+        public DateTime? ultima_fecha_utc { get; set; }
+    }
 }
 
 namespace SitioBase.Controller
@@ -131,6 +171,108 @@ namespace SitioBase.Controller
             }
 
             return lista;
+        }
+
+        /// <summary>La serie de una variable en un rango (HU-045). Sin fechas: los ultimos 90 dias.</summary>
+        public List<MedicionSerie> GetSerie(int variable, DateTime? desde, DateTime? hasta)
+        {
+            List<MedicionSerie> lista = new List<MedicionSerie>();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_ACTIVO_MEDICION_SERIE";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@ACTIVO_VARIABLE", variable);
+                    if (desde != null) cmd.Parameters.AddWithValue("@DESDE", desde);
+                    if (hasta != null) cmd.Parameters.AddWithValue("@HASTA", hasta);
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            MedicionSerie p = new MedicionSerie();
+                            p.amd_id = int.Parse(dr["AMD_ID"].ToString());
+                            p.fecha_utc = DateTime.Parse(dr["FECHA_UTC"].ToString());
+                            p.fecha = DateTime.Parse(dr["FECHA"].ToString());
+                            p.valor = decimal.Parse(dr["VALOR"].ToString());
+                            p.valor_original = decimal.Parse(dr["VALOR_ORIGINAL"].ToString());
+                            p.unidad_original = dr["UNIDAD_ORIGINAL"].ToString();
+                            p.nivel = dr["NIVEL"].ToString();
+                            p.calidad = dr["CALIDAD"].ToString();
+                            p.origen_codigo = dr["ORIGEN_CODIGO"].ToString();
+                            p.origen = dr["ORIGEN"].ToString();
+                            p.entrada = dr["ENTRADA"].ToString();
+                            if (dr["ORDEN_TRABAJO"] != DBNull.Value) p.orden_trabajo = int.Parse(dr["ORDEN_TRABAJO"].ToString());
+                            if (dr["OT_CORRELATIVO"] != DBNull.Value) p.ot_correlativo = int.Parse(dr["OT_CORRELATIVO"].ToString());
+                            if (dr["CHECKLIST_EJECUCION"] != DBNull.Value) p.checklist_ejecucion = int.Parse(dr["CHECKLIST_EJECUCION"].ToString());
+                            p.observacion = dr["OBSERVACION"].ToString();
+                            p.usuario_nombre = dr["USUARIO_NOMBRE"].ToString();
+                            if (dr["FECHA_REGISTRO_UTC"] != DBNull.Value) p.fecha_registro_utc = DateTime.Parse(dr["FECHA_REGISTRO_UTC"].ToString());
+                            lista.Add(p);
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                    lista = null;
+                }
+            }
+
+            return lista;
+        }
+
+        public MedicionSerieResumen GetSerieResumen(int variable, DateTime? desde, DateTime? hasta)
+        {
+            MedicionSerieResumen r = new MedicionSerieResumen();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_ACTIVO_MEDICION_SERIE_RESUMEN";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@ACTIVO_VARIABLE", variable);
+                    if (desde != null) cmd.Parameters.AddWithValue("@DESDE", desde);
+                    if (hasta != null) cmd.Parameters.AddWithValue("@HASTA", hasta);
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        if (dr.Read())
+                        {
+                            r.puntos = int.Parse(dr["PUNTOS"].ToString());
+                            if (dr["CRITICOS"] != DBNull.Value) r.criticos = int.Parse(dr["CRITICOS"].ToString());
+                            if (dr["ADVERTENCIAS"] != DBNull.Value) r.advertencias = int.Parse(dr["ADVERTENCIAS"].ToString());
+                            if (dr["FUERA_RANGO"] != DBNull.Value) r.fuera_rango = int.Parse(dr["FUERA_RANGO"].ToString());
+                            if (dr["VALOR_MINIMO"] != DBNull.Value) r.valor_minimo = decimal.Parse(dr["VALOR_MINIMO"].ToString());
+                            if (dr["VALOR_MAXIMO"] != DBNull.Value) r.valor_maximo = decimal.Parse(dr["VALOR_MAXIMO"].ToString());
+                            if (dr["PROMEDIO"] != DBNull.Value) r.promedio = decimal.Parse(dr["PROMEDIO"].ToString());
+                            if (dr["ULTIMO_VALOR"] != DBNull.Value) r.ultimo_valor = decimal.Parse(dr["ULTIMO_VALOR"].ToString());
+                            if (dr["ULTIMA_FECHA_UTC"] != DBNull.Value) r.ultima_fecha_utc = DateTime.Parse(dr["ULTIMA_FECHA_UTC"].ToString());
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+            }
+
+            return r;
         }
 
         public ActivoVariable GetVariable(int id)

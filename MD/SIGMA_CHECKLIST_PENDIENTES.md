@@ -1451,6 +1451,37 @@ sin pantalla, sin etiqueta y sin escaneo: las tres tablas vacías.
 
 ---
 
+### 10.15 · Sprint 2 · HU-045 Serie histórica de una variable (16-09-2026)
+
+Lo medido en terreno quedaba en `Activo_Medicion` sin ninguna pantalla que
+lo mostrara: la ficha de la variable solo contaba las mediciones.
+
+- **`BD/233_ACTIVO_MEDICION_SERIE.sql`** — `SEL_ACTIVO_MEDICION_SERIE`
+  (un punto por medición en el rango, por defecto 90 días, con el valor **en
+  la unidad de la variable** —vuelto desde el canónico con factor y offset,
+  porque comparar 318 K contra un umbral de 80 °C daba CRÍTICO a 45 °C—, el
+  `NIVEL` calculado con la misma regla de `API_INS_ACTIVO_MEDICION`, el
+  origen, quién, cuándo, OT o ejecución de checklist, entrada teclado/voz y
+  las fechas en Santiago), `SEL_ACTIVO_MEDICION_SERIE_RESUMEN` (puntos,
+  críticos, advertencias, fuera de rango, último valor, promedio), la fila
+  en `Menus` (oculta, `VER VARIABLES ACTIVO`) y un parche a
+  `API_INS_ACTIVO_MEDICION`: con orden de trabajo el `Dato_Origen` es ORDEN
+  TRABAJO, no MANUAL (se leía «Ingreso manual · Orden OT-34»).
+- **Web** — `View/Activos/Variables/ActivoVariableSerie.aspx`: cabecera
+  (equipo, variable, unidad, chips de umbrales, KPIs), filtro de fechas,
+  gráfico Highcharts (el `highcharts.js` 3.0 que ya carga el master) con la
+  banda normal sombreada, bandas de advertencia/crítico, líneas de umbral,
+  puntos fuera de umbral en color y más grandes, eje que siempre incluye el
+  crítico; al tocar un punto (o una fila) el panel dice valor, cuándo, quién,
+  origen (checklist #n / OT-n / manual, teclado o voz), calidad y
+  observación (HU-045 #2). Tabla del rango con el nivel por fila. Icono
+  «serie» por fila en `ActivoVariables.aspx`.
+- **Trampa**: el master emite `chpScript` **después** del cuerpo; un
+  `var sgSerie = null` ahí pisaba los datos que la página inyecta en un
+  `Literal`. Se usa `window.sgSerie = window.sgSerie || null`.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
