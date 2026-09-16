@@ -1634,15 +1634,22 @@ móvil, inteligencia y cierre».
   App (154 pts) pasan de los Sprints 2–5 al Sprint 6 (hoja Backlog
   completo, hojas Sprint N, Seguimiento, Plan de Sprints, Épicas).
 - Sprint Backlogs: 304 tareas Móvil (y todas las de las historias App)
-  quedan **«Movida a Sprint 6»** en S1–S5 y aparecen en S6 con su estado
-  (las adelantadas como MVP quedan Terminadas allá, con nota). Las
-  historias «Web y App» figuran en S6 con 0 pts y «solo la parte móvil».
+  quedan **«Movida a Sprint 6»** en S1–S5 y aparecen en S6 **todas Por
+  hacer** (nada de la app cuenta como realizado: lo adelantado es el MVP
+  interno de Bryan para la hackatón del equipo). Las historias «Web y App»
+  figuran en S6 con 0 pts y «solo la parte móvil».
 - Burndown: comprometidos S1 81 · S2 83 · S3 139 · S4 109 · S5 72 ·
   **S6 301**. Ese 301 es el riesgo que quedó anotado en la Review y en el
   acuerdo A4 de la retro: refinar el Sprint 6 (app primero; AI/dashboard/
   importación contra ella, y lo que no quepa al Cierre).
-- Script: `_scratch/mover_app_s6.py` (idempotente por estado) y
-  `_scratch/gen_ceremonias.py`.
+- **Infraestructura y servicios externos también al Sprint 6** (Decisión 5
+  de la Review, lo provee Código Creativo): SMTP (T-6301), almacenamiento de
+  archivos (T-6302), clave de Google Maps (T-6303), push/Firebase (T-6304)
+  y HTTPS de la API para el login de la app (T-6305). Impedimentos 1, 2 y 4
+  quedan «En gestión» con esa fecha; HU-004 pasa a En revisión en S1 (el
+  criterio del correo se verifica en S6).
+- Scripts: `_scratch/mover_app_s6.py`, `infra_s6.py`, `s6_sin_realizado.py`
+  y `gen_ceremonias.py`.
 
 ---
 
