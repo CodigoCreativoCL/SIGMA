@@ -6,6 +6,7 @@ import '../../constants/api_constants.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/outbox_service.dart';
+import '../../services/sigma_repository.dart';
 import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
@@ -205,8 +206,37 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
     );
   }
 
+  /// HU-044: una medición es DE UNA VARIABLE (temperatura, vibración…), con
+  /// su unidad y sus umbrales. Sin eso el servidor no tiene contra qué
+  /// comparar ni dónde guardar; por eso se elige primero. Con una sola
+  /// variable no se pregunta.
   Future<void> _capturar(Activo? a) async {
     if (a == null) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    final variables = await SigmaRepository.instance.variablesDe(a.act_id);
+    if (!mounted) return;
+
+    if (variables.isEmpty) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Este equipo no tiene variables de condición definidas (o falta '
+            'sincronizar). Se definen en la web: Activos › Variables de '
+            'condición.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    VariableActivo? elegida = variables.length == 1 ? variables.first : null;
+    elegida ??= await showModalBottomSheet<VariableActivo>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ElegirVariable(variables: variables),
+    );
+    if (elegida == null || !mounted) return;
+
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -216,6 +246,14 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
           activoNombre: a.act_nombre,
           activoCodigo: a.act_codigo,
           ubicacion: a.ruta,
+          variableId: elegida!.AVA_ID,
+          unidadId: elegida.AVA_UNIDAD_MEDIDA,
+          unidad: elegida.UNIDAD_SIMBOLO,
+          medidorNombre: elegida.VARIABLE_NOMBRE,
+          minimoEsperado: elegida.AVA_VALOR_MINIMO,
+          maximoEsperado: elegida.AVA_VALOR_MAXIMO,
+          advertencia: elegida.AVA_VALOR_ADVERTENCIA,
+          critico: elegida.AVA_VALOR_CRITICO,
         ),
       ),
     );
@@ -717,6 +755,56 @@ class _Componentes extends ConsumerWidget {
           ],
         );
       },
+    );
+  }
+}
+
+/// La hoja para elegir qué variable se mide (HU-044).
+class _ElegirVariable extends StatelessWidget {
+  const _ElegirVariable({required this.variables});
+
+  final List<VariableActivo> variables;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        decoration: BoxDecoration(
+          color: sg.fondo,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SgRotulo('¿Qué vas a medir?'),
+            const SizedBox(height: 10),
+            SgBloque(
+              filas: [
+                for (final v in variables)
+                  SgFila(
+                    icono: Icons.thermostat_outlined,
+                    texto: v.VARIABLE_NOMBRE,
+                    detalle: [
+                      if ((v.UNIDAD_SIMBOLO ?? '').isNotEmpty)
+                        'en ${v.UNIDAD_SIMBOLO}',
+                      if (v.AVA_VALOR_ADVERTENCIA != null)
+                        'adv ${v.AVA_VALOR_ADVERTENCIA}',
+                      if (v.AVA_VALOR_CRITICO != null)
+                        'crít ${v.AVA_VALOR_CRITICO}',
+                    ].join(' · '),
+                    chevron: true,
+                    alto: 56,
+                    onTap: () => Navigator.pop(context, v),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

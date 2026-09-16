@@ -50,6 +50,9 @@ abstract final class CacheDatos {
   static const tareas = 'TAREAS';
   static const activos = 'ACTIVOS';
   static const medidores = 'MEDICION_0';
+  /// Las variables de condición con sus umbrales (segundo resultado del
+  /// bloque MEDICION): no hay endpoint propio, salen de la sábana.
+  static const variables = 'MEDICION_1';
   static const repuestos = 'INVENTARIO_0';
   static const bodegas = 'INVENTARIO_1';
   static const existencias = 'EXISTENCIAS';

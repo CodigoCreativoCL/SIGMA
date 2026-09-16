@@ -403,6 +403,7 @@ curl -X POST http://localhost/SIGMA/Servicio/API/sesion -H "Content-Type: applic
 | 15-09-2026 | **`POST /captura/mediciones` responde `{id, mensaje}`**: el veredicto contra los umbrales (normal / advertencia / crítico / fuera del rango operativo) que ya calculaba `API_INS_ACTIVO_MEDICION` se perdía en `Datos.Ejecutar`. La app sigue encolando la medición igual; cuando muestre el resultado del envío puede leer `mensaje`. Evidencia: S2 HU-041 #2 |
 | 15-09-2026 | **Escanear una posición (HU-154).** `GET /escaneo?c=POS-<id>` resuelve la posición: con equipo abre `ActivoFichaScreen`; vacía, `HojaOcuparPosicion` deja poner un equipo de la sábana y lo encola con uuid (`POST /posiciones/{id}/ocupar`, idempotente). Con `BD/232` las posiciones bajan en la sábana (bloque 11): `escanear()` resuelve `POS-` y `ACT-` en local y la tarjeta dice de cuándo son los datos |
 | 16-09-2026 | **Órdenes y pautas en la sábana (HU-150 #1).** Bloques 12 y 13 (`BD/234`): `ordenesTrabajo`, `ordenTrabajo`, `checklistPendientes` y `checklistPlantilla` tienen respaldo local; la cola de escritura ya existía |
+| 16-09-2026 | **Captura en terreno arreglada (HU-043/044).** `CapturaScreen` mandaba `act_id`/`ame_id`/`fecha_evento`, que la API no conoce: cada lectura o medición encolada rebotaba. Ahora usa los nombres del DTO con uuid, la ficha del activo pide elegir la variable (de la sábana) y exige comentario fuera de umbral; la lectura se registra desde el medidor |
 
 ### Cómo actualizar este documento
 

@@ -3122,6 +3122,48 @@ class ComponenteEvento {
   );
 }
 
+/// Una variable de condición de un equipo con sus umbrales — sale de la
+/// sábana (bloque MEDICION, segundo resultado): es lo que hace falta para
+/// registrar una medición (HU-044) sin señal.
+class VariableActivo {
+  const VariableActivo({
+    required this.AVA_ID,
+    required this.AVA_ACTIVO,
+    required this.VARIABLE_NOMBRE,
+    this.VARIABLE_CODIGO,
+    this.AVA_UNIDAD_MEDIDA,
+    this.UNIDAD_SIMBOLO,
+    this.AVA_VALOR_MINIMO,
+    this.AVA_VALOR_MAXIMO,
+    this.AVA_VALOR_ADVERTENCIA,
+    this.AVA_VALOR_CRITICO,
+  });
+
+  final int AVA_ID;
+  final int AVA_ACTIVO;
+  final String VARIABLE_NOMBRE;
+  final String? VARIABLE_CODIGO;
+  final int? AVA_UNIDAD_MEDIDA;
+  final String? UNIDAD_SIMBOLO;
+  final double? AVA_VALOR_MINIMO;
+  final double? AVA_VALOR_MAXIMO;
+  final double? AVA_VALOR_ADVERTENCIA;
+  final double? AVA_VALOR_CRITICO;
+
+  factory VariableActivo.fromJson(Map<String, dynamic> j) => VariableActivo(
+    AVA_ID: _i(j['AVA_ID']),
+    AVA_ACTIVO: _i(j['AVA_ACTIVO']),
+    VARIABLE_NOMBRE: _s(j['VARIABLE_NOMBRE']),
+    VARIABLE_CODIGO: _sN(j['VARIABLE_CODIGO']),
+    AVA_UNIDAD_MEDIDA: _iN(j['AVA_UNIDAD_MEDIDA']),
+    UNIDAD_SIMBOLO: _sN(j['UNIDAD_SIMBOLO']),
+    AVA_VALOR_MINIMO: _dN(j['AVA_VALOR_MINIMO']),
+    AVA_VALOR_MAXIMO: _dN(j['AVA_VALOR_MAXIMO']),
+    AVA_VALOR_ADVERTENCIA: _dN(j['AVA_VALOR_ADVERTENCIA']),
+    AVA_VALOR_CRITICO: _dN(j['AVA_VALOR_CRITICO']),
+  );
+}
+
 /// Un medidor y su último valor.
 class Medidor {
   const Medidor({

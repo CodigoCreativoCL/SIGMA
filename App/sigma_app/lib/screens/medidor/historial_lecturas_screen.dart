@@ -9,6 +9,7 @@ import '../../providers/datos_provider.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../lectura/captura_screen.dart';
 
 /// El historial de lecturas de un medidor — vista 9.2 del diseño v3.
 ///
@@ -54,6 +55,37 @@ class HistorialLecturasScreen extends ConsumerWidget {
         medidor.valueOrNull?.AME_NOMBRE ?? 'Lecturas',
         tamanoTitulo: 19,
       ),
+      // HU-043: la lectura se registra desde el medidor, que es donde está su
+      // identidad (unidad, último valor, si admite reinicio).
+      bottomNavigationBar: medidor.valueOrNull == null
+          ? null
+          : SgPie(
+              child: SgBoton(
+                'Registrar lectura',
+                icono: Icons.speed_outlined,
+                onTap: () async {
+                  final m = medidor.valueOrNull!;
+                  await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CapturaScreen(
+                        tipo: TipoCaptura.lectura,
+                        activoId: m.AME_ACTIVO,
+                        activoNombre: m.ACTIVO_NOMBRE ?? '',
+                        activoCodigo: m.ACTIVO_CODIGO,
+                        medidorId: m.AME_ID,
+                        medidorNombre: m.AME_NOMBRE,
+                        unidad: m.UNIDAD_SIMBOLO,
+                        valorAnterior: m.AME_VALOR_ACTUAL,
+                        permiteReinicio: m.AME_PERMITE_REINICIO,
+                      ),
+                    ),
+                  );
+                  ref.invalidate(medidorProvider(medidorId));
+                  ref.invalidate(lecturasProvider(medidorId));
+                },
+              ),
+            ),
       body: SafeArea(
         bottom: false,
         child: EstadoAsync<Medidor>(

@@ -569,5 +569,121 @@
   ],
   "detalle": "",
   "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 1,
+  "titulo": "Registro con validación",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/lecturas con el horómetro MED-33-H (valor anterior 7908.00): +8 horas con fecha de lectura 16-09-2026 05:00 UTC; luego GET /medidores/8.",
+  "esperado": "Se guarda con la fecha y hora del registro y el valor actual del medidor se actualiza.",
+  "obtenido": "HTTP 201: {\n  \"id\": 19,\n  \"mensaje\": \"Lectura registrada.\"\n}. Activo_Medidor queda con valor actual y fecha «7916.00|2026-09-16 05:00:00»; GET /medidores/8 lo muestra (AME_VALOR_ACTUAL). La fecha de registro (aml_fecha_creacion) la pone el servidor aparte de la fecha de la lectura.",
+  "ok": true,
+  "capturas": [
+   "hu043_1_sw_lectura.png",
+   "hu043_1_sw_medidor.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 2,
+  "titulo": "Salto no razonable",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "El medidor tiene máximo diario 24 h. POST /captura/lecturas con 8316 (un salto de 400 h respecto de la lectura de hace minutos).",
+  "esperado": "La lectura se acepta, se marca como pendiente de revisión y aparece en el informe de lecturas a revisar.",
+  "obtenido": "HTTP 201: {\n  \"id\": 20,\n  \"mensaje\": \"Lectura registrada. El salto de 400.0 en 1 dia(s) supera el maximo diario (24.0): queda pendiente de revision.\"\n}. La fila queda con calidad «5|Pendiente de revisión» y se abre la alerta «Lectura a revisar en Horómetro del motor — El medidor MED-33-H de ACT-33 avanzo 400.0 en 1 dia(s); el maximo diario es 24.0.», que es la que alimenta la bandeja de alertas (informe de lecturas a revisar).",
+  "ok": true,
+  "capturas": [
+   "hu043_2_sw_salto.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 3,
+  "titulo": "Registro sin conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "La app guarda la lectura en el teléfono (outbox, uuid generado al encolar) y la envía al volver la señal; aquí se reproduce el envío y el reintento con el mismo uuid, con fecha_lectura_utc de ayer 15:30.",
+  "esperado": "Se guarda en el dispositivo y se sincroniza al recuperar conexión; la fecha registrada es la del momento de la lectura, no la de la sincronización.",
+  "obtenido": "Envío: HTTP 201. Reintento con el mismo uuid: HTTP 201 «{\n  \"id\": 21,\n  \"mensaje\": \"La lectura ya estaba registrada.\"\n}» (no duplica). La fila guarda la fecha de la lectura y aparte la del registro: 2026-09-15 18:30:00 | registro 2026-09-16 05:08:19. En la app, CapturaScreen encola con los nombres del DTO (activo_medidor, fecha_lectura_utc, uuid) —antes mandaba act_id/fecha_evento y la cola rebotaba, defecto corregido hoy—.",
+  "ok": true,
+  "capturas": [
+   "hu043_3_sw_encolada.png",
+   "hu043_3_sw_reintento.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-044",
+  "criterio": 1,
+  "titulo": "Registro con unidad distinta a la esperada",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "La variable Presión de ACT-36 espera bar (adv 6, crít 8). POST /captura/mediciones con 120 psi (unidad_medida 34).",
+  "esperado": "Se guarda el valor tal como lo ingresé con su unidad, además su equivalente en la unidad base, y la comparación contra el umbral se hace sobre el equivalente.",
+  "obtenido": "HTTP 201: {\n  \"id\": 491,\n  \"mensaje\": \"Medicion registrada. VALOR CRITICO: supera el umbral definido.\"\n}. En Activo_Medicion: «120.00 psi | canonico 8.2738 bar» (120 psi = 8,27 bar). El veredicto CRÍTICO se tomó sobre 8,27 bar contra el umbral 8 —no sobre el 120 tecleado—.",
+  "ok": true,
+  "capturas": [
+   "hu044_1_sw_psi.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-044",
+  "criterio": 2,
+  "titulo": "Valor fuera de umbral",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/mediciones con 7 bar (sobre el umbral de advertencia 6) sin observación; luego con observación.",
+  "esperado": "Se solicita un comentario y se genera una alerta del tipo correspondiente.",
+  "obtenido": "Sin comentario: HTTP 400 «{\n  \"codigo\": 400,\n  \"mensaje\": \"EL VALOR (7.00) ESTA FUERA DE UMBRAL (6.00): INDIQUE UN COMENTARIO CON LO QUE OBSERVO.\"». Con comentario: HTTP 201 «{\n  \"id\": 492,\n  \"mensaje\": \"Medicion registrada. Valor en advertencia» y se abre la alerta «Presión en advertencia en ACT-36 | severidad 3 | Se midio 7.00 bar contra un umbral de 6.00 bar. Presión sube al cargar; válvula de alivio revisada (evidencia S» (tipo MEDICIÓN FUERA RANGO, severidad 3 = advertencia; crítico sería 4). En la app, CapturaScreen exige el comentario antes de encolar cuando el valor supera los umbrales de la variable.",
+  "ok": true,
+  "capturas": [
+   "hu044_2_sw_sin_comentario.png",
+   "hu044_2_sw_con_comentario.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 1,
+  "titulo": "Cambio de estado",
+  "usuario": "paula",
+  "tipo": "API",
+  "pasos": "POST /activo-estados con ACT-37 → DETENIDO sin motivo; luego con motivo.",
+  "esperado": "Se exige un motivo y el cambio queda registrado con fecha, usuario y motivo.",
+  "obtenido": "Sin motivo: HTTP 400 «{\n  \"codigo\": 400,\n  \"mensaje\": \"ESTE CAMBIO DE ESTADO REQUIERE INDICAR EL MOTIVO.\",\n  \"es». Con motivo: HTTP 201. Activo_Estado_Historial: 3 | 2026-09-16 05:09 -> vigente | Compresor detenido por ruido en el rodamiento (evidencia S2) | usuario 10.",
+  "ok": true,
+  "capturas": [
+   "hu038_1_sw_sin_motivo.png",
+   "hu038_1_sw_detenido.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:09"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 2,
+  "titulo": "Cierre del periodo anterior",
+  "usuario": "paula",
+  "tipo": "API",
+  "pasos": "POST /activo-estados con ACT-37 → OPERATIVO (vuelve a operar).",
+  "esperado": "El periodo del estado anterior se cierra con la misma fecha y no quedan dos periodos vigentes simultáneos.",
+  "obtenido": "HTTP 201. Historial: 1 | 2026-09-16 05:09:59 -> vigente ; 3 | 2026-09-16 05:09:54 -> 2026-09-16 05:09:59 — el fin del periodo DETENIDO es exactamente el inicio del nuevo; periodos vigentes: 1.",
+  "ok": true,
+  "capturas": [
+   "hu038_2_sw_operativo.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:10"
  }
 ]

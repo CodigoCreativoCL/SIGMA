@@ -344,5 +344,22 @@ void main() {
       expect(f.pasos.length, 2);
       expect(f.asignados.length, 1);
     });
+
+    test('la variable de condición de la sábana trae sus umbrales', () {
+      final v = VariableActivo.fromJson(const {
+        'AVA_ID': 21,
+        'AVA_ACTIVO': 36,
+        'VARIABLE_NOMBRE': 'Presión',
+        'AVA_UNIDAD_MEDIDA': 25,
+        'UNIDAD_SIMBOLO': 'bar',
+        'AVA_VALOR_MINIMO': 2,
+        'AVA_VALOR_MAXIMO': 10,
+        'AVA_VALOR_ADVERTENCIA': 6,
+        'AVA_VALOR_CRITICO': 8,
+      });
+      expect(v.VARIABLE_NOMBRE, 'Presión');
+      expect(v.AVA_VALOR_CRITICO, 8);
+      expect(v.UNIDAD_SIMBOLO, 'bar');
+    });
   });
 }

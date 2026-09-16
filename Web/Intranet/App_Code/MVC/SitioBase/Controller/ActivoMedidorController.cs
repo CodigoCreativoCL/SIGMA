@@ -55,6 +55,8 @@ namespace SitioBase.Controller
                                 item.ame_fecha_valor_actual_utc = DateTime.Parse(dr["AME_FECHA_VALOR_ACTUAL_UTC"].ToString());
                             if (dr["AME_VALOR_REINICIO"] != DBNull.Value)
                                 item.ame_valor_reinicio = decimal.Parse(dr["AME_VALOR_REINICIO"].ToString());
+                            if (dr["AME_MAXIMO_DIARIO"] != DBNull.Value)
+                                item.ame_maximo_diario = decimal.Parse(dr["AME_MAXIMO_DIARIO"].ToString());
                             item.ame_permite_reinicio = bool.Parse(dr["AME_PERMITE_REINICIO"].ToString());
                             item.ame_habilitado = bool.Parse(dr["AME_HABILITADO"].ToString());
 
@@ -150,6 +152,22 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
+        /// <summary>
+        /// El maximo diario vive en su propio SP (BD/235) para no tocar la
+        /// firma de INS/UPD_ACTIVO_MEDIDOR, que comparten otras pantallas.
+        /// </summary>
+        public void UpdateMaximoDiario(int id, decimal? maximoDiario)
+        {
+            if (!Token.TokenSeguridad()) return;
+
+            SqlCommand cmdMax = Conexion.GetCommand("UPD_ACTIVO_MEDIDOR_MAXIMO_DIARIO");
+            cmdMax.Parameters.AddWithValue("@ID", id);
+            cmdMax.Parameters.AddWithValue("@MAXIMO_DIARIO", (object)maximoDiario ?? DBNull.Value);
+            cmdMax.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+            cmdMax.ExecuteNonQuery();
+            cmdMax.Connection.Close();
+        }
+
         public Respuesta UpdateActivoMedidor(ActivoMedidor entidad)
         {
             Respuesta respuesta = new Respuesta();
@@ -172,6 +190,8 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();
+
+                    UpdateMaximoDiario(entidad.ame_id, entidad.ame_maximo_diario);
 
                     respuesta.codigo = entidad.ame_id;
                     respuesta.detalle = "Medidor actualizado con éxito.";

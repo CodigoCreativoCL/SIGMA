@@ -101,6 +101,8 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             txtValorActual.Text = entidad.ame_valor_actual.ToString("0.##", CultureInfo.InvariantCulture);
             if (entidad.ame_valor_reinicio != null)
                 txtValorReinicio.Text = entidad.ame_valor_reinicio.Value.ToString("0.##", CultureInfo.InvariantCulture);
+            if (entidad.ame_maximo_diario != null)
+                txtMaximoDiario.Text = entidad.ame_maximo_diario.Value.ToString("0.##", CultureInfo.InvariantCulture);
 
             rdbReinicioSi.Checked = entidad.ame_permite_reinicio;
             rdbReinicioNo.Checked = !entidad.ame_permite_reinicio;
@@ -135,6 +137,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
         txtNombre.ReadOnly = !puedeEditar;
         txtValorActual.ReadOnly = !puedeEditar;
         txtValorReinicio.ReadOnly = !puedeEditar;
+        txtMaximoDiario.ReadOnly = !puedeEditar;
 
         rdbReinicioSi.Enabled = puedeEditar;
         rdbReinicioNo.Enabled = puedeEditar;
@@ -166,6 +169,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             entidad.ame_nombre = txtNombre.Text.Trim();
             entidad.ame_valor_actual = LeerDecimal(txtValorActual.Text, "valor actual") ?? 0m;
             entidad.ame_valor_reinicio = LeerDecimal(txtValorReinicio.Text, "valor de reinicio");
+            entidad.ame_maximo_diario = LeerDecimal(txtMaximoDiario.Text, "máximo diario");
             entidad.ame_permite_reinicio = rdbReinicioSi.Checked;
             entidad.ame_habilitado = rdbSi.Checked;
 
@@ -176,6 +180,12 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
             if (!respuesta.error)
             {
                 Id = respuesta.codigo;
+
+                /* Al crear, el maximo diario se guarda aparte: INS_ACTIVO_MEDIDOR
+                   no lo recibe (su firma la comparten otras pantallas). */
+                if (entidad.ame_maximo_diario != null && entidad.ame_id == 0)
+                    controller.UpdateMaximoDiario(Id, entidad.ame_maximo_diario);
+
                 Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
             }
             else

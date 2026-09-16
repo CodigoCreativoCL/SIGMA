@@ -106,6 +106,12 @@ final medidoresProvider = FutureProvider.family<List<Medidor>, int>(
   (ref, activo) => _repo.medidoresDe(activo),
 );
 
+/// Las variables de condición de un equipo (de la sábana) — HU-044.
+final variablesDeActivoProvider =
+    FutureProvider.family<List<VariableActivo>, int>(
+      (ref, activo) => _repo.variablesDe(activo),
+    );
+
 /// Un medidor con sus umbrales.
 final medidorProvider = FutureProvider.family<Medidor, int>(
   (ref, id) => _repo.medidor(id),

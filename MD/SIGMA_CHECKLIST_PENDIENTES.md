@@ -1523,6 +1523,43 @@ en cada apertura.
 
 ---
 
+### 10.18 · Sprint 2 · Captura en terreno: HU-043, HU-044 y HU-038 (16-09-2026)
+
+Los SP y los endpoints existían (bloque 141), pero faltaban tres reglas y
+la app no podía usarlos.
+
+- **Defecto en la app (HU-043/044)**: `CapturaScreen` encolaba el cuerpo con
+  `act_id`, `ame_id`, `fecha_evento` y `origen`, nombres que la API no
+  conoce (`LecturaAltaDto`/`MedicionAltaDto` esperan `activo_medidor` /
+  `activo_variable`, `fecha_lectura_utc`/`fecha_medicion_utc`, `uuid`,
+  `entrada_modo`): cada captura rebotaba con «el medidor no existe». Además
+  la medición no llevaba variable: la ficha abría la captura solo con el
+  activo. Ahora el cuerpo usa los nombres del DTO, la ficha pide elegir la
+  variable (de la sábana `MEDICION_1`, `VariableActivo`) y la lectura se
+  registra desde el medidor (`HistorialLecturasScreen`). 130 tests.
+- **`BD/235_CAPTURA_REGLAS_HU043_HU044.sql`** —
+  · HU-043 #2: `Activo_Medidor.ame_maximo_diario` (ficha web, campo «Máximo
+    diario», SP propio `UPD_ACTIVO_MEDIDOR_MAXIMO_DIARIO`); una lectura que
+    salte más que máximo × días se acepta con `Medicion_Calidad` 5
+    «Pendiente de revisión» y abre una alerta `LECTURA A REVISAR` (tipo
+    nuevo), que es el informe de lecturas a revisar en la bandeja.
+  · HU-044 #1: el veredicto contra los umbrales se toma sobre el
+    **equivalente en la unidad de la variable** (120 psi → 8,27 bar), no
+    sobre el número tecleado.
+  · HU-044 #2: fuera de umbral sin comentario → 400 «indique un comentario»;
+    con comentario se registra y abre una alerta `MEDICION FUERA RANGO`
+    (severidad 4 crítico / 3 advertencia / 2 fuera de rango). La app pide el
+    comentario antes de encolar con los umbrales de la variable.
+  · `POST /captura/lecturas` devuelve `{id, mensaje}` como la medición.
+- HU-038 se probó tal como estaba (`ACTIVO_CAMBIAR_ESTADO`): motivo
+  obligatorio y cierre del periodo anterior con la misma fecha. Requiere
+  `CAMBIAR ESTADO ACTIVO` (supervisor hacia arriba; el técnico recibe 403).
+
+Con esto **todas las tareas de Bryan del Sprint 2 quedan Terminadas o
+Descartadas** (S2: 41 casos de evidencia, 40 ✓).
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

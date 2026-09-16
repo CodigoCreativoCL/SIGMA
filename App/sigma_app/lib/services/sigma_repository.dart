@@ -267,6 +267,16 @@ class SigmaRepository {
     return Paginado.desde(j, Medidor.fromJson).datos;
   }
 
+  /// Las variables de condición de un equipo, con sus umbrales. Solo de la
+  /// sábana: no hay endpoint propio, y en terreno es donde se usan.
+  Future<List<VariableActivo>> variablesDe(int activo) async {
+    final todas = await CacheDatos.lista<VariableActivo>(
+      CacheDatos.variables,
+      VariableActivo.fromJson,
+    );
+    return todas.where((v) => v.AVA_ACTIVO == activo).toList();
+  }
+
   /// Un medidor con sus umbrales.
   Future<Medidor> medidor(int id) async {
     final j = await _api.get('${ApiConstants.medidores}/$id');
