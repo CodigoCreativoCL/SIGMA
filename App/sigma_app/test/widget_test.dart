@@ -305,5 +305,19 @@ void main() {
       expect(ocupada.cabecera?.pos_libre, isFalse);
       expect(ocupada.cabecera?.act_id, 35);
     });
+
+    test('un escaneo resuelto en el teléfono dice que es local y de cuándo', () {
+      final e = Escaneo(
+        tipo: 'POS',
+        id: 7,
+        local: true,
+        fechaLocal: DateTime(2026, 9, 15, 23, 0),
+        cabecera: const EscaneoCabecera(pos_id: 7, pos_codigo: 'CB01', pos_libre: true),
+      );
+      expect(e.local, isTrue);
+      expect(e.fechaLocal?.day, 15);
+      // El que viene del servidor no es local.
+      expect(Escaneo.fromJson(const {'tipo': 'POS', 'id': 7}).local, isFalse);
+    });
   });
 }

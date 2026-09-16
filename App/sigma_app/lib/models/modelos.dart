@@ -654,13 +654,21 @@ class Escaneo {
     required this.id,
     this.cabecera,
     this.lineas = const [],
+    this.local = false,
+    this.fechaLocal,
   });
 
-  /// REPUESTO · UBICACION · BODEGA · ACTIVO.
+  /// REPUESTO · UBICACION · BODEGA · ACTIVO · POS.
   final String tipo;
   final int id;
   final EscaneoCabecera? cabecera;
   final List<EscaneoLinea> lineas;
+
+  /// Resuelto desde la sábana del teléfono, sin señal (HU-154 #2).
+  /// [fechaLocal] es de cuándo son esos datos: se muestra para que un
+  /// equipo cambiado ayer no se confunda con el de hoy.
+  final bool local;
+  final DateTime? fechaLocal;
 
   factory Escaneo.fromJson(Map<String, dynamic> j) => Escaneo(
     tipo: _s(j['tipo']),

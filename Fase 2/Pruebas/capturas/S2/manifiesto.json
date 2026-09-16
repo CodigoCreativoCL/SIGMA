@@ -404,20 +404,6 @@
   "fecha": "15-09-2026 23:25"
  },
  {
-  "hu": "HU-154",
-  "criterio": 2,
-  "titulo": "Escaneo sin conexión",
-  "usuario": "cristian",
-  "tipo": "App",
-  "pasos": "Escanear el QR de una posición sin señal.",
-  "esperado": "La ficha se abre desde los datos locales y se indica la última sincronización.",
-  "obtenido": "La ficha del activo ya abre desde la sábana local (HU-150/151); la resolución POS→activo sin señal requiere que las posiciones bajen en la sábana, lo que no está construido. No ejercitado en esta corrida (requiere el teléfono).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "15-09-2026 23:25"
- },
- {
   "hu": "HU-033",
   "criterio": 2,
   "titulo": "Historial de ocupación",
@@ -450,5 +436,22 @@
   ],
   "detalle": "",
   "fecha": "15-09-2026 23:44"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 2,
+  "titulo": "Escaneo sin conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /sincronizacion (manifiesto) y GET /sincronizacion/11 (bloque POSICIONES) con Cristián; en la app, escanear POS-<id> sin señal.",
+  "esperado": "La ficha se abre desde los datos locales y se indica la fecha de la última sincronización.",
+  "obtenido": "El manifiesto anuncia el bloque 11 «Posiciones funcionales» (HTTP 200) y el bloque trae cada posición con su área, planta y el equipo que la ocupa o LIBRE (HTTP 200). La app lo guarda como POSICIONES y, sin señal, `escanear()` resuelve POS-<id> (y ACT-<id>) desde la sábana, marca el resultado como local y muestra «Datos del teléfono · última sincronización dd-MM-yyyy HH:mm»; con equipo abre su ficha local.",
+  "ok": true,
+  "capturas": [
+   "hu154_2_sw_manifiesto.png",
+   "hu154_2_sw_bloque_posiciones.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 00:04"
  }
 ]

@@ -529,8 +529,96 @@ class SigmaRepository {
   // ---- Escaneo (HU-154 y HU-067) ----
 
   Future<Escaneo> escanear(String codigo) async {
-    final j = await _api.get(ApiConstants.escaneo, query: {'c': codigo});
-    return Escaneo.fromJson(j as Map<String, dynamic>);
+    if (!SyncService.instance.enLinea.value) {
+      final local = await _escaneoLocal(codigo);
+      if (local != null) return local;
+      throw const ApiException(
+        'Sin conexión, y este código no está en los datos descargados. '
+        'Sincroniza cuando tengas señal.',
+        esDeNegocio: false,
+      );
+    }
+    try {
+      final j = await _api.get(ApiConstants.escaneo, query: {'c': codigo});
+      return Escaneo.fromJson(j as Map<String, dynamic>);
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      final local = await _escaneoLocal(codigo);
+      if (local != null) return local;
+      rethrow;
+    }
+  }
+
+  /// Resuelve `POS-<id>` y `ACT-<id>` desde la sábana (HU-154 #2).
+  ///
+  /// Los otros tipos —bodega, estante, repuesto— preguntan «qué hay adentro»
+  /// y eso vive en existencias por red; sin señal no se inventa un desglose.
+  /// Acepta la URL completa del QR igual que el servidor: lo que va después
+  /// de `c=`.
+  Future<Escaneo?> _escaneoLocal(String leido) async {
+    var texto = leido.trim();
+    final corte = texto.toLowerCase().lastIndexOf('c=');
+    if (corte >= 0) texto = texto.substring(corte + 2);
+    final fin = texto.indexOf(RegExp(r'[&? \r\n]'));
+    if (fin >= 0) texto = texto.substring(0, fin);
+    texto = texto.trim().toUpperCase();
+    final guion = texto.indexOf('-');
+    if (guion <= 0) return null;
+    final tipo = texto.substring(0, guion);
+    final id = int.tryParse(texto.substring(guion + 1)) ?? 0;
+    if (id <= 0) return null;
+
+    if (tipo == 'POS') {
+      final p = await CacheDatos.uno<Map<String, dynamic>>(
+        CacheDatos.posiciones,
+        (f) => f,
+        'APO_ID',
+        id,
+      );
+      if (p == null) return null;
+      final actId = p['ACTIVO_ID'];
+      return Escaneo(
+        tipo: 'POS',
+        id: id,
+        local: true,
+        fechaLocal: await CacheDatos.fechaDe(CacheDatos.posiciones),
+        cabecera: EscaneoCabecera(
+          pos_id: id,
+          pos_codigo: p['APO_CODIGO']?.toString(),
+          pos_nombre: p['APO_NOMBRE']?.toString(),
+          AREA: p['AREA_NOMBRE']?.toString(),
+          PLANTA: p['PLANTA_NOMBRE']?.toString(),
+          pos_libre: actId == null,
+          act_id: actId is num ? actId.toInt() : 0,
+          act_codigo: p['ACTIVO_CODIGO']?.toString(),
+          act_nombre: p['ACTIVO_NOMBRE']?.toString(),
+        ),
+      );
+    }
+
+    if (tipo == 'ACT') {
+      final a = await CacheDatos.uno<Activo>(
+        CacheDatos.activos,
+        Activo.fromJson,
+        'ACT_ID',
+        id,
+      );
+      if (a == null) return null;
+      return Escaneo(
+        tipo: 'ACT',
+        id: id,
+        local: true,
+        fechaLocal: await CacheDatos.fechaDe(CacheDatos.activos),
+        cabecera: EscaneoCabecera(
+          act_id: a.act_id,
+          act_codigo: a.act_codigo,
+          act_nombre: a.act_nombre,
+          PLANTA: a.PLANTA_NOMBRE,
+        ),
+      );
+    }
+
+    return null;
   }
 
   /// Poner un equipo en una posición vacía (HU-154 #3). Se encola con uuid:

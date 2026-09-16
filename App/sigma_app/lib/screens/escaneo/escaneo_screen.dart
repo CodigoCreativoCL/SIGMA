@@ -576,6 +576,12 @@ class _Encontrado extends StatelessWidget {
 
   bool get _esPosicion => escaneo.tipo.toUpperCase() == 'POS';
 
+  static String _fechaCorta(DateTime f) {
+    final l = f.toLocal();
+    String d(int n) => n.toString().padLeft(2, '0');
+    return '${d(l.day)}-${d(l.month)}-${l.year} ${d(l.hour)}:${d(l.minute)}';
+  }
+
   String get _titulo {
     final c = escaneo.cabecera;
     if (_esPosicion) return c?.pos_nombre ?? codigo;
@@ -721,6 +727,26 @@ class _Encontrado extends StatelessWidget {
                 ? 'Posición sin equipo asignado.'
                 : 'Equipo instalado: ${escaneo.cabecera?.act_codigo ?? ''} · ${escaneo.cabecera?.act_nombre ?? ''}',
             style: sora(13, 500, color: _tinta3, alto: 1.4),
+          ),
+        ],
+        // HU-154 #2: resuelto desde la sábana, sin señal. Se dice de cuándo
+        // son los datos: un equipo cambiado ayer no es el de hoy.
+        if (escaneo.local) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.cloud_off_outlined, size: 14, color: _tinta3),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  escaneo.fechaLocal == null
+                      ? 'Datos del teléfono, sin señal.'
+                      : 'Datos del teléfono · última sincronización '
+                            '${_fechaCorta(escaneo.fechaLocal!)}',
+                  style: sora(12, 500, color: _tinta3),
+                ),
+              ),
+            ],
           ),
         ],
         const SizedBox(height: 14),

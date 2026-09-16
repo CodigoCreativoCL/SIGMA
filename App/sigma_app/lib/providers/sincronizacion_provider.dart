@@ -145,6 +145,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'PERMISOS_TRABAJO': 'PTT_ID',
     'ORDENES_TRABAJO': 'OCM_ID',
     'TAREAS': 'toc_id',
+    'POSICIONES': 'APO_ID',
   };
 
   static const _iconos = <String, String>{
@@ -158,6 +159,7 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'PERMISOS_TRABAJO': 'assignment',
     'ORDENES_TRABAJO': 'assignment',
     'TAREAS': 'assignment',
+    'POSICIONES': 'map',
   };
 
   /// Cuándo terminó la última sincronización automática.

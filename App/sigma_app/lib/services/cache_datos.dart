@@ -65,6 +65,10 @@ abstract final class CacheDatos {
   /// por qué.
   static const motivosCierre = 'ORDENES_TRABAJO';
 
+  /// Posiciones funcionales con el equipo que las ocupa (bloque 11, BD/232):
+  /// lo que hace falta para resolver un QR `POS-` sin señal (HU-154 #2).
+  static const posiciones = 'POSICIONES';
+
   static final _base = BaseLocalService.instance;
 
   /// Lo guardado de una entidad, ya mapeado.

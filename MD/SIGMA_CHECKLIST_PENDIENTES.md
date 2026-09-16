@@ -1439,9 +1439,13 @@ sin pantalla, sin etiqueta y sin escaneo: las tres tablas vacías.
   líneas y sacaba el pie de la etiqueta; los umbrales de `Escala()` bajaron a
   6/9/14 y el detalle va en una línea con puntos suspensivos.
 
-- [ ] HU-154 #2 (escaneo sin señal): las posiciones no bajan en la sábana;
-      la ficha del activo sí abre local, pero resolver `POS→activo` sin red
-      requiere un bloque de posiciones en `SincronizacionController`.
+- [x] HU-154 #2 (escaneo sin señal): **`BD/232`** agrega el bloque 11
+      `POSICIONES` a la sábana (posición, área, planta y el equipo que la
+      ocupa o LIBRE; baja entero, sin `@DESDE`, porque la ocupación cambia en
+      `Activo`, no en la posición). `BLOQUE_MAXIMO` = 11. La app lo guarda
+      como `POSICIONES` y `escanear()` resuelve `POS-` y `ACT-` desde la
+      sábana cuando no hay señal, marcando el resultado como local con la
+      fecha de la última sincronización.
 - [ ] La ocupación desde la web no pide OT ni permite «traslado» explícito;
       el motivo lo decide el SP (inicial/reemplazo) salvo que se elija.
 
