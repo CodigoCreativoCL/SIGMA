@@ -519,5 +519,55 @@
   ],
   "detalle": "",
   "fecha": "16-09-2026 01:31"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 1,
+  "titulo": "Primera sincronización",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /sincronizacion (manifiesto) y GET /sincronizacion/12 (órdenes abiertas) y /13 (pautas y plantillas).",
+  "esperado": "Se descargan catálogos, mis activos, mis órdenes abiertas y las plantillas publicadas; se muestra el progreso por bloque.",
+  "obtenido": "El manifiesto (HTTP 200) declara 13 bloques con sus filas —ORGANIZACION, AREAS, CATALOGOS, ACTIVOS, MEDICION, INVENTARIO, EXISTENCIAS, PERMISOS_TRABAJO, ORDENES_TRABAJO, TAREAS, POSICIONES, ORDENES_ABIERTAS, CHECKLISTS— y es lo que la app usa para la barra de progreso por bloque. El bloque 12 trae la bandeja, los pasos y los asignados de las órdenes no cerradas; el 13 las pautas pendientes con los items y opciones de sus versiones. La app los guarda en SQLite y la bandeja, la ficha de la OT, las pautas y la plantilla se abren desde ahí sin señal.",
+  "ok": true,
+  "capturas": [
+   "hu150_1_sw_manifiesto.png",
+   "hu150_1_sw_bloque_ordenes.png",
+   "hu150_1_sw_bloque_checklists.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 2,
+  "titulo": "Sincronización incremental",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /sincronizacion/4?desde=2026-09-14T00:00:00Z (activos modificados desde la marca).",
+  "esperado": "Solo se descarga lo modificado desde la última marca.",
+  "obtenido": "HTTP 200: el bloque de activos trae 5 fila(s) (las modificadas desde el 14-09) en vez de los 20 activos completos. La marca la entrega el servidor (servidor_fecha_utc) y la app la guarda como «desde» solo cuando ningún bloque falló.",
+  "ok": true,
+  "capturas": [
+   "hu150_2_sw_incremental.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 3,
+  "titulo": "Sincronización interrumpida",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /sincronizacion/99 (un bloque que falla) en medio de una corrida.",
+  "esperado": "Al reintentar continúa desde donde quedó y los datos ya descargados permanecen utilizables.",
+  "obtenido": "HTTP 400: el servidor rechaza solo ese bloque ({\n  \"codigo\": 400,\n  \"mensaje\": \"El bloque pedido no existe. Consulta GET /sincronizacion.\",\n  \"esDe). La app descarga bloque por bloque y guarda cada uno en disco al llegar (SincronizacionProvider): un bloque fallido queda marcado y los anteriores siguen usables; la marca de corte no se guarda hasta que todos lleguen, así que el reintento repite solo lo que falló.",
+  "ok": true,
+  "capturas": [
+   "hu150_3_sw_bloque_inexistente.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:43"
  }
 ]

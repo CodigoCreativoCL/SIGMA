@@ -1,0 +1,770 @@
+﻿USE [db_acd593_sigma]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- AUTHOR:          BRYAN CHAVEZ
+-- FECHA CREACION:  16-09-2026
+-- DESCRIPTION:     MIS ORDENES ABIERTAS Y LAS PAUTAS PENDIENTES CON SUS
+--                  PLANTILLAS BAJAN CON LA SABANA (HU-150 #1).
+-- =============================================
+-- El criterio dice «catalogos, mis activos, mis ordenes abiertas y las
+-- plantillas publicadas». Los dos primeros bajaban desde el bloque 140; las
+-- ordenes y las pautas se pedian por red en cada apertura, asi que sin senal
+-- el tecnico no tenia ni la bandeja ni los pasos, y no podia abrir una pauta.
+--
+-- Bloques 12 (ORDENES_ABIERTAS: bandeja, pasos, asignados) y 13 (CHECKLISTS:
+-- pendientes, items y opciones de sus versiones). Mismo mecanismo que 190,
+-- 192, 208 y 232: el SP completo. BLOQUE_MAXIMO sube a 13.
+-- =============================================
+SET NOCOUNT ON
+GO
+
+CREATE OR ALTER PROCEDURE [dbo].[API_SEL_APP_SABANA_DATOS]
+     @USUARIO      INT
+    ,@CLIENTE      INT
+    ,@TIPO         INT      = 0
+    ,@DESDE        DATETIME = NULL   -- NULL = carga completa
+    ,@INSTALACION  INT      = NULL   -- NULL = todas las autorizadas
+AS
+SET NOCOUNT ON
+
+BEGIN
+
+    /* Las plantas que esta persona puede ver. Se resuelve UNA vez y los
+       bloques la usan: repetir el encadenado en cada uno es repetir la regla
+       de seguridad siete veces, y la septima es la que sale mal. */
+    DECLARE @PLANTAS TABLE (CIN_ID INT PRIMARY KEY)
+
+    INSERT  @PLANTAS (CIN_ID)
+    SELECT  DISTINCT CIN.cin_id
+    FROM    [dbo].[Cliente_Instalacion] CIN
+    JOIN    [dbo].[Cliente_Instalacion_Usuario] CIU
+            ON  CIU.ciu_id_instalacion = CIN.cin_id
+            AND CIU.ciu_id_usuario     = @USUARIO
+            AND ISNULL(CIU.ciu_habilitado, 0) = 1
+    WHERE   CIN.cin_cliente    = @CLIENTE
+    AND     CIN.cin_habilitado = 1
+    AND     (@INSTALACION IS NULL OR CIN.cin_id = @INSTALACION)
+
+
+    -- =========================================================
+    -- 0 � MANIFIESTO
+    --
+    -- Cuantas filas tiene cada bloque, para que la app dibuje una barra de
+    -- progreso REAL en vez de una animacion indefinida, y sepa que pedir.
+    -- =========================================================
+    IF (@TIPO = 0)
+    BEGIN
+        SELECT  1 AS BLOQUE, 'ORGANIZACION' AS CODIGO, 'Organizacion y plantas' AS NOMBRE,
+                (SELECT COUNT(*) FROM @PLANTAS) AS FILAS
+        UNION ALL
+        SELECT  2, 'AREAS', 'Areas de planta',
+                (SELECT COUNT(*) FROM [dbo].[Instalacion_Area] IAR
+                  JOIN @PLANTAS P ON P.CIN_ID = IAR.iar_cliente_instalacion
+                 WHERE IAR.iar_habilitado = 1)
+        UNION ALL
+        SELECT  3, 'CATALOGOS', 'Catalogos y sus valores',
+                /* Las cabeceras MAS los valores: el bloque baja los dos
+                   resultados y la barra de progreso cuenta filas guardadas, no
+                   cabeceras. Contando solo las cabeceras el bloque se pasaba
+                   del 100 %. Los valores no se pueden contar sin recorrer las
+                   81 tablas, asi que se estima a 8 por catalogo: el manifiesto
+                   dimensiona la barra, no cuadra un inventario. */
+                (SELECT COUNT(*) * 9 FROM [dbo].[Catalogo] WHERE ctl_habilitado = 1)
+        UNION ALL
+        SELECT  4, 'ACTIVOS', 'Activos de planta',
+                (SELECT COUNT(*) FROM [dbo].[Activo] ACT
+                  JOIN @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+                 WHERE ACT.act_habilitado = 1)
+        UNION ALL
+        SELECT  5, 'MEDICION', 'Medidores y variables',
+                (SELECT COUNT(*) FROM [dbo].[Activo_Medidor] AME
+                  JOIN [dbo].[Activo] ACT ON ACT.act_id = AME.ame_activo
+                  JOIN @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+                 WHERE AME.ame_habilitado = 1)
+        UNION ALL
+        SELECT  6, 'INVENTARIO', 'Repuestos y bodegas',
+                (SELECT COUNT(*) FROM [dbo].[Repuesto]
+                  WHERE rep_cliente = @CLIENTE AND rep_habilitado = 1)
+        UNION ALL
+        SELECT  7, 'EXISTENCIAS', 'Existencias',
+                (SELECT COUNT(*) FROM [dbo].[Inventario_Saldo] ISA
+                  JOIN [dbo].[Bodega] BOD ON BOD.bod_id = ISA.isa_bodega
+                  JOIN @PLANTAS P ON P.CIN_ID = BOD.bod_cliente_instalacion)
+        UNION ALL
+        SELECT  8, 'PERMISOS_TRABAJO', 'Tipos y estados de permiso',
+                (SELECT COUNT(*) FROM [dbo].[Permiso_Trabajo_Tipo] WHERE ptt_habilitado = 1)
+        UNION ALL
+        SELECT  9, 'ORDENES_TRABAJO', 'Motivos de cierre de OT',
+                (SELECT COUNT(*) FROM [dbo].[Orden_Trabajo_Cierre_Motivo] WHERE ocm_habilitado = 1)
+        UNION ALL
+        SELECT  10, 'TAREAS', 'Tareas asignadas',
+                /* Sin filtrar por estado: el numero dimensiona la barra de
+                   progreso, no cuadra un inventario, y repetir aca el filtro de
+                   API_SEL_TAREA seria una segunda copia que un dia difiere. */
+                (SELECT COUNT(*) FROM [dbo].[Tarea_Ocurrencia] TOC
+                  JOIN [dbo].[Tarea] TAR ON TAR.tar_id = TOC.toc_tarea
+                  JOIN @PLANTAS P ON P.CIN_ID = TAR.tar_cliente_instalacion
+                 WHERE ISNULL(TOC.toc_habilitado, 1) = 1)
+
+        UNION ALL
+        SELECT  11, 'POSICIONES', 'Posiciones funcionales',
+                (SELECT COUNT(*) FROM [dbo].[Activo_Posicion] APO
+                  JOIN @PLANTAS P ON P.CIN_ID = APO.apo_cliente_instalacion
+                 WHERE APO.apo_habilitado = 1)
+
+        UNION ALL
+        SELECT  12, 'ORDENES_ABIERTAS', 'Mis ordenes de trabajo',
+                (SELECT COUNT(*) FROM [dbo].[Orden_Trabajo] OTR
+                  JOIN @PLANTAS P ON P.CIN_ID = OTR.otr_cliente_instalacion
+                 WHERE OTR.otr_habilitado = 1 AND OTR.otr_orden_trabajo_estado <> 4)
+        UNION ALL
+        SELECT  13, 'CHECKLISTS', 'Pautas pendientes y sus plantillas',
+                (SELECT COUNT(*) FROM [dbo].[Checklist_Ocurrencia] COC
+                  JOIN [dbo].[Activo] ACT ON ACT.act_id = COC.coc_activo
+                  JOIN @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+                 WHERE COC.coc_habilitado = 1)
+
+        ORDER BY BLOQUE
+
+        /* La hora del servidor. La app la guarda como @DESDE de la proxima
+           vez: usar su propio reloj haria que un telefono desajustado se
+           saltara registros para siempre. */
+        SELECT GETUTCDATE() AS SERVIDOR_FECHA_UTC
+    END
+
+
+    -- =========================================================
+    -- 1 � ORGANIZACION: cliente y sus plantas
+    -- =========================================================
+    IF (@TIPO = 1)
+    BEGIN
+        SELECT  CLI.cli_id            AS CLI_ID
+               ,CLI.cli_nombre        AS CLI_NOMBRE
+               ,CIN.cin_id            AS CIN_ID
+               ,CIN.cin_codigo        AS CIN_CODIGO
+               ,CIN.cin_nombre        AS CIN_NOMBRE
+               ,CIN.cin_direccion     AS CIN_DIRECCION
+               ,CIN.cin_zona_horaria  AS CIN_ZONA_HORARIA
+        FROM    [dbo].[Cliente_Instalacion] CIN
+        JOIN    @PLANTAS P ON P.CIN_ID = CIN.cin_id
+        JOIN    [dbo].[Cliente] CLI ON CLI.cli_id = CIN.cin_cliente
+        ORDER BY CIN.cin_nombre
+    END
+
+
+    -- =========================================================
+    -- 2 � AREAS de cada planta
+    -- =========================================================
+    IF (@TIPO = 2)
+    BEGIN
+        SELECT  IAR.iar_id                  AS IAR_ID
+               ,IAR.iar_cliente_instalacion AS IAR_CLIENTE_INSTALACION
+               ,IAR.iar_area_padre          AS IAR_AREA_PADRE
+               ,IAR.iar_codigo              AS IAR_CODIGO
+               ,IAR.iar_nombre              AS IAR_NOMBRE
+        FROM    [dbo].[Instalacion_Area] IAR
+        JOIN    @PLANTAS P ON P.CIN_ID = IAR.iar_cliente_instalacion
+        WHERE   IAR.iar_habilitado = 1
+        ORDER BY IAR.iar_cliente_instalacion, IAR.iar_nombre
+    END
+
+
+    -- =========================================================
+    -- 3 � CATALOGOS y sus valores
+    --
+    -- Van juntos en un solo resultado: son el combo de media app y pedirlos
+    -- por separado obliga a la app a cruzar dos listas.
+    -- =========================================================
+    IF (@TIPO = 3)
+    BEGIN
+        SELECT  CTL.ctl_id      AS CTL_ID
+               ,CTL.ctl_codigo  AS CTL_CODIGO
+               ,CTL.ctl_nombre  AS CTL_NOMBRE
+               ,CTL.ctl_modulo  AS CTL_MODULO
+        FROM    [dbo].[Catalogo] CTL
+        WHERE   CTL.ctl_habilitado = 1
+        ORDER BY CTL.ctl_codigo
+
+        /* -----------------------------------------------------------------
+           SEGUNDO RESULTADO: LOS VALORES DE TODOS LOS CATALOGOS
+
+           Sin esto la app bajaba las CABECERAS de los catalogos y ningun
+           valor, asi que toda hoja con chips de catalogo se quedaba vacia sin
+           senal: el selector de estado del activo (HU-038) y la severidad de
+           la bitacora no ofrecian ninguna opcion, y esas dos SI bloquean.
+
+           POR QUE ES SQL DINAMICO
+             Los valores no viven en una tabla: viven en las 81 que declara
+             `Catalogo.ctl_tabla`, cada una con su prefijo. Es el mismo
+             enfoque de `SEL_CATALOGO_VALOR`, que resuelve UN catalogo; aca se
+             recorren todos y se unen.
+
+           POR QUE BAJAN TODOS Y NO SOLO LOS TRES QUE HOY SE USAN
+             Son unos cientos de filas contra los veinte activos que ya baja el
+             bloque 4. Traer solo los tres de hoy obliga a tocar este SP �y a
+             publicar la app� cada vez que una pantalla nueva use un catalogo,
+             que es justo el acoplamiento que la sabana existe para evitar.
+
+           LAS COLUMNAS OPCIONALES SE MIRAN EN sys.columns
+             No todo catalogo tiene `_orden` ni `_cliente`. Igual que en
+             SEL_CATALOGO_VALOR, si no estan se devuelve NULL en su lugar en
+             vez de fallar.
+           ----------------------------------------------------------------- */
+        DECLARE @CAT TABLE (ID INT IDENTITY(1,1) PRIMARY KEY,
+                            CODIGO NVARCHAR(100),
+                            TABLA  NVARCHAR(128),
+                            PFX    NVARCHAR(10))
+
+        INSERT  @CAT (CODIGO, TABLA, PFX)
+        SELECT  ctl_codigo, ctl_tabla, ctl_prefijo
+        FROM    [dbo].[Catalogo]
+        WHERE   ctl_habilitado = 1
+        AND     ISNULL(ctl_tabla, '') <> ''
+        AND     ISNULL(ctl_prefijo, '') <> ''
+        ORDER BY ctl_codigo
+
+        DECLARE @I INT = 1, @N INT = (SELECT COUNT(*) FROM @CAT)
+        DECLARE @SQL NVARCHAR(MAX) = N''
+
+        WHILE (@I <= @N)
+        BEGIN
+            DECLARE @CODIGO NVARCHAR(100), @TABLA NVARCHAR(128), @PFX NVARCHAR(10)
+
+            SELECT  @CODIGO = CODIGO, @TABLA = TABLA, @PFX = PFX
+            FROM    @CAT WHERE ID = @I
+
+            DECLARE @OBJ INT = OBJECT_ID(N'[dbo].' + QUOTENAME(@TABLA))
+
+            /* La tabla registrada tiene que existir de verdad, y con sus tres
+               columnas obligatorias: un catalogo mal registrado no puede
+               tumbar la sincronizacion entera del bloque. */
+            IF (@OBJ IS NOT NULL
+                AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_id')
+                AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_codigo')
+                AND EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_nombre'))
+            BEGIN
+                DECLARE @COL_ORDEN NVARCHAR(200) = N'CAST(NULL AS INT)'
+                DECLARE @DONDE     NVARCHAR(400) = N''
+
+                IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_orden')
+                    SET @COL_ORDEN = QUOTENAME(@PFX + '_orden')
+
+                IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_habilitado')
+                    SET @DONDE = N' AND ' + QUOTENAME(@PFX + '_habilitado') + N' = 1'
+
+                /* Los propios del cliente van junto a los del sistema, igual
+                   que en la web: HU-021 escenario 1. */
+                IF EXISTS (SELECT 1 FROM sys.columns WHERE object_id = @OBJ AND name = @PFX + '_cliente')
+                    SET @DONDE = @DONDE + N' AND (' + QUOTENAME(@PFX + '_cliente')
+                               + N' IS NULL OR ' + QUOTENAME(@PFX + '_cliente') + N' = @P_CLIENTE)'
+
+                SET @SQL = @SQL
+                    + CASE WHEN @SQL = N'' THEN N'' ELSE N' UNION ALL ' END
+                    + N'SELECT ' + QUOTENAME(@CODIGO, '''') + N' AS CATALOGO_CODIGO'
+                    + N',' + QUOTENAME(@PFX + '_id')     + N' AS VALOR_ID'
+                    + N',' + QUOTENAME(@PFX + '_codigo') + N' AS VALOR_CODIGO'
+                    + N',' + QUOTENAME(@PFX + '_nombre') + N' AS VALOR_NOMBRE'
+                    + N',' + @COL_ORDEN                  + N' AS VALOR_ORDEN'
+                    + N' FROM [dbo].' + QUOTENAME(@TABLA)
+                    + N' WHERE 1 = 1' + @DONDE
+
+                SET @COL_ORDEN = N'CAST(NULL AS INT)'
+                SET @DONDE     = N''
+            END
+
+            SET @I = @I + 1
+        END
+
+        IF (@SQL <> N'')
+        BEGIN
+            /* El ORDER BY va afuera: SQLite no conserva el orden de insercion
+               y los chips saldrian barajados. */
+            SET @SQL = N'SELECT * FROM (' + @SQL + N') V'
+                     + N' ORDER BY V.CATALOGO_CODIGO, ISNULL(V.VALOR_ORDEN, 9999), V.VALOR_NOMBRE'
+
+            EXEC sp_executesql @SQL, N'@P_CLIENTE INT', @P_CLIENTE = @CLIENTE
+        END
+        ELSE
+            /* Ni un catalogo utilizable: se devuelve el resultado VACIO igual,
+               porque la app cuenta los resultados para decidir con que nombre
+               guarda cada uno. Sin esta fila fantasma el bloque pasaria de dos
+               resultados a uno y las cabeceras cambiarian de entidad. */
+            SELECT TOP 0
+                   CAST(NULL AS NVARCHAR(100)) AS CATALOGO_CODIGO
+                  ,CAST(NULL AS INT)           AS VALOR_ID
+                  ,CAST(NULL AS NVARCHAR(200)) AS VALOR_CODIGO
+                  ,CAST(NULL AS NVARCHAR(200)) AS VALOR_NOMBRE
+                  ,CAST(NULL AS INT)           AS VALOR_ORDEN
+    END
+
+
+
+    -- =========================================================
+    -- 4 � ACTIVOS
+    --
+    -- El bloque grande. Con @DESDE la app pide solo lo que cambio: la
+    -- auditoria de la tabla es lo que lo hace posible.
+    -- =========================================================
+    IF (@TIPO = 4)
+    BEGIN
+        SELECT  ACT.act_id                  AS ACT_ID
+               ,ACT.act_codigo              AS ACT_CODIGO
+               ,ACT.act_nombre              AS ACT_NOMBRE
+               ,ACT.act_cliente_instalacion AS ACT_CLIENTE_INSTALACION
+               ,ACT.act_instalacion_area    AS ACT_INSTALACION_AREA
+               ,ACT.act_activo_posicion     AS ACT_ACTIVO_POSICION
+               ,ACT.act_activo_tipo         AS ACT_ACTIVO_TIPO
+               ,ACT.act_activo_modelo       AS ACT_ACTIVO_MODELO
+               ,ACT.act_activo_estado       AS ACT_ACTIVO_ESTADO
+               ,ACT.act_criticidad_nivel    AS ACT_CRITICIDAD_NIVEL
+               ,ACT.act_numero_serie        AS ACT_NUMERO_SERIE
+               ,ACT.act_fabricante          AS ACT_FABRICANTE
+
+               /* Resueltos aca y no en la app: son los que se muestran en la
+                  ficha, y hacer que el telefono cruce cinco catalogos para
+                  pintar una pantalla es trabajo que el servidor ya hizo. */
+               ,ATI.ati_nombre              AS TIPO_NOMBRE
+               ,AMO.amo_nombre              AS MODELO_NOMBRE
+               ,AES.aes_nombre              AS ESTADO_NOMBRE
+               ,AES.aes_codigo              AS ESTADO_CODIGO
+               ,CRN.crn_nombre              AS CRITICIDAD_NOMBRE
+               ,IAR.iar_nombre              AS AREA_NOMBRE
+               ,APO.apo_codigo              AS POSICION_CODIGO
+               ,CIN.cin_nombre              AS PLANTA_NOMBRE
+
+               ,ACT.act_fecha_actualizacion AS ACT_FECHA_ACTUALIZACION
+        FROM    [dbo].[Activo] ACT
+        JOIN    @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+        JOIN    [dbo].[Cliente_Instalacion] CIN ON CIN.cin_id = ACT.act_cliente_instalacion
+        LEFT JOIN [dbo].[Activo_Tipo]        ATI ON ATI.ati_id = ACT.act_activo_tipo
+        LEFT JOIN [dbo].[Activo_Modelo]      AMO ON AMO.amo_id = ACT.act_activo_modelo
+        LEFT JOIN [dbo].[Activo_Estado]      AES ON AES.aes_id = ACT.act_activo_estado
+        LEFT JOIN [dbo].[Criticidad_Nivel]   CRN ON CRN.crn_id = ACT.act_criticidad_nivel
+        LEFT JOIN [dbo].[Instalacion_Area]   IAR ON IAR.iar_id = ACT.act_instalacion_area
+        LEFT JOIN [dbo].[Activo_Posicion]    APO ON APO.apo_id = ACT.act_activo_posicion
+        WHERE   ACT.act_habilitado = 1
+        AND     (@DESDE IS NULL
+                 OR ISNULL(ACT.act_fecha_actualizacion, ACT.act_fecha_creacion) > @DESDE)
+        ORDER BY ACT.act_codigo
+    END
+
+
+    -- =========================================================
+    -- 5 � MEDIDORES Y VARIABLES
+    --
+    -- Lo que la app necesita para capturar en terreno: que medidor tiene cada
+    -- activo, en que unidad, y cual fue su ultimo valor.
+    --
+    -- NO HAY SENSORES. Todo valor lo escribe una persona en su ronda, asi que
+    -- `ame_valor_actual` es la ULTIMA LECTURA REGISTRADA, no una se�al en
+    -- vivo. La app lo muestra con su fecha y con quien la tomo.
+    -- =========================================================
+    IF (@TIPO = 5)
+    BEGIN
+        -- Medidores
+        SELECT  AME.ame_id                      AS AME_ID
+               ,AME.ame_activo                  AS AME_ACTIVO
+               ,AME.ame_codigo                  AS AME_CODIGO
+               ,AME.ame_nombre                  AS AME_NOMBRE
+               ,AME.ame_unidad_medida           AS AME_UNIDAD_MEDIDA
+               ,UME.ume_simbolo                 AS UNIDAD_SIMBOLO
+               ,AME.ame_valor_actual            AS AME_VALOR_ACTUAL
+               ,AME.ame_fecha_valor_actual_utc  AS AME_FECHA_VALOR_ACTUAL_UTC
+               ,AME.ame_permite_reinicio        AS AME_PERMITE_REINICIO
+               ,ACT.act_codigo                  AS ACTIVO_CODIGO
+               ,ACT.act_nombre                  AS ACTIVO_NOMBRE
+        FROM    [dbo].[Activo_Medidor] AME
+        JOIN    [dbo].[Activo] ACT ON ACT.act_id = AME.ame_activo AND ACT.act_habilitado = 1
+        JOIN    @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+        LEFT JOIN [dbo].[Unidad_Medida] UME ON UME.ume_id = AME.ame_unidad_medida
+        WHERE   AME.ame_habilitado = 1
+        ORDER BY ACT.act_codigo, AME.ame_codigo
+
+        -- Variables de condicion, con sus umbrales
+        SELECT  AVA.ava_id                AS AVA_ID
+               ,AVA.ava_activo            AS AVA_ACTIVO
+               ,AVA.ava_variable_medicion AS AVA_VARIABLE_MEDICION
+               ,VME.vme_codigo            AS VARIABLE_CODIGO
+               ,VME.vme_nombre            AS VARIABLE_NOMBRE
+               ,AVA.ava_unidad_medida     AS AVA_UNIDAD_MEDIDA
+               ,UME.ume_simbolo           AS UNIDAD_SIMBOLO
+               ,AVA.ava_valor_minimo      AS AVA_VALOR_MINIMO
+               ,AVA.ava_valor_maximo      AS AVA_VALOR_MAXIMO
+               ,AVA.ava_valor_advertencia AS AVA_VALOR_ADVERTENCIA
+               ,AVA.ava_valor_critico     AS AVA_VALOR_CRITICO
+        FROM    [dbo].[Activo_Variable] AVA
+        JOIN    [dbo].[Activo] ACT ON ACT.act_id = AVA.ava_activo AND ACT.act_habilitado = 1
+        JOIN    @PLANTAS P ON P.CIN_ID = ACT.act_cliente_instalacion
+        LEFT JOIN [dbo].[Variable_Medicion] VME ON VME.vme_id = AVA.ava_variable_medicion
+        LEFT JOIN [dbo].[Unidad_Medida] UME ON UME.ume_id = AVA.ava_unidad_medida
+        WHERE   AVA.ava_habilitado = 1
+        ORDER BY ACT.act_codigo, VME.vme_nombre
+    END
+
+
+    -- =========================================================
+    -- 6 � INVENTARIO: repuestos, bodegas y ubicaciones
+    -- =========================================================
+    IF (@TIPO = 6)
+    BEGIN
+        -- Repuestos
+        SELECT  REP.rep_id             AS REP_ID
+               ,REP.rep_codigo         AS REP_CODIGO
+               ,REP.rep_nombre         AS REP_NOMBRE
+               ,REP.rep_fabricante     AS REP_FABRICANTE
+               ,REP.rep_modelo         AS REP_MODELO
+               ,REP.rep_unidad_medida  AS REP_UNIDAD_MEDIDA
+               ,UME.ume_simbolo        AS UNIDAD_SIMBOLO
+               ,REP.rep_controla_lote  AS REP_CONTROLA_LOTE
+        FROM    [dbo].[Repuesto] REP
+        LEFT JOIN [dbo].[Unidad_Medida] UME ON UME.ume_id = REP.rep_unidad_medida
+        WHERE   REP.rep_cliente    = @CLIENTE
+        AND     REP.rep_habilitado = 1
+        ORDER BY REP.rep_codigo
+
+        -- Bodegas
+        SELECT  BOD.bod_id                  AS BOD_ID
+               ,BOD.bod_codigo              AS BOD_CODIGO
+               ,BOD.bod_nombre              AS BOD_NOMBRE
+               ,BOD.bod_cliente_instalacion AS BOD_CLIENTE_INSTALACION
+        FROM    [dbo].[Bodega] BOD
+        JOIN    @PLANTAS P ON P.CIN_ID = BOD.bod_cliente_instalacion
+        WHERE   BOD.bod_habilitado = 1
+        ORDER BY BOD.bod_nombre
+
+        -- Ubicaciones
+        SELECT  BUB.bub_id     AS BUB_ID
+               ,BUB.bub_bodega AS BUB_BODEGA
+               ,BUB.bub_codigo AS BUB_CODIGO
+               ,BUB.bub_nombre AS BUB_NOMBRE
+        FROM    [dbo].[Bodega_Ubicacion] BUB
+        JOIN    [dbo].[Bodega] BOD ON BOD.bod_id = BUB.bub_bodega
+        JOIN    @PLANTAS P ON P.CIN_ID = BOD.bod_cliente_instalacion
+        WHERE   BUB.bub_habilitado = 1
+        ORDER BY BUB.bub_bodega, BUB.bub_codigo
+
+        -- Tipos de movimiento: sin esto la app no sabe que puede hacer
+        /* El signo NO esta en esta tabla: `imo_cantidad` siempre es
+           positiva y el sentido lo resuelve el SP de movimientos segun el
+           tipo. La app solo necesita saber que tipos existen. */
+        SELECT  IMT.imt_id     AS IMT_ID
+               ,IMT.imt_codigo AS IMT_CODIGO
+               ,IMT.imt_nombre AS IMT_NOMBRE
+               ,IMT.imt_orden  AS IMT_ORDEN
+        FROM    [dbo].[Inventario_Movimiento_Tipo] IMT
+        WHERE   IMT.imt_habilitado = 1
+        ORDER BY IMT.imt_orden, IMT.imt_id
+    END
+
+
+    -- =========================================================
+    -- 7 � EXISTENCIAS
+    --
+    -- El bloque que NO conviene cachear como los demas: es el dato que no
+    -- puede estar viejo. Baja igual �sin se�al es mejor un saldo de hace una
+    -- hora que ninguno� pero viaja `isa_fecha_ultimo_movimiento` para que la
+    -- app pueda decir DE CUANDO es lo que muestra (HU-056 CA2).
+    -- =========================================================
+    IF (@TIPO = 7)
+    BEGIN
+        SELECT  ISA.isa_id                       AS ISA_ID
+               ,ISA.isa_repuesto                 AS ISA_REPUESTO
+               ,ISA.isa_bodega                   AS ISA_BODEGA
+               ,ISA.isa_cantidad                 AS ISA_CANTIDAD
+               ,ISA.isa_cantidad_reservada       AS ISA_CANTIDAD_RESERVADA
+               ,ISA.isa_cantidad - ISNULL(ISA.isa_cantidad_reservada, 0) AS CANTIDAD_DISPONIBLE
+               ,ISA.isa_fecha_ultimo_movimiento  AS ISA_FECHA_ULTIMO_MOVIMIENTO
+               ,REP.rep_codigo                   AS REPUESTO_CODIGO
+               ,REP.rep_nombre                   AS REPUESTO_NOMBRE
+               ,UME.ume_simbolo                  AS UNIDAD_SIMBOLO
+               ,BOD.bod_nombre                   AS BODEGA_NOMBRE
+               ,CIN.cin_nombre                   AS PLANTA_NOMBRE
+               ,RBS.rbs_stock_minimo             AS RBS_STOCK_MINIMO
+               ,RBS.rbs_stock_maximo             AS RBS_STOCK_MAXIMO
+
+               /* Bajo minimo lo decide el SP, no la pantalla: asi la web y el
+                  telefono no pueden discrepar sobre que es "critico". */
+               ,CASE WHEN RBS.rbs_stock_minimo IS NOT NULL
+                      AND ISA.isa_cantidad < RBS.rbs_stock_minimo
+                     THEN 1 ELSE 0 END           AS BAJO_MINIMO
+               ,CASE WHEN RBS.rbs_stock_maximo IS NOT NULL
+                      AND ISA.isa_cantidad > RBS.rbs_stock_maximo
+                     THEN 1 ELSE 0 END           AS SOBRE_MAXIMO
+        FROM    [dbo].[Inventario_Saldo] ISA
+        JOIN    [dbo].[Bodega] BOD ON BOD.bod_id = ISA.isa_bodega
+        JOIN    @PLANTAS P ON P.CIN_ID = BOD.bod_cliente_instalacion
+        JOIN    [dbo].[Cliente_Instalacion] CIN ON CIN.cin_id = BOD.bod_cliente_instalacion
+        JOIN    [dbo].[Repuesto] REP ON REP.rep_id = ISA.isa_repuesto
+        LEFT JOIN [dbo].[Unidad_Medida] UME ON UME.ume_id = REP.rep_unidad_medida
+        LEFT JOIN [dbo].[Repuesto_Bodega_Stock] RBS
+               ON RBS.rbs_repuesto = ISA.isa_repuesto
+              AND RBS.rbs_bodega   = ISA.isa_bodega
+        ORDER BY REP.rep_codigo, BOD.bod_nombre
+    END
+
+
+    -- =========================================================
+    -- 8 � PERMISOS DE TRABAJO: tipos y estados
+    -- =========================================================
+    IF (@TIPO = 8)
+    BEGIN
+        SELECT  PTT.ptt_id     AS PTT_ID
+               ,PTT.ptt_codigo AS PTT_CODIGO
+               ,PTT.ptt_nombre AS PTT_NOMBRE
+        FROM    [dbo].[Permiso_Trabajo_Tipo] PTT
+        WHERE   PTT.ptt_habilitado = 1
+        AND     (PTT.ptt_cliente IS NULL OR PTT.ptt_cliente = @CLIENTE)
+        ORDER BY PTT.ptt_orden, PTT.ptt_id
+
+        SELECT  PTE.pte_id     AS PTE_ID
+               ,PTE.pte_codigo AS PTE_CODIGO
+               ,PTE.pte_nombre AS PTE_NOMBRE
+        FROM    [dbo].[Permiso_Trabajo_Estado] PTE
+        WHERE   PTE.pte_habilitado = 1
+        ORDER BY PTE.pte_orden, PTE.pte_id
+    END
+
+
+    -- =========================================================
+    -- 9 � ORDENES DE TRABAJO: motivos de cierre            HU-120
+    --
+    -- Bajan con la sabana y no se piden al abrir la hoja de cierre porque el
+    -- cierre es una accion de TERRENO: el supervisor la cierra donde este, y
+    -- ahi puede no haber se�al. Pidiendolos por red, sin se�al la hoja no
+    -- muestra ningun chip y no se puede cerrar -aunque el encolado si funcione
+    -- sin conexion, no se llega a el-.
+    --
+    -- No van en el bloque CATALOGOS: aquel lee Catalogo/Catalogo_Valor, el
+    -- sistema generico, y los motivos de cierre viven en su propia tabla.
+    --
+    -- Sin @DESDE: son seis filas y el incremental se las saltaria en toda
+    -- sincronizacion posterior a la primera, dejando la hoja vacia justo en el
+    -- telefono que ya venia sincronizado.
+    -- =========================================================
+    IF (@TIPO = 9)
+    BEGIN
+        SELECT  OCM.ocm_id     AS OCM_ID
+               ,OCM.ocm_codigo AS OCM_CODIGO
+               ,OCM.ocm_nombre AS OCM_NOMBRE
+               ,OCM.ocm_orden  AS OCM_ORDEN
+        FROM    [dbo].[Orden_Trabajo_Cierre_Motivo] OCM
+        WHERE   OCM.ocm_habilitado = 1
+        ORDER BY ISNULL(OCM.ocm_orden, 999), OCM.ocm_id
+    END
+
+
+    -- =========================================================
+    -- 10 - TAREAS ASIGNADAS                            HU-103, HU-104
+    --
+    -- Sin esto, el tecnico sin senal no veia NI SIQUIERA que tenia asignado:
+    -- podia caminar hasta el equipo y no saber que hacer. Responder una tarea
+    -- ya se encola, pero encolar no sirve de nada si no se puede llegar a la
+    -- pantalla.
+    --
+    -- POR QUE DELEGA EN API_SEL_TAREA EN VEZ DE REPETIR EL SELECT
+    --   Ese SP ya responde «que tareas tengo», con la foto del activo, la
+    --   estrella de favorito, la linea donde esta montado y el filtro de
+    --   plantas autorizadas. Copiarlo aca serian cien lineas duplicadas y la
+    --   garantia de que un dia la bandeja y lo que baja al telefono muestren
+    --   cosas distintas. El resultado de un EXEC fluye igual que un SELECT.
+    --
+    -- SIN @DESDE
+    --   `API_SEL_TAREA` no lo acepta, y una tarea que desaparece del
+    --   incremental por no haber cambiado dejaria la bandeja local incompleta.
+    --   Son unas pocas filas por persona: bajan enteras.
+    -- =========================================================
+    IF (@TIPO = 10)
+    BEGIN
+        EXEC [dbo].[API_SEL_TAREA]
+             @USUARIO     = @USUARIO
+            ,@CLIENTE     = @CLIENTE
+            ,@TIPO        = 1
+            ,@ID          = NULL
+            ,@INSTALACION = @INSTALACION
+    END
+
+    -- =========================================================
+    -- 11 - POSICIONES FUNCIONALES                            HU-154 #2
+    --
+    -- El QR pegado en la sala dice POS-<id>. Sin senal la app tiene que
+    -- resolverlo igual: que posicion es, en que area, y que equipo la ocupa
+    -- hoy (o que esta vacia). Con el bloque de activos solo se sabria de las
+    -- ocupadas -el activo apunta a su posicion-; las libres no aparecerian
+    -- en ninguna parte.
+    --
+    -- SIN @DESDE
+    --   La ocupacion cambia en Activo y en el historial, no en la posicion:
+    --   un incremental por apo_fecha_actualizacion no se enteraria de que el
+    --   equipo cambio. Son decenas de filas por planta: bajan enteras.
+    -- =========================================================
+    IF (@TIPO = 11)
+    BEGIN
+        SELECT  APO.apo_id                   AS APO_ID
+               ,APO.apo_codigo               AS APO_CODIGO
+               ,APO.apo_nombre               AS APO_NOMBRE
+               ,APO.apo_cliente_instalacion  AS APO_CLIENTE_INSTALACION
+               ,APO.apo_instalacion_area     AS APO_INSTALACION_AREA
+               ,APO.apo_activo_tipo          AS APO_ACTIVO_TIPO
+               ,APO.apo_critica              AS APO_CRITICA
+               ,CIN.cin_nombre               AS PLANTA_NOMBRE
+               ,IAR.iar_nombre               AS AREA_NOMBRE
+               ,ATI.ati_nombre               AS TIPO_NOMBRE
+               ,ACT.act_id                   AS ACTIVO_ID
+               ,ACT.act_codigo               AS ACTIVO_CODIGO
+               ,ACT.act_nombre               AS ACTIVO_NOMBRE
+               ,CASE WHEN ACT.act_id IS NULL THEN 1 ELSE 0 END AS LIBRE
+        FROM    [dbo].[Activo_Posicion] APO
+        JOIN    @PLANTAS P ON P.CIN_ID = APO.apo_cliente_instalacion
+        JOIN    [dbo].[Cliente_Instalacion] CIN ON CIN.cin_id = APO.apo_cliente_instalacion
+        LEFT JOIN [dbo].[Instalacion_Area]  IAR ON IAR.iar_id = APO.apo_instalacion_area
+        LEFT JOIN [dbo].[Activo_Tipo]       ATI ON ATI.ati_id = APO.apo_activo_tipo
+        LEFT JOIN [dbo].[Activo]            ACT ON ACT.act_activo_posicion = APO.apo_id
+                                               AND ACT.act_habilitado = 1 AND ACT.act_fusionado_en IS NULL
+        WHERE   APO.apo_habilitado = 1
+        ORDER BY APO.apo_codigo
+    END
+
+    -- =========================================================
+    -- 12 - MIS ORDENES DE TRABAJO ABIERTAS                     HU-150 #1
+    --
+    -- «Se descargan catalogos, mis activos, MIS ORDENES ABIERTAS y las
+    -- plantillas publicadas». La bandeja y la ficha se pedian por red en
+    -- cada apertura: sin senal no habia ni lista ni pasos.
+    --
+    -- Tres resultados: la bandeja (delegada en API_SEL_ORDEN_TRABAJO, ambito
+    -- 3 = todas mis plantas, misma foto que la pantalla), los pasos de esas
+    -- ordenes y sus asignados. Las cerradas (estado 4) no bajan: no se
+    -- trabajan en terreno. Sin @DESDE: son las abiertas de hoy, enteras.
+    -- =========================================================
+    IF (@TIPO = 12)
+    BEGIN
+        EXEC [dbo].[API_SEL_ORDEN_TRABAJO]
+             @USUARIO = @USUARIO, @CLIENTE = @CLIENTE, @TIPO = 1, @AMBITO = 3, @INSTALACION = @INSTALACION
+
+        SELECT
+             otp.[otp_id]
+            ,otp.[otp_orden_trabajo]
+            ,otp.[otp_orden]
+            ,otp.[otp_nombre]
+            ,otp.[otp_descripcion]
+            ,otp.[otp_obligatorio]
+            ,otp.[otp_resultado_paso]      AS [RESULTADO_ID]
+            ,rpa.[rpa_codigo]              AS [RESULTADO_CODIGO]
+            ,rpa.[rpa_nombre]              AS [RESULTADO_NOMBRE]
+            ,otp.[otp_resultado]           AS [OBSERVACION]
+            ,otp.[otp_usuario_ejecutor]    AS [EJECUTOR_ID]
+            ,usr.[usu_nombre]              AS [EJECUTOR_NOMBRE]
+            ,otp.[otp_fecha_ejecucion_utc]
+          FROM [dbo].[Orden_Trabajo_Paso] otp
+          JOIN [dbo].[Orden_Trabajo]      otr ON otr.[otr_id] = otp.[otp_orden_trabajo]
+          JOIN @PLANTAS                    pl ON pl.[CIN_ID] = otr.[otr_cliente_instalacion]
+          JOIN [dbo].[Resultado_Paso]     rpa ON rpa.[rpa_id] = otp.[otp_resultado_paso]
+     LEFT JOIN [dbo].[Usuario]            usr ON usr.[usu_id] = otp.[otp_usuario_ejecutor]
+         WHERE otr.[otr_cliente] = @CLIENTE
+           AND otr.[otr_habilitado] = 1
+           AND otr.[otr_orden_trabajo_estado] <> 4
+           AND otp.[otp_habilitado] = 1
+         ORDER BY otp.[otp_orden_trabajo], otp.[otp_orden], otp.[otp_id]
+
+        SELECT
+             ota.[ota_id]
+            ,ota.[ota_orden_trabajo]
+            ,ota.[ota_usuario]              AS [USUARIO_ID]
+            ,usr.[usu_nombre] + N' ' + ISNULL(usr.[usu_apellido_paterno], N'') AS [USUARIO_NOMBRE]
+            ,ota.[ota_es_responsable]
+            ,rej.[rej_nombre]               AS [ROL_NOMBRE]
+            ,ota.[ota_fecha_asignacion_utc]
+            ,ota.[ota_fecha_aceptacion_utc]
+          FROM [dbo].[Orden_Trabajo_Asignacion] ota
+          JOIN [dbo].[Orden_Trabajo]            otr ON otr.[otr_id] = ota.[ota_orden_trabajo]
+          JOIN @PLANTAS                          pl ON pl.[CIN_ID] = otr.[otr_cliente_instalacion]
+     LEFT JOIN [dbo].[Usuario]                  usr ON usr.[usu_id] = ota.[ota_usuario]
+     LEFT JOIN [dbo].[Rol_Ejecucion]            rej ON rej.[rej_id] = ota.[ota_rol_ejecucion]
+         WHERE otr.[otr_cliente] = @CLIENTE
+           AND otr.[otr_habilitado] = 1
+           AND otr.[otr_orden_trabajo_estado] <> 4
+           AND ota.[ota_habilitado] = 1
+         ORDER BY ota.[ota_orden_trabajo], ota.[ota_es_responsable] DESC, ota.[ota_id]
+    END
+
+
+    -- =========================================================
+    -- 13 - PAUTAS PENDIENTES Y SUS PLANTILLAS PUBLICADAS         HU-150 #1
+    --
+    -- Las pendientes (delegadas en API_SEL_CHECKLIST tipo 1) mas los items y
+    -- las opciones de TODAS las versiones que esas pendientes usan, con su
+    -- VERSION_ID para que el telefono arme cada plantilla. Es lo que hace
+    -- falta para abrir y responder una pauta sin senal; la respuesta ya se
+    -- encolaba (bloque 156), pero encolar no sirve si no se puede llegar a la
+    -- pantalla.
+    -- =========================================================
+    IF (@TIPO = 13)
+    BEGIN
+        EXEC [dbo].[API_SEL_CHECKLIST]
+             @USUARIO = @USUARIO, @CLIENTE = @CLIENTE, @TIPO = 1, @INSTALACION = @INSTALACION
+
+        DECLARE @VERSIONES TABLE (CPV_ID INT PRIMARY KEY)
+        INSERT @VERSIONES (CPV_ID)
+        SELECT DISTINCT coc.[coc_checklist_plantilla_version]
+          FROM [dbo].[Checklist_Ocurrencia] coc
+          JOIN [dbo].[Activo] act ON act.[act_id] = coc.[coc_activo]
+          JOIN @PLANTAS pl ON pl.[CIN_ID] = act.[act_cliente_instalacion]
+         WHERE coc.[coc_habilitado] = 1
+
+        SELECT
+             cpi.[cpi_checklist_plantilla_version] AS [VERSION_ID]
+            ,cpi.[cpi_id]
+            ,cpi.[cpi_codigo]
+            ,cpi.[cpi_texto]
+            ,cpi.[cpi_ayuda]
+            ,cpi.[cpi_orden]
+            ,cpi.[cpi_obligatorio]
+            ,cpi.[cpi_permite_comentario]
+            ,cpi.[cpi_requiere_evidencia]
+            ,cpi.[cpi_genera_medicion]
+            ,cpi.[cpi_pregunta_voz]
+            ,cpi.[cpi_checklist_item_tipo]  AS [TIPO_ID]
+            ,cit.[cit_codigo]               AS [TIPO_CODIGO]
+            ,cit.[cit_nombre]               AS [TIPO_NOMBRE]
+            ,ume.[ume_simbolo]              AS [UNIDAD_SIMBOLO]
+            ,cps.[cps_id]                   AS [SECCION_ID]
+            ,cps.[cps_nombre]               AS [SECCION_NOMBRE]
+            ,cps.[cps_orden]                AS [SECCION_ORDEN]
+            ,civ.[civ_valor_minimo]
+            ,civ.[civ_valor_maximo]
+            ,civ.[civ_mensaje]
+            ,civ.[civ_requiere_comentario_fuera_rango]
+            ,civ.[civ_genera_hallazgo]
+          FROM [dbo].[Checklist_Plantilla_Item]    cpi
+          JOIN @VERSIONES                          v   ON v.[CPV_ID] = cpi.[cpi_checklist_plantilla_version]
+          JOIN [dbo].[Checklist_Item_Tipo]         cit ON cit.[cit_id] = cpi.[cpi_checklist_item_tipo]
+     LEFT JOIN [dbo].[Checklist_Plantilla_Seccion] cps ON cps.[cps_id] = cpi.[cpi_checklist_plantilla_seccion]
+     LEFT JOIN [dbo].[Unidad_Medida]               ume ON ume.[ume_id] = cpi.[cpi_unidad_medida]
+     LEFT JOIN [dbo].[Checklist_Item_Validacion]   civ ON civ.[civ_checklist_plantilla_item] = cpi.[cpi_id]
+                                                      AND civ.[civ_habilitado] = 1
+         WHERE cpi.[cpi_habilitado] = 1
+         ORDER BY cpi.[cpi_checklist_plantilla_version], ISNULL(cps.[cps_orden], 0), cpi.[cpi_orden], cpi.[cpi_id]
+
+        SELECT
+             cpi.[cpi_checklist_plantilla_version] AS [VERSION_ID]
+            ,cio.[cio_id]
+            ,cio.[cio_checklist_plantilla_item] AS [ITEM_ID]
+            ,cio.[cio_codigo]
+            ,cio.[cio_texto]
+            ,cio.[cio_valor]
+            ,cio.[cio_orden]
+            ,cio.[cio_es_conforme]
+            ,cio.[cio_requiere_comentario]
+          FROM [dbo].[Checklist_Item_Opcion]     cio
+          JOIN [dbo].[Checklist_Plantilla_Item]  cpi ON cpi.[cpi_id] = cio.[cio_checklist_plantilla_item]
+          JOIN @VERSIONES                        v   ON v.[CPV_ID] = cpi.[cpi_checklist_plantilla_version]
+         WHERE cio.[cio_habilitado] = 1
+         ORDER BY cpi.[cpi_checklist_plantilla_version], cio.[cio_checklist_plantilla_item], cio.[cio_orden], cio.[cio_id]
+    END
+
+END
+GO

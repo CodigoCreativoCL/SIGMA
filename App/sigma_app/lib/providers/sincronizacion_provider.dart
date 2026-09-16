@@ -146,6 +146,10 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'ORDENES_TRABAJO': 'OCM_ID',
     'TAREAS': 'toc_id',
     'POSICIONES': 'APO_ID',
+    // Bloques de varios resultados: la clave nombra la del primero; los
+    // otros resultados caen al JSON entero, que igual no se repite.
+    'ORDENES_ABIERTAS': 'otr_id',
+    'CHECKLISTS': 'coc_id',
   };
 
   static const _iconos = <String, String>{
@@ -160,6 +164,8 @@ class SincronizacionNotifier extends Notifier<SincronizacionEstado> {
     'ORDENES_TRABAJO': 'assignment',
     'TAREAS': 'assignment',
     'POSICIONES': 'map',
+    'ORDENES_ABIERTAS': 'assignment',
+    'CHECKLISTS': 'assignment',
   };
 
   /// Cuándo terminó la última sincronización automática.

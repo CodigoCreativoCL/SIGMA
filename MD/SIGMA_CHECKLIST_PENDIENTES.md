@@ -1500,6 +1500,29 @@ y el uso del plan; faltaban dos cosas del criterio:
 
 ---
 
+### 10.17 · Sprint 2 · HU-150 Sincronizar los datos hacia el dispositivo (16-09-2026)
+
+La sábana (bloque 140) ya bajaba por bloques con progreso, incremental por
+`desde` y tolerante a un bloque fallido; lo que faltaba del criterio #1 eran
+**mis órdenes abiertas y las plantillas publicadas**, que se pedían por red
+en cada apertura.
+
+- **`BD/234_APP_SABANA_ORDENES_CHECKLISTS.sql`** — bloque 12
+  `ORDENES_ABIERTAS` (bandeja delegada en `API_SEL_ORDEN_TRABAJO` ámbito 3,
+  más pasos y asignados de las órdenes no cerradas) y bloque 13 `CHECKLISTS`
+  (pendientes delegadas en `API_SEL_CHECKLIST` tipo 1, más items y opciones
+  de todas las versiones que esas pendientes usan, con `VERSION_ID`).
+  `BLOQUE_MAXIMO` = 13.
+- **App** — `ordenesTrabajo()` y `ordenTrabajo(id)` se arman desde
+  `ORDENES_ABIERTAS_0/1/2` sin señal (el ámbito se aplica en local con
+  `ES_MIA` y estado); `checklistPendientes()` y `checklistPlantilla(v)`
+  desde `CHECKLISTS_0/1/2`. 129 tests.
+- Las tareas de plantilla del backlog que hablaban de `Sincronizacion_Lote`
+  y de una subida por lotes quedaron **Descartadas**: la subida es por
+  recurso, cada `POST` con su uuid (patrón 209), y no hay lote que recibir.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

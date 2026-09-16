@@ -1099,6 +1099,7 @@ $t = [System.IO.File]::ReadAllText($p)
 | 16-09-2026 | **Las posiciones bajan en la sábana (`BD/232`, bloque 11).** Sin señal, escanear `POS-`/`ACT-` se resuelve desde el teléfono con la fecha de la última sincronización (HU-154 #2). `BLOQUE_MAXIMO` = 11 |
 | 16-09-2026 | **Sprint 2 · HU-045 serie histórica de una variable.** `BD/233` (serie en la unidad de la variable con el nivel del SP, resumen, origen ORDEN TRABAJO al medir con OT) y `ActivoVariableSerie.aspx` con Highcharts: banda normal, umbrales, puntos destacados y el origen de cada dato al tocarlo. Checklist §10.15 |
 | 16-09-2026 | **Sprint 2 · HU-192 Mi suscripción.** «Qué incluye tu plan» (incluido / no incluido) y aviso «Cerca del límite» al 80 % del tope en `Renovar.aspx`. Checklist §10.16 |
+| 16-09-2026 | **Sprint 2 · HU-150 sincronización descendente completa.** `BD/234`: bloques 12 (órdenes abiertas con pasos y asignados) y 13 (pautas pendientes con items y opciones) en la sábana; la bandeja, la ficha de la OT y la plantilla de checklist abren sin señal. Checklist §10.17 |
 
 ### Cómo actualizar este documento
 

@@ -69,6 +69,16 @@ abstract final class CacheDatos {
   /// lo que hace falta para resolver un QR `POS-` sin señal (HU-154 #2).
   static const posiciones = 'POSICIONES';
 
+  /// Mis órdenes abiertas con sus pasos y asignados (bloque 12, BD/234) y
+  /// las pautas pendientes con los items y opciones de sus versiones
+  /// (bloque 13): lo que HU-150 #1 promete bajar para trabajar sin señal.
+  static const ordenesAbiertas = 'ORDENES_ABIERTAS_0';
+  static const ordenesPasos = 'ORDENES_ABIERTAS_1';
+  static const ordenesAsignados = 'ORDENES_ABIERTAS_2';
+  static const checklistsPendientes = 'CHECKLISTS_0';
+  static const checklistsItems = 'CHECKLISTS_1';
+  static const checklistsOpciones = 'CHECKLISTS_2';
+
   static final _base = BaseLocalService.instance;
 
   /// Lo guardado de una entidad, ya mapeado.

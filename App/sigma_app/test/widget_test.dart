@@ -319,5 +319,30 @@ void main() {
       // El que viene del servidor no es local.
       expect(Escaneo.fromJson(const {'tipo': 'POS', 'id': 7}).local, isFalse);
     });
+
+    test('la ficha de una orden se arma desde la sábana con pasos y asignados', () {
+      final f = OrdenTrabajoFicha.fromJson(const {
+        'orden': {
+          'otr_id': 5,
+          'otr_correlativo': 5,
+          'OT_NUMERO': 'OT-5',
+          'otr_titulo': 'Cambio de correa',
+          'ESTADO_ID': 1,
+          'PRIORIDAD_ID': 2,
+          'PASOS_TOTAL': 2,
+          'PASOS_LISTOS': 0,
+        },
+        'pasos': [
+          {'otp_id': 1, 'otp_orden_trabajo': 5, 'otp_orden': 1, 'otp_nombre': 'Detener', 'otp_obligatorio': true, 'RESULTADO_ID': 1},
+          {'otp_id': 2, 'otp_orden_trabajo': 5, 'otp_orden': 2, 'otp_nombre': 'Cambiar', 'otp_obligatorio': true, 'RESULTADO_ID': 1},
+        ],
+        'asignados': [
+          {'ota_id': 9, 'USUARIO_ID': 11, 'USUARIO_NOMBRE': 'Cristián Muñoz', 'ota_es_responsable': true},
+        ],
+      });
+      expect(f.orden.OT_NUMERO, 'OT-5');
+      expect(f.pasos.length, 2);
+      expect(f.asignados.length, 1);
+    });
   });
 }

@@ -1343,25 +1343,69 @@ class SigmaRepository {
 
   Future<List<ChecklistPendiente>> checklistPendientes({
     int? instalacion,
-  }) async {
-    final j = await _api.get(
-      ApiConstants.checklistPendientes,
-      query: {'instalacion': ?instalacion},
-    );
-    if (j is! List) return const [];
-    return j
-        .map(
-          (e) =>
-              ChecklistPendiente.fromJson((e as Map).cast<String, dynamic>()),
-        )
-        .toList();
-  }
+  }) => _conRespaldo<ChecklistPendiente>(
+    entidad: CacheDatos.checklistsPendientes,
+    desde: ChecklistPendiente.fromJson,
+    red: () async {
+      final j = await _api.get(
+        ApiConstants.checklistPendientes,
+        query: {'instalacion': ?instalacion},
+      );
+      if (j is! List) return const [];
+      return j
+          .map(
+            (e) => ChecklistPendiente.fromJson(
+              (e as Map).cast<String, dynamic>(),
+            ),
+          )
+          .toList();
+    },
+  );
 
   /// Items y opciones juntos: la app no puede pintar una seleccion sin sus
   /// opciones, y pedirlas aparte serian dos viajes para una sola pantalla.
+  /// Sin señal se arman desde la sábana (bloque 13), que trae los items y
+  /// las opciones de todas las versiones que las pautas pendientes usan.
   Future<ChecklistPlantilla> checklistPlantilla(int version) async {
-    final j = await _api.get('${ApiConstants.checklistPlantillas}/$version');
-    return ChecklistPlantilla.fromJson((j as Map).cast<String, dynamic>());
+    Future<ChecklistPlantilla?> local() async {
+      bool deLaVersion(Map<String, dynamic> f) {
+        final v = f['VERSION_ID'];
+        return v is num && v.toInt() == version;
+      }
+
+      final items = (await CacheDatos.lista<Map<String, dynamic>>(
+        CacheDatos.checklistsItems,
+        (f) => f,
+      )).where(deLaVersion).toList();
+      if (items.isEmpty) return null;
+      final opciones = (await CacheDatos.lista<Map<String, dynamic>>(
+        CacheDatos.checklistsOpciones,
+        (f) => f,
+      )).where(deLaVersion).toList();
+      return ChecklistPlantilla.fromJson({
+        'items': items,
+        'opciones': opciones,
+      });
+    }
+
+    if (!SyncService.instance.enLinea.value) {
+      final l = await local();
+      if (l != null) return l;
+      throw const ApiException(
+        'Sin conexión y esta pauta no está descargada. Sincroniza cuando '
+        'tengas señal.',
+        esDeNegocio: false,
+      );
+    }
+    try {
+      final j = await _api.get('${ApiConstants.checklistPlantillas}/$version');
+      return ChecklistPlantilla.fromJson((j as Map).cast<String, dynamic>());
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      final l = await local();
+      if (l != null) return l;
+      rethrow;
+    }
   }
 
   /// Abre o **retoma**: si ya hay un borrador propio de esa ocurrencia, el
@@ -1413,24 +1457,112 @@ class SigmaRepository {
     int? instalacion,
     DateTime? desde,
   }) async {
-    final j = await _api.get(
-      ApiConstants.ordenesTrabajo,
-      query: {
-        'ambito': ambito,
-        'instalacion': ?instalacion,
-        if (desde != null) 'desde': desde.toUtc().toIso8601String(),
-      },
-    );
-    if (j is! List) return const [];
-    return j
-        .map((e) => OrdenTrabajo.fromJson((e as Map).cast<String, dynamic>()))
-        .toList();
+    Future<List<OrdenTrabajo>> red() async {
+      final j = await _api.get(
+        ApiConstants.ordenesTrabajo,
+        query: {
+          'ambito': ambito,
+          'instalacion': ?instalacion,
+          if (desde != null) 'desde': desde.toUtc().toIso8601String(),
+        },
+      );
+      if (j is! List) return const [];
+      return j
+          .map(
+            (e) => OrdenTrabajo.fromJson((e as Map).cast<String, dynamic>()),
+          )
+          .toList();
+    }
+
+    /* HU-150 #1: sin señal la bandeja sale de la sábana (bloque 12, todas
+       mis plantas) y el ámbito se aplica acá con lo que el servidor ya
+       calculó: ES_MIA para «mías», abierta y sin responsable para
+       «disponibles». */
+    Future<List<OrdenTrabajo>> local() async {
+      final filas = await CacheDatos.lista<Map<String, dynamic>>(
+        CacheDatos.ordenesAbiertas,
+        (f) => f,
+      );
+      final salida = <OrdenTrabajo>[];
+      for (final f in filas) {
+        if (instalacion != null) {
+          final cin =
+              f['otr_cliente_instalacion'] ?? f['OTR_CLIENTE_INSTALACION'];
+          if (cin is num && cin.toInt() != instalacion) continue;
+        }
+        final o = OrdenTrabajo.fromJson(f);
+        // La bandeja del servidor (ámbito 3) trae también las cerradas; en
+        // terreno solo interesan las abiertas, que es lo que el bloque promete.
+        if (o.ESTADO_ID == 4) continue;
+        if (ambito == 1 && !o.ES_MIA) continue;
+        if (ambito == 2 && !(o.ESTADO_ID == 1 && o.RESPONSABLE_ID == null)) {
+          continue;
+        }
+        salida.add(o);
+      }
+      return salida;
+    }
+
+    if (!SyncService.instance.enLinea.value) return local();
+    try {
+      return await red();
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      final l = await local();
+      if (l.isEmpty) rethrow;
+      return l;
+    }
   }
 
-  /// La ficha con sus pasos, en un solo viaje de red.
+  /// La ficha con sus pasos, en un solo viaje de red. Sin señal se arma
+  /// desde la sábana: cabecera, pasos y asignados de las órdenes abiertas.
   Future<OrdenTrabajoFicha> ordenTrabajo(int id) async {
-    final j = await _api.get('${ApiConstants.ordenesTrabajo}/$id');
-    return OrdenTrabajoFicha.fromJson((j as Map).cast<String, dynamic>());
+    Future<OrdenTrabajoFicha?> local() async {
+      final cab = await CacheDatos.uno<Map<String, dynamic>>(
+        CacheDatos.ordenesAbiertas,
+        (f) => f,
+        'otr_id',
+        id,
+      );
+      if (cab == null) return null;
+      bool deLaOrden(Map<String, dynamic> f, String col) {
+        final v = f[col] ?? f[col.toUpperCase()];
+        return v is num && v.toInt() == id;
+      }
+
+      final pasos = (await CacheDatos.lista<Map<String, dynamic>>(
+        CacheDatos.ordenesPasos,
+        (f) => f,
+      )).where((f) => deLaOrden(f, 'otp_orden_trabajo')).toList();
+      final asignados = (await CacheDatos.lista<Map<String, dynamic>>(
+        CacheDatos.ordenesAsignados,
+        (f) => f,
+      )).where((f) => deLaOrden(f, 'ota_orden_trabajo')).toList();
+      return OrdenTrabajoFicha.fromJson({
+        'orden': cab,
+        'pasos': pasos,
+        'asignados': asignados,
+      });
+    }
+
+    if (!SyncService.instance.enLinea.value) {
+      final l = await local();
+      if (l != null) return l;
+      throw const ApiException(
+        'Sin conexión y esta orden no está descargada. Sincroniza cuando '
+        'tengas señal.',
+        esDeNegocio: false,
+      );
+    }
+    try {
+      final j = await _api.get('${ApiConstants.ordenesTrabajo}/$id');
+      return OrdenTrabajoFicha.fromJson((j as Map).cast<String, dynamic>());
+    } on ApiException catch (e) {
+      if (!e.esDeRed) rethrow;
+      final l = await local();
+      if (l != null) return l;
+      rethrow;
+    }
   }
 
   /// El alta desde terreno. **Idempotente por uuid**, que la app genera al
