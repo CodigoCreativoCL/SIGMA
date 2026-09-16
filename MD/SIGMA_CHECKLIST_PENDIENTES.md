@@ -1617,6 +1617,35 @@ T-3109, T-3227, T-3902) y T-3041 (validación con la PO).
 
 ---
 
+### 10.20 · Cambio de alcance: la app móvil se entrega en el Sprint 6 (16-09-2026)
+
+Acordado con el cliente en la **Sprint Review 1** (15-09-2026) y recogido
+por la PO: los Sprints 1–5 concentran los entregables en la **web** (la
+configuración base tiene que existir antes de poner la app en manos de los
+técnicos); la app se entrega **completa en el Sprint 6**, renombrado «App
+móvil, inteligencia y cierre».
+
+- Actas Scrum en `Fase 2/Ceremonias/`: `SIGMA_Sprint_Review_Sprint_1.docx`
+  y `SIGMA_Sprint_Retrospective_Sprint_1.docx` (Guía Scrum 2020: asistentes,
+  incremento, feedback, decisiones sobre el Product Backlog, riesgos,
+  próximos pasos; retro con qué salió bien / mal / acuerdos con dueño y
+  fecha).
+- `SIGMA_Product_Backlog_por_Sprint.xlsx`: las 22 historias de plataforma
+  App (154 pts) pasan de los Sprints 2–5 al Sprint 6 (hoja Backlog
+  completo, hojas Sprint N, Seguimiento, Plan de Sprints, Épicas).
+- Sprint Backlogs: 304 tareas Móvil (y todas las de las historias App)
+  quedan **«Movida a Sprint 6»** en S1–S5 y aparecen en S6 con su estado
+  (las adelantadas como MVP quedan Terminadas allá, con nota). Las
+  historias «Web y App» figuran en S6 con 0 pts y «solo la parte móvil».
+- Burndown: comprometidos S1 81 · S2 83 · S3 139 · S4 109 · S5 72 ·
+  **S6 301**. Ese 301 es el riesgo que quedó anotado en la Review y en el
+  acuerdo A4 de la retro: refinar el Sprint 6 (app primero; AI/dashboard/
+  importación contra ella, y lo que no quepa al Cierre).
+- Script: `_scratch/mover_app_s6.py` (idempotente por estado) y
+  `_scratch/gen_ceremonias.py`.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
