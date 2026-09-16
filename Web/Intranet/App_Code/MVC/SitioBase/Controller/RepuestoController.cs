@@ -969,6 +969,198 @@ namespace SitioBase.Controller
             Entregar(Tools.Excel.exportExcelXLSX_Bytes(datos, true), nombre);
         }
 
+        #region Vida util real (HU-058)
+
+        /// <summary>
+        /// Las instalaciones de repuesto con lo que duro cada una.
+        ///
+        /// @CLIENTE sale de la sesion y de ningun otro lado: es lo que impide
+        /// que un id de repuesto o de activo puesto a mano muestre la vida
+        /// util de las piezas de otra empresa.
+        /// </summary>
+        public List<RepuestoVidaUtil> GetVidaUtil(RepuestoVidaUtil filtro = null)
+        {
+            List<RepuestoVidaUtil> lista = new List<RepuestoVidaUtil>();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_REPUESTO_VIDA_UTIL";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                    if (filtro != null)
+                    {
+                        if (filtro.filtro_repuesto > 0)
+                            cmd.Parameters.AddWithValue("@REPUESTO", filtro.filtro_repuesto);
+                        if (filtro.filtro_activo > 0)
+                            cmd.Parameters.AddWithValue("@ACTIVO", filtro.filtro_activo);
+                        if (filtro.filtro_solo_retirados != null)
+                            cmd.Parameters.AddWithValue("@SOLO_RETIRADOS", filtro.filtro_solo_retirados);
+                        if (!string.IsNullOrEmpty(filtro.filtro))
+                            cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
+                    }
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            RepuestoVidaUtil item = new RepuestoVidaUtil();
+
+                            item.cri_id = int.Parse(dr["cri_id"].ToString());
+                            item.cri_repuesto = int.Parse(dr["cri_repuesto"].ToString());
+                            item.cri_activo_componente = int.Parse(dr["cri_activo_componente"].ToString());
+                            if (dr["cri_activo_medidor"] != DBNull.Value)
+                                item.cri_activo_medidor = int.Parse(dr["cri_activo_medidor"].ToString());
+                            item.cri_cantidad = decimal.Parse(dr["cri_cantidad"].ToString());
+                            item.cri_fecha_instalacion_utc = DateTime.Parse(dr["cri_fecha_instalacion_utc"].ToString());
+                            if (dr["cri_fecha_retiro_utc"] != DBNull.Value)
+                                item.cri_fecha_retiro_utc = DateTime.Parse(dr["cri_fecha_retiro_utc"].ToString());
+                            if (dr["cri_lectura_inicial"] != DBNull.Value)
+                                item.cri_lectura_inicial = decimal.Parse(dr["cri_lectura_inicial"].ToString());
+                            if (dr["cri_lectura_final"] != DBNull.Value)
+                                item.cri_lectura_final = decimal.Parse(dr["cri_lectura_final"].ToString());
+                            item.cri_fallo = bool.Parse(dr["cri_fallo"].ToString());
+                            item.cri_observacion = dr["cri_observacion"].ToString();
+
+                            item.fecha_instalacion = DateTime.Parse(dr["FECHA_INSTALACION"].ToString());
+                            if (dr["FECHA_RETIRO"] != DBNull.Value)
+                                item.fecha_retiro = DateTime.Parse(dr["FECHA_RETIRO"].ToString());
+
+                            item.rep_codigo = dr["rep_codigo"].ToString();
+                            item.rep_nombre = dr["rep_nombre"].ToString();
+                            if (dr["ESPERADA_HORAS"] != DBNull.Value)
+                                item.esperada_horas = decimal.Parse(dr["ESPERADA_HORAS"].ToString());
+                            if (dr["ESPERADA_DIAS"] != DBNull.Value)
+                                item.esperada_dias = int.Parse(dr["ESPERADA_DIAS"].ToString());
+
+                            item.componente_codigo = dr["COMPONENTE_CODIGO"].ToString();
+                            item.componente_nombre = dr["COMPONENTE_NOMBRE"].ToString();
+                            item.activo_id = int.Parse(dr["ACTIVO_ID"].ToString());
+                            item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
+                            item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
+                            item.medidor_nombre = dr["MEDIDOR_NOMBRE"].ToString();
+                            item.medidor_unidad = dr["MEDIDOR_UNIDAD"].ToString();
+                            item.motivo_retiro = dr["MOTIVO_RETIRO"].ToString();
+                            item.estado_final = dr["ESTADO_FINAL"].ToString();
+                            item.tecnico_nombre = dr["TECNICO_NOMBRE"].ToString();
+                            if (dr["OT_INSTALACION"] != DBNull.Value)
+                                item.ot_instalacion = int.Parse(dr["OT_INSTALACION"].ToString());
+                            if (dr["OT_RETIRO"] != DBNull.Value)
+                                item.ot_retiro = int.Parse(dr["OT_RETIRO"].ToString());
+
+                            if (dr["VIDA_UTIL_HORAS"] != DBNull.Value)
+                                item.vida_util_horas = decimal.Parse(dr["VIDA_UTIL_HORAS"].ToString());
+                            item.vida_util_dias = int.Parse(dr["VIDA_UTIL_DIAS"].ToString());
+                            item.tiene_horas = bool.Parse(dr["TIENE_HORAS"].ToString());
+                            item.instalada = bool.Parse(dr["INSTALADA"].ToString());
+
+                            if (dr["PROMEDIO_HORAS"] != DBNull.Value)
+                                item.promedio_horas = decimal.Parse(dr["PROMEDIO_HORAS"].ToString());
+                            if (dr["MINIMO_HORAS"] != DBNull.Value)
+                                item.minimo_horas = decimal.Parse(dr["MINIMO_HORAS"].ToString());
+                            if (dr["MAXIMO_HORAS"] != DBNull.Value)
+                                item.maximo_horas = decimal.Parse(dr["MAXIMO_HORAS"].ToString());
+                            if (dr["PROMEDIO_DIAS"] != DBNull.Value)
+                                item.promedio_dias = int.Parse(dr["PROMEDIO_DIAS"].ToString());
+                            if (dr["MINIMO_DIAS"] != DBNull.Value)
+                                item.minimo_dias = int.Parse(dr["MINIMO_DIAS"].ToString());
+                            if (dr["MAXIMO_DIAS"] != DBNull.Value)
+                                item.maximo_dias = int.Parse(dr["MAXIMO_DIAS"].ToString());
+                            item.instalaciones_cerradas = int.Parse(dr["INSTALACIONES_CERRADAS"].ToString());
+                            item.instalaciones_total = int.Parse(dr["INSTALACIONES_TOTAL"].ToString());
+
+                            lista.Add(item);
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    if (cmd.Connection != null) cmd.Connection.Close();
+                    cmd.Dispose();
+                    lista = null;
+                }
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Baja a Excel lo que la pantalla esta mostrando: la MISMA lista que
+        /// se pinto, no otra consulta (ver ExportarVigentes en permisos).
+        ///
+        /// Las horas van vacias cuando no hay dato, no en cero: el criterio
+        /// 2 de la historia distingue "no se anoto el horometro" de "duro
+        /// cero horas", y el archivo tiene que distinguirlo igual.
+        /// </summary>
+        public void ExportarVidaUtil(List<RepuestoVidaUtil> lista)
+        {
+            DataTable t = new DataTable();
+
+            t.Columns.Add("REPUESTO");
+            t.Columns.Add("NOMBRE");
+            t.Columns.Add("EQUIPO");
+            t.Columns.Add("COMPONENTE");
+            t.Columns.Add("INSTALADA");
+            t.Columns.Add("RETIRADA");
+            t.Columns.Add("SITUACION");
+            t.Columns.Add("LECTURA_INICIAL", typeof(decimal));
+            t.Columns.Add("LECTURA_FINAL", typeof(decimal));
+            t.Columns.Add("VIDA_UTIL_HORAS", typeof(decimal));
+            t.Columns.Add("VIDA_UTIL_DIAS", typeof(int));
+            t.Columns.Add("ESPERADA_HORAS", typeof(decimal));
+            t.Columns.Add("ESPERADA_DIAS", typeof(int));
+            t.Columns.Add("PROMEDIO_HORAS", typeof(decimal));
+            t.Columns.Add("MINIMO_HORAS", typeof(decimal));
+            t.Columns.Add("MAXIMO_HORAS", typeof(decimal));
+            t.Columns.Add("MOTIVO_RETIRO");
+            t.Columns.Add("ESTADO_FINAL");
+            t.Columns.Add("FALLO");
+            t.Columns.Add("TECNICO");
+            t.Columns.Add("OBSERVACION");
+
+            if (lista != null)
+            {
+                foreach (RepuestoVidaUtil v in lista)
+                {
+                    DataRow f = t.NewRow();
+
+                    f["REPUESTO"] = v.rep_codigo;
+                    f["NOMBRE"] = v.rep_nombre;
+                    f["EQUIPO"] = (v.activo_codigo + " " + v.activo_nombre).Trim();
+                    f["COMPONENTE"] = (v.componente_codigo + " " + v.componente_nombre).Trim();
+                    f["INSTALADA"] = v.fecha_instalacion.ToString("dd-MM-yyyy");
+                    f["RETIRADA"] = v.fecha_retiro == null ? "" : v.fecha_retiro.Value.ToString("dd-MM-yyyy");
+                    f["SITUACION"] = v.instalada ? "Instalada" : "Retirada";
+                    f["LECTURA_INICIAL"] = (object)v.cri_lectura_inicial ?? DBNull.Value;
+                    f["LECTURA_FINAL"] = (object)v.cri_lectura_final ?? DBNull.Value;
+                    f["VIDA_UTIL_HORAS"] = (object)v.vida_util_horas ?? DBNull.Value;
+                    f["VIDA_UTIL_DIAS"] = v.vida_util_dias;
+                    f["ESPERADA_HORAS"] = (object)v.esperada_horas ?? DBNull.Value;
+                    f["ESPERADA_DIAS"] = (object)v.esperada_dias ?? DBNull.Value;
+                    f["PROMEDIO_HORAS"] = (object)v.promedio_horas ?? DBNull.Value;
+                    f["MINIMO_HORAS"] = (object)v.minimo_horas ?? DBNull.Value;
+                    f["MAXIMO_HORAS"] = (object)v.maximo_horas ?? DBNull.Value;
+                    f["MOTIVO_RETIRO"] = v.motivo_retiro;
+                    f["ESTADO_FINAL"] = v.estado_final;
+                    f["FALLO"] = v.cri_fallo ? "Sí" : "No";
+                    f["TECNICO"] = v.tecnico_nombre;
+                    f["OBSERVACION"] = v.cri_observacion;
+
+                    t.Rows.Add(f);
+                }
+            }
+
+            Entregar(Tools.Excel.exportExcelXLSX_Bytes(t, true), "VIDA UTIL REPUESTOS");
+        }
+
+        #endregion
+
         private void Entregar(byte[] binario, string nombre)
         {
             string archivo = nombre + " " + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");

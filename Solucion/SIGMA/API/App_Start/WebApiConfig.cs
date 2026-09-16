@@ -18,6 +18,11 @@ namespace API
             //Api Token
             config.MessageHandlers.Add(new TokenValidationHandler());
 
+            /* Despues del token y antes del enrutado: con cliente en el
+               token y suscripcion que no permite operar, 402 (HU-151,
+               T-3007). Ver el comentario de la clase. */
+            config.MessageHandlers.Add(new SuscripcionHandler());
+
             /* RETIRADO 04-09-2026: WebApiCustomMessageHandler.
                Venía de la plantilla y reemplazaba el CUERPO de 46 códigos de
                estado por la descripción canónica del código, en inglés. Es

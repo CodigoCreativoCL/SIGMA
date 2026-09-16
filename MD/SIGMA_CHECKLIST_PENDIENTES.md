@@ -1560,6 +1560,63 @@ Descartadas** (S2: 41 casos de evidencia, 40 ✓).
 
 ---
 
+### 10.19 · Sprint 3 · HU-058, HU-065, HU-151 (servidor) y HU-077 detectores (16-09-2026)
+
+Regla de este bloque: **lo de la app no se marca en los Excel** (es el MVP
+que trabaja Bryan). Solo web, API, base, documentación y pruebas.
+
+- **HU-058 vida útil real** — el bloque 108 había dejado
+  `SEL_REPUESTO_VIDA_UTIL` y el 109 una siembra que ya no enganchaba con
+  el catálogo (0 filas). `BD/236`: el SP gana fechas en hora de Santiago,
+  la vida útil **esperada** (bloque 63) al lado de la real y los
+  correlativos de las OT; datos de prueba sobre `REP-6205` en `CMP-33-03`
+  con el horómetro `MED-33-H` (300 → 8.712 = 8.412 h; 3.388 h; una abierta;
+  una correa sin horómetro). `RepuestoVidaUtil.aspx` (Inventario › Operación,
+  permiso `VER REPUESTOS`): una tarjeta por repuesto con promedio / mínima /
+  máxima **solo de las cerradas** y el veredicto contra la esperada; grilla y
+  Excel. 3 criterios ✓.
+- **HU-065 historial del proveedor** — `SEL_PROVEEDOR_HISTORIAL` tenía un
+  defecto: el rango de fechas se aplicaba después de contar las órdenes.
+  Corregido en `BD/236` (el rango entra en la base). `ProveedorHistorial.aspx`
+  (Terceros › Proveedores, `VER PROVEEDORES`): una tarjeta **por moneda**
+  (730.000 CLP y 12,50 UF nunca se suman; «sin moneda» aparte con borde
+  punteado) + órdenes distintas; filtros proveedor / tipo / rango; enlace
+  desde el maestro. 2 criterios ✓.
+  - Lección: `sigma-calendario.js` toma como disparador de calendario
+    **todo lo pulsable dentro de `.filtroPersonalizado`** y le quita el
+    `onclick`. Un botón «Aplicar» ahí no hace postback. El rango vive en su
+    propia tarjeta, como en la serie histórica.
+- **Menú Terceros ordenado** (`BD/237`, pedido de Bryan): carpetas
+  «Proveedores» (Maestro de proveedores, Historial de servicios) y «Permisos
+  de trabajo» (Registro de permisos, Vigentes y por vencer), como Inventario.
+- **HU-151 lado servidor** — `SuscripcionHandler` en el pipeline de Web API
+  (T-3007): con cliente en el token y `PUEDE_OPERAR = 0` responde **402**
+  con el cuerpo estándar antes del controller; misma fuente de verdad que la
+  web y el login (`SEL_SUSCRIPCION_ESTADO_CLIENTE` → `FNC_SUSCRIPCION_VIGENTE`);
+  caché 60 s por cliente; registra en `Suscripcion_Bloqueo_Log` origen API una
+  vez por minuto; exentas `/sesion`, `/cliente-usuarios`, `/mi-perfil`. Probado
+  con Root en CCU (vencida): 402; Hamburgo: 200. T-3005 ya existía (la sábana);
+  T-3001/T-3004 (`Sincronizacion_Lote`) Descartadas por la misma razón que en
+  HU-150. **T-3009/T-3011 (móvil) siguen Por hacer**: son del MVP de la app.
+- **HU-077 T-3957 detectores de los otros módulos** — `BD/238`:
+  `GEN_ALERTA_OPERACION` abre y cierra (RESUELTA) por llave funcional:
+  ocurrencia vencida sin OT (ALTA a los 7 días), permiso vencido aún
+  solicitado/autorizado, variable con frecuencia sin medición, hallazgo
+  alto/crítico sin OT, activo/medidor descubierto en terreno sin revisar, y
+  horómetro próximo al disparo del plan (`Programacion_Medidor`). `Alerta`
+  gana `ale_permiso_trabajo`, `ale_activo_variable`, `ale_checklist_hallazgo`.
+  `GEN_ALERTA_DETECTAR` corre los dos detectores en el mismo turno.
+  `CK_ALE_ATENCION` exige `ale_usuario_atencion` cuando hay fecha de atención:
+  el cierre automático lo firma el usuario que disparó el detector.
+- Evidencia S3: **37 casos, 36 ✓** (`ev_s3c/d/e.py`); Word S3 regenerado.
+  Datos de prueba que quedan: instalaciones `DEMO-058-*`, servicios
+  `DEMO-F-*`, la ocurrencia 74 atrasada a propósito, y las alertas nuevas.
+
+Pendiente de Bryan en S3 después de esto: solo lo móvil (T-3009/T-3011,
+T-3109, T-3227, T-3902) y T-3041 (validación con la PO).
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

@@ -29,7 +29,7 @@ public partial class View_Terceros_Proveedores_Proveedores : System.Web.UI.Page
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();
-            Grid.AddColumn("PRV_ID", "", Width: "3%");
+            Grid.AddColumn("PRV_ID", "", Width: "5%");
             Grid.AddColumn("PRV_RUT", "RUT", Width: "13%");
             Grid.AddTemplateColumn("EMPRESA", "", "EMPRESA", Width: "30%");
             Grid.AddTemplateColumn("CONTACTO", "", "CONTACTO", Width: "24%");
@@ -102,6 +102,17 @@ public partial class View_Terceros_Proveedores_Proveedores : System.Web.UI.Page
         editar.Attributes.Add("onclick", "abrirProveedor('" + query + "')");
 
         item["PRV_ID"].Controls.Add(editar);
+
+        /* ---- El historial de servicios (HU-065) ----
+           Al lado del lapiz: quien mira la lista de contratistas quiere
+           saber cuanto se le ha contratado a cada uno, no solo editarlo. */
+        HyperLink historial = new HyperLink();
+        historial.ID = "lnkHistorial" + item.ItemIndex;
+        historial.CssClass = "icono_Editar";
+        historial.ToolTip = "Ver el historial de servicios";
+        historial.Text = "<i class=\"mdi mdi-history\"></i>";
+        historial.NavigateUrl = ResolveUrl("~/View/Terceros/Proveedores/ProveedorHistorial.aspx") + "?Proveedor=" + p.prv_id;
+        item["PRV_ID"].Controls.Add(historial);
 
         /* ---- La empresa ----
            El nombre de fantasía arriba, que es como la gente la llama, y la

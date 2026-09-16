@@ -275,6 +275,7 @@
     <Compile Include="Utils\Pagina.cs" />
     <Compile Include="Utils\Permisos.cs" />
     <Compile Include="Utils\SesionApi.cs" />
+    <Compile Include="Utils\SuscripcionHandler.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Token\AutenticacionServiceController.cs" />
     <Compile Include="Global.asax.cs">

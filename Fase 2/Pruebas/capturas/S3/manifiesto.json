@@ -357,5 +357,237 @@
   ],
   "detalle": "",
   "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 1,
+  "titulo": "Vida útil de una instalación",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Inventario › Operación › Vida útil de repuestos: fila del rodamiento REP-6205 instalado con horómetro 300 y retirado con 8.712 (OT 3 → OT 4).",
+  "esperado": "Se muestra una vida útil de 8.412 horas y además la vida útil en días calendario.",
+  "obtenido": "La fila muestra «8.412 h» con las lecturas 300 → 8.712 HORA y «522 días» (15 ene 2024 → 20 jun 2025).",
+  "ok": true,
+  "capturas": [
+   "hu058_listado.png"
+  ],
+  "detalle": "\t | REP-6205 | Rodamiento rigido de bolas 6205 | \t | ACT-33 Modeladora L1 | CMP-33-03 Rodamiento lado motor | Administrador De | \t | RETIRADA | 15 ene. 2024 → 20 jun. 2025 | OT 3 instala · OT 4 retira | \t | 8.412 h | 300 → 8.712 HORA | \t | 522 | días | \t | Desgaste | Desgaste severo",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 2,
+  "titulo": "Horómetro no registrado",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Misma pantalla: fila de la correa REP-CORREA instalada el 01-03-2025 y retirada el 01-09-2025 sin lecturas de horómetro.",
+  "esperado": "Se muestra solo la vida útil en días y se indica que el dato de horas no está disponible.",
+  "obtenido": "La fila muestra el chip «Sin horómetro · el dato de horas no está disponible» y «184 días»; la tarjeta del repuesto dice «horas no disponibles».",
+  "ok": true,
+  "capturas": [
+   "hu058_listado.png"
+  ],
+  "detalle": "\t | REP-CORREA | Correa trapecial B-58 | \t | ACT-33 Modeladora L1 | CMP-33-02 Reductor de salida | Administrador De | \t | RETIRADA | 01 mar. 2025 → 01 sept. 2025 | \t | SIN HORÓMETRO | el dato de horas no está disponible | \t | 184 | días | \t | Reemplazo preventivo | Desgaste leve",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 3,
+  "titulo": "Comparación entre instalaciones",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Filtro Repuesto = REP-6205: tres instalaciones (dos retiradas de 8.412 y 3.388 horas y una todavía puesta).",
+  "esperado": "Se muestra la duración promedio, la mínima y la máxima de las instalaciones del mismo repuesto.",
+  "obtenido": "La tarjeta del repuesto muestra Promedio 5.900 h · Mínima 3.388 h · Máxima 8.412 h sobre «2 instalaciones cerradas de 3»: la que sigue instalada no entra en el promedio.",
+  "ok": true,
+  "capturas": [
+   "hu058_3_comparacion.png"
+  ],
+  "detalle": "REP-6205 · Rodamiento rigido de bolas 6205 | 2 instalaciones cerradas de 3 | 5.900 h | 378 días | PROMEDIO | 3.388 h | 235 días | MÍNIMA | 8.412 h | 522 días | MÁXIMA",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 3,
+  "titulo": "Filtro por situación (solo instaladas)",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Filtro Situación = «Solo instaladas»: queda la pieza que sigue en el equipo.",
+  "esperado": "La lista se acota a las instalaciones abiertas y la fila dice «días y contando».",
+  "obtenido": "Queda 1 fila, marcada «Instalada» y con «En curso» en horas.",
+  "ok": true,
+  "capturas": [
+   "hu058_solo_instaladas.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Historial del proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Historial de servicios › Proveedor = Frío Sur Servicios Ltda.",
+  "esperado": "Veo las órdenes en que participó, los servicios facturados y el monto acumulado, y puedo filtrar por rango de fechas.",
+  "obtenido": "4 servicios en las OT 3, 34 y 35; tarjetas «3 órdenes de trabajo en que participó», total 730.000 CLP y 12,50 UF.",
+  "ok": true,
+  "capturas": [
+   "hu065_1_proveedor.png"
+  ],
+  "detalle": "730.000CLP | TOTAL EN PESO CHILENO · 2 SERVICIOS | 12,50UF | TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO | 90.000 | SIN MONEDA DECLARADA · 1 SERVICIO | 3 | ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Filtro por rango de fechas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mismo proveedor, rango 01-08-2025 → 31-10-2025 › Aplicar.",
+  "esperado": "Solo quedan los servicios del rango y los totales y el número de órdenes se recalculan sobre ese rango.",
+  "obtenido": "Quedan 2 servicios (alineación 280.000 CLP y contrato 12,50 UF); «DEL 01 AGO. 2025 AL 31 OCT. 2025»; las órdenes bajan a 2. Los 450.000 de junio salen del total.",
+  "ok": true,
+  "capturas": [
+   "hu065_1_rango.png"
+  ],
+  "detalle": "280.000CLP | TOTAL EN PESO CHILENO · 1 SERVICIO | 12,50UF | TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO | 2 | ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 2,
+  "titulo": "Totales por moneda",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Proveedor Frío Sur: dos servicios en pesos (450.000 + 280.000), uno en UF (12,5) y uno sin moneda declarada (90.000).",
+  "esperado": "El total se presenta separado por moneda y no se suman montos de monedas distintas.",
+  "obtenido": "Tres tarjetas: «730.000 CLP · 2 servicios», «12,50 UF · 1 servicio» y «90.000 · Sin moneda declarada» (borde punteado). No existe ningún total combinado.",
+  "ok": true,
+  "capturas": [
+   "hu065_2_monedas.png"
+  ],
+  "detalle": "730.000CLP TOTAL EN PESO CHILENO · 2 SERVICIOS || 12,50UF TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO || 90.000 SIN MONEDA DECLARADA · 1 SERVICIO || 3 ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Descargar a Excel",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Botón «Descargar a Excel» con el proveedor filtrado.",
+  "esperado": "Se descarga un .xlsx con lo mismo que muestra la pantalla, con monto y moneda en columnas separadas.",
+  "obtenido": "Se generó HISTORIAL PROVEEDOR 16-09-2026.xlsx",
+  "ok": true,
+  "capturas": [
+   "hu065_2_monedas.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Suscripción vencida: la API responde 402 antes del controller",
+  "usuario": "root",
+  "tipo": "API",
+  "pasos": "CCU (cliente 6) con suscripción VENCIDA. Sesión de Root (token con cliente 6) › GET /activos/33.",
+  "esperado": "Toda petición con cliente en el token responde 402 con el mensaje de negocio si la suscripción no permite operar; la captura queda en el teléfono.",
+  "obtenido": "HTTP 402: «La suscripción de tu empresa venció. Lo que capturaste queda guardado en el teléfono y se enviará cuando se regularice. El pago se gestiona desde la web de SIGMA por el administrador de tu empresa.». Queda registrado en Suscripcion_Bloqueo_Log con origen API.",
+  "ok": true,
+  "capturas": [
+   "hu151_api_402_activos.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Suscripción vigente: la API opera normal",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "Hamburgo (cliente 1) vigente hasta el 02-10-2026. Sesión de Rodrigo › GET /activos/33.",
+  "esperado": "La compuerta no interfiere con un cliente al día.",
+  "obtenido": "HTTP 200: activo ACT-33 devuelto.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Rutas exentas de la compuerta",
+  "usuario": "root",
+  "tipo": "API",
+  "pasos": "Con el mismo token vencido › GET /mi-perfil (exenta, igual que /sesion y /cliente-usuarios).",
+  "esperado": "La app puede cerrar sesión, ver quién es y cambiar de cliente aunque la empresa esté vencida.",
+  "obtenido": "HTTP 404 (no 402).",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Descarga para el dispositivo filtrada por usuario y planta",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Técnico Cristián › GET /sincronizacion (manifiesto) y GET /sincronizacion/{bloque}.",
+  "esperado": "El servidor entrega lo que baja al teléfono acotado a las plantas del usuario, por bloques y con conteo.",
+  "obtenido": "HTTP 200: 13 bloques (1..13) con su conteo; cada bloque se pide por separado y acepta ?desde= para bajar solo lo cambiado.",
+  "ok": true,
+  "capturas": [
+   "hu151_api_sabana_manifiesto.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:25"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "Detectores de planes, permisos, mediciones y checklists",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Alertas › «Revisar ahora» con: una ocurrencia del plan 12 días vencida sin OT, el permiso PT-2026-0001 vencido el 09-09 y aún solicitado, variables con frecuencia 24 h sin medir y un hallazgo alto de checklist sin OT.",
+  "esperado": "El sistema detecta solo los problemas de operación de los otros módulos y los muestra en la bandeja, cada uno con su severidad; una segunda pasada no duplica.",
+  "obtenido": "Bandeja con HALLAZGO CRITICO (1), MEDIDOR SIN LECTURA (10), OCURRENCIA VENCIDA (1), PERMISO VENCIDO (1). La segunda ejecución del detector devolvió 0 abiertas / 0 cerradas.",
+  "ok": true,
+  "capturas": [
+   "hu077_detectores_bandeja.png"
+  ],
+  "detalle": "HALLAZGO CRITICO|1\nOCURRENCIA VENCIDA|1\nPERMISO VENCIDO|1\nMEDIDOR SIN LECTURA|10",
+  "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "El detector no duplica ni cierra lo que sigue pasando",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "EXEC GEN_ALERTA_OPERACION @CLIENTE=1 inmediatamente después de la pasada anterior.",
+  "esperado": "Sin cambios en los datos, la pasada devuelve 0 abiertas y 0 cerradas.",
+  "obtenido": "Devolvió 0|0",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "La alerta se cierra sola cuando la condición deja de darse",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Se le asigna una orden de trabajo a la ocurrencia 74 y se vuelve a correr el detector.",
+  "esperado": "La alerta «Ocurrencia vencida» pasa a RESUELTA con el motivo automático, sin borrarse.",
+  "obtenido": "Estado: RESUELTA|La condición dejó de darse (detector automático). RESUELTA|La condición dejó de darse (detector automático).",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:35"
  }
 ]
