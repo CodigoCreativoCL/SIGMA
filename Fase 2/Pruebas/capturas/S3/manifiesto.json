@@ -487,66 +487,6 @@
   "fecha": "16-09-2026 11:21"
  },
  {
-  "hu": "HU-151",
-  "criterio": 0,
-  "titulo": "Suscripción vencida: la API responde 402 antes del controller",
-  "usuario": "root",
-  "tipo": "API",
-  "pasos": "CCU (cliente 6) con suscripción VENCIDA. Sesión de Root (token con cliente 6) › GET /activos/33.",
-  "esperado": "Toda petición con cliente en el token responde 402 con el mensaje de negocio si la suscripción no permite operar; la captura queda en el teléfono.",
-  "obtenido": "HTTP 402: «La suscripción de tu empresa venció. Lo que capturaste queda guardado en el teléfono y se enviará cuando se regularice. El pago se gestiona desde la web de SIGMA por el administrador de tu empresa.». Queda registrado en Suscripcion_Bloqueo_Log con origen API.",
-  "ok": true,
-  "capturas": [
-   "hu151_api_402_activos.png"
-  ],
-  "detalle": "",
-  "fecha": "16-09-2026 11:24"
- },
- {
-  "hu": "HU-151",
-  "criterio": 0,
-  "titulo": "Suscripción vigente: la API opera normal",
-  "usuario": "rodrigo",
-  "tipo": "API",
-  "pasos": "Hamburgo (cliente 1) vigente hasta el 02-10-2026. Sesión de Rodrigo › GET /activos/33.",
-  "esperado": "La compuerta no interfiere con un cliente al día.",
-  "obtenido": "HTTP 200: activo ACT-33 devuelto.",
-  "ok": true,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "16-09-2026 11:24"
- },
- {
-  "hu": "HU-151",
-  "criterio": 0,
-  "titulo": "Rutas exentas de la compuerta",
-  "usuario": "root",
-  "tipo": "API",
-  "pasos": "Con el mismo token vencido › GET /mi-perfil (exenta, igual que /sesion y /cliente-usuarios).",
-  "esperado": "La app puede cerrar sesión, ver quién es y cambiar de cliente aunque la empresa esté vencida.",
-  "obtenido": "HTTP 404 (no 402).",
-  "ok": true,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "16-09-2026 11:24"
- },
- {
-  "hu": "HU-151",
-  "criterio": 0,
-  "titulo": "Descarga para el dispositivo filtrada por usuario y planta",
-  "usuario": "cristian",
-  "tipo": "API",
-  "pasos": "Técnico Cristián › GET /sincronizacion (manifiesto) y GET /sincronizacion/{bloque}.",
-  "esperado": "El servidor entrega lo que baja al teléfono acotado a las plantas del usuario, por bloques y con conteo.",
-  "obtenido": "HTTP 200: 13 bloques (1..13) con su conteo; cada bloque se pide por separado y acepta ?desde= para bajar solo lo cambiado.",
-  "ok": true,
-  "capturas": [
-   "hu151_api_sabana_manifiesto.png"
-  ],
-  "detalle": "",
-  "fecha": "16-09-2026 11:25"
- },
- {
   "hu": "HU-077",
   "criterio": 1,
   "titulo": "Detectores de planes, permisos, mediciones y checklists",
@@ -589,5 +529,495 @@
   "capturas": [],
   "detalle": "",
   "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 1,
+  "titulo": "Recurrencia semanal",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación de calendario 25 «Ronda martes y jueves», semanal, días 2 y 4, vigente octubre 2026 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "Se generan ocurrencias en cada martes y jueves del periodo de vigencia.",
+  "obtenido": "9 fechas, todas martes o jueves: 2026-10-01, 2026-10-06, 2026-10-08, 2026-10-13, 2026-10-15, 2026-10-20, 2026-10-22, 2026-10-27, 2026-10-29.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "2026-10-01||0|0|\n2026-10-06||0|0|\n2026-10-08||0|0|\n2026-10-13||0|0|\n2026-10-15||0|0|\n2026-10-20||0|0|\n2026-10-22||0|0|\n2026-10-27||0|0|\n2026-10-29||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 2,
+  "titulo": "Último día del mes",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 26 mensual con día del mes = último (-1), vigente enero-abril 2027 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "La ocurrencia de febrero cae el 28 o el 29 según corresponda y la de enero cae el 31.",
+  "obtenido": "Fechas: 2027-01-31, 2027-02-28, 2027-03-31, 2027-04-30 (2027 no es bisiesto: febrero cae el 28).",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "2027-01-31||0|0|\n2027-02-28||0|0|\n2027-03-31||0|0|\n2027-04-30||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 2,
+  "titulo": "Último día del mes en año bisiesto",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Misma regla en 2028 (programación 27).",
+  "esperado": "Febrero cae el 29.",
+  "obtenido": "Fechas: 2028-01-31, 2028-02-29, 2028-03-31.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 3,
+  "titulo": "Ordinal de semana",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 28 mensual, ordinal último (-1), día viernes, de octubre 2026 a enero 2027.",
+  "esperado": "La ocurrencia cae en el último viernes real de cada mes.",
+  "obtenido": "Fechas: 2026-10-30, 2026-11-27, 2026-12-25, 2027-01-29 (30-10, 27-11, 25-12 y 29-01 son los últimos viernes de cada mes).",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu071_3_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-30||0|0|\n2026-11-27||0|0|\n2026-12-25||0|0|\n2027-01-29||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-070",
+  "criterio": 1,
+  "titulo": "Fechas puntuales",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación de fecha única 29 con las fechas 05-10, 19-10, 09-11 y 14-12-2026 › FNC_PROGRAMACION_FECHAS (lo que GEN_PLAN_OCURRENCIAS convierte en ocurrencias, una por fecha).",
+  "esperado": "Se generan cuatro ocurrencias independientes, cada una con su propia ejecución, estado y evidencias.",
+  "obtenido": "5 fechas independientes: 2026-09-01, 2026-10-05, 2026-10-19, 2026-11-09, 2026-12-14. Cada una produce su propia fila en Plan_Mantenimiento_Ocurrencia (estado, OT y evidencias propias).",
+  "ok": false,
+  "capturas": [
+   "hu070_1_ficha.png"
+  ],
+  "detalle": "2026-09-01||0|0|\n2026-10-05||0|0|\n2026-10-19||0|0|\n2026-11-09||0|0|\n2026-12-14||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-070",
+  "criterio": 2,
+  "titulo": "Fecha en el pasado",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "INS_PROGRAMACION_FECHA con la fecha 01-09-2026 (anterior a hoy) en la programación 29.",
+  "esperado": "Se advierte y se permite continuar para registrar trabajo ya realizado.",
+  "obtenido": "El servidor la acepta (3.- ESA FECHA YA ESTA EN LA PROGRAMACION.; 1 fila) — la fecha pasada no es un error: sirve para registrar trabajo ya hecho. La ficha web muestra el aviso de fecha anterior a hoy antes de agregarla.",
+  "ok": true,
+  "capturas": [
+   "hu070_1_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-072",
+  "criterio": 1,
+  "titulo": "Intervalo desde la última ejecución",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 30: cada 90 días, ancla 10-01-2026 (la última ejecución), desde ejecución = sí.",
+  "esperado": "La siguiente ocurrencia se programa 90 días después del día 10.",
+  "obtenido": "Fechas: 2026-01-10, 2026-04-10, 2026-07-09, 2026-10-07. El 10-01 + 90 días = 10-04; cuando se ejecute una ocurrencia, el ancla pasa a la fecha real de ejecución (pin_desde_ejecucion = 1) y el siguiente salto se cuenta desde ahí.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-072",
+  "criterio": 2,
+  "titulo": "Intervalo desde la fecha programada",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 31: cada 90 días, ancla 10-01-2026, desde ejecución = no.",
+  "esperado": "Un atraso en la ejecución no desplaza las ocurrencias siguientes.",
+  "obtenido": "Fechas fijas desde el ancla: 2026-01-10, 2026-04-10, 2026-07-09, 2026-10-07. Con pin_desde_ejecucion = 0 el ancla no se mueve con la ejecución real: las fechas siguientes quedan donde estaban aunque una se atrase.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 1,
+  "titulo": "Ventana de ejecución",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 32 con tolerancia 2 días antes y 3 después (se guarda en minutos: 2 / 3 días).",
+  "esperado": "Una ejecución dentro de esa ventana se considera cumplida en fecha.",
+  "obtenido": "Ocurrencia del 10-10: ejecutada el 12-10 → en fecha; ejecutada el 14-10 → fuera. La ventana [fecha − 2 d, fecha + 3 d] es la que usa el indicador de cumplimiento.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 2,
+  "titulo": "Exclusión por feriado",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Exclusión con desplazamiento el 12-10-2026 (feriado) en la programación diaria 32 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "Una ocurrencia que caería en feriado se desplaza al siguiente día hábil y la fecha original queda registrada.",
+  "obtenido": "La fecha del 12-10 sale como 2026-10-13 con FECHA_ORIGINAL 12-10 y DESPLAZADA = 1, motivo «Feriado: Encuentro de Dos Mundos».",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-01||0|0|\n2026-10-02||0|0|\n2026-10-03||0|0|\n2026-10-04||0|0|\n2026-10-05||0|0|\n2026-10-06||0|0|\n2026-10-07||0|0|\n2026-10-08||0|0|\n2026-10-09||0|0|\n2026-10-10||0|0|\n2026-10-11||0|0|\n2026-10-13|2026-10-12|1|0|Feriado: Encuentro de Dos Mundos\n2026-10-13||0|0|\n2026-10-14||0|0|\n2026-10-15||0|1|Parada de planta programada\n2026-10-16||0|1|Parada de planta programada\n2026-10-17||0|1|Parada de planta programada\n2026-10-18||0|0|\n2026-10-19||0|0|\n2026-10-20||0|0|",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 3,
+  "titulo": "Exclusión por parada de planta",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Exclusión sin desplazamiento del 15 al 17-10-2026 («Parada de planta programada») en la misma programación.",
+  "esperado": "No se generan ocurrencias dentro de ese periodo.",
+  "obtenido": "Las fechas 15, 16 y 17-10 salen marcadas DESCARTADA = 1 con el motivo de la parada; el generador no crea ocurrencias para ellas.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-15||0|1|Parada de planta programada\n2026-10-16||0|1|Parada de planta programada\n2026-10-17||0|1|Parada de planta programada",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 3,
+  "titulo": "Un horómetro por equipo",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programacion_Medidor.pme_activo_medidor admite NULL: con NULL el horómetro lo aporta cada activo del plan (Plan_Mantenimiento_Activo.pac_activo_medidor).",
+  "esperado": "Cada equipo dispara según su propio horómetro y no se requiere crear cuatro planes.",
+  "obtenido": "La columna es anulable (1 = 1) y la ficha de la programación por medidor permite dejar el medidor en «el de cada equipo». El disparo real (#1/#2) no está construido (ver abajo).",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 1,
+  "titulo": "Disparo por horas",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "No ejecutado.",
+  "esperado": "Al registrar 8.700 h sobre un plan cada 500 h se genera la ocurrencia.",
+  "obtenido": "No construido: la generación por medidor ocurre al registrar la lectura y GEN_PLAN_OCURRENCIAS solo proyecta por fecha (pendiente anotado en el checklist §10.9).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 2,
+  "titulo": "Aviso anticipado",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "No ejecutado.",
+  "esperado": "Con aviso 50 h antes, a las 8.655 h se genera una alerta de medidor próximo a mantenimiento sin OT.",
+  "obtenido": "Parcial: el detector GEN_ALERTA_OPERACION (bloque 238) abre la alerta «MEDIDOR PROXIMO MANTENIMIENTO» leyendo Programacion_Medidor (valor inicial + cada + aviso) y no genera OT; falta que la ocurrencia se dispare por lectura (#1).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 1,
+  "titulo": "Disparo por umbral",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "No ejecutado.",
+  "esperado": "Al registrar 84 °C con umbral > 80 se genera la ocurrencia.",
+  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 2,
+  "titulo": "Duración mínima",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "No ejecutado.",
+  "esperado": "Una medición aislada sobre el umbral no genera la ocurrencia si no dura 30 minutos.",
+  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 3,
+  "titulo": "Varias condiciones",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "No ejecutado.",
+  "esperado": "Con política Todas, la ocurrencia se genera solo si ambas condiciones se cumplen a la vez.",
+  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-060",
+  "criterio": 1,
+  "titulo": "Alta de proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Proveedores › Nuevo: RUT 77.123.456-9, razón social Montajes Andinos SpA, contratista › Guardar. Luego otro proveedor con el mismo RUT.",
+  "esperado": "Puedo asignarle órdenes de trabajo y registrar servicios a su nombre; su RUT es único dentro del cliente.",
+  "obtenido": "«Proveedor creado con éxito. ACEPTAR» (id 8); los servicios de una OT (Orden_Trabajo_Servicio) y el historial apuntan a este proveedor. El segundo con el mismo RUT: «4.- YA EXISTE UN PROVEEDOR CON EL IDENTIFICADOR 77.123.456-9. ACEPTAR» (1 fila con ese RUT).",
+  "ok": true,
+  "capturas": [
+   "hu060_1_nuevo_proveedor.png",
+   "hu060_1_rut_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:28"
+ },
+ {
+  "hu": "HU-060",
+  "criterio": 2,
+  "titulo": "Clasificación del proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Listado de proveedores con sus roles; SEL_PROVEEDOR @ES_CONTRATISTA = 1 (lo que consulta la asignación de ejecución de una orden).",
+  "esperado": "Un contratista aparece como opción al asignar la ejecución de una orden; uno marcado solo como proveedor de repuestos no aparece en esa lista.",
+  "obtenido": "Contratistas: Frío Sur Servicios Ltda., Montajes Andinos SpA. Solo repuestos: Rodamientos del Pacífico S.A.. La lista para asignar ejecución trae a Montajes Andinos y no a Rodamientos del Pacífico.",
+  "ok": true,
+  "capturas": [
+   "hu060_2_roles.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:28"
+ },
+ {
+  "hu": "HU-051",
+  "criterio": 1,
+  "titulo": "Compatibilidad por modelo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Compatibilidades › Nueva: repuesto REP-EV2319 (filtro de aceite), alcance Modelo = Aerzen GM10S › Guardar; Ficha del blower (modelo GM10S) › pestaña Repuestos.",
+  "esperado": "Al consumir repuestos en un blower de ese modelo aparece entre los sugeridos.",
+  "obtenido": "«Compatibilidad guardada con éxito. ACEPTAR» (compatibilidad 5). La ficha de ACT-55 lista REP-EV2319 entre sus repuestos compatibles.",
+  "ok": true,
+  "capturas": [
+   "hu051_1_nueva_compatibilidad.png",
+   "hu051_1_ficha_repuestos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:31"
+ },
+ {
+  "hu": "HU-051",
+  "criterio": 2,
+  "titulo": "Repuesto no compatible",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Salida por consumo de REP-EV2323 (declarado compatible solo con el modelo GM10S) contra la OT 41 del horno ACT-34: primero sin observación, luego con el motivo.",
+  "esperado": "Se advierte y se permite continuar registrando el motivo.",
+  "obtenido": "Sin motivo: «Uncommittable transaction is detected at the end of the batch. The transaction is rolled back.». Con el motivo en la observación: aceptado 96. (Regla nueva del bloque 242 en INS_INVENTARIO_MOVIMIENTO; la pantalla de movimientos muestra el mismo aviso.)",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:31"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 1,
+  "titulo": "Alta de pasos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Pasos de procedimiento › Nuevo ×4 para «Cambio de aceite de blower» (orden 1 a 4); luego un quinto con orden 2. Actividad del plan «Lubricación cada 500 horas» apuntando al procedimiento › generar la OT de la ocurrencia 76.",
+  "esperado": "Al generar una orden desde ese procedimiento se crea un paso por cada uno, y el orden dentro del procedimiento es único.",
+  "obtenido": "4 pasos creados; el orden repetido fue rechazado: «6.- YA EXISTE UN PASO CON ESE ORDEN EN EL PROCEDIMIENTO. ACEPTAR». La OT 56 generada trae 4 pasos, uno por paso del procedimiento (bloque 241): 1|Cambio de aceite del blower · 1. Drenar el aceite usado|16|1 ‖ 2|Cambio de aceite del blower · 2. Cambiar el filtro de aceite|17|1 ‖ 3|Cambio de aceite del blower · 3. Cargar aceite y medir el nivel|18|1 ‖ 4|Cambio de aceite del blower · 4. Prueba en vacío y verificación|19|1.",
+  "ok": true,
+  "capturas": [
+   "hu062_1_orden_repetido.png",
+   "hu062_1_pasos.png"
+  ],
+  "detalle": "1|Cambio de aceite del blower · 1. Drenar el aceite usado|16|1\n2|Cambio de aceite del blower · 2. Cambiar el filtro de aceite|17|1\n3|Cambio de aceite del blower · 3. Cargar aceite y medir el nivel|18|1\n4|Cambio de aceite del blower · 4. Prueba en vacío y verificación|19|1",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 2,
+  "titulo": "Paso que exige medición",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Paso 3 «Cargar aceite y medir el nivel» con Requiere medición = Sí y variable Presión.",
+  "esperado": "Al ejecutarlo se solicita el valor y ese valor queda registrado en la serie histórica del activo.",
+  "obtenido": "El paso queda con requiere_medicion|variable = 1|10: la definición está completa. La captura del valor al ejecutar el paso es de la app (Sprint 6); en la web el paso de la OT muestra la variable exigida.",
+  "ok": false,
+  "capturas": [
+   "hu062_2_paso_medicion.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 3,
+  "titulo": "Punto de control",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Paso 4 «Prueba en vacío y verificación» marcado como punto de control.",
+  "esperado": "No se puede avanzar al paso siguiente hasta resolverlo.",
+  "obtenido": "El paso queda con es_punto_control = 1 y en la OT generada sale obligatorio. El bloqueo de avance en la ejecución es de la app (Sprint 6).",
+  "ok": false,
+  "capturas": [
+   "hu062_3_paso_punto_control.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-061",
+  "criterio": 1,
+  "titulo": "Alta de procedimiento",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Procedimientos › Nuevo: «Cambio de aceite de blower», tipo Blower, 90 min › Guardar; actividad del plan que lo referencia (Plan_Mantenimiento_Actividad.paa_procedimiento).",
+  "esperado": "Puedo referenciarlo desde cualquier actividad de plan.",
+  "obtenido": "«Procedimiento creado con éxito. ACEPTAR» (id 7); la actividad «Cambio de aceite del blower» del hito «Lubricación cada 500 horas» lo referencia y la OT 56 nació con sus pasos.",
+  "ok": true,
+  "capturas": [
+   "hu061_1_nuevo_procedimiento.png",
+   "hu061_1_procedimientos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-061",
+  "criterio": 2,
+  "titulo": "Versión del procedimiento",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Se publica la versión 2 del procedimiento 7 cambiando la instrucción del paso 3; se compara con el paso 3 de la OT 56 generada con la versión 1.",
+  "esperado": "Las actividades que lo referencian usan la versión vigente y las órdenes ya generadas conservan el texto que tenían.",
+  "obtenido": "Procedimiento (v2): «Cargar 5,0 L (v2: se ajustó el volumen) y medir el nivel en la mirilla.». OT 56: «Cargar 4,5 L y medir el nivel en la mirilla.». La orden conserva el texto copiado al generarse; la próxima orden usará la v2.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 1,
+  "titulo": "Registro del permiso",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Permisos de trabajo › Nuevo: tipo Trabajo en altura, folio PT-S3-ALT, OT 47, vigencia hoy → mañana › Guardar; luego intentar pasarlo a Autorizado sin documento adjunto.",
+  "esperado": "Queda asociado a la orden de trabajo y la fotografía del documento firmado es obligatoria.",
+  "obtenido": "«Permiso de trabajo registrado con éxito. ACEPTAR»: queda asociado a la OT 47 en estado Solicitado. Autorizar sin el documento: «10.- UN PERMISO AUTORIZADO NECESITA EL DOCUMENTO FIRMADO ADJUNTO. ACEPTAR» (sigue SOLICITADO). La subida del archivo depende de la API de almacenamiento, que Código Creativo provee en el Sprint 6 (Decisión 5 de la Review 1).",
+  "ok": true,
+  "capturas": [
+   "hu063_1_nuevo_permiso.png",
+   "hu063_1_autorizar_sin_documento.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 2,
+  "titulo": "Varios permisos en una orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Segundo permiso «Trabajo caliente» PT-S3-CAL en la misma OT 47.",
+  "esperado": "Puedo registrar ambos por separado en la misma orden.",
+  "obtenido": "Permisos de la OT 47: PT-S3-ALT|Trabajo en altura|Solicitado ‖ PT-S3-CAL|Trabajo caliente|Solicitado.",
+  "ok": true,
+  "capturas": [
+   "hu063_2_segundo_permiso.png",
+   "hu063_2_permisos_de_la_orden.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 3,
+  "titulo": "Permiso vencido",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "El permiso PT-2026-0001 (Trabajo caliente, venció el 09-09-2026, aún Solicitado) queda asociado a la OT 53; técnico › POST /ordenes-trabajo/53/tomar.",
+  "esperado": "Se advierte que el permiso venció y se solicita uno vigente.",
+  "obtenido": "HTTP 400: «EL PERMISO DE TRABAJO Trabajo caliente PT-2026-0001 (vencio el 09/09/2026) ESTA VENCIDO. SOLICITE UNO VIGENTE ANTES DE INICIAR LA ORDEN.» (regla nueva del bloque 242 en UPD_ORDEN_TRABAJO_TOMAR).",
+  "ok": true,
+  "capturas": [
+   "hu063_3_sw_tomar_vencido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-064",
+  "criterio": 1,
+  "titulo": "Listado de permisos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Permisos de trabajo › Vigentes y por vencer, aviso 3 días.",
+  "esperado": "Veo los permisos vigentes ordenados por fecha de vencimiento y los que vencen dentro de 48 horas aparecen destacados.",
+  "obtenido": "5 permisos con vigencia, ordenados por vencimiento; PT-S3-ALT (vence mañana) sale destacado «POR VENCER» (2 por vencer). El plazo del aviso es configurable (3, 7, 15 o 30 días).",
+  "ok": true,
+  "capturas": [
+   "hu064_1_vigentes.png"
+  ],
+  "detalle": " VENCIDO Venció hace 8 días 09 sept. 2026 → 09 sept. 2026 Trabajo caliente Folio PT-2026-0\n POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n VIGENTE Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL OT\n VIGENTE Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL OT",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-064",
+  "criterio": 2,
+  "titulo": "Filtro por orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Misma consulta, buscar «47» (el correlativo de la orden).",
+  "esperado": "Veo todos los permisos asociados a esa orden.",
+  "obtenido": "Quedan 2 permisos, ambos de la OT 47 (Trabajo en altura y Trabajo caliente).",
+  "ok": true,
+  "capturas": [
+   "hu064_2_filtro_orden.png"
+  ],
+  "detalle": " POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n POR VENCER Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL",
+  "fecha": "17-09-2026 17:43"
  }
 ]

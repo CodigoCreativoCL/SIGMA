@@ -1686,6 +1686,36 @@ unidad kgf/cm².
 
 ---
 
+### 10.22 · Pruebas del Sprint 3 completo (17-09-2026)
+
+Informe S3 de todo el sprint: **64 casos, 55 ✓, 74 figuras**
+(`ev_s3f.py` programaciones, `ev_s3g*.py` terceros/repuestos/procedimientos/
+permisos). Los casos de HU-151 pasan al manifiesto de S6.
+
+- **Programaciones (HU-070/071/072/075)**: las reglas se ejercitan sobre
+  `FNC_PROGRAMACION_FECHAS` con programaciones reales «Evidencia S3 · …»
+  (martes/jueves, último día del mes con y sin bisiesto, último viernes,
+  fechas puntuales, fecha pasada aceptada, intervalo desde ejecución /
+  desde programada, ventana 2/3, feriado desplazado con fecha original,
+  parada de planta descartada) y la ficha muestra la proyección.
+- **Correcciones**: `BD/241` la OT generada desde una ocurrencia trae **un
+  paso por cada paso del procedimiento** de la actividad, con el texto
+  copiado (HU-062 #1, HU-061 #2; antes ignoraba `paa_procedimiento`);
+  `BD/242` **tomar una OT con todos sus permisos vencidos se rechaza**
+  pidiendo uno vigente (HU-063 #3) y **consumir contra una OT un repuesto
+  no declarado compatible con el equipo exige el motivo** (HU-051 #2).
+- No cumplen y quedan anotados: **HU-073 #1/#2 y HU-074 #1-#3** (el
+  disparo por lectura/medición no está construido, ya en §10.9) y
+  **HU-062 #2/#3** (la exigencia al ejecutar el paso es de la app, S6).
+- Datos que quedan: 8 programaciones «Evidencia S3 · …», proveedor Montajes
+  Andinos SpA, compatibilidades de REP-EV2319/REP-EV2323 con GM10S,
+  procedimiento PRC-ACEITE-BLW (v2) con 4 pasos, actividad del hito
+  «Lubricación cada 500 horas» y la OT generada (correlativo 47) con sus
+  permisos PT-S3-ALT/PT-S3-CAL; PT-2026-0001 quedó asociado a una OT del
+  horno L2.
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no

@@ -197,5 +197,65 @@
   ],
   "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
   "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Suscripción vencida: la API responde 402 antes del controller",
+  "usuario": "root",
+  "tipo": "API",
+  "pasos": "CCU (cliente 6) con suscripción VENCIDA. Sesión de Root (token con cliente 6) › GET /activos/33.",
+  "esperado": "Toda petición con cliente en el token responde 402 con el mensaje de negocio si la suscripción no permite operar; la captura queda en el teléfono.",
+  "obtenido": "HTTP 402: «La suscripción de tu empresa venció. Lo que capturaste queda guardado en el teléfono y se enviará cuando se regularice. El pago se gestiona desde la web de SIGMA por el administrador de tu empresa.». Queda registrado en Suscripcion_Bloqueo_Log con origen API.",
+  "ok": true,
+  "capturas": [
+   "../S3/hu151_api_402_activos.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 3 como lado servidor; la historia se reprogramó al Sprint 6 (Sprint Review 1). Capturas en capturas/S3/.",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Suscripción vigente: la API opera normal",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "Hamburgo (cliente 1) vigente hasta el 02-10-2026. Sesión de Rodrigo › GET /activos/33.",
+  "esperado": "La compuerta no interfiere con un cliente al día.",
+  "obtenido": "HTTP 200: activo ACT-33 devuelto.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Ejecutado durante el Sprint 3 como lado servidor; la historia se reprogramó al Sprint 6 (Sprint Review 1). Capturas en capturas/S3/.",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Rutas exentas de la compuerta",
+  "usuario": "root",
+  "tipo": "API",
+  "pasos": "Con el mismo token vencido › GET /mi-perfil (exenta, igual que /sesion y /cliente-usuarios).",
+  "esperado": "La app puede cerrar sesión, ver quién es y cambiar de cliente aunque la empresa esté vencida.",
+  "obtenido": "HTTP 404 (no 402).",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Ejecutado durante el Sprint 3 como lado servidor; la historia se reprogramó al Sprint 6 (Sprint Review 1). Capturas en capturas/S3/.",
+  "fecha": "16-09-2026 11:24"
+ },
+ {
+  "hu": "HU-151",
+  "criterio": 0,
+  "titulo": "Descarga para el dispositivo filtrada por usuario y planta",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Técnico Cristián › GET /sincronizacion (manifiesto) y GET /sincronizacion/{bloque}.",
+  "esperado": "El servidor entrega lo que baja al teléfono acotado a las plantas del usuario, por bloques y con conteo.",
+  "obtenido": "HTTP 200: 13 bloques (1..13) con su conteo; cada bloque se pide por separado y acepta ?desde= para bajar solo lo cambiado.",
+  "ok": true,
+  "capturas": [
+   "../S3/hu151_api_sabana_manifiesto.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 3 como lado servidor; la historia se reprogramó al Sprint 6 (Sprint Review 1). Capturas en capturas/S3/.",
+  "fecha": "16-09-2026 11:25"
  }
 ]
