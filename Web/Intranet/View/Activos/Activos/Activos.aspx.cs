@@ -80,6 +80,24 @@ public partial class View_Activos_Activos_Activos : System.Web.UI.Page
     /// de lo elegido: el hijo siempre corresponde al padre y, si el padre
     /// cambia, el hijo se resetea a "Todas".
     /// </summary>
+    /// <summary>
+    /// El combo de tipo: el arbol completo (globales + del cliente), con
+    /// sangria por nivel para que se vea que Blower cuelga de Equipo
+    /// rotatorio. Elegir el padre filtra tambien a los hijos.
+    /// </summary>
+    public void LoadControls(object sender, EventArgs e)
+    {
+        if (!IsPostBack && sender is RadComboBox2 && ((RadComboBox2)sender).ID == "cboTipo")
+        {
+            RadComboBox2 ctrl = (RadComboBox2)sender;
+            ctrl.Items.Add(new RadComboBoxItem("Todos los tipos", ""));
+            List<ActivoTipo> tipos = new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true })
+                                     ?? new List<ActivoTipo>();
+            foreach (ActivoTipo t in tipos)
+                ctrl.Items.Add(new RadComboBoxItem(new string(' ', Math.Max(0, t.nivel) * 3) + t.ati_nombre, t.ati_id.ToString()));
+        }
+    }
+
     protected void ConfigurarUbicacion()
     {
         RadComboBox2 cboPlanta = Cbo("cboPlanta");
@@ -163,6 +181,10 @@ public partial class View_Activos_Activos_Activos : System.Web.UI.Page
             filtro.filtro_cliente_instalacion = id;
 
         RadComboBox2 cboHabilitado = (RadComboBox2)wucFiltro.FindControl("cboHabilitado");
+        RadComboBox2 cboTipo = (RadComboBox2)wucFiltro.FindControl("cboTipo");
+        int tipo;
+        if (cboTipo != null && int.TryParse(cboTipo.SelectedValue, out tipo) && tipo > 0)
+            filtro.filtro_activo_tipo = tipo;   // el SP incluye los subtipos (bloque 239)
 
         if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
         if (cboHabilitado != null && cboHabilitado.SelectedValue != "")

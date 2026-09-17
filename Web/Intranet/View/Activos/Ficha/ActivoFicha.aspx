@@ -150,6 +150,7 @@
                             <button type="button" class="sigma-af-tab" data-tab="resumen">Resumen</button>
                             <button type="button" class="sigma-af-tab is-activa" data-tab="historial">Historial</button>
                             <button type="button" class="sigma-af-tab" data-tab="repuestos">Repuestos</button>
+                            <button type="button" class="sigma-af-tab" data-tab="componentes">Componentes</button>
                             <button type="button" class="sigma-af-tab" data-tab="medidores">Medidores</button>
                             <button type="button" class="sigma-af-tab" data-tab="atributos">Atributos técnicos</button>
                             <button type="button" class="sigma-af-tab" data-tab="documentos">Documentos</button>
@@ -236,6 +237,33 @@
                         </div>
 
                         <%-- MEDIDORES --%>
+                        <%-- COMPONENTES (HU-036 #2 / HU-037 #1): el arbol del activo,
+                             con sangria por nivel para ver que cuelga de que. --%>
+                        <div class="sigma-af-pane" data-pane="componentes">
+                            <div class="sigma-af-card">
+                                <div class="sigma-af-tools">
+                                    <h3 style="margin:0;">Componentes del activo</h3>
+                                    <asp:HyperLink ID="hlComponentes" runat="server" CssClass="sigma-af-btn is-primario"><i class="mdi mdi-cog-outline"></i> Gestionar</asp:HyperLink>
+                                </div>
+                                <asp:Panel ID="pnlSinComponentes" runat="server" Visible="false" CssClass="sigma-af-vacio">
+                                    <i class="mdi mdi-shape-outline"></i> Este activo aún no tiene componentes registrados.
+                                </asp:Panel>
+                                <div class="sigma-af-tabla">
+                                    <asp:Repeater ID="rptComponentes" runat="server">
+                                        <HeaderTemplate><div class="fila cab"><span>Código</span><span>Componente</span><span>Tipo</span><span>Estado</span></div></HeaderTemplate>
+                                        <ItemTemplate>
+                                            <div class="fila">
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("aco_codigo"))) %></span>
+                                                <span style='padding-left:<%# Convert.ToInt32(Eval("nivel")) * 18 %>px;'><%# Convert.ToInt32(Eval("nivel")) > 0 ? "<i class=\"mdi mdi-subdirectory-arrow-right\" style=\"color:#8592a8;\"></i> " : "" %><%# Server.HtmlEncode(Convert.ToString(Eval("aco_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("tipo_nombre"))) %></span>
+                                                <span><%# Server.HtmlEncode(Convert.ToString(Eval("estado_nombre"))) %></span>
+                                            </div>
+                                        </ItemTemplate>
+                                    </asp:Repeater>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="sigma-af-pane" data-pane="medidores">
                             <div class="sigma-af-card">
                                 <div class="sigma-af-tools">

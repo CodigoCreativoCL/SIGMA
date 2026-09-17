@@ -1,0 +1,201 @@
+[
+ {
+  "hu": "HU-154",
+  "criterio": 1,
+  "titulo": "Escaneo con conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /escaneo?c=POS-2 (el QR de CB22, ocupada por ACT-33).",
+  "esperado": "Se abre la ficha del activo que la ocupa; se ve estado, criticidad, componentes y órdenes abiertas.",
+  "obtenido": "HTTP 200: tipo POS, pos_codigo CB22, área y planta, pos_libre=false y act_id/act_codigo del equipo que la ocupa; la app abre con eso ActivoFichaScreen (estado, criticidad, componentes y OT abiertas).",
+  "ok": true,
+  "capturas": [
+   "../S2/hu154_1_sw_pos_ocupada.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 3,
+  "titulo": "Posición sin activo asignado",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /escaneo?c=POS-3 (posición vacía); luego, como Rodrigo, POST /posiciones/3/ocupar con ACT-34.",
+  "esperado": "Se ofrece registrar un activo en esa posición.",
+  "obtenido": "Escaneo → HTTP 200 con pos_libre=true (la app muestra «Poner un equipo aquí»). Ocupar → HTTP 200: {\n  \"APH_ID\": 6,\n  \"POSICION\": 3,\n  \"ACTIVO\": 34\n}.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu154_3_sw_pos_libre.png",
+   "../S2/hu154_3_sw_ocupar.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 4,
+  "titulo": "Código no reconocido",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /escaneo?c=POS-99999 (una posición que no es de la instalación).",
+  "esperado": "Se informa que el código no pertenece a esta instalación.",
+  "obtenido": "HTTP 404: {\n  \"mensaje\": \"Ese código no corresponde a ninguna posición de esta instalación.\"\n}",
+  "ok": true,
+  "capturas": [
+   "../S2/hu154_4_sw_pos_ajena.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "15-09-2026 23:25"
+ },
+ {
+  "hu": "HU-154",
+  "criterio": 2,
+  "titulo": "Escaneo sin conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /sincronizacion (manifiesto) y GET /sincronizacion/11 (bloque POSICIONES) con Cristián; en la app, escanear POS-<id> sin señal.",
+  "esperado": "La ficha se abre desde los datos locales y se indica la fecha de la última sincronización.",
+  "obtenido": "El manifiesto anuncia el bloque 11 «Posiciones funcionales» (HTTP 200) y el bloque trae cada posición con su área, planta y el equipo que la ocupa o LIBRE (HTTP 200). La app lo guarda como POSICIONES y, sin señal, `escanear()` resuelve POS-<id> (y ACT-<id>) desde la sábana, marca el resultado como local y muestra «Datos del teléfono · última sincronización dd-MM-yyyy HH:mm»; con equipo abre su ficha local.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu154_2_sw_manifiesto.png",
+   "../S2/hu154_2_sw_bloque_posiciones.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 00:04"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 1,
+  "titulo": "Primera sincronización",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › GET /sincronizacion (manifiesto) y GET /sincronizacion/12 (órdenes abiertas) y /13 (pautas y plantillas).",
+  "esperado": "Se descargan catálogos, mis activos, mis órdenes abiertas y las plantillas publicadas; se muestra el progreso por bloque.",
+  "obtenido": "El manifiesto (HTTP 200) declara 13 bloques con sus filas —ORGANIZACION, AREAS, CATALOGOS, ACTIVOS, MEDICION, INVENTARIO, EXISTENCIAS, PERMISOS_TRABAJO, ORDENES_TRABAJO, TAREAS, POSICIONES, ORDENES_ABIERTAS, CHECKLISTS— y es lo que la app usa para la barra de progreso por bloque. El bloque 12 trae la bandeja, los pasos y los asignados de las órdenes no cerradas; el 13 las pautas pendientes con los items y opciones de sus versiones. La app los guarda en SQLite y la bandeja, la ficha de la OT, las pautas y la plantilla se abren desde ahí sin señal.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu150_1_sw_manifiesto.png",
+   "../S2/hu150_1_sw_bloque_ordenes.png",
+   "../S2/hu150_1_sw_bloque_checklists.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 2,
+  "titulo": "Sincronización incremental",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /sincronizacion/4?desde=2026-09-14T00:00:00Z (activos modificados desde la marca).",
+  "esperado": "Solo se descarga lo modificado desde la última marca.",
+  "obtenido": "HTTP 200: el bloque de activos trae 5 fila(s) (las modificadas desde el 14-09) en vez de los 20 activos completos. La marca la entrega el servidor (servidor_fecha_utc) y la app la guarda como «desde» solo cuando ningún bloque falló.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu150_2_sw_incremental.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-150",
+  "criterio": 3,
+  "titulo": "Sincronización interrumpida",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "GET /sincronizacion/99 (un bloque que falla) en medio de una corrida.",
+  "esperado": "Al reintentar continúa desde donde quedó y los datos ya descargados permanecen utilizables.",
+  "obtenido": "HTTP 400: el servidor rechaza solo ese bloque ({\n  \"codigo\": 400,\n  \"mensaje\": \"El bloque pedido no existe. Consulta GET /sincronizacion.\",\n  \"esDe). La app descarga bloque por bloque y guarda cada uno en disco al llegar (SincronizacionProvider): un bloque fallido queda marcado y los anteriores siguen usables; la marca de corte no se guarda hasta que todos lleguen, así que el reintento repite solo lo que falló.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu150_3_sw_bloque_inexistente.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 01:43"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 1,
+  "titulo": "Registro con validación",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/lecturas con el horómetro MED-33-H (valor anterior 7908.00): +8 horas con fecha de lectura 16-09-2026 05:00 UTC; luego GET /medidores/8.",
+  "esperado": "Se guarda con la fecha y hora del registro y el valor actual del medidor se actualiza.",
+  "obtenido": "HTTP 201: {\n  \"id\": 19,\n  \"mensaje\": \"Lectura registrada.\"\n}. Activo_Medidor queda con valor actual y fecha «7916.00|2026-09-16 05:00:00»; GET /medidores/8 lo muestra (AME_VALOR_ACTUAL). La fecha de registro (aml_fecha_creacion) la pone el servidor aparte de la fecha de la lectura.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu043_1_sw_lectura.png",
+   "../S2/hu043_1_sw_medidor.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 2,
+  "titulo": "Salto no razonable",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "El medidor tiene máximo diario 24 h. POST /captura/lecturas con 8316 (un salto de 400 h respecto de la lectura de hace minutos).",
+  "esperado": "La lectura se acepta, se marca como pendiente de revisión y aparece en el informe de lecturas a revisar.",
+  "obtenido": "HTTP 201: {\n  \"id\": 20,\n  \"mensaje\": \"Lectura registrada. El salto de 400.0 en 1 dia(s) supera el maximo diario (24.0): queda pendiente de revision.\"\n}. La fila queda con calidad «5|Pendiente de revisión» y se abre la alerta «Lectura a revisar en Horómetro del motor — El medidor MED-33-H de ACT-33 avanzo 400.0 en 1 dia(s); el maximo diario es 24.0.», que es la que alimenta la bandeja de alertas (informe de lecturas a revisar).",
+  "ok": true,
+  "capturas": [
+   "../S2/hu043_2_sw_salto.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-043",
+  "criterio": 3,
+  "titulo": "Registro sin conexión",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "La app guarda la lectura en el teléfono (outbox, uuid generado al encolar) y la envía al volver la señal; aquí se reproduce el envío y el reintento con el mismo uuid, con fecha_lectura_utc de ayer 15:30.",
+  "esperado": "Se guarda en el dispositivo y se sincroniza al recuperar conexión; la fecha registrada es la del momento de la lectura, no la de la sincronización.",
+  "obtenido": "Envío: HTTP 201. Reintento con el mismo uuid: HTTP 201 «{\n  \"id\": 21,\n  \"mensaje\": \"La lectura ya estaba registrada.\"\n}» (no duplica). La fila guarda la fecha de la lectura y aparte la del registro: 2026-09-15 18:30:00 | registro 2026-09-16 05:08:19. En la app, CapturaScreen encola con los nombres del DTO (activo_medidor, fecha_lectura_utc, uuid) —antes mandaba act_id/fecha_evento y la cola rebotaba, defecto corregido hoy—.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu043_3_sw_encolada.png",
+   "../S2/hu043_3_sw_reintento.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-044",
+  "criterio": 1,
+  "titulo": "Registro con unidad distinta a la esperada",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "La variable Presión de ACT-36 espera bar (adv 6, crít 8). POST /captura/mediciones con 120 psi (unidad_medida 34).",
+  "esperado": "Se guarda el valor tal como lo ingresé con su unidad, además su equivalente en la unidad base, y la comparación contra el umbral se hace sobre el equivalente.",
+  "obtenido": "HTTP 201: {\n  \"id\": 491,\n  \"mensaje\": \"Medicion registrada. VALOR CRITICO: supera el umbral definido.\"\n}. En Activo_Medicion: «120.00 psi | canonico 8.2738 bar» (120 psi = 8,27 bar). El veredicto CRÍTICO se tomó sobre 8,27 bar contra el umbral 8 —no sobre el 120 tecleado—.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu044_1_sw_psi.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 02:08"
+ },
+ {
+  "hu": "HU-044",
+  "criterio": 2,
+  "titulo": "Valor fuera de umbral",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/mediciones con 7 bar (sobre el umbral de advertencia 6) sin observación; luego con observación.",
+  "esperado": "Se solicita un comentario y se genera una alerta del tipo correspondiente.",
+  "obtenido": "Sin comentario: HTTP 400 «{\n  \"codigo\": 400,\n  \"mensaje\": \"EL VALOR (7.00) ESTA FUERA DE UMBRAL (6.00): INDIQUE UN COMENTARIO CON LO QUE OBSERVO.\"». Con comentario: HTTP 201 «{\n  \"id\": 492,\n  \"mensaje\": \"Medicion registrada. Valor en advertencia» y se abre la alerta «Presión en advertencia en ACT-36 | severidad 3 | Se midio 7.00 bar contra un umbral de 6.00 bar. Presión sube al cargar; válvula de alivio revisada (evidencia S» (tipo MEDICIÓN FUERA RANGO, severidad 3 = advertencia; crítico sería 4). En la app, CapturaScreen exige el comentario antes de encolar cuando el valor supera los umbrales de la variable.",
+  "ok": true,
+  "capturas": [
+   "../S2/hu044_2_sw_sin_comentario.png",
+   "../S2/hu044_2_sw_con_comentario.png"
+  ],
+  "detalle": "Ejecutado durante el Sprint 2 como lado servidor de la historia; la historia se reprogramó al Sprint 6 (Sprint Review 1). Las capturas están en capturas/S2/.",
+  "fecha": "16-09-2026 02:08"
+ }
+]

@@ -308,6 +308,15 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         rptRepuestos.DataSource = lr; rptRepuestos.DataBind();
         pnlSinRepuestos.Visible = (lr.Count == 0);
 
+        /* Componentes del activo, como arbol: se ordenan padre -> hijos y
+           cada uno lleva su nivel para la sangria (HU-036 #2). */
+        var lc = new ActivoComponenteController().GetComponentes(new ActivoComponente
+        { aco_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
+        if (lc == null) lc = new System.Collections.Generic.List<ActivoComponente>();
+        rptComponentes.DataSource = Arbol(lc); rptComponentes.DataBind();
+        pnlSinComponentes.Visible = (lc.Count == 0);
+        hlComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
+
         // Medidores del activo
         var lm = new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor
         { ame_cliente = cliente, filtro_activo = a.act_id, filtro_habilitado = true });
@@ -320,6 +329,34 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (la == null) la = new System.Collections.Generic.List<ActivoAtributoValor>();
         rptAtributos.DataSource = la; rptAtributos.DataBind();
         pnlSinAtributos.Visible = (la.Count == 0);
+    }
+
+    /// <summary>
+    /// Recorre los componentes en profundidad desde los que no tienen
+    /// padre, y devuelve filas anonimas con su nivel. Un padre que no esta
+    /// en la lista (deshabilitado) deja a sus hijos en el primer nivel.
+    /// </summary>
+    private static System.Collections.Generic.List<object> Arbol(System.Collections.Generic.List<ActivoComponente> lista)
+    {
+        var salida = new System.Collections.Generic.List<object>();
+        var ids = new System.Collections.Generic.HashSet<int>();
+        foreach (ActivoComponente c in lista) ids.Add(c.aco_id);
+
+        System.Action<int?, int> recorrer = null;
+        recorrer = delegate (int? padre, int nivel)
+        {
+            foreach (ActivoComponente c in lista)
+            {
+                bool raiz = c.aco_componente_padre == null || !ids.Contains(c.aco_componente_padre.Value);
+                if ((padre == null && raiz) || (padre != null && c.aco_componente_padre == padre))
+                {
+                    salida.Add(new { c.aco_codigo, c.aco_nombre, c.tipo_nombre, c.estado_nombre, nivel = nivel });
+                    if (salida.Count < 500) recorrer(c.aco_id, nivel + 1);
+                }
+            }
+        };
+        recorrer(null, 0);
+        return salida;
     }
 
     protected void CargarHistorial(int activo)

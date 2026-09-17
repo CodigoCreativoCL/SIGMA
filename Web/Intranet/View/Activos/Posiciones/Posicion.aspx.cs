@@ -227,6 +227,20 @@ public partial class View_Activos_Posiciones_Posicion : System.Web.UI.Page
 
         btnLiberar.Visible = p.activo_id != null;
 
+        /* HU-035 #2: si la posicion ya esta ocupada, asignar otro equipo
+           pide confirmacion diciendo QUIEN la ocupa. Al confirmar, el SP
+           cierra el periodo del anterior y abre el del nuevo. Con la
+           posicion libre no hay nada que confirmar. */
+        if (p.activo_id != null)
+        {
+            string quien = (p.activo_codigo + " " + p.activo_nombre).Trim().Replace("\\", "\\\\").Replace("'", "\\'");
+            btnOcupar.OnClientClick = "if (!ConfirSweetAlert(this, 'Posición ocupada', 'Hoy la ocupa " + quien +
+                                      ". ¿Asignarla al equipo elegido? El periodo de " + quien +
+                                      " se cierra ahora y se abre el del nuevo.')) return false;";
+        }
+        else
+            btnOcupar.OnClientClick = "";
+
         CargarActivos(p);
 
         ActivoPosicionController controller = new ActivoPosicionController();

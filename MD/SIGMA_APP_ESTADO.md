@@ -12,7 +12,7 @@
 > **Regla: cada vez que se cierre un bloque de trabajo, se actualiza este
 > archivo en el mismo cambio.**
 
-**Última actualización:** 08-09-2026
+**Última actualización:** 16-09-2026
 **Estado:** bloques 0 a 7 hechos · **las 10 pantallas contra endpoints
 reales, la base local y la cola de salida funcionando**, y la sábana de datos
 construida y probada en el servidor · `flutter analyze` limpio, 12 tests verdes
@@ -404,6 +404,7 @@ curl -X POST http://localhost/SIGMA/Servicio/API/sesion -H "Content-Type: applic
 | 15-09-2026 | **Escanear una posición (HU-154).** `GET /escaneo?c=POS-<id>` resuelve la posición: con equipo abre `ActivoFichaScreen`; vacía, `HojaOcuparPosicion` deja poner un equipo de la sábana y lo encola con uuid (`POST /posiciones/{id}/ocupar`, idempotente). Con `BD/232` las posiciones bajan en la sábana (bloque 11): `escanear()` resuelve `POS-` y `ACT-` en local y la tarjeta dice de cuándo son los datos |
 | 16-09-2026 | **Órdenes y pautas en la sábana (HU-150 #1).** Bloques 12 y 13 (`BD/234`): `ordenesTrabajo`, `ordenTrabajo`, `checklistPendientes` y `checklistPlantilla` tienen respaldo local; la cola de escritura ya existía |
 | 16-09-2026 | **Captura en terreno arreglada (HU-043/044).** `CapturaScreen` mandaba `act_id`/`ame_id`/`fecha_evento`, que la API no conoce: cada lectura o medición encolada rebotaba. Ahora usa los nombres del DTO con uuid, la ficha del activo pide elegir la variable (de la sábana) y exige comentario fuera de umbral; la lectura se registra desde el medidor |
+| 16-09-2026 | **La sesión vencida impedía volver a entrar** (reportado por Bryan probando el login con la cuenta de Jonathan). El síntoma era «La sesión expiró» **al iniciar sesión**, no adentro. Causa raíz: el `TokenValidationHandler` de la API valida el JWT **antes de enrutar**, así que un token vencido en el encabezado `Authorization` responde 401 sin que la petición llegue al `SesionController` anónimo — y el `ApiClient` adjuntaba el token viejo hasta en `POST /sesion`, porque `cargarDesdeDisco` lo cargaba y `SesionModel.autenticado` **no miraba la expiración** (solo `token.isNotEmpty`). Tres arreglos, todos en la app: (1) `AuthService.iniciar` **limpia el token antes de autenticar** — el login es siempre una petición anónima limpia; (2) `SesionModel` sella el **instante absoluto** de expiración (`expiraEn = ahora + expira_minutos`), lo persiste en disco y `autenticado` lo respeta, así que una sesión caducada ya no manda al Home a responder 401 en cada pantalla, y `cargarDesdeDisco` **descarta el token muerto** en vez de arrastrarlo; (3) **recuperación automática ante un 401**: el `ApiClient` distingue el 401 de credenciales (login, sin token) del 401 de sesión caducada (petición **con** token) y, en el segundo, dispara **una sola vez** —re-armado al estrenar token— el callback que `main` cablea para limpiar la sesión y volver al login por `navigatorKey`; el splash rutea según el estado de sesión **vivo**, no el del arranque. Sin token vencido en disco, el 401 pasa a decir «Correo o contraseña incorrectos», que es lo correcto. `flutter analyze` limpio, **132 tests** (dos nuevos que fijan la expiración) |
 
 ### Cómo actualizar este documento
 

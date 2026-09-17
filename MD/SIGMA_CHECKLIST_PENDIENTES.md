@@ -1653,6 +1653,39 @@ móvil, inteligencia y cierre».
 
 ---
 
+### 10.21 · Pruebas del Sprint 2 completo (17-09-2026)
+
+El informe S2 pasa de «lo de Bryan» a **todo el Sprint**: 52 casos, 49 ✓,
+100 figuras (`ev_s2l.py`, `ev_s2l3.py`, `ev_s2m.py`, `ev_s2m2.py`;
+`generar_docx.py` ahora lista desarrollador y plataforma por historia).
+Los casos de las historias App (HU-043/044/150/154) se sacaron del
+manifiesto S2 y viven en `capturas/S6/manifiesto.json` (apuntan a las
+capturas de S2).
+
+Al probar las historias de Emilio salieron dos defectos reales y dos
+faltantes de pantalla, corregidos:
+- **`BD/239`** `SEL_ACTIVO`: filtrar por un tipo padre no traía a los
+  subtipos (HU-030 #1). Misma técnica que `@AREAS`.
+- **`BD/240`** `UPD_ACTIVO`: aceptaba que un activo colgara de su propio
+  subactivo (HU-035 #4); ahora recorre la rama.
+- `Activos.aspx` gana el filtro **Tipo de activo** (con sangría por nivel).
+- `ActivoFicha.aspx` gana la pestaña **Componentes** (árbol por padre),
+  que HU-036 #2 y HU-037 #1 pedían y no existía.
+- `Posicion.aspx`: asignar equipo a una posición ocupada **confirma
+  diciendo quién la ocupa** (HU-035 #2).
+
+Lo que no cumple y queda anotado: **HU-036 #3** (el estado del componente
+cambia con fecha y usuario, pero no pide motivo ni hay historial de
+estados del componente — base pendiente) y los criterios de app
+(HU-037 #3, HU-193 #4) que son del Sprint 6.
+
+Datos de prueba que quedan: tipo global «Equipo rotatorio», tipo Blower,
+modelo Aerzen GM10S, activos ACT-55 (Blower de aireación 1) y ACT-56
+(Motor del blower 1) con componentes, medidor «Horómetro del blower» y la
+unidad kgf/cm².
+
+---
+
 ## Antes de dar cualquier bloque por cerrado
 
 - [ ] MSBuild → 0 errores, **y después pedir una ruta**: compilar sin errores no
