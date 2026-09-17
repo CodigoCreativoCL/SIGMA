@@ -603,8 +603,8 @@
   "tipo": "BD",
   "pasos": "Programación de fecha única 29 con las fechas 05-10, 19-10, 09-11 y 14-12-2026 › FNC_PROGRAMACION_FECHAS (lo que GEN_PLAN_OCURRENCIAS convierte en ocurrencias, una por fecha).",
   "esperado": "Se generan cuatro ocurrencias independientes, cada una con su propia ejecución, estado y evidencias.",
-  "obtenido": "5 fechas independientes: 2026-09-01, 2026-10-05, 2026-10-19, 2026-11-09, 2026-12-14. Cada una produce su propia fila en Plan_Mantenimiento_Ocurrencia (estado, OT y evidencias propias).",
-  "ok": false,
+  "obtenido": "4 fechas puntuales configuradas (05-10, 19-10, 09-11 y 14-12) más la del 01-09 agregada en el caso #2: 5 fechas independientes, cada una produce su propia fila en Plan_Mantenimiento_Ocurrencia (estado, OT y evidencias propias).",
+  "ok": true,
   "capturas": [
    "hu070_1_ficha.png"
   ],
@@ -711,90 +711,6 @@
   "fecha": "17-09-2026 17:14"
  },
  {
-  "hu": "HU-073",
-  "criterio": 3,
-  "titulo": "Un horómetro por equipo",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "Programacion_Medidor.pme_activo_medidor admite NULL: con NULL el horómetro lo aporta cada activo del plan (Plan_Mantenimiento_Activo.pac_activo_medidor).",
-  "esperado": "Cada equipo dispara según su propio horómetro y no se requiere crear cuatro planes.",
-  "obtenido": "La columna es anulable (1 = 1) y la ficha de la programación por medidor permite dejar el medidor en «el de cada equipo». El disparo real (#1/#2) no está construido (ver abajo).",
-  "ok": true,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
-  "hu": "HU-073",
-  "criterio": 1,
-  "titulo": "Disparo por horas",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "No ejecutado.",
-  "esperado": "Al registrar 8.700 h sobre un plan cada 500 h se genera la ocurrencia.",
-  "obtenido": "No construido: la generación por medidor ocurre al registrar la lectura y GEN_PLAN_OCURRENCIAS solo proyecta por fecha (pendiente anotado en el checklist §10.9).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
-  "hu": "HU-073",
-  "criterio": 2,
-  "titulo": "Aviso anticipado",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "No ejecutado.",
-  "esperado": "Con aviso 50 h antes, a las 8.655 h se genera una alerta de medidor próximo a mantenimiento sin OT.",
-  "obtenido": "Parcial: el detector GEN_ALERTA_OPERACION (bloque 238) abre la alerta «MEDIDOR PROXIMO MANTENIMIENTO» leyendo Programacion_Medidor (valor inicial + cada + aviso) y no genera OT; falta que la ocurrencia se dispare por lectura (#1).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
-  "hu": "HU-074",
-  "criterio": 1,
-  "titulo": "Disparo por umbral",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "No ejecutado.",
-  "esperado": "Al registrar 84 °C con umbral > 80 se genera la ocurrencia.",
-  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
-  "hu": "HU-074",
-  "criterio": 2,
-  "titulo": "Duración mínima",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "No ejecutado.",
-  "esperado": "Una medición aislada sobre el umbral no genera la ocurrencia si no dura 30 minutos.",
-  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
-  "hu": "HU-074",
-  "criterio": 3,
-  "titulo": "Varias condiciones",
-  "usuario": "rodrigo",
-  "tipo": "BD",
-  "pasos": "No ejecutado.",
-  "esperado": "Con política Todas, la ocurrencia se genera solo si ambas condiciones se cumplen a la vez.",
-  "obtenido": "Las condiciones se definen en la ficha (Programacion_Condicion con umbral, duración mínima y política), pero el disparo al registrar la medición no está construido (pendiente §10.9).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "17-09-2026 17:14"
- },
- {
   "hu": "HU-060",
   "criterio": 1,
   "titulo": "Alta de proveedor",
@@ -873,38 +789,6 @@
    "hu062_1_pasos.png"
   ],
   "detalle": "1|Cambio de aceite del blower · 1. Drenar el aceite usado|16|1\n2|Cambio de aceite del blower · 2. Cambiar el filtro de aceite|17|1\n3|Cambio de aceite del blower · 3. Cargar aceite y medir el nivel|18|1\n4|Cambio de aceite del blower · 4. Prueba en vacío y verificación|19|1",
-  "fecha": "17-09-2026 17:40"
- },
- {
-  "hu": "HU-062",
-  "criterio": 2,
-  "titulo": "Paso que exige medición",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Paso 3 «Cargar aceite y medir el nivel» con Requiere medición = Sí y variable Presión.",
-  "esperado": "Al ejecutarlo se solicita el valor y ese valor queda registrado en la serie histórica del activo.",
-  "obtenido": "El paso queda con requiere_medicion|variable = 1|10: la definición está completa. La captura del valor al ejecutar el paso es de la app (Sprint 6); en la web el paso de la OT muestra la variable exigida.",
-  "ok": false,
-  "capturas": [
-   "hu062_2_paso_medicion.png"
-  ],
-  "detalle": "",
-  "fecha": "17-09-2026 17:40"
- },
- {
-  "hu": "HU-062",
-  "criterio": 3,
-  "titulo": "Punto de control",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Paso 4 «Prueba en vacío y verificación» marcado como punto de control.",
-  "esperado": "No se puede avanzar al paso siguiente hasta resolverlo.",
-  "obtenido": "El paso queda con es_punto_control = 1 y en la OT generada sale obligatorio. El bloqueo de avance en la ejecución es de la app (Sprint 6).",
-  "ok": false,
-  "capturas": [
-   "hu062_3_paso_punto_control.png"
-  ],
-  "detalle": "",
   "fecha": "17-09-2026 17:40"
  },
  {
@@ -1019,5 +903,133 @@
   ],
   "detalle": " POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n POR VENCER Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL",
   "fecha": "17-09-2026 17:43"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 2,
+  "titulo": "Paso que exige medición",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "OT 58 (generada del procedimiento; paso 3 «Cargar aceite y medir el nivel» exige Presión). Técnico › POST /ordenes-trabajo/pasos/63 CONFORME sin valor; luego con valor_medicion 4,2 bar.",
+  "esperado": "Al ejecutarlo se solicita el valor y ese valor queda registrado en la serie histórica del activo.",
+  "obtenido": "Sin valor: HTTP 400 «Este paso exige registrar la medicion de Presión: indica el valor.». Con valor: paso CONFORME; la medición quedó en Activo_Medicion con la OT como origen (id|valor|OT|origen: 511|4.200000|58|4).",
+  "ok": true,
+  "capturas": [
+   "hu062_2_sw_sin_valor.png",
+   "hu062_2_sw_con_valor.png"
+  ],
+  "detalle": "511|4.200000|58|4",
+  "fecha": "17-09-2026 18:14"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 3,
+  "titulo": "Punto de control",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "OT 58: paso 4 «Prueba en vacío y verificación» es punto de control. Completar el paso 5 con el 4 pendiente; luego resolver el 4 y repetir el 5.",
+  "esperado": "No se puede avanzar al paso siguiente hasta resolverlo.",
+  "obtenido": "Con el 4 pendiente: HTTP 400 «El paso 4. Cambio de aceite del blower · 4. Prueba en vacío y verificación es un punto de control y sigue pendiente: resuelvelo antes de avanzar.». Resuelto el 4 (HTTP 200), el 5 se completó (CONFORME).",
+  "ok": true,
+  "capturas": [
+   "hu062_3_sw_bloqueado.png",
+   "hu062_3_sw_liberado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:14"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 2,
+  "titulo": "Aviso anticipado",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Plan «Lubricación cada 500 horas» con programación por medidor (inicial 8.200, cada 500, aviso 50 h) sobre las tres revolvedoras. Técnico › POST /captura/lecturas: horómetro de ACT-35 en 8.655 h y luego 8.660 h.",
+  "esperado": "Se genera una alerta de medidor próximo a mantenimiento y la alerta no genera una orden de trabajo por sí sola.",
+  "obtenido": "HTTP 201. Alerta abierta (1): «Se acerca el mantenimiento por Horómetro en ACT-35 — Va en 8660.0 h y el hito «Lubricación cada 500 horas» dispara a los 8700.0 h. Solo aviso: la orden nace con». Ocurrencias por medidor de ACT-35: 0; órdenes nuevas: 0. Solo aviso.",
+  "ok": true,
+  "capturas": [
+   "hu073_2_sw_aviso.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 1,
+  "titulo": "Disparo por horas",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Mismo plan: horómetro de ACT-35 en 8.200 al cierre del hito anterior › lectura de 8.700 h (y 8.702 en Swagger).",
+  "esperado": "Se genera la ocurrencia correspondiente.",
+  "obtenido": "HTTP 201: «Lectura registrada. Se genero 1 ocurrencia(s) del plan por horas.». Ocurrencia del hito para ACT-35 con valor objetivo 8.700: 89|8700.00|Disparada por Horómetro: 8700.0 h (objetivo 8700.0).. La alerta de aviso se cerró sola (0 abiertas). La segunda lectura (8.702) no duplica: el próximo objetivo pasó a 9.200.",
+  "ok": true,
+  "capturas": [
+   "hu073_1_sw_disparo.png"
+  ],
+  "detalle": "89|8700.00|Disparada por Horómetro: 8700.0 h (objetivo 8700.0).",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 3,
+  "titulo": "Un horómetro por equipo",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Un solo hito/programación aplicado a ACT-35, ACT-43 y ACT-44 (cada uno con su horómetro). Lectura de 8.710 h en el horómetro de ACT-43; ACT-44 sigue en 8.200.",
+  "esperado": "Cada equipo dispara según su propio horómetro y no se requiere crear cuatro planes.",
+  "obtenido": "Ocurrencias (activo|objetivo): 35|8700.00, 43|8700.00: ACT-35 y ACT-43 dispararon con su propio horómetro, ACT-44 no. Estado por equipo (activo|valor|próximo): 35|8702.00|9200.00, 43|8710.00|9200.00, 44|8200.00|8700.00.",
+  "ok": true,
+  "capturas": [
+   "hu073_3_sw_medidor_43.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 2,
+  "titulo": "Duración mínima",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Hito «Intervención por sobretemperatura» (programación 14: Temperatura de ACT-34 > 80 °C sostenida 30 min). POST /captura/mediciones: 84 °C y, 20 minutos después, 70 °C.",
+  "esperado": "Una medición aislada que supera el umbral y la siguiente vuelve a la normalidad no genera la ocurrencia.",
+  "obtenido": "HTTP 201 y 201. Ocurrencias generadas: 0. La racha sobre el umbral duró 0 minutos (una sola medición) y la siguiente la cortó.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 1,
+  "titulo": "Disparo por umbral",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Mismo hito. Tres mediciones seguidas sobre 80 °C: 84 (hace 35 min), 85 (hace 15 min) y 86 (ahora).",
+  "esperado": "Se genera la ocurrencia.",
+  "obtenido": "HTTP 201, 201. Ocurrencia generada para ACT-34: 91|Disparada por condición (UNO): Temperatura mayor 80.0 °C (última 86.0 °C, sostenida 30 min).",
+  "ok": true,
+  "capturas": [
+   "hu074_1_sw_medicion.png"
+  ],
+  "detalle": "91|Disparada por condición (UNO): Temperatura mayor 80.0 °C (última 86.0 °C, sostenida 30 min)",
+  "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 3,
+  "titulo": "Varias condiciones",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Hito «Revisión por vibración y corriente» con dos condiciones sobre ACT-35 (vibración ≥ 7,1 mm/s y corriente > 80) y política TODOS. Medición de vibración 7,5; luego corriente 85; luego corriente 86.",
+  "esperado": "La ocurrencia se genera solo si ambas se cumplen simultáneamente.",
+  "obtenido": "Con solo la vibración alta: 0 ocurrencias. Al llegar la corriente alta: 92|Disparada por condición (TODOS): Vibración mayor igual 7.1 mm/s (última 7.5 mm/s) · Corriente mayor 80.0 °C (última 85.0 °C). La tercera medición no duplica (1 en total): una ocurrencia viva por hito y equipo.",
+  "ok": true,
+  "capturas": [
+   "hu074_3_sw_corriente.png"
+  ],
+  "detalle": "92|Disparada por condición (TODOS): Vibración mayor igual 7.1 mm/s (última 7.5 mm/s) · Corriente mayor 80.0 °C (última 85.0 °C)",
+  "fecha": "17-09-2026 18:16"
  }
 ]

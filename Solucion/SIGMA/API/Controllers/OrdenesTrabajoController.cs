@@ -194,7 +194,7 @@ namespace API.Controllers
         /// falla, responde lo mismo. Es el caso del reintento de la cola.
         /// </summary>
         /// <response code="200">Completado, o ya estaba con ese resultado.</response>
-        /// <response code="400">La orden no está en ejecución.</response>
+        /// <response code="400">La orden no está en ejecución; el paso exige una medición y no vino el valor; o un punto de control anterior sigue pendiente (HU-062).</response>
         /// <response code="403">No estás asignado a esa orden.</response>
         [HttpPost]
         [Route("pasos/{id:int}")]
@@ -214,7 +214,10 @@ namespace API.Controllers
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@RESULTADO_PASO", dto.resultado },
                         { "@OBSERVACION", dto.observacion },
-                        { "@ENTRADA_MODO", dto.entrada_modo }
+                        { "@ENTRADA_MODO", dto.entrada_modo },
+                        // HU-062 #2: el SP exige el valor si el paso mide.
+                        { "@VALOR_MEDICION", dto.valor_medicion },
+                        { "@UNIDAD_MEDIDA", dto.unidad_medida }
                     });
 
                 return Ok(new { otp_id = id });

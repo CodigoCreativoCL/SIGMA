@@ -1106,6 +1106,7 @@ $t = [System.IO.File]::ReadAllText($p)
 | 16-09-2026 | **Cambio de alcance: app móvil al Sprint 6.** Pedido por Hamburgo en la Sprint Review 1 (15-09) y aceptado por la PO: Sprints 1–5 web, app completa en el Sprint 6. Actas en `Fase 2/Ceremonias/`; Product Backlog, Sprint Backlogs (304 tareas Móvil «Movida a Sprint 6») y Burndown actualizados. Checklist §10.20 |
 | 17-09-2026 | **Pruebas del Sprint 2 completo** (todas las historias web del sprint, incluidas las de Emilio): 52 casos, 49 ✓. Correcciones: `BD/239` (SEL_ACTIVO tipo + subtipos), `BD/240` (UPD_ACTIVO rechaza ciclos), filtro por tipo en Activos, pestaña Componentes en la ficha, confirmación de posición ocupada. Checklist §10.21 |
 | 17-09-2026 | **Pruebas del Sprint 3 completo**: 64 casos, 55 ✓. Programaciones probadas sobre `FNC_PROGRAMACION_FECHAS`; `BD/241` (la OT despliega los pasos del procedimiento), `BD/242` (permiso vencido al tomar la OT; repuesto no compatible exige motivo). Checklist §10.22 |
+| 17-09-2026 | **Generación por medidor y por condición + paso con medición / punto de control.** `BD/243` (`FNC_PLAN_MEDIDOR_ESTADO`, `GEN_PLAN_OCURRENCIAS_MEDIDOR`, `GEN_PLAN_OCURRENCIAS_CONDICION`, hooks en los SP de captura), `BD/244` (`API_UPD_ORDEN_TRABAJO_PASO` exige la medición y respeta el punto de control; DTO con `valor_medicion`). HU-073/074 y HU-062 #2/#3 con evidencia; informe S3 62/64. Checklist §10.23 |
 
 ### Cómo actualizar este documento
 

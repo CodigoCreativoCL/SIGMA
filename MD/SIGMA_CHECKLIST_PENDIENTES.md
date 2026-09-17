@@ -1166,9 +1166,8 @@ recalcula las fórmulas al abrir (LibreOffice no está en esta máquina).
 - [ ] **Job nocturno** que llame `GEN_PLAN_OCURRENCIAS` /
       `GEN_TAREA_OCURRENCIAS` con `@SOLO_AUTOMATICAS = 1` (SQL Agent o
       tarea programada contra `POST /plan-ocurrencias/generar`).
-- [ ] Generación **por medidor** (HU-073 #1/#2) y **por condición**
-      (HU-074 #1-#3): el disparo ocurre al registrar la lectura/medición,
-      no por fecha. No construido.
+- [x] Generación **por medidor** (HU-073 #1/#2) y **por condición**
+      (HU-074 #1-#3): construida el 17-09-2026 en `BD/243` (ver §10.23).
 - [ ] HU-004 sigue bloqueada por SMTP (infra, no código).
 - [ ] No verificados (quedan en «No» en los Excels): HU-081 #1/#3, HU-083
       #2/#3, HU-084 #4, HU-095 #4, HU-102 #2, HU-103 #2.
@@ -1713,6 +1712,53 @@ permisos). Los casos de HU-151 pasan al manifiesto de S6.
   «Lubricación cada 500 horas» y la OT generada (correlativo 47) con sus
   permisos PT-S3-ALT/PT-S3-CAL; PT-2026-0001 quedó asociado a una OT del
   horno L2.
+
+---
+
+### 10.23 · Lo que no estaba construido del Sprint 3, ahora sí (17-09-2026)
+
+Bryan tomó HU-073/074 y el lado servidor de HU-062 #2/#3. Informe S3:
+**64 casos, 63 ✓** (queda HU-076 #4, «programación deshabilitada», que se
+verificó por SP y no por pantalla).
+
+- **`BD/243` generación por medidor y por condición.** El disparo vive en
+  los SP de captura, después del `COMMIT` y con su propio `TRY` (lo
+  capturado nunca se pierde por un error del plan):
+  - `FNC_PLAN_MEDIDOR_ESTADO(@CLIENTE)`: por hito × equipo de los planes
+    publicados con programación por medidor, **qué horómetro manda** en ese
+    equipo (`pme_activo_medidor` → `pac_activo_medidor` → primer horómetro
+    del activo) y el **próximo valor** desde la última ocurrencia generada
+    (`pmo_valor_medidor_objetivo`) o el valor inicial. Es lo que resuelve
+    HU-073 #3: un plan sobre N equipos dispara N veces con su propio
+    horómetro.
+  - `GEN_PLAN_OCURRENCIAS_MEDIDOR`: al alcanzar el próximo valor, ocurrencia
+    PENDIENTE con ese objetivo (tope 5 por lectura); dentro de la
+    anticipación, alerta `MEDIDOR PROXIMO MANTENIMIENTO` sin OT, que se
+    cierra sola al generar. `GEN_ALERTA_OPERACION` usa la misma función.
+    `UPS_PROGRAMACION_MEDIDOR` acepta medidor vacío (= el de cada equipo).
+  - `GEN_PLAN_OCURRENCIAS_CONDICION`: evalúa cada condición sobre la última
+    medición **en la unidad de la variable** (canónico → factor/offset);
+    con duración mínima, cuenta solo si la **racha** de mediciones que
+    cumplen (desde la última que no) lleva esos minutos: una aislada no
+    dispara; política TODOS = todas a la vez, UNO/MINIMO = cualquiera; una
+    ocurrencia viva por hito y equipo.
+- **`BD/244` completar un paso de la OT.** `API_UPD_ORDEN_TRABAJO_PASO`
+  gana `@VALOR_MEDICION` / `@UNIDAD_MEDIDA`: un paso del procedimiento que
+  exige medición no se completa CONFORME/NO CONFORME sin el valor, y el
+  valor entra por `API_INS_ACTIVO_MEDICION` contra la variable del equipo
+  de la orden con la OT como origen (serie histórica + umbrales + alerta);
+  un punto de control pendiente bloquea los pasos siguientes.
+  `PasoResultadoDto` gana `valor_medicion` y `unidad_medida`.
+- Evidencia `ev_s3h.py` (API, Cristián): aviso a 8.655 h sin OT, disparo a
+  8.700 con objetivo 8.700 y cierre del aviso, ACT-35 y ACT-43 disparan
+  con su propio horómetro y ACT-44 no; 84→70 °C no dispara y 84/85/86
+  sostenidos 35 min sí; vibración sola no, vibración + corriente sí; paso 5
+  bloqueado por el punto de control 4; paso 3 sin valor rechazado y con
+  4,2 bar registrado en `Activo_Medicion`.
+- Datos que quedan: programación «Lubricación cada 500 horas (por
+  medidor)» en el hito 10, horómetros MED-35/43/44-H, hitos COND-TEMP
+  (versión 9) y COND-VIB-CORR (versión 11) con la programación «Vibración
+  y corriente altas (todas)», OTs 56–58 de las revolvedoras.
 
 ---
 

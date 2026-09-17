@@ -1680,6 +1680,16 @@ namespace API.MVC.Model
 
         public string observacion { get; set; }
         public int? entrada_modo { get; set; }
+
+        /// <summary>
+        /// HU-062 #2: el valor que el paso exige medir, cuando el paso del
+        /// procedimiento lo pide. Queda en la serie histórica del equipo con
+        /// la orden como origen. Vacío en un paso que no mide.
+        /// </summary>
+        public decimal? valor_medicion { get; set; }
+
+        /// <summary>Unidad en que viene el valor; vacío = la de la variable.</summary>
+        public int? unidad_medida { get; set; }
     }
 
     /// <summary>
