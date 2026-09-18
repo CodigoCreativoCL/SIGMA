@@ -6,9 +6,12 @@ que SIGMA AI va a aprender de verdad — empezando por **SIGMA FAILURE 30 días*
 
 **Estado (18-09-2026):** camino completo probado con datos reales de Hamburgo
 para el dataset y con un dataset sintético para el entrenamiento (el
-historial real tiene 8 fallas: no alcanza para aprender). Azure ML queda
-conectado desde el entrenador (cuenta de Bryan) y opcional desde la API
-(entidad de servicio, ver §5).
+historial real tiene 8 fallas: no alcanza para aprender). **Azure ML ya
+recibió una corrida y un modelo registrados desde el entrenador con la cuenta
+de Bryan** (`SIGMA_FAILURE_30D` v1, experimento `SIGMA_FAILURE_30D`). La
+lectura desde la API queda sin configurar: el tenant de grupoexpro no permite
+registrar aplicaciones en Entra ID, y sin entidad de servicio un servidor no
+tiene cómo identificarse (§4.3).
 
 ---
 
@@ -70,6 +73,7 @@ Entra a la API, baja el dataset registrado (o `--csv`, o `--demo N` sintético),
 | Puntuar | 22 equipos: ACT‑40 99,8 % (crítica, alerta #81), ACT‑35 77,7 %, ACT‑37 73,1 %, ACT‑34 66,0 % (alta) … con sus razones. |
 | Simular | `{FALLAS_90D:3, MED_30D_RATIO_CRITICO:1.2, TENDENCIA_30D:0.05}` → 99,05 %. |
 | Pantalla | KPIs, plan, muestra, registro, corridas, versiones, puntuar y «Azure ML no está configurado: faltan ClientId, ClientSecret». Capturas en `Fase 2/Pruebas/capturas/AzureML/`. |
+| **Azure ML real** | `az login` por código de dispositivo con la cuenta de Bryan; `--demo 800` con `MLFLOW_TRACKING_URI` del área: corrida `319576fc-5bc5-4422-b5cc-ca9f799c8bcf` en el experimento `SIGMA_FAILURE_30D` (métricas, parámetros, `.onnx` y JSON como artefactos) y modelo **SIGMA_FAILURE_30D v1** (`az ml model show`: tipo `mlflow_model`, ruta en `workspaceartifactstore`). `az ml compute list` vacío: no se creó cómputo. Versión v2 en SIGMA con la ruta `azureml://…/models/SIGMA_FAILURE_30D/versions/1`, publicada; 22 equipos puntuados con v2. |
 
 > La versión v1 publicada viene de un **dataset sintético** y está marcada así en `mpv_observacion`. Sirve para que el camino esté vivo, **no para decidir sobre una máquina**. El modelo de línea base (Tendencia de variable medida) sigue operando en paralelo.
 
@@ -82,11 +86,13 @@ Entra a la API, baja el dataset registrado (o `--csv`, o `--demo N` sintético),
 cd C:\Capstone\SIGMA\ML
 pip install -r requirements.txt
 ```
-Instala también la **CLI de Azure** (gratis, `winget install Microsoft.AzureCLI`) y entra con tu cuenta:
+Instala también la **CLI de Azure** (gratis). En este equipo no hay `winget`, así que se instaló con pip en un entorno aislado (`python -m venv C:\Capstone\_scratchzcli` + `pip install azure-cli`; el ejecutable es `…zcli\Scriptsz.bat`). Entra con tu cuenta; si el navegador no se abre solo, por código:
 ```bash
-az login
+az login --use-device-code --tenant e3430037-16f9-4613-8257-37c436e01a82
 ```
-Con eso el entrenador se identifica ante Azure ML **con tu propia cuenta** (la misma con que creaste SIGMA_AI). **No hace falta ningún client id ni secret para entrenar y registrar.**
+(abre https://login.microsoft.com/device y escribe el código que imprime). Con eso el entrenador se identifica ante Azure ML **con tu propia cuenta** (la misma con que creaste SIGMA_AI). **No hace falta ningún client id ni secret para entrenar y registrar.** La sesión queda guardada en `%USERPROFILE%\.azure`.
+
+> `mlflow` debe ser **2.x** (`mlflow<3`, ya fijado en `requirements.txt`): `azureml-mlflow` 1.60 no sube artefactos con mlflow 3 (`azureml_artifacts_builder() got an unexpected keyword argument 'tracking_uri'`).
 
 ### 4.2 Entrenar y registrar en SIGMA_AI
 ```bash
@@ -106,7 +112,7 @@ La API es un servidor: no puede hacer `az login`. Para que la tarjeta 5 lea el �
 3. Portal › área de trabajo **SIGMA_AI › Control de acceso (IAM) › Agregar › Agregar asignación de roles › AzureML Data Scientist** → Miembros: *Usuario, grupo o entidad de servicio* → busca `sigma-api-ml` → Revisar y asignar.
 4. En `Solucion/SIGMA/API/Web.config`: `AzureML.ClientId` = id de aplicación, `AzureML.ClientSecret` = el valor del secreto. Tenant, suscripción, grupo, área y región ya están puestos. **Nunca por chat ni correo.**
 
-Si el tenant de grupoexpro no te deja registrar aplicaciones («no tiene permiso»), la investigación no se detiene: la API puntúa sin Azure, y Azure se usa desde el entrenador con tu cuenta. La tarjeta 5 seguirá diciendo «no configurado», que es la verdad.
+**Es el caso hoy (18-09-2026):** el tenant de grupoexpro no deja entrar a Entra ID ni registrar aplicaciones. La investigación no se detiene: la API puntúa sin Azure, y Azure se usa desde el entrenador con tu cuenta. La tarjeta 5 seguirá diciendo «no configurado», que es la verdad. Cuando SIGMA tenga tenant propio (o el administrador de grupoexpro cree la entidad de servicio), son los cuatro pasos de arriba y dos claves en `Web.config`.
 
 ### 4.4 Lo que NO hay que crear (porque cuesta)
 Instancias de proceso (Compute instances), clústeres, jobs serverless, endpoints en línea o por lotes, y los «Ejemplos de cuadernos» del inicio de Studio (todos piden una instancia). El área de trabajo Basic, el registro, MLflow y el Key Vault que creó por defecto no tienen cargo por uso.

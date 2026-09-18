@@ -1814,6 +1814,11 @@ decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
 - Probado: dataset real (12 filas, 0 positivas: el historial no alcanza),
   demo sintético 800 filas (AUC 0,763; ONNX = pesos a 1e-7), publicación,
   puntuación de 22 equipos con razones y alertas, pantalla completa.
-- **Pendiente**: claves `AzureML.ClientId/ClientSecret` (entidad de
-  servicio, la pone Bryan; opcional), `az login` + corrida real contra
-  SIGMA_AI, ONNX Runtime en la API, `Prediccion_Resultado`.
+- **Azure ML real (18-09)**: `az login` con la cuenta de Bryan (CLI vía
+  pip, código de dispositivo) y corrida `319576fc…` + modelo
+  `SIGMA_FAILURE_30D` v1 registrados en SIGMA_AI; sin cómputo. `mlflow<3`
+  por compatibilidad con `azureml-mlflow`. Versión v2 publicada en SIGMA
+  con la ruta del activo de Azure.
+- **Pendiente**: la lectura desde la API (tarjeta 5) necesita una entidad
+  de servicio y el tenant de grupoexpro no permite registrarla; ONNX
+  Runtime en la API; `Prediccion_Resultado`.

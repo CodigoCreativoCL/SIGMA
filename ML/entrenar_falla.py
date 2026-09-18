@@ -42,6 +42,7 @@ import hashlib
 import io
 import json
 import os
+import re
 import sys
 import time
 
@@ -257,7 +258,11 @@ def registrar_mlflow(parametros, metricas, hiper, archivos, etiquetas):
         onnx = next((a for a in archivos if a and a.endswith('.onnx')), None)
         origen = 'runs:/%s/modelo' % run_id
         mv = mlflow.register_model(origen, MODELO)
-        ruta_modelo = 'azureml://registries/models/%s/versions/%s' % (MODELO, mv.version) if 'azureml' in uri \
+        # El id del activo en Azure ML (lo que muestra `az ml model show`);
+        # en MLflow local, la referencia a la corrida.
+        m = re.search(r'subscriptions/([^/]+)/resourceGroups/([^/]+)/providers/[^/]+/workspaces/([^/?]+)', uri)
+        ruta_modelo = ('azureml://subscriptions/%s/resourceGroups/%s/workspaces/%s/models/%s/versions/%s'
+                       % (m.group(1), m.group(2), m.group(3), MODELO, mv.version)) if m \
             else '%s#%s/%s' % (origen, MODELO, mv.version)
         log('modelo registrado: %s v%s' % (MODELO, mv.version))
     except Exception as e:  # el registro es deseable, no obligatorio

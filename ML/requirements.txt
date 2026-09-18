@@ -6,5 +6,5 @@ numpy>=1.26
 skl2onnx>=1.16
 onnxruntime>=1.17
 # Azure ML / MLflow (opcional)
-mlflow>=2.12
+mlflow>=2.12,<3        # azureml-mlflow 1.60 no soporta mlflow 3 (artefactos)
 azureml-mlflow>=1.55
