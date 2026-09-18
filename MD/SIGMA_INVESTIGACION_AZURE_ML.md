@@ -1,4 +1,4 @@
-# SIGMA · Investigación Azure Machine Learning
+﻿# SIGMA · Investigación Azure Machine Learning
 
 **Objetivo:** dejar probado, de punta a punta y **sin costo**, el camino con el
 que SIGMA AI va a aprender de verdad — empezando por **SIGMA FAILURE 30 días**
