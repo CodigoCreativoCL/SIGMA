@@ -1,3 +1,4 @@
 salida/
 mlruns/
 __pycache__/
+.env

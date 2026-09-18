@@ -24,6 +24,25 @@ def log(msg):
     print(time.strftime('%H:%M:%S'), msg, flush=True)
 
 
+def cargar_env():
+    """Lee ML/.env (CLAVE=valor por linea) al entorno, sin pisar lo que ya
+    esta. Es donde van las claves de entrenamiento de Custom Vision y el
+    MLFLOW_TRACKING_URI: fuera del chat, fuera de git (.gitignore)."""
+    ruta = os.path.join(os.path.dirname(os.path.abspath(__file__)), '.env')
+    if not os.path.exists(ruta):
+        return
+    with open(ruta, encoding='utf-8-sig') as f:
+        for linea in f:
+            linea = linea.strip()
+            if not linea or linea.startswith('#') or '=' not in linea:
+                continue
+            k, v = linea.split('=', 1)
+            os.environ.setdefault(k.strip(), v.strip().strip('"'))
+
+
+cargar_env()
+
+
 # ---------------------------------------------------------------------------
 # LA API
 # ---------------------------------------------------------------------------

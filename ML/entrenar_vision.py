@@ -61,7 +61,9 @@ class CustomVision:
         self.url = self.base + '/customvision/v3.3/training/projects/' + self.project
 
     def _r(self, metodo, ruta, **kw):
-        r = requests.request(metodo, self.url + ruta, headers=self.h, timeout=300, **kw)
+        headers = dict(self.h)
+        headers.update(kw.pop('headers', {}))
+        r = requests.request(metodo, self.url + ruta, headers=headers, timeout=300, **kw)
         if r.status_code >= 300:
             raise SystemExit('Custom Vision %s %s -> %s: %s' % (metodo, ruta, r.status_code, r.text[:400]))
         return r.json() if r.content and 'json' in r.headers.get('Content-Type', '') else r
@@ -78,7 +80,7 @@ class CustomVision:
         return t['id']
 
     def subir(self, imagen, tag_id):
-        r = self._r('POST', '/images', params={'tagIds': tag_id}, data=imagen, headers={**self.h, 'Content-Type': 'application/octet-stream'})
+        r = self._r('POST', '/images', params={'tagIds': tag_id}, data=imagen, headers={'Content-Type': 'application/octet-stream'})
         ok = r.get('isBatchSuccessful') and all(i.get('status') in ('OK', 'OKDuplicate') for i in r.get('images', []))
         return ok, [i.get('status') for i in r.get('images', [])]
 

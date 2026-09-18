@@ -1849,7 +1849,12 @@ decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
   ONNX de la parte lineal), `entrenar_vision.py` (Custom Vision REST: subir,
   entrenar, publicar, exportar ONNX, registrar en Azure ML).
 - Probado: RUL demo 600 → `SIGMA_RUL:1` en Azure, v1 publicada, la
-  instalación vigente puntuada (54 días, 5–587); VISION `--demo --solo-preparar`.
-- **Pendiente de Bryan**: crear el recurso Custom Vision F0 (Ambos, compact)
-  y poner las claves; regenerar las claves de `SIGMAVISION` expuestas en el
-  chat.
+  instalación vigente puntuada (54 días, 5–587). VISION con el recurso
+  `SIGMAVISIONMODEL` F0 creado por Bryan: `--demo 36` sube, entrena, publica
+  `sigma-vision`, exporta ONNX y registra `SIGMA_VISION:1`; v1 publicada;
+  fotos reales clasificadas desde la API y la pantalla; una etiqueta
+  corregida por Rodrigo entra al dataset real. `ML/.env` para las claves
+  de entrenamiento (ignorado por git).
+- **Pendiente de Bryan**: regenerar las claves de `SIGMAVISION` y de
+  `SIGMAVISIONMODEL-Prediction` que aparecieron en el chat, y volver a
+  pegar la nueva en `Web.config`.
