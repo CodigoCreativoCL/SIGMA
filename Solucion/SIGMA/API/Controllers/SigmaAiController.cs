@@ -279,6 +279,7 @@ namespace API.Controllers
                         { "@HIPERPARAMETRO", Json(dto.version.hiperparametro) },
                         { "@PARAMETRO", parametro },
                         { "@RUTA", dto.version.ruta },
+                        { "@REGISTRO", dto.version.registro },
                         { "@HASH", dto.version.hash },
                         { "@BYTE", dto.version.bytes },
                         { "@AUC", dto.version.auc },
@@ -454,10 +455,20 @@ namespace API.Controllers
             {
                 Entrar();
                 ExigirPermiso("VER PREDICCIONES");
-                if (!AzureMl.Configurado)
-                    return Ok(new { configurado = false, faltantes = AzureMl.Faltantes(), mensaje = "Azure ML no está configurado en el Web.config de la API." });
+                object artefactos = new
+                {
+                    disponible = AzureMl.ArtefactosDisponibles,
+                    contenedor = AzureMl.ContenedorArtefactos,
+                    mensaje = AzureMl.ArtefactosDisponibles
+                        ? "La API lee los artefactos registrados por el almacenamiento del área de trabajo (SAS del módulo de archivos), sin entidad de servicio."
+                        : "Sin SAS del almacenamiento no se pueden leer los artefactos."
+                };
 
-                return Ok(new { configurado = true, area = AzureMl.AreaTrabajo(), mlflow = AzureMl.MlflowUri });
+                if (!AzureMl.Configurado)
+                    return Ok(new { configurado = false, faltantes = AzureMl.Faltantes(), artefactos = artefactos,
+                                    mensaje = "El plano de control de Azure ML (experimentos, corridas) no está configurado en el Web.config de la API." });
+
+                return Ok(new { configurado = true, area = AzureMl.AreaTrabajo(), mlflow = AzureMl.MlflowUri, artefactos = artefactos });
             });
         }
 
@@ -487,6 +498,193 @@ namespace API.Controllers
                 if (!string.IsNullOrEmpty(id)) return Ok(new { configurado = true, experimento = id, corridas = AzureMl.Corridas(id) });
                 return Ok(new { configurado = true, experimentos = AzureMl.Experimentos() });
             });
+        }
+
+        /* ====================================================================
+           EL ARTEFACTO REGISTRADO EN AZURE ML (bloque 246)
+           ==================================================================== */
+
+        /// <summary>
+        /// GET /sigma-ai/versiones/{id}/artefactos — baja del área de trabajo
+        /// los archivos del modelo registrado, compara el SHA-256 del .onnx
+        /// con el que informó el entrenador y los pesos del JSON con los de
+        /// la versión. Si el hash coincide deja constancia
+        /// (mpv_fecha_verificacion_utc).
+        /// </summary>
+        [HttpGet]
+        [Route("versiones/{id:int}/artefactos")]
+        public IHttpActionResult Artefactos(int id)
+        {
+            return Ejecutar(() =>
+            {
+                Entrar();
+                ExigirPermiso("VER PREDICCIONES");
+                ExigirCliente();
+
+                Verificacion v = Verificar(id);
+
+                if (v.hashCoincide)
+                    Datos.Ejecutar("API_UPD_ML_MODELO_VERSION_ARTEFACTO", new Dictionary<string, object>
+                    {
+                        { "@ID", id }, { "@USUARIO", SesionApi.UsuarioId() }, { "@HASH", v.hashAzure }, { "@BYTE", v.bytesOnnx }
+                    });
+
+                return Ok(v);
+            });
+        }
+
+        /// <summary>
+        /// POST /sigma-ai/versiones/{id}/sincronizar — toma los pesos desde
+        /// el JSON que acompaña al artefacto en Azure ML y los deja en la
+        /// versión. Solo si el .onnx de Azure es el que informó el
+        /// entrenador (mismo hash): con eso "Azure ML entrega el modelo".
+        /// </summary>
+        [HttpPost]
+        [Route("versiones/{id:int}/sincronizar")]
+        public IHttpActionResult Sincronizar(int id)
+        {
+            return Ejecutar(() =>
+            {
+                Entrar();
+                ExigirPermiso("ENTRENAR MODELOS");
+                ExigirCliente();
+
+                Verificacion v = Verificar(id);
+
+                if (!v.hashCoincide)
+                    throw new ArgumentException("El .onnx registrado en Azure ML no coincide con el que informó el entrenador (" +
+                                                Corto(v.hashAzure) + " vs " + Corto(v.hashVersion) + "): no se toman sus pesos.");
+                if (string.IsNullOrEmpty(v.parametrosAzure))
+                    throw new ArgumentException("El artefacto de Azure ML no trae el JSON de pesos.");
+
+                // Se prueba a puntuar con esos pesos antes de guardarlos.
+                new PuntuadorFalla(v.parametrosAzure);
+
+                Datos.Ejecutar("API_UPD_ML_MODELO_VERSION_ARTEFACTO", new Dictionary<string, object>
+                {
+                    { "@ID", id }, { "@USUARIO", SesionApi.UsuarioId() }, { "@HASH", v.hashAzure }, { "@BYTE", v.bytesOnnx },
+                    { "@PARAMETRO", v.parametrosAzure },
+                    { "@OBSERVACION", "Pesos tomados del artefacto de Azure ML el " + DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm") + " UTC." }
+                });
+
+                v.pesosCoinciden = true;
+                return Ok(v);
+            });
+        }
+
+        /// <summary>Lo que se le cuenta a la pantalla sobre el artefacto.</summary>
+        public class Verificacion
+        {
+            public int version { get; set; }
+            public string registro { get; set; }
+            public string rutaAzure { get; set; }
+            public string rutaBlob { get; set; }
+            public List<object> archivos { get; set; }
+            public string hashVersion { get; set; }
+            public string hashAzure { get; set; }
+            public long? bytesOnnx { get; set; }
+            public bool hashCoincide { get; set; }
+            public bool pesosCoinciden { get; set; }
+            public string mensaje { get; set; }
+            [JsonIgnore] public string parametrosAzure { get; set; }
+        }
+
+        private Verificacion Verificar(int id)
+        {
+            if (!AzureMl.ArtefactosDisponibles)
+                throw new ArgumentException("La API no tiene acceso al almacenamiento del área de trabajo (AzureBlobSas).");
+
+            List<MlVersionDto> lista = Datos.Listar<MlVersionDto>("API_SEL_ML", Parametros(4, id));
+            if (lista.Count == 0) throw new ArgumentException("La versión " + id + " no existe.");
+            MlVersionDto ver = lista[0];
+
+            Verificacion v = new Verificacion
+            {
+                version = ver.mpv_numero, registro = ver.mpv_registro, rutaAzure = ver.mpv_ruta,
+                hashVersion = ver.mpv_hash, archivos = new List<object>()
+            };
+
+            v.rutaBlob = AzureMl.RutaBlob(ver.mpv_ruta);
+            if (v.rutaBlob == null)
+            {
+                v.mensaje = string.IsNullOrEmpty(ver.mpv_ruta)
+                    ? "Esta versión no tiene artefacto en Azure ML (se entrenó sin registrar)."
+                    : "La ruta de la versión no es de un datastore del área de trabajo: " + ver.mpv_ruta;
+                return v;
+            }
+
+            API.Services.BlobService blob = new API.Services.BlobService();
+            int corte = v.rutaBlob.IndexOf('/');
+            string contenedor = v.rutaBlob.Substring(0, corte);
+            string prefijo = v.rutaBlob.Substring(corte + 1).TrimEnd('/') + "/";
+
+            List<API.Services.ContenidoBlob> blobs = blob.Listar(contenedor, prefijo);
+            if (blobs.Count == 0)
+            {
+                v.mensaje = "En Azure ML no hay archivos bajo " + v.rutaBlob + ".";
+                return v;
+            }
+
+            foreach (API.Services.ContenidoBlob b in blobs)
+            {
+                string nombre = b.nombre.Substring(prefijo.Length);
+                string hash = null;
+
+                if (nombre.EndsWith(".onnx", StringComparison.OrdinalIgnoreCase))
+                {
+                    byte[] onnx = blob.Descargar(contenedor + "/" + b.nombre);
+                    hash = API.Services.BlobService.Hash(onnx);
+                    v.hashAzure = hash;
+                    v.bytesOnnx = onnx.LongLength;
+                }
+                else if (nombre.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                {
+                    byte[] json = blob.Descargar(contenedor + "/" + b.nombre);
+                    hash = API.Services.BlobService.Hash(json);
+                    try
+                    {
+                        Newtonsoft.Json.Linq.JObject j = Newtonsoft.Json.Linq.JObject.Parse(Encoding.UTF8.GetString(json));
+                        Newtonsoft.Json.Linq.JToken par = j["parametros"] ?? j;
+                        if (par["coeficientes"] != null)
+                        {
+                            v.parametrosAzure = par.ToString(Newtonsoft.Json.Formatting.None);
+                            v.pesosCoinciden = MismosPesos(v.parametrosAzure, ver.mpv_parametro);
+                        }
+                    }
+                    catch (Exception) { /* un JSON que no es de pesos: se lista igual */ }
+                }
+
+                v.archivos.Add(new { nombre = nombre, bytes = b.tamano, modificado = b.modificado, sha256 = hash });
+            }
+
+            v.hashCoincide = v.hashAzure != null && (string.IsNullOrEmpty(v.hashVersion) ||
+                             string.Equals(v.hashAzure, v.hashVersion, StringComparison.OrdinalIgnoreCase));
+            v.mensaje = v.hashAzure == null ? "El artefacto no trae un .onnx."
+                      : v.hashCoincide ? "El .onnx de Azure ML es el que informó el entrenador (SHA-256 igual)."
+                      : "El .onnx de Azure ML NO es el que informó el entrenador.";
+            return v;
+        }
+
+        /// <summary>Los coeficientes e intercepto, comparados con tolerancia.</summary>
+        private static bool MismosPesos(string a, string b)
+        {
+            if (string.IsNullOrEmpty(a) || string.IsNullOrEmpty(b)) return false;
+            try
+            {
+                PuntuadorFalla.Parametros pa = JsonConvert.DeserializeObject<PuntuadorFalla.Parametros>(a);
+                PuntuadorFalla.Parametros pb = JsonConvert.DeserializeObject<PuntuadorFalla.Parametros>(b);
+                if (pa.coeficientes.Count != pb.coeficientes.Count) return false;
+                if (Math.Abs(pa.intercepto - pb.intercepto) > 1e-9) return false;
+                for (int i = 0; i < pa.coeficientes.Count; i++)
+                    if (Math.Abs(pa.coeficientes[i] - pb.coeficientes[i]) > 1e-9) return false;
+                return true;
+            }
+            catch (Exception) { return false; }
+        }
+
+        private static string Corto(string hash)
+        {
+            return string.IsNullOrEmpty(hash) ? "(sin hash)" : hash.Substring(0, Math.Min(12, hash.Length)) + "…";
         }
 
         /* ====================================================================

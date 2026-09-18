@@ -1819,6 +1819,13 @@ decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
   `SIGMA_FAILURE_30D` v1 registrados en SIGMA_AI; sin cómputo. `mlflow<3`
   por compatibilidad con `azureml-mlflow`. Versión v2 publicada en SIGMA
   con la ruta del activo de Azure.
-- **Pendiente**: la lectura desde la API (tarjeta 5) necesita una entidad
-  de servicio y el tenant de grupoexpro no permite registrarla; ONNX
-  Runtime en la API; `Prediccion_Resultado`.
+- **`BD/246` Azure ML entrega el modelo sin entidad de servicio**: la API
+  lee el artefacto registrado por el almacenamiento del área (SAS del
+  módulo de archivos), verifica el SHA-256 del `.onnx` contra el del
+  entrenador y puede tomar los pesos desde Azure (`/versiones/{id}/artefactos`,
+  `/sincronizar`; `mpv_registro`, `mpv_fecha_verificacion_utc`;
+  `BlobService.Listar`). Pantalla: «Verificar en Azure» y «Tomar los pesos
+  desde Azure ML». Probado con `SIGMA_FAILURE_30D:1` y `:2`.
+- **Pendiente**: el plano de control (experimentos, corridas) desde la API
+  necesita una entidad de servicio y el tenant de grupoexpro no permite
+  registrarla; ONNX Runtime en la API; `Prediccion_Resultado`.

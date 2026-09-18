@@ -119,6 +119,34 @@ Instancias de proceso (Compute instances), clústeres, jobs serverless, endpoint
 
 ---
 
+## 4.5 Azure ML entrega el modelo sin entidad de servicio (bloque 246)
+
+El registro de modelos guarda los artefactos en la cuenta de almacenamiento del área
+de trabajo (`sigmacodigocreativo`, contenedor `azureml`, ruta
+`ExperimentRun/dcid.<corrida>/modelo/`), la misma a la que la API ya accede con el
+SAS del módulo de archivos. Por ahí la API:
+
+- `GET /sigma-ai/versiones/{id}/artefactos`: lista los archivos del modelo registrado,
+  baja el `.onnx`, compara su SHA‑256 con el que informó el entrenador
+  (`mpv_hash`) y compara los pesos del JSON con `mpv_parametro`; si coincide deja
+  `mpv_fecha_verificacion_utc`.
+- `POST /sigma-ai/versiones/{id}/sincronizar`: toma los pesos desde el artefacto de
+  Azure (solo con hash coincidente). Con eso la fuente de los pesos es Azure ML, no
+  lo que pegó el entrenador.
+- `mpv_registro` = `SIGMA_FAILURE_30D:<versión>` del registro; `mpv_ruta` = ruta del
+  artefacto en el datastore (lo que `az ml model show` devuelve como `path`); el
+  entrenador ya manda las dos.
+
+Probado el 18‑09: v2 (`SIGMA_FAILURE_30D:1`, corrida `319576fc…`) y v3
+(`SIGMA_FAILURE_30D:2`, corrida `092b2045…`): hash del `.onnx` en Azure = hash del
+entrenador, pesos iguales, sincronización OK, puntuación con los pesos de Azure.
+`Web.config`: `AzureML.ContenedorArtefactos=azureml` (otro datastore se declara como
+`AzureML.Contenedor.<datastore>`).
+
+**Lo que NO se hace:** puntos de conexión en tiempo real. El panel «Implementar» de
+Studio propone 3 instancias Standard_D2as_v4 a 0,10 USD/h cada una (~216 USD/mes)
+cobradas desde que existen, aunque nadie las llame.
+
 ## 5. Lo que falta para que sea SIGMA AI de verdad
 
 1. **Historial**: con 8 fallas no hay nada que aprender. El dataset crece solo con la operación (fallas, OT, mediciones); el corte semanal ya genera una fila por equipo y semana.

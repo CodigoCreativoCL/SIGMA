@@ -117,6 +117,57 @@ namespace API.Utils
         }
 
         /* ====================================================================
+           LOS ARTEFACTOS, POR EL ALMACENAMIENTO (sin Entra ID)
+           El registro de modelos deja los archivos en la cuenta de
+           almacenamiento del area de trabajo; la API ya tiene un SAS de esa
+           cuenta (el del modulo de archivos). Una ruta
+           `azureml://.../datastores/<ds>/paths/<ruta>` se traduce a
+           `<contenedor del datastore>/<ruta>` y se lee con BlobService.
+           ==================================================================== */
+
+        /// <summary>True si la API puede leer los artefactos del área de trabajo.</summary>
+        public static bool ArtefactosDisponibles
+        {
+            get { return new API.Services.BlobService().Disponible && !string.IsNullOrEmpty(ContenedorArtefactos); }
+        }
+
+        /// <summary>El contenedor del datastore `workspaceartifactstore` (por omisión `azureml`).</summary>
+        public static string ContenedorArtefactos
+        {
+            get { string v = Leer("AzureML.ContenedorArtefactos"); return string.IsNullOrEmpty(v) ? "azureml" : v; }
+        }
+
+        /// <summary>
+        /// `azureml://.../datastores/workspaceartifactstore/paths/ExperimentRun/dcid.X/modelo`
+        /// → `azureml/ExperimentRun/dcid.X/modelo`. Null si la ruta no es de un datastore.
+        /// </summary>
+        public static string RutaBlob(string rutaAzure)
+        {
+            if (string.IsNullOrEmpty(rutaAzure)) return null;
+
+            int i = rutaAzure.IndexOf("/datastores/", StringComparison.OrdinalIgnoreCase);
+            int j = rutaAzure.IndexOf("/paths/", StringComparison.OrdinalIgnoreCase);
+            if (i < 0 || j < 0 || j < i) return null;
+
+            string datastore = rutaAzure.Substring(i + "/datastores/".Length, j - i - "/datastores/".Length);
+            string ruta = rutaAzure.Substring(j + "/paths/".Length).Trim('/');
+
+            string contenedor;
+            if (string.Equals(datastore, "workspaceartifactstore", StringComparison.OrdinalIgnoreCase))
+                contenedor = ContenedorArtefactos;
+            else
+            {
+                /* Otro datastore (workspaceblobstore, uno propio): su
+                   contenedor se declara en Web.config como
+                   AzureML.Contenedor.<datastore>. Sin declarar, no se adivina. */
+                contenedor = Leer("AzureML.Contenedor." + datastore);
+                if (string.IsNullOrEmpty(contenedor)) return null;
+            }
+
+            return contenedor + "/" + ruta;
+        }
+
+        /* ====================================================================
            EL TOKEN
            ==================================================================== */
 

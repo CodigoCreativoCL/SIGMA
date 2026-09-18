@@ -239,7 +239,7 @@ def registrar_mlflow(parametros, metricas, hiper, archivos, etiquetas):
         import mlflow
     except ImportError:
         log('mlflow no esta instalado: no se registra en Azure ML (pip install mlflow azureml-mlflow).')
-        return None, None
+        return None, None, None
     uri = os.environ.get('MLFLOW_TRACKING_URI', '')
     if not uri:
         mlflow.set_tracking_uri('file:' + os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mlruns'))
@@ -253,23 +253,26 @@ def registrar_mlflow(parametros, metricas, hiper, archivos, etiquetas):
             if a and os.path.exists(a):
                 mlflow.log_artifact(a, 'modelo')
         run_id = run.info.run_id
-    ruta_modelo = None
+    ruta_modelo, registro = None, None
+    m = re.search(r'subscriptions/([^/]+)/resourceGroups/([^/]+)/providers/[^/]+/workspaces/([^/?]+)', uri)
+    if m:
+        # Donde quedaron los archivos en el area de trabajo: es lo que `az ml
+        # model show` devuelve como `path` y lo que la API descarga con el
+        # SAS del almacenamiento (bloque 246), sin entidad de servicio.
+        ruta_modelo = ('azureml://subscriptions/%s/resourceGroups/%s/workspaces/%s/datastores/workspaceartifactstore'
+                       '/paths/ExperimentRun/dcid.%s/modelo' % (m.group(1), m.group(2), m.group(3), run_id))
     try:
-        onnx = next((a for a in archivos if a and a.endswith('.onnx')), None)
         origen = 'runs:/%s/modelo' % run_id
         mv = mlflow.register_model(origen, MODELO)
-        # El id del activo en Azure ML (lo que muestra `az ml model show`);
-        # en MLflow local, la referencia a la corrida.
-        m = re.search(r'subscriptions/([^/]+)/resourceGroups/([^/]+)/providers/[^/]+/workspaces/([^/?]+)', uri)
-        ruta_modelo = ('azureml://subscriptions/%s/resourceGroups/%s/workspaces/%s/models/%s/versions/%s'
-                       % (m.group(1), m.group(2), m.group(3), MODELO, mv.version)) if m \
-            else '%s#%s/%s' % (origen, MODELO, mv.version)
-        log('modelo registrado: %s v%s' % (MODELO, mv.version))
+        registro = '%s:%s' % (MODELO, mv.version)
+        if not m:
+            ruta_modelo = origen
+        log('modelo registrado: %s' % registro)
     except Exception as e:  # el registro es deseable, no obligatorio
         log('no se pudo registrar el modelo en MLflow: %s' % str(e)[:300])
     entorno = ('azureml' if 'azureml' in uri else 'mlflow local') + ' · run ' + run_id
     log('corrida %s en %s' % (run_id, uri[:80]))
-    return entorno, ruta_modelo
+    return entorno, ruta_modelo, registro
 
 
 # ---------------------------------------------------------------------------
@@ -333,12 +336,12 @@ def main():
             contenido = f.read()
         hash_onnx, bytes_onnx = hashlib.sha256(contenido).hexdigest(), len(contenido)
 
-    entorno, ruta_modelo = ('local · sin MLflow', None)
+    entorno, ruta_modelo, registro = ('local · sin MLflow', None, None)
     if not a.sin_azure:
-        e, r = registrar_mlflow(parametros, metricas, hiper, [ruta_json, ruta_onnx],
-                                {'sigma_modelo': 'SIGMA FAILURE 30D', 'dataset': origen, 'onnx_sha256': hash_onnx or ''})
+        e, r, g = registrar_mlflow(parametros, metricas, hiper, [ruta_json, ruta_onnx],
+                                   {'sigma_modelo': 'SIGMA FAILURE 30D', 'dataset': origen, 'onnx_sha256': hash_onnx or ''})
         if e:
-            entorno, ruta_modelo = e, r
+            entorno, ruta_modelo, registro = e, r, g
 
     if a.sin_informar:
         log('no se informa a la API (--sin-informar). Pesos en %s' % ruta_json)
@@ -350,7 +353,7 @@ def main():
         'version': {
             'formato': 'ONNX' if ruta_onnx else 'PICKLE',
             'algoritmo': parametros['algoritmo'], 'hiperparametro': hiper, 'parametro': parametros,
-            'ruta': ruta_modelo, 'hash': hash_onnx, 'bytes': bytes_onnx,
+            'ruta': ruta_modelo, 'registro': registro, 'hash': hash_onnx, 'bytes': bytes_onnx,
             'auc': round(metricas['auc'], 6), 'precision': round(metricas['precision'], 6),
             'recall': round(metricas['recall'], 6), 'f1': round(metricas['f1'], 6),
             'observacion': ('DATASET SINTETICO: no usar para operar. ' if a.demo else '') + 'ONNX ' + (ruta_onnx or 'no generado'),

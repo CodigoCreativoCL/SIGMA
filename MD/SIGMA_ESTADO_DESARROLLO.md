@@ -1110,6 +1110,8 @@ $t = [System.IO.File]::ReadAllText($p)
 
 | 18-09-2026 | **Investigación Azure Machine Learning · SIGMA FAILURE 30D.** `BD/245` (modelo, 15 características, `FNC_ML_ACTIVO_HISTORICO_V1` sin fuga, SP de dataset/entrenamiento/versión/publicación/predicción, permiso y menú), API `/sigma-ai/*` con `PuntuadorFalla` (pesos de la versión publicada) y `AzureMl` (solo lectura, client credentials), web `SigmaAI/Experimentos.aspx`, `ML/entrenar_falla.py`. Cero costo: entrenamiento local, Azure ML solo como registro, puntuación en la API. Probado de punta a punta con demo sintético; el historial real (8 fallas) no alcanza para aprender. Guía en `SIGMA_INVESTIGACION_AZURE_ML.md`. Checklist §10.24 |
 
+| 18-09-2026 | **Azure ML entrega el modelo sin entidad de servicio (`BD/246`).** La API baja el artefacto registrado por el almacenamiento del área (contenedor `azureml`, SAS existente), verifica el SHA-256 del `.onnx` y puede tomar los pesos desde Azure; `mpv_registro` y `mpv_fecha_verificacion_utc`. Corridas y modelo `SIGMA_FAILURE_30D` v1/v2 registrados en SIGMA_AI con la cuenta de Bryan (`az login` por código; `mlflow<3`). Sin cómputo, sin endpoints (el de Studio costaría ~216 USD/mes). Checklist §10.24 |
+
 ### Cómo actualizar este documento
 
 Al cerrar un bloque de trabajo: agregar la fila en la bitácora, mover lo

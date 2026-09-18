@@ -2760,6 +2760,8 @@ namespace API.MVC.Model
         public string VERSION_PARAMETRO { get; set; }
         public string VERSION_RUTA { get; set; }
         public string VERSION_HASH { get; set; }
+        public string VERSION_REGISTRO { get; set; }
+        public DateTime? VERSION_VERIFICADA { get; set; }
         public decimal? VERSION_AUC { get; set; }
         public decimal? VERSION_PRECISION { get; set; }
         public decimal? VERSION_RECALL { get; set; }
@@ -2826,8 +2828,12 @@ namespace API.MVC.Model
         public string mpv_hiperparametro { get; set; }
         public string mpv_parametro { get; set; }
         public string mpv_ruta { get; set; }
+        /// <summary>nombre:versión en el registro de Azure ML.</summary>
+        public string mpv_registro { get; set; }
         public string mpv_hash { get; set; }
         public long? mpv_byte { get; set; }
+        /// <summary>La última vez que la API bajó el artefacto y el hash coincidió.</summary>
+        public DateTime? mpv_fecha_verificacion_utc { get; set; }
         public decimal? mpv_metrica_auc { get; set; }
         public decimal? mpv_metrica_precision { get; set; }
         public decimal? mpv_metrica_recall { get; set; }
@@ -2897,8 +2903,10 @@ namespace API.MVC.Model
         public object hiperparametro { get; set; }
         /// <summary>{ caracteristicas, media, desviacion, coeficientes, intercepto }.</summary>
         public object parametro { get; set; }
-        /// <summary>azureml://… del modelo registrado.</summary>
+        /// <summary>azureml://…/datastores/…/paths/… del artefacto (lo que la API descarga).</summary>
         public string ruta { get; set; }
+        /// <summary>nombre:versión en el registro de Azure ML.</summary>
+        public string registro { get; set; }
         public string hash { get; set; }
         public long? bytes { get; set; }
         public decimal? auc { get; set; }

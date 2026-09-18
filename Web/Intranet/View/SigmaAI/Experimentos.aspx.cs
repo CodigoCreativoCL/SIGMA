@@ -318,6 +318,8 @@ public partial class View_SigmaAI_Experimentos : System.Web.UI.Page
                 int estado = Convert.ToInt32(d["mpv_plan_version_estado"]);
                 string pill = estado == 2 ? "is-pub" : (estado == 1 ? "is-bor" : "is-ret");
                 string ruta = T(d["mpv_ruta"]);
+                string registro = T(d["mpv_registro"]);
+                bool verificada = d["mpv_fecha_verificacion_utc"] != null;
                 filas.Add(new
                 {
                     id = Convert.ToInt32(d["mpv_id"]),
@@ -330,9 +332,14 @@ public partial class View_SigmaAI_Experimentos : System.Web.UI.Page
                     recall = Num(d["mpv_metrica_recall"], "0.000"),
                     f1 = Num(d["mpv_metrica_f1"], "0.000"),
                     ruta = HttpUtility.HtmlEncode(ruta),
-                    rutaCorta = HttpUtility.HtmlEncode(string.IsNullOrEmpty(ruta) ? "sin registrar" : Corto(ruta, 34)),
+                    registroHtml = string.IsNullOrEmpty(ruta)
+                        ? "<span class='neg'>sin registrar</span>"
+                        : "<strong>" + HttpUtility.HtmlEncode(string.IsNullOrEmpty(registro) ? "registrado" : registro) + "</strong>" +
+                          (verificada ? " <span class='sg-ml-pill is-ok' title='La API bajó el .onnx y su hash coincide'>verificado " + Fecha(d["mpv_fecha_verificacion_utc"]) + "</span>"
+                                      : " <span class='sg-ml-pill is-bor'>sin verificar</span>"),
                     entrenada = Fecha(d["mpv_fecha_entrenamiento_utc"]),
-                    puedePublicar = puede && estado == 1
+                    puedePublicar = puede && estado == 1,
+                    tieneArtefacto = !string.IsNullOrEmpty(ruta)
                 });
             }
         }
@@ -344,17 +351,87 @@ public partial class View_SigmaAI_Experimentos : System.Web.UI.Page
 
     protected void rptVersiones_ItemCommand(object source, RepeaterCommandEventArgs e)
     {
-        if (e.CommandName != "publicar") return;
         try
         {
-            Services.PostJson("/sigma-ai/versiones/" + e.CommandArgument + "/publicar", new Dictionary<string, object>());
-            Tools.tools.ClientAlert("Versión publicada. La API ya puntúa con sus pesos.", "ok");
-            Cargar();
+            if (e.CommandName == "publicar")
+            {
+                Services.PostJson("/sigma-ai/versiones/" + e.CommandArgument + "/publicar", new Dictionary<string, object>());
+                Tools.tools.ClientAlert("Versión publicada. La API ya puntúa con sus pesos.", "ok");
+                Cargar();
+            }
+            else if (e.CommandName == "verificar")
+            {
+                Dictionary<string, object> v = Services.GetJson("/sigma-ai/versiones/" + e.CommandArgument + "/artefactos");
+                Cargar();
+                litArtefacto.Text = PintarArtefacto(v, Convert.ToInt32(e.CommandArgument));
+            }
+            else if (e.CommandName == "sincronizar")
+            {
+                Dictionary<string, object> v = Services.PostJson("/sigma-ai/versiones/" + e.CommandArgument + "/sincronizar", new Dictionary<string, object>());
+                Tools.tools.ClientAlert("Los pesos de la versión ahora son los del artefacto registrado en Azure ML.", "ok");
+                Cargar();
+                litArtefacto.Text = PintarArtefacto(v, Convert.ToInt32(e.CommandArgument));
+            }
         }
         catch (Exception ex)
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
         }
+    }
+
+    /// <summary>
+    /// Lo que la API encontró en el área de trabajo para esa versión: los
+    /// archivos, el hash de Azure contra el del entrenador y si los pesos
+    /// son los mismos. Con permiso, el botón para tomar los pesos de Azure.
+    /// </summary>
+    private string PintarArtefacto(Dictionary<string, object> v, int id)
+    {
+        StringBuilder sb = new StringBuilder();
+        bool hash = v["hashCoincide"] != null && Convert.ToBoolean(v["hashCoincide"]);
+        bool pesos = v["pesosCoinciden"] != null && Convert.ToBoolean(v["pesosCoinciden"]);
+        object[] archivos = Lista(v["archivos"]);
+
+        sb.Append("<div class='sg-ml-aviso " + (hash ? "is-ok" : "is-mal") + "' style='margin-top:12px'><strong>v" + T(v["version"]) +
+                  (string.IsNullOrEmpty(T(v["registro"])) ? "" : " · " + HttpUtility.HtmlEncode(T(v["registro"]))) + "</strong> — " +
+                  HttpUtility.HtmlEncode(T(v["mensaje"])) +
+                  (archivos != null && archivos.Length > 0 ? (pesos ? " Los pesos del JSON de Azure son los de la versión." : " Los pesos del JSON de Azure NO son los de la versión.") : "") +
+                  "</div>");
+
+        if (archivos != null && archivos.Length > 0)
+        {
+            sb.Append("<div class='txt'>Ruta en el área de trabajo: <code>" + HttpUtility.HtmlEncode(T(v["rutaBlob"])) + "</code></div>");
+            sb.Append("<table class='sg-tabla is-compacta'><tr><th>Archivo</th><th class='num'>Bytes</th><th>Modificado (UTC)</th><th>SHA-256</th></tr>");
+            foreach (object o in archivos)
+            {
+                Dictionary<string, object> a = (Dictionary<string, object>)o;
+                sb.Append("<tr><td><strong>" + HttpUtility.HtmlEncode(T(a["nombre"])) + "</strong></td><td class='num'>" + T(a["bytes"]) +
+                          "</td><td>" + Fecha(a["modificado"]) + "</td><td><code title='" + HttpUtility.HtmlEncode(T(a["sha256"])) + "'>" +
+                          Corto(T(a["sha256"]), 16) + "</code></td></tr>");
+            }
+            sb.Append("</table>");
+            sb.Append("<div class='txt' style='margin-top:6px'>Hash informado por el entrenador: <code>" + Corto(T(v["hashVersion"]), 16) +
+                      "</code> · hash del .onnx en Azure: <code>" + Corto(T(v["hashAzure"]), 16) + "</code></div>");
+        }
+
+        litArtefacto.Text = sb.ToString();
+
+        /* El botón de sincronizar se agrega como control real, no como HTML:
+           tiene que hacer postback con permiso. */
+        if (hash && PuedeEntrenar)
+        {
+            sb.Append("<div class='sg-ml-form'><a href=\"javascript:__doPostBack('" + btnSincronizar.UniqueID + "','" + id + "')\" class='sigma-accion'>" +
+                      "<i class='mdi mdi-cloud-download-outline'></i><span>Tomar los pesos desde Azure ML</span></a></div>");
+        }
+        return sb.ToString();
+    }
+
+    /// <summary>Postback del enlace «Tomar los pesos desde Azure ML» (el id viene como argumento).</summary>
+    protected void btnSincronizar_Click(object sender, EventArgs e)
+    {
+        string arg = Request.Form["__EVENTARGUMENT"];
+        int id;
+        if (!int.TryParse(arg, out id)) return;
+        rptVersiones_ItemCommand(rptVersiones, new RepeaterCommandEventArgs(null, sender, new CommandEventArgs("sincronizar", id)));
     }
 
     /* ====================================================================

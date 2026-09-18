@@ -148,9 +148,13 @@
                             <td class="num"><%# Eval("precision") %></td>
                             <td class="num"><%# Eval("recall") %></td>
                             <td class="num"><%# Eval("f1") %></td>
-                            <td><span class="sg-ml-exp" title='<%# Eval("ruta") %>'><%# Eval("rutaCorta") %></span></td>
+                            <td style="white-space: normal; min-width: 190px;"><span class="sg-ml-exp" title='<%# Eval("ruta") %>'><%# Eval("registroHtml") %></span></td>
                             <td><%# Eval("entrenada") %></td>
-                            <td class="sg-tabla-acciones">
+                            <td class="sg-tabla-acciones" style="width: 250px; white-space: nowrap;">
+                                <asp:LinkButton ID="lnkVerificar" runat="server" CssClass="sigma-accion" CommandName="verificar"
+                                    CommandArgument='<%# Eval("id") %>' Visible='<%# (bool)Eval("tieneArtefacto") %>' ToolTip="Baja el .onnx del área de trabajo y compara su hash">
+                                    <i class="mdi mdi-cloud-check-outline"></i><span>Verificar en Azure</span>
+                                </asp:LinkButton>
                                 <asp:LinkButton ID="lnkPublicar" runat="server" CssClass="sigma-accion is-primaria" CommandName="publicar"
                                     CommandArgument='<%# Eval("id") %>' Visible='<%# (bool)Eval("puedePublicar") %>'
                                     OnClientClick="return ConfirSweetAlert(this, '', '¿Publicar esta versión? La API pasará a puntuar con sus pesos y la versión vigente se retira.');">
@@ -162,6 +166,8 @@
                     <FooterTemplate></table></div></FooterTemplate>
                 </asp:Repeater>
                 <asp:Literal ID="litVersionesVacio" runat="server" />
+                <asp:Literal ID="litArtefacto" runat="server" />
+                <asp:LinkButton ID="btnSincronizar" runat="server" OnClick="btnSincronizar_Click" style="display:none" />
             </div>
 
             <%-- PASO 4: PUNTUAR --%>
@@ -186,9 +192,11 @@
             <div class="card-box sg-ml-paso">
                 <h4><span class="n" id="n5" runat="server">5</span> Lo que hay en Azure ML (área de trabajo SIGMA_AI)</h4>
                 <div class="txt">
-                    La API lee el área de trabajo con una entidad de servicio (Entra ID) que tiene el rol <em>AzureML Data Scientist</em>:
-                    modelos registrados, experimentos y corridas de MLflow. Solo lectura, sin cómputo, sin cargo. Mientras las claves
-                    <code>AzureML.*</code> del Web.config de la API digan PENDIENTE, esta tarjeta lo dice tal cual.
+                    Dos canales, los dos gratis. <strong>El artefacto</strong>: el registro de modelos deja el <code>.onnx</code> y los pesos en el
+                    almacenamiento del área de trabajo (contenedor <code>azureml</code>), la misma cuenta a la que la API ya accede con su SAS;
+                    por ahí la API baja el modelo registrado, comprueba su hash y puede tomar los pesos desde Azure («Verificar en Azure» en la
+                    tarjeta 3). <strong>El plano de control</strong> (experimentos, corridas, lista de modelos) exige una entidad de servicio en
+                    Entra ID; mientras las claves <code>AzureML.ClientId/ClientSecret</code> digan PENDIENTE, esta tarjeta lo dice tal cual.
                 </div>
                 <div class="sg-ml-form">
                     <asp:LinkButton ID="btnAzure" runat="server" CssClass="sigma-accion" OnClick="btnAzure_Click">
