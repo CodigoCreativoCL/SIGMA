@@ -1108,6 +1108,8 @@ $t = [System.IO.File]::ReadAllText($p)
 | 17-09-2026 | **Pruebas del Sprint 3 completo**: 64 casos, 55 ✓. Programaciones probadas sobre `FNC_PROGRAMACION_FECHAS`; `BD/241` (la OT despliega los pasos del procedimiento), `BD/242` (permiso vencido al tomar la OT; repuesto no compatible exige motivo). Checklist §10.22 |
 | 17-09-2026 | **Generación por medidor y por condición + paso con medición / punto de control.** `BD/243` (`FNC_PLAN_MEDIDOR_ESTADO`, `GEN_PLAN_OCURRENCIAS_MEDIDOR`, `GEN_PLAN_OCURRENCIAS_CONDICION`, hooks en los SP de captura), `BD/244` (`API_UPD_ORDEN_TRABAJO_PASO` exige la medición y respeta el punto de control; DTO con `valor_medicion`). HU-073/074 y HU-062 #2/#3 con evidencia; informe S3 62/64. Checklist §10.23 |
 
+| 18-09-2026 | **Investigación Azure Machine Learning · SIGMA FAILURE 30D.** `BD/245` (modelo, 15 características, `FNC_ML_ACTIVO_HISTORICO_V1` sin fuga, SP de dataset/entrenamiento/versión/publicación/predicción, permiso y menú), API `/sigma-ai/*` con `PuntuadorFalla` (pesos de la versión publicada) y `AzureMl` (solo lectura, client credentials), web `SigmaAI/Experimentos.aspx`, `ML/entrenar_falla.py`. Cero costo: entrenamiento local, Azure ML solo como registro, puntuación en la API. Probado de punta a punta con demo sintético; el historial real (8 fallas) no alcanza para aprender. Guía en `SIGMA_INVESTIGACION_AZURE_ML.md`. Checklist §10.24 |
+
 ### Cómo actualizar este documento
 
 Al cerrar un bloque de trabajo: agregar la fila en la bitácora, mover lo

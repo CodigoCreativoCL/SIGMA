@@ -1,0 +1,10 @@
+scikit-learn>=1.4
+pandas>=2.0
+requests>=2.31
+numpy>=1.26
+# ONNX (recomendado)
+skl2onnx>=1.16
+onnxruntime>=1.17
+# Azure ML / MLflow (opcional)
+mlflow>=2.12
+azureml-mlflow>=1.55

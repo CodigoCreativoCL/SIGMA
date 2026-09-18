@@ -166,6 +166,32 @@ namespace SitioBase
             return Serializador().Deserialize<Dictionary<string, object>>(respuesta);
         }
 
+        /// <summary>
+        /// GET cuya respuesta puede ser un arreglo JSON y no un objeto: los
+        /// listados de la API (/sigma-ai/versiones, …) vienen así. Devuelve
+        /// object: un Dictionary si era objeto, un object[] si era arreglo.
+        /// </summary>
+        public static object GetJsonLibre(string ruta)
+        {
+            Exigir();
+
+            string respuesta;
+
+            using (WebClient wc = Preparar())
+            {
+                try
+                {
+                    respuesta = wc.DownloadString(Url() + Normalizar(ruta));
+                }
+                catch (WebException ex)
+                {
+                    throw Traducir(ex);
+                }
+            }
+
+            return Serializador().DeserializeObject(respuesta);
+        }
+
         /// <summary>GET que devuelve un binario.</summary>
         public static byte[] GetBinario(string ruta)
         {
@@ -242,6 +268,29 @@ namespace SitioBase
 
             wc.Encoding = Encoding.UTF8;
             wc.Headers["X-Api-Key"] = Clave();
+
+            /* EN NOMBRE DE QUIEN
+               Junto con la clave va la persona en sesión y su cliente. La API
+               (SigmaAiController.Entrar) arma con eso la misma identidad que
+               armaría un JWT —solo si la clave es la correcta— y así los
+               permisos y la auditoría quedan a nombre de la persona, no de
+               "la web". Sin sesión (tareas de fondo) no se mandan y la API
+               trata la llamada como de servicio, igual que hasta ahora. */
+            try
+            {
+                if (HttpContext.Current != null && HttpContext.Current.Session != null
+                    && HttpContext.Current.Session["usu_id"] != null)
+                {
+                    /* Se lee la sesión directo: Session.UsuarioId() redirige
+                       al login cuando no hay usuario, y acá no corresponde. */
+                    wc.Headers["X-Sigma-Usuario"] = HttpContext.Current.Session["usu_id"].ToString();
+                    wc.Headers["X-Sigma-Cliente"] = Session.ClienteId().ToString();
+                }
+            }
+            catch (Exception)
+            {
+                // Sin sesión legible se llama como servicio, como siempre.
+            }
 
             return wc;
         }

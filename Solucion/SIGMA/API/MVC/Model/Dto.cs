@@ -2738,4 +2738,185 @@ namespace API.MVC.Model
         public string motivo { get; set; }
         public bool? habilitado { get; set; }
     }
+
+    /* =====================================================================
+       SIGMA AI · Investigación Azure Machine Learning (bloque 245)
+       ===================================================================== */
+
+    /// <summary>Una fila de `API_SEL_ML` @TIPO 1: el modelo y su versión publicada.</summary>
+    public class MlModeloDto
+    {
+        public int mpr_id { get; set; }
+        public string mpr_codigo { get; set; }
+        public string mpr_nombre { get; set; }
+        public string mpr_descripcion { get; set; }
+        public int? mpr_horizonte_dia { get; set; }
+        public decimal? mpr_umbral_alerta { get; set; }
+        public decimal? mpr_umbral_critico { get; set; }
+        public string OBJETIVO { get; set; }
+        public int? VERSION_ID { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public string VERSION_ALGORITMO { get; set; }
+        public string VERSION_PARAMETRO { get; set; }
+        public string VERSION_RUTA { get; set; }
+        public string VERSION_HASH { get; set; }
+        public decimal? VERSION_AUC { get; set; }
+        public decimal? VERSION_PRECISION { get; set; }
+        public decimal? VERSION_RECALL { get; set; }
+        public decimal? VERSION_F1 { get; set; }
+        public DateTime? VERSION_PUBLICADA { get; set; }
+        public int DATASETS { get; set; }
+        public int CORRIDAS { get; set; }
+        public int VERSIONES { get; set; }
+        public int PREDICCIONES_VIGENTES { get; set; }
+        public int ACTIVOS { get; set; }
+        public int FALLAS { get; set; }
+        public int MEDICIONES { get; set; }
+    }
+
+    public class MlCaracteristicaDto
+    {
+        public int cmo_id { get; set; }
+        public string cmo_codigo { get; set; }
+        public string cmo_etiqueta { get; set; }
+        public string cmo_descripcion { get; set; }
+        public int? cmo_ventana_dia { get; set; }
+        public string cmo_agregacion { get; set; }
+        public int? cmo_orden { get; set; }
+    }
+
+    public class MlDatasetDto
+    {
+        public int den_id { get; set; }
+        public string den_codigo { get; set; }
+        public string den_nombre { get; set; }
+        public DateTime? den_fecha_desde { get; set; }
+        public DateTime? den_fecha_hasta { get; set; }
+        public int? den_fila_total { get; set; }
+        public int? den_fila_positiva { get; set; }
+        public string den_hash_datos { get; set; }
+        public string den_ruta { get; set; }
+        public string den_observacion { get; set; }
+        public DateTime? den_fecha_creacion { get; set; }
+        public int VERSIONES { get; set; }
+    }
+
+    public class MlEjecucionDto
+    {
+        public int eej_id { get; set; }
+        public int? eej_dataset_entrenamiento { get; set; }
+        public int? eej_modelo_predictivo_version { get; set; }
+        public string ESTADO { get; set; }
+        public string eej_entorno { get; set; }
+        public DateTime? eej_fecha_inicio_utc { get; set; }
+        public DateTime? eej_fecha_fin_utc { get; set; }
+        public int? eej_segundo_duracion { get; set; }
+        public string eej_metrica { get; set; }
+        public string eej_mensaje { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public string DATASET_CODIGO { get; set; }
+    }
+
+    public class MlVersionDto
+    {
+        public int mpv_id { get; set; }
+        public int mpv_numero { get; set; }
+        public string FORMATO { get; set; }
+        public string mpv_algoritmo { get; set; }
+        public string mpv_hiperparametro { get; set; }
+        public string mpv_parametro { get; set; }
+        public string mpv_ruta { get; set; }
+        public string mpv_hash { get; set; }
+        public long? mpv_byte { get; set; }
+        public decimal? mpv_metrica_auc { get; set; }
+        public decimal? mpv_metrica_precision { get; set; }
+        public decimal? mpv_metrica_recall { get; set; }
+        public decimal? mpv_metrica_f1 { get; set; }
+        public string ESTADO { get; set; }
+        public int mpv_plan_version_estado { get; set; }
+        public DateTime? mpv_fecha_entrenamiento_utc { get; set; }
+        public DateTime? mpv_fecha_publicacion { get; set; }
+        public DateTime? mpv_fecha_retiro { get; set; }
+        public string mpv_observacion { get; set; }
+        public string DATASET_CODIGO { get; set; }
+        public int? DATASET_FILAS { get; set; }
+        public int? DATASET_POSITIVAS { get; set; }
+    }
+
+    public class MlPrediccionDto
+    {
+        public int pre_id { get; set; }
+        public int pre_activo { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public decimal? pre_probabilidad { get; set; }
+        public int? pre_severidad { get; set; }
+        public string SEVERIDAD { get; set; }
+        public string ESTADO { get; set; }
+        public DateTime? pre_fecha_calculo_utc { get; set; }
+        public DateTime? pre_fecha_vigencia_hasta_utc { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public int? pre_alerta { get; set; }
+        public int? pre_orden_trabajo { get; set; }
+        public string EXPLICACION { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/datasets: el rango del dataset a registrar.</summary>
+    public class MlDatasetNuevoDto
+    {
+        public string codigo { get; set; }
+        public string nombre { get; set; }
+        /// <summary>yyyy-MM-dd; vacío = desde el primer registro del cliente.</summary>
+        public string desde { get; set; }
+        /// <summary>yyyy-MM-dd; vacío = hoy − 30 (último corte observable).</summary>
+        public string hasta { get; set; }
+        public int? paso_dias { get; set; }
+        public string observacion { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/entrenamientos: lo que informa el entrenador al terminar.</summary>
+    public class MlEntrenamientoNuevoDto
+    {
+        public int? dataset { get; set; }
+        /// <summary>Dónde corrió y el id de la corrida de MLflow, si la hubo.</summary>
+        public string entorno { get; set; }
+        /// <summary>3 PROCESADO (por defecto) o 4 ERROR.</summary>
+        public int? estado { get; set; }
+        public int? segundos { get; set; }
+        /// <summary>Todas las métricas, en JSON libre.</summary>
+        public object metrica { get; set; }
+        public string mensaje { get; set; }
+        /// <summary>La versión que produjo; vacío si falló.</summary>
+        public MlVersionNuevaDto version { get; set; }
+    }
+
+    public class MlVersionNuevaDto
+    {
+        public string formato { get; set; }
+        public string algoritmo { get; set; }
+        public object hiperparametro { get; set; }
+        /// <summary>{ caracteristicas, media, desviacion, coeficientes, intercepto }.</summary>
+        public object parametro { get; set; }
+        /// <summary>azureml://… del modelo registrado.</summary>
+        public string ruta { get; set; }
+        public string hash { get; set; }
+        public long? bytes { get; set; }
+        public decimal? auc { get; set; }
+        public decimal? precision { get; set; }
+        public decimal? recall { get; set; }
+        public decimal? f1 { get; set; }
+        public string observacion { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/predecir: vacío = todos los equipos del cliente.</summary>
+    public class MlPredecirDto
+    {
+        public int? activo { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/simular: valores de características a mano, sin guardar.</summary>
+    public class MlSimularDto
+    {
+        public Dictionary<string, double> valores { get; set; }
+    }
 }

@@ -1792,3 +1792,28 @@ No se han olvidado; están fuera de este encargo hasta que Bryan diga.
 - `Repuesto_Compatibilidad` y `Usuario_Especialidad` están vacías: el código
   está hecho, pero sin datos el badge «Compatible» y los chips de especialidad
   no aparecen nunca. **Se cargan desde la web, no programando.**
+
+### 10.24 · Investigación Azure Machine Learning · SIGMA FAILURE 30D (18-09-2026)
+
+El camino completo de un modelo que aprende, probado sin costo. Detalle,
+decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
+
+- **`BD/245`**: modelo SIGMA FAILURE 30D + 15 características;
+  `FNC_ML_ACTIVO_HISTORICO_V1` (características antes del corte, label
+  después); `API_SEL_ML_DATASET_FALLA`, `API_INS_ML_DATASET`,
+  `API_INS_ML_ENTRENAMIENTO`, `API_INS_ML_MODELO_VERSION`,
+  `API_UPD_ML_MODELO_VERSION_PUBLICAR`, `API_SEL_ML`,
+  `API_INS_PREDICCION_FALLA`; `mpv_parametro`; permiso ENTRENAR MODELOS;
+  menú SIGMA AI › Experimentos.
+- **API** `SigmaAiController` (`/sigma-ai/*`), `PuntuadorFalla`, `AzureMl`,
+  `ClaveServicio` (sesión delegada por la web, acotada al controller).
+- **Web** `View/SigmaAI/Experimentos.aspx`; `Services.GetJsonLibre` y los
+  encabezados X-Sigma-Usuario/Cliente en `Services.Preparar`.
+- **`ML/entrenar_falla.py`**: dataset por la API → logística → ONNX
+  (contrastado con los pesos) → MLflow/Azure ML → informa a la API.
+- Probado: dataset real (12 filas, 0 positivas: el historial no alcanza),
+  demo sintético 800 filas (AUC 0,763; ONNX = pesos a 1e-7), publicación,
+  puntuación de 22 equipos con razones y alertas, pantalla completa.
+- **Pendiente**: claves `AzureML.ClientId/ClientSecret` (entidad de
+  servicio, la pone Bryan; opcional), `az login` + corrida real contra
+  SIGMA_AI, ONNX Runtime en la API, `Prediccion_Resultado`.
