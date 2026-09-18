@@ -279,6 +279,8 @@
     <Compile Include="Utils\ClaveServicio.cs" />
     <Compile Include="Utils\AzureMl.cs" />
     <Compile Include="Utils\PuntuadorFalla.cs" />
+    <Compile Include="Utils\CustomVision.cs" />
+    <Compile Include="Utils\PuntuadorRul.cs" />
     <Compile Include="Controllers\SigmaAiController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Token\AutenticacionServiceController.cs" />

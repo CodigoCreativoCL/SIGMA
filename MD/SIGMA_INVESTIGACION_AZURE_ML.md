@@ -147,10 +147,37 @@ entrenador, pesos iguales, sincronización OK, puntuación con los pesos de Azur
 Studio propone 3 instancias Standard_D2as_v4 a 0,10 USD/h cada una (~216 USD/mes)
 cobradas desde que existen, aunque nadie las llame.
 
+## 4.6 Los tres modelos por el mismo camino (bloques 247 y 248)
+
+Todo endpoint de `/sigma-ai/*` recibe `?modelo=FALLA|RUL|VISION` y la pantalla
+Experimentos tiene un selector; el resto (dataset → registro → entrenamiento →
+versión → publicar → puntuar → artefacto en Azure) es el mismo.
+
+| | SIGMA FAILURE 30D | SIGMA RUL | SIGMA VISION |
+|---|---|---|---|
+| Sujeto | equipo × corte | **instalación de repuesto** × corte | imagen |
+| Función / SP | `FNC_ML_ACTIVO_HISTORICO_V1` · `API_SEL_ML_DATASET_FALLA` | `FNC_ML_COMPONENTE_HISTORICO_V1` (reusa la del equipo al mismo corte) · `API_SEL_ML_DATASET_RUL` | `API_SEL_ML_DATASET_VISION` (solo etiquetas **confirmadas por una persona**) |
+| Label | `FALLO_EN_30D` | `DIAS_RESTANTES` (+ `HORAS_RESTANTES`) y **`CENSURADO`** | `ETIQUETA` |
+| Entrenador | `entrenar_falla.py` · logística | `entrenar_rul.py` · **AFT log-normal con censura** (scipy): los retiros preventivos entran como «duró al menos» | `entrenar_vision.py` · **Azure Custom Vision F0** (claves, sin Entra ID), exporta ONNX |
+| Puntuador en la API | `PuntuadorFalla` → probabilidad | `PuntuadorRul` → mediana de días, intervalo 80 %, fecha | Custom Vision predice; la API guarda (`API_INS_ANALISIS_VISUAL`) |
+| Sale a | `Prediccion` + alerta ≥ 0,5 | `Prediccion` (`pre_dia_restante`, intervalos, `pre_componente_repuesto_instalacion`) + alerta ≤ 30 días | `Analisis_Visual_Revision/Deteccion` **sin confirmar**; `API_UPD_ANALISIS_VISUAL_CONFIRMAR` alimenta el próximo dataset |
+| Umbrales | probabilidad 0,50 / 0,80 | fracción del horizonte (90 d): 30 / 7 días (`CK_MPR_UMBRAL` obliga 0–1) | probabilidad 0,60 / 0,85 |
+| Probado 18-09 | real 12 filas / demo 800: AUC 0,763 | real 39 filas (26 observadas) / demo 600: MAE 90 d, error mediano 25 d, cobertura 77 %; `SIGMA_RUL:1` en Azure; instalación vigente → 54 días (5–587) | dataset real 0 imágenes; `--demo 36 --solo-preparar` arma 6 etiquetas × 6; el resto espera el recurso Custom Vision |
+
+`sigma_ml.py` concentra lo común (sesión, dataset registrado, ONNX contrastado, MLflow/Azure ML, informe a la API).
+
+**Custom Vision (lo que crea Bryan, una vez):** portal › Crear un recurso › **Custom Vision** (no *Computer Vision*; enlace directo `portal.azure.com/#create/Microsoft.CognitiveServicesCustomVision`), opciones de creación **Ambos**, F0 en los dos, grupo SIGMA, East US; customvision.ai › New Project «SIGMA VISION», Classification, Multiclass, **General (compact)** (lo que permite exportar a ONNX). Claves de predicción en `Web.config` (`CustomVision.PredictionEndpoint/PredictionKey/ProjectId`, `IterationName=sigma-vision`); las de entrenamiento en el entorno (`CV_TRAINING_ENDPOINT`, `CV_TRAINING_KEY`, `CV_PROJECT_ID`, `CV_PREDICTION_RESOURCE_ID` para publicar). El recurso `SIGMAVISION` (Computer Vision F0) que ya existe es el genérico: sirve para OCR de placas, no para SIGMA VISION; sus claves quedaron en el chat y hay que regenerarlas.
+
+## 4.7 Producción: dónde corre Python
+
+Python solo se necesita para **reentrenar**; la puntuación vive en la API. Opciones sin costo real, todas con identidad administrada (sin Entra ID): **Azure Container Apps Jobs** (grant mensual permanente 180.000 vCPU-s + 360.000 GiB-s; un reentrenamiento gasta ~120 vCPU-s), **Azure Functions** Python con timer (1 M ejecuciones/mes), o GitHub Actions (sin identidad hacia Azure ML hasta tener tenant propio). La imagen del entrenador va en **GitHub Container Registry**, no en Azure Container Registry (Basic ~5 USD/mes; el Standard «gratis» vence a los 12 meses). El job llama `GET /sigma-ai/dataset` → entrena → registra → `POST /sigma-ai/entrenamientos`; publicar sigue siendo humano.
+
+**Lo que no se crea porque cobra:** puntos de conexión en tiempo real (Studio propone 3 × Standard_D2as_v4 ≈ 216 USD/mes), instancias/clústeres de cómputo, Container Registry, VMs.
+
 ## 5. Lo que falta para que sea SIGMA AI de verdad
 
 1. **Historial**: con 8 fallas no hay nada que aprender. El dataset crece solo con la operación (fallas, OT, mediciones); el corte semanal ya genera una fila por equipo y semana.
 2. **ONNX Runtime en la API** (dos NuGet) para puntuar el artefacto oficial; el puntuador de pesos queda como contraste.
 3. **Monitoreo**: `Prediccion_Resultado` (¿ocurrió?) y `Modelo_Monitoreo` para medir la versión publicada contra lo que pasó; hoy las tablas existen y nadie las llena.
-4. **SIGMA RUL** (retiros de repuestos censurados) y **SIGMA VISION** (imágenes etiquetadas), cuando existan los datos.
+4. **SIGMA RUL** necesita ~30 retiros observados por par repuesto/componente; **SIGMA VISION** necesita ≥ 5 imágenes confirmadas por etiqueta (mínimo de Custom Vision) y el recurso Custom Vision F0 creado.
 5. Un job programado (`predecir` una vez al día) cuando haya una versión que valga la pena operar.

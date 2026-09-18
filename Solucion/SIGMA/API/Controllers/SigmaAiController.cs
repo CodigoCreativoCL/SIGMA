@@ -17,76 +17,96 @@ using System.Web.Http;
 namespace API.Controllers
 {
     /// <summary>
-    /// SIGMA AI · Investigación Azure Machine Learning.        SIGMA FAILURE 30D
+    /// SIGMA AI · Investigación Azure Machine Learning.
     ///
-    /// EL CAMINO COMPLETO, SIN COSTO
-    ///   1. GET  /sigma-ai/dataset        el dataset (equipo × fecha de corte) que
-    ///                                    arma la base con `FNC_ML_ACTIVO_HISTORICO_V1`:
-    ///                                    características antes del corte, label después.
-    ///   2. POST /sigma-ai/datasets       lo registra (filas, positivas, hash) para
-    ///                                    que el entrenamiento sea reproducible.
-    ///   3. (fuera)                       `ML/entrenar_falla.py` entrena en el equipo de
+    /// TRES MODELOS, UN CAMINO
+    ///   Todo endpoint recibe `?modelo=FALLA|RUL|VISION` (FALLA por omisión) y
+    ///   el resto es igual para los tres:
+    ///   1. GET  /sigma-ai/dataset        el dataset (sujeto × fecha de corte) que
+    ///                                    arma la base: características antes del
+    ///                                    corte, label después (sin fuga).
+    ///   2. POST /sigma-ai/datasets       lo registra (filas, positivas, hash).
+    ///   3. (fuera)                       `ML/entrenar_*.py` entrena en el equipo de
     ///                                    quien entrena, deja la corrida y el .onnx en
-    ///                                    Azure ML (gratis: es registro, no cómputo) …
+    ///                                    Azure ML (gratis: registro, no cómputo) …
     ///   4. POST /sigma-ai/entrenamientos … y vuelve con las métricas y los pesos.
     ///   5. POST /sigma-ai/versiones/{id}/publicar
     ///   6. POST /sigma-ai/predecir       puntúa hoy con los pesos de la versión
-    ///                                    publicada (`PuntuadorFalla`) y guarda en
-    ///                                    `Prediccion`, con explicación y alerta.
-    ///   7. GET  /sigma-ai/azure/*        lo que hay en Azure ML, leído con la
-    ///                                    entidad de servicio, para contrastarlo.
+    ///                                    publicada (`PuntuadorFalla` / `PuntuadorRul`)
+    ///                                    y guarda en `Prediccion`, con explicación y alerta.
+    ///   7. GET  /sigma-ai/versiones/{id}/artefactos   el .onnx registrado, leído del
+    ///                                    almacenamiento del área (sin entidad de servicio).
+    ///
+    ///   FALLA  = SIGMA FAILURE 30D  · sujeto: el equipo        · probabilidad
+    ///   RUL    = SIGMA RUL          · sujeto: la instalación   · días restantes + intervalo
+    ///   VISION = SIGMA VISION       · sujeto: la imagen        · etiqueta (Custom Vision)
     ///
     /// QUIEN PUEDE
     ///   Leer: VER PREDICCIONES. Registrar, entrenar, publicar y puntuar:
-    ///   ENTRENAR MODELOS (jefatura y planificación).
+    ///   ENTRENAR MODELOS.
     ///
     /// LA WEB LLAMA EN NOMBRE DE LA PERSONA
     ///   La pantalla Experimentos pasa por `Services` con la clave de servicio
     ///   y los encabezados X-Sigma-Usuario / X-Sigma-Cliente; `Entrar()` arma
     ///   con eso la misma identidad que armaría un JWT —solo si la clave es
     ///   la correcta— y de ahí en adelante rigen SesionApi, Permisos y
-    ///   ExigirPermiso igual que para la app. La auditoría queda a nombre de
-    ///   la persona, no de "la web". Es el mismo criterio con el que
-    ///   `/archivo` confía en la web desde el 29-08, acotado a este
-    ///   controller.
+    ///   ExigirPermiso igual que para la app. Es el mismo criterio con el que
+    ///   `/archivo` confía en la web desde el 29-08, acotado a este controller.
     /// </summary>
     [RoutePrefix("sigma-ai")]
     public class SigmaAiController : ApiBase
     {
-        private const string MODELO = "SIGMA FAILURE 30D";
+        /// <summary>El código del modelo de la petición (lo fija Entrar).</summary>
+        private string _modelo = "SIGMA FAILURE 30D";
+
+        private bool EsFalla  { get { return _modelo == "SIGMA FAILURE 30D"; } }
+        private bool EsRul    { get { return _modelo == "SIGMA RUL"; } }
+        private bool EsVision { get { return _modelo == "SIGMA VISION"; } }
+
+        /// <summary>FALLA | RUL | VISION (o el código completo) → código del catálogo.</summary>
+        private static string CodigoModelo(string modelo)
+        {
+            string m = (modelo ?? "").Trim().ToUpperInvariant();
+            if (m == "" || m == "FALLA" || m == "FAILURE" || m == "SIGMA FAILURE 30D") return "SIGMA FAILURE 30D";
+            if (m == "RUL" || m == "SIGMA RUL") return "SIGMA RUL";
+            if (m == "VISION" || m == "SIGMA VISION") return "SIGMA VISION";
+            throw new ArgumentException("Modelo desconocido: '" + modelo + "'. Use FALLA, RUL o VISION.");
+        }
 
         /* ====================================================================
            ESTADO Y CATALOGO
            ==================================================================== */
 
         /// <summary>
-        /// GET /sigma-ai/estado — el modelo, su versión publicada, cuánto hay
-        /// para entrenar y si Azure ML está configurado (sin secretos).
+        /// GET /sigma-ai/estado?modelo= — el modelo, su versión publicada, cuánto
+        /// hay para entrenar y si Azure ML está configurado (sin secretos).
         /// </summary>
         [HttpGet]
         [Route("estado")]
-        public IHttpActionResult Estado()
+        public IHttpActionResult Estado(string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
 
                 List<MlModeloDto> m = Datos.Listar<MlModeloDto>("API_SEL_ML", Parametros(1));
-                MlModeloDto modelo = m.Count > 0 ? m[0] : null;
+                MlModeloDto md = m.Count > 0 ? m[0] : null;
 
                 return Ok(new
                 {
-                    modelo = modelo,
+                    modelo = md,
                     caracteristicas = Datos.Listar<MlCaracteristicaDto>("API_SEL_ML", Parametros(6)),
                     azure = new
                     {
                         configurado = AzureMl.Configurado,
                         faltantes = AzureMl.Faltantes(),
+                        artefactos = AzureMl.ArtefactosDisponibles,
                         workspace = AzureMl.Workspace,
                         region = AzureMl.Region,
-                        mlflow = AzureMl.MlflowUri
+                        mlflow = AzureMl.MlflowUri,
+                        customVision = CustomVision.Configurado
                     },
                     puedeEntrenar = Permisos.Tiene("ENTRENAR MODELOS"),
                     servidorUtc = DateTime.UtcNow
@@ -99,18 +119,17 @@ namespace API.Controllers
            ==================================================================== */
 
         /// <summary>
-        /// GET /sigma-ai/dataset?desde=&hasta=&paso=7&formato=json|csv
+        /// GET /sigma-ai/dataset?modelo=&desde=&hasta=&paso=7&formato=json|csv
         /// Las filas que se entrenan. Con formato=csv baja el archivo que lee
-        /// el entrenador. Sin fechas: desde el primer registro del cliente
-        /// hasta hoy − 30, cada 7 días.
+        /// el entrenador.
         /// </summary>
         [HttpGet]
         [Route("dataset")]
-        public IHttpActionResult Dataset(string desde = null, string hasta = null, int paso = 7, string formato = "json", int? activo = null)
+        public IHttpActionResult Dataset(string modelo = null, string desde = null, string hasta = null, int paso = 7, string formato = "json", int? activo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
 
@@ -123,28 +142,27 @@ namespace API.Controllers
                     r.Content = new StringContent(csv, new UTF8Encoding(true), "text/csv");
                     r.Content.Headers.ContentDisposition = new ContentDispositionHeaderValue("attachment")
                     {
-                        FileName = "sigma_failure_30d_" + DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".csv"
+                        FileName = Prefijo().ToLowerInvariant() + "_" + DateTime.UtcNow.ToString("yyyyMMdd_HHmm") + ".csv"
                     };
                     return ResponseMessage(r);
                 }
 
-                int positivas = Positivas(filas);
-                return Ok(new { filas = filas.Count, positivas = positivas, etiquetadas = Etiquetadas(filas), datos = filas });
+                return Ok(new { modelo = _modelo, filas = filas.Count, positivas = Positivas(filas), etiquetadas = Etiquetadas(filas), datos = filas });
             });
         }
 
         /// <summary>
-        /// POST /sigma-ai/datasets — arma el dataset y lo deja registrado con
-        /// su huella (SHA-256 del CSV), para que la versión que salga de él
+        /// POST /sigma-ai/datasets?modelo= — arma el dataset y lo deja registrado
+        /// con su huella (SHA-256 del CSV), para que la versión que salga de él
         /// diga exactamente con qué se entrenó.
         /// </summary>
         [HttpPost]
         [Route("datasets")]
-        public IHttpActionResult RegistrarDataset(MlDatasetNuevoDto dto)
+        public IHttpActionResult RegistrarDataset(MlDatasetNuevoDto dto, string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("ENTRENAR MODELOS");
                 ExigirCliente();
                 if (dto == null) dto = new MlDatasetNuevoDto();
@@ -153,7 +171,7 @@ namespace API.Controllers
                 List<Dictionary<string, object>> filas = Filas(dto.desde, dto.hasta, paso, false, null);
 
                 if (filas.Count == 0)
-                    throw new ArgumentException("El rango no produce ninguna fila: no hay equipos con historial anterior a esos cortes.");
+                    throw new ArgumentException("El rango no produce ninguna fila: no hay historial anterior a esos cortes para " + _modelo + ".");
 
                 string csv = Csv(filas);
                 string hash = Sha256(csv);
@@ -163,17 +181,17 @@ namespace API.Controllers
                 DateTime ultima = (DateTime)filas[filas.Count - 1]["CORTE"];
 
                 string codigo = string.IsNullOrEmpty(dto.codigo)
-                    ? "FALLA30-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmm")
+                    ? Prefijo() + "-" + DateTime.UtcNow.ToString("yyyyMMdd-HHmm")
                     : dto.codigo.Trim();
                 string nombre = string.IsNullOrEmpty(dto.nombre)
-                    ? "SIGMA FAILURE 30D · " + primera.ToString("yyyy-MM-dd") + " a " + ultima.ToString("yyyy-MM-dd") + " cada " + paso + " días"
+                    ? _modelo + " · " + primera.ToString("yyyy-MM-dd") + " a " + ultima.ToString("yyyy-MM-dd") + " cada " + paso + " días"
                     : dto.nombre.Trim();
 
                 int id = Datos.Ejecutar("API_INS_ML_DATASET", new Dictionary<string, object>
                 {
                     { "@CLIENTE", SesionApi.ClienteId() },
                     { "@USUARIO", SesionApi.UsuarioId() },
-                    { "@MODELO", MODELO },
+                    { "@MODELO", _modelo },
                     { "@CODIGO", codigo },
                     { "@NOMBRE", nombre },
                     { "@DESDE", primera.Date },
@@ -181,13 +199,13 @@ namespace API.Controllers
                     { "@FILAS", filas.Count },
                     { "@POSITIVAS", positivas },
                     { "@HASH", hash },
-                    { "@RUTA", "sigma-ai/dataset?desde=" + primera.ToString("yyyy-MM-dd") + "&hasta=" + ultima.ToString("yyyy-MM-dd") + "&paso=" + paso + "&formato=csv" },
+                    { "@RUTA", "sigma-ai/dataset?modelo=" + Clave() + "&desde=" + primera.ToString("yyyy-MM-dd") + "&hasta=" + ultima.ToString("yyyy-MM-dd") + "&paso=" + paso + "&formato=csv" },
                     { "@OBSERVACION", dto.observacion }
                 }, true);
 
                 return Creado(id, new
                 {
-                    id = id, codigo = codigo, nombre = nombre, filas = filas.Count, positivas = positivas,
+                    id = id, modelo = _modelo, codigo = codigo, nombre = nombre, filas = filas.Count, positivas = positivas,
                     etiquetadas = Etiquetadas(filas), hash = hash,
                     desde = primera.ToString("yyyy-MM-dd"), hasta = ultima.ToString("yyyy-MM-dd"), paso_dias = paso
                 });
@@ -196,11 +214,11 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("datasets")]
-        public IHttpActionResult Datasets()
+        public IHttpActionResult Datasets(string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
                 return Ok(Datos.Listar<MlDatasetDto>("API_SEL_ML", Parametros(2)));
@@ -213,11 +231,11 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("entrenamientos")]
-        public IHttpActionResult Entrenamientos()
+        public IHttpActionResult Entrenamientos(string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
                 return Ok(Datos.Listar<MlEjecucionDto>("API_SEL_ML", Parametros(3)));
@@ -225,17 +243,17 @@ namespace API.Controllers
         }
 
         /// <summary>
-        /// POST /sigma-ai/entrenamientos — lo que el entrenador informa al
+        /// POST /sigma-ai/entrenamientos?modelo= — lo que el entrenador informa al
         /// terminar: la corrida (métricas, dónde corrió, cuánto tardó) y, si
         /// produjo modelo, la versión con sus pesos. Queda en BORRADOR.
         /// </summary>
         [HttpPost]
         [Route("entrenamientos")]
-        public IHttpActionResult RegistrarEntrenamiento(MlEntrenamientoNuevoDto dto)
+        public IHttpActionResult RegistrarEntrenamiento(MlEntrenamientoNuevoDto dto, string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("ENTRENAR MODELOS");
                 ExigirCliente();
                 ExigirCuerpo(dto);
@@ -247,7 +265,7 @@ namespace API.Controllers
                 int ejecucion = Datos.Ejecutar("API_INS_ML_ENTRENAMIENTO", new Dictionary<string, object>
                 {
                     { "@USUARIO", SesionApi.UsuarioId() },
-                    { "@MODELO", MODELO },
+                    { "@MODELO", _modelo },
                     { "@DATASET", dto.dataset },
                     { "@ENTORNO", dto.entorno },
                     { "@ESTADO", estado },
@@ -266,12 +284,12 @@ namespace API.Controllers
 
                     /* Se prueba a puntuar con los pesos ANTES de guardarlos: una
                        versión que no se puede leer no sirve publicada. */
-                    new PuntuadorFalla(parametro);
+                    ProbarPesos(parametro);
 
                     version = Datos.Ejecutar("API_INS_ML_MODELO_VERSION", new Dictionary<string, object>
                     {
                         { "@USUARIO", SesionApi.UsuarioId() },
-                        { "@MODELO", MODELO },
+                        { "@MODELO", _modelo },
                         { "@DATASET", dto.dataset },
                         { "@EJECUCION", ejecucion },
                         { "@FORMATO", string.IsNullOrEmpty(dto.version.formato) ? "ONNX" : dto.version.formato },
@@ -286,6 +304,7 @@ namespace API.Controllers
                         { "@PRECISION", dto.version.precision },
                         { "@RECALL", dto.version.recall },
                         { "@F1", dto.version.f1 },
+                        { "@MAE", dto.version.mae },
                         { "@OBSERVACION", dto.version.observacion }
                     }, true);
                 }
@@ -296,11 +315,11 @@ namespace API.Controllers
 
         [HttpGet]
         [Route("versiones")]
-        public IHttpActionResult Versiones()
+        public IHttpActionResult Versiones(string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
                 return Ok(Datos.Listar<MlVersionDto>("API_SEL_ML", Parametros(4)));
@@ -314,7 +333,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("ENTRENAR MODELOS");
                 ExigirCliente();
 
@@ -333,109 +352,151 @@ namespace API.Controllers
            ==================================================================== */
 
         /// <summary>
-        /// POST /sigma-ai/predecir — puntúa hoy, con la versión publicada, a
-        /// todos los equipos del cliente (o a uno), y guarda cada predicción
-        /// con sus características, sus razones y la alerta si corresponde.
+        /// POST /sigma-ai/predecir?modelo= — puntúa hoy, con la versión
+        /// publicada, a todos los sujetos del cliente (o a los de un equipo), y
+        /// guarda cada predicción con sus características, sus razones y la
+        /// alerta si corresponde.
         /// </summary>
         [HttpPost]
         [Route("predecir")]
-        public IHttpActionResult Predecir(MlPredecirDto dto)
+        public IHttpActionResult Predecir(MlPredecirDto dto, string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("ENTRENAR MODELOS");
                 ExigirCliente();
                 if (dto == null) dto = new MlPredecirDto();
+                if (EsVision)
+                    throw new ArgumentException("SIGMA VISION no se puntúa por lote: use POST /sigma-ai/vision/clasificar con una imagen.");
 
-                MlModeloDto modelo = Modelo();
-                if (modelo.VERSION_ID == null)
-                    throw new ArgumentException("No hay una versión publicada de " + MODELO + ": entrene y publique una antes de puntuar.");
+                MlModeloDto md = Modelo();
+                if (md.VERSION_ID == null)
+                    throw new ArgumentException("No hay una versión publicada de " + _modelo + ": entrene y publique una antes de puntuar.");
 
-                PuntuadorFalla puntuador = new PuntuadorFalla(modelo.VERSION_PARAMETRO);
                 List<Dictionary<string, object>> hoy = Filas(null, null, 7, true, dto.activo);
-
                 List<object> resultado = new List<object>();
 
-                foreach (Dictionary<string, object> fila in hoy)
+                if (EsRul)
                 {
-                    Dictionary<string, double> valores = PuntuadorFalla.Valores(fila);
-                    PuntuadorFalla.Resultado r = puntuador.Puntuar(valores);
-
-                    List<object> caracteristicas = new List<object>();
-                    foreach (string c in puntuador.Caracteristicas)
-                        if (valores.ContainsKey(c)) caracteristicas.Add(new { codigo = c, valor = valores[c] });
-
-                    List<object> explicaciones = new List<object>();
-                    foreach (PuntuadorFalla.Contribucion c in r.contribuciones)
+                    PuntuadorRul puntuador = new PuntuadorRul(md.VERSION_PARAMETRO);
+                    foreach (Dictionary<string, object> fila in hoy)
                     {
-                        if (c.texto == null || explicaciones.Count >= 3) continue;
-                        explicaciones.Add(new { codigo = c.codigo, texto = c.texto, contribucion = c.contribucion, direccion = c.direccion, observado = c.valor, referencia = c.referencia });
+                        Dictionary<string, double> valores = PuntuadorFalla.Valores(fila);
+                        PuntuadorRul.Resultado r = puntuador.Puntuar(valores);
+                        List<object> caracteristicas = Caracteristicas(puntuador.Caracteristicas, valores);
+                        List<object> explicaciones = Explicaciones(r.contribuciones);
+
+                        int id = Datos.Ejecutar("API_INS_PREDICCION_RUL", new Dictionary<string, object>
+                        {
+                            { "@CLIENTE", SesionApi.ClienteId() },
+                            { "@USUARIO", SesionApi.UsuarioId() },
+                            { "@VERSION", md.VERSION_ID },
+                            { "@INSTALACION", Convert.ToInt32(fila["INSTALACION"]) },
+                            { "@DIAS", Math.Round((decimal)r.dias, 2) },
+                            { "@DIAS_INFERIOR", Math.Round((decimal)r.diasInferior, 2) },
+                            { "@DIAS_SUPERIOR", Math.Round((decimal)r.diasSuperior, 2) },
+                            { "@CONFIANZA", (decimal)r.confianza },
+                            { "@CARACTERISTICAS", JsonConvert.SerializeObject(caracteristicas) },
+                            { "@EXPLICACIONES", JsonConvert.SerializeObject(explicaciones) }
+                        }, true);
+
+                        resultado.Add(new
+                        {
+                            prediccion = id,
+                            instalacion = Convert.ToInt32(fila["INSTALACION"]),
+                            activo = Convert.ToInt32(fila["ACTIVO"]),
+                            codigo = fila["ACTIVO_CODIGO"],
+                            nombre = fila["REPUESTO_CODIGO"] + " " + fila["REPUESTO_NOMBRE"] + " en " + fila["COMPONENTE_CODIGO"] + " " + fila["COMPONENTE_NOMBRE"],
+                            dias = Math.Round(r.dias, 1),
+                            diasInferior = Math.Round(r.diasInferior, 1),
+                            diasSuperior = Math.Round(r.diasSuperior, 1),
+                            fechaEstimada = DateTime.UtcNow.AddDays(r.dias).ToString("yyyy-MM-dd"),
+                            probabilidad = (double?)null,
+                            explicaciones = explicaciones
+                        });
                     }
-
-                    int id = Datos.Ejecutar("API_INS_PREDICCION_FALLA", new Dictionary<string, object>
+                    resultado.Sort((a, b) => ((double)Propiedad(a, "dias")).CompareTo((double)Propiedad(b, "dias")));
+                }
+                else
+                {
+                    PuntuadorFalla puntuador = new PuntuadorFalla(md.VERSION_PARAMETRO);
+                    foreach (Dictionary<string, object> fila in hoy)
                     {
-                        { "@CLIENTE", SesionApi.ClienteId() },
-                        { "@USUARIO", SesionApi.UsuarioId() },
-                        { "@VERSION", modelo.VERSION_ID },
-                        { "@ACTIVO", Convert.ToInt32(fila["ACTIVO"]) },
-                        { "@PROBABILIDAD", Math.Round((decimal)r.probabilidad, 6) },
-                        { "@CARACTERISTICAS", JsonConvert.SerializeObject(caracteristicas) },
-                        { "@EXPLICACIONES", JsonConvert.SerializeObject(explicaciones) }
-                    }, true);
+                        Dictionary<string, double> valores = PuntuadorFalla.Valores(fila);
+                        PuntuadorFalla.Resultado r = puntuador.Puntuar(valores);
+                        List<object> caracteristicas = Caracteristicas(puntuador.Caracteristicas, valores);
+                        List<object> explicaciones = Explicaciones(r.contribuciones);
 
-                    resultado.Add(new
-                    {
-                        prediccion = id,
-                        activo = Convert.ToInt32(fila["ACTIVO"]),
-                        codigo = fila["ACTIVO_CODIGO"],
-                        nombre = fila["ACTIVO_NOMBRE"],
-                        probabilidad = Math.Round(r.probabilidad, 4),
-                        explicaciones = explicaciones
-                    });
+                        int id = Datos.Ejecutar("API_INS_PREDICCION_FALLA", new Dictionary<string, object>
+                        {
+                            { "@CLIENTE", SesionApi.ClienteId() },
+                            { "@USUARIO", SesionApi.UsuarioId() },
+                            { "@VERSION", md.VERSION_ID },
+                            { "@ACTIVO", Convert.ToInt32(fila["ACTIVO"]) },
+                            { "@PROBABILIDAD", Math.Round((decimal)r.probabilidad, 6) },
+                            { "@CARACTERISTICAS", JsonConvert.SerializeObject(caracteristicas) },
+                            { "@EXPLICACIONES", JsonConvert.SerializeObject(explicaciones) }
+                        }, true);
+
+                        resultado.Add(new
+                        {
+                            prediccion = id,
+                            activo = Convert.ToInt32(fila["ACTIVO"]),
+                            codigo = fila["ACTIVO_CODIGO"],
+                            nombre = fila["ACTIVO_NOMBRE"],
+                            probabilidad = Math.Round(r.probabilidad, 4),
+                            explicaciones = explicaciones
+                        });
+                    }
+                    resultado.Sort((a, b) => ((double)Propiedad(b, "probabilidad")).CompareTo((double)Propiedad(a, "probabilidad")));
                 }
 
-                resultado.Sort((a, b) => ((double)Propiedad(b, "probabilidad")).CompareTo((double)Propiedad(a, "probabilidad")));
-
-                return Ok(new { version = modelo.VERSION_NUMERO, equipos = resultado.Count, predicciones = resultado });
+                return Ok(new { modelo = _modelo, version = md.VERSION_NUMERO, equipos = resultado.Count, predicciones = resultado });
             });
         }
 
         /// <summary>
-        /// POST /sigma-ai/simular — "¿qué diría el modelo si…?": puntúa
-        /// valores escritos a mano con la versión publicada, sin guardar
-        /// nada. Para entender el modelo, no para decidir.
+        /// POST /sigma-ai/simular?modelo= — "¿qué diría el modelo si…?": puntúa
+        /// valores escritos a mano con la versión publicada, sin guardar nada.
         /// </summary>
         [HttpPost]
         [Route("simular")]
-        public IHttpActionResult Simular(MlSimularDto dto)
+        public IHttpActionResult Simular(MlSimularDto dto, string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
                 ExigirCuerpo(dto);
                 if (dto.valores == null) throw new ArgumentException("Faltan los valores.");
 
-                MlModeloDto modelo = Modelo();
-                if (modelo.VERSION_ID == null)
-                    throw new ArgumentException("No hay una versión publicada de " + MODELO + ".");
+                MlModeloDto md = Modelo();
+                if (md.VERSION_ID == null)
+                    throw new ArgumentException("No hay una versión publicada de " + _modelo + ".");
 
-                PuntuadorFalla puntuador = new PuntuadorFalla(modelo.VERSION_PARAMETRO);
-                PuntuadorFalla.Resultado r = puntuador.Puntuar(new Dictionary<string, double>(dto.valores, StringComparer.OrdinalIgnoreCase));
+                Dictionary<string, double> v = new Dictionary<string, double>(dto.valores, StringComparer.OrdinalIgnoreCase);
 
-                return Ok(new { version = modelo.VERSION_NUMERO, probabilidad = Math.Round(r.probabilidad, 4), logit = Math.Round(r.logit, 4), contribuciones = r.contribuciones });
+                if (EsRul)
+                {
+                    PuntuadorRul.Resultado r = new PuntuadorRul(md.VERSION_PARAMETRO).Puntuar(v);
+                    return Ok(new { modelo = _modelo, version = md.VERSION_NUMERO, dias = Math.Round(r.dias, 1), diasInferior = Math.Round(r.diasInferior, 1),
+                                    diasSuperior = Math.Round(r.diasSuperior, 1), contribuciones = r.contribuciones });
+                }
+
+                PuntuadorFalla.Resultado f = new PuntuadorFalla(md.VERSION_PARAMETRO).Puntuar(v);
+                return Ok(new { modelo = _modelo, version = md.VERSION_NUMERO, probabilidad = Math.Round(f.probabilidad, 4), logit = Math.Round(f.logit, 4), contribuciones = f.contribuciones });
             });
         }
 
         [HttpGet]
         [Route("predicciones")]
-        public IHttpActionResult Predicciones()
+        public IHttpActionResult Predicciones(string modelo = null)
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(modelo);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
                 return Ok(Datos.Listar<MlPrediccionDto>("API_SEL_ML", Parametros(5)));
@@ -443,7 +504,119 @@ namespace API.Controllers
         }
 
         /* ====================================================================
-           LO QUE HAY EN AZURE ML
+           SIGMA VISION (bloque 248): Custom Vision predice, la API guarda
+           ==================================================================== */
+
+        /// <summary>
+        /// POST /sigma-ai/vision/clasificar — { archivo } (un archivo del
+        /// cliente, que la API baja del almacenamiento) o { imagen_base64,
+        /// nombre, mime } (una imagen suelta, solo para probar). Devuelve las
+        /// etiquetas con su probabilidad y, si era un archivo registrado, deja
+        /// la revisión visual SIN confirmar.
+        /// </summary>
+        [HttpPost]
+        [Route("vision/clasificar")]
+        public IHttpActionResult Clasificar(MlClasificarDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                Entrar("VISION");
+                ExigirPermiso("VER PREDICCIONES");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+
+                if (!CustomVision.Configurado)
+                    throw new ArgumentException("SIGMA VISION no está configurado: faltan " + string.Join(", ", CustomVision.Faltantes()) + " en el Web.config de la API.");
+
+                byte[] imagen;
+                string nombre = dto.nombre;
+
+                if (dto.archivo != null)
+                {
+                    List<ArchivoIdDto> a = Datos.Listar<ArchivoIdDto>("API_SEL_ARCHIVO_ID", new Dictionary<string, object>
+                    {
+                        { "@ID", dto.archivo }, { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+                    if (a.Count == 0) throw new ArgumentException("El archivo " + dto.archivo + " no existe para el cliente en sesión.");
+                    if (string.IsNullOrEmpty(a[0].ARC_MIME) || !a[0].ARC_MIME.StartsWith("image/"))
+                        throw new ArgumentException("El archivo " + dto.archivo + " no es una imagen (" + a[0].ARC_MIME + ").");
+                    imagen = new API.Services.BlobService().Descargar(a[0].ARC_RUTA);
+                    nombre = a[0].ARC_NOMBRE;
+                }
+                else
+                {
+                    ExigirTexto(dto.imagen_base64, "imagen_base64");
+                    try { imagen = Convert.FromBase64String(dto.imagen_base64); }
+                    catch (FormatException) { throw new ArgumentException("imagen_base64 no es base64 válido."); }
+                    if (imagen.Length > 4 * 1024 * 1024) throw new ArgumentException("La imagen supera los 4 MB que acepta Custom Vision.");
+                }
+
+                System.Diagnostics.Stopwatch reloj = System.Diagnostics.Stopwatch.StartNew();
+                List<CustomVision.Etiqueta> etiquetas = CustomVision.Clasificar(imagen);
+                reloj.Stop();
+
+                MlModeloDto md = Modelo();
+                string version = md.VERSION_NUMERO != null ? "v" + md.VERSION_NUMERO + " · " + CustomVision.Iteracion : CustomVision.Iteracion;
+
+                int revision = 0;
+                if (dto.archivo != null)
+                    revision = Datos.Ejecutar("API_INS_ANALISIS_VISUAL", new Dictionary<string, object>
+                    {
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@ARCHIVO", dto.archivo },
+                        { "@MOTOR", "SIGMA VISION (Azure Custom Vision)" },
+                        { "@VERSION", version },
+                        { "@MILISEGUNDOS", (int)reloj.ElapsedMilliseconds },
+                        { "@ETIQUETAS", JsonConvert.SerializeObject(etiquetas) },
+                        { "@MENSAJE", "Clasificada desde la API; sin confirmar." }
+                    }, true);
+
+                return Ok(new
+                {
+                    modelo = _modelo, iteracion = CustomVision.Iteracion, version = md.VERSION_NUMERO,
+                    archivo = dto.archivo, nombre = nombre, milisegundos = reloj.ElapsedMilliseconds,
+                    revision = revision > 0 ? (int?)revision : null,
+                    etiquetas = etiquetas
+                });
+            });
+        }
+
+        /// <summary>
+        /// POST /sigma-ai/vision/confirmar — { deteccion, etiqueta? }: una
+        /// persona confirma (o corrige) lo que dijo el modelo. Es lo que
+        /// alimenta el próximo dataset.
+        /// </summary>
+        [HttpPost]
+        [Route("vision/confirmar")]
+        public IHttpActionResult ConfirmarDeteccion(MlConfirmarDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                Entrar("VISION");
+                ExigirPermiso("VER PREDICCIONES");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+                if (dto.deteccion <= 0) throw new ArgumentException("Falta la detección.");
+
+                Datos.Ejecutar("API_UPD_ANALISIS_VISUAL_CONFIRMAR", new Dictionary<string, object>
+                {
+                    { "@ID", dto.deteccion }, { "@CLIENTE", SesionApi.ClienteId() }, { "@USUARIO", SesionApi.UsuarioId() }, { "@ETIQUETA", dto.etiqueta }
+                });
+                return Ok(new { deteccion = dto.deteccion, confirmada = true, etiqueta = dto.etiqueta });
+            });
+        }
+
+        private class ArchivoIdDto
+        {
+            public int ARC_ID { get; set; }
+            public string ARC_RUTA { get; set; }
+            public string ARC_MIME { get; set; }
+            public string ARC_NOMBRE { get; set; }
+        }
+
+        /* ====================================================================
+           LO QUE HAY EN AZURE ML (plano de control: exige entidad de servicio)
            ==================================================================== */
 
         /// <summary>GET /sigma-ai/azure — el área de trabajo, o por qué no se puede leer.</summary>
@@ -453,8 +626,9 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("VER PREDICCIONES");
+
                 object artefactos = new
                 {
                     disponible = AzureMl.ArtefactosDisponibles,
@@ -465,10 +639,10 @@ namespace API.Controllers
                 };
 
                 if (!AzureMl.Configurado)
-                    return Ok(new { configurado = false, faltantes = AzureMl.Faltantes(), artefactos = artefactos,
+                    return Ok(new { configurado = false, faltantes = AzureMl.Faltantes(), artefactos = artefactos, customVision = CustomVision.Configurado,
                                     mensaje = "El plano de control de Azure ML (experimentos, corridas) no está configurado en el Web.config de la API." });
 
-                return Ok(new { configurado = true, area = AzureMl.AreaTrabajo(), mlflow = AzureMl.MlflowUri, artefactos = artefactos });
+                return Ok(new { configurado = true, area = AzureMl.AreaTrabajo(), mlflow = AzureMl.MlflowUri, artefactos = artefactos, customVision = CustomVision.Configurado });
             });
         }
 
@@ -478,7 +652,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("VER PREDICCIONES");
                 if (!AzureMl.Configurado) return Ok(new { configurado = false, faltantes = AzureMl.Faltantes() });
                 if (!string.IsNullOrEmpty(nombre)) return Ok(new { configurado = true, modelo = nombre, versiones = AzureMl.Versiones(nombre) });
@@ -492,7 +666,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("VER PREDICCIONES");
                 if (!AzureMl.Configurado) return Ok(new { configurado = false, faltantes = AzureMl.Faltantes() });
                 if (!string.IsNullOrEmpty(id)) return Ok(new { configurado = true, experimento = id, corridas = AzureMl.Corridas(id) });
@@ -517,7 +691,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("VER PREDICCIONES");
                 ExigirCliente();
 
@@ -545,7 +719,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                Entrar();
+                Entrar(null);
                 ExigirPermiso("ENTRENAR MODELOS");
                 ExigirCliente();
 
@@ -594,9 +768,7 @@ namespace API.Controllers
             if (!AzureMl.ArtefactosDisponibles)
                 throw new ArgumentException("La API no tiene acceso al almacenamiento del área de trabajo (AzureBlobSas).");
 
-            List<MlVersionDto> lista = Datos.Listar<MlVersionDto>("API_SEL_ML", Parametros(4, id));
-            if (lista.Count == 0) throw new ArgumentException("La versión " + id + " no existe.");
-            MlVersionDto ver = lista[0];
+            MlVersionDto ver = VersionPorId(id);
 
             Verificacion v = new Verificacion
             {
@@ -692,13 +864,15 @@ namespace API.Controllers
            ==================================================================== */
 
         /// <summary>
-        /// La identidad. Con JWT ya viene puesta por el handler; sin JWT se
-        /// acepta la que delega la web con la clave de servicio (ver
-        /// ClaveServicio). Si no hay ninguna, ExigirPermiso responde lo de
-        /// siempre: "inicie sesión".
+        /// La identidad y el modelo de la petición. Con JWT la identidad ya
+        /// viene puesta por el handler; sin JWT se acepta la que delega la web
+        /// con la clave de servicio (ver ClaveServicio). Si no hay ninguna,
+        /// ExigirPermiso responde lo de siempre: "inicie sesión".
         /// </summary>
-        private void Entrar()
+        private void Entrar(string modelo)
         {
+            _modelo = CodigoModelo(modelo);
+
             if (SesionApi.HayUsuario()) return;
 
             ClaimsPrincipal delegada = ClaveServicio.SesionDelegada(Request);
@@ -708,6 +882,18 @@ namespace API.Controllers
             if (HttpContext.Current != null) HttpContext.Current.User = delegada;
         }
 
+        /// <summary>FALLA / RUL / VISION, para armar rutas.</summary>
+        private string Clave()
+        {
+            return EsRul ? "RUL" : (EsVision ? "VISION" : "FALLA");
+        }
+
+        /// <summary>El prefijo de los códigos de dataset.</summary>
+        private string Prefijo()
+        {
+            return EsRul ? "RUL" : (EsVision ? "VISION" : "FALLA30");
+        }
+
         private Dictionary<string, object> Parametros(int tipo, int? id = null)
         {
             return new Dictionary<string, object>
@@ -715,7 +901,7 @@ namespace API.Controllers
                 { "@CLIENTE", SesionApi.ClienteId() },
                 { "@USUARIO", SesionApi.UsuarioId() },
                 { "@TIPO", tipo },
-                { "@MODELO", MODELO },
+                { "@MODELO", _modelo },
                 { "@ID", id }
             };
         }
@@ -723,8 +909,34 @@ namespace API.Controllers
         private MlModeloDto Modelo()
         {
             List<MlModeloDto> m = Datos.Listar<MlModeloDto>("API_SEL_ML", Parametros(1));
-            if (m.Count == 0) throw new ArgumentException("El modelo " + MODELO + " no está registrado: aplique el bloque 245.");
+            if (m.Count == 0) throw new ArgumentException("El modelo " + _modelo + " no está registrado: aplique los bloques 245/247/248.");
             return m[0];
+        }
+
+        /// <summary>Una versión por id, sea del modelo que sea (los artefactos no saben de modelos).</summary>
+        private MlVersionDto VersionPorId(int id)
+        {
+            string original = _modelo;
+            try
+            {
+                foreach (string codigo in new[] { "SIGMA FAILURE 30D", "SIGMA RUL", "SIGMA VISION" })
+                {
+                    _modelo = codigo;
+                    List<MlVersionDto> lista = Datos.Listar<MlVersionDto>("API_SEL_ML", Parametros(4, id));
+                    if (lista.Count > 0) return lista[0];
+                }
+            }
+            finally { _modelo = original; }
+
+            throw new ArgumentException("La versión " + id + " no existe.");
+        }
+
+        /// <summary>Que los pesos se puedan leer con el puntuador del modelo.</summary>
+        private void ProbarPesos(string parametro)
+        {
+            if (EsRul) new PuntuadorRul(parametro);
+            else if (EsFalla) new PuntuadorFalla(parametro);
+            /* VISION: los pesos viven en Custom Vision; el JSON es descriptivo. */
         }
 
         private List<Dictionary<string, object>> Filas(string desde, string hasta, int paso, bool hoy, int? activo)
@@ -739,7 +951,8 @@ namespace API.Controllers
                 { "@HOY", hoy },
                 { "@ACTIVO", activo }
             };
-            return Datos.Filas(Datos.Conjunto("API_SEL_ML_DATASET_FALLA", p), 0);
+            string sp = EsRul ? "API_SEL_ML_DATASET_RUL" : (EsVision ? "API_SEL_ML_DATASET_VISION" : "API_SEL_ML_DATASET_FALLA");
+            return Datos.Filas(Datos.Conjunto(sp, p), 0);
         }
 
         private static object Fecha(string texto, string campo)
@@ -751,20 +964,52 @@ namespace API.Controllers
             return f;
         }
 
-        private static int Positivas(List<Dictionary<string, object>> filas)
+        /// <summary>
+        /// "Positivas" según el modelo: FALLA = falló en 30 d; RUL = retiro
+        /// observado (no censurado); VISION = imagen con etiqueta confirmada.
+        /// </summary>
+        private int Positivas(List<Dictionary<string, object>> filas)
         {
             int n = 0;
             foreach (Dictionary<string, object> f in filas)
-                if (f["FALLO_EN_30D"] != null && Convert.ToBoolean(f["FALLO_EN_30D"])) n++;
+            {
+                if (EsRul) { if (f["CENSURADO"] != null && !Convert.ToBoolean(f["CENSURADO"])) n++; }
+                else if (EsVision) { if (f.ContainsKey("ETIQUETA") && f["ETIQUETA"] != null) n++; }
+                else if (f["FALLO_EN_30D"] != null && Convert.ToBoolean(f["FALLO_EN_30D"])) n++;
+            }
             return n;
         }
 
-        private static int Etiquetadas(List<Dictionary<string, object>> filas)
+        private int Etiquetadas(List<Dictionary<string, object>> filas)
         {
             int n = 0;
             foreach (Dictionary<string, object> f in filas)
-                if (f["FALLO_EN_30D"] != null) n++;
+            {
+                if (EsRul) { if (f["DIAS_RESTANTES"] != null) n++; }
+                else if (EsVision) { if (f.ContainsKey("ETIQUETA") && f["ETIQUETA"] != null) n++; }
+                else if (f["FALLO_EN_30D"] != null) n++;
+            }
             return n;
+        }
+
+        private static List<object> Caracteristicas(IList<string> codigos, Dictionary<string, double> valores)
+        {
+            List<object> lista = new List<object>();
+            foreach (string c in codigos)
+                if (valores.ContainsKey(c)) lista.Add(new { codigo = c, valor = valores[c] });
+            return lista;
+        }
+
+        /// <summary>Las tres razones que más pesan, con frase.</summary>
+        private static List<object> Explicaciones(List<PuntuadorFalla.Contribucion> contribuciones)
+        {
+            List<object> lista = new List<object>();
+            foreach (PuntuadorFalla.Contribucion c in contribuciones)
+            {
+                if (c.texto == null || lista.Count >= 3) continue;
+                lista.Add(new { codigo = c.codigo, texto = c.texto, contribucion = c.contribucion, direccion = c.direccion, observado = c.valor, referencia = c.referencia });
+            }
+            return lista;
         }
 
         /// <summary>CSV con punto decimal y fechas ISO: lo lee pandas sin configurar nada.</summary>

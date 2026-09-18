@@ -1829,3 +1829,27 @@ decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
 - **Pendiente**: el plano de control (experimentos, corridas) desde la API
   necesita una entidad de servicio y el tenant de grupoexpro no permite
   registrarla; ONNX Runtime en la API; `Prediccion_Resultado`.
+
+### 10.25 · SIGMA RUL y SIGMA VISION por el mismo camino (18-09-2026)
+
+- **`BD/247` SIGMA RUL**: modelo (umbrales como fracción del horizonte: 30/7
+  días), 14 características, `FNC_ML_COMPONENTE_HISTORICO_V1` (reusa la del
+  equipo; horas negativas → 0), `API_SEL_ML_DATASET_RUL` con `CENSURADO`,
+  `API_INS_PREDICCION_RUL` (mediana, intervalo 80 %, fecha, alerta ≤ 30 d),
+  `API_INS_ML_MODELO_VERSION` con `@MAE`, `API_SEL_ML` con columnas de RUL.
+- **`BD/248` SIGMA VISION**: modelo con 6 etiquetas, `API_SEL_ML_DATASET_VISION`
+  (solo confirmadas por persona), `API_INS_ANALISIS_VISUAL`,
+  `API_UPD_ANALISIS_VISUAL_CONFIRMAR`, `API_SEL_ARCHIVO_ID`.
+- **API**: `SigmaAiController` con `?modelo=`, `PuntuadorRul`, `CustomVision`
+  (predicción por clave), `POST /sigma-ai/vision/clasificar` y `/confirmar`;
+  Web.config `CustomVision.*` en PENDIENTE.
+- **Web**: selector de modelo en Experimentos, tabla RUL (días + intervalo),
+  clasificador de imagen para VISION.
+- **ML**: `sigma_ml.py` común, `entrenar_rul.py` (AFT log-normal con censura,
+  ONNX de la parte lineal), `entrenar_vision.py` (Custom Vision REST: subir,
+  entrenar, publicar, exportar ONNX, registrar en Azure ML).
+- Probado: RUL demo 600 → `SIGMA_RUL:1` en Azure, v1 publicada, la
+  instalación vigente puntuada (54 días, 5–587); VISION `--demo --solo-preparar`.
+- **Pendiente de Bryan**: crear el recurso Custom Vision F0 (Ambos, compact)
+  y poner las claves; regenerar las claves de `SIGMAVISION` expuestas en el
+  chat.

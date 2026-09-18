@@ -1112,6 +1112,8 @@ $t = [System.IO.File]::ReadAllText($p)
 
 | 18-09-2026 | **Azure ML entrega el modelo sin entidad de servicio (`BD/246`).** La API baja el artefacto registrado por el almacenamiento del área (contenedor `azureml`, SAS existente), verifica el SHA-256 del `.onnx` y puede tomar los pesos desde Azure; `mpv_registro` y `mpv_fecha_verificacion_utc`. Corridas y modelo `SIGMA_FAILURE_30D` v1/v2 registrados en SIGMA_AI con la cuenta de Bryan (`az login` por código; `mlflow<3`). Sin cómputo, sin endpoints (el de Studio costaría ~216 USD/mes). Checklist §10.24 |
 
+| 18-09-2026 | **SIGMA RUL y SIGMA VISION por el mismo camino (`BD/247`, `BD/248`).** RUL: dataset por instalación de repuesto con censura, AFT log-normal (scipy) en `entrenar_rul.py`, `PuntuadorRul` en la API (mediana + intervalo 80 %), `SIGMA_RUL:1` registrado en Azure ML, v1 publicada. VISION: dataset de imágenes confirmadas por persona, Azure Custom Vision F0 por claves (`CustomVision.cs`, `entrenar_vision.py`), revisión visual sin confirmar + confirmación humana. `/sigma-ai/*?modelo=`, selector en Experimentos, `sigma_ml.py` común. Checklist §10.25 |
+
 ### Cómo actualizar este documento
 
 Al cerrar un bloque de trabajo: agregar la fila en la bitácora, mover lo

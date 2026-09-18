@@ -2754,6 +2754,7 @@ namespace API.MVC.Model
         public decimal? mpr_umbral_alerta { get; set; }
         public decimal? mpr_umbral_critico { get; set; }
         public string OBJETIVO { get; set; }
+        public string OBJETIVO_CODIGO { get; set; }
         public int? VERSION_ID { get; set; }
         public int? VERSION_NUMERO { get; set; }
         public string VERSION_ALGORITMO { get; set; }
@@ -2766,6 +2767,7 @@ namespace API.MVC.Model
         public decimal? VERSION_PRECISION { get; set; }
         public decimal? VERSION_RECALL { get; set; }
         public decimal? VERSION_F1 { get; set; }
+        public decimal? VERSION_MAE { get; set; }
         public DateTime? VERSION_PUBLICADA { get; set; }
         public int DATASETS { get; set; }
         public int CORRIDAS { get; set; }
@@ -2774,6 +2776,9 @@ namespace API.MVC.Model
         public int ACTIVOS { get; set; }
         public int FALLAS { get; set; }
         public int MEDICIONES { get; set; }
+        public int INSTALACIONES { get; set; }
+        public int RETIROS { get; set; }
+        public int IMAGENES_ETIQUETADAS { get; set; }
     }
 
     public class MlCaracteristicaDto
@@ -2838,6 +2843,7 @@ namespace API.MVC.Model
         public decimal? mpv_metrica_precision { get; set; }
         public decimal? mpv_metrica_recall { get; set; }
         public decimal? mpv_metrica_f1 { get; set; }
+        public decimal? mpv_metrica_mae { get; set; }
         public string ESTADO { get; set; }
         public int mpv_plan_version_estado { get; set; }
         public DateTime? mpv_fecha_entrenamiento_utc { get; set; }
@@ -2855,7 +2861,19 @@ namespace API.MVC.Model
         public int pre_activo { get; set; }
         public string ACTIVO_CODIGO { get; set; }
         public string ACTIVO_NOMBRE { get; set; }
+        /// <summary>RUL: la instalación del repuesto que se puntuó.</summary>
+        public int? INSTALACION { get; set; }
+        public string COMPONENTE_CODIGO { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
         public decimal? pre_probabilidad { get; set; }
+        public decimal? pre_valor { get; set; }
+        public int? pre_dia_restante { get; set; }
+        public decimal? pre_intervalo_inferior { get; set; }
+        public decimal? pre_intervalo_superior { get; set; }
+        public DateTime? pre_fecha_evento_estimada_utc { get; set; }
+        public decimal? pre_confianza { get; set; }
         public int? pre_severidad { get; set; }
         public string SEVERIDAD { get; set; }
         public string ESTADO { get; set; }
@@ -2913,6 +2931,8 @@ namespace API.MVC.Model
         public decimal? precision { get; set; }
         public decimal? recall { get; set; }
         public decimal? f1 { get; set; }
+        /// <summary>RUL: error absoluto medio en días.</summary>
+        public decimal? mae { get; set; }
         public string observacion { get; set; }
     }
 
@@ -2926,5 +2946,22 @@ namespace API.MVC.Model
     public class MlSimularDto
     {
         public Dictionary<string, double> valores { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/vision/clasificar: un archivo del cliente o una imagen suelta.</summary>
+    public class MlClasificarDto
+    {
+        public int? archivo { get; set; }
+        public string imagen_base64 { get; set; }
+        public string nombre { get; set; }
+        public string mime { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/vision/confirmar: una persona confirma o corrige la etiqueta.</summary>
+    public class MlConfirmarDto
+    {
+        public int deteccion { get; set; }
+        /// <summary>Vacío = confirma la etiqueta que puso el modelo.</summary>
+        public string etiqueta { get; set; }
     }
 }

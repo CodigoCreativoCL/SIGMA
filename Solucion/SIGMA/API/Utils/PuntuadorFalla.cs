@@ -109,7 +109,7 @@ namespace API.Utils
                     valor = x,
                     referencia = _p.media[i],
                     contribucion = c,
-                    direccion = c > 0 ? "AUMENTA" : (c < 0 ? "DISMINUYE" : "NEUTRA"),
+                    direccion = c > 0 ? "AUMENTA" : (c < 0 ? "DISMINUYE" : null),   // CK_PEX_DIRECCION
                     texto = imputado ? null : Frase(codigo, x, _p.media[i], c)
                 });
             }

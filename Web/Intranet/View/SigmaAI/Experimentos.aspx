@@ -41,6 +41,12 @@
         .sg-ml-aviso.is-mal { border-color: #dc2626; background: #fef2f2; color: #7f1d1d; }
         .sg-ml-exp { font-size: 11px; color: #4e5b72; white-space: normal !important; max-width: 520px; }
         .sg-ml-scroll { overflow-x: auto; }
+        .sg-ml-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 16px; }
+        .sg-ml-tab { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid #dfe5ee; background: #fff; color: #374151; font-size: 12.5px; font-weight: 700; text-decoration: none !important; }
+        .sg-ml-tab i { font-size: 16px; color: #6C5CFF; }
+        .sg-ml-tab.is-activa { background: #6C5CFF; border-color: #6C5CFF; color: #fff !important; }
+        .sg-ml-tab.is-activa i { color: #fff; }
+        .sg-ml-tab small { font-weight: 600; opacity: .75; }
     </style>
 </asp:Content>
 
@@ -56,14 +62,22 @@
 </asp:Content>
 
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    SIGMA FAILURE a 30 días, de punta a punta y sin costo: dataset desde la base, entrenamiento local, registro en Azure ML y puntuación dentro de la API.
+    <asp:Literal ID="litSubtitulo" runat="server" Text="Los tres modelos de SIGMA AI por el mismo camino, sin costo: dataset desde la base, entrenamiento local, registro en Azure ML y puntuación dentro de la API." />
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
+        <Triggers>
+            <asp:PostBackTrigger ControlID="btnClasificar" />
+        </Triggers>
         <ContentTemplate>
 
             <asp:Literal ID="litAviso" runat="server" />
+
+            <%-- EL SELECTOR: un modelo a la vez, el resto de la pantalla es el mismo --%>
+            <div class="sg-ml-tabs">
+                <asp:Literal ID="litTabs" runat="server" />
+            </div>
 
             <%-- ESTADO: cinco números que dicen en qué paso va la investigación --%>
             <div class="sg-kpis">
@@ -86,14 +100,8 @@
 
             <%-- PASO 1: EL DATASET --%>
             <div class="card-box sg-ml-paso">
-                <h4><span class="n" id="n1" runat="server">1</span> Dataset: un equipo × una fecha de corte</h4>
-                <div class="txt">
-                    <code>FNC_ML_ACTIVO_HISTORICO_V1</code> calcula, para cada equipo y cada corte, 15 características con lo que
-                    pasó <strong>antes</strong> del corte y el label <code>FALLO_EN_30D</code> con lo que pasó <strong>después</strong>
-                    (una falla en los 30 días siguientes). Sin fechas toma desde el primer registro del cliente hasta hoy − 30, un corte
-                    cada 7 días. Registrar el dataset guarda cuántas filas tiene, cuántas positivas y su huella SHA-256: la versión
-                    que salga de él dirá exactamente con qué se entrenó.
-                </div>
+                <h4><span class="n" id="n1" runat="server">1</span> <asp:Literal ID="litTituloDataset" runat="server" Text="Dataset: un equipo × una fecha de corte" /></h4>
+                <div class="txt"><asp:Literal ID="litTextoDataset" runat="server" /></div>
                 <div class="sg-ml-form">
                     <label for="txtDesde">Desde</label>
                     <asp:TextBox ID="txtDesde" runat="server" CssClass="form-control" placeholder="aaaa-mm-dd" MaxLength="10" />
@@ -114,14 +122,8 @@
 
             <%-- PASO 2: ENTRENAR (fuera de la web) --%>
             <div class="card-box sg-ml-paso">
-                <h4><span class="n" id="n2" runat="server">2</span> Entrenar en tu computador y registrar en Azure ML</h4>
-                <div class="txt">
-                    <code>ML/entrenar_falla.py</code> baja el dataset por la API, entrena una regresión logística (scikit-learn),
-                    la valida, la convierte a ONNX y comprueba que el ONNX y los pesos dan la misma probabilidad. Si
-                    <code>MLFLOW_TRACKING_URI</code> apunta al área de trabajo, deja la corrida y registra el modelo en Azure ML
-                    (gratis); si no, lo deja en <code>ML/mlruns</code>. Al terminar informa la corrida y la versión con
-                    <code>POST /sigma-ai/entrenamientos</code>; la versión queda en <strong>borrador</strong>.
-                </div>
+                <h4><span class="n" id="n2" runat="server">2</span> <asp:Literal ID="litTituloEntrenar" runat="server" Text="Entrenar en tu computador y registrar en Azure ML" /></h4>
+                <div class="txt"><asp:Literal ID="litTextoEntrenar" runat="server" /></div>
                 <asp:Literal ID="litComando" runat="server" />
                 <asp:Literal ID="litCorridas" runat="server" />
             </div>
@@ -136,7 +138,7 @@
                 <asp:Repeater ID="rptVersiones" runat="server" OnItemCommand="rptVersiones_ItemCommand">
                     <HeaderTemplate>
                         <div class="sg-ml-scroll"><table class="sg-tabla is-compacta">
-                            <tr><th>#</th><th>Estado</th><th>Algoritmo</th><th>Dataset</th><th class="num">AUC</th><th class="num">Precisión</th><th class="num">Recall</th><th class="num">F1</th><th>Azure ML</th><th>Entrenada</th><th></th></tr>
+                            <tr><th>#</th><th>Estado</th><th>Algoritmo</th><th>Dataset</th><th class="num">AUC</th><th class="num">Precisión</th><th class="num">Recall</th><th class="num">F1</th><th class="num" title="Error absoluto medio en días (RUL)">MAE</th><th>Azure ML</th><th>Entrenada</th><th></th></tr>
                     </HeaderTemplate>
                     <ItemTemplate>
                         <tr>
@@ -148,6 +150,7 @@
                             <td class="num"><%# Eval("precision") %></td>
                             <td class="num"><%# Eval("recall") %></td>
                             <td class="num"><%# Eval("f1") %></td>
+                            <td class="num"><%# Eval("mae") %></td>
                             <td style="white-space: normal; min-width: 190px;"><span class="sg-ml-exp" title='<%# Eval("ruta") %>'><%# Eval("registroHtml") %></span></td>
                             <td><%# Eval("entrenada") %></td>
                             <td class="sg-tabla-acciones" style="width: 250px; white-space: nowrap;">
@@ -172,19 +175,20 @@
 
             <%-- PASO 4: PUNTUAR --%>
             <div class="card-box sg-ml-paso">
-                <h4><span class="n" id="n4" runat="server">4</span> Puntuar hoy con la versión publicada</h4>
-                <div class="txt">
-                    <code>POST /sigma-ai/predecir</code> arma la fila de hoy de cada equipo, la puntúa dentro de la API
-                    (<code>PuntuadorFalla</code>: estandarizar, multiplicar por los pesos, sigmoide) y guarda la predicción con las
-                    características que usó, las tres razones que más pesaron y la alerta si supera el umbral del modelo.
-                    Volver a puntuar el mismo día devuelve la misma predicción. Lo que sale se ve también en
-                    <strong>Alertas</strong> y en la app (Análisis de SIGMA AI).
-                </div>
+                <h4><span class="n" id="n4" runat="server">4</span> <asp:Literal ID="litTituloPuntuar" runat="server" Text="Puntuar hoy con la versión publicada" /></h4>
+                <div class="txt"><asp:Literal ID="litTextoPuntuar" runat="server" /></div>
                 <div class="sg-ml-form">
                     <asp:LinkButton ID="btnPredecir" runat="server" CssClass="sigma-accion is-primaria" OnClick="btnPredecir_Click">
-                        <i class="mdi mdi-brain"></i><span>Puntuar todos los equipos</span>
+                        <i class="mdi mdi-brain"></i><span><asp:Literal ID="litBotonPuntuar" runat="server" Text="Puntuar todos los equipos" /></span>
                     </asp:LinkButton>
                 </div>
+                <asp:Panel ID="pnlClasificar" runat="server" Visible="false" CssClass="sg-ml-form">
+                    <label>Imagen:</label>
+                    <asp:FileUpload ID="fuImagen" runat="server" />
+                    <asp:LinkButton ID="btnClasificar" runat="server" CssClass="sigma-accion is-primaria" OnClick="btnClasificar_Click">
+                        <i class="mdi mdi-image-search-outline"></i><span>Clasificar con SIGMA VISION</span>
+                    </asp:LinkButton>
+                </asp:Panel>
                 <div class="sg-ml-scroll"><asp:Literal ID="litPredicciones" runat="server" /></div>
             </div>
 
