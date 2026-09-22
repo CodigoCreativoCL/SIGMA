@@ -1,4 +1,8 @@
-# SIGMA — Traspaso de sesión
+﻿# SIGMA — Traspaso de sesión
+
+> **Superado (22-09-2026):** el punto de entrada del equipo es ahora
+> [`SIGMA_TRASPASO_EQUIPO.md`](SIGMA_TRASPASO_EQUIPO.md). Lo que sigue es el traspaso del
+> 08-09-2026 y se conserva como historia.
 
 **Fecha:** 08-09-2026
 **Rama de trabajo:** `BryanChavez` · **Estado del remoto:** las cuatro ramas alineadas
