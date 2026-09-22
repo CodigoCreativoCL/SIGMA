@@ -98,12 +98,30 @@ class SesionService {
       final crudo = prefs.getString(_clave);
       if (crudo == null || crudo.isEmpty) return false;
 
-      sesion = SesionModel.fromJson(jsonDecode(crudo) as Map<String, dynamic>);
+      final guardada = SesionModel.fromJson(
+        jsonDecode(crudo) as Map<String, dynamic>,
+      );
+
+      /* UN TOKEN VENCIDO NO SE CARGA: SE DESCARTA
+
+         Antes se cargaba el token pasara lo que pasara y se devolvía
+         `autenticado`. Con una sesión caducada en disco —lo normal tras las
+         ocho horas de vigencia— eso dejaba el token muerto pegado al cliente
+         HTTP: el splash mandaba al Home (creía que había sesión) y cada
+         pantalla respondía 401, y hasta el propio login salía con ese token y
+         el servidor lo rechazaba con «La sesión expiró». Si ya no vale, se
+         limpia y se manda a entrar de nuevo con el cliente HTTP en blanco. */
+      if (!guardada.autenticado) {
+        await limpiar();
+        return false;
+      }
+
+      sesion = guardada;
       ApiClient.instance.token = sesion.token;
       // El cliente viaja con el token y se restaura con él: si no, al retomar
       // la sesión el cliente HTTP creería que no hay ninguno elegido.
       ApiClient.instance.cliente = sesion.cliente;
-      return sesion.autenticado;
+      return true;
     } catch (e) {
       debugPrint('[SesionService] No se pudo leer la sesión: $e');
       return false;
@@ -162,6 +180,21 @@ class AuthService {
     bool recordar = true,
   }) async {
     final correo = login.trim();
+
+    /* EL LOGIN NUNCA LLEVA UN TOKEN ANTERIOR
+
+       `POST /sesion` es anonimo, pero el `TokenValidationHandler` de la API
+       valida el token ANTES de enrutar: si el encabezado Authorization trae
+       un token vencido —el de la sesion anterior, que `cargarDesdeDisco` deja
+       cargado en el cliente HTTP porque `autenticado` no mira la expiracion—
+       responde 401 «La sesion expiro» sin que la peticion llegue siquiera al
+       controller. Es decir: un token caducado impedia VOLVER A ENTRAR, y el
+       mensaje enganaba —parecia clave mala cuando el login ni se ejecutaba—.
+
+       Se limpia antes de autenticar; el token nuevo lo pone `guardar()` con lo
+       que devuelve el servidor. */
+    ApiClient.instance.limpiarToken();
+    ApiClient.instance.cliente = 0;
 
     final j = await ApiClient.instance.post(ApiConstants.sesion, {
       'login': correo,

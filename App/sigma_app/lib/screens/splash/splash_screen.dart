@@ -87,11 +87,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
     _decir('Listo', 1);
 
+    // Se decide con el estado VIVO, no con `haySesion` del arranque: si al
+    // preparar la sesión un 401 la caducó y la limpió, entrar al Home sería
+    // abrir una pantalla condenada a responder 401. En ese caso, al login.
+    final entrar = widget.haySesion && SesionService.instance.autenticado;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 320),
         pageBuilder: (_, _, _) =>
-            widget.haySesion ? const HomeScreen() : const LoginScreen(),
+            entrar ? const HomeScreen() : const LoginScreen(),
         transitionsBuilder: (_, animacion, _, hijo) =>
             FadeTransition(opacity: animacion, child: hijo),
       ),

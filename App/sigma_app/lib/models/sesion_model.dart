@@ -12,6 +12,7 @@ class SesionModel {
     this.clienteNombre = '',
     this.token = '',
     this.expiraMinutos = 0,
+    this.expiraEn,
     this.debeElegirCliente = false,
   });
 
@@ -27,11 +28,31 @@ class SesionModel {
   final String token;
   final int expiraMinutos;
 
+  /// El instante en que el token deja de valer, en absoluto.
+  ///
+  /// `expiraMinutos` es **relativo** —«dura ocho horas»— y no sirve para saber
+  /// si un token guardado en disco hace rato sigue vivo: al leerlo no hay con
+  /// qué compararlo. El JWT sí caduca en el servidor (`JWT_EXPIRE_MINUTES`), y
+  /// su `TokenValidationHandler` responde 401 «La sesión expiró» a todo lo que
+  /// llegue con un token vencido —incluido, si se adjuntara, el propio login—.
+  ///
+  /// Se sella al recibir la sesión del servidor (`now + expiraMinutos`) y se
+  /// persiste, para que al retomar la app se sepa **sin viaje de red** que la
+  /// sesión ya no vale y se mande a la persona a entrar de nuevo, en vez de
+  /// abrir un Home que va a responder 401 en cada pantalla.
+  final DateTime? expiraEn;
+
   /// True cuando la persona pertenece a más de un cliente y todavía no
   /// eligió (HU-002): hay que mandarla a elegir antes de dejarla operar.
   final bool debeElegirCliente;
 
-  bool get autenticado => usuario > 0 && token.isNotEmpty;
+  /// Vencida según el reloj del teléfono. Sin `expiraEn` —sesión vieja
+  /// guardada antes de que existiera este campo— se responde `false`: el 401
+  /// del servidor sigue siendo el respaldo, y no se echa a nadie por una duda.
+  bool get expirado =>
+      expiraEn != null && !DateTime.now().isBefore(expiraEn!);
+
+  bool get autenticado => usuario > 0 && token.isNotEmpty && !expirado;
   bool get tieneCliente => cliente > 0;
 
   /// Para saludar. Si el servidor no mandó nombre, el login sirve.
@@ -41,16 +62,37 @@ class SesionModel {
     return login.split('@').first;
   }
 
-  factory SesionModel.fromJson(Map<String, dynamic> j) => SesionModel(
-    usuario: (j['usuario'] as num?)?.toInt() ?? 0,
-    login: j['login'] as String? ?? '',
-    nombre: j['nombre'] as String?,
-    cliente: (j['cliente'] as num?)?.toInt() ?? 0,
-    clienteNombre: j['cliente_nombre'] as String? ?? '',
-    token: j['token'] as String? ?? '',
-    expiraMinutos: (j['expira_minutos'] as num?)?.toInt() ?? 0,
-    debeElegirCliente: j['debe_elegir_cliente'] as bool? ?? false,
-  );
+  factory SesionModel.fromJson(Map<String, dynamic> j) {
+    final token = j['token'] as String? ?? '';
+    final minutos = (j['expira_minutos'] as num?)?.toInt() ?? 0;
+
+    /* DE DÓNDE SALE `expiraEn`
+
+       · Del disco: viaja `expira_en` (ISO) y se usa tal cual — es el instante
+         real, calculado cuando el servidor emitió el token.
+       · Del servidor: NO viaja `expira_en`, sólo `expira_minutos` relativo. El
+         token acaba de emitirse, así que su vencimiento es `ahora + minutos`.
+         Sellarlo acá deja el instante absoluto listo para persistir. */
+    DateTime? expira;
+    final crudo = j['expira_en'];
+    if (crudo is String && crudo.isNotEmpty) {
+      expira = DateTime.tryParse(crudo);
+    } else if (token.isNotEmpty && minutos > 0) {
+      expira = DateTime.now().add(Duration(minutes: minutos));
+    }
+
+    return SesionModel(
+      usuario: (j['usuario'] as num?)?.toInt() ?? 0,
+      login: j['login'] as String? ?? '',
+      nombre: j['nombre'] as String?,
+      cliente: (j['cliente'] as num?)?.toInt() ?? 0,
+      clienteNombre: j['cliente_nombre'] as String? ?? '',
+      token: token,
+      expiraMinutos: minutos,
+      expiraEn: expira,
+      debeElegirCliente: j['debe_elegir_cliente'] as bool? ?? false,
+    );
+  }
 
   Map<String, dynamic> toJson() => {
     'usuario': usuario,
@@ -60,6 +102,7 @@ class SesionModel {
     'cliente_nombre': clienteNombre,
     'token': token,
     'expira_minutos': expiraMinutos,
+    'expira_en': expiraEn?.toIso8601String(),
     'debe_elegir_cliente': debeElegirCliente,
   };
 
@@ -71,6 +114,7 @@ class SesionModel {
     String? clienteNombre,
     String? token,
     int? expiraMinutos,
+    DateTime? expiraEn,
     bool? debeElegirCliente,
   }) => SesionModel(
     usuario: usuario ?? this.usuario,
@@ -80,6 +124,7 @@ class SesionModel {
     clienteNombre: clienteNombre ?? this.clienteNombre,
     token: token ?? this.token,
     expiraMinutos: expiraMinutos ?? this.expiraMinutos,
+    expiraEn: expiraEn ?? this.expiraEn,
     debeElegirCliente: debeElegirCliente ?? this.debeElegirCliente,
   );
 }

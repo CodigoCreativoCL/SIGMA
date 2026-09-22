@@ -5,13 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'screens/login/login_screen.dart';
 import 'screens/splash/splash_screen.dart';
 import 'services/accesibilidad_service.dart';
+import 'services/api_client.dart';
 import 'services/preferencias_service.dart';
 import 'services/sesion_service.dart';
 import 'services/tema_service.dart';
 import 'theme/app_theme.dart';
 import 'widgets/comun/sigma_al_retomar.dart';
+
+/// La llave del `Navigator` raíz, para poder navegar desde fuera del árbol de
+/// widgets —en concreto, cuando el `ApiClient` detecta que la sesión caducó y
+/// hay que volver a la pantalla de entrada sin tener un `context` a mano—.
+final navigatorKey = GlobalKey<NavigatorState>();
 
 /// El orden de este arranque importa, y cada paso está donde está por una
 /// razón. Ver `MD/SIGMA_APP_ARQUITECTURA.md` §9.
@@ -36,6 +43,21 @@ void main() async {
   } catch (e) {
     debugPrint('[main] No se pudo preparar la sesión: $e');
   }
+
+  /* RECUPERACIÓN AUTOMÁTICA ANTE UN 401
+
+     Cuando el servidor rechaza el token —caducó a mitad de turno, o se
+     revocó—, cualquier petición vuelve 401. En vez de dejar a la persona
+     mirando «La sesión expiró» en una pantalla que no reacciona, se limpia la
+     sesión y se vuelve al login, conservando el correo para no re-escribirlo.
+     El `ApiClient` garantiza que esto se dispara UNA sola vez por sesión. */
+  ApiClient.instance.alCaducarSesion = () async {
+    await SesionService.instance.limpiar();
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  };
 
   // Después de la sesión, no antes: los ajustes de accesibilidad son **de la
   // persona**, no del aparato, y hasta acá no se sabe quién es. Sin sesión se
@@ -73,6 +95,7 @@ class SigmaApp extends StatelessWidget {
       builder: (_, modo, _) => ValueListenableBuilder<bool>(
         valueListenable: AccesibilidadService.instance.altoContraste,
         builder: (_, contraste, _) => MaterialApp(
+          navigatorKey: navigatorKey,
           title: 'SIGMA',
           debugShowCheckedModeBanner: false,
           // **El oscuro es el de fábrica**, y no es capricho: es la superficie

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sigma_app/models/modelos.dart';
+import 'package:sigma_app/models/sesion_model.dart';
 import 'package:sigma_app/services/api_client.dart';
 import 'package:sigma_app/theme/app_theme.dart';
 import 'package:sigma_app/theme/sigma_tokens.dart';
@@ -343,6 +344,49 @@ void main() {
       expect(f.orden.OT_NUMERO, 'OT-5');
       expect(f.pasos.length, 2);
       expect(f.asignados.length, 1);
+    });
+
+    test('una sesión con el token vencido no está autenticada', () {
+      // El token relativo («dura 480 min») no basta para saber si un token
+      // guardado en disco sigue vivo: se sella el instante absoluto y es él
+      // quien decide. Sin esto, la app entraba al Home con un token muerto.
+      final viva = SesionModel(
+        usuario: 7,
+        token: 'jwt',
+        expiraEn: DateTime.now().add(const Duration(minutes: 10)),
+      );
+      final vencida = SesionModel(
+        usuario: 7,
+        token: 'jwt',
+        expiraEn: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+
+      expect(viva.autenticado, isTrue);
+      expect(vencida.expirado, isTrue);
+      expect(vencida.autenticado, isFalse);
+    });
+
+    test('la respuesta del servidor sella la expiración y sobrevive al disco', () {
+      // El servidor manda `expira_minutos` relativo; se convierte a instante
+      // absoluto al mapear, y ese instante se persiste como `expira_en` para
+      // que al releer del disco se sepa cuándo caduca sin viaje de red.
+      final delServidor = SesionModel.fromJson(const {
+        'usuario': 7,
+        'token': 'jwt',
+        'expira_minutos': 480,
+      });
+      expect(delServidor.expiraEn, isNotNull);
+      expect(delServidor.autenticado, isTrue);
+
+      // Round-trip por disco: no se recalcula, se conserva el instante.
+      final delDisco = SesionModel.fromJson(delServidor.toJson());
+      expect(delDisco.expiraEn, delServidor.expiraEn);
+
+      // Sin `expira_en` ni minutos —sesión vieja previa a este campo— no se
+      // echa a nadie por una duda: el 401 del servidor es el respaldo.
+      final antigua = SesionModel.fromJson(const {'usuario': 7, 'token': 'jwt'});
+      expect(antigua.expirado, isFalse);
+      expect(antigua.autenticado, isTrue);
     });
 
     test('la variable de condición de la sábana trae sus umbrales', () {
