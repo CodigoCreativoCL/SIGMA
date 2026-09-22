@@ -61,6 +61,51 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// Pautas que tienen una versión PUBLICADA (una por pauta, la última
+        /// publicada). Sirve para el combo de "pauta" al programarla (HU-094):
+        /// solo se puede programar una pauta ya publicada.
+        /// </summary>
+        public List<ChecklistVersion> GetPublicadas(int cliente)
+        {
+            List<ChecklistVersion> lista = new List<ChecklistVersion>();
+            System.Collections.Generic.HashSet<int> vistos = new System.Collections.Generic.HashSet<int>();
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+                try
+                {
+                    cmd.CommandText = "SEL_CHECKLIST_VERSION";
+                    cmd.Parameters.AddWithValue("@CLIENTE", cliente > 0 ? cliente : Session.ClienteId());
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            if (int.Parse(dr["CPV_ESTADO"].ToString()) != 2) continue;   // solo PUBLICADO
+                            int plantilla = int.Parse(dr["CPV_CHECKLIST_PLANTILLA"].ToString());
+                            if (vistos.Contains(plantilla)) continue;                     // una por pauta (SEL viene ordenado por numero desc)
+                            vistos.Add(plantilla);
+                            ChecklistVersion v = new ChecklistVersion();
+                            v.cpv_id = int.Parse(dr["CPV_ID"].ToString());
+                            v.cpv_checklist_plantilla = plantilla;
+                            v.cpv_numero = int.Parse(dr["CPV_NUMERO"].ToString());
+                            v.plantilla_codigo = dr["PLANTILLA_CODIGO"].ToString();
+                            v.plantilla_nombre = dr["PLANTILLA_NOMBRE"].ToString();
+                            lista.Add(v);
+                        }
+                    }
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    if (cmd.Connection != null) cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+            }
+            return lista;
+        }
+
         /// <summary>Publica el borrador de la pauta. Las reglas (CA1/CA2) están en el SP.</summary>
         public Respuesta Publicar(int plantilla, string observacion)
         {
