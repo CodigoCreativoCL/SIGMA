@@ -41,6 +41,7 @@
     <rad:RadTabStrip2 ID="tabFicha" runat="server" MultiPageID="mpFicha" SelectedIndex="0">
         <Tabs>
             <rad:RadTab ID="tabDonde" Text="Dónde está" runat="server" PageViewID="pvDonde" />
+            <rad:RadTab ID="tabCubos" Text="Por estante y lote" runat="server" PageViewID="pvCubos" />
             <rad:RadTab ID="tabMovimientos" Text="Últimos movimientos" runat="server" PageViewID="pvMovimientos" />
         </Tabs>
     </rad:RadTabStrip2>
@@ -49,6 +50,16 @@
 
         <rad:RadPageView ID="pvDonde" runat="server">
             <rad:RadGrid2 ID="GridBodegas" runat="server" OnItemDataBound="GridBodegas_ItemDataBound">
+                <MasterTableView CommandItemDisplay="None" />
+            </rad:RadGrid2>
+        </rad:RadPageView>
+
+        <%-- HU-059 #2: la existencia por cubo (bodega · estante · lote), que es
+             lo que el bodeguero necesita para ir directo al estante y tomar
+             el lote que vence antes. Sale de SEL_REPUESTO_DESGLOSE, el mismo
+             SP que resuelve el escaneo de la etiqueta del repuesto. --%>
+        <rad:RadPageView ID="pvCubos" runat="server">
+            <rad:RadGrid2 ID="GridCubos" runat="server" OnItemDataBound="GridCubos_ItemDataBound">
                 <MasterTableView CommandItemDisplay="None" />
             </rad:RadGrid2>
         </rad:RadPageView>

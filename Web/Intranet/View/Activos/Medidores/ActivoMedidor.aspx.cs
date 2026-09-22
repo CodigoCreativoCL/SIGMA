@@ -131,6 +131,10 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
 
         // El activo no se cambia al editar: el medidor pertenece a su máquina.
         cboActivo.ReadOnly = !puedeEditar || Id > 0;
+        /* Un combo ReadOnly no arma sus items en el cliente y validaControl
+           revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
+           Al editar no hay nada que validar ahi (el servidor exige el valor). */
+        cvActivo.Enabled = Id == 0;
         cboUnidad.ReadOnly = !puedeEditar;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Medidor");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta

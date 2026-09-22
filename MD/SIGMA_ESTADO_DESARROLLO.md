@@ -1,4 +1,4 @@
-﻿# SIGMA — Estado del desarrollo
+# SIGMA — Estado del desarrollo
 
 > **Documento vivo.** Es el traspaso de contexto entre sesiones de trabajo.
 > Quien retome el proyecto debería poder leer solo esto y saber dónde está
@@ -1113,6 +1113,7 @@ $t = [System.IO.File]::ReadAllText($p)
 | 18-09-2026 | **Azure ML entrega el modelo sin entidad de servicio (`BD/246`).** La API baja el artefacto registrado por el almacenamiento del área (contenedor `azureml`, SAS existente), verifica el SHA-256 del `.onnx` y puede tomar los pesos desde Azure; `mpv_registro` y `mpv_fecha_verificacion_utc`. Corridas y modelo `SIGMA_FAILURE_30D` v1/v2 registrados en SIGMA_AI con la cuenta de Bryan (`az login` por código; `mlflow<3`). Sin cómputo, sin endpoints (el de Studio costaría ~216 USD/mes). Checklist §10.24 |
 
 | 18-09-2026 | **SIGMA RUL y SIGMA VISION por el mismo camino (`BD/247`, `BD/248`).** RUL: dataset por instalación de repuesto con censura, AFT log-normal (scipy) en `entrenar_rul.py`, `PuntuadorRul` en la API (mediana + intervalo 80 %), `SIGMA_RUL:1` registrado en Azure ML, v1 publicada. VISION: dataset de imágenes confirmadas por persona, Azure Custom Vision F0 por claves (`CustomVision.cs`, `entrenar_vision.py`), revisión visual sin confirmar + confirmación humana. `/sigma-ai/*?modelo=`, selector en Experimentos, `sigma_ml.py` común. Checklist §10.25 |
+| 22-09-2026 | **Sprints 1, 2 y 3 cerrados con evidencia; lo de la app al Sprint 6.** S1: `BD/249`–`BD/252` (hora por planta, grupo → líder, certificación vencida y alerta 15, contraseña vs. tres anteriores, candidatos), plantas/vigencia en el usuario del cliente, Catálogos «Nuevo valor» arreglado; 45/46 criterios ✓. S2: `BD/253` (historial de estado del componente con motivo), validador de combos ReadOnly que mataba el Guardar; 42 ✓ + 14 → S6. S3: 18 criterios escritos y probados para HU-059/066/067/068/069/077, `BD/254` (escaneo por código), `BD/255` (admin crea repuestos), `BD/256` (el detector de inventario cerraba con error 547), existencia por estante y lote, rollo térmico en A4; 73 ✓ + 3 → S6. Historias: 17 + 18 + 28 Terminada; solo quedan las validaciones con la PO. Informes S1–S3 regenerados. Checklist §10.26 |
 
 ### Cómo actualizar este documento
 

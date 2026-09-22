@@ -89,6 +89,20 @@
         ValidateEmptyText="true"
         ValidationGroup="Identidad" />
     </div>
+    <%-- HU-014 #2 y #3: sin planta no hay usuario operativo. La lista y la
+         vigencia van al SP UPS_CLIENTE_USUARIO_PLANTA, que es quien rechaza
+         «Debe asignar al menos una planta» y quien deshabilita las que ya
+         no estan (no las borra: hay ordenes historicas que se apoyan en que
+         la persona estuvo autorizada). --%>
+    <div class="sigma-modal-field">
+        <label>Plantas(*)</label>
+        <rad:RadComboBox2 ID="cboPlantas" runat="server" OnLoad="LoadControls" CheckBoxes="true" Filter="Contains" style="width:100% !important;" />
+    </div>
+    <div class="sigma-modal-field">
+        <label>Vigente en las plantas hasta (opcional)</label>
+        <WebControls:Calendar ID="calVigenciaFin" runat="server" />
+        <small style="color:#6b7280;">Al vencer la fecha, la persona deja de ver esas plantas. Vacío = sin vencimiento.</small>
+    </div>
     <div class="sigma-modal-field">
         <label>Nombre(*)</label>
         <WebControls:TextBox2 ID="TextNombre" runat="server" />

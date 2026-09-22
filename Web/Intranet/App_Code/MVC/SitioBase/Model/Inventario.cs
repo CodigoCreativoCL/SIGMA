@@ -239,6 +239,26 @@ namespace SitioBase.Model
         public bool bajo_minimo { get; set; }
         public bool sobre_maximo { get; set; }
         public string ubicacion_codigo { get; set; }
+        /// <summary>Cuántos cubos (estante × lote) con saldo hay en la bodega; ubicacion_codigo solo viene cuando es uno.</summary>
+        public int ubicaciones { get; set; }
+        public int lotes { get; set; }
+
+        /// <summary>
+        /// Lo que se lee en la columna Ubicación: el estante si es uno; si
+        /// hay varios, cuántos estantes y lotes (HU-059 #2). «sin registrar»
+        /// queda solo para el saldo que de verdad no tiene estante.
+        /// </summary>
+        public string ubicacion_texto
+        {
+            get
+            {
+                if (!string.IsNullOrEmpty(ubicacion_codigo)) return ubicacion_codigo;
+                if (ubicaciones <= 1) return "";
+                string s = ubicaciones + " cubos";
+                if (lotes > 1) s += " · " + lotes + " lotes";
+                return s;
+            }
+        }
 
         public string filtro { get; set; }
         public int filtro_instalacion { get; set; }

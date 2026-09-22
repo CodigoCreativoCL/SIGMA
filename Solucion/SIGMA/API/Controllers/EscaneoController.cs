@@ -1,6 +1,7 @@
 ﻿using API.MVC.Model;
 using API.Utils;
 using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Web.Http;
 
@@ -50,10 +51,17 @@ namespace API.Controllers
                 string tipo;
                 int id;
 
-                if (!Interpretar(c, out tipo, out id))
-                    return BadRequest("No se reconoce «" + (c ?? "") + "». " +
-                                      "Escanee la etiqueta otra vez, o escriba el código " +
-                                      "impreso, por ejemplo UBI-17.");
+                /* Primero el token del QR; si no es un token o ese id no es
+                   de este cliente, el código impreso en la etiqueta (bloque
+                   254): la app manda lo leído tal cual y aquí se resuelve. */
+                bool esToken = Interpretar(c, out tipo, out id);
+                if (!esToken || !ExisteEnCliente(tipo, id))
+                {
+                    if (!ResolverPorCodigo(c, out tipo, out id))
+                        return BadRequest("No se reconoce «" + (c ?? "") + "». " +
+                                          "Escanee la etiqueta otra vez, o escriba el código " +
+                                          "impreso, por ejemplo UBI-17.");
+                }
 
                 /* UN ACTIVO NO SE DESGLOSA, SE ABRE
 
@@ -187,6 +195,44 @@ namespace API.Controllers
         /// teléfono al leer el QR— y el token pelado, que es lo que llega
         /// cuando alguien lo teclea porque la etiqueta está rayada.
         /// </summary>
+        /// <summary>El token leído pertenece al cliente de la sesión.</summary>
+        private bool ExisteEnCliente(string tipo, int id)
+        {
+            DataSet ds = Datos.Conjunto("SEL_ETIQUETA_RESOLVER", new Dictionary<string, object>
+            {
+                { "@CLIENTE", SesionApi.ClienteId() }, { "@TIPO", tipo }, { "@ID", id }
+            });
+            return ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0;
+        }
+
+        /// <summary>
+        /// El código impreso en la etiqueta, tecleado: se busca dentro del
+        /// cliente en bodegas, ubicaciones, repuestos, activos y posiciones.
+        /// </summary>
+        private bool ResolverPorCodigo(string leido, out string tipo, out int id)
+        {
+            tipo = ""; id = 0;
+            if (string.IsNullOrEmpty(leido)) return false;
+
+            string texto = leido.Trim();
+            int corte = texto.LastIndexOf("c=", StringComparison.OrdinalIgnoreCase);
+            if (corte >= 0) texto = texto.Substring(corte + 2);
+            int fin = texto.IndexOfAny(new char[] { '&', '?', '\r', '\n' });
+            if (fin >= 0) texto = texto.Substring(0, fin);
+            texto = texto.Trim();
+            if (texto.Length == 0) return false;
+
+            DataSet ds = Datos.Conjunto("SEL_ETIQUETA_RESOLVER", new Dictionary<string, object>
+            {
+                { "@CLIENTE", SesionApi.ClienteId() }, { "@CODIGO", texto }
+            });
+            if (ds == null || ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0) return false;
+
+            tipo = ds.Tables[0].Rows[0]["TIPO"].ToString();
+            id = Convert.ToInt32(ds.Tables[0].Rows[0]["ID"]);
+            return id > 0;
+        }
+
         private bool Interpretar(string leido, out string tipo, out int id)
         {
             tipo = "";

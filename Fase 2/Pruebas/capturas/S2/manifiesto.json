@@ -744,22 +744,6 @@
   "fecha": "17-09-2026 03:30"
  },
  {
-  "hu": "HU-036",
-  "criterio": 3,
-  "titulo": "Estado del componente",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Editar «Rodamiento lado acople» › Estado = otro estado › Guardar.",
-  "esperado": "El cambio queda registrado con fecha, motivo y responsable.",
-  "obtenido": "El estado cambia y queda la fecha y el usuario de actualización (Cannot resolve collation conflict between \"Modern_Spanish_CI_AS\" and \"SQL_Latin1_General_CP1_CI_AS\" in add operator occurring in SELECT statement column 1.), pero la ficha no pide motivo y no existe un historial de estados del componente (0 tablas de historial): el criterio se cumple parcialmente. Pendiente anotado en el MD (base que falta: historial de estado del componente).",
-  "ok": false,
-  "capturas": [
-   "hu036_3_cambio_estado.png"
-  ],
-  "detalle": "Estados disponibles: Seleccione... | Operativo | Con observación | Degradado | Fuera de servicio | Retirado",
-  "fecha": "17-09-2026 03:30"
- },
- {
   "hu": "HU-042",
   "criterio": 1,
   "titulo": "Alta de medidor",
@@ -876,5 +860,39 @@
   ],
   "detalle": "",
   "fecha": "17-09-2026 03:40"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 3,
+  "titulo": "Estado del componente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Componentes › editar COM-13 «Rodamiento lado acople» (estado Operativo): Estado = Degradado › Guardar sin motivo; luego con motivo › Guardar; se vuelve a abrir la ficha.",
+  "esperado": "El cambio queda registrado con fecha, motivo y responsable.",
+  "obtenido": "Sin motivo: «6.- INDIQUE EL MOTIVO DEL CAMBIO DE ESTADO DEL COMPONENTE. ACEPTAR». Con motivo: «Componente actualizado con éxito. ACEPTAR». Al reabrir, la ficha muestra el historial: 22-09-2026 03:14\tOperativo\tDegradado\tVibración sobre 7 mm/s en la última medición; se degrada hasta el cambio del rodamiento.\tRodrigo Quezada. SEL_ACTIVO_COMPONENTE_ESTADO_HISTORIAL: 1|13|1|Operativo|3|Degradado|Vibración sobre 7 mm/s en la última medición; se degrada hasta el cambio del rodamiento.|8|Rodrigo Quezada|2026-09-22 03:14:32.127.",
+  "ok": true,
+  "capturas": [
+   "hu036_3_sin_motivo.png",
+   "hu036_3_con_motivo.png",
+   "hu036_3_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 03:14"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 3,
+  "titulo": "Defecto corregido: Guardar de la ficha del componente moría en silencio al editar",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Activos › Componentes › editar › Guardar.",
+  "esperado": "Guarda o avisa.",
+  "obtenido": "El combo Activo va ReadOnly al editar y Telerik no construye sus items en el cliente; el CustomValidator (validaControl) reventaba dentro de Page_ClientValidate y el clic no llegaba al servidor, sin aviso. Corregido en ActivoComponente, ActivoMedidor y RepuestoCompatibilidad: el validador del combo fijo se deshabilita al editar (el servidor sigue exigiendo el valor). Reprobado con HU-036 #3.",
+  "ok": true,
+  "capturas": [
+   "hu036_3_con_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
  }
 ]

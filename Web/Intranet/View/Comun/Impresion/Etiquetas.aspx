@@ -3,10 +3,6 @@
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <link href="../../../Css/LookAndFeel/sigma-impresion.css?vrs=2" rel="stylesheet" />
 
-    <%-- El tamaño de página depende del formato elegido, y @page no se puede
-         condicionar por clase: se emite desde el servidor. --%>
-    <asp:Literal ID="litPagina" runat="server" />
-
     <script type="text/javascript">
         function imprimir() {
             window.print();
@@ -16,6 +12,12 @@
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
+<%-- El tamaño de página depende del formato elegido, y @page no se puede
+     condicionar por clase: se emite desde el servidor. Va DENTRO del cuerpo
+     (que es lo que refresca el UpdatePanel del master) y no en el head: si
+     no, cambiar el combo dejaba la clase del rollo térmico con la regla de
+     A4 y la impresión salía en hoja grande. --%>
+<asp:Literal ID="litPagina" runat="server" />
 <div class="sigma-modal">
 
     <h1 class="sigma-modal-title no-imprimir"><asp:Literal ID="litTitulo" runat="server" /></h1>

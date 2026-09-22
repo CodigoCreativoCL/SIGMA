@@ -23,6 +23,16 @@ public partial class View_Sistema_Catalogos_Catalogos : System.Web.UI.Page
         set { ViewState["IdCatalogo"] = value; }
     }
 
+    /// <summary>
+    /// Lo que recibe la ficha al pulsar «Nuevo valor»: el catálogo elegido y
+    /// valor 0. Sin esto la ficha abría con IdCatalogo=0 y el guardado
+    /// terminaba en «EL CATÁLOGO NO ESTÁ REGISTRADO» (HU-021 #1).
+    /// </summary>
+    public string QueryNuevoValor
+    {
+        get { return Server.UrlEncode(Tools.Crypto.Encrypt("IdCatalogo=" + IdCatalogo + "&IdValor=0")); }
+    }
+
     public bool EsAmpliable
     {
         get { return ViewState["EsAmpliable"] != null ? (bool)ViewState["EsAmpliable"] : false; }
@@ -106,9 +116,6 @@ public partial class View_Sistema_Catalogos_Catalogos : System.Web.UI.Page
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
-        CargarValores();
-        GridValores.DataBind();
-
         /* El botón "Nuevo valor" solo aparece cuando el catálogo admite
            valores propios (HU-021 escenario 2: "cuando abro un catálogo que
            no admite valores propios, la acción de agregar no se muestra")
@@ -116,12 +123,18 @@ public partial class View_Sistema_Catalogos_Catalogos : System.Web.UI.Page
 
            Ocultarlo no es la seguridad: INS_CATALOGO_VALOR rechaza igual un
            catálogo no ampliable. Esto es para no ofrecer algo que va a
-           fallar. */
+           fallar.
+
+           Se decide ANTES del DataBind: el command item se construye al
+           enlazar, así que cambiarlo después no se pintaba nunca. */
         bool puedeCrear = IdCatalogo > 0 && EsAmpliable && Token.PuedeFuncion("Crear y editar");
 
         GridValores.MasterTableView.CommandItemDisplay = puedeCrear
             ? GridCommandItemDisplay.Top
             : GridCommandItemDisplay.None;
+
+        CargarValores();
+        GridValores.DataBind();
 
         udPanel.Update();
     }

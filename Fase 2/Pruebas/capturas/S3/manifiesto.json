@@ -244,20 +244,6 @@
   "fecha": "14-09-2026 23:31"
  },
  {
-  "hu": "HU-076",
-  "criterio": 4,
-  "titulo": "Programación deshabilitada",
-  "usuario": "rodrigo",
-  "tipo": "Servidor",
-  "pasos": "Deshabilitar una programación y volver a generar.",
-  "esperado": "Deja de generar ocurrencias nuevas y las ya generadas se conservan.",
-  "obtenido": "GEN_PLAN_OCURRENCIAS solo recorre programaciones con pro_habilitado = 1 y nunca borra ocurrencias (BD/222). No se ejercitó por pantalla en esta corrida.",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "14-09-2026 23:31"
- },
- {
   "hu": "HU-054",
   "criterio": 1,
   "titulo": "Ingreso simple",
@@ -504,7 +490,7 @@
  },
  {
   "hu": "HU-077",
-  "criterio": 1,
+  "criterio": 2,
   "titulo": "El detector no duplica ni cierra lo que sigue pasando",
   "usuario": "rodrigo",
   "tipo": "BD",
@@ -518,7 +504,7 @@
  },
  {
   "hu": "HU-077",
-  "criterio": 1,
+  "criterio": 2,
   "titulo": "La alerta se cierra sola cuando la condición deja de darse",
   "usuario": "rodrigo",
   "tipo": "BD",
@@ -1031,5 +1017,394 @@
   ],
   "detalle": "92|Disparada por condición (TODOS): Vibración mayor igual 7.1 mm/s (última 7.5 mm/s) · Corriente mayor 80.0 °C (última 85.0 °C)",
   "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 4,
+  "titulo": "Programación deshabilitada",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "La programación 12 (hitos 1,3,6,8) tiene 42 ocurrencias generadas hasta 2026-12-13. Se deshabilita (pro_habilitado=0) y se llama POST /plan-ocurrencias/generar con horizonte 400 días; luego se vuelve a habilitar y se repite la llamada.",
+  "esperado": "Deshabilitada deja de generar ocurrencias; las ya generadas se conservan.",
+  "obtenido": "Deshabilitada: 200, ocurrencias 42 → 42 (ninguna nueva, ninguna borrada), marca de agua sin cambio (2026-12-13 · 33 · 90). Habilitada de nuevo: 200, ocurrencias 42 → 44 y la marca avanza a 2027-10-27: la única causa de no generar era la deshabilitación.",
+  "ok": true,
+  "capturas": [
+   "hu076_4_sw_deshabilitada.png",
+   "hu076_4_sw_habilitada.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 03:15"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 1,
+  "titulo": "Ingreso con estante y lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "INS_INVENTARIO_MOVIMIENTO (ingreso de REP-EV2323 a Bodega Frío) sin ubicación; luego Inventario › Movimientos › Nuevo: Ingreso por compra, REP-EV2323, Bodega Frío, ubicación UBI-29, lote nuevo L054918, 6 unidades › Registrar.",
+  "esperado": "Sin estante se rechaza; con estante y lote la existencia queda en ese cubo (bodega, ubicación, lote).",
+  "obtenido": "Sin ubicación: «Msg 50000, Level 16, State 1, Server SQL5112, Procedure INS_INVENTARIO_MOVIMIENTO, Line 119\n15.- ESTA BODEGA T». Con ubicación y lote: «Movimiento registrado. ACEPTAR». Inventario_Saldo de REP-EV2323 en Bodega Frío por cubo: UBI-28 · L-2026-09 · 5.00; UBI-28 · L053801 · 4.00; UBI-29 · L054918 · 6.00.",
+  "ok": true,
+  "capturas": [
+   "hu059_1_ingreso_estante_lote.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:50"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 2,
+  "titulo": "Existencias por estante y lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Existencias › buscar «Filtro de aceite» › abrir el detalle › pestaña «Por estante y lote».",
+  "esperado": "La cantidad se ve desglosada por bodega, ubicación y lote; el umbral mínimo se evalúa por bodega.",
+  "obtenido": "El listado dice «3 cubos · 3 lotes» en Bodega Frío (sí) y la pestaña «Por estante y lote» muestra cada cubo con su estante, lote, vencimiento y cantidad, entre ellos UBI-29 · L054918 · 6 (sí). El umbral (Repuesto_Bodega_Stock) se define por bodega, no por estante, y SEL_INVENTARIO_SALDO agrupa por bodega para compararlo.",
+  "ok": true,
+  "capturas": [
+   "hu059_2_existencias.png",
+   "hu059_2_detalle_cubos.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:50"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 3,
+  "titulo": "Reubicación dentro de la bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Nuevo: Cambio de ubicación, REP-EV2323, Bodega Frío, origen UBI-29 · L054918, destino UBI-28, 6 unidades › Registrar.",
+  "esperado": "La existencia cambia de ubicación con un solo movimiento (sin salida ni entrada) y queda el historial de ubicaciones.",
+  "obtenido": "Aviso: «Movimiento registrado. ACEPTAR». Movimientos nuevos del repuesto en la bodega: 1 (REUBICACION). Cubos después: UBI-28 · L-2026-09 · 5.00; UBI-28 · L053801 · 4.00; UBI-28 · L054918 · 6.00. SEL_REPUESTO_UBICACION_HISTORIAL devuelve 7 filas con ubicación, fecha y usuario.",
+  "ok": true,
+  "capturas": [
+   "hu059_3_reubicacion.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:51"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 4,
+  "titulo": "Trazabilidad del lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Se consume 2 del lote L054918 contra la OT 56 y se consulta el lote (SEL_REPUESTO_LOTE_SALDO) y el detalle de existencias.",
+  "esperado": "Se ve cuánto ingresó, cuánto se consumió y cuánto queda, con su vencimiento.",
+  "obtenido": "SEL_REPUESTO_LOTE_SALDO: 10|L054918|2026-09-22|NULL|1|43|REP-EV2323|Filtro de aceite hidráulico (evidencia S3)|un|6.00|2.00|4.00|1|NULL|Ximena Leiva|2026-09-22 05:50:23.210||NULL. El detalle de existencias muestra el lote L054918 con 4 (sí).",
+  "ok": true,
+  "capturas": [
+   "hu059_4_lote.png"
+  ],
+  "detalle": "10|L054918|2026-09-22|NULL|1|43|REP-EV2323|Filtro de aceite hidráulico (evidencia S3)|un|6.00|2.00|4.00|1|NULL|Ximena Leiva|2026-09-22 05:50:23.210||NULL",
+  "fecha": "22-09-2026 05:51"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 1,
+  "titulo": "Etiquetas de una bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Impresión › Centro de etiquetas › bodega Bodega Frío › «Ubicaciones» (abre la hoja de etiquetas).",
+  "esperado": "Una hoja con una etiqueta por ubicación, cada una con su código y su QR.",
+  "obtenido": "La hoja trae 2 códigos QR (imágenes generadas con QRCoder) y los códigos UBI-28, UBI-29; Bodega Frío tiene 2 ubicaciones.",
+  "ok": true,
+  "capturas": [
+   "hu066_1_centro.png",
+   "hu066_1_hoja_a4_24.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 2,
+  "titulo": "Formato de papel",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "En la hoja de etiquetas cambiar el formato: A4 · 24 → A4 · 10 (99 × 57 mm) → rollo térmico 50 × 25 mm.",
+  "esperado": "La hoja se reacomoda al formato elegido y el código se lee completo, sin recortarse.",
+  "obtenido": "La hoja cambia de clase con el formato («etq-hoja etq-a4-24» → «etq-hoja etq-a4-10» → «etq-hoja etq-termica»); en A4 la regla es «@page { size: A4; margin: 8mm; }» y en térmico «@page { size: 50mm 25mm; margin: 0; }» (50 × 25 mm, sin márgenes); ningún código queda recortado (overflow A4·10: no; térmico: no).",
+  "ok": true,
+  "capturas": [
+   "hu066_2_formato_a4_10.png",
+   "hu066_2_formato_termico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 3,
+  "titulo": "Sin permiso",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Emilio (planificador, sin IMPRIMIR ETIQUETAS) entra al centro de etiquetas y luego abre por URL la hoja de ubicaciones de Bodega Frío.",
+  "esperado": "No se le ofrece nada para imprimir.",
+  "obtenido": "Centro de etiquetas: 0 tarjetas para imprimir; la hoja abierta por URL no trae etiquetas (0 QR) y dice «Hamburgo».",
+  "ok": true,
+  "capturas": [
+   "hu066_3_sin_permiso.png",
+   "hu066_3_hoja_directa.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 1,
+  "titulo": "Consulta de una ubicación",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Impresión › Escanear: escribir UBI-28 (o leerlo con la cámara) › Buscar.",
+  "esperado": "Se ve qué repuestos hay en ese estante, con cantidad y lote.",
+  "obtenido": "La pantalla resuelve UBI-28 (Pasillo A · Estante 1 · Nivel 1) y lista lo que hay en él, con cantidad y lote: repuestos con cantidad.",
+  "ok": true,
+  "capturas": [
+   "hu067_1_ubicacion.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 2,
+  "titulo": "Bodega y repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Escanear: BOD-1 (bodega) y luego REP-6205 (repuesto).",
+  "esperado": "La misma pantalla muestra su desglose: la bodega por ubicación, el repuesto por bodega.",
+  "obtenido": "BOD-1 → Bodega Frio desglosada por ubicación (sí); REP-6205 → existencia por bodega (sí). GET /escaneo?c= resuelve los tres tipos para la app.",
+  "ok": true,
+  "capturas": [
+   "hu067_2_bodega.png",
+   "hu067_2_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:02"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 3,
+  "titulo": "Código no reconocido",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Escanear: ZZZ-404 (no existe) › Buscar; y GET /escaneo?c=ZZZ-404 desde la API.",
+  "esperado": "Se informa con claridad y no se muestra información de otro cliente.",
+  "obtenido": "La pantalla responde «['No se reconoce «ZZZ-404». Escriba el código impreso en la etiqueta, por ejemplo UBI-17 o BOD-9.']» sin detalle alguno; la API devuelve 400. Todo escaneo resuelve dentro del cliente en sesión (SEL_*_DESGLOSE reciben @CLIENTE).",
+  "ok": true,
+  "capturas": [
+   "hu067_3_no_reconocido.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:02"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 1,
+  "titulo": "Carga desde la plantilla",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Inventario › Repuestos › Carga masiva: planilla con la fila de ejemplo de la plantilla, dos filas válidas (una sin código, otra con código propio) y una fila con unidad «NOEXISTE» › Cargar.",
+  "esperado": "Las filas válidas se crean; una fila mala no detiene el resto y se informa cuál falló y por qué.",
+  "obtenido": "Resultado: «RESULTADO · Cargados · 2 · Con error · 1 · Duración · 0 min 1 s · FILA · QUÉ PASÓ · 5 · Sello de válvula (carga 060654) — La unidad \"NOEXISTE\" no existe. Vea la hoja UNIDADES VALIDAS de la plantilla.». Creados: REP-44 � Correa dentada HTD 8M (carga 060654); MANUAL-060654 � Aceite hidr�ulico ISO 68 (carga 060654). La fila de ejemplo se ignora sola.",
+  "ok": true,
+  "capturas": [
+   "hu068_1_planilla_elegida.png",
+   "hu068_1_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:07"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 2,
+  "titulo": "Descarga a Excel",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Repuestos › buscar «carga 060654» › Descargar a Excel.",
+  "esperado": "Bajan los repuestos que coinciden con la búsqueda.",
+  "obtenido": "Archivo REPUESTOS 22-09-2026.xlsx con 2 filas de datos y las columnas CODIGO, NOMBRE, UNIDAD, FABRICANTE, MODELO…: solo los dos repuestos de la carga.",
+  "ok": true,
+  "capturas": [
+   "hu068_2_listado_filtrado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:07"
+ },
+ {
+  "hu": "HU-069",
+  "criterio": 1,
+  "titulo": "Código generado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Inventario › Bodegas › Nueva (la ficha ya no pide el código) y el repuesto cargado sin código en HU-068 #1.",
+  "esperado": "El sistema genera el código con el prefijo de su módulo y el id.",
+  "obtenido": "La ficha muestra el prefijo fijo «BOD-» y la ayuda «El prefijo lo pone el sistema; escriba usted el resto (por ejemplo CALDERAS). Si lo deja v». El repuesto cargado sin código quedó como REP-44 (id 44) por FNC_CODIGO_AUTOMATICO; Modulo_Codigo tiene 20 módulos con prefijo.",
+  "ok": true,
+  "capturas": [
+   "hu069_1_ficha_codigo_automatico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:13"
+ },
+ {
+  "hu": "HU-069",
+  "criterio": 2,
+  "titulo": "Códigos propios y antiguos",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "El repuesto cargado con código propio MANUAL-060654 (HU-068 #1) se edita (UPD_REPUESTO cambia el nombre); se revisan los códigos anteriores a la regla (REP-6205, REP-SELLO, REP-CORREA, REP-GRASA).",
+  "esperado": "El código escrito a mano se conserva tal cual; los antiguos no se tocan.",
+  "obtenido": "Antes de editar: MANUAL-060654; después: MANUAL-060654 · Aceite hidráulico ISO 68 (carga 060654, editado). Antiguos: REP-6205, REP-SELLO, REP-CORREA, REP-GRASA.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:13"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "Quiebre de stock detectado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "REP-6205 (saldo 1, mínimo 10) y REP-SELLO (3, mínimo 4) en Bodega Frío; REP-EV2319 con mínimo 3 en la bodega 13 sin existencia. Corre GEN_ALERTA_INVENTARIO y se abre la bandeja de alertas.",
+  "esperado": "Se abre una alerta de stock mínimo por cada caso, con su severidad (sin existencia es crítica).",
+  "obtenido": "Detector: 4|0 (abiertas|cerradas). Alertas STOCK MINIMO abiertas: REP-6205 · BOD-1 · ALTA; REP-EV2319 · BOD-EV2319 · CRITICA; REP-SELLO · BOD-1 · ALTA. La bandeja las muestra (sí).",
+  "ok": true,
+  "capturas": [
+   "hu077_1_stock_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "Sin duplicados y cierre automático",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Segunda pasada de GEN_ALERTA_INVENTARIO sin cambios; luego un ajuste positivo de 5 sellos (REP-SELLO pasa de 3 a 8, sobre el mínimo 4) y una tercera pasada.",
+  "esperado": "La segunda pasada no duplica; al reponer la existencia la alerta se cierra sola como resuelta.",
+  "obtenido": "Segunda pasada: 0|0 (abiertas|cerradas), REP-SELLO sigue con 1 alerta abierta. Tras el ajuste, tercera pasada: 0|1; la alerta de REP-SELLO queda «RESUELTA · La condición dejó de darse (detector automático). · atendida por Rodrigo».",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 3,
+  "titulo": "Aviso en la web",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Con alertas sin leer, entrar a la web (campana en el encabezado), abrir la campana y luego la bandeja Alertas.",
+  "esperado": "La campana muestra el contador de no leídas y la bandeja las agrupa por categoría y gravedad.",
+  "obtenido": "Campana: «65»; el panel de la campana lista las alertas (sí); la bandeja las agrupa por categoría con su gravedad (sí). SEL_ALERTA_RESUMEN: ['65|65|2|2|62|8'].",
+  "ok": true,
+  "capturas": [
+   "hu077_3_campana.png",
+   "hu077_3_panel_campana.png",
+   "hu077_3_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 4,
+  "titulo": "La app recibe lo mismo",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "GET /alertas/resumen y GET /alertas con el token de Rodrigo (lo que consumirá la app; la pantalla móvil es del Sprint 6).",
+  "esperado": "Recibe las mismas alertas y el mismo contador que la web.",
+  "obtenido": "/alertas/resumen → 200: {'ABIERTAS': 65, 'NO_LEIDAS': 65}. /alertas → 200 con las mismas alertas que la bandeja (True).",
+  "ok": true,
+  "capturas": [
+   "hu077_4_sw_resumen.png",
+   "hu077_4_sw_listar.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 2,
+  "titulo": "Defecto corregido: la ficha de existencia decía «sin registrar» con varios cubos",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Existencias › un repuesto con dos estantes o dos lotes en la misma bodega › detalle.",
+  "esperado": "Se ve por estante y lote.",
+  "obtenido": "SEL_INVENTARIO_SALDO solo trae el estante cuando es uno; con dos cubos la pantalla mostraba «sin registrar» (falso). Ahora el listado y la ficha dicen «N cubos · M lotes» y la ficha gana la pestaña «Por estante y lote» (SEL_REPUESTO_DESGLOSE).",
+  "ok": true,
+  "capturas": [
+   "hu059_2_detalle_cubos.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el rollo térmico se imprimía con página A4",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Hoja de etiquetas › cambiar el formato a rollo térmico › imprimir.",
+  "esperado": "La página mide 50 × 25 mm.",
+  "obtenido": "La regla @page se emitía en el head y el cambio de formato es un postback parcial que solo refresca el cuerpo: la clase pasaba a etq-termica pero la página seguía en A4. El literal se movió dentro del cuerpo. Reprobado: «@page { size: 50mm 25mm; margin: 0; }» (hu066_2_formato_termico).",
+  "ok": true,
+  "capturas": [
+   "hu066_2_formato_termico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el código impreso no se podía teclear si no era el token",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Escanear › escribir BOD-1 o REP-6205 (códigos escritos a mano, distintos del token del QR).",
+  "esperado": "Se resuelve dentro del cliente.",
+  "obtenido": "Solo se interpretaba TIPO-<id>; «BOD-1» buscaba la bodega id 1 y «REP-6205» el repuesto 6205: «no corresponde a ninguna bodega de su empresa». Bloque 254 (SEL_ETIQUETA_RESOLVER) busca el código impreso dentro del cliente y confirma que el token sea del cliente; lo usan Escanear.aspx y GET /escaneo. Reprobado con HU-067 #2.",
+  "ok": true,
+  "capturas": [
+   "hu067_2_bodega.png",
+   "hu067_2_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 1,
+  "titulo": "Defecto corregido: el administrador del cliente no podía cargar repuestos",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Como Marcela (Administrador del Cliente) › Repuestos › Carga masiva.",
+  "esperado": "La carga se abre y se puede ejecutar.",
+  "obtenido": "El perfil solo tenía «Ver el maestro de repuestos» y la ficha de carga (permiso 67) lo mandaba a la portada, aunque el listado sí le ofrecía el botón. Bloque 255: el perfil gana «Crear y editar repuestos» (la historia es suya); el botón «Carga masiva» se oculta a quien no puede crear. Reprobado con HU-068 #1.",
+  "ok": true,
+  "capturas": [
+   "hu068_1_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el detector de inventario nunca cerraba una alerta",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Reponer la existencia bajo el mínimo y correr GEN_ALERTA_INVENTARIO.",
+  "esperado": "La alerta pasa a RESUELTA.",
+  "obtenido": "El UPDATE de cierre ponía ale_fecha_atencion_utc sin ale_usuario_atencion y chocaba con CK_ALE_ATENCION (547): abría bien, no cerraba nunca. Bloque 256 parcha el texto vivo del SP para cerrar como GEN_ALERTA_OPERACION (usuario de atención y motivo «La condición dejó de darse»). Reprobado con HU-077 #2.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
  }
 ]

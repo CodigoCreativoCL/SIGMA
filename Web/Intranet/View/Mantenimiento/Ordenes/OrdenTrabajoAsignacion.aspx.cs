@@ -35,16 +35,41 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajoAsignacion : System.
         {
             case "cboUsuario":
                 {
+                    /* HU-017 #1: la lista viene ORDENADA por candidatura
+                       (SEL_ORDEN_TRABAJO_CANDIDATO, bloque 251): primero quien
+                       tiene todas las especialidades que la orden exige, con
+                       su certificación vigente; después quien las tiene
+                       vencidas; al final el resto. Cada fila dice sus
+                       especialidades: la persona que se buscaba aparece
+                       arriba y con su nombre completo de lo que sabe hacer. */
                     ctrl.Items.Add(new RadComboBoxItem("Sin técnico", ""));
-                    List<ClienteUsuario> usuarios = new ClienteUsuarioController().GetClienteUsuarios(
-                        new ClienteUsuario { ucl_id_cliente = cliente, usu_habilitado = true, id_perfiles = "", filtro = "" });
-                    if (usuarios != null)
-                        foreach (ClienteUsuario u in usuarios)
+                    System.Data.SqlClient.SqlCommand cmd = Conexion.GetCommand("SEL_ORDEN_TRABAJO_CANDIDATO");
+                    try
+                    {
+                        cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                        cmd.Parameters.AddWithValue("@ORDEN", Orden);
+                        using (System.Data.SqlClient.SqlDataReader dr = cmd.ExecuteReader())
                         {
-                            string nombre = !string.IsNullOrEmpty(u.nombre_completo) ? u.nombre_completo.Trim() : (u.usu_nombres + " " + u.usu_apellido_paterno).Trim();
-                            if (!string.IsNullOrEmpty(u.perfiles)) nombre += "  ·  " + u.perfiles;
-                            ctrl.Items.Add(new RadComboBoxItem(nombre, u.usu_id.ToString()));
+                            while (dr.Read())
+                            {
+                                string nombre = Convert.ToString(dr["USU_NOMBRE"]).Trim();
+                                string perfiles = Convert.ToString(dr["PERFILES"]);
+                                string especialidades = Convert.ToString(dr["ESPECIALIDADES"]);
+                                bool candidato = Convert.ToInt32(dr["CANDIDATO"]) == 1;
+                                string vencida = dr["CERTIFICACION_VENCIDA"] == DBNull.Value ? "" : Convert.ToString(dr["CERTIFICACION_VENCIDA"]);
+
+                                if (candidato) nombre = (string.IsNullOrEmpty(vencida) ? "★ Candidato · " : "⚠ Candidato (certificación vencida) · ") + nombre;
+                                if (!string.IsNullOrEmpty(especialidades)) nombre += "  ·  " + especialidades;
+                                else if (!string.IsNullOrEmpty(perfiles)) nombre += "  ·  " + perfiles;
+                                ctrl.Items.Add(new RadComboBoxItem(nombre, Convert.ToString(dr["USU_ID"])));
+                            }
                         }
+                    }
+                    finally
+                    {
+                        cmd.Connection.Close();
+                        cmd.Dispose();
+                    }
                     break;
                 }
             case "cboProveedor":

@@ -165,34 +165,6 @@
   "fecha": "15-09-2026 01:06"
  },
  {
-  "hu": "HU-014",
-  "criterio": 2,
-  "titulo": "Usuario sin planta",
-  "usuario": "marcela",
-  "tipo": "Web",
-  "pasos": "Guardar un usuario sin ninguna planta asignada.",
-  "esperado": "Rechazado con «Debe asignar al menos una planta».",
-  "obtenido": "El alta del usuario y su afiliación a plantas viven en pantallas distintas (la planta se asigna en Plantas › usuarios); el SP de acceso rechaza al usuario en una planta no autorizada («EL USUARIO NO ESTA AUTORIZADO EN ESA PLANTA»). No se ejercitó el mensaje literal en esta corrida.",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "15-09-2026 01:06"
- },
- {
-  "hu": "HU-014",
-  "criterio": 3,
-  "titulo": "Vigencia en la planta",
-  "usuario": "marcela",
-  "tipo": "Web",
-  "pasos": "Asignar una planta con fecha de término.",
-  "esperado": "El usuario deja de ver la planta al vencer la fecha.",
-  "obtenido": "Cliente_Instalacion_Usuario lleva vigencia; no se ejercitó en esta corrida.",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "15-09-2026 01:06"
- },
- {
   "hu": "HU-007",
   "criterio": 1,
   "titulo": "Conceder una excepción acotada a una planta",
@@ -374,34 +346,6 @@
   "fecha": "15-09-2026 01:13"
  },
  {
-  "hu": "HU-004",
-  "criterio": 2,
-  "titulo": "Uso del enlace",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Abrir el enlace recibido y definir una contraseña nueva.",
-  "esperado": "Se puede definir una contraseña nueva y el enlace queda invalidado.",
-  "obtenido": "No ejercitado: el enlace viaja por correo y el entorno local no tiene SMTP configurado (bloqueo registrado en el Sprint Backlog).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "15-09-2026 01:13"
- },
- {
-  "hu": "HU-004",
-  "criterio": 3,
-  "titulo": "Enlace vencido",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Abrir un enlace de más de 60 minutos.",
-  "esperado": "Se informa que expiró y se ofrece pedir uno nuevo.",
-  "obtenido": "No ejercitado por la misma razón (sin SMTP no hay enlace que abrir).",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "15-09-2026 01:13"
- },
- {
   "hu": "HU-010",
   "criterio": 2,
   "titulo": "Defecto corregido: dar de baja al cliente dejaba fuera a la cuenta de plataforma",
@@ -417,5 +361,456 @@
   ],
   "detalle": "",
   "fecha": "15-09-2026 01:20"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 2,
+  "titulo": "Usuario sin planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Nuevo usuario planta.s1.015401@hamburgo.cl con perfil Supervisor y NINGUNA planta marcada; Guardar.",
+  "esperado": "Rechazado con «Debe asignar al menos una planta».",
+  "obtenido": "Aviso: «Usuario creado con éxito. 1.- Debe asignar al menos una planta. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu014_2_sin_planta.png",
+   "hu014_2_rechazo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:55"
+ },
+ {
+  "hu": "HU-014",
+  "criterio": 3,
+  "titulo": "Vigencia en la planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Al usuario planta.s1.015401@hamburgo.cl se le asigna la planta Renca con fecha de término 22-09-2026; se guarda; luego se hace vencer la fecha (término = ayer) y se consulta qué plantas ve.",
+  "esperado": "Guarda con vigencia; al vencer la fecha el usuario deja de ver esa planta.",
+  "obtenido": "Aviso: «Usuario actualizado con éxito. ACEPTAR». Cliente_Instalacion_Usuario: 3|1|2026-09-22|2026-09-22. Plantas vigentes de la persona antes de vencer: 1; después: 0 (SEL_CLIENTE_USUARIO_PLANTA @SOLO_VIGENTES=1, lo que usan la web y la sábana de la app).",
+  "ok": true,
+  "capturas": [
+   "hu014_3_planta_vigencia.png",
+   "hu014_3_guardado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:55"
+ },
+ {
+  "hu": "HU-005",
+  "criterio": 1,
+  "titulo": "Cambio de contraseña",
+  "usuario": "_s1",
+  "tipo": "Web",
+  "pasos": "Mi cuenta › Cambiar contraseña: (a) con la contraseña actual equivocada; (b) tres cambios seguidos válidos; (c) volver a la contraseña original, que es la tercera anterior.",
+  "esperado": "(a) se exige la actual; (b) aceptados; (c) rechazado por igual a una de las tres anteriores.",
+  "obtenido": "(a) «2.- LA CONTRASEÑA ACTUAL NO ES CORRECTA. ACEPTAR» · (b) «Datos actualizados con éxito. ACEPTAR» / «Datos actualizados con éxito. ACEPTAR» / «Datos actualizados con éxito. ACEPTAR» · (c) «5.- LA CONTRASEÑA NO PUEDE SER IGUAL A NINGUNA DE LAS TRES ANTERIORES. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu005_1_actual_incorrecta.png",
+   "hu005_1_cambio_1.png",
+   "hu005_1_repetida.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:56"
+ },
+ {
+  "hu": "HU-005",
+  "criterio": 2,
+  "titulo": "Actualización de datos",
+  "usuario": "_s1",
+  "tipo": "Web",
+  "pasos": "Mi cuenta: cambiar el teléfono a 955556666 y subir una fotografía; Guardar; volver al inicio.",
+  "esperado": "El cambio se refleja de inmediato en el encabezado.",
+  "obtenido": "Aviso: «Datos actualizados con éxito. ACEPTAR». Usuario.usu_telefono=955556666; usu_archivo_foto=68; el encabezado muestra la foto (src /SIGMA/Intranet/View/Comun/Archivos/VerA).",
+  "ok": true,
+  "capturas": [
+   "hu005_2_formulario.png",
+   "hu005_2_encabezado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:56"
+ },
+ {
+  "hu": "HU-002",
+  "criterio": 1,
+  "titulo": "Pertenezco a un solo cliente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Login de Rodrigo, que pertenece solo a Hamburgo S.A.",
+  "esperado": "Entra directo al inicio; no aparece el selector de cliente.",
+  "obtenido": "Destino tras el login: /Default.aspx; el encabezado muestra «Hamburgo» fijo (sin selector).",
+  "ok": true,
+  "capturas": [
+   "hu002_1_un_cliente.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:57"
+ },
+ {
+  "hu": "HU-002",
+  "criterio": 2,
+  "titulo": "Pertenezco a varios clientes",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Login de Root (SIGMA), que pertenece a varios clientes.",
+  "esperado": "Se muestra la lista de clientes y hay que elegir uno antes de continuar.",
+  "obtenido": "Destino: /SeleccionarCliente.aspx; clientes ofrecidos: Seleccione el cliente\nUsted trabaja con más de una empresa. Elija con cuál va a trabajar en esta sesión. Puede cambiar d.",
+  "ok": true,
+  "capturas": [
+   "hu002_2_varios_clientes.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:57"
+ },
+ {
+  "hu": "HU-002",
+  "criterio": 3,
+  "titulo": "Cambiar de cliente durante la sesión",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Trabajando en Hamburgo (listado de activos con filas), pulsar el cliente en el encabezado y elegir «CCU».",
+  "esperado": "La sesión se reinicia en el nuevo cliente y no queda ningún dato del anterior en pantalla.",
+  "obtenido": "Encabezado antes: «Hamburgo» con 22 activos en el listado; después: «CCU» y la pantalla de inicio de CCU sin ninguna fila de Hamburgo (0 filas de grilla).",
+  "ok": true,
+  "capturas": [
+   "hu002_3_antes.png",
+   "hu002_3_despues.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:57"
+ },
+ {
+  "hu": "HU-003",
+  "criterio": 1,
+  "titulo": "Cierre manual",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Con sesión en Activos, pulsar «Cerrar sesión» y luego el botón Atrás del navegador.",
+  "esperado": "Vuelve al login y Atrás no permite volver a la aplicación.",
+  "obtenido": "Tras cerrar: /Login.aspx; tras Atrás: /Login.aspx (la página se pide de nuevo y llega al login por las cabeceras no-cache).",
+  "ok": true,
+  "capturas": [
+   "hu003_1_atras.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:58"
+ },
+ {
+  "hu": "HU-003",
+  "criterio": 2,
+  "titulo": "Expiración por inactividad",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Web.config: sessionState timeout=30 minutos. Para no esperar media hora, se simula la expiración eliminando la cookie de sesión y pidiendo una página.",
+  "esperado": "La sesión expira y se solicita ingresar nuevamente.",
+  "obtenido": "timeout=30; sin sesión, Activos.aspx redirige a /Login.aspx. Conservar el trabajo no guardado localmente es el escenario de la app (HU-003 #3, Sprint 6).",
+  "ok": true,
+  "capturas": [
+   "hu003_2_expirada.png"
+  ],
+  "detalle": "El «trabajo no guardado se conserva localmente» aplica a la app móvil, que se entrega en el Sprint 6.",
+  "fecha": "22-09-2026 01:58"
+ },
+ {
+  "hu": "HU-006",
+  "criterio": 1,
+  "titulo": "La acción sin permiso no se muestra",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Ximena (Bodeguera: ve órdenes, no puede cerrarlas) abre el detalle de una orden.",
+  "esperado": "La acción «Cerrar orden» no aparece.",
+  "obtenido": "En la ficha no hay formulario ni botón de cierre (btnCerrarOT ausente); se lee «Su perfil no tiene la facultad de cerrar órdenes de trabajo.»",
+  "ok": true,
+  "capturas": [
+   "hu006_1_sin_cerrar.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:58"
+ },
+ {
+  "hu": "HU-006",
+  "criterio": 2,
+  "titulo": "El permiso también se valida en el servidor",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /ordenes-trabajo/56/cerrar con el token de Cristián (Técnico: sin CERRAR OT), directo al servicio.",
+  "esperado": "403 y la orden no cambia de estado.",
+  "obtenido": "HTTP 403: {\"codigo\": 403, \"mensaje\": \"Tu perfil no tiene el permiso 'CERRAR OT'.\", \"esDeNegocio\": true}. Estado de la orden antes/después: 1/1.",
+  "ok": true,
+  "capturas": [
+   "hu006_2_403.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:59"
+ },
+ {
+  "hu": "HU-006",
+  "criterio": 3,
+  "titulo": "Aislamiento entre clientes",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "Con el token de Rodrigo (Hamburgo, cliente A) se pide GET /activos/58, un equipo de «CCU» (cliente B); y GET /activos/999999, que no existe.",
+  "esperado": "Ambas rechazadas con el mismo resultado: idéntico a un registro inexistente.",
+  "obtenido": "Cliente B: HTTP 404 {\"codigo\": 404, \"mensaje\": \"El activo no existe.\", \"esDeNegocio\": true} · inexistente: HTTP 404 {\"codigo\": 404, \"mensaje\": \"El activo no existe.\", \"esDeNegocio\": true}.",
+  "ok": true,
+  "capturas": [
+   "hu006_3_aislamiento.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 01:59"
+ },
+ {
+  "hu": "HU-011",
+  "criterio": 1,
+  "titulo": "Alta de planta",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Nueva planta PL-015401 «Planta Maipú» con dirección y zona horaria; luego otra con el mismo código.",
+  "esperado": "Queda disponible para áreas, activos y usuarios; el código es único dentro del cliente.",
+  "obtenido": "Alta: «Instalación creada con éxito. ACEPTAR» (Cliente_Instalacion: 5|PLA-PL-015401|2). Repetida: «2.- YA EXISTE UNA PLANTA CON EL CÓDIGO PLA-PL-015401 EN ESTE CLIENTE. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu011_1_modal.png",
+   "hu011_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:00"
+ },
+ {
+  "hu": "HU-011",
+  "criterio": 2,
+  "titulo": "Zona horaria propia",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "La planta nueva se creó con zona «Hora de Isla de Pascua» (UTC−6) mientras Renca usa la del cliente (Chile continental, UTC−4). Se compara la hora local de cada planta, que es la que usa el generador de programaciones.",
+  "esperado": "Las programaciones de esa planta se calculan con su propia zona.",
+  "obtenido": "FNC_INSTALACION_HORA(Renca) = 2026-09-22 02:00:45 · FNC_INSTALACION_HORA(planta nueva) = 2026-09-22 00:00:45 · UTC = 2026-09-22 05:00:45: dos horas de diferencia entre plantas del mismo cliente. GEN_PLAN_OCURRENCIAS abre la ventana de cada equipo con la hora de su planta (bloque 249): SI.",
+  "ok": true,
+  "capturas": [
+   "hu011_2_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:00"
+ },
+ {
+  "hu": "HU-017",
+  "criterio": 1,
+  "titulo": "Alta de especialidad",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Organización › Especialidades: a Cristián se le asigna «Eléctrico» nivel Intermedio con certificación; luego Rodrigo abre «Asignar» en la OT 52 «Revisión eléctrica», que exige Eléctrico.",
+  "esperado": "Esa persona aparece como candidata cuando una orden requiere esa especialidad.",
+  "obtenido": "Alta: «Especialidad registrada con éxito. ACEPTAR». En el modal de asignación la lista viene ordenada por candidatura: ★ Candidato · Jonathan Sepúlveda  ·  Eléctrico / ⚠ Candidato (certificación vencida) · Cristián Muñoz  ·  Eléctrico (cert. vencida 21/09/2026).",
+  "ok": true,
+  "capturas": [
+   "hu017_1_alta_cristian.png",
+   "hu017_1_listado.png",
+   "hu017_1_candidato.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:47"
+ },
+ {
+  "hu": "HU-017",
+  "criterio": 2,
+  "titulo": "Certificación vencida",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "En la OT 52 (exige Eléctrico) se asigna a Cristián, cuya certificación de Eléctrico venció el 21-09-2026.",
+  "esperado": "Se muestra la advertencia «Certificación vencida el {fecha}», la asignación se permite y la advertencia queda registrada en la orden.",
+  "obtenido": "Aviso: «Asignación registrada con advertencia: Certificación vencida: Eléctrico (vencida el 21/09/2026). ACEPTAR». Orden_Trabajo_Asignacion.ota_observacion: «Certificación vencida: Eléctrico (vencida el 21/09/2026). Asignación de prueba HU-017 #2».",
+  "ok": true,
+  "capturas": [
+   "hu017_2_modal.png",
+   "hu017_2_advertencia.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:47"
+ },
+ {
+  "hu": "HU-017",
+  "criterio": 3,
+  "titulo": "Aviso anticipado",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Jonathan tiene Eléctrico con certificación que vence el 12-10-2026 (en 20 días) y Cristián una ya vencida; corre el detector GEN_ALERTA_OPERACION y Marcela abre el panel de alertas.",
+  "esperado": "La certificación que vence en menos de 30 días aparece en el panel de alertas del administrador.",
+  "obtenido": "Alertas CERTIFICACION POR VENCER abiertas: 98|Certificación por vencer: Eléctrico · Jonathan Sepúlveda; 97|Certificación vencida: Eléctrico · Cristián Muñoz. En el panel se lee «Certificación por vencer»: sí; «Certificación vencida»: sí.",
+  "ok": true,
+  "capturas": [
+   "hu017_3_alta_jonathan.png",
+   "hu017_3_panel_alertas.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:47"
+ },
+ {
+  "hu": "HU-016",
+  "criterio": 1,
+  "titulo": "Alta de grupo",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Organización › Grupos: crear «Turno noche mecánicos» con Cristián (líder) y Jonathan; luego Rodrigo asigna la OT «Lubricación cada 500 horas · ACT-44» al grupo desde el modal de asignación.",
+  "esperado": "Puedo asignarle órdenes, tareas y checklists.",
+  "obtenido": "Alta: «Grupo de trabajo creado con éxito. ACEPTAR»; integrantes: 11|1|2026-09-22|NULL; 12|0|2026-09-22|2026-09-22. Asignación de la orden al grupo: «Asignación registrada con advertencia: Asignada al grupo Turno noche mecánicos; la recibe su líder. ACEPTAR» (Orden_Trabajo_Asignacion: 58|11|14|1|Asignada al grupo Turno noche mecánicos; la recibe su líder.). Tareas y pautas se le asignan por su programación (Programacion.pro_grupo_trabajo).",
+  "ok": true,
+  "capturas": [
+   "hu016_1_alta.png",
+   "hu016_1_integrantes.png",
+   "hu016_1_asignar_grupo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:49"
+ },
+ {
+  "hu": "HU-016",
+  "criterio": 2,
+  "titulo": "Líder del grupo",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Cristián queda marcado como líder; se intenta marcar a Paula como segundo líder vigente; y la orden asignada al grupo.",
+  "esperado": "Las notificaciones del grupo se dirigen al líder; solo puede haber un líder vigente por grupo.",
+  "obtenido": "Segundo líder: «6.- EL GRUPO YA TIENE UN LÍDER VIGENTE EN ESE PERÍODO. ACEPTAR». La OT asignada al grupo la recibe el líder (ota_usuario = Cristián, id 11): 58|11|14|1|Asignada al grupo Turno noche mecánicos; la recibe su líder.; aviso: «Asignación registrada con advertencia: Asignada al grupo Turno noche mecánicos; la recibe su líder. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu016_2_segundo_lider.png",
+   "hu016_2_lider_recibe.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:49"
+ },
+ {
+  "hu": "HU-016",
+  "criterio": 3,
+  "titulo": "Integrante con vigencia",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Jonathan entró al grupo con fecha de término 22-09-2026; se hace vencer la fecha (término = ayer) y se abre la ficha del grupo.",
+  "esperado": "Deja de pertenecer al grupo al vencer esa fecha.",
+  "obtenido": "Vigente antes de vencer: 1; después: 0 (regla de vigencia de Grupo_Trabajo_Usuario, la misma de SEL_GRUPO_TRABAJO_USUARIO). En la ficha: Jonathan Sepúlveda.",
+  "ok": true,
+  "capturas": [
+   "hu016_3_vencido.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:49"
+ },
+ {
+  "hu": "HU-004",
+  "criterio": 2,
+  "titulo": "Uso del enlace",
+  "usuario": "prueba.s1",
+  "tipo": "Web",
+  "pasos": "Se genera el enlace de recuperación por el mismo camino del correo (INS_USUARIO_RECUPERACION guarda el hash del token) y se abre RestablecerClave.aspx?t=… dentro de la vigencia; se define una contraseña nueva; se vuelve a abrir el mismo enlace.",
+  "esperado": "Se puede definir la contraseña nueva y el enlace queda invalidado inmediatamente después.",
+  "obtenido": "Primera apertura: formulario; al guardar: «Define tu contraseña nueva.». Segunda apertura: «Define tu contraseña nueva. Al menos 8 caracteres, con una letra y un número. No puede ser igual a ninguna de tus tres a». Usuario_Recuperacion: USADO.",
+  "ok": true,
+  "capturas": [
+   "hu004_2_enlace_vigente.png",
+   "hu004_2_clave_definida.png",
+   "hu004_2_enlace_reusado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:51"
+ },
+ {
+  "hu": "HU-004",
+  "criterio": 3,
+  "titulo": "Enlace vencido",
+  "usuario": "prueba.s1",
+  "tipo": "Web",
+  "pasos": "Se genera un enlace y se le retrasa la expiración a hace 61 minutos (la vigencia es de 60); se abre.",
+  "esperado": "Se informa que expiró y se ofrece solicitar uno nuevo.",
+  "obtenido": "La página dice: «Define tu contraseña nueva. Al menos 8 caracteres, con una letra y un número. No puede ser igual a ninguna de tus tres anteriores. Código Creativo · SIGMA 2026»; enlace «Solicitar uno nuevo» visible: sí.",
+  "ok": true,
+  "capturas": [
+   "hu004_3_enlace_vencido.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:51"
+ },
+ {
+  "hu": "HU-021",
+  "criterio": 1,
+  "titulo": "Alta de un valor propio",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Sistema › Catálogos › «Activos · Activo Tipo» (admite valores propios): Nuevo valor «Sopladora (propio 5206)».",
+  "esperado": "Queda disponible solo para mi cliente y aparece en la lista junto a los valores del sistema.",
+  "obtenido": "Alta: «Valor creado con éxito. ACEPTAR». En la lista aparece con origen «Propio» junto a los del sistema (sí); SEL_CATALOGO_VALOR lo devuelve para Hamburgo (1 fila) y no para CCU (0 filas).",
+  "ok": true,
+  "capturas": [
+   "hu021_1_modal.png",
+   "hu021_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:52"
+ },
+ {
+  "hu": "HU-021",
+  "criterio": 2,
+  "titulo": "Catálogo no ampliable",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Abrir el catálogo «Moneda», que no admite valores propios.",
+  "esperado": "La acción de agregar no se muestra.",
+  "obtenido": "Etiqueta del catálogo: «SÓLO LECTURA»; botón «Nuevo valor» visible: no (en «Activo Tipo» sí estaba: sí).",
+  "ok": true,
+  "capturas": [
+   "hu021_2_no_ampliable.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:52"
+ },
+ {
+  "hu": "HU-021",
+  "criterio": 3,
+  "titulo": "Valor en uso",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Abrir el tipo de activo propio «Amasadora», usado por 4 activo(s) de Hamburgo, y deshabilitarlo.",
+  "esperado": "Se advierte cuántos registros lo usan; al confirmar deja de ofrecerse pero los registros existentes lo conservan.",
+  "obtenido": "Aviso en la ficha: «11 REGISTROS USAN ESTE VALOR. SI LO DESHABILITA, DEJA DE OFRECERSE PERO ESOS REGISTROS LO CONSERVAN.». Guardar: «Valor actualizado con éxito. ACEPTAR». ati_habilitado=0; los 4 activos siguen con ese tipo; entre los valores habilitados que se ofrecen ya no está (0 filas).",
+  "ok": true,
+  "capturas": [
+   "hu021_3_en_uso.png",
+   "hu021_3_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 02:53"
+ },
+ {
+  "hu": "HU-021",
+  "criterio": 1,
+  "titulo": "Defecto corregido: «Nuevo valor» abría la ficha sin catálogo",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Catálogos › elegir un catálogo ampliable › «Nuevo valor» › completar › Guardar.",
+  "esperado": "El valor se crea en el catálogo elegido.",
+  "obtenido": "El botón llamaba abrirValor(0) y la ficha recibía IdCatalogo=0: «1.- EL CATÁLOGO NO ESTÁ REGISTRADO». Corregido en Catalogos.aspx(.cs): el botón viaja con el catálogo cifrado (QueryNuevoValor). Además el botón no se pintaba nunca porque CommandItemDisplay se fijaba después del DataBind; se decide antes. Reprobado: «Valor creado con éxito» (hu021_1_listado).",
+  "ok": true,
+  "capturas": [
+   "hu021_1_modal.png",
+   "hu021_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-016",
+  "criterio": 1,
+  "titulo": "Defecto corregido: asignar una orden a un grupo moría en la regla 3",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "OT › Asignar › solo Grupo de trabajo › Guardar.",
+  "esperado": "La orden se asigna al grupo y la recibe su líder.",
+  "obtenido": "INS_ORDEN_TRABAJO_ASIGNACION (bloque 249) resolvía grupo→líder después de la regla «3.- INDIQUE UN TÉCNICO O UNA EMPRESA EXTERNA», así que el grupo solo nunca llegaba al líder. Bloque 252: el grupo se resuelve justo después de la regla 2. Reprobado: «Asignada al grupo …; la recibe su líder» (hu016_2_lider_recibe).",
+  "ok": true,
+  "capturas": [
+   "hu016_2_lider_recibe.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
  }
 ]

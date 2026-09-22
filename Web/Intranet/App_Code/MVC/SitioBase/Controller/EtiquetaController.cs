@@ -234,5 +234,45 @@ namespace SitioBase.Controller
 
             return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT");
         }
+
+        /// <summary>
+        /// Lo que la persona TECLEA es el código impreso en grande en la
+        /// etiqueta, y ese código no siempre es el token del QR (hay bodegas
+        /// «BOD-1» con id 12 y repuestos «REP-6205» anteriores a los códigos
+        /// automáticos). SEL_ETIQUETA_RESOLVER lo busca dentro del cliente en
+        /// sesión. Con tipo e id confirma que el token es de este cliente.
+        /// </summary>
+        public bool ResolverPorCodigo(string leido, out string tipo, out int id)
+        {
+            tipo = ""; id = 0;
+            if (string.IsNullOrEmpty(leido) || !Token.TokenSeguridad()) return false;
+
+            string texto = leido.Trim();
+            int corte = texto.LastIndexOf("c=", StringComparison.OrdinalIgnoreCase);
+            if (corte >= 0) texto = texto.Substring(corte + 2);
+            int fin = texto.IndexOfAny(new char[] { '&', '?', '\r', '\n' });
+            if (fin >= 0) texto = texto.Substring(0, fin);
+            texto = texto.Trim();
+            if (texto.Length == 0) return false;
+
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "SEL_ETIQUETA_RESOLVER";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@CODIGO", texto);
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        tipo = dr["TIPO"].ToString();
+                        id = Convert.ToInt32(dr["ID"]);
+                    }
+                }
+                cmd.Connection.Close(); cmd.Dispose();
+            }
+            catch (Exception) { if (cmd.Connection != null) cmd.Connection.Close(); cmd.Dispose(); return false; }
+            return id > 0;
+        }
     }
 }

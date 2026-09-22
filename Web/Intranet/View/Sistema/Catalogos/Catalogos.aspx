@@ -87,7 +87,7 @@
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="valor_id, valor_cliente">
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo valor" CssClass="icono_guardar" OnClientClick="abrirValor(0)" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo valor" CssClass="icono_guardar" OnClientClick='<%# "return abrirValor(\"" + QueryNuevoValor + "\");" %>' />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

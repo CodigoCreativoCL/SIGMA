@@ -170,6 +170,14 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
             wucAuditoria.Mostrar(x.usuario_creacion_nombre, x.aco_fecha_creacion,
                                  x.usuario_actualizacion_nombre, x.aco_fecha_actualizacion);
+
+            // HU-036 #3: al editar se puede cambiar el estado (con motivo) y se ve la historia
+            pnlMotivoEstado.Visible = true;
+            pnlHistorialEstado.Visible = true;
+            List<ActivoComponenteEstadoHistorial> historial = c.GetHistorialEstado(Id, SitioBase.Session.ClienteId());
+            rptHistorialEstado.DataSource = historial;
+            rptHistorialEstado.DataBind();
+            lblSinHistorial.Visible = historial == null || historial.Count == 0;
         }
         else
         {
@@ -188,6 +196,10 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
 
         cboActivo.ReadOnly = !puedeEditar || Id > 0;   // el activo no se cambia al editar
+        /* Un combo ReadOnly no arma sus items en el cliente y validaControl
+           revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
+           Al editar no hay nada que validar ahi (el servidor exige el valor). */
+        cvActivo.Enabled = Id == 0;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Componente");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
@@ -229,6 +241,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (!string.IsNullOrEmpty(cboPosicion.SelectedValue)) x.aco_componente_posicion = int.Parse(cboPosicion.SelectedValue);
             if (!string.IsNullOrEmpty(cboPadre.SelectedValue)) x.aco_componente_padre = int.Parse(cboPadre.SelectedValue);
             if (!string.IsNullOrEmpty(txtDescripcion.Text.Trim())) x.aco_descripcion = txtDescripcion.Text.Trim();
+            if (!string.IsNullOrEmpty(txtMotivoEstado.Text.Trim())) x.aco_motivo_estado = txtMotivoEstado.Text.Trim();
 
             if (calInstalacion.Value != null && calInstalacion.Value.Value.Date > global::SitioBase.Hora.Hoy)
                 throw new Exception("La fecha de instalación no puede ser futura.");

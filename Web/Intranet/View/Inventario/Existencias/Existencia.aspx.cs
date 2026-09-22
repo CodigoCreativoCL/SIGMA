@@ -108,6 +108,23 @@ public partial class View_Inventario_Existencias_Existencia : System.Web.UI.Page
         GridBodegas.DataSource = saldos;
         GridBodegas.DataBind();
 
+        // HU-059 #2: el mismo repuesto, cubo por cubo (estante y lote)
+        if (GridCubos.Columns.Count == 0)
+        {
+            GridCubos.AddColumn("Bodega", "BODEGA", Width: "26%");
+            GridCubos.AddTemplateColumn("UBICACION", "", "ESTANTE", Width: "26%");
+            GridCubos.AddTemplateColumn("LOTE", "", "LOTE", Width: "20%");
+            GridCubos.AddTemplateColumn("CANTIDAD", "", "CANTIDAD", Width: "14%",
+                ItemPosition: HorizontalAlign.Right, HederPosition: HorizontalAlign.Right);
+            GridCubos.AddColumn("UltimoMovimiento", "ÚLTIMO MOV.", Width: "14%",
+                DataFormat: "{0:dd-MM-yyyy HH:mm}");
+        }
+
+        DesgloseController desglose = new DesgloseController();
+        desglose.CargarRepuesto(Id);
+        GridCubos.DataSource = desglose.Lineas;
+        GridCubos.DataBind();
+
         if (GridMovimientos.Columns.Count == 0)
         {
             GridMovimientos.AddColumn("IMO_FECHA_MOVIMIENTO_UTC", "FECHA", Width: "17%",
@@ -127,6 +144,39 @@ public partial class View_Inventario_Existencias_Existencia : System.Web.UI.Page
 
         GridMovimientos.DataSource = controller.GetMovimientos(new InventarioMovimiento { imo_repuesto = Id });
         GridMovimientos.DataBind();
+    }
+
+    /// <summary>Una fila por cubo: estante, lote (con su vencimiento) y cantidad.</summary>
+    protected void GridCubos_ItemDataBound(object sender, GridItemEventArgs e)
+    {
+        if (e.Item.ItemType != GridItemType.AlternatingItem &&
+            e.Item.ItemType != GridItemType.Item) return;
+
+        GridDataItem item = e.Item as GridDataItem;
+        DesgloseLinea f = item == null ? null : item.DataItem as DesgloseLinea;
+        if (f == null) return;
+
+        item["UBICACION"].Controls.Add(new Literal
+        {
+            Text = string.IsNullOrEmpty(f.Ubicacion)
+                 ? "<span class=\"sigma-inv-vacio\">sin estante</span>"
+                 : Server.HtmlEncode(f.Ubicacion)
+                   + "<span class=\"sigma-inv-nota\">" + Server.HtmlEncode(f.UbicacionNombre) + "</span>"
+        });
+
+        string lote = string.IsNullOrEmpty(f.LoteCodigo)
+            ? "<span class=\"sigma-inv-vacio\">sin lote</span>"
+            : Server.HtmlEncode(f.LoteCodigo);
+        if (f.LoteVence.HasValue)
+            lote += "<span class=\"sigma-inv-nota\">vence " + f.LoteVence.Value.ToString("dd-MM-yyyy")
+                  + (f.DiasParaVencer.HasValue && f.DiasParaVencer.Value < 0 ? " · VENCIDO" : "") + "</span>";
+        item["LOTE"].Controls.Add(new Literal { Text = lote });
+
+        item["CANTIDAD"].Controls.Add(new Literal
+        {
+            Text = "<div class=\"sigma-inv-cantidad\"><span><span class=\"valor\">" + f.Cantidad.ToString("N2")
+                 + "</span><span class=\"unidad\">" + Server.HtmlEncode(f.Unidad) + "</span></span></div>"
+        });
     }
 
     protected void GridBodegas_ItemDataBound(object sender, GridItemEventArgs e)
@@ -151,7 +201,9 @@ public partial class View_Inventario_Existencias_Existencia : System.Web.UI.Page
         });
 
         if (string.IsNullOrEmpty(f.ubicacion_codigo))
-            item["UBICACION_CODIGO"].Text = "<span class=\"sigma-inv-vacio\">sin registrar</span>";
+            item["UBICACION_CODIGO"].Text = f.ubicaciones > 1
+                ? "<span class=\"sigma-inv-nota\">" + Server.HtmlEncode(f.ubicacion_texto) + " · ver «Por estante y lote»</span>"
+                : "<span class=\"sigma-inv-vacio\">sin registrar</span>";
 
         string clase = f.bajo_minimo ? " is-bajo" : (f.sobre_maximo ? " is-sobre" : "");
 

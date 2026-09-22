@@ -450,6 +450,83 @@ namespace SitioBase.Controller
             return usuarios;
         }
 
+        /// <summary>
+        /// Las plantas de una persona en un cliente (SEL_CLIENTE_USUARIO_PLANTA),
+        /// con vigencia y si siguen habilitadas. HU-014.
+        /// </summary>
+        public List<ClienteUsuarioPlanta> PlantasDelUsuario(int usuarioId, int cliente)
+        {
+            List<ClienteUsuarioPlanta> lista = new List<ClienteUsuarioPlanta>();
+            if (!Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = Conexion.GetCommand("SEL_CLIENTE_USUARIO_PLANTA");
+            try
+            {
+                cmd.Parameters.AddWithValue("@USUARIO_DESTINO", usuarioId);
+                cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                {
+                    while (dr.Read())
+                    {
+                        ClienteUsuarioPlanta p = new ClienteUsuarioPlanta();
+                        p.instalacion = Convert.ToInt32(dr["CIU_ID_INSTALACION"]);
+                        p.nombre = Convert.ToString(dr["CIN_NOMBRE"]);
+                        p.habilitada = dr["CIU_HABILITADO"] != DBNull.Value && Convert.ToBoolean(dr["CIU_HABILITADO"]);
+                        p.fecha_inicio = dr["CIU_FECHA_INICIO"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(dr["CIU_FECHA_INICIO"]);
+                        p.fecha_fin = dr["CIU_FECHA_FIN"] == DBNull.Value ? (DateTime?)null : Convert.ToDateTime(dr["CIU_FECHA_FIN"]);
+                        lista.Add(p);
+                    }
+                }
+            }
+            finally
+            {
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            return lista;
+        }
+
+        /// <summary>
+        /// Fija las plantas de una persona en un cliente (UPS_CLIENTE_USUARIO_PLANTA):
+        /// las que no vienen se deshabilitan, las nuevas se agregan, todas con la
+        /// vigencia indicada. Sin ninguna, el SP rechaza «Debe asignar al menos
+        /// una planta» (HU-014 #2).
+        /// </summary>
+        public Respuesta AsignarPlantas(int usuarioId, int cliente, string plantas, DateTime? vigenciaFin)
+        {
+            Respuesta respuesta = new Respuesta();
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.codigo = -1; respuesta.error = true;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                return respuesta;
+            }
+
+            SqlCommand cmd = Conexion.GetCommand("UPS_CLIENTE_USUARIO_PLANTA");
+            try
+            {
+                cmd.Parameters.AddWithValue("@USUARIO_DESTINO", usuarioId);
+                cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                cmd.Parameters.AddWithValue("@PLANTAS", plantas ?? "");
+                if (vigenciaFin.HasValue) cmd.Parameters.AddWithValue("@FECHA_FIN", vigenciaFin.Value.Date);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                respuesta.codigo = 0; respuesta.error = false;
+                respuesta.detalle = "Plantas asignadas.";
+            }
+            catch (Exception ex)
+            {
+                respuesta.codigo = -1; respuesta.error = true;
+                respuesta.detalle = ex.Message;
+            }
+            finally
+            {
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            return respuesta;
+        }
+
         public Respuesta AsociarClienteUsuario(ClienteUsuario usuario)
         {
             Respuesta respuesta = new Respuesta();

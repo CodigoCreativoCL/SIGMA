@@ -1858,3 +1858,50 @@ decisiones y guía para Bryan en `SIGMA_INVESTIGACION_AZURE_ML.md`.
 - **Pendiente de Bryan**: regenerar las claves de `SIGMAVISION` y de
   `SIGMAVISIONMODEL-Prediction` que aparecieron en el chat, y volver a
   pegar la nueva en `Web.config`.
+
+### 10.26 · Sprints 1, 2 y 3 cerrados «como corresponde» (22-09-2026)
+
+Todo lo web/API/BD de los tres sprints con evidencia; lo de la app separado y
+en el Sprint 6 (Sprint Review 1). Informes regenerados: S1 49 casos / 49 ✓,
+S2 53 / 51 (los 2 no-ok son criterios de la app, marcados «Sprint 6»),
+S3 87 / 87.
+
+- **Sprint 1** (26 criterios que faltaban). Reglas nuevas: `BD/249`
+  (`FNC_INSTALACION_HORA`, GEN_PLAN_OCURRENCIAS con la hora de cada planta,
+  asignación a grupo → líder, advertencia por certificación vencida, alerta
+  tipo 15 CERTIFICACION POR VENCER), `BD/250` (contraseña distinta de las
+  tres anteriores: el TOP contaba la actual), `BD/251`
+  (`SEL_ORDEN_TRABAJO_CANDIDATO`: candidatos primero en el modal de
+  asignación), `BD/252` (el grupo se resuelve antes de la regla 3: asignar
+  una orden a un grupo moría en «indique un técnico o una empresa»). Web:
+  plantas y vigencia en la ficha del usuario del cliente (HU-014), candidatos
+  en la asignación (HU-017), «Nuevo valor» de Catálogos viajaba sin catálogo
+  y el botón no se pintaba (CommandItemDisplay después del DataBind).
+  Criterios: 45/46 Sí, HU-003 #3 → Sprint 6. 17 historias Terminada.
+- **Sprint 2**. HU-036 #3 construido: `BD/253`
+  (`Activo_Componente_Estado_Historial`, `UPD_ACTIVO_COMPONENTE @MOTIVO`
+  con regla 6, `SEL_ACTIVO_COMPONENTE_ESTADO_HISTORIAL`), ficha del
+  componente con motivo e historial. Defecto: el Guardar de la ficha moría
+  en silencio al editar porque `validaControl` revienta con un RadComboBox
+  ReadOnly (arreglado en componente, medidor y compatibilidad: el validador
+  del combo fijo se apaga al editar). Criterios: 42 Sí, 14 → Sprint 6
+  (HU-037 #3, HU-193 #4 y las cuatro historias App). 18 historias Terminada.
+- **Sprint 3**. HU-076 #4 evidenciado (programación deshabilitada no genera;
+  habilitada de nuevo sí). Las seis historias que entraron tarde (HU-059,
+  066, 067, 068, 069, 077) no tenían criterios: se escribieron 18
+  (hoja «Criterios de aceptación» del backlog S3 y del Product Backlog) y se
+  probaron todos. Por el camino: `BD/254` (`SEL_ETIQUETA_RESOLVER`: el
+  código impreso se puede teclear aunque no sea el token; web y API),
+  `BD/255` (Administrador del Cliente crea repuestos: HU-068 es suya),
+  `BD/256` (GEN_ALERTA_INVENTARIO nunca cerraba: chocaba con
+  CK_ALE_ATENCION), ficha de existencia con pestaña «Por estante y lote»
+  (decía «sin registrar» con varios cubos), el rollo térmico se imprimía en
+  A4 (la regla @page vivía en el head y el UpdatePanel no la refrescaba).
+  Criterios: 73 Sí, 3 → Sprint 6 (HU-151). 28 historias Terminada; HU-059
+  (parte móvil) agregada al S6 con T-6306.
+- **Tareas**: quedan «Por hacer» solo las validaciones funcionales con la
+  Product Owner (S1 2, S2 1, S3 3) y T-3928 (imprimir una plancha real).
+- **Datos que dejó la evidencia**: usuarios `planta.s1.*`, grupo GRU-GN4538,
+  tipo de activo «Sopladora (propio …)», lotes L05…, repuestos REP-44 y
+  MANUAL-060654, componente COM-13 en Degradado, umbral de REP-EV2319 en la
+  bodega 13. Ninguno estorba; todos dicen «evidencia».

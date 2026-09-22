@@ -68,6 +68,14 @@
                 <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Comp" />
             </div>
+            <%-- HU-036 #3: cambiar el estado exige decir por que. El SP
+                 (UPD_ACTIVO_COMPONENTE, regla 6) rechaza el cambio sin motivo
+                 y deja la huella en Activo_Componente_Estado_Historial. --%>
+            <asp:Panel ID="pnlMotivoEstado" runat="server" CssClass="sigma-modal-field is-grande" Visible="false">
+                <label>Motivo del cambio de estado(*)</label>
+                <WebControls:TextArea2 ID="txtMotivoEstado" runat="server" MaxLength="500" />
+                <span class="sigma-modal-ayuda">Obligatorio solo si cambia el estado. Queda en el historial con fecha y responsable.</span>
+            </asp:Panel>
             <div class="sigma-modal-field is-chico">
                 <label>Criticidad(*)</label>
                 <rad:RadComboBox2 ID="cboCriticidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
@@ -108,6 +116,27 @@
             </div>
         </div>
     </div>
+
+    <asp:Panel ID="pnlHistorialEstado" runat="server" Visible="false" style="margin:12px 0;">
+        <h4 style="margin:0 0 6px;">Historial de estados</h4>
+        <table class="sigma-tabla-simple" style="width:100%; font-size:13px;">
+            <thead><tr><th style="text-align:left;">Fecha</th><th style="text-align:left;">De</th><th style="text-align:left;">A</th><th style="text-align:left;">Motivo</th><th style="text-align:left;">Responsable</th></tr></thead>
+            <tbody>
+                <asp:Repeater ID="rptHistorialEstado" runat="server">
+                    <ItemTemplate>
+                        <tr>
+                            <td><%# Eval("ceh_fecha_creacion", "{0:dd/MM/yyyy HH:mm}") %></td>
+                            <td><%# Eval("estado_anterior") %></td>
+                            <td><%# Eval("estado_nuevo") %></td>
+                            <td><%# Eval("ceh_motivo") %></td>
+                            <td><%# Eval("responsable") %></td>
+                        </tr>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </tbody>
+        </table>
+        <asp:Label ID="lblSinHistorial" runat="server" CssClass="sigma-modal-ayuda" Text="Aún no hay cambios de estado registrados." Visible="false" />
+    </asp:Panel>
 
     <wuc:Auditoria runat="server" ID="wucAuditoria" />
 

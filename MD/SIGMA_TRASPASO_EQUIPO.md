@@ -1,4 +1,4 @@
-﻿# SIGMA — Traspaso al equipo
+# SIGMA — Traspaso al equipo
 
 **Fecha:** 22-09-2026 · **Rama:** `BryanChavez` (sin push a `master`, `EmilioFuentes` ni `CatalinaPescio`) ·
 **API compila:** 0 errores · **Web precompila:** sin errores · **Último commit:** ver `git log --oneline -1` en `BryanChavez`
@@ -41,25 +41,26 @@ Estado según los Sprint Backlogs (tareas) y las pruebas con evidencia (criterio
 
 | Sprint | Tareas | Terminadas | En revisión | Por hacer | Movidas a S6 | Historias | Criterios verificados | Informe de pruebas |
 |---|---|---|---|---|---|---|---|---|
-| S1 Fundaciones | 251 | 131 | 38 | 41 | 7 | 17 en revisión | 20 / 46 | 26 casos, 22 ✓ (9 HU) |
-| **S2 Activos (en curso)** | 252 | 164 | — | 34 | 54 | 14 en revisión · 3 en curso · 1 terminada · 4 movidas | 53 / 56 | 52 casos, 49 ✓ (18 HU) |
-| S3 Recursos y recurrencia | 336 | 270 | 3 | 32 | 21 | 22 en revisión · 6 en curso · 1 movida | 54 / 58 | 64 casos, 63 ✓ (23 HU) |
+| S1 Fundaciones | 251 | 208 | — | 2 (validación PO) | 7 | 17 terminadas | 45 / 45 web · 1 → S6 | 49 casos, 49 ✓ (17 HU) |
+| **S2 Activos (en curso)** | 252 | 195 | — | 1 (validación PO) | 54 | 18 terminadas · 4 movidas | 42 / 42 web · 14 → S6 | 53 casos, 51 ✓ (18 HU; los 2 no-ok son app) |
+| S3 Recursos y recurrencia | 336 | 301 | — | 4 (3 validación PO + plancha real) | 21 | 28 terminadas · 1 movida | 73 / 73 web · 3 → S6 | 87 casos, 87 ✓ (28 HU) |
 | S4 Trabajo planificado | 274 | 75 | — | 120 | 69 | 8 en revisión · 11 por hacer · 5 movidas | 32 / 74 | 23 casos, 20 ✓ (8 HU) |
 | S5 Ejecución | 313 | 89 | — | 71 | 153 | 8 en revisión · 6 por hacer · 12 movidas | 43 / 83 | 48 casos, 48 ✓ (14 HU) |
 | S6 App, IA y cierre | 508 | — | 7 (investigación) | 501 | — | 67 por hacer | — | 16 casos app (MVP), 16 ✓ |
 
 Lectura honesta:
 
-- **El equipo va adelantado respecto del calendario**: S2 está en curso y S3 tiene 270 de 336 tareas
-  terminadas y 63 de 64 casos probados. Bryan construyó y probó la mayor parte de S3 (224 tareas) y una
-  parte de S4/S5 (65 + 89).
-- **S1 tiene 26 criterios sin verificar** (HU-002/003/005/006/011/016/017/021 de Emilio; HU-004 y HU-014
-  de Bryan): las pantallas existen, falta correr la evidencia. Es la deuda más antigua.
+- **S1, S2 y S3 están cerrados en lo web/API/BD (22-09-2026)**: todos sus criterios de esa plataforma
+  tienen evidencia (informes S1–S3) y las historias están «Terminada»; lo único «Por hacer» son las
+  validaciones funcionales con la Product Owner. Lo de la app (HU-003 #3, HU-037 #3, HU-193 #4, HU-150/043/
+  154/044, HU-151) está marcado «Sprint 6» en la hoja de criterios y vive en el backlog del S6, incluida la
+  parte móvil de HU-059 (T-6306). El cierre dejó ocho defectos corregidos (checklist §10.26).
 - **S4 y S5 dependen de Emilio y Catalina**: 120 y 71 tareas «Por hacer», y 10 bloqueadas en S4 porque
   HU-082/091/093/097 (actividades, umbrales, publicar plantilla, historial de pauta) aún no están en el
   repositorio. Sin eso no hay prueba posible.
-- **Por persona (S1–S5, tareas)**: Bryan 489 terminadas / 31 por hacer / 10 bloqueadas; Emilio 168
-  terminadas / 89 por hacer / 22 en revisión; Catalina 72 terminadas / 178 por hacer.
+- **Por persona (S1–S3, tareas)**: Bryan 357 terminadas / 1 por hacer; Emilio 191 terminadas / 0 por
+  hacer; Catalina 156 terminadas / 6 por hacer (las validaciones con la PO y la plancha real). S4/S5 siguen
+  como estaban: Bryan 65 + 89 terminadas, Emilio 55 + 22 y Catalina 65 + 22 tareas «Por hacer».
 - **S6** concentra todo lo móvil (304 tareas movidas), la infraestructura externa (SMTP, blob, Maps, push,
   HTTPS) y SIGMA AI (HU-170 a HU-178). La investigación dejó 7 tareas de Bryan «En revisión» y 8 de
   Emilio/Catalina anotadas como cubiertas, para resolver en el Sprint Planning 6.
@@ -69,8 +70,7 @@ Lectura honesta:
 ## 3. Qué le toca a cada uno ahora
 
 **Emilio**
-- S1: evidencia de HU-002, 003, 005, 006, 011, 016, 017, 021 (criterios en «No»; pantallas construidas).
-- S2: HU-036 tiene criterios en «No»; HU-037 y HU-038 «En curso».
+- S1–S3: nada pendiente (cerrados el 22-09-2026).
 - S4: HU-084, 086, 093 (publicar plantilla, sin merge), 094, 100 «Por hacer»; S4/S5: 55 + 22 tareas.
 - Su rama `EmilioFuentes` ya está fusionada en `BryanChavez` (0 commits pendientes).
 
@@ -84,13 +84,14 @@ Lectura honesta:
 - Regenerar las claves de `SIGMAVISION` y `SIGMAVISIONMODEL-Prediction` (aparecieron en el chat) y pegar la
   nueva en `Web.config`; después decidir si `Web.config` se versiona con esa clave (hoy está fuera del commit).
 - Cambiar la contraseña de la cuenta de Azure (también apareció en el chat).
-- S1: HU-004 #2/#3 y HU-014 #2/#3 (criterios en «No»). S2: HU-193 (un criterio en «No», app) y HU-194 «En curso».
+- S1–S3: nada pendiente; T-3928 (imprimir una plancha real y medirla) es de Catalina.
 - S5: 27 tareas «Por hacer» (HU-117 ×4, 118 ×2, 125 ×2, 131 ×5, 142 ×3, 143 ×5, 162 ×6).
 - S6: llevar al Sprint Planning 6 las 15 tareas anotadas por la investigación y la propuesta de producción
   (Container Apps Job + GHCR + identidad administrada).
 
 **Los tres (Sprint Planning 6, antes del 11-11)**
-- Cerrar las verificaciones pendientes de S1 (26 criterios) y S4/S5 (42 + 40).
+- Cerrar las verificaciones pendientes de S4/S5 (42 + 40); S1–S3 ya están.
+- Validación funcional con la Product Owner de S1–S3 (6 tareas de Catalina).
 - Confirmar el reparto de EP-17 con lo que la investigación dejó: HU-171/172 casi completas, HU-170 y
   HU-177 por construir, HU-178 depende de HU-177.
 - Definir hosting de producción (site4now sigue para web/API; Python solo para reentrenar).
