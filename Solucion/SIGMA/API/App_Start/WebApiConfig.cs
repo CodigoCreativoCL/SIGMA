@@ -18,6 +18,12 @@ namespace API
             //Api Token
             config.MessageHandlers.Add(new TokenValidationHandler());
 
+            /* Suscripcion vigente (HU-160, T-4158): corta con 402 si la KEY del
+               cliente (encabezado X-Cliente-Key) apunta a una suscripcion que no
+               permite operar. Sin el encabezado no hace nada, para no romper a
+               los clientes que aun no la mandan ni los endpoints anonimos. */
+            config.MessageHandlers.Add(new SuscripcionVigenteHandler());
+
             /* RETIRADO 04-09-2026: WebApiCustomMessageHandler.
                Venía de la plantilla y reemplazaba el CUERPO de 46 códigos de
                estado por la descripción canónica del código, en inglés. Es
