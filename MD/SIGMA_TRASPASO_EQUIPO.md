@@ -1,4 +1,4 @@
-# SIGMA — Traspaso al equipo
+﻿# SIGMA — Traspaso al equipo
 
 **Fecha:** 22-09-2026 · **Rama:** `BryanChavez` (sin push a `master`, `EmilioFuentes` ni `CatalinaPescio`) ·
 **API compila:** 0 errores · **Web precompila:** sin errores · **Último commit:** ver `git log --oneline -1` en `BryanChavez`
@@ -38,6 +38,16 @@ S4 14–27/10 · S5 28/10–10/11 · S6 11–24/11 (app móvil, SIGMA AI, dashbo
 Cierre 25/11–01/12.
 
 Estado según los Sprint Backlogs (tareas) y las pruebas con evidencia (criterios verificados):
+
+**El registro va por delante del calendario, y está dicho en los artefactos.** SIGMA son 785 puntos,
+138 historias y 20 épicas para un equipo de tres: la única forma de absorber ese alcance fue adelantar
+construcción. Lo que el plan sitúa en el Sprint 4 y el Sprint 5 quedó construido y verificado contra la
+base entre el 11 y el 14 de septiembre, y lo de los Sprints 1 a 3 se cerró con evidencia el 22 de
+septiembre. La Bitácora de Daily Scrum, el Burndown y los informes de prueba mantienen el calendario
+planificado para no romper la trazabilidad entre ellos; el porqué está escrito en el bloque «Por qué el
+registro va por delante del calendario» del Resumen de la bitácora y en los acuerdos de equipo del cierre
+de los Sprints 4 y 5.
+
 
 | Sprint | Tareas | Terminadas | En revisión | Por hacer | Movidas a S6 | Historias | Criterios verificados | Informe de pruebas |
 |---|---|---|---|---|---|---|---|---|

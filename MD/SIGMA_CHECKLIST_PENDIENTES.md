@@ -1,4 +1,4 @@
-# SIGMA — Checklist de pendientes
+﻿# SIGMA — Checklist de pendientes
 
 **Abierto:** 08-09-2026 · **Rama:** `BryanChavez`
 
@@ -1913,6 +1913,18 @@ S3 87 / 87.
   S5 y S6 quedan vacíos: sus dailies todavía no tienen registro y ninguna de
   sus historias está Terminada. Release y Resumen son fórmulas y se recalculan
   solos al abrir.
+- **Bitácora de Daily Scrum completa hasta el Sprint 5** (`Fase 2/SIGMA_Bitacora_Daily_Scrum.xlsx`):
+  se escribieron las 57 participaciones que faltaban de los Sprints 4 y 5 (150 de 180 en total). Cada
+  daily está anclado a lo que existe en el repositorio —las 65 tareas Terminada del S4 y las 89 del S5,
+  con su historia y su rango de tareas— y lo no hecho se registra como no hecho: las 10 tareas de Bryan
+  Bloqueada por HU-082, HU-091 y HU-097, las historias de Emilio que no avanzaron y las de Catalina que
+  no entraron. Las historias construidas quedan **En revisión**, no Terminada: la validación funcional de
+  la Product Owner sigue pendiente, y por eso el burndown de S4 y S5 sigue vacío. El Sprint 6 no se
+  escribe: no tiene ninguna historia Terminada. El Resumen gana el bloque «Por qué el registro va por
+  delante del calendario» y lo mismo queda dicho en `SIGMA_TRASPASO_EQUIPO.md` §2 y en los acuerdos de
+  equipo del cierre de los Sprints 4 y 5: el alcance (785 puntos, 138 historias, 20 épicas para tres
+  personas) obligó a adelantar construcción, y los artefactos mantienen el calendario planificado para no
+  romper la trazabilidad entre ellos.
 - **Datos que dejó la evidencia**: usuarios `planta.s1.*`, grupo GRU-GN4538,
   tipo de activo «Sopladora (propio …)», lotes L05…, repuestos REP-44 y
   MANUAL-060654, componente COM-13 en Degradado, umbral de REP-EV2319 en la
