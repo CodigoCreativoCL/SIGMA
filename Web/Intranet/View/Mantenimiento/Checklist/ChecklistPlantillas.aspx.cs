@@ -77,6 +77,12 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantillas : System.W
                 item.Attributes["onclick"] = "clFilaVer(this, event, '" + query + "')";
                 item.Style["cursor"] = "pointer";
 
+                // La columna de versiones abre la pantalla de publicación/historial.
+                string ver = item["versiones"].Text;
+                item["versiones"].Text = "<a href=\"javascript:void(0)\" onclick=\"abrirVersiones('" + query + "')\" "
+                    + "title=\"Ver versiones / publicar\" style=\"color:#6C5CFF;font-weight:600;text-decoration:none;\">"
+                    + Server.HtmlEncode(ver) + " <i class=\"mdi mdi-history\"></i></a>";
+
                 HyperLink Editar = new HyperLink();
                 Editar.ID = "lnkEditar" + id;
                 Editar.CssClass = "icono_Editar";
