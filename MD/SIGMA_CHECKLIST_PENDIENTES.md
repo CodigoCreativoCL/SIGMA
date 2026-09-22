@@ -1,4 +1,4 @@
-﻿# SIGMA — Checklist de pendientes
+# SIGMA — Checklist de pendientes
 
 **Abierto:** 08-09-2026 · **Rama:** `BryanChavez`
 
@@ -1901,6 +1901,18 @@ S3 87 / 87.
   (parte móvil) agregada al S6 con T-6306.
 - **Tareas**: quedan «Por hacer» solo las validaciones funcionales con la
   Product Owner (S1 2, S2 1, S3 3) y T-3928 (imprimir una plancha real).
+- **Burndown y Burnup con datos** (`Fase 2/SIGMA_Burndown_Burnup.xlsx`): la
+  columna amarilla de los Sprints 1, 2 y 3 se llenó desde la Bitácora de
+  Daily Scrum —cada historia quema sus puntos el último día en que el
+  registro diario la nombra trabajada, sin contar el día de la Sprint Review,
+  que es un repaso de todas—. Los tres cuadran con lo comprometido (81, 83 y
+  139) y cierran en cero. Lo que dicen las curvas: S1 con retraso hasta el
+  día 6 y cierre el día 9; S2 siempre por encima de la ideal (máximo 8 puntos
+  de retraso) y cierre justo el último día; S3, el más cargado, hasta 25
+  puntos de retraso el día 4 y 50 puntos cerrados entre los días 8 y 9. S4,
+  S5 y S6 quedan vacíos: sus dailies todavía no tienen registro y ninguna de
+  sus historias está Terminada. Release y Resumen son fórmulas y se recalculan
+  solos al abrir.
 - **Datos que dejó la evidencia**: usuarios `planta.s1.*`, grupo GRU-GN4538,
   tipo de activo «Sopladora (propio …)», lotes L05…, repuestos REP-44 y
   MANUAL-060654, componente COM-13 en Degradado, umbral de REP-EV2319 en la
