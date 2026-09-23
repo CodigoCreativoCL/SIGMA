@@ -205,6 +205,27 @@
         filtrar();
     }
 
+    /* ------------------------------------------------ tecnico o empresa */
+
+    function quien() {
+        var radios = document.querySelectorAll('.sg-ot-quien input[type="radio"]');
+        var tecnico = document.querySelector('.sg-ot-quien-tecnico');
+        var empresa = document.querySelector('.sg-ot-quien-empresa');
+        if (!radios.length || !tecnico || !empresa) return;
+
+        function pintar() {
+            /* El segundo radio del grupo es "empresa externa": se mira el que
+               esta marcado en vez de su id, que ASP.NET alarga con el prefijo
+               del master. */
+            var esEmpresa = radios.length > 1 && radios[1].checked;
+            tecnico.classList.toggle('es-oculto', esEmpresa);
+            empresa.classList.toggle('es-oculto', !esEmpresa);
+        }
+
+        for (var i = 0; i < radios.length; i++) radios[i].onclick = pintar;
+        pintar();
+    }
+
     /* -------------------------------------------------------------- firma */
 
     function firma() {
@@ -277,6 +298,7 @@
     function armar() {
         pestanas();
         evidencias();
+        quien();
         firma();
     }
 

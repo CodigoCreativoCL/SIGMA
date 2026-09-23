@@ -65,6 +65,7 @@
         <a href="#" class="sg-ot-tab" data-tab="asignacion"><i class="mdi mdi-account-group-outline"></i>Asignación</a>
         <a href="#" class="sg-ot-tab" data-tab="pasos"><i class="mdi mdi-format-list-numbered"></i>Pasos</a>
         <a href="#" class="sg-ot-tab" data-tab="evidencias"><i class="mdi mdi-image-multiple-outline"></i>Evidencias</a>
+        <a href="#" class="sg-ot-tab" data-tab="recursos"><i class="mdi mdi-package-variant-closed"></i>Repuestos y costos</a>
         <a href="#" class="sg-ot-tab" data-tab="indisponibilidad"><i class="mdi mdi-clock-outline"></i>Indisponibilidad</a>
         <a href="#" class="sg-ot-tab" data-tab="cierre"><i class="mdi mdi-shield-check-outline"></i>Cierre</a>
     </nav>
@@ -170,8 +171,11 @@
                     <div class="sigma-modal-grid">
                         <div class="sigma-modal-field is-chico">
                             <label>Fecha programada</label>
-                            <WebControls:TextBox2 ID="txtFechaProgramada" runat="server" MaxLength="16" />
-                            <span class="sigma-modal-ayuda">dd-mm-aaaa hh:mm</span>
+                            <div class="sigma-modal-fecha"><WebControls:Calendar ID="calFechaProgramada" runat="server" /></div>
+                        </div>
+                        <div class="sigma-modal-field is-chico">
+                            <label>Hora programada</label>
+                            <rad:RadComboBox2 ID="cboHoraProgramada" runat="server" OnLoad="LoadControls" AllowCustomText="true" MarkFirstMatch="true" Filter="Contains" Width="100%" />
                         </div>
                         <div class="sigma-modal-field is-chico">
                             <label>Duración estimada (min)</label>
@@ -179,8 +183,12 @@
                         </div>
                         <div class="sigma-modal-field is-chico">
                             <label>Cuándo ocurrió</label>
-                            <WebControls:TextBox2 ID="txtFechaOcurrencia" runat="server" MaxLength="16" />
+                            <div class="sigma-modal-fecha"><WebControls:Calendar ID="calFechaOcurrencia" runat="server" /></div>
                             <span class="sigma-modal-ayuda">Solo registro posterior.</span>
+                        </div>
+                        <div class="sigma-modal-field is-chico">
+                            <label>Hora en que ocurrió</label>
+                            <rad:RadComboBox2 ID="cboHoraOcurrencia" runat="server" OnLoad="LoadControls" AllowCustomText="true" MarkFirstMatch="true" Filter="Contains" Width="100%" />
                         </div>
                         <div class="sigma-modal-field is-chico">
                             <label>Requiere permiso</label>
@@ -265,10 +273,10 @@
                                     <span class="sg-ot-persona-meta"><%# Eval("meta") %></span>
                                 </div>
                                 <div class="sg-ot-persona-acc">
-                                    <asp:LinkButton runat="server" CssClass="sg-ot-link" CommandName="responsable" CommandArgument='<%# Eval("id") %>'>
+                                    <asp:LinkButton ID="lnkHacerResponsable" runat="server" CssClass="sg-ot-link" CommandName="responsable" CommandArgument='<%# Eval("id") %>'>
                                         <i class="mdi mdi-account-star-outline"></i>Hacer responsable
                                     </asp:LinkButton>
-                                    <asp:LinkButton runat="server" CssClass="sg-ot-link es-quita" CommandName="quitar" CommandArgument='<%# Eval("id") %>'
+                                    <asp:LinkButton ID="lnkQuitarApoyo" runat="server" CssClass="sg-ot-link es-quita" CommandName="quitar" CommandArgument='<%# Eval("id") %>'
                                         OnClientClick="return confirm('¿Quitar esta asignación?');">
                                         <i class="mdi mdi-trash-can-outline"></i>Quitar
                                     </asp:LinkButton>
@@ -288,21 +296,24 @@
                     <header class="sg-ot-card-cab" id="sgOtNuevaAsignacion">
                         <span class="sg-ot-card-ico"><i class="mdi mdi-account-plus-outline"></i></span>
                         <h3>Nueva asignación</h3>
-                        <div class="sigma-modal-opciones sg-ot-card-acc">
-                            <asp:RadioButton ID="rdbQuienTecnico" runat="server" Text="Técnico" GroupName="Quien" Checked="true"
-                                AutoPostBack="true" OnCheckedChanged="rdbQuien_CheckedChanged" />
-                            <asp:RadioButton ID="rdbQuienEmpresa" runat="server" Text="Empresa externa" GroupName="Quien"
-                                AutoPostBack="true" OnCheckedChanged="rdbQuien_CheckedChanged" />
+                        <%-- Elegir entre tecnico y empresa no le pide nada al
+                             servidor: los dos campos ya estan en la pagina y el
+                             JS muestra el que corresponde. Con AutoPostBack, un
+                             gesto de mirar costaba un viaje y el panel entero
+                             parpadeaba. --%>
+                        <div class="sigma-modal-opciones sg-ot-card-acc sg-ot-quien">
+                            <asp:RadioButton ID="rdbQuienTecnico" runat="server" Text="Técnico" GroupName="Quien" Checked="true" />
+                            <asp:RadioButton ID="rdbQuienEmpresa" runat="server" Text="Empresa externa" GroupName="Quien" />
                         </div>
                     </header>
 
                     <div class="sigma-modal-grid">
-                        <asp:Panel ID="pnlTecnico" runat="server" CssClass="sigma-modal-field is-medio">
+                        <asp:Panel ID="pnlTecnico" runat="server" CssClass="sigma-modal-field is-medio sg-ot-quien-tecnico">
                             <label>Buscar técnico</label>
                             <rad:RadComboBox2 ID="cboUsuario" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                             <span class="sigma-modal-ayuda">Arriba aparecen quienes tienen la especialidad que la orden exige.</span>
                         </asp:Panel>
-                        <asp:Panel ID="pnlEmpresa" runat="server" CssClass="sigma-modal-field is-medio" Visible="false">
+                        <asp:Panel ID="pnlEmpresa" runat="server" CssClass="sigma-modal-field is-medio sg-ot-quien-empresa es-oculto">
                             <label>Empresa externa</label>
                             <rad:RadComboBox2 ID="cboProveedor" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                         </asp:Panel>
@@ -370,7 +381,7 @@
             <div class="sg-ot-card sg-ot-pasos-lista">
                 <asp:Repeater ID="rptPasos" runat="server" OnItemCommand="rptPasos_ItemCommand">
                     <ItemTemplate>
-                        <asp:LinkButton runat="server" CssClass='<%# "sg-ot-paso" + ((bool)Eval("elegido") ? " es-elegido" : "") %>'
+                        <asp:LinkButton ID="lnkPaso" runat="server" CssClass='<%# "sg-ot-paso" + ((bool)Eval("elegido") ? " es-elegido" : "") %>'
                             CommandName="sel" CommandArgument='<%# Eval("indice") %>'>
                             <span class='<%# "sg-ot-paso-num " + Eval("clase") %>'><%# Eval("numero") %></span>
                             <span class="sg-ot-paso-nom"><%# Server.HtmlEncode(Convert.ToString(Eval("nombre"))) %></span>
@@ -445,6 +456,58 @@
     </section>
 
     <%-- =====================================================================
+         6. REPUESTOS Y COSTOS
+
+         Lo que la orden consumio. Es de lectura: los repuestos y las horas
+         los escribe la app cuando el tecnico retira de bodega y registra su
+         tiempo, y los servicios entran con la factura del contratista.
+         ===================================================================== --%>
+    <section class="sg-ot-panel" data-panel="recursos">
+        <div class="sg-ot-card sg-ot-pasos-cab">
+            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-package-variant-closed"></i></span>
+            <div class="sg-ot-pasos-tit">
+                <h3>Lo que consumió la orden</h3>
+                <p class="sg-ot-card-sub">Repuestos de bodega, horas de trabajo y servicios contratados.</p>
+            </div>
+            <span class="sg-ot-candado"><i class="mdi mdi-lock-outline"></i>Solo lectura · Se registra desde la app y desde bodega</span>
+            <asp:Literal ID="litCostoTotal" runat="server" />
+        </div>
+
+        <div class="sg-ot-card">
+            <header class="sg-ot-card-cab">
+                <span class="sg-ot-card-ico"><i class="mdi mdi-package-variant-closed"></i></span>
+                <div>
+                    <h3>Repuestos</h3>
+                    <p class="sg-ot-card-sub">Lo pedido, lo reservado y lo que efectivamente salió de bodega.</p>
+                </div>
+            </header>
+            <asp:Literal ID="litRepuestos" runat="server" />
+        </div>
+
+        <div class="sg-ot-card">
+            <header class="sg-ot-card-cab">
+                <span class="sg-ot-card-ico"><i class="mdi mdi-account-clock-outline"></i></span>
+                <div>
+                    <h3>Mano de obra</h3>
+                    <p class="sg-ot-card-sub">Quién trabajó, cuánto rato y a qué costo por hora.</p>
+                </div>
+            </header>
+            <asp:Literal ID="litManoObra" runat="server" />
+        </div>
+
+        <div class="sg-ot-card">
+            <header class="sg-ot-card-cab">
+                <span class="sg-ot-card-ico"><i class="mdi mdi-truck-outline"></i></span>
+                <div>
+                    <h3>Servicios contratados</h3>
+                    <p class="sg-ot-card-sub">Lo que hizo un tercero, con su documento de respaldo.</p>
+                </div>
+            </header>
+            <asp:Literal ID="litServicios" runat="server" />
+        </div>
+    </section>
+
+    <%-- =====================================================================
          6. INDISPONIBILIDAD
          ===================================================================== --%>
     <section class="sg-ot-panel" data-panel="indisponibilidad">
@@ -472,13 +535,20 @@
                 <div class="sigma-modal-grid">
                     <div class="sigma-modal-field is-chico">
                         <label>Inicio <b class="sg-req">*</b></label>
-                        <WebControls:TextBox2 ID="txtIndInicio" runat="server" MaxLength="16" />
-                        <span class="sigma-modal-ayuda">dd-mm-aaaa hh:mm</span>
+                        <div class="sigma-modal-fecha"><WebControls:Calendar ID="calIndInicio" runat="server" /></div>
+                    </div>
+                    <div class="sigma-modal-field is-chico">
+                        <label>Hora <b class="sg-req">*</b></label>
+                        <rad:RadComboBox2 ID="cboIndHoraInicio" runat="server" OnLoad="LoadControls" AllowCustomText="true" MarkFirstMatch="true" Filter="Contains" Width="100%" />
                     </div>
                     <div class="sigma-modal-field is-chico">
                         <label>Término</label>
-                        <WebControls:TextBox2 ID="txtIndFin" runat="server" MaxLength="16" />
+                        <div class="sigma-modal-fecha"><WebControls:Calendar ID="calIndFin" runat="server" /></div>
                         <span class="sigma-modal-ayuda">Vacío = sigue detenido.</span>
+                    </div>
+                    <div class="sigma-modal-field is-chico">
+                        <label>Hora</label>
+                        <rad:RadComboBox2 ID="cboIndHoraFin" runat="server" OnLoad="LoadControls" AllowCustomText="true" MarkFirstMatch="true" Filter="Contains" Width="100%" />
                     </div>
                     <div class="sigma-modal-field is-medio">
                         <label>Tipo de indisponibilidad <b class="sg-req">*</b></label>
@@ -537,11 +607,14 @@
          ===================================================================== --%>
     <section class="sg-ot-panel" data-panel="cierre">
         <div class="sg-ot-card sg-ot-cierre-cab">
-            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-shield-check-outline"></i></span>
-            <div>
-                <h3>Revisar y firmar cierre</h3>
-                <p class="sg-ot-card-sub">Valide el resultado del trabajo, revise las evidencias y complete la firma para cerrar la OT.</p>
+            <div class="sg-ot-cierre-tit">
+                <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-shield-check-outline"></i></span>
+                <div>
+                    <h3>Revisar y firmar cierre</h3>
+                    <p class="sg-ot-card-sub">Valide el resultado, revise las evidencias y firme para cerrar la OT.</p>
+                </div>
             </div>
+
         </div>
 
         <div class="sg-ot-cols">
@@ -578,6 +651,38 @@
                     <div class="sg-ot-sub-titulo">Evidencias del técnico</div>
                     <asp:Literal ID="litCierreEvidencias" runat="server" />
                 </asp:Panel>
+
+                <%-- La firma va DEBAJO del resultado y no en la columna de al
+                     lado: se firma despues de escribir lo que se hizo, y ese
+                     es el orden en que se lee la pantalla. Compacta -una linea
+                     para quien firma, el trazo y el boton- para que las dos
+                     cosas quepan juntas sin desplazarse. --%>
+                <asp:Panel ID="pnlFirma" runat="server" CssClass="sg-ot-card sg-ot-firma-compacta">
+                    <div class="sg-ot-firma-datos">
+                        <span class="sg-ot-firma-etq">Firma de quien autoriza</span>
+                        <span class="sg-ot-usuario"><i class="mdi mdi-account-outline"></i><asp:Literal ID="litUsuarioCierre" runat="server" /></span>
+                    </div>
+
+                    <%-- El trazo se dibuja en el canvas y viaja en el campo oculto
+                         como PNG: un canvas no se postea solo. --%>
+                    <div class="sg-ot-firma">
+                        <canvas id="sgOtFirma" width="620" height="110"></canvas>
+                        <span class="sg-ot-firma-guia"><i class="mdi mdi-pencil-outline"></i>Firme aquí</span>
+                    </div>
+                    <asp:HiddenField ID="hdnFirma" runat="server" ClientIDMode="Static" />
+
+                    <div class="sg-ot-firma-pie">
+                        <a href="#" class="sg-ot-link" id="sgOtFirmaLimpiar"><i class="mdi mdi-trash-can-outline"></i>Limpiar</a>
+                        <label class="sg-ot-confirmo">
+                            <asp:CheckBox ID="chkConfirmo" runat="server" />
+                            <span>Confirmo que revisé el trabajo y sus evidencias.</span>
+                        </label>
+                        <WebControls:PushButton ID="btnCerrarOT" runat="server" Text="Firmar y cerrar OT" CssClass="sg-ot-btn es-primario"
+                            OnClick="btnCerrarOT_Click" CausesValidation="false" />
+                    </div>
+
+                    <span class="sg-ot-firma-nota"><i class="mdi mdi-information-outline"></i>La firma queda vinculada a la OT, al usuario autenticado y a la fecha de cierre.</span>
+                </asp:Panel>
             </div>
 
             <aside class="sg-ot-lado">
@@ -591,49 +696,6 @@
                     </header>
                     <asp:Literal ID="litValidacion" runat="server" />
                 </div>
-
-                <asp:Panel ID="pnlFirma" runat="server" CssClass="sg-ot-card">
-                    <header class="sg-ot-card-cab">
-                        <span class="sg-ot-card-ico"><i class="mdi mdi-draw-pen"></i></span>
-                        <div>
-                            <h3>Firma de quien autoriza</h3>
-                            <p class="sg-ot-card-sub">Dibuje su firma con el mouse o en la pantalla táctil.</p>
-                        </div>
-                    </header>
-
-                    <div class="sigma-modal-field is-ancho">
-                        <label>Usuario con permiso de cierre</label>
-                        <div class="sg-ot-usuario"><i class="mdi mdi-account-outline"></i><asp:Literal ID="litUsuarioCierre" runat="server" /></div>
-                    </div>
-
-                    <%-- El trazo se dibuja en el canvas y viaja en el campo
-                         oculto como PNG: un canvas no se postea solo. --%>
-                    <div class="sg-ot-firma">
-                        <canvas id="sgOtFirma" width="620" height="150"></canvas>
-                        <span class="sg-ot-firma-guia"><i class="mdi mdi-pencil-outline"></i>Firme aquí</span>
-                    </div>
-                    <asp:HiddenField ID="hdnFirma" runat="server" ClientIDMode="Static" />
-
-                    <div class="sg-ot-firma-acc">
-                        <a href="#" class="sg-ot-link" id="sgOtFirmaLimpiar"><i class="mdi mdi-trash-can-outline"></i>Limpiar</a>
-                    </div>
-
-                    <label class="sg-ot-confirmo">
-                        <asp:CheckBox ID="chkConfirmo" runat="server" />
-                        <span>Confirmo que revisé el trabajo y sus evidencias.</span>
-                    </label>
-
-                    <div class="sg-ot-nota es-chica">
-                        <i class="mdi mdi-information-outline"></i>
-                        <span>La firma se vinculará a la OT, al usuario autenticado y a la fecha de cierre.</span>
-                    </div>
-
-                    <div class="sg-ot-card-pie">
-                        <a href="#" class="sg-ot-btn es-plano" data-ir="resumen">Volver a revisión</a>
-                        <WebControls:PushButton ID="btnCerrarOT" runat="server" Text="Firmar y cerrar OT" CssClass="sg-ot-btn es-primario"
-                            OnClick="btnCerrarOT_Click" CausesValidation="false" />
-                    </div>
-                </asp:Panel>
 
                 <asp:Literal ID="litCerrada" runat="server" />
             </aside>

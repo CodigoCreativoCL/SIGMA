@@ -248,7 +248,7 @@
                 <asp:Repeater ID="rptPasos" runat="server" OnItemCommand="rptPasos_ItemCommand">
                     <ItemTemplate>
                         <div class='<%# "sg-pr-paso" + ((bool)Eval("elegido") ? " es-elegido" : "") + ((bool)Eval("habilitado") ? "" : " es-baja") %>'>
-                            <asp:LinkButton runat="server" CssClass="sg-pr-paso-cuerpo" CommandName="sel" CommandArgument='<%# Eval("indice") %>'>
+                            <asp:LinkButton ID="lnkPaso" runat="server" CssClass="sg-pr-paso-cuerpo" CommandName="sel" CommandArgument='<%# Eval("indice") %>'>
                                 <span class="sg-pr-paso-num"><%# Eval("numero") %></span>
                                 <span class="sg-pr-paso-txt">
                                     <span class="sg-pr-paso-nom"><%# Server.HtmlEncode(Convert.ToString(Eval("nombre"))) %></span>
@@ -256,11 +256,11 @@
                                 </span>
                             </asp:LinkButton>
                             <span class="sg-pr-paso-acc">
-                                <asp:LinkButton runat="server" CssClass="sg-pr-icono" CommandName="sube" CommandArgument='<%# Eval("indice") %>'
+                                <asp:LinkButton ID="lnkSubir" runat="server" CssClass="sg-pr-icono" CommandName="sube" CommandArgument='<%# Eval("indice") %>'
                                     ToolTip="Subir" Enabled='<%# !(bool)Eval("primero") %>'><i class="mdi mdi-chevron-up"></i></asp:LinkButton>
-                                <asp:LinkButton runat="server" CssClass="sg-pr-icono" CommandName="baja" CommandArgument='<%# Eval("indice") %>'
+                                <asp:LinkButton ID="lnkBajar" runat="server" CssClass="sg-pr-icono" CommandName="baja" CommandArgument='<%# Eval("indice") %>'
                                     ToolTip="Bajar" Enabled='<%# !(bool)Eval("ultimo") %>'><i class="mdi mdi-chevron-down"></i></asp:LinkButton>
-                                <asp:LinkButton runat="server" CssClass="sg-pr-icono es-quita" CommandName="quita" CommandArgument='<%# Eval("indice") %>'
+                                <asp:LinkButton ID="lnkQuitar" runat="server" CssClass="sg-pr-icono es-quita" CommandName="quita" CommandArgument='<%# Eval("indice") %>'
                                     ToolTip="Quitar el paso"><i class="mdi mdi-trash-can-outline"></i></asp:LinkButton>
                             </span>
                         </div>

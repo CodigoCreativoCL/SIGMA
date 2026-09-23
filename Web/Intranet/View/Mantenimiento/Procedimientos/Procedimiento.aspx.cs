@@ -182,10 +182,29 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
         btnCerrar.OnClientClick = "return sgProcVolver('" +
             ResolveUrl("~/View/Mantenimiento/Procedimientos/Procedimientos.aspx") + "');";
 
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnPlantilla);
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnRevisar);
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnCargaErrores);
+        /* SOLO EL ARCHIVO RECARGA
+
+           Los tres botones del asistente escriben o leen el disco -dos
+           descargas y un FileUpload- y eso no sobrevive a un postback
+           asincrono. Guardar, en cambio, no tiene por que recargar la
+           pantalla entera, y hacerlo con la receta a medio escribir es justo
+           lo que mas molesta.
+
+           Los demas se registran como asincronos a proposito: un LinkButton
+           sin id -y los de un repeater no lo tienen si no se les pone-
+           postea con __doPostBack sin que el PageRequestManager pueda ubicar
+           su UpdatePanel, y sale completo. */
+        ScriptManager sm = ScriptManager.GetCurrent(Page);
+
+        sm.RegisterPostBackControl(btnPlantilla);
+        sm.RegisterPostBackControl(btnRevisar);
+        sm.RegisterPostBackControl(btnCargaErrores);
+
+        sm.RegisterAsyncPostBackControl(btnGuardar);
+        sm.RegisterAsyncPostBackControl(rptPasos);
+        sm.RegisterAsyncPostBackControl(lnkAgregarPaso);
+        sm.RegisterAsyncPostBackControl(lnkCargaMasiva);
+        sm.RegisterAsyncPostBackControl(lnkEditarDatos);
 
         udPanel.Update();
     }

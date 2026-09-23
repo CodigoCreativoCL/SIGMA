@@ -127,6 +127,13 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
                     break;
                 }
 
+            case "cboHoraProgramada":
+            case "cboHoraOcurrencia":
+            case "cboIndHoraInicio":
+            case "cboIndHoraFin":
+                CargarHoras(ctrl);
+                break;
+
             case "cboIndMotivo":
                 // Indisponibilidad_Motivo: catalogo fijo del bloque 19.
                 ctrl.Items.Add(new RadComboBoxItem("Seleccione un motivo", ""));
@@ -183,6 +190,26 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         }
     }
 
+    /// <summary>
+    /// Las horas del dia, de cuarto en cuarto.
+    ///
+    /// Son las que se eligen el noventa por ciento de las veces -una orden se
+    /// programa a las 8:00, no a las 8:07- y el combo acepta texto escrito
+    /// para la hora suelta. Se usa el mismo desplegable que el resto del
+    /// sistema y no el <input type="time"> del navegador, que trae su propia
+    /// tipografia, su propio alto y su propio reloj.
+    /// </summary>
+    private static void CargarHoras(RadComboBox2 ctrl)
+    {
+        ctrl.Items.Add(new RadComboBoxItem("--:--", ""));
+
+        for (int minuto = 0; minuto < 24 * 60; minuto += 15)
+        {
+            string h = (minuto / 60).ToString("00") + ":" + (minuto % 60).ToString("00");
+            ctrl.Items.Add(new RadComboBoxItem(h, h));
+        }
+    }
+
     protected void cboPlanta_SelectedIndexChanged(object sender, EventArgs e) { Pestana("ficha"); }
 
     protected void Page_PreRender(object sender, EventArgs e)
@@ -192,9 +219,29 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         Pintar();
         Bloqueo();
 
-        /* A proposito NO se registra ningun boton como postback completo: esta
-           pantalla no recarga nunca. Las descargas, que son lo unico que no
-           sobrevive a un postback asincrono, no viven aca. */
+        /* NINGUN GESTO RECARGA LA PAGINA
+
+           Estar dentro del UpdatePanel no alcanza. Los <input> del proyecto
+           (PushButton) postean con WebForm_DoPostBackWithOptions y salen
+           asincronos solos, pero un LinkButton -y un radio con AutoPostBack-
+           postean con __doPostBack desde el href, y ahi el PageRequestManager
+           no alcanza a marcar el envio como parcial: la pagina se recargaba
+           entera al elegir un paso o al cambiar entre tecnico y empresa.
+
+           Registrarlos como controles asincronos lo resuelve sin tocar el
+           markup. Se registran los contenedores -el repeater, no cada fila-
+           porque las filas se crean en cada enlace de datos. */
+        ScriptManager sm = ScriptManager.GetCurrent(Page);
+
+        sm.RegisterAsyncPostBackControl(rptPasos);
+        sm.RegisterAsyncPostBackControl(rptApoyos);
+        sm.RegisterAsyncPostBackControl(cboPlanta);
+        sm.RegisterAsyncPostBackControl(btnGuardar);
+        sm.RegisterAsyncPostBackControl(btnAsignar);
+        sm.RegisterAsyncPostBackControl(btnIndRegistrar);
+        sm.RegisterAsyncPostBackControl(btnIndLimpiar);
+        sm.RegisterAsyncPostBackControl(btnCerrarOT);
+
         udPanel.Update();
     }
 
@@ -207,7 +254,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             litTitulo.Text = "Nueva orden de trabajo";
             litSubtitulo.Text = "Guarde la ficha y aparecerán asignación, pasos, evidencias, indisponibilidad y cierre.";
             hdnTab.Value = "ficha";
-            txtIndInicio.Text = global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm");
+            Repartir(global::SitioBase.Hora.Ahora, calIndInicio, cboIndHoraInicio);
             return;
         }
 
@@ -222,15 +269,15 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         Seleccionar(cboPlanta, o.otr_cliente_instalacion.ToString());
         if (o.otr_activo != null) _activoEditar = o.otr_activo.Value.ToString();
         if (o.otr_instalacion_area != null) _areaEditar = o.otr_instalacion_area.Value.ToString();
-        txtFechaProgramada.Text = o.otr_fecha_programada_utc == null ? "" : o.otr_fecha_programada_utc.Value.ToString("dd-MM-yyyy HH:mm");
+        Repartir(o.otr_fecha_programada_utc, calFechaProgramada, cboHoraProgramada);
         txtDuracion.Text = o.otr_duracion_estimada_minuto == null ? "" : o.otr_duracion_estimada_minuto.ToString();
         rdbPermisoSi.Checked = o.otr_requiere_permiso; rdbPermisoNo.Checked = !o.otr_requiere_permiso;
         rdbPosteriorSi.Checked = o.otr_registro_posterior; rdbPosteriorNo.Checked = !o.otr_registro_posterior;
-        txtFechaOcurrencia.Text = o.otr_fecha_ocurrencia == null ? "" : o.otr_fecha_ocurrencia.Value.ToString("dd-MM-yyyy HH:mm");
+        Repartir(o.otr_fecha_ocurrencia, calFechaOcurrencia, cboHoraOcurrencia);
         txtResultadoCierre.Text = o.otr_resultado;
         if (o.otr_cierre_motivo != null) Seleccionar(cboMotivoCierre, o.otr_cierre_motivo.Value.ToString());
 
-        txtIndInicio.Text = global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm");
+        Repartir(global::SitioBase.Hora.Ahora, calIndInicio, cboIndHoraInicio);
         Seleccionar(cboIndMotivo, "1");
 
         wucAuditoria.Mostrar(o.usuario_creacion_nombre, o.otr_fecha_creacion, o.usuario_actualizacion_nombre, o.otr_fecha_actualizacion);
@@ -274,8 +321,9 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         bool cerrada = Id > 0 && Orden().otr_orden_trabajo_estado == 4;
         bool puede = Token.Puede("CREAR ORDEN TRABAJO") && !cerrada;
 
-        txtTitulo.ReadOnly = txtDescripcion.ReadOnly = txtNotas.ReadOnly = txtFechaProgramada.ReadOnly =
-            txtDuracion.ReadOnly = txtFechaOcurrencia.ReadOnly = !puede;
+        txtTitulo.ReadOnly = txtDescripcion.ReadOnly = txtNotas.ReadOnly = txtDuracion.ReadOnly = !puede;
+        calFechaProgramada.Enabled = puede;
+        cboHoraProgramada.ReadOnly = !puede;
         cboEstrategia.ReadOnly = cboPrioridad.ReadOnly = !puede;
 
         // Donde, el tipo y el registro posterior se fijan al crear: despues la
@@ -283,7 +331,8 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         cboPlanta.Enabled = cboActivo.Enabled = cboArea.Enabled = Id == 0;
         cboTipo.Enabled = Id == 0;
         rdbPosteriorSi.Enabled = rdbPosteriorNo.Enabled = Id == 0;
-        txtFechaOcurrencia.ReadOnly = Id > 0;
+        calFechaOcurrencia.Enabled = Id == 0;
+        cboHoraOcurrencia.ReadOnly = Id > 0;
         rdbPermisoSi.Enabled = rdbPermisoNo.Enabled = puede;
         btnGuardar.Visible = puede;
 
@@ -325,6 +374,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         PintarAsignacion(o);
         PintarPasos();
         PintarEvidencias();
+        PintarRecursos();
         PintarIndisponibilidad();
         PintarCierre(o);
     }
@@ -574,6 +624,12 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
     private void PintarAsignacion(OrdenTrabajo o)
     {
+        /* Los dos campos -tecnico y empresa- se pintan siempre y el JS
+           muestra el que corresponde al radio elegido. Esconder uno desde el
+           servidor obligaba a un postback para cambiar de opcion. */
+        pnlTecnico.CssClass = "sigma-modal-field is-medio sg-ot-quien-tecnico" + (rdbQuienEmpresa.Checked ? " es-oculto" : "");
+        pnlEmpresa.CssClass = "sigma-modal-field is-medio sg-ot-quien-empresa" + (rdbQuienEmpresa.Checked ? "" : " es-oculto");
+
         List<OrdenTrabajoAsignacion> lista = new OrdenTrabajoController().GetAsignaciones(Id) ?? new List<OrdenTrabajoAsignacion>();
 
         OrdenTrabajoAsignacion resp = lista.FirstOrDefault(a => a.ota_es_responsable);
@@ -614,13 +670,6 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         rptApoyos.DataBind();
 
         pnlSinApoyos.Visible = apoyos.Count == 0;
-    }
-
-    protected void rdbQuien_CheckedChanged(object sender, EventArgs e)
-    {
-        Pestana("asignacion");
-        pnlTecnico.Visible = rdbQuienTecnico.Checked;
-        pnlEmpresa.Visible = rdbQuienEmpresa.Checked;
     }
 
     protected void btnAsignar_Click(object sender, EventArgs e)
@@ -739,7 +788,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
         litPasoDetalle.Text = pasos.Count == 0
             ? "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-gesture-tap-button\"></i><p>Sin pasos que mostrar</p></div>"
-            : DetallePaso(pasos[PasoElegido]);
+            : DetallePaso(pasos, PasoElegido);
     }
 
     /// <summary>El anillo de avance: un circulo SVG con su trazo recortado.</summary>
@@ -795,8 +844,10 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         }
     }
 
-    private string DetallePaso(Dictionary<string, object> p)
+    private string DetallePaso(List<Dictionary<string, object>> pasos, int indice)
     {
+        Dictionary<string, object> p = pasos[indice];
+
         string cod = Convert.ToString(p["RESULTADO_CODIGO"]);
         int pasoId = Convert.ToInt32(p["otp_id"]);
 
@@ -807,16 +858,56 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
          .Append("</h3><span class=\"sg-ot-card-acc sg-ot-estado ").Append(ClasePaso(cod)).Append("\"><i class=\"mdi ")
          .Append(IconoPaso(cod)).Append("\"></i>").Append(Server.HtmlEncode(EstadoPaso(p))).Append("</span></header>");
 
-        s.Append("<div class=\"sg-ot-datos\">");
-        s.Append(Dato("mdi-account-outline", "Registrado por", Convert.ToString(p["EJECUTOR_NOMBRE"])));
-        s.Append(Dato("mdi-calendar-outline", "Fecha",
-                 p["otp_fecha_ejecucion_utc"] == null ? "" : ((DateTime)p["otp_fecha_ejecucion_utc"]).ToString("dd MMM yyyy · HH:mm")));
+        /* DOS COSAS DISTINTAS QUE SE VEIAN IGUAL
+
+           "Instruccion" es lo que el plan MANDA hacer -viene del procedimiento
+           y es igual en todas las ordenes que lo usan-, y la observacion es lo
+           que el tecnico RESPONDIO en terreno para este equipo y este dia.
+           Puestas una debajo de la otra como dos datos mas, se leian como si
+           fueran lo mismo. Van separadas, cada una con su titulo y su dueño. */
+        s.Append("<div class=\"sg-ot-bloque es-tecnico\">")
+         .Append("<div class=\"sg-ot-bloque-cab\"><i class=\"mdi mdi-account-hard-hat\"></i>Lo que registró el técnico</div>");
+
+        if (!Resuelto(p))
+            s.Append("<p class=\"sg-ot-vacio-txt\">Este paso todavía no se ejecuta en terreno.</p>");
+        else
+        {
+            DateTime? cuando = p["otp_fecha_ejecucion_utc"] == null ? (DateTime?)null : (DateTime)p["otp_fecha_ejecucion_utc"];
+
+            s.Append("<div class=\"sg-ot-datos\">");
+            s.Append(Dato("mdi-account-outline", "Registrado por", Convert.ToString(p["EJECUTOR_NOMBRE"])));
+            s.Append(Dato("mdi-calendar-outline", "Día", cuando == null ? "" : cuando.Value.ToString("dd MMM yyyy")));
+            s.Append(Dato("mdi-clock-outline", "Hora", cuando == null ? "" : cuando.Value.ToString("HH:mm")));
+
+            /* CUANTO TOMO EL PASO
+
+               La app sella cuando se marca cada paso, no cuanto duro. La
+               diferencia con el paso anterior es lo mas cerca que se puede
+               estar de eso y sirve para lo que se pregunta al leer la ficha:
+               en cual se demoro. Se dice "desde el paso anterior" y no
+               "duracion" a proposito: si el tecnico marco tres pasos juntos al
+               final, la cuenta lo muestra como dos minutos y un salto grande,
+               que es justo la verdad de lo que paso. */
+            string tomo = DesdeElAnterior(pasos, indice);
+            if (tomo.Length > 0) s.Append(Dato("mdi-timer-outline", "Desde el paso anterior", tomo));
+
+            s.Append("</div>");
+
+            string obs = Convert.ToString(p["otp_resultado"]);
+            s.Append("<div class=\"sg-ot-respuesta\">")
+             .Append(string.IsNullOrEmpty(obs)
+                 ? "<span class=\"sg-ot-vacio-txt\">Marcó el paso sin dejar observación.</span>"
+                 : Server.HtmlEncode(obs))
+             .Append("</div>");
+        }
+
         s.Append("</div>");
 
-        s.Append(Dato("mdi-note-text-outline", "Observación", Convert.ToString(p["otp_resultado"])));
-
         if (!string.IsNullOrEmpty(Convert.ToString(p["otp_descripcion"])))
-            s.Append(Dato("mdi-text-box-outline", "Instrucción", Convert.ToString(p["otp_descripcion"])));
+            s.Append("<div class=\"sg-ot-bloque es-plan\">")
+             .Append("<div class=\"sg-ot-bloque-cab\"><i class=\"mdi mdi-clipboard-text-outline\"></i>Instrucción del procedimiento</div>")
+             .Append("<p class=\"sg-ot-texto\">").Append(Server.HtmlEncode(Convert.ToString(p["otp_descripcion"]))).Append("</p>")
+             .Append("</div>");
 
         // ---- evidencias del paso ----
         List<OrdenTrabajoArchivo> ev = Evidencias().Where(x => x.paso_id == pasoId).ToList();
@@ -838,6 +929,30 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         }
 
         return s.ToString();
+    }
+
+    /// <summary>
+    /// El tiempo entre el paso anterior ejecutado y este. Vacio si no hay con
+    /// que comparar -es el primero, o el anterior quedo pendiente-, porque un
+    /// numero sin referencia es peor que ningun numero.
+    /// </summary>
+    private static string DesdeElAnterior(List<Dictionary<string, object>> pasos, int indice)
+    {
+        if (indice <= 0) return "";
+
+        DateTime? este = pasos[indice]["otp_fecha_ejecucion_utc"] as DateTime?;
+        if (este == null) return "";
+
+        for (int i = indice - 1; i >= 0; i--)
+        {
+            DateTime? antes = pasos[i]["otp_fecha_ejecucion_utc"] as DateTime?;
+            if (antes == null) continue;
+
+            int minutos = (int)Math.Round((este.Value - antes.Value).TotalMinutes);
+            return minutos <= 0 ? "menos de un minuto" : Duracion(minutos);
+        }
+
+        return "";
     }
 
     protected void rptPasos_ItemCommand(object source, RepeaterCommandEventArgs e)
@@ -944,6 +1059,181 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
     #endregion
 
+    #region Repuestos, mano de obra y servicios
+
+    /// <summary>
+    /// Lo que costo la orden. Tres listas y un total, todo de lectura: los
+    /// repuestos y las horas los escribe la app en terreno y los servicios
+    /// entran con la factura del contratista.
+    ///
+    /// Los totales se suman por moneda y no se convierten: mezclar pesos con
+    /// dolares en un solo numero da una cifra que no es de nadie.
+    /// </summary>
+    private void PintarRecursos()
+    {
+        OrdenTrabajoRecursoController c = new OrdenTrabajoRecursoController();
+
+        List<OrdenTrabajoRepuesto> repuestos = c.GetRepuestos(Id);
+        List<OrdenTrabajoManoObra> horas = c.GetManoObra(Id);
+        List<OrdenTrabajoServicio> servicios = c.GetServicios(Id);
+
+        // ---- repuestos ----
+        if (repuestos.Count == 0)
+            litRepuestos.Text = Vacio("mdi-package-variant", "Sin repuestos",
+                                      "No se retiró ningún repuesto de bodega para esta orden.");
+        else
+        {
+            StringBuilder s = new StringBuilder();
+
+            s.Append(Tabla(new[] { "Repuesto", "Planificado", "Reservado", "Consumido", "Devuelto", "Costo" }));
+
+            foreach (OrdenTrabajoRepuesto r in repuestos)
+            {
+                s.Append("<div class=\"sg-ot-tabla-fila es-recurso\">")
+                 .Append("<span class=\"c-nom\"><strong>").Append(Server.HtmlEncode(r.codigo)).Append("</strong> ")
+                 .Append(Server.HtmlEncode(r.nombre))
+                 .Append(string.IsNullOrEmpty(r.lote) ? "" : "<span class=\"sg-ot-tabla-sub\">Lote " + Server.HtmlEncode(r.lote) + "</span>")
+                 .Append(string.IsNullOrEmpty(r.componente) ? "" : "<span class=\"sg-ot-tabla-sub\">" + Server.HtmlEncode(r.componente) + "</span>")
+                 .Append("</span>")
+                 .Append(Celda(Cantidad(r.planificada, r.unidad)))
+                 .Append(Celda(Cantidad(r.reservada, r.unidad)))
+                 .Append(Celda("<strong>" + Cantidad(r.consumida, r.unidad) + "</strong>"))
+                 .Append(Celda(r.devuelta > 0 ? Cantidad(r.devuelta, r.unidad) : "—"))
+                 .Append(Celda(Plata(r.costo, r.moneda)))
+                 .Append("</div>");
+            }
+
+            litRepuestos.Text = s.ToString();
+        }
+
+        // ---- mano de obra ----
+        if (horas.Count == 0)
+            litManoObra.Text = Vacio("mdi-account-clock-outline", "Sin horas registradas",
+                                     "El técnico todavía no registró su tiempo desde la app.");
+        else
+        {
+            StringBuilder s = new StringBuilder();
+
+            s.Append(Tabla(new[] { "Quién", "Cuándo", "Tiempo", "Valor hora", "Costo" }));
+
+            foreach (OrdenTrabajoManoObra m in horas)
+            {
+                s.Append("<div class=\"sg-ot-tabla-fila es-recurso\">")
+                 .Append("<span class=\"c-nom\"><strong>").Append(Server.HtmlEncode(m.quien)).Append("</strong>")
+                 .Append(string.IsNullOrEmpty(m.especialidad) ? "" : "<span class=\"sg-ot-tabla-sub\">" + Server.HtmlEncode(m.especialidad) + "</span>")
+                 .Append(m.hora_extra ? "<span class=\"sg-ot-chip es-alta\">hora extra</span>" : "")
+                 .Append("</span>")
+                 .Append(Celda(m.inicio == null ? "—" : m.inicio.Value.ToString("dd MMM · HH:mm")))
+                 .Append(Celda("<strong>" + Duracion(m.minutos) + "</strong>"))
+                 .Append(Celda(m.costo_hora > 0 ? Plata(m.costo_hora, m.moneda) : "—"))
+                 .Append(Celda(Plata(m.costo, m.moneda)))
+                 .Append("</div>");
+            }
+
+            litManoObra.Text = s.ToString();
+        }
+
+        // ---- servicios ----
+        if (servicios.Count == 0)
+            litServicios.Text = Vacio("mdi-truck-outline", "Sin servicios contratados",
+                                      "Esta orden se resolvió con recursos propios.");
+        else
+        {
+            StringBuilder s = new StringBuilder();
+
+            s.Append(Tabla(new[] { "Proveedor", "Documento", "Cantidad", "Fecha", "Costo" }));
+
+            foreach (OrdenTrabajoServicio v in servicios)
+            {
+                s.Append("<div class=\"sg-ot-tabla-fila es-recurso\">")
+                 .Append("<span class=\"c-nom\"><strong>").Append(Server.HtmlEncode(v.proveedor)).Append("</strong>")
+                 .Append(string.IsNullOrEmpty(v.tipo) ? "" : "<span class=\"sg-ot-tabla-sub\">" + Server.HtmlEncode(v.tipo) + "</span>")
+                 .Append(string.IsNullOrEmpty(v.descripcion) ? "" : "<span class=\"sg-ot-tabla-sub\">" + Server.HtmlEncode(v.descripcion) + "</span>")
+                 .Append("</span>")
+                 .Append(Celda(string.IsNullOrEmpty(v.documento) ? "—" : Server.HtmlEncode(v.documento)))
+                 .Append(Celda(Cantidad(v.cantidad, "")))
+                 .Append(Celda(v.fecha_servicio == null ? "—" : v.fecha_servicio.Value.ToString("dd MMM yyyy")))
+                 .Append(Celda(Plata(v.costo, v.moneda)))
+                 .Append("</div>");
+            }
+
+            litServicios.Text = s.ToString();
+        }
+
+        // ---- el total, por moneda ----
+        Dictionary<string, decimal> total = new Dictionary<string, decimal>();
+
+        foreach (OrdenTrabajoRepuesto r in repuestos) Acumular(total, r.moneda, r.costo);
+        foreach (OrdenTrabajoManoObra m in horas) Acumular(total, m.moneda, m.costo);
+        foreach (OrdenTrabajoServicio v in servicios) Acumular(total, v.moneda, v.costo);
+
+        StringBuilder tot = new StringBuilder("<div class=\"sg-ot-avance\">");
+
+        if (total.Count == 0)
+            tot.Append("<div class=\"sg-ot-avance-num\"><strong>—</strong><span>sin costo registrado</span></div>");
+        else
+            foreach (KeyValuePair<string, decimal> par in total)
+                tot.Append("<div class=\"sg-ot-avance-num\"><strong>").Append(Plata(par.Value, par.Key))
+                   .Append("</strong><span>costo total</span></div>");
+
+        tot.Append("<div class=\"sg-ot-avance-num\"><strong>").Append(Duracion(horas.Sum(x => x.minutos)))
+           .Append("</strong><span>de trabajo</span></div>");
+
+        litCostoTotal.Text = tot.Append("</div>").ToString();
+    }
+
+    private static void Acumular(Dictionary<string, decimal> total, string moneda, decimal monto)
+    {
+        if (monto == 0) return;
+
+        string k = string.IsNullOrEmpty(moneda) ? "CLP" : moneda;
+        total[k] = (total.ContainsKey(k) ? total[k] : 0) + monto;
+    }
+
+    private static string Tabla(string[] columnas)
+    {
+        StringBuilder s = new StringBuilder("<div class=\"sg-ot-tabla-cab es-recurso\">");
+
+        for (int i = 0; i < columnas.Length; i++)
+            s.Append("<span class=\"").Append(i == 0 ? "c-nom" : "c-dato").Append("\">").Append(columnas[i]).Append("</span>");
+
+        return s.Append("</div>").ToString();
+    }
+
+    private static string Celda(string contenido) { return "<span class=\"c-dato\">" + contenido + "</span>"; }
+
+    /// <summary>Una cantidad sin ceros de relleno: 2 y no 2,0000.</summary>
+    private static string Cantidad(decimal valor, string unidad)
+    {
+        if (valor == 0) return "—";
+
+        string n = valor == Math.Floor(valor) ? ((long)valor).ToString("N0") : valor.ToString("0.##");
+        return n + (string.IsNullOrEmpty(unidad) ? "" : " " + unidad);
+    }
+
+    private static string Plata(decimal monto, string moneda)
+    {
+        if (monto == 0) return "—";
+        return (string.IsNullOrEmpty(moneda) ? "$" : moneda + " ") + monto.ToString("N0");
+    }
+
+    private static string Duracion(int minutos)
+    {
+        if (minutos <= 0) return "—";
+        if (minutos < 60) return minutos + " min";
+
+        int horas = minutos / 60, resto = minutos % 60;
+        return horas + " h" + (resto > 0 ? " " + resto + " min" : "");
+    }
+
+    private string Vacio(string icono, string titulo, string detalle)
+    {
+        return "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi " + icono + "\"></i><p>" +
+               Server.HtmlEncode(titulo) + "</p><span>" + Server.HtmlEncode(detalle) + "</span></div>";
+    }
+
+    #endregion
+
     #region Indisponibilidad
 
     private void PintarIndisponibilidad()
@@ -986,9 +1276,9 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
     protected void btnIndLimpiar_Click(object sender, EventArgs e)
     {
         Pestana("indisponibilidad");
-        txtIndFin.Text = "";
+        Repartir(null, calIndFin, cboIndHoraFin);
         txtIndDetalle.Text = "";
-        txtIndInicio.Text = global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm");
+        Repartir(global::SitioBase.Hora.Ahora, calIndInicio, cboIndHoraInicio);
         rdbIndPlan.Checked = true; rdbIndNoPlan.Checked = false;
         rdbIndProdNo.Checked = true; rdbIndProdSi.Checked = false;
     }
@@ -1001,10 +1291,10 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             OrdenTrabajo o = Orden();
             if (o.otr_activo == null) throw new Exception("Esta orden no tiene equipo: no hay indisponibilidad que registrar.");
 
-            DateTime? inicio = Fecha(txtIndInicio.Text, "Inicio");
-            if (inicio == null) throw new Exception("Indique cuándo empezó la detención.");
+            DateTime? inicio = Juntar(calIndInicio, cboIndHoraInicio);
+            if (inicio == null) throw new Exception("Indique el día en que empezó la detención.");
 
-            DateTime? fin = Fecha(txtIndFin.Text, "Término");
+            DateTime? fin = Juntar(calIndFin, cboIndHoraFin);
             if (fin != null && fin <= inicio) throw new Exception("El término debe ser posterior al inicio.");
 
             ActivoIndisponibilidad i = new ActivoIndisponibilidad();
@@ -1131,6 +1421,50 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
     #region Ficha
 
+    /// <summary>
+    /// Junta el dia del calendario con la hora del selector.
+    ///
+    /// Van separados en pantalla porque son dos decisiones distintas -que dia
+    /// y a que hora- y porque asi cada una tiene el control que le sirve: el
+    /// calendario del producto y el selector de hora del navegador. Sin hora
+    /// se asume medianoche, que es lo que hacia la caja de texto cuando solo
+    /// se escribia la fecha.
+    /// </summary>
+    private static DateTime? Juntar(global::WebControls.Calendar cal, RadComboBox2 hora)
+    {
+        if (cal.Value == null) return null;
+
+        DateTime d = cal.Value.Value.Date;
+
+        string h = (string.IsNullOrEmpty(hora.SelectedValue) ? hora.Text : hora.SelectedValue).Trim();
+        if (h.Length == 0) return d;
+
+        TimeSpan t;
+        /* Del desplegable llega HH:mm; escrita a mano puede venir "8:5" o con
+           segundos. Lo que no se parsee se ignora -queda la medianoche- en vez
+           de tumbar el guardado entero por la hora. */
+        if (TimeSpan.TryParse(h, CultureInfo.InvariantCulture, out t) && t < TimeSpan.FromDays(1)) return d.Add(t);
+
+        return d;
+    }
+
+    /// <summary>Reparte un DateTime en el calendario y el selector de hora.</summary>
+    private static void Repartir(DateTime? valor, global::WebControls.Calendar cal, RadComboBox2 hora)
+    {
+        cal.Value = valor == null ? (DateTime?)null : valor.Value.Date;
+
+        string h = valor == null ? "" : valor.Value.ToString("HH:mm");
+
+        hora.ClearSelection();
+        RadComboBoxItem item = hora.FindItemByValue(h);
+
+        /* Una hora que no cae en un cuarto -las 14:32 de una detencion real-
+           no esta en la lista: se escribe como texto del combo, que para eso
+           acepta texto suelto. */
+        if (item != null) item.Selected = true;
+        else hora.Text = h;
+    }
+
     private static DateTime? Fecha(string texto, string campo)
     {
         string t = (texto ?? "").Trim();
@@ -1173,7 +1507,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             if (!string.IsNullOrEmpty(cboActivo.SelectedValue)) o.otr_activo = int.Parse(cboActivo.SelectedValue);
             if (!string.IsNullOrEmpty(cboArea.SelectedValue)) o.otr_instalacion_area = int.Parse(cboArea.SelectedValue);
 
-            o.otr_fecha_programada_utc = Fecha(txtFechaProgramada.Text, "Fecha programada");
+            o.otr_fecha_programada_utc = Juntar(calFechaProgramada, cboHoraProgramada);
             o.quita_fecha = o.otr_fecha_programada_utc == null;
 
             if (!string.IsNullOrEmpty(txtDuracion.Text.Trim()))
@@ -1187,7 +1521,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
             o.otr_requiere_permiso = rdbPermisoSi.Checked;
             o.otr_registro_posterior = rdbPosteriorSi.Checked;
-            o.otr_fecha_ocurrencia = Fecha(txtFechaOcurrencia.Text, "Cuándo ocurrió");
+            o.otr_fecha_ocurrencia = Juntar(calFechaOcurrencia, cboHoraOcurrencia);
 
             OrdenTrabajoController c = new OrdenTrabajoController();
             bool nueva = Id == 0;

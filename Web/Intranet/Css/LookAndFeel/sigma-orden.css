@@ -707,3 +707,231 @@ label.sg-ot-confirmo input[type="checkbox"] + label { display: none; }
     .sg-ot-cols.es-tres .sigma-modal-field.is-medio { grid-column: span 12; }
 }
 .sg-ot .sigma-modal-opciones.sg-ot-si-no label { margin: 0 0 0 4px; font-weight: 400; font-size: 13px; }
+
+/* ---- El cierre: la firma debajo del resultado, compacta ----
+   Estaba al final de la columna derecha, despues de la validacion, y quedaba
+   fuera de la vista con la columna izquierda vacia al lado. Ahora va debajo
+   del resultado del trabajo -se firma despues de escribir lo que se hizo- y
+   en una sola linea: quien firma, el trazo y el boton. */
+.sg-ot-cierre-cab { display: flex; align-items: center; gap: 12px; }
+.sg-ot-cierre-tit { display: flex; align-items: center; gap: 12px; }
+.sg-ot-firma-compacta { min-width: 0; }
+
+.sg-ot-firma-datos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 7px; }
+.sg-ot-firma-etq { font-size: 12px; font-weight: 600; color: #4b5563; }
+.sg-ot-firma-datos .sg-ot-usuario { height: 30px; padding: 0 10px; font-size: 12.5px; }
+
+.sg-ot-firma-compacta .sg-ot-firma { margin-top: 0; }
+.sg-ot-firma-compacta .sg-ot-firma canvas { height: 110px; }
+
+.sg-ot-firma-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+.sg-ot-firma-pie .sg-ot-confirmo { margin: 0; flex: 1 1 220px; }
+.sg-ot-firma-pie .sg-ot-btn { margin-left: auto; }
+
+.sg-ot-firma-nota {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+.sg-ot-firma-nota i { font-size: 14px; }
+
+@media (max-width: 760px) {
+    .sg-ot-cierre-tit { flex: 1 1 100%; }
+}
+
+/* ---- Fechas y horas ----
+   La fecha es el calendario del producto envuelto en .sigma-modal-fecha, que
+   es como se hace en el resto del sistema: esa clase ya resuelve que el icono
+   quede pegado a la derecha del input y respeta las medidas que el control
+   trae en linea. Poner bordes y radios propios -como estaba- daba un input
+   con forma de pastilla y el icono en una caja gris aparte.
+
+   La hora es un RadComboBox2 mas, asi que tampoco necesita estilo propio.
+   Lo unico que se ajusta es que el campo de fecha ocupe el ancho de su celda,
+   porque el control fuerza un ancho fijo pensado para formularios angostos. */
+.sg-ot .sigma-modal-fecha { width: 100%; }
+.sg-ot .sigma-modal-fecha input[type="text"] { flex: 1 1 auto; min-width: 0; }
+
+/* ---- El cierre: la firma arriba, compacta ----
+   Estaba al final de la columna derecha y quedaba fuera de la vista, con la
+   columna izquierda vacia al lado. Ahora ocupa ese ancho en la tarjeta de
+   encabezado y cabe en una linea. */
+.sg-ot-cierre-cab {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 18px;
+}
+.sg-ot-cierre-tit { flex: 0 1 280px; display: flex; align-items: center; gap: 12px; }
+.sg-ot-firma-compacta { flex: 1 1 420px; min-width: 0; }
+
+.sg-ot-firma-datos { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 7px; }
+.sg-ot-firma-etq { font-size: 12px; font-weight: 600; color: #4b5563; }
+.sg-ot-firma-datos .sg-ot-usuario { height: 30px; padding: 0 10px; font-size: 12.5px; }
+
+.sg-ot-firma-compacta .sg-ot-firma { margin-top: 0; }
+.sg-ot-firma-compacta .sg-ot-firma canvas { height: 110px; }
+
+.sg-ot-firma-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+}
+.sg-ot-firma-pie .sg-ot-confirmo { margin: 0; flex: 1 1 220px; }
+.sg-ot-firma-pie .sg-ot-btn { margin-left: auto; }
+
+.sg-ot-firma-nota {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+.sg-ot-firma-nota i { font-size: 14px; }
+
+@media (max-width: 760px) {
+    .sg-ot-cierre-tit { flex: 1 1 100%; }
+}
+
+/* ---- Fechas y horas ----
+   La fecha la pone el calendario del producto (WebControls:Calendar, el mismo
+   de las otras pantallas) y la hora el selector del navegador. Se escribian a
+   mano con la ayuda "dd-mm-aaaa hh:mm" debajo, que es la forma mas rapida de
+   equivocarse: el 03/09 de quien escribe en formato gringo es el 9 de marzo, y
+   el error recien aparecia al guardar. */
+.sg-ot .sg-ot-fecha input[type="text"],
+.sg-ot input.sg-ot-hora {
+    width: 100%;
+    height: 38px;
+    padding: 0 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: #fff;
+    color: var(--sg-texto);
+    font-size: 13px;
+    outline: none;
+}
+.sg-ot .sg-ot-fecha input[type="text"]:focus,
+.sg-ot input.sg-ot-hora:focus {
+    border-color: #b9aeff;
+    box-shadow: 0 0 0 3px rgba(108, 92, 255, .12);
+}
+.sg-ot .sg-ot-fecha { position: relative; display: block; }
+/* El disparador del calendario es un <a> con el icono; se lleva al borde
+   derecho del campo para que el conjunto se lea como un solo control. */
+.sg-ot .sg-ot-fecha a {
+    position: absolute;
+    right: 8px; top: 50%;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    color: var(--sg-tenue);
+    line-height: 1;
+}
+.sg-ot .sg-ot-fecha a:hover { color: var(--sg-p); }
+.sg-ot .sg-ot-fecha input[type="text"] { padding-right: 34px; }
+
+/* El reloj nativo del input[type=time] se tiñe del color del producto: por
+   omision es un gris que no se ve contra el borde. */
+.sg-ot input.sg-ot-hora::-webkit-calendar-picker-indicator {
+    opacity: .55;
+    cursor: pointer;
+    filter: invert(38%) sepia(69%) saturate(3661%) hue-rotate(234deg) brightness(101%) contrast(101%);
+}
+.sg-ot input.sg-ot-hora::-webkit-calendar-picker-indicator:hover { opacity: 1; }
+.sg-ot input.sg-ot-hora:disabled,
+.sg-ot .sg-ot-fecha input[type="text"]:disabled { background: #f7f7fa; color: #9aa2b1; }
+
+/* Tecnico o empresa externa: el campo que no corresponde se esconde en el
+   navegador, no en el servidor. Cambiar de opcion es mirar otra cosa. */
+.sg-ot .sg-ot-quien-tecnico.es-oculto,
+.sg-ot .sg-ot-quien-empresa.es-oculto { display: none; }
+
+/* ---- El detalle de un paso: el plan y el terreno ----
+   La instruccion la escribio quien armo el procedimiento y la observacion la
+   dejo el tecnico con el equipo delante. Son dos voces distintas y se veian
+   como dos renglones iguales. */
+.sg-ot-bloque {
+    margin-top: 12px;
+    padding: 12px 13px;
+    border-radius: 12px;
+    border: 1px solid #f0f1f6;
+    background: #fcfcfe;
+}
+.sg-ot-bloque.es-tecnico { border-color: #ddd6fe; background: #faf9ff; }
+.sg-ot-bloque.es-plan { background: #fbfbfd; }
+
+.sg-ot-bloque-cab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    color: var(--sg-suave);
+}
+.sg-ot-bloque.es-tecnico .sg-ot-bloque-cab { color: #5b4bd6; }
+.sg-ot-bloque-cab i { font-size: 15px; }
+
+/* Lo que respondio el tecnico se lee como una cita: es su voz, no un campo
+   mas de la ficha. */
+.sg-ot-respuesta {
+    margin-top: 8px;
+    padding: 9px 12px;
+    border-left: 3px solid #c4b5fd;
+    border-radius: 0 8px 8px 0;
+    background: #fff;
+    font-size: 13px;
+    line-height: 1.55;
+    color: var(--sg-texto);
+}
+
+/* ---- Repuestos y costos ----
+   Tres tablas con la misma forma: lo que se llama la linea a la izquierda y
+   sus numeros a la derecha, alineados para poder compararlos de un vistazo. */
+.sg-ot-tabla-cab.es-recurso,
+.sg-ot-tabla-fila.es-recurso {
+    display: grid;
+    grid-template-columns: minmax(0, 2.4fr) repeat(5, minmax(0, 1fr));
+    gap: 10px;
+    align-items: center;
+    padding: 10px 4px;
+}
+.sg-ot-tabla-cab.es-recurso {
+    padding-top: 0;
+    border-bottom: 1px solid #eef0f6;
+    color: var(--sg-suave);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sg-ot-tabla-fila.es-recurso + .sg-ot-tabla-fila.es-recurso { border-top: 1px solid #f5f6fa; }
+.sg-ot-tabla-fila.es-recurso .c-nom { font-size: 13px; color: var(--sg-texto); min-width: 0; }
+.sg-ot-tabla-fila.es-recurso .c-dato,
+.sg-ot-tabla-cab.es-recurso .c-dato { text-align: right; font-size: 12.5px; color: #4b5563; }
+.sg-ot-tabla-sub { display: block; font-size: 11px; color: var(--sg-tenue); }
+.sg-ot-tabla-fila.es-recurso .sg-ot-chip { margin-top: 4px; }
+
+/* Con cinco columnas de numeros la tabla no cabe en un telefono: ahi cada
+   linea se lee como una ficha y los numeros se apilan con su etiqueta. */
+@media (max-width: 760px) {
+    .sg-ot-tabla-cab.es-recurso { display: none; }
+    .sg-ot-tabla-fila.es-recurso { grid-template-columns: 1fr 1fr; }
+    .sg-ot-tabla-fila.es-recurso .c-nom { grid-column: 1 / -1; }
+    .sg-ot-tabla-fila.es-recurso .c-dato { text-align: left; }
+}
