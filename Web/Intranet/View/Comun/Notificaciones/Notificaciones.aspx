@@ -42,7 +42,7 @@
          refresco parcial. --%>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>'></script>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-animaciones.js?vrs=1") %>'></script>
-    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-notificaciones-cao.js?vrs=4") %>'></script>
+    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-notificaciones-cao.js?vrs=8") %>'></script>
 
     <script type="text/javascript">
         /* Se abre el registro relacionado en la misma ventana modal del

@@ -116,10 +116,18 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         if (cuantos > 1)
         {
-            html = "<a href=\"" + ResolveUrl("~/SeleccionarCliente.aspx") + "\" class=\"sg-cliente-chip\" " +
+            /* El chip abre el desplegable de acá al lado en vez de llevar a
+               SeleccionarCliente.aspx: cambiar de empresa no debería costar
+               salir de la pantalla en la que uno está trabajando. */
+            html = "<a href=\"#\" class=\"sg-cliente-chip dropdown-toggle\" data-toggle=\"dropdown\" " +
+                   "role=\"button\" aria-haspopup=\"true\" aria-expanded=\"false\" " +
                    "title=\"Cambiar de cliente\">" +
                    "<i class=\"mdi mdi-domain\"></i><span>" + Server.HtmlEncode(nombre) + "</span>" +
                    "<i class=\"mdi mdi-chevron-down\"></i></a>";
+
+            rptClientes.DataSource = clientes;
+            rptClientes.DataBind();
+            pnlClientes.Visible = true;
         }
         else
         {
@@ -129,6 +137,38 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         phCliente.Controls.Clear();
         phCliente.Controls.Add(new System.Web.UI.LiteralControl(html));
+    }
+
+    /// <summary>
+    /// Cambiar de cliente desde la barra.
+    ///
+    /// Quién puede pasar a qué empresa lo decide el controlador contra los
+    /// clientes elegibles de la persona: acá no se comprueba nada, porque una
+    /// comprobación en la pantalla sería la segunda y la que se olvida.
+    ///
+    /// Al volver se recarga la MISMA dirección: cambiar de empresa no debería
+    /// mover a nadie de donde estaba trabajando.
+    /// </summary>
+    protected void rptClientes_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "elegir") return;
+
+        int idCliente;
+        if (!int.TryParse(Convert.ToString(e.CommandArgument), out idCliente)) return;
+
+        if (idCliente == SitioBase.Session.ClienteId()) return;
+
+        ClienteSesionController controller = new ClienteSesionController();
+        Respuesta r = controller.CambiarCliente(int.Parse(SitioBase.Session.UsuarioId()), idCliente);
+
+        if (r.error)
+        {
+            Tools.tools.ClientAlert(r.detalle, "alerta");
+            return;
+        }
+
+        Response.Redirect(Request.RawUrl, false);
+        Context.ApplicationInstance.CompleteRequest();
     }
 
     /// <summary>

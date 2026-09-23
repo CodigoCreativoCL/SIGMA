@@ -2780,3 +2780,118 @@
 .sg-ald-vacio i { color: #c3cbd9; font-size: 42px; }
 .sg-ald-vacio-titulo { margin-top: 10px; color: #1f2839; font-size: 16px; font-weight: 700; }
 .sg-ald-vacio-texto { margin-top: 4px; color: #6b7488; font-size: 13px; }
+
+/* ============================================================================
+   EL DESPLEGABLE DE CLIENTES DE LA BARRA
+
+   El chip ya se veía como un desplegable -con su flechita- y llevaba a otra
+   pantalla. Ahora hace lo que aparenta: abre la lista de empresas elegibles,
+   marca en cuál se está y cambiar es un clic sin salir de donde uno estaba.
+   ============================================================================ */
+.sg-cliente-actual { position: relative; }
+.sg-cliente-menu {
+    min-width: 240px;
+    padding: 6px;
+    border: 1px solid #e3e8f0;
+    border-radius: 14px;
+    box-shadow: 0 18px 44px rgba(20, 30, 54, .16);
+}
+.sg-cliente-menu-titulo {
+    padding: 6px 10px 8px;
+    color: #99a1b2;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+.sg-cliente-op {
+    display: flex !important;
+    gap: 9px;
+    align-items: center;
+    padding: 9px 10px;
+    border-radius: 10px;
+    color: #2b3245 !important;
+    font-size: 13px;
+    text-decoration: none !important;
+}
+.sg-cliente-op:hover { background: #f4f6fb; }
+.sg-cliente-op > span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-cliente-op .mdi-domain { color: #8a93a5; font-size: 17px; }
+.sg-cliente-op .mdi-check { color: var(--sg-purple, #6C5CFF); font-size: 17px; visibility: hidden; }
+.sg-cliente-op.is-actual { background: #f3f1ff; font-weight: 700; }
+.sg-cliente-op.is-actual .mdi-check { visibility: visible; }
+
+/* ============================================================================
+   LA BANDEJA DE ALERTAS OCUPA LA VENTANA, NO LA ESTIRA
+
+   Con sesenta y cinco alertas la página medía varias pantallas: elegir una
+   de abajo y leer su detalle obligaba a subir, y los indicadores de arriba
+   se perdían de vista. Ahora el bloque mide lo que queda de ventana y lo que
+   se desplaza es cada columna por dentro.
+
+   El alto lo calcula el navegador y lo escribe en `--sg-cao-alto`
+   (sigma-notificaciones-cao.js): depende de si hay aviso de suscripción y de
+   cuánto ocupen los filtros, y eso no se puede adivinar desde la hoja.
+   ============================================================================ */
+.sg-cao {
+    height: var(--sg-cao-alto, calc(100vh - 270px));
+    /* El piso es bajo a proposito: con la cabecera de indicadores y filtros
+       ocupando casi 480 px, un minimo de 420 empujaba el bloque fuera de la
+       ventana y la pagina volvia a desplazarse. Bajo este alto las columnas
+       se apilan por la media query y la pagina scrollea de corrido, que es
+       lo correcto cuando no hay sitio para dos paneles. */
+    min-height: 300px;
+    align-items: stretch;
+}
+
+.sg-cola,
+.sg-detalle {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+}
+
+/* La cabecera de la cola -título, buscador y filtros- se queda fija y solo
+   corre la lista: filtrar mientras se busca es el gesto más repetido de esta
+   pantalla. */
+.sg-cola-cab { flex: 0 0 auto; }
+.sg-cola-lista {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #c9c1f6 transparent;
+    scrollbar-width: thin;
+}
+.sg-cola-lista::-webkit-scrollbar { width: 6px; }
+.sg-cola-lista::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
+
+/* El detalle también: con la línea de tiempo y el análisis predictivo es más
+   largo que la ventana en cuanto la alerta tiene historia. */
+.sg-detalle {
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-color: #c9c1f6 transparent;
+    scrollbar-width: thin;
+}
+.sg-detalle::-webkit-scrollbar { width: 6px; }
+.sg-detalle::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
+
+/* En pantallas bajas o en móvil el alto fijo estorba: ahí las dos columnas
+   se apilan y la página vuelve a desplazarse de corrido, que es lo correcto
+   cuando no hay espacio para dos paneles. */
+/* El alto fijo pide sitio de verdad: sobre la bandeja hay casi 480 px de
+   indicadores, pestañas y filtros, así que por debajo de 860 px de ventana
+   la cola quedaría en una franja de dos alertas, que es peor que desplazar.
+   Ahí las columnas se apilan y la página vuelve a correr de corrido. */
+@media (max-width: 1100px), (max-height: 860px) {
+    .sg-cao { height: auto !important; min-height: 0; }
+    .sg-cola, .sg-detalle { overflow: visible; }
+    .sg-cola-lista { overflow-y: visible; max-height: none; }
+}
+
+/* Y aun con sitio, la cola nunca baja de cinco alertas visibles. */
+@media (min-width: 1101px) and (min-height: 861px) {
+    .sg-cola-lista { min-height: 260px; }
+}

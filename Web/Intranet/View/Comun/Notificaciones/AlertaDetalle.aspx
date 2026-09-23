@@ -20,7 +20,38 @@
 --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="../../../Css/LookAndFeel/sigma-notificaciones.css?vrs=24" rel="stylesheet" />
+    <link href="../../../Css/LookAndFeel/sigma-notificaciones.css?vrs=26" rel="stylesheet" />
+
+    <script type="text/javascript">
+        /* CERRAR LA VENTANA DESDE ADENTRO
+
+           La ficha vive dentro de un iframe y el botón «Cerrar» es suyo, no
+           del marco. Cada ficha del sitio declara su propio closeWindow() y
+           esta no lo tenía: el botón no hacía nada.
+
+           Se piden las dos puertas porque conviven dos marcos: el RadWindow
+           de siempre y el SigmaModal nuevo, que es el que abre la campana. */
+        function getRadWindow() {
+            var oWindow = null;
+            if (window.radWindow) oWindow = window.radWindow;
+            else if (window.frameElement && window.frameElement.radWindow) oWindow = window.frameElement.radWindow;
+            return oWindow;
+        }
+
+        function closeWindow() {
+            var w = getRadWindow();
+
+            if (w) {
+                if (w.BrowserWindow && w.BrowserWindow.refresh) w.BrowserWindow.refresh();
+                w.close();
+                return;
+            }
+
+            try {
+                if (window.parent && window.parent.SigmaModal) window.parent.SigmaModal.close();
+            } catch (e) { }
+        }
+    </script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">

@@ -103,7 +103,7 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=24" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=26" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -288,8 +288,27 @@
                          no tiene como saber donde esta cargando los datos.
                          Solo es un enlace cuando hay mas de uno entre los
                          que elegir. -->
-                    <li class="sg-cliente-actual">
+                    <li class="sg-cliente-actual dropdown">
                         <asp:PlaceHolder ID="phCliente" runat="server" />
+
+                        <%-- El menú de clientes. Cada opción es un LinkButton
+                             del master: cambiar de empresa es un postback y no
+                             una navegación, así la persona se queda en la
+                             pantalla donde estaba. --%>
+                        <asp:Panel ID="pnlClientes" runat="server" Visible="false"
+                                   CssClass="dropdown-menu dropdown-menu-right sg-cliente-menu">
+                            <div class="sg-cliente-menu-titulo">Cambiar de cliente</div>
+                            <asp:Repeater ID="rptClientes" runat="server" OnItemCommand="rptClientes_ItemCommand">
+                                <ItemTemplate>
+                                    <asp:LinkButton runat="server" CssClass='<%# "sg-cliente-op" + ((int)Eval("cli_id") == SitioBase.Session.ClienteId() ? " is-actual" : "") %>'
+                                        CommandName="elegir" CommandArgument='<%# Eval("cli_id") %>'>
+                                        <i class="mdi mdi-domain" aria-hidden="true"></i>
+                                        <span><%# Server.HtmlEncode(Convert.ToString(Eval("cli_nombre"))) %></span>
+                                        <i class="mdi mdi-check" aria-hidden="true"></i>
+                                    </asp:LinkButton>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                        </asp:Panel>
                     </li>
 
                     <!-- NOTIFICACIONES
