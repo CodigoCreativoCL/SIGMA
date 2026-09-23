@@ -22,10 +22,25 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     // Solo aplica en el primer render; después manda lo que elige el usuario.
     private string _padreEditar = null;
 
+    /// <summary>
+    /// El activo ya viene decidido: la ficha se abrió desde el centro de ESE
+    /// equipo. Entonces el combo no se ofrece, se fija. Pedirle a alguien que
+    /// elija de una lista de cuarenta el equipo que acaba de abrir es una
+    /// pregunta que ya tiene respuesta, y una oportunidad de equivocarse.
+    /// </summary>
+    public int ActivoFijo
+    {
+        get { return ViewState["ActivoFijo"] != null ? (int)ViewState["ActivoFijo"] : 0; }
+        set { ViewState["ActivoFijo"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -182,6 +197,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         else
         {
             lblId.Text = "Nuevo";
+            if (ActivoFijo > 0) SeleccionarCombo(cboActivo, ActivoFijo);
         }
     }
 
@@ -195,11 +211,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
 
-        cboActivo.ReadOnly = !puedeEditar || Id > 0;   // el activo no se cambia al editar
+        // El activo no se cambia al editar, ni cuando la ficha se abrio desde
+        // el centro de un equipo: ahi ya esta decidido.
+        cboActivo.ReadOnly = !puedeEditar || Id > 0 || ActivoFijo > 0;
         /* Un combo ReadOnly no arma sus items en el cliente y validaControl
            revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
            Al editar no hay nada que validar ahi (el servidor exige el valor). */
-        cvActivo.Enabled = Id == 0;
+        cvActivo.Enabled = Id == 0 && ActivoFijo == 0;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Componente");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;

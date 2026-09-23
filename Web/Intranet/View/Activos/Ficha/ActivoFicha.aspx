@@ -17,6 +17,7 @@
         /* El listado suelto de Activos ya no esta en el menu: el alta vive
            aca, en el mismo modal que usa la edicion. */
         function abrirActivo(query) {
+            seccionPendiente = null;
             return SigmaModal.open({
                 url: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo activo' : 'Editar activo',
@@ -25,7 +26,32 @@
             });
         }
 
-        function refresh() { __doPostBack('<%=btnBuscar.UniqueID %>', ''); }
+        /* Los componentes se crean y se editan aca: el listado suelto no
+           esta en el menu, y salir del centro para agregar una pieza del
+           equipo que se esta mirando es perder el lugar. */
+        function abrirComponente(query) {
+            seccionPendiente = 'componentes';
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=' + query,
+                title: query === queryNuevoComponente ? 'Nuevo componente' : 'Editar componente',
+                width: 1040,
+                initialHeight: 620
+            });
+        }
+
+        var seccionPendiente = null;
+
+        /* Los ids nunca viajan a la vista: el activo va DENTRO del
+           querystring cifrado que arma el servidor. */
+        var queryNuevoComponente = '<%=QueryNuevoComponente %>';
+
+        /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
+           al Resumen: el postback repinta el bloque entero. */
+        function refresh() {
+            var h = document.getElementById('hdnSeccion');
+            if (h && seccionPendiente) h.value = seccionPendiente;
+            __doPostBack('<%=lnkRecargar.UniqueID %>', '');
+        }
     </script>
 
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-activo360.js") %>?vrs=1'></script>
@@ -83,6 +109,7 @@
                  asincrono repinta el bloque entero y sin esto siempre volveria
                  al Resumen. --%>
             <asp:HiddenField ID="hdnSeccion" runat="server" Value="resumen" ClientIDMode="Static" />
+            <asp:LinkButton ID="lnkRecargar" runat="server" style="display:none" CausesValidation="false" />
 
             <%-- ====== LISTA DE RESULTADOS (clic para abrir el centro) ====== --%>
             <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sigma-af-lista" style="margin-top:14px;">
@@ -396,9 +423,8 @@
                                 <h3>Componentes del equipo</h3>
                                 <p class="sg-ot-card-sub">Las partes instaladas, su estado y desde cuándo están.</p>
                             </div>
-                            <asp:HyperLink ID="hlComponentes" runat="server" CssClass="sg-ot-btn es-plano sg-ot-card-acc">
-                                <i class="mdi mdi-cog-outline"></i>Gestionar
-                            </asp:HyperLink>
+                            <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                                OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Nuevo componente</asp:LinkButton>
                         </header>
                         <asp:Literal ID="litComponentes" runat="server" />
                     </div>

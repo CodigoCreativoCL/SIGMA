@@ -213,6 +213,19 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hdnSeccion.Value = "resumen";
     }
 
+    /// <summary>
+    /// El querystring cifrado para crear un componente de ESTE equipo. El
+    /// activo viaja dentro: la ficha se abre con el equipo ya puesto.
+    /// </summary>
+    protected string QueryNuevoComponente
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
+        }
+    }
+
     protected int ActivoSeleccionado()
     {
         int id;
@@ -298,7 +311,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         hlEscanear.NavigateUrl = ResolveUrl("~/View/Activos/Escaneo/Escanear.aspx");
         hlGenerarOT.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx");
-        hlComponentes.NavigateUrl = ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx");
         hlMedidores.NavigateUrl = ResolveUrl("~/View/Activos/Medidores/ActivoMedidores.aspx");
     }
 
@@ -688,10 +700,18 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
             ?? new List<ActivoComponente>();
 
+        /* Crear y editar exigen el permiso del modulo de componentes, no el
+           de ver la ficha: se mira el mismo que aplica la ficha al guardar. */
+        bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
+        lnkNuevoComponente.Visible = puedeEditar;
+
         if (lista.Count == 0)
         {
             litComponentes.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i>" +
-                                  "<p>Sin componentes registrados</p><span>Las partes del equipo se cargan desde Componentes.</span></div>";
+                                  "<p>Sin componentes registrados</p><span>" +
+                                  (puedeEditar ? "Agregue las partes del equipo con «Nuevo componente»."
+                                               : "Las partes del equipo todavía no se han cargado.") +
+                                  "</span></div>";
             return;
         }
 
@@ -708,7 +728,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(c.tipo_nombre))).Append("</span>")
              .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip es-abierta\">")
              .Append(Server.HtmlEncode(Texto(c.estado_nombre))).Append("</span></span>")
-             .Append("<span class=\"c-acc\">").Append(Boton(ResolveUrl("~/View/Activos/Componentes/ActivoComponentes.aspx"), "Ver ficha")).Append("</span>")
+             .Append("<span class=\"c-acc\">")
+             .Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirComponente('")
+             .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + c.aco_id)))
+             .Append("')\"><i class=\"mdi ").Append(puedeEditar ? "mdi-pencil-outline" : "mdi-eye-outline").Append("\"></i>")
+             .Append(puedeEditar ? "Editar" : "Ver").Append("</a></span>")
              .Append("</div>");
         }
 
