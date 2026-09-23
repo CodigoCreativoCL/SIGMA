@@ -69,27 +69,6 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
                 }
             }
 
-            GridHitos.AddSelectColumn();
-            GridHitos.AddColumn("PMH_ID", "", Width: "3%");
-            GridHitos.AddTemplateColumn("VERSION", "", "VERSIÓN", Width: "11%");
-            GridHitos.AddColumn("PMH_ORDEN", "#", Width: "3%");
-            GridHitos.AddColumn("PMH_CODIGO", "CÓDIGO", Width: "11%");
-            GridHitos.AddColumn("PMH_NOMBRE", "HITO", Width: "24%");
-            GridHitos.AddColumn("PROGRAMACION_NOMBRE", "CADA CUÁNTO", Width: "18%");
-            GridHitos.AddTemplateColumn("MARCAS", "", "", Width: "12%");
-            GridHitos.AddColumn("ACTIVIDADES", "ACTIV.", Width: "5%");
-            GridHitos.AddCheckboxColumn("PMH_HABILITADO", "HABILITADO");
-
-            GridActivos.AddSelectColumn();
-            GridActivos.AddColumn("PAC_ID", "", Width: "3%");
-            GridActivos.AddTemplateColumn("VERSION", "", "VERSIÓN", Width: "11%");
-            GridActivos.AddColumn("ACTIVO_CODIGO", "CÓDIGO", Width: "10%");
-            GridActivos.AddColumn("ACTIVO_NOMBRE", "EQUIPO", Width: "22%");
-            GridActivos.AddColumn("PLANTA_NOMBRE", "PLANTA", Width: "11%");
-            GridActivos.AddColumn("TIPO_NOMBRE", "TIPO", Width: "11%");
-            GridActivos.AddColumn("COMPONENTE_NOMBRE", "COMPONENTE", Width: "15%");
-            GridActivos.AddColumn("MEDIDOR_NOMBRE", "MEDIDOR", Width: "12%");
-
             GridCalendario.AddSelectColumn();
             GridCalendario.AddTemplateColumn("FECHA", "", "FECHA", Width: "11%");
             GridCalendario.AddColumn("HITO_CODIGO", "HITO", Width: "11%");
@@ -110,8 +89,6 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             GridVersiones.AddColumn("PMV_OBSERVACION", "OBSERVACIÓN", Width: "23%");
         }
 
-        Tools.tools.RegisterPostBackScript(GridHitos);
-        Tools.tools.RegisterPostBackScript(GridActivos);
         Tools.tools.RegisterPostBackScript(GridCalendario);
         Tools.tools.RegisterPostBackScript(GridVersiones);
     }
@@ -219,28 +196,48 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         Bloqueo();
 
         bool conPlan = Id > 0;
-        tabHitos.Visible = conPlan;
-        tabEquipos.Visible = conPlan;
-        tabCalendario.Visible = conPlan;
-        tabVersiones.Visible = conPlan;
+
+        /* Un plan nuevo no tiene version todavia -la crea el SP al guardar-,
+           asi que no hay donde colgar hitos ni equipos. Se muestra solo la
+           configuracion: una pestaña que al abrirla no tiene nada se lee
+           como que la pantalla se rompio. */
+        pnlNav.CssClass = conPlan ? "sg-a3-nav" : "sg-a3-nav es-solo-configuracion";
+        if (!conPlan) hdnSeccion.Value = "configuracion";
 
         if (conPlan)
         {
-            // Los botones de las grillas dependen de la funcion de ESTA pagina.
             bool puedeEscribir = Token.PuedeFuncion("Crear y editar");
-            if (!puedeEscribir)
+
+            PlanMantenimiento plan = new PlanMantenimientoController().GetPlanMantenimiento(
+                new PlanMantenimiento { pma_id = Id });
+
+            List<PlanHito> hitos = new PlanHitoController().GetPlanHitos(
+                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+                ?? new List<PlanHito>();
+
+            List<PlanActivo> equipos = new PlanActivoController().GetPlanActivos(
+                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+                ?? new List<PlanActivo>();
+
+            /* El año completo alimenta la cabecera y el resumen. El
+               calendario de abajo usa SU filtro: son dos preguntas -como
+               viene el año y que pasa en mayo- y mezclarlas daria una
+               cabecera que cambia cada vez que alguien filtra. */
+            List<PlanOcurrencia> anio = new PlanOcurrenciaController().GetCalendario(new PlanOcurrencia
             {
-                GridHitos.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
-                GridActivos.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
-            }
+                filtro_plan = Id,
+                filtro_desde = new DateTime(global::SitioBase.Hora.Ahora.Year, 1, 1),
+                filtro_hasta = new DateTime(global::SitioBase.Hora.Ahora.Year, 12, 31)
+            }) ?? new List<PlanOcurrencia>();
 
-            GridHitos.DataSource = new PlanHitoController().GetPlanHitos(
-                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id });
-            GridHitos.DataBind();
+            Cabecera(plan);
+            Kpis(plan, hitos, equipos, anio);
+            Resumen360(plan, hitos, equipos, anio);
+            Hitos(hitos, puedeEscribir);
+            Equipos(plan, equipos, puedeEscribir);
 
-            GridActivos.DataSource = new PlanActivoController().GetPlanActivos(
-                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id });
-            GridActivos.DataBind();
+            lnkNuevoHito.Visible = puedeEscribir;
+            lnkNuevoActivo.Visible = puedeEscribir;
 
             ConfigurarFiltrosCalendario();
             CargarCalendario();
@@ -281,18 +278,31 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         else
         {
             lblId.Text = "Nuevo";
-            litTitulo.Text = "Nuevo plan de mantenimiento";
-            litSubtitulo.Text = "Guarde la ficha y aparecerán las pestañas de hitos y equipos.";
+            litHeroNombre.Text = "Nuevo plan de mantenimiento";
+            litHeroSub.Text = "Guarde la ficha y aparecerán los hitos, los equipos y el calendario.";
             litVersion.Text = "<span class=\"sigma-modal-ayuda\">Se crea la versión 1 en borrador al guardar.</span>";
         }
     }
 
-    /// <summary>Titulo, subtitulo y linea de version. Se vuelve a pintar cuando cambia la version que manda.</summary>
+    /// <summary>
+    /// El encabezado del centro: de que plan estamos hablando, en que version
+    /// y si esta habilitado. Se vuelve a pintar cuando cambia la version que
+    /// manda -publicar o abrir un borrador la cambia-.
+    /// </summary>
     private void Cabecera(PlanMantenimiento entidad)
     {
         litVersion.Text = TextoVersion(entidad);
-        litTitulo.Text = Server.HtmlEncode(entidad.pma_codigo + " · " + entidad.pma_nombre);
-        litSubtitulo.Text = Server.HtmlEncode(Resumen(entidad));
+
+        litHeroCodigo.Text = Server.HtmlEncode(Texto(entidad.pma_codigo));
+        litHeroNombre.Text = Server.HtmlEncode(Texto(entidad.pma_nombre));
+        litHeroSub.Text = Server.HtmlEncode(Resumen(entidad));
+
+        litBadges.Text = ChipVersionCentro(entidad.version_numero, entidad.version_estado_codigo)
+                       + (entidad.pma_habilitado
+                            ? "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check-circle-outline\"></i>Habilitado</span>"
+                            : "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-pause-circle-outline\"></i>Deshabilitado</span>");
+
+        hlVolver.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimientos.aspx");
     }
 
     private string TextoVersion(PlanMantenimiento p)
@@ -311,8 +321,8 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         partes.Add(string.IsNullOrEmpty(p.planta_nombre) ? "Cualquier planta" : p.planta_nombre);
         partes.Add(string.IsNullOrEmpty(p.tipo_nombre) ? "cualquier tipo de equipo" : p.tipo_nombre);
         if (!string.IsNullOrEmpty(p.modelo_nombre)) partes.Add(p.modelo_nombre);
-        if (p.version_numero != null)
-            partes.Add("v" + p.version_numero + " " + (p.version_estado_nombre ?? "").ToLower());
+        /* La version NO va aca: el chip del encabezado ya la dice, y
+           repetirla deja la misma palabra dos veces en dos renglones. */
         return string.Join(" · ", partes.ToArray());
     }
 
@@ -401,81 +411,385 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     #region Hitos
 
-    protected void GridHitos_ItemDataBound(object sender, GridItemEventArgs e)
+    /// <summary>
+    /// Que se le hace al equipo y cada cuanto. La fila se despliega en su
+    /// lugar con la programacion, las marcas y las actividades: abrir la
+    /// ficha del hito es un clic mas, pero "que hace este hito" se responde
+    /// sin salir.
+    /// </summary>
+    private void Hitos(List<PlanHito> hitos, bool puedeEscribir)
     {
-        if (e.Item.ItemType != GridItemType.AlternatingItem && e.Item.ItemType != GridItemType.Item) return;
-        if (!(e.Item is GridDataItem)) return;
+        litTabHitos.Text = hitos.Count == 0 ? "" : "<b>" + hitos.Count + "</b>";
 
-        GridDataItem item = e.Item as GridDataItem;
-        PlanHito hito = item.DataItem as PlanHito;
-        if (hito == null) return;
+        litHitosEstado.Text = hitos.Count == 0 || hitos[0].version_editable
+            ? ""
+            : "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-lock-outline\"></i>Versión publicada · solo lectura</span>";
 
-        string id = item.GetDataKeyValue("pmh_id").ToString();
-        string query = Cifrar("Id=" + id + "&Plan=" + Id);
+        if (hitos.Count == 0)
+        {
+            litHitos.Text = Vacio("mdi-format-list-checks", "Este plan todavía no tiene hitos",
+                                  "Un hito dice qué se hace y cada cuánto. Sin hitos el plan no genera nada.");
+            litHitosResumen.Text = "<p class=\"sg-ot-vacio-txt\">Sin hitos definidos.</p>";
+            return;
+        }
 
-        HyperLink Editar = new HyperLink();
-        Editar.ID = "lnkEditarHito" + id;
-        Editar.CssClass = "icono_Editar";
-        Editar.NavigateUrl = "javascript:void(0)";
-        Editar.Attributes.Add("onclick", "abrirPlanHito('" + query + "')");
-        item["pmh_id"].Controls.Add(Editar);
+        StringBuilder s = new StringBuilder();
 
-        if (!string.IsNullOrEmpty(hito.programacion_tipo_nombre))
-            item["PROGRAMACION_NOMBRE"].Text = Server.HtmlEncode(hito.programacion_nombre)
-                + "<br/><span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(hito.programacion_tipo_nombre) + "</span>";
+        s.Append("<div class=\"sg-a3-tabla-cab sg-plan-hito-cab\">")
+         .Append("<span>Hito</span><span>Programación</span><span>Condiciones</span>")
+         .Append("<span>Actividades</span><span>Estado</span><span></span></div>");
 
-        item["VERSION"].Controls.Add(new Literal { Text = ChipVersion(hito.version_numero, hito.version_estado_codigo) });
+        foreach (PlanHito h in hitos)
+        {
+            string clave = "hito-" + h.pmh_id;
+            string query = Cifrar("Id=" + h.pmh_id + "&Plan=" + Id);
 
-        string marcas = "";
-        if (hito.pmh_requiere_parada)
-            marcas += "<span class=\"grid-estado-chip is-alerta\" title=\"Requiere parada del equipo\"><i class=\"mdi mdi-power\"></i>Parada</span> ";
-        if (hito.pmh_es_overhaul)
-            marcas += "<span class=\"grid-estado-chip is-advertencia\" title=\"Overhaul: intervención mayor\"><i class=\"mdi mdi-wrench\"></i>Overhaul</span>";
-        item["MARCAS"].Controls.Add(new Literal { Text = marcas });
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rev sg-plan-hito\" data-rev=\"").Append(clave).Append("\">")
+
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(h.pmh_nombre)))
+             .Append("<span>").Append(Server.HtmlEncode(Texto(h.pmh_codigo))).Append("</span></span>")
+
+             .Append("<span class=\"c-dato\"><i class=\"mdi mdi-calendar-outline\"></i>")
+             .Append(Server.HtmlEncode(Texto(h.programacion_nombre)))
+             .Append("<span class=\"sg-plan-sub\">").Append(Server.HtmlEncode(Texto(h.programacion_tipo_nombre))).Append("</span></span>")
+
+             .Append("<span class=\"c-dato\">").Append(Marcas(h.pmh_requiere_parada, h.pmh_es_overhaul)).Append("</span>")
+
+             .Append("<span class=\"c-dato\"><i class=\"mdi mdi-format-list-bulleted\"></i>")
+             .Append(h.actividades).Append(h.actividades == 1 ? " actividad" : " actividades").Append("</span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(h.pmh_habilitado
+                    ? "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check-circle-outline\"></i>Activo</span>"
+                    : "<span class=\"sg-ot-chip es-neutro\">Inactivo</span>")
+             .Append("</span>")
+
+             .Append("<span class=\"c-acc\"><i class=\"mdi mdi-chevron-down sg-a3-rev-flecha\"></i></span>")
+             .Append("</div>");
+
+            // ---- el detalle que se despliega ----
+            s.Append("<div class=\"sg-a3-ot-detalle sg-a3-rev-detalle\" id=\"rev-").Append(clave).Append("\">");
+
+            s.Append(DetItem("mdi-calendar-outline", "Programación",
+                     Texto(h.programacion_nombre) +
+                     (string.IsNullOrEmpty(h.programacion_tipo_nombre) ? "" : " · " + h.programacion_tipo_nombre)));
+
+            s.Append(DetItem("mdi-power", "Requiere parada", h.pmh_requiere_parada ? "Sí" : "No"));
+
+            s.Append(DetItem("mdi-wrench-outline", "Tipo de trabajo",
+                     h.pmh_es_overhaul ? "Overhaul" : Texto(h.ot_tipo_nombre)));
+
+            s.Append(DetItem("mdi-timer-outline", "Duración estimada",
+                     h.pmh_duracion_estimada_minuto == null ? "" : Duracion(h.pmh_duracion_estimada_minuto.Value)));
+
+            if (h.pmh_valor_medidor != null)
+                s.Append(DetItem("mdi-counter", "Cada",
+                         h.pmh_valor_medidor.Value.ToString("0.##") + " " + Texto(h.unidad_simbolo)));
+
+            s.Append(DetItem("mdi-text-long", "Descripción", Texto(h.pmh_descripcion)));
+
+            s.Append("<div class=\"sg-a3-ot-det-acc\">");
+            if (puedeEscribir && h.version_editable)
+                s.Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirPlanHito('")
+                 .Append(query).Append("')\"><i class=\"mdi mdi-pencil-outline\"></i>Editar hito</a>");
+            else
+                s.Append("<span class=\"sg-ot-vacio-txt\">Los hitos se editan en una versión en borrador.</span>");
+            s.Append("</div></div>");
+        }
+
+        litHitos.Text = s.ToString();
+
+        // ---- el mismo hito, resumido, en la portada ----
+        StringBuilder r = new StringBuilder();
+
+        foreach (PlanHito h in hitos)
+            r.Append(Fila("mdi-wrench-outline", "",
+                     Texto(h.pmh_nombre),
+                     Texto(h.pmh_codigo),
+                     "<span class=\"sg-ot-chip es-tipo\"><i class=\"mdi mdi-calendar-outline\"></i>" +
+                     Server.HtmlEncode(Texto(h.programacion_nombre)) + "</span>" +
+                     Marcas(h.pmh_requiere_parada, h.pmh_es_overhaul)));
+
+        litHitosResumen.Text = r.ToString();
     }
 
-    protected void lnkEliminarHito_Click(object sender, EventArgs e)
+    private string Marcas(bool parada, bool overhaul)
     {
-        Pestana(tabHitos, pvHitos);
-        Eliminar(GridHitos, "pmh_id", id => new PlanHitoController().DeletePlanHito(new PlanHito { pmh_id = id }));
+        string m = "";
+        if (parada) m += "<span class=\"sg-ot-chip es-aviso\" title=\"Requiere parada del equipo\"><i class=\"mdi mdi-pause-circle-outline\"></i>Parada</span>";
+        if (overhaul) m += "<span class=\"sg-ot-chip es-tipo\" title=\"Overhaul: intervención mayor\"><i class=\"mdi mdi-cog-outline\"></i>Overhaul</span>";
+        return m.Length == 0 ? "<span class=\"sg-ot-vacio-txt\">—</span>" : m;
     }
 
     #endregion
 
     #region Equipos
 
-    protected void GridActivos_ItemDataBound(object sender, GridItemEventArgs e)
+    /// <summary>
+    /// A que maquinas se le aplica el plan. Van como tarjetas y no como
+    /// filas: lo que se comprueba aca es que el equipo sea EL equipo -su
+    /// foto, su planta, su componente-, y eso no se lee en una grilla.
+    /// </summary>
+    private void Equipos(PlanMantenimiento p, List<PlanActivo> equipos, bool puedeEscribir)
     {
-        if (e.Item.ItemType != GridItemType.AlternatingItem && e.Item.ItemType != GridItemType.Item) return;
-        if (!(e.Item is GridDataItem)) return;
+        litTabEquipos.Text = equipos.Count == 0 ? "" : "<b>" + equipos.Count + "</b>";
 
-        GridDataItem item = e.Item as GridDataItem;
-        PlanActivo v = item.DataItem as PlanActivo;
-        if (v == null) return;
+        litEquiposEstado.Text = equipos.Count == 0 || equipos[0].version_editable
+            ? ""
+            : "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-lock-outline\"></i>Versión publicada · solo lectura</span>";
 
-        string id = item.GetDataKeyValue("pac_id").ToString();
-        string query = Cifrar("Id=" + id + "&Plan=" + Id);
+        litAlcanceChips.Text =
+            "<div class=\"sg-plan-alcance\">" +
+            ChipAlcance("mdi-factory", "Planta", string.IsNullOrEmpty(p.planta_nombre) ? "Cualquiera" : p.planta_nombre) +
+            ChipAlcance("mdi-cog-outline", "Tipo", string.IsNullOrEmpty(p.tipo_nombre) ? "Cualquiera" : p.tipo_nombre) +
+            ChipAlcance("mdi-layers-outline", "Modelo", string.IsNullOrEmpty(p.modelo_nombre) ? "Cualquier modelo" : p.modelo_nombre) +
+            "</div>";
 
-        HyperLink Editar = new HyperLink();
-        Editar.ID = "lnkEditarActivo" + id;
-        Editar.CssClass = "icono_Editar";
-        Editar.NavigateUrl = "javascript:void(0)";
-        Editar.Attributes.Add("onclick", "abrirPlanActivo('" + query + "')");
-        item["pac_id"].Controls.Add(Editar);
+        if (equipos.Count == 0)
+        {
+            litEquipos.Text = Vacio("mdi-account-group-outline", "Ningún equipo asociado",
+                                    "Un plan sin equipos no se publica: no tendría para qué máquina generar.");
+            litEquiposResumen.Text = "<p class=\"sg-ot-vacio-txt\">Sin equipos asociados.</p>";
+            return;
+        }
 
-        if (string.IsNullOrEmpty(v.componente_nombre))
-            item["COMPONENTE_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">equipo completo</span>";
-        if (string.IsNullOrEmpty(v.medidor_nombre))
-            item["MEDIDOR_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">—</span>";
+        ActivoImagenController imagenes = new ActivoImagenController();
+        StringBuilder s = new StringBuilder("<div class=\"sg-plan-equipos\">");
 
-        item["VERSION"].Controls.Add(new Literal { Text = ChipVersion(v.version_numero, v.version_estado_codigo) });
+        foreach (PlanActivo v in equipos)
+        {
+            string query = Cifrar("Id=" + v.pac_id + "&Plan=" + Id);
+            int foto = imagenes.GetImagenId(v.pac_activo, SitioBase.Session.ClienteId());
+
+            s.Append("<div class=\"sg-plan-equipo\">")
+             .Append(foto > 0
+                    ? "<span class=\"sg-plan-foto\"><img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(foto)) + "\" alt=\"Imagen del equipo\" /></span>"
+                    : "<span class=\"sg-plan-foto es-vacia\"><i class=\"mdi mdi-image-off-outline\"></i></span>")
+
+             .Append("<div class=\"sg-plan-equipo-txt\">")
+             .Append("<header><div><h4>").Append(Server.HtmlEncode(Texto(v.activo_nombre))).Append("</h4>")
+             .Append("<span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(v.activo_codigo))).Append("</span></div>")
+             .Append("<a class=\"sg-ot-btn es-plano\" href=\"").Append(UrlActivo(v.pac_activo))
+             .Append("\">Ver ficha del activo<i class=\"mdi mdi-open-in-new\"></i></a></header>")
+
+             .Append("<dl class=\"sg-a3-ident\">")
+             .Append(Dato2("Planta", Texto(v.planta_nombre)))
+             .Append(Dato2("Tipo", Texto(v.tipo_nombre)))
+             .Append(Dato2("Componente", string.IsNullOrEmpty(v.componente_nombre) ? "Equipo completo" : v.componente_nombre))
+             .Append(Dato2("Medidor", string.IsNullOrEmpty(v.medidor_nombre) ? "No asociado" : v.medidor_nombre))
+             .Append("</dl>");
+
+            if (puedeEscribir && v.version_editable)
+                s.Append("<div class=\"sg-plan-equipo-acc\">")
+                 .Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirPlanActivo('")
+                 .Append(query).Append("')\"><i class=\"mdi mdi-pencil-outline\"></i>Editar vínculo</a>")
+                 .Append("</div>");
+
+            s.Append("</div></div>");
+        }
+
+        litEquipos.Text = s.Append("</div>").ToString();
+
+        // ---- los mismos equipos, en la portada ----
+        StringBuilder r = new StringBuilder();
+
+        foreach (PlanActivo v in equipos)
+            r.Append(Fila("mdi-cog-outline", "",
+                     Texto(v.activo_nombre),
+                     Texto(v.activo_codigo),
+                     Boton(UrlActivo(v.pac_activo), "Ver ficha")));
+
+        litEquiposResumen.Text = r.ToString();
     }
 
-    protected void lnkEliminarActivo_Click(object sender, EventArgs e)
+    private string ChipAlcance(string icono, string etiqueta, string valor)
     {
-        Pestana(tabEquipos, pvEquipos);
-        Eliminar(GridActivos, "pac_id", id => new PlanActivoController().DeletePlanActivo(new PlanActivo { pac_id = id }));
+        return "<div class=\"sg-plan-alcance-chip\"><i class=\"mdi " + icono + "\"></i>" +
+               "<div><span>" + Server.HtmlEncode(etiqueta) + "</span>" +
+               "<b>" + Server.HtmlEncode(valor) + "</b></div></div>";
     }
+
+    private string UrlActivo(int activo)
+    {
+        return ResolveUrl("~/View/Activos/Ficha/ActivoFicha.aspx") + "?query=" +
+               Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + activo));
+    }
+
+    #endregion
+
+    #region Portada del centro
+
+    /// <summary>
+    /// Los cuatro numeros de la cabecera. Vencidas y disponibles van juntas a
+    /// proposito: el plan que importa no es el que tiene muchos hitos, es el
+    /// que tiene trabajo esperando.
+    /// </summary>
+    private void Kpis(PlanMantenimiento p, List<PlanHito> hitos, List<PlanActivo> equipos, List<PlanOcurrencia> anio)
+    {
+        int vencidas = anio.FindAll(o => o.situacion == "VENCIDA").Count;
+        int atrasadas = anio.FindAll(o => o.situacion == "ATRASADA").Count;
+        int disponibles = anio.FindAll(o => o.situacion == "DISPONIBLE").Count;
+        int cerradas = anio.FindAll(o => o.situacion == "CERRADA").Count;
+
+        StringBuilder k = new StringBuilder("<div class=\"sg-a3-kpis\">");
+
+        k.Append(Kpi("mdi-account-group-outline", equipos.Count.ToString(), "Equipos asociados", "", "es-lila"));
+        k.Append(Kpi("mdi-format-list-checks", hitos.Count.ToString(), "Hitos del plan", "", "es-azul"));
+        k.Append(Kpi("mdi-alert-outline", (vencidas + atrasadas).ToString(), "Vencidas y atrasadas",
+                 vencidas + atrasadas == 0 ? "Nada corriendo" : "Del año en curso", "es-rojo"));
+        k.Append(Kpi("mdi-play-circle-outline", disponibles.ToString(), "Disponibles",
+                 disponibles == 0 ? "Nada para ejecutar hoy" : "Listas para ejecutar", "es-verde"));
+
+        k.Append("</div>");
+
+        k.Append("<p class=\"sg-plan-anio\"><i class=\"mdi mdi-calendar-blank-outline\"></i>")
+         .Append(global::SitioBase.Hora.Ahora.Year).Append(" · ").Append(anio.Count)
+         .Append(anio.Count == 1 ? " ocurrencia" : " ocurrencias")
+         .Append(" · ").Append(cerradas).Append(" cerradas")
+         .Append(" · ").Append(anio.Count - cerradas - vencidas - atrasadas - disponibles).Append(" futuras</p>");
+
+        litKpis.Text = k.ToString();
+    }
+
+    /// <summary>
+    /// La portada: lo que hay que mirar hoy, el alcance y con que equipos.
+    ///
+    /// "Requiere atencion" muestra lo VENCIDO y lo ATRASADO, no todo lo
+    /// abierto: una lista con las cuarenta ocurrencias del año no dice por
+    /// donde empezar.
+    /// </summary>
+    private void Resumen360(PlanMantenimiento p, List<PlanHito> hitos, List<PlanActivo> equipos, List<PlanOcurrencia> anio)
+    {
+        List<PlanOcurrencia> urgentes = anio.FindAll(o => o.situacion == "VENCIDA" || o.situacion == "ATRASADA");
+        int disponibles = anio.FindAll(o => o.situacion == "DISPONIBLE").Count;
+
+        StringBuilder a = new StringBuilder();
+
+        if (urgentes.Count == 0)
+            a.Append("<p class=\"sg-ot-vacio-txt\">Nada vencido ni atrasado en el año. Lo que viene está en el calendario.</p>");
+        else
+            foreach (PlanOcurrencia o in urgentes.GetRange(0, Math.Min(6, urgentes.Count)))
+                a.Append(Fila("mdi-wrench-outline", o.situacion == "VENCIDA" ? "es-rojo" : "es-ambar",
+                         Texto(o.hito_nombre),
+                         Texto(o.hito_codigo) + " · " + Texto(o.activo_nombre) + " · " + Texto(o.activo_codigo) +
+                         " · " + o.fecha_programada.ToString("dd MMM yyyy"),
+                         ChipSituacionCentro(o.situacion) +
+                         (o.orden_trabajo_id == null ? "" : Boton(UrlOrden(o.orden_trabajo_id.Value), "OT-" + o.orden_trabajo_correlativo))));
+
+        if (disponibles > 0)
+            a.Append("<div class=\"sg-ot-nota es-ok\"><i class=\"mdi mdi-play-circle-outline\"></i><span>")
+             .Append(disponibles).Append(disponibles == 1 ? " ocurrencia disponible" : " ocurrencias disponibles")
+             .Append(" para ejecutar.</span></div>");
+
+        litAtencion.Text = a.ToString();
+
+        // ---- alcance ----
+        StringBuilder al = new StringBuilder();
+        al.Append(Dato2("Planta", string.IsNullOrEmpty(p.planta_nombre) ? "Cualquier planta" : p.planta_nombre));
+        al.Append(Dato2("Tipo de activo", string.IsNullOrEmpty(p.tipo_nombre) ? "Cualquier tipo" : p.tipo_nombre));
+        al.Append(Dato2("Modelo", string.IsNullOrEmpty(p.modelo_nombre) ? "Cualquier modelo" : p.modelo_nombre));
+        al.Append(Dato2("Planificador", Texto(p.planificador_nombre)));
+        litAlcance.Text = al.ToString();
+
+        litNotaVersion.Text = hitos.Count > 0 && !hitos[0].version_editable
+            ? "<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-lock-outline\"></i>" +
+              "<span>Versión publicada · los hitos y equipos se editan en una versión en borrador.</span></div>"
+            : "";
+    }
+
+    #endregion
+
+    #region Presentacion
+
+    private string Texto(string v) { return string.IsNullOrEmpty(v) ? "" : v; }
+
+    private string Vacio(string icono, string titulo, string detalle)
+    {
+        return "<div class=\"sg-ot-vacio\"><i class=\"mdi " + icono + "\"></i><p>" +
+               Server.HtmlEncode(titulo) + "</p><span>" + Server.HtmlEncode(detalle) + "</span></div>";
+    }
+
+    private string Kpi(string icono, string valor, string etiqueta, string pie, string clase)
+    {
+        return "<div class=\"sg-a3-kpi\"><span class=\"sg-a3-kpi-ico " + clase + "\"><i class=\"mdi " + icono + "\"></i></span>" +
+               "<div><span class=\"sg-a3-kpi-etq\">" + Server.HtmlEncode(etiqueta) + "</span>" +
+               "<span class=\"sg-a3-kpi-val" + (valor.Length > 12 ? " es-chico" : "") + "\">" + Server.HtmlEncode(valor) + "</span>" +
+               (string.IsNullOrEmpty(pie) ? "" : "<span class=\"sg-a3-kpi-pie\">" + Server.HtmlEncode(pie) + "</span>") +
+               "</div></div>";
+    }
+
+    private string Fila(string icono, string clase, string titulo, string sub, string acciones)
+    {
+        return "<div class=\"sg-a3-fila\"><span class=\"sg-a3-fila-ico " + clase + "\"><i class=\"mdi " + icono + "\"></i></span>" +
+               "<div class=\"sg-a3-fila-txt\"><span class=\"sg-a3-fila-tit\">" + Server.HtmlEncode(titulo) + "</span>" +
+               (string.IsNullOrEmpty(sub) ? "" : "<span class=\"sg-a3-fila-sub\">" + Server.HtmlEncode(sub) + "</span>") +
+               "</div><div class=\"sg-a3-fila-acc\">" + acciones + "</div></div>";
+    }
+
+    private string Dato2(string etiqueta, string valor)
+    {
+        return "<dt>" + Server.HtmlEncode(etiqueta) + "</dt><dd>" +
+               Server.HtmlEncode(string.IsNullOrEmpty(valor) ? "Sin registrar" : valor) + "</dd>";
+    }
+
+    private string DetItem(string icono, string titulo, string valor)
+    {
+        return "<div class=\"sg-a3-ot-det-item\"><strong><i class=\"mdi " + icono + "\"></i>" +
+               Server.HtmlEncode(titulo) + "</strong><span>" +
+               Server.HtmlEncode(string.IsNullOrEmpty(valor) ? "Sin registrar" : valor) + "</span></div>";
+    }
+
+    private string Boton(string url, string texto)
+    {
+        return "<a class=\"sg-ot-btn es-plano\" href=\"" + url + "\">" +
+               Server.HtmlEncode(texto) + "<i class=\"mdi mdi-open-in-new\"></i></a>";
+    }
+
+    private string UrlOrden(int id)
+    {
+        return ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?query=" +
+               Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id));
+    }
+
+    private static string Duracion(int minutos)
+    {
+        if (minutos <= 0) return "";
+        if (minutos < 60) return minutos + " min";
+        int h = minutos / 60, m = minutos % 60;
+        return m == 0 ? h + " h" : h + " h " + m + " min";
+    }
+
+    /// <summary>
+    /// La situacion de una ocurrencia con los chips del centro. La grilla del
+    /// calendario tiene los suyos y se quedan: son de Telerik y viven dentro
+    /// de la tabla.
+    /// </summary>
+    private static string ChipSituacionCentro(string situacion)
+    {
+        switch (situacion)
+        {
+            case "VENCIDA":    return "<span class=\"sg-ot-chip es-rojo\"><i class=\"mdi mdi-alert-circle-outline\"></i>Vencida</span>";
+            case "ATRASADA":   return "<span class=\"sg-ot-chip es-aviso\"><i class=\"mdi mdi-clock-alert-outline\"></i>Atrasada</span>";
+            case "DISPONIBLE": return "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-play-circle-outline\"></i>Disponible</span>";
+            case "CERRADA":    return "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-check\"></i>Cerrada</span>";
+            default:           return "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-calendar-blank-outline\"></i>Futura</span>";
+        }
+    }
+
+    /// <summary>El chip de version con el vocabulario del centro.</summary>
+    private static string ChipVersionCentro(int? numero, string estadoCodigo)
+    {
+        string n = "v" + (numero ?? 0);
+        switch ((estadoCodigo ?? "").ToUpperInvariant())
+        {
+            case "PUBLICADO": return "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check-circle-outline\"></i>" + n + " publicada</span>";
+            case "RETIRADO": return "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-archive-outline\"></i>" + n + " retirada</span>";
+            default: return "<span class=\"sg-ot-chip es-aviso\"><i class=\"mdi mdi-pencil-outline\"></i>" + n + " borrador</span>";
+        }
+    }
+
+    /// <summary>Recarga el centro cuando un modal de hito o equipo se cierra.</summary>
+    protected void lnkRecargar_Click(object sender, EventArgs e) { }
 
     #endregion
 
@@ -538,7 +852,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     protected void lnkNuevaVersion_Click(object sender, EventArgs e)
     {
-        Pestana(tabVersiones, pvVersiones);
+        hdnSeccion.Value = "configuracion";
         Respuesta r = new PlanVersionController().AbrirVersionNueva(Id, txtObservacionVersion.Text.Trim());
         if (!r.error) { txtObservacionVersion.Text = ""; Cabecera(new PlanMantenimientoController().GetPlanMantenimiento(new PlanMantenimiento { pma_id = Id })); }
         Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
@@ -546,7 +860,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     protected void lnkPublicar_Click(object sender, EventArgs e)
     {
-        Pestana(tabVersiones, pvVersiones);
+        hdnSeccion.Value = "configuracion";
         List<PlanVersion> lista = new PlanVersionController().GetPlanVersiones(
             new PlanVersion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id }) ?? new List<PlanVersion>();
         PlanVersion borrador = lista.Find(v => v.pmv_plan_version_estado == 1);
@@ -764,18 +1078,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     }
 
     /// <summary>Page_PreRender recarga con el filtro nuevo; aqui solo se sostiene la pestaña.</summary>
-    protected void btnFiltrarCal_Click(object sender, EventArgs e) { Pestana(tabCalendario, pvCalendario); }
-
-    /// <summary>
-    /// Un postback desde una pestaña tiene que volver a esa pestaña. El
-    /// tabstrip no lo hace solo cuando las pestañas se muestran y esconden
-    /// en PreRender, asi que se fija a mano.
-    /// </summary>
-    private void Pestana(RadTab tab, RadPageView vista)
-    {
-        tab.Selected = true;
-        vista.Selected = true;
-    }
+    protected void btnFiltrarCal_Click(object sender, EventArgs e) { hdnSeccion.Value = "calendario"; }
 
     /// <summary>
     /// HU-111: una orden por cada ocurrencia seleccionada. El SP decide -y
@@ -785,7 +1088,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     /// </summary>
     protected void lnkGenerarOT_Click(object sender, EventArgs e)
     {
-        Pestana(tabCalendario, pvCalendario);
+        hdnSeccion.Value = "calendario";
         try
         {
             if (!Token.Puede("CREAR ORDEN TRABAJO"))
@@ -829,7 +1132,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     /// <summary>HU-076: el generador a mano desde el plan; el mismo SP que usara el job nocturno.</summary>
     protected void btnGenerarOcurrencias_Click(object sender, EventArgs e)
     {
-        Pestana(tabCalendario, pvCalendario);
+        hdnSeccion.Value = "calendario";
         try
         {
             if (!Token.Puede("CREAR EDITAR PLANES MANTENIMIENTO"))
@@ -871,40 +1174,6 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     }
 
     #endregion
-
-    /// <summary>
-    /// Borra los seleccionados de una grilla. El primero que rebota corta: el
-    /// mensaje del SP dice cual y por que, y seguir con el resto lo taparia.
-    /// </summary>
-    private void Eliminar(RadGrid2 grid, string clave, Func<int, Respuesta> borrar)
-    {
-        try
-        {
-            if (grid.SelectedIndexes.Count == 0)
-            {
-                Tools.tools.ClientAlert("Debe seleccionar al menos un registro.");
-                return;
-            }
-
-            Respuesta respuesta = new Respuesta();
-
-            foreach (string indice in grid.SelectedIndexes)
-            {
-                Telerik.Web.UI.DataKey value = grid.MasterTableView.DataKeyValues[Int32.Parse(indice)];
-                respuesta = borrar(Int32.Parse(value[clave].ToString()));
-                if (respuesta.error) break;
-            }
-
-            if (!respuesta.error)
-                Tools.tools.ClientAlert(respuesta.detalle, "ok");
-            else
-                Tools.tools.ClientAlert(respuesta.detalle, "alerta");
-        }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message);
-        }
-    }
 
     private static string ChipVersion(int? numero, string estadoCodigo)
     {

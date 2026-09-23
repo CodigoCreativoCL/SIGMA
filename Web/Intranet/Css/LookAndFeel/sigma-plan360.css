@@ -1,0 +1,136 @@
+﻿/* ============================================================================
+   EL CENTRO DEL PLAN
+
+   La cascara -tarjetas, chips, KPIs, tablas que se despliegan- viene de
+   sigma-orden.css y sigma-activo360.css. Aqui va solo lo que el plan tiene y
+   los otros centros no: el codigo sobre el titulo, las tarjetas de equipo con
+   foto, los chips de alcance y la fila de filtros del calendario.
+   ========================================================================= */
+
+.sg-plan-codigo {
+    display: block;
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: .04em;
+    color: var(--sg-tenue);
+}
+
+/* Un plan sin version todavia no tiene hitos ni equipos que mostrar: se
+   esconden las pestañas en vez de abrirlas vacias. */
+.sg-a3-nav.es-solo-configuracion .sg-a3-tab { display: none; }
+.sg-a3-nav.es-solo-configuracion .sg-a3-tab[data-sec="configuracion"] { display: inline-flex; }
+
+.sg-plan-anio {
+    margin: -4px 0 14px;
+    font-size: 12px;
+    color: var(--sg-suave);
+}
+.sg-plan-anio i { margin-right: 6px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------- hitos ----- */
+.sg-plan-hito-cab,
+.sg-plan-hito {
+    grid-template-columns: minmax(200px, 2.2fr) 190px 190px 140px 120px 40px;
+}
+.sg-plan-hito .c-dato i { margin-right: 5px; color: var(--sg-tenue); }
+.sg-plan-sub { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------ equipos ---- */
+.sg-plan-alcance {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+.sg-plan-alcance-chip {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+}
+.sg-plan-alcance-chip i { font-size: 18px; color: var(--sg-suave); }
+.sg-plan-alcance-chip span { display: block; font-size: 11px; color: var(--sg-tenue); }
+.sg-plan-alcance-chip b { font-size: 12.5px; color: var(--sg-texto); }
+
+.sg-plan-equipos {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: 14px;
+}
+.sg-plan-equipo {
+    display: grid;
+    grid-template-columns: 150px 1fr;
+    gap: 14px;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.sg-plan-foto {
+    display: block;
+    height: 100%;
+    min-height: 140px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: #f1f3f9;
+}
+.sg-plan-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-plan-foto.es-vacia {
+    display: grid;
+    place-items: center;
+    color: var(--sg-tenue);
+    font-size: 26px;
+}
+.sg-plan-equipo-txt header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+.sg-plan-equipo-txt h4 { margin: 0; font-size: 15px; color: var(--sg-texto); }
+.sg-plan-equipo-acc { margin-top: 10px; }
+
+/* --------------------------------------------------------- calendario ---- */
+.sg-plan-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fbfbfe;
+}
+.sg-plan-filtro { flex: 1 1 150px; min-width: 130px; }
+.sg-plan-filtro.es-ancho { flex: 2 1 240px; }
+.sg-plan-filtro.es-boton { flex: 0 0 auto; }
+.sg-plan-filtro label {
+    display: block;
+    margin-bottom: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-suave);
+}
+
+@media (max-width: 900px) {
+    .sg-plan-equipo { grid-template-columns: 1fr; }
+    .sg-plan-foto { min-height: 160px; }
+}
+
+/* El numero al lado del nombre de la pestaña: cuantos hay, sin abrirla. */
+.sg-a3-tab b {
+    margin-left: 7px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: #eef0f7;
+    color: var(--sg-suave);
+    font-size: 11px;
+    font-weight: 700;
+}
+.sg-a3-tab.es-activa b { background: #e9e5ff; color: #5b46e5; }
