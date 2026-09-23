@@ -119,6 +119,7 @@
                     <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
                     <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo</a>
                     <a href="#" class="sg-a3-tab" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
+                    <a href="#" class="sg-a3-tab" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i>Inspecciones y tareas</a>
 
                     <div class="sg-a3-mas">
                         <a href="#" class="sg-a3-tab sg-a3-mas-btn"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
@@ -129,8 +130,14 @@
                             <a href="#" class="sg-a3-mas-op" data-sec="fallas"><i class="mdi mdi-alert-outline"></i>Fallas e indisponibilidad</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="documentos"><i class="mdi mdi-image-multiple-outline"></i>Documentos y galería</a>
+                            <a href="#" class="sg-a3-mas-op" data-sec="repuestos"><i class="mdi mdi-package-variant-closed"></i>Repuestos y costos</a>
+                            <a href="#" class="sg-a3-mas-op" data-sec="bitacora"><i class="mdi mdi-notebook-outline"></i>Bitácora y trazabilidad</a>
                         </div>
                     </div>
+
+                    <%-- SIGMA AI va aparte y no dentro de Mas: es lo unico de esta
+                         pantalla que no afirma hechos, sino que propone revisar. --%>
+                    <a href="#" class="sg-a3-tab es-ia" data-sec="ia"><i class="mdi mdi-star-four-points-outline"></i>SIGMA AI</a>
                 </nav>
 
                 <%-- ================================================================
@@ -493,6 +500,148 @@
                             <p>Sin documentos ni fotografías</p>
                             <span>Se adjuntan desde la ficha del activo o llegan con las evidencias de la app.</span>
                         </asp:Panel>
+                    </div>
+                </section>
+
+                <%-- ================================================================
+                     10. INSPECCIONES Y TAREAS
+                     ================================================================ --%>
+                <section class="sg-a3-panel" data-panel="inspecciones">
+                    <div class="sg-ot-card">
+                        <header class="sg-ot-card-cab">
+                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-clipboard-check-outline"></i></span>
+                            <div>
+                                <h3>Inspecciones y tareas</h3>
+                                <p class="sg-ot-card-sub">Lo que se pasó a revisar en este equipo: pautas de inspección y tareas.</p>
+                            </div>
+                            <asp:Literal ID="litRevConteos" runat="server" />
+                        </header>
+
+                        <div class="sg-ot-ev-filtros">
+                            <div class="sg-ot-ev-tipos" id="sgA3RevTipos">
+                                <a href="#" class="sg-a3-chip es-activa" data-rev-tipo="todas">Todas <b><asp:Literal ID="litRevTodas" runat="server" Text="0" /></b></a>
+                                <a href="#" class="sg-a3-chip" data-rev-tipo="INSPECCION"><i class="mdi mdi-clipboard-text-outline"></i>Inspecciones <b><asp:Literal ID="litRevInsp" runat="server" Text="0" /></b></a>
+                                <a href="#" class="sg-a3-chip" data-rev-tipo="TAREA"><i class="mdi mdi-checkbox-marked-circle-outline"></i>Tareas <b><asp:Literal ID="litRevTareas" runat="server" Text="0" /></b></a>
+                            </div>
+                            <div class="sg-ot-ev-buscar">
+                                <i class="mdi mdi-magnify"></i>
+                                <input type="search" id="sgA3RevBuscar" placeholder="Buscar inspección o tarea..." autocomplete="off" />
+                            </div>
+                            <select id="sgA3RevResultado" class="sg-ot-select">
+                                <option value="">Todos los resultados</option>
+                                <option value="CONFORME">Sin observaciones</option>
+                                <option value="CON_OBSERVACION">Con observación</option>
+                                <option value="SIN_EVALUAR">Sin evaluar</option>
+                            </select>
+                        </div>
+
+                        <asp:Literal ID="litRevisiones" runat="server" />
+
+                        <div class="sg-ot-nota es-chica">
+                            <i class="mdi mdi-information-outline"></i>
+                            <span>El <strong>estado</strong> dice el avance de la inspección o tarea. El <strong>resultado</strong> refleja la evaluación del técnico: una revisión puede estar completada y con hallazgos.</span>
+                        </div>
+                    </div>
+                </section>
+
+                <%-- ================================================================
+                     11. REPUESTOS Y COSTOS
+                     ================================================================ --%>
+                <section class="sg-a3-panel" data-panel="repuestos">
+                    <asp:Literal ID="litCostoKpis" runat="server" />
+
+                    <div class="sg-ot-card">
+                        <header class="sg-ot-card-cab">
+                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-package-variant-closed"></i></span>
+                            <div>
+                                <h3>Materiales consumidos en el equipo</h3>
+                                <p class="sg-ot-card-sub">Repuestos e insumos usados en las intervenciones de este activo.</p>
+                            </div>
+                            <asp:Literal ID="litConsumoConteos" runat="server" />
+                        </header>
+
+                        <asp:Literal ID="litConsumos" runat="server" />
+                    </div>
+
+                    <div class="sg-ot-card">
+                        <header class="sg-ot-card-cab">
+                            <span class="sg-ot-card-ico"><i class="mdi mdi-shape-outline"></i></span>
+                            <div>
+                                <h3>Repuestos compatibles</h3>
+                                <p class="sg-ot-card-sub">Lo que este equipo puede llevar, aunque todavía no se le haya puesto.</p>
+                            </div>
+                        </header>
+
+                        <asp:Literal ID="litCompatibles" runat="server" />
+                    </div>
+                </section>
+
+                <%-- ================================================================
+                     12. SIGMA AI
+                     ================================================================ --%>
+                <section class="sg-a3-panel" data-panel="ia">
+                    <asp:Literal ID="litIaPanel" runat="server" />
+                </section>
+
+                <%-- ================================================================
+                     13. BITÁCORA Y TRAZABILIDAD
+                     ================================================================ --%>
+                <section class="sg-a3-panel" data-panel="bitacora">
+                    <div class="sg-a3-cols">
+                        <div class="sg-a3-col">
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-notebook-outline"></i></span>
+                                    <div>
+                                        <h3>Bitácora del activo</h3>
+                                        <p class="sg-ot-card-sub">Lo que la gente anotó del equipo, del registro más nuevo al más viejo.</p>
+                                    </div>
+                                    <asp:Literal ID="litBitConteos" runat="server" />
+                                </header>
+
+                                <asp:Literal ID="litBitacora" runat="server" />
+                            </div>
+
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-comment-text-outline"></i></span>
+                                    <div>
+                                        <h3>Agregar observación</h3>
+                                        <p class="sg-ot-card-sub">Queda registrada a tu nombre y con la hora del servidor.</p>
+                                    </div>
+                                </header>
+
+                                <div class="sg-a3-obs">
+                                    <asp:TextBox ID="txtObservacion" runat="server" TextMode="MultiLine" Rows="3"
+                                        CssClass="sg-ot-textarea" placeholder="Escribe una observación sobre el activo..." />
+                                    <div class="sg-a3-obs-acc">
+                                        <asp:LinkButton ID="lnkPublicar" runat="server" CssClass="sg-ot-btn es-primario"
+                                            OnClick="lnkPublicar_Click"><i class="mdi mdi-send-outline"></i>Publicar</asp:LinkButton>
+                                    </div>
+                                </div>
+
+                                <asp:Literal ID="litObsAviso" runat="server" />
+                            </div>
+                        </div>
+
+                        <div class="sg-a3-col es-angosta">
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-shield-check-outline"></i></span>
+                                    <div>
+                                        <h3>Trazabilidad de estado</h3>
+                                        <p class="sg-ot-card-sub">Cada cambio de estado del equipo, con quién y por qué.</p>
+                                    </div>
+                                </header>
+
+                                <asp:Literal ID="litTrazabilidad" runat="server" />
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="sg-ot-nota es-chica">
+                        <i class="mdi mdi-information-outline"></i>
+                        <span>Los registros de bitácora no se editan. Una corrección entra como un registro nuevo: la trazabilidad se pierde el día que alguien puede arreglar lo que escribió ayer.</span>
                     </div>
                 </section>
 

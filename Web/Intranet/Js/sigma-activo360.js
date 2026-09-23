@@ -101,9 +101,68 @@
             };
     }
 
+    /* ---- Inspecciones y tareas ----
+
+       La fila se despliega en su lugar y los filtros -tipo, resultado y
+       busqueda- son del navegador: pedirle al servidor que filtre una lista
+       que ya esta en pantalla es recargarla para esconder filas. */
+    function revisiones() {
+        var filas = document.querySelectorAll('.sg-a3-rev');
+        if (!filas.length) return;
+
+        for (var i = 0; i < filas.length; i++) {
+            filas[i].onclick = function (ev) {
+                if (ev.target.closest('a, input, button, select')) return;
+
+                var det = document.getElementById('rev-' + this.getAttribute('data-rev'));
+                if (!det) return;
+
+                var abierto = det.classList.contains('es-abierto');
+                det.classList.toggle('es-abierto', !abierto);
+                this.classList.toggle('es-abierta', !abierto);
+            };
+        }
+
+        var chips = document.querySelectorAll('#sgA3RevTipos a[data-rev-tipo]');
+        var buscar = document.getElementById('sgA3RevBuscar');
+        var resultado = document.getElementById('sgA3RevResultado');
+
+        /* El estado del filtro se lee del DOM en cada pasada y no de una
+           variable: la pagina se repinta por UpdatePanel y una variable
+           guardada en el cierre anterior filtra filas que ya no existen. */
+        function filtrar() {
+            var activa = document.querySelector('#sgA3RevTipos a.es-activa');
+            var tipo = activa ? activa.getAttribute('data-rev-tipo') : 'todas';
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+            var res = resultado && resultado.value || '';
+            var vivas = document.querySelectorAll('.sg-a3-rev');
+
+            for (var i = 0; i < vivas.length; i++) {
+                var f = vivas[i];
+                var ok = (tipo === 'todas' || f.getAttribute('data-rev-tipo') === tipo)
+                      && (res === '' || f.getAttribute('data-rev-res') === res)
+                      && (texto === '' || (f.getAttribute('data-rev-txt') || '').indexOf(texto) !== -1);
+
+                f.classList.toggle('es-oculta', !ok);
+            }
+        }
+
+        for (var c = 0; c < chips.length; c++)
+            chips[c].onclick = function (ev) {
+                ev.preventDefault();
+                for (var k = 0; k < chips.length; k++) chips[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+                filtrar();
+            };
+
+        if (buscar) buscar.oninput = filtrar;
+        if (resultado) resultado.onchange = filtrar;
+    }
+
     function armar() {
         navegacion();
         ordenes();
+        revisiones();
     }
 
     if (document.addEventListener) document.addEventListener('DOMContentLoaded', armar);

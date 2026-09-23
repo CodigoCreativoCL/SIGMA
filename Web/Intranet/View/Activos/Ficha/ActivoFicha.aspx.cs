@@ -270,6 +270,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         FallasYDetenciones(a, fallas, detenciones);
         Condicion(a);
         Documentos(a);
+        InspeccionesYTareas(a);
+        RepuestosYCostos(a);
+        SigmaAi(a, ordenes, fallas);
+        BitacoraYTrazabilidad(a, eventos);
     }
 
     private void Cabecera(Activo a)
@@ -959,6 +963,551 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (bytes < 1024) return bytes + " B";
         if (bytes < 1024 * 1024) return (bytes / 1024) + " KB";
         return (bytes / (1024 * 1024)) + " MB";
+    }
+
+    #endregion
+
+
+    #region 10. Inspecciones y tareas
+
+    /// <summary>
+    /// Todo lo que se paso a revisar en el equipo: pautas de inspeccion y
+    /// tareas, en una sola lista.
+    ///
+    /// SON DOS COSAS DISTINTAS Y LA PANTALLA LAS SEPARA
+    ///   El ESTADO dice el avance -pendiente, en ejecucion, completada- y el
+    ///   RESULTADO dice la evaluacion del tecnico. Mezclarlos deja pasar el
+    ///   caso que mas importa: la inspeccion que se hizo completa y encontro
+    ///   algo. Completada no significa conforme.
+    /// </summary>
+    private void InspeccionesYTareas(Activo a)
+    {
+        List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
+                                          ?? new List<ActivoRevision>();
+
+        int inspecciones = revisiones.Count(x => x.es_inspeccion);
+        int hallazgos = revisiones.Count(x => x.resultado_codigo == "CON_OBSERVACION");
+
+        litRevTodas.Text = revisiones.Count.ToString();
+        litRevInsp.Text = inspecciones.ToString();
+        litRevTareas.Text = (revisiones.Count - inspecciones).ToString();
+
+        litRevConteos.Text =
+            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + revisiones.Count + "</strong><span>registros</span></div>" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + revisiones.Count(x => x.ejecutada) + "</strong><span>ejecutadas</span></div>" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + hallazgos + "</strong><span>con observación</span></div></div>";
+
+        if (revisiones.Count == 0)
+        {
+            litRevisiones.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-clipboard-check-outline\"></i>" +
+                                 "<p>Sin inspecciones ni tareas</p>" +
+                                 "<span>Se programan desde Pautas de inspección y desde Tareas recurrentes.</span></div>";
+            return;
+        }
+
+        ChecklistCentroController checklists = new ChecklistCentroController();
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-tabla-cab sg-a3-rev-cab\">")
+         .Append("<span>Inspección / Tarea</span><span>Tipo</span><span>Fecha</span>")
+         .Append("<span>Resultado técnico</span><span>Estado</span><span>Responsable</span><span></span></div>");
+
+        foreach (ActivoRevision r in revisiones)
+        {
+            string clave = r.tipo.ToLower() + "-" + r.ocurrencia_id;
+
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rev\" data-rev=\"").Append(clave)
+             .Append("\" data-rev-tipo=\"").Append(r.tipo)
+             .Append("\" data-rev-res=\"").Append(r.resultado_codigo)
+             .Append("\" data-rev-txt=\"").Append(Server.HtmlEncode((Texto(r.nombre) + " " + Texto(r.codigo) + " " + Texto(r.responsable)).ToLower()))
+             .Append("\">")
+
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(r.nombre)))
+             .Append("<span>").Append(Server.HtmlEncode(Texto(r.descripcion))).Append("</span></span>")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ")
+             .Append(r.es_inspeccion ? "es-tipo" : "es-tarea").Append("\">")
+             .Append(r.es_inspeccion ? "Inspección" : "Tarea").Append("</span></span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(r.fecha == null ? "—" : r.fecha.Value.ToString("dd MMM yyyy"))
+             .Append("</span>")
+
+             .Append("<span class=\"c-dato\">").Append(ChipResultado(r)).Append("</span>")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip es-estado\">")
+             .Append(Server.HtmlEncode(string.IsNullOrEmpty(r.estado_nombre) ? "Sin estado" : r.estado_nombre))
+             .Append("</span></span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(Server.HtmlEncode(string.IsNullOrEmpty(r.responsable) ? "Sin asignar" : r.responsable))
+             .Append("</span>")
+
+             .Append("<span class=\"c-acc\"><i class=\"mdi mdi-chevron-down sg-a3-rev-flecha\"></i></span>")
+             .Append("</div>");
+
+            // ---- el detalle que se despliega ----
+            s.Append("<div class=\"sg-a3-ot-detalle sg-a3-rev-detalle\" id=\"rev-").Append(clave).Append("\">");
+
+            if (!r.ejecutada)
+            {
+                s.Append(DetItem("mdi-calendar-clock", "Programada para",
+                         r.programada == null ? "" : r.programada.Value.ToString("dd MMM yyyy · HH:mm")));
+                s.Append(DetItem("mdi-information-outline", "Todavía sin ejecutar",
+                         "No hay resultado que mostrar hasta que alguien la pase en terreno."));
+            }
+            else
+            {
+                /* Los items respondidos se piden solo para lo ejecutado: una
+                   ocurrencia pendiente no tiene respuestas que leer. */
+                if (r.es_inspeccion && r.ejecucion_id != null)
+                    s.Append(Respuestas(checklists.GetRespuestas(r.ejecucion_id.Value)));
+
+                s.Append(DetItem("mdi-comment-text-outline", "Observaciones",
+                         string.IsNullOrEmpty(r.observacion) ? "Sin observaciones." : r.observacion));
+
+                s.Append(DetItem("mdi-image-multiple-outline", "Evidencias",
+                         r.evidencias == 0 ? "Sin archivos"
+                         : r.evidencias + (r.evidencias == 1 ? " archivo adjunto" : " archivos adjuntos")));
+
+                s.Append(DetItem("mdi-cellphone-link", "Fuente del registro",
+                         string.IsNullOrEmpty(r.origen) ? "" : r.origen));
+            }
+
+            s.Append("</div>");
+        }
+
+        litRevisiones.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Los items de la pauta con lo que quedo respondido. Un item sin
+    /// responder tambien se muestra: omitirlo haria ver completa una ronda
+    /// que no lo esta.
+    /// </summary>
+    private string Respuestas(List<ChecklistRespuesta> items)
+    {
+        if (items == null || items.Count == 0)
+            return DetItem("mdi-format-list-checks", "Resultados de la inspección", "Sin items respondidos.");
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-ot-det-item es-ancho\">");
+        s.Append("<strong><i class=\"mdi mdi-format-list-checks\"></i>Resultados de la inspección</strong>");
+        s.Append("<div class=\"sg-a3-items\">");
+
+        foreach (ChecklistRespuesta i in items.Take(12))
+        {
+            string clase = !i.respondido ? "es-pendiente" : (i.fuera_rango ? "es-malo" : "es-bueno");
+            string icono = !i.respondido ? "mdi-circle-outline"
+                         : (i.fuera_rango ? "mdi-alert-circle-outline" : "mdi-check-circle");
+
+            s.Append("<div class=\"sg-a3-item ").Append(clase).Append("\">")
+             .Append("<i class=\"mdi ").Append(icono).Append("\"></i>")
+             .Append("<span class=\"sg-a3-item-txt\">").Append(Server.HtmlEncode(Texto(i.texto))).Append("</span>")
+             .Append("<span class=\"sg-a3-item-val\">")
+             .Append(Server.HtmlEncode(!i.respondido ? "Sin responder"
+                     : (i.no_aplica ? "No aplica" : (string.IsNullOrEmpty(i.valor) ? "Respondido" : i.valor))))
+             .Append("</span></div>");
+        }
+
+        if (items.Count > 12)
+            s.Append("<p class=\"sg-ot-vacio-txt\">Y ").Append(items.Count - 12)
+             .Append(" items más en la pauta completa.</p>");
+
+        return s.Append("</div></div>").ToString();
+    }
+
+    private string ChipResultado(ActivoRevision r)
+    {
+        string clase = r.resultado_codigo == "CONFORME" ? "es-ok"
+                     : (r.resultado_codigo == "CON_OBSERVACION" ? "es-aviso" : "es-neutro");
+
+        string icono = r.resultado_codigo == "CONFORME" ? "mdi-check"
+                     : (r.resultado_codigo == "CON_OBSERVACION" ? "mdi-alert-circle-outline" : "mdi-minus-circle-outline");
+
+        return "<span class=\"sg-ot-chip " + clase + "\"><i class=\"mdi " + icono + "\"></i>" +
+               Server.HtmlEncode(r.resultado_nombre) + "</span>";
+    }
+
+    #endregion
+
+    #region 11. Repuestos y costos
+
+    /// <summary>
+    /// Que se le cambio al equipo y cuanto costo.
+    ///
+    /// LO QUE SE MUESTRA ES LO REGISTRADO, NO LO QUE COSTO
+    ///   Si nadie cargo el costo hora del tecnico, la mano de obra sale en
+    ///   cero. Un total con ceros adentro invita a concluir que mantener este
+    ///   equipo salio barato, que es exactamente la decision que no se quiere
+    ///   inducir. Por eso, mientras falte algo, la pantalla lo dice.
+    /// </summary>
+    private void RepuestosYCostos(Activo a)
+    {
+        ActivoCentroController ctl = new ActivoCentroController();
+
+        ActivoCosto costo = ctl.GetCostos(a.act_id);
+        List<ActivoConsumo> consumos = ctl.GetConsumos(a.act_id) ?? new List<ActivoConsumo>();
+
+        StringBuilder k = new StringBuilder("<div class=\"sg-a3-kpis\">");
+
+        /* Cero pesos con lineas cargadas no es "salio gratis": es un precio que
+           nadie puso. Se dice con palabras para no invitar a sumarlo. */
+        k.Append(Kpi("mdi-package-variant-closed",
+                 costo.lineas_material == 0 ? "Sin consumo"
+                 : (costo.material <= 0 ? "Sin costo cargado" : Moneda(costo.material)), "Materiales registrados",
+                 costo.lineas_material + (costo.lineas_material == 1 ? " línea" : " líneas"), "es-lila"));
+
+        k.Append(Kpi("mdi-wrench-outline",
+                 costo.minutos_mano_obra == 0 ? "Sin registrar"
+                 : (costo.mano_obra <= 0 ? "Sin costo cargado" : Moneda(costo.mano_obra)), "Mano de obra",
+                 costo.minutos_mano_obra == 0 ? "Nadie cargó horas" : Duracion(costo.minutos_mano_obra) + " cargadas", "es-azul"));
+
+        k.Append(Kpi("mdi-handshake-outline",
+                 costo.lineas_servicio == 0 ? "Sin registrar" : Moneda(costo.servicio), "Servicios externos",
+                 costo.lineas_servicio + (costo.lineas_servicio == 1 ? " línea" : " líneas"), "es-ambar"));
+
+        k.Append(Kpi("mdi-calculator-variant-outline", Moneda(costo.total), "Total conocido",
+                 costo.ordenes + (costo.ordenes == 1 ? " orden" : " órdenes"), "es-verde"));
+
+        k.Append("</div>");
+
+        if (costo.incompleto)
+            k.Append("<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-information-outline\"></i>")
+             .Append("<span>El total no incluye lo que todavía no tiene precio cargado. ")
+             .Append("Es un piso, no el costo del equipo.</span></div>");
+
+        litCostoKpis.Text = k.ToString();
+
+        // ---- consumos ----
+        litConsumoConteos.Text =
+            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + consumos.Count + "</strong><span>consumos</span></div></div>";
+
+        if (consumos.Count == 0)
+        {
+            litConsumos.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-package-variant\"></i>" +
+                               "<p>Sin consumo de repuestos</p>" +
+                               "<span>Nada salió de bodega para este equipo todavía.</span></div>";
+        }
+        else
+        {
+            StringBuilder s = new StringBuilder();
+
+            s.Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
+             .Append("<span>Material / Repuesto</span><span>Código</span><span>Consumo</span>")
+             .Append("<span>Costo unitario</span><span>Costo total</span><span>Fecha</span>")
+             .Append("<span>Orden</span><span></span></div>");
+
+            foreach (ActivoConsumo c in consumos)
+            {
+                s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rep\">")
+                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.repuesto_nombre)))
+                 .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(c.componente) ? Texto(c.orden_titulo) : c.componente))
+                 .Append("</span></span>")
+                 .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(c.repuesto_codigo))).Append("</span></span>")
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Cantidad(c.cantidad, c.unidad))).Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(c.costo_unitario) : "Sin cargar").Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(c.costo) : "—").Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(c.fecha == null ? "—" : c.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
+                 .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(c.orden_codigo).Append("</span></span>")
+                 .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(c.orden_id), "Abrir OT")).Append("</span>")
+                 .Append("</div>");
+            }
+
+            litConsumos.Text = s.ToString();
+        }
+
+        // ---- compatibles ----
+        List<ActivoRepuesto> compatibles = new ActivoRepuestoController().GetRepuestos(a.act_id, _cliente)
+                                           ?? new List<ActivoRepuesto>();
+
+        if (compatibles.Count == 0)
+        {
+            litCompatibles.Text = "<p class=\"sg-ot-vacio-txt\">No hay repuestos declarados como compatibles con este equipo.</p>";
+            return;
+        }
+
+        StringBuilder m = new StringBuilder();
+
+        foreach (ActivoRepuesto r in compatibles)
+            m.Append(Fila("mdi-shape-outline", "",
+                     Texto(r.rep_nombre),
+                     string.Join(" · ", new[] { Texto(r.rep_fabricante), Texto(r.rep_modelo) }
+                                 .Where(x => !string.IsNullOrEmpty(x)).ToArray()),
+                     "<span class=\"sg-a3-codigo\">" + Server.HtmlEncode(Texto(r.rep_codigo)) + "</span>"));
+
+        litCompatibles.Text = m.ToString();
+    }
+
+    private static string Moneda(decimal valor)
+    {
+        return "$" + valor.ToString("N0") + " CLP";
+    }
+
+    #endregion
+
+    #region 12. SIGMA AI
+
+    /// <summary>
+    /// Lo que el modelo vio en este equipo.
+    ///
+    /// NO AFIRMA UNA FALLA
+    ///   Una prediccion es un patron que alguien tiene que ir a mirar. Se
+    ///   muestra lo que la alerta dejo escrito y nada mas: sin porcentaje de
+    ///   confianza inventado, sin diagnostico y sin crear ordenes solo. El
+    ///   boton propone crear la OT; la crea una persona.
+    /// </summary>
+    private void SigmaAi(Activo a, List<OrdenTrabajo> ordenes, List<Falla> fallas)
+    {
+        List<Alerta> alertas = new AlertaController().GetAlertas(false, 200) ?? new List<Alerta>();
+
+        List<Alerta> predicciones = alertas
+            .Where(x => x.ES_PREDICCION && x.ale_activo == a.act_id)
+            .OrderByDescending(x => x.ale_fecha_deteccion_utc)
+            .ToList();
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-ot-card sg-a3-ia-card\">");
+
+        Alerta p = predicciones.FirstOrDefault();
+
+        s.Append("<header class=\"sg-a3-ia-head\">")
+         .Append("<span class=\"sg-a3-ia-ico\"><i class=\"mdi mdi-star-four-points-outline\"></i></span>")
+         .Append("<div><h3>SIGMA AI<span> · ").Append(p == null ? "Sin análisis" : "Predicción por revisar").Append("</span></h3>")
+         .Append("<p class=\"sg-ot-card-sub\">Lo que el modelo observó en este equipo, para que una persona lo revise.</p></div>");
+
+        if (p != null)
+            s.Append("<span class=\"sg-a3-ia-fecha\">Último análisis: ")
+             .Append(p.ale_fecha_deteccion_utc.ToString("dd MMM yyyy · HH:mm")).Append("</span>");
+
+        s.Append("</header>");
+
+        if (p == null)
+        {
+            s.Append("<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-robot-outline\"></i>")
+             .Append("<p>Sin análisis predictivo para este equipo</p>")
+             .Append("<span>El modelo todavía no encontró un patrón que valga la pena mirar acá.</span></div>")
+             .Append("</div>");
+
+            litIaPanel.Text = s.ToString();
+            return;
+        }
+
+        s.Append("<div class=\"sg-a3-ia-cols\">");
+
+        // ---- el aviso ----
+        s.Append("<div class=\"sg-a3-ia-aviso\">")
+         .Append("<i class=\"mdi mdi-alert-outline\"></i>")
+         .Append("<div><strong>").Append(Server.HtmlEncode(Texto(p.ale_titulo))).Append("</strong>")
+         .Append("<span class=\"sg-a3-ia-tipo\">").Append(Server.HtmlEncode(Texto(p.alt_nombre))).Append("</span>")
+         .Append("<p>").Append(Server.HtmlEncode(Texto(p.ale_descripcion))).Append("</p>")
+         .Append("<p class=\"sg-a3-ia-limite\">El modelo detecta un patrón. <strong>No confirma una falla.</strong></p>")
+         .Append("</div></div>");
+
+        // ---- las senales que alimentan el modelo ----
+        s.Append("<div class=\"sg-a3-ia-senal\"><h4>Estado de señales de entrada</h4><div class=\"sg-a3-senales\">");
+
+        List<ActivoVariable> variables = new ActivoVariableController().GetVariables(
+            new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
+            ?? new List<ActivoVariable>();
+
+        if (variables.Count == 0)
+            s.Append("<p class=\"sg-ot-vacio-txt\">Este equipo no tiene variables de condición configuradas.</p>");
+        else
+        {
+            DateTime hoy = global::SitioBase.Hora.Hoy;
+            ActivoVariableController ctlVar = new ActivoVariableController();
+
+            foreach (ActivoVariable v in variables.Take(4))
+            {
+                MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-30), null);
+                bool hay = r != null && r.ultimo_valor != null;
+
+                s.Append("<div class=\"sg-a3-senal ").Append(hay ? "es-ok" : "es-sin").Append("\">")
+                 .Append("<i class=\"mdi mdi-pulse\"></i>")
+                 .Append("<div><span>").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</span>")
+                 .Append("<b>").Append(hay ? "Disponible" : "Sin datos").Append("</b></div></div>");
+            }
+        }
+
+        s.Append("</div></div></div>");
+
+        // ---- recomendacion y acciones ----
+        s.Append("<div class=\"sg-a3-ia-cols es-abajo\">");
+
+        s.Append("<div class=\"sg-a3-ia-reco\"><h4><i class=\"mdi mdi-wrench-outline\"></i>Recomendación</h4>")
+         .Append("<p>Revisar el equipo y validar las lecturas antes de intervenir.</p>");
+
+        /* La alerta no guarda una recomendacion escrita: guarda el numero que
+           disparo el aviso. Se muestra ese, que es lo unico comprobable. */
+        if (p.ale_valor_observado != null)
+            s.Append("<p class=\"sg-a3-ia-dato\">Valor observado <strong>")
+             .Append(p.ale_valor_observado.Value.ToString("0.##")).Append("</strong>")
+             .Append(p.ale_valor_umbral == null ? "" : " · umbral " + p.ale_valor_umbral.Value.ToString("0.##"))
+             .Append("</p>");
+
+        s
+         .Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
+         .Append("<span>Revisión humana requerida antes de cualquier acción.</span></div></div>");
+
+        s.Append("<div class=\"sg-a3-ia-acc\"><h4>Acciones sugeridas</h4>")
+         .Append(BotonSeccion("condicion", "Ver señales del equipo"))
+         .Append(Boton(ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx"), "Crear OT predictiva", true))
+         .Append("<p class=\"sg-a3-ia-limite\">Revise si ya existe una orden abierta antes de crear otra.</p></div>");
+
+        s.Append("</div>");
+
+        // ---- con que se relaciona ----
+        s.Append("<div class=\"sg-a3-ia-rel\">");
+
+        s.Append("<div><h4><i class=\"mdi mdi-clipboard-text-outline\"></i>Órdenes abiertas del equipo</h4>");
+        List<OrdenTrabajo> abiertas = ordenes.Where(o => o.otr_orden_trabajo_estado != 4).Take(4).ToList();
+
+        if (abiertas.Count == 0)
+            s.Append("<p class=\"sg-ot-vacio-txt\">Sin órdenes abiertas.</p>");
+        else
+            foreach (OrdenTrabajo o in abiertas)
+                s.Append(Fila("mdi-clipboard-text-outline", "", "OT-" + o.otr_correlativo + " · " + Texto(o.otr_titulo),
+                         Texto(o.tipo_nombre), Boton(UrlOrden(o.otr_id), "Abrir OT")));
+
+        s.Append("</div>");
+
+        s.Append("<div><h4><i class=\"mdi mdi-alert-outline\"></i>Fallas registradas</h4>");
+        List<Falla> abiertasFalla = fallas.Take(4).ToList();
+
+        if (abiertasFalla.Count == 0)
+            s.Append("<p class=\"sg-ot-vacio-txt\">Sin fallas registradas.</p>");
+        else
+            foreach (Falla f in abiertasFalla)
+                s.Append(Fila("mdi-alert-outline", "es-rojo", Texto(f.fal_titulo),
+                         f.fal_fecha_deteccion_utc == null ? "" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy"),
+                         ""));
+
+        s.Append("</div></div>");
+
+        s.Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
+         .Append("<span>La predicción es un apoyo al análisis. Requiere revisión humana y validación en terreno.</span></div>");
+
+        s.Append("</div>");
+
+        litIaPanel.Text = s.ToString();
+    }
+
+    #endregion
+
+    #region 13. Bitacora y trazabilidad
+
+    /// <summary>
+    /// Lo que la gente anoto del equipo y cada cambio de estado que tuvo.
+    ///
+    /// LA BITACORA NO SE EDITA
+    ///   Una correccion entra como un registro nuevo. La trazabilidad se
+    ///   pierde el dia que alguien puede arreglar lo que escribio ayer, asi
+    ///   que esta pantalla solo agrega.
+    /// </summary>
+    private void BitacoraYTrazabilidad(Activo a, List<ActivoFichaEvento> eventos)
+    {
+        List<ActivoBitacora> registros = new ActivoCentroController().GetBitacora(a.act_id)
+                                         ?? new List<ActivoBitacora>();
+
+        litBitConteos.Text =
+            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + registros.Count + "</strong><span>registros</span></div>" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + registros.Count(x => x.requiere_atencion) + "</strong><span>por atender</span></div></div>";
+
+        if (registros.Count == 0)
+            litBitacora.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-notebook-outline\"></i>" +
+                               "<p>Sin registros de bitácora</p>" +
+                               "<span>Las observaciones llegan desde la app o se escriben acá abajo.</span></div>";
+        else
+        {
+            StringBuilder s = new StringBuilder("<ul class=\"sg-a3-linea\">");
+
+            foreach (ActivoBitacora b in registros)
+            {
+                s.Append("<li class=\"").Append(b.requiere_atencion ? "es-aviso" : "").Append("\">")
+                 .Append("<span class=\"sg-a3-linea-ico\"><i class=\"mdi ")
+                 .Append(b.tipo_icono.StartsWith("mdi-") ? b.tipo_icono : "mdi-note-text-outline").Append("\"></i></span>")
+                 .Append("<div class=\"sg-a3-linea-txt\">")
+                 .Append("<span class=\"sg-a3-linea-tit\">").Append(Server.HtmlEncode(b.etiqueta))
+                 .Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(b.tipo_nombre))).Append("</span>");
+
+                if (b.requiere_atencion)
+                    s.Append("<span class=\"sg-ot-chip es-aviso\">Requiere atención</span>");
+
+                s.Append("</span>")
+                 .Append("<span class=\"sg-a3-linea-sub\">").Append(Server.HtmlEncode(Texto(b.texto))).Append("</span>")
+                 .Append("<span class=\"sg-a3-linea-pie\">")
+                 .Append(b.fecha == null ? "Sin fecha" : b.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+                 .Append(" · ").Append(Server.HtmlEncode(string.IsNullOrEmpty(b.usuario) ? "Sin usuario" : b.usuario))
+                 .Append(" · ").Append(Server.HtmlEncode(Texto(b.origen)));
+
+                if (!string.IsNullOrEmpty(b.componente))
+                    s.Append(" · ").Append(Server.HtmlEncode(b.componente));
+
+                if (b.orden_id != null && b.orden_correlativo > 0)
+                    s.Append(" · OT-").Append(b.orden_correlativo);
+
+                /* Se escribio sin conexion y llego despues: la fecha del
+                   evento y la de llegada no son la misma, y eso es justo lo
+                   que se revisa cuando algo no cuadra. */
+                if (b.llego_tarde)
+                    s.Append(" · <em>sincronizado el ")
+                     .Append(b.sincronizacion.Value.ToString("dd MMM yyyy · HH:mm")).Append("</em>");
+
+                s.Append("</span></div></li>");
+            }
+
+            litBitacora.Text = s.Append("</ul>").ToString();
+        }
+
+        // ---- trazabilidad: los cambios de estado del equipo ----
+        List<ActivoFichaEvento> cambios = eventos
+            .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO")
+            .Take(15)
+            .ToList();
+
+        if (cambios.Count == 0)
+        {
+            litTrazabilidad.Text = "<p class=\"sg-ot-vacio-txt\">Este equipo no registra cambios de estado.</p>";
+            return;
+        }
+
+        StringBuilder tz = new StringBuilder();
+
+        foreach (ActivoFichaEvento c in cambios)
+            tz.Append(Fila("mdi-swap-horizontal", "",
+                     Texto(c.titulo),
+                     (c.fecha == null ? "Sin fecha" : c.fecha.Value.ToString("dd MMM yyyy · HH:mm")) +
+                     (string.IsNullOrEmpty(c.usuario_nombre) ? "" : " · " + c.usuario_nombre),
+                     ""));
+
+        litTrazabilidad.Text = tz.ToString();
+    }
+
+    /// <summary>
+    /// Publica la observacion escrita en la pantalla. Es el unico punto de
+    /// esta ficha que escribe, y escribe por el mismo camino que la app.
+    /// </summary>
+    protected void lnkPublicar_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "bitacora";
+
+        int id = ActivoSeleccionado();
+        if (id == 0) return;
+
+        Activo a = new ActivoController().GetActivo(id);
+        if (a == null || a.act_id == 0 || a.act_cliente != _cliente) return;
+
+        Respuesta r = new ActivoCentroController().AgregarObservacion(
+            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area, txtObservacion.Text);
+
+        litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
+                           "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
+                           "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        if (!r.error) txtObservacion.Text = "";
     }
 
     #endregion

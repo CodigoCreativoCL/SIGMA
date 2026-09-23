@@ -332,3 +332,208 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-linea .fecha { font-size: 11.5px; color: var(--sg-tenue); }
 .sg-a3-linea .tit { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
 .sg-a3-linea .det { display: block; font-size: 12px; color: var(--sg-suave); line-height: 1.5; }
+
+/* ============================================================================
+   VISTAS 10 A 13: inspecciones, repuestos, SIGMA AI y bitacora.
+   ========================================================================= */
+
+/* ------------------------------------------- inspecciones y tareas -------- */
+.sg-a3-rev-cab,
+.sg-a3-rev {
+    grid-template-columns: minmax(200px, 2.2fr) 110px 110px 170px 130px 140px 40px;
+}
+.sg-a3-rev { cursor: pointer; }
+.sg-a3-rev-flecha { color: var(--sg-tenue); transition: transform .18s ease; }
+.sg-a3-rev.es-abierta .sg-a3-rev-flecha { transform: rotate(180deg); }
+.sg-a3-rev.es-oculta,
+.sg-a3-rev.es-oculta + .sg-a3-rev-detalle { display: none; }
+
+.sg-a3-items { display: grid; gap: 6px; margin-top: 6px; }
+.sg-a3-item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: #fff;
+    border: 1px solid var(--sg-borde);
+}
+.sg-a3-item i { font-size: 15px; }
+.sg-a3-item.es-bueno i { color: #16a34a; }
+.sg-a3-item.es-malo i { color: #dc2626; }
+.sg-a3-item.es-pendiente i { color: #94a3b8; }
+.sg-a3-item-txt { font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-item-val {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--sg-suave);
+    background: #f1f3f9;
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+.sg-a3-item.es-malo .sg-a3-item-val { background: #fee2e2; color: #b91c1c; }
+.sg-a3-item.es-bueno .sg-a3-item-val { background: #dcfce7; color: #15803d; }
+
+.sg-a3-ot-det-item.es-ancho { grid-column: 1 / -1; }
+
+/* ---------------------------------------------- repuestos y costos -------- */
+.sg-a3-rep-cab,
+.sg-a3-rep {
+    grid-template-columns: minmax(180px, 2fr) 110px 110px 130px 120px 110px 90px 120px;
+}
+
+/* ------------------------------------------------------- SIGMA AI -------- */
+.sg-a3-tab.es-ia { margin-left: auto; }
+.sg-a3-tab.es-ia i { color: #7c5cff; }
+
+.sg-a3-ia-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sg-a3-ia-head h3 { margin: 0; font-size: 16px; }
+.sg-a3-ia-head h3 span { font-weight: 500; color: #7c5cff; }
+.sg-a3-ia-ico {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #6d28d9;
+    font-size: 20px;
+}
+.sg-a3-ia-fecha { margin-left: auto; font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-a3-ia-cols {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.sg-a3-ia-cols.es-abajo { grid-template-columns: 1.4fr 1fr; }
+
+.sg-a3-ia-aviso {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f5f3ff, #faf5ff);
+    border: 1px solid #e9d5ff;
+}
+.sg-a3-ia-aviso > i { font-size: 24px; color: #dc2626; }
+.sg-a3-ia-aviso strong { display: block; font-size: 16px; color: var(--sg-texto); }
+.sg-a3-ia-aviso p { margin: 6px 0 0; font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-ia-tipo {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #6d28d9;
+}
+
+/* El limite del modelo se dice en la misma tarjeta que su aviso: leerlo
+   aparte, al pie, es leerlo despues de haber decidido. */
+.sg-a3-ia-limite { font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-ia-dato { font-size: 12.5px; color: var(--sg-suave); }
+
+.sg-a3-ia-senal h4,
+.sg-a3-ia-reco h4,
+.sg-a3-ia-acc h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-reco h4 i,
+.sg-a3-ia-acc h4 i { margin-right: 6px; color: var(--sg-suave); }
+
+.sg-a3-senales { display: grid; gap: 8px; }
+.sg-a3-senal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+}
+.sg-a3-senal i { font-size: 17px; color: var(--sg-suave); }
+.sg-a3-senal span { display: block; font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-senal b { font-size: 11.5px; font-weight: 600; }
+.sg-a3-senal.es-ok b { color: #16a34a; }
+.sg-a3-senal.es-sin b { color: #94a3b8; }
+
+.sg-a3-ia-reco,
+.sg-a3-ia-acc {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.sg-a3-ia-acc { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.sg-a3-ia-acc .sg-ot-btn { justify-content: center; }
+
+.sg-a3-ia-rel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.sg-a3-ia-rel h4 { margin: 0 0 8px; font-size: 13px; color: var(--sg-texto); }
+.sg-a3-ia-rel h4 i { margin-right: 6px; color: var(--sg-suave); }
+
+/* -------------------------------------------------------- bitacora ------- */
+.sg-a3-linea li.es-aviso { border-left-color: #f59e0b; }
+.sg-a3-linea-ico {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: #f1f3f9;
+    color: var(--sg-suave);
+    font-size: 15px;
+}
+.sg-a3-linea-txt { display: block; }
+.sg-a3-linea-tit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-linea-sub { display: block; margin: 3px 0; font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-linea-pie { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-a3-obs { display: grid; gap: 8px; }
+.sg-a3-obs-acc { display: flex; justify-content: flex-end; }
+
+.sg-a3-col.es-angosta { max-width: 380px; }
+
+@media (max-width: 1100px) {
+    .sg-a3-ia-cols,
+    .sg-a3-ia-cols.es-abajo { grid-template-columns: 1fr; }
+    .sg-a3-col.es-angosta { max-width: none; }
+}
+
+/* El chip de inspecciones NO reusa .sg-ot-ev-chip: sigma-orden.js toma todos
+   los de esa clase para la galeria de evidencias y le pisaria el onclick. */
+a.sg-a3-chip, a.sg-a3-chip:hover, a.sg-a3-chip:focus {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 999px;
+    background: #fff;
+    color: #4b5563;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+}
+a.sg-a3-chip:hover { background: #f9fafb; }
+a.sg-a3-chip b { font-weight: 700; color: var(--sg-tenue); }
+a.sg-a3-chip.es-activa { background: var(--sg-p); border-color: var(--sg-p); color: #fff; }
+a.sg-a3-chip.es-activa b { color: #fff; }
