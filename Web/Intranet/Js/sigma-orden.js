@@ -98,7 +98,12 @@
            filtrar devuelva vacio y parezca roto. */
         if (selPaso) {
             var vistos = {};
-            selPaso.innerHTML = '<option value="">Todos los pasos</option>';
+
+            /* El texto de "todas" lo pone la pagina: en la orden de trabajo son
+               pasos y en la tarea recurrente son ocurrencias. Escribirlo aca
+               dejaba a la tarea preguntando por "todos los pasos". */
+            var todas = selPaso.options.length ? selPaso.options[0].textContent : 'Todos';
+            selPaso.innerHTML = '<option value="">' + todas + '</option>';
             for (var i = 0; i < cards.length; i++) {
                 var id = cards[i].getAttribute('data-paso');
                 var txt = cards[i].getAttribute('data-paso-txt');

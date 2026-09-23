@@ -1,0 +1,247 @@
+﻿/* ============================================================================
+   LA TAREA RECURRENTE
+
+   La cascara -cabecera, pestañas, tarjetas, chips, datos, vacios- es la del
+   centro de la orden de trabajo y se reusa tal cual desde sigma-orden.css.
+   Aca va SOLO lo que esta pantalla tiene y la otra no: la lista de
+   programaciones, la tabla de ocurrencias y el hilo de conversacion.
+
+   Copiar la cascara con otro prefijo habrian sido doscientas lineas que se
+   separan a la primera correccion hecha en una sola de las dos.
+   ============================================================================ */
+
+/* ------------------------------------------------- campos con sufijo ------ */
+/* "10" y "min" se leen como una sola cosa: el sufijo va pegado al campo y no
+   como ayuda debajo, que es donde se pierde. */
+.sg-ta .sg-ta-min { display: flex; align-items: stretch; }
+.sg-ta .sg-ta-min input[type="text"] { border-top-right-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+.sg-ta-min-suf {
+    display: inline-flex;
+    align-items: center;
+    padding: 0 12px;
+    border: 1px solid var(--sg-borde);
+    border-left: 0;
+    border-radius: 0 10px 10px 0;
+    background: #f7f7fa;
+    color: var(--sg-suave);
+    font-size: 12.5px;
+}
+
+/* ---- El si/no como interruptor ----
+   Dos radios "SI/NO" para una pregunta de si o no son dos controles para un
+   dato: la casilla ya dice lo mismo y el texto de al lado cambia con ella. */
+label.sg-ta-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    height: 38px;
+    margin: 0;
+    font-weight: 400;
+    cursor: pointer;
+}
+/* La casilla se dibuja como interruptor: una casilla cuadrada al lado de la
+   palabra "No" no se lee como un si/no, se lee como una casilla marcada que
+   dice que no. El control sigue siendo el <input type="checkbox"> de ASP.NET
+   -con su foco de teclado y su postback-, solo cambia su pintura. */
+label.sg-ta-toggle input[type="checkbox"] {
+    position: relative;
+    flex: 0 0 auto;
+    width: 40px; height: 22px;
+    margin: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    border-radius: 999px;
+    background: #d9dce3;
+    cursor: pointer;
+    transition: background .15s ease;
+}
+label.sg-ta-toggle input[type="checkbox"]::after {
+    content: '';
+    position: absolute;
+    top: 3px; left: 3px;
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, .25);
+    transition: transform .15s ease;
+}
+label.sg-ta-toggle input[type="checkbox"]:checked { background: var(--sg-p); }
+label.sg-ta-toggle input[type="checkbox"]:checked::after { transform: translateX(18px); }
+label.sg-ta-toggle input[type="checkbox"]:focus-visible { outline: 3px solid rgba(108, 92, 255, .25); outline-offset: 2px; }
+label.sg-ta-toggle input[type="checkbox"]:disabled { opacity: .5; cursor: default; }
+
+/* El <label> que ASP.NET pega al lado de la casilla va vacio: el texto lo
+   pone el span, que ademas cambia con el interruptor. */
+label.sg-ta-toggle input[type="checkbox"] + label { display: none; }
+.sg-ta-toggle-txt { font-size: 13px; font-weight: 500; color: var(--sg-texto); }
+
+/* --------------------------------------------------- programaciones ------- */
+.sg-ta-prog-cab,
+.sg-ta-prog {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr) minmax(0, 1fr) minmax(0, 1fr) 100px 70px;
+    gap: 10px;
+    align-items: center;
+    padding: 10px 4px;
+}
+.sg-ta-prog-cab {
+    padding-top: 0;
+    border-bottom: 1px solid #eef0f6;
+    color: var(--sg-suave);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sg-ta-prog + .sg-ta-prog { border-top: 1px solid #f5f6fa; }
+.sg-ta-prog .c-frec { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.sg-ta-prog .c-frec i { color: var(--sg-p); font-size: 17px; }
+.sg-ta-prog .c-frec strong { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-ta-prog .c-frec em { display: block; font-size: 11px; font-style: normal; color: var(--sg-tenue); }
+.sg-ta-prog .c-resp,
+.sg-ta-prog .c-grupo,
+.sg-ta-prog .c-inicio { font-size: 12.5px; color: #4b5563; min-width: 0; }
+.sg-ta-prog .c-resp i { margin-right: 5px; color: var(--sg-tenue); }
+.sg-ta-prog .c-acc { display: flex; justify-content: flex-end; gap: 4px; }
+.sg-ta-prog-pie { margin-top: 10px; padding-top: 10px; border-top: 1px solid #f2f3f7; }
+
+/* ------------------------------------------------------- ocurrencias ------ */
+.sg-ta-conteos { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 10px; }
+
+/* Un punto de color antes del texto: el estado se distingue de lejos sin
+   depender solo del color, porque la palabra sigue estando. */
+.sg-ta-punto { width: 7px; height: 7px; border-radius: 999px; background: #c7cad6; display: inline-block; }
+.sg-ta-punto.es-ok { background: #16a34a; }
+.sg-ta-punto.es-pendiente { background: #f59e0b; }
+.sg-ta-punto.es-futura { background: #9ca3af; }
+.sg-ta-punto.es-mala { background: #dc2626; }
+
+.sg-ta-oc-cab,
+.sg-ta-oc {
+    display: grid;
+    grid-template-columns: minmax(0, 1.3fr) minmax(0, 1.2fr) 130px minmax(0, 1.3fr) 130px;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 8px;
+    border-radius: 10px;
+}
+.sg-ta-oc-cab {
+    border-bottom: 1px solid #eef0f6;
+    border-radius: 0;
+    color: var(--sg-suave);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sg-ta-oc + .sg-ta-oc { border-top: 1px solid #f5f6fa; }
+.sg-ta-oc:hover { background: #fafaff; }
+.sg-ta-oc.es-elegida { background: #f5f3ff; }
+.sg-ta-oc .c-fecha { font-size: 13px; font-weight: 500; color: var(--sg-texto); }
+.sg-ta-oc .c-resp { font-size: 12.5px; color: #4b5563; display: flex; align-items: center; gap: 6px; min-width: 0; }
+.sg-ta-oc .c-resp i { color: var(--sg-tenue); }
+.sg-ta-oc .c-ejec { font-size: 12.5px; color: #4b5563; min-width: 0; }
+.sg-ta-oc .c-acc { display: flex; justify-content: flex-end; }
+a.sg-ta-ver, a.sg-ta-ver:hover { height: 32px; padding: 0 12px; font-size: 12px; }
+
+.sg-ta-sin-fotos {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px;
+    border: 1.5px dashed #e3e6ef;
+    border-radius: 12px;
+    background: #fcfcfe;
+}
+.sg-ta-sin-fotos i { font-size: 24px; color: #c0c4d2; }
+.sg-ta-sin-fotos strong { display: block; font-size: 13px; color: #4b5563; }
+.sg-ta-sin-fotos span { font-size: 11.5px; color: var(--sg-tenue); }
+
+a.sg-ta-ver-conversacion, a.sg-ta-ver-conversacion:hover { width: 100%; margin-top: 14px; }
+
+/* ------------------------------------------------------ conversacion ------ */
+.sg-ta-com-filtros {
+    display: grid;
+    grid-template-columns: minmax(200px, 280px) minmax(0, 1fr);
+    gap: 10px;
+    align-items: end;
+    margin-bottom: 14px;
+}
+@media (max-width: 760px) { .sg-ta-com-filtros { grid-template-columns: 1fr; } }
+
+.sg-ta-hilo {
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+}
+.sg-ta-hilo-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sg-ta-hilo-cab strong { display: block; font-size: 13px; color: var(--sg-texto); }
+.sg-ta-hilo-cab span { font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-ta-com { display: flex; gap: 10px; padding: 10px 0; }
+.sg-ta-com + .sg-ta-com { border-top: 1px solid #f5f6fa; }
+
+/* La respuesta se sangra y cuelga de una linea: sin eso, una conversacion de
+   ocho mensajes se lee como ocho mensajes sueltos. */
+.sg-ta-com.es-respuesta {
+    margin-left: 26px;
+    padding-left: 14px;
+    border-left: 2px solid #e6e3f8;
+    border-top: 0;
+}
+.sg-ta-com-txt { flex: 1 1 auto; min-width: 0; }
+.sg-ta-com-meta { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 3px; font-size: 11.5px; color: var(--sg-tenue); }
+.sg-ta-com-meta strong { font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-ta-origen { padding: 2px 7px; border-radius: 6px; background: #f1effe; color: #5b4bd6; font-size: 10.5px; }
+.sg-ta-com-txt p { margin: 0 0 4px; font-size: 13px; line-height: 1.55; color: #374151; white-space: pre-wrap; }
+
+.sg-ta-responder {
+    margin-top: 14px;
+    padding: 12px 14px;
+    border: 1px solid #ddd6fe;
+    border-radius: 12px;
+    background: #faf9ff;
+}
+.sg-ta-responder-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12.5px;
+    color: #4b5563;
+}
+.sg-ta-responder textarea {
+    width: 100% !important;
+    min-height: 74px;
+    padding: 10px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: #fff;
+    font-size: 13px;
+    outline: none;
+}
+.sg-ta-responder textarea:focus { border-color: #b9aeff; box-shadow: 0 0 0 3px rgba(108, 92, 255, .12); }
+.sg-ta-responder-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 10px; }
+
+/* Mientras el navegador escucha, el boton lo dice: un microfono que no avisa
+   que esta grabando es un microfono en el que no se confia. */
+a.sg-ta-dictando, a.sg-ta-dictando:hover {
+    border-color: #fecaca;
+    background: #fff1f2;
+    color: #b91c1c !important;
+}
+
+/* --------------------------------------------------------- resumen -------- */
+.sg-ta-kpi { display: flex; align-items: center; gap: 11px; padding: 9px 0; }
+.sg-ta-kpi + .sg-ta-kpi { border-top: 1px solid #f5f6fa; }
+.sg-ta-kpi-valor { display: block; font-size: 14px; font-weight: 600; color: var(--sg-texto); }
+.sg-ta-kpi-etq { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+
+@media (max-width: 900px) {
+    .sg-ta-prog-cab, .sg-ta-oc-cab { display: none; }
+    .sg-ta-prog, .sg-ta-oc { grid-template-columns: 1fr 1fr; }
+    .sg-ta-prog .c-frec, .sg-ta-oc .c-fecha { grid-column: 1 / -1; }
+    .sg-ta-oc .c-acc, .sg-ta-prog .c-acc { justify-content: flex-start; }
+}

@@ -687,12 +687,15 @@ label.sg-ot-confirmo input[type="checkbox"] + label { display: none; }
 /* ==================================================== FORMULARIOS (rejilla) */
 /* sigma-modal.css trae la grilla de campos; aca solo se ajusta lo que en una
    pantalla completa se ve distinto que dentro de un modal. */
+/* El reparto en doce columnas es de los campos que estan DENTRO de una
+   .sigma-modal-grid. Sin ese "> ", un campo suelto en cualquier otra rejilla
+   -los filtros de la conversacion, por ejemplo- se llevaba la fila entera. */
 .sg-ot .sigma-modal-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 12px 14px; }
-.sg-ot .sigma-modal-field { grid-column: span 12; }
+.sg-ot .sigma-modal-grid > .sigma-modal-field { grid-column: span 12; }
 @media (min-width: 681px) {
-    .sg-ot .sigma-modal-field.is-chico { grid-column: span 4; }
-    .sg-ot .sigma-modal-field.is-medio { grid-column: span 6; }
-    .sg-ot .sigma-modal-field.is-ancho { grid-column: span 12; }
+    .sg-ot .sigma-modal-grid > .sigma-modal-field.is-chico { grid-column: span 4; }
+    .sg-ot .sigma-modal-grid > .sigma-modal-field.is-medio { grid-column: span 6; }
+    .sg-ot .sigma-modal-grid > .sigma-modal-field.is-ancho { grid-column: span 12; }
 }
 .sg-ot .sigma-modal-field > label { display: block; font-size: 12px; font-weight: 500; color: #4b5563; margin-bottom: 5px; }
 .sg-ot .sigma-modal-ayuda { display: block; margin-top: 4px; font-size: 11px; color: var(--sg-tenue); line-height: 1.4; }
@@ -703,8 +706,8 @@ label.sg-ot-confirmo input[type="checkbox"] + label { display: none; }
    misma rejilla de la ficha, las etiquetas se cortaban ("¿Detuvo la produc...")
    y los dos radios de tipo se montaban uno sobre otro. */
 @media (min-width: 681px) {
-    .sg-ot-cols.es-tres .sigma-modal-field.is-chico { grid-column: span 6; }
-    .sg-ot-cols.es-tres .sigma-modal-field.is-medio { grid-column: span 12; }
+    .sg-ot-cols.es-tres .sigma-modal-grid > .sigma-modal-field.is-chico { grid-column: span 6; }
+    .sg-ot-cols.es-tres .sigma-modal-grid > .sigma-modal-field.is-medio { grid-column: span 12; }
 }
 .sg-ot .sigma-modal-opciones.sg-ot-si-no label { margin: 0 0 0 4px; font-weight: 400; font-size: 13px; }
 
