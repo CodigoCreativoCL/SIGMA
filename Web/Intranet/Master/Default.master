@@ -103,7 +103,7 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=18" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=24" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -332,19 +332,16 @@
                                  formulario de la pantalla que queda detrás. --%>
 
                             <div class="sg-notif-cabecera">
-                                <div>
-                                    <span class="sg-notif-eyebrow">Centro de notificaciones</span>
-                                    <span class="titulo">Actividad que requiere atención</span>
-                                    <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
+                                <div class="sg-notif-head">
+                                    <span class="sg-notif-head-icono" aria-hidden="true"><i class="mdi mdi-bell-outline"></i></span>
+                                    <span class="titulo">Notificaciones</span>
+                                    <asp:Literal ID="litPanelNuevas" runat="server" />
                                 </div>
-                                <div class="sg-notif-cabecera-acciones">
-                                    <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
-                                        data-sg-notif-leer-todo>Marcar todo como leído</button>
-                                    <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
-                                            aria-label="Cerrar centro de notificaciones">
-                                        <i class="mdi mdi-close" aria-hidden="true"></i>
-                                    </button>
-                                </div>
+                                <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
+                                        aria-label="Cerrar centro de notificaciones">
+                                    <i class="mdi mdi-close" aria-hidden="true"></i>
+                                </button>
+                                <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
                             </div>
 
                             <%-- FILTRAR SIN SALIR DEL PANEL
@@ -364,16 +361,19 @@
                                     Todas <span class="n"></span></button>
                                 <button type="button" class="sg-notif-filtro"
                                         data-sg-notif-filtro="0" aria-pressed="false">
-                                    Sin ver <span class="n"></span></button>
+                                    Sin leer <span class="n"></span></button>
                                 <button type="button" class="sg-notif-filtro"
-                                        data-sg-notif-filtro="1" aria-pressed="false">
-                                    Vistas <span class="n"></span></button>
+                                        data-sg-notif-filtro="ai" aria-pressed="false">
+                                    SIGMA AI <span class="n"></span></button>
+                                <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
+                                    data-sg-notif-leer-todo>Marcar leídas</button>
                             </div>
 
                             <div class="sg-notif-cuerpo">
                                 <asp:Repeater ID="rptAlertas" runat="server"
                                     OnItemDataBound="rptAlertas_ItemDataBound">
                                     <ItemTemplate>
+                                        <asp:Literal ID="litSeccion" runat="server" />
                                         <button type="button" ID="lnkItem" runat="server">
                                             <asp:Literal ID="litItem" runat="server" />
                                         </button>

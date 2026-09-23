@@ -2170,3 +2170,613 @@
 .sg-notif-item[hidden],
 .sg-alerta[hidden],
 .sg-notif-filtro[hidden] { display: none !important; }
+
+
+/* ============================================================================
+   EL PANEL DE LA CAMPANA, EN VERSION CORTA
+
+   QUE PASABA
+
+     Cada fila media 88 pixeles y traia seis bloques: titulo, descripcion de
+     dos lineas, ubicacion, hora, hasta cuatro pastillas y un "Revisar ->".
+     En una pantalla de 900 px de alto las filas se pisaban: el "Revisar" de
+     una quedaba sobre el titulo de la siguiente y las pastillas de la
+     primera salian cortadas por el borde del panel.
+
+     Y la palabra "Nueva" aparecia DOS veces en la misma fila: el estado de
+     la alerta se llama NUEVA y ademas estaba la pastilla de no leida.
+
+   LA REGLA
+
+     La de cualquier centro de notificaciones -Facebook, Instagram, GitHub-:
+     icono, dos lineas de texto, la hora y un punto si no se ha visto. La
+     fila solo tiene que lograr que la persona decida si abre; el detalle
+     esta en la ficha que se abre al tocarla.
+
+     La altura baja de 88 a 56 pixeles, asi que en el mismo alto caben siete
+     filas en vez de cuatro y media, y ninguna queda cortada.
+
+   ESTA HOJA VA AL FINAL A PROPOSITO
+
+     Redefine reglas de mas arriba de este mismo archivo, como las capas
+     anteriores. Van juntas y comentadas: el dia que haya que volver atras se
+     saca el bloque entero.
+   ============================================================================ */
+
+/* ---- El panel: mas angosto y con el alto de una lista, no de una pagina ---- */
+.sg-notif-panel { width: 352px; }
+.sg-notif-cuerpo { max-height: 396px; }
+
+/* ---- La cabecera deja de ser un titulo de pagina ---- */
+.sg-notif-cabecera { padding: 11px 14px 9px; }
+.sg-notif-eyebrow { display: none; }
+.sg-notif-cabecera .titulo { font-size: 13px; font-weight: 700; line-height: 1.2; }
+.sg-notif-resumen { font-size: 10px; }
+.sg-notif-leer { font-size: 10px; }
+
+/* ---- Los filtros, mas bajos ---- */
+.sg-notif-filtros { padding: 0 10px 8px; }
+.sg-notif-filtro { padding: 4px 9px; font-size: 10px; }
+
+/* ---- La fila ---- */
+.sg-notif-item {
+    grid-template-columns: 34px minmax(0, 1fr) 8px !important;
+    gap: 10px !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    padding: 9px 13px !important;
+}
+.sg-notif-item .icono { width: 34px; height: 34px; }
+.sg-notif-item .icono img { width: 25px; height: 25px; }
+
+.sg-notif-item .titulo {
+    display: -webkit-box;
+    overflow: hidden;
+    padding-right: 0;
+    font-size: 11.5px;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+}
+
+/* La descripcion baja a UNA linea: la segunda casi siempre era el final de
+   una cifra ("Faltan 9.00.") y no cambia ninguna decision. */
+.sg-notif-item .detalle {
+    margin-top: 1px;
+    font-size: 10px;
+    line-height: 1.3;
+    -webkit-line-clamp: 1;
+}
+
+/* La hora y, si pide decision, la gravedad. Sin pastillas: texto gris. */
+.sg-notif-item .cuando {
+    display: block;
+    margin-top: 3px;
+    overflow: hidden;
+    color: #8a93a5;
+    font-size: 9.5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.sg-notif-item .cuando .sev {
+    padding: 0;
+    border-radius: 0;
+    background: none !important;
+    color: #b4413c;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* ---- Lo que ya no va en la fila ---- */
+.sg-notif-item .contexto,
+.sg-notif-item .sg-notif-state,
+.sg-notif-item .sg-notif-ai,
+.sg-notif-action { display: none !important; }
+
+/* ---- El punto de no leida, centrado con la fila ---- */
+.sg-notif-item .punto {
+    align-self: center;
+    width: 7px;
+    height: 7px;
+    margin-top: 0;
+    background: var(--sg-purple, #6C5CFF);
+}
+.sg-notif-item.sev-critica .punto,
+.sg-notif-item.sev-alta .punto { background: #c0443f; }
+
+/* ---- El pie ---- */
+.sg-notif-pie { padding: 8px 14px; }
+.sg-notif-pie a { font-size: 10px; }
+
+/* ---- El icono: glifo de Material en un disco neutro ----
+   El disco no es decoración: separa el icono del título cuando la fila mide
+   56 px y los dos compiten por la misma línea. Es gris y uno solo para todos
+   los tipos, porque la señal de color de la fila ya la da el punto de no
+   leída y la palabra de gravedad. La predicción se queda con su SVG y sin
+   disco: el dibujo ya trae su propio color de marca. */
+.sg-notif-item .icono {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: #f1f3f9;
+}
+.sg-notif-item .icono i {
+    color: #5d6478;
+    font-size: 17px;
+    line-height: 1;
+}
+.sg-notif-item.is-nueva .icono i { color: #434b61; }
+.sg-notif-item .icono.es-ai { background: rgba(108, 92, 255, .10); }
+.sg-notif-item.is-resuelta .icono { background: #f4f5f7; }
+.sg-notif-item.is-resuelta .icono i { color: #98a1b3; }
+
+/* ---- La columna: solo la lista scrollea ----
+
+   El `display` va en `.show` y NO en el panel a secas: Bootstrap abre y
+   cierra este dropdown poniendo y quitando esa clase, y su regla para
+   cerrarlo es `.dropdown-menu { display: none }`. Al declarar el flex en el
+   panel se le ganaba por orden de carga y el panel quedaba visible siempre:
+   se abría bien y no se cerraba nunca. */
+.sg-notif-panel { width: 384px !important; }
+.sg-notif-panel.show {
+    display: flex;
+    flex-direction: column;
+}
+.sg-notif-panel > .sg-notif-cabecera,
+.sg-notif-panel > .sg-notif-filtros,
+.sg-notif-panel > .sg-notif-pie {
+    flex: 0 0 auto;
+    max-height: none;
+}
+.sg-notif-panel > .sg-notif-cuerpo {
+    flex: 1 1 auto;
+    min-height: 120px;
+    max-height: 372px;
+    overflow-y: auto;
+}
+
+/* La lista es una columna flex, así que sus filas son elementos flex: con el
+   `min-height: 88px` de antes no se notaba, pero al bajarlo a 0 para la fila
+   corta empezaron a encogerse por debajo de su contenido y una fila se
+   dibujaba encima de la siguiente. Una fila no se comprime: mide lo que mide
+   su texto. */
+.sg-notif-cuerpo > .sg-notif-item { flex: 0 0 auto; }
+
+/* ---- El disco del icono, redondo también en las filas de SIGMA AI ---- */
+.sg-notif-item .icono.es-ai,
+.sg-notif-item.is-ai .icono.es-ai {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: rgba(108, 92, 255, .10);
+}
+
+/* El símbolo respira dentro del disco en vez de tocarle el borde, que es lo
+   que hacía que se viera el fondo como un cuadrado detrás del dibujo. */
+.sg-notif-item .icono svg { width: 74%; height: 74%; margin: auto; }
+
+/* ---- El pie, como pie ---- */
+.sg-notif-pie {
+    border-top: 1px solid #e8ecf3;
+    background: #fbfcfe;
+}
+.sg-notif-pie a {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    justify-content: center;
+    padding: 2px 0;
+    color: #5c3de4;
+    font-weight: 700;
+}
+
+
+/* ============================================================================
+   EL PANEL CON LA FORMA DEL MOCKUP
+
+   Tres decisiones que vale la pena dejar escritas:
+
+   1. LA PREDICCION SE DESTACA UNA SOLA VEZ
+      La primera fila que salio de un modelo se dibuja como tarjeta, con su
+      marca arriba y su boton abajo. Es lo unico de la lista que no se lee
+      solo -una prediccion pide entender antes de actuar- y ponerla como una
+      fila mas la hacia invisible entre diez avisos de stock.
+      Las demas predicciones siguen siendo filas: si se destacaran todas, no
+      se destacaria ninguna.
+
+   2. LA ACCION DICE QUE SE ABRE
+      "Revisar" a secas obliga a tocar para saber a donde lleva. "Ver
+      existencias", "Revisar certificacion", "Ver permiso" se leen antes.
+
+   3. UNA SOLA SEÑAL DE COLOR POR FILA
+      El punto morado dice que no se ha leido; la palabra roja dice que la
+      gravedad pide decidir. Nada mas tiene color: ni el borde, ni el fondo,
+      ni el icono.
+   ============================================================================ */
+
+/* ---- Cabecera ---- */
+.sg-notif-cabecera {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 2px 10px;
+    padding: 15px 16px 12px !important;
+    border-bottom: 0 !important;
+    background: #fff !important;
+}
+.sg-notif-head {
+    display: flex;
+    gap: 9px;
+    align-items: center;
+    min-width: 0;
+}
+.sg-notif-head-icono {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    color: var(--sg-purple, #6C5CFF);
+    background: rgba(108, 92, 255, .10);
+    font-size: 17px;
+}
+.sg-notif-cabecera .titulo {
+    display: block;
+    color: #16203a;
+    font-size: 17px;
+    font-weight: 800;
+    letter-spacing: -.01em;
+    line-height: 1.15;
+}
+.sg-notif-pill {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    color: #5536db;
+    background: #ece8ff;
+    font-size: 10px;
+    font-weight: 800;
+}
+.sg-notif-cabecera .sg-notif-resumen {
+    grid-column: 1 / -1;
+    margin: 0 0 0 39px;
+    color: #6b7488;
+    font-size: 11.5px;
+}
+.sg-notif-cabecera .sg-notif-resumen strong { color: #2b3245; font-weight: 700; }
+.sg-notif-cerrar {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 0 !important;
+    border-radius: 8px;
+    color: #98a1b3 !important;
+    background: none !important;
+    font-size: 19px;
+}
+.sg-notif-cerrar:hover { color: #46506a !important; background: #f2f4f8 !important; }
+
+/* ---- Pestañas subrayadas ---- */
+.sg-notif-filtros {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    padding: 0 16px !important;
+    border-bottom: 1px solid #eceff5;
+    background: #fff !important;
+}
+.sg-notif-filtro {
+    position: relative;
+    padding: 9px 11px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    color: #7a8395 !important;
+    background: none !important;
+    font-size: 12px !important;
+    font-weight: 600;
+}
+.sg-notif-filtro .n {
+    display: inline-block;
+    margin-left: 4px;
+    padding: 1px 6px;
+    border-radius: 999px;
+    background: #f0f2f7;
+    font-size: 10px;
+    font-weight: 800;
+}
+.sg-notif-filtro.is-activo {
+    color: var(--sg-purple, #6C5CFF) !important;
+    font-weight: 800;
+    box-shadow: inset 0 -2px 0 var(--sg-purple, #6C5CFF);
+}
+.sg-notif-filtro.is-activo .n { color: #5536db; background: #ece8ff; }
+.sg-notif-filtro.is-vacia { opacity: .45; }
+.sg-notif-filtros .sg-notif-leer {
+    margin: 0 0 0 auto !important;
+    padding: 6px 0 !important;
+    border-radius: 0 !important;
+    background: none !important;
+    font-size: 11px !important;
+    font-weight: 700;
+    text-decoration: underline;
+}
+
+/* ---- El rótulo que separa la predicción de lo demás ---- */
+.sg-notif-seccion {
+    padding: 13px 16px 5px;
+    color: #99a1b2;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+/* ---- La fila ---- */
+.sg-notif-item {
+    grid-template-columns: 30px minmax(0, 1fr) auto 7px !important;
+    gap: 12px !important;
+    align-items: center !important;
+    padding: 11px 16px !important;
+    border-bottom: 1px solid #f2f4f8;
+}
+.sg-notif-item:last-child { border-bottom: 0; }
+.sg-notif-item.is-nueva { background: #fff; }
+.sg-notif-item:hover { background: #f8f9fd !important; box-shadow: none; }
+
+/* El icono pierde el disco: con una sola columna de iconos alineados, el
+   disco era una segunda caja alrededor de algo que ya estaba alineado. */
+.sg-notif-item .icono {
+    width: 30px;
+    height: 30px;
+    border-radius: 0;
+    background: none;
+}
+.sg-notif-item .icono i { color: #6b7387; font-size: 21px; }
+.sg-notif-item.is-nueva .icono i { color: #4a5266; }
+
+.sg-notif-item .titulo {
+    color: #16203a;
+    font-size: 12.5px;
+    font-weight: 700;
+    -webkit-line-clamp: 2;
+}
+.sg-notif-item .contexto {
+    display: block;
+    margin-top: 2px;
+    overflow: hidden;
+    color: #6b7488;
+    font-size: 11.5px;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+.sg-notif-item .detalle { margin-top: 3px; font-size: 11.5px; -webkit-line-clamp: 2; }
+.sg-notif-item .cuando { margin-top: 3px; color: #8a93a5; font-size: 11px; }
+.sg-notif-item .cuando .sev,
+.sg-notif-item.sev-critica .cuando .sev,
+.sg-notif-item.sev-alta .cuando .sev {
+    padding: 0;
+    border-radius: 0;
+    background: none !important;
+    color: #d23b3b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+
+/* La acción, a la derecha y en la misma línea de los ojos que recorre la
+   columna de la izquierda. */
+.sg-notif-action {
+    display: inline-flex !important;
+    flex: 0 0 auto;
+    gap: 5px;
+    align-items: center;
+    margin: 0 !important;
+    color: #6345e9 !important;
+    font-size: 11.5px !important;
+    font-weight: 600 !important;
+    white-space: nowrap;
+}
+.sg-notif-action i { font-size: 14px; }
+.sg-notif-item:hover .sg-notif-action { text-decoration: underline; }
+
+.sg-notif-item .punto { width: 7px; height: 7px; background: var(--sg-purple, #6C5CFF); }
+
+/* ---- La tarjeta de la predicción ---- */
+.sg-notif-item.es-destacada {
+    grid-template-columns: 38px minmax(0, 1fr) 7px !important;
+    align-items: start !important;
+    margin: 10px 12px 4px;
+    padding: 14px !important;
+    border: 1px solid #e4dffb;
+    border-bottom: 1px solid #e4dffb;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f7f5ff 0%, #fbf9ff 100%) !important;
+}
+.sg-notif-item.es-destacada:hover { background: #f4f1ff !important; }
+.sg-notif-item.es-destacada .icono { width: 38px; height: 38px; background: none; }
+.sg-notif-marca {
+    display: block;
+    margin-bottom: 5px;
+    color: #5536db;
+    font-size: 11px;
+    font-weight: 800;
+}
+.sg-notif-item.es-destacada .titulo { font-size: 14px; font-weight: 800; }
+.sg-notif-item.es-destacada .cuando { display: inline-block; margin: 0 0 0 0; }
+.sg-notif-cta {
+    display: inline-flex;
+    gap: 7px;
+    align-items: center;
+    margin-top: 11px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    color: #fff;
+    background: var(--sg-purple, #6C5CFF);
+    font-size: 12px;
+    font-weight: 700;
+}
+.sg-notif-item.es-destacada:hover .sg-notif-cta { background: #5a49e0; }
+
+/* ---- El pie ---- */
+.sg-notif-pie { padding: 11px 14px; }
+.sg-notif-pie a { font-size: 12px; font-weight: 700; }
+
+/* ---- Correcciones tras verlo en pantalla ----
+
+   1. ANCHO. Con 384 px la fila de tres columnas dejaba 170 px para el
+      título: se partía en tres líneas y chocaba con la acción de la derecha.
+      460 px es lo que necesita un título de dos líneas al lado de "Revisar
+      certificación".
+   2. La cabecera se declaraba `display: flex` más arriba y mi grid perdía,
+      así que la X caía debajo del título en vez de ir a su derecha.
+   3. El "chip" de gravedad que se veía no era el fondo -ya estaba quitado-
+      sino un BORDE rosado que quedó de una capa anterior.
+   4. "SIGMA AI" se partía en dos líneas y la barra de pestañas medía 55 px. */
+
+.sg-notif-panel { width: 460px !important; }
+.sg-notif-cabecera { display: grid !important; }
+.sg-notif-item .cuando .sev,
+.sg-notif-item.sev-critica .cuando .sev,
+.sg-notif-item.sev-alta .cuando .sev { border: 0 !important; }
+.sg-notif-filtro { white-space: nowrap; }
+.sg-notif-filtros { flex-wrap: nowrap; }
+.sg-notif-item .titulo { min-width: 0; }
+
+/* ---- Dos ajustes de la pasada anterior ----
+
+   1. En la tarjeta de la predicción, la gravedad y el botón quedaban en la
+      misma línea y el botón le pasaba por encima a la palabra. Cada uno en
+      su renglón: primero qué tan grave es, después qué hacer.
+   2. "Marcar todas como leídas" no cabía junto a las tres pestañas en 460 px
+      y se cortaba contra el borde. El texto corto dice lo mismo. */
+
+.sg-notif-item.es-destacada .cuando { display: block; margin: 7px 0 0; }
+.sg-notif-item.es-destacada .sg-notif-cta { margin-top: 10px; }
+.sg-notif-item.es-destacada .punto { align-self: start; margin-top: 5px; }
+.sg-notif-filtros .sg-notif-leer { flex: 0 0 auto; }
+
+/* ============================================================================
+   LA FICHA DE UNA ALERTA (AlertaDetalle.aspx)
+
+   Se abre desde la campana y desde la bandeja. El orden de la pantalla es el
+   de las preguntas: qué pasó, dónde, con qué números, qué dijo el modelo si
+   lo hubo, cómo se ve el equipo, qué se ha hecho, y recién al final qué
+   hacer ahora.
+   ============================================================================ */
+.sg-ald { padding: 4px 2px; }
+
+.sg-ald-head { display: flex; gap: 14px; align-items: flex-start; }
+.sg-ald-icono {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    background: #f1f3f9;
+}
+.sg-ald-icono i { color: #5d6478; font-size: 25px; }
+.sg-ald-icono img { width: 34px; height: 34px; }
+.sg-ald-head-texto { min-width: 0; }
+.sg-ald-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.sg-ald-chip {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #eef1f6;
+    color: #5a6377;
+    font-size: 10.5px;
+    font-weight: 700;
+}
+.sg-ald-chip.is-grave { color: #b3322f; background: #fdeceb; }
+.sg-ald-chip.is-ai    { color: #fff; background: linear-gradient(120deg, #12c7d0, #6550f4 58%, #d338a6); }
+.sg-ald-titulo { margin: 0; color: #16203a; font-size: 19px; font-weight: 800; line-height: 1.25; }
+.sg-ald-contexto { margin-top: 4px; color: #6b7488; font-size: 13px; }
+.sg-ald-descripcion { margin: 14px 0 0; color: #3d4659; font-size: 14px; line-height: 1.5; }
+
+/* Los números, en pares: lo que se busca acá es comparar. */
+.sg-ald-datos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.sg-ald-dato {
+    flex: 1 1 128px;
+    padding: 9px 12px;
+    border: 1px solid #e9edf4;
+    border-radius: 11px;
+    background: #fbfcfe;
+}
+.sg-ald-dato .r { display: block; color: #8a93a5; font-size: 10.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .04em; }
+.sg-ald-dato .v { display: block; margin-top: 2px; color: #1f2839; font-size: 15px; font-weight: 700; }
+
+.sg-ald-ai {
+    margin-top: 16px;
+    padding: 13px 14px;
+    border: 1px solid #e4dffb;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f7f5ff 0%, #fbf9ff 100%);
+}
+.sg-ald-ai-marca { color: #5536db; font-size: 11.5px; font-weight: 800; }
+.sg-ald-ai .sg-ald-datos { margin-top: 9px; }
+.sg-ald-ai .sg-ald-dato { border-color: #e8e3fb; background: #fff; }
+
+.sg-ald-seccion {
+    margin: 20px 0 8px;
+    color: #99a1b2;
+    font-size: 10.5px;
+    font-weight: 800;
+    letter-spacing: .07em;
+    text-transform: uppercase;
+}
+
+.sg-ald-galeria { display: flex; flex-wrap: wrap; gap: 9px; }
+.sg-ald-foto {
+    display: block;
+    overflow: hidden;
+    width: 104px;
+    height: 78px;
+    border: 1px solid #e6eaf1;
+    border-radius: 10px;
+}
+.sg-ald-foto img { width: 100%; height: 100%; object-fit: cover; }
+
+/* La línea de tiempo: un punto por estado, de lo más nuevo a lo más viejo. */
+.sg-ald-hito { display: flex; gap: 11px; padding: 0 0 13px; }
+.sg-ald-hito .p {
+    flex: 0 0 auto;
+    width: 9px;
+    height: 9px;
+    margin-top: 5px;
+    border-radius: 50%;
+    background: var(--sg-purple, #6C5CFF);
+    box-shadow: 0 0 0 3px rgba(108, 92, 255, .14);
+}
+.sg-ald-hito .e { display: block; color: #1f2839; font-size: 13px; font-weight: 700; }
+.sg-ald-hito .f { display: block; color: #8a93a5; font-size: 11.5px; }
+.sg-ald-hito .m { display: block; margin-top: 3px; color: #4b5468; font-size: 12.5px; }
+
+.sg-ald-motivo {
+    margin-top: 16px;
+    padding: 13px 14px;
+    border: 1px solid #e9edf4;
+    border-radius: 12px;
+    background: #fbfcfe;
+}
+.sg-ald-motivo label { display: block; margin-bottom: 6px; color: #3d4659; font-size: 12.5px; font-weight: 700; }
+.sg-ald-motivo-acciones { display: flex; gap: 8px; margin-top: 9px; }
+
+.sg-ald-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+
+.sg-ald-vacio { padding: 44px 20px; text-align: center; }
+.sg-ald-vacio i { color: #c3cbd9; font-size: 42px; }
+.sg-ald-vacio-titulo { margin-top: 10px; color: #1f2839; font-size: 16px; font-weight: 700; }
+.sg-ald-vacio-texto { margin-top: 4px; color: #6b7488; font-size: 13px; }

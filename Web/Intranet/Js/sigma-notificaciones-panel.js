@@ -42,7 +42,11 @@
         var visibles = 0;
 
         for (var i = 0; i < filas.length; i++) {
-            var pasa = !filtroVisto || filas[i].getAttribute('data-visto') === filtroVisto;
+            var pasa = !filtroVisto
+                     ? true
+                     : (filtroVisto === 'ai'
+                            ? filas[i].getAttribute('data-ai') === '1'
+                            : filas[i].getAttribute('data-visto') === filtroVisto);
             filas[i].hidden = !pasa;
             if (pasa) visibles++;
         }
@@ -59,7 +63,12 @@
         for (var k = 0; k < filas.length; k++)
             if (filas[k].getAttribute('data-visto') === '0') sinVer++;
 
-        var cuenta = { '': filas.length, '0': sinVer, '1': filas.length - sinVer };
+        var conAi = 0;
+
+        for (var q = 0; q < filas.length; q++)
+            if (filas[q].getAttribute('data-ai') === '1') conAi++;
+
+        var cuenta = { '': filas.length, '0': sinVer, '1': filas.length - sinVer, 'ai': conAi };
 
         var botones = panel.querySelectorAll('[data-sg-notif-filtro]');
 
@@ -97,13 +106,18 @@
                 cuerpo.appendChild(aviso);
             }
 
-            aviso.innerHTML = '<div class="sg-notif-vacio-titulo">' +
-                (filtroVisto === '0' ? 'No queda nada sin ver' : 'Todavía no has visto ninguna') +
-                '</div><div class="sg-notif-vacio-texto">' +
-                (filtroVisto === '0'
-                    ? 'Ya revisaste las ' + filas.length + ' notificaciones del panel.'
-                    : 'Las ' + filas.length + ' que hay siguen sin abrirse.') +
-                '</div>';
+            var titulo = filtroVisto === '0' ? 'No queda nada sin leer'
+                       : filtroVisto === 'ai' ? 'Ninguna vino de SIGMA AI'
+                       : 'Todavía no has visto ninguna';
+
+            var texto = filtroVisto === '0'
+                        ? 'Ya revisaste las ' + filas.length + ' notificaciones del panel.'
+                        : filtroVisto === 'ai'
+                            ? 'Las ' + filas.length + ' del panel las detectaron las reglas de operación.'
+                            : 'Las ' + filas.length + ' que hay siguen sin abrirse.';
+
+            aviso.innerHTML = '<div class="sg-notif-vacio-titulo">' + titulo +
+                              '</div><div class="sg-notif-vacio-texto">' + texto + '</div>';
 
             aviso.hidden = false;
         }
