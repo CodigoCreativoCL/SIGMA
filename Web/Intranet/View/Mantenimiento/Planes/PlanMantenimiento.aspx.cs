@@ -211,12 +211,17 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             PlanMantenimiento plan = new PlanMantenimientoController().GetPlanMantenimiento(
                 new PlanMantenimiento { pma_id = Id });
 
+            /* Solo los de LA VERSION QUE MANDA -la publicada, o la ultima si
+               no hay publicada-. La grilla vieja mostraba los de todas las
+               versiones con un chip al lado, y el plan se leia con el doble
+               de hitos de los que en realidad se ejecutan. Las versiones
+               anteriores estan en Configuracion, que es donde se comparan. */
             List<PlanHito> hitos = new PlanHitoController().GetPlanHitos(
-                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
                 ?? new List<PlanHito>();
 
             List<PlanActivo> equipos = new PlanActivoController().GetPlanActivos(
-                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
                 ?? new List<PlanActivo>();
 
             /* El año completo alimenta la cabecera y el resumen. El
