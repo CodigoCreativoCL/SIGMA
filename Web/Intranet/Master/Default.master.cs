@@ -103,6 +103,8 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         int cuantos = clientes != null ? clientes.Count : 0;
 
+        PintarSelectorCliente(clientes);
+
         if (cuantos == 0)
         {
             phCliente.Controls.Clear();
@@ -169,6 +171,61 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         Response.Redirect(Request.RawUrl, false);
         Context.ApplicationInstance.CompleteRequest();
+    }
+
+
+    /// <summary>
+    /// El selector de empresa al entrar (HU-002 escenario 2).
+    ///
+    /// Se muestra cuando la persona pertenece a varias empresas y la sesion
+    /// todavia no tiene ninguna: es exactamente el estado en el que queda
+    /// despues de entrar, porque ResolverClienteInicial ya no fija una.
+    ///
+    /// Usa la lista que PintarClienteActual acaba de leer: son los mismos
+    /// clientes elegibles y leerlos dos veces por pantalla seria un viaje a
+    /// la base para traer lo que ya se tiene.
+    /// </summary>
+    private void PintarSelectorCliente(List<Cliente> clientes)
+    {
+        bool hayQueElegir = clientes != null && clientes.Count > 1 && SitioBase.Session.ClienteId() == 0;
+
+        pnlSelectorCliente.Visible = hayQueElegir;
+        if (!hayQueElegir) return;
+
+        litSelcliCuantos.Text = clientes.Count.ToString();
+        rptSelectorCliente.DataSource = clientes;
+        rptSelectorCliente.DataBind();
+    }
+
+    /// <summary>La inicial para el avatar de la empresa.</summary>
+    public static string Inicial(string nombre)
+    {
+        nombre = (nombre ?? "").Trim();
+        return nombre.Length > 0 ? nombre.Substring(0, 1).ToUpper() : "?";
+    }
+
+    /// <summary>
+    /// La segunda linea de la opcion: razon social y RUT, lo que distingue a
+    /// dos empresas que se llaman parecido. Si no hay ninguno de los dos, no
+    /// se escribe un separador solo.
+    /// </summary>
+    public static string Detalle(string razon, string identificador)
+    {
+        razon = (razon ?? "").Trim();
+        identificador = (identificador ?? "").Trim();
+
+        if (razon.Length > 0 && identificador.Length > 0) return razon + " \u00B7 " + identificador;
+        return razon.Length > 0 ? razon : identificador;
+    }
+
+    /// <summary>
+    /// Elegir la empresa desde el selector de entrada. Mismo camino que el
+    /// combo de la barra: el controlador vuelve a comprobar que la persona
+    /// pertenezca a la empresa, porque el id viaja por el navegador.
+    /// </summary>
+    protected void rptSelectorCliente_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        rptClientes_ItemCommand(source, e);
     }
 
     /// <summary>

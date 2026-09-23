@@ -103,7 +103,7 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=29" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -639,6 +639,109 @@
             </asp:ContentPlaceHolder>
           
         </div>
+
+        <%-- =========================================================
+             ELEGIR EMPRESA AL ENTRAR (HU-002 escenario 2)
+
+             Quien presta servicios a varias empresas tiene que elegir con
+             cual trabaja: lo que vea y lo que cargue queda en esa. Antes
+             eso era una pagina aparte (SeleccionarCliente.aspx) y era un
+             desvio: se entraba al sistema y lo primero era una pantalla
+             sin menu ni barra. Aca es un modal sobre la propia pantalla de
+             inicio.
+
+             No lleva X ni cierra por el fondo a proposito: sin empresa en
+             sesion no hay datos que mostrar, asi que cerrarlo dejaria al
+             sistema vacio sin decir por que. El unico camino es elegir.
+
+             Cada opcion es un LinkButton del master -un postback, no una
+             navegacion- por el mismo camino que el combo de la barra:
+             ClienteSesionController.CambiarCliente vuelve a comprobar que
+             la persona pertenezca a la empresa.
+             ========================================================= --%>
+        <asp:Panel ID="pnlSelectorCliente" runat="server" Visible="false" CssClass="sg-selcli-fondo">
+            <div class="sg-selcli" role="dialog" aria-modal="true" aria-labelledby="sgSelcliTitulo">
+
+                <div class="sg-selcli-cab">
+                    <span class="sg-selcli-icono"><i class="mdi mdi-domain"></i></span>
+                    <div class="sg-selcli-cab-txt">
+                        <h2 id="sgSelcliTitulo">&#191;Con qu&#233; empresa va a trabajar?</h2>
+                        <p>
+                            Usted atiende a <asp:Literal ID="litSelcliCuantos" runat="server" /> empresas.
+                            Lo que vea y lo que cargue queda en la que elija; puede cambiarla
+                            cuando quiera desde la barra de arriba.
+                        </p>
+                    </div>
+                </div>
+
+                <%-- El buscador filtra en el navegador: la lista ya esta
+                     entera en la pagina y son unas pocas empresas, asi que
+                     un postback por cada letra no traeria nada nuevo. --%>
+                <div class="sg-selcli-buscar">
+                    <i class="mdi mdi-magnify" aria-hidden="true"></i>
+                    <input type="search" id="txtSelcliBuscar" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+                </div>
+
+                <div class="sg-selcli-lista" id="sgSelcliLista">
+                    <asp:Repeater ID="rptSelectorCliente" runat="server" OnItemCommand="rptSelectorCliente_ItemCommand">
+                        <ItemTemplate>
+                            <asp:LinkButton runat="server" CssClass="sg-selcli-op" CommandName="elegir" CommandArgument='<%# Eval("cli_id") %>'>
+                                <span class="sg-selcli-avatar"><%# Server.HtmlEncode(Inicial(Convert.ToString(Eval("cli_nombre")))) %></span>
+                                <span class="sg-selcli-txt">
+                                    <span class="sg-selcli-nombre"><%# Server.HtmlEncode(Convert.ToString(Eval("cli_nombre"))) %></span>
+                                    <span class="sg-selcli-meta"><%# Server.HtmlEncode(Detalle(Convert.ToString(Eval("cli_razon_social")), Convert.ToString(Eval("cli_identificador")))) %></span>
+                                </span>
+                                <i class="mdi mdi-arrow-right sg-selcli-flecha" aria-hidden="true"></i>
+                            </asp:LinkButton>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                    <p class="sg-selcli-vacio" id="sgSelcliVacio">Ninguna empresa coincide con lo que escribi&#243;.</p>
+                </div>
+
+                <div class="sg-selcli-pie">
+                    <i class="mdi mdi-shield-lock-outline" aria-hidden="true"></i>
+                    <span>Solo aparecen las empresas a las que usted pertenece y que est&#225;n habilitadas.</span>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                /* Filtro del buscador. Es del modal y no de la barra, asi que
+                   vive con el: si el modal no se pinta, este script tampoco. */
+                (function () {
+                    var caja = document.getElementById('txtSelcliBuscar');
+                    var lista = document.getElementById('sgSelcliLista');
+                    var vacio = document.getElementById('sgSelcliVacio');
+                    if (!caja || !lista) return;
+
+                    caja.focus();
+
+                    caja.addEventListener('input', function () {
+                        var q = caja.value.trim().toLowerCase();
+                        var ops = lista.querySelectorAll('.sg-selcli-op');
+                        var visibles = 0;
+                        for (var i = 0; i < ops.length; i++) {
+                            var calza = !q || (ops[i].textContent || '').toLowerCase().indexOf(q) !== -1;
+                            ops[i].style.display = calza ? '' : 'none';
+                            if (calza) visibles++;
+                        }
+                        vacio.style.display = visibles ? 'none' : 'block';
+                    });
+
+                    /* Enter con una sola empresa a la vista: la elige. Buscar
+                       y tener que apuntar despues es un paso de mas. */
+                    caja.addEventListener('keydown', function (ev) {
+                        if (ev.keyCode !== 13) return;
+                        ev.preventDefault();
+                        var ops = lista.querySelectorAll('.sg-selcli-op');
+                        var unica = null, n = 0;
+                        for (var i = 0; i < ops.length; i++)
+                            if (ops[i].style.display !== 'none') { unica = ops[i]; n++; }
+                        if (n === 1) unica.click();
+                    });
+                })();
+            </script>
+        </asp:Panel>
+
     </form>
 </body>
 </html>

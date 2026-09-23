@@ -168,6 +168,64 @@ namespace SitioBase.Controller
             return r;
         }
 
+        /// <summary>
+        /// Aplica el orden de TODOS los pasos de un procedimiento de una sola
+        /// pasada, en la secuencia en que vienen los ids.
+        ///
+        /// POR QUE NO ALCANZA CON EL @ORDEN DEL UPD
+        ///   El par (procedimiento, orden) tiene indice unico. Mover el quinto
+        ///   paso al segundo lugar y renumerar de a uno choca con el que ya
+        ///   ocupa el 2 en cuanto se escribe el primero, y lo que queda es
+        ///   media receta renumerada. El SP los pasa a orden negativo dentro
+        ///   de una transaccion y recien ahi asigna 1..N, asi que nunca hay
+        ///   dos pasos disputandose el mismo numero.
+        ///
+        /// Los pasos que no vengan en la lista -por ejemplo uno dado de baja-
+        /// quedan despues del ultimo, conservando su orden relativo.
+        /// </summary>
+        public Respuesta OrdenarPasos(int procedimiento, List<int> idsEnOrden)
+        {
+            Respuesta r = new Respuesta();
+
+            if (idsEnOrden == null || idsEnOrden.Count == 0)
+            {
+                r.codigo = procedimiento; r.detalle = "Sin pasos que ordenar."; r.error = false;
+                return r;
+            }
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+                try
+                {
+                    string[] ids = new string[idsEnOrden.Count];
+                    for (int i = 0; i < idsEnOrden.Count; i++) ids[i] = idsEnOrden[i].ToString();
+
+                    cmd = Conexion.GetCommand("UPD_PROCEDIMIENTO_PASO_ORDEN");
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                    cmd.Parameters.AddWithValue("@PROCEDIMIENTO", procedimiento);
+                    cmd.Parameters.AddWithValue("@IDS", string.Join(",", ids));
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = procedimiento; r.detalle = "Orden aplicado."; r.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
+                }
+            }
+            else
+            {
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
+            }
+
+            return r;
+        }
+
         public Respuesta DeletePaso(ProcedimientoPaso e)
         {
             Respuesta r = new Respuesta();
