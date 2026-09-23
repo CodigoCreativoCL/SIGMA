@@ -13,6 +13,21 @@
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
+    <script type="text/javascript">
+        /* El listado suelto de Activos ya no esta en el menu: el alta vive
+           aca, en el mismo modal que usa la edicion. */
+        function abrirActivo(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo activo' : 'Editar activo',
+                width: 1060,
+                initialHeight: 620
+            });
+        }
+
+        function refresh() { __doPostBack('<%=btnBuscar.UniqueID %>', ''); }
+    </script>
+
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-activo360.js") %>?vrs=1'></script>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-orden.js") %>?vrs=1'></script>
 </asp:Content>
@@ -71,6 +86,12 @@
 
             <%-- ====== LISTA DE RESULTADOS (clic para abrir el centro) ====== --%>
             <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sigma-af-lista" style="margin-top:14px;">
+                <%-- La clase sg-ot trae las variables de color de la hoja del centro:
+                     fuera de ella el boton queda con texto blanco sobre nada. --%>
+                <div class="sg-ot sg-a3-lista-acc">
+                    <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
+                        OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
+                </div>
                 <rad:RadGrid2 ID="gridResultados" runat="server" OnItemDataBound="gridResultados_ItemDataBound">
                     <MasterTableView DataKeyNames="act_id" />
                 </rad:RadGrid2>

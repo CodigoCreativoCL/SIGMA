@@ -537,3 +537,5 @@ a.sg-a3-chip:hover { background: #f9fafb; }
 a.sg-a3-chip b { font-weight: 700; color: var(--sg-tenue); }
 a.sg-a3-chip.es-activa { background: var(--sg-p); border-color: var(--sg-p); color: #fff; }
 a.sg-a3-chip.es-activa b { color: #fff; }
+
+.sg-a3-lista-acc { display: flex; justify-content: flex-end; margin-bottom: 10px; }
