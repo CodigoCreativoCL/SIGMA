@@ -105,7 +105,7 @@ namespace SitioBase.Controller
                     cmd.ExecuteNonQuery();
                     cmd.Connection.Close();
                     id = (int)cmd.Parameters["@ID"].Value;
-                    r.codigo = id; r.detalle = "Plantilla creada con éxito."; r.error = false;
+                    r.codigo = id; r.detalle = "Pauta de inspección creada con éxito."; r.error = false;
                 }
                 catch (Exception ex)
                 {
@@ -141,7 +141,7 @@ namespace SitioBase.Controller
                     cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmd.ExecuteNonQuery();
                     cmd.Connection.Close();
-                    r.codigo = e.cpl_id; r.detalle = "Plantilla actualizada con éxito."; r.error = false;
+                    r.codigo = e.cpl_id; r.detalle = "Pauta de inspección actualizada con éxito."; r.error = false;
                 }
                 catch (Exception ex)
                 {
@@ -171,7 +171,7 @@ namespace SitioBase.Controller
                     cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmd.ExecuteNonQuery();
                     cmd.Connection.Close();
-                    r.codigo = e.cpl_id; r.detalle = "Plantilla dada de baja con éxito."; r.error = false;
+                    r.codigo = e.cpl_id; r.detalle = "Pauta de inspección dada de baja con éxito."; r.error = false;
                 }
                 catch (Exception ex)
                 {

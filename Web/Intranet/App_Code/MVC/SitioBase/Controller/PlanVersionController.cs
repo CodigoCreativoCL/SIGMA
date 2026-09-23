@@ -6,7 +6,15 @@ using SitioBase.Model;
 
 namespace SitioBase.Controller
 {
-    /// <summary>Versiones de un plan (HU-084): listar, abrir la siguiente y publicar.</summary>
+    /// <summary>
+    /// Versiones de un plan (HU-084): listar, abrir la siguiente y publicar.
+    ///
+    /// La publicación es un proceso del SP (UPD_PLAN_VERSION_PUBLICAR, que
+    /// delega en el del bloque 14): las reglas -que exista, que sea borrador,
+    /// que tenga hitos y equipos, y la carrera entre dos publicaciones- viven
+    /// en la base, así la web y la API dan el mismo resultado. Siempre acotado
+    /// al cliente en sesión.
+    /// </summary>
     public class PlanVersionController
     {
         public List<PlanVersion> GetPlanVersiones(PlanVersion filtro = null)
@@ -70,6 +78,25 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// Las versiones de un plan, la más nueva primero.
+        ///
+        /// Es la forma en que las pide la ficha de versiones. Lee por el mismo
+        /// camino que el resto: dos lectores del mismo SP se separan a la
+        /// primera columna nueva, y ahí una pantalla muestra un dato que la
+        /// otra no.
+        /// </summary>
+        public List<PlanVersion> GetVersiones(int plan, int cliente)
+        {
+            if (plan <= 0) return new List<PlanVersion>();
+
+            return GetPlanVersiones(new PlanVersion
+            {
+                filtro_plan = plan,
+                filtro_cliente = cliente > 0 ? cliente : Session.ClienteId()
+            }) ?? new List<PlanVersion>();
+        }
+
         public Respuesta AbrirVersionNueva(int plan, string observacion)
         {
             return Ejecutar("INS_PLAN_VERSION_NUEVA", "Versión nueva abierta en borrador, con los hitos y equipos de la vigente.", cmd =>
@@ -82,6 +109,10 @@ namespace SitioBase.Controller
             }, true);
         }
 
+        /// <summary>
+        /// Publica la versión en borrador. Se pasa el id de la VERSIÓN
+        /// (pmv_id), no el del plan.
+        /// </summary>
         public Respuesta Publicar(int version, string observacion)
         {
             return Ejecutar("UPD_PLAN_VERSION_PUBLICAR", "Versión publicada. La anterior quedó retirada.", cmd =>
@@ -100,6 +131,7 @@ namespace SitioBase.Controller
             if (Token.TokenSeguridad())
             {
                 SqlCommand cmd = null;
+
                 try
                 {
                     cmd = Conexion.GetCommand(sp);

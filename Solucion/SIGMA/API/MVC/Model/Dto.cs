@@ -952,6 +952,31 @@ namespace API.MVC.Model
         public Guid? uuid { get; set; }
     }
 
+    /// <summary>
+    /// Un dictado por voz que sube el telefono (HU-160). El uuid lo genera el
+    /// dispositivo al terminar de dictar: hace la subida idempotente -reintentar
+    /// no duplica-. `texto` es lo que la persona dio por bueno; el reconocimiento
+    /// ya ocurrio en el telefono, por eso no viaja audio.
+    /// </summary>
+    public class DictadoVozAltaDto
+    {
+        public Guid? uuid { get; set; }
+        public string texto { get; set; }
+
+        /// <summary>Codigo del idioma (es-CL, en-US). Por omision, es-CL.</summary>
+        public string idioma { get; set; }
+
+        /// <summary>Motor de reconocimiento. 1 = en el telefono (por omision).</summary>
+        public int? motor { get; set; }
+        public string modelo { get; set; }
+        public decimal? confianza { get; set; }
+        public int? segundos { get; set; }
+        public int? intentos { get; set; }
+        public bool? confirmado { get; set; }
+        public bool? confirmado_por_voz { get; set; }
+        public Guid? dispositivo_uuid { get; set; }
+    }
+
     /// <summary>Una medicion de condicion tomada en terreno (HU-044).</summary>
     public class MedicionAltaDto
     {
