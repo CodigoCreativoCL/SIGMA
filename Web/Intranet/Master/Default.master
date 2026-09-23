@@ -103,7 +103,7 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=26" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=29" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />

@@ -259,10 +259,6 @@
 
                 reemplazar(nuevoRoot, '.sg-detalle');
 
-                /* La cabecera pudo cambiar de alto -los indicadores o el
-                   aviso de suscripcion- y el bloque mide desde donde empieza
-                   hasta el borde de la ventana. */
-                alto();
 
                 var panel = uno('.sg-detalle', root);
                 if (panel) panel.removeAttribute('data-sg-esqueleto');
@@ -430,44 +426,6 @@
     }
 
 
-    /* ======================================================================
-       EL ALTO DE LA BANDEJA
-
-       El bloque de dos columnas ocupa desde donde empieza hasta el borde de
-       la ventana, menos un respiro. No se puede escribir como un `calc` fijo
-       en la hoja porque lo de arriba cambia: el aviso de suscripcion aparece
-       y desaparece, y los filtros se reparten en una o dos lineas segun el
-       ancho.
-
-       Se recalcula al cargar, al redimensionar y cuando el panel se repinta
-       por AJAX, que es cuando la cabecera puede cambiar de alto.
-       ====================================================================== */
-    function alto() {
-        var cao = document.querySelector('.sg-cao');
-        if (!cao) return;
-
-        /* En pantallas angostas o bajas las columnas se apilan y la hoja
-           devuelve el alto automatico: aca no hay que calcular nada. */
-        if (window.innerWidth <= 1100 || window.innerHeight <= 860) {
-            cao.style.removeProperty('--sg-cao-alto');
-            return;
-        }
-
-        var arriba = cao.getBoundingClientRect().top + window.scrollY;
-
-        /* Lo que viene DESPUES del bloque -el pie de la pagina y su margen-
-           tambien ocupa ventana. Sin descontarlo el bloque llegaba justo al
-           borde y la pagina seguia desplazandose ese pedazo. */
-        var debajo = document.documentElement.scrollHeight - (arriba + cao.offsetHeight);
-        if (!(debajo > 0) || debajo > 400) debajo = 24;
-
-        var libre = window.innerHeight - arriba + window.scrollY - debajo;
-
-        /* El piso acompana al de la hoja: por debajo de esto las columnas se
-           apilan y la pagina vuelve a desplazarse de corrido. */
-        cao.style.setProperty('--sg-cao-alto', Math.max(420, Math.round(libre)) + 'px');
-    }
-
     function ejecutarAccion(accion) {
         if (accion === 'limpiar-filtros') {
             limpiarFiltros();
@@ -616,10 +574,7 @@
         root.addEventListener('change', cambio);
         root.addEventListener('input', entrada);
 
-        window.sigmaNotificaciones = { refrescar: refrescar, alto: alto };
-
-        alto();
-        window.addEventListener('resize', alto);
+        window.sigmaNotificaciones = { refrescar: refrescar };
     }
 
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', boot);

@@ -2821,44 +2821,53 @@
 .sg-cliente-op.is-actual { background: #f3f1ff; font-weight: 700; }
 .sg-cliente-op.is-actual .mdi-check { visibility: visible; }
 
+}
+
 /* ============================================================================
-   LA BANDEJA DE ALERTAS OCUPA LA VENTANA, NO LA ESTIRA
+   LA BANDEJA DE ALERTAS: SE LIMITA LA LISTA, NO LA PANTALLA
 
-   Con sesenta y cinco alertas la página medía varias pantallas: elegir una
-   de abajo y leer su detalle obligaba a subir, y los indicadores de arriba
-   se perdían de vista. Ahora el bloque mide lo que queda de ventana y lo que
-   se desplaza es cada columna por dentro.
+   El problema era que con sesenta y cinco alertas la cola crecía sin fin y la
+   página medía varias pantallas: elegir una de abajo y leer su detalle
+   obligaba a subir, y los indicadores se perdían de vista.
 
-   El alto lo calcula el navegador y lo escribe en `--sg-cao-alto`
-   (sigma-notificaciones-cao.js): depende de si hay aviso de suscripción y de
-   cuánto ocupen los filtros, y eso no se puede adivinar desde la hoja.
+   El primer intento fue forzar el bloque entero al alto de la ventana. Salió
+   peor: la cabecera de la cola -título, buscador, tres desplegables y
+   pestañas- se comía 260 px, así que quedaban dos alertas visibles al lado de
+   un panel de detalle vacío y altísimo.
+
+   Acá se limita lo que efectivamente crece —la lista— y se recupera espacio
+   de donde sobraba:
+
+   1. Los tres filtros en una fila. Apilados gastaban 120 px de alto que no
+      eran de nadie.
+   2. La lista tiene su tope y desplaza por dentro.
+   3. El detalle se queda pegado arriba mientras uno recorre la lista.
    ============================================================================ */
-.sg-cao {
-    height: var(--sg-cao-alto, calc(100vh - 270px));
-    /* El piso es bajo a proposito: con la cabecera de indicadores y filtros
-       ocupando casi 480 px, un minimo de 420 empujaba el bloque fuera de la
-       ventana y la pagina volvia a desplazarse. Bajo este alto las columnas
-       se apilan por la media query y la pagina scrollea de corrido, que es
-       lo correcto cuando no hay sitio para dos paneles. */
-    min-height: 300px;
-    align-items: stretch;
+
+/* ---- Los filtros, en una fila ---- */
+.sg-cola-cab {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 9px;
+    padding: 14px 14px 10px;
+}
+.sg-cola-cab .sg-cola-titulo { margin: 0; }
+.sg-cola-buscar { width: 100%; }
+.sg-cola-filtros {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 7px;
+}
+.sg-cola-cab .sg-select {
+    width: 100%;
+    min-width: 0;
+    padding-right: 26px;
+    font-size: 12px;
 }
 
-.sg-cola,
-.sg-detalle {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    overflow: hidden;
-}
-
-/* La cabecera de la cola -título, buscador y filtros- se queda fija y solo
-   corre la lista: filtrar mientras se busca es el gesto más repetido de esta
-   pantalla. */
-.sg-cola-cab { flex: 0 0 auto; }
+/* ---- La lista: tope propio y su barra ---- */
 .sg-cola-lista {
-    flex: 1 1 auto;
-    min-height: 0;
+    max-height: min(58vh, 620px);
     overflow-y: auto;
     overscroll-behavior: contain;
     scrollbar-color: #c9c1f6 transparent;
@@ -2867,31 +2876,30 @@
 .sg-cola-lista::-webkit-scrollbar { width: 6px; }
 .sg-cola-lista::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
 
-/* El detalle también: con la línea de tiempo y el análisis predictivo es más
-   largo que la ventana en cuanto la alerta tiene historia. */
-.sg-detalle {
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    scrollbar-color: #c9c1f6 transparent;
-    scrollbar-width: thin;
-}
-.sg-detalle::-webkit-scrollbar { width: 6px; }
-.sg-detalle::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
+/* ---- El detalle acompaña ----
+   Pegado arriba mientras se recorre la lista: sin esto, elegir la alerta
+   cuarenta dejaba el detalle fuera de la pantalla y había que volver a subir
+   para leerlo. */
+@media (min-width: 1101px) {
+    .sg-cao { align-items: start; }
+    /* Con `.sg-detalle` a secas no alcanza: mas arriba hay un
+       `.sg-cao > .sg-detalle { min-height: 0 }` que gana por especificidad y
+       dejaba el panel midiendo su contenido. */
+    .sg-cao > .sg-detalle {
+        position: sticky;
+        top: 14px;
 
-/* En pantallas bajas o en móvil el alto fijo estorba: ahí las dos columnas
-   se apilan y la página vuelve a desplazarse de corrido, que es lo correcto
-   cuando no hay espacio para dos paneles. */
-/* El alto fijo pide sitio de verdad: sobre la bandeja hay casi 480 px de
-   indicadores, pestañas y filtros, así que por debajo de 860 px de ventana
-   la cola quedaría en una franja de dos alertas, que es peor que desplazar.
-   Ahí las columnas se apilan y la página vuelve a correr de corrido. */
-@media (max-width: 1100px), (max-height: 860px) {
-    .sg-cao { height: auto !important; min-height: 0; }
-    .sg-cola, .sg-detalle { overflow: visible; }
-    .sg-cola-lista { overflow-y: visible; max-height: none; }
-}
-
-/* Y aun con sitio, la cola nunca baja de cinco alertas visibles. */
-@media (min-width: 1101px) and (min-height: 861px) {
-    .sg-cola-lista { min-height: 260px; }
+        /* El mismo alto que el tope de la lista: al dejar que midiera su
+           contenido, el panel vacío ("Elija una alerta") quedaba como una
+           tarjeta corta al lado de una lista larga y se leía como que
+           faltaba algo. Las dos columnas se ven como dos paneles. */
+        min-height: min(58vh, 620px);
+        max-height: calc(100vh - 28px);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-color: #c9c1f6 transparent;
+        scrollbar-width: thin;
+    }
+    .sg-cao > .sg-detalle::-webkit-scrollbar { width: 6px; }
+    .sg-cao > .sg-detalle::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
 }

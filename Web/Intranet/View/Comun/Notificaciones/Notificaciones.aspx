@@ -42,7 +42,7 @@
          refresco parcial. --%>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>'></script>
     <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-animaciones.js?vrs=1") %>'></script>
-    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-notificaciones-cao.js?vrs=8") %>'></script>
+    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-notificaciones-cao.js?vrs=9") %>'></script>
 
     <script type="text/javascript">
         /* Se abre el registro relacionado en la misma ventana modal del
@@ -207,35 +207,40 @@
                                 data-sg-cao-filtro="texto" placeholder="Buscar alertas..." />
                         </div>
 
+                        <%-- Los tres filtros en una fila: apilados gastaban 120 px
+                             de alto de la cabecera, que es alto que le falta a la
+                             lista de alertas. --%>
+                        <div class="sg-cola-filtros">
                         <%-- Filter="Contains" para poder escribir y acotar: con
-                             doce tipos de alerta, desplegar y buscar con la vista
-                             es mas lento que teclear tres letras. --%>
-                        <asp:DropDownList ID="cboSeveridad" runat="server" CssClass="sg-select"
-                            data-sg-cao-filtro="severidad">
-                            <asp:ListItem Text="Toda gravedad" Value="" Selected="true" />
-                            <asp:ListItem Text="Crítica" Value="CRITICA" />
-                            <asp:ListItem Text="Alta" Value="ALTA" />
-                            <asp:ListItem Text="Advertencia" Value="ADVERTENCIA" />
-                            <asp:ListItem Text="Baja" Value="BAJA" />
-                        </asp:DropDownList>
+                                 doce tipos de alerta, desplegar y buscar con la vista
+                                 es mas lento que teclear tres letras. --%>
+                            <asp:DropDownList ID="cboSeveridad" runat="server" CssClass="sg-select"
+                                data-sg-cao-filtro="severidad">
+                                <asp:ListItem Text="Toda gravedad" Value="" Selected="true" />
+                                <asp:ListItem Text="Crítica" Value="CRITICA" />
+                                <asp:ListItem Text="Alta" Value="ALTA" />
+                                <asp:ListItem Text="Advertencia" Value="ADVERTENCIA" />
+                                <asp:ListItem Text="Baja" Value="BAJA" />
+                            </asp:DropDownList>
 
-                        <asp:DropDownList ID="cboTipo" runat="server" CssClass="sg-select"
-                            data-sg-cao-filtro="tipo" />
+                            <asp:DropDownList ID="cboTipo" runat="server" CssClass="sg-select"
+                                data-sg-cao-filtro="tipo" />
 
-                        <%-- VISTO / SIN VER
+                            <%-- VISTO / SIN VER
 
-                             Es la pregunta que se hace al abrir la bandeja
-                             —"¿qué hay que no haya mirado?"— y hasta ahora
-                             había que deducirla del fondo tenue de cada fila.
+                                 Es la pregunta que se hace al abrir la bandeja
+                                 —"¿qué hay que no haya mirado?"— y hasta ahora
+                                 había que deducirla del fondo tenue de cada fila.
 
-                             No viaja al servidor: el dato de si está leída ya
-                             viaja en la fila. Filtra el navegador. --%>
-                        <select class="sg-select" data-sg-cao-filtro="visto"
-                                aria-label="Filtrar por vistas o sin ver">
-                            <option value="">Vistas y sin ver</option>
-                            <option value="0">Solo sin ver</option>
-                            <option value="1">Solo vistas</option>
-                        </select>
+                                 No viaja al servidor: el dato de si está leída ya
+                                 viaja en la fila. Filtra el navegador. --%>
+                            <select class="sg-select" data-sg-cao-filtro="visto"
+                                    aria-label="Filtrar por vistas o sin ver">
+                                <option value="">Vistas y sin ver</option>
+                                <option value="0">Solo sin ver</option>
+                                <option value="1">Solo vistas</option>
+                            </select>
+                        </div>
                     </div>
 
                     <%-- Botones nativos: la pestaña solo cambia el estado del
