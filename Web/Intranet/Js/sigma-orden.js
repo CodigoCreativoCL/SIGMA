@@ -150,35 +150,57 @@
             var d = function (n) { return card.getAttribute('data-' + n) || ''; };
             var esImagen = d('imagen') === '1';
 
-            var html = '<header class="sg-ot-ev-det-cab">' +
+            var html = '<div class="sg-ot-lb-marco" role="dialog" aria-modal="true">' +
+                       '<header class="sg-ot-lb-cab">' +
                        '<span class="sg-ot-card-ico"><i class="mdi ' + d('icono') + '"></i></span>' +
                        '<h3>' + d('titulo') + '</h3>' +
-                       '<a href="#" class="sg-ot-ev-cerrar" title="Cerrar"><i class="mdi mdi-close"></i></a></header>';
+                       '<a href="#" class="sg-ot-lb-cerrar" title="Cerrar (Esc)"><i class="mdi mdi-close"></i></a>' +
+                       '</header>';
 
             html += esImagen
-                ? '<a class="sg-ot-ev-det-foto" href="' + d('url') + '" target="_blank"><img src="' + d('url') + '" alt="' + d('titulo') + '" /></a>'
-                : '<div class="sg-ot-ev-det-doc"><i class="mdi ' + d('icono') + '"></i></div>';
+                ? '<div class="sg-ot-lb-foto"><img src="' + d('url') + '" alt="' + d('titulo') + '" /></div>'
+                : '<div class="sg-ot-lb-doc"><i class="mdi ' + d('icono') + '"></i><span>' + d('titulo') + '</span></div>';
 
-            html += '<div class="sg-ot-datos">';
+            html += '<div class="sg-ot-lb-datos"><div class="sg-ot-datos">';
             if (d('paso-txt')) html += dato('mdi-format-list-numbered', 'Paso asociado', d('paso-txt'));
             if (d('fecha')) html += dato('mdi-calendar-outline', 'Capturada', d('fecha'));
             if (d('usuario')) html += dato('mdi-account-outline', 'Enviada por', d('usuario'));
             if (d('obs')) html += dato('mdi-note-text-outline', 'Observación del técnico', d('obs'));
             html += '</div>';
 
-            html += '<a class="sg-ot-btn es-plano sg-ot-ev-abrir" href="' + d('url') + '" target="_blank">' +
-                    '<i class="mdi mdi-open-in-new"></i>Abrir original</a>';
+            html += '<a class="sg-ot-btn es-plano" href="' + d('url') + '" target="_blank">' +
+                    '<i class="mdi mdi-open-in-new"></i>Abrir original</a></div></div>';
 
-            detalle.innerHTML = html;
-            detalle.classList.add('es-abierto');
+            /* El modal se cuelga del BODY y no del panel: dentro de la
+               tarjeta heredaba su ancho y su recorte, y no habia forma de
+               que la foto usara la pantalla. */
+            var fondo = document.getElementById('sgOtLightbox');
+            if (!fondo) {
+                fondo = document.createElement('div');
+                fondo.id = 'sgOtLightbox';
+                fondo.className = 'sg-ot-lightbox';
+                document.body.appendChild(fondo);
+            }
 
-            var cerrar = detalle.querySelector('.sg-ot-ev-cerrar');
-            if (cerrar) cerrar.onclick = function (ev) {
-                ev.preventDefault();
-                detalle.classList.remove('es-abierto');
-                detalle.innerHTML = '';
+            fondo.innerHTML = html;
+            fondo.classList.add('es-abierto');
+
+            function cerrar(ev) {
+                if (ev) ev.preventDefault();
+                fondo.classList.remove('es-abierto');
+                fondo.innerHTML = '';
+                document.removeEventListener('keydown', porEscape);
                 for (var i = 0; i < cards.length; i++) cards[i].classList.remove('es-elegida');
-            };
+            }
+
+            function porEscape(ev) { if (ev.keyCode === 27) cerrar(); }
+
+            fondo.querySelector('.sg-ot-lb-cerrar').onclick = cerrar;
+
+            /* Tocar fuera del marco cierra; dentro, no. */
+            fondo.onclick = function (ev) { if (ev.target === fondo) cerrar(ev); };
+
+            document.addEventListener('keydown', porEscape);
         }
 
         function dato(icono, etiqueta, valor) {
