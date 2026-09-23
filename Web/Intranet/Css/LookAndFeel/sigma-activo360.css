@@ -1,0 +1,334 @@
+﻿/* ============================================================================
+   CENTRO DEL ACTIVO 360
+
+   Un equipo se mira desde muchos lados -sus ordenes, su mantencion, su
+   condicion, sus repuestos, lo que la app fotografio- y hasta ahora cada lado
+   era una pantalla distinta a la que se llegaba por el menu, perdiendo de
+   vista de que equipo se estaba hablando.
+
+   Aca todo cuelga del mismo encabezado: el equipo se elige una vez y las
+   secciones cambian debajo. Las cuatro que se usan siempre -Resumen,
+   Historial, Ordenes y Mantenimiento- estan a la vista; las otras nueve viven
+   en "Mas", que al elegir una escribe su nombre al lado para que nunca se
+   pierda en que seccion se esta.
+
+   La cascara comun -tarjetas, chips, datos, vacios, botones- viene de
+   sigma-orden.css. Aca va lo propio del centro.
+   ============================================================================ */
+.sg-a3 {
+    --sg-p: #6C5CFF;
+    --sg-borde: #ebecf3;
+    --sg-texto: #0f172a;
+    --sg-suave: #6b7280;
+    --sg-tenue: #9ca3af;
+}
+
+/* ------------------------------------------------------------- cabecera --- */
+.sg-a3-miga { font-size: 12.5px; color: var(--sg-tenue); margin-bottom: 6px; }
+.sg-a3-miga a, .sg-a3-miga a:hover { color: var(--sg-suave); text-decoration: none; }
+.sg-a3-miga .sep { margin: 0 6px; color: #cbd0db; }
+
+.sg-a3-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.sg-a3-hero-txt { flex: 1 1 280px; min-width: 0; }
+.sg-a3-hero h1 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    font-size: 27px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    line-height: 1.15;
+}
+.sg-a3-hero-sub { margin-top: 4px; font-size: 13px; color: var(--sg-suave); }
+.sg-a3-hero-acc { display: flex; align-items: center; gap: 8px; }
+
+/* El rotulo de datos de ejemplo: cuando la pantalla muestra un escenario y no
+   registros del cliente, se dice, y se dice chico. */
+.sg-a3-ilustrativo { margin-left: auto; align-self: flex-start; font-size: 11.5px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------ navegacion -- */
+.sg-a3-nav {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    margin-bottom: 16px;
+    padding: 4px 6px 0;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+    overflow: visible;
+}
+a.sg-a3-tab, a.sg-a3-tab:hover, a.sg-a3-tab:focus {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 16px;
+    border-bottom: 2px solid transparent;
+    color: var(--sg-suave);
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+a.sg-a3-tab:hover { color: var(--sg-texto); }
+a.sg-a3-tab i { font-size: 17px; }
+a.sg-a3-tab.es-activa { color: var(--sg-p); border-bottom-color: var(--sg-p); font-weight: 600; }
+
+/* "Mas" abre la lista de las otras nueve secciones y, cuando una esta
+   elegida, escribe su nombre al lado: sin eso, la pantalla no dice donde
+   esta parado uno. */
+.sg-a3-mas { position: relative; margin-left: auto; }
+a.sg-a3-mas-btn, a.sg-a3-mas-btn:hover { padding-right: 13px; }
+.sg-a3-mas-nombre { color: var(--sg-p); font-weight: 600; }
+
+.sg-a3-mas-menu {
+    position: absolute;
+    right: 0; top: calc(100% + 6px);
+    z-index: 40;
+    display: none;
+    width: 264px;
+    padding: 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 32px -14px rgba(15, 23, 42, .35);
+}
+.sg-a3-mas.es-abierto .sg-a3-mas-menu { display: block; animation: sgA3Menu .14s ease-out; }
+@keyframes sgA3Menu { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+a.sg-a3-mas-op, a.sg-a3-mas-op:hover, a.sg-a3-mas-op:focus {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    color: #374151;
+    font-size: 13px;
+    text-decoration: none;
+}
+a.sg-a3-mas-op:hover { background: #f5f3ff; color: var(--sg-p); }
+a.sg-a3-mas-op i { font-size: 17px; color: var(--sg-tenue); }
+a.sg-a3-mas-op:hover i, a.sg-a3-mas-op.es-activa i { color: var(--sg-p); }
+a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight: 600; }
+
+/* --------------------------------------------------------------- paneles -- */
+.sg-a3-panel { display: none; }
+.sg-a3-panel.es-activo { display: block; animation: sgA3Entra .16s ease-out; }
+@keyframes sgA3Entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.sg-a3-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+    gap: 16px;
+    align-items: start;
+}
+@media (max-width: 1150px) { .sg-a3-cols { grid-template-columns: 1fr; } }
+.sg-a3-col, .sg-a3-lado { display: grid; gap: 16px; align-content: start; }
+
+/* ------------------------------------------------------------------ kpis -- */
+.sg-a3-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.sg-a3-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.sg-a3-kpi-ico {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: #f1effe;
+    color: var(--sg-p);
+    font-size: 20px;
+}
+.sg-a3-kpi-ico.es-alerta { background: #fee2e2; color: #b91c1c; }
+.sg-a3-kpi-ico.es-ok { background: #dcfce7; color: #15803d; }
+.sg-a3-kpi-etq { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-kpi-val { display: block; font-size: 19px; font-weight: 700; color: var(--sg-texto); line-height: 1.2; }
+.sg-a3-kpi-val.es-chico { font-size: 14px; font-weight: 600; }
+.sg-a3-kpi-pie { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* --------------------------------------------------------------- filas ---- */
+.sg-a3-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 4px;
+}
+.sg-a3-fila + .sg-a3-fila { border-top: 1px solid #f5f6fa; }
+.sg-a3-fila-ico {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: #f1effe;
+    color: var(--sg-p);
+    font-size: 18px;
+}
+.sg-a3-fila-ico.es-alerta { background: #fee2e2; color: #b91c1c; }
+.sg-a3-fila-ico.es-ok { background: #dcfce7; color: #15803d; }
+.sg-a3-fila-ico.es-plan { background: #e0e7ff; color: #3730a3; }
+.sg-a3-fila-txt { flex: 1 1 auto; min-width: 0; }
+.sg-a3-fila-tit { display: block; font-size: 13.5px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-fila-sub { display: block; font-size: 12px; color: var(--sg-suave); line-height: 1.45; }
+.sg-a3-fila-acc { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.sg-a3-codigo { font-size: 12.5px; font-weight: 700; color: var(--sg-p); }
+
+/* --------------------------------------------------------------- tablas --- */
+.sg-a3-tabla-cab,
+.sg-a3-tabla-fila {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 8px;
+}
+.sg-a3-tabla-cab {
+    border-bottom: 1px solid #eef0f6;
+    color: var(--sg-suave);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sg-a3-tabla-fila + .sg-a3-tabla-fila { border-top: 1px solid #f5f6fa; }
+.sg-a3-tabla-fila:hover { background: #fafaff; }
+.sg-a3-tabla-fila .c-cod { font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-tabla-fila .c-cod span { display: block; font-size: 11.5px; font-weight: 400; color: var(--sg-suave); }
+.sg-a3-tabla-fila .c-dato { font-size: 12.5px; color: #4b5563; min-width: 0; }
+.sg-a3-tabla-fila .c-acc { display: flex; justify-content: flex-end; }
+
+/* Las ordenes de trabajo: seis columnas y una fila que se despliega. */
+.sg-a3-ot-cab, .sg-a3-ot { grid-template-columns: minmax(0, 1.8fr) 110px minmax(0, 1fr) minmax(0, 1.1fr) 120px 110px 110px; }
+.sg-a3-ot.es-abierta { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+.sg-a3-ot-detalle {
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin: 0 8px 10px;
+    padding: 14px;
+    border: 1px solid #ece9fb;
+    border-radius: 12px;
+    background: #faf9ff;
+}
+.sg-a3-ot-detalle.es-abierto { display: grid; }
+.sg-a3-ot-det-item strong { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-ot-det-item strong i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-ot-det-item span { display: block; margin-top: 3px; font-size: 12px; color: var(--sg-suave); line-height: 1.5; }
+.sg-a3-ot-det-acc { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* Las tablas de las demas secciones comparten forma pero no anchos. */
+.sg-a3-t4-cab, .sg-a3-t4 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 130px 120px; }
+.sg-a3-t5-cab, .sg-a3-t5 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 130px 120px; }
+
+@media (max-width: 1000px) {
+    .sg-a3-ot-cab, .sg-a3-t4-cab, .sg-a3-t5-cab { display: none; }
+    .sg-a3-ot, .sg-a3-t4, .sg-a3-t5 { grid-template-columns: 1fr 1fr; }
+    .sg-a3-ot .c-cod, .sg-a3-t4 .c-cod, .sg-a3-t5 .c-cod { grid-column: 1 / -1; }
+    .sg-a3-ot .c-acc, .sg-a3-t4 .c-acc, .sg-a3-t5 .c-acc { justify-content: flex-start; }
+}
+
+/* ------------------------------------------------------------- identidad -- */
+.sg-a3-foto {
+    display: block;
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    background: #f1f2f6;
+    overflow: hidden;
+}
+.sg-a3-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-a3-foto.es-vacia { display: flex; align-items: center; justify-content: center; color: #c0c4d2; font-size: 38px; }
+
+.sg-a3-ident { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 6px 12px; margin-top: 14px; }
+.sg-a3-ident dt { font-size: 12px; color: var(--sg-tenue); font-weight: 400; }
+.sg-a3-ident dd { margin: 0; font-size: 13px; color: var(--sg-texto); }
+
+/* --------------------------------------------------------------- SIGMA AI - */
+.sg-a3-ia {
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f5f3ff, #eef2ff);
+    border: 1px solid #ddd6fe;
+}
+.sg-a3-ia-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: #5b4bd6; }
+.sg-a3-ia-cab .sg-ot-chip { margin-left: auto; }
+.sg-a3-ia p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.55; color: #374151; }
+.sg-a3-ia-senales { font-size: 11.5px; color: var(--sg-suave); }
+
+/* ------------------------------------------------------- condicion -------- */
+.sg-a3-cond {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sg-a3-cond-card {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-left: 3px solid #cbd0db;
+    border-radius: 12px;
+    background: #fff;
+}
+.sg-a3-cond-card.es-normal { border-left-color: #16a34a; }
+.sg-a3-cond-card.es-aviso { border-left-color: #f59e0b; }
+.sg-a3-cond-card.es-critico { border-left-color: #dc2626; }
+.sg-a3-cond-card.es-viejo { border-left-color: #94a3b8; }
+.sg-a3-cond-nom { font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-cond-val { display: block; margin: 2px 0 4px; font-size: 22px; font-weight: 700; color: var(--sg-texto); }
+.sg-a3-cond-val small { font-size: 13px; font-weight: 500; color: var(--sg-suave); }
+.sg-a3-cond-pie { font-size: 11.5px; color: var(--sg-tenue); }
+
+/* El aviso de que los umbrales del ejemplo no son limites de operacion. */
+.sg-a3-umbrales { margin-top: 12px; font-size: 11.5px; color: var(--sg-tenue); }
+
+/* --------------------------------------------------------------- galeria -- */
+.sg-a3-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.sg-a3-foto-card {
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+}
+.sg-a3-foto-card:hover { box-shadow: 0 6px 18px -12px rgba(15, 23, 42, .35); }
+.sg-a3-foto-card .marco { display: block; height: 130px; background: #f1f2f6; }
+.sg-a3-foto-card .marco img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-a3-foto-card .pie { padding: 9px 11px 11px; }
+.sg-a3-foto-card .pie strong { display: block; font-size: 12.5px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-foto-card .pie span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------ linea de vida */
+.sg-a3-linea { list-style: none; margin: 0; padding: 0 0 0 20px; position: relative; }
+.sg-a3-linea::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: #eceef5; }
+.sg-a3-linea li { position: relative; padding: 10px 0; }
+.sg-a3-linea li + li { border-top: 1px solid #f5f6fa; }
+.sg-a3-linea li::before {
+    content: '';
+    position: absolute;
+    left: -19px; top: 17px;
+    width: 9px; height: 9px;
+    border-radius: 999px;
+    background: var(--sg-p);
+    box-shadow: 0 0 0 3px #f1effe;
+}
+.sg-a3-linea .fecha { font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-linea .tit { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-linea .det { display: block; font-size: 12px; color: var(--sg-suave); line-height: 1.5; }
