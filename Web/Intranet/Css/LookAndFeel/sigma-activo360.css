@@ -216,7 +216,13 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-tabla-fila .c-acc { display: flex; justify-content: flex-end; }
 
 /* Las ordenes de trabajo: seis columnas y una fila que se despliega. */
-.sg-a3-ot-cab, .sg-a3-ot { grid-template-columns: minmax(0, 1.8fr) 110px minmax(0, 1fr) minmax(0, 1.1fr) 120px 110px 110px; }
+/* Ocho columnas: entre Tipo y Responsable entra ALCANCE, la parte del
+   equipo que se intervino. Sin ella, dos ordenes del mismo horno se ven
+   iguales aunque una sea del quemador y la otra del ventilador. */
+.sg-a3-ot-cab, .sg-a3-ot { grid-template-columns: minmax(0, 1.6fr) 100px minmax(0, .9fr) minmax(0, .9fr) 112px 100px 70px 118px; }
+
+/* El boton de la ultima columna no se parte en dos lineas. */
+.sg-a3-ot .c-acc .sg-ot-btn { white-space: nowrap; }
 .sg-a3-ot.es-abierta { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
 .sg-a3-ot-detalle {
     display: none;
@@ -1858,4 +1864,173 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
    de corrido; "Evidencias 2" hay que interpretarlo. */
 .sg-a3-ev-sub { display: block; font-size: 11.5px; color: var(--sg-tenue); margin: 2px 0 2px; }
 .sg-a3-ev-todas { margin-top: 10px; }
+
+/* ---- La barra de filtros de una seccion -------------------------------
+   Misma forma en las cinco pestañas que la llevan: la etiqueta arriba en
+   chico y el valor abajo, como en los mockups. Un select suelto con su
+   label al lado obliga a leer dos veces para saber que filtra. */
+.sg-a3-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--sg-borde);
+}
+
+.sg-a3-filtro {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0 8px;
+    min-width: 172px;
+    padding: 7px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    cursor: pointer;
+}
+.sg-a3-filtro i {
+    grid-row: 1 / 3;
+    font-size: 18px;
+    color: var(--sg-p);
+}
+.sg-a3-filtro span { font-size: 10.5px; color: var(--sg-tenue); }
+
+/* El select va sin marco: el marco es el de la tarjeta que lo contiene. */
+.sg-a3-filtro select {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    cursor: pointer;
+    outline: none;
+    max-width: 100%;
+}
+
+.sg-a3-filtro-buscar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 260px;
+}
+.sg-a3-filtro-buscar i {
+    position: absolute;
+    left: 12px;
+    font-size: 17px;
+    color: var(--sg-tenue);
+    pointer-events: none;
+}
+.sg-a3-filtro-buscar input {
+    width: 100%;
+    padding: 11px 12px 11px 36px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    font-size: 13px;
+    color: var(--sg-texto);
+    outline: none;
+}
+.sg-a3-filtro-buscar input:focus { border-color: var(--sg-p); }
+
+.sg-a3-filtro-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--sg-texto);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.sg-a3-filtro-check input { accent-color: var(--sg-p); width: 16px; height: 16px; }
+
+/* ---- El pie de paginacion ---- */
+.sg-a3-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 12.5px;
+    color: var(--sg-tenue);
+}
+.sg-a3-pie-conteo { margin-right: auto; }
+
+.sg-a3-pie-tam { display: inline-flex; align-items: center; gap: 7px; margin: 0; }
+.sg-a3-pie-tam select {
+    padding: 5px 8px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 8px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-texto);
+}
+
+.sg-a3-pie-paginas { display: inline-flex; align-items: center; gap: 4px; }
+.sg-a3-pie-paginas a {
+    display: grid;
+    place-items: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 8px;
+    color: var(--sg-suave);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+.sg-a3-pie-paginas a:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-a3-pie-paginas a.es-activa {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff;
+    font-weight: 600;
+}
+.sg-a3-pie-paginas span { padding: 0 2px; color: var(--sg-tenue); }
+
+@media (max-width: 760px) {
+    .sg-a3-filtro { min-width: 100%; }
+    .sg-a3-pie-conteo { margin-right: 0; flex: 1 1 100%; }
+}
+
+/* Los KPI de la cabecera de una tarjeta: mismas tres respuestas, en el aire
+   que deja el encabezado. La fila completa es para el resumen. */
+.sg-a3-kpis.es-compacta {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 0 auto;
+}
+.sg-a3-kpis.es-compacta .sg-a3-kpi {
+    min-width: 108px;
+    padding: 9px 12px;
+    gap: 9px;
+}
+.sg-a3-kpis.es-compacta .sg-a3-kpi-ico { width: 30px; height: 30px; font-size: 16px; }
+
+@media (max-width: 1100px) {
+    .sg-a3-kpis.es-compacta { flex-wrap: wrap; margin-left: 0; width: 100%; }
+}
+
+/* Un RadComboBox dentro de un filtro trae su propio marco, y encima del
+   marco de la tarjeta quedaban dos cajas una dentro de otra. */
+.sg-a3-filtro .RadComboBox,
+.sg-a3-filtro .RadComboBox .rcbInputCell,
+.sg-a3-filtro .RadComboBox .rcbInput {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-filtro .RadComboBox { width: 100% !important; }
+.sg-a3-filtro .RadComboBox .rcbActionButton { background: transparent !important; border: 0 !important; }
 

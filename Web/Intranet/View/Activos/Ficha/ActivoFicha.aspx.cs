@@ -59,8 +59,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         udPanel.Visible = hayCliente;
         if (!hayCliente) return;
 
-        ConfigurarUbicacion();
-
         int activo = ActivoSeleccionado();
 
         if (activo > 0)
@@ -87,95 +85,41 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         udPanel.Update();
     }
 
-    private RadComboBox2 Cbo(string id) { return (RadComboBox2)wucFiltro.FindControl(id); }
-
-    private void Seleccionar(RadComboBox2 cbo, string valor)
+    /// <summary>
+    /// Los combos de ubicacion vivian dentro del `wucFiltro` del encabezado y
+    /// habia que buscarlos por nombre. Ahora son controles de la pagina: se
+    /// usan directo y el compilador avisa si se les cambia el id.
+    /// </summary>
+    private RadComboBox2 Cbo(string id)
     {
-        RadComboBoxItem item = cbo.FindItemByValue(valor ?? "");
-        if (item == null) item = cbo.Items.Count > 0 ? cbo.Items[0] : null;
-        if (item != null) item.Selected = true;
+        return FindControl(id) as RadComboBox2
+            ?? udPanel.FindControl(id) as RadComboBox2;
     }
 
     /// <summary>
-    /// Cascada Planta -> Área -> Línea: el hijo siempre corresponde al padre;
-    /// si el padre cambia, el hijo vuelve a "Todas".
+    /// Los activos del cliente, sin filtrar por ubicacion.
+    ///
+    /// LA CASCADA PLANTA -> AREA -> LINEA SE SACO
+    ///   Tres combos con postback para lo mismo que hace el buscador de la
+    ///   lista, que compara contra la ubicacion escrita en cada fila. Y
+    ///   arrastraban la regla de vaciar el hijo cuando cambia el padre, que
+    ///   es codigo que hay que mantener para no ganar nada.
+    ///
+    ///   Queda el estado del registro porque es el unico filtro que revela
+    ///   algo: un activo dado de baja no figura en el texto de ninguna fila.
     /// </summary>
-    protected void ConfigurarUbicacion()
-    {
-        RadComboBox2 cboPlanta = Cbo("cboPlanta");
-        RadComboBox2 cboArea = Cbo("cboArea");
-        RadComboBox2 cboLinea = Cbo("cboLinea");
-        if (cboPlanta == null || cboArea == null || cboLinea == null) return;
-
-        int cliente = SitioBase.Session.ClienteId();
-
-        string selP = cboPlanta.SelectedValue;
-        string selA = cboArea.SelectedValue;
-        string selL = cboLinea.SelectedValue;
-
-        List<ClienteInstalacion> plantas =
-            new ClienteInstalacionController().GetClienteInstalaciones(new ClienteInstalacion { cin_cliente = cliente })
-            ?? new List<ClienteInstalacion>();
-
-        List<InstalacionArea> areas =
-            new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true })
-            ?? new List<InstalacionArea>();
-
-        cboPlanta.Items.Clear();
-        cboPlanta.Items.Add(new RadComboBoxItem("Todas las plantas", ""));
-        foreach (ClienteInstalacion p in plantas)
-            cboPlanta.Items.Add(new RadComboBoxItem(p.cin_nombre, p.cin_id.ToString()));
-
-        if (string.IsNullOrEmpty(selP) && plantas.Count == 1) selP = plantas[0].cin_id.ToString();
-        Seleccionar(cboPlanta, selP);
-        selP = cboPlanta.SelectedValue;
-        int plantaId; int.TryParse(selP, out plantaId);
-
-        cboArea.Items.Clear();
-        cboArea.Items.Add(new RadComboBoxItem("Todas las áreas", ""));
-        if (plantaId > 0)
-            foreach (InstalacionArea a in areas)
-                if (a.iar_cliente_instalacion == plantaId && (a.iar_area_padre == null || a.iar_area_padre == 0))
-                    cboArea.Items.Add(new RadComboBoxItem(a.iar_nombre, a.iar_id.ToString()));
-
-        if (cboArea.FindItemByValue(selA) == null) selA = "";
-        Seleccionar(cboArea, selA);
-        selA = cboArea.SelectedValue;
-        int areaId; int.TryParse(selA, out areaId);
-
-        cboLinea.Items.Clear();
-        cboLinea.Items.Add(new RadComboBoxItem("Todas las líneas", ""));
-        if (areaId > 0)
-            foreach (InstalacionArea a in areas)
-                if (a.iar_area_padre == areaId)
-                    cboLinea.Items.Add(new RadComboBoxItem(a.iar_nombre, a.iar_id.ToString()));
-
-        if (cboLinea.FindItemByValue(selL) == null) selL = "";
-        Seleccionar(cboLinea, selL);
-    }
-
     private List<Activo> FiltrarActivos()
     {
         Activo filtro = new Activo { act_cliente = SitioBase.Session.ClienteId() };
 
-        RadComboBox2 cboLinea = Cbo("cboLinea");
-        RadComboBox2 cboArea = Cbo("cboArea");
-        RadComboBox2 cboPlanta = Cbo("cboPlanta");
         RadComboBox2 cboHabilitado = Cbo("cboHabilitado");
 
-        string vL = cboLinea != null ? cboLinea.SelectedValue : "";
-        string vA = cboArea != null ? cboArea.SelectedValue : "";
-        string vP = cboPlanta != null ? cboPlanta.SelectedValue : "";
+        /* Sin elegir nada se muestran los habilitados: un catalogo que abre
+           mostrando los equipos de baja miente sobre el tamaño de la planta. */
+        string vH = cboHabilitado != null ? cboHabilitado.SelectedValue : "1";
 
-        int id;
-        if (!string.IsNullOrEmpty(vL) && int.TryParse(vL, out id)) filtro.filtro_instalacion_area = id;
-        else if (!string.IsNullOrEmpty(vA) && int.TryParse(vA, out id)) filtro.filtro_instalacion_area = id;
-        else if (!string.IsNullOrEmpty(vP) && int.TryParse(vP, out id)) filtro.filtro_cliente_instalacion = id;
-
-        if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
-
-        if (cboHabilitado != null && cboHabilitado.SelectedValue != "")
-            filtro.filtro_habilitado = cboHabilitado.SelectedValue == "1";
+        if (vH == "1") filtro.filtro_habilitado = true;
+        else if (vH == "0") filtro.filtro_habilitado = false;
 
         return new ActivoController().GetActivos(filtro) ?? new List<Activo>();
     }
@@ -667,6 +611,101 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
     }
 
+    #region La barra de filtros
+
+    /// <summary>
+    /// Un control de la barra de filtros: la etiqueta arriba y el valor
+    /// abajo, como en los mockups.
+    ///
+    /// El filtrado ocurre en el NAVEGADOR, igual que el resto del centro: las
+    /// consultas ya traen el historial completo del equipo -decenas de filas,
+    /// no miles-, y un postback por cada vez que alguien cambia el periodo
+    /// haria que filtrar se sienta mas lento que leer.
+    /// </summary>
+    private static string FiltroLista(string campo, string icono, string etiqueta, params string[] opciones)
+    {
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<label class=\"sg-a3-filtro\"><i class=\"mdi ").Append(icono).Append("\"></i>")
+         .Append("<span>").Append(System.Web.HttpUtility.HtmlEncode(etiqueta)).Append("</span>")
+         .Append("<select data-f=\"").Append(campo).Append("\">");
+
+        /* Las opciones llegan como "valor|texto". El valor vacio es "todos" y
+           va primero: es el estado en que se abre la pestaña. */
+        foreach (string o in opciones)
+        {
+            string[] p = o.Split('|');
+            s.Append("<option value=\"").Append(System.Web.HttpUtility.HtmlEncode(p[0])).Append("\">")
+             .Append(System.Web.HttpUtility.HtmlEncode(p.Length > 1 ? p[1] : p[0])).Append("</option>");
+        }
+
+        return s.Append("</select></label>").ToString();
+    }
+
+    /// <summary>
+    /// El filtro de periodo, igual en todas las pestañas.
+    ///
+    /// Abre en "todo el historial" y no en el mes actual como el mockup: de un
+    /// equipo con once ordenes, arrancar en septiembre muestra dos y parece
+    /// que las otras nueve se perdieron. El periodo se acota cuando alguien lo
+    /// pide, no antes.
+    /// </summary>
+    private static string FiltroPeriodo()
+    {
+        return FiltroLista("periodo", "mdi-calendar-range", "Período",
+                           "|Todo el historial", "30|Últimos 30 días",
+                           "90|Últimos 90 días", "365|Último año");
+    }
+
+    /// <summary>El buscador de la barra, con su lupa.</summary>
+    private static string FiltroTexto(string placeholder)
+    {
+        return "<span class=\"sg-a3-filtro-buscar\"><i class=\"mdi mdi-magnify\"></i>" +
+               "<input type=\"search\" data-f=\"texto\" autocomplete=\"off\" placeholder=\"" +
+               System.Web.HttpUtility.HtmlEncode(placeholder) + "\" /></span>";
+    }
+
+    /// <summary>
+    /// La casilla que suma lo de los componentes.
+    ///
+    /// Filtra al reves de una lista: marcada deja pasar todo, y sin marcar
+    /// esconde lo que cuelga de una pieza. Es "incluir los componentes", no
+    /// "solo los componentes", y por eso nace marcada.
+    /// </summary>
+    private static string FiltroComponentes(string etiqueta = "Incluir componentes")
+    {
+        return "<label class=\"sg-a3-filtro-check\"><input type=\"checkbox\" data-f=\"de-componente\" checked />" +
+               System.Web.HttpUtility.HtmlEncode(etiqueta) + "</label>";
+    }
+
+    /// <summary>La barra completa: los controles que se le pasen, en una fila.</summary>
+    private static string BarraFiltros(params string[] controles)
+    {
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-filtros\">");
+        foreach (string c in controles) s.Append(c);
+        return s.Append("</div>").ToString();
+    }
+
+    /// <summary>
+    /// El pie: cuantos se muestran, el tamaño de pagina y los numeros.
+    ///
+    /// Sin el, una grilla de cuarenta filas se lee como si el equipo tuviera
+    /// cuarenta y ninguna forma de saber si hay mas abajo.
+    /// </summary>
+    private static string PiePaginacion(string nombre)
+    {
+        return "<div class=\"sg-a3-pie\">" +
+               "<span class=\"sg-a3-pie-conteo\" data-conteo></span>" +
+               "<label class=\"sg-a3-pie-tam\">Filas por página" +
+               "<select data-f-pagina><option value=\"10\">10</option>" +
+               "<option value=\"25\" selected>25</option>" +
+               "<option value=\"50\">50</option>" +
+               "<option value=\"0\">Todas</option></select></label>" +
+               "<span class=\"sg-a3-pie-paginas\" data-paginas></span></div>";
+    }
+
+    #endregion
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {
@@ -983,11 +1022,15 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         int abiertas = ordenes.Count(o => o.otr_orden_trabajo_estado != 4);
 
+        /* Tres tarjetas y no tres numeros pegados: son las respuestas a tres
+           preguntas distintas -cuanto se le ha hecho, cuanto le falta, cuanto
+           se cerro- y en una fila corrida se leen como una sola cifra. */
         litOtConteos.Text =
-            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + ordenes.Count + "</strong><span>total</span></div>" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + abiertas + "</strong><span>abiertas</span></div>" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + (ordenes.Count - abiertas) + "</strong><span>cerradas</span></div></div>";
+            "<div class=\"sg-a3-kpis es-compacta\">" +
+            Kpi("mdi-clipboard-text-outline", ordenes.Count.ToString(), "Total", "", "", true) +
+            Kpi("mdi-clock-outline", abiertas.ToString(), "Abiertas", "", abiertas > 0 ? "es-ambar" : "", true) +
+            Kpi("mdi-check-circle-outline", (ordenes.Count - abiertas).ToString(), "Cerradas", "", "es-verde", true) +
+            "</div>";
 
         if (ordenes.Count == 0)
         {
@@ -1001,20 +1044,50 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         StringBuilder s = new StringBuilder();
 
-        s.Append("<div class=\"sg-a3-tabla-cab sg-a3-ot-cab\">")
-         .Append("<span>Orden de trabajo</span><span>Tipo</span><span>Responsable</span>")
+        /* La zona filtrable envuelve barra, grilla y pie: el motor del
+           navegador busca sus controles y sus filas dentro de ella. */
+        s.Append("<div data-filtra=\".sg-a3-ot\" data-nombre=\"órdenes\">")
+
+         .Append(BarraFiltros(
+                FiltroPeriodo(),
+                FiltroLista("tipo", "mdi-shape-outline", "Tipo de OT", OpcionesDe(ordenes.Select(o => Texto(o.tipo_nombre)))),
+                FiltroLista("estado", "mdi-format-list-bulleted", "Estado", OpcionesDe(ordenes.Select(o => Texto(o.estado_nombre)))),
+                FiltroTexto("Buscar OT por código o descripción..."),
+                FiltroComponentes("Incluir OT de componentes")))
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-a3-ot-cab\">")
+         .Append("<span>Orden de trabajo</span><span>Tipo</span><span>Alcance</span><span>Responsable</span>")
          .Append("<span>Estado</span><span>Fecha</span><span>Pasos</span><span></span></div>");
 
         foreach (OrdenTrabajo o in ordenes.OrderByDescending(x => x.otr_fecha_programada_utc ?? x.otr_fecha_creacion))
         {
-            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-ot\" data-ot=\"").Append(o.otr_id).Append("\">")
+            DateTime? fecha = o.otr_fecha_programada_utc ?? o.otr_fecha_creacion;
+
+            /* El alcance es la PARTE del equipo que se intervino. Sin el, dos
+               ordenes del mismo horno se ven iguales aunque una sea del
+               quemador y la otra del ventilador. */
+            bool deComponente = !string.IsNullOrEmpty(o.componente_nombre);
+            string alcance = deComponente ? o.componente_nombre : Texto(o.activo_nombre);
+
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-ot\" data-ot=\"").Append(o.otr_id)
+             .Append("\" data-par=\"det-").Append(o.otr_id)
+             .Append("\" data-fecha=\"").Append(fecha == null ? "" : fecha.Value.ToString("yyyy-MM-dd"))
+             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(Texto(o.tipo_nombre).ToLowerInvariant()))
+             .Append("\" data-estado=\"").Append(Server.HtmlEncode(Texto(o.estado_nombre).ToLowerInvariant()))
+             .Append("\" data-de-componente=\"").Append(deComponente ? "1" : "0")
+             .Append("\" data-txt=\"")
+             .Append(Server.HtmlEncode(("OT-" + o.otr_correlativo + " " + Texto(o.otr_titulo) + " " +
+                                        alcance + " " + Quien(o)).ToLowerInvariant()))
+             .Append("\">")
+
              .Append("<span class=\"c-cod\">OT-").Append(o.otr_correlativo)
              .Append("<span>").Append(Server.HtmlEncode(Texto(o.otr_titulo))).Append("</span></span>")
              .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(o.tipo_nombre))).Append("</span></span>")
+             .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(alcance)).Append("</span>")
              .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Quien(o))).Append("</span>")
              .Append("<span class=\"c-dato\">").Append(ChipEstadoOt(o)).Append("</span>")
              .Append("<span class=\"c-dato\">")
-             .Append(o.otr_fecha_programada_utc == null ? "—" : o.otr_fecha_programada_utc.Value.ToString("dd MMM yyyy"))
+             .Append(fecha == null ? "—" : fecha.Value.ToString("dd MMM yyyy"))
              .Append("</span>")
              .Append("<span class=\"c-dato\">").Append(o.pasos - o.pasos_pendientes).Append(" / ").Append(o.pasos).Append("</span>")
              .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(o.otr_id), "Abrir OT")).Append("</span>")
@@ -1040,12 +1113,46 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                         ? Texto(o.cierre_motivo_nombre) + (string.IsNullOrEmpty(o.cierre_usuario_nombre) ? "" : " · " + o.cierre_usuario_nombre)
                         : "Sin cerrar"));
 
-            s.Append("<div class=\"sg-a3-ot-det-acc\">")
-             .Append(Boton(UrlOrden(o.otr_id), "Abrir OT completa"))
+            s.Append("<div class=\"sg-a3-ot-det-acc\">");
+
+            /* "Ver evidencias" lleva a la galeria del equipo, que es donde se
+               comparan con las de otras ordenes; en el detalle ya estan las de
+               esta. Llevar a la misma pantalla dos veces no es una accion. */
+            if (ev.Count > 0)
+                s.Append("<a class=\"sg-ot-btn es-accion\" href=\"javascript:void(0)\" data-ir-sec=\"documentos\">")
+                 .Append("<i class=\"mdi mdi-image-multiple-outline\"></i>Ver evidencias</a>");
+
+            /* La firma vive en el cierre de la orden y solo existe si se
+               cerro: ofrecerla en una abierta promete algo que no esta. */
+            if (o.otr_orden_trabajo_estado == 4)
+                s.Append(Boton(UrlOrden(o.otr_id), "Ver cierre y firma"));
+
+            s.Append(Boton(UrlOrden(o.otr_id), "Abrir OT completa"))
              .Append("</div></div>");
         }
 
+        s.Append(PiePaginacion("órdenes"))
+         .Append("</div>");
+
         litOrdenes.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Las opciones de una lista, sacadas de lo que HAY.
+    ///
+    /// Un desplegable con los ocho tipos del catalogo cuando el equipo solo
+    /// tiene dos obliga a probar seis que no devuelven nada. El valor es el
+    /// texto en minuscula, que es contra lo que compara el motor.
+    /// </summary>
+    private static string[] OpcionesDe(IEnumerable<string> valores)
+    {
+        List<string> opciones = new List<string>();
+        opciones.Add("|Todos");
+
+        foreach (string v in valores.Where(x => !string.IsNullOrEmpty(x)).Distinct().OrderBy(x => x))
+            opciones.Add(v.ToLowerInvariant() + "|" + v);
+
+        return opciones.ToArray();
     }
 
     /// <summary>

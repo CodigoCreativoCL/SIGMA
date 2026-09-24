@@ -1291,6 +1291,193 @@
         }
     }
 
+    /* ---- Filtrar y paginar cualquier seccion del centro ----
+
+       Todas las pestañas filtran igual: un periodo, un par de listas, texto
+       libre y paginacion. Estaba escrito una vez por pestaña -fallas,
+       documentos, lista, condicion- y cada copia se comportaba distinto: una
+       reseteaba la pagina al filtrar y otra no, una contaba los resultados y
+       otra no.
+
+       Ahora el motor es uno y lo dirige el HTML. Una seccion filtrable
+       declara:
+
+         [data-filtra="<selector de filas>"]   el contenedor
+         [data-f="periodo|texto|<campo>"]      cada control
+         [data-f-pagina]                       el tamaño de pagina
+         [data-conteo] / [data-paginas]        donde se escribe el resultado
+
+       y cada fila declara `data-fecha`, `data-txt` y un `data-<campo>` por
+       cada lista que la filtre. Nada de configuracion en JS: una pestaña
+       nueva no necesita tocar este archivo. */
+    function filtrables() {
+        var zonas = document.querySelectorAll('[data-filtra]');
+
+        for (var z = 0; z < zonas.length; z++) armarZona(zonas[z]);
+    }
+
+    function armarZona(zona) {
+        if (zona.getAttribute('data-filtra-listo') === '1') return;
+        zona.setAttribute('data-filtra-listo', '1');
+
+        var selector = zona.getAttribute('data-filtra');
+        var filas = zona.querySelectorAll(selector);
+        if (!filas.length) return;
+
+        var controles = zona.querySelectorAll('[data-f]');
+        var tamPagina = zona.querySelector('[data-f-pagina]');
+        var conteo = zona.querySelector('[data-conteo]');
+        var paginas = zona.querySelector('[data-paginas]');
+        var vacio = zona.querySelector('[data-vacio]');
+        var pagina = 1;
+
+        var nombra = zona.getAttribute('data-nombre') || 'registros';
+
+        function valor(c) {
+            if (c.type === 'checkbox') return c.checked ? '1' : '';
+            return (c.value || '').toString().toLowerCase().trim();
+        }
+
+        /* El periodo se mide en dias hacia atras. Una fila SIN fecha nunca se
+           esconde: no tener fecha no es estar fuera del periodo, y esconderla
+           seria perder una orden sin programar justo cuando se la busca. */
+        function dentroDelPeriodo(fila, dias) {
+            if (!dias) return true;
+
+            var f = fila.getAttribute('data-fecha');
+            if (!f) return true;
+
+            var cuando = new Date(f + 'T00:00:00');
+            if (isNaN(cuando.getTime())) return true;
+
+            var limite = new Date();
+            limite.setHours(0, 0, 0, 0);
+            limite.setDate(limite.getDate() - parseInt(dias, 10));
+
+            /* Hacia adelante no se corta: lo programado para el mes que viene
+               es justamente lo que se quiere ver en una agenda. */
+            return cuando >= limite;
+        }
+
+        function coinciden() {
+            var salen = [];
+
+            for (var i = 0; i < filas.length; i++) {
+                var fila = filas[i];
+                var ok = true;
+
+                for (var c = 0; c < controles.length && ok; c++) {
+                    var campo = controles[c].getAttribute('data-f');
+                    var v = valor(controles[c]);
+
+                    if (campo === 'periodo') { ok = dentroDelPeriodo(fila, v); continue; }
+
+                    if (campo === 'texto') {
+                        ok = v === '' || (fila.getAttribute('data-txt') || '').toLowerCase().indexOf(v) !== -1;
+                        continue;
+                    }
+
+                    /* Una casilla filtra al REVES de una lista: marcada deja
+                       pasar todo, y sin marcar esconde lo que la cumple. Es
+                       "incluir los componentes", no "solo los componentes". */
+                    if (controles[c].type === 'checkbox') {
+                        ok = v === '1' || fila.getAttribute('data-' + campo) !== '1';
+                        continue;
+                    }
+
+                    ok = v === '' || (fila.getAttribute('data-' + campo) || '').toLowerCase() === v;
+                }
+
+                if (ok) salen.push(fila);
+            }
+
+            return salen;
+        }
+
+        /* Una fila puede arrastrar su detalle desplegable, que es otro
+           elemento hermano: si se esconde la fila y no su detalle, queda un
+           panel abierto debajo de una fila que ya no esta. */
+        function par(fila) {
+            var id = fila.getAttribute('data-par');
+            return id ? zona.querySelector('#' + id) : null;
+        }
+
+        function pintar() {
+            var salen = coinciden();
+            var tam = tamPagina ? parseInt(tamPagina.value, 10) : 0;
+            if (!tam) tam = salen.length || 1;
+
+            var total = salen.length;
+            var ultima = Math.max(1, Math.ceil(total / tam));
+            if (pagina > ultima) pagina = ultima;
+
+            var desde = (pagina - 1) * tam;
+            var hasta = Math.min(desde + tam, total);
+
+            for (var i = 0; i < filas.length; i++) {
+                filas[i].classList.add('es-oculta');
+
+                /* El detalle no solo se esconde: se CIERRA. Su clase de
+                   abierto gana en especificidad a la de oculto, asi que una
+                   fila que sale por el filtro dejaba su panel flotando debajo
+                   de otra fila que no es la suya. */
+                var d = par(filas[i]);
+                if (d) {
+                    d.classList.add('es-oculta');
+                    d.classList.remove('es-abierto');
+                }
+
+                filas[i].classList.remove('es-abierta');
+            }
+
+            for (var k = desde; k < hasta; k++) salen[k].classList.remove('es-oculta');
+
+            if (conteo)
+                conteo.textContent = total === 0
+                    ? 'Nada coincide con el filtro'
+                    : 'Mostrando ' + (desde + 1) + '–' + hasta + ' de ' + total + ' ' + nombra;
+
+            if (vacio) vacio.style.display = total === 0 ? 'block' : 'none';
+
+            if (!paginas) return;
+
+            paginas.innerHTML = '';
+            if (ultima <= 1) return;
+
+            /* Todas las paginas cuando son pocas; con muchas, los bordes y las
+               vecinas de la actual. Una tira de treinta numeros no sirve para
+               llegar a la treinta. */
+            for (var p = 1; p <= ultima; p++) {
+                if (ultima > 7 && p > 2 && p < ultima - 1 && Math.abs(p - pagina) > 1) {
+                    if (paginas.lastChild && paginas.lastChild.tagName !== 'SPAN') {
+                        var puntos = document.createElement('span');
+                        puntos.textContent = '…';
+                        paginas.appendChild(puntos);
+                    }
+                    continue;
+                }
+
+                var a = document.createElement('a');
+                a.href = 'javascript:void(0)';
+                a.textContent = p;
+                a.className = p === pagina ? 'es-activa' : '';
+                a.onclick = (function (n) { return function () { pagina = n; pintar(); }; })(p);
+                paginas.appendChild(a);
+            }
+        }
+
+        for (var c = 0; c < controles.length; c++) {
+            var evento = controles[c].tagName === 'INPUT' && controles[c].type !== 'checkbox'
+                       ? 'input' : 'change';
+
+            controles[c].addEventListener(evento, function () { pagina = 1; pintar(); });
+        }
+
+        if (tamPagina) tamPagina.addEventListener('change', function () { pagina = 1; pintar(); });
+
+        pintar();
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -1298,6 +1485,7 @@
         condicion();
         fallas();
         lista();
+        filtrables();
         popovers();
         documentos();
         agenda();

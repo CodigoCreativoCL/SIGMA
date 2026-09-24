@@ -118,36 +118,19 @@
     <asp:Literal ID="litSubtitulo" runat="server" Text="Historial, mantenimiento y condición de tus equipos." />
 </asp:Content>
 
-<asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
-    <wuc:Filtro runat="server" ID="wucFiltro">
-        <FiltroPersonalizado>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-3 col-md-3 col-xs-12">
-                    <label for="cboPlanta" style="display:block; margin:0 0 4px;">Planta:</label>
-                    <rad:RadComboBox2 ID="cboPlanta" runat="server" Width="100%" AutoPostBack="true" />
-                </div>
-                <div class="col-lg-3 col-md-3 col-xs-12">
-                    <label for="cboArea" style="display:block; margin:0 0 4px;">Área:</label>
-                    <rad:RadComboBox2 ID="cboArea" runat="server" Width="100%" AutoPostBack="true" />
-                </div>
-                <div class="col-lg-3 col-md-3 col-xs-12">
-                    <label for="cboLinea" style="display:block; margin:0 0 4px;">Línea:</label>
-                    <rad:RadComboBox2 ID="cboLinea" runat="server" Width="100%" AutoPostBack="true" />
-                </div>
-                <div class="col-lg-3 col-md-3 col-xs-12">
-                    <label for="cboHabilitado" style="display:block; margin:0 0 4px;">Habilitado:</label>
-                    <rad:RadComboBox2 ID="cboHabilitado" runat="server" Width="100%">
-                        <Items>
-                            <rad:RadComboBoxItem Text="Todos" Value="" />
-                            <rad:RadComboBoxItem Text="Si" Value="1" />
-                            <rad:RadComboBoxItem Text="No" Value="0" />
-                        </Items>
-                    </rad:RadComboBox2>
-                </div>
-            </div>
-        </FiltroPersonalizado>
-    </wuc:Filtro>
-</asp:Content>
+<%-- LA BUSQUEDA AVANZADA DEL SITIO NO SIRVE EN EL CENTRO
+
+     El `wucFiltro` del encabezado trae un cuadro de texto que busca contra
+     SEL_ACTIVO. Aca eso no hace nada visible: la lista ya se filtra en el
+     navegador con su propio buscador, y una vez abierto un activo el centro
+     no es una lista, asi que escribir "ot-20" arriba y apretar Buscar no
+     cambiaba una sola fila.
+
+     Los combos de planta, area y linea SI filtraban de verdad, y por eso no
+     se borraron: bajaron a la barra de la lista, donde estan las cosas que
+     afectan a lo que se ve. Siguen siendo de servidor -con postback- porque
+     "Exportar" entrega lo que el filtro dejo, y para eso el servidor tiene
+     que saber cual es. --%>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
@@ -186,6 +169,45 @@
                                 OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                         </div>
                     </header>
+
+                    <%-- PLANTA, AREA Y LINEA NO HACEN FALTA
+
+                         El buscador de la lista ya compara contra la
+                         ubicacion -"Renca · Linea 1" viaja en el texto de
+                         cada fila-, asi que escribir "renca" hace lo mismo
+                         que la cascada de tres combos, sin tres postbacks ni
+                         la regla de que el hijo se vacia cuando cambia el
+                         padre.
+
+                         Queda solo "Habilitado", que es el unico que muestra
+                         algo que de otra forma no se puede ver: un activo
+                         dado de baja no aparece escrito en ninguna parte. --%>
+                    <div class="sg-a3-filtros">
+                        <%-- El buscador de la lista.
+
+                             No existia: lo que buscaba era el cuadro de la
+                             busqueda avanzada del encabezado, que pegaba
+                             contra el servidor. Al sacarlo, la lista se
+                             quedaba sin ninguna forma de buscar, asi que
+                             entra aca y compara contra el texto que cada fila
+                             ya trae -codigo, nombre, tipo y ubicacion-. --%>
+                        <span class="sg-a3-filtro-buscar">
+                            <i class="mdi mdi-magnify"></i>
+                            <input type="search" id="sgListaBuscar" autocomplete="off"
+                                placeholder="Buscar por código, nombre, tipo o ubicación..." />
+                        </span>
+
+                        <label class="sg-a3-filtro"><i class="mdi mdi-check-circle-outline"></i>
+                            <span>Estado del registro</span>
+                            <rad:RadComboBox2 ID="cboHabilitado" runat="server" AutoPostBack="true" Width="100%">
+                                <Items>
+                                    <rad:RadComboBoxItem Text="Solo habilitados" Value="1" />
+                                    <rad:RadComboBoxItem Text="Todos" Value="" />
+                                    <rad:RadComboBoxItem Text="Solo dados de baja" Value="0" />
+                                </Items>
+                            </rad:RadComboBox2>
+                        </label>
+                    </div>
 
                     <div class="sg-ot-ev-filtros">
                         <div class="sg-ot-ev-tipos" id="sgListaChips">
