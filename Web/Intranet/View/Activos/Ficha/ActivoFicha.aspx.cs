@@ -644,8 +644,15 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             es_audio = x.es_audio
         }).ToList();
 
-        return "<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>" +
-               "Evidencias <b>" + lista.Count + "</b></strong>" + Galeria(medios) + "</div>";
+        /* El mockup lo dice con palabras y no con un contador: "Se adjuntaron
+           2 archivos" se lee de corrido, "Evidencias 2" hay que interpretarlo. */
+        return "<div class=\"sg-a3-ot-det-item es-ancho\">" +
+               "<strong><i class=\"mdi mdi-image-multiple-outline\"></i>Evidencias</strong>" +
+               "<span class=\"sg-a3-ev-sub\">Se adjunt" + (lista.Count == 1 ? "ó 1 archivo." : "aron " + lista.Count + " archivos.") + "</span>" +
+               Galeria(medios) +
+               "<a class=\"sg-ot-btn es-accion sg-a3-ev-todas\" href=\"javascript:void(0)\" data-ir-sec=\"documentos\">" +
+               "<i class=\"mdi mdi-image-multiple-outline\"></i>Ver evidencias</a>" +
+               "</div>";
     }
 
     /// <summary>El icono que le corresponde a cada clase de medio.</summary>
@@ -1062,8 +1069,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             es_audio = a.es_audio
         }).ToList();
 
-        return "<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>" +
-               "Evidencias <b>" + ev.Count + "</b></strong>" + Galeria(medios) + "</div>";
+        return "<div class=\"sg-a3-ot-det-item es-ancho\">" +
+               "<strong><i class=\"mdi mdi-image-multiple-outline\"></i>Evidencias</strong>" +
+               "<span class=\"sg-a3-ev-sub\">Se adjunt" + (ev.Count == 1 ? "ó 1 archivo." : "aron " + ev.Count + " archivos.") + "</span>" +
+               Galeria(medios) + "</div>";
     }
 
     private string DetItem(string icono, string titulo, string valor)

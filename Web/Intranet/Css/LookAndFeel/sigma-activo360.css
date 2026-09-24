@@ -1854,3 +1854,8 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
 .sg-ot-lb-foto.es-audio i { font-size: 54px; color: var(--sg-p); }
 .sg-ot-lb-foto.es-audio audio { width: min(420px, 80vw); }
 
+/* El subtitulo del bloque de evidencias: "Se adjuntaron 2 archivos" se lee
+   de corrido; "Evidencias 2" hay que interpretarlo. */
+.sg-a3-ev-sub { display: block; font-size: 11.5px; color: var(--sg-tenue); margin: 2px 0 2px; }
+.sg-a3-ev-todas { margin-top: 10px; }
+
