@@ -378,9 +378,10 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-ot-det-item.es-ancho { grid-column: 1 / -1; }
 
 /* ---------------------------------------------- repuestos y costos -------- */
+/* La primera columna es la foto de la pieza: 44px fijos. */
 .sg-a3-rep-cab,
 .sg-a3-rep {
-    grid-template-columns: minmax(180px, 2fr) 110px 110px 130px 120px 110px 90px 120px;
+    grid-template-columns: 44px minmax(160px, 2fr) 105px 105px 125px 115px 105px 85px 115px;
 }
 
 /* ------------------------------------------------------- SIGMA AI -------- */

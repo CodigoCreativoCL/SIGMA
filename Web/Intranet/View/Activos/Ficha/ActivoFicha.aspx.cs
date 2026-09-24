@@ -485,6 +485,23 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                ResolveUrl("~/Imagen/sigma-ai/sigma-ai-" + cual + ".svg") + "')\"></span>";
     }
 
+    /// <summary>
+    /// La miniatura de una pieza -repuesto o componente-, o su hueco.
+    ///
+    /// El hueco tambien ocupa lugar: una lista donde solo algunas filas
+    /// tienen foto se desalinea y cuesta mas leerla que si no tuviera
+    /// ninguna.
+    /// </summary>
+    private string FotoPieza(int? imagen, string alt)
+    {
+        if (imagen == null)
+            return "<span class=\"sg-comp-foto es-vacia\"><i class=\"mdi mdi-package-variant-closed\"></i></span>";
+
+        return "<span class=\"sg-comp-foto\" data-ampliar=\"1\"><img src=\"" +
+               Server.HtmlEncode(UrlArchivo.Ver(imagen.Value)) + "\" alt=\"" +
+               Server.HtmlEncode(Texto(alt)) + "\" /></span>";
+    }
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {
@@ -1267,6 +1284,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append(c.aco_fecha_instalacion == null ? "" : c.aco_fecha_instalacion.Value.ToString("dd MMM yyyy"))
              .Append("\" data-comp-estado-txt=\"").Append(Server.HtmlEncode(Texto(c.estado_nombre)))
              .Append("\" data-comp-motivo=\"").Append(Server.HtmlEncode(Texto(c.aco_motivo_estado)))
+             /* El detalle de la derecha pinta la foto con este dato y el
+                servidor no se lo mandaba: la pieza salia sin imagen aunque la
+                fila de la izquierda si la mostraba. */
+             .Append("\" data-comp-foto=\"").Append(foto > 0 ? Server.HtmlEncode(urlFoto) : "")
              .Append("\" data-comp-query=\"").Append(query).Append("\">")
 
              .Append("<span class=\"c-dato\">")
@@ -2363,13 +2384,17 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             StringBuilder s = new StringBuilder();
 
             s.Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
-             .Append("<span>Material / Repuesto</span><span>Código</span><span>Consumo</span>")
+             .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Consumo</span>")
              .Append("<span>Costo unitario</span><span>Costo total</span><span>Fecha</span>")
              .Append("<span>Orden</span><span></span></div>");
 
             foreach (ActivoConsumo c in consumos)
             {
+                /* "RE-0041 · Rodamiento 6205 2RS" identifica la pieza para
+                   quien la compra; para el tecnico que mira que se le cambio
+                   al equipo, la foto es lo que la reconoce. */
                 s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rep\">")
+                 .Append("<span class=\"c-dato\">").Append(FotoPieza(c.imagen_id, c.repuesto_nombre)).Append("</span>")
                  .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.repuesto_nombre)))
                  .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(c.componente) ? Texto(c.orden_titulo) : c.componente))
                  .Append("</span></span>")

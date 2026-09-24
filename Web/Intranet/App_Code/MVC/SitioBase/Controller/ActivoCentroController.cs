@@ -123,6 +123,9 @@ namespace SitioBase.Controller
         public string unidad { get; set; }
         public string componente { get; set; }
         public int? componente_id { get; set; }
+
+        /// <summary>La foto de la pieza (bloque 280). Solo el id: los bytes viven en el blob.</summary>
+        public int? imagen_id { get; set; }
         public decimal cantidad { get; set; }
         public decimal devuelta { get; set; }
         public decimal costo_unitario { get; set; }
@@ -663,6 +666,7 @@ namespace SitioBase.Controller
                         c.unidad = dr["UNIDAD"].ToString();
                         c.componente = dr["COMPONENTE"].ToString();
                         if (dr["COMPONENTE_ID"] != DBNull.Value) c.componente_id = int.Parse(dr["COMPONENTE_ID"].ToString());
+                        if (dr["IMAGEN_ID"] != DBNull.Value) c.imagen_id = int.Parse(dr["IMAGEN_ID"].ToString());
                         c.cantidad = decimal.Parse(dr["CANTIDAD"].ToString());
                         c.devuelta = decimal.Parse(dr["DEVUELTA"].ToString());
                         c.costo_unitario = decimal.Parse(dr["COSTO_UNITARIO"].ToString());
