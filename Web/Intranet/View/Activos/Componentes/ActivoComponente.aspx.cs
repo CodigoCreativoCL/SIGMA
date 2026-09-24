@@ -186,6 +186,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             wucAuditoria.Mostrar(x.usuario_creacion_nombre, x.aco_fecha_creacion,
                                  x.usuario_actualizacion_nombre, x.aco_fecha_actualizacion);
 
+            /* La imagen vigente, si tiene. El id va cifrado en la url que la
+               sirve: el archivo vive en Blob Storage, no en la pagina. */
+            int idImagen = new ActivoComponenteImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
+            pnlSinImagen.Visible = idImagen <= 0;
+            pnlImagenActual.Visible = idImagen > 0;
+            if (idImagen > 0) imgActual.Src = UrlArchivo.Ver(idImagen);
+
             // HU-036 #3: al editar se puede cambiar el estado (con motivo) y se ve la historia
             pnlMotivoEstado.Visible = true;
             pnlHistorialEstado.Visible = true;
@@ -270,7 +277,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (!r.error)
             {
                 Id = r.codigo;
-                Tools.tools.ClientAlert(r.detalle, "ok", true);
+
+                /* La imagen va DESPUES del componente: al crear, el vinculo
+                   necesita el id que acaba de devolver el SP. Un fallo aca no
+                   anula lo guardado, solo avisa. */
+                string avisoImagen = GuardarImagen(Id);
+
+                Tools.tools.ClientAlert(r.detalle + avisoImagen, "ok", true);
             }
             else
             {
@@ -280,6 +293,50 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         catch (Exception ex)
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Sube la imagen elegida y la deja como LA imagen del componente. Un
+    /// fallo aca no anula el guardado, que ya esta hecho: solo avisa.
+    /// </summary>
+    private string GuardarImagen(int componente)
+    {
+        if (componente <= 0) return "";
+
+        bool haySubida = fuImagenComp != null && fuImagenComp.HasFile;
+
+        if (!haySubida)
+        {
+            if (chkQuitarImagen != null && chkQuitarImagen.Checked)
+                new ActivoComponenteImagenController().DesvincularImagen(componente);
+            return "";
+        }
+
+        try
+        {
+            byte[] contenido = fuImagenComp.FileBytes;
+            if (contenido == null || contenido.Length == 0) return "";
+
+            Archivo arc = new Archivo();
+            arc.arc_cliente = SitioBase.Session.ClienteId();
+            arc.arc_archivo_categoria = 10;   // REFERENCIA
+            arc.arc_nombre_original = System.IO.Path.GetFileName(fuImagenComp.FileName);
+            arc.arc_mime = fuImagenComp.PostedFile != null ? fuImagenComp.PostedFile.ContentType : null;
+            arc.contenido = contenido;
+
+            Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
+            if (r.error || r.codigo <= 0)
+                return " (la imagen no se pudo guardar: " + r.detalle + ")";
+
+            if (new ActivoComponenteImagenController().VincularImagen(componente, r.codigo) < 0)
+                return " (la imagen se subió pero no se pudo enlazar al componente)";
+
+            return "";
+        }
+        catch (Exception ex)
+        {
+            return " (la imagen no se pudo guardar: " + ex.Message + ")";
         }
     }
 }

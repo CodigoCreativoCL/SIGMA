@@ -346,6 +346,10 @@
             var d = function (n) { return fila.getAttribute('data-comp-' + n) || ''; };
             var html = '';
 
+            /* La foto primero: es lo que identifica la pieza antes que su
+               codigo. Si no tiene, no se deja un hueco gris. */
+            if (d('foto')) html += '<span class="sg-comp-det-foto"><img alt="" /></span>';
+
             html += '<div><span class="sg-comp-det-tit"></span><span class="sg-comp-det-sub"></span></div>';
             html += '<div>' + (d('estado-txt') ? '<span class="sg-ot-chip ' +
                     (fila.getAttribute('data-comp-estado') === 'instalados' ? 'es-ok' : 'es-neutro') +
@@ -367,6 +371,9 @@
 
             /* El nombre y el motivo se ponen por propiedad: los escribio una
                persona y pueden traer comillas o angulos. */
+            var foto = detalle.querySelector('.sg-comp-det-foto img');
+            if (foto) { foto.src = d('foto'); foto.alt = d('nombre'); }
+
             detalle.querySelector('.sg-comp-det-tit').textContent = d('nombre');
             detalle.querySelector('.sg-comp-det-sub').textContent = d('codigo');
 
@@ -404,10 +411,111 @@
         if (primera) elegir(primera.getAttribute('data-comp'));
     }
 
+    /* ---- Condicion: la tarjeta elegida manda ----
+
+       Elegir una variable marca su fila en la tabla, acota las ultimas
+       lecturas a esa variable y llena el panel de la derecha. Todo con lo que
+       ya vino en la tarjeta. */
+    function condicion() {
+        var tarjetas = document.querySelectorAll('.sg-a3-cond-card[data-var]');
+        var vistas = document.querySelectorAll('#sgCondVistas a[data-cond-vista]');
+
+        for (var v = 0; v < vistas.length; v++)
+            vistas[v].onclick = function (ev) {
+                ev.preventDefault();
+                var cual = this.getAttribute('data-cond-vista');
+
+                for (var k = 0; k < vistas.length; k++) vistas[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+
+                var paneles = document.querySelectorAll('.sg-cond-vista');
+                for (var p = 0; p < paneles.length; p++)
+                    paneles[p].classList.toggle('es-oculta', paneles[p].getAttribute('data-cond-vista') !== cual);
+            };
+
+        if (!tarjetas.length) return;
+
+        var detalle = document.querySelector('.sg-cond-detalle-cuerpo');
+        var filas = document.querySelectorAll('.sg-cond-fila');
+        var lecturas = document.querySelectorAll('.sg-cond-lec');
+        var deQuien = document.getElementById('sgCondLecturasDe');
+
+        function dato(etiqueta, valor) {
+            if (!valor) return '';
+            var d = document.createElement('div');
+            d.className = 'sg-ot-dato';
+            d.innerHTML = '<div><span class="sg-ot-dato-etq"></span><span class="sg-ot-dato-val"></span></div>';
+            d.querySelector('.sg-ot-dato-etq').textContent = etiqueta;
+            d.querySelector('.sg-ot-dato-val').textContent = valor;
+            return d.outerHTML;
+        }
+
+        function elegir(id) {
+            for (var i = 0; i < tarjetas.length; i++)
+                tarjetas[i].classList.toggle('es-elegida', tarjetas[i].getAttribute('data-var') === String(id));
+
+            for (var f = 0; f < filas.length; f++)
+                filas[f].classList.toggle('es-elegida', filas[f].getAttribute('data-var-fila') === String(id));
+
+            var vistasLec = 0;
+            for (var l = 0; l < lecturas.length; l++) {
+                var suya = lecturas[l].getAttribute('data-var-lec') === String(id);
+                lecturas[l].classList.toggle('es-oculta', !suya);
+                if (suya) vistasLec++;
+            }
+
+            var card = document.querySelector('.sg-a3-cond-card[data-var="' + id + '"]');
+            if (!card) return;
+
+            var d = function (n) { return card.getAttribute('data-var-' + n) || ''; };
+
+            if (deQuien) deQuien.textContent = ' · ' + d('nombre') + (vistasLec ? '' : ' (sin lecturas)');
+
+            if (!detalle) return;
+
+            var html = '<div><span class="sg-cond-det-tit"></span></div>' +
+                       '<div class="sg-cond-det-val"></div>' +
+                       '<div><span class="sg-ot-chip ' + chip(d('clase')) + '"></span></div>';
+
+            html += dato('Rangos configurados', d('rango'));
+            html += dato('Frecuencia esperada', d('frecuencia'));
+            html += dato('Componente', d('componente'));
+
+            html += '<a class="sg-ot-btn es-accion" href="' + d('serie') + '" target="_blank" rel="noopener">' +
+                    '<i class="mdi mdi-chart-line"></i>Ver historial completo</a>';
+            html += '<a class="sg-ot-btn es-accion" href="javascript:void(0)" data-var-abrir="1">' +
+                    '<i class="mdi mdi-tune-variant"></i>Configurar umbrales</a>';
+
+            detalle.innerHTML = html;
+            detalle.querySelector('.sg-cond-det-tit').textContent = d('nombre');
+            detalle.querySelector('.sg-cond-det-val').textContent = d('valor');
+            detalle.querySelector('.sg-ot-chip').textContent = d('estado');
+
+            var abrir = detalle.querySelector('[data-var-abrir]');
+            if (abrir) abrir.onclick = function () { abrirVariable(d('query')); };
+        }
+
+        function chip(clase) {
+            if (clase === 'es-normal') return 'es-ok';
+            if (clase === 'es-critico') return 'es-rojo';
+            if (clase === 'es-aviso') return 'es-aviso';
+            return 'es-neutro';
+        }
+
+        for (var i = 0; i < tarjetas.length; i++)
+            tarjetas[i].onclick = function () { elegir(this.getAttribute('data-var')); };
+
+        for (var f = 0; f < filas.length; f++)
+            filas[f].onclick = function () { elegir(this.getAttribute('data-var-fila')); };
+
+        elegir(tarjetas[0].getAttribute('data-var'));
+    }
+
     function armar() {
         navegacion();
         ficha();
         componentes();
+        condicion();
         ordenes();
         revisiones();
         ampliables();

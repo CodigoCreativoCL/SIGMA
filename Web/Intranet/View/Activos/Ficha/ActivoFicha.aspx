@@ -527,37 +527,67 @@
                 <%-- ================================================================
                      8. CONDICIÓN Y MEDIDORES
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="condicion">
+                <section class="sg-a3-panel sg-a3-cond-panel" data-panel="condicion">
                     <div class="sg-ot-card">
                         <header class="sg-ot-card-cab">
-                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-gauge"></i></span>
+                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-pulse"></i></span>
                             <div>
-                                <h3>Variables de condición</h3>
-                                <p class="sg-ot-card-sub">Lo que se mide del equipo: valor, cuándo se tomó y contra qué se compara.</p>
+                                <h3>Condición y medidores</h3>
+                                <p class="sg-ot-card-sub">Lo que se mide del equipo, con su última lectura y contra qué se compara.</p>
                             </div>
                             <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                 OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-plus"></i>Nueva variable</asp:LinkButton>
-                        </header>
-
-                        <asp:Literal ID="litCondicion" runat="server" />
-
-                        <div class="sg-a3-umbrales">
-                            <i class="mdi mdi-information-outline"></i>
-                            Los rangos se configuran por equipo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
-                        </div>
-                    </div>
-
-                    <div class="sg-ot-card" style="margin-top:16px;">
-                        <header class="sg-ot-card-cab">
-                            <span class="sg-ot-card-ico"><i class="mdi mdi-counter"></i></span>
-                            <div>
-                                <h3>Contadores acumulativos</h3>
-                                <p class="sg-ot-card-sub">Horómetros y cuentakilómetros: no bajan, se acumulan.</p>
-                            </div>
                             <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                 OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-plus"></i>Nuevo contador</asp:LinkButton>
                         </header>
-                        <asp:Literal ID="litMedidores" runat="server" />
+
+                        <%-- Dos cosas distintas que se miden en el mismo equipo:
+                             una variable sube y baja, un contador solo sube.
+                             Mezclarlas en una lista obliga a leer la unidad para
+                             saber cual es cual. --%>
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgCondVistas">
+                            <a href="#" class="sg-a3-chip es-activa" data-cond-vista="variables"><i class="mdi mdi-pulse"></i>Variables de condición <b><asp:Literal ID="litCondVariables" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-cond-vista="medidores"><i class="mdi mdi-counter"></i>Contadores acumulativos <b><asp:Literal ID="litCondMedidores" runat="server" Text="0" /></b></a>
+                        </div>
+
+                        <div class="sg-cond-vista" data-cond-vista="variables">
+                            <div class="sg-cond-cols">
+                                <div class="sg-cond-centro">
+                                    <asp:Literal ID="litCondicion" runat="server" />
+
+                                    <div class="sg-cond-bloque">
+                                        <h4><i class="mdi mdi-table"></i>Variables de condición</h4>
+                                        <asp:Literal ID="litCondTabla" runat="server" />
+                                    </div>
+
+                                    <div class="sg-cond-bloque">
+                                        <h4><i class="mdi mdi-clock-outline"></i>Últimas lecturas<span id="sgCondLecturasDe"></span></h4>
+                                        <asp:Literal ID="litCondLecturas" runat="server" />
+                                    </div>
+
+                                    <div class="sg-a3-umbrales">
+                                        <i class="mdi mdi-information-outline"></i>
+                                        Los rangos se configuran por equipo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
+                                    </div>
+                                </div>
+
+                                <aside class="sg-cond-detalle" id="sgCondDetalle">
+                                    <div class="sg-ot-card">
+                                        <header class="sg-ot-card-cab">
+                                            <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
+                                            <div><h3>Detalle de variable</h3></div>
+                                        </header>
+                                        <div class="sg-cond-detalle-cuerpo">
+                                            <p class="sg-ot-vacio-txt">Elija una variable para ver su detalle.</p>
+                                        </div>
+                                    </div>
+                                </aside>
+                            </div>
+                        </div>
+
+                        <div class="sg-cond-vista es-oculta" data-cond-vista="medidores">
+                            <asp:Literal ID="litMedidores" runat="server" />
+                        </div>
                     </div>
                 </section>
 

@@ -2,19 +2,30 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <script type="text/javascript">
-        function getRadWindow() {
-            var oWindow = null;
-            if (window.radWindow) oWindow = window.radWindow;
-            else if (window.frameElement.radWindow) oWindow = window.frameElement.radWindow;
-            return oWindow;
+    <style type="text/css">
+        /* El cargador de imagen es el mismo de la ficha del activo. Vive aca y
+           no en una hoja global porque son dos fichas y dos modales; el dia que
+           sea la tercera, se saca a una hoja. */
+        .sigma-img-uploader { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .sigma-img-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #fff; color: #4b5563; border: 1px solid #e5e7eb;
+            border-radius: 9px; padding: 9px 16px; font-size: 13px; font-weight: 600;
+            cursor: pointer; margin: 0;
         }
-        function closeWindow() {
-            var window = getRadWindow();
-            if (window.BrowserWindow.refresh) window.BrowserWindow.refresh();
-            window.close();
+        .sigma-img-btn i { color: #6C5CFF; }
+        .sigma-img-btn:hover { background: #f7f7fc; }
+        .sigma-img-vacio {
+            flex: 1 1 260px;
+            display: grid; place-items: center; gap: 4px;
+            padding: 22px 16px;
+            border: 1.5px dashed #d7dbe7; border-radius: 12px;
+            background: #fbfbfe; text-align: center;
         }
-    </script>
+        .sigma-img-vacio i { font-size: 28px; color: #b6bccd; }
+        .sigma-img-vacio strong { font-size: 13.5px; color: #475569; }
+        .sigma-img-vacio span { font-size: 12px; color: #8a93a6; max-width: 280px; }
+    </style>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -137,6 +148,34 @@
         </table>
         <asp:Label ID="lblSinHistorial" runat="server" CssClass="sigma-modal-ayuda" Text="Aún no hay cambios de estado registrados." Visible="false" />
     </asp:Panel>
+
+    <%-- ============ IMAGEN DEL COMPONENTE ============ --%>
+    <div class="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-image-outline"></i>Imagen del componente</div>
+
+        <div class="sigma-modal-grid">
+            <div class="sigma-modal-field is-ancho">
+                <div class="sigma-img-uploader">
+                    <asp:Panel ID="pnlSinImagen" runat="server" CssClass="sigma-img-vacio">
+                        <i class="mdi mdi-image-off-outline"></i>
+                        <strong>Sin imagen</strong>
+                        <span>Una foto de la pieza evita confundir dos componentes que se llaman parecido.</span>
+                    </asp:Panel>
+
+                    <label for="fuImagenComp" class="sigma-img-btn"><i class="mdi mdi-image-plus-outline"></i> Elegir imagen</label>
+                    <asp:FileUpload ID="fuImagenComp" runat="server" accept="image/*" ClientIDMode="Static" style="display:none;" />
+
+                    <asp:Panel ID="pnlImagenActual" runat="server" Visible="false">
+                        <img id="imgActual" runat="server" alt="Imagen del componente" style="max-width:220px;max-height:150px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;" />
+                        <label style="font-size:12px;color:#b91c1c;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                            <asp:CheckBox ID="chkQuitarImagen" runat="server" /> Quitar la imagen actual al guardar
+                        </label>
+                    </asp:Panel>
+                </div>
+                <span class="sigma-modal-ayuda">JPG o PNG. Se ve en la lista de componentes del centro del activo.</span>
+            </div>
+        </div>
+    </div>
 
     <wuc:Auditoria runat="server" ID="wucAuditoria" />
 

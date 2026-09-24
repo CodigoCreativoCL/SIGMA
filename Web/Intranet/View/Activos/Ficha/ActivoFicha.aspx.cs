@@ -729,17 +729,25 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
+        ActivoComponenteImagenController imagenes = new ActivoComponenteImagenController();
+
         StringBuilder s = new StringBuilder();
 
         s.Append("<div class=\"sg-a3-tabla-cab sg-comp-cab\">")
-         .Append("<span>Código</span><span>Descripción</span><span>Instalación</span>")
+         .Append("<span></span><span>Código</span><span>Descripción</span><span>Instalación</span>")
          .Append("<span>Estado</span><span></span></div>");
 
         foreach (ActivoComponente c in lista.OrderBy(x => x.aco_codigo))
         {
             string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + c.aco_id));
 
+            /* La foto de la pieza: "cambiar el rodamiento lado motor" se
+               decide mirandola, no leyendo su codigo. */
+            int foto = imagenes.GetImagenId(c.aco_id, _cliente);
+            string urlFoto = foto > 0 ? UrlArchivo.Ver(foto) : "";
+
             s.Append("<div class=\"sg-a3-tabla-fila sg-comp-fila\" data-comp=\"").Append(c.aco_id)
+             .Append("\" data-comp-foto=\"").Append(Server.HtmlEncode(urlFoto))
              .Append("\" data-comp-estado=\"").Append(c.aco_habilitado ? "instalados" : "retirados")
              .Append("\" data-comp-txt=\"").Append(Server.HtmlEncode((Texto(c.aco_codigo) + " " + Texto(c.aco_nombre) + " " + Texto(c.tipo_nombre)).ToLower()))
              .Append("\" data-comp-nombre=\"").Append(Server.HtmlEncode(Texto(c.aco_nombre)))
@@ -755,6 +763,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("\" data-comp-motivo=\"").Append(Server.HtmlEncode(Texto(c.aco_motivo_estado)))
              .Append("\" data-comp-query=\"").Append(query).Append("\">")
 
+             .Append("<span class=\"c-dato\">")
+             .Append(foto > 0
+                    ? "<span class=\"sg-comp-foto\"><img src=\"" + Server.HtmlEncode(urlFoto) + "\" alt=\"" + Server.HtmlEncode(Texto(c.aco_nombre)) + "\" /></span>"
+                    : "<span class=\"sg-comp-foto es-vacia\"><i class=\"mdi mdi-puzzle-outline\"></i></span>")
+             .Append("</span>")
              .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(c.aco_codigo))).Append("</span></span>")
              .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.aco_nombre)))
              .Append("<span>").Append(Server.HtmlEncode(Texto(c.tipo_nombre))).Append("</span></span>")
@@ -966,6 +979,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     /// "Dato desactualizado" no es lo mismo que "normal": una lectura de hace
     /// tres semanas no dice que el equipo este bien, dice que nadie lo midio.
     /// </summary>
+    /// <summary>
+    /// Lo que se mide del equipo: su ultima lectura, contra que se compara y
+    /// de donde vino ese numero.
+    ///
+    /// LA TABLA Y LAS TARJETAS DICEN LO MISMO A PROPOSITO
+    ///   La tarjeta responde "como esta" de un vistazo; la tabla responde
+    ///   "contra que" -los umbrales-, que es lo que hay que mirar antes de
+    ///   decidir. Con solo tarjetas hay que abrir la ficha de cada variable
+    ///   para ver el rango; con solo tabla, el estado se pierde entre numeros.
+    /// </summary>
     private void Condicion(Activo a)
     {
         ActivoVariableController ctlVar = new ActivoVariableController();
@@ -976,65 +999,180 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         bool puedeVariable = Token.Puede("CREAR EDITAR VARIABLES ACTIVO");
         lnkNuevaVariable.Visible = puedeVariable;
+        litCondVariables.Text = variables.Count.ToString();
 
         if (variables.Count == 0)
+        {
             litCondicion.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-gauge-empty\"></i>" +
                                 "<p>Sin variables de condición</p><span>" +
                                 (puedeVariable ? "Agregue una con «Nueva variable» y el equipo empezará a medirse."
                                                : "Todavía no se ha configurado qué se le mide a este equipo.") +
                                 "</span></div>";
-        else
-        {
-            DateTime hoy = global::SitioBase.Hora.Hoy;
-            StringBuilder s = new StringBuilder("<div class=\"sg-a3-cond\">");
-
-            foreach (ActivoVariable v in variables)
-            {
-                /* La variable dice que se mide y entre que valores; la ultima
-                   lectura vive en la serie. Se pide el resumen de los ultimos
-                   noventa dias, que es lo que ya calcula el SP. */
-                MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-90), null);
-
-                string clase, etiqueta;
-                Semaforo(v, r, hoy, out clase, out etiqueta);
-
-                s.Append("<div class=\"sg-a3-cond-card ").Append(clase).Append("\">")
-                 .Append("<span class=\"sg-a3-cond-nom\">").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</span>")
-                 .Append("<span class=\"sg-a3-cond-val\">")
-                 .Append(r == null || r.ultimo_valor == null ? "—" : r.ultimo_valor.Value.ToString("0.##"))
-                 .Append(string.IsNullOrEmpty(v.unidad_simbolo) ? "" : " <small>" + Server.HtmlEncode(v.unidad_simbolo) + "</small>")
-                 .Append("</span>")
-                 .Append("<span class=\"sg-a3-cond-pie\">").Append(etiqueta).Append("</span>")
-                 .Append("<a class=\"sg-a3-cond-editar\" href=\"javascript:void(0)\" onclick=\"abrirVariable('")
-                 .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id)))
-                 .Append("')\" title=\"").Append(puedeVariable ? "Editar la variable y sus umbrales" : "Ver la variable")
-                 .Append("\"><i class=\"mdi ").Append(puedeVariable ? "mdi-pencil-outline" : "mdi-eye-outline").Append("\"></i></a>")
-                 .Append("</div>");
-            }
-
-            litCondicion.Text = s.Append("</div>").ToString();
+            litCondTabla.Text = "";
+            litCondLecturas.Text = "";
+            Medidores(a);
+            return;
         }
 
-        // ---- contadores ----
+        DateTime hoy = global::SitioBase.Hora.Hoy;
+
+        StringBuilder tarjetas = new StringBuilder("<div class=\"sg-a3-cond\">");
+        StringBuilder tabla = new StringBuilder();
+        StringBuilder lecturas = new StringBuilder();
+
+        tabla.Append("<div class=\"sg-a3-tabla-cab sg-cond-cab\">")
+             .Append("<span>Variable</span><span>Lectura actual</span><span>Unidad</span>")
+             .Append("<span>Estado</span><span>Rangos configurados</span></div>");
+
+        lecturas.Append("<div class=\"sg-a3-tabla-cab sg-cond-lec-cab\">")
+                .Append("<span>Fecha y hora</span><span>Valor</span><span>Unidad</span>")
+                .Append("<span>Origen</span><span>Nivel</span></div>");
+
+        int conLecturas = 0;
+
+        foreach (ActivoVariable v in variables)
+        {
+            MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-90), null);
+
+            string clase, etiqueta;
+            Semaforo(v, r, hoy, out clase, out etiqueta);
+
+            bool hay = r != null && r.ultimo_valor != null;
+            string valor = hay ? r.ultimo_valor.Value.ToString("0.##") : "—";
+            string unidad = Texto(v.unidad_simbolo);
+            string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id));
+
+            // ---- la tarjeta ----
+            tarjetas.Append("<a href=\"javascript:void(0)\" class=\"sg-a3-cond-card ").Append(clase)
+                    .Append("\" data-var=\"").Append(v.ava_id)
+                    .Append("\" data-var-nombre=\"").Append(Server.HtmlEncode(Texto(v.variable_nombre)))
+                    .Append("\" data-var-valor=\"").Append(Server.HtmlEncode(valor + (unidad.Length > 0 ? " " + unidad : "")))
+                    .Append("\" data-var-estado=\"").Append(Server.HtmlEncode(etiqueta))
+                    .Append("\" data-var-clase=\"").Append(clase)
+                    .Append("\" data-var-rango=\"").Append(Server.HtmlEncode(Rangos(v)))
+                    .Append("\" data-var-frecuencia=\"")
+                    .Append(v.ava_frecuencia_esperada_hora == null ? "" : "Cada " + v.ava_frecuencia_esperada_hora + " h")
+                    .Append("\" data-var-componente=\"").Append(Server.HtmlEncode(Texto(v.componente_nombre)))
+                    .Append("\" data-var-serie=\"").Append(UrlSerie(v.ava_id))
+                    .Append("\" data-var-query=\"").Append(query).Append("\">")
+                    .Append("<span class=\"sg-a3-cond-nom\">").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</span>")
+                    .Append("<span class=\"sg-a3-cond-val\">").Append(Server.HtmlEncode(valor))
+                    .Append(unidad.Length == 0 ? "" : " <small>" + Server.HtmlEncode(unidad) + "</small>")
+                    .Append("</span>")
+                    .Append("<span class=\"sg-a3-cond-pie\">").Append(Server.HtmlEncode(etiqueta)).Append("</span>")
+                    .Append("</a>");
+
+            // ---- la fila de la tabla ----
+            tabla.Append("<div class=\"sg-a3-tabla-fila sg-cond-fila\" data-var-fila=\"").Append(v.ava_id).Append("\">")
+                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(v.variable_nombre)))
+                 .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(v.componente_nombre) ? "Equipo completo" : v.componente_nombre)).Append("</span></span>")
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(valor)).Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(unidad.Length == 0 ? "—" : unidad)).Append("</span>")
+                 .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ").Append(ChipCondicion(clase)).Append("\">")
+                 .Append(Server.HtmlEncode(etiqueta)).Append("</span></span>")
+                 .Append("<span class=\"c-dato sg-cond-rango\">").Append(Server.HtmlEncode(Rangos(v))).Append("</span>")
+                 .Append("</div>");
+
+            // ---- sus ultimas lecturas ----
+            List<MedicionSerie> serie = ctlVar.GetSerie(v.ava_id, hoy.AddDays(-90), null) ?? new List<MedicionSerie>();
+
+            foreach (MedicionSerie p in serie.OrderByDescending(x => x.fecha).Take(5))
+            {
+                conLecturas++;
+
+                lecturas.Append("<div class=\"sg-a3-tabla-fila sg-cond-lec\" data-var-lec=\"").Append(v.ava_id).Append("\">")
+                        .Append("<span class=\"c-dato\">").Append(p.fecha.ToString("dd MMM yyyy · HH:mm")).Append("</span>")
+                        .Append("<span class=\"c-cod\">").Append(p.valor.ToString("0.##")).Append("</span>")
+                        .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(unidad.Length == 0 ? "—" : unidad)).Append("</span>")
+                        .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(p.origen))).Append("</span>")
+                        .Append("<span class=\"c-dato\">").Append(ChipNivel(p.nivel)).Append("</span>")
+                        .Append("</div>");
+            }
+        }
+
+        litCondicion.Text = tarjetas.Append("</div>").ToString();
+        litCondTabla.Text = tabla.ToString();
+
+        litCondLecturas.Text = conLecturas > 0
+            ? lecturas.ToString()
+            : "<p class=\"sg-ot-vacio-txt\">Esta variable no tiene lecturas en los últimos 90 días.</p>";
+
+        Medidores(a);
+    }
+
+    /// <summary>Los rangos de la variable, en una linea que se lee de corrido.</summary>
+    private string Rangos(ActivoVariable v)
+    {
+        List<string> partes = new List<string>();
+
+        if (v.ava_valor_minimo != null || v.ava_valor_maximo != null)
+            partes.Add("Normal " +
+                       (v.ava_valor_minimo == null ? "" : v.ava_valor_minimo.Value.ToString("0.##")) + " – " +
+                       (v.ava_valor_maximo == null ? "" : v.ava_valor_maximo.Value.ToString("0.##")));
+
+        if (v.ava_valor_advertencia != null) partes.Add("Aviso " + v.ava_valor_advertencia.Value.ToString("0.##"));
+        if (v.ava_valor_critico != null) partes.Add("Crítico " + v.ava_valor_critico.Value.ToString("0.##"));
+
+        return partes.Count == 0 ? "Sin rangos configurados" : string.Join("  ·  ", partes.ToArray());
+    }
+
+    /// <summary>El chip de la tabla usa el mismo color que el borde de la tarjeta.</summary>
+    private static string ChipCondicion(string clase)
+    {
+        switch (clase)
+        {
+            case "es-normal": return "es-ok";
+            case "es-aviso": return "es-aviso";
+            case "es-critico": return "es-rojo";
+            default: return "es-neutro";
+        }
+    }
+
+    /// <summary>
+    /// El nivel de un punto de la serie lo calcula el SP contra los umbrales
+    /// de la variable; aca solo se le pone color.
+    /// </summary>
+    private static string ChipNivel(string nivel)
+    {
+        string n = (nivel ?? "").ToUpperInvariant();
+
+        if (n.Contains("CRIT")) return "<span class=\"sg-ot-chip es-rojo\">Crítico</span>";
+        if (n.Contains("ADVERT") || n.Contains("AVISO")) return "<span class=\"sg-ot-chip es-aviso\">Advertencia</span>";
+        if (n.Contains("FUERA")) return "<span class=\"sg-ot-chip es-aviso\">Fuera de rango</span>";
+        if (n.Length == 0) return "<span class=\"sg-ot-vacio-txt\">—</span>";
+
+        return "<span class=\"sg-ot-chip es-ok\">Normal</span>";
+    }
+
+    private string UrlSerie(int variable)
+    {
+        return UrlRegistro("~/View/Activos/Variables/ActivoVariableSerie.aspx", variable);
+    }
+
+    /// <summary>Los contadores del equipo: no bajan, se acumulan.</summary>
+    private void Medidores(Activo a)
+    {
         List<ActivoMedidor> medidores = new ActivoMedidorController().GetActivoMedidores(
             new ActivoMedidor { ame_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
             ?? new List<ActivoMedidor>();
 
         bool puedeMedidor = Token.Puede("CREAR EDITAR MEDIDORES");
         lnkNuevoMedidor.Visible = puedeMedidor;
+        litCondMedidores.Text = medidores.Count.ToString();
 
         if (medidores.Count == 0)
         {
-            litMedidores.Text = "<p class=\"sg-ot-vacio-txt\">" +
-                                (puedeMedidor ? "Este equipo no tiene contadores. Agregue uno con «Nuevo contador»."
-                                              : "Este equipo no tiene contadores.") + "</p>";
+            litMedidores.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-counter\"></i>" +
+                                "<p>Sin contadores</p><span>" +
+                                (puedeMedidor ? "Agregue uno con «Nuevo contador»: es lo que permite programar por uso y no solo por calendario."
+                                              : "Este equipo no tiene contadores.") + "</span></div>";
             return;
         }
 
         StringBuilder m = new StringBuilder();
 
         foreach (ActivoMedidor x in medidores)
-            m.Append(Fila("mdi-counter", "",
+            m.Append(Fila("mdi-counter", "es-azul",
                      Texto(x.ame_nombre),
                      x.ame_fecha_valor_actual_utc == null
                         ? "Sin lecturas"

@@ -905,3 +905,91 @@ input.sg-ot-btn.es-accion {
     background: var(--sg-surface-subtle);
     border-color: var(--sg-border-strong);
 }
+
+/* ============================================================================
+   CONDICION Y MEDIDORES
+
+   Tres bloques que responden tres preguntas seguidas: como esta (las
+   tarjetas), contra que se compara (la tabla de rangos) y de donde salio ese
+   numero (las ultimas lecturas). Elegir una tarjeta acota las lecturas a esa
+   variable: la pregunta nunca es "las lecturas del equipo", es "las de esta".
+   ========================================================================= */
+.sg-cond-vistas { margin-bottom: 14px; }
+.sg-cond-vista.es-oculta { display: none; }
+
+.sg-cond-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 14px;
+    align-items: start;
+}
+
+.sg-cond-bloque { margin-top: 16px; }
+.sg-cond-bloque h4 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 8px;
+    font-size: 13.5px;
+    color: var(--sg-texto);
+}
+.sg-cond-bloque h4 i { color: var(--sg-suave); font-size: 16px; }
+.sg-cond-bloque h4 span { font-weight: 500; color: var(--sg-suave); }
+
+/* La tarjeta ahora se puede elegir: deja de ser un cartel y pasa a ser un
+   filtro de lo que se ve abajo. */
+a.sg-a3-cond-card { text-decoration: none; cursor: pointer; display: block; }
+a.sg-a3-cond-card:hover { background: var(--sg-surface-subtle); }
+.sg-a3-cond-card.es-elegida {
+    box-shadow: 0 0 0 2px var(--sg-p);
+    background: #faf9ff;
+}
+
+.sg-cond-cab,
+.sg-cond-fila { grid-template-columns: minmax(150px, 1.6fr) 120px 90px 150px minmax(160px, 1.8fr); }
+.sg-cond-fila.es-elegida { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+.sg-cond-rango { font-size: 11.5px; color: var(--sg-suave); }
+
+.sg-cond-lec-cab,
+.sg-cond-lec { grid-template-columns: 180px 110px 90px minmax(120px, 1fr) 130px; }
+.sg-cond-lec.es-oculta { display: none; }
+
+.sg-cond-detalle { position: sticky; top: 14px; }
+.sg-cond-detalle-cuerpo { display: grid; gap: 10px; }
+.sg-cond-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); }
+.sg-cond-det-val { font-size: 26px; font-weight: 700; color: var(--sg-texto); }
+.sg-cond-det-val small { font-size: 14px; font-weight: 500; color: var(--sg-suave); }
+
+@media (max-width: 1400px) {
+    .sg-cond-cols { grid-template-columns: minmax(0, 1fr); }
+    .sg-cond-detalle { position: static; }
+}
+
+/* ---- La foto del componente en su fila ---- */
+.sg-comp-cab,
+.sg-comp-fila { grid-template-columns: 56px 120px minmax(150px, 2fr) 130px 130px 110px; }
+
+.sg-comp-foto {
+    display: block;
+    width: 46px;
+    height: 46px;
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-comp-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-comp-foto.es-vacia {
+    display: grid;
+    place-items: center;
+    color: var(--sg-tenue);
+    font-size: 20px;
+}
+.sg-comp-det-foto {
+    display: block;
+    width: 100%;
+    height: 150px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-comp-det-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
