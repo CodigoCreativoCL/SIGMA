@@ -163,6 +163,28 @@ namespace SitioBase.Controller
     }
 
     /// <summary>
+    /// Lo que la lista de equipos necesita saber de cada uno y no esta en su
+    /// ficha: cuanto trabajo tiene encima y cuando le toca lo proximo.
+    /// </summary>
+    [Serializable]
+    public class ActivoResumenLista
+    {
+        public int activo_id { get; set; }
+        public int ot_abiertas { get; set; }
+        public int fallas_abiertas { get; set; }
+        public int detencion_abierta { get; set; }
+        public DateTime? proxima_mantencion { get; set; }
+        public int? imagen_id { get; set; }
+
+        /// <summary>
+        /// Lo que obliga a mirar este equipo antes que los otros: una falla
+        /// sin resolver o una detencion abierta. Tener ordenes abiertas NO
+        /// es atencion: un equipo con plan siempre las tiene.
+        /// </summary>
+        public bool requiere_atencion { get { return fallas_abiertas > 0 || detencion_abierta > 0; } }
+    }
+
+    /// <summary>
     /// Las cuatro preguntas que el centro del activo hace al reves de como
     /// pregunta el resto del sistema: dado UN equipo, que se le reviso, que se
     /// le cambio, cuanto costo y que se anoto de el.
@@ -177,6 +199,57 @@ namespace SitioBase.Controller
     {
         /// <summary>Bitacora_Tipo 1 = OBSERVACION, lo que deja la web.</summary>
         private const int TIPO_OBSERVACION = 1;
+
+        /// <summary>
+        /// El resumen de TODOS los equipos del cliente, en una consulta.
+        ///
+        /// POR QUE NO SE PIDE POR ACTIVO
+        ///   Ordenes, fallas, detencion, proxima mantencion e imagen son cinco
+        ///   preguntas. Por cuarenta y siete equipos son casi doscientas
+        ///   consultas para pintar una lista, y el cliente con mas equipos
+        ///   seria el mas lento de atender.
+        /// </summary>
+        public Dictionary<int, ActivoResumenLista> GetResumenLista()
+        {
+            Dictionary<int, ActivoResumenLista> mapa = new Dictionary<int, ActivoResumenLista>();
+
+            if (!Token.TokenSeguridad()) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_LISTA_RESUMEN";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoResumenLista r = new ActivoResumenLista();
+
+                        r.activo_id = int.Parse(dr["ACTIVO_ID"].ToString());
+                        r.ot_abiertas = int.Parse(dr["OT_ABIERTAS"].ToString());
+                        r.fallas_abiertas = int.Parse(dr["FALLAS_ABIERTAS"].ToString());
+                        r.detencion_abierta = int.Parse(dr["DETENCION_ABIERTA"].ToString());
+                        if (dr["PROXIMA_MANTENCION"] != DBNull.Value) r.proxima_mantencion = (DateTime)dr["PROXIMA_MANTENCION"];
+                        if (dr["IMAGEN_ID"] != DBNull.Value) r.imagen_id = int.Parse(dr["IMAGEN_ID"].ToString());
+
+                        mapa[r.activo_id] = r;
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return mapa;
+        }
 
         /// <summary>Inspecciones y tareas del equipo, lo ejecutado y lo pendiente.</summary>
         public List<ActivoRevision> GetRevisiones(int activo, DateTime? desde = null, DateTime? hasta = null)

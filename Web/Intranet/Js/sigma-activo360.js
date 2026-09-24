@@ -561,12 +561,126 @@
         if (buscar) buscar.oninput = filtrar;
     }
 
+    /* ---- La lista de equipos ----
+
+       Buscar, los chips y las paginas son del navegador: las filas ya estan
+       en pantalla y pedirle al servidor que las esconda es recargar la
+       pantalla entera para mostrar menos. */
+    function lista() {
+        var filas = document.querySelectorAll('.sg-lista-fila');
+        if (!filas.length) return;
+
+        var chips = document.querySelectorAll('#sgListaChips a[data-lista]');
+        var buscar = document.getElementById('sgListaBuscar');
+        var porPagina = document.getElementById('sgListaPorPagina');
+        var conteo = document.getElementById('sgListaConteo');
+        var paginas = document.getElementById('sgListaPaginas');
+        var pagina = 1;
+
+        function coinciden() {
+            var activa = document.querySelector('#sgListaChips a.es-activa');
+            var cual = activa ? activa.getAttribute('data-lista') : 'todos';
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+            var salen = [];
+
+            for (var i = 0; i < filas.length; i++) {
+                var f = filas[i];
+                var ok = (cual === 'todos'
+                          || (cual === 'atencion' && f.getAttribute('data-lista-atencion') === '1')
+                          || (cual === 'ot' && parseInt(f.getAttribute('data-lista-ot'), 10) > 0))
+                      && (texto === '' || (f.getAttribute('data-lista-txt') || '').indexOf(texto) !== -1);
+
+                if (ok) salen.push(f);
+            }
+
+            return salen;
+        }
+
+        function pintar() {
+            var salen = coinciden();
+            var tam = porPagina ? parseInt(porPagina.value, 10) : 25;
+            if (!tam) tam = salen.length || 1;
+
+            var total = salen.length;
+            var ultima = Math.max(1, Math.ceil(total / tam));
+            if (pagina > ultima) pagina = ultima;
+
+            var desde = (pagina - 1) * tam;
+            var hasta = Math.min(desde + tam, total);
+
+            for (var i = 0; i < filas.length; i++) filas[i].classList.add('es-oculta');
+            for (var j = desde; j < hasta; j++) salen[j].classList.remove('es-oculta');
+
+            if (conteo)
+                conteo.textContent = total === 0
+                    ? 'Ningún equipo coincide con la búsqueda'
+                    : 'Mostrando ' + (desde + 1) + '–' + hasta + ' de ' + total + (total === 1 ? ' equipo' : ' equipos');
+
+            if (!paginas) return;
+
+            paginas.innerHTML = '';
+            if (ultima <= 1) return;
+
+            /* Se listan todas las paginas cuando son pocas; con muchas, las
+               de los bordes y las vecinas de la actual. Una tira de treinta
+               numeros no sirve para llegar a la treinta. */
+            for (var p = 1; p <= ultima; p++) {
+                if (ultima > 7 && p > 2 && p < ultima - 1 && Math.abs(p - pagina) > 1) {
+                    if (paginas.lastChild && paginas.lastChild.tagName !== 'SPAN') {
+                        var puntos = document.createElement('span');
+                        puntos.textContent = '…';
+                        paginas.appendChild(puntos);
+                    }
+                    continue;
+                }
+
+                var a = document.createElement('a');
+                a.href = 'javascript:void(0)';
+                a.textContent = p;
+                a.className = p === pagina ? 'es-activa' : '';
+                a.onclick = (function (n) { return function () { pagina = n; pintar(); }; })(p);
+                paginas.appendChild(a);
+            }
+        }
+
+        for (var c = 0; c < chips.length; c++)
+            chips[c].onclick = function (ev) {
+                ev.preventDefault();
+                for (var k = 0; k < chips.length; k++) chips[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+                pagina = 1;
+                pintar();
+            };
+
+        if (buscar) buscar.oninput = function () { pagina = 1; pintar(); };
+        if (porPagina) porPagina.onchange = function () { pagina = 1; pintar(); };
+
+        /* Abrir el equipo es un postback: el centro se arma en el servidor.
+           El resto de la lista no lo es. */
+        for (var i = 0; i < filas.length; i++)
+            filas[i].onclick = function (ev) {
+                if (ev.target.closest('input, select')) return;
+                abrirActivoDelCentro(this.getAttribute('data-act'));
+            };
+
+        pintar();
+    }
+
+    function abrirActivoDelCentro(id) {
+        var campo = document.getElementById(window.sgCampoActivo || '');
+        if (!campo) return;
+
+        campo.value = id;
+        __doPostBack('', '');
+    }
+
     function armar() {
         navegacion();
         ficha();
         componentes();
         condicion();
         fallas();
+        lista();
         ordenes();
         revisiones();
         ampliables();

@@ -1004,3 +1004,68 @@ a.sg-a3-cond-card:hover { background: var(--sg-surface-subtle); }
 
 .sg-falla-total { margin-bottom: 14px; }
 .sg-falla-total .sg-a3-kpis { margin-bottom: 0; }
+
+/* ============================================================================
+   LA LISTA DE EQUIPOS
+
+   Quien entra no viene a leer un catalogo: viene a encontrar EL equipo que
+   tiene un problema. Por eso cada fila trae su foto, su estado y el trabajo
+   que carga, y los filtros -buscar, chips y paginas- son del navegador:
+   filtrar cuarenta y siete filas que ya estan en pantalla no necesita al
+   servidor.
+   ========================================================================= */
+.sg-lista .sg-a3-kpis { margin-bottom: 14px; }
+.sg-lista-acc { display: flex; gap: 8px; }
+
+.sg-lista-cab,
+.sg-lista-fila {
+    grid-template-columns: 62px minmax(180px, 2fr) minmax(130px, 1.2fr) 130px 120px 110px 160px 130px;
+}
+.sg-lista-fila { cursor: pointer; }
+.sg-lista-fila:hover { background: var(--sg-surface-subtle); }
+.sg-lista-fila.es-oculta { display: none; }
+
+.sg-lista-num {
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--sg-info-subtle);
+    color: var(--sg-info);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sg-lista-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+}
+.sg-lista-paginas { display: flex; gap: 6px; flex-wrap: wrap; }
+.sg-lista-paginas a {
+    display: inline-grid;
+    place-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 9px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+    color: var(--sg-text-secondary);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.sg-lista-paginas a:hover { background: var(--sg-surface-subtle); }
+.sg-lista-paginas a.es-activa {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff;
+}
+.sg-lista-paginas span { align-self: center; color: var(--sg-tenue); padding: 0 2px; }

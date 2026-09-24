@@ -46,15 +46,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             if (deLaUrl > 0) hdnActivo.Value = deLaUrl.ToString();
 
             // Columnas de la lista de resultados (la lupa se agrega en ItemDataBound).
-            gridResultados.AddColumn("ACT_ID", "", Width: "4%");
-            gridResultados.AddColumn("ACT_CODIGO", "CÓDIGO", Width: "13%");
-            gridResultados.AddColumn("ACT_NOMBRE", "NOMBRE", Width: "30%");
-            gridResultados.AddColumn("TIPO_NOMBRE", "TIPO", Width: "17%");
-            gridResultados.AddColumn("AREA_NOMBRE", "ÁREA / LÍNEA", Width: "18%");
-            gridResultados.AddColumn("ESTADO_NOMBRE", "ESTADO", Width: "18%");
         }
 
-        Tools.tools.RegisterPostBackScript(gridResultados);
     }
 
     public void LoadControls(object sender, EventArgs e) { }
@@ -182,34 +175,119 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return new ActivoController().GetActivos(filtro) ?? new List<Activo>();
     }
 
+    /// <summary>
+    /// La lista de equipos: lo que hay que saber de cada uno ANTES de abrirlo.
+    ///
+    /// POR QUE NO ES UNA GRILLA DE CODIGO Y NOMBRE
+    ///   Quien entra aca no viene a leer un catalogo: viene a encontrar EL
+    ///   equipo que tiene un problema. Por eso cada fila trae su foto, su
+    ///   estado, cuantas ordenes abiertas carga y cuando le toca lo proximo,
+    ///   y los numeros de arriba dicen como esta la planta entera.
+    ///
+    ///   Los conteos salen de UNA consulta (bloque 275). Pedirlos por activo
+    ///   eran cinco por fila.
+    /// </summary>
     protected void CargarResultados()
     {
         List<Activo> lista = FiltrarActivos();
 
-        gridResultados.DataSource = lista;
-        gridResultados.DataBind();
+        litTitulo.Text = "Centro de activos 360°";
+        litSubtitulo.Text = "Historial, mantenimiento y condición de tus equipos.";
 
         pnlLista.Visible = lista.Count > 0;
         pnlSinActivo.Visible = lista.Count == 0;
-    }
 
-    protected void gridResultados_ItemDataBound(object sender, GridItemEventArgs e)
-    {
-        if (e.Item is GridDataItem)
+        if (lista.Count == 0) return;
+
+        Dictionary<int, ActivoResumenLista> resumen = new ActivoCentroController().GetResumenLista()
+                                                      ?? new Dictionary<int, ActivoResumenLista>();
+
+        int operativos = 0, detenidos = 0, enMantencion = 0, atencion = 0, conOt = 0;
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-tabla-cab sg-lista-cab\">")
+         .Append("<span></span><span>Activo</span><span>Ubicación</span><span>Estado</span>")
+         .Append("<span>Criticidad</span><span>OT abiertas</span><span>Próximo mantenimiento</span>")
+         .Append("<span></span></div>");
+
+        foreach (Activo a in lista.OrderBy(x => x.act_codigo))
         {
-            GridDataItem item = (GridDataItem)e.Item;
-            string id = item.GetDataKeyValue("act_id").ToString();
-            string sel = "document.getElementById('" + hdnActivo.ClientID + "').value='" + id + "';__doPostBack('','');";
+            ActivoResumenLista r;
+            if (!resumen.TryGetValue(a.act_id, out r)) r = new ActivoResumenLista();
 
-            HyperLink ver = new HyperLink();
-            ver.CssClass = "icono_Editar";
-            ver.NavigateUrl = "javascript:void(0)";
-            ver.Attributes.Add("onclick", sel);
-            item["act_id"].Controls.Add(ver);
+            string estado = Texto(a.estado_nombre);
+            string e = estado.ToUpperInvariant();
 
-            item.Attributes["onclick"] = sel;
-            item.Style["cursor"] = "pointer";
+            if (e.Contains("OPERATIV")) operativos++;
+            else if (e.Contains("DETEN") || e.Contains("PARAD")) detenidos++;
+            else if (e.Contains("MANTEN")) enMantencion++;
+
+            if (r.requiere_atencion) atencion++;
+            if (r.ot_abiertas > 0) conOt++;
+
+            string ubicacion = string.Join(" · ", new[] { Texto(a.planta_nombre), Texto(a.area_nombre) }
+                                           .Where(x => !string.IsNullOrEmpty(x)).ToArray());
+
+            s.Append("<div class=\"sg-a3-tabla-fila sg-lista-fila\" data-act=\"").Append(a.act_id)
+             .Append("\" data-lista-atencion=\"").Append(r.requiere_atencion ? "1" : "0")
+             .Append("\" data-lista-ot=\"").Append(r.ot_abiertas)
+             .Append("\" data-lista-txt=\"")
+             .Append(Server.HtmlEncode((Texto(a.act_codigo) + " " + Texto(a.act_nombre) + " " + Texto(a.tipo_nombre) + " " + ubicacion).ToLower()))
+             .Append("\">")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(r.imagen_id == null
+                    ? "<span class=\"sg-comp-foto es-vacia\"><i class=\"mdi mdi-cog-outline\"></i></span>"
+                    : "<span class=\"sg-comp-foto\"><img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(r.imagen_id.Value)) +
+                      "\" alt=\"" + Server.HtmlEncode(Texto(a.act_nombre)) + "\" /></span>")
+             .Append("</span>")
+
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(a.act_nombre)))
+             .Append("<span>").Append(Server.HtmlEncode(Texto(a.act_codigo)))
+             .Append(string.IsNullOrEmpty(a.tipo_nombre) ? "" : " · " + Server.HtmlEncode(a.tipo_nombre))
+             .Append("</span></span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(Server.HtmlEncode(ubicacion.Length == 0 ? "Sin ubicación" : ubicacion)).Append("</span>")
+
+             .Append("<span class=\"c-dato\">").Append(ChipEstado(a)).Append("</span>")
+             .Append("<span class=\"c-dato\">").Append(ChipNivelCriticidad(a.criticidad_nombre)).Append("</span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(r.ot_abiertas == 0
+                    ? "<span class=\"sg-ot-vacio-txt\">0</span>"
+                    : "<span class=\"sg-lista-num\">" + r.ot_abiertas + "</span>")
+             .Append("</span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(r.proxima_mantencion == null
+                    ? "<span class=\"sg-ot-vacio-txt\">Sin programación</span>"
+                    : Server.HtmlEncode(r.proxima_mantencion.Value.ToString("dd MMM yyyy")))
+             .Append("</span>")
+
+             .Append("<span class=\"c-acc\">")
+             .Append("<a class=\"sg-ot-btn es-accion\" href=\"javascript:void(0)\" data-abrir-act=\"")
+             .Append(a.act_id).Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a>")
+             .Append("</span>")
+             .Append("</div>");
         }
+
+        litLista.Text = s.ToString();
+
+        litListaTodos.Text = lista.Count.ToString();
+        litListaAtencion.Text = atencion.ToString();
+        litListaOt.Text = conOt.ToString();
+
+        /* Los cuatro numeros de arriba: como esta la planta antes de mirar
+           equipo por equipo. */
+        litListaKpis.Text =
+            "<div class=\"sg-a3-kpis\">" +
+            Kpi("mdi-cog-outline", lista.Count.ToString(), "Activos", "En la búsqueda actual", "es-teal") +
+            Kpi("mdi-check-circle-outline", operativos.ToString(), "Operativos", "", "es-verde") +
+            Kpi("mdi-alert-octagon-outline", detenidos.ToString(), "Detenidos", "", detenidos > 0 ? "es-rojo" : "es-verde") +
+            Kpi("mdi-wrench-outline", enMantencion.ToString(), "En mantenimiento", "", "es-ambar") +
+            "</div>";
     }
 
     protected void btnBuscar_Click(object sender, EventArgs e) { hdnSeccion.Value = "historial"; }
@@ -252,6 +330,24 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
         }
     }
+
+    /// <summary>
+    /// La criticidad en la lista va sin la palabra "Criticidad": la columna ya
+    /// se llama asi, y repetirla en cada fila no deja ancho para el nivel.
+    /// </summary>
+    private string ChipNivelCriticidad(string nivel)
+    {
+        string n = (nivel ?? "").ToUpperInvariant();
+
+        string clase = n.Contains("CRITIC") || n.Contains("ALTA") ? "es-aviso"
+                     : (n.Contains("BAJA") ? "es-ok" : "es-neutro");
+
+        return "<span class=\"sg-ot-chip " + clase + "\">" +
+               Server.HtmlEncode(string.IsNullOrEmpty(nivel) ? "Sin definir" : nivel) + "</span>";
+    }
+
+    /// <summary>El id del campo oculto que el JS usa para elegir un equipo.</summary>
+    protected string IdCampoActivo { get { return hdnActivo.ClientID; } }
 
     protected int ActivoSeleccionado()
     {

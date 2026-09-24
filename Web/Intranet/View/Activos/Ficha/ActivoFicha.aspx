@@ -62,6 +62,10 @@
 
         var seccionPendiente = null;
 
+        /* El campo donde vive el equipo elegido. El JS de la lista lo escribe
+           y hace postback: el centro se arma en el servidor. */
+        window.sgCampoActivo = '<%=IdCampoActivo %>';
+
         /* Los ids nunca viajan a la vista: el activo va DENTRO del
            querystring cifrado que arma el servidor. */
         var queryNuevoComponente = '<%=QueryNuevoComponente %>';
@@ -82,9 +86,9 @@
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Activos</asp:Content>
-<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Centro del activo</asp:Content>
+<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server"><asp:Literal ID="litTitulo" runat="server" Text="Centro de activos 360°" /></asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Toda la vida de un equipo en una sola pantalla: lo que se le hizo, lo que se le va a hacer y lo que se midió.
+    <asp:Literal ID="litSubtitulo" runat="server" Text="Historial, mantenimiento y condición de tus equipos." />
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
@@ -134,17 +138,51 @@
             <asp:HiddenField ID="hdnSeccion" runat="server" Value="resumen" ClientIDMode="Static" />
             <asp:LinkButton ID="lnkRecargar" runat="server" style="display:none" CausesValidation="false" />
 
-            <%-- ====== LISTA DE RESULTADOS (clic para abrir el centro) ====== --%>
-            <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sigma-af-lista" style="margin-top:14px;">
-                <%-- La clase sg-ot trae las variables de color de la hoja del centro:
-                     fuera de ella el boton queda con texto blanco sobre nada. --%>
-                <div class="sg-ot sg-a3-lista-acc">
-                    <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-accion"
-                        OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
+            <%-- ====== LA LISTA DE EQUIPOS ====== --%>
+            <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sg-a3 sg-ot sg-lista">
+
+                <asp:Literal ID="litListaKpis" runat="server" />
+
+                <div class="sg-ot-card">
+                    <header class="sg-ot-card-cab">
+                        <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-cog-outline"></i></span>
+                        <div>
+                            <h3>Equipos</h3>
+                            <p class="sg-ot-card-sub">Toque un equipo para abrir su centro.</p>
+                        </div>
+                        <div class="sg-ot-card-acc sg-lista-acc">
+                            <asp:LinkButton ID="lnkExportarLista" runat="server" CssClass="sg-ot-btn es-accion"
+                                OnClick="lnkExportar_Click"><i class="mdi mdi-download-outline"></i>Exportar</asp:LinkButton>
+                            <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
+                                OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
+                        </div>
+                    </header>
+
+                    <div class="sg-ot-ev-filtros">
+                        <div class="sg-ot-ev-tipos" id="sgListaChips">
+                            <a href="#" class="sg-a3-chip es-activa" data-lista="todos">Todos <b><asp:Literal ID="litListaTodos" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-lista="atencion"><i class="mdi mdi-alert-outline"></i>Requieren atención <b><asp:Literal ID="litListaAtencion" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-lista="ot"><i class="mdi mdi-wrench-outline"></i>Con OT abiertas <b><asp:Literal ID="litListaOt" runat="server" Text="0" /></b></a>
+                        </div>
+                        <div class="sg-ot-ev-buscar">
+                            <i class="mdi mdi-magnify"></i>
+                            <input type="search" id="sgListaBuscar" placeholder="Buscar por nombre, código o tipo..." autocomplete="off" />
+                        </div>
+                        <select id="sgListaPorPagina" class="sg-ot-select">
+                            <option value="10">10 por página</option>
+                            <option value="25" selected="selected">25 por página</option>
+                            <option value="50">50 por página</option>
+                            <option value="0">Todos</option>
+                        </select>
+                    </div>
+
+                    <asp:Literal ID="litLista" runat="server" />
+
+                    <div class="sg-lista-pie">
+                        <span id="sgListaConteo" class="sg-ot-vacio-txt"></span>
+                        <div class="sg-lista-paginas" id="sgListaPaginas"></div>
+                    </div>
                 </div>
-                <rad:RadGrid2 ID="gridResultados" runat="server" OnItemDataBound="gridResultados_ItemDataBound">
-                    <MasterTableView DataKeyNames="act_id" />
-                </rad:RadGrid2>
             </asp:Panel>
 
             <asp:Panel ID="pnlSinActivo" runat="server" Visible="false" CssClass="sg-ot-vacio">
