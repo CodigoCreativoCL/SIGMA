@@ -164,6 +164,72 @@ namespace SitioBase.Controller
         }
 
         /// <summary>HU-120/122. El SP decide jerarquia, estado y resultado obligatorio.</summary>
+        /// <summary>
+        /// Le copia a la orden los pasos de un procedimiento (bloque 276).
+        ///
+        /// POR QUE HACIA FALTA
+        ///   Una correctiva creada desde la web nace SIN pasos: INS_ORDEN_TRABAJO
+        ///   no toca Orden_Trabajo_Paso. Los pasos venian solo del plan, de un
+        ///   hallazgo o de lo que el tecnico agregaba en terreno, asi que quien
+        ///   creaba la orden sabia lo que habia que hacer y no tenia donde
+        ///   escribirlo.
+        ///
+        ///   El nombre y la instruccion se COPIAN. Si manana alguien edita el
+        ///   procedimiento, la orden ya ejecutada sigue diciendo lo que se mando
+        ///   a hacer ese dia.
+        /// </summary>
+        public Respuesta AgregarPasosDeProcedimiento(int orden, int procedimiento)
+        {
+            Respuesta r = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                r.codigo = -1;
+                r.detalle = "La sesión no es válida o expiró. Vuelva a entrar y repita la operación.";
+                r.error = true;
+                return r;
+            }
+
+            if (orden <= 0 || procedimiento <= 0)
+            {
+                r.codigo = -1;
+                r.detalle = "Elija el procedimiento cuyos pasos quiere agregar.";
+                r.error = true;
+                return r;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("INS_ORDEN_TRABAJO_PASO_PROCEDIMIENTO");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@ORDEN", orden);
+                cmd.Parameters.AddWithValue("@PROCEDIMIENTO", procedimiento);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+
+                int agregados = cmd.Parameters["@ID"].Value == DBNull.Value
+                              ? 0 : (int)cmd.Parameters["@ID"].Value;
+
+                r.codigo = agregados;
+                r.error = false;
+                r.detalle = agregados == 0
+                    ? "La orden ya tenía los pasos de ese procedimiento."
+                    : agregados + (agregados == 1 ? " paso agregado." : " pasos agregados.");
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.codigo = -1;
+                r.detalle = ex.Message;
+                r.error = true;
+            }
+
+            return r;
+        }
+
         public Respuesta Cerrar(int orden, int motivo, string resultado)
         {
             return Sql.Ejecutar("UPD_ORDEN_TRABAJO_CERRAR_WEB", "Orden cerrada.", cmd =>

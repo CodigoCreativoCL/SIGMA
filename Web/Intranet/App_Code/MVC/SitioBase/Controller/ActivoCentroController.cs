@@ -11,6 +11,29 @@ namespace SitioBase.Controller
     /// tarea. Van en la misma clase porque en terreno son la misma cosa.
     /// </summary>
     [Serializable]
+    /// <summary>
+    /// Lo que la tarjeta del contador necesita y no estaba en Activo_Medidor:
+    /// de donde vino la ultima lectura y a que valor esta citado el proximo
+    /// mantenimiento (bloque 277).
+    /// </summary>
+    public class ActivoMedidorResumen
+    {
+        public int id { get; set; }
+        public string codigo { get; set; }
+        public string nombre { get; set; }
+        public decimal valor { get; set; }
+        public string unidad { get; set; }
+        public string componente { get; set; }
+        public DateTime? fecha { get; set; }
+        public string origen { get; set; }
+
+        /* Sin plan por uso los tres quedan nulos: la tarjeta dice "sin
+           mantenimiento asociado" en vez de inventar una cuenta regresiva. */
+        public decimal? objetivo { get; set; }
+        public decimal? falta { get; set; }
+        public string plan_nombre { get; set; }
+    }
+
     public class ActivoRevision
     {
         public string tipo { get; set; }              // INSPECCION | TAREA
@@ -252,6 +275,184 @@ namespace SitioBase.Controller
         }
 
         /// <summary>Inspecciones y tareas del equipo, lo ejecutado y lo pendiente.</summary>
+        /// <summary>
+        /// Los contadores del activo, con su proximo mantenimiento por uso.
+        ///
+        /// Va por SP y no por el controlador de medidores porque el dato que
+        /// falta -cuanto falta para el proximo hito- vive en la ocurrencia del
+        /// plan, a tres tablas de distancia del contador.
+        /// </summary>
+        public List<ActivoMedidorResumen> GetResumenMedidores(int activo)
+        {
+            List<ActivoMedidorResumen> lista = new List<ActivoMedidorResumen>();
+
+            if (!Token.TokenSeguridad() || activo <= 0) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_MEDIDOR_RESUMEN";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoMedidorResumen m = new ActivoMedidorResumen();
+
+                        m.id = int.Parse(dr["ID"].ToString());
+                        m.codigo = dr["CODIGO"] == DBNull.Value ? "" : dr["CODIGO"].ToString();
+                        m.nombre = dr["NOMBRE"] == DBNull.Value ? "" : dr["NOMBRE"].ToString();
+                        m.valor = decimal.Parse(dr["VALOR"].ToString());
+                        m.unidad = dr["UNIDAD"] == DBNull.Value ? "" : dr["UNIDAD"].ToString();
+                        m.componente = dr["COMPONENTE"] == DBNull.Value ? "" : dr["COMPONENTE"].ToString();
+                        m.origen = dr["ORIGEN"] == DBNull.Value ? "" : dr["ORIGEN"].ToString();
+                        m.plan_nombre = dr["PLAN_NOMBRE"] == DBNull.Value ? "" : dr["PLAN_NOMBRE"].ToString();
+
+                        if (dr["FECHA"] != DBNull.Value) m.fecha = (DateTime)dr["FECHA"];
+                        if (dr["OBJETIVO"] != DBNull.Value) m.objetivo = decimal.Parse(dr["OBJETIVO"].ToString());
+                        if (dr["FALTA"] != DBNull.Value) m.falta = decimal.Parse(dr["FALTA"].ToString());
+
+                        lista.Add(m);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Anota una medicion de condicion escrita a mano en la web.
+        ///
+        /// POR QUE USA EL SP DE LA APP
+        ///   API_INS_ACTIVO_MEDICION es el unico que sabe calcular el valor
+        ///   canonico y comparar contra los umbrales de la variable. Escribir
+        ///   la fila por otro lado dejaria una medicion que el semaforo no
+        ///   sabe leer.
+        ///
+        ///   El origen queda MANUAL (3) y el modo TECLADO (1): despues importa
+        ///   saber que ese numero lo escribio una persona y no un sensor.
+        /// </summary>
+        public Respuesta RegistrarMedicion(int variable, decimal valor, DateTime fecha, string observacion)
+        {
+            Respuesta r = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                r.codigo = -1;
+                r.detalle = "La sesión no es válida o expiró. Vuelva a entrar y repita la operación.";
+                r.error = true;
+                return r;
+            }
+
+            ActivoVariable v = new ActivoVariableController().GetVariable(variable);
+
+            if (v == null || v.ava_id == 0)
+            {
+                r.codigo = -1;
+                r.detalle = "La variable no existe o no está disponible.";
+                r.error = true;
+                return r;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("API_INS_ACTIVO_MEDICION");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO_VARIABLE", variable);
+                cmd.Parameters.AddWithValue("@VALOR", valor);
+                cmd.Parameters.AddWithValue("@FECHA_MEDICION_UTC", fecha);
+                cmd.Parameters.AddWithValue("@UNIDAD_MEDIDA", (object)v.ava_unidad_medida ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ACTIVO_COMPONENTE", (object)v.ava_activo_componente ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ORDEN_TRABAJO", DBNull.Value);
+                cmd.Parameters.AddWithValue("@OBSERVACION", (object)observacion ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ENTRADA_MODO", 1);
+                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+
+                r.codigo = cmd.Parameters["@ID"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@ID"].Value;
+                r.detalle = "Lectura registrada.";
+                r.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.codigo = -1;
+                r.detalle = ex.Message;
+                r.error = true;
+            }
+
+            return r;
+        }
+
+        /// <summary>
+        /// Anota la lectura de un contador escrita a mano en la web.
+        ///
+        /// El contador acumula: el SP rechaza un valor menor al que ya tiene a
+        /// menos que se declare reinicio, y de ahi sale la generacion de
+        /// ocurrencias por uso. Por eso tampoco se escribe la fila a mano.
+        /// </summary>
+        public Respuesta RegistrarLecturaMedidor(int medidor, decimal valor, DateTime fecha, string observacion, bool esReinicio)
+        {
+            Respuesta r = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                r.codigo = -1;
+                r.detalle = "La sesión no es válida o expiró. Vuelva a entrar y repita la operación.";
+                r.error = true;
+                return r;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("API_INS_ACTIVO_MEDIDOR_LECTURA");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO_MEDIDOR", medidor);
+                cmd.Parameters.AddWithValue("@VALOR_ACUMULADO", valor);
+                cmd.Parameters.AddWithValue("@FECHA_LECTURA_UTC", fecha);
+                cmd.Parameters.AddWithValue("@ES_REINICIO", esReinicio);
+                cmd.Parameters.AddWithValue("@ORDEN_TRABAJO", DBNull.Value);
+                cmd.Parameters.AddWithValue("@OBSERVACION", (object)observacion ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@ENTRADA_MODO", 1);
+                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+
+                r.codigo = cmd.Parameters["@ID"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@ID"].Value;
+                r.detalle = "Lectura registrada.";
+                r.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.codigo = -1;
+                r.detalle = ex.Message;
+                r.error = true;
+            }
+
+            return r;
+        }
+
         public List<ActivoRevision> GetRevisiones(int activo, DateTime? desde = null, DateTime? hasta = null)
         {
             List<ActivoRevision> lista = new List<ActivoRevision>();

@@ -322,6 +322,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
     }
 
+    /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
+    protected string QueryLectura
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Activo=" + id)) : "0";
+        }
+    }
+
     /// <summary>El querystring cifrado para crear un contador de ESTE equipo.</summary>
     protected string QueryNuevoMedidor
     {
@@ -1355,36 +1365,20 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         bool puedeVariable = Token.Puede("CREAR EDITAR VARIABLES ACTIVO");
         lnkNuevaVariable.Visible = puedeVariable;
-        litCondVariables.Text = variables.Count.ToString();
 
-        if (variables.Count == 0)
-        {
-            litCondicion.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-gauge-empty\"></i>" +
-                                "<p>Sin variables de condición</p><span>" +
-                                (puedeVariable ? "Agregue una con «Nueva variable» y el equipo empezará a medirse."
-                                               : "Todavía no se ha configurado qué se le mide a este equipo.") +
-                                "</span></div>";
-            litCondTabla.Text = "";
-            litCondLecturas.Text = "";
-            Medidores(a);
-            return;
-        }
+        lnkRegistrarLectura.Visible = Token.Puede("REGISTRAR MEDICION") || Token.Puede("REGISTRAR LECTURA");
+
+        litCondActivo.Text = Server.HtmlEncode(Texto(a.act_nombre)) +
+                             (string.IsNullOrEmpty(a.act_codigo) ? "" : " · " + Server.HtmlEncode(a.act_codigo));
+
+        litCondVariables.Text = litCondVariables2.Text = variables.Count.ToString();
 
         DateTime hoy = global::SitioBase.Hora.Hoy;
 
-        StringBuilder tarjetas = new StringBuilder("<div class=\"sg-a3-cond\">");
-        StringBuilder tabla = new StringBuilder();
+        StringBuilder tarjetas = new StringBuilder();
         StringBuilder lecturas = new StringBuilder();
 
-        tabla.Append("<div class=\"sg-a3-tabla-cab sg-cond-cab\">")
-             .Append("<span>Variable</span><span>Lectura actual</span><span>Unidad</span>")
-             .Append("<span>Estado</span><span>Rangos configurados</span></div>");
-
-        lecturas.Append("<div class=\"sg-a3-tabla-cab sg-cond-lec-cab\">")
-                .Append("<span>Fecha y hora</span><span>Valor</span><span>Unidad</span>")
-                .Append("<span>Origen</span><span>Nivel</span></div>");
-
-        int conLecturas = 0;
+        int fuera = 0, revisar = 0, sinLectura = 0;
 
         foreach (ActivoVariable v in variables)
         {
@@ -1393,67 +1387,191 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             string clase, etiqueta;
             Semaforo(v, r, hoy, out clase, out etiqueta);
 
+            if (clase == "es-critico") fuera++;
+            else if (clase == "es-aviso") revisar++;
+            else if (clase == "es-sin") sinLectura++;
+
             bool hay = r != null && r.ultimo_valor != null;
-            string valor = hay ? r.ultimo_valor.Value.ToString("0.##") : "—";
+            string valor = hay ? r.ultimo_valor.Value.ToString("N2").TrimEnd('0').TrimEnd(',', '.') : "—";
             string unidad = Texto(v.unidad_simbolo);
+            string componente = string.IsNullOrEmpty(v.componente_nombre) ? "Equipo completo" : v.componente_nombre;
             string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id));
 
-            // ---- la tarjeta ----
-            tarjetas.Append("<a href=\"javascript:void(0)\" class=\"sg-a3-cond-card ").Append(clase)
-                    .Append("\" data-var=\"").Append(v.ava_id)
-                    .Append("\" data-var-nombre=\"").Append(Server.HtmlEncode(Texto(v.variable_nombre)))
-                    .Append("\" data-var-valor=\"").Append(Server.HtmlEncode(valor + (unidad.Length > 0 ? " " + unidad : "")))
-                    .Append("\" data-var-estado=\"").Append(Server.HtmlEncode(etiqueta))
-                    .Append("\" data-var-clase=\"").Append(clase)
-                    .Append("\" data-var-rango=\"").Append(Server.HtmlEncode(Rangos(v)))
-                    .Append("\" data-var-frecuencia=\"")
-                    .Append(v.ava_frecuencia_esperada_hora == null ? "" : "Cada " + v.ava_frecuencia_esperada_hora + " h")
-                    .Append("\" data-var-componente=\"").Append(Server.HtmlEncode(Texto(v.componente_nombre)))
-                    .Append("\" data-var-serie=\"").Append(UrlSerie(v.ava_id))
-                    .Append("\" data-var-query=\"").Append(query).Append("\">")
-                    .Append("<span class=\"sg-a3-cond-nom\">").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</span>")
-                    .Append("<span class=\"sg-a3-cond-val\">").Append(Server.HtmlEncode(valor))
-                    .Append(unidad.Length == 0 ? "" : " <small>" + Server.HtmlEncode(unidad) + "</small>")
-                    .Append("</span>")
-                    .Append("<span class=\"sg-a3-cond-pie\">").Append(Server.HtmlEncode(etiqueta)).Append("</span>")
-                    .Append("</a>");
-
-            // ---- la fila de la tabla ----
-            tabla.Append("<div class=\"sg-a3-tabla-fila sg-cond-fila\" data-var-fila=\"").Append(v.ava_id).Append("\">")
-                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(v.variable_nombre)))
-                 .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(v.componente_nombre) ? "Equipo completo" : v.componente_nombre)).Append("</span></span>")
-                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(valor)).Append("</span>")
-                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(unidad.Length == 0 ? "—" : unidad)).Append("</span>")
-                 .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ").Append(ChipCondicion(clase)).Append("\">")
-                 .Append(Server.HtmlEncode(etiqueta)).Append("</span></span>")
-                 .Append("<span class=\"c-dato sg-cond-rango\">").Append(Server.HtmlEncode(Rangos(v))).Append("</span>")
-                 .Append("</div>");
-
-            // ---- sus ultimas lecturas ----
             List<MedicionSerie> serie = ctlVar.GetSerie(v.ava_id, hoy.AddDays(-90), null) ?? new List<MedicionSerie>();
+            MedicionSerie ultima = serie.OrderByDescending(x => x.fecha).FirstOrDefault();
 
-            foreach (MedicionSerie p in serie.OrderByDescending(x => x.fecha).Take(5))
-            {
-                conLecturas++;
+            tarjetas.Append("<a href=\"javascript:void(0)\" class=\"sg-cond-card ").Append(clase)
+                    .Append("\" data-cond=\"variable\" data-clase=\"").Append(clase)
+                    .Append("\" data-id=\"v").Append(v.ava_id)
+                    .Append("\" data-buscar=\"")
+                    .Append(Server.HtmlEncode((Texto(v.variable_nombre) + " " + componente + " " + unidad).ToLowerInvariant()))
+                    .Append("\" data-titulo=\"").Append(Server.HtmlEncode(Texto(v.variable_nombre)))
+                    .Append("\" data-sub=\"").Append(Server.HtmlEncode(componente))
+                    .Append("\" data-rango=\"").Append(Server.HtmlEncode(Rangos(v)))
+                    .Append("\" data-frecuencia=\"")
+                    .Append(v.ava_frecuencia_esperada_hora == null ? "Sin frecuencia definida" : "Se espera una lectura cada " + v.ava_frecuencia_esperada_hora + " h")
+                    .Append("\" data-serie=\"").Append(UrlSerie(v.ava_id))
+                    .Append("\" data-query=\"").Append(query)
+                    .Append("\" data-lectura=\"")
+                    .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Activo=" + a.act_id + "&Que=v" + v.ava_id)))
+                    .Append("\" data-editar=\"").Append(puedeVariable ? "1" : "0").Append("\">")
 
-                lecturas.Append("<div class=\"sg-a3-tabla-fila sg-cond-lec\" data-var-lec=\"").Append(v.ava_id).Append("\">")
-                        .Append("<span class=\"c-dato\">").Append(p.fecha.ToString("dd MMM yyyy · HH:mm")).Append("</span>")
-                        .Append("<span class=\"c-cod\">").Append(p.valor.ToString("0.##")).Append("</span>")
-                        .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(unidad.Length == 0 ? "—" : unidad)).Append("</span>")
-                        .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(p.origen))).Append("</span>")
-                        .Append("<span class=\"c-dato\">").Append(ChipNivel(p.nivel)).Append("</span>")
+                    .Append("<span class=\"sg-cond-card-top\">")
+                    .Append("<span class=\"sg-cond-ico\"><i class=\"mdi ").Append(IconoVariable(v.variable_nombre)).Append("\"></i></span>")
+                    .Append("<span class=\"sg-cond-card-id\"><strong>").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</strong>")
+                    .Append("<span>").Append(Server.HtmlEncode(componente)).Append("</span></span>")
+                    .Append(ChipEstado(clase, etiqueta))
+                    .Append("</span>")
+
+                    .Append("<span class=\"sg-cond-card-val\"><b>").Append(Server.HtmlEncode(valor)).Append("</b>")
+                    .Append(unidad.Length == 0 ? "" : "<small>" + Server.HtmlEncode(unidad) + "</small>")
+                    .Append("</span>")
+
+                    .Append("<span class=\"sg-cond-card-ref\">").Append(Server.HtmlEncode(Referencia(v, clase, unidad))).Append("</span>")
+
+                    .Append("<span class=\"sg-cond-card-pie\">")
+                    .Append(hay
+                        ? "<span><i class=\"mdi mdi-clock-outline\"></i>" + Server.HtmlEncode(Cuando(r.ultima_fecha_utc, ultima == null ? "" : ultima.origen)) + "</span><em>Ver detalle <i class=\"mdi mdi-arrow-right\"></i></em>"
+                        : "<span></span><em>Registrar lectura <i class=\"mdi mdi-arrow-right\"></i></em>")
+                    .Append("</span></a>");
+
+            foreach (MedicionSerie p in serie.OrderByDescending(x => x.fecha).Take(6))
+                lecturas.Append("<div class=\"sg-cond-lec\" data-de=\"v").Append(v.ava_id).Append("\">")
+                        .Append("<span>").Append(p.fecha.ToString("dd MMM yyyy · HH:mm")).Append("</span>")
+                        .Append("<b>").Append(p.valor.ToString("0.##"))
+                        .Append(unidad.Length == 0 ? "" : " " + Server.HtmlEncode(unidad)).Append("</b>")
+                        .Append("<span>").Append(Server.HtmlEncode(Texto(p.origen))).Append("</span>")
+                        .Append(ChipNivel(p.nivel))
                         .Append("</div>");
-            }
         }
 
-        litCondicion.Text = tarjetas.Append("</div>").ToString();
-        litCondTabla.Text = tabla.ToString();
+        litCondicion.Text = variables.Count > 0
+            ? tarjetas.ToString()
+            : "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-gauge-empty\"></i>" +
+              "<p>Sin variables de condición</p><span>" +
+              (puedeVariable ? "Agregue una con «Configurar» y el equipo empezará a medirse."
+                             : "Todavía no se ha configurado qué se le mide a este equipo.") + "</span></div>";
 
-        litCondLecturas.Text = conLecturas > 0
-            ? lecturas.ToString()
-            : "<p class=\"sg-ot-vacio-txt\">Esta variable no tiene lecturas en los últimos 90 días.</p>";
+        litCondLecturas.Text = lecturas.ToString();
 
-        Medidores(a);
+        Aviso(fuera, revisar, sinLectura);
+        Medidores(a, variables.Count);
+    }
+
+    /// <summary>
+    /// La banda de arriba: cuantas piden atencion y por que.
+    ///
+    /// Con doce tarjetas, la que esta fuera de limite se pierde entre las que
+    /// estan bien. La banda la cuenta antes de que haya que buscarla.
+    /// </summary>
+    private void Aviso(int fuera, int revisar, int sinLectura)
+    {
+        int total = fuera + revisar + sinLectura;
+
+        if (total == 0)
+        {
+            litCondAviso.Text = "";
+            return;
+        }
+
+        List<string> partes = new List<string>();
+        if (fuera > 0) partes.Add(fuera + (fuera == 1 ? " fuera de límite" : " fuera de límite"));
+        if (revisar > 0) partes.Add(revisar + " para revisar");
+        if (sinLectura > 0) partes.Add(sinLectura + (sinLectura == 1 ? " sin lectura" : " sin lectura"));
+
+        litCondAviso.Text =
+            "<div class=\"sg-cond-aviso " + (fuera > 0 ? "es-critico" : "es-aviso") + "\">" +
+            "<i class=\"mdi mdi-alert-circle-outline\"></i>" +
+            "<strong>" + total + (total == 1 ? " variable necesita" : " variables necesitan") + " revisión</strong>" +
+            "<span>" + string.Join("  ·  ", partes.ToArray()) + "</span>" +
+            "<a href=\"javascript:void(0)\" class=\"sg-cond-aviso-ver\">Ver pendientes <i class=\"mdi mdi-arrow-right\"></i></a></div>";
+    }
+
+    /// <summary>El chip del estado, con la palabra corta que se lee de lejos.</summary>
+    private static string ChipEstado(string clase, string etiqueta)
+    {
+        string color;
+
+        switch (clase)
+        {
+            case "es-critico": color = "es-rojo"; break;
+            case "es-aviso": color = "es-aviso"; break;
+            case "es-normal": color = "es-ok"; break;
+            default: color = "es-neutro"; break;
+        }
+
+        string icono = clase == "es-critico" ? "mdi-alert-circle"
+                     : clase == "es-aviso" ? "mdi-alert-outline"
+                     : clase == "es-normal" ? "mdi-check-circle"
+                     : "mdi-minus-circle-outline";
+
+        return "<span class=\"sg-ot-chip " + color + "\"><i class=\"mdi " + icono + "\"></i>" +
+               System.Web.HttpUtility.HtmlEncode(etiqueta) + "</span>";
+    }
+
+    /// <summary>
+    /// Contra que se esta comparando la lectura. No es el listado completo de
+    /// rangos: es EL umbral que explica el color de la tarjeta.
+    /// </summary>
+    private string Referencia(ActivoVariable v, string clase, string unidad)
+    {
+        string u = unidad.Length == 0 ? "" : " " + unidad;
+
+        if (clase == "es-sin") return "Registra la primera medición.";
+
+        if (clase == "es-critico" && v.ava_valor_critico != null)
+            return "Límite crítico: " + v.ava_valor_critico.Value.ToString("0.##") + u;
+
+        if (clase == "es-aviso" && v.ava_valor_advertencia != null)
+            return "Aviso desde: " + v.ava_valor_advertencia.Value.ToString("0.##") + u;
+
+        if (v.ava_valor_minimo != null && v.ava_valor_maximo != null)
+            return (clase == "es-normal" ? "Rango: " : "Rango esperado: ") +
+                   v.ava_valor_minimo.Value.ToString("0.##") + " – " +
+                   v.ava_valor_maximo.Value.ToString("0.##") + u;
+
+        if (v.ava_valor_minimo != null) return "Aviso bajo: " + v.ava_valor_minimo.Value.ToString("0.##") + u;
+        if (v.ava_valor_advertencia != null) return "Aviso desde: " + v.ava_valor_advertencia.Value.ToString("0.##") + u;
+        if (v.ava_valor_critico != null) return "Límite crítico: " + v.ava_valor_critico.Value.ToString("0.##") + u;
+
+        return "Sin rangos configurados";
+    }
+
+    /// <summary>Cuando y de donde vino la lectura, en el largo de un pie de tarjeta.</summary>
+    private string Cuando(DateTime? fecha, string origen)
+    {
+        if (fecha == null) return "Sin lecturas";
+
+        DateTime hoy = global::SitioBase.Hora.Hoy;
+        int dias = (int)(hoy.Date - fecha.Value.Date).TotalDays;
+
+        string cuando = dias == 0 ? "Hoy, " + fecha.Value.ToString("HH:mm")
+                      : dias == 1 ? "Ayer, " + fecha.Value.ToString("HH:mm")
+                      : fecha.Value.ToString("dd MMM · HH:mm");
+
+        return string.IsNullOrEmpty(origen) ? cuando : cuando + " · " + origen;
+    }
+
+    /// <summary>
+    /// El icono de la variable se deduce de su nombre: la tabla de variables
+    /// no guarda uno, y doce tarjetas con el mismo simbolo obligan a leer cada
+    /// titulo para distinguirlas.
+    /// </summary>
+    private static string IconoVariable(string nombre)
+    {
+        string n = (nombre ?? "").ToLowerInvariant();
+
+        if (n.Contains("vibra")) return "mdi-pulse";
+        if (n.Contains("temperatura") || n.Contains("térmic") || n.Contains("termic")) return "mdi-thermometer";
+        if (n.Contains("humedad") || n.Contains("aceite") || n.Contains("nivel")) return "mdi-water-outline";
+        if (n.Contains("presión") || n.Contains("presion")) return "mdi-gauge";
+        if (n.Contains("corriente") || n.Contains("tensión") || n.Contains("voltaje") || n.Contains("energ")) return "mdi-flash";
+        if (n.Contains("caudal") || n.Contains("flujo")) return "mdi-waves";
+        if (n.Contains("ruido") || n.Contains("sonor")) return "mdi-volume-high";
+        if (n.Contains("velocidad") || n.Contains("rpm") || n.Contains("giro")) return "mdi-speedometer";
+        if (n.Contains("hora") || n.Contains("tiempo")) return "mdi-clock-outline";
+
+        return "mdi-chart-line";
     }
 
     /// <summary>Los rangos de la variable, en una linea que se lee de corrido.</summary>
@@ -1470,18 +1588,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (v.ava_valor_critico != null) partes.Add("Crítico " + v.ava_valor_critico.Value.ToString("0.##"));
 
         return partes.Count == 0 ? "Sin rangos configurados" : string.Join("  ·  ", partes.ToArray());
-    }
-
-    /// <summary>El chip de la tabla usa el mismo color que el borde de la tarjeta.</summary>
-    private static string ChipCondicion(string clase)
-    {
-        switch (clase)
-        {
-            case "es-normal": return "es-ok";
-            case "es-aviso": return "es-aviso";
-            case "es-critico": return "es-rojo";
-            default: return "es-neutro";
-        }
     }
 
     /// <summary>
@@ -1505,16 +1611,23 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return UrlRegistro("~/View/Activos/Variables/ActivoVariableSerie.aspx", variable);
     }
 
-    /// <summary>Los contadores del equipo: no bajan, se acumulan.</summary>
-    private void Medidores(Activo a)
+    /// <summary>
+    /// Los contadores del equipo: no bajan, se acumulan.
+    ///
+    /// La tarjeta dice cuanto falta para el proximo mantenimiento por uso, que
+    /// es lo unico que se hace con un contador: el numero suelto -84.250 kWh-
+    /// no le dice nada a nadie si no esta al lado de "faltan 1.650".
+    /// </summary>
+    private void Medidores(Activo a, int variables)
     {
-        List<ActivoMedidor> medidores = new ActivoMedidorController().GetActivoMedidores(
-            new ActivoMedidor { ame_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
-            ?? new List<ActivoMedidor>();
+        List<ActivoMedidorResumen> medidores = new ActivoCentroController().GetResumenMedidores(a.act_id)
+                                               ?? new List<ActivoMedidorResumen>();
 
         bool puedeMedidor = Token.Puede("CREAR EDITAR MEDIDORES");
         lnkNuevoMedidor.Visible = puedeMedidor;
-        litCondMedidores.Text = medidores.Count.ToString();
+
+        litCondMedidores.Text = litCondMedidores2.Text = medidores.Count.ToString();
+        litCondTodas.Text = (variables + medidores.Count).ToString();
 
         if (medidores.Count == 0)
         {
@@ -1527,20 +1640,69 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         StringBuilder m = new StringBuilder();
 
-        foreach (ActivoMedidor x in medidores)
-            m.Append(Fila("mdi-counter", "es-azul",
-                     Texto(x.ame_nombre),
-                     x.ame_fecha_valor_actual_utc == null
-                        ? "Sin lecturas"
-                        : "Última lectura " + x.ame_fecha_valor_actual_utc.Value.ToString("dd MMM yyyy · HH:mm"),
-                     "<span class=\"sg-a3-codigo\">" + x.ame_valor_actual.ToString("0.##") +
-                     (string.IsNullOrEmpty(x.unidad_simbolo) ? "" : " " + Server.HtmlEncode(x.unidad_simbolo)) + "</span>" +
-                     "<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirMedidor('" +
-                     Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.ame_id)) + "')\"><i class=\"mdi " +
-                     (puedeMedidor ? "mdi-pencil-outline" : "mdi-eye-outline") + "\"></i>" +
-                     (puedeMedidor ? "Editar" : "Ver") + "</a>"));
+        foreach (ActivoMedidorResumen x in medidores)
+        {
+            string unidad = Texto(x.unidad);
+            string u = unidad.Length == 0 ? "" : " " + unidad;
+            string clase = x.fecha == null ? "es-sin" : "es-contador";
+            string sub = string.IsNullOrEmpty(x.componente) ? "Equipo completo" : x.componente;
+
+            string falta = x.falta == null
+                ? (string.IsNullOrEmpty(x.plan_nombre) ? "Consumo acumulado" : "Sin objetivo pendiente")
+                : "Faltan " + x.falta.Value.ToString("N0") + u + " para mantenimiento";
+
+            string proximo = x.objetivo == null
+                ? "Sin mantenimiento asociado"
+                : "Próximo: " + x.objetivo.Value.ToString("N0") + u;
+
+            m.Append("<a href=\"javascript:void(0)\" class=\"sg-cond-card es-medidor ").Append(clase)
+             .Append("\" data-cond=\"medidor\" data-clase=\"").Append(clase == "es-sin" ? "es-sin" : "es-normal")
+             .Append("\" data-id=\"m").Append(x.id)
+             .Append("\" data-buscar=\"").Append(Server.HtmlEncode((Texto(x.nombre) + " " + Texto(x.codigo) + " " + sub + " " + unidad).ToLowerInvariant()))
+             .Append("\" data-titulo=\"").Append(Server.HtmlEncode(Texto(x.nombre)))
+             .Append("\" data-sub=\"").Append(Server.HtmlEncode(sub))
+             .Append("\" data-rango=\"").Append(Server.HtmlEncode(proximo))
+             .Append("\" data-frecuencia=\"")
+             .Append(Server.HtmlEncode(string.IsNullOrEmpty(x.plan_nombre) ? "Sin plan por uso asociado" : "Plan: " + x.plan_nombre))
+             .Append("\" data-query=\"").Append(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.id)))
+             .Append("\" data-lectura=\"")
+             .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Activo=" + a.act_id + "&Que=m" + x.id)))
+             .Append("\" data-editar=\"").Append(puedeMedidor ? "1" : "0").Append("\">")
+
+             .Append("<span class=\"sg-cond-card-top\">")
+             .Append("<span class=\"sg-cond-ico\"><i class=\"mdi ").Append(IconoContador(x.nombre)).Append("\"></i></span>")
+             .Append("<span class=\"sg-cond-card-id\"><strong>").Append(Server.HtmlEncode(Texto(x.nombre))).Append("</strong>")
+             .Append("<span>").Append(Server.HtmlEncode(sub)).Append("</span></span>")
+             .Append("</span>")
+
+             .Append("<span class=\"sg-cond-card-val\"><b>").Append(x.valor.ToString("N0")).Append("</b>")
+             .Append(unidad.Length == 0 ? "" : "<small>" + Server.HtmlEncode(unidad) + "</small>")
+             .Append("</span>")
+
+             .Append("<span class=\"sg-cond-card-ref\">").Append(Server.HtmlEncode(falta))
+             .Append("<small>").Append(Server.HtmlEncode(proximo)).Append("</small></span>")
+
+             .Append("<span class=\"sg-cond-card-pie\">")
+             .Append("<span><i class=\"mdi mdi-clock-outline\"></i>").Append(Server.HtmlEncode(Cuando(x.fecha, x.origen))).Append("</span>")
+             .Append("<em>Ver detalle <i class=\"mdi mdi-arrow-right\"></i></em>")
+             .Append("</span></a>");
+        }
 
         litMedidores.Text = m.ToString();
+    }
+
+    /// <summary>Igual que la variable: el icono sale del nombre del contador.</summary>
+    private static string IconoContador(string nombre)
+    {
+        string n = (nombre ?? "").ToLowerInvariant();
+
+        if (n.Contains("hora") || n.Contains("horómetro") || n.Contains("horometro")) return "mdi-clock-outline";
+        if (n.Contains("ciclo") || n.Contains("producción") || n.Contains("produccion")) return "mdi-cog-outline";
+        if (n.Contains("energ") || n.Contains("kwh") || n.Contains("consumo")) return "mdi-flash";
+        if (n.Contains("arranque") || n.Contains("partida")) return "mdi-power";
+        if (n.Contains("kilómetro") || n.Contains("kilometro") || n.Contains("km")) return "mdi-map-marker-distance";
+
+        return "mdi-counter";
     }
 
     /// <summary>
@@ -1552,8 +1714,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         if (r == null || r.ultimo_valor == null || r.ultima_fecha_utc == null)
         {
-            clase = "";
-            etiqueta = "Sin datos";
+            clase = "es-sin";
+            etiqueta = "Sin lectura";
             return;
         }
 
@@ -1561,13 +1723,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (dias > 14)
         {
-            clase = "es-viejo";
-            etiqueta = "Dato desactualizado · " + r.ultima_fecha_utc.Value.ToString("dd MMM yyyy");
+            clase = "es-aviso";
+            etiqueta = "Revisar";
             return;
         }
 
         decimal valor = r.ultimo_valor.Value;
-        string cuando = "Última lectura " + r.ultima_fecha_utc.Value.ToString("dd MMM · HH:mm");
 
         /* Los umbrales son los de la variable del equipo: primero el critico y
            despues el de advertencia, porque un valor que pasa el critico
@@ -1575,22 +1736,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
            rango normal -minimo y maximo- se mira al final. */
         if (v.ava_valor_critico != null && valor >= v.ava_valor_critico)
         {
-            clase = "es-critico"; etiqueta = "Crítico · " + cuando; return;
+            clase = "es-critico"; etiqueta = "Fuera de límite"; return;
         }
 
         if (v.ava_valor_advertencia != null && valor >= v.ava_valor_advertencia)
         {
-            clase = "es-aviso"; etiqueta = "Advertencia · " + cuando; return;
+            clase = "es-aviso"; etiqueta = "Revisar"; return;
         }
 
         if ((v.ava_valor_maximo != null && valor > v.ava_valor_maximo) ||
             (v.ava_valor_minimo != null && valor < v.ava_valor_minimo))
         {
-            clase = "es-aviso"; etiqueta = "Fuera de rango · " + cuando; return;
+            clase = "es-aviso"; etiqueta = "Revisar"; return;
         }
 
         clase = "es-normal";
-        etiqueta = "Normal · " + cuando;
+        etiqueta = "En rango";
     }
 
     #endregion

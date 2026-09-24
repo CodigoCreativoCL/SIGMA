@@ -60,6 +60,19 @@
             });
         }
 
+        /* Registrar una lectura a mano. `query` lo cifra el servidor: el de
+           la tarjeta trae la variable o el contador ya elegido; el del boton
+           de arriba trae solo el equipo. */
+        function abrirLectura(query) {
+            seccionPendiente = 'condicion';
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Ficha/RegistrarLectura.aspx") %>?query=' + (query || queryLecturaSuelta),
+                title: 'Registrar lectura',
+                width: 860,
+                initialHeight: 560
+            });
+        }
+
         var seccionPendiente = null;
 
         /* El campo donde vive el equipo elegido. El JS de la lista lo escribe
@@ -71,6 +84,9 @@
         var queryNuevoComponente = '<%=QueryNuevoComponente %>';
         var queryNuevoMedidor = '<%=QueryNuevoMedidor %>';
         var queryNuevaVariable = '<%=QueryNuevaVariable %>';
+
+        /* El querystring de la lectura tambien lo cifra el servidor. */
+        var queryLecturaSuelta = '<%=QueryLectura %>';
 
         /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
            al Resumen: el postback repinta el bloque entero. */
@@ -593,69 +609,83 @@
                      ================================================================ --%>
                 <section class="sg-a3-panel sg-a3-cond-panel" data-panel="condicion">
                     <div class="sg-ot-card">
-                        <header class="sg-ot-card-cab">
+
+                        <%-- La cabecera trae las cuatro cosas que se hacen aca:
+                             buscar, filtrar por estado, configurar que se mide
+                             y registrar una lectura. --%>
+                        <header class="sg-ot-card-cab sg-cond-top">
                             <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-pulse"></i></span>
                             <div>
                                 <h3>Condición y medidores</h3>
-                                <p class="sg-ot-card-sub">Lo que se mide del equipo, con su última lectura y contra qué se compara.</p>
+                                <p class="sg-ot-card-sub"><asp:Literal ID="litCondActivo" runat="server" /></p>
                             </div>
-                            <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
-                                OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-plus"></i>Nueva variable</asp:LinkButton>
-                            <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
-                                OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-plus"></i>Nuevo contador</asp:LinkButton>
-                        </header>
 
-                        <%-- Dos cosas distintas que se miden en el mismo equipo:
-                             una variable sube y baja, un contador solo sube.
-                             Mezclarlas en una lista obliga a leer la unidad para
-                             saber cual es cual. --%>
-                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgCondVistas">
-                            <a href="#" class="sg-a3-chip es-activa" data-cond-vista="variables"><i class="mdi mdi-pulse"></i>Variables de condición <b><asp:Literal ID="litCondVariables" runat="server" Text="0" /></b></a>
-                            <a href="#" class="sg-a3-chip" data-cond-vista="medidores"><i class="mdi mdi-counter"></i>Contadores acumulativos <b><asp:Literal ID="litCondMedidores" runat="server" Text="0" /></b></a>
-                        </div>
-
-                        <div class="sg-cond-vista" data-cond-vista="variables">
-                            <div class="sg-cond-cols">
-                                <div class="sg-cond-centro">
-                                    <asp:Literal ID="litCondicion" runat="server" />
-
-                                    <div class="sg-cond-bloque">
-                                        <h4><i class="mdi mdi-table"></i>Variables de condición</h4>
-                                        <asp:Literal ID="litCondTabla" runat="server" />
-                                    </div>
-
-                                    <div class="sg-cond-bloque">
-                                        <h4><i class="mdi mdi-clock-outline"></i>Últimas lecturas<span id="sgCondLecturasDe"></span></h4>
-                                        <asp:Literal ID="litCondLecturas" runat="server" />
-                                    </div>
-
-                                    <div class="sg-a3-umbrales">
-                                        <i class="mdi mdi-information-outline"></i>
-                                        Los rangos se configuran por equipo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
-                                    </div>
+                            <div class="sg-cond-acciones">
+                                <div class="sg-ot-ev-buscar sg-cond-buscar">
+                                    <i class="mdi mdi-magnify"></i>
+                                    <input type="search" id="sgCondBuscar" placeholder="Buscar variable o contador..." autocomplete="off" />
                                 </div>
 
-                                <aside class="sg-cond-detalle" id="sgCondDetalle">
-                                    <div class="sg-ot-card">
-                                        <header class="sg-ot-card-cab">
-                                            <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
-                                            <div><h3>Detalle de variable</h3></div>
-                                        </header>
-                                        <div class="sg-cond-detalle-cuerpo">
-                                            <p class="sg-ot-vacio-txt">Elija una variable para ver su detalle.</p>
-                                        </div>
-                                    </div>
-                                </aside>
+                                <select id="sgCondEstado" class="sg-ot-select">
+                                    <option value="">Estado: Todos</option>
+                                    <option value="es-critico">Fuera de límite</option>
+                                    <option value="es-aviso">Revisar</option>
+                                    <option value="es-normal">En rango</option>
+                                    <option value="es-sin">Sin lectura</option>
+                                </select>
+
+                                <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-plano"
+                                    OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-cog-outline"></i>Configurar</asp:LinkButton>
+                                <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-plano"
+                                    OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-counter"></i>Nuevo contador</asp:LinkButton>
+                                <asp:LinkButton ID="lnkRegistrarLectura" runat="server" CssClass="sg-ot-btn es-primario"
+                                    OnClientClick="return abrirLectura('');"><i class="mdi mdi-plus"></i>Registrar lectura</asp:LinkButton>
                             </div>
+                        </header>
+
+                        <%-- La banda dice cuantas piden atencion ANTES de la
+                             grilla: con doce tarjetas, la que esta fuera de
+                             limite se pierde entre las que estan bien. --%>
+                        <asp:Literal ID="litCondAviso" runat="server" />
+
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgCondVistas">
+                            <a href="#" class="sg-a3-chip es-activa" data-cond-vista="todas">Todas <b><asp:Literal ID="litCondTodas" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-cond-vista="variables"><i class="mdi mdi-pulse"></i>Variables <b><asp:Literal ID="litCondVariables" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-cond-vista="medidores"><i class="mdi mdi-counter"></i>Contadores <b><asp:Literal ID="litCondMedidores" runat="server" Text="0" /></b></a>
                         </div>
 
-                        <div class="sg-cond-vista es-oculta" data-cond-vista="medidores">
-                            <asp:Literal ID="litMedidores" runat="server" />
+                        <section class="sg-cond-seccion" data-cond-grupo="variables">
+                            <h4>Variables de condición <b><asp:Literal ID="litCondVariables2" runat="server" Text="0" /></b></h4>
+                            <p>Cómo está el equipo según la última lectura.</p>
+                            <div class="sg-cond-grid"><asp:Literal ID="litCondicion" runat="server" /></div>
+                        </section>
+
+                        <section class="sg-cond-seccion" data-cond-grupo="medidores">
+                            <h4>Contadores acumulativos <b><asp:Literal ID="litCondMedidores2" runat="server" Text="0" /></b></h4>
+                            <p>Cuánto ha trabajado o consumido el equipo.</p>
+                            <div class="sg-cond-grid"><asp:Literal ID="litMedidores" runat="server" /></div>
+                        </section>
+
+                        <p class="sg-cond-nada" id="sgCondNada" style="display:none">Ninguna variable o contador coincide con la búsqueda.</p>
+
+                        <%-- El historial y las acciones de la tarjeta elegida se
+                             despliegan DEBAJO de su fila, no en una columna al
+                             costado: asi la tarjeta no se mueve al abrirse. --%>
+                        <div class="sg-cond-detalle" id="sgCondDetalle" style="display:none"></div>
+
+                        <%-- Las lecturas viajan escondidas y el navegador las
+                             mueve al detalle: pedirlas de a una obligaria a un
+                             postback por tarjeta. --%>
+                        <div class="sg-cond-fuente" id="sgCondFuente" style="display:none"><asp:Literal ID="litCondLecturas" runat="server" /></div>
+
+                        <div class="sg-a3-umbrales">
+                            <i class="mdi mdi-information-outline"></i>
+                            Los rangos se configuran por equipo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
                         </div>
                     </div>
                 </section>
 
-                <%-- ================================================================
+<%-- ================================================================
                      9. DOCUMENTOS Y GALERÍA
                      ================================================================ --%>
                 <section class="sg-a3-panel sg-a3-docs" data-panel="documentos">

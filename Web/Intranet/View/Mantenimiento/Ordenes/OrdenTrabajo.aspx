@@ -373,7 +373,7 @@
                 <h3>Pasos de la intervención</h3>
                 <p class="sg-ot-card-sub">Seguimiento del trabajo registrado en terreno.</p>
             </div>
-            <span class="sg-ot-candado"><i class="mdi mdi-lock-outline"></i>Solo lectura · Se actualiza desde la app</span>
+            <span class="sg-ot-candado"><i class="mdi mdi-lock-outline"></i>La ejecución se registra desde la app</span>
             <asp:Literal ID="litPasosAvance" runat="server" />
         </div>
 
@@ -394,7 +394,23 @@
                 <asp:Panel ID="pnlSinPasos" runat="server" Visible="false" CssClass="sg-ot-vacio">
                     <i class="mdi mdi-format-list-numbered"></i>
                     <p>Esta orden todavía no tiene pasos</p>
-                    <span>Nacen del plan o los agrega el técnico desde la app.</span>
+                    <span>Nacen del plan, se copian de un procedimiento o los agrega el técnico desde la app.</span>
+                </asp:Panel>
+
+                <%-- UNA CORRECTIVA NACE SIN PASOS
+
+                     Quien la crea sabe lo que hay que hacer, y hasta ahora no
+                     tenia donde escribirlo: el tecnico llegaba a la maquina con
+                     un titulo y ninguna instruccion. Copiar los pasos de un
+                     procedimiento es la misma operacion que hace el plan. --%>
+                <asp:Panel ID="pnlAgregarPasos" runat="server" Visible="false" CssClass="sg-ot-pasos-agregar">
+                    <label>Copiar los pasos de un procedimiento</label>
+                    <div class="sg-ot-pasos-agregar-fila">
+                        <rad:RadComboBox2 ID="cboProcedimiento" runat="server" Filter="Contains" Width="100%" />
+                        <asp:LinkButton ID="lnkAgregarPasos" runat="server" CssClass="sg-ot-btn es-accion"
+                            CausesValidation="false" OnClick="lnkAgregarPasos_Click"><i class="mdi mdi-playlist-plus"></i>Agregar pasos</asp:LinkButton>
+                    </div>
+                    <span class="sg-ot-pasos-agregar-ayuda">Se copian el nombre y la instrucción de cada paso. Editar el procedimiento después no cambia esta orden.</span>
                 </asp:Panel>
             </div>
 

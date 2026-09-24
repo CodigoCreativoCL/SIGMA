@@ -416,99 +416,206 @@
        Elegir una variable marca su fila en la tabla, acota las ultimas
        lecturas a esa variable y llena el panel de la derecha. Todo con lo que
        ya vino en la tarjeta. */
+    /* ---- Condicion y medidores ----
+
+       Tres filtros sobre la misma grilla -que es, como esta, como se llama- y
+       un detalle que se abre DEBAJO de la tarjeta elegida. Separar variables
+       y contadores en dos pantallas obligaba a saber de antemano en cual
+       estaba lo que se buscaba. */
     function condicion() {
-        var tarjetas = document.querySelectorAll('.sg-a3-cond-card[data-var]');
+        var tarjetas = document.querySelectorAll('.sg-cond-card');
+        if (!tarjetas.length) return;
+
         var vistas = document.querySelectorAll('#sgCondVistas a[data-cond-vista]');
+        var buscar = document.getElementById('sgCondBuscar');
+        var estado = document.getElementById('sgCondEstado');
+        var detalle = document.getElementById('sgCondDetalle');
+        var nada = document.getElementById('sgCondNada');
+        var secciones = document.querySelectorAll('.sg-cond-seccion');
+        var aviso = document.querySelector('.sg-cond-aviso-ver');
+
+        function vistaActiva() {
+            var a = document.querySelector('#sgCondVistas a.es-activa');
+            return a ? a.getAttribute('data-cond-vista') : 'todas';
+        }
+
+        function filtrar() {
+            var vista = vistaActiva();
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+            var cual = estado ? estado.value : '';
+            var visibles = 0;
+
+            for (var i = 0; i < tarjetas.length; i++) {
+                var t = tarjetas[i];
+                var tipo = t.getAttribute('data-cond');
+
+                var ok = (vista === 'todas' || (vista === 'variables' && tipo === 'variable') || (vista === 'medidores' && tipo === 'medidor'))
+                      && (texto === '' || (t.getAttribute('data-buscar') || '').indexOf(texto) !== -1)
+                      && (cual === '' || t.getAttribute('data-clase') === cual);
+
+                t.classList.toggle('es-oculta', !ok);
+                if (ok) visibles++;
+            }
+
+            /* Una seccion sin tarjetas visibles se va entera: dejar el titulo
+               "Contadores acumulativos 4" sobre un hueco es peor que nada. */
+            for (var s = 0; s < secciones.length; s++) {
+                var quedan = secciones[s].querySelectorAll('.sg-cond-card:not(.es-oculta)').length;
+                var vacia = secciones[s].querySelector('.sg-ot-vacio');
+                secciones[s].classList.toggle('es-oculta', quedan === 0 && !(vacia && vista !== 'medidores' && texto === '' && cual === ''));
+            }
+
+            if (nada) nada.style.display = visibles ? 'none' : 'block';
+        }
 
         for (var v = 0; v < vistas.length; v++)
             vistas[v].onclick = function (ev) {
                 ev.preventDefault();
-                var cual = this.getAttribute('data-cond-vista');
-
                 for (var k = 0; k < vistas.length; k++) vistas[k].classList.remove('es-activa');
                 this.classList.add('es-activa');
-
-                var paneles = document.querySelectorAll('.sg-cond-vista');
-                for (var p = 0; p < paneles.length; p++)
-                    paneles[p].classList.toggle('es-oculta', paneles[p].getAttribute('data-cond-vista') !== cual);
+                filtrar();
             };
 
-        if (!tarjetas.length) return;
+        if (buscar) buscar.oninput = filtrar;
+        if (estado) estado.onchange = filtrar;
 
-        var detalle = document.querySelector('.sg-cond-detalle-cuerpo');
-        var filas = document.querySelectorAll('.sg-cond-fila');
-        var lecturas = document.querySelectorAll('.sg-cond-lec');
-        var deQuien = document.getElementById('sgCondLecturasDe');
+        /* "Ver pendientes" es el mismo filtro de estado, no otra pantalla. */
+        if (aviso) aviso.onclick = function (ev) {
+            ev.preventDefault();
+            if (!estado) return;
+            estado.value = document.querySelector('.sg-cond-card.es-critico') ? 'es-critico' : 'es-aviso';
+            filtrar();
+        };
 
         function dato(etiqueta, valor) {
             if (!valor) return '';
-            var d = document.createElement('div');
-            d.className = 'sg-ot-dato';
-            d.innerHTML = '<div><span class="sg-ot-dato-etq"></span><span class="sg-ot-dato-val"></span></div>';
-            d.querySelector('.sg-ot-dato-etq').textContent = etiqueta;
-            d.querySelector('.sg-ot-dato-val').textContent = valor;
-            return d.outerHTML;
+            return '<div class="sg-cond-det-dato"><span>' + etiqueta + '</span><i class="sg-cond-det-txt"></i></div>';
         }
 
-        function elegir(id) {
-            for (var i = 0; i < tarjetas.length; i++)
-                tarjetas[i].classList.toggle('es-elegida', tarjetas[i].getAttribute('data-var') === String(id));
+        function cerrar() {
+            for (var i = 0; i < tarjetas.length; i++) tarjetas[i].classList.remove('es-elegida');
+            if (detalle) detalle.style.display = 'none';
+        }
 
-            for (var f = 0; f < filas.length; f++)
-                filas[f].classList.toggle('es-elegida', filas[f].getAttribute('data-var-fila') === String(id));
-
-            var vistasLec = 0;
-            for (var l = 0; l < lecturas.length; l++) {
-                var suya = lecturas[l].getAttribute('data-var-lec') === String(id);
-                lecturas[l].classList.toggle('es-oculta', !suya);
-                if (suya) vistasLec++;
-            }
-
-            var card = document.querySelector('.sg-a3-cond-card[data-var="' + id + '"]');
-            if (!card) return;
-
-            var d = function (n) { return card.getAttribute('data-var-' + n) || ''; };
-
-            if (deQuien) deQuien.textContent = ' · ' + d('nombre') + (vistasLec ? '' : ' (sin lecturas)');
-
+        function abrir(card) {
             if (!detalle) return;
 
-            var html = '<div><span class="sg-cond-det-tit"></span></div>' +
+            if (card.classList.contains('es-elegida')) { cerrar(); return; }
+
+            for (var i = 0; i < tarjetas.length; i++) tarjetas[i].classList.remove('es-elegida');
+            card.classList.add('es-elegida');
+
+            var d = function (n) { return card.getAttribute('data-' + n) || ''; };
+            var esVariable = d('cond') === 'variable';
+
+            var etiquetas = ['Contra qué se compara', esVariable ? 'Frecuencia esperada' : 'Plan asociado', 'Dónde se mide'];
+            var valores = [d('rango'), d('frecuencia'), d('sub')];
+
+            var html = '<div class="sg-cond-det-cab">' +
+                       '<div class="sg-cond-det-tit"><i class="sg-cond-det-nom"></i><span class="sg-cond-det-sub2"></span></div>' +
                        '<div class="sg-cond-det-val"></div>' +
-                       '<div><span class="sg-ot-chip ' + chip(d('clase')) + '"></span></div>';
+                       '<a href="javascript:void(0)" class="sg-cond-det-cerrar" title="Cerrar"><i class="mdi mdi-close"></i></a>' +
+                       '</div><div class="sg-cond-det-datos">';
 
-            html += dato('Rangos configurados', d('rango'));
-            html += dato('Frecuencia esperada', d('frecuencia'));
-            html += dato('Componente', d('componente'));
-
-            html += '<a class="sg-ot-btn es-accion" href="' + d('serie') + '" target="_blank" rel="noopener">' +
-                    '<i class="mdi mdi-chart-line"></i>Ver historial completo</a>';
-            html += '<a class="sg-ot-btn es-accion" href="javascript:void(0)" data-var-abrir="1">' +
-                    '<i class="mdi mdi-tune-variant"></i>Configurar umbrales</a>';
+            for (var e = 0; e < etiquetas.length; e++) html += dato(etiquetas[e], valores[e]);
+            html += '</div>';
 
             detalle.innerHTML = html;
-            detalle.querySelector('.sg-cond-det-tit').textContent = d('nombre');
-            detalle.querySelector('.sg-cond-det-val').textContent = d('valor');
-            detalle.querySelector('.sg-ot-chip').textContent = d('estado');
+            detalle.style.display = 'block';
 
-            var abrir = detalle.querySelector('[data-var-abrir]');
-            if (abrir) abrir.onclick = function () { abrirVariable(d('query')); };
+            /* Los textos se escriben como texto, nunca como HTML: el nombre de
+               una variable lo escribe una persona. */
+            var nom = detalle.querySelector('.sg-cond-det-nom');
+            if (nom) nom.textContent = d('titulo');
+
+            var sub = detalle.querySelector('.sg-cond-det-sub2');
+            if (sub) sub.textContent = d('sub');
+
+            var val = detalle.querySelector('.sg-cond-det-val');
+            var numero = card.querySelector('.sg-cond-card-val');
+
+            /* El numero y la unidad son dos nodos pegados: leer el textContent
+               del contenedor los junta en "27,6A". */
+            if (val && numero) {
+                var n = numero.querySelector('b'), u = numero.querySelector('small');
+                val.textContent = (n ? n.textContent : '') + (u ? ' ' + u.textContent : '');
+            }
+
+            var textos = detalle.querySelectorAll('.sg-cond-det-txt');
+            var puestos = 0;
+            for (var x = 0; x < valores.length; x++) {
+                if (!valores[x]) continue;
+                if (textos[puestos]) textos[puestos].textContent = valores[x];
+                puestos++;
+            }
+
+            // ---- el historial de ESTA tarjeta ----
+            var lecturas = document.querySelectorAll('#sgCondFuente .sg-cond-lec[data-de="' + d('id') + '"]');
+
+            if (esVariable) {
+                var lista = document.createElement('div');
+                lista.innerHTML = '<p class="sg-cond-det-sub">Últimas lecturas</p>';
+
+                if (lecturas.length) {
+                    for (var l = 0; l < lecturas.length; l++) lista.appendChild(lecturas[l].cloneNode(true));
+                } else {
+                    var p = document.createElement('p');
+                    p.className = 'sg-ot-vacio-txt';
+                    p.textContent = 'Sin lecturas en los últimos 90 días.';
+                    lista.appendChild(p);
+                }
+
+                detalle.appendChild(lista);
+            }
+
+            // ---- las acciones ----
+            var acciones = document.createElement('div');
+            acciones.className = 'sg-cond-det-acciones';
+
+            if (d('lectura'))
+                acciones.appendChild(boton('mdi-plus', 'Registrar lectura', 'es-primario', function () {
+                    abrirLectura(d('lectura'));
+                }));
+
+            if (esVariable && d('serie')) {
+                var a = document.createElement('a');
+                a.className = 'sg-ot-btn es-accion';
+                a.href = d('serie');
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.innerHTML = '<i class="mdi mdi-chart-line"></i>';
+                a.appendChild(document.createTextNode('Ver historial completo'));
+                acciones.appendChild(a);
+            }
+
+            if (d('editar') === '1')
+                acciones.appendChild(boton('mdi-tune-variant',
+                    esVariable ? 'Configurar umbrales' : 'Editar contador', 'es-accion', function () {
+                        if (esVariable) abrirVariable(d('query')); else abrirMedidor(d('query'));
+                    }));
+
+            detalle.appendChild(acciones);
+
+            var equis = detalle.querySelector('.sg-cond-det-cerrar');
+            if (equis) equis.onclick = cerrar;
+
+            detalle.scrollIntoView({ block: 'nearest' });
         }
 
-        function chip(clase) {
-            if (clase === 'es-normal') return 'es-ok';
-            if (clase === 'es-critico') return 'es-rojo';
-            if (clase === 'es-aviso') return 'es-aviso';
-            return 'es-neutro';
+        function boton(icono, texto, clase, accion) {
+            var b = document.createElement('a');
+            b.className = 'sg-ot-btn ' + clase;
+            b.href = 'javascript:void(0)';
+            b.innerHTML = '<i class="mdi ' + icono + '"></i>';
+            b.appendChild(document.createTextNode(texto));
+            b.onclick = accion;
+            return b;
         }
 
         for (var i = 0; i < tarjetas.length; i++)
-            tarjetas[i].onclick = function () { elegir(this.getAttribute('data-var')); };
+            tarjetas[i].onclick = function () { abrir(this); };
 
-        for (var f = 0; f < filas.length; f++)
-            filas[f].onclick = function () { elegir(this.getAttribute('data-var-fila')); };
-
-        elegir(tarjetas[0].getAttribute('data-var'));
+        filtrar();
     }
 
     /* ---- Fallas: dos vistas y un filtro ----

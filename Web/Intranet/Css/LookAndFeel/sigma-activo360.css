@@ -917,55 +917,247 @@ input.sg-ot-btn.es-accion {
    numero (las ultimas lecturas). Elegir una tarjeta acota las lecturas a esa
    variable: la pregunta nunca es "las lecturas del equipo", es "las de esta".
    ========================================================================= */
-.sg-cond-vistas { margin-bottom: 14px; }
-.sg-cond-vista.es-oculta { display: none; }
+.sg-cond-vistas { margin-bottom: 4px; }
 
-.sg-cond-cols {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
-    gap: 14px;
-    align-items: start;
-}
-
-.sg-cond-bloque { margin-top: 16px; }
-.sg-cond-bloque h4 {
+/* ---- La cabecera: buscar, filtrar, configurar, registrar --------------- */
+.sg-cond-top { flex-wrap: wrap; row-gap: 10px; }
+.sg-cond-acciones {
     display: flex;
     align-items: center;
-    gap: 7px;
-    margin: 0 0 8px;
-    font-size: 13.5px;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+.sg-cond-buscar { min-width: 240px; }
+
+/* ---- La banda de pendientes ------------------------------------------- */
+.sg-cond-aviso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--sg-warning);
+    border-left-width: 4px;
+    background: var(--sg-warning-subtle, #fff8ec);
+    font-size: 13px;
     color: var(--sg-texto);
 }
-.sg-cond-bloque h4 i { color: var(--sg-suave); font-size: 16px; }
-.sg-cond-bloque h4 span { font-weight: 500; color: var(--sg-suave); }
-
-/* La tarjeta ahora se puede elegir: deja de ser un cartel y pasa a ser un
-   filtro de lo que se ve abajo. */
-a.sg-a3-cond-card { text-decoration: none; cursor: pointer; display: block; }
-a.sg-a3-cond-card:hover { background: var(--sg-surface-subtle); }
-.sg-a3-cond-card.es-elegida {
-    box-shadow: 0 0 0 2px var(--sg-p);
-    background: #faf9ff;
+.sg-cond-aviso.es-critico {
+    border-color: var(--sg-danger);
+    background: var(--sg-danger-subtle, #fff1f1);
+}
+.sg-cond-aviso > i { font-size: 20px; color: var(--sg-warning); }
+.sg-cond-aviso.es-critico > i { color: var(--sg-danger); }
+.sg-cond-aviso strong { font-size: 14px; }
+.sg-cond-aviso span { color: var(--sg-suave); }
+.sg-cond-aviso span::before { content: "|"; margin: 0 10px; color: var(--sg-borde); }
+.sg-cond-aviso-ver {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--sg-p);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
 }
 
-.sg-cond-cab,
-.sg-cond-fila { grid-template-columns: minmax(150px, 1.6fr) 120px 90px 150px minmax(160px, 1.8fr); }
-.sg-cond-fila.es-elegida { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
-.sg-cond-rango { font-size: 11.5px; color: var(--sg-suave); }
+/* ---- Las dos secciones ------------------------------------------------ */
+.sg-cond-seccion { margin-top: 18px; }
+.sg-cond-seccion.es-oculta { display: none; }
+.sg-cond-seccion h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    color: var(--sg-texto);
+}
+.sg-cond-seccion h4 b {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-suave);
+    font-size: 11.5px;
+}
+.sg-cond-seccion > p { margin: 3px 0 12px; font-size: 12.5px; color: var(--sg-tenue); }
 
-.sg-cond-lec-cab,
-.sg-cond-lec { grid-template-columns: 180px 110px 90px minmax(120px, 1fr) 130px; }
-.sg-cond-lec.es-oculta { display: none; }
+.sg-cond-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
 
-.sg-cond-detalle { position: sticky; top: 14px; }
-.sg-cond-detalle-cuerpo { display: grid; gap: 10px; }
-.sg-cond-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); }
-.sg-cond-det-val { font-size: 26px; font-weight: 700; color: var(--sg-texto); }
-.sg-cond-det-val small { font-size: 14px; font-weight: 500; color: var(--sg-suave); }
+/* ---- La tarjeta -------------------------------------------------------
+   Cuatro renglones fijos -identidad, numero, contra que, cuando- para que
+   doce tarjetas se lean como una tabla y no como doce carteles sueltos. */
+a.sg-cond-card {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-left: 3px solid transparent;
+    border-radius: 14px;
+    background: var(--sg-surface);
+    text-decoration: none;
+    cursor: pointer;
+    transition: box-shadow .12s, border-color .12s;
+}
+a.sg-cond-card:hover { box-shadow: 0 2px 10px rgba(13, 13, 13, .07); }
+a.sg-cond-card.es-elegida { border-color: var(--sg-p); box-shadow: 0 0 0 2px rgba(108, 92, 255, .18); }
+a.sg-cond-card.es-oculta { display: none; }
 
-@media (max-width: 1400px) {
-    .sg-cond-cols { grid-template-columns: minmax(0, 1fr); }
-    .sg-cond-detalle { position: static; }
+.sg-cond-card.es-normal { border-left-color: transparent; }
+.sg-cond-card.es-aviso { border-left-color: var(--sg-warning); }
+.sg-cond-card.es-critico { border-left-color: var(--sg-danger); }
+.sg-cond-card.es-sin { border-left-color: var(--sg-borde); }
+
+.sg-cond-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.sg-cond-ico {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 17px;
+}
+.sg-cond-card.es-critico .sg-cond-ico { background: var(--sg-danger-subtle, #fff1f1); color: var(--sg-danger); }
+.sg-cond-card.es-aviso .sg-cond-ico { background: var(--sg-warning-subtle, #fff8ec); color: var(--sg-warning); }
+
+.sg-cond-card-id { display: grid; gap: 1px; min-width: 0; }
+.sg-cond-card-id strong {
+    font-size: 13.5px;
+    color: var(--sg-texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-cond-card-id span {
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* El chip va arriba a la derecha y no empuja el titulo. */
+.sg-cond-card-top .sg-ot-chip {
+    margin-left: auto;
+    flex: none;
+    font-size: 11px;
+    padding: 3px 8px;
+}
+
+.sg-cond-card-val { display: flex; align-items: baseline; gap: 5px; }
+.sg-cond-card-val b { font-size: 30px; font-weight: 700; color: var(--sg-texto); line-height: 1; }
+.sg-cond-card-val small { font-size: 13px; font-weight: 500; color: var(--sg-suave); }
+
+.sg-cond-card-ref { display: grid; gap: 2px; font-size: 12px; color: var(--sg-suave); }
+.sg-cond-card-ref small { font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-cond-card-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+    padding-top: 9px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-cond-card-pie > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.sg-cond-card-pie em { font-style: normal; color: var(--sg-p); font-weight: 600; white-space: nowrap; }
+
+.sg-cond-nada { margin: 18px 0; font-size: 13px; color: var(--sg-tenue); text-align: center; }
+
+/* ---- El detalle desplegado -------------------------------------------
+   Se abre DEBAJO de la fila de la tarjeta elegida y no al costado: en una
+   grilla de cuatro columnas, un panel lateral mueve todo lo demas. */
+.sg-cond-detalle {
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface-subtle);
+}
+.sg-cond-det-cab { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.sg-cond-det-tit { font-size: 16px; font-weight: 700; color: var(--sg-texto); }
+.sg-cond-det-tit span { display: block; font-size: 12px; font-weight: 500; color: var(--sg-tenue); }
+.sg-cond-det-val { margin-left: auto; font-size: 26px; font-weight: 700; color: var(--sg-texto); white-space: nowrap; }
+.sg-cond-det-cerrar {
+    flex: none;
+    color: var(--sg-tenue);
+    font-size: 18px;
+    text-decoration: none;
+}
+.sg-cond-det-cerrar:hover { color: var(--sg-texto); }
+
+.sg-cond-det-datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.sg-cond-det-dato {
+    padding: 10px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-texto);
+}
+.sg-cond-det-dato span { display: block; font-size: 11px; color: var(--sg-tenue); margin-bottom: 2px; }
+
+/* El texto de cada dato va en un <i> para poder escribirlo con textContent:
+   el nombre de una variable lo escribe una persona y no se inyecta como HTML. */
+.sg-cond-det-txt,
+.sg-cond-det-nom,
+.sg-cond-det-sub2 { font-style: normal; }
+.sg-cond-det-nom { display: block; }
+.sg-cond-det-sub2 { display: block; font-size: 12px; font-weight: 500; color: var(--sg-tenue); }
+
+.sg-cond-det-sub {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-cond-det-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* El historial: una linea por lectura, no una tabla con cabecera. */
+.sg-cond-lec {
+    display: grid;
+    grid-template-columns: 170px 120px minmax(110px, 1fr) 120px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-suave);
+}
+.sg-cond-lec + .sg-cond-lec { margin-top: 6px; }
+.sg-cond-lec b { color: var(--sg-texto); font-size: 13.5px; }
+
+@media (max-width: 1400px) { .sg-cond-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .sg-cond-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+    .sg-cond-grid { grid-template-columns: minmax(0, 1fr); }
+    .sg-cond-acciones { margin-left: 0; width: 100%; }
+    .sg-cond-buscar { flex: 1 1 100%; }
+    .sg-cond-lec { grid-template-columns: minmax(0, 1fr) auto; }
 }
 
 /* ---- La foto del componente en su fila ---- */

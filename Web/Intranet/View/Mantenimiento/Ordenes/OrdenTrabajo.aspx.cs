@@ -242,6 +242,11 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         sm.RegisterAsyncPostBackControl(btnIndLimpiar);
         sm.RegisterAsyncPostBackControl(btnCerrarOT);
 
+        /* Copiar los pasos de un procedimiento es un LinkButton: sin esto
+           postea con __doPostBack desde el href y recarga la pagina entera,
+           que es como este boton "no hacia nada". */
+        sm.RegisterAsyncPostBackControl(lnkAgregarPasos);
+
         udPanel.Update();
     }
 
@@ -756,6 +761,49 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
     #endregion
 
+    /// <summary>
+    /// Los procedimientos del cliente. Se cargan una vez: la lista no cambia
+    /// entre postbacks y volver a pedirla en cada uno es una consulta de mas.
+    /// </summary>
+    private void CargarProcedimientos()
+    {
+        if (cboProcedimiento.Items.Count > 0) return;
+
+        cboProcedimiento.Items.Add(new RadComboBoxItem("Elija un procedimiento...", ""));
+
+        List<Procedimiento> lista = new ProcedimientoController().GetProcedimientos(
+            new Procedimiento { prc_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true })
+            ?? new List<Procedimiento>();
+
+        foreach (Procedimiento p in lista)
+            cboProcedimiento.Items.Add(new RadComboBoxItem(
+                (string.IsNullOrEmpty(p.prc_codigo) ? "" : p.prc_codigo + " · ") + p.prc_nombre,
+                p.prc_id.ToString()));
+    }
+
+    /// <summary>
+    /// Copia a esta orden los pasos del procedimiento elegido.
+    ///
+    /// Es la misma operacion que hace el plan cuando genera una orden desde
+    /// una ocurrencia: el nombre y la instruccion se copian, no se
+    /// referencian. Volver a apretar no duplica la lista.
+    /// </summary>
+    protected void lnkAgregarPasos_Click(object sender, EventArgs e)
+    {
+        Pestana("pasos");
+
+        int procedimiento;
+        if (!int.TryParse(cboProcedimiento.SelectedValue, out procedimiento) || procedimiento <= 0)
+        {
+            Tools.tools.ClientAlert("Elija el procedimiento cuyos pasos quiere agregar.", "alerta");
+            return;
+        }
+
+        Respuesta r = new OrdenTrabajoController().AgregarPasosDeProcedimiento(Id, procedimiento);
+
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+    }
+
     #region Pasos (lectura)
 
     private void PintarPasos()
@@ -785,6 +833,13 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         rptPasos.DataBind();
 
         pnlSinPasos.Visible = pasos.Count == 0;
+
+        /* Copiar pasos es planificar, no ejecutar: lo puede hacer quien crea
+           ordenes, y solo mientras la orden siga abierta. */
+        bool cerradaOt = Id > 0 && Orden().otr_orden_trabajo_estado == 4;
+        pnlAgregarPasos.Visible = Id > 0 && Token.Puede("CREAR ORDEN TRABAJO") && !cerradaOt;
+
+        if (pnlAgregarPasos.Visible) CargarProcedimientos();
 
         litPasoDetalle.Text = pasos.Count == 0
             ? "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-gesture-tap-button\"></i><p>Sin pasos que mostrar</p></div>"
