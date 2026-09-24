@@ -201,6 +201,7 @@ html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
 .sigma-modal-grid > .is-mini   { grid-column: span 2; }  /* ID, un numero corto   */
 .sigma-modal-grid > .is-chico  { grid-column: span 3; }  /* codigo, fecha, cantidad */
 .sigma-modal-grid > .is-medio  { grid-column: span 4; }  /* explicito, por claridad */
+.sigma-modal-grid > .is-cuarto { grid-column: span 3; }  /* cuatro por fila       */
 .sigma-modal-grid > .is-cinco  { grid-column: span 5; }  /* un grupo de casillas   */
 .sigma-modal-grid > .is-mitad  { grid-column: span 6; }
 .sigma-modal-grid > .is-grande { grid-column: span 8; }

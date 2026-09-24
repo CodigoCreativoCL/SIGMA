@@ -595,11 +595,19 @@ a.sg-a3-chip.es-activa b { color: #fff; }
     margin: 0;
 }
 @media (min-width: 1100px) {
+    /* La columna de la derecha tiene un ancho fijo -lo que adjunta cabe en
+       400px- para que la de la izquierda se quede con todo lo demas y los
+       campos entren de a tres. */
     .sg-a3-ficha-grid {
         display: grid;
-        grid-template-columns: 1.65fr 1fr;
+        grid-template-columns: minmax(0, 1fr) 400px;
         gap: 14px;
         align-items: start;
+
+        /* Sin "dense" la imagen arranca en la fila 4 -debajo de las tres
+           secciones de la izquierda- porque la rejilla no vuelve atras a
+           buscar hueco. La columna derecha tiene que empezar arriba. */
+        grid-auto-flow: dense;
     }
 
     /* Izquierda lo que se escribe, derecha lo que se adjunta. Cada seccion
@@ -645,3 +653,102 @@ a.sg-a3-chip.es-activa b { color: #fff; }
 }
 .sg-a3-ficha-sucio i { font-size: 18px; color: #f59e0b; }
 .sg-a3-ficha.es-sucia .sg-a3-ficha-sucio { display: inline-flex; }
+
+/* ---- La ficha dentro del centro: el mismo formulario, otra piel ---------- */
+
+/* El id no se muestra: quien mira la ficha de un equipo lo reconoce por su
+   codigo -ACT-34-, no por el numero de la fila. */
+.sg-a3-ficha .es-id { display: none; }
+
+/* Los titulos de seccion dejan de gritar: en el modal son una guia rapida,
+   aca son la estructura de una pantalla. */
+.sg-a3-ficha .sigma-form-seccion .titulo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-transform: none;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--sg-texto);
+    border: 0;
+    padding: 0 0 12px;
+}
+.sg-a3-ficha .sigma-form-seccion .titulo i {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 17px;
+}
+
+/* Habilitado se lee de un vistazo: dos botones pegados, el elegido marcado. */
+.sg-a3-ficha .sigma-modal-opciones {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 999px;
+    background: #f4f5fa;
+}
+.sg-a3-ficha .sigma-modal-opciones label {
+    padding: 5px 16px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-suave);
+    cursor: pointer;
+}
+.sg-a3-ficha .sigma-modal-opciones input { display: none; }
+.sg-a3-ficha .sigma-modal-opciones input:checked + label {
+    background: var(--sg-p);
+    color: #fff;
+}
+
+/* Los datos de auditoria, en la barra de abajo. */
+.sg-a3-pie-dato {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-right: 22px;
+}
+.sg-a3-pie-dato i { font-size: 17px; color: var(--sg-tenue); }
+.sg-a3-pie-dato b { display: block; color: var(--sg-suave); font-weight: 700; }
+
+/* ---- El reparto de campos de la ficha dentro del centro ------------------
+
+   sigma-orden.css reparte los campos de CUALQUIER .sigma-modal-grid que este
+   dentro de un .sg-ot, y el centro lo es: ahi un campo "chico" mide un tercio
+   y uno "medio" la mitad, que para la orden esta bien y para la ficha deja
+   dos campos por fila donde caben tres. Se vuelve al reparto de la ficha.
+   ------------------------------------------------------------------------ */
+@media (min-width: 1100px) {
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-chico { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-medio { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-cuarto { grid-column: span 3; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-grande { grid-column: span 8; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-ancho { grid-column: span 12; }
+}
+
+/* La columna de la derecha es angosta: lo que en el modal iba en una linea
+   -boton, nombre del archivo, quitar- aca se apila. */
+.sg-a3-ficha .es-imagen .sigma-modal-field > label,
+.sg-a3-ficha .es-documentos .sigma-modal-field > label { display: none; }
+
+.sg-a3-ficha .sigma-img-uploader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+.sg-a3-ficha .sigma-img-btn { justify-content: center; white-space: nowrap; }
+
+.sg-a3-ficha #pnlImagenActual > div,
+.sg-a3-ficha [id$="pnlImagenActual"] > div {
+    flex-direction: column;
+    align-items: flex-start;
+}
+.sg-a3-ficha [id$="pnlImagenActual"] img { max-width: 100%; }
+.sg-a3-ficha [id$="pnlImagenActual"] label { white-space: normal; line-height: 1.35; }

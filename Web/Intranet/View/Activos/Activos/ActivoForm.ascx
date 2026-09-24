@@ -28,6 +28,55 @@
         .sigma-doc .nom { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .sigma-doc .ver { color: #6C5CFF !important; font-weight: 600; text-decoration: none; }
         .sigma-doc .quitar { color: #b91c1c !important; font-weight: 600; text-decoration: none; }
+
+        /* El asterisco del campo obligatorio se ve, no se lee entre parentesis. */
+        .req { color: #dc2626; font-weight: 700; }
+
+        /* Zona vacia de la imagen: dice que falta y como ponerlo. */
+        .sigma-img-vacio {
+            width: 100%;
+            display: grid;
+            place-items: center;
+            gap: 4px;
+            padding: 26px 16px;
+            border: 1.5px dashed #d7dbe7;
+            border-radius: 12px;
+            background: #fbfbfe;
+            text-align: center;
+        }
+        .sigma-img-vacio i { font-size: 30px; color: #b6bccd; }
+        .sigma-img-vacio strong { font-size: 13.5px; color: #475569; }
+        .sigma-img-vacio span { font-size: 12px; color: #8a93a6; max-width: 260px; }
+
+        /* Documentos: la misma zona, para que se lea como un lugar donde soltar. */
+        .sigma-doc-zona {
+            display: grid;
+            place-items: center;
+            gap: 8px;
+            padding: 22px 16px;
+            border: 1.5px dashed #d7dbe7;
+            border-radius: 12px;
+            background: #fbfbfe;
+            text-align: center;
+        }
+        .sigma-doc-zona .sigma-modal-ayuda { text-align: center; }
+        .sigma-doc-btn { margin: 0; }
+
+        /* Encabezado de los datos tecnicos: tres palabras que evitan tener que
+           adivinar cual caja es cual. */
+        .sigma-nd-cab {
+            display: grid;
+            grid-template-columns: 1fr 1fr 150px 22px;
+            gap: 6px;
+            padding: 0 2px 6px;
+            border-bottom: 1px solid #eceef5;
+            margin-bottom: 8px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #8a93a6;
+            text-transform: uppercase;
+            letter-spacing: .03em;
+        }
     </style>
     <script type="text/javascript">
         // Muestra los nombres de los documentos elegidos (aún sin subir).
@@ -147,7 +196,7 @@
         <div class="titulo"><i class="mdi mdi-cog-outline"></i>Identificación</div>
 
         <div class="sigma-modal-grid">
-            <div class="sigma-modal-field is-mini">
+            <div class="sigma-modal-field is-mini es-id">
                 <label>ID</label>
                 <asp:Label ID="lblId" runat="server"></asp:Label>
             </div>
@@ -163,19 +212,19 @@
                 <span class="sigma-modal-ayuda">El prefijo lo pone el sistema; escriba usted el resto (por ejemplo <em>CALDERAS</em>). Si lo deja vacío, se numera solo.</span>
             </div>
             <div class="sigma-modal-field is-medio">
-                <label>Nombre(*)</label>
+                <label>Nombre <span class="req">*</span></label>
                 <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
                 <asp:CustomValidator ID="cvNombre" runat="server" ControlToValidate="txtNombre"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
             </div>
             <div class="sigma-modal-field is-chico">
-                <label>Tipo(*)</label>
+                <label>Tipo <span class="req">*</span></label>
                 <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
                     OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
             </div>
-            <div class="sigma-modal-field is-medio">
+            <div class="sigma-modal-field is-medio is-cuarto">
                 <label>Modelo</label>
                 <rad:RadComboBox2 ID="cboModelo" runat="server" AutoPostBack="true"
                     OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%" />
@@ -184,20 +233,20 @@
                     <a href="javascript:void(0)" onclick="nuevoModelo()" style="color:#6C5CFF;font-weight:600;">+ Nuevo modelo</a>
                 </span>
             </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Estado(*)</label>
+            <div class="sigma-modal-field is-chico is-cuarto">
+                <label>Estado <span class="req">*</span></label>
                 <rad:RadComboBox2 ID="cboEstado" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
             </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Criticidad(*)</label>
+            <div class="sigma-modal-field is-chico is-cuarto">
+                <label>Criticidad <span class="req">*</span></label>
                 <rad:RadComboBox2 ID="cboCriticidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvCriticidad" runat="server" ControlToValidate="cboCriticidad"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
             </div>
-            <div class="sigma-modal-field is-medio">
-                <label>Habilitado(*)</label>
+            <div class="sigma-modal-field is-medio is-cuarto">
+                <label>Habilitado <span class="req">*</span></label>
                 <div class="sigma-modal-opciones">
                     <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" />
                     <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" />
@@ -213,7 +262,7 @@
 
         <div class="sigma-modal-grid">
             <div class="sigma-modal-field is-chico">
-                <label>Planta(*)</label>
+                <label>Planta <span class="req">*</span></label>
                 <rad:RadComboBox2 ID="cboPlanta" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="cboPlanta"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
@@ -276,6 +325,14 @@
             <div class="sigma-modal-field is-medio">
                 <label>Imagen del activo</label>
                 <div class="sigma-img-uploader">
+                    <%-- El estado vacio dice QUE falta y COMO ponerlo. Un boton
+                         solo, sin nada alrededor, no dice que el equipo no
+                         tiene foto: parece que la foto no cargo. --%>
+                    <asp:Panel ID="pnlSinImagen" runat="server" CssClass="sigma-img-vacio">
+                        <i class="mdi mdi-image-off-outline"></i>
+                        <strong>Sin imagen</strong>
+                        <span>Agrega una imagen del equipo (PNG, JPG) para su identificación.</span>
+                    </asp:Panel>
                     <label for="fuImagen" class="sigma-img-btn"><i class="mdi mdi-image-plus-outline"></i> Elegir imagen</label>
                     <asp:FileUpload ID="fuImagen" runat="server" accept="image/*" ClientIDMode="Static" onchange="sigmaPrevImg(this)" style="display:none;" />
                     <span id="sigmaFileName" class="sigma-img-name"></span>
@@ -302,6 +359,8 @@
         <div class="titulo"><i class="mdi mdi-tune-variant"></i>Datos técnicos</div>
 
         <%-- Datos ya definidos (del tipo): editar valor + unidad. --%>
+        <div class="sigma-nd-cab"><span>Nombre</span><span>Valor</span><span>Unidad</span><span></span></div>
+
         <div class="sigma-modal-grid">
             <asp:Repeater ID="rptDatos" runat="server" OnItemDataBound="rptDatos_ItemDataBound">
                 <ItemTemplate>
@@ -350,8 +409,8 @@
             <FooterTemplate></div></FooterTemplate>
         </asp:Repeater>
 
-        <asp:Panel ID="pnlSubirDocs" runat="server">
-            <label for="fuDocs" class="sigma-img-btn" style="display:inline-flex;align-items:center;gap:7px;margin-top:6px;">
+        <asp:Panel ID="pnlSubirDocs" runat="server" CssClass="sigma-doc-zona">
+            <label for="fuDocs" class="sigma-img-btn sigma-doc-btn">
                 <i class="mdi mdi-upload"></i> Agregar documentos
             </label>
             <asp:FileUpload ID="fuDocs" runat="server" AllowMultiple="true" ClientIDMode="Static"

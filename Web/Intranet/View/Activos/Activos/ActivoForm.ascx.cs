@@ -238,6 +238,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
            izquierda, lo que se adjunta a la derecha-; el modal es angosto y
            las deja una debajo de otra. La diferencia es una clase. */
         pnlSecciones.CssClass = EnCentro ? "sg-a3-ficha-grid" : "";
+        wucAuditoria.Visible = !EnCentro;
 
         CargarDatos();
         CargarModelos();   // depende del tipo ya seleccionado por CargarDatos
@@ -500,11 +501,19 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             rdbSi.Checked = entidad.act_habilitado;
             rdbNo.Checked = !entidad.act_habilitado;
 
+            /* En el centro la auditoria va en la barra fija de abajo, al lado
+               de Guardar: es el dato que se mira justo antes de tocar algo
+               -quien fue el ultimo que lo cambio- y no al final de la ficha. */
+            litAuditoriaPie.Text =
+                Pie("mdi-account-plus-outline", "Creado", entidad.usuario_creacion_nombre, entidad.act_fecha_creacion) +
+                Pie("mdi-clock-outline", "Última edición", entidad.usuario_actualizacion_nombre, entidad.act_fecha_actualizacion);
+
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.act_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.act_fecha_actualizacion);
 
             // Vista previa de la imagen actual, si la tiene.
             int idImagen = new ActivoImagenController().GetImagenId(ActivoId, SitioBase.Session.ClienteId());
+            pnlSinImagen.Visible = idImagen <= 0;
             if (idImagen > 0)
             {
                 imgActual.Src = UrlArchivo.Ver(idImagen);
@@ -522,6 +531,18 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     /// excepción de RadComboBox cuando el id ya no está en la lista (por
     /// ejemplo, un tipo deshabilitado después de haberse asignado).
     /// </summary>
+    /// <summary>Un dato de la barra de abajo: quien y cuando.</summary>
+    private string Pie(string icono, string etiqueta, string usuario, DateTime? fecha)
+    {
+        if (fecha == null && string.IsNullOrEmpty(usuario)) return "";
+
+        return "<span class=\"sg-a3-pie-dato\"><i class=\"mdi " + icono + "\"></i>" +
+               "<span><b>" + Server.HtmlEncode(etiqueta) + "</b>" +
+               Server.HtmlEncode(string.IsNullOrEmpty(usuario) ? "Sin registro" : usuario) +
+               (fecha == null ? "" : " · " + fecha.Value.ToString("dd MMM yyyy HH:mm")) +
+               "</span></span>";
+    }
+
     private void SeleccionarCombo(RadComboBox2 combo, int id)
     {
         RadComboBoxItem item = combo.FindItemByValue(id.ToString());
