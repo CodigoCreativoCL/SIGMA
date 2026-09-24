@@ -1581,6 +1581,96 @@
         pintar();
     }
 
+    /* ---- El evento elegido de la linea de tiempo ----
+
+       La linea responde "que paso y cuando"; el panel del costado responde
+       "que fue exactamente eso", sin salir a la pantalla de origen y perder
+       el lugar en la linea. Todo lo que muestra ya viaja en el <li>: pedirlo
+       al abrirlo seria un ida y vuelta por cada evento que se toca. */
+    function historial() {
+        var hitos = document.querySelectorAll('.sg-hist-hito');
+        if (!hitos.length) return;
+
+        var panel = document.getElementById('sgHistDetalle');
+        if (!panel) return;
+
+        function dato(etiqueta, valor) {
+            var d = document.createElement('div');
+            d.className = 'sg-ot-dato';
+            d.innerHTML = '<div><span class="sg-ot-dato-etq"></span><span class="sg-ot-dato-val"></span></div>';
+            d.querySelector('.sg-ot-dato-etq').textContent = etiqueta;
+            d.querySelector('.sg-ot-dato-val').textContent = valor;
+            return d;
+        }
+
+        function pintar(hito) {
+            for (var i = 0; i < hitos.length; i++) hitos[i].classList.remove('es-elegido');
+            hito.classList.add('es-elegido');
+
+            var d = function (n) { return hito.getAttribute('data-' + n) || ''; };
+
+            panel.innerHTML =
+                '<div class="sg-ot-card">' +
+                '<header class="sg-ot-card-cab">' +
+                '<span class="sg-ot-card-ico"><i class="mdi ' + (d('icono') || 'mdi-information-outline') + '"></i></span>' +
+                '<div><h3>Evento seleccionado</h3></div>' +
+                '<span class="sg-ot-chip es-neutro sg-hist-det-tipo"></span>' +
+                '</header>' +
+                '<div class="sg-hist-det-tit"></div>' +
+                '<div class="sg-hist-det-cuando"></div>' +
+                '<div class="sg-hist-det-datos"></div>' +
+                '<div class="sg-hist-det-acc"></div>' +
+                '</div>';
+
+            /* Los textos se escriben como TEXTO: el titulo de una falla y el
+               nombre de quien la reporto los escribio una persona. */
+            panel.querySelector('.sg-hist-det-tipo').textContent = d('etiqueta');
+            panel.querySelector('.sg-hist-det-tit').textContent =
+                (d('codigo') ? d('codigo') + ' · ' : '') + d('titulo');
+            panel.querySelector('.sg-hist-det-cuando').textContent =
+                d('cuando') + (d('responsable') ? ' · ' + d('responsable') : '');
+
+            var caja = panel.querySelector('.sg-hist-det-datos');
+
+            if (d('detalle')) caja.appendChild(dato('Detalle', d('detalle')));
+
+            /* Los pares vienen en una cadena y no en JSON: son etiqueta y
+               valor, sin anidar, y armar JSON en el servidor para esto obliga
+               a escapar comillas en ambos lados. */
+            var pares = d('datos') ? d('datos').split('¦') : [];
+
+            for (var p = 0; p < pares.length; p++) {
+                var corte = pares[p].indexOf('|');
+                if (corte < 1) continue;
+
+                caja.appendChild(dato(pares[p].substring(0, corte), pares[p].substring(corte + 1)));
+            }
+
+            var acc = panel.querySelector('.sg-hist-det-acc');
+
+            if (d('url')) {
+                var a = document.createElement('a');
+                a.className = 'sg-ot-btn es-primario';
+                a.href = d('url');
+                a.target = '_blank';
+                a.rel = 'noopener';
+                a.innerHTML = '<i class="mdi mdi-open-in-new"></i>';
+                a.appendChild(document.createTextNode(d('url-texto') || 'Abrir el registro'));
+                acc.appendChild(a);
+            }
+        }
+
+        for (var i = 0; i < hitos.length; i++)
+            hitos[i].onclick = function (ev) {
+                if (ev.target.closest('a')) return;
+                pintar(this);
+            };
+
+        /* Se abre con el mas reciente puesto: un panel vacio al lado de una
+           linea llena parece que no cargo. */
+        pintar(hitos[0]);
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -1588,6 +1678,7 @@
         condicion();
         fallas();
         lista();
+        historial();
         filtrables();
         popovers();
         documentos();

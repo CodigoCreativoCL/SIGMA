@@ -2095,3 +2095,102 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
 @media (max-width: 620px) {
     .sg-ot-lb-nav { width: 36px; height: 36px; font-size: 22px; }
 }
+
+/* ---- La linea de tiempo del historial --------------------------------
+   Antes eran tres cosas -estado, posicion y mediciones- y se llamaba
+   "historial". Ahora junta ordenes, inspecciones, fallas, detenciones,
+   repuestos y cambios: lo que alguien busca cuando pregunta que le paso a
+   una maquina. */
+.sg-hist { list-style: none; margin: 0; padding: 0; }
+
+.sg-hist-hito {
+    position: relative;
+    display: grid;
+    grid-template-columns: 96px 34px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 12px 10px 12px 4px;
+    border-radius: 11px;
+    cursor: pointer;
+}
+.sg-hist-hito.es-oculta { display: none; }
+.sg-hist-hito:hover { background: var(--sg-surface-subtle); }
+.sg-hist-hito.es-elegido { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+
+/* El hilo que une los eventos: sin el, la lista se lee como una tabla sin
+   bordes y se pierde la idea de que una cosa paso despues de la otra. */
+.sg-hist-hito::before {
+    content: "";
+    position: absolute;
+    left: 112px;
+    top: 42px;
+    bottom: -12px;
+    width: 1px;
+    background: var(--sg-borde);
+}
+.sg-hist-hito:last-child::before { display: none; }
+
+.sg-hist-cuando { display: grid; gap: 1px; text-align: right; padding-top: 5px; }
+.sg-hist-cuando b { font-size: 12.5px; color: var(--sg-texto); }
+.sg-hist-cuando span { font-size: 11px; color: var(--sg-tenue); }
+
+.sg-hist-ico {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 16px;
+}
+
+/* El color del icono dice de que clase de evento se trata, de un vistazo. */
+.sg-hist-hito.es-orden .sg-hist-ico { background: var(--sg-ramp-2-subtle); color: var(--sg-ramp-2); }
+.sg-hist-hito.es-revision .sg-hist-ico { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-hist-hito.es-aviso .sg-hist-ico { background: var(--sg-warning-subtle); color: var(--sg-warning); }
+.sg-hist-hito.es-falla .sg-hist-ico { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-hist-hito.es-detencion .sg-hist-ico { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-hist-hito.es-repuesto .sg-hist-ico { background: var(--sg-ramp-4-subtle); color: var(--sg-ramp-4); }
+.sg-hist-hito.es-cambio .sg-hist-ico { background: var(--sg-ramp-3-subtle); color: var(--sg-ramp-3); }
+
+.sg-hist-txt { min-width: 0; padding-top: 3px; }
+.sg-hist-tit { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-hist-det {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sg-suave);
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.sg-hist-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-hist-acc { padding-top: 2px; }
+
+/* ---- El panel del evento elegido ---- */
+.sg-hist-detalle { position: sticky; top: 14px; }
+.sg-hist-det-tipo { margin-left: auto; }
+.sg-hist-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); margin-top: 4px; }
+.sg-hist-det-cuando { font-size: 12px; color: var(--sg-tenue); margin-bottom: 10px; }
+.sg-hist-det-datos { display: grid; gap: 8px; }
+.sg-hist-det-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sg-hist-det-acc:empty { display: none; }
+
+@media (max-width: 1100px) {
+    .sg-hist-detalle { position: static; }
+    .sg-hist-hito { grid-template-columns: 84px 30px minmax(0, 1fr); }
+    .sg-hist-hito::before { left: 98px; }
+    .sg-hist-acc { grid-column: 1 / -1; padding-left: 96px; }
+}

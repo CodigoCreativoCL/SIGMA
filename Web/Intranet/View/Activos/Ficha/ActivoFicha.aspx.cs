@@ -825,9 +825,19 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         List<PlanOcurrencia> ocurrencias = new PlanOcurrenciaController().GetCalendario(
             new PlanOcurrencia { filtro_activo = a.act_id }) ?? new List<PlanOcurrencia>();
 
-        List<ActivoFichaEvento> eventos = CargarHistorial(a.act_id);
+        /* Las revisiones y los consumos se leian dentro de su pestaña. Ahora
+           los necesita tambien el historial, asi que se leen aca una vez y se
+           pasan: dos consultas, no cuatro. */
+        List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
+                                          ?? new List<ActivoRevision>();
+
+        List<ActivoConsumo> consumos = new ActivoCentroController().GetConsumos(a.act_id)
+                                       ?? new List<ActivoConsumo>();
+
+        List<ActivoFichaEvento> eventos = LeerCambios(a.act_id);
 
         Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos);
+        Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos);
         Ordenes(ordenes);
         Mantenimiento(a, ocurrencias);
         FichaTecnica(a);
@@ -835,8 +845,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         FallasYDetenciones(a, fallas, detenciones);
         Condicion(a);
         Documentos(a);
-        InspeccionesYTareas(a);
-        RepuestosYCostos(a);
+        InspeccionesYTareas(a, revisiones);
+        RepuestosYCostos(a, consumos);
         SigmaAi(a, ordenes, fallas);
         BitacoraYTrazabilidad(a, eventos);
     }
@@ -1003,43 +1013,302 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 2. Historial
 
-    private List<ActivoFichaEvento> CargarHistorial(int activo)
+    /// <summary>
+    /// Los cambios que registra SEL_ACTIVO_FICHA: estado, posicion y
+    /// mediciones. Es UNA de las fuentes del historial, no el historial.
+    /// </summary>
+    private List<ActivoFichaEvento> LeerCambios(int activo)
     {
         int total;
-        List<ActivoFichaEvento> datos = LeerHistorial(activo, out total) ?? new List<ActivoFichaEvento>();
+        return new ActivoFichaController().GetHistorial(activo, _cliente, "", null, null, true, 1, TOPE_EVENTOS, out total)
+               ?? new List<ActivoFichaEvento>();
+    }
 
-        pnlSinEventos.Visible = datos.Count == 0;
+    /// <summary>Un evento de la linea de tiempo, venga de donde venga.</summary>
+    private class Hito
+    {
+        public DateTime fecha;
+        public string tipo = "";          // la clave con que se filtra
+        public string etiqueta = "";      // como se llama ese tipo en pantalla
+        public string icono = "";
+        public string clase = "";
+        public string codigo = "";
+        public string titulo = "";
+        public string detalle = "";
+        public string responsable = "";
+        public bool deComponente;
+        public string url = "";
+        public string urlTexto = "";
 
-        StringBuilder s = new StringBuilder("<ul class=\"sg-a3-linea\">");
+        /// <summary>Los pares que muestra el panel del costado.</summary>
+        public List<string[]> datos = new List<string[]>();
+    }
 
-        foreach (ActivoFichaEvento ev in datos)
+    /// <summary>
+    /// Todo lo que le paso al equipo, en una sola linea de tiempo.
+    ///
+    /// ANTES ERAN TRES COSAS Y SE LLAMABA "HISTORIAL"
+    ///   SEL_ACTIVO_FICHA devuelve cambios de estado, cambios de posicion y
+    ///   mediciones. Eso deja fuera las ordenes, las inspecciones, las fallas
+    ///   y los repuestos: justamente lo que alguien busca cuando pregunta que
+    ///   le paso a una maquina.
+    ///
+    ///   No hace falta un SP nuevo: el centro ya consulta esas listas para
+    ///   sus otras pestañas. Aca se juntan y se ordenan por fecha, que es lo
+    ///   unico que una linea de tiempo necesita.
+    /// </summary>
+    private void Historial(Activo a, List<OrdenTrabajo> ordenes, List<Falla> fallas,
+                           List<ActivoIndisponibilidad> detenciones, List<ActivoRevision> revisiones,
+                           List<ActivoConsumo> consumos, List<ActivoFichaEvento> cambios)
+    {
+        List<Hito> hitos = new List<Hito>();
+
+        // ---- ordenes de trabajo ----
+        foreach (OrdenTrabajo o in ordenes)
         {
-            s.Append("<li><span class=\"fecha\">")
-             .Append(ev.fecha == null ? "" : ev.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
-             .Append(" · ").Append(Server.HtmlEncode(TipoEtiqueta(ev.tipo_evento))).Append("</span>")
-             .Append("<span class=\"tit\">").Append(Server.HtmlEncode(Texto(ev.titulo))).Append("</span>");
+            DateTime? cuando = o.otr_fecha_fin_real_utc ?? o.otr_fecha_programada_utc ?? o.otr_fecha_creacion;
+            if (cuando == null) continue;
 
-            if (!string.IsNullOrEmpty(ev.detalle))
-                s.Append("<span class=\"det\">").Append(Server.HtmlEncode(ev.detalle)).Append("</span>");
+            Hito h = new Hito();
+            h.fecha = cuando.Value;
+            h.tipo = "orden";
+            h.etiqueta = "Orden de trabajo";
+            h.icono = "mdi-clipboard-text-outline";
+            h.clase = "es-orden";
+            h.codigo = "OT-" + o.otr_correlativo;
+            h.titulo = Texto(o.otr_titulo);
+            h.detalle = string.IsNullOrEmpty(o.otr_resultado) ? Texto(o.otr_descripcion) : o.otr_resultado;
+            h.responsable = Quien(o);
+            h.deComponente = !string.IsNullOrEmpty(o.componente_nombre);
+            h.url = UrlOrden(o.otr_id);
+            h.urlTexto = "Abrir OT completa";
 
-            if (!string.IsNullOrEmpty(ev.usuario_nombre))
-                s.Append("<span class=\"det\">").Append(Server.HtmlEncode(ev.usuario_nombre)).Append("</span>");
+            h.datos.Add(new[] { "Estado", Texto(o.estado_nombre) });
+            h.datos.Add(new[] { "Tipo", Texto(o.tipo_nombre) });
+            h.datos.Add(new[] { "Alcance", h.deComponente ? o.componente_nombre : Texto(a.act_nombre) });
+            if (o.otr_fecha_inicio_real_utc != null) h.datos.Add(new[] { "Inicio", o.otr_fecha_inicio_real_utc.Value.ToString("dd MMM yyyy · HH:mm") });
+            if (o.otr_fecha_fin_real_utc != null) h.datos.Add(new[] { "Fin", o.otr_fecha_fin_real_utc.Value.ToString("dd MMM yyyy · HH:mm") });
+            if (!string.IsNullOrEmpty(o.cierre_motivo_nombre)) h.datos.Add(new[] { "Cierre", o.cierre_motivo_nombre });
+
+            hitos.Add(h);
+        }
+
+        // ---- inspecciones y tareas ----
+        foreach (ActivoRevision r in revisiones)
+        {
+            if (r.fecha == null) continue;
+
+            Hito h = new Hito();
+            h.fecha = r.fecha.Value;
+            h.tipo = r.es_inspeccion ? "inspeccion" : "tarea";
+            h.etiqueta = r.es_inspeccion ? "Inspección" : "Tarea";
+            h.icono = r.es_inspeccion ? "mdi-clipboard-check-outline" : "mdi-check-circle-outline";
+            h.clase = r.resultado_codigo == "CON_OBSERVACION" ? "es-aviso" : "es-revision";
+            h.codigo = Texto(r.codigo);
+            h.titulo = Texto(r.nombre);
+            h.detalle = Texto(r.observacion);
+            h.responsable = Texto(r.responsable);
+
+            h.datos.Add(new[] { "Estado", Texto(r.estado_nombre) });
+            h.datos.Add(new[] { "Resultado", r.resultado_codigo == "CON_OBSERVACION" ? "Con observación"
+                                           : r.resultado_codigo == "CONFORME" ? "Sin observaciones" : "Sin evaluar" });
+            if (r.item_total > 0) h.datos.Add(new[] { "Ítems", r.item_respondido + " de " + r.item_total });
+            if (r.evidencias > 0) h.datos.Add(new[] { "Evidencias", r.evidencias + (r.evidencias == 1 ? " archivo" : " archivos") });
+            if (!string.IsNullOrEmpty(r.dispositivo)) h.datos.Add(new[] { "Fuente del registro", r.dispositivo });
+
+            hitos.Add(h);
+        }
+
+        // ---- fallas ----
+        foreach (Falla f in fallas)
+        {
+            if (f.fal_fecha_deteccion_utc == null) continue;
+
+            Hito h = new Hito();
+            h.fecha = f.fal_fecha_deteccion_utc.Value;
+            h.tipo = "falla";
+            h.etiqueta = "Falla";
+            h.icono = "mdi-alert-outline";
+            h.clase = "es-falla";
+            /* La falla no tiene codigo propio: se identifica por su titulo
+               y su sintoma, que es como la nombra quien la reporto. */
+            h.titulo = Texto(f.fal_titulo);
+            h.detalle = Texto(f.fal_descripcion);
+            h.responsable = Texto(f.reporta_nombre);
+            h.deComponente = f.fal_activo_componente != null;
+            h.url = UrlFalla(f.fal_id);
+            h.urlTexto = "Abrir falla";
+
+            h.datos.Add(new[] { "Estado", f.fal_fecha_solucion_utc == null ? "Abierta" : "Resuelta" });
+            if (!string.IsNullOrEmpty(f.criticidad_nombre)) h.datos.Add(new[] { "Criticidad", f.criticidad_nombre });
+            if (!string.IsNullOrEmpty(f.sintoma_nombre)) h.datos.Add(new[] { "Síntoma", f.sintoma_nombre });
+            if (!string.IsNullOrEmpty(f.componente_nombre)) h.datos.Add(new[] { "Componente", f.componente_nombre });
+            if (f.fal_detuvo_produccion) h.datos.Add(new[] { "Detuvo producción", "Sí" });
+            if (f.fal_fecha_solucion_utc != null) h.datos.Add(new[] { "Resuelta el", f.fal_fecha_solucion_utc.Value.ToString("dd MMM yyyy · HH:mm") });
+
+            hitos.Add(h);
+        }
+
+        // ---- detenciones ----
+        foreach (ActivoIndisponibilidad d in detenciones)
+        {
+            Hito h = new Hito();
+            h.fecha = d.ain_fecha_inicio_utc;
+            h.tipo = "detencion";
+            h.etiqueta = "Detención";
+            h.icono = "mdi-power-plug-off-outline";
+            h.clase = "es-detencion";
+            h.titulo = d.ain_fecha_fin_utc == null ? "El equipo se detuvo" : "Detención del equipo";
+            h.detalle = Texto(d.motivo_nombre);
+            h.responsable = Texto(d.usuario_creacion_nombre);
+
+            h.datos.Add(new[] { "Inicio", d.ain_fecha_inicio_utc.ToString("dd MMM yyyy · HH:mm") });
+            h.datos.Add(new[] { "Fin", d.ain_fecha_fin_utc == null ? "En curso" : d.ain_fecha_fin_utc.Value.ToString("dd MMM yyyy · HH:mm") });
+            if (!string.IsNullOrEmpty(d.motivo_nombre)) h.datos.Add(new[] { "Motivo", d.motivo_nombre });
+
+            hitos.Add(h);
+        }
+
+        // ---- repuestos consumidos ----
+        foreach (ActivoConsumo c in consumos)
+        {
+            if (c.fecha == null) continue;
+
+            Hito h = new Hito();
+            h.fecha = c.fecha.Value;
+            h.tipo = "repuesto";
+            h.etiqueta = "Repuesto";
+            h.icono = "mdi-package-variant-closed";
+            h.clase = "es-repuesto";
+            h.codigo = Texto(c.repuesto_codigo);
+            h.titulo = Texto(c.repuesto_nombre);
+            h.detalle = Cantidad(c.cantidad, c.unidad) + " · " + c.orden_codigo;
+            h.responsable = Texto(c.usuario);
+            h.deComponente = c.componente_id != null;
+            h.url = UrlOrden(c.orden_id);
+            h.urlTexto = "Abrir la orden";
+
+            h.datos.Add(new[] { "Cantidad", Cantidad(c.cantidad, c.unidad) });
+            if (c.costo_registrado) h.datos.Add(new[] { "Costo", Moneda(c.costo) });
+            if (!string.IsNullOrEmpty(c.componente)) h.datos.Add(new[] { "Componente", c.componente });
+            h.datos.Add(new[] { "Orden", c.orden_codigo + " · " + Texto(c.orden_titulo) });
+
+            hitos.Add(h);
+        }
+
+        // ---- cambios de estado, posicion y mediciones ----
+        foreach (ActivoFichaEvento e in cambios)
+        {
+            if (e.fecha == null) continue;
+
+            string clave = (e.tipo_evento ?? "").ToUpperInvariant();
+
+            Hito h = new Hito();
+            h.fecha = e.fecha.Value;
+            h.tipo = clave == "ESTADO" ? "estado" : clave == "POSICION" ? "posicion" : "medicion";
+            h.etiqueta = TipoEtiqueta(e.tipo_evento);
+            h.icono = clave == "ESTADO" ? "mdi-swap-horizontal"
+                    : clave == "POSICION" ? "mdi-map-marker-outline" : "mdi-pulse";
+            h.clase = "es-cambio";
+            h.titulo = Texto(e.titulo);
+            h.detalle = Texto(e.detalle);
+            h.responsable = Texto(e.usuario_nombre);
+
+            if (!string.IsNullOrEmpty(e.detalle)) h.datos.Add(new[] { "Detalle", e.detalle });
+
+            hitos.Add(h);
+        }
+
+        pnlSinEventos.Visible = hitos.Count == 0;
+
+        if (hitos.Count == 0) { litHistorial.Text = ""; return; }
+
+        PintarHistorial(hitos);
+    }
+
+    /// <summary>La linea de tiempo, con su barra de filtros y su pie.</summary>
+    private void PintarHistorial(List<Hito> hitos)
+    {
+        hitos = hitos.OrderByDescending(x => x.fecha).ToList();
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-hist-hito\" data-nombre=\"eventos\">")
+
+         .Append(BarraFiltros(
+                FiltroPeriodo(),
+                FiltroLista("tipo", "mdi-format-list-bulleted-type", "Tipo de evento",
+                            OpcionesDe(hitos.Select(h => h.etiqueta))),
+                FiltroLista("quien", "mdi-account-outline", "Responsable",
+                            OpcionesDe(hitos.Select(h => h.responsable))),
+                FiltroTexto("Buscar por código o descripción..."),
+                FiltroComponentes()))
+
+         .Append("<ul class=\"sg-hist\">");
+
+        int i = 0;
+
+        foreach (Hito h in hitos)
+        {
+            i++;
+
+            StringBuilder datos = new StringBuilder();
+            foreach (string[] d in h.datos)
+            {
+                if (datos.Length > 0) datos.Append("¦");
+                datos.Append(d[0]).Append("|").Append(d[1]);
+            }
+
+            s.Append("<li class=\"sg-hist-hito ").Append(h.clase).Append("\" data-hito=\"h").Append(i)
+             .Append("\" data-fecha=\"").Append(h.fecha.ToString("yyyy-MM-dd"))
+             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(h.etiqueta.ToLowerInvariant()))
+             .Append("\" data-quien=\"").Append(Server.HtmlEncode(Texto(h.responsable).ToLowerInvariant()))
+             .Append("\" data-de-componente=\"").Append(h.deComponente ? "1" : "0")
+             .Append("\" data-txt=\"")
+             .Append(Server.HtmlEncode((h.codigo + " " + h.titulo + " " + h.detalle + " " + h.responsable).ToLowerInvariant()))
+
+             // lo que necesita el panel del costado
+             .Append("\" data-etiqueta=\"").Append(Server.HtmlEncode(h.etiqueta))
+             .Append("\" data-codigo=\"").Append(Server.HtmlEncode(h.codigo))
+             .Append("\" data-titulo=\"").Append(Server.HtmlEncode(h.titulo))
+             .Append("\" data-detalle=\"").Append(Server.HtmlEncode(h.detalle))
+             .Append("\" data-cuando=\"").Append(h.fecha.ToString("dd MMM yyyy · HH:mm"))
+             .Append("\" data-responsable=\"").Append(Server.HtmlEncode(Texto(h.responsable)))
+             .Append("\" data-icono=\"").Append(h.icono)
+             .Append("\" data-url=\"").Append(Server.HtmlEncode(h.url))
+             .Append("\" data-url-texto=\"").Append(Server.HtmlEncode(h.urlTexto))
+             .Append("\" data-datos=\"").Append(Server.HtmlEncode(datos.ToString()))
+             .Append("\">")
+
+             .Append("<span class=\"sg-hist-cuando\"><b>").Append(h.fecha.ToString("dd MMM yyyy"))
+             .Append("</b><span>").Append(h.fecha.ToString("HH:mm")).Append("</span></span>")
+
+             .Append("<span class=\"sg-hist-ico\"><i class=\"mdi ").Append(h.icono).Append("\"></i></span>")
+
+             .Append("<span class=\"sg-hist-txt\">")
+             .Append("<span class=\"sg-hist-tit\">")
+             .Append(string.IsNullOrEmpty(h.codigo) ? "" : Server.HtmlEncode(h.codigo) + " · ")
+             .Append(Server.HtmlEncode(h.titulo)).Append("</span>");
+
+            if (!string.IsNullOrEmpty(h.detalle))
+                s.Append("<span class=\"sg-hist-det\">").Append(Server.HtmlEncode(h.detalle)).Append("</span>");
+
+            s.Append("<span class=\"sg-hist-meta\">")
+             .Append("<span class=\"sg-ot-chip es-neutro\">").Append(Server.HtmlEncode(h.etiqueta)).Append("</span>")
+             .Append(string.IsNullOrEmpty(h.responsable) ? "" : Server.HtmlEncode(h.responsable))
+             .Append("</span></span>");
+
+            if (!string.IsNullOrEmpty(h.url))
+                s.Append("<span class=\"sg-hist-acc\">").Append(Boton(h.url, h.urlTexto)).Append("</span>");
 
             s.Append("</li>");
         }
 
-        litHistorial.Text = datos.Count == 0 ? "" : s.Append("</ul>").ToString();
+        s.Append("</ul>")
+         .Append(PiePaginacion("eventos"))
+         .Append("</div>");
 
-        return datos;
-    }
-
-    private List<ActivoFichaEvento> LeerHistorial(int activo, out int total)
-    {
-        string tipo = cboTipo != null ? cboTipo.SelectedValue : "";
-        DateTime? desde = calDesde != null ? calDesde.Value : null;
-        DateTime? hasta = calHasta != null ? calHasta.Value : null;
-
-        return new ActivoFichaController().GetHistorial(activo, _cliente, tipo, desde, hasta, true, 1, TOPE_EVENTOS, out total);
+        litHistorial.Text = s.ToString();
     }
 
     #endregion
@@ -2446,10 +2715,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   caso que mas importa: la inspeccion que se hizo completa y encontro
     ///   algo. Completada no significa conforme.
     /// </summary>
-    private void InspeccionesYTareas(Activo a)
+    private void InspeccionesYTareas(Activo a, List<ActivoRevision> revisiones)
     {
-        List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
-                                          ?? new List<ActivoRevision>();
 
         /* Los adjuntos de TODAS las revisiones, de una vez: pedirlos por fila
            serian veinte consultas al abrir la pestaña. */
@@ -2616,12 +2883,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   equipo salio barato, que es exactamente la decision que no se quiere
     ///   inducir. Por eso, mientras falte algo, la pantalla lo dice.
     /// </summary>
-    private void RepuestosYCostos(Activo a)
+    private void RepuestosYCostos(Activo a, List<ActivoConsumo> consumos)
     {
         ActivoCentroController ctl = new ActivoCentroController();
 
         ActivoCosto costo = ctl.GetCostos(a.act_id);
-        List<ActivoConsumo> consumos = ctl.GetConsumos(a.act_id) ?? new List<ActivoConsumo>();
 
         StringBuilder k = new StringBuilder("<div class=\"sg-a3-kpis\">");
 
@@ -3222,8 +3488,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             int activo = ActivoSeleccionado();
             if (activo == 0) { Tools.tools.ClientAlert("Elija un activo primero."); return; }
 
-            int total;
-            List<ActivoFichaEvento> datos = LeerHistorial(activo, out total) ?? new List<ActivoFichaEvento>();
+            List<ActivoFichaEvento> datos = LeerCambios(activo) ?? new List<ActivoFichaEvento>();
 
             StringBuilder sb = new StringBuilder();
             sb.Append("<table border='1'><tr>");

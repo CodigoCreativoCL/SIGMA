@@ -358,56 +358,61 @@
                 <%-- ================================================================
                      2. HISTORIAL
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="historial">
-                    <div class="sg-ot-card">
-                        <header class="sg-ot-card-cab">
-                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-timeline-text-outline"></i></span>
-                            <div>
-                                <h3>Historial del activo</h3>
-                                <p class="sg-ot-card-sub">Cambios de estado, de posición y mediciones, en orden.</p>
-                            </div>
-                            <asp:LinkButton ID="lnkExportar" runat="server" CssClass="sg-ot-btn es-plano sg-ot-card-acc" OnClick="lnkExportar_Click">
-                                <i class="mdi mdi-download"></i>Exportar
-                            </asp:LinkButton>
-                        </header>
+                <section class="sg-a3-panel sg-a3-hist" data-panel="historial">
+                    <div class="sg-a3-cols">
+                        <div class="sg-a3-col">
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-timeline-text-outline"></i></span>
+                                    <div>
+                                        <h3>Todo lo que ha ocurrido en este activo</h3>
+                                        <p class="sg-ot-card-sub">Órdenes, inspecciones, fallas, repuestos, lecturas y cambios, en una sola línea de tiempo.</p>
+                                    </div>
+                                    <asp:LinkButton ID="lnkExportar" runat="server" CssClass="sg-ot-btn es-plano sg-ot-card-acc" OnClick="lnkExportar_Click">
+                                        <i class="mdi mdi-download"></i>Exportar
+                                    </asp:LinkButton>
+                                </header>
 
-                        <div class="sigma-modal-grid">
-                            <div class="sigma-modal-field is-chico">
-                                <label>Tipo de evento</label>
-                                <rad:RadComboBox2 ID="cboTipo" runat="server" Width="100%" AutoPostBack="true" OnSelectedIndexChanged="btnBuscar_Click">
-                                    <Items>
-                                        <rad:RadComboBoxItem Text="Todos los tipos" Value="" />
-                                        <rad:RadComboBoxItem Text="Cambios de estado" Value="ESTADO" />
-                                        <rad:RadComboBoxItem Text="Cambios de posición" Value="POSICION" />
-                                        <rad:RadComboBoxItem Text="Mediciones" Value="MEDICION" />
-                                    </Items>
-                                </rad:RadComboBox2>
-                            </div>
-                            <div class="sigma-modal-field is-chico">
-                                <label>Desde</label>
-                                <div class="sigma-modal-fecha"><WebControls:Calendar ID="calDesde" runat="server" /></div>
-                            </div>
-                            <div class="sigma-modal-field is-chico">
-                                <label>Hasta</label>
-                                <div class="sigma-modal-fecha"><WebControls:Calendar ID="calHasta" runat="server" /></div>
+                                <%-- La barra y la linea de tiempo las arma el
+                                     servidor: los filtros salen de lo que hay,
+                                     no de un catalogo fijo. --%>
+                                <asp:Literal ID="litHistorial" runat="server" />
+
+                                <asp:Panel ID="pnlSinEventos" runat="server" Visible="false" CssClass="sg-ot-vacio">
+                                    <i class="mdi mdi-timeline-text-outline"></i>
+                                    <p>Sin eventos registrados</p>
+                                    <span>Este equipo todavía no tiene historia que mostrar.</span>
+                                </asp:Panel>
                             </div>
                         </div>
 
-                        <div class="sg-ot-card-pie">
-                            <WebControls:PushButton ID="btnBuscar" runat="server" Text="Filtrar" CssClass="sg-ot-btn es-plano" OnClick="btnBuscar_Click" />
+                        <%-- EL EVENTO ELEGIDO
+
+                             La linea de tiempo responde "que paso y cuando";
+                             este panel responde "que fue exactamente eso", sin
+                             salir a la pantalla de origen y perder el lugar en
+                             la linea. Se llena en el navegador con lo que ya
+                             trae cada evento. --%>
+                        <div class="sg-a3-col es-angosta">
+                            <aside class="sg-hist-detalle" id="sgHistDetalle">
+                                <div class="sg-ot-card">
+                                    <header class="sg-ot-card-cab">
+                                        <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
+                                        <div><h3>Evento seleccionado</h3></div>
+                                    </header>
+                                    <p class="sg-ot-vacio-txt">Toque un evento de la línea para ver su detalle.</p>
+                                </div>
+                            </aside>
                         </div>
+                    </div>
 
-                        <asp:Panel ID="pnlSinEventos" runat="server" Visible="false" CssClass="sg-ot-vacio">
-                            <i class="mdi mdi-timeline-text-outline"></i>
-                            <p>Sin eventos en el período</p>
-                            <span>Cambie el filtro o el rango de fechas.</span>
-                        </asp:Panel>
-
-                        <asp:Literal ID="litHistorial" runat="server" />
+                    <div class="sg-ot-nota es-chica">
+                        <i class="mdi mdi-information-outline"></i>
+                        <span>Cada evento conserva el vínculo a su registro de origen.</span>
                     </div>
                 </section>
 
-                <%-- ================================================================
+<%-- ================================================================
                      3. ÓRDENES DE TRABAJO
                      ================================================================ --%>
                 <section class="sg-a3-panel" data-panel="ordenes">
