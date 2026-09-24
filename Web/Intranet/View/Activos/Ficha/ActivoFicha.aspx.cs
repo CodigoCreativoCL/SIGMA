@@ -872,6 +872,91 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return s.Append("</div></div>").ToString();
     }
 
+    /// <summary>
+    /// De quien es el equipo y si su ficha esta fresca.
+    ///
+    /// POR QUE LA FECHA IMPORTA
+    ///   Una ficha sin fecha de actualizacion se lee como si estuviera al
+    ///   dia, y puede llevar dos años sin que nadie la mire. Decir cuando y
+    ///   quien la toco por ultima vez es lo que permite desconfiar de ella.
+    ///
+    ///   El activo no guarda un "responsable": lo mas cerca es su centro de
+    ///   costo, que es quien responde por el gasto. Se dice con ese nombre y
+    ///   no inventando un cargo que el modelo no tiene.
+    /// </summary>
+    private string Contexto(Activo a)
+    {
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-contexto\">");
+
+        s.Append(DatoContexto("mdi-office-building-outline", "Centro de costo",
+                 string.IsNullOrEmpty(a.centro_costo_nombre) ? "Sin asignar" : a.centro_costo_nombre));
+
+        s.Append(DatoContexto("mdi-map-marker-outline", "Dónde está",
+                 string.Join(" · ", new[] { Texto(a.planta_nombre), Texto(a.area_nombre) }
+                             .Where(x => x.Length > 0).ToArray())));
+
+        s.Append(DatoContexto("mdi-calendar-check-outline", "Última actualización",
+                 a.act_fecha_actualizacion == null
+                    ? "Nunca se editó desde el alta"
+                    : a.act_fecha_actualizacion.Value.ToString("dd MMM yyyy · HH:mm") +
+                      (string.IsNullOrEmpty(a.usuario_actualizacion_nombre) ? "" : "  ·  " + a.usuario_actualizacion_nombre)));
+
+        s.Append(DatoContexto("mdi-account-plus-outline", "Dado de alta",
+                 a.act_fecha_creacion == null
+                    ? "Sin fecha"
+                    : a.act_fecha_creacion.Value.ToString("dd MMM yyyy") +
+                      (string.IsNullOrEmpty(a.usuario_creacion_nombre) ? "" : "  ·  " + a.usuario_creacion_nombre)));
+
+        return s.Append("</div>").ToString();
+    }
+
+    private string DatoContexto(string icono, string etiqueta, string valor)
+    {
+        return "<div class=\"sg-a3-contexto-dato\"><i class=\"mdi " + icono + "\"></i>" +
+               "<div><span>" + Server.HtmlEncode(etiqueta) + "</span>" +
+               "<strong>" + Server.HtmlEncode(string.IsNullOrEmpty(valor) ? "Sin registrar" : valor) + "</strong></div></div>";
+    }
+
+    /// <summary>
+    /// La celda de diagnostico o de accion.
+    ///
+    /// Se distingue lo DEFINITIVO de la hipotesis: "polea desalineada" como
+    /// conclusion cerrada y como sospecha en revision son dos cosas
+    /// distintas, y leerlas igual lleva a cerrar la falla antes de tiempo.
+    /// </summary>
+    private string CeldaCierre(Dictionary<int, ActivoFallaCierre> cierre, int falla, bool esDiagnostico)
+    {
+        ActivoFallaCierre c;
+
+        if (!cierre.TryGetValue(falla, out c))
+            return "<span class=\"c-dato\"><span class=\"sg-ot-vacio-txt\">—</span></span>";
+
+        string texto = esDiagnostico ? c.diagnostico : c.accion;
+        bool definitivo = esDiagnostico ? c.diagnostico_definitivo : c.accion_definitiva;
+
+        if (string.IsNullOrEmpty(texto))
+            return "<span class=\"c-dato\"><span class=\"sg-ot-vacio-txt\">" +
+                   (esDiagnostico ? "Sin diagnóstico" : "Sin acción") + "</span></span>";
+
+        StringBuilder s = new StringBuilder("<span class=\"c-dato sg-falla-cierre\">");
+
+        s.Append(Server.HtmlEncode(texto));
+
+        if (!definitivo)
+            s.Append("<span class=\"sg-ot-chip es-aviso\">")
+             .Append(esDiagnostico ? "Hipótesis" : "Provisoria").Append("</span>");
+
+        /* El modo y la causa acompañan al diagnostico cuando estan: "fatiga
+           por desalineamiento" dice mas que el parrafo suelto. */
+        if (esDiagnostico && (c.modo.Length > 0 || c.causa.Length > 0))
+            s.Append("<span>")
+             .Append(Server.HtmlEncode(string.Join(" · ", new[] { c.modo, c.causa }
+                                                    .Where(x => x.Length > 0).ToArray())))
+             .Append("</span>");
+
+        return s.Append("</span>").ToString();
+    }
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {
@@ -1098,6 +1183,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         // ---- SIGMA AI ----
         litIA.Text = Prediccion(a);
+
+        // ---- contexto ----
+        litContexto.Text = Contexto(a);
     }
 
     /// <summary>
@@ -1726,23 +1814,113 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             StringBuilder tb = new StringBuilder();
 
             tb.Append("<div class=\"sg-a3-tabla-cab sg-mant-tar-cab\">")
-              .Append("<span>Código</span><span>Tarea</span><span>Programaciones</span><span></span></div>");
+              .Append("<span>Código</span><span>Tarea</span><span>Frecuencia</span>")
+              .Append("<span>Responsable</span><span>Estado</span><span></span></div>");
+
+            /* Las programaciones viven en el mismo controlador de tareas. */
+            TareaController ctlProg = new TareaController();
 
             foreach (Tarea x in tareas)
+            {
+                /* La frecuencia y el responsable no estan en la tarea: viven
+                   en su PROGRAMACION -la misma tarea puede repetirse semanal
+                   para un turno y mensual para otro-. Son una o dos por
+                   tarea, asi que se leen por tarea y no se trae el catalogo
+                   completo del cliente para filtrarlo en memoria. */
+                List<TareaProgramacion> progs = ctlProg.GetTareaProgramaciones(
+                    new TareaProgramacion { filtro_tarea = x.tar_id, filtro_habilitado = true })
+                    ?? new List<TareaProgramacion>();
+
+                string frecuencia = string.Join(" · ", progs
+                    .Select(p => Texto(p.programacion_tipo_nombre))
+                    .Where(v => v.Length > 0).Distinct().ToArray());
+
+                string dequien = string.Join(" · ", progs
+                    .Select(p => !string.IsNullOrEmpty(p.responsable_nombre) ? p.responsable_nombre : Texto(p.grupo_nombre))
+                    .Where(v => v.Length > 0).Distinct().ToArray());
+
                 tb.Append("<div class=\"sg-a3-tabla-fila sg-mant-tar\">")
                   .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">")
                   .Append(Server.HtmlEncode(Texto(x.tar_codigo))).Append("</span></span>")
-                  .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(x.tar_titulo))).Append("</span>")
-                  .Append("<span class=\"c-dato\">").Append(x.programaciones)
-                  .Append(x.programaciones == 1 ? " programación" : " programaciones")
-                  .Append(x.pendientes > 0 ? " · " + x.pendientes + " pendientes" : "").Append("</span>")
+
+                  .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(x.tar_titulo)))
+                  .Append("<span>").Append(Server.HtmlEncode(Texto(x.tar_descripcion))).Append("</span></span>")
+
+                  .Append("<span class=\"c-dato\">")
+                  .Append(frecuencia.Length == 0
+                         ? "<span class=\"sg-ot-vacio-txt\">Sin programar</span>"
+                         : "<span class=\"sg-ot-chip es-tarea\">" + Server.HtmlEncode(frecuencia) + "</span>")
+                  .Append("</span>")
+
+                  .Append("<span class=\"c-dato\">")
+                  .Append(dequien.Length == 0 ? "<span class=\"sg-ot-vacio-txt\">Sin asignar</span>" : Server.HtmlEncode(dequien))
+                  .Append("</span>")
+
+                  /* Una tarea sin programacion vigente no esta "activa": esta
+                     declarada y nunca va a aparecer en la agenda. */
+                  .Append("<span class=\"c-dato\">")
+                  .Append(x.programaciones == 0
+                         ? "<span class=\"sg-ot-chip es-neutro\">Sin programación</span>"
+                         : "<span class=\"sg-ot-chip es-ok\">Activa</span>")
+                  .Append(x.pendientes > 0 ? "<span>" + x.pendientes + " pendientes</span>" : "")
+                  .Append("</span>")
+
                   .Append("<span class=\"c-acc\">").Append(Boton(UrlTarea(x.tar_id), "Ver tarea")).Append("</span>")
                   .Append("</div>");
+            }
 
             litTareas.Text = tb.ToString();
         }
 
         Agenda(ocurrencias, hoy);
+        Alcance(a, ocurrencias);
+    }
+
+    /// <summary>
+    /// Que cubre el mantenimiento de este equipo.
+    ///
+    /// POR QUE NO SE DEDUCE DE LA LISTA DE PLANES
+    ///   "Preventivo de hornos v1" no dice si entra el quemador. Quien firma
+    ///   una parada necesita saber QUE se va a tocar y que queda fuera, y eso
+    ///   son las piezas del equipo y las actividades que el plan repite.
+    /// </summary>
+    private void Alcance(Activo a, List<PlanOcurrencia> ocurrencias)
+    {
+        List<ActivoComponente> componentes = new ActivoComponenteController().GetComponentes(
+            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
+            ?? new List<ActivoComponente>();
+
+        /* Un subsistema es un componente que no cuelga de otro: el quemador
+           del horno. Los demas son piezas suyas. */
+        List<ActivoComponente> subsistemas = componentes
+            .Where(c => c.aco_componente_padre == null).ToList();
+
+        string actividades = string.Join(", ", ocurrencias
+            .Select(o => Texto(o.hito_nombre)).Where(x => x.Length > 0)
+            .Distinct().Take(6).ToArray());
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-alcance\">");
+
+        s.Append(BloqueAlcance("mdi-cog-outline", "Subsistemas",
+                 subsistemas.Count == 0
+                    ? "El equipo no tiene subsistemas registrados"
+                    : string.Join(", ", subsistemas.Select(c => Texto(c.aco_nombre)).Take(6).ToArray())));
+
+        s.Append(BloqueAlcance("mdi-puzzle-outline", "Componentes",
+                 componentes.Count == 0
+                    ? "Sin componentes"
+                    : componentes.Count + (componentes.Count == 1 ? " pieza registrada" : " piezas registradas")));
+
+        s.Append(BloqueAlcance("mdi-clipboard-list-outline", "Incluye",
+                 actividades.Length == 0 ? "Sin actividades programadas" : actividades));
+
+        litAlcance.Text = s.Append("</div>").ToString();
+    }
+
+    private string BloqueAlcance(string icono, string titulo, string valor)
+    {
+        return "<div class=\"sg-a3-alcance-bloque\"><h4><i class=\"mdi " + icono + "\"></i>" +
+               Server.HtmlEncode(titulo) + "</h4><p>" + Server.HtmlEncode(valor) + "</p></div>";
     }
 
     /// <summary>
@@ -2120,9 +2298,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             StringBuilder s = new StringBuilder();
 
+            /* Que se concluyo y que se hizo: las dos columnas que contestan
+               la pregunta de fondo. Se leen de una vez para todas las fallas
+               -por falla serian dos consultas por fila-. */
+            Dictionary<int, ActivoFallaCierre> cierre = new ActivoCentroController().GetCierreFallas(a.act_id)
+                                                        ?? new Dictionary<int, ActivoFallaCierre>();
+
             s.Append("<div class=\"sg-a3-tabla-cab sg-falla-cab\">")
-             .Append("<span>Falla</span><span>Síntoma</span><span>Criticidad</span>")
-             .Append("<span>Estado</span><span>Detectada</span><span>OT</span><span></span></div>");
+             .Append("<span>Falla</span><span>Síntoma</span><span>Criticidad</span><span>Estado</span>")
+             .Append("<span>Diagnóstico</span><span>Acción definitiva</span>")
+             .Append("<span>Detectada</span><span>OT</span><span></span></div>");
 
             foreach (Falla f in fallas.OrderByDescending(x => x.fal_fecha_deteccion_utc ?? x.fal_fecha_creacion))
             {
@@ -2147,6 +2332,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                         ? "<span class=\"sg-ot-chip es-rojo\"><i class=\"mdi mdi-alert-circle-outline\"></i>Abierta</span>"
                         : "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check\"></i>Resuelta</span>")
                  .Append("</span>")
+
+                 .Append(CeldaCierre(cierre, f.fal_id, true))
+                 .Append(CeldaCierre(cierre, f.fal_id, false))
 
                  .Append("<span class=\"c-dato\">")
                  .Append(f.fal_fecha_deteccion_utc == null ? "—" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy"))
@@ -2749,6 +2937,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
             s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(medio)
              .Append("\" data-doc-clase=\"").Append(clase)
+             .Append("\" data-doc-medio=\"").Append(medio)
+             .Append("\" data-doc-fecha=\"").Append(f.fecha == null ? "" : f.fecha.Value.ToString("yyyy-MM-dd"))
              .Append("\" data-paso=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append("\" data-paso-txt=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append("\" data-paso-etq=\"Origen\"")
@@ -3534,79 +3724,167 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         List<ActivoBitacora> registros = new ActivoCentroController().GetBitacora(a.act_id)
                                          ?? new List<ActivoBitacora>();
 
-        litBitConteos.Text =
-            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + registros.Count + "</strong><span>registros</span></div>" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + registros.Count(x => x.requiere_atencion) + "</strong><span>por atender</span></div></div>";
+        List<ActivoFichaEvento> cambios = eventos
+            .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO"
+                     || (x.tipo_evento ?? "").ToUpperInvariant() == "POSICION")
+            .ToList();
 
+        litBitRegistros.Text = registros.Count.ToString();
+        litBitCambios.Text = cambios.Count.ToString();
+
+        litBitConteos.Text =
+            "<div class=\"sg-a3-kpis es-compacta\">" +
+            Kpi("mdi-note-text-outline", registros.Count.ToString(), "Anotaciones", "", "", true) +
+            Kpi("mdi-alert-outline", registros.Count(x => x.requiere_atencion).ToString(), "Por atender", "",
+                registros.Count(x => x.requiere_atencion) > 0 ? "es-ambar" : "", true) +
+            "</div>";
+
+        PintarBitacora(registros);
+        PintarAuditoria(cambios);
+    }
+
+    /// <summary>
+    /// Lo que la gente anoto del equipo, con sus filtros.
+    ///
+    /// El periodo y el autor son los dos filtros que se usan de verdad:
+    /// "¿que dejo dicho el turno de noche la semana pasada?" no se responde
+    /// leyendo cuarenta notas en orden.
+    /// </summary>
+    private void PintarBitacora(List<ActivoBitacora> registros)
+    {
         if (registros.Count == 0)
+        {
             litBitacora.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-notebook-outline\"></i>" +
                                "<p>Sin registros de bitácora</p>" +
                                "<span>Las observaciones llegan desde la app o se escriben acá abajo.</span></div>";
-        else
-        {
-            StringBuilder s = new StringBuilder("<ul class=\"sg-a3-linea\">");
-
-            foreach (ActivoBitacora b in registros)
-            {
-                s.Append("<li class=\"").Append(b.requiere_atencion ? "es-aviso" : "").Append("\">")
-                 .Append("<span class=\"sg-a3-linea-ico\"><i class=\"mdi ")
-                 .Append(b.tipo_icono.StartsWith("mdi-") ? b.tipo_icono : "mdi-note-text-outline").Append("\"></i></span>")
-                 .Append("<div class=\"sg-a3-linea-txt\">")
-                 .Append("<span class=\"sg-a3-linea-tit\">").Append(Server.HtmlEncode(b.etiqueta))
-                 .Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(b.tipo_nombre))).Append("</span>");
-
-                if (b.requiere_atencion)
-                    s.Append("<span class=\"sg-ot-chip es-aviso\">Requiere atención</span>");
-
-                s.Append("</span>")
-                 .Append("<span class=\"sg-a3-linea-sub\">").Append(Server.HtmlEncode(Texto(b.texto))).Append("</span>")
-                 .Append("<span class=\"sg-a3-linea-pie\">")
-                 .Append(b.fecha == null ? "Sin fecha" : b.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
-                 .Append(" · ").Append(Server.HtmlEncode(string.IsNullOrEmpty(b.usuario) ? "Sin usuario" : b.usuario))
-                 .Append(" · ").Append(Server.HtmlEncode(Texto(b.origen)));
-
-                if (!string.IsNullOrEmpty(b.componente))
-                    s.Append(" · ").Append(Server.HtmlEncode(b.componente));
-
-                if (b.orden_id != null && b.orden_correlativo > 0)
-                    s.Append(" · OT-").Append(b.orden_correlativo);
-
-                /* Se escribio sin conexion y llego despues: la fecha del
-                   evento y la de llegada no son la misma, y eso es justo lo
-                   que se revisa cuando algo no cuadra. */
-                if (b.llego_tarde)
-                    s.Append(" · <em>sincronizado el ")
-                     .Append(b.sincronizacion.Value.ToString("dd MMM yyyy · HH:mm")).Append("</em>");
-
-                s.Append("</span></div></li>");
-            }
-
-            litBitacora.Text = s.Append("</ul>").ToString();
-        }
-
-        // ---- trazabilidad: los cambios de estado del equipo ----
-        List<ActivoFichaEvento> cambios = eventos
-            .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO")
-            .Take(15)
-            .ToList();
-
-        if (cambios.Count == 0)
-        {
-            litTrazabilidad.Text = "<p class=\"sg-ot-vacio-txt\">Este equipo no registra cambios de estado.</p>";
             return;
         }
 
-        StringBuilder tz = new StringBuilder();
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-bit\" data-nombre=\"anotaciones\">")
+
+         .Append(BarraFiltros(
+                FiltroPeriodo(),
+                FiltroLista("quien", "mdi-account-outline", "Usuario", OpcionesDe(registros.Select(b => Texto(b.usuario)))),
+                FiltroLista("tipo", "mdi-format-list-bulleted-type", "Evento", OpcionesDe(registros.Select(b => Texto(b.tipo_nombre)))),
+                FiltroTexto("Buscar en bitácora...")))
+
+         .Append("<ul class=\"sg-a3-linea\">");
+
+        foreach (ActivoBitacora b in registros)
+        {
+            s.Append("<li class=\"sg-bit ").Append(b.requiere_atencion ? "es-aviso" : "").Append("\"")
+             .Append(" data-fecha=\"").Append(b.fecha == null ? "" : b.fecha.Value.ToString("yyyy-MM-dd"))
+             .Append("\" data-quien=\"").Append(Server.HtmlEncode(Texto(b.usuario).ToLowerInvariant()))
+             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(Texto(b.tipo_nombre).ToLowerInvariant()))
+             .Append("\" data-txt=\"")
+             .Append(Server.HtmlEncode((Texto(b.etiqueta) + " " + Texto(b.texto) + " " + Texto(b.usuario)).ToLowerInvariant()))
+             .Append("\">")
+
+             .Append("<span class=\"sg-a3-linea-ico\"><i class=\"mdi ")
+             .Append(b.tipo_icono.StartsWith("mdi-") ? b.tipo_icono : "mdi-note-text-outline").Append("\"></i></span>")
+             .Append("<div class=\"sg-a3-linea-txt\">")
+             .Append("<span class=\"sg-a3-linea-tit\">").Append(Server.HtmlEncode(b.etiqueta))
+             .Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(b.tipo_nombre))).Append("</span>");
+
+            if (b.requiere_atencion)
+                s.Append("<span class=\"sg-ot-chip es-aviso\">Requiere atención</span>");
+
+            s.Append("</span>")
+             .Append("<span class=\"sg-a3-linea-sub\">").Append(Server.HtmlEncode(Texto(b.texto))).Append("</span>")
+             .Append("<span class=\"sg-a3-linea-pie\">")
+             .Append(b.fecha == null ? "Sin fecha" : b.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+             .Append(" · ").Append(Server.HtmlEncode(string.IsNullOrEmpty(b.usuario) ? "Sin usuario" : b.usuario))
+             .Append(" · ").Append(Server.HtmlEncode(Texto(b.origen)));
+
+            if (!string.IsNullOrEmpty(b.componente))
+                s.Append(" · ").Append(Server.HtmlEncode(b.componente));
+
+            if (b.orden_id != null && b.orden_correlativo > 0)
+                s.Append(" · OT-").Append(b.orden_correlativo);
+
+            /* Se escribio sin conexion y llego despues: la fecha del evento y
+               la de llegada no son la misma, y eso es justo lo que se revisa
+               cuando algo no cuadra. */
+            if (b.llego_tarde)
+                s.Append(" · <em>sincronizado el ")
+                 .Append(b.sincronizacion.Value.ToString("dd MMM yyyy · HH:mm")).Append("</em>");
+
+            s.Append("</span></div></li>");
+        }
+
+        s.Append("</ul>").Append(PiePaginacion("anotaciones")).Append("</div>");
+
+        litBitacora.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Los cambios auditables: quien movio que y cuando.
+    ///
+    /// No se editan. Una correccion se anota como un evento nuevo, y por eso
+    /// esta separada de la bitacora, que si admite agregar contexto.
+    /// </summary>
+    private void PintarAuditoria(List<ActivoFichaEvento> cambios)
+    {
+        if (cambios.Count == 0)
+        {
+            litTrazabilidad.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-shield-check-outline\"></i>" +
+                                   "<p>Sin cambios auditables</p>" +
+                                   "<span>El equipo no registra cambios de estado ni de posición.</span></div>";
+            return;
+        }
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-aud\" data-nombre=\"cambios\">")
+
+         .Append(BarraFiltros(
+                FiltroPeriodo(),
+                FiltroLista("quien", "mdi-account-outline", "Usuario", OpcionesDe(cambios.Select(c => Texto(c.usuario_nombre)))),
+                FiltroLista("tipo", "mdi-format-list-bulleted-type", "Evento", OpcionesDe(cambios.Select(c => TipoEtiqueta(c.tipo_evento)))),
+                FiltroTexto("Buscar en auditoría...")))
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-aud-cab\">")
+         .Append("<span>Fecha y hora</span><span>Evento</span><span>Qué cambió</span>")
+         .Append("<span>Usuario</span><span>Origen</span></div>");
 
         foreach (ActivoFichaEvento c in cambios)
-            tz.Append(Fila("mdi-swap-horizontal", "",
-                     Texto(c.titulo),
-                     (c.fecha == null ? "Sin fecha" : c.fecha.Value.ToString("dd MMM yyyy · HH:mm")) +
-                     (string.IsNullOrEmpty(c.usuario_nombre) ? "" : " · " + c.usuario_nombre),
-                     ""));
+        {
+            string etiqueta = TipoEtiqueta(c.tipo_evento);
 
-        litTrazabilidad.Text = tz.ToString();
+            s.Append("<div class=\"sg-a3-tabla-fila sg-aud\"")
+             .Append(" data-fecha=\"").Append(c.fecha == null ? "" : c.fecha.Value.ToString("yyyy-MM-dd"))
+             .Append("\" data-quien=\"").Append(Server.HtmlEncode(Texto(c.usuario_nombre).ToLowerInvariant()))
+             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(etiqueta.ToLowerInvariant()))
+             .Append("\" data-txt=\"")
+             .Append(Server.HtmlEncode((Texto(c.titulo) + " " + Texto(c.detalle) + " " + Texto(c.usuario_nombre)).ToLowerInvariant()))
+             .Append("\">")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(c.fecha == null ? "—" : c.fecha.Value.ToString("dd MMM yyyy") + "<span>" + c.fecha.Value.ToString("HH:mm") + "</span>")
+             .Append("</span>")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip es-neutro\">")
+             .Append(Server.HtmlEncode(etiqueta)).Append("</span></span>")
+
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.titulo)))
+             .Append(string.IsNullOrEmpty(c.detalle) ? "" : "<span>" + Server.HtmlEncode(c.detalle) + "</span>")
+             .Append("</span>")
+
+             .Append("<span class=\"c-dato\">")
+             .Append(string.IsNullOrEmpty(c.usuario_nombre) ? "<span class=\"sg-ot-vacio-txt\">Sin usuario</span>" : Server.HtmlEncode(c.usuario_nombre))
+             .Append("</span>")
+
+             /* El origen: web o app. Todavia no viaja en el evento, y decir
+                "Web" sin saberlo seria inventarlo. */
+             .Append("<span class=\"c-dato\"><span class=\"sg-ot-vacio-txt\">—</span></span>")
+             .Append("</div>");
+        }
+
+        s.Append(PiePaginacion("cambios")).Append("</div>");
+
+        litTrazabilidad.Text = s.ToString();
     }
 
     /// <summary>

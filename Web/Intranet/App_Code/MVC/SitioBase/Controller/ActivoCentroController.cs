@@ -7,6 +7,25 @@ using SitioBase.Model;
 namespace SitioBase.Controller
 {
     /// <summary>
+    /// Lo que se concluyo de una falla y lo que se hizo (bloque 285).
+    ///
+    /// La lista mostraba titulo, sintoma y estado, y le faltaban las dos
+    /// columnas que contestan la pregunta de fondo: que se diagnostico y que
+    /// se hizo al respecto.
+    /// </summary>
+    public class ActivoFallaCierre
+    {
+        public int falla_id { get; set; }
+        public string diagnostico { get; set; }
+        public bool diagnostico_definitivo { get; set; }
+        public string modo { get; set; }
+        public string causa { get; set; }
+        public string accion { get; set; }
+        public bool accion_definitiva { get; set; }
+        public int? accion_orden { get; set; }
+    }
+
+    /// <summary>
     /// Un repuesto que le sirve al equipo, con la respuesta a "¿hay?"
     /// (bloque 284).
     ///
@@ -756,6 +775,59 @@ namespace SitioBase.Controller
             }
 
             return lista;
+        }
+
+        /// <summary>
+        /// El diagnostico y la accion de cada falla del activo (bloque 285).
+        ///
+        /// De una vez para todas: SEL_FALLA_DIAGNOSTICO se lee por falla, y
+        /// una lista de veinte fallas serian cuarenta consultas.
+        /// </summary>
+        public Dictionary<int, ActivoFallaCierre> GetCierreFallas(int activo)
+        {
+            Dictionary<int, ActivoFallaCierre> mapa = new Dictionary<int, ActivoFallaCierre>();
+
+            if (!Token.TokenSeguridad() || activo <= 0) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_FALLA_CIERRE";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoFallaCierre c = new ActivoFallaCierre();
+
+                        c.falla_id = int.Parse(dr["FALLA_ID"].ToString());
+                        c.diagnostico = dr["DIAGNOSTICO"].ToString();
+                        c.diagnostico_definitivo = dr["DIAGNOSTICO_DEFINITIVO"].ToString() == "True"
+                                                || dr["DIAGNOSTICO_DEFINITIVO"].ToString() == "1";
+                        c.modo = dr["MODO"].ToString();
+                        c.causa = dr["CAUSA"].ToString();
+                        c.accion = dr["ACCION"].ToString();
+                        c.accion_definitiva = dr["ACCION_DEFINITIVA"].ToString() == "True"
+                                           || dr["ACCION_DEFINITIVA"].ToString() == "1";
+                        if (dr["ACCION_ORDEN"] != DBNull.Value) c.accion_orden = int.Parse(dr["ACCION_ORDEN"].ToString());
+
+                        mapa[c.falla_id] = c;
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return mapa;
         }
 
         public List<ActivoRevision> GetRevisiones(int activo, DateTime? desde = null, DateTime? hasta = null)

@@ -978,6 +978,8 @@
         var chips = document.querySelectorAll('#sgDocChips a[data-doc]');
         var buscar = document.getElementById('sgDocBuscar');
         var origen = document.getElementById('sgDocOrigen');
+        var fecha = document.getElementById('sgDocFecha');
+        var tipo = document.getElementById('sgDocTipo');
         var detalle = document.getElementById('sgOtEvDetalle');
         var filas = document.querySelectorAll('.sg-doc-fila');
 
@@ -1004,10 +1006,35 @@
             var texto = (buscar && buscar.value || '').toLowerCase().trim();
             var deQuien = origen ? origen.value : '';
 
+            /* Los dos filtros nuevos: cuando llego el archivo y que clase
+               es. Con cuarenta archivos, "el informe de la semana pasada" se
+               encuentra por fecha y no leyendo cuarenta nombres. */
+            function calzaExtra(el) {
+                if (tipo && tipo.value && el.getAttribute('data-doc-medio') !== tipo.value) return false;
+
+                if (!fecha || !fecha.value) return true;
+
+                var f = el.getAttribute('data-doc-fecha');
+
+                /* Sin fecha no se esconde: no tenerla no es estar fuera del
+                   periodo, y es justo el archivo que alguien subio sin datos. */
+                if (!f) return true;
+
+                var cuando = new Date(f + 'T00:00:00');
+                if (isNaN(cuando.getTime())) return true;
+
+                var limite = new Date();
+                limite.setHours(0, 0, 0, 0);
+                limite.setDate(limite.getDate() - parseInt(fecha.value, 10));
+
+                return cuando >= limite;
+            }
+
             function calza(el, claseAttr, textoAttr, origenAttr) {
                 return (clase === 'todos' || el.getAttribute(claseAttr) === clase)
                     && (texto === '' || (el.getAttribute(textoAttr) || '').indexOf(texto) !== -1)
-                    && (deQuien === '' || (el.getAttribute(origenAttr) || '') === deQuien);
+                    && (deQuien === '' || (el.getAttribute(origenAttr) || '') === deQuien)
+                    && calzaExtra(el);
             }
 
             for (var i = 0; i < tarjetas.length; i++)
@@ -1086,6 +1113,8 @@
 
         if (buscar) buscar.oninput = filtrar;
         if (origen) origen.onchange = filtrar;
+        if (fecha) fecha.onchange = filtrar;
+        if (tipo) tipo.onchange = filtrar;
 
         filtrar();
         pintar(tarjetas[0]);
@@ -1694,6 +1723,28 @@
             };
     }
 
+    /* ---- Bitacora y auditoria ----
+
+       La bitacora la escribe una persona; la auditoria, el sistema. Una se
+       corrige agregando otra nota, la otra no se corrige nunca. */
+    function bitacora() {
+        var vistas = document.querySelectorAll('#sgBitVistas a[data-bit-vista]');
+        if (!vistas.length) return;
+
+        for (var v = 0; v < vistas.length; v++)
+            vistas[v].onclick = function (ev) {
+                ev.preventDefault();
+                var cual = this.getAttribute('data-bit-vista');
+
+                for (var k = 0; k < vistas.length; k++) vistas[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+
+                var paneles = document.querySelectorAll('.sg-cond-vista[data-bit-vista]');
+                for (var p = 0; p < paneles.length; p++)
+                    paneles[p].classList.toggle('es-oculta', paneles[p].getAttribute('data-bit-vista') !== cual);
+            };
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -1703,6 +1754,7 @@
         lista();
         historial();
         repuestos();
+        bitacora();
         filtrables();
         popovers();
         documentos();

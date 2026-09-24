@@ -2313,3 +2313,72 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
 }
 .sg-a3-ia-contexto h4 i { color: var(--sg-p); font-size: 16px; }
 
+/* ---- El contexto del equipo ------------------------------------------
+   La ficha dice como es el equipo; esto dice de quien es y si el dato esta
+   fresco. Una ficha sin fecha de actualizacion se lee como si estuviera al
+   dia. */
+.sg-a3-contexto { display: grid; gap: 10px; }
+
+.sg-a3-contexto-dato {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.sg-a3-contexto-dato > i {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 16px;
+}
+.sg-a3-contexto-dato span { display: block; font-size: 11px; color: var(--sg-tenue); }
+.sg-a3-contexto-dato strong { display: block; font-size: 12.5px; color: var(--sg-texto); line-height: 1.4; }
+
+/* Las tareas recurrentes dicen cada cuanto y de quien son. */
+.sg-mant-tar-cab,
+.sg-mant-tar { grid-template-columns: 110px minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 1fr) 150px 110px; }
+.sg-mant-tar .c-dato span { display: block; margin-top: 3px; font-size: 11px; color: var(--sg-tenue); }
+
+/* ---- El alcance del mantenimiento ---- */
+.sg-a3-alcance {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+}
+.sg-a3-alcance-bloque h4 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: var(--sg-texto);
+}
+.sg-a3-alcance-bloque h4 i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-alcance-bloque p { margin: 0; font-size: 12.5px; color: var(--sg-suave); line-height: 1.5; }
+
+/* Nueve columnas: entran Diagnostico y Accion definitiva, que son las dos
+   que contestan la pregunta de fondo de una falla. */
+.sg-falla-cab,
+.sg-falla { grid-template-columns: minmax(0, 1.4fr) minmax(0, .9fr) 110px 112px minmax(0, 1.5fr) minmax(0, 1.5fr) 105px 88px 105px; }
+
+.sg-falla-cierre {
+    font-size: 12px;
+    line-height: 1.45;
+    display: block;
+}
+.sg-falla-cierre .sg-ot-chip { margin-top: 4px; font-size: 10.5px; padding: 2px 7px; }
+.sg-falla-cierre > span:not(.sg-ot-chip) { display: block; margin-top: 3px; font-size: 11px; color: var(--sg-tenue); }
+
+@media (max-width: 1500px) {
+    .sg-falla-cab, .sg-falla { grid-template-columns: minmax(0, 1.3fr) 100px 100px 108px minmax(0, 1.3fr) minmax(0, 1.3fr) 98px 82px 100px; }
+}
+
+/* La tabla de auditoria: cinco columnas, y la hora bajo la fecha. */
+.sg-aud-cab,
+.sg-aud { grid-template-columns: 130px 140px minmax(0, 2fr) minmax(0, 1fr) 90px; }
+.sg-aud .c-dato span,
+.sg-aud .c-cod span { display: block; margin-top: 2px; font-size: 11px; color: var(--sg-tenue); }

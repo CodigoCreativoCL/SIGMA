@@ -84,6 +84,20 @@
             });
         }
 
+        /* Retirar necesita saber CUAL pieza: la elegida en la lista. Sin una
+           elegida, el boton no abre un modal vacio, lo dice. */
+        function retirarComponente() {
+            var fila = document.querySelector('.sg-comp.es-elegida[data-comp-query]')
+                    || document.querySelector('.sg-comp[data-comp-query]');
+
+            if (!fila) {
+                alert('Primero elija el componente que va a retirar.');
+                return false;
+            }
+
+            return abrirComponente(fila.getAttribute('data-comp-query'));
+        }
+
         var seccionPendiente = null;
 
         /* El campo donde vive el equipo elegido. El JS de la lista lo escribe
@@ -311,6 +325,9 @@
                                         <h3>Requiere atención</h3>
                                         <p class="sg-ot-card-sub">Lo abierto sobre este equipo, con acceso a su registro.</p>
                                     </div>
+                                    <%-- La tarjeta muestra los primeros: sin salida,
+                                         el resto queda escondido sin decirlo. --%>
+                                    <a href="#" class="sg-ot-card-acc sg-ot-link" data-ir-sec="ordenes">Ver todas <i class="mdi mdi-arrow-right"></i></a>
                                 </header>
                                 <asp:Literal ID="litAtencion" runat="server" />
                             </div>
@@ -350,6 +367,21 @@
                                     <h3>SIGMA AI</h3>
                                 </header>
                                 <asp:Literal ID="litIA" runat="server" />
+                            </div>
+
+                            <%-- QUIEN RESPONDE POR EL EQUIPO Y CUANDO SE TOCO
+
+                                 La ficha dice como es el equipo; esto dice de
+                                 quien es y si el dato esta fresco. Una ficha
+                                 sin fecha de actualizacion se lee como si
+                                 estuviera al dia, y puede llevar dos años
+                                 sin que nadie la mire. --%>
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-account-group-outline"></i></span>
+                                    <h3>Contexto del equipo</h3>
+                                </header>
+                                <asp:Literal ID="litContexto" runat="server" />
                             </div>
                         </aside>
                     </div>
@@ -474,6 +506,22 @@
                                 </header>
                                 <asp:Literal ID="litTareas" runat="server" />
                             </div>
+
+                            <%-- QUE CUBRE EL MANTENIMIENTO
+
+                                 "Preventivo de hornos v1" no dice si entra el
+                                 quemador. Quien firma una parada necesita
+                                 saber que se va a tocar y que queda fuera. --%>
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-target"></i></span>
+                                    <div>
+                                        <h3>Alcance del mantenimiento</h3>
+                                        <p class="sg-ot-card-sub">Componentes y actividades que cubre el plan.</p>
+                                    </div>
+                                </header>
+                                <asp:Literal ID="litAlcance" runat="server" />
+                            </div>
                         </div>
 
                         <aside class="sg-mant-lado">
@@ -548,6 +596,15 @@
                                     </div>
                                     <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                         OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Asociar componente</asp:LinkButton>
+
+                                    <%-- RETIRAR ES CAMBIAR SU ESTADO, NO BORRARLO
+
+                                         La ficha del componente ya pide el motivo y
+                                         deja la huella en su historial; este boton
+                                         lleva ahi con la pieza elegida en vez de
+                                         inventar un segundo camino para lo mismo. --%>
+                                    <asp:LinkButton ID="lnkRetirarComponente" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
+                                        OnClientClick="return retirarComponente();"><i class="mdi mdi-archive-arrow-down-outline"></i>Registrar retiro</asp:LinkButton>
                                 </header>
 
                                 <div class="sg-ot-ev-filtros">
@@ -761,6 +818,25 @@
                                 <input type="search" id="sgDocBuscar" placeholder="Buscar archivo, origen o persona..." autocomplete="off" />
                             </div>
                             <select id="sgDocOrigen" class="sg-ot-select"><option value="">Todos los orígenes</option></select>
+
+                            <%-- Fecha y tipo: con cuarenta archivos, "el
+                                 informe de la semana pasada" se encuentra por
+                                 cuando llego, no leyendo cuarenta nombres. --%>
+                            <select id="sgDocFecha" class="sg-ot-select">
+                                <option value="">Cualquier fecha</option>
+                                <option value="7">Últimos 7 días</option>
+                                <option value="30">Últimos 30 días</option>
+                                <option value="90">Últimos 90 días</option>
+                                <option value="365">Último año</option>
+                            </select>
+
+                            <select id="sgDocTipo" class="sg-ot-select">
+                                <option value="">Todos los tipos</option>
+                                <option value="imagen">Imágenes</option>
+                                <option value="video">Videos</option>
+                                <option value="audio">Audios</option>
+                                <option value="documento">Documentos</option>
+                            </select>
                         </div>
 
                         <div class="sg-ot-ev-cols">
@@ -894,61 +970,51 @@
                      13. BITÁCORA Y TRAZABILIDAD
                      ================================================================ --%>
                 <section class="sg-a3-panel" data-panel="bitacora">
-                    <div class="sg-a3-cols">
-                        <div class="sg-a3-col">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-notebook-outline"></i></span>
-                                    <div>
-                                        <h3>Bitácora del activo</h3>
-                                        <p class="sg-ot-card-sub">Lo que la gente anotó del equipo, del registro más nuevo al más viejo.</p>
-                                    </div>
-                                    <asp:Literal ID="litBitConteos" runat="server" />
-                                </header>
-
-                                <asp:Literal ID="litBitacora" runat="server" />
+                    <div class="sg-ot-card">
+                        <header class="sg-ot-card-cab">
+                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-notebook-outline"></i></span>
+                            <div>
+                                <h3>Bitácora y trazabilidad</h3>
+                                <p class="sg-ot-card-sub">Registro cronológico de lo que se anotó del equipo y de cada cambio auditable.</p>
                             </div>
+                            <asp:Literal ID="litBitConteos" runat="server" />
+                        </header>
 
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-comment-text-outline"></i></span>
-                                    <div>
-                                        <h3>Agregar observación</h3>
-                                        <p class="sg-ot-card-sub">Queda registrada a tu nombre y con la hora del servidor.</p>
-                                    </div>
-                                </header>
+                        <%-- LA BITACORA Y LA AUDITORIA NO SON LO MISMO
 
-                                <div class="sg-a3-obs">
-                                    <asp:TextBox ID="txtObservacion" runat="server" TextMode="MultiLine" Rows="3"
-                                        CssClass="sg-ot-textarea" placeholder="Escribe una observación sobre el activo..." />
-                                    <div class="sg-a3-obs-acc">
-                                        <asp:LinkButton ID="lnkPublicar" runat="server" CssClass="sg-ot-btn es-primario"
-                                            OnClick="lnkPublicar_Click"><i class="mdi mdi-send-outline"></i>Publicar</asp:LinkButton>
-                                    </div>
-                                </div>
-
-                                <asp:Literal ID="litObsAviso" runat="server" />
-                            </div>
+                             La bitacora la escribe una persona: "el equipo
+                             suena raro". La auditoria la escribe el sistema:
+                             "la criticidad paso de media a alta". Una se
+                             corrige agregando otra nota; la otra no se corrige
+                             nunca, y por eso van separadas. --%>
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgBitVistas">
+                            <a href="#" class="sg-a3-chip es-activa" data-bit-vista="bitacora"><i class="mdi mdi-note-text-outline"></i>Bitácora <b><asp:Literal ID="litBitRegistros" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-bit-vista="auditoria"><i class="mdi mdi-shield-check-outline"></i>Auditoría <b><asp:Literal ID="litBitCambios" runat="server" Text="0" /></b></a>
                         </div>
 
-                        <div class="sg-a3-col es-angosta">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-shield-check-outline"></i></span>
-                                    <div>
-                                        <h3>Trazabilidad de estado</h3>
-                                        <p class="sg-ot-card-sub">Cada cambio de estado del equipo, con quién y por qué.</p>
-                                    </div>
-                                </header>
+                        <div class="sg-cond-vista" data-bit-vista="bitacora">
+                            <asp:Literal ID="litBitacora" runat="server" />
 
-                                <asp:Literal ID="litTrazabilidad" runat="server" />
+                            <div class="sg-a3-obs">
+                                <asp:TextBox ID="txtObservacion" runat="server" TextMode="MultiLine" Rows="3"
+                                    CssClass="sg-ot-textarea" placeholder="Escribe una observación sobre el activo..." />
+                                <div class="sg-a3-obs-acc">
+                                    <asp:LinkButton ID="lnkPublicar" runat="server" CssClass="sg-ot-btn es-primario"
+                                        OnClick="lnkPublicar_Click"><i class="mdi mdi-send-outline"></i>Publicar</asp:LinkButton>
+                                </div>
                             </div>
+
+                            <asp:Literal ID="litObsAviso" runat="server" />
+                        </div>
+
+                        <div class="sg-cond-vista es-oculta" data-bit-vista="auditoria">
+                            <asp:Literal ID="litTrazabilidad" runat="server" />
                         </div>
                     </div>
 
                     <div class="sg-ot-nota es-chica">
                         <i class="mdi mdi-information-outline"></i>
-                        <span>Los registros de bitácora no se editan. Una corrección entra como un registro nuevo: la trazabilidad se pierde el día que alguien puede arreglar lo que escribió ayer.</span>
+                        <span>Los registros de auditoría no son editables. Las correcciones se registran como nuevos eventos en la bitácora.</span>
                     </div>
                 </section>
 
