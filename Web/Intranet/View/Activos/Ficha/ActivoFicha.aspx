@@ -255,7 +255,7 @@
 
                     <%-- SIGMA AI va aparte y no dentro de Mas: es lo unico de esta
                          pantalla que no afirma hechos, sino que propone revisar. --%>
-                    <a href="#" class="sg-a3-tab es-ia" data-sec="ia"><i class="mdi mdi-star-four-points-outline"></i>SIGMA AI</a>
+                    <a href="#" class="sg-a3-tab es-ia" data-sec="ia"><span class="sg-ai-ico" role="img" aria-label="" style="background-image:url('<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-symbol-gradient.svg") %>')"></span>SIGMA AI</a>
                 </nav>
 
                 <%-- ================================================================
@@ -305,7 +305,10 @@
 
                             <div class="sg-ot-card">
                                 <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-star-four-points-outline"></i></span>
+                                    <%-- La marca de SIGMA AI es su simbolo, no una estrellita
+                                         de la fuente de iconos: es lo unico de esta pantalla
+                                         que no lo escribio una persona. --%>
+                                    <img class="sg-ai-badge" src="<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-badge-light.svg") %>" alt="SIGMA AI" />
                                     <h3>SIGMA AI</h3>
                                 </header>
                                 <asp:Literal ID="litIA" runat="server" />

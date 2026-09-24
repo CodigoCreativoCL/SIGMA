@@ -114,9 +114,11 @@ DECLARE @HOY DATETIME = [dbo].[FNC_AHORA]()
        AND  ISNULL(o.pmo_plan_ocurrencia_estado, 1) NOT IN (4, 5, 6)
        AND  o.pmo_fecha_programada_utc >= @HOY
 )
+/* Doce, no cinco: el popover es un calendario y un mes con la mitad de sus
+   dias marcados miente por omision. */
 SELECT  ACTIVO_ID, OCURRENCIA_ID, FECHA, TITULO, PLAN_NOMBRE, ESTADO, CON_ORDEN, OT_ID
   FROM  proximas
- WHERE  N <= 5
+ WHERE  N <= 12
  ORDER  BY ACTIVO_ID, N
 GO
 PRINT '--- SEL_ACTIVO_LISTA_AGENDA creado.'

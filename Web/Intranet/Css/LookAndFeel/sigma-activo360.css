@@ -1502,3 +1502,220 @@ a.sg-cond-card.es-oculta { display: none; }
 }
 .sg-pop-fecha b { font-size: 15px; color: var(--sg-texto); }
 .sg-pop-fecha span { font-size: 10px; color: var(--sg-tenue); text-transform: uppercase; }
+
+/* ---- Las evidencias dentro del detalle de la orden -------------------
+   Decia "3 archivos", que es cierto y no sirve: la foto de la correa
+   cortada es lo que explica la orden. */
+.sg-a3-ev {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+.sg-a3-ev-foto {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--sg-borde);
+    background: var(--sg-surface-subtle);
+}
+.sg-a3-ev-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.sg-a3-ev-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 200px;
+    padding: 7px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+    font-size: 12px;
+    color: var(--sg-texto);
+    text-decoration: none;
+}
+.sg-a3-ev-doc:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-a3-ev-doc i { font-size: 16px; color: var(--sg-p); flex: none; }
+.sg-a3-ev-doc span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sg-a3-ev-mas {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px dashed var(--sg-borde);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+}
+
+/* ---- El popover de programaciones es un calendario -------------------
+   "01 oct · 01 nov · 01 dic" es una lista de fechas que hay que leer una por
+   una para entender que el equipo se toca el primero de cada mes. */
+.sg-pop.es-cal { width: 310px; padding: 8px; }
+.sg-pop-ev { display: none; }
+
+.sg-pop-cal-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 2px 2px 8px;
+}
+.sg-pop-cal-cab strong {
+    font-size: 13px;
+    color: var(--sg-texto);
+    text-transform: capitalize;
+}
+.sg-pop-cal-nav {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-borde);
+    background: var(--sg-surface);
+    color: var(--sg-suave);
+    font-size: 15px;
+    text-decoration: none;
+}
+.sg-pop-cal-nav:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-pop-cal-nav.es-mudo { opacity: .35; pointer-events: none; }
+
+.sg-pop-cal-dias,
+.sg-pop-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+.sg-pop-cal-dias span {
+    text-align: center;
+    padding-bottom: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+}
+
+.sg-pop-cal-dia {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--sg-text-secondary, #555);
+    text-decoration: none;
+}
+.sg-pop-cal-dia.es-fuera { opacity: .3; }
+.sg-pop-cal-dia.es-hoy { border: 1px solid var(--sg-p); font-weight: 700; color: var(--sg-p); }
+
+/* Un dia con programacion se toca; uno sin ella es solo un numero.
+
+   Van como `a.` porque el dia con evento es un enlace y el kit le pone su
+   propio color: sin ganar especificidad, el numero salia blanco sobre blanco
+   y el dia 1 simplemente no estaba. */
+a.sg-pop-cal-dia { color: var(--sg-text-secondary, #555); }
+a.sg-pop-cal-dia.es-con {
+    background: var(--sg-surface-subtle);
+    font-weight: 600;
+    color: var(--sg-texto);
+    cursor: pointer;
+}
+a.sg-pop-cal-dia.es-con:hover { background: var(--sg-borde); color: var(--sg-texto); }
+a.sg-pop-cal-dia.es-elegido,
+a.sg-pop-cal-dia.es-elegido:hover { background: var(--sg-p); color: #fff; }
+a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
+
+/* El punto dice que ese dia tiene algo; el color, si ya tiene orden. */
+.sg-pop-cal-dia i {
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--sg-info);
+}
+.sg-pop-cal-dia.es-ot i { background: var(--sg-success); }
+.sg-pop-cal-dia.es-elegido i { background: #fff; }
+
+.sg-pop-dia {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--sg-borde);
+}
+.sg-pop-dia:empty { display: none; }
+.sg-pop-dia > strong {
+    display: block;
+    margin: 0 2px 6px;
+    font-size: 12px;
+    color: var(--sg-texto);
+}
+/* Solo la primera letra: `capitalize` dejaba "1 De Octubre". */
+.sg-pop-dia > strong::first-letter { text-transform: uppercase; }
+.sg-pop-dia .sg-pop-item { padding: 7px 8px; }
+.sg-pop-item.es-plano { cursor: default; }
+.sg-pop-item.es-plano:hover { background: transparent; }
+
+.sg-pop-hora {
+    flex: none;
+    width: 62px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+    padding-top: 1px;
+}
+
+/* ---- Los iconos de SIGMA AI ------------------------------------------
+   La estrellita de la fuente de iconos es la misma que usan "destacar" y
+   "favorito": lo que sale de un modelo tiene que distinguirse de un vistazo,
+   y ademas su simbolo dice en que esta -analizando, prediccion,
+   recomendacion, tiempo real-. */
+.sg-ai-ico,
+.sg-ai-simbolo,
+.sg-ai-vacio {
+    display: inline-block;
+    flex: none;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    /* El simbolo ocupa un tercio de su lienzo -esta pensado para un logo de
+       128px-. Agrandado al 300%, el recorte del contenedor lo deja lleno. */
+    background-size: 300%;
+}
+
+.sg-ai-ico {
+    width: 18px;
+    height: 18px;
+    vertical-align: -4px;
+    margin-right: 6px;
+}
+.sg-a3-tab .sg-ai-ico { margin-right: 7px; }
+
+.sg-ai-badge {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+}
+
+.sg-ai-simbolo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background-color: var(--sg-surface-subtle);
+    background-size: 220%;
+}
+
+/* En el vacio el simbolo es grande: es el unico contenido de la caja. */
+.sg-ai-vacio {
+    width: 72px;
+    height: 72px;
+    margin-bottom: 4px;
+    opacity: .9;
+}
+
+.sg-a3-ia-senal h4,
+.sg-a3-ia-reco h4 { display: flex; align-items: center; }

@@ -392,7 +392,19 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return s.ToString();
     }
 
-    /// <summary>El contenido del popover de programaciones de este equipo.</summary>
+    /// <summary>
+    /// El contenido del popover de programaciones: un calendario.
+    ///
+    /// POR QUE UN CALENDARIO Y NO UNA LISTA
+    ///   "01 oct · 01 nov · 01 dic" es una lista de fechas que hay que leer
+    ///   una por una para entender que el equipo se toca el primero de cada
+    ///   mes. La rejilla lo muestra de un vistazo, que es lo que se le pide a
+    ///   una agenda.
+    ///
+    ///   El servidor manda los eventos y el mes lo arma el navegador: pintar
+    ///   doce rejillas -una por activo- en el HTML de la lista serian unas
+    ///   ochocientas celdas que nadie va a mirar.
+    /// </summary>
     private string PopoverAgendaCont(Activo a, Dictionary<int, List<ActivoListaAgenda>> agenda)
     {
         List<ActivoListaAgenda> lista;
@@ -400,30 +412,43 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         StringBuilder s = new StringBuilder();
 
-        s.Append("<div class=\"sg-pop\" data-pop-cont=\"agenda\" data-pop-de=\"").Append(a.act_id).Append("\">")
+        s.Append("<div class=\"sg-pop es-cal\" data-pop-cont=\"agenda\" data-pop-de=\"").Append(a.act_id).Append("\">")
          .Append("<div class=\"sg-pop-cab\"><strong>Próximas programaciones</strong><span>")
-         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</span></div>");
+         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</span></div>")
+
+         // la rejilla y el detalle del dia los arma el navegador
+         .Append("<div class=\"sg-pop-cal\"></div>")
+         .Append("<div class=\"sg-pop-dia\"></div>")
+
+         .Append("<div class=\"sg-pop-ev\">");
 
         foreach (ActivoListaAgenda g in lista)
         {
-            /* Con orden ya generada se va a la orden; sin ella, al plan: son
-               dos pantallas distintas y el dia esta en dos estados distintos. */
-            string url = g.con_orden && g.ot_id != null ? UrlOrden(g.ot_id.Value) : "javascript:void(0)";
+            /* Con orden ya generada se va a la orden; sin ella no hay adonde
+               ir todavia, y el item no finge ser un enlace. */
+            bool conOrden = g.con_orden && g.ot_id != null;
 
-            s.Append("<a class=\"sg-pop-item\" href=\"").Append(url)
-             .Append(g.con_orden && g.ot_id != null ? "\" target=\"_blank\" rel=\"noopener\">" : "\">")
-             .Append("<span class=\"sg-pop-fecha\"><b>").Append(g.fecha.ToString("dd"))
-             .Append("</b><span>").Append(g.fecha.ToString("MMM")).Append("</span></span>")
+            s.Append(conOrden
+                    ? "<a class=\"sg-pop-item\" href=\"" + UrlOrden(g.ot_id.Value) + "\" target=\"_blank\" rel=\"noopener\""
+                    : "<span class=\"sg-pop-item es-plano\"")
+             .Append(" data-fecha=\"").Append(g.fecha.ToString("yyyy-MM-dd")).Append("\">")
+
+             .Append("<span class=\"sg-pop-hora\">")
+             .Append(g.fecha.TimeOfDay.Ticks == 0 ? "Todo el día" : g.fecha.ToString("HH:mm"))
+             .Append("</span>")
+
              .Append("<span class=\"sg-pop-txt\">")
              .Append("<span class=\"sg-pop-tit\">").Append(Server.HtmlEncode(Texto(g.titulo))).Append("</span>")
-             .Append("<span class=\"sg-pop-sub\">").Append(Server.HtmlEncode(Texto(g.plan_nombre)))
-             .Append("</span><span class=\"sg-pop-sub\">")
-             .Append(g.con_orden ? "<span class=\"sg-ot-chip es-ok\">Con OT</span>"
-                                 : "<span class=\"sg-ot-chip es-neutro\">" + Server.HtmlEncode(Texto(g.estado)) + "</span>")
-             .Append("</span></span></a>");
+             .Append("<span class=\"sg-pop-sub\">").Append(Server.HtmlEncode(Texto(g.plan_nombre))).Append("</span>")
+             .Append("<span class=\"sg-pop-sub\">")
+             .Append(conOrden ? "<span class=\"sg-ot-chip es-ok\">Con OT</span>"
+                              : "<span class=\"sg-ot-chip es-neutro\">" + Server.HtmlEncode(Texto(g.estado)) + "</span>")
+             .Append("</span></span>")
+
+             .Append(conOrden ? "</a>" : "</span>");
         }
 
-        return s.Append("</div>").ToString();
+        return s.Append("</div></div>").ToString();
     }
 
     /// <summary>El color del estado de la orden, con el mismo criterio del centro.</summary>
@@ -436,6 +461,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (c.Contains("CERRADA")) return "es-ok";
 
         return "es-neutro";
+    }
+
+    /// <summary>
+    /// Un icono de SIGMA AI.
+    ///
+    /// POR QUE NO UN mdi
+    ///   La estrellita de la fuente de iconos es la misma que usan "destacar"
+    ///   y "favorito" en medio sistema. Lo que sale de un modelo es lo unico
+    ///   de esta pantalla que no lo escribio una persona y tiene que
+    ///   distinguirse de un vistazo: por eso lleva su propio simbolo.
+    ///
+    ///   Y cada estado tiene el suyo -analizando, prediccion, recomendacion,
+    ///   tiempo real-, asi que el icono dice ademas EN QUE esta el modelo.
+    /// </summary>
+    private string IconoIa(string cual, string clase, string alt)
+    {
+        /* Va como fondo y no como <img> porque el simbolo ocupa un tercio de
+           su lienzo -esta pensado para un logo de 128px-: puesto a 18px se
+           veia como una mota. El CSS lo agranda y el contenedor lo recorta. */
+        return "<span class=\"" + clase + "\" role=\"img\" aria-label=\"" + Server.HtmlEncode(alt) +
+               "\" style=\"background-image:url('" +
+               ResolveUrl("~/Imagen/sigma-ai/sigma-ai-" + cual + ".svg") + "')\"></span>";
     }
 
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
@@ -682,7 +729,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         StringBuilder s = new StringBuilder("<div class=\"sg-a3-ia\">");
 
-        s.Append("<div class=\"sg-a3-ia-cab\"><i class=\"mdi mdi-star-four-points-outline\"></i>Predicción por revisar")
+        s.Append("<div class=\"sg-a3-ia-cab\">").Append(IconoIa("status-prediction", "sg-ai-ico", "")).Append("Predicción por revisar")
          .Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(p.alt_nombre))).Append("</span></div>");
 
         s.Append("<p><strong>").Append(Server.HtmlEncode(Texto(p.ale_titulo))).Append("</strong></p>");
@@ -804,8 +851,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                      rep.Count == 0 ? "Sin consumo registrado"
                      : string.Join(" · ", rep.Select(r => r.codigo + " · " + Cantidad(r.neto, r.unidad)).ToArray())));
 
-            s.Append(DetItem("mdi-image-multiple-outline", "Evidencias",
-                     ev.Count == 0 ? "Sin archivos" : ev.Count + (ev.Count == 1 ? " archivo" : " archivos")));
+            s.Append(Evidencias(ev));
 
             s.Append(DetItem("mdi-shield-check-outline", "Cierre",
                      o.otr_orden_trabajo_estado == 4
@@ -818,6 +864,74 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
 
         litOrdenes.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Las evidencias de la orden, como miniaturas.
+    ///
+    /// ANTES DECIA "3 ARCHIVOS"
+    ///   Que es cierto y no sirve: la foto de la correa cortada es lo que
+    ///   explica la orden, y para verla habia que abrir la OT completa,
+    ///   perdiendo el lugar en el historial del equipo.
+    ///
+    ///   Los bytes no viajan aca: la miniatura se pide por VerArchivo.aspx
+    ///   con el id cifrado. Lo que no es imagen -un PDF, una planilla- se
+    ///   muestra como chip con su icono, porque una miniatura gris de un PDF
+    ///   no dice mas que su nombre.
+    /// </summary>
+    private string Evidencias(List<OrdenTrabajoArchivo> ev)
+    {
+        if (ev == null || ev.Count == 0)
+            return DetItem("mdi-image-multiple-outline", "Evidencias", "Sin archivos");
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>")
+         .Append("Evidencias <b>").Append(ev.Count).Append("</b></strong>")
+         .Append("<div class=\"sg-a3-ev\">");
+
+        /* Primero lo que se ve. Con seis archivos y un PDF primero, las fotos
+           quedaban bajo el pliegue de la fila. */
+        foreach (OrdenTrabajoArchivo a in ev.OrderByDescending(x => x.es_imagen).ThenBy(x => x.paso_orden).Take(8))
+        {
+            string titulo = Texto(a.etiqueta) +
+                            (a.paso_orden > 0 ? " · Paso " + a.paso_orden : "") +
+                            (string.IsNullOrEmpty(a.usuario) ? "" : " · " + a.usuario);
+
+            if (a.es_imagen)
+            {
+                s.Append("<span class=\"sg-a3-ev-foto\" data-ampliar=\"1\"><img src=\"")
+                 .Append(Server.HtmlEncode(UrlArchivo.Ver(a.arc_id)))
+                 .Append("\" alt=\"").Append(Server.HtmlEncode(titulo))
+                 .Append("\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\" /></span>");
+                continue;
+            }
+
+            s.Append("<a class=\"sg-a3-ev-doc\" href=\"").Append(Server.HtmlEncode(UrlArchivo.Ver(a.arc_id)))
+             .Append("\" target=\"_blank\" rel=\"noopener\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
+             .Append("<i class=\"mdi ").Append(IconoArchivo(a)).Append("\"></i>")
+             .Append("<span>").Append(Server.HtmlEncode(Texto(a.etiqueta))).Append("</span></a>");
+        }
+
+        if (ev.Count > 8)
+            s.Append("<span class=\"sg-a3-ev-mas\">+").Append(ev.Count - 8).Append("</span>");
+
+        return s.Append("</div></div>").ToString();
+    }
+
+    /// <summary>El icono del archivo que no es imagen.</summary>
+    private static string IconoArchivo(OrdenTrabajoArchivo a)
+    {
+        if (a.es_video) return "mdi-play-circle-outline";
+        if (a.es_audio) return "mdi-microphone-outline";
+
+        string n = (a.nombre ?? "").ToLowerInvariant();
+
+        if (n.EndsWith(".pdf")) return "mdi-file-pdf-box";
+        if (n.EndsWith(".xls") || n.EndsWith(".xlsx") || n.EndsWith(".csv")) return "mdi-file-excel-outline";
+        if (n.EndsWith(".doc") || n.EndsWith(".docx")) return "mdi-file-word-outline";
+
+        return "mdi-file-document-outline";
     }
 
     private string DetItem(string icono, string titulo, string valor)
@@ -2326,7 +2440,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         Alerta p = predicciones.FirstOrDefault();
 
         s.Append("<header class=\"sg-a3-ia-head\">")
-         .Append("<span class=\"sg-a3-ia-ico\"><i class=\"mdi mdi-star-four-points-outline\"></i></span>")
+         .Append(IconoIa("symbol-gradient", "sg-ai-simbolo", "SIGMA AI"))
          .Append("<div><h3>SIGMA AI<span> · ").Append(p == null ? "Sin análisis" : "Predicción por revisar").Append("</span></h3>")
          .Append("<p class=\"sg-ot-card-sub\">Lo que el modelo observó en este equipo, para que una persona lo revise.</p></div>");
 
@@ -2338,7 +2452,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (p == null)
         {
-            s.Append("<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-robot-outline\"></i>")
+            s.Append("<div class=\"sg-ot-vacio\">").Append(IconoIa("status-analyzing", "sg-ai-vacio", ""))
              .Append("<p>Sin análisis predictivo para este equipo</p>")
              .Append("<span>El modelo todavía no encontró un patrón que valga la pena mirar acá.</span></div>")
              .Append("</div>");
@@ -2359,7 +2473,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("</div></div>");
 
         // ---- las senales que alimentan el modelo ----
-        s.Append("<div class=\"sg-a3-ia-senal\"><h4>Estado de señales de entrada</h4><div class=\"sg-a3-senales\">");
+        s.Append("<div class=\"sg-a3-ia-senal\"><h4>")
+         .Append(IconoIa("status-realtime", "sg-ai-ico", ""))
+         .Append("Estado de señales de entrada</h4><div class=\"sg-a3-senales\">");
 
         List<ActivoVariable> variables = new ActivoVariableController().GetVariables(
             new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
@@ -2389,7 +2505,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         // ---- recomendacion y acciones ----
         s.Append("<div class=\"sg-a3-ia-cols es-abajo\">");
 
-        s.Append("<div class=\"sg-a3-ia-reco\"><h4><i class=\"mdi mdi-wrench-outline\"></i>Recomendación</h4>")
+        s.Append("<div class=\"sg-a3-ia-reco\"><h4>")
+         .Append(IconoIa("status-recommendation", "sg-ai-ico", ""))
+         .Append("Recomendación</h4>")
          .Append("<p>Revisar el equipo y validar las lecturas antes de intervenir.</p>");
 
         /* La alerta no guarda una recomendacion escrita: guarda el numero que

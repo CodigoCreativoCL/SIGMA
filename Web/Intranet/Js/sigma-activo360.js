@@ -946,6 +946,148 @@
        El numero de OT abiertas y la fecha del proximo mantenimiento abren el
        detalle sobre la fila. El contenido ya viaja con ella: un ida y vuelta
        al servidor por cada numero que se toca se nota. */
+    /* ---- El calendario del popover ----
+
+       El servidor manda los eventos; el mes lo arma el navegador. Pintar una
+       rejilla por activo en el HTML de la lista serian ochocientas celdas que
+       nadie va a mirar. */
+    function calendario(caja) {
+        var rejilla = caja.querySelector('.sg-pop-cal');
+        var detalle = caja.querySelector('.sg-pop-dia');
+        var fuente = caja.querySelector('.sg-pop-ev');
+
+        if (!rejilla || !fuente) return;
+        if (rejilla.getAttribute('data-listo') === '1') return;
+
+        rejilla.setAttribute('data-listo', '1');
+
+        var MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+                   'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        var DIA = ['L', 'M', 'M', 'J', 'V', 'S', 'D'];
+
+        var eventos = fuente.querySelectorAll('.sg-pop-item[data-fecha]');
+        if (!eventos.length) return;
+
+        /* Por dia: cuantos hay y si alguno ya tiene orden. El popover se abre
+           en el mes del primer evento, no en el mes de hoy: la proxima
+           mantencion puede ser en marzo. */
+        var porDia = {};
+        var primero = null, ultimo = null;
+
+        for (var i = 0; i < eventos.length; i++) {
+            var f = eventos[i].getAttribute('data-fecha');
+            if (!porDia[f]) porDia[f] = { n: 0, ot: false };
+            porDia[f].n++;
+            if (eventos[i].querySelector('.es-ok')) porDia[f].ot = true;
+
+            if (!primero || f < primero) primero = f;
+            if (!ultimo || f > ultimo) ultimo = f;
+        }
+
+        function partes(iso) {
+            var p = iso.split('-');
+            return { a: parseInt(p[0], 10), m: parseInt(p[1], 10) - 1, d: parseInt(p[2], 10) };
+        }
+
+        function clave(a, m, d) {
+            return a + '-' + ('0' + (m + 1)).slice(-2) + '-' + ('0' + d).slice(-2);
+        }
+
+        var ini = partes(primero), fin = partes(ultimo);
+        var hoy = new Date();
+        var hoyClave = clave(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+
+        var verA = ini.a, verM = ini.m;
+
+        function mostrarDia(iso) {
+            if (!detalle) return;
+
+            detalle.innerHTML = '<strong></strong>';
+
+            var p = partes(iso);
+            detalle.querySelector('strong').textContent = p.d + ' de ' + MES[p.m];
+
+            for (var e = 0; e < eventos.length; e++)
+                if (eventos[e].getAttribute('data-fecha') === iso)
+                    detalle.appendChild(eventos[e].cloneNode(true));
+        }
+
+        function pintar() {
+            var html = '<div class="sg-pop-cal-cab">' +
+                       '<a href="javascript:void(0)" class="sg-pop-cal-nav" data-mes="-1"><i class="mdi mdi-chevron-left"></i></a>' +
+                       '<strong></strong>' +
+                       '<a href="javascript:void(0)" class="sg-pop-cal-nav" data-mes="1"><i class="mdi mdi-chevron-right"></i></a>' +
+                       '</div><div class="sg-pop-cal-dias">';
+
+            for (var d = 0; d < 7; d++) html += '<span>' + DIA[d] + '</span>';
+            html += '</div><div class="sg-pop-cal-grid"></div>';
+
+            rejilla.innerHTML = html;
+            rejilla.querySelector('.sg-pop-cal-cab strong').textContent = MES[verM] + ' ' + verA;
+
+            /* Lunes primero: getDay() devuelve 0 para el domingo y la semana
+               laboral chilena no empieza ahi. */
+            var primeroMes = new Date(verA, verM, 1);
+            var desplaza = (primeroMes.getDay() + 6) % 7;
+            var largo = new Date(verA, verM + 1, 0).getDate();
+            var previo = new Date(verA, verM, 0).getDate();
+
+            var grid = rejilla.querySelector('.sg-pop-cal-grid');
+            var celdas = '';
+
+            for (var x = desplaza; x > 0; x--)
+                celdas += '<span class="sg-pop-cal-dia es-fuera">' + (previo - x + 1) + '</span>';
+
+            for (var n = 1; n <= largo; n++) {
+                var iso = clave(verA, verM, n);
+                var info = porDia[iso];
+
+                var cls = 'sg-pop-cal-dia';
+                if (info) cls += ' es-con' + (info.ot ? ' es-ot' : '');
+                if (iso === hoyClave) cls += ' es-hoy';
+
+                celdas += info
+                    ? '<a href="javascript:void(0)" class="' + cls + '" data-dia="' + iso + '">' + n + '<i></i></a>'
+                    : '<span class="' + cls + '">' + n + '</span>';
+            }
+
+            grid.innerHTML = celdas;
+
+            // los meses fuera del rango con eventos no se ofrecen
+            var atras = rejilla.querySelector('[data-mes="-1"]');
+            var adelante = rejilla.querySelector('[data-mes="1"]');
+
+            if (verA === ini.a && verM === ini.m) atras.classList.add('es-mudo');
+            if (verA === fin.a && verM === fin.m) adelante.classList.add('es-mudo');
+
+            var navs = rejilla.querySelectorAll('.sg-pop-cal-nav');
+            for (var v = 0; v < navs.length; v++)
+                navs[v].onclick = function () {
+                    var paso = parseInt(this.getAttribute('data-mes'), 10);
+                    verM += paso;
+                    if (verM < 0) { verM = 11; verA--; }
+                    if (verM > 11) { verM = 0; verA++; }
+                    pintar();
+                };
+
+            var dias = rejilla.querySelectorAll('.sg-pop-cal-dia[data-dia]');
+            for (var k = 0; k < dias.length; k++)
+                dias[k].onclick = function () {
+                    for (var q = 0; q < dias.length; q++) dias[q].classList.remove('es-elegido');
+                    this.classList.add('es-elegido');
+                    mostrarDia(this.getAttribute('data-dia'));
+                };
+
+            /* Se abre con un dia puesto: un calendario con puntos y un panel
+               vacio debajo parece que no cargo. */
+            var deEsteMes = rejilla.querySelector('.sg-pop-cal-dia[data-dia]');
+            if (deEsteMes) deEsteMes.click();
+            else if (detalle) detalle.innerHTML = '';
+        }
+
+        pintar();
+    }
+
     function popovers() {
         /* Tras un postback parcial la lista se vuelve a pintar entera. Las
            cajas que se habian colgado del <body> ya no tienen fila: si no se
@@ -975,8 +1117,18 @@
             cerrar();
 
             /* Se cuelga del <body> y se posiciona a mano: dentro de la fila,
-               el overflow de la grilla le cortaba la mitad. */
-            if (caja.parentNode !== document.body) document.body.appendChild(caja);
+               el overflow de la grilla le cortaba la mitad.
+
+               Y se lleva la clase `sg-a3`, que es donde viven los tokens de
+               color del centro: fuera de ese contenedor, `var(--sg-p)` no
+               resuelve y el fondo del dia elegido quedaba transparente con el
+               numero en blanco, o sea invisible. */
+            if (caja.parentNode !== document.body) {
+                caja.classList.add('sg-a3');
+                document.body.appendChild(caja);
+            }
+
+            if (caja.classList.contains('es-cal')) calendario(caja);
 
             caja.classList.add('es-abierto');
             abierto = caja;
