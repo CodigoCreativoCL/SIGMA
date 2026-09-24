@@ -1710,13 +1710,147 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
     background-size: 220%;
 }
 
-/* En el vacio el simbolo es grande: es el unico contenido de la caja. */
+/* En el vacio el simbolo es grande y va ENTERO: agrandado al 300% como los
+   chicos, el recorte le cortaba un nodo y se veia un pedazo suelto. */
 .sg-ai-vacio {
-    width: 72px;
-    height: 72px;
+    width: 96px;
+    height: 96px;
     margin-bottom: 4px;
+    background-size: contain;
     opacity: .9;
 }
 
 .sg-a3-ia-senal h4,
 .sg-a3-ia-reco h4 { display: flex; align-items: center; }
+
+/* ---- La rampa de marca en el centro ----------------------------------
+   Trece secciones con el mismo icono morado no se distinguen entre si: el
+   morado repetido deja de senalar. Cada seccion toma un tono de la rampa, y
+   el morado queda para lo que de verdad es una accion.
+
+   El tono va por seccion y no por tipo de dato: lo que se busca es "donde
+   estoy", no "que clase de cosa es esta". */
+.sg-a3-panel[data-panel="resumen"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="ficha"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="documentos"] .sg-ot-card-ico {
+    background: var(--sg-ramp-1-subtle);
+    color: var(--sg-ramp-1);
+}
+
+.sg-a3-panel[data-panel="historial"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="ordenes"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="bitacora"] .sg-ot-card-ico {
+    background: var(--sg-ramp-2-subtle);
+    color: var(--sg-ramp-2);
+}
+
+.sg-a3-panel[data-panel="mantenimiento"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="revisiones"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="componentes"] .sg-ot-card-ico {
+    background: var(--sg-ramp-3-subtle);
+    color: var(--sg-ramp-3);
+}
+
+.sg-a3-panel[data-panel="condicion"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="fallas"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="repuestos"] .sg-ot-card-ico {
+    background: var(--sg-ramp-4-subtle);
+    color: var(--sg-ramp-4);
+}
+
+/* Los estados operativos mandan sobre el tono de la seccion: un icono de
+   alerta en rojo significa algo, el tono de la seccion solo ubica. */
+.sg-a3-panel .sg-ot-card-ico.es-ok { background: var(--sg-success-subtle); color: var(--sg-success); }
+
+/* La fila de KPI: cuatro tarjetas del mismo rango, cuatro tonos de la rampa
+   en orden. Antes eran cuatro morados con el numero como unica diferencia.
+
+   Solo las que NO traen estado propio: un KPI en rojo dice algo, y el tono
+   de la rampa solo ordena. */
+.sg-a3-kpis .sg-a3-kpi:nth-child(1) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-1-subtle); color: var(--sg-ramp-1); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(2) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-2-subtle); color: var(--sg-ramp-2); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(3) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-3-subtle); color: var(--sg-ramp-3); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(4) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-4-subtle); color: var(--sg-ramp-4); }
+
+/* El degradado de la rampa como filo de la cabecera se probo y se saco: la
+   miga de navegacion vive justo encima y la linea le cruzaba el texto. El
+   tono por seccion ya hace el trabajo sin pelear con nada. */
+
+/* ---- Video y audio en la galeria -------------------------------------
+   El numero de adjuntos es cierto y no sirve: la foto de la correa cortada
+   explica la orden, y el audio que grabo el tecnico explica la falla. */
+.sg-a3-ev-foto.es-video { position: relative; }
+.sg-a3-ev-foto video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0d0d; }
+
+/* El play sobre la miniatura: sin el, el primer fotograma parece una foto. */
+.sg-a3-ev-foto.es-video > i {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 26px;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(13, 13, 13, .55);
+    pointer-events: none;
+}
+
+/* El audio no tiene nada que mirar: se escucha ahi mismo, sin abrir nada. */
+.sg-a3-ev-audio {
+    display: grid;
+    gap: 5px;
+    padding: 8px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface);
+    max-width: 260px;
+}
+.sg-a3-ev-audio-nom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--sg-suave);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-a3-ev-audio-nom i { color: var(--sg-p); font-size: 15px; flex: none; }
+.sg-a3-ev-audio audio { width: 240px; height: 32px; }
+
+/* ---- Documentos: la tarjeta y el detalle ---- */
+.sg-ot-ev-foto.es-video { position: relative; }
+.sg-ot-ev-foto video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0d0d; }
+.sg-ot-ev-foto.es-video > .mdi-play-circle {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(13, 13, 13, .55);
+    pointer-events: none;
+}
+
+.sg-doc-det-video video { width: 100%; border-radius: 10px; background: #0d0d0d; display: block; }
+.sg-doc-det-audio {
+    display: grid;
+    gap: 8px;
+    place-items: center;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+}
+.sg-doc-det-audio audio { width: 100%; }
+
+/* ---- El visor con reproductor ---- */
+.sg-ot-lb-foto.es-video video { max-width: 100%; max-height: 74vh; display: block; background: #0d0d0d; border-radius: 10px; }
+.sg-ot-lb-foto.es-audio {
+    display: grid;
+    gap: 14px;
+    place-items: center;
+    padding: 30px 20px;
+}
+.sg-ot-lb-foto.es-audio i { font-size: 54px; color: var(--sg-p); }
+.sg-ot-lb-foto.es-audio audio { width: min(420px, 80vw); }
+

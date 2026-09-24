@@ -39,6 +39,11 @@ namespace SitioBase.Controller
 
         public bool es_imagen { get { return (mime ?? "").StartsWith("image", StringComparison.OrdinalIgnoreCase); } }
 
+        /* Un video y un audio no son "un documento": el primero se reproduce
+           con su propio control y el segundo no tiene nada que mirar. */
+        public bool es_video { get { return (mime ?? "").StartsWith("video", StringComparison.OrdinalIgnoreCase); } }
+        public bool es_audio { get { return (mime ?? "").StartsWith("audio", StringComparison.OrdinalIgnoreCase); } }
+
         /// <summary>Lo que el terreno adjunto, contra lo que vive en la ficha.</summary>
         public bool es_evidencia { get { return origen == "ORDEN" || origen == "INSPECCION" || origen == "TAREA"; } }
 

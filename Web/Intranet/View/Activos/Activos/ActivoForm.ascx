@@ -370,16 +370,22 @@
                     <a id="sigmaQuitar" href="javascript:void(0)" onclick="sigmaQuitarSel()" class="sigma-img-quitar" style="display:none;"><i class="mdi mdi-close-circle-outline"></i> Quitar</a>
                 </div>
                 <span class="sigma-modal-ayuda">Foto o esquema del equipo (JPG/PNG). Se muestra en la ficha e historial.</span>
-                <img id="sigmaThumb" alt="Vista previa" style="display:none;width:auto;height:auto;max-height:150px;max-width:260px;object-fit:contain;margin-top:8px;border-radius:8px;border:1px solid #e5e7eb;" />
+                <img id="sigmaThumb" class="sigma-img-prev" alt="Vista previa" style="display:none" />
 
-                <%-- Imagen ya guardada (edición): mostrar y permitir quitarla. --%>
-                <asp:Panel ID="pnlImagenActual" runat="server" Visible="false" style="margin-top:8px;">
-                    <div style="display:flex;align-items:center;gap:10px;">
-                        <img id="imgActual" runat="server" alt="Imagen actual" style="width:auto;height:auto;max-height:110px;max-width:200px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;" />
-                        <label style="font-size:12px;color:#b91c1c;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
-                            <asp:CheckBox ID="chkQuitarImagen" runat="server" /> Quitar la imagen actual al guardar
-                        </label>
-                    </div>
+                <%-- Imagen ya guardada (edición): mostrar y permitir quitarla.
+
+                     Iba con estilos en linea y una fila flex: dentro de la
+                     ficha, que es una columna angosta, la etiqueta caia en
+                     tres lineas al lado de la foto. Ahora es una tarjeta que
+                     se apila cuando no hay ancho. --%>
+                <asp:Panel ID="pnlImagenActual" runat="server" Visible="false" CssClass="sigma-img-actual">
+                    <a id="lnkImagenActual" runat="server" class="sigma-img-actual-foto" target="_blank" rel="noopener" title="Ampliar">
+                        <img id="imgActual" runat="server" alt="Imagen actual del equipo" data-ampliar="1" />
+                    </a>
+                    <label class="sigma-img-actual-quitar">
+                        <asp:CheckBox ID="chkQuitarImagen" runat="server" />
+                        <span>Quitar la imagen actual al guardar</span>
+                    </label>
                 </asp:Panel>
             </div>
         </div>

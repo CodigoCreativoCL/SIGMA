@@ -172,19 +172,52 @@
        mismo Esc: dos visores distintos en la misma pagina se cierran de dos
        maneras distintas. */
     function ampliables() {
-        var fotos = document.querySelectorAll('.sg-a3-foto img, .sg-plan-foto img, [data-ampliar] img, img[data-ampliar]');
+        /* TODA imagen de contenido se amplia, no una lista de casos.
 
-        for (var i = 0; i < fotos.length; i++) {
-            if (fotos[i].getAttribute('data-listo') === '1') continue;
+           Enumerar los contenedores obligaba a acordarse de agregarlo cada
+           vez que aparecia una foto nueva -la del componente, la del
+           repuesto, la evidencia de la orden- y siempre quedaba una afuera.
+           Ahora se toman todas las del centro y se descartan las que NO son
+           contenido: los simbolos de marca y lo que se marque a mano. */
+        var todas = document.querySelectorAll('.sg-a3 img, .sigma-modal img, .sg-plan-foto img, img[data-ampliar]');
 
-            fotos[i].setAttribute('data-listo', '1');
-            fotos[i].classList.add('sg-a3-ampliable');
-            fotos[i].title = 'Ampliar';
-            fotos[i].onclick = function () { ampliar(this.src, this.alt || 'Imagen'); };
+        for (var i = 0; i < todas.length; i++) {
+            var img = todas[i];
+
+            if (img.getAttribute('data-listo') === '1') continue;
+            if (img.getAttribute('data-no-ampliar') !== null) continue;
+            if (img.classList.contains('sg-ai-badge')) continue;
+
+            img.setAttribute('data-listo', '1');
+            img.classList.add('sg-a3-ampliable');
+            img.title = 'Ampliar';
+
+            /* Si la foto va dentro de un enlace -la imagen guardada del
+               equipo, que fuera del centro se abre en una pestaña- el clic se
+               atiende en el enlace: dejarlo pasar navegaba igual. */
+            var caja = img.parentNode;
+            var enlace = caja && caja.tagName === 'A' ? caja : null;
+
+            if (enlace) {
+                enlace.onclick = (function (foto) {
+                    return function (ev) {
+                        ev.preventDefault();
+                        ampliar(foto.src, foto.alt || 'Imagen');
+                    };
+                })(img);
+                continue;
+            }
+
+            img.onclick = function () { ampliar(this.src, this.alt || 'Imagen'); };
         }
     }
 
-    function ampliar(url, titulo) {
+    /* ---- El visor: una foto se mira, un video se reproduce ----
+
+       `tipo` es 'imagen', 'video' o 'audio'. Sin el se deduce de la
+       extension, porque muchas llamadas vienen de una <img> y ahi no hay
+       duda. */
+    function ampliar(url, titulo, tipo) {
         var fondo = document.getElementById('sgOtLightbox');
 
         if (!fondo) {
@@ -194,14 +227,26 @@
             document.body.appendChild(fondo);
         }
 
+        var clase = tipo || 'imagen';
+
+        var cuerpo = clase === 'video'
+            ? '<div class="sg-ot-lb-foto es-video"><video controls autoplay preload="metadata"></video></div>'
+            : clase === 'audio'
+                ? '<div class="sg-ot-lb-foto es-audio"><i class="mdi mdi-waveform"></i><audio controls autoplay preload="none"></audio></div>'
+                : '<div class="sg-ot-lb-foto"><img alt="" /></div>';
+
+        var icono = clase === 'video' ? 'mdi-play-circle-outline'
+                  : clase === 'audio' ? 'mdi-waveform'
+                  : 'mdi-image-outline';
+
         fondo.innerHTML =
             '<div class="sg-ot-lb-marco" role="dialog" aria-modal="true">' +
             '<header class="sg-ot-lb-cab">' +
-            '<span class="sg-ot-card-ico"><i class="mdi mdi-image-outline"></i></span>' +
+            '<span class="sg-ot-card-ico"><i class="mdi ' + icono + '"></i></span>' +
             '<h3></h3>' +
             '<a href="#" class="sg-ot-lb-cerrar" title="Cerrar (Esc)"><i class="mdi mdi-close"></i></a>' +
             '</header>' +
-            '<div class="sg-ot-lb-foto"><img alt="" /></div>' +
+            cuerpo +
             '<div class="sg-ot-lb-datos">' +
             '<a class="sg-ot-btn es-plano" target="_blank"><i class="mdi mdi-open-in-new"></i>Abrir original</a>' +
             '</div></div>';
@@ -210,14 +255,24 @@
            nombre del archivo lo escribio una persona y puede traer comillas
            o angulos. */
         fondo.querySelector('h3').textContent = titulo;
-        fondo.querySelector('.sg-ot-lb-foto img').src = url;
-        fondo.querySelector('.sg-ot-lb-foto img').alt = titulo;
         fondo.querySelector('.sg-ot-lb-datos a').href = url;
+
+        var medio = fondo.querySelector('.sg-ot-lb-foto img, .sg-ot-lb-foto video, .sg-ot-lb-foto audio');
+        if (medio) {
+            medio.src = url;
+            if (medio.tagName === 'IMG') medio.alt = titulo;
+        }
 
         fondo.classList.add('es-abierto');
 
         function cerrar(ev) {
             if (ev) ev.preventDefault();
+
+            /* Un video que sigue sonando con el visor cerrado es lo peor que
+               puede pasar en una oficina. */
+            var repro = fondo.querySelector('video, audio');
+            if (repro) { try { repro.pause(); } catch (e) { } }
+
             fondo.classList.remove('es-abierto');
             fondo.innerHTML = '';
             document.removeEventListener('keydown', porEscape);
@@ -228,6 +283,32 @@
         fondo.querySelector('.sg-ot-lb-cerrar').onclick = cerrar;
         fondo.onclick = function (ev) { if (ev.target === fondo) cerrar(ev); };
         document.addEventListener('keydown', porEscape);
+    }
+
+    /* Cualquier cosa marcada como medio abre el visor: la miniatura de una
+       evidencia, la de un video. El audio no pasa por aca porque se escucha
+       en su propio control, sin abrir nada. */
+    function medios() {
+        var cajas = document.querySelectorAll('[data-medio="imagen"], [data-medio="video"]');
+
+        for (var i = 0; i < cajas.length; i++) {
+            if (cajas[i].getAttribute('data-listo-medio') === '1') continue;
+            cajas[i].setAttribute('data-listo-medio', '1');
+
+            cajas[i].style.cursor = 'zoom-in';
+            cajas[i].onclick = (function (caja) {
+                return function (ev) {
+                    ev.preventDefault();
+                    ev.stopPropagation();
+
+                    var foto = caja.querySelector('img, video');
+
+                    ampliar(caja.getAttribute('data-url') || (foto ? foto.src : ''),
+                            caja.getAttribute('data-titulo') || 'Archivo',
+                            caja.getAttribute('data-medio'));
+                };
+            })(cajas[i]);
+        }
     }
 
     /* ---- La ficha avisa antes de que se pierda lo escrito ----
@@ -849,13 +930,18 @@
             if (!detalle) return;
 
             var d = function (n) { return card.getAttribute('data-' + n) || ''; };
-            var esImagen = d('imagen') === '1';
+            var medio = d('medio') || (d('imagen') === '1' ? 'imagen' : 'documento');
 
             var html = '<header class="sg-ot-card-cab"><span class="sg-ot-card-ico">' +
-                       '<i class="mdi ' + (esImagen ? 'mdi-image-outline' : 'mdi-file-document-outline') + '"></i></span>' +
+                       '<i class="mdi ' + (d('icono') || 'mdi-file-document-outline') + '"></i></span>' +
                        '<div><h3>Archivo</h3></div></header>';
 
-            if (esImagen) html += '<span class="sg-doc-det-foto"><img alt="" /></span>';
+            /* Cada medio se muestra como se consume: la foto se mira y se
+               amplia, el video se reproduce con su control y el audio se
+               escucha sin nada que mirar. */
+            if (medio === 'imagen') html += '<span class="sg-doc-det-foto"><img alt="" /></span>';
+            else if (medio === 'video') html += '<span class="sg-doc-det-video"><video controls preload="metadata"></video></span>';
+            else if (medio === 'audio') html += '<span class="sg-doc-det-audio"><audio controls preload="none"></audio></span>';
 
             html += '<div class="sg-doc-det-nom"></div>';
             html += dato('Origen', d('paso-txt'));
@@ -877,8 +963,11 @@
             if (img) {
                 img.src = d('url');
                 img.alt = d('titulo');
-                img.onclick = function () { ampliar(d('url'), d('titulo')); };
+                img.onclick = function () { ampliar(d('url'), d('titulo'), 'imagen'); };
             }
+
+            var reproductor = detalle.querySelector('.sg-doc-det-video video, .sg-doc-det-audio audio');
+            if (reproductor) reproductor.src = d('url');
         }
 
         for (var i = 0; i < tarjetas.length; i++)
@@ -1175,6 +1264,33 @@
         }
     }
 
+    /* ---- Una imagen que no esta no deja un icono roto ----
+
+       El archivo vive en el blob y la fila solo trae su id: si el blob no
+       responde -borrado, subida a medias-, el navegador pinta el icono de
+       imagen rota, que parece un error de la pantalla. Se cambia por el mismo
+       hueco que se muestra cuando no hay foto. */
+    function imagenesRotas() {
+        var fotos = document.querySelectorAll('.sg-comp-foto img, .sg-a3-foto img, .sg-a3-ev-foto img, .sg-comp-det-foto img');
+
+        for (var i = 0; i < fotos.length; i++) {
+            if (fotos[i].getAttribute('data-rota') === '1') continue;
+            fotos[i].setAttribute('data-rota', '1');
+
+            fotos[i].onerror = function () {
+                var caja = this.parentNode;
+                if (!caja) return;
+
+                caja.classList.add('es-vacia');
+                caja.removeAttribute('data-ampliar');
+                caja.innerHTML = '<i class="mdi mdi-image-off-outline"></i>';
+            };
+
+            // por si ya fallo antes de que esto corriera
+            if (fotos[i].complete && fotos[i].naturalWidth === 0) fotos[i].onerror();
+        }
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -1188,6 +1304,8 @@
         ordenes();
         revisiones();
         ampliables();
+        medios();
+        imagenesRotas();
     }
 
     if (document.addEventListener) document.addEventListener('DOMContentLoaded', armar);

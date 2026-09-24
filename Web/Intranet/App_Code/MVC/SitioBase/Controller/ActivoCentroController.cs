@@ -11,6 +11,35 @@ namespace SitioBase.Controller
     /// tarea. Van en la misma clase porque en terreno son la misma cosa.
     /// </summary>
     [Serializable]
+    /// <summary>
+    /// Un archivo adjunto a una inspeccion o a una tarea (bloque 282).
+    ///
+    /// El MIME es lo que le dice a la pantalla si eso se mira, se reproduce o
+    /// se descarga: sin el, todo termina como un enlace gris.
+    /// </summary>
+    public class ActivoRevisionArchivo
+    {
+        public string tipo { get; set; }            // INSPECCION | TAREA
+        public int ejecucion_id { get; set; }
+        public int arc_id { get; set; }
+        public string nombre { get; set; }
+        public string mime { get; set; }
+        public long bytes { get; set; }
+        public DateTime? fecha { get; set; }
+        public string titulo { get; set; }
+        public string origen { get; set; }          // el item del checklist, cuando lo hay
+        public string usuario { get; set; }
+
+        public bool es_imagen { get { return (mime ?? "").StartsWith("image", StringComparison.OrdinalIgnoreCase); } }
+        public bool es_video { get { return (mime ?? "").StartsWith("video", StringComparison.OrdinalIgnoreCase); } }
+        public bool es_audio { get { return (mime ?? "").StartsWith("audio", StringComparison.OrdinalIgnoreCase); } }
+
+        public string etiqueta { get { return !string.IsNullOrEmpty(titulo) ? titulo : nombre; } }
+
+        /// <summary>La clave con la que la pantalla agrupa: tipo + ejecucion.</summary>
+        public string clave { get { return tipo + "-" + ejecucion_id; } }
+    }
+
     /// <summary>Una de las ordenes abiertas que hay detras del numero de la lista.</summary>
     public class ActivoListaOrden
     {
@@ -564,6 +593,62 @@ namespace SitioBase.Controller
 
                         if (!mapa.ContainsKey(g.activo_id)) mapa[g.activo_id] = new List<ActivoListaAgenda>();
                         mapa[g.activo_id].Add(g);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return mapa;
+        }
+
+        /// <summary>
+        /// Los archivos de todas las inspecciones y tareas del activo
+        /// (bloque 282), agrupados por revision.
+        ///
+        /// La pestaña decia "1 archivo adjunto". Ese archivo es la foto del
+        /// filtro saturado: es LA razon por la que la tarea quedo con
+        /// observacion, y para verla habia que salir a otra pantalla.
+        /// </summary>
+        public Dictionary<string, List<ActivoRevisionArchivo>> GetArchivosRevision(int activo)
+        {
+            Dictionary<string, List<ActivoRevisionArchivo>> mapa = new Dictionary<string, List<ActivoRevisionArchivo>>();
+
+            if (!Token.TokenSeguridad() || activo <= 0) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_REVISION_ARCHIVO";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoRevisionArchivo a = new ActivoRevisionArchivo();
+
+                        a.tipo = dr["TIPO"].ToString();
+                        a.ejecucion_id = int.Parse(dr["EJECUCION_ID"].ToString());
+                        a.arc_id = int.Parse(dr["ARC_ID"].ToString());
+                        a.nombre = dr["NOMBRE"] == DBNull.Value ? "" : dr["NOMBRE"].ToString();
+                        a.mime = dr["MIME"] == DBNull.Value ? "" : dr["MIME"].ToString();
+                        a.bytes = dr["BYTES"] == DBNull.Value ? 0 : long.Parse(dr["BYTES"].ToString());
+                        a.titulo = dr["TITULO"] == DBNull.Value ? "" : dr["TITULO"].ToString();
+                        a.origen = dr["ORIGEN"] == DBNull.Value ? "" : dr["ORIGEN"].ToString();
+                        a.usuario = dr["USUARIO"] == DBNull.Value ? "" : dr["USUARIO"].ToString();
+                        if (dr["FECHA"] != DBNull.Value) a.fecha = (DateTime)dr["FECHA"];
+
+                        if (!mapa.ContainsKey(a.clave)) mapa[a.clave] = new List<ActivoRevisionArchivo>();
+                        mapa[a.clave].Add(a);
                     }
                 }
 

@@ -1177,3 +1177,64 @@ html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
     color: var(--fg-m3-text, #222);
 }
 
+/* ---- La imagen guardada del equipo ------------------------------------
+   Iba con estilos en linea y una fila flex: dentro de la ficha del centro,
+   que es una columna angosta, la etiqueta caia en tres lineas al lado de la
+   foto. */
+.sigma-img-prev {
+    display: block;
+    max-height: 150px;
+    max-width: 100%;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    object-fit: contain;
+    cursor: zoom-in;
+}
+
+.sigma-img-actual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 12px;
+    background: var(--sg-surface-subtle, #f6f7fb);
+}
+.sigma-img-actual-foto {
+    display: block;
+    flex: none;
+    line-height: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    background: #fff;
+}
+.sigma-img-actual-foto img {
+    display: block;
+    max-height: 110px;
+    max-width: 180px;
+    object-fit: contain;
+    cursor: zoom-in;
+}
+.sigma-img-actual-quitar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b91c1c;
+    cursor: pointer;
+}
+.sigma-img-actual-quitar span { line-height: 1.35; }
+
+/* En columna angosta la foto ocupa el ancho y la casilla baja: al lado, el
+   texto caia en tres lineas. */
+@media (max-width: 560px) {
+    .sigma-img-actual { flex-direction: column; align-items: flex-start; }
+    .sigma-img-actual-foto img { max-width: 100%; }
+}

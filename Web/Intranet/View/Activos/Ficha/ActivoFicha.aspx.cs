@@ -502,6 +502,160 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                Server.HtmlEncode(Texto(alt)) + "\" /></span>";
     }
 
+    /// <summary>
+    /// Lo que la pantalla necesita de un archivo para poder mostrarlo.
+    ///
+    /// Las tres pestañas que muestran adjuntos -ordenes, revisiones y
+    /// documentos- los traen de tres consultas distintas con tres modelos
+    /// distintos. En vez de escribir la galeria tres veces, cada una traduce
+    /// lo suyo a esto.
+    /// </summary>
+    private class Medio
+    {
+        public int arc_id;
+        public string etiqueta;
+        public string mime;
+        public string pie;
+        public bool es_imagen;
+        public bool es_video;
+        public bool es_audio;
+    }
+
+    /// <summary>
+    /// La galeria de adjuntos: miniatura para lo que se ve, control para lo
+    /// que se escucha, chip para lo que se descarga.
+    ///
+    /// POR QUE NO ALCANZA "3 ARCHIVOS"
+    ///   El numero es cierto y no sirve. La foto de la correa cortada es lo
+    ///   que explica la orden, y el audio de treinta segundos que grabo el
+    ///   tecnico es lo que explica la falla: ir a buscarlos a otra pantalla
+    ///   era perder el lugar en el historial del equipo.
+    ///
+    ///   Los bytes no viajan aca. La miniatura, el video y el audio se piden
+    ///   por VerArchivo.aspx con el id cifrado, y el navegador los cachea.
+    /// </summary>
+    private string Galeria(List<Medio> medios, int tope = 8)
+    {
+        if (medios == null || medios.Count == 0) return "";
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-ev\">");
+
+        /* Primero lo que se ve. Con seis adjuntos y un PDF adelante, las
+           fotos quedaban bajo el pliegue de la fila. */
+        List<Medio> orden = medios
+            .OrderByDescending(x => x.es_imagen)
+            .ThenByDescending(x => x.es_video)
+            .ThenByDescending(x => x.es_audio)
+            .ToList();
+
+        foreach (Medio m in orden.Take(tope))
+        {
+            string url = UrlArchivo.Ver(m.arc_id);
+            string titulo = Texto(m.etiqueta) + (string.IsNullOrEmpty(m.pie) ? "" : " · " + m.pie);
+
+            if (m.es_imagen)
+            {
+                s.Append("<span class=\"sg-a3-ev-foto\" data-medio=\"imagen\" data-url=\"").Append(Server.HtmlEncode(url))
+                 .Append("\" data-titulo=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
+                 .Append("<img src=\"").Append(Server.HtmlEncode(url))
+                 .Append("\" alt=\"").Append(Server.HtmlEncode(titulo))
+                 .Append("\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\" /></span>");
+                continue;
+            }
+
+            /* El video se abre en el visor, no se reproduce en la miniatura:
+               seis videos autoreproduciendose en una fila es lo que nadie
+               pidio. La miniatura es su primer fotograma, que el navegador
+               saca solo. */
+            if (m.es_video)
+            {
+                s.Append("<span class=\"sg-a3-ev-foto es-video\" data-medio=\"video\" data-url=\"").Append(Server.HtmlEncode(url))
+                 .Append("\" data-titulo=\"").Append(Server.HtmlEncode(titulo))
+                 .Append("\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
+                 .Append("<video src=\"").Append(Server.HtmlEncode(url)).Append("\" preload=\"metadata\" muted></video>")
+                 .Append("<i class=\"mdi mdi-play-circle\"></i></span>");
+                continue;
+            }
+
+            /* Un audio no tiene nada que mirar: se escucha ahi mismo, sin
+               abrir un visor para oir treinta segundos. */
+            if (m.es_audio)
+            {
+                s.Append("<span class=\"sg-a3-ev-audio\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
+                 .Append("<span class=\"sg-a3-ev-audio-nom\"><i class=\"mdi mdi-waveform\"></i>")
+                 .Append(Server.HtmlEncode(Texto(m.etiqueta))).Append("</span>")
+                 .Append("<audio src=\"").Append(Server.HtmlEncode(url)).Append("\" controls preload=\"none\"></audio>")
+                 .Append("</span>");
+                continue;
+            }
+
+            s.Append("<a class=\"sg-a3-ev-doc\" href=\"").Append(Server.HtmlEncode(url))
+             .Append("\" target=\"_blank\" rel=\"noopener\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
+             .Append("<i class=\"mdi ").Append(IconoMime(m)).Append("\"></i>")
+             .Append("<span>").Append(Server.HtmlEncode(Texto(m.etiqueta))).Append("</span></a>");
+        }
+
+        if (medios.Count > tope)
+            s.Append("<span class=\"sg-a3-ev-mas\">+").Append(medios.Count - tope).Append("</span>");
+
+        return s.Append("</div>").ToString();
+    }
+
+    /// <summary>El icono del archivo que no es imagen, video ni audio.</summary>
+    private static string IconoMime(Medio m)
+    {
+        string n = (m.etiqueta ?? "").ToLowerInvariant();
+        string mime = (m.mime ?? "").ToLowerInvariant();
+
+        if (n.EndsWith(".pdf") || mime.Contains("pdf")) return "mdi-file-pdf-box";
+        if (n.EndsWith(".xls") || n.EndsWith(".xlsx") || n.EndsWith(".csv") || mime.Contains("sheet")) return "mdi-file-excel-outline";
+        if (n.EndsWith(".doc") || n.EndsWith(".docx") || mime.Contains("word")) return "mdi-file-word-outline";
+
+        return "mdi-file-document-outline";
+    }
+
+    /// <summary>
+    /// Los adjuntos de una inspeccion o tarea, con la galeria comun.
+    ///
+    /// La clave es tipo + EJECUCION, no la ocurrencia: una ocurrencia sin
+    /// ejecutar no tiene fotos, y lo que se fotografio pertenece al recorrido
+    /// que de verdad se hizo.
+    /// </summary>
+    private string EvidenciasRevision(ActivoRevision r, Dictionary<string, List<ActivoRevisionArchivo>> adjuntos)
+    {
+        List<ActivoRevisionArchivo> lista;
+        string clave = r.tipo + "-" + (r.ejecucion_id ?? 0);
+
+        if (r.ejecucion_id == null || !adjuntos.TryGetValue(clave, out lista) || lista.Count == 0)
+            return DetItem("mdi-image-multiple-outline", "Evidencias", "Sin archivos");
+
+        List<Medio> medios = lista.Select(x => new Medio
+        {
+            arc_id = x.arc_id,
+            etiqueta = x.etiqueta,
+            mime = x.mime,
+            pie = string.IsNullOrEmpty(x.origen) ? Texto(x.usuario) : x.origen,
+            es_imagen = x.es_imagen,
+            es_video = x.es_video,
+            es_audio = x.es_audio
+        }).ToList();
+
+        return "<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>" +
+               "Evidencias <b>" + lista.Count + "</b></strong>" + Galeria(medios) + "</div>";
+    }
+
+    /// <summary>El icono que le corresponde a cada clase de medio.</summary>
+    private static string IconoMedio(string medio)
+    {
+        switch (medio)
+        {
+            case "imagen": return "mdi-image-outline";
+            case "video": return "mdi-play-circle-outline";
+            case "audio": return "mdi-waveform";
+            default: return "mdi-file-document-outline";
+        }
+    }
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {
@@ -884,71 +1038,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     }
 
     /// <summary>
-    /// Las evidencias de la orden, como miniaturas.
-    ///
-    /// ANTES DECIA "3 ARCHIVOS"
-    ///   Que es cierto y no sirve: la foto de la correa cortada es lo que
-    ///   explica la orden, y para verla habia que abrir la OT completa,
-    ///   perdiendo el lugar en el historial del equipo.
-    ///
-    ///   Los bytes no viajan aca: la miniatura se pide por VerArchivo.aspx
-    ///   con el id cifrado. Lo que no es imagen -un PDF, una planilla- se
-    ///   muestra como chip con su icono, porque una miniatura gris de un PDF
-    ///   no dice mas que su nombre.
+    /// Las evidencias de la orden. Traduce al medio comun y delega: la
+    /// galeria es la misma de revisiones y documentos.
     /// </summary>
     private string Evidencias(List<OrdenTrabajoArchivo> ev)
     {
         if (ev == null || ev.Count == 0)
             return DetItem("mdi-image-multiple-outline", "Evidencias", "Sin archivos");
 
-        StringBuilder s = new StringBuilder();
-
-        s.Append("<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>")
-         .Append("Evidencias <b>").Append(ev.Count).Append("</b></strong>")
-         .Append("<div class=\"sg-a3-ev\">");
-
-        /* Primero lo que se ve. Con seis archivos y un PDF primero, las fotos
-           quedaban bajo el pliegue de la fila. */
-        foreach (OrdenTrabajoArchivo a in ev.OrderByDescending(x => x.es_imagen).ThenBy(x => x.paso_orden).Take(8))
+        List<Medio> medios = ev.Select(a => new Medio
         {
-            string titulo = Texto(a.etiqueta) +
-                            (a.paso_orden > 0 ? " · Paso " + a.paso_orden : "") +
-                            (string.IsNullOrEmpty(a.usuario) ? "" : " · " + a.usuario);
+            arc_id = a.arc_id,
+            etiqueta = a.etiqueta,
+            mime = a.mime,
+            pie = (a.paso_orden > 0 ? "Paso " + a.paso_orden : "") +
+                  (string.IsNullOrEmpty(a.usuario) ? "" : (a.paso_orden > 0 ? " · " : "") + a.usuario),
+            es_imagen = a.es_imagen,
+            es_video = a.es_video,
+            es_audio = a.es_audio
+        }).ToList();
 
-            if (a.es_imagen)
-            {
-                s.Append("<span class=\"sg-a3-ev-foto\" data-ampliar=\"1\"><img src=\"")
-                 .Append(Server.HtmlEncode(UrlArchivo.Ver(a.arc_id)))
-                 .Append("\" alt=\"").Append(Server.HtmlEncode(titulo))
-                 .Append("\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\" /></span>");
-                continue;
-            }
-
-            s.Append("<a class=\"sg-a3-ev-doc\" href=\"").Append(Server.HtmlEncode(UrlArchivo.Ver(a.arc_id)))
-             .Append("\" target=\"_blank\" rel=\"noopener\" title=\"").Append(Server.HtmlEncode(titulo)).Append("\">")
-             .Append("<i class=\"mdi ").Append(IconoArchivo(a)).Append("\"></i>")
-             .Append("<span>").Append(Server.HtmlEncode(Texto(a.etiqueta))).Append("</span></a>");
-        }
-
-        if (ev.Count > 8)
-            s.Append("<span class=\"sg-a3-ev-mas\">+").Append(ev.Count - 8).Append("</span>");
-
-        return s.Append("</div></div>").ToString();
-    }
-
-    /// <summary>El icono del archivo que no es imagen.</summary>
-    private static string IconoArchivo(OrdenTrabajoArchivo a)
-    {
-        if (a.es_video) return "mdi-play-circle-outline";
-        if (a.es_audio) return "mdi-microphone-outline";
-
-        string n = (a.nombre ?? "").ToLowerInvariant();
-
-        if (n.EndsWith(".pdf")) return "mdi-file-pdf-box";
-        if (n.EndsWith(".xls") || n.EndsWith(".xlsx") || n.EndsWith(".csv")) return "mdi-file-excel-outline";
-        if (n.EndsWith(".doc") || n.EndsWith(".docx")) return "mdi-file-word-outline";
-
-        return "mdi-file-document-outline";
+        return "<div class=\"sg-a3-ot-det-item es-ancho\"><strong><i class=\"mdi mdi-image-multiple-outline\"></i>" +
+               "Evidencias <b>" + ev.Count + "</b></strong>" + Galeria(medios) + "</div>";
     }
 
     private string DetItem(string icono, string titulo, string valor)
@@ -2077,7 +2188,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             string buscar = (Texto(f.nombre) + " " + Texto(f.origen_etiqueta) + " " + Texto(f.usuario)).ToLower();
 
             // ---- la tarjeta de la galeria ----
-            s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(f.es_imagen ? "imagen" : "documento")
+            /* El tipo de MEDIO, no "imagen o lo demas": un video se
+               reproduce y un audio no tiene nada que mirar. */
+            string medio = f.es_imagen ? "imagen" : f.es_video ? "video" : f.es_audio ? "audio" : "documento";
+
+            s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(medio)
              .Append("\" data-doc-clase=\"").Append(clase)
              .Append("\" data-paso=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append("\" data-paso-txt=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
@@ -2089,14 +2204,23 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("\" data-fecha=\"").Append(f.fecha == null ? "" : f.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
              .Append("\" data-obs=\"").Append(Server.HtmlEncode(Texto(f.descripcion)))
              .Append("\" data-orden=\"").Append(f.orden_id == null ? "" : UrlOrden(f.orden_id.Value))
-             .Append("\" data-icono=\"").Append(f.es_imagen ? "mdi-image-outline" : "mdi-file-document-outline")
+             .Append("\" data-icono=\"").Append(IconoMedio(medio))
+             .Append("\" data-medio=\"").Append(medio)
              .Append("\" data-imagen=\"").Append(f.es_imagen ? "1" : "0").Append("\">");
 
-            s.Append("<span class=\"sg-ot-ev-foto\">");
+            s.Append("<span class=\"sg-ot-ev-foto").Append(f.es_video ? " es-video" : "").Append("\">");
+
             if (f.es_imagen)
                 s.Append("<img src=\"").Append(url).Append("\" alt=\"").Append(Server.HtmlEncode(f.etiqueta)).Append("\" />");
+
+            /* El primer fotograma como miniatura: el navegador lo saca solo
+               con preload=metadata, sin descargar el video entero. */
+            else if (f.es_video)
+                s.Append("<video src=\"").Append(url).Append("\" preload=\"metadata\" muted></video>")
+                 .Append("<i class=\"mdi mdi-play-circle\"></i>");
+
             else
-                s.Append("<i class=\"mdi mdi-file-document-outline sg-ot-ev-icono\"></i>");
+                s.Append("<i class=\"mdi ").Append(IconoMedio(medio)).Append(" sg-ot-ev-icono\"></i>");
 
             /* La etiqueta de donde vino va sobre la miniatura: en una grilla
                de doce fotos, leer doce pies para encontrar la de la OT es
@@ -2172,6 +2296,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
                                           ?? new List<ActivoRevision>();
+
+        /* Los adjuntos de TODAS las revisiones, de una vez: pedirlos por fila
+           serian veinte consultas al abrir la pestaña. */
+        Dictionary<string, List<ActivoRevisionArchivo>> adjuntos =
+            new ActivoCentroController().GetArchivosRevision(a.act_id)
+            ?? new Dictionary<string, List<ActivoRevisionArchivo>>();
 
         int inspecciones = revisiones.Count(x => x.es_inspeccion);
         int hallazgos = revisiones.Count(x => x.resultado_codigo == "CON_OBSERVACION");
@@ -2256,9 +2386,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 s.Append(DetItem("mdi-comment-text-outline", "Observaciones",
                          string.IsNullOrEmpty(r.observacion) ? "Sin observaciones." : r.observacion));
 
-                s.Append(DetItem("mdi-image-multiple-outline", "Evidencias",
-                         r.evidencias == 0 ? "Sin archivos"
-                         : r.evidencias + (r.evidencias == 1 ? " archivo adjunto" : " archivos adjuntos")));
+                /* Decia "1 archivo adjunto". Ese archivo es la foto del
+                   filtro saturado: es LA razon por la que la tarea quedo con
+                   observacion, y habia que salir a otra pantalla para verla. */
+                s.Append(EvidenciasRevision(r, adjuntos));
 
                 s.Append(DetItem("mdi-cellphone-link", "Fuente del registro",
                          string.IsNullOrEmpty(r.origen) ? "" : r.origen));

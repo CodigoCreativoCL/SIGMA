@@ -517,6 +517,10 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             if (idImagen > 0)
             {
                 imgActual.Src = UrlArchivo.Ver(idImagen);
+                /* El enlace lleva a la misma imagen: dentro del centro la
+                   amplia el visor, y en el modal -donde ese visor no existe- se
+                   abre en una pestaña nueva. */
+                lnkImagenActual.HRef = UrlArchivo.Ver(idImagen);
                 pnlImagenActual.Visible = true;
             }
         }
