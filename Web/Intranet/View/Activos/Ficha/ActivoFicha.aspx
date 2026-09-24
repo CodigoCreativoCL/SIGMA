@@ -73,6 +73,17 @@
             });
         }
 
+        /* Un cliente que parte con SIGMA llega con su catalogo en una
+           planilla: doscientos equipos de a uno son doscientos modales. */
+        function abrirCargaMasiva() {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Ficha/CargaMasivaActivos.aspx") %>',
+                title: 'Carga masiva de activos',
+                width: 1080,
+                initialHeight: 640
+            });
+        }
+
         var seccionPendiente = null;
 
         /* El campo donde vive el equipo elegido. El JS de la lista lo escribe
@@ -169,6 +180,8 @@
                         <div class="sg-ot-card-acc sg-lista-acc">
                             <asp:LinkButton ID="lnkExportarLista" runat="server" CssClass="sg-ot-btn es-accion"
                                 OnClick="lnkExportarLista_Click"><i class="mdi mdi-download-outline"></i>Exportar</asp:LinkButton>
+                            <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sg-ot-btn es-accion"
+                                OnClientClick="return abrirCargaMasiva();"><i class="mdi mdi-upload-outline"></i>Carga masiva</asp:LinkButton>
                             <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
                                 OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                         </div>

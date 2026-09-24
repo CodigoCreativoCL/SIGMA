@@ -172,11 +172,11 @@ public partial class View_Activos_Ficha_RegistrarLectura : System.Web.UI.Page
             if (v.ava_valor_advertencia != null) partes.Add("Aviso " + v.ava_valor_advertencia.Value.ToString("0.##"));
             if (v.ava_valor_critico != null) partes.Add("Crítico " + v.ava_valor_critico.Value.ToString("0.##"));
 
-            litContexto.Text = "<p class=\"sigma-modal-nota\"><i class=\"mdi mdi-information-outline\"></i>" +
+            litContexto.Text = "<p class=\"sigma-modal-nota\"><i class=\"mdi mdi-information-outline\"></i><span>" +
                                (partes.Count == 0
                                    ? "Esta variable no tiene rangos configurados: la lectura se guarda sin semáforo."
                                    : "Se compara contra " + Server.HtmlEncode(string.Join("  ·  ", partes.ToArray())) + ".") +
-                               "</p>";
+                               "</span></p>";
             return;
         }
 
@@ -189,12 +189,12 @@ public partial class View_Activos_Ficha_RegistrarLectura : System.Web.UI.Page
             ? "Valor acumulado."
             : "Acumulado, en " + Server.HtmlEncode(m.unidad_simbolo) + ".";
 
-        litContexto.Text = "<p class=\"sigma-modal-nota\"><i class=\"mdi mdi-information-outline\"></i>" +
+        litContexto.Text = "<p class=\"sigma-modal-nota\"><i class=\"mdi mdi-information-outline\"></i><span>" +
                            "Hoy marca " + m.ame_valor_actual.ToString("N0") +
                            (string.IsNullOrEmpty(m.unidad_simbolo) ? "" : " " + Server.HtmlEncode(m.unidad_simbolo)) +
                            ". Un contador acumula: el valor nuevo no puede ser menor" +
                            (m.ame_permite_reinicio ? ", salvo que declare un reinicio." : ".") +
-                           "</p>";
+                           "</span></p>";
     }
 
     protected void cboQue_SelectedIndexChanged(object sender, EventArgs e) { }

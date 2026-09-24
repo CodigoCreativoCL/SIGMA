@@ -80,6 +80,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkExportar);
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkExportarLista);
 
+        /* Crear cien activos de una vez es crear activos: el mismo permiso
+           que el boton de al lado. */
+        lnkCargaMasiva.Visible = Token.Puede("CREAR EDITAR ACTIVOS");
+
         udPanel.Update();
     }
 
