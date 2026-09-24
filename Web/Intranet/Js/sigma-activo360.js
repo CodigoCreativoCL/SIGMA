@@ -674,6 +674,124 @@
         __doPostBack('', '');
     }
 
+    /* ---- Documentos y galeria ----
+
+       Tres vistas por lo que SON los archivos -documento, fotografia,
+       evidencia de terreno- y un panel al lado con el elegido. El visor de
+       imagen sigue siendo el de sigma-orden.js: aca se escucha el clic con
+       addEventListener para no pisarle el suyo. */
+    function documentos() {
+        var tarjetas = document.querySelectorAll('.sg-a3-docs .sg-ot-ev-card');
+        if (!tarjetas.length) return;
+
+        var chips = document.querySelectorAll('#sgDocChips a[data-doc]');
+        var buscar = document.getElementById('sgDocBuscar');
+        var origen = document.getElementById('sgDocOrigen');
+        var detalle = document.getElementById('sgOtEvDetalle');
+        var filas = document.querySelectorAll('.sg-doc-fila');
+
+        /* El desplegable se arma con los origenes que REALMENTE hay: ofrecer
+           una orden que no adjunto nada devuelve vacio y parece roto. */
+        if (origen && origen.options.length <= 1) {
+            var vistos = {};
+
+            for (var i = 0; i < tarjetas.length; i++) {
+                var o = tarjetas[i].getAttribute('data-paso');
+                if (!o || vistos[o]) continue;
+                vistos[o] = true;
+
+                var op = document.createElement('option');
+                op.value = o;
+                op.textContent = o;
+                origen.appendChild(op);
+            }
+        }
+
+        function filtrar() {
+            var activa = document.querySelector('#sgDocChips a.es-activa');
+            var clase = activa ? activa.getAttribute('data-doc') : 'todos';
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+            var deQuien = origen ? origen.value : '';
+
+            function calza(el, claseAttr, textoAttr, origenAttr) {
+                return (clase === 'todos' || el.getAttribute(claseAttr) === clase)
+                    && (texto === '' || (el.getAttribute(textoAttr) || '').indexOf(texto) !== -1)
+                    && (deQuien === '' || (el.getAttribute(origenAttr) || '') === deQuien);
+            }
+
+            for (var i = 0; i < tarjetas.length; i++)
+                tarjetas[i].classList.toggle('es-oculta',
+                    !calza(tarjetas[i], 'data-doc-clase', 'data-buscar', 'data-paso'));
+
+            for (var f = 0; f < filas.length; f++)
+                filas[f].classList.toggle('es-oculta',
+                    !calza(filas[f], 'data-doc-clase', 'data-doc-txt', 'data-doc-origen'));
+        }
+
+        function dato(etiqueta, valor) {
+            if (!valor) return '';
+            var d = document.createElement('div');
+            d.className = 'sg-ot-dato';
+            d.innerHTML = '<div><span class="sg-ot-dato-etq"></span><span class="sg-ot-dato-val"></span></div>';
+            d.querySelector('.sg-ot-dato-etq').textContent = etiqueta;
+            d.querySelector('.sg-ot-dato-val').textContent = valor;
+            return d.outerHTML;
+        }
+
+        function pintar(card) {
+            if (!detalle) return;
+
+            var d = function (n) { return card.getAttribute('data-' + n) || ''; };
+            var esImagen = d('imagen') === '1';
+
+            var html = '<header class="sg-ot-card-cab"><span class="sg-ot-card-ico">' +
+                       '<i class="mdi ' + (esImagen ? 'mdi-image-outline' : 'mdi-file-document-outline') + '"></i></span>' +
+                       '<div><h3>Archivo</h3></div></header>';
+
+            if (esImagen) html += '<span class="sg-doc-det-foto"><img alt="" /></span>';
+
+            html += '<div class="sg-doc-det-nom"></div>';
+            html += dato('Origen', d('paso-txt'));
+            html += dato('Fecha', d('fecha'));
+            html += dato('Subido por', d('usuario'));
+            html += dato('Descripción', d('obs'));
+
+            html += '<a class="sg-ot-btn es-accion" href="' + d('url') + '" target="_blank" rel="noopener">' +
+                    '<i class="mdi mdi-open-in-new"></i>Abrir original</a>';
+
+            if (d('orden'))
+                html += '<a class="sg-ot-btn es-accion" href="' + d('orden') + '" target="_blank" rel="noopener">' +
+                        '<i class="mdi mdi-clipboard-text-outline"></i>Abrir la orden</a>';
+
+            detalle.innerHTML = html;
+            detalle.querySelector('.sg-doc-det-nom').textContent = d('titulo');
+
+            var img = detalle.querySelector('.sg-doc-det-foto img');
+            if (img) {
+                img.src = d('url');
+                img.alt = d('titulo');
+                img.onclick = function () { ampliar(d('url'), d('titulo')); };
+            }
+        }
+
+        for (var i = 0; i < tarjetas.length; i++)
+            tarjetas[i].addEventListener('click', function () { pintar(this); });
+
+        for (var c = 0; c < chips.length; c++)
+            chips[c].onclick = function (ev) {
+                ev.preventDefault();
+                for (var k = 0; k < chips.length; k++) chips[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+                filtrar();
+            };
+
+        if (buscar) buscar.oninput = filtrar;
+        if (origen) origen.onchange = filtrar;
+
+        filtrar();
+        pintar(tarjetas[0]);
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -681,6 +799,7 @@
         condicion();
         fallas();
         lista();
+        documentos();
         ordenes();
         revisiones();
         ampliables();

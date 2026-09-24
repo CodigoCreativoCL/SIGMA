@@ -1069,3 +1069,37 @@ a.sg-a3-cond-card:hover { background: var(--sg-surface-subtle); }
     color: #fff;
 }
 .sg-lista-paginas span { align-self: center; color: var(--sg-tenue); padding: 0 2px; }
+
+/* ---- Documentos y galeria ------------------------------------------------ */
+.sg-doc-badge {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: rgba(15, 23, 42, .72);
+    color: #fff;
+}
+.sg-doc-badge.es-evidencia { background: rgba(37, 99, 235, .85); }
+.sg-doc-badge.es-fotografia { background: rgba(0, 191, 174, .9); }
+
+.sg-ot-ev-card { position: relative; }
+.sg-ot-ev-card.es-oculta { display: none; }
+
+.sg-doc-cab,
+.sg-doc-fila { grid-template-columns: minmax(180px, 2fr) 130px minmax(140px, 1.3fr) 120px 140px 100px 110px; }
+.sg-doc-fila.es-oculta { display: none; }
+
+/* El detalle del archivo elegido, al lado de la grilla. */
+.sg-doc-det-foto {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-doc-det-foto img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.sg-doc-det-nom { font-size: 14px; font-weight: 700; color: var(--sg-texto); word-break: break-all; }

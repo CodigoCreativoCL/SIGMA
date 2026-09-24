@@ -1447,44 +1447,73 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   Los archivos viven en Blob Storage: aca solo viaja el id, y la imagen
     ///   se pide por VerArchivo.aspx con ese id cifrado.
     /// </summary>
+    /// <summary>
+    /// Todo lo que hay del equipo en archivos: sus documentos, sus fotos y lo
+    /// que el terreno adjuntó en sus ordenes, inspecciones y tareas.
+    ///
+    /// TRES VISTAS POR LO QUE SON, NO POR SU EXTENSION
+    ///   Un manual y la foto de una correa rota son dos cosas distintas
+    ///   aunque las dos sean archivos: el manual se busca una vez y se lee;
+    ///   la foto es prueba de algo que paso un dia. Separarlas por "imagen" y
+    ///   "documento" deja el manual escaneado junto a las evidencias.
+    ///
+    ///   Los archivos viven en Blob Storage: aca solo viaja el id, y la
+    ///   imagen se pide por VerArchivo.aspx con ese id cifrado.
+    /// </summary>
     private void Documentos(Activo a)
     {
         List<ActivoArchivoOrigen> archivos = new ActivoArchivoController().GetTodos(a.act_id, _cliente)
                                              ?? new List<ActivoArchivoOrigen>();
 
+        int evidencias = archivos.Count(x => x.es_evidencia);
+        int fotos = archivos.Count(x => x.es_imagen && !x.es_evidencia);
+        int documentos = archivos.Count(x => !x.es_imagen && !x.es_evidencia);
+
         litEvTodas.Text = archivos.Count.ToString();
-        litEvFotos.Text = archivos.Count(x => x.es_imagen).ToString();
-        litEvDocs.Text = archivos.Count(x => !x.es_imagen).ToString();
+        litEvDocs.Text = documentos.ToString();
+        litEvFotos.Text = fotos.ToString();
+        litEvEvidencias.Text = evidencias.ToString();
 
         pnlSinArchivos.Visible = archivos.Count == 0;
-
-        int evidencias = archivos.Count(x => x.es_evidencia);
 
         litDocConteos.Text =
             "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
             "<div class=\"sg-ot-avance-num\"><strong>" + archivos.Count + "</strong><span>archivos</span></div>" +
             "<div class=\"sg-ot-avance-num\"><strong>" + evidencias + "</strong><span>de terreno</span></div></div>";
 
+        if (archivos.Count == 0)
+        {
+            litArchivos.Text = "";
+            litDocTabla.Text = "";
+            return;
+        }
+
         StringBuilder s = new StringBuilder();
+        StringBuilder tabla = new StringBuilder();
+
+        tabla.Append("<div class=\"sg-a3-tabla-cab sg-doc-cab\">")
+             .Append("<span>Nombre</span><span>Tipo</span><span>Origen</span>")
+             .Append("<span>Fecha</span><span>Quién</span><span>Tamaño</span><span></span></div>");
 
         foreach (ActivoArchivoOrigen f in archivos)
         {
-            string tipo = f.es_imagen ? "imagen" : "documento";
+            string clase = f.es_evidencia ? "evidencia" : (f.es_imagen ? "fotografia" : "documento");
             string url = UrlArchivo.Ver(f.arc_id);
+            string buscar = (Texto(f.nombre) + " " + Texto(f.origen_etiqueta) + " " + Texto(f.usuario)).ToLower();
 
-            /* data-paso alimenta el desplegable de origen de la galeria: el
-               mismo JS que en la orden de trabajo, con otra pregunta. */
-            s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(tipo)
+            // ---- la tarjeta de la galeria ----
+            s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(f.es_imagen ? "imagen" : "documento")
+             .Append("\" data-doc-clase=\"").Append(clase)
              .Append("\" data-paso=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append("\" data-paso-txt=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append("\" data-paso-etq=\"Origen\"")
-             .Append(" data-buscar=\"")
-             .Append(Server.HtmlEncode((Texto(f.nombre) + " " + Texto(f.origen_etiqueta) + " " + Texto(f.usuario)).ToLower()))
+             .Append(" data-buscar=\"").Append(Server.HtmlEncode(buscar))
              .Append("\" data-url=\"").Append(url)
              .Append("\" data-titulo=\"").Append(Server.HtmlEncode(f.etiqueta))
              .Append("\" data-usuario=\"").Append(Server.HtmlEncode(Texto(f.usuario)))
              .Append("\" data-fecha=\"").Append(f.fecha == null ? "" : f.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
              .Append("\" data-obs=\"").Append(Server.HtmlEncode(Texto(f.descripcion)))
+             .Append("\" data-orden=\"").Append(f.orden_id == null ? "" : UrlOrden(f.orden_id.Value))
              .Append("\" data-icono=\"").Append(f.es_imagen ? "mdi-image-outline" : "mdi-file-document-outline")
              .Append("\" data-imagen=\"").Append(f.es_imagen ? "1" : "0").Append("\">");
 
@@ -1493,6 +1522,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 s.Append("<img src=\"").Append(url).Append("\" alt=\"").Append(Server.HtmlEncode(f.etiqueta)).Append("\" />");
             else
                 s.Append("<i class=\"mdi mdi-file-document-outline sg-ot-ev-icono\"></i>");
+
+            /* La etiqueta de donde vino va sobre la miniatura: en una grilla
+               de doce fotos, leer doce pies para encontrar la de la OT es
+               justo lo que se quiere evitar. */
+            s.Append("<span class=\"sg-doc-badge es-").Append(clase).Append("\">")
+             .Append(clase == "evidencia" ? "Terreno" : (clase == "fotografia" ? "Foto" : "Documento"))
+             .Append("</span>");
+
             s.Append("</span>");
 
             s.Append("<div class=\"sg-ot-ev-txt\"><span class=\"sg-ot-ev-nom\">")
@@ -1501,9 +1538,36 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
              .Append(f.bytes > 0 ? " · " + Tamano(f.bytes) : "")
              .Append("</span></div></article>");
+
+            // ---- su fila en la tabla ----
+            tabla.Append("<div class=\"sg-a3-tabla-fila sg-doc-fila\" data-doc-clase=\"").Append(clase)
+                 .Append("\" data-doc-txt=\"").Append(Server.HtmlEncode(buscar))
+                 .Append("\" data-doc-origen=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta))).Append("\">")
+
+                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(f.etiqueta))
+                 .Append("<span>").Append(Server.HtmlEncode(Texto(f.descripcion))).Append("</span></span>")
+
+                 .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ")
+                 .Append(clase == "evidencia" ? "es-info" : (clase == "fotografia" ? "es-tarea" : "es-neutro"))
+                 .Append("\">")
+                 .Append(clase == "evidencia" ? "Evidencia" : (clase == "fotografia" ? "Fotografía" : "Documento"))
+                 .Append("</span></span>")
+
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(f.origen_etiqueta))).Append("</span>")
+                 .Append("<span class=\"c-dato\">")
+                 .Append(f.fecha == null ? "—" : f.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(f.usuario))).Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(f.bytes > 0 ? Tamano(f.bytes) : "—").Append("</span>")
+
+                 .Append("<span class=\"c-acc\">")
+                 .Append("<a class=\"sg-ot-btn es-accion\" href=\"").Append(url)
+                 .Append("\" target=\"_blank\" rel=\"noopener\">Ver<i class=\"mdi mdi-open-in-new\"></i></a>")
+                 .Append("</span>")
+                 .Append("</div>");
         }
 
         litArchivos.Text = s.ToString();
+        litDocTabla.Text = tabla.ToString();
     }
 
     private static string Tamano(long bytes)

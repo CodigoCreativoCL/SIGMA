@@ -164,10 +164,6 @@
                             <a href="#" class="sg-a3-chip" data-lista="atencion"><i class="mdi mdi-alert-outline"></i>Requieren atención <b><asp:Literal ID="litListaAtencion" runat="server" Text="0" /></b></a>
                             <a href="#" class="sg-a3-chip" data-lista="ot"><i class="mdi mdi-wrench-outline"></i>Con OT abiertas <b><asp:Literal ID="litListaOt" runat="server" Text="0" /></b></a>
                         </div>
-                        <div class="sg-ot-ev-buscar">
-                            <i class="mdi mdi-magnify"></i>
-                            <input type="search" id="sgListaBuscar" placeholder="Buscar por nombre, código o tipo..." autocomplete="off" />
-                        </div>
                         <select id="sgListaPorPagina" class="sg-ot-select">
                             <option value="10">10 por página</option>
                             <option value="25" selected="selected">25 por página</option>
@@ -643,34 +639,42 @@
                 <%-- ================================================================
                      9. DOCUMENTOS Y GALERÍA
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="documentos">
+                <section class="sg-a3-panel sg-a3-docs" data-panel="documentos">
                     <div class="sg-ot-card">
                         <header class="sg-ot-card-cab">
                             <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-image-multiple-outline"></i></span>
                             <div>
                                 <h3>Documentos y galería</h3>
-                                <p class="sg-ot-card-sub">Manuales, certificados y fotografías del equipo.</p>
+                                <p class="sg-ot-card-sub">Documentos técnicos, fotografías y lo que el terreno adjuntó.</p>
                             </div>
                             <asp:Literal ID="litDocConteos" runat="server" />
                         </header>
 
+                        <%-- Tres vistas por lo que SON, no por su extension: un
+                             manual y la foto de una correa rota son dos cosas
+                             distintas aunque las dos sean archivos. --%>
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgDocChips">
+                            <a href="#" class="sg-a3-chip es-activa" data-doc="todos">Todos <b><asp:Literal ID="litEvTodas" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-doc="documento"><i class="mdi mdi-file-document-outline"></i>Documentos <b><asp:Literal ID="litEvDocs" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-doc="fotografia"><i class="mdi mdi-camera-outline"></i>Fotografías <b><asp:Literal ID="litEvFotos" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-doc="evidencia"><i class="mdi mdi-cellphone-link"></i>Evidencias <b><asp:Literal ID="litEvEvidencias" runat="server" Text="0" /></b></a>
+                        </div>
+
                         <div class="sg-ot-ev-filtros">
-                            <div class="sg-ot-ev-tipos">
-                                <a href="#" class="sg-ot-ev-chip es-activa" data-tipo="todas">Todas <b><asp:Literal ID="litEvTodas" runat="server" Text="0" /></b></a>
-                                <a href="#" class="sg-ot-ev-chip" data-tipo="imagen"><i class="mdi mdi-camera-outline"></i>Fotografías <b><asp:Literal ID="litEvFotos" runat="server" Text="0" /></b></a>
-                                <a href="#" class="sg-ot-ev-chip" data-tipo="documento"><i class="mdi mdi-file-outline"></i>Documentos <b><asp:Literal ID="litEvDocs" runat="server" Text="0" /></b></a>
-                            </div>
                             <div class="sg-ot-ev-buscar">
                                 <i class="mdi mdi-magnify"></i>
-                                <input type="search" id="sgOtEvBuscar" placeholder="Buscar archivo..." autocomplete="off" />
+                                <input type="search" id="sgDocBuscar" placeholder="Buscar archivo, origen o persona..." autocomplete="off" />
                             </div>
-                            <select id="sgOtEvPaso" class="sg-ot-select"><option value="">Todos los orígenes</option></select>
+                            <select id="sgDocOrigen" class="sg-ot-select"><option value="">Todos los orígenes</option></select>
                         </div>
 
                         <div class="sg-ot-ev-cols">
                             <div class="sg-ot-ev-grid" id="sgOtEvGrid">
                                 <asp:Literal ID="litArchivos" runat="server" />
                             </div>
+
+                            <%-- El detalle del archivo elegido. Se llena en el
+                                 navegador con lo que ya trae la tarjeta. --%>
                             <aside class="sg-ot-ev-detalle" id="sgOtEvDetalle"></aside>
                         </div>
 
@@ -679,6 +683,11 @@
                             <p>Sin documentos ni fotografías</p>
                             <span>Se adjuntan desde la ficha del activo o llegan con las evidencias de la app.</span>
                         </asp:Panel>
+
+                        <div class="sg-cond-bloque">
+                            <h4><i class="mdi mdi-format-list-bulleted"></i>Lista de archivos</h4>
+                            <asp:Literal ID="litDocTabla" runat="server" />
+                        </div>
                     </div>
                 </section>
 
