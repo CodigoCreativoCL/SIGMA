@@ -24,10 +24,24 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
         set { ViewState["Id"] = value; }
     }
 
+    /// <summary>
+    /// El activo ya viene decidido: la ficha se abrió desde el centro de ESE
+    /// equipo. Entonces el combo no se ofrece, se muestra. Es la misma regla
+    /// que en la ficha del componente.
+    /// </summary>
+    public int ActivoFijo
+    {
+        get { return ViewState["ActivoFijo"] != null ? (int)ViewState["ActivoFijo"] : 0; }
+        set { ViewState["ActivoFijo"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+        }
     }
 
     /// <summary>
@@ -116,6 +130,7 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
         else
         {
             lblId.Text = "Nuevo";
+            if (ActivoFijo > 0) SeleccionarCombo(cboActivo, ActivoFijo);
         }
     }
 
@@ -129,12 +144,13 @@ public partial class View_Activos_Medidores_ActivoMedidor : System.Web.UI.Page
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR MEDIDORES");
 
-        // El activo no se cambia al editar: el medidor pertenece a su máquina.
-        cboActivo.ReadOnly = !puedeEditar || Id > 0;
+        // El activo no se cambia al editar -el medidor pertenece a su máquina-
+        // ni cuando la ficha se abrió desde el centro de un equipo.
+        cboActivo.ReadOnly = !puedeEditar || Id > 0 || ActivoFijo > 0;
         /* Un combo ReadOnly no arma sus items en el cliente y validaControl
            revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
            Al editar no hay nada que validar ahi (el servidor exige el valor). */
-        cvActivo.Enabled = Id == 0;
+        cvActivo.Enabled = Id == 0 && ActivoFijo == 0;
         cboUnidad.ReadOnly = !puedeEditar;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Medidor");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta

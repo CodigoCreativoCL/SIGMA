@@ -39,11 +39,22 @@
             });
         }
 
+        function abrirMedidor(query) {
+            seccionPendiente = 'condicion';
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>?query=' + query,
+                title: query === queryNuevoMedidor ? 'Nuevo contador' : 'Editar contador',
+                width: 920,
+                initialHeight: 560
+            });
+        }
+
         var seccionPendiente = null;
 
         /* Los ids nunca viajan a la vista: el activo va DENTRO del
            querystring cifrado que arma el servidor. */
         var queryNuevoComponente = '<%=QueryNuevoComponente %>';
+        var queryNuevoMedidor = '<%=QueryNuevoMedidor %>';
 
         /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
            al Resumen: el postback repinta el bloque entero. */
@@ -500,9 +511,8 @@
                                 <h3>Contadores acumulativos</h3>
                                 <p class="sg-ot-card-sub">Horómetros y cuentakilómetros: no bajan, se acumulan.</p>
                             </div>
-                            <asp:HyperLink ID="hlMedidores" runat="server" CssClass="sg-ot-btn es-plano sg-ot-card-acc">
-                                <i class="mdi mdi-cog-outline"></i>Gestionar
-                            </asp:HyperLink>
+                            <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                                OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-plus"></i>Nuevo contador</asp:LinkButton>
                         </header>
                         <asp:Literal ID="litMedidores" runat="server" />
                     </div>

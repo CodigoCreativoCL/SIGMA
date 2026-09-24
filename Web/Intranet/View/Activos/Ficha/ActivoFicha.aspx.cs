@@ -226,6 +226,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
     }
 
+    /// <summary>El querystring cifrado para crear un contador de ESTE equipo.</summary>
+    protected string QueryNuevoMedidor
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
+        }
+    }
+
     protected int ActivoSeleccionado()
     {
         int id;
@@ -311,7 +321,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         hlEscanear.NavigateUrl = ResolveUrl("~/View/Activos/Escaneo/Escanear.aspx");
         hlGenerarOT.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx");
-        hlMedidores.NavigateUrl = ResolveUrl("~/View/Activos/Medidores/ActivoMedidores.aspx");
     }
 
     #endregion
@@ -866,9 +875,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             new ActivoMedidor { ame_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
             ?? new List<ActivoMedidor>();
 
+        bool puedeMedidor = Token.Puede("CREAR EDITAR MEDIDORES");
+        lnkNuevoMedidor.Visible = puedeMedidor;
+
         if (medidores.Count == 0)
         {
-            litMedidores.Text = "<p class=\"sg-ot-vacio-txt\">Este equipo no tiene contadores.</p>";
+            litMedidores.Text = "<p class=\"sg-ot-vacio-txt\">" +
+                                (puedeMedidor ? "Este equipo no tiene contadores. Agregue uno con «Nuevo contador»."
+                                              : "Este equipo no tiene contadores.") + "</p>";
             return;
         }
 
@@ -881,7 +895,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                         ? "Sin lecturas"
                         : "Última lectura " + x.ame_fecha_valor_actual_utc.Value.ToString("dd MMM yyyy · HH:mm"),
                      "<span class=\"sg-a3-codigo\">" + x.ame_valor_actual.ToString("0.##") +
-                     (string.IsNullOrEmpty(x.unidad_simbolo) ? "" : " " + Server.HtmlEncode(x.unidad_simbolo)) + "</span>"));
+                     (string.IsNullOrEmpty(x.unidad_simbolo) ? "" : " " + Server.HtmlEncode(x.unidad_simbolo)) + "</span>" +
+                     "<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirMedidor('" +
+                     Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.ame_id)) + "')\"><i class=\"mdi " +
+                     (puedeMedidor ? "mdi-pencil-outline" : "mdi-eye-outline") + "\"></i>" +
+                     (puedeMedidor ? "Editar" : "Ver") + "</a>"));
 
         litMedidores.Text = m.ToString();
     }
