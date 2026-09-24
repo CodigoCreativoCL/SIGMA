@@ -73,6 +73,7 @@ namespace SitioBase.Controller
         public string repuesto_nombre { get; set; }
         public string unidad { get; set; }
         public string componente { get; set; }
+        public int? componente_id { get; set; }
         public decimal cantidad { get; set; }
         public decimal devuelta { get; set; }
         public decimal costo_unitario { get; set; }
@@ -264,6 +265,7 @@ namespace SitioBase.Controller
                         c.repuesto_nombre = dr["REPUESTO_NOMBRE"].ToString();
                         c.unidad = dr["UNIDAD"].ToString();
                         c.componente = dr["COMPONENTE"].ToString();
+                        if (dr["COMPONENTE_ID"] != DBNull.Value) c.componente_id = int.Parse(dr["COMPONENTE_ID"].ToString());
                         c.cantidad = decimal.Parse(dr["CANTIDAD"].ToString());
                         c.devuelta = decimal.Parse(dr["DEVUELTA"].ToString());
                         c.costo_unitario = decimal.Parse(dr["COSTO_UNITARIO"].ToString());

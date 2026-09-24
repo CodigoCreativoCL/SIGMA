@@ -283,9 +283,131 @@
         return false;
     }
 
+    /* ---- Componentes: el arbol, la lista y el detalle miran lo mismo ----
+
+       Elegir una pieza en cualquiera de los tres lados marca los otros dos y
+       acota el historial de reemplazos a esa pieza. Todo con lo que ya vino
+       en la fila: pedirle al servidor lo que ya esta en pantalla es un viaje
+       de mas y un parpadeo. */
+    function componentes() {
+        var filas = document.querySelectorAll('.sg-comp-fila');
+        if (!filas.length) return;
+
+        var chips = document.querySelectorAll('#sgCompTipos a[data-comp-estado]');
+        var buscar = document.getElementById('sgCompBuscar');
+        var detalle = document.querySelector('.sg-comp-detalle-cuerpo');
+        var nodos = document.querySelectorAll('.sg-comp-nodo[data-ir-comp]');
+        var reemplazos = document.querySelectorAll('.sg-comp-rep');
+
+        function filtrar() {
+            var activa = document.querySelector('#sgCompTipos a.es-activa');
+            var estado = activa ? activa.getAttribute('data-comp-estado') : 'instalados';
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+
+            for (var i = 0; i < filas.length; i++) {
+                var ok = filas[i].getAttribute('data-comp-estado') === estado
+                      && (texto === '' || (filas[i].getAttribute('data-comp-txt') || '').indexOf(texto) !== -1);
+                filas[i].classList.toggle('es-oculta', !ok);
+            }
+        }
+
+        function elegir(id) {
+            var fila = document.querySelector('.sg-comp-fila[data-comp="' + id + '"]');
+            if (!fila) return;
+
+            for (var i = 0; i < filas.length; i++) filas[i].classList.remove('es-elegida');
+            fila.classList.add('es-elegida');
+
+            for (var n = 0; n < nodos.length; n++)
+                nodos[n].classList.toggle('es-elegido', nodos[n].getAttribute('data-ir-comp') === String(id));
+
+            pintar(fila);
+
+            /* El historial se acota a la pieza elegida: "cuantos rodamientos
+               lleva este ventilador" es la pregunta, no cuantos lleva el
+               equipo entero. */
+            for (var r = 0; r < reemplazos.length; r++)
+                reemplazos[r].classList.toggle('es-oculta', reemplazos[r].getAttribute('data-comp-rep') !== String(id));
+        }
+
+        function dato(etiqueta, valor) {
+            if (!valor) return '';
+            var d = document.createElement('div');
+            d.className = 'sg-ot-dato';
+            d.innerHTML = '<div><span class="sg-ot-dato-etq"></span><span class="sg-ot-dato-val"></span></div>';
+            d.querySelector('.sg-ot-dato-etq').textContent = etiqueta;
+            d.querySelector('.sg-ot-dato-val').textContent = valor;
+            return d.outerHTML;
+        }
+
+        function pintar(fila) {
+            if (!detalle) return;
+
+            var d = function (n) { return fila.getAttribute('data-comp-' + n) || ''; };
+            var html = '';
+
+            html += '<div><span class="sg-comp-det-tit"></span><span class="sg-comp-det-sub"></span></div>';
+            html += '<div>' + (d('estado-txt') ? '<span class="sg-ot-chip ' +
+                    (fila.getAttribute('data-comp-estado') === 'instalados' ? 'es-ok' : 'es-neutro') +
+                    '">' + d('estado-txt') + '</span>' : '') + '</div>';
+
+            html += dato('Tipo', d('tipo'));
+            html += dato('Criticidad', d('criticidad'));
+            html += dato('Posición', d('posicion'));
+            html += dato('Componente superior', d('padre'));
+            html += dato('Instalado el', d('instalacion'));
+            html += dato('Descripción', d('desc'));
+
+            if (d('motivo')) html += '<div class="sg-comp-det-motivo"></div>';
+
+            html += '<a class="sg-ot-btn es-plano" href="javascript:void(0)" data-comp-abrir="1">' +
+                    '<i class="mdi mdi-open-in-new"></i>Ver ficha del componente</a>';
+
+            detalle.innerHTML = html;
+
+            /* El nombre y el motivo se ponen por propiedad: los escribio una
+               persona y pueden traer comillas o angulos. */
+            detalle.querySelector('.sg-comp-det-tit').textContent = d('nombre');
+            detalle.querySelector('.sg-comp-det-sub').textContent = d('codigo');
+
+            var motivo = detalle.querySelector('.sg-comp-det-motivo');
+            if (motivo) motivo.textContent = d('motivo');
+
+            var abrir = detalle.querySelector('[data-comp-abrir]');
+            if (abrir) abrir.onclick = function () { abrirComponente(d('query')); };
+        }
+
+        for (var i = 0; i < filas.length; i++)
+            filas[i].onclick = function (ev) {
+                if (ev.target.closest('a, input, button')) return;
+                elegir(this.getAttribute('data-comp'));
+            };
+
+        for (var n = 0; n < nodos.length; n++)
+            nodos[n].onclick = function () { elegir(this.getAttribute('data-ir-comp')); };
+
+        for (var c = 0; c < chips.length; c++)
+            chips[c].onclick = function (ev) {
+                ev.preventDefault();
+                for (var k = 0; k < chips.length; k++) chips[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+                filtrar();
+            };
+
+        if (buscar) buscar.oninput = filtrar;
+
+        filtrar();
+
+        /* Se abre con la primera pieza elegida: un panel de detalle vacio al
+           lado de una lista llena parece que no cargo. */
+        var primera = document.querySelector('.sg-comp-fila:not(.es-oculta)');
+        if (primera) elegir(primera.getAttribute('data-comp'));
+    }
+
     function armar() {
         navegacion();
         ficha();
+        componentes();
         ordenes();
         revisiones();
         ampliables();

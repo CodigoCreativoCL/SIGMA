@@ -752,3 +752,78 @@ a.sg-a3-chip.es-activa b { color: #fff; }
 }
 .sg-a3-ficha [id$="pnlImagenActual"] img { max-width: 100%; }
 .sg-a3-ficha [id$="pnlImagenActual"] label { white-space: normal; line-height: 1.35; }
+
+/* ============================================================================
+   COMPONENTES: estructura, lista y detalle
+
+   Tres columnas porque son tres preguntas distintas y seguidas: de que esta
+   hecho el equipo, que piezas tiene puestas, y como es LA pieza que me
+   interesa. Con una sola lista hay que abrir una ficha para responder la
+   tercera, y se pierde la segunda.
+   ========================================================================= */
+.sg-comp-cols {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr) 320px;
+    gap: 14px;
+    align-items: start;
+}
+
+/* ---- el arbol ---- */
+.sg-comp-arbol-lista,
+.sg-comp-arbol-lista ul { list-style: none; margin: 0; padding: 0; }
+.sg-comp-arbol-lista ul { margin-left: 14px; border-left: 1px dashed var(--sg-borde); padding-left: 10px; }
+.sg-comp-arbol-lista li { margin: 2px 0; }
+
+.sg-comp-nodo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--sg-texto);
+}
+a.sg-comp-nodo:hover { background: #f4f5fa; }
+.sg-comp-nodo.es-equipo { background: #ede9fe; }
+.sg-comp-nodo.es-elegido { background: var(--sg-p); color: #fff; }
+.sg-comp-nodo.es-elegido span, .sg-comp-nodo.es-elegido i { color: #fff; }
+.sg-comp-nodo i { font-size: 17px; color: var(--sg-suave); }
+.sg-comp-nodo strong { display: block; font-size: 12.5px; font-weight: 600; }
+.sg-comp-nodo span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* ---- la lista ---- */
+.sg-comp-cab,
+.sg-comp-fila { grid-template-columns: 120px minmax(160px, 2fr) 130px 130px 110px; }
+.sg-comp-fila { cursor: pointer; }
+.sg-comp-fila.es-elegida { background: #f5f3ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+.sg-comp-fila.es-oculta { display: none; }
+
+.sg-comp-rep-cab,
+.sg-comp-rep { grid-template-columns: 120px minmax(150px, 2fr) 150px 110px 90px 120px; }
+.sg-comp-rep.es-oculta { display: none; }
+
+/* ---- el detalle ---- */
+.sg-comp-detalle { position: sticky; top: 14px; }
+.sg-comp-detalle-cuerpo { display: grid; gap: 10px; }
+.sg-comp-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); }
+.sg-comp-det-sub { font-size: 12px; color: var(--sg-suave); }
+.sg-comp-det-motivo {
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    font-size: 12px;
+    color: #9a3412;
+}
+
+@media (max-width: 1400px) {
+    .sg-comp-cols { grid-template-columns: 220px minmax(0, 1fr); }
+    .sg-comp-detalle { grid-column: 1 / -1; position: static; }
+}
+@media (max-width: 900px) {
+    .sg-comp-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+.sg-comp-det-tit,
+.sg-comp-det-sub { display: block; }
+.sg-comp-centro .sg-ot-card-acc { white-space: nowrap; }

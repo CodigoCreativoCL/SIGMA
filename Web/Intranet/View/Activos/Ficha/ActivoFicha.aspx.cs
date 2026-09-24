@@ -687,49 +687,195 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 6. Componentes
 
+    /// <summary>
+    /// De que esta hecho el equipo: su estructura, sus piezas y lo que se les
+    /// cambio.
+    ///
+    /// EL DETALLE SE ARMA EN EL NAVEGADOR
+    ///   Cada fila lleva lo suyo en atributos. Pedirle el componente al
+    ///   servidor para mostrar lo que ya esta en pantalla es un viaje de mas
+    ///   y una pantalla que parpadea al elegir una fila.
+    /// </summary>
     private void Componentes(Activo a)
     {
         List<ActivoComponente> lista = new ActivoComponenteController().GetComponentes(
-            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
+            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id })
             ?? new List<ActivoComponente>();
 
-        /* Crear y editar exigen el permiso del modulo de componentes, no el
-           de ver la ficha: se mira el mismo que aplica la ficha al guardar. */
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
         lnkNuevoComponente.Visible = puedeEditar;
+
+        litCompTitulo.Text = "Componentes de " + Server.HtmlEncode(Texto(a.act_nombre));
+
+        int instalados = lista.Count(c => c.aco_habilitado);
+        litCompInstalados.Text = instalados.ToString();
+        litCompRetirados.Text = (lista.Count - instalados).ToString();
+
+        Arbol(a, lista);
 
         if (lista.Count == 0)
         {
             litComponentes.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i>" +
                                   "<p>Sin componentes registrados</p><span>" +
-                                  (puedeEditar ? "Agregue las partes del equipo con «Nuevo componente»."
+                                  (puedeEditar ? "Agregue las partes del equipo con «Asociar componente»."
                                                : "Las partes del equipo todavía no se han cargado.") +
                                   "</span></div>";
+            litReemplazos.Text = "<p class=\"sg-ot-vacio-txt\">Sin componentes, no hay reemplazos que mostrar.</p>";
             return;
         }
 
         StringBuilder s = new StringBuilder();
 
-        s.Append("<div class=\"sg-a3-tabla-cab sg-a3-t4-cab\">")
-         .Append("<span>Componente</span><span>Tipo</span><span>Estado</span><span></span></div>");
+        s.Append("<div class=\"sg-a3-tabla-cab sg-comp-cab\">")
+         .Append("<span>Código</span><span>Descripción</span><span>Instalación</span>")
+         .Append("<span>Estado</span><span></span></div>");
 
-        foreach (ActivoComponente c in lista)
+        foreach (ActivoComponente c in lista.OrderBy(x => x.aco_codigo))
         {
-            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-t4\">")
-             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.aco_codigo)))
-             .Append("<span>").Append(Server.HtmlEncode(Texto(c.aco_nombre))).Append("</span></span>")
-             .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(c.tipo_nombre))).Append("</span>")
-             .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip es-abierta\">")
-             .Append(Server.HtmlEncode(Texto(c.estado_nombre))).Append("</span></span>")
+            string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + c.aco_id));
+
+            s.Append("<div class=\"sg-a3-tabla-fila sg-comp-fila\" data-comp=\"").Append(c.aco_id)
+             .Append("\" data-comp-estado=\"").Append(c.aco_habilitado ? "instalados" : "retirados")
+             .Append("\" data-comp-txt=\"").Append(Server.HtmlEncode((Texto(c.aco_codigo) + " " + Texto(c.aco_nombre) + " " + Texto(c.tipo_nombre)).ToLower()))
+             .Append("\" data-comp-nombre=\"").Append(Server.HtmlEncode(Texto(c.aco_nombre)))
+             .Append("\" data-comp-codigo=\"").Append(Server.HtmlEncode(Texto(c.aco_codigo)))
+             .Append("\" data-comp-tipo=\"").Append(Server.HtmlEncode(Texto(c.tipo_nombre)))
+             .Append("\" data-comp-desc=\"").Append(Server.HtmlEncode(Texto(c.aco_descripcion)))
+             .Append("\" data-comp-criticidad=\"").Append(Server.HtmlEncode(Texto(c.criticidad_nombre)))
+             .Append("\" data-comp-posicion=\"").Append(Server.HtmlEncode(Texto(c.posicion_nombre)))
+             .Append("\" data-comp-padre=\"").Append(Server.HtmlEncode(Texto(c.padre_nombre)))
+             .Append("\" data-comp-instalacion=\"")
+             .Append(c.aco_fecha_instalacion == null ? "" : c.aco_fecha_instalacion.Value.ToString("dd MMM yyyy"))
+             .Append("\" data-comp-estado-txt=\"").Append(Server.HtmlEncode(Texto(c.estado_nombre)))
+             .Append("\" data-comp-motivo=\"").Append(Server.HtmlEncode(Texto(c.aco_motivo_estado)))
+             .Append("\" data-comp-query=\"").Append(query).Append("\">")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(c.aco_codigo))).Append("</span></span>")
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.aco_nombre)))
+             .Append("<span>").Append(Server.HtmlEncode(Texto(c.tipo_nombre))).Append("</span></span>")
+             .Append("<span class=\"c-dato\">")
+             .Append(c.aco_fecha_instalacion == null ? "—" : c.aco_fecha_instalacion.Value.ToString("dd MMM yyyy"))
+             .Append("</span>")
+             .Append("<span class=\"c-dato\">").Append(ChipEstadoComponente(c)).Append("</span>")
              .Append("<span class=\"c-acc\">")
              .Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirComponente('")
-             .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + c.aco_id)))
-             .Append("')\"><i class=\"mdi ").Append(puedeEditar ? "mdi-pencil-outline" : "mdi-eye-outline").Append("\"></i>")
-             .Append(puedeEditar ? "Editar" : "Ver").Append("</a></span>")
+             .Append(query).Append("')\"><i class=\"mdi ").Append(puedeEditar ? "mdi-pencil-outline" : "mdi-eye-outline")
+             .Append("\"></i>").Append(puedeEditar ? "Editar" : "Ver").Append("</a></span>")
              .Append("</div>");
         }
 
         litComponentes.Text = s.ToString();
+
+        Reemplazos(a);
+    }
+
+    /// <summary>
+    /// La estructura del equipo: sus piezas de primer nivel y lo que cuelga de
+    /// cada una. Dos niveles alcanzan: un arbol mas hondo en una barra angosta
+    /// se lee peor que la lista de al lado.
+    /// </summary>
+    private void Arbol(Activo a, List<ActivoComponente> lista)
+    {
+        StringBuilder s = new StringBuilder("<ul class=\"sg-comp-arbol-lista\">");
+
+        s.Append("<li class=\"es-raiz\"><span class=\"sg-comp-nodo es-equipo\">")
+         .Append("<i class=\"mdi mdi-cog-outline\"></i><div><strong>")
+         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</strong><span>")
+         .Append(Server.HtmlEncode(Texto(a.act_codigo))).Append("</span></div></span>");
+
+        List<ActivoComponente> raiz = lista.Where(c => c.aco_componente_padre == null).OrderBy(c => c.aco_codigo).ToList();
+
+        if (raiz.Count > 0)
+        {
+            s.Append("<ul>");
+
+            foreach (ActivoComponente c in raiz)
+            {
+                s.Append(Nodo(c));
+
+                List<ActivoComponente> hijos = lista.Where(x => x.aco_componente_padre == c.aco_id).OrderBy(x => x.aco_codigo).ToList();
+
+                if (hijos.Count > 0)
+                {
+                    s.Append("<ul>");
+                    foreach (ActivoComponente h in hijos) s.Append(Nodo(h)).Append("</li>");
+                    s.Append("</ul>");
+                }
+
+                s.Append("</li>");
+            }
+
+            s.Append("</ul>");
+        }
+
+        s.Append("</li></ul>");
+
+        litArbol.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// El color del estado sale del ESTADO y no de si esta habilitado: un
+    /// componente degradado sigue habilitado, y pintarlo en verde es decir
+    /// que esta bien.
+    /// </summary>
+    private string ChipEstadoComponente(ActivoComponente c)
+    {
+        string nombre = Texto(c.estado_nombre);
+        string n = nombre.ToUpperInvariant();
+
+        string clase = !c.aco_habilitado ? "es-neutro"
+                     : (n.Contains("OPERATIV") || n.Contains("NUEVO") ? "es-ok"
+                     : (n.Contains("FUERA") || n.Contains("FALLA") ? "es-rojo" : "es-aviso"));
+
+        return "<span class=\"sg-ot-chip " + clase + "\">" +
+               Server.HtmlEncode(string.IsNullOrEmpty(nombre) ? "Sin estado" : nombre) + "</span>";
+    }
+
+    private string Nodo(ActivoComponente c)
+    {
+        return "<li><a href=\"javascript:void(0)\" class=\"sg-comp-nodo\" data-ir-comp=\"" + c.aco_id + "\">" +
+               "<i class=\"mdi " + (c.aco_habilitado ? "mdi-circle-small" : "mdi-close-circle-outline") + "\"></i>" +
+               "<div><strong>" + Server.HtmlEncode(Texto(c.aco_nombre)) + "</strong>" +
+               "<span>" + Server.HtmlEncode(Texto(c.aco_codigo)) + "</span></div></a>";
+    }
+
+    /// <summary>
+    /// Que repuesto se le cambio a cada pieza, con la orden que lo consumio.
+    /// Es lo que responde "cuantos rodamientos lleva este ventilador".
+    /// </summary>
+    private void Reemplazos(Activo a)
+    {
+        List<ActivoConsumo> consumos = new ActivoCentroController().GetConsumos(a.act_id)
+                                       ?? new List<ActivoConsumo>();
+
+        if (consumos.Count == 0)
+        {
+            litReemplazos.Text = "<p class=\"sg-ot-vacio-txt\">Todavía no se registran repuestos consumidos en este equipo.</p>";
+            return;
+        }
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-tabla-cab sg-comp-rep-cab\">")
+         .Append("<span>Fecha</span><span>Repuesto</span><span>Componente</span>")
+         .Append("<span>Cantidad</span><span>Orden</span><span></span></div>");
+
+        foreach (ActivoConsumo c in consumos)
+        {
+            s.Append("<div class=\"sg-a3-tabla-fila sg-comp-rep\" data-comp-rep=\"")
+             .Append(c.componente_id == null ? "" : c.componente_id.Value.ToString()).Append("\">")
+             .Append("<span class=\"c-dato\">").Append(c.fecha == null ? "—" : c.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.repuesto_nombre)))
+             .Append("<span>").Append(Server.HtmlEncode(Texto(c.repuesto_codigo))).Append("</span></span>")
+             .Append("<span class=\"c-dato\">")
+             .Append(Server.HtmlEncode(string.IsNullOrEmpty(c.componente) ? "Equipo completo" : c.componente)).Append("</span>")
+             .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Cantidad(c.cantidad, c.unidad))).Append("</span>")
+             .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(c.orden_codigo).Append("</span></span>")
+             .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(c.orden_id), "Abrir OT")).Append("</span>")
+             .Append("</div>");
+        }
+
+        litReemplazos.Text = s.ToString();
     }
 
     #endregion

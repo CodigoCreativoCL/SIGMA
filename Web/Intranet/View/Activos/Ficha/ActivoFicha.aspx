@@ -409,18 +409,76 @@
                 <%-- ================================================================
                      6. COMPONENTES
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="componentes">
-                    <div class="sg-ot-card">
-                        <header class="sg-ot-card-cab">
-                            <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-puzzle-outline"></i></span>
-                            <div>
-                                <h3>Componentes del equipo</h3>
-                                <p class="sg-ot-card-sub">Las partes instaladas, su estado y desde cuándo están.</p>
+                <section class="sg-a3-panel sg-a3-comp" data-panel="componentes">
+                    <div class="sg-comp-cols">
+
+                        <%-- La estructura a la izquierda: de que esta hecho el
+                             equipo. Es lo primero que alguien busca cuando le
+                             dicen "fallo el reductor". --%>
+                        <aside class="sg-ot-card sg-comp-arbol">
+                            <header class="sg-ot-card-cab">
+                                <span class="sg-ot-card-ico"><i class="mdi mdi-file-tree-outline"></i></span>
+                                <div><h3>Estructura del equipo</h3></div>
+                            </header>
+                            <asp:Literal ID="litArbol" runat="server" />
+                        </aside>
+
+                        <div class="sg-comp-centro">
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-puzzle-outline"></i></span>
+                                    <div>
+                                        <h3><asp:Literal ID="litCompTitulo" runat="server" Text="Componentes del equipo" /></h3>
+                                        <p class="sg-ot-card-sub">Componentes instalados, retirados y su historial de reemplazos.</p>
+                                    </div>
+                                    <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                                        OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Asociar componente</asp:LinkButton>
+                                </header>
+
+                                <div class="sg-ot-ev-filtros">
+                                    <div class="sg-ot-ev-tipos" id="sgCompTipos">
+                                        <a href="#" class="sg-a3-chip es-activa" data-comp-estado="instalados">Instalados <b><asp:Literal ID="litCompInstalados" runat="server" Text="0" /></b></a>
+                                        <a href="#" class="sg-a3-chip" data-comp-estado="retirados">Retirados <b><asp:Literal ID="litCompRetirados" runat="server" Text="0" /></b></a>
+                                    </div>
+                                    <div class="sg-ot-ev-buscar">
+                                        <i class="mdi mdi-magnify"></i>
+                                        <input type="search" id="sgCompBuscar" placeholder="Buscar por código o descripción..." autocomplete="off" />
+                                    </div>
+                                </div>
+
+                                <asp:Literal ID="litComponentes" runat="server" />
                             </div>
-                            <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
-                                OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Nuevo componente</asp:LinkButton>
-                        </header>
-                        <asp:Literal ID="litComponentes" runat="server" />
+
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-history"></i></span>
+                                    <div>
+                                        <h3>Historial de reemplazos</h3>
+                                        <p class="sg-ot-card-sub">Repuestos que se cambiaron en este equipo, con la orden que los consumió.</p>
+                                    </div>
+                                </header>
+                                <asp:Literal ID="litReemplazos" runat="server" />
+                            </div>
+                        </div>
+
+                        <%-- El detalle se llena en el navegador con lo que ya
+                             viene en la fila: pedir el componente al servidor
+                             para mostrar lo que ya esta en pantalla es un viaje
+                             de mas. --%>
+                        <aside class="sg-ot-card sg-comp-detalle" id="sgCompDetalle">
+                            <header class="sg-ot-card-cab">
+                                <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
+                                <div><h3>Detalles del componente</h3></div>
+                            </header>
+                            <div class="sg-comp-detalle-cuerpo">
+                                <p class="sg-ot-vacio-txt">Elija un componente de la lista para ver su detalle.</p>
+                            </div>
+                        </aside>
+                    </div>
+
+                    <div class="sg-ot-nota es-chica">
+                        <i class="mdi mdi-information-outline"></i>
+                        <span>Los componentes retirados conservan su fecha de instalación: es lo que permite saber cuánto duró la pieza anterior.</span>
                     </div>
                 </section>
 
