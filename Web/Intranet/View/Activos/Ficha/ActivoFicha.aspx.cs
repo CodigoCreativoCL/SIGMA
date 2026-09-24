@@ -226,6 +226,16 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
     }
 
+    /// <summary>El querystring cifrado para crear una variable de ESTE equipo.</summary>
+    protected string QueryNuevaVariable
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
+        }
+    }
+
     /// <summary>El querystring cifrado para crear un contador de ESTE equipo.</summary>
     protected string QueryNuevoMedidor
     {
@@ -371,7 +381,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                      Texto(f.fal_titulo),
                      Texto(f.sintoma_nombre),
                      "<span class=\"sg-ot-chip es-critica\">" + Server.HtmlEncode(Texto(f.criticidad_nombre)) + "</span>" +
-                     Boton(ResolveUrl("~/View/Mantenimiento/Fallas/Fallas.aspx"), "Ver falla")));
+                     Boton(UrlFalla(f.fal_id), "Ver falla")));
 
         if (proxima != null)
             at.Append(Fila("mdi-calendar-clock", "es-plan",
@@ -606,7 +616,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             p.Append(Fila("mdi-calendar-text-outline", "es-plan",
                      Texto(pl.plan_codigo) + " · " + Texto(pl.plan_nombre),
                      pl.version_numero == null ? "Sin versión publicada" : "Versión " + pl.version_numero,
-                     Boton(ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimientos.aspx"), "Ver plan")));
+                     Boton(UrlPlan(pl.plan_id), "Ver plan")));
 
         litPlanes.Text = p.Length > 0 ? p.ToString()
             : "<p class=\"sg-ot-vacio-txt\">Ningún plan de mantenimiento incluye este equipo.</p>";
@@ -640,7 +650,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                      Texto(x.tar_codigo) + " · " + Texto(x.tar_titulo),
                      x.programaciones + (x.programaciones == 1 ? " programación" : " programaciones") +
                      (x.pendientes > 0 ? " · " + x.pendientes + " pendientes" : ""),
-                     Boton(ResolveUrl("~/View/Mantenimiento/Tareas/Tareas.aspx"), "Ver tarea")));
+                     Boton(UrlTarea(x.tar_id), "Ver tarea")));
 
         litTareas.Text = t.Length > 0 ? t.ToString()
             : "<p class=\"sg-ot-vacio-txt\">Este equipo no tiene tareas recurrentes.</p>";
@@ -775,7 +785,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                          (abierta
                             ? "<span class=\"sg-ot-chip es-espera\">Abierta</span>"
                             : "<span class=\"sg-ot-chip es-ejecucion\">Resuelta</span>") +
-                         Boton(ResolveUrl("~/View/Mantenimiento/Fallas/Fallas.aspx"), "Abrir falla")));
+                         Boton(UrlFalla(f.fal_id), "Abrir falla")));
             }
 
             litFallas.Text = s.ToString();
@@ -839,9 +849,15 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
             ?? new List<ActivoVariable>();
 
+        bool puedeVariable = Token.Puede("CREAR EDITAR VARIABLES ACTIVO");
+        lnkNuevaVariable.Visible = puedeVariable;
+
         if (variables.Count == 0)
             litCondicion.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-gauge-empty\"></i>" +
-                                "<p>Sin variables de condición</p><span>Se configuran en Activos · Variables.</span></div>";
+                                "<p>Sin variables de condición</p><span>" +
+                                (puedeVariable ? "Agregue una con «Nueva variable» y el equipo empezará a medirse."
+                                               : "Todavía no se ha configurado qué se le mide a este equipo.") +
+                                "</span></div>";
         else
         {
             DateTime hoy = global::SitioBase.Hora.Hoy;
@@ -864,6 +880,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                  .Append(string.IsNullOrEmpty(v.unidad_simbolo) ? "" : " <small>" + Server.HtmlEncode(v.unidad_simbolo) + "</small>")
                  .Append("</span>")
                  .Append("<span class=\"sg-a3-cond-pie\">").Append(etiqueta).Append("</span>")
+                 .Append("<a class=\"sg-a3-cond-editar\" href=\"javascript:void(0)\" onclick=\"abrirVariable('")
+                 .Append(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id)))
+                 .Append("')\" title=\"").Append(puedeVariable ? "Editar la variable y sus umbrales" : "Ver la variable")
+                 .Append("\"><i class=\"mdi ").Append(puedeVariable ? "mdi-pencil-outline" : "mdi-eye-outline").Append("\"></i></a>")
                  .Append("</div>");
             }
 
@@ -958,10 +978,23 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 9. Documentos y galeria
 
+    /// <summary>
+    /// Todo lo que hay del equipo en archivos: sus documentos, su foto y lo
+    /// que el terreno fotografio en sus ordenes, inspecciones y tareas.
+    ///
+    /// ANTES SE VEIA VACIO Y NO LO ESTABA
+    ///   La galeria pedia solo los documentos colgados de la ficha, que es lo
+    ///   unico que devuelve SEL_ACTIVO_ARCHIVO -su imagen la deja fuera a
+    ///   proposito-. Un equipo con su foto y veinte evidencias de terreno
+    ///   mostraba "sin documentos ni fotografias".
+    ///
+    ///   Los archivos viven en Blob Storage: aca solo viaja el id, y la imagen
+    ///   se pide por VerArchivo.aspx con ese id cifrado.
+    /// </summary>
     private void Documentos(Activo a)
     {
-        List<ActivoArchivo> archivos = new ActivoArchivoController().GetArchivos(a.act_id, _cliente)
-                                       ?? new List<ActivoArchivo>();
+        List<ActivoArchivoOrigen> archivos = new ActivoArchivoController().GetTodos(a.act_id, _cliente)
+                                             ?? new List<ActivoArchivoOrigen>();
 
         litEvTodas.Text = archivos.Count.ToString();
         litEvFotos.Text = archivos.Count(x => x.es_imagen).ToString();
@@ -969,31 +1002,49 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         pnlSinArchivos.Visible = archivos.Count == 0;
 
-        litDocConteos.Text = "";
+        int evidencias = archivos.Count(x => x.es_evidencia);
+
+        litDocConteos.Text =
+            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + archivos.Count + "</strong><span>archivos</span></div>" +
+            "<div class=\"sg-ot-avance-num\"><strong>" + evidencias + "</strong><span>de terreno</span></div></div>";
 
         StringBuilder s = new StringBuilder();
 
-        foreach (ActivoArchivo f in archivos)
+        foreach (ActivoArchivoOrigen f in archivos)
         {
             string tipo = f.es_imagen ? "imagen" : "documento";
             string url = UrlArchivo.Ver(f.arc_id);
 
+            /* data-paso alimenta el desplegable de origen de la galeria: el
+               mismo JS que en la orden de trabajo, con otra pregunta. */
             s.Append("<article class=\"sg-ot-ev-card\" data-tipo=\"").Append(tipo)
-             .Append("\" data-paso=\"\" data-buscar=\"").Append(Server.HtmlEncode((f.arc_nombre ?? "").ToLower()))
+             .Append("\" data-paso=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
+             .Append("\" data-paso-txt=\"").Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
+             .Append("\" data-paso-etq=\"Origen\"")
+             .Append(" data-buscar=\"")
+             .Append(Server.HtmlEncode((Texto(f.nombre) + " " + Texto(f.origen_etiqueta) + " " + Texto(f.usuario)).ToLower()))
              .Append("\" data-url=\"").Append(url)
-             .Append("\" data-titulo=\"").Append(Server.HtmlEncode(Texto(f.arc_nombre)))
-             .Append("\" data-paso-txt=\"Ficha del activo\" data-usuario=\"\" data-fecha=\"\" data-obs=\"\"")
-             .Append(" data-icono=\"").Append(f.es_imagen ? "mdi-image-outline" : "mdi-file-document-outline")
+             .Append("\" data-titulo=\"").Append(Server.HtmlEncode(f.etiqueta))
+             .Append("\" data-usuario=\"").Append(Server.HtmlEncode(Texto(f.usuario)))
+             .Append("\" data-fecha=\"").Append(f.fecha == null ? "" : f.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+             .Append("\" data-obs=\"").Append(Server.HtmlEncode(Texto(f.descripcion)))
+             .Append("\" data-icono=\"").Append(f.es_imagen ? "mdi-image-outline" : "mdi-file-document-outline")
              .Append("\" data-imagen=\"").Append(f.es_imagen ? "1" : "0").Append("\">");
 
             s.Append("<span class=\"sg-ot-ev-foto\">");
-            if (f.es_imagen) s.Append("<img src=\"").Append(url).Append("\" alt=\"").Append(Server.HtmlEncode(Texto(f.arc_nombre))).Append("\" />");
-            else s.Append("<i class=\"mdi mdi-file-document-outline sg-ot-ev-icono\"></i>");
+            if (f.es_imagen)
+                s.Append("<img src=\"").Append(url).Append("\" alt=\"").Append(Server.HtmlEncode(f.etiqueta)).Append("\" />");
+            else
+                s.Append("<i class=\"mdi mdi-file-document-outline sg-ot-ev-icono\"></i>");
             s.Append("</span>");
 
             s.Append("<div class=\"sg-ot-ev-txt\"><span class=\"sg-ot-ev-nom\">")
-             .Append(Server.HtmlEncode(Texto(f.arc_nombre))).Append("</span>")
-             .Append("<span class=\"sg-ot-ev-meta\">").Append(Tamano(f.arc_byte)).Append("</span></div></article>");
+             .Append(Server.HtmlEncode(f.etiqueta)).Append("</span>")
+             .Append("<span class=\"sg-ot-ev-meta\">")
+             .Append(Server.HtmlEncode(Texto(f.origen_etiqueta)))
+             .Append(f.bytes > 0 ? " · " + Tamano(f.bytes) : "")
+             .Append("</span></div></article>");
         }
 
         litArchivos.Text = s.ToString();
@@ -1588,11 +1639,27 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                Server.HtmlEncode(string.IsNullOrEmpty(valor) ? "Sin registrar" : valor) + "</dd>";
     }
 
+    /// <summary>
+    /// Un boton que lleva a OTRO registro. Abre en una pestaña nueva: el
+    /// centro es donde se estaba mirando el equipo, y volver con el boton
+    /// atras pierde la seccion, los filtros y la fila desplegada.
+    /// </summary>
     private string Boton(string url, string texto, bool primario = false)
     {
-        return "<a class=\"sg-ot-btn " + (primario ? "es-primario" : "es-plano") + "\" href=\"" + url + "\">" +
+        return "<a class=\"sg-ot-btn " + (primario ? "es-primario" : "es-plano") +
+               "\" href=\"" + url + "\" target=\"_blank\" rel=\"noopener\">" +
                Server.HtmlEncode(texto) + "<i class=\"mdi mdi-open-in-new\"></i></a>";
     }
+
+    /// <summary>El id nunca viaja en claro: va cifrado como en todo el sitio.</summary>
+    private string UrlRegistro(string pagina, int id)
+    {
+        return ResolveUrl(pagina) + "?query=" + Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id));
+    }
+
+    private string UrlFalla(int id) { return UrlRegistro("~/View/Mantenimiento/Fallas/Falla.aspx", id); }
+    private string UrlPlan(int id) { return UrlRegistro("~/View/Mantenimiento/Planes/PlanMantenimiento.aspx", id); }
+    private string UrlTarea(int id) { return UrlRegistro("~/View/Mantenimiento/Tareas/Tarea.aspx", id); }
 
     private string BotonSeccion(string seccion, string texto)
     {
@@ -1602,8 +1669,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     private string UrlOrden(int id)
     {
-        return ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?query=" +
-               Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + id));
+        return UrlRegistro("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx", id);
     }
 
     private string Foto(int activo)

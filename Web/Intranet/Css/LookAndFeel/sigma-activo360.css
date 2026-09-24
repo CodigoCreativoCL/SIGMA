@@ -543,3 +543,14 @@ a.sg-a3-chip.es-activa b { color: #fff; }
 /* Una foto que se puede agrandar tiene que decirlo antes de que la toquen. */
 .sg-a3-ampliable { cursor: zoom-in; transition: filter .15s ease; }
 .sg-a3-ampliable:hover { filter: brightness(1.06); }
+
+.sg-a3-cond-card { position: relative; }
+.sg-a3-cond-editar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--sg-tenue);
+    font-size: 16px;
+    text-decoration: none;
+}
+.sg-a3-cond-editar:hover { color: var(--sg-p); }

@@ -39,6 +39,16 @@
             });
         }
 
+        function abrirVariable(query) {
+            seccionPendiente = 'condicion';
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>?query=' + query,
+                title: query === queryNuevaVariable ? 'Nueva variable de condición' : 'Editar variable',
+                width: 940,
+                initialHeight: 600
+            });
+        }
+
         function abrirMedidor(query) {
             seccionPendiente = 'condicion';
             return SigmaModal.open({
@@ -55,6 +65,7 @@
            querystring cifrado que arma el servidor. */
         var queryNuevoComponente = '<%=QueryNuevoComponente %>';
         var queryNuevoMedidor = '<%=QueryNuevoMedidor %>';
+        var queryNuevaVariable = '<%=QueryNuevaVariable %>';
 
         /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
            al Resumen: el postback repinta el bloque entero. */
@@ -494,6 +505,8 @@
                                 <h3>Variables de condición</h3>
                                 <p class="sg-ot-card-sub">Lo que se mide del equipo: valor, cuándo se tomó y contra qué se compara.</p>
                             </div>
+                            <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                                OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-plus"></i>Nueva variable</asp:LinkButton>
                         </header>
 
                         <asp:Literal ID="litCondicion" runat="server" />

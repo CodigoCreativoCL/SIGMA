@@ -25,10 +25,23 @@ public partial class View_Activos_Variables_ActivoVariable : System.Web.UI.Page
 
     private string _componenteEditar = null;
 
+    /// <summary>
+    /// El activo ya viene decidido: la ficha se abrió desde el centro de ESE
+    /// equipo. Misma regla que en componentes y medidores.
+    /// </summary>
+    public int ActivoFijo
+    {
+        get { return ViewState["ActivoFijo"] != null ? (int)ViewState["ActivoFijo"] : 0; }
+        set { ViewState["ActivoFijo"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -122,7 +135,11 @@ public partial class View_Activos_Variables_ActivoVariable : System.Web.UI.Page
             rdbNo.Checked = !v.ava_habilitado;
             wucAuditoria.Mostrar(v.usuario_creacion_nombre, v.ava_fecha_creacion, v.usuario_actualizacion_nombre, v.ava_fecha_actualizacion);
         }
-        else lblId.Text = "Nueva";
+        else
+        {
+            lblId.Text = "Nueva";
+            if (ActivoFijo > 0) Seleccionar(cboActivo, ActivoFijo.ToString());
+        }
     }
 
     private static string Num(decimal? d) { return d == null ? "" : d.Value.ToString("0.######", CultureInfo.InvariantCulture); }
@@ -138,7 +155,7 @@ public partial class View_Activos_Variables_ActivoVariable : System.Web.UI.Page
         bool puedeEditar = Token.Puede("CREAR EDITAR VARIABLES ACTIVO");
 
         // Fijos con Enabled: un RadComboBox ReadOnly no renderiza sus items y validaControl se cae.
-        cboActivo.Enabled = Id == 0;
+        cboActivo.Enabled = Id == 0 && ActivoFijo == 0;
         cboComponente.Enabled = Id == 0;
         cboVariable.Enabled = Id == 0;
         cboActivo.ReadOnly = cboVariable.ReadOnly = cboComponente.ReadOnly = !puedeEditar;

@@ -162,7 +162,10 @@
                 : '<div class="sg-ot-lb-doc"><i class="mdi ' + d('icono') + '"></i><span>' + d('titulo') + '</span></div>';
 
             html += '<div class="sg-ot-lb-datos"><div class="sg-ot-datos">';
-            if (d('paso-txt')) html += dato('mdi-format-list-numbered', 'Paso asociado', d('paso-txt'));
+            /* La etiqueta la pone la pagina: en la orden es un paso, en el
+               activo es el origen del archivo -su OT, su inspeccion, su
+               tarea-. Escribirla aca dejaba al activo hablando de pasos. */
+            if (d('paso-txt')) html += dato('mdi-format-list-numbered', d('paso-etq') || 'Paso asociado', d('paso-txt'));
             if (d('fecha')) html += dato('mdi-calendar-outline', 'Capturada', d('fecha'));
             if (d('usuario')) html += dato('mdi-account-outline', 'Enviada por', d('usuario'));
             if (d('obs')) html += dato('mdi-note-text-outline', 'Observación del técnico', d('obs'));
