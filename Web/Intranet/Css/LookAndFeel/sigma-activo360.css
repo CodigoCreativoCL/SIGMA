@@ -384,11 +384,21 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-ot-det-item.es-ancho { grid-column: 1 / -1; }
 
 /* ---------------------------------------------- repuestos y costos -------- */
-/* La primera columna es la foto de la pieza: 44px fijos. */
+/* La primera columna es la foto de la pieza: 44px fijos. Once columnas,
+   porque de donde salio y quien lo registro importan tanto como la cantidad:
+   cuando el repuesto no llego a la maquina, la pregunta es esa. */
 .sg-a3-rep-cab,
 .sg-a3-rep {
-    grid-template-columns: 44px minmax(160px, 2fr) 105px 105px 125px 115px 105px 85px 115px;
+    grid-template-columns: 44px minmax(150px, 1.7fr) 95px 95px 110px 105px minmax(0, 1fr) 95px minmax(0, 1fr) 78px 105px;
 }
+.sg-a3-rep .c-dato span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+.sg-a3-costo-cab,
+.sg-a3-costo { grid-template-columns: 92px minmax(0, 2fr) 80px minmax(0, 1fr) 110px 105px; }
+.sg-a3-costo .c-dato span { display: block; font-size: 11px; color: var(--sg-warning); }
+
+.sg-a3-compat-cab,
+.sg-a3-compat { grid-template-columns: 44px minmax(150px, 1.6fr) 110px minmax(0, 1.2fr) minmax(0, 150px) minmax(0, 1fr) 100px; }
 
 /* ------------------------------------------------------- SIGMA AI -------- */
 .sg-a3-tab.es-ia { margin-left: auto; }
@@ -925,6 +935,14 @@ input.sg-ot-btn.es-accion {
    variable: la pregunta nunca es "las lecturas del equipo", es "las de esta".
    ========================================================================= */
 .sg-cond-vistas { margin-bottom: 4px; }
+
+/* El panel de una vista que no esta activa se esconde.
+
+   Esta regla se perdio al rehacer Condicion y se llevo con ella las vistas
+   de Fallas y de Repuestos: los dos o tres paneles se pintaban uno debajo
+   del otro, asi que se veian "Sin consumo", "Sin devoluciones" y "Sin
+   costos" a la vez, como si la pantalla estuviera repitiendo el mismo vacio. */
+.sg-cond-vista.es-oculta { display: none; }
 
 /* ---- La cabecera: buscar, filtrar, configurar, registrar --------------- */
 .sg-cond-top { flex-wrap: wrap; row-gap: 10px; }

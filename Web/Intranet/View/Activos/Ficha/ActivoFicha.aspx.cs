@@ -2919,69 +2919,272 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         litCostoKpis.Text = k.ToString();
 
-        // ---- consumos ----
-        litConsumoConteos.Text =
-            "<div class=\"sg-ot-card-acc sg-ot-avance\">" +
-            "<div class=\"sg-ot-avance-num\"><strong>" + consumos.Count + "</strong><span>consumos</span></div></div>";
+        // ---- las tres vistas ----
+        List<ActivoConsumo> devueltos = consumos.Where(x => x.devuelta > 0).ToList();
 
+        litRepConsumos.Text = consumos.Count.ToString();
+        litRepDevoluciones.Text = devueltos.Count.ToString();
+        litRepOrdenes.Text = consumos.Select(x => x.orden_id).Distinct().Count().ToString();
+
+        litConsumoConteos.Text =
+            "<div class=\"sg-a3-kpis es-compacta\">" +
+            Kpi("mdi-package-variant-closed", consumos.Count.ToString(), "Líneas", "", "", true) +
+            "</div>";
+
+        PintarConsumos(consumos);
+        PintarDevoluciones(devueltos);
+        PintarCostos(consumos);
+        PintarCompatibles(a);
+    }
+
+    /// <summary>
+    /// Lo que salio de bodega para este equipo.
+    ///
+    /// La bodega y quien lo registro importan tanto como la cantidad: cuando
+    /// el repuesto no llego a la maquina, la pregunta es de donde salio y
+    /// quien lo entrego, y eso vive en el movimiento de inventario.
+    /// </summary>
+    private void PintarConsumos(List<ActivoConsumo> consumos)
+    {
         if (consumos.Count == 0)
         {
             litConsumos.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-package-variant\"></i>" +
                                "<p>Sin consumo de repuestos</p>" +
                                "<span>Nada salió de bodega para este equipo todavía.</span></div>";
-        }
-        else
-        {
-            StringBuilder s = new StringBuilder();
-
-            s.Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
-             .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Consumo</span>")
-             .Append("<span>Costo unitario</span><span>Costo total</span><span>Fecha</span>")
-             .Append("<span>Orden</span><span></span></div>");
-
-            foreach (ActivoConsumo c in consumos)
-            {
-                /* "RE-0041 · Rodamiento 6205 2RS" identifica la pieza para
-                   quien la compra; para el tecnico que mira que se le cambio
-                   al equipo, la foto es lo que la reconoce. */
-                s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rep\">")
-                 .Append("<span class=\"c-dato\">").Append(FotoPieza(c.imagen_id, c.repuesto_nombre)).Append("</span>")
-                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.repuesto_nombre)))
-                 .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(c.componente) ? Texto(c.orden_titulo) : c.componente))
-                 .Append("</span></span>")
-                 .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(c.repuesto_codigo))).Append("</span></span>")
-                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Cantidad(c.cantidad, c.unidad))).Append("</span>")
-                 .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(c.costo_unitario) : "Sin cargar").Append("</span>")
-                 .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(c.costo) : "—").Append("</span>")
-                 .Append("<span class=\"c-dato\">").Append(c.fecha == null ? "—" : c.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
-                 .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(c.orden_codigo).Append("</span></span>")
-                 .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(c.orden_id), "Abrir OT")).Append("</span>")
-                 .Append("</div>");
-            }
-
-            litConsumos.Text = s.ToString();
-        }
-
-        // ---- compatibles ----
-        List<ActivoRepuesto> compatibles = new ActivoRepuestoController().GetRepuestos(a.act_id, _cliente)
-                                           ?? new List<ActivoRepuesto>();
-
-        if (compatibles.Count == 0)
-        {
-            litCompatibles.Text = "<p class=\"sg-ot-vacio-txt\">No hay repuestos declarados como compatibles con este equipo.</p>";
             return;
         }
 
-        StringBuilder m = new StringBuilder();
+        StringBuilder s = new StringBuilder();
 
-        foreach (ActivoRepuesto r in compatibles)
-            m.Append(Fila("mdi-shape-outline", "",
-                     Texto(r.rep_nombre),
-                     string.Join(" · ", new[] { Texto(r.rep_fabricante), Texto(r.rep_modelo) }
-                                 .Where(x => !string.IsNullOrEmpty(x)).ToArray()),
-                     "<span class=\"sg-a3-codigo\">" + Server.HtmlEncode(Texto(r.rep_codigo)) + "</span>"));
+        s.Append("<div data-filtra=\".sg-a3-rep\" data-nombre=\"consumos\">")
 
-        litCompatibles.Text = m.ToString();
+         .Append(BarraFiltros(
+                FiltroPeriodo(),
+                FiltroLista("bodega", "mdi-warehouse", "Bodega", OpcionesDe(consumos.Select(c => Texto(c.bodega)))),
+                FiltroTexto("Buscar repuesto, código o descripción...")))
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
+         .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Consumo</span>")
+         .Append("<span>Costo unitario</span><span>Costo total</span><span>Bodega</span>")
+         .Append("<span>Fecha</span><span>Registrado por</span><span>Orden</span><span></span></div>");
+
+        foreach (ActivoConsumo c in consumos)
+            s.Append(FilaConsumo(c, Cantidad(c.cantidad, c.unidad)));
+
+        s.Append(PiePaginacion("consumos")).Append("</div>");
+
+        litConsumos.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Lo que volvio a bodega.
+    ///
+    /// No es un consumo con signo cambiado: es material que se pidio de mas y
+    /// no se gasto. Sumarlo junto a lo consumido infla el costo del equipo
+    /// con algo que sigue en el estante.
+    /// </summary>
+    private void PintarDevoluciones(List<ActivoConsumo> devueltos)
+    {
+        if (devueltos.Count == 0)
+        {
+            litDevoluciones.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-undo-variant\"></i>" +
+                                   "<p>Sin devoluciones</p>" +
+                                   "<span>Todo lo que salió de bodega para este equipo se usó.</span></div>";
+            return;
+        }
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-a3-rep\" data-nombre=\"devoluciones\">")
+
+         .Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
+         .Append("<span>Lo devuelto no es gasto del equipo: volvió a bodega y no suma al costo.</span></div>")
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
+         .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Devuelto</span>")
+         .Append("<span>Costo unitario</span><span>No gastado</span><span>Bodega</span>")
+         .Append("<span>Fecha</span><span>Registrado por</span><span>Orden</span><span></span></div>");
+
+        foreach (ActivoConsumo c in devueltos)
+            s.Append(FilaConsumo(c, Cantidad(c.devuelta, c.unidad), c.costo_registrado ? c.costo_unitario * c.devuelta : 0));
+
+        s.Append("</div>");
+
+        litDevoluciones.Text = s.ToString();
+    }
+
+    /// <summary>Una fila de material, la misma forma para consumo y devolucion.</summary>
+    private string FilaConsumo(ActivoConsumo c, string cantidad, decimal? totalDistinto = null)
+    {
+        decimal total = totalDistinto ?? c.costo;
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rep\"")
+         .Append(" data-fecha=\"").Append(c.fecha == null ? "" : c.fecha.Value.ToString("yyyy-MM-dd"))
+         .Append("\" data-bodega=\"").Append(Server.HtmlEncode(Texto(c.bodega).ToLowerInvariant()))
+         .Append("\" data-txt=\"")
+         .Append(Server.HtmlEncode((Texto(c.repuesto_codigo) + " " + Texto(c.repuesto_nombre) + " " +
+                                    Texto(c.bodega) + " " + Texto(c.usuario)).ToLowerInvariant()))
+         .Append("\">")
+
+         .Append("<span class=\"c-dato\">").Append(FotoPieza(c.imagen_id, c.repuesto_nombre)).Append("</span>")
+         .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(c.repuesto_nombre)))
+         .Append("<span>").Append(Server.HtmlEncode(string.IsNullOrEmpty(c.componente) ? Texto(c.orden_titulo) : c.componente))
+         .Append("</span></span>")
+         .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(c.repuesto_codigo))).Append("</span></span>")
+         .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(cantidad)).Append("</span>")
+         .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(c.costo_unitario) : "Sin cargar").Append("</span>")
+         .Append("<span class=\"c-dato\">").Append(c.costo_registrado ? Moneda(total) : "—").Append("</span>")
+
+         .Append("<span class=\"c-dato\">")
+         .Append(string.IsNullOrEmpty(c.bodega) ? "<span class=\"sg-ot-vacio-txt\">Sin movimiento</span>"
+                : Server.HtmlEncode(c.bodega) + (string.IsNullOrEmpty(c.ubicacion) ? "" : "<span>" + Server.HtmlEncode(c.ubicacion) + "</span>"))
+         .Append("</span>")
+
+         .Append("<span class=\"c-dato\">").Append(c.fecha == null ? "—" : c.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
+         .Append("<span class=\"c-dato\">")
+         .Append(string.IsNullOrEmpty(c.usuario) ? "<span class=\"sg-ot-vacio-txt\">Sin registrar</span>" : Server.HtmlEncode(c.usuario))
+         .Append("</span>")
+         .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(c.orden_codigo).Append("</span></span>")
+         .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(c.orden_id), "Abrir OT")).Append("</span>")
+         .Append("</div>");
+
+        return s.ToString();
+    }
+
+    /// <summary>
+    /// Lo gastado, agrupado por orden.
+    ///
+    /// Es como se aprueba el presupuesto: nadie firma "cuarenta lineas de
+    /// repuesto", firma "la OT-231 costo tanto".
+    /// </summary>
+    private void PintarCostos(List<ActivoConsumo> consumos)
+    {
+        if (consumos.Count == 0)
+        {
+            litCostos.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-calculator-variant-outline\"></i>" +
+                             "<p>Sin costos de material</p>" +
+                             "<span>Todavía no hay repuestos cargados a una orden de este equipo.</span></div>";
+            return;
+        }
+
+        var porOrden = consumos
+            .GroupBy(c => c.orden_id)
+            .Select(g => new
+            {
+                id = g.Key,
+                codigo = g.First().orden_codigo,
+                titulo = g.First().orden_titulo,
+                fecha = g.Max(x => x.fecha),
+                lineas = g.Count(),
+                total = g.Where(x => x.costo_registrado).Sum(x => x.costo),
+                sinPrecio = g.Count(x => !x.costo_registrado)
+            })
+            .OrderByDescending(x => x.fecha)
+            .ToList();
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-a3-costo\" data-nombre=\"órdenes\">")
+
+         .Append(BarraFiltros(FiltroPeriodo(), FiltroTexto("Buscar por orden...")))
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-a3-costo-cab\">")
+         .Append("<span>Orden</span><span>Trabajo</span><span>Líneas</span>")
+         .Append("<span>Material</span><span>Fecha</span><span></span></div>");
+
+        foreach (var o in porOrden)
+        {
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-costo\"")
+             .Append(" data-fecha=\"").Append(o.fecha == null ? "" : o.fecha.Value.ToString("yyyy-MM-dd"))
+             .Append("\" data-txt=\"").Append(Server.HtmlEncode((o.codigo + " " + Texto(o.titulo)).ToLowerInvariant()))
+             .Append("\">")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(o.codigo).Append("</span></span>")
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(o.titulo))).Append("</span>")
+             .Append("<span class=\"c-dato\">").Append(o.lineas).Append("</span>")
+
+             /* Si alguna linea no tiene precio, el total de la orden es un
+                piso y se dice: un numero limpio invita a sumarlo como si
+                estuviera completo. */
+             .Append("<span class=\"c-dato\">").Append(Moneda(o.total))
+             .Append(o.sinPrecio > 0 ? "<span>+" + o.sinPrecio + " sin precio</span>" : "")
+             .Append("</span>")
+
+             .Append("<span class=\"c-dato\">").Append(o.fecha == null ? "—" : o.fecha.Value.ToString("dd MMM yyyy")).Append("</span>")
+             .Append("<span class=\"c-acc\">").Append(Boton(UrlOrden(o.id), "Abrir OT")).Append("</span>")
+             .Append("</div>");
+        }
+
+        s.Append(PiePaginacion("órdenes")).Append("</div>");
+
+        litCostos.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Los repuestos que le sirven, con lo que hay en bodega.
+    ///
+    /// Era una lista de nombres. La pregunta real es "¿hay?" y "¿donde?": un
+    /// compatible sin existencia no resuelve la falla de esta noche, y habia
+    /// que salir a inventario para saberlo.
+    /// </summary>
+    private void PintarCompatibles(Activo a)
+    {
+        List<ActivoRepuestoCompatible> compatibles = new ActivoCentroController().GetCompatibles(a.act_id)
+                                                     ?? new List<ActivoRepuestoCompatible>();
+
+        if (compatibles.Count == 0)
+        {
+            litCompatibles.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-shape-outline\"></i>" +
+                                  "<p>Sin repuestos compatibles declarados</p>" +
+                                  "<span>La compatibilidad se declara por tipo o modelo, en la ficha del repuesto.</span></div>";
+            return;
+        }
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div data-filtra=\".sg-a3-compat\" data-nombre=\"repuestos\">")
+
+         .Append(BarraFiltros(
+                FiltroLista("hay", "mdi-package-variant", "Existencia", "|Todos", "1|Con existencia", "0|Sin existencia"),
+                FiltroTexto("Buscar repuesto compatible...")))
+
+         .Append("<div class=\"sg-a3-tabla-cab sg-a3-compat-cab\">")
+         .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Descripción</span>")
+         .Append("<span>Estado</span><span>Ubicación</span><span></span></div>");
+
+        foreach (ActivoRepuestoCompatible r in compatibles)
+        {
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-compat\" data-hay=\"").Append(r.hay ? "1" : "0")
+             .Append("\" data-txt=\"")
+             .Append(Server.HtmlEncode((Texto(r.codigo) + " " + Texto(r.nombre) + " " + Texto(r.fabricante) + " " +
+                                        Texto(r.modelo) + " " + Texto(r.donde)).ToLowerInvariant()))
+             .Append("\">")
+
+             .Append("<span class=\"c-dato\">").Append(FotoPieza(r.imagen_id, r.nombre)).Append("</span>")
+
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(r.nombre)))
+             .Append("<span>")
+             .Append(Server.HtmlEncode(string.Join(" · ", new[] { Texto(r.fabricante), Texto(r.modelo) }
+                                                   .Where(x => x.Length > 0).ToArray())))
+             .Append("</span></span>")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">").Append(Server.HtmlEncode(Texto(r.codigo))).Append("</span></span>")
+             .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(r.descripcion))).Append("</span>")
+
+             .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ").Append(r.hay ? "es-ok" : "es-neutro").Append("\">")
+             .Append(r.hay ? Cantidad(r.existencia, r.unidad) + " disponible" : "Sin existencia")
+             .Append("</span></span>")
+
+             .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(r.ubicacion)).Append("</span>")
+             .Append("<span class=\"c-acc\">").Append(Boton(UrlRepuesto(r.repuesto_id), "Ver ficha")).Append("</span>")
+             .Append("</div>");
+        }
+
+        s.Append(PiePaginacion("repuestos")).Append("</div>");
+
+        litCompatibles.Text = s.ToString();
     }
 
     private static string Moneda(decimal valor)
@@ -3324,6 +3527,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     private string UrlOrden(int id)
     {
         return UrlRegistro("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx", id);
+    }
+
+    /// <summary>La ficha del repuesto, en inventario.</summary>
+    private string UrlRepuesto(int id)
+    {
+        return UrlRegistro("~/View/Inventario/Repuestos/Repuesto.aspx", id);
     }
 
     private string Foto(int activo)

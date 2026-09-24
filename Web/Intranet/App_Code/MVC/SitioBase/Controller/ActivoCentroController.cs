@@ -7,10 +7,39 @@ using SitioBase.Model;
 namespace SitioBase.Controller
 {
     /// <summary>
-    /// Algo que se paso a revisar en el equipo: una inspeccion de pauta o una
-    /// tarea. Van en la misma clase porque en terreno son la misma cosa.
+    /// Un repuesto que le sirve al equipo, con la respuesta a "¿hay?"
+    /// (bloque 284).
+    ///
+    /// Una lista de nombres no sirve para resolver la falla de esta noche:
+    /// habia que salir a inventario a preguntar si quedaba alguno.
     /// </summary>
-    [Serializable]
+    public class ActivoRepuestoCompatible
+    {
+        public int repuesto_id { get; set; }
+        public string codigo { get; set; }
+        public string nombre { get; set; }
+        public string descripcion { get; set; }
+        public string fabricante { get; set; }
+        public string modelo { get; set; }
+        public string unidad { get; set; }
+        public decimal existencia { get; set; }
+        public int bodegas { get; set; }
+        public string donde { get; set; }
+        public int? imagen_id { get; set; }
+
+        public bool hay { get { return existencia > 0; } }
+
+        /// <summary>"Bodega central · A-12 +2" cabe en una celda; "en tres bodegas" no dice a cual ir.</summary>
+        public string ubicacion
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(donde)) return "Sin existencia";
+                return bodegas > 1 ? donde + "  +" + (bodegas - 1) : donde;
+            }
+        }
+    }
+
     /// <summary>
     /// Un archivo adjunto a una inspeccion o a una tarea (bloque 282).
     ///
@@ -89,6 +118,11 @@ namespace SitioBase.Controller
         public string plan_nombre { get; set; }
     }
 
+    /// <summary>
+    /// Algo que se paso a revisar en el equipo: una inspeccion de pauta o una
+    /// tarea. Van en la misma clase porque en terreno son la misma cosa.
+    /// </summary>
+    [Serializable]
     public class ActivoRevision
     {
         public string tipo { get; set; }              // INSPECCION | TAREA
@@ -155,6 +189,12 @@ namespace SitioBase.Controller
 
         /// <summary>La foto de la pieza (bloque 280). Solo el id: los bytes viven en el blob.</summary>
         public int? imagen_id { get; set; }
+
+        /* De donde salio (bloque 284). No esta en la linea de la orden: vive
+           en el movimiento de inventario que se genero al consumir. */
+        public string bodega { get; set; }
+        public string ubicacion { get; set; }
+        public int? movimiento_id { get; set; }
         public decimal cantidad { get; set; }
         public decimal devuelta { get; set; }
         public decimal costo_unitario { get; set; }
@@ -664,6 +704,60 @@ namespace SitioBase.Controller
             return mapa;
         }
 
+        /// <summary>
+        /// Los repuestos compatibles con el equipo y cuantos hay (bloque 284).
+        ///
+        /// La compatibilidad se declara por TIPO o por MODELO del activo: el
+        /// mismo rodamiento sirve para todas las bombas de ese modelo.
+        /// </summary>
+        public List<ActivoRepuestoCompatible> GetCompatibles(int activo)
+        {
+            List<ActivoRepuestoCompatible> lista = new List<ActivoRepuestoCompatible>();
+
+            if (!Token.TokenSeguridad() || activo <= 0) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_REPUESTO_COMPATIBLE";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoRepuestoCompatible r = new ActivoRepuestoCompatible();
+
+                        r.repuesto_id = int.Parse(dr["REPUESTO_ID"].ToString());
+                        r.codigo = dr["CODIGO"].ToString();
+                        r.nombre = dr["NOMBRE"].ToString();
+                        r.descripcion = dr["DESCRIPCION"].ToString();
+                        r.fabricante = dr["FABRICANTE"].ToString();
+                        r.modelo = dr["MODELO"].ToString();
+                        r.unidad = dr["UNIDAD"].ToString();
+                        r.existencia = decimal.Parse(dr["EXISTENCIA"].ToString());
+                        r.bodegas = int.Parse(dr["BODEGAS"].ToString());
+                        r.donde = dr["DONDE"].ToString();
+                        if (dr["IMAGEN_ID"] != DBNull.Value) r.imagen_id = int.Parse(dr["IMAGEN_ID"].ToString());
+
+                        lista.Add(r);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
         public List<ActivoRevision> GetRevisiones(int activo, DateTime? desde = null, DateTime? hasta = null)
         {
             List<ActivoRevision> lista = new List<ActivoRevision>();
@@ -752,6 +846,9 @@ namespace SitioBase.Controller
                         c.componente = dr["COMPONENTE"].ToString();
                         if (dr["COMPONENTE_ID"] != DBNull.Value) c.componente_id = int.Parse(dr["COMPONENTE_ID"].ToString());
                         if (dr["IMAGEN_ID"] != DBNull.Value) c.imagen_id = int.Parse(dr["IMAGEN_ID"].ToString());
+                        c.bodega = dr["BODEGA"] == DBNull.Value ? "" : dr["BODEGA"].ToString();
+                        c.ubicacion = dr["UBICACION"] == DBNull.Value ? "" : dr["UBICACION"].ToString();
+                        if (dr["MOVIMIENTO_ID"] != DBNull.Value) c.movimiento_id = int.Parse(dr["MOVIMIENTO_ID"].ToString());
                         c.cantidad = decimal.Parse(dr["CANTIDAD"].ToString());
                         c.devuelta = decimal.Parse(dr["DEVUELTA"].ToString());
                         c.costo_unitario = decimal.Parse(dr["COSTO_UNITARIO"].ToString());

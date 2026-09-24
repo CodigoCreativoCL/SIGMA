@@ -830,20 +830,44 @@
                 <%-- ================================================================
                      11. REPUESTOS Y COSTOS
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="repuestos">
+                <section class="sg-a3-panel sg-a3-rep-panel" data-panel="repuestos">
                     <asp:Literal ID="litCostoKpis" runat="server" />
 
                     <div class="sg-ot-card">
                         <header class="sg-ot-card-cab">
                             <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-package-variant-closed"></i></span>
                             <div>
-                                <h3>Materiales consumidos en el equipo</h3>
-                                <p class="sg-ot-card-sub">Repuestos e insumos usados en las intervenciones de este activo.</p>
+                                <h3>Repuestos y costos</h3>
+                                <p class="sg-ot-card-sub">Gestión de materiales, devoluciones y costos asociados al activo.</p>
                             </div>
                             <asp:Literal ID="litConsumoConteos" runat="server" />
                         </header>
 
-                        <asp:Literal ID="litConsumos" runat="server" />
+                        <%-- CONSUMOS, DEVOLUCIONES Y COSTOS NO SON LA MISMA LISTA
+
+                             Lo consumido dice que se gasto; lo devuelto dice
+                             que se pidio de mas y volvio a bodega -que no es
+                             gasto y no puede sumarse igual-; y los costos
+                             agrupan por orden, que es como se aprueba el
+                             presupuesto. Mezclarlas obliga a leer una columna
+                             para saber que se esta mirando. --%>
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgRepVistas">
+                            <a href="#" class="sg-a3-chip es-activa" data-rep-vista="consumos"><i class="mdi mdi-package-variant-closed"></i>Consumos <b><asp:Literal ID="litRepConsumos" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-rep-vista="devoluciones"><i class="mdi mdi-undo-variant"></i>Devoluciones <b><asp:Literal ID="litRepDevoluciones" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-rep-vista="costos"><i class="mdi mdi-calculator-variant-outline"></i>Costos <b><asp:Literal ID="litRepOrdenes" runat="server" Text="0" /></b></a>
+                        </div>
+
+                        <div class="sg-cond-vista" data-rep-vista="consumos">
+                            <asp:Literal ID="litConsumos" runat="server" />
+                        </div>
+
+                        <div class="sg-cond-vista es-oculta" data-rep-vista="devoluciones">
+                            <asp:Literal ID="litDevoluciones" runat="server" />
+                        </div>
+
+                        <div class="sg-cond-vista es-oculta" data-rep-vista="costos">
+                            <asp:Literal ID="litCostos" runat="server" />
+                        </div>
                     </div>
 
                     <div class="sg-ot-card">
@@ -851,7 +875,7 @@
                             <span class="sg-ot-card-ico"><i class="mdi mdi-shape-outline"></i></span>
                             <div>
                                 <h3>Repuestos compatibles</h3>
-                                <p class="sg-ot-card-sub">Lo que este equipo puede llevar, aunque todavía no se le haya puesto.</p>
+                                <p class="sg-ot-card-sub">Lo que este equipo puede llevar, con lo que hay en bodega ahora.</p>
                             </div>
                         </header>
 
@@ -859,7 +883,7 @@
                     </div>
                 </section>
 
-                <%-- ================================================================
+<%-- ================================================================
                      12. SIGMA AI
                      ================================================================ --%>
                 <section class="sg-a3-panel" data-panel="ia">

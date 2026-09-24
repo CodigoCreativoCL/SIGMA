@@ -1671,6 +1671,29 @@
         pintar(hitos[0]);
     }
 
+    /* ---- Repuestos: tres vistas de la misma plata ----
+
+       Lo consumido dice que se gasto; lo devuelto, que se pidio de mas y
+       volvio a bodega -que no es gasto-; los costos agrupan por orden, que
+       es como se aprueba el presupuesto. */
+    function repuestos() {
+        var vistas = document.querySelectorAll('#sgRepVistas a[data-rep-vista]');
+        if (!vistas.length) return;
+
+        for (var v = 0; v < vistas.length; v++)
+            vistas[v].onclick = function (ev) {
+                ev.preventDefault();
+                var cual = this.getAttribute('data-rep-vista');
+
+                for (var k = 0; k < vistas.length; k++) vistas[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+
+                var paneles = document.querySelectorAll('.sg-cond-vista[data-rep-vista]');
+                for (var p = 0; p < paneles.length; p++)
+                    paneles[p].classList.toggle('es-oculta', paneles[p].getAttribute('data-rep-vista') !== cual);
+            };
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -1679,6 +1702,7 @@
         fallas();
         lista();
         historial();
+        repuestos();
         filtrables();
         popovers();
         documentos();
