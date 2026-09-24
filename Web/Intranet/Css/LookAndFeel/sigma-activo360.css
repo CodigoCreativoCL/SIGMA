@@ -2212,3 +2212,104 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
     .sg-hist-hito::before { left: 98px; }
     .sg-hist-acc { grid-column: 1 / -1; padding-left: 96px; }
 }
+
+/* ---- La curva del modelo ---------------------------------------------
+   "66 % de probabilidad" no dice si eso es nuevo o si viene asi desde
+   marzo, y esa es la diferencia entre atender hoy o programar para la semana
+   que viene. */
+.sg-a3-ia-curva {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface);
+}
+.sg-a3-ia-curva-cab {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.sg-a3-ia-curva-cab h4 { margin: 0; font-size: 13.5px; color: var(--sg-texto); }
+.sg-a3-ia-curva-cab span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-a3-ia-curva-cab span i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sg-ramp-1);
+    display: inline-block;
+}
+
+.sg-a3-ia-curva svg { display: block; width: 100%; height: 150px; }
+.sg-a3-ia-curva-linea { fill: none; stroke: var(--sg-ramp-1); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+/* La banda marca las ultimas corridas: sin ella la curva es solo una linea
+   que sube y no se ve donde el patron se hizo recurrente. */
+.sg-a3-ia-curva-zona { fill: var(--sg-danger-subtle); opacity: .75; }
+
+.sg-a3-ia-curva-pie {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+
+/* ---- El estado de la revision humana ---- */
+.sg-a3-ia-revision {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 11px 13px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: var(--sg-surface-subtle);
+}
+.sg-a3-ia-revision-etq {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-revision-etq i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-ia-revision-nota { font-size: 11.5px; color: var(--sg-tenue); margin-left: auto; }
+
+@media (max-width: 760px) {
+    .sg-a3-ia-revision-nota { margin-left: 0; flex: 1 1 100%; }
+}
+
+/* El contexto al pie del panel de IA: dos tarjetas propias, no la misma
+   rejilla de la recomendacion -compartir clase las pegaba en una fila-. */
+.sg-a3-ia-contexto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+.sg-a3-ia-contexto > div {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface);
+}
+.sg-a3-ia-contexto h4 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 10px;
+    font-size: 13.5px;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-contexto h4 i { color: var(--sg-p); font-size: 16px; }
+

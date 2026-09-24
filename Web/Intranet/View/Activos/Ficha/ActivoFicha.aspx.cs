@@ -740,6 +740,138 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return url;
     }
 
+    /// <summary>
+    /// Como venia subiendo el riesgo, dibujado.
+    ///
+    /// POR QUE LA CURVA Y NO EL NUMERO
+    ///   "66 % de probabilidad" no dice si eso es nuevo o si viene asi desde
+    ///   marzo, y esa es justamente la diferencia entre atender hoy o
+    ///   programar para la semana que viene. La serie son las corridas
+    ///   ANTERIORES del modelo: una fila por dia.
+    ///
+    ///   Se dibuja en SVG a mano y sin biblioteca: son diez puntos y una
+    ///   linea, y cargar una libreria de graficos para esto pesa mas que la
+    ///   pantalla entera.
+    /// </summary>
+    private string CurvaRiesgo(AlertaPrediccion p)
+    {
+        if (p == null || p.Serie == null || p.Serie.Count < 2)
+            return "";
+
+        List<AlertaPrediccionPunto> serie = p.Serie.OrderBy(x => x.Fecha).ToList();
+
+        const int ancho = 560, alto = 150, margen = 6;
+
+        decimal maximo = serie.Max(x => x.Porcentaje);
+        decimal minimo = serie.Min(x => x.Porcentaje);
+
+        /* Si todas las corridas dan parecido, una escala ajustada convierte
+           una variacion de dos puntos en una montaña. Se fuerza un rango
+           minimo de 20 puntos para que la curva diga la verdad. */
+        if (maximo - minimo < 20) { maximo = Math.Min(100, minimo + 20); }
+        if (maximo == minimo) maximo = minimo + 1;
+
+        StringBuilder puntos = new StringBuilder();
+
+        for (int i = 0; i < serie.Count; i++)
+        {
+            decimal x = margen + (decimal)i * (ancho - 2 * margen) / (serie.Count - 1);
+            decimal y = alto - margen - (serie[i].Porcentaje - minimo) * (alto - 2 * margen) / (maximo - minimo);
+
+            if (puntos.Length > 0) puntos.Append(" ");
+            puntos.Append(x.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture)).Append(",")
+                  .Append(y.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture));
+        }
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-a3-ia-curva\">")
+         .Append("<div class=\"sg-a3-ia-curva-cab\"><h4>Cómo viene el riesgo</h4>")
+         .Append("<span><i></i>Probabilidad por corrida del modelo</span></div>")
+
+         .Append("<svg viewBox=\"0 0 ").Append(ancho).Append(" ").Append(alto)
+         .Append("\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Evolución del riesgo\">");
+
+        /* La banda marca los ultimos tres dias: es donde el modelo dice que
+           el patron se hizo recurrente, y sin ella la curva es solo una
+           linea que sube. */
+        if (serie.Count > 3)
+        {
+            decimal desde = margen + (decimal)(serie.Count - 4) * (ancho - 2 * margen) / (serie.Count - 1);
+            s.Append("<rect class=\"sg-a3-ia-curva-zona\" x=\"").Append(desde.ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))
+             .Append("\" y=\"0\" width=\"").Append((ancho - margen - desde).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))
+             .Append("\" height=\"").Append(alto).Append("\" />");
+        }
+
+        s.Append("<polyline class=\"sg-a3-ia-curva-linea\" points=\"").Append(puntos).Append("\" />")
+         .Append("</svg>")
+
+         .Append("<div class=\"sg-a3-ia-curva-pie\">")
+         .Append("<span>").Append(serie[0].Fecha.ToString("dd MMM")).Append("</span>")
+         .Append("<span>").Append(minimo.ToString("0")).Append(" % – ").Append(maximo.ToString("0")).Append(" %</span>")
+         .Append("<span>").Append(serie[serie.Count - 1].Fecha.ToString("dd MMM")).Append("</span>")
+         .Append("</div></div>");
+
+        return s.ToString();
+    }
+
+    /// <summary>
+    /// Los componentes del equipo y sus archivos, que es donde el analista va
+    /// a buscar el contexto de la prediccion.
+    ///
+    /// El mockup las pone como dos tarjetas al pie porque son el paso
+    /// siguiente: "el modelo vio esto, ¿que pieza es y que hay documentado".
+    /// </summary>
+    private string ContextoIa(Activo a)
+    {
+        StringBuilder s = new StringBuilder("<div class=\"sg-a3-ia-contexto\">");
+
+        // ---- componentes asociados ----
+        List<ActivoComponente> componentes = new ActivoComponenteController().GetComponentes(
+            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
+            ?? new List<ActivoComponente>();
+
+        s.Append("<div><h4><i class=\"mdi mdi-puzzle-outline\"></i>Componentes asociados</h4>");
+
+        if (componentes.Count == 0)
+            s.Append("<p class=\"sg-ot-vacio-txt\">El equipo no tiene componentes registrados.</p>");
+        else
+            foreach (ActivoComponente c in componentes.Take(4))
+                s.Append(Fila("mdi-puzzle-outline", "", Texto(c.aco_nombre),
+                         Texto(c.aco_codigo) + (string.IsNullOrEmpty(c.tipo_nombre) ? "" : " · " + c.tipo_nombre),
+                         BotonSeccion("componentes", "Ver")));
+
+        s.Append("</div>");
+
+        // ---- documentos y evidencias ----
+        List<ActivoArchivoOrigen> archivos = new ActivoArchivoController().GetTodos(a.act_id, _cliente)
+                                             ?? new List<ActivoArchivoOrigen>();
+
+        s.Append("<div><h4><i class=\"mdi mdi-image-multiple-outline\"></i>Documentos y evidencias</h4>");
+
+        if (archivos.Count == 0)
+            s.Append("<p class=\"sg-ot-vacio-txt\">No hay archivos del equipo todavía.</p>");
+        else
+        {
+            /* Agrupados por origen y no uno por uno: al analista le sirve
+               saber que hay tres fotos de la OT-231, no el nombre de cada
+               archivo. */
+            var grupos = archivos
+                .GroupBy(x => Texto(x.origen_etiqueta))
+                .Select(g => new { origen = g.Key, cuantos = g.Count() })
+                .OrderByDescending(g => g.cuantos)
+                .Take(4);
+
+            foreach (var g in grupos)
+                s.Append(Fila("mdi-file-multiple-outline", "",
+                         string.IsNullOrEmpty(g.origen) ? "Del equipo" : g.origen,
+                         g.cuantos + (g.cuantos == 1 ? " archivo" : " archivos"),
+                         BotonSeccion("documentos", "Ver")));
+        }
+
+        return s.Append("</div></div>").ToString();
+    }
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {
@@ -3240,6 +3372,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
+        /* Lo que el modelo dejo ademas del texto: la curva de sus corridas
+           anteriores, sus factores y la OT que ya se genero desde esta
+           prediccion. Sin esto el panel repite el aviso en grande. */
+        AlertaPrediccion pred = new AlertaController().GetPrediccion(p.ale_id);
+
         s.Append("<div class=\"sg-a3-ia-cols\">");
 
         // ---- el aviso ----
@@ -3301,12 +3438,46 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
          .Append("<span>Revisión humana requerida antes de cualquier acción.</span></div></div>");
 
+        /* EL ESTADO DE LA REVISION HUMANA
+
+           Una prediccion no esta "abierta" o "cerrada": esta esperando que
+           alguien la mire. Decirlo evita que dos personas la trabajen y que
+           una tercera la crea atendida porque lleva dias en pantalla. */
+        bool conOrden = pred != null && pred.ORDEN_TRABAJO != null;
+
+        s.Append("<div class=\"sg-a3-ia-revision\">")
+         .Append("<span class=\"sg-a3-ia-revision-etq\"><i class=\"mdi mdi-account-search-outline\"></i>Estado de revisión del analista</span>")
+         .Append(conOrden
+                ? "<span class=\"sg-ot-chip es-ok\">Atendida con OT-" + pred.ORDEN_CORRELATIVO + "</span>"
+                : "<span class=\"sg-ot-chip es-aviso\">Pendiente</span>")
+         .Append("<span class=\"sg-a3-ia-revision-nota\">")
+         .Append(conOrden
+                ? "Ya se generó una orden desde esta predicción."
+                : "Un especialista debe revisar la información antes de generar una OT.")
+         .Append("</span></div>");
+
         s.Append("<div class=\"sg-a3-ia-acc\"><h4>Acciones sugeridas</h4>")
-         .Append(BotonSeccion("condicion", "Ver señales del equipo"))
-         .Append(Boton(ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx"), "Crear OT predictiva", true))
-         .Append("<p class=\"sg-a3-ia-limite\">Revise si ya existe una orden abierta antes de crear otra.</p></div>");
+         .Append(BotonSeccion("condicion", "Ver señales del equipo"));
+
+        /* Si de esta prediccion ya salio una orden, lo que corresponde es
+           REVISARLA y no crear otra: el mockup la pone antes que "Crear" a
+           proposito, y el modelo ya guarda cual fue para impedir el duplicado. */
+        if (conOrden)
+            s.Append(Boton(UrlOrden(pred.ORDEN_TRABAJO.Value), "Revisar OT existente OT-" + pred.ORDEN_CORRELATIVO));
+        else
+            s.Append(Boton(ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx"), "Crear OT predictiva", true));
+
+        s.Append("<p class=\"sg-a3-ia-limite\">")
+         .Append(conOrden
+                ? "Esta predicción ya tiene su orden: no se crea otra."
+                : "Revise si ya existe una orden abierta antes de crear otra.")
+         .Append("</p></div>");
 
         s.Append("</div>");
+
+        /* La curva va DESPUES del aviso y antes del contexto: primero que vio
+           el modelo, despues como venia, y al final con que se relaciona. */
+        s.Append(CurvaRiesgo(pred));
 
         // ---- con que se relaciona ----
         s.Append("<div class=\"sg-a3-ia-rel\">");
@@ -3335,6 +3506,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                          ""));
 
         s.Append("</div></div>");
+
+        s.Append(ContextoIa(a));
 
         s.Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
          .Append("<span>La predicción es un apoyo al análisis. Requiere revisión humana y validación en terreno.</span></div>");
