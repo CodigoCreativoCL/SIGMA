@@ -139,7 +139,7 @@
                 <%-- La clase sg-ot trae las variables de color de la hoja del centro:
                      fuera de ella el boton queda con texto blanco sobre nada. --%>
                 <div class="sg-ot sg-a3-lista-acc">
-                    <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
+                    <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-accion"
                         OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                 </div>
                 <rad:RadGrid2 ID="gridResultados" runat="server" OnItemDataBound="gridResultados_ItemDataBound">
@@ -431,7 +431,7 @@
                                         <h3><asp:Literal ID="litCompTitulo" runat="server" Text="Componentes del equipo" /></h3>
                                         <p class="sg-ot-card-sub">Componentes instalados, retirados y su historial de reemplazos.</p>
                                     </div>
-                                    <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                                    <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                         OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Asociar componente</asp:LinkButton>
                                 </header>
 
@@ -535,7 +535,7 @@
                                 <h3>Variables de condición</h3>
                                 <p class="sg-ot-card-sub">Lo que se mide del equipo: valor, cuándo se tomó y contra qué se compara.</p>
                             </div>
-                            <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                            <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                 OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-plus"></i>Nueva variable</asp:LinkButton>
                         </header>
 
@@ -554,7 +554,7 @@
                                 <h3>Contadores acumulativos</h3>
                                 <p class="sg-ot-card-sub">Horómetros y cuentakilómetros: no bajan, se acumulan.</p>
                             </div>
-                            <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-primario sg-ot-card-acc"
+                            <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
                                 OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-plus"></i>Nuevo contador</asp:LinkButton>
                         </header>
                         <asp:Literal ID="litMedidores" runat="server" />

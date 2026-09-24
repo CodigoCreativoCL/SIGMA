@@ -287,9 +287,9 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
     border-radius: 12px;
     background: #fff;
 }
-.sg-a3-cond-card.es-normal { border-left-color: #16a34a; }
-.sg-a3-cond-card.es-aviso { border-left-color: #f59e0b; }
-.sg-a3-cond-card.es-critico { border-left-color: #dc2626; }
+.sg-a3-cond-card.es-normal { border-left-color: var(--sg-success); }
+.sg-a3-cond-card.es-aviso { border-left-color: var(--sg-warning); }
+.sg-a3-cond-card.es-critico { border-left-color: var(--sg-danger); }
 .sg-a3-cond-card.es-viejo { border-left-color: #94a3b8; }
 .sg-a3-cond-nom { font-size: 12.5px; color: var(--sg-suave); }
 .sg-a3-cond-val { display: block; margin: 2px 0 4px; font-size: 22px; font-weight: 700; color: var(--sg-texto); }
@@ -360,8 +360,8 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
     border: 1px solid var(--sg-borde);
 }
 .sg-a3-item i { font-size: 15px; }
-.sg-a3-item.es-bueno i { color: #16a34a; }
-.sg-a3-item.es-malo i { color: #dc2626; }
+.sg-a3-item.es-bueno i { color: var(--sg-success); }
+.sg-a3-item.es-malo i { color: var(--sg-danger); }
 .sg-a3-item.es-pendiente i { color: #94a3b8; }
 .sg-a3-item-txt { font-size: 12.5px; color: var(--sg-texto); }
 .sg-a3-item-val {
@@ -423,7 +423,7 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
     background: linear-gradient(135deg, #f5f3ff, #faf5ff);
     border: 1px solid #e9d5ff;
 }
-.sg-a3-ia-aviso > i { font-size: 24px; color: #dc2626; }
+.sg-a3-ia-aviso > i { font-size: 24px; color: var(--sg-danger); }
 .sg-a3-ia-aviso strong { display: block; font-size: 16px; color: var(--sg-texto); }
 .sg-a3-ia-aviso p { margin: 6px 0 0; font-size: 12.5px; color: var(--sg-suave); }
 .sg-a3-ia-tipo {
@@ -461,7 +461,7 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-senal i { font-size: 17px; color: var(--sg-suave); }
 .sg-a3-senal span { display: block; font-size: 12.5px; color: var(--sg-texto); }
 .sg-a3-senal b { font-size: 11.5px; font-weight: 600; }
-.sg-a3-senal.es-ok b { color: #16a34a; }
+.sg-a3-senal.es-ok b { color: var(--sg-success); }
 .sg-a3-senal.es-sin b { color: #94a3b8; }
 
 .sg-a3-ia-reco,
@@ -484,7 +484,7 @@ a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight:
 .sg-a3-ia-rel h4 i { margin-right: 6px; color: var(--sg-suave); }
 
 /* -------------------------------------------------------- bitacora ------- */
-.sg-a3-linea li.es-aviso { border-left-color: #f59e0b; }
+.sg-a3-linea li.es-aviso { border-left-color: var(--sg-warning); }
 .sg-a3-linea-ico {
     display: grid;
     place-items: center;
@@ -651,7 +651,7 @@ a.sg-a3-chip.es-activa b { color: #fff; }
     font-weight: 600;
     color: #b45309;
 }
-.sg-a3-ficha-sucio i { font-size: 18px; color: #f59e0b; }
+.sg-a3-ficha-sucio i { font-size: 18px; color: var(--sg-warning); }
 .sg-a3-ficha.es-sucia .sg-a3-ficha-sucio { display: inline-flex; }
 
 /* ---- La ficha dentro del centro: el mismo formulario, otra piel ---------- */
@@ -827,3 +827,81 @@ a.sg-comp-nodo:hover { background: #f4f5fa; }
 .sg-comp-det-tit,
 .sg-comp-det-sub { display: block; }
 .sg-comp-centro .sg-ot-card-acc { white-space: nowrap; }
+
+/* ============================================================================
+   TOKENS: lo que faltaba definir y lo que sobraba de morado
+
+   sigma-brand.css trae la paleta oficial —marca (morado, teal, azul, rosa) y
+   estados operativos (success, info, warning, danger) con su variante
+   subtle—. El centro estaba usando nombres de variante que NADIE habia
+   definido: `es-ok`, `es-neutro`, `es-aviso`, `es-rojo` salian sin fondo, que
+   es por lo que un componente "Operativo" se leia como texto suelto al lado
+   de uno "Degradado" que si tenia chip.
+
+   Aca se definen contra el token que les corresponde. Un color operativo NO
+   es identidad: verde es "esta bien", ambar es "mirar", rojo es "parar". El
+   morado es de marca y no dice nada del estado de una maquina.
+   ========================================================================= */
+.sg-ot-chip.es-ok      { background: var(--sg-success-subtle); color: #15803D; }
+.sg-ot-chip.es-aviso   { background: var(--sg-warning-subtle); color: #92400E; }
+.sg-ot-chip.es-rojo    { background: var(--sg-danger-subtle);  color: #B91C1C; }
+.sg-ot-chip.es-info    { background: var(--sg-info-subtle);    color: #1D4ED8; }
+.sg-ot-chip.es-neutro  { background: var(--sg-surface-subtle); color: var(--sg-text-muted); }
+.sg-ot-chip.es-estado  { background: var(--sg-surface-subtle); color: var(--sg-text-secondary); }
+
+/* La tarea se distingue de la inspeccion por color, no por leer la palabra:
+   teal es el segundo color de marca y no compite con el morado. */
+.sg-ot-chip.es-tarea {
+    background: rgba(0, 224, 194, .16);
+    color: #0F766E;
+}
+
+/* ---- Los iconos de los KPI ------------------------------------------------
+
+   Cuatro numeros con el mismo icono morado se leen como cuatro veces lo
+   mismo. Cada uno toma el color de LO QUE MIDE: lo abierto en morado de
+   marca, lo planificado en azul, lo que esta bien en verde, lo que hay que
+   mirar en ambar y lo que duele en rojo.
+   ------------------------------------------------------------------------ */
+.sg-a3-kpi-ico.es-lila  { background: #EDE9FE; color: #5B46E5; }
+.sg-a3-kpi-ico.es-azul  { background: var(--sg-info-subtle); color: var(--sg-info); }
+.sg-a3-kpi-ico.es-verde { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-a3-kpi-ico.es-ambar { background: var(--sg-warning-subtle); color: #B45309; }
+.sg-a3-kpi-ico.es-rojo  { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-a3-kpi-ico.es-teal  { background: rgba(0, 224, 194, .16); color: #0F766E; }
+
+/* Lo mismo para el icono de una fila y el de una tarjeta. */
+.sg-a3-fila-ico.es-rojo,
+.sg-ot-card-ico.es-rojo   { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-a3-fila-ico.es-ambar  { background: var(--sg-warning-subtle); color: #B45309; }
+.sg-a3-fila-ico.es-verde  { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-a3-fila-ico.es-azul   { background: var(--sg-info-subtle); color: var(--sg-info); }
+
+/* ---- Jerarquia de botones -------------------------------------------------
+
+   El morado lleno es UNA accion por pantalla: la que no se puede deshacer
+   sola —Guardar, Publicar— o la que lleva a crear el trabajo —Nueva OT—.
+   Todo lo demas —agregar un componente, una variable, un contador, un hito—
+   es accion secundaria: se ve, se entiende, y no compite. Ocho botones
+   morados en una pantalla son ocho botones sin jerarquia.
+
+   Es la misma jerarquia que ya documenta sigma-botones.css para las clases
+   heredadas (`icono_guardar` principal, `ButtonCerrar` secundario); aca solo
+   se le da el mismo cuerpo al boton del centro.
+   ------------------------------------------------------------------------ */
+.sg-ot-btn.es-accion,
+a.sg-ot-btn.es-accion,
+input.sg-ot-btn.es-accion {
+    background: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    color: var(--sg-text-secondary) !important;
+    font-weight: 600;
+}
+
+/* El icono en teal: marca el boton como accion sin sumar otro morado. */
+.sg-ot-btn.es-accion i { color: var(--sg-teal-accessible); }
+
+.sg-ot-btn.es-accion:hover {
+    background: var(--sg-surface-subtle);
+    border-color: var(--sg-border-strong);
+}

@@ -642,7 +642,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
         StringBuilder k = new StringBuilder("<div class=\"sg-a3-kpis\">");
 
-        k.Append(Kpi("mdi-account-group-outline", equipos.Count.ToString(), "Equipos asociados", "", "es-lila"));
+        k.Append(Kpi("mdi-account-group-outline", equipos.Count.ToString(), "Equipos asociados", "", "es-teal"));
         k.Append(Kpi("mdi-format-list-checks", hitos.Count.ToString(), "Hitos del plan", "", "es-azul"));
         k.Append(Kpi("mdi-alert-outline", (vencidas + atrasadas).ToString(), "Vencidas y atrasadas",
                  vencidas + atrasadas == 0 ? "Nada corriendo" : "Del año en curso", "es-rojo"));

@@ -12,13 +12,19 @@
         /* Cargador de imagen propio: botón estilizado + nombre + quitar. El
            input file real va oculto; el label lo dispara. */
         .sigma-img-uploader { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+        /* Agregar un dato, una imagen o un documento no es LA accion de la
+           pantalla: es una mas. Va en tono suave para que el morado quede
+           reservado a Guardar, que es lo unico que no se puede deshacer
+           solo. */
         .sigma-img-btn {
             display: inline-flex; align-items: center; gap: 7px;
-            background: #6C5CFF; color: #fff; border-radius: 9px;
+            background: #fff; color: #4b5563; border: 1px solid #e5e7eb;
+            border-radius: 9px;
             padding: 9px 16px; font-size: 13px; font-weight: 600; cursor: pointer;
-            transition: filter .15s ease; margin: 0;
+            transition: background .15s ease, border-color .15s ease; margin: 0;
         }
-        .sigma-img-btn:hover { filter: brightness(1.07); }
+        .sigma-img-btn i { color: #6C5CFF; }
+        .sigma-img-btn:hover { background: #f7f7fc; border-color: #d7dbe7; }
         .sigma-img-btn i { font-size: 17px; }
         .sigma-img-name { font-size: 12.5px; color: #475569; word-break: break-all; }
         .sigma-img-quitar { font-size: 12px; color: #b91c1c; font-weight: 600; text-decoration: none; display: inline-flex; align-items: center; gap: 4px; }
@@ -64,9 +70,35 @@
 
         /* Encabezado de los datos tecnicos: tres palabras que evitan tener que
            adivinar cual caja es cual. */
+        .sigma-nd-lista { display: grid; gap: 8px; }
+        .sigma-nd-fila {
+            display: grid;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 112px 18px;
+            gap: 6px;
+            align-items: center;
+        }
+        .sigma-nd-fila > label {
+            margin: 0;
+            font-size: 12.5px;
+            color: #475569;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .sigma-nd-txt, .sigma-nd-sel {
+            width: 100%;
+            min-width: 0;
+            padding: 9px 11px;
+            border: 1px solid #e5e7eb;
+            border-radius: 9px;
+            font-size: 13px;
+            background: #fff;
+        }
+        .sigma-nd-sel { padding: 9px 8px; }
+        .sigma-nd-quitar { color: #b91c1c; font-weight: 700; text-decoration: none; text-align: center; }
+
         .sigma-nd-cab {
             display: grid;
-            grid-template-columns: 1fr 1fr 150px 22px;
+            grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) 112px 18px;
             gap: 6px;
             padding: 0 2px 6px;
             border-bottom: 1px solid #eceef5;
@@ -161,13 +193,12 @@
             var cont = document.getElementById('ndContainer');
             if (!cont) return;
             var row = document.createElement('div');
-            row.className = 'nd-row';
-            row.style.cssText = 'display:flex;gap:6px;align-items:center;margin-top:8px;';
+            row.className = 'sigma-nd-fila nd-row';
             row.innerHTML =
-                '<input type="text" name="nd_nombre" placeholder="Nombre (ej. Potencia)" style="flex:1;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />' +
-                '<select name="nd_unidad" style="width:150px;padding:9px 8px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;">' + ND_UNIT_OPTIONS + '</select>' +
-                '<input type="text" name="nd_valor" placeholder="Valor" style="width:120px;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />' +
-                '<a href="javascript:void(0)" onclick="this.closest(\'.nd-row\').remove()" style="color:#b91c1c;font-weight:700;text-decoration:none;padding:0 6px;">✕</a>';
+                '<input type="text" name="nd_nombre" class="sigma-nd-txt" placeholder="Nombre (ej. Potencia)" />' +
+                '<input type="text" name="nd_valor" class="sigma-nd-txt" placeholder="Valor" />' +
+                '<select name="nd_unidad" class="sigma-nd-sel">' + ND_UNIT_OPTIONS + '</select>' +
+                '<a href="javascript:void(0)" onclick="this.closest(\'.nd-row\').remove()" class="sigma-nd-quitar">✕</a>';
             cont.appendChild(row);
             var inp = row.querySelector('input[name="nd_nombre"]');
             if (inp) inp.focus();
@@ -176,7 +207,7 @@
         // Quita un dato ya guardado: vacía su valor (al Guardar se elimina del activo)
         // y oculta la fila para dar feedback. El campo del tipo se conserva.
         function ndQuitarDato(a) {
-            var field = a.closest('.sigma-modal-field');
+            var field = a.closest('.sigma-nd-fila');
             if (!field) return;
             var txt = field.querySelector('input[type="text"]');
             var sel = field.querySelector('select');
@@ -361,20 +392,19 @@
         <%-- Datos ya definidos (del tipo): editar valor + unidad. --%>
         <div class="sigma-nd-cab"><span>Nombre</span><span>Valor</span><span>Unidad</span><span></span></div>
 
-        <div class="sigma-modal-grid">
+        <div class="sigma-nd-lista">
             <asp:Repeater ID="rptDatos" runat="server" OnItemDataBound="rptDatos_ItemDataBound">
                 <ItemTemplate>
-                    <div class="sigma-modal-field is-grande">
+                    <%-- Una fila de tres columnas que calzan con el encabezado:
+                         nombre, valor y unidad. Antes era un campo con un flex
+                         adentro y se salia de la tarjeta en la columna angosta
+                         del centro. --%>
+                    <div class="sigma-nd-fila">
                         <label><%# Server.HtmlEncode(Convert.ToString(Eval("ate_nombre"))) %></label>
                         <asp:HiddenField runat="server" ID="hdnAte" Value='<%# Eval("ate_id") %>' />
-                        <div style="display:flex;gap:6px;align-items:center;">
-                            <asp:TextBox runat="server" ID="txtValor" Text='<%# Eval("valor_edit") %>' MaxLength="200"
-                                style="flex:1;padding:9px 11px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;" />
-                            <asp:DropDownList runat="server" ID="ddlUnidad"
-                                style="width:150px;padding:9px 8px;border:1px solid #e5e7eb;border-radius:9px;font-size:13px;background:#fff;" />
-                            <a href="javascript:void(0)" onclick="ndQuitarDato(this)" title="Quitar este dato"
-                               style="color:#b91c1c;font-weight:700;text-decoration:none;padding:0 6px;">✕</a>
-                        </div>
+                        <asp:TextBox runat="server" ID="txtValor" Text='<%# Eval("valor_edit") %>' MaxLength="200" CssClass="sigma-nd-txt" />
+                        <asp:DropDownList runat="server" ID="ddlUnidad" CssClass="sigma-nd-sel" />
+                        <a href="javascript:void(0)" onclick="ndQuitarDato(this)" title="Quitar este dato" class="sigma-nd-quitar">✕</a>
                     </div>
                 </ItemTemplate>
             </asp:Repeater>

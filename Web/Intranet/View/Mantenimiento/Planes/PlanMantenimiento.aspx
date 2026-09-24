@@ -92,7 +92,7 @@
                     <div class="sg-a3-hero-acc">
                         <asp:HyperLink ID="hlVolver" runat="server" CssClass="sg-ot-btn es-plano">
                             <i class="mdi mdi-arrow-left"></i>Volver a planes</asp:HyperLink>
-                        <a href="#" class="sg-ot-btn es-primario" data-ir-sec="calendario">
+                        <a href="#" class="sg-ot-btn es-accion" data-ir-sec="calendario">
                             <i class="mdi mdi-calendar-month-outline"></i>Ver calendario</a>
                     </div>
                 </header>
@@ -177,7 +177,7 @@
                                 <p class="sg-ot-card-sub">Qué se realiza y con qué frecuencia.</p>
                             </div>
                             <asp:Literal ID="litHitosEstado" runat="server" />
-                            <asp:LinkButton ID="lnkNuevoHito" runat="server" CssClass="sg-ot-btn es-primario"
+                            <asp:LinkButton ID="lnkNuevoHito" runat="server" CssClass="sg-ot-btn es-accion"
                                 OnClientClick="return abrirPlanHito(queryNuevoHito);"><i class="mdi mdi-plus"></i>Nuevo hito</asp:LinkButton>
                         </header>
 
@@ -202,7 +202,7 @@
                                 <p class="sg-ot-card-sub">Equipos incluidos en el alcance de esta versión.</p>
                             </div>
                             <asp:Literal ID="litEquiposEstado" runat="server" />
-                            <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
+                            <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-accion"
                                 OnClientClick="return abrirPlanActivo(queryNuevoActivo);"><i class="mdi mdi-plus"></i>Asociar equipo</asp:LinkButton>
                         </header>
 

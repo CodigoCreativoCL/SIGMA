@@ -351,14 +351,19 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         StringBuilder k = new StringBuilder("<div class=\"sg-a3-kpis\">");
 
-        k.Append(Kpi("mdi-clipboard-text-outline", abiertas.Count.ToString(), "OT abiertas", "", abiertas.Count > 0 ? "es-alerta" : "es-ok"));
-        k.Append(Kpi("mdi-alert-outline", fallasAbiertas.Count.ToString(), "Fallas abiertas", "", fallasAbiertas.Count > 0 ? "es-alerta" : "es-ok"));
+        /* Cada KPI toma el color de LO QUE MIDE y no el morado de marca: el
+           trabajo abierto en ambar, la falla en rojo, lo planificado en azul.
+           Cuatro iconos iguales se leen como cuatro veces lo mismo. */
+        k.Append(Kpi("mdi-clipboard-text-outline", abiertas.Count.ToString(), "OT abiertas", "",
+                 abiertas.Count > 0 ? "es-ambar" : "es-verde"));
+        k.Append(Kpi("mdi-alert-outline", fallasAbiertas.Count.ToString(), "Fallas abiertas", "",
+                 fallasAbiertas.Count > 0 ? "es-rojo" : "es-verde"));
         k.Append(Kpi("mdi-calendar-outline",
                  proxima == null ? "Sin programar" : proxima.fecha_programada.ToString("dd MMM yyyy"),
                  "Próxima mantención",
-                 proxima == null ? "" : Texto(proxima.hito_nombre), "", proxima == null));
+                 proxima == null ? "" : Texto(proxima.hito_nombre), "es-azul", proxima == null));
         k.Append(Kpi("mdi-clock-outline", Duracion(minutos), "Detención del período",
-                 hoy.ToString("MMMM yyyy"), minutos > 0 ? "es-alerta" : ""));
+                 hoy.ToString("MMMM yyyy"), minutos > 0 ? "es-ambar" : "es-teal"));
 
         litKpis.Text = k.Append("</div>").ToString();
 
@@ -578,7 +583,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                         : "Sin cerrar"));
 
             s.Append("<div class=\"sg-a3-ot-det-acc\">")
-             .Append(Boton(UrlOrden(o.otr_id), "Abrir OT completa", true))
+             .Append(Boton(UrlOrden(o.otr_id), "Abrir OT completa"))
              .Append("</div></div>");
         }
 
@@ -1370,7 +1375,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         k.Append(Kpi("mdi-package-variant-closed",
                  costo.lineas_material == 0 ? "Sin consumo"
                  : (costo.material <= 0 ? "Sin costo cargado" : Moneda(costo.material)), "Materiales registrados",
-                 costo.lineas_material + (costo.lineas_material == 1 ? " línea" : " líneas"), "es-lila"));
+                 costo.lineas_material + (costo.lineas_material == 1 ? " línea" : " líneas"), "es-teal"));
 
         k.Append(Kpi("mdi-wrench-outline",
                  costo.minutos_mano_obra == 0 ? "Sin registrar"
