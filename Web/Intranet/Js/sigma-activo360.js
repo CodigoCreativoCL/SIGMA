@@ -159,10 +159,77 @@
         if (resultado) resultado.onchange = filtrar;
     }
 
+    /* ---- Cualquier foto de la pantalla se puede agrandar ----
+
+       La galeria de evidencias ya tenia su visor; la foto del equipo, la del
+       componente y la del plan no, y son justo las que alguien acerca a la
+       cara para decidir si esa es la maquina. Se reusa el mismo marco y el
+       mismo Esc: dos visores distintos en la misma pagina se cierran de dos
+       maneras distintas. */
+    function ampliables() {
+        var fotos = document.querySelectorAll('.sg-a3-foto img, .sg-plan-foto img, [data-ampliar] img, img[data-ampliar]');
+
+        for (var i = 0; i < fotos.length; i++) {
+            if (fotos[i].getAttribute('data-listo') === '1') continue;
+
+            fotos[i].setAttribute('data-listo', '1');
+            fotos[i].classList.add('sg-a3-ampliable');
+            fotos[i].title = 'Ampliar';
+            fotos[i].onclick = function () { ampliar(this.src, this.alt || 'Imagen'); };
+        }
+    }
+
+    function ampliar(url, titulo) {
+        var fondo = document.getElementById('sgOtLightbox');
+
+        if (!fondo) {
+            fondo = document.createElement('div');
+            fondo.id = 'sgOtLightbox';
+            fondo.className = 'sg-ot-lightbox';
+            document.body.appendChild(fondo);
+        }
+
+        fondo.innerHTML =
+            '<div class="sg-ot-lb-marco" role="dialog" aria-modal="true">' +
+            '<header class="sg-ot-lb-cab">' +
+            '<span class="sg-ot-card-ico"><i class="mdi mdi-image-outline"></i></span>' +
+            '<h3></h3>' +
+            '<a href="#" class="sg-ot-lb-cerrar" title="Cerrar (Esc)"><i class="mdi mdi-close"></i></a>' +
+            '</header>' +
+            '<div class="sg-ot-lb-foto"><img alt="" /></div>' +
+            '<div class="sg-ot-lb-datos">' +
+            '<a class="sg-ot-btn es-plano" target="_blank"><i class="mdi mdi-open-in-new"></i>Abrir original</a>' +
+            '</div></div>';
+
+        /* El titulo y la url se ponen por propiedad y no armando HTML: el
+           nombre del archivo lo escribio una persona y puede traer comillas
+           o angulos. */
+        fondo.querySelector('h3').textContent = titulo;
+        fondo.querySelector('.sg-ot-lb-foto img').src = url;
+        fondo.querySelector('.sg-ot-lb-foto img').alt = titulo;
+        fondo.querySelector('.sg-ot-lb-datos a').href = url;
+
+        fondo.classList.add('es-abierto');
+
+        function cerrar(ev) {
+            if (ev) ev.preventDefault();
+            fondo.classList.remove('es-abierto');
+            fondo.innerHTML = '';
+            document.removeEventListener('keydown', porEscape);
+        }
+
+        function porEscape(ev) { if (ev.keyCode === 27) cerrar(); }
+
+        fondo.querySelector('.sg-ot-lb-cerrar').onclick = cerrar;
+        fondo.onclick = function (ev) { if (ev.target === fondo) cerrar(ev); };
+        document.addEventListener('keydown', porEscape);
+    }
+
     function armar() {
         navegacion();
         ordenes();
         revisiones();
+        ampliables();
     }
 
     if (document.addEventListener) document.addEventListener('DOMContentLoaded', armar);
@@ -170,5 +237,5 @@
     if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager)
         Sys.WebForms.PageRequestManager.getInstance().add_endRequest(armar);
 
-    window.sigmaActivo360 = { irA: irA };
+    window.sigmaActivo360 = { irA: irA, ampliar: ampliar };
 })();

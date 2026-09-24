@@ -539,3 +539,7 @@ a.sg-a3-chip.es-activa { background: var(--sg-p); border-color: var(--sg-p); col
 a.sg-a3-chip.es-activa b { color: #fff; }
 
 .sg-a3-lista-acc { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+
+/* Una foto que se puede agrandar tiene que decirlo antes de que la toquen. */
+.sg-a3-ampliable { cursor: zoom-in; transition: filter .15s ease; }
+.sg-a3-ampliable:hover { filter: brightness(1.06); }
