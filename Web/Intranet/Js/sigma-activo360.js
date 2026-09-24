@@ -511,11 +511,62 @@
         elegir(tarjetas[0].getAttribute('data-var'));
     }
 
+    /* ---- Fallas: dos vistas y un filtro ----
+
+       La falla es lo que le paso al equipo y la detencion es el tiempo que
+       costo: se cuentan distinto, asi que se miran en dos vistas. El filtro
+       de abiertas/resueltas es del navegador. */
+    function fallas() {
+        var vistas = document.querySelectorAll('#sgFallaVistas a[data-falla-vista]');
+
+        for (var v = 0; v < vistas.length; v++)
+            vistas[v].onclick = function (ev) {
+                ev.preventDefault();
+                var cual = this.getAttribute('data-falla-vista');
+
+                for (var k = 0; k < vistas.length; k++) vistas[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+
+                var paneles = document.querySelectorAll('.sg-cond-vista[data-falla-vista]');
+                for (var p = 0; p < paneles.length; p++)
+                    paneles[p].classList.toggle('es-oculta', paneles[p].getAttribute('data-falla-vista') !== cual);
+            };
+
+        var filas = document.querySelectorAll('.sg-falla');
+        if (!filas.length) return;
+
+        var chips = document.querySelectorAll('#sgFallaEstados a[data-falla-estado]');
+        var buscar = document.getElementById('sgFallaBuscar');
+
+        function filtrar() {
+            var activa = document.querySelector('#sgFallaEstados a.es-activa');
+            var estado = activa ? activa.getAttribute('data-falla-estado') : 'todas';
+            var texto = (buscar && buscar.value || '').toLowerCase().trim();
+
+            for (var i = 0; i < filas.length; i++) {
+                var ok = (estado === 'todas' || filas[i].getAttribute('data-falla-estado') === estado)
+                      && (texto === '' || (filas[i].getAttribute('data-falla-txt') || '').indexOf(texto) !== -1);
+                filas[i].classList.toggle('es-oculta', !ok);
+            }
+        }
+
+        for (var c = 0; c < chips.length; c++)
+            chips[c].onclick = function (ev) {
+                ev.preventDefault();
+                for (var k = 0; k < chips.length; k++) chips[k].classList.remove('es-activa');
+                this.classList.add('es-activa');
+                filtrar();
+            };
+
+        if (buscar) buscar.oninput = filtrar;
+    }
+
     function armar() {
         navegacion();
         ficha();
         componentes();
         condicion();
+        fallas();
         ordenes();
         revisiones();
         ampliables();

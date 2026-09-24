@@ -485,42 +485,53 @@
                 <%-- ================================================================
                      7. FALLAS E INDISPONIBILIDAD
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="fallas">
-                    <div class="sg-a3-cols">
-                        <div class="sg-a3-col">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico es-alerta"><i class="mdi mdi-alert-outline"></i></span>
-                                    <div>
-                                        <h3>Fallas</h3>
-                                        <p class="sg-ot-card-sub">Lo que se reportó del equipo y en qué quedó.</p>
-                                    </div>
-                                </header>
-                                <asp:Literal ID="litFallas" runat="server" />
+                <section class="sg-a3-panel sg-a3-fallas" data-panel="fallas">
+                    <div class="sg-ot-card">
+                        <header class="sg-ot-card-cab">
+                            <span class="sg-ot-card-ico es-grande es-rojo"><i class="mdi mdi-alert-outline"></i></span>
+                            <div>
+                                <h3>Fallas e indisponibilidad</h3>
+                                <p class="sg-ot-card-sub">Lo que se reportó del equipo y los períodos en que estuvo detenido.</p>
                             </div>
+                            <asp:Literal ID="litEstadoAhora" runat="server" />
+                        </header>
 
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-power-plug-off-outline"></i></span>
-                                    <div>
-                                        <h3>Indisponibilidad</h3>
-                                        <p class="sg-ot-card-sub">Los períodos en que el equipo estuvo detenido.</p>
-                                    </div>
-                                    <asp:Literal ID="litDetencionTotal" runat="server" />
-                                </header>
-                                <asp:Literal ID="litIndisponibilidad" runat="server" />
-                            </div>
+                        <%-- Una falla es lo que le pasa al equipo; una detencion
+                             es el tiempo que costo. Se cuentan distinto y se
+                             miran en momentos distintos. --%>
+                        <div class="sg-ot-ev-tipos sg-cond-vistas" id="sgFallaVistas">
+                            <a href="#" class="sg-a3-chip es-activa" data-falla-vista="fallas"><i class="mdi mdi-alert-outline"></i>Fallas <b><asp:Literal ID="litFallasN" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-falla-vista="detenciones"><i class="mdi mdi-clock-alert-outline"></i>Detenciones <b><asp:Literal ID="litDetencionesN" runat="server" Text="0" /></b></a>
                         </div>
 
-                        <aside class="sg-a3-lado">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
-                                    <h3>Estado ahora</h3>
-                                </header>
-                                <asp:Literal ID="litEstadoAhora" runat="server" />
+                        <div class="sg-cond-vista" data-falla-vista="fallas">
+                            <div class="sg-ot-ev-filtros">
+                                <div class="sg-ot-ev-tipos" id="sgFallaEstados">
+                                    <a href="#" class="sg-a3-chip es-activa" data-falla-estado="todas">Todas</a>
+                                    <a href="#" class="sg-a3-chip" data-falla-estado="abierta">Abiertas <b><asp:Literal ID="litFallasAbiertas" runat="server" Text="0" /></b></a>
+                                    <a href="#" class="sg-a3-chip" data-falla-estado="resuelta">Resueltas</a>
+                                </div>
+                                <div class="sg-ot-ev-buscar">
+                                    <i class="mdi mdi-magnify"></i>
+                                    <input type="search" id="sgFallaBuscar" placeholder="Buscar falla por descripción o síntoma..." autocomplete="off" />
+                                </div>
                             </div>
-                        </aside>
+
+                            <asp:Literal ID="litFallas" runat="server" />
+                        </div>
+
+                        <div class="sg-cond-vista es-oculta" data-falla-vista="detenciones">
+                            <div class="sg-falla-total">
+                                <asp:Literal ID="litDetencionTotal" runat="server" />
+                            </div>
+
+                            <asp:Literal ID="litIndisponibilidad" runat="server" />
+
+                            <div class="sg-ot-nota es-chica">
+                                <i class="mdi mdi-information-outline"></i>
+                                <span>Una detención planificada es tiempo que se decidió gastar; una no planificada es tiempo que se perdió. El indicador de disponibilidad los cuenta distinto.</span>
+                            </div>
+                        </div>
                     </div>
                 </section>
 

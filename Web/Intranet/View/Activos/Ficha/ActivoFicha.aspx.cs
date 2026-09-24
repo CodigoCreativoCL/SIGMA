@@ -38,6 +38,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
+            /* El centro se puede abrir apuntando a UN equipo: es lo que hacen
+               "Ver ficha del activo" desde el plan y cualquier enlace guardado.
+               Sin esto la url llegaba con el id y la pantalla abria el listado,
+               que es peor que no tener el enlace. */
+            int deLaUrl = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            if (deLaUrl > 0) hdnActivo.Value = deLaUrl.ToString();
+
             // Columnas de la lista de resultados (la lupa se agrega en ItemDataBound).
             gridResultados.AddColumn("ACT_ID", "", Width: "4%");
             gridResultados.AddColumn("ACT_CODIGO", "CÓDIGO", Width: "13%");
@@ -900,70 +907,160 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 7. Fallas e indisponibilidad
 
+    /// <summary>
+    /// Lo que se reporto del equipo y el tiempo que costo.
+    ///
+    /// SON DOS CUENTAS DISTINTAS
+    ///   Una falla es lo que le paso a la maquina; una detencion es el tiempo
+    ///   que estuvo parada. Una falla puede no detener nada y una detencion
+    ///   planificada no viene de ninguna falla. Mezclarlas en una lista
+    ///   obliga a leer cada fila para saber cual es cual.
+    /// </summary>
     private void FallasYDetenciones(Activo a, List<Falla> fallas, List<ActivoIndisponibilidad> detenciones)
     {
-        // ---- fallas ----
+        // ======================================================== fallas ====
+        int abiertas = fallas.Count(f => f.fal_fecha_solucion_utc == null);
+
+        litFallasN.Text = fallas.Count.ToString();
+        litFallasAbiertas.Text = abiertas.ToString();
+
         if (fallas.Count == 0)
-            litFallas.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-check-circle-outline\"></i>" +
-                             "<p>Sin fallas registradas</p><span>Este equipo no tiene reportes.</span></div>";
+        {
+            litFallas.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-check-circle-outline\"></i>" +
+                             "<p>Sin fallas registradas</p>" +
+                             "<span>Este equipo no tiene fallas reportadas.</span></div>";
+        }
         else
         {
             StringBuilder s = new StringBuilder();
 
-            foreach (Falla f in fallas.OrderByDescending(x => x.fal_fecha_deteccion_utc))
+            s.Append("<div class=\"sg-a3-tabla-cab sg-falla-cab\">")
+             .Append("<span>Falla</span><span>Síntoma</span><span>Criticidad</span>")
+             .Append("<span>Estado</span><span>Detectada</span><span>OT</span><span></span></div>");
+
+            foreach (Falla f in fallas.OrderByDescending(x => x.fal_fecha_deteccion_utc ?? x.fal_fecha_creacion))
             {
                 bool abierta = f.fal_fecha_solucion_utc == null;
 
-                s.Append(Fila(abierta ? "mdi-alert-outline" : "mdi-check-circle-outline",
-                         abierta ? "es-alerta" : "es-ok",
-                         Texto(f.fal_titulo),
-                         (f.fal_fecha_deteccion_utc == null ? "" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy") + " · ") +
-                         Texto(f.sintoma_nombre) +
-                         (f.ultima_ot_correlativo != null ? " · OT-" + f.ultima_ot_correlativo : ""),
-                         (abierta
-                            ? "<span class=\"sg-ot-chip es-espera\">Abierta</span>"
-                            : "<span class=\"sg-ot-chip es-ejecucion\">Resuelta</span>") +
-                         Boton(UrlFalla(f.fal_id), "Abrir falla")));
+                s.Append("<div class=\"sg-a3-tabla-fila sg-falla\" data-falla-estado=\"")
+                 .Append(abierta ? "abierta" : "resuelta")
+                 .Append("\" data-falla-txt=\"")
+                 .Append(Server.HtmlEncode((Texto(f.fal_titulo) + " " + Texto(f.sintoma_nombre) + " " + Texto(f.componente_nombre)).ToLower()))
+                 .Append("\">")
+
+                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(f.fal_titulo)))
+                 .Append("<span>")
+                 .Append(Server.HtmlEncode(string.IsNullOrEmpty(f.componente_nombre) ? "Equipo completo" : f.componente_nombre))
+                 .Append("</span></span>")
+
+                 .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(f.sintoma_nombre))).Append("</span>")
+                 .Append("<span class=\"c-dato\">").Append(ChipCriticidad(f.criticidad_nombre)).Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(abierta
+                        ? "<span class=\"sg-ot-chip es-rojo\"><i class=\"mdi mdi-alert-circle-outline\"></i>Abierta</span>"
+                        : "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check\"></i>Resuelta</span>")
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(f.fal_fecha_deteccion_utc == null ? "—" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy"))
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(f.ultima_ot_correlativo == null
+                        ? "<span class=\"sg-ot-vacio-txt\">Sin OT</span>"
+                        : "<span class=\"sg-a3-codigo\">OT-" + f.ultima_ot_correlativo + "</span>")
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-acc\">").Append(Boton(UrlFalla(f.fal_id), "Abrir falla")).Append("</span>")
+                 .Append("</div>");
             }
 
             litFallas.Text = s.ToString();
         }
 
-        // ---- detenciones ----
+        // =================================================== detenciones ====
         DateTime hoy = global::SitioBase.Hora.Hoy;
         DateTime mes = new DateTime(hoy.Year, hoy.Month, 1);
-        int minutosMes = detenciones.Where(d => d.ain_fecha_inicio_utc >= mes).Sum(d => d.minutos_acumulados);
 
-        litDetencionTotal.Text = "<div class=\"sg-ot-card-acc sg-ot-avance\"><div class=\"sg-ot-avance-num\"><strong>" +
-                                 Duracion(minutosMes) + "</strong><span>" + hoy.ToString("MMMM yyyy") + "</span></div></div>";
+        int minutosMes = detenciones.Where(d => d.ain_fecha_inicio_utc >= mes).Sum(d => d.minutos_acumulados);
+        int minutosNoPlan = detenciones.Where(d => d.ain_fecha_inicio_utc >= mes && !d.ain_planificada).Sum(d => d.minutos_acumulados);
+
+        litDetencionesN.Text = detenciones.Count.ToString();
+
+        litDetencionTotal.Text =
+            "<div class=\"sg-a3-kpis\">" +
+            Kpi("mdi-clock-outline", Duracion(minutosMes), "Detención del período",
+                hoy.ToString("MMMM yyyy"), minutosMes > 0 ? "es-ambar" : "es-verde") +
+            Kpi("mdi-flash-outline", Duracion(minutosNoPlan), "De ella, no planificada",
+                minutosNoPlan > 0 ? "Tiempo que se perdió" : "Nada imprevisto",
+                minutosNoPlan > 0 ? "es-rojo" : "es-verde") +
+            Kpi("mdi-counter", detenciones.Count.ToString(), "Detenciones registradas", "Historia completa", "es-azul") +
+            "</div>";
 
         if (detenciones.Count == 0)
         {
-            litIndisponibilidad.Text = "<p class=\"sg-ot-vacio-txt\">Sin períodos de detención registrados.</p>";
+            litIndisponibilidad.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-power-plug-outline\"></i>" +
+                                       "<p>Sin períodos de detención</p>" +
+                                       "<span>El equipo no registra paradas.</span></div>";
         }
         else
         {
             StringBuilder d = new StringBuilder();
 
-            foreach (ActivoIndisponibilidad i in detenciones.OrderByDescending(x => x.ain_fecha_inicio_utc).Take(10))
-                d.Append(Fila(i.ain_planificada ? "mdi-calendar-check-outline" : "mdi-flash-outline",
-                         i.ain_planificada ? "es-ok" : "es-alerta",
-                         i.ain_fecha_inicio_utc.ToString("dd MMM yyyy · HH:mm") + " → " +
-                         (i.ain_fecha_fin_utc == null ? "sigue detenido" : i.ain_fecha_fin_utc.Value.ToString("HH:mm")),
-                         Texto(i.motivo_nombre) + (i.ot_correlativo != null ? " · OT-" + i.ot_correlativo : ""),
-                         "<span class=\"sg-ot-chip " + (i.ain_planificada ? "es-abierta" : "es-critica") + "\">" +
-                         (i.ain_planificada ? "Planificada" : "No planificada") + "</span>" +
-                         "<span class=\"sg-a3-codigo\">" + Duracion(i.minutos_acumulados) + "</span>"));
+            d.Append("<div class=\"sg-a3-tabla-cab sg-deten-cab\">")
+             .Append("<span>Inicio</span><span>Fin</span><span>Duración</span>")
+             .Append("<span>Tipo</span><span>Causa</span><span>OT</span><span></span></div>");
+
+            foreach (ActivoIndisponibilidad i in detenciones.OrderByDescending(x => x.ain_fecha_inicio_utc))
+            {
+                bool abierta = i.ain_fecha_fin_utc == null;
+
+                d.Append("<div class=\"sg-a3-tabla-fila sg-deten\">")
+                 .Append("<span class=\"c-cod\">").Append(i.ain_fecha_inicio_utc.ToString("dd MMM yyyy"))
+                 .Append("<span>").Append(i.ain_fecha_inicio_utc.ToString("HH:mm")).Append("</span></span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(abierta
+                        ? "<span class=\"sg-ot-chip es-rojo\">Sigue detenido</span>"
+                        : Server.HtmlEncode(i.ain_fecha_fin_utc.Value.ToString("dd MMM yyyy · HH:mm")))
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-dato\">").Append(Duracion(i.minutos_acumulados)).Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(i.ain_planificada
+                        ? "<span class=\"sg-ot-chip es-info\">Planificada</span>"
+                        : "<span class=\"sg-ot-chip es-aviso\">No planificada</span>")
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(Server.HtmlEncode(
+                     !string.IsNullOrEmpty(i.motivo_nombre) ? i.motivo_nombre
+                     : (!string.IsNullOrEmpty(i.falla_titulo) ? i.falla_titulo : Texto(i.ain_motivo))))
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-dato\">")
+                 .Append(i.ot_correlativo == null
+                        ? "<span class=\"sg-ot-vacio-txt\">—</span>"
+                        : "<span class=\"sg-a3-codigo\">OT-" + i.ot_correlativo + "</span>")
+                 .Append("</span>")
+
+                 .Append("<span class=\"c-acc\">")
+                 .Append(i.ain_orden_trabajo == null ? "" : Boton(UrlOrden(i.ain_orden_trabajo.Value), "Abrir OT"))
+                 .Append("</span>")
+                 .Append("</div>");
+            }
 
             litIndisponibilidad.Text = d.ToString();
         }
 
-        // ---- estado ahora ----
+        // ---- el estado de AHORA, en la cabecera ----
         bool detenidoAhora = detenciones.Any(x => x.ain_fecha_fin_utc == null);
 
         litEstadoAhora.Text = detenidoAhora
-            ? "<div class=\"sg-ot-aviso\"><i class=\"mdi mdi-flash-outline\"></i>Hay una detención abierta: el equipo figura detenido ahora mismo.</div>"
-            : "<div class=\"sg-ot-aviso es-ok\"><i class=\"mdi mdi-check-circle-outline\"></i>Sin detenciones abiertas: el equipo figura operando.</div>";
+            ? "<span class=\"sg-ot-chip es-rojo sg-ot-card-acc\"><i class=\"mdi mdi-flash-outline\"></i>Detenido ahora</span>"
+            : "<span class=\"sg-ot-chip es-ok sg-ot-card-acc\"><i class=\"mdi mdi-check-circle-outline\"></i>Operando</span>";
     }
 
     #endregion
