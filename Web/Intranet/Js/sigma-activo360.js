@@ -19,6 +19,11 @@
     }
 
     function irA(nombre) {
+        /* Salir de la ficha con cambios sin guardar pregunta primero: el
+           formulario sigue vivo mientras la pestaña este abierta, pero se
+           pierde en cuanto la pagina recargue. */
+        if (!puedeSalirDeFicha(nombre)) return;
+
         var tabs = document.querySelectorAll('.sg-a3-tab[data-sec]');
         var ops = document.querySelectorAll('.sg-a3-mas-op[data-sec]');
         var paneles = document.querySelectorAll('.sg-a3-panel');
@@ -225,8 +230,62 @@
         document.addEventListener('keydown', porEscape);
     }
 
+    /* ---- La ficha avisa antes de que se pierda lo escrito ----
+
+       La pestaña Ficha es un formulario largo. Cambiar de seccion no recarga
+       -las pestañas son del navegador-, pero el formulario sigue ahi con lo
+       tecleado sin guardar, y al recargar la pagina se pierde. Se marca
+       sucio al primer cambio y se pregunta antes de salir. */
+    var fichaSucia = false;
+
+    function ficha() {
+        var panel = document.querySelector('.sg-a3-ficha');
+        if (!panel || panel.getAttribute('data-listo') === '1') return;
+
+        panel.setAttribute('data-listo', '1');
+
+        panel.addEventListener('input', ensuciar, true);
+        panel.addEventListener('change', ensuciar, true);
+
+        /* Guardar y Cancelar hacen postback: lo que venia sin guardar deja de
+           estarlo en cuanto se van al servidor. */
+        var acciones = panel.querySelectorAll('.sg-a3-ficha-pie input, .sg-a3-ficha-pie button');
+        for (var i = 0; i < acciones.length; i++)
+            acciones[i].addEventListener('click', function () { limpiar(); });
+
+        window.onbeforeunload = function () {
+            if (fichaSucia) return 'Hay cambios sin guardar en la ficha del activo.';
+        };
+    }
+
+    function ensuciar() {
+        var panel = document.querySelector('.sg-a3-ficha');
+        if (!panel) return;
+        fichaSucia = true;
+        panel.classList.add('es-sucia');
+    }
+
+    function limpiar() {
+        var panel = document.querySelector('.sg-a3-ficha');
+        fichaSucia = false;
+        if (panel) panel.classList.remove('es-sucia');
+    }
+
+    /// Se pregunta solo al SALIR de la ficha: entrar a ella no arriesga nada.
+    function puedeSalirDeFicha(destino) {
+        if (!fichaSucia || destino === 'ficha') return true;
+
+        if (confirm('La ficha tiene cambios sin guardar. ¿Descartarlos y cambiar de sección?')) {
+            limpiar();
+            return true;
+        }
+
+        return false;
+    }
+
     function armar() {
         navegacion();
+        ficha();
         ordenes();
         revisiones();
         ampliables();

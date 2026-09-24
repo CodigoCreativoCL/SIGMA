@@ -134,3 +134,6 @@
     font-weight: 700;
 }
 .sg-a3-tab.es-activa b { background: #e9e5ff; color: #5b46e5; }
+
+.sg-a3-hero-txt a { text-decoration: none; }
+.sg-a3-hero-txt a:hover .sg-ot-chip { filter: brightness(.96); }

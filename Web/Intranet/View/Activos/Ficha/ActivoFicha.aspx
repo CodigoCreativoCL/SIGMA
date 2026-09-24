@@ -1,6 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="ActivoFicha.aspx.cs" Inherits="View_Activos_Ficha_ActivoFicha" %>
 
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
+<%@ Register TagPrefix="wuc" TagName="ActivoForm" Src="~/View/Activos/Activos/ActivoForm.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
@@ -172,9 +173,6 @@
                     </div>
 
                     <div class="sg-a3-hero-acc">
-                        <asp:HyperLink ID="hlEscanear" runat="server" CssClass="sg-ot-btn es-plano">
-                            <i class="mdi mdi-qrcode-scan"></i>Escanear QR
-                        </asp:HyperLink>
                         <asp:HyperLink ID="hlGenerarOT" runat="server" CssClass="sg-ot-btn es-primario">
                             <i class="mdi mdi-plus"></i>Nueva OT
                         </asp:HyperLink>
@@ -186,6 +184,7 @@
                 <%-- ---------------- navegacion: cuatro a la vista, el resto en Mas -------- --%>
                 <nav class="sg-a3-nav">
                     <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-home-outline"></i>Resumen</a>
+                    <a href="#" class="sg-a3-tab" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
                     <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
                     <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo</a>
                     <a href="#" class="sg-a3-tab" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
@@ -195,7 +194,6 @@
                         <a href="#" class="sg-a3-tab sg-a3-mas-btn"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
 
                         <div class="sg-a3-mas-menu">
-                            <a href="#" class="sg-a3-mas-op" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha técnica</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="fallas"><i class="mdi mdi-alert-outline"></i>Fallas e indisponibilidad</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores</a>
@@ -394,44 +392,18 @@
                 </section>
 
                 <%-- ================================================================
-                     5. FICHA TÉCNICA
+                     2. FICHA  ·  el activo se edita aca, sin salir del centro
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="ficha">
-                    <div class="sg-a3-cols">
-                        <div class="sg-a3-col">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-file-document-outline"></i></span>
-                                    <div>
-                                        <h3>Ficha técnica</h3>
-                                        <p class="sg-ot-card-sub">Identificación, ubicación y gestión del equipo.</p>
-                                    </div>
-                                    <asp:HyperLink ID="hlEditarFicha" runat="server" CssClass="sg-ot-btn es-plano sg-ot-card-acc" NavigateUrl="javascript:void(0)">
-                                        <i class="mdi mdi-pencil-outline"></i>Editar ficha
-                                    </asp:HyperLink>
-                                </header>
-                                <asp:Literal ID="litFichaTecnica" runat="server" />
-                            </div>
+                <section class="sg-a3-panel sg-a3-ficha" data-panel="ficha">
+                    <header class="sg-a3-ficha-cab">
+                        <h2>Ficha del activo</h2>
+                        <asp:Literal ID="litFichaModo" runat="server" />
+                    </header>
 
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-tune-variant"></i></span>
-                                    <div>
-                                        <h3>Atributos técnicos</h3>
-                                        <p class="sg-ot-card-sub">Los campos que definen su tipo de equipo.</p>
-                                    </div>
-                                </header>
-                                <asp:Literal ID="litAtributos" runat="server" />
-                            </div>
-                        </div>
-
-                        <aside class="sg-a3-lado">
-                            <div class="sg-ot-card">
-                                <asp:Literal ID="litFotoFicha" runat="server" />
-                                <asp:Literal ID="litQr" runat="server" />
-                            </div>
-                        </aside>
-                    </div>
+                    <%-- Es el MISMO formulario del modal de alta: un control, no
+                         una copia. Lo unico que cambia es donde van Guardar y
+                         Cancelar. --%>
+                    <wuc:ActivoForm runat="server" ID="frmFicha" EnCentro="true" OnGuardado="frmFicha_Guardado" />
                 </section>
 
                 <%-- ================================================================

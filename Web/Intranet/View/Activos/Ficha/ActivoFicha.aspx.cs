@@ -321,15 +321,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         litBadges.Text = ChipEstado(a) + ChipCriticidad(a.criticidad_nombre);
 
-        string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.act_id));
-        string urlEditar = ResolveUrl("~/View/Activos/Activos/Activo.aspx");
-        string abrir = "return SigmaModal.open({url:'" + urlEditar + "?query=" + q +
-                       "', title:'Editar activo', width:960, initialHeight:620});";
+        /* Editar el activo ya no abre un modal: lleva a la pestaña Ficha,
+           que es el mismo formulario sin sacar a nadie del centro. */
+        hlEditar.Attributes["onclick"] = "sigmaActivo360.irA('ficha'); return false;";
 
-        hlEditar.Attributes["onclick"] = abrir;
-        hlEditarFicha.Attributes["onclick"] = abrir;
-
-        hlEscanear.NavigateUrl = ResolveUrl("~/View/Activos/Escaneo/Escanear.aspx");
         hlGenerarOT.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx");
     }
 
@@ -660,53 +655,32 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 5. Ficha tecnica
 
+    /// <summary>
+    /// La pestaña Ficha muestra el MISMO formulario del modal de alta, como
+    /// control compartido. Aca solo se le dice de que activo habla y en que
+    /// modo se esta mostrando.
+    ///
+    /// POR QUE NO ES UNA VISTA DE SOLO LECTURA APARTE
+    ///   Antes habia una "Ficha tecnica" que solo mostraba, y para cambiar un
+    ///   dato mandaba a un modal con los mismos campos. Eran dos pantallas
+    ///   para la misma informacion y la de leer siempre se quedaba atras.
+    /// </summary>
     private void FichaTecnica(Activo a)
     {
-        StringBuilder s = new StringBuilder();
+        frmFicha.ActivoDelCentro = a.act_id;
 
-        s.Append("<div class=\"sg-ot-sub-titulo\">Identificación</div><div class=\"sg-ot-datos\">");
-        s.Append(Dato("mdi-barcode", "Código", a.act_codigo));
-        s.Append(Dato("mdi-tag-outline", "Nombre", a.act_nombre));
-        s.Append(Dato("mdi-shape-outline", "Tipo", a.tipo_nombre));
-        s.Append(Dato("mdi-factory", "Fabricante", a.act_fabricante));
-        s.Append(Dato("mdi-identifier", "N° de serie", a.act_numero_serie));
-        s.Append("</div>");
+        litFichaModo.Text = Token.Puede("CREAR EDITAR ACTIVOS")
+            ? "<span class=\"sg-a3-ficha-chip\"><i class=\"mdi mdi-pencil-outline\"></i>Editando</span>"
+            : "<span class=\"sg-a3-ficha-chip es-lectura\"><i class=\"mdi mdi-eye-outline\"></i>Solo lectura</span>";
+    }
 
-        s.Append("<div class=\"sg-ot-sub-titulo\">Ubicación</div><div class=\"sg-ot-datos\">");
-        s.Append(Dato("mdi-factory", "Planta", a.planta_nombre));
-        s.Append(Dato("mdi-map-marker-outline", "Área", a.area_nombre));
-        s.Append("</div>");
-
-        s.Append("<div class=\"sg-ot-sub-titulo\">Gestión</div><div class=\"sg-ot-datos\">");
-        s.Append("<div class=\"sg-ot-dato\"><span class=\"sg-ot-dato-ico\"><i class=\"mdi mdi-shield-alert-outline\"></i></span>" +
-                 "<div><span class=\"sg-ot-dato-etq\">Criticidad</span>" + ChipCriticidad(a.criticidad_nombre) + "</div></div>");
-        s.Append("<div class=\"sg-ot-dato\"><span class=\"sg-ot-dato-ico\"><i class=\"mdi mdi-pulse\"></i></span>" +
-                 "<div><span class=\"sg-ot-dato-etq\">Estado</span>" + ChipEstado(a) + "</div></div>");
-        s.Append("</div>");
-
-        if (!string.IsNullOrEmpty(a.act_descripcion))
-            s.Append("<div class=\"sg-ot-sub-titulo\">Descripción</div><p class=\"sg-ot-texto\">")
-             .Append(Server.HtmlEncode(a.act_descripcion)).Append("</p>");
-
-        litFichaTecnica.Text = s.ToString();
-
-        // ---- atributos tecnicos ----
-        List<ActivoAtributoValor> atributos = new ActivoAtributoController().GetValores(a.act_id, _cliente)
-                                              ?? new List<ActivoAtributoValor>();
-
-        StringBuilder at = new StringBuilder("<div class=\"sg-ot-datos\">");
-
-        foreach (ActivoAtributoValor v in atributos)
-            at.Append(Dato("mdi-tune-variant", v.ate_nombre, v.valor_mostrar));
-
-        litAtributos.Text = atributos.Count > 0 ? at.Append("</div>").ToString()
-            : "<p class=\"sg-ot-vacio-txt\">El tipo de este equipo no define atributos técnicos.</p>";
-
-        litFotoFicha.Text = Foto(a.act_id);
-
-        litQr.Text = "<div class=\"sg-ot-nota es-chica\" style=\"margin-top:12px;\">" +
-                     "<i class=\"mdi mdi-qrcode\"></i><span>La etiqueta QR del equipo se imprime desde " +
-                     "<strong>Activos · Etiquetas</strong> y se lee con «Escanear QR».</span></div>";
+    /// <summary>
+    /// El formulario guardo: la cabecera del centro puede haber cambiado -el
+    /// nombre, el estado, la criticidad- y se vuelve a pintar entera.
+    /// </summary>
+    protected void frmFicha_Guardado(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "ficha";
     }
 
     #endregion

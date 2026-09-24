@@ -302,7 +302,11 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         litHeroNombre.Text = Server.HtmlEncode(Texto(entidad.pma_nombre));
         litHeroSub.Text = Server.HtmlEncode(Resumen(entidad));
 
-        litBadges.Text = ChipVersionCentro(entidad.version_numero, entidad.version_estado_codigo)
+        /* El chip de version lleva a Configuracion, que es donde vive el
+           historial de versiones: verlo y no poder tocarlo invita a buscarlo
+           en un menu que no existe. */
+        litBadges.Text = "<a href=\"#\" data-ir-sec=\"configuracion\" title=\"Ver el historial de versiones\">" +
+                         ChipVersionCentro(entidad.version_numero, entidad.version_estado_codigo) + "</a>"
                        + (entidad.pma_habilitado
                             ? "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-check-circle-outline\"></i>Habilitado</span>"
                             : "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-pause-circle-outline\"></i>Deshabilitado</span>");
