@@ -941,6 +941,88 @@
         mostrar(conAlgo || document.querySelector('.sg-mant-cal-dia.es-hoy') || dias[0]);
     }
 
+    /* ---- Los popover de la lista ----
+
+       El numero de OT abiertas y la fecha del proximo mantenimiento abren el
+       detalle sobre la fila. El contenido ya viaja con ella: un ida y vuelta
+       al servidor por cada numero que se toca se nota. */
+    function popovers() {
+        /* Tras un postback parcial la lista se vuelve a pintar entera. Las
+           cajas que se habian colgado del <body> ya no tienen fila: si no se
+           barren, cada refresco deja otra copia y el popover abre la vieja. */
+        var viejas = document.querySelectorAll('body > .sg-pop');
+        for (var q = 0; q < viejas.length; q++) viejas[q].parentNode.removeChild(viejas[q]);
+
+        var gatillos = document.querySelectorAll('.es-pop[data-pop]');
+        if (!gatillos.length) return;
+
+        var abierto = null;
+
+        function cerrar() {
+            if (!abierto) return;
+            abierto.classList.remove('es-abierto');
+            abierto = null;
+        }
+
+        function abrir(gatillo) {
+            var cual = gatillo.getAttribute('data-pop');
+            var de = gatillo.getAttribute('data-pop-de');
+
+            var caja = document.querySelector('.sg-pop[data-pop-cont="' + cual + '"][data-pop-de="' + de + '"]');
+            if (!caja) return;
+
+            if (abierto === caja) { cerrar(); return; }
+            cerrar();
+
+            /* Se cuelga del <body> y se posiciona a mano: dentro de la fila,
+               el overflow de la grilla le cortaba la mitad. */
+            if (caja.parentNode !== document.body) document.body.appendChild(caja);
+
+            caja.classList.add('es-abierto');
+            abierto = caja;
+
+            var r = gatillo.getBoundingClientRect();
+            var alto = caja.offsetHeight;
+            var ancho = caja.offsetWidth;
+
+            var arriba = window.pageYOffset + r.bottom + 6;
+
+            // si no cabe abajo, se abre hacia arriba antes que salirse de la pantalla
+            if (r.bottom + alto + 12 > window.innerHeight && r.top - alto - 6 > 0)
+                arriba = window.pageYOffset + r.top - alto - 6;
+
+            var izquierda = window.pageXOffset + Math.min(r.left, window.innerWidth - ancho - 12);
+
+            caja.style.top = Math.round(arriba) + 'px';
+            caja.style.left = Math.round(Math.max(8, izquierda)) + 'px';
+        }
+
+        for (var i = 0; i < gatillos.length; i++)
+            gatillos[i].onclick = function (ev) {
+                ev.preventDefault();
+                ev.stopPropagation();
+                abrir(this);
+            };
+
+        /* Un clic en el popover no lo cierra -se va a tocar un enlace-; uno
+           afuera, si. */
+        var cajas = document.querySelectorAll('.sg-pop');
+        for (var c = 0; c < cajas.length; c++)
+            cajas[c].onclick = function (ev) { ev.stopPropagation(); };
+
+        /* Los oyentes del documento se ponen UNA vez: armar() corre de nuevo
+           en cada postback parcial y se irian acumulando. */
+        window.__sgPopCerrar = cerrar;
+
+        if (!window.__sgPopListo) {
+            window.__sgPopListo = true;
+            var fuera = function () { if (window.__sgPopCerrar) window.__sgPopCerrar(); };
+            document.addEventListener('click', fuera);
+            document.addEventListener('keydown', function (ev) { if (ev.key === 'Escape') fuera(); });
+            window.addEventListener('resize', fuera);
+        }
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -948,6 +1030,7 @@
         condicion();
         fallas();
         lista();
+        popovers();
         documentos();
         agenda();
         ordenes();

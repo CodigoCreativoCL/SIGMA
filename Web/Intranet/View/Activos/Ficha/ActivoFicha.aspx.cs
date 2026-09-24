@@ -203,6 +203,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         Dictionary<int, ActivoResumenLista> resumen = new ActivoCentroController().GetResumenLista()
                                                       ?? new Dictionary<int, ActivoResumenLista>();
 
+        /* El detalle detras de los dos numeros de la fila. Se pide una vez
+           para toda la lista, no una vez por activo. */
+        Dictionary<int, List<ActivoListaOrden>> ordenes = new ActivoCentroController().GetOrdenesLista()
+                                                          ?? new Dictionary<int, List<ActivoListaOrden>>();
+        Dictionary<int, List<ActivoListaAgenda>> agenda = new ActivoCentroController().GetAgendaLista()
+                                                          ?? new Dictionary<int, List<ActivoListaAgenda>>();
+
         int operativos = 0, detenidos = 0, enMantencion = 0, atencion = 0, conOt = 0;
 
         StringBuilder s = new StringBuilder();
@@ -255,22 +262,32 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("<span class=\"c-dato\">").Append(ChipEstado(a)).Append("</span>")
              .Append("<span class=\"c-dato\">").Append(ChipNivelCriticidad(a.criticidad_nombre)).Append("</span>")
 
+             /* EL NUMERO ES LA PUERTA, NO EL DATO
+                "3" obliga a entrar al centro para saber cuales son. El popover
+                adelanta las cinco primeras; quien necesita mas, entra. */
              .Append("<span class=\"c-dato\">")
              .Append(r.ot_abiertas == 0
                     ? "<span class=\"sg-ot-vacio-txt\">0</span>"
-                    : "<span class=\"sg-lista-num\">" + r.ot_abiertas + "</span>")
+                    : "<a href=\"javascript:void(0)\" class=\"sg-lista-num es-pop\" data-pop=\"ot\" data-pop-de=\"" +
+                      a.act_id + "\">" + r.ot_abiertas + "</a>")
              .Append("</span>")
 
              .Append("<span class=\"c-dato\">")
              .Append(r.proxima_mantencion == null
                     ? "<span class=\"sg-ot-vacio-txt\">Sin programación</span>"
-                    : Server.HtmlEncode(r.proxima_mantencion.Value.ToString("dd MMM yyyy")))
+                    : "<a href=\"javascript:void(0)\" class=\"sg-lista-fecha es-pop\" data-pop=\"agenda\" data-pop-de=\"" +
+                      a.act_id + "\"><i class=\"mdi mdi-calendar-month-outline\"></i>" +
+                      Server.HtmlEncode(r.proxima_mantencion.Value.ToString("dd MMM yyyy")) + "</a>")
              .Append("</span>")
 
              .Append("<span class=\"c-acc\">")
+             .Append(PopoverAgenda(a, agenda))
              .Append("<a class=\"sg-ot-btn es-accion\" href=\"javascript:void(0)\" data-abrir-act=\"")
              .Append(a.act_id).Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a>")
              .Append("</span>")
+
+             .Append(PopoverOrdenes(a, ordenes))
+             .Append(PopoverAgendaCont(a, agenda))
              .Append("</div>");
         }
 
@@ -320,6 +337,105 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             int id = ActivoSeleccionado();
             return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
         }
+    }
+
+    /// <summary>
+    /// El calendario de la fila: las proximas programaciones del equipo.
+    ///
+    /// Va al lado de "Abrir 360°" y solo si hay algo que mostrar: un icono de
+    /// calendario que abre una caja vacia es peor que no tener icono.
+    /// </summary>
+    private string PopoverAgenda(Activo a, Dictionary<int, List<ActivoListaAgenda>> agenda)
+    {
+        List<ActivoListaAgenda> lista;
+        if (!agenda.TryGetValue(a.act_id, out lista) || lista.Count == 0) return "";
+
+        return "<a class=\"sg-lista-cal es-pop\" href=\"javascript:void(0)\" data-pop=\"agenda\" data-pop-de=\"" +
+               a.act_id + "\" title=\"Próximas programaciones\"><i class=\"mdi mdi-calendar-month-outline\"></i>" +
+               "<b>" + lista.Count + "</b></a>";
+    }
+
+    /// <summary>
+    /// El contenido de los dos popover del activo, escondido en la fila.
+    ///
+    /// Viaja con la fila y no se pide al abrirlo: son cinco lineas por activo,
+    /// y un ida y vuelta al servidor por cada numero que se toca se nota.
+    /// </summary>
+    private string PopoverOrdenes(Activo a, Dictionary<int, List<ActivoListaOrden>> ordenes)
+    {
+        StringBuilder s = new StringBuilder();
+
+        List<ActivoListaOrden> lista;
+
+        if (ordenes.TryGetValue(a.act_id, out lista) && lista.Count > 0)
+        {
+            s.Append("<div class=\"sg-pop\" data-pop-cont=\"ot\" data-pop-de=\"").Append(a.act_id).Append("\">")
+             .Append("<div class=\"sg-pop-cab\"><strong>Órdenes abiertas</strong><span>")
+             .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</span></div>");
+
+            foreach (ActivoListaOrden o in lista)
+                s.Append("<a class=\"sg-pop-item\" href=\"").Append(UrlOrden(o.ot_id))
+                 .Append("\" target=\"_blank\" rel=\"noopener\">")
+                 .Append("<span class=\"sg-pop-txt\">")
+                 .Append("<span class=\"sg-pop-tit\">OT-").Append(o.correlativo).Append(" · ")
+                 .Append(Server.HtmlEncode(Texto(o.titulo))).Append("</span>")
+                 .Append("<span class=\"sg-pop-sub\">")
+                 .Append("<span class=\"sg-ot-chip ").Append(ChipOt(o.estado_codigo)).Append("\">")
+                 .Append(Server.HtmlEncode(Texto(o.estado))).Append("</span>")
+                 .Append(o.fecha == null ? "Sin fecha programada" : Server.HtmlEncode(o.fecha.Value.ToString("dd MMM yyyy")))
+                 .Append(string.IsNullOrEmpty(o.responsable) ? " · Sin responsable" : " · " + Server.HtmlEncode(o.responsable))
+                 .Append("</span></span></a>");
+
+            s.Append("</div>");
+        }
+
+        return s.ToString();
+    }
+
+    /// <summary>El contenido del popover de programaciones de este equipo.</summary>
+    private string PopoverAgendaCont(Activo a, Dictionary<int, List<ActivoListaAgenda>> agenda)
+    {
+        List<ActivoListaAgenda> lista;
+        if (!agenda.TryGetValue(a.act_id, out lista) || lista.Count == 0) return "";
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<div class=\"sg-pop\" data-pop-cont=\"agenda\" data-pop-de=\"").Append(a.act_id).Append("\">")
+         .Append("<div class=\"sg-pop-cab\"><strong>Próximas programaciones</strong><span>")
+         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</span></div>");
+
+        foreach (ActivoListaAgenda g in lista)
+        {
+            /* Con orden ya generada se va a la orden; sin ella, al plan: son
+               dos pantallas distintas y el dia esta en dos estados distintos. */
+            string url = g.con_orden && g.ot_id != null ? UrlOrden(g.ot_id.Value) : "javascript:void(0)";
+
+            s.Append("<a class=\"sg-pop-item\" href=\"").Append(url)
+             .Append(g.con_orden && g.ot_id != null ? "\" target=\"_blank\" rel=\"noopener\">" : "\">")
+             .Append("<span class=\"sg-pop-fecha\"><b>").Append(g.fecha.ToString("dd"))
+             .Append("</b><span>").Append(g.fecha.ToString("MMM")).Append("</span></span>")
+             .Append("<span class=\"sg-pop-txt\">")
+             .Append("<span class=\"sg-pop-tit\">").Append(Server.HtmlEncode(Texto(g.titulo))).Append("</span>")
+             .Append("<span class=\"sg-pop-sub\">").Append(Server.HtmlEncode(Texto(g.plan_nombre)))
+             .Append("</span><span class=\"sg-pop-sub\">")
+             .Append(g.con_orden ? "<span class=\"sg-ot-chip es-ok\">Con OT</span>"
+                                 : "<span class=\"sg-ot-chip es-neutro\">" + Server.HtmlEncode(Texto(g.estado)) + "</span>")
+             .Append("</span></span></a>");
+        }
+
+        return s.Append("</div>").ToString();
+    }
+
+    /// <summary>El color del estado de la orden, con el mismo criterio del centro.</summary>
+    private static string ChipOt(string codigo)
+    {
+        string c = (codigo ?? "").ToUpperInvariant();
+
+        if (c.Contains("EJECUCION")) return "es-info";
+        if (c.Contains("ESPERA")) return "es-aviso";
+        if (c.Contains("CERRADA")) return "es-ok";
+
+        return "es-neutro";
     }
 
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
@@ -2625,6 +2741,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
             Dictionary<int, ActivoResumenLista> resumen = new ActivoCentroController().GetResumenLista()
                                                           ?? new Dictionary<int, ActivoResumenLista>();
+
 
             StringBuilder sb = new StringBuilder();
 

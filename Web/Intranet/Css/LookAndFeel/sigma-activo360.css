@@ -1387,3 +1387,118 @@ a.sg-cond-card.es-oculta { display: none; }
     .sg-mant-cols { grid-template-columns: minmax(0, 1fr); }
     .sg-mant-lado { position: static; }
 }
+
+/* ---- Los popover de la lista -----------------------------------------
+   El "3" de OT abiertas y la fecha del proximo mantenimiento son ciertos y
+   no dicen nada: los dos obligaban a entrar al centro del activo. Ahora
+   los dos abren el detalle sobre la misma fila. */
+.sg-lista-num.es-pop,
+.sg-lista-fecha.es-pop,
+.sg-lista-cal {
+    cursor: pointer;
+    text-decoration: none;
+}
+.sg-lista-fecha.es-pop {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--sg-texto);
+    border-bottom: 1px dashed var(--sg-borde);
+}
+.sg-lista-fecha.es-pop i { color: var(--sg-p); font-size: 15px; }
+.sg-lista-fecha.es-pop:hover { color: var(--sg-p); border-bottom-color: var(--sg-p); }
+
+/* El calendario de la fila: solo aparece si el equipo tiene programaciones. */
+.sg-lista-cal {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 6px;
+    padding: 5px 8px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    color: var(--sg-p);
+    font-size: 15px;
+    line-height: 1;
+}
+.sg-lista-cal b { font-size: 11px; font-weight: 700; }
+.sg-lista-cal:hover { border-color: var(--sg-p); background: var(--sg-surface-subtle); }
+
+.sg-pop {
+    position: absolute;
+    z-index: 40;
+    display: none;
+    width: 340px;
+    padding: 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 13px;
+    background: var(--sg-surface);
+    box-shadow: 0 12px 30px rgba(13, 13, 13, .16);
+}
+.sg-pop.es-abierto { display: block; }
+
+.sg-pop-cab {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--sg-borde);
+    margin-bottom: 4px;
+}
+.sg-pop-cab strong { font-size: 13px; color: var(--sg-texto); }
+.sg-pop-cab span {
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sg-pop-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    text-decoration: none;
+}
+.sg-pop-item:hover { background: var(--sg-surface-subtle); }
+
+.sg-pop-tit {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-pop-sub {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-pop-sub .sg-ot-chip { font-size: 10.5px; padding: 2px 7px; }
+
+.sg-pop-txt { min-width: 0; }
+
+/* El dia grande a la izquierda: la agenda se lee por fecha, no por titulo. */
+.sg-pop-fecha {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+    line-height: 1;
+}
+.sg-pop-fecha b { font-size: 15px; color: var(--sg-texto); }
+.sg-pop-fecha span { font-size: 10px; color: var(--sg-tenue); text-transform: uppercase; }

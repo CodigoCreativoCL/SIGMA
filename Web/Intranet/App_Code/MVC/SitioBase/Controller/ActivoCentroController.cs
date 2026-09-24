@@ -11,6 +11,32 @@ namespace SitioBase.Controller
     /// tarea. Van en la misma clase porque en terreno son la misma cosa.
     /// </summary>
     [Serializable]
+    /// <summary>Una de las ordenes abiertas que hay detras del numero de la lista.</summary>
+    public class ActivoListaOrden
+    {
+        public int activo_id { get; set; }
+        public int ot_id { get; set; }
+        public int correlativo { get; set; }
+        public string titulo { get; set; }
+        public string estado { get; set; }
+        public string estado_codigo { get; set; }
+        public DateTime? fecha { get; set; }
+        public string responsable { get; set; }
+    }
+
+    /// <summary>Una de las proximas programaciones del activo.</summary>
+    public class ActivoListaAgenda
+    {
+        public int activo_id { get; set; }
+        public int ocurrencia_id { get; set; }
+        public DateTime fecha { get; set; }
+        public string titulo { get; set; }
+        public string plan_nombre { get; set; }
+        public string estado { get; set; }
+        public bool con_orden { get; set; }
+        public int? ot_id { get; set; }
+    }
+
     /// <summary>
     /// Lo que la tarjeta del contador necesita y no estaba en Activo_Medidor:
     /// de donde vino la ultima lectura y a que valor esta citado el proximo
@@ -451,6 +477,103 @@ namespace SitioBase.Controller
             }
 
             return r;
+        }
+
+        /// <summary>
+        /// Las ordenes abiertas de cada activo (bloque 279), hasta cinco.
+        ///
+        /// De una sola vez para toda la lista: pedirlas por fila serian
+        /// veintidos consultas para armar una pantalla que se abre siempre.
+        /// </summary>
+        public Dictionary<int, List<ActivoListaOrden>> GetOrdenesLista()
+        {
+            Dictionary<int, List<ActivoListaOrden>> mapa = new Dictionary<int, List<ActivoListaOrden>>();
+
+            if (!Token.TokenSeguridad()) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_LISTA_ORDENES";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoListaOrden o = new ActivoListaOrden();
+
+                        o.activo_id = int.Parse(dr["ACTIVO_ID"].ToString());
+                        o.ot_id = int.Parse(dr["OT_ID"].ToString());
+                        o.correlativo = dr["CORRELATIVO"] == DBNull.Value ? 0 : int.Parse(dr["CORRELATIVO"].ToString());
+                        o.titulo = dr["TITULO"] == DBNull.Value ? "" : dr["TITULO"].ToString();
+                        o.estado = dr["ESTADO"] == DBNull.Value ? "" : dr["ESTADO"].ToString();
+                        o.estado_codigo = dr["ESTADO_CODIGO"] == DBNull.Value ? "" : dr["ESTADO_CODIGO"].ToString();
+                        o.responsable = dr["RESPONSABLE"] == DBNull.Value ? "" : dr["RESPONSABLE"].ToString();
+                        if (dr["FECHA"] != DBNull.Value) o.fecha = (DateTime)dr["FECHA"];
+
+                        if (!mapa.ContainsKey(o.activo_id)) mapa[o.activo_id] = new List<ActivoListaOrden>();
+                        mapa[o.activo_id].Add(o);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return mapa;
+        }
+
+        /// <summary>Las proximas programaciones de cada activo (bloque 279), hasta cinco.</summary>
+        public Dictionary<int, List<ActivoListaAgenda>> GetAgendaLista()
+        {
+            Dictionary<int, List<ActivoListaAgenda>> mapa = new Dictionary<int, List<ActivoListaAgenda>>();
+
+            if (!Token.TokenSeguridad()) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_LISTA_AGENDA";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoListaAgenda g = new ActivoListaAgenda();
+
+                        g.activo_id = int.Parse(dr["ACTIVO_ID"].ToString());
+                        g.ocurrencia_id = int.Parse(dr["OCURRENCIA_ID"].ToString());
+                        g.fecha = (DateTime)dr["FECHA"];
+                        g.titulo = dr["TITULO"] == DBNull.Value ? "" : dr["TITULO"].ToString();
+                        g.plan_nombre = dr["PLAN_NOMBRE"] == DBNull.Value ? "" : dr["PLAN_NOMBRE"].ToString();
+                        g.estado = dr["ESTADO"] == DBNull.Value ? "" : dr["ESTADO"].ToString();
+                        g.con_orden = dr["CON_ORDEN"] != DBNull.Value && int.Parse(dr["CON_ORDEN"].ToString()) == 1;
+                        if (dr["OT_ID"] != DBNull.Value) g.ot_id = int.Parse(dr["OT_ID"].ToString());
+
+                        if (!mapa.ContainsKey(g.activo_id)) mapa[g.activo_id] = new List<ActivoListaAgenda>();
+                        mapa[g.activo_id].Add(g);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return mapa;
         }
 
         public List<ActivoRevision> GetRevisiones(int activo, DateTime? desde = null, DateTime? hasta = null)
