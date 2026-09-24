@@ -217,6 +217,13 @@
        `tipo` es 'imagen', 'video' o 'audio'. Sin el se deduce de la
        extension, porque muchas llamadas vienen de una <img> y ahi no hay
        duda. */
+    /* La galeria abierta: los medios del grupo y en cual se esta.
+
+       Se guarda afuera porque las flechas y el teclado vuelven a llamar a
+       `ampliar` para el vecino, y el visor tiene que saber contra que lista
+       se esta moviendo. */
+    var galeria = { medios: [], i: 0 };
+
     function ampliar(url, titulo, tipo) {
         var fondo = document.getElementById('sgOtLightbox');
 
@@ -239,17 +246,29 @@
                   : clase === 'audio' ? 'mdi-waveform'
                   : 'mdi-image-outline';
 
+        /* Con un solo medio no hay a donde ir: las flechas y el contador
+           solo aparecen cuando el grupo tiene mas de uno. */
+        var hayGrupo = galeria.medios.length > 1;
+
+        var flechas = hayGrupo
+            ? '<a href="#" class="sg-ot-lb-nav es-antes" title="Anterior (←)"><i class="mdi mdi-chevron-left"></i></a>' +
+              '<a href="#" class="sg-ot-lb-nav es-despues" title="Siguiente (→)"><i class="mdi mdi-chevron-right"></i></a>'
+            : '';
+
         fondo.innerHTML =
             '<div class="sg-ot-lb-marco" role="dialog" aria-modal="true">' +
             '<header class="sg-ot-lb-cab">' +
             '<span class="sg-ot-card-ico"><i class="mdi ' + icono + '"></i></span>' +
             '<h3></h3>' +
+            (hayGrupo ? '<span class="sg-ot-lb-cuenta"></span>' : '') +
             '<a href="#" class="sg-ot-lb-cerrar" title="Cerrar (Esc)"><i class="mdi mdi-close"></i></a>' +
             '</header>' +
-            cuerpo +
+            '<div class="sg-ot-lb-visor">' + flechas + cuerpo + '</div>' +
             '<div class="sg-ot-lb-datos">' +
             '<a class="sg-ot-btn es-plano" target="_blank"><i class="mdi mdi-open-in-new"></i>Abrir original</a>' +
-            '</div></div>';
+            '</div>' +
+            (hayGrupo ? '<div class="sg-ot-lb-tiras"></div>' : '') +
+            '</div>';
 
         /* El titulo y la url se ponen por propiedad y no armando HTML: el
            nombre del archivo lo escribio una persona y puede traer comillas
@@ -275,7 +294,9 @@
 
             fondo.classList.remove('es-abierto');
             fondo.innerHTML = '';
+            galeria = { medios: [], i: 0 };
             document.removeEventListener('keydown', porEscape);
+            document.removeEventListener('keydown', porFlechas);
         }
 
         function porEscape(ev) { if (ev.keyCode === 27) cerrar(); }
@@ -283,6 +304,65 @@
         fondo.querySelector('.sg-ot-lb-cerrar').onclick = cerrar;
         fondo.onclick = function (ev) { if (ev.target === fondo) cerrar(ev); };
         document.addEventListener('keydown', porEscape);
+
+        if (!hayGrupo) return;
+
+        var cuenta = fondo.querySelector('.sg-ot-lb-cuenta');
+        if (cuenta) cuenta.textContent = (galeria.i + 1) + ' de ' + galeria.medios.length;
+
+        /* Las miniaturas del pie: con seis evidencias, saltar a la cuarta con
+           la flecha son tres clics y con la tira es uno. */
+        var tiras = fondo.querySelector('.sg-ot-lb-tiras');
+
+        if (tiras)
+            for (var t = 0; t < galeria.medios.length; t++) {
+                var m = galeria.medios[t];
+
+                var mini = document.createElement('a');
+                mini.href = 'javascript:void(0)';
+                mini.className = 'sg-ot-lb-tira' + (t === galeria.i ? ' es-activa' : '');
+                mini.title = m.titulo;
+
+                if (m.tipo === 'imagen') {
+                    var img = document.createElement('img');
+                    img.src = m.url;
+                    img.alt = '';
+                    mini.appendChild(img);
+                } else {
+                    mini.innerHTML = '<i class="mdi ' +
+                        (m.tipo === 'video' ? 'mdi-play-circle-outline' : 'mdi-waveform') + '"></i>';
+                }
+
+                mini.onclick = (function (n) { return function () { irAlMedio(n); }; })(t);
+                tiras.appendChild(mini);
+            }
+
+        var antes = fondo.querySelector('.sg-ot-lb-nav.es-antes');
+        var despues = fondo.querySelector('.sg-ot-lb-nav.es-despues');
+
+        if (antes) antes.onclick = function (ev) { ev.preventDefault(); irAlMedio(galeria.i - 1); };
+        if (despues) despues.onclick = function (ev) { ev.preventDefault(); irAlMedio(galeria.i + 1); };
+
+        document.addEventListener('keydown', porFlechas);
+    }
+
+    /* Se da la vuelta en los extremos: quien llega al final de seis fotos
+       quiere volver a la primera, no que el boton deje de responder. */
+    function irAlMedio(n) {
+        if (!galeria.medios.length) return;
+
+        var total = galeria.medios.length;
+        galeria.i = ((n % total) + total) % total;
+
+        var m = galeria.medios[galeria.i];
+        ampliar(m.url, m.titulo, m.tipo);
+    }
+
+    function porFlechas(ev) {
+        if (!document.querySelector('.sg-ot-lightbox.es-abierto')) return;
+
+        if (ev.keyCode === 37) { ev.preventDefault(); irAlMedio(galeria.i - 1); }
+        if (ev.keyCode === 39) { ev.preventDefault(); irAlMedio(galeria.i + 1); }
     }
 
     /* Cualquier cosa marcada como medio abre el visor: la miniatura de una
@@ -293,6 +373,12 @@
 
         for (var i = 0; i < cajas.length; i++) {
             if (cajas[i].getAttribute('data-listo-medio') === '1') continue;
+
+            /* La tarjeta de Documentos ya tiene dueño: al tocarla se elige y
+               se pinta el panel del costado. El visor se abre desde la imagen
+               grande de ese panel, no desde la miniatura de la grilla. */
+            if (cajas[i].classList.contains('sg-ot-ev-card')) continue;
+
             cajas[i].setAttribute('data-listo-medio', '1');
 
             cajas[i].style.cursor = 'zoom-in';
@@ -301,11 +387,28 @@
                     ev.preventDefault();
                     ev.stopPropagation();
 
-                    var foto = caja.querySelector('img, video');
+                    /* El grupo es el de SU galeria: abrir una evidencia de la
+                       OT-12 y pasar con la flecha a una foto de otra orden
+                       seria cambiar de tema sin avisar. */
+                    var contenedor = caja.closest('.sg-a3-ev, .sg-ot-ev-grid') || caja.parentNode;
+                    var hermanos = contenedor.querySelectorAll('[data-medio]');
 
-                    ampliar(caja.getAttribute('data-url') || (foto ? foto.src : ''),
-                            caja.getAttribute('data-titulo') || 'Archivo',
-                            caja.getAttribute('data-medio'));
+                    galeria = { medios: [], i: 0 };
+
+                    for (var h = 0; h < hermanos.length; h++) {
+                        var foto = hermanos[h].querySelector('img, video');
+
+                        galeria.medios.push({
+                            url: hermanos[h].getAttribute('data-url') || (foto ? foto.src : ''),
+                            titulo: hermanos[h].getAttribute('data-titulo') || 'Archivo',
+                            tipo: hermanos[h].getAttribute('data-medio')
+                        });
+
+                        if (hermanos[h] === caja) galeria.i = h;
+                    }
+
+                    var m = galeria.medios[galeria.i];
+                    ampliar(m.url, m.titulo, m.tipo);
                 };
             })(cajas[i]);
         }

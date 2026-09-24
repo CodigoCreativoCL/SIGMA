@@ -706,6 +706,40 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #endregion
 
+    /// <summary>
+    /// La URL de un archivo propio con su version pegada.
+    ///
+    /// POR QUE NO UN NUMERO A MANO
+    ///   El head llevaba `?vrs=1` escrito a mano. El navegador guarda esa URL
+    ///   y no vuelve a pedir el archivo NUNCA, asi que cada correccion de
+    ///   JavaScript o de CSS se publicaba y no llegaba: la pantalla seguia
+    ///   comportandose como la version vieja, y desde afuera parecia que el
+    ///   arreglo no habia funcionado.
+    ///
+    ///   Subir el numero a mano en cada cambio es acordarse siempre. La fecha
+    ///   del archivo se acuerda sola.
+    /// </summary>
+    protected string Asset(string ruta)
+    {
+        string url = ResolveUrl(ruta);
+
+        try
+        {
+            string fisica = Server.MapPath(ruta);
+
+            if (System.IO.File.Exists(fisica))
+                return url + "?v=" + System.IO.File.GetLastWriteTimeUtc(fisica).Ticks;
+        }
+        catch (Exception)
+        {
+            /* Si no se puede leer la fecha -permisos, ruta virtual rara- la
+               pagina tiene que cargar igual: se devuelve sin version y lo
+               unico que se pierde es el refresco automatico. */
+        }
+
+        return url;
+    }
+
     /// <summary>El querystring cifrado para anotar una lectura de ESTE equipo.</summary>
     protected string QueryLectura
     {

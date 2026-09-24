@@ -2034,3 +2034,64 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
 .sg-a3-filtro .RadComboBox { width: 100% !important; }
 .sg-a3-filtro .RadComboBox .rcbActionButton { background: transparent !important; border: 0 !important; }
 
+/* ---- El visor como galeria -------------------------------------------
+   Con seis evidencias, cerrar y volver a abrir para ver la siguiente es
+   seis veces el mismo gesto. */
+.sg-ot-lb-visor { position: relative; display: grid; place-items: center; }
+
+.sg-ot-lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(13, 13, 13, .55);
+    color: #fff;
+    font-size: 26px;
+    text-decoration: none;
+    z-index: 2;
+}
+.sg-ot-lb-nav:hover { background: rgba(13, 13, 13, .8); color: #fff; }
+.sg-ot-lb-nav.es-antes { left: 10px; }
+.sg-ot-lb-nav.es-despues { right: 10px; }
+
+.sg-ot-lb-cuenta {
+    margin-left: auto;
+    margin-right: 10px;
+    font-size: 12.5px;
+    color: var(--sg-tenue, #9ca3af);
+    white-space: nowrap;
+}
+
+/* La tira del pie: con seis fotos, saltar a la cuarta con la flecha son tres
+   clics y con la tira es uno. */
+.sg-ot-lb-tiras {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sg-borde, #ebecf3);
+    overflow-x: auto;
+}
+.sg-ot-lb-tira {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 44px;
+    flex: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle, #f3f5f8);
+    color: var(--sg-p, #6C5CFF);
+    font-size: 20px;
+}
+.sg-ot-lb-tira img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-ot-lb-tira.es-activa { border-color: var(--sg-p, #6C5CFF); }
+
+@media (max-width: 620px) {
+    .sg-ot-lb-nav { width: 36px; height: 36px; font-size: 22px; }
+}

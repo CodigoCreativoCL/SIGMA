@@ -4,13 +4,13 @@
 <%@ Register TagPrefix="wuc" TagName="ActivoForm" Src="~/View/Activos/Activos/ActivoForm.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-modal.css") %>' rel="stylesheet" />
 
     <%-- La cascara -tarjetas, chips, datos, vacios, botones- es la misma del
          centro de la orden de trabajo y se reusa tal cual. Aca va solo lo
          propio del centro del activo. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=1") %>' rel="stylesheet" />
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-activo360.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
@@ -108,8 +108,11 @@
         }
     </script>
 
-    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-activo360.js") %>?vrs=1'></script>
-    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-orden.js") %>?vrs=1'></script>
+    <%-- La version sale de la fecha del archivo: con `?vrs=1` fijo, el
+         navegador se quedaba con la copia vieja y las correcciones se
+         publicaban sin llegar. --%>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-activo360.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-orden.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Activos</asp:Content>
