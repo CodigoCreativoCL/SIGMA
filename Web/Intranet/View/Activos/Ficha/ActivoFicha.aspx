@@ -129,7 +129,8 @@
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-orden.js") %>'></script>
 </asp:Content>
 
-<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Activos</asp:Content>
+<%-- El rotulo dice el modulo, no la pantalla: el titulo ya dice cual es. --%>
+<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Control de activos</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server"><asp:Literal ID="litTitulo" runat="server" Text="Centro de activos 360°" /></asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
     <asp:Literal ID="litSubtitulo" runat="server" Text="Historial, mantenimiento y condición de tus equipos." />
@@ -260,9 +261,15 @@
                  ==================================================================== --%>
             <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sg-a3 sg-ot">
 
+                <%-- La miga usa los nombres del menu: el modulo es "Control de
+                     activos" y la pantalla de vuelta es "Activos". Dejarla con
+                     los nombres viejos obliga a traducir mentalmente donde
+                     esta uno. --%>
                 <div class="sg-a3-miga">
+                    <span>Control de activos</span>
+                    <span class="sep">/</span>
                     <asp:LinkButton ID="lnkVolverLista" runat="server" OnClick="btnVolver_Click" CausesValidation="false">Activos</asp:LinkButton>
-                    <span class="sep">/</span>Centro del activo
+                    <span class="sep">/</span><asp:Literal ID="litMigaActivo" runat="server" />
                 </div>
 
                 <header class="sg-a3-hero">

@@ -1072,6 +1072,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         litHeroNombre.Text = Server.HtmlEncode(a.act_nombre);
 
+        /* La miga cierra con el equipo abierto, no con la palabra "centro":
+           con doce pestañas abiertas, el rastro es lo que dice en cual esta. */
+        litMigaActivo.Text = Server.HtmlEncode(Texto(a.act_codigo));
+
         List<string> donde = new List<string>();
         donde.Add(a.act_codigo);
         if (!string.IsNullOrEmpty(a.planta_nombre)) donde.Add(a.planta_nombre);
