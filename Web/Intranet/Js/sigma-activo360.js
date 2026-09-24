@@ -792,6 +792,48 @@
         pintar(tarjetas[0]);
     }
 
+    /* ---- La agenda: un dia a la vez ----
+
+       El calendario dice como viene el mes; tocar un dia dice que hay ESE
+       dia. Los eventos ya viajan en la casilla, asi que no se pide nada. */
+    function agenda() {
+        var dias = document.querySelectorAll('.sg-mant-cal-dia');
+        if (!dias.length) return;
+
+        var caja = document.getElementById('sgMantDia');
+        if (!caja) return;
+
+        function mostrar(dia) {
+            for (var i = 0; i < dias.length; i++) dias[i].classList.remove('es-elegido');
+            dia.classList.add('es-elegido');
+
+            var eventos = (dia.getAttribute('data-eventos') || '').split('\n').filter(function (x) { return x; });
+
+            caja.innerHTML = '<strong></strong>' + (eventos.length
+                ? '<ul></ul>'
+                : '<span>Sin actividades este día.</span>');
+
+            caja.querySelector('strong').textContent = dia.getAttribute('data-dia') || '';
+
+            var ul = caja.querySelector('ul');
+            if (!ul) return;
+
+            for (var e = 0; e < eventos.length; e++) {
+                var li = document.createElement('li');
+                li.textContent = eventos[e];
+                ul.appendChild(li);
+            }
+        }
+
+        for (var i = 0; i < dias.length; i++)
+            dias[i].onclick = function () { mostrar(this); };
+
+        /* Se abre en el primer dia que tiene algo, o en hoy: un panel vacio
+           al lado de un calendario con puntos parece que no cargo. */
+        var conAlgo = document.querySelector('.sg-mant-cal-dia.es-con');
+        mostrar(conAlgo || document.querySelector('.sg-mant-cal-dia.es-hoy') || dias[0]);
+    }
+
     function armar() {
         navegacion();
         ficha();
@@ -800,6 +842,7 @@
         fallas();
         lista();
         documentos();
+        agenda();
         ordenes();
         revisiones();
         ampliables();

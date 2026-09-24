@@ -702,10 +702,13 @@ a.sg-a3-chip.es-activa b { color: #fff; }
     cursor: pointer;
 }
 .sg-a3-ficha .sigma-modal-opciones input { display: none; }
+/* El !important no es capricho: el kit define el color de los label de un
+   radio con !important, y sin esto "SI" quedaba en gris sobre el morado. */
 .sg-a3-ficha .sigma-modal-opciones input:checked + label {
     background: var(--sg-p);
-    color: #fff;
+    color: #fff !important;
 }
+.sg-a3-ficha .sigma-modal-opciones label { color: var(--sg-text-secondary) !important; }
 
 /* Los datos de auditoria, en la barra de abajo. */
 .sg-a3-pie-dato {
@@ -1103,3 +1106,92 @@ a.sg-a3-cond-card:hover { background: var(--sg-surface-subtle); }
 }
 .sg-doc-det-foto img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
 .sg-doc-det-nom { font-size: 14px; font-weight: 700; color: var(--sg-texto); word-break: break-all; }
+
+/* ---- Mantenimiento: la agenda del mes --------------------------------- */
+.sg-mant-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 14px;
+    align-items: start;
+}
+.sg-mant-lado { position: sticky; top: 14px; display: grid; gap: 14px; }
+
+.sg-mant-plan-cab, .sg-mant-plan { grid-template-columns: 140px minmax(150px, 2fr) 150px 120px; }
+.sg-mant-oc-cab, .sg-mant-oc { grid-template-columns: 140px minmax(150px, 2fr) 110px 120px 120px; }
+.sg-mant-tar-cab, .sg-mant-tar { grid-template-columns: 120px minmax(150px, 2fr) 180px 120px; }
+
+.sg-mant-cal-cab { text-align: center; margin-bottom: 10px; font-size: 14px; color: var(--sg-texto); }
+.sg-mant-cal-cab strong { text-transform: capitalize; }
+
+.sg-mant-cal-dias,
+.sg-mant-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.sg-mant-cal-dias span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+    padding-bottom: 4px;
+}
+
+.sg-mant-cal-dia {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 36px;
+    border-radius: 9px;
+    color: var(--sg-text-secondary);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+.sg-mant-cal-dia:hover { background: var(--sg-surface-subtle); }
+.sg-mant-cal-dia.es-hoy { border: 1px solid var(--sg-p); font-weight: 700; color: var(--sg-p); }
+.sg-mant-cal-dia.es-elegido { background: var(--sg-p); color: #fff; }
+
+/* El punto dice que ese dia tiene algo; el color, si ya tiene orden. */
+.sg-mant-cal-dia i {
+    position: absolute;
+    bottom: 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--sg-info);
+}
+.sg-mant-cal-dia.es-ot i { background: var(--sg-p); }
+.sg-mant-cal-dia.es-elegido i { background: #fff; }
+
+.sg-mant-cal-leyenda {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+.sg-mant-cal-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.sg-mant-cal-leyenda i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sg-mant-cal-leyenda i.es-con { background: var(--sg-info); }
+.sg-mant-cal-leyenda i.es-ot { background: var(--sg-p); }
+
+.sg-mant-dia {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 12.5px;
+    color: var(--sg-suave);
+}
+.sg-mant-dia strong { display: block; color: var(--sg-texto); margin-bottom: 6px; }
+.sg-mant-dia ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sg-mant-dia li {
+    padding: 8px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+}
+
+@media (max-width: 1300px) {
+    .sg-mant-cols { grid-template-columns: minmax(0, 1fr); }
+    .sg-mant-lado { position: static; }
+}

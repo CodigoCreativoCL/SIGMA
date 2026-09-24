@@ -78,6 +78,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         /* Exportar devuelve un archivo y un binario no sobrevive a un postback
            asincrono. Lo demas -filtrar, cambiar de seccion- no recarga. */
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkExportar);
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkExportarLista);
 
         udPanel.Update();
     }
@@ -704,6 +705,15 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     #region 4. Mantenimiento
 
+    /// <summary>
+    /// Lo que el plan tiene dicho para este equipo y cuando le toca.
+    ///
+    /// LA AGENDA ES UN CALENDARIO Y NO OTRA LISTA
+    ///   La lista de al lado responde "que viene"; el calendario responde
+    ///   "como viene el mes", que es la pregunta de quien tiene que repartir
+    ///   gente. Dos semanas seguidas con cuatro mantenciones cada una se ven
+    ///   en el calendario y no se ven en una lista ordenada por fecha.
+    /// </summary>
     private void Mantenimiento(Activo a, List<PlanOcurrencia> ocurrencias)
     {
         DateTime hoy = global::SitioBase.Hora.Hoy;
@@ -713,50 +723,203 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             .GroupBy(o => new { o.plan_id, o.plan_codigo, o.plan_nombre, o.version_numero })
             .Select(g => g.Key).ToList();
 
-        StringBuilder p = new StringBuilder();
-
-        foreach (var pl in planes)
-            p.Append(Fila("mdi-calendar-text-outline", "es-plan",
-                     Texto(pl.plan_codigo) + " · " + Texto(pl.plan_nombre),
-                     pl.version_numero == null ? "Sin versión publicada" : "Versión " + pl.version_numero,
-                     Boton(UrlPlan(pl.plan_id), "Ver plan")));
-
-        litPlanes.Text = p.Length > 0 ? p.ToString()
-            : "<p class=\"sg-ot-vacio-txt\">Ningún plan de mantenimiento incluye este equipo.</p>";
-
-        // ---- proximas ocurrencias ----
-        StringBuilder oc = new StringBuilder();
-
-        foreach (PlanOcurrencia o in ocurrencias.Where(x => x.fecha_programada.Date >= hoy)
-                                                .OrderBy(x => x.fecha_programada).Take(8))
+        if (planes.Count == 0)
         {
-            string chip = o.orden_trabajo_id != null
-                ? "<span class=\"sg-ot-chip es-ejecucion\">OT-" + o.orden_trabajo_correlativo + "</span>"
-                : "<span class=\"sg-ot-chip es-abierta\">" + Server.HtmlEncode(Texto(o.situacion)) + "</span>";
+            litPlanes.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-calendar-remove-outline\"></i>" +
+                             "<p>Sin plan de mantenimiento</p>" +
+                             "<span>Este equipo no está incluido en ningún plan: todo lo que se le haga será correctivo.</span></div>";
+        }
+        else
+        {
+            StringBuilder p = new StringBuilder();
 
-            oc.Append(Fila("mdi-calendar-clock", "es-plan",
-                     o.fecha_programada.ToString("dd MMM yyyy") + " · " + Texto(o.hito_nombre),
-                     Texto(o.plan_nombre),
-                     chip));
+            p.Append("<div class=\"sg-a3-tabla-cab sg-mant-plan-cab\">")
+             .Append("<span>Código</span><span>Plan</span><span>Versión</span><span></span></div>");
+
+            foreach (var pl in planes)
+                p.Append("<div class=\"sg-a3-tabla-fila sg-mant-plan\">")
+                 .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">")
+                 .Append(Server.HtmlEncode(Texto(pl.plan_codigo))).Append("</span></span>")
+                 .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(pl.plan_nombre))).Append("</span>")
+                 .Append("<span class=\"c-dato\">")
+                 .Append(pl.version_numero == null
+                        ? "<span class=\"sg-ot-chip es-aviso\">Sin publicar</span>"
+                        : "<span class=\"sg-ot-chip es-ok\">v" + pl.version_numero + " publicada</span>")
+                 .Append("</span>")
+                 .Append("<span class=\"c-acc\">").Append(Boton(UrlPlan(pl.plan_id), "Ver plan")).Append("</span>")
+                 .Append("</div>");
+
+            litPlanes.Text = p.ToString();
         }
 
-        litOcurrencias.Text = oc.Length > 0 ? oc.ToString()
-            : "<p class=\"sg-ot-vacio-txt\">No hay mantenciones programadas por delante.</p>";
+        // ---- proximas actividades ----
+        List<PlanOcurrencia> proximas = ocurrencias
+            .Where(x => x.fecha_programada.Date >= hoy)
+            .OrderBy(x => x.fecha_programada)
+            .ToList();
+
+        litOcurrenciasConteo.Text = proximas.Count == 0 ? "" :
+            "<div class=\"sg-ot-card-acc sg-ot-avance\"><div class=\"sg-ot-avance-num\"><strong>" +
+            proximas.Count + "</strong><span>por delante</span></div></div>";
+
+        if (proximas.Count == 0)
+        {
+            litOcurrencias.Text = "<p class=\"sg-ot-vacio-txt\">No hay mantenciones programadas por delante.</p>";
+        }
+        else
+        {
+            StringBuilder oc = new StringBuilder();
+
+            oc.Append("<div class=\"sg-a3-tabla-cab sg-mant-oc-cab\">")
+              .Append("<span>Fecha</span><span>Actividad</span><span>Plan</span>")
+              .Append("<span>Situación</span><span>OT</span></div>");
+
+            foreach (PlanOcurrencia o in proximas.Take(10))
+                oc.Append("<div class=\"sg-a3-tabla-fila sg-mant-oc\">")
+                  .Append("<span class=\"c-cod\">").Append(o.fecha_programada.ToString("dd MMM yyyy"))
+                  .Append("<span>").Append(Dias(o.fecha_programada, hoy)).Append("</span></span>")
+                  .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(o.hito_nombre))).Append("</span>")
+                  .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(o.plan_codigo))).Append("</span>")
+                  .Append("<span class=\"c-dato\">").Append(ChipSituacionActivo(o.situacion)).Append("</span>")
+                  .Append("<span class=\"c-dato\">")
+                  .Append(o.orden_trabajo_id == null
+                         ? "<span class=\"sg-ot-vacio-txt\">Sin generar</span>"
+                         : Boton(UrlOrden(o.orden_trabajo_id.Value), "OT-" + o.orden_trabajo_correlativo))
+                  .Append("</span>")
+                  .Append("</div>");
+
+            litOcurrencias.Text = oc.ToString();
+        }
 
         // ---- tareas recurrentes ----
         List<Tarea> tareas = new TareaController().GetTareas(new Tarea { filtro_activo = a.act_id }) ?? new List<Tarea>();
 
-        StringBuilder t = new StringBuilder();
+        if (tareas.Count == 0)
+        {
+            litTareas.Text = "<p class=\"sg-ot-vacio-txt\">Este equipo no tiene tareas recurrentes.</p>";
+        }
+        else
+        {
+            StringBuilder tb = new StringBuilder();
 
-        foreach (Tarea x in tareas)
-            t.Append(Fila("mdi-checkbox-marked-circle-outline", "",
-                     Texto(x.tar_codigo) + " · " + Texto(x.tar_titulo),
-                     x.programaciones + (x.programaciones == 1 ? " programación" : " programaciones") +
-                     (x.pendientes > 0 ? " · " + x.pendientes + " pendientes" : ""),
-                     Boton(UrlTarea(x.tar_id), "Ver tarea")));
+            tb.Append("<div class=\"sg-a3-tabla-cab sg-mant-tar-cab\">")
+              .Append("<span>Código</span><span>Tarea</span><span>Programaciones</span><span></span></div>");
 
-        litTareas.Text = t.Length > 0 ? t.ToString()
-            : "<p class=\"sg-ot-vacio-txt\">Este equipo no tiene tareas recurrentes.</p>";
+            foreach (Tarea x in tareas)
+                tb.Append("<div class=\"sg-a3-tabla-fila sg-mant-tar\">")
+                  .Append("<span class=\"c-dato\"><span class=\"sg-a3-codigo\">")
+                  .Append(Server.HtmlEncode(Texto(x.tar_codigo))).Append("</span></span>")
+                  .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(x.tar_titulo))).Append("</span>")
+                  .Append("<span class=\"c-dato\">").Append(x.programaciones)
+                  .Append(x.programaciones == 1 ? " programación" : " programaciones")
+                  .Append(x.pendientes > 0 ? " · " + x.pendientes + " pendientes" : "").Append("</span>")
+                  .Append("<span class=\"c-acc\">").Append(Boton(UrlTarea(x.tar_id), "Ver tarea")).Append("</span>")
+                  .Append("</div>");
+
+            litTareas.Text = tb.ToString();
+        }
+
+        Agenda(ocurrencias, hoy);
+    }
+
+    /// <summary>
+    /// El mes en curso con un punto en los dias que tienen algo. El detalle
+    /// del dia se arma en el navegador con lo que ya viaja en la casilla: son
+    /// treinta dias, no hace falta volver al servidor por cada uno.
+    /// </summary>
+    private void Agenda(List<PlanOcurrencia> ocurrencias, DateTime hoy)
+    {
+        DateTime primero = new DateTime(hoy.Year, hoy.Month, 1);
+        int dias = DateTime.DaysInMonth(hoy.Year, hoy.Month);
+
+        /* La semana empieza el lunes: es como se reparte el trabajo en una
+           planta, y como lo muestra el calendario del plan. */
+        int desplazamiento = ((int)primero.DayOfWeek + 6) % 7;
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-mant-cal\">");
+
+        s.Append("<header class=\"sg-mant-cal-cab\"><strong>")
+         .Append(Server.HtmlEncode(primero.ToString("MMMM yyyy"))).Append("</strong></header>");
+
+        s.Append("<div class=\"sg-mant-cal-dias\">");
+        foreach (string d in new[] { "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom" })
+            s.Append("<span>").Append(d).Append("</span>");
+        s.Append("</div>");
+
+        s.Append("<div class=\"sg-mant-cal-grid\">");
+
+        for (int i = 0; i < desplazamiento; i++) s.Append("<span class=\"sg-mant-cal-hueco\"></span>");
+
+        for (int d = 1; d <= dias; d++)
+        {
+            DateTime dia = new DateTime(hoy.Year, hoy.Month, d);
+
+            List<PlanOcurrencia> delDia = ocurrencias.Where(x => x.fecha_programada.Date == dia).ToList();
+
+            string clases = "sg-mant-cal-dia";
+            if (dia == hoy) clases += " es-hoy";
+            if (delDia.Count > 0) clases += " es-con";
+            if (delDia.Any(x => x.orden_trabajo_id != null)) clases += " es-ot";
+
+            s.Append("<a href=\"javascript:void(0)\" class=\"").Append(clases)
+             .Append("\" data-dia=\"").Append(dia.ToString("dd MMM yyyy"))
+             .Append("\" data-eventos=\"").Append(Server.HtmlEncode(Eventos(delDia)))
+             .Append("\">").Append(d);
+
+            if (delDia.Count > 0) s.Append("<i></i>");
+
+            s.Append("</a>");
+        }
+
+        s.Append("</div>");
+
+        s.Append("<div class=\"sg-mant-cal-leyenda\">")
+         .Append("<span><i class=\"es-con\"></i>Ocurrencia planificada</span>")
+         .Append("<span><i class=\"es-ot\"></i>Con OT vinculada</span>")
+         .Append("</div></div>");
+
+        litAgenda.Text = s.ToString();
+    }
+
+    /// <summary>
+    /// Lo del dia, en una linea por evento. Viaja como texto en la casilla
+    /// para que el detalle se pinte sin pedir nada.
+    /// </summary>
+    private string Eventos(List<PlanOcurrencia> delDia)
+    {
+        if (delDia.Count == 0) return "";
+
+        List<string> lineas = new List<string>();
+
+        foreach (PlanOcurrencia o in delDia.OrderBy(x => x.fecha_programada))
+            lineas.Add(o.fecha_programada.ToString("HH:mm") + " · " + Texto(o.hito_nombre) +
+                       (o.orden_trabajo_correlativo == null ? "" : " · OT-" + o.orden_trabajo_correlativo));
+
+        return string.Join("\n", lineas.ToArray());
+    }
+
+    /// <summary>Cuanto falta, en palabras: "en 3 días" se lee mejor que una resta.</summary>
+    private static string Dias(DateTime fecha, DateTime hoy)
+    {
+        int d = (int)(fecha.Date - hoy).TotalDays;
+
+        if (d == 0) return "hoy";
+        if (d == 1) return "mañana";
+        if (d < 0) return "hace " + (-d) + " días";
+
+        return "en " + d + " días";
+    }
+
+    private static string ChipSituacionActivo(string situacion)
+    {
+        switch ((situacion ?? "").ToUpperInvariant())
+        {
+            case "VENCIDA": return "<span class=\"sg-ot-chip es-rojo\">Vencida</span>";
+            case "ATRASADA": return "<span class=\"sg-ot-chip es-aviso\">Atrasada</span>";
+            case "DISPONIBLE": return "<span class=\"sg-ot-chip es-ok\">Disponible</span>";
+            case "CERRADA": return "<span class=\"sg-ot-chip es-neutro\">Cerrada</span>";
+            default: return "<span class=\"sg-ot-chip es-info\">Futura</span>";
+        }
     }
 
     #endregion
@@ -2282,12 +2445,76 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     #region Exportar
 
     /// <summary>El historial del equipo, tal como se esta mirando.</summary>
+    /// <summary>
+    /// Baja la lista de activos tal como se esta viendo.
+    ///
+    /// POR QUE NO REUSA EL EXPORTAR DE LA FICHA
+    ///   Aquel baja el HISTORIAL de UN equipo y empieza pidiendo que se elija
+    ///   uno: apretado desde la lista solo respondia "elija un equipo
+    ///   primero", que es exactamente lo contrario de lo que se pedia.
+    ///
+    ///   Se exporta lo que el filtro dejo, no todo el catalogo: quien filtro
+    ///   por una planta espera esa planta en el archivo.
+    /// </summary>
+    protected void lnkExportarLista_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            List<Activo> lista = FiltrarActivos();
+
+            Dictionary<int, ActivoResumenLista> resumen = new ActivoCentroController().GetResumenLista()
+                                                          ?? new Dictionary<int, ActivoResumenLista>();
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.Append("<table border='1'><tr>")
+              .Append("<th>Código</th><th>Activo</th><th>Tipo</th><th>Planta</th><th>Área</th>")
+              .Append("<th>Estado</th><th>Criticidad</th><th>OT abiertas</th><th>Fallas abiertas</th>")
+              .Append("<th>Próximo mantenimiento</th></tr>");
+
+            foreach (Activo a in lista.OrderBy(x => x.act_codigo))
+            {
+                ActivoResumenLista r;
+                if (!resumen.TryGetValue(a.act_id, out r)) r = new ActivoResumenLista();
+
+                sb.Append("<tr>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.act_codigo))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.tipo_nombre))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.planta_nombre))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.area_nombre))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.estado_nombre))).Append("</td>")
+                  .Append("<td>").Append(Server.HtmlEncode(Texto(a.criticidad_nombre))).Append("</td>")
+                  .Append("<td>").Append(r.ot_abiertas).Append("</td>")
+                  .Append("<td>").Append(r.fallas_abiertas).Append("</td>")
+                  .Append("<td>")
+                  .Append(r.proxima_mantencion == null ? "Sin programación" : r.proxima_mantencion.Value.ToString("dd-MM-yyyy"))
+                  .Append("</td></tr>");
+            }
+
+            sb.Append("</table>");
+
+            Response.Clear();
+            Response.Buffer = true;
+            Response.AddHeader("content-disposition", "attachment;filename=Activos.xls");
+            Response.ContentType = "application/vnd.ms-excel";
+            Response.Charset = "UTF-8";
+            Response.ContentEncoding = System.Text.Encoding.UTF8;
+            Response.Write("<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
+            Response.Write(sb.ToString());
+            Response.Flush();
+            Response.End();
+        }
+        catch (System.Threading.ThreadAbortException) { }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message); }
+    }
+
     protected void lnkExportar_Click(object sender, EventArgs e)
     {
         try
         {
             int activo = ActivoSeleccionado();
-            if (activo == 0) { Tools.tools.ClientAlert("Elija un equipo primero."); return; }
+            if (activo == 0) { Tools.tools.ClientAlert("Elija un activo primero."); return; }
 
             int total;
             List<ActivoFichaEvento> datos = LeerHistorial(activo, out total) ?? new List<ActivoFichaEvento>();

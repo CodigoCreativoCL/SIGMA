@@ -147,12 +147,12 @@
                     <header class="sg-ot-card-cab">
                         <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-cog-outline"></i></span>
                         <div>
-                            <h3>Equipos</h3>
-                            <p class="sg-ot-card-sub">Toque un equipo para abrir su centro.</p>
+                            <h3>Activos</h3>
+                            <p class="sg-ot-card-sub">Toque un activo para abrir su centro.</p>
                         </div>
                         <div class="sg-ot-card-acc sg-lista-acc">
                             <asp:LinkButton ID="lnkExportarLista" runat="server" CssClass="sg-ot-btn es-accion"
-                                OnClick="lnkExportar_Click"><i class="mdi mdi-download-outline"></i>Exportar</asp:LinkButton>
+                                OnClick="lnkExportarLista_Click"><i class="mdi mdi-download-outline"></i>Exportar</asp:LinkButton>
                             <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
                                 OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                         </div>
@@ -376,9 +376,9 @@
                 <%-- ================================================================
                      4. MANTENIMIENTO
                      ================================================================ --%>
-                <section class="sg-a3-panel" data-panel="mantenimiento">
-                    <div class="sg-a3-cols">
-                        <div class="sg-a3-col">
+                <section class="sg-a3-panel sg-a3-mant" data-panel="mantenimiento">
+                    <div class="sg-mant-cols">
+                        <div class="sg-mant-centro">
                             <div class="sg-ot-card">
                                 <header class="sg-ot-card-cab">
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-calendar-text-outline"></i></span>
@@ -394,9 +394,10 @@
                                 <header class="sg-ot-card-cab">
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-calendar-clock"></i></span>
                                     <div>
-                                        <h3>Próximas mantenciones</h3>
-                                        <p class="sg-ot-card-sub">Lo que el plan tiene programado para este equipo.</p>
+                                        <h3>Próximas actividades</h3>
+                                        <p class="sg-ot-card-sub">Ocurrencias planificadas del plan de mantenimiento.</p>
                                     </div>
+                                    <asp:Literal ID="litOcurrenciasConteo" runat="server" />
                                 </header>
                                 <asp:Literal ID="litOcurrencias" runat="server" />
                             </div>
@@ -413,11 +414,29 @@
                             </div>
                         </div>
 
-                        <aside class="sg-a3-lado">
+                        <aside class="sg-mant-lado">
                             <div class="sg-ot-card">
                                 <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
-                                    <h3>Cómo se lee</h3>
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-calendar-month-outline"></i></span>
+                                    <div>
+                                        <h3>Agenda de mantenimiento</h3>
+                                        <p class="sg-ot-card-sub">Próximas actividades y OT vinculadas.</p>
+                                    </div>
+                                </header>
+
+                                <%-- El calendario se arma en el servidor con los
+                                     dias que TIENEN algo: pintar un mes vacio
+                                     es pedirle a alguien que recorra treinta
+                                     casillas para descubrir que no hay nada. --%>
+                                <asp:Literal ID="litAgenda" runat="server" />
+
+                                <div class="sg-mant-dia" id="sgMantDia"></div>
+                            </div>
+
+                            <div class="sg-ot-card">
+                                <header class="sg-ot-card-cab">
+                                    <span class="sg-ot-card-ico"><i class="mdi mdi-target"></i></span>
+                                    <div><h3>Cómo se lee</h3></div>
                                 </header>
                                 <p class="sg-ot-texto">Una <strong>ocurrencia programada</strong> es una cita del plan: existe aunque nadie la haya tomado todavía. La <strong>orden de trabajo</strong> es el trabajo real, y aparece cuando alguien la genera desde esa cita.</p>
                             </div>
