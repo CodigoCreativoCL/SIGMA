@@ -37,3 +37,26 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   planificador" no es demostrable end-to-end porque no existe todavía una vista
   de calendario del planificador en la web que consuma `tca_color`. El color se
   persiste y queda disponible para esa vista. Limitación conocida, no defecto.
+
+---
+
+## HU-101 — Crear una tarea
+
+**Estado:** cerrada (dev + pruebas). Verificada el 24-09-2026.
+
+- **Centro de tarea** (`Tarea.aspx`, `Tarea.aspx.cs`) + **listado** (`Tareas.aspx`):
+  alta/edición de la tarea (código único por cliente, título, prioridad,
+  categoría, duración, evidencia, planta/área/equipo) sobre los SP
+  `SEL/INS/UPD/DEL_TAREA`. El acceso lo resuelve el master por datos y la
+  escritura con `Token.Puede/ExigirPagina`; el cliente sale de la sesión.
+- **CA-1** (crear con título, categoría y prioridad; código único; disponible
+  para programarse): verificado. El alta con código repetido se rechaza
+  («YA EXISTE UNA TAREA CON EL CÓDIGO …»). La categoría quedó disponible en la
+  ficha gracias al combo agregado en HU-100.
+- **CA-2** (asociada a un equipo → aparece en su historial; no cuenta en
+  indicadores): verificado. La tarea aparece en el Centro de activos 360° del
+  equipo (pestaña Mantenimiento → «Tareas recurrentes»). Al no tener
+  programación, no genera ocurrencias ni OT, por lo que no se contabiliza en los
+  indicadores del plan (que se calculan sobre ocurrencias/órdenes de trabajo).
+- **Sin endpoint de API** propio para el alta web; la documentación es este MD y
+  el informe `Fase 2/Pruebas/SIGMA_Pruebas_HU-101.docx`.
