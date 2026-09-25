@@ -24,11 +24,20 @@
                 initialHeight: 600
             });
         }
-        // Clic en la fila abre la vista; los clic en la lupa/checkbox no.
+        // Clic en la fila abre la vista; los clic en la lupa/checkbox/enlaces no.
         function clFilaVer(row, ev, query) {
             var t = ev.target;
             if (t.closest && t.closest('a, input, .icono_Editar, .rgSelect')) return;
             verChecklist(query);
+        }
+        // Publicar / historial de versiones de la pauta.
+        function abrirVersiones(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistVersion.aspx") %>?query=' + query,
+                title: 'Versiones de la pauta',
+                width: 720,
+                initialHeight: 560
+            });
         }
         function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
     </script>
@@ -37,7 +46,7 @@
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Mantenimiento</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Pautas de inspección</asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Las plantillas de checklist reutilizables: se diseñan una vez y se ejecutan en las rondas e inspecciones.
+    Las pautas de inspección reutilizables: se diseñan una vez y se ejecutan en las rondas e inspecciones.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">

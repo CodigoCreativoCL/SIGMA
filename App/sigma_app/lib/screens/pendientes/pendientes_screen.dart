@@ -8,9 +8,11 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'conflicto_screen.dart';
 
-final colaProvider =
-    FutureProvider<List<ItemCola>>((ref) => OutboxService.instance.listar());
+final colaProvider = FutureProvider<List<ItemCola>>(
+  (ref) => OutboxService.instance.listar(),
+);
 
 /// Pendientes de envío — HU-151.
 ///
@@ -43,6 +45,7 @@ class PendientesScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async {
           await OutboxService.instance.despachar();
+          if (!context.mounted) return;
           ref.invalidate(colaProvider);
         },
         child: EstadoAsync<List<ItemCola>>(
@@ -63,13 +66,17 @@ class PendientesScreen extends ConsumerWidget {
             ],
           ),
           child: (items) {
-            final pend =
-                items.where((i) => i.estado == EstadoItem.pendiente).length;
-            final rech =
-                items.where((i) => i.estado == EstadoItem.rechazado).length;
+            final pend = items
+                .where((i) => i.estado == EstadoItem.pendiente)
+                .length;
+            final rech = items
+                .where((i) => i.estado == EstadoItem.rechazado)
+                .length;
 
             return ListView(
-              padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
+              padding: context.conBarraSistema(
+                const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              ),
               children: [
                 const _AvisoSinSenal(),
                 Padding(
@@ -82,19 +89,26 @@ class PendientesScreen extends ConsumerWidget {
                           runSpacing: 7,
                           children: [
                             if (pend > 0)
-                              SgBadge('$pend pendiente${pend == 1 ? "" : "s"}',
-                                  color: sg.ambarTexto),
+                              SgBadge(
+                                '$pend pendiente${pend == 1 ? "" : "s"}',
+                                color: sg.ambarTexto,
+                              ),
                             if (rech > 0)
-                              SgBadge('$rech rechazado${rech == 1 ? "" : "s"}',
-                                  color: sg.rojoTexto),
+                              SgBadge(
+                                '$rech rechazado${rech == 1 ? "" : "s"}',
+                                color: sg.rojoTexto,
+                              ),
                           ],
                         ),
                       ),
                       const SizedBox(width: 10),
-                      _BotonReintentar(onTap: () async {
-                        await OutboxService.instance.despachar();
-                        ref.invalidate(colaProvider);
-                      }),
+                      _BotonReintentar(
+                        onTap: () async {
+                          await OutboxService.instance.despachar();
+                          if (!context.mounted) return;
+                          ref.invalidate(colaProvider);
+                        },
+                      ),
                     ],
                   ),
                 ),
@@ -104,10 +118,12 @@ class PendientesScreen extends ConsumerWidget {
                     onReintentar: () async {
                       await OutboxService.instance.reintentar(i.id);
                       await OutboxService.instance.despachar();
+                      if (!context.mounted) return;
                       ref.invalidate(colaProvider);
                     },
                     onDescartar: () async {
                       await OutboxService.instance.descartar(i.id);
+                      if (!context.mounted) return;
                       ref.invalidate(colaProvider);
                     },
                   ),
@@ -156,18 +172,18 @@ class _AvisoSinSenal extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
-        valueListenable: SyncService.instance.enLinea,
-        builder: (_, enLinea, _) => enLinea
-            ? const SizedBox.shrink()
-            : const Padding(
-                padding: EdgeInsets.only(bottom: 14),
-                child: SgAviso(
-                  'Sin conexión. Puedes seguir trabajando; lo enviaremos solo '
-                  'cuando vuelva la señal.',
-                  icono: Icons.cloud_off_outlined,
-                ),
-              ),
-      );
+    valueListenable: SyncService.instance.enLinea,
+    builder: (_, enLinea, _) => enLinea
+        ? const SizedBox.shrink()
+        : const Padding(
+            padding: EdgeInsets.only(bottom: 14),
+            child: SgAviso(
+              'Sin conexión. Puedes seguir trabajando; lo enviaremos solo '
+              'cuando vuelva la señal.',
+              icono: Icons.cloud_off_outlined,
+            ),
+          ),
+  );
 }
 
 /// El botón de 36 del kit: relleno `up`, píldora, ícono 17 y texto 14/600.
@@ -186,7 +202,7 @@ class _BotonReintentar extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 36,
+          height: context.alto(36),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           child: Row(
             mainAxisSize: MainAxisSize.min,
@@ -223,20 +239,33 @@ class _Fila extends StatelessWidget {
     final hoy = DateTime.now();
     final esHoy =
         f.year == hoy.year && f.month == hoy.month && f.day == hoy.day;
-    final base =
-        esHoy ? 'hoy ${_hora.format(f)}' : '${_dia.format(f)} ${_hora.format(f)}';
+    final base = esHoy
+        ? 'hoy ${_hora.format(f)}'
+        : '${_dia.format(f)} ${_hora.format(f)}';
     return item.intentos > 1 ? '$base · ${item.intentos} intentos' : base;
   }
 
   IconData get _icono => switch (item.tipo) {
-        'LECTURA' => Icons.speed_outlined,
-        'MEDICION' => Icons.straighten,
-        'MOVIMIENTO' => Icons.archive_outlined,
-        'ESTADO_ACTIVO' => Icons.published_with_changes,
-        'PERMISO_TRABAJO' => Icons.assignment_turned_in_outlined,
-        'BITACORA' => Icons.edit_note,
-        _ => Icons.upload_file_outlined,
-      };
+    'LECTURA' => Icons.speed_outlined,
+    'MEDICION' => Icons.straighten,
+    'MOVIMIENTO' => Icons.archive_outlined,
+    'ESTADO_ACTIVO' => Icons.published_with_changes,
+    'PERMISO_TRABAJO' => Icons.assignment_turned_in_outlined,
+    'BITACORA' => Icons.edit_note,
+    'CIERRE_OT' => Icons.check_circle_outline,
+    'UNIRME' => Icons.person_add_alt,
+    'ORDEN_TRABAJO' => Icons.build_outlined,
+    'COMPARTIR' => Icons.ios_share,
+    'PASO' => Icons.edit_note,
+    'TAREA' => Icons.task_alt,
+    'COMENTARIO_TAREA' => Icons.mode_comment_outlined,
+    'FALLA' => Icons.report_problem_outlined,
+    'DIAGNOSTICO' => Icons.search_outlined,
+    'ACCION_FALLA' => Icons.handyman_outlined,
+    'INDISPONIBILIDAD' => Icons.power_off_outlined,
+    'ASIGNACION_OT' => Icons.person_add_alt,
+    _ => Icons.upload_file_outlined,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -251,20 +280,38 @@ class _Fila extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       elegida: rechazado,
       colorAnillo: SgColor.rojo,
+      /* SOLO LA RECHAZADA SE ABRE — vista 15.2
+
+         La que está en cola no tiene nada que contar: se va sola en cuanto
+         haya señal. La rechazada sí, y lo que hay dentro es lo que esta
+         tarjeta no alcanza a decir: qué significa el código que devolvió el
+         servidor y qué fue exactamente lo que se capturó. */
+      onTap: !rechazado
+          ? null
+          : () => Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => ConflictoScreen(item: item)),
+            ),
       child: Column(
         children: [
           Row(
             children: [
-              SgIconoCuadro(rechazado ? Icons.error_outline : _icono,
-                  color: color, lado: 44, tamanoIcono: 22),
+              SgIconoCuadro(
+                rechazado ? Icons.error_outline : _icono,
+                color: color,
+                lado: 44,
+                tamanoIcono: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(item.titulo,
-                        style: sora(16, 600, color: sg.tinta),
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      item.titulo,
+                      style: sora(16, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                     const SizedBox(height: 5),
                     Text(
                       [
@@ -278,11 +325,21 @@ class _Fila extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 10),
-              SgBadge(rechazado ? 'Rechazado' : 'En cola',
-                  color: color, icono: rechazado ? null : Icons.schedule),
+              SgBadge(
+                rechazado ? 'Rechazado' : 'En cola',
+                color: color,
+                icono: rechazado ? null : Icons.schedule,
+              ),
             ],
           ),
-          if (rechazado) ...[
+          /* UN «EN COLA» QUE LLEVA HORAS FALLANDO NO SE VEIA
+
+             El motivo solo se pintaba en los rechazados. Un ítem que reintenta
+             y choca cada vez sigue en «pendiente», así que se quedaba días
+             mostrando «En cola» sin una palabra de por qué — y desde fuera eso
+             se lee como que la cola no funciona, cuando en realidad está
+             gritando algo que nadie le dejó decir. */
+          if (rechazado || (item.ultimoError ?? '').isNotEmpty) ...[
             const SizedBox(height: 12),
             // El motivo tal como lo dijo el servidor. Un «error al enviar»
             // genérico no le dice al bodeguero qué corregir; «la cantidad
@@ -303,17 +360,21 @@ class _Fila extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: SgBoton('Corregir y reenviar',
-                      icono: Icons.edit_outlined,
-                      alto: 44,
-                      tamanoTexto: 15,
-                      onTap: onReintentar),
+                  child: SgBoton(
+                    'Corregir y reenviar',
+                    icono: Icons.edit_outlined,
+                    alto: 44,
+                    tamanoTexto: 15,
+                    onTap: onReintentar,
+                  ),
                 ),
                 const SizedBox(width: 9),
-                SgBotonIcono(Icons.delete_outline,
-                    fondo: sg.up,
-                    color: sg.tinta2,
-                    onTap: () => _confirmarDescarte(context)),
+                SgBotonIcono(
+                  Icons.delete_outline,
+                  fondo: sg.up,
+                  color: sg.tinta2,
+                  onTap: () => _confirmarDescarte(context),
+                ),
               ],
             ),
           ],
@@ -326,11 +387,14 @@ class _Fila extends StatelessWidget {
   /// que se pregunta. Es lo único de esta pantalla que sí destruye algo.
   Future<void> _confirmarDescarte(BuildContext context) async {
     final sg = context.sg;
+    if (!context.mounted) return;
     final si = await showDialog<bool>(
       context: context,
       builder: (c) => AlertDialog(
-        title: Text('¿Descartar el registro?',
-            style: sora(18, 600, color: sg.tinta)),
+        title: Text(
+          '¿Descartar el registro?',
+          style: sora(18, 600, color: sg.tinta),
+        ),
         content: Text(
           'Se borra del teléfono y no se envía. Lo que capturaste en terreno '
           'se pierde.',

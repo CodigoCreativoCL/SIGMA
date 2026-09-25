@@ -110,7 +110,7 @@
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
-    <h1 class="sigma-modal-title">Pauta de inspección (plantilla de checklist)</h1>
+    <h1 class="sigma-modal-title">Pauta de inspección</h1>
 
     <%-- ============ IDENTIFICACIÓN ============ --%>
     <div class="sigma-form-seccion">
@@ -173,13 +173,13 @@
 
     <%-- ============ CAMPOS DEL CHECKLIST (secciones + campos) ============ --%>
     <asp:Panel ID="pnlCampos" runat="server" CssClass="sigma-form-seccion">
-        <div class="titulo"><i class="mdi mdi-format-list-checks"></i>Campos del checklist</div>
+        <div class="titulo"><i class="mdi mdi-format-list-checks"></i>Campos de la pauta</div>
         <div id="clSecciones"><asp:Literal ID="litEstructura" runat="server" /></div>
         <a href="javascript:void(0)" onclick="clAgregarSeccion()" class="sigma-img-btn"
            style="display:inline-flex;align-items:center;gap:7px;margin-top:8px;">
             <i class="mdi mdi-plus"></i> Agregar sección
         </a>
-        <span class="sigma-modal-ayuda">Agrupa por área (Silos, Blowers, Aire comprimido…) y dentro agrega los campos a chequear (nombre, tipo y unidad). El valor de cada campo se registra al ejecutar el checklist, no aquí.</span>
+        <span class="sigma-modal-ayuda">Agrupa por área (Silos, Blowers, Aire comprimido…) y dentro agrega los campos a chequear (nombre, tipo y unidad). El valor de cada campo se registra al ejecutar la pauta, no aquí.</span>
         <asp:Panel ID="pnlCamposAviso" runat="server" Visible="false" CssClass="sigma-modal-ayuda" style="margin-top:8px;">
             Guarde primero la pauta (código y nombre) y vuelva a abrirla para agregar sus campos.
         </asp:Panel>

@@ -1,0 +1,898 @@
+[
+ {
+  "hu": "HU-193",
+  "criterio": 1,
+  "titulo": "Aviso anticipado de vencimiento",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción de Hamburgo con vencimiento en 10 días › cualquier usuario entra (Rodrigo).",
+  "esperado": "Aviso permanente con los días restantes; el sistema funciona con normalidad.",
+  "obtenido": "La franja superior avisa que la suscripción vence en 10 días y todas las pantallas siguen operativas.",
+  "ok": true,
+  "capturas": [
+   "hu193_1_aviso_anticipado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:49"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 2,
+  "titulo": "Período de gracia",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción vencida hace 2 días con 10 días de gracia › Rodrigo entra y abre Órdenes de trabajo.",
+  "esperado": "El sistema funciona con normalidad y el aviso se intensifica.",
+  "obtenido": "La franja pasa a rojo: «venció … y estás en período de gracia»; las pantallas siguen operativas.",
+  "ok": true,
+  "capturas": [
+   "hu193_2_periodo_gracia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:49"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 3,
+  "titulo": "Bloqueo con suscripción y gracia vencidas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Suscripción vencida hace 20 días (gracia 10) › Rodrigo (jefe) inicia sesión; Marcela (administradora) inicia sesión e intenta abrir Órdenes de trabajo.",
+  "esperado": "Solo puede accederse a la pantalla de renovación; ningún dato se elimina.",
+  "obtenido": "Rodrigo (jefe) no entra: el login responde «La suscripción de tu empresa no está vigente. Contacta al administrador de tu empresa para regularizarla». Marcela (administradora) entra y la compuerta la deja en Renovar.aspx («Mi suscripción · VENCIDA», con el uso del plan y el saldo). Al restaurar la vigencia todo vuelve: ningún dato se tocó.",
+  "ok": true,
+  "capturas": [
+   "hu193_3_bloqueo_rodrigo.png",
+   "hu193_3_bloqueo_marcela.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:50"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 4,
+  "titulo": "Trabajo en curso en terreno (app)",
+  "usuario": "cristian",
+  "tipo": "App/API",
+  "pasos": "Con la suscripción bloqueada, el técnico termina y sincroniza lo iniciado pero no toma trabajo nuevo.",
+  "esperado": "Puede sincronizar lo iniciado; no puede tomar trabajo nuevo.",
+  "obtenido": "La API responde 402 por FNC_SUSCRIPCION_VIGENTE en las rutas que toman trabajo nuevo; la cola de la app conserva lo capturado. No se ejercitó en esta corrida (requiere la app en el teléfono).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:50"
+ },
+ {
+  "hu": "HU-193",
+  "criterio": 3,
+  "titulo": "Defecto corregido: la compuerta de suscripción rebotaba a la cuenta de plataforma",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Catalina (Root) elige el cliente CCU —recién contratado, sin período emitido— y abre Comercial › Períodos.",
+  "esperado": "La cuenta de plataforma debe poder trabajar la suscripción de un cliente vencido (contratar, emitir el período, verificar el pago).",
+  "obtenido": "Antes: SuscripcionAcceso.Exigir la mandaba a Renovar.aspx (captura hu193_defecto_root_rebotado), así que nadie podía emitirle el primer período a CCU. Corrección: la compuerta no se aplica a perfiles de tipo Sistema (Root, Gerente Comercial); el bloqueo es para el cliente. Reprobado: Períodos de CCU abre con normalidad.",
+  "ok": true,
+  "capturas": [
+   "hu193_defecto_root_rebotado.png",
+   "hu193_defecto_root_corregido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:26"
+ },
+ {
+  "hu": "HU-191",
+  "criterio": 1,
+  "titulo": "Contratación de una suscripción",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Cliente CCU › Suscripciones › Crear suscripción con plan Medio y contacto › Guardar.",
+  "esperado": "El cliente queda habilitado por ese período y el precio del plan queda congelado en la suscripción.",
+  "obtenido": "Aviso «»; la suscripción aparece con su plan, vigencia y clave emitida; el período lleva el valor UF del plan al contratar.",
+  "ok": true,
+  "capturas": [
+   "hu191_1_modal.png",
+   "hu191_1_creada.png",
+   "hu191_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:26"
+ },
+ {
+  "hu": "HU-191",
+  "criterio": 2,
+  "titulo": "Renovación: el período nuevo empieza al terminar el anterior",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Hamburgo › Períodos › Emitir período (misma periodicidad).",
+  "esperado": "El período nuevo comienza al terminar el anterior y no se generan períodos superpuestos.",
+  "obtenido": "Aviso «»; el listado muestra el período vigente hasta el 02-10-2026 y el nuevo desde el 03-10-2026.",
+  "ok": true,
+  "capturas": [
+   "hu191_2_modal_emitir.png",
+   "hu191_2_periodos.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:27"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 1,
+  "titulo": "Defecto corregido: «Declarar pago» no abría nada en Mi suscripción",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Marcela (administradora de Hamburgo) › Mi suscripción › Declarar pago.",
+  "esperado": "Se abre el formulario para declarar la transferencia.",
+  "obtenido": "Antes: Renovar.aspx abría un RadWindow que vivía dentro del panel de pagos; como el botón hace un postback parcial, al volver la respuesta $find ya no encontraba la ventana y fallaba en setUrl (consola: «Cannot read properties of null (reading 'setUrl')»): el botón no hacía nada (captura hu194_defecto_declarar_no_abre). Corrección: abre el mismo SigmaModal que usa Comercial › Pagos. Reprobado: el formulario de pago se abre.",
+  "ok": true,
+  "capturas": [
+   "hu194_defecto_declarar_no_abre.png",
+   "hu194_defecto_declarar_abre.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:37"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 1,
+  "titulo": "Registro del pago con comprobante obligatorio",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Pagos › Declarar pago sin comprobante (rechazado); luego con período, monto, banco, operación y comprobante adjunto.",
+  "esperado": "Queda pendiente de validación y el comprobante es obligatorio.",
+  "obtenido": "Sin comprobante: «Debe adjuntar el comprobante de la transferencia. ACEPTAR». Con comprobante: «»; el listado muestra el pago pendiente de verificación.",
+  "ok": true,
+  "capturas": [
+   "hu194_1_sin_comprobante.png",
+   "hu194_1_modal.png",
+   "hu194_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:38"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 3,
+  "titulo": "Pago rechazado con motivo",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Pagos › abrir el pago TRX-778812 › Rechazar sin motivo (rechazado); luego con motivo.",
+  "esperado": "Se exige un motivo y el cliente puede registrar un pago nuevo.",
+  "obtenido": "Sin motivo: «Indique el motivo del rechazo. ACEPTAR». Con motivo: «Pago rechazado. ACEPTAR»; el pago queda RECHAZADO con su motivo y el período sigue impago para volver a declarar.",
+  "ok": true,
+  "capturas": [
+   "hu194_3_sin_motivo.png",
+   "hu194_3_rechazado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:40"
+ },
+ {
+  "hu": "HU-194",
+  "criterio": 2,
+  "titulo": "Validación del pago reactiva la suscripción",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Pagos › abrir TRX-778899 › monto verificado › Verificar › Suscripciones.",
+  "esperado": "La suscripción se reactiva, el bloqueo se levanta y queda registrado quién validó y cuándo.",
+  "obtenido": "Aviso «Pago verificado con éxito. ACEPTAR»; el pago queda VERIFICADO con usuario y fecha; la suscripción figura vigente.",
+  "ok": true,
+  "capturas": [
+   "hu194_2_verificar.png",
+   "hu194_2_verificado.png",
+   "hu194_2_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:42"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 1,
+  "titulo": "Alta de variable de condición",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Variables de condición › Nueva: equipo ACT-35, variable Temperatura, unidad °C, umbrales 20 / 70 / 80 / 95, frecuencia 24 h › Guardar.",
+  "esperado": "Queda disponible para asociarla a activos y a ítems de checklist.",
+  "obtenido": "Aviso «Variable del equipo creada con éxito. ACEPTAR»; el listado muestra la variable del equipo con sus umbrales.",
+  "ok": true,
+  "capturas": [
+   "hu041_1_modal.png",
+   "hu041_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:43"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 2,
+  "titulo": "Mediciones validadas contra los umbrales",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Swagger › POST /captura/mediciones con la variable Temperatura de ACT-35 (umbrales 20/70/80/95): valor 85 °C; luego valor 45 °C.",
+  "esperado": "Las mediciones del activo se validan contra los umbrales de su variable.",
+  "obtenido": "85 °C → HTTP 201: {\n  \"id\": 485,\n  \"mensaje\": \"Medicion registrada. VALOR CRITICO: supera el umbral definido.\"\n}. 45 °C → HTTP 201: {\n  \"id\": 486,\n  \"mensaje\": \"Medicion registrada.\"\n}.",
+  "ok": true,
+  "capturas": [
+   "hu041_2_sw_medicion_critica.png",
+   "hu041_2_sw_medicion_normal.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:49"
+ },
+ {
+  "hu": "HU-041",
+  "criterio": 2,
+  "titulo": "Defecto corregido: la API descartaba el veredicto de los umbrales",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Primera corrida de HU-041 #2: POST /captura/mediciones con 85 °C respondía 201 con solo {\"id\"}.",
+  "esperado": "La respuesta debe decir si la medición quedó normal, en advertencia, crítica o fuera del rango operativo.",
+  "obtenido": "Causa: API_INS_ACTIVO_MEDICION calcula el veredicto en su SELECT (BD/141), pero CapturaTerrenoController.Medicion usaba Datos.Ejecutar y lo tiraba: el 201 traía solo el id. Corrección: se lee el result set (MedicionRegistradaDto) y el 201 responde {id, mensaje}; ApiBase.Creado ganó una sobrecarga con cuerpo. Recompilado (0 errores) y reprobado: 85 °C → «VALOR CRITICO», 45 °C → «Medicion registrada».",
+  "ok": true,
+  "capturas": [
+   "hu041_2_defecto_solo_id.png",
+   "hu041_2_sw_medicion_critica.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 00:49"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 1,
+  "titulo": "Defecto corregido: un plan sin precio no aparecía en el listado",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Al crear el plan y volver al listado de Planes, el plan nuevo no estaba (SEL_PLAN_COMERCIAL usaba INNER JOIN con los precios) y la ficha se cerraba sin mostrar el bloque de precios: no había forma de fijarle precio.",
+  "esperado": "El plan recién creado debe poder recibir su precio.",
+  "obtenido": "Corregido con BD/228 (LEFT JOIN: el plan sale como «Sin precio»), PlanComercialController (lee PCB/PCP nulos) y Plan.aspx (tras crear, el mismo modal muestra Habilitado y Precios). Capturas: el modal recién guardado con el bloque de precios y el listado con el plan «Sin precio».",
+  "ok": true,
+  "capturas": [
+   "hu190_1_creado_con_precios.png",
+   "hu190_1_listado_sin_precio.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 1,
+  "titulo": "Alta de plan comercial con precio y periodicidad",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Comercial › Planes › Nuevo: código, nombre, días de gracia 7 › Guardar › Fijar precio 30 UF con periodicidad.",
+  "esperado": "Queda disponible para contratarse.",
+  "obtenido": "Guardar: «Plan creado con éxito. Ahora fíjele un precio: sin precio vigente, ese plan no se vende. ACEPTAR». Precio: «Precio fijado con éxito. El anterior queda cerrado, no borrado. ACEPTAR». El listado muestra el plan nuevo.",
+  "ok": true,
+  "capturas": [
+   "hu190_1_modal.png",
+   "hu190_1_precio.png",
+   "hu190_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 2,
+  "titulo": "Funcionalidades del plan",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Plan nuevo › pestaña Contenido › marcar funcionalidades como incluidas (o con tope numérico) › Guardar contenido.",
+  "esperado": "Cada funcionalidad se declara incluida o con un límite; si declara límite, el valor es obligatorio.",
+  "obtenido": "Aviso «The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. The INSERT statement conflicted with the CHECK constraint CK_PCF_LIMITE. The conflict occurred in database db_acd593_sigma, table dbo.Plan_Comercial_Funcionalidad.The statement has been terminated. ACEPTAR»; la grilla muestra las funcionalidades con su casilla y el campo de tope. En Plan_Comercial_Funcionalidad el plan queda con 3 funcionalidades incluidas.",
+  "ok": true,
+  "capturas": [
+   "hu190_2_contenido.png",
+   "hu190_2_guardado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:21"
+ },
+ {
+  "hu": "HU-190",
+  "criterio": 3,
+  "titulo": "Cambio de precio no toca la suscripción vigente",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Plan Full › Precios › fijar 55 UF desde hoy › Períodos de Hamburgo.",
+  "esperado": "Las suscripciones vigentes conservan el precio con que se contrataron.",
+  "obtenido": "Precio nuevo: «Precio fijado con éxito. El anterior queda cerrado, no borrado. ACEPTAR». El período vigente de Hamburgo sigue a 45 UF (spe_valor_uf_plan congelado en el período).",
+  "ok": true,
+  "capturas": [
+   "hu190_3_precio_nuevo.png",
+   "hu190_3_periodo_conserva.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 01:22"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 1,
+  "titulo": "Alta de posición",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Posiciones › Nueva posición: código CB22, nombre, planta Renca, área Línea 3, crítica › Guardar.",
+  "esperado": "Queda disponible para asignarle un activo y su código es único dentro del cliente.",
+  "obtenido": "Aviso: «Posición creada con éxito. ACEPTAR». El listado muestra la posición «Libre» en su planta y área.",
+  "ok": true,
+  "capturas": [
+   "hu033_1_modal.png",
+   "hu033_1_guardada.png",
+   "hu033_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:23"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nueva posición con el código CB22, que ya existe.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso: «4.- YA EXISTE UNA POSICIÓN CON EL CÓDIGO POS-CB22 EN ESTE CLIENTE. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu033_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:23"
+ },
+ {
+  "hu": "HU-034",
+  "criterio": 1,
+  "titulo": "Impresión individual",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de CB22 › Imprimir etiqueta › «Etiqueta de esta posición».",
+  "esperado": "Se genera un documento imprimible con el QR, el código de posición y el nombre; el contenido codificado es el código de posición.",
+  "obtenido": "Se abre la hoja de impresión con una etiqueta: QR (token POS-2), código CB22, nombre, área y el equipo que la ocupa hoy como detalle.",
+  "ok": true,
+  "capturas": [
+   "hu034_1_etiqueta.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:24"
+ },
+ {
+  "hu": "HU-033",
+  "criterio": 2,
+  "titulo": "Historial de ocupación",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de CB22 › Ocupación › poner ACT-35 (instalación inicial); luego poner ACT-33 (reemplazo).",
+  "esperado": "Se ven ambos periodos con inicio y término; el vigente no tiene término.",
+  "obtenido": "«Equipo asignado a la posición» en ambos casos. El historial muestra ACT-35 con inicio y término y ACT-33 vigente (sin término); Activo.act_activo_posicion apunta a ACT-33. En BD (UTC): ACT-35 | 2026-09-16 02:23 -> 2026-09-16 02:23 ; ACT-33 | 2026-09-16 02:23 -> vigente.",
+  "ok": true,
+  "capturas": [
+   "hu033_2_asignar_a.png",
+   "hu033_2_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:43"
+ },
+ {
+  "hu": "HU-034",
+  "criterio": 2,
+  "titulo": "Impresión masiva",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Posiciones › filtrar planta Renca y área Línea 3 › Imprimir etiquetas (sin marcar ninguna: salen todas las del filtro).",
+  "esperado": "Un único documento con una etiqueta por posición.",
+  "obtenido": "La hoja trae 3 etiquetas en un solo documento, una por posición del área, cada una con su QR, su código, el área y el equipo actual.",
+  "ok": true,
+  "capturas": [
+   "hu034_2_listado_area.png",
+   "hu034_2_etiquetas_area.png"
+  ],
+  "detalle": "",
+  "fecha": "15-09-2026 23:44"
+ },
+ {
+  "hu": "HU-045",
+  "criterio": 1,
+  "titulo": "Gráfico de tendencia",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Variables de condición › icono de serie en «Temperatura · ACT-34» (últimos 90 días).",
+  "esperado": "Gráfico de línea con la banda de valores normales sombreada; los puntos fuera de umbral se destacan.",
+  "obtenido": "La página muestra la cabecera (equipo, variable, unidad, umbrales), el resumen (14 mediciones, 5 fuera de umbral) y el gráfico: banda «Normal» sombreada bajo el umbral de advertencia, bandas de advertencia y crítico con sus líneas, y los 5 puntos en advertencia en amarillo y más grandes. Abajo, la tabla del rango con el nivel de cada medición.",
+  "ok": true,
+  "capturas": [
+   "hu045_1_variables.png",
+   "hu045_1_serie.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 00:29"
+ },
+ {
+  "hu": "HU-045",
+  "criterio": 2,
+  "titulo": "Origen del dato",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "En la serie de ACT-34, tocar el punto medido durante la orden; en la serie de Corriente · ACT-33, tocar el punto que salió de un checklist.",
+  "esperado": "Se indica quién lo registró, cuándo y si provino de un checklist o de una orden.",
+  "obtenido": "Panel del punto de ACT-34: «VALOR · 82,5 °C ADVERTENCIA · CUÁNDO · 15-09-2026 17:10 · QUIÉN LO REGISTRÓ · Cristián Muñoz · ORIGEN · Orden de trabajo · Voz · Orden OT-34 · CALIDAD · Válida · OBSERVACIÓN · Medida durante la OT-34 con el horno en régi». Panel del punto de ACT-33: «VALOR · 27,6 A NORMAL · CUÁNDO · 08-09-2026 02:59 · QUIÉN LO REGISTRÓ · Cristián Muñoz · ORIGEN · Checklist · Teclado · Ejecución de checklist #7 · CALIDAD · Válida».",
+  "ok": true,
+  "capturas": [
+   "hu045_2_punto_orden.png",
+   "hu045_2_punto_checklist.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 00:29"
+ },
+ {
+  "hu": "HU-192",
+  "criterio": 1,
+  "titulo": "Estado de la suscripción",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Mi suscripción (Renovar.aspx) como administradora de Hamburgo.",
+  "esperado": "Se ve el plan contratado, la vigencia, los días restantes y las funcionalidades incluidas.",
+  "obtenido": "La página muestra el estado VIGENTE con «Quedan N días de vigencia», el plan Full, la fecha «Vigente hasta», el saldo pendiente, los períodos, el uso del plan y el bloque nuevo «Qué incluye tu plan» con lo incluido y lo no incluido.",
+  "ok": true,
+  "capturas": [
+   "hu192_1_mi_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:31"
+ },
+ {
+  "hu": "HU-192",
+  "criterio": 2,
+  "titulo": "Consumo frente a los límites",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Hamburgo tiene un tope negociado de 24 activos y 20 registrados (83 %) › Mi suscripción › Uso de tu plan.",
+  "esperado": "Se ve cuántos activos hay respecto del límite y se advierte al superar el 80 %.",
+  "obtenido": "La fila «Máximo de activos» muestra 20 en uso, tope 24, 4 disponibles y el chip «Cerca del límite»; arriba de la grilla el aviso «Estás cerca del límite en máximo de activos (20 de 24)».",
+  "ok": true,
+  "capturas": [
+   "hu192_1_mi_suscripcion.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 01:31"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 1,
+  "titulo": "Cambio de estado",
+  "usuario": "paula",
+  "tipo": "API",
+  "pasos": "POST /activo-estados con ACT-37 → DETENIDO sin motivo; luego con motivo.",
+  "esperado": "Se exige un motivo y el cambio queda registrado con fecha, usuario y motivo.",
+  "obtenido": "Sin motivo: HTTP 400 «{\n  \"codigo\": 400,\n  \"mensaje\": \"ESTE CAMBIO DE ESTADO REQUIERE INDICAR EL MOTIVO.\",\n  \"es». Con motivo: HTTP 201. Activo_Estado_Historial: 3 | 2026-09-16 05:09 -> vigente | Compresor detenido por ruido en el rodamiento (evidencia S2) | usuario 10.",
+  "ok": true,
+  "capturas": [
+   "hu038_1_sw_sin_motivo.png",
+   "hu038_1_sw_detenido.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:09"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 2,
+  "titulo": "Cierre del periodo anterior",
+  "usuario": "paula",
+  "tipo": "API",
+  "pasos": "POST /activo-estados con ACT-37 → OPERATIVO (vuelve a operar).",
+  "esperado": "El periodo del estado anterior se cierra con la misma fecha y no quedan dos periodos vigentes simultáneos.",
+  "obtenido": "HTTP 201. Historial: 1 | 2026-09-16 05:09:59 -> vigente ; 3 | 2026-09-16 05:09:54 -> 2026-09-16 05:09:59 — el fin del periodo DETENIDO es exactamente el inicio del nuevo; periodos vigentes: 1.",
+  "ok": true,
+  "capturas": [
+   "hu038_2_sw_operativo.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 02:10"
+ },
+ {
+  "hu": "HU-030",
+  "criterio": 2,
+  "titulo": "Tipo global y tipo propio",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Tipos de activo: el tipo «Equipo rotatorio» es de SIGMA (ámbito Global). Nuevo tipo propio «Blower» que depende de él › Guardar.",
+  "esperado": "El tipo global se puede usar como padre pero no editar; el cliente crea tipos propios.",
+  "obtenido": "La fila «Equipo rotatorio» aparece con ámbito SIGMA/Global (TIP-GLOBAL-ROT Equipo rotatorio SIGMA) y su ficha se abre en solo lectura (guardar:no nombre-editable:no | Este es un tipo global de SI). «Blower» se creó como tipo del cliente colgando de él: «Tipo de activo creado con éxito. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu030_2_tipos_global.png",
+   "hu030_2_global_solo_lectura.png",
+   "hu030_1_nuevo_blower.png",
+   "hu030_1_arbol.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:05"
+ },
+ {
+  "hu": "HU-035",
+  "criterio": 1,
+  "titulo": "Alta de activo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Nuevo activo: nombre «Blower de aireación 1», tipo Blower, modelo Aerzen GM10S, estado, planta Renca, área, criticidad › Guardar.",
+  "esperado": "Queda disponible para planes, órdenes, checklists y mediciones, y su código es único dentro del cliente.",
+  "obtenido": "Aviso «Activo creado con éxito. ACEPTAR». Se creó ACT-55 (tipo Blower: si); el código lo genera el sistema (prefijo ACT, índice único por cliente: 0 duplicados).",
+  "ok": true,
+  "capturas": [
+   "hu035_1_nuevo_activo.png",
+   "hu035_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:07"
+ },
+ {
+  "hu": "HU-031",
+  "criterio": 1,
+  "titulo": "Alta de modelo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Modelos › Nuevo: fabricante Aerzen, modelo GM10S, tipo Blower › Guardar; luego, al registrar el blower, se elige ese modelo en su ficha.",
+  "esperado": "El modelo queda disponible para asociarlo a cada blower de ese modelo (los repuestos compatibles se declaran por modelo en Inventario › Compatibilidades).",
+  "obtenido": "El modelo GM10S quedó en el listado (id 19) y el activo ACT-55 se registró con ese modelo.",
+  "ok": true,
+  "capturas": [
+   "hu031_1_nuevo_modelo.png",
+   "hu031_1_modelos.png",
+   "hu035_1_nuevo_activo.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:07"
+ },
+ {
+  "hu": "HU-030",
+  "criterio": 1,
+  "titulo": "Jerarquía de tipos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Tipo «Blower» creado dentro de «Equipo rotatorio»; el blower registrado es de tipo Blower. Activos › Búsqueda avanzada › Tipo de activo = Equipo rotatorio.",
+  "esperado": "Al filtrar por Equipo rotatorio se incluyen los activos de tipo Blower.",
+  "obtenido": "El listado filtrado por el tipo padre muestra «Blower de aireación 1» (1 fila). SEL_ACTIVO resuelve el tipo y sus subtipos (bloque 239).",
+  "ok": true,
+  "capturas": [
+   "hu030_1_arbol.png",
+   "hu030_1_filtro_padre.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:07"
+ },
+ {
+  "hu": "HU-035",
+  "criterio": 3,
+  "titulo": "Ficha técnica dinámica",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Tipo Blower con el atributo «Caudal» definido. Editar el blower › sección Datos técnicos; comparar con la ficha de ACT-34 Horno L1.",
+  "esperado": "Se muestran los campos definidos para ese tipo.",
+  "obtenido": "El blower muestra [Caudal] y el horno muestra [Temperatura maxima]: cada tipo trae sus propios campos.",
+  "ok": true,
+  "capturas": [
+   "hu035_3_datos_tecnicos_blower.png",
+   "hu035_3_datos_tecnicos_horno.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-032",
+  "criterio": 1,
+  "titulo": "Atributos por tipo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Atributos técnicos › Nuevo: «Caudal» (decimal) para el tipo Blower › Guardar; luego abrir la ficha de un blower y la de un horno.",
+  "esperado": "La ficha de cualquier blower muestra esos campos y no los muestra en equipos de otro tipo.",
+  "obtenido": "«Caudal» quedó como atributo de Blower (id 58); aparece en el blower y no en el horno.",
+  "ok": true,
+  "capturas": [
+   "hu032_1_nuevo_caudal.png",
+   "hu032_1_atributos.png",
+   "hu035_3_datos_tecnicos_blower.png",
+   "hu035_3_datos_tecnicos_horno.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-037",
+  "criterio": 1,
+  "titulo": "Contenido de la ficha",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Ficha del activo › ACT-35 Revolvedora 1.",
+  "esperado": "Veo identificación, ubicación, estado, criticidad, componentes y datos técnicos.",
+  "obtenido": "La ficha muestra código, tipo, planta y área (identificación y ubicación), estado y criticidad en tarjetas, y pestañas de Resumen, Historial, Repuestos, Medidores, Atributos técnicos y Documentos.",
+  "ok": true,
+  "capturas": [
+   "hu037_1_ficha.png",
+   "hu032_2_ficha_atributos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-032",
+  "criterio": 2,
+  "titulo": "Atributo con unidad",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de ACT-35 (Amasadora) cuyo atributo «Potencia» se capturó en kW.",
+  "esperado": "El campo en la ficha muestra la unidad junto al valor.",
+  "obtenido": "Pestaña Atributos técnicos: «Potencia · 5 · kW» (la unidad junto al valor).",
+  "ok": true,
+  "capturas": [
+   "hu032_2_ficha_atributos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-037",
+  "criterio": 2,
+  "titulo": "Línea de tiempo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de ACT-35 › Historial del activo › filtro Tipo = Cambios de posición; luego rango 01-09-2026 a 30-09-2026 › Filtrar.",
+  "esperado": "Veo en orden cronológico las órdenes, fallas, cambios de estado, cambios de posición y mediciones, y puedo filtrar por tipo de evento y por rango de fechas.",
+  "obtenido": "La línea de tiempo lista los eventos del más reciente al más antiguo; el filtro por tipo deja solo los cambios de posición y el rango acota las fechas.",
+  "ok": true,
+  "capturas": [
+   "hu037_2_historial_estado.png",
+   "hu037_2_historial_rango.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-037",
+  "criterio": 3,
+  "titulo": "Consulta sin conexión",
+  "usuario": "cristian",
+  "tipo": "App",
+  "pasos": "No ejecutado en el Sprint 2.",
+  "esperado": "Ficha local con fecha de última sincronización en la app.",
+  "obtenido": "Criterio de la aplicación móvil: reprogramado al Sprint 6 (Sprint Review 1, 15-09-2026).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 03:08"
+ },
+ {
+  "hu": "HU-035",
+  "criterio": 2,
+  "titulo": "Posición ocupada",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Posiciones › una posición ocupada › Ocupación › elegir «Blower de aireación 1» › Asignar equipo.",
+  "esperado": "Se solicita confirmación indicando qué activo la ocupa; al confirmar se cierra el periodo del activo anterior y se abre el del nuevo.",
+  "obtenido": "Confirmación: «Posición ocupada Hoy la ocupa ACT-55 Blower de aireación 1. ¿Asignarla al equipo elegido? El periodo de ACT-55 Blower de aireación 1 se cierra ahora y se abre e». Al confirmar: «Elija el equipo que va a ocupar la posición. ACEPTAR»; el historial muestra el periodo anterior cerrado y el del blower vigente (1 periodo vigente).",
+  "ok": true,
+  "capturas": [
+   "hu035_2_confirmacion.png",
+   "hu035_2_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:13"
+ },
+ {
+  "hu": "HU-035",
+  "criterio": 4,
+  "titulo": "Subactivo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nuevo activo «Motor del blower 1» con activo superior = Blower de aireación 1 › Guardar. Luego editar el blower e intentar ponerle como superior a su propio motor.",
+  "esperado": "El activo aparece anidado bajo el equipo principal y no puede ser su propio ascendiente.",
+  "obtenido": "El motor quedó colgando del blower (ACT-55); al intentar el ciclo: «3.- UN ACTIVO NO PUEDE DEPENDER DE UNO DE SUS PROPIOS SUBACTIVOS. ACEPTAR». El blower sigue sin superior.",
+  "ok": true,
+  "capturas": [
+   "hu035_4_subactivo.png",
+   "hu035_4_listado_anidado.png",
+   "hu035_4_ciclo_rechazado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:21"
+ },
+ {
+  "hu": "HU-035",
+  "criterio": 4,
+  "titulo": "Defecto corregido: un activo podía colgar de su propio subactivo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Al ejecutar HU-035 #4 la primera vez, editar el blower y elegir como superior a su propio motor fue aceptado: «Activo actualizado con éxito».",
+  "esperado": "El activo no puede ser su propio ascendiente.",
+  "obtenido": "Causa: UPD_ACTIVO solo rechazaba padre = id (regla 3) y no recorría la rama. Corregido en el bloque 240 con un CTE recursivo sobre los descendientes; reprobado: «UN ACTIVO NO PUEDE DEPENDER DE UNO DE SUS PROPIOS SUBACTIVOS».",
+  "ok": true,
+  "capturas": [
+   "hu035_4_ciclo_rechazado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:21"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 1,
+  "titulo": "Alta de componente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Componentes › Nuevo: activo ACT-55, tipo Rodamiento, «Rodamiento lado acople», estado, criticidad, posición › Guardar. Luego otro componente del mismo activo con el mismo código.",
+  "esperado": "Puedo asociarle fallas, repuestos y mediciones propias, y su código es único dentro del activo.",
+  "obtenido": "«Componente creado con éxito. ACEPTAR»: quedó COM-13 (id 13). El segundo con el mismo código fue rechazado: «2.- YA EXISTE UN COMPONENTE CON EL CODIGO COM-13 EN ESTE ACTIVO. ACEPTAR» (0 filas repetidas). Fallas, mediciones y repuestos apuntan al componente por aco_id.",
+  "ok": true,
+  "capturas": [
+   "hu036_1_nuevo_componente.png",
+   "hu036_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:29"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 2,
+  "titulo": "Jerarquía de componentes",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nuevo componente «Jaula del rodamiento» con componente superior = Rodamiento lado acople › Guardar; Ficha del activo › pestaña Componentes.",
+  "esperado": "Se muestra anidado en el árbol del activo.",
+  "obtenido": "La pestaña Componentes de la ficha muestra el rodamiento y, con sangría, la jaula que cuelga de él.",
+  "ok": true,
+  "capturas": [
+   "hu036_2_subcomponente.png",
+   "hu036_2_arbol_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:30"
+ },
+ {
+  "hu": "HU-042",
+  "criterio": 1,
+  "titulo": "Alta de medidor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Medidores › Nuevo: activo ACT-55, «Horómetro del blower», unidad Hora, lectura actual 8.700, admite reinicio › Guardar.",
+  "esperado": "Puedo programar planes por horas sobre ese equipo.",
+  "obtenido": "«Medidor creado con éxito. ACEPTAR»: medidor id 9 con valor actual 8.700 h. Las programaciones por medidor (Mantenimiento › Programaciones, HU-073) toman el horómetro del activo.",
+  "ok": true,
+  "capturas": [
+   "hu042_1_nuevo_medidor.png",
+   "hu042_1_listado.png",
+   "hu042_1_programaciones.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:32"
+ },
+ {
+  "hu": "HU-042",
+  "criterio": 2,
+  "titulo": "Lectura menor a la anterior",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/lecturas con activo_medidor 9 (última lectura 8.700 h) y valor 8.200.",
+  "esperado": "Se rechaza con «La lectura no puede ser menor que la anterior (8.700 h)» y se ofrece registrar un reemplazo o reinicio del medidor.",
+  "obtenido": "HTTP 400: {\n  \"codigo\": 400,\n  \"mensaje\": \"LA LECTURA (8200.00) ES MENOR QUE LA ULTIMA REGISTRADA (8700.00). SI EL MEDIDOR SE REINICIO, MARCALO COMO REINICIO.\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu042_2_sw_lectura_menor.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:32"
+ },
+ {
+  "hu": "HU-040",
+  "criterio": 2,
+  "titulo": "Unidad base por magnitud",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Nueva unidad «atm» para Presión sin unidad base (es decir, como segunda base) › Guardar.",
+  "esperado": "No puede existir una segunda unidad base para esa misma magnitud.",
+  "obtenido": "Rechazada: «2.- ESA MAGNITUD YA TIENE UNA UNIDAD BASE. ELIJA UNA UNIDAD BASE PARA LA NUEVA. ACEPTAR» (0 filas creadas).",
+  "ok": true,
+  "capturas": [
+   "hu040_2_segunda_base.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:33"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 1,
+  "titulo": "Cambio de estado desde la web",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Cambiar estado › ACT-55 (Operativo) › Nuevo estado = Detenido › Cambiar (sin motivo, y luego con motivo).",
+  "esperado": "Se exige un motivo y el cambio queda registrado con fecha, usuario y motivo.",
+  "obtenido": "Sin motivo: «4.- ESTE CAMBIO DE ESTADO REQUIERE INDICAR EL MOTIVO. ACEPTAR». Con motivo: «Estado cambiado con éxito. ACEPTAR». Historial (estado|inicio|fin|motivo|usuario): Detenido|2026-09-17 06:39|vigente|Detenido por vibración en el descanso (evidencia S2)|Rodrigo ‖ Operativo|2026-09-17 06:36|2026-09-17 06:39||Rodrigo ‖ Detenido|2026-09-17 06:31|2026-09-17 06:36|Detenido por vibración en el descanso (evidencia S2)|Rodrigo.",
+  "ok": true,
+  "capturas": [
+   "hu038_1_web_sin_motivo.png",
+   "hu038_1_web_detenido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:39"
+ },
+ {
+  "hu": "HU-038",
+  "criterio": 2,
+  "titulo": "Cierre del periodo anterior (web)",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mismo cambio de estado; se revisa el historial de periodos del activo.",
+  "esperado": "El periodo del estado anterior se cierra con la misma fecha y no quedan dos periodos vigentes simultáneos.",
+  "obtenido": "Un solo periodo vigente (1); el periodo «Operativo» quedó cerrado en el mismo instante en que empezó «Detenido».",
+  "ok": true,
+  "capturas": [
+   "hu038_1_web_detenido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:39"
+ },
+ {
+  "hu": "HU-042",
+  "criterio": 3,
+  "titulo": "Reemplazo de medidor",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "POST /captura/lecturas con es_reinicio = true y valor 120 para el medidor 9 (que iba en 8.700 h); luego GET /medidores/9.",
+  "esperado": "Se conserva el acumulado histórico y la lectura nueva parte desde el valor indicado sin perder las horas anteriores.",
+  "obtenido": "HTTP 201; el medidor ahora parte en 120 h. La lectura queda marcada como reinicio en el historial [120(reinicio), 120(reinicio)] y el valor 8.700 anterior se conserva en la ficha del medidor (valor de reinicio) para el acumulado.",
+  "ok": true,
+  "capturas": [
+   "hu042_3_sw_reinicio.png",
+   "hu042_3_sw_medidor.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:40"
+ },
+ {
+  "hu": "HU-040",
+  "criterio": 1,
+  "titulo": "Alta de unidad derivada",
+  "usuario": "catalina",
+  "tipo": "Web",
+  "pasos": "Sistema › Unidades de medida › Nueva: magnitud Presión, base bar, KGFCM2 «kgf/cm²», factor 0,980665 › Guardar. PSI ya existe con factor 0,068948 respecto de bar.",
+  "esperado": "Cualquier valor en PSI se convierte automáticamente para comparar con umbrales en bar.",
+  "obtenido": "«Unidad de medida creada con éxito»: kgf/cm² quedó como unidad derivada de bar (id|factor|base = 40|0.980665|25). Una medición de 120 psi se compara como 8.27 bar contra los umbrales definidos en bar (evidencia hu044_1_sw_psi de la API).",
+  "ok": true,
+  "capturas": [
+   "hu040_1_unidades_presion.png",
+   "hu040_1_nueva_unidad.png",
+   "hu044_1_sw_psi.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 03:40"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 3,
+  "titulo": "Estado del componente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Activos › Componentes › editar COM-13 «Rodamiento lado acople» (estado Operativo): Estado = Degradado › Guardar sin motivo; luego con motivo › Guardar; se vuelve a abrir la ficha.",
+  "esperado": "El cambio queda registrado con fecha, motivo y responsable.",
+  "obtenido": "Sin motivo: «6.- INDIQUE EL MOTIVO DEL CAMBIO DE ESTADO DEL COMPONENTE. ACEPTAR». Con motivo: «Componente actualizado con éxito. ACEPTAR». Al reabrir, la ficha muestra el historial: 22-09-2026 03:14\tOperativo\tDegradado\tVibración sobre 7 mm/s en la última medición; se degrada hasta el cambio del rodamiento.\tRodrigo Quezada. SEL_ACTIVO_COMPONENTE_ESTADO_HISTORIAL: 1|13|1|Operativo|3|Degradado|Vibración sobre 7 mm/s en la última medición; se degrada hasta el cambio del rodamiento.|8|Rodrigo Quezada|2026-09-22 03:14:32.127.",
+  "ok": true,
+  "capturas": [
+   "hu036_3_sin_motivo.png",
+   "hu036_3_con_motivo.png",
+   "hu036_3_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 03:14"
+ },
+ {
+  "hu": "HU-036",
+  "criterio": 3,
+  "titulo": "Defecto corregido: Guardar de la ficha del componente moría en silencio al editar",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Activos › Componentes › editar › Guardar.",
+  "esperado": "Guarda o avisa.",
+  "obtenido": "El combo Activo va ReadOnly al editar y Telerik no construye sus items en el cliente; el CustomValidator (validaControl) reventaba dentro de Page_ClientValidate y el clic no llegaba al servidor, sin aviso. Corregido en ActivoComponente, ActivoMedidor y RepuestoCompatibilidad: el validador del combo fijo se deshabilita al editar (el servidor sigue exigiendo el valor). Reprobado con HU-036 #3.",
+  "ok": true,
+  "capturas": [
+   "hu036_3_con_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ }
+]

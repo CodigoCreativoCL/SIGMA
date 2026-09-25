@@ -84,7 +84,14 @@ namespace SitioBase.Controller
                 return "~/Default.aspx";
             }
 
-            return "~/SeleccionarCliente.aspx";
+            /* Con varios clientes NO se fija ninguno y se entra igual a la
+               pantalla de inicio: la sesion sin empresa es justo lo que hace
+               que el master muestre el selector encima. Antes se mandaba a
+               SeleccionarCliente.aspx, una pagina aparte sin menu ni barra
+               para lo que es un dato de la sesion. La pagina sigue existiendo
+               -queda como respaldo y esta exenta de la compuerta- pero ya no
+               se navega hacia ella. */
+            return "~/Default.aspx";
         }
 
         /// <summary>

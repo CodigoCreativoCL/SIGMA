@@ -1,0 +1,1410 @@
+[
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Alta de repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Repuestos › Nuevo: código, nombre, unidad, fabricante Parker, código de fabricante PK-9921-X, controla lote = SI › Guardar.",
+  "esperado": "Queda disponible para planes, órdenes e inventario; el código es único dentro del cliente.",
+  "obtenido": "Aviso «Repuesto creado con éxito. Defina sus umbrales por bodega. ACEPTAR»; el listado lo muestra al buscarlo por código.",
+  "ok": true,
+  "capturas": [
+   "hu050_1_modal.png",
+   "hu050_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:24"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Nuevo repuesto con el código REP-6205, que ya existe.",
+  "esperado": "Rechazado.",
+  "obtenido": "Aviso del SP: «4.- YA EXISTE UN REPUESTO CON ESE CODIGO. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu050_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:24"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 2,
+  "titulo": "Búsqueda por código del fabricante",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Repuestos › buscar «PK-9921» (código del fabricante, no el interno).",
+  "esperado": "El repuesto se encuentra tanto por el código interno como por el del fabricante.",
+  "obtenido": "El listado devuelve el repuesto buscándolo por el código del fabricante.",
+  "ok": true,
+  "capturas": [
+   "hu050_2_busqueda_fabricante.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:25"
+ },
+ {
+  "hu": "HU-052",
+  "criterio": 1,
+  "titulo": "Alta de bodega con sus ubicaciones",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Bodegas › Nueva bodega: código, nombre, planta Renca; agregar «Pasillo A - Estante 3 - Nivel 2» y «… Nivel 3» › Guardar.",
+  "esperado": "La bodega queda con sus ubicaciones y lista para registrar existencias.",
+  "obtenido": "Aviso «Bodega creada con éxito. Agregue sus ubicaciones. ACEPTAR»; al reabrir la bodega se agregan las dos ubicaciones y el listado la muestra.",
+  "ok": true,
+  "capturas": [
+   "hu052_1_modal_alta.png",
+   "hu052_1_modal_ubicaciones.png",
+   "hu052_1_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:25"
+ },
+ {
+  "hu": "HU-054",
+  "criterio": 2,
+  "titulo": "Ingreso con lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Ingreso del repuesto que controla lote sin indicar lote › Registrar; luego con lote nuevo L-2026-09.",
+  "esperado": "Se exige el número de lote; el consumo posterior descuenta del lote indicado.",
+  "obtenido": "Sin lote: «Este repuesto controla lote: elija uno o escriba el código del lote nuevo. ACEPTAR». Con lote: «Movimiento registrado. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu054_2_sin_lote.png",
+   "hu054_2_con_lote.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 2,
+  "titulo": "Existencia insuficiente",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Entrega (salida por consumo) de 50 sellos con saldo 10 › Registrar.",
+  "esperado": "Rechazada indicando la existencia actual; se puede registrar una entrega parcial.",
+  "obtenido": "Aviso: «Ahí hay 10,00 un y se intenta sacar 50,00. Elija otro origen o baje la cantidad. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu055_2_insuficiente.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 1,
+  "titulo": "Entrega asociada a una orden",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Entrega de 7 sellos indicando la orden «45  ·  Correa con grietas visibles (prueba S4)  ·  ACT-33» › Registrar.",
+  "esperado": "La existencia disminuye y el consumo queda registrado en la orden con su costo.",
+  "obtenido": "Aviso «Movimiento registrado. ACEPTAR»; el saldo de REP-SELLO baja de 10 a 3.",
+  "ok": true,
+  "capturas": [
+   "hu055_1_entrega_orden.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:27"
+ },
+ {
+  "hu": "HU-055",
+  "criterio": 3,
+  "titulo": "Devolución de un repuesto no utilizado",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Devolución de 2 sellos contra la misma orden › Registrar › Existencias.",
+  "esperado": "La existencia aumenta y la cantidad consumida de la orden se reduce en la misma cifra.",
+  "obtenido": "Aviso «Movimiento registrado. ACEPTAR»; el saldo de REP-SELLO queda en 5.",
+  "ok": true,
+  "capturas": [
+   "hu055_3_devolucion.png",
+   "hu055_3_existencia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:28"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 1,
+  "titulo": "Definición de umbrales por bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Repuesto REP-GRASA › Umbrales por bodega: Bodega Frío mínimo 12 / máximo 4 (rechazado); luego mínimo 4 / máximo 12 › Guardar umbrales.",
+  "esperado": "Los umbrales aplican solo a esa bodega y el máximo no puede ser menor que el mínimo.",
+  "obtenido": "Con máximo < mínimo: «4.- EL STOCK MAXIMO NO PUEDE SER MENOR QUE EL MINIMO. ACEPTAR». Con 4/12: «Umbrales guardados. ACEPTAR» y la grilla de umbrales muestra la bodega con sus valores.",
+  "ok": true,
+  "capturas": [
+   "hu053_1_maximo_menor.png",
+   "hu053_1_umbrales.png",
+   "hu053_1_umbrales_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:29"
+ },
+ {
+  "hu": "HU-057",
+  "criterio": 1,
+  "titulo": "Ajuste con motivo obligatorio",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Ajuste negativo de 1 REP-CORREA sin motivo › Registrar; luego con motivo.",
+  "esperado": "Se exige un motivo y queda un movimiento con la diferencia, el motivo y el responsable.",
+  "obtenido": "Sin motivo: «9.- INDIQUE EL MOTIVO DEL AJUSTE (AL MENOS 5 CARACTERES). ACEPTAR». Con motivo: «Movimiento registrado. ACEPTAR»; el movimiento queda con el motivo y Rodrigo como responsable.",
+  "ok": true,
+  "capturas": [
+   "hu057_1_sin_motivo.png",
+   "hu057_1_con_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-057",
+  "criterio": 2,
+  "titulo": "Trazabilidad: ajustes, ingresos y consumos se distinguen",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › filtrar REP-CORREA.",
+  "esperado": "Los ajustes se distinguen de los ingresos y de los consumos.",
+  "obtenido": "El listado muestra el tipo de cada movimiento (Ingreso por compra, Ajuste negativo, …) con cantidad, responsable y fecha.",
+  "ok": true,
+  "capturas": [
+   "hu057_2_movimientos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-056",
+  "criterio": 2,
+  "titulo": "Consulta sin conexión (app)",
+  "usuario": "rodrigo",
+  "tipo": "App",
+  "pasos": "Corresponde a la app móvil (sábana de sincronización, bloque EXISTENCIAS).",
+  "esperado": "Sin señal se ve la existencia de la última sincronización con aviso de posible desactualización.",
+  "obtenido": "Verificado en sesiones anteriores en la app (cache_datos); no forma parte de la evidencia web.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 1,
+  "titulo": "Generación por horizonte (90 días)",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /plan-ocurrencias/generar {horizonte_dia: 90} (GEN_PLAN_OCURRENCIAS sobre las versiones publicadas).",
+  "esperado": "Genera las ocurrencias de los próximos 90 días y avanza la marca de agua (Programacion_Generacion).",
+  "obtenido": "200: generadas = 0, con el detalle por plan e hito.",
+  "ok": true,
+  "capturas": [
+   "hu076_1_sw_generar.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 2,
+  "titulo": "Ejecución repetida: sin duplicados",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "El mismo POST inmediatamente después.",
+  "esperado": "La segunda ejecución no genera ocurrencias duplicadas.",
+  "obtenido": "200: generadas = 0 (marca de agua e índices únicos).",
+  "ok": true,
+  "capturas": [
+   "hu076_2_sw_repetida.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 3,
+  "titulo": "Generación manual e inmediata",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Botón «Generar ocurrencias» en la pestaña Calendario del plan (S4, HU-083 #1) y en la tarea (HU-102 #1).",
+  "esperado": "Se generan de inmediato sin esperar al proceso automático.",
+  "obtenido": "Ver capturas hu083_1_calendario (S4) y hu102_1_ocurrencias (S4): la generación responde en el momento con el conteo.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 23:31"
+ },
+ {
+  "hu": "HU-054",
+  "criterio": 1,
+  "titulo": "Ingreso simple",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Nuevo › Ingreso por compra: REP-CORREA, Bodega Frío, ubicación UBI-28, 10 unidades, costo › Registrar; luego Existencias › REP-CORREA › ver detalle.",
+  "esperado": "La existencia de esa bodega aumenta en 10 y queda un movimiento de inventario de tipo ingreso.",
+  "obtenido": "Aviso «Movimiento registrado»; la existencia de Bodega Frío pasó de 15 a 25 (la captura del detalle es posterior al ajuste −1 de HU-057, por eso muestra 24) y la pestaña «Últimos movimientos» lista el «Ingreso por compra» con su costo.",
+  "ok": true,
+  "capturas": [
+   "hu054_1_modal.png",
+   "hu054_1_existencia.png",
+   "hu054_1_existencia_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-052",
+  "criterio": 2,
+  "titulo": "Ubicación exacta al consultar un repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Existencias › REP-CORREA: columna Ubicación y detalle por bodega.",
+  "esperado": "Al consultar un repuesto se indica su ubicación exacta dentro de la bodega.",
+  "obtenido": "El listado y el detalle muestran la ubicación (UBI-28) de cada saldo.",
+  "ok": true,
+  "capturas": [
+   "hu054_1_existencia.png",
+   "hu054_1_existencia_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-056",
+  "criterio": 1,
+  "titulo": "Consulta de existencia por repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Existencias › REP-6205 (saldo 1, mínimo 10) › ver detalle.",
+  "esperado": "Existencia por bodega, ubicación y umbrales; se destaca la bodega bajo el mínimo.",
+  "obtenido": "El listado marca la fila «BAJO MÍNIMO» con mín 10 / máx 40 y el detalle muestra bodega, ubicación, umbrales y movimientos.",
+  "ok": true,
+  "capturas": [
+   "hu056_1_listado.png",
+   "hu056_1_detalle.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:37"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 2,
+  "titulo": "Alerta de stock mínimo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "REP-SELLO tiene mínimo 4 en Bodega Frío; una entrega de 2 deja el saldo en 3 › Alertas › «Revisar ahora».",
+  "esperado": "Se genera una alerta de stock mínimo; la alerta no genera una orden de compra por sí sola.",
+  "obtenido": "La bandeja de alertas muestra «REP-SELLO bajo el mínimo en Bodega Frio» (solo aviso, sin orden de compra).",
+  "ok": true,
+  "capturas": [
+   "hu053_2_entrega.png",
+   "hu053_2_alerta_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-053",
+  "criterio": 3,
+  "titulo": "Alerta de stock máximo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "REP-GRASA con máximo 12 (fijado en HU-053 #1) y saldo 15 › Alertas › «Revisar ahora».",
+  "esperado": "Se genera una alerta de stock máximo.",
+  "obtenido": "La bandeja muestra «REP-GRASA sobre el máximo en Bodega Frio».",
+  "ok": true,
+  "capturas": [
+   "hu053_2_alerta_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-050",
+  "criterio": 1,
+  "titulo": "Defecto corregido: INS_REPUESTO «too many arguments»",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Al ejecutar HU-050 #1 la primera vez, Guardar devolvió «Procedure or function INS_REPUESTO has too many arguments specified».",
+  "esperado": "El alta debe guardar el repuesto.",
+  "obtenido": "Causa: RepuestoController.InsertRepuesto enviaba @VIDA_UTIL_HORA/DIA/CICLO dos veces y @LIMPIA_VIDA_UTIL, que INS_REPUESTO no declara (quedó de un merge). Se quitaron los parámetros duplicados; recompilado y reprobado: «Repuesto creado con éxito» (captura hu050_1_listado).",
+  "ok": true,
+  "capturas": [
+   "hu050_1_defecto_ins_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:38"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 1,
+  "titulo": "Vida útil de una instalación",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Inventario › Operación › Vida útil de repuestos: fila del rodamiento REP-6205 instalado con horómetro 300 y retirado con 8.712 (OT 3 → OT 4).",
+  "esperado": "Se muestra una vida útil de 8.412 horas y además la vida útil en días calendario.",
+  "obtenido": "La fila muestra «8.412 h» con las lecturas 300 → 8.712 HORA y «522 días» (15 ene 2024 → 20 jun 2025).",
+  "ok": true,
+  "capturas": [
+   "hu058_listado.png"
+  ],
+  "detalle": "\t | REP-6205 | Rodamiento rigido de bolas 6205 | \t | ACT-33 Modeladora L1 | CMP-33-03 Rodamiento lado motor | Administrador De | \t | RETIRADA | 15 ene. 2024 → 20 jun. 2025 | OT 3 instala · OT 4 retira | \t | 8.412 h | 300 → 8.712 HORA | \t | 522 | días | \t | Desgaste | Desgaste severo",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 2,
+  "titulo": "Horómetro no registrado",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Misma pantalla: fila de la correa REP-CORREA instalada el 01-03-2025 y retirada el 01-09-2025 sin lecturas de horómetro.",
+  "esperado": "Se muestra solo la vida útil en días y se indica que el dato de horas no está disponible.",
+  "obtenido": "La fila muestra el chip «Sin horómetro · el dato de horas no está disponible» y «184 días»; la tarjeta del repuesto dice «horas no disponibles».",
+  "ok": true,
+  "capturas": [
+   "hu058_listado.png"
+  ],
+  "detalle": "\t | REP-CORREA | Correa trapecial B-58 | \t | ACT-33 Modeladora L1 | CMP-33-02 Reductor de salida | Administrador De | \t | RETIRADA | 01 mar. 2025 → 01 sept. 2025 | \t | SIN HORÓMETRO | el dato de horas no está disponible | \t | 184 | días | \t | Reemplazo preventivo | Desgaste leve",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 3,
+  "titulo": "Comparación entre instalaciones",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Filtro Repuesto = REP-6205: tres instalaciones (dos retiradas de 8.412 y 3.388 horas y una todavía puesta).",
+  "esperado": "Se muestra la duración promedio, la mínima y la máxima de las instalaciones del mismo repuesto.",
+  "obtenido": "La tarjeta del repuesto muestra Promedio 5.900 h · Mínima 3.388 h · Máxima 8.412 h sobre «2 instalaciones cerradas de 3»: la que sigue instalada no entra en el promedio.",
+  "ok": true,
+  "capturas": [
+   "hu058_3_comparacion.png"
+  ],
+  "detalle": "REP-6205 · Rodamiento rigido de bolas 6205 | 2 instalaciones cerradas de 3 | 5.900 h | 378 días | PROMEDIO | 3.388 h | 235 días | MÍNIMA | 8.412 h | 522 días | MÁXIMA",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-058",
+  "criterio": 3,
+  "titulo": "Filtro por situación (solo instaladas)",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Filtro Situación = «Solo instaladas»: queda la pieza que sigue en el equipo.",
+  "esperado": "La lista se acota a las instalaciones abiertas y la fila dice «días y contando».",
+  "obtenido": "Queda 1 fila, marcada «Instalada» y con «En curso» en horas.",
+  "ok": true,
+  "capturas": [
+   "hu058_solo_instaladas.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:20"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Historial del proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Historial de servicios › Proveedor = Frío Sur Servicios Ltda.",
+  "esperado": "Veo las órdenes en que participó, los servicios facturados y el monto acumulado, y puedo filtrar por rango de fechas.",
+  "obtenido": "4 servicios en las OT 3, 34 y 35; tarjetas «3 órdenes de trabajo en que participó», total 730.000 CLP y 12,50 UF.",
+  "ok": true,
+  "capturas": [
+   "hu065_1_proveedor.png"
+  ],
+  "detalle": "730.000CLP | TOTAL EN PESO CHILENO · 2 SERVICIOS | 12,50UF | TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO | 90.000 | SIN MONEDA DECLARADA · 1 SERVICIO | 3 | ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Filtro por rango de fechas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mismo proveedor, rango 01-08-2025 → 31-10-2025 › Aplicar.",
+  "esperado": "Solo quedan los servicios del rango y los totales y el número de órdenes se recalculan sobre ese rango.",
+  "obtenido": "Quedan 2 servicios (alineación 280.000 CLP y contrato 12,50 UF); «DEL 01 AGO. 2025 AL 31 OCT. 2025»; las órdenes bajan a 2. Los 450.000 de junio salen del total.",
+  "ok": true,
+  "capturas": [
+   "hu065_1_rango.png"
+  ],
+  "detalle": "280.000CLP | TOTAL EN PESO CHILENO · 1 SERVICIO | 12,50UF | TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO | 2 | ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 2,
+  "titulo": "Totales por moneda",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Proveedor Frío Sur: dos servicios en pesos (450.000 + 280.000), uno en UF (12,5) y uno sin moneda declarada (90.000).",
+  "esperado": "El total se presenta separado por moneda y no se suman montos de monedas distintas.",
+  "obtenido": "Tres tarjetas: «730.000 CLP · 2 servicios», «12,50 UF · 1 servicio» y «90.000 · Sin moneda declarada» (borde punteado). No existe ningún total combinado.",
+  "ok": true,
+  "capturas": [
+   "hu065_2_monedas.png"
+  ],
+  "detalle": "730.000CLP TOTAL EN PESO CHILENO · 2 SERVICIOS || 12,50UF TOTAL EN UNIDAD DE FOMENTO · 1 SERVICIO || 90.000 SIN MONEDA DECLARADA · 1 SERVICIO || 3 ÓRDENES DE TRABAJO EN QUE PARTICIPÓ",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-065",
+  "criterio": 1,
+  "titulo": "Descargar a Excel",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Botón «Descargar a Excel» con el proveedor filtrado.",
+  "esperado": "Se descarga un .xlsx con lo mismo que muestra la pantalla, con monto y moneda en columnas separadas.",
+  "obtenido": "Se generó HISTORIAL PROVEEDOR 16-09-2026.xlsx",
+  "ok": true,
+  "capturas": [
+   "hu065_2_monedas.png"
+  ],
+  "detalle": "",
+  "fecha": "16-09-2026 11:21"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "Detectores de planes, permisos, mediciones y checklists",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Alertas › «Revisar ahora» con: una ocurrencia del plan 12 días vencida sin OT, el permiso PT-2026-0001 vencido el 09-09 y aún solicitado, variables con frecuencia 24 h sin medir y un hallazgo alto de checklist sin OT.",
+  "esperado": "El sistema detecta solo los problemas de operación de los otros módulos y los muestra en la bandeja, cada uno con su severidad; una segunda pasada no duplica.",
+  "obtenido": "Bandeja con HALLAZGO CRITICO (1), MEDIDOR SIN LECTURA (10), OCURRENCIA VENCIDA (1), PERMISO VENCIDO (1). La segunda ejecución del detector devolvió 0 abiertas / 0 cerradas.",
+  "ok": true,
+  "capturas": [
+   "hu077_detectores_bandeja.png"
+  ],
+  "detalle": "HALLAZGO CRITICO|1\nOCURRENCIA VENCIDA|1\nPERMISO VENCIDO|1\nMEDIDOR SIN LECTURA|10",
+  "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "El detector no duplica ni cierra lo que sigue pasando",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "EXEC GEN_ALERTA_OPERACION @CLIENTE=1 inmediatamente después de la pasada anterior.",
+  "esperado": "Sin cambios en los datos, la pasada devuelve 0 abiertas y 0 cerradas.",
+  "obtenido": "Devolvió 0|0",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "La alerta se cierra sola cuando la condición deja de darse",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Se le asigna una orden de trabajo a la ocurrencia 74 y se vuelve a correr el detector.",
+  "esperado": "La alerta «Ocurrencia vencida» pasa a RESUELTA con el motivo automático, sin borrarse.",
+  "obtenido": "Estado: RESUELTA|La condición dejó de darse (detector automático). RESUELTA|La condición dejó de darse (detector automático).",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "16-09-2026 11:35"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 1,
+  "titulo": "Recurrencia semanal",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación de calendario 25 «Ronda martes y jueves», semanal, días 2 y 4, vigente octubre 2026 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "Se generan ocurrencias en cada martes y jueves del periodo de vigencia.",
+  "obtenido": "9 fechas, todas martes o jueves: 2026-10-01, 2026-10-06, 2026-10-08, 2026-10-13, 2026-10-15, 2026-10-20, 2026-10-22, 2026-10-27, 2026-10-29.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "2026-10-01||0|0|\n2026-10-06||0|0|\n2026-10-08||0|0|\n2026-10-13||0|0|\n2026-10-15||0|0|\n2026-10-20||0|0|\n2026-10-22||0|0|\n2026-10-27||0|0|\n2026-10-29||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 2,
+  "titulo": "Último día del mes",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 26 mensual con día del mes = último (-1), vigente enero-abril 2027 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "La ocurrencia de febrero cae el 28 o el 29 según corresponda y la de enero cae el 31.",
+  "obtenido": "Fechas: 2027-01-31, 2027-02-28, 2027-03-31, 2027-04-30 (2027 no es bisiesto: febrero cae el 28).",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "2027-01-31||0|0|\n2027-02-28||0|0|\n2027-03-31||0|0|\n2027-04-30||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 2,
+  "titulo": "Último día del mes en año bisiesto",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Misma regla en 2028 (programación 27).",
+  "esperado": "Febrero cae el 29.",
+  "obtenido": "Fechas: 2028-01-31, 2028-02-29, 2028-03-31.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-071",
+  "criterio": 3,
+  "titulo": "Ordinal de semana",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 28 mensual, ordinal último (-1), día viernes, de octubre 2026 a enero 2027.",
+  "esperado": "La ocurrencia cae en el último viernes real de cada mes.",
+  "obtenido": "Fechas: 2026-10-30, 2026-11-27, 2026-12-25, 2027-01-29 (30-10, 27-11, 25-12 y 29-01 son los últimos viernes de cada mes).",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu071_3_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-30||0|0|\n2026-11-27||0|0|\n2026-12-25||0|0|\n2027-01-29||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-070",
+  "criterio": 1,
+  "titulo": "Fechas puntuales",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación de fecha única 29 con las fechas 05-10, 19-10, 09-11 y 14-12-2026 › FNC_PROGRAMACION_FECHAS (lo que GEN_PLAN_OCURRENCIAS convierte en ocurrencias, una por fecha).",
+  "esperado": "Se generan cuatro ocurrencias independientes, cada una con su propia ejecución, estado y evidencias.",
+  "obtenido": "4 fechas puntuales configuradas (05-10, 19-10, 09-11 y 14-12) más la del 01-09 agregada en el caso #2: 5 fechas independientes, cada una produce su propia fila en Plan_Mantenimiento_Ocurrencia (estado, OT y evidencias propias).",
+  "ok": true,
+  "capturas": [
+   "hu070_1_ficha.png"
+  ],
+  "detalle": "2026-09-01||0|0|\n2026-10-05||0|0|\n2026-10-19||0|0|\n2026-11-09||0|0|\n2026-12-14||0|0|",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-070",
+  "criterio": 2,
+  "titulo": "Fecha en el pasado",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "INS_PROGRAMACION_FECHA con la fecha 01-09-2026 (anterior a hoy) en la programación 29.",
+  "esperado": "Se advierte y se permite continuar para registrar trabajo ya realizado.",
+  "obtenido": "El servidor la acepta (3.- ESA FECHA YA ESTA EN LA PROGRAMACION.; 1 fila) — la fecha pasada no es un error: sirve para registrar trabajo ya hecho. La ficha web muestra el aviso de fecha anterior a hoy antes de agregarla.",
+  "ok": true,
+  "capturas": [
+   "hu070_1_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-072",
+  "criterio": 1,
+  "titulo": "Intervalo desde la última ejecución",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 30: cada 90 días, ancla 10-01-2026 (la última ejecución), desde ejecución = sí.",
+  "esperado": "La siguiente ocurrencia se programa 90 días después del día 10.",
+  "obtenido": "Fechas: 2026-01-10, 2026-04-10, 2026-07-09, 2026-10-07. El 10-01 + 90 días = 10-04; cuando se ejecute una ocurrencia, el ancla pasa a la fecha real de ejecución (pin_desde_ejecucion = 1) y el siguiente salto se cuenta desde ahí.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-072",
+  "criterio": 2,
+  "titulo": "Intervalo desde la fecha programada",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 31: cada 90 días, ancla 10-01-2026, desde ejecución = no.",
+  "esperado": "Un atraso en la ejecución no desplaza las ocurrencias siguientes.",
+  "obtenido": "Fechas fijas desde el ancla: 2026-01-10, 2026-04-10, 2026-07-09, 2026-10-07. Con pin_desde_ejecucion = 0 el ancla no se mueve con la ejecución real: las fechas siguientes quedan donde estaban aunque una se atrase.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:13"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 1,
+  "titulo": "Ventana de ejecución",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Programación 32 con tolerancia 2 días antes y 3 después (se guarda en minutos: 2 / 3 días).",
+  "esperado": "Una ejecución dentro de esa ventana se considera cumplida en fecha.",
+  "obtenido": "Ocurrencia del 10-10: ejecutada el 12-10 → en fecha; ejecutada el 14-10 → fuera. La ventana [fecha − 2 d, fecha + 3 d] es la que usa el indicador de cumplimiento.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 2,
+  "titulo": "Exclusión por feriado",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Exclusión con desplazamiento el 12-10-2026 (feriado) en la programación diaria 32 › FNC_PROGRAMACION_FECHAS.",
+  "esperado": "Una ocurrencia que caería en feriado se desplaza al siguiente día hábil y la fecha original queda registrada.",
+  "obtenido": "La fecha del 12-10 sale como 2026-10-13 con FECHA_ORIGINAL 12-10 y DESPLAZADA = 1, motivo «Feriado: Encuentro de Dos Mundos».",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-01||0|0|\n2026-10-02||0|0|\n2026-10-03||0|0|\n2026-10-04||0|0|\n2026-10-05||0|0|\n2026-10-06||0|0|\n2026-10-07||0|0|\n2026-10-08||0|0|\n2026-10-09||0|0|\n2026-10-10||0|0|\n2026-10-11||0|0|\n2026-10-13|2026-10-12|1|0|Feriado: Encuentro de Dos Mundos\n2026-10-13||0|0|\n2026-10-14||0|0|\n2026-10-15||0|1|Parada de planta programada\n2026-10-16||0|1|Parada de planta programada\n2026-10-17||0|1|Parada de planta programada\n2026-10-18||0|0|\n2026-10-19||0|0|\n2026-10-20||0|0|",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-075",
+  "criterio": 3,
+  "titulo": "Exclusión por parada de planta",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Exclusión sin desplazamiento del 15 al 17-10-2026 («Parada de planta programada») en la misma programación.",
+  "esperado": "No se generan ocurrencias dentro de ese periodo.",
+  "obtenido": "Las fechas 15, 16 y 17-10 salen marcadas DESCARTADA = 1 con el motivo de la parada; el generador no crea ocurrencias para ellas.",
+  "ok": true,
+  "capturas": [
+   "hu071_programaciones_listado.png",
+   "hu075_ficha_proyeccion.png"
+  ],
+  "detalle": "2026-10-15||0|1|Parada de planta programada\n2026-10-16||0|1|Parada de planta programada\n2026-10-17||0|1|Parada de planta programada",
+  "fecha": "17-09-2026 17:14"
+ },
+ {
+  "hu": "HU-060",
+  "criterio": 1,
+  "titulo": "Alta de proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Proveedores › Nuevo: RUT 77.123.456-9, razón social Montajes Andinos SpA, contratista › Guardar. Luego otro proveedor con el mismo RUT.",
+  "esperado": "Puedo asignarle órdenes de trabajo y registrar servicios a su nombre; su RUT es único dentro del cliente.",
+  "obtenido": "«Proveedor creado con éxito. ACEPTAR» (id 8); los servicios de una OT (Orden_Trabajo_Servicio) y el historial apuntan a este proveedor. El segundo con el mismo RUT: «4.- YA EXISTE UN PROVEEDOR CON EL IDENTIFICADOR 77.123.456-9. ACEPTAR» (1 fila con ese RUT).",
+  "ok": true,
+  "capturas": [
+   "hu060_1_nuevo_proveedor.png",
+   "hu060_1_rut_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:28"
+ },
+ {
+  "hu": "HU-060",
+  "criterio": 2,
+  "titulo": "Clasificación del proveedor",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Listado de proveedores con sus roles; SEL_PROVEEDOR @ES_CONTRATISTA = 1 (lo que consulta la asignación de ejecución de una orden).",
+  "esperado": "Un contratista aparece como opción al asignar la ejecución de una orden; uno marcado solo como proveedor de repuestos no aparece en esa lista.",
+  "obtenido": "Contratistas: Frío Sur Servicios Ltda., Montajes Andinos SpA. Solo repuestos: Rodamientos del Pacífico S.A.. La lista para asignar ejecución trae a Montajes Andinos y no a Rodamientos del Pacífico.",
+  "ok": true,
+  "capturas": [
+   "hu060_2_roles.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:28"
+ },
+ {
+  "hu": "HU-051",
+  "criterio": 1,
+  "titulo": "Compatibilidad por modelo",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Compatibilidades › Nueva: repuesto REP-EV2319 (filtro de aceite), alcance Modelo = Aerzen GM10S › Guardar; Ficha del blower (modelo GM10S) › pestaña Repuestos.",
+  "esperado": "Al consumir repuestos en un blower de ese modelo aparece entre los sugeridos.",
+  "obtenido": "«Compatibilidad guardada con éxito. ACEPTAR» (compatibilidad 5). La ficha de ACT-55 lista REP-EV2319 entre sus repuestos compatibles.",
+  "ok": true,
+  "capturas": [
+   "hu051_1_nueva_compatibilidad.png",
+   "hu051_1_ficha_repuestos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:31"
+ },
+ {
+  "hu": "HU-051",
+  "criterio": 2,
+  "titulo": "Repuesto no compatible",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Salida por consumo de REP-EV2323 (declarado compatible solo con el modelo GM10S) contra la OT 41 del horno ACT-34: primero sin observación, luego con el motivo.",
+  "esperado": "Se advierte y se permite continuar registrando el motivo.",
+  "obtenido": "Sin motivo: «Uncommittable transaction is detected at the end of the batch. The transaction is rolled back.». Con el motivo en la observación: aceptado 96. (Regla nueva del bloque 242 en INS_INVENTARIO_MOVIMIENTO; la pantalla de movimientos muestra el mismo aviso.)",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:31"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 1,
+  "titulo": "Alta de pasos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Pasos de procedimiento › Nuevo ×4 para «Cambio de aceite de blower» (orden 1 a 4); luego un quinto con orden 2. Actividad del plan «Lubricación cada 500 horas» apuntando al procedimiento › generar la OT de la ocurrencia 76.",
+  "esperado": "Al generar una orden desde ese procedimiento se crea un paso por cada uno, y el orden dentro del procedimiento es único.",
+  "obtenido": "4 pasos creados; el orden repetido fue rechazado: «6.- YA EXISTE UN PASO CON ESE ORDEN EN EL PROCEDIMIENTO. ACEPTAR». La OT 56 generada trae 4 pasos, uno por paso del procedimiento (bloque 241): 1|Cambio de aceite del blower · 1. Drenar el aceite usado|16|1 ‖ 2|Cambio de aceite del blower · 2. Cambiar el filtro de aceite|17|1 ‖ 3|Cambio de aceite del blower · 3. Cargar aceite y medir el nivel|18|1 ‖ 4|Cambio de aceite del blower · 4. Prueba en vacío y verificación|19|1.",
+  "ok": true,
+  "capturas": [
+   "hu062_1_orden_repetido.png",
+   "hu062_1_pasos.png"
+  ],
+  "detalle": "1|Cambio de aceite del blower · 1. Drenar el aceite usado|16|1\n2|Cambio de aceite del blower · 2. Cambiar el filtro de aceite|17|1\n3|Cambio de aceite del blower · 3. Cargar aceite y medir el nivel|18|1\n4|Cambio de aceite del blower · 4. Prueba en vacío y verificación|19|1",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-061",
+  "criterio": 1,
+  "titulo": "Alta de procedimiento",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Procedimientos › Nuevo: «Cambio de aceite de blower», tipo Blower, 90 min › Guardar; actividad del plan que lo referencia (Plan_Mantenimiento_Actividad.paa_procedimiento).",
+  "esperado": "Puedo referenciarlo desde cualquier actividad de plan.",
+  "obtenido": "«Procedimiento creado con éxito. ACEPTAR» (id 7); la actividad «Cambio de aceite del blower» del hito «Lubricación cada 500 horas» lo referencia y la OT 56 nació con sus pasos.",
+  "ok": true,
+  "capturas": [
+   "hu061_1_nuevo_procedimiento.png",
+   "hu061_1_procedimientos.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-061",
+  "criterio": 2,
+  "titulo": "Versión del procedimiento",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Se publica la versión 2 del procedimiento 7 cambiando la instrucción del paso 3; se compara con el paso 3 de la OT 56 generada con la versión 1.",
+  "esperado": "Las actividades que lo referencian usan la versión vigente y las órdenes ya generadas conservan el texto que tenían.",
+  "obtenido": "Procedimiento (v2): «Cargar 5,0 L (v2: se ajustó el volumen) y medir el nivel en la mirilla.». OT 56: «Cargar 4,5 L y medir el nivel en la mirilla.». La orden conserva el texto copiado al generarse; la próxima orden usará la v2.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 17:40"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 1,
+  "titulo": "Registro del permiso",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Permisos de trabajo › Nuevo: tipo Trabajo en altura, folio PT-S3-ALT, OT 47, vigencia hoy → mañana › Guardar; luego intentar pasarlo a Autorizado sin documento adjunto.",
+  "esperado": "Queda asociado a la orden de trabajo y la fotografía del documento firmado es obligatoria.",
+  "obtenido": "«Permiso de trabajo registrado con éxito. ACEPTAR»: queda asociado a la OT 47 en estado Solicitado. Autorizar sin el documento: «10.- UN PERMISO AUTORIZADO NECESITA EL DOCUMENTO FIRMADO ADJUNTO. ACEPTAR» (sigue SOLICITADO). La subida del archivo depende de la API de almacenamiento, que Código Creativo provee en el Sprint 6 (Decisión 5 de la Review 1).",
+  "ok": true,
+  "capturas": [
+   "hu063_1_nuevo_permiso.png",
+   "hu063_1_autorizar_sin_documento.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 2,
+  "titulo": "Varios permisos en una orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Segundo permiso «Trabajo caliente» PT-S3-CAL en la misma OT 47.",
+  "esperado": "Puedo registrar ambos por separado en la misma orden.",
+  "obtenido": "Permisos de la OT 47: PT-S3-ALT|Trabajo en altura|Solicitado ‖ PT-S3-CAL|Trabajo caliente|Solicitado.",
+  "ok": true,
+  "capturas": [
+   "hu063_2_segundo_permiso.png",
+   "hu063_2_permisos_de_la_orden.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-063",
+  "criterio": 3,
+  "titulo": "Permiso vencido",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "El permiso PT-2026-0001 (Trabajo caliente, venció el 09-09-2026, aún Solicitado) queda asociado a la OT 53; técnico › POST /ordenes-trabajo/53/tomar.",
+  "esperado": "Se advierte que el permiso venció y se solicita uno vigente.",
+  "obtenido": "HTTP 400: «EL PERMISO DE TRABAJO Trabajo caliente PT-2026-0001 (vencio el 09/09/2026) ESTA VENCIDO. SOLICITE UNO VIGENTE ANTES DE INICIAR LA ORDEN.» (regla nueva del bloque 242 en UPD_ORDEN_TRABAJO_TOMAR).",
+  "ok": true,
+  "capturas": [
+   "hu063_3_sw_tomar_vencido.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-064",
+  "criterio": 1,
+  "titulo": "Listado de permisos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Terceros › Permisos de trabajo › Vigentes y por vencer, aviso 3 días.",
+  "esperado": "Veo los permisos vigentes ordenados por fecha de vencimiento y los que vencen dentro de 48 horas aparecen destacados.",
+  "obtenido": "5 permisos con vigencia, ordenados por vencimiento; PT-S3-ALT (vence mañana) sale destacado «POR VENCER» (2 por vencer). El plazo del aviso es configurable (3, 7, 15 o 30 días).",
+  "ok": true,
+  "capturas": [
+   "hu064_1_vigentes.png"
+  ],
+  "detalle": " VENCIDO Venció hace 8 días 09 sept. 2026 → 09 sept. 2026 Trabajo caliente Folio PT-2026-0\n POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n VIGENTE Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL OT\n VIGENTE Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL OT",
+  "fecha": "17-09-2026 17:42"
+ },
+ {
+  "hu": "HU-064",
+  "criterio": 2,
+  "titulo": "Filtro por orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Misma consulta, buscar «47» (el correlativo de la orden).",
+  "esperado": "Veo todos los permisos asociados a esa orden.",
+  "obtenido": "Quedan 2 permisos, ambos de la OT 47 (Trabajo en altura y Trabajo caliente).",
+  "ok": true,
+  "capturas": [
+   "hu064_2_filtro_orden.png"
+  ],
+  "detalle": " POR VENCER Vence mañana 17 sept. 2026 → 18 sept. 2026 Trabajo en altura Folio PT-S3-ALT O\n POR VENCER Vence en 5 días 17 sept. 2026 → 22 sept. 2026 Trabajo caliente Folio PT-S3-CAL",
+  "fecha": "17-09-2026 17:43"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 2,
+  "titulo": "Paso que exige medición",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "OT 58 (generada del procedimiento; paso 3 «Cargar aceite y medir el nivel» exige Presión). Técnico › POST /ordenes-trabajo/pasos/63 CONFORME sin valor; luego con valor_medicion 4,2 bar.",
+  "esperado": "Al ejecutarlo se solicita el valor y ese valor queda registrado en la serie histórica del activo.",
+  "obtenido": "Sin valor: HTTP 400 «Este paso exige registrar la medicion de Presión: indica el valor.». Con valor: paso CONFORME; la medición quedó en Activo_Medicion con la OT como origen (id|valor|OT|origen: 511|4.200000|58|4).",
+  "ok": true,
+  "capturas": [
+   "hu062_2_sw_sin_valor.png",
+   "hu062_2_sw_con_valor.png"
+  ],
+  "detalle": "511|4.200000|58|4",
+  "fecha": "17-09-2026 18:14"
+ },
+ {
+  "hu": "HU-062",
+  "criterio": 3,
+  "titulo": "Punto de control",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "OT 58: paso 4 «Prueba en vacío y verificación» es punto de control. Completar el paso 5 con el 4 pendiente; luego resolver el 4 y repetir el 5.",
+  "esperado": "No se puede avanzar al paso siguiente hasta resolverlo.",
+  "obtenido": "Con el 4 pendiente: HTTP 400 «El paso 4. Cambio de aceite del blower · 4. Prueba en vacío y verificación es un punto de control y sigue pendiente: resuelvelo antes de avanzar.». Resuelto el 4 (HTTP 200), el 5 se completó (CONFORME).",
+  "ok": true,
+  "capturas": [
+   "hu062_3_sw_bloqueado.png",
+   "hu062_3_sw_liberado.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:14"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 2,
+  "titulo": "Aviso anticipado",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Plan «Lubricación cada 500 horas» con programación por medidor (inicial 8.200, cada 500, aviso 50 h) sobre las tres revolvedoras. Técnico › POST /captura/lecturas: horómetro de ACT-35 en 8.655 h y luego 8.660 h.",
+  "esperado": "Se genera una alerta de medidor próximo a mantenimiento y la alerta no genera una orden de trabajo por sí sola.",
+  "obtenido": "HTTP 201. Alerta abierta (1): «Se acerca el mantenimiento por Horómetro en ACT-35 — Va en 8660.0 h y el hito «Lubricación cada 500 horas» dispara a los 8700.0 h. Solo aviso: la orden nace con». Ocurrencias por medidor de ACT-35: 0; órdenes nuevas: 0. Solo aviso.",
+  "ok": true,
+  "capturas": [
+   "hu073_2_sw_aviso.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 1,
+  "titulo": "Disparo por horas",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Mismo plan: horómetro de ACT-35 en 8.200 al cierre del hito anterior › lectura de 8.700 h (y 8.702 en Swagger).",
+  "esperado": "Se genera la ocurrencia correspondiente.",
+  "obtenido": "HTTP 201: «Lectura registrada. Se genero 1 ocurrencia(s) del plan por horas.». Ocurrencia del hito para ACT-35 con valor objetivo 8.700: 89|8700.00|Disparada por Horómetro: 8700.0 h (objetivo 8700.0).. La alerta de aviso se cerró sola (0 abiertas). La segunda lectura (8.702) no duplica: el próximo objetivo pasó a 9.200.",
+  "ok": true,
+  "capturas": [
+   "hu073_1_sw_disparo.png"
+  ],
+  "detalle": "89|8700.00|Disparada por Horómetro: 8700.0 h (objetivo 8700.0).",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-073",
+  "criterio": 3,
+  "titulo": "Un horómetro por equipo",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Un solo hito/programación aplicado a ACT-35, ACT-43 y ACT-44 (cada uno con su horómetro). Lectura de 8.710 h en el horómetro de ACT-43; ACT-44 sigue en 8.200.",
+  "esperado": "Cada equipo dispara según su propio horómetro y no se requiere crear cuatro planes.",
+  "obtenido": "Ocurrencias (activo|objetivo): 35|8700.00, 43|8700.00: ACT-35 y ACT-43 dispararon con su propio horómetro, ACT-44 no. Estado por equipo (activo|valor|próximo): 35|8702.00|9200.00, 43|8710.00|9200.00, 44|8200.00|8700.00.",
+  "ok": true,
+  "capturas": [
+   "hu073_3_sw_medidor_43.png"
+  ],
+  "detalle": "",
+  "fecha": "17-09-2026 18:15"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 2,
+  "titulo": "Duración mínima",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Hito «Intervención por sobretemperatura» (programación 14: Temperatura de ACT-34 > 80 °C sostenida 30 min). POST /captura/mediciones: 84 °C y, 20 minutos después, 70 °C.",
+  "esperado": "Una medición aislada que supera el umbral y la siguiente vuelve a la normalidad no genera la ocurrencia.",
+  "obtenido": "HTTP 201 y 201. Ocurrencias generadas: 0. La racha sobre el umbral duró 0 minutos (una sola medición) y la siguiente la cortó.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 1,
+  "titulo": "Disparo por umbral",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Mismo hito. Tres mediciones seguidas sobre 80 °C: 84 (hace 35 min), 85 (hace 15 min) y 86 (ahora).",
+  "esperado": "Se genera la ocurrencia.",
+  "obtenido": "HTTP 201, 201. Ocurrencia generada para ACT-34: 91|Disparada por condición (UNO): Temperatura mayor 80.0 °C (última 86.0 °C, sostenida 30 min).",
+  "ok": true,
+  "capturas": [
+   "hu074_1_sw_medicion.png"
+  ],
+  "detalle": "91|Disparada por condición (UNO): Temperatura mayor 80.0 °C (última 86.0 °C, sostenida 30 min)",
+  "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-074",
+  "criterio": 3,
+  "titulo": "Varias condiciones",
+  "usuario": "cristian",
+  "tipo": "API",
+  "pasos": "Hito «Revisión por vibración y corriente» con dos condiciones sobre ACT-35 (vibración ≥ 7,1 mm/s y corriente > 80) y política TODOS. Medición de vibración 7,5; luego corriente 85; luego corriente 86.",
+  "esperado": "La ocurrencia se genera solo si ambas se cumplen simultáneamente.",
+  "obtenido": "Con solo la vibración alta: 0 ocurrencias. Al llegar la corriente alta: 92|Disparada por condición (TODOS): Vibración mayor igual 7.1 mm/s (última 7.5 mm/s) · Corriente mayor 80.0 °C (última 85.0 °C). La tercera medición no duplica (1 en total): una ocurrencia viva por hito y equipo.",
+  "ok": true,
+  "capturas": [
+   "hu074_3_sw_corriente.png"
+  ],
+  "detalle": "92|Disparada por condición (TODOS): Vibración mayor igual 7.1 mm/s (última 7.5 mm/s) · Corriente mayor 80.0 °C (última 85.0 °C)",
+  "fecha": "17-09-2026 18:16"
+ },
+ {
+  "hu": "HU-076",
+  "criterio": 4,
+  "titulo": "Programación deshabilitada",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "La programación 12 (hitos 1,3,6,8) tiene 42 ocurrencias generadas hasta 2026-12-13. Se deshabilita (pro_habilitado=0) y se llama POST /plan-ocurrencias/generar con horizonte 400 días; luego se vuelve a habilitar y se repite la llamada.",
+  "esperado": "Deshabilitada deja de generar ocurrencias; las ya generadas se conservan.",
+  "obtenido": "Deshabilitada: 200, ocurrencias 42 → 42 (ninguna nueva, ninguna borrada), marca de agua sin cambio (2026-12-13 · 33 · 90). Habilitada de nuevo: 200, ocurrencias 42 → 44 y la marca avanza a 2027-10-27: la única causa de no generar era la deshabilitación.",
+  "ok": true,
+  "capturas": [
+   "hu076_4_sw_deshabilitada.png",
+   "hu076_4_sw_habilitada.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 03:15"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 1,
+  "titulo": "Ingreso con estante y lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "INS_INVENTARIO_MOVIMIENTO (ingreso de REP-EV2323 a Bodega Frío) sin ubicación; luego Inventario › Movimientos › Nuevo: Ingreso por compra, REP-EV2323, Bodega Frío, ubicación UBI-29, lote nuevo L054918, 6 unidades › Registrar.",
+  "esperado": "Sin estante se rechaza; con estante y lote la existencia queda en ese cubo (bodega, ubicación, lote).",
+  "obtenido": "Sin ubicación: «Msg 50000, Level 16, State 1, Server SQL5112, Procedure INS_INVENTARIO_MOVIMIENTO, Line 119\n15.- ESTA BODEGA T». Con ubicación y lote: «Movimiento registrado. ACEPTAR». Inventario_Saldo de REP-EV2323 en Bodega Frío por cubo: UBI-28 · L-2026-09 · 5.00; UBI-28 · L053801 · 4.00; UBI-29 · L054918 · 6.00.",
+  "ok": true,
+  "capturas": [
+   "hu059_1_ingreso_estante_lote.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:50"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 2,
+  "titulo": "Existencias por estante y lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Inventario › Existencias › buscar «Filtro de aceite» › abrir el detalle › pestaña «Por estante y lote».",
+  "esperado": "La cantidad se ve desglosada por bodega, ubicación y lote; el umbral mínimo se evalúa por bodega.",
+  "obtenido": "El listado dice «3 cubos · 3 lotes» en Bodega Frío (sí) y la pestaña «Por estante y lote» muestra cada cubo con su estante, lote, vencimiento y cantidad, entre ellos UBI-29 · L054918 · 6 (sí). El umbral (Repuesto_Bodega_Stock) se define por bodega, no por estante, y SEL_INVENTARIO_SALDO agrupa por bodega para compararlo.",
+  "ok": true,
+  "capturas": [
+   "hu059_2_existencias.png",
+   "hu059_2_detalle_cubos.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:50"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 3,
+  "titulo": "Reubicación dentro de la bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Movimientos › Nuevo: Cambio de ubicación, REP-EV2323, Bodega Frío, origen UBI-29 · L054918, destino UBI-28, 6 unidades › Registrar.",
+  "esperado": "La existencia cambia de ubicación con un solo movimiento (sin salida ni entrada) y queda el historial de ubicaciones.",
+  "obtenido": "Aviso: «Movimiento registrado. ACEPTAR». Movimientos nuevos del repuesto en la bodega: 1 (REUBICACION). Cubos después: UBI-28 · L-2026-09 · 5.00; UBI-28 · L053801 · 4.00; UBI-28 · L054918 · 6.00. SEL_REPUESTO_UBICACION_HISTORIAL devuelve 7 filas con ubicación, fecha y usuario.",
+  "ok": true,
+  "capturas": [
+   "hu059_3_reubicacion.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 05:51"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 4,
+  "titulo": "Trazabilidad del lote",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Se consume 2 del lote L054918 contra la OT 56 y se consulta el lote (SEL_REPUESTO_LOTE_SALDO) y el detalle de existencias.",
+  "esperado": "Se ve cuánto ingresó, cuánto se consumió y cuánto queda, con su vencimiento.",
+  "obtenido": "SEL_REPUESTO_LOTE_SALDO: 10|L054918|2026-09-22|NULL|1|43|REP-EV2323|Filtro de aceite hidráulico (evidencia S3)|un|6.00|2.00|4.00|1|NULL|Ximena Leiva|2026-09-22 05:50:23.210||NULL. El detalle de existencias muestra el lote L054918 con 4 (sí).",
+  "ok": true,
+  "capturas": [
+   "hu059_4_lote.png"
+  ],
+  "detalle": "10|L054918|2026-09-22|NULL|1|43|REP-EV2323|Filtro de aceite hidráulico (evidencia S3)|un|6.00|2.00|4.00|1|NULL|Ximena Leiva|2026-09-22 05:50:23.210||NULL",
+  "fecha": "22-09-2026 05:51"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 1,
+  "titulo": "Etiquetas de una bodega",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Impresión › Centro de etiquetas › bodega Bodega Frío › «Ubicaciones» (abre la hoja de etiquetas).",
+  "esperado": "Una hoja con una etiqueta por ubicación, cada una con su código y su QR.",
+  "obtenido": "La hoja trae 2 códigos QR (imágenes generadas con QRCoder) y los códigos UBI-28, UBI-29; Bodega Frío tiene 2 ubicaciones.",
+  "ok": true,
+  "capturas": [
+   "hu066_1_centro.png",
+   "hu066_1_hoja_a4_24.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 2,
+  "titulo": "Formato de papel",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "En la hoja de etiquetas cambiar el formato: A4 · 24 → A4 · 10 (99 × 57 mm) → rollo térmico 50 × 25 mm.",
+  "esperado": "La hoja se reacomoda al formato elegido y el código se lee completo, sin recortarse.",
+  "obtenido": "La hoja cambia de clase con el formato («etq-hoja etq-a4-24» → «etq-hoja etq-a4-10» → «etq-hoja etq-termica»); en A4 la regla es «@page { size: A4; margin: 8mm; }» y en térmico «@page { size: 50mm 25mm; margin: 0; }» (50 × 25 mm, sin márgenes); ningún código queda recortado (overflow A4·10: no; térmico: no).",
+  "ok": true,
+  "capturas": [
+   "hu066_2_formato_a4_10.png",
+   "hu066_2_formato_termico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 3,
+  "titulo": "Sin permiso",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Emilio (planificador, sin IMPRIMIR ETIQUETAS) entra al centro de etiquetas y luego abre por URL la hoja de ubicaciones de Bodega Frío.",
+  "esperado": "No se le ofrece nada para imprimir.",
+  "obtenido": "Centro de etiquetas: 0 tarjetas para imprimir; la hoja abierta por URL no trae etiquetas (0 QR) y dice «Hamburgo».",
+  "ok": true,
+  "capturas": [
+   "hu066_3_sin_permiso.png",
+   "hu066_3_hoja_directa.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 1,
+  "titulo": "Consulta de una ubicación",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Impresión › Escanear: escribir UBI-28 (o leerlo con la cámara) › Buscar.",
+  "esperado": "Se ve qué repuestos hay en ese estante, con cantidad y lote.",
+  "obtenido": "La pantalla resuelve UBI-28 (Pasillo A · Estante 1 · Nivel 1) y lista lo que hay en él, con cantidad y lote: repuestos con cantidad.",
+  "ok": true,
+  "capturas": [
+   "hu067_1_ubicacion.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:01"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 2,
+  "titulo": "Bodega y repuesto",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Escanear: BOD-1 (bodega) y luego REP-6205 (repuesto).",
+  "esperado": "La misma pantalla muestra su desglose: la bodega por ubicación, el repuesto por bodega.",
+  "obtenido": "BOD-1 → Bodega Frio desglosada por ubicación (sí); REP-6205 → existencia por bodega (sí). GET /escaneo?c= resuelve los tres tipos para la app.",
+  "ok": true,
+  "capturas": [
+   "hu067_2_bodega.png",
+   "hu067_2_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:02"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 3,
+  "titulo": "Código no reconocido",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Escanear: ZZZ-404 (no existe) › Buscar; y GET /escaneo?c=ZZZ-404 desde la API.",
+  "esperado": "Se informa con claridad y no se muestra información de otro cliente.",
+  "obtenido": "La pantalla responde «['No se reconoce «ZZZ-404». Escriba el código impreso en la etiqueta, por ejemplo UBI-17 o BOD-9.']» sin detalle alguno; la API devuelve 400. Todo escaneo resuelve dentro del cliente en sesión (SEL_*_DESGLOSE reciben @CLIENTE).",
+  "ok": true,
+  "capturas": [
+   "hu067_3_no_reconocido.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:02"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 1,
+  "titulo": "Carga desde la plantilla",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Inventario › Repuestos › Carga masiva: planilla con la fila de ejemplo de la plantilla, dos filas válidas (una sin código, otra con código propio) y una fila con unidad «NOEXISTE» › Cargar.",
+  "esperado": "Las filas válidas se crean; una fila mala no detiene el resto y se informa cuál falló y por qué.",
+  "obtenido": "Resultado: «RESULTADO · Cargados · 2 · Con error · 1 · Duración · 0 min 1 s · FILA · QUÉ PASÓ · 5 · Sello de válvula (carga 060654) — La unidad \"NOEXISTE\" no existe. Vea la hoja UNIDADES VALIDAS de la plantilla.». Creados: REP-44 � Correa dentada HTD 8M (carga 060654); MANUAL-060654 � Aceite hidr�ulico ISO 68 (carga 060654). La fila de ejemplo se ignora sola.",
+  "ok": true,
+  "capturas": [
+   "hu068_1_planilla_elegida.png",
+   "hu068_1_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:07"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 2,
+  "titulo": "Descarga a Excel",
+  "usuario": "marcela",
+  "tipo": "Web",
+  "pasos": "Repuestos › buscar «carga 060654» › Descargar a Excel.",
+  "esperado": "Bajan los repuestos que coinciden con la búsqueda.",
+  "obtenido": "Archivo REPUESTOS 22-09-2026.xlsx con 2 filas de datos y las columnas CODIGO, NOMBRE, UNIDAD, FABRICANTE, MODELO…: solo los dos repuestos de la carga.",
+  "ok": true,
+  "capturas": [
+   "hu068_2_listado_filtrado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:07"
+ },
+ {
+  "hu": "HU-069",
+  "criterio": 1,
+  "titulo": "Código generado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Inventario › Bodegas › Nueva (la ficha ya no pide el código) y el repuesto cargado sin código en HU-068 #1.",
+  "esperado": "El sistema genera el código con el prefijo de su módulo y el id.",
+  "obtenido": "La ficha muestra el prefijo fijo «BOD-» y la ayuda «El prefijo lo pone el sistema; escriba usted el resto (por ejemplo CALDERAS). Si lo deja v». El repuesto cargado sin código quedó como REP-44 (id 44) por FNC_CODIGO_AUTOMATICO; Modulo_Codigo tiene 20 módulos con prefijo.",
+  "ok": true,
+  "capturas": [
+   "hu069_1_ficha_codigo_automatico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:13"
+ },
+ {
+  "hu": "HU-069",
+  "criterio": 2,
+  "titulo": "Códigos propios y antiguos",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "El repuesto cargado con código propio MANUAL-060654 (HU-068 #1) se edita (UPD_REPUESTO cambia el nombre); se revisan los códigos anteriores a la regla (REP-6205, REP-SELLO, REP-CORREA, REP-GRASA).",
+  "esperado": "El código escrito a mano se conserva tal cual; los antiguos no se tocan.",
+  "obtenido": "Antes de editar: MANUAL-060654; después: MANUAL-060654 · Aceite hidráulico ISO 68 (carga 060654, editado). Antiguos: REP-6205, REP-SELLO, REP-CORREA, REP-GRASA.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:13"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 1,
+  "titulo": "Quiebre de stock detectado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "REP-6205 (saldo 1, mínimo 10) y REP-SELLO (3, mínimo 4) en Bodega Frío; REP-EV2319 con mínimo 3 en la bodega 13 sin existencia. Corre GEN_ALERTA_INVENTARIO y se abre la bandeja de alertas.",
+  "esperado": "Se abre una alerta de stock mínimo por cada caso, con su severidad (sin existencia es crítica).",
+  "obtenido": "Detector: 4|0 (abiertas|cerradas). Alertas STOCK MINIMO abiertas: REP-6205 · BOD-1 · ALTA; REP-EV2319 · BOD-EV2319 · CRITICA; REP-SELLO · BOD-1 · ALTA. La bandeja las muestra (sí).",
+  "ok": true,
+  "capturas": [
+   "hu077_1_stock_minimo.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "Sin duplicados y cierre automático",
+  "usuario": "rodrigo",
+  "tipo": "BD",
+  "pasos": "Segunda pasada de GEN_ALERTA_INVENTARIO sin cambios; luego un ajuste positivo de 5 sellos (REP-SELLO pasa de 3 a 8, sobre el mínimo 4) y una tercera pasada.",
+  "esperado": "La segunda pasada no duplica; al reponer la existencia la alerta se cierra sola como resuelta.",
+  "obtenido": "Segunda pasada: 0|0 (abiertas|cerradas), REP-SELLO sigue con 1 alerta abierta. Tras el ajuste, tercera pasada: 0|1; la alerta de REP-SELLO queda «RESUELTA · La condición dejó de darse (detector automático). · atendida por Rodrigo».",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 3,
+  "titulo": "Aviso en la web",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Con alertas sin leer, entrar a la web (campana en el encabezado), abrir la campana y luego la bandeja Alertas.",
+  "esperado": "La campana muestra el contador de no leídas y la bandeja las agrupa por categoría y gravedad.",
+  "obtenido": "Campana: «65»; el panel de la campana lista las alertas (sí); la bandeja las agrupa por categoría con su gravedad (sí). SEL_ALERTA_RESUMEN: ['65|65|2|2|62|8'].",
+  "ok": true,
+  "capturas": [
+   "hu077_3_campana.png",
+   "hu077_3_panel_campana.png",
+   "hu077_3_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 4,
+  "titulo": "La app recibe lo mismo",
+  "usuario": "rodrigo",
+  "tipo": "API",
+  "pasos": "GET /alertas/resumen y GET /alertas con el token de Rodrigo (lo que consumirá la app; la pantalla móvil es del Sprint 6).",
+  "esperado": "Recibe las mismas alertas y el mismo contador que la web.",
+  "obtenido": "/alertas/resumen → 200: {'ABIERTAS': 65, 'NO_LEIDAS': 65}. /alertas → 200 con las mismas alertas que la bandeja (True).",
+  "ok": true,
+  "capturas": [
+   "hu077_4_sw_resumen.png",
+   "hu077_4_sw_listar.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:14"
+ },
+ {
+  "hu": "HU-059",
+  "criterio": 2,
+  "titulo": "Defecto corregido: la ficha de existencia decía «sin registrar» con varios cubos",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Existencias › un repuesto con dos estantes o dos lotes en la misma bodega › detalle.",
+  "esperado": "Se ve por estante y lote.",
+  "obtenido": "SEL_INVENTARIO_SALDO solo trae el estante cuando es uno; con dos cubos la pantalla mostraba «sin registrar» (falso). Ahora el listado y la ficha dicen «N cubos · M lotes» y la ficha gana la pestaña «Por estante y lote» (SEL_REPUESTO_DESGLOSE).",
+  "ok": true,
+  "capturas": [
+   "hu059_2_detalle_cubos.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el rollo térmico se imprimía con página A4",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Hoja de etiquetas › cambiar el formato a rollo térmico › imprimir.",
+  "esperado": "La página mide 50 × 25 mm.",
+  "obtenido": "La regla @page se emitía en el head y el cambio de formato es un postback parcial que solo refresca el cuerpo: la clase pasaba a etq-termica pero la página seguía en A4. El literal se movió dentro del cuerpo. Reprobado: «@page { size: 50mm 25mm; margin: 0; }» (hu066_2_formato_termico).",
+  "ok": true,
+  "capturas": [
+   "hu066_2_formato_termico.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-067",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el código impreso no se podía teclear si no era el token",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Escanear › escribir BOD-1 o REP-6205 (códigos escritos a mano, distintos del token del QR).",
+  "esperado": "Se resuelve dentro del cliente.",
+  "obtenido": "Solo se interpretaba TIPO-<id>; «BOD-1» buscaba la bodega id 1 y «REP-6205» el repuesto 6205: «no corresponde a ninguna bodega de su empresa». Bloque 254 (SEL_ETIQUETA_RESOLVER) busca el código impreso dentro del cliente y confirma que el token sea del cliente; lo usan Escanear.aspx y GET /escaneo. Reprobado con HU-067 #2.",
+  "ok": true,
+  "capturas": [
+   "hu067_2_bodega.png",
+   "hu067_2_repuesto.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-068",
+  "criterio": 1,
+  "titulo": "Defecto corregido: el administrador del cliente no podía cargar repuestos",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Como Marcela (Administrador del Cliente) › Repuestos › Carga masiva.",
+  "esperado": "La carga se abre y se puede ejecutar.",
+  "obtenido": "El perfil solo tenía «Ver el maestro de repuestos» y la ficha de carga (permiso 67) lo mandaba a la portada, aunque el listado sí le ofrecía el botón. Bloque 255: el perfil gana «Crear y editar repuestos» (la historia es suya); el botón «Carga masiva» se oculta a quien no puede crear. Reprobado con HU-068 #1.",
+  "ok": true,
+  "capturas": [
+   "hu068_1_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-077",
+  "criterio": 2,
+  "titulo": "Defecto corregido: el detector de inventario nunca cerraba una alerta",
+  "usuario": "bryan",
+  "tipo": "Web",
+  "pasos": "Reponer la existencia bajo el mínimo y correr GEN_ALERTA_INVENTARIO.",
+  "esperado": "La alerta pasa a RESUELTA.",
+  "obtenido": "El UPDATE de cierre ponía ale_fecha_atencion_utc sin ale_usuario_atencion y chocaba con CK_ALE_ATENCION (547): abría bien, no cerraba nunca. Bloque 256 parcha el texto vivo del SP para cerrar como GEN_ALERTA_OPERACION (usuario de atención y motivo «La condición dejó de darse»). Reprobado con HU-077 #2.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "22-09-2026 06:15"
+ }
+]

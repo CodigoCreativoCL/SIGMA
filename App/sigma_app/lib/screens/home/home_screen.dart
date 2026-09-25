@@ -13,6 +13,7 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/sigma_ia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
+import '../../widgets/comun/sigma_esqueleto.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../sigma_ai/analisis_screen.dart';
 import '../sigma_ai/sigma_ai_screen.dart';
@@ -23,6 +24,7 @@ import '../trabajo/mi_trabajo_screen.dart';
 import '../pendientes/pendientes_screen.dart';
 import '../permiso_trabajo/permisos_trabajo_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
+import 'dart:async';
 
 /// Navega empujando una pantalla sobre la actual.
 Future<T?> irA<T>(BuildContext c, Widget p) =>
@@ -69,15 +71,26 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
     if (ref.read(instalacionProvider) != null) return;
     if (!ref.read(sesionProvider).tieneCliente) return;
 
-    final plantas = await ref.read(plantasProvider.future).catchError(
-          (_) => const Paginado<ClienteInstalacion>(datos: []),
-        );
+    final plantas = await ref
+        .read(plantasProvider.future)
+        .catchError((_) => const Paginado<ClienteInstalacion>(datos: []));
     if (!mounted) return;
+
+    /* PRIMERO, LA QUE SE ESTABA USANDO
+
+       Si Android mató la app mientras estaba en segundo plano, al volver se
+       retoma donde se dejó en vez de preguntar de nuevo o —peor— quedarse sin
+       planta y mostrar listados vacíos.
+
+       `restaurar` comprueba contra las plantas AUTORIZADAS: a alguien le
+       pueden haber quitado una desde la web mientras la app estaba cerrada, y
+       devolverle esa sería dejarlo trabajando donde ya no le corresponde. */
+    if (ref.read(instalacionProvider.notifier).restaurar(plantas.datos)) return;
 
     // Con una sola instalación no se pregunta: preguntar por algo que no tiene
     // alternativa es un trámite, no una decisión.
     if (plantas.datos.length == 1) {
-      ref.read(instalacionProvider.notifier).state = plantas.datos.first;
+      ref.read(instalacionProvider.notifier).elegir(plantas.datos.first);
       return;
     }
     if (plantas.datos.isEmpty) return;
@@ -93,6 +106,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       existenciasEnAlertaProvider,
       permisosVigentesProvider,
     ]) {
+      if (!mounted) return;
       ref.invalidate(p);
     }
   }
@@ -116,7 +130,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
           SgDestino(
             icono: Icons.assignment_outlined,
             texto: 'Mi trabajo',
-            contador: ref.watch(ordenesTrabajoProvider).valueOrNull?.length ?? 0,
+            contador:
+                ref.watch(ordenesTrabajoProvider).valueOrNull?.length ?? 0,
             // La bandeja única en vez de la lista de órdenes: tareas,
             // pautas y bitácora dejan de estar escondidas en «Más».
             onTap: () => irA(context, const MiTrabajoScreen()),
@@ -143,7 +158,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
               child: RefreshIndicator(
                 onRefresh: _recargar,
                 child: ListView(
-                  padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+                  padding: context.conBarraSistema(
+                    const EdgeInsets.fromLTRB(16, 14, 16, 12),
+                  ),
                   children: const [
                     _ChipsEstado(),
                     SizedBox(height: 14),
@@ -206,6 +223,7 @@ class _Cabecera extends ConsumerWidget {
             perfil?.iniciales ?? (primero.isEmpty ? '?' : primero[0]),
             id: sesion.usuario,
             lado: 46,
+            ruta: perfil?.FOTO_RUTA,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -263,7 +281,16 @@ class _ChipsEstado extends ConsumerWidget {
     final sg = context.sg;
     final corte = ref.watch(sincronizacionProvider).fechaCorte;
 
-    return Row(
+    /* WRAP Y NO ROW
+
+       Son dos insignias de estado en la cabecera del Inicio. Con la letra en
+       Máximo «Sin señal» y «3 en cola» no caben juntas en un teléfono angosto
+       y la cabecera se desborda. Bajar la segunda de línea se lee; recortarla
+       contra el borde, no. */
+    return Wrap(
+      spacing: 0,
+      runSpacing: 8,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         ValueListenableBuilder<bool>(
           valueListenable: SyncService.instance.enLinea,
@@ -284,15 +311,20 @@ class _ChipsEstado extends ConsumerWidget {
                   child: InkWell(
                     onTap: () => irA(context, const PendientesScreen()),
                     borderRadius: BorderRadius.circular(SgRadius.pill),
-                    child: SgBadge('$n en cola',
-                        color: sg.ambarTexto,
-                        icono: Icons.cloud_upload_outlined),
+                    child: SgBadge(
+                      '$n en cola',
+                      color: sg.ambarTexto,
+                      icono: Icons.cloud_upload_outlined,
+                    ),
                   ),
                 ),
         ),
         if (corte != null)
-          SgBadge(DateFormat('HH:mm').format(corte.toLocal()),
-              color: sg.tinta2, icono: Icons.check_circle_outline),
+          SgBadge(
+            DateFormat('HH:mm').format(corte.toLocal()),
+            color: sg.tinta2,
+            icono: Icons.check_circle_outline,
+          ),
       ],
     );
   }
@@ -314,6 +346,20 @@ class _Jornada extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
     final permisos = ref.watch(permisosVigentesProvider);
+
+    /* MIENTRAS CARGA, LA SILUETA — NO LOS CEROS
+
+       Con `valueOrNull ?? 0` esta tarjeta se pintaba entera y al instante
+       diciendo «0 vigentes, 0 vencidos», y un segundo después saltaba a los
+       números de verdad. Un cero que no es un cero es peor que una espera: se
+       lee, se cree, y quien mira ya decidió que hoy no tiene nada.
+
+       La silueta ocupa el mismo sitio que la tarjeta, así que cuando llegan
+       los datos nada se mueve. */
+    if (permisos.isLoading && !permisos.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 132, conIcono: false);
+    }
+
     final lista = permisos.valueOrNull?.datos ?? const <PermisoTrabajo>[];
     final total = permisos.valueOrNull?.total ?? 0;
 
@@ -346,15 +392,22 @@ class _Jornada extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.baseline,
                 textBaseline: TextBaseline.alphabetic,
                 children: [
-                  Text(permisos.hasValue ? '$vigentes' : '—',
-                      style: sora(44, 700,
-                          color: sg.tinta,
-                          alto: 1,
-                          espaciado: -1.32,
-                          tabular: true)),
+                  Text(
+                    permisos.hasValue ? '$vigentes' : '—',
+                    style: sora(
+                      44,
+                      700,
+                      color: sg.tinta,
+                      alto: 1,
+                      espaciado: -1.32,
+                      tabular: true,
+                    ),
+                  ),
                   const SizedBox(width: 8),
-                  Text('/ $total',
-                      style: sora(20, 600, color: sg.tinta3, alto: 1)),
+                  Text(
+                    '/ $total',
+                    style: sora(20, 600, color: sg.tinta3, alto: 1),
+                  ),
                 ],
               ),
               const SizedBox(width: 16),
@@ -364,8 +417,10 @@ class _Jornada extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Text('permisos al día',
-                          style: sora(13, 500, color: sg.tinta2)),
+                      Text(
+                        'permisos al día',
+                        style: sora(13, 500, color: sg.tinta2),
+                      ),
                       const SizedBox(height: 7),
                       ClipRRect(
                         borderRadius: BorderRadius.circular(SgRadius.pill),
@@ -377,7 +432,8 @@ class _Jornada extends ConsumerWidget {
                               child: Container(
                                 height: 8,
                                 decoration: const BoxDecoration(
-                                    gradient: SgColor.gradiente),
+                                  gradient: SgColor.gradiente,
+                                ),
                               ),
                             ),
                           ],
@@ -396,11 +452,17 @@ class _Jornada extends ConsumerWidget {
               runSpacing: 7,
               children: [
                 if (vencidos > 0)
-                  SgBadge('$vencidos ${vencidos == 1 ? "vencido" : "vencidos"}',
-                      color: sg.rojoTexto, icono: Icons.error_outline),
+                  SgBadge(
+                    '$vencidos ${vencidos == 1 ? "vencido" : "vencidos"}',
+                    color: sg.rojoTexto,
+                    icono: Icons.error_outline,
+                  ),
                 if (porVencer > 0)
-                  SgBadge('$porVencer por vencer',
-                      color: sg.ambarTexto, icono: Icons.schedule),
+                  SgBadge(
+                    '$porVencer por vencer',
+                    color: sg.ambarTexto,
+                    icono: Icons.schedule,
+                  ),
                 if (vigentes > 0)
                   SgBadge('$vigentes vigentes', color: sg.azulTexto),
               ],
@@ -424,12 +486,26 @@ class _Siguiente extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final lista =
-        ref.watch(permisosVigentesProvider).valueOrNull?.datos ?? const [];
+    final permisos = ref.watch(permisosVigentesProvider);
+
+    /* CARGANDO NO ES «NO HAY NADA»
+
+       Este bloque se esconde cuando la lista está vacía, y mientras carga
+       también lo está: la pantalla se dibujaba sin él y un segundo después
+       aparecía empujando todo lo de abajo. La silueta reserva el sitio para
+       que nada salte. */
+    if (permisos.isLoading && !permisos.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 84);
+    }
+
+    final lista = permisos.valueOrNull?.datos ?? const [];
     if (lista.isEmpty) return const SizedBox.shrink();
 
-    final ordenados = [...lista]..sort((a, b) =>
-        (a.DIAS_RESTANTES ?? 9999).compareTo(b.DIAS_RESTANTES ?? 9999));
+    final ordenados = [...lista]
+      ..sort(
+        (a, b) =>
+            (a.DIAS_RESTANTES ?? 9999).compareTo(b.DIAS_RESTANTES ?? 9999),
+      );
     final p = ordenados.first;
 
     return SgCard(
@@ -443,15 +519,18 @@ class _Siguiente extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SgBadge('Siguiente sugerido',
-                    color: sg.primarioTexto,
-                    icono: Icons.arrow_forward,
-                    chico: true),
+                SgBadge(
+                  'Siguiente sugerido',
+                  color: sg.primarioTexto,
+                  icono: Icons.arrow_forward,
+                  chico: true,
+                ),
                 const SizedBox(height: 5),
                 Text(
-                  [p.ptr_numero, p.ORDEN_TITULO ?? p.TIPO_NOMBRE]
-                      .where((s) => s.isNotEmpty)
-                      .join(' · '),
+                  [
+                    p.ptr_numero,
+                    p.ORDEN_TITULO ?? p.TIPO_NOMBRE,
+                  ].where((s) => s.isNotEmpty).join(' · '),
                   style: sora(16, 600, color: sg.tinta),
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -474,8 +553,10 @@ class _Siguiente extends ConsumerWidget {
           Container(
             width: 44,
             height: 44,
-            decoration:
-                BoxDecoration(color: sg.primario, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              color: sg.primario,
+              shape: BoxShape.circle,
+            ),
             child: const Icon(Icons.play_arrow, size: 22, color: Colors.white),
           ),
         ],
@@ -502,10 +583,26 @@ class _BloqueIa extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final sg = context.sg;
-    final p = ref.watch(prediccionDestacadaProvider);
+    final predicciones =
+        ref.watch(prediccionesProvider).valueOrNull ?? const [];
+    final ordenes = ref.watch(ordenesTrabajoProvider).valueOrNull ?? const [];
 
-    if (p == null) {
+    /* LAS OT SIN TERMINAR TAMBIEN SON UNA TARJETA
+
+       Bryan pidió que el carrusel alternara entre los análisis y «OT no
+       finalizadas». No es un adorno: una predicción dice qué VA a pasar y una
+       OT abierta dice qué está pasando ya, y las dos compiten por el mismo
+       rato de la persona. Verlas en el mismo sitio es lo que permite decidir
+       cuál atender primero.
+
+       Se cuentan las que están en ejecución o esperando cierre —estado 2 y 3—:
+       una recién abierta que nadie ha tomado no es «sin terminar», es «sin
+       empezar», y la bandeja ya la muestra. */
+    final sinTerminar = ordenes
+        .where((o) => o.ESTADO_ID == 2 || o.ESTADO_ID == 3)
+        .toList();
+
+    if (predicciones.isEmpty && sinTerminar.isEmpty) {
       final sinDatos = ref.watch(vigiladosSinDatosProvider);
 
       // «No hay análisis» no significa lo mismo si además nadie mide nada: lo
@@ -514,13 +611,199 @@ class _BloqueIa extends ConsumerWidget {
         motivo: sinDatos == 0
             ? null
             : sinDatos == 1
-                ? 'Hay un equipo vigilado que nadie ha medido todavía.'
-                : 'Hay $sinDatos equipos vigilados que nadie ha medido '
-                    'todavía.',
+            ? 'Hay un equipo vigilado que nadie ha medido todavía.'
+            : 'Hay $sinDatos equipos vigilados que nadie ha medido todavía.',
       );
     }
 
+    return _CarruselIa(
+      predicciones: predicciones.take(4).toList(),
+      sinTerminar: sinTerminar,
+    );
+  }
+}
+
+/// El carrusel de SIGMA AI: los análisis y las OT sin terminar, uno a uno.
+///
+/// ## Por qué pasa solo
+///
+/// La tarjeta ocupa el sitio más visible del Inicio y antes mostraba una sola
+/// predicción: la más grave. Las otras tres existían y nadie las veía salvo
+/// que entrara a «Ver todo», que es un toque que casi nadie da.
+///
+/// Pasando sola, en ocho segundos se ven las cuatro sin hacer nada. Ocho y no
+/// tres: hay que poder LEER la tarjeta —dos líneas y dos cifras— antes de que
+/// cambie, y una que se va mientras se lee enseña a ignorarla.
+///
+/// ## Por qué se detiene al tocarla
+///
+/// Porque quien la toca está eligiendo mirar esa, y que se le mueva debajo del
+/// dedo es la forma más rápida de abrir la ficha equivocada.
+class _CarruselIa extends StatefulWidget {
+  const _CarruselIa({required this.predicciones, required this.sinTerminar});
+
+  final List<Prediccion> predicciones;
+  final List<OrdenTrabajo> sinTerminar;
+
+  @override
+  State<_CarruselIa> createState() => _CarruselIaState();
+}
+
+class _CarruselIaState extends State<_CarruselIa> {
+  final _paginas = PageController();
+  Timer? _reloj;
+  int _actual = 0;
+
+  /// Se detiene mientras se toca y no vuelve a arrancar hasta que se suelta:
+  /// ver la nota de la clase.
+  bool _detenido = false;
+
+  int get _cuantas =>
+      widget.predicciones.length + (widget.sinTerminar.isEmpty ? 0 : 1);
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    /* CON MOVIMIENTO REDUCIDO NO AVANZA SOLO
+
+       Una tarjeta que se cambia sola cada ocho segundos es exactamente lo que
+       el ajuste existe para evitar, y no se pierde nada: los puntos siguen
+       ahí y se desliza con el dedo. Lo que desaparece es el movimiento que
+       nadie pidió. */
+    final quieto = MediaQuery.disableAnimationsOf(context);
+    final debe = _cuantas > 1 && !quieto;
+
+    if (!debe) {
+      _reloj?.cancel();
+      _reloj = null;
+      return;
+    }
+    _reloj ??= Timer.periodic(const Duration(seconds: 8), (_) => _siguiente());
+  }
+
+  @override
+  void dispose() {
+    _reloj?.cancel();
+    _paginas.dispose();
+    super.dispose();
+  }
+
+  void _siguiente() {
+    if (!mounted || _detenido || !_paginas.hasClients) return;
+
+    _paginas.animateToPage(
+      (_actual + 1) % _cuantas,
+      // Lenta y con `easeInOutCubic`: el movimiento tiene que leerse como que
+      // la tarjeta se está cambiando sola, no como que alguien la deslizó.
+      duration: const Duration(milliseconds: 620),
+      curve: Curves.easeInOutCubic,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Listener(
+      onPointerDown: (_) => _detenido = true,
+      onPointerUp: (_) => _detenido = false,
+      onPointerCancel: (_) => _detenido = false,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          /* ALTO FIJO Y NO `shrinkWrap`
+
+             Un PageView mide la página que está mostrando, así que con alto
+             libre la tarjeta daría un salto cada vez que una predicción tenga
+             una línea más que la anterior. Un salto de veinte píxeles bajo el
+             dedo, en el Inicio, se siente como un fallo. */
+          /* 297, Y ES UN NUMERO MEDIDO
+
+             Antes decia 254 y la tarjeta se desbordaba por 59 px en el Inicio.
+             254 no salio de ninguna parte: la tarjeta de SIGMA AI con sus tres
+             cifras, su pie y sus dos botones ocupa 297 a cualquier ancho -se
+             midio con `test/tarjeta_ia_test.dart`, que ademas falla si vuelve
+             a crecer-.
+
+             Y se escala con el tamaño de texto del usuario, porque con el
+             ajuste de accesibilidad en Maximo (1,5x, vista 16.2) todo lo de
+             dentro crece y un alto fijo volveria a reventar sin que nadie haya
+             tocado el Inicio. El factor sobra un poco -los espaciados no
+             crecen- y sobrar es exactamente lo que se quiere de un alto. */
+          SizedBox(
+            height: MediaQuery.textScalerOf(context).scale(297),
+            child: PageView.builder(
+              controller: _paginas,
+              itemCount: _cuantas,
+              onPageChanged: (i) => setState(() => _actual = i),
+              itemBuilder: (_, i) => i < widget.predicciones.length
+                  ? _TarjetaPrediccion(prediccion: widget.predicciones[i])
+                  : _TarjetaSinTerminar(ordenes: widget.sinTerminar),
+            ),
+          ),
+          if (_cuantas > 1) ...[
+            const SizedBox(height: 10),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                for (var i = 0; i < _cuantas; i++) ...[
+                  // El punto activo es una barra y no un círculo más grande:
+                  // se distingue de un vistazo incluso con la pantalla sucia.
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 260),
+                    curve: Curves.easeOut,
+                    width: i == _actual ? 18 : 6,
+                    height: 6,
+                    decoration: BoxDecoration(
+                      color: i == _actual ? sg.acentoTexto : sg.up,
+                      borderRadius: BorderRadius.circular(3),
+                    ),
+                  ),
+                  if (i < _cuantas - 1) const SizedBox(width: 5),
+                ],
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Una predicción en la tarjeta de SIGMA AI.
+///
+/// ## Qué se dice y qué no
+///
+/// «32 d» sale de resolver una ecuación sobre lecturas reales y se puede
+/// verificar. La **probabilidad no se pinta**: no es probabilidad de falla,
+/// es cuánta certeza tiene el modelo de que el cruce caiga dentro de su
+/// horizonte, y esa frase cabe en la ficha y no en una tarjeta. Poner el
+/// número sin la frase es exactamente cómo un «87 %» termina repitiéndose en
+/// una reunión como si significara otra cosa.
+///
+/// El «± 4 d» del margen va al lado a propósito: un plazo sin margen se lee
+/// como una fecha comprometida, y esto es una estimación.
+///
+/// ## Lo que se agregó
+///
+/// El **valor actual contra el límite** —«82 °C de 95 °C»—: es lo que convierte
+/// el aviso en algo que se puede comprobar mirando el equipo, en vez de una
+/// afirmación que hay que creer. Y **dónde está**, porque un plazo sin sitio
+/// obliga a buscar el activo antes de poder hacer nada.
+class _TarjetaPrediccion extends StatelessWidget {
+  const _TarjetaPrediccion({required this.prediccion});
+
+  final Prediccion prediccion;
+
+  static final _n = NumberFormat.decimalPattern('es_CL');
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    final p = prediccion;
     final variable = (p.VARIABLE_NOMBRE ?? 'La variable').toLowerCase();
+    final unidad = p.UNIDAD ?? '';
 
     return SgTarjetaIa(
       simbolo: SgIconoIa.prediccion,
@@ -528,29 +811,106 @@ class _BloqueIa extends ConsumerWidget {
       detalle: p.pre_dia_restante == null
           ? 'La $variable viene en alza.'
           : 'La $variable llega al límite del equipo en unos '
-              '${p.pre_dia_restante} días, si la tendencia se mantiene.',
+                '${p.pre_dia_restante} días, si la tendencia se mantiene.',
       badge: p.SEVERIDAD_NOMBRE,
       colorBadge: p.critica
           ? sg.rojoTexto
           : p.alta
-              ? sg.ambarTexto
-              : sg.acentoTexto,
+          ? sg.ambarTexto
+          : sg.acentoTexto,
+      pie: _donde(p),
       cifras: [
-        if (p.pre_dia_restante != null)
-          ('${p.pre_dia_restante} d', 'faltan'),
+        if (p.pre_dia_restante != null) ('${p.pre_dia_restante} d', 'faltan'),
         if (p.margenDias != null) ('± ${p.margenDias} d', 'margen'),
+        // Comprobable mirando el equipo, que es lo que lo hace creíble.
+        if (p.VALOR_ACTUAL != null && p.VALOR_CRITICO != null)
+          (
+            // Con espacio: «6,35mm/s» no es un número, son dos cosas pegadas,
+            // y a la hora de leerlo de reojo eso cuesta.
+            '${_n.format(p.VALOR_ACTUAL)}${unidad.isEmpty ? '' : ' $unidad'}',
+            'de ${_n.format(p.VALOR_CRITICO)}${unidad.isEmpty ? '' : ' $unidad'}',
+          ),
       ],
-      miniatura: p.ACTIVO_FOTO == null
-          ? const SgFoto(lado: 52, radio: 15)
-          : SigmaImagen(
-              ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
-      accion: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => AnalisisScreen(prediccionId: p.pre_id),
-      )),
+      /* SIN FOTO, EL ICONO DEL EQUIPO; NO UN MARCO VACIO
+
+         El marcador de imagen generico se lee como «esto no cargo», y en la
+         tarjeta mas visible del Inicio eso hace dudar del resto. */
+      miniatura: (p.ACTIVO_FOTO ?? '').isEmpty
+          ? const SgFoto(lado: 52, radio: 15, icono: Icons.view_in_ar_outlined)
+          : SigmaImagen(ruta: p.ACTIVO_FOTO!, ancho: 52, alto: 52, radio: 15),
+      accion: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => AnalisisScreen(prediccionId: p.pre_id),
+        ),
+      ),
       textoAccionSecundaria: 'Ver todo',
-      accionSecundaria: () => Navigator.of(context).push(MaterialPageRoute(
-        builder: (_) => const SigmaAiScreen(),
-      )),
+      accionSecundaria: () => Navigator.of(
+        context,
+      ).push(MaterialPageRoute(builder: (_) => const SigmaAiScreen())),
+    );
+  }
+
+  /// Dónde está el equipo. Un plazo sin sitio obliga a buscarlo antes de poder
+  /// hacer nada con el aviso.
+  String? _donde(Prediccion p) {
+    final partes = [
+      p.ACTIVO_CODIGO,
+      p.AREA_NOMBRE,
+    ].where((s) => (s ?? '').trim().isNotEmpty).map((s) => s!.trim()).toList();
+    return partes.isEmpty ? null : partes.join(' · ');
+  }
+}
+
+/// La página de las OT que están empezadas y sin cerrar.
+class _TarjetaSinTerminar extends StatelessWidget {
+  const _TarjetaSinTerminar({required this.ordenes});
+
+  final List<OrdenTrabajo> ordenes;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    final cuantas = ordenes.length;
+    final enEspera = ordenes.where((o) => o.ESTADO_ID == 3).length;
+
+    return SgTarjetaIa(
+      simbolo: SgIconoIa.prediccion,
+      titulo: cuantas == 1
+          ? 'Tienes un trabajo sin terminar'
+          : 'Tienes $cuantas trabajos sin terminar',
+      detalle: enEspera == 0
+          ? 'Están empezados y todavía no se cierran. Lo que no se cierra no '
+                'entra en el historial del equipo.'
+          : enEspera == 1
+          ? 'Uno ya está esperando cierre: el técnico terminó y falta que '
+                'alguien lo firme.'
+          : '$enEspera ya están esperando cierre: el técnico terminó y falta '
+                'que alguien los firme.',
+      badge: enEspera > 0 ? 'Esperan cierre' : null,
+      colorBadge: sg.ambarTexto,
+      pie: ordenes.first.OT_NUMERO,
+      cifras: [
+        ('$cuantas', cuantas == 1 ? 'abierto' : 'abiertos'),
+        if (enEspera > 0) ('$enEspera', 'por cerrar'),
+      ],
+      miniatura: (ordenes.first.ACTIVO_FOTO ?? '').isEmpty
+          ? const SgFoto(
+              lado: 52,
+              radio: 15,
+              icono: Icons.build_circle_outlined,
+            )
+          : SigmaImagen(
+              ruta: ordenes.first.ACTIVO_FOTO!,
+              ancho: 52,
+              alto: 52,
+              radio: 15,
+            ),
+      textoAccion: 'Ver mi trabajo',
+      accion: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => const MiTrabajoScreen(inicial: TipoTrabajo.ordenes),
+        ),
+      ),
     );
   }
 }
@@ -561,7 +921,15 @@ class _ResumenAlertas extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
-    final r = ref.watch(resumenAlertasProvider).valueOrNull;
+    final resumen = ref.watch(resumenAlertasProvider);
+
+    // Sin esto la tarjeta decía «0 alertas» durante el primer segundo, y cero
+    // alertas es justo la respuesta que hace que nadie la abra.
+    if (resumen.isLoading && !resumen.hasValue) {
+      return const SgEsqueleto(filas: 1, alto: 62, conCifra: true);
+    }
+
+    final r = resumen.valueOrNull;
     final abiertas = r?.ABIERTAS ?? 0;
     final noLeidas = r?.NO_LEIDAS ?? 0;
 
@@ -591,9 +959,7 @@ class _ResumenAlertas extends ConsumerWidget {
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  noLeidas == 0
-                      ? 'Todo revisado'
-                      : '$noLeidas sin leer',
+                  noLeidas == 0 ? 'Todo revisado' : '$noLeidas sin leer',
                   style: sora(12, 500, color: sg.tinta3),
                 ),
               ],
@@ -626,15 +992,21 @@ class _Cola extends StatelessWidget {
               onTap: () => irA(context, const PendientesScreen()),
               child: Row(
                 children: [
-                  SgIconoCuadro(Icons.cloud_upload_outlined,
-                      color: sg.ambarTexto, lado: 42, tamanoIcono: 21),
+                  SgIconoCuadro(
+                    Icons.cloud_upload_outlined,
+                    color: sg.ambarTexto,
+                    lado: 42,
+                    tamanoIcono: 21,
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Pendientes de envío',
-                            style: sora(16, 600, color: sg.tinta)),
+                        Text(
+                          'Pendientes de envío',
+                          style: sora(16, 600, color: sg.tinta),
+                        ),
                         const SizedBox(height: 2),
                         Text(
                           n == 1

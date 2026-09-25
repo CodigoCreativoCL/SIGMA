@@ -47,8 +47,9 @@ class VozService {
 
   final _motor = SpeechToText();
 
-  final ValueNotifier<EstadoVoz> estado =
-      ValueNotifier<EstadoVoz>(EstadoVoz.sinIniciar);
+  final ValueNotifier<EstadoVoz> estado = ValueNotifier<EstadoVoz>(
+    EstadoVoz.sinIniciar,
+  );
 
   /// Lo que se lleva escuchado, incluido el tramo provisional.
   final ValueNotifier<String> texto = ValueNotifier<String>('');
@@ -136,8 +137,9 @@ class VozService {
     await _motor.stop();
     nivel.value = 0;
     if (estado.value == EstadoVoz.escuchando) {
-      estado.value =
-          texto.value.trim().isEmpty ? EstadoVoz.listo : EstadoVoz.transcrito;
+      estado.value = texto.value.trim().isEmpty
+          ? EstadoVoz.listo
+          : EstadoVoz.transcrito;
     }
   }
 
@@ -158,8 +160,9 @@ class VozService {
     if (s == 'done' || s == 'notListening') {
       nivel.value = 0;
       if (estado.value == EstadoVoz.escuchando) {
-        estado.value =
-            texto.value.trim().isEmpty ? EstadoVoz.listo : EstadoVoz.transcrito;
+        estado.value = texto.value.trim().isEmpty
+            ? EstadoVoz.listo
+            : EstadoVoz.transcrito;
       }
     }
   }
@@ -215,8 +218,10 @@ class CampoDictado {
 abstract final class InterpreteVoz {
   /// «ocho coma cuatro» → «8,4». El español dicta el decimal como «coma» y a
   /// veces como «punto»; los dos significan lo mismo acá.
-  static final _decimal =
-      RegExp(r'(\d+)\s*(?:coma|punto)\s*(\d+)', caseSensitive: false);
+  static final _decimal = RegExp(
+    r'(\d+)\s*(?:coma|punto)\s*(\d+)',
+    caseSensitive: false,
+  );
 
   /// `1.234.567` → `1234567`. **Solo** cuando los puntos vienen en grupos de
   /// tres repetidos: eso es un separador de miles y nunca un decimal.
@@ -340,7 +345,9 @@ abstract final class InterpreteVoz {
     var t = crudo.trim().replaceAll(RegExp(r'\s+'), ' ');
     t = _numerosEnPalabras(t);
     t = t.replaceAllMapped(
-        _miles, (m) => '${m[1]}${m[2]!.replaceAll('.', '')}');
+      _miles,
+      (m) => '${m[1]}${m[2]!.replaceAll('.', '')}',
+    );
     t = t.replaceAllMapped(_decimal, (m) => '${m[1]},${m[2]}');
     t = t.replaceAllMapped(_puntoDecimal, (m) => '${m[1]},${m[2]}');
     return t.replaceAll(RegExp(r'\s+'), ' ').trim();
@@ -374,8 +381,10 @@ abstract final class InterpreteVoz {
 
     // Si la persona dijo «observación …», lo de después es la observación y
     // punto: es la señal más clara que puede dar.
-    final marca = RegExp(r'observaci[oó]n\s*[:,]?\s*(.+)$', caseSensitive: false)
-        .firstMatch(t);
+    final marca = RegExp(
+      r'observaci[oó]n\s*[:,]?\s*(.+)$',
+      caseSensitive: false,
+    ).firstMatch(t);
     if (marca != null) return _mayuscula(marca.group(1)!.trim());
 
     t = t.replaceAll(RegExp(r'-?\d+(?:,\d+)?'), ' ');
@@ -384,9 +393,12 @@ abstract final class InterpreteVoz {
     }
     t = t
         .replaceAll(
-            RegExp(r'\b(vibraci[oó]n|temperatura|lectura|medici[oó]n|valor|rms)\b',
-                caseSensitive: false),
-            ' ')
+          RegExp(
+            r'\b(vibraci[oó]n|temperatura|lectura|medici[oó]n|valor|rms)\b',
+            caseSensitive: false,
+          ),
+          ' ',
+        )
         .replaceAll(RegExp(r'\s+'), ' ')
         .trim();
 
@@ -409,20 +421,22 @@ abstract final class InterpreteVoz {
     final u = unidad(crudo);
 
     if (n != null) {
-      campos.add(CampoDictado(
-        clave: 'valor',
-        rotulo: rotulo,
-        valor: n,
-        unidad: u ?? unidadEsperada,
-        confirmar:
-            u != null && unidadEsperada != null && u != unidadEsperada,
-      ));
+      campos.add(
+        CampoDictado(
+          clave: 'valor',
+          rotulo: rotulo,
+          valor: n,
+          unidad: u ?? unidadEsperada,
+          confirmar: u != null && unidadEsperada != null && u != unidadEsperada,
+        ),
+      );
     }
 
     final obs = observacion(crudo);
     if (obs.isNotEmpty) {
-      campos.add(CampoDictado(
-          clave: 'observacion', rotulo: 'Observación', valor: obs));
+      campos.add(
+        CampoDictado(clave: 'observacion', rotulo: 'Observación', valor: obs),
+      );
     }
 
     return campos;

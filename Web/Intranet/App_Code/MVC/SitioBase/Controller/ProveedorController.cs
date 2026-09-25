@@ -2,7 +2,9 @@
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
+using System.Web;
 
 namespace SitioBase.Controller
 {
@@ -428,5 +430,163 @@ namespace SitioBase.Controller
         {
             return valor == null ? (object)"" : valor.Trim();
         }
+
+        #region Historial de servicios (HU-065)
+
+        /// <summary>
+        /// Todo lo contratado a un proveedor dentro de un rango, con el
+        /// total por moneda y las ordenes en que participo.
+        ///
+        /// El rango se pasa en fecha (no en hora): el SP compara contra la
+        /// primera fecha que exista del servicio —servicio, documento o
+        /// creacion— y las dos puntas son inclusivas.
+        /// </summary>
+        public List<ProveedorHistorial> GetHistorial(ProveedorHistorial filtro = null)
+        {
+            List<ProveedorHistorial> lista = new List<ProveedorHistorial>();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+
+                try
+                {
+                    cmd.CommandText = "SEL_PROVEEDOR_HISTORIAL";
+                    cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+                    if (filtro != null)
+                    {
+                        if (filtro.filtro_proveedor > 0)
+                            cmd.Parameters.AddWithValue("@PROVEEDOR", filtro.filtro_proveedor);
+                        if (filtro.filtro_servicio_tipo > 0)
+                            cmd.Parameters.AddWithValue("@SERVICIO_TIPO", filtro.filtro_servicio_tipo);
+                        if (filtro.filtro_desde != null)
+                            cmd.Parameters.AddWithValue("@DESDE", filtro.filtro_desde.Value.Date);
+                        if (filtro.filtro_hasta != null)
+                            cmd.Parameters.AddWithValue("@HASTA", filtro.filtro_hasta.Value.Date);
+                        if (!string.IsNullOrEmpty(filtro.filtro))
+                            cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
+                    }
+
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                    {
+                        while (dr.Read())
+                        {
+                            ProveedorHistorial item = new ProveedorHistorial();
+
+                            item.ots_id = int.Parse(dr["ots_id"].ToString());
+                            item.ots_orden_trabajo = int.Parse(dr["ots_orden_trabajo"].ToString());
+                            item.ots_proveedor = int.Parse(dr["ots_proveedor"].ToString());
+                            item.ots_servicio_tipo = int.Parse(dr["ots_servicio_tipo"].ToString());
+                            item.ots_descripcion = dr["ots_descripcion"].ToString();
+                            if (dr["ots_cantidad"] != DBNull.Value)
+                                item.ots_cantidad = decimal.Parse(dr["ots_cantidad"].ToString());
+                            if (dr["ots_monto_unitario"] != DBNull.Value)
+                                item.ots_monto_unitario = decimal.Parse(dr["ots_monto_unitario"].ToString());
+                            item.ots_monto = decimal.Parse(dr["ots_monto"].ToString());
+                            if (dr["ots_moneda"] != DBNull.Value)
+                                item.ots_moneda = int.Parse(dr["ots_moneda"].ToString());
+                            item.ots_documento_referencia = dr["ots_documento_referencia"].ToString();
+                            if (dr["ots_fecha_servicio_utc"] != DBNull.Value)
+                                item.ots_fecha_servicio_utc = DateTime.Parse(dr["ots_fecha_servicio_utc"].ToString());
+                            if (dr["ots_fecha_documento"] != DBNull.Value)
+                                item.ots_fecha_documento = DateTime.Parse(dr["ots_fecha_documento"].ToString());
+
+                            item.prv_rut = dr["prv_rut"].ToString();
+                            item.prv_razon_social = dr["prv_razon_social"].ToString();
+                            item.proveedor_fantasia = dr["PROVEEDOR_FANTASIA"].ToString();
+                            item.servicio_tipo_nombre = dr["SERVICIO_TIPO_NOMBRE"].ToString();
+                            item.otr_correlativo = int.Parse(dr["otr_correlativo"].ToString());
+                            item.orden_titulo = dr["ORDEN_TITULO"].ToString();
+                            item.orden_estado = dr["ORDEN_ESTADO"].ToString();
+
+                            item.moneda_codigo = dr["MONEDA_CODIGO"].ToString();
+                            item.moneda_nombre = dr["MONEDA_NOMBRE"].ToString();
+                            item.moneda_grupo = int.Parse(dr["MONEDA_GRUPO"].ToString());
+                            item.fecha_efectiva = DateTime.Parse(dr["FECHA_EFECTIVA"].ToString());
+
+                            item.total_moneda = decimal.Parse(dr["TOTAL_MONEDA"].ToString());
+                            item.servicios_moneda = int.Parse(dr["SERVICIOS_MONEDA"].ToString());
+                            item.ordenes_proveedor = int.Parse(dr["ORDENES_PROVEEDOR"].ToString());
+
+                            lista.Add(item);
+                        }
+                    }
+
+                    cmd.Connection.Close();
+                    cmd.Dispose();
+                }
+                catch (Exception)
+                {
+                    if (cmd.Connection != null) cmd.Connection.Close();
+                    cmd.Dispose();
+                    lista = null;
+                }
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Baja a Excel lo que la pantalla esta mostrando, desde la MISMA
+        /// lista que se pinto. El monto y la moneda van en columnas
+        /// separadas a proposito: un total en el pie del archivo sumaria
+        /// pesos con UF, que es justo lo que la historia prohibe.
+        /// </summary>
+        public void ExportarHistorial(List<ProveedorHistorial> lista)
+        {
+            DataTable t = new DataTable();
+
+            t.Columns.Add("FECHA");
+            t.Columns.Add("PROVEEDOR");
+            t.Columns.Add("RUT");
+            t.Columns.Add("ORDEN");
+            t.Columns.Add("TITULO_ORDEN");
+            t.Columns.Add("ESTADO_ORDEN");
+            t.Columns.Add("TIPO_SERVICIO");
+            t.Columns.Add("DESCRIPCION");
+            t.Columns.Add("DOCUMENTO");
+            t.Columns.Add("CANTIDAD", typeof(decimal));
+            t.Columns.Add("MONTO_UNITARIO", typeof(decimal));
+            t.Columns.Add("MONTO", typeof(decimal));
+            t.Columns.Add("MONEDA");
+
+            if (lista != null)
+            {
+                foreach (ProveedorHistorial h in lista)
+                {
+                    DataRow f = t.NewRow();
+
+                    f["FECHA"] = h.fecha_efectiva.ToString("dd-MM-yyyy");
+                    f["PROVEEDOR"] = h.prv_razon_social;
+                    f["RUT"] = h.prv_rut;
+                    f["ORDEN"] = h.otr_correlativo;
+                    f["TITULO_ORDEN"] = h.orden_titulo;
+                    f["ESTADO_ORDEN"] = h.orden_estado;
+                    f["TIPO_SERVICIO"] = h.servicio_tipo_nombre;
+                    f["DESCRIPCION"] = h.ots_descripcion;
+                    f["DOCUMENTO"] = h.ots_documento_referencia;
+                    f["CANTIDAD"] = (object)h.ots_cantidad ?? DBNull.Value;
+                    f["MONTO_UNITARIO"] = (object)h.ots_monto_unitario ?? DBNull.Value;
+                    f["MONTO"] = h.ots_monto;
+                    f["MONEDA"] = h.moneda_codigo;
+
+                    t.Rows.Add(f);
+                }
+            }
+
+            byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(t, true);
+
+            string archivo = "HISTORIAL PROVEEDOR " + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");
+
+            HttpContext.Current.Response.Clear();
+            HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";
+            HttpContext.Current.Response.AddHeader("content-disposition",
+                                                   "attachment; filename=" + archivo + ".xlsx");
+            HttpContext.Current.Response.BinaryWrite(binario);
+            HttpContext.Current.Response.End();
+        }
+
+        #endregion
     }
 }

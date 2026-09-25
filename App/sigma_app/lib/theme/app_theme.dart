@@ -34,9 +34,17 @@ class AppColors extends ThemeExtension<AppColors> {
     required this.esqueleto2,
     required this.foto,
     required this.scrim,
+    this.altoContraste = false,
   });
 
   final bool esOscuro;
+
+  /// El modo de alto contraste está puesto.
+  ///
+  /// Lo miran los pocos widgets donde el contraste no se arregla cambiando un
+  /// color: `SgCard` dibuja contorno, porque una tarjeta sin borde se apoya
+  /// en la sombra y la sombra es lo primero que desaparece para quien ve poco.
+  final bool altoContraste;
 
   /// El lienzo de la pantalla.
   final Color fondo;
@@ -107,11 +115,17 @@ class AppColors extends ThemeExtension<AppColors> {
   List<BoxShadow> get e1 => esOscuro
       ? const [
           BoxShadow(
-              color: Color(0xB3000000), blurRadius: 10, offset: Offset(0, 2)),
+            color: Color(0xB3000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
         ]
       : const [
           BoxShadow(
-              color: Color(0x120B0F1A), blurRadius: 3, offset: Offset(0, 1)),
+            color: Color(0x120B0F1A),
+            blurRadius: 3,
+            offset: Offset(0, 1),
+          ),
         ];
 
   /// La sombra de nivel 2: lo que tiene que despegarse —el hero, la tarjeta
@@ -119,11 +133,17 @@ class AppColors extends ThemeExtension<AppColors> {
   List<BoxShadow> get e2 => esOscuro
       ? const [
           BoxShadow(
-              color: Color(0xBF000000), blurRadius: 30, offset: Offset(0, 12)),
+            color: Color(0xBF000000),
+            blurRadius: 30,
+            offset: Offset(0, 12),
+          ),
         ]
       : const [
           BoxShadow(
-              color: Color(0x380B0F1A), blurRadius: 26, offset: Offset(0, 12)),
+            color: Color(0x380B0F1A),
+            blurRadius: 26,
+            offset: Offset(0, 12),
+          ),
         ];
 
   static const oscuro = AppColors(
@@ -178,6 +198,52 @@ class AppColors extends ThemeExtension<AppColors> {
     scrim: SgColor.claroScrim,
   );
 
+  /// El mismo juego, subido de contraste — vista 16.2 (HU-161).
+  ///
+  /// ## Qué se toca y qué no
+  ///
+  /// **No se invierte nada ni se cambia de identidad.** SIGMA sigue siendo
+  /// SIGMA: el morado es el morado. Lo que cambia es lo que separa una cosa
+  /// de otra, que es donde el contraste falla:
+  ///
+  /// - El fondo y la tarjeta se van a los extremos, para que el escalón entre
+  ///   lienzo y superficie no dependa de dos grises casi iguales.
+  /// - `tinta2` y `tinta3` suben hasta casi `tinta`. Los metadatos al 40 % son
+  ///   lo primero que se pierde, y ahí van la fecha, el código y el área.
+  /// - `div` y `linea` se marcan de verdad.
+  /// - El texto de estado se aclara en oscuro y se oscurece en claro: el rojo
+  ///   de «vencido» tiene que leerse como rojo, no como un naranja apagado.
+  ///
+  /// La sombra deja de ser el único apoyo de la tarjeta —`SgCard` le pone
+  /// contorno—, que es la única regla del v3 que este modo rompe, y la rompe
+  /// a sabiendas: «nada lleva borde» supone que se ve la sombra.
+  AppColors get contrastado => AppColors(
+    esOscuro: esOscuro,
+    altoContraste: true,
+    fondo: esOscuro ? const Color(0xFF000000) : const Color(0xFFFFFFFF),
+    card: esOscuro ? const Color(0xFF14141B) : const Color(0xFFFFFFFF),
+    up: esOscuro ? const Color(0xFF23232E) : const Color(0xFFE6E8EF),
+    up2: esOscuro ? const Color(0xFF2E2E3C) : const Color(0xFFD5D8E2),
+    campo: esOscuro ? const Color(0xFF1A1A23) : const Color(0xFFFFFFFF),
+    div: esOscuro ? const Color(0xFF4A4A5A) : const Color(0xFF9AA0B0),
+    linea: esOscuro ? const Color(0xFF6E6E82) : const Color(0xFF5A6070),
+    tinta: esOscuro ? const Color(0xFFFFFFFF) : const Color(0xFF000000),
+    tinta2: esOscuro ? const Color(0xFFE4E4EC) : const Color(0xFF1E2230),
+    tinta3: esOscuro ? const Color(0xFFC3C3D2) : const Color(0xFF3A4050),
+    primario: primario,
+    primarioTexto: esOscuro ? const Color(0xFFC4B5FD) : const Color(0xFF4C1D95),
+    acentoTexto: esOscuro ? const Color(0xFF7DE8DC) : const Color(0xFF0B4F49),
+    rojoTexto: esOscuro ? const Color(0xFFFFA9A0) : const Color(0xFF8C1D18),
+    ambarTexto: esOscuro ? const Color(0xFFFFD27A) : const Color(0xFF6B4300),
+    verdeTexto: esOscuro ? const Color(0xFF8FE9A8) : const Color(0xFF0A5A26),
+    azulTexto: esOscuro ? const Color(0xFF9EC6FF) : const Color(0xFF0B3E8C),
+    indicador: indicador,
+    esqueleto: esqueleto,
+    esqueleto2: esqueleto2,
+    foto: foto,
+    scrim: esOscuro ? const Color(0xE6000000) : const Color(0x99000000),
+  );
+
   /// Doce tonos para el avatar, elegidos por `id % 12`.
   ///
   /// La misma paleta y el mismo criterio que `SitioBase.Avatar` en la web: si
@@ -216,8 +282,29 @@ class AppColors extends ThemeExtension<AppColors> {
 
 /// El atajo de toda pantalla: `context.sg`.
 extension SgContexto on BuildContext {
-  AppColors get sg =>
-      Theme.of(this).extension<AppColors>() ?? AppColors.oscuro;
+  AppColors get sg => Theme.of(this).extension<AppColors>() ?? AppColors.oscuro;
+
+  /// Un alto fijo que envuelve texto, escalado con el texto.
+  ///
+  /// ## Por qué hace falta un atajo para esto
+  ///
+  /// El kit trabaja con altos exactos —el chip mide 28, el botón 52— y eso es
+  /// lo que hace que la app se vea pareja. Pero un alto exacto alrededor de un
+  /// texto es una promesa que el texto no cumple: crece con el ajuste de
+  /// accesibilidad (vista 16.2), y entonces el número deja de alcanzar y el
+  /// widget se desborda **sin que nadie haya tocado esa pantalla**.
+  ///
+  /// Pasó en la tarjeta de SIGMA AI del Inicio, y no era la única: casi todo
+  /// chip, píldora y botón del kit tenía el mismo alto en duro.
+  ///
+  /// ## Por qué no se escala todo
+  ///
+  /// Porque no todo alto envuelve texto. Un separador de 1, el riel de una
+  /// barra de progreso, un avatar o el visor de la cámara miden lo que miden y
+  /// crecerlos solo desordenaría la pantalla. Este atajo se usa **donde
+  /// adentro hay una letra**, y por eso se escribe a mano en cada sitio en vez
+  /// de aplicarse solo.
+  double alto(double base) => MediaQuery.textScalerOf(this).scale(base);
 }
 
 /// Un estilo de Sora.
@@ -234,20 +321,19 @@ TextStyle sora(
   double? espaciado,
   bool tabular = false,
   TextDecoration? decoracion,
-}) =>
-    TextStyle(
-      fontFamily: 'Sora',
-      fontSize: tamano,
-      fontWeight: FontWeight.values[(peso ~/ 100) - 1],
-      fontVariations: [FontVariation('wght', peso.toDouble())],
-      color: color,
-      height: alto,
-      letterSpacing: espaciado,
-      decoration: decoracion,
-      // Cifras de ancho fijo. Sin esto, un contador que sube de 46 a 47 mueve
-      // todo lo que tiene al lado cada vez que cambia.
-      fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
-    );
+}) => TextStyle(
+  fontFamily: 'Sora',
+  fontSize: tamano,
+  fontWeight: FontWeight.values[(peso ~/ 100) - 1],
+  fontVariations: [FontVariation('wght', peso.toDouble())],
+  color: color,
+  height: alto,
+  letterSpacing: espaciado,
+  decoration: decoracion,
+  // Cifras de ancho fijo. Sin esto, un contador que sube de 46 a 47 mueve
+  // todo lo que tiene al lado cada vez que cambia.
+  fontFeatures: tabular ? const [FontFeature.tabularFigures()] : null,
+);
 
 /// El tema de SIGMA, en sus dos modos.
 ///
@@ -260,8 +346,10 @@ TextStyle sora(
 /// donde el fondo es un gris azulado —no blanco— para que las tarjetas
 /// blancas se separen **sin borde**, que es la regla del v3.
 abstract final class AppTheme {
-  static ThemeData oscuro() => _construir(AppColors.oscuro);
-  static ThemeData claro() => _construir(AppColors.claro);
+  static ThemeData oscuro({bool contraste = false}) =>
+      _construir(contraste ? AppColors.oscuro.contrastado : AppColors.oscuro);
+  static ThemeData claro({bool contraste = false}) =>
+      _construir(contraste ? AppColors.claro.contrastado : AppColors.claro);
 
   static ThemeData _construir(AppColors sg) {
     final base = sg.esOscuro ? ThemeData.dark() : ThemeData.light();
@@ -306,8 +394,9 @@ abstract final class AppTheme {
         surfaceTintColor: Colors.transparent,
         modalBarrierColor: sg.scrim,
         shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(SgRadius.hoja),
+          ),
         ),
       ),
       dialogTheme: DialogThemeData(

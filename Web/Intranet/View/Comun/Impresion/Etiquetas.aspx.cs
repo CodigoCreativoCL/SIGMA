@@ -78,22 +78,9 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
 
         EtiquetaController controller = new EtiquetaController();
 
-        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega, UrlBaseEscaneo());
+        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega);
 
         Mostrar(lista);
-    }
-
-    /// <summary>
-    /// El QR guarda la URL COMPLETA y no solo el token, porque el teléfono de
-    /// cualquiera tiene que poder abrirla sin instalar nada: la cámara nativa
-    /// lee el QR y abre esa dirección.
-    /// </summary>
-    protected string UrlBaseEscaneo()
-    {
-        string autoridad = Request.Url.GetLeftPart(UriPartial.Authority);
-        string ruta = ResolveUrl("~/View/Comun/Impresion/Escanear.aspx");
-
-        return autoridad + ruta + "?c=";
     }
 
     protected bool PuedeVerOrigen()
@@ -109,6 +96,9 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
 
             case EtiquetaOrigen.Activo:
                 return Token.Puede("VER ACTIVOS");
+
+            case EtiquetaOrigen.Posicion:
+                return Token.Puede("VER POSICIONES");
 
             case EtiquetaOrigen.UbicacionRepuesto:
                 /* Lleva el nombre del repuesto Y dónde está guardado: hacen
@@ -185,9 +175,13 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
     {
         int largo = string.IsNullOrEmpty(codigo) ? 0 : codigo.Trim().Length;
 
-        if (largo <= 8) return "cod-l";
-        if (largo <= 12) return "cod-m";
-        if (largo <= 18) return "cod-s";
+        /* Umbrales medidos con la fuente en negrita sobre la etiqueta A4 de
+           24 (unos 40 mm de texto al lado del QR): a 19pt caben seis
+           caracteres; POS-CB22, con ocho, se partia en dos lineas y
+           empujaba el resto fuera de la etiqueta (visto el 15-09-2026). */
+        if (largo <= 6) return "cod-l";
+        if (largo <= 9) return "cod-m";
+        if (largo <= 14) return "cod-s";
 
         return "cod-xs";
     }
@@ -219,6 +213,7 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
             case EtiquetaOrigen.UbicacionRepuesto: return "Etiquetas de ubicación con su repuesto";
             case EtiquetaOrigen.Repuesto: return "Etiquetas de repuesto";
             case EtiquetaOrigen.Activo: return "Etiquetas de activo";
+            case EtiquetaOrigen.Posicion: return "Etiquetas de posición";
         }
 
         return "Etiquetas";

@@ -103,6 +103,8 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         int cuantos = clientes != null ? clientes.Count : 0;
 
+        PintarSelectorCliente(clientes);
+
         if (cuantos == 0)
         {
             phCliente.Controls.Clear();
@@ -116,10 +118,18 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         if (cuantos > 1)
         {
-            html = "<a href=\"" + ResolveUrl("~/SeleccionarCliente.aspx") + "\" class=\"sg-cliente-chip\" " +
+            /* El chip abre el desplegable de acá al lado en vez de llevar a
+               SeleccionarCliente.aspx: cambiar de empresa no debería costar
+               salir de la pantalla en la que uno está trabajando. */
+            html = "<a href=\"#\" class=\"sg-cliente-chip dropdown-toggle\" data-toggle=\"dropdown\" " +
+                   "role=\"button\" aria-haspopup=\"true\" aria-expanded=\"false\" " +
                    "title=\"Cambiar de cliente\">" +
                    "<i class=\"mdi mdi-domain\"></i><span>" + Server.HtmlEncode(nombre) + "</span>" +
                    "<i class=\"mdi mdi-chevron-down\"></i></a>";
+
+            rptClientes.DataSource = clientes;
+            rptClientes.DataBind();
+            pnlClientes.Visible = true;
         }
         else
         {
@@ -129,6 +139,93 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         phCliente.Controls.Clear();
         phCliente.Controls.Add(new System.Web.UI.LiteralControl(html));
+    }
+
+    /// <summary>
+    /// Cambiar de cliente desde la barra.
+    ///
+    /// Quién puede pasar a qué empresa lo decide el controlador contra los
+    /// clientes elegibles de la persona: acá no se comprueba nada, porque una
+    /// comprobación en la pantalla sería la segunda y la que se olvida.
+    ///
+    /// Al volver se recarga la MISMA dirección: cambiar de empresa no debería
+    /// mover a nadie de donde estaba trabajando.
+    /// </summary>
+    protected void rptClientes_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        if (e.CommandName != "elegir") return;
+
+        int idCliente;
+        if (!int.TryParse(Convert.ToString(e.CommandArgument), out idCliente)) return;
+
+        if (idCliente == SitioBase.Session.ClienteId()) return;
+
+        ClienteSesionController controller = new ClienteSesionController();
+        Respuesta r = controller.CambiarCliente(int.Parse(SitioBase.Session.UsuarioId()), idCliente);
+
+        if (r.error)
+        {
+            Tools.tools.ClientAlert(r.detalle, "alerta");
+            return;
+        }
+
+        Response.Redirect(Request.RawUrl, false);
+        Context.ApplicationInstance.CompleteRequest();
+    }
+
+
+    /// <summary>
+    /// El selector de empresa al entrar (HU-002 escenario 2).
+    ///
+    /// Se muestra cuando la persona pertenece a varias empresas y la sesion
+    /// todavia no tiene ninguna: es exactamente el estado en el que queda
+    /// despues de entrar, porque ResolverClienteInicial ya no fija una.
+    ///
+    /// Usa la lista que PintarClienteActual acaba de leer: son los mismos
+    /// clientes elegibles y leerlos dos veces por pantalla seria un viaje a
+    /// la base para traer lo que ya se tiene.
+    /// </summary>
+    private void PintarSelectorCliente(List<Cliente> clientes)
+    {
+        bool hayQueElegir = clientes != null && clientes.Count > 1 && SitioBase.Session.ClienteId() == 0;
+
+        pnlSelectorCliente.Visible = hayQueElegir;
+        if (!hayQueElegir) return;
+
+        litSelcliCuantos.Text = clientes.Count.ToString();
+        rptSelectorCliente.DataSource = clientes;
+        rptSelectorCliente.DataBind();
+    }
+
+    /// <summary>La inicial para el avatar de la empresa.</summary>
+    public static string Inicial(string nombre)
+    {
+        nombre = (nombre ?? "").Trim();
+        return nombre.Length > 0 ? nombre.Substring(0, 1).ToUpper() : "?";
+    }
+
+    /// <summary>
+    /// La segunda linea de la opcion: razon social y RUT, lo que distingue a
+    /// dos empresas que se llaman parecido. Si no hay ninguno de los dos, no
+    /// se escribe un separador solo.
+    /// </summary>
+    public static string Detalle(string razon, string identificador)
+    {
+        razon = (razon ?? "").Trim();
+        identificador = (identificador ?? "").Trim();
+
+        if (razon.Length > 0 && identificador.Length > 0) return razon + " \u00B7 " + identificador;
+        return razon.Length > 0 ? razon : identificador;
+    }
+
+    /// <summary>
+    /// Elegir la empresa desde el selector de entrada. Mismo camino que el
+    /// combo de la barra: el controlador vuelve a comprobar que la persona
+    /// pertenezca a la empresa, porque el id viaja por el navegador.
+    /// </summary>
+    protected void rptSelectorCliente_ItemCommand(object source, RepeaterCommandEventArgs e)
+    {
+        rptClientes_ItemCommand(source, e);
     }
 
     /// <summary>
@@ -217,9 +314,48 @@ public partial class Master_Default : System.Web.UI.MasterPage
         List<Alerta> lista = controller.GetAlertas(false, 12);
         if (lista == null) lista = new List<Alerta>();
 
-        litPanelResumen.Text = "<strong>" + resumen.Abiertas +
-                               (resumen.Abiertas == 1 ? " activa" : " activas") + "</strong> · " +
-                               resumen.NoLeidas + (resumen.NoLeidas == 1 ? " nueva" : " nuevas");
+        /* La pastilla dice lo que llegó sin mirar; la línea de abajo dice si
+           algo de eso pide una decisión hoy. Son dos preguntas distintas y
+           por eso van separadas. */
+        /* LA PREDICCION, ARRIBA
+
+           El panel llega ordenado por fecha y una predicción de hace tres
+           días quedaba en el medio de diez avisos de stock de hace una hora.
+           Es la única fila que pide entender algo antes de actuar, así que
+           se sube al principio: es la que se dibuja como tarjeta y la que le
+           da sentido al rótulo "En tu operación" que separa el resto.
+
+           Se mueve UNA, la más reciente. Subirlas todas volvería a ser una
+           lista ordenada por tipo y no por urgencia. */
+        int iPred = lista.FindIndex(x => x.ES_PREDICCION);
+        if (iPred > 0)
+        {
+            Alerta pred = lista[iPred];
+            lista.RemoveAt(iPred);
+            lista.Insert(0, pred);
+        }
+
+        int sinLeer = 0;
+        foreach (Alerta c in lista) if (!c.LEIDA) sinLeer++;
+
+        litPanelNuevas.Text = sinLeer > 0
+            ? "<span class=\"sg-notif-pill\">" + sinLeer +
+              (sinLeer == 1 ? " nueva" : " nuevas") + "</span>"
+            : "";
+
+        int criticas = 0;
+        foreach (Alerta c in lista)
+            if (c.Activa && (c.sev_codigo == "CRITICA" || c.sev_codigo == "ALTA")) criticas++;
+
+        litPanelResumen.Text = criticas > 0
+            ? "<strong>" + criticas + (criticas == 1 ? " crítica requiere" : " críticas requieren") +
+              "</strong> tu atención"
+            : (resumen.Abiertas > 0
+                ? resumen.Abiertas + (resumen.Abiertas == 1 ? " activa" : " activas") + ", nada urgente"
+                : "Estás al día");
+
+        _primeraOperacion = true;
+        _aiDestacada = false;
 
         foreach (Alerta a in lista)
         {
@@ -240,6 +376,12 @@ public partial class Master_Default : System.Web.UI.MasterPage
         rptAlertas.DataSource = lista;
         rptAlertas.DataBind();
     }
+
+    /* La primera predicción se dibuja como tarjeta y el resto de la lista va
+       bajo el rótulo "En tu operación". Las dos cosas dependen de por dónde
+       va la pasada del repetidor, así que el estado vive acá. */
+    private bool _primeraOperacion = true;
+    private bool _aiDestacada = false;
 
     protected void rptAlertas_ItemDataBound(object sender, RepeaterItemEventArgs e)
     {
@@ -279,65 +421,166 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         JavaScriptSerializer js = new JavaScriptSerializer();
 
-        if (!string.IsNullOrEmpty(a.FICHA_LINK) && a.FICHA_ID != null && a.FICHA_ID > 0)
-        {
-            string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.FICHA_ID.Value));
+        /* TOCAR LA FILA ABRE LA ALERTA, NO EL REGISTRO
 
-            enlace.Attributes["onclick"] = "return abrirNotificacion(" +
-                js.Serialize(ResolveUrl(a.FICHA_LINK)) + "," +
-                js.Serialize(query) + "," + a.ale_id + ");";
-        }
-        else if (!string.IsNullOrEmpty(a.alt_menu_link))
+           Antes llevaba a la ficha del origen -el repuesto, el permiso, el
+           medidor- y de los quince tipos solo unos pocos la tienen
+           configurada: el resto terminaba en "esta notificación no tiene un
+           registro relacionado configurado", que es una puerta cerrada.
+
+           Ahora abre la ficha de la alerta, que existe siempre: cuenta qué se
+           detectó, contra qué umbral, cuántas veces se repitió, su línea de
+           tiempo y qué hacer con ella. Abrir el registro de origen queda como
+           un botón adentro, para cuando haga falta. */
+        string qAlerta = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.ale_id));
+
+        enlace.Attributes["onclick"] = "return abrirNotificacion(" +
+            js.Serialize(ResolveUrl("~/View/Comun/Notificaciones/AlertaDetalle.aspx")) + "," +
+            js.Serialize(qAlerta) + "," + a.ale_id + ");";
+
+        bool destacada = a.ES_PREDICCION && !_aiDestacada;
+        if (destacada) _aiDestacada = true;
+
+        enlace.Attributes["data-ai"] = a.ES_PREDICCION ? "1" : "0";
+        if (destacada) enlace.Attributes["class"] += " es-destacada";
+
+        /* El rótulo de sección, una sola vez y solo si arriba quedó la
+           tarjeta de la predicción: sin ella no hay dos grupos que separar. */
+        Literal sec = (Literal)e.Item.FindControl("litSeccion");
+        if (!a.ES_PREDICCION && _primeraOperacion)
         {
-            enlace.Attributes["onclick"] =
-                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
-                "window.location.href=" + js.Serialize(ResolveUrl(a.alt_menu_link)) + ";return false;";
-        }
-        else
-        {
-            enlace.Attributes["onclick"] =
-                "if(window.sigmaAlertas){sigmaAlertas.leer(" + a.ale_id + ");}" +
-                "window.alert('Esta notificación no tiene un registro relacionado configurado.');" +
-                "return false;";
+            _primeraOperacion = false;
+            if (_aiDestacada) sec.Text = "<div class=\"sg-notif-seccion\">En tu operación</div>";
         }
 
         StringBuilder sb = new StringBuilder();
 
-        sb.Append("<span class=\"icono\">");
-        sb.Append("<img src=\"" + ResolveUrl("~/Imagen/sigma-ai/" + IconoSigma(a.alt_codigo)) +
-                  "\" alt=\"\" aria-hidden=\"true\" /></span>");
+        /* EL ICONO LO DICE EL TIPO
+
+           Sale de Alerta_Tipo.alt_icono, que es catálogo: el día que se
+           agregue una clase de alerta, su icono entra con el mismo INSERT y
+           nadie tiene que tocar esta pantalla. La predicción conserva el SVG
+           de SIGMA AI: es la única fila que sale de un modelo. */
+        if (a.ES_PREDICCION)
+        {
+            sb.Append("<span class=\"icono es-ai\">");
+            sb.Append("<img src=\"" + ResolveUrl("~/Imagen/sigma-ai/sigma-ai-status-prediction.svg") +
+                      "\" alt=\"\" aria-hidden=\"true\" /></span>");
+        }
+        else
+        {
+            sb.Append("<span class=\"icono\"><i class=\"" + IconoTipo(a.alt_icono) +
+                      "\" aria-hidden=\"true\"></i></span>");
+        }
 
         sb.Append("<span class=\"texto\">");
+
+        /* En la tarjeta, la marca va arriba: quien la mira tiene que saber
+           que esto lo dijo un modelo antes de leer lo que dice. */
+        if (destacada)
+            sb.Append("<span class=\"sg-notif-marca\">SIGMA AI · " +
+                      Server.HtmlEncode(a.alt_nombre) + " · " + Server.HtmlEncode(a.Antiguedad) + "</span>");
+
         sb.Append("<span class=\"titulo\">" + Server.HtmlEncode(a.ale_titulo) + "</span>");
-        sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
 
         string contexto = !string.IsNullOrEmpty(a.ACTIVO_NOMBRE) ? a.ACTIVO_NOMBRE :
-                          (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? "Repuesto " + a.REPUESTO_CODIGO :
-                           (!string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : a.INSTALACION_NOMBRE));
+                          (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : "");
+        string lugar = !string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : a.INSTALACION_NOMBRE;
+
+        if (!string.IsNullOrEmpty(lugar))
+            contexto = string.IsNullOrEmpty(contexto) ? lugar : contexto + " · " + lugar;
+
         if (!string.IsNullOrEmpty(contexto))
-            sb.Append("<span class=\"contexto\"><i class=\"mdi mdi-map-marker-radius-outline\"></i>" +
-                      Server.HtmlEncode(contexto) + "</span>");
+            sb.Append("<span class=\"contexto\">" + Server.HtmlEncode(contexto) + "</span>");
 
-        sb.Append("<span class=\"cuando\"><span>" + Server.HtmlEncode(a.Antiguedad) + "</span>");
+        if (destacada)
+            sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
 
-        sb.Append("<span class=\"sg-notif-state\">" + Server.HtmlEncode(a.aet_nombre) + "</span>");
+        /* La línea de abajo: cuándo, y la gravedad solo cuando pide decidir.
+           En la tarjeta el cuándo ya está arriba, junto a la marca. */
+        sb.Append("<span class=\"cuando\">");
 
-        if (!a.LEIDA) sb.Append("<span class=\"sg-notif-state is-new\">Nueva</span>");
-        if (a.ES_PREDICCION) sb.Append("<span class=\"sg-notif-ai\">SIGMA AI</span>");
+        if (!destacada) sb.Append(Server.HtmlEncode(a.Antiguedad));
 
-        /* El rotulo de gravedad SOLO cuando pide accion. Poner "Normal" en
-           cada fila que no es grave llenaria la lista de una etiqueta que no
-           dice nada, y de paso le quitaria peso a la que si. */
         if (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")
-            sb.Append("<span class=\"sev\">" + Server.HtmlEncode(a.sev_nombre) + "</span>");
+            sb.Append((destacada ? "" : " · ") + "<span class=\"sev\">" +
+                      Server.HtmlEncode(a.sev_nombre) + "</span>");
 
-        sb.Append("</span><span class=\"sg-notif-action\">Revisar <i class=\"mdi mdi-arrow-right\"></i></span></span>");
+        if (!a.Activa)
+            sb.Append(" · " + Server.HtmlEncode(a.aet_nombre.ToLower()));
+
+        sb.Append("</span>");
+
+        if (destacada)
+            sb.Append("<span class=\"sg-notif-cta\">" + Server.HtmlEncode(Accion(a.alt_codigo)) +
+                      " <i class=\"mdi mdi-arrow-right\"></i></span>");
+
+        sb.Append("</span>");
+
+        if (!destacada)
+            sb.Append("<span class=\"sg-notif-action\">" + Server.HtmlEncode(Accion(a.alt_codigo)) +
+                      " <i class=\"mdi mdi-arrow-right\"></i></span>");
 
         /* El punto de "sin leer" a la derecha, como en cualquier bandeja: se
            recorre la columna de un vistazo. */
         if (!a.LEIDA) sb.Append("<span class=\"punto\"></span>");
 
         lit.Text = sb.ToString();
+    }
+
+    /// <summary>
+    /// Qué se va a hacer al tocar la fila, dicho con el nombre de lo que se
+    /// abre. «Revisar» a secas obliga a adivinar si lleva al repuesto, a la
+    /// orden o al medidor; con el sustantivo se sabe antes de tocar.
+    /// </summary>
+    protected string Accion(string tipo)
+    {
+        switch (tipo)
+        {
+            case "STOCK MINIMO":
+            case "STOCK MAXIMO":            return "Ver existencias";
+            case "LOTE VENCIDO":
+            case "LOTE POR VENCER":         return "Ver lote";
+            case "MEDICION FUERA RANGO":
+            case "LECTURA A REVISAR":       return "Ver medición";
+            case "MEDIDOR SIN LECTURA":
+            case "MEDIDOR PROXIMO MANTENIMIENTO": return "Ver medidor";
+            case "PREDICCION RIESGO":       return "Revisar predicción";
+            case "CERTIFICACION POR VENCER": return "Revisar certificación";
+            case "PERMISO VENCIDO":         return "Ver permiso";
+            case "OCURRENCIA VENCIDA":      return "Ver ocurrencia";
+            case "HALLAZGO CRITICO":        return "Ver hallazgo";
+            case "DESCUBRIMIENTO TERRENO":  return "Revisar registro";
+            case "COMPARTIDO":              return "Ver trabajo";
+        }
+
+        return "Revisar";
+    }
+
+    /// <summary>
+    /// La clase del icono de Material que le toca al tipo de alerta, tal
+    /// como viene del catálogo (Alerta_Tipo.alt_icono).
+    ///
+    /// Se normaliza porque el catálogo tiene las dos formas: la mayoría trae
+    /// «mdi mdi-gauge» y alguna quedó con el nombre pelado. Y se limpia a
+    /// letras, números y guiones: es texto de una tabla y va directo al
+    /// atributo class de la página.
+    /// </summary>
+    protected string IconoTipo(string icono)
+    {
+        string v = (icono ?? "").Trim().ToLowerInvariant();
+
+        System.Text.StringBuilder limpio = new System.Text.StringBuilder();
+        foreach (char c in v)
+            if (char.IsLetterOrDigit(c) || c == '-' || c == ' ') limpio.Append(c);
+
+        v = limpio.ToString().Trim();
+
+        if (v.Length == 0) return "mdi mdi-bell-outline";
+        if (v.StartsWith("mdi mdi-")) return v;
+        if (v.StartsWith("mdi-")) return "mdi " + v;
+
+        return "mdi mdi-" + v;
     }
 
     /// <summary>

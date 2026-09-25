@@ -23,7 +23,11 @@ typedef ConsumoRepuesto = ({
   int repuesto,
   int bodega,
   double cantidad,
-  String nombre
+
+  /// El estante. Nulo solo cuando la bodega no tiene ninguno: si los tiene, la
+  /// hoja no deja enviar sin elegirlo.
+  int? ubicacion,
+  String nombre,
 });
 
 /// Elegir a quién se suma al trabajo y cuánto estuvo — HU-115.
@@ -53,11 +57,40 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
   Companero? _elegido;
   int _minutos = 60;
 
+  /// Lo escrito en el campo de minutos. Arranca en 60, que es el atajo del
+  /// medio y el caso mas comun.
+  final _minutosTexto = TextEditingController(text: '60');
+
   /// La especialidad por la que se está filtrando. Nula = todas.
   ///
   /// Se filtra por id y no por texto: un acento o una mayúscula rompen la
   /// comparación, y «Eléctrico» se escribe de dos formas según el teclado.
   int? _especialidad;
+
+  @override
+  void dispose() {
+    _minutosTexto.dispose();
+    super.dispose();
+  }
+
+  /// Que le pasa a los minutos escritos, en castellano, o nulo si estan bien.
+  ///
+  /// Los dos limites los hace cumplir `API_INS_ORDEN_TRABAJO_MANO_OBRA`; se
+  /// repiten aca solo para AVISAR antes de enviar, no para decidir. Si el SP
+  /// cambia de opinion, manda el SP.
+  String? get _minutosMalos {
+    final t = _minutosTexto.text.trim();
+    if (t.isEmpty) return 'Escribe cuántos minutos estuvo.';
+
+    final n = int.tryParse(t);
+    if (n == null) return 'Los minutos van en números enteros.';
+    if (n <= 0) return 'Tiene que ser más de cero minutos.';
+    if (n > 1440) {
+      return 'Un tramo no puede pasar de 24 horas (1440 minutos). Si de '
+          'verdad fueron más, van en dos tramos.';
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -103,21 +136,26 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
             return Padding(
               padding: const EdgeInsets.only(bottom: 12),
               child: SizedBox(
-                height: 34,
+                // Al mismo paso que el chip que lleva dentro.
+                height: context.alto(34),
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: ids.length + 1,
                   separatorBuilder: (_, _) => const SizedBox(width: 8),
                   itemBuilder: (_, i) {
                     if (i == 0) {
-                      return SgChip('Todos',
-                          elegido: _especialidad == null,
-                          onTap: () => setState(() => _especialidad = null));
+                      return SgChip(
+                        'Todos',
+                        elegido: _especialidad == null,
+                        onTap: () => setState(() => _especialidad = null),
+                      );
                     }
                     final id = ids[i - 1];
-                    return SgChip(oficios[id]!,
-                        elegido: _especialidad == id,
-                        onTap: () => setState(() => _especialidad = id));
+                    return SgChip(
+                      oficios[id]!,
+                      elegido: _especialidad == id,
+                      onTap: () => setState(() => _especialidad = id),
+                    );
                   },
                 ),
               ),
@@ -127,8 +165,9 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
         ),
 
         ConstrainedBox(
-          constraints:
-              BoxConstraints(maxHeight: MediaQuery.sizeOf(context).height * 0.3),
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.sizeOf(context).height * 0.3,
+          ),
           child: companeros.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -145,41 +184,67 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
               final lista = _especialidad == null
                   ? todos
                   : todos
-                      .where((c) => c.especialidades.contains(_especialidad))
-                      .toList();
+                        .where((c) => c.especialidades.contains(_especialidad))
+                        .toList();
 
               if (lista.isEmpty) {
                 return SgAviso(
                   todos.isEmpty
                       ? 'No hay nadie más asignado a esta planta. Las '
-                          'asignaciones se hacen desde la web.'
+                            'asignaciones se hacen desde la web.'
                       : 'Nadie de esta planta tiene esa especialidad.',
                   icono: Icons.person_off_outlined,
                   color: sg.tinta2,
                 );
               }
 
+              /* AGRUPADA POR OFICIO, Y POR PERFIL CUANDO NO HAY OFICIO
+
+                 En una lista plana de doce personas hay que leer la fila de
+                 cada una para encontrar al electrico. Agrupada, se va al grupo
+                 y se elige. `Companero.grupo` decide el encabezado —oficio si
+                 lo tiene, perfil si no— y vive en el modelo porque las dos
+                 hojas agrupan igual. */
+              final grupos = agruparCompaneros(lista);
+              final filas = <Widget>[];
+
+              for (final g in grupos.entries) {
+                filas.add(_Encabezado(g.key, cuantos: g.value.length));
+                for (final c in g.value) {
+                  final elegido = _elegido?.usu_id == c.usu_id;
+                  filas.add(
+                    SgFila(
+                      texto: c.NOMBRE,
+                      // El OFICIO manda sobre el perfil: para un acople
+                      // eléctrico se suma al eléctrico, y «Técnico de
+                      // Mantenimiento» no dice si lo es. El perfil queda de
+                      // respaldo mientras las especialidades no estén cargadas.
+                      detalle: c.ESPECIALIDADES ?? c.PERFIL_NOMBRE,
+                      // Su foto, y si no tiene, sus iniciales.
+                      iconoWidget: SgAvatar(
+                        c.iniciales,
+                        id: c.usu_id,
+                        lado: 34,
+                        ruta: c.FOTO_RUTA,
+                      ),
+                      derecha: Icon(
+                        elegido
+                            ? Icons.radio_button_checked
+                            : Icons.radio_button_unchecked,
+                        size: 20,
+                        color: elegido ? sg.primarioTexto : sg.tinta3,
+                      ),
+                      onTap: () => setState(() => _elegido = c),
+                    ),
+                  );
+                }
+              }
+
               return ListView.separated(
                 shrinkWrap: true,
-                itemCount: lista.length,
+                itemCount: filas.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
-                itemBuilder: (_, i) {
-                  final c = lista[i];
-                  final elegido = _elegido?.usu_id == c.usu_id;
-                  return SgFila(
-                    texto: c.NOMBRE,
-                    // El OFICIO manda sobre el perfil: para un acople
-                    // eléctrico se suma al eléctrico, y «Técnico de
-                    // Mantenimiento» no dice si lo es. El perfil queda de
-                    // respaldo mientras las especialidades no estén cargadas.
-                    detalle: c.ESPECIALIDADES ?? c.PERFIL_NOMBRE,
-                    icono: elegido
-                        ? Icons.radio_button_checked
-                        : Icons.radio_button_unchecked,
-                    colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
-                    onTap: () => setState(() => _elegido = c),
-                  );
-                },
+                itemBuilder: (_, i) => filas[i],
               );
             },
           ),
@@ -187,9 +252,14 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
         const SizedBox(height: 14),
         const SgRotulo('Cuánto estuvo'),
         const SizedBox(height: 9),
-        // Cuatro tramos redondos en vez de dos relojes: nadie recuerda el
-        // minuto exacto en que llegó un compañero, y pedirlo obliga a inventar
-        // una precisión que no existe.
+        /* LOS ATAJOS SIGUEN, PERO YA NO SON EL TECHO
+
+           Los cuatro tramos redondos se quedan porque casi siempre aciertan:
+           nadie recuerda el minuto exacto en que llegó un compañero. Pero eran
+           lo ÚNICO que había, y el mayor era 4 h: un trabajo de seis horas no
+           se podía registrar, aunque el SP acepta hasta 24.
+
+           Ahora los chips solo rellenan el campo, y el campo manda. */
         Row(
           children: [
             for (final m in const [30, 60, 120, 240]) ...[
@@ -197,18 +267,46 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                 child: SgChip(
                   m < 60 ? '$m min' : '${m ~/ 60} h',
                   elegido: _minutos == m,
-                  onTap: () => setState(() => _minutos = m),
+                  onTap: () => setState(() {
+                    _minutos = m;
+                    _minutosTexto.text = '$m';
+                  }),
                 ),
               ),
               if (m != 240) const SizedBox(width: 8),
             ],
           ],
         ),
+        const SizedBox(height: 10),
+        SgCampo(
+          controlador: _minutosTexto,
+          icono: Icons.timer_outlined,
+          hint: '60',
+          teclado: TextInputType.number,
+          rotulo: 'Minutos',
+          onCambio: (v) => setState(() {
+            final n = int.tryParse(v.trim());
+            if (n != null) _minutos = n;
+          }),
+        ),
+        /* Los dos límites los hace cumplir el SP —rechaza 0 o negativo y
+           rechaza más de 1440—, y se avisan ACÁ para no descubrirlo después de
+           haber elegido a la persona. El de 24 h no es un capricho: un tramo
+           de treinta horas es un error de fecha, y grabarlo arruina el MTTR
+           del activo por meses. */
+        if (_minutosMalos != null) ...[
+          const SizedBox(height: 10),
+          SgAviso(
+            _minutosMalos!,
+            icono: Icons.error_outline,
+            color: sg.rojoTexto,
+          ),
+        ],
         const SizedBox(height: 14),
         SgBoton(
           'Sumar al trabajo',
           icono: Icons.person_add_alt,
-          onTap: _elegido == null
+          onTap: (_elegido == null || _minutosMalos != null)
               ? null
               : () {
                   final ahora = DateTime.now();
@@ -219,7 +317,8 @@ class _HojaCompaneroState extends ConsumerState<HojaCompanero> {
                     // Con qué oficio participó. Si no se filtró, la primera
                     // que tenga: un tramo sin especialidad no se puede costear
                     // después, porque la tarifa depende del oficio.
-                    especialidad: _especialidad ??
+                    especialidad:
+                        _especialidad ??
                         (_elegido!.especialidades.isEmpty
                             ? null
                             : _elegido!.especialidades.first),
@@ -254,6 +353,16 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
   RepuestoOrden? _elegido;
   String _filtro = '';
 
+  /// El estante del que sale la pieza.
+  ///
+  /// **Obligatorio cuando la bodega tiene ubicaciones.** Sin esto el consumo
+  /// respondia 400 —«ESTA BODEGA TIENE UBICACIONES: INDIQUE DE CUAL SALE O A
+  /// CUAL ENTRA»— y en una bodega con estantes, que es lo normal, fallaba
+  /// siempre. Se reinicia al cambiar de pieza: dos repuestos rara vez viven en
+  /// el mismo estante, y arrastrar el anterior seria descontar del sitio
+  /// equivocado sin que nadie lo note.
+  int? _ubicacion;
+
   /// El último código leído que no calzó con nada. Se muestra tal cual: si la
   /// etiqueta dice «REP-6205» y no aparece, hay que poder ver QUÉ se leyó para
   /// saber si el problema es la etiqueta, la bodega o el escáner.
@@ -273,6 +382,23 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
   static String _num(double v) =>
       v == v.roundToDouble() ? '${v.round()}' : v.toString();
+
+  /// Falso mientras la bodega tenga estantes y no se haya elegido uno, y
+  /// tambien mientras la lista viaja: hasta que llegue no se sabe si hara
+  /// falta, y habilitar el boton antes seria invitar al 400.
+  bool get _puedeConsumir {
+    if (_elegido == null) return false;
+
+    final estantes = ref.watch(ubicacionesBodegaProvider(_elegido!.isa_bodega));
+
+    return estantes.when(
+      // Sin poder preguntar —sin señal— se deja pasar: el servidor decide, y
+      // bloquear aqui dejaria el consumo imposible en el peor momento.
+      error: (_, _) => true,
+      loading: () => false,
+      data: (lista) => lista.isEmpty || _ubicacion != null,
+    );
+  }
 
   /// Leer la etiqueta y elegir la pieza sin teclear.
   ///
@@ -295,12 +421,15 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
     if (leido == null || !mounted) return;
 
     final codigo = leido.trim().toLowerCase();
-    final lista = ref.read(repuestosOrdenProvider(widget.ordenId)).valueOrNull ??
+    final lista =
+        ref.read(repuestosOrdenProvider(widget.ordenId)).valueOrNull ??
         const <RepuestoOrden>[];
 
-    final calza = lista.where((x) =>
-        x.REPUESTO_CODIGO.toLowerCase() == codigo ||
-        x.REPUESTO_NOMBRE.toLowerCase() == codigo);
+    final calza = lista.where(
+      (x) =>
+          x.REPUESTO_CODIGO.toLowerCase() == codigo ||
+          x.REPUESTO_NOMBRE.toLowerCase() == codigo,
+    );
 
     setState(() {
       if (calza.isEmpty) {
@@ -312,6 +441,7 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
       _noEncontrado = null;
       _elegido = calza.first;
+      _ubicacion = null;
       // Se filtra a esa pieza para que quede sola en pantalla: tras escanear,
       // ver una lista de veinte con una marcada obliga a buscarla otra vez.
       _buscar.text = calza.first.REPUESTO_CODIGO;
@@ -326,13 +456,15 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
 
     // Pasarse del saldo lo rechaza el SP igual, pero avisar antes ahorra el
     // viaje de red y explica por qué: el número está a la vista.
-    final sobrepasa = _elegido != null &&
+    final sobrepasa =
+        _elegido != null &&
         _cuanto != null &&
         _cuanto! > _elegido!.CANTIDAD_DISPONIBLE;
 
     return HojaRecurso(
       titulo: 'Consumir un repuesto',
-      detalle: 'Descuenta de la bodega y queda anotado en la orden, en una '
+      detalle:
+          'Descuenta de la bodega y queda anotado en la orden, en una '
           'sola operación.',
       children: [
         Row(
@@ -373,7 +505,8 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
         const SizedBox(height: 12),
         ConstrainedBox(
           constraints: BoxConstraints(
-              maxHeight: MediaQuery.sizeOf(context).height * 0.28),
+            maxHeight: MediaQuery.sizeOf(context).height * 0.28,
+          ),
           child: disponibles.when(
             loading: () => const Padding(
               padding: EdgeInsets.symmetric(vertical: 24),
@@ -390,11 +523,12 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
               final visibles = _filtro.isEmpty
                   ? lista
                   : lista
-                      .where((x) =>
-                          '${x.REPUESTO_CODIGO} ${x.REPUESTO_NOMBRE}'
+                        .where(
+                          (x) => '${x.REPUESTO_CODIGO} ${x.REPUESTO_NOMBRE}'
                               .toLowerCase()
-                              .contains(_filtro))
-                      .toList();
+                              .contains(_filtro),
+                        )
+                        .toList();
 
               if (visibles.isEmpty) {
                 return SgAviso(
@@ -440,7 +574,8 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                       ],
                       SgFila(
                         texto: '${x.REPUESTO_CODIGO} · ${x.REPUESTO_NOMBRE}',
-                        detalle: '${_num(x.CANTIDAD_DISPONIBLE)} '
+                        detalle:
+                            '${_num(x.CANTIDAD_DISPONIBLE)} '
                             '${x.UNIDAD_SIMBOLO ?? ''} · '
                             '${x.BODEGA_NOMBRE ?? 'bodega'}',
                         icono: elegido
@@ -448,12 +583,17 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
                             : Icons.radio_button_unchecked,
                         colorIcono: elegido ? sg.primarioTexto : sg.tinta3,
                         derecha: x.ES_COMPATIBLE
-                            ? SgBadge('Compatible',
+                            ? SgBadge(
+                                'Compatible',
                                 color: sg.verdeTexto,
                                 icono: Icons.verified_outlined,
-                                chico: true)
+                                chico: true,
+                              )
                             : null,
-                        onTap: () => setState(() => _elegido = x),
+                        onTap: () => setState(() {
+                          _elegido = x;
+                          _ubicacion = null;
+                        }),
                       ),
                     ],
                   );
@@ -462,6 +602,20 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
             },
           ),
         ),
+        /* DE QUE ESTANTE SALE
+
+           Solo aparece cuando la bodega de la pieza elegida tiene estantes: en
+           una bodega de un solo hueco, preguntarlo es un tramite. Cuando los
+           tiene, el SP no deja pasar el consumo sin el, y con razon: el saldo
+           por ubicacion quedaria sin dueño y el proximo que vaya a buscar la
+           pieza no sabria a que estante ir. */
+        if (_elegido != null)
+          SelectorEstante(
+            bodegaId: _elegido!.isa_bodega,
+            elegida: _ubicacion,
+            onElegir: (v) => setState(() => _ubicacion = v),
+          ),
+
         const SizedBox(height: 14),
         const SgRotuloCampo('Cantidad'),
         const SizedBox(height: 8),
@@ -484,14 +638,23 @@ class _HojaRepuestoState extends ConsumerState<HojaRepuesto> {
         SgBoton(
           'Consumir',
           icono: Icons.check,
-          onTap: (_elegido == null || _cuanto == null || sobrepasa)
+          /* Si la bodega tiene estantes y no se eligio ninguno, el boton no
+             responde: mas vale que no se pueda enviar a que el servidor lo
+             rechace despues de haberlo llenado todo. Mientras la lista de
+             estantes viaja, tampoco: no se sabe todavia si hara falta. */
+          onTap:
+              (_elegido == null ||
+                  _cuanto == null ||
+                  sobrepasa ||
+                  !_puedeConsumir)
               ? null
               : () => Navigator.of(context).pop((
-                    repuesto: _elegido!.isa_repuesto,
-                    bodega: _elegido!.isa_bodega,
-                    cantidad: _cuanto!,
-                    nombre: _elegido!.REPUESTO_NOMBRE,
-                  )),
+                  repuesto: _elegido!.isa_repuesto,
+                  bodega: _elegido!.isa_bodega,
+                  cantidad: _cuanto!,
+                  ubicacion: _ubicacion,
+                  nombre: _elegido!.REPUESTO_NOMBRE,
+                )),
         ),
       ],
     );
@@ -518,8 +681,9 @@ class HojaRecurso extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -550,8 +714,10 @@ class HojaRecurso extends StatelessWidget {
                 const SizedBox(height: 15),
                 Text(titulo, style: sora(17, 600, color: sg.tinta)),
                 const SizedBox(height: 4),
-                Text(detalle,
-                    style: sora(13, 500, color: sg.tinta3, alto: 1.45)),
+                Text(
+                  detalle,
+                  style: sora(13, 500, color: sg.tinta3, alto: 1.45),
+                ),
                 const SizedBox(height: 15),
                 ...children,
                 const SgBarraGestos(),
@@ -559,6 +725,143 @@ class HojaRecurso extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// El estante del que sale la pieza.
+///
+/// Se dibuja solo, y solo si la bodega tiene estantes: en una bodega de un
+/// hueco preguntarlo es un trámite. Cuando los tiene, el SP no deja pasar el
+/// movimiento sin él.
+///
+/// **Público a propósito.** Lo usan la hoja de consumo y la de movimientos, y
+/// duplicarlo serían dos sitios donde arreglar el mismo defecto el día que la
+/// regla del estante cambie.
+class SelectorEstante extends ConsumerWidget {
+  const SelectorEstante({
+    super.key,
+    required this.bodegaId,
+    required this.elegida,
+    required this.onElegir,
+  });
+
+  final int bodegaId;
+  final int? elegida;
+  final ValueChanged<int?> onElegir;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sg = context.sg;
+    final estantes = ref.watch(ubicacionesBodegaProvider(bodegaId));
+
+    return estantes.when(
+      loading: () => const Padding(
+        padding: EdgeInsets.only(top: 14),
+        child: Center(
+          child: SizedBox(
+            height: 18,
+            width: 18,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      ),
+
+      /* Sin señal no se puede saber si la bodega tiene estantes. Se dice, y no
+         se bloquea: el servidor decide. Callar aquí dejaría al técnico
+         mirando un botón muerto sin entender por qué. */
+      error: (_, _) => Padding(
+        padding: const EdgeInsets.only(top: 14),
+        child: SgAviso(
+          'No se pudo leer los estantes de esta bodega. Si tiene, el servidor '
+          'va a pedir de cuál sale.',
+          icono: Icons.cloud_off_outlined,
+          color: sg.ambarTexto,
+        ),
+      ),
+
+      data: (lista) {
+        if (lista.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SizedBox(height: 14),
+            const SgRotuloCampo('De qué estante sale'),
+            const SizedBox(height: 4),
+            Text(
+              'Esta bodega tiene ${lista.length} ubicaciones. Sin decir cuál, '
+              'el saldo queda sin dueño.',
+              style: sora(12, 500, color: sg.tinta3, alto: 1.45),
+            ),
+            const SizedBox(height: 9),
+            SizedBox(
+              // Al mismo paso que el chip que lleva dentro.
+              height: context.alto(36),
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                padding: EdgeInsets.zero,
+                itemCount: lista.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 8),
+                itemBuilder: (_, i) => SgChip(
+                  lista[i].etiqueta,
+                  elegido: elegida == lista[i].bub_id,
+                  onTap: () => onElegir(lista[i].bub_id),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// Agrupa a los compañeros por su [Companero.grupo], conservando el orden que
+/// trajo el servidor dentro de cada grupo.
+///
+/// Vive fuera de las dos hojas porque las dos agrupan igual: dos copias de esta
+/// función se separan el día que alguien toque una.
+Map<String, List<Companero>> agruparCompaneros(List<Companero> lista) {
+  final salida = <String, List<Companero>>{};
+
+  for (final c in lista) {
+    salida.putIfAbsent(c.grupo, () => <Companero>[]).add(c);
+  }
+
+  /* Los grupos, por nombre. El servidor ordena a las PERSONAS y ese orden se
+     conserva dentro de cada grupo; el orden de los grupos lo decide la app
+     porque el servidor no sabe cómo se van a agrupar. */
+  final claves = salida.keys.toList()..sort();
+  return {for (final k in claves) k: salida[k]!};
+}
+
+/// El encabezado de un grupo, con cuántos hay debajo.
+class _Encabezado extends StatelessWidget {
+  const _Encabezado(this.texto, {required this.cuantos});
+
+  final String texto;
+  final int cuantos;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 4, bottom: 2, left: 2),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              texto.toUpperCase(),
+              style: sora(11, 700, color: sg.tinta3, espaciado: 0.6),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text('$cuantos', style: sora(11, 600, color: sg.tinta3)),
+        ],
       ),
     );
   }

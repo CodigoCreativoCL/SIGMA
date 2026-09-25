@@ -142,7 +142,7 @@ namespace Facilityges.Controller
             if (!string.IsNullOrEmpty(informeUsuarioMarcacion.filtro_cliente)) cmd.Parameters.AddWithValue("@FILTRO_CLIENTE", informeUsuarioMarcacion.filtro_cliente);
             if (!string.IsNullOrEmpty(informeUsuarioMarcacion.filtro_instalacion)) cmd.Parameters.AddWithValue("@FILTRO_INSTALACION", informeUsuarioMarcacion.filtro_instalacion);
 
-            string filename = "INFORME INFORME USUARIO MARCACION - " + DateTime.Now;
+            string filename = "INFORME INFORME USUARIO MARCACION - " + global::SitioBase.Hora.Ahora;
             Tools.Excel.exportExcel(Conexion.GetDataTable(cmd), filename, true);
         }
 

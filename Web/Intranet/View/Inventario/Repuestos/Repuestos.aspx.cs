@@ -125,6 +125,11 @@ public partial class View_Inventario_Repuestos_Repuestos : System.Web.UI.Page
         if (!Token.PuedeFuncion("Crear y editar"))
             Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
 
+        /* La carga masiva crea repuestos: sin la facultad no se ofrece (la
+           ficha de carga igual la exige, esto es para no ofrecer lo que va a
+           terminar en la portada). Descargar es leer y queda para todos. */
+        lnkCargaMasiva.Visible = Token.Puede("CREAR EDITAR REPUESTOS");
+
         CargarTabs();
         CargarGrid();
         Grid.DataBind();

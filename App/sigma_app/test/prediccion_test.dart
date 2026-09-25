@@ -9,14 +9,14 @@ import 'package:sigma_app/models/modelos.dart';
 /// exactamente el problema que la sábana del SP evita.
 void main() {
   Map<String, dynamic> base() => {
-        'pre_id': 17,
-        'ACTIVO_ID': 42,
-        'ACTIVO_NOMBRE': 'Horno L4',
-        'ACTIVO_CODIGO': 'ACT-42',
-        'VARIABLE_NOMBRE': 'Temperatura',
-        'UNIDAD': '°C',
-        'pre_fecha_calculo_utc': '2026-09-07T09:00:00',
-      };
+    'pre_id': 17,
+    'ACTIVO_ID': 42,
+    'ACTIVO_NOMBRE': 'Horno L4',
+    'ACTIVO_CODIGO': 'ACT-42',
+    'VARIABLE_NOMBRE': 'Temperatura',
+    'UNIDAD': '°C',
+    'pre_fecha_calculo_utc': '2026-09-07T09:00:00',
+  };
 
   group('Prediccion', () {
     test('la severidad la declara el servidor, no los días', () {
@@ -75,7 +75,7 @@ void main() {
       final uno = PrediccionFicha.fromJson({
         ...base(),
         'serie': [
-          {'FECHA': '2026-09-07T09:00:00', 'VALOR': 89.5}
+          {'FECHA': '2026-09-07T09:00:00', 'VALOR': 89.5},
         ],
       });
       final varios = PrediccionFicha.fromJson({
@@ -94,13 +94,21 @@ void main() {
       final f = PrediccionFicha.fromJson({
         ...base(),
         'razones': [
-          {'pex_orden': 1, 'pex_texto': 'Viene subiendo.', 'pex_direccion': 'AUMENTA'}
+          {
+            'pex_orden': 1,
+            'pex_texto': 'Viene subiendo.',
+            'pex_direccion': 'AUMENTA',
+          },
         ],
         'datos': [
-          {'cmo_codigo': 'R2', 'cmo_etiqueta': 'Qué tan recta', 'pcr_valor': 0.98}
+          {
+            'cmo_codigo': 'R2',
+            'cmo_etiqueta': 'Qué tan recta',
+            'pcr_valor': 0.98,
+          },
         ],
         'serie': [
-          {'FECHA': '2026-09-07T09:00:00', 'VALOR': 89.5}
+          {'FECHA': '2026-09-07T09:00:00', 'VALOR': 89.5},
         ],
       });
 
@@ -119,24 +127,32 @@ void main() {
 
   group('Vigilado', () {
     Map<String, dynamic> v(String motivo, {int lecturas = 0}) => {
-          'ava_id': 11,
-          'ACTIVO_ID': 40,
-          'ACTIVO_NOMBRE': 'Horno L2',
-          'LECTURAS': lecturas,
-          'MOTIVO': motivo,
-        };
+      'ava_id': 11,
+      'ACTIVO_ID': 40,
+      'ACTIVO_NOMBRE': 'Horno L2',
+      'LECTURAS': lecturas,
+      'MOTIVO': motivo,
+    };
 
-    test('el silencio se explica en palabras, y cada motivo dice algo distinto',
-        () {
-      // Los tres estados no son matices del mismo vacío: «nadie lo mide» pide
-      // una acción, «se mide y está tranquilo» es una buena noticia.
-      expect(Vigilado.fromJson(v('SIN LECTURAS')).explicacion,
-          'Nadie lo ha medido todavía.');
-      expect(Vigilado.fromJson(v('FALTAN LECTURAS', lecturas: 2)).explicacion,
-          contains('2 lecturas'));
-      expect(Vigilado.fromJson(v('SIN SENALES', lecturas: 13)).explicacion,
-          contains('no muestra señales'));
-    });
+    test(
+      'el silencio se explica en palabras, y cada motivo dice algo distinto',
+      () {
+        // Los tres estados no son matices del mismo vacío: «nadie lo mide» pide
+        // una acción, «se mide y está tranquilo» es una buena noticia.
+        expect(
+          Vigilado.fromJson(v('SIN LECTURAS')).explicacion,
+          'Nadie lo ha medido todavía.',
+        );
+        expect(
+          Vigilado.fromJson(v('FALTAN LECTURAS', lecturas: 2)).explicacion,
+          contains('2 lecturas'),
+        );
+        expect(
+          Vigilado.fromJson(v('SIN SENALES', lecturas: 13)).explicacion,
+          contains('no muestra señales'),
+        );
+      },
+    );
 
     test('los tres motivos son mutuamente excluyentes', () {
       final sin = Vigilado.fromJson(v('SIN LECTURAS'));
@@ -149,8 +165,10 @@ void main() {
     });
 
     test('atrasada lo decide el servidor contra la frecuencia declarada', () {
-      final a = Vigilado.fromJson(
-          {...v('SIN SENALES', lecturas: 13), 'ATRASADA': true});
+      final a = Vigilado.fromJson({
+        ...v('SIN SENALES', lecturas: 13),
+        'ATRASADA': true,
+      });
 
       expect(a.ATRASADA, isTrue);
     });

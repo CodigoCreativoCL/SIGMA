@@ -1,7 +1,9 @@
 ﻿using API.MVC.Model;
 using API.Utils;
 using System;
+using API.Services;
 using System.Collections.Generic;
+using System.Net;
 using System.Web.Http;
 
 namespace API.Controllers
@@ -192,7 +194,7 @@ namespace API.Controllers
         /// falla, responde lo mismo. Es el caso del reintento de la cola.
         /// </summary>
         /// <response code="200">Completado, o ya estaba con ese resultado.</response>
-        /// <response code="400">La orden no está en ejecución.</response>
+        /// <response code="400">La orden no está en ejecución; el paso exige una medición y no vino el valor; o un punto de control anterior sigue pendiente (HU-062).</response>
         /// <response code="403">No estás asignado a esa orden.</response>
         [HttpPost]
         [Route("pasos/{id:int}")]
@@ -212,10 +214,59 @@ namespace API.Controllers
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@RESULTADO_PASO", dto.resultado },
                         { "@OBSERVACION", dto.observacion },
-                        { "@ENTRADA_MODO", dto.entrada_modo }
+                        { "@ENTRADA_MODO", dto.entrada_modo },
+                        // HU-062 #2: el SP exige el valor si el paso mide.
+                        { "@VALOR_MEDICION", dto.valor_medicion },
+                        { "@UNIDAD_MEDIDA", dto.unidad_medida }
                     });
 
                 return Ok(new { otp_id = id });
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/pasos — anota lo que se hizo.
+        ///
+        /// EL HUECO QUE TAPA
+        ///   `Orden_Trabajo_Paso` tenia UPD y no INS: se podian MARCAR los
+        ///   pasos que alguien definio antes y no agregar ninguno. Una
+        ///   correctiva abierta en terreno nace sin pauta, asi que el tecnico
+        ///   se quedaba sin sitio donde registrar el trabajo.
+        ///
+        /// POR QUE UN PASO Y NO UN CAMPO DE NOTAS
+        ///   El modelo ya tiene el concepto: accion, resultado, ejecutor y
+        ///   hora, y `Archivo_Vinculo` sabe colgarle evidencia con destino
+        ///   PASO. Un texto libre en la cabecera seria decir lo mismo sin
+        ///   ejecutor, sin hora y sin fotos.
+        /// </summary>
+        /// <response code="201">Anotado, o el que ya existia con ese uuid.</response>
+        /// <response code="400">Sin texto, o la orden ya esta cerrada.</response>
+        [HttpPost]
+        [Route("{id:int}/pasos")]
+        public IHttpActionResult AgregarPaso(int id, PasoAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("EJECUTAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirCuerpo(dto);
+
+                int nuevo = Datos.Ejecutar("API_INS_ORDEN_TRABAJO_PASO",
+                    new Dictionary<string, object>
+                    {
+                        { "@OTR_ID", id },
+                        // Del token: `otp_usuario_ejecutor` es quien firma que
+                        // el trabajo se hizo.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@NOMBRE", dto.nombre },
+                        { "@DESCRIPCION", dto.descripcion },
+                        { "@RESULTADO_PASO", dto.resultado },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@UUID", dto.uuid }
+                    }, true);
+
+                return Creado(nuevo);
             });
         }
 
@@ -227,7 +278,8 @@ namespace API.Controllers
         /// el registro sirva como respaldo.
         /// </summary>
         /// <response code="200">Finalizada. Queda en espera de cierre.</response>
-        /// <response code="400">Faltan pasos obligatorios, o ya no estaba en ejecución.</response>
+        /// <response code="200">Finalizada; `advertencia` con texto si no hubo mano de obra (HU-119 #3).</response>
+        /// <response code="400">Faltan pasos obligatorios (los nombra), o ya no estaba en ejecución.</response>
         [HttpPost]
         [Route("{id:int}/finalizar")]
         public IHttpActionResult Finalizar(int id, OrdenTrabajoFinDto dto)
@@ -237,7 +289,9 @@ namespace API.Controllers
                 ExigirPermiso("EJECUTAR ORDEN TRABAJO");
                 ExigirCliente();
 
-                Datos.Ejecutar("UPD_ORDEN_TRABAJO_FINALIZAR",
+                // HU-119 #3: sin mano de obra el SP deja finalizar y avisa; la
+                // advertencia viaja en el result set y la app la muestra.
+                List<OrdenTrabajoFinalizadaDto> r = Datos.Listar<OrdenTrabajoFinalizadaDto>("UPD_ORDEN_TRABAJO_FINALIZAR",
                     new Dictionary<string, object>
                     {
                         { "@ORDEN_TRABAJO", id },
@@ -245,7 +299,92 @@ namespace API.Controllers
                         { "@OBSERVACION", dto == null ? null : dto.resultado }
                     });
 
+                return Ok(new { otr_id = id, advertencia = r.Count > 0 ? r[0].ADVERTENCIA : null });
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/cerrar — el cierre.           HU-120
+        ///
+        /// EL CIERRE ES DE OTRO, Y POR ESO EXISTE
+        ///   El tecnico finaliza; cierran el jefe de mantenimiento, el
+        ///   supervisor y el planificador. Que el que ejecuta no sea el que
+        ///   certifica es lo que hace que el registro valga como respaldo.
+        ///
+        /// SE AUTORIZA POR PERMISO, NO POR NOMBRE DE PERFIL
+        ///   `CERRAR OT` lo tienen hoy esos tres cargos, y el dia que un
+        ///   cliente llame distinto a los suyos la regla sigue funcionando.
+        ///   Comparar contra la cadena "Supervisor de Mantenimiento" seria
+        ///   correcto hasta el primer cliente que escriba "Jefe de Turno".
+        ///
+        /// LAS REGLAS NO SE REPITEN ACA
+        ///   La jerarquia, el estado 3 previo, el motivo habilitado y el
+        ///   bloqueo por permiso de trabajo sin autorizar los hace cumplir
+        ///   `UPD_ORDEN_TRABAJO_CERRAR`. Sus RAISERROR los traduce `ErrorSql`
+        ///   al codigo HTTP: escribir validaciones gemelas en C# daria dos
+        ///   verdades que se separan el dia que una de las dos cambie.
+        ///
+        /// IDEMPOTENTE POR `uuid`
+        ///   El cierre se encola como toda captura de terreno. El SP corta por
+        ///   uuid ANTES de validar, asi que el reintento de un cierre que si
+        ///   entro responde lo mismo en vez de fallar con «la OT no esta en
+        ///   espera de cierre» — es decir, en vez de fallar por haber
+        ///   funcionado.
+        /// </summary>
+        /// <response code="200">Cerrada, o ya lo estaba con ese uuid.</response>
+        /// <response code="400">No esta en espera de cierre, el motivo no existe, o hay un permiso de trabajo sin autorizar.</response>
+        /// <response code="403">Sin el permiso de cerrar ordenes.</response>
+        [HttpPost]
+        [Route("{id:int}/cerrar")]
+        public IHttpActionResult Cerrar(int id, CierreOrdenDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CERRAR OT");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                Datos.Ejecutar("UPD_ORDEN_TRABAJO_CERRAR",
+                    new Dictionary<string, object>
+                    {
+                        { "@ORDEN_TRABAJO", id },
+                        // Del token, nunca del cuerpo: `otr_usuario_cierre` es
+                        // quien firma el cierre, y una firma que llega por el
+                        // cuerpo la escribe cualquiera con un token valido.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CIERRE_MOTIVO", dto.motivo },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@UUID", dto.uuid }
+                    });
+
                 return Ok(new { otr_id = id });
+            });
+        }
+
+        /// <summary>
+        /// GET /ordenes-trabajo/motivos-cierre — el catalogo de la hoja.
+        ///
+        /// La app no trae los seis motivos escritos adentro: son un dato de la
+        /// empresa y se habilitan desde la web. Una lista quemada en el
+        /// telefono obliga a publicar una version nueva cada vez que cambie, y
+        /// mientras tanto deja al supervisor eligiendo un motivo que el SP ya
+        /// rechaza.
+        /// </summary>
+        /// <response code="200">Los motivos habilitados, en su orden.</response>
+        /// <response code="403">Sin el permiso de cerrar ordenes.</response>
+        [HttpGet]
+        [Route("motivos-cierre")]
+        public IHttpActionResult MotivosCierre()
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CERRAR OT");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<CierreMotivoDto>(
+                    "API_SEL_ORDEN_TRABAJO_CIERRE_MOTIVO",
+                    new Dictionary<string, object> { { "@HABILITADO", true } }));
             });
         }
 
@@ -423,5 +562,252 @@ namespace API.Controllers
                 { "@OTR_ID", id }
             };
         }
+        // ------------------------------------------------------------ 6.7 --
+
+        /// <summary>
+        /// GET /ordenes-trabajo/{id}/validaciones — las firmas.     Vista 6.7
+        ///
+        /// LA MAS NUEVA PRIMERO
+        ///   Cuando hay dos validaciones del mismo tipo —una rechazada y
+        ///   despues una aceptada— la que manda es la ultima. La anterior
+        ///   sigue ahi, debajo: la tabla es de solo agregar y ninguna firma se
+        ///   borra, porque una firma que se puede reemplazar no prueba nada.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/validaciones")]
+        public IHttpActionResult Validaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<ValidacionDto>("API_SEL_ORDEN_TRABAJO_VALIDACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@ORDEN", id },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    }));
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/validaciones — firmar.        HU-118
+        ///
+        /// LA FIRMA VIAJA EN EL MISMO ENVIO, NO EN DOS
+        ///   Se podria subir el PNG por /evidencias y despues mandar el id,
+        ///   pero eso son DOS peticiones que la cola de salida no puede
+        ///   encolar juntas: sin señal, la primera entraria y la segunda no, y
+        ///   quedaria una firma huerfana sin validacion. Un solo envio, un
+        ///   solo uuid, un solo reintento.
+        ///
+        /// EL DIBUJO ES OPCIONAL
+        ///   No toda validacion se firma a mano; lo que siempre queda es
+        ///   QUIEN valido y CUANDO, que sale del token y del reloj del
+        ///   servidor. El dibujo es prueba adicional, no la validacion misma.
+        /// </summary>
+        /// <response code="201">Firmada, o la que ya estaba si era un reenvío.</response>
+        /// <response code="400">Tipo o resultado inválido, o rechazo sin motivo.</response>
+        [HttpPost]
+        [Route("{id:int}/validaciones")]
+        public IHttpActionResult Validar(int id, ValidacionAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VALIDAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                if (dto.uuid == Guid.Empty)
+                    return BadRequest("Falta el identificador del envío.");
+
+                int? archivoFirma = null;
+
+                if (!string.IsNullOrEmpty(dto.firma_base64))
+                {
+                    byte[] contenido;
+                    try
+                    {
+                        contenido = Convert.FromBase64String(dto.firma_base64);
+                    }
+                    catch (FormatException)
+                    {
+                        return BadRequest("La firma no es base64 válido.");
+                    }
+
+                    if (contenido.Length == 0)
+                        return BadRequest("La firma está vacía.");
+
+                    // Un trazo de firma en PNG pesa decenas de kilobytes. Un
+                    // megabyte es holgado, y el tope evita que por acá entre
+                    // una foto disfrazada de firma.
+                    if (contenido.Length > 1024 * 1024)
+                        return BadRequest("La firma pesa demasiado.");
+
+                    BlobService blob = new BlobService();
+
+                    if (!blob.Disponible)
+                        return Content(HttpStatusCode.ServiceUnavailable,
+                            new ErrorApi { codigo = 503, mensaje = blob.Motivo, esDeNegocio = false });
+
+                    string almacenado = dto.uuid.ToString("N") + ".png";
+
+                    /* La misma regla de rutas que la evidencia, y por el mismo
+                       motivo: con el cliente arriba, un SAS acotado a un
+                       prefijo deja fuera a las demas empresas con una sola
+                       regla. Se reusa RutaArchivo para que no haya dos maneras
+                       de armar la misma ruta. */
+                    string ruta = RutaArchivo.Armar(
+                        "sigma",
+                        SesionApi.ClienteId(),
+                        EvidenciasController.NombreDelCliente(),
+                        "firmas",
+                        almacenado,
+                        Hora.Ahora);
+
+                    ResultadoBlob subido = blob.Subir(ruta, contenido, "image/png");
+
+                    /* Se registra como evidencia de la orden, con categoria
+                       FIRMA (8). Dos cosas de una: el Archivo queda creado
+                       -que es lo que otv_archivo_firma necesita- y la firma
+                       pasa a formar parte del expediente de la orden, que es
+                       donde tiene que estar cuando alguien audite el cierre.
+
+                       El uuid es el mismo del envio, asi que un reintento
+                       tampoco duplica el archivo: API_INS_EVIDENCIA devuelve
+                       el que ya estaba. */
+                    archivoFirma = Datos.Ejecutar("API_INS_EVIDENCIA",
+                        new Dictionary<string, object>
+                        {
+                            { "@UUID", dto.uuid },
+                            { "@USUARIO", SesionApi.UsuarioId() },
+                            { "@CLIENTE", SesionApi.ClienteId() },
+                            { "@DESTINO", "ORDEN" },
+                            { "@DESTINO_ID", id },
+                            { "@CATEGORIA", 8 },
+                            { "@NOMBRE_ORIGINAL", almacenado },
+                            { "@NOMBRE_ALMACENADO", almacenado },
+                            { "@RUTA", subido.ruta },
+                            { "@MIME", "image/png" },
+                            { "@EXTENSION", "png" },
+                            { "@BYTE", subido.tamano },
+                            { "@HASH", subido.hash },
+                            { "@CAPTURA_UTC", DateTime.UtcNow },
+                            { "@TITULO", "Firma" }
+                        }, true);
+                }
+
+                int otv = Datos.Ejecutar("API_INS_ORDEN_TRABAJO_VALIDACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@UUID", dto.uuid },
+                        { "@ORDEN", id },
+                        { "@VALIDACION_TIPO", dto.tipo },
+                        { "@RESULTADO", dto.resultado },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@ARCHIVO_FIRMA", archivoFirma },
+                        // Del token, nunca del cuerpo: quien firma es quien
+                        // esta en sesion, y una firma que llega por el cuerpo
+                        // la escribe cualquiera con un token valido.
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    }, true);
+
+                return Creado(otv);
+            });
+        }
+
+        /// <summary>
+        /// GET /ordenes-trabajo/tipos-validacion — el catalogo de la hoja.
+        ///
+        /// Como los motivos de cierre: los tres tipos son un dato de la base y
+        /// no una lista quemada en el telefono, que obligaria a publicar una
+        /// version nueva cada vez que cambien.
+        /// </summary>
+        [HttpGet]
+        [Route("tipos-validacion")]
+        public IHttpActionResult TiposValidacion()
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<ValidacionTipoDto>("SEL_VALIDACION_TIPO",
+                    new Dictionary<string, object> { { "@HABILITADO", true } }));
+            });
+        }
+            #region Asignacion (HU-112)
+
+        /// <summary>GET /ordenes-trabajo/{id}/asignaciones — quién la ejecuta: responsable y apoyos.</summary>
+        [HttpGet]
+        [Route("{id:int}/asignaciones")]
+        public IHttpActionResult Asignaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER ORDENES TRABAJO");
+                ExigirCliente();
+                return Ok(Datos.Listar<OrdenTrabajoAsignacionDto>("SEL_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object> { { "@CLIENTE", SesionApi.ClienteId() }, { "@ORDEN", id } }));
+            });
+        }
+
+        /// <summary>
+        /// POST /ordenes-trabajo/{id}/asignaciones — un técnico o una empresa externa, uno de los dos.
+        ///
+        /// Un único responsable: si ya había otro, pasa a apoyo (lo decide el SP).
+        /// Si la orden pide una especialidad que el técnico no tiene, se asigna igual
+        /// y vuelve ADVERTENCIA con el texto; el consumidor decide si lo muestra.
+        /// </summary>
+        /// <response code="200">OTA_ID y ADVERTENCIA (null si no la hay).</response>
+        /// <response code="400">Ni técnico ni proveedor, los dos a la vez, proveedor no contratista, o la orden está cerrada.</response>
+        [HttpPost]
+        [Route("{id:int}/asignaciones")]
+        public IHttpActionResult Asignar(int id, OrdenTrabajoAsignacionAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CREAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                List<OrdenTrabajoAsignadaDto> r = Datos.Listar<OrdenTrabajoAsignadaDto>("INS_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@ORDEN", id },
+                        { "@USUARIO_ASIG", dto.usuario },
+                        { "@PROVEEDOR", dto.proveedor },
+                        { "@GRUPO_TRABAJO", dto.grupo_trabajo },
+                        { "@ES_RESPONSABLE", dto.es_responsable },
+                        { "@ROL_EJECUCION", dto.rol_ejecucion },
+                        { "@OBSERVACION", dto.observacion },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@UUID", dto.uuid }
+                    });
+                return Ok(r.Count > 0 ? r[0] : new OrdenTrabajoAsignadaDto());
+            });
+        }
+
+        /// <summary>DELETE /ordenes-trabajo/asignaciones/{id} — quita una asignación (baja lógica).</summary>
+        [HttpDelete]
+        [Route("asignaciones/{id:int}")]
+        public IHttpActionResult QuitarAsignacion(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("CREAR ORDEN TRABAJO");
+                ExigirCliente();
+                ExigirUsuario();
+                Datos.Ejecutar("DEL_ORDEN_TRABAJO_ASIGNACION",
+                    new Dictionary<string, object> { { "@ID", id }, { "@CLIENTE", SesionApi.ClienteId() }, { "@USUARIO", SesionApi.UsuarioId() } });
+                return Ok(new { ota_id = id });
+            });
+        }
+
+        #endregion
     }
 }

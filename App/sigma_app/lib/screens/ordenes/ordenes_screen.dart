@@ -5,13 +5,16 @@ import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/sync_service.dart';
 import '../../services/api_client.dart';
+import '../../services/buscador.dart';
 import '../../services/sigma_repository.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_imagen.dart';
+import '../../widgets/comun/sigma_pulso.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import 'nueva_orden_screen.dart';
 import 'orden_ficha_screen.dart';
 
 final busquedaOrdenProvider = StateProvider<String>((ref) => '');
@@ -40,7 +43,6 @@ class OrdenesScreen extends ConsumerStatefulWidget {
   /// arreglar el mismo defecto.
   final bool embebida;
 
-
   @override
   ConsumerState<OrdenesScreen> createState() => _OrdenesScreenState();
 }
@@ -67,11 +69,34 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     final mias = ref.watch(ordenesTrabajoProvider);
     final disponibles = ref.watch(ordenesDisponiblesProvider);
 
-    final filtro = ref.watch(busquedaOrdenProvider).trim().toLowerCase();
-    final listaMias = mias.valueOrNull ?? const <OrdenTrabajo>[];
-    final hoy = listaMias.where(_apremia).toList();
+    /* DENTRO DE LA BANDEJA MANDA EL BUSCADOR DE LA BANDEJA
 
-    final favoritas = listaMias.where((o) => o.ES_FAVORITO).toList();
+       «Mi trabajo» tiene una sola caja arriba que vale para las cuatro
+       pestañas. Si acá se siguiera leyendo el estado propio, escribir en esa
+       caja filtraría tareas y pautas pero no órdenes, y nadie entendería por
+       qué la misma búsqueda funciona en tres sitios y en uno no.
+
+       Suelta —abierta desde su acceso directo— sigue usando el suyo, que es el
+       que llena su propia barra. */
+    final filtro = widget.embebida
+        ? ref.watch(busquedaBandejaProvider)
+        : ref.watch(busquedaOrdenProvider);
+    final listaMias = mias.valueOrNull ?? const <OrdenTrabajo>[];
+    final hoy = listaMias.where(_vencidaODeHoy).toList();
+
+    /* EL FAVORITO SE RESUELVE CONTRA LO MARCADO EN ESTA SESION
+
+       Antes se leia `o.ES_FAVORITO` a secas, que es lo que trajo el servidor:
+       la estrella se encendia, el contador del chip seguia igual y la orden no
+       aparecia al filtrar. Con esto el contador y el filtro se enteran sin
+       volver a pedir la bandeja, que es lo que reordenaria la lista bajo el
+       dedo. */
+    ref.watch(favoritosLocalesProvider);
+    final locales = ref.read(favoritosLocalesProvider.notifier);
+    bool favorita(OrdenTrabajo o) =>
+        locales.resuelto('ORDEN', o.otr_id, o.ES_FAVORITO);
+
+    final favoritas = listaMias.where(favorita).toList();
 
     var visibles = switch (_pestana) {
       0 => hoy,
@@ -92,16 +117,57 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
        Se ordena con `sort` estable sobre una copia: el orden que trae el
        servidor —lo más urgente primero— se conserva dentro de cada grupo. */
     if (_pestana != 3) {
-      visibles = [...visibles]..sort((a, b) {
-          if (a.ES_FAVORITO == b.ES_FAVORITO) return 0;
-          return a.ES_FAVORITO ? -1 : 1;
+      visibles = [...visibles]
+        ..sort((a, b) {
+          final fa = favorita(a), fb = favorita(b);
+          if (fa == fb) return 0;
+          return fa ? -1 : 1;
         });
     }
 
     final fuente = _pestana == 2 ? disponibles : mias;
 
+    /* ABRIR UNA CORRECTIVA SE HACE DESDE ACA — HU-110
+
+       La bandeja solo dejaba mirar y tomar lo que ya existia, asi que avisar
+       de una maquina rota obligaba a llamar por radio y que otro la
+       registrara: por el camino se pierde lo unico que no se reconstruye
+       despues —que se vio y a que hora paro—.
+
+       El boton se muestra solo a quien puede: la API exige CREAR ORDEN
+       TRABAJO. Ofrecerlo a los demas seria prometer algo que termina en 403
+       despues de llenar el formulario, que es la misma regla que ya sigue el
+       boton de solicitar permiso.
+
+       Embebida no lleva boton: ahi la bandeja es una pestaña dentro de otra
+       pantalla y un flotante se superpondria con el suyo. */
+    final puedeCrear = ref.watch(tienePermisoProvider('CREAR ORDEN TRABAJO'));
+
     return Scaffold(
       backgroundColor: sg.fondo,
+      floatingActionButton: (!puedeCrear || widget.embebida)
+          ? null
+          : FloatingActionButton.extended(
+              heroTag: 'nuevaOrden',
+              backgroundColor: sg.primario,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: Text(
+                'Nueva OT',
+                style: sora(14, 600, color: Colors.white),
+              ),
+              onPressed: () async {
+                if (!mounted) return;
+                final ok = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(builder: (_) => const NuevaOrdenScreen()),
+                );
+                if (!context.mounted) return;
+                if (ok == true) {
+                  ref.invalidate(ordenesTrabajoProvider);
+                  ref.invalidate(ordenesDisponiblesProvider);
+                }
+              },
+            ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -110,6 +176,9 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
             // ya dijo «Mi trabajo» y no hace falta repetirlo debajo.
             if (!widget.embebida) _Cabecera(),
             _Filtros(
+              // Embebida no dibuja su propia caja: la de la bandeja ya está
+              // arriba y dos buscadores en la misma pantalla es una de más.
+              sinBuscador: widget.embebida,
               buscar: _buscar,
               pestana: _pestana,
               favoritos: favoritas.length,
@@ -134,15 +203,17 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
                       : Icons.assignment_turned_in_outlined,
                   titulo: switch (_pestana) {
                     _ when filtro.isNotEmpty => 'Nada coincide',
-                    0 => 'Nada apremia hoy',
+                    0 => 'Nada vencido ni para hoy',
                     1 => 'No tienes órdenes asignadas',
                     _ => 'No hay trabajo disponible',
                   },
                   detalle: switch (_pestana) {
-                    0 => 'Lo que vence hoy o está vencido aparece acá. Mira '
-                        '«Mías» para el resto de tu carga.',
-                    1 => 'Cuando el planificador te asigne una orden, o tomes '
-                        'una de las disponibles, aparece acá.',
+                    0 =>
+                      'Lo que vence hoy o está vencido aparece acá. Mira '
+                          '«Mías» para el resto de tu carga.',
+                    1 =>
+                      'Cuando el planificador te asigne una orden, o tomes '
+                          'una de las disponibles, aparece acá.',
                     _ => 'Todas las órdenes abiertas ya tienen responsable.',
                   },
                 ),
@@ -152,7 +223,9 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
                     ref.invalidate(ordenesDisponiblesProvider);
                   },
                   child: ListView.separated(
-                    padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
+                    padding: context.conBarraSistema(
+                      const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    ),
                     itemCount: visibles.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 11),
                     itemBuilder: (_, i) => _Tarjeta(
@@ -181,19 +254,24 @@ class _OrdenesScreenState extends ConsumerState<OrdenesScreen> {
     ref.invalidate(ordenesDisponiblesProvider);
   }
 
-  /// Lo que no puede esperar: vencido o vence hoy.
-  static bool _apremia(OrdenTrabajo o) {
+  /// Vencida o vence hoy. **La situación la decide el SP**, no la pantalla: si
+  /// la calculara la app, dos teléfonos con distinta hora darían veredictos
+  /// distintos sobre la misma orden.
+  static bool _vencidaODeHoy(OrdenTrabajo o) {
     final s = (o.SITUACION ?? '').toUpperCase();
     return s == 'VENCIDA' || s == 'VENCE HOY';
   }
 
-  static bool _coincide(OrdenTrabajo o, String f) => [
-        o.OT_NUMERO,
-        o.otr_titulo,
-        o.ACTIVO_CODIGO ?? '',
-        o.ACTIVO_NOMBRE ?? '',
-        o.AREA_NOMBRE ?? '',
-      ].any((s) => s.toLowerCase().contains(f));
+  /// Antes era un `contains` en minúsculas: «ot4» no encontraba `OT-04`, que
+  /// es justo lo que sale de dictar «ot cuatro». Ahora normaliza los dos lados
+  /// —tildes, separadores y ceros a la izquierda— y exige todos los términos.
+  static bool _coincide(OrdenTrabajo o, String f) => coincideBusqueda(f, [
+    o.OT_NUMERO,
+    o.otr_titulo,
+    o.ACTIVO_CODIGO,
+    o.ACTIVO_NOMBRE,
+    o.AREA_NOMBRE,
+  ]);
 }
 
 class _Cabecera extends StatelessWidget {
@@ -202,21 +280,28 @@ class _Cabecera extends StatelessWidget {
     final sg = context.sg;
 
     return SizedBox(
-      height: 60,
+      // Un titulo de 23 en una caja de 60: con la letra en Maximo son 34,5 y
+      // la caja se queda corta.
+      height: context.alto(60),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
             Expanded(
-              child: Text('Mi trabajo',
-                  style: sora(23, 700, color: sg.tinta, espaciado: -0.46)),
+              child: Text(
+                'Mi trabajo',
+                style: sora(23, 700, color: sg.tinta, espaciado: -0.46),
+              ),
             ),
             ValueListenableBuilder<bool>(
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ],
         ),
@@ -235,6 +320,7 @@ class _Filtros extends StatelessWidget {
     required this.disponibles,
     required this.onPestana,
     required this.onBuscar,
+    this.sinBuscador = false,
   });
 
   final TextEditingController buscar;
@@ -248,6 +334,9 @@ class _Filtros extends StatelessWidget {
   final ValueChanged<int> onPestana;
   final ValueChanged<String> onBuscar;
 
+  /// Dentro de la bandeja la caja de búsqueda ya está arriba: aquí sobra.
+  final bool sinBuscador;
+
   @override
   Widget build(BuildContext context) {
     final sg = context.sg;
@@ -257,82 +346,114 @@ class _Filtros extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(SgRadius.pill),
-              boxShadow: sg.e1,
-            ),
-            child: Container(
-              height: 52,
-              padding: const EdgeInsets.only(left: 18, right: 8),
+          if (!sinBuscador)
+            DecoratedBox(
               decoration: BoxDecoration(
-                color: sg.campo,
                 borderRadius: BorderRadius.circular(SgRadius.pill),
+                boxShadow: sg.e1,
               ),
-              child: Row(
-                children: [
-                  Icon(Icons.search, size: 21, color: sg.tinta3),
-                  const SizedBox(width: 11),
-                  Expanded(
-                    child: TextField(
-                      controller: buscar,
-                      onChanged: onBuscar,
-                      style: sora(16, 500, color: sg.tinta),
-                      cursorColor: sg.primario,
-                      decoration: InputDecoration(
-                        isDense: true,
-                        border: InputBorder.none,
-                        hintText: 'OT, activo, código o ubicación',
-                        hintStyle: sora(16, 500, color: sg.tinta3),
+              child: Container(
+                // El campo de busqueda es texto.
+                height: context.alto(52),
+                padding: const EdgeInsets.only(left: 18, right: 8),
+                decoration: BoxDecoration(
+                  color: sg.campo,
+                  borderRadius: BorderRadius.circular(SgRadius.pill),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.search, size: 21, color: sg.tinta3),
+                    const SizedBox(width: 11),
+                    Expanded(
+                      child: TextField(
+                        controller: buscar,
+                        onChanged: onBuscar,
+                        style: sora(16, 500, color: sg.tinta),
+                        cursorColor: sg.primario,
+                        decoration: InputDecoration(
+                          isDense: true,
+                          border: InputBorder.none,
+                          hintText: 'OT, activo, código o ubicación',
+                          hintStyle: sora(16, 500, color: sg.tinta3),
+                        ),
                       ),
                     ),
-                  ),
-                  // Dictar la búsqueda: un código como «MOT-001» con guantes
-                  // es donde más se falla al teclear, y buscarlo mal devuelve
-                  // una lista vacía que parece que la orden no existe.
-                  SgMicrofonoCampo(
-                    rotulo: 'Buscar',
-                    soloTexto: true,
-                    lado: 40,
-                    onValor: (v) {
-                      buscar.text = v;
-                      onBuscar(v);
-                    },
-                  ),
-                ],
+                    // Dictar la búsqueda: un código como «MOT-001» con guantes
+                    // es donde más se falla al teclear, y buscarlo mal devuelve
+                    // una lista vacía que parece que la orden no existe.
+                    SgMicrofonoCampo(
+                      rotulo: 'Buscar',
+                      soloTexto: true,
+                      lado: 40,
+                      onValor: (v) {
+                        buscar.text = v;
+                        onBuscar(v);
+                      },
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
           const SizedBox(height: 11),
-          Row(
-            children: [
-              _Chip('Hoy',
+          /* LA FILA DE CHIPS SCROLLEA — SI NO, EL CUARTO NO EXISTE
+
+             Era un Row fijo. Con «★ Míos» presente se desbordaba 81 px: franja
+             amarilla y negra, y ese chip quedaba fuera de la pantalla y sin
+             recibir toques. De ahi el reporte de que «los tabs internos no
+             funcionan» — funcionaban, pero no habia forma de tocarlos.
+
+             El scroll horizontal, ademas, no depende del ancho del telefono ni
+             del largo de las etiquetas: el dia que se agregue un quinto filtro
+             o que la traduccion alargue una palabra, sigue alcanzable. */
+          SizedBox(
+            // Crece con el chip. El scroll resolvió el ancho; sin esto el
+            // alto seguía en duro y recortaba la letra crecida.
+            height: context.alto(36),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              children: [
+                /* «Vencen hoy» y no «Hoy»
+
+                   «Hoy» se lee como «las de hoy» y este chip trae tambien las
+                   ATRASADAS, que son las que de verdad importan. Un rotulo que
+                   describe mal lo que filtra hace dudar de si falta algo. */
+                _Chip(
+                  'Vencen hoy',
                   contador: hoy,
                   colorContador: SgColor.rojo,
                   elegido: pestana == 0,
-                  onTap: () => onPestana(0)),
-              const SizedBox(width: 8),
-              _Chip('Mías',
+                  onTap: () => onPestana(0),
+                ),
+                const SizedBox(width: 8),
+                _Chip(
+                  'Mías',
                   contador: mias,
                   elegido: pestana == 1,
-                  onTap: () => onPestana(1)),
-              const SizedBox(width: 8),
-              _Chip('Disponibles',
+                  onTap: () => onPestana(1),
+                ),
+                const SizedBox(width: 8),
+                _Chip(
+                  'Disponibles',
                   contador: disponibles,
                   colorContador: SgColor.verde,
                   elegido: pestana == 2,
-                  onTap: () => onPestana(2)),
-              // El chip de favoritos solo aparece cuando hay alguno: un filtro
-              // que siempre da cero ocupa sitio y enseña a ignorar la fila.
-              if (favoritos > 0) ...[
-                const SizedBox(width: 8),
-                _Chip('★ Míos',
+                  onTap: () => onPestana(2),
+                ),
+                // El chip de favoritos solo aparece cuando hay alguno: un filtro
+                // que siempre da cero ocupa sitio y enseña a ignorar la fila.
+                if (favoritos > 0) ...[
+                  const SizedBox(width: 8),
+                  _Chip(
+                    '★ Míos',
                     contador: favoritos,
                     colorContador: SgColor.ambar,
                     elegido: pestana == 3,
-                    onTap: () => onPestana(3)),
+                    onTap: () => onPestana(3),
+                  ),
+                ],
               ],
-            ],
+            ),
           ),
         ],
       ),
@@ -369,7 +490,7 @@ class _Chip extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SgRadius.pill),
       child: Container(
-        height: 34,
+        height: context.alto(34),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: elegido ? sg.primario : sg.up,
@@ -382,7 +503,7 @@ class _Chip extends StatelessWidget {
             if (contador > 0) ...[
               const SizedBox(width: 7),
               Container(
-                height: 19,
+                height: context.alto(19),
                 constraints: const BoxConstraints(minWidth: 19),
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
@@ -392,8 +513,10 @@ class _Chip extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SgRadius.pill),
                 ),
                 alignment: Alignment.center,
-                child: Text('$contador',
-                    style: sora(11, 700, color: Colors.white)),
+                child: Text(
+                  '$contador',
+                  style: sora(11, 700, color: Colors.white),
+                ),
               ),
             ],
           ],
@@ -417,11 +540,11 @@ class _Tarjeta extends StatelessWidget {
   /// El color de la prioridad. Lo decide el catálogo del servidor, no la
   /// pantalla: acá solo se pinta.
   Color _prioridad(AppColors sg) => switch (orden.PRIORIDAD_ID) {
-        4 => sg.rojoTexto,
-        3 => sg.ambarTexto,
-        2 => sg.azulTexto,
-        _ => sg.tinta2,
-      };
+    4 => sg.rojoTexto,
+    3 => sg.ambarTexto,
+    2 => sg.azulTexto,
+    _ => sg.tinta2,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -444,7 +567,10 @@ class _Tarjeta extends StatelessWidget {
               // disco. Sin foto cargada queda el hueco del kit, no un error.
               if ((orden.ACTIVO_FOTO ?? '').isEmpty)
                 const SgFoto(
-                    lado: 60, radio: 17, icono: Icons.build_circle_outlined)
+                  lado: 60,
+                  radio: 17,
+                  icono: Icons.build_circle_outlined,
+                )
               else
                 SigmaImagen(
                   ruta: orden.ACTIVO_FOTO,
@@ -463,28 +589,36 @@ class _Tarjeta extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         if ((orden.PRIORIDAD_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(orden.PRIORIDAD_NOMBRE!,
-                              color: colorPrioridad,
-                              icono: orden.PRIORIDAD_ID >= 3
-                                  ? Icons.arrow_upward
-                                  : null,
-                              chico: true),
+                          SgBadge(
+                            orden.PRIORIDAD_NOMBRE!,
+                            color: colorPrioridad,
+                            icono: orden.PRIORIDAD_ID >= 3
+                                ? Icons.arrow_upward
+                                : null,
+                            chico: true,
+                          ),
                         if ((orden.TIPO_NOMBRE ?? '').isNotEmpty)
-                          SgBadge(orden.TIPO_NOMBRE!,
-                              color: sg.tinta2, chico: true),
+                          SgBadge(
+                            orden.TIPO_NOMBRE!,
+                            color: sg.tinta2,
+                            chico: true,
+                          ),
                         if (orden.vencida)
-                          SgBadge('Vencida',
-                              color: sg.rojoTexto, chico: true),
+                          SgBadge('Vencida', color: sg.rojoTexto, chico: true),
                         if (orden.enEjecucion)
-                          SgBadge('En ejecución',
-                              color: sg.ambarTexto,
-                              icono: Icons.build,
-                              chico: true),
+                          SgBadge(
+                            'En ejecución',
+                            color: sg.ambarTexto,
+                            icono: Icons.build,
+                            chico: true,
+                          ),
                         if (orden.abierta && orden.sinResponsable)
-                          SgBadge('Disponible',
-                              color: sg.acentoTexto,
-                              icono: Icons.pan_tool_outlined,
-                              chico: true),
+                          SgBadge(
+                            'Disponible',
+                            color: sg.acentoTexto,
+                            icono: Icons.pan_tool_outlined,
+                            chico: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
@@ -493,9 +627,9 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         Expanded(
                           child: Text(
-                              '${orden.OT_NUMERO} · ${orden.otr_titulo}',
-                              style: sora(16, 600,
-                                  color: sg.tinta, alto: 1.35)),
+                            '${orden.OT_NUMERO} · ${orden.otr_titulo}',
+                            style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                          ),
                         ),
                         const SizedBox(width: 6),
                         _Estrella(
@@ -515,8 +649,11 @@ class _Tarjeta extends StatelessWidget {
                       const SizedBox(height: 5),
                       Row(
                         children: [
-                          Icon(Icons.view_in_ar_outlined,
-                              size: 14, color: sg.tinta2),
+                          Icon(
+                            Icons.view_in_ar_outlined,
+                            size: 14,
+                            color: sg.tinta2,
+                          ),
                           const SizedBox(width: 5),
                           Expanded(
                             child: Text(
@@ -531,8 +668,7 @@ class _Tarjeta extends StatelessWidget {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.place_outlined,
-                            size: 14, color: sg.tinta3),
+                        Icon(Icons.place_outlined, size: 14, color: sg.tinta3),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
@@ -572,8 +708,10 @@ class _Tarjeta extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                Text('${orden.PASOS_LISTOS} / ${orden.PASOS_TOTAL} pasos',
-                    style: sora(12, 600, color: sg.tinta2, tabular: true)),
+                Text(
+                  '${orden.PASOS_LISTOS} / ${orden.PASOS_TOTAL} pasos',
+                  style: sora(12, 600, color: sg.tinta2, tabular: true),
+                ),
               ],
             ),
           ],
@@ -589,8 +727,8 @@ class _Tarjeta extends StatelessWidget {
                   icono: orden.enEjecucion
                       ? Icons.play_arrow
                       : (orden.sinResponsable
-                          ? Icons.pan_tool_outlined
-                          : Icons.chevron_right),
+                            ? Icons.pan_tool_outlined
+                            : Icons.chevron_right),
                   primario: orden.enEjecucion,
                   alto: 44,
                   tamanoTexto: 14,
@@ -604,10 +742,12 @@ class _Tarjeta extends StatelessWidget {
                 const SizedBox(width: 9),
                 Tooltip(
                   message: 'Requiere permiso de trabajo',
-                  child: SgBotonIcono(Icons.engineering,
-                      fondo: sg.tinte(sg.ambarTexto),
-                      color: sg.ambarTexto,
-                      onTap: onAbrir),
+                  child: SgBotonIcono(
+                    Icons.engineering,
+                    fondo: sg.tinte(sg.ambarTexto),
+                    color: sg.ambarTexto,
+                    onTap: onAbrir,
+                  ),
                 ),
               ],
             ],
@@ -617,7 +757,6 @@ class _Tarjeta extends StatelessWidget {
     );
   }
 }
-
 
 /// La estrella que fija una orden arriba de la bandeja.
 ///
@@ -647,7 +786,13 @@ class _EstrellaState extends ConsumerState<_Estrella> {
   bool? _local;
   bool _ocupado = false;
 
-  bool get _marcada => _local ?? widget.orden.ES_FAVORITO;
+  bool get _marcada => ref
+      .read(favoritosLocalesProvider.notifier)
+      .resuelto(
+        'ORDEN',
+        widget.orden.otr_id,
+        _local ?? widget.orden.ES_FAVORITO,
+      );
 
   Future<void> _alternar() async {
     if (_ocupado) return;
@@ -660,15 +805,24 @@ class _EstrellaState extends ConsumerState<_Estrella> {
     });
 
     try {
-      final ahora = await SigmaRepository.instance
-          .alternarFavorito('ORDEN', widget.orden.otr_id);
+      final ahora = await SigmaRepository.instance.alternarFavorito(
+        'ORDEN',
+        widget.orden.otr_id,
+      );
       if (!mounted) return;
       setState(() => _local = ahora);
+      // Lo que hace que el contador del chip y el filtro se enteren.
+      ref
+          .read(favoritosLocalesProvider.notifier)
+          .marcar('ORDEN', widget.orden.otr_id, ahora);
     } on ApiException catch (e) {
       if (!mounted) return;
       // Se devuelve al estado real: una estrella encendida que el servidor no
       // guardó es una mentira que se descubre al reabrir la app.
       setState(() => _local = antes);
+      ref
+          .read(favoritosLocalesProvider.notifier)
+          .marcar('ORDEN', widget.orden.otr_id, antes);
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     } finally {
       if (mounted) setState(() => _ocupado = false);
@@ -679,12 +833,32 @@ class _EstrellaState extends ConsumerState<_Estrella> {
   Widget build(BuildContext context) {
     final sg = context.sg;
 
-    return SgBotonIcono(
-      _marcada ? Icons.star : Icons.star_border,
-      color: _marcada ? sg.ambarTexto : sg.tinta3,
-      lado: 34,
-      tamano: 20,
+    /* LA ESTRELLA RESPONDE AL TOQUE
+
+       Antes solo cambiaba de icono: veinte pixeles que en terreno, con guantes
+       y a contraluz, se pierden. Quien no esta seguro de haber tocado vuelve a
+       tocar, y en un favorito eso lo DESMARCA.
+
+       Ahora rebota y vibra al tocar —acuse del gesto, no del resultado— y el
+       relleno entra con una transicion en vez de aparecer de golpe. */
+    return SgPulso(
       onTap: _alternar,
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        transitionBuilder: (hijo, animacion) => ScaleTransition(
+          scale: animacion,
+          child: FadeTransition(opacity: animacion, child: hijo),
+        ),
+        child: SgBotonIcono(
+          // La `key` es lo que hace que el switcher vea DOS iconos distintos y
+          // anime entre ellos; sin ella cambia el color y no pasa nada.
+          key: ValueKey(_marcada),
+          _marcada ? Icons.star : Icons.star_border,
+          color: _marcada ? sg.ambarTexto : sg.tinta3,
+          lado: 34,
+          tamano: 20,
+        ),
+      ),
     );
   }
 }

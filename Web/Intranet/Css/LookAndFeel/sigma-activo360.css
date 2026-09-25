@@ -1,0 +1,2384 @@
+﻿/* ============================================================================
+   CENTRO DEL ACTIVO 360
+
+   Un equipo se mira desde muchos lados -sus ordenes, su mantencion, su
+   condicion, sus repuestos, lo que la app fotografio- y hasta ahora cada lado
+   era una pantalla distinta a la que se llegaba por el menu, perdiendo de
+   vista de que equipo se estaba hablando.
+
+   Aca todo cuelga del mismo encabezado: el equipo se elige una vez y las
+   secciones cambian debajo. Las cuatro que se usan siempre -Resumen,
+   Historial, Ordenes y Mantenimiento- estan a la vista; las otras nueve viven
+   en "Mas", que al elegir una escribe su nombre al lado para que nunca se
+   pierda en que seccion se esta.
+
+   La cascara comun -tarjetas, chips, datos, vacios, botones- viene de
+   sigma-orden.css. Aca va lo propio del centro.
+   ============================================================================ */
+.sg-a3 {
+    --sg-p: #6C5CFF;
+    --sg-borde: #ebecf3;
+    --sg-texto: #0f172a;
+    --sg-suave: #6b7280;
+    --sg-tenue: #9ca3af;
+}
+
+/* ------------------------------------------------------------- cabecera --- */
+.sg-a3-miga { font-size: 12.5px; color: var(--sg-tenue); margin-bottom: 6px; }
+.sg-a3-miga a, .sg-a3-miga a:hover { color: var(--sg-suave); text-decoration: none; }
+.sg-a3-miga .sep { margin: 0 6px; color: #cbd0db; }
+
+.sg-a3-hero {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 14px;
+}
+.sg-a3-hero-txt { flex: 1 1 280px; min-width: 0; }
+.sg-a3-hero h1 {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin: 0;
+    font-size: 27px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    line-height: 1.15;
+}
+.sg-a3-hero-sub { margin-top: 4px; font-size: 13px; color: var(--sg-suave); }
+.sg-a3-hero-acc { display: flex; align-items: center; gap: 8px; }
+
+/* El rotulo de datos de ejemplo: cuando la pantalla muestra un escenario y no
+   registros del cliente, se dice, y se dice chico. */
+.sg-a3-ilustrativo { margin-left: auto; align-self: flex-start; font-size: 11.5px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------ navegacion -- */
+.sg-a3-nav {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    gap: 2px;
+    margin-bottom: 16px;
+    padding: 4px 6px 0;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+    overflow: visible;
+}
+a.sg-a3-tab, a.sg-a3-tab:hover, a.sg-a3-tab:focus {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 13px 16px;
+    border-bottom: 2px solid transparent;
+    color: var(--sg-suave);
+    font-size: 13.5px;
+    font-weight: 500;
+    text-decoration: none;
+    white-space: nowrap;
+}
+a.sg-a3-tab:hover { color: var(--sg-texto); }
+a.sg-a3-tab i { font-size: 17px; }
+a.sg-a3-tab.es-activa { color: var(--sg-p); border-bottom-color: var(--sg-p); font-weight: 600; }
+
+/* "Mas" abre la lista de las otras nueve secciones y, cuando una esta
+   elegida, escribe su nombre al lado: sin eso, la pantalla no dice donde
+   esta parado uno. */
+.sg-a3-mas { position: relative; margin-left: auto; }
+a.sg-a3-mas-btn, a.sg-a3-mas-btn:hover { padding-right: 13px; }
+.sg-a3-mas-nombre { color: var(--sg-p); font-weight: 600; }
+
+.sg-a3-mas-menu {
+    position: absolute;
+    right: 0; top: calc(100% + 6px);
+    z-index: 40;
+    display: none;
+    width: 264px;
+    padding: 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 12px 32px -14px rgba(15, 23, 42, .35);
+}
+.sg-a3-mas.es-abierto .sg-a3-mas-menu { display: block; animation: sgA3Menu .14s ease-out; }
+@keyframes sgA3Menu { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+a.sg-a3-mas-op, a.sg-a3-mas-op:hover, a.sg-a3-mas-op:focus {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 10px;
+    border-radius: 9px;
+    color: #374151;
+    font-size: 13px;
+    text-decoration: none;
+}
+a.sg-a3-mas-op:hover { background: #f5f3ff; color: var(--sg-p); }
+a.sg-a3-mas-op i { font-size: 17px; color: var(--sg-tenue); }
+a.sg-a3-mas-op:hover i, a.sg-a3-mas-op.es-activa i { color: var(--sg-p); }
+a.sg-a3-mas-op.es-activa { background: #f1effe; color: var(--sg-p); font-weight: 600; }
+
+/* --------------------------------------------------------------- paneles -- */
+.sg-a3-panel { display: none; }
+.sg-a3-panel.es-activo { display: block; animation: sgA3Entra .16s ease-out; }
+@keyframes sgA3Entra { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
+.sg-a3-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(300px, 400px);
+    gap: 16px;
+    align-items: start;
+}
+@media (max-width: 1150px) { .sg-a3-cols { grid-template-columns: 1fr; } }
+.sg-a3-col, .sg-a3-lado { display: grid; gap: 16px; align-content: start; }
+
+/* ------------------------------------------------------------------ kpis -- */
+.sg-a3-kpis {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.sg-a3-kpi {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 15px 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.sg-a3-kpi-ico {
+    flex: 0 0 auto;
+    width: 40px; height: 40px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+    background: #f1effe;
+    color: var(--sg-p);
+    font-size: 20px;
+}
+.sg-a3-kpi-ico.es-alerta { background: #fee2e2; color: #b91c1c; }
+.sg-a3-kpi-ico.es-ok { background: #dcfce7; color: #15803d; }
+.sg-a3-kpi-etq { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-kpi-val { display: block; font-size: 19px; font-weight: 700; color: var(--sg-texto); line-height: 1.2; }
+.sg-a3-kpi-val.es-chico { font-size: 14px; font-weight: 600; }
+.sg-a3-kpi-pie { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* --------------------------------------------------------------- filas ---- */
+.sg-a3-fila {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 4px;
+}
+.sg-a3-fila + .sg-a3-fila { border-top: 1px solid #f5f6fa; }
+.sg-a3-fila-ico {
+    flex: 0 0 auto;
+    width: 34px; height: 34px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 10px;
+    background: #f1effe;
+    color: var(--sg-p);
+    font-size: 18px;
+}
+.sg-a3-fila-ico.es-alerta { background: #fee2e2; color: #b91c1c; }
+.sg-a3-fila-ico.es-ok { background: #dcfce7; color: #15803d; }
+.sg-a3-fila-ico.es-plan { background: #e0e7ff; color: #3730a3; }
+.sg-a3-fila-txt { flex: 1 1 auto; min-width: 0; }
+.sg-a3-fila-tit { display: block; font-size: 13.5px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-fila-sub { display: block; font-size: 12px; color: var(--sg-suave); line-height: 1.45; }
+.sg-a3-fila-acc { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; }
+.sg-a3-codigo { font-size: 12.5px; font-weight: 700; color: var(--sg-p); }
+
+/* --------------------------------------------------------------- tablas --- */
+.sg-a3-tabla-cab,
+.sg-a3-tabla-fila {
+    display: grid;
+    gap: 10px;
+    align-items: center;
+    padding: 11px 8px;
+}
+.sg-a3-tabla-cab {
+    border-bottom: 1px solid #eef0f6;
+    color: var(--sg-suave);
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+}
+.sg-a3-tabla-fila + .sg-a3-tabla-fila { border-top: 1px solid #f5f6fa; }
+.sg-a3-tabla-fila:hover { background: #fafaff; }
+.sg-a3-tabla-fila .c-cod { font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-tabla-fila .c-cod span { display: block; font-size: 11.5px; font-weight: 400; color: var(--sg-suave); }
+.sg-a3-tabla-fila .c-dato { font-size: 12.5px; color: #4b5563; min-width: 0; }
+.sg-a3-tabla-fila .c-acc { display: flex; justify-content: flex-end; }
+
+/* Las ordenes de trabajo: seis columnas y una fila que se despliega. */
+/* Ocho columnas: entre Tipo y Responsable entra ALCANCE, la parte del
+   equipo que se intervino. Sin ella, dos ordenes del mismo horno se ven
+   iguales aunque una sea del quemador y la otra del ventilador. */
+.sg-a3-ot-cab, .sg-a3-ot { grid-template-columns: minmax(0, 1.6fr) 100px minmax(0, .9fr) minmax(0, .9fr) 112px 100px 70px 118px; }
+
+/* El boton de la ultima columna no se parte en dos lineas. */
+.sg-a3-ot .c-acc .sg-ot-btn { white-space: nowrap; }
+.sg-a3-ot.es-abierta { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+.sg-a3-ot-detalle {
+    display: none;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 14px;
+    margin: 0 8px 10px;
+    padding: 14px;
+    border: 1px solid #ece9fb;
+    border-radius: 12px;
+    background: #faf9ff;
+}
+.sg-a3-ot-detalle.es-abierto { display: grid; }
+.sg-a3-ot-det-item strong { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-ot-det-item strong i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-ot-det-item span { display: block; margin-top: 3px; font-size: 12px; color: var(--sg-suave); line-height: 1.5; }
+.sg-a3-ot-det-acc { grid-column: 1 / -1; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+
+/* Las tablas de las demas secciones comparten forma pero no anchos. */
+.sg-a3-t4-cab, .sg-a3-t4 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) 130px 120px; }
+.sg-a3-t5-cab, .sg-a3-t5 { grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr) minmax(0, 1fr) 130px 120px; }
+
+@media (max-width: 1000px) {
+    .sg-a3-ot-cab, .sg-a3-t4-cab, .sg-a3-t5-cab { display: none; }
+    .sg-a3-ot, .sg-a3-t4, .sg-a3-t5 { grid-template-columns: 1fr 1fr; }
+    .sg-a3-ot .c-cod, .sg-a3-t4 .c-cod, .sg-a3-t5 .c-cod { grid-column: 1 / -1; }
+    .sg-a3-ot .c-acc, .sg-a3-t4 .c-acc, .sg-a3-t5 .c-acc { justify-content: flex-start; }
+}
+
+/* ------------------------------------------------------------- identidad -- */
+.sg-a3-foto {
+    display: block;
+    width: 100%;
+    height: 200px;
+    border-radius: 12px;
+    background: #f1f2f6;
+    overflow: hidden;
+}
+.sg-a3-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-a3-foto.es-vacia { display: flex; align-items: center; justify-content: center; color: #c0c4d2; font-size: 38px; }
+
+.sg-a3-ident { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 6px 12px; margin-top: 14px; }
+.sg-a3-ident dt { font-size: 12px; color: var(--sg-tenue); font-weight: 400; }
+.sg-a3-ident dd { margin: 0; font-size: 13px; color: var(--sg-texto); }
+
+/* --------------------------------------------------------------- SIGMA AI - */
+.sg-a3-ia {
+    padding: 14px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #f5f3ff, #eef2ff);
+    border: 1px solid #ddd6fe;
+}
+.sg-a3-ia-cab { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-size: 12.5px; font-weight: 600; color: #5b4bd6; }
+.sg-a3-ia-cab .sg-ot-chip { margin-left: auto; }
+.sg-a3-ia p { margin: 0 0 6px; font-size: 12.5px; line-height: 1.55; color: #374151; }
+.sg-a3-ia-senales { font-size: 11.5px; color: var(--sg-suave); }
+
+/* ------------------------------------------------------- condicion -------- */
+.sg-a3-cond {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sg-a3-cond-card {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-left: 3px solid #cbd0db;
+    border-radius: 12px;
+    background: #fff;
+}
+.sg-a3-cond-card.es-normal { border-left-color: var(--sg-success); }
+.sg-a3-cond-card.es-aviso { border-left-color: var(--sg-warning); }
+.sg-a3-cond-card.es-critico { border-left-color: var(--sg-danger); }
+.sg-a3-cond-card.es-viejo { border-left-color: #94a3b8; }
+.sg-a3-cond-nom { font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-cond-val { display: block; margin: 2px 0 4px; font-size: 22px; font-weight: 700; color: var(--sg-texto); }
+.sg-a3-cond-val small { font-size: 13px; font-weight: 500; color: var(--sg-suave); }
+.sg-a3-cond-pie { font-size: 11.5px; color: var(--sg-tenue); }
+
+/* El aviso de que los umbrales del ejemplo no son limites de operacion. */
+.sg-a3-umbrales { margin-top: 12px; font-size: 11.5px; color: var(--sg-tenue); }
+
+/* --------------------------------------------------------------- galeria -- */
+.sg-a3-galeria { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; }
+.sg-a3-foto-card {
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+    overflow: hidden;
+    cursor: pointer;
+}
+.sg-a3-foto-card:hover { box-shadow: 0 6px 18px -12px rgba(15, 23, 42, .35); }
+.sg-a3-foto-card .marco { display: block; height: 130px; background: #f1f2f6; }
+.sg-a3-foto-card .marco img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-a3-foto-card .pie { padding: 9px 11px 11px; }
+.sg-a3-foto-card .pie strong { display: block; font-size: 12.5px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-foto-card .pie span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* ------------------------------------------------------------ linea de vida */
+.sg-a3-linea { list-style: none; margin: 0; padding: 0 0 0 20px; position: relative; }
+.sg-a3-linea::before { content: ''; position: absolute; left: 5px; top: 6px; bottom: 6px; width: 2px; background: #eceef5; }
+.sg-a3-linea li { position: relative; padding: 10px 0; }
+.sg-a3-linea li + li { border-top: 1px solid #f5f6fa; }
+.sg-a3-linea li::before {
+    content: '';
+    position: absolute;
+    left: -19px; top: 17px;
+    width: 9px; height: 9px;
+    border-radius: 999px;
+    background: var(--sg-p);
+    box-shadow: 0 0 0 3px #f1effe;
+}
+.sg-a3-linea .fecha { font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-linea .tit { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-a3-linea .det { display: block; font-size: 12px; color: var(--sg-suave); line-height: 1.5; }
+
+/* ============================================================================
+   VISTAS 10 A 13: inspecciones, repuestos, SIGMA AI y bitacora.
+   ========================================================================= */
+
+/* ------------------------------------------- inspecciones y tareas -------- */
+.sg-a3-rev-cab,
+.sg-a3-rev {
+    grid-template-columns: minmax(200px, 2.2fr) 110px 110px 170px 130px 140px 40px;
+}
+.sg-a3-rev { cursor: pointer; }
+.sg-a3-rev-flecha { color: var(--sg-tenue); transition: transform .18s ease; }
+.sg-a3-rev.es-abierta .sg-a3-rev-flecha { transform: rotate(180deg); }
+.sg-a3-rev.es-oculta,
+.sg-a3-rev.es-oculta + .sg-a3-rev-detalle { display: none; }
+
+.sg-a3-items { display: grid; gap: 6px; margin-top: 6px; }
+.sg-a3-item {
+    display: grid;
+    grid-template-columns: 18px 1fr auto;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    border-radius: 9px;
+    background: #fff;
+    border: 1px solid var(--sg-borde);
+}
+.sg-a3-item i { font-size: 15px; }
+.sg-a3-item.es-bueno i { color: var(--sg-success); }
+.sg-a3-item.es-malo i { color: var(--sg-danger); }
+.sg-a3-item.es-pendiente i { color: #94a3b8; }
+.sg-a3-item-txt { font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-item-val {
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--sg-suave);
+    background: #f1f3f9;
+    border-radius: 999px;
+    padding: 3px 10px;
+}
+.sg-a3-item.es-malo .sg-a3-item-val { background: #fee2e2; color: #b91c1c; }
+.sg-a3-item.es-bueno .sg-a3-item-val { background: #dcfce7; color: #15803d; }
+
+.sg-a3-ot-det-item.es-ancho { grid-column: 1 / -1; }
+
+/* ---------------------------------------------- repuestos y costos -------- */
+/* La primera columna es la foto de la pieza: 44px fijos. Once columnas,
+   porque de donde salio y quien lo registro importan tanto como la cantidad:
+   cuando el repuesto no llego a la maquina, la pregunta es esa. */
+.sg-a3-rep-cab,
+.sg-a3-rep {
+    grid-template-columns: 44px minmax(150px, 1.7fr) 95px 95px 110px 105px minmax(0, 1fr) 95px minmax(0, 1fr) 78px 105px;
+}
+.sg-a3-rep .c-dato span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+.sg-a3-costo-cab,
+.sg-a3-costo { grid-template-columns: 92px minmax(0, 2fr) 80px minmax(0, 1fr) 110px 105px; }
+.sg-a3-costo .c-dato span { display: block; font-size: 11px; color: var(--sg-warning); }
+
+.sg-a3-compat-cab,
+.sg-a3-compat { grid-template-columns: 44px minmax(150px, 1.6fr) 110px minmax(0, 1.2fr) minmax(0, 150px) minmax(0, 1fr) 100px; }
+
+/* ------------------------------------------------------- SIGMA AI -------- */
+.sg-a3-tab.es-ia { margin-left: auto; }
+.sg-a3-tab.es-ia i { color: #7c5cff; }
+
+.sg-a3-ia-head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 14px;
+}
+.sg-a3-ia-head h3 { margin: 0; font-size: 16px; }
+.sg-a3-ia-head h3 span { font-weight: 500; color: #7c5cff; }
+.sg-a3-ia-ico {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+    color: #6d28d9;
+    font-size: 20px;
+}
+.sg-a3-ia-fecha { margin-left: auto; font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-a3-ia-cols {
+    display: grid;
+    grid-template-columns: 1.4fr 1fr;
+    gap: 14px;
+    margin-bottom: 14px;
+}
+.sg-a3-ia-cols.es-abajo { grid-template-columns: 1.4fr 1fr; }
+
+.sg-a3-ia-aviso {
+    display: flex;
+    gap: 12px;
+    padding: 16px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #f5f3ff, #faf5ff);
+    border: 1px solid #e9d5ff;
+}
+.sg-a3-ia-aviso > i { font-size: 24px; color: var(--sg-danger); }
+.sg-a3-ia-aviso strong { display: block; font-size: 16px; color: var(--sg-texto); }
+.sg-a3-ia-aviso p { margin: 6px 0 0; font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-ia-tipo {
+    display: inline-block;
+    margin-top: 4px;
+    font-size: 11px;
+    color: #6d28d9;
+}
+
+/* El limite del modelo se dice en la misma tarjeta que su aviso: leerlo
+   aparte, al pie, es leerlo despues de haber decidido. */
+.sg-a3-ia-limite { font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-ia-dato { font-size: 12.5px; color: var(--sg-suave); }
+
+.sg-a3-ia-senal h4,
+.sg-a3-ia-reco h4,
+.sg-a3-ia-acc h4 {
+    margin: 0 0 8px;
+    font-size: 13px;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-reco h4 i,
+.sg-a3-ia-acc h4 i { margin-right: 6px; color: var(--sg-suave); }
+
+.sg-a3-senales { display: grid; gap: 8px; }
+.sg-a3-senal {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: #fff;
+}
+.sg-a3-senal i { font-size: 17px; color: var(--sg-suave); }
+.sg-a3-senal span { display: block; font-size: 12.5px; color: var(--sg-texto); }
+.sg-a3-senal b { font-size: 11.5px; font-weight: 600; }
+.sg-a3-senal.es-ok b { color: var(--sg-success); }
+.sg-a3-senal.es-sin b { color: #94a3b8; }
+
+.sg-a3-ia-reco,
+.sg-a3-ia-acc {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+}
+.sg-a3-ia-acc { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.sg-a3-ia-acc .sg-ot-btn { justify-content: center; }
+
+.sg-a3-ia-rel {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 14px;
+    margin-bottom: 12px;
+}
+.sg-a3-ia-rel h4 { margin: 0 0 8px; font-size: 13px; color: var(--sg-texto); }
+.sg-a3-ia-rel h4 i { margin-right: 6px; color: var(--sg-suave); }
+
+/* -------------------------------------------------------- bitacora ------- */
+.sg-a3-linea li.es-aviso { border-left-color: var(--sg-warning); }
+.sg-a3-linea-ico {
+    display: grid;
+    place-items: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 9px;
+    background: #f1f3f9;
+    color: var(--sg-suave);
+    font-size: 15px;
+}
+.sg-a3-linea-txt { display: block; }
+.sg-a3-linea-tit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-linea-sub { display: block; margin: 3px 0; font-size: 12.5px; color: var(--sg-suave); }
+.sg-a3-linea-pie { display: block; font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-a3-obs { display: grid; gap: 8px; }
+.sg-a3-obs-acc { display: flex; justify-content: flex-end; }
+
+.sg-a3-col.es-angosta { max-width: 380px; }
+
+@media (max-width: 1100px) {
+    .sg-a3-ia-cols,
+    .sg-a3-ia-cols.es-abajo { grid-template-columns: 1fr; }
+    .sg-a3-col.es-angosta { max-width: none; }
+}
+
+/* El chip de inspecciones NO reusa .sg-ot-ev-chip: sigma-orden.js toma todos
+   los de esa clase para la galeria de evidencias y le pisaria el onclick. */
+a.sg-a3-chip, a.sg-a3-chip:hover, a.sg-a3-chip:focus {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 999px;
+    background: #fff;
+    color: #4b5563;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+}
+a.sg-a3-chip:hover { background: #f9fafb; }
+a.sg-a3-chip b { font-weight: 700; color: var(--sg-tenue); }
+a.sg-a3-chip.es-activa { background: var(--sg-p); border-color: var(--sg-p); color: #fff; }
+a.sg-a3-chip.es-activa b { color: #fff; }
+
+.sg-a3-lista-acc { display: flex; justify-content: flex-end; margin-bottom: 10px; }
+
+/* Una foto que se puede agrandar tiene que decirlo antes de que la toquen. */
+.sg-a3-ampliable { cursor: zoom-in; transition: filter .15s ease; }
+.sg-a3-ampliable:hover { filter: brightness(1.06); }
+
+.sg-a3-cond-card { position: relative; }
+.sg-a3-cond-editar {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    color: var(--sg-tenue);
+    font-size: 16px;
+    text-decoration: none;
+}
+.sg-a3-cond-editar:hover { color: var(--sg-p); }
+
+/* ============================================================================
+   LA PESTAÑA FICHA
+
+   El formulario es el mismo control que usa el modal de alta. Aca cambia de
+   forma: dos columnas -a la izquierda lo que se escribe, a la derecha lo que
+   se adjunta- y las acciones en una barra fija abajo, porque la ficha es
+   larga y el boton no puede quedar a dos pantallas del campo recien tocado.
+   ========================================================================= */
+.sg-a3-ficha-cab {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+.sg-a3-ficha-cab h2 { margin: 0; font-size: 20px; color: var(--sg-texto); }
+.sg-a3-ficha-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    background: #ede9fe;
+    color: #5b46e5;
+    font-size: 12px;
+    font-weight: 600;
+}
+.sg-a3-ficha-chip.es-lectura { background: #f1f3f9; color: var(--sg-suave); }
+
+.sg-a3-ficha .sigma-modal { padding: 0; max-width: none; }
+
+/* Dos columnas por CSS y no por markup: el modal sigue en una sola y el
+   formulario es el mismo archivo. */
+.sg-a3-ficha .sigma-form-seccion {
+    background: #fff;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    padding: 16px;
+    margin: 0;
+}
+@media (min-width: 1100px) {
+    /* La columna de la derecha tiene un ancho fijo -lo que adjunta cabe en
+       400px- para que la de la izquierda se quede con todo lo demas y los
+       campos entren de a tres. */
+    .sg-a3-ficha-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 400px;
+        gap: 14px;
+        align-items: start;
+
+        /* Sin "dense" la imagen arranca en la fila 4 -debajo de las tres
+           secciones de la izquierda- porque la rejilla no vuelve atras a
+           buscar hueco. La columna derecha tiene que empezar arriba. */
+        grid-auto-flow: dense;
+    }
+
+    /* Izquierda lo que se escribe, derecha lo que se adjunta. Cada seccion
+       declara su columna y el navegador las apila en orden. */
+    .sg-a3-ficha-grid > .es-identificacion,
+    .sg-a3-ficha-grid > .es-ubicacion,
+    .sg-a3-ficha-grid > .es-tecnica { grid-column: 1; }
+
+    .sg-a3-ficha-grid > .es-imagen,
+    .sg-a3-ficha-grid > .es-datos,
+    .sg-a3-ficha-grid > .es-documentos { grid-column: 2; }
+}
+
+.sg-a3-ficha-grid { display: grid; gap: 14px; }
+
+/* La barra de acciones vive pegada abajo mientras la pestaña este abierta. */
+.sg-a3-ficha-pie {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 14px;
+    padding: 12px 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: rgba(255, 255, 255, .96);
+    backdrop-filter: blur(6px);
+    box-shadow: 0 -6px 18px rgba(15, 23, 42, .06);
+}
+.sg-a3-ficha-pie-info { flex: 1 1 auto; font-size: 11.5px; color: var(--sg-tenue); }
+.sg-a3-ficha-pie-info b { color: var(--sg-suave); font-weight: 600; }
+
+/* "Cambios sin guardar" aparece solo cuando los hay: un aviso permanente
+   deja de leerse a los dos minutos. */
+.sg-a3-ficha-sucio {
+    display: none;
+    align-items: center;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b45309;
+}
+.sg-a3-ficha-sucio i { font-size: 18px; color: var(--sg-warning); }
+.sg-a3-ficha.es-sucia .sg-a3-ficha-sucio { display: inline-flex; }
+
+/* ---- La ficha dentro del centro: el mismo formulario, otra piel ---------- */
+
+/* El id no se muestra: quien mira la ficha de un equipo lo reconoce por su
+   codigo -ACT-34-, no por el numero de la fila. */
+.sg-a3-ficha .es-id { display: none; }
+
+/* Los titulos de seccion dejan de gritar: en el modal son una guia rapida,
+   aca son la estructura de una pantalla. */
+.sg-a3-ficha .sigma-form-seccion .titulo {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    text-transform: none;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0;
+    color: var(--sg-texto);
+    border: 0;
+    padding: 0 0 12px;
+}
+.sg-a3-ficha .sigma-form-seccion .titulo i {
+    display: grid;
+    place-items: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 9px;
+    background: #ede9fe;
+    color: #6d28d9;
+    font-size: 17px;
+}
+
+/* Habilitado se lee de un vistazo: dos botones pegados, el elegido marcado. */
+.sg-a3-ficha .sigma-modal-opciones {
+    display: inline-flex;
+    padding: 3px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 999px;
+    background: #f4f5fa;
+}
+.sg-a3-ficha .sigma-modal-opciones label {
+    padding: 5px 16px;
+    border-radius: 999px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-suave);
+    cursor: pointer;
+}
+.sg-a3-ficha .sigma-modal-opciones input { display: none; }
+/* El !important no es capricho: el kit define el color de los label de un
+   radio con !important, y sin esto "SI" quedaba en gris sobre el morado. */
+.sg-a3-ficha .sigma-modal-opciones input:checked + label {
+    background: var(--sg-p);
+    color: #fff !important;
+}
+.sg-a3-ficha .sigma-modal-opciones label { color: var(--sg-text-secondary) !important; }
+
+/* Los datos de auditoria, en la barra de abajo. */
+.sg-a3-pie-dato {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-right: 22px;
+}
+.sg-a3-pie-dato i { font-size: 17px; color: var(--sg-tenue); }
+.sg-a3-pie-dato b { display: block; color: var(--sg-suave); font-weight: 700; }
+
+/* ---- El reparto de campos de la ficha dentro del centro ------------------
+
+   sigma-orden.css reparte los campos de CUALQUIER .sigma-modal-grid que este
+   dentro de un .sg-ot, y el centro lo es: ahi un campo "chico" mide un tercio
+   y uno "medio" la mitad, que para la orden esta bien y para la ficha deja
+   dos campos por fila donde caben tres. Se vuelve al reparto de la ficha.
+   ------------------------------------------------------------------------ */
+@media (min-width: 1100px) {
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-chico { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-medio { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-cuarto { grid-column: span 3; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-grande { grid-column: span 8; }
+    .sg-ot .sg-a3-ficha .sigma-modal-grid > .sigma-modal-field.is-ancho { grid-column: span 12; }
+}
+
+/* La columna de la derecha es angosta: lo que en el modal iba en una linea
+   -boton, nombre del archivo, quitar- aca se apila. */
+.sg-a3-ficha .es-imagen .sigma-modal-field > label,
+.sg-a3-ficha .es-documentos .sigma-modal-field > label { display: none; }
+
+.sg-a3-ficha .sigma-img-uploader {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+}
+.sg-a3-ficha .sigma-img-btn { justify-content: center; white-space: nowrap; }
+
+.sg-a3-ficha #pnlImagenActual > div,
+.sg-a3-ficha [id$="pnlImagenActual"] > div {
+    flex-direction: column;
+    align-items: flex-start;
+}
+.sg-a3-ficha [id$="pnlImagenActual"] img { max-width: 100%; }
+.sg-a3-ficha [id$="pnlImagenActual"] label { white-space: normal; line-height: 1.35; }
+
+/* ============================================================================
+   COMPONENTES: estructura, lista y detalle
+
+   Tres columnas porque son tres preguntas distintas y seguidas: de que esta
+   hecho el equipo, que piezas tiene puestas, y como es LA pieza que me
+   interesa. Con una sola lista hay que abrir una ficha para responder la
+   tercera, y se pierde la segunda.
+   ========================================================================= */
+.sg-comp-cols {
+    display: grid;
+    grid-template-columns: 250px minmax(0, 1fr) 320px;
+    gap: 14px;
+    align-items: start;
+}
+
+/* ---- el arbol ---- */
+.sg-comp-arbol-lista,
+.sg-comp-arbol-lista ul { list-style: none; margin: 0; padding: 0; }
+.sg-comp-arbol-lista ul { margin-left: 14px; border-left: 1px dashed var(--sg-borde); padding-left: 10px; }
+.sg-comp-arbol-lista li { margin: 2px 0; }
+
+.sg-comp-nodo {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 9px;
+    border-radius: 10px;
+    text-decoration: none;
+    color: var(--sg-texto);
+}
+a.sg-comp-nodo:hover { background: #f4f5fa; }
+.sg-comp-nodo.es-equipo { background: #ede9fe; }
+.sg-comp-nodo.es-elegido { background: var(--sg-p); color: #fff; }
+.sg-comp-nodo.es-elegido span, .sg-comp-nodo.es-elegido i { color: #fff; }
+.sg-comp-nodo i { font-size: 17px; color: var(--sg-suave); }
+.sg-comp-nodo strong { display: block; font-size: 12.5px; font-weight: 600; }
+.sg-comp-nodo span { display: block; font-size: 11px; color: var(--sg-tenue); }
+
+/* ---- la lista ---- */
+.sg-comp-cab,
+.sg-comp-fila { grid-template-columns: 120px minmax(160px, 2fr) 130px 130px 110px; }
+.sg-comp-fila { cursor: pointer; }
+.sg-comp-fila.es-elegida { background: #f5f3ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+.sg-comp-fila.es-oculta { display: none; }
+
+.sg-comp-rep-cab,
+.sg-comp-rep { grid-template-columns: 120px minmax(150px, 2fr) 150px 110px 90px 120px; }
+.sg-comp-rep.es-oculta { display: none; }
+
+/* ---- el detalle ---- */
+.sg-comp-detalle { position: sticky; top: 14px; }
+.sg-comp-detalle-cuerpo { display: grid; gap: 10px; }
+.sg-comp-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); }
+.sg-comp-det-sub { font-size: 12px; color: var(--sg-suave); }
+.sg-comp-det-motivo {
+    padding: 9px 11px;
+    border-radius: 10px;
+    background: #fff7ed;
+    border: 1px solid #fed7aa;
+    font-size: 12px;
+    color: #9a3412;
+}
+
+@media (max-width: 1400px) {
+    .sg-comp-cols { grid-template-columns: 220px minmax(0, 1fr); }
+    .sg-comp-detalle { grid-column: 1 / -1; position: static; }
+}
+@media (max-width: 900px) {
+    .sg-comp-cols { grid-template-columns: minmax(0, 1fr); }
+}
+
+.sg-comp-det-tit,
+.sg-comp-det-sub { display: block; }
+.sg-comp-centro .sg-ot-card-acc { white-space: nowrap; }
+
+/* ============================================================================
+   TOKENS: lo que faltaba definir y lo que sobraba de morado
+
+   sigma-brand.css trae la paleta oficial —marca (morado, teal, azul, rosa) y
+   estados operativos (success, info, warning, danger) con su variante
+   subtle—. El centro estaba usando nombres de variante que NADIE habia
+   definido: `es-ok`, `es-neutro`, `es-aviso`, `es-rojo` salian sin fondo, que
+   es por lo que un componente "Operativo" se leia como texto suelto al lado
+   de uno "Degradado" que si tenia chip.
+
+   Aca se definen contra el token que les corresponde. Un color operativo NO
+   es identidad: verde es "esta bien", ambar es "mirar", rojo es "parar". El
+   morado es de marca y no dice nada del estado de una maquina.
+   ========================================================================= */
+.sg-ot-chip.es-ok      { background: var(--sg-success-subtle); color: #15803D; }
+.sg-ot-chip.es-aviso   { background: var(--sg-warning-subtle); color: #92400E; }
+.sg-ot-chip.es-rojo    { background: var(--sg-danger-subtle);  color: #B91C1C; }
+.sg-ot-chip.es-info    { background: var(--sg-info-subtle);    color: #1D4ED8; }
+.sg-ot-chip.es-neutro  { background: var(--sg-surface-subtle); color: var(--sg-text-muted); }
+.sg-ot-chip.es-estado  { background: var(--sg-surface-subtle); color: var(--sg-text-secondary); }
+
+/* La tarea se distingue de la inspeccion por color, no por leer la palabra:
+   teal es el segundo color de marca y no compite con el morado. */
+.sg-ot-chip.es-tarea {
+    background: rgba(0, 224, 194, .16);
+    color: #0F766E;
+}
+
+/* ---- Los iconos de los KPI ------------------------------------------------
+
+   Cuatro numeros con el mismo icono morado se leen como cuatro veces lo
+   mismo. Cada uno toma el color de LO QUE MIDE: lo abierto en morado de
+   marca, lo planificado en azul, lo que esta bien en verde, lo que hay que
+   mirar en ambar y lo que duele en rojo.
+   ------------------------------------------------------------------------ */
+.sg-a3-kpi-ico.es-lila  { background: #EDE9FE; color: #5B46E5; }
+.sg-a3-kpi-ico.es-azul  { background: var(--sg-info-subtle); color: var(--sg-info); }
+.sg-a3-kpi-ico.es-verde { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-a3-kpi-ico.es-ambar { background: var(--sg-warning-subtle); color: #B45309; }
+.sg-a3-kpi-ico.es-rojo  { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-a3-kpi-ico.es-teal  { background: rgba(0, 224, 194, .16); color: #0F766E; }
+
+/* Lo mismo para el icono de una fila y el de una tarjeta. */
+.sg-a3-fila-ico.es-rojo,
+.sg-ot-card-ico.es-rojo   { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-a3-fila-ico.es-ambar  { background: var(--sg-warning-subtle); color: #B45309; }
+.sg-a3-fila-ico.es-verde  { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-a3-fila-ico.es-azul   { background: var(--sg-info-subtle); color: var(--sg-info); }
+
+/* ---- Jerarquia de botones -------------------------------------------------
+
+   El morado lleno es UNA accion por pantalla: la que no se puede deshacer
+   sola —Guardar, Publicar— o la que lleva a crear el trabajo —Nueva OT—.
+   Todo lo demas —agregar un componente, una variable, un contador, un hito—
+   es accion secundaria: se ve, se entiende, y no compite. Ocho botones
+   morados en una pantalla son ocho botones sin jerarquia.
+
+   Es la misma jerarquia que ya documenta sigma-botones.css para las clases
+   heredadas (`icono_guardar` principal, `ButtonCerrar` secundario); aca solo
+   se le da el mismo cuerpo al boton del centro.
+   ------------------------------------------------------------------------ */
+.sg-ot-btn.es-accion,
+a.sg-ot-btn.es-accion,
+input.sg-ot-btn.es-accion {
+    background: var(--sg-surface);
+    border: 1px solid var(--sg-border);
+    color: var(--sg-text-secondary) !important;
+    font-weight: 600;
+}
+
+/* El icono en teal: marca el boton como accion sin sumar otro morado. */
+.sg-ot-btn.es-accion i { color: var(--sg-teal-accessible); }
+
+.sg-ot-btn.es-accion:hover {
+    background: var(--sg-surface-subtle);
+    border-color: var(--sg-border-strong);
+}
+
+/* ============================================================================
+   CONDICION Y MEDIDORES
+
+   Tres bloques que responden tres preguntas seguidas: como esta (las
+   tarjetas), contra que se compara (la tabla de rangos) y de donde salio ese
+   numero (las ultimas lecturas). Elegir una tarjeta acota las lecturas a esa
+   variable: la pregunta nunca es "las lecturas del equipo", es "las de esta".
+   ========================================================================= */
+.sg-cond-vistas { margin-bottom: 4px; }
+
+/* El panel de una vista que no esta activa se esconde.
+
+   Esta regla se perdio al rehacer Condicion y se llevo con ella las vistas
+   de Fallas y de Repuestos: los dos o tres paneles se pintaban uno debajo
+   del otro, asi que se veian "Sin consumo", "Sin devoluciones" y "Sin
+   costos" a la vez, como si la pantalla estuviera repitiendo el mismo vacio. */
+.sg-cond-vista.es-oculta { display: none; }
+
+/* ---- La cabecera: buscar, filtrar, configurar, registrar --------------- */
+.sg-cond-top { flex-wrap: wrap; row-gap: 10px; }
+.sg-cond-acciones {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-left: auto;
+    flex-wrap: wrap;
+}
+.sg-cond-buscar { min-width: 240px; }
+
+/* ---- La banda de pendientes ------------------------------------------- */
+.sg-cond-aviso {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 0 14px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    border: 1px solid var(--sg-warning);
+    border-left-width: 4px;
+    background: var(--sg-warning-subtle, #fff8ec);
+    font-size: 13px;
+    color: var(--sg-texto);
+}
+.sg-cond-aviso.es-critico {
+    border-color: var(--sg-danger);
+    background: var(--sg-danger-subtle, #fff1f1);
+}
+.sg-cond-aviso > i { font-size: 20px; color: var(--sg-warning); }
+.sg-cond-aviso.es-critico > i { color: var(--sg-danger); }
+.sg-cond-aviso strong { font-size: 14px; }
+.sg-cond-aviso span { color: var(--sg-suave); }
+.sg-cond-aviso span::before { content: "|"; margin: 0 10px; color: var(--sg-borde); }
+.sg-cond-aviso-ver {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--sg-p);
+    font-weight: 600;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+/* ---- Las dos secciones ------------------------------------------------ */
+.sg-cond-seccion { margin-top: 18px; }
+.sg-cond-seccion.es-oculta { display: none; }
+.sg-cond-seccion h4 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 16px;
+    color: var(--sg-texto);
+}
+.sg-cond-seccion h4 b {
+    display: inline-grid;
+    place-items: center;
+    min-width: 24px;
+    height: 20px;
+    padding: 0 7px;
+    border-radius: 999px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-suave);
+    font-size: 11.5px;
+}
+.sg-cond-seccion > p { margin: 3px 0 12px; font-size: 12.5px; color: var(--sg-tenue); }
+
+.sg-cond-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 12px;
+}
+
+/* ---- La tarjeta -------------------------------------------------------
+   Cuatro renglones fijos -identidad, numero, contra que, cuando- para que
+   doce tarjetas se lean como una tabla y no como doce carteles sueltos. */
+a.sg-cond-card {
+    display: grid;
+    gap: 8px;
+    align-content: start;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-left: 3px solid transparent;
+    border-radius: 14px;
+    background: var(--sg-surface);
+    text-decoration: none;
+    cursor: pointer;
+    transition: box-shadow .12s, border-color .12s;
+}
+a.sg-cond-card:hover { box-shadow: 0 2px 10px rgba(13, 13, 13, .07); }
+a.sg-cond-card.es-elegida { border-color: var(--sg-p); box-shadow: 0 0 0 2px rgba(108, 92, 255, .18); }
+a.sg-cond-card.es-oculta { display: none; }
+
+.sg-cond-card.es-normal { border-left-color: transparent; }
+.sg-cond-card.es-aviso { border-left-color: var(--sg-warning); }
+.sg-cond-card.es-critico { border-left-color: var(--sg-danger); }
+.sg-cond-card.es-sin { border-left-color: var(--sg-borde); }
+
+.sg-cond-card-top { display: flex; align-items: flex-start; gap: 10px; }
+.sg-cond-ico {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 17px;
+}
+.sg-cond-card.es-critico .sg-cond-ico { background: var(--sg-danger-subtle, #fff1f1); color: var(--sg-danger); }
+.sg-cond-card.es-aviso .sg-cond-ico { background: var(--sg-warning-subtle, #fff8ec); color: var(--sg-warning); }
+
+.sg-cond-card-id { display: grid; gap: 1px; min-width: 0; }
+.sg-cond-card-id strong {
+    font-size: 13.5px;
+    color: var(--sg-texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-cond-card-id span {
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* El chip va arriba a la derecha y no empuja el titulo. */
+.sg-cond-card-top .sg-ot-chip {
+    margin-left: auto;
+    flex: none;
+    font-size: 11px;
+    padding: 3px 8px;
+}
+
+.sg-cond-card-val { display: flex; align-items: baseline; gap: 5px; }
+.sg-cond-card-val b { font-size: 30px; font-weight: 700; color: var(--sg-texto); line-height: 1; }
+.sg-cond-card-val small { font-size: 13px; font-weight: 500; color: var(--sg-suave); }
+
+.sg-cond-card-ref { display: grid; gap: 2px; font-size: 12px; color: var(--sg-suave); }
+.sg-cond-card-ref small { font-size: 11.5px; color: var(--sg-tenue); }
+
+.sg-cond-card-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 2px;
+    padding-top: 9px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-cond-card-pie > span { display: inline-flex; align-items: center; gap: 5px; min-width: 0; }
+.sg-cond-card-pie em { font-style: normal; color: var(--sg-p); font-weight: 600; white-space: nowrap; }
+
+.sg-cond-nada { margin: 18px 0; font-size: 13px; color: var(--sg-tenue); text-align: center; }
+
+/* ---- El detalle desplegado -------------------------------------------
+   Se abre DEBAJO de la fila de la tarjeta elegida y no al costado: en una
+   grilla de cuatro columnas, un panel lateral mueve todo lo demas. */
+.sg-cond-detalle {
+    margin-top: 14px;
+    padding: 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface-subtle);
+}
+.sg-cond-det-cab { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.sg-cond-det-tit { font-size: 16px; font-weight: 700; color: var(--sg-texto); }
+.sg-cond-det-tit span { display: block; font-size: 12px; font-weight: 500; color: var(--sg-tenue); }
+.sg-cond-det-val { margin-left: auto; font-size: 26px; font-weight: 700; color: var(--sg-texto); white-space: nowrap; }
+.sg-cond-det-cerrar {
+    flex: none;
+    color: var(--sg-tenue);
+    font-size: 18px;
+    text-decoration: none;
+}
+.sg-cond-det-cerrar:hover { color: var(--sg-texto); }
+
+.sg-cond-det-datos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+    gap: 10px;
+    margin-bottom: 12px;
+}
+.sg-cond-det-dato {
+    padding: 10px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-texto);
+}
+.sg-cond-det-dato span { display: block; font-size: 11px; color: var(--sg-tenue); margin-bottom: 2px; }
+
+/* El texto de cada dato va en un <i> para poder escribirlo con textContent:
+   el nombre de una variable lo escribe una persona y no se inyecta como HTML. */
+.sg-cond-det-txt,
+.sg-cond-det-nom,
+.sg-cond-det-sub2 { font-style: normal; }
+.sg-cond-det-nom { display: block; }
+.sg-cond-det-sub2 { display: block; font-size: 12px; font-weight: 500; color: var(--sg-tenue); }
+
+.sg-cond-det-sub {
+    margin: 0 0 8px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-cond-det-acciones { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+
+/* El historial: una linea por lectura, no una tabla con cabecera. */
+.sg-cond-lec {
+    display: grid;
+    grid-template-columns: 170px 120px minmax(110px, 1fr) 120px;
+    gap: 10px;
+    align-items: center;
+    padding: 8px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-suave);
+}
+.sg-cond-lec + .sg-cond-lec { margin-top: 6px; }
+.sg-cond-lec b { color: var(--sg-texto); font-size: 13.5px; }
+
+@media (max-width: 1400px) { .sg-cond-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1100px) { .sg-cond-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 760px) {
+    .sg-cond-grid { grid-template-columns: minmax(0, 1fr); }
+    .sg-cond-acciones { margin-left: 0; width: 100%; }
+    .sg-cond-buscar { flex: 1 1 100%; }
+    .sg-cond-lec { grid-template-columns: minmax(0, 1fr) auto; }
+}
+
+/* ---- La foto del componente en su fila ---- */
+.sg-comp-cab,
+.sg-comp-fila { grid-template-columns: 56px 120px minmax(150px, 2fr) 130px 130px 110px; }
+
+.sg-comp-foto {
+    display: block;
+    width: 46px;
+    height: 46px;
+    border-radius: 9px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-comp-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-comp-foto.es-vacia {
+    display: grid;
+    place-items: center;
+    color: var(--sg-tenue);
+    font-size: 20px;
+}
+.sg-comp-det-foto {
+    display: block;
+    width: 100%;
+    height: 150px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-comp-det-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+/* ---- Fallas e indisponibilidad ------------------------------------------ */
+.sg-falla-cab,
+.sg-falla { grid-template-columns: minmax(180px, 2fr) 150px 130px 130px 120px 100px 120px; }
+.sg-falla.es-oculta { display: none; }
+
+.sg-deten-cab,
+.sg-deten { grid-template-columns: 130px 170px 110px 140px minmax(150px, 1.6fr) 100px 120px; }
+
+.sg-falla-total { margin-bottom: 14px; }
+.sg-falla-total .sg-a3-kpis { margin-bottom: 0; }
+
+/* ============================================================================
+   LA LISTA DE EQUIPOS
+
+   Quien entra no viene a leer un catalogo: viene a encontrar EL equipo que
+   tiene un problema. Por eso cada fila trae su foto, su estado y el trabajo
+   que carga, y los filtros -buscar, chips y paginas- son del navegador:
+   filtrar cuarenta y siete filas que ya estan en pantalla no necesita al
+   servidor.
+   ========================================================================= */
+.sg-lista .sg-a3-kpis { margin-bottom: 14px; }
+.sg-lista-acc { display: flex; gap: 8px; }
+
+.sg-lista-cab,
+.sg-lista-fila {
+    grid-template-columns: 62px minmax(180px, 2fr) minmax(130px, 1.2fr) 130px 120px 110px 160px 130px;
+}
+.sg-lista-fila { cursor: pointer; }
+.sg-lista-fila:hover { background: var(--sg-surface-subtle); }
+.sg-lista-fila.es-oculta { display: none; }
+
+.sg-lista-num {
+    display: inline-grid;
+    place-items: center;
+    min-width: 28px;
+    height: 24px;
+    padding: 0 8px;
+    border-radius: 999px;
+    background: var(--sg-info-subtle);
+    color: var(--sg-info);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.sg-lista-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+}
+.sg-lista-paginas { display: flex; gap: 6px; flex-wrap: wrap; }
+.sg-lista-paginas a {
+    display: inline-grid;
+    place-items: center;
+    min-width: 32px;
+    height: 32px;
+    padding: 0 9px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+    color: var(--sg-text-secondary);
+    font-size: 12.5px;
+    font-weight: 600;
+    text-decoration: none;
+}
+.sg-lista-paginas a:hover { background: var(--sg-surface-subtle); }
+.sg-lista-paginas a.es-activa {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff;
+}
+.sg-lista-paginas span { align-self: center; color: var(--sg-tenue); padding: 0 2px; }
+
+/* ---- Documentos y galeria ------------------------------------------------ */
+.sg-doc-badge {
+    position: absolute;
+    left: 8px;
+    top: 8px;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 10.5px;
+    font-weight: 700;
+    background: rgba(15, 23, 42, .72);
+    color: #fff;
+}
+.sg-doc-badge.es-evidencia { background: rgba(37, 99, 235, .85); }
+.sg-doc-badge.es-fotografia { background: rgba(0, 191, 174, .9); }
+
+.sg-ot-ev-card { position: relative; }
+.sg-ot-ev-card.es-oculta { display: none; }
+
+.sg-doc-cab,
+.sg-doc-fila { grid-template-columns: minmax(180px, 2fr) 130px minmax(140px, 1.3fr) 120px 140px 100px 110px; }
+.sg-doc-fila.es-oculta { display: none; }
+
+/* El detalle del archivo elegido, al lado de la grilla. */
+.sg-doc-det-foto {
+    display: block;
+    width: 100%;
+    max-height: 220px;
+    border-radius: 11px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle);
+}
+.sg-doc-det-foto img { width: 100%; height: 100%; object-fit: cover; display: block; cursor: zoom-in; }
+.sg-doc-det-nom { font-size: 14px; font-weight: 700; color: var(--sg-texto); word-break: break-all; }
+
+/* ---- Mantenimiento: la agenda del mes --------------------------------- */
+.sg-mant-cols {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 14px;
+    align-items: start;
+}
+.sg-mant-lado { position: sticky; top: 14px; display: grid; gap: 14px; }
+
+.sg-mant-plan-cab, .sg-mant-plan { grid-template-columns: 140px minmax(150px, 2fr) 150px 120px; }
+.sg-mant-oc-cab, .sg-mant-oc { grid-template-columns: 140px minmax(150px, 2fr) 110px 120px 120px; }
+.sg-mant-tar-cab, .sg-mant-tar { grid-template-columns: 120px minmax(150px, 2fr) 180px 120px; }
+
+.sg-mant-cal-cab { text-align: center; margin-bottom: 10px; font-size: 14px; color: var(--sg-texto); }
+.sg-mant-cal-cab strong { text-transform: capitalize; }
+
+.sg-mant-cal-dias,
+.sg-mant-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+}
+.sg-mant-cal-dias span {
+    text-align: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+    padding-bottom: 4px;
+}
+
+.sg-mant-cal-dia {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 36px;
+    border-radius: 9px;
+    color: var(--sg-text-secondary);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+.sg-mant-cal-dia:hover { background: var(--sg-surface-subtle); }
+.sg-mant-cal-dia.es-hoy { border: 1px solid var(--sg-p); font-weight: 700; color: var(--sg-p); }
+.sg-mant-cal-dia.es-elegido { background: var(--sg-p); color: #fff; }
+
+/* El punto dice que ese dia tiene algo; el color, si ya tiene orden. */
+.sg-mant-cal-dia i {
+    position: absolute;
+    bottom: 5px;
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--sg-info);
+}
+.sg-mant-cal-dia.es-ot i { background: var(--sg-p); }
+.sg-mant-cal-dia.es-elegido i { background: #fff; }
+
+.sg-mant-cal-leyenda {
+    display: flex;
+    gap: 14px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+.sg-mant-cal-leyenda span { display: inline-flex; align-items: center; gap: 5px; }
+.sg-mant-cal-leyenda i { width: 7px; height: 7px; border-radius: 50%; display: inline-block; }
+.sg-mant-cal-leyenda i.es-con { background: var(--sg-info); }
+.sg-mant-cal-leyenda i.es-ot { background: var(--sg-p); }
+
+.sg-mant-dia {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 12.5px;
+    color: var(--sg-suave);
+}
+.sg-mant-dia strong { display: block; color: var(--sg-texto); margin-bottom: 6px; }
+.sg-mant-dia ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.sg-mant-dia li {
+    padding: 8px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+}
+
+@media (max-width: 1300px) {
+    .sg-mant-cols { grid-template-columns: minmax(0, 1fr); }
+    .sg-mant-lado { position: static; }
+}
+
+/* ---- Los popover de la lista -----------------------------------------
+   El "3" de OT abiertas y la fecha del proximo mantenimiento son ciertos y
+   no dicen nada: los dos obligaban a entrar al centro del activo. Ahora
+   los dos abren el detalle sobre la misma fila. */
+.sg-lista-num.es-pop,
+.sg-lista-fecha.es-pop,
+.sg-lista-cal {
+    cursor: pointer;
+    text-decoration: none;
+}
+.sg-lista-fecha.es-pop {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--sg-texto);
+    border-bottom: 1px dashed var(--sg-borde);
+}
+.sg-lista-fecha.es-pop i { color: var(--sg-p); font-size: 15px; }
+.sg-lista-fecha.es-pop:hover { color: var(--sg-p); border-bottom-color: var(--sg-p); }
+
+/* El calendario de la fila: solo aparece si el equipo tiene programaciones. */
+.sg-lista-cal {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-right: 6px;
+    padding: 5px 8px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    color: var(--sg-p);
+    font-size: 15px;
+    line-height: 1;
+}
+.sg-lista-cal b { font-size: 11px; font-weight: 700; }
+.sg-lista-cal:hover { border-color: var(--sg-p); background: var(--sg-surface-subtle); }
+
+.sg-pop {
+    position: absolute;
+    z-index: 40;
+    display: none;
+    width: 340px;
+    padding: 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 13px;
+    background: var(--sg-surface);
+    box-shadow: 0 12px 30px rgba(13, 13, 13, .16);
+}
+.sg-pop.es-abierto { display: block; }
+
+.sg-pop-cab {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    padding: 8px 10px 10px;
+    border-bottom: 1px solid var(--sg-borde);
+    margin-bottom: 4px;
+}
+.sg-pop-cab strong { font-size: 13px; color: var(--sg-texto); }
+.sg-pop-cab span {
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    margin-left: auto;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.sg-pop-item {
+    display: flex;
+    gap: 10px;
+    padding: 8px 10px;
+    border-radius: 9px;
+    text-decoration: none;
+}
+.sg-pop-item:hover { background: var(--sg-surface-subtle); }
+
+.sg-pop-tit {
+    display: block;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-pop-sub {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin-top: 3px;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-pop-sub .sg-ot-chip { font-size: 10.5px; padding: 2px 7px; }
+
+.sg-pop-txt { min-width: 0; }
+
+/* El dia grande a la izquierda: la agenda se lee por fecha, no por titulo. */
+.sg-pop-fecha {
+    display: grid;
+    place-items: center;
+    width: 40px;
+    height: 40px;
+    flex: none;
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+    line-height: 1;
+}
+.sg-pop-fecha b { font-size: 15px; color: var(--sg-texto); }
+.sg-pop-fecha span { font-size: 10px; color: var(--sg-tenue); text-transform: uppercase; }
+
+/* ---- Las evidencias dentro del detalle de la orden -------------------
+   Decia "3 archivos", que es cierto y no sirve: la foto de la correa
+   cortada es lo que explica la orden. */
+.sg-a3-ev {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+}
+.sg-a3-ev-foto {
+    display: block;
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--sg-borde);
+    background: var(--sg-surface-subtle);
+}
+.sg-a3-ev-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.sg-a3-ev-doc {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 200px;
+    padding: 7px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 9px;
+    background: var(--sg-surface);
+    font-size: 12px;
+    color: var(--sg-texto);
+    text-decoration: none;
+}
+.sg-a3-ev-doc:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-a3-ev-doc i { font-size: 16px; color: var(--sg-p); flex: none; }
+.sg-a3-ev-doc span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.sg-a3-ev-mas {
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    border: 1px dashed var(--sg-borde);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+}
+
+/* ---- El popover de programaciones es un calendario -------------------
+   "01 oct · 01 nov · 01 dic" es una lista de fechas que hay que leer una por
+   una para entender que el equipo se toca el primero de cada mes. */
+.sg-pop.es-cal { width: 310px; padding: 8px; }
+.sg-pop-ev { display: none; }
+
+.sg-pop-cal-cab {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 2px 2px 8px;
+}
+.sg-pop-cal-cab strong {
+    font-size: 13px;
+    color: var(--sg-texto);
+    text-transform: capitalize;
+}
+.sg-pop-cal-nav {
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-borde);
+    background: var(--sg-surface);
+    color: var(--sg-suave);
+    font-size: 15px;
+    text-decoration: none;
+}
+.sg-pop-cal-nav:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-pop-cal-nav.es-mudo { opacity: .35; pointer-events: none; }
+
+.sg-pop-cal-dias,
+.sg-pop-cal-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+.sg-pop-cal-dias span {
+    text-align: center;
+    padding-bottom: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--sg-tenue);
+}
+
+.sg-pop-cal-dia {
+    position: relative;
+    display: grid;
+    place-items: center;
+    height: 32px;
+    border-radius: 8px;
+    font-size: 12px;
+    color: var(--sg-text-secondary, #555);
+    text-decoration: none;
+}
+.sg-pop-cal-dia.es-fuera { opacity: .3; }
+.sg-pop-cal-dia.es-hoy { border: 1px solid var(--sg-p); font-weight: 700; color: var(--sg-p); }
+
+/* Un dia con programacion se toca; uno sin ella es solo un numero.
+
+   Van como `a.` porque el dia con evento es un enlace y el kit le pone su
+   propio color: sin ganar especificidad, el numero salia blanco sobre blanco
+   y el dia 1 simplemente no estaba. */
+a.sg-pop-cal-dia { color: var(--sg-text-secondary, #555); }
+a.sg-pop-cal-dia.es-con {
+    background: var(--sg-surface-subtle);
+    font-weight: 600;
+    color: var(--sg-texto);
+    cursor: pointer;
+}
+a.sg-pop-cal-dia.es-con:hover { background: var(--sg-borde); color: var(--sg-texto); }
+a.sg-pop-cal-dia.es-elegido,
+a.sg-pop-cal-dia.es-elegido:hover { background: var(--sg-p); color: #fff; }
+a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
+
+/* El punto dice que ese dia tiene algo; el color, si ya tiene orden. */
+.sg-pop-cal-dia i {
+    position: absolute;
+    bottom: 4px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--sg-info);
+}
+.sg-pop-cal-dia.es-ot i { background: var(--sg-success); }
+.sg-pop-cal-dia.es-elegido i { background: #fff; }
+
+.sg-pop-dia {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--sg-borde);
+}
+.sg-pop-dia:empty { display: none; }
+.sg-pop-dia > strong {
+    display: block;
+    margin: 0 2px 6px;
+    font-size: 12px;
+    color: var(--sg-texto);
+}
+/* Solo la primera letra: `capitalize` dejaba "1 De Octubre". */
+.sg-pop-dia > strong::first-letter { text-transform: uppercase; }
+.sg-pop-dia .sg-pop-item { padding: 7px 8px; }
+.sg-pop-item.es-plano { cursor: default; }
+.sg-pop-item.es-plano:hover { background: transparent; }
+
+.sg-pop-hora {
+    flex: none;
+    width: 62px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+    padding-top: 1px;
+}
+
+/* ---- Los iconos de SIGMA AI ------------------------------------------
+   La estrellita de la fuente de iconos es la misma que usan "destacar" y
+   "favorito": lo que sale de un modelo tiene que distinguirse de un vistazo,
+   y ademas su simbolo dice en que esta -analizando, prediccion,
+   recomendacion, tiempo real-. */
+.sg-ai-ico,
+.sg-ai-simbolo,
+.sg-ai-vacio {
+    display: inline-block;
+    flex: none;
+    background-repeat: no-repeat;
+    background-position: center;
+
+    /* El simbolo ocupa un tercio de su lienzo -esta pensado para un logo de
+       128px-. Agrandado al 300%, el recorte del contenedor lo deja lleno. */
+    background-size: 300%;
+}
+
+.sg-ai-ico {
+    width: 18px;
+    height: 18px;
+    vertical-align: -4px;
+    margin-right: 6px;
+}
+.sg-a3-tab .sg-ai-ico { margin-right: 7px; }
+
+.sg-ai-badge {
+    width: 34px;
+    height: 34px;
+    flex: none;
+    border-radius: 10px;
+}
+
+.sg-ai-simbolo {
+    width: 42px;
+    height: 42px;
+    border-radius: 12px;
+    background-color: var(--sg-surface-subtle);
+    background-size: 220%;
+}
+
+/* En el vacio el simbolo es grande y va ENTERO: agrandado al 300% como los
+   chicos, el recorte le cortaba un nodo y se veia un pedazo suelto. */
+.sg-ai-vacio {
+    width: 96px;
+    height: 96px;
+    margin-bottom: 4px;
+    background-size: contain;
+    opacity: .9;
+}
+
+.sg-a3-ia-senal h4,
+.sg-a3-ia-reco h4 { display: flex; align-items: center; }
+
+/* ---- La rampa de marca en el centro ----------------------------------
+   Trece secciones con el mismo icono morado no se distinguen entre si: el
+   morado repetido deja de senalar. Cada seccion toma un tono de la rampa, y
+   el morado queda para lo que de verdad es una accion.
+
+   El tono va por seccion y no por tipo de dato: lo que se busca es "donde
+   estoy", no "que clase de cosa es esta". */
+.sg-a3-panel[data-panel="resumen"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="ficha"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="documentos"] .sg-ot-card-ico {
+    background: var(--sg-ramp-1-subtle);
+    color: var(--sg-ramp-1);
+}
+
+.sg-a3-panel[data-panel="historial"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="ordenes"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="bitacora"] .sg-ot-card-ico {
+    background: var(--sg-ramp-2-subtle);
+    color: var(--sg-ramp-2);
+}
+
+.sg-a3-panel[data-panel="mantenimiento"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="revisiones"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="componentes"] .sg-ot-card-ico {
+    background: var(--sg-ramp-3-subtle);
+    color: var(--sg-ramp-3);
+}
+
+.sg-a3-panel[data-panel="condicion"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="fallas"] .sg-ot-card-ico,
+.sg-a3-panel[data-panel="repuestos"] .sg-ot-card-ico {
+    background: var(--sg-ramp-4-subtle);
+    color: var(--sg-ramp-4);
+}
+
+/* Los estados operativos mandan sobre el tono de la seccion: un icono de
+   alerta en rojo significa algo, el tono de la seccion solo ubica. */
+.sg-a3-panel .sg-ot-card-ico.es-ok { background: var(--sg-success-subtle); color: var(--sg-success); }
+
+/* La fila de KPI: cuatro tarjetas del mismo rango, cuatro tonos de la rampa
+   en orden. Antes eran cuatro morados con el numero como unica diferencia.
+
+   Solo las que NO traen estado propio: un KPI en rojo dice algo, y el tono
+   de la rampa solo ordena. */
+.sg-a3-kpis .sg-a3-kpi:nth-child(1) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-1-subtle); color: var(--sg-ramp-1); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(2) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-2-subtle); color: var(--sg-ramp-2); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(3) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-3-subtle); color: var(--sg-ramp-3); }
+.sg-a3-kpis .sg-a3-kpi:nth-child(4) .sg-a3-kpi-ico:not([class*="es-"]) { background: var(--sg-ramp-4-subtle); color: var(--sg-ramp-4); }
+
+/* El degradado de la rampa como filo de la cabecera se probo y se saco: la
+   miga de navegacion vive justo encima y la linea le cruzaba el texto. El
+   tono por seccion ya hace el trabajo sin pelear con nada. */
+
+/* ---- Video y audio en la galeria -------------------------------------
+   El numero de adjuntos es cierto y no sirve: la foto de la correa cortada
+   explica la orden, y el audio que grabo el tecnico explica la falla. */
+.sg-a3-ev-foto.es-video { position: relative; }
+.sg-a3-ev-foto video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0d0d; }
+
+/* El play sobre la miniatura: sin el, el primer fotograma parece una foto. */
+.sg-a3-ev-foto.es-video > i {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 26px;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(13, 13, 13, .55);
+    pointer-events: none;
+}
+
+/* El audio no tiene nada que mirar: se escucha ahi mismo, sin abrir nada. */
+.sg-a3-ev-audio {
+    display: grid;
+    gap: 5px;
+    padding: 8px 10px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface);
+    max-width: 260px;
+}
+.sg-a3-ev-audio-nom {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11.5px;
+    color: var(--sg-suave);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sg-a3-ev-audio-nom i { color: var(--sg-p); font-size: 15px; flex: none; }
+.sg-a3-ev-audio audio { width: 240px; height: 32px; }
+
+/* ---- Documentos: la tarjeta y el detalle ---- */
+.sg-ot-ev-foto.es-video { position: relative; }
+.sg-ot-ev-foto video { width: 100%; height: 100%; object-fit: cover; display: block; background: #0d0d0d; }
+.sg-ot-ev-foto.es-video > .mdi-play-circle {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    font-size: 30px;
+    color: #fff;
+    text-shadow: 0 1px 6px rgba(13, 13, 13, .55);
+    pointer-events: none;
+}
+
+.sg-doc-det-video video { width: 100%; border-radius: 10px; background: #0d0d0d; display: block; }
+.sg-doc-det-audio {
+    display: grid;
+    gap: 8px;
+    place-items: center;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 10px;
+    background: var(--sg-surface-subtle);
+}
+.sg-doc-det-audio audio { width: 100%; }
+
+/* ---- El visor con reproductor ---- */
+.sg-ot-lb-foto.es-video video { max-width: 100%; max-height: 74vh; display: block; background: #0d0d0d; border-radius: 10px; }
+.sg-ot-lb-foto.es-audio {
+    display: grid;
+    gap: 14px;
+    place-items: center;
+    padding: 30px 20px;
+}
+.sg-ot-lb-foto.es-audio i { font-size: 54px; color: var(--sg-p); }
+.sg-ot-lb-foto.es-audio audio { width: min(420px, 80vw); }
+
+/* El subtitulo del bloque de evidencias: "Se adjuntaron 2 archivos" se lee
+   de corrido; "Evidencias 2" hay que interpretarlo. */
+.sg-a3-ev-sub { display: block; font-size: 11.5px; color: var(--sg-tenue); margin: 2px 0 2px; }
+.sg-a3-ev-todas { margin-top: 10px; }
+
+/* ---- La barra de filtros de una seccion -------------------------------
+   Misma forma en las cinco pestañas que la llevan: la etiqueta arriba en
+   chico y el valor abajo, como en los mockups. Un select suelto con su
+   label al lado obliga a leer dos veces para saber que filtra. */
+.sg-a3-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin: 14px 0;
+    padding-bottom: 14px;
+    border-bottom: 1px solid var(--sg-borde);
+}
+
+.sg-a3-filtro {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 0 8px;
+    min-width: 172px;
+    padding: 7px 12px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    cursor: pointer;
+}
+.sg-a3-filtro i {
+    grid-row: 1 / 3;
+    font-size: 18px;
+    color: var(--sg-p);
+}
+.sg-a3-filtro span { font-size: 10.5px; color: var(--sg-tenue); }
+
+/* El select va sin marco: el marco es el de la tarjeta que lo contiene. */
+.sg-a3-filtro select {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+    cursor: pointer;
+    outline: none;
+    max-width: 100%;
+}
+
+.sg-a3-filtro-buscar {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1 1 260px;
+}
+.sg-a3-filtro-buscar i {
+    position: absolute;
+    left: 12px;
+    font-size: 17px;
+    color: var(--sg-tenue);
+    pointer-events: none;
+}
+.sg-a3-filtro-buscar input {
+    width: 100%;
+    padding: 11px 12px 11px 36px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 11px;
+    background: var(--sg-surface);
+    font-size: 13px;
+    color: var(--sg-texto);
+    outline: none;
+}
+.sg-a3-filtro-buscar input:focus { border-color: var(--sg-p); }
+
+.sg-a3-filtro-check {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--sg-texto);
+    cursor: pointer;
+    white-space: nowrap;
+}
+.sg-a3-filtro-check input { accent-color: var(--sg-p); width: 16px; height: 16px; }
+
+/* ---- El pie de paginacion ---- */
+.sg-a3-pie {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--sg-borde);
+    font-size: 12.5px;
+    color: var(--sg-tenue);
+}
+.sg-a3-pie-conteo { margin-right: auto; }
+
+.sg-a3-pie-tam { display: inline-flex; align-items: center; gap: 7px; margin: 0; }
+.sg-a3-pie-tam select {
+    padding: 5px 8px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 8px;
+    background: var(--sg-surface);
+    font-size: 12.5px;
+    color: var(--sg-texto);
+}
+
+.sg-a3-pie-paginas { display: inline-flex; align-items: center; gap: 4px; }
+.sg-a3-pie-paginas a {
+    display: grid;
+    place-items: center;
+    min-width: 28px;
+    height: 28px;
+    padding: 0 6px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 8px;
+    color: var(--sg-suave);
+    font-size: 12.5px;
+    text-decoration: none;
+}
+.sg-a3-pie-paginas a:hover { border-color: var(--sg-p); color: var(--sg-p); }
+.sg-a3-pie-paginas a.es-activa {
+    background: var(--sg-p);
+    border-color: var(--sg-p);
+    color: #fff;
+    font-weight: 600;
+}
+.sg-a3-pie-paginas span { padding: 0 2px; color: var(--sg-tenue); }
+
+@media (max-width: 760px) {
+    .sg-a3-filtro { min-width: 100%; }
+    .sg-a3-pie-conteo { margin-right: 0; flex: 1 1 100%; }
+}
+
+/* Los KPI de la cabecera de una tarjeta: mismas tres respuestas, en el aire
+   que deja el encabezado. La fila completa es para el resumen. */
+.sg-a3-kpis.es-compacta {
+    display: flex;
+    gap: 8px;
+    margin: 0 0 0 auto;
+}
+.sg-a3-kpis.es-compacta .sg-a3-kpi {
+    min-width: 108px;
+    padding: 9px 12px;
+    gap: 9px;
+}
+.sg-a3-kpis.es-compacta .sg-a3-kpi-ico { width: 30px; height: 30px; font-size: 16px; }
+
+@media (max-width: 1100px) {
+    .sg-a3-kpis.es-compacta { flex-wrap: wrap; margin-left: 0; width: 100%; }
+}
+
+/* Un RadComboBox dentro de un filtro trae su propio marco, y encima del
+   marco de la tarjeta quedaban dos cajas una dentro de otra. */
+.sg-a3-filtro .RadComboBox,
+.sg-a3-filtro .RadComboBox .rcbInputCell,
+.sg-a3-filtro .RadComboBox .rcbInput {
+    border: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding-left: 0 !important;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-filtro .RadComboBox { width: 100% !important; }
+.sg-a3-filtro .RadComboBox .rcbActionButton { background: transparent !important; border: 0 !important; }
+
+/* ---- El visor como galeria -------------------------------------------
+   Con seis evidencias, cerrar y volver a abrir para ver la siguiente es
+   seis veces el mismo gesto. */
+.sg-ot-lb-visor { position: relative; display: grid; place-items: center; }
+
+.sg-ot-lb-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    background: rgba(13, 13, 13, .55);
+    color: #fff;
+    font-size: 26px;
+    text-decoration: none;
+    z-index: 2;
+}
+.sg-ot-lb-nav:hover { background: rgba(13, 13, 13, .8); color: #fff; }
+.sg-ot-lb-nav.es-antes { left: 10px; }
+.sg-ot-lb-nav.es-despues { right: 10px; }
+
+.sg-ot-lb-cuenta {
+    margin-left: auto;
+    margin-right: 10px;
+    font-size: 12.5px;
+    color: var(--sg-tenue, #9ca3af);
+    white-space: nowrap;
+}
+
+/* La tira del pie: con seis fotos, saltar a la cuarta con la flecha son tres
+   clics y con la tira es uno. */
+.sg-ot-lb-tiras {
+    display: flex;
+    gap: 7px;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid var(--sg-borde, #ebecf3);
+    overflow-x: auto;
+}
+.sg-ot-lb-tira {
+    display: grid;
+    place-items: center;
+    width: 54px;
+    height: 44px;
+    flex: none;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--sg-surface-subtle, #f3f5f8);
+    color: var(--sg-p, #6C5CFF);
+    font-size: 20px;
+}
+.sg-ot-lb-tira img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-ot-lb-tira.es-activa { border-color: var(--sg-p, #6C5CFF); }
+
+@media (max-width: 620px) {
+    .sg-ot-lb-nav { width: 36px; height: 36px; font-size: 22px; }
+}
+
+/* ---- La linea de tiempo del historial --------------------------------
+   Antes eran tres cosas -estado, posicion y mediciones- y se llamaba
+   "historial". Ahora junta ordenes, inspecciones, fallas, detenciones,
+   repuestos y cambios: lo que alguien busca cuando pregunta que le paso a
+   una maquina. */
+.sg-hist { list-style: none; margin: 0; padding: 0; }
+
+.sg-hist-hito {
+    position: relative;
+    display: grid;
+    grid-template-columns: 96px 34px minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: start;
+    padding: 12px 10px 12px 4px;
+    border-radius: 11px;
+    cursor: pointer;
+}
+.sg-hist-hito.es-oculta { display: none; }
+.sg-hist-hito:hover { background: var(--sg-surface-subtle); }
+.sg-hist-hito.es-elegido { background: #faf9ff; box-shadow: inset 3px 0 0 var(--sg-p); }
+
+/* El hilo que une los eventos: sin el, la lista se lee como una tabla sin
+   bordes y se pierde la idea de que una cosa paso despues de la otra. */
+.sg-hist-hito::before {
+    content: "";
+    position: absolute;
+    left: 112px;
+    top: 42px;
+    bottom: -12px;
+    width: 1px;
+    background: var(--sg-borde);
+}
+.sg-hist-hito:last-child::before { display: none; }
+
+.sg-hist-cuando { display: grid; gap: 1px; text-align: right; padding-top: 5px; }
+.sg-hist-cuando b { font-size: 12.5px; color: var(--sg-texto); }
+.sg-hist-cuando span { font-size: 11px; color: var(--sg-tenue); }
+
+.sg-hist-ico {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 16px;
+}
+
+/* El color del icono dice de que clase de evento se trata, de un vistazo. */
+.sg-hist-hito.es-orden .sg-hist-ico { background: var(--sg-ramp-2-subtle); color: var(--sg-ramp-2); }
+.sg-hist-hito.es-revision .sg-hist-ico { background: var(--sg-success-subtle); color: var(--sg-success); }
+.sg-hist-hito.es-aviso .sg-hist-ico { background: var(--sg-warning-subtle); color: var(--sg-warning); }
+.sg-hist-hito.es-falla .sg-hist-ico { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-hist-hito.es-detencion .sg-hist-ico { background: var(--sg-danger-subtle); color: var(--sg-danger); }
+.sg-hist-hito.es-repuesto .sg-hist-ico { background: var(--sg-ramp-4-subtle); color: var(--sg-ramp-4); }
+.sg-hist-hito.es-cambio .sg-hist-ico { background: var(--sg-ramp-3-subtle); color: var(--sg-ramp-3); }
+
+.sg-hist-txt { min-width: 0; padding-top: 3px; }
+.sg-hist-tit { display: block; font-size: 13px; font-weight: 600; color: var(--sg-texto); }
+.sg-hist-det {
+    display: block;
+    margin-top: 2px;
+    font-size: 12px;
+    color: var(--sg-suave);
+    line-height: 1.45;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+.sg-hist-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 5px;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-hist-acc { padding-top: 2px; }
+
+/* ---- El panel del evento elegido ---- */
+.sg-hist-detalle { position: sticky; top: 14px; }
+.sg-hist-det-tipo { margin-left: auto; }
+.sg-hist-det-tit { font-size: 15px; font-weight: 700; color: var(--sg-texto); margin-top: 4px; }
+.sg-hist-det-cuando { font-size: 12px; color: var(--sg-tenue); margin-bottom: 10px; }
+.sg-hist-det-datos { display: grid; gap: 8px; }
+.sg-hist-det-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.sg-hist-det-acc:empty { display: none; }
+
+@media (max-width: 1100px) {
+    .sg-hist-detalle { position: static; }
+    .sg-hist-hito { grid-template-columns: 84px 30px minmax(0, 1fr); }
+    .sg-hist-hito::before { left: 98px; }
+    .sg-hist-acc { grid-column: 1 / -1; padding-left: 96px; }
+}
+
+/* ---- La curva del modelo ---------------------------------------------
+   "66 % de probabilidad" no dice si eso es nuevo o si viene asi desde
+   marzo, y esa es la diferencia entre atender hoy o programar para la semana
+   que viene. */
+.sg-a3-ia-curva {
+    margin-top: 14px;
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface);
+}
+.sg-a3-ia-curva-cab {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+.sg-a3-ia-curva-cab h4 { margin: 0; font-size: 13.5px; color: var(--sg-texto); }
+.sg-a3-ia-curva-cab span {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: auto;
+    font-size: 11.5px;
+    color: var(--sg-tenue);
+}
+.sg-a3-ia-curva-cab span i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--sg-ramp-1);
+    display: inline-block;
+}
+
+.sg-a3-ia-curva svg { display: block; width: 100%; height: 150px; }
+.sg-a3-ia-curva-linea { fill: none; stroke: var(--sg-ramp-1); stroke-width: 2; vector-effect: non-scaling-stroke; }
+
+/* La banda marca las ultimas corridas: sin ella la curva es solo una linea
+   que sube y no se ve donde el patron se hizo recurrente. */
+.sg-a3-ia-curva-zona { fill: var(--sg-danger-subtle); opacity: .75; }
+
+.sg-a3-ia-curva-pie {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 6px;
+    font-size: 11px;
+    color: var(--sg-tenue);
+}
+
+/* ---- El estado de la revision humana ---- */
+.sg-a3-ia-revision {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 12px;
+    padding: 11px 13px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 12px;
+    background: var(--sg-surface-subtle);
+}
+.sg-a3-ia-revision-etq {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-revision-etq i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-ia-revision-nota { font-size: 11.5px; color: var(--sg-tenue); margin-left: auto; }
+
+@media (max-width: 760px) {
+    .sg-a3-ia-revision-nota { margin-left: 0; flex: 1 1 100%; }
+}
+
+/* El contexto al pie del panel de IA: dos tarjetas propias, no la misma
+   rejilla de la recomendacion -compartir clase las pegaba en una fila-. */
+.sg-a3-ia-contexto {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 14px;
+    margin-top: 14px;
+}
+.sg-a3-ia-contexto > div {
+    padding: 14px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: var(--sg-surface);
+}
+.sg-a3-ia-contexto h4 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 10px;
+    font-size: 13.5px;
+    color: var(--sg-texto);
+}
+.sg-a3-ia-contexto h4 i { color: var(--sg-p); font-size: 16px; }
+
+/* ---- El contexto del equipo ------------------------------------------
+   La ficha dice como es el equipo; esto dice de quien es y si el dato esta
+   fresco. Una ficha sin fecha de actualizacion se lee como si estuviera al
+   dia. */
+.sg-a3-contexto { display: grid; gap: 10px; }
+
+.sg-a3-contexto-dato {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+.sg-a3-contexto-dato > i {
+    flex: none;
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border-radius: 9px;
+    background: var(--sg-surface-subtle);
+    color: var(--sg-p);
+    font-size: 16px;
+}
+.sg-a3-contexto-dato span { display: block; font-size: 11px; color: var(--sg-tenue); }
+.sg-a3-contexto-dato strong { display: block; font-size: 12.5px; color: var(--sg-texto); line-height: 1.4; }
+
+/* Las tareas recurrentes dicen cada cuanto y de quien son. */
+.sg-mant-tar-cab,
+.sg-mant-tar { grid-template-columns: 110px minmax(0, 1.8fr) minmax(0, 1fr) minmax(0, 1fr) 150px 110px; }
+.sg-mant-tar .c-dato span { display: block; margin-top: 3px; font-size: 11px; color: var(--sg-tenue); }
+
+/* ---- El alcance del mantenimiento ---- */
+.sg-a3-alcance {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    gap: 14px;
+}
+.sg-a3-alcance-bloque h4 {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin: 0 0 6px;
+    font-size: 13px;
+    color: var(--sg-texto);
+}
+.sg-a3-alcance-bloque h4 i { color: var(--sg-p); font-size: 16px; }
+.sg-a3-alcance-bloque p { margin: 0; font-size: 12.5px; color: var(--sg-suave); line-height: 1.5; }
+
+/* Nueve columnas: entran Diagnostico y Accion definitiva, que son las dos
+   que contestan la pregunta de fondo de una falla. */
+.sg-falla-cab,
+.sg-falla { grid-template-columns: minmax(0, 1.4fr) minmax(0, .9fr) 110px 112px minmax(0, 1.5fr) minmax(0, 1.5fr) 105px 88px 105px; }
+
+.sg-falla-cierre {
+    font-size: 12px;
+    line-height: 1.45;
+    display: block;
+}
+.sg-falla-cierre .sg-ot-chip { margin-top: 4px; font-size: 10.5px; padding: 2px 7px; }
+.sg-falla-cierre > span:not(.sg-ot-chip) { display: block; margin-top: 3px; font-size: 11px; color: var(--sg-tenue); }
+
+@media (max-width: 1500px) {
+    .sg-falla-cab, .sg-falla { grid-template-columns: minmax(0, 1.3fr) 100px 100px 108px minmax(0, 1.3fr) minmax(0, 1.3fr) 98px 82px 100px; }
+}
+
+/* La tabla de auditoria: cinco columnas, y la hora bajo la fecha. */
+.sg-aud-cab,
+.sg-aud { grid-template-columns: 130px 140px minmax(0, 2fr) minmax(0, 1fr) 90px; }
+.sg-aud .c-dato span,
+.sg-aud .c-cod span { display: block; margin-top: 2px; font-size: 11px; color: var(--sg-tenue); }

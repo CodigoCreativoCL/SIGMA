@@ -351,6 +351,20 @@ namespace API.MVC.Model
         public string PERFIL_NOMBRE { get; set; }
 
         /// <summary>
+        /// El id del perfil. La app agrupa por el, no por el nombre: agrupar
+        /// por texto se rompe con un acento o una mayuscula.
+        /// </summary>
+        public int? PERFIL_ID { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de la foto, como la del activo. No el binario: una
+        /// lista de veinte personas serian veinte fotos en el mismo JSON, en
+        /// una red de planta. Nula mientras nadie tenga foto cargada, y ahi la
+        /// app pinta las iniciales.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
+
+        /// <summary>
         /// «Mecanico · Electrico»: lo que sabe hacer, para leerlo en la fila.
         ///
         /// Un trabajo lo hacen dos personas de oficios distintos —uno desmonta
@@ -403,6 +417,236 @@ namespace API.MVC.Model
         public string USUARIO_NOMBRE { get; set; }
     }
 
+
+    // ---------------------------------------------------------------- 8.x --
+
+    /// <summary>
+    /// Un componente de un activo — vistas 8.1 y 8.2.
+    ///
+    /// Los nombres son los que devuelve SEL_ACTIVO_COMPONENTE, que es el
+    /// mismo SP que usa la web: no se renombra nada al pasar por la API,
+    /// porque un alias distinto en cada capa obliga a traducir mentalmente
+    /// tres veces la misma columna.
+    /// </summary>
+    public class ComponenteDto
+    {
+        public int ACO_ID { get; set; }
+        public int ACO_ACTIVO { get; set; }
+        public int? ACO_COMPONENTE_PADRE { get; set; }
+        public int ACO_COMPONENTE_TIPO { get; set; }
+        public int? ACO_COMPONENTE_POSICION { get; set; }
+        public int ACO_CRITICIDAD_NIVEL { get; set; }
+        public int ACO_ACTIVO_COMPONENTE_ESTADO { get; set; }
+        public string ACO_CODIGO { get; set; }
+        public string ACO_NOMBRE { get; set; }
+        public DateTime? ACO_FECHA_INSTALACION { get; set; }
+        public string ACO_DESCRIPCION { get; set; }
+        public bool ACO_HABILITADO { get; set; }
+
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        public string CRITICIDAD_NOMBRE { get; set; }
+        public string POSICION_NOMBRE { get; set; }
+        public string PADRE_NOMBRE { get; set; }
+
+        /* Se pegan en el controller, no en el SP: SEL_ACTIVO_COMPONENTE lo
+           usan tambien las grillas de la web, y un JOIN mas a Archivo_Vinculo
+           le costaria a toda pantalla que liste componentes para un dato que
+           solo mira la ficha. Mismo criterio que ActivoDto. */
+        public string FOTO_RUTA { get; set; }
+        public List<string> FOTOS { get; set; }
+
+        /// <summary>Los medidores del componente: las horas o ciclos de uso
+        /// que pide 8.2. Nulo en el listado, que no los necesita.</summary>
+        public List<MedidorDto> MEDIDORES { get; set; }
+
+        /// <summary>Alertas activas sobre el componente (8.1).</summary>
+        public int ALERTAS { get; set; }
+    }
+
+    /// <summary>Un medidor y su ultimo valor. De SEL_ACTIVO_MEDIDOR.</summary>
+    public class MedidorDto
+    {
+        public int AME_ID { get; set; }
+        public int AME_ACTIVO { get; set; }
+        public int? AME_ACTIVO_COMPONENTE { get; set; }
+        public string AME_CODIGO { get; set; }
+        public string AME_NOMBRE { get; set; }
+        public decimal? AME_VALOR_ACTUAL { get; set; }
+        public DateTime? AME_FECHA_VALOR_ACTUAL_UTC { get; set; }
+        public bool AME_PERMITE_REINICIO { get; set; }
+        public string UNIDAD_NOMBRE { get; set; }
+        public string UNIDAD_SIMBOLO { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+
+        /// <summary>A cuanto toca la proxima mantencion. Nulo en los
+        /// listados, que no la necesitan.</summary>
+        public List<MedidorUmbralDto> UMBRALES { get; set; }
+    }
+
+    /// <summary>
+    /// El proximo hito de mantencion de un medidor — el «umbral» de 9.2.
+    ///
+    /// No sale de una tabla de umbrales, que no existe, sino de la
+    /// programacion: «cada 500 h desde 0» con el medidor en 7.500 da 8.000.
+    /// Es el umbral real del negocio y ya lo mantiene alguien.
+    /// </summary>
+    public class MedidorUmbralDto
+    {
+        public int PME_ID { get; set; }
+        public string PROGRAMACION_NOMBRE { get; set; }
+        public decimal? CADA_CANTIDAD { get; set; }
+        public decimal? AVISO_ANTICIPACION { get; set; }
+        public decimal? VALOR_ACTUAL { get; set; }
+        public decimal? PROXIMO_UMBRAL { get; set; }
+        public decimal? AVISO_DESDE { get; set; }
+        public decimal? FALTA { get; set; }
+    }
+
+    /// <summary>
+    /// Una lectura de medidor — vista 9.2.
+    ///
+    /// INCREMENTO viene calculado del SP y puede ser nulo: la primera lectura
+    /// no tiene contra que restarse, y una marcada como reinicio tampoco. Un
+    /// cero ahi seria mentira -diria «no corrio»- cuando lo cierto es que no
+    /// se sabe.
+    /// </summary>
+    public class LecturaDto
+    {
+        public int AML_ID { get; set; }
+        public DateTime? FECHA_LECTURA_UTC { get; set; }
+        public decimal VALOR_ACUMULADO { get; set; }
+        public decimal? INCREMENTO { get; set; }
+        public bool ES_REINICIO { get; set; }
+        public string OBSERVACION { get; set; }
+        public int? ORDEN_TRABAJO { get; set; }
+        public string ORDEN_CORRELATIVO { get; set; }
+        public string MODO_NOMBRE { get; set; }
+        public string ORIGEN_NOMBRE { get; set; }
+        public string CALIDAD_NOMBRE { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+    }
+
+    /// <summary>
+    /// Un evento de la linea de tiempo del componente — vista 8.3.
+    ///
+    /// Es ActivoFichaEventoDto mas REF_ID y REF_TEXTO: el historial del
+    /// componente lleva a la OT, a la falla o al repuesto que lo causo, y
+    /// sin el id la fila se puede leer pero no se puede abrir.
+    /// </summary>
+    public class ComponenteFichaEventoDto
+    {
+        public DateTime? FECHA { get; set; }
+        public string TIPO_EVENTO { get; set; }
+        public string TITULO { get; set; }
+        public string DETALLE { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public int? REF_ID { get; set; }
+        public string REF_TEXTO { get; set; }
+    }
+
+    // --------------------------------------------------------------- 6.7 --
+
+    /// <summary>
+    /// Una firma o validacion de una orden — vista 6.7 (HU-118).
+    ///
+    /// La tabla `Orden_Trabajo_Validacion` es de SOLO AGREGAR: firmar dos
+    /// veces deja dos filas. Eso es lo que pide la vista —«nueva validacion
+    /// sin eliminar el registro anterior»— y ademas lo unico defendible en
+    /// una auditoria: una firma que se puede reemplazar no prueba nada.
+    /// </summary>
+    public class ValidacionDto
+    {
+        public int OTV_ID { get; set; }
+        public int OTV_ORDEN_TRABAJO { get; set; }
+        public int OTV_VALIDACION_TIPO { get; set; }
+        public string TIPO_CODIGO { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int OTV_USUARIO { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public string USUARIO_IDENTIFICADOR { get; set; }
+        public string OTV_RESULTADO { get; set; }
+        public DateTime? OTV_FECHA_UTC { get; set; }
+        public string OTV_OBSERVACION { get; set; }
+
+        /// <summary>La ruta del blob de la firma manuscrita. Nula si se firmo
+        /// sin dibujarla: no toda validacion la exige.</summary>
+        public string FIRMA_RUTA { get; set; }
+    }
+
+    /// <summary>Lo que manda el telefono al firmar.</summary>
+    public class ValidacionAltaDto
+    {
+        /// <summary>Lo genera el telefono AL ENCOLAR, no al enviar: es lo que
+        /// hace que un reintento sin señal no firme dos veces.</summary>
+        public Guid uuid { get; set; }
+
+        public int tipo { get; set; }
+
+        /// <summary>ACEPTADA o RECHAZADA. Lo valida el SP.</summary>
+        public string resultado { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>La firma manuscrita en PNG, en base64. Opcional.</summary>
+        public string firma_base64 { get; set; }
+    }
+
+    /// <summary>Un tipo de validacion: aceptacion, ejecucion, validacion.</summary>
+    public class ValidacionTipoDto
+    {
+        public int VAT_ID { get; set; }
+        public string VAT_CODIGO { get; set; }
+        public string VAT_NOMBRE { get; set; }
+        public int? VAT_ORDEN { get; set; }
+    }
+
+    /// <summary>
+    /// Una evidencia que subio el usuario, con el registro del que cuelga
+    /// — vista 13.2.
+    ///
+    /// El destino viaja RESUELTO —«Orden de trabajo» + «OT-2026-0031»— y no
+    /// como id: de poco sirve saber que la foto cuelga del destino 412, y
+    /// traducirlo en el telefono obligaria a bajar cuatro listados enteros
+    /// para cuatro numeros.
+    /// </summary>
+    public class EvidenciaMiaDto
+    {
+        public int ARC_ID { get; set; }
+        public string ARC_UUID { get; set; }
+        public string ARC_RUTA { get; set; }
+        public string ARC_NOMBRE { get; set; }
+        public string ARC_MIME { get; set; }
+        public long ARC_BYTE { get; set; }
+        public DateTime? FECHA_CAPTURA_UTC { get; set; }
+        public DateTime? FECHA_SUBIDA { get; set; }
+        public string CATEGORIA_NOMBRE { get; set; }
+        public string DESCRIPCION { get; set; }
+        public string DESTINO_TIPO { get; set; }
+        public string DESTINO_TEXTO { get; set; }
+        public int? DESTINO_ID { get; set; }
+    }
+
+    /// <summary>
+    /// Una foto de una galeria — vistas 7.4, 8.4 y 10.4.
+    ///
+    /// Lleva quien y cuando porque una galeria sin fecha ni autor es un
+    /// muro de fotos que no se puede usar para nada: la pregunta que se le
+    /// hace es «como estaba esto en marzo», no «que fotos hay».
+    /// </summary>
+    public class GaleriaFotoDto
+    {
+        public string ARC_RUTA { get; set; }
+        public string ARC_MIME { get; set; }
+        public string ARC_NOMBRE { get; set; }
+        public bool ES_PORTADA { get; set; }
+        public string DESCRIPCION { get; set; }
+        public DateTime? FECHA_CAPTURA_UTC { get; set; }
+        public string AUTOR_NOMBRE { get; set; }
+    }
 
     /// <summary>Solicitud de cambio de estado de un activo (HU-038).</summary>
     public class ActivoEstadoAltaDto
@@ -469,6 +713,19 @@ namespace API.MVC.Model
         public string usu_correo { get; set; }
         public string usu_telefono { get; set; }
         public string PERFILES { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de su foto. Nula mientras no haya cargado ninguna,
+        /// y ahi el avatar pinta las iniciales.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
+    }
+
+    /// <summary>Lo que devuelve `API_SEL_APP_USUARIO_FOTO`.</summary>
+    public class UsuarioFotoDto
+    {
+        public int usu_id { get; set; }
+        public string FOTO_RUTA { get; set; }
     }
 
     public class MiPerfilEdicionDto
@@ -695,6 +952,31 @@ namespace API.MVC.Model
         public Guid? uuid { get; set; }
     }
 
+    /// <summary>
+    /// Un dictado por voz que sube el telefono (HU-160). El uuid lo genera el
+    /// dispositivo al terminar de dictar: hace la subida idempotente -reintentar
+    /// no duplica-. `texto` es lo que la persona dio por bueno; el reconocimiento
+    /// ya ocurrio en el telefono, por eso no viaja audio.
+    /// </summary>
+    public class DictadoVozAltaDto
+    {
+        public Guid? uuid { get; set; }
+        public string texto { get; set; }
+
+        /// <summary>Codigo del idioma (es-CL, en-US). Por omision, es-CL.</summary>
+        public string idioma { get; set; }
+
+        /// <summary>Motor de reconocimiento. 1 = en el telefono (por omision).</summary>
+        public int? motor { get; set; }
+        public string modelo { get; set; }
+        public decimal? confianza { get; set; }
+        public int? segundos { get; set; }
+        public int? intentos { get; set; }
+        public bool? confirmado { get; set; }
+        public bool? confirmado_por_voz { get; set; }
+        public Guid? dispositivo_uuid { get; set; }
+    }
+
     /// <summary>Una medicion de condicion tomada en terreno (HU-044).</summary>
     public class MedicionAltaDto
     {
@@ -760,11 +1042,30 @@ namespace API.MVC.Model
 
         public string PLANTA { get; set; }
         public string UNIDAD { get; set; }
+
+        /// <summary>Escaneo de una posición (POS-): el lugar, y si está libre. act_* trae el equipo que la ocupa hoy.</summary>
+        public int pos_id { get; set; }
+        public string pos_codigo { get; set; }
+        public string pos_nombre { get; set; }
+        public string AREA { get; set; }
+        public bool pos_libre { get; set; }
         public decimal? TOTAL { get; set; }
 
         public bool? bub_habilitado { get; set; }
         public bool? bod_habilitado { get; set; }
         public bool? rep_habilitado { get; set; }
+
+        /* EL ACTIVO ESCANEADO
+
+           Los campos de arriba los llenan los SP de desglose, que hablan de
+           existencias. Un activo no tiene existencia adentro: lo que hace
+           falta es el codigo y el nombre para que la tarjeta del escaneo diga
+           QUE se leyo antes de abrir su ficha. Se agregan aca y no en un DTO
+           aparte porque la app ya sabe leer esta cabecera; un segundo tipo la
+           obligaria a decidir cual mirar antes de saber que escaneo. */
+        public int act_id { get; set; }
+        public string act_codigo { get; set; }
+        public string act_nombre { get; set; }
         public bool? rep_controla_lote { get; set; }
     }
 
@@ -989,6 +1290,36 @@ namespace API.MVC.Model
         public int? ale_repuesto_lote { get; set; }
         public decimal? ale_valor_observado { get; set; }
         public decimal? ale_valor_umbral { get; set; }
+
+        /* DE QUE HABLA LA ALERTA
+
+           SEL_ALERTA devolvia ACTIVO_CODIGO, ACTIVO_NOMBRE y REPUESTO_CODIGO
+           desde el principio y este DTO no las declaraba: Datos.Listar mapea por
+           nombre de columna y descarta EN SILENCIO lo que el DTO no tiene, sin
+           dar error. Asi que la identidad viajaba desde la base y se tiraba en
+           el camino, y la bandeja de alertas mostraba diez filas iguales con el
+           mismo icono de campana.
+
+           Es la misma clase de fallo que el mime en duro de la evidencia: nada
+           avisa, y solo se ve mirando la respuesta. */
+        public int? ale_activo { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+
+        public int? ale_activo_componente { get; set; }
+        public string COMPONENTE_CODIGO { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public string BODEGA_NOMBRE { get; set; }
+
+        /// <summary>
+        /// La ruta del blob de la foto de lo que le pasa: el activo, el activo
+        /// padre si es un componente, o el repuesto. Nula si no hay ninguna, y
+        /// ahi la app pinta el icono del tipo en vez de un marco vacio.
+        /// </summary>
+        public string FOTO_RUTA { get; set; }
 
         public int LEIDA { get; set; }
 
@@ -1374,11 +1705,92 @@ namespace API.MVC.Model
 
         public string observacion { get; set; }
         public int? entrada_modo { get; set; }
+
+        /// <summary>
+        /// HU-062 #2: el valor que el paso exige medir, cuando el paso del
+        /// procedimiento lo pide. Queda en la serie histórica del equipo con
+        /// la orden como origen. Vacío en un paso que no mide.
+        /// </summary>
+        public decimal? valor_medicion { get; set; }
+
+        /// <summary>Unidad en que viene el valor; vacío = la de la variable.</summary>
+        public int? unidad_medida { get; set; }
+    }
+
+    /// <summary>
+    /// Lo que el tecnico anota que hizo — un paso agregado sobre la marcha.
+    ///
+    /// POR QUE EXISTE
+    ///   Una correctiva abierta en terreno nace SIN pasos, asi que hasta ahora
+    ///   el tecnico no tenia donde registrar el trabajo salvo el cuadro de
+    ///   «Resultado» del cierre: una sola caja, al final, cuando ya se olvido
+    ///   la mitad.
+    /// </summary>
+    public class PasoAltaDto
+    {
+        /// <summary>Que se hizo. Es lo unico obligatorio.</summary>
+        public string nombre { get; set; }
+
+        public string descripcion { get; set; }
+
+        /// <summary>
+        /// 1 CONFORME, 2 NO CONFORME, 3 NO APLICA. Nulo deja el paso
+        /// pendiente, que sirve de recordatorio de lo que falta.
+        /// </summary>
+        public int? resultado { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>Nace en el telefono AL ENCOLAR.</summary>
+        public Guid? uuid { get; set; }
     }
 
     public class OrdenTrabajoFinDto
     {
         public string resultado { get; set; }
+    }
+
+    /// <summary>
+    /// El cierre de la orden — HU-120.
+    ///
+    /// FINALIZAR Y CERRAR NO SON LO MISMO
+    ///   El tecnico finaliza y la orden queda EN ESPERA DE CIERRE; cerrarla es
+    ///   del jefe de mantenimiento, el supervisor o el planificador. Esa
+    ///   separacion es la que hace que el registro sirva de respaldo: el que
+    ///   hizo el trabajo no es el que certifica que quedo hecho.
+    ///
+    /// LAS REGLAS VIVEN EN EL SP
+    ///   Quien puede cerrar, el estado 3 previo, el motivo habilitado y el
+    ///   bloqueo por permiso de trabajo sin autorizar los hace cumplir
+    ///   UPD_ORDEN_TRABAJO_CERRAR. Repetirlos aca daria dos verdades que se
+    ///   separan el dia que una de las dos cambie.
+    /// </summary>
+    public class CierreOrdenDto
+    {
+        /// <summary>
+        /// El motivo, del catalogo Orden_Trabajo_Cierre_Motivo. No es un texto
+        /// libre: «trabajo realizado» escrito de cinco formas no agrupa en un
+        /// informe.
+        /// </summary>
+        public int motivo { get; set; }
+
+        public string observacion { get; set; }
+
+        /// <summary>
+        /// Lo genera el telefono AL ENCOLAR, no al enviar. Sin el, el reintento
+        /// de un cierre que si entro fallaria con «la OT no esta en espera de
+        /// cierre» — por haber funcionado.
+        /// </summary>
+        public Guid? uuid { get; set; }
+    }
+
+    /// <summary>Un motivo de cierre del catalogo.</summary>
+    public class CierreMotivoDto
+    {
+        public int ocm_id { get; set; }
+        public string ocm_codigo { get; set; }
+        public string ocm_nombre { get; set; }
+        public int? ocm_orden { get; set; }
     }
 
     // =====================================================================
@@ -1762,7 +2174,16 @@ namespace API.MVC.Model
 
         /// <summary>De `Archivo_Categoria`. 5 = DURANTE, que es lo que saca
         /// alguien parado frente a la maquina.</summary>
-        public int categoria { get; set; }
+        /// <summary>
+        /// La categoria del archivo. **Anulable a proposito**: siendo `int` a
+        /// secas, un cuerpo que no la trae la manda como **0**, y 0 no existe
+        /// en `Archivo_Categoria` — el INSERT moria con una violacion de clave
+        /// foranea que le llegaba al cliente como texto de SQL Server.
+        ///
+        /// Nula deja que el SP ponga la suya (5, DURANTE). `Datos.Ejecutar`
+        /// omite los nulos justamente para eso.
+        /// </summary>
+        public int? categoria { get; set; }
 
         public string nombre { get; set; }
         public string mime { get; set; }
@@ -1961,4 +2382,611 @@ namespace API.MVC.Model
         public bool YA_ESTABA { get; set; }
     }
 
+
+    // ---------------- HU-076 · HU-087 · HU-111 ----------------
+
+    public class PlanOcurrenciaDto
+    {
+        public int PMO_ID { get; set; }
+        public Guid PMO_UUID { get; set; }
+        public DateTime FECHA_PROGRAMADA { get; set; }
+        public DateTime? FECHA_LIMITE { get; set; }
+        public DateTime? FECHA_DISPONIBLE { get; set; }
+        public string MES { get; set; }
+        public int PLAN_ID { get; set; }
+        public string PLAN_CODIGO { get; set; }
+        public string PLAN_NOMBRE { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public int HITO_ID { get; set; }
+        public string HITO_CODIGO { get; set; }
+        public string HITO_NOMBRE { get; set; }
+        public bool ES_OVERHAUL { get; set; }
+        public bool REQUIERE_PARADA { get; set; }
+        public int? DURACION_ESTIMADA_MINUTO { get; set; }
+        public int ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public int ESTADO_ID { get; set; }
+        public string ESTADO_CODIGO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        /// <summary>CERRADA · VENCIDA · ATRASADA · DISPONIBLE · FUTURA, derivada al consultar.</summary>
+        public string SITUACION { get; set; }
+        public int DIAS_RESTANTES { get; set; }
+        public int FUE_REPROGRAMADA { get; set; }
+        public int? ORDEN_TRABAJO_ID { get; set; }
+        public int? ORDEN_TRABAJO_CORRELATIVO { get; set; }
+        public string ORDEN_TRABAJO_TITULO { get; set; }
+        public int TOTAL { get; set; }
+    }
+
+    public class PlanOcurrenciaGenerarDto
+    {
+        /// <summary>Vacio: todos los planes publicados del cliente.</summary>
+        public int? plan { get; set; }
+        /// <summary>Dias hacia adelante; 90 si no se indica, tope 730.</summary>
+        public int? horizonte_dia { get; set; }
+        /// <summary>true respeta pro_genera_automaticamente (lo que usa el job).</summary>
+        public bool solo_automaticas { get; set; }
+    }
+
+    public class PlanOcurrenciaGeneradaDto
+    {
+        public string PLAN_CODIGO { get; set; }
+        public string HITO_CODIGO { get; set; }
+        public int EQUIPOS { get; set; }
+        public int GENERADAS { get; set; }
+        public DateTime? PRIMERA { get; set; }
+        public DateTime? ULTIMA { get; set; }
+    }
+
+    public class PlanOcurrenciaGeneracionDto
+    {
+        public int generadas { get; set; }
+        public int horizonte_dia { get; set; }
+        public List<PlanOcurrenciaGeneradaDto> detalle { get; set; }
+    }
+
+    public class OrdenDesdeOcurrenciaDto
+    {
+        public int OTR_ID { get; set; }
+        public int OTR_CORRELATIVO { get; set; }
+        public bool YA_EXISTIA { get; set; }
+    }
+
+    // ======================= Sprint 5 · OT web, fallas, indisponibilidad =======================
+
+    /// <summary>
+    /// Lo que devuelve API_INS_ACTIVO_MEDICION: el id y el veredicto contra
+    /// los umbrales de la variable (HU-041 #2).
+    /// </summary>
+    public class MedicionRegistradaDto
+    {
+        public int ID { get; set; }
+        public string MENSAJE { get; set; }
+    }
+
+    public class OrdenTrabajoFinalizadaDto
+    {
+        public int ORDEN_TRABAJO { get; set; }
+        public int ESTADO { get; set; }
+        public string ESTADO_NOMBRE { get; set; }
+        /// <summary>HU-119 #3: texto cuando se finalizó sin mano de obra; null si hubo.</summary>
+        public string ADVERTENCIA { get; set; }
+    }
+
+    public class OrdenTrabajoAsignacionDto
+    {
+        public int OTA_ID { get; set; }
+        public int OTA_ORDEN_TRABAJO { get; set; }
+        public int? OTA_USUARIO { get; set; }
+        public int? OTA_PROVEEDOR { get; set; }
+        public int? OTA_GRUPO_TRABAJO { get; set; }
+        public bool OTA_ES_RESPONSABLE { get; set; }
+        public int? OTA_ROL_EJECUCION { get; set; }
+        public DateTime? OTA_FECHA_ASIGNACION_UTC { get; set; }
+        public DateTime? OTA_FECHA_ACEPTACION_UTC { get; set; }
+        public string OTA_OBSERVACION { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public string PROVEEDOR_NOMBRE { get; set; }
+        public string GRUPO_NOMBRE { get; set; }
+        public string ROL_CODIGO { get; set; }
+        public string ROL_NOMBRE { get; set; }
+        public string ASIGNADO_POR_NOMBRE { get; set; }
+        public string ESPECIALIDADES { get; set; }
+    }
+
+    public class OrdenTrabajoAsignacionAltaDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
+        /// <summary>Técnico del cliente. Excluyente con proveedor.</summary>
+        public int? usuario { get; set; }
+        /// <summary>Empresa externa; tiene que ser contratista. Excluyente con usuario.</summary>
+        public int? proveedor { get; set; }
+        public int? grupo_trabajo { get; set; }
+        /// <summary>true: pasa a ser EL responsable; el anterior queda como apoyo.</summary>
+        public bool es_responsable { get; set; }
+        public int? rol_ejecucion { get; set; }
+        public string observacion { get; set; }
+    }
+
+    public class OrdenTrabajoAsignadaDto
+    {
+        public int OTA_ID { get; set; }
+        /// <summary>Texto si la orden pide una especialidad que el técnico no tiene; null si no.</summary>
+        public string ADVERTENCIA { get; set; }
+    }
+
+    public class FallaDto
+    {
+        public int FAL_ID { get; set; }
+        public Guid FAL_UUID { get; set; }
+        public int FAL_ACTIVO { get; set; }
+        public int? FAL_ACTIVO_COMPONENTE { get; set; }
+        public int? FAL_FALLA_SINTOMA { get; set; }
+        public int FAL_CRITICIDAD_NIVEL { get; set; }
+        public string FAL_TITULO { get; set; }
+        public string FAL_DESCRIPCION { get; set; }
+        public string FAL_CONSECUENCIA { get; set; }
+        public int? FAL_ACTIVO_ESTADO_POSTERIOR { get; set; }
+        public bool FAL_DETUVO_PRODUCCION { get; set; }
+        public DateTime? FAL_FECHA_DETECCION_UTC { get; set; }
+        public DateTime? FAL_FECHA_SOLUCION_UTC { get; set; }
+        public int? FAL_USUARIO_REPORTA { get; set; }
+        public DateTime? FAL_FECHA_CREACION { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public int ACTIVO_INSTALACION { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public string SINTOMA_NOMBRE { get; set; }
+        public string CRITICIDAD_CODIGO { get; set; }
+        public string CRITICIDAD_NOMBRE { get; set; }
+        public string ESTADO_POSTERIOR_NOMBRE { get; set; }
+        public string REPORTA_NOMBRE { get; set; }
+        public int DIAGNOSTICOS { get; set; }
+        public int ACCIONES { get; set; }
+        public int ACCIONES_PROVISORIAS { get; set; }
+        public int ORDENES { get; set; }
+        public int? ULTIMA_OT_CORRELATIVO { get; set; }
+        public int INDISPONIBILIDADES { get; set; }
+        /// <summary>Reparaciones provisorias del mismo equipo (todas sus fallas). Dos o más: equipo que pide atención.</summary>
+        public int PROVISORIAS_DEL_EQUIPO { get; set; }
+    }
+
+    public class FallaAltaDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
+        public int activo { get; set; }
+        public int? componente { get; set; }
+        public int? sintoma { get; set; }
+        /// <summary>1 BAJA, 2 MEDIA, 3 ALTA, 4 CRITICA. Vacío: MEDIA.</summary>
+        public int? criticidad { get; set; }
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+        public string consecuencia { get; set; }
+        /// <summary>Activo_Estado al que pasa el equipo (2 con observación, 3 detenido, 5 fuera de servicio). Vacío: no cambia.</summary>
+        public int? estado_posterior { get; set; }
+        public bool detuvo_produccion { get; set; }
+        /// <summary>Vacío: ahora.</summary>
+        public DateTime? fecha_deteccion_utc { get; set; }
+    }
+
+    public class FallaEdicionDto
+    {
+        public string titulo { get; set; }
+        public string descripcion { get; set; }
+        public string consecuencia { get; set; }
+        public int? criticidad { get; set; }
+        public bool? detuvo_produccion { get; set; }
+    }
+
+    public class FallaDiagnosticoDto
+    {
+        public int FDI_ID { get; set; }
+        public int FDI_FALLA { get; set; }
+        public int? FDI_FALLA_MODO { get; set; }
+        public int? FDI_FALLA_CAUSA { get; set; }
+        public int? FDI_DIAGNOSTICO_METODO { get; set; }
+        public string FDI_DESCRIPCION { get; set; }
+        public bool FDI_ES_DEFINITIVO { get; set; }
+        public decimal? FDI_CONFIANZA { get; set; }
+        public DateTime? FDI_FECHA_DIAGNOSTICO_UTC { get; set; }
+        public string MODO_NOMBRE { get; set; }
+        public string CAUSA_NOMBRE { get; set; }
+        public string METODO_NOMBRE { get; set; }
+        public string DIAGNOSTICA_NOMBRE { get; set; }
+    }
+
+    public class FallaDiagnosticoAltaDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
+        public int? modo { get; set; }
+        public int? causa { get; set; }
+        /// <summary>Diagnostico_Metodo: 1 inspección visual … 9 análisis con IA.</summary>
+        public int? metodo { get; set; }
+        public string descripcion { get; set; }
+        public bool es_definitivo { get; set; }
+        /// <summary>0..100.</summary>
+        public decimal? confianza { get; set; }
+    }
+
+    public class FallaAccionDto
+    {
+        public int FAC_ID { get; set; }
+        public int FAC_FALLA { get; set; }
+        public int? FAC_FALLA_DIAGNOSTICO { get; set; }
+        public int? FAC_ORDEN_TRABAJO { get; set; }
+        public string FAC_DESCRIPCION { get; set; }
+        public bool FAC_ES_DEFINITIVA { get; set; }
+        public DateTime? FAC_FECHA_ACCION_UTC { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string EJECUTA_NOMBRE { get; set; }
+    }
+
+    public class FallaAccionAltaDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
+        public int? diagnostico { get; set; }
+        /// <summary>Solo una orden generada desde esta falla.</summary>
+        public int? orden_trabajo { get; set; }
+        public string descripcion { get; set; }
+        /// <summary>true resuelve la falla (fija la fecha de solución).</summary>
+        public bool es_definitiva { get; set; }
+        public DateTime? fecha_accion_utc { get; set; }
+    }
+
+    public class FallaOrdenDto
+    {
+        /// <summary>Orden_Trabajo_Estrategia; vacío: 3 EMERGENCIA.</summary>
+        public int? estrategia { get; set; }
+        public DateTime? fecha_programada_utc { get; set; }
+        public int? duracion_estimada_minuto { get; set; }
+        public bool requiere_permiso { get; set; }
+    }
+
+    public class ActivoIndisponibilidadDto
+    {
+        public int AIN_ID { get; set; }
+        public int AIN_ACTIVO { get; set; }
+        public int? AIN_ORDEN_TRABAJO { get; set; }
+        public int? AIN_FALLA { get; set; }
+        public DateTime AIN_FECHA_INICIO_UTC { get; set; }
+        public DateTime? AIN_FECHA_FIN_UTC { get; set; }
+        public int? AIN_MINUTO { get; set; }
+        public bool AIN_PLANIFICADA { get; set; }
+        public bool AIN_DETUVO_PRODUCCION { get; set; }
+        public int? AIN_INDISPONIBILIDAD_MOTIVO { get; set; }
+        public string AIN_MOTIVO { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string MOTIVO_NOMBRE { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string FALLA_TITULO { get; set; }
+        /// <summary>Con término, los minutos guardados; abierta, los que corren hasta ahora.</summary>
+        public int MINUTOS_ACUMULADOS { get; set; }
+        public string USUARIO_CREACION_NOMBRE { get; set; }
+    }
+
+    /// <summary>Una posición funcional (SEL_ACTIVO_POSICION, BD/231). ACTIVO_* es el equipo que la ocupa hoy; null si está libre.</summary>
+    public class ActivoPosicionDto
+    {
+        public int APO_ID { get; set; }
+        public int APO_CLIENTE_INSTALACION { get; set; }
+        public int APO_INSTALACION_AREA { get; set; }
+        public int? APO_ACTIVO_TIPO { get; set; }
+        public string APO_CODIGO { get; set; }
+        public string APO_NOMBRE { get; set; }
+        public bool APO_CRITICA { get; set; }
+        public string APO_DESCRIPCION { get; set; }
+        public bool APO_HABILITADO { get; set; }
+        public string PLANTA_NOMBRE { get; set; }
+        public string AREA_CODIGO { get; set; }
+        public string AREA_NOMBRE { get; set; }
+        public string TIPO_NOMBRE { get; set; }
+        public int? ACTIVO_ID { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public DateTime? OCUPADA_DESDE_UTC { get; set; }
+        public int PERIODOS { get; set; }
+    }
+
+    public class ActivoPosicionHistorialDto
+    {
+        public int APH_ID { get; set; }
+        public int APH_ACTIVO_POSICION { get; set; }
+        public int APH_ACTIVO { get; set; }
+        public DateTime APH_FECHA_INICIO_UTC { get; set; }
+        public DateTime? APH_FECHA_FIN_UTC { get; set; }
+        public int? APH_ACTIVO_POSICION_MOTIVO { get; set; }
+        public int? APH_ORDEN_TRABAJO { get; set; }
+        public string APH_OBSERVACION { get; set; }
+        public string POSICION_CODIGO { get; set; }
+        public string POSICION_NOMBRE { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        public string MOTIVO_NOMBRE { get; set; }
+        public int? OT_CORRELATIVO { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public bool VIGENTE { get; set; }
+        public int DIAS { get; set; }
+    }
+
+    public class ActivoPosicionOcuparDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar.</summary>
+        public Guid? uuid { get; set; }
+        public int activo { get; set; }
+        /// <summary>Activo_Posicion_Motivo: 1 instalación inicial, 2 reemplazo, 3 respaldo temporal, 4 overhaul, 5 baja, 6 traslado. Vacío: el SP decide (inicial o reemplazo).</summary>
+        public int? motivo { get; set; }
+        public string observacion { get; set; }
+        public int? orden_trabajo { get; set; }
+    }
+
+    public class ActivoPosicionOcupadaDto
+    {
+        public int APH_ID { get; set; }
+        public int POSICION { get; set; }
+        public int ACTIVO { get; set; }
+    }
+
+    public class ActivoIndisponibilidadAltaDto
+    {
+        /// <summary>Lo genera el teléfono al encolar; un reintento con el mismo uuid responde lo mismo sin duplicar. Opcional desde la web.</summary>
+        public Guid? uuid { get; set; }
+        public int activo { get; set; }
+        public int? orden_trabajo { get; set; }
+        public int? falla { get; set; }
+        public DateTime fecha_inicio_utc { get; set; }
+        /// <summary>Vacío: sigue detenido.</summary>
+        public DateTime? fecha_fin_utc { get; set; }
+        public bool planificada { get; set; }
+        public bool detuvo_produccion { get; set; }
+        /// <summary>Indisponibilidad_Motivo: 1 mantenimiento planificado, 2 falla, 3 espera de repuesto, 4 espera de técnico, 5 causa externa, 6 parada de producción.</summary>
+        public int? motivo_catalogo { get; set; }
+        /// <summary>Obligatorio si no hay motivo de catálogo.</summary>
+        public string motivo { get; set; }
+    }
+
+    public class ActivoIndisponibilidadEdicionDto
+    {
+        public DateTime? fecha_fin_utc { get; set; }
+        public bool? planificada { get; set; }
+        public bool? detuvo_produccion { get; set; }
+        public int? motivo_catalogo { get; set; }
+        public string motivo { get; set; }
+        public bool? habilitado { get; set; }
+    }
+
+    /* =====================================================================
+       SIGMA AI · Investigación Azure Machine Learning (bloque 245)
+       ===================================================================== */
+
+    /// <summary>Una fila de `API_SEL_ML` @TIPO 1: el modelo y su versión publicada.</summary>
+    public class MlModeloDto
+    {
+        public int mpr_id { get; set; }
+        public string mpr_codigo { get; set; }
+        public string mpr_nombre { get; set; }
+        public string mpr_descripcion { get; set; }
+        public int? mpr_horizonte_dia { get; set; }
+        public decimal? mpr_umbral_alerta { get; set; }
+        public decimal? mpr_umbral_critico { get; set; }
+        public string OBJETIVO { get; set; }
+        public string OBJETIVO_CODIGO { get; set; }
+        public int? VERSION_ID { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public string VERSION_ALGORITMO { get; set; }
+        public string VERSION_PARAMETRO { get; set; }
+        public string VERSION_RUTA { get; set; }
+        public string VERSION_HASH { get; set; }
+        public string VERSION_REGISTRO { get; set; }
+        public DateTime? VERSION_VERIFICADA { get; set; }
+        public decimal? VERSION_AUC { get; set; }
+        public decimal? VERSION_PRECISION { get; set; }
+        public decimal? VERSION_RECALL { get; set; }
+        public decimal? VERSION_F1 { get; set; }
+        public decimal? VERSION_MAE { get; set; }
+        public DateTime? VERSION_PUBLICADA { get; set; }
+        public int DATASETS { get; set; }
+        public int CORRIDAS { get; set; }
+        public int VERSIONES { get; set; }
+        public int PREDICCIONES_VIGENTES { get; set; }
+        public int ACTIVOS { get; set; }
+        public int FALLAS { get; set; }
+        public int MEDICIONES { get; set; }
+        public int INSTALACIONES { get; set; }
+        public int RETIROS { get; set; }
+        public int IMAGENES_ETIQUETADAS { get; set; }
+    }
+
+    public class MlCaracteristicaDto
+    {
+        public int cmo_id { get; set; }
+        public string cmo_codigo { get; set; }
+        public string cmo_etiqueta { get; set; }
+        public string cmo_descripcion { get; set; }
+        public int? cmo_ventana_dia { get; set; }
+        public string cmo_agregacion { get; set; }
+        public int? cmo_orden { get; set; }
+    }
+
+    public class MlDatasetDto
+    {
+        public int den_id { get; set; }
+        public string den_codigo { get; set; }
+        public string den_nombre { get; set; }
+        public DateTime? den_fecha_desde { get; set; }
+        public DateTime? den_fecha_hasta { get; set; }
+        public int? den_fila_total { get; set; }
+        public int? den_fila_positiva { get; set; }
+        public string den_hash_datos { get; set; }
+        public string den_ruta { get; set; }
+        public string den_observacion { get; set; }
+        public DateTime? den_fecha_creacion { get; set; }
+        public int VERSIONES { get; set; }
+    }
+
+    public class MlEjecucionDto
+    {
+        public int eej_id { get; set; }
+        public int? eej_dataset_entrenamiento { get; set; }
+        public int? eej_modelo_predictivo_version { get; set; }
+        public string ESTADO { get; set; }
+        public string eej_entorno { get; set; }
+        public DateTime? eej_fecha_inicio_utc { get; set; }
+        public DateTime? eej_fecha_fin_utc { get; set; }
+        public int? eej_segundo_duracion { get; set; }
+        public string eej_metrica { get; set; }
+        public string eej_mensaje { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public string DATASET_CODIGO { get; set; }
+    }
+
+    public class MlVersionDto
+    {
+        public int mpv_id { get; set; }
+        public int mpv_numero { get; set; }
+        public string FORMATO { get; set; }
+        public string mpv_algoritmo { get; set; }
+        public string mpv_hiperparametro { get; set; }
+        public string mpv_parametro { get; set; }
+        public string mpv_ruta { get; set; }
+        /// <summary>nombre:versión en el registro de Azure ML.</summary>
+        public string mpv_registro { get; set; }
+        public string mpv_hash { get; set; }
+        public long? mpv_byte { get; set; }
+        /// <summary>La última vez que la API bajó el artefacto y el hash coincidió.</summary>
+        public DateTime? mpv_fecha_verificacion_utc { get; set; }
+        public decimal? mpv_metrica_auc { get; set; }
+        public decimal? mpv_metrica_precision { get; set; }
+        public decimal? mpv_metrica_recall { get; set; }
+        public decimal? mpv_metrica_f1 { get; set; }
+        public decimal? mpv_metrica_mae { get; set; }
+        public string ESTADO { get; set; }
+        public int mpv_plan_version_estado { get; set; }
+        public DateTime? mpv_fecha_entrenamiento_utc { get; set; }
+        public DateTime? mpv_fecha_publicacion { get; set; }
+        public DateTime? mpv_fecha_retiro { get; set; }
+        public string mpv_observacion { get; set; }
+        public string DATASET_CODIGO { get; set; }
+        public int? DATASET_FILAS { get; set; }
+        public int? DATASET_POSITIVAS { get; set; }
+    }
+
+    public class MlPrediccionDto
+    {
+        public int pre_id { get; set; }
+        public int pre_activo { get; set; }
+        public string ACTIVO_CODIGO { get; set; }
+        public string ACTIVO_NOMBRE { get; set; }
+        /// <summary>RUL: la instalación del repuesto que se puntuó.</summary>
+        public int? INSTALACION { get; set; }
+        public string COMPONENTE_CODIGO { get; set; }
+        public string COMPONENTE_NOMBRE { get; set; }
+        public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
+        public decimal? pre_probabilidad { get; set; }
+        public decimal? pre_valor { get; set; }
+        public int? pre_dia_restante { get; set; }
+        public decimal? pre_intervalo_inferior { get; set; }
+        public decimal? pre_intervalo_superior { get; set; }
+        public DateTime? pre_fecha_evento_estimada_utc { get; set; }
+        public decimal? pre_confianza { get; set; }
+        public int? pre_severidad { get; set; }
+        public string SEVERIDAD { get; set; }
+        public string ESTADO { get; set; }
+        public DateTime? pre_fecha_calculo_utc { get; set; }
+        public DateTime? pre_fecha_vigencia_hasta_utc { get; set; }
+        public int? VERSION_NUMERO { get; set; }
+        public int? pre_alerta { get; set; }
+        public int? pre_orden_trabajo { get; set; }
+        public string EXPLICACION { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/datasets: el rango del dataset a registrar.</summary>
+    public class MlDatasetNuevoDto
+    {
+        public string codigo { get; set; }
+        public string nombre { get; set; }
+        /// <summary>yyyy-MM-dd; vacío = desde el primer registro del cliente.</summary>
+        public string desde { get; set; }
+        /// <summary>yyyy-MM-dd; vacío = hoy − 30 (último corte observable).</summary>
+        public string hasta { get; set; }
+        public int? paso_dias { get; set; }
+        public string observacion { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/entrenamientos: lo que informa el entrenador al terminar.</summary>
+    public class MlEntrenamientoNuevoDto
+    {
+        public int? dataset { get; set; }
+        /// <summary>Dónde corrió y el id de la corrida de MLflow, si la hubo.</summary>
+        public string entorno { get; set; }
+        /// <summary>3 PROCESADO (por defecto) o 4 ERROR.</summary>
+        public int? estado { get; set; }
+        public int? segundos { get; set; }
+        /// <summary>Todas las métricas, en JSON libre.</summary>
+        public object metrica { get; set; }
+        public string mensaje { get; set; }
+        /// <summary>La versión que produjo; vacío si falló.</summary>
+        public MlVersionNuevaDto version { get; set; }
+    }
+
+    public class MlVersionNuevaDto
+    {
+        public string formato { get; set; }
+        public string algoritmo { get; set; }
+        public object hiperparametro { get; set; }
+        /// <summary>{ caracteristicas, media, desviacion, coeficientes, intercepto }.</summary>
+        public object parametro { get; set; }
+        /// <summary>azureml://…/datastores/…/paths/… del artefacto (lo que la API descarga).</summary>
+        public string ruta { get; set; }
+        /// <summary>nombre:versión en el registro de Azure ML.</summary>
+        public string registro { get; set; }
+        public string hash { get; set; }
+        public long? bytes { get; set; }
+        public decimal? auc { get; set; }
+        public decimal? precision { get; set; }
+        public decimal? recall { get; set; }
+        public decimal? f1 { get; set; }
+        /// <summary>RUL: error absoluto medio en días.</summary>
+        public decimal? mae { get; set; }
+        public string observacion { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/predecir: vacío = todos los equipos del cliente.</summary>
+    public class MlPredecirDto
+    {
+        public int? activo { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/simular: valores de características a mano, sin guardar.</summary>
+    public class MlSimularDto
+    {
+        public Dictionary<string, double> valores { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/vision/clasificar: un archivo del cliente o una imagen suelta.</summary>
+    public class MlClasificarDto
+    {
+        public int? archivo { get; set; }
+        public string imagen_base64 { get; set; }
+        public string nombre { get; set; }
+        public string mime { get; set; }
+    }
+
+    /// <summary>POST /sigma-ai/vision/confirmar: una persona confirma o corrige la etiqueta.</summary>
+    public class MlConfirmarDto
+    {
+        public int deteccion { get; set; }
+        /// <summary>Vacío = confirma la etiqueta que puso el modelo.</summary>
+        public string etiqueta { get; set; }
+    }
 }

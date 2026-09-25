@@ -53,6 +53,12 @@
             </div>
             <div class="row col-lg-12 col-md-12 col-xs-12" style="margin-top:10px;">
                 <div class="col-lg-4 col-md-4 col-xs-12">
+                    <%-- HU-030 #1: filtrar por un tipo incluye sus subtipos (Equipo
+                         rotatorio trae los blowers). Lo resuelve SEL_ACTIVO. --%>
+                    <label for="cboTipo" style="display:block; margin:0 0 4px;">Tipo de activo:</label>
+                    <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" AutoPostBack="true" />
+                </div>
+                <div class="col-lg-4 col-md-4 col-xs-12">
                     <label for="cboHabilitado" style="display:block; margin:0 0 4px;">Habilitado:</label>
                     <rad:RadComboBox2 ID="cboHabilitado" runat="server" Width="100%">
                         <Items>

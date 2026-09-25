@@ -3,30 +3,42 @@ Sys.WebForms.PageRequestManager.getInstance().add_endRequest(endReq);
 
 var intervaloModalTiempoCarga;
 
+/* EL VELO SOLO CUANDO LA ESPERA SE NOTA
+
+   Se mostraba al empezar CUALQUIER ida al servidor. Con las pantallas nuevas
+   -elegir un paso, cambiar de filtro, abrir una evidencia- la respuesta llega
+   en decimas, asi que el velo alcanzaba a dibujarse y a irse: un parpadeo de
+   pantalla completa que parecia una recarga.
+
+   Ahora se agenda para 600 ms despues y se cancela si la respuesta llego
+   antes. Las operaciones largas -una carga masiva, un informe- lo siguen
+   mostrando con su cronometro, que es para lo que estaba. */
+var esperaModal = null;
+
 function beginReq(sender, args) {
-    // shows the Popup "ctl00_ModalProgress"
-    $find(ModalProgress).show();
+    clearTimeout(esperaModal);
 
-    $('.tiempoCarga').show();
+    esperaModal = setTimeout(function () {
+        $find(ModalProgress).show();
 
-    var lblModalMinutos = $('#lblModalMinutos');
-    var lblModalSegundos = $('#lblModalSegundos');
+        $('.tiempoCarga').show();
 
-    lblModalMinutos.html("0");
-    lblModalSegundos.html("0");
-    
-    intervaloModalTiempoCarga = setInterval(ModalTiempoCargaSegundos, 1000);
-    
+        $('#lblModalMinutos').html("0");
+        $('#lblModalSegundos').html("0");
+
+        clearInterval(intervaloModalTiempoCarga);
+        intervaloModalTiempoCarga = setInterval(ModalTiempoCargaSegundos, 1000);
+    }, 600);
 }
 
 function endReq(sender, args) {
-	//  shows the Popup 
+    clearTimeout(esperaModal);
+
     $find(ModalProgress).hide();
     clearInterval(intervaloModalTiempoCarga);
 
-    $('#lblMinutos').html($('#lblModalMinutos').html()); 
+    $('#lblMinutos').html($('#lblModalMinutos').html());
     $('#lblSegundos').html($('#lblModalSegundos').html());
-
 }
 
 // Calcula tiempo de carga cuando ejecuto ajax

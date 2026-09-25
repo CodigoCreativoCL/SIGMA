@@ -1,6 +1,7 @@
 ﻿using SitioBase.Controller;
 using SitioBase.Model;
 using System;
+using System.Collections.Generic;
 using Telerik.Web.UI;
 
 public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
@@ -100,6 +101,16 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
                 RadComboBox2 ctrl = (RadComboBox2)sender;
                 switch (ctrl.ID)
                 {
+                    case "cboPlantas":
+                        ClienteInstalacion ci = new ClienteInstalacion();
+                        ci.cin_cliente = IdCliente;
+                        ci.filtro_habilitado = "1";
+                        ctrl.EmptyMessage = "Seleccione una o más plantas";
+                        ctrl.DataSource = new ClienteInstalacionController().GetClienteInstalaciones(ci);
+                        ctrl.DataValueField = "cin_id";
+                        ctrl.DataTextField = "cin_nombre";
+                        ctrl.DataBind();
+                        break;
                     case "cboPerfil":
                         Perfil perfil = new Perfil();
                         PerfilController perfilController = new PerfilController();
@@ -183,6 +194,20 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
 
             if (!string.IsNullOrEmpty(clienteUsuario.id_perfiles))
                 cboPerfil.SetValues(clienteUsuario.id_perfiles);
+
+            /* Las plantas vigentes de la persona en este cliente, y su
+               vencimiento si todas comparten uno. */
+            List<ClienteUsuarioPlanta> plantas = clienteUsuarioController.PlantasDelUsuario(Id, IdCliente);
+            List<string> ids = new List<string>();
+            DateTime? fin = null; bool mismoFin = true;
+            foreach (ClienteUsuarioPlanta pl in plantas)
+            {
+                if (!pl.habilitada) continue;
+                ids.Add(pl.instalacion.ToString());
+                if (ids.Count == 1) fin = pl.fecha_fin; else if (fin != pl.fecha_fin) mismoFin = false;
+            }
+            if (ids.Count > 0) cboPlantas.SetValues(string.Join(",", ids.ToArray()));
+            if (mismoFin && fin.HasValue) calVigenciaFin.Value = fin;
 
 
         }
@@ -283,6 +308,19 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
                     clienteUsuario.cliente_nuevo = true;
                     respuesta = clienteUsuarioController.InsertClienteUsuario(clienteUsuario);
                     Id = respuesta.codigo;
+                }
+
+                /* HU-014 #2/#3: recien con el usuario guardado se fijan sus
+                   plantas. Sin ninguna, el SP rechaza y se le dice: el
+                   usuario existe pero no puede operar hasta tener planta. */
+                if (!respuesta.error && Id > 0)
+                {
+                    Respuesta rp = clienteUsuarioController.AsignarPlantas(Id, IdCliente, cboPlantas.dbValues(), calVigenciaFin.Value);
+                    if (rp.error)
+                    {
+                        Tools.tools.ClientAlert(respuesta.detalle + " " + rp.detalle, "alerta");
+                        return;
+                    }
                 }
 
                 if (!respuesta.error)

@@ -84,5 +84,6 @@ namespace SitioBase.Model
         public const string UbicacionRepuesto = "UBICACION_REPUESTO";
         public const string Repuesto = "REPUESTO";
         public const string Activo = "ACTIVO";
+        public const string Posicion = "POSICION";
     }
 }

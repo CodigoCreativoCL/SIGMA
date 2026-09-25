@@ -10,12 +10,17 @@ import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'nuevo_permiso_screen.dart';
+import '../../services/buscador.dart';
+import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_voz.dart';
+import 'ficha_permiso_screen.dart';
 
 /// Qué se está mirando en la bandeja.
 enum FiltroTrabajo { hoy, prioritarios, todos }
 
-final filtroTrabajoProvider =
-    StateProvider<FiltroTrabajo>((ref) => FiltroTrabajo.hoy);
+final filtroTrabajoProvider = StateProvider<FiltroTrabajo>(
+  (ref) => FiltroTrabajo.hoy,
+);
 final busquedaTrabajoProvider = StateProvider<String>((ref) => '');
 
 /// 6.1 · Mi trabajo — HU-112, HU-113, HU-121.
@@ -44,8 +49,9 @@ class PermisosTrabajoScreen extends ConsumerWidget {
     final datos = ref.watch(permisosTrabajoProvider);
     final filtro = ref.watch(filtroTrabajoProvider);
     final busqueda = ref.watch(busquedaTrabajoProvider).trim().toLowerCase();
-    final puedePedir =
-        ref.watch(tienePermisoProvider('REGISTRAR PERMISO TRABAJO'));
+    final puedePedir = ref.watch(
+      tienePermisoProvider('REGISTRAR PERMISO TRABAJO'),
+    );
 
     final todos = datos.valueOrNull?.datos ?? const <PermisoTrabajo>[];
     final hoy = todos.where(_venceHoy).toList();
@@ -58,6 +64,19 @@ class PermisosTrabajoScreen extends ConsumerWidget {
     };
     if (busqueda.isNotEmpty) {
       visibles = visibles.where((p) => _coincide(p, busqueda)).toList();
+    }
+
+    /* EL ESTADO SE CRUZA CON EL RESTO, NO LO REEMPLAZA
+
+       «Vencen hoy» y «Autorizados» son dos preguntas distintas, y la útil es
+       la de en medio: qué de lo que vence hoy ya está firmado. Por eso el
+       estado filtra sobre lo que dejaron los otros chips en vez de ser un
+       cuarto chip de la misma fila. */
+    final estado = ref.watch(estadoPermisoProvider);
+    if (estado != null) {
+      visibles = visibles
+          .where((p) => (p.ESTADO_CODIGO ?? '').toUpperCase() == estado)
+          .toList();
     }
 
     return Scaffold(
@@ -75,21 +94,25 @@ class PermisosTrabajoScreen extends ConsumerWidget {
       floatingActionButton: !puedePedir
           ? null
           : FloatingActionButton.extended(
-        heroTag: 'permiso',
-        backgroundColor: sg.primario,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: Text('Solicitar', style: sora(14, 600, color: Colors.white)),
-        onPressed: () async {
-          final ok = await Navigator.of(context).push<bool>(
-            MaterialPageRoute(builder: (_) => const NuevoPermisoScreen()),
-          );
-          if (ok == true) {
-            ref.invalidate(permisosTrabajoProvider);
-            ref.invalidate(permisosVigentesProvider);
-          }
-        },
-      ),
+              heroTag: 'permiso',
+              backgroundColor: sg.primario,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: Text(
+                'Solicitar',
+                style: sora(14, 600, color: Colors.white),
+              ),
+              onPressed: () async {
+                final ok = await Navigator.of(context).push<bool>(
+                  MaterialPageRoute(builder: (_) => const NuevoPermisoScreen()),
+                );
+                if (!context.mounted) return;
+                if (ok == true) {
+                  ref.invalidate(permisosTrabajoProvider);
+                  ref.invalidate(permisosVigentesProvider);
+                }
+              },
+            ),
       body: SafeArea(
         bottom: false,
         child: Column(
@@ -98,6 +121,13 @@ class PermisosTrabajoScreen extends ConsumerWidget {
             _Filtros(
               hoy: hoy.length,
               prioritarios: prioritarios.length,
+              // Lo que hay ANTES de aplicar el estado: contando sobre lo ya
+              // filtrado, el chip elegido diría su número y los demás cero.
+              paraContar: switch (filtro) {
+                FiltroTrabajo.hoy => hoy,
+                FiltroTrabajo.prioritarios => prioritarios,
+                FiltroTrabajo.todos => todos,
+              },
               onBuscar: (v) =>
                   ref.read(busquedaTrabajoProvider.notifier).state = v,
             ),
@@ -126,7 +156,9 @@ class PermisosTrabajoScreen extends ConsumerWidget {
                     ref.invalidate(permisosVigentesProvider);
                   },
                   child: ListView.separated(
-                    padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 0, 16, 24)),
+                    padding: context.conBarraSistema(
+                      const EdgeInsets.fromLTRB(16, 0, 16, 24),
+                    ),
                     itemCount: visibles.length,
                     separatorBuilder: (_, _) => const SizedBox(height: 11),
                     itemBuilder: (_, i) => _Tarjeta(
@@ -152,14 +184,15 @@ class PermisosTrabajoScreen extends ConsumerWidget {
     return s == 'VENCIDO' || s == 'POR VENCER';
   }
 
-  static bool _coincide(PermisoTrabajo p, String f) => [
-        p.ptr_numero,
-        p.TIPO_NOMBRE,
-        p.ESTADO_NOMBRE,
-        p.ORDEN_CORRELATIVO ?? '',
-        p.ORDEN_TITULO ?? '',
-        p.SOLICITANTE_NOMBRE ?? '',
-      ].any((s) => s.toLowerCase().contains(f));
+  /// Misma tolerancia que la bandeja de órdenes: ver `coincideBusqueda`.
+  static bool _coincide(PermisoTrabajo p, String f) => coincideBusqueda(f, [
+    p.ptr_numero,
+    p.TIPO_NOMBRE,
+    p.ESTADO_NOMBRE,
+    p.ORDEN_CORRELATIVO,
+    p.ORDEN_TITULO,
+    p.SOLICITANTE_NOMBRE,
+  ]);
 }
 
 class _Cabecera extends StatelessWidget {
@@ -168,21 +201,28 @@ class _Cabecera extends StatelessWidget {
     final sg = context.sg;
 
     return SizedBox(
-      height: 60,
+      // Un titulo grande en una caja fija: con la letra en Maximo se queda
+      //    corta.
+      height: context.alto(60),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16),
         child: Row(
           children: [
             Expanded(
-              child: Text('Mi trabajo',
-                  style: sora(23, 700, color: sg.tinta, espaciado: -0.46)),
+              child: Text(
+                'Mi trabajo',
+                style: sora(23, 700, color: sg.tinta, espaciado: -0.46),
+              ),
             ),
             ValueListenableBuilder<bool>(
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ],
         ),
@@ -195,11 +235,16 @@ class _Filtros extends ConsumerStatefulWidget {
   const _Filtros({
     required this.hoy,
     required this.prioritarios,
+    required this.paraContar,
     required this.onBuscar,
   });
 
   final int hoy;
   final int prioritarios;
+
+  /// Los permisos sobre los que se cuenta cada estado.
+  final List<PermisoTrabajo> paraContar;
+
   final ValueChanged<String> onBuscar;
 
   @override
@@ -234,7 +279,8 @@ class _FiltrosState extends ConsumerState<_Filtros> {
               boxShadow: sg.e1,
             ),
             child: Container(
-              height: 52,
+              // El campo de busqueda es texto.
+              height: context.alto(52),
               padding: const EdgeInsets.only(left: 18, right: 8),
               decoration: BoxDecoration(
                 color: sg.campo,
@@ -258,43 +304,70 @@ class _FiltrosState extends ConsumerState<_Filtros> {
                       ),
                     ),
                   ),
-                  SgBotonIcono(Icons.mic_none,
-                      color: sg.primarioTexto,
-                      tamano: 20,
-                      onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                                content: Text(
-                                    'El dictado por voz llega más adelante.')),
-                          )),
+                  // Mismo caso que la busqueda de existencias: el dictado ya
+                  // estaba resuelto y el boton solo se disculpaba.
+                  SgBotonIcono(
+                    Icons.mic_none,
+                    color: sg.primarioTexto,
+                    tamano: 20,
+                    onTap: () async {
+                      final campos = await mostrarPanelVoz(
+                        context,
+                        titulo: 'Buscar un permiso',
+                        interpretar: (t) => [
+                          CampoDictado(
+                            clave: 'busqueda',
+                            rotulo: 'Buscar',
+                            valor: InterpreteVoz.normalizar(t),
+                          ),
+                        ],
+                      );
+                      if (campos == null || campos.isEmpty) return;
+                      final texto = campos.first.valor;
+                      escribirDictado(_buscar, texto);
+                      widget.onBuscar(texto);
+                    },
+                  ),
                 ],
               ),
             ),
           ),
           const SizedBox(height: 11),
-          Row(
-            children: [
-              _ChipFiltro(
-                texto: 'Hoy',
-                contador: widget.hoy,
-                elegido: filtro == FiltroTrabajo.hoy,
-                onTap: () => _cambiar(FiltroTrabajo.hoy),
-              ),
-              const SizedBox(width: 8),
-              _ChipFiltro(
-                texto: 'Prioritarios',
-                contador: widget.prioritarios,
-                colorContador: SgColor.rojo,
-                elegido: filtro == FiltroTrabajo.prioritarios,
-                onTap: () => _cambiar(FiltroTrabajo.prioritarios),
-              ),
-              const SizedBox(width: 8),
-              _ChipFiltro(
-                texto: 'Todos',
-                elegido: filtro == FiltroTrabajo.todos,
-                onTap: () => _cambiar(FiltroTrabajo.todos),
-              ),
-            ],
+          /* Scrollable por lo mismo que la fila de ordenes: «Prioritarios» con
+             su contador es larga, y en un telefono angosto el tercer chip se
+             salia de la pantalla sin recibir toques. Los chips de estado, mas
+             abajo, ya scrolleaban. */
+          SizedBox(
+            // Igual que su gemelo de la bandeja de órdenes.
+            height: context.alto(36),
+            child: ListView(
+              scrollDirection: Axis.horizontal,
+              padding: EdgeInsets.zero,
+              children: [
+                _ChipFiltro(
+                  texto: 'Hoy',
+                  contador: widget.hoy,
+                  elegido: filtro == FiltroTrabajo.hoy,
+                  onTap: () => _cambiar(FiltroTrabajo.hoy),
+                ),
+                const SizedBox(width: 8),
+                _ChipFiltro(
+                  texto: 'Prioritarios',
+                  contador: widget.prioritarios,
+                  colorContador: SgColor.rojo,
+                  elegido: filtro == FiltroTrabajo.prioritarios,
+                  onTap: () => _cambiar(FiltroTrabajo.prioritarios),
+                ),
+                const SizedBox(width: 8),
+                _ChipFiltro(
+                  texto: 'Todos',
+                  elegido: filtro == FiltroTrabajo.todos,
+                  onTap: () => _cambiar(FiltroTrabajo.todos),
+                ),
+              ],
+            ),
           ),
+          _ChipsEstado(paraContar: widget.paraContar),
         ],
       ),
     );
@@ -302,6 +375,85 @@ class _FiltrosState extends ConsumerState<_Filtros> {
 
   void _cambiar(FiltroTrabajo f) =>
       ref.read(filtroTrabajoProvider.notifier).state = f;
+}
+
+/// Filtrar por el estado del permiso.
+///
+/// ## Por qué hacía falta
+///
+/// Sin esto, ver «qué tengo autorizado» obligaba a recorrer la lista entera
+/// buscando el badge. La pregunta de la mañana —qué puedo empezar a trabajar
+/// ya— no tenía respuesta en una pantalla.
+///
+/// ## Sale del catálogo, no de una lista escrita acá
+///
+/// Los estados los define `Permiso_Trabajo_Estado` y bajan en la sábana, así
+/// que los chips aparecen **también sin señal** y el día que se agregue uno
+/// nuevo sale solo, sin publicar una versión de la app.
+///
+/// ## Solo se dibujan los que tienen algo
+///
+/// Un chip que siempre da cero ocupa sitio y enseña a ignorar la fila —la
+/// misma regla que ya usan los oficios en `HojaCompanero` y la estrella de
+/// favoritos en la bandeja—. Si no queda ninguno, la fila entera desaparece.
+class _ChipsEstado extends ConsumerWidget {
+  const _ChipsEstado({required this.paraContar});
+
+  final List<PermisoTrabajo> paraContar;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final estados = ref.watch(estadosPermisoProvider).valueOrNull;
+    if (estados == null || estados.isEmpty) return const SizedBox.shrink();
+
+    final cuantos = <String, int>{};
+    for (final p in paraContar) {
+      final c = (p.ESTADO_CODIGO ?? '').toUpperCase();
+      if (c.isEmpty) continue;
+      cuantos[c] = (cuantos[c] ?? 0) + 1;
+    }
+
+    final conAlgo = estados
+        .where((e) => (cuantos[e.codigo.toUpperCase()] ?? 0) > 0)
+        .toList();
+    if (conAlgo.isEmpty) return const SizedBox.shrink();
+
+    final elegido = ref.watch(estadoPermisoProvider);
+
+    return Padding(
+      padding: const EdgeInsets.only(top: 9),
+      child: SizedBox(
+        // Al mismo paso que el chip que lleva dentro.
+        height: context.alto(30),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          itemCount: conAlgo.length + 1,
+          separatorBuilder: (_, _) => const SizedBox(width: 8),
+          itemBuilder: (_, i) {
+            if (i == 0) {
+              return SgChip(
+                'Cualquier estado',
+                elegido: elegido == null,
+                onTap: () =>
+                    ref.read(estadoPermisoProvider.notifier).state = null,
+              );
+            }
+            final e = conAlgo[i - 1];
+            final codigo = e.codigo.toUpperCase();
+            return SgChip(
+              e.nombre,
+              elegido: elegido == codigo,
+              contador: cuantos[codigo],
+              // Volver a tocar el chip elegido lo suelta: sin eso, para quitar
+              // el filtro hay que acordarse de que existe «Cualquier estado».
+              onTap: () => ref.read(estadoPermisoProvider.notifier).state =
+                  elegido == codigo ? null : codigo,
+            );
+          },
+        ),
+      ),
+    );
+  }
 }
 
 /// El chip de 34 de la bandeja.
@@ -333,7 +485,7 @@ class _ChipFiltro extends StatelessWidget {
       onTap: onTap,
       borderRadius: BorderRadius.circular(SgRadius.pill),
       child: Container(
-        height: 34,
+        height: context.alto(34),
         padding: const EdgeInsets.symmetric(horizontal: 14),
         decoration: BoxDecoration(
           color: elegido ? sg.primario : sg.up,
@@ -346,7 +498,7 @@ class _ChipFiltro extends StatelessWidget {
             if (contador != null && contador! > 0) ...[
               const SizedBox(width: 7),
               Container(
-                height: 19,
+                height: context.alto(19),
                 constraints: const BoxConstraints(minWidth: 19),
                 padding: const EdgeInsets.symmetric(horizontal: 5),
                 decoration: BoxDecoration(
@@ -356,8 +508,10 @@ class _ChipFiltro extends StatelessWidget {
                   borderRadius: BorderRadius.circular(SgRadius.pill),
                 ),
                 alignment: Alignment.center,
-                child: Text('${contador!}',
-                    style: sora(11, 700, color: Colors.white)),
+                child: Text(
+                  '${contador!}',
+                  style: sora(11, 700, color: Colors.white),
+                ),
               ),
             ],
           ],
@@ -393,6 +547,15 @@ class _Tarjeta extends StatelessWidget {
 
     return SgCard(
       padding: const EdgeInsets.all(14),
+      // La ficha responde «¿puedo trabajar?», que es para lo que se abre.
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => FichaPermisoScreen(
+            permisoId: permiso.ptr_id,
+            numeroConocido: permiso.ptr_numero,
+          ),
+        ),
+      ),
       elevada: destacada,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -418,26 +581,29 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         SgBadge(situacion, color: color, chico: true),
                         if (permiso.TIPO_NOMBRE.isNotEmpty)
-                          SgBadge(permiso.TIPO_NOMBRE,
-                              color: sg.tinta2, chico: true),
+                          SgBadge(
+                            permiso.TIPO_NOMBRE,
+                            color: sg.tinta2,
+                            chico: true,
+                          ),
                       ],
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      [permiso.ptr_numero, permiso.ORDEN_TITULO]
-                          .where((s) => (s ?? '').isNotEmpty)
-                          .join(' · '),
+                      [
+                        permiso.ptr_numero,
+                        permiso.ORDEN_TITULO,
+                      ].where((s) => (s ?? '').isNotEmpty).join(' · '),
                       style: sora(16, 600, color: sg.tinta, alto: 1.35),
                     ),
                     const SizedBox(height: 6),
                     Row(
                       children: [
                         Icon(
-                            fin == null
-                                ? Icons.place_outlined
-                                : Icons.schedule,
-                            size: 14,
-                            color: fin == null ? sg.tinta3 : color),
+                          fin == null ? Icons.place_outlined : Icons.schedule,
+                          size: 14,
+                          color: fin == null ? sg.tinta3 : color,
+                        ),
                         const SizedBox(width: 5),
                         Expanded(
                           child: Text(
@@ -446,8 +612,11 @@ class _Tarjeta extends StatelessWidget {
                               if (permiso.SOLICITANTE_NOMBRE != null)
                                 permiso.SOLICITANTE_NOMBRE!,
                             ].join(' · '),
-                            style: sora(12, 500,
-                                color: fin == null ? sg.tinta3 : color),
+                            style: sora(
+                              12,
+                              500,
+                              color: fin == null ? sg.tinta3 : color,
+                            ),
                             overflow: TextOverflow.ellipsis,
                           ),
                         ),
@@ -472,8 +641,10 @@ class _Tarjeta extends StatelessWidget {
                       children: [
                         Container(height: 6, color: sg.up),
                         FractionallySizedBox(
-                          widthFactor:
-                              (permiso.DIAS_RESTANTES! / 7).clamp(0.0, 1.0),
+                          widthFactor: (permiso.DIAS_RESTANTES! / 7).clamp(
+                            0.0,
+                            1.0,
+                          ),
                           child: Container(height: 6, color: color),
                         ),
                       ],

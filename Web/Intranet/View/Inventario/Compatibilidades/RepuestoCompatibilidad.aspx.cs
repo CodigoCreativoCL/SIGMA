@@ -217,6 +217,10 @@ public partial class View_Inventario_Compatibilidades_RepuestoCompatibilidad : S
         /* El repuesto se fija una sola vez: al editar no se cambia, porque
            eso sería otra afirmación y no una corrección. */
         cboRepuesto.ReadOnly = !puedeEditar || Id > 0;
+        /* Un combo ReadOnly no arma sus items en el cliente y validaControl
+           revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
+           Al editar no hay nada que validar ahi (el servidor exige el valor). */
+        cvRepuesto.Enabled = Id == 0;
 
         cboAlcance.ReadOnly = !puedeEditar;
         cboTipo.ReadOnly = !puedeEditar;

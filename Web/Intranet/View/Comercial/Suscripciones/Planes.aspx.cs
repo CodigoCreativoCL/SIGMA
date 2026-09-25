@@ -113,6 +113,6 @@ public partial class View_Comercial_Suscripciones_Planes : System.Web.UI.Page
 
         litUf.Text = "UF de hoy: <strong>" +
                      uf.Value.ToString("C2", CultureInfo.GetCultureInfo("es-CL")) +
-                     "</strong> &middot; " + DateTime.Today.ToString("dd-MM-yyyy");
+                     "</strong> &middot; " + global::SitioBase.Hora.Hoy.ToString("dd-MM-yyyy");
     }
 }

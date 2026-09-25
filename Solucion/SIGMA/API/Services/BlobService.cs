@@ -195,6 +195,53 @@ namespace API.Services
         }
 
         /// <summary>
+        /// Los blobs bajo un prefijo, sin contenido: nombre, tamaño y fecha.
+        ///
+        /// Nació para leer los artefactos que Azure ML deja en el
+        /// almacenamiento del área de trabajo (bloque 246): el registro de
+        /// modelos escribe en la misma cuenta a la que este SAS accede, así
+        /// que la API puede ir a buscar el .onnx registrado sin Entra ID.
+        /// </summary>
+        public List<ContenidoBlob> Listar(string contenedor, string prefijo)
+        {
+            Exigir();
+
+            List<ContenidoBlob> lista = new List<ContenidoBlob>();
+
+            string url = Endpoint() + "/" + Uri.EscapeDataString(contenedor) +
+                         "?restype=container&comp=list&prefix=" + Uri.EscapeDataString(prefijo ?? "") + "&" + Sas();
+
+            string xml;
+
+            using (WebClient wc = Preparar())
+            {
+                xml = wc.DownloadString(url);
+            }
+
+            System.Xml.Linq.XDocument doc = System.Xml.Linq.XDocument.Parse(xml);
+
+            foreach (System.Xml.Linq.XElement b in doc.Descendants("Blob"))
+            {
+                System.Xml.Linq.XElement props = b.Element("Properties");
+                ContenidoBlob c = new ContenidoBlob { existe = true };
+                c.nombre = (string)b.Element("Name");
+
+                long tam;
+                if (props != null && long.TryParse((string)props.Element("Content-Length"), out tam)) c.tamano = tam;
+                if (props != null) c.mime = (string)props.Element("Content-Type");
+
+                DateTime mod;
+                if (props != null && DateTime.TryParse((string)props.Element("Last-Modified"), null,
+                                                       System.Globalization.DateTimeStyles.AdjustToUniversal, out mod))
+                    c.modificado = mod;
+
+                lista.Add(c);
+            }
+
+            return lista;
+        }
+
+        /// <summary>
         /// Lee el blob CON su descripcion: el contenido, el mime con el que
         /// se guardo, el tamano y cuando se modifico.
         ///

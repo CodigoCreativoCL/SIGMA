@@ -23,6 +23,8 @@ namespace SitioBase.Model
         public decimal ame_valor_actual { get; set; }
         public DateTime? ame_fecha_valor_actual_utc { get; set; }
         public decimal? ame_valor_reinicio { get; set; }
+        /// <summary>Lo que el medidor puede avanzar por dia; un salto mayor deja la lectura pendiente de revision (HU-043 #2). Nulo: sin control.</summary>
+        public decimal? ame_maximo_diario { get; set; }
         public bool ame_permite_reinicio { get; set; }
         public int ame_usuario_creacion { get; set; }
         public DateTime? ame_fecha_creacion { get; set; }

@@ -3,10 +3,20 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:path_provider/path_provider.dart';
 
 import 'outbox_service.dart';
 
-/// Una foto sacada en terreno, todavía sin enviar.
+/// Qué clase de evidencia es. Decide el ícono, el tope de peso en el servidor
+/// y con qué se abre en el teléfono.
+enum ClaseEvidencia { foto, audio, video }
+
+/// Una evidencia capturada en terreno, todavía sin enviar.
+///
+/// Se sigue llamando `FotoTomada` porque es el nombre que usan las cinco
+/// pantallas que la reciben, y renombrarlo tocaría todas para no ganar nada;
+/// pero ya no es solo una foto: también una nota de voz o un video.
 class FotoTomada {
   const FotoTomada({
     required this.uuid,
@@ -14,6 +24,9 @@ class FotoTomada {
     required this.bytes,
     this.ancho,
     this.alto,
+    this.clase = ClaseEvidencia.foto,
+    this.mime = 'image/jpeg',
+    this.segundos,
   });
 
   /// Generado al **sacar** la foto, no al enviarla. Una foto tomada sin señal
@@ -25,6 +38,20 @@ class FotoTomada {
   final int bytes;
   final int? ancho;
   final int? alto;
+
+  final ClaseEvidencia clase;
+
+  /// El mime real. Antes se mandaba `image/jpeg` en duro: para un .m4a eso
+  /// significa que el servidor le pone extensión .jpg y después no lo abre
+  /// nada.
+  final String mime;
+
+  /// Cuánto dura, si es audio o video. Para pintarlo en la miniatura: una nota
+  /// de voz sin duración obliga a abrirla para saber si son diez segundos o
+  /// tres minutos.
+  final int? segundos;
+
+  bool get esFoto => clase == ClaseEvidencia.foto;
 }
 
 /// Sacar fotos de evidencia.
@@ -37,12 +64,19 @@ class FotoTomada {
 /// que lo que queda en la cola de salida ya es pequeño —importante, porque esa
 /// cola espera en el teléfono hasta que haya señal, a veces horas—.
 ///
-/// ## El audio no se guarda, la foto sí
+/// ## El audio del DICTADO no se guarda; la nota de voz sí
 ///
-/// Son cosas distintas y conviene decirlo: la voz se transcribe y se descarta
-/// porque el texto sirve igual y grabar a la gente trabajando es una carga de
-/// privacidad innecesaria. La foto **es** la evidencia; sin ella no queda nada
-/// que mirar después.
+/// Son dos cosas distintas y la diferencia importa. Cuando alguien **dicta**
+/// para llenar un campo, la voz se transcribe y se descarta: el texto sirve
+/// igual y guardar la grabación sería una carga de privacidad sin uso.
+///
+/// Una **nota de voz** adjuntada a propósito a una entrada de bitácora o a una
+/// tarea es lo contrario: es evidencia, la persona decidió dejarla, y a veces
+/// dice lo que un texto no —el ruido del rodamiento, por ejemplo—. Esa se
+/// sube y se conserva, igual que la foto.
+///
+/// El límite es quién decide: el dictado lo descarta la app, la nota la guarda
+/// porque se la pidieron.
 class EvidenciaService {
   EvidenciaService._();
 
@@ -54,6 +88,11 @@ class EvidenciaService {
   /// el archivo baja de ~4 MB a unos 300 KB.
   static const double _anchoMaximo = 1600;
   static const int _calidad = 82;
+
+  /// Por encima de esto se recomprime. 800 KB es holgado para 1600 px al 82 %
+  /// —una foto asi ronda los 300 KB—, asi que solo se activa con las que de
+  /// verdad vienen sin achicar.
+  static const int _pesoMaximo = 800 * 1024;
 
   /// Saca una foto con la cámara. Devuelve null si la persona canceló.
   Future<FotoTomada?> tomar() => _obtener(ImageSource.camera);
@@ -88,18 +127,21 @@ class EvidenciaService {
       final x = perdida.file;
       if (x == null) {
         // Hubo un error del sistema, no una foto a medias.
-        debugPrint('[Evidencia] Dato perdido sin archivo: ${perdida.exception}');
+        debugPrint(
+          '[Evidencia] Dato perdido sin archivo: ${perdida.exception}',
+        );
         return null;
       }
 
       final archivo = File(x.path);
       if (!await archivo.exists()) return null;
 
-      return FotoTomada(
-        uuid: OutboxService.nuevoUuid(),
-        archivo: archivo,
-        bytes: await archivo.length(),
-      );
+      /* POR EL MISMO REDUCTOR QUE LAS DEMAS
+
+         Este es el camino que NO pasa por las opciones de `pickImage`: lo que
+         devuelve `retrieveLostData` puede venir sin achicar. Era el hueco por
+         el que entraban fotos de megas a la cola. */
+      return _comoEvidencia(archivo);
     } catch (e) {
       debugPrint('[Evidencia] No se pudo recuperar la foto perdida: $e');
       return null;
@@ -115,13 +157,104 @@ class EvidenciaService {
 
     if (x == null) return null;
 
+    return _comoEvidencia(File(x.path));
+  }
+
+  /// TODA imagen pasa por aquí antes de entrar a la cola.
+  ///
+  /// ## Por qué no basta con las opciones de `pickImage`
+  ///
+  /// Porque hay un camino que no pasa por ellas: [recuperarPerdida]. Cuando
+  /// Android mata la app con la cámara abierta, `retrieveLostData` devuelve el
+  /// archivo que quedó en el disco del sistema, y **no está garantizado que
+  /// lleve aplicados el ancho y la calidad** que se pidieron. Una foto de
+  /// cuatro megas entrando a la cola es justo lo que la hace pesada, y esa cola
+  /// espera en el teléfono hasta que haya señal.
+  ///
+  /// Con el reductor acá, da igual por dónde llegue la imagen.
+  ///
+  /// ## Por qué se comprueba antes de recomprimir
+  ///
+  /// Recomprimir un JPEG ya comprimido pierde calidad sin ganar tamaño. Si la
+  /// foto ya viene por debajo del umbral —el caso normal, porque `pickImage`
+  /// ya la achicó— se deja tal cual.
+  Future<FotoTomada> _comoEvidencia(File archivo) async {
+    var bytes = await archivo.length();
+    var salida = archivo;
+
+    if (bytes > _pesoMaximo) {
+      final comprimida = await _reducir(archivo);
+      if (comprimida != null) {
+        salida = comprimida;
+        bytes = await comprimida.length();
+      }
+    }
+
+    return FotoTomada(
+      uuid: OutboxService.nuevoUuid(),
+      archivo: salida,
+      bytes: bytes,
+    );
+  }
+
+  /// Reduce una imagen a [_anchoMaximo] de ancho y [_calidad] de calidad.
+  ///
+  /// Devuelve null si no se pudo: en ese caso se sube la original, que es
+  /// preferible a perder la evidencia por no poder achicarla.
+  Future<File?> _reducir(File original) async {
+    try {
+      final dir = await getTemporaryDirectory();
+      final destino = '${dir.path}/ev_${OutboxService.nuevoUuid()}.jpg';
+
+      final salida = await FlutterImageCompress.compressAndGetFile(
+        original.absolute.path,
+        destino,
+        minWidth: _anchoMaximo.round(),
+        quality: _calidad,
+        // La foto de terreno se mira, no se imprime: la orientación EXIF hay
+        // que aplicarla, o media planta sale de lado.
+        autoCorrectionAngle: true,
+      );
+
+      if (salida == null) return null;
+
+      final f = File(salida.path);
+      return await f.exists() ? f : null;
+    } catch (e) {
+      debugPrint('[Evidencia] No se pudo reducir la imagen: $e');
+      return null;
+    }
+  }
+
+  /// Graba un video con la cámara.
+  ///
+  /// Un minuto de tope: no es un documental, es «mira cómo suena esto girando».
+  /// Y el tope del servidor son 48 MB, que un video largo pasa sin esfuerzo.
+  Future<FotoTomada?> grabarVideo() => _video(ImageSource.camera);
+
+  /// Elige un video de la galería.
+  Future<FotoTomada?> elegirVideo() => _video(ImageSource.gallery);
+
+  Future<FotoTomada?> _video(ImageSource origen) async {
+    final XFile? x = await _selector.pickVideo(
+      source: origen,
+      maxDuration: const Duration(minutes: 1),
+    );
+
+    if (x == null) return null;
+
     final archivo = File(x.path);
-    final bytes = await archivo.length();
 
     return FotoTomada(
       uuid: OutboxService.nuevoUuid(),
       archivo: archivo,
-      bytes: bytes,
+      bytes: await archivo.length(),
+      clase: ClaseEvidencia.video,
+      // Lo que graban Android y iOS por omisión. La galería puede traer otra
+      // cosa, y para eso está el mapa de extensiones del servidor.
+      mime: x.path.toLowerCase().endsWith('.mov')
+          ? 'video/quicktime'
+          : 'video/mp4',
     );
   }
 
@@ -147,7 +280,9 @@ class EvidenciaService {
       'destino_id': destinoId,
       'categoria': categoria,
       'nombre': foto.archivo.uri.pathSegments.last,
-      'mime': 'image/jpeg',
+      // El mime REAL. En duro era 'image/jpeg', asi que un .m4a llegaba al
+      // servidor como foto, se guardaba con extension .jpg y no lo abria nada.
+      'mime': foto.mime,
       'contenido_base64': base64Encode(datos),
       'captura_utc': DateTime.now().toUtc().toIso8601String(),
       'titulo': ?titulo,

@@ -259,6 +259,7 @@
 
                 reemplazar(nuevoRoot, '.sg-detalle');
 
+
                 var panel = uno('.sg-detalle', root);
                 if (panel) panel.removeAttribute('data-sg-esqueleto');
 
@@ -423,6 +424,7 @@
         mostrarPanel('[data-sg-cao-asignar]', false);
         mostrarPanel('[data-sg-cao-cierre]', true);
     }
+
 
     function ejecutarAccion(accion) {
         if (accion === 'limpiar-filtros') {

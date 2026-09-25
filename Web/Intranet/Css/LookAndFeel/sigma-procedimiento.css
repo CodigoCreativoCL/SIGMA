@@ -202,3 +202,523 @@
 
 /* --------------------------------------------------------- opciones (radios) */
 .sg-proc-form .sigma-modal-opciones { display: flex; gap: 18px; align-items: center; }
+
+/* ============================================================================
+   PROCEDIMIENTO Y PASOS EN UNA SOLA PANTALLA
+
+   Antes esta ficha era solo la cabecera de la receta y los pasos vivian en
+   otro menu. Ahora la pantalla tiene tres zonas y cada una tiene un trabajo:
+
+   1. El resumen (.sg-pr-resumen) deja a la vista lo que se consulta seguido
+      -a que aplica, cuanto dura, si exige permiso- y esconde el formulario
+      detras de "Editar datos". Con el formulario desplegado, los pasos
+      quedaban abajo del pliegue, y los pasos son lo que se viene a hacer.
+   2. La lista (.sg-pr-lista) numera y reordena.
+   3. El editor (.sg-pr-editor) edita el paso elegido sin abrir otra ventana.
+
+   Las dos columnas tienen ALTO PROPIO y desplazan por dentro: una receta de
+   treinta pasos estiraba la pagina y dejaba el editor fuera de la pantalla,
+   asi que elegir el paso veintiocho obligaba a subir para escribirlo.
+   ============================================================================ */
+
+/* ---------------------------------------------------------------- resumen --- */
+.sg-pr-resumen {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin: 0 0 16px;
+    padding: 14px 16px;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #fbfaff, #fff);
+}
+.sg-pr-res-txt { min-width: 0; }
+.sg-pr-res-cod {
+    font-size: 14px;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: .2px;
+}
+.sg-pr-res-ver { font-weight: 500; color: #9ca3af; }
+
+.sg-pr-chips { display: flex; flex-wrap: wrap; align-items: center; gap: 7px; margin-top: 7px; }
+.sg-pr-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 9px;
+    border-radius: 999px;
+    background: #f4f4f8;
+    color: #4b5563;
+    font-size: 11.5px;
+    line-height: 1.6;
+}
+.sg-pr-chip i { font-size: 14px; color: #9aa2b1; }
+
+/* Los botones planos de esta pantalla: los de la ficha son <input type=submit>
+   y estos son <a>, asi que no heredan nada de .sg-proc-cab-acciones. */
+a.sg-pr-btn-secundario,
+a.sg-pr-btn-secundario:hover,
+a.sg-pr-btn-secundario:focus {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 34px;
+    padding: 0 13px;
+    border: 1px solid #e3e6ef;
+    border-radius: 9px;
+    background: #fff;
+    color: #4b5563;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background .12s ease, border-color .12s ease, color .12s ease;
+}
+a.sg-pr-btn-secundario:hover { background: #f5f3ff; border-color: #ddd6fe; color: #5b4bd6; }
+a.sg-pr-btn-secundario i { font-size: 15px; }
+
+.sg-pr-datos { margin-bottom: 18px; }
+
+/* ------------------------------------------------------- las dos columnas --- */
+.sg-pr-cols {
+    display: grid;
+    grid-template-columns: minmax(280px, 380px) minmax(0, 1fr);
+    gap: 16px;
+    align-items: stretch;
+}
+@media (max-width: 900px) {
+    .sg-pr-cols { grid-template-columns: 1fr; }
+}
+
+.sg-pr-lista,
+.sg-pr-editor {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+}
+.sg-pr-lista { max-height: 62vh; }
+.sg-pr-editor { max-height: 62vh; overflow-y: auto; padding: 16px; }
+@media (max-width: 900px) {
+    .sg-pr-lista, .sg-pr-editor { max-height: none; }
+}
+
+/* ---- cabecera de la lista ---- */
+.sg-pr-lista-cab {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f1f5;
+}
+.sg-pr-lista-tit { display: block; font-size: 13.5px; font-weight: 700; color: #111827; }
+.sg-pr-lista-sub { display: block; font-size: 11.5px; color: #9ca3af; margin-top: 1px; }
+
+a.sg-pr-btn-plano,
+a.sg-pr-btn-plano:hover,
+a.sg-pr-btn-plano:focus {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 5px 9px;
+    border-radius: 8px;
+    color: #5b4bd6;
+    font-size: 12px;
+    font-weight: 500;
+    text-decoration: none;
+}
+a.sg-pr-btn-plano:hover { background: #f5f3ff; }
+a.sg-pr-btn-plano i { font-size: 15px; }
+
+/* ---- aviso de minutos ---- */
+.sg-pr-aviso-min {
+    flex: 0 0 auto;
+    display: flex;
+    gap: 8px;
+    margin: 10px 12px 0;
+    padding: 9px 11px;
+    border: 1px solid #fde68a;
+    border-radius: 10px;
+    background: #fffbeb;
+    color: #92400e;
+    font-size: 11.5px;
+    line-height: 1.45;
+}
+.sg-pr-aviso-min i { font-size: 15px; flex: 0 0 auto; }
+
+/* ---- la lista, que es lo unico que crece ---- */
+.sg-pr-pasos {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 8px;
+    scrollbar-color: #c9c1f6 transparent;
+    scrollbar-width: thin;
+}
+.sg-pr-pasos::-webkit-scrollbar { width: 6px; }
+.sg-pr-pasos::-webkit-scrollbar-thumb { border-radius: 99px; background: #cbc4ed; }
+
+.sg-pr-paso {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 11px;
+    border: 1px solid transparent;
+    transition: background .12s ease, border-color .12s ease;
+}
+.sg-pr-paso + .sg-pr-paso { margin-top: 2px; }
+.sg-pr-paso:hover { background: #fafaff; }
+.sg-pr-paso.es-elegido {
+    background: #f5f3ff;
+    border-color: #ddd6fe;
+    box-shadow: inset 2px 0 0 var(--sg-p);
+}
+.sg-pr-paso.es-baja { opacity: .62; }
+
+a.sg-pr-paso-cuerpo,
+a.sg-pr-paso-cuerpo:hover,
+a.sg-pr-paso-cuerpo:focus {
+    flex: 1 1 auto;
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 6px 9px 9px;
+    color: #111827;
+    text-decoration: none;
+}
+.sg-pr-paso-num {
+    flex: 0 0 auto;
+    width: 25px; height: 25px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 8px;
+    background: #ede9fe;
+    color: #5b4bd6;
+    font-size: 12px;
+    font-weight: 700;
+}
+.sg-pr-paso-num.es-grande { width: 34px; height: 34px; border-radius: 10px; font-size: 15px; }
+
+.sg-pr-paso-txt { min-width: 0; }
+.sg-pr-paso-nom {
+    display: block;
+    font-size: 12.8px;
+    font-weight: 500;
+    line-height: 1.35;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.sg-pr-paso-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-top: 2px;
+    font-size: 11px;
+    color: #9ca3af;
+}
+.sg-pr-paso-meta .es-marca { display: inline-flex; align-items: center; gap: 3px; }
+.sg-pr-paso-meta .es-marca i { font-size: 13px; }
+.sg-pr-paso-meta .es-baja { color: #b91c1c; }
+
+.sg-pr-paso-acc { flex: 0 0 auto; display: flex; align-items: center; padding-right: 5px; }
+
+a.sg-pr-icono,
+a.sg-pr-icono:hover,
+a.sg-pr-icono:focus {
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 7px;
+    color: #9aa2b1;
+    font-size: 15px;
+    text-decoration: none;
+    transition: background .12s ease, color .12s ease;
+}
+a.sg-pr-icono:hover { background: #ede9fe; color: #5b4bd6; }
+a.sg-pr-icono.es-quita:hover { background: #fee2e2; color: #b91c1c; }
+/* Un LinkButton deshabilitado se pinta como <span>: hay que apagarlo igual. */
+.sg-pr-paso-acc span.sg-pr-icono {
+    width: 26px; height: 26px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #e3e6ef;
+    font-size: 15px;
+}
+
+/* ---- pie de la lista ---- */
+.sg-pr-lista-pie {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    border-top: 1px solid #f0f1f5;
+    background: #fcfcfe;
+}
+a.sg-pr-btn-agregar,
+a.sg-pr-btn-agregar:hover,
+a.sg-pr-btn-agregar:focus {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    height: 34px;
+    border: 1px dashed #c4b5fd;
+    border-radius: 9px;
+    color: #5b4bd6;
+    font-size: 12.5px;
+    font-weight: 500;
+    text-decoration: none;
+    transition: background .12s ease, border-color .12s ease;
+}
+a.sg-pr-btn-agregar:hover { background: #f5f3ff; border-color: var(--sg-p); }
+a.sg-pr-btn-agregar i { font-size: 16px; }
+
+/* ---- estados vacios ---- */
+.sg-pr-vacio {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    padding: 34px 18px;
+    text-align: center;
+}
+.sg-pr-vacio i { font-size: 30px; color: #d6d9e3; }
+.sg-pr-vacio p { margin: 6px 0 0; font-size: 13px; font-weight: 500; color: #4b5563; }
+.sg-pr-vacio span { font-size: 11.5px; color: #9ca3af; }
+.sg-pr-vacio.es-editor { height: 100%; }
+
+/* ------------------------------------------------------------- el editor --- */
+.sg-pr-editor-cab { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+.sg-pr-editor-tit { font-size: 14px; font-weight: 700; color: #111827; }
+.sg-pr-editor-sub { font-size: 11.5px; color: #9ca3af; margin-top: 1px; }
+
+/* Los interruptores. La casilla es la de ASP.NET -un <input type=checkbox>-,
+   asi que se agranda y se colorea en vez de reemplazarla: una casilla propia
+   con un <span> perderia el foco de teclado y el postback del AutoPostBack. */
+.sg-pr-toggles { display: grid; gap: 8px; margin-top: 14px; }
+label.sg-pr-toggle {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin: 0;
+    padding: 10px 12px;
+    border: 1px solid #eef0f6;
+    border-radius: 11px;
+    background: #fcfcfe;
+    cursor: pointer;
+    font-weight: 400;
+    transition: border-color .12s ease, background .12s ease;
+}
+label.sg-pr-toggle:hover { border-color: #ddd6fe; background: #fbfaff; }
+label.sg-pr-toggle input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 17px; height: 17px;
+    margin: 1px 0 0;
+    accent-color: var(--sg-p);
+    cursor: pointer;
+}
+/* El <label> que ASP.NET pega al lado de la casilla va vacio: el texto lo
+   pone el span de al lado. Sin esto queda un hueco de 4px. */
+label.sg-pr-toggle input[type="checkbox"] + label { display: none; }
+.sg-pr-toggle-txt { display: block; min-width: 0; }
+.sg-pr-toggle-txt strong { display: block; font-size: 12.8px; font-weight: 600; color: #111827; }
+.sg-pr-toggle-txt em { display: block; font-size: 11.5px; font-style: normal; color: #9ca3af; line-height: 1.45; margin-top: 1px; }
+
+.sg-pr-variable { margin: 2px 0 2px 27px; }
+.sg-pr-variable.es-oculta { display: none; }
+.sg-pr-variable label { display: block; font-size: 11.5px; font-weight: 500; color: #4b5563; margin-bottom: 4px; }
+
+/* ------------------------------------------------------- carga masiva ----- */
+.sg-pr-carga {
+    border: 1px solid var(--sg-borde);
+    border-radius: 14px;
+    background: #fff;
+    overflow: hidden;
+}
+.sg-pr-carga-cab {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 16px 10px;
+}
+.sg-pr-carga-tit { margin: 3px 0 0; font-size: 17px; font-weight: 600; color: #111827; }
+
+/* El paso 1-2-3. Es informativo: no se navega haciendo clic, se avanza con
+   los botones, porque el paso 2 no existe hasta que hay un archivo leido. */
+.sg-pr-stepper {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    list-style: none;
+    margin: 0;
+    padding: 0 16px 14px;
+    border-bottom: 1px solid #f0f1f5;
+}
+.sg-pr-stepper li {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+.sg-pr-stepper li + li::before {
+    content: '';
+    width: 22px; height: 1px;
+    margin-right: 7px;
+    background: #e3e6ef;
+}
+.sg-pr-stepper li span {
+    width: 21px; height: 21px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px;
+    background: #f0f1f5;
+    color: #9ca3af;
+    font-size: 11px;
+    font-weight: 700;
+}
+.sg-pr-stepper li.es-actual { color: #111827; font-weight: 600; }
+.sg-pr-stepper li.es-actual span { background: var(--sg-p); color: #fff; }
+.sg-pr-stepper li.es-hecho span { background: #ddd6fe; color: #5b4bd6; }
+
+.sg-pr-carga-cuerpo { padding: 14px 16px 16px; }
+.sg-pr-carga-ayuda { margin: 0 0 14px; font-size: 12.5px; line-height: 1.55; color: #6b7280; }
+.sg-pr-carga-ayuda strong { color: #374151; }
+.sg-pr-modo { display: flex; gap: 16px; align-items: center; }
+.sg-pr-file { font-size: 12.5px; }
+
+.sg-pr-carga-pie {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid #f0f1f5;
+}
+.sg-pr-carga-pie input[type="submit"] {
+    height: 36px;
+    padding: 0 16px;
+    border: 0;
+    border-radius: 9px;
+    background: var(--sg-p);
+    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
+}
+.sg-pr-carga-pie input[type="submit"]:hover { filter: brightness(1.07); }
+.sg-pr-carga-pie input[type="submit"].ButtonCerrar {
+    background: #fff;
+    border: 1px solid #e3e6ef;
+    color: #4b5563;
+    font-weight: 500;
+}
+.sg-pr-carga-pie input[type="submit"].ButtonCerrar:hover { background: #f9fafb; filter: none; }
+
+/* ---- conteos y tabla de revision ---- */
+.sg-pr-carga-conteo { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+.sg-pr-conteo {
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: #f4f4f8;
+    color: #4b5563;
+    font-size: 11.5px;
+    font-weight: 500;
+}
+.sg-pr-conteo.es-ok { background: #dcfce7; color: #15803d; }
+.sg-pr-conteo.es-mal { background: #fee2e2; color: #b91c1c; }
+
+.sg-pr-tabla {
+    border: 1px solid #eef0f6;
+    border-radius: 11px;
+    overflow: hidden;
+}
+.sg-pr-tabla-cab,
+.sg-pr-tabla-fila {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 2fr) 50px minmax(0, 1.2fr) minmax(0, 1.6fr);
+    gap: 8px;
+    align-items: center;
+    padding: 8px 11px;
+    font-size: 11.8px;
+}
+.sg-pr-tabla-cab {
+    background: #fafafd;
+    border-bottom: 1px solid #eef0f6;
+    color: #6b7280;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 10.5px;
+    letter-spacing: .4px;
+}
+.sg-pr-tabla-fila + .sg-pr-tabla-fila { border-top: 1px solid #f4f5f9; }
+.sg-pr-tabla-fila.es-mal { background: #fff8f8; }
+.sg-pr-tabla-fila .c-nom { color: #111827; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-pr-tabla-fila .c-min, .sg-pr-tabla-fila .c-mar { color: #6b7280; }
+.sg-pr-ok, .sg-pr-mal { display: inline-flex; align-items: flex-start; gap: 4px; line-height: 1.4; }
+.sg-pr-ok { color: #15803d; }
+.sg-pr-mal { color: #b91c1c; }
+.sg-pr-ok i, .sg-pr-mal i { font-size: 14px; flex: 0 0 auto; }
+
+/* ---------------------------------------------------------------- el pie --- */
+/* El pie va al final de la ficha, no pegado a la ventana: pegarlo con
+   position: sticky obliga a abrir el overflow de #wrapper y .content-page, y
+   eso suelta el menu lateral y la cabecera del master. Lo que se acota es la
+   altura de las dos columnas, asi que el pie queda a un desplazamiento corto. */
+.sg-pr-pie {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 16px;
+    padding: 12px 0;
+    background: #fff;
+    box-shadow: 0 -8px 16px -12px rgba(15, 23, 42, .35);
+}
+/* El aviso solo aparece cuando hay algo sin guardar; el JS de la ficha agrega
+   es-sucio al escribir, porque escribir en una caja no es un postback. */
+.sg-pr-sucio {
+    display: none;
+    align-items: center;
+    gap: 3px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #b45309;
+}
+.sg-pr-pie.es-sucio .sg-pr-sucio { display: inline-flex; }
+.sg-pr-sucio i { font-size: 18px; color: #f59e0b; }
+
+/* ---- La ficha en pantalla completa ----
+   El titulo, el rubro y la bajada los pone Default.master; el modo y el ID
+   viajan en la bajada, en una linea propia. */
+.sg-pr-sub {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 3px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: #6C5CFF;
+}
+.sg-pr-sub .sg-proc-id { text-transform: none; letter-spacing: 0; font-weight: 500; }
+
+/* Las dos columnas se miden para que la ficha ENTERA entre en la ventana: lo
+   que descuenta es la cabecera del master, el aviso de suscripcion, el resumen
+   de la receta y el pie. Asi el pie de guardado queda a la vista sin que la
+   pagina tenga que desplazarse, que es lo que no se puede resolver con
+   position: sticky sin soltar el menu lateral (ver el <style> de la ficha).
+
+   Lo que crece -la lista de pasos y el editor- desplaza por dentro, que ya es
+   como se leen. */
+@media (min-width: 901px) {
+    .sg-pr-lista, .sg-pr-editor { max-height: calc(100vh - 430px); min-height: 340px; }
+}

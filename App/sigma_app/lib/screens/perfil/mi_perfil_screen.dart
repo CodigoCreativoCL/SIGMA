@@ -6,14 +6,13 @@ import '../../providers/datos_provider.dart';
 import '../../providers/sesion_provider.dart';
 import '../../providers/sincronizacion_provider.dart';
 import '../../services/api_client.dart';
-import '../../services/preferencias_service.dart';
 import '../../services/sigma_repository.dart';
 import '../../services/sync_service.dart';
-import '../../services/tema_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../accesibilidad/accesibilidad_screen.dart';
 import '../login/login_screen.dart';
 import '../seleccion/seleccion_contexto_screen.dart';
 
@@ -49,7 +48,9 @@ class MiPerfilScreen extends ConsumerWidget {
       body: RefreshIndicator(
         onRefresh: () async => ref.invalidate(miPerfilProvider),
         child: ListView(
-          padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 20, 16, 16)),
+          padding: context.conBarraSistema(
+            const EdgeInsets.fromLTRB(16, 20, 16, 16),
+          ),
           children: [
             EstadoAsync<MiPerfil>(
               valor: perfil,
@@ -69,12 +70,14 @@ class MiPerfilScreen extends ConsumerWidget {
             const SizedBox(height: 22),
             const _Version(),
             const SizedBox(height: 9),
-            SgBoton('Cerrar sesión',
-                icono: Icons.logout,
-                primario: false,
-                colorTexto: sg.rojoTexto,
-                colorIcono: sg.rojoTexto,
-                onTap: () => _salir(context, ref)),
+            SgBoton(
+              'Cerrar sesión',
+              icono: Icons.logout,
+              primario: false,
+              colorTexto: sg.rojoTexto,
+              colorIcono: sg.rojoTexto,
+              onTap: () => _salir(context, ref),
+            ),
             const SizedBox(height: 4),
             const SgBarraGestos(),
           ],
@@ -94,9 +97,10 @@ class MiPerfilScreen extends ConsumerWidget {
       permisosProvider,
       resumenAlertasProvider,
     ]) {
+      if (!context.mounted) return;
       ref.invalidate(p);
     }
-    ref.read(instalacionProvider.notifier).state = null;
+    ref.read(instalacionProvider.notifier).elegir(null);
 
     nav.pushAndRemoveUntil(
       MaterialPageRoute(builder: (_) => const LoginScreen()),
@@ -138,26 +142,32 @@ class _Cabecera extends StatelessWidget {
 
     return Row(
       children: [
-        SgAvatar(p.iniciales, id: p.usu_id, lado: 76),
+        SgAvatar(p.iniciales, id: p.usu_id, lado: 76, ruta: p.FOTO_RUTA),
         const SizedBox(width: 14),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(p.nombreCompleto,
-                  style: sora(22, 600, color: sg.tinta),
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                p.nombreCompleto,
+                style: sora(22, 600, color: sg.tinta),
+                overflow: TextOverflow.ellipsis,
+              ),
               if ((p.PERFILES ?? '').isNotEmpty) ...[
                 const SizedBox(height: 6),
-                SgBadge(p.PERFILES!,
-                    color: SgColor.tealSolido,
-                    icono: Icons.engineering,
-                    solido: true),
+                SgBadge(
+                  p.PERFILES!,
+                  color: SgColor.tealSolido,
+                  icono: Icons.engineering,
+                  solido: true,
+                ),
               ],
               const SizedBox(height: 6),
-              Text(p.usu_correo ?? p.usu_login,
-                  style: sora(13, 500, color: sg.tinta3),
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                p.usu_correo ?? p.usu_login,
+                style: sora(13, 500, color: sg.tinta3),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),
@@ -178,8 +188,12 @@ class _Contexto extends ConsumerWidget {
     return SgCard(
       child: Row(
         children: [
-          SgIconoCuadro(Icons.swap_horiz,
-              color: sg.primario, lado: 44, tamanoIcono: 22),
+          SgIconoCuadro(
+            Icons.swap_horiz,
+            color: sg.primario,
+            lado: 44,
+            tamanoIcono: 22,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -193,19 +207,24 @@ class _Contexto extends ConsumerWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 2),
-                Text(instalacion?.cin_nombre ?? 'Sin instalación',
-                    style: sora(13, 500, color: sg.tinta2),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  instalacion?.cin_nombre ?? 'Sin instalación',
+                  style: sora(13, 500, color: sg.tinta2),
+                  overflow: TextOverflow.ellipsis,
+                ),
               ],
             ),
           ),
           const SizedBox(width: 10),
-          _Pildora('Cambiar',
-              onTap: () => Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (_) => const SeleccionContextoScreen()),
-                  )),
+          _Pildora(
+            'Cambiar',
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const SeleccionContextoScreen(),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -229,7 +248,7 @@ class _Pildora extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 34,
+          height: context.alto(34),
           padding: const EdgeInsets.symmetric(horizontal: 14),
           alignment: Alignment.center,
           child: Text(texto, style: sora(14, 600, color: sg.tinta)),
@@ -264,15 +283,21 @@ class _MisDatos extends ConsumerWidget {
           icono: Icons.email_outlined,
           texto: 'Correo',
           colorTexto: sg.tinta2,
-          derecha:
-              SgBadge('Solo lectura', color: sg.tinta3, icono: Icons.lock_outline),
+          derecha: SgBadge(
+            'Solo lectura',
+            color: sg.tinta3,
+            icono: Icons.lock_outline,
+          ),
         ),
         SgFila(
           icono: Icons.badge_outlined,
           texto: 'Perfil',
           colorTexto: sg.tinta2,
-          derecha:
-              SgBadge('Solo lectura', color: sg.tinta3, icono: Icons.lock_outline),
+          derecha: SgBadge(
+            'Solo lectura',
+            color: sg.tinta3,
+            icono: Icons.lock_outline,
+          ),
         ),
       ],
     );
@@ -285,10 +310,14 @@ class _MisDatos extends ConsumerWidget {
 /// capricho: es por donde se le avisa cuando algo se cae en su turno. Un
 /// teléfono viejo en la ficha significa que el aviso no llega.
 Future<void> _editarTelefono(
-    BuildContext context, WidgetRef ref, String actual) async {
+  BuildContext context,
+  WidgetRef ref,
+  String actual,
+) async {
   final control = TextEditingController(text: actual);
   final formulario = GlobalKey<FormState>();
 
+  if (!context.mounted) return;
   final guardado = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -309,8 +338,9 @@ Future<void> _editarTelefono(
               : null,
         ),
       ],
-      alGuardar: () => SigmaRepository.instance
-          .actualizarPerfil(telefono: control.text.trim()),
+      alGuardar: () => SigmaRepository.instance.actualizarPerfil(
+        telefono: control.text.trim(),
+      ),
     ),
   );
 
@@ -323,26 +353,32 @@ class _Aplicacion extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SgBloque(
-        rotulo: 'Aplicación',
-        filas: [
-          SgFila(
-            icono: Icons.shield_outlined,
-            texto: 'Cambiar contraseña',
-            chevron: true,
-            onTap: () => _cambiarPassword(context),
-          ),
-          const SgFila(
-            icono: Icons.notifications_none,
-            texto: 'Notificaciones',
-            derecha: _SwitchAvisos(),
-          ),
-          const SgFila(
-            icono: Icons.dark_mode_outlined,
-            texto: 'Tema',
-            derecha: _SelectorTema(),
-          ),
-        ],
-      );
+    rotulo: 'Aplicación',
+    filas: [
+      SgFila(
+        icono: Icons.shield_outlined,
+        texto: 'Cambiar contraseña',
+        chevron: true,
+        onTap: () => _cambiarPassword(context),
+      ),
+      /* LOS AJUSTES DE COMO SE VE YA NO VIVEN ACA
+
+         El tema y el aviso estaban sueltos en esta lista, y el tamano del
+         texto y el contraste habrian sido dos filas mas de lo mismo. Ahora hay
+         una sola puerta: quien busca «que se vea mejor» encuentra todo junto
+         en vez de la mitad. */
+      SgFila(
+        icono: Icons.accessibility_new,
+        texto: 'Accesibilidad',
+        detalle: 'Texto, contraste, tema y avisos',
+        chevron: true,
+        onTap: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const AccesibilidadScreen()),
+        ),
+      ),
+    ],
+  );
 }
 
 /// HU-005 · cambiar la contraseña.
@@ -357,6 +393,7 @@ Future<void> _cambiarPassword(BuildContext context) async {
   final formulario = GlobalKey<FormState>();
   final mensajero = ScaffoldMessenger.of(context);
 
+  if (!context.mounted) return;
   final ok = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -414,8 +451,9 @@ Future<void> _cambiarPassword(BuildContext context) async {
   repetir.dispose();
 
   if (ok == true) {
-    mensajero
-        .showSnackBar(const SnackBar(content: Text('Contraseña cambiada.')));
+    mensajero.showSnackBar(
+      const SnackBar(content: Text('Contraseña cambiada.')),
+    );
   }
 }
 
@@ -473,12 +511,15 @@ class _HojaFormularioState extends State<_HojaFormulario> {
     final sg = context.sg;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: sg.card,
           borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(SgRadius.hoja)),
+            top: Radius.circular(SgRadius.hoja),
+          ),
         ),
         child: SafeArea(
           top: false,
@@ -501,13 +542,17 @@ class _HojaFormularioState extends State<_HojaFormulario> {
                   child: Row(
                     children: [
                       Expanded(
-                        child: Text(widget.titulo,
-                            style: sora(20, 600, color: sg.tinta)),
+                        child: Text(
+                          widget.titulo,
+                          style: sora(20, 600, color: sg.tinta),
+                        ),
                       ),
-                      SgBotonIcono(Icons.close,
-                          fondo: sg.up,
-                          color: sg.tinta,
-                          onTap: () => Navigator.of(context).pop()),
+                      SgBotonIcono(
+                        Icons.close,
+                        fondo: sg.up,
+                        color: sg.tinta,
+                        onTap: () => Navigator.of(context).pop(),
+                      ),
                     ],
                   ),
                 ),
@@ -525,105 +570,26 @@ class _HojaFormularioState extends State<_HojaFormulario> {
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-                    child: SgAviso(_error!,
-                        icono: Icons.error_outline,
-                        color: sg.rojoTexto,
-                        tenido: true),
+                    child: SgAviso(
+                      _error!,
+                      icono: Icons.error_outline,
+                      color: sg.rojoTexto,
+                      tenido: true,
+                    ),
                   ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 20, 16, 0),
-                  child: SgBoton(widget.textoBoton,
-                      icono: Icons.check,
-                      cargando: _guardando,
-                      onTap: _guardar),
+                  child: SgBoton(
+                    widget.textoBoton,
+                    icono: Icons.check,
+                    cargando: _guardando,
+                    onTap: _guardar,
+                  ),
                 ),
                 const SgBarraGestos(),
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _SwitchAvisos extends StatelessWidget {
-  const _SwitchAvisos();
-
-  @override
-  Widget build(BuildContext context) {
-    final sg = context.sg;
-
-    return ValueListenableBuilder<bool>(
-      valueListenable: PreferenciasService.instance.avisos,
-      builder: (_, activo, _) => Switch.adaptive(
-        value: activo,
-        activeThumbColor: Colors.white,
-        activeTrackColor: sg.primario,
-        inactiveTrackColor: sg.up2,
-        onChanged: PreferenciasService.instance.cambiarAvisos,
-      ),
-    );
-  }
-}
-
-/// El selector de modo, en la píldora segmentada del kit.
-///
-/// Tres opciones y no dos: **Auto** existe porque quien tiene el teléfono en
-/// cambio automático espera que la app lo siga. Pero el de fábrica es
-/// **Oscuro**: la app se usa en planta, y dejar que Android decida haría que
-/// el técnico entre en claro solo porque nunca tocó ese ajuste.
-class _SelectorTema extends StatelessWidget {
-  const _SelectorTema();
-
-  static const _opciones = [
-    (modo: ThemeMode.dark, texto: 'Oscuro', icono: Icons.dark_mode_outlined),
-    (modo: ThemeMode.light, texto: 'Claro', icono: Icons.light_mode_outlined),
-    (modo: ThemeMode.system, texto: 'Auto', icono: Icons.brightness_auto),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final sg = context.sg;
-
-    return ValueListenableBuilder<ThemeMode>(
-      valueListenable: TemaService.instance.modo,
-      builder: (_, actual, _) => Container(
-        padding: const EdgeInsets.all(3),
-        decoration: BoxDecoration(
-          color: sg.up,
-          borderRadius: BorderRadius.circular(SgRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final o in _opciones)
-              InkWell(
-                onTap: () => TemaService.instance.cambiar(o.modo),
-                borderRadius: BorderRadius.circular(SgRadius.pill),
-                child: Container(
-                  height: 28,
-                  padding: const EdgeInsets.symmetric(horizontal: 9),
-                  decoration: BoxDecoration(
-                    color: actual == o.modo ? sg.primario : null,
-                    borderRadius: BorderRadius.circular(SgRadius.pill),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(o.icono,
-                          size: 14,
-                          color: actual == o.modo ? Colors.white : sg.tinta2),
-                      const SizedBox(width: 5),
-                      Text(o.texto,
-                          style: sora(12, 600,
-                              color:
-                                  actual == o.modo ? Colors.white : sg.tinta2)),
-                    ],
-                  ),
-                ),
-              ),
-          ],
         ),
       ),
     );
@@ -647,8 +613,11 @@ class _Version extends ConsumerWidget {
         : 'sincronizado ${_hace(DateTime.now().difference(corte.toLocal()))}';
 
     return Center(
-      child: Text('v1.0.0 (24) · $cuando',
-          style: sora(12, 500, color: sg.tinta3), textAlign: TextAlign.center),
+      child: Text(
+        'v1.0.0 (24) · $cuando',
+        style: sora(12, 500, color: sg.tinta3),
+        textAlign: TextAlign.center,
+      ),
     );
   }
 

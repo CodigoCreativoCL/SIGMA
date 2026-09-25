@@ -65,7 +65,9 @@ class _SincronizacionScreenState extends ConsumerState<SincronizacionScreen> {
         ),
       ),
       body: ListView(
-        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        ),
         children: [
           _Cabecera(termino: e.termino, fallidos: e.fallidos),
           const SizedBox(height: 20),
@@ -73,20 +75,22 @@ class _SincronizacionScreenState extends ConsumerState<SincronizacionScreen> {
           const SizedBox(height: 20),
           if (e.bloques.isNotEmpty) ...[
             SgBloque(
-              filas: [
-                for (final b in e.bloques) _FilaBloque(bloque: b),
-              ],
+              filas: [for (final b in e.bloques) _FilaBloque(bloque: b)],
             ),
             const SizedBox(height: 20),
           ],
           Text(
             e.fallidos > 0
                 ? 'Los bloques que fallaron se vuelven a pedir la próxima vez. '
-                    'Lo que sí bajó ya se puede usar sin señal.'
+                      'Lo que sí bajó ya se puede usar sin señal.'
                 : 'La primera carga puede tardar unos minutos con señal débil. '
-                    'Después solo se descargan los cambios.',
-            style: sora(13, 500,
-                color: e.fallidos > 0 ? sg.ambarTexto : sg.tinta3, alto: 1.55),
+                      'Después solo se descargan los cambios.',
+            style: sora(
+              13,
+              500,
+              color: e.fallidos > 0 ? sg.ambarTexto : sg.tinta3,
+              alto: 1.55,
+            ),
           ),
           const SizedBox(height: 12),
         ],
@@ -107,8 +111,8 @@ class _Cabecera extends StatelessWidget {
     final color = fallidos > 0
         ? sg.ambarTexto
         : termino
-            ? sg.verdeTexto
-            : sg.acentoTexto;
+        ? sg.verdeTexto
+        : sg.acentoTexto;
 
     return Row(
       children: [
@@ -126,14 +130,16 @@ class _Cabecera extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(termino ? 'Tus datos están listos' : 'Preparando tus datos',
-                  style: sora(22, 700, color: sg.tinta, espaciado: -0.44)),
+              Text(
+                termino ? 'Tus datos están listos' : 'Preparando tus datos',
+                style: sora(22, 700, color: sg.tinta, espaciado: -0.44),
+              ),
               const SizedBox(height: 4),
               Text(
                 termino
                     ? (fallidos > 0
-                        ? '$fallidos ${fallidos == 1 ? "bloque quedó pendiente" : "bloques quedaron pendientes"}.'
-                        : 'Ya puedes trabajar sin señal.')
+                          ? '$fallidos ${fallidos == 1 ? "bloque quedó pendiente" : "bloques quedaron pendientes"}.'
+                          : 'Ya puedes trabajar sin señal.')
                     : 'Podrás trabajar sin señal al terminar.',
                 style: sora(14, 500, color: sg.tinta2),
               ),
@@ -169,12 +175,17 @@ class _Avance extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
-              Text('${estado.porcentaje}',
-                  style: sora(44, 700,
-                      color: sg.tinta,
-                      alto: 1,
-                      espaciado: -1.32,
-                      tabular: true)),
+              Text(
+                '${estado.porcentaje}',
+                style: sora(
+                  44,
+                  700,
+                  color: sg.tinta,
+                  alto: 1,
+                  espaciado: -1.32,
+                  tabular: true,
+                ),
+              ),
               const SizedBox(width: 6),
               Text('%', style: sora(20, 600, color: sg.tinta3)),
               const Spacer(),
@@ -197,21 +208,26 @@ class _Avance extends StatelessWidget {
                     widthFactor: estado.avance.clamp(0.0, 1.0),
                     child: Container(
                       height: 8,
-                      decoration:
-                          const BoxDecoration(gradient: SgColor.gradiente),
+                      decoration: const BoxDecoration(
+                        gradient: SgColor.gradiente,
+                      ),
                     ),
                   )
                 else
                   const SizedBox(
-                      height: 8, child: LinearProgressIndicator(minHeight: 8)),
+                    height: 8,
+                    child: LinearProgressIndicator(minHeight: 8),
+                  ),
               ],
             ),
           ),
           if (contexto.isNotEmpty) ...[
             const SizedBox(height: 12),
-            Text(contexto,
-                style: sora(13, 500, color: sg.tinta3),
-                overflow: TextOverflow.ellipsis),
+            Text(
+              contexto,
+              style: sora(13, 500, color: sg.tinta3),
+              overflow: TextOverflow.ellipsis,
+            ),
           ],
         ],
       ),
@@ -225,9 +241,10 @@ class _FilaBloque extends StatelessWidget {
   final Bloque bloque;
 
   /// 3180 → 3.180. El punto es el separador de miles en Chile.
-  static String _mil(int n) => n
-      .toString()
-      .replaceAllMapped(RegExp(r'(\d)(?=(\d{3})+$)'), (m) => '${m[1]}.');
+  static String _mil(int n) => n.toString().replaceAllMapped(
+    RegExp(r'(\d)(?=(\d{3})+$)'),
+    (m) => '${m[1]}.',
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -245,9 +262,11 @@ class _FilaBloque extends StatelessWidget {
                 Icon(Icons.sync, size: 21, color: sg.acentoTexto),
                 const SizedBox(width: 12),
                 Expanded(
-                  child: Text(bloque.nombre,
-                      style: sora(16, 600, color: sg.tinta),
-                      overflow: TextOverflow.ellipsis),
+                  child: Text(
+                    bloque.nombre,
+                    style: sora(16, 600, color: sg.tinta),
+                    overflow: TextOverflow.ellipsis,
+                  ),
                 ),
                 const SizedBox(width: 8),
                 Text(
@@ -267,8 +286,7 @@ class _FilaBloque extends StatelessWidget {
                   value: bloque.total > 0 ? bloque.avance : null,
                   minHeight: 4,
                   backgroundColor: sg.fondo,
-                  valueColor:
-                      const AlwaysStoppedAnimation(SgColor.tealSolido),
+                  valueColor: const AlwaysStoppedAnimation(SgColor.tealSolido),
                 ),
               ),
             ),
@@ -277,20 +295,24 @@ class _FilaBloque extends StatelessWidget {
       );
     }
 
-    final (IconData icono, Color color, String detalle, double opacidad) =
-        switch (bloque.estado) {
+    final (
+      IconData icono,
+      Color color,
+      String detalle,
+      double opacidad,
+    ) = switch (bloque.estado) {
       EstadoBloque.listo => (
-          Icons.check_circle,
-          sg.verdeTexto,
-          bloque.filas > 0 ? _mil(bloque.filas) : 'Listo',
-          1.0
-        ),
+        Icons.check_circle,
+        sg.verdeTexto,
+        bloque.filas > 0 ? _mil(bloque.filas) : 'Listo',
+        1.0,
+      ),
       EstadoBloque.fallido => (
-          Icons.error_outline,
-          sg.rojoTexto,
-          'No bajó',
-          1.0
-        ),
+        Icons.error_outline,
+        sg.rojoTexto,
+        'No bajó',
+        1.0,
+      ),
       _ => (Icons.donut_large, sg.tinta3, 'En espera', 0.45),
     };
 

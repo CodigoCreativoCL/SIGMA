@@ -11,6 +11,7 @@ import '../../services/voz_service.dart';
 import '../../theme/app_theme.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import '../../widgets/comun/sigma_voz.dart';
+import 'entrada_bitacora_screen.dart';
 
 /// Escribir en la bitácora de planta — HU-130.
 ///
@@ -60,6 +61,21 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
   bool _porVoz = false;
   bool _guardando = false;
 
+  /* SE MARCA LO QUE FALTA, NO SE APAGA EL BOTON
+
+     El boton estaba deshabilitado hasta tener todo, y eso deja a la persona
+     mirando un boton gris sin saber QUE falta: en una pantalla con tipo,
+     titulo y texto hay que adivinar cual de los tres. Ahora el boton responde
+     siempre y al tocarlo, si falta algo, se marca en rojo lo que falta.
+
+     `_intento` enciende la validacion. Antes del primer toque no hay nada
+     rojo: pintar de rojo un formulario que ni se ha empezado a llenar es
+     regañar antes de tiempo. */
+  bool _intento = false;
+
+  String? _obligatorio(String? v) =>
+      !_intento || (v ?? '').trim().isNotEmpty ? null : 'Falta completar esto.';
+
   @override
   void dispose() {
     _titulo.dispose();
@@ -83,15 +99,23 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
       _texto.text.trim().isNotEmpty;
 
   Future<void> _guardar() async {
-    if (!_completo || _guardando) return;
+    if (_guardando) return;
+
+    if (!_completo) {
+      // Enciende la validación y deja que el árbol se repinte: los campos
+      // vacíos quedan con su anillo rojo y el tipo, si falta, con su aviso.
+      setState(() => _intento = true);
+      return;
+    }
 
     final instalacion = ref.read(instalacionProvider);
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
 
     if (instalacion == null) {
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Elige una planta antes de escribir.')));
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Elige una planta antes de escribir.')),
+      );
       return;
     }
 
@@ -116,21 +140,48 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
         if (_porVoz) 'texto_dictado': _texto.text.trim(),
       });
 
-      SyncService.instance.despacharAhora();
-      ref.invalidate(bitacoraProvider);
+      /* Y AHORA LA FOTO, LA VOZ O EL VIDEO
+
+         La evidencia cuelga de un id, y hasta que el servidor lo asigne no hay
+         de qué colgarla. Esta pantalla no puede ofrecer adjuntar —y por eso no
+         lo ofrece, en vez de fingirlo—: lo que hace es despachar, esperar unos
+         segundos a que la entrada llegue, y abrir su ficha, que sí tiene el
+         bloque de evidencia.
+
+         Sin señal no hay id, y se dice tal cual. La entrada no se pierde: sale
+         cuando vuelva la cobertura, y la evidencia se adjunta entonces. */
+      final id = await OutboxService.instance.despacharYEsperar(_uuid);
 
       if (!mounted) return;
+      ref.invalidate(bitacoraProvider);
+
+      if (id != null && id > 0) {
+        // `pushReplacement`: volver atrás desde la ficha tiene que llevar a la
+        // bandeja, no al formulario que se acaba de enviar.
+        await navegador.pushReplacement(
+          MaterialPageRoute(
+            builder: (_) => EntradaBitacoraScreen(entradaId: id),
+          ),
+        );
+        return;
+      }
+
+      // Sin id: sigue en la cola. Se vuelve y se dice qué pasó.
       navegador.pop(true);
-      mensajero.showSnackBar(SnackBar(
-        content: Text(SyncService.instance.enLinea.value
-            ? 'Anotado en la bitácora.'
-            : 'Guardado en el teléfono. Se envía al volver la señal.'),
-      ));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            SyncService.instance.enLinea.value
+                ? 'Anotado en la bitácora.'
+                : 'Guardado en el teléfono. Se envía al volver la señal, y '
+                      'ahí podrás agregarle fotos o una nota de voz.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      mensajero.showSnackBar(
-          SnackBar(content: Text('No se pudo guardar: $e')));
+      mensajero.showSnackBar(SnackBar(content: Text('No se pudo guardar: $e')));
     }
   }
 
@@ -159,8 +210,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ),
         ],
@@ -170,12 +224,13 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
           'Guardar en la bitácora',
           icono: Icons.check,
           cargando: _guardando,
-          onTap: _completo ? _guardar : null,
+          onTap: _guardar,
         ),
       ),
       body: ListView(
-        padding:
-            context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        ),
         children: [
           if (widget.activoNombre != null) ...[
             SgCard(
@@ -185,9 +240,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                   Icon(Icons.view_in_ar_outlined, size: 19, color: sg.tinta2),
                   const SizedBox(width: 11),
                   Expanded(
-                    child: Text(widget.activoNombre!,
-                        style: sora(14, 600, color: sg.tinta),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      widget.activoNombre!,
+                      style: sora(14, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -196,6 +253,14 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
           ],
 
           const SgRotulo('Qué tipo de anotación'),
+          if (_intento && _tipo == null) ...[
+            const SizedBox(height: 8),
+            SgAviso(
+              'Elige de qué tipo es la anotación.',
+              icono: Icons.error_outline,
+              color: sg.rojoTexto,
+            ),
+          ],
           const SizedBox(height: 9),
           tipos.when(
             loading: () => const Padding(
@@ -212,9 +277,11 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
               runSpacing: 8,
               children: [
                 for (final t in lista)
-                  SgChip(t.bti_nombre,
-                      elegido: _tipo == t.bti_id,
-                      onTap: () => setState(() => _tipo = t.bti_id)),
+                  SgChip(
+                    t.bti_nombre,
+                    elegido: _tipo == t.bti_id,
+                    onTap: () => setState(() => _tipo = t.bti_id),
+                  ),
               ],
             ),
           ),
@@ -236,29 +303,33 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                 runSpacing: 8,
                 children: [
                   for (final v in lista)
-                    SgChip(v.ctv_nombre,
-                        elegido: _severidad == v.ctv_id,
-                        onTap: () => setState(() => _severidad = v.ctv_id)),
+                    SgChip(
+                      v.ctv_nombre,
+                      elegido: _severidad == v.ctv_id,
+                      onTap: () => setState(() => _severidad = v.ctv_id),
+                    ),
                 ],
               ),
             ),
           ],
 
           const SizedBox(height: 16),
-          const SgRotuloCampo('En una línea'),
+          const SgRotuloCampo('En una línea', obligatorio: true),
           const SizedBox(height: 8),
           SgCampo(
             controlador: _titulo,
             icono: Icons.short_text,
             hint: 'Fuga en la brida del cabezal',
+            validador: _obligatorio,
             onCambio: (_) => setState(() {}),
           ),
 
           const SizedBox(height: 14),
-          const SgRotuloCampo('Qué pasó'),
+          const SgRotuloCampo('Qué pasó', obligatorio: true),
           const SizedBox(height: 8),
           SgCampo(
             controlador: _texto,
+            validador: _obligatorio,
             icono: Icons.notes,
             hint: 'Lo que viste, oíste o tocaste',
             lineas: 4,
@@ -270,9 +341,10 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
                 titulo: 'Qué pasó',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'texto',
-                      rotulo: 'Qué pasó',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'texto',
+                    rotulo: 'Qué pasó',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -329,7 +401,14 @@ class _NuevaEntradaScreenState extends ConsumerState<NuevaEntradaScreen> {
     );
     if (hora == null || !mounted) return;
 
-    setState(() => _cuando =
-        DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute));
+    setState(
+      () => _cuando = DateTime(
+        dia.year,
+        dia.month,
+        dia.day,
+        hora.hour,
+        hora.minute,
+      ),
+    );
   }
 }

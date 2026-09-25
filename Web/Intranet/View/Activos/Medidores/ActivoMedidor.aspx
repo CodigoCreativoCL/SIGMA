@@ -98,6 +98,11 @@
                 <WebControls:TextBox2 ID="txtValorReinicio" runat="server" MaxLength="18" />
                 <span class="sigma-modal-ayuda">A qué valor vuelve al reiniciarse. Vacío indica sin dato.</span>
             </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Máximo diario</label>
+                <WebControls:TextBox2 ID="txtMaximoDiario" runat="server" MaxLength="18" />
+                <span class="sigma-modal-ayuda">Cuánto puede avanzar por día (un horómetro: 24). Una lectura que salte más queda pendiente de revisión y avisa. Vacío: sin control.</span>
+            </div>
         </div>
     </div>
 

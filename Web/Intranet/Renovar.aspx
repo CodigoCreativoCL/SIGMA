@@ -5,10 +5,19 @@
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
+        /* Antes abria un RadWindow2 que vivia dentro del panel de pagos.
+           Como "Declarar pago" es un postback parcial, al volver la
+           respuesta el RadWindow ya no existia para $find y la funcion
+           reventaba en setUrl: el administrador del cliente apretaba el
+           boton y no pasaba nada (encontrado en las pruebas de HU-194,
+           15-09-2026). Ahora abre el mismo SigmaModal que usa Pagos.aspx. */
         function abrirPago(query) {
-            var oWin = $find("<%=rwiPago.ClientID %>");
-            oWin.setUrl('<%=ResolveUrl("~/View/Comercial/Suscripciones/Pago.aspx") %>?query=' + query);
-            oWin.show();
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Comercial/Suscripciones/Pago.aspx") %>?query=' + query,
+                title: 'Pago',
+                width: 900,
+                initialHeight: 620
+            });
         }
 
         function refresh() {
@@ -69,10 +78,30 @@
          el que se está preguntando por qué no puede crear una planta más. --%>
     <asp:Panel ID="pnlLimites" runat="server" Visible="false">
         <div class="SubTitulos">Uso de tu plan</div>
+        <%-- HU-192 #2: cuando un limite pasa del 80 % se dice arriba, antes de
+             que la persona tenga que leer la grilla fila por fila. --%>
+        <asp:Literal ID="litAvisoLimites" runat="server" />
         <rad:RadGrid2 ID="GridLimites" runat="server" OnItemDataBound="GridLimites_ItemDataBound">
             <MasterTableView CommandItemDisplay="None" DataKeyNames="fun_codigo">
             </MasterTableView>
         </rad:RadGrid2>
+        <br />
+    </asp:Panel>
+
+    <%-- HU-192 #1: que incluye el plan. Lo que se tiene y lo que no, en dos
+         listas: es la pregunta que se hace antes de decidir si subir de plan. --%>
+    <asp:Panel ID="pnlIncluye" runat="server" Visible="false">
+        <div class="SubTitulos">Qué incluye tu plan</div>
+        <div class="sg-renovar-incluye">
+            <div>
+                <div class="sg-renovar-incluye-titulo"><i class="mdi mdi-check-circle"></i>Incluido</div>
+                <asp:Literal ID="litIncluidas" runat="server" />
+            </div>
+            <div>
+                <div class="sg-renovar-incluye-titulo is-no"><i class="mdi mdi-minus-circle-outline"></i>No incluido en tu plan</div>
+                <asp:Literal ID="litNoIncluidas" runat="server" />
+            </div>
+        </div>
         <br />
     </asp:Panel>
 
@@ -87,8 +116,6 @@
          esta grilla es de solo lectura salvo por el boton. --%>
     <asp:Panel ID="pnlPagos" runat="server" Visible="false">
         <div class="SubTitulos">Mis pagos declarados</div>
-
-        <rad:RadWindow2 ID="rwiPago" runat="server" Width="900" Height="620" />
 
         <rad:RadGrid2 ID="GridPagos" runat="server" OnItemDataBound="GridPagos_ItemDataBound">
             <MasterTableView CommandItemDisplay="Top" DataKeyNames="spa_id">

@@ -63,7 +63,30 @@ class ApiClient {
   static final ApiClient instance = ApiClient._();
 
   /// El JWT de la sesión. Lo pone `SesionService`; nadie más lo escribe.
-  String? token;
+  ///
+  /// Es una propiedad y no un campo suelto para poder **re-armar el aviso de
+  /// caducidad** cada vez que llega un token nuevo: un login o un cambio de
+  /// cliente estrena sesión, y a partir de ahí un 401 vuelve a ser noticia.
+  String? get token => _token;
+  set token(String? v) {
+    _token = v;
+    if (v != null && v.isNotEmpty) _avisoCaducidadEnviado = false;
+  }
+
+  String? _token;
+
+  /// Qué hacer cuando el servidor rechaza un token con 401: limpiar la sesión
+  /// y mandar a la pantalla de entrada. Lo cablea `main()`; acá no se sabe de
+  /// navegación ni de providers, y no tiene por qué.
+  void Function()? alCaducarSesion;
+
+  /* EL AVISO DE CADUCIDAD SE MANDA UNA SOLA VEZ
+
+     El Home dispara muchas peticiones a la vez. Si la sesión murió, TODAS
+     vuelven 401 casi juntas, y sin esta marca se limpiaría la sesión y se
+     navegaría a login una vez por cada una. Se manda al primer 401 y se
+     re-arma sola al estrenar un token nuevo (ver el setter). */
+  bool _avisoCaducidadEnviado = false;
 
   /// El cliente que lleva **ese** token. Lo pone `SesionService` junto con él.
   ///
@@ -105,12 +128,12 @@ class ApiClient {
   void cerrar() => _cliente.close();
 
   Map<String, String> _headers() => {
-        HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
-        HttpHeaders.acceptHeader: 'application/json',
-        // "Bearer" es el estándar. La API acepta además "Base" por herencia
-        // de FacilityGes, pero acá se usa el correcto.
-        if (token != null) HttpHeaders.authorizationHeader: 'Bearer $token',
-      };
+    HttpHeaders.contentTypeHeader: 'application/json; charset=utf-8',
+    HttpHeaders.acceptHeader: 'application/json',
+    // "Bearer" es el estándar. La API acepta además "Base" por herencia
+    // de FacilityGes, pero acá se usa el correcto.
+    if (token != null) HttpHeaders.authorizationHeader: 'Bearer $token',
+  };
 
   /// Las lecturas se reintentan una vez ante un fallo de red.
   ///
@@ -143,8 +166,12 @@ class ApiClient {
 
   Future<dynamic> delete(String ruta) => _enviar('DELETE', ruta);
 
-  Future<dynamic> _enviar(String metodo, String ruta,
-      {Object? cuerpo, Map<String, dynamic>? query}) async {
+  Future<dynamic> _enviar(
+    String metodo,
+    String ruta, {
+    Object? cuerpo,
+    Map<String, dynamic>? query,
+  }) async {
     if (!ApiConstants.configurada) {
       throw const ApiException(
         'La app no tiene configurado el servidor. Falta API_BASE_URL '
@@ -180,6 +207,11 @@ class ApiClient {
 
     if (ApiConstants.logHttp) debugPrint('[ApiClient] $metodo $uri');
 
+    // Si la petición sale CON token, un 401 significa que ese token ya no
+    // vale y hay que renovar sesión. Si sale SIN token —el login, la
+    // recuperación—, un 401 es «credenciales incorrectas» y no toca la sesión.
+    final conToken = token != null;
+
     try {
       final tiempo = Duration(seconds: ApiConstants.timeoutSegundos);
       final cabeceras = _headers();
@@ -187,31 +219,47 @@ class ApiClient {
 
       final http.Response r = switch (metodo) {
         'GET' => await _cliente.get(uri, headers: cabeceras).timeout(tiempo),
-        'POST' => await _cliente
-            .post(uri, headers: cabeceras, body: cuerpoJson)
-            .timeout(tiempo),
-        'PUT' => await _cliente
-            .put(uri, headers: cabeceras, body: cuerpoJson)
-            .timeout(tiempo),
+        'POST' =>
+          await _cliente
+              .post(uri, headers: cabeceras, body: cuerpoJson)
+              .timeout(tiempo),
+        'PUT' =>
+          await _cliente
+              .put(uri, headers: cabeceras, body: cuerpoJson)
+              .timeout(tiempo),
         'DELETE' =>
           await _cliente.delete(uri, headers: cabeceras).timeout(tiempo),
-        _ => throw ApiException('Método no soportado: $metodo',
-            esDeNegocio: false),
+        _ => throw ApiException(
+          'Método no soportado: $metodo',
+          esDeNegocio: false,
+        ),
       };
 
       if (ApiConstants.logHttp) debugPrint('[ApiClient] ${r.statusCode}');
 
-      return await _interpretar(r);
+      final datos = await _interpretar(r);
+      // Una petición autenticada que salió bien prueba que la sesión vive: se
+      // re-arma el aviso por si más adelante caduca de verdad.
+      if (conToken) _avisoCaducidadEnviado = false;
+      return datos;
     } on SocketException {
       throw const ApiException('Sin conexión al servidor.', esDeNegocio: false);
     } on HttpException {
       throw const ApiException('Sin conexión al servidor.', esDeNegocio: false);
-    } on ApiException {
+    } on ApiException catch (e) {
+      if (e.sesionInvalida && conToken && !_avisoCaducidadEnviado) {
+        _avisoCaducidadEnviado = true;
+        // Fuera del stack de esta petición: la recuperación limpia la sesión y
+        // navega, y no tiene por qué correr dentro del `await` de quien llamó.
+        Future<void>.microtask(() => alCaducarSesion?.call());
+      }
       rethrow;
     } catch (e) {
       // Timeout entra por acá. Es transitorio: quien llame decide reintentar.
-      throw ApiException('No se pudo contactar al servidor.',
-          esDeNegocio: false);
+      throw ApiException(
+        'No se pudo contactar al servidor.',
+        esDeNegocio: false,
+      );
     }
   }
 

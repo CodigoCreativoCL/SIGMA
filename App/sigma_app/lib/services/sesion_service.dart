@@ -5,6 +5,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../constants/api_constants.dart';
 import '../models/sesion_model.dart';
+import 'accesibilidad_service.dart';
 import 'api_client.dart';
 
 /// El almacén de la sesión: en memoria, y respaldado en disco.
@@ -27,6 +28,7 @@ class SesionService {
   String dispositivo = '';
 
   static const _claveLogin = 'sigma_ultimo_login';
+  static const _claveInstalacion = 'sigma_instalacion';
 
   /// El correo con el que se entro la ultima vez, para rellenarlo solo.
   ///
@@ -36,6 +38,40 @@ class SesionService {
   /// cambio, no abre nada por si mismo y ahorra el campo mas largo de
   /// escribir con guantes.
   String? ultimoLogin;
+
+  /// La planta con la que se estaba trabajando.
+  ///
+  /// ## Por que SI se persiste, si antes no
+  ///
+  /// El comentario de `instalacionProvider` decia que perderla al reiniciar
+  /// era «un inconveniente menor». No lo es: la sabana se descarga POR PLANTA
+  /// y media app filtra por ella, asi que sin planta los listados bajan
+  /// vacios. Al retomar la app despues de que Android la matara —lo normal si
+  /// se deja en segundo plano un rato— la persona veia todo vacio sin
+  /// entender por que, o peor, volvia a elegir sin darse cuenta de que habia
+  /// estado mirando una pantalla sin contexto.
+  ///
+  /// ## Por que solo el id
+  ///
+  /// El nombre y la direccion los trae `plantas()`, que ya viaja en la sabana.
+  /// Guardar el objeto entero seria una segunda copia que envejece: si desde
+  /// la web renombran la planta, la del telefono seguiria diciendo el nombre
+  /// viejo hasta que alguien la vuelva a elegir.
+  int? instalacionRecordada;
+
+  Future<void> recordarInstalacion(int? id) async {
+    instalacionRecordada = id;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (id == null) {
+        await prefs.remove(_claveInstalacion);
+      } else {
+        await prefs.setInt(_claveInstalacion, id);
+      }
+    } catch (e) {
+      debugPrint('[SesionService] No se pudo recordar la planta: $e');
+    }
+  }
 
   Future<void> recordarLogin(String? login) async {
     ultimoLogin = login;
@@ -57,16 +93,35 @@ class SesionService {
     try {
       final prefs = await SharedPreferences.getInstance();
       ultimoLogin = prefs.getString(_claveLogin);
+      instalacionRecordada = prefs.getInt(_claveInstalacion);
 
       final crudo = prefs.getString(_clave);
       if (crudo == null || crudo.isEmpty) return false;
 
-      sesion = SesionModel.fromJson(jsonDecode(crudo) as Map<String, dynamic>);
+      final guardada = SesionModel.fromJson(
+        jsonDecode(crudo) as Map<String, dynamic>,
+      );
+
+      /* UN TOKEN VENCIDO NO SE CARGA: SE DESCARTA
+
+         Antes se cargaba el token pasara lo que pasara y se devolvía
+         `autenticado`. Con una sesión caducada en disco —lo normal tras las
+         ocho horas de vigencia— eso dejaba el token muerto pegado al cliente
+         HTTP: el splash mandaba al Home (creía que había sesión) y cada
+         pantalla respondía 401, y hasta el propio login salía con ese token y
+         el servidor lo rechazaba con «La sesión expiró». Si ya no vale, se
+         limpia y se manda a entrar de nuevo con el cliente HTTP en blanco. */
+      if (!guardada.autenticado) {
+        await limpiar();
+        return false;
+      }
+
+      sesion = guardada;
       ApiClient.instance.token = sesion.token;
       // El cliente viaja con el token y se restaura con él: si no, al retomar
       // la sesión el cliente HTTP creería que no hay ninguno elegido.
       ApiClient.instance.cliente = sesion.cliente;
-      return sesion.autenticado;
+      return true;
     } catch (e) {
       debugPrint('[SesionService] No se pudo leer la sesión: $e');
       return false;
@@ -74,9 +129,21 @@ class SesionService {
   }
 
   Future<void> guardar(SesionModel nueva) async {
+    final cambioDePersona = nueva.usuario != sesion.usuario;
     sesion = nueva;
     ApiClient.instance.token = nueva.token;
     ApiClient.instance.cliente = nueva.cliente;
+
+    /* LOS AJUSTES DE ACCESIBILIDAD SIGUEN A LA PERSONA
+
+       El telefono de planta se pasa de turno en turno. Sin esto, quien entra
+       hereda el tamano de letra y el contraste del turno anterior y cree que
+       la app se descompuso. Se releen solo cuando cambia el usuario: volver a
+       guardar la misma sesion —al elegir cliente, por ejemplo— no tiene por
+       que tocarlos. */
+    if (cambioDePersona) {
+      await AccesibilidadService.instance.cargar(nueva.usuario);
+    }
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_clave, jsonEncode(nueva.toJson()));
@@ -87,6 +154,8 @@ class SesionService {
 
   Future<void> limpiar() async {
     sesion = const SesionModel();
+    // De vuelta a los de fabrica: la pantalla de login no es de nadie.
+    await AccesibilidadService.instance.cargar(0);
     ApiClient.instance.limpiarToken();
     ApiClient.instance.cliente = 0;
     try {
@@ -112,6 +181,21 @@ class AuthService {
   }) async {
     final correo = login.trim();
 
+    /* EL LOGIN NUNCA LLEVA UN TOKEN ANTERIOR
+
+       `POST /sesion` es anonimo, pero el `TokenValidationHandler` de la API
+       valida el token ANTES de enrutar: si el encabezado Authorization trae
+       un token vencido —el de la sesion anterior, que `cargarDesdeDisco` deja
+       cargado en el cliente HTTP porque `autenticado` no mira la expiracion—
+       responde 401 «La sesion expiro» sin que la peticion llegue siquiera al
+       controller. Es decir: un token caducado impedia VOLVER A ENTRAR, y el
+       mensaje enganaba —parecia clave mala cuando el login ni se ejecutaba—.
+
+       Se limpia antes de autenticar; el token nuevo lo pone `guardar()` con lo
+       que devuelve el servidor. */
+    ApiClient.instance.limpiarToken();
+    ApiClient.instance.cliente = 0;
+
     final j = await ApiClient.instance.post(ApiConstants.sesion, {
       'login': correo,
       'password': password,
@@ -128,8 +212,9 @@ class AuthService {
   /// HU-002. Cambiar de cliente exige un token nuevo: el servidor revalida la
   /// pertenencia contra la base sin confiar en el id que llega.
   Future<SesionModel> seleccionarCliente(int clienteId) async {
-    final j = await ApiClient.instance
-        .post(ApiConstants.seleccionarCliente, {'cliente': clienteId});
+    final j = await ApiClient.instance.post(ApiConstants.seleccionarCliente, {
+      'cliente': clienteId,
+    });
 
     final sesion = SesionModel.fromJson(j as Map<String, dynamic>);
     await SesionService.instance.guardar(sesion);

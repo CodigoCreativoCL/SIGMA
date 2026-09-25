@@ -14,6 +14,9 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import 'sigma_imagen.dart';
 import 'sigma_v3.dart';
+import 'dart:async';
+import '../../services/nota_voz_service.dart';
+import 'sigma_reproductor.dart';
 
 /// Las fotos de evidencia de algo.
 ///
@@ -33,6 +36,8 @@ class SgEvidencias extends ConsumerStatefulWidget {
     super.key,
     required this.destino,
     required this.destinoId,
+    this.conAudio = false,
+    this.conVideo = false,
     this.obligatoria = false,
     this.puedeAgregar = true,
     this.onCambio,
@@ -42,6 +47,21 @@ class SgEvidencias extends ConsumerStatefulWidget {
   final String destino;
 
   final int destinoId;
+
+  /// Ofrece grabar una nota de voz.
+  ///
+  /// **Encendido en todos los módulos** por decisión de Bryan (09-09-2026): el
+  /// ruido de un rodamiento dice lo que el texto no, y quien está frente al
+  /// equipo no debería tener que acordarse de en qué pantalla sí se puede
+  /// grabar y en cuál no.
+  ///
+  /// Sigue siendo una bandera y no algo fijo: un paso de pauta que solo pide
+  /// «foto del manómetro» no gana nada con tres botones, y el día que aparezca
+  /// esa pantalla se apaga ahí sin tocar el resto.
+  final bool conAudio;
+
+  /// Ofrece grabar o adjuntar un video. Mismo criterio.
+  final bool conVideo;
 
   /// Solo cambia el texto de ayuda. **El veredicto lo pone el servidor**: un
   /// teléfono con la versión vieja cerraría sin foto en silencio si esto fuera
@@ -72,8 +92,7 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
     WidgetsBinding.instance.addObserver(this);
     // También al montar: si la app murió con la cámara abierta, vuelve por
     // este camino y no por el de `resumed`.
-    WidgetsBinding.instance
-        .addPostFrameCallback((_) => _recuperarPerdida());
+    WidgetsBinding.instance.addPostFrameCallback((_) => _recuperarPerdida());
   }
 
   @override
@@ -118,11 +137,19 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
         children: [
           Row(
             children: [
-              SgRotulo(widget.obligatoria ? 'FOTO OBLIGATORIA' : 'FOTOS'),
+              SgRotulo(
+                widget.obligatoria
+                    ? 'FOTO OBLIGATORIA'
+                    : (widget.conAudio || widget.conVideo)
+                    ? 'EVIDENCIA'
+                    : 'FOTOS',
+              ),
               const Spacer(),
               if (!vacio)
-                Text('${fotos.length + _subiendo.length + _enCola.length}',
-                    style: sora(12, 600, color: sg.tinta3)),
+                Text(
+                  '${fotos.length + _subiendo.length + _enCola.length}',
+                  style: sora(12, 600, color: sg.tinta3),
+                ),
             ],
           ),
           const SizedBox(height: 10),
@@ -132,9 +159,12 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
               widget.obligatoria
                   ? 'Esta tarea pide una foto antes de cerrarla.'
                   : 'Una foto ahorra tener que explicar después qué se encontró.',
-              style: sora(13, 500,
-                  color: widget.obligatoria ? sg.ambarTexto : sg.tinta3,
-                  alto: 1.45),
+              style: sora(
+                13,
+                500,
+                color: widget.obligatoria ? sg.ambarTexto : sg.tinta3,
+                alto: 1.45,
+              ),
             )
           else
             SizedBox(
@@ -145,7 +175,7 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
                 separatorBuilder: (_, _) => const SizedBox(width: 9),
                 itemBuilder: (_, i) {
                   if (i < fotos.length) {
-                    return _Miniatura(ruta: fotos[i].arc_ruta);
+                    return _Miniatura(evidencia: fotos[i]);
                   }
                   final j = i - fotos.length;
                   return j < _subiendo.length
@@ -174,12 +204,34 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
                   lado: 44,
                   onTap: () => _agregar(desdeCamara: false),
                 ),
+                if (widget.conVideo) ...[
+                  const SizedBox(width: 9),
+                  SgBotonIcono(
+                    Icons.videocam_outlined,
+                    lado: 44,
+                    onTap: _grabarVideo,
+                  ),
+                ],
               ],
             ),
+            /* LA NOTA DE VOZ VA EN SU PROPIA FILA
+
+               Mientras se graba hay que ver cuánto va y poder cortar, y eso no
+               cabe en un botón de 44 al lado de otros tres. */
+            if (widget.conAudio) ...[
+              const SizedBox(height: 9),
+              _BotonNotaVoz(onGrabada: _subir),
+            ],
           ],
         ],
       ),
     );
+  }
+
+  Future<void> _grabarVideo() async {
+    final video = await EvidenciaService.instance.grabarVideo();
+    if (video == null || !mounted) return;
+    await _subir(video);
   }
 
   Future<void> _agregar({required bool desdeCamara}) async {
@@ -252,28 +304,140 @@ class _SgEvidenciasState extends ConsumerState<SgEvidencias>
         _subiendo.remove(foto);
         _enCola.add(foto);
       });
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Sin señal: la foto queda guardada y se envía sola.')));
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text('Sin señal: la foto queda guardada y se envía sola.'),
+        ),
+      );
     }
   }
 }
 
 class _Miniatura extends StatelessWidget {
-  const _Miniatura({required this.ruta});
+  const _Miniatura({required this.evidencia});
 
-  final String ruta;
+  final Evidencia evidencia;
 
   @override
-  Widget build(BuildContext context) => SizedBox(
-        width: 92,
-        height: 92,
-        child: SigmaImagen(
-          ruta: ruta,
-          ancho: 92,
-          alto: 92,
-          radio: SgRadius.campo,
+  Widget build(BuildContext context) {
+    final mime = (evidencia.arc_mime ?? '').toLowerCase();
+
+    /* UN AUDIO NO SE PUEDE PINTAR
+
+       `SigmaImagen` baja los bytes y los decodifica como imagen: con un .m4a
+       eso es un hueco roto en la fila. Una nota de voz se representa con lo
+       unico que se puede saber de ella sin abrirla —que es audio— y por eso
+       importa que el servidor guarde el mime de verdad. */
+    if (mime.startsWith('audio/') || mime.startsWith('video/')) {
+      final esVideo = mime.startsWith('video/');
+
+      return _Tarjeta(
+        esVideo: esVideo,
+        texto: esVideo ? 'Video' : 'Nota de voz',
+        // Se toca y suena. Antes era una tarjeta muerta: decia que habia una
+        // nota de voz y no habia forma de escucharla, que es peor que no
+        // mostrarla.
+        onTap: () => SgReproductor.abrir(
+          context,
+          ruta: evidencia.arc_ruta,
+          mime: evidencia.arc_mime,
+          titulo: evidencia.arc_nombre_original,
         ),
       );
+    }
+
+    return SizedBox(
+      width: 92,
+      height: 92,
+      child: SigmaImagen(
+        ruta: evidencia.arc_ruta,
+        ancho: 92,
+        alto: 92,
+        radio: SgRadius.campo,
+      ),
+    );
+  }
+}
+
+/// La casilla de una evidencia que no es una imagen.
+///
+/// ## Por qué no es un recuadro gris con una palabra debajo
+///
+/// Antes lo era, y decía «tocar» en letra chica bajo el rótulo. Esa palabra es
+/// una instrucción, y una instrucción en la interfaz suele ser la confesión de
+/// que el elemento no se explica solo: al lado de tres fotos, un cuadro gris
+/// con texto no parece algo que se pueda abrir.
+///
+/// Ahora se parece a lo que es. El **triángulo de reproducir sobre un disco**
+/// es el gesto que todo el mundo reconoce, y el color lo separa de una foto sin
+/// que haya que leer nada: el video en morado de la marca, la nota de voz en el
+/// verde del acento. El rótulo queda de apoyo, no de explicación.
+class _Tarjeta extends StatelessWidget {
+  const _Tarjeta({required this.esVideo, required this.texto, this.onTap});
+
+  final bool esVideo;
+  final String texto;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    // El video toma el morado de la marca y el audio el verde del acento: dos
+    // cosas distintas que no se distinguían cuando las dos eran grises.
+    final color = esVideo ? sg.primarioTexto : sg.acentoTexto;
+
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 92,
+        // El ancho no cambia -es una cuadrícula, todas las celdas miden igual-
+        // pero el alto tiene que dar para la letra crecida.
+        height: context.alto(92),
+        decoration: BoxDecoration(
+          color: sg.tinte(color),
+          borderRadius: BorderRadius.circular(SgRadius.campo),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            /* EL DISCO CON EL TRIANGULO, Y NO UN ICONO SUELTO
+
+               Es el mismo gesto del reproductor de cualquier teléfono: sobre
+               una superficie llena, en el color del tipo. Un icono plano sobre
+               un fondo plano se lee como una etiqueta; esto se lee como un
+               botón. */
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              child: Icon(
+                esVideo ? Icons.play_arrow_rounded : Icons.graphic_eq_rounded,
+                size: 20,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 7),
+            /* EL ROTULO CEDE, EL CUADRO NO
+
+               Con la letra en Máximo «Nota de voz» se sale por el costado del
+               cuadro, que mide lo que mide. Se le deja bajar de línea, que es
+               lo que el alto escalado ya permite. */
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 6),
+              child: Text(
+                texto,
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: sora(11, 600, color: color),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 /// La que todavía va en camino: se ve la foto real del teléfono con un velo y
@@ -307,8 +471,7 @@ class _EnCola extends StatelessWidget {
               right: 5,
               bottom: 5,
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
                 decoration: BoxDecoration(
                   color: sg.scrim,
                   borderRadius: BorderRadius.circular(SgRadius.pill),
@@ -316,8 +479,7 @@ class _EnCola extends StatelessWidget {
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.cloud_off_outlined,
-                        size: 12, color: sg.tinta2),
+                    Icon(Icons.cloud_off_outlined, size: 12, color: sg.tinta2),
                     const SizedBox(width: 4),
                     Text('En cola', style: sora(10, 600, color: sg.tinta2)),
                   ],
@@ -355,12 +517,169 @@ class _Subiendo extends StatelessWidget {
                 width: 22,
                 height: 22,
                 child: CircularProgressIndicator(
-                    strokeWidth: 2.4, color: sg.primarioTexto),
+                  strokeWidth: 2.4,
+                  color: sg.primarioTexto,
+                ),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Grabar una nota de voz, con el tiempo a la vista y sin sorpresas.
+///
+/// ## Por qué se ve el tiempo mientras graba
+///
+/// Sin contador nadie sabe si el micrófono está tomando algo. La duda hace que
+/// se grabe dos veces «por si acaso», y en la cola de salida quedan dos notas
+/// de las que hay que escuchar las dos para saber cuál sirve.
+///
+/// ## Por qué cancelar está al lado de detener
+///
+/// Detener sube la nota; cancelar la tira. Con guantes y a contraluz eso hay
+/// que poder distinguirlo, así que uno lleva el color de acción y el otro no,
+/// y el que destruye no es el que queda bajo el pulgar por omisión.
+class _BotonNotaVoz extends StatefulWidget {
+  const _BotonNotaVoz({required this.onGrabada});
+
+  final Future<void> Function(FotoTomada) onGrabada;
+
+  @override
+  State<_BotonNotaVoz> createState() => _BotonNotaVozState();
+}
+
+class _BotonNotaVozState extends State<_BotonNotaVoz> {
+  Timer? _reloj;
+  Duration _va = Duration.zero;
+  bool _ocupado = false;
+
+  bool get _grabando => _reloj != null;
+
+  @override
+  void dispose() {
+    _reloj?.cancel();
+    // No se cancela la grabación acá: si la pantalla se cerró mientras grababa,
+    // `NotaVozService` es un singleton y la próxima llamada a iniciar() la
+    // reemplaza. Cortarla desde un dispose puede correr después de que el
+    // servicio ya empezó otra.
+    super.dispose();
+  }
+
+  String get _tiempo {
+    final m = _va.inMinutes.toString().padLeft(2, '0');
+    final s = (_va.inSeconds % 60).toString().padLeft(2, '0');
+    return '$m:$s';
+  }
+
+  Future<void> _empezar() async {
+    if (_ocupado) return;
+    setState(() => _ocupado = true);
+
+    final ok = await NotaVozService.instance.iniciar();
+
+    if (!mounted) return;
+
+    if (!ok) {
+      setState(() => _ocupado = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'SIGMA necesita permiso del micrófono para grabar una nota. '
+            'Se cambia en los ajustes del teléfono.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _ocupado = false;
+      _va = Duration.zero;
+      _reloj = Timer.periodic(const Duration(seconds: 1), (_) {
+        if (!mounted) return;
+        setState(() => _va = NotaVozService.instance.transcurrido);
+      });
+    });
+  }
+
+  Future<void> _detener() async {
+    _reloj?.cancel();
+    setState(() {
+      _reloj = null;
+      _ocupado = true;
+    });
+
+    final nota = await NotaVozService.instance.detener();
+
+    if (!mounted) return;
+    setState(() => _ocupado = false);
+
+    if (nota == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('No quedó nada grabado.')));
+      return;
+    }
+
+    await widget.onGrabada(nota);
+  }
+
+  Future<void> _cancelar() async {
+    _reloj?.cancel();
+    setState(() => _reloj = null);
+    await NotaVozService.instance.cancelar();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+
+    if (!_grabando) {
+      return SgBoton(
+        'Grabar nota de voz',
+        icono: Icons.mic_none,
+        primario: false,
+        alto: 44,
+        tamanoTexto: 14,
+        cargando: _ocupado,
+        onTap: _empezar,
+      );
+    }
+
+    return Row(
+      children: [
+        // El punto rojo y el contador: la única forma de saber que el micrófono
+        // está tomando algo.
+        Container(
+          width: 9,
+          height: 9,
+          decoration: const BoxDecoration(
+            color: SgColor.rojo,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 9),
+        Text(_tiempo, style: sora(15, 700, color: sg.tinta, tabular: true)),
+        const Spacer(),
+        SgBotonIcono(Icons.close, lado: 40, onTap: _cancelar),
+        const SizedBox(width: 8),
+        // 108 de ancho: cabe «Listo» con su icono y no se estira a media
+        // pantalla, que dejaria el cancelar perdido a la izquierda.
+        SizedBox(
+          width: 108,
+          child: SgBoton(
+            'Listo',
+            icono: Icons.check,
+            alto: 40,
+            tamanoTexto: 14,
+            cargando: _ocupado,
+            onTap: _detener,
+          ),
+        ),
+      ],
     );
   }
 }

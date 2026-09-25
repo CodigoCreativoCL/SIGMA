@@ -87,11 +87,16 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     if (!mounted) return;
     _decir('Listo', 1);
 
+    // Se decide con el estado VIVO, no con `haySesion` del arranque: si al
+    // preparar la sesión un 401 la caducó y la limpió, entrar al Home sería
+    // abrir una pantalla condenada a responder 401. En ese caso, al login.
+    final entrar = widget.haySesion && SesionService.instance.autenticado;
+
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 320),
         pageBuilder: (_, _, _) =>
-            widget.haySesion ? const HomeScreen() : const LoginScreen(),
+            entrar ? const HomeScreen() : const LoginScreen(),
         transitionsBuilder: (_, animacion, _, hijo) =>
             FadeTransition(opacity: animacion, child: hijo),
       ),
@@ -158,14 +163,15 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       const SizedBox(height: 20),
                       const SgWordmark(alto: 30),
                       const SizedBox(height: 20),
-                      Text('Gestión de mantenimiento industrial',
-                          style: sora(15, 500, color: sg.tinta2)),
+                      Text(
+                        'Gestión de mantenimiento industrial',
+                        style: sora(15, 500, color: sg.tinta2),
+                      ),
                       const SizedBox(height: 32),
                       SizedBox(
                         width: 180,
                         child: ClipRRect(
-                          borderRadius:
-                              BorderRadius.circular(SgRadius.pill),
+                          borderRadius: BorderRadius.circular(SgRadius.pill),
                           child: TweenAnimationBuilder<double>(
                             tween: Tween(begin: 0, end: _avance),
                             duration: const Duration(milliseconds: 420),
@@ -178,7 +184,8 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                                   child: Container(
                                     height: 4,
                                     decoration: const BoxDecoration(
-                                        gradient: SgColor.gradiente),
+                                      gradient: SgColor.gradiente,
+                                    ),
                                   ),
                                 ),
                               ],
@@ -189,15 +196,19 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
                       const SizedBox(height: 20),
                       Semantics(
                         liveRegion: true,
-                        child: Text(_estado,
-                            textAlign: TextAlign.center,
-                            style: sora(13, 500, color: sg.tinta3)),
+                        child: Text(
+                          _estado,
+                          textAlign: TextAlign.center,
+                          style: sora(13, 500, color: sg.tinta3),
+                        ),
                       ),
                     ],
                   ),
                 ),
-                Text('v1.0.0 (24) · Código Creativo',
-                    style: sora(12, 500, color: sg.tinta3)),
+                Text(
+                  'v1.0.0 (24) · Código Creativo',
+                  style: sora(12, 500, color: sg.tinta3),
+                ),
                 const SizedBox(height: 14),
                 const SgBarraGestos(),
               ],

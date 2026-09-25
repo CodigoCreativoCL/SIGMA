@@ -55,7 +55,7 @@ namespace SitioBase
                     foreach (string archivoExistente in archivosExistentes)
                     {
                         FileInfo fi = new FileInfo(archivoExistente);
-                        if (fi.CreationTime < DateTime.Now.AddDays(-1))
+                        if (fi.CreationTime < global::SitioBase.Hora.Ahora.AddDays(-1))
                         {
                             fi.Delete();
                         }

@@ -18,6 +18,18 @@ namespace SitioBase.Controller
             try
             {
                 cmd.CommandText = "SEL_MENUS";
+
+                /* EL MENU LATERAL ES DE LA WEB
+
+                   Menus.mnu_ambito dice donde vive cada opcion: WEB, APP o
+                   AMBOS. Sin este parametro la barra mostraba tambien las
+                   dieciseis opciones del telefono -Mis tareas, Pautas de
+                   inspeccion, Bitacora de planta- y varias de ellas ni
+                   siquiera tienen pagina web que abrir.
+
+                   El ambito va aca y no en la pantalla porque es la misma
+                   pregunta que ya responde el SP para la app. */
+                cmd.Parameters.AddWithValue("@AMBITO", 1);
                 //if (menu.mnu_tipo > 0) cmd.Parameters.AddWithValue("@TIPO", menu.mnu_tipo);
                 //if (menu.mnu_nivel > 0) cmd.Parameters.AddWithValue("@NIVEL", menu.mnu_nivel);
                 //if (menu.mnu_padre > 0) cmd.Parameters.AddWithValue("@PADRE", menu.mnu_padre);

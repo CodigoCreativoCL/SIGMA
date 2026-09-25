@@ -144,6 +144,12 @@
       <Private>True</Private>
       <HintPath>..\packages\Microsoft.AspNet.WebPages.3.2.9\lib\net45\System.Web.Helpers.dll</HintPath>
     </Reference>
+    <Reference Include="Swashbuckle.Core, Version=1.0.0.0, Culture=neutral, PublicKeyToken=cd1bb07a5ac7c7bc, processorArchitecture=MSIL">
+      <HintPath>..\packages\Swashbuckle.Core.5.6.0\lib\net40\Swashbuckle.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="WebActivatorEx, Version=2.0.0.0, Culture=neutral, PublicKeyToken=7b26dc2a43f6a0d4, processorArchitecture=MSIL">
+      <HintPath>..\packages\WebActivatorEx.2.0\lib\net40\WebActivatorEx.dll</HintPath>
+    </Reference>
     <Reference Include="System.Web.Http, Version=5.2.9.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.AspNet.WebApi.Core.5.2.9\lib\net45\System.Web.Http.dll</HintPath>
     </Reference>
@@ -193,6 +199,7 @@
     <Compile Include="App_Start\RouteConfig.cs" />
     <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="App_Start\WebApiConfig.cs" />
+    <Compile Include="App_Start\SwaggerConfig.cs" />
     <Compile Include="Areas\HelpPage\ApiDescriptionExtensions.cs" />
     <Compile Include="Areas\HelpPage\App_Start\HelpPageConfig.cs" />
     <Compile Include="Areas\HelpPage\Controllers\HelpController.cs" />
@@ -224,6 +231,7 @@
     <Compile Include="Controllers\ActivoEstadosController.cs" />
     <Compile Include="Controllers\ActivosController.cs" />
     <Compile Include="Controllers\FavoritosController.cs" />
+    <Compile Include="Controllers\PosicionesController.cs" />
     <Compile Include="Controllers\CompartirController.cs" />
     <Compile Include="Controllers\OrdenesTrabajoController.cs" />
     <Compile Include="Controllers\ChecklistController.cs" />
@@ -236,6 +244,7 @@
     <Compile Include="Controllers\ClienteUsuariosController.cs" />
     <Compile Include="Controllers\InstalacionAreasController.cs" />
     <Compile Include="Controllers\MiPerfilController.cs" />
+    <Compile Include="Controllers\MedidoresController.cs" />
     <Compile Include="Controllers\MenusController.cs" />
     <Compile Include="Controllers\AlertasController.cs" />
     <Compile Include="Controllers\BodegasController.cs" />
@@ -243,6 +252,8 @@
     <Compile Include="Controllers\SincronizacionController.cs" />
     <Compile Include="Controllers\DispositivosController.cs" />
     <Compile Include="Controllers\CapturaTerrenoController.cs" />
+    <Compile Include="Controllers\ComponentesController.cs" />
+    <Compile Include="Controllers\DictadoVozController.cs" />
     <Compile Include="Controllers\EscaneoController.cs" />
     <Compile Include="Controllers\InventarioMovimientosController.cs" />
     <Compile Include="Controllers\RepuestosController.cs" />
@@ -252,14 +263,26 @@
     <Compile Include="MVC\Model\Dto.cs" />
     <Compile Include="Controllers\ArchivoController.cs" />
     <Compile Include="Controllers\PermisosTrabajoController.cs" />
+    <Compile Include="Controllers\PlanOcurrenciasController.cs" />
+    <Compile Include="Controllers\FallasController.cs" />
+    <Compile Include="Controllers\IndisponibilidadesController.cs" />
     <Compile Include="Services\BlobService.cs" />
+    <Compile Include="Services\RutaArchivo.cs" />
     <Compile Include="Utils\ApiBase.cs" />
     <Compile Include="Utils\CacheCorta.cs" />
     <Compile Include="Utils\Datos.cs" />
+    <Compile Include="Utils\Hora.cs" />
     <Compile Include="Utils\ErrorSql.cs" />
     <Compile Include="Utils\Pagina.cs" />
     <Compile Include="Utils\Permisos.cs" />
     <Compile Include="Utils\SesionApi.cs" />
+    <Compile Include="Utils\SuscripcionHandler.cs" />
+    <Compile Include="Utils\ClaveServicio.cs" />
+    <Compile Include="Utils\AzureMl.cs" />
+    <Compile Include="Utils\PuntuadorFalla.cs" />
+    <Compile Include="Utils\CustomVision.cs" />
+    <Compile Include="Utils\PuntuadorRul.cs" />
+    <Compile Include="Controllers\SigmaAiController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\Token\AutenticacionServiceController.cs" />
     <Compile Include="Global.asax.cs">
@@ -271,6 +294,7 @@
     <Compile Include="Utils\Respuesta.cs" />
     <Compile Include="Utils\TokenGenerator.cs" />
     <Compile Include="Utils\TokenValidationHandler.cs" />
+    <Compile Include="Utils\SuscripcionVigenteHandler.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Areas\HelpPage\HelpPage.css" />

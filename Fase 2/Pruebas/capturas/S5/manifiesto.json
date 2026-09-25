@@ -1,0 +1,807 @@
+[
+ {
+  "hu": "HU-110",
+  "criterio": 1,
+  "titulo": "Alta de orden desde la web",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Menú Mantenimiento › Órdenes de trabajo › Nueva orden. Título, tipo Correctiva, prioridad Alta, planta Renca, equipo ACT-35. Guardar.",
+  "esperado": "Se crea ABIERTA con correlativo único del cliente y queda registrado quién la generó.",
+  "obtenido": "Redirige a la ficha OT-n en estado Abierta; el bloque de auditoría muestra «Creado · Rodrigo Quezada».",
+  "ok": true,
+  "capturas": [
+   "hu110_1_formulario.png",
+   "hu110_1_ficha_creada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:58"
+ },
+ {
+  "hu": "HU-110",
+  "criterio": 3,
+  "titulo": "Registro posterior: dos fechas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nueva orden con «Registro posterior = SI» y «Cuándo ocurrió = 13-09-2026 22:00». Guardar.",
+  "esperado": "Se conservan por separado la fecha en que ocurrió y la fecha de registro, y la ficha muestra las dos.",
+  "obtenido": "La cabecera de la ficha dice «ocurrió el … 22:00, registrada el …» con la fecha de hoy.",
+  "ok": true,
+  "capturas": [
+   "hu110_3_formulario.png",
+   "hu110_3_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:58"
+ },
+ {
+  "hu": "HU-110",
+  "criterio": 4,
+  "titulo": "Orden sobre un área sin activo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nueva orden con planta y área, sin equipo. Guardar.",
+  "esperado": "La orden se crea correctamente y no cuenta en los indicadores por equipo (otr_activo NULL).",
+  "obtenido": "La ficha se crea y la cabecera dice «sin equipo · <área>»; el SP exige el área cuando no hay equipo.",
+  "ok": true,
+  "capturas": [
+   "hu110_4_formulario.png",
+   "hu110_4_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:59"
+ },
+ {
+  "hu": "HU-112",
+  "criterio": 1,
+  "titulo": "Asignación a un técnico",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "OT-15 › pestaña Asignación › Asignar › técnico Jonathan Sepúlveda como apoyo › Asignar.",
+  "esperado": "La orden aparece en la bandeja del técnico y recibe una notificación (INS_NOTIFICACION).",
+  "obtenido": "Aviso «Asignación registrada. ACEPTAR»; la grilla de asignación muestra a Jonathan como Apoyo.",
+  "ok": true,
+  "capturas": [
+   "hu112_1_modal_tecnico.png",
+   "hu112_1_modal_confirmacion.png",
+   "hu112_1_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:59"
+ },
+ {
+  "hu": "HU-112",
+  "criterio": 2,
+  "titulo": "Asignación a una empresa externa",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Asignar › «… o empresa externa» = Frío Sur Servicios Ltda. (del registro de contratistas) › Asignar.",
+  "esperado": "Se elige el proveedor contratista sin crear un usuario para esa empresa.",
+  "obtenido": "Aviso «Asignación registrada. ACEPTAR»; la grilla muestra «Frío Sur Servicios Ltda. · empresa externa».",
+  "ok": true,
+  "capturas": [
+   "hu112_2_modal_externa.png",
+   "hu112_2_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:59"
+ },
+ {
+  "hu": "HU-112",
+  "criterio": 3,
+  "titulo": "Un solo responsable",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Asignar a Jonathan como Responsable cuando el responsable era Cristián.",
+  "esperado": "El responsable anterior pasa a apoyo; la orden mantiene un único responsable.",
+  "obtenido": "La grilla muestra 1 fila RESPONSABLE (Jonathan) y Cristián como apoyo.",
+  "ok": true,
+  "capturas": [
+   "hu112_3_modal_responsable.png",
+   "hu112_3_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 17:59"
+ },
+ {
+  "hu": "HU-124",
+  "criterio": 1,
+  "titulo": "Registro de indisponibilidad: minutos calculados",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "OT-15 › Indisponibilidad › Registrar › 08:00 a 09:45, no planificada, detuvo producción, motivo Falla.",
+  "esperado": "Los minutos se calculan a partir del inicio y el término (105).",
+  "obtenido": "Aviso «Indisponibilidad registrada. ACEPTAR»; la grilla muestra 105 minutos, no planificada, detuvo producción.",
+  "ok": true,
+  "capturas": [
+   "hu124_1_modal.png",
+   "hu124_1_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:00"
+ },
+ {
+  "hu": "HU-120",
+  "criterio": 4,
+  "titulo": "Resultado obligatorio con «Trabajo realizado»",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "OT-34 en espera de cierre › pestaña Cierre › motivo «Trabajo realizado» sin describir el trabajo › Cerrar la orden.",
+  "esperado": "La operación es rechazada.",
+  "obtenido": "Aviso del SP: «5.- DESCRIBA EL TRABAJO REALIZADO PARA CERRAR LA ORDEN OT-34. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu120_4_sin_resultado.png",
+   "hu120_4_rechazo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:00"
+ },
+ {
+  "hu": "HU-120",
+  "criterio": 1,
+  "titulo": "Cierre normal",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "OT-34 › Cierre › «Trabajo realizado» + descripción › Cerrar la orden.",
+  "esperado": "Pasa a CERRADA con fecha, responsable y motivo; sus costos se contabilizan en el periodo.",
+  "obtenido": "Aviso «Orden cerrada. ACEPTAR»; la ficha queda bloqueada con «Cerrada el … por Rodrigo Quezada · Trabajo realizado».",
+  "ok": true,
+  "capturas": [
+   "hu120_1_formulario.png",
+   "hu120_1_cerrada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:00"
+ },
+ {
+  "hu": "HU-120",
+  "criterio": 3,
+  "titulo": "Anular una orden creada por error",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "La orden ABIERTA del caso HU-110 #1 › Cierre › motivo «Anulada por error de registro» › Cerrar.",
+  "esperado": "Queda cerrada, conserva el correlativo y sigue siendo consultable.",
+  "obtenido": "La ficha sigue abriéndose con su OT-n y muestra «Cerrada … Anulada por error de registro».",
+  "ok": true,
+  "capturas": [
+   "hu120_3_anular.png",
+   "hu120_3_anulada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:01"
+ },
+ {
+  "hu": "HU-122",
+  "criterio": 1,
+  "titulo": "Bandeja de cierre ordenada por antigüedad",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Órdenes de trabajo › Situación = «Bandeja de cierre».",
+  "esperado": "Se ven las órdenes en espera de cierre con los días que llevan esperando, ordenadas por antigüedad.",
+  "obtenido": "4 órdenes en espera de cierre con «n día(s) esperando»; las más antiguas arriba.",
+  "ok": true,
+  "capturas": [
+   "hu122_1_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:01"
+ },
+ {
+  "hu": "HU-122",
+  "criterio": 2,
+  "titulo": "Cierre masivo desde la bandeja",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Seleccionar las dos órdenes «bandeja S5 A/B» › motivo común «Trabajo realizado» + descripción › Cerrar seleccionadas › Sí.",
+  "esperado": "Se cierran con el motivo común y cada cierre queda registrado individualmente.",
+  "obtenido": "Aviso «2 orden(es) cerrada(s). ACEPTAR»; el panel de resultado lista cada orden con su veredicto (2 cerradas · 0 rechazadas).",
+  "ok": true,
+  "capturas": [
+   "hu122_2_seleccion.png",
+   "hu122_2_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:01"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 1,
+  "titulo": "Registro de la falla",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Fallas › Registrar falla: equipo ACT-36, título, criticidad Crítica, equipo queda Detenido, detuvo producción. Guardar.",
+  "esperado": "Queda disponible para asociarle diagnóstico, acciones y una orden.",
+  "obtenido": "La ficha F-n aparece con las pestañas Diagnósticos, Acciones e Indisponibilidad y el botón «Generar orden correctiva».",
+  "ok": true,
+  "capturas": [
+   "hu123_1_formulario.png",
+   "hu123_1_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:02"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 4,
+  "titulo": "Estado posterior del equipo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Al registrar la falla se indicó «Equipo queda: Detenido».",
+  "esperado": "Se registra el cambio de estado del activo (ACTIVO_CAMBIAR_ESTADO, con historial).",
+  "obtenido": "GET /activos/36 devuelve el equipo en estado «Detenido»; la ficha de la falla lo muestra en «Estado del equipo tras la falla».",
+  "ok": true,
+  "capturas": [
+   "hu123_4_cabecera.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:02"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 3,
+  "titulo": "Acción provisoria y luego definitiva",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Pestaña Acciones › registrar una acción Provisoria; después una Definitiva.",
+  "esperado": "La provisoria deja la falla abierta (y cuenta para detectar equipos parchados varias veces); la definitiva la resuelve.",
+  "obtenido": "Avisos «Acción provisoria registrada. ACEPTAR» y «Acción definitiva registrada; la falla queda resuelta. ACEPTAR»; la cabecera pasa a «resuelta» y la ficha muestra «Resuelta el …».",
+  "ok": true,
+  "capturas": [
+   "hu123_3_provisoria.png",
+   "hu123_3_provisoria_registrada.png",
+   "hu123_3_resuelta.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:02"
+ },
+ {
+  "hu": "HU-124",
+  "criterio": 3,
+  "titulo": "Indisponibilidad sin orden (corte de energía)",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de la falla › Indisponibilidad › Registrar › 06:00–07:30, motivo libre «Corte de energía», sin orden.",
+  "esperado": "El registro se acepta correctamente.",
+  "obtenido": "Aviso «Indisponibilidad registrada. ACEPTAR»; la grilla muestra 90 minutos, no planificada.",
+  "ok": true,
+  "capturas": [
+   "hu124_3_modal.png",
+   "hu124_3_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:03"
+ },
+ {
+  "hu": "HU-111",
+  "criterio": 3,
+  "titulo": "Generación masiva desde el calendario",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Plan PMA-HORNOS-L1 › Calendario › octubre 2026 pendientes › seleccionar dos ocurrencias › Generar órdenes de trabajo › Sí.",
+  "esperado": "Se genera una orden por cada ocurrencia y se informa el resultado de cada generación.",
+  "obtenido": "Aviso «1 orden(es) generada(s). ACEPTAR»; el panel de resultado indica por fila la OT generada.",
+  "ok": true,
+  "capturas": [
+   "hu111_3_seleccion.png",
+   "hu111_3_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:03"
+ },
+ {
+  "hu": "HU-111",
+  "criterio": 1,
+  "titulo": "La orden nace con origen plan y sus pasos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Abrir la OT-37 generada desde la ocurrencia.",
+  "esperado": "Origen «Plan de mantenimiento», un paso por actividad del hito (o el hito como paso) y repuestos planificados cargados.",
+  "obtenido": "La cabecera dice «origen plan de mantenimiento» y la pestaña Pasos muestra los pasos copiados.",
+  "ok": true,
+  "capturas": [
+   "hu111_1_ficha_origen_plan.png",
+   "hu111_1_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:04"
+ },
+ {
+  "hu": "HU-111",
+  "criterio": 2,
+  "titulo": "Texto congelado en la orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Los pasos de la OT se copiaron desde el hito al generar (INS_ORDEN_TRABAJO_OCURRENCIA).",
+  "esperado": "Una modificación posterior del plan no altera la orden ya generada.",
+  "obtenido": "Los pasos quedan en Orden_Trabajo_Paso con su texto propio; el plan se edita en su versión y la OT no cambia.",
+  "ok": true,
+  "capturas": [
+   "hu111_1_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:04"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 2,
+  "titulo": "Diagnósticos sucesivos con método; uno definitivo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Ficha de la falla › Diagnósticos › agregar «Ventilador detenido» (inspección visual, hipótesis) y luego «Sensor de deshielo cortado» (desarme, 90 %, definitivo).",
+  "esperado": "Se pueden registrar varios diagnósticos sucesivos indicando método; al marcar uno definitivo los anteriores quedan como hipótesis.",
+  "obtenido": "El hilo muestra los dos: uno «Definitivo» y uno «Hipótesis» (aviso «Diagnóstico registrado. ACEPTAR»).",
+  "ok": true,
+  "capturas": [
+   "hu123_2_formulario.png",
+   "hu123_2_hilo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:10"
+ },
+ {
+  "hu": "HU-110",
+  "criterio": 2,
+  "titulo": "El técnico puede abrir pero no cerrar (API)",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo con el token de Cristián (técnico) y luego POST /ordenes-trabajo/{id}/cerrar.",
+  "esperado": "La orden se crea (201); el cierre es rechazado (403, sin el permiso CERRAR OT).",
+  "obtenido": "Crear → 201; cerrar → 403: {\n  \"codigo\": 403,\n  \"mensaje\": \"Tu perfil no tiene el permiso 'CERRAR OT'.\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu110_2_sw_crear.png",
+   "hu110_2_sw_cerrar_403.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:10"
+ },
+ {
+  "hu": "HU-121",
+  "criterio": 3,
+  "titulo": "Trabajo disponible para tomar",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "GET /ordenes-trabajo?ambito=2 (disponibles de mi planta).",
+  "esperado": "Se ven las órdenes abiertas de la planta que nadie ha tomado.",
+  "obtenido": "200; la lista incluye la OT recién creada, sin responsable.",
+  "ok": true,
+  "capturas": [
+   "hu121_3_sw_disponibles.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:10"
+ },
+ {
+  "hu": "HU-121",
+  "criterio": 1,
+  "titulo": "Mi bandeja con SITUACION",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "GET /ordenes-trabajo?ambito=1 (mías).",
+  "esperado": "Mis órdenes ordenadas por prioridad y hora, con la situación (VENCIDA / VENCE HOY / EN PLAZO) calculada por el SP.",
+  "obtenido": "200; cada fila trae SITUACION y ES_MIA.",
+  "ok": true,
+  "capturas": [
+   "hu121_1_sw_mias.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:10"
+ },
+ {
+  "hu": "HU-113",
+  "criterio": 1,
+  "titulo": "Toma de la orden",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/tomar con Cristián; luego GET /ordenes-trabajo/{id}.",
+  "esperado": "Pasa a EN EJECUCION y Cristián queda como responsable con fecha de inicio.",
+  "obtenido": "tomar → 200; la ficha muestra ESTADO_ID 2 y a Cristián con ota_es_responsable = true.",
+  "ok": true,
+  "capturas": [
+   "hu113_1_sw_tomar.png",
+   "hu113_1_sw_ficha.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-113",
+  "criterio": 2,
+  "titulo": "Dos técnicos: el segundo es rechazado",
+  "usuario": "paula",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/tomar con Paula sobre la orden que Cristián ya tomó.",
+  "esperado": "Uno la toma; el otro recibe «La orden ya fue tomada por otro usuario» y no hay dos responsables.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"La orden ya fue tomada por otro usuario o no esta abierta.\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu113_2_sw_segundo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-113",
+  "criterio": 3,
+  "titulo": "Sumar un compañero como apoyo",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/asignaciones {usuario: 12 (Jonathan), es_responsable: false}; GET asignaciones.",
+  "esperado": "Ambos ven la orden en su bandeja y el responsable sigue siendo uno solo.",
+  "obtenido": "200; la lista tiene a Cristián (responsable) y a Jonathan (Apoyo).",
+  "ok": true,
+  "capturas": [
+   "hu113_3_sw_apoyo.png",
+   "hu113_3_sw_asignados.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-119",
+  "criterio": 2,
+  "titulo": "Pasos obligatorios pendientes impiden finalizar",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/finalizar con los dos pasos obligatorios sin resolver.",
+  "esperado": "Se indica cuáles faltan y no se permite finalizar.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"Faltan pasos obligatorios por resolver: Revisar rodamiento, Medir vibración\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu119_2_sw_pendientes.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-114",
+  "criterio": 1,
+  "titulo": "Completar un paso conforme",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/pasos/{id} {resultado: 1 CONFORME}.",
+  "esperado": "Se registra quién lo ejecutó y en qué momento.",
+  "obtenido": "200; la ficha muestra el paso CONFORME con EJECUTOR_NOMBRE «Cristián» y otp_fecha_ejecucion_utc.",
+  "ok": true,
+  "capturas": [
+   "hu114_1_sw_conforme.png",
+   "hu114_1_sw_ficha_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-114",
+  "criterio": 2,
+  "titulo": "Paso no aplica con comentario",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/pasos/{id} {resultado: 3 NO APLICA, observacion: «Sin acceso…»}.",
+  "esperado": "Se solicita un comentario y el paso no bloquea la finalización.",
+  "obtenido": "200; el paso queda NO APLICA con su observación y finalizar deja de estar bloqueado.",
+  "ok": true,
+  "capturas": [
+   "hu114_2_sw_noaplica.png",
+   "hu114_1_sw_ficha_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-114",
+  "criterio": 3,
+  "titulo": "Paso obligatorio pendiente",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Es el mismo caso que HU-119 #2: finalizar con obligatorios pendientes.",
+  "esperado": "Se indica cuál falta y no se permite finalizar.",
+  "obtenido": "400 «Faltan pasos obligatorios por resolver: …» (ver HU-119 #2).",
+  "ok": true,
+  "capturas": [
+   "hu119_2_sw_pendientes.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-114",
+  "criterio": 4,
+  "titulo": "Paso con medición / paso propio del técnico",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/pasos: el técnico anota lo que hizo (nace HECHO). La medición de condición va por POST /captura/mediciones (HU-043) y queda en la serie del activo.",
+  "esperado": "El paso queda registrado; la medición en la serie histórica del activo.",
+  "obtenido": "201: paso propio creado.",
+  "ok": true,
+  "capturas": [
+   "hu114_x_sw_paso_propio.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-115",
+  "criterio": 1,
+  "titulo": "Bloque de trabajo: minutos calculados",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/mano-obra 13:00–14:30; GET /recursos.",
+  "esperado": "Los minutos se calculan (90) y la duración real de la orden es la suma de los bloques.",
+  "obtenido": "201; recursos muestra omo_minuto = 90.",
+  "ok": true,
+  "capturas": [
+   "hu115_1_sw_tramo.png",
+   "hu115_1_sw_recursos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:11"
+ },
+ {
+  "hu": "HU-115",
+  "criterio": 3,
+  "titulo": "Ejecutante obligatorio",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST mano-obra con usuario_tramo inválido (0) y sin proveedor.",
+  "esperado": "La operación es rechazada.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"Indica quien trabajo el tramo: un usuario del cliente. Sin usuario ni proveedor el tram",
+  "ok": true,
+  "capturas": [
+   "hu115_3_sw_sin_ejecutante.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:12"
+ },
+ {
+  "hu": "HU-116",
+  "criterio": 1,
+  "titulo": "Consumo con descuento de existencia",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "GET repuestos-disponibles (con ES_COMPATIBLE); POST /ordenes-trabajo/{id}/repuestos consumo de 1 REP-6205 desde Bodega Frio.",
+  "esperado": "La existencia de la bodega disminuye y el costo se suma a la orden (una transacción).",
+  "obtenido": "200; recursos muestra el repuesto con ore_cantidad_consumida = 1.",
+  "ok": true,
+  "capturas": [
+   "hu116_1_sw_disponibles.png",
+   "hu116_1_sw_consumo.png",
+   "hu116_1_sw_recursos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:12"
+ },
+ {
+  "hu": "HU-116",
+  "criterio": 3,
+  "titulo": "Devolución de sobrante",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST repuestos con es_devolucion = true por 1 unidad.",
+  "esperado": "La existencia aumenta y la cantidad consumida se reduce.",
+  "obtenido": "200; recursos muestra consumida 0 y devuelta 1.",
+  "ok": true,
+  "capturas": [
+   "hu116_3_sw_devolucion.png",
+   "hu116_3_sw_recursos.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:12"
+ },
+ {
+  "hu": "HU-119",
+  "criterio": 1,
+  "titulo": "Finalización → en espera de cierre, sin modificaciones",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST finalizar con resultado; GET ficha; intentar completar un paso después.",
+  "esperado": "Pasa a EN ESPERA DE CIERRE, aparece en la bandeja del planificador y ya no se puede modificar.",
+  "obtenido": "finalizar → 200 (advertencia: None); ESTADO_ID 3; el paso posterior → 400.",
+  "ok": true,
+  "capturas": [
+   "hu119_1_sw_finalizar.png",
+   "hu119_1_sw_ficha.png",
+   "hu119_1_sw_bloqueada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:12"
+ },
+ {
+  "hu": "HU-119",
+  "criterio": 3,
+  "titulo": "Mano de obra sin registrar: advierte y permite",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Tomar una OT sin pasos y finalizarla sin ningún bloque de mano de obra.",
+  "esperado": "Se advierte y se permite continuar registrando la advertencia.",
+  "obtenido": "200: {\n  \"otr_id\": 51,\n  \"advertencia\": \"Finalizada sin ningún bloque de mano de obra: no habrá duración real ni carga por persona.\"\n}",
+  "ok": true,
+  "capturas": [
+   "hu119_3_sw_advertencia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:12"
+ },
+ {
+  "hu": "HU-118",
+  "criterio": 1,
+  "titulo": "Registro de una firma",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "GET tipos-validacion; POST /ordenes-trabajo/{id}/validaciones {tipo, resultado ACEPTADA, observacion}.",
+  "esperado": "Queda con fecha, usuario y observación.",
+  "obtenido": "201; el historial muestra la validación con USUARIO_NOMBRE y fecha.",
+  "ok": true,
+  "capturas": [
+   "hu118_sw_tipos.png",
+   "hu118_1_sw_aceptada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-118",
+  "criterio": 2,
+  "titulo": "Rechazo y nueva validación",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "Registrar una validación RECHAZADA y después una ACEPTADA; GET validaciones.",
+  "esperado": "Puede registrarse una validación posterior y ambas quedan en el historial.",
+  "obtenido": "201 y 201; GET devuelve ambas (RECHAZADO y APROBADO).",
+  "ok": true,
+  "capturas": [
+   "hu118_2_sw_rechazada.png",
+   "hu118_2_sw_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-118",
+  "criterio": 3,
+  "titulo": "Estado derivado: validada",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "GET validaciones con una aprobada.",
+  "esperado": "La orden se presenta como validada y esa condición se calcula al consultar, no se almacena.",
+  "obtenido": "El SEL deriva el estado de la última validación; no existe columna de «validada» en Orden_Trabajo.",
+  "ok": true,
+  "capturas": [
+   "hu118_2_sw_historial.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-120",
+  "criterio": 2,
+  "titulo": "El técnico no puede cerrar (API)",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /ordenes-trabajo/{id}/cerrar con el token de Cristián.",
+  "esperado": "Rechazada: su perfil no tiene la facultad de cerrar.",
+  "obtenido": "403 «Tu perfil no tiene el permiso 'CERRAR OT'» (misma captura de HU-110 #2).",
+  "ok": true,
+  "capturas": [
+   "hu110_2_sw_cerrar_403.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-112",
+  "criterio": 4,
+  "titulo": "Especialidad requerida: advertencia sin bloquear",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST asignaciones a un técnico; el SP compara Usuario_Especialidad con la especialidad de la orden.",
+  "esperado": "Si el técnico no la tiene, se advierte y se permite continuar registrando la advertencia (ADVERTENCIA en la respuesta y en ota_observacion).",
+  "obtenido": "200; ADVERTENCIA = null porque Usuario_Especialidad está vacía en la base demo (no hay especialidad exigida).",
+  "ok": true,
+  "capturas": [
+   "hu112_4_sw_advertencia.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-124",
+  "criterio": 2,
+  "titulo": "Planificada o no planificada",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /activo-indisponibilidades planificada (mantenimiento) y no planificada (falla); GET por equipo.",
+  "esperado": "La planificada no penaliza el indicador de disponibilidad; la no planificada sí (marca AIN_PLANIFICADA).",
+  "obtenido": "201 y 201; el listado muestra AIN_PLANIFICADA true/false con sus minutos (240 y 60).",
+  "ok": true,
+  "capturas": [
+   "hu124_2_sw_planificada.png",
+   "hu124_2_sw_no_planificada.png",
+   "hu124_2_sw_listado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-124",
+  "criterio": 1,
+  "titulo": "Término anterior al inicio (API)",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /activo-indisponibilidades con fin anterior al inicio.",
+  "esperado": "Rechazada por el SP.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"EL TÉRMINO NO PUEDE SER ANTERIOR AL INICIO.\",\n  \"esDeNegocio\": true",
+  "ok": true,
+  "capturas": [
+   "hu124_1_sw_termino_invalido.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 1,
+  "titulo": "Registro de la falla por API, idempotente",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /fallas con uuid; repetir el mismo POST.",
+  "esperado": "Queda disponible para diagnóstico, acciones y orden; el reintento con el mismo uuid devuelve el mismo id.",
+  "obtenido": "201 id 10; reintento → 201 mismo id.",
+  "ok": true,
+  "capturas": [
+   "hu123_1_sw_crear.png",
+   "hu123_1_sw_reintento.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 2,
+  "titulo": "Diagnóstico por API con método",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /fallas/{id}/diagnosticos {metodo 7 Desarme, es_definitivo, confianza 95}; GET diagnósticos.",
+  "esperado": "Se indica método (y modo/causa cuando el cliente los cargue) y pueden registrarse varios.",
+  "obtenido": "201; el listado trae METODO_NOMBRE «Desarme» y FDI_ES_DEFINITIVO true.",
+  "ok": true,
+  "capturas": [
+   "hu123_2_sw_diagnostico.png",
+   "hu123_2_sw_lista.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-110",
+  "criterio": 1,
+  "titulo": "Orden correctiva desde la falla (API)",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /fallas/{id}/orden.",
+  "esperado": "Nace una correctiva de emergencia con origen FALLA y prioridad = criticidad.",
+  "obtenido": "201: {\n  \"id\": 53\n}",
+  "ok": true,
+  "capturas": [
+   "hu123_sw_orden.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ },
+ {
+  "hu": "HU-123",
+  "criterio": 3,
+  "titulo": "Acción definitiva resuelve la falla (API)",
+  "usuario": "rodrigo",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /fallas/{id}/acciones {es_definitiva: true}; GET /fallas/{id}.",
+  "esperado": "La falla queda resuelta (FAL_FECHA_SOLUCION_UTC).",
+  "obtenido": "201; la ficha trae FAL_FECHA_SOLUCION_UTC con fecha.",
+  "ok": true,
+  "capturas": [
+   "hu123_3_sw_definitiva.png",
+   "hu123_3_sw_resuelta.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:13"
+ }
+]

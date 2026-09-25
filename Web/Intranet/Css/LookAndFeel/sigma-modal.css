@@ -201,6 +201,7 @@ html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
 .sigma-modal-grid > .is-mini   { grid-column: span 2; }  /* ID, un numero corto   */
 .sigma-modal-grid > .is-chico  { grid-column: span 3; }  /* codigo, fecha, cantidad */
 .sigma-modal-grid > .is-medio  { grid-column: span 4; }  /* explicito, por claridad */
+.sigma-modal-grid > .is-cuarto { grid-column: span 3; }  /* cuatro por fila       */
 .sigma-modal-grid > .is-cinco  { grid-column: span 5; }  /* un grupo de casillas   */
 .sigma-modal-grid > .is-mitad  { grid-column: span 6; }
 .sigma-modal-grid > .is-grande { grid-column: span 8; }
@@ -1149,4 +1150,177 @@ html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
 .sg-fecha-icono:focus-visible {
     outline: 2px solid var(--sg-purple, #6C5CFF);
     outline-offset: 1px;
+}
+
+/* ---- El boton de archivo -------------------------------------------
+   `sigma-img-btn` se venia usando en la ficha del activo sin estar definida
+   en ningun lado: era un <label> suelto que el kit pintaba como texto. Va
+   aca, que es el CSS que cargan tanto los modales como el centro. */
+.sigma-img-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 14px;
+    border: 1px solid var(--sg-border, #e2e8f0);
+    border-radius: 10px;
+    background: var(--sg-surface, #fff);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--fg-m3-text, #1f2937);
+    text-decoration: none;
+    cursor: pointer;
+}
+.sigma-img-btn:hover {
+    border-color: var(--sg-purple, #6C5CFF);
+    color: var(--sg-purple, #6C5CFF);
+}
+.sigma-img-btn i { font-size: 16px; }
+
+/* Dentro de un campo del formulario no se estira al ancho de la columna: un
+   boton de una palabra midiendo media pantalla parece un campo de texto. */
+.sigma-modal-field > .sigma-img-btn { align-self: flex-start; }
+
+.sigma-img-btn.es-primario {
+    border-color: var(--sg-purple, #6C5CFF);
+    background: var(--sg-purple, #6C5CFF);
+    color: #fff;
+}
+.sigma-img-btn.es-primario:hover {
+    background: var(--sg-purple-hover, #5847E8);
+    border-color: var(--sg-purple-hover, #5847E8);
+    color: #fff;
+}
+
+/* La nota de contexto del formulario: contra que se va a comparar lo que se
+   esta por escribir. Va al pie de la seccion, no al lado de un campo.
+
+   El texto va en su propio hijo: como items sueltos del flex, cada <strong>
+   se volvia una columna y la frase se leia desordenada. */
+.sigma-modal-nota {
+    display: flex;
+    align-items: flex-start;
+    gap: 7px;
+    margin: 12px 0 0;
+    padding: 10px 12px;
+    border-radius: 10px;
+    background: var(--sg-surface-subtle, #f6f5ff);
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--fg-m3-text-secondary, #555);
+}
+.sigma-modal-nota i { font-size: 15px; color: var(--sg-purple, #6C5CFF); }
+
+/* Un dato que se muestra y no se edita, con el alto de un campo. */
+.sigma-modal-lectura {
+    display: inline-block;
+    padding-top: 7px;
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--fg-m3-text, #222);
+}
+
+/* ---- La imagen guardada del equipo ------------------------------------
+   Iba con estilos en linea y una fila flex: dentro de la ficha del centro,
+   que es una columna angosta, la etiqueta caia en tres lineas al lado de la
+   foto. */
+.sigma-img-prev {
+    display: block;
+    max-height: 150px;
+    max-width: 100%;
+    margin-top: 8px;
+    border-radius: 8px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    object-fit: contain;
+    cursor: zoom-in;
+}
+
+.sigma-img-actual {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 10px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 12px;
+    background: var(--sg-surface-subtle, #f6f7fb);
+}
+.sigma-img-actual-foto {
+    display: block;
+    flex: none;
+    line-height: 0;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    background: #fff;
+}
+.sigma-img-actual-foto img {
+    display: block;
+    max-height: 110px;
+    max-width: 180px;
+    object-fit: contain;
+    cursor: zoom-in;
+}
+.sigma-img-actual-quitar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    margin: 0;
+    font-size: 12px;
+    font-weight: 600;
+    color: #b91c1c;
+    cursor: pointer;
+}
+.sigma-img-actual-quitar span { line-height: 1.35; }
+
+/* En columna angosta la foto ocupa el ancho y la casilla baja: al lado, el
+   texto caia en tres lineas. */
+@media (max-width: 560px) {
+    .sigma-img-actual { flex-direction: column; align-items: flex-start; }
+    .sigma-img-actual-foto img { max-width: 100%; }
+}
+
+/* ---- La vista previa de la carga masiva ------------------------------
+   Nada se escribe antes de mostrar QUE se va a escribir: una carga que se
+   cae a la mitad deja un catalogo incompleto y nadie sabe donde quedo. */
+.sg-carga-tabla {
+    margin-top: 12px;
+    border: 1px solid var(--sg-border, #e5e7eb);
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.sg-carga-cab,
+.sg-carga-fila {
+    display: grid;
+    grid-template-columns: 54px 120px minmax(140px, 1.4fr) minmax(120px, 1fr) minmax(180px, 1.6fr);
+    gap: 10px;
+    align-items: center;
+    padding: 9px 12px;
+    font-size: 12.5px;
+}
+.sg-carga-cab {
+    background: var(--sg-surface-subtle, #f6f7fb);
+    font-weight: 600;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    color: var(--sg-text-muted, #64748b);
+}
+.sg-carga-fila + .sg-carga-fila,
+.sg-carga-cab + .sg-carga-fila { border-top: 1px solid var(--sg-border, #eef0f5); }
+
+/* El filo de color dice de un vistazo cuantas filas hay que arreglar antes
+   de volver a subir la planilla. */
+.sg-carga-fila.es-ok { box-shadow: inset 3px 0 0 var(--sg-success, #16a34a); }
+.sg-carga-fila.es-mal { box-shadow: inset 3px 0 0 var(--sg-danger, #dc2626); background: #fffafa; }
+
+.sg-carga-fila .sg-ot-chip { white-space: normal; text-align: left; line-height: 1.35; }
+
+.sigma-modal-actions.es-alineado { justify-content: flex-end; margin-top: 12px; }
+
+@media (max-width: 760px) {
+    .sg-carga-cab { display: none; }
+    .sg-carga-fila { grid-template-columns: minmax(0, 1fr); gap: 3px; }
 }

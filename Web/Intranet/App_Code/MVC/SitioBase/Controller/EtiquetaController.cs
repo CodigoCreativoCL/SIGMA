@@ -76,7 +76,22 @@ namespace SitioBase.Controller
         /// significa "todas": rotular la estantería completa de una vez es el
         /// caso normal, no la excepción.
         /// </summary>
-        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega, string urlBase)
+        /// <summary>
+        /// EL QR LLEVA EL CODIGO, NO UNA URL
+        ///
+        /// Antes guardaba la direccion completa de Escanear.aspx con el token
+        /// pegado. La razon era que la camara nativa de cualquier telefono
+        /// pudiera abrirla sin instalar nada, y no era mala, pero el lector que
+        /// de verdad se usa en planta es el de la app: ahi el QR compite con la
+        /// etiqueta impresa y el codigo pelado gana. Es mas corto -menos
+        /// modulos, mas tolerante a la suciedad y al roce del estante-, no
+        /// depende del host, y es exactamente lo mismo que se teclea a mano
+        /// cuando la etiqueta esta rayada.
+        ///
+        /// Las etiquetas YA IMPRESAS siguen sirviendo: Interpretar(), aca y en
+        /// la API, acepta las dos formas.
+        /// </summary>
+        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega)
         {
             List<Etiqueta> lista = new List<Etiqueta>();
 
@@ -110,7 +125,7 @@ namespace SitioBase.Controller
                         item.Detalle = dr["DETALLE"].ToString();
                         item.Pie = dr["PIE"].ToString();
 
-                        item.QrDataUri = GenerarQr(urlBase + item.Token);
+                        item.QrDataUri = GenerarQr(item.Token);
 
                         lista.Add(item);
                     }
@@ -218,6 +233,46 @@ namespace SitioBase.Controller
             }
 
             return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT");
+        }
+
+        /// <summary>
+        /// Lo que la persona TECLEA es el código impreso en grande en la
+        /// etiqueta, y ese código no siempre es el token del QR (hay bodegas
+        /// «BOD-1» con id 12 y repuestos «REP-6205» anteriores a los códigos
+        /// automáticos). SEL_ETIQUETA_RESOLVER lo busca dentro del cliente en
+        /// sesión. Con tipo e id confirma que el token es de este cliente.
+        /// </summary>
+        public bool ResolverPorCodigo(string leido, out string tipo, out int id)
+        {
+            tipo = ""; id = 0;
+            if (string.IsNullOrEmpty(leido) || !Token.TokenSeguridad()) return false;
+
+            string texto = leido.Trim();
+            int corte = texto.LastIndexOf("c=", StringComparison.OrdinalIgnoreCase);
+            if (corte >= 0) texto = texto.Substring(corte + 2);
+            int fin = texto.IndexOfAny(new char[] { '&', '?', '\r', '\n' });
+            if (fin >= 0) texto = texto.Substring(0, fin);
+            texto = texto.Trim();
+            if (texto.Length == 0) return false;
+
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "SEL_ETIQUETA_RESOLVER";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@CODIGO", texto);
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        tipo = dr["TIPO"].ToString();
+                        id = Convert.ToInt32(dr["ID"]);
+                    }
+                }
+                cmd.Connection.Close(); cmd.Dispose();
+            }
+            catch (Exception) { if (cmd.Connection != null) cmd.Connection.Close(); cmd.Dispose(); return false; }
+            return id > 0;
         }
     }
 }

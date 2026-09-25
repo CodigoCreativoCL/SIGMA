@@ -148,6 +148,15 @@ namespace SitioBase.Controller
                         a.alt_codigo = dr["alt_codigo"].ToString();
                         a.alt_nombre = dr["alt_nombre"].ToString();
                         a.alt_icono = dr["alt_icono"].ToString();
+
+                        /* Lo medido y el umbral: el SP los devuelve desde
+                           siempre y nadie los leía. Son los dos números que
+                           explican la alerta -hay 1, el mínimo es 10- y sin
+                           ellos la ficha solo puede repetir la frase. */
+                        if (dr["ale_valor_observado"] != DBNull.Value)
+                            a.ale_valor_observado = decimal.Parse(dr["ale_valor_observado"].ToString());
+                        if (dr["ale_valor_umbral"] != DBNull.Value)
+                            a.ale_valor_umbral = decimal.Parse(dr["ale_valor_umbral"].ToString());
                         a.alt_menu_link = dr["alt_menu_link"].ToString();
                         a.FICHA_LINK = dr["FICHA_LINK"].ToString();
 

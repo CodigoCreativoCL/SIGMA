@@ -424,7 +424,7 @@ namespace SitioBase.Controller
 
             byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(t, true);
 
-            string archivo = "PERMISOS VIGENTES " + DateTime.Now.ToString("dd-MM-yyyy");
+            string archivo = "PERMISOS VIGENTES " + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");
 
             HttpContext.Current.Response.Clear();
             HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";

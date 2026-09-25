@@ -1,40 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
-using System.Linq;
-using System.Web;
-using SitioBase.Model;
 using SitioBase;
+using SitioBase.Model;
 
 namespace SitioBase.Controller
 {
     /// <summary>
-    /// CONTROLLER de la entidad TAREA_CATEGORIA.
-    ///
-    /// REGLAS DEL PATRON (ver PATRON_MVC.md seccion 3):
-    ///  1. Namespace SitioBase.Controller. Una clase por entidad.
-    ///  2. TODA operacion arranca con if (Token.TokenSeguridad()).
-    ///  3. NUNCA SQL embebido. Siempre Stored Procedures:
-    ///        SEL_TAREA_CATEGORIA  INS_TAREA_CATEGORIA  UPD_TAREA_CATEGORIA  DEL_TAREA_CATEGORIA
-    ///  4. Acceso a datos SIEMPRE via SitioBase.Conexion.
-    ///  5. Los metodos de escritura devuelven SitioBase.Respuesta.
-    ///  6. try/catch en todos los metodos, cerrando la conexion en AMBOS caminos.
-    ///  7. Los parametros de filtro se agregan SOLO si vienen informados.
-    ///
-    /// ARCHIVO GENERADO por 03-Generador.
+    /// Categorías de tarea del cliente (HU-100). Un solo SEL sirve al listado y
+    /// a la ficha; las reglas (código único por cliente, dependientes) viven en
+    /// los SP. Todo acotado al cliente en sesión.
     /// </summary>
     public class TareaCategoriaController
     {
-        #region LECTURA
-
-        /// <summary>
-        /// LISTADO. Se usa como DataSource del RadGrid2.
-        /// Recibe un Model que actua SOLO como bolsa de filtros.
-        /// </summary>
-        public List<TareaCategoria> GetTareaCategorias(TareaCategoria tareacategoria = null)
+        public List<TareaCategoria> GetTareaCategorias(TareaCategoria filtro = null)
         {
-            List<TareaCategoria> tareacategorias = new List<TareaCategoria>();
+            List<TareaCategoria> lista = new List<TareaCategoria>();
 
             if (Token.TokenSeguridad())
             {
@@ -42,19 +23,12 @@ namespace SitioBase.Controller
                 try
                 {
                     cmd.CommandText = "SEL_TAREA_CATEGORIA";
-
-                    // Cada filtro se agrega SOLO si viene informado. Lo que no se
-                    // agrega llega al SP como NULL y ese IF del WHERE no se concatena.
-                    if (tareacategoria != null)
+                    if (filtro != null)
                     {
-                        if (tareacategoria.tca_id > 0)
-                            cmd.Parameters.AddWithValue("@ID", tareacategoria.tca_id);
-
-                        if (!string.IsNullOrEmpty(tareacategoria.filtro))
-                            cmd.Parameters.AddWithValue("@FILTRO", tareacategoria.filtro);
-
-                        if (tareacategoria.filtro_habilitado.HasValue)
-                            cmd.Parameters.AddWithValue("@HABILITADO", tareacategoria.filtro_habilitado.Value);
+                        if (filtro.tca_id > 0) cmd.Parameters.AddWithValue("@ID", filtro.tca_id);
+                        if (filtro.tca_cliente > 0) cmd.Parameters.AddWithValue("@CLIENTE", filtro.tca_cliente);
+                        if (filtro.filtro_habilitado != null) cmd.Parameters.AddWithValue("@HABILITADO", filtro.filtro_habilitado);
+                        if (!string.IsNullOrEmpty(filtro.filtro)) cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
                     }
 
                     using (SqlDataReader dr = Conexion.GetDataReader(cmd))
@@ -62,63 +36,18 @@ namespace SitioBase.Controller
                         while (dr.Read())
                         {
                             TareaCategoria item = new TareaCategoria();
-
                             item.tca_id = int.Parse(dr["TCA_ID"].ToString());
+                            item.tca_cliente = int.Parse(dr["TCA_CLIENTE"].ToString());
                             item.tca_codigo = dr["TCA_CODIGO"].ToString();
                             item.tca_nombre = dr["TCA_NOMBRE"].ToString();
                             item.tca_color = dr["TCA_COLOR"].ToString();
-                            item.tca_orden = int.Parse(dr["TCA_ORDEN"].ToString());
+                            if (dr["TCA_ORDEN"] != DBNull.Value) item.tca_orden = int.Parse(dr["TCA_ORDEN"].ToString());
                             item.tca_habilitado = bool.Parse(dr["TCA_HABILITADO"].ToString());
-
-                            tareacategorias.Add(item);
+                            if (dr["TCA_FECHA_CREACION"] != DBNull.Value) item.tca_fecha_creacion = DateTime.Parse(dr["TCA_FECHA_CREACION"].ToString());
+                            if (dr["TCA_FECHA_ACTUALIZACION"] != DBNull.Value) item.tca_fecha_actualizacion = DateTime.Parse(dr["TCA_FECHA_ACTUALIZACION"].ToString());
+                            lista.Add(item);
                         }
                     }
-
-                    cmd.Connection.Close();
-                    cmd.Dispose();
-                }
-                catch (Exception)
-                {
-                    // En los Get devolvemos null para que la vista distinga
-                    // "error" de "lista vacia".
-                    if (cmd.Connection != null) cmd.Connection.Close();
-                    cmd.Dispose();
-                    tareacategorias = null;
-                }
-            }
-
-            return tareacategorias;
-        }
-
-        /// <summary>
-        /// REGISTRO UNICO. Se usa al abrir el formulario de edicion.
-        /// Reutiliza el mismo SP SEL_TAREA_CATEGORIA pasandole @ID.
-        /// </summary>
-        public TareaCategoria GetTareaCategoria(TareaCategoria tareacategoria)
-        {
-            TareaCategoria item = new TareaCategoria();
-
-            if (Token.TokenSeguridad())
-            {
-                SqlCommand cmd = new SqlCommand();
-                try
-                {
-                    cmd.CommandText = "SEL_TAREA_CATEGORIA";
-                    cmd.Parameters.AddWithValue("@ID", tareacategoria.tca_id);
-
-                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
-                    {
-                        while (dr.Read())
-                        {
-                            item.tca_id = int.Parse(dr["TCA_ID"].ToString());
-                            item.tca_codigo = dr["TCA_CODIGO"].ToString();
-                            item.tca_nombre = dr["TCA_NOMBRE"].ToString();
-                            item.tca_color = dr["TCA_COLOR"].ToString();
-                            item.tca_orden = int.Parse(dr["TCA_ORDEN"].ToString());
-                            item.tca_habilitado = bool.Parse(dr["TCA_HABILITADO"].ToString());
-                        }
-                    }
-
                     cmd.Connection.Close();
                     cmd.Dispose();
                 }
@@ -126,166 +55,106 @@ namespace SitioBase.Controller
                 {
                     if (cmd.Connection != null) cmd.Connection.Close();
                     cmd.Dispose();
-                    item = null;
+                    lista = null;
                 }
             }
-
-            return item;
+            return lista;
         }
 
-        #endregion
-
-        #region ESCRITURA
-
-        /// <summary>
-        /// ALTA. El SP INS_TAREA_CATEGORIA devuelve el id generado por el parametro @ID OUTPUT.
-        /// </summary>
-        public Respuesta InsertTareaCategoria(TareaCategoria tareacategoria)
+        public TareaCategoria GetTareaCategoria(int id)
         {
-            Respuesta respuesta = new Respuesta();
+            List<TareaCategoria> lista = GetTareaCategorias(new TareaCategoria { tca_id = id });
+            return (lista != null && lista.Count > 0) ? lista[0] : new TareaCategoria();
+        }
 
+        public Respuesta InsertTareaCategoria(TareaCategoria entidad)
+        {
+            Respuesta r = new Respuesta();
             if (Token.TokenSeguridad())
             {
-                SqlCommand cmdExecute = null;
+                SqlCommand cmd = null;
                 try
                 {
-                    int id = 0;
-                    cmdExecute = Conexion.GetCommand("INS_TAREA_CATEGORIA");
-
-                    // @ID SIEMPRE primero y como OUTPUT: el SP hace SET @ID = SCOPE_IDENTITY().
-                    cmdExecute.Parameters.AddWithValue("@ID", id).Direction = ParameterDirection.Output;
-
-                    cmdExecute.Parameters.AddWithValue("@CODIGO", tareacategoria.tca_codigo);
-                    cmdExecute.Parameters.AddWithValue("@NOMBRE", tareacategoria.tca_nombre);
-                    cmdExecute.Parameters.AddWithValue("@COLOR", (object)tareacategoria.tca_color ?? DBNull.Value);
-                    cmdExecute.Parameters.AddWithValue("@ORDEN", tareacategoria.tca_orden);
-                    cmdExecute.Parameters.AddWithValue("@HABILITADO", tareacategoria.tca_habilitado);
-
-                    // La auditoria NUNCA la manda la pantalla: se toma de la sesion.
-                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
-
-                    cmdExecute.ExecuteNonQuery();
-                    cmdExecute.Connection.Close();
-
-                    id = (int)cmdExecute.Parameters["@ID"].Value;
-
-                    respuesta.codigo = id;
-                    respuesta.detalle = "TareaCategoria creada con exito.";
-                    respuesta.error = false;
+                    cmd = Conexion.GetCommand("INS_TAREA_CATEGORIA");
+                    cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                    cmd.Parameters.AddWithValue("@CLIENTE", entidad.tca_cliente);
+                    cmd.Parameters.AddWithValue("@CODIGO", entidad.tca_codigo);
+                    cmd.Parameters.AddWithValue("@NOMBRE", entidad.tca_nombre);
+                    cmd.Parameters.AddWithValue("@COLOR", (object)entidad.tca_color ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ORDEN", (object)entidad.tca_orden ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = (int)cmd.Parameters["@ID"].Value;
+                    r.detalle = "Categoría creada con éxito.";
+                    r.error = false;
                 }
                 catch (Exception ex)
                 {
-                    if (cmdExecute != null && cmdExecute.Connection != null)
-                        cmdExecute.Connection.Close();
-
-                    respuesta.codigo = -1;
-                    // ex.Message trae el texto del RAISERROR del SP.
-                    respuesta.detalle = ex.Message;
-                    respuesta.error = true;
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
             }
-
-            return respuesta;
+            else { r.codigo = -1; r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion."; r.error = true; }
+            return r;
         }
 
-        /// <summary>
-        /// MODIFICACION. Mismo patron que el alta pero con @ID de entrada.
-        /// </summary>
-        public Respuesta UpdateTareaCategoria(TareaCategoria tareacategoria)
+        public Respuesta UpdateTareaCategoria(TareaCategoria entidad)
         {
-            Respuesta respuesta = new Respuesta();
-
+            Respuesta r = new Respuesta();
             if (Token.TokenSeguridad())
             {
-                SqlCommand cmdExecute = null;
+                SqlCommand cmd = null;
                 try
                 {
-                    cmdExecute = Conexion.GetCommand("UPD_TAREA_CATEGORIA");
-
-                    cmdExecute.Parameters.AddWithValue("@ID", tareacategoria.tca_id);
-                    cmdExecute.Parameters.AddWithValue("@CODIGO", tareacategoria.tca_codigo);
-                    cmdExecute.Parameters.AddWithValue("@NOMBRE", tareacategoria.tca_nombre);
-                    cmdExecute.Parameters.AddWithValue("@COLOR", (object)tareacategoria.tca_color ?? DBNull.Value);
-                    cmdExecute.Parameters.AddWithValue("@ORDEN", tareacategoria.tca_orden);
-                    cmdExecute.Parameters.AddWithValue("@HABILITADO", tareacategoria.tca_habilitado);
-
-                    // La auditoria NUNCA la manda la pantalla: se toma de la sesion.
-                    cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
-
-                    cmdExecute.ExecuteNonQuery();
-                    cmdExecute.Connection.Close();
-
-                    respuesta.codigo = tareacategoria.tca_id;
-                    respuesta.detalle = "TareaCategoria actualizada con exito.";
-                    respuesta.error = false;
+                    cmd = Conexion.GetCommand("UPD_TAREA_CATEGORIA");
+                    cmd.Parameters.AddWithValue("@ID", entidad.tca_id);
+                    cmd.Parameters.AddWithValue("@CODIGO", entidad.tca_codigo);
+                    cmd.Parameters.AddWithValue("@NOMBRE", entidad.tca_nombre);
+                    cmd.Parameters.AddWithValue("@COLOR", (object)entidad.tca_color ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@ORDEN", (object)entidad.tca_orden ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@HABILITADO", entidad.tca_habilitado);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = entidad.tca_id;
+                    r.detalle = "Categoría actualizada con éxito.";
+                    r.error = false;
                 }
                 catch (Exception ex)
                 {
-                    if (cmdExecute != null && cmdExecute.Connection != null)
-                        cmdExecute.Connection.Close();
-
-                    respuesta.codigo = -1;
-                    respuesta.detalle = ex.Message;
-                    respuesta.error = true;
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
             }
-
-            return respuesta;
+            else { r.codigo = -1; r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion."; r.error = true; }
+            return r;
         }
 
-        /// <summary>
-        /// BAJA. TAREA_CATEGORIA es una tabla MAESTRO: el patron pide baja LOGICA
-        /// (UPD_TAREA_CATEGORIA con @HABILITADO = 0), no DELETE fisico.
-        /// DEL_TAREA_CATEGORIA existe solo para casos excepcionales.
-        /// </summary>
-        public Respuesta DeleteTareaCategoria(TareaCategoria tareacategoria)
+        public Respuesta DeleteTareaCategoria(TareaCategoria entidad)
         {
-            Respuesta respuesta = new Respuesta();
-
+            Respuesta r = new Respuesta();
             if (Token.TokenSeguridad())
             {
-                SqlCommand cmdExecute = null;
+                SqlCommand cmd = null;
                 try
                 {
-                    cmdExecute = Conexion.GetCommand("DEL_TAREA_CATEGORIA");
-                    cmdExecute.Parameters.AddWithValue("@ID", tareacategoria.tca_id);
-
-                    cmdExecute.ExecuteNonQuery();
-                    cmdExecute.Connection.Close();
-
-                    respuesta.codigo = tareacategoria.tca_id;
-                    respuesta.detalle = "TareaCategoria eliminada con exito.";
-                    respuesta.error = false;
+                    cmd = Conexion.GetCommand("DEL_TAREA_CATEGORIA");
+                    cmd.Parameters.AddWithValue("@ID", entidad.tca_id);
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = entidad.tca_id;
+                    r.detalle = "Categoría dada de baja con éxito.";
+                    r.error = false;
                 }
                 catch (Exception ex)
                 {
-                    if (cmdExecute != null && cmdExecute.Connection != null)
-                        cmdExecute.Connection.Close();
-
-                    respuesta.codigo = -1;
-                    respuesta.detalle = ex.Message;
-                    respuesta.error = true;
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
                 }
             }
-
-            return respuesta;
+            else { r.codigo = -1; r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion."; r.error = true; }
+            return r;
         }
-
-        /// <summary>
-        /// BAJA LOGICA: la que realmente usa el boton "Deshabilitar" del grid.
-        /// Reutiliza UPD_TAREA_CATEGORIA en vez de crear un SP nuevo.
-        /// </summary>
-        public Respuesta DeshabilitarTareaCategoria(TareaCategoria tareacategoria)
-        {
-            tareacategoria.tca_habilitado = false;
-            Respuesta respuesta = UpdateTareaCategoria(tareacategoria);
-
-            if (!respuesta.error)
-                respuesta.detalle = "TareaCategoria deshabilitada con exito.";
-
-            return respuesta;
-        }
-
-        #endregion
     }
 }

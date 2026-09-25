@@ -54,4 +54,14 @@ namespace SitioBase.Model
         public byte[] abi_archivo { get; set; }
         public FileUpload fileUpload { get; set; }
     }
+
+    /// <summary>Una planta de una persona en un cliente, con su vigencia (HU-014).</summary>
+    public class ClienteUsuarioPlanta
+    {
+        public int instalacion { get; set; }
+        public string nombre { get; set; }
+        public bool habilitada { get; set; }
+        public DateTime? fecha_inicio { get; set; }
+        public DateTime? fecha_fin { get; set; }
+    }
 }

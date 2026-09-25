@@ -7,11 +7,15 @@ abstract final class ApiConstants {
   /// publicada bajo ese segmento y repetirlo daría `.../API/api/sesion`.
   static const String baseUrl = String.fromEnvironment('API_BASE_URL');
 
-  static const int timeoutSegundos =
-      int.fromEnvironment('TIMEOUT_SEGUNDOS', defaultValue: 15);
+  static const int timeoutSegundos = int.fromEnvironment(
+    'TIMEOUT_SEGUNDOS',
+    defaultValue: 15,
+  );
 
-  static const bool logHttp =
-      bool.fromEnvironment('LOG_HTTP', defaultValue: true);
+  static const bool logHttp = bool.fromEnvironment(
+    'LOG_HTTP',
+    defaultValue: true,
+  );
 
   /// Un baseUrl vacío tiene que **fallar temprano y con un mensaje claro**, no
   /// producir peticiones sin host que se ven como un error de red.
@@ -38,9 +42,16 @@ abstract final class ApiConstants {
   static const String activos = '/activos';
   static const String activoEstados = '/activo-estados';
 
+  /// Componentes (vistas 8.1 a 8.4) y medidores (9.1 y 9.2). Los dos cuelgan
+  /// de un activo pero tienen ruta propia: `?activo=` los filtra, y sin el
+  /// parámetro son la búsqueda global que pide 8.1.
+  static const String componentes = '/componentes';
+  static const String medidores = '/medidores';
+
   /// Los valores de un catálogo: `/catalogos/{codigo}/valores`.
   /// El de estados de activo es `ACTIVO_ESTADO`.
-  static String valoresDeCatalogo(String codigo) => '/catalogos/$codigo/valores';
+  static String valoresDeCatalogo(String codigo) =>
+      '/catalogos/$codigo/valores';
 
   // ---- Inventario (Sprint 3) ----
   static const String existencias = '/existencias';
@@ -60,6 +71,7 @@ abstract final class ApiConstants {
   static const String alertas = '/alertas';
   static const String alertasResumen = '/alertas/resumen';
   static const String escaneo = '/escaneo';
+  static const String posiciones = '/posiciones';
 
   // ---- Carga descendente: la sabana de datos (HU-150) ----
 
@@ -127,4 +139,11 @@ abstract final class ApiConstants {
   /// `POST /bitacora/{id}/rectificaciones` corrige **sin borrar**: la entrada
   /// original queda y encima se apila la version corregida con su motivo.
   static const String bitacora = '/bitacora';
+
+  /// Fallas y su diagnóstico (HU-123). La OT correctiva nace de acá con
+  /// `POST /fallas/{id}/orden`.
+  static const String fallas = '/fallas';
+
+  /// Cuánto estuvo detenido un equipo (HU-124). Con o sin orden y falla.
+  static const String indisponibilidades = '/activo-indisponibilidades';
 }

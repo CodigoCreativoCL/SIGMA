@@ -88,8 +88,10 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
 
     try {
       await SigmaRepository.instance.restablecer(_token.text, _nueva.text);
-      mensajero.showSnackBar(const SnackBar(
-          content: Text('Contraseña cambiada. Ya puedes entrar.')));
+      if (!mounted) return;
+      mensajero.showSnackBar(
+        const SnackBar(content: Text('Contraseña cambiada. Ya puedes entrar.')),
+      );
       navegador.pop();
     } on ApiException catch (e) {
       if (mounted) setState(() => _error = e.mensaje);
@@ -107,18 +109,27 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
       backgroundColor: sg.fondo,
       appBar: const SgBarra('Recuperar acceso'),
       bottomNavigationBar: SgPie(
-        child: SgBoton('Volver al acceso',
-            primario: false, onTap: () => Navigator.maybePop(context)),
+        child: SgBoton(
+          'Volver al acceso',
+          primario: false,
+          onTap: () => Navigator.maybePop(context),
+        ),
       ),
       body: ListView(
-        padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 8)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 12, 16, 8),
+        ),
         children: [
-          SgTitulo(enviado
-              ? 'Te enviamos un enlace\nal correo registrado'
-              : '¿No puedes entrar?\nTe mandamos un enlace'),
+          SgTitulo(
+            enviado
+                ? 'Te enviamos un enlace\nal correo registrado'
+                : '¿No puedes entrar?\nTe mandamos un enlace',
+          ),
           const SizedBox(height: 8),
-          Text('El enlace sirve una sola vez y vence en 30 minutos.',
-              style: sora(15, 500, color: sg.tinta2, alto: 1.55)),
+          Text(
+            'El enlace sirve una sola vez y vence en 30 minutos.',
+            style: sora(15, 500, color: sg.tinta2, alto: 1.55),
+          ),
           const SizedBox(height: 24),
           Form(
             key: _formPedir,
@@ -134,10 +145,12 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
             ),
           ),
           const SizedBox(height: 24),
-          SgBoton(enviado ? 'Volver a enviar' : 'Enviar enlace',
-              cargando: _cargando && !enviado,
-              primario: !enviado,
-              onTap: _pedir),
+          SgBoton(
+            enviado ? 'Volver a enviar' : 'Enviar enlace',
+            cargando: _cargando && !enviado,
+            primario: !enviado,
+            onTap: _pedir,
+          ),
           const SizedBox(height: 24),
           const SgRotulo('Estado del enlace'),
           const SizedBox(height: 10),
@@ -150,8 +163,12 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
           ],
           if (_error != null) ...[
             const SizedBox(height: 20),
-            SgAviso(_error!,
-                icono: Icons.error_outline, color: sg.rojoTexto, tenido: true),
+            SgAviso(
+              _error!,
+              icono: Icons.error_outline,
+              color: sg.rojoTexto,
+              tenido: true,
+            ),
           ],
           const SizedBox(height: 16),
         ],
@@ -160,56 +177,57 @@ class _RecuperarClaveScreenState extends State<RecuperarClaveScreen> {
   }
 
   Widget _formularioCambio(AppColors sg) => Form(
-        key: _formCambiar,
-        child: SgCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              SgCampo(
-                controlador: _token,
-                rotulo: 'Código del correo',
-                icono: Icons.vpn_key_outlined,
-                hint: 'Pega el código',
-                validador: (v) => (v == null || v.trim().isEmpty)
-                    ? 'Pega el código que llegó al correo'
-                    : null,
-              ),
-              const SizedBox(height: 16),
-              SgCampo(
-                controlador: _nueva,
-                rotulo: 'Contraseña nueva',
-                icono: Icons.lock_outline,
-                oculto: true,
-                espaciadoTexto: 3,
-                tamanoTexto: 19,
-                pesoTexto: 600,
-                // El largo mínimo lo valida el SP, que es donde vive la
-                // política. Acá solo se atajan los casos obvios para no hacer
-                // viajar un rechazo seguro.
-                validador: (v) =>
-                    (v == null || v.length < 6) ? 'Al menos 6 caracteres' : null,
-              ),
-              const SizedBox(height: 16),
-              SgCampo(
-                controlador: _repetir,
-                rotulo: 'Repetir la contraseña',
-                icono: Icons.lock_outline,
-                oculto: true,
-                espaciadoTexto: 3,
-                tamanoTexto: 19,
-                pesoTexto: 600,
-                validador: (v) =>
-                    v != _nueva.text ? 'Las dos no coinciden' : null,
-              ),
-              const SizedBox(height: 20),
-              SgBoton('Cambiar la contraseña',
-                  icono: Icons.check,
-                  cargando: _cargando && _enviadoA != null,
-                  onTap: _restablecer),
-            ],
+    key: _formCambiar,
+    child: SgCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SgCampo(
+            controlador: _token,
+            rotulo: 'Código del correo',
+            icono: Icons.vpn_key_outlined,
+            hint: 'Pega el código',
+            validador: (v) => (v == null || v.trim().isEmpty)
+                ? 'Pega el código que llegó al correo'
+                : null,
           ),
-        ),
-      );
+          const SizedBox(height: 16),
+          SgCampo(
+            controlador: _nueva,
+            rotulo: 'Contraseña nueva',
+            icono: Icons.lock_outline,
+            oculto: true,
+            espaciadoTexto: 3,
+            tamanoTexto: 19,
+            pesoTexto: 600,
+            // El largo mínimo lo valida el SP, que es donde vive la
+            // política. Acá solo se atajan los casos obvios para no hacer
+            // viajar un rechazo seguro.
+            validador: (v) =>
+                (v == null || v.length < 6) ? 'Al menos 6 caracteres' : null,
+          ),
+          const SizedBox(height: 16),
+          SgCampo(
+            controlador: _repetir,
+            rotulo: 'Repetir la contraseña',
+            icono: Icons.lock_outline,
+            oculto: true,
+            espaciadoTexto: 3,
+            tamanoTexto: 19,
+            pesoTexto: 600,
+            validador: (v) => v != _nueva.text ? 'Las dos no coinciden' : null,
+          ),
+          const SizedBox(height: 20),
+          SgBoton(
+            'Cambiar la contraseña',
+            icono: Icons.check,
+            cargando: _cargando && _enviadoA != null,
+            onTap: _restablecer,
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 /// Los tres estados por los que pasa el enlace.
@@ -296,13 +314,20 @@ class _Fila extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(titulo,
-                        style: sora(15, activa ? 600 : 500,
-                            color: activa ? sg.tinta : sg.tinta2)),
+                    Text(
+                      titulo,
+                      style: sora(
+                        15,
+                        activa ? 600 : 500,
+                        color: activa ? sg.tinta : sg.tinta2,
+                      ),
+                    ),
                     const SizedBox(height: 2),
-                    Text(detalle,
-                        style: sora(12, 500, color: sg.tinta3),
-                        overflow: TextOverflow.ellipsis),
+                    Text(
+                      detalle,
+                      style: sora(12, 500, color: sg.tinta3),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ],
                 ),
               ),

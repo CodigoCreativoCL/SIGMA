@@ -39,8 +39,8 @@ class TemaService {
   }
 
   static ThemeMode _desde(String? v) => switch (v) {
-        'light' => ThemeMode.light,
-        'system' => ThemeMode.system,
-        _ => ThemeMode.dark,
-      };
+    'light' => ThemeMode.light,
+    'system' => ThemeMode.system,
+    _ => ThemeMode.dark,
+  };
 }

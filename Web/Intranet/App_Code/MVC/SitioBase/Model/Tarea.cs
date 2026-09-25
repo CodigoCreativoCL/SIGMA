@@ -3,109 +3,117 @@
 namespace SitioBase.Model
 {
     /// <summary>
-    /// MODEL (POCO) de la entidad TAREA.
-    ///
-    /// REGLAS DEL PATRON (ver PATRON_MVC.md seccion 2):
-    ///  1. Namespace SitioBase.Model.
-    ///  2. Clase [Serializable] porque viaja en ViewState / Session.
-    ///  3. SOLO datos. Cero logica, cero acceso a BD, cero validaciones.
-    ///  4. Nombre de propiedad = nombre de columna EN MINUSCULAS, con el
-    ///     prefijo de 3 letras de la tabla (tar_).
-    ///  5. Ademas de las columnas reales se agregan campos "filtro_*" que NO
-    ///     existen en la tabla: solo los usa el Controller para armar los
-    ///     parametros del Stored Procedure SEL_TAREA.
-    ///
-    /// ARCHIVO GENERADO por 03-Generador. Si cambia la tabla, regeneralo.
+    /// Tarea recurrente (HU-102): trabajo breve que se repite. Que es; el
+    /// «cada cuanto y quien» va en TareaProgramacion.
     /// </summary>
-    [Serializable]
     public class Tarea
     {
-        // ------------------------------------------------------------------
-        // COLUMNAS REALES DE LA TABLA TAREA
-        // ------------------------------------------------------------------
-
-        /// <summary>PK. Columna TAR_ID (IDENTITY).</summary>
         public int tar_id { get; set; }
-
-        /// <summary>Columna TAR_CODIGO.</summary>
+        public int tar_cliente { get; set; }
+        public int? tar_cliente_instalacion { get; set; }
+        public int? tar_instalacion_area { get; set; }
+        public int? tar_tarea_categoria { get; set; }
+        public int? tar_activo { get; set; }
         public string tar_codigo { get; set; }
-
-        /// <summary>Columna TAR_TITULO.</summary>
         public string tar_titulo { get; set; }
-
-        /// <summary>Columna TAR_DESCRIPCION.</summary>
         public string tar_descripcion { get; set; }
-
-        /// <summary>FK a TAREA_PRIORIDAD. Columna TAR_TAREA_PRIORIDAD.</summary>
         public int tar_tarea_prioridad { get; set; }
-
-        /// <summary>FK a TAREA_CATEGORIA. Columna TAR_TAREA_CATEGORIA.</summary>
-        public int tar_tarea_categoria { get; set; }
-
-        /// <summary>FK a CLIENTE_INSTALACION. Columna TAR_CLIENTE_INSTALACION.</summary>
-        public int tar_cliente_instalacion { get; set; }
-
-        /// <summary>FK a INSTALACION_AREA. Columna TAR_INSTALACION_AREA.</summary>
-        public int tar_instalacion_area { get; set; }
-
-        /// <summary>FK a ACTIVO. Columna TAR_ACTIVO.</summary>
-        public int tar_activo { get; set; }
-
-        /// <summary>Columna TAR_DURACION_ESTIMADA_MINUTO.</summary>
-        public int tar_duracion_estimada_minuto { get; set; }
-
-        /// <summary>Columna TAR_REQUIERE_EVIDENCIA.</summary>
+        public int? tar_duracion_estimada_minuto { get; set; }
         public bool tar_requiere_evidencia { get; set; }
-
-        /// <summary>Columna TAR_HABILITADO. Baja logica: en tablas maestro NO se borra fisico.</summary>
-        public bool tar_habilitado { get; set; }
-
-        // ------------------------------------------------------------------
-        // COLUMNAS DE AUDITORIA (van en TODAS las tablas del patron)
-        // ------------------------------------------------------------------
-
         public int tar_usuario_creacion { get; set; }
         public DateTime? tar_fecha_creacion { get; set; }
-        public int tar_usuario_act { get; set; }
-        public DateTime? tar_fecha_act { get; set; }
+        public int? tar_usuario_actualizacion { get; set; }
+        public DateTime? tar_fecha_actualizacion { get; set; }
+        public bool tar_habilitado { get; set; }
 
-        // ------------------------------------------------------------------
-        // CAMPOS DENORMALIZADOS QUE TRAE EL JOIN DEL SP
-        // No son columnas de TAREA: vienen de los JOIN. Sirven para que el
-        // grid muestre el nombre en vez del id.
-        // ------------------------------------------------------------------
+        public string planta_nombre { get; set; }
+        public string area_nombre { get; set; }
+        public string activo_codigo { get; set; }
+        public string activo_nombre { get; set; }
+        public string categoria_nombre { get; set; }
+        public string prioridad_codigo { get; set; }
+        public string prioridad_nombre { get; set; }
+        public int prioridad_orden { get; set; }
+        public string usuario_creacion_nombre { get; set; }
+        public string usuario_actualizacion_nombre { get; set; }
+        public int programaciones { get; set; }
+        public int ocurrencias { get; set; }
+        public int pendientes { get; set; }
 
-        public string tpa_nombre { get; set; }   // TAREA_PRIORIDAD.TPA_NOMBRE
-        public string tca_nombre { get; set; }   // TAREA_CATEGORIA.TCA_NOMBRE
-        public string cin_nombre { get; set; }   // CLIENTE_INSTALACION.CIN_NOMBRE
-        public string iar_nombre { get; set; }   // INSTALACION_AREA.IAR_NOMBRE
-        public string act_nombre { get; set; }   // ACTIVO.ACT_NOMBRE
-
-        // ------------------------------------------------------------------
-        // CAMPOS DE FILTRO (NO EXISTEN EN LA TABLA)
-        // Solo los lee el Controller para decidir que parametros le manda
-        // al SP SEL_TAREA. Son nullable para poder preguntar si vienen informados.
-        // ------------------------------------------------------------------
-
-        /// <summary>Texto libre de la barra de busqueda: busca en codigo, titulo.</summary>
+        // filtros
         public string filtro { get; set; }
+        public bool? filtro_habilitado { get; set; }
+        public int? filtro_instalacion { get; set; }
+        public int? filtro_activo { get; set; }
+        public int? filtro_prioridad { get; set; }
 
-        /// <summary>null = todos, true = solo habilitados, false = solo deshabilitados.</summary>
+        // banderas de «quitalo» para los opcionales (UPD)
+        public bool quita_instalacion { get; set; }
+        public bool quita_area { get; set; }
+        public bool quita_activo { get; set; }
+        public bool quita_categoria { get; set; }
+        public bool quita_duracion { get; set; }
+        public bool quita_descripcion { get; set; }
+    }
+
+    /// <summary>Cada cuanto y quien: una tarea con una programacion.</summary>
+    public class TareaProgramacion
+    {
+        public int tpr_id { get; set; }
+        public int tpr_tarea { get; set; }
+        public int tpr_programacion { get; set; }
+        public int? tpr_usuario_responsable { get; set; }
+        public int? tpr_grupo_trabajo { get; set; }
+        public int tpr_usuario_creacion { get; set; }
+        public DateTime? tpr_fecha_creacion { get; set; }
+        public int? tpr_usuario_actualizacion { get; set; }
+        public DateTime? tpr_fecha_actualizacion { get; set; }
+        public bool tpr_habilitado { get; set; }
+
+        public int tarea_cliente { get; set; }
+        public string tarea_codigo { get; set; }
+        public string tarea_titulo { get; set; }
+        public string programacion_nombre { get; set; }
+        public string programacion_tipo_nombre { get; set; }
+        public DateTime? programacion_fecha_inicio { get; set; }
+        public DateTime? programacion_fecha_fin { get; set; }
+        public bool programacion_habilitado { get; set; }
+        public string responsable_nombre { get; set; }
+        public string grupo_nombre { get; set; }
+        public string usuario_creacion_nombre { get; set; }
+        public string usuario_actualizacion_nombre { get; set; }
+        public int ocurrencias { get; set; }
+
+        public int? filtro_cliente { get; set; }
+        public int? filtro_tarea { get; set; }
         public bool? filtro_habilitado { get; set; }
 
-        /// <summary>Filtro por prioridad (combo de la barra de filtros).</summary>
-        public int? filtro_tarea_prioridad { get; set; }
+        public bool quita_responsable { get; set; }
+        public bool quita_grupo { get; set; }
+    }
 
-        /// <summary>Filtro por categoria (combo de la barra de filtros).</summary>
-        public int? filtro_tarea_categoria { get; set; }
+    /// <summary>Un comentario del hilo de una ocurrencia (HU-104). Append-only.</summary>
+    public class TareaComentario
+    {
+        public int tco_id { get; set; }
+        public int tco_tarea_ocurrencia { get; set; }
+        public int? tco_comentario_padre { get; set; }
+        public string tco_texto { get; set; }
+        public int? tco_dictado_voz { get; set; }
+        public int tco_usuario_creacion { get; set; }
+        public DateTime? tco_fecha_creacion { get; set; }
 
-        /// <summary>Filtro por planta (combo de la barra de filtros).</summary>
-        public int? filtro_cliente_instalacion { get; set; }
+        public string usuario_nombre { get; set; }
+        public int tarea_id { get; set; }
+        public string tarea_codigo { get; set; }
+        public string tarea_titulo { get; set; }
+        public DateTime? ocurrencia_fecha { get; set; }
+        public string ocurrencia_estado_codigo { get; set; }
+        public string ocurrencia_estado_nombre { get; set; }
+        public int respuestas { get; set; }
 
-        /// <summary>Filtro por area (combo de la barra de filtros).</summary>
-        public int? filtro_instalacion_area { get; set; }
-
-        /// <summary>Filtro por equipo (combo de la barra de filtros).</summary>
-        public int? filtro_activo { get; set; }
+        public int? filtro_cliente { get; set; }
+        public int? filtro_tarea { get; set; }
+        public int? filtro_ocurrencia { get; set; }
     }
 }

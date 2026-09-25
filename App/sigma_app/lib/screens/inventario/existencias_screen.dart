@@ -8,7 +8,10 @@ import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import 'ficha_repuesto_screen.dart';
 import 'hoja_ajuste.dart';
+import '../../services/voz_service.dart';
+import '../../widgets/comun/sigma_voz.dart';
 
 /// Existencias de bodega — HU-067 y siguientes.
 ///
@@ -63,28 +66,35 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                       ref.read(busquedaExistenciasProvider.notifier).state = v,
                 ),
                 const SizedBox(height: 11),
-                Row(
-                  children: [
-                    SgChip(
-                      'Todas',
-                      elegido: !soloAlerta,
-                      contador: total,
-                      colorContador: sg.tinta3,
-                      onTap: () =>
-                          ref.read(filtroExistenciasProvider.notifier).state =
-                              false,
-                    ),
-                    const SizedBox(width: 8),
-                    SgChip(
-                      'Bajo mínimo',
-                      elegido: soloAlerta,
-                      contador: enAlerta,
-                      colorContador: SgColor.rojo,
-                      onTap: () =>
-                          ref.read(filtroExistenciasProvider.notifier).state =
-                              true,
-                    ),
-                  ],
+                // Riel: «Bajo mínimo» con su contador y la letra crecida no
+                // cabe junto a «Todas» en un teléfono angosto.
+                SizedBox(
+                  height: context.alto(36),
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    padding: EdgeInsets.zero,
+                    children: [
+                      SgChip(
+                        'Todas',
+                        elegido: !soloAlerta,
+                        contador: total,
+                        colorContador: sg.tinta3,
+                        onTap: () =>
+                            ref.read(filtroExistenciasProvider.notifier).state =
+                                false,
+                      ),
+                      const SizedBox(width: 8),
+                      SgChip(
+                        'Bajo mínimo',
+                        elegido: soloAlerta,
+                        contador: enAlerta,
+                        colorContador: SgColor.rojo,
+                        onTap: () =>
+                            ref.read(filtroExistenciasProvider.notifier).state =
+                                true,
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -131,6 +141,23 @@ class _ExistenciasScreenState extends ConsumerState<ExistenciasScreen> {
                     onTap: !puedeAjustar
                         ? null
                         : () => HojaAjuste.abrir(contexto, p.datos[i]),
+                    /* LA FICHA TIENE SU PROPIO BOTON, NO SE ROBA EL TOQUE
+
+                       Este listado es una fila POR BODEGA, y tocarlo ya
+                       significa ajustar. Mandar el toque a la ficha le
+                       agregaria un paso al conteo del pasillo, que es el uso
+                       de todos los dias; y dejar la ficha sin entrada visible
+                       es lo que la tenia sin construir. Un boton aparte
+                       resuelve las dos: quien cuenta toca la tarjeta, quien
+                       busca «donde mas hay» toca la flecha. */
+                    onFicha: () => Navigator.of(contexto).push(
+                      MaterialPageRoute(
+                        builder: (_) => FichaRepuestoScreen(
+                          repuestoId: p.datos[i].isa_repuesto,
+                          nombreConocido: p.datos[i].REPUESTO_NOMBRE,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -159,7 +186,9 @@ class _Buscador extends StatelessWidget {
         boxShadow: sg.e1,
       ),
       child: Container(
-        height: 52,
+        // El campo de busqueda es texto: si no crece, la letra grande se
+        // recorta justo donde hay que leer lo que se escribio.
+        height: context.alto(52),
         padding: const EdgeInsets.only(left: 18, right: 8),
         decoration: BoxDecoration(
           color: sg.campo,
@@ -183,15 +212,36 @@ class _Buscador extends StatelessWidget {
                 ),
               ),
             ),
+            /* DICTAR LA BUSQUEDA — EL BOTON YA NO ES UN ADORNO
+
+               Decia «llega mas adelante» y el dictado estaba resuelto
+               desde hace tiempo en mostrarPanelVoz: era cablearlo. Y en
+               terreno es donde mas sirve, porque teclear «REP-6205» con
+               guantes de nitrilo es justo lo que se falla.
+
+               No se filtra al vuelo mientras se habla: se escribe el
+               texto ya interpretado y se dispara la busqueda una vez. */
             SgBotonIcono(
               Icons.mic_none,
               color: sg.primarioTexto,
               tamano: 20,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('El dictado por voz llega más adelante.'),
-                ),
-              ),
+              onTap: () async {
+                final campos = await mostrarPanelVoz(
+                  context,
+                  titulo: 'Buscar un repuesto',
+                  interpretar: (t) => [
+                    CampoDictado(
+                      clave: 'busqueda',
+                      rotulo: 'Buscar',
+                      valor: InterpreteVoz.normalizar(t),
+                    ),
+                  ],
+                );
+                if (campos == null || campos.isEmpty) return;
+                final texto = campos.first.valor;
+                escribirDictado(controlador, texto);
+                onCambio(texto);
+              },
             ),
           ],
         ),
@@ -201,10 +251,13 @@ class _Buscador extends StatelessWidget {
 }
 
 class _Tarjeta extends StatelessWidget {
-  const _Tarjeta({required this.saldo, this.onTap});
+  const _Tarjeta({required this.saldo, this.onTap, this.onFicha});
 
   final InventarioSaldo saldo;
   final VoidCallback? onTap;
+
+  /// Abrir la ficha del repuesto (10.3): dónde más hay y sus lotes.
+  final VoidCallback? onFicha;
 
   static final _n = NumberFormat.decimalPattern('es_CL');
 
@@ -278,11 +331,27 @@ class _Tarjeta extends StatelessWidget {
           // La cifra tabular con la unidad en su propia píldora: «12» y «UN»
           // no se comparan igual, y juntarlas hace que el ojo lea un número
           // más largo del que hay.
-          SgCifra(
-            _n.format(saldo.CANTIDAD_DISPONIBLE),
-            unidad: saldo.UNIDAD_SIMBOLO,
-            tamano: 20,
-            color: saldo.bajoMinimo ? color : sg.tinta,
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              SgCifra(
+                _n.format(saldo.CANTIDAD_DISPONIBLE),
+                unidad: saldo.UNIDAD_SIMBOLO,
+                tamano: 20,
+                color: saldo.bajoMinimo ? color : sg.tinta,
+              ),
+              if (onFicha != null) ...[
+                const SizedBox(height: 6),
+                SgBotonIcono(
+                  Icons.chevron_right,
+                  fondo: sg.up,
+                  color: sg.tinta2,
+                  lado: 34,
+                  tamano: 20,
+                  onTap: onFicha,
+                ),
+              ],
+            ],
           ),
         ],
       ),

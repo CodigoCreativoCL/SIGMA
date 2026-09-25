@@ -40,6 +40,30 @@ namespace API.Controllers
         /// </summary>
         private const int MaxBytes = 12 * 1024 * 1024;
 
+        /* UN VIDEO NO CABE EN LO QUE CABE UNA FOTO
+
+           Doce megas alcanzan de sobra para una foto de terreno y para una nota
+           de voz de varios minutos, pero no para un video: treinta segundos de
+           camara de telefono pasan facil de veinte megas, y rechazarlo despues
+           de haberlo subido por la red de una planta es el peor momento para
+           decirlo.
+
+           Cuarenta y ocho megas en base64 son unos sesenta y cuatro, y
+           Web.config admite doscientos (maxRequestLength=204800 KB), asi que el
+           tope de la infraestructura no se toca. */
+        private const int MaxBytesVideo = 48 * 1024 * 1024;
+
+        /// <summary>
+        /// El tope segun lo que se sube. Un video puede pesar cuatro veces mas
+        /// que una foto.
+        /// </summary>
+        private static int TopeDe(string mime)
+        {
+            return (mime ?? "").ToLowerInvariant().StartsWith("video/")
+                ? MaxBytesVideo
+                : MaxBytes;
+        }
+
         /// <summary>
         /// Cada destino se cubre con el permiso de lo que se está haciendo.
         /// Un permiso propio de «subir fotos» sería una llave paralela: quien
@@ -55,7 +79,28 @@ namespace API.Controllers
                 { "RESPUESTA", "EJECUTAR CHECKLIST" },
                 { "HALLAZGO",  "EJECUTAR CHECKLIST" },
                 { "FALLA",     "EJECUTAR ORDEN TRABAJO" },
-                { "ACTIVO",    "VER ACTIVOS" }
+                { "ACTIVO",    "VER ACTIVOS" },
+
+                /* La anotacion de bitacora tambien lleva evidencia, y es donde
+                   mas hace falta: se escribe delante de la fuga, no despues.
+                   `avi_bitacora` existia desde el principio; lo que faltaba
+                   era esta linea y la rama de los dos SP (BD/198). */
+                { "BITACORA",  "REGISTRAR BITACORA" },
+
+                /* El componente se sumo con las vistas 8.x: `avi_activo_
+                   componente` la creo BD/202 para la galeria y BD/206
+                   completo los dos SP. Sin esta linea se podian VER las fotos
+                   de una pieza y no se podia subir ninguna. */
+                { "COMPONENTE", "VER COMPONENTES" },
+
+                /* La foto de la pieza la saca quien la tiene en la mano: el
+                   bodeguero, en el pasillo. Hasta ahora solo podia entrar por
+                   la web, que es justo al reves de lo util — un rodamiento
+                   6205 y uno 6310 se ven casi iguales en una lista, y la foto
+                   del empaque real es lo que evita bajar al equipo con la que
+                   no calza. `avi_repuesto` existia; faltaba la rama de los dos
+                   SP (BD/211) y esta linea. */
+                { "REPUESTO",   "VER REPUESTOS" }
             };
 
         /// <summary>
@@ -79,8 +124,11 @@ namespace API.Controllers
 
                 ExigirPermiso(permiso);
 
+                // «Archivo» y no «foto»: por acá entran tambien notas de voz
+                // y videos, y un mensaje que habla de fotos manda a buscar el
+                // problema donde no está.
                 if (string.IsNullOrEmpty(dto.contenido_base64))
-                    return BadRequest("La foto está vacía.");
+                    return BadRequest("El archivo está vacío.");
 
                 byte[] contenido;
                 try
@@ -96,10 +144,13 @@ namespace API.Controllers
                 }
 
                 if (contenido.Length == 0)
-                    return BadRequest("La foto está vacía.");
+                    return BadRequest("El archivo está vacío.");
 
-                if (contenido.Length > MaxBytes)
-                    return BadRequest("La foto pesa demasiado. El máximo son 12 MB.");
+                int tope = TopeDe(dto.mime);
+
+                if (contenido.Length > tope)
+                    return BadRequest("El archivo pesa demasiado. El máximo son " +
+                                      (tope / (1024 * 1024)) + " MB.");
 
                 BlobService blob = new BlobService();
 
@@ -113,7 +164,28 @@ namespace API.Controllers
                 // los días.
                 string extension = Extension(dto.mime);
                 string almacenado = dto.uuid.ToString("N") + "." + extension;
-                string ruta = "sigma/" + dto.destino.ToLowerInvariant() + "/" + almacenado;
+
+                /* LA RUTA LLEVA EL CLIENTE, COMO LA DE LA WEB
+
+                   Antes era «sigma/bitacora/archivo.m4a»: sin cliente, todas
+                   las empresas mezcladas en la misma carpeta. La intranet
+                   guarda bajo la carpeta de la empresa desde siempre, asi que
+                   ademas eran dos estructuras distintas en el mismo
+                   contenedor.
+
+                   No es orden, es aislamiento: con el cliente arriba, un SAS
+                   acotado a un prefijo deja fuera a las demas empresas con una
+                   sola regla. Sin el no hay prefijo que acotar.
+
+                   Lo ya subido no se mueve: su ruta vive en Archivo.arc_ruta y
+                   se sigue encontrando donde esta. */
+                string ruta = RutaArchivo.Armar(
+                    "sigma",
+                    SesionApi.ClienteId(),
+                    NombreDelCliente(),
+                    dto.destino.ToLowerInvariant(),
+                    almacenado,
+                    Hora.Ahora);
 
                 ResultadoBlob subido = blob.Subir(ruta, contenido, dto.mime);
 
@@ -188,6 +260,52 @@ namespace API.Controllers
         /// un nombre lo escribe quien llama y puede traer cualquier cosa,
         /// incluido un `.aspx`.
         /// </summary>
+        /// <summary>
+        /// El nombre de la empresa del token, para la carpeta legible.
+        ///
+        /// Se consulta y se cachea corto: se usa en cada subida y es un dato
+        /// que no cambia en el dia. Si no se puede leer, la carpeta queda solo
+        /// con el id —«0001»—, que es feo pero sigue aislando, que es lo que
+        /// de verdad importa.
+        /// </summary>
+        /// <summary>
+        /// Publico y estatico porque tambien lo necesita la firma de una
+        /// orden (HU-118): la ruta del blob lleva la carpeta de la empresa, y
+        /// resolver el nombre dos veces en dos sitios terminaria dando dos
+        /// carpetas distintas para el mismo cliente.
+        /// </summary>
+        public static string NombreDelCliente()
+        {
+            int cliente = SesionApi.ClienteId();
+            if (cliente <= 0) return "";
+
+            try
+            {
+                return CacheCorta.Obtener(
+                    CacheCorta.Clave("clientenombre", 0, cliente, ""),
+                    () =>
+                    {
+                        List<ClienteElegibleDto> r = Datos.Listar<ClienteElegibleDto>(
+                            "API_SEL_APP_CLIENTE",
+                            new Dictionary<string, object>
+                            {
+                                { "@USUARIO", SesionApi.UsuarioId() }
+                            });
+
+                        if (r == null) return "";
+
+                        for (int i = 0; i < r.Count; i++)
+                            if (r[i].cli_id == cliente) return r[i].cli_nombre ?? "";
+
+                        return "";
+                    });
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
         private static string Extension(string mime)
         {
             switch ((mime ?? "").ToLowerInvariant())
@@ -195,8 +313,77 @@ namespace API.Controllers
                 case "image/png": return "png";
                 case "image/webp": return "webp";
                 case "image/heic": return "heic";
+
+                /* AUDIO Y VIDEO
+
+                   La extension importa: el navegador y el reproductor del
+                   telefono eligen el decodificador por ella cuando el servidor
+                   de blobs no manda un Content-Type util, y un .jpg que en
+                   realidad es un .m4a no se abre en ninguna parte.
+
+                   m4a y mp4 son lo que graban Android y iOS por omision; los
+                   demas entran porque un archivo elegido de la galeria puede
+                   venir de cualquier sitio. */
+                case "audio/mp4":
+                case "audio/m4a":
+                case "audio/x-m4a": return "m4a";
+                case "audio/aac": return "aac";
+                case "audio/mpeg": return "mp3";
+                case "audio/ogg": return "ogg";
+                case "audio/wav":
+                case "audio/x-wav": return "wav";
+
+                case "video/mp4": return "mp4";
+                case "video/quicktime": return "mov";
+                case "video/3gpp": return "3gp";
+                case "video/webm": return "webm";
+
                 default: return "jpg";
             }
+        }
+        /// <summary>
+        /// GET /evidencias/mias — todo lo que subi yo.        Vista 13.2
+        ///
+        /// LA VUELTA AL REVES DE `Listar`
+        ///   Aquel responde «que fotos tiene esta tarea»; este, «se subieron
+        ///   mis fotos». Hoy la unica forma de saberlo es abrir una por una
+        ///   las ordenes, tareas y bitacoras donde se sacaron: quien
+        ///   fotografio veinte cosas en un turno sin señal no tiene manera de
+        ///   comprobar que llegaron, y se entera de que falto una cuando
+        ///   alguien se la reclama.
+        ///
+        /// SIN PERMISO DE DESTINO
+        ///   Porque el filtro es el propio usuario: son SUS archivos. Exigir
+        ///   el permiso de cada destino dejaria a alguien sin poder comprobar
+        ///   una foto que el mismo subio cuando si lo tenia.
+        /// </summary>
+        [HttpGet]
+        [Route("mias")]
+        public IHttpActionResult Mias(int dias = 30, int pagina = 1,
+                                      int tamano = Pagina.TAMANO_DEFECTO)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirCliente();
+
+                Pagina p = new Pagina { pagina = pagina, tamano = tamano };
+
+                // @TOTAL es parametro de SALIDA obligatorio: omitirlo hace que
+                // SQL Server rechace la llamada entera.
+                int totalSql;
+                List<EvidenciaMiaDto> todo = Datos.ListarConTotal<EvidenciaMiaDto>(
+                    "API_SEL_EVIDENCIA_MIAS",
+                    new Dictionary<string, object>
+                    {
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() },
+                        { "@DIAS", dias },
+                        { "@PAGINA", 1 },
+                        { "@TAMANO", 200 }
+                    }, out totalSql);
+
+                return Ok(Paginado<EvidenciaMiaDto>.Armar(todo, p));
+            });
         }
     }
 }

@@ -126,8 +126,9 @@ public partial class View_Inventario_Existencias_Existencias : System.Web.UI.Pag
 
         // ---- Ubicación: vacío no se entiende, "sin registrar" sí ----
         if (string.IsNullOrEmpty(f.ubicacion_codigo))
-            item["UBICACION_CODIGO"].Text =
-                "<span class=\"sigma-inv-vacio\">sin registrar</span>";
+            item["UBICACION_CODIGO"].Text = f.ubicaciones > 1
+                ? "<span class=\"sigma-inv-nota\">" + Server.HtmlEncode(f.ubicacion_texto) + "</span>"
+                : "<span class=\"sigma-inv-vacio\">sin registrar</span>";
 
         // ---- Existencia: la cifra y, debajo, contra qué se compara ----
         string clase = f.bajo_minimo ? " is-bajo" : (f.sobre_maximo ? " is-sobre" : "");

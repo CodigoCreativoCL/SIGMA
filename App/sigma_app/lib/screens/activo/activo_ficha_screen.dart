@@ -6,6 +6,7 @@ import '../../constants/api_constants.dart';
 import '../../models/modelos.dart';
 import '../../providers/datos_provider.dart';
 import '../../services/outbox_service.dart';
+import '../../services/sigma_repository.dart';
 import '../../services/sync_service.dart';
 import '../../theme/app_theme.dart';
 import '../../theme/sigma_tokens.dart';
@@ -13,6 +14,10 @@ import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_evidencia.dart';
 import '../../widgets/comun/sigma_imagen.dart';
 import '../../widgets/comun/sigma_v3.dart';
+import '../componente/ficha_componente_screen.dart';
+import '../fallas/nueva_falla_screen.dart';
+import '../galeria/galeria_screen.dart';
+import '../medidor/historial_lecturas_screen.dart';
 import '../lectura/captura_screen.dart';
 
 /// Ficha de activo — HU-037.
@@ -49,6 +54,7 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   Future<void> _fotos(Activo? a) async {
     if (a == null) return;
 
+    if (!mounted) return;
     await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -69,6 +75,7 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   Future<void> _cambiarEstado(Activo? a) async {
     if (a == null) return;
 
+    if (!mounted) return;
     final elegido = await showModalBottomSheet<({int estado, String motivo})>(
       context: context,
       isScrollControlled: true,
@@ -107,11 +114,15 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
     if (!mounted) return;
     ref.invalidate(activoProvider(widget.activoId));
     ref.invalidate(fichaActivoProvider(widget.activoId));
-    mensajero.showSnackBar(SnackBar(
-      content: Text(SyncService.instance.enLinea.value
-          ? 'Estado cambiado.'
-          : 'Guardado en el teléfono. Se envía al volver la señal.'),
-    ));
+    mensajero.showSnackBar(
+      SnackBar(
+        content: Text(
+          SyncService.instance.enLinea.value
+              ? 'Estado cambiado.'
+              : 'Guardado en el teléfono. Se envía al volver la señal.',
+        ),
+      ),
+    );
   }
 
   @override
@@ -125,33 +136,39 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
         child: Row(
           children: [
             Expanded(
-              child: SgBoton('Registrar condición',
-                  icono: Icons.speed_outlined,
-                  // Medicion y no lectura: una lectura necesita saber **de que
-                  // medidor** es, y los medidores bajan en el bloque MEDICION
-                  // de la sabana, no por un endpoint propio. Desde la ficha se
-                  // registra la condicion del activo; la lectura se abre desde
-                  // el medidor, que es donde su identidad esta.
-                  onTap: () => _capturar(activo.valueOrNull)),
+              child: SgBoton(
+                'Registrar condición',
+                icono: Icons.speed_outlined,
+                // Medicion y no lectura: una lectura necesita saber **de que
+                // medidor** es, y los medidores bajan en el bloque MEDICION
+                // de la sabana, no por un endpoint propio. Desde la ficha se
+                // registra la condicion del activo; la lectura se abre desde
+                // el medidor, que es donde su identidad esta.
+                onTap: () => _capturar(activo.valueOrNull),
+              ),
             ),
             const SizedBox(width: 9),
             // Los dos se dibujaban sin `onTap`: se veian habilitados y no
             // hacian nada. Un boton muerto es peor que uno ausente, porque se
             // toca una vez, no pasa nada, y a partir de ahi no se confia en
             // ninguno de la barra.
-            SgBotonIcono(Icons.photo_camera_outlined,
-                fondo: sg.up,
-                color: sg.tinta,
-                lado: 52,
-                tamano: 21,
-                onTap: () => _fotos(activo.valueOrNull)),
+            SgBotonIcono(
+              Icons.photo_camera_outlined,
+              fondo: sg.up,
+              color: sg.tinta,
+              lado: 52,
+              tamano: 21,
+              onTap: () => _fotos(activo.valueOrNull),
+            ),
             const SizedBox(width: 9),
-            SgBotonIcono(Icons.swap_vert,
-                fondo: sg.up,
-                color: sg.tinta,
-                lado: 52,
-                tamano: 21,
-                onTap: () => _cambiarEstado(activo.valueOrNull)),
+            SgBotonIcono(
+              Icons.swap_vert,
+              fondo: sg.up,
+              color: sg.tinta,
+              lado: 52,
+              tamano: 21,
+              onTap: () => _cambiarEstado(activo.valueOrNull),
+            ),
           ],
         ),
       ),
@@ -176,9 +193,11 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
               sliver: SliverList.list(
-                children: _pestana == 0
-                    ? _ficha(a)
-                    : [_Historial(activoId: widget.activoId)],
+                children: switch (_pestana) {
+                  0 => _ficha(a),
+                  1 => [_Componentes(activo: a)],
+                  _ => [_Historial(activoId: widget.activoId)],
+                },
               ),
             ),
           ],
@@ -187,8 +206,37 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
     );
   }
 
+  /// HU-044: una medición es DE UNA VARIABLE (temperatura, vibración…), con
+  /// su unidad y sus umbrales. Sin eso el servidor no tiene contra qué
+  /// comparar ni dónde guardar; por eso se elige primero. Con una sola
+  /// variable no se pregunta.
   Future<void> _capturar(Activo? a) async {
     if (a == null) return;
+    final mensajero = ScaffoldMessenger.of(context);
+    final variables = await SigmaRepository.instance.variablesDe(a.act_id);
+    if (!mounted) return;
+
+    if (variables.isEmpty) {
+      mensajero.showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Este equipo no tiene variables de condición definidas (o falta '
+            'sincronizar). Se definen en la web: Activos › Variables de '
+            'condición.',
+          ),
+        ),
+      );
+      return;
+    }
+
+    VariableActivo? elegida = variables.length == 1 ? variables.first : null;
+    elegida ??= await showModalBottomSheet<VariableActivo>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (_) => _ElegirVariable(variables: variables),
+    );
+    if (elegida == null || !mounted) return;
+
     await Navigator.push<bool>(
       context,
       MaterialPageRoute(
@@ -198,6 +246,14 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
           activoNombre: a.act_nombre,
           activoCodigo: a.act_codigo,
           ubicacion: a.ruta,
+          variableId: elegida!.AVA_ID,
+          unidadId: elegida.AVA_UNIDAD_MEDIDA,
+          unidad: elegida.UNIDAD_SIMBOLO,
+          medidorNombre: elegida.VARIABLE_NOMBRE,
+          minimoEsperado: elegida.AVA_VALOR_MINIMO,
+          maximoEsperado: elegida.AVA_VALOR_MAXIMO,
+          advertencia: elegida.AVA_VALOR_ADVERTENCIA,
+          critico: elegida.AVA_VALOR_CRITICO,
         ),
       ),
     );
@@ -205,22 +261,78 @@ class _ActivoFichaScreenState extends ConsumerState<ActivoFichaScreen> {
   }
 
   List<Widget> _ficha(Activo a) => [
-        _Cifras(activo: a),
-        const SizedBox(height: 13),
-        SgBloque(
-          filas: [
-            if ((a.TIPO_NOMBRE ?? '').isNotEmpty)
-              SgFila(texto: 'Tipo', valor: a.TIPO_NOMBRE!, alto: 50),
-            if (a.marcaModelo.isNotEmpty)
-              SgFila(texto: 'Marca y modelo', valor: a.marcaModelo, alto: 50),
-            if ((a.act_numero_serie ?? '').isNotEmpty)
-              SgFila(
-                  texto: 'N.º de serie', valor: a.act_numero_serie!, alto: 50),
-            if ((a.PADRE_CODIGO ?? '').isNotEmpty)
-              SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
-          ],
+    _Cifras(activo: a),
+    const SizedBox(height: 13),
+    SgBloque(
+      filas: [
+        if ((a.TIPO_NOMBRE ?? '').isNotEmpty)
+          SgFila(texto: 'Tipo', valor: a.TIPO_NOMBRE!, alto: 50),
+        if (a.marcaModelo.isNotEmpty)
+          SgFila(texto: 'Marca y modelo', valor: a.marcaModelo, alto: 50),
+        if ((a.act_numero_serie ?? '').isNotEmpty)
+          SgFila(texto: 'N.º de serie', valor: a.act_numero_serie!, alto: 50),
+        if ((a.PADRE_CODIGO ?? '').isNotEmpty)
+          SgFila(texto: 'Depende de', valor: a.PADRE_CODIGO!, alto: 50),
+      ],
+    ),
+    const SizedBox(height: 13),
+    /* LOS MEDIDORES DEL EQUIPO — la puerta a 9.2
+
+       No basta con los del componente. `INS_ACTIVO_MEDIDOR` ni siquiera
+       recibe el componente, asi que en la practica **casi todos los medidores
+       cuelgan del activo**: sin esta lista, un equipo sin componentes no
+       tenia ningun camino a su historial de lecturas. */
+    _Medidores(activoId: a.act_id),
+    const SizedBox(height: 13),
+    /* LA GALERIA, APARTE DE LAS FOTOS DEL HERO
+
+       El hero muestra las fotos; la galeria (7.4) muestra CUANDO se tomo cada
+       una y quien. Son dos preguntas distintas: «como es este equipo» la
+       responde el hero de un vistazo, y «como estaba en marzo» solo la
+       responde la galeria. */
+    /* REGISTRAR UNA FALLA — HU-123
+
+       Desde el equipo y no solo desde el menú: la falla se anota frente a la
+       máquina, y ahí la ficha del activo es la pantalla que ya está abierta.
+       El permiso lo vuelve a exigir el servidor. */
+    if (ref.watch(tienePermisoProvider('REGISTRAR FALLA'))) ...[
+      SgBoton(
+        'Registrar una falla',
+        icono: Icons.report_problem_outlined,
+        primario: false,
+        onTap: () async {
+          final ok = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (_) => NuevaFallaScreen(
+                activoId: a.act_id,
+                activoNombre: '${a.act_codigo} · ${a.act_nombre}',
+              ),
+            ),
+          );
+          if (ok == true && mounted) {
+            ref.invalidate(activoProvider(widget.activoId));
+            ref.invalidate(fichaActivoProvider(widget.activoId));
+          }
+        },
+      ),
+      const SizedBox(height: 10),
+    ],
+    SgBoton(
+      a.FOTOS.isEmpty ? 'Galería (sin fotos)' : 'Galería · ${a.FOTOS.length}',
+      icono: Icons.photo_library_outlined,
+      primario: false,
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => GaleriaScreen(
+            titulo: a.act_nombre,
+            origen: OrigenGaleria.activo(a.act_id),
+          ),
         ),
-      ];
+      ),
+    ),
+  ];
 }
 
 /// El hero de 274 con la foto, los velos y las miniaturas.
@@ -286,9 +398,10 @@ class _Hero extends StatelessWidget {
               radio: 0,
               ajuste: BoxFit.cover,
               // Ampliada, una foto sin rótulo no dice de qué equipo es.
-              titulo: [activo.act_codigo, activo.act_nombre]
-                  .where((t) => t.isNotEmpty)
-                  .join(' · '),
+              titulo: [
+                activo.act_codigo,
+                activo.act_nombre,
+              ].where((t) => t.isNotEmpty).join(' · '),
             ),
           // Dos velos: arriba para que se lean los botones, abajo para que se
           // lea el título. Sin ellos, una foto clara los borra a los dos.
@@ -304,8 +417,10 @@ class _Hero extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: Row(
                       children: [
-                        _BotonVidrio(Icons.arrow_back,
-                            onTap: () => Navigator.maybePop(context)),
+                        _BotonVidrio(
+                          Icons.arrow_back,
+                          onTap: () => Navigator.maybePop(context),
+                        ),
                         const Spacer(),
                         _BotonVidrio(Icons.star_outline),
                         const SizedBox(width: 8),
@@ -326,32 +441,46 @@ class _Hero extends StatelessWidget {
                         children: [
                           _ChipHero(activo.act_codigo, color: SgColor.teal),
                           if ((activo.ESTADO_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(activo.ESTADO_NOMBRE!,
-                                color: SgColor.oscuroVerdeTexto,
-                                icono: Icons.check_circle),
+                            _ChipHero(
+                              activo.ESTADO_NOMBRE!,
+                              color: SgColor.oscuroVerdeTexto,
+                              icono: Icons.check_circle,
+                            ),
                           if ((activo.CRITICIDAD_NOMBRE ?? '').isNotEmpty)
-                            _ChipHero(activo.CRITICIDAD_NOMBRE!,
-                                color: SgColor.oscuroAmbarTexto,
-                                icono: Icons.local_fire_department),
+                            _ChipHero(
+                              activo.CRITICIDAD_NOMBRE!,
+                              color: SgColor.oscuroAmbarTexto,
+                              icono: Icons.local_fire_department,
+                            ),
                         ],
                       ),
                       const SizedBox(height: 10),
-                      Text(activo.act_nombre,
-                          style: sora(24, 700, color: _tinta, alto: 1.2),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis),
+                      Text(
+                        activo.act_nombre,
+                        style: sora(24, 700, color: _tinta, alto: 1.2),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
                       if (activo.ruta.isNotEmpty) ...[
                         const SizedBox(height: 6),
                         Row(
                           children: [
-                            const Icon(Icons.place_outlined,
-                                size: 16, color: Color(0xFFA8B2C3)),
+                            const Icon(
+                              Icons.place_outlined,
+                              size: 16,
+                              color: Color(0xFFA8B2C3),
+                            ),
                             const SizedBox(width: 6),
                             Expanded(
-                              child: Text(activo.ruta,
-                                  style: sora(13, 500,
-                                      color: const Color(0xFFA8B2C3)),
-                                  overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                activo.ruta,
+                                style: sora(
+                                  13,
+                                  500,
+                                  color: const Color(0xFFA8B2C3),
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                           ],
                         ),
@@ -370,8 +499,9 @@ class _Hero extends StatelessWidget {
                               child: DecoratedBox(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(14),
-                                  boxShadow:
-                                      i == indice ? anillo(SgColor.teal) : null,
+                                  boxShadow: i == indice
+                                      ? anillo(SgColor.teal)
+                                      : null,
                                 ),
                                 child: SigmaImagen(
                                   ruta: fotos[i],
@@ -402,23 +532,23 @@ class _Velo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Align(
-        alignment: arriba ? Alignment.topCenter : Alignment.bottomCenter,
-        child: IgnorePointer(
-          child: Container(
-            height: arriba ? 120 : 150,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: arriba ? Alignment.topCenter : Alignment.bottomCenter,
-                end: arriba ? Alignment.bottomCenter : Alignment.topCenter,
-                colors: [
-                  Color(arriba ? 0xD905070E : 0xEB05070E),
-                  const Color(0x0005070E),
-                ],
-              ),
-            ),
+    alignment: arriba ? Alignment.topCenter : Alignment.bottomCenter,
+    child: IgnorePointer(
+      child: Container(
+        height: arriba ? 120 : 150,
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: arriba ? Alignment.topCenter : Alignment.bottomCenter,
+            end: arriba ? Alignment.bottomCenter : Alignment.topCenter,
+            colors: [
+              Color(arriba ? 0xD905070E : 0xEB05070E),
+              const Color(0x0005070E),
+            ],
           ),
         ),
-      );
+      ),
+    ),
+  );
 }
 
 class _BotonVidrio extends StatelessWidget {
@@ -428,18 +558,18 @@ class _BotonVidrio extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => SizedBox(
-        width: 44,
-        height: 44,
-        child: Material(
-          color: const Color(0xD1111827),
-          shape: const CircleBorder(),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
-          ),
-        ),
-      );
+    width: 44,
+    height: 44,
+    child: Material(
+      color: const Color(0xD1111827),
+      shape: const CircleBorder(),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Icon(icono, size: 21, color: const Color(0xFFF8FAFC)),
+      ),
+    ),
+  );
 }
 
 class _ChipHero extends StatelessWidget {
@@ -451,23 +581,23 @@ class _ChipHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        height: SgMedida.badge,
-        padding: const EdgeInsets.symmetric(horizontal: 10),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.20),
-          borderRadius: BorderRadius.circular(SgRadius.pill),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icono != null) ...[
-              Icon(icono, size: 13, color: color),
-              const SizedBox(width: 6),
-            ],
-            Text(texto, style: sora(12, 600, color: color)),
-          ],
-        ),
-      );
+    height: SgMedida.badge,
+    padding: const EdgeInsets.symmetric(horizontal: 10),
+    decoration: BoxDecoration(
+      color: color.withValues(alpha: 0.20),
+      borderRadius: BorderRadius.circular(SgRadius.pill),
+    ),
+    child: Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (icono != null) ...[
+          Icon(icono, size: 13, color: color),
+          const SizedBox(width: 6),
+        ],
+        Text(texto, style: sora(12, 600, color: color)),
+      ],
+    ),
+  );
 }
 
 /// Las pestañas del kit: subrayado de 2 en morado sobre `card`.
@@ -477,7 +607,13 @@ class _Pestanas extends StatelessWidget {
   final int activa;
   final ValueChanged<int> onCambio;
 
-  static const _titulos = ['Ficha', 'Historial'];
+  /* TRES PESTANAS Y NO DOS
+
+     «Componentes» la pide 7.3 y faltaba: la ficha decia que es el equipo y
+     que le paso, pero no de que esta hecho, que es la pregunta que aparece
+     cuando algo falla —no se cambia «la modeladora», se cambia el rodamiento
+     del lado motor—. */
+  static const _titulos = ['Ficha', 'Componentes', 'Historial'];
 
   @override
   Widget build(BuildContext context) {
@@ -507,8 +643,11 @@ class _Pestanas extends StatelessWidget {
                   child: Text(
                     _titulos[i],
                     textAlign: TextAlign.center,
-                    style: sora(14, i == activa ? 600 : 500,
-                        color: i == activa ? sg.tinta : sg.tinta2),
+                    style: sora(
+                      14,
+                      i == activa ? 600 : 500,
+                      color: i == activa ? sg.tinta : sg.tinta2,
+                    ),
                   ),
                 ),
               ),
@@ -517,6 +656,214 @@ class _Pestanas extends StatelessWidget {
       ),
     );
   }
+}
+
+/// La pestaña «Componentes» — lo que 7.3 pedía y faltaba.
+///
+/// Muestra las piezas del equipo con su estado, y **las que piden atención
+/// arriba**: en un equipo de veinte componentes, las dos degradadas son las
+/// que importan cuando se baja con una falla en la mano. Ordenarlas por
+/// código dejaría la información útil en el medio de la lista.
+class _Componentes extends ConsumerWidget {
+  const _Componentes({required this.activo});
+
+  final Activo activo;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final sg = context.sg;
+    final datos = ref.watch(componentesProvider(activo.act_id));
+
+    return EstadoAsync<Paginado<Componente>>(
+      valor: datos,
+      onReintentar: () => ref.invalidate(componentesProvider(activo.act_id)),
+      child: (p) {
+        if (p.datos.isEmpty) {
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24),
+            child: SgAviso(
+              'Este equipo no tiene componentes registrados. Se cargan '
+              'desde la web.',
+              icono: Icons.category_outlined,
+              color: sg.tinta2,
+            ),
+          );
+        }
+
+        final orden = [...p.datos]
+          ..sort((a, b) {
+            if (a.enObservacion != b.enObservacion) {
+              return a.enObservacion ? -1 : 1;
+            }
+            return a.ACO_CODIGO.compareTo(b.ACO_CODIGO);
+          });
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final c in orden) ...[
+              SgCard(
+                padding: const EdgeInsets.all(13),
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) =>
+                        FichaComponenteScreen(componenteId: c.ACO_ID),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    SgIconoCuadro(
+                      Icons.settings_outlined,
+                      color: c.enObservacion ? sg.ambarTexto : sg.primarioTexto,
+                      lado: 42,
+                      tamanoIcono: 20,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            c.ACO_NOMBRE,
+                            style: sora(14, 600, color: sg.tinta),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            [
+                              c.ACO_CODIGO,
+                              c.POSICION_NOMBRE ?? '',
+                            ].where((s) => s.isNotEmpty).join(' · '),
+                            style: sora(11, 500, color: sg.tinta3),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                    if ((c.ESTADO_NOMBRE ?? '').isNotEmpty)
+                      SgBadge(
+                        c.ESTADO_NOMBRE!,
+                        color: c.enObservacion ? sg.ambarTexto : sg.verdeTexto,
+                        chico: true,
+                      ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 9),
+            ],
+          ],
+        );
+      },
+    );
+  }
+}
+
+/// La hoja para elegir qué variable se mide (HU-044).
+class _ElegirVariable extends StatelessWidget {
+  const _ElegirVariable({required this.variables});
+
+  final List<VariableActivo> variables;
+
+  @override
+  Widget build(BuildContext context) {
+    final sg = context.sg;
+    return SafeArea(
+      child: Container(
+        margin: const EdgeInsets.all(12),
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+        decoration: BoxDecoration(
+          color: sg.fondo,
+          borderRadius: BorderRadius.circular(22),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SgRotulo('¿Qué vas a medir?'),
+            const SizedBox(height: 10),
+            SgBloque(
+              filas: [
+                for (final v in variables)
+                  SgFila(
+                    icono: Icons.thermostat_outlined,
+                    texto: v.VARIABLE_NOMBRE,
+                    detalle: [
+                      if ((v.UNIDAD_SIMBOLO ?? '').isNotEmpty)
+                        'en ${v.UNIDAD_SIMBOLO}',
+                      if (v.AVA_VALOR_ADVERTENCIA != null)
+                        'adv ${v.AVA_VALOR_ADVERTENCIA}',
+                      if (v.AVA_VALOR_CRITICO != null)
+                        'crít ${v.AVA_VALOR_CRITICO}',
+                    ].join(' · '),
+                    chevron: true,
+                    alto: 56,
+                    onTap: () => Navigator.pop(context, v),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Los medidores del equipo, cada uno con su ultima lectura.
+///
+/// Se dibuja solo si hay: un rotulo «Medidores» sobre una lista vacia ocupa
+/// sitio para decir que no hay nada, y la mayoria de los equipos no tienen.
+class _Medidores extends ConsumerWidget {
+  const _Medidores({required this.activoId});
+
+  final int activoId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final datos = ref.watch(medidoresProvider(activoId));
+
+    return datos.maybeWhen(
+      orElse: () => const SizedBox.shrink(),
+      data: (lista) {
+        if (lista.isEmpty) return const SizedBox.shrink();
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const SgRotulo('Medidores'),
+            const SizedBox(height: 9),
+            SgBloque(
+              filas: [
+                for (final m in lista)
+                  SgFila(
+                    icono: Icons.speed_outlined,
+                    texto: m.AME_NOMBRE,
+                    detalle: m.UNIDAD_NOMBRE,
+                    valor: m.AME_VALOR_ACTUAL == null
+                        ? '—'
+                        : '${_sinCeros(m.AME_VALOR_ACTUAL!)} '
+                                  '${m.UNIDAD_SIMBOLO ?? ''}'
+                              .trim(),
+                    chevron: true,
+                    alto: 56,
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            HistorialLecturasScreen(medidorId: m.AME_ID),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  static String _sinCeros(double v) =>
+      v == v.roundToDouble() ? v.round().toString() : v.toStringAsFixed(1);
 }
 
 /// La rejilla de tres cifras.
@@ -530,8 +877,7 @@ class _Cifras extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final eventos =
-        ref.watch(fichaActivoProvider(activo.act_id)).valueOrNull;
+    final eventos = ref.watch(fichaActivoProvider(activo.act_id)).valueOrNull;
 
     return Row(
       children: [
@@ -595,11 +941,18 @@ class _Cifra extends StatelessWidget {
         children: [
           Icon(icono, size: 18, color: sg.acentoTexto),
           const SizedBox(height: 5),
-          Text(valor,
-              style: sora(pequeno ? 14 : 21, 700,
-                  color: sg.tinta, alto: 1, tabular: true),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis),
+          Text(
+            valor,
+            style: sora(
+              pequeno ? 14 : 21,
+              700,
+              color: sg.tinta,
+              alto: 1,
+              tabular: true,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
           const SizedBox(height: 5),
           Text(rotulo, style: sora(11, 500, color: sg.tinta3)),
         ],
@@ -627,7 +980,8 @@ class _Historial extends ConsumerWidget {
       vacio: const EstadoVacio(
         icono: Icons.history,
         titulo: 'Sin historial',
-        detalle: 'Cuando este activo tenga intervenciones registradas, van a '
+        detalle:
+            'Cuando este activo tenga intervenciones registradas, van a '
             'aparecer acá en orden.',
       ),
       child: (p) => SgBloque(
@@ -648,7 +1002,6 @@ class _Historial extends ConsumerWidget {
   }
 }
 
-
 /// La hoja de fotos de un activo.
 class _HojaFotos extends StatelessWidget {
   const _HojaFotos({required this.activo});
@@ -662,8 +1015,9 @@ class _HojaFotos extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -675,14 +1029,23 @@ class _HojaFotos extends StatelessWidget {
             children: [
               const _Agarradera(),
               const SizedBox(height: 14),
-              Text('Fotos de ${activo.act_codigo}',
-                  style: sora(17, 600, color: sg.tinta)),
+              Text(
+                'Fotos de ${activo.act_codigo}',
+                style: sora(17, 600, color: sg.tinta),
+              ),
               const SizedBox(height: 4),
-              Text(activo.act_nombre,
-                  style: sora(13, 500, color: sg.tinta3),
-                  overflow: TextOverflow.ellipsis),
+              Text(
+                activo.act_nombre,
+                style: sora(13, 500, color: sg.tinta3),
+                overflow: TextOverflow.ellipsis,
+              ),
               const SizedBox(height: 14),
-              SgEvidencias(destino: 'ACTIVO', destinoId: activo.act_id),
+              SgEvidencias(
+                destino: 'ACTIVO',
+                destinoId: activo.act_id,
+                conAudio: true,
+                conVideo: true,
+              ),
               const SgBarraGestos(),
             ],
           ),
@@ -720,8 +1083,9 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
     return Container(
       decoration: BoxDecoration(
         color: sg.fondo,
-        borderRadius:
-            const BorderRadius.vertical(top: Radius.circular(SgRadius.hoja)),
+        borderRadius: const BorderRadius.vertical(
+          top: Radius.circular(SgRadius.hoja),
+        ),
       ),
       child: SafeArea(
         top: false,
@@ -741,13 +1105,17 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
               children: [
                 const _Agarradera(),
                 const SizedBox(height: 14),
-                Text('Cambiar el estado',
-                    style: sora(17, 600, color: sg.tinta)),
+                Text(
+                  'Cambiar el estado',
+                  style: sora(17, 600, color: sg.tinta),
+                ),
                 const SizedBox(height: 4),
-                Text('${widget.activo.act_codigo} · ahora en '
-                    '${widget.activo.ESTADO_NOMBRE ?? "sin estado"}',
-                    style: sora(13, 500, color: sg.tinta3),
-                    overflow: TextOverflow.ellipsis),
+                Text(
+                  '${widget.activo.act_codigo} · ahora en '
+                  '${widget.activo.ESTADO_NOMBRE ?? "sin estado"}',
+                  style: sora(13, 500, color: sg.tinta3),
+                  overflow: TextOverflow.ellipsis,
+                ),
                 const SizedBox(height: 14),
                 estados.when(
                   loading: () => const Padding(
@@ -796,10 +1164,9 @@ class _HojaEstadoState extends ConsumerState<_HojaEstado> {
                   // explicación obliga a preguntarle a quien lo movió, y en un
                   // turno de noche esa persona ya se fue.
                   onTap: (_elegido != null && _motivo.text.trim().isNotEmpty)
-                      ? () => Navigator.of(context).pop((
-                            estado: _elegido!,
-                            motivo: _motivo.text.trim(),
-                          ))
+                      ? () => Navigator.of(
+                          context,
+                        ).pop((estado: _elegido!, motivo: _motivo.text.trim()))
                       : null,
                 ),
                 const SgBarraGestos(),
@@ -818,13 +1185,13 @@ class _Agarradera extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Container(
-          width: 44,
-          height: 4,
-          decoration: BoxDecoration(
-            color: context.sg.indicador,
-            borderRadius: BorderRadius.circular(SgRadius.pill),
-          ),
-        ),
-      );
+    child: Container(
+      width: 44,
+      height: 4,
+      decoration: BoxDecoration(
+        color: context.sg.indicador,
+        borderRadius: BorderRadius.circular(SgRadius.pill),
+      ),
+    ),
+  );
 }

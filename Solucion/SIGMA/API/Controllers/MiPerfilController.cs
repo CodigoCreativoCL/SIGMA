@@ -44,7 +44,35 @@ namespace API.Controllers
 
                 if (r == null || r.Count == 0) return NoEncontrado("El usuario");
 
-                return Ok(r[0]);
+                MiPerfilDto perfil = r[0];
+
+                /* LA FOTO SE PEGA ACA, Y COMO RUTA
+
+                   SEL_CLIENTE_USUARIO tiene @DEVUELVE_FOTO, pero eso devuelve
+                   el BINARIO: cientos de kilobytes dentro del JSON en cada
+                   arranque de la app. La app quiere la ruta del blob y la baja
+                   por /archivo/ver, que ya cachea y deduplica.
+
+                   Sin esto el avatar del telefono no podia mostrar la foto de
+                   nadie, ni la de uno mismo, y siempre pintaba las iniciales.
+
+                   Se ignora si falla: quedarse sin avatar es un detalle, y
+                   tumbar la pantalla de perfil por eso no. */
+                if (SesionApi.ClienteId() > 0)
+                {
+                    List<UsuarioFotoDto> foto = Datos.Listar<UsuarioFotoDto>(
+                        "API_SEL_APP_USUARIO_FOTO",
+                        new Dictionary<string, object>
+                        {
+                            { "@USUARIO", SesionApi.UsuarioId() },
+                            { "@CLIENTE", SesionApi.ClienteId() }
+                        });
+
+                    if (foto != null && foto.Count > 0)
+                        perfil.FOTO_RUTA = foto[0].FOTO_RUTA;
+                }
+
+                return Ok(perfil);
             });
         }
 

@@ -22,10 +22,25 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     // Solo aplica en el primer render; después manda lo que elige el usuario.
     private string _padreEditar = null;
 
+    /// <summary>
+    /// El activo ya viene decidido: la ficha se abrió desde el centro de ESE
+    /// equipo. Entonces el combo no se ofrece, se fija. Pedirle a alguien que
+    /// elija de una lista de cuarenta el equipo que acaba de abrir es una
+    /// pregunta que ya tiene respuesta, y una oportunidad de equivocarse.
+    /// </summary>
+    public int ActivoFijo
+    {
+        get { return ViewState["ActivoFijo"] != null ? (int)ViewState["ActivoFijo"] : 0; }
+        set { ViewState["ActivoFijo"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -170,10 +185,26 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
             wucAuditoria.Mostrar(x.usuario_creacion_nombre, x.aco_fecha_creacion,
                                  x.usuario_actualizacion_nombre, x.aco_fecha_actualizacion);
+
+            /* La imagen vigente, si tiene. El id va cifrado en la url que la
+               sirve: el archivo vive en Blob Storage, no en la pagina. */
+            int idImagen = new ActivoComponenteImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
+            pnlSinImagen.Visible = idImagen <= 0;
+            pnlImagenActual.Visible = idImagen > 0;
+            if (idImagen > 0) imgActual.Src = UrlArchivo.Ver(idImagen);
+
+            // HU-036 #3: al editar se puede cambiar el estado (con motivo) y se ve la historia
+            pnlMotivoEstado.Visible = true;
+            pnlHistorialEstado.Visible = true;
+            List<ActivoComponenteEstadoHistorial> historial = c.GetHistorialEstado(Id, SitioBase.Session.ClienteId());
+            rptHistorialEstado.DataSource = historial;
+            rptHistorialEstado.DataBind();
+            lblSinHistorial.Visible = historial == null || historial.Count == 0;
         }
         else
         {
             lblId.Text = "Nuevo";
+            if (ActivoFijo > 0) SeleccionarCombo(cboActivo, ActivoFijo);
         }
     }
 
@@ -187,7 +218,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
 
-        cboActivo.ReadOnly = !puedeEditar || Id > 0;   // el activo no se cambia al editar
+        // El activo no se cambia al editar, ni cuando la ficha se abrio desde
+        // el centro de un equipo: ahi ya esta decidido.
+        cboActivo.ReadOnly = !puedeEditar || Id > 0 || ActivoFijo > 0;
+        /* Un combo ReadOnly no arma sus items en el cliente y validaControl
+           revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
+           Al editar no hay nada que validar ahi (el servidor exige el valor). */
+        cvActivo.Enabled = Id == 0 && ActivoFijo == 0;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Componente");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
@@ -229,8 +266,9 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (!string.IsNullOrEmpty(cboPosicion.SelectedValue)) x.aco_componente_posicion = int.Parse(cboPosicion.SelectedValue);
             if (!string.IsNullOrEmpty(cboPadre.SelectedValue)) x.aco_componente_padre = int.Parse(cboPadre.SelectedValue);
             if (!string.IsNullOrEmpty(txtDescripcion.Text.Trim())) x.aco_descripcion = txtDescripcion.Text.Trim();
+            if (!string.IsNullOrEmpty(txtMotivoEstado.Text.Trim())) x.aco_motivo_estado = txtMotivoEstado.Text.Trim();
 
-            if (calInstalacion.Value != null && calInstalacion.Value.Value.Date > DateTime.Today)
+            if (calInstalacion.Value != null && calInstalacion.Value.Value.Date > global::SitioBase.Hora.Hoy)
                 throw new Exception("La fecha de instalación no puede ser futura.");
             x.aco_fecha_instalacion = calInstalacion.Value;
 
@@ -239,7 +277,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (!r.error)
             {
                 Id = r.codigo;
-                Tools.tools.ClientAlert(r.detalle, "ok", true);
+
+                /* La imagen va DESPUES del componente: al crear, el vinculo
+                   necesita el id que acaba de devolver el SP. Un fallo aca no
+                   anula lo guardado, solo avisa. */
+                string avisoImagen = GuardarImagen(Id);
+
+                Tools.tools.ClientAlert(r.detalle + avisoImagen, "ok", true);
             }
             else
             {
@@ -249,6 +293,50 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         catch (Exception ex)
         {
             Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
+    }
+
+    /// <summary>
+    /// Sube la imagen elegida y la deja como LA imagen del componente. Un
+    /// fallo aca no anula el guardado, que ya esta hecho: solo avisa.
+    /// </summary>
+    private string GuardarImagen(int componente)
+    {
+        if (componente <= 0) return "";
+
+        bool haySubida = fuImagenComp != null && fuImagenComp.HasFile;
+
+        if (!haySubida)
+        {
+            if (chkQuitarImagen != null && chkQuitarImagen.Checked)
+                new ActivoComponenteImagenController().DesvincularImagen(componente);
+            return "";
+        }
+
+        try
+        {
+            byte[] contenido = fuImagenComp.FileBytes;
+            if (contenido == null || contenido.Length == 0) return "";
+
+            Archivo arc = new Archivo();
+            arc.arc_cliente = SitioBase.Session.ClienteId();
+            arc.arc_archivo_categoria = 10;   // REFERENCIA
+            arc.arc_nombre_original = System.IO.Path.GetFileName(fuImagenComp.FileName);
+            arc.arc_mime = fuImagenComp.PostedFile != null ? fuImagenComp.PostedFile.ContentType : null;
+            arc.contenido = contenido;
+
+            Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
+            if (r.error || r.codigo <= 0)
+                return " (la imagen no se pudo guardar: " + r.detalle + ")";
+
+            if (new ActivoComponenteImagenController().VincularImagen(componente, r.codigo) < 0)
+                return " (la imagen se subió pero no se pudo enlazar al componente)";
+
+            return "";
+        }
+        catch (Exception ex)
+        {
+            return " (la imagen no se pudo guardar: " + ex.Message + ")";
         }
     }
 }

@@ -189,7 +189,7 @@ public class WsProgramacion : System.Web.Services.WebService
         d["dia"] = CultureInfo.GetCultureInfo("es-CL")
                               .DateTimeFormat.GetDayName(f.pfe_fecha.DayOfWeek);
 
-        d["pasada"] = f.pfe_fecha.Date < DateTime.Today;
+        d["pasada"] = f.pfe_fecha.Date < global::SitioBase.Hora.Hoy;
 
         /* El token de la fila lo emite el SERVIDOR. El navegador no cifra:
            no puede, y no debe —una clave dentro del JS es una clave

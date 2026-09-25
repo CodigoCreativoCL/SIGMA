@@ -48,7 +48,16 @@ namespace API.Controllers
         /// <response code="200">Lo vencido primero, después por prioridad y plazo.</response>
         [HttpGet]
         [Route("")]
-        public IHttpActionResult Pendientes(int? instalacion = null)
+        /// <param name="cerradas">
+        /// `true` devuelve las ya CERRADAS —completada y no realizada— en vez
+        /// de las abiertas. Sin esto una tarea desaparecía de la app en cuanto
+        /// se cerraba: no había forma de comprobar que quedó registrada, ni de
+        /// mirar qué se le hizo a una máquina la semana pasada.
+        ///
+        /// No incluye cancelada ni reprogramada: esas no las hizo nadie.
+        /// </param>
+        public IHttpActionResult Pendientes(int? instalacion = null,
+                                            bool cerradas = false)
         {
             return Ejecutar(() =>
             {
@@ -62,7 +71,8 @@ namespace API.Controllers
                         { "@USUARIO", SesionApi.UsuarioId() },
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@TIPO", 1 },
-                        { "@INSTALACION", instalacion }
+                        { "@INSTALACION", instalacion },
+                        { "@CERRADAS", cerradas }
                     });
 
                 return Ok(todo);

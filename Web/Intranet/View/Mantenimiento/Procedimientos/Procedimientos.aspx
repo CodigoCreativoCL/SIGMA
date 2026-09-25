@@ -7,14 +7,15 @@
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
+        /* La ficha ya no es un modal: es una pantalla completa con menu y
+           barra, como la del plan de mantenimiento. Trae la lista de pasos, el
+           editor del paso elegido y el asistente de carga masiva, y eso no cabe
+           -ni se lee- dentro de un iframe. */
         function abrirProcedimiento(query) {
-            return SigmaModal.open({
-                url: '<%=ResolveUrl("~/View/Mantenimiento/Procedimientos/Procedimiento.aspx") %>?query=' + query,
-                title: String(query) === '0' ? 'Nuevo procedimiento' : 'Editar procedimiento',
-                width: 860,
-                initialHeight: 600
-            });
+            location.href = '<%=ResolveUrl("~/View/Mantenimiento/Procedimientos/Procedimiento.aspx") %>' + (String(query) === '0' ? '' : '?query=' + query);
+            return false;
         }
+
         function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
     </script>
 </asp:Content>
@@ -22,7 +23,7 @@
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Mantenimiento</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Procedimientos</asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Las recetas de trabajo reutilizables: se escriben una vez y se usan en cada plan y cada orden.
+    Las recetas de trabajo reutilizables y sus pasos: se escriben una vez y se usan en cada plan y cada orden.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">

@@ -241,7 +241,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         else
         {
             string fecha = l.rlo_fecha_vencimiento.Value.ToString("dd-MM-yyyy");
-            int dias = (int)(l.rlo_fecha_vencimiento.Value.Date - DateTime.Today).TotalDays;
+            int dias = (int)(l.rlo_fecha_vencimiento.Value.Date - global::SitioBase.Hora.Hoy).TotalDays;
 
             if (l.vencido)
                 html = "<span class=\"grid-estado-chip is-alerta\">"

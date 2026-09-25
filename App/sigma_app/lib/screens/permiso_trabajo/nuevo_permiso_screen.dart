@@ -68,6 +68,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
 
   bool _guardando = false;
 
+  /// Enciende la validación. Antes del primer intento no hay nada rojo:
+  /// regañar un formulario que ni se ha empezado a llenar es de mal gusto.
+  bool _intento = false;
+
   @override
   void dispose() {
     _numero.dispose();
@@ -80,7 +84,12 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
   bool get _completo => _tipo != null && !_vigenciaAlReves;
 
   Future<void> _guardar() async {
-    if (!_completo || _guardando) return;
+    if (_guardando) return;
+
+    if (!_completo) {
+      setState(() => _intento = true);
+      return;
+    }
 
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
@@ -111,21 +120,27 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
       );
 
       SyncService.instance.despacharAhora();
+      if (!mounted) return;
       ref.invalidate(permisosTrabajoProvider);
       ref.invalidate(permisosVigentesProvider);
 
       if (!mounted) return;
       navegador.pop(true);
-      mensajero.showSnackBar(SnackBar(
-        content: Text(SyncService.instance.enLinea.value
-            ? 'Permiso solicitado.'
-            : 'Guardado en el teléfono. Se envía al volver la señal.'),
-      ));
+      mensajero.showSnackBar(
+        SnackBar(
+          content: Text(
+            SyncService.instance.enLinea.value
+                ? 'Permiso solicitado.'
+                : 'Guardado en el teléfono. Se envía al volver la señal.',
+          ),
+        ),
+      );
     } catch (e) {
       if (!mounted) return;
       setState(() => _guardando = false);
-      mensajero
-          .showSnackBar(SnackBar(content: Text('No se pudo registrar: $e')));
+      mensajero.showSnackBar(
+        SnackBar(content: Text('No se pudo registrar: $e')),
+      );
     }
   }
 
@@ -145,8 +160,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
               valueListenable: SyncService.instance.enLinea,
               builder: (_, enLinea, _) => enLinea
                   ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+                  : SgBadge(
+                      'Sin conexión',
+                      color: sg.tinta2,
+                      icono: Icons.cloud_off_outlined,
+                    ),
             ),
           ),
         ],
@@ -156,12 +174,14 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
           'Registrar la solicitud',
           icono: Icons.assignment_turned_in_outlined,
           cargando: _guardando,
-          onTap: _completo ? _guardar : null,
+          // Responde siempre: apagado no dice QUE falta.
+          onTap: _guardar,
         ),
       ),
       body: ListView(
-        padding:
-            context.conBarraSistema(const EdgeInsets.fromLTRB(16, 14, 16, 12)),
+        padding: context.conBarraSistema(
+          const EdgeInsets.fromLTRB(16, 14, 16, 12),
+        ),
         children: [
           if (widget.ordenNumero != null) ...[
             SgCard(
@@ -171,9 +191,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                   Icon(Icons.assignment_outlined, size: 19, color: sg.tinta2),
                   const SizedBox(width: 11),
                   Expanded(
-                    child: Text('OT ${widget.ordenNumero}',
-                        style: sora(14, 600, color: sg.tinta),
-                        overflow: TextOverflow.ellipsis),
+                    child: Text(
+                      'OT ${widget.ordenNumero}',
+                      style: sora(14, 600, color: sg.tinta),
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
                 ],
               ),
@@ -182,6 +204,14 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
           ],
 
           const SgRotulo('Qué tipo de permiso'),
+          if (_intento && _tipo == null) ...[
+            const SizedBox(height: 8),
+            SgAviso(
+              'Elige qué tipo de permiso se está pidiendo.',
+              icono: Icons.error_outline,
+              color: sg.rojoTexto,
+            ),
+          ],
           const SizedBox(height: 9),
           tipos.when(
             loading: () => const Padding(
@@ -199,9 +229,11 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
               runSpacing: 8,
               children: [
                 for (final t in lista)
-                  SgChip(t.nombre,
-                      elegido: _tipo == t.id,
-                      onTap: () => setState(() => _tipo = t.id)),
+                  SgChip(
+                    t.nombre,
+                    elegido: _tipo == t.id,
+                    onTap: () => setState(() => _tipo = t.id),
+                  ),
               ],
             ),
           ),
@@ -222,9 +254,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                 titulo: 'Número del permiso',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'numero',
-                      rotulo: 'Número',
-                      valor: InterpreteVoz.normalizar(t).toUpperCase()),
+                    clave: 'numero',
+                    rotulo: 'Número',
+                    valor: InterpreteVoz.normalizar(t).toUpperCase(),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -284,9 +317,10 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
                 titulo: 'Observación',
                 interpretar: (t) => [
                   CampoDictado(
-                      clave: 'observacion',
-                      rotulo: 'Observación',
-                      valor: InterpreteVoz.normalizar(t)),
+                    clave: 'observacion',
+                    rotulo: 'Observación',
+                    valor: InterpreteVoz.normalizar(t),
+                  ),
                 ],
               );
               if (campos == null || campos.isEmpty) return;
@@ -323,8 +357,13 @@ class _NuevoPermisoScreenState extends ConsumerState<NuevoPermisoScreen> {
     );
     if (hora == null || !mounted) return;
 
-    final elegido =
-        DateTime(dia.year, dia.month, dia.day, hora.hour, hora.minute);
+    final elegido = DateTime(
+      dia.year,
+      dia.month,
+      dia.day,
+      hora.hour,
+      hora.minute,
+    );
 
     setState(() {
       if (inicio) {

@@ -32,14 +32,55 @@ abstract final class CacheDatos {
   /// escribe — un error que no falla, solo devuelve vacío.
   static const organizacion = 'ORGANIZACION';
   static const areas = 'AREAS';
-  static const catalogos = 'CATALOGOS';
+
+  /// Las cabeceras de los catálogos.
+  ///
+  /// **Con sufijo `_0` desde que el bloque 3 trae también los valores.** La
+  /// sincronización numera los resultados solo cuando hay más de uno, así que
+  /// el día que se agregó el segundo, esta entidad cambió de nombre. Dejarla
+  /// como `CATALOGOS` no habría fallado: habría devuelto vacío.
+  static const catalogos = 'CATALOGOS_0';
+
+  /// Los valores de TODOS los catálogos, con el código de su catálogo en cada
+  /// fila. Es lo que hace que los chips de catálogo existan sin señal.
+  static const catalogoValores = 'CATALOGOS_1';
+
+  /// Las tareas asignadas. Sin esto, sin señal la bandeja salía vacía y el
+  /// técnico caminaba hasta el equipo sin saber qué le tocaba.
+  static const tareas = 'TAREAS';
   static const activos = 'ACTIVOS';
   static const medidores = 'MEDICION_0';
+  /// Las variables de condición con sus umbrales (segundo resultado del
+  /// bloque MEDICION): no hay endpoint propio, salen de la sábana.
+  static const variables = 'MEDICION_1';
   static const repuestos = 'INVENTARIO_0';
   static const bodegas = 'INVENTARIO_1';
   static const existencias = 'EXISTENCIAS';
   static const permisosTipos = 'PERMISOS_TRABAJO_0';
   static const permisosEstados = 'PERMISOS_TRABAJO_1';
+
+  /// Los motivos de cierre de OT (HU-120). Bajan con la sábana porque el
+  /// cierre es una acción de terreno: pedidos por red, sin señal la hoja no
+  /// muestra ningún chip y no se puede cerrar.
+  /// Sin sufijo `_0`: la sincronización solo numera los bloques que traen
+  /// VARIOS resultados, y éste trae uno. Con el sufijo la lectura no falla,
+  /// devuelve vacío — y la hoja de cierre se quedaría sin chips sin decir
+  /// por qué.
+  static const motivosCierre = 'ORDENES_TRABAJO';
+
+  /// Posiciones funcionales con el equipo que las ocupa (bloque 11, BD/232):
+  /// lo que hace falta para resolver un QR `POS-` sin señal (HU-154 #2).
+  static const posiciones = 'POSICIONES';
+
+  /// Mis órdenes abiertas con sus pasos y asignados (bloque 12, BD/234) y
+  /// las pautas pendientes con los items y opciones de sus versiones
+  /// (bloque 13): lo que HU-150 #1 promete bajar para trabajar sin señal.
+  static const ordenesAbiertas = 'ORDENES_ABIERTAS_0';
+  static const ordenesPasos = 'ORDENES_ABIERTAS_1';
+  static const ordenesAsignados = 'ORDENES_ABIERTAS_2';
+  static const checklistsPendientes = 'CHECKLISTS_0';
+  static const checklistsItems = 'CHECKLISTS_1';
+  static const checklistsOpciones = 'CHECKLISTS_2';
 
   static final _base = BaseLocalService.instance;
 

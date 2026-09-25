@@ -454,7 +454,7 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
                                     DateTimeStyles.None, out fecha))
             throw new Exception("La fecha de la transferencia no es válida. Use dd-mm-aaaa.");
 
-        if (fecha.Date > DateTime.Today)
+        if (fecha.Date > global::SitioBase.Hora.Hoy)
             throw new Exception("La fecha de la transferencia no puede ser futura.");
 
         return fecha;

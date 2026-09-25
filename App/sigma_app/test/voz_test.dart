@@ -37,8 +37,10 @@ void main() {
 
   group('Número', () {
     test('saca la cifra de una frase corriente', () {
-      expect(InterpreteVoz.numero('vibración 8 coma 4 milímetros por segundo'),
-          '8,4');
+      expect(
+        InterpreteVoz.numero('vibración 8 coma 4 milímetros por segundo'),
+        '8,4',
+      );
       expect(InterpreteVoz.numero('temperatura 68 grados'), '68');
       expect(InterpreteVoz.numero('12480 horas'), '12480');
     });
@@ -77,13 +79,15 @@ void main() {
   group('Observación', () {
     test('«observación …» manda sobre todo lo demás', () {
       final o = InterpreteVoz.observacion(
-          'vibración 8 coma 4, observación ruido intermitente en lado acople');
+        'vibración 8 coma 4, observación ruido intermitente en lado acople',
+      );
       expect(o, 'Ruido intermitente en lado acople');
     });
 
     test('sin la palabra clave, saca cifras y unidades', () {
       final o = InterpreteVoz.observacion(
-          'vibración 8 coma 4 milímetros por segundo ruido en el acople');
+        'vibración 8 coma 4 milímetros por segundo ruido en el acople',
+      );
       expect(o.toLowerCase(), contains('ruido'));
       expect(o, isNot(contains('8,4')));
       expect(o.toLowerCase(), isNot(contains('milímetros')));
@@ -115,18 +119,21 @@ void main() {
       expect(campos.last.valor, 'Ruido intermitente en lado acople');
     });
 
-    test('una unidad que no cuadra se marca para confirmar, no se descarta', () {
-      // Decir «grados» en un campo de vibración casi siempre significa que la
-      // frase mezcló dos medidas. Descartarlo en silencio haría repetir todo.
-      final campos = InterpreteVoz.paraMedicion(
-        'vibración 68 grados',
-        rotulo: 'Vibración RMS',
-        unidadEsperada: 'mm/s',
-      );
+    test(
+      'una unidad que no cuadra se marca para confirmar, no se descarta',
+      () {
+        // Decir «grados» en un campo de vibración casi siempre significa que la
+        // frase mezcló dos medidas. Descartarlo en silencio haría repetir todo.
+        final campos = InterpreteVoz.paraMedicion(
+          'vibración 68 grados',
+          rotulo: 'Vibración RMS',
+          unidadEsperada: 'mm/s',
+        );
 
-      expect(campos.first.valor, '68');
-      expect(campos.first.confirmar, isTrue);
-    });
+        expect(campos.first.valor, '68');
+        expect(campos.first.confirmar, isTrue);
+      },
+    );
 
     test('sin unidad dictada se asume la esperada y no se marca', () {
       final campos = InterpreteVoz.paraMedicion(

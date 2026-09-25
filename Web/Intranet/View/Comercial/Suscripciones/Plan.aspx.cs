@@ -436,6 +436,13 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
                 if (Id == 0)
                 {
                     Id = respuesta.codigo;
+                    /* Recien creado: el bloque de precios aparece en este mismo
+                       modal. Antes quedaba oculto hasta reabrir, y como el plan
+                       sin precio tampoco salia en el listado (BD/228), no habia
+                       forma de fijarle el precio. */
+                    lblId.Text = Id.ToString();
+                    pnlHabilitado.Visible = true;
+                    pnlPrecios.Visible = true;
                     Tools.tools.ClientAlert(respuesta.detalle, "ok");
                     return;
                 }

@@ -22,6 +22,8 @@ namespace SitioBase.Model
         public string aco_nombre { get; set; }
         public DateTime? aco_fecha_instalacion { get; set; }
         public string aco_descripcion { get; set; }
+        /// <summary>Solo al editar: por qué cambia el estado (HU-036 #3). El SP lo exige si el estado cambia.</summary>
+        public string aco_motivo_estado { get; set; }
         public DateTime? aco_fecha_creacion { get; set; }
         public DateTime? aco_fecha_actualizacion { get; set; }
         public bool aco_habilitado { get; set; }
@@ -88,6 +90,21 @@ namespace SitioBase.Model
 
     /// <summary>Estado de un componente. Catálogo global.</summary>
     [Serializable]
+    /// <summary>Una fila de Activo_Componente_Estado_Historial (HU-036 #3).</summary>
+    public class ActivoComponenteEstadoHistorial
+    {
+        public int ceh_id { get; set; }
+        public int ceh_activo_componente { get; set; }
+        public int? ceh_estado_anterior { get; set; }
+        public string estado_anterior { get; set; }
+        public int ceh_estado_nuevo { get; set; }
+        public string estado_nuevo { get; set; }
+        public string ceh_motivo { get; set; }
+        public int ceh_usuario_creacion { get; set; }
+        public string responsable { get; set; }
+        public DateTime ceh_fecha_creacion { get; set; }
+    }
+
     public class ActivoComponenteEstado
     {
         public int ace_id { get; set; }

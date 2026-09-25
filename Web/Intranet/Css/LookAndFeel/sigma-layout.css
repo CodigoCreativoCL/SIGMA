@@ -110,15 +110,42 @@ body:not(.enlarged) .left-side-menu #sidebar-menu {
     transition: background-color 120ms ease, color 120ms ease;
 }
 
-/* Una etiqueta larga como "Órdenes de Trabajo" no debe partirse en dos
-   lineas: rompe la altura de la pastilla y desalinea la lista. Si no
-   cabe, se recorta con puntos suspensivos. */
+/* UNA ETIQUETA LARGA AHORA SE PARTE EN DOS LINEAS
+
+   Antes se recortaba con puntos suspensivos para no romper la altura de la
+   pastilla. El problema es que el recorte esconde justo el final del nombre,
+   que es donde esta la palabra que distingue: "Control de act..." y "Control
+   de cal..." se leen igual.
+
+   Y lo que producia era peor: obligaba a bautizar los modulos con nombres de
+   una palabra hasta que cupieran, que es de donde salio un modulo "Activos"
+   con un hijo llamado "Centro del activo".
+
+   La altura ya era `min-height`, asi que la pastilla crece sola y la lista no
+   se desalinea: los items de una linea no se mueven. */
 #sidebar-menu > ul > li > a > span {
     flex: 1 1 auto;
     min-width: 0;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    white-space: normal;
+    overflow-wrap: break-word;
+}
+
+/* Con dos lineas, la pastilla necesita aire arriba y abajo: sin el, el texto
+   toca los bordes del redondeo.
+
+   Y hay que reservar la derecha: la flecha del desplegable la posiciona
+   Adminto en absoluto contra el borde, asi que NO ocupa lugar en el flex y el
+   punto de alerta del modulo le caia justo encima. Con el hueco, cada uno
+   tiene su lugar: el punto al final del contenido y la flecha en el margen. */
+#sidebar-menu > ul > li > a {
+    padding-top: 7px;
+    padding-bottom: 7px;
+    padding-right: 42px;
+}
+
+#sidebar-menu > ul > li > a > .sigma-menu-alert {
+    flex: 0 0 auto;
+    margin-left: 6px;
 }
 
 /* El icono va en un chip cuadrado.

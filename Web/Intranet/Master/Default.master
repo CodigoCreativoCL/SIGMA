@@ -60,10 +60,10 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=9" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
-    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=5" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=7" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=6" rel="stylesheet" />
@@ -103,7 +103,7 @@
     </asp:ContentPlaceHolder>
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=18" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -288,8 +288,27 @@
                          no tiene como saber donde esta cargando los datos.
                          Solo es un enlace cuando hay mas de uno entre los
                          que elegir. -->
-                    <li class="sg-cliente-actual">
+                    <li class="sg-cliente-actual dropdown">
                         <asp:PlaceHolder ID="phCliente" runat="server" />
+
+                        <%-- El menú de clientes. Cada opción es un LinkButton
+                             del master: cambiar de empresa es un postback y no
+                             una navegación, así la persona se queda en la
+                             pantalla donde estaba. --%>
+                        <asp:Panel ID="pnlClientes" runat="server" Visible="false"
+                                   CssClass="dropdown-menu dropdown-menu-right sg-cliente-menu">
+                            <div class="sg-cliente-menu-titulo">Cambiar de cliente</div>
+                            <asp:Repeater ID="rptClientes" runat="server" OnItemCommand="rptClientes_ItemCommand">
+                                <ItemTemplate>
+                                    <asp:LinkButton ID="lnkCliente" runat="server" CssClass='<%# "sg-cliente-op" + ((int)Eval("cli_id") == SitioBase.Session.ClienteId() ? " is-actual" : "") %>'
+                                        CommandName="elegir" CommandArgument='<%# Eval("cli_id") %>'>
+                                        <i class="mdi mdi-domain" aria-hidden="true"></i>
+                                        <span><%# Server.HtmlEncode(Convert.ToString(Eval("cli_nombre"))) %></span>
+                                        <i class="mdi mdi-check" aria-hidden="true"></i>
+                                    </asp:LinkButton>
+                                </ItemTemplate>
+                            </asp:Repeater>
+                        </asp:Panel>
                     </li>
 
                     <!-- NOTIFICACIONES
@@ -332,19 +351,16 @@
                                  formulario de la pantalla que queda detrás. --%>
 
                             <div class="sg-notif-cabecera">
-                                <div>
-                                    <span class="sg-notif-eyebrow">Centro de notificaciones</span>
-                                    <span class="titulo">Actividad que requiere atención</span>
-                                    <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
+                                <div class="sg-notif-head">
+                                    <span class="sg-notif-head-icono" aria-hidden="true"><i class="mdi mdi-bell-outline"></i></span>
+                                    <span class="titulo">Notificaciones</span>
+                                    <asp:Literal ID="litPanelNuevas" runat="server" />
                                 </div>
-                                <div class="sg-notif-cabecera-acciones">
-                                    <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
-                                        data-sg-notif-leer-todo>Marcar todo como leído</button>
-                                    <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
-                                            aria-label="Cerrar centro de notificaciones">
-                                        <i class="mdi mdi-close" aria-hidden="true"></i>
-                                    </button>
-                                </div>
+                                <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
+                                        aria-label="Cerrar centro de notificaciones">
+                                    <i class="mdi mdi-close" aria-hidden="true"></i>
+                                </button>
+                                <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
                             </div>
 
                             <%-- FILTRAR SIN SALIR DEL PANEL
@@ -364,16 +380,19 @@
                                     Todas <span class="n"></span></button>
                                 <button type="button" class="sg-notif-filtro"
                                         data-sg-notif-filtro="0" aria-pressed="false">
-                                    Sin ver <span class="n"></span></button>
+                                    Sin leer <span class="n"></span></button>
                                 <button type="button" class="sg-notif-filtro"
-                                        data-sg-notif-filtro="1" aria-pressed="false">
-                                    Vistas <span class="n"></span></button>
+                                        data-sg-notif-filtro="ai" aria-pressed="false">
+                                    SIGMA AI <span class="n"></span></button>
+                                <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
+                                    data-sg-notif-leer-todo>Marcar leídas</button>
                             </div>
 
                             <div class="sg-notif-cuerpo">
                                 <asp:Repeater ID="rptAlertas" runat="server"
                                     OnItemDataBound="rptAlertas_ItemDataBound">
                                     <ItemTemplate>
+                                        <asp:Literal ID="litSeccion" runat="server" />
                                         <button type="button" ID="lnkItem" runat="server">
                                             <asp:Literal ID="litItem" runat="server" />
                                         </button>
@@ -620,6 +639,109 @@
             </asp:ContentPlaceHolder>
           
         </div>
+
+        <%-- =========================================================
+             ELEGIR EMPRESA AL ENTRAR (HU-002 escenario 2)
+
+             Quien presta servicios a varias empresas tiene que elegir con
+             cual trabaja: lo que vea y lo que cargue queda en esa. Antes
+             eso era una pagina aparte (SeleccionarCliente.aspx) y era un
+             desvio: se entraba al sistema y lo primero era una pantalla
+             sin menu ni barra. Aca es un modal sobre la propia pantalla de
+             inicio.
+
+             No lleva X ni cierra por el fondo a proposito: sin empresa en
+             sesion no hay datos que mostrar, asi que cerrarlo dejaria al
+             sistema vacio sin decir por que. El unico camino es elegir.
+
+             Cada opcion es un LinkButton del master -un postback, no una
+             navegacion- por el mismo camino que el combo de la barra:
+             ClienteSesionController.CambiarCliente vuelve a comprobar que
+             la persona pertenezca a la empresa.
+             ========================================================= --%>
+        <asp:Panel ID="pnlSelectorCliente" runat="server" Visible="false" CssClass="sg-selcli-fondo">
+            <div class="sg-selcli" role="dialog" aria-modal="true" aria-labelledby="sgSelcliTitulo">
+
+                <div class="sg-selcli-cab">
+                    <span class="sg-selcli-icono"><i class="mdi mdi-domain"></i></span>
+                    <div class="sg-selcli-cab-txt">
+                        <h2 id="sgSelcliTitulo">&#191;Con qu&#233; empresa va a trabajar?</h2>
+                        <p>
+                            Usted atiende a <asp:Literal ID="litSelcliCuantos" runat="server" /> empresas.
+                            Lo que vea y lo que cargue queda en la que elija; puede cambiarla
+                            cuando quiera desde la barra de arriba.
+                        </p>
+                    </div>
+                </div>
+
+                <%-- El buscador filtra en el navegador: la lista ya esta
+                     entera en la pagina y son unas pocas empresas, asi que
+                     un postback por cada letra no traeria nada nuevo. --%>
+                <div class="sg-selcli-buscar">
+                    <i class="mdi mdi-magnify" aria-hidden="true"></i>
+                    <input type="search" id="txtSelcliBuscar" placeholder="Buscar empresa..." autocomplete="off" aria-label="Buscar empresa" />
+                </div>
+
+                <div class="sg-selcli-lista" id="sgSelcliLista">
+                    <asp:Repeater ID="rptSelectorCliente" runat="server" OnItemCommand="rptSelectorCliente_ItemCommand">
+                        <ItemTemplate>
+                            <asp:LinkButton ID="lnkSelcli" runat="server" CssClass="sg-selcli-op" CommandName="elegir" CommandArgument='<%# Eval("cli_id") %>'>
+                                <span class="sg-selcli-avatar"><%# Server.HtmlEncode(Inicial(Convert.ToString(Eval("cli_nombre")))) %></span>
+                                <span class="sg-selcli-txt">
+                                    <span class="sg-selcli-nombre"><%# Server.HtmlEncode(Convert.ToString(Eval("cli_nombre"))) %></span>
+                                    <span class="sg-selcli-meta"><%# Server.HtmlEncode(Detalle(Convert.ToString(Eval("cli_razon_social")), Convert.ToString(Eval("cli_identificador")))) %></span>
+                                </span>
+                                <i class="mdi mdi-arrow-right sg-selcli-flecha" aria-hidden="true"></i>
+                            </asp:LinkButton>
+                        </ItemTemplate>
+                    </asp:Repeater>
+                    <p class="sg-selcli-vacio" id="sgSelcliVacio">Ninguna empresa coincide con lo que escribi&#243;.</p>
+                </div>
+
+                <div class="sg-selcli-pie">
+                    <i class="mdi mdi-shield-lock-outline" aria-hidden="true"></i>
+                    <span>Solo aparecen las empresas a las que usted pertenece y que est&#225;n habilitadas.</span>
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                /* Filtro del buscador. Es del modal y no de la barra, asi que
+                   vive con el: si el modal no se pinta, este script tampoco. */
+                (function () {
+                    var caja = document.getElementById('txtSelcliBuscar');
+                    var lista = document.getElementById('sgSelcliLista');
+                    var vacio = document.getElementById('sgSelcliVacio');
+                    if (!caja || !lista) return;
+
+                    caja.focus();
+
+                    caja.addEventListener('input', function () {
+                        var q = caja.value.trim().toLowerCase();
+                        var ops = lista.querySelectorAll('.sg-selcli-op');
+                        var visibles = 0;
+                        for (var i = 0; i < ops.length; i++) {
+                            var calza = !q || (ops[i].textContent || '').toLowerCase().indexOf(q) !== -1;
+                            ops[i].style.display = calza ? '' : 'none';
+                            if (calza) visibles++;
+                        }
+                        vacio.style.display = visibles ? 'none' : 'block';
+                    });
+
+                    /* Enter con una sola empresa a la vista: la elige. Buscar
+                       y tener que apuntar despues es un paso de mas. */
+                    caja.addEventListener('keydown', function (ev) {
+                        if (ev.keyCode !== 13) return;
+                        ev.preventDefault();
+                        var ops = lista.querySelectorAll('.sg-selcli-op');
+                        var unica = null, n = 0;
+                        for (var i = 0; i < ops.length; i++)
+                            if (ops[i].style.display !== 'none') { unica = ops[i]; n++; }
+                        if (n === 1) unica.click();
+                    });
+                })();
+            </script>
+        </asp:Panel>
+
     </form>
 </body>
 </html>

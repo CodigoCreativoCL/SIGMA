@@ -5,11 +5,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'screens/login/login_screen.dart';
 import 'screens/splash/splash_screen.dart';
+import 'services/accesibilidad_service.dart';
+import 'services/api_client.dart';
 import 'services/preferencias_service.dart';
 import 'services/sesion_service.dart';
 import 'services/tema_service.dart';
 import 'theme/app_theme.dart';
+import 'widgets/comun/sigma_al_retomar.dart';
+
+/// La llave del `Navigator` raíz, para poder navegar desde fuera del árbol de
+/// widgets —en concreto, cuando el `ApiClient` detecta que la sesión caducó y
+/// hay que volver a la pantalla de entrada sin tener un `context` a mano—.
+final navigatorKey = GlobalKey<NavigatorState>();
 
 /// El orden de este arranque importa, y cada paso está donde está por una
 /// razón. Ver `MD/SIGMA_APP_ARQUITECTURA.md` §9.
@@ -27,7 +36,6 @@ void main() async {
   // es molesto; quedarse sin pantalla, no se puede.
   await TemaService.instance.cargar();
   await PreferenciasService.instance.cargar();
-  await PreferenciasService.instance.cargar();
 
   bool haySesion = false;
   try {
@@ -35,6 +43,28 @@ void main() async {
   } catch (e) {
     debugPrint('[main] No se pudo preparar la sesión: $e');
   }
+
+  /* RECUPERACIÓN AUTOMÁTICA ANTE UN 401
+
+     Cuando el servidor rechaza el token —caducó a mitad de turno, o se
+     revocó—, cualquier petición vuelve 401. En vez de dejar a la persona
+     mirando «La sesión expiró» en una pantalla que no reacciona, se limpia la
+     sesión y se vuelve al login, conservando el correo para no re-escribirlo.
+     El `ApiClient` garantiza que esto se dispara UNA sola vez por sesión. */
+  ApiClient.instance.alCaducarSesion = () async {
+    await SesionService.instance.limpiar();
+    navigatorKey.currentState?.pushAndRemoveUntil(
+      MaterialPageRoute(builder: (_) => const LoginScreen()),
+      (_) => false,
+    );
+  };
+
+  // Después de la sesión, no antes: los ajustes de accesibilidad son **de la
+  // persona**, no del aparato, y hasta acá no se sabe quién es. Sin sesión se
+  // leen los del usuario 0, que son los de fábrica.
+  await AccesibilidadService.instance.cargar(
+    SesionService.instance.sesion.usuario,
+  );
 
   runApp(ProviderScope(child: SigmaApp(haySesion: haySesion)));
 }
@@ -62,16 +92,55 @@ class SigmaApp extends StatelessWidget {
     // ninguna consulta en curso se cancela por cambiar de tema.
     return ValueListenableBuilder<ThemeMode>(
       valueListenable: TemaService.instance.modo,
-      builder: (_, modo, _) => MaterialApp(
-        title: 'SIGMA',
-        debugShowCheckedModeBanner: false,
-        // **El oscuro es el de fábrica**, y no es capricho: es la superficie
-        // que se mira en una planta, con contraluz y detrás de una funda. El
-        // claro existe porque la misma app se abre en la oficina.
-        themeMode: modo,
-        theme: AppTheme.claro(),
-        darkTheme: AppTheme.oscuro(),
-        home: SplashScreen(haySesion: haySesion),
+      builder: (_, modo, _) => ValueListenableBuilder<bool>(
+        valueListenable: AccesibilidadService.instance.altoContraste,
+        builder: (_, contraste, _) => MaterialApp(
+          navigatorKey: navigatorKey,
+          title: 'SIGMA',
+          debugShowCheckedModeBanner: false,
+          // **El oscuro es el de fábrica**, y no es capricho: es la superficie
+          // que se mira en una planta, con contraluz y detrás de una funda. El
+          // claro existe porque la misma app se abre en la oficina.
+          themeMode: modo,
+          theme: AppTheme.claro(contraste: contraste),
+          darkTheme: AppTheme.oscuro(contraste: contraste),
+          /* EL TAMANO DEL TEXTO SE APLICA ACA, UNA VEZ
+
+             Envolver el `home` y no cada pantalla: si cada una escalara por su
+             cuenta, la que se olvidara se veria distinta al resto. `builder`
+             se aplica tambien a lo que abre `Navigator`, que es lo que hace
+             que valga para toda la app y no solo para la primera pantalla.
+
+             Se ignora el ajuste del sistema a proposito: Android ya escala, y
+             multiplicar los dos factores lleva a texto cortado sin que nadie
+             entienda de donde salio. Manda el de SIGMA. */
+          builder: (contexto, hijo) => ValueListenableBuilder<double>(
+            valueListenable: AccesibilidadService.instance.escalaTexto,
+            builder: (contexto, escala, _) => ValueListenableBuilder<bool>(
+              valueListenable: AccesibilidadService.instance.movimientoReducido,
+              /* MOVIMIENTO REDUCIDO VIAJA EN `disableAnimations`
+
+                 Es la bandera que Flutter ya tiene para esto —la que enciende
+                 el ajuste del sistema— y la miran tanto los widgets propios
+                 como los del framework. Inventar un provider nuestro habria
+                 obligado a que cada animacion se acordara de consultarlo, y la
+                 que se olvidara seguiria girando. */
+              builder: (_, quieto, _) => MediaQuery(
+                data: MediaQuery.of(contexto).copyWith(
+                  textScaler: TextScaler.linear(escala),
+                  disableAnimations: quieto,
+                ),
+                child: hijo ?? const SizedBox.shrink(),
+              ),
+            ),
+          ),
+          /* AL VOLVER DEL SEGUNDO PLANO, SE PONE AL DIA
+
+             Android mata las apps en segundo plano sin avisar. Al volver,
+             SIGMA se reconstruia con la sesion pero con los datos de hace
+             horas: se veian listas viejas sin nada que dijera que lo eran. */
+          home: SgAlRetomar(child: SplashScreen(haySesion: haySesion)),
+        ),
       ),
     );
   }

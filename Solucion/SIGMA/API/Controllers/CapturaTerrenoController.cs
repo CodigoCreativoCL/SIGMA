@@ -37,7 +37,7 @@ namespace API.Controllers
         /// <summary>
         /// POST /captura/lecturas — registra la lectura de un medidor. HU-043
         /// </summary>
-        /// <response code="201">Registrada. Devuelve el id.</response>
+        /// <response code="201">Registrada. Devuelve el id y el mensaje del SP: si el salto supera el máximo diario del medidor, la lectura queda pendiente de revisión (HU-043 #2).</response>
         /// <response code="400">El SP rechazó el valor: menor que la anterior sin marcar reinicio, negativo, o fecha futura.</response>
         /// <response code="403">Sin el permiso, o el medidor no es de este cliente.</response>
         [HttpPost]
@@ -50,9 +50,14 @@ namespace API.Controllers
                 ExigirCliente();
                 ExigirCuerpo(dto);
 
-                int id = Datos.Ejecutar("API_INS_ACTIVO_MEDIDOR_LECTURA",
+                /* Igual que la medición: el SP dice si la lectura quedó pendiente
+                   de revisión por un salto no razonable, y eso viaja al
+                   teléfono. @ID es OUTPUT en el SP; se manda como entrada
+                   porque el valor se toma del SELECT. */
+                List<MedicionRegistradaDto> r = Datos.Listar<MedicionRegistradaDto>("API_INS_ACTIVO_MEDIDOR_LECTURA",
                     new Dictionary<string, object>
                     {
+                        { "@ID", 0 },
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@ACTIVO_MEDIDOR", dto.activo_medidor },
                         { "@VALOR_ACUMULADO", dto.valor },
@@ -66,16 +71,18 @@ namespace API.Controllers
                         // con un token válido registraría lecturas a nombre de
                         // otro y la auditoría diría lo que el atacante quiso.
                         { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
+                    });
 
-                return Creado(id);
+                int id = r.Count > 0 ? r[0].ID : 0;
+
+                return Creado(id, new { id = id, mensaje = r.Count > 0 ? r[0].MENSAJE : null });
             });
         }
 
         /// <summary>
         /// POST /captura/mediciones — registra una medición de condición. HU-044
         /// </summary>
-        /// <response code="201">Registrada. Devuelve el id.</response>
+        /// <response code="201">Registrada. Devuelve el id y el veredicto contra los umbrales de la variable (normal, advertencia, crítico o fuera del rango operativo).</response>
         /// <response code="400">El SP rechazó el valor o la unidad.</response>
         /// <response code="403">Sin el permiso, o la variable no es de este cliente.</response>
         [HttpPost]
@@ -88,9 +95,18 @@ namespace API.Controllers
                 ExigirCliente();
                 ExigirCuerpo(dto);
 
-                int id = Datos.Ejecutar("API_INS_ACTIVO_MEDICION",
+                /* El SP devuelve, ademas del id, el veredicto contra los
+                   umbrales de la variable (HU-041 #2): normal, advertencia,
+                   critico o fuera del rango operativo. Se lee del result set
+                   y viaja en la respuesta; antes se descartaba y el 201
+                   traia solo el id, con lo que nadie se enteraba de que la
+                   medicion estaba fuera de rango (visto en las pruebas del
+                   15-09-2026). @ID sigue siendo OUTPUT en el SP; aca se
+                   manda como entrada porque el valor se toma del SELECT. */
+                List<MedicionRegistradaDto> r = Datos.Listar<MedicionRegistradaDto>("API_INS_ACTIVO_MEDICION",
                     new Dictionary<string, object>
                     {
+                        { "@ID", 0 },
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@ACTIVO_VARIABLE", dto.activo_variable },
                         { "@VALOR", dto.valor },
@@ -102,9 +118,11 @@ namespace API.Controllers
                         { "@ENTRADA_MODO", dto.entrada_modo },
                         { "@UUID", dto.uuid },
                         { "@USUARIO", SesionApi.UsuarioId() }
-                    }, true);
+                    });
 
-                return Creado(id);
+                int id = r.Count > 0 ? r[0].ID : 0;
+
+                return Creado(id, new { id = id, mensaje = r.Count > 0 ? r[0].MENSAJE : null });
             });
         }
     }

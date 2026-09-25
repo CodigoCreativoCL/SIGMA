@@ -48,8 +48,10 @@ class SgCronometro extends StatelessWidget {
             children: [
               _Pulso(activo: c.corriendo),
               const SizedBox(width: 6),
-              Text(c.texto,
-                  style: sora(13, 600, color: sg.tinta2, tabular: true)),
+              Text(
+                c.texto,
+                style: sora(13, 600, color: sg.tinta2, tabular: true),
+              ),
             ],
           );
         }
@@ -66,19 +68,31 @@ class SgCronometro extends StatelessWidget {
                   children: [
                     Text(
                       c.corriendo ? 'En curso' : 'En pausa',
-                      style: sora(12, 600,
-                          color: c.corriendo ? sg.acentoTexto : sg.tinta3),
+                      style: sora(
+                        12,
+                        600,
+                        color: c.corriendo ? sg.acentoTexto : sg.tinta3,
+                      ),
                     ),
                     const SizedBox(height: 2),
-                    Text(c.texto,
-                        style: sora(26, 700,
-                            color: sg.tinta, tabular: true, espaciado: -0.5)),
+                    Text(
+                      c.texto,
+                      style: sora(
+                        26,
+                        700,
+                        color: sg.tinta,
+                        tabular: true,
+                        espaciado: -0.5,
+                      ),
+                    ),
                     if (c.tramos > 1) ...[
                       const SizedBox(height: 2),
                       // Un trabajo interrumpido cuatro veces cuenta una
                       // historia distinta de uno hecho de corrido.
-                      Text('${c.tramos} tramos',
-                          style: sora(11, 500, color: sg.tinta3)),
+                      Text(
+                        '${c.tramos} tramos',
+                        style: sora(11, 500, color: sg.tinta3),
+                      ),
                     ],
                   ],
                 ),

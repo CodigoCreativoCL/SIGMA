@@ -49,6 +49,31 @@
     --sg-blue: #2563EB;
     --sg-pink: #FF4D9D;
 
+    /* ---- Rampa de marca ----
+
+       Los cuatro tonos van del violeta al turquesa en pasos parejos, asi que
+       sirven para DISTINGUIR cosas del mismo rango -las secciones de un
+       centro, las tarjetas de una fila de KPI- sin que ninguna pese mas que
+       otra. Es lo que el morado solo no puede hacer: repetido doce veces deja
+       de senalar y se vuelve ruido.
+
+       No reemplazan a --sg-purple, que sigue siendo el color de la accion
+       primaria, ni a los estados operativos, que significan otra cosa. */
+    --sg-ramp-1: #5A30F2;   /* violeta profundo */
+    --sg-ramp-2: #1675F2;   /* azul */
+    --sg-ramp-3: #0B9DE1;   /* celeste */
+    --sg-ramp-4: #12CBCE;   /* turquesa */
+
+    /* El negro de la marca: mas cerrado que --sg-navy, para texto y trazo
+       sobre fondo claro cuando hace falta el maximo contraste. */
+    --sg-ink: #0D0D0D;
+
+    /* Los mismos, muy diluidos, para el fondo de un icono o un chip. */
+    --sg-ramp-1-subtle: #EFEBFE;
+    --sg-ramp-2-subtle: #E6F0FE;
+    --sg-ramp-3-subtle: #E2F4FC;
+    --sg-ramp-4-subtle: #DFF8F8;
+
     /* ---- Tema claro (web) ---- */
     --sg-background: #F8FAFC;
     --sg-surface: #FFFFFF;
@@ -79,6 +104,10 @@
 
     /* ---- Degradado de marca: solo acento ---- */
     --sg-gradient: linear-gradient(135deg, #00E0C2 0%, #2563EB 42%, #6C5CFF 72%, #FF4D9D 100%);
+
+    /* El de la rampa: para barras, bordes y acentos largos, donde el
+       degradado de cuatro colores de arriba se lee como un arcoiris. */
+    --sg-gradient-ramp: linear-gradient(135deg, #5A30F2 0%, #1675F2 38%, #0B9DE1 70%, #12CBCE 100%);
 
     /* ---- Tipografia ---- */
     --sg-font: 'Sora', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;

@@ -77,6 +77,44 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// La historia de estados de un componente, la más reciente primero
+        /// (SEL_ACTIVO_COMPONENTE_ESTADO_HISTORIAL). HU-036 #3.
+        /// </summary>
+        public List<ActivoComponenteEstadoHistorial> GetHistorialEstado(int componente, int cliente)
+        {
+            List<ActivoComponenteEstadoHistorial> lista = new List<ActivoComponenteEstadoHistorial>();
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = new SqlCommand();
+                try
+                {
+                    cmd.CommandText = "SEL_ACTIVO_COMPONENTE_ESTADO_HISTORIAL";
+                    cmd.Parameters.AddWithValue("@COMPONENTE", componente);
+                    cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                    using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                        while (dr.Read())
+                        {
+                            ActivoComponenteEstadoHistorial h = new ActivoComponenteEstadoHistorial();
+                            h.ceh_id = int.Parse(dr["CEH_ID"].ToString());
+                            h.ceh_activo_componente = int.Parse(dr["CEH_ACTIVO_COMPONENTE"].ToString());
+                            if (dr["CEH_ESTADO_ANTERIOR"] != DBNull.Value) h.ceh_estado_anterior = int.Parse(dr["CEH_ESTADO_ANTERIOR"].ToString());
+                            h.estado_anterior = dr["ESTADO_ANTERIOR"] == DBNull.Value ? "—" : dr["ESTADO_ANTERIOR"].ToString();
+                            h.ceh_estado_nuevo = int.Parse(dr["CEH_ESTADO_NUEVO"].ToString());
+                            h.estado_nuevo = dr["ESTADO_NUEVO"].ToString();
+                            h.ceh_motivo = dr["CEH_MOTIVO"].ToString();
+                            h.ceh_usuario_creacion = int.Parse(dr["CEH_USUARIO_CREACION"].ToString());
+                            h.responsable = dr["RESPONSABLE"].ToString();
+                            h.ceh_fecha_creacion = Convert.ToDateTime(dr["CEH_FECHA_CREACION"]);
+                            lista.Add(h);
+                        }
+                    cmd.Connection.Close(); cmd.Dispose();
+                }
+                catch (Exception) { if (cmd.Connection != null) cmd.Connection.Close(); cmd.Dispose(); lista = null; }
+            }
+            return lista;
+        }
+
         public ActivoComponente GetComponente(int id)
         {
             List<ActivoComponente> l = GetComponentes(new ActivoComponente { aco_id = id });
@@ -152,6 +190,7 @@ namespace SitioBase.Controller
                     cmd.Parameters.AddWithValue("@FECHA_INSTALACION", (object)e.aco_fecha_instalacion ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@DESCRIPCION", (object)e.aco_descripcion ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@HABILITADO", e.aco_habilitado);
+                    cmd.Parameters.AddWithValue("@MOTIVO", (object)e.aco_motivo_estado ?? DBNull.Value);
                     cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                     cmd.ExecuteNonQuery();
                     cmd.Connection.Close();

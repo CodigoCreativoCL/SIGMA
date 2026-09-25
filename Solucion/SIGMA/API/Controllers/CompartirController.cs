@@ -1,4 +1,4 @@
-using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
 using System.Collections.Generic;
@@ -42,7 +42,8 @@ namespace API.Controllers
         /// </summary>
         [HttpGet]
         [Route("companeros")]
-        public IHttpActionResult Companeros(int instalacion = 0, string filtro = null)
+        public IHttpActionResult Companeros(int instalacion = 0, string filtro = null,
+                                            string perfiles = null)
         {
             return Ejecutar(() =>
             {
@@ -58,11 +59,55 @@ namespace API.Controllers
                         { "@CLIENTE", SesionApi.ClienteId() },
                         { "@USUARIO", SesionApi.UsuarioId() },
                         { "@INSTALACION", instalacion },
-                        { "@FILTRO", filtro }
+                        { "@FILTRO", filtro },
+
+                        /* QUIENES PUEDEN ESTAR EN UN TRABAJO
+
+                           Sin esto salian TODOS los usuarios de la planta, el
+                           gerente comercial y el administrador incluidos, que
+                           no van a estar delante de la maquina. Lo elige la
+                           app y no el SP porque las dos hojas —sumar compañero
+                           y compartir— pueden pedir conjuntos distintos.
+
+                           Se sanea antes de pasarlo: es una lista de numeros y
+                           entra en un LIKE dentro del SP. Cualquier cosa que
+                           no sean digitos y comas se descarta. */
+                        { "@PERFILES", SoloIdsDePerfil(perfiles) }
                     });
 
                 return Ok(r ?? new List<CompaneroDto>());
             });
+        }
+
+        /// <summary>
+        /// Deja solo digitos y comas, y descarta el resto.
+        ///
+        /// El parametro viaja hasta un LIKE del SP. Aunque `Datos` lo manda
+        /// parametrizado —no hay concatenacion, asi que no hay inyeccion—, un
+        /// valor con basura devolveria una lista vacia sin explicar por que.
+        /// Saneado, o filtra bien o no filtra.
+        /// </summary>
+        private static string SoloIdsDePerfil(string crudo)
+        {
+            if (string.IsNullOrWhiteSpace(crudo)) return null;
+
+            List<string> ids = new List<string>();
+
+            foreach (string parte in crudo.Split(','))
+            {
+                int id;
+                if (int.TryParse(parte.Trim(), out id) && id > 0)
+                    ids.Add(id.ToString());
+            }
+
+            /* SI PIDIO FILTRAR Y NADA ERA VALIDO, NO SE DEVUELVE A TODOS
+
+               Devolver null aca seria «sin filtro», o sea que un parametro con
+               basura ampliaria la lista en vez de reducirla. En algo que decide
+               a quien se le puede mandar un trabajo, equivocarse hacia el lado
+               permisivo es el peor de los dos. Se responde con un id que no es
+               de nadie: lista vacia, y se nota. */
+            return ids.Count == 0 ? "0" : string.Join(",", ids);
         }
 
         /// <summary>

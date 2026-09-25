@@ -32,6 +32,7 @@ class SgTarjetaIa extends StatelessWidget {
     this.textoAccion = 'Ver análisis',
     this.accionSecundaria,
     this.textoAccionSecundaria = 'Tomar',
+    this.pie,
   });
 
   final SgIconoIa simbolo;
@@ -46,6 +47,11 @@ class SgTarjetaIa extends StatelessWidget {
   final List<(String, String)> cifras;
 
   final Widget? miniatura;
+
+  /// Una línea pequeña bajo el detalle: **dónde está** lo que se está
+  /// diciendo. Un plazo sin sitio obliga a buscar el equipo antes de poder
+  /// hacer nada con el aviso.
+  final String? pie;
 
   final VoidCallback? accion;
   final String textoAccion;
@@ -96,17 +102,26 @@ class SgTarjetaIa extends StatelessWidget {
                          esta tarjeta en el Inicio. */
                       Row(
                         children: [
-                          SgRadarIa(simbolo: simbolo, lado: 46, activo: accion != null),
+                          SgRadarIa(
+                            simbolo: simbolo,
+                            lado: 46,
+                            activo: accion != null,
+                          ),
                           const SizedBox(width: 12),
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Text('SIGMA AI',
-                                    style: sora(13, 700,
-                                        color: sg.acentoTexto,
-                                        espaciado: 0.6)),
+                                Text(
+                                  'SIGMA AI',
+                                  style: sora(
+                                    13,
+                                    700,
+                                    color: sg.acentoTexto,
+                                    espaciado: 0.6,
+                                  ),
+                                ),
                                 const SizedBox(height: 2),
                                 Text(
                                   // Lo que está haciendo, no lo que es: la
@@ -123,9 +138,11 @@ class SgTarjetaIa extends StatelessWidget {
                           ),
                           if (badge != null) ...[
                             const SizedBox(width: 8),
-                            SgBadge(badge!,
-                                color: colorBadge ?? sg.rojoTexto,
-                                chico: true),
+                            SgBadge(
+                              badge!,
+                              color: colorBadge ?? sg.rojoTexto,
+                              chico: true,
+                            ),
                           ],
                         ],
                       ),
@@ -140,12 +157,58 @@ class SgTarjetaIa extends StatelessWidget {
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(titulo,
-                                    style: sora(16, 600, color: sg.tinta)),
+                                Text(
+                                  titulo,
+                                  style: sora(16, 600, color: sg.tinta),
+                                  /* UNA LINEA, COMO EL DETALLE
+
+                                     El titulo es el nombre de un equipo y al
+                                     lado tiene el badge, asi que el sitio es
+                                     el que es. Sin tope, en un telefono
+                                     angosto se partia en dos y la tarjeta
+                                     crecia 23 px **solo en esos telefonos**:
+                                     el carrusel tiene alto fijo, y un alto
+                                     que depende del ancho es un desbordamiento
+                                     esperando al aparato mas chico. */
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                                 const SizedBox(height: 3),
-                                Text(detalle,
-                                    style: sora(12, 500, color: sg.tinta2),
-                                    overflow: TextOverflow.ellipsis),
+                                Text(
+                                  detalle,
+                                  style: sora(12, 500, color: sg.tinta2),
+                                  // Dos lineas: el detalle de una prediccion
+                                  // no cabe en una y cortarlo a la mitad deja
+                                  // la frase sin el «si la tendencia se
+                                  // mantiene», que es la salvedad que la hace
+                                  // honesta.
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                if ((pie ?? '').isNotEmpty) ...[
+                                  const SizedBox(height: 5),
+                                  Row(
+                                    children: [
+                                      Icon(
+                                        Icons.place_outlined,
+                                        size: 12,
+                                        color: sg.tinta3,
+                                      ),
+                                      const SizedBox(width: 4),
+                                      Flexible(
+                                        child: Text(
+                                          pie!,
+                                          style: sora(
+                                            11,
+                                            600,
+                                            color: sg.tinta3,
+                                          ),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ],
                               ],
                             ),
                           ),
@@ -167,14 +230,19 @@ class SgTarjetaIa extends StatelessWidget {
                         Row(
                           children: [
                             Expanded(
-                              child: SgBoton(textoAccion,
-                                  alto: 44, tamanoTexto: 14, onTap: accion),
+                              child: SgBoton(
+                                textoAccion,
+                                alto: 44,
+                                tamanoTexto: 14,
+                                onTap: accion,
+                              ),
                             ),
                             if (accionSecundaria != null) ...[
                               const SizedBox(width: 8),
                               _BotonVidrio(
-                                  texto: textoAccionSecundaria,
-                                  onTap: accionSecundaria!),
+                                texto: textoAccionSecundaria,
+                                onTap: accionSecundaria!,
+                              ),
                             ],
                           ],
                         ),
@@ -214,10 +282,43 @@ class _Cifra extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(dato.$1,
-              style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true)),
+          /* LA CIFRA SE ENCOGE, NO SE PARTE
+
+             Son tres recuadros repartiéndose el ancho, y el tercero es el que
+             lleva unidades: «6,35 mm/s» no cabe a tamaño 20 en un tercio de un
+             teléfono angosto. Sin esto se iba a dos líneas, la fila crecía y
+             la tarjeta reventaba su alto —59 px de overflow en el Inicio—.
+
+             `scaleDown` y no `ellipsis`: media cifra —«6,3…»— es peor que una
+             cifra chica, porque la cifra es justamente lo que se viene a leer.
+             Y no se encoge nunca por debajo de lo necesario: con texto corto
+             se sigue viendo a 20. */
+          SizedBox(
+            /* EL ALTO SIGUE AL AJUSTE DE ACCESIBILIDAD
+
+               24 es lo que ocupa la cifra a tamaño normal. Dejarlo fijo haría
+               que la cifra —lo único que se viene a leer de esta tarjeta— sea
+               lo único que NO crece cuando alguien sube el tamaño del texto
+               (vista 16.2). */
+            height: MediaQuery.textScalerOf(context).scale(24),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                dato.$1,
+                maxLines: 1,
+                softWrap: false,
+                style: sora(20, 700, color: sg.tinta, alto: 1, tabular: true),
+              ),
+            ),
+          ),
           const SizedBox(height: 2),
-          Text(dato.$2, style: sora(11, 500, color: sg.tinta2)),
+          Text(
+            dato.$2,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: sora(11, 500, color: sg.tinta2),
+          ),
         ],
       ),
     );
@@ -241,7 +342,7 @@ class _BotonVidrio extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         child: Container(
-          height: 44,
+          height: context.alto(44),
           padding: const EdgeInsets.symmetric(horizontal: 16),
           alignment: Alignment.center,
           child: Text(texto, style: sora(14, 600, color: sg.tinta)),
@@ -283,8 +384,10 @@ class SgIaSinDatos extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('SIGMA AI sin análisis para esta planta',
-                    style: sora(15, 600, color: sg.tinta2)),
+                Text(
+                  'SIGMA AI sin análisis para esta planta',
+                  style: sora(15, 600, color: sg.tinta2),
+                ),
                 const SizedBox(height: 3),
                 Text(
                   motivo ??

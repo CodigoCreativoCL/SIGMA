@@ -120,10 +120,16 @@ public partial class View_Comun_Impresion_Escanear : System.Web.UI.Page
             string tipo;
             int id;
 
-            if (!lector.Interpretar(leido, out tipo, out id))
-                throw new Exception("No se reconoce «" + leido.Trim() +
-                                    "». Escriba el código impreso en la etiqueta, " +
-                                    "por ejemplo UBI-17 o BOD-9.");
+            /* Primero el token del QR; si no es un token o el id no es de
+               este cliente, el código impreso (bloque 254). */
+            bool esToken = lector.Interpretar(leido, out tipo, out id);
+            if (!esToken || !ExisteEnCliente(tipo, id))
+            {
+                if (!lector.ResolverPorCodigo(leido, out tipo, out id))
+                    throw new Exception("No se reconoce «" + leido.Trim() +
+                                        "». Escriba el código impreso en la etiqueta, " +
+                                        "por ejemplo UBI-17 o BOD-9.");
+            }
 
             /* Un activo NO es un lugar: no tiene existencia adentro, así que
                no hay desglose que mostrar. Su etiqueta lleva a su ficha, que
@@ -177,6 +183,24 @@ public partial class View_Comun_Impresion_Escanear : System.Web.UI.Page
             ScriptManager.RegisterStartupScript(this, GetType(), "escaneo-olvidar",
                                                 "if(window.sigmaEscaneo) sigmaEscaneo.olvidar();", true);
         }
+    }
+
+    /// <summary>El token leído es de este cliente (SEL_ETIQUETA_RESOLVER con tipo e id).</summary>
+    private bool ExisteEnCliente(string tipo, int id)
+    {
+        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
+        try
+        {
+            cmd.CommandText = "SEL_ETIQUETA_RESOLVER";
+            cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+            cmd.Parameters.AddWithValue("@TIPO", tipo);
+            cmd.Parameters.AddWithValue("@ID", id);
+            bool hay;
+            using (System.Data.SqlClient.SqlDataReader dr = Conexion.GetDataReader(cmd)) hay = dr.Read();
+            cmd.Connection.Close(); cmd.Dispose();
+            return hay;
+        }
+        catch (Exception) { if (cmd.Connection != null) cmd.Connection.Close(); cmd.Dispose(); return false; }
     }
 
     protected string Articulo(string tipo)

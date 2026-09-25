@@ -2,19 +2,30 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <script type="text/javascript">
-        function getRadWindow() {
-            var oWindow = null;
-            if (window.radWindow) oWindow = window.radWindow;
-            else if (window.frameElement.radWindow) oWindow = window.frameElement.radWindow;
-            return oWindow;
+    <style type="text/css">
+        /* El cargador de imagen es el mismo de la ficha del activo. Vive aca y
+           no en una hoja global porque son dos fichas y dos modales; el dia que
+           sea la tercera, se saca a una hoja. */
+        .sigma-img-uploader { display: flex; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+        .sigma-img-btn {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: #fff; color: #4b5563; border: 1px solid #e5e7eb;
+            border-radius: 9px; padding: 9px 16px; font-size: 13px; font-weight: 600;
+            cursor: pointer; margin: 0;
         }
-        function closeWindow() {
-            var window = getRadWindow();
-            if (window.BrowserWindow.refresh) window.BrowserWindow.refresh();
-            window.close();
+        .sigma-img-btn i { color: #6C5CFF; }
+        .sigma-img-btn:hover { background: #f7f7fc; }
+        .sigma-img-vacio {
+            flex: 1 1 260px;
+            display: grid; place-items: center; gap: 4px;
+            padding: 22px 16px;
+            border: 1.5px dashed #d7dbe7; border-radius: 12px;
+            background: #fbfbfe; text-align: center;
         }
-    </script>
+        .sigma-img-vacio i { font-size: 28px; color: #b6bccd; }
+        .sigma-img-vacio strong { font-size: 13.5px; color: #475569; }
+        .sigma-img-vacio span { font-size: 12px; color: #8a93a6; max-width: 280px; }
+    </style>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -68,6 +79,14 @@
                 <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Comp" />
             </div>
+            <%-- HU-036 #3: cambiar el estado exige decir por que. El SP
+                 (UPD_ACTIVO_COMPONENTE, regla 6) rechaza el cambio sin motivo
+                 y deja la huella en Activo_Componente_Estado_Historial. --%>
+            <asp:Panel ID="pnlMotivoEstado" runat="server" CssClass="sigma-modal-field is-grande" Visible="false">
+                <label>Motivo del cambio de estado(*)</label>
+                <WebControls:TextArea2 ID="txtMotivoEstado" runat="server" MaxLength="500" />
+                <span class="sigma-modal-ayuda">Obligatorio solo si cambia el estado. Queda en el historial con fecha y responsable.</span>
+            </asp:Panel>
             <div class="sigma-modal-field is-chico">
                 <label>Criticidad(*)</label>
                 <rad:RadComboBox2 ID="cboCriticidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
@@ -105,6 +124,55 @@
             <div class="sigma-modal-field is-grande">
                 <label>Descripción</label>
                 <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="500" />
+            </div>
+        </div>
+    </div>
+
+    <asp:Panel ID="pnlHistorialEstado" runat="server" Visible="false" style="margin:12px 0;">
+        <h4 style="margin:0 0 6px;">Historial de estados</h4>
+        <table class="sigma-tabla-simple" style="width:100%; font-size:13px;">
+            <thead><tr><th style="text-align:left;">Fecha</th><th style="text-align:left;">De</th><th style="text-align:left;">A</th><th style="text-align:left;">Motivo</th><th style="text-align:left;">Responsable</th></tr></thead>
+            <tbody>
+                <asp:Repeater ID="rptHistorialEstado" runat="server">
+                    <ItemTemplate>
+                        <tr>
+                            <td><%# Eval("ceh_fecha_creacion", "{0:dd/MM/yyyy HH:mm}") %></td>
+                            <td><%# Eval("estado_anterior") %></td>
+                            <td><%# Eval("estado_nuevo") %></td>
+                            <td><%# Eval("ceh_motivo") %></td>
+                            <td><%# Eval("responsable") %></td>
+                        </tr>
+                    </ItemTemplate>
+                </asp:Repeater>
+            </tbody>
+        </table>
+        <asp:Label ID="lblSinHistorial" runat="server" CssClass="sigma-modal-ayuda" Text="Aún no hay cambios de estado registrados." Visible="false" />
+    </asp:Panel>
+
+    <%-- ============ IMAGEN DEL COMPONENTE ============ --%>
+    <div class="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-image-outline"></i>Imagen del componente</div>
+
+        <div class="sigma-modal-grid">
+            <div class="sigma-modal-field is-ancho">
+                <div class="sigma-img-uploader">
+                    <asp:Panel ID="pnlSinImagen" runat="server" CssClass="sigma-img-vacio">
+                        <i class="mdi mdi-image-off-outline"></i>
+                        <strong>Sin imagen</strong>
+                        <span>Una foto de la pieza evita confundir dos componentes que se llaman parecido.</span>
+                    </asp:Panel>
+
+                    <label for="fuImagenComp" class="sigma-img-btn"><i class="mdi mdi-image-plus-outline"></i> Elegir imagen</label>
+                    <asp:FileUpload ID="fuImagenComp" runat="server" accept="image/*" ClientIDMode="Static" style="display:none;" />
+
+                    <asp:Panel ID="pnlImagenActual" runat="server" Visible="false">
+                        <img id="imgActual" runat="server" alt="Imagen del componente" style="max-width:220px;max-height:150px;object-fit:contain;border-radius:8px;border:1px solid #e5e7eb;" />
+                        <label style="font-size:12px;color:#b91c1c;font-weight:600;display:inline-flex;align-items:center;gap:5px;cursor:pointer;">
+                            <asp:CheckBox ID="chkQuitarImagen" runat="server" /> Quitar la imagen actual al guardar
+                        </label>
+                    </asp:Panel>
+                </div>
+                <span class="sigma-modal-ayuda">JPG o PNG. Se ve en la lista de componentes del centro del activo.</span>
             </div>
         </div>
     </div>

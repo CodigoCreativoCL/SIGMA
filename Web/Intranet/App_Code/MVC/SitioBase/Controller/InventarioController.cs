@@ -181,6 +181,8 @@ namespace SitioBase.Controller
                             item.bodega_nombre = dr["BODEGA_NOMBRE"].ToString();
                             item.planta_nombre = dr["PLANTA_NOMBRE"].ToString();
                             item.ubicacion_codigo = dr["UBICACION_CODIGO"].ToString();
+                            if (dr["UBICACIONES"] != DBNull.Value) item.ubicaciones = int.Parse(dr["UBICACIONES"].ToString());
+                            if (dr["LOTES"] != DBNull.Value) item.lotes = int.Parse(dr["LOTES"].ToString());
                             item.bajo_minimo = (dr["BAJO_MINIMO"].ToString() == "1");
                             item.sobre_maximo = (dr["SOBRE_MAXIMO"].ToString() == "1");
 

@@ -12,6 +12,7 @@ import '../../theme/app_theme.dart';
 import '../../widgets/comun/estado_async.dart';
 import '../../widgets/comun/sigma_v3.dart';
 import 'ejecucion_checklist_screen.dart';
+import '../../services/buscador.dart';
 
 /// Checklist en terreno · la bandeja — HU-095.
 ///
@@ -30,7 +31,6 @@ class ChecklistScreen extends ConsumerWidget {
   /// arreglar el mismo defecto.
   final bool embebida;
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final sg = context.sg;
@@ -44,21 +44,24 @@ class ChecklistScreen extends ConsumerWidget {
       appBar: embebida
           ? null
           : SgBarra(
-        'Pautas de hoy',
-        tamanoTitulo: 23,
-        acciones: [
-          Padding(
-            padding: const EdgeInsets.only(right: 4),
-            child: ValueListenableBuilder<bool>(
-              valueListenable: SyncService.instance.enLinea,
-              builder: (_, enLinea, _) => enLinea
-                  ? const SizedBox.shrink()
-                  : SgBadge('Sin conexión',
-                      color: sg.tinta2, icono: Icons.cloud_off_outlined),
+              'Pautas de hoy',
+              tamanoTitulo: 23,
+              acciones: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 4),
+                  child: ValueListenableBuilder<bool>(
+                    valueListenable: SyncService.instance.enLinea,
+                    builder: (_, enLinea, _) => enLinea
+                        ? const SizedBox.shrink()
+                        : SgBadge(
+                            'Sin conexión',
+                            color: sg.tinta2,
+                            icono: Icons.cloud_off_outlined,
+                          ),
+                  ),
+                ),
+              ],
             ),
-          ),
-        ],
-      ),
       body: EstadoAsync<List<ChecklistPendiente>>(
         valor: pendientes,
         onReintentar: () => ref.invalidate(checklistPendientesProvider),
@@ -66,27 +69,48 @@ class ChecklistScreen extends ConsumerWidget {
         vacio: const EstadoVacio(
           icono: Icons.fact_check_outlined,
           titulo: 'No tienes pautas pendientes',
-          detalle: 'Las rondas se programan desde la web. Cuando te toque una, '
+          detalle:
+              'Las rondas se programan desde la web. Cuando te toque una, '
               'aparece acá y se puede llenar sin señal.',
         ),
-        child: (lista) => RefreshIndicator(
-          onRefresh: () async => ref.invalidate(checklistPendientesProvider),
-          child: ListView.separated(
-            padding: context.conBarraSistema(const EdgeInsets.fromLTRB(16, 12, 16, 24)),
-            itemCount: lista.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 11),
-            itemBuilder: (_, i) => _Tarjeta(
-              pauta: lista[i],
-              onAbrir: () => _abrir(context, ref, lista[i]),
+        child: (todas) {
+          // El mismo buscador de la bandeja: ver la nota en tareas_screen.
+          final buscado = ref.watch(busquedaBandejaProvider);
+          final lista = todas
+              .where(
+                (p) => coincideBusqueda(buscado, [
+                  p.PLANTILLA_NOMBRE,
+                  p.PLANTILLA_CODIGO,
+                  p.ACTIVO_CODIGO,
+                  p.ACTIVO_NOMBRE,
+                ]),
+              )
+              .toList();
+
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(checklistPendientesProvider),
+            child: ListView.separated(
+              padding: context.conBarraSistema(
+                const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              ),
+              itemCount: lista.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 11),
+              itemBuilder: (_, i) => _Tarjeta(
+                pauta: lista[i],
+                onAbrir: () => _abrir(context, ref, lista[i]),
+              ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
 
   Future<void> _abrir(
-      BuildContext context, WidgetRef ref, ChecklistPendiente p) async {
+    BuildContext context,
+    WidgetRef ref,
+    ChecklistPendiente p,
+  ) async {
     final mensajero = ScaffoldMessenger.of(context);
     final navegador = Navigator.of(context);
 
@@ -105,23 +129,27 @@ class ChecklistScreen extends ConsumerWidget {
       });
 
       if (id == 0) {
+        if (!context.mounted) return;
         mensajero.showSnackBar(
-            const SnackBar(content: Text('No se pudo abrir la pauta.')));
+          const SnackBar(content: Text('No se pudo abrir la pauta.')),
+        );
         return;
       }
 
-      await navegador.push(MaterialPageRoute(
-        builder: (_) => EjecucionChecklistScreen(
-          ejecucionId: id,
-          versionId: p.VERSION_ID,
+      await navegador.push(
+        MaterialPageRoute(
+          builder: (_) => EjecucionChecklistScreen(
+            ejecucionId: id,
+            versionId: p.VERSION_ID,
+          ),
         ),
-      ));
+      );
+      if (!context.mounted) return;
       ref.invalidate(checklistPendientesProvider);
     } on ApiException catch (e) {
       mensajero.showSnackBar(SnackBar(content: Text(e.mensaje)));
     }
   }
-
 }
 
 class _Tarjeta extends StatelessWidget {
@@ -147,10 +175,12 @@ class _Tarjeta extends StatelessWidget {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SgIconoCuadro(Icons.fact_check_outlined,
-                  color: pauta.vencida ? sg.rojoTexto : sg.acentoTexto,
-                  lado: 44,
-                  tamanoIcono: 22),
+              SgIconoCuadro(
+                Icons.fact_check_outlined,
+                color: pauta.vencida ? sg.rojoTexto : sg.acentoTexto,
+                lado: 44,
+                tamanoIcono: 22,
+              ),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -161,30 +191,42 @@ class _Tarjeta extends StatelessWidget {
                       runSpacing: 6,
                       children: [
                         if (pauta.vencida)
-                          SgBadge('Vencida',
-                              color: sg.rojoTexto, chico: true),
+                          SgBadge('Vencida', color: sg.rojoTexto, chico: true),
                         if (pauta.empezada)
-                          SgBadge('Empezada',
-                              color: sg.ambarTexto,
-                              icono: Icons.edit_note,
-                              chico: true),
-                        SgBadge('${pauta.ITEM_TOTAL} ítems',
-                            color: sg.tinta2, chico: true),
+                          SgBadge(
+                            'Empezada',
+                            color: sg.ambarTexto,
+                            icono: Icons.edit_note,
+                            chico: true,
+                          ),
+                        SgBadge(
+                          '${pauta.ITEM_TOTAL} ítems',
+                          color: sg.tinta2,
+                          chico: true,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 6),
-                    Text(pauta.PLANTILLA_NOMBRE,
-                        style: sora(16, 600, color: sg.tinta, alto: 1.35)),
+                    Text(
+                      pauta.PLANTILLA_NOMBRE,
+                      style: sora(16, 600, color: sg.tinta, alto: 1.35),
+                    ),
                     if (pauta.donde.isNotEmpty) ...[
                       const SizedBox(height: 6),
                       Row(
                         children: [
-                          Icon(Icons.place_outlined, size: 14, color: sg.tinta3),
+                          Icon(
+                            Icons.place_outlined,
+                            size: 14,
+                            color: sg.tinta3,
+                          ),
                           const SizedBox(width: 5),
                           Expanded(
-                            child: Text(pauta.donde,
-                                style: sora(12, 500, color: sg.tinta3),
-                                overflow: TextOverflow.ellipsis),
+                            child: Text(
+                              pauta.donde,
+                              style: sora(12, 500, color: sg.tinta3),
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           ),
                         ],
                       ),
@@ -193,16 +235,20 @@ class _Tarjeta extends StatelessWidget {
                       const SizedBox(height: 4),
                       Row(
                         children: [
-                          Icon(Icons.schedule,
-                              size: 14,
-                              color:
-                                  pauta.vencida ? sg.rojoTexto : sg.tinta3),
+                          Icon(
+                            Icons.schedule,
+                            size: 14,
+                            color: pauta.vencida ? sg.rojoTexto : sg.tinta3,
+                          ),
                           const SizedBox(width: 5),
-                          Text('Hasta las ${_hora.format(limite)}',
-                              style: sora(12, 500,
-                                  color: pauta.vencida
-                                      ? sg.rojoTexto
-                                      : sg.tinta3)),
+                          Text(
+                            'Hasta las ${_hora.format(limite)}',
+                            style: sora(
+                              12,
+                              500,
+                              color: pauta.vencida ? sg.rojoTexto : sg.tinta3,
+                            ),
+                          ),
                         ],
                       ),
                     ],

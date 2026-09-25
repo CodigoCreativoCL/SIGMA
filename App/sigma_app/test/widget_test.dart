@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:sigma_app/models/modelos.dart';
+import 'package:sigma_app/models/sesion_model.dart';
 import 'package:sigma_app/services/api_client.dart';
 import 'package:sigma_app/theme/app_theme.dart';
 import 'package:sigma_app/theme/sigma_tokens.dart';
@@ -135,11 +136,17 @@ void main() {
     test('Paginado acepta el objeto y la lista pelada', () {
       // Hay endpoints que devuelven {datos:[...]} y otros un array: /menus y
       // /repuestos/{id}/lotes son arrays.
-      final objeto = Paginado.desde(
-        const {'total': 2, 'pagina': 1, 'datos': [{'ctl_id': 1}, {'ctl_id': 2}]},
-        Catalogo.fromJson,
-      );
-      final lista = Paginado.desde(const [{'ctl_id': 7}], Catalogo.fromJson);
+      final objeto = Paginado.desde(const {
+        'total': 2,
+        'pagina': 1,
+        'datos': [
+          {'ctl_id': 1},
+          {'ctl_id': 2},
+        ],
+      }, Catalogo.fromJson);
+      final lista = Paginado.desde(const [
+        {'ctl_id': 7},
+      ], Catalogo.fromJson);
 
       expect(objeto.datos.length, 2);
       expect(objeto.total, 2);
@@ -151,6 +158,252 @@ void main() {
       expect(Alerta.fromJson(const {'MINUTOS': 12}).hace, 'hace 12 min');
       expect(Alerta.fromJson(const {'MINUTOS': 180}).hace, 'hace 3 h');
       expect(Alerta.fromJson(const {'MINUTOS': 1500}).hace, 'ayer');
+    });
+    // ---- Sprint 5: el ciclo de la OT en terreno ----
+
+    test('la situación de una falla se deriva al mirar, no viaja', () {
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+        }).situacion,
+        'Abierta',
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'DIAGNOSTICOS': 1,
+        }).situacion,
+        'Diagnosticada',
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'DIAGNOSTICOS': 1,
+          'ACCIONES_PROVISORIAS': 2,
+        }).situacion,
+        'Provisoria',
+      );
+      final r = Falla.fromJson(const {
+        'FAL_ID': 1,
+        'FAL_ACTIVO': 1,
+        'FAL_TITULO': 'x',
+        'ACCIONES_PROVISORIAS': 2,
+        'FAL_FECHA_SOLUCION_UTC': '2026-09-14T19:00:00',
+      });
+      expect(r.situacion, 'Resuelta');
+      expect(r.resuelta, isTrue);
+      expect(r.codigo, 'F-1');
+    });
+
+    test('dos provisorias del equipo es un equipo que pide atención', () {
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'PROVISORIAS_DEL_EQUIPO': 1,
+        }).equipoConHistorial,
+        isFalse,
+      );
+      expect(
+        Falla.fromJson(const {
+          'FAL_ID': 1,
+          'FAL_ACTIVO': 1,
+          'FAL_TITULO': 'x',
+          'PROVISORIAS_DEL_EQUIPO': 2,
+        }).equipoConHistorial,
+        isTrue,
+      );
+    });
+
+    test(
+      'la indisponibilidad lee los minutos del servidor y los dice en horas',
+      () {
+        final abierta = Indisponibilidad.fromJson(const {
+          'AIN_ID': 1,
+          'AIN_ACTIVO': 40,
+          'AIN_FECHA_INICIO_UTC': '2026-09-14T08:00:00',
+          'MINUTOS_ACUMULADOS': 45,
+        });
+        expect(abierta.abierta, isTrue);
+        expect(abierta.duracion, '45 min');
+        final cerrada = Indisponibilidad.fromJson(const {
+          'AIN_ID': 2,
+          'AIN_ACTIVO': 40,
+          'AIN_FECHA_INICIO_UTC': '2026-09-14T08:00:00',
+          'AIN_FECHA_FIN_UTC': '2026-09-14T11:30:00',
+          'AIN_MINUTO': 210,
+          'MINUTOS_ACUMULADOS': 210,
+        });
+        expect(cerrada.abierta, isFalse);
+        expect(cerrada.duracion, '3 h 30 min');
+      },
+    );
+
+    test(
+      'la asignación distingue técnico de empresa externa y lee la advertencia',
+      () {
+        final t = AsignacionOrden.fromJson(const {
+          'OTA_ID': 1,
+          'OTA_USUARIO': 11,
+          'USUARIO_NOMBRE': 'Cristián',
+          'OTA_ES_RESPONSABLE': true,
+        });
+        expect(t.esExterna, isFalse);
+        expect(t.quien, 'Cristián');
+        expect(t.conAdvertencia, isFalse);
+        final e = AsignacionOrden.fromJson(const {
+          'OTA_ID': 2,
+          'OTA_PROVEEDOR': 3,
+          'PROVEEDOR_NOMBRE': 'Frío Sur',
+          'OTA_OBSERVACION':
+              'Advertencia: la orden pide la especialidad ELÉCTRICA',
+        });
+        expect(e.esExterna, isTrue);
+        expect(e.quien, 'Frío Sur');
+        expect(e.conAdvertencia, isTrue);
+      },
+    );
+
+    test('el escaneo de una posición dice si está libre y qué equipo la ocupa', () {
+      final libre = Escaneo.fromJson(const {
+        'tipo': 'POS',
+        'id': 7,
+        'cabecera': {
+          'pos_id': 7,
+          'pos_codigo': 'CB01',
+          'pos_nombre': 'Blower 1',
+          'AREA': 'Sala de blowers',
+          'PLANTA': 'Renca',
+          'pos_libre': true,
+          'act_id': 0,
+        },
+        'lineas': [],
+      });
+      expect(libre.tipo, 'POS');
+      expect(libre.cabecera?.pos_codigo, 'CB01');
+      expect(libre.cabecera?.pos_libre, isTrue);
+      expect(libre.cabecera?.AREA, 'Sala de blowers');
+
+      final ocupada = Escaneo.fromJson(const {
+        'tipo': 'POS',
+        'id': 7,
+        'cabecera': {
+          'pos_id': 7,
+          'pos_codigo': 'CB01',
+          'pos_libre': false,
+          'act_id': 35,
+          'act_codigo': 'ACT-35',
+          'act_nombre': 'Revolvedora 1',
+        },
+      });
+      expect(ocupada.cabecera?.pos_libre, isFalse);
+      expect(ocupada.cabecera?.act_id, 35);
+    });
+
+    test('un escaneo resuelto en el teléfono dice que es local y de cuándo', () {
+      final e = Escaneo(
+        tipo: 'POS',
+        id: 7,
+        local: true,
+        fechaLocal: DateTime(2026, 9, 15, 23, 0),
+        cabecera: const EscaneoCabecera(pos_id: 7, pos_codigo: 'CB01', pos_libre: true),
+      );
+      expect(e.local, isTrue);
+      expect(e.fechaLocal?.day, 15);
+      // El que viene del servidor no es local.
+      expect(Escaneo.fromJson(const {'tipo': 'POS', 'id': 7}).local, isFalse);
+    });
+
+    test('la ficha de una orden se arma desde la sábana con pasos y asignados', () {
+      final f = OrdenTrabajoFicha.fromJson(const {
+        'orden': {
+          'otr_id': 5,
+          'otr_correlativo': 5,
+          'OT_NUMERO': 'OT-5',
+          'otr_titulo': 'Cambio de correa',
+          'ESTADO_ID': 1,
+          'PRIORIDAD_ID': 2,
+          'PASOS_TOTAL': 2,
+          'PASOS_LISTOS': 0,
+        },
+        'pasos': [
+          {'otp_id': 1, 'otp_orden_trabajo': 5, 'otp_orden': 1, 'otp_nombre': 'Detener', 'otp_obligatorio': true, 'RESULTADO_ID': 1},
+          {'otp_id': 2, 'otp_orden_trabajo': 5, 'otp_orden': 2, 'otp_nombre': 'Cambiar', 'otp_obligatorio': true, 'RESULTADO_ID': 1},
+        ],
+        'asignados': [
+          {'ota_id': 9, 'USUARIO_ID': 11, 'USUARIO_NOMBRE': 'Cristián Muñoz', 'ota_es_responsable': true},
+        ],
+      });
+      expect(f.orden.OT_NUMERO, 'OT-5');
+      expect(f.pasos.length, 2);
+      expect(f.asignados.length, 1);
+    });
+
+    test('una sesión con el token vencido no está autenticada', () {
+      // El token relativo («dura 480 min») no basta para saber si un token
+      // guardado en disco sigue vivo: se sella el instante absoluto y es él
+      // quien decide. Sin esto, la app entraba al Home con un token muerto.
+      final viva = SesionModel(
+        usuario: 7,
+        token: 'jwt',
+        expiraEn: DateTime.now().add(const Duration(minutes: 10)),
+      );
+      final vencida = SesionModel(
+        usuario: 7,
+        token: 'jwt',
+        expiraEn: DateTime.now().subtract(const Duration(minutes: 1)),
+      );
+
+      expect(viva.autenticado, isTrue);
+      expect(vencida.expirado, isTrue);
+      expect(vencida.autenticado, isFalse);
+    });
+
+    test('la respuesta del servidor sella la expiración y sobrevive al disco', () {
+      // El servidor manda `expira_minutos` relativo; se convierte a instante
+      // absoluto al mapear, y ese instante se persiste como `expira_en` para
+      // que al releer del disco se sepa cuándo caduca sin viaje de red.
+      final delServidor = SesionModel.fromJson(const {
+        'usuario': 7,
+        'token': 'jwt',
+        'expira_minutos': 480,
+      });
+      expect(delServidor.expiraEn, isNotNull);
+      expect(delServidor.autenticado, isTrue);
+
+      // Round-trip por disco: no se recalcula, se conserva el instante.
+      final delDisco = SesionModel.fromJson(delServidor.toJson());
+      expect(delDisco.expiraEn, delServidor.expiraEn);
+
+      // Sin `expira_en` ni minutos —sesión vieja previa a este campo— no se
+      // echa a nadie por una duda: el 401 del servidor es el respaldo.
+      final antigua = SesionModel.fromJson(const {'usuario': 7, 'token': 'jwt'});
+      expect(antigua.expirado, isFalse);
+      expect(antigua.autenticado, isTrue);
+    });
+
+    test('la variable de condición de la sábana trae sus umbrales', () {
+      final v = VariableActivo.fromJson(const {
+        'AVA_ID': 21,
+        'AVA_ACTIVO': 36,
+        'VARIABLE_NOMBRE': 'Presión',
+        'AVA_UNIDAD_MEDIDA': 25,
+        'UNIDAD_SIMBOLO': 'bar',
+        'AVA_VALOR_MINIMO': 2,
+        'AVA_VALOR_MAXIMO': 10,
+        'AVA_VALOR_ADVERTENCIA': 6,
+        'AVA_VALOR_CRITICO': 8,
+      });
+      expect(v.VARIABLE_NOMBRE, 'Presión');
+      expect(v.AVA_VALOR_CRITICO, 8);
+      expect(v.UNIDAD_SIMBOLO, 'bar');
     });
   });
 }

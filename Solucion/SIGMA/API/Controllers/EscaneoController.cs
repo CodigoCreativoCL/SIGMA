@@ -1,6 +1,7 @@
-using API.MVC.Model;
+﻿using API.MVC.Model;
 using API.Utils;
 using System;
+using System.Data;
 using System.Collections.Generic;
 using System.Web.Http;
 
@@ -50,10 +51,105 @@ namespace API.Controllers
                 string tipo;
                 int id;
 
-                if (!Interpretar(c, out tipo, out id))
-                    return BadRequest("No se reconoce «" + (c ?? "") + "». " +
-                                      "Escanee la etiqueta otra vez, o escriba el código " +
-                                      "impreso, por ejemplo UBI-17.");
+                /* Primero el token del QR; si no es un token o ese id no es
+                   de este cliente, el código impreso en la etiqueta (bloque
+                   254): la app manda lo leído tal cual y aquí se resuelve. */
+                bool esToken = Interpretar(c, out tipo, out id);
+                if (!esToken || !ExisteEnCliente(tipo, id))
+                {
+                    if (!ResolverPorCodigo(c, out tipo, out id))
+                        return BadRequest("No se reconoce «" + (c ?? "") + "». " +
+                                          "Escanee la etiqueta otra vez, o escriba el código " +
+                                          "impreso, por ejemplo UBI-17.");
+                }
+
+                /* UN ACTIVO NO SE DESGLOSA, SE ABRE
+
+                   Los otros tres tipos preguntan «qué hay adentro» y por eso
+                   pasan por un SP de desglose. Un equipo no tiene nada adentro
+                   que contar: lo único que hace falta es confirmar que es de
+                   este cliente y devolver con qué identificarlo, para que la
+                   app abra la ficha que ya existe en el módulo de activos.
+
+                   El cliente sale del token: un id de otra empresa devuelve
+                   404, no la ficha ajena. */
+                if (tipo == "ACT")
+                {
+                    ExigirPermiso("VER ACTIVOS");
+
+                    List<ActivoDto> act = Datos.Listar<ActivoDto>("SEL_ACTIVO",
+                        new Dictionary<string, object>
+                        {
+                            { "@ID", id },
+                            { "@CLIENTE", SesionApi.ClienteId() }
+                        });
+
+                    if (act == null || act.Count == 0)
+                        return Content(System.Net.HttpStatusCode.NotFound,
+                                       new { mensaje = "Esa etiqueta no corresponde a " +
+                                                       "ningún equipo de su empresa." });
+
+                    return Ok(new EscaneoDto
+                    {
+                        tipo = "ACT",
+                        id = id,
+                        token = "ACT-" + id,
+                        cabecera = new DesgloseCabeceraDto
+                        {
+                            act_id = act[0].act_id,
+                            act_codigo = act[0].act_codigo,
+                            act_nombre = act[0].act_nombre,
+                            PLANTA = act[0].PLANTA_NOMBRE
+                        },
+                        lineas = new List<DesgloseLineaDto>()
+                    });
+                }
+
+                /* UNA POSICIÓN ABRE LO QUE HAY EN ELLA (HU-154)
+
+                   El QR pegado en la sala dice POS-<id>. Se resuelve la
+                   posición y se devuelve el equipo que la ocupa hoy para que
+                   la app abra su ficha (#1). Si está vacía se dice, y la app
+                   ofrece poner un equipo (#3). Un id de otra empresa da 404
+                   con el motivo: «no pertenece a esta instalación» (#4). */
+                if (tipo == "POS")
+                {
+                    ExigirPermiso("VER POSICIONES");
+
+                    List<ActivoPosicionDto> pos = Datos.Listar<ActivoPosicionDto>("SEL_ACTIVO_POSICION",
+                        new Dictionary<string, object>
+                        {
+                            { "@ID", id },
+                            { "@CLIENTE", SesionApi.ClienteId() }
+                        });
+
+                    if (pos == null || pos.Count == 0)
+                        return Content(System.Net.HttpStatusCode.NotFound,
+                                       new { mensaje = "Ese código no corresponde a ninguna " +
+                                                       "posición de esta instalación." });
+
+                    ActivoPosicionDto p = pos[0];
+
+                    return Ok(new EscaneoDto
+                    {
+                        tipo = "POS",
+                        id = id,
+                        token = "POS-" + id,
+                        cabecera = new DesgloseCabeceraDto
+                        {
+                            pos_id = p.APO_ID,
+                            pos_codigo = p.APO_CODIGO,
+                            pos_nombre = p.APO_NOMBRE,
+                            AREA = p.AREA_NOMBRE,
+                            PLANTA = p.PLANTA_NOMBRE,
+                            pos_libre = p.ACTIVO_ID == null,
+                            act_id = p.ACTIVO_ID ?? 0,
+                            act_codigo = p.ACTIVO_CODIGO,
+                            act_nombre = p.ACTIVO_NOMBRE
+                        },
+                        lineas = new List<DesgloseLineaDto>()
+                    });
+                }
 
                 string sp;
                 string parametro;
@@ -99,6 +195,44 @@ namespace API.Controllers
         /// teléfono al leer el QR— y el token pelado, que es lo que llega
         /// cuando alguien lo teclea porque la etiqueta está rayada.
         /// </summary>
+        /// <summary>El token leído pertenece al cliente de la sesión.</summary>
+        private bool ExisteEnCliente(string tipo, int id)
+        {
+            DataSet ds = Datos.Conjunto("SEL_ETIQUETA_RESOLVER", new Dictionary<string, object>
+            {
+                { "@CLIENTE", SesionApi.ClienteId() }, { "@TIPO", tipo }, { "@ID", id }
+            });
+            return ds != null && ds.Tables.Count > 0 && ds.Tables[0].Rows.Count > 0;
+        }
+
+        /// <summary>
+        /// El código impreso en la etiqueta, tecleado: se busca dentro del
+        /// cliente en bodegas, ubicaciones, repuestos, activos y posiciones.
+        /// </summary>
+        private bool ResolverPorCodigo(string leido, out string tipo, out int id)
+        {
+            tipo = ""; id = 0;
+            if (string.IsNullOrEmpty(leido)) return false;
+
+            string texto = leido.Trim();
+            int corte = texto.LastIndexOf("c=", StringComparison.OrdinalIgnoreCase);
+            if (corte >= 0) texto = texto.Substring(corte + 2);
+            int fin = texto.IndexOfAny(new char[] { '&', '?', '\r', '\n' });
+            if (fin >= 0) texto = texto.Substring(0, fin);
+            texto = texto.Trim();
+            if (texto.Length == 0) return false;
+
+            DataSet ds = Datos.Conjunto("SEL_ETIQUETA_RESOLVER", new Dictionary<string, object>
+            {
+                { "@CLIENTE", SesionApi.ClienteId() }, { "@CODIGO", texto }
+            });
+            if (ds == null || ds.Tables.Count == 0 || ds.Tables[0].Rows.Count == 0) return false;
+
+            tipo = ds.Tables[0].Rows[0]["TIPO"].ToString();
+            id = Convert.ToInt32(ds.Tables[0].Rows[0]["ID"]);
+            return id > 0;
+        }
+
         private bool Interpretar(string leido, out string tipo, out int id)
         {
             tipo = "";
@@ -127,16 +261,24 @@ namespace API.Controllers
                 return false;
             }
 
-            /* ACT no entra: un activo no es un lugar con existencia adentro, y
-               su ficha la sirve el módulo de activos. Devolver acá una
-               pantalla vacía sería peor que decir que no. */
-            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP");
+            /* ACT SÍ ENTRA, Y ANTES NO
+
+               El razonamiento original —«un activo no es un lugar con
+               existencia adentro»— era correcto sobre el DESGLOSE y equivocado
+               sobre el escaneo: SEL_ETIQUETA imprime etiquetas `ACT-<id>` para
+               los equipos, así que había QR en la planta que esta ruta
+               rechazaba con «no se reconoce». Lo que hacía falta no era el
+               desglose del activo, sino decirle a la app qué se leyó para que
+               abra su ficha. Eso es lo que hace ahora. */
+            return (tipo == "UBI" || tipo == "BOD" || tipo == "REP" || tipo == "ACT" || tipo == "POS");
         }
 
         private string Articulo(string tipo)
         {
             if (tipo == "UBI") return "ninguna ubicación";
             if (tipo == "BOD") return "ninguna bodega";
+            if (tipo == "ACT") return "ningún equipo";
+            if (tipo == "POS") return "ninguna posición";
             return "ningún repuesto";
         }
     }
