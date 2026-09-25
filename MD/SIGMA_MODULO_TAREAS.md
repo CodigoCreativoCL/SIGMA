@@ -81,3 +81,23 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   cada una con `toc_uuid` propio, estado propio y su panel de ejecución/
   evidencias/conversación.
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-102.docx`.
+
+---
+
+## HU-104 — Comentar una tarea
+
+**Estado:** cerrada (dev + pruebas). Verificada el 24-09-2026.
+
+- **Comentarios por ocurrencia** en el centro de tarea (pestaña Comentarios):
+  hilo por ocurrencia, con respuestas anidadas. La UI no ofrece editar ni
+  borrar: un comentario se conserva como registro y solo se responde. SP
+  `INS/SEL_TAREA_COMENTARIO`; en la app, `API_INS/API_SEL_TAREA_COMENTARIO`.
+- **CA-1** (comentario con nombre y fecha, inmutable): verificado. El comentario
+  queda con autor, canal y fecha; el hilo solo tiene «Responder».
+- **CA-2** (respuesta anidada): verificado. La respuesta cuelga del comentario
+  raíz (`tco_comentario_padre`).
+- **API** (HU-104): `POST /api/tareas/{id}/comentarios` (comentar una ocurrencia;
+  idempotente por dictado_uuid) y el detalle de la tarea incluyen la
+  conversación. Documentados con comentarios XML de Swagger (summary/response)
+  en `API/Controllers/TareasController.cs`.
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-104.docx`.
