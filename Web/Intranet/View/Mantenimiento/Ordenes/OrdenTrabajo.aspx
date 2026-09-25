@@ -385,6 +385,11 @@
                             CommandName="sel" CommandArgument='<%# Eval("indice") %>'>
                             <span class='<%# "sg-ot-paso-num " + Eval("clase") %>'><%# Eval("numero") %></span>
                             <span class="sg-ot-paso-nom"><%# Server.HtmlEncode(Convert.ToString(Eval("nombre"))) %></span>
+                            <%-- Solo se marca lo OPCIONAL: si casi todos los pasos son
+                                 obligatorios, un cartel "obligatorio" en cada fila es
+                                 ruido y el que importa -el que se puede saltar- se
+                                 pierde entre los demas. --%>
+                            <span class="sg-ot-chip es-neutro" style='<%# (bool)Eval("opcional") ? "" : "display:none" %>'><i class="mdi mdi-slash-forward"></i>Opcional</span>
                             <span class='<%# "sg-ot-estado " + Eval("clase") %>'><i class='<%# "mdi " + Eval("icono") %>'></i><%# Eval("estado") %></span>
                             <i class="mdi mdi-chevron-right sg-ot-paso-flecha"></i>
                         </asp:LinkButton>

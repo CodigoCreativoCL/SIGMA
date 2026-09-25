@@ -828,7 +828,11 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             estado = EstadoPaso(p),
             clase = ClasePaso(Convert.ToString(p["RESULTADO_CODIGO"])),
             icono = IconoPaso(Convert.ToString(p["RESULTADO_CODIGO"])),
-            elegido = i == PasoElegido
+            elegido = i == PasoElegido,
+            /* Viene de paa_obligatoria de la actividad del plan, copiada por
+               INS_ORDEN_TRABAJO_OCURRENCIA. Es lo que despues le permite al
+               tecnico declarar "no aplica" sin dejar la orden incompleta. */
+            opcional = p["otp_obligatorio"] != null && !Convert.ToBoolean(p["otp_obligatorio"])
         }).ToList();
         rptPasos.DataBind();
 
@@ -912,6 +916,18 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
          .Append(p["otp_orden"]).Append("</span><h3>").Append(Server.HtmlEncode(Convert.ToString(p["otp_nombre"])))
          .Append("</h3><span class=\"sg-ot-card-acc sg-ot-estado ").Append(ClasePaso(cod)).Append("\"><i class=\"mdi ")
          .Append(IconoPaso(cod)).Append("\"></i>").Append(Server.HtmlEncode(EstadoPaso(p))).Append("</span></header>");
+
+        /* Obligatorio o no, dicho con palabras y no con un icono: el tecnico
+           tiene que saber si puede declararlo "no aplica" ANTES de decidir
+           que hace con el equipo detenido. */
+        bool obligatorio = p["otp_obligatorio"] == null || Convert.ToBoolean(p["otp_obligatorio"]);
+
+        s.Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi ")
+         .Append(obligatorio ? "mdi-asterisk" : "mdi-slash-forward").Append("\"></i><span>")
+         .Append(obligatorio
+                ? "Paso <strong>obligatorio</strong>: la orden no se cierra sin su resultado."
+                : "Paso <strong>opcional</strong>: se puede declarar «no aplica» en terreno y la orden igual se cierra.")
+         .Append("</span></div>");
 
         /* DOS COSAS DISTINTAS QUE SE VEIAN IGUAL
 

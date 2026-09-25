@@ -211,17 +211,29 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             PlanMantenimiento plan = new PlanMantenimientoController().GetPlanMantenimiento(
                 new PlanMantenimiento { pma_id = Id });
 
-            /* Solo los de LA VERSION QUE MANDA -la publicada, o la ultima si
-               no hay publicada-. La grilla vieja mostraba los de todas las
-               versiones con un chip al lado, y el plan se leia con el doble
-               de hitos de los que en realidad se ejecutan. Las versiones
-               anteriores estan en Configuracion, que es donde se comparan. */
+            /* Los de UNA version, no los de todas. La grilla vieja mostraba
+               los de todas con un chip al lado, y el plan se leia con el
+               doble de hitos de los que en realidad se ejecutan. Las
+               versiones anteriores estan en Configuracion, que es donde se
+               comparan.
+
+               CUAL: el BORRADOR si hay uno, y si no la que manda.
+
+               El SEL del plan devuelve siempre la publicada, porque eso es lo
+               que se quiere ver en un LISTADO -que esta corriendo-. Pero el
+               centro es donde se edita, y un borrador existe justamente
+               porque alguien lo abrio para cambiar algo. Mostrando la
+               publicada, sus hitos quedaban sin ninguna puerta: la pantalla
+               decia "para cambiarlo, abra una version nueva" y despues no
+               habia donde entrar a la version nueva. */
+            int? versionAEditar = VersionBorrador() ?? plan.version_id;
+
             List<PlanHito> hitos = new PlanHitoController().GetPlanHitos(
-                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
+                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = versionAEditar })
                 ?? new List<PlanHito>();
 
             List<PlanActivo> equipos = new PlanActivoController().GetPlanActivos(
-                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
+                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = versionAEditar })
                 ?? new List<PlanActivo>();
 
             /* El año completo alimenta la cabecera y el resumen. El
@@ -498,6 +510,20 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             s.Append(DetItem("mdi-text-long", "Descripción", Texto(h.pmh_descripcion)));
 
             s.Append("<div class=\"sg-a3-ot-det-acc\">");
+
+            /* Las actividades del hito viven en su propia pantalla: son una
+               lista que crece y no cabe dentro de esta fila. El enlace va
+               aunque la version este publicada, porque LEER que se hace es
+               justamente para lo que se consulta un plan publicado. */
+            s.Append("<a class=\"sg-ot-btn es-plano\" href=\"")
+             .Append(ResolveUrl("~/View/Mantenimiento/Planes/PlanActividades.aspx"))
+             .Append("?query=").Append(Cifrar("Hito=" + h.pmh_id))
+             .Append("\"><i class=\"mdi mdi-format-list-bulleted\"></i>")
+             .Append(h.actividades > 0
+                    ? "Ver las " + h.actividades + " actividades"
+                    : (puedeEscribir && h.version_editable ? "Agregar actividades" : "Ver actividades"))
+             .Append("</a>");
+
             if (puedeEscribir && h.version_editable)
                 s.Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirPlanHito('")
                  .Append(query).Append("')\"><i class=\"mdi mdi-pencil-outline\"></i>Editar hito</a>");
@@ -857,6 +883,23 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             Text = (v.pmv_fecha_creacion == null ? "" : v.pmv_fecha_creacion.Value.ToString("dd-MM-yyyy HH:mm"))
                  + "<br/><span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(v.usuario_creacion_nombre) + "</span>"
         });
+    }
+
+    /// <summary>
+    /// El id de la version en borrador del plan, si tiene una. Null si no.
+    ///
+    /// Es la misma consulta que usa Publicar, que ya buscaba el borrador por
+    /// su estado: un plan tiene a lo sumo un borrador abierto.
+    /// </summary>
+    private int? VersionBorrador()
+    {
+        List<PlanVersion> lista = new PlanVersionController().GetPlanVersiones(
+            new PlanVersion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+            ?? new List<PlanVersion>();
+
+        PlanVersion borrador = lista.Find(v => v.pmv_plan_version_estado == 1);
+
+        return borrador == null ? (int?)null : borrador.pmv_id;
     }
 
     protected void lnkNuevaVersion_Click(object sender, EventArgs e)
