@@ -60,3 +60,24 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   indicadores del plan (que se calculan sobre ocurrencias/órdenes de trabajo).
 - **Sin endpoint de API** propio para el alta web; la documentación es este MD y
   el informe `Fase 2/Pruebas/SIGMA_Pruebas_HU-101.docx`.
+
+---
+
+## HU-102 — Programar una tarea recurrente
+
+**Estado:** cerrada (dev + pruebas). Verificada el 24-09-2026.
+
+- **Programaciones** desde el centro de tarea (pestaña Configuración, tarjeta
+  «Cuándo y quién» → «Agregar programación», modal `TareaProgramacion.aspx`).
+  Reutiliza la entidad Programación (tipos: Abierta, Fecha única, Calendario,
+  Intervalo, Medidor, Condición) por medio de `Tarea_Programacion`.
+- **Generación de ocurrencias:** botón «Generar ocurrencias» del centro →
+  `TareaController.GenerarOcurrencias(Id, 90)` → SP `GEN_TAREA_OCURRENCIAS`
+  (horizonte 90 días). Las ocurrencias se ven en la pestaña Ocurrencias.
+- **CA-1** (asociar programación → genera ocurrencias): verificado.
+- **CA-2** (fecha única con cuatro fechas → cuatro ocurrencias independientes):
+  verificado. Con la programación «Cuatro fechas puntuales» (tipo Fecha única)
+  se generaron exactamente 4 ocurrencias (05-oct, 19-oct, 09-nov, 14-dic 2026),
+  cada una con `toc_uuid` propio, estado propio y su panel de ejecución/
+  evidencias/conversación.
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-102.docx`.
