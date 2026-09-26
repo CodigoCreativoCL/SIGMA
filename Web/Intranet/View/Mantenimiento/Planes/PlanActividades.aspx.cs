@@ -70,8 +70,8 @@ public partial class View_Mantenimiento_Planes_PlanActividades : System.Web.UI.P
             Grid.AddColumn("HITO_CODIGO", "HITO", Width: "10%");
             /* Field vacío: el contenido lo arma ItemDataBound. Es como lo
                hacen el listado de planes y Existencias. */
-            Grid.AddTemplateColumn("PROCEDIMIENTO", "", "PROCEDIMIENTO", Width: "18%");
-            Grid.AddTemplateColumn("DURACION", "", "DURACIÓN", Width: "8%", ItemPosition: HorizontalAlign.Right);
+            Grid.AddTemplateColumn("PROCEDIMIENTO", "", "PROCEDIMIENTO", Width: "18%", Wrap: true);
+            Grid.AddTemplateColumn("DURACION", "", "DURACIÓN", Width: "8%", Wrap: true, ItemPosition: HorizontalAlign.Right);
             Grid.AddTemplateColumn("EXIGE", "", "EXIGE", Width: "16%", Wrap: true);
             Grid.AddCheckboxColumn("PAA_HABILITADO", "HABILITADO", Width: "7%");
         }

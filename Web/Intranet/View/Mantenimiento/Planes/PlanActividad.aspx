@@ -175,10 +175,12 @@
 
         <asp:Literal ID="litRepuestos" runat="server" />
 
-        <%-- El "Quitar" de cada fila postea aca con el id en el argumento: un
-             LinkButton por fila dentro de un Literal no existe como control,
-             y un boton por fila en un Repeater seria mas markup para lo
-             mismo. --%>
+        <%-- El "Quitar" de cada fila escribe su id en el campo oculto y
+             dispara este LinkButton. Un boton por fila dentro de un Literal
+             no existe como control, y el argumento de __doPostBack llega
+             vacio, asi que el id va por el campo: es el mismo par que usa el
+             centro del plan con hdnSeccion. --%>
+        <asp:HiddenField ID="hdnRepuestoQuitar" runat="server" Value="" ClientIDMode="Static" />
         <asp:LinkButton ID="lnkQuitarRepuesto" runat="server" style="display:none"
             OnClick="lnkQuitarRepuesto_Click" CausesValidation="false" />
     </asp:Panel>

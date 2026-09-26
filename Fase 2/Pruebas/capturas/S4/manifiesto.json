@@ -601,5 +601,73 @@
   ],
   "detalle": "",
   "fecha": "25-09-2026 02:08"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 3,
+  "titulo": "Un repuesto planificado se puede quitar de la actividad",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de PMA-2 / REC-SEG › abrir ACT-010 › Repuestos planificados › elegir un repuesto, cantidad 3 › Agregar › Quitar.",
+  "esperado": "El repuesto se agrega y se quita. La lista no tiene edición a propósito: es una lista de materiales, y cambiar la cantidad es quitar la línea y volver a ponerla.",
+  "obtenido": "Al agregar: «Repuesto planificado agregado con éxito. ACEPTAR»; el repuesto «MANUAL-060654» aparece en la lista: sí. Al quitar: «Repuesto quitado de la actividad. ACEPTAR»; queda en la lista: no.",
+  "ok": true,
+  "capturas": [
+   "hu082e_3_repuesto_puesto.png",
+   "hu082e_3_repuesto_quitado.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 10:11"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 1,
+  "titulo": "La bandeja muestra lo pendiente, ordenado por urgencia y con su situación",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Planificación › Bandeja de mantenciones.",
+  "esperado": "Se ven las ocurrencias pendientes de todos los planes ordenadas por urgencia, y cada una indica si está futura, disponible, atrasada o vencida. Los contadores de arriba dicen cuántas hay de cada una.",
+  "obtenido": "Contadores: {\"Vencidas\":\"7\",\"Atrasadas\":\"2\",\"Disponibles\":\"4\",\"Futuras\":\"35\"}. En la primera página: {\"VENCIDA\":7,\"ATRASADA\":2,\"DISPONIBLE\":4,\"FUTURA\":35}. Las filas vienen ordenadas de más urgente a menos: sí.",
+  "ok": true,
+  "capturas": [
+   "hu087_1_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:23"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 2,
+  "titulo": "La situación se calcula al consultar, no la escribe un proceso nocturno",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "En la bandeja › apretar el contador «Vencidas».",
+  "esperado": "Quedan solo las vencidas. La condición de vencida no está guardada en ninguna columna: sale de comparar la fecha límite con ahora en el momento de consultar, así que no hay ningún proceso nocturno del que dependa —el día que ese proceso fallara, la bandeja diría que no hay nada atrasado—. El estado guardado de esas filas sigue siendo «Pendiente»: son dos cosas distintas y la pantalla las muestra como tales.",
+  "obtenido": "Filas mostradas: 7 vencidas y 0 de otra situación. Los contadores no se filtran a sí mismos (siguen siendo {\"Vencidas\":\"7\",\"Atrasadas\":\"2\",\"Disponibles\":\"4\",\"Futuras\":\"35\"}), para poder salir del filtro.",
+  "ok": true,
+  "capturas": [
+   "hu087_2_solo_vencidas.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:23"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 3,
+  "titulo": "Desde la bandeja se genera la orden, y la ocurrencia queda enlazada",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › contador «Disponibles» › marcar una sin orden › Generar órdenes de trabajo › confirmar › volver a la bandeja.",
+  "esperado": "La orden se crea con los pasos del hito —una actividad, un paso— y la ocurrencia queda enlazada: su número aparece en la columna «Orden» de la misma fila, y desde ahí se entra a la orden. Volver a generarla no duplica: el SP devuelve la que ya existe.",
+  "obtenido": "Equipo elegido: ACT-40 Horno L2 Renca||01-11-2026. Respuesta del sistema: «1 orden generada ACEPTAR». La columna Orden de esa fila quedó con: «OT-55».",
+  "ok": true,
+  "capturas": [
+   "hu087c_3_disponibles.png",
+   "hu087c_3_seleccionada.png",
+   "hu087c_3_generada.png",
+   "hu087c_3_enlazada.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:24"
  }
 ]

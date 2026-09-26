@@ -280,8 +280,9 @@ public partial class View_Mantenimiento_Planes_PlanActividad : System.Web.UI.Pag
             s.Append("<td style=\"text-align:right;\">");
             if (puedeEditar)
                 s.Append("<a href=\"javascript:void(0)\" class=\"icono_eliminar\" title=\"Quitar\" onclick=\"")
-                 .Append(Page.ClientScript.GetPostBackClientHyperlink(lnkQuitarRepuesto, r.pra_id.ToString()))
-                 .Append("\">Quitar</a>");
+                 .Append("document.getElementById('hdnRepuestoQuitar').value='").Append(r.pra_id).Append("';")
+                 .Append(Page.ClientScript.GetPostBackEventReference(lnkQuitarRepuesto, ""))
+                 .Append(";return false;\">Quitar</a>");
             s.Append("</td></tr>");
         }
 
@@ -361,7 +362,9 @@ public partial class View_Mantenimiento_Planes_PlanActividad : System.Web.UI.Pag
             }
 
             int id;
-            if (!int.TryParse(Request.Form["__EVENTARGUMENT"], out id) || id <= 0) return;
+            if (!int.TryParse(hdnRepuestoQuitar.Value, out id) || id <= 0) return;
+
+            hdnRepuestoQuitar.Value = "";
 
             Respuesta r = new PlanActividadController().DeleteRepuesto(
                 new PlanActividadRepuesto { pra_id = id });
