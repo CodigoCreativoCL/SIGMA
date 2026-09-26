@@ -102,20 +102,6 @@
   "fecha": "14-09-2026 18:24"
  },
  {
-  "hu": "HU-083",
-  "criterio": 3,
-  "titulo": "Activo ya cubierto por otro plan",
-  "usuario": "rodrigo",
-  "tipo": "Web",
-  "pasos": "Asociar un equipo que ya está en otro plan vigente del mismo tipo.",
-  "esperado": "Se advierte cuál es el otro plan y se permite continuar.",
-  "obtenido": "No construido: el SP solo rechaza el equipo repetido dentro de la misma versión (error 9). Queda en «No» en el backlog.",
-  "ok": false,
-  "capturas": [],
-  "detalle": "",
-  "fecha": "14-09-2026 18:24"
- },
- {
   "hu": "HU-085",
   "criterio": 1,
   "titulo": "Vista del calendario anual",
@@ -669,5 +655,104 @@
   ],
   "detalle": "",
   "fecha": "26-09-2026 13:24"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 3,
+  "titulo": "Un hito con varias actividades genera UNA orden con un paso por actividad",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Órdenes de trabajo › la orden generada desde la ocurrencia del hito REC-SEG › pestaña Pasos.",
+  "esperado": "La ocurrencia genera una sola orden de trabajo, y dentro de ella un paso por cada actividad habilitada del hito, con el texto copiado —no referenciado—: si el plan cambia mañana, la orden de hoy sigue diciendo lo que se mandó a hacer.",
+  "obtenido": "La orden tiene 6 pasos, uno por actividad del hito. Es una sola orden: la ocurrencia queda enlazada a ella y el SP es idempotente, así que volver a generarla devuelve la misma.",
+  "ok": true,
+  "capturas": [
+   "t3_hu081_3_una_orden_varios_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:58"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 4,
+  "titulo": "Un hito de overhaul que requiere parada llega marcado a la ocurrencia y a la orden",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja de mantenciones › la fila del hito OVH-QUEMADOR.",
+  "esperado": "Lo que el hito declara —overhaul e intervención con parada de equipo— viaja a la ocurrencia y a la orden que se genere, así que se puede planificar la detención antes de que llegue el día.",
+  "obtenido": "La fila muestra las dos marcas: «ATRASADA 15-09-2026 hace 11 días · vence en 3 días ACT-34 Horno L1 Renca OVH-QUEMADOR Overhaul del quemador PMA-HORNOS-L1 · SIN AC».",
+  "ok": true,
+  "capturas": [
+   "t3_hu081_4_overhaul_parada.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:58"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 3,
+  "titulo": "El equipo ya está cubierto por otro plan: se advierte y se permite continuar",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Centro del plan PMA-2 › Equipos › Asociar equipo › elegir ACT-34 — Horno L1, que ya está en el plan publicado PMA-HORNOS-L1.",
+  "esperado": "Al elegir el equipo se advierte cuál es el otro plan vigente que ya lo cubre —con su versión, su tipo, cuántos hitos tiene y cuántas mantenciones le tiene corriendo— y el botón Guardar sigue disponible: es un aviso, no un rechazo. Un equipo puede tener un plan de lubricación y otro de inspección legal; el sistema no puede distinguir ese caso del descuido, el planificador sí.",
+  "obtenido": "El aviso aparece nombrando a PMA-HORNOS-L1: sí. El botón Guardar sigue ofrecido: sí.",
+  "ok": true,
+  "capturas": [
+   "t3_hu083_3_equipos_del_plan.png",
+   "t3_hu083_3_aviso_otro_plan.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:59"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 3,
+  "titulo": "Sin motivo no se reprograma",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › Reprogramar en una fila › poner la fecha nueva y dejar el motivo vacío › Reprogramar.",
+  "esperado": "Se rechaza pidiendo el motivo. Reprogramar sin decir por qué deja un rastro que no explica nada, que es como no dejar rastro.",
+  "obtenido": "Respuesta del sistema: «Indique el motivo de la reprogramación. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_3_sin_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:59"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 1,
+  "titulo": "Reprogramar deja rastro: la original no se pisa",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › Reprogramar una mantención a 54 días con su motivo › volver a la bandeja mostrando también las cerradas.",
+  "esperado": "La ocurrencia original no se pisa: pasa a «Reprogramada» con su motivo y nace una nueva en pendiente con la fecha nueva, ligada a la vieja. Así queda quién la movió, cuándo, de qué fecha a qué fecha y por qué. La ventana de tolerancia se corre junto con la fecha: antes se copiaba tal cual y la ocurrencia nueva nacía ya vencida —o el movimiento fallaba contra una restricción de la base cuando pasaba la tolerancia, que es el caso normal—.",
+  "obtenido": "Respuesta del sistema: «Ocurrencia reprogramada con éxito. ACEPTAR». La bandeja muestra la original como «Reprogramada»: sí.",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_1_bandeja_con_reprogramar.png",
+   "t3_hu086_1_reprogramada.png",
+   "t3_hu086_1_rastro.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 15:00"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 2,
+  "titulo": "El cumplimiento se mide contra la fecha programada original",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Centro del plan › pestaña Calendario › la línea de cumplimiento.",
+  "esperado": "El indicador se calcula contra la fecha programada ORIGINAL, no contra la reprogramada, y lo dice. Es la regla que le da sentido a poder reprogramar: si reprogramar corriera también la vara, el indicador se dejaría en 100% moviendo fechas y medir dejaría de servir. Cuando hay ocurrencias reprogramadas se muestra además lo que marcaría contra la fecha nueva, para que la diferencia se vea.",
+  "obtenido": "La pantalla dice: «Cumplimiento del plan: 8,3% (1 a tiempo de 12 programadas este año). Se mide contra la fecha programada original, no contra la reprogramada. Hay 2 ocurrencias reprogramadas: medido contra la fecha nueva marcaría 16,7%.».",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_2_cumplimiento.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 15:00"
  }
 ]

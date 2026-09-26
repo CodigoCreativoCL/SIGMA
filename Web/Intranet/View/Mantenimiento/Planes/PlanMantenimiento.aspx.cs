@@ -3,6 +3,7 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -1051,6 +1052,48 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         }
 
         litResumenCal.Text = ResumenCalendario(lista);
+        litCumplimiento.Text = Cumplimiento();
+    }
+
+    /// <summary>
+    /// El cumplimiento del plan, medido contra la fecha ORIGINAL (HU-086 #2).
+    ///
+    /// Es la regla que le da sentido a poder reprogramar: si reprogramar
+    /// corriera tambien la vara, el indicador se dejaria en 100% moviendo
+    /// fechas y medir dejaria de servir para algo. Cuando hay ocurrencias
+    /// reprogramadas se muestra ADEMAS lo que marcaria contra la fecha nueva,
+    /// que es la forma de que la regla se vea en vez de solo estar escrita.
+    /// </summary>
+    private string Cumplimiento()
+    {
+        PlanCumplimiento c = new PlanOcurrenciaController().GetCumplimiento(Id, null, null);
+
+        if (c == null || c.programadas == 0) return "";
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-ot-nota\">");
+
+        s.Append("<i class=\"mdi mdi-target-variant\"></i><span>")
+         .Append("Cumplimiento del plan: <strong>").Append(Porcentaje(c.cumplimiento)).Append("</strong> ")
+         .Append("(").Append(c.a_tiempo_original).Append(" a tiempo de ").Append(c.programadas)
+         .Append(c.programadas == 1 ? " programada" : " programadas").Append(" este año). ")
+         .Append("Se mide contra la <strong>fecha programada original</strong>, no contra la reprogramada.");
+
+        if (c.reprogramadas > 0)
+        {
+            s.Append(" Hay ").Append(c.reprogramadas)
+             .Append(c.reprogramadas == 1 ? " ocurrencia reprogramada" : " ocurrencias reprogramadas")
+             .Append(": medido contra la fecha nueva marcaría ")
+             .Append(Porcentaje(c.cumplimiento_vigente)).Append(".");
+        }
+
+        s.Append("</span></div>");
+
+        return s.ToString();
+    }
+
+    private static string Porcentaje(decimal valor)
+    {
+        return valor.ToString("0.#", CultureInfo.InvariantCulture).Replace('.', ',') + "%";
     }
 
     /// <summary>

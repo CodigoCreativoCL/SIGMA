@@ -22,6 +22,15 @@
             return false;
         }
 
+        function abrirReprogramar(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanOcurrenciaReprogramar.aspx") %>?query=' + query,
+                title: 'Reprogramar la mantención',
+                width: 720,
+                initialHeight: 560
+            });
+        }
+
         function refresh() {
             __doPostBack("<%=Grid.ClientID %>", '')
         }

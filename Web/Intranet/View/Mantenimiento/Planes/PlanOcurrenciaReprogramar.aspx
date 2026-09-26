@@ -66,8 +66,25 @@
         </div>
         <asp:TextBox ID="txtMotivo" runat="server" TextMode="MultiLine" placeholder="Motivo de la reprogramación (obligatorio)…" />
         <div style="margin-top:10px;">
+            <%-- SIN `return` DELANTE DEL CONFIRM, Y NO ES UN DETALLE
+
+                 PushButton se renderiza como <input type="button"> y ASP.NET
+                 le pega el __doPostBack DETRAS de lo que diga OnClientClick.
+                 Con "return ConfirSweetAlert(...)" ese __doPostBack queda
+                 despues de un return: codigo muerto. El resultado era que el
+                 boton mostraba la confirmacion, uno apretaba SI y no pasaba
+                 absolutamente nada -ni error ni mensaje-, porque un
+                 type="button" que devuelve true tampoco envia el formulario.
+
+                 En el resto del sitio el mismo patron funciona porque son
+                 LinkButton: ahi el postback va en el href y el `return false`
+                 solo cancela la navegacion.
+
+                 Asi que el confirm se pregunta con un if: si dice que no, se
+                 corta; si dice que si, la ejecucion sigue y llega al
+                 __doPostBack de atras. --%>
             <WebControls:PushButton ID="btnReprogramar" runat="server" Text="Reprogramar" OnClick="btnReprogramar_Click"
-                OnClientClick="return ConfirSweetAlert(this, '', '¿Reprogramar esta ocurrencia? La actual quedará como reprogramada.');" />
+                OnClientClick="if (!ConfirSweetAlert(this, '', '¿Reprogramar esta ocurrencia? La actual quedará como reprogramada.')) return false;" />
         </div>
     </asp:Panel>
 

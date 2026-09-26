@@ -363,6 +363,54 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// El cumplimiento del plan (HU-086 #2), medido contra la fecha
+        /// programada ORIGINAL. Devuelve tambien la cuenta contra la fecha
+        /// vigente para poder mostrar la diferencia.
+        /// </summary>
+        public PlanCumplimiento GetCumplimiento(int plan, DateTime? desde, DateTime? hasta)
+        {
+            PlanCumplimiento item = new PlanCumplimiento();
+
+            if (!Token.TokenSeguridad()) return item;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_PLAN_CUMPLIMIENTO";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                if (plan > 0) cmd.Parameters.AddWithValue("@PLAN", plan);
+                if (desde != null) cmd.Parameters.AddWithValue("@DESDE", desde.Value.Date);
+                if (hasta != null) cmd.Parameters.AddWithValue("@HASTA", hasta.Value.Date);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        item.programadas = int.Parse(dr["PROGRAMADAS"].ToString());
+                        item.cumplidas = int.Parse(dr["CUMPLIDAS"].ToString());
+                        item.a_tiempo_original = int.Parse(dr["A_TIEMPO_ORIGINAL"].ToString());
+                        item.a_tiempo_vigente = int.Parse(dr["A_TIEMPO_VIGENTE"].ToString());
+                        item.vencidas = int.Parse(dr["VENCIDAS"].ToString());
+                        item.reprogramadas = int.Parse(dr["REPROGRAMADAS"].ToString());
+                        item.cumplimiento = decimal.Parse(dr["CUMPLIMIENTO"].ToString());
+                        item.cumplimiento_vigente = decimal.Parse(dr["CUMPLIMIENTO_VIGENTE"].ToString());
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return item;
+        }
+
         public void ExportarBandeja(PlanOcurrencia filtro)
         {
             SqlCommand cmd = new SqlCommand();

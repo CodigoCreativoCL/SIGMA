@@ -51,9 +51,10 @@ public partial class View_Mantenimiento_Planes_PlanOcurrenciaBandeja : System.We
             Grid.AddTemplateColumn("SITUACION", "", "SITUACIÓN", Width: "10%", Wrap: true);
             Grid.AddTemplateColumn("CUANDO", "", "PROGRAMADA", Width: "14%", Wrap: true);
             Grid.AddTemplateColumn("EQUIPO", "", "EQUIPO", Width: "19%", Wrap: true);
-            Grid.AddTemplateColumn("TRABAJO", "", "QUÉ SE HACE", Width: "29%", Wrap: true);
+            Grid.AddTemplateColumn("TRABAJO", "", "QUÉ SE HACE", Width: "22%", Wrap: true);
             Grid.AddTemplateColumn("EXIGE", "", "EXIGE", Width: "13%", Wrap: true);
             Grid.AddTemplateColumn("ORDEN", "", "ORDEN", Width: "8%", Wrap: true);
+            Grid.AddTemplateColumn("ACCION", "", "", Width: "7%", Wrap: true);
         }
 
         Tools.tools.RegisterPostBackScript(Grid);
@@ -309,6 +310,7 @@ public partial class View_Mantenimiento_Planes_PlanOcurrenciaBandeja : System.We
         item["TRABAJO"].Controls.Add(new Literal { Text = CeldaTrabajo(o) });
         item["EXIGE"].Controls.Add(new Literal { Text = CeldaExige(o) });
         item["ORDEN"].Controls.Add(new Literal { Text = CeldaOrden(o) });
+        item["ACCION"].Controls.Add(new Literal { Text = CeldaAccion(o) });
     }
 
     private string ChipSituacion(PlanOcurrencia o)
@@ -437,6 +439,32 @@ public partial class View_Mantenimiento_Planes_PlanOcurrenciaBandeja : System.We
         return "<a href=\"javascript:void(0)\" onclick=\"abrirOrden('" + query + "')\""
              + " title=\"" + Server.HtmlEncode(o.orden_trabajo_titulo) + "\">"
              + "<i class=\"mdi mdi-clipboard-text-outline\"></i> OT-" + o.orden_trabajo_correlativo + "</a>";
+    }
+
+    /// <summary>
+    /// Reprogramar, desde la fila (HU-086 #1).
+    ///
+    /// La pantalla de reprogramar existía desde el bloque 202 —con su SP y su
+    /// fila en Menus— y no había ningún lugar que la abriera: estaba escrita
+    /// y muerta. Su sitio es este, que es donde se ve que algo se está
+    /// pasando y donde se decide correrlo.
+    ///
+    /// Solo en lo abierto y sin orden, que es lo que el SP acepta: una
+    /// ocurrencia que ya generó su orden no se reprograma, se trabaja la
+    /// orden.
+    /// </summary>
+    private string CeldaAccion(PlanOcurrencia o)
+    {
+        bool reprogramable = o.orden_trabajo_id == null
+                          && (o.estado_id == 1 || o.estado_id == 2)
+                          && Token.Puede("CREAR EDITAR PLANES MANTENIMIENTO");
+
+        if (!reprogramable) return "";
+
+        string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + o.pmo_id));
+
+        return "<a href=\"javascript:void(0)\" class=\"icono_Editar\" title=\"Correr esta mantención a otra fecha\""
+             + " onclick=\"return abrirReprogramar('" + query + "')\">Reprogramar</a>";
     }
 
     protected void lnkGenerarOT_Click(object sender, EventArgs e)

@@ -266,6 +266,7 @@
                             </div>
                         </div>
 
+                        <asp:Literal ID="litCumplimiento" runat="server" />
                         <asp:Literal ID="litResumenCal" runat="server" />
                         <asp:Literal ID="litSemanas" runat="server" />
 
