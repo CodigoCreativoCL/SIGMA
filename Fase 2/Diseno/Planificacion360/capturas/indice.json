@@ -1,0 +1,157 @@
+[
+ {
+  "archivo": "00_menu_centro_de_mantenimiento.png",
+  "pantalla": "Menú lateral: módulo Centro de Mantenimiento desplegado",
+  "grupo": "Menú"
+ },
+ {
+  "archivo": "01_planificacion_hub.png",
+  "pantalla": "Planificación (hub actual)",
+  "grupo": "Planificación"
+ },
+ {
+  "archivo": "02_programaciones_listado.png",
+  "pantalla": "Programaciones — listado",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso1_información_general.png",
+  "pantalla": "Programación — ficha, paso 1 de 6: Información general",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso2_alcance.png",
+  "pantalla": "Programación — ficha, paso 2 de 6: Alcance",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso3_asignación.png",
+  "pantalla": "Programación — ficha, paso 3 de 6: Asignación",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso4_frecuencia.png",
+  "pantalla": "Programación — ficha, paso 4 de 6: Frecuencia",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso5_exclusiones.png",
+  "pantalla": "Programación — ficha, paso 5 de 6: Exclusiones",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "03_programacion_paso6_revisar.png",
+  "pantalla": "Programación — ficha, paso 6 de 6: Revisar",
+  "grupo": "Programaciones"
+ },
+ {
+  "archivo": "04_planes_listado.png",
+  "pantalla": "Planes de mantenimiento — listado",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "05_planes_carga_masiva.png",
+  "pantalla": "Planes — carga masiva (modal)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "06_centro_plan_calendario.png",
+  "pantalla": "Centro del plan — pestaña Calendario (plan publicado)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "06_centro_plan_configuracion.png",
+  "pantalla": "Centro del plan — pestaña Configuración (plan publicado)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "06_centro_plan_equipos.png",
+  "pantalla": "Centro del plan — pestaña Equipos (plan publicado)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "06_centro_plan_hitos.png",
+  "pantalla": "Centro del plan — pestaña Hitos (plan publicado)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "06_centro_plan_resumen.png",
+  "pantalla": "Centro del plan — pestaña Resumen (plan publicado)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "07_centro_plan_hito_desplegado.png",
+  "pantalla": "Centro del plan — hito desplegado con su detalle",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "08_centro_plan_borrador_hitos.png",
+  "pantalla": "Centro del plan — hitos de una versión en borrador",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "09_hito_ficha.png",
+  "pantalla": "Hito — ficha (modal)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "10_equipo_del_plan_ficha.png",
+  "pantalla": "Equipo del plan — ficha con aviso de otro plan vigente (modal)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "11_actividades_del_hito.png",
+  "pantalla": "Actividades del hito — listado",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "12_actividad_ficha.png",
+  "pantalla": "Actividad — ficha (modal)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "12b_actividad_ficha_repuestos.png",
+  "pantalla": "Actividad — sección de repuestos planificados (modal)",
+  "grupo": "Plan de mantenimiento"
+ },
+ {
+  "archivo": "13_bandeja.png",
+  "pantalla": "Bandeja de mantenciones",
+  "grupo": "Bandeja"
+ },
+ {
+  "archivo": "14_bandeja_vencidas.png",
+  "pantalla": "Bandeja — filtrada por Vencidas",
+  "grupo": "Bandeja"
+ },
+ {
+  "archivo": "15_reprogramar.png",
+  "pantalla": "Reprogramar ocurrencia (modal)",
+  "grupo": "Bandeja"
+ },
+ {
+  "archivo": "16_programacion_de_pautas.png",
+  "pantalla": "Programación de pautas — listado (usa Programaciones)",
+  "grupo": "Consumidores"
+ },
+ {
+  "archivo": "17_tareas_recurrentes.png",
+  "pantalla": "Tareas recurrentes — listado (usa Programaciones)",
+  "grupo": "Consumidores"
+ },
+ {
+  "archivo": "18_tarea_ficha.png",
+  "pantalla": "Tarea — ficha con su programación",
+  "grupo": "Consumidores"
+ },
+ {
+  "archivo": "19_referencia_centro360_activo.png",
+  "pantalla": "Referencia de estilo: Centro 360 del activo (ACT-34)",
+  "grupo": "Referencia"
+ },
+ {
+  "archivo": "20_referencia_centro360_activo_mantenimiento.png",
+  "pantalla": "Referencia: Centro 360 del activo — pestaña Mantenimiento",
+  "grupo": "Referencia"
+ }
+]
