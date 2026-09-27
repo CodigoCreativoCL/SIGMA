@@ -3,7 +3,7 @@
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=2") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
