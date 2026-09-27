@@ -155,7 +155,7 @@
 
 
 /* ---- Formato: A4, 3 x 8 (70 x 37 mm) ---- */
-.etq-a4-24 .etq { width: 68mm; height: 36mm; }
+.etq-a4-24 .etq { width: 70mm; height: 37mm; }
 .etq-a4-24 .etq img { width: 22mm; height: 22mm; }
 .etq-a4-24 .titulo  { font-size: 8.5pt; }
 .etq-a4-24 .sub,
@@ -164,7 +164,7 @@
 
 
 /* ---- Formato: A4, 2 x 5 (99 x 57 mm) ---- */
-.etq-a4-10 .etq { width: 97mm; height: 56mm; }
+.etq-a4-10 .etq { width: 99mm; height: 57mm; }
 .etq-a4-10 .etq img { width: 34mm; height: 34mm; }
 .etq-a4-10 .titulo  { font-size: 11pt; }
 .etq-a4-10 .sub,
@@ -323,4 +323,16 @@
 @media (max-width: 700px) {
     .etq-grupo-cabecera .campo,
     .etq-grupo-cabecera .nota { margin-left: 0; }
+}
+
+/* ---- Plancha troquelada: al imprimir, la etiqueta mide lo que dice ----
+   Las hojas A4 de 3 x 8 (70 x 37) van sin margen y las de 2 x 5 (99 x 57)
+   con 6 mm: las etiquetas se tocan, el troquel las separa. Antes la hoja
+   llevaba 8 mm de margen y 2 mm entre etiquetas, y para que cupieran se
+   achicaron a 68 x 36 y 97 x 56: impresas sobre la plancha no calzaban con
+   el troquel (T-3928, medido en el PDF de impresion). En pantalla se deja
+   la separacion para ver donde termina cada una. */
+@media print {
+    .etq-hoja.etq-a4-24,
+    .etq-hoja.etq-a4-10 { gap: 0; }
 }

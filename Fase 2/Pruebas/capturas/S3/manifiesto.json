@@ -1406,5 +1406,23 @@
   "capturas": [],
   "detalle": "",
   "fecha": "22-09-2026 06:15"
+ },
+ {
+  "hu": "HU-066",
+  "criterio": 2,
+  "titulo": "Medida real de la etiqueta en la plancha impresa (T-3928)",
+  "usuario": "ximena",
+  "tipo": "Web",
+  "pasos": "Etiquetas de una bodega → cada formato → PDF de impresión (reglas @page del sitio) y medición de cada etiqueta en mm con el modo impresión emulado.",
+  "esperado": "Cada etiqueta mide lo que dice su formato (±1 mm) y la página del PDF es la del formato.",
+  "obtenido": "termica: 3 etiquetas de (50.0, 25.0) mm (declarado 50 × 25), página (50, 25) mm; a4-24: 3 etiquetas de (70.0, 37.0) mm (declarado 70 × 37), página (210, 297) mm; a4-10: 3 etiquetas de (99.0, 57.0) mm (declarado 99 × 57), página (210, 297) mm",
+  "ok": true,
+  "capturas": [
+   "hu066_t3928_termica.pdf",
+   "hu066_t3928_a4-24.pdf",
+   "hu066_t3928_a4-10.pdf"
+  ],
+  "detalle": "Equivalente verificable a imprimir y medir con regla: el PDF es exactamente lo que recibe la impresora.",
+  "fecha": "27-09-2026 11:33"
  }
 ]

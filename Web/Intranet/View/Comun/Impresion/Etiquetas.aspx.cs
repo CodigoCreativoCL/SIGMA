@@ -197,9 +197,11 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
     /// </summary>
     protected string ReglaDePagina()
     {
-        string regla = Formato() == "termica"
-                       ? "@page { size: 50mm 25mm; margin: 0; }"
-                       : "@page { size: A4; margin: 8mm; }";
+        // Los margenes son los de la plancha troquelada: 3 x 8 de 70 x 37
+        // ocupa la hoja entera; 2 x 5 de 99 x 57 deja 6 mm alrededor.
+        string regla = Formato() == "termica" ? "@page { size: 50mm 25mm; margin: 0; }"
+                     : Formato() == "a4-10"   ? "@page { size: A4; margin: 6mm; }"
+                     :                          "@page { size: A4; margin: 0; }";
 
         return "<style type=\"text/css\">" + regla + "</style>";
     }
