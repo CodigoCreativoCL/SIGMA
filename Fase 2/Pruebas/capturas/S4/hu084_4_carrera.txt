@@ -1,0 +1,23 @@
+ANTES
+pmv_id|pmv_plan_version_estado| | | | | | 
+------|-----------------------|-|-|-|-|-|-
+2|2|2026-09-25 01:56:43.400|9|NULL|9|2026-09-25 01:56:43.400|texto
+12|1|NULL|NULL|NULL|9|2026-09-25 02:02:43.327|NULL
+
+SESIÓN A
+pmv_id
+------
+12
+A: PUBLICO, retiene el bloqueo 6 s
+A: COMMIT
+
+SESIÓN B (esperó 6.2 s)
+B: intenta publicar
+B: RECHAZADA -> 2.- LA VERSIÓN YA NO ESTÁ EN BORRADOR: OTRO USUARIO LA PUBLICÓ O LA RETIRÓ.
+
+DESPUÉS
+pmv_id|pmv_plan_version_estado
+------|-----------------------
+2|3
+12|2
+

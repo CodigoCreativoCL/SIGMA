@@ -31,6 +31,7 @@ namespace SitioBase.Model
         public string activo_codigo { get; set; }
         public string activo_nombre { get; set; }
         public string planta_nombre { get; set; }
+        public int? planta_id { get; set; }
         public string area_nombre { get; set; }
         public string tipo_nombre { get; set; }
         public string estado_activo_nombre { get; set; }

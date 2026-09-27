@@ -1,133 +1,85 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="Planificacion.aspx.cs" Inherits="View_Mantenimiento_Planificacion" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <%-- La cáscara de tarjetas y chips es la misma de la bandeja y del
-         centro del plan: se reusa tal cual, no se vuelve a inventar. --%>
-    <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
-    <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
-    <link href='<%=Asset("~/Css/LookAndFeel/sigma-plan360.css") %>' rel="stylesheet" />
-</asp:Content>
-
-<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
-    Centro de Mantenimiento
-</asp:Content>
-
-<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">
-    Planificación
-</asp:Content>
-
-<asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Un solo lugar para lo que hay que hacer, lo que está planificado y cada cuánto se dispara.
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-planificacion360.css") %>' rel="stylesheet" />
+    <script>window.Planificacion360Config={url:'<%=ResolveUrl("~/WebService/WsPlanificacion360.asmx/") %>',hoy:'<%=HoyIso %>'};</script>
+    <script src='<%=Asset("~/Js/sigma-planificacion360.js") %>' type="text/javascript"></script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
 
-    <%-- SIN UpdatePanel, SIN grilla Telerik A PROPÓSITO.
+    <%-- Planificación 360. Sin UpdatePanel ni RadGrid A PROPÓSITO: las pestañas
+         cambian en el navegador y cada una pide sus datos por AJAX la primera
+         vez que se abre (WsPlanificacion360.asmx). Nada de esta página depende
+         del ViewState, que va apagado. Los editores (Centro del plan, OT,
+         wizard de Programación) se abren aparte: en otra pestaña o en modal. --%>
+    <div class="p3" id="sgP360">
 
-         Este hub es la puerta de entrada a los tres módulos, no un reemplazo
-         de ninguno: cada tarjeta linkea a su pantalla real, que sigue siendo
-         donde se trabaja. Meter aquí la bandeja o el listado de planes
-         dentro del mismo ViewState es exactamente lo que el análisis de
-         viabilidad de la unificación desaconsejó -son las dos pantallas más
-         pesadas del sitio-, así que esta página se queda liviana y deja que
-         cada módulo siga siendo su propia página, con su propio ciclo de
-         postback. --%>
-    <div class="sg-a3 sg-ot">
-
-        <div class="sg-a3-kpis">
-            <a href='<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanOcurrenciaBandeja.aspx") %>' class="sg-a3-kpi">
-                <span class="sg-a3-kpi-ico es-rojo"><i class="mdi mdi-alert-octagon-outline"></i></span>
-                <div>
-                    <span class="sg-a3-kpi-etq">Requiere atención</span>
-                    <span class="sg-a3-kpi-val"><asp:Literal ID="litUrgente" runat="server" /></span>
-                    <span class="sg-a3-kpi-pie">Vencidas y atrasadas</span>
-                </div>
-            </a>
-
-            <a href='<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanOcurrenciaBandeja.aspx") %>' class="sg-a3-kpi">
-                <span class="sg-a3-kpi-ico es-verde"><i class="mdi mdi-play-circle-outline"></i></span>
-                <div>
-                    <span class="sg-a3-kpi-etq">Disponibles</span>
-                    <span class="sg-a3-kpi-val"><asp:Literal ID="litDisponibles" runat="server" /></span>
-                    <span class="sg-a3-kpi-pie">Se pueden adelantar</span>
-                </div>
-            </a>
-
-            <a href='<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimientos.aspx") %>' class="sg-a3-kpi">
-                <span class="sg-a3-kpi-ico es-azul"><i class="mdi mdi-clipboard-text-outline"></i></span>
-                <div>
-                    <span class="sg-a3-kpi-etq">Planes activos</span>
-                    <span class="sg-a3-kpi-val"><asp:Literal ID="litPlanes" runat="server" /></span>
-                    <span class="sg-a3-kpi-pie"><asp:Literal ID="litPlanesPie" runat="server" /></span>
-                </div>
-            </a>
-
-            <a href='<%=ResolveUrl("~/View/Mantenimiento/Programaciones/Programaciones.aspx") %>' class="sg-a3-kpi">
-                <span class="sg-a3-kpi-ico es-teal"><i class="mdi mdi-calendar-sync-outline"></i></span>
-                <div>
-                    <span class="sg-a3-kpi-etq">Programaciones</span>
-                    <span class="sg-a3-kpi-val"><asp:Literal ID="litProgramaciones" runat="server" /></span>
-                    <span class="sg-a3-kpi-pie">Reglas activas</span>
-                </div>
-            </a>
-        </div>
-
-        <asp:Literal ID="litContexto" runat="server" />
-
-        <%-- Las tres puertas, en el orden en que se usan: primero se define
-             cada cuánto (Programaciones), después se arma el plan que las
-             agrupa (Plan de mantenimiento), y el trabajo del día a día se
-             mira en la Bandeja -por eso ella va primero en el KPI de arriba
-             y última aquí: es adonde se vuelve, no de donde se parte. --%>
-        <div class="sg-a3-cols">
-            <div class="sg-a3-col">
-
-                <div class="sg-ot-card">
-                    <header class="sg-ot-card-cab">
-                        <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-calendar-sync-outline"></i></span>
-                        <div>
-                            <h3>Programaciones</h3>
-                            <p class="sg-ot-card-sub">Cada cuánto se dispara un hito: fecha única, calendario, intervalo, medidor o condición.</p>
-                        </div>
-                        <a class="sg-ot-btn es-accion" href='<%=ResolveUrl("~/View/Mantenimiento/Programaciones/Programaciones.aspx") %>'>Abrir</a>
-                    </header>
-                    <asp:Literal ID="litProgramacionesResumen" runat="server" />
-                </div>
-
-                <div class="sg-ot-card">
-                    <header class="sg-ot-card-cab">
-                        <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-clipboard-text-outline"></i></span>
-                        <div>
-                            <h3>Planes de mantenimiento</h3>
-                            <p class="sg-ot-card-sub">Qué se le hace a cada familia de equipos, agrupado en hitos y actividades.</p>
-                        </div>
-                        <a class="sg-ot-btn es-accion" href='<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanMantenimientos.aspx") %>'>Abrir</a>
-                    </header>
-                    <asp:Literal ID="litPlanesResumen" runat="server" />
-                </div>
-
+        <header class="p3-head">
+            <div class="p3-head-txt">
+                <nav class="p3-migas" aria-label="Ruta"><span>Centro de Mantenimiento</span><i aria-hidden="true">/</i><span>Planificación</span></nav>
+                <h1>Planificación<span id="p3TituloPlanta"></span></h1>
+                <p>Un solo lugar para lo que hay que hacer, lo que está planificado y cada cuánto se dispara.</p>
             </div>
-
-            <div class="sg-a3-col es-angosta">
-                <div class="sg-ot-card">
-                    <header class="sg-ot-card-cab">
-                        <span class="sg-ot-card-ico es-grande es-rojo"><i class="mdi mdi-inbox-arrow-down-outline"></i></span>
-                        <div>
-                            <h3>Bandeja de mantenciones</h3>
-                            <p class="sg-ot-card-sub">Lo que está por vencer o ya venció, de todos los planes.</p>
-                        </div>
-                        <a class="sg-ot-btn es-accion" href='<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanOcurrenciaBandeja.aspx") %>'>Abrir</a>
-                    </header>
-                    <asp:Literal ID="litBandejaResumen" runat="server" />
+            <div class="p3-filtros">
+                <label class="p3-campo"><span class="p3-campo-etq">Planta</span>
+                    <span class="p3-select"><i class="mdi mdi-factory" aria-hidden="true"></i><select id="p360Planta"><asp:Literal ID="litPlantas" runat="server" /></select></span>
+                </label>
+                <%-- Período: selector propio de mes y año (no la lista larga del
+                     navegador). El <select> oculto sigue siendo el valor. --%>
+                <div class="p3-campo"><span class="p3-campo-etq" id="p3PeriodoEtq">Período</span>
+                    <div class="p3-periodo">
+                        <button type="button" class="p3-periodo-btn" id="p3PeriodoBtn" aria-haspopup="dialog" aria-expanded="false" aria-labelledby="p3PeriodoEtq p3PeriodoTxt">
+                            <i class="mdi mdi-calendar-blank-outline" aria-hidden="true"></i><span id="p3PeriodoTxt"></span><i class="mdi mdi-chevron-down p3-periodo-chev" aria-hidden="true"></i>
+                        </button>
+                        <select id="p360Periodo" hidden aria-hidden="true" tabindex="-1"><asp:Literal ID="litPeriodos" runat="server" /></select>
+                        <div class="p3-pop" id="p3PeriodoPop" role="dialog" aria-label="Elegir período" hidden></div>
+                    </div>
                 </div>
             </div>
+        </header>
+
+        <div class="p3-kpis">
+            <button type="button" class="p3-kpi" data-ir="bandeja" data-kpi-situacion="URGENTE">
+                <span class="p3-kpi-ico es-ambar"><i class="mdi mdi-alert-circle-outline"></i></span>
+                <span class="p3-kpi-txt"><span class="p3-kpi-etq">Requieren atención</span><strong data-kpi="urgente">—</strong><span class="p3-kpi-pie" data-kpi="urgentePie">&nbsp;</span></span>
+                <i class="mdi mdi-chevron-right p3-kpi-ir" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="p3-kpi" data-ir="bandeja" data-kpi-situacion="DISPONIBLE">
+                <span class="p3-kpi-ico es-turquesa"><i class="mdi mdi-play-circle-outline"></i></span>
+                <span class="p3-kpi-txt"><span class="p3-kpi-etq">Disponibles</span><strong data-kpi="disponibles">—</strong><span class="p3-kpi-pie">Se pueden adelantar hoy</span></span>
+                <i class="mdi mdi-chevron-right p3-kpi-ir" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="p3-kpi" data-ir="cumplimiento">
+                <span class="p3-kpi-ico es-azul"><i class="mdi mdi-chart-bar"></i></span>
+                <span class="p3-kpi-txt"><span class="p3-kpi-etq">Cumplimiento anual</span><strong data-kpi="cumplimiento">—</strong><span class="p3-kpi-pie" data-kpi="cumplimientoPie">&nbsp;</span></span>
+                <i class="mdi mdi-chevron-right p3-kpi-ir" aria-hidden="true"></i>
+            </button>
+            <button type="button" class="p3-kpi" data-ir="calendario" data-kpi-vista="semana">
+                <span class="p3-kpi-ico es-lila"><i class="mdi mdi-calendar-month-outline"></i></span>
+                <span class="p3-kpi-txt"><span class="p3-kpi-etq">Carga próximas 4 semanas</span><strong data-kpi="carga">—</strong><span class="p3-kpi-pie" data-kpi="cargaPie">&nbsp;</span></span>
+                <i class="mdi mdi-chevron-right p3-kpi-ir" aria-hidden="true"></i>
+            </button>
         </div>
 
-        <div class="sg-ot-nota es-chica">
-            <i class="mdi mdi-information-outline"></i>
-            <span>Cada tarjeta abre su pantalla completa: esta vista solo reúne el estado de las tres, no reemplaza a ninguna. Un plan cuelga de una programación, y la bandeja muestra lo que los planes ya generaron.</span>
+        <div class="p3-caja">
+            <div class="p3-tabs" role="tablist" aria-label="Vistas de Planificación">
+                <button type="button" role="tab" id="p3t-resumen" aria-controls="p3p-resumen" data-sec="resumen" aria-selected="true"><i class="mdi mdi-home-outline"></i>Resumen</button>
+                <button type="button" role="tab" id="p3t-bandeja" aria-controls="p3p-bandeja" data-sec="bandeja" aria-selected="false" tabindex="-1"><i class="mdi mdi-inbox-arrow-down-outline"></i>Bandeja</button>
+                <button type="button" role="tab" id="p3t-calendario" aria-controls="p3p-calendario" data-sec="calendario" aria-selected="false" tabindex="-1"><i class="mdi mdi-calendar-blank-outline"></i>Calendario</button>
+                <button type="button" role="tab" id="p3t-planes" aria-controls="p3p-planes" data-sec="planes" aria-selected="false" tabindex="-1"><i class="mdi mdi-clipboard-text-outline"></i>Planes</button>
+                <button type="button" role="tab" id="p3t-programaciones" aria-controls="p3p-programaciones" data-sec="programaciones" aria-selected="false" tabindex="-1"><i class="mdi mdi-calendar-sync-outline"></i>Programaciones</button>
+                <button type="button" role="tab" id="p3t-cumplimiento" aria-controls="p3p-cumplimiento" data-sec="cumplimiento" aria-selected="false" tabindex="-1"><i class="mdi mdi-chart-bar"></i>Cumplimiento</button>
+                <button type="button" role="tab" id="p3t-cobertura" aria-controls="p3p-cobertura" data-sec="cobertura" aria-selected="false" tabindex="-1"><i class="mdi mdi-shield-check-outline"></i>Cobertura</button>
+            </div>
+            <section role="tabpanel" id="p3p-resumen" aria-labelledby="p3t-resumen" class="p3-panel" data-panel="resumen"></section>
+            <section role="tabpanel" id="p3p-bandeja" aria-labelledby="p3t-bandeja" class="p3-panel" data-panel="bandeja" hidden></section>
+            <section role="tabpanel" id="p3p-calendario" aria-labelledby="p3t-calendario" class="p3-panel" data-panel="calendario" hidden></section>
+            <section role="tabpanel" id="p3p-planes" aria-labelledby="p3t-planes" class="p3-panel" data-panel="planes" hidden></section>
+            <section role="tabpanel" id="p3p-programaciones" aria-labelledby="p3t-programaciones" class="p3-panel" data-panel="programaciones" hidden></section>
+            <section role="tabpanel" id="p3p-cumplimiento" aria-labelledby="p3t-cumplimiento" class="p3-panel" data-panel="cumplimiento" hidden></section>
+            <section role="tabpanel" id="p3p-cobertura" aria-labelledby="p3t-cobertura" class="p3-panel" data-panel="cobertura" hidden></section>
         </div>
-
     </div>
 
 </asp:Content>

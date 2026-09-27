@@ -62,6 +62,7 @@ namespace SitioBase.Controller
                             item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
                             item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
                             item.planta_nombre = dr["PLANTA_NOMBRE"].ToString();
+                            item.planta_id = dr["PLANTA_ID"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["PLANTA_ID"]);
                             item.area_nombre = dr["AREA_NOMBRE"].ToString();
                             item.tipo_nombre = dr["TIPO_NOMBRE"].ToString();
                             item.estado_activo_nombre = dr["ESTADO_ACTIVO_NOMBRE"].ToString();

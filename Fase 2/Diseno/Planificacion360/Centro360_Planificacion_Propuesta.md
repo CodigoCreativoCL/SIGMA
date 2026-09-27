@@ -87,7 +87,7 @@ Datos: `SEL_PLAN_CALENDARIO` ya acepta `@PLAN = NULL` (todos los planes). No hay
 Hoy `04_planes_listado.png`, una grilla de código y nombre.
 
 - Cada plan como una fila con: versión (publicada / borrador), hitos, equipos, **cumplimiento de ese plan** y próxima ocurrencia.
-- Al hacer clic, abre el **Centro del plan** (pantalla actual, sin cambios).
+- Al hacer clic, abre el **Centro del plan** (pantalla actual, sin cambios). La acción **Versiones** abre `PlanVersion.aspx` como modal para consultar el historial y publicar el borrador.
 - *Nuevo plan* y *Carga masiva* (`05_planes_carga_masiva.png`) desde acá.
 
 ---
@@ -148,7 +148,7 @@ Se mantienen los de hoy. La página exige 116 (ver planes), como el hub actual. 
 
 Recorriendo las pantallas para estas capturas aparecieron cosas que el 360 resuelve:
 
-1. **`PlanVersion.aspx` no tiene entrada.** Está registrada en el menú (*Versiones del plan (detalle)*) y ninguna pantalla la abre: las versiones se manejan desde la pestaña Configuración del Centro del plan (`06_centro_plan_configuracion.png`). Es la segunda pantalla huérfana del módulo; la primera fue Reprogramar, que ya se conectó desde la Bandeja. Hay que decidir si se conecta o se da de baja.
+1. **`PlanVersion.aspx` se conecta al 360.** La acción *Versiones* de cada fila de Planes y de cada borrador del Resumen abre esta pantalla en modal. Conserva ahí el historial y la publicación del borrador, sin incorporar ese editor pesado dentro del 360.
 2. **Tres cosas se llaman "bandeja".** Bandeja de mantenciones (esta), Mi bandeja de trabajo (HU-121, del técnico) y Bandeja de alertas (HU-184, sin construir). En el 360 esta pasa a ser la pestaña *Bandeja* dentro de Planificación, lo que la distingue por contexto.
 3. **HU-181 deja de ser una pantalla aparte** y pasa a ser la pestaña Cumplimiento, reusando el cálculo que ya existe en vez de duplicarlo.
 

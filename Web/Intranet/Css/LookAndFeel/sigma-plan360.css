@@ -137,3 +137,39 @@
 
 .sg-a3-hero-txt a { text-decoration: none; }
 .sg-a3-hero-txt a:hover .sg-ot-chip { filter: brightness(.96); }
+
+/* ---- Actividades del hito, dentro del hito (antes: otra pantalla) ---- */
+.sg-plan-acts { grid-column: 1 / -1; background: #fff; border: 1px solid #e6e3f7; border-radius: 12px; padding: 14px 16px; }
+.sg-plan-acts-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.sg-plan-acts-cab strong { display: flex; align-items: center; gap: 6px; font-size: 13.5px; color: var(--sg-texto); }
+.sg-plan-acts-cab strong i { color: var(--sg-p); font-size: 17px; }
+.sg-plan-acts-cab span { display: block; margin-top: 2px; font-size: 12px; color: var(--sg-suave); }
+.sg-plan-acts-cab .sg-ot-btn { white-space: nowrap; }
+.sg-plan-acts-vacio { margin: 4px 0 2px; padding: 14px; border: 1px dashed #dcd6f6; border-radius: 10px; text-align: center; font-size: 12.5px; color: var(--sg-suave); }
+.sg-plan-acts-tabla { border: 1px solid var(--sg-borde); border-radius: 10px; overflow: hidden; }
+.sg-plan-act { display: grid; grid-template-columns: 38px 110px minmax(0, 1fr) 80px minmax(0, 1.1fr) 82px 40px; gap: 10px; align-items: center;
+               padding: 9px 12px; border-top: 1px solid #f0f1f5; font-size: 12.5px; color: var(--sg-texto); }
+.sg-plan-act.es-cab { border-top: 0; background: #f7f7fb; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--sg-suave); }
+.sg-plan-act .c-n { font-weight: 700; color: var(--sg-suave); }
+.sg-plan-act .c-cod { font-weight: 600; }
+.sg-plan-act .c-nom .sg-plan-sub { display: block; margin-top: 2px; font-size: 11.5px; }
+.sg-plan-act .c-exige { display: flex; flex-wrap: wrap; gap: 4px; }
+.sg-plan-act .c-acc { text-align: right; font-size: 17px; }
+.sg-plan-act.es-inactiva { opacity: .55; }
+@media (max-width: 900px) {
+    .sg-plan-act { grid-template-columns: 30px minmax(0, 1fr) 70px 36px; }
+    .sg-plan-act > span:nth-child(2), .sg-plan-act > span:nth-child(5), .sg-plan-act > span:nth-child(6) { display: none; }
+}
+
+/* ---- Combo de planta del centro (mismo lenguaje que Planificacion 360) ---- */
+.sg-plan-planta { display: inline-flex; align-items: center; gap: 8px; margin-right: 4px; }
+.sg-plan-planta-etq { font-size: 13px; color: var(--sg-suave); }
+.sg-plan-select { position: relative; display: inline-flex; align-items: center; }
+.sg-plan-select > i { position: absolute; left: 12px; color: #55617c; font-size: 17px; pointer-events: none; }
+.sg-plan-select select { appearance: none; -webkit-appearance: none; min-width: 210px; height: 40px; padding: 0 36px 0 38px;
+    border: 1px solid #e2e7f0; border-radius: 10px; font: inherit; font-weight: 600; color: var(--sg-texto); cursor: pointer;
+    background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2355617c' stroke-width='1.8' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat right 12px center; }
+.sg-plan-select select:hover { border-color: #cfd5e3; }
+.sg-plan-select select:focus-visible { outline: 3px solid rgba(22, 198, 201, .35); outline-offset: 2px; border-color: #007f8a; }
+@media (max-width: 760px) { .sg-plan-planta { width: 100%; } .sg-plan-select, .sg-plan-select select { width: 100%; } }
+

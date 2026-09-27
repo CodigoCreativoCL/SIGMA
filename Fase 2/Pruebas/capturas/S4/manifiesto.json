@@ -754,5 +754,21 @@
   ],
   "detalle": "",
   "fecha": "26-09-2026 15:00"
+ },
+ {
+  "hu": "HU-084",
+  "criterio": 4,
+  "titulo": "Publicación simultánea",
+  "usuario": "sqlcmd ×2",
+  "tipo": "BD",
+  "pasos": "Dos sesiones publican la misma versión (PMA-2 v2) a la vez: A publica y retiene el bloqueo 6 s; B entra 1,5 s después.",
+  "esperado": "Una publica; la otra recibe «La versión ya no está en borrador».",
+  "obtenido": "A publicó. B esperó 6.2 s el bloqueo de A y fue rechazada: «2.- LA VERSIÓN YA NO ESTÁ EN BORRADOR: OTRO USUARIO LA PUBLICÓ O LA RETIRÓ.». Datos restaurados al terminar.",
+  "ok": true,
+  "capturas": [
+   "hu084_4_carrera.txt"
+  ],
+  "detalle": "La carrera se decide en SQL: la validación de estado del envoltorio espera el bloqueo de A y ve la versión ya publicada; si no alcanzara, el UPDATE ... WHERE estado = BORRADOR del SP base devuelve 0 filas y rechaza. BD/301 unifica el mensaje.",
+  "fecha": "26-09-2026 23:51"
  }
 ]
