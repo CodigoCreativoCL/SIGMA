@@ -67,7 +67,7 @@
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=6" rel="stylesheet" />
-    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=2" rel="stylesheet" />
 
     <!-- WebControls CSS -->
     <link href="../Css/UI/WebControls/calendar/CSS/Classic.css?vrs=1" rel="stylesheet" />

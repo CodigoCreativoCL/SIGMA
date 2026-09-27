@@ -32,7 +32,7 @@
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css" rel="stylesheet" />
-    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css" rel="stylesheet" />
+    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=2" rel="stylesheet" />
 
     <!-- WebControls CSS -->
     <link href="../Css/UI/WebControls/calendar/CSS/Classic.css" rel="stylesheet" />

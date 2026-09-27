@@ -27,7 +27,14 @@
     box-shadow: 0 0 0 3px rgba(0, 74, 133, .15) !important;
 }
 
-/* ---- Tabla interna: sin caja propia, hereda el alto del contenedor ---- */
+/* ---- Tabla interna: sin caja propia, hereda el alto del contenedor ----
+   El skin base de Telerik dibuja el borde de cada celda con una imagen de
+   fondo (sprite), no solo con background-color: anular solo el color dejaba
+   la imagen puesta, y esa raya de sprite era la "linea" que sobraba debajo
+   del control. Tambien se colapsa la tabla -el render clasico usa
+   cellspacing/cellpadding propios que, sin colapsar, dejan un hueco de 1px
+   entre celdas por donde asoma el fondo de la pagina como si fuera un
+   borde. */
 .RadComboBox_Bootstrap table,
 .RadComboBox_Bootstrap .rcbInner,
 .RadComboBox_Bootstrap tbody,
@@ -36,14 +43,18 @@
     width: 100% !important;
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
 }
 
 .RadComboBox_Bootstrap .rcbInputCell {
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
 }
 
@@ -54,7 +65,8 @@
     width: 100% !important;
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     color: var(--fg-m3-text-primary) !important;
     box-shadow: none !important;
 }
@@ -67,7 +79,8 @@
 .RadComboBox_Bootstrap .rcbArrowCell,
 .RadComboBox_Bootstrap .rcbArrowCell a,
 .RadComboBox_Bootstrap .rcbArrowCellRight {
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     border: 0 !important;
     box-shadow: none !important;
 }
