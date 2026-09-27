@@ -5,7 +5,7 @@
 
     <%-- La ficha habla el mismo idioma visual que los modales -secciones,
          grilla de campos, ayudas- y Default.master no trae esa hoja. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-procedimiento.css?vrs=4") %>' rel="stylesheet" />
 
     <style type="text/css">

@@ -381,11 +381,16 @@ html.sigma-dialog-child .sigma-modal .sigma-modal-hero:first-of-type {
 /* Un campo de solo lectura pierde el borde del input y queda como
    texto suelto al lado de uno editable. Se le pone la misma linea a
    la izquierda que al valor: se lee como campo, y se distingue del
-   editable sin fingir que se puede escribir en el. */
+   editable sin fingir que se puede escribir en el.
+
+   Ese border-left es la linea que sobraba junto al combobox: un
+   RadComboBox2 readonly (el input interno queda con el atributo)
+   tambien cae en este selector y la mostraba pegada al control. Se
+   quita; el campo readonly queda sin la marca lateral. */
 .sigma-modal-field input[readonly] {
     padding-left: 10px !important;
     border: 0 !important;
-    border-left: 2px solid var(--sg-border) !important;
+    /* border-left: 2px solid var(--sg-border) !important; */
     border-radius: 0 !important;
     background-color: transparent !important;
     font-weight: 600;
