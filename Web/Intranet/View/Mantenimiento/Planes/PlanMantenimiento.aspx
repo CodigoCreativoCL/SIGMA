@@ -5,7 +5,7 @@
     <%-- La configuracion sigue siendo un formulario y usa el vocabulario de
          los modales; la cascara del centro -tarjetas, chips, tablas, vacios-
          es la misma de la orden de trabajo y del activo, y se reusa tal cual. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=1") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-activo360.css?vrs=1") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-plan360.css?vrs=3") %>' rel="stylesheet" />

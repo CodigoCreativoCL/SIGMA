@@ -2,8 +2,8 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=4") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=6") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
@@ -48,7 +48,7 @@
         <div class="sg-ot-chips"><asp:Literal ID="litChips" runat="server" /></div>
 
         <div class="sg-ot-cab-acc">
-            <WebControls:PushButton ID="btnVolver" runat="server" Text="Volver a órdenes" CssClass="sg-ot-btn es-plano"
+            <WebControls:PushButton ID="btnVolver" runat="server" Text="Volver a órdenes" CssClass="sg-ot-btn es-contorno"
                 OnClick="btnVolver_Click" CausesValidation="false" />
             <a href="#" class="sg-ot-btn es-primario" data-ir="cierre"><i class="mdi mdi-check-decagram-outline"></i>Revisar cierre</a>
         </div>
