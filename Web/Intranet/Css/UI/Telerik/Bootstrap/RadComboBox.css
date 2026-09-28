@@ -27,7 +27,14 @@
     box-shadow: 0 0 0 3px rgba(0, 74, 133, .15) !important;
 }
 
-/* ---- Tabla interna: sin caja propia, hereda el alto del contenedor ---- */
+/* ---- Tabla interna: sin caja propia, hereda el alto del contenedor ----
+   El skin base de Telerik dibuja el borde de cada celda con una imagen de
+   fondo (sprite), no solo con background-color: anular solo el color dejaba
+   la imagen puesta, y esa raya de sprite era la "linea" que sobraba debajo
+   del control. Tambien se colapsa la tabla -el render clasico usa
+   cellspacing/cellpadding propios que, sin colapsar, dejan un hueco de 1px
+   entre celdas por donde asoma el fondo de la pagina como si fuera un
+   borde. */
 .RadComboBox_Bootstrap table,
 .RadComboBox_Bootstrap .rcbInner,
 .RadComboBox_Bootstrap tbody,
@@ -36,14 +43,18 @@
     width: 100% !important;
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    border-collapse: collapse !important;
+    border-spacing: 0 !important;
+    background: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
 }
 
 .RadComboBox_Bootstrap .rcbInputCell {
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     box-shadow: none !important;
 }
 
@@ -54,7 +65,8 @@
     width: 100% !important;
     border: 0 !important;
     border-radius: 0 !important;
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     color: var(--fg-m3-text-primary) !important;
     box-shadow: none !important;
 }
@@ -67,7 +79,8 @@
 .RadComboBox_Bootstrap .rcbArrowCell,
 .RadComboBox_Bootstrap .rcbArrowCell a,
 .RadComboBox_Bootstrap .rcbArrowCellRight {
-    background-color: transparent !important;
+    background: transparent !important;
+    background-image: none !important;
     border: 0 !important;
     box-shadow: none !important;
 }
@@ -111,3 +124,25 @@
     background-color: var(--fg-m3-secondary-container) !important;
     color: var(--fg-m3-on-secondary-container) !important;
 }
+
+/* ---- La flecha del combo ----
+   Anular background-image en las celdas de la flecha (para sacar la linea
+   del sprite) se llevo tambien la flecha, que el skin dibuja con ese mismo
+   sprite: el combo quedaba como una caja de texto sin nada que dijera que se
+   despliega. Se pinta un chevron propio, el mismo de los combos de
+   Planificacion 360. Selector con td para ganarle al !important de arriba. */
+.RadComboBox_Bootstrap td.rcbArrowCell,
+.RadComboBox_Bootstrap td.rcbArrowCellRight { width: 32px !important; min-width: 32px; }
+.RadComboBox_Bootstrap td.rcbArrowCell a,
+.RadComboBox_Bootstrap td.rcbArrowCellRight a {
+    display: block !important;
+    width: 32px !important;
+    height: 100% !important;
+    min-height: 20px;
+    background: transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%2355617c' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") no-repeat center center !important;
+    text-indent: -9999px;
+    overflow: hidden;
+}
+.RadComboBox_Bootstrap.rcbDisabled td.rcbArrowCell a,
+.RadComboBox_Bootstrap .rcbReadOnly td.rcbArrowCell a { opacity: .45; }
+

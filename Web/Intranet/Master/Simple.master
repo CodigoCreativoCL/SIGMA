@@ -56,11 +56,11 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=11" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-modal.css?vrs=9" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=4" rel="stylesheet" />
-    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/UI/Telerik/Bootstrap/RadComboBox.css?vrs=4" rel="stylesheet" />
 
     <!-- WebControls CSS -->
     <link href="../Css/UI/WebControls/calendar/CSS/Classic.css?vrs=1" rel="stylesheet" />

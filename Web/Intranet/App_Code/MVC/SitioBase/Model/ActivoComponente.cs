@@ -28,6 +28,16 @@ namespace SitioBase.Model
         public DateTime? aco_fecha_actualizacion { get; set; }
         public bool aco_habilitado { get; set; }
 
+        /* LA PLACA DE LA PIEZA (bloque 288)
+           Serie, fabricante y modelo. Van en su propio SP y no en
+           INS/UPD_ACTIVO_COMPONENTE porque esos dos los llama tambien la app:
+           sumarles tres parametros obliga a revisar cada llamada para ganar un
+           UPDATE de tres columnas. Es lo que se necesita para saber que pieza
+           comprar sin abrir la foto ni preguntarle al que la instalo. */
+        public string aco_numero_serie { get; set; }
+        public string aco_fabricante { get; set; }
+        public string aco_modelo { get; set; }
+
         // Calculadas por SEL_ACTIVO_COMPONENTE
         public string activo_codigo { get; set; }
         public string activo_nombre { get; set; }

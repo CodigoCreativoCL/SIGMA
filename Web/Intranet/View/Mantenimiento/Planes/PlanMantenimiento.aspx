@@ -5,10 +5,10 @@
     <%-- La configuracion sigue siendo un formulario y usa el vocabulario de
          los modales; la cascara del centro -tarjetas, chips, tablas, vacios-
          es la misma de la orden de trabajo y del activo, y se reusa tal cual. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=1") %>' rel="stylesheet" />
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-activo360.css?vrs=1") %>' rel="stylesheet" />
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-plan360.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-plan360.css?vrs=3") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
@@ -49,6 +49,21 @@
             });
         }
 
+        /* Las actividades del hito se crean y editan desde el mismo hito,
+           en el modal de siempre. Se anota cual hito estaba abierto para
+           que el refresco lo devuelva desplegado. */
+        function abrirPlanActividad(query, hito, nueva) {
+            seccionPendiente = 'hitos';
+            var h = document.getElementById('hdnHitoAbierto');
+            if (h) h.value = hito;
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanActividad.aspx") %>?query=' + query,
+                title: nueva ? 'Nueva actividad' : 'Actividad del hito',
+                width: 960,
+                initialHeight: 700
+            });
+        }
+
         function refresh() {
             var h = document.getElementById('hdnSeccion');
             if (h && seccionPendiente) h.value = seccionPendiente;
@@ -72,6 +87,7 @@
                  asincrono repinta el bloque entero y sin esto siempre
                  volveria al Resumen. --%>
             <asp:HiddenField ID="hdnSeccion" runat="server" Value="resumen" ClientIDMode="Static" />
+            <asp:HiddenField ID="hdnHitoAbierto" runat="server" ClientIDMode="Static" />
             <asp:LinkButton ID="lnkRecargar" runat="server" style="display:none" OnClick="lnkRecargar_Click" CausesValidation="false" />
 
             <asp:Panel ID="pnlPlan" runat="server" CssClass="sg-a3 sg-ot">
@@ -90,6 +106,17 @@
                     </div>
 
                     <div class="sg-a3-hero-acc">
+                        <%-- Planta: el plan puede cubrir equipos de varias plantas.
+                             Filtra lo que se ve (indicadores, resumen, equipos y
+                             calendario), no el plan: los hitos y sus actividades
+                             son los mismos en todas. Si el plan esta acotado a una
+                             planta, el combo no aparece. --%>
+                        <asp:Panel ID="pnlPlanta" runat="server" CssClass="sg-plan-planta">
+                            <span class="sg-plan-planta-etq">Planta</span>
+                            <span class="sg-plan-select"><i class="mdi mdi-factory" aria-hidden="true"></i>
+                                <asp:DropDownList ID="ddlPlanta" runat="server" AutoPostBack="true" OnSelectedIndexChanged="ddlPlanta_SelectedIndexChanged" aria-label="Planta" />
+                            </span>
+                        </asp:Panel>
                         <asp:HyperLink ID="hlVolver" runat="server" CssClass="sg-ot-btn es-plano">
                             <i class="mdi mdi-arrow-left"></i>Volver a planes</asp:HyperLink>
                         <a href="#" class="sg-ot-btn es-accion" data-ir-sec="calendario">
@@ -266,6 +293,7 @@
                             </div>
                         </div>
 
+                        <asp:Literal ID="litCumplimiento" runat="server" />
                         <asp:Literal ID="litResumenCal" runat="server" />
                         <asp:Literal ID="litSemanas" runat="server" />
 

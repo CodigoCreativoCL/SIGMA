@@ -31,6 +31,7 @@ namespace SitioBase.Model
         public string activo_codigo { get; set; }
         public string activo_nombre { get; set; }
         public string planta_nombre { get; set; }
+        public int? planta_id { get; set; }
         public string area_nombre { get; set; }
         public string tipo_nombre { get; set; }
         public string estado_activo_nombre { get; set; }
@@ -54,5 +55,33 @@ namespace SitioBase.Model
 
         public bool quita_componente { get; set; }
         public bool quita_medidor { get; set; }
+    }
+
+
+    /// <summary>
+    /// Otro plan vigente que ya cubre a este equipo (HU-083 #3).
+    ///
+    /// NO ES UN ERROR, ES UN AVISO. Que un equipo este en dos planes a veces
+    /// es un descuido -dos preventivos pisandose- y a veces es lo correcto
+    /// -uno de lubricacion y otro de inspeccion legal-. El sistema no tiene
+    /// como distinguirlos; el planificador si. Lo unico que le falta es
+    /// enterarse antes de guardar.
+    /// </summary>
+    [Serializable]
+    public class PlanCobertura
+    {
+        public int plan_id { get; set; }
+        public string plan_codigo { get; set; }
+        public string plan_nombre { get; set; }
+        public int version_id { get; set; }
+        public int? version_numero { get; set; }
+        public string version_estado_codigo { get; set; }
+        public string version_estado_nombre { get; set; }
+        public string tipo_nombre { get; set; }
+        public int hitos { get; set; }
+        public bool mismo_tipo { get; set; }
+
+        /// <summary>Lo que de verdad se pisa: lo que ese plan ya tiene corriendo para este equipo.</summary>
+        public int ocurrencias_abiertas { get; set; }
     }
 }

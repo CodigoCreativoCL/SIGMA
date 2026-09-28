@@ -62,6 +62,7 @@ namespace SitioBase.Controller
                             item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
                             item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
                             item.planta_nombre = dr["PLANTA_NOMBRE"].ToString();
+                            item.planta_id = dr["PLANTA_ID"] == DBNull.Value ? (int?)null : Convert.ToInt32(dr["PLANTA_ID"]);
                             item.area_nombre = dr["AREA_NOMBRE"].ToString();
                             item.tipo_nombre = dr["TIPO_NOMBRE"].ToString();
                             item.estado_activo_nombre = dr["ESTADO_ACTIVO_NOMBRE"].ToString();
@@ -84,6 +85,67 @@ namespace SitioBase.Controller
                     cmd.Dispose();
                     lista = null;
                 }
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Los otros planes VIGENTES que ya cubren a este equipo (HU-083 #3).
+        ///
+        /// Se consulta al elegir el equipo, que es cuando el dato sirve para
+        /// decidir, y no al apretar Guardar, que es cuando ya se decidio.
+        /// Devuelve lista vacia cuando no hay ninguno, que es lo normal.
+        /// </summary>
+        public List<PlanCobertura> GetCobertura(int activo, int plan)
+        {
+            List<PlanCobertura> lista = new List<PlanCobertura>();
+
+            if (activo <= 0 || !Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_PLAN_ACTIVO_COBERTURA";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+                if (plan > 0) cmd.Parameters.AddWithValue("@PLAN", plan);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        PlanCobertura item = new PlanCobertura();
+
+                        item.plan_id = int.Parse(dr["PLAN_ID"].ToString());
+                        item.plan_codigo = dr["PLAN_CODIGO"].ToString();
+                        item.plan_nombre = dr["PLAN_NOMBRE"].ToString();
+                        item.version_id = int.Parse(dr["VERSION_ID"].ToString());
+                        if (dr["VERSION_NUMERO"] != DBNull.Value)
+                            item.version_numero = int.Parse(dr["VERSION_NUMERO"].ToString());
+                        item.version_estado_codigo = dr["VERSION_ESTADO_CODIGO"].ToString();
+                        item.version_estado_nombre = dr["VERSION_ESTADO_NOMBRE"].ToString();
+                        item.tipo_nombre = dr["TIPO_NOMBRE"].ToString();
+                        item.hitos = int.Parse(dr["HITOS"].ToString());
+                        item.mismo_tipo = dr["MISMO_TIPO"].ToString() == "1";
+                        item.ocurrencias_abiertas = int.Parse(dr["OCURRENCIAS_ABIERTAS"].ToString());
+
+                        lista.Add(item);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+                /* Lista vacia y no null: el aviso es una ayuda, y si la
+                   consulta falla lo correcto es no avisar, no impedir
+                   guardar. */
+                lista = new List<PlanCobertura>();
             }
 
             return lista;

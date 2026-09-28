@@ -243,6 +243,193 @@ namespace SitioBase.Controller
             if (!string.IsNullOrEmpty(filtro.filtro)) cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
         }
 
+        /// <summary>
+        /// Los filtros que solo entiende la bandeja. Van aparte porque
+        /// SEL_PLAN_CALENDARIO no los tiene: pasarselos seria un error de
+        /// parametro desconocido, no un filtro que se ignora.
+        /// </summary>
+        private static void FiltrarBandeja(SqlCommand cmd, PlanOcurrencia filtro)
+        {
+            Filtrar(cmd, filtro);
+            if (filtro == null) return;
+
+            if (!string.IsNullOrEmpty(filtro.filtro_situacion)) cmd.Parameters.AddWithValue("@SITUACION", filtro.filtro_situacion);
+            if (filtro.solo_abiertas != null) cmd.Parameters.AddWithValue("@SOLO_ABIERTAS", filtro.solo_abiertas);
+            if (filtro.solo_parada != null) cmd.Parameters.AddWithValue("@SOLO_PARADA", filtro.solo_parada);
+        }
+
+        /// <summary>
+        /// La bandeja de ocurrencias (HU-087): lo que hay que hacer, de todos
+        /// los planes, ordenado por urgencia.
+        ///
+        /// Devuelve la pagina y, por `resumen`, los contadores de TODO lo que
+        /// cumple el filtro. Los dos salen de la misma llamada -el SP escribe
+        /// dos result sets-, porque pedir los contadores aparte seria correr
+        /// dos veces la misma consulta pesada.
+        /// </summary>
+        public List<PlanOcurrencia> GetBandeja(PlanOcurrencia filtro, out BandejaResumen resumen)
+        {
+            List<PlanOcurrencia> lista = new List<PlanOcurrencia>();
+            resumen = new BandejaResumen();
+
+            if (!Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_PLAN_OCURRENCIA_BANDEJA";
+                FiltrarBandeja(cmd, filtro);
+                if (filtro != null && filtro.pagina != null) cmd.Parameters.AddWithValue("@PAGINA", filtro.pagina);
+                if (filtro != null && filtro.tamano != null) cmd.Parameters.AddWithValue("@TAMANO", filtro.tamano);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        PlanOcurrencia item = new PlanOcurrencia();
+
+                        item.pmo_id = int.Parse(dr["PMO_ID"].ToString());
+                        item.pmo_uuid = (Guid)dr["PMO_UUID"];
+                        item.fecha_programada = (DateTime)dr["FECHA_PROGRAMADA"];
+                        if (dr["FECHA_LIMITE"] != DBNull.Value) item.fecha_limite = (DateTime)dr["FECHA_LIMITE"];
+                        if (dr["FECHA_DISPONIBLE"] != DBNull.Value) item.fecha_disponible = (DateTime)dr["FECHA_DISPONIBLE"];
+                        if (dr["FECHA_ORIGINAL"] != DBNull.Value) item.fecha_original = (DateTime)dr["FECHA_ORIGINAL"];
+
+                        item.plan_id = int.Parse(dr["PLAN_ID"].ToString());
+                        item.plan_codigo = dr["PLAN_CODIGO"].ToString();
+                        item.plan_nombre = dr["PLAN_NOMBRE"].ToString();
+                        if (dr["VERSION_NUMERO"] != DBNull.Value) item.version_numero = int.Parse(dr["VERSION_NUMERO"].ToString());
+
+                        item.hito_id = int.Parse(dr["HITO_ID"].ToString());
+                        item.hito_codigo = dr["HITO_CODIGO"].ToString();
+                        item.hito_nombre = dr["HITO_NOMBRE"].ToString();
+                        item.es_overhaul = dr["ES_OVERHAUL"] != DBNull.Value && (bool)dr["ES_OVERHAUL"];
+                        item.requiere_parada = dr["REQUIERE_PARADA"] != DBNull.Value && (bool)dr["REQUIERE_PARADA"];
+                        if (dr["DURACION_ESTIMADA_MINUTO"] != DBNull.Value) item.duracion_estimada_minuto = int.Parse(dr["DURACION_ESTIMADA_MINUTO"].ToString());
+
+                        item.activo_id = int.Parse(dr["ACTIVO_ID"].ToString());
+                        item.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
+                        item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
+                        if (dr["INSTALACION_ID"] != DBNull.Value) item.instalacion_id = int.Parse(dr["INSTALACION_ID"].ToString());
+                        item.planta_nombre = dr["PLANTA_NOMBRE"].ToString();
+                        item.componente_nombre = dr["COMPONENTE_NOMBRE"].ToString();
+                        if (dr["VALOR_MEDIDOR_OBJETIVO"] != DBNull.Value) item.valor_medidor_objetivo = decimal.Parse(dr["VALOR_MEDIDOR_OBJETIVO"].ToString());
+
+                        item.estado_id = int.Parse(dr["ESTADO_ID"].ToString());
+                        item.estado_codigo = dr["ESTADO_CODIGO"].ToString();
+                        item.estado_nombre = dr["ESTADO_NOMBRE"].ToString();
+                        item.situacion = dr["SITUACION"].ToString();
+                        item.actividades = int.Parse(dr["ACTIVIDADES"].ToString());
+                        item.dias_restantes = int.Parse(dr["DIAS_RESTANTES"].ToString());
+                        if (dr["DIAS_PARA_LIMITE"] != DBNull.Value) item.dias_para_limite = int.Parse(dr["DIAS_PARA_LIMITE"].ToString());
+                        item.fue_reprogramada = dr["FUE_REPROGRAMADA"].ToString() == "1";
+
+                        if (dr["ORDEN_TRABAJO_ID"] != DBNull.Value) item.orden_trabajo_id = int.Parse(dr["ORDEN_TRABAJO_ID"].ToString());
+                        if (dr["ORDEN_TRABAJO_CORRELATIVO"] != DBNull.Value) item.orden_trabajo_correlativo = int.Parse(dr["ORDEN_TRABAJO_CORRELATIVO"].ToString());
+                        item.orden_trabajo_titulo = dr["ORDEN_TRABAJO_TITULO"].ToString();
+                        item.observacion = dr["OBSERVACION"].ToString();
+                        item.total = int.Parse(dr["TOTAL"].ToString());
+
+                        lista.Add(item);
+                    }
+
+                    /* El segundo result set son los contadores. Si no viene
+                       -no deberia-, el resumen queda en cero y la pantalla
+                       muestra cero, que es mejor que reventar por un
+                       NextResult que devolvio false. */
+                    if (dr.NextResult() && dr.Read())
+                    {
+                        resumen.vencidas    = int.Parse(dr["VENCIDAS"].ToString());
+                        resumen.atrasadas   = int.Parse(dr["ATRASADAS"].ToString());
+                        resumen.disponibles = int.Parse(dr["DISPONIBLES"].ToString());
+                        resumen.futuras     = int.Parse(dr["FUTURAS"].ToString());
+                        resumen.cerradas    = int.Parse(dr["CERRADAS"].ToString());
+                        resumen.con_parada  = int.Parse(dr["CON_PARADA"].ToString());
+                        resumen.total       = int.Parse(dr["TOTAL"].ToString());
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+                lista = null;
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// El cumplimiento del plan (HU-086 #2), medido contra la fecha
+        /// programada ORIGINAL. Devuelve tambien la cuenta contra la fecha
+        /// vigente para poder mostrar la diferencia.
+        /// </summary>
+        public PlanCumplimiento GetCumplimiento(int plan, DateTime? desde, DateTime? hasta)
+        {
+            PlanCumplimiento item = new PlanCumplimiento();
+
+            if (!Token.TokenSeguridad()) return item;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_PLAN_CUMPLIMIENTO";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                if (plan > 0) cmd.Parameters.AddWithValue("@PLAN", plan);
+                if (desde != null) cmd.Parameters.AddWithValue("@DESDE", desde.Value.Date);
+                if (hasta != null) cmd.Parameters.AddWithValue("@HASTA", hasta.Value.Date);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        item.programadas = int.Parse(dr["PROGRAMADAS"].ToString());
+                        item.cumplidas = int.Parse(dr["CUMPLIDAS"].ToString());
+                        item.a_tiempo_original = int.Parse(dr["A_TIEMPO_ORIGINAL"].ToString());
+                        item.a_tiempo_vigente = int.Parse(dr["A_TIEMPO_VIGENTE"].ToString());
+                        item.vencidas = int.Parse(dr["VENCIDAS"].ToString());
+                        item.reprogramadas = int.Parse(dr["REPROGRAMADAS"].ToString());
+                        item.cumplimiento = decimal.Parse(dr["CUMPLIMIENTO"].ToString());
+                        item.cumplimiento_vigente = decimal.Parse(dr["CUMPLIMIENTO_VIGENTE"].ToString());
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return item;
+        }
+
+        public void ExportarBandeja(PlanOcurrencia filtro)
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "RPT_PLAN_OCURRENCIA_BANDEJA_EXCEL";
+            FiltrarBandeja(cmd, filtro);
+
+            DataTable datos = Conexion.GetDataTable(cmd);
+            byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(datos, true);
+            string archivo = "BANDEJA MANTENCIONES " + global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy");
+
+            HttpContext.Current.Response.Clear();
+            HttpContext.Current.Response.ContentType = "application/vnd.ms-excel";
+            HttpContext.Current.Response.HeaderEncoding = Encoding.Default;
+            HttpContext.Current.Response.ContentEncoding = Encoding.Default;
+            HttpContext.Current.Response.AddHeader("content-disposition", "attachment; filename=" + archivo + ".xlsx");
+            HttpContext.Current.Response.BinaryWrite(binario);
+            HttpContext.Current.Response.End();
+        }
+
         /* ==================================================================
            REPROGRAMAR (HU-086)
 

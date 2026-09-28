@@ -2,7 +2,7 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
 
     <%-- La cascara -cabecera, pestañas, tarjetas, chips, tablas- es la misma
          del centro de la orden de trabajo y se reusa tal cual, con sus clases

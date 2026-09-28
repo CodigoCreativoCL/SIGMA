@@ -66,6 +66,16 @@
         </div>
     </div>
 
+    <%-- ============ YA ESTA EN OTRO PLAN ============
+         Un aviso, no un rechazo: que un equipo este en dos planes a veces es
+         un descuido y a veces es lo correcto -uno de lubricacion y otro de
+         inspeccion legal-. Quien sabe cual de los dos casos es, es el
+         planificador; lo unico que le falta es enterarse antes de guardar. --%>
+    <asp:Panel ID="pnlCobertura" runat="server" Visible="false" CssClass="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-alert-outline"></i>Este equipo ya está en otro plan</div>
+        <asp:Literal ID="litCobertura" runat="server" />
+    </asp:Panel>
+
     <div class="sigma-modal-actions">
         <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />
         <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="PlanActivo" />

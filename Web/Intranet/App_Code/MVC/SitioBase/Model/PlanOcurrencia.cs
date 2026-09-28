@@ -43,6 +43,14 @@ namespace SitioBase.Model
         /// <summary>CERRADA · VENCIDA · ATRASADA · DISPONIBLE · FUTURA. La deriva el SP contra hoy.</summary>
         public string situacion { get; set; }
         public int dias_restantes { get; set; }
+
+        /* De la bandeja (HU-087). La misma ocurrencia contesta otra pregunta
+           -"que tengo encima ahora"- y para eso hacen falta tres datos mas:
+           donde esta el equipo, cuanto falta para que se venza, y si el hito
+           trae actividades o la orden va a salir con un solo paso. */
+        public int? instalacion_id { get; set; }
+        public int? dias_para_limite { get; set; }
+        public int actividades { get; set; }
         public bool fue_reprogramada { get; set; }
 
         public int? orden_trabajo_id { get; set; }
@@ -58,6 +66,12 @@ namespace SitioBase.Model
         public int? filtro_activo { get; set; }
         public int? filtro_instalacion { get; set; }
         public int? filtro_estado { get; set; }
+
+        /* SITUACION es derivada -no existe en ninguna tabla- y por eso se
+           filtra en el SP de la bandeja y no en el del calendario. */
+        public string filtro_situacion { get; set; }
+        public bool? solo_abiertas { get; set; }
+        public bool? solo_parada { get; set; }
         public DateTime? filtro_desde { get; set; }
         public DateTime? filtro_hasta { get; set; }
         public string filtro { get; set; }
@@ -91,5 +105,60 @@ namespace SitioBase.Model
         /// <summary>Solo se reprograma lo que todavia no ocurrio: PENDIENTE (1) o DISPONIBLE (2).</summary>
         public bool EsReprogramable { get { return pmo_estado == 1 || pmo_estado == 2; } }
         public bool YaReprogramada { get { return pmo_estado == 7; } }
+    }
+
+    /// <summary>
+    /// Los contadores de la bandeja (HU-087).
+    ///
+    /// Cuentan TODO lo que cumple el filtro, no la pagina que se esta
+    /// mirando: por eso no se arman contando filas en la pantalla. Vienen en
+    /// el segundo result set del mismo SP, para no repetir la consulta.
+    ///
+    /// La situacion elegida NO se aplica a estos numeros: son la botonera
+    /// con la que se cambia de situacion, y si se filtraran a si mismos, al
+    /// entrar en "vencidas" el resto marcaria cero y no habria como salir.
+    /// </summary>
+    [Serializable]
+    public class BandejaResumen
+    {
+        public int vencidas { get; set; }
+        public int atrasadas { get; set; }
+        public int disponibles { get; set; }
+        public int futuras { get; set; }
+        public int cerradas { get; set; }
+        public int con_parada { get; set; }
+        public int total { get; set; }
+
+        /// <summary>Lo que requiere atencion hoy: vencido, atrasado o ya disponible.</summary>
+        public int pendientes { get { return vencidas + atrasadas + disponibles; } }
+    }
+
+
+    /// <summary>
+    /// El cumplimiento del plan (HU-086 #2).
+    ///
+    /// SE MIDE CONTRA LA FECHA ORIGINAL, NO CONTRA LA NUEVA. Es la regla que
+    /// le da sentido a poder reprogramar: si reprogramar corriera tambien la
+    /// vara, el indicador se dejaria en 100% moviendo fechas y medir dejaria
+    /// de servir para algo.
+    ///
+    /// `cumplimiento_vigente` es la misma cuenta contra la fecha vigente y NO
+    /// es el indicador: esta para poder mostrar la diferencia, que es
+    /// exactamente lo que el criterio quiere que se vea.
+    /// </summary>
+    [Serializable]
+    public class PlanCumplimiento
+    {
+        public int programadas { get; set; }
+        public int cumplidas { get; set; }
+        public int a_tiempo_original { get; set; }
+        public int a_tiempo_vigente { get; set; }
+        public int vencidas { get; set; }
+        public int reprogramadas { get; set; }
+        public decimal cumplimiento { get; set; }
+        public decimal cumplimiento_vigente { get; set; }
+
+        /// <summary>Cuanto le regalaria al indicador medir contra la fecha nueva.</summary>
+        public decimal diferencia { get { return cumplimiento_vigente - cumplimiento; } }
     }
 }

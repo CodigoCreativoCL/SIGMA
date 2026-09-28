@@ -2,8 +2,8 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=8") %>' rel="stylesheet" />
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-modal.css?vrs=9") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-orden.css?vrs=6") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
@@ -48,7 +48,7 @@
         <div class="sg-ot-chips"><asp:Literal ID="litChips" runat="server" /></div>
 
         <div class="sg-ot-cab-acc">
-            <WebControls:PushButton ID="btnVolver" runat="server" Text="Volver a órdenes" CssClass="sg-ot-btn es-plano"
+            <WebControls:PushButton ID="btnVolver" runat="server" Text="Volver a órdenes" CssClass="sg-ot-btn es-contorno"
                 OnClick="btnVolver_Click" CausesValidation="false" />
             <a href="#" class="sg-ot-btn es-primario" data-ir="cierre"><i class="mdi mdi-check-decagram-outline"></i>Revisar cierre</a>
         </div>
@@ -385,6 +385,11 @@
                             CommandName="sel" CommandArgument='<%# Eval("indice") %>'>
                             <span class='<%# "sg-ot-paso-num " + Eval("clase") %>'><%# Eval("numero") %></span>
                             <span class="sg-ot-paso-nom"><%# Server.HtmlEncode(Convert.ToString(Eval("nombre"))) %></span>
+                            <%-- Solo se marca lo OPCIONAL: si casi todos los pasos son
+                                 obligatorios, un cartel "obligatorio" en cada fila es
+                                 ruido y el que importa -el que se puede saltar- se
+                                 pierde entre los demas. --%>
+                            <span class="sg-ot-chip es-neutro" style='<%# (bool)Eval("opcional") ? "" : "display:none" %>'><i class="mdi mdi-slash-forward"></i>Opcional</span>
                             <span class='<%# "sg-ot-estado " + Eval("clase") %>'><i class='<%# "mdi " + Eval("icono") %>'></i><%# Eval("estado") %></span>
                             <i class="mdi mdi-chevron-right sg-ot-paso-flecha"></i>
                         </asp:LinkButton>
@@ -668,37 +673,77 @@
                     <asp:Literal ID="litCierreEvidencias" runat="server" />
                 </asp:Panel>
 
-                <%-- La firma va DEBAJO del resultado y no en la columna de al
-                     lado: se firma despues de escribir lo que se hizo, y ese
-                     es el orden en que se lee la pantalla. Compacta -una linea
-                     para quien firma, el trazo y el boton- para que las dos
-                     cosas quepan juntas sin desplazarse. --%>
-                <asp:Panel ID="pnlFirma" runat="server" CssClass="sg-ot-card sg-ot-firma-compacta">
-                    <div class="sg-ot-firma-datos">
-                        <span class="sg-ot-firma-etq">Firma de quien autoriza</span>
-                        <span class="sg-ot-usuario"><i class="mdi mdi-account-outline"></i><asp:Literal ID="litUsuarioCierre" runat="server" /></span>
-                    </div>
+                <%-- UNA sola firma para la orden (HU-118 + cierre de HU-120).
+                     Antes habia dos cuadros -la firma de quien cierra y la de
+                     aceptacion/ejecucion/validacion- y se leian como dos cosas
+                     que firmar. Ahora es un trazo con dos acciones: registrar
+                     la firma que corresponda, o firmar y cerrar la orden. El
+                     historial va arriba porque es lo primero que se pregunta:
+                     quien firmo ya. Sin modal: se firma aqui mismo. --%>
+                <div class="sg-ot-card sg-ot-firmas">
+                    <header class="sg-ot-card-cab">
+                        <span class="sg-ot-card-ico"><i class="mdi mdi-draw-pen"></i></span>
+                        <div>
+                            <h3>Firmas</h3>
+                            <p class="sg-ot-card-sub">Quién recibió, ejecutó y aprobó el trabajo. Un rechazo se supera con una firma posterior: las dos quedan.</p>
+                        </div>
+                    </header>
+                    <asp:Literal ID="litFirmas" runat="server" />
 
-                    <%-- El trazo se dibuja en el canvas y viaja en el campo oculto
-                         como PNG: un canvas no se postea solo. --%>
-                    <div class="sg-ot-firma">
-                        <canvas id="sgOtFirma" width="620" height="110"></canvas>
-                        <span class="sg-ot-firma-guia"><i class="mdi mdi-pencil-outline"></i>Firme aquí</span>
-                    </div>
-                    <asp:HiddenField ID="hdnFirma" runat="server" ClientIDMode="Static" />
+                    <asp:Panel ID="pnlFirma" runat="server" CssClass="sg-ot-firma-compacta sg-ot-firma-nueva">
+                        <asp:Panel ID="pnlFirmaDatos" runat="server" CssClass="sg-ot-firma-campos">
+                            <div>
+                                <span class="sg-ot-firma-etq">Qué firma</span>
+                                <asp:RadioButtonList ID="rblFirmaTipo" runat="server" RepeatLayout="Flow" RepeatDirection="Horizontal" CssClass="sg-ot-opciones" />
+                            </div>
+                            <div>
+                                <span class="sg-ot-firma-etq">Resultado</span>
+                                <asp:RadioButtonList ID="rblFirmaResultado" runat="server" RepeatLayout="Flow" RepeatDirection="Horizontal" CssClass="sg-ot-opciones es-resultado">
+                                    <asp:ListItem Value="APROBADO" Text="Aprobado" Selected="True" />
+                                    <asp:ListItem Value="RECHAZADO" Text="Rechazado" />
+                                </asp:RadioButtonList>
+                            </div>
+                            <div class="es-ancho">
+                                <span class="sg-ot-firma-etq">Observación <em>(obligatoria si rechaza)</em></span>
+                                <WebControls:TextBox2 ID="txtFirmaObservacion" runat="server" MaxLength="1000" />
+                            </div>
+                        </asp:Panel>
 
-                    <div class="sg-ot-firma-pie">
-                        <a href="#" class="sg-ot-link" id="sgOtFirmaLimpiar"><i class="mdi mdi-trash-can-outline"></i>Limpiar</a>
-                        <label class="sg-ot-confirmo">
-                            <asp:CheckBox ID="chkConfirmo" runat="server" />
-                            <span>Confirmo que revisé el trabajo y sus evidencias.</span>
-                        </label>
-                        <WebControls:PushButton ID="btnCerrarOT" runat="server" Text="Firmar y cerrar OT" CssClass="sg-ot-btn es-primario"
-                            OnClick="btnCerrarOT_Click" CausesValidation="false" />
-                    </div>
+                        <div class="sg-ot-firma-datos">
+                            <span class="sg-ot-firma-etq">Firma de</span>
+                            <span class="sg-ot-usuario"><i class="mdi mdi-account-outline"></i><asp:Literal ID="litUsuarioCierre" runat="server" /></span>
+                        </div>
 
-                    <span class="sg-ot-firma-nota"><i class="mdi mdi-information-outline"></i>La firma queda vinculada a la OT, al usuario autenticado y a la fecha de cierre.</span>
-                </asp:Panel>
+                        <%-- El trazo se dibuja en el canvas y viaja en el campo oculto
+                             como PNG: un canvas no se postea solo. --%>
+                        <div class="sg-ot-firma">
+                            <canvas id="sgOtFirma" width="620" height="110"></canvas>
+                            <span class="sg-ot-firma-guia"><i class="mdi mdi-pencil-outline"></i>Firme aquí</span>
+                        </div>
+                        <asp:HiddenField ID="hdnFirma" runat="server" ClientIDMode="Static" />
+                        <%-- El uuid de la firma nace antes de guardar: un doble clic
+                             devuelve la misma firma y no crea dos. --%>
+                        <asp:HiddenField ID="hdnFirmaUuid" runat="server" />
+
+                        <div class="sg-ot-firma-pie">
+                            <a href="#" class="sg-ot-link" id="sgOtFirmaLimpiar"><i class="mdi mdi-trash-can-outline"></i>Limpiar</a>
+                            <asp:Panel ID="pnlCerrarAcc" runat="server" CssClass="sg-ot-firma-cierre">
+                                <label class="sg-ot-confirmo">
+                                    <asp:CheckBox ID="chkConfirmo" runat="server" />
+                                    <span>Confirmo que revisé el trabajo y sus evidencias.</span>
+                                </label>
+                            </asp:Panel>
+                            <span class="sg-ot-firma-botones">
+                                <WebControls:PushButton ID="btnRegistrarFirma" runat="server" Text="Registrar firma" CssClass="sg-ot-btn es-secundario"
+                                    OnClick="btnRegistrarFirma_Click" CausesValidation="false" />
+                                <WebControls:PushButton ID="btnCerrarOT" runat="server" Text="Firmar y cerrar OT" CssClass="sg-ot-btn es-primario"
+                                    OnClick="btnCerrarOT_Click" CausesValidation="false" />
+                            </span>
+                        </div>
+
+                        <span class="sg-ot-firma-nota"><i class="mdi mdi-information-outline"></i>La firma queda vinculada a la OT, al usuario autenticado y a la fecha. Las firmas no se editan ni se borran.</span>
+                    </asp:Panel>
+                </div>
             </div>
 
             <aside class="sg-ot-lado">

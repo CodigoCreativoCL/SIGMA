@@ -3,6 +3,7 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text;
 using System.Web.UI;
 using System.Web.UI.WebControls;
@@ -64,6 +65,11 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
                     {
                         case "Id":
                             Id = Int32.Parse(array[1].ToString());
+                            break;
+                        case "Sec":
+                            // Planificación 360 abre el centro directo en una
+                            // pestaña (calendario, configuracion...).
+                            hdnSeccion.Value = array[1].ToString();
                             break;
                     }
                 }
@@ -211,18 +217,37 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             PlanMantenimiento plan = new PlanMantenimientoController().GetPlanMantenimiento(
                 new PlanMantenimiento { pma_id = Id });
 
-            /* Solo los de LA VERSION QUE MANDA -la publicada, o la ultima si
-               no hay publicada-. La grilla vieja mostraba los de todas las
-               versiones con un chip al lado, y el plan se leia con el doble
-               de hitos de los que en realidad se ejecutan. Las versiones
-               anteriores estan en Configuracion, que es donde se comparan. */
+            /* Los de UNA version, no los de todas. La grilla vieja mostraba
+               los de todas con un chip al lado, y el plan se leia con el
+               doble de hitos de los que en realidad se ejecutan. Las
+               versiones anteriores estan en Configuracion, que es donde se
+               comparan.
+
+               CUAL: el BORRADOR si hay uno, y si no la que manda.
+
+               El SEL del plan devuelve siempre la publicada, porque eso es lo
+               que se quiere ver en un LISTADO -que esta corriendo-. Pero el
+               centro es donde se edita, y un borrador existe justamente
+               porque alguien lo abrio para cambiar algo. Mostrando la
+               publicada, sus hitos quedaban sin ninguna puerta: la pantalla
+               decia "para cambiarlo, abra una version nueva" y despues no
+               habia donde entrar a la version nueva. */
+            int? versionAEditar = VersionBorrador() ?? plan.version_id;
+
             List<PlanHito> hitos = new PlanHitoController().GetPlanHitos(
-                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
+                new PlanHito { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = versionAEditar })
                 ?? new List<PlanHito>();
 
             List<PlanActivo> equipos = new PlanActivoController().GetPlanActivos(
-                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = plan.version_id })
+                new PlanActivo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id, filtro_version = versionAEditar })
                 ?? new List<PlanActivo>();
+
+            /* La planta elegida filtra lo que se VE, no el plan. El combo se
+               arma con las plantas de los equipos del plan: una planta sin
+               equipos aqui daria todo vacio sin explicar por que. */
+            Plantas(plan, equipos);
+            if (PlantaFiltro != null)
+                equipos = equipos.FindAll(x => x.planta_id == PlantaFiltro);
 
             /* El año completo alimenta la cabecera y el resumen. El
                calendario de abajo usa SU filtro: son dos preguntas -como
@@ -231,6 +256,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
             List<PlanOcurrencia> anio = new PlanOcurrenciaController().GetCalendario(new PlanOcurrencia
             {
                 filtro_plan = Id,
+                filtro_instalacion = PlantaFiltro,
                 filtro_desde = new DateTime(global::SitioBase.Hora.Ahora.Year, 1, 1),
                 filtro_hasta = new DateTime(global::SitioBase.Hora.Ahora.Year, 12, 31)
             }) ?? new List<PlanOcurrencia>();
@@ -448,12 +474,33 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
          .Append("<span>Hito</span><span>Programación</span><span>Condiciones</span>")
          .Append("<span>Actividades</span><span>Estado</span><span></span></div>");
 
+        /* Las actividades de TODOS los hitos de la version, en una sola
+           consulta, y repartidas por hito aqui: una por hito seria una ida
+           a la base por fila. */
+        Dictionary<int, List<PlanActividad>> actividades = new Dictionary<int, List<PlanActividad>>();
+        foreach (PlanActividad a in new PlanActividadController().GetPlanActividades(new PlanActividad
+                 {
+                     filtro_cliente = SitioBase.Session.ClienteId(),
+                     filtro_version = hitos[0].pmh_plan_mantenimiento_version
+                 }) ?? new List<PlanActividad>())
+        {
+            if (!actividades.ContainsKey(a.paa_plan_mantenimiento_hito))
+                actividades[a.paa_plan_mantenimiento_hito] = new List<PlanActividad>();
+            actividades[a.paa_plan_mantenimiento_hito].Add(a);
+        }
+
         foreach (PlanHito h in hitos)
         {
             string clave = "hito-" + h.pmh_id;
             string query = Cifrar("Id=" + h.pmh_id + "&Plan=" + Id);
 
-            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rev sg-plan-hito\" data-rev=\"").Append(clave).Append("\">")
+            /* Guardar una actividad en el modal refresca el centro por
+               UpdatePanel: el hito en el que se estaba trabajando vuelve
+               desplegado, o cada actividad nueva obligaria a buscarlo. */
+            bool abierto = hdnHitoAbierto.Value == clave;
+
+            s.Append("<div class=\"sg-a3-tabla-fila sg-a3-rev sg-plan-hito").Append(abierto ? " es-abierta" : "")
+             .Append("\" data-rev=\"").Append(clave).Append("\">")
 
              .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(h.pmh_nombre)))
              .Append("<span>").Append(Server.HtmlEncode(Texto(h.pmh_codigo))).Append("</span></span>")
@@ -477,7 +524,8 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
              .Append("</div>");
 
             // ---- el detalle que se despliega ----
-            s.Append("<div class=\"sg-a3-ot-detalle sg-a3-rev-detalle\" id=\"rev-").Append(clave).Append("\">");
+            s.Append("<div class=\"sg-a3-ot-detalle sg-a3-rev-detalle").Append(abierto ? " es-abierto" : "")
+             .Append("\" id=\"rev-").Append(clave).Append("\">");
 
             s.Append(DetItem("mdi-calendar-outline", "Programación",
                      Texto(h.programacion_nombre) +
@@ -497,7 +545,12 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
             s.Append(DetItem("mdi-text-long", "Descripción", Texto(h.pmh_descripcion)));
 
+            List<PlanActividad> lista;
+            actividades.TryGetValue(h.pmh_id, out lista);
+            s.Append(ActividadesDelHito(h, clave, lista ?? new List<PlanActividad>(), puedeEscribir && h.version_editable));
+
             s.Append("<div class=\"sg-a3-ot-det-acc\">");
+
             if (puedeEscribir && h.version_editable)
                 s.Append("<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"abrirPlanHito('")
                  .Append(query).Append("')\"><i class=\"mdi mdi-pencil-outline\"></i>Editar hito</a>");
@@ -520,6 +573,72 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
                      Marcas(h.pmh_requiere_parada, h.pmh_es_overhaul)));
 
         litHitosResumen.Text = r.ToString();
+    }
+
+    /// <summary>
+    /// Las actividades del hito, dentro del hito. Antes vivian en su propia
+    /// pantalla (PlanActividades.aspx) y armar un hito obligaba a salir del
+    /// centro y volver por cada una. Ahora se crean y se editan aqui mismo,
+    /// en el modal de siempre (PlanActividad.aspx), y el hito queda abierto
+    /// al volver. En una version publicada la lista se lee y no se edita.
+    /// </summary>
+    private string ActividadesDelHito(PlanHito h, string clave, List<PlanActividad> lista, bool editable)
+    {
+        // Las dadas de baja no se muestran, igual que en el listado de siempre.
+        lista = lista.FindAll(x => x.paa_habilitado);
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-plan-acts\">");
+
+        s.Append("<div class=\"sg-plan-acts-cab\"><div><strong><i class=\"mdi mdi-format-list-numbered\"></i>Actividades del hito</strong>")
+         .Append("<span>Qué se hace. Cada una se copia como paso de la orden de trabajo que el hito genere.</span></div>");
+        if (editable)
+            s.Append("<a class=\"sg-ot-btn es-primario\" href=\"javascript:void(0)\" onclick=\"abrirPlanActividad('")
+             .Append(Cifrar("Hito=" + h.pmh_id)).Append("','").Append(clave).Append("',true)\"><i class=\"mdi mdi-plus\"></i>Nueva actividad</a>");
+        s.Append("</div>");
+
+        if (lista.Count == 0)
+        {
+            s.Append("<p class=\"sg-plan-acts-vacio\">")
+             .Append(editable ? "Este hito todavía no tiene actividades. Agregue la primera con «Nueva actividad»."
+                              : "Este hito no tiene actividades.")
+             .Append("</p></div>");
+            return s.ToString();
+        }
+
+        s.Append("<div class=\"sg-plan-acts-tabla\"><div class=\"sg-plan-act es-cab\">")
+         .Append("<span>N°</span><span>Código</span><span>Actividad</span><span>Duración</span><span>Exige</span><span>Estado</span><span></span></div>");
+
+        lista.Sort((a, b) => a.paa_orden != b.paa_orden ? a.paa_orden.CompareTo(b.paa_orden) : string.Compare(a.paa_codigo, b.paa_codigo, StringComparison.Ordinal));
+        foreach (PlanActividad a in lista)
+        {
+            string exige = "";
+            if (a.paa_obligatoria) exige += "<span class=\"sg-ot-chip es-neutro\" title=\"No deja cerrar la orden sin resultado\"><i class=\"mdi mdi-asterisk\"></i>Obligatoria</span>";
+            if (a.paa_requiere_parada) exige += "<span class=\"sg-ot-chip es-aviso\" title=\"Exige el equipo detenido\"><i class=\"mdi mdi-pause-circle-outline\"></i>Parada</span>";
+            if (a.paa_requiere_permiso)
+                exige += "<span class=\"sg-ot-chip es-error\"><i class=\"mdi mdi-shield-alert-outline\"></i>"
+                       + Server.HtmlEncode(string.IsNullOrEmpty(a.permiso_tipo_nombre) ? "Permiso" : a.permiso_tipo_nombre) + "</span>";
+            if (exige == "") exige = "<span class=\"sg-plan-sub\">—</span>";
+
+            string procedimiento = a.paa_procedimiento == null ? "" :
+                "<span class=\"sg-plan-sub\"><i class=\"mdi mdi-file-document-outline\"></i>" + Server.HtmlEncode(Texto(a.procedimiento_nombre))
+                + (a.procedimiento_pasos == 0 ? " · sin pasos" : " · " + a.procedimiento_pasos + (a.procedimiento_pasos == 1 ? " paso" : " pasos")) + "</span>";
+
+            s.Append("<div class=\"sg-plan-act").Append(a.paa_habilitado ? "" : " es-inactiva").Append("\">")
+             .Append("<span class=\"c-n\">").Append(a.paa_orden).Append("</span>")
+             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(a.paa_codigo))).Append("</span>")
+             .Append("<span class=\"c-nom\">").Append(Server.HtmlEncode(Texto(a.paa_nombre))).Append(procedimiento).Append("</span>")
+             .Append("<span>").Append(a.paa_duracion_estimada_minuto == null ? "—" : Duracion(a.paa_duracion_estimada_minuto.Value)).Append("</span>")
+             .Append("<span class=\"c-exige\">").Append(exige).Append("</span>")
+             .Append("<span>").Append(a.paa_habilitado
+                    ? "<span class=\"sg-ot-chip es-ok\">Activa</span>"
+                    : "<span class=\"sg-ot-chip es-neutro\">Inactiva</span>").Append("</span>")
+             .Append("<span class=\"c-acc\"><a class=\"sg-ot-link\" href=\"javascript:void(0)\" title=\"").Append(editable ? "Editar actividad" : "Ver actividad")
+             .Append("\" onclick=\"abrirPlanActividad('").Append(Cifrar("Id=" + a.paa_id)).Append("','").Append(clave).Append("',false)\">")
+             .Append("<i class=\"mdi ").Append(editable ? "mdi-pencil-outline" : "mdi-eye-outline").Append("\"></i></a></span>")
+             .Append("</div>");
+        }
+        s.Append("</div></div>");
+        return s.ToString();
     }
 
     private string Marcas(bool parada, bool overhaul)
@@ -859,6 +978,23 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         });
     }
 
+    /// <summary>
+    /// El id de la version en borrador del plan, si tiene una. Null si no.
+    ///
+    /// Es la misma consulta que usa Publicar, que ya buscaba el borrador por
+    /// su estado: un plan tiene a lo sumo un borrador abierto.
+    /// </summary>
+    private int? VersionBorrador()
+    {
+        List<PlanVersion> lista = new PlanVersionController().GetPlanVersiones(
+            new PlanVersion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_plan = Id })
+            ?? new List<PlanVersion>();
+
+        PlanVersion borrador = lista.Find(v => v.pmv_plan_version_estado == 1);
+
+        return borrador == null ? (int?)null : borrador.pmv_id;
+    }
+
     protected void lnkNuevaVersion_Click(object sender, EventArgs e)
     {
         hdnSeccion.Value = "configuracion";
@@ -931,9 +1067,48 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     }
 
     /// <summary>El mismo filtro para la grilla y para la descarga.</summary>
+    /// <summary>La planta elegida en la cabecera, o null para todas.</summary>
+    private int? PlantaFiltro
+    {
+        get
+        {
+            int p;
+            return int.TryParse(ddlPlanta.SelectedValue, out p) && p > 0 ? (int?)p : null;
+        }
+    }
+
+    /// <summary>
+    /// El combo de planta del centro, igual al de Planificación: todas las
+    /// plantas del cliente. Si el plan está acotado a una planta, el combo
+    /// queda fijo en ella y deshabilitado —se ve a qué planta pertenece, pero
+    /// no hay otra que elegir—. Se rearma en cada carga conservando lo elegido.
+    /// </summary>
+    private void Plantas(PlanMantenimiento plan, List<PlanActivo> equipos)
+    {
+        string elegida = ddlPlanta.SelectedValue;
+        ddlPlanta.Items.Clear();
+        ddlPlanta.Items.Add(new ListItem("Todas las plantas", "0"));
+
+        foreach (ClienteInstalacion ci in new ClienteInstalacionController().GetClienteInstalaciones(
+                     new ClienteInstalacion { cin_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = "1" }) ?? new List<ClienteInstalacion>())
+            ddlPlanta.Items.Add(new ListItem(ci.cin_nombre, ci.cin_id.ToString()));
+
+        bool acotado = plan.pma_cliente_instalacion != null;
+        if (acotado) elegida = plan.pma_cliente_instalacion.Value.ToString();
+
+        ListItem it = ddlPlanta.Items.FindByValue(elegida ?? "0");
+        if (it != null) it.Selected = true;
+
+        ddlPlanta.Enabled = !acotado;
+        ddlPlanta.ToolTip = acotado ? "El plan está acotado a esta planta." : "Filtra indicadores, resumen, equipos y calendario.";
+    }
+
+    /// <summary>Page_PreRender recarga todo con la planta nueva; la pestaña abierta viaja en hdnSeccion.</summary>
+    protected void ddlPlanta_SelectedIndexChanged(object sender, EventArgs e) { }
+
     private PlanOcurrencia FiltroCalendario()
     {
-        PlanOcurrencia f = new PlanOcurrencia { filtro_plan = Id };
+        PlanOcurrencia f = new PlanOcurrencia { filtro_plan = Id, filtro_instalacion = PlantaFiltro };
 
         int anio, mes;
         if (!int.TryParse(cboAnio.SelectedValue, out anio) || anio < 2000) anio = global::SitioBase.Hora.Ahora.Year;
@@ -1008,6 +1183,48 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
         }
 
         litResumenCal.Text = ResumenCalendario(lista);
+        litCumplimiento.Text = Cumplimiento();
+    }
+
+    /// <summary>
+    /// El cumplimiento del plan, medido contra la fecha ORIGINAL (HU-086 #2).
+    ///
+    /// Es la regla que le da sentido a poder reprogramar: si reprogramar
+    /// corriera tambien la vara, el indicador se dejaria en 100% moviendo
+    /// fechas y medir dejaria de servir para algo. Cuando hay ocurrencias
+    /// reprogramadas se muestra ADEMAS lo que marcaria contra la fecha nueva,
+    /// que es la forma de que la regla se vea en vez de solo estar escrita.
+    /// </summary>
+    private string Cumplimiento()
+    {
+        PlanCumplimiento c = new PlanOcurrenciaController().GetCumplimiento(Id, null, null);
+
+        if (c == null || c.programadas == 0) return "";
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-ot-nota\">");
+
+        s.Append("<i class=\"mdi mdi-target-variant\"></i><span>")
+         .Append("Cumplimiento del plan: <strong>").Append(Porcentaje(c.cumplimiento)).Append("</strong> ")
+         .Append("(").Append(c.a_tiempo_original).Append(" a tiempo de ").Append(c.programadas)
+         .Append(c.programadas == 1 ? " programada" : " programadas").Append(" este año). ")
+         .Append("Se mide contra la <strong>fecha programada original</strong>, no contra la reprogramada.");
+
+        if (c.reprogramadas > 0)
+        {
+            s.Append(" Hay ").Append(c.reprogramadas)
+             .Append(c.reprogramadas == 1 ? " ocurrencia reprogramada" : " ocurrencias reprogramadas")
+             .Append(": medido contra la fecha nueva marcaría ")
+             .Append(Porcentaje(c.cumplimiento_vigente)).Append(".");
+        }
+
+        s.Append("</span></div>");
+
+        return s.ToString();
+    }
+
+    private static string Porcentaje(decimal valor)
+    {
+        return valor.ToString("0.#", CultureInfo.InvariantCulture).Replace('.', ',') + "%";
     }
 
     /// <summary>

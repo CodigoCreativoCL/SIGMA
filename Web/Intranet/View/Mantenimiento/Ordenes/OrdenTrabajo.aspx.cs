@@ -85,7 +85,15 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+
+            // Qué se firma: aceptación, ejecución o validación (HU-118).
+            foreach (ValidacionTipo t in new OrdenTrabajoValidacionController().GetTipos())
+                rblFirmaTipo.Items.Add(new ListItem(t.nombre, t.id.ToString()));
+            if (rblFirmaTipo.Items.Count > 0) rblFirmaTipo.Items[0].Selected = true;
+            hdnFirmaUuid.Value = Guid.NewGuid().ToString();
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -351,8 +359,13 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
         pnlFormIndisp.Visible = Id > 0 && Token.Puede("REGISTRAR FALLA") && Orden().otr_activo != null && !cerrada;
 
         bool puedeCerrar = Id > 0 && Token.PuedeFuncion("Cerrar") && !cerrada;
+        bool puedeFirmar = Id > 0 && Token.Puede("VALIDAR ORDEN TRABAJO");
         pnlFormCierre.Visible = Id > 0;
-        pnlFirma.Visible = puedeCerrar;
+        // Un solo cuadro de firma: se ve si se puede firmar o cerrar, y cada
+        // acción aparece solo para quien la puede hacer.
+        pnlFirma.Visible = puedeCerrar || puedeFirmar;
+        pnlFirmaDatos.Visible = btnRegistrarFirma.Visible = puedeFirmar;
+        pnlCerrarAcc.Visible = btnCerrarOT.Visible = puedeCerrar;
         txtResultadoCierre.ReadOnly = !puedeCerrar;
         cboMotivoCierre.ReadOnly = !puedeCerrar;
     }
@@ -828,7 +841,11 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             estado = EstadoPaso(p),
             clase = ClasePaso(Convert.ToString(p["RESULTADO_CODIGO"])),
             icono = IconoPaso(Convert.ToString(p["RESULTADO_CODIGO"])),
-            elegido = i == PasoElegido
+            elegido = i == PasoElegido,
+            /* Viene de paa_obligatoria de la actividad del plan, copiada por
+               INS_ORDEN_TRABAJO_OCURRENCIA. Es lo que despues le permite al
+               tecnico declarar "no aplica" sin dejar la orden incompleta. */
+            opcional = p["otp_obligatorio"] != null && !Convert.ToBoolean(p["otp_obligatorio"])
         }).ToList();
         rptPasos.DataBind();
 
@@ -912,6 +929,18 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
          .Append(p["otp_orden"]).Append("</span><h3>").Append(Server.HtmlEncode(Convert.ToString(p["otp_nombre"])))
          .Append("</h3><span class=\"sg-ot-card-acc sg-ot-estado ").Append(ClasePaso(cod)).Append("\"><i class=\"mdi ")
          .Append(IconoPaso(cod)).Append("\"></i>").Append(Server.HtmlEncode(EstadoPaso(p))).Append("</span></header>");
+
+        /* Obligatorio o no, dicho con palabras y no con un icono: el tecnico
+           tiene que saber si puede declararlo "no aplica" ANTES de decidir
+           que hace con el equipo detenido. */
+        bool obligatorio = p["otp_obligatorio"] == null || Convert.ToBoolean(p["otp_obligatorio"]);
+
+        s.Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi ")
+         .Append(obligatorio ? "mdi-asterisk" : "mdi-slash-forward").Append("\"></i><span>")
+         .Append(obligatorio
+                ? "Paso <strong>obligatorio</strong>: la orden no se cierra sin su resultado."
+                : "Paso <strong>opcional</strong>: se puede declarar «no aplica» en terreno y la orden igual se cierra.")
+         .Append("</span></div>");
 
         /* DOS COSAS DISTINTAS QUE SE VEIAN IGUAL
 
@@ -1378,6 +1407,7 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
     private void PintarCierre(OrdenTrabajo o)
     {
         litUsuarioCierre.Text = Server.HtmlEncode(SitioBase.Session.UsuarioNombre());
+        PintarFirmas(o);
 
         List<Dictionary<string, object>> pasos = Pasos();
         int resueltos = pasos.Count(Resuelto);
@@ -1418,6 +1448,87 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
             Server.HtmlEncode(o.cierre_usuario_nombre) + "</p></div></header>" +
             "<p class=\"sg-ot-texto\"><strong>" + Server.HtmlEncode(o.cierre_motivo_nombre) + "</strong>" +
             (string.IsNullOrEmpty(o.otr_resultado) ? "" : "<br/>" + Server.HtmlEncode(o.otr_resultado)) + "</p></div>";
+    }
+
+    /// <summary>
+    /// HU-118: registra la firma elegida con el mismo trazo del cuadro. Escribe
+    /// por el SP de la app (idempotente por uuid) a través del controller.
+    /// </summary>
+    protected void btnRegistrarFirma_Click(object sender, EventArgs e)
+    {
+        Pestana("cierre");
+        try
+        {
+            if (string.IsNullOrEmpty(rblFirmaTipo.SelectedValue)) throw new Exception("Indique qué firma.");
+            if (rblFirmaResultado.SelectedValue == "RECHAZADO" && string.IsNullOrWhiteSpace(txtFirmaObservacion.Text))
+                throw new Exception("Indique el motivo del rechazo en la observación.");
+            if (string.IsNullOrEmpty(hdnFirma.Value)) throw new Exception("Dibuje su firma antes de registrarla.");
+
+            Respuesta r = new OrdenTrabajoValidacionController().Registrar(
+                Id, int.Parse(rblFirmaTipo.SelectedValue), rblFirmaResultado.SelectedValue,
+                txtFirmaObservacion.Text, hdnFirma.Value, new Guid(hdnFirmaUuid.Value));
+
+            if (!r.error)
+            {
+                hdnFirma.Value = "";
+                txtFirmaObservacion.Text = "";
+                hdnFirmaUuid.Value = Guid.NewGuid().ToString();
+            }
+            Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+        }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
+    }
+
+    /// <summary>
+    /// HU-118: el historial de firmas y la condición derivada. «Validada» no
+    /// es un estado guardado: se calcula al leer, mirando la ÚLTIMA firma de
+    /// validación (un rechazo seguido de una aprobación deja la orden
+    /// validada; al revés, no).
+    /// </summary>
+    private void PintarFirmas(OrdenTrabajo o)
+    {
+        List<OrdenTrabajoValidacion> firmas = new OrdenTrabajoValidacionController().GetValidaciones(Id);
+
+        OrdenTrabajoValidacion ultimaValidacion = firmas.FirstOrDefault(f => f.tipo_codigo == "VALIDACION");
+        string condicion = ultimaValidacion == null
+            ? "<span class=\"sg-ot-chip es-neutro\"><i class=\"mdi mdi-shield-outline\"></i>Sin validar</span>"
+            : ultimaValidacion.aprobada
+                ? "<span class=\"sg-ot-chip es-ok\"><i class=\"mdi mdi-shield-check-outline\"></i>Validada</span>"
+                : "<span class=\"sg-ot-chip es-error\"><i class=\"mdi mdi-shield-alert-outline\"></i>Validación rechazada</span>";
+
+        StringBuilder s = new StringBuilder("<div class=\"sg-ot-firmas-cond\">").Append(condicion);
+        foreach (string tipo in new[] { "ACEPTACION", "EJECUCION" })
+        {
+            OrdenTrabajoValidacion u = firmas.FirstOrDefault(f => f.tipo_codigo == tipo);
+            if (u != null)
+                s.Append("<span class=\"sg-ot-chip ").Append(u.aprobada ? "es-ok" : "es-error").Append("\">")
+                 .Append(Server.HtmlEncode(u.tipo_nombre)).Append(u.aprobada ? " aprobada" : " rechazada").Append("</span>");
+        }
+        s.Append("</div>");
+
+        if (firmas.Count == 0)
+        {
+            s.Append("<p class=\"sg-ot-vacio-txt\">Todavía no hay firmas registradas en esta orden.</p>");
+            litFirmas.Text = s.ToString();
+            return;
+        }
+
+        s.Append("<div class=\"sg-ot-firmas-lista\">");
+        foreach (OrdenTrabajoValidacion f in firmas)
+        {
+            s.Append("<div class=\"sg-ot-firma-fila\">")
+             .Append("<span class=\"c-tipo\"><strong>").Append(Server.HtmlEncode(f.tipo_nombre)).Append("</strong>")
+             .Append("<span class=\"sg-ot-chip ").Append(f.aprobada ? "es-ok" : "es-error").Append("\">").Append(f.aprobada ? "Aprobado" : "Rechazado").Append("</span></span>")
+             .Append("<span class=\"c-quien\"><i class=\"mdi mdi-account-outline\"></i>").Append(Server.HtmlEncode(f.usuario_nombre))
+             .Append("<small>").Append(f.fecha.ToString("dd MMM yyyy · HH:mm")).Append("</small></span>")
+             .Append("<span class=\"c-obs\">").Append(string.IsNullOrEmpty(f.observacion) ? "<span class=\"sg-ot-vacio-txt\">Sin observación</span>" : Server.HtmlEncode(f.observacion)).Append("</span>")
+             .Append("<span class=\"c-firma\">")
+             .Append(f.archivo_firma == null ? "<span class=\"sg-ot-vacio-txt\">—</span>"
+                     : "<a href=\"" + UrlArchivo(f.archivo_firma.Value) + "\" target=\"_blank\" rel=\"noopener\" title=\"Ver firma\"><img src=\"" + UrlArchivo(f.archivo_firma.Value) + "\" alt=\"Firma de " + Server.HtmlEncode(f.usuario_nombre) + "\" /></a>")
+             .Append("</span></div>");
+        }
+        s.Append("</div>");
+        litFirmas.Text = s.ToString();
     }
 
     private string Requisito(bool cumple, string titulo, string detalle)

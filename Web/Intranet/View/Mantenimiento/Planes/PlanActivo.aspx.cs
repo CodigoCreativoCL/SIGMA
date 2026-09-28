@@ -3,6 +3,7 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Text;
 using System.Web.UI;
 using Telerik.Web.UI;
 
@@ -114,6 +115,92 @@ public partial class View_Mantenimiento_Planes_PlanActivo : System.Web.UI.Page
     protected void cboActivo_SelectedIndexChanged(object sender, EventArgs e) { }
 
     /// <summary>
+    /// El plan vuelve a quedar elegido en CADA carga, no solo en la primera.
+    ///
+    /// Cuando se entra desde el centro del plan, el combo va fijo con
+    /// Enabled = false para que nadie lo cambie... y un control deshabilitado
+    /// NO viaja en el postback: al elegir el equipo -que sí postea- el plan se
+    /// perdía y Guardar rechazaba por «Plan(*)» sin que el usuario hubiera
+    /// tocado ese campo. CargarDatos() no alcanza porque se salta en los
+    /// postbacks, que es justo cuando hace falta.
+    /// </summary>
+    private void FijarPlan()
+    {
+        if (Plan > 0) Seleccionar(cboPlan, Plan.ToString());
+    }
+
+    /// <summary>
+    /// Si el equipo elegido ya está cubierto por otro plan vigente (HU-083 #3).
+    ///
+    /// ES UN AVISO Y NO UN RECHAZO, y por eso vive acá y no dentro del SP:
+    /// una validación en el INS solo puede dejar pasar o rechazar, y lo que
+    /// el criterio pide es una tercera cosa —mostrar y seguir—. Se consulta
+    /// al elegir el equipo, que es cuando el dato sirve para decidir, y no al
+    /// apretar Guardar, que es cuando ya se decidió.
+    /// </summary>
+    private void Cobertura()
+    {
+        pnlCobertura.Visible = false;
+
+        int activo;
+        if (!int.TryParse(cboActivo.SelectedValue, out activo) || activo <= 0) return;
+
+        int plan;
+        if (!int.TryParse(cboPlan.SelectedValue, out plan)) plan = 0;
+
+        List<PlanCobertura> otros = new PlanActivoController().GetCobertura(activo, plan);
+
+        if (otros == null || otros.Count == 0) return;
+
+        StringBuilder s = new StringBuilder();
+
+        s.Append("<span class=\"sigma-modal-ayuda\" style=\"display:block; margin-bottom:8px;\">")
+         .Append(otros.Count == 1
+                ? "Hay <strong>otro plan vigente</strong> que ya incluye este equipo. "
+                : "Hay <strong>" + otros.Count + " planes vigentes</strong> que ya incluyen este equipo. ")
+         .Append("No es un impedimento —un equipo puede tener un plan de lubricación y otro de inspección—, ")
+         .Append("pero si los dos hacen lo mismo se va a generar trabajo repetido.</span>");
+
+        s.Append("<table class=\"sigma-tabla-simple\" style=\"width:100%; font-size:13px;\">")
+         .Append("<thead><tr><th style=\"text-align:left;\">Plan</th><th style=\"text-align:left;\">Versión</th>")
+         .Append("<th style=\"text-align:left;\">Tipo</th><th style=\"text-align:right;\">Hitos</th>")
+         .Append("<th style=\"text-align:right;\">Corriendo</th></tr></thead><tbody>");
+
+        foreach (PlanCobertura c in otros)
+        {
+            s.Append("<tr><td><strong>").Append(Server.HtmlEncode(c.plan_codigo)).Append("</strong> ")
+             .Append(Server.HtmlEncode(c.plan_nombre)).Append("</td>");
+
+            s.Append("<td>v").Append(c.version_numero).Append(" ")
+             .Append(Server.HtmlEncode((c.version_estado_nombre ?? "").ToLower())).Append("</td>");
+
+            /* El mismo tipo de activo es el caso que el criterio nombra: dos
+               planes para la misma familia de equipos es donde se pisan. */
+            s.Append("<td>").Append(string.IsNullOrEmpty(c.tipo_nombre)
+                    ? "<span class=\"sigma-inv-vacio\">cualquiera</span>"
+                    : Server.HtmlEncode(c.tipo_nombre))
+             .Append(c.mismo_tipo ? " <span class=\"grid-estado-chip is-advertencia\">mismo tipo</span>" : "")
+             .Append("</td>");
+
+            s.Append("<td style=\"text-align:right;\">").Append(c.hitos).Append("</td>");
+
+            /* Lo que de verdad se pisa: dos planes que se solapan en el papel
+               pero no generan nada no son el mismo problema que dos que ya
+               tienen mantenciones corriendo sobre el mismo equipo. */
+            s.Append("<td style=\"text-align:right;\">")
+             .Append(c.ocurrencias_abiertas == 0
+                    ? "<span class=\"sigma-inv-vacio\">nada</span>"
+                    : "<span class=\"grid-estado-chip is-advertencia\">" + c.ocurrencias_abiertas + "</span>")
+             .Append("</td></tr>");
+        }
+
+        s.Append("</tbody></table>");
+
+        litCobertura.Text = s.ToString();
+        pnlCobertura.Visible = true;
+    }
+
+    /// <summary>
     /// Componente y medidor del equipo elegido, preservando la seleccion
     /// entre postbacks. Sin equipo, los combos van vacios.
     /// </summary>
@@ -154,7 +241,9 @@ public partial class View_Mantenimiento_Planes_PlanActivo : System.Web.UI.Page
     protected void Page_PreRender(object sender, EventArgs e)
     {
         CargarDatos();
+        FijarPlan();            // ANTES de lo demas: un combo deshabilitado no viaja
         CargarDependientes();   // depende del equipo ya seleccionado por CargarDatos
+        Cobertura();            // y del mismo equipo: que otro plan vigente lo cubre
         Bloqueo();
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();

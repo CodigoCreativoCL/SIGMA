@@ -30,6 +30,22 @@ public partial class View_Mantenimiento_Planes_PlanOcurrenciaReprogramar : Syste
     protected void Page_PreRender(object sender, EventArgs e)
     {
         Cargar();
+
+        /* POSTBACK COMPLETO, NO ASINCRONO, Y POR UNA RAZON CONCRETA
+
+           «Nueva fecha» es un <asp:TextBox TextMode="Date">, o sea un
+           <input type="date">. El serializador de formularios de ASP.NET AJAX
+           -el que arma el postback parcial de un UpdatePanel- solo conoce los
+           tipos de input clasicos y SALTA los tipos HTML5: la fecha nunca
+           llegaba al servidor. El sintoma era «Indique la nueva fecha» con la
+           fecha escrita en la pantalla, que es de los mas desconcertantes que
+           hay.
+
+           Con el boton registrado, el envio es del formulario de verdad y
+           viajan todos los campos. Es la misma linea que tienen las otras
+           fichas del modulo, y esta es la razon por la que la tienen. */
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnReprogramar);
+
         udPanel.Update();
     }
 

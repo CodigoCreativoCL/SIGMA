@@ -183,6 +183,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             rdbSi.Checked = x.aco_habilitado;
             rdbNo.Checked = !x.aco_habilitado;
 
+            /* La placa se lee con su propio SP: el SEL del componente lo
+               comparte la app y no trae estas tres columnas. */
+            ActivoComponente placa = c.GetPlaca(Id, SitioBase.Session.ClienteId());
+            txtNumeroSerie.Text = placa.aco_numero_serie;
+            txtFabricante.Text = placa.aco_fabricante;
+            txtModelo.Text = placa.aco_modelo;
+
             wucAuditoria.Mostrar(x.usuario_creacion_nombre, x.aco_fecha_creacion,
                                  x.usuario_actualizacion_nombre, x.aco_fecha_actualizacion);
 
@@ -229,6 +236,9 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
+        txtNumeroSerie.ReadOnly = !puedeEditar;
+        txtFabricante.ReadOnly = !puedeEditar;
+        txtModelo.ReadOnly = !puedeEditar;
         calInstalacion.Enabled = puedeEditar;
         cboTipo.ReadOnly = !puedeEditar;
         cboEstado.ReadOnly = !puedeEditar;
@@ -283,7 +293,20 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                    anula lo guardado, solo avisa. */
                 string avisoImagen = GuardarImagen(Id);
 
-                Tools.tools.ClientAlert(r.detalle + avisoImagen, "ok", true);
+                /* La placa va DESPUES, por lo mismo que la imagen: al crear,
+                   el UPDATE de las tres columnas necesita el id que acaba de
+                   devolver el SP. Se guarda siempre, tambien vacia: dejar los
+                   campos en blanco es una forma de corregir lo que estaba mal. */
+                ActivoComponente placa = new ActivoComponente();
+                placa.aco_id = Id;
+                placa.aco_numero_serie = txtNumeroSerie.Text.Trim();
+                placa.aco_fabricante = txtFabricante.Text.Trim();
+                placa.aco_modelo = txtModelo.Text.Trim();
+                Respuesta rp = c.GuardarPlaca(placa);
+
+                string avisoPlaca = rp.error ? " La placa no se pudo guardar: " + rp.detalle : "";
+
+                Tools.tools.ClientAlert(r.detalle + avisoImagen + avisoPlaca, "ok", true);
             }
             else
             {

@@ -252,6 +252,90 @@ namespace SitioBase.Controller
             }
             return r;
         }
+
+        /// <summary>
+        /// Lee la placa de una pieza: serie, fabricante y modelo.
+        ///
+        /// Va aparte del GetComponente porque el SEL del componente lo
+        /// comparte la app y no devuelve estas tres columnas. Un SP chico para
+        /// tres campos cuesta menos que cambiarle el contrato a la app.
+        /// </summary>
+        public ActivoComponente GetPlaca(int componente, int cliente)
+        {
+            ActivoComponente item = new ActivoComponente();
+
+            if (!Token.TokenSeguridad()) return item;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_COMPONENTE_PLACA";
+                cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                cmd.Parameters.AddWithValue("@COMPONENTE", componente);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    if (dr.Read())
+                    {
+                        item.aco_id = int.Parse(dr["COMPONENTE_ID"].ToString());
+                        item.aco_numero_serie = dr["NUMERO_SERIE"].ToString();
+                        item.aco_fabricante = dr["FABRICANTE"].ToString();
+                        item.aco_modelo = dr["MODELO"].ToString();
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return item;
+        }
+
+        /// <summary>
+        /// Guarda la placa. Se llama DESPUES de INS o de UPD, con el id que
+        /// devolvio el SP: al crear, la pieza todavia no existe cuando se
+        /// arma el formulario.
+        /// </summary>
+        public Respuesta GuardarPlaca(ActivoComponente e)
+        {
+            Respuesta r = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+                try
+                {
+                    cmd = Conexion.GetCommand("UPS_ACTIVO_COMPONENTE_PLACA");
+                    cmd.Parameters.AddWithValue("@ID", e.aco_id);
+                    cmd.Parameters.AddWithValue("@NUMERO_SERIE", (object)e.aco_numero_serie ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@FABRICANTE", (object)e.aco_fabricante ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@MODELO", (object)e.aco_modelo ?? DBNull.Value);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = e.aco_id; r.detalle = "Placa guardada."; r.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
+                }
+            }
+            else
+            {
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
+            }
+
+            return r;
+        }
     }
 
 

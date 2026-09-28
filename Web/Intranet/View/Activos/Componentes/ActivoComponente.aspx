@@ -128,6 +128,27 @@
         </div>
     </div>
 
+    <%-- ============ PLACA DE LA PIEZA ============ --%>
+    <div class="sigma-form-seccion">
+        <div class="titulo"><i class="mdi mdi-tag-text-outline"></i>Placa de la pieza</div>
+        <div class="sigma-modal-grid">
+            <div class="sigma-modal-field is-chico">
+                <label>Número de serie</label>
+                <WebControls:TextBox2 ID="txtNumeroSerie" runat="server" MaxLength="100" />
+                <span class="sigma-modal-ayuda">El de la placa de la pieza, no el del activo.</span>
+            </div>
+            <div class="sigma-modal-field is-medio">
+                <label>Fabricante</label>
+                <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="150" />
+            </div>
+            <div class="sigma-modal-field is-medio">
+                <label>Modelo</label>
+                <WebControls:TextBox2 ID="txtModelo" runat="server" MaxLength="150" />
+                <span class="sigma-modal-ayuda">Con esto y el fabricante se pide el repuesto sin abrir la foto.</span>
+            </div>
+        </div>
+    </div>
+
     <asp:Panel ID="pnlHistorialEstado" runat="server" Visible="false" style="margin:12px 0;">
         <h4 style="margin:0 0 6px;">Historial de estados</h4>
         <table class="sigma-tabla-simple" style="width:100%; font-size:13px;">
