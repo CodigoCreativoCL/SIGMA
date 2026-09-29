@@ -123,3 +123,29 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
 - **CA-3** (descartar con motivo): verificado. Motivo < 10 caracteres se rechaza;
   con motivo válido se registra el descarte con usuario y fecha.
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-096.docx`.
+
+---
+
+## HU-094 — Programar un checklist recurrente
+
+**Estado:** cerrada (generador construido + pruebas). Verificada el 28-09-2026.
+
+- **Programación** (`ChecklistProgramacion.aspx` / `ChecklistProgramacions.aspx`):
+  CRUD de `Checklist_Programacion` (pauta + recurrencia + objetivo activo/área +
+  responsable). CA-3 lo valida el SP `INS_CHECKLIST_PROGRAMACION`
+  («Indique un objetivo: un activo o un área»).
+- **Generador construido en esta iteración (faltaba):** no existía forma de
+  generar las ocurrencias que piden CA-1/CA-2. Se agregó:
+  - **SP `GEN_CHECKLIST_OCURRENCIAS`** (`BD/304_GEN_CHECKLIST_OCURRENCIAS.sql`):
+    genera las ocurrencias por recurrencia (reusa `FNC_PROGRAMACION_FECHAS`),
+    con el objetivo (activo o área) y el responsable de la programación; cada
+    ocurrencia queda asignada al responsable (`Checklist_Ocurrencia_Asignacion`).
+    Idempotente.
+  - **`ChecklistProgramacionController.GenerarOcurrencias`** + botón
+    **«Generar ocurrencias»** en el listado.
+- **CA-1** (activo → ocurrencia diaria asignada): verificado (91 ocurrencias
+  diarias sobre ACT-35, asignadas al responsable).
+- **CA-2** (área → ocurrencia para el área): verificado (91 ocurrencias diarias
+  con `coc_instalacion_area`).
+- **CA-3** (sin objetivo → rechazo): verificado.
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-094.docx`.
