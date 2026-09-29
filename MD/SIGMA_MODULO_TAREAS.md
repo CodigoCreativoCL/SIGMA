@@ -101,3 +101,25 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   conversación. Documentados con comentarios XML de Swagger (summary/response)
   en `API/Controllers/TareasController.cs`.
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-104.docx`.
+
+---
+
+## HU-096 — Bandeja de hallazgos de checklist
+
+**Estado:** cerrada (pruebas + corrección). Verificada el 28-09-2026.
+
+- **Bandeja** (`ChecklistHallazgos.aspx`, Centro de Mantenimiento → Hallazgos de
+  inspección): lista los hallazgos pendientes (SP `SEL_CHECKLIST_HALLAZGO`) con
+  activo, severidad, respuesta/valor, técnico y estado. Acciones: **Generar
+  orden de trabajo** (`GenerarOrden`) y **Descartar con motivo** (`Descartar`).
+- **Defecto encontrado y corregido (CA-1):** el SP ordenaba solo por
+  `cha_fecha_creacion DESC`, sin severidad. Se corrigió a
+  `cha_severidad DESC, cha_fecha_creacion ASC` (más severo y más antiguo
+  primero); mismo criterio en el export a Excel `RPT_CHECKLIST_HALLAZGO_EXCEL`.
+  Archivo: `BD/221_CHECKLIST_HALLAZGO.sql`.
+- **CA-2** (convertir en OT): verificado. La OT se crea con origen «Hallazgo de
+  checklist» (`otr_orden_trabajo_origen = 4`) y enlazada (`otr_checklist_hallazgo`);
+  el hallazgo queda Procesado y sale de la bandeja.
+- **CA-3** (descartar con motivo): verificado. Motivo < 10 caracteres se rechaza;
+  con motivo válido se registra el descarte con usuario y fecha.
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-096.docx`.
