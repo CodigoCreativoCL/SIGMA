@@ -149,3 +149,26 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   con `coc_instalacion_area`).
 - **CA-3** (sin objetivo → rechazo): verificado.
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-094.docx`.
+
+---
+
+## HU-097 — Consultar el historial de ejecuciones de un checklist
+
+**Estado:** cerrada (desarrollo + pruebas). Verificada el 29-09-2026.
+
+- **Pantalla nueva** `ChecklistHistorial.aspx` (solo lectura, Centro de
+  Mantenimiento → Historial de ejecuciones): filtro por pauta y estado, grilla
+  de ejecuciones y detalle de una ejecución.
+- **Backend construido en esta iteración:**
+  - **SP `SEL_CHECKLIST_HISTORIAL`** + índice `IX_Checklist_Ejecucion_Cliente_Version`
+    (`BD/306`): lista las ejecuciones de una pauta. Es por EJECUCIÓN, así ve
+    también las ad-hoc que `SEL_CHECKLIST_OCURRENCIA` no muestra.
+  - **`ChecklistCentroController.GetHistorial`** (+ modelo `ChecklistEjecucionHist`).
+    El detalle reutiliza `GetRespuestas`/`GetEvidencias` (SP existentes).
+  - **Permiso `VER HISTORIAL CHECKLIST`** + fila en `Menus` (`BD/305`).
+- **CA-1** (historial por plantilla): verificado. La grilla muestra fecha,
+  ejecutor, activo, versión, no conformidades, avance y estado.
+- **CA-2** (detalle de una ejecución): verificado. Cada pregunta de la versión
+  ejecutada con su respuesta, severidad (Conforme / Fuera de rango) y sus
+  fotografías, agrupadas por sección.
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-097.docx`.
