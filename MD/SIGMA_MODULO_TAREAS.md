@@ -196,3 +196,31 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   de respuesta (`API_UPS_CHECKLIST_RESPUESTA`) crea un `Checklist_Hallazgo`
   pendiente y no crea una orden por sí solo (la OT se genera aparte, HU-096).
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-091.docx`.
+
+---
+
+## HU-092 — Definir dependencias entre ítems
+
+**Estado:** cerrada (desarrollo + pruebas). Verificada el 29-09-2026.
+
+- **Mantenedor construido** (no existía forma web de definir dependencias):
+  pantalla `ChecklistItemDependencias.aspx` (listado) + `ChecklistItemDependencia.aspx`
+  (ficha), controlador `ChecklistItemDependenciaController` y modelo. La ficha
+  define el ítem dependiente, la acción (mostrar / ocultar / requerir / bloquear),
+  el ítem de condición, el operador (igual, distinto, mayor, mayor o igual, menor,
+  menor o igual, entre, contiene) y el valor.
+- **Backend:** SP `SEL/INS/UPD/DEL_CHECKLIST_ITEM_DEPENDENCIA` (`BD/309`). El alta
+  valida que ambos ítems sean de la MISMA pauta, que un ítem no dependa de sí mismo
+  y que no exista la dependencia inversa (evita el ciclo directo). El combo de
+  ítems reutiliza `SEL_CHECKLIST_ITEM_LISTA` (HU-091). Permisos `VER DEPENDENCIAS`
+  / `CREAR EDITAR DEPENDENCIAS` + menú bajo «Centro de Mantenimiento» (`BD/310`).
+- **CA-1** (la respuesta condiciona a otro ítem): el mantenedor define la
+  dependencia (ítem, condición, operador, valor, acción); la app la aplica en
+  terreno al responder (muestra / oculta / requiere / bloquea el ítem dependiente).
+- **CA-2** (sin dependencias circulares): verificado. `INS_CHECKLIST_ITEM_DEPENDENCIA`
+  rechaza que un ítem dependa de sí mismo («1.- UN ITEM NO PUEDE DEPENDER DE SI
+  MISMO.»), la dependencia inversa (ciclo directo) y las de distinta pauta.
+- **CA-3** (ítem oculto y obligatorio no bloquea): un ítem oculto por una
+  dependencia no participa de la obligatoriedad y queda como «no aplicable» al
+  cerrar la pauta (enforcement en terreno).
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-092.docx`.
