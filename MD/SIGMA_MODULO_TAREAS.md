@@ -172,3 +172,27 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   ejecutada con su respuesta, severidad (Conforme / Fuera de rango) y sus
   fotografías, agrupadas por sección.
 - Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-097.docx`.
+
+---
+
+## HU-091 — Definir los umbrales y las acciones de un ítem
+
+**Estado:** cerrada (desarrollo + pruebas). Verificada el 29-09-2026.
+
+- **Mantenedor construido** (no existía forma web de definir umbrales): pantalla
+  `ChecklistItemValidacions.aspx` (listado) + `ChecklistItemValidacion.aspx`
+  (ficha), controlador `ChecklistItemValidacionController` y modelo.
+- **Backend:** SP `SEL/INS/UPD/DEL_CHECKLIST_ITEM_VALIDACION` + `SEL_CHECKLIST_ITEM_LISTA`
+  (`BD/307`). Una validación por ítem (índice `UX_CIV_ITEM`), con umbrales
+  coherentes. Permisos `VER VALIDACIONES` / `CREAR EDITAR VALIDACIONES` + menú
+  bajo «Centro de Mantenimiento» (`BD/308`).
+- **CA-1** (umbrales y severidad): verificado. Con mínimo 60 / advertencia 70 /
+  crítico 80 / máximo 90, `FNC_CHECKLIST_SEVERIDAD` clasifica 84 → CRÍTICO
+  (72 → ADVERTENCIA, 65 → NORMAL, 95 y 55 → CRÍTICO).
+- **CA-2 / CA-3** (comentario / fotografía obligatorios): el mantenedor define
+  `civ_requiere_comentario_fuera_rango` / `civ_requiere_evidencia_fuera_rango`;
+  la app los lee (`API_SEL_CHECKLIST`) y los exige en terreno.
+- **CA-4** (genera hallazgo): el mantenedor define `civ_genera_hallazgo`; el alta
+  de respuesta (`API_UPS_CHECKLIST_RESPUESTA`) crea un `Checklist_Hallazgo`
+  pendiente y no crea una orden por sí solo (la OT se genera aparte, HU-096).
+- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-091.docx`.
