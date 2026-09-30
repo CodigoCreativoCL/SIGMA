@@ -3,24 +3,46 @@
 <%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-pauta360.css") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
-        function refresh() { __doPostBack("<%=Grid.ClientID %>", '') }
+        function refresh() { __doPostBack('<%=lnkRecargar.UniqueID %>', ''); }
+
+        /* Seleccionar un hallazgo muestra su detalle a la derecha (sin postback). */
+        function pcHzSel(id) {
+            id = String(id);
+            var r = document.querySelectorAll('.pc-hz-fila');
+            for (var i = 0; i < r.length; i++) r[i].classList.toggle('es-sel', r[i].getAttribute('data-hz') === id);
+            var d = document.querySelectorAll('.pc-hz-det');
+            for (var j = 0; j < d.length; j++) d[j].classList.toggle('es-sel', d[j].getAttribute('data-hzdet') === id);
+            return false;
+        }
+        /* Generar OT para un hallazgo (postback). */
+        function pcHzOT(id) {
+            if (!confirm('¿Generar una orden de trabajo por este hallazgo? Queda enlazado y sale de la bandeja.')) return false;
+            document.getElementById('hdnAccionId').value = id;
+            __doPostBack('<%=btnGenerarOT.UniqueID %>', '');
+            return false;
+        }
+        /* Descartar con motivo (mínimo 10 caracteres). */
+        function pcHzDesc(id) {
+            var m = prompt('Motivo del descarte (mínimo 10 caracteres):', '');
+            if (m === null) return false;
+            if (m.trim().length < 10) { alert('El motivo debe tener al menos 10 caracteres.'); return false; }
+            document.getElementById('hdnAccionId').value = id;
+            document.getElementById('hdnMotivo').value = m.trim();
+            __doPostBack('<%=btnDescartar.UniqueID %>', '');
+            return false;
+        }
     </script>
 </asp:Content>
 
-<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
-    Mantenimiento
-</asp:Content>
-
-<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">
-    Hallazgos de inspección
-</asp:Content>
-
+<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Mantenimiento</asp:Content>
+<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Hallazgos de inspección</asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Lo que las pautas encontraron en terreno: respuestas fuera de rango y no conformidades. Solo lectura; la orden de trabajo se abre desde el hallazgo cuando corresponde.
+    Bandeja transversal de todas las pautas de inspección.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
@@ -52,29 +74,31 @@
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
-            <div class="sigma-modal-grid" style="margin:0 0 8px;">
-                <div class="sigma-modal-field is-ancho">
-                    <label>Motivo del descarte (al menos 10 caracteres; solo para «Descartar»)</label>
-                    <WebControls:TextBox2 ID="txtMotivo" runat="server" MaxLength="1000" />
+            <div class="sg-pc">
+                <asp:HiddenField ID="hdnAccionId" runat="server" Value="0" ClientIDMode="Static" />
+                <asp:HiddenField ID="hdnMotivo" runat="server" Value="" ClientIDMode="Static" />
+                <asp:LinkButton ID="lnkRecargar" runat="server" style="display:none" CausesValidation="false" OnClick="lnkRecargar_Click" />
+                <asp:LinkButton ID="btnGenerarOT" runat="server" style="display:none" CausesValidation="false" OnClick="btnGenerarOT_Click" />
+                <asp:LinkButton ID="btnDescartar" runat="server" style="display:none" CausesValidation="false" OnClick="btnDescartar_Click" />
+
+                <%-- KPIs + Exportar --%>
+                <div style="display:flex;gap:12px;align-items:stretch;margin-bottom:16px;flex-wrap:wrap;">
+                    <div class="sg-a3-kpi" style="flex:1;min-width:170px;"><span class="sg-a3-kpi-ico es-alerta"><i class="mdi mdi-alert-circle-outline"></i></span><div class="sg-a3-kpi-txt"><span>Pendientes</span><b><asp:Literal ID="litKpiPend" runat="server" Text="0" /></b></div></div>
+                    <div class="sg-a3-kpi" style="flex:1;min-width:170px;"><span class="sg-a3-kpi-ico es-info"><i class="mdi mdi-clipboard-text-outline"></i></span><div class="sg-a3-kpi-txt"><span>Con OT</span><b><asp:Literal ID="litKpiOt" runat="server" Text="0" /></b></div></div>
+                    <div class="sg-a3-kpi" style="flex:1;min-width:170px;"><span class="sg-a3-kpi-ico es-ok"><i class="mdi mdi-check-circle-outline"></i></span><div class="sg-a3-kpi-txt"><span>Descartados</span><b><asp:Literal ID="litKpiDesc" runat="server" Text="0" /></b></div></div>
+                    <asp:LinkButton ID="lnkDescargar" runat="server" CssClass="pc-btn out" style="align-self:center;" OnClick="lnkDescargar_Click" CausesValidation="false"><i class="mdi mdi-download-outline"></i>Exportar a Excel</asp:LinkButton>
+                </div>
+
+                <div class="pc-md-grid">
+                    <div class="pc-card">
+                        <div class="pc-list-cab"><div><h3>Hallazgos</h3><span class="s">Toque una fila para ver el detalle a la derecha.</span></div></div>
+                        <asp:Literal ID="litTabla" runat="server" />
+                    </div>
+                    <aside class="pc-aside">
+                        <div class="pc-card"><asp:Literal ID="litDetalle" runat="server" /></div>
+                    </aside>
                 </div>
             </div>
-            <asp:Panel ID="pnlResultado" runat="server" Visible="false" CssClass="sigma-modal-note" style="margin:0 0 10px;">
-                <i class="mdi mdi-clipboard-check-outline"></i>
-                <div><asp:Literal ID="litResultado" runat="server" /></div>
-            </asp:Panel>
-            <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound" AllowPaging="true" PageSize="50">
-                <MasterTableView CommandItemDisplay="Top" DataKeyNames="cha_id">
-                    <CommandItemTemplate>
-                        <div style="margin-bottom: 5px;">
-                            <asp:LinkButton ID="lnkGenerarOT" runat="server" Text="Generar orden de trabajo" CssClass="icono_guardar" OnClick="lnkGenerarOT_Click" CausesValidation="false"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar una orden de trabajo por cada hallazgo seleccionado? Quedan enlazados y salen de la bandeja.');" />
-                            <asp:LinkButton ID="lnkDescartar" runat="server" Text="Descartar con motivo" CssClass="icono_eliminar" OnClick="lnkDescartar_Click" CausesValidation="false"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Descartar los hallazgos seleccionados con el motivo escrito arriba? Queda registrado quién y cuándo.');" />
-                            <asp:LinkButton ID="lnkDescargar" runat="server" Text="Descargar Excel" CssClass="icono_excel" OnClick="lnkDescargar_Click" CausesValidation="false" />
-                        </div>
-                    </CommandItemTemplate>
-                </MasterTableView>
-            </rad:RadGrid2>
         </ContentTemplate>
     </asp:UpdatePanel>
 </asp:Content>
