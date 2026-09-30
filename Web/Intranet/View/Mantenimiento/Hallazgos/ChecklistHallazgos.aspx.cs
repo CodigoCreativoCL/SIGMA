@@ -3,38 +3,21 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.Text;
 using System.Web.UI;
-using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
-/// Bandeja de hallazgos de checklist (HU-096). Solo lectura: el hallazgo lo
-/// abre el telefono cuando una respuesta sale de rango, y se cierra cuando
-/// alguien lo confirma con una orden o lo descarta con un motivo. Aqui se
-/// ve todo eso, se filtra y se baja a Excel; no se edita.
-///
-/// El acceso lo resuelve el master por datos (fila en Menus con VER
-/// HALLAZGOS) y el cliente va siempre desde la sesion en el controlador.
+/// Bandeja transversal de hallazgos de inspección (rediseño SIGMA-Pautas-360,
+/// mockup 09). KPIs (pendientes / con OT / descartados), tabla propia y panel
+/// de detalle. Las acciones (generar OT, descartar) y el Excel reusan el
+/// ChecklistHallazgoController. El acceso lo resuelve el master por datos y el
+/// cliente va siempre desde la sesión en el controlador.
 /// </summary>
 public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.Web.UI.Page
 {
-    protected void Page_Load(object sender, EventArgs e)
-    {
-        if (!IsPostBack)
-        {
-            Grid.AddSelectColumn();
-            Grid.AddTemplateColumn("FECHA", "", "FECHA", Width: "10%");
-            Grid.AddTemplateColumn("SEVERIDAD", "", "SEVERIDAD", Width: "9%");
-            Grid.AddColumn("CHA_TITULO", "HALLAZGO", Width: "22%");
-            Grid.AddTemplateColumn("EQUIPO", "", "EQUIPO", Width: "14%");
-            Grid.AddColumn("PLANTILLA_NOMBRE", "PAUTA", Width: "12%");
-            Grid.AddTemplateColumn("RESPUESTA", "", "RESPUESTA", Width: "13%");
-            Grid.AddColumn("EJECUTOR_NOMBRE", "TÉCNICO", Width: "10%");
-            Grid.AddTemplateColumn("ESTADO", "", "ESTADO", Width: "10%");
-        }
-
-        Tools.tools.RegisterPostBackScript(Grid);
-    }
+    protected void Page_Load(object sender, EventArgs e) { }
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
@@ -46,22 +29,27 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
         ConfigurarPlantas();
         ConfigurarCatalogos();
 
-        CargarGrid();
-        Grid.DataBind();
+        List<ChecklistHallazgo> lista = new ChecklistHallazgoController().GetHallazgos(Filtro()) ?? new List<ChecklistHallazgo>();
 
-        // Resolver (orden o descarte) exige la funcion de escritura de la pagina: CREAR ORDEN TRABAJO.
-        bool puedeResolver = Token.PuedeFuncion("Crear y editar");
-        foreach (GridItem it in Grid.MasterTableView.GetItems(GridItemType.CommandItem))
+        // KPIs.
+        int pend = 0, conot = 0, desc = 0;
+        foreach (ChecklistHallazgo h in lista)
         {
-            Control lnk = it.FindControl("lnkDescargar");
-            if (lnk != null) ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnk);
-            Control g = it.FindControl("lnkGenerarOT"); if (g != null) g.Visible = puedeResolver;
-            Control d = it.FindControl("lnkDescartar"); if (d != null) d.Visible = puedeResolver;
+            if (h.orden_trabajo_id != null) conot++;
+            else if (!string.IsNullOrEmpty(h.cha_motivo_descarte)) desc++;
+            else if ((h.estado_codigo ?? "").ToUpperInvariant() == "PENDIENTE") pend++;
         }
+        litKpiPend.Text = pend.ToString();
+        litKpiOt.Text = conot.ToString();
+        litKpiDesc.Text = desc.ToString();
+
+        bool puedeResolver = Token.PuedeFuncion("Crear y editar");
+        Render(lista, puedeResolver);
 
         udPanel.Update();
     }
 
+    // ------------------------------------------------------------------ filtros
     private RadComboBox2 Cbo(string id) { return (RadComboBox2)wucFiltro.FindControl(id); }
 
     private void ConfigurarPlantas()
@@ -79,7 +67,6 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
         RadComboBoxItem item = cbo.FindItemByValue(seleccion ?? ""); if (item != null) item.Selected = true;
     }
 
-    /// <summary>Severidad y Proceso_Estado son catalogos fijos (bloques 19 y 156).</summary>
     private void ConfigurarCatalogos()
     {
         RadComboBox2 sev = Cbo("cboSeveridad");
@@ -97,7 +84,7 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
         if (est != null && est.Items.Count == 0)
         {
             est.Items.Add(new RadComboBoxItem("Todos", ""));
-            est.Items.Add(new RadComboBoxItem("Pendiente", "1") { Selected = true });
+            est.Items.Add(new RadComboBoxItem("Pendiente", "1"));
             est.Items.Add(new RadComboBoxItem("En proceso", "2"));
             est.Items.Add(new RadComboBoxItem("Procesado", "3"));
             est.Items.Add(new RadComboBoxItem("Error", "4"));
@@ -117,114 +104,134 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
         return f;
     }
 
-    protected void CargarGrid()
+    // ------------------------------------------------------------------ render
+    private void Render(List<ChecklistHallazgo> lista, bool puede)
     {
-        Grid.DataSource = new ChecklistHallazgoController().GetHallazgos(Filtro()) ?? new List<ChecklistHallazgo>();
-    }
-
-    protected void Grid_ItemDataBound(object sender, GridItemEventArgs e)
-    {
-        if (e.Item.ItemType != GridItemType.AlternatingItem && e.Item.ItemType != GridItemType.Item) return;
-        if (!(e.Item is GridDataItem)) return;
-
-        GridDataItem item = e.Item as GridDataItem;
-        ChecklistHallazgo h = item.DataItem as ChecklistHallazgo;
-        if (h == null) return;
-
-        item["FECHA"].Controls.Add(new Literal
+        string centro = ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistCentro.aspx");
+        if (lista.Count == 0)
         {
-            Text = (h.cha_fecha_creacion == null ? "" : h.cha_fecha_creacion.Value.ToString("dd-MM-yyyy HH:mm"))
-                 + (h.cha_generado_ia ? " <i class=\"mdi mdi-robot-outline\" title=\"Generado por SIGMA AI" + (h.cha_confianza_ia == null ? "" : " · confianza " + (h.cha_confianza_ia.Value * 100).ToString("0") + " %") + "\"></i>" : "")
-        });
-
-        item["SEVERIDAD"].Controls.Add(new Literal { Text = ChipSeveridad(h.severidad_codigo, h.severidad_nombre) });
-
-        item["EQUIPO"].Controls.Add(new Literal
-        {
-            Text = string.IsNullOrEmpty(h.activo_codigo)
-                 ? "<span class=\"sigma-inv-vacio\">sin equipo</span>"
-                 : Server.HtmlEncode(h.activo_codigo) + " <span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(h.activo_nombre)
-                   + (string.IsNullOrEmpty(h.componente_nombre) ? "" : " · " + Server.HtmlEncode(h.componente_nombre)) + "</span>"
-        });
-
-        string resp = "";
-        if (!string.IsNullOrEmpty(h.item_texto)) resp = "<span class=\"sigma-inv-vacio\">" + Server.HtmlEncode(h.item_texto) + "</span><br/>";
-        if (h.respuesta_numero != null) resp += "<strong>" + h.respuesta_numero.Value.ToString("0.##") + " " + Server.HtmlEncode(h.respuesta_unidad ?? "") + "</strong>";
-        else if (!string.IsNullOrEmpty(h.respuesta_texto)) resp += "<strong>" + Server.HtmlEncode(h.respuesta_texto) + "</strong>";
-        if (h.respuesta_fuera_rango) resp += " <span class=\"grid-estado-chip is-alerta\">fuera de rango</span>";
-        if (resp.Length == 0) resp = "<span class=\"sigma-inv-vacio\">—</span>";
-        item["RESPUESTA"].Controls.Add(new Literal { Text = resp });
-
-        if (string.IsNullOrEmpty(h.plantilla_nombre)) item["PLANTILLA_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">—</span>";
-
-        string estado = ChipEstado(h.estado_codigo, h.estado_nombre);
-        if (h.orden_trabajo_correlativo != null)
-            estado += "<br/><span class=\"sigma-inv-vacio\" title=\"" + Server.HtmlEncode(h.orden_trabajo_estado ?? "") + "\">OT-" + h.orden_trabajo_correlativo + "</span>";
-        if (!string.IsNullOrEmpty(h.cha_motivo_descarte))
-            estado += "<br/><span class=\"sigma-inv-vacio\" title=\"" + Server.HtmlEncode(h.cha_motivo_descarte) + "\">descartado</span>";
-        item["ESTADO"].Controls.Add(new Literal { Text = estado });
-    }
-
-    private static string ChipSeveridad(string codigo, string nombre)
-    {
-        if (string.IsNullOrEmpty(codigo)) return "<span class=\"sigma-inv-vacio\">sin severidad</span>";
-        switch (codigo.ToUpperInvariant())
-        {
-            case "CRITICA":     return "<span class=\"grid-estado-chip is-alerta\"><i class=\"mdi mdi-alert\"></i>" + nombre + "</span>";
-            case "ALTA":        return "<span class=\"grid-estado-chip is-alerta\"><i class=\"mdi mdi-arrow-up-bold\"></i>" + nombre + "</span>";
-            case "ADVERTENCIA": return "<span class=\"grid-estado-chip is-advertencia\"><i class=\"mdi mdi-alert-outline\"></i>" + nombre + "</span>";
-            default:            return "<span class=\"grid-estado-chip is-neutro\">" + nombre + "</span>";
+            litTabla.Text = "<div class='pc-vacio'><i class='mdi mdi-clipboard-check-outline'></i>No hay hallazgos que coincidan con el filtro.</div>";
+            litDetalle.Text = "<div class='pc-vacio'><i class='mdi mdi-gesture-tap'></i>Selecciona un hallazgo para ver su detalle.</div>";
+            return;
         }
+
+        CultureInfo cul = new CultureInfo("es-CL");
+        StringBuilder tb = new StringBuilder(), det = new StringBuilder();
+        tb.Append("<table class='pc-table'><thead><tr><th>Código</th><th>Descripción</th><th>Severidad</th><th>Equipo</th><th>Pauta</th><th>Estado</th><th>Fecha</th><th class='acc'>Acciones</th></tr></thead><tbody>");
+
+        bool first = true;
+        foreach (ChecklistHallazgo h in lista)
+        {
+            string id = "H-" + h.cha_id.ToString("000");
+            string activo = string.IsNullOrEmpty(h.activo_codigo) ? "—" : Server.HtmlEncode((h.activo_codigo + " · " + h.activo_nombre).Trim(' ', '·'));
+            string pauta = string.IsNullOrEmpty(h.plantilla_nombre) ? "—" : Server.HtmlEncode(h.plantilla_nombre);
+            string fecha = h.cha_fecha_creacion != null ? h.cha_fecha_creacion.Value.ToString("dd-MM-yyyy HH:mm", cul) : "—";
+            string valor = h.respuesta_numero != null ? h.respuesta_numero.Value.ToString("0.####", cul) + (string.IsNullOrEmpty(h.respuesta_unidad) ? "" : " " + Server.HtmlEncode(h.respuesta_unidad)) : "";
+
+            // Acciones por fila.
+            string acc = "<a href='#' class='pc-btn out sm' onclick='return pcHzSel(" + h.cha_id + ")'>Ver detalle</a>";
+            if (puede)
+            {
+                if (h.orden_trabajo_id != null)
+                    acc = "<span class='pc-badge es-on'>OT #" + h.orden_trabajo_correlativo + "</span> " + acc;
+                else if (!string.IsNullOrEmpty(h.cha_motivo_descarte))
+                    acc = "<span class='pc-badge es-ret' title='" + Server.HtmlEncode(h.cha_motivo_descarte) + "'>Descartado</span> " + acc;
+                else
+                    acc += " <a href='#' class='pc-btn prim sm' onclick='return pcHzOT(" + h.cha_id + ")'><i class='mdi mdi-wrench-outline'></i>Generar OT</a>"
+                         + " <a href='#' class='pc-btn danger sm' onclick='return pcHzDesc(" + h.cha_id + ")'>Descartar</a>";
+            }
+
+            tb.Append("<tr class='pc-hz-fila").Append(first ? " es-sel" : "").Append("' data-hz='").Append(h.cha_id).Append("'>")
+              .Append("<td class='cod'><a href='#' onclick='return pcHzSel(").Append(h.cha_id).Append(")' style='color:inherit;text-decoration:none;'>").Append(id).Append("</a></td>")
+              .Append("<td>").Append(Server.HtmlEncode(h.cha_titulo)).Append("</td>")
+              .Append("<td>").Append(SevBadge(h.severidad_nombre)).Append("</td>")
+              .Append("<td>").Append(activo).Append("</td>")
+              .Append("<td>").Append(pauta).Append("</td>")
+              .Append("<td>").Append(EstBadge(h.estado_codigo, h.estado_nombre)).Append("</td>")
+              .Append("<td>").Append(fecha).Append("</td>")
+              .Append("<td class='acc'>").Append(acc).Append("</td></tr>");
+
+            // Detalle.
+            det.Append("<div class='pc-hz-det").Append(first ? " es-sel" : "").Append("' data-hzdet='").Append(h.cha_id).Append("'>");
+            det.Append("<div class='pc-hz-h'><div style='font-weight:800;color:var(--muted);font-size:12px;'>").Append(id).Append("</div>")
+               .Append(EstBadge(h.estado_codigo, h.estado_nombre)).Append("</div>");
+            det.Append("<div style='font-size:16px;font-weight:800;color:var(--ink);margin:4px 0 2px;'>").Append(Server.HtmlEncode(h.cha_titulo)).Append("</div>");
+            det.Append("<div class='pc-hz-meta'>")
+               .Append("<span><i class='mdi mdi-clipboard-outline'></i>").Append(pauta).Append("</span>")
+               .Append("<span><i class='mdi mdi-cube-outline'></i>").Append(activo).Append("</span>")
+               .Append("<span><i class='mdi mdi-calendar-outline'></i>").Append(fecha).Append("</span>")
+               .Append("<span><i class='mdi mdi-account-outline'></i>").Append(string.IsNullOrEmpty(h.ejecutor_nombre) ? "—" : Server.HtmlEncode(h.ejecutor_nombre)).Append("</span></div>");
+
+            det.Append("<div style='font-weight:800;color:var(--ink);font-size:13px;margin-bottom:10px;'>Detalle de la respuesta</div>");
+            det.Append("<div class='pc-hz-grid'>")
+               .Append("<div><div class='k'>Valor medido</div><div class='v'>").Append(valor == "" ? "—" : valor).Append("</div></div>")
+               .Append("<div><div class='k'>Severidad</div><div class='v sm'>").Append(SevBadge(h.severidad_nombre)).Append("</div></div>")
+               .Append("</div>");
+            if (!string.IsNullOrEmpty(h.cha_descripcion))
+                det.Append("<div style='margin-bottom:14px;'><div class='k' style='font-size:11px;color:var(--muted);text-transform:uppercase;margin-bottom:3px;'>Descripción</div><div style='font-size:13px;color:#384357;line-height:1.5;'>").Append(Server.HtmlEncode(h.cha_descripcion)).Append("</div></div>");
+            if (!string.IsNullOrEmpty(h.cha_motivo_descarte))
+                det.Append("<div class='pc-info-card' style='background:#EEF1F6;border-color:var(--line);margin-bottom:12px;'><div class='t' style='color:var(--muted);'><i class='mdi mdi-close-circle-outline' style='color:var(--muted);'></i>Descartado</div><p>").Append(Server.HtmlEncode(h.cha_motivo_descarte)).Append("</p></div>");
+            if (h.orden_trabajo_id != null)
+                det.Append("<div class='pc-info-card' style='background:#E7F4EE;border-color:#BBE4CE;margin-bottom:12px;'><div class='t' style='color:#16855B;'><i class='mdi mdi-wrench-outline' style='color:#16855B;'></i>OT vinculada #").Append(h.orden_trabajo_correlativo).Append("</div><p>Generar OT vincula el trabajo; no resuelve automáticamente el hallazgo.</p></div>");
+
+            det.Append("<div class='pc-hz-acc'>")
+               .Append("<a href='").Append(centro).Append("' class='pc-btn out'><i class='mdi mdi-clipboard-outline'></i>Abrir pauta</a>");
+            if (puede && h.orden_trabajo_id == null && string.IsNullOrEmpty(h.cha_motivo_descarte))
+                det.Append("<a href='#' class='pc-btn prim' onclick='return pcHzOT(").Append(h.cha_id).Append(")'><i class='mdi mdi-wrench-outline'></i>Generar OT</a>");
+            det.Append("</div>");
+            det.Append("</div>");
+            first = false;
+        }
+        tb.Append("</tbody></table>");
+        litTabla.Text = tb.ToString();
+        litDetalle.Text = det.ToString();
     }
 
-    private static string ChipEstado(string codigo, string nombre)
+    private string SevBadge(string sev)
     {
+        if (string.IsNullOrEmpty(sev)) return "<span class='pc-badge es-ret'>—</span>";
+        string s = sev.ToLower();
+        string style = (s.Contains("crít") || s.Contains("crit") || s.Contains("alta")) ? "background:#FBEBEA;color:#C7352B;"
+                     : s.Contains("advert") || s.Contains("media") ? "background:#FBF0E3;color:#B65C00;" : "background:#EAF4FF;color:#087BEA;";
+        return "<span class='pc-badge' style='" + style + "'>" + Server.HtmlEncode(sev) + "</span>";
+    }
+
+    private string EstBadge(string codigo, string nombre)
+    {
+        string txt = Server.HtmlEncode(string.IsNullOrEmpty(nombre) ? (codigo ?? "") : nombre);
         switch ((codigo ?? "").ToUpperInvariant())
         {
-            case "PENDIENTE":  return "<span class=\"grid-estado-chip is-advertencia\"><i class=\"mdi mdi-clock-outline\"></i>" + nombre + "</span>";
-            case "EN PROCESO": return "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-progress-clock\"></i>" + nombre + "</span>";
-            case "PROCESADO":  return "<span class=\"grid-estado-chip is-exito\"><i class=\"mdi mdi-check-circle\"></i>" + nombre + "</span>";
-            case "ERROR":      return "<span class=\"grid-estado-chip is-alerta\"><i class=\"mdi mdi-alert-circle\"></i>" + nombre + "</span>";
-            default:           return "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-close-circle-outline\"></i>" + (nombre ?? "") + "</span>";
+            case "PENDIENTE": return "<span class='pc-badge' style='background:#FBEBEA;color:#C7352B;'>" + txt + "</span>";
+            case "PROCESADO": return "<span class='pc-badge es-pub'>" + txt + "</span>";
+            case "EN PROCESO": return "<span class='pc-badge es-bor'>" + txt + "</span>";
+            case "CANCELADO": return "<span class='pc-badge es-ret'>" + txt + "</span>";
+            default: return "<span class='pc-badge es-ret'>" + txt + "</span>";
         }
     }
 
-    /// <summary>Criterio 2: la orden nace con origen hallazgo, el hallazgo queda enlazado y sale de la bandeja.</summary>
-    protected void lnkGenerarOT_Click(object sender, EventArgs e)
+    // ------------------------------------------------------------------ acciones
+    protected void lnkRecargar_Click(object sender, EventArgs e) { /* el PreRender repinta */ }
+
+    protected void btnGenerarOT_Click(object sender, EventArgs e)
     {
-        Resolver("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().GenerarOrden(id));
+        Accion("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().GenerarOrden(id));
     }
 
-    /// <summary>Criterio 3: descarte con motivo de al menos 10 caracteres; el SP lo exige y registra quien y cuando.</summary>
-    protected void lnkDescartar_Click(object sender, EventArgs e)
+    protected void btnDescartar_Click(object sender, EventArgs e)
     {
-        string motivo = txtMotivo.Text.Trim();
-        Resolver("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().Descartar(id, motivo));
-        if (pnlResultado.Visible && !litResultado.Text.Contains("is-alerta")) txtMotivo.Text = "";
+        string motivo = (hdnMotivo.Value ?? "").Trim();
+        Accion("CREAR ORDEN TRABAJO", id => new ChecklistHallazgoController().Descartar(id, motivo));
+        hdnMotivo.Value = "";
     }
 
-    private void Resolver(string permiso, Func<int, Respuesta> accion)
+    private void Accion(string permiso, Func<int, Respuesta> accion)
     {
         try
         {
-            if (!Token.Puede(permiso)) throw new Exception("No tiene permiso para resolver hallazgos.");
-            if (Grid.SelectedIndexes.Count == 0) { Tools.tools.ClientAlert("Seleccione al menos un hallazgo."); return; }
-
-            System.Text.StringBuilder sb = new System.Text.StringBuilder();
-            int ok = 0, malos = 0;
-            foreach (string indice in Grid.SelectedIndexes)
-            {
-                GridDataItem fila = (GridDataItem)Grid.MasterTableView.Items[Int32.Parse(indice)];
-                int id = Int32.Parse(Grid.MasterTableView.DataKeyValues[Int32.Parse(indice)]["cha_id"].ToString());
-                Respuesta r = accion(id);
-                string etiqueta = Server.HtmlEncode(fila["CHA_TITULO"].Text);
-                if (r.error) { malos++; sb.Append("<div><span class=\"grid-estado-chip is-alerta\">rechazado</span> " + etiqueta + " — " + Server.HtmlEncode(r.detalle) + "</div>"); }
-                else { ok++; sb.Append("<div><span class=\"grid-estado-chip is-exito\">" + Server.HtmlEncode(r.detalle) + "</span> " + etiqueta + "</div>"); }
-            }
-
-            pnlResultado.Visible = true;
-            litResultado.Text = "<strong>" + ok + " resuelto(s) · " + malos + " rechazado(s)</strong>" + sb;
-            Tools.tools.ClientAlert(ok + " hallazgo(s) resuelto(s).", malos > 0 ? "alerta" : "ok");
+            if (!Token.Puede(permiso)) { Tools.tools.ClientAlert("No tiene permiso para resolver hallazgos.", "alerta"); return; }
+            int id; if (!int.TryParse(hdnAccionId.Value, out id) || id <= 0) { Tools.tools.ClientAlert("No se identificó el hallazgo.", "alerta"); return; }
+            Respuesta r = accion(id);
+            Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
         }
         catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
     }
@@ -233,15 +240,10 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
     {
         try
         {
-            if (!Token.Puede("VER HALLAZGOS"))
-                throw new Exception("No tiene permiso para ver hallazgos.");
-
+            if (!Token.Puede("VER HALLAZGOS")) throw new Exception("No tiene permiso para ver hallazgos.");
             new ChecklistHallazgoController().Exportar(Filtro());
         }
         catch (System.Threading.ThreadAbortException) { throw; }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message, "alerta");
-        }
+        catch (Exception ex) { Tools.tools.ClientAlert(ex.Message, "alerta"); }
     }
 }

@@ -124,6 +124,32 @@ namespace SitioBase.Controller
     }
 
     /// <summary>
+    /// Una ejecución de una pauta para el historial (HU-097): quién la hizo, sobre
+    /// qué equipo, con qué versión y cuántas no conformidades. Es por EJECUCIÓN,
+    /// así que incluye las ad-hoc que no nacieron de una ocurrencia programada.
+    /// </summary>
+    [Serializable]
+    public class ChecklistEjecucionHist
+    {
+        public int ejecucion_id { get; set; }
+        public int version_numero { get; set; }
+        public string activo_codigo { get; set; }
+        public string activo_nombre { get; set; }
+        public string ejecutor { get; set; }
+        public string estado_codigo { get; set; }
+        public string estado_nombre { get; set; }
+        public int item_total { get; set; }
+        public int item_respondido { get; set; }
+        public int item_no_conforme { get; set; }
+        public DateTime? inicio { get; set; }
+        public DateTime? fin { get; set; }
+        public int? minutos { get; set; }
+        public string observacion { get; set; }
+
+        public int avance { get { return item_total <= 0 ? 0 : (int)Math.Round(item_respondido * 100.0 / item_total); } }
+    }
+
+    /// <summary>
     /// El terreno de una pauta de inspeccion: lo que la programacion genero,
     /// lo que el tecnico respondio y lo que fotografio.
     ///
@@ -191,6 +217,61 @@ namespace SitioBase.Controller
                         o.hallazgos = int.Parse(dr["HALLAZGOS"].ToString());
 
                         lista.Add(o);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// HU-097 (CA-1): las ejecuciones de una pauta a lo largo del tiempo, con
+        /// fecha, ejecutor, activo, versión y no conformidades. Es por EJECUCIÓN
+        /// (SEL_CHECKLIST_HISTORIAL), así que ve también las ad-hoc.
+        /// </summary>
+        public List<ChecklistEjecucionHist> GetHistorial(int plantilla, int? estado = null)
+        {
+            List<ChecklistEjecucionHist> lista = new List<ChecklistEjecucionHist>();
+
+            if (plantilla <= 0 || !Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_CHECKLIST_HISTORIAL";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@PLANTILLA", plantilla);
+                if (estado != null) cmd.Parameters.AddWithValue("@ESTADO", estado.Value);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ChecklistEjecucionHist h = new ChecklistEjecucionHist();
+                        h.ejecucion_id = int.Parse(dr["EJECUCION_ID"].ToString());
+                        h.version_numero = int.Parse(dr["VERSION_NUMERO"].ToString());
+                        h.activo_codigo = dr["ACTIVO_CODIGO"].ToString();
+                        h.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
+                        h.ejecutor = dr["EJECUTOR_NOMBRE"].ToString();
+                        h.estado_codigo = dr["ESTADO_CODIGO"].ToString();
+                        h.estado_nombre = dr["ESTADO_NOMBRE"].ToString();
+                        h.item_total = int.Parse(dr["ITEM_TOTAL"].ToString());
+                        h.item_respondido = int.Parse(dr["ITEM_RESPONDIDO"].ToString());
+                        h.item_no_conforme = int.Parse(dr["ITEM_NO_CONFORME"].ToString());
+                        if (dr["EJECUCION_INICIO"] != DBNull.Value) h.inicio = (DateTime)dr["EJECUCION_INICIO"];
+                        if (dr["EJECUCION_FIN"] != DBNull.Value) h.fin = (DateTime)dr["EJECUCION_FIN"];
+                        if (dr["EJECUCION_MINUTOS"] != DBNull.Value) h.minutos = int.Parse(dr["EJECUCION_MINUTOS"].ToString());
+                        h.observacion = dr["EJECUCION_OBSERVACION"].ToString();
+                        lista.Add(h);
                     }
                 }
 
