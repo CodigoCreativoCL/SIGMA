@@ -31,6 +31,8 @@ namespace SitioBase.Controller
                 {
                     if (filtro.filtro_plantilla.HasValue && filtro.filtro_plantilla.Value > 0)
                         cmd.Parameters.AddWithValue("@PLANTILLA", filtro.filtro_plantilla.Value);
+                    if (filtro.filtro_version.HasValue && filtro.filtro_version.Value > 0)
+                        cmd.Parameters.AddWithValue("@VERSION", filtro.filtro_version.Value);
                     if (!string.IsNullOrEmpty(filtro.filtro))
                         cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
                 }
@@ -76,7 +78,7 @@ namespace SitioBase.Controller
         }
 
         /// <summary>Ítems del cliente para el combo de la ficha (con su pauta y si ya tienen validación).</summary>
-        public List<ChecklistItemValidacion> GetItems()
+        public List<ChecklistItemValidacion> GetItems(int version = 0)
         {
             List<ChecklistItemValidacion> lista = new List<ChecklistItemValidacion>();
 
@@ -87,6 +89,7 @@ namespace SitioBase.Controller
             {
                 cmd.CommandText = "SEL_CHECKLIST_ITEM_LISTA";
                 cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                if (version > 0) cmd.Parameters.AddWithValue("@VERSION", version);
 
                 using (SqlDataReader dr = Conexion.GetDataReader(cmd))
                     while (dr.Read())

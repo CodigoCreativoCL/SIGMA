@@ -8,37 +8,64 @@ using System.Web.UI.WebControls;
 using Telerik.Web.UI;
 
 /// <summary>
-/// Listado de dependencias entre ítems (HU-092). Solo lectura de la grilla: el
-/// alta/edición va en la ficha (RadWindow). Filtra por el cliente en sesión y,
-/// opcionalmente, por pauta. La barra de comandos la habilita la función
-/// "Crear y editar".
+/// Dependencias entre ítems (HU-092), en MODAL desde el centro de la pauta.
+/// Se abre con ?query=Encrypt("Id=&lt;plantilla&gt;"): filtra al BORRADOR de esa
+/// pauta (creándolo/clonándolo de la publicada si no existe). El alta/edición va
+/// en la ficha.
 /// </summary>
 public partial class View_Mantenimiento_Checklist_ChecklistItemDependencias : System.Web.UI.Page
 {
+    public int Plantilla
+    {
+        get { return ViewState["Plantilla"] != null ? (int)ViewState["Plantilla"] : 0; }
+        set { ViewState["Plantilla"] = value; }
+    }
+
+    public int Version
+    {
+        get { return ViewState["Version"] != null ? (int)ViewState["Version"] : 0; }
+        set { ViewState["Version"] = value; }
+    }
+
+    /// <summary>Query cifrado para el botón "Nuevo": acota los selectores de ítem a este borrador.</summary>
+    protected string NuevoQuery
+    {
+        get { return Server.UrlEncode(Tools.Crypto.Encrypt("Version=" + Version)); }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();
-            Grid.AddColumn("cid_id", "", Width: "3%");
-            Grid.AddColumn("plantilla_nombre", "PAUTA", Width: "18%");
-            Grid.AddTemplateColumn("ITEM", "", "ÍTEM DEPENDIENTE", Width: "22%");
-            Grid.AddTemplateColumn("ACCION", "", "ACCIÓN", Width: "13%");
-            Grid.AddTemplateColumn("CONDICION", "", "CONDICIÓN", Width: "30%");
+            Grid.AddColumn("cid_id", "", Width: "4%");
+            Grid.AddTemplateColumn("ITEM", "", "ÍTEM DEPENDIENTE", Width: "28%");
+            Grid.AddTemplateColumn("ACCION", "", "ACCIÓN", Width: "15%");
+            Grid.AddTemplateColumn("CONDICION", "", "CONDICIÓN", Width: "37%");
             Grid.AddCheckboxColumn("habilitado", "HABILITADO");
+
+            Plantilla = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            ResolverBorrador();
         }
 
         Tools.tools.RegisterPostBackScript(Grid);
     }
 
+    /// <summary>Crea/obtiene el borrador de la pauta (clonando la publicada) y su nombre.</summary>
+    private void ResolverBorrador()
+    {
+        if (Plantilla <= 0) return;
+        ChecklistPlantilla pla = new ChecklistPlantillaController().GetChecklistPlantilla(Plantilla);
+        litPauta.Text = pla != null ? Server.HtmlEncode(pla.cpl_nombre) : "—";
+        Version = new ChecklistEstructuraController().GetBorradorVersion(Plantilla, SitioBase.Session.UsuarioId(), true);
+    }
+
     protected void Page_PreRender(object sender, EventArgs e)
     {
-        bool hayCliente = SitioBase.Session.ClienteId() > 0;
-        pnlSinCliente.Visible = !hayCliente;
-        udPanel.Visible = hayCliente;
-        if (!hayCliente) return;
-
-        ConfigurarPlantillas();
+        bool ok = SitioBase.Session.ClienteId() > 0 && Plantilla > 0;
+        pnlSinCliente.Visible = !ok;
+        udPanel.Visible = ok;
+        if (!ok) return;
 
         if (!Token.PuedeFuncion("Crear y editar"))
             Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
@@ -48,26 +75,13 @@ public partial class View_Mantenimiento_Checklist_ChecklistItemDependencias : Sy
         udPanel.Update();
     }
 
-    private RadComboBox2 Cbo(string id) { return (RadComboBox2)wucFiltro.FindControl(id); }
-
-    private void ConfigurarPlantillas()
-    {
-        RadComboBox2 cbo = Cbo("cboPlantilla");
-        if (cbo == null || cbo.Items.Count > 0) return;
-
-        cbo.Items.Add(new RadComboBoxItem("Todas las pautas", ""));
-        List<ChecklistPlantilla> pautas = new ChecklistPlantillaController().GetChecklistPlantillas(
-            new ChecklistPlantilla { cpl_cliente = SitioBase.Session.ClienteId() }) ?? new List<ChecklistPlantilla>();
-        foreach (ChecklistPlantilla p in pautas) cbo.Items.Add(new RadComboBoxItem(p.cpl_nombre, p.cpl_id.ToString()));
-    }
-
     protected void CargarGrid()
     {
-        ChecklistItemDependencia filtro = new ChecklistItemDependencia();
-        if (!string.IsNullOrEmpty(wucFiltro.Filtro())) filtro.filtro = wucFiltro.Filtro();
-        RadComboBox2 cbo = Cbo("cboPlantilla");
-        if (cbo != null && cbo.SelectedValue != "") filtro.filtro_plantilla = int.Parse(cbo.SelectedValue);
-
+        ChecklistItemDependencia filtro = new ChecklistItemDependencia
+        {
+            filtro_plantilla = Plantilla,
+            filtro_version = Version > 0 ? Version : (int?)null
+        };
         Grid.DataSource = new ChecklistItemDependenciaController().GetDependencias(filtro) ?? new List<ChecklistItemDependencia>();
     }
 

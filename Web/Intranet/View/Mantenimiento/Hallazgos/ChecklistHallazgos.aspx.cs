@@ -174,8 +174,13 @@ public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.We
             if (h.orden_trabajo_id != null)
                 det.Append("<div class='pc-info-card' style='background:#E7F4EE;border-color:#BBE4CE;margin-bottom:12px;'><div class='t' style='color:#16855B;'><i class='mdi mdi-wrench-outline' style='color:#16855B;'></i>OT vinculada #").Append(h.orden_trabajo_correlativo).Append("</div><p>Generar OT vincula el trabajo; no resuelve automáticamente el hallazgo.</p></div>");
 
+            // "Abrir pauta" lleva al centro de ESA pauta (si se conoce su id); el centro
+            // lee ?query=Encrypt("Id=<plantilla>") y abre su ficha directamente.
+            string urlPauta = h.plantilla_id > 0
+                ? centro + "?query=" + Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + h.plantilla_id))
+                : centro;
             det.Append("<div class='pc-hz-acc'>")
-               .Append("<a href='").Append(centro).Append("' class='pc-btn out'><i class='mdi mdi-clipboard-outline'></i>Abrir pauta</a>");
+               .Append("<a href='").Append(urlPauta).Append("' class='pc-btn out'><i class='mdi mdi-clipboard-outline'></i>Abrir pauta</a>");
             if (puede && h.orden_trabajo_id == null && string.IsNullOrEmpty(h.cha_motivo_descarte))
                 det.Append("<a href='#' class='pc-btn prim' onclick='return pcHzOT(").Append(h.cha_id).Append(")'><i class='mdi mdi-wrench-outline'></i>Generar OT</a>");
             det.Append("</div>");

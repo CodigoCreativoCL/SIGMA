@@ -30,6 +30,8 @@ namespace SitioBase.Controller
                 {
                     if (filtro.filtro_plantilla.HasValue && filtro.filtro_plantilla.Value > 0)
                         cmd.Parameters.AddWithValue("@PLANTILLA", filtro.filtro_plantilla.Value);
+                    if (filtro.filtro_version.HasValue && filtro.filtro_version.Value > 0)
+                        cmd.Parameters.AddWithValue("@VERSION", filtro.filtro_version.Value);
                     if (!string.IsNullOrEmpty(filtro.filtro))
                         cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
                 }
