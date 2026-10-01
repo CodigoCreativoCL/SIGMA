@@ -363,6 +363,10 @@ MigrationBackup/
 FodyWeavers.xsd
 # Artefactos de compilacion de Visual Studio (no van al repo)
 _program files_git_check/
+
+# Salida temporal de aspnet_compiler al verificar que las paginas compilan.
+# Son miles de archivos generados; no son del proyecto.
+_program files_git/
 .codex-compile-*/
 
 # Precompilado de la intranet (salida de build, no fuente).

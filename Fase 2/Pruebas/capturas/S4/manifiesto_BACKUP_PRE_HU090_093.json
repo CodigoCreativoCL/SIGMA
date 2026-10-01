@@ -1,0 +1,774 @@
+[
+ {
+  "hu": "HU-080",
+  "criterio": 1,
+  "titulo": "Alta de plan: versión 1 en borrador",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Planes de mantenimiento › Nuevo › código PMA-EV…, nombre, planta Renca, tipo Amasadora › Guardar › pestaña Versiones.",
+  "esperado": "Se crea la versión 1 en estado borrador y el código es único dentro del cliente.",
+  "obtenido": "La ficha se abre como centro (Ficha / Hitos / Equipos / Calendario / Versiones); Versiones muestra la v1 «Borrador».",
+  "ok": true,
+  "capturas": [
+   "hu080_1_formulario.png",
+   "hu080_1_ficha.png",
+   "hu080_1_versiones.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:22"
+ },
+ {
+  "hu": "HU-080",
+  "criterio": 1,
+  "titulo": "Código único dentro del cliente",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Nuevo plan con el código PMA-HORNOS-L1, que ya existe. Guardar.",
+  "esperado": "Rechazado: el código es único dentro del cliente.",
+  "obtenido": "Aviso del SP: «2.- YA EXISTE UN PLAN CON EL CÓDIGO PMA-HORNOS-L1. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu080_1_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:22"
+ },
+ {
+  "hu": "HU-080",
+  "criterio": 2,
+  "titulo": "Plan acotado a un tipo: solo equipos de ese tipo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Plan acotado al tipo Amasadora (las revolvedoras) › Equipos › Asociar equipo: primero un Horno (ACT-34), luego una Revolvedora (ACT-35).",
+  "esperado": "Solo se aceptan equipos del tipo (o modelo) al que está acotado el plan.",
+  "obtenido": "El horno se rechaza: «5.- EL ACTIVO ACT-34 NO ES DEL TIPO AL QUE ESTÁ ACOTADO EL PLAN. ACEPTAR»; la revolvedora queda asociada («Equipo asociado al plan con éxito. ACEPTAR»).",
+  "ok": true,
+  "capturas": [
+   "hu080_2_modal_otro_tipo.png",
+   "hu080_2_rechazo.png",
+   "hu080_2_equipo_asociado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 2,
+  "titulo": "Hito sin programación: rechazado",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Hitos › Nuevo hito con código y nombre pero sin elegir «Cada cuánto» › Guardar.",
+  "esperado": "La operación es rechazada: el hito debe tener una recurrencia definida.",
+  "obtenido": "El validador marca la programación como obligatoria y el formulario no se envía; el SP además exige @PROGRAMACION.",
+  "ok": true,
+  "capturas": [
+   "hu081_2_sin_programacion.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 1,
+  "titulo": "Alta de hito con programación",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mismo hito con «Cada cuánto = Mensual (semilla)», requiere parada = SI › Guardar.",
+  "esperado": "El hito queda ligado a su programación; las ocurrencias las genera el generador (HU-076) a partir de ella.",
+  "obtenido": "Aviso «Hito creado con éxito. ACEPTAR»; la grilla de hitos muestra LUB-500 con su programación.",
+  "ok": true,
+  "capturas": [
+   "hu081_1_modal.png",
+   "hu081_1_grilla.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:23"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 1,
+  "titulo": "Varios equipos: una ocurrencia por cada uno",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Equipos › asociar ACT-35, ACT-43 y ACT-44 › Versiones › Publicar el borrador › Calendario › Generar ocurrencias (90 días).",
+  "esperado": "El plan genera ocurrencias independientes para cada equipo.",
+  "obtenido": "Publicación: «Versión publicada. La anterior quedó retirada. ACEPTAR»; generación: «9 ocurrencia(s) generada(s). ACEPTAR». El calendario muestra una fila por equipo y mes.",
+  "ok": true,
+  "capturas": [
+   "hu083_1_equipos.png",
+   "hu083_1_calendario.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:24"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 1,
+  "titulo": "Vista del calendario anual",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "PMA-HORNOS-L1 › Calendario › año 2027, todo el año.",
+  "esperado": "Ocurrencias por mes con su equipo y su hito; filtros por planta, área, equipo y tipo de trabajo.",
+  "obtenido": "La grilla lista mes a mes las ocurrencias con hito, equipo y estado; filtros de año, mes, equipo y estado.",
+  "ok": true,
+  "capturas": [
+   "hu085_1_calendario_anual.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:24"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 2,
+  "titulo": "Solo trabajos que requieren parada",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Calendario › «Solo con parada» = SI › Aplicar.",
+  "esperado": "Se muestran solo las ocurrencias de hitos que requieren parada.",
+  "obtenido": "2 filas, todas del hito OVH-QUEMADOR (requiere parada).",
+  "ok": true,
+  "capturas": [
+   "hu085_2_solo_parada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-085",
+  "criterio": 3,
+  "titulo": "Carga estimada por semana",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Calendario › bloque «Horas estimadas por semana».",
+  "esperado": "Se ve la cantidad de horas estimadas por semana.",
+  "obtenido": "El bloque bajo los filtros lista cada semana con sus horas (duración estimada de los hitos).",
+  "ok": true,
+  "capturas": [
+   "hu085_3_horas_semana.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 1,
+  "titulo": "Bandeja de hallazgos",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Hallazgos de inspección (estado Pendiente).",
+  "esperado": "Hallazgos pendientes con equipo, severidad, foto y días de espera, ordenados por severidad y antigüedad.",
+  "obtenido": "La grilla muestra severidad, equipo, días de espera y la respuesta que lo originó.",
+  "ok": true,
+  "capturas": [
+   "hu096_1_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 3,
+  "titulo": "Descartar con motivo de al menos 10 caracteres",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Seleccionar «Guarda de seguridad suelta» › motivo «corto» › Descartar; luego con un motivo completo.",
+  "esperado": "Se exige un motivo de al menos 10 caracteres y queda registrado quién lo descartó y cuándo.",
+  "obtenido": "Con «corto» el panel de resultado marca RECHAZADO: «3.- INDIQUE EL MOTIVO DEL DESCARTE (AL MENOS 10 CARACTERES)» (0 resueltos). Con el motivo completo: «1 hallazgo(s) resuelto(s)» y el hallazgo sale de la bandeja con quién y cuándo lo descartó.",
+  "ok": true,
+  "capturas": [
+   "hu096_3_motivo_corto.png",
+   "hu096_3_descartado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-096",
+  "criterio": 2,
+  "titulo": "Convertir un hallazgo en orden",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Seleccionar «Correa con grietas visibles» › Generar orden de trabajo › Sí.",
+  "esperado": "La orden nace con origen «hallazgo de checklist», el hallazgo queda enlazado y sale de la bandeja.",
+  "obtenido": "Aviso «1 hallazgo(s) resuelto(s). ACEPTAR»; el hallazgo desaparece de pendientes y la orden queda con origen HALLAZGO CHECKLIST.",
+  "ok": true,
+  "capturas": [
+   "hu096_2_seleccion.png",
+   "hu096_2_resultado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:25"
+ },
+ {
+  "hu": "HU-102",
+  "criterio": 1,
+  "titulo": "Programación de la tarea y sus ocurrencias",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Tareas recurrentes › Nueva tarea › Guardar › Programaciones › Programar (Mensual) › Generar ocurrencias (90 días).",
+  "esperado": "Se generan ocurrencias según la recurrencia definida.",
+  "obtenido": "Programación: «Tarea programada con éxito. ACEPTAR». Generación: «3 ocurrencia(s) generada(s) para los próximos 90 días. · TAR-EV1822 · Mensual (semilla): 3 ACEPTAR». La pestaña lista la programación y sus ocurrencias generadas.",
+  "ok": true,
+  "capturas": [
+   "hu102_1_formulario.png",
+   "hu102_1_modal_programacion.png",
+   "hu102_1_ocurrencias.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-102",
+  "criterio": 2,
+  "titulo": "Programación de fecha única con varias fechas",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Requiere una programación de tipo fecha única con cuatro fechas.",
+  "esperado": "Cuatro ocurrencias independientes, cada una con su ejecución y evidencias.",
+  "obtenido": "No verificado: la base demo no tiene programaciones de fecha única con varias fechas (el generador las soporta vía FNC_PROGRAMACION_FECHAS).",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-104",
+  "criterio": 1,
+  "titulo": "Comentario en el hilo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "TAR-001 › Comentarios › Comentar en una ocurrencia › Publicar.",
+  "esperado": "Queda con mi nombre y la fecha y no puede editarse ni eliminarse.",
+  "obtenido": "Aviso «Elija en qué ocurrencia comentar: «Comentar» en la tarjeta o «Responder» en un comentario. ACEPTAR»; el hilo muestra el comentario con «Rodrigo Quezada» y la fecha; no hay acciones de editar ni borrar.",
+  "ok": true,
+  "capturas": [
+   "hu104_1_escribiendo.png",
+   "hu104_1_publicado.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-104",
+  "criterio": 2,
+  "titulo": "Respuesta anidada",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "En un comentario › Responder › Publicar.",
+  "esperado": "La respuesta se muestra anidada bajo el comentario original.",
+  "obtenido": "Aviso «Comentario publicado. ACEPTAR»; la respuesta aparece con sangría bajo el comentario al que responde.",
+  "ok": true,
+  "capturas": [
+   "hu104_2_respuesta_anidada.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:26"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 5,
+  "titulo": "Ejecución sin conexión: la apertura es idempotente",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /checklist/ejecuciones con offline=true y uuid; repetir el mismo POST (reintento al recuperar señal).",
+  "esperado": "Queda guardado en el dispositivo y al sincronizar no se duplica; el servidor revalida.",
+  "obtenido": "201 y 201: el reintento devuelve el mismo id 7. La definición sincronizada (plantilla con umbrales) es GET /checklist/plantillas/{version}.",
+  "ok": true,
+  "capturas": [
+   "hu095_sw_pendientes.png",
+   "hu095_sw_plantilla.png",
+   "hu095_sw_abrir.png",
+   "hu095_5_sw_reintento.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 2,
+  "titulo": "Ítem obligatorio sin responder",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST /checklist/ejecuciones/{id}/cerrar sin haber respondido.",
+  "esperado": "Se indica cuál falta y no se permite finalizar.",
+  "obtenido": "400: {\n  \"codigo\": 400,\n  \"mensaje\": \"Faltan 4 items obligatorios por responder.\",\n  \"esDeNegocio\": true\n}",
+  "ok": true,
+  "capturas": [
+   "hu095_2_sw_cerrar_incompleto.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 3,
+  "titulo": "Valor fuera de rango se marca con su mensaje",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "POST respuestas con un valor sobre el umbral crítico del ítem numérico.",
+  "esperado": "El ítem se marca fuera de rango con el mensaje configurado (y exige foto si así está definido).",
+  "obtenido": "La respuesta devuelve fuera_rango = true con la severidad y el mensaje del umbral.",
+  "ok": true,
+  "capturas": [
+   "hu095_sw_resp_2.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 1,
+  "titulo": "Ejecución completa",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Responder todos los obligatorios y POST cerrar; GET /checklist/ejecuciones/{id}.",
+  "esperado": "La ejecución queda con fecha de inicio y término y se calculan respondidos y no conformes.",
+  "obtenido": "cerrar → 200; la ejecución muestra fechas y contadores.",
+  "ok": true,
+  "capturas": [
+   "hu095_1_sw_cerrar.png",
+   "hu095_1_sw_ejecucion.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-095",
+  "criterio": 4,
+  "titulo": "Unidad distinta a la esperada",
+  "usuario": "cristian",
+  "tipo": "API (Swagger)",
+  "pasos": "Registrar un valor en PSI en un ítem que espera bar.",
+  "esperado": "Se guarda el valor y la unidad ingresados; la comparación usa el valor convertido.",
+  "obtenido": "No construido en esta versión (la respuesta no lleva unidad). Queda en «No» en el backlog.",
+  "ok": false,
+  "capturas": [],
+  "detalle": "",
+  "fecha": "14-09-2026 18:27"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 2,
+  "titulo": "Horómetro por activo",
+  "usuario": "rodrigo",
+  "tipo": "Web",
+  "pasos": "Equipos › abrir un equipo del plan: campo «Medidor» propio de cada equipo (pac_activo_medidor).",
+  "esperado": "Cada equipo dispara según su propio uso (su horómetro), no un medidor único del plan.",
+  "obtenido": "El modal del equipo del plan ofrece componente y medidor propios del equipo; con la decisión HU-073 #3 (BD/224) el horómetro lo aporta cada equipo. La generación por lectura de medidor no está construida (pendiente HU-073).",
+  "ok": true,
+  "capturas": [
+   "hu083_2_medidor_por_equipo.png"
+  ],
+  "detalle": "",
+  "fecha": "14-09-2026 23:02"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Del hito a sus actividades: la lista con orden, duración y lo que exige",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Planes de mantenimiento › PMA-HORNOS-L1 › pestaña Hitos › OVH-QUEMADOR › «Ver las 5 actividades».",
+  "esperado": "Se abre la lista de actividades de ese hito, en su orden de ejecución, mostrando el procedimiento enganchado con sus pasos, la duración en horas y minutos, y lo que cada una exige (obligatoria, parada, permiso).",
+  "obtenido": "La lista muestra las 5 actividades del overhaul en orden 1..5, con «Bloqueo de energía» y «Trabajo caliente» como permisos, la marca de parada, «2 h 30 min» y el procedimiento «Cambio de motorreductor · 10 pasos».",
+  "ok": true,
+  "capturas": [
+   "hu082_1_centro_plan_hitos.png",
+   "hu082_1_hito_desplegado.png",
+   "hu082_1_listado_actividades.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:40"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Actividad de una versión publicada: solo lectura",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "En las actividades de OVH-QUEMADOR (versión 3 publicada) › abrir una actividad.",
+  "esperado": "El listado avisa que la versión ya no está en borrador y la ficha se abre bloqueada, sin botón Guardar: para cambiarla hay que abrir una versión nueva del plan.",
+  "obtenido": "El aviso aparece sobre la grilla: sí. La ficha dice «ya no se puede modificar»: sí. Botón Guardar: oculto.",
+  "ok": true,
+  "capturas": [
+   "hu082_1_listado_actividades.png",
+   "hu082_2_ficha_bloqueada.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:40"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Alta de actividad en un hito en borrador, con orden automático",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de PMA-2 / REC-SEG (versión 1 borrador) › Nueva › código, nombre y duración 25 min › Guardar.",
+  "esperado": "La actividad se crea, queda al final del hito sin tener que escribir el número de orden, y aparece en la lista.",
+  "obtenido": "Respuesta del sistema: «Actividad creada con éxito. ACEPTAR». La actividad ACT-EV4003 aparece en la lista.",
+  "ok": true,
+  "capturas": [
+   "hu082_3_listado_borrador.png",
+   "hu082_3_ficha_nueva.png",
+   "hu082_3_guardada.png",
+   "hu082_3_en_la_lista.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:41"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "El código de la actividad es único dentro del hito",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de REC-SEG › Nueva › el mismo código ACT-EV4003 › Guardar.",
+  "esperado": "Se rechaza indicando que ya existe otra actividad con ese código en el hito.",
+  "obtenido": "Respuesta del sistema: «6.- YA EXISTE UNA ACTIVIDAD CON EL CÓDIGO ACT-EV4003 EN ESTE HITO. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu082_4_codigo_repetido.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:41"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 4,
+  "titulo": "«Requiere permiso» sin tipo de permiso se rechaza",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de REC-SEG › Nueva › Requiere permiso = SI, Tipo de permiso vacío › Guardar.",
+  "esperado": "Se rechaza: un permiso sin tipo no se puede emitir, así que la actividad no se guarda a medias.",
+  "obtenido": "Respuesta del sistema: «Si la actividad requiere permiso de trabajo, indique de qué tipo. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu082_5_permiso_sin_tipo.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:41"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Edición de una actividad: nombre y duración",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de REC-SEG › abrir ACT-EV4003 › cambiar el nombre y poner 40 minutos › Guardar.",
+  "esperado": "Los cambios quedan guardados y la lista los muestra, con la duración formateada.",
+  "obtenido": "Respuesta del sistema: «Actividad actualizada con éxito. ACEPTAR». La lista muestra «anclajes» y «40 min»: sí.",
+  "ok": true,
+  "capturas": [
+   "hu082_6_editada.png",
+   "hu082_6_lista_actualizada.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:42"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Sin la función de escritura la pantalla se lee pero no ofrece crear ni eliminar",
+  "usuario": "paula",
+  "tipo": "Web",
+  "pasos": "Entrar como Paula (sin la función «Crear y editar» en planes) a las actividades de REC-SEG.",
+  "esperado": "Las actividades se ven, pero la barra con «Nueva» y «Eliminar» no se muestra. Esconderla no es la seguridad: el servidor vuelve a exigir el permiso al guardar y al eliminar.",
+  "obtenido": "La lista se ve. Botón Nueva: ausente. Botón Eliminar: ausente.",
+  "ok": true,
+  "capturas": [
+   "hu082_8_solo_lectura.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:42"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 3,
+  "titulo": "Repuestos de la actividad: se planifican con su cantidad",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de PMA-2 / REC-SEG › abrir ACT-020 › Repuestos planificados › elegir un repuesto, cantidad 2 › Agregar.",
+  "esperado": "El repuesto queda planificado en la actividad con su cantidad y su unidad, y se avisa si en bodega hay menos de lo planificado.",
+  "obtenido": "Respuesta del sistema al agregar: «Repuesto planificado agregado con éxito. ACEPTAR». La lista de la ficha muestra el repuesto «MANUAL-060654 — Aceite hidráulico ISO 68 (carga 060654, edit». Se le marcó además «requiere permiso · Trabajo eléctrico» para el criterio 4: «Actividad actualizada con éxito. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "hu082b_1_repuesto_antes.png",
+   "hu082b_1_repuesto_agregado.png",
+   "hu082b_1_permiso_guardado.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:56"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "La actividad del hito se convierte en un paso de la orden generada",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "PMA-2 › publicar la versión 1 › Calendario › Generar ocurrencias › elegir una › Generar órdenes de trabajo › abrir la orden › pestaña Pasos.",
+  "esperado": "Cada actividad habilitada del hito aparece como un paso de la orden, en su orden de ejecución y con su texto copiado (no referenciado: si el plan cambia mañana, la orden de hoy sigue diciendo lo que se mandó a hacer).",
+  "obtenido": "Los pasos de la orden son las tres actividades de REC-SEG: «Revisar guardas…», «Probar las paradas…», «Registrar fugas…». Todas presentes.",
+  "ok": true,
+  "capturas": [
+   "hu082b_3_ocurrencias.png",
+   "hu082b_3_ocurrencia_elegida.png",
+   "hu082b_3_ot_generada.png",
+   "hu082b_4_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:57"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 3,
+  "titulo": "El repuesto planificado en la actividad llega a la orden como cantidad planificada",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "En la orden generada › pestaña Repuestos y costos.",
+  "esperado": "El repuesto que se planificó en la actividad aparece en la orden con su cantidad planificada, sumada por repuesto si varias actividades del mismo hito lo piden.",
+  "obtenido": "La orden trae el repuesto «MANUAL-060654 — Aceite hidráulico ISO 68 (carga 060654, edit»: sí.",
+  "ok": true,
+  "capturas": [
+   "hu082b_1_repuesto_agregado.png",
+   "hu082b_4_repuestos.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:57"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 4,
+  "titulo": "Si una actividad requiere permiso de trabajo, la orden generada queda marcada",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "ACT-020 marcada como «requiere permiso · Trabajo eléctrico» › generar la orden › pestaña Ficha de la orden.",
+  "esperado": "Se exige indicar el tipo de permiso al marcar la actividad, y la orden generada nace con «requiere permiso» en sí, porque al menos una de sus actividades lo pide.",
+  "obtenido": "La ficha de la orden muestra la marca de permiso requerido: sí. El rechazo de «requiere permiso» sin tipo está en el caso 5 de la primera tanda.",
+  "ok": true,
+  "capturas": [
+   "hu082b_1_permiso_guardado.png",
+   "hu082b_4_ficha_permiso.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 01:57"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 2,
+  "titulo": "Una actividad no obligatoria llega al terreno como no obligatoria",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Orden generada desde el plan › pestaña Pasos › el paso que viene de ACT-030, la única actividad de REC-SEG marcada como no obligatoria.",
+  "esperado": "El paso hereda «obligatorio = no» y la orden lo dice: se marca «Opcional» en la lista y el detalle explica que se puede declarar «no aplica» sin dejar la orden incompleta. Los obligatorios no se marcan, para que el que se puede saltar no se pierda entre carteles.",
+  "obtenido": "En la lista de pasos hay exactamente 1 paso marcado «Opcional», y es el de «Registrar fugas…»: sí. La marcación de «no aplica» en terreno es de la app móvil y se entrega en el Sprint 6; lo que se verifica acá es que el plan se lo transmite a la orden.",
+  "ok": true,
+  "capturas": [
+   "hu082c_2_pasos_opcional.png",
+   "hu082c_2_detalle_opcional.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 02:01"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 1,
+  "titulo": "Baja lógica de una actividad: sale de la lista y la fila se conserva",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de un hito en borrador › Nueva › crear ACT-BAJA0717 › marcarla › Eliminar › confirmar.",
+  "esperado": "La barra de comandos ofrece «Nueva» y «Eliminar» a quien tiene la función de escritura, y al eliminar la actividad deja de aparecer en la lista. La fila no se borra: queda con habilitado = 0 para no perder la trazabilidad de las órdenes que la copiaron.",
+  "obtenido": "Botón Nueva: presente. Botón Eliminar: presente. Alta: «Actividad creada con éxito. ACEPTAR». Baja: «Actividad eliminada con éxito. ACEPTAR». ACT-BAJA0717 ya no aparece en la lista.",
+  "ok": true,
+  "capturas": [
+   "hu082d_7_antes_de_la_baja.png",
+   "hu082d_7_seleccionada.png",
+   "hu082d_7_eliminada.png",
+   "hu082d_7_lista_sin_ella.png"
+  ],
+  "detalle": "",
+  "fecha": "25-09-2026 02:08"
+ },
+ {
+  "hu": "HU-082",
+  "criterio": 3,
+  "titulo": "Un repuesto planificado se puede quitar de la actividad",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Actividades de PMA-2 / REC-SEG › abrir ACT-010 › Repuestos planificados › elegir un repuesto, cantidad 3 › Agregar › Quitar.",
+  "esperado": "El repuesto se agrega y se quita. La lista no tiene edición a propósito: es una lista de materiales, y cambiar la cantidad es quitar la línea y volver a ponerla.",
+  "obtenido": "Al agregar: «Repuesto planificado agregado con éxito. ACEPTAR»; el repuesto «MANUAL-060654» aparece en la lista: sí. Al quitar: «Repuesto quitado de la actividad. ACEPTAR»; queda en la lista: no.",
+  "ok": true,
+  "capturas": [
+   "hu082e_3_repuesto_puesto.png",
+   "hu082e_3_repuesto_quitado.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 10:11"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 1,
+  "titulo": "La bandeja muestra lo pendiente, ordenado por urgencia y con su situación",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Planificación › Bandeja de mantenciones.",
+  "esperado": "Se ven las ocurrencias pendientes de todos los planes ordenadas por urgencia, y cada una indica si está futura, disponible, atrasada o vencida. Los contadores de arriba dicen cuántas hay de cada una.",
+  "obtenido": "Contadores: {\"Vencidas\":\"7\",\"Atrasadas\":\"2\",\"Disponibles\":\"4\",\"Futuras\":\"35\"}. En la primera página: {\"VENCIDA\":7,\"ATRASADA\":2,\"DISPONIBLE\":4,\"FUTURA\":35}. Las filas vienen ordenadas de más urgente a menos: sí.",
+  "ok": true,
+  "capturas": [
+   "hu087_1_bandeja.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:23"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 2,
+  "titulo": "La situación se calcula al consultar, no la escribe un proceso nocturno",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "En la bandeja › apretar el contador «Vencidas».",
+  "esperado": "Quedan solo las vencidas. La condición de vencida no está guardada en ninguna columna: sale de comparar la fecha límite con ahora en el momento de consultar, así que no hay ningún proceso nocturno del que dependa —el día que ese proceso fallara, la bandeja diría que no hay nada atrasado—. El estado guardado de esas filas sigue siendo «Pendiente»: son dos cosas distintas y la pantalla las muestra como tales.",
+  "obtenido": "Filas mostradas: 7 vencidas y 0 de otra situación. Los contadores no se filtran a sí mismos (siguen siendo {\"Vencidas\":\"7\",\"Atrasadas\":\"2\",\"Disponibles\":\"4\",\"Futuras\":\"35\"}), para poder salir del filtro.",
+  "ok": true,
+  "capturas": [
+   "hu087_2_solo_vencidas.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:23"
+ },
+ {
+  "hu": "HU-087",
+  "criterio": 3,
+  "titulo": "Desde la bandeja se genera la orden, y la ocurrencia queda enlazada",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › contador «Disponibles» › marcar una sin orden › Generar órdenes de trabajo › confirmar › volver a la bandeja.",
+  "esperado": "La orden se crea con los pasos del hito —una actividad, un paso— y la ocurrencia queda enlazada: su número aparece en la columna «Orden» de la misma fila, y desde ahí se entra a la orden. Volver a generarla no duplica: el SP devuelve la que ya existe.",
+  "obtenido": "Equipo elegido: ACT-40 Horno L2 Renca||01-11-2026. Respuesta del sistema: «1 orden generada ACEPTAR». La columna Orden de esa fila quedó con: «OT-55».",
+  "ok": true,
+  "capturas": [
+   "hu087c_3_disponibles.png",
+   "hu087c_3_seleccionada.png",
+   "hu087c_3_generada.png",
+   "hu087c_3_enlazada.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 13:24"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 3,
+  "titulo": "Un hito con varias actividades genera UNA orden con un paso por actividad",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Órdenes de trabajo › la orden generada desde la ocurrencia del hito REC-SEG › pestaña Pasos.",
+  "esperado": "La ocurrencia genera una sola orden de trabajo, y dentro de ella un paso por cada actividad habilitada del hito, con el texto copiado —no referenciado—: si el plan cambia mañana, la orden de hoy sigue diciendo lo que se mandó a hacer.",
+  "obtenido": "La orden tiene 6 pasos, uno por actividad del hito. Es una sola orden: la ocurrencia queda enlazada a ella y el SP es idempotente, así que volver a generarla devuelve la misma.",
+  "ok": true,
+  "capturas": [
+   "t3_hu081_3_una_orden_varios_pasos.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:58"
+ },
+ {
+  "hu": "HU-081",
+  "criterio": 4,
+  "titulo": "Un hito de overhaul que requiere parada llega marcado a la ocurrencia y a la orden",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja de mantenciones › la fila del hito OVH-QUEMADOR.",
+  "esperado": "Lo que el hito declara —overhaul e intervención con parada de equipo— viaja a la ocurrencia y a la orden que se genere, así que se puede planificar la detención antes de que llegue el día.",
+  "obtenido": "La fila muestra las dos marcas: «ATRASADA 15-09-2026 hace 11 días · vence en 3 días ACT-34 Horno L1 Renca OVH-QUEMADOR Overhaul del quemador PMA-HORNOS-L1 · SIN AC».",
+  "ok": true,
+  "capturas": [
+   "t3_hu081_4_overhaul_parada.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:58"
+ },
+ {
+  "hu": "HU-083",
+  "criterio": 3,
+  "titulo": "El equipo ya está cubierto por otro plan: se advierte y se permite continuar",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Centro del plan PMA-2 › Equipos › Asociar equipo › elegir ACT-34 — Horno L1, que ya está en el plan publicado PMA-HORNOS-L1.",
+  "esperado": "Al elegir el equipo se advierte cuál es el otro plan vigente que ya lo cubre —con su versión, su tipo, cuántos hitos tiene y cuántas mantenciones le tiene corriendo— y el botón Guardar sigue disponible: es un aviso, no un rechazo. Un equipo puede tener un plan de lubricación y otro de inspección legal; el sistema no puede distinguir ese caso del descuido, el planificador sí.",
+  "obtenido": "El aviso aparece nombrando a PMA-HORNOS-L1: sí. El botón Guardar sigue ofrecido: sí.",
+  "ok": true,
+  "capturas": [
+   "t3_hu083_3_equipos_del_plan.png",
+   "t3_hu083_3_aviso_otro_plan.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:59"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 3,
+  "titulo": "Sin motivo no se reprograma",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › Reprogramar en una fila › poner la fecha nueva y dejar el motivo vacío › Reprogramar.",
+  "esperado": "Se rechaza pidiendo el motivo. Reprogramar sin decir por qué deja un rastro que no explica nada, que es como no dejar rastro.",
+  "obtenido": "Respuesta del sistema: «Indique el motivo de la reprogramación. ACEPTAR».",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_3_sin_motivo.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 14:59"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 1,
+  "titulo": "Reprogramar deja rastro: la original no se pisa",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Bandeja › Reprogramar una mantención a 54 días con su motivo › volver a la bandeja mostrando también las cerradas.",
+  "esperado": "La ocurrencia original no se pisa: pasa a «Reprogramada» con su motivo y nace una nueva en pendiente con la fecha nueva, ligada a la vieja. Así queda quién la movió, cuándo, de qué fecha a qué fecha y por qué. La ventana de tolerancia se corre junto con la fecha: antes se copiaba tal cual y la ocurrencia nueva nacía ya vencida —o el movimiento fallaba contra una restricción de la base cuando pasaba la tolerancia, que es el caso normal—.",
+  "obtenido": "Respuesta del sistema: «Ocurrencia reprogramada con éxito. ACEPTAR». La bandeja muestra la original como «Reprogramada»: sí.",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_1_bandeja_con_reprogramar.png",
+   "t3_hu086_1_reprogramada.png",
+   "t3_hu086_1_rastro.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 15:00"
+ },
+ {
+  "hu": "HU-086",
+  "criterio": 2,
+  "titulo": "El cumplimiento se mide contra la fecha programada original",
+  "usuario": "emilio",
+  "tipo": "Web",
+  "pasos": "Centro del plan › pestaña Calendario › la línea de cumplimiento.",
+  "esperado": "El indicador se calcula contra la fecha programada ORIGINAL, no contra la reprogramada, y lo dice. Es la regla que le da sentido a poder reprogramar: si reprogramar corriera también la vara, el indicador se dejaría en 100% moviendo fechas y medir dejaría de servir. Cuando hay ocurrencias reprogramadas se muestra además lo que marcaría contra la fecha nueva, para que la diferencia se vea.",
+  "obtenido": "La pantalla dice: «Cumplimiento del plan: 8,3% (1 a tiempo de 12 programadas este año). Se mide contra la fecha programada original, no contra la reprogramada. Hay 2 ocurrencias reprogramadas: medido contra la fecha nueva marcaría 16,7%.».",
+  "ok": true,
+  "capturas": [
+   "t3_hu086_2_cumplimiento.png"
+  ],
+  "detalle": "",
+  "fecha": "26-09-2026 15:00"
+ },
+ {
+  "hu": "HU-084",
+  "criterio": 4,
+  "titulo": "Publicación simultánea",
+  "usuario": "sqlcmd ×2",
+  "tipo": "BD",
+  "pasos": "Dos sesiones publican la misma versión (PMA-2 v2) a la vez: A publica y retiene el bloqueo 6 s; B entra 1,5 s después.",
+  "esperado": "Una publica; la otra recibe «La versión ya no está en borrador».",
+  "obtenido": "A publicó. B esperó 6.2 s el bloqueo de A y fue rechazada: «2.- LA VERSIÓN YA NO ESTÁ EN BORRADOR: OTRO USUARIO LA PUBLICÓ O LA RETIRÓ.». Datos restaurados al terminar.",
+  "ok": true,
+  "capturas": [
+   "hu084_4_carrera.txt"
+  ],
+  "detalle": "La carrera se decide en SQL: la validación de estado del envoltorio espera el bloqueo de A y ve la versión ya publicada; si no alcanzara, el UPDATE ... WHERE estado = BORRADOR del SP base devuelve 0 filas y rechaza. BD/301 unifica el mensaje.",
+  "fecha": "26-09-2026 23:51"
+ }
+]
