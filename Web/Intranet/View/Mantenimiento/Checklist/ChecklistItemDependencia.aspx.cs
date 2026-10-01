@@ -21,10 +21,20 @@ public partial class View_Mantenimiento_Checklist_ChecklistItemDependencia : Sys
         set { ViewState["Id"] = value; }
     }
 
+    /// <summary>Al crear (desde el centro), acota los selectores de ítem al borrador de la pauta.</summary>
+    public int Version
+    {
+        get { return ViewState["Version"] != null ? (int)ViewState["Version"] : 0; }
+        set { ViewState["Version"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            Version = SitioBase.Querystring.Entero(Request.QueryString["query"], "Version");
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -35,7 +45,7 @@ public partial class View_Mantenimiento_Checklist_ChecklistItemDependencia : Sys
         if (ctrl.ID != "cboItem" && ctrl.ID != "cboCondicion") return;
 
         ctrl.Items.Add(new RadComboBoxItem("Seleccione un ítem…", ""));
-        var items = new ChecklistItemValidacionController().GetItems();
+        var items = new ChecklistItemValidacionController().GetItems(Version);
         if (items != null)
             foreach (ChecklistItemValidacion i in items)
             {

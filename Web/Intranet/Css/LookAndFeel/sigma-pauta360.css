@@ -60,8 +60,11 @@
 .pc-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; border-radius: 9px; padding: 8px 14px; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
 .pc-btn.prim { background: var(--sigma-purple); color: #fff; }
 .pc-btn.prim:hover { background: var(--sigma-purple-dark); }
-.pc-btn.out { background: #fff; color: var(--sigma-blue); border-color: #CFD6E3; }
-.pc-btn.out:hover { border-color: var(--sigma-blue); background: var(--sigma-blue-soft); }
+.pc-btn.out { background: #fff; color: var(--sigma-blue) !important; border-color: #CFD6E3; }
+.pc-btn.out:hover, .pc-btn.out:focus { border-color: var(--sigma-blue); background: var(--sigma-blue-soft); color: var(--sigma-blue-dark) !important; text-decoration: none; }
+.pc-btn.out:hover i, .pc-btn.out:focus i { color: inherit !important; }
+.pc-btn.prim { color: #fff !important; }
+.pc-btn.prim:hover, .pc-btn.prim:focus { color: #fff !important; text-decoration: none; }
 .pc-btn.danger { background: #fff; color: var(--danger); border-color: #F3C9C6; }
 .pc-btn.danger:hover { background: #FBEBEA; }
 .pc-btn.sm { padding: 6px 10px; font-size: 12px; }

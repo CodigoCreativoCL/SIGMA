@@ -35,6 +35,7 @@ namespace SitioBase.Model
         public string componente_nombre { get; set; }
         public int ejecucion_id { get; set; }
         public DateTime? ejecucion_fecha { get; set; }
+        public int plantilla_id { get; set; }
         public string plantilla_codigo { get; set; }
         public string plantilla_nombre { get; set; }
         public string ejecutor_nombre { get; set; }
@@ -105,6 +106,7 @@ namespace SitioBase.Controller
                             h.componente_nombre = dr["COMPONENTE_NOMBRE"].ToString();
                             h.ejecucion_id = int.Parse(dr["EJECUCION_ID"].ToString());
                             if (dr["EJECUCION_FECHA"] != DBNull.Value) h.ejecucion_fecha = (DateTime)dr["EJECUCION_FECHA"];
+                            if (dr["PLANTILLA_ID"] != DBNull.Value) h.plantilla_id = int.Parse(dr["PLANTILLA_ID"].ToString());
                             h.plantilla_codigo = dr["PLANTILLA_CODIGO"].ToString();
                             h.plantilla_nombre = dr["PLANTILLA_NOMBRE"].ToString();
                             h.ejecutor_nombre = dr["EJECUTOR_NOMBRE"].ToString();

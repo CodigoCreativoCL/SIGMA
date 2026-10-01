@@ -167,6 +167,8 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
         litHeroSub.Text = "<b>" + Server.HtmlEncode(pla.cpl_codigo) + "</b> · " + alcance + badges;
 
         string queryEditar = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + pla.cpl_id));
+        // Con Borrador=1 el editor crea (y clona desde la publicada) el borrador al abrir.
+        string queryBorrador = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + pla.cpl_id + "&Borrador=1"));
         hlEditar.NavigateUrl = "javascript:void(0)";
         hlEditar.Attributes["onclick"] = "return abrirPauta('" + queryEditar + "')";
 
@@ -306,19 +308,21 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
 
         // ---- Pestaña ESTRUCTURA (solo lectura de la versión actual) ----
         hlEditarEstructura.NavigateUrl = "javascript:void(0)";
-        hlEditarEstructura.Attributes["onclick"] = "return abrirPauta('" + queryEditar + "')";
+        hlEditarEstructura.Attributes["onclick"] = "return abrirPauta('" + queryBorrador + "')";
         hlEditarEstructura.Visible = Token.Puede("CREAR EDITAR PAUTAS");
         // Umbrales (validaciones) y dependencias: ya no están en el menú; se
         // gestionan desde aquí (sus pantallas filtran por pauta).
-        hlUmbrales.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemValidacions.aspx");
-        hlDependencias.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemDependencias.aspx");
+        hlUmbrales.NavigateUrl = "javascript:void(0)";
+        hlUmbrales.Attributes["onclick"] = "return abrirUmbrales('" + queryEditar + "')";
+        hlDependencias.NavigateUrl = "javascript:void(0)";
+        hlDependencias.Attributes["onclick"] = "return abrirDependencias('" + queryEditar + "')";
         RenderEstructura(actual != null ? actual.cpv_id : 0,
                          actual != null ? actual.cpv_numero : 0,
                          actual != null ? actual.cpv_estado : 0);
 
         // ---- Pestaña VERSIONES (mockup 05) ----
         hlNuevaVersion.NavigateUrl = "javascript:void(0)";
-        hlNuevaVersion.Attributes["onclick"] = "return abrirPauta('" + queryEditar + "')";
+        hlNuevaVersion.Attributes["onclick"] = "return abrirPauta('" + queryBorrador + "')";
         hlNuevaVersion.Visible = Token.Puede("CREAR EDITAR PAUTAS");
         litVersiones.Text = RenderVersiones(versiones);
         ChecklistVersion borrador = versiones.Find(v => v.cpv_estado == 1);
@@ -518,7 +522,7 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
         if (sel == null) foreach (ChecklistOcurrencia o in ocs) if (o.ejecutada) { sel = o; break; }
 
         StringBuilder sb = new StringBuilder();
-        sb.Append("<table class='pc-table'><thead><tr><th>Fecha programada</th><th>Estado</th><th>Equipo</th><th>Versión</th><th></th></tr></thead><tbody>");
+        sb.Append("<table class='pc-table pc-oc-table'><thead><tr><th>Fecha programada</th><th>Estado</th><th>Equipo</th><th>Versión</th><th></th></tr></thead><tbody>");
         int n = 0;
         foreach (ChecklistOcurrencia o in ocs)
         {

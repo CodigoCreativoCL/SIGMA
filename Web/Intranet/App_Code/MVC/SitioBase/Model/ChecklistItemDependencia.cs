@@ -33,6 +33,7 @@ namespace SitioBase.Model
 
         // Filtros del listado
         public int? filtro_plantilla { get; set; }
+        public int? filtro_version { get; set; }
         public string filtro { get; set; }
     }
 }

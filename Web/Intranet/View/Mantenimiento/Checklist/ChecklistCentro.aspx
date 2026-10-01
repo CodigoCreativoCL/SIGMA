@@ -10,10 +10,12 @@
     <style type="text/css">
         /* Tokens de la paleta SIGMA (CLAUDE.md). No repetir hex sueltos. */
         .sg-pc {
-            --sigma-purple: #6732F4; --sigma-purple-soft: #F2EFFF;
-            --sigma-cyan-soft: #E8FBFB; --sigma-cyan-dark: #007F8A;
+            --sigma-purple: #6732F4; --sigma-purple-dark: #4820C9; --sigma-purple-soft: #F2EFFF;
+            --sigma-blue: #087BEA; --sigma-blue-dark: #0565C2; --sigma-blue-soft: #EAF4FF;
+            --sigma-cyan: #16C6C9; --sigma-cyan-soft: #E8FBFB; --sigma-cyan-dark: #007F8A;
             --ink: #17223B; --muted: #68738A; --line: #E2E7F0;
-            --success: #16855B; --warning: #B65C00;
+            --success: #16855B; --warning: #B65C00; --danger: #C7352B;
+            --surface: #FFFFFF; --canvas: #F4F6FA;
         }
         /* Chips: fondo suave + texto del tono. Estado de negocio = semántico;
            versión = morado de marca. */
@@ -97,8 +99,11 @@
         .pc-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; border-radius: 9px; padding: 8px 14px; cursor: pointer; text-decoration: none; border: 1px solid transparent; }
         .pc-btn.prim { background: var(--sigma-purple); color: #fff; }
         .pc-btn.prim:hover { background: var(--sigma-purple-dark); }
-        .pc-btn.out { background: #fff; color: var(--sigma-blue); border-color: #CFD6E3; }
-        .pc-btn.out:hover { border-color: var(--sigma-blue); background: var(--sigma-blue-soft); }
+        .pc-btn.out { background: #fff; color: var(--sigma-blue) !important; border-color: #CFD6E3; }
+        .pc-btn.out:hover, .pc-btn.out:focus { border-color: var(--sigma-blue); background: var(--sigma-blue-soft); color: var(--sigma-blue-dark) !important; text-decoration: none; }
+        .pc-btn.out:hover i, .pc-btn.out:focus i { color: inherit !important; }
+        .pc-btn.prim { color: #fff !important; }
+        .pc-btn.prim:hover, .pc-btn.prim:focus { color: #fff !important; text-decoration: none; }
         /* Tarjeta lateral "Un solo centro" */
         .pc-aside .pc-card { text-align: left; }
         .pc-aside-ico { width: 46px; height: 46px; border-radius: 12px; background: var(--sigma-purple-soft); color: var(--sigma-purple); display: flex; align-items: center; justify-content: center; font-size: 24px; margin-bottom: 12px; }
@@ -142,7 +147,10 @@
         .pc-est-grid { display: grid; grid-template-columns: 300px minmax(0,1fr) 300px; gap: 16px; align-items: start; }
         @media (max-width: 1200px) { .pc-est-grid { grid-template-columns: 260px minmax(0,1fr); } .pc-est-side { display: none; } }
         @media (max-width: 820px) { .pc-est-grid { grid-template-columns: 1fr; } }
-        .pc-tree { }
+        .pc-tree { max-height: calc(100vh - 185px); min-height: 300px; overflow-y: auto; }
+        .pc-tree::-webkit-scrollbar { width: 8px; }
+        .pc-tree::-webkit-scrollbar-thumb { background: #D5DCE8; border-radius: 8px; }
+        .pc-tree::-webkit-scrollbar-thumb:hover { background: #C1C9D9; }
         .pc-tree-sec { margin-bottom: 6px; }
         .pc-tree-sec > .cab { display: flex; align-items: center; gap: 8px; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-weight: 700; color: var(--ink); font-size: 13.5px; }
         .pc-tree-sec > .cab:hover { background: #F4F6FA; }
@@ -190,6 +198,12 @@
         @media (max-width: 1050px) { .pc-md-grid { grid-template-columns: 1fr; } }
         .pc-table tr.pc-oc-fila { cursor: pointer; }
         .pc-table tr.pc-oc-fila.es-sel { background: var(--sigma-purple-soft); }
+        /* Master de ocurrencias: cabe en su tarjeta (440px) sin desbordar. */
+        .pc-oc-wrap { overflow-x: auto; }
+        .pc-oc-table { width: 100%; }
+        .pc-oc-table th, .pc-oc-table td { white-space: normal; word-break: break-word; }
+        .pc-oc-table td.cod { font-weight: 700; }
+        .pc-oc-table th:last-child, .pc-oc-table td.acc { width: 22px; padding-left: 2px; padding-right: 4px; }
         .pc-ej-attrs { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 12px 0 18px; }
         @media (max-width: 900px) { .pc-ej-attrs { grid-template-columns: repeat(2, 1fr); } }
         .pc-ej-attr { display: flex; gap: 10px; align-items: flex-start; }
@@ -229,6 +243,19 @@
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistPlantilla.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva pauta de inspección' : 'Editar pauta de inspección',
                 width: 860, initialHeight: 560
+            });
+        }
+        /* Umbrales y dependencias de la pauta, en modal, filtrados al borrador. */
+        function abrirUmbrales(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemValidacions.aspx") %>?query=' + query,
+                title: 'Umbrales de la pauta', width: 980, initialHeight: 640
+            });
+        }
+        function abrirDependencias(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemDependencias.aspx") %>?query=' + query,
+                title: 'Dependencias entre ítems', width: 980, initialHeight: 640
             });
         }
         /* Alta/edición de una programación de la pauta, en modal. */
@@ -623,7 +650,7 @@
                                 <h3 style="margin:0;font-size:15px;font-weight:800;color:var(--ink);">Ocurrencias y ejecuciones</h3>
                                 <span style="color:var(--muted);font-size:12.5px;">Historial de ejecuciones de la pauta. Toque una fila ejecutada para ver su detalle.</span>
                             </div>
-                            <asp:Literal ID="litOcurrencias" runat="server" />
+                            <div class="pc-oc-wrap"><asp:Literal ID="litOcurrencias" runat="server" /></div>
                         </div>
                         <div class="pc-card">
                             <asp:Literal ID="litEjecucion" runat="server" />

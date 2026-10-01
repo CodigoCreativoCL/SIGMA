@@ -1,16 +1,23 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="ChecklistItemValidacions.aspx.cs" Inherits="View_Mantenimiento_Checklist_ChecklistItemValidacions" %>
-
-<%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/Master/Simple.master" AutoEventWireup="true" CodeFile="ChecklistItemValidacions.aspx.cs" Inherits="View_Mantenimiento_Checklist_ChecklistItemValidacions" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <style type="text/css">
+        .civ-cab { margin: 0 0 14px; }
+        .civ-cab h2 { margin: 0; font-size: 17px; font-weight: 800; color: #17223B; }
+        .civ-cab p { margin: 3px 0 0; font-size: 12.5px; color: #68738A; }
+        .civ-cab .pauta { color: #6732F4; font-weight: 800; }
+        /* La tabla mantiene su ancho natural; si excede el modal, scroll horizontal. */
+        .civ-tabla { width: 100%; max-width: 100%; overflow-x: auto; }
+    </style>
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
-        function abrirValidacion(query) {
+        var CIV_NUEVO = '<%= NuevoQuery %>';
+        function abrirValidacion(query, esNuevo) {
             return SigmaModal.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemValidacion.aspx") %>?query=' + query,
-                title: String(query) === '0' ? 'Nueva validación de ítem' : 'Editar validación de ítem',
+                title: esNuevo ? 'Nueva validación de ítem' : 'Editar validación de ítem',
                 width: 900,
                 initialHeight: 640
             });
@@ -19,44 +26,31 @@
     </script>
 </asp:Content>
 
-<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Mantenimiento</asp:Content>
-<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">Umbrales y acciones de ítems</asp:Content>
-<asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Qué valores son normales para cada ítem de una pauta y qué ocurre cuando no lo son: umbrales de clasificación y acciones fuera de rango.
-</asp:Content>
-
-<asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">
-    <wuc:Filtro runat="server" ID="wucFiltro">
-        <FiltroPersonalizado>
-            <div class="row col-lg-12 col-md-12 col-xs-12">
-                <div class="col-lg-6 col-md-6 col-12">
-                    <label for="cboPlantilla" style="display:block; margin:0 0 4px;">Pauta:</label>
-                    <rad:RadComboBox2 ID="cboPlantilla" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" />
-                </div>
-                <div class="col-lg-6 col-md-6 col-12"></div>
-            </div>
-        </FiltroPersonalizado>
-    </wuc:Filtro>
-</asp:Content>
-
-<asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
+<asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
     <asp:Panel ID="pnlSinCliente" runat="server" Visible="false" CssClass="card-box">
-        <p>Seleccione un cliente en el encabezado para ver las validaciones.</p>
+        <p>Abra esta pantalla desde una pauta de inspección (pestaña Estructura → Umbrales).</p>
     </asp:Panel>
+
+    <div class="civ-cab">
+        <h2>Umbrales y acciones</h2>
+        <p>Qué valores son normales para cada ítem y qué ocurre fuera de rango, en el <b>borrador</b> de <span class="pauta"><asp:Literal ID="litPauta" runat="server" /></span>.</p>
+    </div>
 
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
+            <div class="civ-tabla">
             <rad:RadGrid2 ID="Grid" runat="server" OnItemDataBound="Grid_ItemDataBound" AllowPaging="true" PageSize="25">
                 <MasterTableView CommandItemDisplay="Top" DataKeyNames="civ_id">
                     <CommandItemTemplate>
                         <div style="margin-bottom:5px;">
-                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirValidacion(0);" />
+                            <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirValidacion(CIV_NUEVO, true);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Dar de baja" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea dar de baja las validaciones seleccionadas?');" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>
             </rad:RadGrid2>
+            </div>
         </ContentTemplate>
     </asp:UpdatePanel>
 </asp:Content>
