@@ -1,0 +1,71 @@
+erDiagram
+    Severidad {
+        int sev_id PK
+        nvarchar sev_codigo 
+        nvarchar sev_nombre 
+        nvarchar sev_icono 
+        int sev_archivo 
+        int sev_orden 
+        bit sev_habilitado 
+    }
+    Tipo_Dato {
+        int tda_id PK
+        nvarchar tda_codigo 
+        nvarchar tda_nombre 
+        int tda_orden 
+        bit tda_habilitado 
+    }
+    Dia_Semana {
+        int dse_id PK
+        nvarchar dse_codigo 
+        nvarchar dse_nombre 
+        int dse_orden 
+        bit dse_habilitado 
+    }
+    Frecuencia_Tipo {
+        int fre_id PK
+        nvarchar fre_codigo 
+        nvarchar fre_nombre 
+        int fre_orden 
+        bit fre_habilitado 
+    }
+    Operador_Comparacion {
+        int opc_id PK
+        nvarchar opc_codigo 
+        nvarchar opc_nombre 
+        int opc_orden 
+        bit opc_habilitado 
+    }
+    Entrada_Modo {
+        int emo_id PK
+        nvarchar emo_codigo 
+        nvarchar emo_nombre 
+        int emo_orden 
+        bit emo_habilitado 
+    }
+    Dato_Origen {
+        int dor_id PK
+        nvarchar dor_codigo 
+        nvarchar dor_nombre 
+        int dor_orden 
+        bit dor_habilitado 
+    }
+    Etiqueta_Origen {
+        int eto_id PK
+        nvarchar eto_codigo 
+        nvarchar eto_nombre 
+        nvarchar eto_descripcion 
+        nvarchar eto_icono 
+        int eto_permiso FK
+        int eto_orden 
+        bit eto_por_bodega 
+        bit eto_habilitado 
+        nvarchar eto_motivo_baja 
+    }
+    Registro_Origen {
+        int ror_id PK
+        nvarchar ror_codigo 
+        nvarchar ror_nombre 
+        int ror_orden 
+        bit ror_habilitado 
+    }

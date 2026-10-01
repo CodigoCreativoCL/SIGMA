@@ -1,0 +1,171 @@
+erDiagram
+    Archivo_Antivirus_Estado ||--o{ Archivo : arc_archivo_antivirus_estado
+    Archivo_Categoria ||--o{ Archivo : arc_archivo_categoria
+    Archivo ||--o{ Archivo_Analisis_Visual : aav_archivo
+    Analisis_Visual_Revision ||--o{ Archivo_Analisis_Visual : aav_analisis_visual_revision
+    Archivo ||--o{ Archivo_Carga : acg_archivo
+    Archivo_Carga_Estado ||--o{ Archivo_Carga : acg_archivo_carga_estado
+    Archivo ||--o{ Archivo_Vinculo : avi_archivo
+    Analisis_Visual_Revision ||--o{ Analisis_Visual_Deteccion : avd_analisis_visual_revision
+    Archivo ||--o{ Analisis_Visual_Revision : avr_archivo
+    Archivo {
+        int arc_id PK
+        uniqueidentifier arc_uuid 
+        int arc_cliente FK
+        int arc_archivo_categoria FK
+        nvarchar arc_nombre_original 
+        nvarchar arc_nombre_almacenado 
+        nvarchar arc_ruta 
+        nvarchar arc_mime 
+        nvarchar arc_extension 
+        bigint arc_byte 
+        nvarchar arc_hash 
+        int arc_ancho_pixel 
+        int arc_alto_pixel 
+        int arc_duracion_segundo 
+        decimal arc_latitud 
+        decimal arc_longitud 
+        datetime arc_fecha_captura_utc 
+        nvarchar arc_dispositivo 
+        int arc_archivo_antivirus_estado FK
+        datetime arc_fecha_antivirus_utc 
+        nvarchar arc_antivirus_detalle 
+        int arc_usuario_creacion 
+        datetime arc_fecha_creacion 
+        int arc_usuario_actualizacion 
+        datetime arc_fecha_actualizacion 
+        bit arc_habilitado 
+    }
+    Archivo_Analisis_Visual {
+        int aav_id PK
+        int aav_archivo FK
+        int aav_analisis_visual_revision FK
+        int aav_proceso_estado FK
+        int aav_prioridad 
+        int aav_intento 
+        datetime aav_fecha_encolado_utc 
+        datetime aav_fecha_proceso_utc 
+        nvarchar aav_mensaje 
+        int aav_usuario_creacion 
+        datetime aav_fecha_creacion 
+        int aav_usuario_actualizacion 
+        datetime aav_fecha_actualizacion 
+        bit aav_habilitado 
+    }
+    Archivo_Antivirus_Estado {
+        int aae_id PK
+        nvarchar aae_codigo 
+        nvarchar aae_nombre 
+        int aae_orden 
+        bit aae_habilitado 
+    }
+    Archivo_Carga {
+        int acg_id PK
+        uniqueidentifier acg_uuid 
+        int acg_cliente FK
+        int acg_archivo FK
+        int acg_archivo_carga_estado FK
+        nvarchar acg_nombre_original 
+        bigint acg_byte_total 
+        bigint acg_byte_recibido 
+        int acg_trozo_total 
+        int acg_trozo_recibido 
+        nvarchar acg_hash_esperado 
+        int acg_intento 
+        datetime acg_fecha_inicio_utc 
+        datetime acg_fecha_fin_utc 
+        nvarchar acg_mensaje 
+        int acg_usuario_creacion 
+        datetime acg_fecha_creacion 
+        int acg_usuario_actualizacion 
+        datetime acg_fecha_actualizacion 
+        bit acg_habilitado 
+    }
+    Archivo_Carga_Estado {
+        int acs_id PK
+        nvarchar acs_codigo 
+        nvarchar acs_nombre 
+        int acs_orden 
+        bit acs_habilitado 
+    }
+    Archivo_Categoria {
+        int aca_id PK
+        int aca_cliente FK
+        nvarchar aca_codigo 
+        nvarchar aca_nombre 
+        nvarchar aca_icono 
+        int aca_archivo 
+        int aca_orden 
+        int aca_usuario_creacion 
+        datetime aca_fecha_creacion 
+        int aca_usuario_actualizacion 
+        datetime aca_fecha_actualizacion 
+        bit aca_habilitado 
+    }
+    Archivo_Vinculo {
+        int avi_id PK
+        int avi_archivo FK
+        int avi_orden_trabajo FK
+        int avi_orden_trabajo_paso FK
+        int avi_falla FK
+        int avi_bitacora FK
+        int avi_checklist_ejecucion_respuesta FK
+        int avi_checklist_plantilla_item FK
+        int avi_plan_mantenimiento_actividad FK
+        int avi_tarea_ejecucion FK
+        int avi_activo FK
+        int avi_repuesto FK
+        int avi_permiso_trabajo FK
+        int avi_checklist_hallazgo FK
+        bit avi_es_referencia 
+        int avi_orden 
+        nvarchar avi_titulo 
+        nvarchar avi_descripcion 
+        int avi_usuario_creacion 
+        datetime avi_fecha_creacion 
+        int avi_usuario_actualizacion 
+        datetime avi_fecha_actualizacion 
+        bit avi_habilitado 
+        int avi_activo_modelo FK
+        int avi_activo_componente FK
+    }
+    Analisis_Visual_Deteccion {
+        int avd_id PK
+        int avd_analisis_visual_revision FK
+        nvarchar avd_etiqueta 
+        decimal avd_confianza 
+        int avd_severidad FK
+        decimal avd_caja_x 
+        decimal avd_caja_y 
+        decimal avd_caja_ancho 
+        decimal avd_caja_alto 
+        nvarchar avd_descripcion 
+        bit avd_confirmado_humano 
+        int avd_usuario_confirmacion FK
+        datetime avd_fecha_confirmacion_utc 
+        int avd_usuario_creacion 
+        datetime avd_fecha_creacion 
+        int avd_usuario_actualizacion 
+        datetime avd_fecha_actualizacion 
+        bit avd_habilitado 
+    }
+    Analisis_Visual_Revision {
+        int avr_id PK
+        int avr_cliente FK
+        int avr_archivo FK
+        nvarchar avr_motor 
+        nvarchar avr_modelo_version 
+        int avr_proceso_estado FK
+        int avr_deteccion_cantidad 
+        decimal avr_confianza_maxima 
+        int avr_milisegundo_proceso 
+        datetime avr_fecha_proceso_utc 
+        bit avr_revisado_humano 
+        int avr_usuario_revision FK
+        nvarchar avr_mensaje 
+        int avr_usuario_creacion 
+        datetime avr_fecha_creacion 
+        int avr_usuario_actualizacion 
+        datetime avr_fecha_actualizacion 
+        bit avr_habilitado 
+    }

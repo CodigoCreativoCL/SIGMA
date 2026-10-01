@@ -1,0 +1,79 @@
+erDiagram
+    Menus ||--o{ Menu_Perfil : mpe_menu
+    Menus ||--o{ Menu_Funcion : mfu_menu
+    Menu_Funcion ||--o{ Menu_Funcion_Perfil : mfp_menu_funcion
+    Menus {
+        int mnu_id PK
+        varchar mnu_nombre 
+        varchar mnu_descripcion 
+        int mnu_nivel 
+        int mnu_padre 
+        int mnu_orden 
+        varchar mnu_link 
+        bit mnu_visible 
+        varchar mnu_icon 
+        int mnu_permiso FK
+        int mnu_ambito FK
+    }
+    Menu_Perfil {
+        int mpe_id PK
+        int mpe_perfil FK
+        int mpe_menu FK
+        bit mpe_habilitado 
+        varchar mpe_host_creacion 
+        int mpe_usuario_creacion 
+        datetime mpe_fecha_creacion 
+        int mpe_usuario_act 
+        datetime mpe_fecha_act 
+    }
+    Menu_Funcion {
+        int mfu_id PK
+        varchar mfu_nombre 
+        int mfu_menu FK
+        int mfu_permiso FK
+    }
+    Menu_Funcion_Perfil {
+        int mfp_id PK
+        int mfp_perfil FK
+        int mfp_menu_funcion FK
+        bit mfp_habilitado 
+    }
+    Tipo_Perfil {
+        int tpp_id PK
+        varchar tpp_nombre 
+        bit tpp_habilitado 
+    }
+    Modulos_Sistema {
+        int mds_id PK
+        varchar mds_nombre 
+        bit mds_habilitado 
+        int mds_usuario_creacion 
+        datetime mds_fecha_creacion 
+        int mds_usuario_act 
+        datetime mds_fecha_act 
+    }
+    Modulo_Codigo {
+        int mco_id PK
+        nvarchar mco_tabla 
+        nvarchar mco_prefijo 
+        nvarchar mco_columna_codigo 
+        nvarchar mco_columna_id 
+        nvarchar mco_procedimiento 
+        bit mco_habilitado 
+    }
+    Privacidad_Modulos_Sistema {
+        int PMS_ID PK
+        int PMS_ID_MODULO 
+        nvarchar PMS_DESCRIPCION 
+        int PMS_USUARIO_CREACION 
+        datetime PMS_FECHA_CREACION 
+        int PMS_USUARIO_ACT 
+        datetime PMS_FECHA_ACT 
+    }
+    Cumplimiento_Politica {
+        int cpo_id PK
+        nvarchar cpo_codigo 
+        nvarchar cpo_nombre 
+        int cpo_orden 
+        bit cpo_habilitado 
+    }

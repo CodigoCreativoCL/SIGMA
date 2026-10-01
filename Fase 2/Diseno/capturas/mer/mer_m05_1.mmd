@@ -1,0 +1,120 @@
+erDiagram
+    Activo_Variable ||--o{ Activo_Medicion : amd_activo_variable
+    Activo_Medidor ||--o{ Activo_Medidor_Lectura : aml_activo_medidor
+    Variable_Medicion ||--o{ Activo_Variable : ava_variable_medicion
+    Marcacion_Binario ||--o{ Marcacion : mar_archivo
+    Activo_Medicion {
+        int amd_id PK
+        uniqueidentifier amd_uuid 
+        int amd_cliente FK
+        int amd_activo_variable FK
+        int amd_activo FK
+        int amd_activo_componente FK
+        datetime amd_fecha_medicion_utc 
+        decimal amd_valor 
+        int amd_unidad_medida FK
+        decimal amd_valor_canonico 
+        int amd_unidad_canonica FK
+        int amd_medicion_calidad FK
+        int amd_dato_origen FK
+        int amd_entrada_modo FK
+        int amd_checklist_ejecucion_respuesta FK
+        int amd_orden_trabajo FK
+        nvarchar amd_observacion 
+        int amd_usuario_creacion 
+        datetime amd_fecha_creacion 
+    }
+    Activo_Medidor {
+        int ame_id PK
+        int ame_cliente FK
+        int ame_activo FK
+        int ame_activo_componente FK
+        int ame_unidad_medida FK
+        nvarchar ame_codigo 
+        nvarchar ame_nombre 
+        decimal ame_valor_actual 
+        datetime ame_fecha_valor_actual_utc 
+        decimal ame_valor_reinicio 
+        bit ame_permite_reinicio 
+        int ame_usuario_creacion 
+        datetime ame_fecha_creacion 
+        int ame_usuario_actualizacion 
+        datetime ame_fecha_actualizacion 
+        bit ame_habilitado 
+        int ame_registro_descubrimiento FK
+        decimal ame_maximo_diario 
+    }
+    Activo_Medidor_Lectura {
+        int aml_id PK
+        uniqueidentifier aml_uuid 
+        int aml_cliente FK
+        int aml_activo_medidor FK
+        datetime aml_fecha_lectura_utc 
+        decimal aml_valor_acumulado 
+        bit aml_es_reinicio 
+        int aml_dato_origen FK
+        int aml_medicion_calidad FK
+        int aml_entrada_modo FK
+        int aml_orden_trabajo FK
+        nvarchar aml_observacion 
+        int aml_usuario_creacion 
+        datetime aml_fecha_creacion 
+    }
+    Activo_Variable {
+        int ava_id PK
+        int ava_cliente FK
+        int ava_activo FK
+        int ava_activo_componente FK
+        int ava_variable_medicion FK
+        int ava_unidad_medida FK
+        decimal ava_valor_minimo 
+        decimal ava_valor_maximo 
+        decimal ava_valor_advertencia 
+        decimal ava_valor_critico 
+        int ava_frecuencia_esperada_hora 
+        int ava_usuario_creacion 
+        datetime ava_fecha_creacion 
+        int ava_usuario_actualizacion 
+        datetime ava_fecha_actualizacion 
+        bit ava_habilitado 
+        int ava_registro_descubrimiento FK
+    }
+    Variable_Medicion {
+        int vme_id PK
+        int vme_cliente FK
+        int vme_unidad_medida FK
+        int vme_tipo_dato FK
+        nvarchar vme_codigo 
+        nvarchar vme_nombre 
+        int vme_decimales 
+        bit vme_relevante_ia 
+        bit vme_permite_manual 
+        bit vme_permite_sensor 
+        nvarchar vme_descripcion 
+        int vme_usuario_creacion 
+        datetime vme_fecha_creacion 
+        int vme_usuario_actualizacion 
+        datetime vme_fecha_actualizacion 
+        bit vme_habilitado 
+    }
+    Marcacion {
+        int mar_id PK
+        int mar_id_usuario FK
+        int mar_archivo FK
+        int mar_tipo_marcacion 
+        datetime mar_fecha_hora_marcacion 
+        int mar_gps 
+        decimal mar_latitud 
+        decimal mar_longitud 
+        int mar_modo_hora_dispositivo 
+        int mar_hora_dispositivo_servidor 
+        int mar_auto_manual 
+        datetime mar_fecha_creacion 
+        varchar mar_hash 
+        varchar mar_dispositivo 
+        datetime mar_fecha_local 
+    }
+    Marcacion_Binario {
+        int mab_id PK
+        varbinary mab_binario 
+    }

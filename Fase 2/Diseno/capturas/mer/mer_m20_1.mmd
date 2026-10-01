@@ -1,0 +1,53 @@
+erDiagram
+    Importacion_Tipo ||--o{ Importacion_Carga : ica_importacion_tipo
+    Importacion_Carga ||--o{ Importacion_Carga_Celda : icc_importacion_carga
+    Importacion_Celda_Estado ||--o{ Importacion_Carga_Celda : icc_importacion_celda_estado
+    Importacion_Carga {
+        int ica_id PK
+        int ica_cliente FK
+        int ica_cliente_instalacion FK
+        int ica_importacion_tipo FK
+        int ica_proceso_estado FK
+        nvarchar ica_nombre_archivo 
+        nvarchar ica_hash_archivo 
+        int ica_byte 
+        int ica_fila_leida 
+        int ica_fila_valida 
+        int ica_fila_rechazada 
+        int ica_fila_ambigua 
+        datetime ica_fecha_inicio_utc 
+        datetime ica_fecha_fin_utc 
+        nvarchar ica_mensaje 
+        int ica_usuario_creacion 
+        datetime ica_fecha_creacion 
+        int ica_usuario_actualizacion 
+        datetime ica_fecha_actualizacion 
+        bit ica_habilitado 
+    }
+    Importacion_Carga_Celda {
+        int icc_id PK
+        int icc_importacion_carga FK
+        nvarchar icc_hoja 
+        int icc_fila 
+        nvarchar icc_columna 
+        nvarchar icc_valor_original 
+        nvarchar icc_valor_interpretado 
+        int icc_importacion_celda_estado FK
+        nvarchar icc_mensaje 
+        int icc_usuario_creacion 
+        datetime icc_fecha_creacion 
+    }
+    Importacion_Celda_Estado {
+        int ice_id PK
+        nvarchar ice_codigo 
+        nvarchar ice_nombre 
+        int ice_orden 
+        bit ice_habilitado 
+    }
+    Importacion_Tipo {
+        int iti_id PK
+        nvarchar iti_codigo 
+        nvarchar iti_nombre 
+        int iti_orden 
+        bit iti_habilitado 
+    }

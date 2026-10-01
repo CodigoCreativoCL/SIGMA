@@ -1,0 +1,71 @@
+erDiagram
+    Funcionalidad ||--o{ Plan_Comercial_Funcionalidad : pcf_funcionalidad
+    Plan_Comercial ||--o{ Plan_Comercial_Funcionalidad : pcf_plan_comercial
+    Funcionalidad_Tipo ||--o{ Plan_Comercial_Funcionalidad : pcf_funcionalidad_tipo
+    Periodicidad_Cobro ||--o{ Plan_Comercial_Precio : pcp_periodicidad_cobro
+    Plan_Comercial ||--o{ Plan_Comercial_Precio : pcp_plan_comercial
+    Plan_Comercial {
+        int plc_id PK
+        nvarchar plc_codigo 
+        nvarchar plc_nombre 
+        nvarchar plc_descripcion 
+        int plc_orden 
+        int plc_dias_gracia 
+        bit plc_publico 
+        int plc_usuario_creacion 
+        datetime plc_fecha_creacion 
+        int plc_usuario_actualizacion 
+        datetime plc_fecha_actualizacion 
+        bit plc_habilitado 
+    }
+    Plan_Comercial_Funcionalidad {
+        int pcf_id PK
+        int pcf_plan_comercial FK
+        int pcf_funcionalidad FK
+        int pcf_cliente FK
+        int pcf_funcionalidad_tipo FK
+        bit pcf_incluida 
+        decimal pcf_limite 
+        date pcf_vigencia_hasta 
+        nvarchar pcf_observacion 
+        int pcf_usuario_creacion 
+        datetime pcf_fecha_creacion 
+        int pcf_usuario_actualizacion 
+        datetime pcf_fecha_actualizacion 
+        bit pcf_habilitado 
+    }
+    Plan_Comercial_Precio {
+        int pcp_id PK
+        int pcp_plan_comercial FK
+        int pcp_periodicidad_cobro FK
+        decimal pcp_valor_uf 
+        date pcp_vigencia_desde 
+        date pcp_vigencia_hasta 
+        decimal pcp_descuento_porcentaje 
+        int pcp_usuario_creacion 
+        datetime pcp_fecha_creacion 
+        int pcp_usuario_actualizacion 
+        datetime pcp_fecha_actualizacion 
+        bit pcp_habilitado 
+    }
+    Periodicidad_Cobro {
+        int pcb_id PK
+        nvarchar pcb_codigo 
+        nvarchar pcb_nombre 
+        int pcb_orden 
+        bit pcb_habilitado 
+    }
+    Funcionalidad {
+        int fun_id PK
+        nvarchar fun_codigo 
+        nvarchar fun_nombre 
+        int fun_orden 
+        bit fun_habilitado 
+    }
+    Funcionalidad_Tipo {
+        int fnt_id PK
+        nvarchar fnt_codigo 
+        nvarchar fnt_nombre 
+        int fnt_orden 
+        bit fnt_habilitado 
+    }

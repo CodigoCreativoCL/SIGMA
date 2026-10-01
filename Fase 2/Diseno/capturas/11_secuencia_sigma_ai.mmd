@@ -1,0 +1,37 @@
+sequenceDiagram
+    actor DS as Entrenador
+    participant W as SIGMA AI - Experimentos (.aspx)
+    participant API as SigmaAiController
+    participant EN as EntrenadorFalla (.NET)
+    participant DB as SQL Server
+    participant AML as Azure Machine Learning
+
+    DS->>W: 1. Armar el dataset
+    W->>API: POST /sigma-ai/datasets
+    API->>DB: API_SEL_ML_DATASET_FALLA + API_INS_ML_DATASET
+    DB-->>API: filas, positivas, SHA-256
+    API-->>W: dataset registrado
+
+    DS->>W: 2. Entrenar
+    W->>API: POST /sigma-ai/entrenamientos
+    API->>EN: entrenar(dataset)
+    activate EN
+    EN->>DB: lee las filas del dataset
+    EN->>EN: regresion logistica: pesos y metricas
+    EN-->>API: pesos, metricas, ONNX
+    deactivate EN
+    API->>DB: API_INS_ML_ENTRENAMIENTO + version borrador
+    API->>AML: registra corrida y modelo (trazabilidad)
+    API-->>W: corrida y version borrador
+
+    DS->>W: 3. Publicar la version
+    W->>API: POST /sigma-ai/versiones/{id}/publicar
+    API->>DB: publica y retira la anterior
+
+    DS->>W: 4. Puntuar hoy
+    W->>API: POST /sigma-ai/predecir
+    API->>DB: lee las 15 caracteristicas por equipo
+    API->>API: PuntuadorFalla: pesos y sigmoide
+    API->>DB: API_INS_PREDICCION_FALLA (alerta si supera el umbral)
+    API-->>W: probabilidad y razones en espanol
+    W-->>DS: equipos en riesgo, con el porque

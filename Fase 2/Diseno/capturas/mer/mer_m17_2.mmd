@@ -1,0 +1,85 @@
+erDiagram
+    Prediccion_Estado ||--o{ Prediccion : pre_prediccion_estado
+    Prediccion ||--o{ Prediccion_Caracteristica : pcr_prediccion
+    Prediccion ||--o{ Prediccion_Explicacion : pex_prediccion
+    Prediccion ||--o{ Prediccion_Resultado : prs_prediccion
+    Prediccion {
+        int pre_id PK
+        uniqueidentifier pre_uuid 
+        int pre_cliente FK
+        int pre_modelo_predictivo_version FK
+        int pre_prediccion_estado FK
+        int pre_activo FK
+        int pre_activo_componente FK
+        int pre_componente_repuesto_instalacion FK
+        decimal pre_valor 
+        decimal pre_probabilidad 
+        int pre_dia_restante 
+        datetime pre_fecha_evento_estimada_utc 
+        int pre_severidad FK
+        decimal pre_confianza 
+        decimal pre_intervalo_inferior 
+        decimal pre_intervalo_superior 
+        datetime pre_fecha_calculo_utc 
+        datetime pre_fecha_vigencia_hasta_utc 
+        int pre_alerta FK
+        int pre_orden_trabajo FK
+        int pre_usuario_revision FK
+        datetime pre_fecha_revision_utc 
+        nvarchar pre_motivo_descarte 
+        int pre_usuario_creacion 
+        datetime pre_fecha_creacion 
+        int pre_usuario_actualizacion 
+        datetime pre_fecha_actualizacion 
+        bit pre_habilitado 
+    }
+    Prediccion_Caracteristica {
+        int pcr_id PK
+        int pcr_prediccion FK
+        int pcr_caracteristica_modelo FK
+        decimal pcr_valor 
+        nvarchar pcr_valor_texto 
+        bit pcr_imputado 
+        int pcr_usuario_creacion 
+        datetime pcr_fecha_creacion 
+    }
+    Prediccion_Estado {
+        int pde_id PK
+        nvarchar pde_codigo 
+        nvarchar pde_nombre 
+        int pde_orden 
+        bit pde_habilitado 
+    }
+    Prediccion_Explicacion {
+        int pex_id PK
+        int pex_prediccion FK
+        int pex_caracteristica_modelo FK
+        int pex_orden 
+        nvarchar pex_texto 
+        decimal pex_contribucion 
+        nvarchar pex_direccion 
+        decimal pex_valor_observado 
+        decimal pex_valor_referencia 
+        int pex_usuario_creacion 
+        datetime pex_fecha_creacion 
+    }
+    Prediccion_Resultado {
+        int prs_id PK
+        int prs_prediccion FK
+        bit prs_ocurrio 
+        int prs_falla FK
+        int prs_orden_trabajo FK
+        datetime prs_fecha_evento_real_utc 
+        decimal prs_valor_real 
+        decimal prs_error_absoluto 
+        bit prs_mantenimiento_previo 
+        nvarchar prs_clasificacion 
+        nvarchar prs_observacion 
+        int prs_usuario_evaluacion FK
+        datetime prs_fecha_evaluacion_utc 
+        int prs_usuario_creacion 
+        datetime prs_fecha_creacion 
+        int prs_usuario_actualizacion 
+        datetime prs_fecha_actualizacion 
+        bit prs_habilitado 
+    }

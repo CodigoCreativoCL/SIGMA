@@ -1,0 +1,94 @@
+erDiagram
+    Alerta_Estado ||--o{ Alerta : ale_alerta_estado
+    Alerta_Tipo ||--o{ Alerta : ale_alerta_tipo
+    Alerta ||--o{ Alerta_Historial : ahi_alerta
+    Alerta_Estado ||--o{ Alerta_Historial : ahi_estado_desde
+    Alerta_Estado ||--o{ Alerta_Historial : ahi_estado_hasta
+    Alerta ||--o{ Alerta_Lectura : alr_alerta
+    Alerta {
+        int ale_id PK
+        uniqueidentifier ale_uuid 
+        int ale_cliente FK
+        int ale_cliente_instalacion FK
+        int ale_alerta_tipo FK
+        int ale_alerta_estado FK
+        int ale_severidad FK
+        nvarchar ale_titulo 
+        nvarchar ale_descripcion 
+        datetime ale_fecha_deteccion_utc 
+        int ale_activo FK
+        int ale_activo_componente FK
+        int ale_activo_medidor FK
+        int ale_repuesto FK
+        int ale_bodega FK
+        int ale_checklist_ejecucion_respuesta FK
+        int ale_plan_mantenimiento_ocurrencia FK
+        int ale_prediccion FK
+        int ale_orden_trabajo FK
+        decimal ale_valor_observado 
+        decimal ale_valor_umbral 
+        int ale_unidad_medida FK
+        int ale_usuario_atencion FK
+        datetime ale_fecha_atencion_utc 
+        nvarchar ale_motivo_descarte 
+        int ale_usuario_creacion 
+        datetime ale_fecha_creacion 
+        int ale_usuario_actualizacion 
+        datetime ale_fecha_actualizacion 
+        bit ale_habilitado 
+        int ale_repuesto_lote FK
+        int ale_usuario_responsable FK
+        datetime ale_fecha_reconocimiento_utc 
+        int ale_usuario_reconocimiento FK
+        datetime ale_fecha_gestion_utc 
+        nvarchar ale_motivo_resolucion 
+        datetime ale_fecha_primera_ocurrencia_utc 
+        datetime ale_fecha_ultima_ocurrencia_utc 
+        int ale_ocurrencias 
+        int ale_usuario_destinatario FK
+        int ale_permiso_trabajo FK
+        int ale_activo_variable FK
+        int ale_checklist_hallazgo FK
+        int ale_usuario_especialidad 
+    }
+    Alerta_Deteccion {
+        int ade_cliente PK
+        datetime ade_fecha_utc 
+        int ade_abiertas 
+        int ade_cerradas 
+    }
+    Alerta_Estado {
+        int aet_id PK
+        nvarchar aet_codigo 
+        nvarchar aet_nombre 
+        int aet_orden 
+        bit aet_habilitado 
+    }
+    Alerta_Historial {
+        int ahi_id PK
+        int ahi_alerta FK
+        int ahi_estado_desde FK
+        int ahi_estado_hasta FK
+        int ahi_usuario FK
+        datetime ahi_fecha_utc 
+        nvarchar ahi_motivo 
+        int ahi_usuario_responsable FK
+    }
+    Alerta_Lectura {
+        int alr_id PK
+        int alr_alerta FK
+        int alr_usuario FK
+        datetime alr_fecha 
+    }
+    Alerta_Tipo {
+        int alt_id PK
+        nvarchar alt_codigo 
+        nvarchar alt_nombre 
+        int alt_orden 
+        bit alt_habilitado 
+        int alt_permiso 
+        nvarchar alt_icono 
+        nvarchar alt_menu_link 
+        nvarchar alt_ficha_link 
+        nvarchar alt_ficha_id_columna 
+    }

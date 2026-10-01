@@ -1,0 +1,22 @@
+erDiagram
+    Registro_Descubrimiento {
+        int rde_id PK
+        uniqueidentifier rde_uuid 
+        int rde_cliente FK
+        int rde_cliente_instalacion FK
+        int rde_usuario FK
+        datetime rde_fecha_utc 
+        int rde_registro_origen FK
+        int rde_orden_trabajo FK
+        int rde_tarea_ocurrencia FK
+        int rde_checklist_ejecucion FK
+        int rde_bitacora FK
+        uniqueidentifier rde_dispositivo_uuid 
+        decimal rde_latitud 
+        decimal rde_longitud 
+        nvarchar rde_observacion 
+        int rde_usuario_revision FK
+        datetime rde_fecha_revision 
+        int rde_usuario_creacion 
+        datetime rde_fecha_creacion 
+    }

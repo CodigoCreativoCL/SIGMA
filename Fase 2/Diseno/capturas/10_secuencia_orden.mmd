@@ -1,0 +1,28 @@
+sequenceDiagram
+    actor PL as Planificador
+    participant V as Bandeja (.aspx)
+    participant C as PlanOcurrenciaController
+    participant T as Token
+    participant SP as INS_ORDEN_TRABAJO_OCURRENCIA
+    participant DB as SQL Server
+
+    PL->>V: Clic "Generar OT" sobre una ocurrencia
+    V->>C: GenerarOrden(ocurrencia)
+    C->>T: TokenSeguridad()
+    T-->>C: sesion valida
+    C->>SP: @CLIENTE, @OCURRENCIA, @USUARIO
+    activate SP
+    SP->>DB: BEGIN TRANSACTION
+    SP->>DB: ya existe OT para esta ocurrencia?
+    alt ya existia
+        DB-->>SP: OT previa (idempotente)
+    else no existia
+        DB->>DB: INSERT Orden_Trabajo
+        DB->>DB: copia hitos a pasos (Orden_Trabajo_Paso)
+        DB->>DB: UPDATE Plan_Mantenimiento_Ocurrencia.otr
+    end
+    DB-->>SP: COMMIT
+    deactivate SP
+    SP-->>C: correlativo, ya_existia
+    C-->>V: Respuesta {codigo, detalle, error=false}
+    V-->>PL: "OT-NN generada" + enlace a la orden

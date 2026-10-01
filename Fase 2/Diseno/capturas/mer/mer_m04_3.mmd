@@ -1,0 +1,25 @@
+erDiagram
+    Componente_Repuesto_Instalacion {
+        int cri_id PK
+        int cri_cliente FK
+        int cri_activo_componente FK
+        int cri_repuesto FK
+        int cri_repuesto_lote FK
+        int cri_activo_medidor FK
+        decimal cri_cantidad 
+        datetime cri_fecha_instalacion_utc 
+        decimal cri_lectura_inicial 
+        datetime cri_fecha_retiro_utc 
+        decimal cri_lectura_final 
+        int cri_repuesto_retiro_motivo FK
+        int cri_repuesto_estado_final FK
+        bit cri_fallo 
+        int cri_usuario_tecnico FK
+        int cri_orden_trabajo_instalacion FK
+        int cri_orden_trabajo_retiro FK
+        nvarchar cri_observacion 
+        int cri_usuario_creacion 
+        datetime cri_fecha_creacion 
+        int cri_usuario_actualizacion 
+        datetime cri_fecha_actualizacion 
+    }

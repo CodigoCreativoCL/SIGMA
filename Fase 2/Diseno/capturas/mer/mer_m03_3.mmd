@@ -1,0 +1,75 @@
+erDiagram
+    Uf_Origen ||--o{ Valor_Uf : vuf_uf_origen
+    Uf_Origen {
+        int ufo_id PK
+        nvarchar ufo_codigo 
+        nvarchar ufo_nombre 
+        int ufo_orden 
+        bit ufo_habilitado 
+    }
+    Valor_Uf {
+        int vuf_id PK
+        date vuf_fecha 
+        decimal vuf_valor 
+        int vuf_uf_origen FK
+        datetime vuf_fecha_obtencion_utc 
+        nvarchar vuf_respuesta_cruda 
+        int vuf_usuario_creacion 
+        datetime vuf_fecha_creacion 
+    }
+    Momento_Ejecucion {
+        int moe_id PK
+        nvarchar moe_codigo 
+        nvarchar moe_nombre 
+        int moe_orden 
+        bit moe_habilitado 
+    }
+    Rol_Ejecucion {
+        int rej_id PK
+        nvarchar rej_codigo 
+        nvarchar rej_nombre 
+        int rej_orden 
+        bit rej_habilitado 
+    }
+    Proceso_Estado {
+        int pes_id PK
+        nvarchar pes_codigo 
+        nvarchar pes_nombre 
+        int pes_orden 
+        bit pes_habilitado 
+    }
+    Medicion_Calidad {
+        int mca_id PK
+        nvarchar mca_codigo 
+        nvarchar mca_nombre 
+        int mca_orden 
+        bit mca_habilitado 
+    }
+    Diagnostico_Metodo {
+        int dme_id PK
+        int dme_cliente FK
+        nvarchar dme_codigo 
+        nvarchar dme_nombre 
+        int dme_orden 
+        int dme_usuario_creacion 
+        datetime dme_fecha_creacion 
+        int dme_usuario_actualizacion 
+        datetime dme_fecha_actualizacion 
+        bit dme_habilitado 
+    }
+    Dependencia_Accion {
+        int dac_id PK
+        nvarchar dac_codigo 
+        nvarchar dac_nombre 
+        int dac_orden 
+        bit dac_habilitado 
+    }
+    Resultado_Paso {
+        int rpa_id PK
+        nvarchar rpa_codigo 
+        nvarchar rpa_nombre 
+        nvarchar rpa_icono 
+        int rpa_archivo 
+        int rpa_orden 
+        bit rpa_habilitado 
+    }

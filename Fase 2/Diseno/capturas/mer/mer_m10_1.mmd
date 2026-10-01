@@ -1,0 +1,144 @@
+erDiagram
+    Checklist_Plantilla ||--o{ Checklist_Plantilla_Version : cpv_checklist_plantilla
+    Checklist_Plantilla_Version ||--o{ Checklist_Plantilla_Seccion : cps_checklist_plantilla_version
+    Checklist_Plantilla_Seccion ||--o{ Checklist_Plantilla_Item : cpi_checklist_plantilla_seccion
+    Checklist_Item_Tipo ||--o{ Checklist_Plantilla_Item : cpi_checklist_item_tipo
+    Checklist_Plantilla_Version ||--o{ Checklist_Plantilla_Item : cpi_checklist_plantilla_version
+    Checklist_Plantilla_Item ||--o{ Checklist_Item_Dependencia : cid_item_condicion
+    Checklist_Plantilla_Item ||--o{ Checklist_Item_Dependencia : cid_checklist_plantilla_item
+    Checklist_Item_Opcion ||--o{ Checklist_Item_Dependencia : cid_checklist_item_opcion
+    Checklist_Plantilla_Item ||--o{ Checklist_Item_Opcion : cio_checklist_plantilla_item
+    Checklist_Plantilla_Item ||--o{ Checklist_Item_Validacion : civ_checklist_plantilla_item
+    Checklist_Item_Opcion ||--o{ Checklist_Respuesta_Opcion : cro_checklist_item_opcion
+    Checklist_Plantilla {
+        int cpl_id PK
+        int cpl_cliente FK
+        int cpl_cliente_instalacion FK
+        int cpl_checklist_asignacion_tipo FK
+        nvarchar cpl_codigo 
+        nvarchar cpl_nombre 
+        nvarchar cpl_descripcion 
+        int cpl_activo_tipo FK
+        int cpl_usuario_creacion 
+        datetime cpl_fecha_creacion 
+        int cpl_usuario_actualizacion 
+        datetime cpl_fecha_actualizacion 
+        bit cpl_habilitado 
+    }
+    Checklist_Plantilla_Version {
+        int cpv_id PK
+        int cpv_checklist_plantilla FK
+        int cpv_numero 
+        int cpv_checklist_version_estado FK
+        datetime cpv_fecha_publicacion 
+        int cpv_usuario_publicacion FK
+        datetime cpv_fecha_retiro 
+        nvarchar cpv_observacion 
+        int cpv_usuario_creacion 
+        datetime cpv_fecha_creacion 
+        int cpv_usuario_actualizacion 
+        datetime cpv_fecha_actualizacion 
+        bit cpv_habilitado 
+    }
+    Checklist_Plantilla_Seccion {
+        int cps_id PK
+        int cps_checklist_plantilla_version FK
+        nvarchar cps_codigo 
+        nvarchar cps_nombre 
+        nvarchar cps_descripcion 
+        int cps_orden 
+        int cps_usuario_creacion 
+        datetime cps_fecha_creacion 
+        int cps_usuario_actualizacion 
+        datetime cps_fecha_actualizacion 
+        bit cps_habilitado 
+    }
+    Checklist_Plantilla_Item {
+        int cpi_id PK
+        int cpi_checklist_plantilla_version FK
+        int cpi_checklist_plantilla_seccion FK
+        nvarchar cpi_codigo 
+        nvarchar cpi_texto 
+        nvarchar cpi_ayuda 
+        int cpi_checklist_item_tipo FK
+        int cpi_orden 
+        bit cpi_obligatorio 
+        bit cpi_permite_comentario 
+        bit cpi_requiere_evidencia 
+        int cpi_unidad_medida FK
+        bit cpi_genera_medicion 
+        int cpi_activo_variable FK
+        int cpi_usuario_creacion 
+        datetime cpi_fecha_creacion 
+        int cpi_usuario_actualizacion 
+        datetime cpi_fecha_actualizacion 
+        bit cpi_habilitado 
+        nvarchar cpi_pregunta_voz 
+    }
+    Checklist_Item_Dependencia {
+        int cid_id PK
+        int cid_checklist_plantilla_item FK
+        int cid_item_condicion FK
+        int cid_operador_comparacion FK
+        nvarchar cid_valor_comparacion 
+        int cid_checklist_item_opcion FK
+        int cid_dependencia_accion FK
+        int cid_usuario_creacion 
+        datetime cid_fecha_creacion 
+        int cid_usuario_actualizacion 
+        datetime cid_fecha_actualizacion 
+        bit cid_habilitado 
+    }
+    Checklist_Item_Opcion {
+        int cio_id PK
+        int cio_checklist_plantilla_item FK
+        nvarchar cio_codigo 
+        nvarchar cio_texto 
+        decimal cio_valor 
+        int cio_orden 
+        bit cio_es_conforme 
+        int cio_severidad FK
+        bit cio_requiere_comentario 
+        bit cio_requiere_evidencia 
+        int cio_usuario_creacion 
+        datetime cio_fecha_creacion 
+        int cio_usuario_actualizacion 
+        datetime cio_fecha_actualizacion 
+        bit cio_habilitado 
+    }
+    Checklist_Item_Tipo {
+        int cit_id PK
+        nvarchar cit_codigo 
+        nvarchar cit_nombre 
+        int cit_orden 
+        bit cit_habilitado 
+    }
+    Checklist_Item_Validacion {
+        int civ_id PK
+        int civ_checklist_plantilla_item FK
+        decimal civ_valor_minimo 
+        decimal civ_valor_maximo 
+        decimal civ_valor_advertencia 
+        decimal civ_valor_critico 
+        int civ_largo_minimo 
+        int civ_largo_maximo 
+        nvarchar civ_expresion_regular 
+        int civ_unidad_medida FK
+        bit civ_requiere_comentario_fuera_rango 
+        bit civ_requiere_evidencia_fuera_rango 
+        bit civ_genera_alerta 
+        bit civ_genera_hallazgo 
+        nvarchar civ_mensaje 
+        int civ_usuario_creacion 
+        datetime civ_fecha_creacion 
+        int civ_usuario_actualizacion 
+        datetime civ_fecha_actualizacion 
+        bit civ_habilitado 
+    }
+    Checklist_Respuesta_Opcion {
+        int cro_id PK
+        int cro_checklist_ejecucion_respuesta FK
+        int cro_checklist_item_opcion FK
+        int cro_usuario_creacion 
+        datetime cro_fecha_creacion 
+    }

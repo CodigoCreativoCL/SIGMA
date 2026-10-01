@@ -1,0 +1,45 @@
+flowchart TB
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    subgraph HOST["SmarterASP.NET - plan .NET Premium (produccion)"]
+        direction TB
+        subgraph IIS["Servidor Windows - IIS"]
+            S1["Sitio 1 - Intranet SIGMA<br/><small>app pool propio<br/>ASP.NET WebForms 4.8</small>"]:::web
+            S2["Sitio 2 - API SIGMA<br/><small>app pool propio<br/>ASP.NET Web API 2<br/>entrena y puntua SIGMA AI</small>"]:::web
+        end
+        subgraph SQL["SQL Server"]
+            BD1[("Base de produccion")]:::datos
+            BD2[("Base de pruebas<br/><small>separada, para no<br/>probar sobre produccion</small>")]:::datos
+        end
+    end
+
+    subgraph NUBE["Microsoft Azure"]
+        direction TB
+        BLOB["Blob Storage<br/><small>acceso por SAS desde la API;<br/>la web no conoce el SAS</small>"]:::azure
+        AML["Machine Learning<br/><small>registro de modelos, corridas<br/>y artefactos; sin computo</small>"]:::azure
+        ACV["Custom Vision F0<br/><small>endpoint de prediccion</small>"]:::azure
+    end
+
+    NAV["Navegador<br/><small>Planificador, Administrador,<br/>Jefatura</small>"]:::persona
+    TEL["Telefono Android<br/><small>App SIGMA, instalada<br/>desde Google Play</small>"]:::persona
+    PC["Navegador del entrenador<br/><small>Lanza el entrenamiento desde<br/>SIGMA AI - Experimentos</small>"]:::persona
+
+    NAV -->|"HTTPS"| S1
+    TEL -->|"HTTPS/JSON - JWT"| S2
+    PC -->|"HTTPS"| S1
+
+    S1 --> BD1
+    S2 --> BD1
+    S1 -.->|"solo en pruebas"| BD2
+    S2 -.->|"solo en pruebas"| BD2
+    S1 -->|"archivos via API"| S2
+    S2 --> BLOB
+    S2 --> AML
+    S2 --> ACV

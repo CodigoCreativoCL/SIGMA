@@ -1,0 +1,28 @@
+erDiagram
+    Plan_Ocurrencia_Estado ||--o{ Plan_Ocurrencia_Historial : poh_estado_anterior
+    Plan_Ocurrencia_Estado ||--o{ Plan_Ocurrencia_Historial : poh_estado_nuevo
+    Plan_Ocurrencia_Estado {
+        int poe_id PK
+        nvarchar poe_codigo 
+        nvarchar poe_nombre 
+        int poe_orden 
+        bit poe_habilitado 
+    }
+    Plan_Ocurrencia_Historial {
+        int poh_id PK
+        int poh_plan_mantenimiento_ocurrencia FK
+        int poh_estado_anterior FK
+        int poh_estado_nuevo FK
+        datetime poh_fecha_anterior_utc 
+        datetime poh_fecha_nueva_utc 
+        nvarchar poh_motivo 
+        int poh_usuario_creacion FK
+        datetime poh_fecha_creacion 
+    }
+    Plan_Version_Estado {
+        int pve_id PK
+        nvarchar pve_codigo 
+        nvarchar pve_nombre 
+        int pve_orden 
+        bit pve_habilitado 
+    }

@@ -1,0 +1,98 @@
+erDiagram
+    Permiso_Trabajo_Tipo ||--o{ Procedimiento : prc_permiso_trabajo_tipo
+    Procedimiento ||--o{ Procedimiento_Paso : ppa_procedimiento
+    Permiso_Trabajo_Estado ||--o{ Permiso_Trabajo : ptr_permiso_trabajo_estado
+    Permiso_Trabajo_Tipo ||--o{ Permiso_Trabajo : ptr_permiso_trabajo_tipo
+    Proveedor {
+        int prv_id PK
+        int prv_cliente FK
+        nvarchar prv_rut 
+        nvarchar prv_razon_social 
+        nvarchar prv_nombre_fantasia 
+        nvarchar prv_giro 
+        nvarchar prv_contacto 
+        nvarchar prv_email 
+        nvarchar prv_telefono 
+        nvarchar prv_direccion 
+        bit prv_es_contratista 
+        bit prv_es_proveedor_repuesto 
+        nvarchar prv_observacion 
+        int prv_usuario_creacion 
+        datetime prv_fecha_creacion 
+        int prv_usuario_actualizacion 
+        datetime prv_fecha_actualizacion 
+        bit prv_habilitado 
+    }
+    Procedimiento {
+        int prc_id PK
+        int prc_cliente FK
+        nvarchar prc_codigo 
+        nvarchar prc_nombre 
+        int prc_version 
+        int prc_activo_tipo FK
+        nvarchar prc_descripcion 
+        int prc_duracion_estimada_minuto 
+        bit prc_requiere_permiso 
+        int prc_permiso_trabajo_tipo FK
+        int prc_usuario_creacion 
+        datetime prc_fecha_creacion 
+        int prc_usuario_actualizacion 
+        datetime prc_fecha_actualizacion 
+        bit prc_habilitado 
+    }
+    Procedimiento_Paso {
+        int ppa_id PK
+        int ppa_procedimiento FK
+        int ppa_orden 
+        nvarchar ppa_nombre 
+        nvarchar ppa_instruccion 
+        bit ppa_es_punto_control 
+        bit ppa_requiere_evidencia 
+        bit ppa_requiere_medicion 
+        int ppa_variable_medicion FK
+        int ppa_duracion_estimada_minuto 
+        int ppa_usuario_creacion 
+        datetime ppa_fecha_creacion 
+        int ppa_usuario_actualizacion 
+        datetime ppa_fecha_actualizacion 
+        bit ppa_habilitado 
+    }
+    Permiso_Trabajo {
+        int ptr_id PK
+        int ptr_cliente FK
+        int ptr_orden_trabajo FK
+        int ptr_permiso_trabajo_tipo FK
+        int ptr_permiso_trabajo_estado FK
+        nvarchar ptr_numero 
+        int ptr_usuario_solicitante FK
+        datetime ptr_fecha_solicitud_utc 
+        datetime ptr_fecha_vigencia_inicio_utc 
+        datetime ptr_fecha_vigencia_fin_utc 
+        nvarchar ptr_observacion 
+        int ptr_usuario_creacion 
+        datetime ptr_fecha_creacion 
+        int ptr_usuario_actualizacion 
+        datetime ptr_fecha_actualizacion 
+        bit ptr_habilitado 
+        int ptr_archivo FK
+        uniqueidentifier ptr_uuid 
+    }
+    Permiso_Trabajo_Estado {
+        int pte_id PK
+        nvarchar pte_codigo 
+        nvarchar pte_nombre 
+        int pte_orden 
+        bit pte_habilitado 
+    }
+    Permiso_Trabajo_Tipo {
+        int ptt_id PK
+        int ptt_cliente FK
+        nvarchar ptt_codigo 
+        nvarchar ptt_nombre 
+        int ptt_orden 
+        int ptt_usuario_creacion 
+        datetime ptt_fecha_creacion 
+        int ptt_usuario_actualizacion 
+        datetime ptt_fecha_actualizacion 
+        bit ptt_habilitado 
+    }

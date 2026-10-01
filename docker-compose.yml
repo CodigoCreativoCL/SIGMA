@@ -1,0 +1,102 @@
+# =============================================================================
+# SIGMA — Intranet y API en contenedores
+#
+# REQUIERE CONTENEDORES WINDOWS
+#   Docker Desktop debe estar en modo Windows containers. La plataforma es
+#   .NET Framework 4.8 sobre IIS: no hay imagen Linux posible.
+#
+# LA BASE DE DATOS NO SE CONTENEDORIZA, Y ES DELIBERADO
+#   Microsoft no publica imagen de SQL Server para contenedores Windows; la
+#   oficial es Linux, y Docker no corre contenedores Linux y Windows bajo el
+#   mismo demonio a la vez. Ademas, en produccion la base la administra el
+#   hosting: ponerla aqui haria que el contenedor se pareciera menos al
+#   ambiente real, que es lo unico que lo hace util. La cadena de conexion
+#   entra por variable de entorno y apunta a donde corresponda.
+#
+# USO
+#   copiar .env.example a .env, completarlo, y
+#       docker compose up -d --build
+#   La Intranet queda en http://localhost:8080 y la API en http://localhost:8081
+# =============================================================================
+
+services:
+
+  api:
+    build:
+      context: .
+      dockerfile: INFRAESTRUCTURA/docker/api.Dockerfile
+    image: sigma/api:4.8
+    container_name: sigma-api
+    ports:
+      - "${PUERTO_API:-8081}:80"
+    environment:
+      SIGMA_DB_CONNECTION: ${SIGMA_DB_CONNECTION:?falta la cadena de conexion}
+      SIGMA_JWT_SECRET: ${SIGMA_JWT_SECRET:?falta la firma del token}
+      SIGMA_JWT_EXPIRE_MINUTES: ${SIGMA_JWT_EXPIRE_MINUTES:-480}
+      SIGMA_JWT_AUDIENCE: ${SIGMA_JWT_AUDIENCE:-}
+      SIGMA_JWT_ISSUER: ${SIGMA_JWT_ISSUER:-}
+      SIGMA_API_KEY: ${SIGMA_API_KEY:-}
+      SIGMA_BLOB_ENDPOINT: ${SIGMA_BLOB_ENDPOINT:-}
+      SIGMA_BLOB_SAS: ${SIGMA_BLOB_SAS:-}
+      SIGMA_BLOB_CONTENEDOR: ${SIGMA_BLOB_CONTENEDOR:-}
+      SIGMA_AML_TENANT: ${SIGMA_AML_TENANT:-}
+      SIGMA_AML_CLIENT_ID: ${SIGMA_AML_CLIENT_ID:-}
+      SIGMA_AML_CLIENT_SECRET: ${SIGMA_AML_CLIENT_SECRET:-}
+      SIGMA_AML_SUBSCRIPTION: ${SIGMA_AML_SUBSCRIPTION:-}
+      SIGMA_AML_RESOURCE_GROUP: ${SIGMA_AML_RESOURCE_GROUP:-}
+      SIGMA_AML_WORKSPACE: ${SIGMA_AML_WORKSPACE:-}
+      SIGMA_AML_REGION: ${SIGMA_AML_REGION:-}
+      SIGMA_AML_CONTENEDOR: ${SIGMA_AML_CONTENEDOR:-}
+      SIGMA_CV_ENDPOINT: ${SIGMA_CV_ENDPOINT:-}
+      SIGMA_CV_KEY: ${SIGMA_CV_KEY:-}
+      SIGMA_CV_PROJECT: ${SIGMA_CV_PROJECT:-}
+      SIGMA_CV_ITERATION: ${SIGMA_CV_ITERATION:-}
+    restart: unless-stopped
+    healthcheck:
+      # /sesion responde sin token: sirve para saber si el sitio esta en pie.
+      test: ["CMD", "powershell", "-NoProfile", "-Command",
+             "try { (Invoke-WebRequest -UseBasicParsing http://localhost/swagger/ui/index -TimeoutSec 5).StatusCode -eq 200 } catch { exit 1 }"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 90s
+
+  intranet:
+    build:
+      context: .
+      dockerfile: INFRAESTRUCTURA/docker/intranet.Dockerfile
+    image: sigma/intranet:4.8
+    container_name: sigma-intranet
+    ports:
+      - "${PUERTO_INTRANET:-8080}:80"
+    environment:
+      SIGMA_DB_CONNECTION: ${SIGMA_DB_CONNECTION:?falta la cadena de conexion}
+      SIGMA_CRYPTO_KEY: ${SIGMA_CRYPTO_KEY:-}
+      SIGMA_AMBIENTE: ${SIGMA_AMBIENTE:-Contenedor}
+      SIGMA_URL_SITIO: ${SIGMA_URL_SITIO:-http://localhost:8080}
+      # La Intranet llama a la API por el nombre del servicio en la red de
+      # compose, no por localhost: dentro del contenedor, localhost es el
+      # propio contenedor.
+      SIGMA_API_URL: ${SIGMA_API_URL:-http://api/}
+      SIGMA_API_KEY: ${SIGMA_API_KEY:-}
+      SIGMA_ALMACENAMIENTO_URL: ${SIGMA_ALMACENAMIENTO_URL:-http://api/}
+      SIGMA_ALMACENAMIENTO_KEY: ${SIGMA_ALMACENAMIENTO_KEY:-}
+      SIGMA_ALMACENAMIENTO_CONTENEDOR: ${SIGMA_ALMACENAMIENTO_CONTENEDOR:-}
+      SIGMA_GOOGLE_MAPS_KEY: ${SIGMA_GOOGLE_MAPS_KEY:-}
+      SIGMA_CORREO_REMITENTE: ${SIGMA_CORREO_REMITENTE:-}
+      SIGMA_CORREO_REMITENTE_NOMBRE: ${SIGMA_CORREO_REMITENTE_NOMBRE:-SIGMA}
+      SIGMA_PDF_URL: ${SIGMA_PDF_URL:-}
+    depends_on:
+      - api
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "powershell", "-NoProfile", "-Command",
+             "try { (Invoke-WebRequest -UseBasicParsing http://localhost/Login.aspx -TimeoutSec 5).StatusCode -eq 200 } catch { exit 1 }"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+
+networks:
+  default:
+    name: sigma

@@ -1,0 +1,15 @@
+erDiagram
+    Programacion_Responsable {
+        int prr_id PK
+        int prr_programacion FK
+        int prr_usuario FK
+        int prr_usuario_creacion 
+        datetime prr_fecha_creacion 
+    }
+    Programacion_Tipo {
+        int pti_id PK
+        nvarchar pti_codigo 
+        nvarchar pti_nombre 
+        int pti_orden 
+        bit pti_habilitado 
+    }

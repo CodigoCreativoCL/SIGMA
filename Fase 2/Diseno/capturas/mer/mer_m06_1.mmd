@@ -1,0 +1,146 @@
+erDiagram
+    Repuesto_Tipo ||--o{ Repuesto : rep_repuesto_tipo
+    Bodega ||--o{ Repuesto_Bodega_Stock : rbs_bodega
+    Repuesto ||--o{ Repuesto_Bodega_Stock : rbs_repuesto
+    Repuesto ||--o{ Repuesto_Compatibilidad : rco_repuesto
+    Repuesto ||--o{ Repuesto_Fusion : rfu_repuesto_destino
+    Repuesto ||--o{ Repuesto_Fusion : rfu_repuesto_origen
+    Repuesto ||--o{ Repuesto_Lote : rlo_repuesto
+    Repuesto {
+        int rep_id PK
+        uniqueidentifier rep_uuid 
+        int rep_cliente FK
+        int rep_unidad_medida FK
+        nvarchar rep_codigo 
+        nvarchar rep_nombre 
+        nvarchar rep_fabricante 
+        nvarchar rep_modelo 
+        decimal rep_vida_util_hora 
+        int rep_vida_util_dia 
+        decimal rep_vida_util_ciclo 
+        bit rep_es_reparable 
+        bit rep_es_consumible 
+        decimal rep_costo_referencia 
+        int rep_moneda FK
+        nvarchar rep_descripcion 
+        int rep_registro_origen FK
+        int rep_usuario_creacion 
+        datetime rep_fecha_creacion 
+        int rep_usuario_actualizacion 
+        datetime rep_fecha_actualizacion 
+        bit rep_habilitado 
+        int rep_registro_descubrimiento FK
+        int rep_fusionado_en FK
+        bit rep_controla_lote 
+        int rep_repuesto_tipo FK
+    }
+    Repuesto_Bodega_Stock {
+        int rbs_id PK
+        int rbs_cliente FK
+        int rbs_repuesto FK
+        int rbs_bodega FK
+        decimal rbs_stock_minimo 
+        decimal rbs_stock_maximo 
+        decimal rbs_punto_reposicion 
+        nvarchar rbs_observacion 
+        int rbs_usuario_creacion 
+        datetime rbs_fecha_creacion 
+        int rbs_usuario_actualizacion 
+        datetime rbs_fecha_actualizacion 
+        bit rbs_habilitado 
+    }
+    Repuesto_Compatibilidad {
+        int rco_id PK
+        int rco_repuesto FK
+        int rco_activo_tipo FK
+        int rco_activo_modelo FK
+        int rco_activo_componente FK
+        nvarchar rco_observacion 
+        int rco_usuario_creacion 
+        datetime rco_fecha_creacion 
+        int rco_usuario_actualizacion 
+        datetime rco_fecha_actualizacion 
+    }
+    Repuesto_Estado_Final {
+        int ref_id PK
+        int ref_cliente FK
+        nvarchar ref_codigo 
+        nvarchar ref_nombre 
+        nvarchar ref_icono 
+        int ref_archivo 
+        int ref_orden 
+        int ref_usuario_creacion 
+        datetime ref_fecha_creacion 
+        int ref_usuario_actualizacion 
+        datetime ref_fecha_actualizacion 
+        bit ref_habilitado 
+    }
+    Repuesto_Fusion {
+        int rfu_id PK
+        int rfu_cliente FK
+        int rfu_repuesto_origen FK
+        int rfu_repuesto_destino FK
+        nvarchar rfu_motivo 
+        int rfu_filas_repuntadas 
+        datetime rfu_fecha_utc 
+        int rfu_usuario_creacion 
+        datetime rfu_fecha_creacion 
+    }
+    Repuesto_Lote {
+        int rlo_id PK
+        int rlo_cliente FK
+        int rlo_repuesto FK
+        nvarchar rlo_codigo 
+        date rlo_fecha_ingreso 
+        date rlo_fecha_vencimiento 
+        int rlo_proveedor FK
+        decimal rlo_costo_unitario 
+        int rlo_moneda FK
+        nvarchar rlo_observacion 
+        int rlo_usuario_creacion 
+        datetime rlo_fecha_creacion 
+        int rlo_usuario_actualizacion 
+        datetime rlo_fecha_actualizacion 
+        bit rlo_habilitado 
+    }
+    Repuesto_Retiro_Motivo {
+        int rrm_id PK
+        int rrm_cliente FK
+        nvarchar rrm_codigo 
+        nvarchar rrm_nombre 
+        int rrm_motivo_base FK
+        nvarchar rrm_icono 
+        int rrm_archivo 
+        int rrm_orden 
+        int rrm_usuario_creacion 
+        datetime rrm_fecha_creacion 
+        int rrm_usuario_actualizacion 
+        datetime rrm_fecha_actualizacion 
+        bit rrm_habilitado 
+    }
+    Repuesto_Tipo {
+        int rti_id PK
+        int rti_cliente FK
+        nvarchar rti_codigo 
+        nvarchar rti_nombre 
+        nvarchar rti_descripcion 
+        int rti_orden 
+        int rti_usuario_creacion 
+        datetime rti_fecha_creacion 
+        int rti_usuario_actualizacion 
+        datetime rti_fecha_actualizacion 
+        bit rti_habilitado 
+    }
+    Bodega {
+        int bod_id PK
+        int bod_cliente FK
+        int bod_cliente_instalacion FK
+        nvarchar bod_codigo 
+        nvarchar bod_nombre 
+        nvarchar bod_descripcion 
+        int bod_usuario_creacion 
+        datetime bod_fecha_creacion 
+        int bod_usuario_actualizacion 
+        datetime bod_fecha_actualizacion 
+        bit bod_habilitado 
+    }

@@ -1,0 +1,27 @@
+erDiagram
+    Servicio_Tipo {
+        int sti_id PK
+        int sti_cliente FK
+        nvarchar sti_codigo 
+        nvarchar sti_nombre 
+        int sti_orden 
+        int sti_usuario_creacion 
+        datetime sti_fecha_creacion 
+        int sti_usuario_actualizacion 
+        datetime sti_fecha_actualizacion 
+        bit sti_habilitado 
+    }
+    Indisponibilidad_Motivo {
+        int inm_id PK
+        int inm_cliente FK
+        nvarchar inm_codigo 
+        nvarchar inm_nombre 
+        nvarchar inm_icono 
+        int inm_archivo 
+        int inm_orden 
+        int inm_usuario_creacion 
+        datetime inm_fecha_creacion 
+        int inm_usuario_actualizacion 
+        datetime inm_fecha_actualizacion 
+        bit inm_habilitado 
+    }

@@ -1,0 +1,150 @@
+erDiagram
+    Activo_Estado ||--o{ Activo : act_activo_estado
+    Activo ||--o{ Activo_Atributo : aat_activo
+    Activo ||--o{ Activo_Componente : aco_activo
+    Activo_Componente_Estado ||--o{ Activo_Componente : aco_activo_componente_estado
+    Activo_Componente ||--o{ Activo_Componente_Estado_Historial : ceh_activo_componente
+    Activo_Componente_Estado ||--o{ Activo_Componente_Estado_Historial : ceh_estado_anterior
+    Activo_Componente_Estado ||--o{ Activo_Componente_Estado_Historial : ceh_estado_nuevo
+    Activo_Componente ||--o{ Activo_Componente_Fusion : acf_componente_destino
+    Activo_Componente ||--o{ Activo_Componente_Fusion : acf_componente_origen
+    Activo ||--o{ Activo_Estado_Historial : aeh_activo
+    Activo_Estado ||--o{ Activo_Estado_Historial : aeh_activo_estado
+    Activo ||--o{ Activo_Fusion : afu_activo_destino
+    Activo ||--o{ Activo_Fusion : afu_activo_origen
+    Activo {
+        int act_id PK
+        uniqueidentifier act_uuid 
+        int act_cliente FK
+        int act_cliente_instalacion FK
+        int act_instalacion_area FK
+        int act_activo_posicion FK
+        int act_activo_tipo FK
+        int act_activo_modelo FK
+        int act_activo_estado FK
+        int act_activo_padre FK
+        int act_centro_costo FK
+        int act_criticidad_nivel FK
+        nvarchar act_codigo 
+        nvarchar act_nombre 
+        nvarchar act_numero_serie 
+        nvarchar act_fabricante 
+        int act_anio_fabricacion 
+        date act_fecha_puesta_marcha 
+        date act_fecha_baja 
+        nvarchar act_descripcion 
+        int act_registro_origen FK
+        int act_usuario_creacion 
+        datetime act_fecha_creacion 
+        int act_usuario_actualizacion 
+        datetime act_fecha_actualizacion 
+        bit act_habilitado 
+        int act_registro_descubrimiento FK
+        int act_fusionado_en FK
+    }
+    Activo_Atributo {
+        int aat_id PK
+        int aat_cliente FK
+        int aat_activo FK
+        int aat_atributo_tecnico FK
+        int aat_unidad_medida FK
+        nvarchar aat_valor_texto 
+        decimal aat_valor_numero 
+        datetime aat_valor_fecha 
+        bit aat_valor_bit 
+        int aat_usuario_creacion 
+        datetime aat_fecha_creacion 
+        int aat_usuario_actualizacion 
+        datetime aat_fecha_actualizacion 
+        bit aat_habilitado 
+        int aat_registro_descubrimiento FK
+    }
+    Activo_Componente {
+        int aco_id PK
+        uniqueidentifier aco_uuid 
+        int aco_cliente FK
+        int aco_activo FK
+        int aco_componente_padre FK
+        int aco_componente_tipo FK
+        int aco_componente_posicion FK
+        int aco_criticidad_nivel FK
+        int aco_activo_componente_estado FK
+        nvarchar aco_codigo 
+        nvarchar aco_nombre 
+        date aco_fecha_instalacion 
+        nvarchar aco_descripcion 
+        int aco_registro_origen FK
+        int aco_usuario_creacion 
+        datetime aco_fecha_creacion 
+        int aco_usuario_actualizacion 
+        datetime aco_fecha_actualizacion 
+        bit aco_habilitado 
+        int aco_registro_descubrimiento FK
+        int aco_fusionado_en FK
+        varchar aco_numero_serie 
+        varchar aco_fabricante 
+        varchar aco_modelo 
+    }
+    Activo_Componente_Estado {
+        int ace_id PK
+        nvarchar ace_codigo 
+        nvarchar ace_nombre 
+        nvarchar ace_icono 
+        int ace_archivo 
+        int ace_orden 
+        bit ace_habilitado 
+    }
+    Activo_Componente_Estado_Historial {
+        int ceh_id PK
+        int ceh_cliente FK
+        int ceh_activo_componente FK
+        int ceh_estado_anterior FK
+        int ceh_estado_nuevo FK
+        nvarchar ceh_motivo 
+        int ceh_usuario_creacion FK
+        datetime ceh_fecha_creacion 
+    }
+    Activo_Componente_Fusion {
+        int acf_id PK
+        int acf_cliente FK
+        int acf_componente_origen FK
+        int acf_componente_destino FK
+        nvarchar acf_motivo 
+        int acf_filas_repuntadas 
+        datetime acf_fecha_utc 
+        int acf_usuario_creacion 
+        datetime acf_fecha_creacion 
+    }
+    Activo_Estado {
+        int aes_id PK
+        nvarchar aes_codigo 
+        nvarchar aes_nombre 
+        nvarchar aes_icono 
+        int aes_archivo 
+        int aes_orden 
+        bit aes_habilitado 
+    }
+    Activo_Estado_Historial {
+        int aeh_id PK
+        int aeh_cliente FK
+        int aeh_activo FK
+        int aeh_activo_estado FK
+        datetime aeh_fecha_inicio_utc 
+        datetime aeh_fecha_fin_utc 
+        nvarchar aeh_motivo 
+        int aeh_orden_trabajo FK
+        int aeh_usuario_creacion 
+        datetime aeh_fecha_creacion 
+        uniqueidentifier aeh_uuid 
+    }
+    Activo_Fusion {
+        int afu_id PK
+        int afu_cliente FK
+        int afu_activo_origen FK
+        int afu_activo_destino FK
+        nvarchar afu_motivo 
+        int afu_filas_repuntadas 
+        datetime afu_fecha_utc 
+        int afu_usuario_creacion 
+        datetime afu_fecha_creacion 
+    }

@@ -1,0 +1,131 @@
+erDiagram
+    Tarea_Categoria ||--o{ Tarea : tar_tarea_categoria
+    Tarea ||--o{ Tarea_Checklist : tck_tarea
+    Tarea_Ocurrencia ||--o{ Tarea_Comentario : tco_tarea_ocurrencia
+    Tarea_Ocurrencia ||--o{ Tarea_Ejecucion : tej_tarea_ocurrencia
+    Tarea_Ocurrencia_Estado ||--o{ Tarea_Historial : thi_estado_anterior
+    Tarea_Ocurrencia_Estado ||--o{ Tarea_Historial : thi_estado_nuevo
+    Tarea_Ocurrencia ||--o{ Tarea_Historial : thi_tarea_ocurrencia
+    Tarea_Ocurrencia_Estado ||--o{ Tarea_Ocurrencia : toc_tarea_ocurrencia_estado
+    Tarea ||--o{ Tarea_Ocurrencia : toc_tarea
+    Tarea_Ocurrencia ||--o{ Tarea_Ocurrencia_Asignacion : toa_tarea_ocurrencia
+    Tarea {
+        int tar_id PK
+        int tar_cliente FK
+        int tar_cliente_instalacion FK
+        int tar_instalacion_area FK
+        int tar_tarea_categoria FK
+        int tar_activo FK
+        nvarchar tar_codigo 
+        nvarchar tar_titulo 
+        nvarchar tar_descripcion 
+        int tar_tarea_prioridad FK
+        int tar_duracion_estimada_minuto 
+        bit tar_requiere_evidencia 
+        int tar_usuario_creacion 
+        datetime tar_fecha_creacion 
+        int tar_usuario_actualizacion 
+        datetime tar_fecha_actualizacion 
+        bit tar_habilitado 
+    }
+    Tarea_Categoria {
+        int tca_id PK
+        int tca_cliente FK
+        nvarchar tca_codigo 
+        nvarchar tca_nombre 
+        nvarchar tca_color 
+        int tca_orden 
+        int tca_usuario_creacion 
+        datetime tca_fecha_creacion 
+        int tca_usuario_actualizacion 
+        datetime tca_fecha_actualizacion 
+        bit tca_habilitado 
+    }
+    Tarea_Checklist {
+        int tck_id PK
+        int tck_tarea FK
+        int tck_checklist_plantilla_version FK
+        int tck_momento_ejecucion FK
+        bit tck_obligatorio 
+        int tck_usuario_creacion 
+        datetime tck_fecha_creacion 
+    }
+    Tarea_Comentario {
+        int tco_id PK
+        int tco_tarea_ocurrencia FK
+        int tco_comentario_padre FK
+        nvarchar tco_texto 
+        int tco_dictado_voz FK
+        int tco_usuario_creacion FK
+        datetime tco_fecha_creacion 
+    }
+    Tarea_Ejecucion {
+        int tej_id PK
+        uniqueidentifier tej_uuid 
+        int tej_tarea_ocurrencia FK
+        int tej_usuario_ejecutor FK
+        datetime tej_fecha_inicio_utc 
+        datetime tej_fecha_fin_utc 
+        int tej_duracion_minuto 
+        nvarchar tej_resultado 
+        bit tej_conforme 
+        decimal tej_latitud 
+        decimal tej_longitud 
+        nvarchar tej_dispositivo 
+        bit tej_offline_creado 
+        datetime tej_fecha_sincronizacion_utc 
+        int tej_usuario_creacion 
+        datetime tej_fecha_creacion 
+        int tej_usuario_actualizacion 
+        datetime tej_fecha_actualizacion 
+        bit tej_habilitado 
+    }
+    Tarea_Historial {
+        int thi_id PK
+        int thi_tarea_ocurrencia FK
+        int thi_estado_anterior FK
+        int thi_estado_nuevo FK
+        datetime thi_fecha_anterior_utc 
+        datetime thi_fecha_nueva_utc 
+        nvarchar thi_motivo 
+        int thi_usuario_creacion FK
+        datetime thi_fecha_creacion 
+    }
+    Tarea_Ocurrencia {
+        int toc_id PK
+        uniqueidentifier toc_uuid 
+        int toc_cliente FK
+        int toc_tarea FK
+        int toc_tarea_programacion FK
+        int toc_tarea_ocurrencia_estado FK
+        datetime toc_fecha_programada_utc 
+        datetime toc_fecha_disponible_utc 
+        datetime toc_fecha_limite_utc 
+        datetime toc_fecha_programada_original_utc 
+        int toc_ocurrencia_origen FK
+        int toc_orden_trabajo FK
+        nvarchar toc_observacion 
+        int toc_usuario_creacion 
+        datetime toc_fecha_creacion 
+        int toc_usuario_actualizacion 
+        datetime toc_fecha_actualizacion 
+        bit toc_habilitado 
+    }
+    Tarea_Ocurrencia_Asignacion {
+        int toa_id PK
+        int toa_tarea_ocurrencia FK
+        int toa_usuario FK
+        int toa_grupo_trabajo FK
+        bit toa_es_responsable 
+        datetime toa_fecha_asignacion_utc 
+        datetime toa_fecha_aceptacion_utc 
+        int toa_usuario_creacion 
+        datetime toa_fecha_creacion 
+    }
+    Tarea_Ocurrencia_Estado {
+        int toe_id PK
+        nvarchar toe_codigo 
+        nvarchar toe_nombre 
+        int toe_orden 
+        bit toe_habilitado 
+    }

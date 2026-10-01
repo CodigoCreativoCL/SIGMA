@@ -1,0 +1,41 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Pruebas unitarias de la API.
+
+    POR QUE SE ENLAZAN LOS ARCHIVOS Y NO SE REFERENCIA API.csproj
+      API.csproj es un proyecto web clasico de .NET Framework 4.8: para
+      compilarlo hace falta la cadena de ASP.NET completa, y arrastrarla a
+      una corrida de pruebas la vuelve lenta y fragil. Lo que se prueba aqui
+      es logica pura -aritmetica y reglas-, que no necesita servidor web ni
+      base de datos. Se enlaza el MISMO archivo fuente que compila la API,
+      asi que lo que se prueba es el codigo real, no una copia.
+
+      Si alguna de estas clases pasara a depender de System.Web o de la
+      base, deja de corresponder enlazarla: eso ya no es una prueba
+      unitaria y va como caso de integracion.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <IsPackable>false</IsPackable>
+    <AssemblyName>API.Pruebas</AssemblyName>
+    <RootNamespace>API.Pruebas</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Include="..\API\Utils\PuntuadorFalla.cs" Link="Codigo\PuntuadorFalla.cs" />
+    <Compile Include="..\API\Utils\PuntuadorRul.cs" Link="Codigo\PuntuadorRul.cs" />
+    <Compile Include="..\API\Utils\Pagina.cs" Link="Codigo\Pagina.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.3" PrivateAssets="all" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.2" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+  </ItemGroup>
+
+</Project>

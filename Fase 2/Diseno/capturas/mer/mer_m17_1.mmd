@@ -1,0 +1,162 @@
+erDiagram
+    Modelo_Objetivo ||--o{ Modelo_Predictivo : mpr_modelo_objetivo
+    Dataset_Entrenamiento ||--o{ Modelo_Predictivo_Version : mpv_dataset_entrenamiento
+    Modelo_Formato ||--o{ Modelo_Predictivo_Version : mpv_modelo_formato
+    Modelo_Predictivo ||--o{ Modelo_Predictivo_Version : mpv_modelo_predictivo
+    Modelo_Predictivo_Version ||--o{ Modelo_Monitoreo : mmo_modelo_predictivo_version
+    Modelo_Predictivo ||--o{ Caracteristica_Modelo : cmo_modelo_predictivo
+    Caracteristica_Tipo ||--o{ Caracteristica_Modelo : cmo_caracteristica_tipo
+    Modelo_Predictivo ||--o{ Dataset_Entrenamiento : den_modelo_predictivo
+    Dataset_Entrenamiento ||--o{ Entrenamiento_Ejecucion : eej_dataset_entrenamiento
+    Modelo_Predictivo ||--o{ Entrenamiento_Ejecucion : eej_modelo_predictivo
+    Modelo_Predictivo_Version ||--o{ Entrenamiento_Ejecucion : eej_modelo_predictivo_version
+    Modelo_Predictivo {
+        int mpr_id PK
+        int mpr_cliente FK
+        int mpr_modelo_objetivo FK
+        int mpr_activo_tipo FK
+        nvarchar mpr_codigo 
+        nvarchar mpr_nombre 
+        nvarchar mpr_descripcion 
+        int mpr_horizonte_dia 
+        decimal mpr_umbral_alerta 
+        decimal mpr_umbral_critico 
+        int mpr_usuario_creacion 
+        datetime mpr_fecha_creacion 
+        int mpr_usuario_actualizacion 
+        datetime mpr_fecha_actualizacion 
+        bit mpr_habilitado 
+    }
+    Modelo_Predictivo_Version {
+        int mpv_id PK
+        int mpv_modelo_predictivo FK
+        int mpv_dataset_entrenamiento FK
+        int mpv_numero 
+        int mpv_modelo_formato FK
+        nvarchar mpv_algoritmo 
+        nvarchar mpv_hiperparametro 
+        nvarchar mpv_ruta 
+        nvarchar mpv_hash 
+        bigint mpv_byte 
+        decimal mpv_metrica_auc 
+        decimal mpv_metrica_precision 
+        decimal mpv_metrica_recall 
+        decimal mpv_metrica_f1 
+        decimal mpv_metrica_mae 
+        int mpv_plan_version_estado FK
+        datetime mpv_fecha_entrenamiento_utc 
+        datetime mpv_fecha_publicacion 
+        int mpv_usuario_publicacion FK
+        datetime mpv_fecha_retiro 
+        nvarchar mpv_observacion 
+        int mpv_usuario_creacion 
+        datetime mpv_fecha_creacion 
+        int mpv_usuario_actualizacion 
+        datetime mpv_fecha_actualizacion 
+        bit mpv_habilitado 
+        nvarchar mpv_parametro 
+        nvarchar mpv_registro 
+        datetime mpv_fecha_verificacion_utc 
+    }
+    Modelo_Formato {
+        int mfo_id PK
+        nvarchar mfo_codigo 
+        nvarchar mfo_nombre 
+        int mfo_orden 
+        bit mfo_habilitado 
+    }
+    Modelo_Monitoreo {
+        int mmo_id PK
+        int mmo_modelo_predictivo_version FK
+        int mmo_cliente FK
+        int mmo_periodo_anio 
+        int mmo_periodo_mes 
+        int mmo_prediccion_total 
+        int mmo_prediccion_evaluada 
+        int mmo_verdadero_positivo 
+        int mmo_falso_positivo 
+        int mmo_verdadero_negativo 
+        int mmo_falso_negativo 
+        int mmo_acierto_con_intervencion 
+        decimal mmo_metrica_actual 
+        decimal mmo_metrica_referencia 
+        decimal mmo_deriva_datos 
+        bit mmo_requiere_reentrenamiento 
+        nvarchar mmo_observacion 
+        int mmo_usuario_creacion 
+        datetime mmo_fecha_creacion 
+        int mmo_usuario_actualizacion 
+        datetime mmo_fecha_actualizacion 
+        bit mmo_habilitado 
+    }
+    Modelo_Objetivo {
+        int mob_id PK
+        nvarchar mob_codigo 
+        nvarchar mob_nombre 
+        int mob_orden 
+        bit mob_habilitado 
+    }
+    Caracteristica_Modelo {
+        int cmo_id PK
+        int cmo_modelo_predictivo FK
+        nvarchar cmo_codigo 
+        nvarchar cmo_etiqueta 
+        nvarchar cmo_descripcion 
+        int cmo_caracteristica_tipo FK
+        int cmo_variable_medicion FK
+        int cmo_unidad_medida FK
+        nvarchar cmo_expresion 
+        int cmo_ventana_dia 
+        nvarchar cmo_agregacion 
+        int cmo_orden 
+        bit cmo_obligatoria 
+        int cmo_usuario_creacion 
+        datetime cmo_fecha_creacion 
+        int cmo_usuario_actualizacion 
+        datetime cmo_fecha_actualizacion 
+        bit cmo_habilitado 
+    }
+    Caracteristica_Tipo {
+        int ctm_id PK
+        nvarchar ctm_codigo 
+        nvarchar ctm_nombre 
+        int ctm_orden 
+        bit ctm_habilitado 
+    }
+    Dataset_Entrenamiento {
+        int den_id PK
+        int den_modelo_predictivo FK
+        int den_cliente FK
+        nvarchar den_codigo 
+        nvarchar den_nombre 
+        date den_fecha_desde 
+        date den_fecha_hasta 
+        int den_fila_total 
+        int den_fila_positiva 
+        int den_fila_entrenamiento 
+        int den_fila_validacion 
+        int den_fila_prueba 
+        nvarchar den_hash_datos 
+        nvarchar den_ruta 
+        nvarchar den_observacion 
+        int den_usuario_creacion 
+        datetime den_fecha_creacion 
+        int den_usuario_actualizacion 
+        datetime den_fecha_actualizacion 
+        bit den_habilitado 
+    }
+    Entrenamiento_Ejecucion {
+        int eej_id PK
+        int eej_modelo_predictivo FK
+        int eej_modelo_predictivo_version FK
+        int eej_dataset_entrenamiento FK
+        int eej_proceso_estado FK
+        nvarchar eej_entorno 
+        datetime eej_fecha_inicio_utc 
+        datetime eej_fecha_fin_utc 
+        int eej_segundo_duracion 
+        nvarchar eej_metrica 
+        nvarchar eej_mensaje 
+        int eej_usuario_creacion 
+        datetime eej_fecha_creacion 
+    }

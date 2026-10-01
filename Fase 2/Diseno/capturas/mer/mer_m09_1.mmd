@@ -1,0 +1,141 @@
+erDiagram
+    Plan_Mantenimiento ||--o{ Plan_Mantenimiento_Version : pmv_plan_mantenimiento
+    Plan_Mantenimiento_Version ||--o{ Plan_Mantenimiento_Hito : pmh_plan_mantenimiento_version
+    Plan_Mantenimiento_Hito ||--o{ Plan_Mantenimiento_Actividad : paa_plan_mantenimiento_hito
+    Plan_Mantenimiento_Version ||--o{ Plan_Mantenimiento_Activo : pac_plan_mantenimiento_version
+    Plan_Mantenimiento_Hito ||--o{ Plan_Mantenimiento_Ocurrencia : pmo_plan_mantenimiento_hito
+    Plan_Mantenimiento_Actividad ||--o{ Plan_Actividad_Checklist : pck_plan_mantenimiento_actividad
+    Plan_Mantenimiento_Actividad ||--o{ Plan_Actividad_Especialidad : pae_plan_mantenimiento_actividad
+    Plan_Mantenimiento_Actividad ||--o{ Plan_Actividad_Repuesto : pra_plan_mantenimiento_actividad
+    Plan_Mantenimiento {
+        int pma_id PK
+        int pma_cliente FK
+        int pma_cliente_instalacion FK
+        nvarchar pma_codigo 
+        nvarchar pma_nombre 
+        nvarchar pma_descripcion 
+        int pma_usuario_planificador FK
+        int pma_activo_tipo FK
+        int pma_activo_modelo FK
+        int pma_usuario_creacion 
+        datetime pma_fecha_creacion 
+        int pma_usuario_actualizacion 
+        datetime pma_fecha_actualizacion 
+        bit pma_habilitado 
+    }
+    Plan_Mantenimiento_Version {
+        int pmv_id PK
+        int pmv_plan_mantenimiento FK
+        int pmv_numero 
+        int pmv_plan_version_estado FK
+        datetime pmv_fecha_publicacion 
+        int pmv_usuario_publicacion FK
+        datetime pmv_fecha_retiro 
+        nvarchar pmv_observacion 
+        int pmv_usuario_creacion 
+        datetime pmv_fecha_creacion 
+        int pmv_usuario_actualizacion 
+        datetime pmv_fecha_actualizacion 
+        bit pmv_habilitado 
+    }
+    Plan_Mantenimiento_Hito {
+        int pmh_id PK
+        int pmh_plan_mantenimiento_version FK
+        int pmh_programacion FK
+        nvarchar pmh_codigo 
+        nvarchar pmh_nombre 
+        int pmh_orden 
+        decimal pmh_valor_medidor 
+        int pmh_unidad_medida FK
+        bit pmh_es_overhaul 
+        bit pmh_requiere_parada 
+        int pmh_duracion_estimada_minuto 
+        int pmh_orden_trabajo_tipo FK
+        int pmh_orden_trabajo_prioridad FK
+        nvarchar pmh_descripcion 
+        int pmh_usuario_creacion 
+        datetime pmh_fecha_creacion 
+        int pmh_usuario_actualizacion 
+        datetime pmh_fecha_actualizacion 
+        bit pmh_habilitado 
+    }
+    Plan_Mantenimiento_Actividad {
+        int paa_id PK
+        int paa_plan_mantenimiento_hito FK
+        int paa_procedimiento FK
+        nvarchar paa_codigo 
+        nvarchar paa_nombre 
+        nvarchar paa_descripcion 
+        int paa_orden 
+        int paa_duracion_estimada_minuto 
+        bit paa_obligatoria 
+        bit paa_requiere_parada 
+        bit paa_requiere_permiso 
+        int paa_permiso_trabajo_tipo FK
+        int paa_usuario_creacion 
+        datetime paa_fecha_creacion 
+        int paa_usuario_actualizacion 
+        datetime paa_fecha_actualizacion 
+        bit paa_habilitado 
+    }
+    Plan_Mantenimiento_Activo {
+        int pac_id PK
+        int pac_plan_mantenimiento_version FK
+        int pac_activo FK
+        int pac_activo_componente FK
+        int pac_activo_medidor FK
+        int pac_usuario_creacion 
+        datetime pac_fecha_creacion 
+    }
+    Plan_Mantenimiento_Ocurrencia {
+        int pmo_id PK
+        uniqueidentifier pmo_uuid 
+        int pmo_cliente FK
+        int pmo_plan_mantenimiento_hito FK
+        int pmo_programacion FK
+        int pmo_activo FK
+        int pmo_activo_componente FK
+        datetime pmo_fecha_programada_utc 
+        datetime pmo_fecha_limite_utc 
+        datetime pmo_fecha_disponible_utc 
+        datetime pmo_fecha_programada_original_utc 
+        int pmo_ocurrencia_origen FK
+        decimal pmo_valor_medidor_objetivo 
+        int pmo_plan_ocurrencia_estado FK
+        int pmo_orden_trabajo FK
+        nvarchar pmo_observacion 
+        int pmo_usuario_creacion 
+        datetime pmo_fecha_creacion 
+        int pmo_usuario_actualizacion 
+        datetime pmo_fecha_actualizacion 
+        bit pmo_habilitado 
+    }
+    Plan_Actividad_Checklist {
+        int pck_id PK
+        int pck_plan_mantenimiento_actividad FK
+        int pck_checklist_plantilla_version FK
+        int pck_momento_ejecucion FK
+        bit pck_obligatorio 
+        int pck_usuario_creacion 
+        datetime pck_fecha_creacion 
+    }
+    Plan_Actividad_Especialidad {
+        int pae_id PK
+        int pae_plan_mantenimiento_actividad FK
+        int pae_especialidad FK
+        int pae_cantidad_persona 
+        int pae_especialidad_nivel FK
+        int pae_usuario_creacion 
+        datetime pae_fecha_creacion 
+    }
+    Plan_Actividad_Repuesto {
+        int pra_id PK
+        int pra_plan_mantenimiento_actividad FK
+        int pra_repuesto FK
+        decimal pra_cantidad 
+        int pra_unidad_medida FK
+        bit pra_obligatorio 
+        nvarchar pra_observacion 
+        int pra_usuario_creacion 
+        datetime pra_fecha_creacion 
+    }

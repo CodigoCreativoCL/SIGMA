@@ -1,0 +1,133 @@
+erDiagram
+    Activo_Tipo ||--o{ Activo_Modelo : amo_activo_tipo
+    Activo_Tipo ||--o{ Activo_Posicion : apo_activo_tipo
+    Activo_Posicion_Motivo ||--o{ Activo_Posicion_Historial : aph_activo_posicion_motivo
+    Activo_Posicion ||--o{ Activo_Posicion_Historial : aph_activo_posicion
+    Activo_Tipo ||--o{ Atributo_Tecnico : ate_activo_tipo
+    Activo_Indisponibilidad {
+        int ain_id PK
+        int ain_cliente FK
+        int ain_activo FK
+        int ain_orden_trabajo FK
+        int ain_falla FK
+        datetime ain_fecha_inicio_utc 
+        datetime ain_fecha_fin_utc 
+        int ain_minuto 
+        bit ain_planificada 
+        bit ain_detuvo_produccion 
+        int ain_indisponibilidad_motivo FK
+        nvarchar ain_motivo 
+        int ain_usuario_creacion 
+        datetime ain_fecha_creacion 
+        int ain_usuario_actualizacion 
+        datetime ain_fecha_actualizacion 
+        bit ain_habilitado 
+        uniqueidentifier ain_uuid 
+    }
+    Activo_Modelo {
+        int amo_id PK
+        int amo_cliente FK
+        int amo_activo_tipo FK
+        nvarchar amo_fabricante 
+        nvarchar amo_nombre 
+        nvarchar amo_descripcion 
+        int amo_usuario_creacion 
+        datetime amo_fecha_creacion 
+        int amo_usuario_actualizacion 
+        datetime amo_fecha_actualizacion 
+        bit amo_habilitado 
+    }
+    Activo_Posicion {
+        int apo_id PK
+        int apo_cliente FK
+        int apo_cliente_instalacion FK
+        int apo_instalacion_area FK
+        int apo_activo_tipo FK
+        nvarchar apo_codigo 
+        nvarchar apo_nombre 
+        bit apo_critica 
+        nvarchar apo_descripcion 
+        int apo_usuario_creacion 
+        datetime apo_fecha_creacion 
+        int apo_usuario_actualizacion 
+        datetime apo_fecha_actualizacion 
+        bit apo_habilitado 
+    }
+    Activo_Posicion_Historial {
+        int aph_id PK
+        int aph_cliente FK
+        int aph_activo_posicion FK
+        int aph_activo FK
+        datetime aph_fecha_inicio_utc 
+        datetime aph_fecha_fin_utc 
+        int aph_activo_posicion_motivo FK
+        int aph_orden_trabajo FK
+        nvarchar aph_observacion 
+        int aph_usuario_creacion 
+        datetime aph_fecha_creacion 
+        uniqueidentifier aph_uuid 
+    }
+    Activo_Posicion_Motivo {
+        int apm_id PK
+        nvarchar apm_codigo 
+        nvarchar apm_nombre 
+        int apm_orden 
+        bit apm_habilitado 
+    }
+    Activo_Tipo {
+        int ati_id PK
+        int ati_cliente FK
+        int ati_activo_tipo_padre FK
+        nvarchar ati_codigo 
+        nvarchar ati_nombre 
+        nvarchar ati_descripcion 
+        int ati_orden 
+        int ati_usuario_creacion 
+        datetime ati_fecha_creacion 
+        int ati_usuario_actualizacion 
+        datetime ati_fecha_actualizacion 
+        bit ati_habilitado 
+    }
+    Atributo_Tecnico {
+        int ate_id PK
+        int ate_cliente FK
+        int ate_activo_tipo FK
+        int ate_tipo_dato FK
+        int ate_unidad_medida FK
+        nvarchar ate_codigo 
+        nvarchar ate_nombre 
+        int ate_orden 
+        int ate_usuario_creacion 
+        datetime ate_fecha_creacion 
+        int ate_usuario_actualizacion 
+        datetime ate_fecha_actualizacion 
+        bit ate_habilitado 
+    }
+    Componente_Posicion {
+        int cpn_id PK
+        int cpn_cliente FK
+        nvarchar cpn_codigo 
+        nvarchar cpn_nombre 
+        nvarchar cpn_icono 
+        int cpn_archivo 
+        int cpn_orden 
+        int cpn_usuario_creacion 
+        datetime cpn_fecha_creacion 
+        int cpn_usuario_actualizacion 
+        datetime cpn_fecha_actualizacion 
+        bit cpn_habilitado 
+    }
+    Componente_Tipo {
+        int cto_id PK
+        int cto_cliente FK
+        nvarchar cto_codigo 
+        nvarchar cto_nombre 
+        nvarchar cto_icono 
+        int cto_archivo 
+        int cto_orden 
+        int cto_usuario_creacion 
+        datetime cto_fecha_creacion 
+        int cto_usuario_actualizacion 
+        datetime cto_fecha_actualizacion 
+        bit cto_habilitado 
+    }

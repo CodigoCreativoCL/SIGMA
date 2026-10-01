@@ -369,3 +369,9 @@ _program files_git_check/
 # Se despliega compilando, no clonando: versionarlo eran 294 MB de DLL
 # que cambiaban de nombre en cada publicacion y ensuciaban todo diff.
 _program files_git_intranet/
+
+# Variables de entorno de los contenedores: lleva credenciales reales.
+# El que se versiona es .env.example, que solo describe que va en cada una.
+.env
+.env.*
+!.env.example

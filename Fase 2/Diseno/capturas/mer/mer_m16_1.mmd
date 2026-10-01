@@ -1,0 +1,31 @@
+erDiagram
+    Voz_Motor ||--o{ Dictado_Voz : dvo_voz_motor
+    Dictado_Voz {
+        int dvo_id PK
+        uniqueidentifier dvo_uuid 
+        int dvo_cliente FK
+        int dvo_usuario FK
+        datetime dvo_fecha_utc 
+        int dvo_archivo FK
+        int dvo_voz_motor FK
+        nvarchar dvo_modelo_version 
+        int dvo_idioma FK
+        nvarchar dvo_texto 
+        decimal dvo_confianza 
+        int dvo_duracion_segundo 
+        int dvo_intentos 
+        bit dvo_confirmado 
+        bit dvo_confirmado_por_voz 
+        datetime dvo_fecha_confirmacion_utc 
+        uniqueidentifier dvo_dispositivo_uuid 
+        int dvo_proceso_estado FK
+        int dvo_usuario_creacion 
+        datetime dvo_fecha_creacion 
+    }
+    Voz_Motor {
+        int vmo_id PK
+        nvarchar vmo_codigo 
+        nvarchar vmo_nombre 
+        int vmo_orden 
+        bit vmo_habilitado 
+    }

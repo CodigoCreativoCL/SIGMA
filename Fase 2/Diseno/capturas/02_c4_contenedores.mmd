@@ -1,0 +1,47 @@
+flowchart TB
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    PL["Planificador - Administrador<br/>Jefatura"]:::persona
+    TE["Tecnico de terreno"]:::persona
+    DS["Entrenador de modelos"]:::persona
+
+    subgraph SIGMA["SIGMA"]
+        direction TB
+        WEB["Intranet SIGMA<br/><small>ASP.NET WebForms 4.8<br/>86 Controllers - 80 Models<br/>11 modulos de vistas</small>"]:::web
+API["API SIGMA<br/><small>ASP.NET Web API 2<br/>40 Controllers REST<br/>JWT + suscripcion vigente<br/>entrena y puntua SIGMA AI</small>"]:::web
+        APP["App SIGMA<br/><small>Flutter 3 + Riverpod<br/>sqflite - cola por uuid<br/>QR, voz, foto, audio</small>"]:::web
+        LIB["Librerias compartidas<br/><small>.NET - acceso a datos,<br/>Tools.Crypto, utilidades</small>"]:::web
+        DB[("Base de datos SIGMA<br/><small>SQL Server<br/>250 tablas - 572 SP - 664 FK<br/>multicliente por *_cliente</small>")]:::datos
+    end
+
+    BLOB["Azure Blob Storage"]:::azure
+    AML["Azure Machine Learning"]:::azure
+    ACV["Azure Custom Vision"]:::azure
+    SMTP["SMTP"]:::externo
+    MAPS["Google Maps"]:::externo
+    FCM["Firebase Cloud Messaging"]:::externo
+
+    PL -->|"HTTPS"| WEB
+    TE -->|"Usa"| APP
+    DS -->|"HTTPS"| WEB
+
+    APP -->|"JSON/HTTPS + JWT"| API
+    WEB -->|"Archivos y SIGMA AI<br/>via API"| API
+    WEB -->|"Procedimientos almacenados"| DB
+    API -->|"Procedimientos almacenados"| DB
+    WEB -.->|"Referencia"| LIB
+    API -.->|"Referencia"| LIB
+
+    API --> BLOB
+    API --> AML
+    API --> ACV
+    API --> SMTP
+    API --> FCM
+    WEB --> MAPS

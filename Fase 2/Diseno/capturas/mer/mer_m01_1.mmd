@@ -1,0 +1,133 @@
+erDiagram
+    Cliente ||--o{ Cliente_Contacto : ccn_cliente
+    Cliente ||--o{ Cliente_Usuario : ucl_id_cliente
+    Usuario ||--o{ Cliente_Usuario : ucl_id_usuario
+    Cliente_Usuario ||--o{ Cliente_Usuario_Perfil : cup_id_cliente_usuario
+    Cliente_Usuario ||--o{ Cliente_Usuario_Permiso : cpm_cliente_usuario
+    Usuario ||--o{ Usuario_Accesibilidad : uac_usuario
+    Cliente ||--o{ Usuario_Favorito : ufv_cliente
+    Usuario ||--o{ Usuario_Favorito : ufv_usuario
+    Usuario ||--o{ Usuario_Foto : uft_usuario
+    Cliente {
+        int cli_id PK
+        varchar cli_nombre 
+        int cli_pais FK
+        varchar cli_razon_social 
+        varchar cli_identificador 
+        bit cli_habilitado 
+        int cli_usuario_creacion 
+        datetime cli_fecha_creacion 
+        int cli_usuario_actualizacion 
+        datetime cli_fecha_actualizacion 
+        varbinary cli_logo 
+        nvarchar cli_nombre_fantasia 
+        int cli_zona_horaria FK
+        int cli_idioma FK
+        int cli_moneda FK
+        int cli_archivo_logo FK
+    }
+    Cliente_Contacto {
+        int ccn_id PK
+        int ccn_cliente FK
+        nvarchar ccn_nombre 
+        nvarchar ccn_cargo 
+        nvarchar ccn_email 
+        nvarchar ccn_telefono 
+        bit ccn_principal 
+        bit ccn_habilitado 
+        int ccn_usuario_creacion 
+        datetime ccn_fecha_creacion 
+        int ccn_usuario_actualizacion 
+        datetime ccn_fecha_actualizacion 
+    }
+    Cliente_Usuario {
+        int ucl_id PK
+        int ucl_id_usuario FK
+        int ucl_id_cliente FK
+        bit ucl_habilitado 
+        int ucl_usuario_creacion 
+        datetime ucl_fecha_creacion 
+        int ucl_usuario_act 
+        datetime ucl_fecha_act 
+    }
+    Cliente_Usuario_Perfil {
+        int cup_id PK
+        int cup_id_cliente_usuario FK
+        int cup_id_perfil FK
+        int cup_usuario_creacion 
+        datetime cup_fecha_creacion 
+    }
+    Cliente_Usuario_Permiso {
+        int cpm_id PK
+        int cpm_cliente_usuario FK
+        int cpm_permiso FK
+        int cpm_cliente_instalacion FK
+        bit cpm_otorgado 
+        date cpm_fecha_inicio 
+        date cpm_fecha_fin 
+        nvarchar cpm_motivo 
+        int cpm_usuario_creacion 
+        datetime cpm_fecha_creacion 
+        int cpm_usuario_actualizacion 
+        datetime cpm_fecha_actualizacion 
+        bit cpm_habilitado 
+        int cpm_instalacion_area FK
+    }
+    Usuario {
+        int usu_id PK
+        varchar usu_login 
+        varchar usu_password 
+        varchar usu_nombre 
+        varchar usu_apellido_paterno 
+        varchar usu_apellido_materno 
+        varchar usu_identificador 
+        varchar usu_correo 
+        varchar usu_telefono 
+        varbinary usu_foto 
+        bit usu_habilitado 
+        int usu_usuario_creacion 
+        datetime usu_fecha_creacion 
+        int usu_usuario_act 
+        datetime usu_fecha_act 
+        datetime usu_ultimo_acceso 
+        int usu_intentos_fallidos 
+        datetime usu_primer_intento_fallido 
+        datetime usu_bloqueado_hasta 
+        int usu_idioma FK
+        varchar usu_password_salt 
+        int usu_archivo_foto FK
+    }
+    Usuario_Accesibilidad {
+        int uac_id PK
+        int uac_usuario FK
+        bit uac_entrada_voz 
+        bit uac_lectura_voz 
+        bit uac_confirmacion_hablada 
+        decimal uac_velocidad_voz 
+        bit uac_texto_grande 
+        bit uac_alto_contraste 
+        bit uac_iconos_grandes 
+        int uac_idioma FK
+        int uac_usuario_creacion 
+        datetime uac_fecha_creacion 
+        int uac_usuario_actualizacion 
+        datetime uac_fecha_actualizacion 
+        bit uac_habilitado 
+    }
+    Usuario_Favorito {
+        int ufv_id PK
+        int ufv_usuario FK
+        int ufv_cliente FK
+        int ufv_orden_trabajo FK
+        int ufv_tarea_ocurrencia FK
+        int ufv_activo FK
+        int ufv_usuario_creacion 
+        datetime ufv_fecha_creacion 
+    }
+    Usuario_Foto {
+        int uft_id PK
+        int uft_usuario FK
+        varbinary uft_binario 
+        varchar uft_extension 
+        datetime uft_fecha_creacion 
+    }

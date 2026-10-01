@@ -1,0 +1,110 @@
+erDiagram
+    Cliente_Instalacion ||--o{ Cliente_Instalacion_Usuario : ciu_id_instalacion
+    Cliente_Instalacion ||--o{ Instalacion_Area : iar_cliente_instalacion
+    Instalacion_Area_Tipo ||--o{ Instalacion_Area : iar_instalacion_area_tipo
+    Especialidad ||--o{ Grupo_Trabajo : gtr_especialidad
+    Cliente_Instalacion ||--o{ Grupo_Trabajo : gtr_cliente_instalacion
+    Grupo_Trabajo ||--o{ Grupo_Trabajo_Usuario : gtu_grupo_trabajo
+    Cliente_Instalacion {
+        int cin_id PK
+        int cin_cliente FK
+        varchar cin_nombre 
+        varchar cin_descripcion 
+        varchar cin_direccion 
+        bit cin_habilitado 
+        int cin_usuario_creacion 
+        datetime cin_fecha_creacion 
+        int cin_usuario_actualizacion 
+        datetime cin_fecha_actualizacion 
+        nvarchar cin_codigo 
+        int cin_zona_horaria FK
+        decimal cin_latitud 
+        decimal cin_longitud 
+    }
+    Cliente_Instalacion_Usuario {
+        int ciu_id PK
+        int ciu_id_instalacion FK
+        int ciu_id_usuario FK
+        int ciu_usuario_creacion 
+        datetime ciu_fecha_creacion 
+        bit ciu_habilitado 
+        date ciu_fecha_inicio 
+        date ciu_fecha_fin 
+    }
+    Instalacion_Area {
+        int iar_id PK
+        int iar_cliente FK
+        int iar_cliente_instalacion FK
+        int iar_area_padre FK
+        int iar_instalacion_area_tipo FK
+        nvarchar iar_codigo 
+        nvarchar iar_nombre 
+        nvarchar iar_descripcion 
+        int iar_usuario_creacion 
+        datetime iar_fecha_creacion 
+        int iar_usuario_actualizacion 
+        datetime iar_fecha_actualizacion 
+        bit iar_habilitado 
+    }
+    Instalacion_Area_Tipo {
+        int iat_id PK
+        nvarchar iat_codigo 
+        nvarchar iat_nombre 
+        int iat_orden 
+        bit iat_habilitado 
+    }
+    Centro_Costo {
+        int cco_id PK
+        int cco_cliente FK
+        int cco_centro_costo_padre FK
+        nvarchar cco_codigo 
+        nvarchar cco_nombre 
+        int cco_usuario_creacion 
+        datetime cco_fecha_creacion 
+        int cco_usuario_actualizacion 
+        datetime cco_fecha_actualizacion 
+        bit cco_habilitado 
+    }
+    Grupo_Trabajo {
+        int gtr_id PK
+        int gtr_cliente FK
+        int gtr_cliente_instalacion FK
+        nvarchar gtr_codigo 
+        nvarchar gtr_nombre 
+        int gtr_especialidad FK
+        nvarchar gtr_descripcion 
+        int gtr_usuario_creacion 
+        datetime gtr_fecha_creacion 
+        int gtr_usuario_actualizacion 
+        datetime gtr_fecha_actualizacion 
+        bit gtr_habilitado 
+    }
+    Grupo_Trabajo_Usuario {
+        int gtu_id PK
+        int gtu_grupo_trabajo FK
+        int gtu_usuario FK
+        bit gtu_es_lider 
+        date gtu_fecha_inicio 
+        date gtu_fecha_fin 
+        int gtu_usuario_creacion 
+        datetime gtu_fecha_creacion 
+    }
+    Especialidad {
+        int esp_id PK
+        int esp_cliente FK
+        nvarchar esp_codigo 
+        nvarchar esp_nombre 
+        int esp_orden 
+        int esp_usuario_creacion 
+        datetime esp_fecha_creacion 
+        int esp_usuario_actualizacion 
+        datetime esp_fecha_actualizacion 
+        bit esp_habilitado 
+    }
+    Especialidad_Nivel {
+        int enl_id PK
+        nvarchar enl_codigo 
+        nvarchar enl_nombre 
+        int enl_orden 
+        bit enl_habilitado 
+    }

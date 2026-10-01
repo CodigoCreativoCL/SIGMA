@@ -1,0 +1,98 @@
+erDiagram
+    Magnitud ||--o{ Unidad_Medida : ume_magnitud
+    Catalogo {
+        int ctl_id PK
+        nvarchar ctl_codigo 
+        nvarchar ctl_nombre 
+        nvarchar ctl_descripcion 
+        nvarchar ctl_tabla 
+        nvarchar ctl_prefijo 
+        nvarchar ctl_modulo 
+        bit ctl_ampliable 
+        int ctl_orden 
+        bit ctl_habilitado 
+    }
+    Paises {
+        int pai_id PK
+        varchar pai_nombre 
+        varchar pai_suma_resta 
+        int pai_hora 
+        bit pai_habilItado 
+        int pai_usuario_creacion 
+        datetime pai_fecha_creacion 
+        int pai_usuario_actualizacion 
+        datetime pai_fecha_actualizacion 
+        nvarchar pai_identificador_nombre 
+        nvarchar pai_identificador_validacion 
+        int pai_identificador_largo 
+        varchar pai_zona_horaria 
+    }
+    Idioma {
+        int idi_id PK
+        nvarchar idi_codigo 
+        nvarchar idi_nombre 
+        int idi_orden 
+        int idi_usuario_creacion 
+        datetime idi_fecha_creacion 
+        int idi_usuario_actualizacion 
+        datetime idi_fecha_actualizacion 
+        bit idi_habilitado 
+    }
+    Moneda {
+        int mon_id PK
+        nvarchar mon_codigo 
+        nvarchar mon_nombre 
+        int mon_orden 
+        bit mon_habilitado 
+    }
+    Zona_Horaria {
+        int zho_id PK
+        nvarchar zho_nombre 
+        nvarchar zho_identificador_windows 
+        nvarchar zho_identificador_iana 
+        int zho_offset_minuto 
+        int zho_usuario_creacion 
+        datetime zho_fecha_creacion 
+        int zho_usuario_actualizacion 
+        datetime zho_fecha_actualizacion 
+        bit zho_habilitado 
+        nvarchar zho_codigo 
+    }
+    Unidad_Medida {
+        int ume_id PK
+        int ume_magnitud FK
+        int ume_unidad_base FK
+        nvarchar ume_codigo 
+        nvarchar ume_nombre 
+        nvarchar ume_simbolo 
+        decimal ume_factor 
+        decimal ume_offset 
+        int ume_usuario_creacion 
+        datetime ume_fecha_creacion 
+        int ume_usuario_actualizacion 
+        datetime ume_fecha_actualizacion 
+        bit ume_habilitado 
+    }
+    Unidad_Tiempo {
+        int uti_id PK
+        nvarchar uti_codigo 
+        nvarchar uti_nombre 
+        int uti_orden 
+        bit uti_habilitado 
+    }
+    Magnitud {
+        int mag_id PK
+        nvarchar mag_codigo 
+        nvarchar mag_nombre 
+        int mag_orden 
+        bit mag_habilitado 
+    }
+    Criticidad_Nivel {
+        int crn_id PK
+        nvarchar crn_codigo 
+        nvarchar crn_nombre 
+        nvarchar crn_icono 
+        int crn_archivo 
+        int crn_orden 
+        bit crn_habilitado 
+    }

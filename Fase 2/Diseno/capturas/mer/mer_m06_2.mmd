@@ -1,0 +1,57 @@
+erDiagram
+    Inventario_Movimiento_Tipo ||--o{ Inventario_Movimiento : imo_inventario_movimiento_tipo
+    Bodega_Ubicacion ||--o{ Inventario_Movimiento : imo_bodega_ubicacion
+    Bodega_Ubicacion ||--o{ Inventario_Movimiento : imo_bodega_ubicacion_destino
+    Bodega_Ubicacion ||--o{ Inventario_Saldo : isa_bodega_ubicacion
+    Bodega_Ubicacion {
+        int bub_id PK
+        int bub_bodega FK
+        nvarchar bub_codigo 
+        nvarchar bub_nombre 
+        int bub_usuario_creacion 
+        datetime bub_fecha_creacion 
+        int bub_usuario_actualizacion 
+        datetime bub_fecha_actualizacion 
+        bit bub_habilitado 
+    }
+    Inventario_Movimiento {
+        int imo_id PK
+        uniqueidentifier imo_uuid 
+        int imo_cliente FK
+        int imo_repuesto FK
+        int imo_bodega FK
+        int imo_bodega_ubicacion FK
+        int imo_repuesto_lote FK
+        int imo_inventario_movimiento_tipo FK
+        decimal imo_cantidad 
+        decimal imo_costo_unitario 
+        int imo_moneda FK
+        datetime imo_fecha_movimiento_utc 
+        int imo_orden_trabajo FK
+        int imo_bodega_destino FK
+        nvarchar imo_observacion 
+        int imo_usuario_creacion 
+        datetime imo_fecha_creacion 
+        int imo_bodega_ubicacion_destino FK
+    }
+    Inventario_Movimiento_Tipo {
+        int imt_id PK
+        nvarchar imt_codigo 
+        nvarchar imt_nombre 
+        int imt_orden 
+        bit imt_habilitado 
+    }
+    Inventario_Saldo {
+        int isa_id PK
+        int isa_cliente FK
+        int isa_repuesto FK
+        int isa_bodega FK
+        decimal isa_cantidad 
+        decimal isa_cantidad_reservada 
+        decimal isa_costo_promedio 
+        datetime isa_fecha_ultimo_movimiento 
+        int isa_usuario_actualizacion 
+        datetime isa_fecha_actualizacion 
+        int isa_bodega_ubicacion FK
+        int isa_repuesto_lote FK
+    }

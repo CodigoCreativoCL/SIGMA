@@ -1,0 +1,130 @@
+erDiagram
+    Suscripcion_Estado ||--o{ Suscripcion : sus_suscripcion_estado
+    Suscripcion ||--o{ Suscripcion_Bloqueo_Log : sbl_suscripcion
+    Suscripcion ||--o{ Suscripcion_Consumo : sco_suscripcion
+    Suscripcion ||--o{ Suscripcion_Key_Historial : skh_suscripcion
+    Suscripcion_Pago_Estado ||--o{ Suscripcion_Pago : spa_suscripcion_pago_estado
+    Suscripcion_Periodo ||--o{ Suscripcion_Pago : spa_suscripcion_periodo
+    Suscripcion_Periodo_Estado ||--o{ Suscripcion_Periodo : spe_suscripcion_periodo_estado
+    Suscripcion ||--o{ Suscripcion_Periodo : spe_suscripcion
+    Suscripcion {
+        int sus_id PK
+        int sus_cliente FK
+        nvarchar sus_key_prefijo 
+        varbinary sus_key_hash 
+        int sus_suscripcion_estado FK
+        int sus_plan_comercial FK
+        date sus_fecha_inicio 
+        date sus_fecha_fin 
+        int sus_dias_gracia 
+        datetime sus_fecha_emision_key_utc 
+        nvarchar sus_contacto_nombre 
+        nvarchar sus_contacto_email 
+        nvarchar sus_contacto_telefono 
+        nvarchar sus_observacion 
+        int sus_usuario_creacion 
+        datetime sus_fecha_creacion 
+        int sus_usuario_actualizacion 
+        datetime sus_fecha_actualizacion 
+        bit sus_habilitado 
+    }
+    Suscripcion_Bloqueo_Log {
+        int sbl_id PK
+        int sbl_suscripcion FK
+        nvarchar sbl_key_prefijo 
+        nvarchar sbl_estado 
+        nvarchar sbl_origen 
+        nvarchar sbl_endpoint 
+        nvarchar sbl_ip 
+        datetime sbl_fecha_utc 
+        int sbl_usuario_creacion 
+        datetime sbl_fecha_creacion 
+    }
+    Suscripcion_Consumo {
+        int sco_id PK
+        int sco_suscripcion FK
+        int sco_periodo_anio 
+        int sco_periodo_mes 
+        int sco_plantas 
+        int sco_usuarios 
+        int sco_activos 
+        int sco_ordenes_trabajo 
+        int sco_ejecuciones_checklist 
+        int sco_dictados_voz 
+        decimal sco_almacenamiento_gb 
+        datetime sco_fecha_utc 
+        int sco_usuario_creacion 
+        datetime sco_fecha_creacion 
+    }
+    Suscripcion_Estado {
+        int sue_id PK
+        nvarchar sue_codigo 
+        nvarchar sue_nombre 
+        int sue_orden 
+        bit sue_habilitado 
+    }
+    Suscripcion_Key_Historial {
+        int skh_id PK
+        int skh_suscripcion FK
+        nvarchar skh_key_prefijo 
+        varbinary skh_key_hash 
+        nvarchar skh_accion 
+        nvarchar skh_motivo 
+        datetime skh_fecha_utc 
+        int skh_usuario_creacion 
+        datetime skh_fecha_creacion 
+    }
+    Suscripcion_Pago {
+        int spa_id PK
+        int spa_suscripcion_periodo FK
+        decimal spa_monto_declarado_clp 
+        decimal spa_monto_verificado_clp 
+        date spa_fecha_transferencia 
+        nvarchar spa_banco 
+        nvarchar spa_numero_operacion 
+        int spa_archivo FK
+        int spa_suscripcion_pago_estado FK
+        int spa_usuario_verificador FK
+        datetime spa_fecha_verificacion_utc 
+        nvarchar spa_motivo_rechazo 
+        int spa_usuario_creacion 
+        datetime spa_fecha_creacion 
+        int spa_usuario_actualizacion 
+        datetime spa_fecha_actualizacion 
+        bit spa_habilitado 
+    }
+    Suscripcion_Pago_Estado {
+        int spo_id PK
+        nvarchar spo_codigo 
+        nvarchar spo_nombre 
+        int spo_orden 
+        bit spo_habilitado 
+    }
+    Suscripcion_Periodo {
+        int spe_id PK
+        int spe_suscripcion FK
+        int spe_plan_comercial FK
+        int spe_periodicidad_cobro FK
+        date spe_fecha_inicio 
+        date spe_fecha_fin 
+        decimal spe_valor_uf_plan 
+        decimal spe_valor_uf_dia 
+        date spe_fecha_valor_uf 
+        decimal spe_monto_clp 
+        decimal spe_monto_pagado_clp 
+        int spe_suscripcion_periodo_estado FK
+        bit spe_es_implantacion 
+        nvarchar spe_observacion 
+        int spe_usuario_creacion 
+        datetime spe_fecha_creacion 
+        int spe_usuario_actualizacion 
+        datetime spe_fecha_actualizacion 
+        bit spe_habilitado 
+    }
+    Suscripcion_Periodo_Estado {
+        int spd_id PK
+        nvarchar spd_codigo 
+        nvarchar spd_nombre 
+        int spd_orden 
+        bit spd_habilitado 
+    }

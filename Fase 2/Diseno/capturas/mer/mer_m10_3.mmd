@@ -1,0 +1,51 @@
+erDiagram
+    Checklist_Ejecucion_Respuesta ||--o{ Checklist_Hallazgo : cha_checklist_ejecucion_respuesta
+    Checklist_Ejecucion_Respuesta {
+        int cer_id PK
+        int cer_checklist_ejecucion FK
+        int cer_checklist_plantilla_item FK
+        nvarchar cer_valor_texto 
+        decimal cer_valor_numero 
+        datetime cer_valor_fecha 
+        bit cer_valor_booleano 
+        int cer_unidad_medida FK
+        decimal cer_valor_canonico 
+        int cer_unidad_canonica FK
+        bit cer_fuera_rango 
+        nvarchar cer_severidad 
+        nvarchar cer_comentario 
+        bit cer_no_aplica 
+        datetime cer_fecha_respuesta_utc 
+        int cer_usuario_creacion 
+        datetime cer_fecha_creacion 
+        int cer_usuario_actualizacion 
+        datetime cer_fecha_actualizacion 
+        bit cer_habilitado 
+        int cer_entrada_modo FK
+        int cer_dictado_voz FK
+    }
+    Checklist_Hallazgo {
+        int cha_id PK
+        uniqueidentifier cha_uuid 
+        int cha_cliente FK
+        int cha_checklist_ejecucion FK
+        int cha_checklist_ejecucion_respuesta FK
+        int cha_activo FK
+        int cha_activo_componente FK
+        nvarchar cha_titulo 
+        nvarchar cha_descripcion 
+        int cha_severidad FK
+        int cha_criticidad_nivel FK
+        int cha_proceso_estado FK
+        bit cha_generado_ia 
+        decimal cha_confianza_ia 
+        int cha_orden_trabajo FK
+        int cha_usuario_confirmacion FK
+        datetime cha_fecha_confirmacion_utc 
+        nvarchar cha_motivo_descarte 
+        int cha_usuario_creacion 
+        datetime cha_fecha_creacion 
+        int cha_usuario_actualizacion 
+        datetime cha_fecha_actualizacion 
+        bit cha_habilitado 
+    }

@@ -1,0 +1,128 @@
+erDiagram
+    Programacion ||--o{ Programacion_Calendario : pca_programacion
+    Programacion_Calendario ||--o{ Programacion_Calendario_Dia : pcd_programacion_calendario
+    Programacion ||--o{ Programacion_Condicion : pco_programacion
+    Programacion ||--o{ Programacion_Exclusion : pxc_programacion
+    Programacion ||--o{ Programacion_Fecha : pfe_programacion
+    Programacion ||--o{ Programacion_Generacion : pge_programacion
+    Programacion ||--o{ Programacion_Intervalo : pin_programacion
+    Programacion ||--o{ Programacion_Medidor : pme_programacion
+    Programacion {
+        int pro_id PK
+        int pro_cliente FK
+        int pro_programacion_tipo FK
+        int pro_zona_horaria FK
+        nvarchar pro_nombre 
+        date pro_fecha_inicio 
+        date pro_fecha_fin 
+        int pro_tolerancia_antes_minuto 
+        int pro_tolerancia_despues_minuto 
+        bit pro_permite_anticipada 
+        bit pro_permite_atrasada 
+        int pro_cumplimiento_politica FK
+        bit pro_genera_automaticamente 
+        int pro_usuario_creacion 
+        datetime pro_fecha_creacion 
+        int pro_usuario_actualizacion 
+        datetime pro_fecha_actualizacion 
+        bit pro_habilitado 
+        int pro_cliente_instalacion FK
+        int pro_instalacion_area FK
+        int pro_activo FK
+        int pro_grupo_trabajo FK
+    }
+    Programacion_Calendario {
+        int pca_id PK
+        int pca_programacion FK
+        int pca_frecuencia_tipo FK
+        int pca_intervalo 
+        int pca_semana_ordinal 
+        int pca_dia_mes 
+        int pca_mes 
+        time pca_hora_local 
+        int pca_usuario_creacion 
+        datetime pca_fecha_creacion 
+        int pca_usuario_actualizacion 
+        datetime pca_fecha_actualizacion 
+        bit pca_habilitado 
+    }
+    Programacion_Calendario_Dia {
+        int pcd_id PK
+        int pcd_programacion_calendario FK
+        int pcd_dia_semana FK
+    }
+    Programacion_Condicion {
+        int pco_id PK
+        int pco_programacion FK
+        int pco_activo_variable FK
+        int pco_operador_comparacion FK
+        decimal pco_umbral 
+        decimal pco_umbral_hasta 
+        int pco_duracion_minima_minuto 
+        int pco_severidad FK
+        int pco_usuario_creacion 
+        datetime pco_fecha_creacion 
+        int pco_usuario_actualizacion 
+        datetime pco_fecha_actualizacion 
+        bit pco_habilitado 
+    }
+    Programacion_Exclusion {
+        int pxc_id PK
+        int pxc_programacion FK
+        datetime pxc_fecha_inicio_utc 
+        datetime pxc_fecha_fin_utc 
+        nvarchar pxc_motivo 
+        int pxc_usuario_creacion 
+        datetime pxc_fecha_creacion 
+        int pxc_usuario_actualizacion 
+        datetime pxc_fecha_actualizacion 
+        bit pxc_habilitado 
+        bit pxc_desplaza 
+    }
+    Programacion_Fecha {
+        int pfe_id PK
+        int pfe_programacion FK
+        date pfe_fecha 
+        time pfe_hora 
+        bit pfe_incluida 
+    }
+    Programacion_Generacion {
+        int pge_id PK
+        int pge_programacion FK
+        int pge_horizonte_dia 
+        datetime pge_fecha_generada_hasta_utc 
+        decimal pge_ultimo_valor_medidor 
+        datetime pge_ultima_ejecucion_utc 
+        int pge_ocurrencias_generadas 
+        nvarchar pge_ultimo_error 
+        int pge_usuario_creacion 
+        datetime pge_fecha_creacion 
+        int pge_usuario_actualizacion 
+        datetime pge_fecha_actualizacion 
+    }
+    Programacion_Intervalo {
+        int pin_id PK
+        int pin_programacion FK
+        int pin_unidad_tiempo FK
+        datetime pin_fecha_ancla_utc 
+        int pin_cantidad 
+        int pin_usuario_creacion 
+        datetime pin_fecha_creacion 
+        int pin_usuario_actualizacion 
+        datetime pin_fecha_actualizacion 
+        bit pin_habilitado 
+        bit pin_desde_ejecucion 
+    }
+    Programacion_Medidor {
+        int pme_id PK
+        int pme_programacion FK
+        int pme_activo_medidor FK
+        decimal pme_valor_inicial 
+        decimal pme_cada_cantidad 
+        decimal pme_aviso_anticipacion 
+        int pme_usuario_creacion 
+        datetime pme_fecha_creacion 
+        int pme_usuario_actualizacion 
+        datetime pme_fecha_actualizacion 
+        bit pme_habilitado 
+    }

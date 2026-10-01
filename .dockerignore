@@ -1,0 +1,26 @@
+# Lo que no tiene por que entrar al contexto de construccion. Reduce lo que
+# Docker copia y, sobre todo, evita que credenciales o documentos terminen
+# dentro de una imagen.
+
+.git
+.gitignore
+.env
+**/.vs
+**/bin
+**/obj
+**/packages
+Fase 1
+Fase 2
+MD
+PATRONES
+ENTRENAMIENTO
+App
+BD
+Dev
+_program files_git_check
+_program files_git_intranet
+**/*.user
+**/*.suo
+**/data.config
+**/*.log
+**/RadUploadTemp

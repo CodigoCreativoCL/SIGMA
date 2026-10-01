@@ -1,0 +1,73 @@
+flowchart LR
+    classDef m fill:#F2EFFF,stroke:#6732F4,color:#17223B
+    M01["<b>M01</b><br/>Acceso, seguridad y multicliente<br/><small>29 tablas</small>"]:::m
+    M02["<b>M02</b><br/>Estructura organizacional<br/><small>10 tablas</small>"]:::m
+    M03["<b>M03</b><br/>Catalogos del sistema<br/><small>29 tablas</small>"]:::m
+    M04["<b>M04</b><br/>Maestro de activos y ubicacion tecnica<br/><small>19 tablas</small>"]:::m
+    M05["<b>M05</b><br/>Mediciones, medidores y variables de condicion<br/><small>7 tablas</small>"]:::m
+    M06["<b>M06</b><br/>Repuestos, bodegas e inventario<br/><small>13 tablas</small>"]:::m
+    M07["<b>M07</b><br/>Terceros, procedimientos y permisos de trabajo<br/><small>6 tablas</small>"]:::m
+    M08["<b>M08</b><br/>Motor de programacion<br/><small>11 tablas</small>"]:::m
+    M09["<b>M09</b><br/>Planes de mantenimiento<br/><small>12 tablas</small>"]:::m
+    M10["<b>M10</b><br/>Checklist dinamico<br/><small>20 tablas</small>"]:::m
+    M11["<b>M11</b><br/>Tareas<br/><small>11 tablas</small>"]:::m
+    M12["<b>M12</b><br/>Ordenes de trabajo y fallas<br/><small>23 tablas</small>"]:::m
+    M13["<b>M13</b><br/>Bitacora de turno<br/><small>4 tablas</small>"]:::m
+    M14["<b>M14</b><br/>Evidencias, archivos y analisis visual<br/><small>10 tablas</small>"]:::m
+    M15["<b>M15</b><br/>Aplicacion movil y trabajo sin conexion<br/><small>4 tablas</small>"]:::m
+    M16["<b>M16</b><br/>Voz e inclusion<br/><small>2 tablas</small>"]:::m
+    M17["<b>M17</b><br/>SIGMA AI<br/><small>14 tablas</small>"]:::m
+    M18["<b>M18</b><br/>Alertas e indicadores de gestion<br/><small>6 tablas</small>"]:::m
+    M19["<b>M19</b><br/>Suscripcion y modelo comercial<br/><small>15 tablas</small>"]:::m
+    M20["<b>M20</b><br/>Importacion y carga inicial<br/><small>4 tablas</small>"]:::m
+    M01 -->|"18 FK"| M04
+    M01 -->|"18 FK"| M12
+    M03 -->|"14 FK"| M05
+    M01 -->|"11 FK"| M10
+    M03 -->|"11 FK"| M10
+    M01 -->|"10 FK"| M06
+    M04 -->|"10 FK"| M12
+    M03 -->|"10 FK"| M12
+    M04 -->|"9 FK"| M05
+    M01 -->|"9 FK"| M18
+    M01 -->|"9 FK"| M14
+    M01 -->|"9 FK"| M02
+    M03 -->|"8 FK"| M04
+    M01 -->|"8 FK"| M11
+    M03 -->|"7 FK"| M01
+    M01 -->|"7 FK"| M17
+    M12 -->|"6 FK"| M04
+    M01 -->|"6 FK"| M05
+    M04 -->|"6 FK"| M10
+    M02 -->|"6 FK"| M12
+    M04 -->|"6 FK"| M09
+    M03 -->|"6 FK"| M08
+    M02 -->|"5 FK"| M04
+    M02 -->|"5 FK"| M10
+    M03 -->|"5 FK"| M06
+    M01 -->|"5 FK"| M07
+    M01 -->|"5 FK"| M09
+    M03 -->|"4 FK"| M14
+    M10 -->|"4 FK"| M14
+    M12 -->|"4 FK"| M14
+    M01 -->|"4 FK"| M13
+    M06 -->|"4 FK"| M04
+    M01 -->|"4 FK"| M03
+    M04 -->|"4 FK"| M17
+    M10 -->|"4 FK"| M12
+    M07 -->|"4 FK"| M12
+    M02 -->|"4 FK"| M11
+    M14 -->|"3 FK"| M04
+    M06 -->|"3 FK"| M18
+    M04 -->|"3 FK"| M14
+    M16 -->|"3 FK"| M13
+    M03 -->|"3 FK"| M17
+    M02 -->|"3 FK"| M01
+    M03 -->|"3 FK"| M09
+    M02 -->|"3 FK"| M09
+    M01 -->|"3 FK"| M19
+    M12 -->|"3 FK"| M09
+    M12 -->|"3 FK"| M17
+    M02 -->|"3 FK"| M08
+    M01 -->|"3 FK"| M08
+    M04 -->|"3 FK"| M06

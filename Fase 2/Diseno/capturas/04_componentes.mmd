@@ -1,0 +1,79 @@
+flowchart TB
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    subgraph VIEW["Intranet - View/ : 11 modulos de vistas (.aspx)"]
+        direction LR
+        V1["Activos"]:::modulo
+        V2["Inventario"]:::modulo
+        V3["Mantenimiento"]:::modulo
+        V4["Comercial"]:::modulo
+        V5["Organizacion"]:::modulo
+        V6["Terceros"]:::modulo
+        V7["Sistema - Comun"]:::modulo
+        V8["SigmaAI"]:::modulo
+    end
+
+    subgraph APPCODE["Intranet - App_Code/MVC/SitioBase"]
+        direction LR
+        C["Controller : 86 clases<br/><small>regla de negocio,<br/>arma el SqlCommand</small>"]:::web
+        M["Model : 80 clases<br/><small>una por entidad<br/>o vista de SIGMA</small>"]:::web
+    end
+
+    subgraph SEG["Transversal - SitioBase"]
+        direction LR
+        T["Token<br/><small>seguridad por dato:<br/>Puede - ExigirPagina</small>"]:::sigma
+        SS["Sesion - Hora - Conexion"]:::web
+        SUS["SuscripcionAcceso<br/><small>compuerta comercial</small>"]:::web
+    end
+
+    subgraph APIBOX["API - 40 Controllers REST"]
+        direction TB
+        H1["TokenValidationHandler<br/><small>valida el JWT antes de enrutar</small>"]:::sigma
+        H2["SuscripcionVigenteHandler<br/><small>HTTP 402 si no esta vigente</small>"]:::sigma
+        AC["Controllers"]:::web
+        AI["SigmaAiController<br/><small>dataset, entrenamiento,<br/>versiones, predecir</small>"]:::web
+        PU["PuntuadorFalla<br/><small>pesos + sigmoide,<br/>razones en espanol</small>"]:::web
+        EN["EntrenadorFalla<br/><small>regresion logistica en .NET,<br/>corre en el mismo app pool</small>"]:::web
+    end
+
+    subgraph APPM["App Flutter"]
+        direction TB
+        UI["Pantallas - Riverpod"]:::web
+        REPO["Repositorios"]:::web
+        LOCAL[("SQLite local")]:::datos
+        SYNC["Cola de sincronizacion<br/><small>idempotente por uuid</small>"]:::web
+    end
+
+    subgraph BD["Base de datos : 572 procedimientos"]
+        direction LR
+        SEL["SEL_* / API_SEL_*<br/><small>lectura, filtrada por @CLIENTE</small>"]:::datos
+        INS["INS_* / UPD_* / DEL_*<br/><small>escritura transaccional<br/>XACT_ABORT ON</small>"]:::datos
+    end
+
+    VIEW -->|".aspx.cs invoca"| C
+    C --> M
+    C -->|"valida antes de ejecutar"| T
+    C --> SEL
+    C --> INS
+    SUS --> SEL
+    T -.-> SEL
+
+    H1 --> H2 --> AC
+    AC --> SEL
+    AC --> INS
+    AI --> PU
+    AI --> EN
+    EN --> INS
+    AI --> SEL
+    AI --> INS
+    V8 -->|"consume"| AI
+
+    UI --> REPO --> LOCAL
+    REPO --> SYNC --> AC

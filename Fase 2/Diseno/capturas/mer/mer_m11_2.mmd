@@ -1,0 +1,20 @@
+erDiagram
+    Tarea_Prioridad {
+        int tpa_id PK
+        nvarchar tpa_codigo 
+        nvarchar tpa_nombre 
+        int tpa_orden 
+        bit tpa_habilitado 
+    }
+    Tarea_Programacion {
+        int tpr_id PK
+        int tpr_tarea FK
+        int tpr_programacion FK
+        int tpr_usuario_responsable FK
+        int tpr_grupo_trabajo FK
+        int tpr_usuario_creacion 
+        datetime tpr_fecha_creacion 
+        int tpr_usuario_actualizacion 
+        datetime tpr_fecha_actualizacion 
+        bit tpr_habilitado 
+    }

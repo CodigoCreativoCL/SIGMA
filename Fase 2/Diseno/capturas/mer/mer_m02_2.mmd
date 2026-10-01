@@ -1,0 +1,15 @@
+erDiagram
+    Usuario_Especialidad {
+        int ues_id PK
+        int ues_usuario FK
+        int ues_cliente FK
+        int ues_especialidad FK
+        int ues_especialidad_nivel FK
+        nvarchar ues_certificacion 
+        date ues_fecha_vencimiento 
+        int ues_usuario_creacion 
+        datetime ues_fecha_creacion 
+        int ues_usuario_actualizacion 
+        datetime ues_fecha_actualizacion 
+        bit ues_habilitado 
+    }

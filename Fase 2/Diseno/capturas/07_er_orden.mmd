@@ -1,0 +1,51 @@
+erDiagram
+    CLIENTE ||--o{ ORDEN_TRABAJO : otr_cliente
+    ACTIVO ||--o{ ORDEN_TRABAJO : otr_activo
+    ORDEN_TRABAJO_ESTADO ||--o{ ORDEN_TRABAJO : otr_orden_trabajo_estado
+    USUARIO ||--o{ ORDEN_TRABAJO : otr_usuario_responsable
+    ORDEN_TRABAJO ||--o{ ORDEN_TRABAJO_ASIGNACION : ota_orden_trabajo
+    ORDEN_TRABAJO ||--o{ ORDEN_TRABAJO_PASO : otp_orden_trabajo
+    ORDEN_TRABAJO ||--o{ ORDEN_TRABAJO_REPUESTO : otre_orden_trabajo
+    ORDEN_TRABAJO ||--o{ ORDEN_TRABAJO_VALIDACION : otv_orden_trabajo
+    ORDEN_TRABAJO ||--o{ ORDEN_TRABAJO_ESTADO_HISTORIAL : "historial de estados"
+    PLAN_MANTENIMIENTO_ACTIVIDAD ||--o{ ORDEN_TRABAJO_PASO : "se copia como paso"
+    PROCEDIMIENTO_PASO ||--o{ ORDEN_TRABAJO_PASO : otp_procedimiento_paso
+    VALIDACION_TIPO ||--o{ ORDEN_TRABAJO_VALIDACION : "aceptacion / ejecucion / validacion"
+    GRUPO_TRABAJO ||--o{ ORDEN_TRABAJO_ASIGNACION : ota_grupo_trabajo
+    PROVEEDOR ||--o{ ORDEN_TRABAJO_ASIGNACION : ota_proveedor
+    ARCHIVO ||--o| ORDEN_TRABAJO_VALIDACION : "firma digital"
+
+    ORDEN_TRABAJO {
+        int otr_id PK
+        int otr_cliente FK
+        int otr_correlativo
+        int otr_activo FK
+        int otr_orden_trabajo_tipo
+        int otr_orden_trabajo_estrategia
+        int otr_orden_trabajo_estado FK
+        int otr_plan_mantenimiento_ocurrencia FK "nace de un plan, o manual"
+        int otr_tarea_ocurrencia FK
+        nvarchar otr_titulo
+        bit otr_requiere_permiso
+    }
+    ORDEN_TRABAJO_ASIGNACION {
+        int ota_id PK
+        int ota_orden_trabajo FK
+        int ota_usuario FK
+        int ota_grupo_trabajo FK
+        int ota_proveedor FK
+        bit ota_es_responsable
+    }
+    ORDEN_TRABAJO_PASO {
+        int otp_id PK
+        int otp_orden_trabajo FK
+        int otp_plan_mantenimiento_actividad FK
+        int otp_resultado_paso
+    }
+    ORDEN_TRABAJO_VALIDACION {
+        int otv_id PK
+        int otv_orden_trabajo FK
+        int otv_validacion_tipo FK
+        nvarchar otv_resultado "APROBADO / RECHAZADO"
+        int otv_archivo_firma FK
+    }

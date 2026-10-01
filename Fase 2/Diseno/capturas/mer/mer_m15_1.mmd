@@ -1,0 +1,45 @@
+erDiagram
+    App ||--o{ Cliente_App_Instalacion : cai_id_app
+    App {
+        int app_id PK
+        nvarchar app_codigo 
+        nvarchar app_nombre 
+        nvarchar app_tipo 
+        int app_orden 
+        bit app_habilitado 
+        int app_funcionalidad FK
+        bit app_por_defecto 
+        nvarchar app_origen 
+    }
+    Cliente_App_Instalacion {
+        int cai_id PK
+        int cai_id_instalacion FK
+        int cai_id_app FK
+        bit cai_habilitado 
+        int cai_usuario_creacion 
+        datetime cai_fecha_creacion 
+        int cai_usuario_actualizacion 
+        datetime cai_fecha_actualizacion 
+    }
+    Cliente_Binario {
+        int clb_id PK
+        int clb_cliente FK
+        nvarchar clb_tipo 
+        nvarchar clb_nombre_archivo 
+        nvarchar clb_mime 
+        int clb_byte 
+        varbinary clb_contenido 
+        int clb_usuario_creacion 
+        datetime clb_fecha_creacion 
+        int clb_usuario_actualizacion 
+        datetime clb_fecha_actualizacion 
+        bit clb_habilitado 
+    }
+    Usuario_App_Dispositivo {
+        int uad_id PK
+        int uad_id_usuario 
+        nvarchar uad_fcm_token 
+        nvarchar uad_dispositivo 
+        datetime uad_fecha 
+        bit uad_activo 
+    }

@@ -1,0 +1,80 @@
+classDiagram
+    class PlanMantenimiento {
+        +int pma_id
+        +int pma_cliente
+        +string pma_codigo
+        +string pma_nombre
+        +int version_id
+        +int hitos
+        +int activos
+    }
+    class PlanVersion {
+        +int pmv_id
+        +int pmv_plan_mantenimiento
+        +int pmv_numero
+        +string version_estado_codigo
+        +bool version_editable
+    }
+    class PlanHito {
+        +int pmh_id
+        +int pmh_plan_mantenimiento_version
+        +string pmh_codigo
+        +bool pmh_requiere_parada
+        +bool pmh_es_overhaul
+    }
+    class PlanActividad {
+        +int paa_id
+        +int paa_plan_mantenimiento_hito
+        +int paa_procedimiento
+        +bool paa_requiere_permiso
+    }
+    class PlanOcurrencia {
+        +int pmo_id
+        +int plan_id
+        +int hito_id
+        +int activo_id
+        +DateTime fecha_programada
+        +string situacion
+        +int orden_trabajo_id
+    }
+    class OrdenTrabajo {
+        +int otr_id
+        +int otr_correlativo
+        +int otr_activo
+        +string otr_titulo
+        +int otr_orden_trabajo_estado
+        +int otr_plan_mantenimiento_ocurrencia
+    }
+    class OrdenTrabajoValidacion {
+        +int id
+        +string tipo_codigo
+        +string resultado
+        +bool aprobada
+    }
+    class PlanOcurrenciaController {
+        +GetBandeja() List~PlanOcurrencia~
+        +GetCalendario() List~PlanOcurrencia~
+        +GenerarOrden(ocurrencia) Respuesta
+        +GetCumplimiento() PlanCumplimiento
+    }
+    class OrdenTrabajoValidacionController {
+        +GetValidaciones(orden) List~OrdenTrabajoValidacion~
+        +Registrar(...) Respuesta
+    }
+    class Token {
+        +Puede(codigo) bool
+        +PuedeFuncion(codigo) bool
+        +ExigirPagina()
+    }
+
+    PlanMantenimiento "1" --> "N" PlanVersion
+    PlanVersion "1" --> "N" PlanHito
+    PlanHito "1" --> "N" PlanActividad
+    PlanHito "1" --> "N" PlanOcurrencia
+    PlanOcurrencia "0..1" --> "1" OrdenTrabajo : genera
+    OrdenTrabajo "1" --> "N" OrdenTrabajoValidacion
+    PlanOcurrenciaController ..> PlanOcurrencia : administra
+    PlanOcurrenciaController ..> OrdenTrabajo : crea
+    PlanOcurrenciaController ..> Token : valida permiso
+    OrdenTrabajoValidacionController ..> OrdenTrabajoValidacion : administra
+    OrdenTrabajoValidacionController ..> Token : valida permiso

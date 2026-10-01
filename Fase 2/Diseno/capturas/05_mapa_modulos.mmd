@@ -1,0 +1,20 @@
+flowchart LR
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    G1["<b>1. Base del sistema</b><br/><br/>EP-01 - Acceso, seguridad y multicliente<br/>EP-02 - Estructura organizacional<br/>EP-03 - Catalogos del sistema<br/>EP-19 - Suscripcion y modelo comercial<br/>EP-20 - Importacion y carga inicial"]:::modulo
+    G2["<b>2. Que se mantiene</b><br/><br/>EP-04 - Maestro de activos y ubicacion tecnica<br/>EP-05 - Mediciones, medidores y variables<br/>EP-06 - Repuestos, bodegas e inventario<br/>EP-07 - Terceros, procedimientos y permisos"]:::modulo
+    G3["<b>3. Como se organiza el trabajo</b><br/><br/>EP-08 - Motor de programacion<br/>EP-09 - Planes de mantenimiento<br/>EP-10 - Checklist dinamico<br/>EP-11 - Tareas<br/>EP-12 - Ordenes de trabajo y fallas"]:::modulo
+    G4["<b>4. Que pasa en terreno</b><br/><br/>EP-13 - Bitacora de turno<br/>EP-14 - Evidencias, archivos y analisis visual<br/>EP-15 - App movil y trabajo sin conexion<br/>EP-16 - Voz e inclusion"]:::modulo
+    G5["<b>5. Que se decide con eso</b><br/><br/>EP-17 - SIGMA AI<br/>EP-18 - Indicadores de gestion"]:::modulo
+
+    G1 -->|"sobre esa base se define"| G2
+    G2 -->|"sobre eso se programa"| G3
+    G3 -->|"eso genera trabajo real"| G4
+    G4 -->|"lo registrado alimenta"| G5

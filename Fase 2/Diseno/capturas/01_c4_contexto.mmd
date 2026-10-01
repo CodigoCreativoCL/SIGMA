@@ -1,0 +1,48 @@
+flowchart TB
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    PL["Planificador<br/><small>Planes, programaciones,<br/>cumplimiento</small>"]:::persona
+    TE["Tecnico de terreno<br/><small>Ordenes, checklists,<br/>bitacora, mediciones</small>"]:::persona
+    AD["Administrador del cliente<br/><small>Usuarios, perfiles,<br/>plantas, catalogos</small>"]:::persona
+    JE["Jefatura / Gerencia<br/><small>Indicadores y decisiones</small>"]:::persona
+    DS["Entrenador de modelos<br/><small>Lanza el entrenamiento y<br/>publica la version</small>"]:::persona
+
+    subgraph SIGMA["SIGMA - Sistema Integrado de Gestion de Mantenimiento Industrial"]
+        direction LR
+        WEB["Intranet SIGMA<br/><small>Planificacion, configuracion,<br/>indicadores</small>"]:::sigma
+        API["API SIGMA<br/><small>REST - la consume la app<br/>y SIGMA AI</small>"]:::sigma
+        APP["App SIGMA (Flutter)<br/><small>Terreno, con y sin conexion</small>"]:::sigma
+    end
+
+    BLOB["Azure Blob Storage<br/><small>Fotos, evidencias, firmas,<br/>documentos, logos</small>"]:::azure
+    AML["Azure Machine Learning<br/><small>Registro de modelos,<br/>corridas y artefactos ONNX</small>"]:::azure
+    ACV["Azure Custom Vision<br/><small>Analisis visual de<br/>evidencia fotografica</small>"]:::azure
+    SMTP["Servidor SMTP<br/><small>Recuperar clave,<br/>avisos del sistema</small>"]:::externo
+    MAPS["Google Maps<br/><small>Geocodifica la direccion<br/>de cada planta</small>"]:::externo
+    FCM["Firebase Cloud Messaging<br/><small>Transporte de las<br/>notificaciones push</small>"]:::externo
+    PLAY["Google Play<br/><small>Distribucion de la app<br/>a los tecnicos</small>"]:::externo
+
+    PL -->|"HTTPS"| WEB
+    AD -->|"HTTPS"| WEB
+    JE -->|"HTTPS"| WEB
+    TE -->|"Usa en terreno"| APP
+    DS -->|"Entrena y publica"| WEB
+
+    APP -->|"HTTPS/JSON - JWT"| API
+    WEB <-.->|"Comparten la base de datos"| API
+    PLAY -.->|"Instala la app"| APP
+
+    WEB -->|"Archivos y SIGMA AI via API"| API
+    API -->|"Sube y lee archivos"| BLOB
+    API -->|"Consulta modelos y corridas"| AML
+    API -->|"Clasifica imagenes"| ACV
+    API -->|"Correo"| SMTP
+    API -->|"Token de dispositivo"| FCM
+    WEB -->|"Geocodifica"| MAPS

@@ -1,0 +1,128 @@
+erDiagram
+    Validacion_Tipo ||--o{ Orden_Trabajo_Validacion : otv_validacion_tipo
+    Orden_Trabajo_Origen {
+        int oto_id PK
+        nvarchar oto_codigo 
+        nvarchar oto_nombre 
+        int oto_orden 
+        bit oto_habilitado 
+    }
+    Orden_Trabajo_Paso {
+        int otp_id PK
+        int otp_orden_trabajo FK
+        int otp_procedimiento_paso FK
+        int otp_plan_mantenimiento_actividad FK
+        int otp_orden 
+        nvarchar otp_nombre 
+        nvarchar otp_descripcion 
+        bit otp_obligatorio 
+        int otp_resultado_paso FK
+        nvarchar otp_resultado 
+        int otp_usuario_ejecutor FK
+        datetime otp_fecha_ejecucion_utc 
+        int otp_usuario_creacion 
+        datetime otp_fecha_creacion 
+        int otp_usuario_actualizacion 
+        datetime otp_fecha_actualizacion 
+        bit otp_habilitado 
+        uniqueidentifier otp_uuid 
+    }
+    Orden_Trabajo_Prioridad {
+        int opr_id PK
+        nvarchar opr_codigo 
+        nvarchar opr_nombre 
+        int opr_orden 
+        bit opr_habilitado 
+    }
+    Orden_Trabajo_Repuesto {
+        int ore_id PK
+        int ore_orden_trabajo FK
+        int ore_repuesto FK
+        int ore_repuesto_lote FK
+        int ore_activo_componente FK
+        int ore_componente_repuesto_instalacion FK
+        decimal ore_cantidad_planificada 
+        decimal ore_cantidad_reservada 
+        decimal ore_cantidad_consumida 
+        decimal ore_cantidad_devuelta 
+        decimal ore_costo_unitario 
+        int ore_moneda FK
+        nvarchar ore_observacion 
+        int ore_usuario_creacion 
+        datetime ore_fecha_creacion 
+        int ore_usuario_actualizacion 
+        datetime ore_fecha_actualizacion 
+        bit ore_habilitado 
+        decimal ore_horometro_retiro 
+        decimal ore_horometro_instalacion 
+        int ore_activo_medidor FK
+    }
+    Orden_Trabajo_Servicio {
+        int ots_id PK
+        int ots_orden_trabajo FK
+        int ots_proveedor FK
+        int ots_servicio_tipo FK
+        nvarchar ots_descripcion 
+        decimal ots_cantidad 
+        decimal ots_monto_unitario 
+        decimal ots_monto 
+        int ots_moneda FK
+        nvarchar ots_documento_referencia 
+        datetime ots_fecha_servicio_utc 
+        date ots_fecha_documento 
+        int ots_usuario_creacion 
+        datetime ots_fecha_creacion 
+        int ots_usuario_actualizacion 
+        datetime ots_fecha_actualizacion 
+        bit ots_habilitado 
+    }
+    Orden_Trabajo_Tipo {
+        int ott_id PK
+        nvarchar ott_codigo 
+        nvarchar ott_nombre 
+        int ott_orden 
+        bit ott_habilitado 
+    }
+    Orden_Trabajo_Validacion {
+        int otv_id PK
+        int otv_orden_trabajo FK
+        int otv_validacion_tipo FK
+        int otv_usuario FK
+        nvarchar otv_resultado 
+        datetime otv_fecha_utc 
+        nvarchar otv_observacion 
+        int otv_archivo_firma FK
+        int otv_usuario_creacion 
+        datetime otv_fecha_creacion 
+        uniqueidentifier otv_uuid 
+    }
+    Validacion_Tipo {
+        int vat_id PK
+        nvarchar vat_codigo 
+        nvarchar vat_nombre 
+        int vat_orden 
+        bit vat_habilitado 
+    }
+    Falla {
+        int fal_id PK
+        uniqueidentifier fal_uuid 
+        int fal_cliente FK
+        int fal_activo FK
+        int fal_activo_componente FK
+        int fal_falla_sintoma FK
+        int fal_criticidad_nivel FK
+        nvarchar fal_titulo 
+        nvarchar fal_descripcion 
+        nvarchar fal_consecuencia 
+        int fal_activo_estado_posterior FK
+        bit fal_detuvo_produccion 
+        datetime fal_fecha_deteccion_utc 
+        datetime fal_fecha_solucion_utc 
+        int fal_usuario_reporta FK
+        int fal_usuario_creacion 
+        datetime fal_fecha_creacion 
+        int fal_usuario_actualizacion 
+        datetime fal_fecha_actualizacion 
+        bit fal_habilitado 
+        int fal_dictado_voz FK
+    }

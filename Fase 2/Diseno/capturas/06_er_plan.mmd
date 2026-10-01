@@ -1,0 +1,65 @@
+erDiagram
+    CLIENTE ||--o{ PLAN_MANTENIMIENTO : pma_cliente
+    ACTIVO_TIPO ||--o{ PLAN_MANTENIMIENTO : "pma_activo_tipo (alcance)"
+    PLAN_MANTENIMIENTO ||--o{ PLAN_MANTENIMIENTO_VERSION : pmv_plan_mantenimiento
+    PLAN_MANTENIMIENTO_VERSION ||--o{ PLAN_MANTENIMIENTO_HITO : pmh_plan_mantenimiento_version
+    PLAN_MANTENIMIENTO_VERSION ||--o{ PLAN_MANTENIMIENTO_ACTIVO : pac_plan_mantenimiento_version
+    PROGRAMACION ||--o{ PLAN_MANTENIMIENTO_HITO : pmh_programacion
+    PLAN_MANTENIMIENTO_HITO ||--o{ PLAN_MANTENIMIENTO_ACTIVIDAD : paa_plan_mantenimiento_hito
+    PLAN_MANTENIMIENTO_HITO ||--o{ PLAN_MANTENIMIENTO_OCURRENCIA : pmo_plan_mantenimiento_hito
+    ACTIVO ||--o{ PLAN_MANTENIMIENTO_ACTIVO : pac_activo
+    ACTIVO ||--o{ PLAN_MANTENIMIENTO_OCURRENCIA : pmo_activo
+    PLAN_MANTENIMIENTO_OCURRENCIA ||--o| ORDEN_TRABAJO : otr_plan_mantenimiento_ocurrencia
+    PROCEDIMIENTO ||--o{ PLAN_MANTENIMIENTO_ACTIVIDAD : paa_procedimiento
+
+    PLAN_MANTENIMIENTO {
+        int pma_id PK
+        int pma_cliente FK
+        nvarchar pma_codigo
+        nvarchar pma_nombre
+        int pma_activo_tipo FK
+    }
+    PLAN_MANTENIMIENTO_VERSION {
+        int pmv_id PK
+        int pmv_plan_mantenimiento FK
+        int pmv_numero
+        int pmv_plan_version_estado "1 Borrador - 2 Publicado - 3 Retirado"
+        bit pmv_habilitado
+    }
+    PLAN_MANTENIMIENTO_HITO {
+        int pmh_id PK
+        int pmh_plan_mantenimiento_version FK
+        int pmh_programacion FK
+        nvarchar pmh_codigo
+        bit pmh_requiere_parada
+        bit pmh_es_overhaul
+    }
+    PLAN_MANTENIMIENTO_ACTIVIDAD {
+        int paa_id PK
+        int paa_plan_mantenimiento_hito FK
+        int paa_procedimiento FK
+        bit paa_requiere_permiso
+    }
+    PLAN_MANTENIMIENTO_ACTIVO {
+        int pac_id PK
+        int pac_plan_mantenimiento_version FK
+        int pac_activo FK
+    }
+    PLAN_MANTENIMIENTO_OCURRENCIA {
+        int pmo_id PK
+        int pmo_plan_mantenimiento_hito FK
+        int pmo_programacion FK
+        int pmo_activo FK
+        datetime pmo_fecha_programada_utc
+        datetime pmo_fecha_programada_original_utc
+        int pmo_plan_ocurrencia_estado "1 Pendiente .. 7 Reprogramada"
+    }
+    ORDEN_TRABAJO {
+        int otr_id PK
+        int otr_plan_mantenimiento_ocurrencia FK
+        int otr_activo FK
+    }
+    PROGRAMACION {
+        int pro_id PK
+        int pro_programacion_tipo "unica, calendario, intervalo, medidor, condicion"
+    }

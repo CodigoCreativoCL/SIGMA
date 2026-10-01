@@ -1,0 +1,122 @@
+erDiagram
+    Checklist_Ocurrencia_Estado ||--o{ Checklist_Ocurrencia : coc_checklist_ocurrencia_estado
+    Checklist_Programacion ||--o{ Checklist_Ocurrencia : coc_checklist_programacion
+    Checklist_Ocurrencia ||--o{ Checklist_Ocurrencia_Asignacion : coa_checklist_ocurrencia
+    Checklist_Ocurrencia_Estado ||--o{ Checklist_Ocurrencia_Historial : coh_estado_anterior
+    Checklist_Ocurrencia_Estado ||--o{ Checklist_Ocurrencia_Historial : coh_estado_nuevo
+    Checklist_Ocurrencia ||--o{ Checklist_Ocurrencia_Historial : coh_checklist_ocurrencia
+    Checklist_Ejecucion_Estado ||--o{ Checklist_Ejecucion : cej_checklist_ejecucion_estado
+    Checklist_Ocurrencia ||--o{ Checklist_Ejecucion : cej_checklist_ocurrencia
+    Checklist_Version_Estado {
+        int cve_id PK
+        nvarchar cve_codigo 
+        nvarchar cve_nombre 
+        int cve_orden 
+        bit cve_habilitado 
+    }
+    Checklist_Programacion {
+        int cpr_id PK
+        int cpr_cliente FK
+        int cpr_checklist_plantilla_version FK
+        int cpr_programacion FK
+        int cpr_activo FK
+        int cpr_instalacion_area FK
+        int cpr_grupo_trabajo FK
+        int cpr_usuario_responsable FK
+        nvarchar cpr_nombre 
+        int cpr_usuario_creacion 
+        datetime cpr_fecha_creacion 
+        int cpr_usuario_actualizacion 
+        datetime cpr_fecha_actualizacion 
+        bit cpr_habilitado 
+    }
+    Checklist_Ocurrencia {
+        int coc_id PK
+        uniqueidentifier coc_uuid 
+        int coc_cliente FK
+        int coc_checklist_programacion FK
+        int coc_checklist_plantilla_version FK
+        int coc_activo FK
+        int coc_instalacion_area FK
+        int coc_checklist_ocurrencia_estado FK
+        datetime coc_fecha_programada_utc 
+        datetime coc_fecha_disponible_utc 
+        datetime coc_fecha_limite_utc 
+        datetime coc_fecha_programada_original_utc 
+        int coc_ocurrencia_origen FK
+        int coc_usuario_creacion 
+        datetime coc_fecha_creacion 
+        int coc_usuario_actualizacion 
+        datetime coc_fecha_actualizacion 
+        bit coc_habilitado 
+    }
+    Checklist_Ocurrencia_Asignacion {
+        int coa_id PK
+        int coa_checklist_ocurrencia FK
+        int coa_usuario FK
+        int coa_grupo_trabajo FK
+        bit coa_es_responsable 
+        datetime coa_fecha_asignacion_utc 
+        datetime coa_fecha_aceptacion_utc 
+        int coa_usuario_creacion 
+        datetime coa_fecha_creacion 
+    }
+    Checklist_Ocurrencia_Estado {
+        int coe_id PK
+        nvarchar coe_codigo 
+        nvarchar coe_nombre 
+        int coe_orden 
+        bit coe_habilitado 
+    }
+    Checklist_Ocurrencia_Historial {
+        int coh_id PK
+        int coh_checklist_ocurrencia FK
+        int coh_estado_anterior FK
+        int coh_estado_nuevo FK
+        datetime coh_fecha_anterior_utc 
+        datetime coh_fecha_nueva_utc 
+        nvarchar coh_motivo 
+        int coh_usuario_creacion FK
+        datetime coh_fecha_creacion 
+    }
+    Checklist_Asignacion_Tipo {
+        int cat_id PK
+        nvarchar cat_codigo 
+        nvarchar cat_nombre 
+        int cat_orden 
+        bit cat_habilitado 
+    }
+    Checklist_Ejecucion {
+        int cej_id PK
+        uniqueidentifier cej_uuid 
+        int cej_cliente FK
+        int cej_checklist_ocurrencia FK
+        int cej_checklist_plantilla_version FK
+        int cej_activo FK
+        int cej_usuario_ejecutor FK
+        int cej_checklist_ejecucion_estado FK
+        datetime cej_fecha_inicio_utc 
+        datetime cej_fecha_fin_utc 
+        int cej_duracion_minuto 
+        decimal cej_latitud 
+        decimal cej_longitud 
+        nvarchar cej_dispositivo 
+        bit cej_offline_creado 
+        datetime cej_fecha_sincronizacion_utc 
+        int cej_item_total 
+        int cej_item_respondido 
+        int cej_item_no_conforme 
+        nvarchar cej_observacion 
+        int cej_usuario_creacion 
+        datetime cej_fecha_creacion 
+        int cej_usuario_actualizacion 
+        datetime cej_fecha_actualizacion 
+        bit cej_habilitado 
+    }
+    Checklist_Ejecucion_Estado {
+        int cee_id PK
+        nvarchar cee_codigo 
+        nvarchar cee_nombre 
+        int cee_orden 
+        bit cee_habilitado 
+    }

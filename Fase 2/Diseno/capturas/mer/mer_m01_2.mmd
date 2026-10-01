@@ -1,0 +1,86 @@
+erDiagram
+    Perfiles ||--o{ Usuario_Perfil : upe_perfil
+    Permiso_Ambito ||--o{ Perfiles : per_ambito
+    Perfiles ||--o{ Perfil_Permiso : ppe_perfil
+    Permiso ||--o{ Perfil_Permiso : ppe_permiso
+    Permiso_Ambito ||--o{ Permiso : prm_permiso_ambito
+    Usuario_Instalacion {
+        int uin_id PK
+        int uin_instalacion FK
+        int uin_usuario FK
+        datetime uin_fecha_creacion 
+        int uin_usuario_creacion 
+    }
+    Usuario_Paises {
+        int upa_id PK
+        int upa_id_usuario FK
+        int upa_id_pais FK
+        int upa_usuario_creacion 
+        datetime upa_fecha_creacion 
+        int upa_usuario_act 
+        datetime upa_fecha_act 
+    }
+    Usuario_Password_Historial {
+        int uph_id PK
+        int uph_usuario FK
+        varchar uph_password 
+        int uph_usuario_creacion 
+        datetime uph_fecha_creacion 
+    }
+    Usuario_Perfil {
+        int upe_id PK
+        int upe_usuario FK
+        int upe_perfil FK
+    }
+    Usuario_Recuperacion {
+        int ure_id PK
+        int ure_usuario FK
+        varbinary ure_token_hash 
+        datetime ure_fecha_expiracion 
+        datetime ure_fecha_uso 
+        nvarchar ure_ip_solicitud 
+        int ure_usuario_creacion 
+        datetime ure_fecha_creacion 
+    }
+    Perfiles {
+        int per_id PK
+        varchar per_nombre 
+        varchar per_descripcion 
+        int per_tipo FK
+        bit per_habilitado 
+        int per_usuario_creacion 
+        datetime per_fecha_creacion 
+        int per_usuario_act 
+        datetime per_fecha_act 
+        int per_cliente FK
+        bit per_solo_ejecucion 
+        int per_ambito FK
+    }
+    Perfil_Permiso {
+        int ppe_id PK
+        int ppe_perfil FK
+        int ppe_permiso FK
+        int ppe_usuario_creacion 
+        datetime ppe_fecha_creacion 
+    }
+    Permiso {
+        int prm_id PK
+        nvarchar prm_codigo 
+        nvarchar prm_nombre 
+        nvarchar prm_modulo 
+        int prm_permiso_ambito FK
+        nvarchar prm_descripcion 
+        int prm_usuario_creacion 
+        datetime prm_fecha_creacion 
+        int prm_usuario_actualizacion 
+        datetime prm_fecha_actualizacion 
+        bit prm_habilitado 
+        bit prm_asignable_usuario 
+    }
+    Permiso_Ambito {
+        int pam_id PK
+        nvarchar pam_codigo 
+        nvarchar pam_nombre 
+        int pam_orden 
+        bit pam_habilitado 
+    }

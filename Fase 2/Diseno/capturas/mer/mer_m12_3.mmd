@@ -1,0 +1,78 @@
+erDiagram
+    Falla_Diagnostico ||--o{ Falla_Accion : fac_falla_diagnostico
+    Falla_Causa ||--o{ Falla_Diagnostico : fdi_falla_causa
+    Falla_Modo ||--o{ Falla_Diagnostico : fdi_falla_modo
+    Falla_Accion {
+        int fac_id PK
+        int fac_falla FK
+        int fac_falla_diagnostico FK
+        int fac_orden_trabajo FK
+        nvarchar fac_descripcion 
+        bit fac_es_definitiva 
+        datetime fac_fecha_accion_utc 
+        int fac_usuario_ejecuta FK
+        int fac_usuario_creacion 
+        datetime fac_fecha_creacion 
+        int fac_usuario_actualizacion 
+        datetime fac_fecha_actualizacion 
+        bit fac_habilitado 
+        uniqueidentifier fac_uuid 
+    }
+    Falla_Causa {
+        int fca_id PK
+        int fca_cliente FK
+        int fca_causa_padre FK
+        nvarchar fca_codigo 
+        nvarchar fca_nombre 
+        nvarchar fca_descripcion 
+        bit fca_es_causa_raiz 
+        int fca_usuario_creacion 
+        datetime fca_fecha_creacion 
+        int fca_usuario_actualizacion 
+        datetime fca_fecha_actualizacion 
+        bit fca_habilitado 
+    }
+    Falla_Diagnostico {
+        int fdi_id PK
+        int fdi_falla FK
+        int fdi_falla_modo FK
+        int fdi_falla_causa FK
+        int fdi_diagnostico_metodo FK
+        nvarchar fdi_descripcion 
+        bit fdi_es_definitivo 
+        decimal fdi_confianza 
+        int fdi_usuario_diagnostica FK
+        datetime fdi_fecha_diagnostico_utc 
+        int fdi_usuario_creacion 
+        datetime fdi_fecha_creacion 
+        int fdi_usuario_actualizacion 
+        datetime fdi_fecha_actualizacion 
+        bit fdi_habilitado 
+        uniqueidentifier fdi_uuid 
+    }
+    Falla_Modo {
+        int fmo_id PK
+        int fmo_cliente FK
+        int fmo_activo_tipo FK
+        nvarchar fmo_codigo 
+        nvarchar fmo_nombre 
+        nvarchar fmo_descripcion 
+        int fmo_usuario_creacion 
+        datetime fmo_fecha_creacion 
+        int fmo_usuario_actualizacion 
+        datetime fmo_fecha_actualizacion 
+        bit fmo_habilitado 
+    }
+    Falla_Sintoma {
+        int fsi_id PK
+        int fsi_cliente FK
+        int fsi_activo_tipo FK
+        nvarchar fsi_codigo 
+        nvarchar fsi_nombre 
+        nvarchar fsi_descripcion 
+        int fsi_usuario_creacion 
+        datetime fsi_fecha_creacion 
+        int fsi_usuario_actualizacion 
+        datetime fsi_fecha_actualizacion 
+        bit fsi_habilitado 
+    }

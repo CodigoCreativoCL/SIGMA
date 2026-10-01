@@ -1,0 +1,72 @@
+flowchart LR
+
+    classDef persona fill:#1B3A6B,stroke:#0F2446,color:#FFFFFF,font-weight:bold
+    classDef sigma fill:#6732F4,stroke:#4820C9,color:#FFFFFF,font-weight:bold
+    classDef web fill:#087BEA,stroke:#0565C2,color:#FFFFFF,font-weight:bold
+    classDef datos fill:#16C6C9,stroke:#007F8A,color:#0F2446,font-weight:bold
+    classDef azure fill:#EAF4FF,stroke:#087BEA,color:#17223B
+    classDef externo fill:#ECEFF4,stroke:#68738A,color:#17223B
+    classDef modulo fill:#F2EFFF,stroke:#6732F4,color:#17223B
+
+    PL(["Planificador"]):::persona
+    TE(["Tecnico de terreno"]):::persona
+    AD(["Administrador<br/>del cliente"]):::persona
+    JE(["Jefatura"]):::persona
+    DS(["Entrenador<br/>de modelos"]):::persona
+
+    subgraph G1["Configurar el sistema - EP-01, 02, 03, 19, 20"]
+        direction TB
+        U1(["Iniciar sesion y aplicar permisos"]):::modulo
+        U2(["Administrar usuarios y perfiles"]):::modulo
+        U3(["Configurar plantas, areas y catalogos"]):::modulo
+        U4(["Importar la carga inicial de datos"]):::modulo
+        U5(["Administrar la suscripcion"]):::modulo
+    end
+
+    subgraph G2["Mantener el maestro - EP-04, 05, 06, 07"]
+        direction TB
+        U6(["Registrar activos y ubicacion tecnica"]):::modulo
+        U7(["Definir medidores y variables"]):::modulo
+        U8(["Administrar repuestos y bodegas"]):::modulo
+        U9(["Registrar terceros y permisos de trabajo"]):::modulo
+    end
+
+    subgraph G3["Planificar el trabajo - EP-08, 09, 10, 11"]
+        direction TB
+        U10(["Definir una programacion"]):::modulo
+        U11(["Crear y publicar un plan"]):::modulo
+        U12(["Disenar plantillas de checklist"]):::modulo
+        U13(["Programar tareas"]):::modulo
+        U14(["Consultar calendario y reprogramar"]):::modulo
+    end
+
+    subgraph G4["Ejecutar en terreno - EP-12, 13, 14, 15, 16"]
+        direction TB
+        U15(["Generar una orden desde una ocurrencia"]):::modulo
+        U16(["Asignar, ejecutar y cerrar la orden"]):::modulo
+        U17(["Registrar una falla"]):::modulo
+        U18(["Ejecutar checklist y tomar mediciones"]):::modulo
+        U19(["Escribir la bitacora de turno"]):::modulo
+        U20(["Adjuntar evidencia: foto, audio, firma"]):::modulo
+        U21(["Trabajar sin conexion y sincronizar"]):::modulo
+        U22(["Registrar hablando (voz)"]):::modulo
+    end
+
+    subgraph G5["Decidir - EP-17, 18"]
+        direction TB
+        U23(["Entrenar y publicar un modelo"]):::modulo
+        U24(["Consultar prediccion de falla"]):::modulo
+        U25(["Revisar indicadores de gestion"]):::modulo
+    end
+
+    AD --> G1
+    PL --> G2
+    PL --> G3
+    TE --> G4
+    PL --> U15
+    JE --> U25
+    JE --> U24
+    DS --> U23
+    PL --> U24
+    TE --> U1
+    PL --> U1

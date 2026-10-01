@@ -1,0 +1,152 @@
+erDiagram
+    Orden_Trabajo_Cierre_Motivo ||--o{ Orden_Trabajo : otr_cierre_motivo
+    Orden_Trabajo_Estado ||--o{ Orden_Trabajo : otr_orden_trabajo_estado
+    Orden_Trabajo_Estrategia ||--o{ Orden_Trabajo : otr_orden_trabajo_estrategia
+    Orden_Trabajo ||--o{ Orden_Trabajo_Asignacion : ota_orden_trabajo
+    Orden_Trabajo ||--o{ Orden_Trabajo_Checklist : otc_orden_trabajo
+    Orden_Trabajo ||--o{ Orden_Trabajo_Especialidad : oep_orden_trabajo
+    Orden_Trabajo_Estado ||--o{ Orden_Trabajo_Estado_Historial : oeh_estado_anterior
+    Orden_Trabajo_Estado ||--o{ Orden_Trabajo_Estado_Historial : oeh_estado_nuevo
+    Orden_Trabajo ||--o{ Orden_Trabajo_Estado_Historial : oeh_orden_trabajo
+    Orden_Trabajo ||--o{ Orden_Trabajo_Mano_Obra : omo_orden_trabajo
+    Orden_Trabajo {
+        int otr_id PK
+        uniqueidentifier otr_uuid 
+        int otr_cliente FK
+        int otr_cliente_instalacion FK
+        int otr_correlativo 
+        int otr_instalacion_area FK
+        int otr_activo FK
+        int otr_activo_componente FK
+        int otr_activo_posicion FK
+        int otr_orden_trabajo_tipo FK
+        int otr_orden_trabajo_estrategia FK
+        int otr_orden_trabajo_origen FK
+        int otr_orden_trabajo_estado FK
+        int otr_orden_trabajo_prioridad FK
+        int otr_centro_costo FK
+        int otr_usuario_generador FK
+        int otr_usuario_solicitante FK
+        nvarchar otr_numero_solicitud 
+        int otr_usuario_responsable FK
+        nvarchar otr_titulo 
+        nvarchar otr_descripcion 
+        nvarchar otr_notas 
+        nvarchar otr_resultado 
+        datetime otr_fecha_evento_utc 
+        datetime otr_fecha_programada_utc 
+        datetime otr_fecha_inicio_real_utc 
+        datetime otr_fecha_fin_real_utc 
+        int otr_duracion_estimada_minuto 
+        int otr_duracion_real_minuto 
+        int otr_minuto_parada_activo 
+        bit otr_requiere_permiso 
+        int otr_plan_mantenimiento_ocurrencia FK
+        int otr_tarea_ocurrencia FK
+        int otr_checklist_hallazgo FK
+        int otr_prediccion FK
+        int otr_falla FK
+        int otr_usuario_creacion 
+        datetime otr_fecha_creacion 
+        int otr_usuario_actualizacion 
+        datetime otr_fecha_actualizacion 
+        bit otr_habilitado 
+        int otr_ot_origen FK
+        datetime otr_fecha_ocurrencia 
+        bit otr_registro_posterior 
+        int otr_cierre_motivo FK
+        int otr_usuario_cierre FK
+        datetime otr_fecha_cierre 
+        int otr_entrada_modo FK
+        int otr_dictado_voz FK
+        uniqueidentifier otr_cierre_uuid 
+    }
+    Orden_Trabajo_Asignacion {
+        int ota_id PK
+        int ota_orden_trabajo FK
+        int ota_usuario FK
+        int ota_grupo_trabajo FK
+        bit ota_es_responsable 
+        int ota_rol_ejecucion FK
+        datetime ota_fecha_asignacion_utc 
+        datetime ota_fecha_aceptacion_utc 
+        nvarchar ota_observacion 
+        int ota_usuario_creacion 
+        datetime ota_fecha_creacion 
+        int ota_usuario_actualizacion 
+        datetime ota_fecha_actualizacion 
+        bit ota_habilitado 
+        int ota_proveedor FK
+        int ota_asignado_por FK
+        uniqueidentifier ota_uuid 
+    }
+    Orden_Trabajo_Checklist {
+        int otc_id PK
+        int otc_orden_trabajo FK
+        int otc_checklist_plantilla_version FK
+        int otc_checklist_ocurrencia FK
+        int otc_checklist_ejecucion FK
+        int otc_momento_ejecucion FK
+        bit otc_obligatorio 
+        int otc_usuario_creacion 
+        datetime otc_fecha_creacion 
+        int otc_usuario_actualizacion 
+        datetime otc_fecha_actualizacion 
+        bit otc_habilitado 
+    }
+    Orden_Trabajo_Cierre_Motivo {
+        int ocm_id PK
+        nvarchar ocm_codigo 
+        nvarchar ocm_nombre 
+        int ocm_orden 
+        bit ocm_habilitado 
+    }
+    Orden_Trabajo_Especialidad {
+        int oep_id PK
+        int oep_orden_trabajo FK
+        int oep_especialidad FK
+        int oep_cantidad_persona 
+        int oep_usuario_creacion 
+        datetime oep_fecha_creacion 
+    }
+    Orden_Trabajo_Estado {
+        int ote_id PK
+        nvarchar ote_codigo 
+        nvarchar ote_nombre 
+        int ote_orden 
+        bit ote_habilitado 
+    }
+    Orden_Trabajo_Estado_Historial {
+        int oeh_id PK
+        int oeh_orden_trabajo FK
+        int oeh_estado_anterior FK
+        int oeh_estado_nuevo FK
+        nvarchar oeh_motivo 
+        datetime oeh_fecha_cambio_utc 
+        int oeh_usuario_creacion FK
+        datetime oeh_fecha_creacion 
+    }
+    Orden_Trabajo_Estrategia {
+        int oet_id PK
+        nvarchar oet_codigo 
+        nvarchar oet_nombre 
+        int oet_orden 
+        bit oet_habilitado 
+    }
+    Orden_Trabajo_Mano_Obra {
+        int omo_id PK
+        int omo_orden_trabajo FK
+        int omo_usuario FK
+        int omo_proveedor FK
+        int omo_especialidad FK
+        datetime omo_fecha_inicio_utc 
+        datetime omo_fecha_fin_utc 
+        int omo_minuto 
+        bit omo_es_hora_extra 
+        decimal omo_costo_hora 
+        int omo_moneda FK
+        nvarchar omo_observacion 
+        int omo_usuario_creacion 
+        datetime omo_fecha_creacion 
+        uniqueidentifier omo_uuid 
+    }

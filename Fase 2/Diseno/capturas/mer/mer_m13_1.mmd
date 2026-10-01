@@ -1,0 +1,56 @@
+erDiagram
+    Bitacora_Tipo ||--o{ Bitacora : bit_bitacora_tipo
+    Bitacora ||--o{ Bitacora_Comentario : bco_bitacora
+    Bitacora ||--o{ Bitacora_Rectificacion : bre_bitacora
+    Bitacora {
+        int bit_id PK
+        uniqueidentifier bit_uuid 
+        int bit_cliente FK
+        int bit_cliente_instalacion FK
+        int bit_instalacion_area FK
+        int bit_bitacora_tipo FK
+        int bit_activo FK
+        int bit_activo_componente FK
+        int bit_orden_trabajo FK
+        nvarchar bit_titulo 
+        nvarchar bit_texto 
+        datetime bit_fecha_evento_utc 
+        nvarchar bit_turno 
+        bit bit_requiere_atencion 
+        int bit_alerta FK
+        int bit_severidad FK
+        int bit_dictado_voz FK
+        int bit_entrada_modo FK
+        decimal bit_latitud 
+        decimal bit_longitud 
+        bit bit_offline_creado 
+        datetime bit_fecha_sincronizacion_utc 
+        int bit_usuario_creacion FK
+        datetime bit_fecha_creacion 
+    }
+    Bitacora_Comentario {
+        int bco_id PK
+        int bco_bitacora FK
+        int bco_comentario_padre FK
+        nvarchar bco_texto 
+        int bco_dictado_voz FK
+        int bco_usuario_creacion FK
+        datetime bco_fecha_creacion 
+    }
+    Bitacora_Rectificacion {
+        int bre_id PK
+        int bre_bitacora FK
+        nvarchar bre_texto_rectificado 
+        nvarchar bre_motivo 
+        int bre_usuario_creacion FK
+        datetime bre_fecha_creacion 
+    }
+    Bitacora_Tipo {
+        int bti_id PK
+        nvarchar bti_codigo 
+        nvarchar bti_nombre 
+        nvarchar bti_icono 
+        int bti_archivo 
+        int bti_orden 
+        bit bti_habilitado 
+    }
