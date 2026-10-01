@@ -379,3 +379,9 @@ _program files_git_intranet/
 .env
 .env.*
 !.env.example
+
+# Respaldos de documentos: se hacen fuera del repositorio (_scratch), no dentro.
+# El historial de git ya guarda la version anterior de cada archivo.
+*_BACKUP_PRE_*
+*_BACKUP_*.xlsx
+*_BACKUP_*.docx
