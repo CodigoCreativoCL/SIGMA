@@ -42,11 +42,15 @@ IF @RAIZ IS NULL
     SELECT @RAIZ = mnu_id FROM [dbo].[Menus] WHERE mnu_nombre COLLATE DATABASE_DEFAULT='Centro de Mantenimiento' AND mnu_nivel=2
 IF @RAIZ IS NULL BEGIN RAISERROR('No existe el nodo padre de checklist.', 16, 1) RETURN END
 
+-- La 'i' acentuada va como NCHAR(237) para que quede bien guardada aun si el
+-- archivo se aplica con una codificacion distinta a UTF-8 (sqlcmd sin -f 65001).
+DECLARE @I NCHAR(1) = NCHAR(237)   -- í
+
 DECLARE @M TABLE (nombre NVARCHAR(200) COLLATE DATABASE_DEFAULT, link NVARCHAR(500) COLLATE DATABASE_DEFAULT,
                   orden INT, visible BIT, icono NVARCHAR(100) COLLATE DATABASE_DEFAULT)
 INSERT INTO @M VALUES
-    (N'Dependencias de ítems',        N'~/View/Mantenimiento/Checklist/ChecklistItemDependencias.aspx', 7,  1, N'mdi mdi-sitemap-outline'),
-    (N'Dependencia de ítem (detalle)',N'~/View/Mantenimiento/Checklist/ChecklistItemDependencia.aspx',   99, 0, NULL)
+    (N'Dependencias de ' + @I + N'tems',         N'~/View/Mantenimiento/Checklist/ChecklistItemDependencias.aspx', 7,  1, N'mdi mdi-sitemap-outline'),
+    (N'Dependencia de ' + @I + N'tem (detalle)', N'~/View/Mantenimiento/Checklist/ChecklistItemDependencia.aspx',   99, 0, NULL)
 
 INSERT INTO [dbo].[Menus] (mnu_nombre, mnu_descripcion, mnu_nivel, mnu_padre, mnu_orden,
                            mnu_link, mnu_visible, mnu_icon, mnu_permiso, mnu_ambito)
