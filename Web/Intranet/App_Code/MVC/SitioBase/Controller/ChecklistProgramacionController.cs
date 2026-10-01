@@ -166,5 +166,18 @@ namespace SitioBase.Controller
             if (!r.error) r.detalle = "Programación dada de baja con éxito.";
             return r;
         }
+
+        /// <summary>
+        /// HU-094: genera las ocurrencias de las programaciones de checklist para
+        /// el horizonte indicado (por defecto 90 dias). Reutiliza el helper comun
+        /// que ya usan tareas y planes; el SP GEN_CHECKLIST_OCURRENCIAS es idempotente.
+        /// Con 'programacion' en null genera para todas las del cliente.
+        /// </summary>
+        public Respuesta GenerarOcurrencias(int? programacion, int horizonteDias = 90)
+        {
+            return PlanOcurrenciaController.Generar("GEN_CHECKLIST_OCURRENCIAS", "@CHECKLIST_PROGRAMACION",
+                programacion, horizonteDias,
+                dr => dr["PROGRAMACION_NOMBRE"] + ": " + dr["GENERADAS"]);
+        }
     }
 }

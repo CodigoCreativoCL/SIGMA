@@ -124,4 +124,22 @@ public partial class View_Mantenimiento_Checklist_ChecklistProgramacions : Syste
             Tools.tools.ClientAlert(ex.Message);
         }
     }
+
+    /// <summary>
+    /// HU-094 (CA-1/CA-2): genera las ocurrencias de las programaciones de
+    /// checklist del cliente para los próximos 90 días. La grilla se recarga en
+    /// Page_PreRender, así que aquí solo se dispara la generación y se avisa.
+    /// </summary>
+    protected void lnkGenerar_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            Respuesta r = new ChecklistProgramacionController().GenerarOcurrencias(null, 90);
+            Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message);
+        }
+    }
 }

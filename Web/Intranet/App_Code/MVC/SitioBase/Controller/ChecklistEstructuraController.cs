@@ -168,7 +168,12 @@ namespace SitioBase.Controller
             return lista;
         }
 
-        /// <summary>Reemplaza la estructura del borrador con lo que mandó la ficha.</summary>
+        /// <summary>
+        /// Guarda la estructura del borrador RECONCILIANDO por ID (no destructivo):
+        /// actualiza lo existente, inserta lo nuevo y da de baja (soft-delete) lo que
+        /// el usuario quitó. Así se PRESERVAN umbrales, opciones y dependencias de los
+        /// ítems que siguen vivos (antes se hacía LIMPIAR + reinsertar y se perdían).
+        /// </summary>
         public bool GuardarEstructura(int plantilla, List<ChecklistSeccion> secciones)
         {
             if (plantilla <= 0 || !Token.TokenSeguridad()) return false;
@@ -177,28 +182,116 @@ namespace SitioBase.Controller
             int version = GetBorradorVersion(plantilla, usuario);
             if (version <= 0) return false;
 
-            Ejecutar("LIMPIAR_CHECKLIST_BORRADOR", "@VERSION", version);
+            // Estado actual del borrador, para saber qué quedó fuera y dar de baja.
+            List<ChecklistSeccion> existentesSec = GetSecciones(version);
+            List<ChecklistItem> existentesItm = GetItems(version);
+            HashSet<int> secVistas = new HashSet<int>();
+            HashSet<int> itmVistos = new HashSet<int>();
 
             int sorden = 1;
             foreach (ChecklistSeccion sec in secciones)
             {
                 if (string.IsNullOrEmpty(sec.cps_nombre)) { sorden++; continue; }
-                int secId = InsertarSeccion(version, "SEC-" + sorden, sec.cps_nombre, sorden, usuario);
+
+                int secId;
+                if (sec.cps_id > 0) { ActualizarSeccion(sec.cps_id, sec.cps_nombre, sorden, usuario); secId = sec.cps_id; }
+                else secId = InsertarSeccion(version, "SEC-" + sorden, sec.cps_nombre, sorden, usuario);
                 if (secId <= 0) { sorden++; continue; }
+                secVistas.Add(secId);
 
                 int iorden = 1;
                 foreach (ChecklistItem it in sec.items)
                 {
                     if (string.IsNullOrEmpty(it.cpi_texto)) { iorden++; continue; }
-                    int itemId = InsertarItem(version, secId, "ITM-" + sorden + "-" + iorden, it.cpi_texto,
+
+                    int itemId;
+                    if (it.cpi_id > 0)
+                    {
+                        ActualizarItem(it.cpi_id, secId, it.cpi_texto, it.cpi_tipo, iorden, it.cpi_obligatorio, it.cpi_unidad, usuario);
+                        itemId = it.cpi_id;
+                    }
+                    else
+                    {
+                        itemId = InsertarItem(version, secId, "ITM-" + sorden + "-" + iorden, it.cpi_texto,
                                               it.cpi_tipo, iorden, it.cpi_obligatorio, it.cpi_unidad, usuario);
-                    if (itemId > 0 && (it.cpi_tipo == TIPO_ENTERO || it.cpi_tipo == TIPO_DECIMAL))
-                        InsertarValidacion(itemId, it.rango_min, it.rango_max, usuario);
+                        if (itemId > 0 && (it.cpi_tipo == TIPO_ENTERO || it.cpi_tipo == TIPO_DECIMAL))
+                            InsertarValidacion(itemId, it.rango_min, it.rango_max, usuario);
+                    }
+                    if (itemId > 0) itmVistos.Add(itemId);
                     iorden++;
                 }
                 sorden++;
             }
+
+            // Baja lógica de lo eliminado (cascada a umbrales/opciones/dependencias en el SP).
+            foreach (ChecklistItem it in existentesItm)
+                if (it.cpi_id > 0 && !itmVistos.Contains(it.cpi_id)) EliminarItem(it.cpi_id, usuario);
+            foreach (ChecklistSeccion s in existentesSec)
+                if (s.cps_id > 0 && !secVistas.Contains(s.cps_id)) EliminarSeccion(s.cps_id, usuario);
+
             return true;
+        }
+
+        private void ActualizarSeccion(int id, string nombre, int orden, string usuario)
+        {
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("UPD_CHECKLIST_SECCION");
+                cmd.Parameters.AddWithValue("@ID", id);
+                cmd.Parameters.AddWithValue("@NOMBRE", nombre);
+                cmd.Parameters.AddWithValue("@ORDEN", orden);
+                cmd.Parameters.AddWithValue("@USUARIO", usuario);
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+        }
+
+        private void ActualizarItem(int id, int seccion, string texto, int tipo, int orden, bool obligatorio, int? unidad, string usuario)
+        {
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("UPD_CHECKLIST_ITEM");
+                cmd.Parameters.AddWithValue("@ID", id);
+                cmd.Parameters.AddWithValue("@SECCION", seccion);
+                cmd.Parameters.AddWithValue("@TEXTO", texto);
+                cmd.Parameters.AddWithValue("@TIPO", tipo);
+                cmd.Parameters.AddWithValue("@ORDEN", orden);
+                cmd.Parameters.AddWithValue("@OBLIGATORIO", obligatorio);
+                cmd.Parameters.AddWithValue("@UNIDAD", (object)unidad ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@USUARIO", usuario);
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+        }
+
+        private void EliminarItem(int id, string usuario) { EjecutarBaja("DEL_CHECKLIST_ITEM", id, usuario); }
+        private void EliminarSeccion(int id, string usuario) { EjecutarBaja("DEL_CHECKLIST_SECCION", id, usuario); }
+
+        private void EjecutarBaja(string sp, int id, string usuario)
+        {
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand(sp);
+                cmd.Parameters.AddWithValue("@ID", id);
+                cmd.Parameters.AddWithValue("@USUARIO", usuario);
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
         }
 
         private int InsertarSeccion(int version, string codigo, string nombre, int orden, string usuario)

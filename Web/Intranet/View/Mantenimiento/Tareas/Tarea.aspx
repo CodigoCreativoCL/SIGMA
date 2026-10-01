@@ -119,6 +119,11 @@
                             <rad:RadComboBox2 ID="cboPrioridad" runat="server" Width="100%" />
                         </div>
                         <div class="sigma-modal-field is-chico">
+                            <label>Categoría</label>
+                            <rad:RadComboBox2 ID="cboCategoria" runat="server" Filter="Contains" Width="100%" />
+                            <span class="sigma-modal-ayuda">Clasifica la tarea; su color se usa en el calendario. Opcional.</span>
+                        </div>
+                        <div class="sigma-modal-field is-chico">
                             <label>Duración estimada (min) <b class="sg-req">*</b></label>
                             <div class="sg-ta-min">
                                 <WebControls:TextBox2 ID="txtDuracion" runat="server" MaxLength="6" />

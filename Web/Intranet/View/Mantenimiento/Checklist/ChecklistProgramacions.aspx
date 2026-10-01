@@ -58,6 +58,8 @@
                             <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nuevo" CssClass="icono_guardar" OnClientClick="return abrirProgramacion(0);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Dar de baja" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
                                 OnClientClick="return ConfirSweetAlert(this, '', '¿Está seguro que desea dar de baja las programaciones seleccionadas?');" />
+                            <asp:LinkButton ID="lnkGenerar" runat="server" Text="Generar ocurrencias" CssClass="icono_guardar" OnClick="lnkGenerar_Click"
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Generar las ocurrencias de las programaciones habilitadas para los próximos 90 días? Las que ya existen no se duplican.');" />
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>

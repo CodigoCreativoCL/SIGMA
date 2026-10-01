@@ -21,10 +21,20 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantilla : System.We
         set { ViewState["Id"] = value; }
     }
 
+    /// <summary>Si se abrió con Borrador=1, al mostrar la estructura se crea (clonando la publicada) el borrador.</summary>
+    public bool CrearBorrador
+    {
+        get { return ViewState["CrearBorrador"] != null && (bool)ViewState["CrearBorrador"]; }
+        set { ViewState["CrearBorrador"] = value; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            CrearBorrador = SitioBase.Querystring.Entero(Request.QueryString["query"], "Borrador") == 1;
+        }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -145,7 +155,9 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantilla : System.We
     private void CargarEstructura()
     {
         ChecklistEstructuraController ec = new ChecklistEstructuraController();
-        int version = ec.GetBorradorVersion(Id, SitioBase.Session.UsuarioId(), false); // solo lectura: no crea borrador vacío
+        // Con Borrador=1 (botón "Crear/editar borrador") se crea el borrador clonando
+        // la versión publicada; en otros accesos (p.ej. editar cabecera) solo se lee.
+        int version = ec.GetBorradorVersion(Id, SitioBase.Session.UsuarioId(), CrearBorrador);
         if (version <= 0) { litEstructura.Text = ""; return; }
 
         List<ChecklistSeccion> secciones = ec.GetSecciones(version);
@@ -167,6 +179,7 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantilla : System.We
                 if (it.seccion_sid != s.sid) continue;
                 sb.Append("<div class=\"cl-item\">")
                   .Append("<input type=\"hidden\" name=\"itm_sec\" value=\"").Append(s.sid).Append("\" />")
+                  .Append("<input type=\"hidden\" name=\"itm_id\" value=\"").Append(it.cpi_id).Append("\" />")
                   .Append("<input type=\"text\" name=\"itm_nombre\" class=\"cl-itm-nombre\" value=\"")
                   .Append(Server.HtmlEncode(it.cpi_texto)).Append("\" />")
                   .Append("<select name=\"itm_tipo\" class=\"cl-itm-tipo\" onchange=\"clTipoChange(this)\">")
@@ -202,12 +215,19 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantilla : System.We
             {
                 ChecklistSeccion s = new ChecklistSeccion();
                 s.sid = secIds[i];
+                // sid "s123" = sección existente (id 123); "n#" = nueva.
+                if (s.sid != null && s.sid.StartsWith("s"))
+                {
+                    int sid;
+                    if (int.TryParse(s.sid.Substring(1), out sid)) s.cps_id = sid;
+                }
                 s.cps_nombre = (secNoms != null && i < secNoms.Length) ? (secNoms[i] ?? "").Trim() : "";
                 secciones.Add(s);
                 if (!map.ContainsKey(s.sid)) map[s.sid] = s;
             }
 
         string[] itSec = Request.Form.GetValues("itm_sec");
+        string[] itId = Request.Form.GetValues("itm_id");
         string[] itNom = Request.Form.GetValues("itm_nombre");
         string[] itTipo = Request.Form.GetValues("itm_tipo");
         string[] itUni = Request.Form.GetValues("itm_unidad");
@@ -223,6 +243,7 @@ public partial class View_Mantenimiento_Checklist_ChecklistPlantilla : System.We
 
                 ChecklistItem it = new ChecklistItem();
                 it.seccion_sid = sid;
+                int cpi; if (itId != null && k < itId.Length && int.TryParse(itId[k], out cpi)) it.cpi_id = cpi;
                 it.cpi_texto = nombre;
                 int tipo; it.cpi_tipo = (itTipo != null && k < itTipo.Length && int.TryParse(itTipo[k], out tipo)) ? tipo : 1;
                 int uni; if (itUni != null && k < itUni.Length && int.TryParse(itUni[k], out uni)) it.cpi_unidad = uni;

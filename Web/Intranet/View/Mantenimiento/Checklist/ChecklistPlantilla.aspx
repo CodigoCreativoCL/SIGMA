@@ -52,6 +52,7 @@
             row.className = 'cl-item';
             row.innerHTML =
                 '<input type="hidden" name="itm_sec" value="' + sid + '" />' +
+                '<input type="hidden" name="itm_id" value="' + (v.id ? v.id : '0') + '" />' +
                 '<input type="text" name="itm_nombre" class="cl-itm-nombre" placeholder="Campo (ej. Presión de trabajo)" value="' + (v.nombre ? clEsc(v.nombre) : '') + '" />' +
                 '<select name="itm_tipo" class="cl-itm-tipo" onchange="clTipoChange(this)">' + CL_TIPO_OPTIONS + '</select>' +
                 '<select name="itm_unidad" class="cl-itm-unidad">' + CL_UNIT_OPTIONS + '</select>' +

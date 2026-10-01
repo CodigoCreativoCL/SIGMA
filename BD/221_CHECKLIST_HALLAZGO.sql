@@ -139,7 +139,9 @@ WHERE   cha.cha_cliente = @CLIENTE
                          OR act.act_codigo LIKE '%' + @FILTRO + '%'
                          OR act.act_nombre LIKE '%' + @FILTRO + '%'
                          OR cpl.cpl_nombre LIKE '%' + @FILTRO + '%')
-ORDER BY cha.cha_fecha_creacion DESC, cha.cha_id DESC
+-- HU-096 CA-1: la bandeja se ordena por severidad (mas severa primero) y luego
+-- por antiguedad (la que lleva mas tiempo esperando primero), no solo por fecha.
+ORDER BY cha.cha_severidad DESC, cha.cha_fecha_creacion ASC, cha.cha_id ASC
 OFFSET (@PAGINA - 1) * @TAMANO ROWS
 FETCH NEXT @TAMANO ROWS ONLY
 GO
@@ -191,7 +193,8 @@ SELECT  CONVERT(VARCHAR(16), CHA_FECHA_CREACION, 120)                 AS [FECHA]
         CASE WHEN ORDEN_TRABAJO_CORRELATIVO IS NULL THEN '' ELSE 'OT-' + CAST(ORDEN_TRABAJO_CORRELATIVO AS VARCHAR) END AS [ORDEN DE TRABAJO],
         ISNULL(CHA_DESCRIPCION, '')                                     AS [DESCRIPCION]
 FROM    @T
-ORDER BY CHA_FECHA_CREACION DESC
+-- Mismo criterio que la bandeja (HU-096 CA-1): severidad y luego antiguedad.
+ORDER BY SEVERIDAD_ID DESC, CHA_FECHA_CREACION ASC
 GO
 
 -- ---------------------------------------------------------------------------

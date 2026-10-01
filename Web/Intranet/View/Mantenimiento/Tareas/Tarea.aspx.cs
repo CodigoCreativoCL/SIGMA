@@ -186,6 +186,18 @@ public partial class View_Mantenimiento_Tareas_Tarea : System.Web.UI.Page
             cboPrioridad.Items.Add(new RadComboBoxItem("Crítica", "4"));
         }
 
+        if (cboCategoria.Items.Count == 0)
+        {
+            // Tarea_Categoria del cliente (HU-100): asi la categoria queda
+            // disponible al crear la tarea. Vacio = sin categoria.
+            cboCategoria.Items.Add(new RadComboBoxItem("Sin categoría", ""));
+            List<TareaCategoria> categorias = new TareaCategoriaController().GetTareaCategorias(
+                new TareaCategoria { tca_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true });
+            if (categorias != null)
+                foreach (TareaCategoria c in categorias)
+                    cboCategoria.Items.Add(new RadComboBoxItem(c.tca_nombre, c.tca_id.ToString()));
+        }
+
         if (cboPeriodo.Items.Count == 0)
         {
             cboPeriodo.Items.Add(new RadComboBoxItem("Últimos y próximos 90 días", "90") { Selected = true });
@@ -230,6 +242,7 @@ public partial class View_Mantenimiento_Tareas_Tarea : System.Web.UI.Page
         txtDescripcion.Text = t.tar_descripcion;
         txtDuracion.Text = t.tar_duracion_estimada_minuto == null ? "" : t.tar_duracion_estimada_minuto.ToString();
         Seleccionar(cboPrioridad, t.tar_tarea_prioridad.ToString());
+        if (t.tar_tarea_categoria != null) Seleccionar(cboCategoria, t.tar_tarea_categoria.Value.ToString());
         if (t.tar_cliente_instalacion != null) Seleccionar(cboPlanta, t.tar_cliente_instalacion.Value.ToString());
         if (t.tar_instalacion_area != null) _areaEditar = t.tar_instalacion_area.Value.ToString();
         if (t.tar_activo != null) _activoEditar = t.tar_activo.Value.ToString();
@@ -282,7 +295,7 @@ public partial class View_Mantenimiento_Tareas_Tarea : System.Web.UI.Page
 
         txtCodigo.ReadOnly = Id > 0;
         txtTitulo.ReadOnly = txtDescripcion.ReadOnly = txtDuracion.ReadOnly = !puedeEditar;
-        cboPrioridad.ReadOnly = cboPlanta.ReadOnly = cboArea.ReadOnly = cboActivo.ReadOnly = !puedeEditar;
+        cboPrioridad.ReadOnly = cboCategoria.ReadOnly = cboPlanta.ReadOnly = cboArea.ReadOnly = cboActivo.ReadOnly = !puedeEditar;
         chkEvidencia.Enabled = chkHabilitada.Enabled = puedeEditar;
         btnGuardar.Visible = puedeEditar;
 
@@ -869,6 +882,7 @@ public partial class View_Mantenimiento_Tareas_Tarea : System.Web.UI.Page
             t.tar_descripcion = string.IsNullOrEmpty(txtDescripcion.Text.Trim()) ? null : txtDescripcion.Text.Trim();
             if (t.tar_descripcion == null) t.quita_descripcion = true;
             t.tar_tarea_prioridad = int.Parse(cboPrioridad.SelectedValue);
+            if (!string.IsNullOrEmpty(cboCategoria.SelectedValue)) t.tar_tarea_categoria = int.Parse(cboCategoria.SelectedValue); else t.quita_categoria = true;
             t.tar_requiere_evidencia = chkEvidencia.Checked;
             t.tar_habilitado = chkHabilitada.Checked;
 
