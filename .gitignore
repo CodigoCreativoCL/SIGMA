@@ -385,3 +385,6 @@ _program files_git_intranet/
 *_BACKUP_PRE_*
 *_BACKUP_*.xlsx
 *_BACKUP_*.docx
+
+# Reinicio de la base: el esquema, el plan y los respaldos son datos del cliente.
+BD/Reinicio/_datos/
