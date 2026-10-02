@@ -36,7 +36,23 @@ public partial class View_Inventario_Compatibilidades_RepuestoCompatibilidad : S
            la segunda falla, y como el helper no lanza devuelve 0 en silencio:
            la ficha se abre en blanco como si fuera un registro nuevo. */
         if (!IsPostBack)
+        {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+
+            /* Alta desde el centro de un repuesto: el repuesto ya se sabe, se
+               entro desde el. Pedirlo otra vez en un combo es preguntar algo
+               que el sistema ya tiene, y permite elegir uno distinto del que
+               se esta mirando. */
+            if (Id == 0)
+                RepuestoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Repuesto");
+        }
+    }
+
+    /// <summary>Repuesto impuesto por quien abrio la ficha. 0 = se elige.</summary>
+    public int RepuestoFijo
+    {
+        get { object v = ViewState["RepuestoFijo"]; return v == null ? 0 : (int)v; }
+        set { ViewState["RepuestoFijo"] = value; }
     }
 
     public void LoadControls(object sender, EventArgs e)
@@ -216,7 +232,14 @@ public partial class View_Inventario_Compatibilidades_RepuestoCompatibilidad : S
 
         /* El repuesto se fija una sola vez: al editar no se cambia, porque
            eso sería otra afirmación y no una corrección. */
-        cboRepuesto.ReadOnly = !puedeEditar || Id > 0;
+        /* Con el repuesto impuesto desde el centro, se preselecciona y queda
+           fijo: es un dato conocido, no una pregunta. */
+        if (Id == 0 && RepuestoFijo > 0)
+        {
+            RadComboBoxItem fijo = cboRepuesto.FindItemByValue(RepuestoFijo.ToString());
+            if (fijo != null) { cboRepuesto.ClearSelection(); fijo.Selected = true; }
+        }
+        cboRepuesto.ReadOnly = !puedeEditar || Id > 0 || RepuestoFijo > 0;
         /* Un combo ReadOnly no arma sus items en el cliente y validaControl
            revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
            Al editar no hay nada que validar ahi (el servidor exige el valor). */

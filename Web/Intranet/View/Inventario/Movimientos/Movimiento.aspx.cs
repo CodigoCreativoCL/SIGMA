@@ -52,6 +52,16 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
         if (!IsPostBack)
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
 
+            /* Alta desde el centro de un repuesto: el repuesto, la bodega y el
+               tipo ya se saben. Volver a pedirlos es preguntar algo que el
+               sistema tiene, y deja elegir uno distinto del que se miraba. */
+            if (Id == 0)
+            {
+                RepuestoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Repuesto");
+                BodegaFija = SitioBase.Querystring.Entero(Request.QueryString["query"], "Bodega");
+                TipoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Tipo");
+            }
+
         /* El puente del escaneo: la cámara escribe el código leído en el
            campo oculto y dispara el botón oculto. Es el mismo mecanismo de
            Escanear.aspx, y se registra en cada carga porque el UpdatePanel
@@ -60,6 +70,42 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                         "sigmaEscaneo.idBoton = '" + btnLeido.ClientID + "';";
 
         ScriptManager.RegisterStartupScript(this, GetType(), "escaneo-enlace", enlace, true);
+    }
+
+    /// <summary>Contexto impuesto por quien abrio la ficha. 0 = se elige.</summary>
+    public int RepuestoFijo
+    {
+        get { object v = ViewState["RepuestoFijo"]; return v == null ? 0 : (int)v; }
+        set { ViewState["RepuestoFijo"] = value; }
+    }
+    public int BodegaFija
+    {
+        get { object v = ViewState["BodegaFija"]; return v == null ? 0 : (int)v; }
+        set { ViewState["BodegaFija"] = value; }
+    }
+    public int TipoFijo
+    {
+        get { object v = ViewState["TipoFijo"]; return v == null ? 0 : (int)v; }
+        set { ViewState["TipoFijo"] = value; }
+    }
+
+    /// <summary>Deja puesto y fijo lo que vino impuesto en la query.</summary>
+    private void AplicarContexto()
+    {
+        if (Id > 0) return;
+        Fijar(cboRepuesto, RepuestoFijo);
+        Fijar(cboBodega, BodegaFija);
+        Fijar(cboTipo, TipoFijo);
+    }
+
+    private static void Fijar(RadComboBox2 combo, int valor)
+    {
+        if (combo == null || valor <= 0) return;
+        RadComboBoxItem it = combo.FindItemByValue(valor.ToString());
+        if (it == null) return;
+        combo.ClearSelection();
+        it.Selected = true;
+        combo.ReadOnly = true;
     }
 
     public void LoadControls(object sender, EventArgs e)

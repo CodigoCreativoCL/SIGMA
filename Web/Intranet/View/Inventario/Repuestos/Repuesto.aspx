@@ -205,46 +205,6 @@
                 </div>
             </div>
 
-        </rad:RadPageView>
-
-        <rad:RadPageView ID="pvUmbrales" runat="server">
-            <%-- ============ UMBRALES POR BODEGA · HU-053 ============ --%>
-            <asp:Panel ID="pnlUmbrales" runat="server" Visible="false" CssClass="sigma-modal-section">
-
-                <div class="sigma-modal-section-title">
-                    <i class="mdi mdi-gauge"></i>
-                    <span>Stock mínimo y máximo por bodega</span>
-                </div>
-
-                <div class="sigma-modal-note">
-                    <i class="mdi mdi-information-outline"></i>
-                    <div>
-                        Los umbrales se definen <strong>por bodega</strong>: la misma pieza puede ser
-                        crítica en una planta y no en otra. El máximo no puede ser menor que el mínimo,
-                        y el punto de reposición tiene que caer entre los dos.
-                    </div>
-                </div>
-
-                <div class="sigma-modal-grid">
-                    <div class="sigma-modal-field">
-                        <label>Bodega</label>
-                        <rad:RadComboBox2 ID="cboBodega" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                    </div>
-                    <div class="sigma-modal-field">
-                        <label>Mínimo</label>
-                        <WebControls:TextBox2 ID="txtMinimo" runat="server" MaxLength="12" />
-                    </div>
-                    <div class="sigma-modal-field">
-                        <label>Máximo</label>
-                        <WebControls:TextBox2 ID="txtMaximo" runat="server" MaxLength="12" />
-                    </div>
-                    <div class="sigma-modal-field">
-                        <label>Punto de reposición</label>
-                        <WebControls:TextBox2 ID="txtReposicion" runat="server" MaxLength="12" />
-                        <span class="sigma-modal-ayuda">Cuándo pedir. Opcional.</span>
-                    </div>
-                </div>
-
                 <%-- ============================================================
      LA GALERIA
 
@@ -301,6 +261,46 @@
                         <span>Sin fotos. La primera que agregue será la portada.</span>
                     </asp:Panel>
                 </asp:Panel>
+        </rad:RadPageView>
+
+        <rad:RadPageView ID="pvUmbrales" runat="server">
+            <%-- ============ UMBRALES POR BODEGA · HU-053 ============ --%>
+            <asp:Panel ID="pnlUmbrales" runat="server" Visible="false" CssClass="sigma-modal-section">
+
+                <div class="sigma-modal-section-title">
+                    <i class="mdi mdi-gauge"></i>
+                    <span>Stock mínimo y máximo por bodega</span>
+                </div>
+
+                <div class="sigma-modal-note">
+                    <i class="mdi mdi-information-outline"></i>
+                    <div>
+                        Los umbrales se definen <strong>por bodega</strong>: la misma pieza puede ser
+                        crítica en una planta y no en otra. El máximo no puede ser menor que el mínimo,
+                        y el punto de reposición tiene que caer entre los dos.
+                    </div>
+                </div>
+
+                <div class="sigma-modal-grid">
+                    <div class="sigma-modal-field">
+                        <label>Bodega</label>
+                        <rad:RadComboBox2 ID="cboBodega" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Mínimo</label>
+                        <WebControls:TextBox2 ID="txtMinimo" runat="server" MaxLength="12" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Máximo</label>
+                        <WebControls:TextBox2 ID="txtMaximo" runat="server" MaxLength="12" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Punto de reposición</label>
+                        <WebControls:TextBox2 ID="txtReposicion" runat="server" MaxLength="12" />
+                        <span class="sigma-modal-ayuda">Cuándo pedir. Opcional.</span>
+                    </div>
+                </div>
+
 
                 <div class="sigma-modal-actions">
                     <WebControls:PushButton ID="btnGuardarUmbral" runat="server" Text="Guardar umbrales" OnClick="btnGuardarUmbral_Click" />

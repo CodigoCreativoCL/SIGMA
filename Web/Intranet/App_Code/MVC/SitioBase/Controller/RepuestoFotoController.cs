@@ -208,6 +208,83 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
+        /// <summary>
+        /// Adjunta cualquier archivo al repuesto: la ficha tecnica, el
+        /// certificado del proveedor, un plano.
+        ///
+        /// POR QUE NO SE RELAJA Agregar()
+        ///   Agregar() alimenta la galeria, y de ahi sale la portada que se ve
+        ///   en el listado del centro: una portada que es un PDF no se puede
+        ///   mostrar. Asi que la galeria sigue aceptando solo imagenes y los
+        ///   documentos entran por aca. El vinculo es el mismo
+        ///   (Archivo_Vinculo.avi_repuesto), asi que el repuesto tiene un solo
+        ///   lugar donde viven sus archivos; lo que cambia es que se exige.
+        /// </summary>
+        public Respuesta Adjuntar(int repuesto, byte[] contenido, string nombre,
+                                  string mime, string titulo)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+                return respuesta;
+            }
+
+            if (contenido == null || contenido.Length == 0)
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "Elija un archivo.";
+                respuesta.error = true;
+                return respuesta;
+            }
+
+            // Una imagen va a la galeria: ahi puede llegar a ser portada.
+            if (!string.IsNullOrEmpty(mime) && mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+                return Agregar(repuesto, contenido, nombre, mime, titulo);
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                Archivo archivo = new Archivo();
+                archivo.arc_cliente = Session.ClienteId();
+                archivo.arc_archivo_categoria = 10;   // Documento de referencia
+                archivo.arc_nombre_original = nombre;
+                archivo.arc_mime = string.IsNullOrEmpty(mime) ? "application/octet-stream" : mime;
+                archivo.contenido = contenido;
+
+                Respuesta subida = new ArchivoController().InsertArchivo(archivo, "REPUESTO");
+
+                if (subida.error) return subida;
+
+                cmd = Conexion.GetCommand("INS_REPUESTO_FOTO");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@REPUESTO", repuesto);
+                cmd.Parameters.AddWithValue("@ARCHIVO", subida.codigo);
+                cmd.Parameters.AddWithValue("@TITULO", (object)titulo ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+
+                respuesta.codigo = (int)cmd.Parameters["@ID"].Value;
+                respuesta.detalle = "Documento adjuntado.";
+                respuesta.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                respuesta.codigo = -1;
+                respuesta.detalle = ex.Message;
+                respuesta.error = true;
+            }
+
+            return respuesta;
+        }
+
         public Respuesta Quitar(int vinculo)
         {
             return Ejecutar("DEL_REPUESTO_FOTO", vinculo, "Imagen quitada de la galería.");
