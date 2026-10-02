@@ -38,6 +38,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** El tablero de indicadores aun no tiene pantalla publicada en el menu.
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -62,6 +64,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** El indicador de cumplimiento del plan aun no tiene pantalla publicada en el menu.
+
 **Como saber que quedo bien:**
 
 1. **Cálculo del cumplimiento** - Cuando consulto el cumplimiento de un periodo Entonces se calcula como ocurrencias completadas sobre ocurrencias programadas Y se mide contra la fecha programada original y no contra la reprogramada
@@ -74,6 +78,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como jefe de mantenimiento, saber cuánto estuvo disponible cada equipo y cada cuánto falla, priorizar dónde intervenir con criterio y no por percepción.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Los indicadores de disponibilidad y confiabilidad aun no tienen pantalla publicada en el menu.
 
 **Como saber que quedo bien:**
 
@@ -88,6 +94,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** Los indicadores de costo aun no tienen pantalla publicada en el menu.
+
 **Como saber que quedo bien:**
 
 1. **Costo por equipo** - Cuando consulto el costo de un equipo Entonces se muestra el costo de repuestos, de mano de obra y de servicios de terceros Y el total se presenta separado por moneda
@@ -101,6 +109,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 6*
 
+**Donde se hace:** Alerta (detalle)
+
+**Como se llega:** Alertas > se abre Alerta (detalle)
+
 **Como saber que quedo bien:**
 
 1. **Bandeja unificada** - Cuando abro la bandeja Entonces veo las alertas abiertas ordenadas por severidad y antigüedad Y cada una indica su tipo, el equipo, el valor observado y el umbral superado
@@ -113,6 +125,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como jefe de mantenimiento, llevarme los datos a una planilla o imprimirlos, presentar la información en las instancias donde no se usa el sistema.
 
 *Web - Sprint 6*
+
+**Donde se hace:** No tiene pantalla propia: cada listado trae su boton de exportar e imprimir.
 
 **Como saber que quedo bien:**
 

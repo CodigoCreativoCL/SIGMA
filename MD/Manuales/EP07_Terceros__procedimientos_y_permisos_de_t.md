@@ -38,6 +38,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Proveedor (detalle)
+
+**Como se llega:** Terceros > Proveedores > Maestro de proveedores > se abre Proveedor (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -64,6 +68,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Procedimiento (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Procedimientos > se abre Procedimiento (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -89,6 +97,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
+**Donde se hace:** Permiso de trabajo (detalle)
+
+**Como se llega:** Terceros > Permisos de trabajo > Registro de permisos > se abre Permiso de trabajo (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -112,6 +124,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, detallar el procedimiento paso a paso, que el técnico sepa exactamente qué hacer y en qué orden.
 
 *Web - Sprint 3*
+
+**Donde se hace:** Procedimiento (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Procedimientos > se abre Procedimiento (detalle)
 
 **Que se completa:**
 
@@ -139,6 +155,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Historial de servicios
+
+**Como se llega:** Terceros > Proveedores > Historial de servicios
+
 **Como saber que quedo bien:**
 
 1. **Historial del proveedor** - Cuando consulto un proveedor Entonces veo las órdenes en que participó, los servicios facturados y el monto acumulado Y puedo filtrar por rango de fechas
@@ -150,6 +170,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como jefe de mantenimiento, ver qué permisos están vigentes y cuáles están por vencer, no descubrir en terreno que el permiso caducó.
 
 *Web - Sprint 3*
+
+**Donde se hace:** Vigentes y por vencer
+
+**Como se llega:** Terceros > Permisos de trabajo > Vigentes y por vencer
 
 **Como saber que quedo bien:**
 

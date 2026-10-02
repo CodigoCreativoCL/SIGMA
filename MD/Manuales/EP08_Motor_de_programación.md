@@ -34,6 +34,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -57,6 +61,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Servidor - Sprint 3*
 
+**Donde se hace:** No tiene pantalla: lo hace el servidor solo, a partir de las programaciones ya definidas.
+
 **Como saber que quedo bien:**
 
 1. **Generación por horizonte** - Cuando el proceso automático se ejecuta Entonces genera las ocurrencias de los próximos 90 días Y avanza la marca de agua hasta la fecha generada
@@ -70,6 +76,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, programar un trabajo que se repite según el calendario, cubrir rutinas diarias, semanales, mensuales y anuales.
 
 *Web - Sprint 3*
+
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
 
 **Que se completa:**
 
@@ -99,6 +109,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -122,6 +136,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -141,6 +159,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, programar un trabajo cada cierta cantidad de días desde la última ejecución, cubrir rutinas que dependen de cuando se hizo la anterior y no del calendario.
 
 *Web - Sprint 3*
+
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
 
 **Que se completa:**
 
@@ -162,6 +184,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, programar un trabajo que se dispara cuando una variable cruza un umbral, reaccionar al estado real del equipo y no a una frecuencia fija.
 
 *Web - Sprint 3*
+
+**Donde se hace:** Programación (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Programaciones > se abre Programación (detalle)
 
 **Que se completa:**
 

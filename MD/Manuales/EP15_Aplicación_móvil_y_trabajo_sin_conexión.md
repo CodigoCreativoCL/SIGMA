@@ -59,6 +59,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** Sincronización
+
+**Como se llega:** aplicacion movil
+
 **Como saber que quedo bien:**
 
 1. **Primera sincronización** - Cuando sincronizo por primera vez Entonces se descargan catálogos, mis activos, mis órdenes abiertas y las plantillas publicadas Y se muestra el progreso por bloque
@@ -71,6 +75,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como técnico de mantenimiento, llegar a la ficha del equipo escaneando el código pegado en la máquina, no buscar el equipo en una lista estando frente a él.
 
 *App - Sprint 6*
+
+**Donde se hace:** Equipos de la planta
+
+**Como se llega:** aplicacion movil
 
 **Como saber que quedo bien:**
 
@@ -86,6 +94,12 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** Inicio
+
+**Como se llega:** aplicacion movil
+
+*La aplicacion sigue funcionando sin senal y guarda lo hecho para enviarlo despues.*
+
 **Como saber que quedo bien:**
 
 1. **Turno completo sin señal** - Dado que estoy sin conexión desde que entré a la planta Cuando escaneo códigos, abro órdenes, ejecuto checklists, dicto observaciones y tomo fotografías Entonces todo funciona sin ningún mensaje de error de red
@@ -98,6 +112,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como técnico de mantenimiento, que lo que registre en terreno llegue al servidor una sola vez, que el planificador no vea trabajo duplicado ni perdido.
 
 *App - Sprint 6*
+
+**Donde se hace:** Sincronización
+
+**Como se llega:** aplicacion movil
 
 **Como saber que quedo bien:**
 
@@ -112,6 +130,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** Sincronización
+
+**Como se llega:** aplicacion movil
+
 **Como saber que quedo bien:**
 
 1. **Detección del conflicto** - Dado que edité una orden sin señal Y el planificador la modifico en la web mientras tanto Cuando sincronizo Entonces se muestra la comparación campo por campo de ambas versiones
@@ -124,6 +146,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como técnico de mantenimiento, dar aviso de un componente que no estaba registrado, que el maestro se complete con lo que realmente hay en la máquina.
 
 *App - Sprint 6*
+
+**Donde se hace:** Componentes
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 
@@ -149,6 +175,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como técnico de mantenimiento, saber qué tengo pendiente de enviar y cuándo sincronicé por última vez, confiar en que lo que registré efectivamente llegó.
 
 *App - Sprint 6*
+
+**Donde se hace:** Sincronización
+
+**Como se llega:** aplicacion movil
 
 **Como saber que quedo bien:**
 

@@ -39,6 +39,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 6*
 
+**Donde se hace:** Análisis de SIGMA AI
+
+**Como se llega:** aplicacion movil
+
 **Como saber que quedo bien:**
 
 1. **Predicciones activas** - Cuando ingreso a la pantalla de inicio Entonces veo las predicciones vigentes ordenadas por nivel y luego por fecha Y cada tarjeta muestra el equipo, la probabilidad, los días restantes y las tres razones principales
@@ -53,6 +57,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, convertir una predicción en trabajo concreto, que la anticipación sirva para evitar la falla y no solo para saber qué venia.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** aplicacion movil > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -78,6 +86,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 6*
 
+**Donde se hace:** Análisis de SIGMA AI
+
+**Como se llega:** aplicacion movil
+
 **Como saber que quedo bien:**
 
 1. **Detalle de la predicción** - Cuando abro una predicción Entonces veo todas las razones ordenadas por su peso, con su valor observado y su valor de referencia Y cada razón está redactada en lenguaje comprensible
@@ -91,6 +103,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, que una predicción crítica me llame la atención cuando aparece, no descubrirla tres días después revisando un listado.
 
 *Web y App - Sprint 6*
+
+**Donde se hace:** Alerta (detalle)
+
+**Como se llega:** Alertas > se abre Alerta (detalle)
 
 **Como saber que quedo bien:**
 
@@ -108,6 +124,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, registrar qué ocurrió realmente después de una predicción, que el modelo aprenda de sus aciertos y de sus errores.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Análisis de SIGMA AI
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 
@@ -131,6 +151,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador de SIGMA, configurar qué se predice, sobre qué equipos y con qué variables, poder ajustar el modelo sin reescribir el sistema.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
 
 **Que se completa:**
 
@@ -162,6 +186,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -183,6 +211,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador de SIGMA, construir el conjunto de datos con el que se entrena el modelo, poder reproducir y auditar después cualquier entrenamiento.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
 
 **Que se completa:**
 
@@ -209,6 +241,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador de SIGMA, seguir el desempeno del modelo mes a mes, saber cuándo hay que reentrenarlo antes de que pierda credibilidad.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
 
 **Como saber que quedo bien:**
 

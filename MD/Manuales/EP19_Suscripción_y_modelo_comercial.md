@@ -44,6 +44,12 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 2*
 
+**Donde se hace:** Mi suscripcion
+
+**Como se llega:** Comercial > Mi suscripcion
+
+*La pantalla aparece sola cuando la suscripcion vence, y no deja pasar a ninguna otra.*
+
 **Como saber que quedo bien:**
 
 1. **Aviso anticipado** - Dado que faltan 15 días para el vencimiento Cuando cualquier usuario ingresa Entonces se muestra un aviso permanente con los días restantes Y el sistema funciona con normalidad
@@ -57,6 +63,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador de SIGMA, registrar la contratación o renovación de un cliente, mantener vigente el servicio y su historial comercial.
 
 *Web - Sprint 2*
+
+**Donde se hace:** Mi suscripcion
+
+**Como se llega:** Comercial > Mi suscripcion
 
 **Que se completa:**
 
@@ -80,6 +90,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador de SIGMA, definir los planes que se ofrecen y que incluye cada uno, poder vender el producto con condiciones claras.
 
 *Web - Sprint 2*
+
+**Donde se hace:** Plan (detalle)
+
+**Como se llega:** Comercial > Planes > se abre Plan (detalle)
 
 **Que se completa:**
 
@@ -105,6 +119,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
+**Donde se hace:** Pago (detalle)
+
+**Como se llega:** Comercial > Pagos > se abre Pago (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -128,6 +146,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador del cliente, ver hasta cuando tengo servicio y que incluye mi plan, gestionar la renovación antes de que el servicio se interrumpa.
 
 *Web - Sprint 2*
+
+**Donde se hace:** Suscripción (detalle)
+
+**Como se llega:** Comercial > Suscripción > se abre Suscripción (detalle)
 
 **Como saber que quedo bien:**
 

@@ -38,6 +38,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** Carga masiva de activos
+
+**Como se llega:** Control de activos > Carga masiva de activos
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -61,6 +65,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** No tiene pantalla propia: las celdas ambiguas se resuelven en la misma pantalla de carga masiva, antes de confirmar.
+
 **Como saber que quedo bien:**
 
 1. **Detalle por celda** - Cuando reviso una importación Entonces veo cada celda ambigua con su valor original, su interpretación propuesta y el motivo Y las celdas correctas de esa misma fila se conservan
@@ -75,6 +81,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 6*
 
+**Donde se hace:** Carga masiva de planes
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Carga masiva de planes
+
 **Como saber que quedo bien:**
 
 1. **Interpretación de la estructura** - Cuando cargo la planilla del plan anual Entonces se identifican los equipos, los hitos y las actividades Y se muestra la estructura interpretada para revisarla antes de confirmar
@@ -87,6 +97,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador del cliente, revisar qué cargas se hicieron y con qué resultado, poder rastrear de dónde salió un registro cuando algo no cuadra.
 
 *Web - Sprint 6*
+
+**Donde se hace:** El historial de importaciones aun no tiene pantalla publicada en el menu.
 
 **Como saber que quedo bien:**
 

@@ -52,7 +52,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Pautas de inspección
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 
@@ -83,7 +85,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Pauta de inspección (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Pautas de inspección > se abre Pauta de inspección (detalle)
 
 **Que se completa:**
 
@@ -118,7 +122,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Donde se hace:** Pautas de inspección > pestana **Hallazgos**
+**Donde se hace:** Hallazgos de inspección
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Hallazgos de inspección
 
 **Que se completa:**
 
@@ -139,7 +145,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Validación de ítem (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Pautas de inspección > se abre Validación de ítem (detalle)
 
 **Que se completa:**
 
@@ -171,7 +179,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Versiones de la pauta
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Pautas de inspección > se abre Versiones de la pauta
 
 **Como saber que quedo bien:**
 
@@ -186,7 +196,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Programación de pauta (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Pautas de inspección > se abre Programación de pauta (detalle)
 
 **Que se completa:**
 
@@ -212,7 +224,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Dependencia de ítem (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Inspección > Pautas de inspección > se abre Dependencia de ítem (detalle)
 
 **Que se completa:**
 
@@ -236,7 +250,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Pautas de inspección:** Resumen / Configuración / Estructura / Versiones / Programaciones / Ocurrencias y ejecuciones / Hallazgos
+**Donde se hace:** Historial de ejecuciones
+
+**Como se llega:** Centro de Mantenimiento > Historial de ejecuciones
 
 **Como saber que quedo bien:**
 

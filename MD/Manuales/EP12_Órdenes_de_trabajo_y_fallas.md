@@ -46,7 +46,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -84,7 +86,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -110,7 +114,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Como saber que quedo bien:**
 
@@ -125,7 +131,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -151,7 +159,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Mis órdenes de trabajo
+
+**Como se llega:** aplicacion movil
 
 **Como saber que quedo bien:**
 
@@ -166,7 +176,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -194,7 +206,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Como saber que quedo bien:**
 
@@ -209,7 +223,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -237,7 +253,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Como saber que quedo bien:**
 
@@ -252,7 +270,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Listado de órdenes
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes
 
 **Como saber que quedo bien:**
 
@@ -266,7 +286,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 6*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -297,7 +319,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Que se completa:**
 
@@ -328,6 +352,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 *Web y App - Sprint 5*
 
 **Donde se hace:** Falla (detalle) > pestana **Diagnósticos**
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Fallas > se abre Falla (detalle)
 
 **Que se completa:**
 
@@ -362,7 +388,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 5*
 
-**Donde se hace:** Falla (detalle) > pestana **Indisponibilidad**
+**Donde se hace:** Indisponibilidad (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Fallas > se abre Indisponibilidad (detalle)
 
 **Que se completa:**
 
@@ -390,7 +418,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Firma de la orden (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Firma de la orden (detalle)
 
 **Que se completa:**
 
@@ -414,7 +444,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 5*
 
-**Pestanas de Falla (detalle):** Ficha / Diagnósticos / Acciones / Indisponibilidad
+**Donde se hace:** Orden de trabajo (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Órdenes de trabajo > Listado de órdenes > se abre Orden de trabajo (detalle)
 
 **Como saber que quedo bien:**
 

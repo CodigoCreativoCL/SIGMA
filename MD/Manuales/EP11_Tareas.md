@@ -38,6 +38,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** Tarea (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Tareas > Tareas recurrentes > se abre Tarea (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -59,6 +63,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, registrar un trabajo que no interviene un equipo, que ese trabajo también quede planificado y verificado.
 
 *Web - Sprint 4*
+
+**Donde se hace:** Tarea (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Tareas > Tareas recurrentes > se abre Tarea (detalle)
 
 **Que se completa:**
 
@@ -88,6 +96,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
+**Donde se hace:** Programación de tarea (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Tareas > Tareas recurrentes > se abre Programación de tarea (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -108,6 +120,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
+**Donde se hace:** Categoría de tarea (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Tareas > Categorías de tarea > se abre Categoría de tarea (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -127,6 +143,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como usuario de mantenimiento, dejar comentarios en el hilo de una tarea, coordinar sin salir del sistema y conservar lo que se acordó.
 
 *Web y App - Sprint 4*
+
+**Donde se hace:** Tarea (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Tareas > Tareas recurrentes > se abre Tarea (detalle)
 
 **Que se completa:**
 

@@ -39,6 +39,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
+**Donde se hace:** Medidor de activo (detalle)
+
+**Como se llega:** Control de activos > Activos > se abre Medidor de activo (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -62,6 +66,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como técnico de mantenimiento, anotar la lectura del horómetro estando frente a la máquina, que el plan por horas se dispare con el dato real y no con una estimación.
 
 *App y Web - Sprint 6*
+
+**Donde se hace:** Registrar lectura
+
+**Como se llega:** Control de activos > Activos > se abre Registrar lectura
 
 **Que se completa:**
 
@@ -87,6 +95,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
+**Donde se hace:** Variable de condición (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Variables de condición > se abre Variable de condición (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -110,6 +122,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
+**Donde se hace:** Serie de una variable (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Variables de condición > se abre Serie de una variable (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -130,6 +146,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, definir qué variables se miden en los equipos, que las mediciones se registren siempre con el mismo nombre y la misma unidad.
 
 *Web - Sprint 2*
+
+**Donde se hace:** Variable de condición (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Variables de condición > se abre Variable de condición (detalle)
 
 **Que se completa:**
 
@@ -152,6 +172,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador del cliente, mantener las unidades y sus factores de conversión, que un valor registrado en PSI se pueda comparar con un umbral definido en bar.
 
 *Web - Sprint 2*
+
+**Donde se hace:** Unidad de medida (detalle)
+
+**Como se llega:** Sistema > Mantenedores > Unidades de medida > se abre Unidad de medida (detalle)
 
 **Que se completa:**
 

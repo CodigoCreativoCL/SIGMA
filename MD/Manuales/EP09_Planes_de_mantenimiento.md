@@ -49,7 +49,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Plan de mantenimiento (detalle):** Resumen / Hitos / Equipos / Calendario / Configuración
+**Donde se hace:** Plan de mantenimiento (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Plan de mantenimiento (detalle)
 
 **Que se completa:**
 
@@ -75,7 +77,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Donde se hace:** Plan de mantenimiento (detalle) > pestana **Hitos**
+**Donde se hace:** Hito de plan (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Hito de plan (detalle)
 
 **Que se completa:**
 
@@ -107,7 +111,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Donde se hace:** Plan de mantenimiento (detalle) > pestana **Hitos**
+**Donde se hace:** Actividad de hito (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Actividad de hito (detalle)
 
 **Que se completa:**
 
@@ -141,7 +147,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Plan de mantenimiento (detalle):** Resumen / Hitos / Equipos / Calendario / Configuración
+**Donde se hace:** Equipo de plan (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Equipo de plan (detalle)
 
 **Que se completa:**
 
@@ -164,7 +172,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Plan de mantenimiento (detalle):** Resumen / Hitos / Equipos / Calendario / Configuración
+**Donde se hace:** Versiones del plan (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Planes de mantenimiento > se abre Versiones del plan (detalle)
 
 **Como saber que quedo bien:**
 
@@ -181,7 +191,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Plan de mantenimiento (detalle):** Resumen / Hitos / Equipos / Calendario / Configuración
+**Donde se hace:** Reprogramar ocurrencia (detalle)
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Bandeja de mantenciones > se abre Reprogramar ocurrencia (detalle)
 
 **Que se completa:**
 
@@ -203,7 +215,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Pestanas de Plan de mantenimiento (detalle):** Resumen / Hitos / Equipos / Calendario / Configuración
+**Donde se hace:** Bandeja de mantenciones
+
+**Como se llega:** Centro de Mantenimiento > Planificación > Bandeja de mantenciones
 
 **Como saber que quedo bien:**
 
@@ -218,7 +232,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 4*
 
-**Donde se hace:** Plan de mantenimiento (detalle) > pestana **Calendario**
+**Donde se hace:** Planificación
+
+**Como se llega:** Centro de Mantenimiento > Planificación
 
 **Como saber que quedo bien:**
 

@@ -37,6 +37,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
+**Donde se hace:** Valor de catálogo (detalle)
+
+**Como se llega:** Cliente > Configuración > Catálogos > se abre Valor de catálogo (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -59,6 +63,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como administrador del cliente, consultar los valores disponibles de cada catálogo, saber qué opciones va a ver el usuario antes de configurar el sistema.
 
 *Web - Sprint 1*
+
+**Donde se hace:** Valor de catálogo (detalle)
+
+**Como se llega:** Cliente > Configuración > Catálogos > se abre Valor de catálogo (detalle)
 
 **Como saber que quedo bien:**
 

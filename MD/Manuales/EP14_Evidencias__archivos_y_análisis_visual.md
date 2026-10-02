@@ -33,6 +33,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
+**Donde se hace:** No tiene pantalla propia: se adjunta desde la orden de trabajo, la pauta o la falla en la que se esta trabajando.
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -55,6 +57,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** No tiene pantalla: la aplicacion reintenta la subida sola cuando vuelve la senal.
+
 **Como saber que quedo bien:**
 
 1. **Reanudación de la carga** - Dado que la carga de una fotografía se interrumpe al 60 por ciento Cuando se recupera la conexión Entonces la carga se retoma desde el 60 por ciento y no desde el inicio
@@ -68,6 +72,12 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 5*
 
+**Donde se hace:** Ver documento adjunto
+
+**Como se llega:** Cliente > Ver documento adjunto
+
+*Se abre al pulsar un adjunto, desde cualquier pantalla que los tenga.*
+
 **Como saber que quedo bien:**
 
 1. **Galería de una orden** - Cuando abro la galería de una orden Entonces veo sus fotografías agrupadas por paso y por momento Y puedo ampliarlas y descargarlas
@@ -79,6 +89,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, adjuntar la fotografía de como debe quedar un trabajo, que el técnico compare contra un estándar y no contra su criterio.
 
 *Web - Sprint 5*
+
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
 
 **Como saber que quedo bien:**
 
@@ -92,6 +106,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como planificador, revisar lo que el análisis automático encontró en las fotografías, aprovechar las imágenes que ya se capturan sin tener que mirarlas todas.
 
 *Web - Sprint 6*
+
+**Donde se hace:** Experimentos
+
+**Como se llega:** SIGMA AI > Experimentos
 
 **Que se completa:**
 

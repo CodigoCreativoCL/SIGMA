@@ -36,6 +36,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** No es una pantalla: el microfono aparece en los campos de texto de toda la aplicacion.
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -57,6 +59,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App - Sprint 6*
 
+**Donde se hace:** No es una pantalla: la lectura en voz alta se activa desde las opciones de accesibilidad.
+
 **Como saber que quedo bien:**
 
 1. **Lectura de un ítem de checklist** - Cuando activo la lectura en voz alta Entonces el teléfono lee la pregunta y sus opciones Y la lectura funciona sin conexión
@@ -69,6 +73,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como usuario de SIGMA, ajustar tamaño de texto, contraste, voz y sonidos, poder usar el sistema según mis condiciones de trabajo y mis capacidades.
 
 *App y Web - Sprint 5*
+
+**Donde se hace:** Mi perfil
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 

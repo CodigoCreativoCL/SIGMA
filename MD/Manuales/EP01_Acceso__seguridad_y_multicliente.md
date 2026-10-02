@@ -60,7 +60,7 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** La pantalla de inicio de sesion es la puerta de entrada: no esta en el menu porque se ve antes de tener menu.
 
 **Que se completa:**
 
@@ -84,7 +84,7 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** No es una pantalla: es la regla que decide que ve y que puede hacer cada persona en todas las demas.
 
 **Como saber que quedo bien:**
 
@@ -99,7 +99,11 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** Seleccionar cliente
+
+**Como se llega:** Seleccionar cliente
+
+*Aparece sola al entrar, y solo si la persona pertenece a mas de un cliente.*
 
 **Que se completa:**
 
@@ -120,7 +124,7 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** Se cierra sesion desde el nombre del usuario, arriba a la derecha. La expiracion por inactividad la aplica el servidor.
 
 **Como saber que quedo bien:**
 
@@ -135,7 +139,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** Permiso de usuario (detalle)
+
+**Como se llega:** Cliente > Usuarios > Permisos > se abre Permiso de usuario (detalle)
 
 **Que se completa:**
 
@@ -162,7 +168,11 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** Restablecer contraseña
+
+**Como se llega:** Recuperar contraseña > se abre Restablecer contraseña
+
+*Se llega desde el enlace de contrasena olvidada, en la pantalla de inicio de sesion.*
 
 **Que se completa:**
 
@@ -185,7 +195,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 1*
 
-**Pestanas de Usuario (detalle):** Identidad / Perfiles / Paises
+**Donde se hace:** Mi perfil
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 

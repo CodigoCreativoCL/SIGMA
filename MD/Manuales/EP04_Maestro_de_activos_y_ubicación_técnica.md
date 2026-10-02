@@ -57,7 +57,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Activo (detalle)
+
+**Como se llega:** Control de activos > Activos > se abre Activo (detalle)
 
 **Que se completa:**
 
@@ -93,7 +95,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 2*
 
-**Donde se hace:** Activos > pestana **Ficha**
+**Donde se hace:** Activo (detalle)
+
+**Como se llega:** Control de activos > Activos > se abre Activo (detalle)
 
 **Como saber que quedo bien:**
 
@@ -108,7 +112,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Posición (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Posiciones > se abre Posición (detalle)
 
 **Que se completa:**
 
@@ -133,7 +139,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Componente (detalle)
+
+**Como se llega:** Control de activos > Activos > se abre Componente (detalle)
 
 **Que se completa:**
 
@@ -161,7 +169,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Cambiar estado
+
+**Como se llega:** Control de activos > Activos > se abre Cambiar estado
 
 **Que se completa:**
 
@@ -183,7 +193,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Etiquetas
+
+**Como se llega:** Control de activos > Configuración de activos > Posiciones > se abre Etiquetas
 
 **Que se completa:**
 
@@ -204,7 +216,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Tipo de activo (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Tipos de activo > se abre Tipo de activo (detalle)
 
 **Que se completa:**
 
@@ -227,7 +241,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Modelo (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Modelos de activo > se abre Modelo (detalle)
 
 **Que se completa:**
 
@@ -250,7 +266,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 2*
 
-**Pestanas de Activos:** Resumen / Ficha / Historial / Órdenes de trabajo / Mantenimiento / Inspecciones y tareas / Más
+**Donde se hace:** Atributo (detalle)
+
+**Como se llega:** Control de activos > Configuración de activos > Atributos técnicos > se abre Atributo (detalle)
 
 **Que se completa:**
 

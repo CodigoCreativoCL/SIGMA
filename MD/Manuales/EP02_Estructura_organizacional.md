@@ -48,7 +48,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Nuevo usuario del cliente
+
+**Como se llega:** Cliente > Usuarios > Usuarios > se abre Nuevo usuario del cliente
 
 **Que se completa:**
 
@@ -78,7 +80,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Perfil (detalle)
+
+**Como se llega:** Sistema > Acceso > Perfiles > se abre Perfil (detalle)
 
 **Que se completa:**
 
@@ -102,7 +106,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Planta (detalle)
+
+**Como se llega:** Cliente > Organización > Plantas > se abre Planta (detalle)
 
 **Que se completa:**
 
@@ -127,7 +133,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Área (detalle)
+
+**Como se llega:** Cliente > Organización > Áreas > se abre Área (detalle)
 
 **Que se completa:**
 
@@ -152,7 +160,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Cliente (detalle)
+
+**Como se llega:** Comercial > Clientes > se abre Cliente (detalle)
 
 **Que se completa:**
 
@@ -180,7 +190,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Especialidad de usuario (detalle)
+
+**Como se llega:** Cliente > Usuarios > Especialidades > se abre Especialidad de usuario (detalle)
 
 **Que se completa:**
 
@@ -205,7 +217,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Grupo de trabajo (detalle)
+
+**Como se llega:** Cliente > Usuarios > Grupos > se abre Grupo de trabajo (detalle)
 
 **Que se completa:**
 
@@ -231,7 +245,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 1*
 
-**Pestanas de Grupo de trabajo (detalle):** Datos / Integrantes
+**Donde se hace:** Centro de costo (detalle)
+
+**Como se llega:** Cliente > Organización > Centros de costo > se abre Centro de costo (detalle)
 
 **Que se completa:**
 

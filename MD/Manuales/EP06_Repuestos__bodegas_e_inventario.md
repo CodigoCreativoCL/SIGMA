@@ -56,7 +56,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Repuesto (detalle) > pestana **Stock mín. y máx.**
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Repuesto (detalle)
 
 **Que se completa:**
 
@@ -81,7 +83,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Movimiento (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Movimiento (detalle)
 
 **Que se completa:**
 
@@ -107,7 +111,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Repuesto (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Repuesto (detalle)
 
 **Que se completa:**
 
@@ -137,7 +143,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Donde se hace:** Centro de repuestos > pestana **Existencias**
+**Donde se hace:** Existencia (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Existencia (detalle)
 
 **Como saber que quedo bien:**
 
@@ -151,7 +159,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Movimiento (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Movimiento (detalle)
 
 **Que se completa:**
 
@@ -180,7 +190,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Compatibilidad (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Compatibilidad (detalle)
 
 **Que se completa:**
 
@@ -206,6 +218,8 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 **Donde se hace:** Bodega (detalle) > pestana **Ubicaciones**
 
+**Como se llega:** Inventario > Bodegas > se abre Bodega (detalle)
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -229,7 +243,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Donde se hace:** Centro de repuestos > pestana **Vida útil**
+**Donde se hace:** Vida útil de repuestos
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Vida útil de repuestos
 
 **Como saber que quedo bien:**
 
@@ -244,7 +260,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Movimiento (detalle)
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Movimiento (detalle)
 
 **Que se completa:**
 
@@ -268,7 +286,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Donde se hace:** Repuesto (detalle) > pestana **Lotes**
+**Donde se hace:** Existencia (detalle) > pestana **Por estante y lote**
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Existencia (detalle)
 
 **Como saber que quedo bien:**
 
@@ -284,7 +304,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Donde se hace:** Bodega (detalle) > pestana **Ubicaciones**
+**Donde se hace:** Etiquetas (impresión)
+
+**Como se llega:** Utilidades > Etiquetas > se abre Etiquetas (impresión)
 
 **Como saber que quedo bien:**
 
@@ -299,7 +321,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Escanear
+
+**Como se llega:** Utilidades > Escanear
 
 **Como saber que quedo bien:**
 
@@ -314,7 +338,9 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Carga masiva de repuestos
+
+**Como se llega:** Inventario > Centro de repuestos > se abre Carga masiva de repuestos
 
 **Como saber que quedo bien:**
 
@@ -328,7 +354,11 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Etiquetas
+
+**Como se llega:** Utilidades > Etiquetas
+
+*El codigo se genera solo al crear el registro; esta pantalla sirve para imprimirlo.*
 
 **Como saber que quedo bien:**
 
@@ -342,7 +372,11 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *Web y App - Sprint 3*
 
-**Pestanas de Centro de repuestos:** Resumen / Compatibilidades / Existencias / Posiciones / Movimientos / Vida útil / Evidencia y documentos
+**Donde se hace:** Alerta (detalle)
+
+**Como se llega:** Alertas > se abre Alerta (detalle)
+
+*El aviso lo levanta el sistema por su cuenta; aqui se consulta lo que aviso.*
 
 **Como saber que quedo bien:**
 

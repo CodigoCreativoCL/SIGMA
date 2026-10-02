@@ -31,6 +31,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 
 *App y Web - Sprint 6*
 
+**Donde se hace:** Bitácora de planta
+
+**Como se llega:** aplicacion movil
+
 **Que se completa:**
 
 | Campo | Control | Obligatorio | Que valida |
@@ -61,6 +65,10 @@ Este modulo se apoya en lo que construyeron otros. Si falta algo de esto, las pa
 **Para que.** Como usuario de mantenimiento, comentar una entrada o corregirla sin borrar lo escrito, que la corrección sea visible y no un reemplazo silencioso.
 
 *Web y App - Sprint 5*
+
+**Donde se hace:** Bitácora de planta
+
+**Como se llega:** aplicacion movil
 
 **Que se completa:**
 
