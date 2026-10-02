@@ -1,0 +1,14 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "intranet",
+      "runtimeExecutable": "C:\\Program Files\\IIS Express\\iisexpress.exe",
+      "runtimeArgs": [
+        "/config:C:\\Capstone\\SIGMA\\Dev\\applicationhost.config",
+        "/site:SIGMA"
+      ],
+      "port": 8080
+    }
+  ]
+}

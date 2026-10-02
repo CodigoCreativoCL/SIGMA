@@ -12,7 +12,10 @@ python 1_esquema.py     # lee tablas, columnas y claves foraneas de la base
 python 2_plan.py        # decide que se borra y que se conserva
 python 3_respaldo.py    # copia a CSV todo lo que se va a borrar
 python 4_reiniciar.py   # aplica el plan
+python 5_comprobar.py root@codigocreativo.cl <clave>   # entra al sitio y comprueba
 ```
+
+El paso 5 corre contra el sitio **local** (`http://localhost:8080`, IIS Express sobre `Dev/applicationhost.config`; se levanta con la configuración `intranet` de `.claude/launch.json`), no contra el ambiente productivo: la base es la misma, así que la comprobación vale igual y no hay por qué escribir credenciales en producción para responderlo. La clave se pasa por línea de comandos; no se guarda ni se imprime.
 
 Los cuatro leen la conexión del `Web.config` de la API: no hay que configurar nada ni escribir la contraseña en ninguna parte. Todo lo que generan va a `_datos/`, que está fuera del control de versiones porque son datos del cliente.
 
@@ -54,6 +57,10 @@ El paso 4 no es un `DELETE` suelto:
 
 **Las identidades se reinician** en las tablas que quedan vacías, para que la primera planta vuelva a ser la número 1 y el recorrido sea fácil de seguir.
 
+## Lo que comprueba el paso 5
+
+Vaciar la base es fácil; lo difícil es no dejarla inservible. El paso 5 entra de verdad y mira las cuatro cosas que el reinicio podría haber roto: que la cuenta inicie sesión, que **no rebote a `Renovar.aspx`** —el riesgo concreto, porque la base queda sin ninguna suscripción vigente—, que la barra lateral se dibuje con Utilidades y sus dos hijos, y que las pantallas del arranque abran sin error con la base vacía.
+
 ## Estado
 
 `3_respaldo.py` **todavía no está en esta carpeta**: su creación fue rechazada por el clasificador de permisos durante la sesión en que se armó esto. Hasta que exista, el paso 4 se niega a correr, que es el comportamiento correcto. Hay una copia funcionando en `_scratch/respaldo_cliente.py`, de la misma sesión, que es de donde conviene traerlo.
@@ -61,5 +68,7 @@ El paso 4 no es un `DELETE` suelto:
 ## Historia
 
 El 02-10-2026, después del reinicio, se borraron además 6 planes comerciales de evidencia del Sprint 2 con sus 4 precios y 84 funcionalidades; desde entonces el paso 2 lo hace solo.
+
+Comprobado el 02-10-2026 con el paso 5: entra, no rebota a Renovar.aspx, la barra lateral trae 22 entradas incluido Utilidades con Escanear y Etiquetas, y las seis pantallas del arranque abren. Clientes aparece vacía y sin error; Planes muestra Básico, Medio y Full.
 
 Ejecutado por primera vez el 02-10-2026: se borraron 3 clientes, 10 personas y 3.667 filas en 121 tablas; quedaron en pie 182 menús, 121 permisos, 496 asignaciones de permiso, 82 catálogos, 10 perfiles y las 3 cuentas. Cero claves foráneas sin confiar.
