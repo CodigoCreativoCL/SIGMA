@@ -129,7 +129,19 @@ for f in FKS:
             if par not in parcial:
                 parcial.append(par)
 
-# ------------------------------------------------------------- 3. las personas
+# ------------------------------------------- 3. los planes comerciales de prueba
+# Plan_Comercial se siembra, no la carga el cliente, asi que se conserva. Pero
+# la pantalla de planes (HU-190) permite crear mas, y en las pruebas del Sprint 2
+# quedaron seis "Plus (evidencia S2)" ofreciendose como planes reales en la
+# contratacion. Se deja la oferta en los tres de verdad; los hijos van primero
+# porque la condicion de los padres se consulta sobre la tabla todavia completa.
+PLANES = "'BASICO', 'MEDIO', 'FULL'"
+_vivos = "SELECT plc_id FROM [dbo].[Plan_Comercial] WHERE plc_codigo IN (%s)" % PLANES
+parcial.append(('Plan_Comercial_Precio', 'pcp_plan_comercial NOT IN (%s)' % _vivos))
+parcial.append(('Plan_Comercial_Funcionalidad', 'pcf_plan_comercial NOT IN (%s)' % _vivos))
+parcial.append(('Plan_Comercial', 'plc_codigo NOT IN (%s)' % PLANES))
+
+# ------------------------------------------------------------- 4. las personas
 parcial.append(('Usuario', 'usu_login NOT IN (%s)' % LOGINS))
 
 json.dump({'conservar_login': list(CONSERVAR_LOGIN),
