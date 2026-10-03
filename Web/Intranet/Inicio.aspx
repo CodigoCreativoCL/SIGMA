@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#0B0F1A" />
 
     <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="Css/Inicio/sigma-inicio.css?vrs=2" rel="stylesheet" />
+    <link href="Css/Inicio/sigma-inicio.css?vrs=4" rel="stylesheet" />
 </head>
 <body>
     <div class="sg-home">
@@ -186,71 +186,135 @@
                     <h2>Los componentes del sistema</h2>
                     <p>SIGMA reúne módulos que trabajan juntos: cada uno resuelve una parte del mantenimiento y comparte la misma información.</p>
                 </div>
-                <div class="sg-grid">
+                <div class="sg-complist" role="list">
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-navy">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-navy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21h18"/><path d="M5 21V7l8-4v18"/><path d="M19 21V11l-6-4"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Control de activos</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Control de activos</h3>
-                        <p>Equipos, componentes y la jerarquía de la planta. La base que todo lo demás referencia.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Equipos, componentes y la jerarquía de la planta, todo en un mismo registro.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> es la base única sobre la que se apoya el resto; nada se mantiene bien si antes no está bien identificado.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Centro de mantenimiento</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Centro de mantenimiento</h3>
-                        <p>Órdenes de trabajo, planes y programaciones. Coordina el trabajo preventivo y correctivo.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Órdenes de trabajo, planes y programaciones del trabajo preventivo y correctivo.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> coordina a todos en un mismo flujo; el trabajo queda planificado, trazable y sin duplicarse.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-teal">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-teal">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Pautas de inspección</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Pautas de inspección</h3>
-                        <p>Checklists dinámicos con umbrales, dependencias entre ítems y hallazgos que derivan en acciones.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Checklists dinámicos con umbrales, dependencias entre ítems y hallazgos.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> convierte una inspección en acción; detecta a tiempo lo que está fuera de rango y lo deriva.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-blue">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-blue">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Inventario</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Inventario</h3>
-                        <p>Catálogo de repuestos, bodegas y existencias. Qué hay, dónde está y cuánto queda.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Catálogo de repuestos, bodegas y existencias por planta.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> evita detener un equipo por falta de repuesto y mantiene bajo control el costo del stock.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-amber">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-amber">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Terceros y permisos</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Terceros y permisos</h3>
-                        <p>Proveedores, servicios contratados y permisos de trabajo para coordinar a quienes entran a la planta.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Proveedores, servicios contratados y permisos de trabajo.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> ordena y da seguridad a quienes entran a la planta, con respaldo de cada autorización.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-pink">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-pink">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 2a3 3 0 0 0-3 3v1a3 3 0 0 0-3 3 3 3 0 0 0 0 6 3 3 0 0 0 3 3v1a3 3 0 0 0 6 0v-1a3 3 0 0 0 3-3 3 3 0 0 0 0-6 3 3 0 0 0-3-3V5a3 3 0 0 0-3-3z"/></svg>
+                            </span>
+                            <span class="sg-comp-name">SIGMA AI</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>SIGMA AI</h3>
-                        <p>Voz para registrar sin teclado, análisis visual de fotos y predicción de fallas sobre tus datos.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Registro por voz, análisis visual de fotografías y predicción de fallas.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> ahorra tiempo en terreno y anticipa la falla antes de que detenga la operación.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-teal">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-teal">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+                            </span>
+                            <span class="sg-comp-name">App móvil y sincronización</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>App móvil y sincronización</h3>
-                        <p>Registro en terreno incluso sin cobertura; los datos se sincronizan al recuperar la conexión.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Registro en terreno incluso sin cobertura, con sincronización al reconectar.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> el dato se captura donde ocurre, sin depender de volver al escritorio ni de la señal.</div>
+                            </div>
+                        </div>
+                    </div>
 
-                    <article class="sg-card">
-                        <div class="sg-card-icon is-navy">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                    <div class="sg-comp" role="listitem" tabindex="0">
+                        <div class="sg-comp-row">
+                            <span class="sg-comp-icon is-navy">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="20" x2="12" y2="10"/><line x1="18" y1="20" x2="18" y2="4"/><line x1="6" y1="20" x2="6" y2="16"/></svg>
+                            </span>
+                            <span class="sg-comp-name">Indicadores y comercial</span>
+                            <svg class="sg-comp-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="9 18 15 12 9 6"/></svg>
                         </div>
-                        <h3>Indicadores y comercial</h3>
-                        <p>Tableros de gestión, exportación de datos y la administración de la suscripción y sus pagos.</p>
-                    </article>
+                        <div class="sg-comp-detail">
+                            <div class="sg-comp-detail-inner">
+                                <p>Tableros de gestión, exportación de datos y administración de la suscripción.</p>
+                                <div class="sg-comp-value"><span class="label">Valor que aporta:</span> decisiones con datos a la vista y el control del plan y sus pagos en un solo lugar.</div>
+                            </div>
+                        </div>
+                    </div>
 
                 </div>
             </div>
