@@ -9,9 +9,9 @@ namespace SitioBase.Controller
     /// Lecturas del mapa 3D de bodegas.
     ///
     /// SOLO LEE
-    ///   El mapa no escribe nada: mover stock, crear ubicaciones o cambiar
-    ///   umbrales se hace en las pantallas de siempre, que ya validan todo.
-    ///   El visor las abre en un modal; no las reimplementa.
+    ///   Lo que el mapa escribe (bodegas, racks, repuestos, movimientos,
+    ///   conteos) pasa por WsBodegaMapa a los controllers de siempre, con sus
+    ///   validaciones. Aqui solo estan las dos lecturas propias del mapa.
     ///
     /// DOS LECTURAS Y NO UNA
     ///   La estructura (bodegas y ubicaciones) casi no cambia; el stock cambia

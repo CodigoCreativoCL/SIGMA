@@ -177,6 +177,22 @@ namespace SitioBase.Controller
         /// </summary>
         public string QrMatriz(string contenido)
         {
+            /* Generar un QR cuesta unos 10 ms y el de un token no cambia nunca
+               (el token es solo el id: REP-17 es el mismo QR para siempre), asi
+               que se calcula una vez por proceso. Sin esto, cargar el mapa con
+               600 repuestos tomaba 6 segundos solo en QR. */
+            string guardado;
+            if (contenido != null && _matrices.TryGetValue(contenido, out guardado)) return guardado;
+            string m = CalcularMatriz(contenido);
+            if (!string.IsNullOrEmpty(m) && contenido != null) _matrices[contenido] = m;
+            return m;
+        }
+
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _matrices =
+            new System.Collections.Concurrent.ConcurrentDictionary<string, string>();
+
+        private string CalcularMatriz(string contenido)
+        {
             try
             {
                 QRCodeGenerator.QRCode qr = new QRCodeGenerator().CreateQrCode(contenido, QRCodeGenerator.ECCLevel.Q);

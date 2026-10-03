@@ -81,7 +81,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 permisos = Permisos(),
                 bodegas = ArmarEstructura(estructura),
                 saldos = ArmarSaldos(saldos),
-                qr = Qrs(estructura, saldos)
+                qr = Qrs(estructura),
+                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta))
             };
         });
     }
@@ -93,7 +94,11 @@ public class WsBodegaMapa : System.Web.Services.WebService
         return Ejecutar(P_VER, () =>
         {
             DataTable saldos = new BodegaMapaController().GetSaldos(planta);
-            return new { error = false, saldos = ArmarSaldos(saldos), qr = Qrs(null, saldos) };
+            return new
+            {
+                error = false, saldos = ArmarSaldos(saldos),
+                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta))
+            };
         });
     }
 
@@ -186,6 +191,25 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 umbrales,
                 qr = new EtiquetaController().QrMatriz("REP-" + id)
             };
+        });
+    }
+
+    /// <summary>
+    /// QR de etiquetas pedidos por el visor, en lote (hasta 200 por llamada).
+    /// Solo tokens con la forma de SEL_ETIQUETA (REP-, UBI-, BOD- y un numero):
+    /// el QR lleva el token, no datos del cliente, asi que no expone nada.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Qr(string tokens)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            EtiquetaController etq = new EtiquetaController();
+            var qr = new Dictionary<string, string>();
+            foreach (string t in (tokens ?? "").Split(',').Select(x => x.Trim().ToUpperInvariant()).Distinct().Take(200))
+                if (System.Text.RegularExpressions.Regex.IsMatch(t, "^(REP|UBI|BOD)-[0-9]{1,9}$")) qr[t] = etq.QrMatriz(t);
+            return new { error = false, qr };
         });
     }
 
@@ -510,7 +534,174 @@ public class WsBodegaMapa : System.Web.Services.WebService
         }
     }
 
+    // ============================================================ conteo ciclico
+
+    /*  CONTEO CICLICO DESDE EL RECORRIDO
+          El bodeguero recorre el pasillo con la tablet y en cada rack confirma o
+          corrige lo que hay en cada caja. Lo que no calza se ajusta EN EL ACTO,
+          con INS_INVENTARIO_MOVIMIENTO:
+            - falta  -> AJUSTE NEGATIVO (5), sacado de los lotes de esa caja
+                        empezando por el que vence antes (FEFO): si falta algo,
+                        lo mas probable es que se haya usado lo mas viejo;
+            - sobra  -> AJUSTE POSITIVO (4), al lote mas reciente de esa caja o,
+                        si el repuesto controla lote y ahi no hay ninguno, al
+                        lote que indique el bodeguero.
+          Lo que "decia el sistema" se lee aqui, al confirmar: no lo manda la
+          pantalla, asi la diferencia se mide contra el stock real del momento.
+          Permiso: AJUSTAR INVENTARIO, el mismo de cualquier ajuste. */
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string IniciarConteo(int bodega, string alcance)
+    {
+        return Ejecutar(P_AJUSTE, () => Resultado(new InventarioConteoController().Iniciar(bodega, alcance), 0));
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ContarRack(string datos)
+    {
+        return Ejecutar(P_AJUSTE, () =>
+        {
+            var d = Leer(datos);
+            int conteo = Entero(d, "conteo"), bodega = Entero(d, "bodega"), ubic = Entero(d, "ubicacion");
+            if (conteo <= 0) throw new Exception("No hay un conteo abierto.");
+            if (bodega <= 0 || ubic <= 0) throw new Exception("Indique la bodega y la ubicación que se contó.");
+
+            object crudas;
+            var lineas = d.TryGetValue("lineas", out crudas) && crudas is System.Collections.IEnumerable
+                ? ((System.Collections.IEnumerable)crudas).OfType<Dictionary<string, object>>().ToList()
+                : new List<Dictionary<string, object>>();
+            if (lineas.Count == 0) throw new Exception("No hay cajas contadas en este rack.");
+
+            InventarioController ic = new InventarioController();
+            InventarioConteoController cc = new InventarioConteoController();
+            RepuestoController rc = new RepuestoController();
+            var resultado = new List<object>();
+            int ajustes = 0;
+
+            foreach (var l in lineas)
+            {
+                int rep = Entero(l, "repuesto");
+                decimal? contadoN = Num(l, "contado");
+                if (rep <= 0 || contadoN == null) continue;
+                decimal contado = contadoN.Value;
+                if (contado < 0) throw new Exception("La cantidad contada no puede ser negativa.");
+
+                var aqui = ic.GetOrigenes(rep, bodega, true).Where(o => (o.ubicacion_id ?? 0) == ubic).ToList();
+                decimal sistema = aqui.Sum(o => o.cantidad);
+                decimal dif = contado - sistema;
+                var movs = new List<string>();
+                string error = null;
+                string obs = "Conteo cíclico N° " + conteo + ": el sistema decía " + sistema.ToString("0.##") +
+                             " y se contaron " + contado.ToString("0.##") + ".";
+
+                if (dif < 0)
+                {
+                    decimal falta = -dif;
+                    foreach (var o in aqui.OrderBy(o => o.lote_vence.HasValue ? 0 : 1).ThenBy(o => o.lote_vence).ThenBy(o => o.lote_id ?? 0))
+                    {
+                        if (falta <= 0) break;
+                        decimal sale = Math.Min(falta, o.cantidad);
+                        Respuesta r = ic.RegistrarMovimiento(new InventarioMovimiento
+                        {
+                            imo_repuesto = rep, imo_bodega = bodega, imo_inventario_movimiento_tipo = 5, imo_cantidad = sale,
+                            imo_bodega_ubicacion = o.ubicacion_id, imo_repuesto_lote = o.lote_id, imo_observacion = obs
+                        });
+                        if (r.error) { error = r.detalle; break; }
+                        movs.Add(r.codigo.ToString());
+                        falta -= sale;
+                    }
+                }
+                else if (dif > 0)
+                {
+                    int? lote = aqui.Where(o => o.lote_id.HasValue).OrderByDescending(o => o.lote_id).Select(o => o.lote_id).FirstOrDefault();
+                    Repuesto rp = rc.GetRepuesto(rep);
+                    bool controla = rp != null && rp.rep_controla_lote;
+                    if (controla && !lote.HasValue)
+                    {
+                        string nuevo = Texto(l, "loteNuevo");
+                        if (string.IsNullOrEmpty(nuevo)) error = "Este repuesto controla lote y en esta caja no hay ninguno: indique el código del lote.";
+                        else
+                        {
+                            Respuesta rl = rc.InsertLote(new RepuestoLote { rlo_repuesto = rep, rlo_codigo = nuevo, rlo_fecha_ingreso = global::SitioBase.Hora.Hoy });
+                            if (rl.error) error = "No se pudo crear el lote: " + rl.detalle; else lote = rl.codigo;
+                        }
+                    }
+                    if (error == null)
+                    {
+                        Respuesta r = ic.RegistrarMovimiento(new InventarioMovimiento
+                        {
+                            imo_repuesto = rep, imo_bodega = bodega, imo_inventario_movimiento_tipo = 4, imo_cantidad = dif,
+                            imo_bodega_ubicacion = ubic, imo_repuesto_lote = controla ? lote : null, imo_observacion = obs
+                        });
+                        if (r.error) error = r.detalle; else movs.Add(r.codigo.ToString());
+                    }
+                }
+
+                ajustes += movs.Count;
+                Respuesta rd = cc.RegistrarCaja(conteo, rep, ubic, sistema, contado, string.Join(",", movs), error);
+                if (rd.error && error == null) error = rd.detalle;
+
+                resultado.Add(new
+                {
+                    repuesto = rep, sistema = (double)sistema, contado = (double)contado, diferencia = (double)dif,
+                    ok = error == null, detalle = error ?? ""
+                });
+            }
+
+            return new { error = false, lineas = resultado, ajustes };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CerrarConteo(int id)
+    {
+        return Ejecutar(P_AJUSTE, () =>
+        {
+            string error;
+            DataRow r = new InventarioConteoController().Cerrar(id, out error);
+            if (r == null) throw new Exception(error ?? "No se pudo cerrar el conteo.");
+            return new
+            {
+                error = false,
+                resumen = new
+                {
+                    id = Convert.ToInt32(r["ID"]), alcance = Convert.ToString(r["ALCANCE"]),
+                    lineas = Convert.ToInt32(r["LINEAS"]), coinciden = Convert.ToInt32(r["COINCIDEN"]),
+                    exactitud = NumeroONulo(r["EXACTITUD"]), ubicaciones = Convert.ToInt32(r["UBICACIONES"]),
+                    sobrantes = r["SOBRANTES"] == DBNull.Value ? 0 : Convert.ToInt32(r["SOBRANTES"]),
+                    faltantes = r["FALTANTES"] == DBNull.Value ? 0 : Convert.ToInt32(r["FALTANTES"]),
+                    unidades = Numero(r["UNIDADES_AJUSTADAS"])
+                }
+            };
+        });
+    }
+
     // ================================================================== armado
+
+    /// <summary>El ultimo conteo de cada ubicacion: el mapa muestra "contado hace 3 dias por ...".</summary>
+    private static List<object> ArmarConteos(DataTable dt)
+    {
+        var lista = new List<object>();
+        foreach (DataRow r in dt.Rows)
+        {
+            DateTime f = Convert.ToDateTime(r["FECHA"]);
+            lista.Add(new
+            {
+                u = Convert.ToInt32(r["BUB_ID"]),
+                conteo = Convert.ToInt32(r["CONTEO"]),
+                fecha = f.ToString("dd-MM-yyyy HH:mm"),
+                dias = Math.Max(0, (global::SitioBase.Hora.Hoy - f.Date).Days),
+                lineas = Convert.ToInt32(r["LINEAS"]),
+                coinciden = Convert.ToInt32(r["COINCIDEN"]),
+                usuario = Convert.ToString(r["USUARIO"])
+            });
+        }
+        return lista;
+    }
+
 
     private static object Permisos()
     {
@@ -566,26 +757,23 @@ public class WsBodegaMapa : System.Web.Services.WebService
     }
 
     /// <summary>
-    /// Los QR de las etiquetas que se ven en el mapa: bodegas (BOD-), racks
-    /// (UBI-) y repuestos (REP-). Son los mismos tokens de SEL_ETIQUETA, asi
-    /// que un QR leido desde la pantalla abre lo mismo que el del estante.
+    /// Los QR de las etiquetas de bodegas (BOD-) y racks (UBI-), que van en la
+    /// carga porque se dibujan al construir la escena. Son los mismos tokens
+    /// de SEL_ETIQUETA: un QR leido desde la pantalla abre lo mismo que el del
+    /// estante. Los de los repuestos (REP-) se piden aparte, con Qr(), solo
+    /// para las cajas a las que la camara se acerca.
     /// </summary>
-    private static Dictionary<string, string> Qrs(DataTable estructura, DataTable saldos)
+    private static Dictionary<string, string> Qrs(DataTable estructura)
     {
         EtiquetaController etq = new EtiquetaController();
         var qr = new Dictionary<string, string>();
         Action<string> agregar = t => { if (!qr.ContainsKey(t)) qr[t] = etq.QrMatriz(t); };
 
-        if (estructura != null)
-            foreach (DataRow r in estructura.Rows)
-            {
-                agregar("BOD-" + Convert.ToInt32(r["BOD_ID"]));
-                if (r["BUB_ID"] != DBNull.Value) agregar("UBI-" + Convert.ToInt32(r["BUB_ID"]));
-            }
-
-        if (saldos != null)
-            foreach (DataRow r in saldos.Rows) agregar("REP-" + Convert.ToInt32(r["REP_ID"]));
-
+        foreach (DataRow r in estructura.Rows)
+        {
+            agregar("BOD-" + Convert.ToInt32(r["BOD_ID"]));
+            if (r["BUB_ID"] != DBNull.Value) agregar("UBI-" + Convert.ToInt32(r["BUB_ID"]));
+        }
         return qr;
     }
 

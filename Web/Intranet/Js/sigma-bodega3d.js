@@ -80,7 +80,7 @@ const S = {
     porBodega: new Map(), hover: null, sel: null,
     vuelo: null, pick: null, tour: null, fovMeta: FOV_MAPA,
     etiquetasVivas: new Map(), vigasHD: new Set(), imagenes: new Map(),
-    basura: [], basuraEdicion: [], cat: null
+    basura: [], basuraEdicion: [], cat: null, conteos: new Map()
 };
 
 // ================================================================== motor
@@ -339,7 +339,7 @@ const QR_CACHE = new Map();
 function qrDe(token) {
     if (QR_CACHE.has(token)) return QR_CACHE.get(token);
     const m = S.qr && S.qr[token];
-    if (!m) return null;
+    if (!m) { if (token) pedirQr(token); return null; }
     const i = m.indexOf(':'), lado = +m.slice(0, i), hex = m.slice(i + 1);
     const bits = new Uint8Array(lado * lado);
     for (let k = 0; k < bits.length; k++) bits[k] = (parseInt(hex[k >> 2], 16) >> (3 - (k & 3))) & 1;
@@ -359,6 +359,26 @@ function dibujarQr(g, token, x, y, tam) {
             if (q.bits[r * q.lado + c]) { const x0 = Math.floor(x + c * k); g.fillRect(x0, y0, Math.floor(x + (c + 1) * k) - x0, y1 - y0); }
     }
     return true;
+}
+/* Los QR de los repuestos no vienen en la carga (generarlos es lo caro): se
+   piden en lote cuando la camara se acerca a una caja, y al llegar se
+   redibujan las etiquetas que los esperaban. */
+const QR_PEDIDOS = new Set();
+let colaQr = new Set(), timerQr = 0;
+function pedirQr(token) {
+    if (QR_PEDIDOS.has(token)) return;
+    QR_PEDIDOS.add(token); colaQr.add(token);
+    if (!timerQr) timerQr = setTimeout(async () => {
+        const lote = [...colaQr]; colaQr = new Set(); timerQr = 0;
+        try {
+            const r = await ws('Qr', { tokens: lote.join(',') });
+            Object.assign(S.qr, r.qr || {});
+            for (const [mesh, t] of S.etiquetasVivas) {
+                if (!r.qr['REP-' + mesh.userData.item.id]) continue;
+                dibujarEtiquetaCaja(mesh.userData.item, t.image); t.needsUpdate = true;
+            }
+        } catch (e) { lote.forEach((x) => QR_PEDIDOS.delete(x)); }
+    }, 60);
 }
 /* Impostor de lejos: tres marcas de posicion y modulos sueltos. No se lee (no
    tiene que): a esa distancia el QR real no se distinguiria igual, y al
@@ -424,8 +444,8 @@ function dibujarEtiqueta(g, x, y, w, h, e, o) {
     if (o.borde) { g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = Math.max(1, h * 0.008); rrect(g, x + 0.5, y + 0.5, w - 1, h - 1, radio); g.stroke(); }
     if (e.color) { g.fillStyle = e.color; g.fillRect(x, y + h * 0.06, Math.max(2, h * 0.035), h * 0.88); }
     const pad = h * 0.075, lado = h - 2 * pad;
-    if (o.lejos) dibujarQrLejano(g, x + pad * 1.2, y + pad, lado);
-    else dibujarQr(g, e.token, x + pad * 1.2, y + pad, lado);
+    // mientras llega el QR real se ve el impostor, no un cuadro en blanco
+    if (o.lejos || !dibujarQr(g, e.token, x + pad * 1.2, y + pad, lado)) dibujarQrLejano(g, x + pad * 1.2, y + pad, lado);
     const tx = x + pad * 2.2 + lado, tw = w - (tx - x) - pad;
     if (tw < h * 0.25) { g.restore(); return; }
 
@@ -1414,14 +1434,17 @@ function panelRack(r) {
     if (p.repuestos && !r.recepcion) rapidas.push('<button type="button" class="bm3d-rapida" id="bm3dNuevoAqui"><i class="mdi mdi-package-variant-plus"></i>Repuesto nuevo aquí</button>');
     if (p.bodegas && !r.recepcion) rapidas.push('<button type="button" class="bm3d-rapida es-cyan" id="bm3dEditarRack"><i class="mdi mdi-pencil-outline"></i>Editar rack</button>');
     if (!r.recepcion) rapidas.push('<button type="button" class="bm3d-rapida" id="bm3dEtqRack"><i class="mdi mdi-qrcode"></i>Etiquetas del rack</button>');
+    if (!r.recepcion && p.ajuste && r.items.length && r.pasillo !== '·') rapidas.push('<button type="button" class="bm3d-rapida es-cyan" id="bm3dContarRack"><i class="mdi mdi-clipboard-check-outline"></i>Contar este rack</button>');
 
     abrirPanel(cab(r.bodega.nombre + (r.pasillo && r.pasillo !== '·' ? ' · Pasillo ' + r.pasillo : ''), r.codigo, r.nombre || '', 'mdi-view-grid-outline'),
         (r.recepcion ? '' : '<div class="bm3d-ocup"><div class="bm3d-barra-stock"><i style="width:' + Math.max(pct, 2) + '%;background:#16C6C9"></i></div><b>' + pct + '%</b>' +
             (bajos ? '<span class="bm3d-estado-chip es-bajo">' + bajos + ' bajo mín.</span>' : '') + '</div>') +
         (conFoto.length ? '<div class="bm3d-galeria">' + conFoto.map((c) => '<span class="bm3d-mini" data-foto="' + r.cajas.indexOf(c) + '" title="' + esc(c.userData.item.n) + '"><img src="' + esc(c.userData.item.foto) + '" alt="" loading="lazy" /></span>').join('') + '</div>' : '') +
+        textoUltimoConteo(r, 'panel') +
         (rapidas.length ? '<div class="bm3d-rapidas">' + rapidas.join('') + '</div>' : '') +
         (r.items.length ? niveles : '<div class="bm3d-vacio-txt">Este rack no tiene stock registrado.</div>'),
-        (r.pasillo && r.pasillo !== '·' && !r.recepcion ? '<button type="button" class="bm3d-btn es-primario" id="bm3dRecorrer"><i class="mdi mdi-walk"></i>Recorrer pasillo ' + esc(r.pasillo) + '</button>' : '') +
+        (r.pasillo && r.pasillo !== '·' && !r.recepcion ? '<button type="button" class="bm3d-btn es-primario" id="bm3dRecorrer"><i class="mdi mdi-walk"></i>Recorrer pasillo ' + esc(r.pasillo) + '</button>' +
+            (p.ajuste ? '<button type="button" class="bm3d-btn es-secundario" id="bm3dContarPasillo"><i class="mdi mdi-clipboard-check-outline"></i>Contar pasillo</button>' : '') : '') +
         '<button type="button" class="bm3d-btn es-contorno" id="bm3dGeneral"><i class="mdi mdi-fit-to-screen-outline"></i>Vista general</button>');
 
     panel.querySelectorAll('[data-caja]').forEach((el) => el.onclick = () => seleccionarCaja(r.cajas[+el.dataset.caja], true));
@@ -1432,6 +1455,8 @@ function panelRack(r) {
     const ed = $('bm3dEditarRack'); if (ed) ed.onclick = () => formRack(r.info, { id: r.id, codigo: r.codigo, nombre: r.nombre, rack: r }, vuelve);
     const et = $('bm3dEtqRack'); if (et) et.onclick = () => imprimirEtiquetas(r.items.length ? 'UBICACION_REPUESTO' : 'UBICACION', r.id);
     const rc = $('bm3dRecorrer'); if (rc) rc.onclick = () => iniciarRecorrido(r.infoPa, r);
+    const cr = $('bm3dContarRack'); if (cr) cr.onclick = () => iniciarRecorrido(r.infoPa, r, { conteo: true, revisar: true });
+    const cp = $('bm3dContarPasillo'); if (cp) cp.onclick = () => iniciarRecorrido(r.infoPa, null, { conteo: true });
     $('bm3dGeneral').onclick = () => { cerrarPanel(); vistaGeneral(); };
 }
 function itemHtml(c, i) {
@@ -1448,7 +1473,8 @@ function panelBodega(info) {
     const reps = new Set(info.cajas.map((c) => c.userData.item.id)).size;
     const pasillos = info.pasillos.map((pa, ip) =>
         '<div class="bm3d-pasillo"><div class="bm3d-pasillo-cab"><span>' + (pa.nom === '·' ? 'Otras ubicaciones' : 'Pasillo ' + esc(pa.nom)) + ' · ' + pa.racks.length + ' racks</span>' +
-        (pa.nom !== '·' && pa.racks.length ? '<button type="button" class="bm3d-btn es-contorno es-chico" data-recorrer="' + ip + '" style="height:28px"><i class="mdi mdi-walk"></i>Recorrer</button>' : '') + '</div>' +
+        (pa.nom !== '·' && pa.racks.length ? '<span class="bm3d-pasillo-acc"><button type="button" class="bm3d-btn es-contorno es-chico" data-recorrer="' + ip + '" style="height:28px"><i class="mdi mdi-walk"></i>Recorrer</button>' +
+            (p.ajuste ? '<button type="button" class="bm3d-btn es-secundario es-chico" data-contar="' + ip + '" style="height:28px" title="Recorrer y contar"><i class="mdi mdi-clipboard-check-outline"></i>Contar</button>' : '') + '</span>' : '') + '</div>' +
         '<div class="bm3d-racks">' + pa.racks.map((r) => '<button type="button" class="bm3d-rackchip" data-rack="' + r.indice + '">' + esc(r.codigo) + '</button>').join('') +
         (p.bodegas && pa.nom !== '·' ? '<button type="button" class="bm3d-rackchip es-mas" data-nuevo-rack="' + esc(pa.nom) + '"><i class="mdi mdi-plus"></i> rack</button>' : '') + '</div></div>').join('');
     abrirPanel(cab(b.planta + ' · ' + b.codigo, b.nombre, '', 'mdi-warehouse'),
@@ -1469,6 +1495,7 @@ function panelBodega(info) {
     const vuelve = () => panelBodega(S.porBodega.get(b.id));
     panel.querySelectorAll('[data-rack]').forEach((el) => el.onclick = () => seleccionarRack(S.racks[+el.dataset.rack], true));
     panel.querySelectorAll('[data-recorrer]').forEach((el) => el.onclick = () => iniciarRecorrido(info.pasillos[+el.dataset.recorrer]));
+    panel.querySelectorAll('[data-contar]').forEach((el) => el.onclick = () => iniciarRecorrido(info.pasillos[+el.dataset.contar], null, { conteo: true }));
     panel.querySelectorAll('[data-nuevo-rack]').forEach((el) => el.onclick = () => formRack(info, sugerirRack(info, el.dataset.nuevoRack), vuelve));
     const np = $('bm3dNuevoPas'); if (np) np.onclick = () => formRack(info, sugerirRack(info, null), vuelve);
     const eb = $('bm3dEditBod'); if (eb) eb.onclick = () => formBodega(b, vuelve);
@@ -1953,9 +1980,13 @@ visor.onclick = (e) => { if (e.target === visor) visor.hidden = true; };
 const cine = $('bm3dCine'), tablet = $('bm3dTablet'), callouts = $('bm3dCallouts');
 const VEL = [0.5, 1, 2];
 
-function iniciarRecorrido(pa, desdeRack) {
+function iniciarRecorrido(pa, desdeRack, opciones) {
     if (!pa || !pa.racks.length) return;
     const previo = S.tour;
+    opciones = opciones || {};
+    // el conteo sigue abierto si se pasa a otro pasillo de la misma bodega
+    let conteo = previo && previo.conteoId && !previo.conteoCerrado && previo.pa.info.id === pa.info.id ? { id: previo.conteoId, stats: previo.cuenta } : null;
+    if (previo && previo.conteoId && !conteo) cerrarConteo(previo, true);
     if (previo) limpiarRecorrido();
     cerrarPanel(); cerrarFicha(); terminarPick(); soltarSeleccion(); marcarContorno(null);
     if (S.filtro.size) { S.filtro.clear(); aplicarFiltros(); }
@@ -1973,7 +2004,10 @@ function iniciarRecorrido(pa, desdeRack) {
         yaw: 0, pitch: 0, fase: 0, andando: 0,
         vistos: new Set(), revisados: new Set(), alertas: [], marcas: new Map(), destellos: [], etiquetas: [],
         camGuardada: previo ? previo.camGuardada : { pos: camera.position.clone(), target: controls.target.clone() },
-        inicio: performance.now(), detalle: null, revisarIdx: -1
+        inicio: performance.now(), detalle: null, revisarIdx: -1,
+        conteo: !!S.permisos.ajuste && (opciones.conteo != null ? !!opciones.conteo : !!(previo && previo.conteo)),
+        conteoId: conteo ? conteo.id : 0, cuenta: conteo ? conteo.stats : { lineas: 0, coinciden: 0, ajustes: 0, cajas: {} },
+        contados: new Set(), contando: null, huboAjustes: !!(previo && previo.huboAjustes)
     };
     const T = S.tour;
     controls.enabled = false;
@@ -1984,6 +2018,7 @@ function iniciarRecorrido(pa, desdeRack) {
     if (desdeRack) {
         const i = paradas.findIndex((p) => p.rack === desdeRack);
         if (i > 0) { T.idx = i; T.pos.z = paradas[i].z - 2.2; T.mira.z = T.pos.z + 5; }
+        if (i >= 0 && opciones.revisar) T.revisarIdx = i;
     }
 
     root.classList.add('en-recorrido');
@@ -2032,10 +2067,12 @@ function armarTablet() {
                     '<button type="button" data-tb="pausa" class="es-play" title="Pausa"><i class="mdi mdi-pause"></i></button>' +
                     '<button type="button" data-tb="sig" title="Rack siguiente"><i class="mdi mdi-skip-next"></i></button>' +
                     '<button type="button" data-tb="vel" class="es-vel" title="Velocidad">1×</button>' +
+                    (S.permisos.ajuste ? '<button type="button" data-tb="conteo" class="es-conteo" title="Contar cada rack al pasar"><i class="mdi mdi-clipboard-check-outline"></i>Contar</button>' : '') +
                     '<button type="button" data-tb="salir" class="es-salir" title="Salir del recorrido"><i class="mdi mdi-exit-run"></i>Salir</button>' +
                 '</div>' +
             '</div>' +
             '<div class="bm3d-tb-detalle" id="tbDetalle" hidden></div>' +
+            '<div class="bm3d-tb-conteo" id="tbConteo" hidden></div>' +
         '</div></div>' +
         '<i class="bm3d-tb-pulgar es-izq"></i><i class="bm3d-tb-pulgar es-der"></i>';
     tablet.hidden = false;
@@ -2046,6 +2083,14 @@ function armarTablet() {
     tablet.querySelector('[data-tb="pausa"]').onclick = () => pausar(!S.tour.pausado);
     tablet.querySelector('[data-tb="vel"]').onclick = () => { const t2 = S.tour; t2.vel = VEL[(VEL.indexOf(t2.vel) + 1) % VEL.length]; estadoTablet(); };
     tablet.querySelector('[data-tb="salir"]').onclick = salirRecorrido;
+    const bc = tablet.querySelector('[data-tb="conteo"]');
+    if (bc) bc.onclick = () => {
+        const t2 = S.tour; t2.conteo = !t2.conteo;
+        aviso(t2.conteo ? 'Modo conteo: el recorrido se detiene en cada rack para contar.' : 'Modo conteo desactivado.');
+        // si ya termino de mirar el rack actual, se cuenta ahora mismo
+        if (t2.conteo && t2.seg && t2.seg.tipo === 'mira' && t2.seg.hecho && !t2.contados.has(t2.seg.parada.rack)) { t2.pausado = true; mostrarConteo(t2.seg.parada); }
+        estadoTablet();
+    };
     $('tbActual').innerHTML = '<div class="bm3d-tb-espera"><i class="mdi mdi-walk"></i>Entrando al pasillo…</div>';
     estadoTablet();
 }
@@ -2055,12 +2100,15 @@ function estadoTablet() {
     $('tbStats').innerHTML =
         '<div><b>' + T.vistos.size + '<small>/' + total + '</small></b><span>Racks</span></div>' +
         '<div><b>' + T.revisados.size + '</b><span>Repuestos</span></div>' +
-        '<div class="' + (T.alertas.length ? 'es-alerta' : '') + '"><b>' + T.alertas.length + '</b><span>Bajo mín.</span></div>';
+        '<div class="' + (T.alertas.length ? 'es-alerta' : '') + '"><b>' + T.alertas.length + '</b><span>Bajo mín.</span></div>' +
+        (T.conteo || T.cuenta.lineas ? '<div class="es-conteo"><b>' + (T.cuenta.lineas ? Math.round(T.cuenta.coinciden * 100 / T.cuenta.lineas) + '<small>%</small>' : '—') + '</b><span>Exactitud</span></div>' : '');
+    $('tbStats').classList.toggle('es-cuatro', !!(T.conteo || T.cuenta.lineas));
     tablet.querySelectorAll('[data-tb-rack]').forEach((b, i) => {
         const p = T.paradas[i];
         b.classList.toggle('es-actual', !!(T.seg && T.seg.tipo === 'mira' && T.seg.parada === p && (!T.seg.hecho || T.pausado)));
         b.classList.toggle('es-visto', T.vistos.has(p.rack));
         b.classList.toggle('es-alerta', T.alertas.some((a) => a.userData.rack === p.rack));
+        b.classList.toggle('es-contado', T.contados.has(p.rack));
     });
     const rec = $('tbRec');
     rec.className = 'bm3d-tb-rec' + (T.pausado ? ' es-pausa' : '') + (T.final ? ' es-fin' : '');
@@ -2071,6 +2119,7 @@ function estadoTablet() {
     bp.disabled = T.final;
     tablet.querySelector('[data-tb="vel"]').textContent = (T.vel === 0.5 ? '½' : T.vel) + '×';
     tablet.classList.toggle('es-pausa', T.pausado);
+    const bcn = tablet.querySelector('[data-tb="conteo"]'); if (bcn) bcn.classList.toggle('is-on', T.conteo);
     cine.classList.toggle('es-pausa', T.pausado && !T.final);
 }
 function tabletRack(p, revisar) {
@@ -2080,6 +2129,7 @@ function tabletRack(p, revisar) {
         '<div class="bm3d-tb-rackcab"><div><small>' + (revisar ? 'Revisando' : 'Mirando') + ' · lado ' + (p.lado === 'izq' ? 'izquierdo' : 'derecho') + '</small><b>' + esc(r.codigo) + '</b></div>' +
         '<span class="bm3d-tb-cuenta" id="tbCuenta">0/' + n + '</span></div>' +
         '<div class="bm3d-tb-progreso"><i id="tbProg"></i></div>' +
+        textoUltimoConteo(r, 'tb') +
         (bajos && revisar ? '<div class="bm3d-tb-nota"><i class="mdi mdi-alert"></i>' + bajos + ' bajo mínimo en este rack</div>' : '');
     $('tbLista').innerHTML = n ? '' : '<div class="bm3d-tb-espera"><i class="mdi mdi-package-variant-closed-remove"></i>Rack vacío: sin stock registrado.</div>';
     estadoTablet();
@@ -2145,6 +2195,7 @@ function resumenTablet() {
         '<button type="button" class="bm3d-btn es-primario es-chico" id="tbRepetir"><i class="mdi mdi-replay"></i>Repetir</button>' +
         otros.map((p) => '<button type="button" class="bm3d-btn es-contorno es-chico" data-tb-pasillo="' + info.pasillos.indexOf(p) + '"><i class="mdi mdi-walk"></i>Pasillo ' + esc(p.nom) + '</button>').join('') +
         '<button type="button" class="bm3d-btn es-ghost es-chico" id="tbSalir2"><i class="mdi mdi-exit-run"></i>Salir</button></div>';
+    if (T.conteoId) resumenConteo(T);
     $('tbRepetir').onclick = () => iniciarRecorrido(pa);
     $('tbSalir2').onclick = salirRecorrido;
     tablet.querySelectorAll('[data-tb-pasillo]').forEach((b) => b.onclick = () => iniciarRecorrido(info.pasillos[+b.dataset.tbPasillo]));
@@ -2235,6 +2286,7 @@ function pausar(si) {
     const T = S.tour; if (!T || T.intro) return;
     if (T.final && !si) return;
     T.pausado = si;
+    if (!si) cerrarConteoTablet();
     estadoTablet();
 }
 function saltarRelativo(d) {
@@ -2248,6 +2300,7 @@ function saltarRelativo(d) {
 function saltarA(i, revisar) {
     const T = S.tour; if (!T || T.intro) return;
     cerrarDetalleTablet();
+    cerrarConteoTablet();
     if (T.seg && !T.seg.hecho) cerrarSegmento(T.seg, true);
     T.seg = null; T.cola = []; T.idx = i; T.revisarIdx = revisar ? i : -1;
     T.final = false; T.terminado = false; T.pausado = false; T.prisa = true;
@@ -2302,7 +2355,10 @@ function cerrarSegmento(s, corte) {
         if (!corte) {
             while (s.k < s.parada.cajas.length) { s.k++; revelar(s, s.parada.cajas[s.k - 1]); }
             T.vistos.add(s.parada.rack);
-            if (s.revisar) {
+            if (T.conteo && s.parada.cajas.length && !T.contados.has(s.parada.rack)) {
+                T.pausado = true; T.revisarIdx = -1;
+                mostrarConteo(s.parada);
+            } else if (s.revisar) {
                 T.pausado = true; T.revisarIdx = -1;
                 if (T.detallePendiente) { detalleTablet(T.detallePendiente); T.detallePendiente = null; }
             }
@@ -2432,7 +2488,7 @@ function moverRecorrido(ev) {
 function clicRecorrido(ev) {
     const T = S.tour, h = intersectar(ev, true);
     if (!h || T.intro) return;
-    if (h.caja) { pausar(true); detalleTablet(h.caja); return; }
+    if (h.caja) { if (T.contando && enfocarCajaConteo(h.caja)) return; pausar(true); detalleTablet(h.caja); return; }
     if (h.rack) {
         const i = T.paradas.findIndex((p) => p.rack === h.rack);
         if (i >= 0) saltarA(i, true);
@@ -2453,6 +2509,8 @@ function limpiarRecorrido() {
 function salirRecorrido() {
     const T = S.tour; if (!T) return;
     const vuelta = T.camGuardada;
+    if (T.conteoId && !T.conteoCerrado) cerrarConteo(T, true);
+    const refrescar = T.huboAjustes || !!T.conteoId;
     limpiarRecorrido();
     cerrarFicha();
     root.classList.remove('en-recorrido');
@@ -2464,6 +2522,243 @@ function salirRecorrido() {
     // se vuelve a la vista que habia antes de entrar
     controls.target.copy(camera.position).add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(3));
     volar(vuelta.pos, vuelta.target, 1500);
+    // lo que se ajusto en el conteo ya esta en la base: se trae el stock real
+    if (refrescar) setTimeout(() => { if (!S.tour) refrescarStock(true); }, 1600);
+}
+
+// ============================================================================
+//  CONTEO CICLICO — dentro del recorrido
+// ----------------------------------------------------------------------------
+//  Con "Contar" activo, al terminar de mirar cada rack el recorrido se detiene
+//  y la tablet pide lo que hay en cada caja. Lo que coincide se confirma con un
+//  toque; lo que no, se escribe. Al confirmar, el servidor (WsBodegaMapa.
+//  ContarRack) mide contra el stock real del momento y ajusta la diferencia en
+//  el acto, con el mismo SP de cualquier ajuste: el kardex queda con el motivo
+//  "Conteo ciclico N°...". Al cerrar, queda la exactitud del conteo.
+// ============================================================================
+function leerConteos(lista) {
+    S.conteos = new Map();
+    for (const c of lista || []) S.conteos.set(c.u, c);
+}
+function haceDias(d) { return d === 0 ? 'hoy' : d === 1 ? 'ayer' : 'hace ' + d + ' días'; }
+/* "Contado hace 3 dias": un rack que hace mas de 30 dias no se cuenta se
+   marca, para que el bodeguero sepa por donde empezar. */
+function textoUltimoConteo(r, donde) {
+    if (r.recepcion) return '';
+    const c = S.conteos.get(r.id);
+    if (!c) return donde === 'tb'
+        ? '<div class="bm3d-tb-ultimo es-nunca"><i class="mdi mdi-clipboard-alert-outline"></i>Sin conteos registrados</div>'
+        : '<div class="bm3d-conteo-ult es-nunca"><i class="mdi mdi-clipboard-alert-outline"></i><span><b>Nunca se ha contado</b>Cuéntalo desde el recorrido.</span></div>';
+    const ex = c.lineas ? Math.round(c.coinciden * 100 / c.lineas) : null;
+    const viejo = c.dias > 30 ? ' es-viejo' : '';
+    if (donde === 'tb') return '<div class="bm3d-tb-ultimo' + viejo + '"><i class="mdi mdi-clipboard-check-outline"></i>Contado ' + haceDias(c.dias) + (ex != null ? ' · ' + ex + '% exacto' : '') + '</div>';
+    return '<div class="bm3d-conteo-ult' + viejo + '"><i class="mdi mdi-clipboard-check-outline"></i><span><b>Último conteo ' + haceDias(c.dias) + '</b>' +
+        esc(c.fecha) + (c.usuario ? ' · ' + esc(c.usuario) : '') + '</span>' + (ex != null ? '<em>' + c.coinciden + '/' + c.lineas + ' · ' + ex + '%</em>' : '') + '</div>';
+}
+
+function leerCant(v) {
+    const t = String(v == null ? '' : v).trim().replace(/\s/g, '');
+    if (!t) return null;
+    const n = parseFloat(t.includes(',') && !t.includes('.') ? t.replace(',', '.') : t.replace(/,/g, ''));
+    return isNaN(n) || n < 0 ? null : n;
+}
+function resaltarCaja(c, si) {
+    c.userData.sacar = si ? (c.userData.fila === 1 ? 0.5 : 0.2) : 0;
+    marcarContorno(si ? c : null, false);
+}
+
+function mostrarConteo(p) {
+    const T = S.tour; if (!T) return;
+    cerrarDetalleTablet();
+    T.contando = p;
+    const el = $('tbConteo');
+    el.innerHTML =
+        '<div class="bm3d-tbc-cab"><div><small>Conteo · lado ' + (p.lado === 'izq' ? 'izquierdo' : 'derecho') + '</small><b>' + esc(p.rack.codigo) + '</b></div>' +
+        '<button type="button" class="bm3d-btn es-contorno es-chico" id="tbcTodo" title="Marca como coincidentes las que no escribiste"><i class="mdi mdi-check-all"></i>Todo coincide</button></div>' +
+        '<div class="bm3d-tbc-ayuda">Escribe lo que hay en cada caja, o toca <i class="mdi mdi-check"></i> si coincide con el sistema. Las que dejes en blanco no se cuentan.</div>' +
+        '<div class="bm3d-tbc-lista" id="tbcLista">' + p.cajas.map((c, i) => filaConteo(c, i)).join('') + '</div>' +
+        '<div class="bm3d-tbc-pie" id="tbcPie"><span id="tbcResumen"></span>' +
+        '<button type="button" class="bm3d-btn es-ghost es-chico" id="tbcOmitir">Omitir</button>' +
+        '<button type="button" class="bm3d-btn es-primario es-chico" id="tbcConfirmar"><i class="mdi mdi-check"></i>Confirmar</button></div>';
+    el.hidden = false;
+    el.querySelectorAll('[data-cant]').forEach((inp) => {
+        const i = +inp.dataset.cant;
+        inp.oninput = () => difConteo(p, i);
+        inp.onfocus = () => resaltarCaja(p.cajas[i], true);
+        inp.onblur = () => resaltarCaja(p.cajas[i], false);
+        inp.onkeydown = (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const sig = el.querySelector('[data-cant="' + (i + 1) + '"]');
+                if (sig) sig.focus(); else $('tbcConfirmar').focus();
+            }
+        };
+    });
+    el.querySelectorAll('[data-igual]').forEach((b) => b.onclick = () => {
+        const i = +b.dataset.igual, inp = el.querySelector('[data-cant="' + i + '"]');
+        inp.value = String(p.cajas[i].userData.item.q);
+        difConteo(p, i);
+    });
+    $('tbcTodo').onclick = () => {
+        p.cajas.forEach((c, i) => {
+            const inp = el.querySelector('[data-cant="' + i + '"]');
+            if (inp && !inp.value.trim()) { inp.value = String(c.userData.item.q); difConteo(p, i); }
+        });
+    };
+    $('tbcOmitir').onclick = () => { cerrarConteoTablet(); pausar(false); };
+    $('tbcConfirmar').onclick = (e) => confirmarConteo(p, e.currentTarget);
+    resumenFilas(p);
+    const primero = el.querySelector('[data-cant]'); if (primero) setTimeout(() => primero.focus({ preventScroll: true }), 80);
+}
+function filaConteo(c, i) {
+    const it = c.userData.item;
+    return '<div class="bm3d-tbc-fila" data-fila="' + i + '">' + miniatura(it.foto, it.color) +
+        '<div class="bm3d-tbc-txt"><b>' + esc(it.c) + '</b><span>' + esc(it.n) + '</span><small>' + c.userData.nivel + '-' + pad2(c.userData.posicion) + ' · sistema ' + num(it.q) + ' ' + esc(it.un) + '</small></div>' +
+        '<div class="bm3d-tbc-entrada"><input type="text" inputmode="decimal" autocomplete="off" data-cant="' + i + '" placeholder="' + num(it.q) + '" aria-label="Cantidad contada de ' + esc(it.c) + '" />' +
+        '<button type="button" data-igual="' + i + '" title="Coincide con el sistema"><i class="mdi mdi-check"></i></button></div>' +
+        '<div class="bm3d-tbc-dif" data-dif="' + i + '"></div>' +
+        '<div class="bm3d-tbc-lote" data-lote="' + i + '" hidden><input type="text" data-lote-in="' + i + '" placeholder="Código del lote nuevo" /></div>' +
+        '</div>';
+}
+function difConteo(p, i) {
+    const el = $('tbConteo'), c = p.cajas[i], it = c.userData.item;
+    const v = leerCant(el.querySelector('[data-cant="' + i + '"]').value);
+    const chip = el.querySelector('[data-dif="' + i + '"]'), fila = el.querySelector('[data-fila="' + i + '"]');
+    fila.classList.remove('es-ok', 'es-falta', 'es-sobra', 'es-error');
+    if (v == null) chip.innerHTML = '';
+    else {
+        const d = v - it.q;
+        if (Math.abs(d) < 1e-9) { chip.innerHTML = '<i class="mdi mdi-check-circle"></i>Coincide'; fila.classList.add('es-ok'); }
+        else if (d < 0) { chip.innerHTML = '<i class="mdi mdi-arrow-down-bold"></i>Faltan ' + num(-d) + ' ' + esc(it.un); fila.classList.add('es-falta'); }
+        else { chip.innerHTML = '<i class="mdi mdi-arrow-up-bold"></i>Sobran ' + num(d) + ' ' + esc(it.un); fila.classList.add('es-sobra'); }
+    }
+    resumenFilas(p);
+}
+function resumenFilas(p) {
+    const el = $('tbConteo'), r = $('tbcResumen'); if (!r) return;
+    let n = 0, dif = 0;
+    p.cajas.forEach((c, i) => {
+        const v = leerCant((el.querySelector('[data-cant="' + i + '"]') || {}).value);
+        if (v == null) return;
+        n++; if (Math.abs(v - c.userData.item.q) > 1e-9) dif++;
+    });
+    r.innerHTML = '<b>' + n + '/' + p.cajas.length + '</b> contadas' + (dif ? ' · <em>' + dif + ' con diferencia</em>' : '');
+}
+/* Un clic en una caja de la escena mientras se cuenta lleva a su fila. */
+function enfocarCajaConteo(c) {
+    const T = S.tour, p = T && T.contando; if (!p) return false;
+    const i = p.cajas.indexOf(c); if (i < 0) return false;
+    const inp = $('tbConteo').querySelector('[data-cant="' + i + '"]');
+    if (inp) { inp.focus(); inp.closest('.bm3d-tbc-fila').scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
+    return true;
+}
+
+async function confirmarConteo(p, btn) {
+    const T = S.tour; if (!T) return;
+    const el = $('tbConteo'), lineas = [];
+    p.cajas.forEach((c, i) => {
+        const v = leerCant(el.querySelector('[data-cant="' + i + '"]').value);
+        if (v == null) return;
+        const lote = el.querySelector('[data-lote-in="' + i + '"]');
+        lineas.push({ i, repuesto: c.userData.item.id, contado: v, loteNuevo: lote ? lote.value.trim() : '' });
+    });
+    if (!lineas.length) { aviso('Escribe al menos una cantidad, o usa «Todo coincide».', true); return; }
+    await guardando(btn, async () => {
+        if (!T.conteoId) {
+            const r0 = await ws('IniciarConteo', { bodega: T.pa.info.id, alcance: T.pa.info.bodega.nombre + ' · Pasillo ' + T.pa.nom + ' (recorrido 3D)' });
+            T.conteoId = r0.id;
+        }
+        const r = await ws('ContarRack', { datos: JSON.stringify({ conteo: T.conteoId, bodega: T.pa.info.id, ubicacion: p.rack.id, lineas: lineas.map((l) => ({ repuesto: l.repuesto, contado: l.contado, loteNuevo: l.loteNuevo })) }) });
+        if (S.tour !== T) return;
+        let errores = 0;
+        for (const res of r.lineas) {
+            const l = lineas.find((x) => x.repuesto === res.repuesto); if (!l) continue;
+            const c = p.cajas[l.i], fila = el.querySelector('[data-fila="' + l.i + '"]'), chip = el.querySelector('[data-dif="' + l.i + '"]');
+            fila.classList.remove('es-ok', 'es-falta', 'es-sobra', 'es-error');
+            const clave = p.rack.id + '|' + res.repuesto;
+            if (!res.ok) {
+                errores++;
+                fila.classList.add('es-error');
+                chip.innerHTML = '<i class="mdi mdi-alert-circle"></i>' + esc(res.detalle);
+                if (/lote/i.test(res.detalle)) el.querySelector('[data-lote="' + l.i + '"]').hidden = false;
+                continue;
+            }
+            if (!(clave in T.cuenta.cajas)) T.cuenta.cajas[clave] = Math.abs(res.diferencia) < 1e-9;
+            if (Math.abs(res.diferencia) < 1e-9) { fila.classList.add('es-ok'); chip.innerHTML = '<i class="mdi mdi-check-circle"></i>Coincide · confirmado'; }
+            else {
+                fila.classList.add(res.diferencia < 0 ? 'es-falta' : 'es-sobra');
+                chip.innerHTML = '<i class="mdi mdi-scale-balance"></i>Ajustado ' + (res.diferencia > 0 ? '+' : '−') + num(Math.abs(res.diferencia)) + ' · sistema ' + num(res.sistema) + ' → ' + num(res.contado);
+                aplicarConteoCaja(c, res.contado);
+            }
+            const inp = el.querySelector('[data-cant="' + l.i + '"]'); inp.disabled = true;
+            const ig = el.querySelector('[data-igual="' + l.i + '"]'); if (ig) ig.disabled = true;
+        }
+        const vals = Object.values(T.cuenta.cajas);
+        T.cuenta.lineas = vals.length; T.cuenta.coinciden = vals.filter(Boolean).length;
+        T.cuenta.ajustes += r.ajustes;
+        if (r.ajustes) T.huboAjustes = true;
+        T.contados.add(p.rack);
+        $('tbcResumen').innerHTML = errores
+            ? '<em>' + errores + ' caja' + (errores === 1 ? '' : 's') + ' sin registrar: revisa y vuelve a confirmar.</em>'
+            : '<b>Rack contado</b>' + (r.ajustes ? ' · ' + r.ajustes + ' ajuste' + (r.ajustes === 1 ? '' : 's') : ' · sin diferencias');
+        const pie = $('tbcPie');
+        pie.querySelector('#tbcOmitir').remove();
+        const conf = pie.querySelector('#tbcConfirmar');
+        if (!errores) {
+            conf.outerHTML = '<button type="button" class="bm3d-btn es-primario es-chico" id="tbcSeguir"><i class="mdi mdi-walk"></i>Seguir</button>';
+            $('tbcSeguir').onclick = () => { cerrarConteoTablet(); pausar(false); };
+            $('tbcTodo').disabled = true;
+        }
+        estadoTablet();
+    });
+}
+/* Lo contado pasa a la escena sin recargar: la caja, su etiqueta, la de la
+   viga y la marca de bajo minimo quedan con la cantidad real. */
+function aplicarConteoCaja(c, contado) {
+    const T = S.tour, it = c.userData.item;
+    it.q = contado;
+    if (S.etiquetasVivas.has(c)) {
+        const t = S.etiquetasVivas.get(c);
+        c.userData.etiqueta.material.dispose(); t.dispose();
+        c.userData.etiqueta.material = c.userData.etqLejos;
+        S.etiquetasVivas.delete(c);
+        ultimoLod = 0;
+    }
+    const r = c.userData.rack;
+    if (S.vigasHD.has(r)) { S.vigasHD.delete(r); vigaHD(r, true); }
+    if (estadoDe(it) === 'bajo') {
+        marcarBajo(c);
+        if (!T.alertas.includes(c)) T.alertas.push(c);
+    } else if (T.marcas.has(c)) {
+        const [sp, borde] = T.marcas.get(c);
+        c.remove(sp, borde); sp.material.dispose();
+        T.marcas.delete(c);
+        T.alertas = T.alertas.filter((x) => x !== c);
+    }
+    alertasTablet();
+}
+function cerrarConteoTablet() {
+    const T = S.tour; if (!T) return;
+    const el = $('tbConteo'); if (el) el.hidden = true;
+    if (T.contando) for (const c of T.contando.cajas) c.userData.sacar = 0;
+    T.contando = null;
+    marcarContorno(null);
+}
+async function cerrarConteo(T, silencioso) {
+    if (!T || !T.conteoId || T.conteoCerrado) return null;
+    T.conteoCerrado = true;
+    try { return (await ws('CerrarConteo', { id: T.conteoId })).resumen; }
+    catch (e) { if (!silencioso) aviso(e.message, true); return null; }
+}
+async function resumenConteo(T) {
+    const res = await cerrarConteo(T, false);
+    if (!res || S.tour !== T) return;
+    const ex = res.exactitud != null ? Math.round(res.exactitud) : null;
+    const caja = document.createElement('div');
+    caja.className = 'bm3d-tb-exactitud' + (ex != null && ex < 90 ? ' es-baja' : '');
+    caja.innerHTML = '<b>' + (ex != null ? ex + '%' : '—') + '</b><div><span>Exactitud del conteo N° ' + res.id + '</span>' +
+        '<small>' + res.coinciden + ' de ' + res.lineas + ' cajas coincidieron · ' + res.faltantes + ' con faltante · ' + res.sobrantes + ' con sobrante · ' + num(res.unidades) + ' un ajustadas</small></div>';
+    $('tbActual').appendChild(caja);
 }
 
 // ==================================================================== busqueda
@@ -2600,6 +2895,7 @@ async function cargar(planta) {
 function aplicarDatos(d) {
     S.datos = d; S.planta = d.planta; S.permisos = d.permisos || {};
     S.qr = Object.assign(S.qr || {}, d.qr || {});
+    leerConteos(d.conteos);
     $('bm3dPlanta').innerHTML = (d.plantas || []).map((p) => '<option value="' + p.id + '"' + (p.id === d.planta ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('');
     root.querySelector('[data-accion="nuevo"]').hidden = !S.permisos.repuestos;
     root.querySelector('[data-accion="editar"]').hidden = !S.permisos.bodegas;
@@ -2614,7 +2910,7 @@ async function recargar(estructura, plantaNueva) {
     const camP = camera.position.clone(), camT = controls.target.clone(), bod = S.bodegaSel;
     const d = estructura ? await ws('Cargar', { planta: plantaNueva || S.planta }) : await ws('Saldos', { planta: S.planta });
     if (estructura) aplicarDatos(d);
-    else { S.datos.saldos = d.saldos; Object.assign(S.qr, d.qr || {}); construir(S.datos); pintarBodegas(); }
+    else { S.datos.saldos = d.saldos; Object.assign(S.qr, d.qr || {}); leerConteos(d.conteos); construir(S.datos); pintarBodegas(); }
     const destino = S.porBodega.has(bod) ? bod : ((S.datos.bodegas || [])[0] || {}).id;
     if (destino) elegirBodega(destino, true);
     if (!plantaNueva) { camera.position.copy(camP); controls.target.copy(camT); }
@@ -2648,6 +2944,7 @@ document.addEventListener('keydown', (e) => {
         if (!visor.hidden) visor.hidden = true;
         else if (!ficha.hidden) cerrarFicha();
         else if (S.tour && S.tour.detalle) cerrarDetalleTablet();
+        else if (S.tour && S.tour.contando) cerrarConteoTablet();
         else if (S.tour) salirRecorrido();
         else if (S.pick) terminarPick();
         else if (!escribiendo) cerrarPanel();
@@ -2711,5 +3008,6 @@ window.__bodega3d = {
     rack(i) { seleccionarRack(S.racks[i], true); },
     recorrer(b, p) { const info = S.porBodega.get(b || S.bodegaSel); if (info) iniciarRecorrido(info.pasillos[p || 0]); },
     ficha(id) { abrirFicha(id); },
+    contar(b, p) { const info = S.porBodega.get(b || S.bodegaSel); if (info) iniciarRecorrido(info.pasillos[p || 0], null, { conteo: true }); },
     camara: () => ({ pos: camera.position.toArray(), target: controls.target.toArray() })
 };
