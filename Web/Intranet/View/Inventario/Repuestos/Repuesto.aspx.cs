@@ -104,6 +104,12 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
     protected void CargarDatos()
     {
+        /* El catalogo va en cada render (tambien en los postbacks parciales):
+           el UpdatePanel reemplaza el bloque y el combo lo vuelve a leer. */
+        litFabCatalogo.Text = "<script type=\"application/json\" id=\"sgFabCatalogo\">" +
+                new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(new FabricanteController().Catalogo()).Replace("</", "<\\/") +
+                "</script>";
+
         if (IsPostBack) return;
 
         if (Id > 0)

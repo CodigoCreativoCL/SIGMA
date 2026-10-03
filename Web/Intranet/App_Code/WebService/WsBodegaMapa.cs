@@ -159,7 +159,10 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 .Select(o => new { id = o.orden_id, texto = o.correlativo + " · " + o.titulo })
                 .ToList();
 
-            return new { error = false, unidades, tipos, repuestos, movimientos = movs, ordenes };
+            // bloque 333: fabricantes y sus modelos, para el combo en cascada
+            var fabricantes = new FabricanteController().Catalogo();
+
+            return new { error = false, unidades, tipos, repuestos, movimientos = movs, ordenes, fabricantes };
         });
     }
 

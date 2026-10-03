@@ -818,3 +818,13 @@ html.bm3d-pagina body { overflow: hidden; }
     .bm3d-cine-barra.es-abajo span:nth-child(3) { display: none; }
     .bm3d-cine-titulo b { font-size: 42px; }
 }
+
+
+/* ---- Fabricante y modelo en cascada (bloque 333) ---- */
+.bm3d-fab-aviso {
+    grid-column: 1 / -1; margin-top: -4px; padding: 8px 10px; border-radius: 9px;
+    background: #E8FBFB; color: #17223B; font-size: 12px; line-height: 1.4;
+}
+.bm3d-fab-aviso i { color: #007F8A; }
+.bm3d-fab-aviso b { color: #17223B; }
+.bm3d-lote-ayuda { grid-column: 1 / -1; margin-top: 2px; }

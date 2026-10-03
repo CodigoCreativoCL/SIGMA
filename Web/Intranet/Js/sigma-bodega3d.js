@@ -2021,10 +2021,16 @@ async function formRepuesto(id, ctx, volver) {
         campo('Costo de referencia', inp('fRepCosto', r.costo, { paso: true, ph: 'CLP' })) +
         campo('Método de salida', sel('fRepMet', [['', 'Según la bodega'], ['FEFO', 'FEFO · vence antes, sale antes'], ['FIFO', 'FIFO · entró antes, sale antes'], ['LIFO', 'LIFO · entró último, sale antes']], fic ? (fic.metodo || '') : ''),
               { ancho: true, ayuda: 'Excepción para este repuesto. «Según la bodega» sigue el método de cada bodega.' }) +
-        campo('Fabricante', inp('fRepFab', r.fabricante)) +
+        campo('Fabricante', inp('fRepFab', r.fabricante, { ph: 'Elija o escriba uno nuevo' })) +
         campo('Modelo', inp('fRepMod', r.modelo)) +
+        '<div class="bm3d-fab-aviso" id="fRepFabAviso" hidden></div>' +
         campo('Descripción', '<textarea id="fRepDesc">' + esc(r.descripcion || '') + '</textarea>', { ancho: true }) +
         campo('Características', '<div class="bm3d-checks">' + chk('fRepCons', 'Consumible', r.consumible) + chk('fRepRepa', 'Reparable', r.reparable) + chk('fRepLote', 'Controla lote', r.lote) + (id ? chk('fRepHab', 'Habilitado', r.habilitado) : '') + '</div>', { ancho: true }) +
+        '<div class="bm3d-nota bm3d-lote-ayuda" id="fRepLoteAyuda"' + (r.lote ? '' : ' hidden') + '><i class="mdi mdi-barcode-scan"></i><div>' +
+            '<b>Con lote, cada ingreso pide el código del lote</b> (o se elige uno que ya existe) <b>y su vencimiento</b>. ' +
+            'Las salidas descuentan lote por lote: con FEFO sale primero el que vence antes, y el mapa marca las cajas por vencer. ' +
+            (id && !r.lote && ((S.datos && S.datos.saldos) || []).some((x) => x.id === id) ? 'El stock que ya tiene queda «sin lote»; los próximos ingresos llevan el suyo.' : '') +
+        '</div></div>' +
         '</div></div>' +
         '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>Vida útil</span></div><div class="bm3d-form" style="grid-template-columns:1fr 1fr 1fr">' +
         campo('Horas', inp('fRepVH', r.vidaHoras, { paso: true })) + campo('Días', inp('fRepVD', r.vidaDias, { paso: true })) + campo('Ciclos', inp('fRepVC', r.vidaCiclos, { paso: true })) +
@@ -2041,6 +2047,9 @@ async function formRepuesto(id, ctx, volver) {
         volver);
     activarChecks();
     $('fCancelar').onclick = () => (volver ? volver() : cerrarPanel());
+    // fabricante y modelo en cascada, sin duplicados (Js/sigma-fabricante.js)
+    if (window.SigmaFabricante) window.SigmaFabricante.enlazar($('fRepFab'), $('fRepMod'), cat.fabricantes || [], $('fRepFabAviso'));
+    $('fRepLote').addEventListener('change', () => { $('fRepLoteAyuda').hidden = !$('fRepLote').checked; });
 
     if (id) {
         $('fSubir').onclick = () => $('fArchivo').click();
@@ -2071,6 +2080,7 @@ async function formRepuesto(id, ctx, volver) {
         if (id) datos.habilitado = val('fRepHab');
         const res = await ws('GuardarRepuesto', { datos: JSON.stringify(datos) });
         const repId = res.id || id;
+        S.cat = null;   // el catalogo de fabricantes pudo crecer: se vuelve a pedir
         if (S.permisos.stock && (val('fUmMin') !== '' || val('fUmMax') !== '' || val('fUmPr') !== '')) {
             try { await ws('GuardarUmbral', { datos: JSON.stringify({ repuesto: repId, bodega, min: val('fUmMin'), max: val('fUmMax'), pr: val('fUmPr') }) }); }
             catch (er) { aviso('El repuesto se guardó, pero los umbrales no: ' + er.message, true); }

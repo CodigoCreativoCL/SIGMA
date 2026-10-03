@@ -5,7 +5,26 @@
     <%-- La galeria comparte hoja con los tipos de repuesto: son del mismo
          modulo y separarlas seria un archivo mas por dos bloques. --%>
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-repuesto-tipos.css?vrs=1") %>' rel="stylesheet" />
+    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-fabricante.js") %>?vrs=1"></script>
+    <style type="text/css">
+        .sg-fab-aviso { margin-top: 6px; padding: 8px 10px; border-radius: 9px; background: #E8FBFB; color: #17223B; font-size: 12px; }
+        .sg-fab-aviso i { color: #007F8A; }
+    </style>
     <script type="text/javascript">
+        /* Fabricante y modelo en cascada (bloque 333): el catalogo lo deja el
+           servidor en #sgFabCatalogo. Se engancha al cargar y despues de cada
+           postback parcial, porque el UpdatePanel reemplaza los campos. */
+        function sgEnlazarFabricante() {
+            var c = document.getElementById('sgFabCatalogo');
+            if (!c || !window.SigmaFabricante) return;
+            SigmaFabricante.enlazar(document.querySelector('input.sg-in-fabricante'), document.querySelector('input.sg-in-modelo'),
+                                    JSON.parse(c.textContent || '[]'), document.getElementById('sgFabAviso'));
+        }
+        window.addEventListener('load', function () {
+            sgEnlazarFabricante();
+            if (window.Sys && Sys.Application) Sys.Application.add_load(function (s, a) { if (a && a.get_isPartialLoad && a.get_isPartialLoad()) sgEnlazarFabricante(); });
+        });
+
         function getRadWindow() {
             var oWindow = null;
             if (window.radWindow) oWindow = window.radWindow;
@@ -125,16 +144,22 @@
                 <div class="sigma-modal-grid">
                     <div class="sigma-modal-field">
                         <label>Fabricante</label>
-                        <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="400" />
+                        <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="400" CssClass="sg-in-fabricante"
+                            placeholder="Elija o escriba uno nuevo" />
                     </div>
                     <div class="sigma-modal-field">
                         <label>Modelo o código del fabricante</label>
-                        <WebControls:TextBox2 ID="txtModelo" runat="server" MaxLength="400" />
+                        <WebControls:TextBox2 ID="txtModelo" runat="server" MaxLength="400" CssClass="sg-in-modelo" />
                     </div>
                     <div class="sigma-modal-field">
                         <label>Costo de referencia</label>
                         <WebControls:TextBox2 ID="txtCosto" runat="server" MaxLength="14" />
                         <span class="sigma-modal-ayuda">Referencial. El costo real sale de cada ingreso.</span>
+                    </div>
+                    <div class="sigma-modal-field is-grande">
+                        <div class="sg-fab-aviso" id="sgFabAviso" hidden></div>
+                        <span class="sigma-modal-ayuda">Se elige de la lista o se escribe uno nuevo: «fleetguard» o «FLEETGUARD» se guardan como «Fleetguard», sin duplicar. El modelo muestra solo los de ese fabricante.</span>
+                        <asp:Literal ID="litFabCatalogo" runat="server" />
                     </div>
                 </div>
             </div>
@@ -153,8 +178,10 @@
                             <asp:RadioButton ID="rdbLoteNo" runat="server" Text="NO" GroupName="Lote" Checked="true" />
                         </div>
                         <span class="sigma-modal-ayuda">
-                            Con SI, cada ingreso exige el número de lote. Se usa en lo que vence o hay
-                            que poder rastrear: aceites, filtros, sellos.
+                            Con SI, cada ingreso exige el <strong>código del lote</strong> (o elegir uno que ya
+                            existe) y pide su <strong>vencimiento</strong>. Las salidas descuentan lote por lote:
+                            con FEFO sale primero el que vence antes. Se usa en lo que vence o hay que poder
+                            rastrear: aceites, filtros, sellos. El stock que ya existe queda «sin lote».
                         </span>
                     </div>
                     <div class="sigma-modal-field">
