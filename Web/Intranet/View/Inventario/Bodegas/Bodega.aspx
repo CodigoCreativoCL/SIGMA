@@ -47,20 +47,59 @@
            siguiente numero libre del pasillo. Los datos los deja el servidor
            en #bodRacksDatos en cada render, asi que sirve tambien despues de
            un postback parcial. */
+        function bodCampo(c) { return document.querySelector('input.' + c); }
+
+        function bodElegir(p) {
+            var pas = bodCampo('bod-in-pasillo');
+            if (!pas) return;
+            pas.value = p;
+            bodPreview();
+        }
+
+        function bodSumar(d) {
+            var can = bodCampo('bod-in-cantidad');
+            if (!can) return;
+            var n = (parseInt(can.value, 10) || 0) + d;
+            can.value = Math.max(1, Math.min(30, n));
+            bodPreview();
+        }
+
         function bodPreview() {
             var datos = document.getElementById('bodRacksDatos'),
-                pas = document.querySelector('.bod-in-pasillo input, input.bod-in-pasillo'),
-                can = document.querySelector('.bod-in-cantidad input, input.bod-in-cantidad'),
-                out = document.getElementById('bodRacksPrevia');
+                pas = bodCampo('bod-in-pasillo'), can = bodCampo('bod-in-cantidad'),
+                out = document.getElementById('bodRacksPrevia'),
+                btn = document.querySelector('input.bod-btn-agregar');
             if (!datos || !pas || !can || !out) return;
-            var p = (pas.value || '').trim().toUpperCase(), n = parseInt(can.value, 10) || 1;
-            if (!/^[A-Z]{1,3}$/.test(p)) { out.innerHTML = 'El pasillo es de 1 a 3 letras (A, B, AB…).'; return; }
-            if (n < 1 || n > 30) { out.innerHTML = 'Se crean de 1 a 30 racks por vez.'; return; }
+            var p = (pas.value || '').trim().toUpperCase(), n = parseInt(can.value, 10) || 0;
+
+            // el boton del pasillo elegido queda marcado
+            var chips = document.querySelectorAll('#bodPasillos .bod-pas');
+            for (var i = 0; i < chips.length; i++)
+                chips[i].className = 'bod-pas' + (chips[i].getAttribute('data-pasillo') === p ? ' is-activo' : '') +
+                                     (chips[i].getAttribute('data-nuevo') ? ' es-nuevo' : '');
+
+            var ok = /^[A-Z]{1,3}$/.test(p) && n >= 1 && n <= 30;
+            if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '' : '.42'; btn.style.cursor = ok ? '' : 'not-allowed'; }
+            if (!/^[A-Z]{1,3}$/.test(p)) { out.innerHTML = '<span class="bod-falta">Elija un pasillo o escriba su letra.</span>'; if (btn) btn.value = 'Agregar racks'; return; }
+            if (n < 1 || n > 30) { out.innerHTML = '<span class="bod-falta">Se crean de 1 a 30 racks por vez.</span>'; if (btn) btn.value = 'Agregar racks'; return; }
+
             var max = JSON.parse(datos.getAttribute('data-max') || '{}'), desde = (max[p] || 0) + 1, hasta = desde + n - 1;
             var cod = function (k) { return datos.getAttribute('data-prefijo') + '-' + p + '-R' + (k < 10 ? '0' + k : k); };
-            out.innerHTML = (max[p] ? 'Sigue el pasillo ' + p + ': ' : 'Abre el pasillo ' + p + ': ') +
+            var nuevo = !max[p];
+            out.innerHTML = '<i class="mdi ' + (nuevo ? 'mdi-road-variant' : 'mdi-plus-box-multiple-outline') + '"></i>' +
+                (nuevo ? 'Se crea el <b>pasillo ' + p + '</b> con ' : 'Al <b>pasillo ' + p + '</b> (tiene ' + max[p] + ') se suman ') +
                 '<b>' + cod(desde) + '</b>' + (n > 1 ? ' a <b>' + cod(hasta) + '</b>' : '');
+            if (btn) btn.value = (nuevo ? 'Crear pasillo ' + p + ' con ' : 'Agregar ') + n + (n === 1 ? ' rack' : ' racks');
+            var nom = bodCampo('bod-in-nombre');
+            if (nom) nom.placeholder = 'Vacío: «Pasillo ' + p + ' · Rack ' + (desde < 10 ? '0' + desde : desde) + '»';
         }
+
+        // tambien despues de cada postback parcial del UpdatePanel
+        // (Sys todavia no existe al leer el head: se engancha al cargar la pagina)
+        window.addEventListener('load', function () {
+            bodPreview();
+            if (window.Sys && Sys.Application) Sys.Application.add_load(function () { bodPreview(); });
+        });
 
         function closeWindow() {
             var window = getRadWindow();
@@ -91,8 +130,50 @@
         .bod-chip.es-muted { background: #F4F6FA; color: #68738A; }
         .bod-dato { font-size: 12px; color: #68738A; }
         .bod-dato b { color: #17223B; }
-        .bod-previa { font-size: 12px; color: #4A556D; margin-top: 6px; }
+        .bod-alta {
+            display: grid; grid-template-columns: minmax(0, 1.6fr) auto minmax(0, 1fr); gap: 14px 18px;
+            border: 1px solid #E2E7F0; border-radius: 14px; padding: 16px; margin: 4px 0 16px; background: #fff;
+        }
+        .bod-paso { display: flex; gap: 10px; min-width: 0; }
+        .bod-paso-n {
+            flex: 0 0 24px; height: 24px; border-radius: 50%; background: #F2EFFF; color: #6732F4;
+            font-size: 12px; font-weight: 800; display: flex; align-items: center; justify-content: center;
+        }
+        .bod-paso-cuerpo { flex: 1; min-width: 0; }
+        .bod-paso-cuerpo > label { display: block; font-size: 11px; font-weight: 800; color: #4A556D; margin: 3px 0 8px; }
+        .bod-pasillos { display: flex; flex-wrap: wrap; gap: 6px; }
+        .bod-pas {
+            display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px;
+            border: 1px solid #CFD6E3; border-radius: 9px; background: #fff; color: #17223B;
+            font-size: 13px; font-weight: 700; cursor: pointer;
+        }
+        .bod-pas small { font-size: 11px; font-weight: 600; color: #68738A; }
+        .bod-pas:hover { border-color: #087BEA; background: #EAF4FF; }
+        .bod-pas.es-nuevo { border-style: dashed; color: #007F8A; }
+        .bod-pas.is-activo { border-color: #6732F4; background: #F2EFFF; color: #6732F4; box-shadow: 0 0 0 3px rgba(103,50,244,.12); }
+        .bod-pas.is-activo small { color: #6732F4; }
+        .bod-pas:focus-visible { outline: 3px solid rgba(22,198,201,.27); border-color: #007F8A; }
+        .bod-otra { margin-top: 8px; font-size: 12px; color: #68738A; display: flex; align-items: center; gap: 8px; }
+        .bod-alta input.bod-in-pasillo { width: 64px; height: 34px; text-align: center; text-transform: uppercase; font-weight: 800; }
+        .bod-alta input[type="text"] { border: 1px solid #CFD6E3; border-radius: 9px; padding: 0 10px; height: 38px; font-size: 13px; color: #17223B; }
+        .bod-alta input[type="text"]:focus { outline: 3px solid rgba(22,198,201,.27); border-color: #007F8A; }
+        .bod-alta input.bod-in-nombre { width: 100%; }
+        .bod-contador { display: inline-flex; align-items: center; border: 1px solid #CFD6E3; border-radius: 9px; overflow: hidden; }
+        .bod-contador button { width: 36px; height: 38px; border: 0; background: #F4F6FA; color: #4A556D; font-size: 16px; cursor: pointer; }
+        .bod-contador button:hover { background: #F2EFFF; color: #6732F4; }
+        .bod-alta .bod-contador input.bod-in-cantidad { width: 52px; border: 0; border-radius: 0; text-align: center; font-weight: 800; outline: 0; }
+        .bod-confirmar {
+            grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 14px;
+            padding-top: 12px; border-top: 1px solid #E2E7F0;
+        }
+        .bod-previa { font-size: 13px; color: #4A556D; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+        .bod-previa i { font-size: 18px; color: #16C6C9; }
         .bod-previa b { color: #6732F4; }
+        .bod-falta { color: #68738A; }
+        @media (max-width: 760px) {
+            .bod-alta { grid-template-columns: 1fr; }
+            .bod-confirmar { flex-direction: column; align-items: stretch; }
+        }
         .bod-mapa {
             display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px;
             border: 1px solid #087BEA; border-radius: 10px; color: #087BEA; background: #fff;
@@ -224,29 +305,48 @@
                 </div>
 
                 <asp:Literal ID="litRacksDatos" runat="server" />
-                <asp:Panel ID="pnlAltaRacks" runat="server" CssClass="sigma-modal-grid">
-                    <div class="sigma-modal-field is-mini">
-                        <label>Pasillo</label>
-                        <WebControls:TextBox2 ID="txtPasillo" runat="server" MaxLength="3" UpperCase="true"
-                            CssClass="bod-in-pasillo" onkeyup="bodPreview()" onchange="bodPreview()" />
+                <%-- Alta de racks en tres pasos visibles: elegir el pasillo (los que
+                     hay, o uno nuevo), cuantos racks, y el boton dice exactamente
+                     que va a crear. Los campos son TextBox y no TextBox2: el
+                     UpperCase de TextBox2 pisa el onkeyup y la vista previa no
+                     se enteraba de lo que se escribia. --%>
+                <asp:Panel ID="pnlAltaRacks" runat="server" CssClass="bod-alta">
+                    <div class="bod-paso">
+                        <span class="bod-paso-n">1</span>
+                        <div class="bod-paso-cuerpo">
+                            <label>Elija el pasillo</label>
+                            <div class="bod-pasillos" id="bodPasillos"><asp:Literal ID="litPasillos" runat="server" /></div>
+                            <div class="bod-otra">
+                                o escriba la letra:
+                                <asp:TextBox ID="txtPasillo" runat="server" MaxLength="3" CssClass="bod-in-pasillo"
+                                    oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');bodPreview()" autocomplete="off" />
+                            </div>
+                        </div>
                     </div>
-                    <div class="sigma-modal-field is-mini">
-                        <label>Racks</label>
-                        <WebControls:TextBox2 ID="txtCantidad" runat="server" MaxLength="2" Text="1"
-                            CssClass="bod-in-cantidad" onkeyup="bodPreview()" onchange="bodPreview()" />
+                    <div class="bod-paso">
+                        <span class="bod-paso-n">2</span>
+                        <div class="bod-paso-cuerpo">
+                            <label>¿Cuántos racks?</label>
+                            <div class="bod-contador">
+                                <button type="button" onclick="bodSumar(-1)" title="Uno menos"><i class="mdi mdi-minus"></i></button>
+                                <asp:TextBox ID="txtCantidad" runat="server" MaxLength="2" Text="1" CssClass="bod-in-cantidad"
+                                    oninput="this.value=this.value.replace(/\D/g,'');bodPreview()" autocomplete="off" />
+                                <button type="button" onclick="bodSumar(1)" title="Uno más"><i class="mdi mdi-plus"></i></button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="sigma-modal-field is-medio">
-                        <label>Nombre (opcional)</label>
-                        <WebControls:TextBox2 ID="txtUbiNombre" runat="server" MaxLength="400" />
+                    <div class="bod-paso">
+                        <span class="bod-paso-n">3</span>
+                        <div class="bod-paso-cuerpo">
+                            <label>Nombre <span style="font-weight:600;color:#68738A">(opcional)</span></label>
+                            <asp:TextBox ID="txtUbiNombre" runat="server" MaxLength="400" CssClass="bod-in-nombre"
+                                placeholder="Vacío: «Pasillo C · Rack 06»" autocomplete="off" />
+                        </div>
                     </div>
-                    <div class="sigma-modal-field is-chico">
-                        <label>&nbsp;</label>
-                        <WebControls:PushButton ID="btnAgregarUbicacion" runat="server"
-                            Text="Agregar racks" OnClick="btnAgregarUbicacion_Click" />
-                    </div>
-                    <div class="sigma-modal-field is-grande" style="margin-top:-6px">
+                    <div class="bod-confirmar">
                         <div class="bod-previa" id="bodRacksPrevia"></div>
-                        <span class="sigma-modal-ayuda">Vacío, el nombre es «Pasillo A · Rack 04». Varios racks numeran el nombre que escriba.</span>
+                        <WebControls:PushButton ID="btnAgregarUbicacion" runat="server" CssClass="Button bod-btn-agregar"
+                            Text="Agregar racks" OnClick="btnAgregarUbicacion_Click" />
                     </div>
                 </asp:Panel>
 

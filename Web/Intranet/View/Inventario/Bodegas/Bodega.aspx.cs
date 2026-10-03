@@ -153,8 +153,19 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         litRacksDatos.Text = "<span id=\"bodRacksDatos\" hidden data-prefijo=\"" + Server.HtmlEncode(prefijo) + "\" data-max=\"" +
             Server.HtmlEncode("{" + string.Join(",", max.Select(kv => "\"" + kv.Key + "\":" + kv.Value)) + "}") + "\"></span>" +
             "<script>setTimeout(bodPreview, 0);</script>";
+        /* Un boton por pasillo que ya existe y uno para abrir el siguiente:
+           elegir con un clic en vez de adivinar que letra escribir. */
+        string siguiente = SiguientePasillo(max.Keys);
+        System.Text.StringBuilder chips = new System.Text.StringBuilder();
+        foreach (string k in max.Keys.OrderBy(x => x.Length).ThenBy(x => x))
+            chips.Append("<button type=\"button\" class=\"bod-pas\" data-pasillo=\"").Append(k).Append("\" onclick=\"bodElegir('")
+                 .Append(k).Append("')\"><i class=\"mdi mdi-road-variant\"></i>").Append(k).Append(" <small>").Append(max[k])
+                 .Append(max[k] == 1 ? " rack" : " racks").Append("</small></button>");
+        chips.Append("<button type=\"button\" class=\"bod-pas es-nuevo\" data-nuevo=\"1\" data-pasillo=\"").Append(siguiente)
+             .Append("\" onclick=\"bodElegir('").Append(siguiente).Append("')\"><i class=\"mdi mdi-plus\"></i>Nuevo pasillo ").Append(siguiente).Append("</button>");
+        litPasillos.Text = chips.ToString();
         if (!IsPostBack && string.IsNullOrEmpty(txtPasillo.Text))
-            txtPasillo.Text = max.Count > 0 ? max.Keys.OrderBy(k => k).Last() : "A";
+            txtPasillo.Text = max.Count > 0 ? max.Keys.OrderBy(k => k.Length).ThenBy(k => k).Last() : "A";
 
         // resumen de la pestaña Datos
         DataTable res = alm.Resumen(Id);
@@ -179,6 +190,15 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
     {
         Bodega b = new BodegaController().GetBodega(Id);
         return b != null ? b.bod_codigo : "";
+    }
+
+    /// <summary>La letra que sigue a la ultima de una sola letra (C -> D); sin pasillos, A.</summary>
+    private static string SiguientePasillo(IEnumerable<string> pasillos)
+    {
+        List<string> una = pasillos.Where(x => x.Length == 1).OrderBy(x => x).ToList();
+        if (una.Count == 0) return "A";
+        char c = una.Last()[0];
+        return c < 'Z' ? ((char)(c + 1)).ToString() : "AA";
     }
 
     private static Dictionary<string, int> MaximosPorPasillo(IEnumerable<string> codigos)
