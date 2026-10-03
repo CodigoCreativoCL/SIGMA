@@ -10,7 +10,8 @@
     <meta name="theme-color" content="#0B0F1A" />
 
     <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="Css/Inicio/sigma-inicio.css?vrs=6" rel="stylesheet" />
+    <link href="Css/Inicio/sigma-inicio.css?vrs=8" rel="stylesheet" />
+    <script>document.documentElement.className += ' sg-anim';</script>
 </head>
 <body>
     <div class="sg-home">
@@ -515,6 +516,50 @@
                     history.replaceState(null, '', '#' + name);
                 }
                 window.scrollTo(0, 0);
+                revealIn(name);
+                if (name === 'quienes') countStats();
+            }
+
+            var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            var revSel = '.sg-features-head,.sg-card,.sg-section-head,.sg-plan,.sg-comp,.sg-about>div,.sg-about-card,.sg-lead,.sg-pricing-note';
+            [].forEach.call(document.querySelectorAll(revSel), function (el) { el.classList.add('reveal'); });
+
+            function revealIn(name) {
+                if (reduce) return;
+                var panel = null;
+                for (var i = 0; i < panels.length; i++) {
+                    if (panels[i].getAttribute('data-panel') === name) { panel = panels[i]; break; }
+                }
+                if (!panel) return;
+                var els = panel.querySelectorAll('.reveal');
+                for (var k = 0; k < els.length; k++) {
+                    var el = els[k];
+                    el.classList.remove('is-in');
+                    void el.offsetWidth;
+                    el.style.animationDelay = (k * 70) + 'ms';
+                    el.classList.add('is-in');
+                }
+            }
+
+            function countStats() {
+                var ns = document.querySelectorAll('[data-panel="quienes"] .sg-stat .n');
+                [].forEach.call(ns, function (n) {
+                    var txt = n.getAttribute('data-val') || n.textContent;
+                    n.setAttribute('data-val', txt);
+                    var m = txt.match(/^(\D*)(\d+)(\D*)$/);
+                    if (!m) return;
+                    if (reduce) { n.textContent = txt; return; }
+                    var pre = m[1], num = parseInt(m[2], 10), post = m[3];
+                    var steps = Math.max(1, Math.min(num, 24)), i = 0;
+                    if (n._iv) clearInterval(n._iv);
+                    n.textContent = pre + '0' + post;
+                    n._iv = setInterval(function () {
+                        i++;
+                        n.textContent = pre + Math.round(num * i / steps) + post;
+                        if (i >= steps) { clearInterval(n._iv); n._iv = null; n.textContent = txt; }
+                    }, 45);
+                });
             }
 
             for (var k = 0; k < tabs.length; k++) {

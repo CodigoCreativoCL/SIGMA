@@ -496,6 +496,45 @@ a { text-decoration: none; }
 .sg-contact-btn:hover { background: var(--sg-purple); border-color: var(--sg-purple); color: #fff; transform: translateY(-1px); }
 .sg-contact-btn svg { width: 15px; height: 15px; }
 
+/* ---------- Animaciones ---------- */
+@keyframes sgFadeUp { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }
+@keyframes sgGrad { to { background-position: 200% center; } }
+@keyframes sgFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(22px); } }
+@keyframes sgFloat2 { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-26px); } }
+
+/* Revelado al entrar / cambiar de pestaña */
+.sg-anim .reveal { opacity: 0; }
+.sg-anim .reveal.is-in { animation: sgFadeUp 600ms cubic-bezier(.2, .7, .2, 1) forwards; }
+
+/* Entrada escalonada del hero */
+.sg-anim .sg-hero-inner > * { opacity: 0; animation: sgFadeUp 700ms cubic-bezier(.2, .7, .2, 1) forwards; }
+.sg-anim .sg-hero-inner > *:nth-child(1) { animation-delay: 80ms; }
+.sg-anim .sg-hero-inner > *:nth-child(2) { animation-delay: 180ms; }
+.sg-anim .sg-hero-inner > *:nth-child(3) { animation-delay: 300ms; }
+.sg-anim .sg-hero-inner > *:nth-child(4) { animation-delay: 420ms; }
+.sg-anim .sg-hero-inner > *:nth-child(5) { animation-delay: 540ms; }
+
+/* Gradientes en movimiento */
+.sg-hero h1 .grad, .sg-stat .n { background-size: 220% auto; animation: sgGrad 6s linear infinite; }
+.sg-hero::before, .sg-lead::before, .sg-about-card::before { background-size: 220% auto; animation: sgGrad 5s linear infinite; }
+
+/* Glows que flotan */
+.sg-hero-glow { animation: sgFloat 9s ease-in-out infinite; }
+.sg-hero-glow.is-teal { animation: sgFloat2 11s ease-in-out infinite; }
+
+/* Micro-interacciones */
+.sg-plan { transition: transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease; }
+.sg-plan:hover { transform: translateY(-5px); box-shadow: var(--sg-shadow); }
+.sg-btn svg, .sg-topbar-cta svg { transition: transform 160ms ease; }
+.sg-btn-primary:hover svg, .sg-topbar-cta:hover svg { transform: translateX(3px); }
+
+@media (prefers-reduced-motion: reduce) {
+    .sg-anim .reveal, .sg-anim .sg-hero-inner > * { opacity: 1 !important; animation: none !important; }
+    .sg-hero h1 .grad, .sg-stat .n, .sg-hero::before, .sg-lead::before,
+    .sg-about-card::before, .sg-hero-glow, .sg-hero-glow.is-teal { animation: none !important; }
+    .sg-plan:hover { transform: none; }
+}
+
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
     .sg-about { grid-template-columns: 1fr; gap: 32px; }
