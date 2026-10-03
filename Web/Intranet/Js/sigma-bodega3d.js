@@ -82,13 +82,17 @@ const S = {
     etiquetasVivas: new Map(), vigasHD: new Set(), imagenes: new Map(),
     basura: [], basuraEdicion: [], cat: null, conteos: new Map(),
     posiciones: new Map(), plano: { racks: new Map(), zonas: [] }, version: null,
-    modo: 'normal', consumo: null, compat: null, historial: null, moverRack: null, dibujo: null
+    modo: 'normal', consumo: null, compat: null, historial: null, moverRack: null, dibujo: null,
+    cajaAbierta: null, maqueta: false, detalleId: 0
 };
 
 // ================================================================== motor
 let renderer;
 try {
-    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+    /* logarithmicDepthBuffer: las marcas del piso (lineas, letras, zonas) van a
+       milimetros del piso; con el buffer lineal, de lejos no alcanzaba la
+       precision y titilaban al mover la camara. */
+    renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
 } catch (e) {
     document.getElementById('bm3dEstado').innerHTML = '<p>Este navegador no puede dibujar 3D (WebGL no está disponible).</p>';
     throw e;
@@ -123,9 +127,12 @@ controls.screenSpacePanning = true;
 scene.add(new THREE.HemisphereLight('#DCE6FF', '#1A2133', 0.6));
 const sol = new THREE.DirectionalLight('#FFFFFF', 1.9);
 sol.castShadow = true;
-sol.shadow.mapSize.set(2048, 2048);
-sol.shadow.bias = -0.0004;
-sol.shadow.normalBias = 0.02;
+// sombra mas fina donde la tarjeta lo permite; bias y normalBias sin acne ni rayas en el piso
+const LADO_SOMBRA = renderer.capabilities.maxTextureSize >= 8192 ? 4096 : 2048;
+sol.shadow.mapSize.set(LADO_SOMBRA, LADO_SOMBRA);
+sol.shadow.bias = -0.00025;
+sol.shadow.normalBias = 0.035;
+sol.shadow.radius = 2.5;
 scene.add(sol, sol.target);
 
 /* Luz de mano del recorrido: sigue a la camara para que el pasillo no quede
@@ -208,10 +215,11 @@ const MAT = {
     malla: new THREE.MeshStandardMaterial({ color: '#AEB7C6', metalness: 0.8, roughness: 0.35, alphaMap: T.malla, alphaTest: 0.4, side: THREE.DoubleSide }),
     placa: new THREE.MeshStandardMaterial({ color: '#111827', metalness: 0.4, roughness: 0.6 }),
     carton: new THREE.MeshStandardMaterial({ map: T.carton, roughness: 0.92, metalness: 0 }),
-    piso: new THREE.MeshStandardMaterial({ map: T.piso, roughness: 0.32, metalness: 0.18 }),
+    // menos brillo: con el reflejo del ambiente el piso se veia casi blanco en angulo bajo
+    piso: new THREE.MeshStandardMaterial({ map: T.piso, roughness: 0.62, metalness: 0.04, envMapIntensity: 0.5 }),
     muro: new THREE.MeshStandardMaterial({ color: '#8C96A8', roughness: 0.85, metalness: 0.05 }),
     columna: new THREE.MeshStandardMaterial({ color: '#2B3448', roughness: 0.5, metalness: 0.6 }),
-    amarillo: new THREE.MeshBasicMaterial({ color: '#F2C230', toneMapped: false }),
+    amarillo: new THREE.MeshBasicMaterial({ color: '#F2C230', toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 }),
     cable: new THREE.MeshBasicMaterial({ color: '#59627A' }),
     pallet: new THREE.MeshStandardMaterial({ color: '#9C7448', roughness: 0.9 }),
     contorno: new THREE.LineBasicMaterial({ color: '#16C6C9', toneMapped: false, transparent: true, depthTest: false, depthWrite: false }),
@@ -512,7 +520,8 @@ function placaTexto(lineas, ancho, alto, fondo, o) {
     return t;
 }
 function planoTexto(t, w, h, transparente) {
-    const mat = new THREE.MeshBasicMaterial({ map: t, toneMapped: false, transparent: !!transparente, depthWrite: !transparente });
+    const mat = new THREE.MeshBasicMaterial({ map: t, toneMapped: false, transparent: !!transparente, depthWrite: !transparente,
+                                             polygonOffset: !!transparente, polygonOffsetFactor: -1, polygonOffsetUnits: -4 });
     const geo = new THREE.PlaneGeometry(w, h);
     S.basura.push(mat, geo);
     return new THREE.Mesh(geo, mat);
@@ -605,7 +614,7 @@ function liberar() {
     S.vigasHD.clear();
     while (mundo.children.length) mundo.remove(mundo.children[0]);
     limpiarEdicion();
-    S.cajas = []; S.racks = []; S.pisos = []; S.porBodega.clear(); S.hover = null; S.sel = null;
+    S.cajas = []; S.racks = []; S.pisos = []; S.porBodega.clear(); S.hover = null; S.sel = null; S.cajaAbierta = null;
 }
 
 function construir(datos) {
@@ -644,7 +653,17 @@ function construir(datos) {
     });
 
     let x = 0;
-    for (const pl of planos) { construirBodega(pl, x, porUbic, sinUbic.get(pl.b.id) || []); x += pl.ancho + ENTRE_BODEGAS; }
+    /* MAQUETA: con muchas bodegas o mucho stock, solo la elegida se dibuja con
+       todo su detalle (cajas, etiquetas, QR). Las demas quedan como maqueta
+       liviana -racks y cajas de color en una sola llamada de dibujo- y se
+       recorren igual; al elegir una, pasa a detalle sin mover la camara. */
+    S.maqueta = !!S.forzarMaqueta || bodegas.length > 3 || saldos.length > 1500;
+    if (!bodegas.some((b) => b.id === S.detalleId)) S.detalleId = bodegas.some((b) => b.id === S.bodegaSel) ? S.bodegaSel : ((bodegas[0] || {}).id || 0);
+    for (const pl of planos) {
+        const detalle = !S.maqueta || pl.b.id === S.detalleId;
+        construirBodega(pl, x, porUbic, sinUbic.get(pl.b.id) || [], detalle);
+        x += pl.ancho + ENTRE_BODEGAS;
+    }
 
     const n = S.racks.length;
     S.instRack = [];
@@ -666,7 +685,7 @@ function construir(datos) {
     if (S.edicion) armarEdicion();
 }
 
-function construirBodega(pl, ox, porUbic, recepcion) {
+function construirBodega(pl, ox, porUbic, recepcion, detalle) {
     const b = pl.b, g = new THREE.Group();
     g.position.set(ox, 0, 0);
     mundo.add(g);
@@ -719,6 +738,7 @@ function construirBodega(pl, ox, porUbic, recepcion) {
 
     const zIni = MARGEN + (pl.hayRecepcion ? ZONA_RECEPCION : 0);
     const info = { id: b.id, bodega: b, grupo: g, ox, racks: [], cajas: [], pasillos: [], zIni, ancho: W, largo: L };
+    const maqueta = [];
 
     for (const pa of pl.lista) {
         const xc = MARGEN + pa.x + BLOQUE / 2;
@@ -753,14 +773,18 @@ function construirBodega(pl, ox, porUbic, recepcion) {
                 items: porUbic.get(u.id) || [], cajas: [], cols: 3, indice: S.racks.length, vigas: []
             };
             S.racks.push(rack); info.racks.push(rack); infoPa.racks.push(rack);
-            poblarRack(rack, info);
-            marcarSobrecarga(rack);
-            letreroRack(rack);
-            etiquetasFierro(rack);
+            if (detalle) {
+                poblarRack(rack, info);
+                marcarSobrecarga(rack);
+                letreroRack(rack);
+                etiquetasFierro(rack);
+            } else maquetaRack(rack, maqueta);
         });
     }
 
-    if (recepcion.length) poblarRecepcion(g, info, recepcion, W, zIni);
+    if (recepcion.length && detalle) poblarRecepcion(g, info, recepcion, W, zIni);
+    info.maqueta = !detalle;
+    if (maqueta.length) dibujarMaqueta(maqueta);
 
     if (!pl.lista.length) {
         const av = placaTexto([{ texto: 'SIN UBICACIONES · ACTIVE EL MODO EDICIÓN PARA CREAR RACKS', color: 'rgba(255,255,255,.55)', fuente: `800 46px ${FUENTE}`, y: 64 }], 1600, 128, 'rgba(0,0,0,0)', { radio: 1 });
@@ -1088,7 +1112,7 @@ function armarEdicion() {
 let ultimoLod = 0;
 const _v = new THREE.Vector3(), _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
 function actualizarEtiquetas(ahora) {
-    if (ahora - ultimoLod < 220) return;
+    if (ahora - ultimoLod < 140) return;
     ultimoLod = ahora;
     _pm.multiplyMatrices(camera.projectionMatrix, camera.matrixWorldInverse);
     _frustum.setFromProjectionMatrix(_pm);
@@ -1110,8 +1134,13 @@ function actualizarEtiquetas(ahora) {
             S.etiquetasVivas.delete(mesh);
         }
     }
+    /* De a poco: crear de golpe decenas de etiquetas con QR (y subirlas a la
+       tarjeta) daba tirones justo mientras se movia la camara. Las mas cercanas
+       primero; el resto en las vueltas siguientes. */
+    let presupuesto = 14;
     for (const mesh of quiero) {
         if (S.etiquetasVivas.has(mesh)) continue;
+        if (presupuesto-- <= 0) break;
         const c = canvas(512, Math.round(512 / RATIO_ETQ));
         dibujarEtiquetaCaja(mesh.userData.item, c);
         const t = tex(c);
@@ -1123,8 +1152,10 @@ function actualizarEtiquetas(ahora) {
     const racks = S.racks.map((r) => [r.pos.distanceTo(camera.position), r]).filter((x) => x[0] < DIST_VIGA_HD)
         .sort((a, b) => a[0] - b[0]).slice(0, TOPE_VIGAS_HD).map((x) => x[1]);
     const hd = new Set(racks);
-    for (const r of [...S.vigasHD]) if (!hd.has(r)) vigaHD(r, false);
-    for (const r of racks) vigaHD(r, true);
+    // una viga por vuelta: regenerar cuatro racks de golpe se notaba como un salto
+    let cambios = 1;
+    for (const r of [...S.vigasHD]) if (!hd.has(r) && cambios-- > 0) vigaHD(r, false);
+    for (const r of racks) if (!S.vigasHD.has(r) && cambios-- > 0) vigaHD(r, true);
 }
 
 // =================================================================== filtros
@@ -1135,7 +1166,7 @@ function aplicarFiltros() {
         let mat = pasa ? c.userData.matNormal : c.userData.matTenue;
         if (S.modoAlertas && pasa) { const e = estadoDe(it); mat = e === 'bajo' ? MAT_ALERTA.bajo : e === 'sobre' ? MAT_ALERTA.sobre : c.userData.matTenue; }
         else if (pasa && S.modo && S.modo !== 'normal') mat = matModo(c) || c.userData.matTenue;
-        c.material = mat;
+        c.material = c.userData.abierta ? MAT_OCULTA : mat;
         const tenue = mat === c.userData.matTenue;
         c.userData.atenuada = tenue;
         c.castShadow = !tenue;
@@ -1224,8 +1255,11 @@ function marcarVista(v) { document.querySelectorAll('[data-vista]').forEach((b) 
 
 function enfocarCaja(c) {
     const p = c.userData.base.clone(), u = c.userData, lado = Math.max(u.w, u.h);
-    const pos = p.clone().addScaledVector(u.normal, 1.5 + lado * 2.6); pos.y += 0.3 + lado * 0.5;
-    volar(pos, p, 1000); marcarVista('');
+    // plano de cine: desde arriba y adelante, a unos 45 grados, mirando dentro de la caja
+    const afuera = p.clone().addScaledVector(u.normal, u.sacar || 0.72);
+    const pos = afuera.clone().addScaledVector(u.normal, 0.8 + lado * 1.5); pos.y += 0.85 + lado * 1.1;
+    const mira = afuera.clone(); mira.y += u.h * 0.3;
+    volar(pos, mira, 1300); marcarVista('');
 }
 function enfocarRack(r) {
     const c = r.pos.clone(); c.y = 1.5;
@@ -1313,6 +1347,10 @@ renderer.domElement.addEventListener('pointermove', (ev) => {
         mostrarTip(ev, (it.foto ? '<img src="' + esc(it.foto) + '" alt="" />' : '') + '<div><b>' + esc(it.c) + '</b>' + esc(it.n) + '<br><span>' + num(it.q) + ' ' + esc(it.un) + ' · ' + esc(ubicTexto(h.caja, true)) + '</span></div>');
     } else if (h && h.rack) {
         mostrarTip(ev, '<div><b>' + esc(h.rack.codigo) + '</b><span>' + (S.pick ? 'Clic para elegir este rack' : h.rack.items.length + ' repuesto(s) · clic para ver el rack') + '</span></div>');
+    } else if (h && h.piso && S.porBodega.get(h.piso) && S.porBodega.get(h.piso).maqueta) {
+        const b = S.porBodega.get(h.piso).bodega;
+        mostrarTip(ev, '<div><b>' + esc(b.nombre) + '</b><span>Clic para entrar y ver el detalle</span></div>');
+        renderer.domElement.style.cursor = 'pointer';
     } else tip.hidden = true;
 });
 renderer.domElement.addEventListener('pointerleave', () => { tip.hidden = true; });
@@ -1343,6 +1381,7 @@ renderer.domElement.addEventListener('pointerup', (ev) => {
 });
 
 function soltarSeleccion() {
+    if (S.cajaAbierta && S.cajaAbierta.c === S.sel) cerrarCaja();
     if (S.sel && S.sel.isMesh) { S.sel.userData.sacar = 0; S.sel.scale.set(1, 1, 1); }
     S.sel = null;
 }
@@ -1350,14 +1389,21 @@ function seleccionarCaja(c, volarA) {
     soltarSeleccion();
     if (c.userData.rack && c.userData.rack.bodega.id !== S.bodegaSel) elegirBodega(c.userData.rack.bodega.id, true);
     S.sel = c;
-    c.userData.sacar = c.userData.fila === 1 ? 0.5 : 0.24;   // se asoma del rack, como al tomarla
+    // sale del rack hasta el pasillo: fuera de la viga de arriba, para abrirla y mirar adentro
+    c.userData.sacar = c.userData.fila === 1 ? 1.0 : 0.72;
     marcarContorno(c, false);
+    abrirCaja(c);
     if (volarA) enfocarCaja(c);
     panelItem(c);
 }
 function seleccionarRack(r, volarA) {
     soltarSeleccion();
-    if (r.bodega.id !== S.bodegaSel) elegirBodega(r.bodega.id, true);
+    if (r.bodega.id !== S.bodegaSel) {
+        // si la bodega estaba en maqueta se reconstruye: se busca el rack nuevo
+        const id = r.id, rec = r.recepcion, bid = r.bodega.id;
+        elegirBodega(bid, true);
+        r = rec ? (S.porBodega.get(bid).recepcion || r) : (S.racks.find((x) => x.id === id) || r);
+    }
     marcarContorno(r.recepcion ? null : r, true);
     S.sel = r;
     if (volarA) enfocarRack(r);
@@ -1608,12 +1654,14 @@ async function abrirFicha(repId) {
     if (f.qr) S.qr['REP-' + repId] = f.qr;
     const r = f.repuesto;
     const cajas = S.cajas.filter((c) => c.userData.item.id === repId);
-    const it0 = cajas.length ? cajas[0].userData.item : null;
+    // lo que esta en bodegas en maqueta no tiene caja dibujada: se lista desde el saldo
+    const otros = (S.datos.saldos || []).filter((x) => x.id === repId && S.porBodega.get(x.b) && S.porBodega.get(x.b).maqueta);
+    const it0 = cajas.length ? cajas[0].userData.item : (otros[0] || null);
     const tipo = cat.tipos.find((t) => t.id === r.tipo);
     const uni = cat.unidades.find((u) => u.id === r.unidad);
     const fam = infoFamilia(it0 ? it0.fam : familiaDe(tipo && tipo.codigo));
     const fotos = f.fotos || [];
-    const total = cajas.reduce((s, c) => s + c.userData.item.q, 0);
+    const total = cajas.reduce((s, c) => s + c.userData.item.q, 0) + otros.reduce((s, x) => s + x.q, 0);
     const reserv = cajas.reduce((s, c) => s + (c.userData.item.res || 0), 0);
     const bajos = cajas.filter((c) => estadoDe(c.userData.item) === 'bajo').length;
     const nomBod = (id) => ((S.datos.bodegas || []).find((b) => b.id === id) || { nombre: 'Bodega ' + id }).nombre;
@@ -1643,8 +1691,9 @@ async function abrirFicha(repId) {
             '<div class="bm3d-fic-der">' +
                 '<div class="bm3d-stock"><div><b>' + num(total) + '</b><span>En la planta' + (uni ? ' · ' + esc(uni.simbolo || uni.nombre) : '') + '</span></div><div><b>' + num(Math.max(0, total - reserv)) + '</b><span>Disponible</span></div><div><b>' + cajas.length + '</b><span>Ubicaciones</span></div></div>' +
                 (bajos ? '<div class="bm3d-nota es-alerta" style="margin-bottom:12px"><i class="mdi mdi-alert-outline"></i>' + bajos + (bajos === 1 ? ' ubicación' : ' ubicaciones') + ' bajo el mínimo de su bodega.</div>' : '') +
-                '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>Dónde está</span><span>' + cajas.length + '</span></div>' +
-                (cajas.length ? cajas.map((c, i) => {
+                '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>Dónde está</span><span>' + (cajas.length + otros.length) + '</span></div>' +
+                otros.map((x, i) => '<div class="bm3d-item" data-fic-saldo="' + i + '"><span class="bm3d-mini"><i class="mdi mdi-warehouse" style="color:#087BEA"></i></span><div><b>' + esc(ubicSaldo(x)) + '</b><span>Abre esa bodega en el mapa</span></div><em>' + num(x.q) + '<small>' + esc(x.un) + '</small></em></div>').join('') +
+                (cajas.length || otros.length ? cajas.map((c, i) => {
                     const x = c.userData.item, e = estadoDe(x);
                     return '<div class="bm3d-item' + (e === 'bajo' ? ' es-bajo' : '') + '" data-fic-caja="' + i + '"><span class="bm3d-mini"><i class="mdi ' + (c.userData.rack.recepcion ? 'mdi-truck-delivery-outline' : 'mdi-view-grid-outline') + '" style="color:#087BEA"></i></span>' +
                         '<div><b>' + esc(ubicTexto(c, true)) + '</b><span>' + esc(nomBod(x.b)) + (x.lot ? ' · ' + x.lot + ' lote' + (x.lot === 1 ? '' : 's') : '') + '</span></div>' +
@@ -1683,6 +1732,7 @@ async function abrirFicha(repId) {
         fp.querySelector('img').src = fotos[i].url; fp.dataset.i = i;
         ficha.querySelectorAll('[data-fic-foto]').forEach((x) => x.classList.toggle('is-portada', x === el));
     });
+    ficha.querySelectorAll('[data-fic-saldo]').forEach((el) => el.onclick = () => { cerrarFicha(); if (S.tour) salirRecorrido(); irASaldo(otros[+el.dataset.ficSaldo]); });
     ficha.querySelectorAll('[data-fic-caja]').forEach((el) => el.onclick = () => {
         const c = cajas[+el.dataset.ficCaja];
         cerrarFicha();
@@ -2077,6 +2127,13 @@ const VEL = [0.5, 1, 2];
 
 function iniciarRecorrido(pa, desdeRack, opciones) {
     if (!pa || !pa.racks.length) return;
+    if (S.maqueta && pa.info.id !== S.detalleId && !S.tour) {
+        const nom = pa.nom, bid = pa.info.id, rid = desdeRack && desdeRack.id;
+        elegirBodega(bid, true);
+        pa = S.porBodega.get(bid).pasillos.find((x) => x.nom === nom);
+        if (rid) desdeRack = S.racks.find((x) => x.id === rid) || null;
+        if (!pa) return;
+    }
     const previo = S.tour;
     opciones = opciones || {};
     // el conteo sigue abierto si se pasa a otro pasillo de la misma bodega
@@ -3311,7 +3368,7 @@ function dibujarZonas(g, bodegaId) {
     for (const z of S.plano.zonas.filter((x) => x.b === bodegaId)) {
         const color = ZONA_COLOR[z.tipo] || ZONA_COLOR.OTRA;
         const geo = new THREE.PlaneGeometry(z.ancho, z.largo); S.basura.push(geo);
-        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, depthWrite: false, toneMapped: false }); S.basura.push(mat);
+        const mat = new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.16, depthWrite: false, toneMapped: false, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -4 }); S.basura.push(mat);
         const m = new THREE.Mesh(geo, mat);
         m.rotation.x = -Math.PI / 2; m.position.set(z.x + z.ancho / 2, 0.009, z.z + z.largo / 2);
         g.add(m);
@@ -3975,6 +4032,426 @@ async function irACodigo(texto) {
     } catch (e) { if (msg) { msg.hidden = false; msg.textContent = e.message; } else aviso(e.message, true); }
 }
 
+// ============================================================================
+//  APERTURA DE LA CAJA — al seleccionarla se abre y muestra lo que guarda
+// ----------------------------------------------------------------------------
+//  La caja se reemplaza por una version abierta: cuerpo con paredes, tapa con
+//  bisagra (o cuatro solapas si es carton) que se abre con rebote, y adentro
+//  las piezas modeladas segun el TIPO de repuesto (rodamiento, polea, pinon,
+//  motor, filtro, aceite...). La pieza principal sube girando bajo una luz
+//  calida, con un destello de particulas. Al deseleccionar, todo vuelve.
+//
+//  Las piezas son geometria procedural (sin modelos externos que descargar):
+//  se generan una vez por tipo, en tamano unitario, y se escalan al casillero.
+// ============================================================================
+const MAT_OCULTA = new THREE.MeshBasicMaterial({ visible: false });
+const MAT_PIEZA = {
+    acero: new THREE.MeshPhysicalMaterial({ color: '#C9D1DC', metalness: 0.92, roughness: 0.22, clearcoat: 0.4 }),
+    oscuro: new THREE.MeshPhysicalMaterial({ color: '#5C6575', metalness: 0.8, roughness: 0.32 }),
+    goma: new THREE.MeshStandardMaterial({ color: '#1C1F26', roughness: 0.85, metalness: 0 }),
+    bronce: new THREE.MeshPhysicalMaterial({ color: '#B8864B', metalness: 0.9, roughness: 0.3 }),
+    pintura: new THREE.MeshPhysicalMaterial({ color: '#1F5FA8', metalness: 0.3, roughness: 0.4, clearcoat: 0.8 }),
+    verde: new THREE.MeshPhysicalMaterial({ color: '#2E7D4F', metalness: 0.2, roughness: 0.45, clearcoat: 0.6 }),
+    plastico: new THREE.MeshStandardMaterial({ color: '#E8ECF2', roughness: 0.5, metalness: 0 }),
+    rojo: new THREE.MeshPhysicalMaterial({ color: '#C7352B', metalness: 0.2, roughness: 0.4, clearcoat: 0.6 }),
+    ambar: new THREE.MeshPhysicalMaterial({ color: '#D9A23A', metalness: 0.1, roughness: 0.25, transmission: 0.3, thickness: 0.2 }),
+    cobre: new THREE.MeshPhysicalMaterial({ color: '#C46A3A', metalness: 0.95, roughness: 0.3 })
+};
+
+function torno(perfil, seg) { return new THREE.LatheGeometry(perfil.map((p) => new THREE.Vector2(p[0], p[1])), seg || 48); }
+function engranaje(dientes, rExt, rInt, esp) {
+    const sh = new THREE.Shape(), n = dientes * 2;
+    for (let i = 0; i <= n; i++) {
+        const a = (i / n) * Math.PI * 2, r = i % 2 ? rInt : rExt, a2 = a + Math.PI / n * 0.5;
+        if (i === 0) sh.moveTo(Math.cos(a) * r, Math.sin(a) * r); else sh.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+        sh.lineTo(Math.cos(a2) * r, Math.sin(a2) * r);
+    }
+    const hueco = new THREE.Path(); hueco.absarc(0, 0, rInt * 0.35, 0, Math.PI * 2, true); sh.holes.push(hueco);
+    const g = new THREE.ExtrudeGeometry(sh, { depth: esp, bevelEnabled: true, bevelThickness: esp * 0.08, bevelSize: esp * 0.06, bevelSegments: 2, curveSegments: 6 });
+    g.translate(0, 0, -esp / 2); g.rotateX(Math.PI / 2);
+    return g;
+}
+
+/* Una pieza "unitaria" (cabe en ~1 x 1 x 1) segun el tipo de repuesto. */
+function piezaUnitaria(clave) {
+    const g = new THREE.Group(), m = (geo, mat) => { const x = new THREE.Mesh(geo, mat); x.castShadow = true; g.add(x); return x; };
+    switch (clave) {
+        case 'rodamiento': {
+            m(new THREE.TorusGeometry(0.42, 0.08, 16, 64), MAT_PIEZA.acero).rotation.x = Math.PI / 2;
+            m(new THREE.TorusGeometry(0.24, 0.06, 16, 48), MAT_PIEZA.acero).rotation.x = Math.PI / 2;
+            const bola = new THREE.SphereGeometry(0.065, 16, 12);
+            for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2; m(bola, MAT_PIEZA.oscuro).position.set(Math.cos(a) * 0.33, 0, Math.sin(a) * 0.33); }
+            m(new THREE.RingGeometry(0.27, 0.39, 48), MAT_PIEZA.goma).rotation.x = -Math.PI / 2;
+            break;
+        }
+        case 'chumacera': {
+            m(new THREE.BoxGeometry(1, 0.12, 0.34), MAT_PIEZA.pintura).position.y = -0.3;
+            m(new THREE.CylinderGeometry(0.36, 0.36, 0.34, 40), MAT_PIEZA.pintura).rotation.x = Math.PI / 2;
+            m(new THREE.TorusGeometry(0.2, 0.06, 12, 40), MAT_PIEZA.acero).position.z = 0.18;
+            break;
+        }
+        case 'correa': {
+            const t = m(new THREE.TorusGeometry(0.42, 0.05, 10, 80), MAT_PIEZA.goma); t.rotation.x = Math.PI / 2; t.scale.set(1, 1, 2.2);
+            break;
+        }
+        case 'polea': {
+            m(torno([[0.08, -0.16], [0.45, -0.16], [0.45, -0.1], [0.32, -0.02], [0.45, 0.06], [0.45, 0.16], [0.08, 0.16]]), MAT_PIEZA.oscuro);
+            break;
+        }
+        case 'pinon': m(engranaje(14, 0.46, 0.38, 0.16), MAT_PIEZA.acero); break;
+        case 'cadena': {
+            const esl = new THREE.TorusGeometry(0.09, 0.025, 8, 20);
+            for (let i = 0; i < 8; i++) { const e = m(esl, MAT_PIEZA.acero); e.position.set(-0.42 + i * 0.12, 0, 0); e.rotation.set(i % 2 ? Math.PI / 2 : 0, 0, 0); e.scale.set(1.4, 1, 1); }
+            break;
+        }
+        case 'motor': {
+            const c = m(new THREE.CylinderGeometry(0.3, 0.3, 0.7, 40), MAT_PIEZA.pintura); c.rotation.z = Math.PI / 2;
+            for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2; const f = m(new THREE.BoxGeometry(0.6, 0.04, 0.03), MAT_PIEZA.pintura); f.position.set(0, Math.cos(a) * 0.31, Math.sin(a) * 0.31); f.rotation.x = a; }
+            m(new THREE.BoxGeometry(0.2, 0.14, 0.18), MAT_PIEZA.pintura).position.set(0, 0.36, 0);
+            const e = m(new THREE.CylinderGeometry(0.05, 0.05, 0.25, 16), MAT_PIEZA.acero); e.rotation.z = Math.PI / 2; e.position.x = 0.47;
+            m(new THREE.BoxGeometry(0.7, 0.06, 0.5), MAT_PIEZA.oscuro).position.y = -0.31;
+            break;
+        }
+        case 'reductor': {
+            m(new THREE.BoxGeometry(0.6, 0.5, 0.5), MAT_PIEZA.verde);
+            const s = m(new THREE.CylinderGeometry(0.06, 0.06, 0.3, 16), MAT_PIEZA.acero); s.rotation.x = Math.PI / 2; s.position.z = 0.38;
+            m(new THREE.CylinderGeometry(0.2, 0.2, 0.12, 32), MAT_PIEZA.verde).position.y = 0.3;
+            break;
+        }
+        case 'bomba': {
+            m(torno([[0, -0.2], [0.38, -0.2], [0.42, 0], [0.38, 0.2], [0, 0.2]]), MAT_PIEZA.pintura).rotation.x = Math.PI / 2;
+            const t = m(new THREE.CylinderGeometry(0.1, 0.1, 0.3, 24), MAT_PIEZA.pintura); t.position.set(0, 0.4, 0);
+            m(new THREE.CylinderGeometry(0.16, 0.16, 0.04, 24), MAT_PIEZA.acero).position.set(0, 0.55, 0);
+            break;
+        }
+        case 'valvula': {
+            const c = m(new THREE.CylinderGeometry(0.16, 0.16, 0.7, 32), MAT_PIEZA.bronce); c.rotation.z = Math.PI / 2;
+            m(new THREE.SphereGeometry(0.24, 24, 16), MAT_PIEZA.bronce);
+            m(new THREE.CylinderGeometry(0.04, 0.04, 0.25, 12), MAT_PIEZA.acero).position.y = 0.3;
+            m(new THREE.BoxGeometry(0.5, 0.04, 0.08), MAT_PIEZA.rojo).position.set(0.15, 0.43, 0);
+            break;
+        }
+        case 'filtro': {
+            m(new THREE.CylinderGeometry(0.28, 0.28, 0.75, 36), MAT_PIEZA.pintura);
+            m(new THREE.CylinderGeometry(0.29, 0.29, 0.08, 36), MAT_PIEZA.acero).position.y = 0.4;
+            m(new THREE.CylinderGeometry(0.08, 0.08, 0.06, 16), MAT_PIEZA.acero).position.y = 0.47;
+            break;
+        }
+        case 'liquido': {
+            m(torno([[0, -0.45], [0.26, -0.45], [0.28, -0.4], [0.28, 0.2], [0.16, 0.34], [0.1, 0.36], [0.1, 0.46], [0, 0.46]]), MAT_PIEZA.ambar);
+            m(new THREE.CylinderGeometry(0.11, 0.11, 0.08, 20), MAT_PIEZA.rojo).position.y = 0.49;
+            break;
+        }
+        case 'cilindro': {
+            m(torno([[0, -0.45], [0.3, -0.45], [0.3, 0.3], [0.16, 0.42], [0, 0.42]]), MAT_PIEZA.verde);
+            m(new THREE.CylinderGeometry(0.06, 0.06, 0.12, 16), MAT_PIEZA.bronce).position.y = 0.48;
+            break;
+        }
+        case 'electrico': {
+            m(new THREE.BoxGeometry(0.45, 0.6, 0.42), MAT_PIEZA.plastico);
+            m(new THREE.BoxGeometry(0.4, 0.08, 0.05), MAT_PIEZA.oscuro).position.set(0, 0.18, 0.22);
+            for (let i = 0; i < 3; i++) m(new THREE.CylinderGeometry(0.03, 0.03, 0.04, 12), MAT_PIEZA.cobre).position.set(-0.12 + i * 0.12, 0.32, 0.1);
+            m(new THREE.BoxGeometry(0.12, 0.05, 0.03), MAT_PIEZA.verde).position.set(0, -0.05, 0.22);
+            break;
+        }
+        case 'fusible': {
+            const c = m(new THREE.CylinderGeometry(0.12, 0.12, 0.6, 24), MAT_PIEZA.plastico); c.rotation.z = Math.PI / 2;
+            for (const x of [-0.33, 0.33]) { const t = m(new THREE.CylinderGeometry(0.13, 0.13, 0.08, 24), MAT_PIEZA.cobre); t.rotation.z = Math.PI / 2; t.position.x = x; }
+            break;
+        }
+        case 'cable': {
+            for (let i = 0; i < 4; i++) { const t = m(new THREE.TorusGeometry(0.38, 0.045, 10, 60), i % 2 ? MAT_PIEZA.oscuro : MAT_PIEZA.rojo); t.rotation.x = Math.PI / 2; t.position.y = -0.15 + i * 0.1; }
+            break;
+        }
+        case 'sensor': {
+            const c = m(new THREE.CylinderGeometry(0.1, 0.1, 0.8, 24), MAT_PIEZA.acero); c.rotation.z = Math.PI / 2;
+            m(new THREE.CylinderGeometry(0.14, 0.14, 0.05, 6), MAT_PIEZA.acero).position.set(0.1, 0, 0);
+            const p = m(new THREE.CylinderGeometry(0.1, 0.1, 0.06, 24), MAT_PIEZA.ambar); p.rotation.z = Math.PI / 2; p.position.x = -0.43;
+            break;
+        }
+        case 'perno': {
+            m(new THREE.CylinderGeometry(0.22, 0.22, 0.14, 6), MAT_PIEZA.acero).position.y = 0.38;
+            m(new THREE.CylinderGeometry(0.1, 0.1, 0.7, 20), MAT_PIEZA.acero);
+            for (let i = 0; i < 10; i++) m(new THREE.TorusGeometry(0.1, 0.012, 6, 20), MAT_PIEZA.oscuro).position.y = -0.3 + i * 0.05, g.children[g.children.length - 1].rotation.x = Math.PI / 2;
+            break;
+        }
+        case 'anillo': { m(new THREE.TorusGeometry(0.38, 0.07, 14, 60), MAT_PIEZA.goma).rotation.x = Math.PI / 2; break; }
+        case 'resorte': {
+            const pts = []; for (let i = 0; i <= 200; i++) { const t = i / 200; pts.push(new THREE.Vector3(Math.cos(t * Math.PI * 14) * 0.25, -0.4 + t * 0.8, Math.sin(t * Math.PI * 14) * 0.25)); }
+            m(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 400, 0.035, 8, false), MAT_PIEZA.acero);
+            break;
+        }
+        case 'eje': {
+            const c = m(new THREE.CylinderGeometry(0.1, 0.1, 0.95, 28), MAT_PIEZA.acero); c.rotation.z = Math.PI / 2;
+            m(new THREE.BoxGeometry(0.3, 0.03, 0.05), MAT_PIEZA.oscuro).position.set(0.25, 0.1, 0);
+            break;
+        }
+        case 'acople': {
+            for (const x of [-0.2, 0.2]) { const c = m(new THREE.CylinderGeometry(0.28, 0.28, 0.32, 36), MAT_PIEZA.oscuro); c.rotation.z = Math.PI / 2; c.position.x = x; }
+            const s = m(new THREE.TorusGeometry(0.2, 0.06, 10, 36), MAT_PIEZA.rojo); s.rotation.y = Math.PI / 2;
+            break;
+        }
+        case 'compresor': {
+            m(torno([[0, -0.45], [0.3, -0.45], [0.32, -0.3], [0.32, 0.25], [0.24, 0.42], [0, 0.45]]), MAT_PIEZA.oscuro);
+            const t = m(new THREE.CylinderGeometry(0.05, 0.05, 0.3, 12), MAT_PIEZA.cobre); t.rotation.z = Math.PI / 2; t.position.set(0.4, 0.1, 0);
+            break;
+        }
+        default: {
+            m(new RoundedBoxGeometry(0.7, 0.45, 0.5, 2, 0.04), MAT_PIEZA.plastico);
+            m(new THREE.BoxGeometry(0.72, 0.06, 0.52), MAT_PIEZA.pintura).position.y = 0.05;
+        }
+    }
+    return g;
+}
+const PIEZAS = [
+    [/RODAMIENTO/, 'rodamiento'], [/CHUMACERA/, 'chumacera'], [/CORREA/, 'correa'], [/POLEA/, 'polea'], [/PI(Ñ|N)ON|ENGRAN/, 'pinon'],
+    [/CADENA/, 'cadena'], [/MOTOR/, 'motor'], [/REDUCTOR/, 'reductor'], [/BOMBA/, 'bomba'], [/VALVULA|VÁLVULA/, 'valvula'],
+    [/FILTRO/, 'filtro'], [/ACEITE|LUBRICANTE|GRASA/, 'liquido'], [/REFRIGERANTE/, 'cilindro'], [/COMPRESOR/, 'compresor'],
+    [/CONTACTOR|RELE|RELÉ|VARIADOR/, 'electrico'], [/FUSIBLE|PROTECC/, 'fusible'], [/CABLE|CONDUCTOR/, 'cable'], [/SENSOR/, 'sensor'],
+    [/PERNO|TORNILL|FIJACI/, 'perno'], [/SELLO|RETEN|RETÉN|EMPAQUE|O-RING|ORING/, 'anillo'], [/RESORTE/, 'resorte'], [/EJE|BUJE/, 'eje'], [/ACOPLE/, 'acople']
+];
+function clavePieza(it) {
+    const t = (String(it.tc || '') + ' ' + String(it.tn || '') + ' ' + String(it.n || '')).toUpperCase();
+    for (const [re, k] of PIEZAS) if (re.test(t)) return k;
+    return 'generico';
+}
+const PIEZA_CACHE = new Map();
+function pieza(clave) {
+    if (!PIEZA_CACHE.has(clave)) {
+        const g = piezaUnitaria(clave);
+        const caja = new THREE.Box3().setFromObject(g), tam = caja.getSize(new THREE.Vector3()), cen = caja.getCenter(new THREE.Vector3());
+        g.children.forEach((c) => c.position.sub(cen));
+        PIEZA_CACHE.set(clave, { g, tam });
+    }
+    const p = PIEZA_CACHE.get(clave);
+    return { obj: p.g.clone(), tam: p.tam };
+}
+/* Tarjeta con la foto del repuesto: papel blanco, la foto entera (sin
+   recortar) arriba, codigo y nombre abajo, y un halo turquesa por detras. */
+function tarjetaFoto(it, img) {
+    const W = 512, H = 600, c = canvas(W, H), g = c.getContext('2d');
+    g.fillStyle = '#FFFFFF'; rrect(g, 0, 0, W, H, 34); g.fill();
+    g.save(); rrect(g, 22, 22, W - 44, 420, 22); g.clip();
+    g.fillStyle = '#F4F6FA'; g.fillRect(22, 22, W - 44, 420);
+    const k = Math.min((W - 64) / img.naturalWidth, 400 / img.naturalHeight);
+    const iw = img.naturalWidth * k, ih = img.naturalHeight * k;
+    g.drawImage(img, (W - iw) / 2, 22 + (420 - ih) / 2, iw, ih);
+    g.restore();
+    g.fillStyle = it.color || '#6732F4'; g.fillRect(22, 462, 8, 110);
+    g.fillStyle = '#17223B'; g.font = `800 40px ${FUENTE}`; g.textBaseline = 'alphabetic';
+    g.fillText(recortar(g, it.c, W - 80), 46, 502);
+    g.fillStyle = '#4A556D'; g.font = `600 26px ${FUENTE}`; envolver(g, it.n, 46, 540, W - 80, 30, 2);
+    const t = tex(c);
+    const grp = new THREE.Group();
+    const geo = new THREE.PlaneGeometry(0.42, 0.42 * H / W);
+    const card = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ map: t, toneMapped: false, side: THREE.DoubleSide, transparent: true }));
+    const halo = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.5 * H / W + 0.08), new THREE.MeshBasicMaterial({ color: '#16C6C9', transparent: true, opacity: 0.28, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }));
+    halo.position.z = -0.004;
+    grp.add(halo, card);
+    return { obj: grp, tam: new THREE.Vector3(0.42, 0.42 * H / W, 0.01) };
+}
+function ajustar(p, w, h, d) {
+    const k = Math.min(w / p.tam.x, h / p.tam.y, d / p.tam.z);
+    p.obj.scale.setScalar(k);
+    return k;
+}
+
+let texChispa = null;
+function chispas(n) {
+    if (!texChispa) {
+        const c = canvas(64, 64), g = c.getContext('2d'), gr = g.createRadialGradient(32, 32, 0, 32, 32, 32);
+        gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.35, 'rgba(160,240,255,.8)'); gr.addColorStop(1, 'rgba(22,198,201,0)');
+        g.fillStyle = gr; g.fillRect(0, 0, 64, 64); texChispa = tex(c);
+    }
+    const geo = new THREE.BufferGeometry(), pos = new Float32Array(n * 3), vel = [];
+    for (let i = 0; i < n; i++) vel.push(new THREE.Vector3((Math.random() - 0.5) * 0.6, 0.5 + Math.random() * 0.9, (Math.random() - 0.5) * 0.6));
+    geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+    const mat = new THREE.PointsMaterial({ map: texChispa, size: 0.035, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, toneMapped: false });
+    const pts = new THREE.Points(geo, mat); pts.frustumCulled = false;
+    pts.userData.vel = vel;
+    return pts;
+}
+
+/* Arma la caja abierta como hija de la caja real (asi acompana su movimiento
+   de "asomarse" del rack) y oculta el cuerpo original. */
+function abrirCaja(c) {
+    if (S.cajaAbierta && S.cajaAbierta.c === c) return;
+    if (S.cajaAbierta) quitarCajaAbierta(true);
+    const u = c.userData, it = u.item, carton = u.carton;
+    const w = u.w, h = u.h, d = u.d, esp = Math.min(0.014, w * 0.03);
+    const matCuerpo = carton ? MAT.carton : u.matNormal;
+    const grupo = new THREE.Group();
+    const pared = (gw, gh, gd, x, y, z) => { const geo = new THREE.BoxGeometry(gw, gh, gd); const m = new THREE.Mesh(geo, matCuerpo); m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true; grupo.add(m); return m; };
+    pared(w, esp, d, 0, -h / 2 + esp / 2, 0);
+    pared(w, h, esp, 0, 0, -d / 2 + esp / 2);
+    pared(w, h, esp, 0, 0, d / 2 - esp / 2);
+    pared(esp, h, d, -w / 2 + esp / 2, 0, 0);
+    pared(esp, h, d, w / 2 - esp / 2, 0, 0);
+    // fondo interior oscuro, para que las piezas se recorten
+    const fondo = new THREE.Mesh(new THREE.PlaneGeometry(w - esp * 2, d - esp * 2), new THREE.MeshStandardMaterial({ color: '#2A303C', roughness: 0.9 }));
+    fondo.rotation.x = -Math.PI / 2; fondo.position.y = -h / 2 + esp + 0.001; grupo.add(fondo);
+
+    // tapa con bisagra atras, o cuatro solapas si es carton
+    const tapas = [];
+    if (!carton) {
+        const piv = new THREE.Group(); piv.position.set(0, h / 2, -d / 2); grupo.add(piv);
+        const tapa = new THREE.Mesh(new RoundedBoxGeometry(w + 0.01, 0.028, d + 0.01, 2, 0.01), matCuerpo); tapa.position.set(0, 0.014, d / 2); tapa.castShadow = true; piv.add(tapa);
+        const asa = new THREE.Mesh(new THREE.BoxGeometry(w * 0.4, 0.015, 0.03), MAT.placa); asa.position.set(0, 0.035, d * 0.85); piv.add(asa);
+        tapas.push({ piv, eje: 'x', signo: -1, max: 1.95 });
+    } else {
+        const solapa = (sw, sd, x, z, eje, signo) => {
+            const piv = new THREE.Group(); piv.position.set(x, h / 2, z); grupo.add(piv);
+            const m = new THREE.Mesh(new THREE.BoxGeometry(sw, 0.006, sd), MAT.carton);
+            if (eje === 'x') m.position.z = signo * -sd / 2; else m.position.x = signo * sd / 2;
+            piv.add(m); tapas.push({ piv, eje, signo, max: 2.3 });
+        };
+        solapa(w, d / 2, 0, -d / 2, 'x', -1); solapa(w, d / 2, 0, d / 2, 'x', 1);
+        // laterales: en x, ancho = d y largo = w/2
+        const lat = (x, signo) => {
+            const piv = new THREE.Group(); piv.position.set(x, h / 2 + 0.003, 0); grupo.add(piv);
+            const m = new THREE.Mesh(new THREE.BoxGeometry(w / 2, 0.006, d * 0.96), MAT.carton); m.position.x = -signo * w / 4; piv.add(m);
+            tapas.push({ piv, eje: 'z', signo, max: 2.1 });
+        };
+        lat(-w / 2, -1); lat(w / 2, 1);
+    }
+
+    // el contenido: tantas piezas como unidades (hasta 6), y una "heroe" que sube
+    const clave = clavePieza(it), n = Math.max(1, Math.min(6, Math.round(it.q) || 1));
+    const cols = n <= 2 ? n : n <= 4 ? 2 : 3, filasG = Math.ceil(n / cols);
+    const iw = w - esp * 4, id = d - esp * 4, ih = h * 0.62;
+    const cw = iw / cols, cd = id / filasG;
+    const piezas = [];
+    for (let i = 0; i < n; i++) {
+        const p = pieza(clave);
+        ajustar(p, cw * 0.82, ih * 0.82, cd * 0.82);
+        const col = i % cols, fil = Math.floor(i / cols);
+        p.obj.position.set(-iw / 2 + cw * (col + 0.5), -h / 2 + esp + ih * 0.45, -id / 2 + cd * (fil + 0.5));
+        p.obj.rotation.y = (i * 0.7) % 1.3 - 0.4;
+        grupo.add(p.obj); piezas.push(p.obj);
+    }
+    /* La pieza que sube: si el repuesto tiene foto, es la FOTO REAL en una
+       tarjeta flotante que mira siempre a la camara; si no, la pieza modelada
+       de su tipo. Nunca mas grande que la caja. */
+    const img = it.foto ? S.imagenes.get(it.foto) : null;
+    const conFoto = !!(img && img.complete && img.naturalWidth);
+    const heroe = conFoto ? tarjetaFoto(it, img) : pieza(clave);
+    const escala = conFoto ? Math.min(w, 0.5) * 0.8 / 0.42 : ajustar(heroe, Math.min(w, 0.42) * 0.62, Math.min(h, 0.3) * 0.9, Math.min(d, 0.42) * 0.62);
+    if (conFoto) heroe.obj.scale.setScalar(escala);
+    heroe.obj.position.set(0, -h / 2 + ih * 0.5, 0); heroe.obj.scale.setScalar(escala * 0.4);
+    grupo.add(heroe.obj);
+
+    // luz de cine: calida desde arriba-adelante, y un relleno frio desde el interior
+    const luz = new THREE.SpotLight('#FFE6C2', 0, 3, 0.55, 0.6, 1.4);
+    luz.position.set(0, h / 2 + 0.9, d / 2 + 0.5); luz.target = heroe.obj; grupo.add(luz);
+    const relleno = new THREE.PointLight('#7FF7F9', 0, 1.2, 2); relleno.position.set(0, 0, 0); grupo.add(relleno);
+    const ch = chispas(70); ch.position.set(0, h / 2 - 0.02, 0); grupo.add(ch);
+
+    c.add(grupo);
+    u.abierta = true;
+    c.material = MAT_OCULTA;
+    S.cajaAbierta = { c, grupo, tapas, piezas, heroe: heroe.obj, escala, luz, relleno, ch, t0: performance.now(), fase: 'abre', h, ih, conFoto, alza: conFoto ? (0.42 * 600 / 512) * escala / 2 + 0.03 : 0 };
+}
+
+function cerrarCaja() {
+    const A = S.cajaAbierta; if (!A || A.fase === 'cierra') return;
+    A.fase = 'cierra'; A.t1 = performance.now();
+    A.inicioCierre = A.tapas.map((t) => t.piv.rotation[t.eje]);
+    A.heroeY0 = A.heroe.position.y; A.heroeK0 = A.heroe.scale.x;
+}
+function quitarCajaAbierta(inmediato) {
+    const A = S.cajaAbierta; if (!A) return;
+    A.c.remove(A.grupo);
+    A.grupo.traverse((o) => { if (o.geometry && !PIEZA_GEOS.has(o.geometry)) o.geometry.dispose(); });
+    A.ch.material.dispose();
+    A.c.userData.abierta = false;
+    S.cajaAbierta = null;
+    aplicarFiltros();
+}
+// las geometrias de las piezas se comparten entre clones: no se liberan
+const PIEZA_GEOS = new Set();
+function registrarGeos() { for (const { g } of PIEZA_CACHE.values()) g.traverse((o) => { if (o.geometry) PIEZA_GEOS.add(o.geometry); }); }
+
+const rebote = (t) => { const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2); };
+const salida = (t) => 1 - Math.pow(1 - t, 3);
+function animarCaja(ahora, dt) {
+    const A = S.cajaAbierta; if (!A) return;
+    registrarGeos();
+    if (A.fase !== 'cierra') {
+        const t = (ahora - A.t0) / 1000;
+        A.tapas.forEach((tp, i) => {
+            const k = clamp01((t - 0.18 - i * 0.07) / 0.75);
+            tp.piv.rotation[tp.eje] = tp.signo * tp.max * rebote(k);
+        });
+        const s = clamp01((t - 0.75) / 0.85);
+        A.heroe.position.y = lerp(-A.h / 2 + A.ih * 0.5, A.h / 2 + 0.16 + A.alza + Math.sin(ahora / 650) * 0.012 * s, salida(s));
+        A.heroe.scale.setScalar(lerp(A.escala * 0.4, A.escala, salida(s)));
+        if (A.conFoto) { A.heroe.lookAt(camera.position); A.heroe.rotateZ(Math.sin(ahora / 900) * 0.04); }
+        else A.heroe.rotation.y += dt * (0.4 + 0.8 * s);
+        A.luz.intensity = 6 * salida(clamp01((t - 0.4) / 0.8));
+        A.relleno.intensity = 1.2 * salida(clamp01((t - 0.3) / 0.6)) * (0.85 + 0.15 * Math.sin(ahora / 300));
+        // particulas: un estallido al abrir que sube y se apaga
+        const pos = A.ch.geometry.attributes.position, vel = A.ch.userData.vel, tp = clamp01((t - 0.45) / 1.8);
+        for (let i = 0; i < vel.length; i++) {
+            const tt = Math.max(0, t - 0.45 - (i % 10) * 0.03);
+            pos.setXYZ(i, vel[i].x * tt * 0.5, vel[i].y * tt * 0.45 - 0.5 * 0.35 * tt * tt, vel[i].z * tt * 0.5);
+        }
+        pos.needsUpdate = true;
+        A.ch.material.opacity = t < 0.45 ? 0 : 1 - tp;
+        if (t > 0.6 && A.fase === 'abre') A.fase = 'abierta';
+    } else {
+        const k = clamp01((ahora - A.t1) / 480), e = k * k * (3 - 2 * k);
+        A.tapas.forEach((tp, i) => { tp.piv.rotation[tp.eje] = lerp(A.inicioCierre[i], 0, e); });
+        A.heroe.position.y = lerp(A.heroeY0, -A.h / 2 + A.ih * 0.5, e);
+        A.heroe.scale.setScalar(lerp(A.heroeK0, A.escala * 0.4, e));
+        A.luz.intensity *= 0.85; A.relleno.intensity *= 0.85; A.ch.material.opacity = 0;
+        if (k >= 1) quitarCajaAbierta();
+    }
+}
+
+// ================================================================== maqueta
+/* Las cajas de una bodega en maqueta: una caja de color por repuesto, en el
+   mismo reparto por niveles que el detalle, todas en un InstancedMesh. */
+function maquetaRack(rack, lista) {
+    const items = rack.items, niveles = RACK.niveles.length;
+    const porNivel = Math.max(1, Math.ceil(items.length / niveles)), filas = porNivel > 6 ? 2 : 1;
+    const cols = Math.max(3, Math.ceil(porNivel / filas));
+    rack.cols = cols; rack.filas = filas; rack.sobrecarga = [];
+    const anchoSlot = (RACK.ancho - 0.14) / cols, d = filas === 1 ? 0.58 : (RACK.prof - 0.18) / 2 - 0.03;
+    items.forEach((it, idx) => {
+        const nivel = Math.min(Math.floor(idx / porNivel), niveles - 1), pos = idx % porNivel;
+        const fila = filas === 2 ? Math.floor(pos / cols) : 0, col = pos % cols;
+        const w = Math.min(anchoSlot - 0.05, 0.62), h = it.pesado ? 0.42 : 0.28;
+        const lz = filas === 1 || fila === 0 ? RACK.prof / 2 - 0.08 - d / 2 : -RACK.prof / 2 + 0.08 + d / 2;
+        lista.push({ p: enRack(rack, -RACK.ancho / 2 + 0.07 + (col + 0.5) * anchoSlot, RACK.niveles[nivel] + 0.006 + h / 2, lz), rot: rack.rot, w, h, d, color: it.pesado ? '#C49A6C' : it.color });
+    });
+}
+const GEO_MAQUETA = new THREE.BoxGeometry(1, 1, 1);
+const MAT_MAQUETA = new THREE.MeshStandardMaterial({ roughness: 0.55, metalness: 0 });
+function dibujarMaqueta(lista) {
+    const im = new THREE.InstancedMesh(GEO_MAQUETA, MAT_MAQUETA, lista.length);
+    const m4 = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Vector3(), col = new THREE.Color();
+    lista.forEach((x, i) => {
+        q.setFromAxisAngle(_ejeY, x.rot); e.set(x.w, x.h, x.d);
+        m4.compose(x.p, q, e); im.setMatrixAt(i, m4);
+        im.setColorAt(i, col.set(x.color));
+    });
+    im.instanceMatrix.needsUpdate = true; if (im.instanceColor) im.instanceColor.needsUpdate = true;
+    im.castShadow = true; im.receiveShadow = true; im.computeBoundingSphere();
+    mundo.add(im); S.basura.push(im);
+}
+const _ejeY = new THREE.Vector3(0, 1, 0);
+function ubicSaldo(x) {
+    const b = (S.datos.bodegas || []).find((y) => y.id === x.b);
+    const u = b && (b.ubicaciones || []).find((y) => y.id === x.u);
+    return (b ? b.nombre : 'Bodega') + (u ? ' · ' + u.codigo : ' · recepción');
+}
+/* Ir a un saldo de una bodega en maqueta: se abre esa bodega y se elige su caja. */
+function irASaldo(x) {
+    elegirBodega(x.b, true);
+    const c = S.cajas.find((y) => y.userData.item.id === x.id && (x.u ? y.userData.rack.id === x.u : y.userData.rack.recepcion));
+    if (c) { if (S.filtro.size && !S.filtro.has(c.userData.item.tid)) { S.filtro.clear(); aplicarFiltros(); } seleccionarCaja(c, true); }
+}
+
 // ==================================================================== busqueda
 const buscar = $('bm3dBuscar'), resultados = $('bm3dResultados');
 let foco = -1, coincidencias = [];
@@ -3986,7 +4463,10 @@ buscar.addEventListener('input', () => {
         const it = c.userData.item;
         return norm(it.c).includes(q) || norm(it.n).includes(q) || norm(it.tn).includes(q) || norm(it.tc).includes(q) || norm(it.mod).includes(q);
     }).slice(0, 40).map((c) => ({ caja: c }));
-    coincidencias = racks.concat(cajas);
+    const enMaqueta = new Set([...S.porBodega.values()].filter((i) => i.maqueta).map((i) => i.id));
+    const otros = enMaqueta.size ? (S.datos.saldos || []).filter((x) => enMaqueta.has(x.b) &&
+        (norm(x.c).includes(q) || norm(x.n).includes(q) || norm(x.tn).includes(q) || norm(x.tc).includes(q))).slice(0, 25).map((x) => ({ saldo: x })) : [];
+    coincidencias = racks.concat(cajas, otros);
     foco = coincidencias.length ? 0 : -1;
     pintarResultados();
 });
@@ -3995,9 +4475,10 @@ function pintarResultados() {
     if (!coincidencias.length) { resultados.innerHTML = '<div class="bm3d-res-vacio">Sin coincidencias en el stock de esta planta.</div>'; return; }
     let html = '', grupo = '';
     coincidencias.forEach((x, i) => {
-        const g = x.rack ? 'Racks' : 'Repuestos en stock';
+        const g = x.rack ? 'Racks' : x.saldo ? 'En otras bodegas' : 'Repuestos en stock';
         if (g !== grupo) { html += '<div class="bm3d-res-grupo">' + g + '</div>'; grupo = g; }
         if (x.rack) html += '<div class="bm3d-res' + (i === foco ? ' is-foco' : '') + '" data-i="' + i + '"><span class="bm3d-mini"><i class="mdi mdi-view-grid-outline" style="color:#087BEA"></i></span><div><b>' + esc(x.rack.codigo) + '</b><span>' + esc(x.rack.bodega.nombre) + ' · ' + x.rack.items.length + ' repuestos</span></div><em></em></div>';
+        else if (x.saldo) { const it = x.saldo; html += '<div class="bm3d-res' + (i === foco ? ' is-foco' : '') + '" data-i="' + i + '">' + miniatura(it.foto, it.color) + '<div><b>' + esc(it.c) + '</b><span>' + esc(it.n) + '</span></div><em>' + esc(ubicSaldo(it)) + '</em></div>'; }
         else { const it = x.caja.userData.item; html += '<div class="bm3d-res' + (i === foco ? ' is-foco' : '') + '" data-i="' + i + '">' + miniatura(it.foto, it.color) + '<div><b>' + esc(it.c) + '</b><span>' + esc(it.n) + '</span></div><em>' + esc(ubicTexto(x.caja, true)) + '</em></div>'; }
     });
     resultados.innerHTML = html;
@@ -4008,6 +4489,7 @@ function elegirResultado(i) {
     if (!x) return;
     resultados.hidden = true; buscar.blur();
     if (x.rack) { seleccionarRack(x.rack, true); return; }
+    if (x.saldo) { irASaldo(x.saldo); return; }
     if (S.filtro.size && !S.filtro.has(x.caja.userData.item.tid)) { S.filtro.clear(); aplicarFiltros(); }
     seleccionarCaja(x.caja, true);
 }
@@ -4021,23 +4503,46 @@ buscar.addEventListener('keydown', (e) => {
 buscar.addEventListener('blur', () => setTimeout(() => { resultados.hidden = true; }, 150));
 
 // ============================================================ bodegas y KPIs
+/* Las bodegas en un combo, no en pestanas: con seis bodegas las pestanas no
+   caben. Las flechas pasan a la anterior o la siguiente sin abrir el combo. */
 function pintarBodegas() {
     const el = $('bm3dBodegas'), bs = S.datos.bodegas || [];
-    el.innerHTML = bs.map((b) => {
-        const n = (S.porBodega.get(b.id) || { cajas: [] }).cajas.length;
-        return '<button type="button" class="bm3d-tab' + (b.id === S.bodegaSel ? ' is-activa' : '') + '" role="tab" data-bodega="' + b.id + '" title="' + esc(b.descripcion) + '">' + esc(b.nombre) + ' <small>' + n + '</small></button>';
-    }).join('') + (S.permisos.bodegas ? '<button type="button" class="bm3d-tab es-nueva" id="bm3dNuevaBod" title="Nueva bodega"><i class="mdi mdi-plus"></i>Bodega</button>' : '');
-    el.querySelectorAll('[data-bodega]').forEach((b) => b.onclick = () => {
-        const id = +b.dataset.bodega;
-        if (id === S.bodegaSel) { panelBodega(S.porBodega.get(id)); return; }
-        cerrarPanel(); elegirBodega(id);
-    });
-    const nb = $('bm3dNuevaBod'); if (nb) nb.onclick = () => formBodega(null);
+    const cuenta = new Map();
+    for (const x of S.datos.saldos || []) cuenta.set(x.b, (cuenta.get(x.b) || 0) + 1);
+    el.innerHTML = '<select id="bm3dBodegaSel" class="bm3d-select es-bodega" aria-label="Bodega">' +
+        bs.map((b) => '<option value="' + b.id + '"' + (b.id === S.bodegaSel ? ' selected' : '') + '>' + esc(b.nombre) + ' · ' + (cuenta.get(b.id) || 0) + ' rep.</option>').join('') +
+        (S.permisos.bodegas ? '<option value="nueva">+ Nueva bodega…</option>' : '') + '</select>' +
+        (bs.length > 1 ? '<span class="bm3d-bod-nav"><button type="button" class="bm3d-ico" id="bm3dBodAnt" title="Bodega anterior"><i class="mdi mdi-chevron-left"></i></button>' +
+            '<span class="bm3d-bod-n" id="bm3dBodN"></span><button type="button" class="bm3d-ico" id="bm3dBodSig" title="Bodega siguiente"><i class="mdi mdi-chevron-right"></i></button></span>' : '');
+    const sel = $('bm3dBodegaSel');
+    sel.onchange = () => {
+        if (sel.value === 'nueva') { sel.value = String(S.bodegaSel); formBodega(null); return; }
+        cerrarPanel(); elegirBodega(+sel.value);
+    };
+    const mover = (d) => {
+        const i2 = bs.findIndex((b) => b.id === S.bodegaSel);
+        const b = bs[(i2 + d + bs.length) % bs.length]; if (b) { cerrarPanel(); elegirBodega(b.id); }
+    };
+    const a = $('bm3dBodAnt'); if (a) a.onclick = () => mover(-1);
+    const z = $('bm3dBodSig'); if (z) z.onclick = () => mover(1);
+    marcarBodegaSel();
+}
+function marcarBodegaSel() {
+    const sel = $('bm3dBodegaSel'); if (sel) sel.value = String(S.bodegaSel);
+    const bs = S.datos.bodegas || [], n = $('bm3dBodN');
+    if (n) n.textContent = (bs.findIndex((b) => b.id === S.bodegaSel) + 1) + '/' + bs.length;
 }
 
 function elegirBodega(id, sinVolar) {
+    // en modo maqueta, la bodega elegida pasa a detalle (se reconstruye sin mover la camara)
+    if (S.maqueta && S.detalleId !== id && S.porBodega.has(id) && !S.tour) {
+        S.detalleId = id; S.bodegaSel = id;
+        const camP = camera.position.clone(), camT = controls.target.clone();
+        construir(S.datos);
+        camera.position.copy(camP); controls.target.copy(camT);
+    }
     S.bodegaSel = id;
-    document.querySelectorAll('.bm3d-tab[data-bodega]').forEach((b) => b.classList.toggle('is-activa', +b.dataset.bodega === id));
+    marcarBodegaSel();
     const b = S.porBodega.get(id);
     if (b) {
         const s = b.span / 2 + 4;
@@ -4228,6 +4733,7 @@ function bucle(ahora) {
     if (S.edicion) MAT.fantasma.opacity = 0.08 + 0.05 * (1 + Math.sin(ahora / 400));
     if (!S.tour) controls.update();
     /* Una falla en el nivel de detalle no puede congelar la escena. */
+    try { animarCaja(ahora, dt); } catch (e) { if (!bucle.avisoCaja) { bucle.avisoCaja = true; console.error('Apertura de caja:', e); } quitarCajaAbierta(); }
     try { actualizarEtiquetas(ahora); }
     catch (e) { if (!bucle.avisado) { bucle.avisado = true; console.error('Etiquetas del mapa 3D:', e); } }
     renderer.render(scene, camera);
@@ -4252,6 +4758,7 @@ window.__bodega3d = {
     recorrer(b, p) { const info = S.porBodega.get(b || S.bodegaSel); if (info) iniciarRecorrido(info.pasillos[p || 0]); },
     ficha(id) { abrirFicha(id); },
     picking: () => formPicking(),
+    maqueta(si) { S.forzarMaqueta = !!si; const cp = camera.position.clone(), ct = controls.target.clone(); construir(S.datos); pintarBodegas(); elegirBodega(S.bodegaSel, true); camera.position.copy(cp); controls.target.copy(ct); },
     modo: (m) => cambiarModo(m),
     historial: () => entrarHistorial(),
     ir: (c) => irACodigo(c),

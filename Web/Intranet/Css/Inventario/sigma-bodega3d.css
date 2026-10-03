@@ -71,7 +71,11 @@ html.bm3d-pagina body { overflow: hidden; }
     outline: 3px solid rgba(22, 198, 201, .27); outline-offset: 0; border-color: var(--sigma-cyan-dark);
 }
 
-.bm3d-bodegas { display: flex; gap: 2px; flex: 0 1 auto; min-width: 250px; overflow-x: auto; scrollbar-width: none; }
+.bm3d-bodegas { display: flex; align-items: center; gap: 4px; flex: 0 1 auto; min-width: 0; }
+.bm3d-select.es-bodega { max-width: 260px; min-width: 170px; color: var(--sigma-purple); border-color: #CDBFFF; background: var(--sigma-purple-soft); }
+.bm3d-bod-nav { display: inline-flex; align-items: center; gap: 0; }
+.bm3d-bod-nav .bm3d-ico { width: 28px; height: 32px; font-size: 18px; }
+.bm3d-bod-n { font-size: 11px; font-weight: 800; color: var(--muted); min-width: 26px; text-align: center; }
 .bm3d-tab {
     position: relative; height: 38px; padding: 0 12px; border: 0; background: transparent; flex: 0 0 auto;
     color: var(--muted); font-weight: 700; font-size: 13px; cursor: pointer; border-radius: 9px;

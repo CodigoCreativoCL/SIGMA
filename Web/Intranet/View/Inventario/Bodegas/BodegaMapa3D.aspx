@@ -17,7 +17,7 @@
        No depende de que un CDN responda el dia de la demo. --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=15" rel="stylesheet" />
+    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=17" rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
@@ -118,5 +118,5 @@
             }
         }
     </script>
-    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=15"></script>
+    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=17"></script>
 </asp:Content>
