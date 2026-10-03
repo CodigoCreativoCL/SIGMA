@@ -167,6 +167,40 @@ namespace SitioBase.Controller
             return GenerarQr(url);
         }
 
+        /// <summary>
+        /// El MISMO QR de la etiqueta impresa, pero como matriz de modulos y no
+        /// como imagen: el mapa 3D lo dibuja en los fierros y en las cajas a la
+        /// resolucion que le haga falta. Formato "lado:hex", fila por fila,
+        /// un bit por modulo (1 = negro). Mismo contenido (el token) y misma
+        /// correccion Q que GenerarQr: lo que se escanea en el mapa es lo que
+        /// se escanea en el estante.
+        /// </summary>
+        public string QrMatriz(string contenido)
+        {
+            try
+            {
+                QRCodeGenerator.QRCode qr = new QRCodeGenerator().CreateQrCode(contenido, QRCodeGenerator.ECCLevel.Q);
+                List<System.Collections.BitArray> m = qr.ModuleMatrix;
+                int lado = m.Count;
+                System.Text.StringBuilder sb = new System.Text.StringBuilder(lado + ":");
+                int nibble = 0, bits = 0;
+
+                for (int y = 0; y < lado; y++)
+                    for (int x = 0; x < lado; x++)
+                    {
+                        nibble = (nibble << 1) | (m[y][x] ? 1 : 0);
+                        if (++bits == 4) { sb.Append(nibble.ToString("x")); nibble = 0; bits = 0; }
+                    }
+
+                if (bits > 0) sb.Append((nibble << (4 - bits)).ToString("x"));
+                return sb.ToString();
+            }
+            catch (Exception)
+            {
+                return "";
+            }
+        }
+
         private string GenerarQr(string contenido)
         {
             try

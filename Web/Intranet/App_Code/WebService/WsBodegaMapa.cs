@@ -1,0 +1,705 @@
+﻿using SitioBase;
+using SitioBase.Controller;
+using SitioBase.Model;
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.Linq;
+using System.Web;
+using System.Web.Script.Serialization;
+using System.Web.Script.Services;
+using System.Web.Services;
+
+/// <summary>
+/// Mapa 3D de bodegas (BodegaMapa3D.aspx): lectura y administracion.
+///
+/// EL MAPA SE DIBUJA CON LO QUE HAY EN LA BASE
+///   Bodegas, ubicaciones y stock salen de la base en cada carga. No hay un
+///   plano guardado aparte que se desactualice.
+///
+/// EL MAPA ADMINISTRA, PERO NO TIENE REGLAS PROPIAS
+///   Crear una bodega, un rack, un repuesto o registrar un movimiento pasa por
+///   los MISMOS controllers que usan las pantallas de siempre (BodegaController,
+///   RepuestoController, InventarioController, RepuestoFotoController). Lo que
+///   se puede hacer en el mapa es exactamente lo que se puede hacer en esas
+///   pantallas, con las mismas validaciones del SP: si una regla cambia, cambia
+///   para las dos.
+///
+///   Las reglas que viven en el code-behind de Movimiento.aspx -no en el SP- se
+///   replican aqui tal cual: la salida sale de un origen concreto (ubicacion +
+///   lote), no puede superar lo que hay, la reubicacion necesita un destino
+///   distinto, y el lote nuevo se crea ANTES del movimiento.
+///
+/// CADA LLAMADA VUELVE A VALIDAR SESION Y PERMISO
+///   Con los mismos permisos que cada pantalla: CREAR EDITAR BODEGAS, CREAR
+///   EDITAR REPUESTOS, GESTIONAR STOCK, y para movimientos los de
+///   Movimiento.aspx (ingreso, entrega, ajuste).
+/// </summary>
+[WebService(Namespace = "http://tempuri.org/")]
+[WebServiceBinding(ConformsTo = WsiProfiles.BasicProfile1_1)]
+[System.ComponentModel.ToolboxItem(false)]
+[ScriptService]
+public class WsBodegaMapa : System.Web.Services.WebService
+{
+    private const string P_VER = "VER BODEGAS";
+    private const string P_BODEGAS = "CREAR EDITAR BODEGAS";
+    private const string P_REPUESTOS = "CREAR EDITAR REPUESTOS";
+    private const string P_STOCK = "GESTIONAR STOCK";
+    private const string P_INGRESO = "REGISTRAR INGRESO REPUESTO";
+    private const string P_ENTREGA = "ENTREGAR REPUESTO";
+    private const string P_AJUSTE = "AJUSTAR INVENTARIO";
+
+    // =================================================================== lectura
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Cargar(int planta)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            ClienteInstalacion filtroPlanta = new ClienteInstalacion();
+            filtroPlanta.filtro_cliente = SitioBase.Session.ClienteId().ToString();
+            filtroPlanta.filtro_habilitado = "1";
+
+            var plantas = new ClienteInstalacionController().GetClienteInstalaciones(filtroPlanta)
+                .Select(p => new { id = p.cin_id, nombre = p.cin_nombre })
+                .ToList();
+
+            /* Sin planta elegida se toma la primera: mezclar las bodegas de dos
+               plantas dibujaria edificios que no estan uno al lado del otro. */
+            if (planta <= 0 && plantas.Count > 0) planta = plantas[0].id;
+
+            BodegaMapaController ctrl = new BodegaMapaController();
+            DataTable estructura = ctrl.GetEstructura(planta), saldos = ctrl.GetSaldos(planta);
+
+            return new
+            {
+                error = false,
+                planta = planta,
+                plantas = plantas,
+                permisos = Permisos(),
+                bodegas = ArmarEstructura(estructura),
+                saldos = ArmarSaldos(saldos),
+                qr = Qrs(estructura, saldos)
+            };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Saldos(int planta)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            DataTable saldos = new BodegaMapaController().GetSaldos(planta);
+            return new { error = false, saldos = ArmarSaldos(saldos), qr = Qrs(null, saldos) };
+        });
+    }
+
+    /// <summary>
+    /// Todo lo que necesitan los formularios del mapa: unidades, tipos, tipos
+    /// de movimiento permitidos, ordenes abiertas y el maestro de repuestos
+    /// (liviano) para elegir que ingresar.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Catalogos()
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var unidades = new UnidadMedidaController().GetUnidades()
+                .Where(u => u.ume_habilitado)
+                .Select(u => new { id = u.ume_id, codigo = u.ume_codigo, nombre = u.ume_nombre, simbolo = u.ume_simbolo })
+                .OrderBy(u => u.nombre).ToList();
+
+            var tipos = new RepuestoTipoController().GetRepuestoTipos(new RepuestoTipo { filtro_habilitado = true })
+                .Select(t => new { id = t.rti_id, codigo = t.rti_codigo, nombre = t.rti_nombre })
+                .ToList();
+
+            Dictionary<int, int> portadas = new RepuestoFotoController().GetPortadas();
+            var repuestos = new RepuestoController().GetRepuestos(new Repuesto { filtro_habilitado = true })
+                .Select(r =>
+                {
+                    int a;
+                    return new
+                    {
+                        id = r.rep_id, c = r.rep_codigo, n = r.rep_nombre, tid = r.rep_repuesto_tipo,
+                        tn = r.repuesto_tipo_nombre, un = r.unidad_simbolo, lote = r.rep_controla_lote,
+                        foto = portadas.TryGetValue(r.rep_id, out a) && a > 0 ? UrlArchivo.Ver(a) : ""
+                    };
+                }).ToList();
+
+            // los mismos tipos y el mismo criterio de permiso que Movimiento.aspx
+            var movs = new List<object>();
+            if (Token.Puede(P_INGRESO)) movs.Add(Mov(1, "Ingreso por compra", "entrada"));
+            if (Token.Puede(P_ENTREGA)) { movs.Add(Mov(2, "Entrega (salida por consumo)", "salida")); movs.Add(Mov(3, "Devolución", "entrada")); }
+            if (Token.Puede(P_AJUSTE))
+            {
+                movs.Add(Mov(4, "Ajuste positivo (sobra en el conteo)", "entrada"));
+                movs.Add(Mov(5, "Ajuste negativo (falta en el conteo)", "salida"));
+                movs.Add(Mov(9, "Cambio de ubicación (mismo depósito)", "reubicacion"));
+                movs.Add(Mov(6, "Traslado a otra bodega", "traslado"));
+                movs.Add(Mov(8, "Merma", "salida"));
+            }
+
+            var ordenes = new InventarioController().GetOrdenesAbiertas(0)
+                .Select(o => new { id = o.orden_id, texto = o.correlativo + " · " + o.titulo })
+                .ToList();
+
+            return new { error = false, unidades, tipos, repuestos, movimientos = movs, ordenes };
+        });
+    }
+
+    /// <summary>La ficha completa de un repuesto, para editarlo en el panel.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string FichaRepuesto(int id)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            RepuestoController rc = new RepuestoController();
+            Repuesto r = rc.GetRepuesto(id);
+            if (r == null) throw new Exception("El repuesto no existe o no es de este cliente.");
+
+            var fotos = (new RepuestoFotoController().GetFotos(id) ?? new List<RepuestoFoto>())
+                .Where(f => string.IsNullOrEmpty(f.mime) || f.mime.StartsWith("image/"))
+                .Select(f => new { vinculo = f.vinculo, url = UrlArchivo.Ver(f.archivo), titulo = f.titulo, orden = f.orden })
+                .ToList();
+
+            var umbrales = rc.GetUmbrales(new RepuestoBodegaStock { rbs_repuesto = id })
+                .Select(u => new { bodega = u.rbs_bodega, min = u.rbs_stock_minimo, max = u.rbs_stock_maximo, pr = u.rbs_punto_reposicion })
+                .ToList();
+
+            return new
+            {
+                error = false,
+                repuesto = new
+                {
+                    id = r.rep_id, codigo = r.rep_codigo, nombre = r.rep_nombre, unidad = r.rep_unidad_medida,
+                    tipo = r.rep_repuesto_tipo, fabricante = r.rep_fabricante, modelo = r.rep_modelo,
+                    descripcion = r.rep_descripcion, reparable = r.rep_es_reparable, consumible = r.rep_es_consumible,
+                    lote = r.rep_controla_lote, costo = r.rep_costo_referencia, vidaHoras = r.rep_vida_util_hora,
+                    vidaDias = r.rep_vida_util_dia, vidaCiclos = r.rep_vida_util_ciclo, habilitado = r.rep_habilitado
+                },
+                fotos,
+                umbrales,
+                qr = new EtiquetaController().QrMatriz("REP-" + id)
+            };
+        });
+    }
+
+    /// <summary>
+    /// La hoja de impresion de etiquetas (Comun/Impresion/Etiquetas.aspx) con
+    /// el query cifrado como lo arma Bodega.aspx. La pagina vuelve a validar
+    /// permisos: esto solo arma la direccion.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string UrlEtiquetas(string origen, string ids, int bodega)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            string o = (origen ?? "").ToUpperInvariant();
+            if (o != EtiquetaOrigen.Bodega && o != EtiquetaOrigen.Ubicacion && o != EtiquetaOrigen.UbicacionRepuesto && o != EtiquetaOrigen.Repuesto)
+                throw new Exception("Origen de etiqueta no valido.");
+
+            string datos = "Origen=" + o;
+            if (!string.IsNullOrEmpty(ids)) datos += "&Ids=" + string.Join(",", ids.Split(',').Select(x => x.Trim()).Where(x => x.All(char.IsDigit) && x.Length > 0));
+            if (bodega > 0) datos += "&Bodega=" + bodega;
+
+            return new
+            {
+                error = false,
+                url = VirtualPathUtility.ToAbsolute("~/View/Comun/Impresion/Etiquetas.aspx") + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt(datos))
+            };
+        });
+    }
+
+    /// <summary>De donde puede salir un repuesto en una bodega: ubicacion + lote con saldo.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Origenes(int repuesto, int bodega)
+    {
+        return Ejecutar(P_VER, () => new
+        {
+            error = false,
+            origenes = new InventarioController().GetOrigenes(repuesto, bodega, true).Select(o => new
+            {
+                ubicacion = o.ubicacion_id ?? 0, ubicacionCodigo = o.ubicacion_codigo, lote = o.lote_id ?? 0,
+                loteCodigo = o.lote_codigo, vence = o.lote_vence.HasValue ? o.lote_vence.Value.ToString("dd-MM-yyyy") : "",
+                vencido = o.lote_vencido, cantidad = o.cantidad, unidad = o.unidad
+            }).ToList()
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Lotes(int repuesto)
+    {
+        return Ejecutar(P_VER, () => new
+        {
+            error = false,
+            lotes = new RepuestoController().GetLotes(new RepuestoLote { rlo_repuesto = repuesto, filtro_vigentes = true })
+                .Select(l => new { id = l.rlo_id, codigo = l.rlo_codigo, vence = l.rlo_fecha_vencimiento.HasValue ? l.rlo_fecha_vencimiento.Value.ToString("dd-MM-yyyy") : "" })
+                .ToList()
+        });
+    }
+
+    // ============================================================ administracion
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarBodega(string datos)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            var d = Leer(datos);
+            BodegaController bc = new BodegaController();
+            Bodega b = new Bodega
+            {
+                bod_id = Entero(d, "id"),
+                bod_cliente_instalacion = Entero(d, "planta"),
+                bod_codigo = Texto(d, "codigo"),
+                bod_nombre = Texto(d, "nombre"),
+                bod_descripcion = Texto(d, "descripcion"),
+                bod_habilitado = !d.ContainsKey("habilitado") || Bool(d, "habilitado")
+            };
+            if (string.IsNullOrEmpty(b.bod_nombre)) throw new Exception("Indique el nombre de la bodega.");
+            if (b.bod_cliente_instalacion <= 0) throw new Exception("Indique la planta de la bodega.");
+            if (b.bod_id == 0 && string.IsNullOrEmpty(b.bod_codigo)) b.bod_codigo = "AUTO";
+
+            return Resultado(b.bod_id > 0 ? bc.UpdateBodega(b) : bc.InsertBodega(b), b.bod_id);
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarUbicacion(string datos)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            var d = Leer(datos);
+            BodegaUbicacion u = new BodegaUbicacion
+            {
+                bub_id = Entero(d, "id"),
+                bub_bodega = Entero(d, "bodega"),
+                bub_codigo = Texto(d, "codigo"),
+                bub_nombre = Texto(d, "nombre"),
+                bub_habilitado = !d.ContainsKey("habilitado") || Bool(d, "habilitado")
+            };
+            if (u.bub_id == 0 && u.bub_bodega <= 0) throw new Exception("Indique la bodega de la ubicación.");
+            if (u.bub_id == 0 && string.IsNullOrEmpty(u.bub_codigo)) throw new Exception("Indique el código de la ubicación.");
+            if (string.IsNullOrEmpty(u.bub_nombre)) u.bub_nombre = u.bub_codigo;
+
+            return Resultado(new BodegaController().GuardarUbicacion(u), u.bub_id);
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string EliminarUbicacion(int id)
+    {
+        return Ejecutar(P_BODEGAS, () => Resultado(new BodegaController().DeleteUbicacion(id), id));
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarRepuesto(string datos)
+    {
+        return Ejecutar(P_REPUESTOS, () =>
+        {
+            var d = Leer(datos);
+            RepuestoController rc = new RepuestoController();
+            int id = Entero(d, "id");
+
+            /* Al editar se parte del repuesto COMPLETO y se pisan solo los campos
+               que vienen: lo que el mapa no muestra no se borra por omision. */
+            Repuesto r = id > 0 ? rc.GetRepuesto(id) : new Repuesto { rep_habilitado = true };
+            if (r == null) throw new Exception("El repuesto no existe o no es de este cliente.");
+
+            if (d.ContainsKey("codigo") && id == 0) r.rep_codigo = string.IsNullOrEmpty(Texto(d, "codigo")) ? "AUTO" : Texto(d, "codigo");
+            if (d.ContainsKey("nombre")) r.rep_nombre = Texto(d, "nombre");
+            if (d.ContainsKey("unidad")) r.rep_unidad_medida = Entero(d, "unidad");
+            if (d.ContainsKey("tipo")) r.rep_repuesto_tipo = Entero(d, "tipo");
+            if (d.ContainsKey("fabricante")) r.rep_fabricante = Texto(d, "fabricante");
+            if (d.ContainsKey("modelo")) r.rep_modelo = Texto(d, "modelo");
+            if (d.ContainsKey("descripcion")) r.rep_descripcion = Texto(d, "descripcion");
+            if (d.ContainsKey("reparable")) r.rep_es_reparable = Bool(d, "reparable");
+            if (d.ContainsKey("consumible")) r.rep_es_consumible = Bool(d, "consumible");
+            if (d.ContainsKey("lote")) r.rep_controla_lote = Bool(d, "lote");
+            if (d.ContainsKey("costo")) r.rep_costo_referencia = Num(d, "costo");
+            if (d.ContainsKey("vidaHoras")) r.rep_vida_util_hora = Num(d, "vidaHoras");
+            if (d.ContainsKey("vidaDias")) { decimal? v = Num(d, "vidaDias"); r.rep_vida_util_dia = v.HasValue ? (int?)Convert.ToInt32(v.Value) : null; }
+            if (d.ContainsKey("vidaCiclos")) r.rep_vida_util_ciclo = Num(d, "vidaCiclos");
+            if (d.ContainsKey("habilitado")) r.rep_habilitado = Bool(d, "habilitado");
+
+            if (string.IsNullOrEmpty(r.rep_nombre)) throw new Exception("Indique el nombre del repuesto.");
+            if (r.rep_unidad_medida <= 0) throw new Exception("Indique la unidad de medida.");
+            if (id == 0 && string.IsNullOrEmpty(r.rep_codigo)) r.rep_codigo = "AUTO";
+
+            return Resultado(id > 0 ? rc.UpdateRepuesto(r) : rc.InsertRepuesto(r), id);
+        });
+    }
+
+    /// <summary>
+    /// Sube una foto del repuesto. Llega en base64 ya reducida por el visor (no
+    /// mas de 1600 px), asi que no se mandan fotos de celular de 8 MB.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string SubirFoto(int repuesto, string nombre, string mime, string base64)
+    {
+        return Ejecutar(P_REPUESTOS, () =>
+        {
+            if (string.IsNullOrEmpty(base64)) throw new Exception("Elija una imagen.");
+            int coma = base64.IndexOf(',');
+            byte[] bytes = Convert.FromBase64String(coma >= 0 ? base64.Substring(coma + 1) : base64);
+            return Resultado(new RepuestoFotoController().Agregar(repuesto, bytes, nombre, mime, nombre), repuesto);
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarFoto(int vinculo)
+    {
+        return Ejecutar(P_REPUESTOS, () => Resultado(new RepuestoFotoController().Quitar(vinculo), vinculo));
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string PortadaFoto(int vinculo)
+    {
+        return Ejecutar(P_REPUESTOS, () => Resultado(new RepuestoFotoController().HacerPortada(vinculo), vinculo));
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarUmbral(string datos)
+    {
+        return Ejecutar(P_STOCK, () =>
+        {
+            var d = Leer(datos);
+            decimal? min = Num(d, "min");
+            RepuestoBodegaStock u = new RepuestoBodegaStock
+            {
+                rbs_repuesto = Entero(d, "repuesto"),
+                rbs_bodega = Entero(d, "bodega"),
+                rbs_stock_minimo = min ?? 0,
+                rbs_stock_maximo = Num(d, "max"),
+                rbs_punto_reposicion = Num(d, "pr"),
+                rbs_habilitado = true
+            };
+            if (u.rbs_stock_maximo.HasValue && u.rbs_stock_maximo < u.rbs_stock_minimo)
+                throw new Exception("El máximo no puede ser menor que el mínimo.");
+            return Resultado(new RepuestoController().GuardarUmbral(u), u.rbs_repuesto);
+        });
+    }
+
+    /// <summary>
+    /// Registra un movimiento con las MISMAS reglas que Movimiento.aspx.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RegistrarMovimiento(string datos)
+    {
+        try
+        {
+            if (!Token.TokenSeguridad()) return Json(new { error = true, sesion = true, detalle = "La sesión expiró. Vuelve a entrar." });
+
+            var d = Leer(datos);
+            int tipo = Entero(d, "tipo");
+            string permiso = tipo == 1 ? P_INGRESO : (tipo == 2 || tipo == 3) ? P_ENTREGA
+                           : (tipo == 4 || tipo == 5 || tipo == 6 || tipo == 8 || tipo == 9) ? P_AJUSTE : null;
+            if (permiso == null) throw new Exception("Indique qué movimiento va a registrar.");
+            if (!Token.Puede(permiso)) return Json(new { error = true, sinPermiso = true, detalle = "No tienes permiso para registrar este movimiento." });
+
+            int repuesto = Entero(d, "repuesto"), bodega = Entero(d, "bodega");
+            if (repuesto == 0) throw new Exception("Indique el repuesto.");
+            if (bodega == 0) throw new Exception("Indique la bodega.");
+
+            decimal? cantidad = Num(d, "cantidad");
+            if (cantidad == null || cantidad <= 0) throw new Exception("La cantidad debe ser mayor que cero.");
+
+            bool sale = tipo == 2 || tipo == 5 || tipo == 6 || tipo == 8 || tipo == 9;
+
+            InventarioMovimiento m = new InventarioMovimiento
+            {
+                imo_repuesto = repuesto,
+                imo_bodega = bodega,
+                imo_inventario_movimiento_tipo = tipo,
+                imo_cantidad = cantidad.Value,
+                imo_observacion = Texto(d, "observacion"),
+                imo_costo_unitario = tipo == 1 ? Num(d, "costo") : null
+            };
+
+            if (sale)
+            {
+                /* La ubicacion y el lote salen JUNTOS del origen elegido: mandarlos
+                   por separado combinaba un estante con un lote que no estaba ahi. */
+                int ubic = Entero(d, "origenUbicacion"), lote = Entero(d, "origenLote");
+                InventarioOrigen o = new InventarioController().GetOrigenes(repuesto, bodega, true)
+                    .FirstOrDefault(x => (x.ubicacion_id ?? 0) == ubic && (x.lote_id ?? 0) == lote);
+                if (o == null) throw new Exception("Indique de dónde sale: ese origen ya no tiene existencia.");
+                if (o.cantidad < cantidad.Value)
+                    throw new Exception("Ahí hay " + o.cantidad.ToString("N2") + " " + o.unidad + " y se intenta sacar " +
+                                        cantidad.Value.ToString("N2") + ". Elija otro origen o baje la cantidad.");
+                m.imo_bodega_ubicacion = o.ubicacion_id;
+                m.imo_repuesto_lote = o.lote_id;
+
+                if (tipo == 9)
+                {
+                    int dest = Entero(d, "destinoUbicacion");
+                    if (dest == 0) throw new Exception("Indique a qué ubicación se cambia.");
+                    if (o.ubicacion_id.HasValue && o.ubicacion_id.Value == dest) throw new Exception("La ubicación de destino es la misma de origen.");
+                    m.imo_bodega_ubicacion_destino = dest;
+                }
+                if (tipo == 6)
+                {
+                    int bd = Entero(d, "destinoBodega");
+                    if (bd == 0) throw new Exception("Indique la bodega de destino del traslado.");
+                    if (bd == bodega) throw new Exception("La bodega de destino es la misma de origen.");
+                    m.imo_bodega_destino = bd;
+
+                    /* El SP exige en que ubicacion queda cuando la bodega de destino
+                       tiene ubicaciones (regla 17). Movimiento.aspx no la manda en el
+                       traslado, asi que ahi no se puede trasladar a una bodega con
+                       racks; aqui si se manda. */
+                    int du = Entero(d, "destinoUbicacion");
+                    if (du > 0) m.imo_bodega_ubicacion_destino = du;
+                }
+            }
+            else
+            {
+                int ubic = Entero(d, "ubicacion");
+                if (ubic > 0) m.imo_bodega_ubicacion = ubic;
+
+                Repuesto r = new RepuestoController().GetRepuesto(repuesto);
+                if (r != null && r.rep_controla_lote)
+                {
+                    int lote = Entero(d, "lote");
+                    string nuevo = Texto(d, "loteNuevo");
+                    if (lote > 0) m.imo_repuesto_lote = lote;
+                    else if (!string.IsNullOrEmpty(nuevo))
+                    {
+                        /* El lote nuevo se crea ANTES del movimiento: despues dejaria
+                           un movimiento apuntando a un lote que todavia no existe. */
+                        RepuestoLote l = new RepuestoLote
+                        {
+                            rlo_repuesto = repuesto,
+                            rlo_codigo = nuevo,
+                            rlo_fecha_ingreso = global::SitioBase.Hora.Hoy,
+                            rlo_fecha_vencimiento = Fecha(d, "loteVence")
+                        };
+                        Respuesta rl = new RepuestoController().InsertLote(l);
+                        if (rl.error) throw new Exception("No se pudo crear el lote: " + rl.detalle);
+                        m.imo_repuesto_lote = rl.codigo;
+                    }
+                    else throw new Exception("Este repuesto controla lote: elija uno o escriba el código del lote nuevo.");
+                }
+            }
+
+            int ot = Entero(d, "orden");
+            if ((tipo == 2 || tipo == 3) && ot > 0) m.imo_orden_trabajo = ot;
+
+            return Json(Resultado(new InventarioController().RegistrarMovimiento(m), 0));
+        }
+        catch (Exception ex)
+        {
+            return Json(new { error = true, detalle = ex.Message });
+        }
+    }
+
+    // ================================================================== armado
+
+    private static object Permisos()
+    {
+        return new
+        {
+            bodegas = Token.Puede(P_BODEGAS),
+            repuestos = Token.Puede(P_REPUESTOS),
+            stock = Token.Puede(P_STOCK),
+            ingreso = Token.Puede(P_INGRESO),
+            entrega = Token.Puede(P_ENTREGA),
+            ajuste = Token.Puede(P_AJUSTE)
+        };
+    }
+
+    private static object Mov(int id, string nombre, string clase) { return new { id, nombre, clase }; }
+
+    private static List<object> ArmarEstructura(DataTable dt)
+    {
+        var bodegas = new List<object>();
+        var porId = new Dictionary<int, List<object>>();
+
+        foreach (DataRow r in dt.Rows)
+        {
+            int bod = Convert.ToInt32(r["BOD_ID"]);
+            List<object> ubic;
+
+            if (!porId.TryGetValue(bod, out ubic))
+            {
+                ubic = new List<object>();
+                porId.Add(bod, ubic);
+                bodegas.Add(new
+                {
+                    id = bod,
+                    codigo = Convert.ToString(r["BOD_CODIGO"]),
+                    nombre = Convert.ToString(r["BOD_NOMBRE"]),
+                    descripcion = Convert.ToString(r["BOD_DESCRIPCION"]),
+                    plantaId = Convert.ToInt32(r["CIN_ID"]),
+                    planta = Convert.ToString(r["CIN_NOMBRE"]),
+                    ubicaciones = ubic
+                });
+            }
+
+            if (r["BUB_ID"] != DBNull.Value)
+                ubic.Add(new
+                {
+                    id = Convert.ToInt32(r["BUB_ID"]),
+                    codigo = Convert.ToString(r["BUB_CODIGO"]),
+                    nombre = Convert.ToString(r["BUB_NOMBRE"])
+                });
+        }
+
+        return bodegas;
+    }
+
+    /// <summary>
+    /// Los QR de las etiquetas que se ven en el mapa: bodegas (BOD-), racks
+    /// (UBI-) y repuestos (REP-). Son los mismos tokens de SEL_ETIQUETA, asi
+    /// que un QR leido desde la pantalla abre lo mismo que el del estante.
+    /// </summary>
+    private static Dictionary<string, string> Qrs(DataTable estructura, DataTable saldos)
+    {
+        EtiquetaController etq = new EtiquetaController();
+        var qr = new Dictionary<string, string>();
+        Action<string> agregar = t => { if (!qr.ContainsKey(t)) qr[t] = etq.QrMatriz(t); };
+
+        if (estructura != null)
+            foreach (DataRow r in estructura.Rows)
+            {
+                agregar("BOD-" + Convert.ToInt32(r["BOD_ID"]));
+                if (r["BUB_ID"] != DBNull.Value) agregar("UBI-" + Convert.ToInt32(r["BUB_ID"]));
+            }
+
+        if (saldos != null)
+            foreach (DataRow r in saldos.Rows) agregar("REP-" + Convert.ToInt32(r["REP_ID"]));
+
+        return qr;
+    }
+
+    private static List<object> ArmarSaldos(DataTable dt)
+    {
+        Dictionary<int, int> portadas = new RepuestoFotoController().GetPortadas();
+        string ficha = VirtualPathUtility.ToAbsolute("~/View/Inventario/Repuestos/RepuestoCentro.aspx");
+        var lista = new List<object>();
+
+        foreach (DataRow r in dt.Rows)
+        {
+            int rep = Convert.ToInt32(r["REP_ID"]);
+            int archivo;
+
+            lista.Add(new
+            {
+                b = Convert.ToInt32(r["BOD_ID"]),
+                u = r["BUB_ID"] == DBNull.Value ? 0 : Convert.ToInt32(r["BUB_ID"]),
+                id = rep,
+                c = Convert.ToString(r["REP_CODIGO"]),
+                n = Convert.ToString(r["REP_NOMBRE"]),
+                fab = Convert.ToString(r["REP_FABRICANTE"]),
+                mod = Convert.ToString(r["REP_MODELO"]),
+                tid = Convert.ToInt32(r["RTI_ID"]),
+                tc = Convert.ToString(r["RTI_CODIGO"]),
+                tn = Convert.ToString(r["RTI_NOMBRE"]),
+                un = Convert.ToString(r["UNIDAD"]),
+                q = Numero(r["CANTIDAD"]),
+                res = Numero(r["RESERVADA"]),
+                lot = Convert.ToInt32(r["LOTES"]),
+                ult = r["ULTIMO_MOVIMIENTO"] == DBNull.Value ? "" : Convert.ToDateTime(r["ULTIMO_MOVIMIENTO"]).ToString("dd-MM-yyyy HH:mm"),
+                min = NumeroONulo(r["STOCK_MINIMO"]),
+                max = NumeroONulo(r["STOCK_MAXIMO"]),
+                pr = NumeroONulo(r["PUNTO_REPOSICION"]),
+                foto = portadas.TryGetValue(rep, out archivo) && archivo > 0 ? UrlArchivo.Ver(archivo) : "",
+                ficha = ficha + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt("Id=" + rep))
+            });
+        }
+
+        return lista;
+    }
+
+    // =============================================================== utilidades
+
+    private static string Ejecutar(string permiso, Func<object> accion)
+    {
+        try
+        {
+            if (!Token.TokenSeguridad())
+                return Json(new { error = true, sesion = true, detalle = "La sesión expiró. Vuelve a entrar." });
+            if (!Token.Puede(permiso))
+                return Json(new { error = true, sinPermiso = true, detalle = "No tienes permiso para esta acción." });
+            return Json(accion());
+        }
+        catch (Exception ex)
+        {
+            return Json(new { error = true, detalle = ex.Message });
+        }
+    }
+
+    private static object Resultado(Respuesta r, int idPrevio)
+    {
+        return new { error = r.error, detalle = r.detalle, id = r.error ? 0 : (r.codigo > 0 ? r.codigo : idPrevio) };
+    }
+
+    private static Dictionary<string, object> Leer(string datos)
+    {
+        if (string.IsNullOrEmpty(datos)) return new Dictionary<string, object>();
+        return new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos) ?? new Dictionary<string, object>();
+    }
+
+    private static string Texto(Dictionary<string, object> d, string k)
+    {
+        object v; return d.TryGetValue(k, out v) && v != null ? Convert.ToString(v, CultureInfo.InvariantCulture).Trim() : "";
+    }
+
+    private static int Entero(Dictionary<string, object> d, string k)
+    {
+        int n; return int.TryParse(Texto(d, k), NumberStyles.Integer, CultureInfo.InvariantCulture, out n) ? n : 0;
+    }
+
+    private static bool Bool(Dictionary<string, object> d, string k)
+    {
+        string t = Texto(d, k).ToLowerInvariant();
+        return t == "true" || t == "1" || t == "si" || t == "sí";
+    }
+
+    /// <summary>Acepta "1.5" y "1,5": quien escribe una cantidad no piensa en la cultura.</summary>
+    private static decimal? Num(Dictionary<string, object> d, string k)
+    {
+        string t = Texto(d, k).Replace(" ", "");
+        if (t.Length == 0) return null;
+        if (t.Contains(",") && !t.Contains(".")) t = t.Replace(",", ".");
+        else if (t.Contains(",") && t.Contains(".")) t = t.Replace(".", "").Replace(",", ".");
+        decimal n;
+        if (!decimal.TryParse(t, NumberStyles.Number, CultureInfo.InvariantCulture, out n))
+            throw new Exception("\"" + Texto(d, k) + "\" no es un número válido.");
+        return n;
+    }
+
+    private static DateTime? Fecha(Dictionary<string, object> d, string k)
+    {
+        DateTime f;
+        return DateTime.TryParseExact(Texto(d, k), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out f) ? (DateTime?)f : null;
+    }
+
+    private static double Numero(object v) { return v == null || v == DBNull.Value ? 0 : Convert.ToDouble(v); }
+
+    private static double? NumeroONulo(object v) { return v == null || v == DBNull.Value ? (double?)null : Convert.ToDouble(v); }
+
+    private static string Json(object o)
+    {
+        JavaScriptSerializer js = new JavaScriptSerializer();
+        js.MaxJsonLength = int.MaxValue;
+        return js.Serialize(o);
+    }
+}
