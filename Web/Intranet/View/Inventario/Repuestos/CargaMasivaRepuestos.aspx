@@ -29,8 +29,9 @@
     <div class="sigma-form-seccion">
         <div class="titulo"><i class="mdi mdi-numeric-1-circle-outline"></i>Baje la plantilla</div>
         <div class="ayuda">
-            Trae una fila de ejemplo con el formato de cada columna, y una segunda
-            hoja con las <strong>unidades válidas</strong>: sin ella se escribe
+            Trae una fila de ejemplo con el formato de cada columna, una segunda
+            hoja con las <strong>unidades válidas</strong> y una tercera con los
+            <strong>tipos de repuesto válidos</strong>: sin ellas se escribe
             "unidades", "un", "u." y cada una falla sin que se entienda por qué.
             La fila de ejemplo se ignora al cargar, así que da lo mismo si se
             olvida borrarla.
@@ -47,6 +48,9 @@
         <div class="ayuda">
             El <strong>código puede ir vacío</strong>: se genera solo como
             <strong>REP-</strong>más el número, igual que al crear un repuesto a mano.
+            La columna <strong>TIPO</strong> también es opcional: escriba el
+            código del tipo (hoja TIPOS VALIDOS) o su nombre; vacía, el repuesto
+            queda sin clasificar.
             Una fila con error no detiene el resto — se cargan las demás y abajo se
             dice cuál falló y por qué.
         </div>
