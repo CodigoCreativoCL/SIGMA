@@ -277,6 +277,7 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
         litAyudaTipo.Text = AyudaDelTipo(tipo);
 
         pnlDestino.Visible = (tipo == InventarioController.TRASLADO_SALIDA);
+        if (!pnlDestino.Visible) pnlDestinoUbicacion.Visible = false;
 
         pnlOrden.Visible = (tipo == InventarioController.SALIDA_CONSUMO
                             || tipo == InventarioController.DEVOLUCION);
@@ -407,6 +408,38 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     protected void cboOrigen_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
     {
         MostrarSaldo();
+    }
+
+    protected void cboDestino_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
+    {
+        CargarUbicacionesDestino();
+    }
+
+    /// <summary>
+    /// Las ubicaciones de la bodega de DESTINO de un traslado. Si la bodega
+    /// tiene ubicaciones el SP exige elegir una (regla 17); si no tiene, el
+    /// campo no se muestra y el stock llega a la bodega sin ubicacion.
+    /// </summary>
+    protected void CargarUbicacionesDestino()
+    {
+        int dest;
+        cboDestinoUbicacion.Items.Clear();
+        pnlDestinoUbicacion.Visible = false;
+
+        if (!pnlDestino.Visible || !int.TryParse(cboDestino.SelectedValue, out dest) || dest == 0) return;
+
+        var lista = new BodegaController().GetUbicaciones(new BodegaUbicacion { bub_bodega = dest, filtro_habilitado = true });
+        if (lista == null || lista.Count == 0) return;
+
+        cboDestinoUbicacion.Items.Add(new RadComboBoxItem("Seleccione...", ""));
+        cboDestinoUbicacion.AppendDataBoundItems = true;
+        cboDestinoUbicacion.DataSource = lista;
+        cboDestinoUbicacion.DataValueField = "bub_id";
+        cboDestinoUbicacion.DataTextField = "bub_codigo";
+        cboDestinoUbicacion.DataBind();
+
+        pnlDestinoUbicacion.Visible = true;
+        litDestinoObligatorio.Text = "(*)";
     }
 
     protected void CargarLotes()
@@ -822,6 +855,17 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
                     throw new Exception("Indique la bodega de destino del traslado.");
 
                 entidad.imo_bodega_destino = aux;
+
+                /* La ubicacion de destino: obligatoria si la bodega de destino
+                   tiene ubicaciones. Antes no se mandaba y el SP rechazaba el
+                   traslado a cualquier bodega con racks (regla 17). */
+                if (pnlDestinoUbicacion.Visible)
+                {
+                    int du;
+                    if (!int.TryParse(cboDestinoUbicacion.SelectedValue, out du) || du == 0)
+                        throw new Exception("Indique en qué ubicación queda en la bodega de destino.");
+                    entidad.imo_bodega_ubicacion_destino = du;
+                }
             }
 
             if (pnlOrden.Visible && int.TryParse(cboOrden.SelectedValue, out aux) && aux > 0)

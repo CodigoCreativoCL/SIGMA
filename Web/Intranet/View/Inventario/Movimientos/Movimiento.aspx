@@ -156,7 +156,8 @@
                         AutoPostBack="true" OnSelectedIndexChanged="cboOrigen_Changed" />
                     <span class="sigma-modal-ayuda">
                         Solo los estantes que tienen existencia de este repuesto, con la
-                        cantidad y el lote. El primero de la lista es el que vence antes.
+                        cantidad y el lote. Van en el orden del método de salida de la bodega
+                        (FEFO, FIFO o LIFO): el primero es el que corresponde sacar.
                     </span>
                 </asp:Panel>
 
@@ -174,7 +175,17 @@
                 <%-- Bodega de destino: solo en el traslado. --%>
                 <asp:Panel ID="pnlDestino" runat="server" Visible="false" CssClass="sigma-modal-field is-mitad">
                     <label>Bodega de destino (*)</label>
-                    <rad:RadComboBox2 ID="cboDestino" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <rad:RadComboBox2 ID="cboDestino" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
+                        AutoPostBack="true" OnSelectedIndexChanged="cboDestino_Changed" />
+                </asp:Panel>
+
+                <%-- Ubicacion en la bodega de destino: el SP la exige cuando esa
+                     bodega tiene ubicaciones (regla 17). Sin este campo no habia
+                     forma de trasladar a una bodega con racks. --%>
+                <asp:Panel ID="pnlDestinoUbicacion" runat="server" Visible="false" CssClass="sigma-modal-field is-mitad">
+                    <label>Ubicación en destino <asp:Literal ID="litDestinoObligatorio" runat="server" /></label>
+                    <rad:RadComboBox2 ID="cboDestinoUbicacion" runat="server" Filter="Contains" Width="100%" />
+                    <span class="sigma-modal-ayuda">En qué estante de la bodega de destino queda.</span>
                 </asp:Panel>
 
             </div>
