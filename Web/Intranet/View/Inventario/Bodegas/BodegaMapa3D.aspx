@@ -1,6 +1,6 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="BodegaMapa3D.aspx.cs" Inherits="View_Inventario_Bodegas_BodegaMapa3D" %>
 
-<%-- Mapa 3D de bodegas: consulta Y administracion de la bodega en un solo lugar.
+<%-- SIGMA Twin (antes "Mapa 3D de bodegas", bloque 336): consulta Y administracion de la bodega en un solo lugar.
 
      SIN POSTBACK, SIN MODALES
        La pagina no tiene ni un control de servidor. Todo -la carga, crear una
@@ -17,7 +17,7 @@
        No depende de que un CDN responda el dia de la demo. --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=21" rel="stylesheet" />
+    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=22" rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
@@ -25,7 +25,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">
-    Mapa 3D de bodegas
+    SIGMA Twin · gemelo digital de bodegas
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -35,7 +35,7 @@
 
         <!-- ---------- barra superior ---------- -->
         <header class="bm3d-barra">
-            <div class="bm3d-marca"><i class="mdi mdi-warehouse"></i><span>Mapa de bodegas</span></div>
+            <div class="bm3d-marca" title="SIGMA Twin · gemelo digital de bodegas"><i class="mdi mdi-cube-scan"></i><span>SIGMA <b>Twin</b></span></div>
             <div class="bm3d-sep"></div>
             <select id="bm3dPlanta" class="bm3d-select" aria-label="Planta"></select>
             <nav class="bm3d-bodegas" id="bm3dBodegas" role="tablist" aria-label="Bodegas"></nav>

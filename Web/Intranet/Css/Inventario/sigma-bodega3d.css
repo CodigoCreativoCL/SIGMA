@@ -61,6 +61,7 @@ html.bm3d-pagina body { overflow: hidden; }
     border: 1px solid rgba(255, 255, 255, .6); border-radius: var(--radio); box-shadow: var(--sombra);
 }
 .bm3d-marca { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 14px; color: var(--ink); white-space: nowrap; }
+.bm3d-marca b { color: var(--sigma-purple); font-weight: 800; }
 .bm3d-marca i { width: 30px; height: 30px; border-radius: 9px; background: var(--sigma-purple-soft); color: var(--sigma-purple); display: inline-flex; align-items: center; justify-content: center; font-size: 17px; }
 .bm3d-sep { width: 1px; align-self: stretch; margin: 12px 2px; background: var(--line); }
 .bm3d-select {
@@ -805,7 +806,8 @@ html.bm3d-pagina body { overflow: hidden; }
 .bm3d-tb-pulgar.es-der { right: -12px; top: 52%; }
 
 /* ------------------------------------------------------------------ pantallas chicas */
-@media (max-width: 1700px) { .bm3d-marca span { display: none; } }
+/* "SIGMA Twin" es corto: se ve hasta pantallas medianas */
+@media (max-width: 1360px) { .bm3d-marca span { display: none; } }
 @media (max-width: 1360px) { .bm3d-acciones .bm3d-sep { display: none; } .bm3d-ico { width: 32px; } }
 @media (max-width: 1000px) {
     .bm3d-barra { height: auto; flex-wrap: wrap; padding: 8px; }

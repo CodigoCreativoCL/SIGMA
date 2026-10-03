@@ -1,0 +1,1 @@
+﻿<%@ WebService Language="C#" CodeBehind="~/App_Code/WebService/WsCargaDatos.cs" Class="WsCargaDatos" %>
