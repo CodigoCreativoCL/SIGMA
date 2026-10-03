@@ -1384,6 +1384,7 @@ function panelItem(c) {
                                '<button type="button" class="bm3d-rapida" data-mov="traslado"><i class="mdi mdi-truck-fast-outline"></i>Trasladar</button>');
     if (p.ingreso) rapidas.push('<button type="button" class="bm3d-rapida es-lila" data-mov="entrada"><i class="mdi mdi-tray-arrow-down"></i>Ingresar más</button>');
     if (p.repuestos) rapidas.push('<button type="button" class="bm3d-rapida es-lila" data-accion="editar-rep"><i class="mdi mdi-pencil-outline"></i>Editar repuesto</button>');
+    if (p.entrega && !c.userData.rack.recepcion) rapidas.push('<button type="button" class="bm3d-rapida es-cyan" data-accion="picking-add"><i class="mdi mdi-cart-plus"></i>Agregar al picking</button>');
     rapidas.push('<button type="button" class="bm3d-rapida" data-accion="etq-rep"><i class="mdi mdi-qrcode"></i>Imprimir etiqueta</button>');
 
     abrirPanel(cab(ubicTexto(c), it.n, it.c),
@@ -1398,6 +1399,9 @@ function panelItem(c) {
         (it.pr != null ? '<div class="bm3d-dato"><span>Punto de reposición</span><b>' + num(it.pr) + '</b></div>' : '') +
         '<div class="bm3d-dato"><span>Fabricante</span><b>' + esc(it.fab || '—') + '</b></div>' +
         '<div class="bm3d-dato"><span>Modelo</span><b>' + esc(it.mod || '—') + '</b></div>' +
+        '<div class="bm3d-dato"><span>Método de salida</span><b>' + esc(it.met || 'FEFO') + ' · ' + esc(METODO_TXT[it.met || 'FEFO']) + '</b></div>' +
+        (it.ing ? '<div class="bm3d-dato"><span>Ingreso a esta caja</span><b>' + fechaCorta(it.ing) + '</b></div>' : '') +
+        (it.vence ? '<div class="bm3d-dato"><span>Vence (lote más próximo)</span><b>' + fechaCorta(it.vence) + '</b></div>' : '') +
         '<div class="bm3d-dato"><span>Último movimiento</span><b>' + esc(it.ult || '—') + '</b></div></div>' +
         (otras.length ? '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>También está en</span><span>' + otras.length + '</span></div>' +
             otras.map((x, i) => '<div class="bm3d-item" data-otra="' + i + '">' + miniatura(x.userData.item.foto, x.userData.item.color) + '<div><b>' + esc(ubicTexto(x)) + '</b></div><em>' + num(x.userData.item.q) + '</em></div>').join('') + '</div>' : ''),
@@ -1413,6 +1417,7 @@ function panelItem(c) {
     const er = panel.querySelector('[data-accion="editar-rep"]');
     if (er) er.onclick = () => formRepuesto(it.id, { bodega: c.userData.rack.bodega.id }, () => panelItem(c));
     panel.querySelector('[data-accion="etq-rep"]').onclick = () => imprimirEtiquetas('REPUESTO', it.id);
+    const pka = panel.querySelector('[data-accion="picking-add"]'); if (pka) pka.onclick = () => agregarAPicking(it);
 }
 
 // -------------------------------------------------------------- panel: rack
@@ -1479,6 +1484,7 @@ function panelBodega(info) {
         (p.bodegas && pa.nom !== '·' ? '<button type="button" class="bm3d-rackchip es-mas" data-nuevo-rack="' + esc(pa.nom) + '"><i class="mdi mdi-plus"></i> rack</button>' : '') + '</div></div>').join('');
     abrirPanel(cab(b.planta + ' · ' + b.codigo, b.nombre, '', 'mdi-warehouse'),
         (b.descripcion ? '<p style="color:#4A556D;margin:0 0 12px;line-height:1.45">' + esc(b.descripcion) + '</p>' : '') +
+        '<div class="bm3d-metodo"><i class="mdi mdi-sort-clock-ascending-outline"></i><span><b>Salida ' + esc(b.metodo || 'FEFO') + '</b>' + esc(METODO_TXT[b.metodo || 'FEFO']) + '</span></div>' +
         '<div class="bm3d-stock"><div><b>' + info.racks.length + '</b><span>Racks</span></div><div><b>' + reps + '</b><span>Repuestos</span></div><div><b>' + info.pasillos.length + '</b><span>Pasillos</span></div></div>' +
         '<div class="bm3d-rapidas">' +
         (p.bodegas ? '<button type="button" class="bm3d-rapida es-lila" id="bm3dEditBod"><i class="mdi mdi-pencil-outline"></i>Editar bodega</button>' : '') +
@@ -1661,12 +1667,14 @@ function formBodega(b, volver) {
         (nueva ? campo('Código', inp('fBodCod', '', { ph: 'Vacío = automático' }), { ayuda: 'No se puede cambiar después.' }) : campo('Código', inp('fBodCod', b.codigo, { ro: true }))) +
         campo('Nombre', inp('fBodNom', nueva ? '' : b.nombre, { ph: 'Ej. Bodega Piso 3' }), { req: true }) +
         campo('Descripción', '<textarea id="fBodDesc" placeholder="Para qué se usa: alta rotación, críticos…">' + esc(nueva ? '' : b.descripcion) + '</textarea>', { ancho: true }) +
+        campo('Método de salida', sel('fBodMet', [['FEFO', 'FEFO · lo que vence antes sale antes'], ['FIFO', 'FIFO · lo que entró antes sale antes'], ['LIFO', 'LIFO · lo que entró último sale antes']], nueva ? 'FEFO' : (b.metodo || 'FEFO')),
+              { ancho: true, ayuda: 'Decide de qué caja y de qué lote se saca primero en entregas, picking y ajustes. Un repuesto puede tener su propia excepción.' }) +
         '</div>' + (nueva ? '<div class="bm3d-nota" style="margin-top:12px"><i class="mdi mdi-lightbulb-on-outline"></i>Después de crearla, activa el modo edición para dibujar sus pasillos y racks directo en el mapa.</div>' : ''),
         '<button type="button" class="bm3d-btn es-ghost" id="fCancelar">Cancelar</button><button type="button" class="bm3d-btn es-primario" id="fGuardar"><i class="mdi mdi-content-save-outline"></i>' + (nueva ? 'Crear bodega' : 'Guardar') + '</button>',
         volver);
     $('fCancelar').onclick = () => (volver ? volver() : cerrarPanel());
     $('fGuardar').onclick = (e) => guardando(e.currentTarget, async () => {
-        const r = await ws('GuardarBodega', { datos: JSON.stringify({ id: nueva ? 0 : b.id, planta: val('fBodPlanta'), codigo: nueva ? val('fBodCod') : '', nombre: val('fBodNom'), descripcion: val('fBodDesc') }) });
+        const r = await ws('GuardarBodega', { datos: JSON.stringify({ id: nueva ? 0 : b.id, planta: val('fBodPlanta'), codigo: nueva ? val('fBodCod') : '', nombre: val('fBodNom'), descripcion: val('fBodDesc'), metodo: val('fBodMet') }) });
         aviso(r.detalle || (nueva ? 'Bodega creada.' : 'Bodega actualizada.'));
         const planta = +val('fBodPlanta');
         await recargar(true, planta !== S.planta ? planta : 0);
@@ -1737,6 +1745,8 @@ async function formRepuesto(id, ctx, volver) {
         campo('Nombre', inp('fRepNom', r.nombre, { ph: 'Ej. Rodamiento 6205-2RS1' }), { ancho: true, req: true }) +
         campo('Unidad', sel('fRepUni', cat.unidades.map((u) => [u.id, u.nombre + (u.simbolo ? ' (' + u.simbolo + ')' : '')]), r.unidad), { req: true }) +
         campo('Costo de referencia', inp('fRepCosto', r.costo, { paso: true, ph: 'CLP' })) +
+        campo('Método de salida', sel('fRepMet', [['', 'Según la bodega'], ['FEFO', 'FEFO · vence antes, sale antes'], ['FIFO', 'FIFO · entró antes, sale antes'], ['LIFO', 'LIFO · entró último, sale antes']], fic ? (fic.metodo || '') : ''),
+              { ancho: true, ayuda: 'Excepción para este repuesto. «Según la bodega» sigue el método de cada bodega.' }) +
         campo('Fabricante', inp('fRepFab', r.fabricante)) +
         campo('Modelo', inp('fRepMod', r.modelo)) +
         campo('Descripción', '<textarea id="fRepDesc">' + esc(r.descripcion || '') + '</textarea>', { ancho: true }) +
@@ -1777,7 +1787,7 @@ async function formRepuesto(id, ctx, volver) {
             id: id || 0, codigo: val('fRepCod'), nombre: val('fRepNom'), tipo: val('fRepTipo'), unidad: val('fRepUni'),
             fabricante: val('fRepFab'), modelo: val('fRepMod'), descripcion: val('fRepDesc'), costo: val('fRepCosto'),
             consumible: val('fRepCons'), reparable: val('fRepRepa'), lote: val('fRepLote'),
-            vidaHoras: val('fRepVH'), vidaDias: val('fRepVD'), vidaCiclos: val('fRepVC')
+            vidaHoras: val('fRepVH'), vidaDias: val('fRepVD'), vidaCiclos: val('fRepVC'), metodo: val('fRepMet')
         };
         if (id) datos.habilitado = val('fRepHab');
         const res = await ws('GuardarRepuesto', { datos: JSON.stringify(datos) });
@@ -1893,8 +1903,9 @@ async function formMovimiento(ctx, volver) {
             try {
                 const o = await ws('Origenes', { repuesto: repuesto.id, bodega: bodegaId });
                 const s = $('fOrigen'); if (!s) return;
-                s.innerHTML = o.origenes.length ? o.origenes.map((x) =>
-                    '<option value="' + x.ubicacion + '|' + x.lote + '">' + esc((x.ubicacionCodigo || 'Sin ubicación') + (x.loteCodigo ? ' · lote ' + x.loteCodigo : '') + ' · hay ' + num(x.cantidad)) + '</option>').join('')
+                const met = (caja && caja.userData.item.met) || (info && info.bodega.metodo) || 'FEFO';
+                s.innerHTML = o.origenes.length ? o.origenes.map((x, i) =>
+                    '<option value="' + x.ubicacion + '|' + x.lote + '">' + esc((x.ubicacionCodigo || 'Sin ubicación') + (x.loteCodigo ? ' · lote ' + x.loteCodigo : '') + ' · hay ' + num(x.cantidad) + (i === 0 ? ' · sugerido ' + met : '')) + '</option>').join('')
                     : '<option value="">Sin existencia en esta bodega</option>';
                 if (caja) { const pre = o.origenes.find((x) => x.ubicacion === caja.userData.rack.id); if (pre) s.value = pre.ubicacion + '|' + pre.lote; }
             } catch (e) { aviso(e.message, true); }
@@ -2096,6 +2107,7 @@ function armarTablet() {
 }
 function estadoTablet() {
     const T = S.tour; if (!T) return;
+    if (T.modo === 'picking') { estadoPicking(); return; }
     const total = T.paradas.length;
     $('tbStats').innerHTML =
         '<div><b>' + T.vistos.size + '<small>/' + total + '</small></b><span>Racks</span></div>' +
@@ -2316,6 +2328,7 @@ function irACajaRecorrido(c) {
 
 function planificar() {
     const T = S.tour;
+    if (T.modo === 'picking') return planificarPicking();
     if (T.cola.length) return empezar(T.cola.shift());
     if (T.terminado) return null;
     if (T.idx < T.paradas.length) {
@@ -2333,7 +2346,13 @@ function empezar(s) {
     const T = S.tour;
     s.t0 = T.reloj;
     s.xa = T.pos.x; s.za = T.pos.z;
-    if (s.tipo === 'camina') s.dur = Math.max(0.6, Math.abs(s.zb - s.za) / (s.prisa ? 2.6 : 0.95));
+    if (s.tipo === 'camina') {
+        if (s.xb == null) s.xb = T.pa.x;
+        if (s.entra) T.pa = s.entra;
+        if (s.dirigir) T.sentido = s.dirigir;
+        s.dur = Math.max(0.6, Math.hypot(s.xb - s.xa, s.zb - s.za) / (s.prisa ? 2.6 : 0.95));
+    }
+    if (s.tipo === 'pick') { s.dur = 1e9; mostrarPick(s); }
     if (s.tipo === 'mira') {
         const n = s.parada.cajas.length;
         s.dur = n ? Math.min(8.5, Math.max(3.2, 2.2 + n * 0.25)) : 2.2;
@@ -2364,7 +2383,12 @@ function cerrarSegmento(s, corte) {
             }
         }
     }
-    if (s.tipo === 'vuelta' && !corte) { T.final = true; T.pausado = true; resumenTablet(); }
+    if (s.tipo === 'pick') {
+        if (!corte) T.vistos.add(s.parada.rack);
+        for (const c of s.parada.cajas) c.userData.sacar = 0;
+        marcarContorno(null); limpiarFlotantes(true);
+    }
+    if (s.tipo === 'vuelta' && !corte) { T.final = true; T.pausado = true; if (T.modo === 'picking') resumenPicking(); else resumenTablet(); }
     estadoTablet();
 }
 function revelar(s, c) {
@@ -2408,16 +2432,19 @@ function pasoRecorrido(dt, ahora) {
         const p = clamp01((T.reloj - s.t0) / s.dur);
         if (s.tipo === 'camina') {
             const e = paso(p);
-            T.pos.x = lerp(s.xa, pa.x, e);
+            T.pos.x = lerp(s.xa, s.xb, e);
             T.pos.z = lerp(s.za, s.zb, e);
             andando = !s.hecho;
-            const sentido = Math.sign(s.zb - s.za) || 1;
-            _desea.set(pa.x + Math.sin(T.fase * 0.5) * 0.12, 1.45, T.pos.z + sentido * 4.5);
+            // se mira hacia donde se camina: a lo largo del pasillo, o por el pasillo de cruce
+            const dx = s.xb - s.xa, dz = s.zb - s.za, cruza = Math.abs(dx) > Math.abs(dz);
+            const sentido = Math.sign(cruza ? dx : dz) || 1;
+            if (cruza) _desea.set(T.pos.x + sentido * 4.5, 1.45, T.pos.z + Math.sin(T.fase * 0.5) * 0.12);
+            else _desea.set(s.xb + Math.sin(T.fase * 0.5) * 0.12, 1.45, T.pos.z + sentido * 4.5);
         } else if (s.tipo === 'mira') {
             const pd = s.parada, lado = pd.lado === 'izq' ? 1 : -1;
             // se aparta hacia el otro lado del pasillo para ver el rack entero, y al terminar vuelve al centro
             const o = paso(Math.min(1, p / 0.16)) * (s.revisar && s.hecho ? 1 : paso(Math.min(1, (1 - p) / 0.14)));
-            T.pos.x = lerp(s.xa, pa.x + lado * 0.5, o);
+            T.pos.x = lerp(s.xa, (pd.pa || pa).x + lado * 0.5, o);
             T.pos.z = s.za;
             // la mirada baja del nivel 4 al 1 y la tablet lista lo que va pasando
             const pe = clamp01((p - 0.1) / 0.78), y = lerp(3.05, 0.22, suave(pe));
@@ -2432,6 +2459,13 @@ function pasoRecorrido(dt, ahora) {
                 }
                 const pg = $('tbProg'); if (pg && !pd.cajas.length) pg.style.width = (p * 100) + '%';
             }
+        } else if (s.tipo === 'pick') {
+            // se arrima al otro lado del pasillo y mira la caja que hay que sacar
+            const pd = s.parada, lado = pd.lado === 'izq' ? 1 : -1;
+            const o = paso(clamp01((T.reloj - s.t0) / 0.9));
+            T.pos.x = lerp(s.xa, pd.pa.x + lado * 0.45, o);
+            T.pos.z = s.za;
+            if (s.caja) _desea.copy(s.caja.userData.base); else _desea.set(pd.cara, 1.3, pd.z);
         } else if (s.tipo === 'vuelta') {
             // al final se da vuelta y mira el pasillo recorrido: las marcas rojas quedan a la vista
             const th = Math.PI * paso(p);
@@ -2492,7 +2526,7 @@ function clicRecorrido(ev) {
     if (h.rack) {
         const i = T.paradas.findIndex((p) => p.rack === h.rack);
         if (i >= 0) saltarA(i, true);
-        else if (h.rack.infoPa && h.rack.infoPa.racks.length) iniciarRecorrido(h.rack.infoPa, h.rack);
+        else if (T.modo !== 'picking' && h.rack.infoPa && h.rack.infoPa.racks.length) iniciarRecorrido(h.rack.infoPa, h.rack);
     }
 }
 
@@ -2761,6 +2795,403 @@ async function resumenConteo(T) {
     $('tbActual').appendChild(caja);
 }
 
+// ============================================================================
+//  PICKING — preparar lo que pide una OT (o un retiro libre)
+// ----------------------------------------------------------------------------
+//  Se arma la lista (lo pendiente de la OT o lo que se agregue a mano), el
+//  mapa reparte cada repuesto entre sus cajas en el orden del METODO DE SALIDA
+//  (FEFO, FIFO o LIFO, BD/328) y arma la ruta en "S": un pasillo hacia el
+//  fondo, el siguiente hacia la entrada, como se recorre una bodega real.
+//  El recorrido en primera persona va caja por caja: la caja se asoma, la
+//  tablet dice cuanto sacar y de que lote, y "Retirar" registra la SALIDA POR
+//  CONSUMO contra la orden (WsBodegaMapa.RetirarPicking).
+// ============================================================================
+const METODO_TXT = { FEFO: 'primero lo que vence antes', FIFO: 'primero lo que entró antes', LIFO: 'primero lo que entró último' };
+function fechaCorta(iso) {
+    if (!iso) return '';
+    const d = String(iso).split(' ')[0].split('-');
+    return d.length === 3 ? d[2] + '-' + d[1] + '-' + d[0] : iso;
+}
+
+/* El orden en que se toman las cajas de un repuesto: el mismo criterio que
+   usa SEL_INVENTARIO_ORIGEN para los lotes dentro de cada caja. */
+function compararPorMetodo(met) {
+    return (a, b) => {
+        const x = a.userData.item, y = b.userData.item;
+        if (met === 'FEFO') {
+            const vx = x.vence || '9999', vy = y.vence || '9999';
+            if (vx !== vy) return vx < vy ? -1 : 1;
+        }
+        if (met === 'LIFO') { if ((x.ingN || '') !== (y.ingN || '')) return (x.ingN || '') > (y.ingN || '') ? -1 : 1; }
+        else if ((x.ing || '') !== (y.ing || '')) return (x.ing || '9999') < (y.ing || '9999') ? -1 : 1;
+        return a.userData.rack.codigo.localeCompare(b.userData.rack.codigo);
+    };
+}
+
+function planPicking(bodegaId, lineas) {
+    const info = S.porBodega.get(bodegaId);
+    const asign = [];
+    for (const l of lineas) {
+        l.retirado = l.retirado || 0; l.asignada = 0; l.faltante = 0;
+        const todas = info ? info.cajas.filter((c) => c.userData.item.id === l.id && c.userData.item.q > 0) : [];
+        l.enRecepcion = todas.filter((c) => c.userData.rack.recepcion).reduce((s, c) => s + c.userData.item.q, 0);
+        const cajas = todas.filter((c) => !c.userData.rack.recepcion);
+        l.metodo = cajas.length ? (cajas[0].userData.item.met || 'FEFO') : ((info && info.bodega.metodo) || 'FEFO');
+        cajas.sort(compararPorMetodo(l.metodo));
+        let resta = Math.max(0, (l.pedida || 0) - l.retirado);
+        for (const c of cajas) {
+            if (resta <= 1e-9) break;
+            const q = Math.min(resta, c.userData.item.q);
+            asign.push({ linea: l, caja: c, cantidad: q, estado: 'pendiente', retirado: 0 });
+            l.asignada += q; resta -= q;
+        }
+        l.faltante = resta > 1e-9 ? resta : 0;
+    }
+    const porRack = new Map();
+    for (const a of asign) { const r = a.caja.userData.rack; if (!porRack.has(r)) porRack.set(r, []); porRack.get(r).push(a); }
+    const pasillos = [...new Set([...porRack.keys()].map((r) => r.infoPa))].sort((a, b) => a.x - b.x);
+    const dir = new Map(pasillos.map((pa, i) => [pa, i % 2 === 0 ? 1 : -1]));
+    const paradas = [...porRack.entries()].map(([rack, picks]) => ({
+        rack, pa: rack.infoPa, lado: rack.lado, z: rack.pos.z, dir: dir.get(rack.infoPa),
+        cara: rack.pos.x + rack.normal.x * (RACK.prof / 2),
+        picks: picks.sort((a, b) => (b.caja.userData.nivel - a.caja.userData.nivel) || (a.caja.userData.posicion - b.caja.userData.posicion)),
+        cajas: picks.map((p) => p.caja)
+    })).sort((a, b) => (pasillos.indexOf(a.pa) - pasillos.indexOf(b.pa)) || (a.z - b.z) * a.dir);
+    return { info, lineas, paradas, pasillos, picks: asign };
+}
+
+function disponibilidad(l, plan) {
+    const racks = [...new Set(plan.picks.filter((p) => p.linea === l).map((p) => corto(p.caja.userData.rack.codigo)))];
+    if (l.asignada > 0) return 'Sale de ' + racks.join(' · ') + ' · ' + l.metodo + (l.faltante ? ' · <em>faltan ' + num(l.faltante) + '</em>' : '');
+    if (l.enRecepcion > 0) return '<em>Solo en recepción (' + num(l.enRecepcion) + '): ubícalo en un rack primero</em>';
+    return '<em>Sin stock en esta bodega</em>';
+}
+
+function agregarAPicking(it) {
+    if (!S.picking) S.picking = { bodega: it.b, orden: 0, ordenTexto: '', lineas: [] };
+    const P = S.picking;
+    if (P.bodega !== it.b) { P.bodega = it.b; }
+    const ya = P.lineas.find((l) => l.id === it.id);
+    if (ya) ya.pedida = (ya.pedida || 0) + 1;
+    else P.lineas.push({ id: it.id, c: it.c, n: it.n, un: it.un, foto: it.foto, pedida: 1 });
+    aviso(it.c + ' agregado al picking (' + P.lineas.length + ' repuesto' + (P.lineas.length === 1 ? '' : 's') + ').');
+    formPicking();
+}
+
+async function formPicking() {
+    abrirPanel(cab('Picking', 'Preparar picking', '', 'mdi-cart-arrow-down'), '<div class="bm3d-loader" style="justify-content:center;margin:30px"><span></span><span></span><span></span></div>', '');
+    let cat;
+    try { cat = await catalogos(); } catch (e) { aviso(e.message, true); return; }
+    if (!S.picking) S.picking = { bodega: S.bodegaSel, orden: 0, ordenTexto: '', lineas: [] };
+    const P = S.picking;
+    if (!S.porBodega.has(P.bodega)) P.bodega = S.bodegaSel;
+
+    const pintar = () => {
+        const info = S.porBodega.get(P.bodega);
+        const plan = planPicking(P.bodega, P.lineas);
+        const nombres = plan.pasillos.map((pa) => pa.nom).join(' → ');
+        abrirPanel(cab(info.bodega.nombre + ' · salida ' + (info.bodega.metodo || 'FEFO'), 'Preparar picking', P.orden ? P.ordenTexto : 'Retiro libre', 'mdi-cart-arrow-down'),
+            '<div class="bm3d-form">' +
+            campo('Bodega', sel('fPkBod', (S.datos.bodegas || []).map((b) => [b.id, b.nombre]), P.bodega), { req: true }) +
+            campo('Orden de trabajo', sel('fPkOT', [[0, 'Sin OT · retiro libre']].concat((cat.ordenes || []).map((o) => [o.id, o.texto])), P.orden)) +
+            '</div>' +
+            (!(cat.ordenes || []).length ? '<div class="bm3d-nota" style="margin-top:10px"><i class="mdi mdi-information-outline"></i>No hay órdenes abiertas: el retiro queda como salida por consumo sin OT.</div>' : '') +
+            '<div class="bm3d-seccion" style="margin-top:14px"><div class="bm3d-seccion-tit"><span>Qué retirar</span><span>' + P.lineas.length + '</span></div>' +
+            (P.lineas.length ? P.lineas.map((l, i) =>
+                '<div class="bm3d-pk-linea' + (l.faltante || !l.asignada ? ' es-falta' : '') + '">' + miniatura(l.foto) +
+                '<div><b>' + esc(l.c) + '</b><span>' + esc(l.n) + '</span><small>' + disponibilidad(l, plan) + '</small></div>' +
+                '<input type="text" inputmode="decimal" data-pk-cant="' + i + '" value="' + esc(l.pedida) + '" aria-label="Cantidad" />' +
+                '<button type="button" data-pk-quitar="' + i + '" title="Quitar"><i class="mdi mdi-close"></i></button></div>').join('')
+                : '<div class="bm3d-vacio-txt">Elige una OT o agrega repuestos con el buscador.</div>') +
+            '<div class="bm3d-selrep" style="margin-top:8px"><input id="fPkBusca" placeholder="Agregar repuesto: código o nombre…" autocomplete="off" style="width:100%;height:36px;padding:0 10px;border:1px solid #CFD6E3;border-radius:9px" />' +
+            '<div class="bm3d-resultados" id="fPkRes" hidden></div></div></div>' +
+            (plan.paradas.length ? '<div class="bm3d-nota"><i class="mdi mdi-map-marker-path"></i><span>Ruta: <b>' + plan.paradas.length + ' parada' + (plan.paradas.length === 1 ? '' : 's') + '</b> en pasillo' + (plan.pasillos.length === 1 ? ' ' : 's ') + esc(nombres) +
+                '. Cada repuesto sale de sus cajas en el orden de su método de salida.</span></div>' : ''),
+            '<button type="button" class="bm3d-btn es-ghost" id="fPkCancelar">Cerrar</button>' +
+            '<button type="button" class="bm3d-btn es-primario" id="fPkIniciar"' + (plan.paradas.length ? '' : ' disabled') + '><i class="mdi mdi-walk"></i>Iniciar picking</button>');
+
+        $('fPkCancelar').onclick = cerrarPanel;
+        $('fPkBod').onchange = (e) => { P.bodega = +e.target.value; pintar(); };
+        $('fPkOT').onchange = async (e) => {
+            P.orden = +e.target.value;
+            P.ordenTexto = P.orden ? e.target.options[e.target.selectedIndex].text : '';
+            if (P.orden) {
+                try {
+                    const r = await ws('PickingOT', { orden: P.orden });
+                    if (r.lineas.length) P.lineas = r.lineas.map((x) => ({ id: x.id, c: x.c, n: x.n, un: x.un, foto: (cat.repuestos.find((y) => y.id === x.id) || {}).foto, pedida: x.pendiente }));
+                    else aviso('La OT no tiene repuestos pendientes: agrega lo que vas a retirar y queda cargado a la orden.');
+                } catch (er) { aviso(er.message, true); }
+            }
+            pintar();
+        };
+        panel.querySelectorAll('[data-pk-cant]').forEach((inp) => inp.onchange = () => { P.lineas[+inp.dataset.pkCant].pedida = leerCant(inp.value) || 0; pintar(); });
+        panel.querySelectorAll('[data-pk-quitar]').forEach((b) => b.onclick = () => { P.lineas.splice(+b.dataset.pkQuitar, 1); pintar(); });
+        const busca = $('fPkBusca'), res = $('fPkRes');
+        busca.oninput = () => {
+            const q = norm(busca.value);
+            if (q.length < 2) { res.hidden = true; return; }
+            const stock = (id) => info.cajas.filter((c) => c.userData.item.id === id && !c.userData.rack.recepcion).reduce((s, c) => s + c.userData.item.q, 0);
+            const m = cat.repuestos.filter((x) => norm(x.c).includes(q) || norm(x.n).includes(q) || norm(x.tn).includes(q))
+                .map((x) => ({ x, hay: stock(x.id) })).sort((a, b) => (b.hay > 0) - (a.hay > 0)).slice(0, 30);
+            res.hidden = false;
+            res.innerHTML = m.length ? m.map((r, i) => '<div class="bm3d-res" data-i="' + i + '">' + miniatura(r.x.foto) + '<div><b>' + esc(r.x.c) + '</b><span>' + esc(r.x.n) + '</span></div><em' + (r.hay ? '' : ' style="color:#C7352B"') + '>' + (r.hay ? 'hay ' + num(r.hay) : 'sin stock') + '</em></div>').join('') : '<div class="bm3d-res-vacio">Sin coincidencias.</div>';
+            res.querySelectorAll('[data-i]').forEach((el) => el.onmousedown = (ev) => {
+                ev.preventDefault();
+                const x = m[+el.dataset.i].x, ya = P.lineas.find((l) => l.id === x.id);
+                if (ya) ya.pedida = (ya.pedida || 0) + 1; else P.lineas.push({ id: x.id, c: x.c, n: x.n, un: x.un, foto: x.foto, pedida: 1 });
+                pintar();
+                setTimeout(() => { const b2 = $('fPkBusca'); if (b2) b2.focus(); }, 30);
+            });
+        };
+        $('fPkIniciar').onclick = () => {
+            panel.querySelectorAll('[data-pk-cant]').forEach((inp) => { P.lineas[+inp.dataset.pkCant].pedida = leerCant(inp.value) || 0; });
+            for (const l of P.lineas) l.retirado = 0;
+            const plan2 = planPicking(P.bodega, P.lineas);
+            if (!plan2.paradas.length) { aviso('No hay nada que retirar con stock en esta bodega.', true); return; }
+            iniciarPicking(plan2, { orden: P.orden, ordenTexto: P.ordenTexto });
+        };
+    };
+    pintar();
+}
+
+function iniciarPicking(plan, meta) {
+    const previo = S.tour;
+    if (previo) { if (previo.conteoId) cerrarConteo(previo, true); limpiarRecorrido(); }
+    cerrarPanel(); cerrarFicha(); terminarPick(); soltarSeleccion(); marcarContorno(null);
+    if (S.filtro.size) { S.filtro.clear(); aplicarFiltros(); }
+    if (S.modoAlertas) root.querySelector('[data-modo="alertas"]').click();
+    if (plan.info.id !== S.bodegaSel) elegirBodega(plan.info.id, true);
+    const pa = plan.paradas[0].pa;
+    S.tour = {
+        modo: 'picking', plan, meta, pa, paradas: plan.paradas, sentido: 1,
+        vel: 1, idx: 0, cola: [], seg: null, reloj: 0, pausado: false, terminado: false, final: false,
+        pos: new THREE.Vector3(pa.x, OJOS, pa.z0 - 2.4), mira: new THREE.Vector3(pa.x, 1.45, pa.z0 + 3),
+        yaw: 0, pitch: 0, fase: 0, andando: 0,
+        vistos: new Set(), revisados: new Set(), alertas: [], marcas: new Map(), destellos: [], etiquetas: [],
+        camGuardada: previo ? previo.camGuardada : { pos: camera.position.clone(), target: controls.target.clone() },
+        inicio: performance.now(), detalle: null, revisarIdx: -1,
+        conteo: false, conteoId: 0, cuenta: { lineas: 0, coinciden: 0, ajustes: 0, cajas: {} }, contados: new Set(), contando: null,
+        huboAjustes: !!(previo && previo.huboAjustes), unidades: 0
+    };
+    controls.enabled = false;
+    S.vuelo = null;
+    S.fovMeta = FOV_RECORRIDO;
+    linterna.intensity = 5;
+    root.classList.add('en-recorrido');
+    armarCinePicking();
+    armarTabletPicking();
+    armarLaser();
+    const mirandoA = camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(6));
+    S.tour.intro = { t0: performance.now(), dur: previo ? 1600 : 2800, p0: camera.position.clone(), q0: mirandoA };
+}
+
+function armarCinePicking() {
+    const T = S.tour, info = T.plan.info;
+    const titulo = T.meta.orden ? T.meta.ordenTexto : 'Retiro libre';
+    cine.innerHTML =
+        '<div class="bm3d-cine-barra es-arriba"><span class="bm3d-cine-rec"><i></i>REC</span><span class="bm3d-cine-nom">PICKING · ' + esc(titulo.toUpperCase()) + ' · ' + esc(info.bodega.nombre.toUpperCase()) + '</span><span class="bm3d-cine-tc" id="cineTc">00:00</span></div>' +
+        '<div class="bm3d-cine-barra es-abajo"><span><kbd>Espacio</kbd> pausa</span><span><kbd>←</kbd><kbd>→</kbd> parada anterior / siguiente</span><span>Arrastra para mirar</span><span><kbd>Esc</kbd> salir</span></div>' +
+        '<div class="bm3d-cine-vineta"></div>' +
+        '<div class="bm3d-cine-titulo" id="cineTitulo"><small>Picking · ' + esc(info.bodega.nombre) + '</small><b>' + esc(titulo) + '</b>' +
+            '<span>' + T.plan.lineas.filter((l) => l.asignada > 0).length + ' repuestos · ' + T.paradas.length + ' paradas · pasillo' + (T.plan.pasillos.length === 1 ? ' ' : 's ') + esc(T.plan.pasillos.map((p) => p.nom).join(' → ')) + '</span></div>';
+    cine.hidden = false;
+    requestAnimationFrame(() => cine.classList.add('is-visible'));
+}
+
+function armarTabletPicking() {
+    const T = S.tour, info = T.plan.info;
+    tablet.innerHTML =
+        '<div class="bm3d-tb-mano es-izq"><i class="manga"></i><i class="palma"></i></div>' +
+        '<div class="bm3d-tb-mano es-der"><i class="manga"></i><i class="palma"></i></div>' +
+        '<div class="bm3d-tb-equipo"><span class="bm3d-tb-camara"></span><div class="bm3d-tb-pantalla">' +
+            '<div class="bm3d-tb-sb"><b>SIGMA</b><span id="tbHora"></span><span><i class="mdi mdi-wifi"></i><i class="mdi mdi-battery-80"></i></span></div>' +
+            '<div class="bm3d-tb-app">' +
+                '<div class="bm3d-tb-cab"><div><small>Picking · ' + esc(info.bodega.nombre) + '</small><b>' + esc(T.meta.orden ? T.meta.ordenTexto : 'Retiro libre') + '</b></div><span class="bm3d-tb-rec" id="tbRec"><i></i>EN VIVO</span></div>' +
+                '<div class="bm3d-tb-stats" id="tbStats"></div>' +
+                '<div class="bm3d-tb-racks" id="tbRacks">' + T.paradas.map((p, i) =>
+                    '<button type="button" class="bm3d-tb-rack" data-tb-rack="' + i + '" title="' + esc(p.rack.codigo) + '"><span>' + esc(corto(p.rack.codigo)) + '</span><small>' + esc(p.pa.nom) + ' · ' + p.picks.length + '</small></button>').join('') + '</div>' +
+                '<div class="bm3d-tb-actual" id="tbActual"><div class="bm3d-tb-espera"><i class="mdi mdi-walk"></i>Camino a la primera caja…</div></div>' +
+                '<div class="bm3d-tb-lista" id="tbLista"></div>' +
+                '<div class="bm3d-tb-alertas" id="tbAlertas" hidden></div>' +
+                '<div class="bm3d-tb-ctrl">' +
+                    '<button type="button" data-tb="ant" title="Parada anterior"><i class="mdi mdi-skip-previous"></i></button>' +
+                    '<button type="button" data-tb="pausa" class="es-play" title="Pausa"><i class="mdi mdi-pause"></i></button>' +
+                    '<button type="button" data-tb="sig" title="Parada siguiente"><i class="mdi mdi-skip-next"></i></button>' +
+                    '<button type="button" data-tb="vel" class="es-vel" title="Velocidad">1×</button>' +
+                    '<button type="button" data-tb="salir" class="es-salir" title="Salir del picking"><i class="mdi mdi-exit-run"></i>Salir</button>' +
+                '</div>' +
+            '</div>' +
+            '<div class="bm3d-tb-detalle" id="tbDetalle" hidden></div>' +
+            '<div class="bm3d-tb-conteo" id="tbConteo" hidden></div>' +
+        '</div></div>' +
+        '<i class="bm3d-tb-pulgar es-izq"></i><i class="bm3d-tb-pulgar es-der"></i>';
+    tablet.hidden = false;
+    requestAnimationFrame(() => tablet.classList.add('is-visible'));
+    tablet.querySelectorAll('[data-tb-rack]').forEach((b) => b.onclick = () => saltarA(+b.dataset.tbRack, false));
+    tablet.querySelector('[data-tb="ant"]').onclick = () => saltarRelativo(-1);
+    tablet.querySelector('[data-tb="sig"]').onclick = () => saltarRelativo(1);
+    tablet.querySelector('[data-tb="pausa"]').onclick = () => pausar(!S.tour.pausado);
+    tablet.querySelector('[data-tb="vel"]').onclick = () => { const t2 = S.tour; t2.vel = VEL[(VEL.indexOf(t2.vel) + 1) % VEL.length]; estadoTablet(); };
+    tablet.querySelector('[data-tb="salir"]').onclick = salirRecorrido;
+    lineasPicking();
+    estadoTablet();
+}
+
+function estadoLinea(l) {
+    if (l.retirado >= (l.pedida || 0) - 1e-9 && l.retirado > 0) return ['es-ok', 'Listo'];
+    if (!l.asignada && !l.retirado) return ['es-falta', l.enRecepcion ? 'En recepción' : 'Sin stock'];
+    if (l.retirado > 0) return ['es-parcial', num(l.retirado) + '/' + num(l.pedida)];
+    if (l.faltante) return ['es-falta', 'Faltan ' + num(l.faltante)];
+    return ['', 'Pendiente'];
+}
+function lineasPicking() {
+    const T = S.tour, el = $('tbLista'); if (!T || !el) return;
+    el.innerHTML = T.plan.lineas.map((l, i) => {
+        const [cl, txt] = estadoLinea(l);
+        return '<div class="bm3d-tb-item bm3d-tb-pkl ' + cl + '" data-pkl="' + i + '">' + miniatura(l.foto) +
+            '<div><b>' + esc(l.c) + '</b><span>' + esc(l.n) + '</span><small>' + num(l.pedida) + ' ' + esc(l.un || '') + ' · ' + esc(l.metodo || '') + '</small></div>' +
+            '<em>' + esc(txt) + '</em></div>';
+    }).join('');
+    el.querySelectorAll('[data-pkl]').forEach((f) => f.onclick = () => {
+        const l = T.plan.lineas[+f.dataset.pkl];
+        const i = T.paradas.findIndex((p) => p.picks.some((k) => k.linea === l && k.estado === 'pendiente'));
+        if (i >= 0) saltarA(i, false);
+    });
+}
+function estadoPicking() {
+    const T = S.tour, L = T.plan.lineas.filter((l) => (l.pedida || 0) > 0);
+    const listas = L.filter((l) => estadoLinea(l)[0] === 'es-ok').length;
+    $('tbStats').innerHTML =
+        '<div><b>' + listas + '<small>/' + L.length + '</small></b><span>Repuestos</span></div>' +
+        '<div><b>' + num(T.unidades) + '</b><span>Unidades</span></div>' +
+        '<div><b>' + T.vistos.size + '<small>/' + T.paradas.length + '</small></b><span>Paradas</span></div>';
+    $('tbStats').classList.remove('es-cuatro');
+    tablet.querySelectorAll('[data-tb-rack]').forEach((b, i) => {
+        const p = T.paradas[i];
+        b.classList.toggle('es-actual', !!(T.seg && T.seg.tipo === 'pick' && T.seg.parada === p && !T.seg.hecho));
+        b.classList.toggle('es-visto', T.vistos.has(p.rack));
+        b.classList.toggle('es-alerta', p.picks.some((k) => k.estado === 'omitido'));
+    });
+    const rec = $('tbRec');
+    rec.className = 'bm3d-tb-rec' + (T.pausado ? ' es-pausa' : '') + (T.final ? ' es-fin' : '');
+    rec.innerHTML = '<i></i>' + (T.final ? 'TERMINADO' : T.pausado ? 'EN PAUSA' : 'EN VIVO');
+    const bp = tablet.querySelector('[data-tb="pausa"]');
+    bp.innerHTML = '<i class="mdi ' + (T.pausado ? 'mdi-play' : 'mdi-pause') + '"></i>';
+    bp.disabled = T.final;
+    tablet.querySelector('[data-tb="vel"]').textContent = (T.vel === 0.5 ? '½' : T.vel) + '×';
+    tablet.classList.toggle('es-pausa', T.pausado);
+    cine.classList.toggle('es-pausa', T.pausado && !T.final);
+}
+
+function planificarPicking() {
+    const T = S.tour;
+    if (T.cola.length) return empezar(T.cola.shift());
+    if (T.terminado) return null;
+    if (T.idx < T.paradas.length) {
+        const p = T.paradas[T.idx]; T.idx++;
+        const prisa = T.prisa; T.prisa = false;
+        if (p.pa !== T.pa) {
+            // se sale por el extremo hacia donde se iba y se cruza al pasillo siguiente
+            const zSalida = T.sentido > 0 ? T.pa.z1 + 1.3 : T.pa.z0 - 1.6;
+            T.cola.push({ tipo: 'camina', xb: T.pa.x, zb: zSalida, prisa },
+                        { tipo: 'camina', xb: p.pa.x, zb: zSalida, prisa, entra: p.pa });
+        }
+        T.cola.push({ tipo: 'camina', xb: p.pa.x, zb: p.z - 0.15 * (p.dir || 1), prisa, dirigir: p.dir || 1 });
+        T.cola.push({ tipo: 'pick', parada: p });
+        return empezar(T.cola.shift());
+    }
+    T.terminado = true;
+    T.cola.push({ tipo: 'vuelta' });
+    return empezar(T.cola.shift());
+}
+
+function mostrarPick(s) {
+    const T = S.tour, pd = s.parada;
+    for (const c of pd.cajas) c.userData.sacar = 0;
+    const pick = pd.picks.find((p) => p.estado === 'pendiente');
+    limpiarFlotantes(false);
+    if (!pick) { s.caja = null; marcarContorno(null); s.dur = Math.max(0.01, T.reloj - s.t0); return; }
+    const c = pick.caja, it = c.userData.item, l = pick.linea, u = c.userData;
+    s.pick = pick; s.caja = c;
+    u.sacar = u.fila === 1 ? 0.5 : 0.3;
+    marcarContorno(c, false);
+    destello(c, '#16C6C9');
+    const fl = document.createElement('div');
+    fl.className = 'bm3d-callout es-pick';
+    fl.innerHTML = '<b>RETIRAR ' + num(pick.cantidad) + ' ' + esc(it.un) + '</b><span>' + esc(it.c) + '</span>';
+    callouts.appendChild(fl);
+    T.etiquetas.push({ el: fl, c });
+    const n = T.paradas.indexOf(pd) + 1;
+    $('tbActual').innerHTML =
+        '<div class="bm3d-tb-pick">' +
+            '<div class="bm3d-tb-pick-top">' + (it.foto ? '<span class="bm3d-mini" style="width:58px;height:58px"><img src="' + esc(it.foto) + '" alt="" /></span>' : miniatura(null, it.color, 58)) +
+                '<div><small>Parada ' + n + '/' + T.paradas.length + ' · lado ' + (pd.lado === 'izq' ? 'izquierdo' : 'derecho') + '</small><b>' + esc(it.c) + '</b><span>' + esc(it.n) + '</span></div>' +
+                '<div class="bm3d-tb-pick-cant"><b>' + num(pick.cantidad) + '</b><span>' + esc(it.un) + '</span></div></div>' +
+            '<div class="bm3d-tb-pick-dato"><i class="mdi mdi-map-marker-outline"></i>' + esc(pd.rack.codigo) + ' · posición ' + u.nivel + '-' + pad2(u.posicion) + ' · hay ' + num(it.q) + '</div>' +
+            '<div class="bm3d-tb-pick-dato"><i class="mdi mdi-sort-clock-ascending-outline"></i><b>' + esc(l.metodo) + '</b>&nbsp;' + esc(METODO_TXT[l.metodo] || '') +
+                (it.vence ? ' · vence ' + fechaCorta(it.vence) : it.ing ? ' · ingreso ' + fechaCorta(it.ing) : '') + '</div>' +
+            '<div class="bm3d-tb-pick-otra" id="tbpOtra" hidden><label>Cantidad a retirar</label><input type="text" inputmode="decimal" id="tbpCant" value="' + esc(pick.cantidad) + '" /></div>' +
+            '<div class="bm3d-tb-pick-otra" id="tbpMotivoBox" hidden><label>Motivo</label><textarea id="tbpMotivo" placeholder="Por qué se usa en este equipo (mínimo 5 caracteres)"></textarea></div>' +
+            '<div class="bm3d-tb-pick-msg" id="tbpMsg" hidden></div>' +
+            '<div class="bm3d-tb-pick-acc">' +
+                '<button type="button" class="bm3d-btn es-primario es-chico" id="tbpRetirar"><i class="mdi mdi-hand-back-left-outline"></i>Retirar ' + num(pick.cantidad) + ' ' + esc(it.un) + '</button>' +
+                '<button type="button" class="bm3d-btn es-contorno es-chico" id="tbpOtraBtn">Otra cantidad</button>' +
+                '<button type="button" class="bm3d-btn es-ghost es-chico" id="tbpNo">No está</button>' +
+            '</div></div>';
+    $('tbpOtraBtn').onclick = () => { $('tbpOtra').hidden = false; $('tbpCant').focus(); $('tbpCant').select(); };
+    $('tbpNo').onclick = () => { pick.estado = 'omitido'; l.noEncontrado = true; lineasPicking(); estadoTablet(); mostrarPick(s); };
+    $('tbpRetirar').onclick = (e) => retirarPick(s, pick, e.currentTarget);
+}
+
+async function retirarPick(s, pick, btn) {
+    const T = S.tour, c = pick.caja, it = c.userData.item, l = pick.linea;
+    const otra = !$('tbpOtra').hidden;
+    const cantidad = otra ? leerCant($('tbpCant').value) : pick.cantidad;
+    const msg = $('tbpMsg');
+    if (!cantidad) { msg.hidden = false; msg.textContent = 'Indica una cantidad mayor que cero.'; return; }
+    if (cantidad > it.q + 1e-9) { msg.hidden = false; msg.textContent = 'En esta caja hay ' + num(it.q) + ' ' + it.un + '.'; return; }
+    const motivo = $('tbpMotivoBox').hidden ? '' : $('tbpMotivo').value.trim();
+    const html = btn.innerHTML; btn.disabled = true; btn.innerHTML = '<i class="mdi mdi-loading mdi-spin"></i>Registrando…';
+    try {
+        const r = await ws('RetirarPicking', { datos: JSON.stringify({ repuesto: l.id, bodega: T.plan.info.id, ubicacion: s.parada.rack.id, cantidad, orden: T.meta.orden || 0, observacion: motivo }) });
+        if (S.tour !== T) return;
+        pick.retirado = r.retirado;
+        pick.estado = r.retirado + 1e-9 < pick.cantidad ? 'parcial' : 'ok';
+        l.retirado += r.retirado;
+        T.unidades += r.retirado;
+        T.huboAjustes = true;
+        aplicarConteoCaja(c, Math.max(0, it.q - r.retirado));
+        destello(c, '#16855B');
+        if (r.parcial) aviso(r.detalle, true);
+        else aviso('Retirado ' + num(r.retirado) + ' ' + it.un + ' de ' + it.c + (T.meta.orden ? ' · cargado a la OT' : '') + '.');
+        lineasPicking(); estadoTablet();
+        mostrarPick(s);
+    } catch (e) {
+        btn.disabled = false; btn.innerHTML = html;
+        msg.hidden = false; msg.textContent = e.message;
+        if (/COMPATIBLE|MOTIVO/i.test(e.message)) { $('tbpMotivoBox').hidden = false; $('tbpMotivo').focus(); }
+    }
+}
+
+function resumenPicking() {
+    const T = S.tour, L = T.plan.lineas.filter((l) => (l.pedida || 0) > 0);
+    const listas = L.filter((l) => estadoLinea(l)[0] === 'es-ok');
+    const faltan = L.filter((l) => estadoLinea(l)[0] !== 'es-ok');
+    const seg = Math.round((performance.now() - T.inicio) / 1000);
+    $('tbActual').innerHTML =
+        '<div class="bm3d-tb-resumen"><i class="mdi mdi-cart-check"></i><b>Picking terminado</b>' +
+        '<span>' + listas.length + ' de ' + L.length + ' repuestos completos · ' + num(T.unidades) + ' un retiradas en ' + Math.floor(seg / 60) + ':' + pad2(seg % 60) + '</span>' +
+        (faltan.length ? '<em>Quedan pendientes: ' + faltan.map((l) => esc(l.c) + ' (' + num(Math.max(0, l.pedida - l.retirado)) + ')').join(', ') + '</em>'
+                       : '<em class="es-ok">Todo listo para entregar' + (T.meta.orden ? ' a ' + esc(T.meta.ordenTexto) : '') + '.</em>') + '</div>' +
+        '<div class="bm3d-tb-fin"><button type="button" class="bm3d-btn es-primario es-chico" id="tbpFin"><i class="mdi mdi-exit-run"></i>Salir</button></div>';
+    $('tbpFin').onclick = salirRecorrido;
+    // lo que no se alcanzo a retirar queda en la lista para otro intento
+    if (S.picking) {
+        S.picking.lineas = faltan.map((l) => ({ id: l.id, c: l.c, n: l.n, un: l.un, foto: l.foto, pedida: Math.max(0, l.pedida - l.retirado) }));
+        if (!S.picking.lineas.length) S.picking = null;
+    }
+}
+
 // ==================================================================== busqueda
 const buscar = $('bm3dBuscar'), resultados = $('bm3dResultados');
 let foco = -1, coincidencias = [];
@@ -2898,6 +3329,7 @@ function aplicarDatos(d) {
     leerConteos(d.conteos);
     $('bm3dPlanta').innerHTML = (d.plantas || []).map((p) => '<option value="' + p.id + '"' + (p.id === d.planta ? ' selected' : '') + '>' + esc(p.nombre) + '</option>').join('');
     root.querySelector('[data-accion="nuevo"]').hidden = !S.permisos.repuestos;
+    root.querySelector('[data-accion="picking"]').hidden = !S.permisos.entrega;
     root.querySelector('[data-accion="editar"]').hidden = !S.permisos.bodegas;
     construir(d);
     pintarBodegas();
@@ -2932,6 +3364,7 @@ root.querySelector('[data-modo="alertas"]').onclick = (e) => { S.modoAlertas = !
 root.querySelector('[data-accion="refrescar"]').onclick = () => refrescarStock(false);
 root.querySelector('[data-accion="editar"]').onclick = alternarEdicion;
 root.querySelector('[data-accion="nuevo"]').onclick = () => formRepuesto(0, { bodega: S.bodegaSel });
+root.querySelector('[data-accion="picking"]').onclick = () => formPicking();
 root.querySelector('[data-accion="bodega"]').onclick = () => panelBodega(S.porBodega.get(S.bodegaSel));
 root.querySelector('[data-accion="pantalla"]').onclick = () => { if (document.fullscreenElement) document.exitFullscreen(); else if (root.requestFullscreen) root.requestFullscreen(); };
 document.addEventListener('fullscreenchange', () => {
@@ -3008,6 +3441,7 @@ window.__bodega3d = {
     rack(i) { seleccionarRack(S.racks[i], true); },
     recorrer(b, p) { const info = S.porBodega.get(b || S.bodegaSel); if (info) iniciarRecorrido(info.pasillos[p || 0]); },
     ficha(id) { abrirFicha(id); },
+    picking: () => formPicking(),
     contar(b, p) { const info = S.porBodega.get(b || S.bodegaSel); if (info) iniciarRecorrido(info.pasillos[p || 0], null, { conteo: true }); },
     camara: () => ({ pos: camera.position.toArray(), target: controls.target.toArray() })
 };

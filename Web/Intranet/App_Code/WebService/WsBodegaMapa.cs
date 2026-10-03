@@ -4,6 +4,7 @@ using SitioBase.Model;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Web;
@@ -189,7 +190,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 },
                 fotos,
                 umbrales,
-                qr = new EtiquetaController().QrMatriz("REP-" + id)
+                qr = new EtiquetaController().QrMatriz("REP-" + id),
+                metodo = MetodoRepuesto(id)
             };
         });
     }
@@ -238,6 +240,16 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 url = VirtualPathUtility.ToAbsolute("~/View/Comun/Impresion/Etiquetas.aspx") + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt(datos))
             };
         });
+    }
+
+    private static string MetodoRepuesto(int id)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = "SEL_REPUESTO_METODO_SALIDA";
+        cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+        cmd.Parameters.AddWithValue("@REPUESTO", id);
+        DataTable dt = Conexion.GetDataTable(cmd);
+        return dt.Rows.Count > 0 && dt.Rows[0]["METODO"] != DBNull.Value ? Convert.ToString(dt.Rows[0]["METODO"]) : "";
     }
 
     /// <summary>De donde puede salir un repuesto en una bodega: ubicacion + lote con saldo.</summary>
@@ -293,7 +305,14 @@ public class WsBodegaMapa : System.Web.Services.WebService
             if (b.bod_cliente_instalacion <= 0) throw new Exception("Indique la planta de la bodega.");
             if (b.bod_id == 0 && string.IsNullOrEmpty(b.bod_codigo)) b.bod_codigo = "AUTO";
 
-            return Resultado(b.bod_id > 0 ? bc.UpdateBodega(b) : bc.InsertBodega(b), b.bod_id);
+            Respuesta res = b.bod_id > 0 ? bc.UpdateBodega(b) : bc.InsertBodega(b);
+            int idBodega = b.bod_id > 0 ? b.bod_id : res.codigo;
+            if (!res.error && d.ContainsKey("metodo") && idBodega > 0)
+            {
+                string err = EjecutarMetodo("UPD_BODEGA_METODO_SALIDA", "@BODEGA", idBodega, Texto(d, "metodo"));
+                if (err != null) return new { error = true, detalle = "La bodega se guardó, pero no el método de salida: " + err, id = idBodega };
+            }
+            return Resultado(res, b.bod_id);
         });
     }
 
@@ -362,7 +381,14 @@ public class WsBodegaMapa : System.Web.Services.WebService
             if (r.rep_unidad_medida <= 0) throw new Exception("Indique la unidad de medida.");
             if (id == 0 && string.IsNullOrEmpty(r.rep_codigo)) r.rep_codigo = "AUTO";
 
-            return Resultado(id > 0 ? rc.UpdateRepuesto(r) : rc.InsertRepuesto(r), id);
+            Respuesta res = id > 0 ? rc.UpdateRepuesto(r) : rc.InsertRepuesto(r);
+            int idRep = id > 0 ? id : res.codigo;
+            if (!res.error && d.ContainsKey("metodo") && idRep > 0)
+            {
+                string err = EjecutarMetodo("UPD_REPUESTO_METODO_SALIDA", "@REPUESTO", idRep, Texto(d, "metodo"));
+                if (err != null) return new { error = true, detalle = "El repuesto se guardó, pero no el método de salida: " + err, id = idRep };
+            }
+            return Resultado(res, id);
         });
     }
 
@@ -534,6 +560,94 @@ public class WsBodegaMapa : System.Web.Services.WebService
         }
     }
 
+    // ==================================================================== picking
+
+    /*  PICKING DESDE EL MAPA
+          El mapa arma la ruta y el bodeguero la recorre; cada retiro es una
+          SALIDA POR CONSUMO (tipo 2) por INS_INVENTARIO_MOVIMIENTO, contra la
+          orden si la hay. No hay tabla de picking: lo pendiente de la orden es
+          planificado menos consumido, y el consumo lo suma el propio SP. */
+
+    /// <summary>Lo que una orden todavia tiene que sacar de bodega.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string PickingOT(int orden)
+    {
+        return Ejecutar(P_ENTREGA, () =>
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "SEL_ORDEN_TRABAJO_PICKING";
+            cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+            cmd.Parameters.AddWithValue("@ORDEN", orden);
+            DataTable dt = Conexion.GetDataTable(cmd);
+            var lineas = new List<object>();
+            foreach (DataRow r in dt.Rows)
+                lineas.Add(new
+                {
+                    id = Convert.ToInt32(r["REP_ID"]), c = Convert.ToString(r["REP_CODIGO"]), n = Convert.ToString(r["REP_NOMBRE"]),
+                    un = Convert.ToString(r["UNIDAD"]), planificada = Numero(r["PLANIFICADA"]),
+                    consumida = Numero(r["CONSUMIDA"]), pendiente = Numero(r["PENDIENTE"])
+                });
+            return new { error = false, lineas };
+        });
+    }
+
+    /// <summary>
+    /// Retira de UNA caja (repuesto en una ubicacion), sacando de sus lotes en
+    /// el orden del metodo de salida (FEFO, FIFO o LIFO, BD/328). Si la caja no alcanza, no saca nada: el mapa ya
+    /// repartio lo pedido entre las cajas, y un retiro a medias en silencio
+    /// dejaria al bodeguero creyendo que tiene en la mano lo que no tiene.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RetirarPicking(string datos)
+    {
+        return Ejecutar(P_ENTREGA, () =>
+        {
+            var d = Leer(datos);
+            int rep = Entero(d, "repuesto"), bodega = Entero(d, "bodega"), ubic = Entero(d, "ubicacion"), orden = Entero(d, "orden");
+            decimal? cant = Num(d, "cantidad");
+            if (rep <= 0 || bodega <= 0) throw new Exception("Indique el repuesto y la bodega.");
+            if (cant == null || cant <= 0) throw new Exception("La cantidad debe ser mayor que cero.");
+
+            InventarioController ic = new InventarioController();
+            // los lotes de la caja en el orden del metodo de salida (BD/328)
+            var aqui = ic.GetOrigenes(rep, bodega, true).Where(o => (o.ubicacion_id ?? 0) == ubic).ToList();
+            decimal hay = aqui.Sum(o => o.cantidad);
+            if (hay < cant.Value)
+                throw new Exception("En esa caja hay " + hay.ToString("0.##") + " y se piden " + cant.Value.ToString("0.##") + ". Retire lo que hay o busque en otra ubicación.");
+
+            string obs = Texto(d, "observacion");
+            if (string.IsNullOrEmpty(obs)) obs = orden > 0 ? "Picking desde el mapa 3D." : "Retiro libre desde el mapa 3D.";
+
+            decimal falta = cant.Value;
+            var movs = new List<int>();
+            foreach (var o in aqui)
+            {
+                if (falta <= 0) break;
+                decimal sale = Math.Min(falta, o.cantidad);
+                Respuesta r = ic.RegistrarMovimiento(new InventarioMovimiento
+                {
+                    imo_repuesto = rep, imo_bodega = bodega, imo_inventario_movimiento_tipo = 2, imo_cantidad = sale,
+                    imo_bodega_ubicacion = o.ubicacion_id, imo_repuesto_lote = o.lote_id, imo_observacion = obs,
+                    imo_orden_trabajo = orden > 0 ? (int?)orden : null
+                });
+                if (r.error)
+                {
+                    /* El primer lote no salio: no se saco nada y se devuelve el
+                       motivo tal cual (p. ej. la compatibilidad con el equipo de la
+                       orden, que se resuelve indicando el motivo). Si fallo un lote
+                       posterior, lo ya sacado queda registrado y se dice cuanto. */
+                    if (movs.Count == 0) throw new Exception(r.detalle);
+                    return new { error = false, retirado = (double)(cant.Value - falta), movimientos = movs, parcial = true, detalle = r.detalle };
+                }
+                movs.Add(r.codigo);
+                falta -= sale;
+            }
+            return new { error = false, retirado = (double)cant.Value, movimientos = movs, parcial = false, detalle = "" };
+        });
+    }
+
     // ============================================================ conteo ciclico
 
     /*  CONTEO CICLICO DESDE EL RECORRIDO
@@ -541,8 +655,9 @@ public class WsBodegaMapa : System.Web.Services.WebService
           corrige lo que hay en cada caja. Lo que no calza se ajusta EN EL ACTO,
           con INS_INVENTARIO_MOVIMIENTO:
             - falta  -> AJUSTE NEGATIVO (5), sacado de los lotes de esa caja
-                        empezando por el que vence antes (FEFO): si falta algo,
-                        lo mas probable es que se haya usado lo mas viejo;
+                        en el orden del metodo de salida de la bodega o del
+                        repuesto (FEFO, FIFO o LIFO, BD/328): lo que falta es lo
+                        que, segun ese metodo, ya se deberia haber usado;
             - sobra  -> AJUSTE POSITIVO (4), al lote mas reciente de esa caja o,
                         si el repuesto controla lote y ahi no hay ninguno, al
                         lote que indique el bodeguero.
@@ -599,7 +714,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 if (dif < 0)
                 {
                     decimal falta = -dif;
-                    foreach (var o in aqui.OrderBy(o => o.lote_vence.HasValue ? 0 : 1).ThenBy(o => o.lote_vence).ThenBy(o => o.lote_id ?? 0))
+                    // en el orden del metodo de salida (FEFO/FIFO/LIFO): SEL_INVENTARIO_ORIGEN ya los trae asi
+                    foreach (var o in aqui)
                     {
                         if (falta <= 0) break;
                         decimal sale = Math.Min(falta, o.cantidad);
@@ -738,6 +854,7 @@ public class WsBodegaMapa : System.Web.Services.WebService
                     codigo = Convert.ToString(r["BOD_CODIGO"]),
                     nombre = Convert.ToString(r["BOD_NOMBRE"]),
                     descripcion = Convert.ToString(r["BOD_DESCRIPCION"]),
+                    metodo = Convert.ToString(r["BOD_METODO_SALIDA"]),
                     plantaId = Convert.ToInt32(r["CIN_ID"]),
                     planta = Convert.ToString(r["CIN_NOMBRE"]),
                     ubicaciones = ubic
@@ -808,6 +925,10 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 min = NumeroONulo(r["STOCK_MINIMO"]),
                 max = NumeroONulo(r["STOCK_MAXIMO"]),
                 pr = NumeroONulo(r["PUNTO_REPOSICION"]),
+                met = Convert.ToString(r["METODO"]),
+                ing = Fecha(r["INGRESO_MIN"]),
+                ingN = Fecha(r["INGRESO_MAX"]),
+                vence = Fecha(r["VENCE_MIN"]),
                 foto = portadas.TryGetValue(rep, out archivo) && archivo > 0 ? UrlArchivo.Ver(archivo) : "",
                 ficha = ficha + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt("Id=" + rep))
             });
@@ -878,6 +999,29 @@ public class WsBodegaMapa : System.Web.Services.WebService
     {
         DateTime f;
         return DateTime.TryParseExact(Texto(d, k), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out f) ? (DateTime?)f : null;
+    }
+
+/// <summary>Fecha ISO (yyyy-MM-dd HH:mm), ordenable como texto en el visor; vacia si no hay.</summary>
+    private static string Fecha(object v)
+    {
+        return v == null || v == DBNull.Value ? "" : Convert.ToDateTime(v).ToString("yyyy-MM-dd HH:mm");
+    }
+
+    /// <summary>Ejecuta un SP de escritura del bloque 328 y devuelve su error, o null.</summary>
+    private static string EjecutarMetodo(string sp, string campo, int id, string metodo)
+    {
+        try
+        {
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = sp;
+            cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+            cmd.Parameters.AddWithValue(campo, id);
+            cmd.Parameters.AddWithValue("@METODO", string.IsNullOrEmpty(metodo) ? (object)DBNull.Value : metodo);
+            cmd.Parameters.AddWithValue("@USUARIO", SitioBase.Session.UsuarioId());
+            Conexion.GetDataTable(cmd);
+            return null;
+        }
+        catch (Exception ex) { return ex.Message; }
     }
 
     private static double Numero(object v) { return v == null || v == DBNull.Value ? 0 : Convert.ToDouble(v); }

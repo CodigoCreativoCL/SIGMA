@@ -17,7 +17,7 @@
        No depende de que un CDN responda el dia de la demo. --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=13" rel="stylesheet" />
+    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=14" rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
@@ -46,6 +46,7 @@
             </div>
             <div class="bm3d-acciones" role="group" aria-label="Acciones">
                 <button type="button" class="bm3d-btn es-primario es-chico" data-accion="nuevo" hidden><i class="mdi mdi-plus"></i><span>Repuesto</span></button>
+                <button type="button" class="bm3d-ico" data-accion="picking" title="Preparar picking: lo que pide una OT o un retiro libre" hidden><i class="mdi mdi-cart-arrow-down"></i></button>
                 <button type="button" class="bm3d-ico" data-accion="editar" title="Modo edición: crear racks y pasillos" hidden><i class="mdi mdi-pencil-ruler"></i></button>
                 <button type="button" class="bm3d-ico" data-accion="bodega" title="Datos de la bodega"><i class="mdi mdi-cog-outline"></i></button>
                 <span class="bm3d-sep"></span>
@@ -101,5 +102,5 @@
             }
         }
     </script>
-    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=13"></script>
+    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=14"></script>
 </asp:Content>
