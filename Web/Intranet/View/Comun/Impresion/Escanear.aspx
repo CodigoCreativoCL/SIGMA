@@ -146,6 +146,10 @@
 
                     <%-- Escanear otra sin salir: quien está frente a la estantería
                          lee varias seguidas. --%>
+                    <asp:HyperLink ID="lnkMapa" runat="server" Visible="false" CssClass="esc-otra" Target="_blank">
+                        <i class="mdi mdi-cube-scan"></i><span>Ver en el mapa 3D</span>
+                    </asp:HyperLink>
+
                     <button type="button" class="esc-otra" onclick="sigmaEscaneo.iniciar(); return false;">
                         <i class="mdi mdi-qrcode-scan"></i><span>Escanear otra</span>
                     </button>

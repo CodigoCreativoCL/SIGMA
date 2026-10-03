@@ -165,6 +165,7 @@ public partial class View_Comun_Impresion_Escanear : System.Web.UI.Page
                                     " de su empresa.");
 
             Mostrar(controller, tipo);
+            EnlaceMapa(tipo, id);
 
             txtLectura.Text = "";
         }
@@ -208,6 +209,18 @@ public partial class View_Comun_Impresion_Escanear : System.Web.UI.Page
         if (tipo == "UBI") return "ninguna ubicación";
         if (tipo == "BOD") return "ninguna bodega";
         return "ningún repuesto";
+    }
+
+    /// <summary>
+    /// "Ver en el mapa 3D": abre el mapa volando a lo escaneado (BodegaMapa3D
+    /// lee ?ir= con el mismo token del QR). Solo para bodega, ubicacion y
+    /// repuesto, y solo si quien escanea puede ver bodegas.
+    /// </summary>
+    protected void EnlaceMapa(string tipo, int id)
+    {
+        bool aplica = (tipo == "UBI" || tipo == "BOD" || tipo == "REP") && Token.Puede("VER BODEGAS");
+        lnkMapa.Visible = aplica;
+        if (aplica) lnkMapa.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx") + "?ir=" + tipo + "-" + id;
     }
 
     protected void Mostrar(DesgloseController controller, string tipo)

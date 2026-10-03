@@ -83,7 +83,10 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 bodegas = ArmarEstructura(estructura),
                 saldos = ArmarSaldos(saldos),
                 qr = Qrs(estructura),
-                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta))
+                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta)),
+                posiciones = ArmarPosiciones(Sp("SEL_BODEGA_MAPA_POSICIONES", "@INSTALACION", Planta(planta))),
+                plano = ArmarPlano(Sp("SEL_BODEGA_MAPA_PLANO", "@INSTALACION", Planta(planta))),
+                version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta)))
             };
         });
     }
@@ -98,7 +101,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
             return new
             {
                 error = false, saldos = ArmarSaldos(saldos),
-                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta))
+                conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta)),
+                version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta)))
             };
         });
     }
@@ -191,7 +195,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 fotos,
                 umbrales,
                 qr = new EtiquetaController().QrMatriz("REP-" + id),
-                metodo = MetodoRepuesto(id)
+                metodo = MetodoRepuesto(id),
+                medidas = MedidasRepuesto(id)
             };
         });
     }
@@ -240,6 +245,14 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 url = VirtualPathUtility.ToAbsolute("~/View/Comun/Impresion/Etiquetas.aspx") + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt(datos))
             };
         });
+    }
+
+    private static object MedidasRepuesto(int id)
+    {
+        DataTable dt = Sp("SEL_REPUESTO_FICHA_MAPA", "@REPUESTO", id);
+        if (dt.Rows.Count == 0) return null;
+        DataRow r = dt.Rows[0];
+        return new { largo = NumeroONulo(r["LARGO"]), ancho = NumeroONulo(r["ANCHO"]), alto = NumeroONulo(r["ALTO"]), peso = NumeroONulo(r["PESO"]) };
     }
 
     private static string MetodoRepuesto(int id)
@@ -383,6 +396,15 @@ public class WsBodegaMapa : System.Web.Services.WebService
 
             Respuesta res = id > 0 ? rc.UpdateRepuesto(r) : rc.InsertRepuesto(r);
             int idRep = id > 0 ? id : res.codigo;
+            if (!res.error && idRep > 0 && (d.ContainsKey("largo") || d.ContainsKey("peso")))
+            {
+                try
+                {
+                    Func<string, object> v = k => { decimal? n = Num(d, k); return n.HasValue ? (object)n.Value : DBNull.Value; };
+                    Sp("UPD_REPUESTO_DIMENSIONES", "@REPUESTO", idRep, "@LARGO", v("largo"), "@ANCHO", v("ancho"), "@ALTO", v("alto"), "@PESO", v("peso"), "@USUARIO", SitioBase.Session.UsuarioId());
+                }
+                catch (Exception ex) { return new { error = true, detalle = "El repuesto se guardó, pero no sus medidas: " + ex.Message, id = idRep }; }
+            }
             if (!res.error && d.ContainsKey("metodo") && idRep > 0)
             {
                 string err = EjecutarMetodo("UPD_REPUESTO_METODO_SALIDA", "@REPUESTO", idRep, Texto(d, "metodo"));
@@ -795,6 +817,362 @@ public class WsBodegaMapa : System.Web.Services.WebService
         });
     }
 
+    // ====================================================== BD/329: inteligencia
+
+    /// <summary>Ejecuta un SP del mapa con @CLIENTE de la sesion y los pares nombre/valor dados.</summary>
+    private static DataTable Sp(string sp, params object[] pares)
+    {
+        SqlCommand cmd = new SqlCommand();
+        cmd.CommandText = sp;
+        cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+        for (int i = 0; i + 1 < pares.Length; i += 2)
+            cmd.Parameters.AddWithValue((string)pares[i], pares[i + 1] ?? DBNull.Value);
+        return Conexion.GetDataTable(cmd);
+    }
+    private static object Planta(int planta) { return planta > 0 ? (object)planta : DBNull.Value; }
+
+    private static List<object> ArmarPosiciones(DataTable dt)
+    {
+        var l = new List<object>();
+        foreach (DataRow r in dt.Rows)
+            l.Add(new { u = Convert.ToInt32(r["BUB_ID"]), rep = Convert.ToInt32(r["REP_ID"]), n = Convert.ToInt32(r["NIVEL"]), p = Convert.ToInt32(r["POSICION"]), f = Convert.ToInt32(r["FILA"]) });
+        return l;
+    }
+    private static List<object> ArmarPlano(DataTable dt)
+    {
+        var l = new List<object>();
+        foreach (DataRow r in dt.Rows)
+            l.Add(new
+            {
+                clase = Convert.ToString(r["CLASE"]), id = Convert.ToInt32(r["ID"]), b = Convert.ToInt32(r["BOD_ID"]),
+                tipo = Convert.ToString(r["TIPO"]), nombre = Convert.ToString(r["NOMBRE"]),
+                x = Numero(r["X"]), z = Numero(r["Z"]), rot = Numero(r["ROT"]), ancho = NumeroONulo(r["ANCHO"]), largo = NumeroONulo(r["LARGO"])
+            });
+        return l;
+    }
+    private static object ArmarVersion(DataTable dt)
+    {
+        if (dt.Rows.Count == 0) return new { mov = 0, est = "", usuario = "", fecha = "" };
+        DataRow r = dt.Rows[0];
+        return new
+        {
+            mov = Convert.ToInt32(r["MOVIMIENTO"]), est = Convert.ToString(r["ESTRUCTURA"]), usuario = Convert.ToString(r["USUARIO"]),
+            fecha = r["FECHA"] == DBNull.Value ? "" : Convert.ToDateTime(r["FECHA"]).ToString("dd-MM-yyyy HH:mm")
+        };
+    }
+
+    /// <summary>La huella de lo que cambio: el visor la consulta para refrescar si otro usuario movio algo.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Version(int planta)
+    {
+        return Ejecutar(P_VER, () => new { error = false, version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta))) });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Rotacion(int planta, int dias)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var l = new List<object>();
+            foreach (DataRow r in Sp("SEL_BODEGA_MAPA_ROTACION", "@INSTALACION", Planta(planta), "@DIAS", dias > 0 ? dias : 90).Rows)
+                l.Add(new
+                {
+                    b = Convert.ToInt32(r["BOD_ID"]), u = r["BUB_ID"] == DBNull.Value ? 0 : Convert.ToInt32(r["BUB_ID"]), rep = Convert.ToInt32(r["REP_ID"]),
+                    sal = Numero(r["SALIDAS"]), ret = Convert.ToInt32(r["RETIROS"]), ult = Fecha(r["ULTIMA"])
+                });
+            return new { error = false, dias = dias > 0 ? dias : 90, consumo = l };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Activos(int planta)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var l = new List<object>();
+            foreach (DataRow r in Sp("SEL_BODEGA_MAPA_ACTIVOS", "@INSTALACION", Planta(planta)).Rows)
+                l.Add(new { id = Convert.ToInt32(r["ID"]), codigo = Convert.ToString(r["CODIGO"]), nombre = Convert.ToString(r["NOMBRE"]), modelo = Convert.ToString(r["MODELO"]), compatibles = Convert.ToInt32(r["COMPATIBLES"]) });
+            return new { error = false, activos = l };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Compatibles(int activo)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var l = new List<object>();
+            foreach (DataRow r in Sp("SEL_BODEGA_MAPA_COMPATIBLES", "@ACTIVO", activo).Rows)
+                l.Add(new { rep = Convert.ToInt32(r["REP_ID"]), regla = Convert.ToString(r["REGLA"]), obs = Convert.ToString(r["OBSERVACION"]) });
+            return new { error = false, repuestos = l };
+        });
+    }
+
+    /// <summary>Guarda el planograma completo de un rack: [{repuesto, nivel, posicion, fila}].</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarPosiciones(int ubicacion, string lista)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            Sp("UPS_UBICACION_POSICIONES", "@UBICACION", ubicacion, "@LISTA", lista ?? "[]", "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Posiciones del rack guardadas.", id = ubicacion };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarCarga(int ubicacion, string carga)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            decimal? c = Num(new Dictionary<string, object> { { "c", carga } }, "c");
+            Sp("UPD_UBICACION_CARGA", "@UBICACION", ubicacion, "@CARGA", c.HasValue ? (object)c.Value : DBNull.Value, "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Carga por nivel guardada.", id = ubicacion };
+        });
+    }
+
+    /// <summary>
+    /// Mueve una caja completa (todos sus lotes) a otra ubicacion de la misma
+    /// bodega: una REUBICACION (tipo 9) por lote. La usa la sugerencia ABC.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ReubicarCaja(string datos)
+    {
+        return Ejecutar(P_AJUSTE, () =>
+        {
+            var d = Leer(datos);
+            int rep = Entero(d, "repuesto"), bodega = Entero(d, "bodega"), origen = Entero(d, "origen"), destino = Entero(d, "destino");
+            if (rep <= 0 || bodega <= 0 || destino <= 0) throw new Exception("Indique el repuesto, la bodega y el destino.");
+            if (origen == destino) throw new Exception("El destino es la misma ubicación.");
+            string obs = Texto(d, "observacion");
+            if (string.IsNullOrEmpty(obs)) obs = "Reubicación desde el mapa 3D.";
+
+            InventarioController ic = new InventarioController();
+            var lotes = ic.GetOrigenes(rep, bodega, true).Where(o => (o.ubicacion_id ?? 0) == origen).ToList();
+            if (lotes.Count == 0) throw new Exception("La caja ya no tiene existencia en esa ubicación.");
+            decimal movido = 0;
+            foreach (var o in lotes)
+            {
+                Respuesta r = ic.RegistrarMovimiento(new InventarioMovimiento
+                {
+                    imo_repuesto = rep, imo_bodega = bodega, imo_inventario_movimiento_tipo = 9, imo_cantidad = o.cantidad,
+                    imo_bodega_ubicacion = o.ubicacion_id, imo_repuesto_lote = o.lote_id, imo_bodega_ubicacion_destino = destino,
+                    imo_observacion = obs
+                });
+                if (r.error)
+                {
+                    if (movido == 0) throw new Exception(r.detalle);
+                    return new { error = false, movido = (double)movido, parcial = true, detalle = r.detalle };
+                }
+                movido += o.cantidad;
+            }
+            return new { error = false, movido = (double)movido, parcial = false, detalle = "" };
+        });
+    }
+
+    // ------------------------------------------------------------ reposicion
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CrearReposicion(string datos)
+    {
+        return Ejecutar(P_STOCK, () =>
+        {
+            var d = Leer(datos);
+            object lineas;
+            d.TryGetValue("lineas", out lineas);
+            string detalle = new JavaScriptSerializer().Serialize(lineas ?? new object[0]);
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "INS_SOLICITUD_REPOSICION";
+            cmd.Parameters.AddWithValue("@ID", 0).Direction = ParameterDirection.Output;
+            cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+            cmd.Parameters.AddWithValue("@BODEGA", Entero(d, "bodega"));
+            cmd.Parameters.AddWithValue("@OBSERVACION", Texto(d, "observacion"));
+            cmd.Parameters.AddWithValue("@DETALLE", detalle);
+            cmd.Parameters.AddWithValue("@USUARIO", SitioBase.Session.UsuarioId());
+            DataTable dt = Conexion.GetDataTable(cmd);
+            if (dt.Rows.Count == 0) throw new Exception("No se pudo crear la solicitud.");
+            return new { error = false, id = Convert.ToInt32(dt.Rows[0]["ID"]), numero = Convert.ToInt32(dt.Rows[0]["NUMERO"]), detalle = Convert.ToString(dt.Rows[0]["MENSAJE"]) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Reposiciones(int bodega)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var porId = new Dictionary<int, Dictionary<string, object>>();
+            var orden = new List<int>();
+            foreach (DataRow r in Sp("SEL_SOLICITUD_REPOSICION", "@BODEGA", bodega > 0 ? (object)bodega : DBNull.Value).Rows)
+            {
+                int id = Convert.ToInt32(r["ID"]);
+                Dictionary<string, object> s;
+                if (!porId.TryGetValue(id, out s))
+                {
+                    s = new Dictionary<string, object>
+                    {
+                        { "id", id }, { "numero", Convert.ToInt32(r["NUMERO"]) }, { "bodega", Convert.ToString(r["BODEGA"]) },
+                        { "estado", Convert.ToString(r["ESTADO"]) }, { "observacion", Convert.ToString(r["OBSERVACION"]) },
+                        { "fecha", Convert.ToDateTime(r["FECHA"]).ToString("dd-MM-yyyy HH:mm") }, { "usuario", Convert.ToString(r["USUARIO"]) },
+                        { "lineas", new List<object>() }
+                    };
+                    porId[id] = s; orden.Add(id);
+                }
+                ((List<object>)s["lineas"]).Add(new
+                {
+                    rep = Convert.ToInt32(r["REP_ID"]), c = Convert.ToString(r["REP_CODIGO"]), n = Convert.ToString(r["REP_NOMBRE"]), un = Convert.ToString(r["UNIDAD"]),
+                    cantidad = Numero(r["CANTIDAD"]), stock = NumeroONulo(r["STOCK"]), minimo = NumeroONulo(r["MINIMO"]), maximo = NumeroONulo(r["MAXIMO"])
+                });
+            }
+            return new { error = false, solicitudes = orden.Select(i => porId[i]).ToList() };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string EstadoReposicion(int id, string estado)
+    {
+        return Ejecutar(P_STOCK, () =>
+        {
+            Sp("UPD_SOLICITUD_REPOSICION_ESTADO", "@ID", id, "@ESTADO", (estado ?? "").ToUpperInvariant(), "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Solicitud actualizada.", id };
+        });
+    }
+
+    // ------------------------------------------------------------ plano
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarPlanoRack(int ubicacion, double x, double z, double rot)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            Sp("UPS_BODEGA_PLANO_RACK", "@UBICACION", ubicacion, "@X", Math.Round(x, 3), "@Z", Math.Round(z, 3), "@ROT", Math.Round(rot, 5), "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Posición del rack guardada.", id = ubicacion };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarPlanoRack(int ubicacion)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            Sp("DEL_BODEGA_PLANO_RACK", "@UBICACION", ubicacion);
+            return new { error = false, detalle = "El rack vuelve a su posición por código.", id = ubicacion };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarZona(string datos)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            var d = Leer(datos);
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "UPS_BODEGA_ZONA";
+            cmd.Parameters.AddWithValue("@ID", Entero(d, "id")).Direction = ParameterDirection.InputOutput;
+            cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+            cmd.Parameters.AddWithValue("@BODEGA", Entero(d, "bodega"));
+            cmd.Parameters.AddWithValue("@TIPO", Texto(d, "tipo").ToUpperInvariant());
+            cmd.Parameters.AddWithValue("@NOMBRE", Texto(d, "nombre"));
+            cmd.Parameters.AddWithValue("@X", Num(d, "x") ?? 0);
+            cmd.Parameters.AddWithValue("@Z", Num(d, "z") ?? 0);
+            cmd.Parameters.AddWithValue("@ANCHO", Num(d, "ancho") ?? 0);
+            cmd.Parameters.AddWithValue("@LARGO", Num(d, "largo") ?? 0);
+            cmd.Parameters.AddWithValue("@USUARIO", SitioBase.Session.UsuarioId());
+            DataTable dt = Conexion.GetDataTable(cmd);
+            return new { error = false, detalle = "Zona guardada.", id = dt.Rows.Count > 0 ? Convert.ToInt32(dt.Rows[0]["ID"]) : 0 };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarZona(int id)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            Sp("DEL_BODEGA_ZONA", "@ID", id, "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Zona eliminada.", id };
+        });
+    }
+
+    // ------------------------------------------------------------ historial
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string SaldosFecha(int planta, string fecha)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            DateTime f;
+            if (!DateTime.TryParseExact(fecha ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out f)) throw new Exception("Fecha no válida.");
+            return new { error = false, fecha, saldos = ArmarSaldos(Sp("SEL_BODEGA_MAPA_SALDOS_FECHA", "@INSTALACION", Planta(planta), "@FECHA", f.Date)) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Movimientos(int planta, string desde, string hasta)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            DateTime d, h;
+            if (!DateTime.TryParseExact(desde ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out d)
+             || !DateTime.TryParseExact(hasta ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out h)) throw new Exception("Fechas no válidas.");
+            var l = new List<object>();
+            foreach (DataRow r in Sp("SEL_BODEGA_MAPA_MOVIMIENTOS", "@INSTALACION", Planta(planta), "@DESDE", d.Date, "@HASTA", h.Date).Rows)
+                l.Add(new
+                {
+                    id = Convert.ToInt32(r["ID"]), fecha = Convert.ToDateTime(r["FECHA"]).ToString("yyyy-MM-dd HH:mm"),
+                    tipo = Convert.ToInt32(r["TIPO_ID"]), tn = Convert.ToString(r["TIPO"]),
+                    rep = Convert.ToInt32(r["REP_ID"]), c = Convert.ToString(r["REP_CODIGO"]), n = Convert.ToString(r["REP_NOMBRE"]),
+                    b = Convert.ToInt32(r["BOD_ID"]), u = r["BUB_ID"] == DBNull.Value ? 0 : Convert.ToInt32(r["BUB_ID"]),
+                    ud = r["BUB_DESTINO"] == DBNull.Value ? 0 : Convert.ToInt32(r["BUB_DESTINO"]),
+                    bd = r["BOD_DESTINO"] == DBNull.Value ? 0 : Convert.ToInt32(r["BOD_DESTINO"]),
+                    q = Numero(r["CANTIDAD"]), usuario = Convert.ToString(r["USUARIO"]), obs = Convert.ToString(r["OBSERVACION"])
+                });
+            return new { error = false, movimientos = l };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Actividad(int planta, int dias)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            var l = new List<object>();
+            foreach (DataRow r in Sp("SEL_BODEGA_MAPA_ACTIVIDAD", "@INSTALACION", Planta(planta), "@DIAS", dias > 0 ? dias : 90).Rows)
+                l.Add(new { dia = Convert.ToDateTime(r["DIA"]).ToString("yyyy-MM-dd"), n = Convert.ToInt32(r["MOVIMIENTOS"]) });
+            return new { error = false, actividad = l };
+        });
+    }
+
+    // ------------------------------------------------------------ escanear
+    /// <summary>
+    /// Lo que leyo el lector o se escribio: un token (UBI-17, REP-5, BOD-2), la
+    /// URL de una etiqueta antigua o el codigo impreso. Devuelve tipo e id.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Resolver(string codigo)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            EtiquetaController etq = new EtiquetaController();
+            string tipo; int id;
+            if (!etq.Interpretar(codigo, out tipo, out id) && !etq.ResolverPorCodigo(codigo, out tipo, out id))
+                throw new Exception("No se reconoce «" + (codigo ?? "").Trim() + "»: no es una etiqueta de este cliente.");
+            return new { error = false, tipo, id };
+        });
+    }
+
     // ================================================================== armado
 
     /// <summary>El ultimo conteo de cada ubicacion: el mapa muestra "contado hace 3 dias por ...".</summary>
@@ -866,7 +1244,8 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 {
                     id = Convert.ToInt32(r["BUB_ID"]),
                     codigo = Convert.ToString(r["BUB_CODIGO"]),
-                    nombre = Convert.ToString(r["BUB_NOMBRE"])
+                    nombre = Convert.ToString(r["BUB_NOMBRE"]),
+                    carga = NumeroONulo(r["BUB_CARGA_KG"])
                 });
         }
 
@@ -929,6 +1308,7 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 ing = Fecha(r["INGRESO_MIN"]),
                 ingN = Fecha(r["INGRESO_MAX"]),
                 vence = Fecha(r["VENCE_MIN"]),
+                largo = NumeroONulo(r["LARGO"]), ancho = NumeroONulo(r["ANCHO"]), alto = NumeroONulo(r["ALTO"]), peso = NumeroONulo(r["PESO"]),
                 foto = portadas.TryGetValue(rep, out archivo) && archivo > 0 ? UrlArchivo.Ver(archivo) : "",
                 ficha = ficha + "?query=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt("Id=" + rep))
             });

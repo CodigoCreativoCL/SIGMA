@@ -17,7 +17,7 @@
        No depende de que un CDN responda el dia de la demo. --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=14" rel="stylesheet" />
+    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=15" rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
@@ -47,14 +47,23 @@
             <div class="bm3d-acciones" role="group" aria-label="Acciones">
                 <button type="button" class="bm3d-btn es-primario es-chico" data-accion="nuevo" hidden><i class="mdi mdi-plus"></i><span>Repuesto</span></button>
                 <button type="button" class="bm3d-ico" data-accion="picking" title="Preparar picking: lo que pide una OT o un retiro libre" hidden><i class="mdi mdi-cart-arrow-down"></i></button>
-                <button type="button" class="bm3d-ico" data-accion="editar" title="Modo edición: crear racks y pasillos" hidden><i class="mdi mdi-pencil-ruler"></i></button>
-                <button type="button" class="bm3d-ico" data-accion="bodega" title="Datos de la bodega"><i class="mdi mdi-cog-outline"></i></button>
-                <span class="bm3d-sep"></span>
-                <button type="button" class="bm3d-ico" data-vista="general" title="Encuadrar la bodega completa"><i class="mdi mdi-fit-to-screen-outline"></i></button>
-                <button type="button" class="bm3d-ico" data-vista="planta" title="Vista de planta (desde arriba)"><i class="mdi mdi-floor-plan"></i></button>
                 <button type="button" class="bm3d-ico" data-modo="alertas" title="Resaltar alertas de stock"><i class="mdi mdi-alert-decagram-outline"></i></button>
-                <button type="button" class="bm3d-ico" data-accion="refrescar" title="Actualizar stock"><i class="mdi mdi-refresh"></i></button>
+                <button type="button" class="bm3d-ico" data-accion="analisis" title="Análisis: rotación ABC, quiebre, vencimientos, compatibles"><i class="mdi mdi-chart-box-outline"></i></button>
+                <button type="button" class="bm3d-ico" data-vista="general" title="Encuadrar la bodega completa"><i class="mdi mdi-fit-to-screen-outline"></i></button>
                 <button type="button" class="bm3d-ico" data-accion="pantalla" title="Pantalla completa"><i class="mdi mdi-fullscreen"></i></button>
+                <%-- Lo que se usa menos, en un menu: la barra no alcanza para todo
+                     sin cortar las pestanas de las bodegas. --%>
+                <div class="bm3d-mas">
+                    <button type="button" class="bm3d-ico" data-accion="mas" title="Más acciones" aria-haspopup="true"><i class="mdi mdi-dots-vertical"></i></button>
+                    <div class="bm3d-mas-menu" id="bm3dMas" hidden>
+                        <button type="button" data-accion="editar" hidden><i class="mdi mdi-pencil-ruler"></i>Modo edición: racks y pasillos</button>
+                        <button type="button" data-accion="bodega"><i class="mdi mdi-cog-outline"></i>Datos de la bodega</button>
+                        <button type="button" data-vista="planta"><i class="mdi mdi-floor-plan"></i>Vista de planta</button>
+                        <button type="button" data-accion="historial"><i class="mdi mdi-history"></i>Historial y reproducción</button>
+                        <button type="button" data-accion="escanear"><i class="mdi mdi-qrcode-scan"></i>Escanear o ir a un código</button>
+                        <button type="button" data-accion="refrescar"><i class="mdi mdi-refresh"></i>Actualizar stock</button>
+                    </div>
+                </div>
             </div>
         </header>
 
@@ -67,6 +76,13 @@
 
         <!-- recorrido de pasillo: barras de cine, etiquetas sobre las cajas y la tablet -->
         <div class="bm3d-callouts" id="bm3dCallouts" aria-hidden="true"></div>
+
+        <!-- historial: linea de tiempo y la leyenda de lo que se reproduce -->
+        <div class="bm3d-historia" id="bm3dHistoria" hidden></div>
+        <div class="bm3d-hs-caption" id="bm3dHsCaption" hidden></div>
+
+        <!-- escanear o escribir un codigo -->
+        <div class="bm3d-scan" id="bm3dScan" hidden></div>
         <div class="bm3d-cine" id="bm3dCine" hidden></div>
         <div class="bm3d-tablet" id="bm3dTablet" hidden></div>
 
@@ -102,5 +118,5 @@
             }
         }
     </script>
-    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=14"></script>
+    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=15"></script>
 </asp:Content>
