@@ -1255,10 +1255,22 @@ function marcarVista(v) { document.querySelectorAll('[data-vista]').forEach((b) 
 
 function enfocarCaja(c) {
     const p = c.userData.base.clone(), u = c.userData, lado = Math.max(u.w, u.h);
-    // plano de cine: desde arriba y adelante, a unos 45 grados, mirando dentro de la caja
+    /* Plano de cine: la caja abierta y lo que sube de ella (la pieza o la
+       tarjeta con la foto) entran enteros en el cuadro. La distancia sale de
+       la altura total y del campo de vision; el sujeto se corre a la
+       izquierda para que no lo tape el panel de la derecha. */
+    const A = S.cajaAbierta && S.cajaAbierta.c === c ? S.cajaAbierta : null;
+    const encima = A && A.conFoto ? A.alza * 2 + 0.2 : 0.32;
     const afuera = p.clone().addScaledVector(u.normal, u.sacar || 0.72);
-    const pos = afuera.clone().addScaledVector(u.normal, 0.8 + lado * 1.5); pos.y += 0.85 + lado * 1.1;
-    const mira = afuera.clone(); mira.y += u.h * 0.3;
+    const alto = u.h + encima, ancho = Math.max(u.w, 0.45);
+    const vfov = THREE.MathUtils.degToRad(FOV_MAPA), hfov = 2 * Math.atan(Math.tan(vfov / 2) * camera.aspect);
+    const dist = Math.max((alto / 2) / Math.tan(vfov / 2), (ancho / 2) / Math.tan(hfov / 2) * 1.6) * 1.45 + 0.25;
+    const mira = afuera.clone(); mira.y += -u.h / 2 + alto / 2;
+    const elev = THREE.MathUtils.degToRad(A && A.conFoto ? 24 : 36);
+    const dir = u.normal.clone().multiplyScalar(Math.cos(elev)).add(new THREE.Vector3(0, Math.sin(elev), 0)).normalize();
+    const derecha = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), dir).normalize();
+    mira.addScaledVector(derecha, dist * 0.16);
+    const pos = mira.clone().addScaledVector(dir, dist);
     volar(pos, mira, 1300); marcarVista('');
 }
 function enfocarRack(r) {
@@ -4335,7 +4347,7 @@ function abrirCaja(c) {
     const img = it.foto ? S.imagenes.get(it.foto) : null;
     const conFoto = !!(img && img.complete && img.naturalWidth);
     const heroe = conFoto ? tarjetaFoto(it, img) : pieza(clave);
-    const escala = conFoto ? Math.min(w, 0.5) * 0.8 / 0.42 : ajustar(heroe, Math.min(w, 0.42) * 0.62, Math.min(h, 0.3) * 0.9, Math.min(d, 0.42) * 0.62);
+    const escala = conFoto ? Math.min(w, 0.5) * 0.7 / 0.42 : ajustar(heroe, Math.min(w, 0.42) * 0.62, Math.min(h, 0.3) * 0.9, Math.min(d, 0.42) * 0.62);
     if (conFoto) heroe.obj.scale.setScalar(escala);
     heroe.obj.position.set(0, -h / 2 + ih * 0.5, 0); heroe.obj.scale.setScalar(escala * 0.4);
     grupo.add(heroe.obj);
@@ -4519,13 +4531,43 @@ function pintarBodegas() {
         if (sel.value === 'nueva') { sel.value = String(S.bodegaSel); formBodega(null); return; }
         cerrarPanel(); elegirBodega(+sel.value);
     };
-    const mover = (d) => {
-        const i2 = bs.findIndex((b) => b.id === S.bodegaSel);
-        const b = bs[(i2 + d + bs.length) % bs.length]; if (b) { cerrarPanel(); elegirBodega(b.id); }
-    };
-    const a = $('bm3dBodAnt'); if (a) a.onclick = () => mover(-1);
-    const z = $('bm3dBodSig'); if (z) z.onclick = () => mover(1);
+    const a = $('bm3dBodAnt'); if (a) a.onclick = () => moverBodega(-1);
+    const z = $('bm3dBodSig'); if (z) z.onclick = () => moverBodega(1);
     marcarBodegaSel();
+}
+/* La caja vecina de la elegida, como la ve quien esta frente al rack: a la
+   derecha sube la posicion; al llegar al borde se pasa al rack contiguo del
+   mismo lado del pasillo. Arriba y abajo cambian de nivel en la misma
+   posicion (o la mas cercana). */
+function cajaVecina(c, dx, dy) {
+    const u = c.userData, r = u.rack;
+    const porPos = (a, b) => (a.userData.posicion - b.userData.posicion) || ((a.userData.fila || 0) - (b.userData.fila || 0));
+    if (dy) {
+        const cand = r.cajas.filter((x) => x.userData.nivel === u.nivel + dy);
+        if (!cand.length) return null;
+        return cand.sort((a, b) => (Math.abs(a.userData.posicion - u.posicion) - Math.abs(b.userData.posicion - u.posicion)) || ((a.userData.fila || 0) - (b.userData.fila || 0)))[0];
+    }
+    const mismos = r.cajas.filter((x) => x.userData.nivel === u.nivel && (x.userData.fila || 0) === (u.fila || 0)).sort(porPos);
+    const sig = mismos[mismos.indexOf(c) + dx];
+    if (sig) return sig;
+    if (r.recepcion) return null;
+    const eje = new THREE.Vector3(1, 0, 0).applyAxisAngle(_ejeY, r.rot).multiplyScalar(dx);
+    const otro = r.info.racks.filter((x) => x !== r && x.cajas.length && Math.abs(x.rot - r.rot) < 0.01)
+        .map((x) => [x, x.pos.clone().sub(r.pos).dot(eje), x.pos.distanceTo(r.pos)])
+        .filter((a) => a[1] > 0.5).sort((a, b) => a[2] - b[2])[0];
+    if (!otro) return null;
+    const en = otro[0].cajas.filter((x) => x.userData.nivel === u.nivel).sort(porPos);
+    if (!en.length) return otro[0].cajas[0];
+    return dx > 0 ? en[0] : en[en.length - 1];
+}
+
+/* La bodega anterior o la siguiente: flechas del combo y teclas ← →. */
+function moverBodega(d) {
+    const bs = S.datos && S.datos.bodegas || [];
+    if (bs.length < 2) return;
+    const i = bs.findIndex((b) => b.id === S.bodegaSel);
+    const b = bs[(i + d + bs.length) % bs.length];
+    if (b) { cerrarPanel(); elegirBodega(b.id); aviso(b.nombre); }
 }
 function marcarBodegaSel() {
     const sel = $('bm3dBodegaSel'); if (sel) sel.value = String(S.bodegaSel);
@@ -4702,7 +4744,16 @@ document.addEventListener('keydown', (e) => {
         else if (e.key === 'ArrowLeft') { e.preventDefault(); saltarRelativo(-1); }
         return;
     }
+    // con una caja elegida, las flechas recorren las cajas: ← → la vecina, ↑ ↓ el otro nivel
+    if (S.sel && S.sel.isMesh && /^Arrow(Left|Right|Up|Down)$/.test(e.key) && ficha.hidden && !S.pick) {
+        e.preventDefault();
+        const v = cajaVecina(S.sel, e.key === 'ArrowRight' ? 1 : e.key === 'ArrowLeft' ? -1 : 0, e.key === 'ArrowUp' ? 1 : e.key === 'ArrowDown' ? -1 : 0);
+        if (v) seleccionarCaja(v, true); else aviso('No hay más cajas en esa dirección.');
+        return;
+    }
     if (e.key === '/') { e.preventDefault(); buscar.focus(); }
+    // ← → cambian de bodega (en el recorrido ya cambian de rack, arriba)
+    else if ((e.key === 'ArrowRight' || e.key === 'ArrowLeft') && !S.historial && !S.pick && ficha.hidden) { e.preventDefault(); moverBodega(e.key === 'ArrowRight' ? 1 : -1); }
 });
 controls.addEventListener('start', () => { S.vuelo = null; marcarVista(''); });
 

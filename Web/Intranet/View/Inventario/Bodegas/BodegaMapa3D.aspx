@@ -17,7 +17,7 @@
        No depende de que un CDN responda el dia de la demo. --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=17" rel="stylesheet" />
+    <link href="<%=ResolveUrl("~/Css/Inventario/sigma-bodega3d.css") %>?vrs=19" rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
@@ -104,6 +104,7 @@
 
         <div class="bm3d-ayuda" id="bm3dAyuda">
             <span><i class="mdi mdi-mouse"></i> Arrastra para girar · rueda para acercar · clic derecho para desplazar</span>
+            <span><i class="mdi mdi-keyboard-outline"></i> ← → cambian de bodega o de caja · ↑ ↓ de nivel · / busca</span>
             <span><i class="mdi mdi-cursor-default-click-outline"></i> Clic en una caja, un rack o el piso para ver su detalle</span>
         </div>
     </div>
@@ -118,5 +119,5 @@
             }
         }
     </script>
-    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=17"></script>
+    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=19"></script>
 </asp:Content>
