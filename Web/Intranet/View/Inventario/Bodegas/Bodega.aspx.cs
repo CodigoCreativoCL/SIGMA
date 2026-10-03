@@ -112,7 +112,8 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             rdbNo.Checked = !entidad.bod_habilitado;
 
             string met = new BodegaAlmacenamientoController().Metodo(Id);
-            if (ddlMetodo.Items.FindByValue(met) != null) ddlMetodo.SelectedValue = met;
+            RadComboBoxItem im = ddlMetodo.FindItemByValue(met);
+            if (im != null) im.Selected = true;
 
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.bod_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.bod_fecha_actualizacion);
@@ -459,7 +460,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
 
         btnGuardar.Visible = puedeEditar;
         pnlAltaRacks.Visible = puedeEditar;
-        ddlMetodo.Enabled = puedeEditar;
+        ddlMetodo.ReadOnly = !puedeEditar;
     }
 
     protected void btnGuardar_Click(object sender, EventArgs e)

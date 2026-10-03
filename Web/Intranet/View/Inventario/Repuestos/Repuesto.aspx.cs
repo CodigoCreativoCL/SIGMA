@@ -102,15 +102,34 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         udPanel.Update();
     }
 
+    private List<FabricanteController.Fabricante> catalogoFab;
+    private List<FabricanteController.Fabricante> CatalogoFab()
+    {
+        return catalogoFab ?? (catalogoFab = new FabricanteController().Catalogo());
+    }
+
+    /// <summary>Los modelos del fabricante, para la cascada al abrir la ficha.</summary>
+    private void CargarModelos(string fabricante)
+    {
+        cboModelo.Items.Clear();
+        string k = (fabricante ?? "").Trim();
+        FabricanteController.Fabricante f = CatalogoFab().Find(x => string.Compare(x.nombre, k, CultureInfo.InvariantCulture,
+            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0);
+        if (f != null) foreach (string m in f.modelos) cboModelo.Items.Add(new RadComboBoxItem(m, m));
+    }
+
     protected void CargarDatos()
     {
         /* El catalogo va en cada render (tambien en los postbacks parciales):
            el UpdatePanel reemplaza el bloque y el combo lo vuelve a leer. */
         litFabCatalogo.Text = "<script type=\"application/json\" id=\"sgFabCatalogo\">" +
-                new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(new FabricanteController().Catalogo()).Replace("</", "<\\/") +
+                new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(CatalogoFab()).Replace("</", "<\\/") +
                 "</script>";
 
         if (IsPostBack) return;
+
+        foreach (FabricanteController.Fabricante f in CatalogoFab())
+            cboFabricante.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
 
         if (Id > 0)
         {
@@ -120,8 +139,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             lblId.Text = Id.ToString();
             txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Repuesto", entidad.rep_codigo);
             txtNombre.Text = entidad.rep_nombre;
-            txtFabricante.Text = entidad.rep_fabricante;
-            txtModelo.Text = entidad.rep_modelo;
+            /* Combos SIGMA con texto libre: la lista sale del catalogo (bloque
+               333) y el valor guardado se muestra aunque no este en ella. */
+            cboFabricante.Text = entidad.rep_fabricante;
+            CargarModelos(entidad.rep_fabricante);
+            cboModelo.Text = entidad.rep_modelo;
             txtDescripcion.Text = entidad.rep_descripcion;
 
             if (entidad.rep_costo_referencia != null)
@@ -142,7 +164,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             if (alm != null)
             {
                 string met = Convert.ToString(alm["METODO"]);
-                if (ddlMetodo.Items.FindByValue(met) != null) ddlMetodo.SelectedValue = met;
+                RadComboBoxItem im = ddlMetodo.FindItemByValue(met ?? "");
+                if (im != null) im.Selected = true;
                 txtLargo.Text = Medida(alm["LARGO"]);
                 txtAncho.Text = Medida(alm["ANCHO"]);
                 txtAlto.Text = Medida(alm["ALTO"]);
@@ -436,8 +459,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Repuesto");
             txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
-        txtFabricante.ReadOnly = !puedeEditar;
-        txtModelo.ReadOnly = !puedeEditar;
+        cboFabricante.ReadOnly = !puedeEditar;
+        cboModelo.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtCosto.ReadOnly = !puedeEditar;
         cboUnidad.ReadOnly = !puedeEditar;
@@ -445,7 +468,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         txtVidaHora.ReadOnly = !puedeEditar;
         txtVidaDia.ReadOnly = !puedeEditar;
         txtVidaCiclo.ReadOnly = !puedeEditar;
-        ddlMetodo.Enabled = puedeEditar;
+        ddlMetodo.ReadOnly = !puedeEditar;
         txtLargo.ReadOnly = !puedeEditar;
         txtAncho.ReadOnly = !puedeEditar;
         txtAlto.ReadOnly = !puedeEditar;
@@ -521,8 +544,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                etiqueta pegada apuntando a algo que no existe. */
             entidad.rep_codigo = SitioBase.CodigoModulo.Componer("Repuesto", txtCodigo.Text);
             entidad.rep_nombre = txtNombre.Text.Trim();
-            entidad.rep_fabricante = txtFabricante.Text.Trim();
-            entidad.rep_modelo = txtModelo.Text.Trim();
+            entidad.rep_fabricante = cboFabricante.Text.Trim();
+            entidad.rep_modelo = cboModelo.Text.Trim();
             entidad.rep_descripcion = txtDescripcion.Text.Trim();
             entidad.rep_unidad_medida = int.Parse(cboUnidad.SelectedValue);
 

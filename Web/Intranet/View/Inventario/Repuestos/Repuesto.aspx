@@ -5,7 +5,7 @@
     <%-- La galeria comparte hoja con los tipos de repuesto: son del mismo
          modulo y separarlas seria un archivo mas por dos bloques. --%>
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-repuesto-tipos.css?vrs=1") %>' rel="stylesheet" />
-    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-fabricante.js") %>?vrs=1"></script>
+    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-fabricante.js") %>?vrs=2"></script>
     <style type="text/css">
         .sg-fab-aviso { margin-top: 6px; padding: 8px 10px; border-radius: 9px; background: #E8FBFB; color: #17223B; font-size: 12px; }
         .sg-fab-aviso i { color: #007F8A; }
@@ -14,15 +14,78 @@
         /* Fabricante y modelo en cascada (bloque 333): el catalogo lo deja el
            servidor en #sgFabCatalogo. Se engancha al cargar y despues de cada
            postback parcial, porque el UpdatePanel reemplaza los campos. */
-        function sgEnlazarFabricante() {
+        function sgCatalogo() {
             var c = document.getElementById('sgFabCatalogo');
-            if (!c || !window.SigmaFabricante) return;
-            SigmaFabricante.enlazar(document.querySelector('input.sg-in-fabricante'), document.querySelector('input.sg-in-modelo'),
-                                    JSON.parse(c.textContent || '[]'), document.getElementById('sgFabAviso'));
+            return c ? JSON.parse(c.textContent || '[]') : [];
+        }
+        function sgCombo(sufijo) {
+            var el = document.querySelector('[id$="_' + sufijo + '"].RadComboBox, [id$="' + sufijo + '"].RadComboBox');
+            return el ? $find(el.id) : null;
+        }
+        /* El texto escrito, sin confundirlo con el mensaje de ayuda del combo. */
+        function sgTexto(c) {
+            if (!c) return '';
+            var t = c.get_text();
+            return (c.get_emptyMessage && t === c.get_emptyMessage()) ? '' : t;
+        }
+        function sgFabricante() {
+            var f = sgCombo('cboFabricante'), k = f ? SigmaFabricante.clave(sgTexto(f)) : '';
+            return sgCatalogo().filter(function (x) { return SigmaFabricante.clave(x.nombre) === k; })[0] || null;
+        }
+
+        /* Fabricante elegido o escrito: forma del catalogo y modelos en cascada. */
+        function sgFabCambio() {
+            var f = sgCombo('cboFabricante'), m = sgCombo('cboModelo');
+            if (!f || !m) return;
+            var fab = sgFabricante(), limpio = sgTexto(f).replace(/\s+/g, ' ').trim();
+            if (fab && sgTexto(f) !== fab.nombre) f.set_text(fab.nombre);
+            else if (!fab && limpio && sgTexto(f) !== limpio) f.set_text(limpio);
+            var antes = sgTexto(m);
+            m.trackChanges();
+            m.get_items().clear();
+            (fab ? fab.modelos : []).forEach(function (x) {
+                var it = new Telerik.Web.UI.RadComboBoxItem(); it.set_text(x); it.set_value(x); m.get_items().add(it);
+            });
+            m.commitChanges();
+            // el modelo de otro fabricante no le pertenece
+            if (antes && !(fab && fab.modelos.some(function (x) { return SigmaFabricante.clave(x) === SigmaFabricante.clave(antes); }))
+                && sgFabCambio.previo && sgFabCambio.previo !== SigmaFabricante.clave(sgTexto(f))) { m.clearSelection(); m.set_text(''); }
+            sgFabCambio.previo = SigmaFabricante.clave(sgTexto(f));
+            sgModAvisar();
+        }
+        function sgModCanon() {
+            var m = sgCombo('cboModelo'), fab = sgFabricante();
+            if (!m) return;
+            var t = sgTexto(m).replace(/\s+/g, ' ').trim();
+            if (!t) return sgModAvisar();
+            if (fab) fab.modelos.forEach(function (x) { if (SigmaFabricante.clave(x) === SigmaFabricante.clave(t)) t = x; });
+            if (sgTexto(m) !== t) m.set_text(t);
+            sgModAvisar();
+        }
+        function sgModAvisar() {
+            var a = document.getElementById('sgFabAviso'), f = sgCombo('cboFabricante'), m = sgCombo('cboModelo');
+            if (!a || !f || !m) return;
+            var fab = sgFabricante(), t = sgTexto(f).trim(), mt = sgTexto(m).trim(), h = '';
+            if (t && !fab) h = '<i class="mdi mdi-plus-circle-outline"></i> <b>' + t.replace(/</g, '&lt;') + '</b> es un fabricante nuevo: se agrega al catálogo al guardar.';
+            else if (fab && mt && !fab.modelos.some(function (x) { return SigmaFabricante.clave(x) === SigmaFabricante.clave(mt); }))
+                h = '<i class="mdi mdi-plus-circle-outline"></i> <b>' + mt.replace(/</g, '&lt;') + '</b> es un modelo nuevo de ' + fab.nombre + ': se agrega al guardar.';
+            else if (fab) h = '<i class="mdi mdi-check-circle-outline"></i> ' + fab.nombre + ' · ' + fab.repuestos + ' repuestos · ' +
+                              (mt ? fab.modelos.length + ' modelos' : 'elija uno de sus ' + fab.modelos.length + ' modelos o escriba uno nuevo');
+            else if (t) h = '';
+            a.innerHTML = h; a.hidden = !h;
+        }
+        /* Estado inicial al cargar y tras cada postback parcial (el
+           UpdatePanel recrea los combos). */
+        function sgFabIniciar() {
+            var f = sgCombo('cboFabricante');
+            if (!f) return;
+            sgFabCambio.previo = SigmaFabricante.clave(sgTexto(f));
+            sgModAvisar();
         }
         window.addEventListener('load', function () {
-            sgEnlazarFabricante();
-            if (window.Sys && Sys.Application) Sys.Application.add_load(function (s, a) { if (a && a.get_isPartialLoad && a.get_isPartialLoad()) sgEnlazarFabricante(); });
+            setTimeout(sgFabIniciar, 0);
+            if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager)
+                Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () { setTimeout(sgFabIniciar, 0); });
         });
 
         function getRadWindow() {
@@ -144,12 +207,17 @@
                 <div class="sigma-modal-grid">
                     <div class="sigma-modal-field">
                         <label>Fabricante</label>
-                        <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="400" CssClass="sg-in-fabricante"
-                            placeholder="Elija o escriba uno nuevo" />
+                        <%-- Combo SIGMA que tambien acepta texto: lo que no esta en la
+                             lista se agrega al catalogo al guardar (trigger del bloque 333). --%>
+                        <rad:RadComboBox2 ID="cboFabricante" runat="server" Width="100%" AllowCustomText="true"
+                            Filter="Contains" MaxLength="400" EmptyMessage="Elija o escriba uno nuevo"
+                            OnClientSelectedIndexChanged="sgFabCambio" OnClientBlur="sgFabCambio" />
                     </div>
                     <div class="sigma-modal-field">
                         <label>Modelo o código del fabricante</label>
-                        <WebControls:TextBox2 ID="txtModelo" runat="server" MaxLength="400" CssClass="sg-in-modelo" />
+                        <rad:RadComboBox2 ID="cboModelo" runat="server" Width="100%" AllowCustomText="true"
+                            Filter="Contains" MaxLength="400" EmptyMessage="Primero el fabricante"
+                            OnClientSelectedIndexChanged="sgModAvisar" OnClientBlur="sgModCanon" />
                     </div>
                     <div class="sigma-modal-field">
                         <label>Costo de referencia</label>
@@ -247,12 +315,14 @@
                 <div class="sigma-modal-grid">
                     <div class="sigma-modal-field">
                         <label>Método de salida</label>
-                        <asp:DropDownList ID="ddlMetodo" runat="server" CssClass="form-control">
-                            <asp:ListItem Value="">Según la bodega</asp:ListItem>
-                            <asp:ListItem Value="FEFO">FEFO · vence primero</asp:ListItem>
-                            <asp:ListItem Value="FIFO">FIFO · entró primero</asp:ListItem>
-                            <asp:ListItem Value="LIFO">LIFO · entró último</asp:ListItem>
-                        </asp:DropDownList>
+                        <rad:RadComboBox2 ID="ddlMetodo" runat="server" Width="100%">
+                            <Items>
+                                <rad:RadComboBoxItem Value="" Text="Según la bodega" Selected="true" />
+                                <rad:RadComboBoxItem Value="FEFO" Text="FEFO · vence primero" />
+                                <rad:RadComboBoxItem Value="FIFO" Text="FIFO · entró primero" />
+                                <rad:RadComboBoxItem Value="LIFO" Text="LIFO · entró último" />
+                            </Items>
+                        </rad:RadComboBox2>
                     </div>
                     <div class="sigma-modal-field">
                         <label>Largo (cm)</label>

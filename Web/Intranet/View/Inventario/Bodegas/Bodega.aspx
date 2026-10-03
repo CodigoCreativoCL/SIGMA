@@ -268,11 +268,13 @@
                 <div class="sigma-modal-grid">
                     <div class="sigma-modal-field is-medio">
                         <label>Método de salida</label>
-                        <asp:DropDownList ID="ddlMetodo" runat="server" CssClass="form-control">
-                            <asp:ListItem Value="FEFO">FEFO · vence primero</asp:ListItem>
-                            <asp:ListItem Value="FIFO">FIFO · entró primero</asp:ListItem>
-                            <asp:ListItem Value="LIFO">LIFO · entró último</asp:ListItem>
-                        </asp:DropDownList>
+                        <rad:RadComboBox2 ID="ddlMetodo" runat="server" Width="100%">
+                            <Items>
+                                <rad:RadComboBoxItem Value="FEFO" Text="FEFO · vence primero" />
+                                <rad:RadComboBoxItem Value="FIFO" Text="FIFO · entró primero" />
+                                <rad:RadComboBoxItem Value="LIFO" Text="LIFO · entró último" />
+                            </Items>
+                        </rad:RadComboBox2>
                     </div>
                     <div class="sigma-modal-field is-medio">
                         <label>En el mapa 3D</label>

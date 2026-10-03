@@ -134,6 +134,11 @@ html.bm3d-pagina body { overflow: hidden; }
 .bm3d-mini { width: 34px; height: 34px; border-radius: 9px; background: var(--canvas); border: 1px solid var(--line); overflow: hidden; display: inline-flex; align-items: center; justify-content: center; flex: 0 0 auto; }
 .bm3d-mini img { width: 100%; height: 100%; object-fit: cover; }
 .bm3d-mini i { font-size: 16px; }
+/* La miniatura es un componente: las reglas de lista "X span { display: block }"
+   (resultados, items del rack, tablet, picking) le quitaban el inline-flex y el
+   icono quedaba arriba a la izquierda. Doble clase = gana siempre. */
+.bm3d-mini.bm3d-mini { display: inline-flex; align-items: center; justify-content: center; padding: 0; line-height: 1; white-space: normal; text-overflow: clip; }
+.bm3d-mini.bm3d-mini i { display: block; line-height: 1; margin: 0; }
 
 /* ------------------------------------------------------------------ KPIs */
 .bm3d-kpis { position: absolute; top: 78px; left: 12px; display: flex; gap: 8px; z-index: 4; flex-wrap: wrap; pointer-events: none; }
@@ -828,3 +833,22 @@ html.bm3d-pagina body { overflow: hidden; }
 .bm3d-fab-aviso i { color: #007F8A; }
 .bm3d-fab-aviso b { color: #17223B; }
 .bm3d-lote-ayuda { grid-column: 1 / -1; margin-top: 2px; }
+
+/* ---- Combo con buscador de SIGMA (Js/sigma-fabricante.js) ---- */
+.sg-combo { position: relative; }
+.sg-combo .sg-combo-in { width: 100%; padding-right: 30px; }
+.sg-combo-flecha { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 18px; cursor: pointer; transition: transform .15s; }
+.sg-combo.is-abierto .sg-combo-flecha { transform: translateY(-50%) rotate(180deg); color: var(--sigma-purple); }
+.sg-combo-lista {
+    position: absolute; left: 0; right: 0; top: calc(100% + 4px); z-index: 30; max-height: 240px; overflow-y: auto;
+    background: var(--surface); border: 1px solid var(--line); border-radius: 10px; box-shadow: 0 12px 28px rgba(23, 34, 59, .16); padding: 4px;
+}
+.sg-combo-op { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: 8px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.sg-combo-op span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-combo-op small { font-size: 11px; font-weight: 700; color: var(--muted); }
+.sg-combo-op mark { background: var(--sigma-purple-soft); color: var(--sigma-purple); padding: 0; border-radius: 3px; }
+.sg-combo-op.is-foco, .sg-combo-op:hover { background: var(--sigma-blue-soft); }
+.sg-combo-op.es-nuevo { color: var(--sigma-cyan-dark); font-weight: 700; border-top: 1px dashed var(--line); margin-top: 2px; }
+.sg-combo-op.es-nuevo i { font-size: 16px; }
+.sg-combo-op.es-nuevo small { color: var(--sigma-cyan-dark); text-transform: uppercase; letter-spacing: .3px; }
+.sg-combo-vacio { padding: 10px; font-size: 12px; color: var(--muted); text-align: center; }
