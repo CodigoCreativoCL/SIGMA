@@ -10,7 +10,7 @@
     <meta name="theme-color" content="#0B0F1A" />
 
     <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="Css/Inicio/sigma-inicio.css?vrs=4" rel="stylesheet" />
+    <link href="Css/Inicio/sigma-inicio.css?vrs=5" rel="stylesheet" />
 </head>
 <body>
     <div class="sg-home">
@@ -396,6 +396,10 @@
                 <button type="button" class="sg-link-btn" data-tab="quienes">Quiénes somos</button>
                 <a href="Privacidad/Privacidad.aspx">Privacidad</a>
                 <a href="Login.aspx">Ingresar</a>
+                <a class="sg-contact-btn" href="mailto:contacto@codigocreativo.cl?subject=Consulta%20sobre%20SIGMA">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+                    Contacto
+                </a>
                 <span>Código Creativo · SIGMA 2026</span>
             </div>
         </footer>

@@ -413,6 +413,23 @@ a { text-decoration: none; }
     font-family: var(--sg-font); font-size: 13px; color: rgba(255, 255, 255, .72); padding: 0;
 }
 .sg-footer-links .sg-link-btn:hover { color: #fff; }
+.sg-contact-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255, 255, 255, .08);
+    color: #fff;
+    border: 1px solid rgba(255, 255, 255, .22);
+    border-radius: var(--sg-radius-sm);
+    padding: 8px 16px;
+    font-family: var(--sg-font);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 120ms ease, border-color 120ms ease, transform 120ms ease;
+}
+.sg-contact-btn:hover { background: var(--sg-purple); border-color: var(--sg-purple); color: #fff; transform: translateY(-1px); }
+.sg-contact-btn svg { width: 15px; height: 15px; }
 
 /* ---------- Responsive ---------- */
 @media (max-width: 860px) {
