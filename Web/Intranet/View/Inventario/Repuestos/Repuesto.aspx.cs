@@ -131,6 +131,18 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             if (entidad.rep_unidad_medida > 0)
                 cboUnidad.SelectedValue = entidad.rep_unidad_medida.ToString();
 
+            // almacenamiento: metodo propio (o vacio = el de la bodega), medidas y peso
+            System.Data.DataRow alm = new RepuestoAlmacenamientoController().Ficha(Id);
+            if (alm != null)
+            {
+                string met = Convert.ToString(alm["METODO"]);
+                if (ddlMetodo.Items.FindByValue(met) != null) ddlMetodo.SelectedValue = met;
+                txtLargo.Text = Medida(alm["LARGO"]);
+                txtAncho.Text = Medida(alm["ANCHO"]);
+                txtAlto.Text = Medida(alm["ALTO"]);
+                txtPeso.Text = Medida(alm["PESO"]);
+            }
+
                 if (entidad.rep_repuesto_tipo > 0)
                     cboTipo.SelectedValue = entidad.rep_repuesto_tipo.ToString();
 
@@ -427,6 +439,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         txtVidaHora.ReadOnly = !puedeEditar;
         txtVidaDia.ReadOnly = !puedeEditar;
         txtVidaCiclo.ReadOnly = !puedeEditar;
+        ddlMetodo.Enabled = puedeEditar;
+        txtLargo.ReadOnly = !puedeEditar;
+        txtAncho.ReadOnly = !puedeEditar;
+        txtAlto.ReadOnly = !puedeEditar;
+        txtPeso.ReadOnly = !puedeEditar;
 
         rdbLoteSi.Enabled = puedeEditar;
         rdbLoteNo.Enabled = puedeEditar;
@@ -454,6 +471,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
     /// chileno la coma es lo natural, y rechazar "4,5" por eso seria
     /// castigar al usuario por la configuracion regional.
     /// </summary>
+    private static string Medida(object v)
+    {
+        return v == null || v == DBNull.Value ? "" : Convert.ToDecimal(v).ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
     private decimal? LeerDecimal(string texto, string campo)
     {
         if (string.IsNullOrEmpty(texto) || string.IsNullOrEmpty(texto.Trim())) return null;
@@ -528,6 +550,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             entidad.rep_es_reparable = rdbReparableSi.Checked;
             entidad.rep_habilitado = rdbSi.Checked;
 
+            decimal? largo = LeerDecimal(txtLargo.Text, "largo");
+            decimal? ancho = LeerDecimal(txtAncho.Text, "ancho");
+            decimal? alto = LeerDecimal(txtAlto.Text, "alto");
+            decimal? peso = LeerDecimal(txtPeso.Text, "peso");
+
             /* La baja pasa por DEL_REPUESTO, que rechaza si queda
                existencia. UPD_REPUESTO con @HABILITADO = 0 tambien lo
                deshabilitaria, pero sin comprobar nada. */
@@ -548,6 +575,20 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
             if (!respuesta.error)
             {
+                /* Metodo y medidas van por sus propios SP (los mismos que usa
+                   el mapa 3D). Si fallan, el repuesto ya quedo guardado: se
+                   avisa y no se cierra, para corregir el dato. */
+                int repId = Id > 0 ? Id : respuesta.codigo;
+                RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+                Respuesta rm = alm.GuardarMetodo(repId, ddlMetodo.SelectedValue);
+                Respuesta rd = rm.error ? rm : alm.GuardarMedidas(repId, largo, ancho, alto, peso);
+                if (rd.error)
+                {
+                    if (Id == 0) Id = repId;
+                    Tools.tools.ClientAlert(respuesta.detalle + " Pero el almacenamiento no se guardó: " + rd.detalle, "alerta");
+                    return;
+                }
+
                 // Al crear no se cierra: falta definir sus umbrales.
                 if (Id == 0)
                 {

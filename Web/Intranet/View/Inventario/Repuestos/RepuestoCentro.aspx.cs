@@ -2,6 +2,8 @@
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Linq;
 using System.Globalization;
 using System.Text;
 using System.Web.UI;
@@ -419,6 +421,16 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         pnlSubir.Visible = puedeCrear;
         lnkNuevoMov.OnClientClick = "return abrirMovimiento('" + queryNuevoDe + "');";
 
+        // el mapa 3D vuela a sus cajas (BodegaMapa3D lee ?ir= con el token de la etiqueta)
+        hlMapa.Visible = SitioBase.Token.Puede("VER BODEGAS");
+        hlMapa.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx") + "?ir=REP-" + r.rep_id;
+
+        // lo que sabe la bodega de este repuesto (bloques 326 a 330)
+        RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+        DataTable almacen = alm.Almacenamiento(r.rep_id);
+        DataTable consumo = alm.Consumo(r.rep_id, 90);
+        DataRow fichaBod = alm.Ficha(r.rep_id);
+
         // ---- datos para los KPIs y los paneles ----
         List<InventarioSaldo> saldos = new InventarioController()
             .GetSaldos(new InventarioSaldo { isa_repuesto = r.rep_id }) ?? new List<InventarioSaldo>();
@@ -439,12 +451,23 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
                      bajoMinimo > 0 ? "Hay que reponer" : "Todo en rango"));
         k.Append(Kpi("puzzle-outline", "azul", "Compatibilidades", compat.Count.ToString(CL),
                      vida.Count > 0 ? vida.Count + " instalaciones" : ""));
+
+        /* Consumo de 90 dias y cuando se agota a ese ritmo: lo mismo que el
+           mapa 3D muestra como "quiebre proyectado". */
+        decimal salidas = 0;
+        foreach (DataRow c in consumo.Rows) salidas += Convert.ToDecimal(c["SALIDAS"]);
+        decimal diario = salidas / 90m;
+        decimal? diasQuiebre = diario > 0 ? r.existencia_total / diario : (decimal?)null;
+        k.Append(Kpi("chart-timeline-variant", diasQuiebre.HasValue && diasQuiebre < 30 ? "alerta" : "teal", "Consumo 90 días",
+                     Num(salidas) + " " + Esc(r.unidad_simbolo),
+                     diasQuiebre.HasValue ? "Se agota en ~" + Math.Round(diasQuiebre.Value).ToString(CL) + " días" : "Sin salidas en el período"));
         litKpisFicha.Text = k.ToString();
 
-        RenderResumen(r, saldos);
+        RenderResumen(r, saldos, fichaBod, almacen);
         RenderCompatibilidades(compat, puedeCrear);
-        RenderExistencias(r, saldos);
-        RenderPosiciones(r, saldos);
+        RenderExistencias(r, saldos, almacen);
+        RenderPosiciones(r, saldos, almacen);
+        RenderReposicion(r, saldos);
         RenderMovimientos(r);
         RenderVidaUtil(r, vida);
         RenderEvidencia(r);
@@ -464,7 +487,7 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
 
     // --------------------------------------------------------------- resumen
 
-    private void RenderResumen(Repuesto r, List<InventarioSaldo> saldos)
+    private void RenderResumen(Repuesto r, List<InventarioSaldo> saldos, DataRow fichaBod, DataTable almacen)
     {
         int portada = new RepuestoFotoController().GetPortadas().ContainsKey(r.rep_id)
                       ? new RepuestoFotoController().GetPortadas()[r.rep_id] : 0;
@@ -486,6 +509,9 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         s.Append(Dato("Consumible", r.rep_es_consumible ? "Sí" : "No"));
         s.Append(Dato("Controla lote", r.rep_controla_lote ? "Sí" : "No"));
         s.Append(Dato("Vida útil declarada", VidaDeclarada(r)));
+        s.Append(Dato("Método de salida", MetodoTexto(fichaBod, almacen)));
+        s.Append(Dato("Medidas", MedidasTexto(fichaBod)));
+        s.Append(Dato("Peso", fichaBod != null && fichaBod["PESO"] != DBNull.Value ? Num(Convert.ToDecimal(fichaBod["PESO"])) + " kg" : ""));
         s.Append("</div>");
         if (!string.IsNullOrWhiteSpace(r.rep_descripcion))
             s.Append("<p style=\"margin:12px 0 0;font-size:13px;color:#17223B;line-height:1.5\">")
@@ -565,14 +591,16 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
              + "\" onclick=\"return abrirMovimiento('" + q + "')\"><i class=\"mdi mdi-" + icono + "\"></i></a>";
     }
 
-    private void RenderExistencias(Repuesto r, List<InventarioSaldo> saldos)
+    private void RenderExistencias(Repuesto r, List<InventarioSaldo> saldos, DataTable almacen)
     {
         bool puedeMover = SitioBase.Token.Puede("REGISTRAR MOVIMIENTOS DE INVENTARIO");
         if (saldos.Count == 0)
             litExistencias.Text = Vacio("warehouse", "Sin existencia", "No hay saldo en ninguna bodega.");
         else
         {
-            StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>Bodega</th><th>Planta</th>"
+            Dictionary<int, string> metodoBod = new Dictionary<int, string>();
+            foreach (DataRow a in almacen.Rows) metodoBod[Convert.ToInt32(a["BOD_ID"])] = Convert.ToString(a["METODO"]);
+            StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>Bodega</th><th>Planta</th><th>Salida</th>"
                 + "<th class=\"num\">Cantidad</th><th class=\"num\">Reservado</th><th class=\"num\">Disponible</th>"
                 + "<th>Último movimiento</th><th></th></tr>");
             foreach (InventarioSaldo x in saldos)
@@ -580,7 +608,10 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
                 // Existencia.aspx abre el detalle DEL REPUESTO (sus bodegas, cubos y
                 // movimientos), asi que recibe el id del repuesto, no el del saldo.
                 string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + r.rep_id));
+                string met;
+                metodoBod.TryGetValue(x.isa_bodega, out met);
                 s.Append("<tr><td>").Append(Esc(x.bodega_nombre)).Append("</td><td>").Append(Esc(x.planta_nombre))
+                 .Append("</td><td>").Append(string.IsNullOrEmpty(met) ? "—" : "<span class=\"rc-badge es-info\">" + Esc(met) + "</span>")
                  .Append("</td><td class=\"num\">").Append(Num(x.isa_cantidad))
                  .Append("</td><td class=\"num\">").Append(Num(x.isa_cantidad_reservada))
                  .Append("</td><td class=\"num\"><b>").Append(Num(x.cantidad_disponible)).Append("</b>")
@@ -659,40 +690,160 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     /// tiene su pestana Ubicaciones. Aqui se enlaza a ella en vez de duplicar
     /// el mantenedor: un dato, un lugar donde se mantiene.
     /// </summary>
-    private void RenderPosiciones(Repuesto r, List<InventarioSaldo> saldos)
+    private void RenderPosiciones(Repuesto r, List<InventarioSaldo> saldos, DataTable almacen)
     {
-        if (saldos.Count == 0)
+        if (almacen.Rows.Count == 0)
         {
             litPosiciones.Text = Vacio("map-marker-off-outline", "Sin existencia en ninguna bodega",
                 "La posicion aparece cuando el repuesto tiene saldo en una bodega.");
             return;
         }
 
-        StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>Bodega</th><th>Planta</th>"
-            + "<th>Posicion</th><th class=\"num\">Cantidad</th><th></th></tr>");
-        foreach (InventarioSaldo x in saldos)
+        /* Una fila por caja (bodega + rack): la posicion del planograma si el
+           rack la tiene fijada, cuando entro y vence lo que hay, y cuando se
+           conto por ultima vez. El icono del cubo abre el mapa en ese rack. */
+        string mapa = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx");
+        bool verMapa = SitioBase.Token.Puede("VER BODEGAS");
+        StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>Bodega</th><th>Rack</th><th>Posición</th>"
+            + "<th class=\"num\">Cantidad</th><th>Ingreso</th><th>Vence</th><th>Último conteo</th><th></th></tr>");
+        foreach (DataRow a in almacen.Rows)
         {
-            string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.isa_bodega));
-            bool tiene = !string.IsNullOrEmpty(x.ubicacion_codigo) || x.ubicaciones > 0;
-            s.Append("<tr><td>").Append(Esc(x.bodega_nombre))
-             .Append("</td><td>").Append(Esc(x.planta_nombre))
-             .Append("</td><td>")
-             .Append(tiene
-                ? "<span class=\"rc-badge es-info\"><i class=\"mdi mdi-map-marker-outline\"></i> "
-                  + Esc(x.ubicacion_texto) + "</span>"
-                : "<span class=\"rc-badge es-off\">Sin estante asignado</span>")
-             .Append("</td><td class=\"num\">").Append(Num(x.isa_cantidad))
-             .Append("</td><td style=\"text-align:right\">")
-             .Append("<a href=\"#\" class=\"link\" onclick=\"return abrirBodega('").Append(q)
-             .Append("')\" title=\"Crear o editar las ubicaciones de esta bodega\">")
-             .Append("<i class=\"mdi mdi-cog-outline\"></i> Ubicaciones de la bodega</a>")
-             .Append("</td></tr>");
+            bool conRack = a["BUB_ID"] != DBNull.Value;
+            string pos = a["NIVEL"] != DBNull.Value
+                ? "<span class=\"rc-badge es-ok\">" + Convert.ToInt32(a["NIVEL"]) + "-" + Convert.ToInt32(a["POSICION"]).ToString("00")
+                  + (Convert.ToInt32(a["FILA"]) == 1 ? " · atrás" : "") + "</span>"
+                : "<span class=\"rc-badge es-off\">Sin fijar</span>";
+            string conteo = "—";
+            if (a["CONTEO_FECHA"] != DBNull.Value)
+            {
+                decimal dif = Convert.ToDecimal(a["CONTEO_DIFERENCIA"]);
+                conteo = Fecha(Convert.ToDateTime(a["CONTEO_FECHA"])) + " · "
+                       + (dif == 0 ? "<span class=\"rc-badge es-ok\">coincidió</span>"
+                                   : "<span class=\"rc-badge es-bajo\">" + (dif > 0 ? "+" : "") + Num(dif) + "</span>");
+            }
+            s.Append("<tr><td>").Append(Esc(Convert.ToString(a["BOD_NOMBRE"])))
+             .Append("</td><td>").Append(conRack ? "<b>" + Esc(Convert.ToString(a["BUB_CODIGO"])) + "</b>" : "<span class=\"rc-badge es-off\">Recepción</span>")
+             .Append("</td><td>").Append(conRack ? pos : "—")
+             .Append("</td><td class=\"num\">").Append(Num(Convert.ToDecimal(a["CANTIDAD"])))
+             .Append("</td><td>").Append(a["INGRESO"] == DBNull.Value ? "—" : Fecha(Convert.ToDateTime(a["INGRESO"])))
+             .Append("</td><td>").Append(a["VENCE"] == DBNull.Value ? "—" : Fecha(Convert.ToDateTime(a["VENCE"])))
+             .Append("</td><td>").Append(conteo)
+             .Append("</td><td style=\"text-align:right;white-space:nowrap\">");
+            if (verMapa && conRack)
+                s.Append("<a class=\"link\" target=\"_blank\" title=\"Ver este rack en el mapa 3D\" href=\"").Append(mapa).Append("?ir=UBI-")
+                 .Append(Convert.ToInt32(a["BUB_ID"])).Append("\"><i class=\"mdi mdi-cube-scan\"></i></a> ");
+            string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + Convert.ToInt32(a["BOD_ID"])));
+            s.Append("<a href=\"#\" class=\"link\" onclick=\"return abrirBodega('").Append(q)
+             .Append("')\" title=\"Ubicaciones de la bodega\"><i class=\"mdi mdi-cog-outline\"></i></a></td></tr>");
         }
         s.Append("</table>");
         s.Append("<p style=\"margin:10px 0 0;font-size:12px;color:#68738A\">")
-         .Append("El estante se asigna al mover el repuesto: en el movimiento se indica la ubicacion de destino. ")
-         .Append("Las ubicaciones disponibles de cada bodega se crean en la ficha de la bodega.</p>");
+         .Append("La posición nivel-posición es el planograma del rack: se fija en el mapa 3D (rack › Fijar posiciones). ")
+         .Append("El stock sigue siendo del rack; la posición dice dónde va dentro de él.</p>");
         litPosiciones.Text = s.ToString();
+    }
+
+    /// <summary>El metodo propio del repuesto, o el que trae cada bodega donde esta.</summary>
+    private static string MetodoTexto(DataRow ficha, DataTable almacen)
+    {
+        if (ficha != null && ficha["METODO"] != DBNull.Value && !string.IsNullOrEmpty(Convert.ToString(ficha["METODO"])))
+            return Convert.ToString(ficha["METODO"]) + " (propio del repuesto)";
+        List<string> m = new List<string>();
+        foreach (DataRow a in almacen.Rows) { string x = Convert.ToString(a["METODO"]); if (!m.Contains(x)) m.Add(x); }
+        return m.Count == 0 ? "Según la bodega" : "Según la bodega: " + string.Join(" / ", m.ToArray());
+    }
+
+    private static string MedidasTexto(DataRow f)
+    {
+        if (f == null || f["LARGO"] == DBNull.Value) return "";
+        return Num(Convert.ToDecimal(f["LARGO"])) + " × " + Num(Convert.ToDecimal(f["ANCHO"] == DBNull.Value ? 0 : f["ANCHO"]))
+             + " × " + Num(Convert.ToDecimal(f["ALTO"] == DBNull.Value ? 0 : f["ALTO"])) + " cm";
+    }
+
+    // ------------------------------------------------------- reposicion y conteos
+
+    private void RenderReposicion(Repuesto r, List<InventarioSaldo> saldos)
+    {
+        RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+
+        pnlRepoNueva.Visible = SitioBase.Token.Puede("GESTIONAR STOCK");
+        if (pnlRepoNueva.Visible && cboRepoBodega.Items.Count == 0)
+        {
+            foreach (Bodega b in new BodegaController().GetBodegas(new Bodega { filtro_habilitado = true }) ?? new List<Bodega>())
+                cboRepoBodega.Items.Add(new RadComboBoxItem(b.bod_nombre, b.bod_id.ToString()));
+            // por defecto, la bodega donde esta bajo minimo (o la primera con saldo)
+            InventarioSaldo critico = saldos.FirstOrDefault(x => x.bajo_minimo) ?? saldos.FirstOrDefault();
+            if (critico != null) { RadComboBoxItem it = cboRepoBodega.FindItemByValue(critico.isa_bodega.ToString()); if (it != null) it.Selected = true; }
+        }
+
+        DataTable sol = alm.Reposiciones(r.rep_id);
+        if (sol.Rows.Count == 0)
+            litReposiciones.Text = Vacio("cart-outline", "Sin solicitudes", "Todavía no se ha pedido reposición de este repuesto.");
+        else
+        {
+            StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>N°</th><th>Fecha</th><th>Bodega</th>"
+                + "<th class=\"num\">Solicitado</th><th class=\"num\">Stock al pedir</th><th>Estado</th><th>Quién</th></tr>");
+            foreach (DataRow x in sol.Rows)
+            {
+                string est = Convert.ToString(x["ESTADO"]);
+                string clase = est == "RECIBIDA" ? "es-ok" : est == "ANULADA" ? "es-off" : est == "ENVIADA" ? "es-info" : "es-alto";
+                s.Append("<tr><td><b>").Append(Convert.ToInt32(x["NUMERO"])).Append("</b></td><td>").Append(Fecha(Convert.ToDateTime(x["FECHA"])))
+                 .Append("</td><td>").Append(Esc(Convert.ToString(x["BODEGA"])))
+                 .Append("</td><td class=\"num\">").Append(Num(Convert.ToDecimal(x["CANTIDAD"])))
+                 .Append("</td><td class=\"num\">").Append(x["STOCK"] == DBNull.Value ? "—" : Num(Convert.ToDecimal(x["STOCK"])))
+                 .Append("</td><td><span class=\"rc-badge ").Append(clase).Append("\">").Append(Esc(est.ToLowerInvariant())).Append("</span>")
+                 .Append("</td><td>").Append(Esc(Convert.ToString(x["USUARIO"]))).Append("</td></tr>");
+            }
+            s.Append("</table>");
+            litReposiciones.Text = s.ToString();
+        }
+
+        DataTable con = alm.Conteos(r.rep_id);
+        if (con.Rows.Count == 0)
+            litConteos.Text = Vacio("clipboard-check-outline", "Sin conteos", "Este repuesto todavía no se ha contado. Se cuenta desde el recorrido del mapa 3D (rack › Contar este rack).");
+        else
+        {
+            StringBuilder s = new StringBuilder("<table class=\"rc-tabla\"><tr><th>Fecha</th><th>Conteo</th><th>Bodega · rack</th>"
+                + "<th class=\"num\">Sistema</th><th class=\"num\">Contado</th><th class=\"num\">Diferencia</th><th>Quién</th></tr>");
+            foreach (DataRow x in con.Rows)
+            {
+                decimal dif = Convert.ToDecimal(x["DIFERENCIA"]);
+                s.Append("<tr><td>").Append(Fecha(Convert.ToDateTime(x["FECHA"])))
+                 .Append("</td><td>N° ").Append(Convert.ToInt32(x["CONTEO"])).Append(" · ").Append(Esc(Convert.ToString(x["ALCANCE"])))
+                 .Append("</td><td>").Append(Esc(Convert.ToString(x["BODEGA"]))).Append(" · <b>").Append(Esc(Convert.ToString(x["UBICACION"]))).Append("</b>")
+                 .Append("</td><td class=\"num\">").Append(Num(Convert.ToDecimal(x["SISTEMA"])))
+                 .Append("</td><td class=\"num\">").Append(Num(Convert.ToDecimal(x["CONTADO"])))
+                 .Append("</td><td class=\"num\">").Append(dif == 0 ? "<span class=\"rc-badge es-ok\">0</span>" : "<span class=\"rc-badge es-bajo\">" + (dif > 0 ? "+" : "") + Num(dif) + "</span>")
+                 .Append("</td><td>").Append(Esc(Convert.ToString(x["USUARIO"]))).Append("</td></tr>");
+            }
+            s.Append("</table>");
+            litConteos.Text = s.ToString();
+        }
+    }
+
+    protected void lnkSolicitar_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "reposicion";
+        if (!SitioBase.Token.Puede("GESTIONAR STOCK")) return;
+        int bodega;
+        if (!int.TryParse(cboRepoBodega.SelectedValue, out bodega) || bodega <= 0)
+        { litRepoAviso.Text = "<p class=\"rc-resultado\" style=\"color:#C7352B\">Elija la bodega.</p>"; return; }
+        string t = (txtRepoCant.Text ?? "").Trim().Replace(" ", "");
+        if (t.Contains(",") && !t.Contains(".")) t = t.Replace(",", ".");
+        decimal cant;
+        if (!decimal.TryParse(t, NumberStyles.Number, CultureInfo.InvariantCulture, out cant) || cant <= 0)
+        { litRepoAviso.Text = "<p class=\"rc-resultado\" style=\"color:#C7352B\">Indique una cantidad mayor que cero.</p>"; return; }
+
+        // la foto del momento: stock y umbrales de esa bodega quedan en la solicitud
+        InventarioSaldo sal = (new InventarioController().GetSaldos(new InventarioSaldo { isa_repuesto = RepuestoId }) ?? new List<InventarioSaldo>())
+                                .FirstOrDefault(x => x.isa_bodega == bodega);
+        RepuestoBodegaStock umb = (new RepuestoController().GetUmbrales(new RepuestoBodegaStock { rbs_repuesto = RepuestoId }) ?? new List<RepuestoBodegaStock>())
+                                .FirstOrDefault(x => x.rbs_bodega == bodega);
+        Respuesta r = new RepuestoAlmacenamientoController().CrearReposicion(bodega, RepuestoId, cant,
+            sal != null ? (decimal?)sal.isa_cantidad : 0, umb != null ? (decimal?)umb.rbs_stock_minimo : null,
+            umb != null ? umb.rbs_stock_maximo : null, (txtRepoObs.Text ?? "").Trim());
+        litRepoAviso.Text = "<p class=\"rc-resultado\" style=\"color:" + (r.error ? "#C7352B" : "#16855B") + ";font-weight:700\">" + Esc(r.detalle) + "</p>";
+        if (!r.error) { txtRepoCant.Text = ""; txtRepoObs.Text = ""; }
     }
 
     // ------------------------------------------------------------ movimientos

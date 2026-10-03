@@ -373,7 +373,7 @@ function dibujarQr(g, token, x, y, tam) {
 /* Los QR de los repuestos no vienen en la carga (generarlos es lo caro): se
    piden en lote cuando la camara se acerca a una caja, y al llegar se
    redibujan las etiquetas que los esperaban. */
-const QR_PEDIDOS = new Set();
+const QR_PEDIDOS = new Set(), QR_INTENTOS = new Map();
 let colaQr = new Set(), timerQr = 0;
 function pedirQr(token) {
     if (QR_PEDIDOS.has(token)) return;
@@ -382,13 +382,31 @@ function pedirQr(token) {
         const lote = [...colaQr]; colaQr = new Set(); timerQr = 0;
         try {
             const r = await ws('Qr', { tokens: lote.join(',') });
-            Object.assign(S.qr, r.qr || {});
-            for (const [mesh, t] of S.etiquetasVivas) {
-                if (!r.qr['REP-' + mesh.userData.item.id]) continue;
-                dibujarEtiquetaCaja(mesh.userData.item, t.image); t.needsUpdate = true;
-            }
-        } catch (e) { lote.forEach((x) => QR_PEDIDOS.delete(x)); }
+            const llegados = r.qr || {};
+            Object.assign(S.qr, llegados);
+            lote.forEach((x) => QR_INTENTOS.delete(x));
+            redibujarQr(llegados);
+        } catch (e) {
+            /* Un lote que falla (servidor ocupado, el sitio reiniciandose) dejaba
+               las etiquetas de la pantalla con el impostor -tres esquinas y un
+               cuadro gris- hasta que la camara se alejaba: nada volvia a pedir.
+               Se reintenta con espera creciente; mientras tanto el token sigue
+               "pedido" para que el nivel de detalle no lo repita en cada vuelta. */
+            const n = Math.min(6, (QR_INTENTOS.get(lote[0]) || 0) + 1);
+            lote.forEach((x) => QR_INTENTOS.set(x, n));
+            setTimeout(() => { lote.forEach((x) => QR_PEDIDOS.delete(x)); lote.forEach(pedirQr); }, 800 * 2 ** n);
+        }
     }, 60);
+}
+/* Lo que llego se dibuja donde esperaba: etiquetas de cajas vivas y vigas en
+   alta resolucion (un rack recien creado no trae su QR en la carga). */
+function redibujarQr(llegados) {
+    for (const [mesh, t] of S.etiquetasVivas) {
+        if (!llegados['REP-' + mesh.userData.item.id]) continue;
+        dibujarEtiquetaCaja(mesh.userData.item, t.image); t.needsUpdate = true;
+        mesh.userData.qrPend = false;
+    }
+    for (const rk of [...S.vigasHD]) if (llegados['UBI-' + rk.id]) { vigaHD(rk, false); vigaHD(rk, true); }
 }
 /* Impostor de lejos: tres marcas de posicion y modulos sueltos. No se lee (no
    tiene que): a esa distancia el QR real no se distinguiria igual, y al
@@ -404,6 +422,48 @@ function dibujarQrLejano(g, x, y, tam) {
     }
     g.globalAlpha = 0.55; g.fillRect(x + 10 * k, y + 10 * k, 13 * k, 13 * k); g.globalAlpha = 1;
 }
+
+// ============================================================ codigo de barras
+/* Code 128, juego B: la misma tabla que App_Code/MVC/SitioBase/Code128.cs
+   (con la que se imprime). Si una cambia, cambia la otra. A diferencia del QR
+   no hace falta pedirlo al servidor: son 107 patrones y una suma. */
+const C128 = ('212222 222122 222221 121223 121322 131222 122213 122312 132212 221213 221312 231212 112232 122132 122231 113222 ' +
+    '123122 123221 223211 221132 221231 213212 223112 312131 311222 321122 321221 312212 322112 322211 212123 212321 232121 111323 ' +
+    '131123 131321 112313 132113 132311 211313 231113 231311 112133 112331 132131 113123 113321 133121 313121 211331 231131 213113 ' +
+    '213311 213131 311123 311321 331121 312113 312311 332111 314111 221411 431111 111224 111422 121124 121421 141122 141221 112214 ' +
+    '112412 122114 122411 142112 142211 241211 221114 413111 241112 134111 111242 121142 121241 114212 124112 124211 411212 421112 ' +
+    '421211 212141 214121 412121 111143 111341 131141 114113 114311 411113 411311 113141 114131 311141 411131 211412 211214 211232 2331112').split(' ');
+const BARRAS_CACHE = new Map();
+function barrasDe(token) {
+    token = String(token || '');
+    if (BARRAS_CACHE.has(token)) return BARRAS_CACHE.get(token);
+    let m = '', suma = 104, ok = true;
+    const add = (v) => { const p = C128[v]; for (let k = 0; k < p.length; k++) m += (k % 2 ? '0' : '1').repeat(+p[k]); };
+    add(104);
+    for (let i = 0; i < token.length; i++) {
+        const v = token.charCodeAt(i) - 32;
+        if (v < 0 || v > 95) { ok = false; break; }
+        suma += v * (i + 1); add(v);
+    }
+    add(suma % 103); add(106);
+    const r = ok && token ? m : '';
+    BARRAS_CACHE.set(token, r);
+    return r;
+}
+const BARRAS_GENERICO = barrasDe('REP-0000');   // las etiquetas compartidas de lejos no tienen token
+function dibujarBarras(g, token, x, y, w, h) {
+    g.fillStyle = '#FFFFFF'; g.fillRect(x, y, w, h);
+    const m = barrasDe(token) || BARRAS_GENERICO, k = w / (m.length + 20);   // 10 modulos de silencio por lado
+    g.fillStyle = '#000000';
+    for (let i = 0; i < m.length;) {
+        if (m[i] !== '1') { i++; continue; }
+        let j = i; while (j < m.length && m[j] === '1') j++;
+        const x0 = Math.floor(x + (i + 10) * k), x1 = Math.floor(x + (j + 10) * k);
+        g.fillRect(x0, y, Math.max(1, x1 - x0), h);
+        i = j;
+    }
+}
+const enBarras = () => S.simbolo === 'BARRAS';
 
 // ======================================================= dibujo 2D comun
 function envolver(g, texto, x, y, ancho, alto, lineas) {
@@ -448,6 +508,7 @@ function rrect(g, x, y, w, h, r) {
    --------------------------------------------------------------------------- */
 function dibujarEtiqueta(g, x, y, w, h, e, o) {
     o = o || {};
+    if (enBarras()) return dibujarEtiquetaBarras(g, x, y, w, h, e, o);
     g.save();
     const radio = Math.max(2, h * 0.045);
     g.fillStyle = '#FFFFFF'; rrect(g, x, y, w, h, radio); g.fill();
@@ -489,6 +550,40 @@ function dibujarEtiqueta(g, x, y, w, h, e, o) {
         g.fillStyle = '#000000'; g.fillText(recortar(g, e.detalle, tw - dx), tx + dx, yy);
     }
     if (e.pie) { g.fillStyle = '#555555'; g.font = `500 ${fs}px ${FUENTE}`; yy += fs * 1.22; g.fillText(recortar(g, e.pie, tw), tx, yy); }
+    g.restore();
+}
+
+/* La misma etiqueta con codigo de barras (.etq.es-barras de la hoja de
+   impresion): codigo y titulo arriba, las barras abajo a todo el ancho. */
+function dibujarEtiquetaBarras(g, x, y, w, h, e, o) {
+    g.save();
+    const radio = Math.max(2, h * 0.045);
+    g.fillStyle = '#FFFFFF'; rrect(g, x, y, w, h, radio); g.fill();
+    if (o.borde) { g.strokeStyle = 'rgba(0,0,0,.18)'; g.lineWidth = Math.max(1, h * 0.008); rrect(g, x + 0.5, y + 0.5, w - 1, h - 1, radio); g.stroke(); }
+    if (e.color) { g.fillStyle = e.color; g.fillRect(x, y + h * 0.06, Math.max(2, h * 0.035), h * 0.88); }
+    const pad = h * 0.075, bx = x + pad * 1.4, bw = w - pad * 2.4;
+    const bh = h * 0.3, by = y + h - pad - bh, tope = by - h * 0.025;
+    dibujarBarras(g, e.token, bx, by, bw, bh);
+
+    g.textBaseline = 'alphabetic'; g.textAlign = 'left';
+    // el codigo nunca se recorta: se achica hasta que cabe
+    const L = String(e.codigo || '').trim().length;
+    let fc = h * (L <= 9 ? 0.2 : L <= 14 ? 0.16 : 0.13);
+    g.font = `800 ${fc}px ${FUENTE}`;
+    while (g.measureText(e.codigo || '').width > bw && fc > h * 0.07) { fc *= 0.92; g.font = `800 ${fc}px ${FUENTE}`; }
+    let yy = y + pad + fc * 0.92;
+    g.fillStyle = '#000000'; g.fillText(e.codigo || '', bx, yy); yy += fc * 0.13;
+    const ft = h * 0.095, fd = h * 0.1;
+    if (e.titulo && yy + ft * 1.2 < tope) {
+        g.fillStyle = '#1A1A1A'; g.font = `600 ${ft}px ${FUENTE}`; yy += ft * 1.15;
+        g.fillText(recortar(g, e.titulo, bw), bx, yy);
+    }
+    if (e.detalle && yy + fd * 1.22 < tope) {
+        g.font = `700 ${fd}px ${FUENTE}`; yy += fd * 1.2;
+        const dx = e.estado ? fd * 0.85 : 0;
+        if (e.estado) { g.fillStyle = COLOR_ESTADO[e.estado]; g.beginPath(); g.arc(bx + fd * 0.32, yy - fd * 0.34, fd * 0.3, 0, Math.PI * 2); g.fill(); }
+        g.fillStyle = '#000000'; g.fillText(recortar(g, e.detalle, bw - dx), bx + dx, yy);
+    }
     g.restore();
 }
 
@@ -881,12 +976,15 @@ function etiquetasFierro(rack) {
     // puntal: codigo en vertical con su QR al pie
     const c = canvas(96, 600), g = c.getContext('2d');
     g.fillStyle = '#FFFFFF'; rrect(g, 0, 0, 96, 600, 8); g.fill();
-    dibujarQr(g, 'UBI-' + rack.id, 6, 600 - 90, 84);
-    g.save(); g.translate(48, 255); g.rotate(-Math.PI / 2);
+    // en barras el codigo corre a lo largo del puntal, como se pega en el fierro
+    const barras = enBarras(), largoTxt = barras ? 340 : 480;
+    if (barras) { g.save(); g.translate(8, 590); g.rotate(-Math.PI / 2); dibujarBarras(g, 'UBI-' + rack.id, 0, 0, 210, 80); g.restore(); }
+    else dibujarQr(g, 'UBI-' + rack.id, 6, 600 - 90, 84);
+    g.save(); g.translate(48, barras ? 195 : 255); g.rotate(-Math.PI / 2);
     g.fillStyle = '#000000'; g.font = `800 44px ${FUENTE}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText(recortar(g, rack.codigo, 480), 0, -8);
+    g.fillText(recortar(g, rack.codigo, largoTxt), 0, -8);
     g.fillStyle = '#555555'; g.font = `500 22px ${FUENTE}`;
-    g.fillText(recortar(g, rack.bodega.codigo, 480), 0, 26);
+    g.fillText(recortar(g, rack.bodega.codigo, largoTxt), 0, 26);
     g.restore();
     const t = tex(c); S.basura.push(t);
     aRack(rack, planoEtiqueta(t, 0.072, 0.45), -RACK.ancho / 2, 1.3, RACK.prof / 2 - 0.045 + 0.037);
@@ -1108,6 +1206,29 @@ function armarEdicion() {
     }
 }
 
+// ================================================================ QR o barras
+/* El mapa parte con el codigo de la empresa (lo ultimo elegido al imprimir)
+   y se puede mirar con el otro sin cambiar nada: lo que se imprima desde aqui
+   sale como se esta viendo. */
+function pintarSimbolo() {
+    const b = root.querySelector('[data-accion="simbolo"]');
+    if (!b) return;
+    b.innerHTML = enBarras() ? '<i class="mdi mdi-qrcode"></i>Ver etiquetas con QR'
+                             : '<i class="mdi mdi-barcode"></i>Ver etiquetas con código de barras';
+}
+function cambiarSimbolo(sim) {
+    if (S.simbolo === sim || !S.datos) return;
+    S.simbolo = sim; S.simboloLocal = true;
+    for (const [, m] of ETQ_LEJOS) { if (m.map) m.map.dispose(); m.dispose(); }
+    ETQ_LEJOS.clear();
+    const camP = camera.position.clone(), camT = controls.target.clone(), bod = S.bodegaSel;
+    construir(S.datos); pintarBodegas();
+    if (S.porBodega.has(bod)) elegirBodega(bod, true);
+    camera.position.copy(camP); controls.target.copy(camT);
+    pintarSimbolo();
+    aviso(sim === 'BARRAS' ? 'Etiquetas con código de barras (Code 128).' : 'Etiquetas con QR.');
+}
+
 // ================================================================ nivel de detalle
 let ultimoLod = 0;
 const _v = new THREE.Vector3(), _frustum = new THREE.Frustum(), _pm = new THREE.Matrix4();
@@ -1137,12 +1258,23 @@ function actualizarEtiquetas(ahora) {
     /* De a poco: crear de golpe decenas de etiquetas con QR (y subirlas a la
        tarjeta) daba tirones justo mientras se movia la camara. Las mas cercanas
        primero; el resto en las vueltas siguientes. */
+    /* Red de seguridad: una etiqueta viva que sigue con el impostor se
+       redibuja apenas su QR esta, y se vuelve a pedir si nadie lo esta
+       pidiendo. Asi ningun camino (lote fallido, recarga a medias) la deja
+       con el QR a medio dibujar. */
+    for (const [mesh, t] of S.etiquetasVivas) {
+        if (!mesh.userData.qrPend) continue;
+        const tok = 'REP-' + mesh.userData.item.id;
+        if (S.qr[tok]) { dibujarEtiquetaCaja(mesh.userData.item, t.image); t.needsUpdate = true; mesh.userData.qrPend = false; }
+        else if (!QR_PEDIDOS.has(tok)) pedirQr(tok);
+    }
     let presupuesto = 14;
     for (const mesh of quiero) {
         if (S.etiquetasVivas.has(mesh)) continue;
         if (presupuesto-- <= 0) break;
         const c = canvas(512, Math.round(512 / RATIO_ETQ));
         dibujarEtiquetaCaja(mesh.userData.item, c);
+        mesh.userData.qrPend = !enBarras() && !S.qr['REP-' + mesh.userData.item.id];
         const t = tex(c);
         mesh.userData.etiqueta.material = new THREE.MeshBasicMaterial({ map: t, toneMapped: false });
         S.etiquetasVivas.set(mesh, t);
@@ -1474,7 +1606,8 @@ async function imprimirEtiquetas(origen, ids, bodega) {
     const vent = window.open('', 'sigmaEtiquetas', 'width=' + w + ',height=' + h + ',left=' + Math.round(x) + ',top=' + Math.round(y) + ',resizable=yes,scrollbars=yes');
     if (!vent) { aviso('El navegador bloqueó la ventana de impresión: permite las ventanas emergentes para este sitio.', true); return; }
     try {
-        const r = await ws('UrlEtiquetas', { origen, ids: String(ids || ''), bodega: bodega || 0 });
+        // sale con el codigo que se esta mirando en el mapa
+        const r = await ws('UrlEtiquetas', { origen, ids: String(ids || ''), bodega: bodega || 0, simbolo: S.simbolo || 'QR' });
         vent.location.href = r.url; vent.focus();
     } catch (e) { vent.close(); aviso(e.message, true); }
 }
@@ -4008,7 +4141,7 @@ async function usarCamara() {
     try {
         flujoCamara = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         v.srcObject = flujoCamara; v.hidden = false; await v.play();
-        const det = new window.BarcodeDetector({ formats: ['qr_code'] });
+        const det = new window.BarcodeDetector({ formats: ['qr_code', 'code_128'] });
         const buscar = async () => {
             if (!flujoCamara) return;
             try { const r = await det.detect(v); if (r.length) { const t = r[0].rawValue; pararCamara(); irACodigo(t); return; } } catch (e) { /* cuadro sin QR */ }
@@ -4659,6 +4792,8 @@ async function cargar(planta) {
 function aplicarDatos(d) {
     S.datos = d; S.planta = d.planta; S.permisos = d.permisos || {};
     S.qr = Object.assign(S.qr || {}, d.qr || {});
+    if (!S.simboloLocal) S.simbolo = d.simbolo === 'BARRAS' ? 'BARRAS' : 'QR';
+    pintarSimbolo();
     leerConteos(d.conteos);
     leerPosiciones(d.posiciones);
     leerPlano(d.plano);
@@ -4707,6 +4842,7 @@ document.addEventListener('click', (e) => { if (!e.target.closest('.bm3d-mas')) 
 root.querySelector('[data-accion="historial"]').onclick = () => (S.historial ? salirHistorial() : entrarHistorial());
 root.querySelector('[data-accion="escanear"]').onclick = () => abrirEscaner();
 root.querySelector('[data-accion="refrescar"]').onclick = () => refrescarStock(false);
+root.querySelector('[data-accion="simbolo"]').onclick = () => cambiarSimbolo(enBarras() ? 'QR' : 'BARRAS');
 root.querySelector('[data-accion="editar"]').onclick = alternarEdicion;
 root.querySelector('[data-accion="nuevo"]').onclick = () => formRepuesto(0, { bodega: S.bodegaSel });
 root.querySelector('[data-accion="picking"]').onclick = () => formPicking();

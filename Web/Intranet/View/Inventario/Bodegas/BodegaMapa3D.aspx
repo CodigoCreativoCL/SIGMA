@@ -62,6 +62,7 @@
                         <button type="button" data-accion="historial"><i class="mdi mdi-history"></i>Historial y reproducción</button>
                         <button type="button" data-accion="escanear"><i class="mdi mdi-qrcode-scan"></i>Escanear o ir a un código</button>
                         <button type="button" data-accion="refrescar"><i class="mdi mdi-refresh"></i>Actualizar stock</button>
+                        <button type="button" data-accion="simbolo"><i class="mdi mdi-barcode"></i>Ver etiquetas con código de barras</button>
                     </div>
                 </div>
             </div>
@@ -119,5 +120,5 @@
             }
         }
     </script>
-    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=19"></script>
+    <script type="module" src="<%=ResolveUrl("~/Js/sigma-bodega3d.js") %>?vrs=20"></script>
 </asp:Content>

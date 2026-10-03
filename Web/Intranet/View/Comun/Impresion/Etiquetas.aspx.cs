@@ -54,6 +54,13 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
             Ids = Querystring.Texto(Request.QueryString["query"], "Ids");
             Bodega = Querystring.Entero(Request.QueryString["query"], "Bodega");
 
+            /* Parte con lo que pida quien abrio la hoja (el mapa 3D manda lo
+               que esta mirando) o, si no dice, con el de la empresa. */
+            string pedido = Querystring.Texto(Request.QueryString["query"], "Simbolo");
+            string simbolo = string.IsNullOrEmpty(pedido) ? new EtiquetaController().Simbologia() : EtiquetaSimbolo.Normalizar(pedido);
+            RadComboBoxItem it = cboSimbolo.FindItemByValue(simbolo);
+            if (it != null) it.Selected = true;
+
             Cargar();
         }
     }
@@ -62,6 +69,26 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
     {
         Cargar();
     }
+
+    /* Cambiarlo aqui lo deja como predeterminado de la empresa: la proxima
+       tirada parte igual y el mapa 3D dibuja las etiquetas con ese codigo. */
+    protected void cboSimbolo_Changed(object sender, RadComboBoxSelectedIndexChangedEventArgs e)
+    {
+        Respuesta r = new EtiquetaController().GuardarSimbologia(Simbolo());
+        litSimboloAviso.Text = r.error
+            ? "<br /><span style=\"color:#C7352B;font-weight:700\">No se pudo guardar como predeterminado: " + Server.HtmlEncode(r.detalle) + "</span>"
+            : "<br /><span style=\"color:#16855B;font-weight:700\">Queda como predeterminado de la empresa; el mapa 3D dibuja las etiquetas igual.</span>";
+        Cargar();
+    }
+
+    protected string Simbolo()
+    {
+        return EtiquetaSimbolo.Normalizar(cboSimbolo.SelectedValue);
+    }
+
+    protected bool EsBarras { get { return Simbolo() == EtiquetaSimbolo.Barras; } }
+
+    protected string ClaseEtiqueta { get { return EsBarras ? "etq es-barras" : "etq"; } }
 
     protected void Cargar()
     {
@@ -78,7 +105,7 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
 
         EtiquetaController controller = new EtiquetaController();
 
-        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega);
+        List<Etiqueta> lista = controller.GetEtiquetas(Origen, Ids, Bodega, Simbolo());
 
         Mostrar(lista);
     }
@@ -112,6 +139,9 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
     protected void Mostrar(List<Etiqueta> lista)
     {
         litTitulo.Text = TituloOrigen();
+        litAyuda.Text = EsBarras
+            ? "Cada etiqueta lleva su código impreso en grande y el mismo dato en barras Code 128: lo lee cualquier pistola lectora y también la cámara del teléfono."
+            : "Cada etiqueta lleva su código impreso en grande y el mismo dato en el QR. Al escanearla —con la cámara del teléfono— se abre en SIGMA lo que hay en ese lugar.";
         litPagina.Text = ReglaDePagina();
 
         bool hay = (lista != null && lista.Count > 0);
@@ -154,6 +184,16 @@ public partial class View_Comun_Impresion_Etiquetas : System.Web.UI.Page
                    Server.HtmlEncode(item.Codigo) + "</div>";
 
         Literal lit = (Literal)e.Item.FindControl("litQr");
+
+        /* En barras el codigo va abajo, a lo ancho: una pistola lineal
+           necesita barras largas, no un cuadrado al lado del texto. */
+        if (EsBarras)
+        {
+            if (!string.IsNullOrEmpty(item.BarrasDataUri))
+                ((Literal)e.Item.FindControl("litBarras")).Text = "<img class=\"barras\" src=\"" + item.BarrasDataUri +
+                    "\" alt=\"" + Server.HtmlEncode(item.Token) + "\" />";
+            return;
+        }
 
         /* Sin QR se deja el hueco y la etiqueta igual sirve: el código va
            impreso en grande justamente para poder teclearlo. */

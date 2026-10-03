@@ -205,6 +205,48 @@
                 </div>
             </div>
 
+            <%-- Almacenamiento (bloques 328 y 329): como sale de bodega y cuanto
+                 ocupa. El mapa 3D dibuja la caja con estas medidas y avisa
+                 cuando el peso supera la carga del nivel. --%>
+            <div class="sigma-form-seccion">
+                <div class="titulo"><i class="mdi mdi-warehouse"></i>Almacenamiento</div>
+                <div class="ayuda">
+                    El <strong>método de salida</strong> decide de qué caja se descuenta al consumir:
+                    FEFO la que vence primero, FIFO la que entró primero, LIFO la última que entró.
+                    Lo normal es dejarlo <strong>según la bodega</strong>; se fija aquí solo cuando este
+                    repuesto es la excepción.
+                </div>
+
+                <div class="sigma-modal-grid">
+                    <div class="sigma-modal-field">
+                        <label>Método de salida</label>
+                        <asp:DropDownList ID="ddlMetodo" runat="server" CssClass="form-control">
+                            <asp:ListItem Value="">Según la bodega</asp:ListItem>
+                            <asp:ListItem Value="FEFO">FEFO · vence primero</asp:ListItem>
+                            <asp:ListItem Value="FIFO">FIFO · entró primero</asp:ListItem>
+                            <asp:ListItem Value="LIFO">LIFO · entró último</asp:ListItem>
+                        </asp:DropDownList>
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Largo (cm)</label>
+                        <WebControls:TextBox2 ID="txtLargo" runat="server" MaxLength="9" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Ancho (cm)</label>
+                        <WebControls:TextBox2 ID="txtAncho" runat="server" MaxLength="9" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Alto (cm)</label>
+                        <WebControls:TextBox2 ID="txtAlto" runat="server" MaxLength="9" />
+                    </div>
+                    <div class="sigma-modal-field">
+                        <label>Peso (kg)</label>
+                        <WebControls:TextBox2 ID="txtPeso" runat="server" MaxLength="10" />
+                        <span class="sigma-modal-ayuda">Por unidad. Vacíos si no se conocen.</span>
+                    </div>
+                </div>
+            </div>
+
                 <%-- ============================================================
      LA GALERIA
 

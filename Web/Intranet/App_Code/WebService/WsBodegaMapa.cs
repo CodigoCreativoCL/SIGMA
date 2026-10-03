@@ -86,7 +86,9 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta)),
                 posiciones = ArmarPosiciones(Sp("SEL_BODEGA_MAPA_POSICIONES", "@INSTALACION", Planta(planta))),
                 plano = ArmarPlano(Sp("SEL_BODEGA_MAPA_PLANO", "@INSTALACION", Planta(planta))),
-                version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta)))
+                version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta))),
+                // QR o BARRAS (bloque 331): las etiquetas del mapa salen como las impresas
+                simbolo = new EtiquetaController().Simbologia()
             };
         });
     }
@@ -227,7 +229,7 @@ public class WsBodegaMapa : System.Web.Services.WebService
     /// </summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string UrlEtiquetas(string origen, string ids, int bodega)
+    public string UrlEtiquetas(string origen, string ids, int bodega, string simbolo)
     {
         return Ejecutar(P_VER, () =>
         {
@@ -238,6 +240,7 @@ public class WsBodegaMapa : System.Web.Services.WebService
             string datos = "Origen=" + o;
             if (!string.IsNullOrEmpty(ids)) datos += "&Ids=" + string.Join(",", ids.Split(',').Select(x => x.Trim()).Where(x => x.All(char.IsDigit) && x.Length > 0));
             if (bodega > 0) datos += "&Bodega=" + bodega;
+            if (!string.IsNullOrEmpty(simbolo)) datos += "&Simbolo=" + EtiquetaSimbolo.Normalizar(simbolo);
 
             return new
             {

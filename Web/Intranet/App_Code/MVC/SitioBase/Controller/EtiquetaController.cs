@@ -91,8 +91,9 @@ namespace SitioBase.Controller
         /// Las etiquetas YA IMPRESAS siguen sirviendo: Interpretar(), aca y en
         /// la API, acepta las dos formas.
         /// </summary>
-        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega)
+        public List<Etiqueta> GetEtiquetas(string origen, string ids, int bodega, string simbolo = EtiquetaSimbolo.Qr)
         {
+            bool barras = EtiquetaSimbolo.Normalizar(simbolo) == EtiquetaSimbolo.Barras;
             List<Etiqueta> lista = new List<Etiqueta>();
 
             if (!Token.TokenSeguridad()) return lista;
@@ -125,7 +126,10 @@ namespace SitioBase.Controller
                         item.Detalle = dr["DETALLE"].ToString();
                         item.Pie = dr["PIE"].ToString();
 
-                        item.QrDataUri = GenerarQr(item.Token);
+                        /* Solo el codigo que se va a imprimir: generar el QR de
+                           una tirada en barras seria trabajo tirado. */
+                        if (barras) item.BarrasDataUri = Code128.SvgDataUri(item.Token);
+                        else item.QrDataUri = GenerarQr(item.Token);
 
                         lista.Add(item);
                     }
@@ -162,6 +166,51 @@ namespace SitioBase.Controller
         /// su telefono": el computador no tiene camara util, pero si puede
         /// mostrar un codigo que el telefono lea.
         /// </summary>
+        /// <summary>
+        /// QR o BARRAS: lo que eligio la empresa la ultima vez que imprimio.
+        /// La hoja de impresion parte con esto y el mapa 3D lo dibuja asi.
+        /// </summary>
+        public string Simbologia()
+        {
+            if (!Token.TokenSeguridad()) return EtiquetaSimbolo.Qr;
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "SEL_CLIENTE_ETIQUETA_SIMBOLO";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                System.Data.DataTable dt = Conexion.GetDataTable(cmd);
+                return dt.Rows.Count > 0 ? EtiquetaSimbolo.Normalizar(Convert.ToString(dt.Rows[0]["SIMBOLO"])) : EtiquetaSimbolo.Qr;
+            }
+            catch (Exception)
+            {
+                // sin la columna (base sin el bloque 331) se sigue como siempre: QR
+                if (cmd.Connection != null) cmd.Connection.Close();
+                return EtiquetaSimbolo.Qr;
+            }
+        }
+
+        public Respuesta GuardarSimbologia(string simbolo)
+        {
+            Respuesta r = new Respuesta();
+            if (!Token.TokenSeguridad()) { r.error = true; r.detalle = "La sesión expiró."; return r; }
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "UPD_CLIENTE_ETIQUETA_SIMBOLO";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@SIMBOLO", EtiquetaSimbolo.Normalizar(simbolo));
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                System.Data.DataTable dt = Conexion.GetDataTable(cmd);
+                r.detalle = dt.Rows.Count > 0 ? Convert.ToString(dt.Rows[0]["MENSAJE"]) : "Listo.";
+            }
+            catch (Exception ex)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                r.error = true; r.codigo = -1; r.detalle = ex.Message;
+            }
+            return r;
+        }
+
         public string QrDeUrl(string url)
         {
             return GenerarQr(url);

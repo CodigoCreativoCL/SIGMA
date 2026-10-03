@@ -1,7 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Simple.master" AutoEventWireup="true" CodeFile="Etiquetas.aspx.cs" Inherits="View_Comun_Impresion_Etiquetas" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <link href="../../../Css/LookAndFeel/sigma-impresion.css?vrs=3" rel="stylesheet" />
+    <link href="../../../Css/LookAndFeel/sigma-impresion.css?vrs=4" rel="stylesheet" />
 
     <script type="text/javascript">
         function imprimir() {
@@ -35,14 +35,27 @@
             </rad:RadComboBox2>
         </div>
 
+        <%-- QR o barras: lo elegido queda como predeterminado de la empresa
+             (bloque 331), y el mapa 3D dibuja las etiquetas igual. --%>
+        <div class="campo">
+            <label for="cboSimbolo">Código:</label>
+            <rad:RadComboBox2 ID="cboSimbolo" runat="server" AutoPostBack="true"
+                OnSelectedIndexChanged="cboSimbolo_Changed" Width="270px">
+                <Items>
+                    <rad:RadComboBoxItem Text="QR · cámara del teléfono" Value="QR" />
+                    <rad:RadComboBoxItem Text="Código de barras · Code 128" Value="BARRAS" />
+                </Items>
+            </rad:RadComboBox2>
+        </div>
+
         <span class="cuenta"><asp:Literal ID="litCuenta" runat="server" /></span>
     </div>
 
     <div class="etq-ayuda no-imprimir">
-        Cada etiqueta lleva su código impreso en grande y el mismo dato en el QR.
-        Al escanearla —con la cámara del teléfono— se abre en SIGMA lo que hay en
-        ese lugar. <strong>El código no se puede cambiar después</strong>: si se
+        <asp:Literal ID="litAyuda" runat="server" />
+        <strong>El código no se puede cambiar después</strong>: si se
         corrige, las etiquetas ya pegadas dejan de servir.
+        <asp:Literal ID="litSimboloAviso" runat="server" />
     </div>
 
     <asp:Panel ID="pnlVacio" runat="server" Visible="false" CssClass="etq-vacio no-imprimir">
@@ -52,7 +65,7 @@
     <div id="divHoja" runat="server" class="etq-hoja">
         <asp:Repeater ID="rptEtiquetas" runat="server" OnItemDataBound="rptEtiquetas_ItemDataBound">
             <ItemTemplate>
-                <div class="etq">
+                <div class="<%# ClaseEtiqueta %>">
                     <asp:Literal ID="litQr" runat="server" />
                     <div class="texto">
                         <asp:Literal ID="litCodigo" runat="server" />
@@ -61,6 +74,7 @@
                         <div class="detalle"><%# Server.HtmlEncode(Eval("Detalle").ToString()) %></div>
                         <div class="pie"><%# Server.HtmlEncode(Eval("Pie").ToString()) %></div>
                     </div>
+                    <asp:Literal ID="litBarras" runat="server" />
                 </div>
             </ItemTemplate>
         </asp:Repeater>

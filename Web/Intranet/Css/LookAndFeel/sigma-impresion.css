@@ -145,9 +145,30 @@
 }
 
 
+/* ---- Etiqueta en codigo de barras (bloque 331) ----
+   El texto arriba y las barras abajo, a todo el ancho: una pistola
+   lineal lee mejor barras largas, y la zona de silencio (blanca)
+   ya viene dentro del SVG. El titulo cede a una linea para dejarles
+   alto. */
+.etq.es-barras {
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: space-between;
+    gap: 1.2mm;
+}
+.etq.es-barras .texto { flex: 0 1 auto; overflow: hidden; }
+.etq.es-barras .titulo { -webkit-line-clamp: 1; }
+.etq.es-barras img.barras { width: 100%; flex: 0 0 auto; }
+.etq-termica .etq.es-barras img.barras { height: 7.5mm; }
+.etq-termica .etq.es-barras .sub,
+.etq-termica .etq.es-barras .pie { display: none; }
+.etq-a4-24 .etq.es-barras img.barras { height: 10mm; }
+.etq-a4-24 .etq.es-barras .pie { display: none; }
+.etq-a4-10 .etq.es-barras img.barras { height: 16mm; }
+
 /* ---- Formato: rollo termico 50 x 25 mm ---- */
 .etq-termica .etq { width: 50mm; height: 25mm; }
-.etq-termica .etq img { width: 15mm; height: 15mm; }
+.etq-termica .etq img:not(.barras) { width: 15mm; height: 15mm; }
 .etq-termica .titulo  { font-size: 6.5pt; }
 .etq-termica .sub,
 .etq-termica .pie     { font-size: 5.5pt; }
@@ -156,7 +177,7 @@
 
 /* ---- Formato: A4, 3 x 8 (70 x 37 mm) ---- */
 .etq-a4-24 .etq { width: 70mm; height: 37mm; }
-.etq-a4-24 .etq img { width: 22mm; height: 22mm; }
+.etq-a4-24 .etq img:not(.barras) { width: 22mm; height: 22mm; }
 .etq-a4-24 .titulo  { font-size: 8.5pt; }
 .etq-a4-24 .sub,
 .etq-a4-24 .pie     { font-size: 7pt; }
@@ -165,7 +186,7 @@
 
 /* ---- Formato: A4, 2 x 5 (99 x 57 mm) ---- */
 .etq-a4-10 .etq { width: 99mm; height: 57mm; }
-.etq-a4-10 .etq img { width: 34mm; height: 34mm; }
+.etq-a4-10 .etq img:not(.barras) { width: 34mm; height: 34mm; }
 .etq-a4-10 .titulo  { font-size: 11pt; }
 .etq-a4-10 .sub,
 .etq-a4-10 .pie     { font-size: 9pt; }
@@ -246,7 +267,8 @@
        dentro de la etiqueta pegada. */
     .etq { border: 0 !important; }
 
-    .etq img {
+    .etq img,
+    .etq img.barras {
         /* Sin esto Chrome imprime el QR aclarado y el lector falla. */
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;

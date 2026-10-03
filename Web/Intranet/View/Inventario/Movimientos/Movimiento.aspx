@@ -4,7 +4,7 @@
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
 
     <link href="../../../Css/LookAndFeel/sigma-escaneo.css?vrs=2" rel="stylesheet" />
-    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-escaneo.js") %>?vrs=2"></script>
+    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-escaneo.js") %>?vrs=3"></script>
 
     <script type="text/javascript">
         function getRadWindow() {

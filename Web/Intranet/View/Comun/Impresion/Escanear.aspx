@@ -5,7 +5,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
-    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-escaneo.js") %>?vrs=2"></script>
+    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-escaneo.js") %>?vrs=3"></script>
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
