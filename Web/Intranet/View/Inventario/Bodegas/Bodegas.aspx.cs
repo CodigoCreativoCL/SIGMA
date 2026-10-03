@@ -2,6 +2,8 @@
 using SitioBase.Controller;
 using SitioBase.Model;
 using System;
+using System.Collections.Generic;
+using System.Data;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -15,12 +17,15 @@ public partial class View_Inventario_Bodegas_Bodegas : System.Web.UI.Page
     {
         if (!IsPostBack)
         {
-            Grid.AddColumn("BOD_ID", "", Width: "3%");
-            Grid.AddColumn("BOD_CODIGO", "CÓDIGO", Width: "14%");
-            Grid.AddColumn("BOD_NOMBRE", "NOMBRE", Width: "28%");
-            Grid.AddColumn("PLANTA_NOMBRE", "PLANTA", Width: "22%");
-            Grid.AddColumn("UBICACIONES", "UBICACIONES", Width: "13%");
-            Grid.AddColumn("REPUESTOS_CON_SALDO", "CON EXISTENCIA", Width: "20%");
+            Grid.AddColumn("BOD_ID", "", Width: "6%");
+            Grid.AddColumn("BOD_CODIGO", "CÓDIGO", Width: "13%");
+            Grid.AddColumn("BOD_NOMBRE", "NOMBRE", Width: "24%");
+            Grid.AddColumn("PLANTA_NOMBRE", "PLANTA", Width: "18%");
+            // lo mismo que muestra el mapa 3D de cada bodega (bloque 332)
+            Grid.AddColumn("METODO", "SALIDA", Width: "9%");
+            Grid.AddColumn("UBICACIONES", "RACKS", Width: "9%");
+            Grid.AddColumn("CONTADOS_30", "CONTADOS 30 D", Width: "10%");
+            Grid.AddColumn("REPUESTOS_CON_SALDO", "CON EXISTENCIA", Width: "11%");
         }
 
         Tools.tools.RegisterPostBackScript(Grid);
@@ -80,6 +85,19 @@ public partial class View_Inventario_Bodegas_Bodegas : System.Web.UI.Page
                 Editar.Attributes.Add("onclick", "abrirBodega('" + query + "')");
 
                 item["bod_id"].Controls.Add(Editar);
+
+                /* La misma bodega en el mapa 3D, en otra pestaña: el listado
+                   no se pierde. */
+                if (Token.Puede("VER BODEGAS"))
+                {
+                    HyperLink mapa = new HyperLink();
+                    mapa.ID = "lnkMapa" + item.ItemIndex;
+                    mapa.Text = "<i class=\"mdi mdi-cube-scan\" style=\"font-size:18px;color:#087BEA;vertical-align:middle;margin-left:8px\"></i>";
+                    mapa.ToolTip = "Ver en el mapa 3D";
+                    mapa.Target = "_blank";
+                    mapa.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx") + "?ir=BOD-" + id;
+                    item["bod_id"].Controls.Add(mapa);
+                }
             }
         }
     }
@@ -107,6 +125,23 @@ public partial class View_Inventario_Bodegas_Bodegas : System.Web.UI.Page
             ? (bool?)(cboHabilitado.SelectedValue == "1")
             : true;
 
-        Grid.DataSource = controller.GetBodegas(filtro);
+        /* La grilla se arma con lo de SEL_BODEGA y lo que sabe el mapa
+           (metodo de salida y racks contados en 30 dias): una tabla y no la
+           lista, porque esas dos columnas no son del modelo Bodega. */
+        Dictionary<int, DataRow> mapa = new Dictionary<int, DataRow>();
+        foreach (DataRow r in new BodegaAlmacenamientoController().Resumen().Rows) mapa[Convert.ToInt32(r["BOD_ID"])] = r;
+
+        DataTable t = new DataTable();
+        foreach (string c in new[] { "bod_id", "bod_codigo", "bod_nombre", "planta_nombre", "metodo", "ubicaciones", "contados_30", "repuestos_con_saldo" })
+            t.Columns.Add(c, c == "bod_id" || c == "ubicaciones" || c == "contados_30" || c == "repuestos_con_saldo" ? typeof(int) : typeof(string));
+        foreach (Bodega b in controller.GetBodegas(filtro) ?? new List<Bodega>())
+        {
+            DataRow m;
+            mapa.TryGetValue(b.bod_id, out m);
+            t.Rows.Add(b.bod_id, b.bod_codigo, b.bod_nombre, b.planta_nombre,
+                       m != null ? Convert.ToString(m["METODO"]) : "FEFO", b.ubicaciones,
+                       m != null ? Convert.ToInt32(m["CONTADOS_30"]) : 0, b.repuestos_con_saldo);
+        }
+        Grid.DataSource = t;
     }
 }

@@ -71,6 +71,8 @@
                     <CommandItemTemplate>
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva bodega" CssClass="icono_guardar" OnClientClick="return abrirBodega(0);" />
+                            <a href="<%# ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx") %>" class="sg-ot-btn es-contorno" style="margin-left:8px"
+                                title="Todas las bodegas de la planta en 3D"><i class="mdi mdi-cube-scan"></i>Ver mapa 3D</a>
                         </div>
                     </CommandItemTemplate>
                 </MasterTableView>
@@ -80,7 +82,9 @@
                 Una bodega pertenece a una <strong>planta</strong>: el mismo repuesto puede existir
                 en dos plantas y son existencias distintas.<br />
                 Una bodega con existencia <strong>no se puede dar de baja</strong>: esconderla no
-                vacía la estantería. Primero se traslada o se ajusta lo que queda.
+                vacía la estantería. Primero se traslada o se ajusta lo que queda.<br />
+                Los racks se crean por pasillo con el código que lee el <strong>mapa 3D</strong>
+                (<em>P1-A-R01</em> = pasillo A, rack 01): así cada bodega se dibuja tal como está en el piso.
             </div>
 
         </ContentTemplate>

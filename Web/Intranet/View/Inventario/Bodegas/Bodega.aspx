@@ -42,12 +42,67 @@
             return false;
         }
 
+        /* Vista previa de los codigos que se van a crear, con la misma regla
+           que el mapa 3D (sugerirRack): <prefijo>-<pasillo>-R<numero>, desde el
+           siguiente numero libre del pasillo. Los datos los deja el servidor
+           en #bodRacksDatos en cada render, asi que sirve tambien despues de
+           un postback parcial. */
+        function bodPreview() {
+            var datos = document.getElementById('bodRacksDatos'),
+                pas = document.querySelector('.bod-in-pasillo input, input.bod-in-pasillo'),
+                can = document.querySelector('.bod-in-cantidad input, input.bod-in-cantidad'),
+                out = document.getElementById('bodRacksPrevia');
+            if (!datos || !pas || !can || !out) return;
+            var p = (pas.value || '').trim().toUpperCase(), n = parseInt(can.value, 10) || 1;
+            if (!/^[A-Z]{1,3}$/.test(p)) { out.innerHTML = 'El pasillo es de 1 a 3 letras (A, B, AB…).'; return; }
+            if (n < 1 || n > 30) { out.innerHTML = 'Se crean de 1 a 30 racks por vez.'; return; }
+            var max = JSON.parse(datos.getAttribute('data-max') || '{}'), desde = (max[p] || 0) + 1, hasta = desde + n - 1;
+            var cod = function (k) { return datos.getAttribute('data-prefijo') + '-' + p + '-R' + (k < 10 ? '0' + k : k); };
+            out.innerHTML = (max[p] ? 'Sigue el pasillo ' + p + ': ' : 'Abre el pasillo ' + p + ': ') +
+                '<b>' + cod(desde) + '</b>' + (n > 1 ? ' a <b>' + cod(hasta) + '</b>' : '');
+        }
+
         function closeWindow() {
             var window = getRadWindow();
             if (window.BrowserWindow.refresh) window.BrowserWindow.refresh();
             window.close();
         }
     </script>
+    <style type="text/css">
+        /* Racks como los ve el mapa 3D: agrupados por pasillo, con lo que
+           guardan, la carga por nivel y el ultimo conteo. */
+        .bod-racks .sigma-lista-cabecera,
+        .bod-racks .sigma-lista-fila { grid-template-columns: 118px minmax(140px, 1fr) 110px 120px 112px 104px; }
+        .bod-pasillo {
+            display: flex; align-items: center; gap: 10px;
+            padding: 8px 16px; background: #F4F6FA; border-top: 1px solid #E2E7F0;
+            font-size: 11px; font-weight: 800; letter-spacing: .4px; text-transform: uppercase; color: #4A556D;
+        }
+        .bod-pasillo:first-child { border-top: 0; }
+        .bod-pasillo .chip { margin-left: auto; text-transform: none; letter-spacing: 0; }
+        .bod-chip {
+            display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px;
+            font-size: 11px; font-weight: 800; white-space: nowrap;
+        }
+        .bod-chip.es-cyan { background: #E8FBFB; color: #007F8A; }
+        .bod-chip.es-purple { background: #F2EFFF; color: #6732F4; }
+        .bod-chip.es-blue { background: #EAF4FF; color: #087BEA; }
+        .bod-chip.es-warning { background: #FFF4E5; color: #B65C00; }
+        .bod-chip.es-muted { background: #F4F6FA; color: #68738A; }
+        .bod-dato { font-size: 12px; color: #68738A; }
+        .bod-dato b { color: #17223B; }
+        .bod-previa { font-size: 12px; color: #4A556D; margin-top: 6px; }
+        .bod-previa b { color: #6732F4; }
+        .bod-mapa {
+            display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px;
+            border: 1px solid #087BEA; border-radius: 10px; color: #087BEA; background: #fff;
+            font-size: 13px; font-weight: 700; text-decoration: none;
+        }
+        .bod-mapa:hover, .bod-mapa:focus { background: #EAF4FF; color: #0565C2; text-decoration: none; }
+        @media (max-width: 760px) {
+            .bod-racks .sigma-lista-fila { grid-template-columns: 1fr auto; }
+        }
+    </style>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -118,6 +173,32 @@
                 </div>
             </div>
             </div>
+
+            <%-- Bloque 328: de que caja se descuenta al consumir. Es lo mismo que
+                 se cambia en el mapa 3D (bodega > Datos de la bodega). --%>
+            <div class="sigma-form-seccion">
+                <div class="titulo"><i class="mdi mdi-swap-vertical"></i>Almacenamiento</div>
+                <div class="ayuda">
+                    El <strong>método de salida</strong> decide de qué caja sale el repuesto al consumir:
+                    <strong>FEFO</strong> la que vence primero, <strong>FIFO</strong> la que entró primero,
+                    <strong>LIFO</strong> la última que entró. Un repuesto puede tener el suyo propio
+                    (en su ficha); los demás siguen el de la bodega.
+                </div>
+                <div class="sigma-modal-grid">
+                    <div class="sigma-modal-field is-medio">
+                        <label>Método de salida</label>
+                        <asp:DropDownList ID="ddlMetodo" runat="server" CssClass="form-control">
+                            <asp:ListItem Value="FEFO">FEFO · vence primero</asp:ListItem>
+                            <asp:ListItem Value="FIFO">FIFO · entró primero</asp:ListItem>
+                            <asp:ListItem Value="LIFO">LIFO · entró último</asp:ListItem>
+                        </asp:DropDownList>
+                    </div>
+                    <div class="sigma-modal-field is-medio">
+                        <label>En el mapa 3D</label>
+                        <asp:Literal ID="litResumenMapa" runat="server" />
+                    </div>
+                </div>
+            </div>
         </rad:RadPageView>
 
         <rad:RadPageView ID="pvUbicaciones" runat="server">
@@ -135,24 +216,39 @@
                 <div class="sigma-modal-note">
                     <i class="mdi mdi-information-outline"></i>
                     <div>
-                        El código se genera solo —<strong>UBI-</strong>más el número— y es
-                        el que va impreso en la etiqueta del estante. Póngale un
-                        <strong>nombre</strong> que diga dónde queda, como "Pasillo A · Estante 3 ·
-                        Nivel 2": es lo que se lee al consultar un repuesto.
+                        Cada rack se crea con el código que lee el <strong>mapa 3D</strong>:
+                        <strong><asp:Literal ID="litConvencion" runat="server" /></strong> es
+                        pasillo A, rack 01 (impares a la izquierda, pares a la derecha). Es el que va
+                        impreso en la etiqueta y <strong>no cambia después</strong>; el nombre sí.
                     </div>
                 </div>
 
-                <div class="sigma-modal-grid">
-                    <div class="sigma-modal-field is-grande">
-                        <label>Nombre</label>
+                <asp:Literal ID="litRacksDatos" runat="server" />
+                <asp:Panel ID="pnlAltaRacks" runat="server" CssClass="sigma-modal-grid">
+                    <div class="sigma-modal-field is-mini">
+                        <label>Pasillo</label>
+                        <WebControls:TextBox2 ID="txtPasillo" runat="server" MaxLength="3" UpperCase="true"
+                            CssClass="bod-in-pasillo" onkeyup="bodPreview()" onchange="bodPreview()" />
+                    </div>
+                    <div class="sigma-modal-field is-mini">
+                        <label>Racks</label>
+                        <WebControls:TextBox2 ID="txtCantidad" runat="server" MaxLength="2" Text="1"
+                            CssClass="bod-in-cantidad" onkeyup="bodPreview()" onchange="bodPreview()" />
+                    </div>
+                    <div class="sigma-modal-field is-medio">
+                        <label>Nombre (opcional)</label>
                         <WebControls:TextBox2 ID="txtUbiNombre" runat="server" MaxLength="400" />
                     </div>
                     <div class="sigma-modal-field is-chico">
                         <label>&nbsp;</label>
                         <WebControls:PushButton ID="btnAgregarUbicacion" runat="server"
-                            Text="Agregar ubicación" OnClick="btnAgregarUbicacion_Click" />
+                            Text="Agregar racks" OnClick="btnAgregarUbicacion_Click" />
                     </div>
-                </div>
+                    <div class="sigma-modal-field is-grande" style="margin-top:-6px">
+                        <div class="bod-previa" id="bodRacksPrevia"></div>
+                        <span class="sigma-modal-ayuda">Vacío, el nombre es «Pasillo A · Rack 04». Varios racks numeran el nombre que escriba.</span>
+                    </div>
+                </asp:Panel>
 
                 <%-- REPEATER Y NO RadGrid
 
@@ -166,11 +262,14 @@
                      Se edita EN LA FILA. Cargar la fila en el formulario de
                      arriba, a media pantalla de distancia, dejaba dudando si
                      se estaba editando esa fila o creando otra. --%>
-                <div class="sigma-lista">
+                <div class="sigma-lista bod-racks">
 
                     <div class="sigma-lista-cabecera">
                         <span class="col-codigo">Código</span>
                         <span class="col-nombre">Nombre</span>
+                        <span>Guarda</span>
+                        <span>Carga / nivel</span>
+                        <span>Último conteo</span>
                         <span class="col-acciones"></span>
                     </div>
 
@@ -178,10 +277,11 @@
                         OnItemDataBound="rptUbicaciones_ItemDataBound"
                         OnItemCommand="rptUbicaciones_ItemCommand">
                         <ItemTemplate>
+                            <asp:Literal ID="litPasillo" runat="server" />
                             <div class="sigma-lista-fila">
 
                                 <span class="col-codigo">
-                                    <span class="sigma-lista-codigo"><%# Eval("bub_codigo") %></span>
+                                    <span class="sigma-lista-codigo"><%# Server.HtmlEncode(Convert.ToString(Eval("CODIGO"))) %></span>
                                 </span>
 
                                 <asp:Panel ID="pnlVista" runat="server" CssClass="col-nombre">
@@ -192,7 +292,20 @@
                                     <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="400" />
                                 </asp:Panel>
 
+                                <span class="bod-dato"><asp:Literal ID="litGuarda" runat="server" /></span>
+
+                                <span class="bod-dato">
+                                    <asp:Literal ID="litCarga" runat="server" />
+                                    <asp:Panel ID="pnlCarga" runat="server" Visible="false">
+                                        <WebControls:TextBox2 ID="txtCarga" runat="server" MaxLength="10" placeholder="1000" />
+                                    </asp:Panel>
+                                </span>
+
+                                <span class="bod-dato"><asp:Literal ID="litConteo" runat="server" /></span>
+
                                 <span class="col-acciones">
+                                    <asp:HyperLink ID="hlMapaRack" runat="server" CssClass="sigma-lista-accion" Target="_blank"
+                                        ToolTip="Ver este rack en el mapa 3D"><i class="mdi mdi-cube-scan"></i></asp:HyperLink>
                                     <asp:LinkButton ID="lnkEditar" runat="server" CommandName="Editar"
                                         CssClass="sigma-lista-accion" ToolTip="Editar esta ubicación">
                                         <i class="mdi mdi-pencil-outline"></i>
@@ -215,7 +328,7 @@
                     </asp:Repeater>
 
                     <asp:Panel ID="pnlSinUbicaciones" runat="server" Visible="false" CssClass="sigma-lista-vacia">
-                        Todavía no hay ubicaciones. Agregue la primera arriba.
+                        Todavía no hay racks. Indique el pasillo y cuántos racks tiene, arriba.
                     </asp:Panel>
 
                 </div>
@@ -227,10 +340,10 @@
                 <asp:Panel ID="pnlEtiquetas" runat="server" Visible="false" CssClass="sigma-form-seccion">
                     <div class="titulo"><i class="mdi mdi-printer-outline"></i>Imprimir etiquetas</div>
                     <div class="ayuda">
-                        Cada etiqueta lleva su código impreso y el mismo dato en un QR.
-                        Al escanearla con la cámara del teléfono se abre en SIGMA lo que
-                        hay en ese lugar, así que sirve tanto para rotular como para
-                        consultar de pie frente al estante.
+                        Cada etiqueta lleva su código impreso y el mismo dato en QR o en
+                        código de barras (se elige en la hoja de impresión). Al escanearla
+                        se abre en SIGMA lo que hay en ese lugar, así que sirve tanto para
+                        rotular como para consultar de pie frente al estante.
                     </div>
 
                     <div class="sigma-opciones">
@@ -271,6 +384,8 @@
     <wuc:Auditoria runat="server" ID="wucAuditoria" />
 
     <div class="sigma-modal-actions">
+        <asp:HyperLink ID="hlMapa" runat="server" CssClass="bod-mapa" Target="_blank" Visible="false"
+            ToolTip="Abre la bodega en el mapa 3D, en otra pestaña"><i class="mdi mdi-cube-scan"></i>Abrir en el mapa 3D</asp:HyperLink>
         <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar" OnClientClick="closeWindow(); return false;" />
         <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar" OnClick="btnGuardar_Click" ValidationGroup="Bodega" />
     </div>
