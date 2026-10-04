@@ -50,7 +50,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Todo lo que se puede identificar con una etiqueta y un código QR.
+    Todo lo que se puede identificar con una etiqueta, con QR o código de barras.
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -62,7 +62,9 @@
                 Cada etiqueta lleva su código impreso en grande y el mismo dato en un QR.
                 Al escanearla con la cámara del teléfono se abre en SIGMA lo que hay en
                 ese lugar, así que sirve tanto para rotular como para consultar de pie
-                frente al estante.
+                frente al estante. Al imprimir se elige el código: <strong>QR</strong> para el
+                teléfono o <strong>código de barras</strong> (Code 128) para las pistolas lectoras;
+                lo elegido queda para la empresa y el mapa 3D lo dibuja igual.
             </div>
 
             <%-- DOS GRUPOS, PORQUE EL FILTRO SOLO APLICA A UNO

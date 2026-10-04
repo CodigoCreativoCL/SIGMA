@@ -37,6 +37,21 @@ namespace SitioBase.Model
         /// no puede depender de que la pantalla se acuerde de generarlo.
         /// </summary>
         public string QrDataUri { get; set; }
+
+        /// <summary>El mismo token en Code 128 (SVG en data URI), cuando la tirada va en barras.</summary>
+        public string BarrasDataUri { get; set; }
+    }
+
+    /// <summary>Con que codigo sale la etiqueta (Cliente.cli_etiqueta_simbolo).</summary>
+    public static class EtiquetaSimbolo
+    {
+        public const string Qr = "QR";
+        public const string Barras = "BARRAS";
+
+        public static string Normalizar(string s)
+        {
+            return string.Equals((s ?? "").Trim(), Barras, StringComparison.OrdinalIgnoreCase) ? Barras : Qr;
+        }
     }
 
     /// <summary>

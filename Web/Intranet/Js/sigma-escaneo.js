@@ -140,7 +140,7 @@ var sigmaEscaneo = (function () {
         decir('');
 
         try {
-            detector = new window.BarcodeDetector({ formats: ['qr_code'] });
+            detector = new window.BarcodeDetector({ formats: ['qr_code', 'code_128'] });
         } catch (e) {
             decir('Este navegador no puede leer códigos QR. Use la cámara de su teléfono.');
             return;

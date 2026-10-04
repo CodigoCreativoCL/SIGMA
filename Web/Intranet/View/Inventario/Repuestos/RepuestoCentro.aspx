@@ -406,7 +406,7 @@
                                         <i class="mdi mdi-file-excel-outline"></i>Exportar</asp:LinkButton>
                                     <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sg-ot-btn es-contorno"
                                         CausesValidation="false"><i class="mdi mdi-file-upload-outline"></i>Carga masiva</asp:LinkButton>
-                                    <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sg-ot-btn es-prim"
+                                    <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sg-ot-btn es-primario"
                                         OnClientClick="return abrirRepuesto(0);" CausesValidation="false">
                                         <i class="mdi mdi-plus"></i>Nuevo repuesto</asp:LinkButton>
                                 </div>
@@ -464,7 +464,10 @@
                         <asp:LinkButton ID="lnkVolver" runat="server" CssClass="sg-ot-btn es-contorno"
                             OnClientClick="return volverListado();" CausesValidation="false">
                             <i class="mdi mdi-arrow-left"></i>Volver al listado</asp:LinkButton>
-                        <asp:LinkButton ID="lnkEditar" runat="server" CssClass="sg-ot-btn es-prim" CausesValidation="false">
+                        <%-- El mapa en otra pestana: quien esta en la ficha no pierde lo que miraba. --%>
+                        <asp:HyperLink ID="hlMapa" runat="server" CssClass="sg-ot-btn es-contorno" Target="_blank" Visible="false">
+                            <i class="mdi mdi-cube-scan"></i>Ver en el mapa 3D</asp:HyperLink>
+                        <asp:LinkButton ID="lnkEditar" runat="server" CssClass="sg-ot-btn es-primario" CausesValidation="false">
                             <i class="mdi mdi-pencil-outline"></i>Editar</asp:LinkButton>
                     </div>
                 </header>
@@ -478,6 +481,7 @@
                     <a href="#" class="sg-a3-tab" data-sec="compatibilidades"><i class="mdi mdi-puzzle-outline"></i>Compatibilidades</a>
                     <a href="#" class="sg-a3-tab" data-sec="existencias"><i class="mdi mdi-warehouse"></i>Existencias</a>
                     <a href="#" class="sg-a3-tab" data-sec="posiciones"><i class="mdi mdi-map-marker-outline"></i>Posiciones</a>
+                    <a href="#" class="sg-a3-tab" data-sec="reposicion"><i class="mdi mdi-cart-plus"></i>Reposición y conteos</a>
                     <a href="#" class="sg-a3-tab" data-sec="movimientos"><i class="mdi mdi-swap-horizontal"></i>Movimientos</a>
                     <a href="#" class="sg-a3-tab" data-sec="vidautil"><i class="mdi mdi-timer-sand"></i>Vida útil</a>
                     <a href="#" class="sg-a3-tab" data-sec="evidencia"><i class="mdi mdi-image-multiple-outline"></i>Evidencia y documentos</a>
@@ -501,7 +505,7 @@
                     <div class="rc-card">
                         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
                             <h3 style="margin:0">Con qué equipos calza</h3>
-                            <asp:LinkButton ID="lnkNuevaCompat" runat="server" CssClass="sg-ot-btn es-prim"
+                            <asp:LinkButton ID="lnkNuevaCompat" runat="server" CssClass="sg-ot-btn es-primario"
                                 CausesValidation="false"><i class="mdi mdi-plus"></i>Agregar</asp:LinkButton>
                         </div>
                         <asp:Literal ID="litCompatibilidades" runat="server" />
@@ -530,6 +534,31 @@
                     </div>
                 </section>
 
+                <%-- Reposicion y conteos (bloques 326 y 329): lo que se pidio para este
+                     repuesto y las veces que se conto en bodega. --%>
+                <section class="sg-a3-panel" data-panel="reposicion">
+                    <asp:Panel ID="pnlRepoNueva" runat="server" CssClass="rc-card">
+                        <h3>Solicitar reposición</h3>
+                        <p class="rc-resultado">Queda como solicitud PENDIENTE con su número; se sigue en el mapa 3D (bodega › Reposición) y se imprime desde ahí.</p>
+                        <div class="rc-subir-fila">
+                            <rad:RadComboBox2 ID="cboRepoBodega" runat="server" Width="240px" Filter="Contains" />
+                            <asp:TextBox ID="txtRepoCant" runat="server" CssClass="form-control" placeholder="Cantidad" style="max-width:130px" />
+                            <asp:TextBox ID="txtRepoObs" runat="server" CssClass="form-control" placeholder="Observación (opcional): proveedor, urgencia…" />
+                            <asp:LinkButton ID="lnkSolicitar" runat="server" CssClass="sg-ot-btn es-primario"
+                                OnClick="lnkSolicitar_Click" CausesValidation="false"><i class="mdi mdi-cart-plus"></i>Solicitar</asp:LinkButton>
+                        </div>
+                        <asp:Literal ID="litRepoAviso" runat="server" />
+                    </asp:Panel>
+                    <div class="rc-card">
+                        <h3>Solicitudes de reposición</h3>
+                        <asp:Literal ID="litReposiciones" runat="server" />
+                    </div>
+                    <div class="rc-card">
+                        <h3>Conteos cíclicos</h3>
+                        <asp:Literal ID="litConteos" runat="server" />
+                    </div>
+                </section>
+
                 <section class="sg-a3-panel" data-panel="movimientos">
                     <div class="rc-card">
                         <div class="rc-barra">
@@ -546,7 +575,7 @@
                                         <rad:RadComboBoxItem Text="Mayor cantidad" Value="cantidad" />
                                     </Items>
                                 </rad:RadComboBox2>
-                                <asp:LinkButton ID="lnkNuevoMov" runat="server" CssClass="sg-ot-btn es-prim"
+                                <asp:LinkButton ID="lnkNuevoMov" runat="server" CssClass="sg-ot-btn es-primario"
                                     CausesValidation="false"><i class="mdi mdi-plus"></i>Registrar movimiento</asp:LinkButton>
                             </div>
                         </div>
@@ -582,7 +611,7 @@
                             </label>
                             <asp:TextBox ID="txtTituloArchivo" runat="server" CssClass="form-control"
                                 placeholder="Título (opcional): ficha técnica, certificado…" />
-                            <asp:LinkButton ID="lnkSubir" runat="server" CssClass="sg-ot-btn es-prim"
+                            <asp:LinkButton ID="lnkSubir" runat="server" CssClass="sg-ot-btn es-primario"
                                 OnClick="lnkSubir_Click" CausesValidation="false">
                                 <i class="mdi mdi-upload"></i>Adjuntar</asp:LinkButton>
                         </div>

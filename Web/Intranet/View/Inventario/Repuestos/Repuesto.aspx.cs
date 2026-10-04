@@ -102,9 +102,34 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         udPanel.Update();
     }
 
+    private List<FabricanteController.Fabricante> catalogoFab;
+    private List<FabricanteController.Fabricante> CatalogoFab()
+    {
+        return catalogoFab ?? (catalogoFab = new FabricanteController().Catalogo());
+    }
+
+    /// <summary>Los modelos del fabricante, para la cascada al abrir la ficha.</summary>
+    private void CargarModelos(string fabricante)
+    {
+        cboModelo.Items.Clear();
+        string k = (fabricante ?? "").Trim();
+        FabricanteController.Fabricante f = CatalogoFab().Find(x => string.Compare(x.nombre, k, CultureInfo.InvariantCulture,
+            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0);
+        if (f != null) foreach (string m in f.modelos) cboModelo.Items.Add(new RadComboBoxItem(m, m));
+    }
+
     protected void CargarDatos()
     {
+        /* El catalogo va en cada render (tambien en los postbacks parciales):
+           el UpdatePanel reemplaza el bloque y el combo lo vuelve a leer. */
+        litFabCatalogo.Text = "<script type=\"application/json\" id=\"sgFabCatalogo\">" +
+                new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(CatalogoFab()).Replace("</", "<\\/") +
+                "</script>";
+
         if (IsPostBack) return;
+
+        foreach (FabricanteController.Fabricante f in CatalogoFab())
+            cboFabricante.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
 
         if (Id > 0)
         {
@@ -114,8 +139,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             lblId.Text = Id.ToString();
             txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Repuesto", entidad.rep_codigo);
             txtNombre.Text = entidad.rep_nombre;
-            txtFabricante.Text = entidad.rep_fabricante;
-            txtModelo.Text = entidad.rep_modelo;
+            /* Combos SIGMA con texto libre: la lista sale del catalogo (bloque
+               333) y el valor guardado se muestra aunque no este en ella. */
+            cboFabricante.Text = entidad.rep_fabricante;
+            CargarModelos(entidad.rep_fabricante);
+            cboModelo.Text = entidad.rep_modelo;
             txtDescripcion.Text = entidad.rep_descripcion;
 
             if (entidad.rep_costo_referencia != null)
@@ -130,6 +158,19 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
             if (entidad.rep_unidad_medida > 0)
                 cboUnidad.SelectedValue = entidad.rep_unidad_medida.ToString();
+
+            // almacenamiento: metodo propio (o vacio = el de la bodega), medidas y peso
+            System.Data.DataRow alm = new RepuestoAlmacenamientoController().Ficha(Id);
+            if (alm != null)
+            {
+                string met = Convert.ToString(alm["METODO"]);
+                RadComboBoxItem im = ddlMetodo.FindItemByValue(met ?? "");
+                if (im != null) im.Selected = true;
+                txtLargo.Text = Medida(alm["LARGO"]);
+                txtAncho.Text = Medida(alm["ANCHO"]);
+                txtAlto.Text = Medida(alm["ALTO"]);
+                txtPeso.Text = Medida(alm["PESO"]);
+            }
 
                 if (entidad.rep_repuesto_tipo > 0)
                     cboTipo.SelectedValue = entidad.rep_repuesto_tipo.ToString();
@@ -418,8 +459,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Repuesto");
             txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
-        txtFabricante.ReadOnly = !puedeEditar;
-        txtModelo.ReadOnly = !puedeEditar;
+        cboFabricante.ReadOnly = !puedeEditar;
+        cboModelo.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtCosto.ReadOnly = !puedeEditar;
         cboUnidad.ReadOnly = !puedeEditar;
@@ -427,6 +468,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         txtVidaHora.ReadOnly = !puedeEditar;
         txtVidaDia.ReadOnly = !puedeEditar;
         txtVidaCiclo.ReadOnly = !puedeEditar;
+        ddlMetodo.ReadOnly = !puedeEditar;
+        txtLargo.ReadOnly = !puedeEditar;
+        txtAncho.ReadOnly = !puedeEditar;
+        txtAlto.ReadOnly = !puedeEditar;
+        txtPeso.ReadOnly = !puedeEditar;
 
         rdbLoteSi.Enabled = puedeEditar;
         rdbLoteNo.Enabled = puedeEditar;
@@ -454,6 +500,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
     /// chileno la coma es lo natural, y rechazar "4,5" por eso seria
     /// castigar al usuario por la configuracion regional.
     /// </summary>
+    private static string Medida(object v)
+    {
+        return v == null || v == DBNull.Value ? "" : Convert.ToDecimal(v).ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
     private decimal? LeerDecimal(string texto, string campo)
     {
         if (string.IsNullOrEmpty(texto) || string.IsNullOrEmpty(texto.Trim())) return null;
@@ -493,8 +544,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                etiqueta pegada apuntando a algo que no existe. */
             entidad.rep_codigo = SitioBase.CodigoModulo.Componer("Repuesto", txtCodigo.Text);
             entidad.rep_nombre = txtNombre.Text.Trim();
-            entidad.rep_fabricante = txtFabricante.Text.Trim();
-            entidad.rep_modelo = txtModelo.Text.Trim();
+            entidad.rep_fabricante = cboFabricante.Text.Trim();
+            entidad.rep_modelo = cboModelo.Text.Trim();
             entidad.rep_descripcion = txtDescripcion.Text.Trim();
             entidad.rep_unidad_medida = int.Parse(cboUnidad.SelectedValue);
 
@@ -528,6 +579,11 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             entidad.rep_es_reparable = rdbReparableSi.Checked;
             entidad.rep_habilitado = rdbSi.Checked;
 
+            decimal? largo = LeerDecimal(txtLargo.Text, "largo");
+            decimal? ancho = LeerDecimal(txtAncho.Text, "ancho");
+            decimal? alto = LeerDecimal(txtAlto.Text, "alto");
+            decimal? peso = LeerDecimal(txtPeso.Text, "peso");
+
             /* La baja pasa por DEL_REPUESTO, que rechaza si queda
                existencia. UPD_REPUESTO con @HABILITADO = 0 tambien lo
                deshabilitaria, pero sin comprobar nada. */
@@ -548,6 +604,20 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
             if (!respuesta.error)
             {
+                /* Metodo y medidas van por sus propios SP (los mismos que usa
+                   el mapa 3D). Si fallan, el repuesto ya quedo guardado: se
+                   avisa y no se cierra, para corregir el dato. */
+                int repId = Id > 0 ? Id : respuesta.codigo;
+                RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+                Respuesta rm = alm.GuardarMetodo(repId, ddlMetodo.SelectedValue);
+                Respuesta rd = rm.error ? rm : alm.GuardarMedidas(repId, largo, ancho, alto, peso);
+                if (rd.error)
+                {
+                    if (Id == 0) Id = repId;
+                    Tools.tools.ClientAlert(respuesta.detalle + " Pero el almacenamiento no se guardó: " + rd.detalle, "alerta");
+                    return;
+                }
+
                 // Al crear no se cierra: falta definir sus umbrales.
                 if (Id == 0)
                 {

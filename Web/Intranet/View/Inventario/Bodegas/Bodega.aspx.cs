@@ -3,6 +3,9 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Globalization;
+using System.Linq;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Telerik.Web.UI;
@@ -108,6 +111,10 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             rdbSi.Checked = entidad.bod_habilitado;
             rdbNo.Checked = !entidad.bod_habilitado;
 
+            string met = new BodegaAlmacenamientoController().Metodo(Id);
+            RadComboBoxItem im = ddlMetodo.FindItemByValue(met);
+            if (im != null) im.Selected = true;
+
             wucAuditoria.Mostrar(entidad.usuario_creacion_nombre, entidad.bod_fecha_creacion,
                                  entidad.usuario_actualizacion_nombre, entidad.bod_fecha_actualizacion);
         }
@@ -129,17 +136,88 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         tabUbicaciones.Visible = (Id > 0);
         pnlUbicaciones.Visible = (Id > 0);
 
+        string mapa = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx");
+        hlMapa.Visible = Id > 0 && Token.Puede("VER BODEGAS");
+        hlMapa.NavigateUrl = mapa + "?ir=BOD-" + Id;
+
         if (Id == 0) return;
 
-        BodegaController controller = new BodegaController();
+        BodegaAlmacenamientoController alm = new BodegaAlmacenamientoController();
+        DataTable racks = alm.Ubicaciones(Id);
+        Racks = racks;
 
-        List<BodegaUbicacion> lista = controller.GetUbicaciones(
-            new BodegaUbicacion { bub_bodega = Id, filtro_habilitado = true });
+        // la convencion de esta bodega y el ultimo numero de cada pasillo, para la vista previa
+        List<string> codigos = racks.Rows.Cast<DataRow>().Select(r => Convert.ToString(r["CODIGO"])).ToList();
+        string prefijo = BodegaAlmacenamientoController.Prefijo(codigos, CodigoBodega());
+        litConvencion.Text = Server.HtmlEncode(BodegaAlmacenamientoController.CodigoRack(prefijo, "A", 1));
+        Dictionary<string, int> max = MaximosPorPasillo(codigos);
+        litRacksDatos.Text = "<span id=\"bodRacksDatos\" hidden data-prefijo=\"" + Server.HtmlEncode(prefijo) + "\" data-max=\"" +
+            Server.HtmlEncode("{" + string.Join(",", max.Select(kv => "\"" + kv.Key + "\":" + kv.Value)) + "}") + "\"></span>" +
+            "<script>setTimeout(bodPreview, 0);</script>";
+        /* Un boton por pasillo que ya existe y uno para abrir el siguiente:
+           elegir con un clic en vez de adivinar que letra escribir. */
+        string siguiente = SiguientePasillo(max.Keys);
+        System.Text.StringBuilder chips = new System.Text.StringBuilder();
+        foreach (string k in max.Keys.OrderBy(x => x.Length).ThenBy(x => x))
+            chips.Append("<button type=\"button\" class=\"bod-pas\" data-pasillo=\"").Append(k).Append("\" onclick=\"bodElegir('")
+                 .Append(k).Append("')\"><i class=\"mdi mdi-road-variant\"></i>").Append(k).Append(" <small>").Append(max[k])
+                 .Append(max[k] == 1 ? " rack" : " racks").Append("</small></button>");
+        chips.Append("<button type=\"button\" class=\"bod-pas es-nuevo\" data-nuevo=\"1\" data-pasillo=\"").Append(siguiente)
+             .Append("\" onclick=\"bodElegir('").Append(siguiente).Append("')\"><i class=\"mdi mdi-plus\"></i>Nuevo pasillo ").Append(siguiente).Append("</button>");
+        litPasillos.Text = chips.ToString();
+        if (!IsPostBack && string.IsNullOrEmpty(txtPasillo.Text))
+            txtPasillo.Text = max.Count > 0 ? max.Keys.OrderBy(k => k.Length).ThenBy(k => k).Last() : "A";
 
-        pnlSinUbicaciones.Visible = (lista == null || lista.Count == 0);
+        // resumen de la pestaña Datos
+        DataTable res = alm.Resumen(Id);
+        if (res.Rows.Count > 0)
+        {
+            DataRow r0 = res.Rows[0];
+            int movidos = Convert.ToInt32(r0["MOVIDOS"]), contados = Convert.ToInt32(r0["CONTADOS_30"]);
+            litResumenMapa.Text = "<div class=\"bod-dato\"><b>" + racks.Rows.Count + "</b> racks en <b>" + max.Count + "</b> pasillo" + (max.Count == 1 ? "" : "s") +
+                " · <b>" + contados + "</b> contados en 30 días" + (movidos > 0 ? " · <b>" + movidos + "</b> movidos en el plano" : "") + "</div>";
+        }
 
-        rptUbicaciones.DataSource = lista;
+        pnlSinUbicaciones.Visible = racks.Rows.Count == 0;
+        pasilloAnterior = null;
+        rptUbicaciones.DataSource = racks;
         rptUbicaciones.DataBind();
+    }
+
+    private DataTable Racks;
+    private string pasilloAnterior;
+
+    private string CodigoBodega()
+    {
+        Bodega b = new BodegaController().GetBodega(Id);
+        return b != null ? b.bod_codigo : "";
+    }
+
+    /// <summary>La letra que sigue a la ultima de una sola letra (C -> D); sin pasillos, A.</summary>
+    private static string SiguientePasillo(IEnumerable<string> pasillos)
+    {
+        List<string> una = pasillos.Where(x => x.Length == 1).OrderBy(x => x).ToList();
+        if (una.Count == 0) return "A";
+        char c = una.Last()[0];
+        return c < 'Z' ? ((char)(c + 1)).ToString() : "AA";
+    }
+
+    private static Dictionary<string, int> MaximosPorPasillo(IEnumerable<string> codigos)
+    {
+        Dictionary<string, int> max = new Dictionary<string, int>();
+        foreach (string c in codigos)
+        {
+            string pa; int n;
+            if (!BodegaAlmacenamientoController.LeerCodigo(c, out pa, out n)) continue;
+            int v;
+            if (!max.TryGetValue(pa, out v) || n > v) max[pa] = n;
+        }
+        return max;
+    }
+
+    private static string Num(decimal v)
+    {
+        return v.ToString(v == Math.Floor(v) ? "#,##0" : "#,##0.##", new CultureInfo("es-CL"));
     }
 
     protected void rptUbicaciones_ItemDataBound(object sender, RepeaterItemEventArgs e)
@@ -147,28 +225,48 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
             return;
 
-        BodegaUbicacion u = (BodegaUbicacion)e.Item.DataItem;
-        bool editando = (u.bub_id == UbicacionId);
+        DataRowView u = (DataRowView)e.Item.DataItem;
+        int bubId = Convert.ToInt32(u["BUB_ID"]);
+        string codigo = Convert.ToString(u["CODIGO"]);
+        bool editando = (bubId == UbicacionId);
         bool puedeEditar = Token.Puede("CREAR EDITAR BODEGAS");
+
+        /* Cabecera de pasillo cuando cambia: la lista se lee como el mapa,
+           un pasillo detras del otro. Los codigos que no calzan con la
+           convencion van juntos al final, como el mapa los pone aparte. */
+        string pa; int n;
+        string grupo = BodegaAlmacenamientoController.LeerCodigo(codigo, out pa, out n) ? pa : "·";
+        if (grupo != pasilloAnterior)
+        {
+            int cuantos = Racks.Rows.Cast<DataRow>().Count(r =>
+            {
+                string p2; int n2;
+                return (BodegaAlmacenamientoController.LeerCodigo(Convert.ToString(r["CODIGO"]), out p2, out n2) ? p2 : "·") == grupo;
+            });
+            ((Literal)e.Item.FindControl("litPasillo")).Text = "<div class=\"bod-pasillo\"><i class=\"mdi mdi-road-variant\"></i>" +
+                (grupo == "·" ? "Fuera de la convención" : "Pasillo " + Server.HtmlEncode(grupo)) +
+                "<span class=\"bod-chip es-muted chip\">" + cuantos + " rack" + (cuantos == 1 ? "" : "s") +
+                (grupo == "·" ? " · el mapa los pone en un pasillo aparte" : "") + "</span></div>";
+            pasilloAnterior = grupo;
+        }
 
         /* El id viaja en el CommandArgument de cada botón: es el único dato
            que el evento va a recibir, y sacarlo del índice de la fila se
            rompe en cuanto la lista se reordena entre un clic y el otro. */
-        string id = u.bub_id.ToString();
-
+        string id = bubId.ToString();
         LinkButton editar = (LinkButton)e.Item.FindControl("lnkEditar");
         LinkButton guardar = (LinkButton)e.Item.FindControl("lnkGuardar");
         LinkButton cancelar = (LinkButton)e.Item.FindControl("lnkCancelar");
-
         editar.CommandArgument = id;
         guardar.CommandArgument = id;
         cancelar.CommandArgument = id;
 
         Panel vista = (Panel)e.Item.FindControl("pnlVista");
         Panel edicion = (Panel)e.Item.FindControl("pnlEdicion");
-
+        Panel carga = (Panel)e.Item.FindControl("pnlCarga");
         vista.Visible = !editando;
         edicion.Visible = editando;
+        carga.Visible = editando;
 
         /* Mientras una fila se edita, el lápiz del resto desaparece: dos
            filas abiertas a la vez dejarían dudando cuál se va a guardar. */
@@ -176,16 +274,37 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         guardar.Visible = editando;
         cancelar.Visible = editando;
 
+        decimal? kg = u["CARGA"] == DBNull.Value ? (decimal?)null : Convert.ToDecimal(u["CARGA"]);
         if (editando)
         {
-            TextBox2 txt = (TextBox2)e.Item.FindControl("txtNombre");
-            txt.Text = u.bub_nombre;
+            ((TextBox2)e.Item.FindControl("txtNombre")).Text = Convert.ToString(u["NOMBRE"]);
+            ((TextBox2)e.Item.FindControl("txtCarga")).Text = kg.HasValue ? kg.Value.ToString("0.##", CultureInfo.InvariantCulture) : "";
         }
         else
         {
-            Literal lit = (Literal)e.Item.FindControl("litNombre");
-            lit.Text = Server.HtmlEncode(u.bub_nombre);
+            ((Literal)e.Item.FindControl("litNombre")).Text = Server.HtmlEncode(Convert.ToString(u["NOMBRE"])) +
+                (Convert.ToBoolean(u["MOVIDO"]) ? " <span class=\"bod-chip es-blue\" title=\"Se movió a mano en el plano del mapa 3D\"><i class=\"mdi mdi-cursor-move\"></i>movido</span>" : "");
+            ((Literal)e.Item.FindControl("litCarga")).Text = kg.HasValue ? "<b>" + Num(kg.Value) + "</b> kg" : "1.000 kg <span style=\"opacity:.7\">(estándar)</span>";
         }
+
+        int reps = Convert.ToInt32(u["REPUESTOS"]);
+        ((Literal)e.Item.FindControl("litGuarda")).Text = reps == 0
+            ? "<span class=\"bod-chip es-muted\">vacío</span>"
+            : "<b>" + reps + "</b> rep. · " + Num(Convert.ToDecimal(u["CANTIDAD"])) + " un";
+
+        if (u["CONTEO_FECHA"] == DBNull.Value)
+            ((Literal)e.Item.FindControl("litConteo")).Text = "<span class=\"bod-chip es-warning\">nunca</span>";
+        else
+        {
+            DateTime f = Convert.ToDateTime(u["CONTEO_FECHA"]);
+            int dias = (int)(DateTime.Now.Date - f.Date).TotalDays;
+            ((Literal)e.Item.FindControl("litConteo")).Text = "<span class=\"bod-chip " + (dias > 90 ? "es-warning" : "es-cyan") + "\">" +
+                (dias <= 0 ? "hoy" : dias == 1 ? "ayer" : "hace " + dias + " días") + "</span>";
+        }
+
+        HyperLink hl = (HyperLink)e.Item.FindControl("hlMapaRack");
+        hl.Visible = Token.Puede("VER BODEGAS");
+        hl.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx") + "?ir=UBI-" + bubId;
     }
 
     protected void rptUbicaciones_ItemCommand(object source, RepeaterCommandEventArgs e)
@@ -224,12 +343,28 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
                 entidad.bub_nombre = nombre;
                 entidad.bub_habilitado = true;
 
+                /* La carga por nivel va por su propio SP (el mismo del mapa):
+                   se lee antes de guardar nada, para que un numero mal escrito
+                   no deje el nombre guardado y la carga no. */
+                string tc = ((TextBox2)e.Item.FindControl("txtCarga")).Text.Trim().Replace(" ", "");
+                if (tc.Contains(",") && !tc.Contains(".")) tc = tc.Replace(",", ".");
+                decimal kg = 0;
+                if (tc.Length > 0 && (!decimal.TryParse(tc, NumberStyles.Number, CultureInfo.InvariantCulture, out kg) || kg <= 0))
+                    throw new Exception("La carga por nivel es un número mayor que cero, en kg (vacío = 1.000 kg).");
+
                 BodegaController controller = new BodegaController();
                 Respuesta respuesta = controller.GuardarUbicacion(entidad);
 
                 if (respuesta.error)
                 {
                     Tools.tools.ClientAlert(respuesta.detalle, "alerta");
+                    return;
+                }
+
+                Respuesta rc = new BodegaAlmacenamientoController().GuardarCarga(id, tc.Length > 0 ? (decimal?)kg : null);
+                if (rc.error)
+                {
+                    Tools.tools.ClientAlert("El nombre se guardó, pero no la carga: " + rc.detalle, "alerta");
                     return;
                 }
 
@@ -324,8 +459,8 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         rdbNo.Enabled = puedeEditar;
 
         btnGuardar.Visible = puedeEditar;
-        btnAgregarUbicacion.Visible = puedeEditar;
-        txtUbiNombre.ReadOnly = !puedeEditar;
+        pnlAltaRacks.Visible = puedeEditar;
+        ddlMetodo.ReadOnly = !puedeEditar;
     }
 
     protected void btnGuardar_Click(object sender, EventArgs e)
@@ -379,13 +514,24 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
 
             if (!respuesta.error)
             {
+                /* El metodo va por UPD_BODEGA_METODO_SALIDA, el mismo SP del
+                   mapa. Si falla, la bodega ya quedo guardada: se avisa y no
+                   se cierra. */
+                Respuesta rm = new BodegaAlmacenamientoController().GuardarMetodo(Id > 0 ? Id : respuesta.codigo, ddlMetodo.SelectedValue);
+                if (rm.error)
+                {
+                    if (Id == 0) Id = respuesta.codigo;
+                    Tools.tools.ClientAlert(respuesta.detalle + " Pero el método de salida no se guardó: " + rm.detalle, "alerta");
+                    return;
+                }
+
                 /* Al crear NO se cierra: la bodega recien nacida no tiene
                    ubicaciones, y cerrar aca dejaria la sensacion de haber
                    terminado algo que esta a medias. */
                 if (Id == 0)
                 {
                     Id = respuesta.codigo;
-                    Tools.tools.ClientAlert(respuesta.detalle + " Agregue sus ubicaciones.", "ok");
+                    Tools.tools.ClientAlert(respuesta.detalle + " Agregue sus racks por pasillo.", "ok");
                     return;
                 }
 
@@ -412,42 +558,26 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         try
         {
             if (Id == 0) throw new Exception("Primero guarde la bodega.");
+            if (!Token.Puede("CREAR EDITAR BODEGAS")) throw new Exception("No tiene permiso para crear racks.");
 
-            BodegaUbicacion entidad = new BodegaUbicacion();
+            int cantidad;
+            if (!int.TryParse(txtCantidad.Text.Trim(), out cantidad)) throw new Exception("Indique cuántos racks crear (1 a 30).");
 
-            /* Cero SIEMPRE: este boton solo da de alta. Pasarle UbicacionId
-               haria que, con una fila abierta en edicion, "Agregar" guardara
-               sobre esa fila en vez de crear una nueva. */
-            entidad.bub_id     = 0;
-            entidad.bub_bodega = Id;
-            /* El código lo genera el SP como UBI-<id>. Va AUTO y no cadena
-               vacía porque el SP valida que el código venga ANTES de
-               insertar, y un vacío se rechazaría con "indique el código". */
-            entidad.bub_codigo = "AUTO";
-
-            /* El nombre pasa a ser obligatorio. Antes, sin nombre, el código
-               hacía de nombre; con el código generándose solo, eso daría una
-               ubicación llamada "AUTO". */
-            if (txtUbiNombre.Text.Trim().Length == 0)
-                throw new Exception("Indique el nombre de la ubicación.");
-
-            entidad.bub_nombre = txtUbiNombre.Text.Trim();
-
-            entidad.bub_habilitado = true;
-
-            BodegaController controller = new BodegaController();
-            Respuesta respuesta = controller.GuardarUbicacion(entidad);
+            /* El codigo sigue la convencion del mapa 3D: <prefijo>-<pasillo>-R<nn>,
+               desde el siguiente numero libre del pasillo. Antes se generaba
+               UBI-<id> y el mapa no sabia en que pasillo ponerlo. */
+            List<string> codigos = new BodegaAlmacenamientoController().Ubicaciones(Id).Rows.Cast<DataRow>()
+                .Select(r => Convert.ToString(r["CODIGO"])).ToList();
+            Respuesta respuesta = new BodegaAlmacenamientoController().CrearRacks(Id, CodigoBodega(), codigos,
+                txtPasillo.Text, cantidad, txtUbiNombre.Text.Trim());
 
             if (!respuesta.error)
             {
                 UbicacionId = 0;
                 txtUbiNombre.Text = "";
-                Tools.tools.ClientAlert(respuesta.detalle, "ok");
+                txtCantidad.Text = "1";
             }
-            else
-            {
-                Tools.tools.ClientAlert(respuesta.detalle, "alerta");
-            }
+            Tools.tools.ClientAlert(respuesta.detalle, respuesta.error ? "alerta" : "ok");
         }
         catch (Exception ex)
         {
