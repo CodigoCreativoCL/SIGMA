@@ -1,6 +1,40 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Simple.master" AutoEventWireup="true" CodeFile="Grupo.aspx.cs" Inherits="View_Organizacion_Grupos_Grupo" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <style>
+        /* Combo de personas: chip redondeado a la derecha, verde si esta
+           libre y ambar si ya pertenece a otro grupo. */
+        .rcbList li.sg-persona-libre,
+        .rcbList li.sg-persona-ocupada { display: flex !important; align-items: center; gap: 10px; }
+        /* Selectores con .RadComboBoxDropDown y !important en content: el
+           skin de Telerik trae su propio li::after (content:"") que, si no,
+           deja el chip vacio. */
+        .RadComboBoxDropDown .rcbList li[data-estado]::after {
+            content: attr(data-estado) !important;
+            display: inline-block !important; visibility: visible !important;
+            margin-left: auto; flex: 0 0 auto; padding: 2px 10px; border-radius: 999px;
+            font-size: 11px !important; line-height: 16px !important; font-weight: 800;
+            white-space: nowrap; max-width: 45%; overflow: hidden; text-overflow: ellipsis;
+            height: auto !important; width: auto !important; clear: none !important;
+        }
+        .RadComboBoxDropDown .rcbList li.sg-persona-libre[data-estado]::after { background: #E7F5EE !important; color: #16855B !important; }
+        .RadComboBoxDropDown .rcbList li.sg-persona-ocupada[data-estado]::after { background: #FFF3E6 !important; color: #B65C00 !important; }
+    </style>
+    <script type="text/javascript">
+        /* El estado se pinta con CSS (::after + data-estado), SIN tocar el
+           texto de la fila: el combo toma el texto de esa fila al elegir, y
+           con un chip dentro ya no coincidia con ninguna persona y al
+           guardar llegaba vacio ("Elija a la persona..."). */
+        function sgChipsDisponibilidad(combo) {
+            var items = combo.get_items();
+            for (var i = 0; i < items.get_count(); i++) {
+                var it = items.getItem(i);
+                var el = it.get_element();
+                var estado = it.get_attributes().getAttribute('estado');
+                if (el && estado) el.setAttribute('data-estado', estado);
+            }
+        }
+    </script>
     <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-grupo.css?vrs=2") %>' rel="stylesheet" />
     <script src='<%=ResolveUrl("~/Js/sigma-grupo.js?vrs=2") %>'></script>
     <script type="text/javascript">
@@ -165,7 +199,7 @@
 
                     <div class="sg-grupo-alta-persona">
                         <label for="cboUsuario">¿Quién se suma al grupo?</label>
-                        <rad:RadComboBox2 ID="cboUsuario" runat="server" Filter="Contains" Width="100%" />
+                        <rad:RadComboBox2 ID="cboUsuario" runat="server" Filter="Contains" Width="100%" OnClientLoad="sgChipsDisponibilidad" OnClientDropDownOpened="sgChipsDisponibilidad" />
                         <span class="sigma-modal-ayuda">Escriba para buscar. La lista muestra el perfil y las especialidades de cada persona.</span>
                     </div>
 

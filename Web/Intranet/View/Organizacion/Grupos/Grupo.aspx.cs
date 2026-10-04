@@ -93,35 +93,39 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
             cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
             cmd.Parameters.AddWithValue("@GRUPO_TRABAJO", Id);
 
-            List<GrupoTrabajoUsuario> personas = new List<GrupoTrabajoUsuario>();
-
             using (SqlDataReader dr = Conexion.GetDataReader(cmd))
             {
                 while (dr.Read())
                 {
                     /* El perfil y no el correo: armar un grupo de trabajo es
                        decidir quién sabe hacer qué, y eso lo dice el perfil.
-                       El correo solo permitía comprobar que la persona
-                       existe, que no es lo que hay que decidir acá. */
+                       Y al final, si está libre o ya pertenece a otro grupo:
+                       sumar a alguien que ya cubre otro turno es una decisión
+                       que hay que tomar sabiéndolo, no descubrirlo después. */
                     string especialidades = dr["ESPECIALIDADES"].ToString();
                     string identificador = dr["USU_IDENTIFICADOR"].ToString();
+                    string grupos = dr["GRUPOS"].ToString();
 
-                    GrupoTrabajoUsuario p = new GrupoTrabajoUsuario();
-                    p.gtu_usuario = int.Parse(dr["USU_ID"].ToString());
-                    p.usu_nombre = dr["USU_NOMBRE"].ToString() +
+                    string texto = dr["USU_NOMBRE"].ToString() +
                                    (string.IsNullOrEmpty(identificador) ? "" : " · " + identificador) + " · " +
                                    (string.IsNullOrEmpty(especialidades) ? "sin especialidad" : especialidades);
-                    personas.Add(p);
+
+                    RadComboBoxItem it = new RadComboBoxItem(texto, dr["USU_ID"].ToString());
+                    it.CssClass = string.IsNullOrEmpty(grupos) ? "sg-persona-libre" : "sg-persona-ocupada";
+                    it.ToolTip = string.IsNullOrEmpty(grupos) ? "No pertenece a ningún grupo vigente." : "Ya está en: " + grupos;
+
+                    /* El estado va como chip a la derecha de la fila (lo dibuja
+                       sgChipsDisponibilidad en el cliente), no pegado al texto:
+                       asi se lee en una columna y el texto elegido queda limpio. */
+                    int cuantos = string.IsNullOrEmpty(grupos) ? 0 : grupos.Split(',').Length;
+                    it.Attributes["estado"] = cuantos == 0 ? "Disponible"
+                                            : (cuantos == 1 ? "En " + grupos.Trim() : "En " + cuantos + " grupos");
+                    cboUsuario.Items.Add(it);
                 }
             }
 
             cmd.Connection.Close();
             cmd.Dispose();
-
-            cboUsuario.DataSource = personas;
-            cboUsuario.DataValueField = "gtu_usuario";
-            cboUsuario.DataTextField = "usu_nombre";
-            cboUsuario.DataBind();
         }
         catch (Exception ex)
         {
@@ -415,6 +419,15 @@ public partial class View_Organizacion_Grupos_Grupo : System.Web.UI.Page
             {
                 Tools.tools.ClientAlert("No tiene permisos para modificar integrantes.", "alerta");
                 return;
+            }
+
+            /* Respaldo: si el combo llega sin valor pero con el texto de una
+               persona de la lista (el filtro "Contains" a veces deja asi la
+               seleccion), se resuelve por ese texto. */
+            if (string.IsNullOrEmpty(cboUsuario.SelectedValue) && !string.IsNullOrEmpty(cboUsuario.Text))
+            {
+                RadComboBoxItem porTexto = cboUsuario.Items.FindItemByText(cboUsuario.Text.Trim());
+                if (porTexto != null && porTexto.Value != "") porTexto.Selected = true;
             }
 
             if (string.IsNullOrEmpty(cboUsuario.SelectedValue))
