@@ -6,7 +6,7 @@
     <%-- Esta pantalla también usa Identidad.ascx, que ahora se dibuja con la
          grilla estándar. Sin esta hoja los encabezados de sección de la ficha
          quedarían sin estilo acá. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-contactos.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-contactos.css?vrs=2") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="chpScript" runat="server">
