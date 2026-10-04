@@ -39,6 +39,16 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         set { hdnRepuesto.Value = value.ToString(); }
     }
 
+    /// <summary>
+    /// Repuesto cuya ficha está en modo edición. Se guarda el id y no un
+    /// booleano: al abrir otro repuesto la edición se cae sola.
+    /// </summary>
+    private bool EditandoFicha
+    {
+        get { object v = ViewState["EditandoRep"]; return v != null && (int)v == RepuestoId && RepuestoId > 0; }
+        set { ViewState["EditandoRep"] = value ? (object)RepuestoId : null; }
+    }
+
     protected void Page_Load(object sender, EventArgs e)
     {
         SitioBase.Token.ExigirPagina();
@@ -54,6 +64,12 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
            existen cuando esta se instancia, asi que se llenan en el PreRender
            y no aca. */
         if (!IsPostBack) CargarTiposMovimiento();
+
+        // Un postback asíncrono no lleva el archivo: Adjuntar debe enviar la página completa.
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkSubir);
+        /* La ficha (y su FileUpload) llega por un postback asíncrono, así que el
+           <form> se pintó sin multipart y el navegador no enviaba el archivo. */
+        Page.Form.Enctype = "multipart/form-data";
     }
 
     protected void Page_PreRender(object sender, EventArgs e)
@@ -413,8 +429,16 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
             + (string.IsNullOrEmpty(r.rep_fabricante) ? "" : " · " + Esc(r.rep_fabricante))
             + (r.rep_habilitado ? "" : " · <span class=\"rc-badge es-off\">Deshabilitado</span>");
 
-        lnkEditar.Visible = puedeCrear;
-        lnkEditar.OnClientClick = "return abrirRepuesto('" + query + "');";
+        /* Editar no abre un modal: vuelve editable la pestaña Ficha. */
+        bool editando = puedeCrear && EditandoFicha;
+        lnkEditar.Visible = puedeCrear && !editando;
+        pnlFichaVer.Visible = !editando;
+        pnlFichaEditar.Visible = editando;
+        litFichaTitulo.Text = editando ? "Editar ficha del repuesto" : "Ficha del repuesto";
+        if (editando)
+            litFabCatalogo.Text = "<script type=\"application/json\" id=\"sgFabCatalogo\">" +
+                new System.Web.Script.Serialization.JavaScriptSerializer()
+                    .Serialize(new FabricanteController().Catalogo()).Replace("</", "<\\/") + "</script>";
         lnkNuevaCompat.Visible = puedeCrear;
         lnkNuevaCompat.OnClientClick = "return abrirCompatibilidad('" + queryNuevoDe + "');";
         lnkNuevoMov.Visible = SitioBase.Token.Puede("REGISTRAR MOVIMIENTOS DE INVENTARIO");
@@ -496,26 +520,32 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
               + "\" alt=\"" + Esc(r.rep_nombre) + "\" /></span>"
             : "<span class=\"rc-foto-grande\"><i class=\"mdi mdi-image-off-outline\"></i></span>";
 
-        StringBuilder s = new StringBuilder("<div class=\"rc-datos\">");
-        s.Append(Dato("Código", r.rep_codigo));
-        s.Append(Dato("Nombre", r.rep_nombre));
-        s.Append(Dato("Tipo", r.repuesto_tipo_nombre));
-        s.Append(Dato("Fabricante", r.rep_fabricante));
-        s.Append(Dato("Modelo", r.rep_modelo));
-        s.Append(Dato("Unidad de medida", r.unidad_nombre + (string.IsNullOrEmpty(r.unidad_simbolo) ? "" : " (" + r.unidad_simbolo + ")")));
-        s.Append(Dato("Costo de referencia", r.rep_costo_referencia == null ? "" :
-            Num(r.rep_costo_referencia.Value) + " " + (r.moneda_codigo ?? "")));
-        s.Append(Dato("Reparable", r.rep_es_reparable ? "Sí" : "No"));
-        s.Append(Dato("Consumible", r.rep_es_consumible ? "Sí" : "No"));
-        s.Append(Dato("Controla lote", r.rep_controla_lote ? "Sí" : "No"));
-        s.Append(Dato("Vida útil declarada", VidaDeclarada(r)));
-        s.Append(Dato("Método de salida", MetodoTexto(fichaBod, almacen)));
-        s.Append(Dato("Medidas", MedidasTexto(fichaBod)));
-        s.Append(Dato("Peso", fichaBod != null && fichaBod["PESO"] != DBNull.Value ? Num(Convert.ToDecimal(fichaBod["PESO"])) + " kg" : ""));
+        string unidad = r.unidad_nombre + (string.IsNullOrEmpty(r.unidad_simbolo) ? "" : " (" + r.unidad_simbolo + ")");
+        string peso = fichaBod != null && fichaBod["PESO"] != DBNull.Value ? Num(Convert.ToDecimal(fichaBod["PESO"])) + " kg" : "";
+
+        StringBuilder s = new StringBuilder();
+        s.Append(string.IsNullOrWhiteSpace(r.rep_descripcion)
+            ? "<p class=\"rc-ficha-desc es-vacia\">Sin descripción.</p>"
+            : "<p class=\"rc-ficha-desc\">" + Esc(r.rep_descripcion) + "</p>");
+        s.Append("<div class=\"rc-grupos\">");
+        s.Append(Grupo("tag-outline", "Identificación",
+            Fila("Código", r.rep_codigo) + Fila("Tipo", r.repuesto_tipo_nombre) +
+            Fila("Unidad", unidad) + Fila("Estado", r.rep_habilitado ? "Habilitado" : "Deshabilitado")));
+        s.Append(Grupo("factory", "Fabricante y costo",
+            Fila("Fabricante", r.rep_fabricante) + Fila("Modelo", r.rep_modelo) +
+            Fila("Costo de referencia", r.rep_costo_referencia == null ? "" :
+                Num(r.rep_costo_referencia.Value) + " " + (r.moneda_codigo ?? ""))));
+        s.Append(Grupo("cog-outline", "Cómo se opera",
+            "<div class=\"rc-chips-op\">" + ChipOp("Controla lote", r.rep_controla_lote) +
+            ChipOp("Consumible", r.rep_es_consumible) + ChipOp("Reparable", r.rep_es_reparable) + "</div>"));
+        s.Append(Grupo("timer-sand", "Vida útil declarada",
+            Fila("Horas", r.rep_vida_util_hora == null ? "" : Num(r.rep_vida_util_hora.Value)) +
+            Fila("Días", r.rep_vida_util_dia == null ? "" : r.rep_vida_util_dia.Value.ToString(CL)) +
+            Fila("Ciclos", r.rep_vida_util_ciclo == null ? "" : Num(r.rep_vida_util_ciclo.Value))));
+        s.Append(Grupo("warehouse", "Almacenamiento",
+            Fila("Método de salida", MetodoTexto(fichaBod, almacen)) +
+            Fila("Medidas", MedidasTexto(fichaBod)) + Fila("Peso", peso)));
         s.Append("</div>");
-        if (!string.IsNullOrWhiteSpace(r.rep_descripcion))
-            s.Append("<p style=\"margin:12px 0 0;font-size:13px;color:#17223B;line-height:1.5\">")
-             .Append(Esc(r.rep_descripcion)).Append("</p>");
         litResumen.Text = s.ToString();
 
         if (saldos.Count == 0)
@@ -1052,13 +1082,29 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
                 "Una foto del repuesto evita que en bodega entreguen el que no era.");
         else
         {
+            bool puede = SitioBase.Token.Puede("CREAR EDITAR REPUESTOS");
+            // Todas las URL viajan en cada foto: el visor recorre la galería sin pedir nada al servidor.
+            List<string> urls = imagenes.ConvertAll(x => SitioBase.UrlArchivo.Ver(x.archivo));
+            string todas = Esc(string.Join("|", urls));
             StringBuilder s = new StringBuilder("<div class=\"rc-fotos\">");
-            foreach (RepuestoFoto f in imagenes)
-                s.Append("<div class=\"rc-foto\"><img src=\"").Append(UrlArchivo(f.archivo))
-                 .Append("\" alt=\"").Append(Esc(r.rep_nombre)).Append("\" />")
-                 .Append("<div class=\"pie\">")
-                 .Append(f.orden == 1 ? "Portada" : Esc(f.titulo))
-                 .Append("</div></div>");
+            for (int i = 0; i < imagenes.Count; i++)
+            {
+                RepuestoFoto f = imagenes[i];
+                s.Append("<div class=\"rc-foto\"><a href=\"#\" class=\"rc-foto-ver\" title=\"Ampliar\" onclick=\"return rcVisor(this);\"")
+                 .Append(" data-fotos=\"").Append(todas).Append("\" data-pos=\"").Append(i)
+                 .Append("\" data-titulo=\"").Append(Esc(r.rep_nombre)).Append("\">")
+                 .Append("<img src=\"").Append(UrlArchivo(f.archivo)).Append("\" alt=\"").Append(Esc(r.rep_nombre)).Append("\" />")
+                 .Append("<span class=\"rc-foto-zoom\"><i class=\"mdi mdi-magnify-plus-outline\"></i></span></a>")
+                 .Append("<div class=\"pie\"><span>").Append(f.orden == 1 ? "<span class=\"rc-chip-portada\">Portada</span>" : Esc(f.titulo)).Append("</span>");
+                if (puede)
+                {
+                    s.Append("<span class=\"rc-foto-acc\">");
+                    if (f.orden != 1)
+                        s.Append("<a href=\"#\" title=\"Usar como portada\" onclick=\"return rcAccion('portada',").Append(f.vinculo).Append(");\"><i class=\"mdi mdi-star-outline\"></i></a>");
+                    s.Append("<a href=\"#\" class=\"es-peligro\" title=\"Eliminar\" onclick=\"return rcAccion('quitar',").Append(f.vinculo).Append(");\"><i class=\"mdi mdi-trash-can-outline\"></i></a></span>");
+                }
+                s.Append("</div></div>");
+            }
             s.Append("</div>");
             litFotos.Text = s.ToString();
         }
@@ -1077,7 +1123,11 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
              .Append("</td><td>").Append(Fecha(a.fecha))
              .Append("</td><td>").Append(Esc(a.usuario))
              .Append("</td><td style=\"text-align:right\"><a class=\"link\" target=\"_blank\" href=\"")
-             .Append(UrlArchivo(a.archivo)).Append("\"><i class=\"mdi mdi-download\"></i></a></td></tr>");
+             .Append(Esc(SitioBase.UrlArchivo.Ver(a.archivo))).Append("\" title=\"Ver\"><i class=\"mdi mdi-eye-outline\"></i></a>")
+             .Append("<a class=\"link\" target=\"_blank\" href=\"").Append(Esc(SitioBase.UrlArchivo.Descargar(a.archivo))).Append("\" title=\"Descargar\"><i class=\"mdi mdi-download\"></i></a>")
+             .Append(SitioBase.Token.Puede("CREAR EDITAR REPUESTOS")
+                 ? "<a class=\"link es-peligro\" href=\"#\" title=\"Eliminar\" onclick=\"return rcAccion('quitar'," + a.vinculo + ");\"><i class=\"mdi mdi-trash-can-outline\"></i></a>" : "")
+             .Append("</td></tr>");
         d.Append("</table>");
         litDocumentos.Text = d.ToString();
     }
@@ -1087,6 +1137,198 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     /// Se apoya en RepuestoFotoController, que enlaza por Archivo_Vinculo: no
     /// hay un segundo origen de archivos, es el mismo que ya usa la ficha.
     /// </summary>
+    /// <summary>Quitar un archivo o dejar una foto de portada (botones de cada tarjeta).</summary>
+    protected void lnkAccionArchivo_Click(object sender, EventArgs e)
+    {
+        litSubirAviso.Text = "";
+        try
+        {
+            if (!SitioBase.Token.Puede("CREAR EDITAR REPUESTOS"))
+                throw new Exception("No tiene permiso para modificar los archivos del repuesto.");
+            int vinculo = Entero(hdnVinculo.Value);
+            if (vinculo <= 0) return;
+            RepuestoFotoController c = new RepuestoFotoController();
+            Respuesta res = hdnAccion.Value == "portada" ? c.HacerPortada(vinculo) : c.Quitar(vinculo);
+            if (res.error) throw new Exception(res.detalle);
+            litSubirAviso.Text = "<p class=\"rc-resultado\" style=\"color:#16855B\"><i class=\"mdi mdi-check-circle-outline\"></i> "
+                               + Esc(hdnAccion.Value == "portada" ? "Portada actualizada." : "Archivo eliminado.") + "</p>";
+        }
+        catch (Exception ex)
+        {
+            litSubirAviso.Text = "<p class=\"rc-resultado\" style=\"color:#C7352B\"><i class=\"mdi mdi-alert-circle-outline\"></i> " + Esc(ex.Message) + "</p>";
+        }
+    }
+
+    // ------------------------------------------------------- ficha: edición en el lugar
+
+    /// <summary>Editar (único, en el encabezado): lleva a la pestaña Ficha en modo formulario, sin modal.</summary>
+    protected void lnkEditar_Click(object sender, EventArgs e)
+    {
+        if (!SitioBase.Token.Puede("CREAR EDITAR REPUESTOS")) return;
+        Repuesto r = new RepuestoController().GetRepuesto(RepuestoId);
+        if (r == null || r.rep_id == 0) return;
+
+        LlenarFormulario(r);
+        litFichaAviso.Text = "";
+        EditandoFicha = true;
+        hdnSeccion.Value = "resumen";
+    }
+
+    protected void lnkCancelarFicha_Click(object sender, EventArgs e)
+    {
+        EditandoFicha = false;
+        litFichaAviso.Text = "";
+    }
+
+    private void LlenarFormulario(Repuesto r)
+    {
+        litEdCodigo.Text = Esc(r.rep_codigo);
+        txtEdNombre.Text = r.rep_nombre;
+        txtEdDescripcion.Text = r.rep_descripcion;
+
+        cboEdTipo.Items.Clear();
+        cboEdTipo.Items.Add(new RadComboBoxItem("Sin clasificar", ""));
+        foreach (RepuestoTipo t in new RepuestoTipoController().GetRepuestoTipos(new RepuestoTipo { filtro_habilitado = true }) ?? new List<RepuestoTipo>())
+            cboEdTipo.Items.Add(new RadComboBoxItem(t.rti_nombre, t.rti_id.ToString()));
+        Elegir(cboEdTipo, r.rep_repuesto_tipo > 0 ? r.rep_repuesto_tipo.ToString() : "");
+
+        cboEdUnidad.Items.Clear();
+        cboEdUnidad.DataSource = new UnidadMedidaController().GetUnidades();
+        cboEdUnidad.DataValueField = "ume_id";
+        cboEdUnidad.DataTextField = "etiqueta";
+        cboEdUnidad.DataBind();
+        Elegir(cboEdUnidad, r.rep_unidad_medida.ToString());
+
+        /* Combos SIGMA con texto libre (bloque 333): la lista sale del catálogo y
+           el valor guardado se muestra aunque no esté en ella. */
+        List<FabricanteController.Fabricante> catalogo = new FabricanteController().Catalogo();
+        cboFabricante.Items.Clear();
+        foreach (FabricanteController.Fabricante f in catalogo) cboFabricante.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
+        cboFabricante.Text = r.rep_fabricante;
+        cboModelo.Items.Clear();
+        FabricanteController.Fabricante fab = catalogo.Find(x => string.Compare(x.nombre, (r.rep_fabricante ?? "").Trim(),
+            CultureInfo.InvariantCulture, CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0);
+        if (fab != null) foreach (string m in fab.modelos) cboModelo.Items.Add(new RadComboBoxItem(m, m));
+        cboModelo.Text = r.rep_modelo;
+
+        txtEdCosto.Text = Dec(r.rep_costo_referencia);
+        txtEdVidaHora.Text = Dec(r.rep_vida_util_hora);
+        txtEdVidaDia.Text = r.rep_vida_util_dia == null ? "" : r.rep_vida_util_dia.Value.ToString(CultureInfo.InvariantCulture);
+        txtEdVidaCiclo.Text = Dec(r.rep_vida_util_ciclo);
+
+        rdbEdHabSi.Checked = r.rep_habilitado; rdbEdHabNo.Checked = !r.rep_habilitado;
+        rdbEdLoteSi.Checked = r.rep_controla_lote; rdbEdLoteNo.Checked = !r.rep_controla_lote;
+        rdbEdConsSi.Checked = r.rep_es_consumible; rdbEdConsNo.Checked = !r.rep_es_consumible;
+        rdbEdRepSi.Checked = r.rep_es_reparable; rdbEdRepNo.Checked = !r.rep_es_reparable;
+
+        DataRow alm = new RepuestoAlmacenamientoController().Ficha(r.rep_id);
+        Elegir(cboEdMetodo, alm != null ? Convert.ToString(alm["METODO"]) : "");
+        txtEdLargo.Text = alm == null ? "" : Med(alm["LARGO"]);
+        txtEdAncho.Text = alm == null ? "" : Med(alm["ANCHO"]);
+        txtEdAlto.Text = alm == null ? "" : Med(alm["ALTO"]);
+        txtEdPeso.Text = alm == null ? "" : Med(alm["PESO"]);
+    }
+
+    /// <summary>
+    /// Guarda la ficha con los mismos métodos que la ficha modal (Repuesto.aspx):
+    /// baja por DEL_REPUESTO, datos por UPD_REPUESTO y almacenamiento por sus SP.
+    /// </summary>
+    protected void lnkGuardarFicha_Click(object sender, EventArgs e)
+    {
+        litFichaAviso.Text = "";
+        try
+        {
+            if (!SitioBase.Token.Puede("CREAR EDITAR REPUESTOS"))
+                throw new Exception("No tiene permiso para editar repuestos.");
+            RepuestoController controller = new RepuestoController();
+            Repuesto actual = controller.GetRepuesto(RepuestoId);
+            if (actual == null || actual.rep_id == 0) throw new Exception("El repuesto ya no existe.");
+            if (string.IsNullOrWhiteSpace(txtEdNombre.Text)) throw new Exception("Escriba el nombre del repuesto.");
+            if (string.IsNullOrEmpty(cboEdUnidad.SelectedValue)) throw new Exception("Elija la unidad de medida.");
+
+            Repuesto e2 = new Repuesto();
+            e2.rep_id = actual.rep_id;
+            e2.rep_codigo = actual.rep_codigo;     // no cambia: está impreso en su etiqueta
+            e2.rep_nombre = txtEdNombre.Text.Trim();
+            e2.rep_fabricante = cboFabricante.Text.Trim();
+            e2.rep_modelo = cboModelo.Text.Trim();
+            e2.rep_descripcion = txtEdDescripcion.Text.Trim();
+            e2.rep_unidad_medida = int.Parse(cboEdUnidad.SelectedValue);
+            int tipo;
+            e2.rep_repuesto_tipo = int.TryParse(cboEdTipo.SelectedValue, out tipo) ? tipo : 0;
+            e2.rep_costo_referencia = LeerDecimal(txtEdCosto.Text, "costo de referencia");
+            e2.rep_vida_util_hora = LeerDecimal(txtEdVidaHora.Text, "vida útil en horas");
+            e2.rep_vida_util_ciclo = LeerDecimal(txtEdVidaCiclo.Text, "vida útil en ciclos");
+            decimal? dias = LeerDecimal(txtEdVidaDia.Text, "vida útil en días");
+            if (dias != null)
+            {
+                if (dias.Value != Math.Floor(dias.Value))
+                    throw new Exception("La vida útil en días tiene que ser un número entero.");
+                e2.rep_vida_util_dia = (int)dias.Value;
+            }
+            e2.limpia_vida_util = true;            // al editar, vacío es borrar
+            e2.rep_controla_lote = rdbEdLoteSi.Checked;
+            e2.rep_es_consumible = rdbEdConsSi.Checked;
+            e2.rep_es_reparable = rdbEdRepSi.Checked;
+            e2.rep_habilitado = rdbEdHabSi.Checked;
+
+            decimal? largo = LeerDecimal(txtEdLargo.Text, "largo");
+            decimal? ancho = LeerDecimal(txtEdAncho.Text, "ancho");
+            decimal? alto = LeerDecimal(txtEdAlto.Text, "alto");
+            decimal? peso = LeerDecimal(txtEdPeso.Text, "peso");
+
+            // La baja pasa por DEL_REPUESTO, que rechaza si queda existencia.
+            if (actual.rep_habilitado && !e2.rep_habilitado)
+            {
+                Respuesta baja = controller.DeleteRepuesto(actual.rep_id);
+                if (baja.error) throw new Exception(baja.detalle);
+            }
+
+            Respuesta res = controller.UpdateRepuesto(e2);
+            if (res.error) throw new Exception(res.detalle);
+
+            RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+            Respuesta rm = alm.GuardarMetodo(actual.rep_id, cboEdMetodo.SelectedValue);
+            Respuesta rd = rm.error ? rm : alm.GuardarMedidas(actual.rep_id, largo, ancho, alto, peso);
+            if (rd.error) throw new Exception("El repuesto se guardó, pero el almacenamiento no: " + rd.detalle);
+
+            EditandoFicha = false;
+            Tools.tools.ClientAlert(res.detalle, "ok");
+        }
+        catch (Exception ex)
+        {
+            litFichaAviso.Text = "<p class=\"rc-resultado\" style=\"color:#C7352B\"><i class=\"mdi mdi-alert-circle-outline\"></i> "
+                               + Esc(ex.Message) + "</p>";
+        }
+    }
+
+    private static void Elegir(RadComboBox2 c, string valor)
+    {
+        c.ClearSelection();
+        RadComboBoxItem it = c.FindItemByValue(valor ?? "");
+        if (it != null) it.Selected = true;
+    }
+
+    private static string Dec(decimal? v)
+    {
+        return v == null ? "" : v.Value.ToString("0.##", CultureInfo.InvariantCulture);
+    }
+
+    private static string Med(object v)
+    {
+        return v == null || v == DBNull.Value ? "" : Convert.ToDecimal(v).ToString("0.###", CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Acepta coma y punto: en un teclado chileno la coma es lo natural.</summary>
+    private static decimal? LeerDecimal(string texto, string campo)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        decimal valor;
+        if (!decimal.TryParse(texto.Trim().Replace(",", "."), NumberStyles.Any, CultureInfo.InvariantCulture, out valor))
+            throw new Exception("El campo '" + campo + "' no es un número válido.");
+        return valor;
+    }
+
     protected void lnkSubir_Click(object sender, EventArgs e)
     {
         litSubirAviso.Text = "";
@@ -1133,11 +1375,8 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     }
 
     /// <summary>Descarga de un archivo por su id, por el manejador del sitio.</summary>
-    private string UrlArchivo(int archivo)
-    {
-        return ResolveUrl("~/Archivo.aspx?query=")
-             + Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + archivo));
-    }
+    // Archivo.aspx no existe: el visor del sitio es VerArchivo.aspx (SitioBase.UrlArchivo).
+    private string UrlArchivo(int archivo) { return Esc(SitioBase.UrlArchivo.Ver(archivo)); }
 
     /// <summary>
     /// Tarjeta de indicador. Usa las clases reales de sigma-activo360
@@ -1152,6 +1391,25 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
              + "<span class=\"sg-a3-kpi-val\">" + valor + "</span>"
              + (string.IsNullOrEmpty(pie) ? "" : "<span class=\"sg-a3-kpi-pie\">" + Esc(pie) + "</span>")
              + "</div></div>";
+    }
+
+    private static string Grupo(string icono, string titulo, string cuerpo)
+    {
+        return "<div class=\"rc-grupo\"><div class=\"rc-grupo-tit\"><i class=\"mdi mdi-" + icono + "\"></i>"
+             + Esc(titulo) + "</div>" + cuerpo + "</div>";
+    }
+
+    private static string Fila(string k, string v)
+    {
+        bool vacio = string.IsNullOrWhiteSpace(v);
+        return "<div class=\"rc-fila\"><span class=\"k\">" + Esc(k) + "</span><span class=\"v" + (vacio ? " es-vacio" : "")
+             + "\">" + (vacio ? "Sin dato" : Esc(v)) + "</span></div>";
+    }
+
+    private static string ChipOp(string texto, bool si)
+    {
+        return "<span class=\"rc-chip-op " + (si ? "es-si" : "es-no") + "\"><i class=\"mdi mdi-"
+             + (si ? "check" : "minus") + "\"></i>" + Esc(texto) + "</span>";
     }
 
     private static string Dato(string k, string v)

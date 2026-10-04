@@ -44,6 +44,8 @@ namespace SitioBase.Controller
                             cmd.Parameters.AddWithValue("@HABILITADO", filtro.filtro_habilitado);
                         if (!string.IsNullOrEmpty(filtro.filtro))
                             cmd.Parameters.AddWithValue("@FILTRO", filtro.filtro);
+                        if (filtro.rep_repuesto_tipo > 0)
+                            cmd.Parameters.AddWithValue("@REPUESTO_TIPO", filtro.rep_repuesto_tipo);
                     }
 
                     using (SqlDataReader dr = Conexion.GetDataReader(cmd))
