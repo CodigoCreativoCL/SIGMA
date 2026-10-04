@@ -9,6 +9,7 @@ using System.Text;
 using System.Linq;
 using System.IO;
 using System.Data;
+using System.Globalization;
 
 namespace SitioBase.Controller
 {
@@ -721,6 +722,10 @@ namespace SitioBase.Controller
         ///   Sin ella, quien la llena escribe "unidades", "un", "u." y cada
         ///   una falla en la carga sin que se entienda por qué. La hoja dice
         ///   exactamente qué escribir en la columna UNIDAD.
+        ///
+        /// Y UNA TERCERA CON LOS TIPOS DE REPUESTO VALIDOS
+        ///   Con el mismo motivo: la columna TIPO acepta el código del tipo, y
+        ///   la hoja lista los del cliente con su código para copiarlos.
         /// </summary>
         public void PlantillaRepuestos()
         {
@@ -733,6 +738,14 @@ namespace SitioBase.Controller
             cmdUni.CommandText = "RPT_UNIDAD_MEDIDA_EXCEL";
 
             DataTable unidades = Conexion.GetDataTable(cmdUni);
+
+            /* Los tipos SI dependen del cliente -cada empresa arma su propio
+               arbol-, a diferencia de las unidades, que son del sistema. */
+            SqlCommand cmdTipo = new SqlCommand();
+            cmdTipo.CommandText = "RPT_REPUESTO_TIPO_EXCEL";
+            cmdTipo.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+
+            DataTable tipos = Conexion.GetDataTable(cmdTipo);
 
             byte[] binario = Tools.Excel.exportExcelXLSX_Bytes(plantilla, true);
 
@@ -755,6 +768,10 @@ namespace SitioBase.Controller
                 ExcelWorksheet ayuda = excel.Workbook.Worksheets.Add("UNIDADES VALIDAS");
                 ayuda.Cells["A1"].LoadFromDataTable(unidades, true);
                 ayuda.Columns.AutoFit();
+
+                ExcelWorksheet ayudaTipos = excel.Workbook.Worksheets.Add("TIPOS VALIDOS");
+                ayudaTipos.Cells["A1"].LoadFromDataTable(tipos, true);
+                ayudaTipos.Columns.AutoFit();
 
                 binario = excel.GetAsByteArray();
             }
@@ -790,7 +807,7 @@ namespace SitioBase.Controller
 
             try
             {
-                DataTable entrada = Tools.Excel.excelXLSX_ToDataTable(archivo, 1, 1, 14);
+                DataTable entrada = Tools.Excel.excelXLSX_ToDataTable(archivo, 1, 1, 15);
 
                 if (!entrada.Columns.Contains("NOMBRE") || !entrada.Columns.Contains("UNIDAD"))
                 {
@@ -813,8 +830,37 @@ namespace SitioBase.Controller
                     if (!unidades.ContainsKey(clave)) unidades.Add(clave, u.ume_id);
                 }
 
+                /* Los tipos se leen UNA vez, por la misma razón que las
+                   unidades. Se resuelven por CÓDIGO -lo que lista la hoja
+                   TIPOS VALIDOS- y, si no calza, por NOMBRE: quien llena una
+                   planilla a mano escribe "Rodamientos" tanto como
+                   "MEC-RODAMIENTO", y rechazar lo primero es hacerle perder
+                   el tiempo. Un nombre repetido entre dos tipos queda como
+                   ambiguo (-1) y obliga a usar el código, en vez de elegir
+                   uno al azar. */
+                Dictionary<string, int> tiposPorCodigo = new Dictionary<string, int>();
+                Dictionary<string, int> tiposPorNombre = new Dictionary<string, int>();
+
+                RepuestoTipo filtroTipo = new RepuestoTipo();
+                filtroTipo.filtro_habilitado = true;
+
+                foreach (RepuestoTipo rt in new RepuestoTipoController().GetRepuestoTipos(filtroTipo))
+                {
+                    string kc = ClaveTexto(rt.rti_codigo);
+                    string kn = ClaveTexto(rt.rti_nombre);
+
+                    if (kc.Length > 0 && !tiposPorCodigo.ContainsKey(kc)) tiposPorCodigo.Add(kc, rt.rti_id);
+
+                    if (kn.Length > 0)
+                    {
+                        if (tiposPorNombre.ContainsKey(kn)) tiposPorNombre[kn] = -1;
+                        else tiposPorNombre.Add(kn, rt.rti_id);
+                    }
+                }
+
                 int cargados = 0;
                 int fallidos = 0;
+                int sinTipo = 0;
                 int fila = 1;
 
                 foreach (DataRow row in entrada.Rows)
@@ -855,6 +901,29 @@ namespace SitioBase.Controller
                         r.rep_unidad_medida = unidades[unidad];
                         r.rep_fabricante = Columna(row, "FABRICANTE");
                         r.rep_modelo = Columna(row, "MODELO");
+
+                        /* El tipo es OPCIONAL: vacío deja el repuesto sin
+                           clasificar, como al crearlo a mano. Pero si viene
+                           escrito y no existe, la fila falla: cargarla sin
+                           tipo en silencio dejaría a quien llenó la planilla
+                           creyendo que quedó clasificada. */
+                        string tipoTexto = Columna(row, "TIPO");
+
+                        if (tipoTexto.Length > 0)
+                        {
+                            string kt = ClaveTexto(tipoTexto);
+                            int tipoId;
+
+                            if (!tiposPorCodigo.TryGetValue(kt, out tipoId) && !tiposPorNombre.TryGetValue(kt, out tipoId))
+                                throw new Exception("El tipo \"" + tipoTexto + "\" no existe o está deshabilitado. " +
+                                                    "Vea la hoja TIPOS VALIDOS de la plantilla.");
+
+                            if (tipoId < 0)
+                                throw new Exception("El nombre de tipo \"" + tipoTexto + "\" lo tienen dos tipos. " +
+                                                    "Escriba el código del tipo (hoja TIPOS VALIDOS).");
+
+                            r.rep_repuesto_tipo = tipoId;
+                        }
                         r.rep_descripcion = Columna(row, "DESCRIPCION");
 
                         r.rep_controla_lote = EsSi(row, "CONTROLA LOTE");
@@ -886,6 +955,8 @@ namespace SitioBase.Controller
                         if (uno.error) throw new Exception(uno.detalle);
 
                         cargados++;
+
+                        if (tipoTexto.Length == 0) sinTipo++;
                     }
                     catch (Exception ex)
                     {
@@ -903,7 +974,11 @@ namespace SitioBase.Controller
                 respuesta.cantidaError = fallidos;
                 respuesta.error = (fallidos > 0);
                 respuesta.table = resultado;
-                respuesta.detalle = cargados.ToString() + " repuesto(s) cargado(s).";
+                respuesta.detalle = cargados.ToString() + " repuesto(s) cargado(s)." +
+                                    (sinTipo > 0
+                                        ? (sinTipo == 1 ? " 1 quedó sin tipo (columna TIPO vacía)."
+                                                        : " " + sinTipo.ToString() + " quedaron sin tipo (columna TIPO vacía).")
+                                        : "");
             }
             catch (Exception ex)
             {
@@ -919,6 +994,24 @@ namespace SitioBase.Controller
            Una planilla que pasó por manos humanas trae columnas que faltan,
            espacios de más y celdas vacías. Preguntar por cada caso en cada
            uso llenaría el método de ruido. */
+
+        /// <summary>
+        /// Texto comparable: sin tildes, sin espacios de más y en mayúsculas.
+        /// "Piñones" y "PINONES" son el mismo tipo para quien lo escribe.
+        /// </summary>
+        private static string ClaveTexto(string s)
+        {
+            if (string.IsNullOrEmpty(s)) return "";
+
+            string d = s.Trim().Normalize(NormalizationForm.FormD);
+            StringBuilder sb = new StringBuilder(d.Length);
+
+            foreach (char c in d)
+                if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark)
+                    sb.Append(c);
+
+            return sb.ToString().Normalize(NormalizationForm.FormC).ToUpperInvariant();
+        }
 
         private string Columna(DataRow row, string nombre)
         {
