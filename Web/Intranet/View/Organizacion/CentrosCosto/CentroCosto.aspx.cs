@@ -31,6 +31,13 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
                     case "Id":
                         Id = Int32.Parse(array[1].ToString());
                         break;
+                    /* "Nuevo centro aca dentro" desde el arbol: el padre
+                       llega resuelto y la ficha abre con la rama elegida. */
+                    case "Padre":
+                        int padre;
+                        if (int.TryParse(array[1].ToString(), out padre) && padre > 0)
+                            ViewState["Padre"] = padre;
+                        break;
                 }
             }
         }
@@ -109,6 +116,10 @@ public partial class View_Organizacion_CentrosCosto_CentroCosto : System.Web.UI.
 
             rdbSi.Checked = entidad.cco_habilitado;
             rdbNo.Checked = !entidad.cco_habilitado;
+        }
+        else if (ViewState["Padre"] != null)
+        {
+            cboPadre.SelectedValue = ViewState["Padre"].ToString();
         }
         else
         {
