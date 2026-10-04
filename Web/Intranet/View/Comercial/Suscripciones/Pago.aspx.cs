@@ -301,8 +301,13 @@ public partial class View_Comercial_Suscripciones_Pago : System.Web.UI.Page
 
             if (!respuesta.error)
             {
+                /* NO se cierra el modal al declarar: con el Id ya asignado, el
+                   PreRender pasa a CargarDetalle y la misma ventana muestra el
+                   detalle y el bloque de verificación, para poder verificar al
+                   instante sin reabrir. El cierre (y el refresco del listado)
+                   ocurre al verificar/rechazar o al cerrar a mano. */
                 Id = respuesta.codigo;
-                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+                Tools.tools.ClientAlert(respuesta.detalle, "ok");
             }
             else
             {
