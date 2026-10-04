@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <WebControls:PushButton ID="btnNuevo" runat="server" Text="Agregar contacto"
+        <WebControls:PushButton ID="btnNuevo" runat="server" Text="Nuevo contacto"
             CssClass="sg-ct-btn is-principal" OnClick="btnNuevo_Click" CausesValidation="false" />
     </div>
 
@@ -30,24 +30,45 @@
 
         <div class="sigma-modal-grid">
             <div class="sigma-modal-field is-medio">
-                <label for="<%=txtNombre.ClientID %>">Nombre <span class="sg-ct-req">*</span></label>
+                <label for="<%=txtNombre.ClientID %>">Nombre del contacto <span class="sg-ct-req">*</span></label>
                 <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" />
             </div>
 
             <div class="sigma-modal-field is-medio">
-                <label for="<%=txtCargo.ClientID %>">Cargo</label>
+                <label for="<%=txtEmpresa.ClientID %>">Empresa</label>
+                <WebControls:TextBox2 ID="txtEmpresa" runat="server" MaxLength="200" />
+            </div>
+
+            <div class="sigma-modal-field is-medio">
+                <label for="<%=txtRubro.ClientID %>">Rubro</label>
+                <WebControls:TextBox2 ID="txtRubro" runat="server" MaxLength="150" />
+                <span class="sigma-modal-ayuda">Por ejemplo: Minería, Alimentos, Logística.</span>
+            </div>
+
+            <div class="sigma-modal-field is-medio">
+                <label for="<%=txtCargo.ClientID %>">Función</label>
                 <WebControls:TextBox2 ID="txtCargo" runat="server" MaxLength="200" />
                 <span class="sigma-modal-ayuda">Por ejemplo: Jefa de Operaciones.</span>
             </div>
 
             <div class="sigma-modal-field is-medio">
-                <label for="<%=txtEmail.ClientID %>">Correo electrónico</label>
-                <WebControls:TextBox2 ID="txtEmail" runat="server" MaxLength="200" />
+                <label for="<%=txtTelefono.ClientID %>">Número telefónico</label>
+                <WebControls:TextBox2 ID="txtTelefono" runat="server" MaxLength="50" />
             </div>
 
             <div class="sigma-modal-field is-medio">
-                <label for="<%=txtTelefono.ClientID %>">Teléfono</label>
-                <WebControls:TextBox2 ID="txtTelefono" runat="server" MaxLength="50" />
+                <label for="<%=txtEmail.ClientID %>">Correo</label>
+                <WebControls:TextBox2 ID="txtEmail" runat="server" MaxLength="200" />
+            </div>
+
+            <div class="sigma-modal-field is-ancho">
+                <label for="<%=txtDireccion.ClientID %>">Dirección</label>
+                <WebControls:TextBox2 ID="txtDireccion" runat="server" MaxLength="300" />
+            </div>
+
+            <div class="sigma-modal-field is-ancho">
+                <label for="<%=txtNotas.ClientID %>">Notas</label>
+                <WebControls:TextBox2 ID="txtNotas" runat="server" TextMode="MultiLine" Rows="3" MaxLength="1000" />
             </div>
 
             <div class="sigma-modal-field is-ancho">
@@ -94,11 +115,13 @@
 
                 <span class="sg-ct-txt">
                     <span class="sg-ct-nombre">
+                        <span class="sg-ct-num">N.º <%# Eval("Numero") %></span>
                         <%# Eval("Nombre") %>
                         <%# Eval("ChipPrincipal") %>
                     </span>
                     <span class="sg-ct-cargo"><%# Eval("Cargo") %></span>
                     <span class="sg-ct-vias"><%# Eval("Vias") %></span>
+                    <span class="sg-ct-meta"><%# Eval("Meta") %></span>
                 </span>
 
                 <span class="sg-ct-acciones">

@@ -17,10 +17,17 @@ namespace SitioBase.Model
         public int ccn_id { get; set; }
         public int ccn_cliente { get; set; }
 
+        /// <summary>Correlativo por cliente, desde 1. La pantalla lo muestra como 001.</summary>
+        public int? ccn_numero { get; set; }
+
         public string ccn_nombre { get; set; }
-        public string ccn_cargo { get; set; }
+        public string ccn_cargo { get; set; }      // Función del contacto
+        public string ccn_empresa { get; set; }
+        public string ccn_rubro { get; set; }
         public string ccn_email { get; set; }
         public string ccn_telefono { get; set; }
+        public string ccn_direccion { get; set; }
+        public string ccn_notas { get; set; }
 
         /// <summary>
         /// El que la ficha muestra arriba y el que usaría cualquier aviso
@@ -38,6 +45,12 @@ namespace SitioBase.Model
 
         public string usuario_creacion_nombre { get; set; }
         public string usuario_actualizacion_nombre { get; set; }
+
+        /// <summary>El correlativo con tres dígitos: 1 → "001".</summary>
+        public string NumeroTexto
+        {
+            get { return (ccn_numero ?? 0).ToString("000"); }
+        }
 
         /// <summary>Las iniciales, para el avatar.</summary>
         public string Iniciales
