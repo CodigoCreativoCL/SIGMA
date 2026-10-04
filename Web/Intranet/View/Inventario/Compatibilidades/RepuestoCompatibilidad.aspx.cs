@@ -44,8 +44,23 @@ public partial class View_Inventario_Compatibilidades_RepuestoCompatibilidad : S
                que el sistema ya tiene, y permite elegir uno distinto del que
                se esta mirando. */
             if (Id == 0)
+            {
                 RepuestoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Repuesto");
+                // Desde el asistente del centro del activo (bloque 342)
+                ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+            }
         }
+    }
+
+    /// <summary>
+    /// Activo desde el que se abrio (asistente "¿Qué vas a agregar?"). Se
+    /// propone el alcance mas especifico que tenga: su modelo o, sin modelo,
+    /// su tipo. Se puede cambiar.
+    /// </summary>
+    public int ActivoFijo
+    {
+        get { object v = ViewState["ActivoFijo"]; return v == null ? 0 : (int)v; }
+        set { ViewState["ActivoFijo"] = value; }
     }
 
     /// <summary>Repuesto impuesto por quien abrio la ficha. 0 = se elige.</summary>
@@ -223,6 +238,22 @@ public partial class View_Inventario_Compatibilidades_RepuestoCompatibilidad : S
         else
         {
             lblId.Text = "Nueva";
+            if (ActivoFijo > 0)
+            {
+                Activo a = new ActivoController().GetActivo(ActivoFijo);
+                if (a != null && a.act_cliente == SitioBase.Session.ClienteId())
+                {
+                    RadComboBoxItem i = a.act_activo_modelo != null
+                        ? cboModelo.FindItemByValue(a.act_activo_modelo.Value.ToString()) : null;
+                    if (i != null) { cboAlcance.SelectedValue = "MODELO"; cboModelo.ClearSelection(); i.Selected = true; }
+                    else
+                    {
+                        cboAlcance.SelectedValue = "TIPO";
+                        i = cboTipo.FindItemByValue(a.act_activo_tipo.ToString());
+                        if (i != null) { cboTipo.ClearSelection(); i.Selected = true; }
+                    }
+                }
+            }
         }
     }
 

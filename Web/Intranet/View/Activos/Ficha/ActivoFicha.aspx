@@ -115,12 +115,132 @@
 
         /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
            al Resumen: el postback repinta el bloque entero. */
+        /* ---- Estructura (bloque 343) ---- */
+        var queryNuevoSubactivo = '<%=QueryNuevoSubactivo %>';
+        var queryNuevaCompat = '<%=QueryNuevaCompat %>';
+        function esAsistente(abrir) {
+            var a = document.getElementById('sgEsAsistente');
+            if (a) a.classList.toggle('es-abierto', !!abrir);
+            return false;
+        }
+        function esAgregar(que) {
+            esAsistente(false);
+            if (que === 'subactivo') {
+                seccionPendiente = 'componentes';
+                return SigmaModal.open({
+                    url: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + queryNuevoSubactivo,
+                    title: 'Nuevo subactivo', width: 1060, initialHeight: 620, onClose: refresh
+                });
+            }
+            if (que === 'componente') { abrirComponente(queryNuevoComponente); seccionPendiente = 'componentes'; return false; }
+            if (que === 'repuesto') {
+                seccionPendiente = 'componentes';
+                return SigmaModal.open({
+                    url: '<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + queryNuevaCompat,
+                    title: 'Repuesto que le sirve', width: 820, initialHeight: 560, onClose: refresh
+                });
+            }
+            return false;
+        }
+        /* Un subactivo se abre en su propio centro, directo en su estructura. */
+        function esAbrirActivo(id) {
+            var campo = document.getElementById(window.sgCampoActivo || '');
+            var h = document.getElementById('hdnSeccion');
+            if (!campo) return false;
+            if (h) h.value = 'componentes';
+            campo.value = id;
+            __doPostBack('', '');
+            return false;
+        }
+        function esAbrirComponente(query) { abrirComponente(query); seccionPendiente = 'componentes'; return false; }
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') esAsistente(false); });
+
         function refresh() {
             var h = document.getElementById('hdnSeccion');
             if (h && seccionPendiente) h.value = seccionPendiente;
             __doPostBack('<%=lnkRecargar.UniqueID %>', '');
         }
     </script>
+
+    <style type="text/css">
+        /* ---- Estructura del activo (bloque 343). Un color fijo por clase de cosa:
+           morado el equipo, azul sus subactivos, turquesa sus componentes y
+           ambar los repuestos. La leyenda lo repite. ---- */
+        .sg-es-barra { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .sg-es-barra h3 { margin: 0; font-size: 16px; font-weight: 800; color: #17223B; }
+        .sg-es-barra p { margin: 2px 0 0; color: #68738A; font-size: 13px; }
+        .sg-es-raiz { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 2px solid #6732F4; border-radius: 16px;
+            background: #F2EFFF; max-width: 640px; margin: 0 auto; }
+        .sg-es-raiz .ico { width: 48px; height: 48px; border-radius: 14px; background: #6732F4; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto; }
+        .sg-es-raiz b { display: block; font-size: 17px; color: #17223B; }
+        .sg-es-raiz small { color: #4A556D; font-size: 12.5px; }
+        .sg-es-etq { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-bottom: 3px; }
+        .sg-es-etq.es-activo { background: #6732F4; color: #fff; }
+        .sg-es-etq.es-sub { background: #EAF4FF; color: #087BEA; }
+        .sg-es-etq.es-comp { background: #E8FBFB; color: #007F8A; }
+        .sg-es-etq.es-rep { background: #FFF4E5; color: #B65C00; }
+        .sg-es-padre { text-align: center; margin: 0 0 8px; font-size: 13px; color: #4A556D; }
+        .sg-es-padre a { color: #087BEA; font-weight: 800; text-decoration: none; }
+        .sg-es-linea { width: 2px; height: 22px; background: #CFD6E3; margin: 0 auto; }
+        .sg-es-ramas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; border-top: 2px solid #CFD6E3; padding-top: 18px; }
+        @media (max-width: 1000px) { .sg-es-ramas { grid-template-columns: 1fr; } }
+        .sg-es-col { border-radius: 14px; border: 1px solid #E2E7F0; background: #fff; padding: 14px; }
+        .sg-es-col.es-sub { border-top: 4px solid #087BEA; }
+        .sg-es-col.es-comp { border-top: 4px solid #16C6C9; }
+        .sg-es-col.es-rep { border-top: 4px solid #B65C00; }
+        .sg-es-col h4 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 800; color: #17223B; }
+        .sg-es-col h4 .n { margin-left: auto; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: #F4F6FA; color: #4A556D; }
+        .sg-es-col.es-sub h4 i { color: #087BEA; } .sg-es-col.es-comp h4 i { color: #007F8A; } .sg-es-col.es-rep h4 i { color: #B65C00; }
+        .sg-es-que { margin: 4px 0 12px; font-size: 12.5px; color: #68738A; line-height: 1.45; }
+        .sg-es-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px;
+            border: 1px solid #E2E7F0; border-radius: 12px; background: #fff; color: #17223B; cursor: pointer; font: inherit; }
+        .sg-es-item:hover { border-color: #087BEA; background: #FAFCFF; }
+        .sg-es-col.es-comp .sg-es-item:hover { border-color: #16C6C9; background: #FAFEFE; }
+        .sg-es-item.es-sin-clic { cursor: default; } .sg-es-item.es-sin-clic:hover { border-color: #E2E7F0; background: #fff; }
+        .sg-es-item b { display: block; font-size: 13.5px; }
+        .sg-es-item span.d { display: block; font-size: 12px; color: #68738A; }
+        .sg-es-item .der { margin-left: auto; text-align: right; flex: 0 0 auto; font-size: 12px; }
+        .sg-es-item.es-hijo { margin-left: 22px; width: calc(100% - 22px); }
+        .sg-es-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+        .sg-es-chip.es-ok { background: #E9F7F0; color: #16855B; }
+        .sg-es-chip.es-ojo { background: #FFF4E5; color: #B65C00; }
+        .sg-es-chip.es-mal { background: #FDECEA; color: #C7352B; }
+        .sg-es-vacio { padding: 14px; border: 1.5px dashed #E2E7F0; border-radius: 12px; color: #68738A; font-size: 12.5px; text-align: center; }
+        .sg-es-leyenda { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 16px; font-size: 12px; color: #4A556D; }
+        .sg-es-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+
+        /* listado en arbol: chips con el mismo color del diagrama */
+        .sg-lista-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+        .sg-lista-chips em { font-style: normal; display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; }
+        .sg-lista-chips em.es-sub { background: #EAF4FF; color: #087BEA; }
+        .sg-lista-chips em.es-comp { background: #E8FBFB; color: #007F8A; }
+        .sg-lista-chips em.es-rep { background: #FFF4E5; color: #B65C00; }
+        .sg-lista-fila.es-hijo { background: #FBFCFE; }
+        .sg-lista-rama { color: #087BEA; margin-right: 4px; }
+        .sg-es-cont { margin-bottom: 18px; }
+        /* "En mantenimiento" no cabia y se montaba sobre la criticidad: que baje de linea */
+        .sg-lista-fila .sg-ot-chip { white-space: normal; max-width: 100%; line-height: 1.25; }
+
+        /* asistente "¿Qué vas a agregar?" */
+        .sg-es-asis { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; background: rgba(23,34,59,.45); padding: 16px; }
+        .sg-es-asis.es-abierto { display: flex; }
+        .sg-es-asis-caja { background: #fff; border-radius: 18px; max-width: 860px; width: 100%; padding: 22px; box-shadow: 0 20px 60px rgba(23,34,59,.3); }
+        .sg-es-asis-caja h3 { margin: 0 0 4px; font-size: 19px; font-weight: 800; color: #17223B; }
+        .sg-es-asis-caja > p { margin: 0 0 16px; color: #68738A; }
+        .sg-es-opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+        @media (max-width: 760px) { .sg-es-opciones { grid-template-columns: 1fr; } }
+        .sg-es-op { text-align: left; border: 2px solid #E2E7F0; border-radius: 16px; padding: 16px; background: #fff; cursor: pointer; font: inherit; color: #17223B; }
+        .sg-es-op:hover, .sg-es-op:focus { outline: none; }
+        .sg-es-op.es-sub:hover, .sg-es-op.es-sub:focus { border-color: #087BEA; background: #FAFCFF; }
+        .sg-es-op.es-comp:hover, .sg-es-op.es-comp:focus { border-color: #16C6C9; background: #FAFEFE; }
+        .sg-es-op.es-rep:hover, .sg-es-op.es-rep:focus { border-color: #B65C00; background: #FFFBF5; }
+        .sg-es-op > i { font-size: 30px; }
+        .sg-es-op.es-sub > i { color: #087BEA; } .sg-es-op.es-comp > i { color: #007F8A; } .sg-es-op.es-rep > i { color: #B65C00; }
+        .sg-es-op b { display: block; font-size: 16px; margin: 6px 0 4px; }
+        .sg-es-op .regla { font-size: 13px; color: #4A556D; line-height: 1.45; }
+        .sg-es-op .ej { display: block; margin-top: 8px; font-size: 12px; color: #68738A; }
+        .sg-es-asis-pie { display: flex; justify-content: flex-end; margin-top: 16px; }
+    </style>
 
     <%-- La version sale de la fecha del archivo: con `?vrs=1` fijo, el
          navegador se quedaba con la copia vieja y las correcciones se
@@ -292,20 +412,22 @@
 
                 <%-- ---------------- navegacion: cuatro a la vista, el resto en Mas -------- --%>
                 <nav class="sg-a3-nav">
+                    <%-- Orden pedido por el cliente (04-10-2026): lo que se mira de un
+                         equipo primero -resumen, su ficha, sus partes y como esta-,
+                         despues su historia. --%>
                     <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-home-outline"></i>Resumen</a>
                     <a href="#" class="sg-a3-tab" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
+                    <a href="#" class="sg-a3-tab" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes</a>
+                    <a href="#" class="sg-a3-tab" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores</a>
                     <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
                     <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo</a>
-                    <a href="#" class="sg-a3-tab" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
-                    <a href="#" class="sg-a3-tab" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i>Inspecciones y tareas</a>
-
                     <div class="sg-a3-mas">
                         <a href="#" class="sg-a3-tab sg-a3-mas-btn"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
 
                         <div class="sg-a3-mas-menu">
-                            <a href="#" class="sg-a3-mas-op" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes</a>
+                            <a href="#" class="sg-a3-mas-op" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
+                            <a href="#" class="sg-a3-mas-op" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i>Inspecciones y tareas</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="fallas"><i class="mdi mdi-alert-outline"></i>Fallas e indisponibilidad</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="documentos"><i class="mdi mdi-image-multiple-outline"></i>Documentos y galería</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="repuestos"><i class="mdi mdi-package-variant-closed"></i>Repuestos y costos</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="bitacora"><i class="mdi mdi-notebook-outline"></i>Bitácora y trazabilidad</a>
@@ -580,6 +702,20 @@
                      6. COMPONENTES
                      ================================================================ --%>
                 <section class="sg-a3-panel sg-a3-comp" data-panel="componentes">
+                    <%-- ESTRUCTURA (bloque 343): de que esta hecho el equipo, con un color
+                         fijo por clase de cosa, antes del detalle de sus partes. --%>
+                    <div class="sg-es-cont">
+                    <div class="sg-es-barra">
+                        <div>
+                            <h3>¿De qué está hecho este equipo?</h3>
+                            <p>Las máquinas que dependen de él, sus partes y los repuestos que le sirven.</p>
+                        </div>
+                        <asp:Panel ID="pnlEsAgregar" runat="server" CssClass="sg-es-agregar-wrap">
+                            <button type="button" class="sg-ot-btn es-primario" onclick="return esAsistente(true);"><i class="mdi mdi-plus"></i>Agregar</button>
+                        </asp:Panel>
+                    </div>
+                    <asp:Literal ID="litEstructura" runat="server" />
+                    </div>
                     <div class="sg-comp-cols">
 
                         <%-- La estructura a la izquierda: de que esta hecho el
@@ -1029,4 +1165,37 @@
 
         </ContentTemplate>
     </asp:UpdatePanel>
+
+    <%-- Asistente: una pregunta, tres respuestas con su regla. Quien no sabe la
+         diferencia entre subactivo, componente y repuesto elige por la regla y
+         el sistema lo guarda donde corresponde. --%>
+    <div class="sg-es-asis" id="sgEsAsistente" role="dialog" aria-modal="true" aria-labelledby="sgEsAsisTit" onclick="if (event.target === this) esAsistente(false);">
+        <div class="sg-es-asis-caja">
+            <h3 id="sgEsAsisTit">¿Qué vas a agregar a este equipo?</h3>
+            <p>Elige según la regla. Si dudas, lee los ejemplos.</p>
+            <div class="sg-es-opciones">
+                <button type="button" class="sg-es-op es-sub" onclick="return esAgregar('subactivo');">
+                    <i class="mdi mdi-cogs"></i><b>Una máquina que depende de esta</b>
+                    <span class="regla">Tiene <strong>número de serie</strong>, se puede <strong>sacar y reparar aparte</strong> y tiene su propio mantenimiento.</span>
+                    <span class="ej">Ej.: el compresor de una cámara, la bomba de una caldera.</span>
+                    <span class="sg-es-etq es-sub" style="margin-top:10px">Subactivo</span>
+                </button>
+                <button type="button" class="sg-es-op es-comp" onclick="return esAgregar('componente');">
+                    <i class="mdi mdi-puzzle-outline"></i><b>Una parte de este equipo</b>
+                    <span class="regla">Va <strong>dentro</strong> de la máquina y quieres saber <strong>qué le pasó</strong>: cuándo se cambió, si está gastada.</span>
+                    <span class="ej">Ej.: el motor, un rodamiento, una válvula, una correa.</span>
+                    <span class="sg-es-etq es-comp" style="margin-top:10px">Componente</span>
+                </button>
+                <button type="button" class="sg-es-op es-rep" onclick="return esAgregar('repuesto');">
+                    <i class="mdi mdi-package-variant-closed"></i><b>Un repuesto que le sirve</b>
+                    <span class="regla">Se <strong>compra por cantidad</strong> y se guarda en bodega. <strong>Uno es igual a otro.</strong></span>
+                    <span class="ej">Ej.: filtros, correas de recambio, sellos, aceite.</span>
+                    <span class="sg-es-etq es-rep" style="margin-top:10px">Repuesto</span>
+                </button>
+            </div>
+            <div class="sg-es-asis-pie">
+                <button type="button" class="sg-ot-btn es-plano" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i>Cancelar</button>
+            </div>
+        </div>
+    </div>
 </asp:Content>

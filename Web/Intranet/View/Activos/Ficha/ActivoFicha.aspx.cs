@@ -81,6 +81,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         /* Crear cien activos de una vez es crear activos: el mismo permiso
            que el boton de al lado. */
         lnkCargaMasiva.Visible = Token.Puede("CREAR EDITAR ACTIVOS");
+        /* "Nuevo activo" se mostraba a todos, pero el formulario solo deja
+           guardar con CREAR EDITAR ACTIVOS: quien no lo tiene (p. ej. Bodeguero)
+           abria una ficha bloqueada y sin boton Guardar. */
+        lnkNuevoActivo.Visible = lnkCargaMasiva.Visible;
 
         udPanel.Update();
     }
@@ -157,6 +161,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                                                           ?? new Dictionary<int, List<ActivoListaOrden>>();
         Dictionary<int, List<ActivoListaAgenda>> agenda = new ActivoCentroController().GetAgendaLista()
                                                           ?? new Dictionary<int, List<ActivoListaAgenda>>();
+        // El arbol (bloque 343): padre, cuantos subactivos/componentes/repuestos y el area con su padre.
+        Dictionary<int, ActivoArbolFila> arbol = new ActivoEstructuraController().GetArbolLista();
 
         int operativos = 0, detenidos = 0, enMantencion = 0, atencion = 0, conOt = 0;
 
@@ -167,7 +173,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<span>Criticidad</span><span>OT abiertas</span><span>Próximo mantenimiento</span>")
          .Append("<span></span></div>");
 
-        foreach (Activo a in lista.OrderBy(x => x.act_codigo))
+        /* Los subactivos van debajo de su maquina principal, indentados. Si el
+           padre no esta en el resultado (la busqueda lo dejo fuera), el hijo
+           se muestra suelto, en su orden. */
+        HashSet<int> enLista = new HashSet<int>(lista.Select(x => x.act_id));
+        List<Activo> ordenada = new List<Activo>();
+        Action<Activo, int> poner = null;
+        Dictionary<int, int> nivel = new Dictionary<int, int>();
+        poner = (x, n) =>
+        {
+            ordenada.Add(x); nivel[x.act_id] = n;
+            foreach (Activo h in lista.Where(y => y.act_activo_padre == x.act_id).OrderBy(y => y.act_nombre)) poner(h, n + 1);
+        };
+        foreach (Activo r0 in lista.Where(x => x.act_activo_padre == null || !enLista.Contains(x.act_activo_padre.Value)).OrderBy(x => x.act_nombre))
+            poner(r0, 0);
+
+        foreach (Activo a in ordenada)
         {
             ActivoResumenLista r;
             if (!resumen.TryGetValue(a.act_id, out r)) r = new ActivoResumenLista();
@@ -182,10 +203,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             if (r.requiere_atencion) atencion++;
             if (r.ot_abiertas > 0) conOt++;
 
-            string ubicacion = string.Join(" · ", new[] { Texto(a.planta_nombre), Texto(a.area_nombre) }
+            ActivoArbolFila af;
+            if (!arbol.TryGetValue(a.act_id, out af)) af = new ActivoArbolFila();
+            // "Refrigeración › Línea 1": habia cinco "Línea 1" y no se sabia cual
+            string ubicacion = string.Join(" · ", new[] { Texto(a.planta_nombre), string.IsNullOrEmpty(af.area_ruta) ? Texto(a.area_nombre) : af.area_ruta }
                                            .Where(x => !string.IsNullOrEmpty(x)).ToArray());
+            int prof = nivel.ContainsKey(a.act_id) ? nivel[a.act_id] : 0;
 
-            s.Append("<div class=\"sg-a3-tabla-fila sg-lista-fila\" data-act=\"").Append(a.act_id)
+            s.Append("<div class=\"sg-a3-tabla-fila sg-lista-fila").Append(prof > 0 ? " es-hijo" : "").Append("\" data-act=\"").Append(a.act_id)
              .Append("\" data-lista-atencion=\"").Append(r.requiere_atencion ? "1" : "0")
              .Append("\" data-lista-ot=\"").Append(r.ot_abiertas)
              .Append("\" data-lista-txt=\"")
@@ -199,10 +224,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                       "\" alt=\"" + Server.HtmlEncode(Texto(a.act_nombre)) + "\" /></span>")
              .Append("</span>")
 
-             .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(a.act_nombre)))
+             .Append("<span class=\"c-cod\"").Append(prof > 0 ? " style=\"padding-left:" + (prof * 22) + "px\"" : "").Append(">")
+             .Append(prof > 0 ? "<i class=\"mdi mdi-subdirectory-arrow-right sg-lista-rama\" title=\"Subactivo\"></i>" : "")
+             .Append(Server.HtmlEncode(Texto(a.act_nombre)))
              .Append("<span>").Append(Server.HtmlEncode(Texto(a.act_codigo)))
              .Append(string.IsNullOrEmpty(a.tipo_nombre) ? "" : " · " + Server.HtmlEncode(a.tipo_nombre))
-             .Append("</span></span>")
+             .Append("</span>")
+             .Append(ChipsArbol(af))
+             .Append("</span>")
 
              .Append("<span class=\"c-dato\">")
              .Append(Server.HtmlEncode(ubicacion.Length == 0 ? "Sin ubicación" : ubicacion)).Append("</span>")
@@ -254,6 +283,17 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             Kpi("mdi-alert-octagon-outline", detenidos.ToString(), "Detenidos", "", detenidos > 0 ? "es-rojo" : "es-verde") +
             Kpi("mdi-wrench-outline", enMantencion.ToString(), "En mantenimiento", "", "es-ambar") +
             "</div>";
+    }
+
+    /// <summary>Lo que cuelga del activo, en chips del mismo color que el diagrama.</summary>
+    private static string ChipsArbol(ActivoArbolFila f)
+    {
+        if (f == null || (f.subactivos + f.componentes + f.repuestos) == 0) return "";
+        StringBuilder b = new StringBuilder("<span class=\"sg-lista-chips\">");
+        if (f.subactivos > 0) b.Append("<em class=\"es-sub\"><i class=\"mdi mdi-cogs\"></i>").Append(f.subactivos).Append(f.subactivos == 1 ? " subactivo" : " subactivos").Append("</em>");
+        if (f.componentes > 0) b.Append("<em class=\"es-comp\"><i class=\"mdi mdi-puzzle-outline\"></i>").Append(f.componentes).Append(f.componentes == 1 ? " componente" : " componentes").Append("</em>");
+        if (f.repuestos > 0) b.Append("<em class=\"es-rep\"><i class=\"mdi mdi-package-variant-closed\"></i>").Append(f.repuestos).Append(f.repuestos == 1 ? " repuesto" : " repuestos").Append("</em>");
+        return b.Append("</span>").ToString();
     }
 
     protected void btnBuscar_Click(object sender, EventArgs e) { hdnSeccion.Value = "historial"; }
@@ -1058,6 +1098,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         Ordenes(ordenes);
         Mantenimiento(a, ocurrencias);
         FichaTecnica(a);
+        Estructura(a);
         Componentes(a);
         FallasYDetenciones(a, fallas, detenciones);
         Condicion(a);
@@ -2072,6 +2113,121 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   servidor para mostrar lo que ya esta en pantalla es un viaje de mas
     ///   y una pantalla que parpadea al elegir una fila.
     /// </summary>
+    // ============================================================ estructura (bloque 343)
+
+    /// <summary>Alta de un subactivo de ESTE equipo: el padre viaja cifrado.</summary>
+    protected string QueryNuevoSubactivo
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Padre=" + id)) : "0";
+        }
+    }
+
+    /// <summary>Repuesto compatible con ESTE equipo (por su modelo o su tipo).</summary>
+    protected string QueryNuevaCompat
+    {
+        get
+        {
+            int id = ActivoSeleccionado();
+            return id > 0 ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Activo=" + id)) : "0";
+        }
+    }
+
+    /// <summary>
+    /// El diagrama: el equipo arriba y, debajo, tres columnas con un color fijo
+    /// -subactivos, componentes, repuestos- y una linea que dice que es cada
+    /// cosa. Una lectura a la base (SEL_ACTIVO_ESTRUCTURA).
+    /// </summary>
+    private void Estructura(Activo a)
+    {
+        pnlEsAgregar.Visible = Token.Puede("CREAR EDITAR ACTIVOS");
+        ActivoEstructura e = new ActivoEstructuraController().GetEstructura(a.act_id);
+        StringBuilder s = new StringBuilder();
+
+        if (e.principal != null)
+            s.Append("<p class=\"sg-es-padre\"><i class=\"mdi mdi-arrow-up-thin\"></i> Es parte de ")
+             .Append("<a href=\"#\" onclick=\"return esAbrirActivo(").Append(e.principal.id).Append(");\">")
+             .Append(Server.HtmlEncode(e.principal.nombre)).Append("</a> (subactivo)</p>");
+
+        s.Append("<div class=\"sg-es-raiz\"><span class=\"ico\"><i class=\"mdi mdi-cog-outline\"></i></span><div>")
+         .Append("<span class=\"sg-es-etq es-activo\">").Append(e.principal != null ? "Subactivo" : "Equipo").Append("</span>")
+         .Append("<b>").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</b>")
+         .Append("<small>").Append(Server.HtmlEncode(string.Join(" · ", new[] { Texto(a.act_codigo), Texto(a.tipo_nombre), Texto(a.estado_nombre) }
+             .Where(x => x != "").ToArray()))).Append("</small></div></div>")
+         .Append("<div class=\"sg-es-linea\"></div><div class=\"sg-es-ramas\">");
+
+        // ---- subactivos
+        s.Append("<div class=\"sg-es-col es-sub\"><h4><i class=\"mdi mdi-cogs\"></i>Subactivos<span class=\"n\">")
+         .Append(e.subactivos.Count).Append("</span></h4><p class=\"sg-es-que\">Máquinas con <b>vida propia</b> que dependen de este equipo. ")
+         .Append("Tienen número de serie y se reparan aparte.</p>");
+        if (e.subactivos.Count == 0)
+            s.Append("<div class=\"sg-es-vacio\">No tiene. ¿Alguna máquina depende de esta? Usa <b>Agregar</b>.</div>");
+        foreach (ActivoEstructuraItem x in e.subactivos)
+            s.Append("<button type=\"button\" class=\"sg-es-item\" title=\"Abrir su ficha\" onclick=\"return esAbrirActivo(").Append(x.id).Append(");\">")
+             .Append("<div><b>").Append(Server.HtmlEncode(x.nombre)).Append("</b><span class=\"d\">")
+             .Append(Server.HtmlEncode(x.codigo)).Append(x.componentes > 0 ? " · " + x.componentes + (x.componentes == 1 ? " componente" : " componentes") : "")
+             .Append("</span></div><span class=\"der\">").Append(ChipSimple(x.estado, x.estado_codigo)).Append("</span></button>");
+        s.Append("</div>");
+
+        // ---- componentes (los hijos van debajo de su parte)
+        s.Append("<div class=\"sg-es-col es-comp\"><h4><i class=\"mdi mdi-puzzle-outline\"></i>Componentes<span class=\"n\">")
+         .Append(e.componentes.Count).Append("</span></h4><p class=\"sg-es-que\"><b>Partes de este equipo</b> que se siguen por separado. ")
+         .Append("No existen fuera de él.</p>");
+        if (e.componentes.Count == 0)
+            s.Append("<div class=\"sg-es-vacio\">Sin partes registradas. Agrega el motor, rodamientos, válvulas…</div>");
+        foreach (ActivoEstructuraItem x in e.componentes.Where(c => c.padre == 0))
+        {
+            s.Append(ItemComponente(x, false));
+            foreach (ActivoEstructuraItem h in e.componentes.Where(c => c.padre == x.id)) s.Append(ItemComponente(h, true));
+        }
+        s.Append("</div>");
+
+        // ---- repuestos
+        s.Append("<div class=\"sg-es-col es-rep\"><h4><i class=\"mdi mdi-package-variant-closed\"></i>Repuestos<span class=\"n\">")
+         .Append(e.repuestos.Count).Append("</span></h4><p class=\"sg-es-que\">Lo que <b>se compra y se guarda en bodega</b> para este equipo. ")
+         .Append("Uno es igual a otro.</p>");
+        if (e.repuestos.Count == 0)
+            s.Append("<div class=\"sg-es-vacio\">Aún no se indica qué repuestos le sirven.</div>");
+        foreach (ActivoEstructuraItem x in e.repuestos)
+        {
+            string chip = x.existencia <= 0 ? "<span class=\"sg-es-chip es-mal\">Sin stock</span>"
+                        : (x.minimo > 0 && x.existencia < x.minimo ? "<span class=\"sg-es-chip es-ojo\">Bajo el mínimo</span>"
+                        : "<span class=\"sg-es-chip es-ok\">Hay " + x.existencia.ToString("0.##") + " " + Server.HtmlEncode(x.unidad) + "</span>");
+            s.Append("<div class=\"sg-es-item es-sin-clic\"><div><b>").Append(Server.HtmlEncode(x.nombre)).Append("</b><span class=\"d\">")
+             .Append(Server.HtmlEncode(x.codigo)).Append(" · le sirve por su ").Append(x.detalle == "MODELO" ? "modelo" : (x.detalle == "COMPONENTE" ? "componente" : "tipo"))
+             .Append("</span></div><span class=\"der\">").Append(chip).Append("</span></div>");
+        }
+        s.Append("</div></div>");
+
+        s.Append("<div class=\"sg-es-leyenda\"><span><i style=\"background:#6732F4\"></i>Equipo</span>")
+         .Append("<span><i style=\"background:#087BEA\"></i>Subactivo: máquina que depende de él</span>")
+         .Append("<span><i style=\"background:#16C6C9\"></i>Componente: parte de él</span>")
+         .Append("<span><i style=\"background:#B65C00\"></i>Repuesto: se compra por cantidad</span></div>");
+
+        litEstructura.Text = s.ToString();
+    }
+
+    private string ItemComponente(ActivoEstructuraItem x, bool hijo)
+    {
+        string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.id));
+        string det = string.Join(" · ", new[] { x.tipo, x.detalle }.Where(t => !string.IsNullOrEmpty(t)).ToArray());
+        return "<button type=\"button\" class=\"sg-es-item" + (hijo ? " es-hijo" : "") + "\" title=\"Ver o editar\" onclick=\"return esAbrirComponente('" + q + "');\">" +
+               (hijo ? "<i class=\"mdi mdi-subdirectory-arrow-right\" style=\"color:#68738A\"></i>" : "") +
+               "<div><b>" + Server.HtmlEncode(x.nombre) + "</b><span class=\"d\">" + Server.HtmlEncode(det) + "</span></div>" +
+               "<span class=\"der\">" + ChipSimple(x.estado, x.estado_codigo) + "</span></button>";
+    }
+
+    /// <summary>Verde si opera, ambar si tiene observacion, rojo si esta fuera.</summary>
+    private string ChipSimple(string estado, string codigo)
+    {
+        if (string.IsNullOrEmpty(estado)) return "";
+        string c = (codigo ?? "").ToUpperInvariant();
+        string tono = c == "OPERATIVO" ? "es-ok" : (c.Contains("OBSERV") || c.Contains("DEGRAD") || c.Contains("MANTEN") ? "es-ojo" : "es-mal");
+        return "<span class=\"sg-es-chip " + tono + "\">" + Server.HtmlEncode(estado) + "</span>";
+    }
+
     private void Componentes(Activo a)
     {
         List<ActivoComponente> lista = new ActivoComponenteController().GetComponentes(
