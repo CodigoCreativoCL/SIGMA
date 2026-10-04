@@ -196,6 +196,7 @@
                     <div class="sigma-modal-seccion">
                         <i class="mdi mdi-account-hard-hat"></i> Responsables de la planta
                     </div>
+                    <p class="text-muted" style="font-size:12px;margin:4px 0 10px;">Marque la casilla junto al ID de quienes están a cargo de esta planta y pulse <b>Guardar</b>. Los responsables aparecen primero, marcados y con una franja morada. Desmarcar a alguien no le quita la autorización para trabajar en la planta.</p>
                     <wuc:Responsables runat="server" ID="wucResponsables" />
 
                 </asp:Panel>

@@ -63,6 +63,7 @@ namespace SitioBase.Controller
                             item.esp_nombre = dr["ESP_NOMBRE"].ToString();
                             item.integrantes = int.Parse(dr["INTEGRANTES"].ToString());
                             item.lider = dr["LIDER"].ToString();
+                            item.integrantes_nombres = dr["INTEGRANTES_NOMBRES"].ToString();
 
                             if (dr["GTR_FECHA_CREACION"] != DBNull.Value)
                                 item.gtr_fecha_creacion = DateTime.Parse(dr["GTR_FECHA_CREACION"].ToString());

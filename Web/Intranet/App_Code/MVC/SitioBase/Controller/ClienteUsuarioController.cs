@@ -527,6 +527,76 @@ namespace SitioBase.Controller
             return respuesta;
         }
 
+        /// <summary>Los usu_id marcados como responsables de una planta (bloque 337).</summary>
+        public HashSet<int> GetResponsablesPlanta(int cliente, int instalacion)
+        {
+            HashSet<int> ids = new HashSet<int>();
+            if (!Token.TokenSeguridad()) return ids;
+
+            SqlCommand cmd = new SqlCommand();
+            cmd.CommandText = "SEL_CLIENTE_INSTALACION_RESPONSABLE";
+            cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+            cmd.Parameters.AddWithValue("@INSTALACION", instalacion);
+
+            /* Si el bloque 337 no esta aplicado, la ficha de planta no debe
+               caerse entera por esta seccion: se devuelve vacio. */
+            try
+            {
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read()) ids.Add(Convert.ToInt32(dr["USU_ID"]));
+                }
+            }
+            catch (Exception) { }
+            finally
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+            }
+            return ids;
+        }
+
+        /// <summary>
+        /// Marca y desmarca responsables de una planta. Solo cambia a las
+        /// personas listadas; desmarcar no quita la autorizacion en la planta.
+        /// </summary>
+        public Respuesta GuardarResponsablesPlanta(int cliente, int instalacion, IEnumerable<int> marcar, IEnumerable<int> desmarcar)
+        {
+            Respuesta respuesta = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                respuesta.codigo = -1;
+                respuesta.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                respuesta.error = true;
+                return respuesta;
+            }
+
+            SqlCommand cmdExecute = new SqlCommand();
+            try
+            {
+                cmdExecute = Conexion.GetCommand("UPS_CLIENTE_INSTALACION_RESPONSABLE");
+                cmdExecute.Parameters.AddWithValue("@CLIENTE", cliente);
+                cmdExecute.Parameters.AddWithValue("@INSTALACION", instalacion);
+                cmdExecute.Parameters.AddWithValue("@MARCAR", string.Join(",", marcar));
+                cmdExecute.Parameters.AddWithValue("@DESMARCAR", string.Join(",", desmarcar));
+                cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmdExecute.ExecuteNonQuery();
+                cmdExecute.Connection.Close();
+
+                respuesta.codigo = 0;
+                respuesta.error = false;
+            }
+            catch (Exception ex)
+            {
+                if (cmdExecute.Connection != null) cmdExecute.Connection.Close();
+                cmdExecute.Dispose();
+                respuesta.codigo = -1;
+                respuesta.detalle = ex.Message;
+                respuesta.error = true;
+            }
+            return respuesta;
+        }
+
         public Respuesta AsociarClienteUsuario(ClienteUsuario usuario)
         {
             Respuesta respuesta = new Respuesta();

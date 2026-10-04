@@ -25,7 +25,7 @@ public partial class View_Clientes_Cliente_Usuarios : System.Web.UI.Page
            Con el tipo, el perfil que un cliente cree manana aparece solo,
            sin que nadie tenga que editar un parametro. */
         wucUsuarios.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
-        wucUsuarios.VerComboCliente = true;
+        wucUsuarios.VerComboCliente = false;
 
         #endregion
 
@@ -35,9 +35,11 @@ public partial class View_Clientes_Cliente_Usuarios : System.Web.UI.Page
 
     protected void Page_PreRender(object sender, EventArgs e)
     {
-        if (wucUsuarios.IdCliente != wucCliente.GetCliente())
+        // El cliente ya se elige en la barra superior; no hay selector en la página.
+        int cliente = SitioBase.Session.ClienteId();
+        if (wucUsuarios.IdCliente != cliente)
         {
-            wucUsuarios.IdCliente = wucCliente.GetCliente();
+            wucUsuarios.IdCliente = cliente;
         }
     }
 }

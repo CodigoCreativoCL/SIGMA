@@ -36,6 +36,23 @@
 </script>
 
 
+<style>
+    /* Responsables de la planta: fila apenas tenida y franja morada; el
+       resto de la grilla queda neutra. */
+    tr.sigma-fila-responsable > td { background: #FAF8FF !important; }
+    tr.sigma-fila-responsable > td:first-child { box-shadow: inset 3px 0 0 var(--sigma-purple, #6732F4); padding-left: 14px !important; }
+    .sigma-resp-toggle { display: inline-flex; align-items: center; margin: 0 10px 0 4px; cursor: pointer; vertical-align: middle; }
+    .sigma-resp-toggle input { width: 17px; height: 17px; margin: 0; cursor: pointer; accent-color: var(--sigma-purple, #6732F4); }
+    .sigma-resp-toggle input:focus-visible { outline: 3px solid rgba(22,198,201,.27); outline-offset: 2px; }
+    .sigma-resp-toggle input:disabled { opacity: .42; cursor: not-allowed; }
+</style>
+<script type="text/javascript">
+    function sigmaMarcarResponsable(chk) {
+        var tr = chk.closest('tr');
+        if (tr) tr.classList.toggle('sigma-fila-responsable', chk.checked);
+    }
+</script>
+
 <asp:UpdatePanel runat="server" ID="udPanelContenedor" UpdateMode="Conditional">
     <ContentTemplate>
         <wuc:PanelSinSeleccion runat="server" ID="wucPanelSinSeleccion" Icono="mdi mdi-account-group-outline" Titulo="Seleccione un cliente"

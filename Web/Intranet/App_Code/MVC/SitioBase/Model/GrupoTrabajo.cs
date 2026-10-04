@@ -29,6 +29,8 @@ namespace SitioBase.Model
         public string esp_nombre { get; set; }
         public int integrantes { get; set; }
         public string lider { get; set; }
+        /// <summary>Integrantes vigentes separados por "|", lider primero (bloque 338).</summary>
+        public string integrantes_nombres { get; set; }
 
         public string filtro { get; set; }
         public bool? filtro_habilitado { get; set; }
