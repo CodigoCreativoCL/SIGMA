@@ -116,6 +116,8 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
                            Bodeguero mezclados, y omitiendo los perfiles
                            operativos reales. */
                         perfil.tipo = TipoPerfil > 0 ? TipoPerfil.ToString() : "2";
+                        // Cada empresa ve sus propios perfiles (bloque 341), nunca los de otra.
+                        if (perfil.tipo == "2") perfil.cliente = IdCliente > 0 ? IdCliente : SitioBase.Session.ClienteId();
                         perfil.filtro_habilitado = "1";
 
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
