@@ -21,12 +21,18 @@
     <%-- ============================================================
          EL FORMULARIO
 
-         Se abre al agregar o al editar. No es una ventana aparte: son
-         cuatro campos, y una modal para cuatro campos es más ceremonia
-         que ayuda.
+         Se abre al agregar o al editar como una ventana hija (modal)
+         centrada, con la página ensombrecida detrás, al estilo de las
+         demás fichas del sistema.
          ============================================================ --%>
-    <asp:Panel ID="pnlForm" runat="server" Visible="false" CssClass="sg-ct-form">
-        <div class="sg-ct-form-cab"><asp:Literal ID="litFormTitulo" runat="server" /></div>
+    <asp:Panel ID="pnlForm" runat="server" Visible="false" CssClass="sg-ct-overlay">
+      <div class="sg-ct-modal">
+        <div class="sg-ct-modal-head">
+            <span class="sg-ct-modal-title"><asp:Literal ID="litFormTitulo" runat="server" /></span>
+            <WebControls:PushButton ID="btnCerrarX" runat="server" Text="✕"
+                CssClass="sg-ct-modal-x" OnClick="btnCancelar_Click" CausesValidation="false" ToolTip="Cerrar" />
+        </div>
+        <div class="sg-ct-modal-body">
 
         <div class="sigma-modal-grid">
             <div class="sigma-modal-field is-medio">
@@ -93,12 +99,15 @@
             </div>
         </div>
 
-        <div class="sg-ct-form-pie">
+        </div><%-- /sg-ct-modal-body --%>
+
+        <div class="sg-ct-modal-pie">
             <WebControls:PushButton ID="btnCancelar" runat="server" Text="Cancelar"
                 CssClass="sg-ct-btn" OnClick="btnCancelar_Click" CausesValidation="false" />
             <WebControls:PushButton ID="btnGuardar" runat="server" Text="Guardar contacto"
                 CssClass="sg-ct-btn is-principal" OnClick="btnGuardar_Click" CausesValidation="false" />
         </div>
+      </div><%-- /sg-ct-modal --%>
     </asp:Panel>
 
     <%-- ============================================================
