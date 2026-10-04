@@ -113,6 +113,14 @@
 
 .sg-ct-modal-body { padding: 22px 24px; }
 
+/* Ajustes del formulario dentro del modal de contactos
+   (acotados aquí para no tocar las fichas que comparten .sigma-modal-*). */
+.sg-ct-modal .sigma-modal-grid { gap: 20px 18px; }           /* separación entre categorías */
+.sg-ct-modal .sigma-modal-field { gap: 2px; }                /* el título, junto a su caja */
+.sg-ct-modal .sigma-modal-ayuda { font-size: 10px; margin-top: 1px; }  /* el ejemplo, más pequeño */
+.sg-ct-modal .sg-ct-check { align-items: center; gap: 10px; margin-top: 2px; }  /* casilla alineada */
+.sg-ct-modal .sg-ct-check input { margin: 0; }
+
 .sg-ct-modal-pie {
     display: flex;
     justify-content: flex-end;

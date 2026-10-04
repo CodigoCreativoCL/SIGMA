@@ -78,15 +78,6 @@
             </div>
 
             <div class="sigma-modal-field is-ancho">
-                <%-- La regla la impone la base: un nombre suelto no alcanza
-                     para contactar a nadie. Se dice acá para que no se
-                     descubra al guardar. --%>
-                <span class="sigma-modal-ayuda">
-                    Indique al menos un correo o un teléfono.
-                </span>
-            </div>
-
-            <div class="sigma-modal-field is-ancho">
                 <label class="sg-ct-check">
                     <asp:CheckBox ID="chkPrincipal" runat="server" />
                     <span class="sg-ct-check-txt">
