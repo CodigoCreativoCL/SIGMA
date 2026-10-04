@@ -10,7 +10,8 @@
     <meta name="theme-color" content="#0B0F1A" />
 
     <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="Css/Inicio/sigma-inicio.css?vrs=4" rel="stylesheet" />
+    <link href="Css/Inicio/sigma-inicio.css?vrs=8" rel="stylesheet" />
+    <script>document.documentElement.className += ' sg-anim';</script>
 </head>
 <body>
     <div class="sg-home">
@@ -175,6 +176,93 @@
 
                 </div>
                 <p class="sg-pricing-note">Todos los planes incluyen la app móvil con registro en terreno y un período de gracia al vencer. Los límites y funcionalidades se ajustan según el plan contratado.</p>
+
+                <!-- ----- Solicitud de asesoría directa ----- -->
+                <div class="sg-lead" id="asesoria">
+                    <div class="sg-lead-intro">
+                        <span class="sg-eyebrow">Asesoría sin costo</span>
+                        <h3>¿Prefieres que te asesoremos?</h3>
+                        <p>Cuéntanos de tu operación y un especialista te contacta para recomendarte el plan y ayudarte a poner SIGMA en marcha.</p>
+                        <ul class="sg-lead-points">
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Demo personalizada según tu planta</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Acompañamiento en la puesta en marcha</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Migración de tus activos y datos</li>
+                            <li><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"/></svg>Respuesta dentro de 1 día hábil</li>
+                        </ul>
+                    </div>
+
+                    <form class="sg-lead-form" id="formAsesoria" novalidate>
+                        <div class="sg-form-grid">
+                            <div class="sg-field2">
+                                <label for="asNombre">Nombre <span class="req">*</span></label>
+                                <input type="text" id="asNombre" name="nombre" autocomplete="given-name" />
+                                <span class="err">Ingresa tu nombre.</span>
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asApellido">Apellido</label>
+                                <input type="text" id="asApellido" name="apellido" autocomplete="family-name" />
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asCorreo">Correo corporativo <span class="req">*</span></label>
+                                <input type="email" id="asCorreo" name="correo" autocomplete="email" placeholder="nombre@empresa.cl" />
+                                <span class="err">Ingresa un correo válido.</span>
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asTelefono">Teléfono</label>
+                                <input type="tel" id="asTelefono" name="telefono" autocomplete="tel" placeholder="+56 9 1234 5678" />
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asEmpresa">Empresa <span class="req">*</span></label>
+                                <input type="text" id="asEmpresa" name="empresa" autocomplete="organization" />
+                                <span class="err">Ingresa el nombre de tu empresa.</span>
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asPais">País</label>
+                                <input type="text" id="asPais" name="pais" autocomplete="country-name" placeholder="Chile" />
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asActivos">N.° de activos aprox.</label>
+                                <select id="asActivos" name="activos">
+                                    <option value="">Selecciona…</option>
+                                    <option>Menos de 150</option>
+                                    <option>Entre 150 y 750</option>
+                                    <option>Más de 750</option>
+                                    <option>Aún no lo sé</option>
+                                </select>
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asPlan">Plan de interés</label>
+                                <select id="asPlan" name="plan">
+                                    <option value="">Selecciona…</option>
+                                    <option>Básico</option>
+                                    <option>Medio</option>
+                                    <option>Full</option>
+                                    <option>No estoy seguro</option>
+                                </select>
+                            </div>
+                            <div class="sg-field2 is-full">
+                                <label for="asMensaje">Cuéntanos de tu operación</label>
+                                <textarea id="asMensaje" name="mensaje" placeholder="Tipo de planta, cantidad de técnicos, qué buscas resolver…"></textarea>
+                            </div>
+                            <label class="sg-consent" id="asConsentWrap">
+                                <input type="checkbox" id="asConsent" name="consent" />
+                                <span>Autorizo a Código Creativo a contactarme para orientarme sobre SIGMA. <span class="req" style="color:var(--sg-purple)">*</span></span>
+                            </label>
+                            <button type="submit" class="sg-btn sg-btn-primary">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                                Solicitar asesoría
+                            </button>
+                        </div>
+
+                        <div class="sg-lead-ok" id="asOk" role="status">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+                            <div>
+                                <h4>¡Solicitud lista!</h4>
+                                <p>Se abrió tu correo con los datos para enviar. Un especialista te responderá dentro de 1 día hábil.</p>
+                            </div>
+                        </div>
+                    </form>
+                </div>
             </div>
         </section>
 
@@ -396,6 +484,10 @@
                 <button type="button" class="sg-link-btn" data-tab="quienes">Quiénes somos</button>
                 <a href="Privacidad/Privacidad.aspx">Privacidad</a>
                 <a href="Login.aspx">Ingresar</a>
+                <a class="sg-contact-btn" href="mailto:contacto@codigocreativo.cl?subject=Consulta%20sobre%20SIGMA">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-10 5L2 7"/></svg>
+                    Contacto
+                </a>
                 <span>Código Creativo · SIGMA 2026</span>
             </div>
         </footer>
@@ -424,6 +516,50 @@
                     history.replaceState(null, '', '#' + name);
                 }
                 window.scrollTo(0, 0);
+                revealIn(name);
+                if (name === 'quienes') countStats();
+            }
+
+            var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+            var revSel = '.sg-features-head,.sg-card,.sg-section-head,.sg-plan,.sg-comp,.sg-about>div,.sg-about-card,.sg-lead,.sg-pricing-note';
+            [].forEach.call(document.querySelectorAll(revSel), function (el) { el.classList.add('reveal'); });
+
+            function revealIn(name) {
+                if (reduce) return;
+                var panel = null;
+                for (var i = 0; i < panels.length; i++) {
+                    if (panels[i].getAttribute('data-panel') === name) { panel = panels[i]; break; }
+                }
+                if (!panel) return;
+                var els = panel.querySelectorAll('.reveal');
+                for (var k = 0; k < els.length; k++) {
+                    var el = els[k];
+                    el.classList.remove('is-in');
+                    void el.offsetWidth;
+                    el.style.animationDelay = (k * 70) + 'ms';
+                    el.classList.add('is-in');
+                }
+            }
+
+            function countStats() {
+                var ns = document.querySelectorAll('[data-panel="quienes"] .sg-stat .n');
+                [].forEach.call(ns, function (n) {
+                    var txt = n.getAttribute('data-val') || n.textContent;
+                    n.setAttribute('data-val', txt);
+                    var m = txt.match(/^(\D*)(\d+)(\D*)$/);
+                    if (!m) return;
+                    if (reduce) { n.textContent = txt; return; }
+                    var pre = m[1], num = parseInt(m[2], 10), post = m[3];
+                    var steps = Math.max(1, Math.min(num, 24)), i = 0;
+                    if (n._iv) clearInterval(n._iv);
+                    n.textContent = pre + '0' + post;
+                    n._iv = setInterval(function () {
+                        i++;
+                        n.textContent = pre + Math.round(num * i / steps) + post;
+                        if (i >= steps) { clearInterval(n._iv); n._iv = null; n.textContent = txt; }
+                    }, 45);
+                });
             }
 
             for (var k = 0; k < tabs.length; k++) {
@@ -435,6 +571,63 @@
 
             var initial = (location.hash || '#inicio').replace('#', '');
             activate(initial, false);
+        })();
+
+        (function () {
+            var form = document.getElementById('formAsesoria');
+            if (!form) return;
+            var ok = document.getElementById('asOk');
+            var consentWrap = document.getElementById('asConsentWrap');
+
+            function setError(id, on) {
+                var el = document.getElementById(id);
+                if (el) el.parentNode.classList.toggle('has-error', on);
+            }
+            function val(id) { var e = document.getElementById(id); return e ? e.value.trim() : ''; }
+
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                var nombre = val('asNombre'), correo = val('asCorreo'), empresa = val('asEmpresa');
+                var consent = document.getElementById('asConsent').checked;
+                var emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo);
+
+                setError('asNombre', !nombre);
+                setError('asCorreo', !emailOk);
+                setError('asEmpresa', !empresa);
+                consentWrap.classList.toggle('has-error', !consent);
+
+                if (!nombre || !emailOk || !empresa || !consent) {
+                    var firstErr = form.querySelector('.has-error input, .has-error select');
+                    if (firstErr) firstErr.focus();
+                    return;
+                }
+
+                var L = [
+                    'Nombre: ' + nombre + ' ' + val('asApellido'),
+                    'Correo: ' + correo,
+                    'Teléfono: ' + val('asTelefono'),
+                    'Empresa: ' + val('asEmpresa'),
+                    'País: ' + val('asPais'),
+                    'N.° de activos: ' + val('asActivos'),
+                    'Plan de interés: ' + val('asPlan'),
+                    '',
+                    'Mensaje:',
+                    val('asMensaje')
+                ];
+                var cuerpo = encodeURIComponent(L.join('\n'));
+                var asunto = encodeURIComponent('Solicitud de asesoría SIGMA — ' + empresa);
+                window.location.href = 'mailto:contacto@codigocreativo.cl?subject=' + asunto + '&body=' + cuerpo;
+
+                ok.classList.add('is-visible');
+                ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            });
+
+            form.addEventListener('input', function (e) {
+                var t = e.target;
+                if (t.id === 'asNombre' || t.id === 'asCorreo' || t.id === 'asEmpresa') t.parentNode.classList.remove('has-error');
+                if (t.id === 'asConsent' && t.checked) consentWrap.classList.remove('has-error');
+            });
         })();
     </script>
 </body>

@@ -4,7 +4,7 @@
 <asp:Content ID="Content1" ContentPlaceHolderID="cphHeder" runat="Server">
     <%-- Una sola vez, desde acá: enlazarla también en el Master la
          descargaría dos veces y cada regla aparecería duplicada. --%>
-    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-contactos.css?vrs=1") %>' rel="stylesheet" />
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-contactos.css?vrs=2") %>' rel="stylesheet" />
 </asp:Content>
 
 <asp:Content ID="Content2" ContentPlaceHolderID="chpScript" runat="server">
