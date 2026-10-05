@@ -342,6 +342,16 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             (esSub ? Server.UrlEncode(Tools.Crypto.Encrypt("Id=0&Padre=" + a.act_activo_padre.Value)) : "0");
     }
 
+    /// <summary>
+    /// La url de una hoja o un script con la fecha del archivo como version:
+    /// con un "?v=1" fijo el navegador se queda con la copia vieja.
+    /// </summary>
+    protected string Asset(string ruta)
+    {
+        string f = Server.MapPath(ruta);
+        return ResolveUrl(ruta) + "?v=" + (System.IO.File.Exists(f) ? System.IO.File.GetLastWriteTimeUtc(f).Ticks.ToString() : "1");
+    }
+
     /// <summary>URL para ver/descargar un documento del activo.</summary>
     public string VerUrl(int idArchivo) { return UrlArchivo.Ver(idArchivo); }
 

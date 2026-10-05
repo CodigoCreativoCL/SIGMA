@@ -11,6 +11,11 @@
          propio del centro del activo. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
+    <%-- El asistente de la pestaña Ficha y el formulario de componente de
+         «¿Qué vas a agregar?» usan la piel compartida. --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-asistente.css") %>' rel="stylesheet" />
+    <script type="text/javascript">var AF_PASOS = 6;</script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-asistente.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
