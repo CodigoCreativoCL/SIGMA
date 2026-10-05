@@ -175,6 +175,8 @@
             return false;
         }
         function escAbrir() {
+            escEnPlanta = false;
+            var ca = document.getElementById('escActivoCampo'); if (ca) ca.hidden = true;
             ['escNombre', 'escTipo', 'escLado', 'escDesc'].forEach(function (id) { var e = document.getElementById(id); if (e) e.value = ''; });
             var tpl = document.getElementById('sgEsDatos');
             var nom = tpl ? tpl.getAttribute('data-nombre') : '';
@@ -191,6 +193,40 @@
             setTimeout(function () { document.getElementById('escNombre').focus(); }, 30);
             return false;
         }
+        /* Desde la pestaña Componentes de la planta: el mismo formulario, con el
+           activo a elegir (los datos salen de la planta ya cargada). */
+        var escEnPlanta = false;
+        function escDesdePlanta() {
+            var P = window.sigmaPlanta, d = P && P.datos ? P.datos() : null;
+            if (!d) return false;
+            esAsistente(true);
+            escAbrir();
+            escEnPlanta = true;
+            document.getElementById('escActivoCampo').hidden = false;
+            var sel = document.getElementById('escActivo');
+            sel.innerHTML = '<option value="">Elige el activo</option>';
+            d.activos.forEach(function (a) {
+                var o = document.createElement('option'); o.value = a.id; o.textContent = a.n + (a.c ? ' · ' + a.c : ''); sel.appendChild(o);
+            });
+            var est = document.getElementById('escEstado'); est.innerHTML = '';
+            d.estados.forEach(function (e) {
+                var o = document.createElement('option'); o.value = e.id; o.textContent = e.n; if (/operativ/i.test(e.n) && !est.value) o.selected = true; est.appendChild(o);
+            });
+            escActivoCambia();
+            var txt = document.querySelector('[data-vista="componente"] .sg-es-donde-txt');
+            if (txt) txt.textContent = 'Una parte de un activo que quieres seguir por separado.';
+            setTimeout(function () { sel.focus(); }, 40);
+            return false;
+        }
+        function escActivoCambia() {
+            var P = window.sigmaPlanta, d = P && P.datos ? P.datos() : null; if (!d) return;
+            var id = document.getElementById('escActivo').value, padre = document.getElementById('escPadre');
+            var a = d.activos.filter(function (x) { return String(x.id) === id; })[0];
+            padre.innerHTML = '';
+            var o0 = document.createElement('option'); o0.value = '0'; o0.textContent = a ? 'Directamente de «' + a.n + '»' : 'Directamente del activo'; padre.appendChild(o0);
+            (a ? a.comps : []).forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = 'De la parte «' + c.n + '»'; padre.appendChild(o); });
+        }
+
         function escFotoVer(input) {
             var ico = document.getElementById('escFotoIco'), nom = document.getElementById('escFotoNom');
             if (input.files && input.files[0] && window.FileReader) {
@@ -202,7 +238,7 @@
         }
         function escGuardar() {
             var faltan = [];
-            [['escNombre', 'Nombre'], ['escTipo', 'Qué es']].forEach(function (c) {
+            (escEnPlanta ? [['escActivo', 'Activo'], ['escNombre', 'Nombre'], ['escTipo', 'Qué es']] : [['escNombre', 'Nombre'], ['escTipo', 'Qué es']]).forEach(function (c) {
                 var e = document.getElementById(c[0]), ok = e && e.value.trim() !== '';
                 e.closest('.sg-es-campo').classList.toggle('es-falta', !ok);
                 if (!ok) faltan.push(c[1]);
@@ -211,10 +247,12 @@
             if (faltan.length) {
                 document.getElementById('sgEscFaltanTxt').textContent = (faltan.length === 1 ? 'Falta: ' : 'Faltan: ') + faltan.join(' y ') + '.';
                 aviso.hidden = false;
-                document.querySelector('#sgEsAsistente .sg-es-campo.es-falta input').focus();
+                var mal = document.querySelector('#sgEsAsistente .sg-es-campo.es-falta input, #sgEsAsistente .sg-es-campo.es-falta select'); if (mal) mal.focus();
                 return false;
             }
             aviso.hidden = true;
+            /* desde la planta, al volver del guardado se abre de nuevo la pestaña Componentes */
+            if (escEnPlanta && window.sigmaPlanta && window.sigmaPlanta.recordar) window.sigmaPlanta.recordar('componentes');
             __doPostBack('<%=lnkEsGuardarComp.UniqueID %>', '');
             return false;
         }
@@ -1036,7 +1074,22 @@
        listas propias que dibuja Js/sigma-planta.js (sin grilla del servidor)
        y abren la ficha de siempre en un modal. --%>
   <div class="tabpanel" role="tabpanel" aria-label="Componentes" data-mpanel="componentes" hidden>
-    <asp:Literal ID="litListaComp" runat="server" />
+    <%-- Crear un componente desde aqui: el mismo modal del centro 360, eligiendo el activo. --%>
+    <div class="sa-cat-bar sa-comp-bar">
+      <div class="sa-cat-tit"><h2>Componentes</h2><p>Las partes de cada activo, agrupadas por su activo. Los que tienen avisos van primero y abiertos.</p></div>
+      <label class="sa-cat-buscar"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <input type="search" data-cg-q placeholder="Busca un componente, código, tipo o activo…" aria-label="Buscar componentes" autocomplete="off"></label>
+      <button type="button" class="btn btn--primary" id="btnNuevoComp" hidden onclick="return escDesdePlanta();">+ Nuevo componente</button>
+    </div>
+    <div class="sa-cg-filtros" role="group" aria-label="Filtrar por estado">
+      <button type="button" class="chipbtn" data-cgf="todos" aria-pressed="true">Todos <b>0</b></button>
+      <button type="button" class="chipbtn" data-cgf="aviso" aria-pressed="false">Con aviso <b>0</b></button>
+      <button type="button" class="chipbtn" data-cgf="ok" aria-pressed="false">Operativos <b>0</b></button>
+    </div>
+    <div class="sa-cg" aria-live="polite"></div>
+    <%-- La lista la dibuja Js/sigma-planta.js con la planta ya cargada (grupos plegados,
+         busqueda y carga por tandas): el servidor ya no arma miles de filas. --%>
+    <asp:Literal ID="litListaComp" runat="server" Visible="false" />
   </div>
   <div class="tabpanel" role="tabpanel" aria-label="Variables" data-mpanel="variables" hidden>
     <div class="sa-cat"></div>
@@ -2095,6 +2148,12 @@
             <div class="sg-es-faltan" id="sgEscFaltan" role="alert" hidden><i class="mdi mdi-alert-circle-outline"></i><span id="sgEscFaltanTxt"></span></div>
 
             <div class="sg-es-form">
+                <label class="sg-es-campo es-ancho" id="escActivoCampo" hidden>
+                    <span class="sg-es-etiq">Activo <b class="req">*</b></span>
+                    <select name="esc_activo" id="escActivo" onchange="escActivoCambia();"></select>
+                    <span class="sg-es-ayuda">El activo o subactivo al que pertenece esta parte.</span>
+                    <span class="sg-es-msg">Elige a qué activo pertenece.</span>
+                </label>
                 <label class="sg-es-campo">
                     <span class="sg-es-etiq">Nombre <b class="req">*</b></span>
                     <input type="text" name="esc_nombre" id="escNombre" maxlength="200" placeholder="Ej.: Burlete de la puerta" autocomplete="off" />

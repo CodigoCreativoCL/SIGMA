@@ -368,6 +368,7 @@ const SIGMA = {
     document.querySelectorAll('[data-mpanel]').forEach(p => { p.hidden = p.dataset.mpanel !== k; });
     SIGMA.tab = k;
     if (CAT[k]) SIGMA.catalogo(k);
+    if (k === 'componentes'){ SIGMA.compArmar(); SIGMA.compLista(); }
   },
   /* Variables, Medidores, Tipos y Modelos: listas propias, sin grilla del
      servidor. Crear, editar y borrar pasan en la misma fila. */
@@ -561,6 +562,94 @@ const SIGMA = {
     try { await ws('QuitarVinculoRepuesto', {vinculo:+b.dataset.v}); XP.sel = null; toast('Se quitó el vínculo'); await SIGMA.recargar(); }
     catch(e){ b.disabled = false; toast(e.message); }
   },
+  /* ---- Pestaña Componentes: pensada para 100 activos y miles de piezas ----
+     Grupos por activo plegados (los que tienen avisos, abiertos), busqueda y
+     filtros por estado, y se dibujan 25 grupos a la vez: los siguientes al
+     llegar al final. Dentro de un grupo, 40 filas y «Ver los N restantes». */
+  _cg: { q:'', f:'todos', abiertos:{}, hasta:25, mas:{} },
+  compRuta(id){
+    let lid = null;
+    for (const k in S.lugares) if ((S.lugares[k].activos || []).includes(id)){ lid = k; break; }
+    const p = []; while (lid && S.lugares[lid]){ p.unshift(S.lugares[lid].nombre); lid = S.lugares[lid].padre; }
+    return p.join(' › ');
+  },
+  compLista(reiniciar){
+    const host = document.querySelector('[data-mpanel="componentes"] .sa-cg'); if (!host || !S) return;
+    const G = SIGMA._cg; if (reiniciar){ G.hasta = 25; }
+    const q = norm(G.q.trim());
+    const malo = c => c.e !== 'operativo';
+    const grupos = Object.keys(S.activos).map(id => ({ id, a:S.activos[id] })).filter(g => (g.a.comps || []).length)
+      .sort((x, y) => (y.a.comps.filter(malo).length - x.a.comps.filter(malo).length) || x.a.nombre.localeCompare(y.a.nombre));
+    let total = 0, aviso = 0;
+    grupos.forEach(g => { total += g.a.comps.length; aviso += g.a.comps.filter(malo).length; });
+    const chips = host.parentNode.querySelectorAll('[data-cgf]');
+    chips.forEach(b => { const k = b.dataset.cgf; b.setAttribute('aria-pressed', G.f === k);
+      b.querySelector('b').textContent = k === 'todos' ? total : k === 'aviso' ? aviso : total - aviso; });
+    const vis = [];
+    grupos.forEach(g => {
+      const delActivo = q && norm(g.a.nombre + ' ' + g.a.codigo).includes(q);
+      let filas = g.a.comps.filter(c => (G.f === 'todos' || (G.f === 'aviso') === malo(c)) &&
+                                        (!q || delActivo || norm([c.n, c.c, c.tipo, c.lado, c.en, c.nota].join(' ')).includes(q)));
+      if (filas.length) vis.push({ g, filas });
+    });
+    if (!vis.length){
+      host.innerHTML = `<div class="sa-cat-vacio"><b>${total ? 'Nada coincide' : 'Todavía no hay componentes'}</b><span>${total ? 'Prueba con otra palabra o quita el filtro.' : 'Agrégalos con «+ Nuevo componente» o desde el centro 360° de cada activo.'}</span></div>`;
+      return;
+    }
+    const fila = (a, c, hijo) => {
+      const t = EST[c.e] ? EST[c.e].t : 'ok';
+      return `<div class="sa-cg-fila${hijo ? ' es-hijo' : ''}">
+        <span class="sa-cg-img">${c.foto ? `<img src="${esc(c.foto)}" alt="" loading="lazy">` : svg('<path d="M12 2l2.4 4.9 5.4.8-3.9 3.8.9 5.4L12 14.4 7.2 16.9l.9-5.4L4.2 7.7l5.4-.8z"/>', 18)}</span>
+        <span class="sa-cg-n"><b>${hijo ? svg('<path d="M6 4v7a4 4 0 0 0 4 4h8M15 12l3 3-3 3"/>', 14) : ''}${esc(c.n)}</b><small>${esc(c.c || '')}</small></span>
+        <span class="sa-cg-d">${esc([c.tipo, c.lado].filter(Boolean).join(' · ') || '—')}</span>
+        <span class="sa-cg-e"><span class="chip chip--${t}"><i></i>${esc(c.en || EST[c.e].l)}</span>${malo(c) && c.nota ? `<small>«${esc(c.nota)}»</small>` : ''}</span>
+        <span class="sa-cg-acc">${c.q ? `<button type="button" class="btn btn--sm" data-cg-editar="${esc(c.q)}">${S.permisos && S.permisos.comp ? 'Editar' : 'Ver'}</button>` : ''}</span></div>`;
+    };
+    const grupo = ({ g, filas }) => {
+      const a = g.a, bad = a.comps.filter(malo).length;
+      const abierto = q || G.f !== 'todos' ? true : (G.abiertos[g.id] != null ? G.abiertos[g.id] : bad > 0);
+      const ids = new Set(filas.map(c => c.id));
+      const orden = []; filas.filter(c => !c.padre || !ids.has(c.padre)).forEach(c => { orden.push([c, false]); filas.filter(h => h.padre === c.id).forEach(h => orden.push([h, true])); });
+      const tope = G.mas[g.id] ? orden.length : 40;
+      const padre = a.padre && S.activos[a.padre] ? S.activos[a.padre].nombre : '';
+      return `<section class="sa-cg-grupo${abierto ? ' is-open' : ''}" data-cg="${g.id}">
+        <header>
+          <button type="button" class="sa-cg-cab" data-cg-toggle="${g.id}" aria-expanded="${abierto}">
+            <span class="sa-cg-av">${a.foto ? `<img src="${esc(a.foto)}" alt="" loading="lazy">` : svg(ICONS[a.tipo] || ICONS.otro, 20)}</span>
+            <span class="sa-cg-t"><b>${esc(a.nombre)}<em class="sa-cg-tag ${padre ? 'es-sub' : ''}">${padre ? 'Subactivo' : 'Activo'}</em></b>
+              <small>${esc([a.codigo, padre ? 'de ' + padre : '', SIGMA.compRuta(g.id)].filter(Boolean).join(' · '))}</small></span>
+            <span class="sa-cg-cont"><span class="chip chip--neutro"><i></i>${cnt(a.comps.length, 'Componente')}</span>${bad ? `<span class="chip chip--warn"><i></i>${bad} con aviso</span>` : '<span class="chip chip--ok"><i></i>Todo bien</span>'}</span>
+            ${svg('<path d="M6 9l6 6 6-6"/>', 18)}
+          </button>
+          ${a.url360 ? `<a class="btn btn--sm btn--outline" href="${esc(a.url360)}">Abrir 360°</a>` : ''}
+        </header>
+        ${abierto ? `<div class="sa-cg-body">${orden.slice(0, tope).map(([c, h]) => fila(a, c, h)).join('')}
+          ${orden.length > tope ? `<button type="button" class="sa-cg-mas" data-cg-mas="${g.id}">Ver los ${orden.length - tope} restantes</button>` : ''}</div>` : ''}
+      </section>`;
+    };
+    host.innerHTML = vis.slice(0, G.hasta).map(grupo).join('') +
+      (vis.length > G.hasta ? `<div class="sa-cg-mas-grupos" data-cg-sentinela>Cargando más activos… (${G.hasta} de ${vis.length})</div>` : '');
+    const sent = host.querySelector('[data-cg-sentinela]');
+    if (sent && 'IntersectionObserver' in window){
+      if (SIGMA._cgObs) SIGMA._cgObs.disconnect();
+      SIGMA._cgObs = new IntersectionObserver(es => { if (es.some(e => e.isIntersecting)){ SIGMA._cgObs.disconnect(); G.hasta += 25; SIGMA.compLista(); } }, { rootMargin:'400px' });
+      SIGMA._cgObs.observe(sent);
+    }
+  },
+  compArmar(){
+    const tab = document.querySelector('[data-mpanel="componentes"]'); if (!tab || tab.dataset.cgListo) return;
+    tab.dataset.cgListo = '1';
+    const host = tab.querySelector('.sa-cg'); if (!host) return;
+    const q = tab.querySelector('[data-cg-q]');
+    let t = null;
+    if (q) q.addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { SIGMA._cg.q = q.value; SIGMA.compLista(true); }, 150); });
+    tab.addEventListener('click', e => {
+      const f = e.target.closest('[data-cgf]'); if (f){ SIGMA._cg.f = f.dataset.cgf; SIGMA.compLista(true); return; }
+      const tg = e.target.closest('[data-cg-toggle]'); if (tg){ const id = tg.dataset.cgToggle; const s = tg.closest('.sa-cg-grupo'); SIGMA._cg.abiertos[id] = !s.classList.contains('is-open'); SIGMA.compLista(); return; }
+      const m = e.target.closest('[data-cg-mas]'); if (m){ SIGMA._cg.mas[m.dataset.cgMas] = true; SIGMA.compLista(); return; }
+      const ed = e.target.closest('[data-cg-editar]'); if (ed){ SIGMA.recordarPestana(); if (window.abrirComponente) window.abrirComponente(ed.dataset.cgEditar); return; }
+    });
+  },
   /* La planta que se ve. Con mas de una planta (las asignadas a la persona,
      o todas si no tiene asignacion) se elige en un combo; con una, se muestra. */
   pintarPlantas(){
@@ -614,10 +703,16 @@ const SIGMA = {
     if (view === '3d' && three) build3D(false);
     if (xpId && S.activos[xpId]) renderXP(false); else if (xpId) closeXP();
     if (abierto('#modalCfg')) renderUb();
+    if (SIGMA.tab === 'componentes') SIGMA.compLista();
   }
 };
 /* Lo que usa el resto de la pagina: el centro del activo usa el combo y la API en su asistente. */
-window.sigmaPlanta = { recargar: () => SIGMA.recargar(), pestana: k => SIGMA.pestana(k), ws, combo, comboSalir };
+window.sigmaPlanta = { recargar: () => SIGMA.recargar(), pestana: k => SIGMA.pestana(k), ws, combo, comboSalir,
+  /* para «+ Nuevo componente» de la pestaña Componentes (formulario del centro) */
+  datos: () => S ? { activos: Object.values(S.activos).map(a => ({ id:a.aid, n:a.nombre, c:a.codigo, comps:(a.comps || []).map(x => ({ id:x.id, n:x.n })) }))
+                                .sort((x, y) => x.n.localeCompare(y.n)),
+                     estados: ((S.estados && S.estados.comp) || []).map(e => ({ id:e.id, n:e.n })) } : null,
+  recordar: k => { try { sessionStorage.setItem(KEY + '-volver', k); } catch(e){} } };
 
 const hasGsap = !!window.gsap;
 if (hasGsap) { try { gsap.registerPlugin(Flip, Draggable); } catch(e){} }
@@ -2180,7 +2275,7 @@ function renderUb(){
   const rows = treeOrder(null, 0, []).map(({id, depth}) => {
     const l = LG(id); const n = allIn(id).length; const sib = l.padre ? LG(l.padre).hijos : S.raiz; const k = sib.indexOf(id);
     let html = `<div class="ub-row${depth ? ' is-child' : ' is-root'}" style="--d:${depth}">
-      <span class="tipo-tag">${esc(tipoL(l.tipo).s)}</span>
+      <span class="tipo-tag tipo-tag--sel"><select data-ubtipo="${id}" aria-label="Tipo de ${esc(l.nombre)}">${S.tipos.map(t => `<option value="${t.id}"${t.id === l.tipo ? ' selected' : ''}>${esc(t.s)}</option>`).join('')}</select>${svg('<path d="M6 9l6 6 6-6"/>',12)}</span>
       <label class="sr" for="ubn-${id}">Nombre de ${esc(l.nombre)}</label><input class="ub-name" id="ubn-${id}" data-ubname="${id}" value="${esc(l.nombre)}" autocomplete="off">
       <span class="ub-n">${cnt(n,'Activo')}</span>
       <span class="ub-act">
@@ -2518,7 +2613,17 @@ async function iniciar(){
   /* sin permiso de edicion no se ofrece crear ni mover */
   if (!(S.permisos && S.permisos.editar)) $$('#btnNuevo, #btnNuevo2').forEach(b => { b.hidden = true; });
   if (!(S.permisos && S.permisos.lugares)) $$('#btnEstructura').forEach(b => { b.hidden = true; });
+  { const bc = document.getElementById('btnNuevoComp'); if (bc) bc.hidden = !(S.permisos && S.permisos.comp); }
 }
+/* Ubicaciones: cambiar el tipo de un lugar en su misma fila; se guarda como
+   cualquier cambio de la planta (SYNC manda GuardarLugar) y se puede deshacer. */
+document.addEventListener('change', e => {
+  const s = e.target.closest && e.target.closest('[data-ubtipo]'); if (!s || !S) return;
+  const id = s.dataset.ubtipo, l = S.lugares[id]; if (!l || l.tipo === s.value) return;
+  const t = s.value;
+  commit(() => { S.lugares[id].tipo = t; }, `${l.nombre} ahora es ${tipoL(t).s.toLowerCase()}`);
+  renderUb();
+});
 iniciar();
 /* El centro y la lista comparten pagina: al volver a la lista por un postback parcial, se dibuja de nuevo. */
 window.addEventListener('load', () => { if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(() => { view = 'tarjetas'; iniciar(); }); });

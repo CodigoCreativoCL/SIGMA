@@ -280,7 +280,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         litLista.Text = s.ToString();
         litVistaActivos.Text = lista.Count.ToString();
-        ListaComponentes(ordenada, arbol);
+        /* La pestaña Componentes la dibuja el navegador con los datos de la planta
+           (sigma-planta.js, SIGMA.compLista): armarla aca era recorrer todos los
+           componentes del cliente en cada carga. */
 
         litListaTodos.Text = lista.Count.ToString();
         litListaAtencion.Text = atencion.ToString();
@@ -2439,7 +2441,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     protected void lnkEsGuardarComp_Click(object sender, EventArgs e)
     {
         hdnSeccion.Value = "componentes";
-        int activo = ActivoSeleccionado();
+        /* Desde la pestaña Componentes de la planta el activo viene elegido en el formulario. */
+        int activo, elegido;
+        activo = int.TryParse(Request.Form["esc_activo"], out elegido) && elegido > 0 ? elegido : ActivoSeleccionado();
         try
         {
             if (!Token.Puede("CREAR EDITAR COMPONENTES")) throw new Exception("No tienes permiso para crear componentes.");
