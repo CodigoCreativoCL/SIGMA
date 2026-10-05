@@ -12,6 +12,7 @@
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-modal.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-fabricante.js") %>?vrs=2"></script>
     <style type="text/css">
         /* Tokens de la paleta SIGMA (CLAUDE.md). No se repiten hex sueltos. */
         .sg-rc {
@@ -62,7 +63,19 @@
         .rc-fotos { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
         .rc-foto { border: 1px solid var(--line); border-radius: 12px; overflow: hidden; background: var(--canvas); }
         .rc-foto img { width: 100%; height: 110px; object-fit: cover; display: block; }
-        .rc-foto .pie { padding: 6px 8px; font-size: 11px; color: var(--muted); }
+        .rc-foto .pie { display: flex; align-items: center; justify-content: space-between; gap: 6px;
+            min-height: 34px; padding: 6px 8px; font-size: 11px; color: var(--muted); }
+        .rc-foto-ver { position: relative; display: block; cursor: zoom-in; }
+        .rc-foto-zoom { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+            background: rgba(23, 34, 59, .35); color: #fff; font-size: 26px; opacity: 0; transition: opacity .15s; }
+        .rc-foto-ver:hover .rc-foto-zoom, .rc-foto-ver:focus .rc-foto-zoom { opacity: 1; }
+        .rc-chip-portada { padding: 2px 8px; border-radius: 999px; background: var(--sigma-purple-soft, #F2EFFF);
+            color: var(--sigma-purple, #6732F4); font-weight: 800; }
+        .rc-foto-acc { display: inline-flex; gap: 2px; }
+        .rc-foto-acc a, .rc-tabla a.link { display: inline-flex; width: 28px; height: 28px; align-items: center;
+            justify-content: center; border-radius: 8px; color: var(--muted); font-size: 16px; }
+        .rc-foto-acc a:hover, .rc-tabla a.link:hover { background: var(--sigma-blue-soft, #EAF4FF); color: var(--sigma-blue, #087BEA); }
+        .rc-foto-acc a.es-peligro:hover, .rc-tabla a.link.es-peligro:hover { background: #FDECEA; color: #C7352B; }
 
         /* Miniatura del repuesto en la tarjeta y en el resumen. Una foto evita
            que en bodega entreguen el que no era. */
@@ -176,6 +189,54 @@
         .rc-resultado { font-size: 12px; color: var(--muted); margin: 0 0 10px; }
         .rc-cols { display: grid; grid-template-columns: 1fr 300px; gap: 16px; align-items: start; }
         @media (max-width: 1100px) { .rc-cols { grid-template-columns: 1fr; } }
+        /* Las pestañas bajan de línea en vez de desbordar la tarjeta (sin scroll horizontal). */
+        /* Ocho pestañas en una fila; si la pantalla no alcanza bajan de línea, nunca scroll horizontal. */
+        .sg-rc .sg-a3-nav { flex-wrap: wrap; }
+        .sg-rc a.sg-a3-tab, .sg-rc a.sg-a3-tab:hover, .sg-rc a.sg-a3-tab:focus { padding: 13px 13px; }
+
+        /* ---- Ficha: lectura y edición en el mismo lugar ---- */
+        .rc-ficha-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
+        .rc-ficha-cab h3 { margin: 0; }
+        .rc-ficha { display: grid; grid-template-columns: 180px 1fr; gap: 22px; align-items: start; }
+        .rc-ficha .rc-foto-grande { display: flex; align-items: center; justify-content: center; width: 180px; height: 180px;
+            border-radius: 14px; overflow: hidden; background: var(--canvas); border: 1px solid var(--line); color: #A0A8B8; font-size: 40px; }
+        .rc-ficha .rc-foto-grande img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .rc-ficha-desc { margin: 0 0 16px; font-size: 13.5px; color: var(--ink); line-height: 1.55; }
+        .rc-ficha-desc.es-vacia { color: var(--muted); font-style: italic; }
+        .rc-grupos { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
+        .rc-grupo { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+        .rc-grupo-tit { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 800; color: #4A556D;
+            text-transform: uppercase; letter-spacing: .4px; margin-bottom: 8px; }
+        .rc-grupo-tit i { color: var(--sigma-cyan-dark); font-size: 15px; }
+        .rc-fila { display: flex; justify-content: space-between; gap: 10px; padding: 6px 0; font-size: 13px; border-top: 1px dashed var(--line); }
+        .rc-grupo-tit + .rc-fila { border-top: 0; }
+        .rc-fila .k { color: var(--muted); }
+        .rc-fila .v { color: var(--ink); font-weight: 600; text-align: right; }
+        .rc-fila .v.es-vacio { color: #A0A8B8; font-weight: 500; }
+        .rc-chips-op { display: flex; flex-wrap: wrap; gap: 6px; }
+        .rc-chip-op { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
+        .rc-chip-op.es-si { background: var(--sigma-cyan-soft); color: var(--sigma-cyan-dark); }
+        .rc-chip-op.es-no { background: var(--canvas); color: var(--muted); }
+        @media (max-width: 860px) { .rc-ficha { grid-template-columns: 1fr; } }
+
+        .rc-form { display: grid; gap: 14px; }
+        .rc-form-sec { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; }
+        .rc-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px 16px; }
+        .rc-form-grid .es-ancho { grid-column: 1 / -1; }
+        .rc-campo label { display: block; margin: 0 0 5px; font-size: 11px; font-weight: 800; color: #4A556D; }
+        .rc-campo .form-control, .rc-campo textarea { width: 100%; border: 1px solid #CFD6E3; border-radius: 9px; padding: 8px 10px; font-size: 13px; color: var(--ink); }
+        .rc-campo textarea { min-height: 76px; resize: vertical; }
+        .rc-campo .form-control:focus, .rc-campo textarea:focus { outline: 3px solid rgba(22,198,201,.27); border-color: var(--sigma-cyan-dark); }
+        .rc-ayuda { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); }
+        .rc-campo .rc-fijo { padding: 8px 0; font-size: 13.5px; font-weight: 700; color: var(--ink); }
+        .rc-switch { display: flex; gap: 6px; }
+        .rc-switch label { margin: 0; font-weight: 400; }
+        .rc-switch input { position: absolute; opacity: 0; pointer-events: none; }
+        .rc-switch span { display: inline-block; padding: 6px 16px; border: 1px solid #CFD6E3; border-radius: 9px; font-size: 12.5px; font-weight: 700; color: var(--muted); cursor: pointer; }
+        .rc-switch input:checked + span { background: var(--sigma-purple-soft); border-color: var(--sigma-purple); color: var(--sigma-purple); }
+        .rc-form-pie { display: flex; justify-content: flex-end; gap: 10px; }
+        .sg-fab-aviso { margin-top: 6px; padding: 8px 10px; border-radius: 9px; background: var(--sigma-cyan-soft); color: var(--ink); font-size: 12px; }
+        .sg-fab-aviso i { color: var(--sigma-cyan-dark); }
     </style>
 
     <script type="text/javascript">
@@ -196,11 +257,70 @@
         /* Visor de las imagenes del repuesto. Las URL viajan en la tarjeta, asi
            que abrirlo no pide nada al servidor. */
         var rcFotos = [], rcPos = 0;
+        /* Eliminar o dejar de portada: confirma y lo resuelve el servidor. */
+        /* Fabricante y modelo en cascada (bloque 333), igual que la ficha modal:
+           el catálogo lo deja el servidor en #sgFabCatalogo. */
+        function sgCatalogo() { var c = document.getElementById('sgFabCatalogo'); return c ? JSON.parse(c.textContent || '[]') : []; }
+        function sgCombo(suf) { var el = document.querySelector('[id$="_' + suf + '"].RadComboBox'); return el ? $find(el.id) : null; }
+        function sgTexto(c) { if (!c) return ''; var t = c.get_text(); return (c.get_emptyMessage && t === c.get_emptyMessage()) ? '' : t; }
+        function sgFabricante() {
+            var f = sgCombo('cboFabricante'), k = f ? SigmaFabricante.clave(sgTexto(f)) : '';
+            return sgCatalogo().filter(function (x) { return SigmaFabricante.clave(x.nombre) === k; })[0] || null;
+        }
+        function sgFabCambio() {
+            var f = sgCombo('cboFabricante'), m = sgCombo('cboModelo');
+            if (!f || !m) return;
+            var fab = sgFabricante(), limpio = sgTexto(f).replace(/\s+/g, ' ').trim();
+            if (fab && sgTexto(f) !== fab.nombre) f.set_text(fab.nombre);
+            else if (!fab && limpio && sgTexto(f) !== limpio) f.set_text(limpio);
+            var antes = sgTexto(m);
+            m.trackChanges(); m.get_items().clear();
+            (fab ? fab.modelos : []).forEach(function (x) {
+                var it = new Telerik.Web.UI.RadComboBoxItem(); it.set_text(x); it.set_value(x); m.get_items().add(it);
+            });
+            m.commitChanges();
+            if (antes && !(fab && fab.modelos.some(function (x) { return SigmaFabricante.clave(x) === SigmaFabricante.clave(antes); }))
+                && sgFabCambio.previo && sgFabCambio.previo !== SigmaFabricante.clave(sgTexto(f))) { m.clearSelection(); m.set_text(''); }
+            sgFabCambio.previo = SigmaFabricante.clave(sgTexto(f));
+            sgModAvisar();
+        }
+        function sgModCanon() {
+            var m = sgCombo('cboModelo'), fab = sgFabricante();
+            if (!m) return;
+            var t = sgTexto(m).replace(/\s+/g, ' ').trim();
+            if (t && fab) fab.modelos.forEach(function (x) { if (SigmaFabricante.clave(x) === SigmaFabricante.clave(t)) t = x; });
+            if (t && sgTexto(m) !== t) m.set_text(t);
+            sgModAvisar();
+        }
+        function sgModAvisar() {
+            var a = document.getElementById('sgFabAviso'), f = sgCombo('cboFabricante'), m = sgCombo('cboModelo');
+            if (!a || !f || !m) return;
+            var fab = sgFabricante(), t = sgTexto(f).trim(), mt = sgTexto(m).trim(), h = '';
+            if (t && !fab) h = '<i class="mdi mdi-plus-circle-outline"></i> <b>' + t.replace(/</g, '&lt;') + '</b> es un fabricante nuevo: se agrega al catálogo al guardar.';
+            else if (fab && mt && !fab.modelos.some(function (x) { return SigmaFabricante.clave(x) === SigmaFabricante.clave(mt); }))
+                h = '<i class="mdi mdi-plus-circle-outline"></i> <b>' + mt.replace(/</g, '&lt;') + '</b> es un modelo nuevo de ' + fab.nombre + ': se agrega al guardar.';
+            a.innerHTML = h; a.hidden = !h;
+        }
+        function sgFabIniciar() { var f = sgCombo('cboFabricante'); if (!f) return; sgFabCambio.previo = SigmaFabricante.clave(sgTexto(f)); sgModAvisar(); }
+        window.addEventListener('load', function () {
+            setTimeout(sgFabIniciar, 0);
+            if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(function () { setTimeout(sgFabIniciar, 0); });
+        });
+
+        function rcAccion(accion, vinculo) {
+            var txt = accion === 'quitar' ? '¿Eliminar este archivo del repuesto? No se puede deshacer.'
+                                          : '¿Usar esta foto como portada del repuesto?';
+            if (!confirm(txt)) return false;
+            document.getElementById('<%=hdnAccion.ClientID %>').value = accion;
+            document.getElementById('<%=hdnVinculo.ClientID %>').value = vinculo;
+            __doPostBack('<%=lnkAccionArchivo.UniqueID %>', '');
+            return false;
+        }
         function rcVisor(el) {
-            event.stopPropagation();
+            if (window.event) window.event.stopPropagation();
             var d = (el.getAttribute('data-fotos') || '').split('|').filter(function (x) { return x; });
             if (!d.length) return false;
-            rcFotos = d; rcPos = 0;
+            rcFotos = d; rcPos = parseInt(el.getAttribute('data-pos') || '0', 10) || 0;
             document.getElementById('rcVisorTitulo').textContent = el.getAttribute('data-titulo') || '';
             rcPintar();
             document.getElementById('rcVisor').classList.add('es-abierto');
@@ -331,6 +451,9 @@
 
     <asp:HiddenField ID="hdnRepuesto" runat="server" Value="0" />
     <asp:HiddenField ID="hdnSeccion" runat="server" Value="resumen" />
+    <asp:HiddenField ID="hdnAccion" runat="server" />
+    <asp:HiddenField ID="hdnVinculo" runat="server" />
+    <asp:LinkButton ID="lnkAccionArchivo" runat="server" OnClick="lnkAccionArchivo_Click" style="display:none" CausesValidation="false" />
     <asp:LinkButton ID="lnkRecargar" runat="server" OnClick="lnkRecargar_Click" style="display:none" CausesValidation="false" />
 
     <asp:UpdatePanel ID="upCentro" runat="server" UpdateMode="Always">
@@ -467,7 +590,7 @@
                         <%-- El mapa en otra pestana: quien esta en la ficha no pierde lo que miraba. --%>
                         <asp:HyperLink ID="hlMapa" runat="server" CssClass="sg-ot-btn es-contorno" Target="_blank" Visible="false">
                             <i class="mdi mdi-cube-scan"></i>Ver en el mapa 3D</asp:HyperLink>
-                        <asp:LinkButton ID="lnkEditar" runat="server" CssClass="sg-ot-btn es-primario" CausesValidation="false">
+                        <asp:LinkButton ID="lnkEditar" runat="server" CssClass="sg-ot-btn es-primario" CausesValidation="false" OnClick="lnkEditar_Click">
                             <i class="mdi mdi-pencil-outline"></i>Editar</asp:LinkButton>
                     </div>
                 </header>
@@ -477,7 +600,7 @@
                 </div>
 
                 <nav class="sg-a3-nav">
-                    <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-view-dashboard-outline"></i>Resumen</a>
+                    <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
                     <a href="#" class="sg-a3-tab" data-sec="compatibilidades"><i class="mdi mdi-puzzle-outline"></i>Compatibilidades</a>
                     <a href="#" class="sg-a3-tab" data-sec="existencias"><i class="mdi mdi-warehouse"></i>Existencias</a>
                     <a href="#" class="sg-a3-tab" data-sec="posiciones"><i class="mdi mdi-map-marker-outline"></i>Posiciones</a>
@@ -487,13 +610,174 @@
                     <a href="#" class="sg-a3-tab" data-sec="evidencia"><i class="mdi mdi-image-multiple-outline"></i>Evidencia y documentos</a>
                 </nav>
 
+                <%-- FICHA. Una sola pestaña para leer y editar el repuesto: Editar no abre
+                     un modal, vuelve editables los mismos datos aquí. Los umbrales de
+                     stock viven en Existencias, por eso no se repiten. --%>
                 <section class="sg-a3-panel" data-panel="resumen">
                     <div class="rc-card">
-                        <h3>Ficha del repuesto</h3>
-                        <div class="rc-resumen">
-                            <asp:Literal ID="litFotoResumen" runat="server" />
-                            <div class="rc-resumen-datos"><asp:Literal ID="litResumen" runat="server" /></div>
+                        <div class="rc-ficha-cab">
+                            <h3><asp:Literal ID="litFichaTitulo" runat="server" Text="Ficha del repuesto" /></h3>
                         </div>
+
+                        <asp:Panel ID="pnlFichaVer" runat="server" CssClass="rc-ficha">
+                            <asp:Literal ID="litFotoResumen" runat="server" />
+                            <div><asp:Literal ID="litResumen" runat="server" /></div>
+                        </asp:Panel>
+
+                        <asp:Panel ID="pnlFichaEditar" runat="server" Visible="false" CssClass="rc-form">
+                            <div class="rc-form-sec">
+                                <div class="rc-grupo-tit"><i class="mdi mdi-tag-outline"></i>Identificación</div>
+                                <div class="rc-form-grid">
+                                    <div class="rc-campo">
+                                        <label>Código</label>
+                                        <div class="rc-fijo"><asp:Literal ID="litEdCodigo" runat="server" /></div>
+                                        <span class="rc-ayuda">No cambia: está impreso en su etiqueta.</span>
+                                    </div>
+                                    <div class="rc-campo" style="grid-column: span 2">
+                                        <label for="<%=txtEdNombre.ClientID %>">Nombre (*)</label>
+                                        <asp:TextBox ID="txtEdNombre" runat="server" CssClass="form-control" MaxLength="400" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Tipo de repuesto</label>
+                                        <rad:RadComboBox2 ID="cboEdTipo" runat="server" Width="100%" Filter="Contains" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Unidad de medida (*)</label>
+                                        <rad:RadComboBox2 ID="cboEdUnidad" runat="server" Width="100%" Filter="Contains" />
+                                        <span class="rc-ayuda">No se puede cambiar si tiene existencia.</span>
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Habilitado</label>
+                                        <div class="rc-switch">
+                                            <label><asp:RadioButton ID="rdbEdHabSi" runat="server" GroupName="EdHab" /><span>Sí</span></label>
+                                            <label><asp:RadioButton ID="rdbEdHabNo" runat="server" GroupName="EdHab" /><span>No</span></label>
+                                        </div>
+                                        <span class="rc-ayuda">No se da de baja con existencia en bodega.</span>
+                                    </div>
+                                    <div class="rc-campo es-ancho">
+                                        <label for="<%=txtEdDescripcion.ClientID %>">Descripción</label>
+                                        <asp:TextBox ID="txtEdDescripcion" runat="server" TextMode="MultiLine" MaxLength="1000" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rc-form-sec">
+                                <div class="rc-grupo-tit"><i class="mdi mdi-factory"></i>Fabricante y costo</div>
+                                <div class="rc-form-grid">
+                                    <div class="rc-campo">
+                                        <label>Fabricante</label>
+                                        <rad:RadComboBox2 ID="cboFabricante" runat="server" Width="100%" AllowCustomText="true"
+                                            Filter="Contains" MaxLength="400" EmptyMessage="Elija o escriba uno nuevo"
+                                            OnClientSelectedIndexChanged="sgFabCambio" OnClientBlur="sgFabCambio" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Modelo o código del fabricante</label>
+                                        <rad:RadComboBox2 ID="cboModelo" runat="server" Width="100%" AllowCustomText="true"
+                                            Filter="Contains" MaxLength="400" EmptyMessage="Primero el fabricante"
+                                            OnClientSelectedIndexChanged="sgModAvisar" OnClientBlur="sgModCanon" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdCosto.ClientID %>">Costo de referencia</label>
+                                        <asp:TextBox ID="txtEdCosto" runat="server" CssClass="form-control" MaxLength="14" />
+                                        <span class="rc-ayuda">Referencial: el costo real sale de cada ingreso.</span>
+                                    </div>
+                                    <div class="rc-campo es-ancho">
+                                        <div class="sg-fab-aviso" id="sgFabAviso" hidden></div>
+                                        <asp:Literal ID="litFabCatalogo" runat="server" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rc-form-sec">
+                                <div class="rc-grupo-tit"><i class="mdi mdi-cog-outline"></i>Cómo se opera</div>
+                                <div class="rc-form-grid">
+                                    <div class="rc-campo">
+                                        <label>Controla lote</label>
+                                        <div class="rc-switch">
+                                            <label><asp:RadioButton ID="rdbEdLoteSi" runat="server" GroupName="EdLote" /><span>Sí</span></label>
+                                            <label><asp:RadioButton ID="rdbEdLoteNo" runat="server" GroupName="EdLote" /><span>No</span></label>
+                                        </div>
+                                        <span class="rc-ayuda">El lote no se escribe aquí: al <strong>registrar un ingreso</strong> (pestaña Movimientos) se pide su código y vencimiento, y luego se ve en Existencias › Lotes.</span>
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Consumible</label>
+                                        <div class="rc-switch">
+                                            <label><asp:RadioButton ID="rdbEdConsSi" runat="server" GroupName="EdCons" /><span>Sí</span></label>
+                                            <label><asp:RadioButton ID="rdbEdConsNo" runat="server" GroupName="EdCons" /><span>No</span></label>
+                                        </div>
+                                        <span class="rc-ayuda">Se gasta y no vuelve a bodega.</span>
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label>Reparable</label>
+                                        <div class="rc-switch">
+                                            <label><asp:RadioButton ID="rdbEdRepSi" runat="server" GroupName="EdRep" /><span>Sí</span></label>
+                                            <label><asp:RadioButton ID="rdbEdRepNo" runat="server" GroupName="EdRep" /><span>No</span></label>
+                                        </div>
+                                        <span class="rc-ayuda">Sale, se repara y vuelve.</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="rc-form-sec">
+                                <div class="rc-grupo-tit"><i class="mdi mdi-timer-sand"></i>Vida útil declarada</div>
+                                <div class="rc-form-grid">
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdVidaHora.ClientID %>">Horas</label>
+                                        <asp:TextBox ID="txtEdVidaHora" runat="server" CssClass="form-control" MaxLength="12" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdVidaDia.ClientID %>">Días</label>
+                                        <asp:TextBox ID="txtEdVidaDia" runat="server" CssClass="form-control" MaxLength="8" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdVidaCiclo.ClientID %>">Ciclos</label>
+                                        <asp:TextBox ID="txtEdVidaCiclo" runat="server" CssClass="form-control" MaxLength="12" />
+                                    </div>
+                                </div>
+                                <span class="rc-ayuda">Lo que ocurra primero. Vacías si no se conocen.</span>
+                            </div>
+
+                            <div class="rc-form-sec">
+                                <div class="rc-grupo-tit"><i class="mdi mdi-warehouse"></i>Almacenamiento</div>
+                                <div class="rc-form-grid">
+                                    <div class="rc-campo">
+                                        <label>Método de salida</label>
+                                        <rad:RadComboBox2 ID="cboEdMetodo" runat="server" Width="100%">
+                                            <Items>
+                                                <rad:RadComboBoxItem Value="" Text="Según la bodega" />
+                                                <rad:RadComboBoxItem Value="FEFO" Text="FEFO · vence primero" />
+                                                <rad:RadComboBoxItem Value="FIFO" Text="FIFO · entró primero" />
+                                                <rad:RadComboBoxItem Value="LIFO" Text="LIFO · entró último" />
+                                            </Items>
+                                        </rad:RadComboBox2>
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdLargo.ClientID %>">Largo (cm)</label>
+                                        <asp:TextBox ID="txtEdLargo" runat="server" CssClass="form-control" MaxLength="9" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdAncho.ClientID %>">Ancho (cm)</label>
+                                        <asp:TextBox ID="txtEdAncho" runat="server" CssClass="form-control" MaxLength="9" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdAlto.ClientID %>">Alto (cm)</label>
+                                        <asp:TextBox ID="txtEdAlto" runat="server" CssClass="form-control" MaxLength="9" />
+                                    </div>
+                                    <div class="rc-campo">
+                                        <label for="<%=txtEdPeso.ClientID %>">Peso (kg)</label>
+                                        <asp:TextBox ID="txtEdPeso" runat="server" CssClass="form-control" MaxLength="10" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            <asp:Literal ID="litFichaAviso" runat="server" />
+                            <div class="rc-form-pie">
+                                <asp:LinkButton ID="lnkCancelarFicha" runat="server" CssClass="sg-ot-btn es-plano"
+                                    OnClick="lnkCancelarFicha_Click" CausesValidation="false"><i class="mdi mdi-close"></i>Cancelar</asp:LinkButton>
+                                <asp:LinkButton ID="lnkGuardarFicha" runat="server" CssClass="sg-ot-btn es-primario"
+                                    OnClick="lnkGuardarFicha_Click" CausesValidation="false"><i class="mdi mdi-content-save-outline"></i>Guardar</asp:LinkButton>
+                            </div>
+                        </asp:Panel>
                     </div>
                     <div class="rc-card">
                         <h3>Dónde está</h3>

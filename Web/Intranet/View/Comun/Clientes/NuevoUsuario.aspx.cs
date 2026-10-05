@@ -122,6 +122,8 @@ public partial class View_Comun_Clientes_NuevoUsuario : System.Web.UI.Page
                            de la propiedad Perfiles, que arrastraba perfiles
                            de sistema. */
                         perfil.tipo = "2";
+                        // Cada empresa ve sus propios perfiles (bloque 341), nunca los de otra.
+                        perfil.cliente = IdCliente > 0 ? IdCliente : SitioBase.Session.ClienteId();
                         ctrl.EmptyMessage = "Seleccione";
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
                         ctrl.DataValueField = "per_id";

@@ -180,6 +180,8 @@ public partial class View_Comun_Clientes_AsociarUsuario : System.Web.UI.Page
                            aqui. */
                         perfil.tipo = "2";
                         perfil.filtro_habilitado = "1";
+                        // Cada empresa ve sus propios perfiles (bloque 341), nunca los de otra.
+                        perfil.cliente = IdCliente > 0 ? IdCliente : SitioBase.Session.ClienteId();
 
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
                         ctrl.DataBind();

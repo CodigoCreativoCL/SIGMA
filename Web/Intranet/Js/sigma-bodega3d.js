@@ -98,7 +98,8 @@ try {
     throw e;
 }
 const escenaEl = document.getElementById('bm3dEscena');
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+// 1,5x y no 2x: en pantallas retina dibuja ~44% menos pixeles y a la distancia del rack no se nota
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.06;
@@ -1014,6 +1015,8 @@ function vigaHD(rack, si) {
     si ? S.vigasHD.add(rack) : S.vigasHD.delete(rack);
 }
 
+const CAJA_MIN = 0.22;            // ancho minimo de una caja en el rack (m)
+const MAT_LABIO = new Map();       // franja de color de la caja, compartida por color
 const GEO_CAJA = new Map();
 function geoCaja(w, h, d, carton) {
     const k = [w, h, d].map((v) => v.toFixed(3)).join('|') + carton;
@@ -1043,8 +1046,19 @@ function poblarRack(rack, info) {
     for (const it of items) { const a = fijas.get(it.id); if (a) { cols = Math.max(cols, a.p); if (a.f) filas = 2; } }
     rack.cols = cols; rack.filas = filas; rack.sobrecarga = [];
     if (!items.length) return;
-    const anchoSlot = (RACK.ancho - 0.14) / cols;
     const altoLibre = RACK.niveles[1] - RACK.niveles[0] - RACK.viga - 0.08;
+    /* Nivel atestado: con 30 posiciones el ancho dividido en partes iguales
+       dejaba laminas de 8 cm que no se leian como cajas. Una caja nunca baja
+       de CAJA_MIN de ancho: si las posiciones no caben en una hilera, se apilan
+       en capas de cajitas rectangulares (mas anchas que altas), como se
+       guardan de verdad. La posicion del planograma no cambia: la 1-12 es la
+       capa de abajo, la 13-24 la de encima, etc. */
+    const usable = RACK.ancho - 0.14;
+    const porCapa = Math.max(1, Math.min(cols, Math.floor(usable / CAJA_MIN)));
+    const capas = Math.ceil(cols / porCapa);
+    const anchoSlot = usable / porCapa;
+    const hCapa = capas > 1 ? Math.min((altoLibre - 0.015 * (capas - 1)) / capas, (anchoSlot - 0.04) * 0.62) : 0;
+    rack.capas = capas;
 
     // casilleros: primero los fijos, despues los libres repartidos parejo por nivel
     const ocupado = new Set(), lugar = new Map(), porNivelCuenta = new Array(niveles).fill(0);
@@ -1085,12 +1099,15 @@ function poblarRack(rack, info) {
         if (it.ancho) d = Math.max(0.08, Math.min(fondoMax, it.ancho / 100));
         if (it.alto) h = Math.max(0.05, Math.min(altoLibre, it.alto / 100));
         if (it.peso) kg[nivel] += it.peso * it.q;
-        const lx = -RACK.ancho / 2 + 0.07 + (col + 0.5) * anchoSlot;
-        const ly = RACK.niveles[nivel] + 0.006 + h / 2;
+        const vcol = col % porCapa, capa = Math.floor(col / porCapa);
+        if (capas > 1) { w = anchoSlot - 0.04; h = hCapa; }   // en capas, todas iguales para que apilen
+        const lx = -RACK.ancho / 2 + 0.07 + (vcol + 0.5) * anchoSlot;
+        const ly = RACK.niveles[nivel] + 0.006 + capa * (hCapa + 0.015) + h / 2;
         const frente = RACK.prof / 2 - 0.08 - d / 2;
         const lz = filas === 1 || fila === 0 ? frente : -RACK.prof / 2 + 0.08 + d / 2;
 
-        const caja = crearCaja(it, w, h, d);
+        const caja = crearCaja(it, w, h, d, capas > 1);
+        if (capas > 1) caja.castShadow = false;   // cientos de cajitas proyectando sombra no aportan y cuestan
         aRack(rack, caja, lx, ly, lz);
         Object.assign(caja.userData, { base: caja.position.clone(), normal: rack.normal.clone(), rack, nivel: nivel + 1, posicion: col + 1, fila, fija: L.fija });
         rack.cajas.push(caja); info.cajas.push(caja);
@@ -1131,7 +1148,7 @@ function poblarRecepcion(g, info, items, W, zIni) {
     info.recepcion = rack;
 }
 
-function crearCaja(it, w, h, d) {
+function crearCaja(it, w, h, d, chica) {
     const carton = !!it.pesado, fam = matFamilia(it.color);
     const mesh = new THREE.Mesh(geoCaja(w, h, d, carton), carton ? MAT.carton : fam.normal);
     mesh.castShadow = true; mesh.receiveShadow = true;
@@ -1142,11 +1159,13 @@ function crearCaja(it, w, h, d) {
     etq.position.set(0, carton ? 0 : -h * 0.06, d / 2 + 0.003);
     mesh.add(etq);
     mesh.userData.etiqueta = etq; mesh.userData.etqLejos = etq.material;
-    if (!carton) {
-        const lm = new THREE.MeshBasicMaterial({ color: new THREE.Color(it.color).lerp(new THREE.Color('#FFFFFF'), 0.35) });
-        const labio = new THREE.Mesh(geoEtiqueta(w * 0.98, h * 0.12), lm);
+    if (!carton && !chica) {   // la cajita apilada no lleva franja: un objeto menos que dibujar por caja
+        // un material por color, no uno por caja: con cientos de cajas eran cientos de materiales
+        if (!MAT_LABIO.has(it.color))
+            MAT_LABIO.set(it.color, new THREE.MeshBasicMaterial({ color: new THREE.Color(it.color).lerp(new THREE.Color('#FFFFFF'), 0.35) }));
+        const labio = new THREE.Mesh(geoEtiqueta(w * 0.98, h * 0.12), MAT_LABIO.get(it.color));
         labio.position.set(0, h / 2 - h * 0.08, d / 2 + 0.002);
-        mesh.add(labio); S.basura.push(lm);
+        mesh.add(labio);
     }
     S.cajas.push(mesh);
     return mesh;
@@ -2568,8 +2587,17 @@ function etiquetaFlotante(c) {
     el.className = 'bm3d-callout' + (e === 'bajo' ? ' es-bajo' : '');
     el.innerHTML = '<b>' + esc(it.c) + '</b><span>' + num(it.q) + ' ' + esc(it.un) + (e === 'bajo' ? ' · mín. ' + num(it.min) : '') + '</span>';
     callouts.appendChild(el);
-    S.tour.etiquetas.push({ el, c });
+    S.tour.etiquetas.push({ el, c, bajo: e === 'bajo' });
+    /* En un rack atestado, una etiqueta por caja tapaba todo. Quedan las de
+       bajo minimo y las ultimas MAX_FLOTANTES que paso la mirada. */
+    const comunes = S.tour.etiquetas.filter((x) => !x.bajo);
+    if (comunes.length > MAX_FLOTANTES) {
+        const fuera = comunes[0];
+        fuera.el.classList.add('es-sale'); setTimeout(() => fuera.el.remove(), 420);
+        S.tour.etiquetas.splice(S.tour.etiquetas.indexOf(fuera), 1);
+    }
 }
+const MAX_FLOTANTES = 8;
 function limpiarFlotantes(suaveSalida) {
     const T = S.tour; if (!T) return;
     for (const x of T.etiquetas) {
@@ -2578,14 +2606,25 @@ function limpiarFlotantes(suaveSalida) {
     T.etiquetas = [];
 }
 const _p = new THREE.Vector3();
+/* Sin superposicion: se ubican primero las de bajo minimo y despues las mas
+   recientes; la que choca con una ya puesta no se muestra en ese cuadro. El
+   tamano de la etiqueta se lee una vez (offsetWidth fuerza layout). */
 function moverFlotantes() {
     const T = S.tour, w = escenaEl.clientWidth, h = escenaEl.clientHeight;
-    for (const x of T.etiquetas) {
+    const orden = T.etiquetas.slice().reverse().sort((a, b) => (b.bajo ? 1 : 0) - (a.bajo ? 1 : 0));
+    const puestas = [];
+    for (const x of orden) {
         x.c.getWorldPosition(_p); _p.y += x.c.userData.h / 2 + 0.02;
         _p.project(camera);
-        const visible = _p.z < 1 && Math.abs(_p.x) < 1.1 && Math.abs(_p.y) < 1.1;
+        let visible = _p.z < 1 && Math.abs(_p.x) < 1.1 && Math.abs(_p.y) < 1.1;
+        if (visible) {
+            if (!x.ancho) { x.el.style.display = ''; x.ancho = x.el.offsetWidth || 90; x.alto = x.el.offsetHeight || 34; }
+            const px = (_p.x + 1) / 2 * w, py = (1 - _p.y) / 2 * h;
+            const r = { x0: px - x.ancho / 2, x1: px + x.ancho / 2, y0: py - x.alto, y1: py };
+            visible = !puestas.some((o) => r.x0 < o.x1 + 4 && r.x1 > o.x0 - 4 && r.y0 < o.y1 + 3 && r.y1 > o.y0 - 3);
+            if (visible) { puestas.push(r); x.el.style.transform = 'translate(' + px.toFixed(1) + 'px,' + py.toFixed(1) + 'px) translate(-50%,-100%)'; }
+        }
         x.el.style.display = visible ? '' : 'none';
-        if (visible) x.el.style.transform = 'translate(' + ((_p.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _p.y) / 2 * h).toFixed(1) + 'px) translate(-50%,-100%)';
     }
 }
 

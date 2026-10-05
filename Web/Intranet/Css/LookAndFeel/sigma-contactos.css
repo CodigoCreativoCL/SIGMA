@@ -58,21 +58,82 @@
 .sg-ct-req { color: #dc2626; font-weight: 700; }
 
 /* ---------------------------------------------------------------- formulario */
-.sg-ct-form {
-    background: #fbfaff;
-    border: 1px solid rgba(108, 92, 255, .22);
-    border-radius: 14px;
-    padding: 18px;
-    margin-bottom: 18px;
+/* ---------- Formulario como ventana hija (modal) ---------- */
+.sg-ct-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 1050;
+    background: rgba(11, 15, 26, .55);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 48px 16px;
+    overflow-y: auto;
 }
 
-.sg-ct-form-cab { font-size: 14px; font-weight: 700; color: #111827; margin-bottom: 14px; }
+.sg-ct-modal {
+    width: 100%;
+    max-width: 780px;
+    margin: auto;
+    background: #fff;
+    border-radius: 16px;
+    box-shadow: 0 24px 60px rgba(11, 15, 26, .38);
+    animation: sgCtModalIn .18s ease;
+}
 
-.sg-ct-form-pie {
+@keyframes sgCtModalIn {
+    from { opacity: 0; transform: translateY(-10px); }
+    to   { opacity: 1; transform: none; }
+}
+
+.sg-ct-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 24px;
+    border-bottom: 1px solid #eef0f4;
+}
+
+.sg-ct-modal-title { font-size: 16px; font-weight: 700; color: #17223B; }
+
+.sg-ct-modal-x {
+    border: none;
+    background: transparent;
+    color: #68738a;
+    font-size: 16px;
+    line-height: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color .12s ease, color .12s ease;
+}
+.sg-ct-modal-x:hover { background: #f1f2f6; color: #17223B; }
+
+.sg-ct-modal-body { padding: 22px 24px; }
+
+/* Ajustes del formulario dentro del modal de contactos
+   (acotados aquí para no tocar las fichas que comparten .sigma-modal-*). */
+.sg-ct-modal .sigma-modal-grid { gap: 26px 18px; }           /* espacio entre cada caja */
+.sg-ct-modal .sigma-modal-field { gap: 1px; }                /* el título, pegado a su caja */
+.sg-ct-modal .sigma-modal-field > label { height: auto; line-height: 1.2; margin: 0; }
+.sg-ct-modal .sigma-modal-ayuda { font-size: 10px; margin-top: 1px; }  /* el ejemplo, más pequeño */
+.sg-ct-modal .sg-ct-check { align-items: center; gap: 10px; margin-top: 2px; }  /* casilla alineada */
+.sg-ct-modal .sg-ct-check input { margin: 0; }
+
+.sg-ct-modal-pie {
     display: flex;
     justify-content: flex-end;
     gap: 10px;
-    margin-top: 16px;
+    padding: 16px 24px;
+    border-top: 1px solid #eef0f4;
+}
+
+@media (max-width: 560px) {
+    .sg-ct-overlay { padding: 20px 10px; }
+    .sg-ct-modal-pie { flex-direction: column-reverse; }
+    .sg-ct-modal-pie .sg-ct-btn { width: 100%; justify-content: center; }
 }
 
 .sg-ct-check { display: flex; align-items: flex-start; gap: 9px; cursor: pointer; }
@@ -134,8 +195,19 @@
     letter-spacing: .03em;
 }
 
+.sg-ct-num {
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 10.5px;
+    font-weight: 700;
+    letter-spacing: .02em;
+}
+
 .sg-ct-cargo { font-size: 11.5px; color: #9ca3af; }
 .sg-ct-vias { display: flex; flex-wrap: wrap; gap: 14px; margin-top: 3px; }
+.sg-ct-meta { display: block; margin-top: 4px; font-size: 11px; color: #9ca3af; }
 
 .sg-ct-vias a {
     display: inline-flex;

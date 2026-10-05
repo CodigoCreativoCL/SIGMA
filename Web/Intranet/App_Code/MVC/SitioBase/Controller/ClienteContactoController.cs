@@ -39,10 +39,16 @@ namespace SitioBase.Controller
 
                         c.ccn_id = int.Parse(dr["ccn_id"].ToString());
                         c.ccn_cliente = int.Parse(dr["ccn_cliente"].ToString());
+                        if (dr["ccn_numero"] != DBNull.Value)
+                            c.ccn_numero = int.Parse(dr["ccn_numero"].ToString());
                         c.ccn_nombre = dr["ccn_nombre"].ToString();
                         c.ccn_cargo = dr["ccn_cargo"].ToString();
+                        c.ccn_empresa = dr["ccn_empresa"].ToString();
+                        c.ccn_rubro = dr["ccn_rubro"].ToString();
                         c.ccn_email = dr["ccn_email"].ToString();
                         c.ccn_telefono = dr["ccn_telefono"].ToString();
+                        c.ccn_direccion = dr["ccn_direccion"].ToString();
+                        c.ccn_notas = dr["ccn_notas"].ToString();
                         c.ccn_principal = Convert.ToBoolean(dr["ccn_principal"]);
                         c.ccn_habilitado = Convert.ToBoolean(dr["ccn_habilitado"]);
 
@@ -103,8 +109,12 @@ namespace SitioBase.Controller
                 cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
                 cmd.Parameters.AddWithValue("@NOMBRE", entidad.ccn_nombre);
                 cmd.Parameters.AddWithValue("@CARGO", (object)entidad.ccn_cargo ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@EMPRESA", (object)entidad.ccn_empresa ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@RUBRO", (object)entidad.ccn_rubro ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@EMAIL", (object)entidad.ccn_email ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@TELEFONO", (object)entidad.ccn_telefono ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@DIRECCION", (object)entidad.ccn_direccion ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@NOTAS", (object)entidad.ccn_notas ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@PRINCIPAL", entidad.ccn_principal);
                 cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
 
@@ -147,8 +157,12 @@ namespace SitioBase.Controller
                 cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
                 cmd.Parameters.AddWithValue("@NOMBRE", (object)entidad.ccn_nombre ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@CARGO", (object)entidad.ccn_cargo ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@EMPRESA", (object)entidad.ccn_empresa ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@RUBRO", (object)entidad.ccn_rubro ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@EMAIL", (object)entidad.ccn_email ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@TELEFONO", (object)entidad.ccn_telefono ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@DIRECCION", (object)entidad.ccn_direccion ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@NOTAS", (object)entidad.ccn_notas ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@PRINCIPAL", entidad.ccn_principal);
                 cmd.Parameters.AddWithValue("@HABILITADO", entidad.ccn_habilitado);
                 cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());

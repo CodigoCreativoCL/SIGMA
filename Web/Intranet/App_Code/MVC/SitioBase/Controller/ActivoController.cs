@@ -363,6 +363,38 @@ namespace SitioBase.Controller
             return (lista != null && lista.Count > 0) ? lista[0] : new ActivoTipo();
         }
 
+        /// <summary>
+        /// Tipo y modelo escritos en la ficha del activo (bloque 342): si vienen
+        /// con id se respetan; si viene solo el texto se buscan por nombre y, si
+        /// no existen, se crean. Una llamada. Devuelve el error como texto.
+        /// </summary>
+        public string ResolverCatalogo(ref int tipo, string tipoTexto, ref int modelo, string modeloTexto, string fabricante)
+        {
+            if (!Token.TokenSeguridad()) return "La sesion no es valida o expiro. Vuelva a entrar.";
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("UPS_ACTIVO_CATALOGO");
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@TIPO", tipo).Direction = System.Data.ParameterDirection.InputOutput;
+                cmd.Parameters.AddWithValue("@TIPO_TEXTO", (object)tipoTexto ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@MODELO", modelo).Direction = System.Data.ParameterDirection.InputOutput;
+                cmd.Parameters.AddWithValue("@MODELO_TEXTO", (object)modeloTexto ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@FABRICANTE", (object)fabricante ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+                tipo = cmd.Parameters["@TIPO"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@TIPO"].Value;
+                modelo = cmd.Parameters["@MODELO"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@MODELO"].Value;
+                return null;
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                return ex.Message;
+            }
+        }
+
         public Respuesta InsertActivoTipo(ActivoTipo entidad)
         {
             Respuesta respuesta = new Respuesta();

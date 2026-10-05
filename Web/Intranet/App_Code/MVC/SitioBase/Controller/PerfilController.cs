@@ -19,6 +19,7 @@ namespace SitioBase.Controller
                 if (!string.IsNullOrEmpty(perfil.filtro_habilitado)) cmd.Parameters.AddWithValue("@HABILITADO", perfil.filtro_habilitado);
                 if (!string.IsNullOrEmpty(perfil.tipo)) cmd.Parameters.AddWithValue("@TIPO", perfil.tipo);
                 if (!string.IsNullOrEmpty(perfil.Perfiles)) cmd.Parameters.AddWithValue("@PERFILES", perfil.Perfiles);
+                if (perfil.cliente > 0) cmd.Parameters.AddWithValue("@CLIENTE", perfil.cliente);
 
                 using (SqlDataReader dr = Conexion.GetDataReader(cmd))
                 {

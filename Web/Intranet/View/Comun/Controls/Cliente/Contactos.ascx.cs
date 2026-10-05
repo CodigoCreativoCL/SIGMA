@@ -50,7 +50,12 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
         bool hayCliente = IdCliente > 0;
 
         pnlSinCliente.Visible = !hayCliente;
-        btnNuevo.Visible = hayCliente && !ReadOnly && Token.PuedeFuncion("Crear y editar");
+        /* La edición se habilita con ReadOnly, igual que el resto de la ficha
+           (Identidad, Usuarios…). El permiso real ("Crear y editar") ya se
+           verificó en el listado que abrió esta ficha editable: ahí la función
+           está registrada; en la página de detalle no, y PuedeFuncion devolvía
+           siempre false, dejando el botón oculto a quien sí puede. */
+        btnNuevo.Visible = hayCliente && !ReadOnly;
 
         if (!hayCliente)
         {
@@ -70,9 +75,11 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
     public class Fila
     {
         public int Id { get; set; }
+        public string Numero { get; set; }
         public string Nombre { get; set; }
         public string Cargo { get; set; }
         public string Vias { get; set; }
+        public string Meta { get; set; }
         public string Iniciales { get; set; }
         public string Color { get; set; }
         public string Clase { get; set; }
@@ -103,9 +110,27 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
             Fila f = new Fila();
 
             f.Id = c.ccn_id;
+            f.Numero = c.NumeroTexto;
+
+            /* La función, y la empresa/rubro si los hay, en una línea. */
+            string cargo = c.ccn_cargo ?? "";
+            string emp = string.IsNullOrEmpty(c.ccn_empresa) ? "" : c.ccn_empresa
+                       + (string.IsNullOrEmpty(c.ccn_rubro) ? "" : " · " + c.ccn_rubro);
+            string cargoLinea = cargo;
+            if (!string.IsNullOrEmpty(emp))
+                cargoLinea = (cargo == "" ? "" : cargo + " — ") + emp;
+
             f.Nombre = Server.HtmlEncode(c.ccn_nombre ?? "");
-            f.Cargo = Server.HtmlEncode(c.ccn_cargo ?? "");
+            f.Cargo = Server.HtmlEncode(cargoLinea);
             f.Iniciales = Server.HtmlEncode(c.Iniciales);
+
+            /* "Ingresado 04-10-2026", con la dirección si está. */
+            string meta = "";
+            if (c.ccn_fecha_creacion.HasValue)
+                meta = "Ingresado " + c.ccn_fecha_creacion.Value.ToString("dd-MM-yyyy");
+            if (!string.IsNullOrEmpty(c.ccn_direccion))
+                meta += (meta == "" ? "" : "  ·  ") + Server.HtmlEncode(c.ccn_direccion);
+            f.Meta = meta;
             f.Color = ColorDe(c.ccn_id);
             f.Clase = c.ccn_principal ? "is-principal" : "";
 
@@ -144,7 +169,7 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
         if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
             return;
 
-        bool puede = !ReadOnly && Token.PuedeFuncion("Crear y editar");
+        bool puede = !ReadOnly;
 
         LinkButton editar = e.Item.FindControl("btnEditar") as LinkButton;
         LinkButton borrar = e.Item.FindControl("btnEliminar") as LinkButton;
@@ -171,7 +196,7 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
         int id;
         if (!int.TryParse(e.CommandArgument.ToString(), out id)) return;
 
-        if (!Token.PuedeFuncion("Crear y editar")) return;
+        if (ReadOnly) return;
 
         if (e.CommandName == "Editar")
         {
@@ -207,8 +232,12 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
 
         txtNombre.Text = "";
         txtCargo.Text = "";
+        txtEmpresa.Text = "";
+        txtRubro.Text = "";
         txtEmail.Text = "";
         txtTelefono.Text = "";
+        txtDireccion.Text = "";
+        txtNotas.Text = "";
         chkPrincipal.Checked = false;
 
         if (id <= 0) return;
@@ -230,8 +259,12 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
 
         txtNombre.Text = c.ccn_nombre;
         txtCargo.Text = c.ccn_cargo;
+        txtEmpresa.Text = c.ccn_empresa;
+        txtRubro.Text = c.ccn_rubro;
         txtEmail.Text = c.ccn_email;
         txtTelefono.Text = c.ccn_telefono;
+        txtDireccion.Text = c.ccn_direccion;
+        txtNotas.Text = c.ccn_notas;
         chkPrincipal.Checked = c.ccn_principal;
     }
 
@@ -240,8 +273,10 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
         try
         {
             /* Esconder el botón en PreRender no es seguridad: quien manda el
-               postback a mano se lo salta. */
-            if (!Token.PuedeFuncion("Crear y editar"))
+               postback a mano se lo salta. ReadOnly viene del query cifrado que
+               arma el listado, y solo es False para quien allí pudo abrir la
+               ficha en modo edición (donde sí se validó "Crear y editar"). */
+            if (ReadOnly)
                 throw new Exception("No tiene permiso para editar los contactos del cliente.");
 
             if (IdCliente <= 0)
@@ -253,8 +288,12 @@ public partial class View_Comun_Controls_Cliente_Contactos : System.Web.UI.UserC
             c.ccn_cliente = IdCliente;
             c.ccn_nombre = txtNombre.Text.Trim();
             c.ccn_cargo = txtCargo.Text.Trim();
+            c.ccn_empresa = txtEmpresa.Text.Trim();
+            c.ccn_rubro = txtRubro.Text.Trim();
             c.ccn_email = txtEmail.Text.Trim();
             c.ccn_telefono = txtTelefono.Text.Trim();
+            c.ccn_direccion = txtDireccion.Text.Trim();
+            c.ccn_notas = txtNotas.Text.Trim();
             c.ccn_principal = chkPrincipal.Checked;
             c.ccn_habilitado = true;
 

@@ -433,7 +433,9 @@
 
         /* Guardar y Cancelar hacen postback: lo que venia sin guardar deja de
            estarlo en cuanto se van al servidor. */
-        var acciones = panel.querySelectorAll('.sg-a3-ficha-pie input, .sg-a3-ficha-pie button');
+        /* Solo Guardar y Cancelar: Anterior y Siguiente cambian de paso sin
+           ir al servidor, y lo escrito sigue sin guardar. */
+        var acciones = panel.querySelectorAll('.af-pie input[type="submit"]');
         for (var i = 0; i < acciones.length; i++)
             acciones[i].addEventListener('click', function () { limpiar(); });
 
