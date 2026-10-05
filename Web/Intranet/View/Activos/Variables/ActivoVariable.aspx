@@ -22,7 +22,7 @@
     <asp:UpdatePanel runat="server" ID="udPanel" UpdateMode="Conditional">
         <ContentTemplate>
 
-    <h1 class="sigma-modal-title">Variable de condición del equipo</h1>
+    <h1 class="sigma-modal-title">Variable de condición del activo</h1>
 
     <div class="sigma-form-seccion">
         <div class="titulo"><i class="mdi mdi-thermometer-lines"></i>Qué se mide y dónde</div>
@@ -32,7 +32,7 @@
                 <asp:Label ID="lblId" runat="server"></asp:Label>
             </div>
             <div class="sigma-modal-field is-medio">
-                <label>Equipo(*)</label>
+                <label>Activo(*)</label>
                 <rad:RadComboBox2 ID="cboActivo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
                     OnSelectedIndexChanged="cboActivo_SelectedIndexChanged" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvActivo" runat="server" ControlToValidate="cboActivo"
@@ -42,7 +42,7 @@
             <div class="sigma-modal-field is-medio">
                 <label>Componente</label>
                 <rad:RadComboBox2 ID="cboComponente" runat="server" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">Vacío: se mide en el equipo completo.</span>
+                <span class="sigma-modal-ayuda">Vacío: se mide en el activo completo.</span>
             </div>
             <div class="sigma-modal-field is-medio">
                 <label>Variable(*)</label>

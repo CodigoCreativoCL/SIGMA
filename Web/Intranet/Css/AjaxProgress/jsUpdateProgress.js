@@ -18,6 +18,12 @@ var esperaModal = null;
 function beginReq(sender, args) {
     clearTimeout(esperaModal);
 
+    /* SIN VELO EN LAS PANTALLAS QUE SE SIENTEN COMO UNA APLICACION
+       El modulo de activos (centro, fichas y sus pestañas) cambia de
+       pestaña y de vista sin recargar: un velo de pantalla completa lo hace
+       ver pegado. La pagina lo apaga con window.SIGMA_SIN_VELO = true. */
+    if (window.SIGMA_SIN_VELO) return;
+
     esperaModal = setTimeout(function () {
         $find(ModalProgress).show();
 

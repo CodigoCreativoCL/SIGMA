@@ -28,7 +28,7 @@
         <div class="sigma-modal-grid">
 
             <div class="sigma-modal-field is-medio">
-                <label>Equipo</label>
+                <label>Activo</label>
                 <asp:Label ID="lblActivo" runat="server" CssClass="sigma-modal-lectura" />
             </div>
 

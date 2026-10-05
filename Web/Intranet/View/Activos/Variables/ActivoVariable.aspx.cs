@@ -90,7 +90,7 @@ public partial class View_Activos_Variables_ActivoVariable : System.Web.UI.Page
     {
         string sel = string.IsNullOrEmpty(_componenteEditar) ? cboComponente.SelectedValue : _componenteEditar;
         cboComponente.Items.Clear();
-        cboComponente.Items.Add(new RadComboBoxItem("Equipo completo", ""));
+        cboComponente.Items.Add(new RadComboBoxItem("Activo completo", ""));
 
         int activo;
         if (int.TryParse(cboActivo.SelectedValue, out activo) && activo > 0)

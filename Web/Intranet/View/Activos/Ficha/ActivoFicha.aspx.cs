@@ -36,6 +36,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        /* «Guardar componente» del asistente sube la foto en el mismo envio:
+           un postback asincrono del UpdatePanel no manda archivos, asi que ese
+           boton va con postback completo y el formulario declara multipart. */
+        Page.Form.Enctype = "multipart/form-data";
+        ScriptManager sm = ScriptManager.GetCurrent(Page);
+        if (sm != null) sm.RegisterPostBackControl(lnkEsGuardarComp);
+
         if (!IsPostBack)
         {
             /* El centro se puede abrir apuntando a UN equipo: es lo que hacen
@@ -85,6 +92,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
            guardar con CREAR EDITAR ACTIVOS: quien no lo tiene (p. ej. Bodeguero)
            abria una ficha bloqueada y sin boton Guardar. */
         lnkNuevoActivo.Visible = lnkCargaMasiva.Visible;
+        pnlCrear.Visible = lnkCargaMasiva.Visible || Token.Puede("CREAR EDITAR COMPONENTES");
 
         udPanel.Update();
     }
@@ -145,10 +153,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         List<Activo> lista = FiltrarActivos();
 
         litTitulo.Text = "Centro de activos 360°";
-        litSubtitulo.Text = "Historial, mantenimiento y condición de tus equipos.";
+        litSubtitulo.Text = "Historial, mantenimiento y condición de tus activos.";
 
-        pnlLista.Visible = lista.Count > 0;
-        pnlSinActivo.Visible = lista.Count == 0;
+        /* La planta sin activos tambien se muestra: sus estados vacios (A3) los
+           dibuja Js/sigma-planta.js con su invitacion a crear el primero. */
+        pnlLista.Visible = true;
+        pnlSinActivo.Visible = false;
 
         if (lista.Count == 0) return;
 
@@ -259,8 +269,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
              .Append("<span class=\"c-acc\">")
              .Append(PopoverAgenda(a, agenda))
-             .Append("<a class=\"sg-ot-btn es-accion\" href=\"javascript:void(0)\" data-abrir-act=\"")
-             .Append(a.act_id).Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a>")
+             .Append("<a class=\"sg-ot-btn es-accion\" href=\"").Append(UrlRegistro("~/View/Activos/Ficha/ActivoFicha.aspx", a.act_id))
+             .Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a>")
              .Append("</span>")
 
              .Append(PopoverOrdenes(a, ordenes))
@@ -270,8 +280,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         litLista.Text = s.ToString();
         litVistaActivos.Text = lista.Count.ToString();
-        ListaComponentes(ordenada, arbol);
-        ListaCatalogos();
+        /* La pestaña Componentes la dibuja el navegador con los datos de la planta
+           (sigma-planta.js, SIGMA.compLista): armarla aca era recorrer todos los
+           componentes del cliente en cada carga. */
 
         litListaTodos.Text = lista.Count.ToString();
         litListaAtencion.Text = atencion.ToString();
@@ -299,17 +310,18 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                                         ?? new List<ActivoComponente>()).Where(c => c.aco_habilitado).ToList();
         litVistaComp.Text = todos.Count.ToString();
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
-        string barra = BarraVista("Las partes de cada activo: motor, rodamiento, válvula. Agrupadas por el activo del que son parte.",
-                                  "componente", "Nuevo componente", puedeEditar);
 
         if (todos.Count == 0)
         {
-            litListaComp.Text = barra + "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i><p>Todavía no hay componentes</p>" +
-                                "<span>Agrégalos desde el asistente de cada activo (paso «Componentes») o con «Nuevo componente».</span></div>";
+            litListaComp.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i><p>Todavía no hay componentes</p>" +
+                                "<span>Agrégalos desde el asistente de cada activo (paso «Componentes») o con «Crear › Componente».</span></div>";
             return;
         }
 
         Dictionary<int, string> nombres = ordenada.ToDictionary(a => a.act_id, a => Texto(a.act_nombre));
+        /* La portada de cada activo y la foto de cada componente, en una sola consulta. */
+        _fotosLista = new ActivoImagenController().GetImagenesLista(_cliente);
+        _motivos = new ActivoComponenteController().GetUltimosMotivos();
         StringBuilder s = new StringBuilder("<div class=\"sg-lc-cabcol\"><span></span><span>Componente</span><span>Qué es · Dónde va</span><span>Estado</span><span>Instalado</span><span></span></div>");
         foreach (Activo a in ordenada)
         {
@@ -321,10 +333,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             string padre = esSub && nombres.ContainsKey(a.act_activo_padre.Value) ? nombres[a.act_activo_padre.Value] : "";
 
             s.Append("<section class=\"sg-lc-grupo\" data-txt=\"").Append(Server.HtmlEncode((Texto(a.act_nombre) + " " + Texto(a.act_codigo) + " " + padre).ToLower())).Append("\">")
-             .Append("<header class=\"sg-lc-cab ").Append(esSub ? "es-sub" : "es-activo").Append("\"><span class=\"ico\"><i class=\"mdi ").Append(esSub ? "mdi-cogs" : "mdi-cog-outline").Append("\"></i></span>")
+             .Append("<header class=\"sg-lc-cab ").Append(esSub ? "es-sub" : "es-activo").Append("\">").Append(FotoLista("A", a.act_id, esSub ? "mdi-cogs" : "mdi-cog-outline", "ico"))
              .Append("<div><b>").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("<span class=\"sg-es-etq ").Append(esSub ? "es-sub\">Subactivo" : "es-activo\">Activo").Append("</span></b>")
              .Append("<small>").Append(Server.HtmlEncode(Texto(a.act_codigo) + (padre != "" ? " · Depende de " + padre : "") + (donde != "" ? " · " + donde : ""))).Append("</small></div>")
-             .Append("<span class=\"der\"><a class=\"sg-ot-btn es-contorno\" href=\"javascript:void(0)\" data-abrir-act=\"").Append(a.act_id).Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a></span></header>");
+             .Append("<span class=\"der\"><a class=\"sg-ot-btn es-contorno\" href=\"").Append(UrlRegistro("~/View/Activos/Ficha/ActivoFicha.aspx", a.act_id)).Append("\">Abrir 360°<i class=\"mdi mdi-arrow-right\"></i></a></span></header>");
 
             foreach (ActivoComponente c in suyos.Where(c => c.aco_componente_padre == null || !suyos.Any(x => x.aco_id == c.aco_componente_padre)).OrderBy(c => c.aco_nombre))
             {
@@ -334,127 +346,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             }
             s.Append("</section>");
         }
-        litListaComp.Text = barra + s.ToString();
+        litListaComp.Text = s.ToString();
     }
 
-    /// <summary>
-    /// Las pestañas de catálogo del listado: variables, medidores, tipos y
-    /// modelos. Antes vivían escondidas en el menú «Crear», que solo dejaba
-    /// crear: no se veía lo que ya existía ni se podía editar sin salir del
-    /// centro. Cada pestaña muestra lo creado, con su «Editar» y su «Nuevo».
-    /// </summary>
-    private void ListaCatalogos()
+    private Dictionary<string, int> _fotosLista = new Dictionary<string, int>();
+    private Dictionary<int, string> _motivos;
+
+    /// <summary>La observacion vigente del componente si no esta operativo (bloque 356).</summary>
+    private string Observacion(int componente, string tono)
     {
-        bool puede = Token.Puede("CREAR EDITAR ACTIVOS") || Token.Puede("CREAR EDITAR COMPONENTES");
-        int cliente = SitioBase.Session.ClienteId();
-
-        /* ---- variables de condicion ---- */
-        List<ActivoVariable> vars = (new ActivoVariableController().GetVariables(new ActivoVariable { filtro_habilitado = true })
-                                     ?? new List<ActivoVariable>()).OrderBy(v => v.activo_nombre).ThenBy(v => v.variable_nombre).ToList();
-        litVistaVar.Text = vars.Count.ToString();
-        StringBuilder s = new StringBuilder(BarraVista("Lo que se mide para saber cómo está un activo: temperatura, presión, vibración.", "variable", "Nueva variable", puede));
-        if (vars.Count == 0) s.Append(VacioVista("mdi-pulse", "Todavía no hay variables de condición"));
-        else
-        {
-            s.Append(CabVista("Variable", "Activo · Componente", "Rango"));
-            foreach (ActivoVariable v in vars)
-            {
-                string rango = v.ava_valor_minimo == null && v.ava_valor_maximo == null ? "Sin rango"
-                             : (v.ava_valor_minimo == null ? "—" : v.ava_valor_minimo.Value.ToString("0.##")) + " a " +
-                               (v.ava_valor_maximo == null ? "—" : v.ava_valor_maximo.Value.ToString("0.##")) + " " + Texto(v.unidad_simbolo);
-                string sub = v.mediciones + (v.mediciones == 1 ? " medición" : " mediciones") +
-                             (v.ava_frecuencia_esperada_hora == null ? "" : " · cada " + v.ava_frecuencia_esperada_hora + " h");
-                string donde = string.Join(" · ", new[] { Texto(v.activo_nombre), Texto(v.componente_nombre) }.Where(x => x != "").ToArray());
-                s.Append(FilaVista("mdi-pulse", "es-comp", Texto(v.variable_nombre), sub, donde, Server.HtmlEncode(rango),
-                                   "variable", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id)), puede, 0));
-            }
-        }
-        litListaVar.Text = s.ToString();
-
-        /* ---- medidores ---- */
-        List<ActivoMedidor> meds = (new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor { ame_cliente = cliente, filtro_habilitado = true })
-                                    ?? new List<ActivoMedidor>()).OrderBy(m => m.activo_nombre).ThenBy(m => m.ame_nombre).ToList();
-        litVistaMed.Text = meds.Count.ToString();
-        s = new StringBuilder(BarraVista("Lo que cuenta cuánto trabajó un activo: horas de marcha, ciclos, kilómetros.", "medidor", "Nuevo medidor", puede));
-        if (meds.Count == 0) s.Append(VacioVista("mdi-counter", "Todavía no hay medidores"));
-        else
-        {
-            s.Append(CabVista("Medidor", "Activo", "Valor actual"));
-            foreach (ActivoMedidor m in meds)
-                s.Append(FilaVista("mdi-counter", "es-comp", Texto(m.ame_nombre), Texto(m.ame_codigo), Texto(m.activo_nombre),
-                                   "<b>" + m.ame_valor_actual.ToString("#,0.##") + "</b> " + Server.HtmlEncode(Texto(m.unidad_simbolo)),
-                                   "medidor", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + m.ame_id)), puede, 0));
-        }
-        litListaMed.Text = s.ToString();
-
-        /* ---- tipos de activo (vienen en orden de arbol, con su nivel) ---- */
-        List<ActivoTipo> tipos = new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = cliente, filtro_habilitado = true })
-                                 ?? new List<ActivoTipo>();
-        litVistaTipo.Text = tipos.Count.ToString();
-        s = new StringBuilder(BarraVista("Cómo se agrupan los activos: Cámaras de frío, Hornos, Bombas. Un tipo puede depender de otro.", "tipo", "Nuevo tipo", puede));
-        if (tipos.Count == 0) s.Append(VacioVista("mdi-shape-outline", "Todavía no hay tipos de activo"));
-        else
-        {
-            s.Append(CabVista("Tipo de activo", "Depende de", "Ámbito"));
-            foreach (ActivoTipo t in tipos)
-                s.Append(FilaVista("mdi-shape-outline", "es-cat", Texto(t.ati_nombre), Texto(t.ati_codigo), Texto(t.padre_nombre),
-                                   ChipAmbito(t.es_global), "tipo", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + t.ati_id)), puede, Math.Max(0, t.nivel - 1)));
-        }
-        litListaTipo.Text = s.ToString();
-
-        /* ---- modelos (los globales de la plataforma no se editan aca) ---- */
-        List<ActivoModelo> mods = (new ActivoModeloController().GetModelos(new ActivoModelo { filtro_cliente = cliente, filtro_habilitado = true })
-                                   ?? new List<ActivoModelo>()).OrderBy(m => m.amo_fabricante).ThenBy(m => m.amo_nombre).ToList();
-        litVistaMod.Text = mods.Count.ToString();
-        s = new StringBuilder(BarraVista("Fabricante y modelo de cada equipo, para no escribirlos de nuevo en cada activo.", "modelo", "Nuevo modelo", puede));
-        if (mods.Count == 0) s.Append(VacioVista("mdi-tag-outline", "Todavía no hay modelos"));
-        else
-        {
-            s.Append(CabVista("Modelo", "Tipo de activo", "Origen"));
-            foreach (ActivoModelo m in mods)
-                s.Append(FilaVista("mdi-tag-outline", "es-cat", Texto(m.amo_nombre), Texto(m.amo_fabricante), Texto(m.tipo_nombre),
-                                   ChipAmbito(m.es_global), "modelo", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + m.amo_id)), puede && !m.es_global, 0));
-        }
-        litListaMod.Text = s.ToString();
+        if (tono == "ok") return null;
+        if (_motivos == null) _motivos = new ActivoComponenteController().GetUltimosMotivos();
+        string m;
+        return _motivos.TryGetValue(componente, out m) && !string.IsNullOrWhiteSpace(m) ? m.Trim() : null;
     }
 
-    /// <summary>La franja de cada pestaña: qué es y el botón para crear uno.</summary>
-    private static string BarraVista(string texto, string que, string boton, bool puede)
+    /// <summary>La foto del activo («A») o del componente («C»); sin foto, su icono.</summary>
+    private string FotoLista(string tipo, int id, string icono, string clase)
     {
-        return "<div class=\"sg-lcat-barra\"><p>" + texto + "</p>" +
-               (puede ? "<a class=\"sg-ot-btn es-secundario\" href=\"javascript:void(0)\" onclick=\"return crearDesdeLista('" + que + "');\"><i class=\"mdi mdi-plus\"></i>" + boton + "</a>" : "") +
-               "</div>";
-    }
-
-    private static string CabVista(string c1, string c2, string c3)
-    {
-        return "<div class=\"sg-lcat-cab\"><span></span><span>" + c1 + "</span><span>" + c2 + "</span><span>" + c3 + "</span><span></span></div>";
-    }
-
-    private static string VacioVista(string icono, string texto)
-    {
-        return "<div class=\"sg-ot-vacio\"><i class=\"mdi " + icono + "\"></i><p>" + texto + "</p><span>Créalo con el botón de arriba o desde el asistente del activo.</span></div>";
-    }
-
-    private static string ChipAmbito(bool global)
-    {
-        return global ? "<span class=\"sg-lcat-chip es-azul\">Global</span>" : "<span class=\"sg-lcat-chip es-morado\">Del cliente</span>";
-    }
-
-    /// <summary>Una fila de catálogo. `dato` ya viene en HTML; lo demás se codifica aca.</summary>
-    private string FilaVista(string icono, string tono, string nombre, string sub, string donde, string dato,
-                             string que, string query, bool puedeEditar, int sangria)
-    {
-        return "<div class=\"sg-lcat-fila\" data-txt=\"" + Server.HtmlEncode((nombre + " " + sub + " " + donde).ToLower()) + "\">" +
-               "<span class=\"sg-lcat-ico " + tono + "\"><i class=\"mdi " + icono + "\"></i></span>" +
-               "<span class=\"t\"" + (sangria > 0 ? " style=\"padding-left:" + (sangria * 22) + "px\"" : "") + "><b>" +
-               (sangria > 0 ? "<i class=\"mdi mdi-subdirectory-arrow-right\" style=\"color:#68738A\"></i> " : "") +
-               Server.HtmlEncode(nombre == "" ? "—" : nombre) + "</b><span>" + Server.HtmlEncode(sub) + "</span></span>" +
-               "<span class=\"d\">" + Server.HtmlEncode(donde == "" ? "—" : donde) + "</span>" +
-               "<span class=\"v\">" + dato + "</span>" +
-               "<span>" + (puedeEditar
-                    ? "<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"return crearDesdeLista('" + que + "', '" + query + "');\"><i class=\"mdi mdi-pencil-outline\"></i>Editar</a>"
-                    : "") + "</span></div>";
+        int arc;
+        if (_fotosLista.TryGetValue(tipo + id, out arc) && arc > 0)
+            return "<span class=\"" + clase + " es-foto\"><img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(arc)) + "\" alt=\"\" loading=\"lazy\" /></span>";
+        return "<span class=\"" + clase + "\"><i class=\"mdi " + icono + "\"></i></span>";
     }
 
     private string FilaComponenteLista(ActivoComponente c, bool hijo, bool puedeEditar)
@@ -464,11 +377,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         string tono = Tono(c.estado_nombre);
         return "<div class=\"sg-lc-fila" + (hijo ? " es-hijo" : "") + "\" data-txt=\"" +
                Server.HtmlEncode((Texto(c.aco_nombre) + " " + Texto(c.aco_codigo) + " " + queEs).ToLower()) + "\">" +
-               "<span class=\"sg-lc-foto\"><i class=\"mdi mdi-puzzle-outline\"></i></span>" +
+               FotoLista("C", c.aco_id, "mdi-puzzle-outline", "sg-lc-foto") +
                "<span class=\"t\"><b>" + (hijo ? "<i class=\"mdi mdi-subdirectory-arrow-right\" style=\"color:#68738A\"></i> " : "") + Server.HtmlEncode(Texto(c.aco_nombre)) + "</b><span>" +
                Server.HtmlEncode(Texto(c.aco_codigo) + (hijo && !string.IsNullOrEmpty(c.padre_nombre) ? " · Parte de " + c.padre_nombre : "")) + "</span></span>" +
                "<span class=\"d\">" + Server.HtmlEncode(queEs == "" ? "—" : queEs) + "</span>" +
-               "<span>" + (string.IsNullOrEmpty(c.estado_nombre) ? "" : "<span class=\"sg-es-chip es-" + tono + "\">" + Server.HtmlEncode(c.estado_nombre) + "</span>") + "</span>" +
+               "<span class=\"e\">" + (string.IsNullOrEmpty(c.estado_nombre) ? "" : "<span class=\"sg-es-chip es-" + tono + "\">" + Server.HtmlEncode(c.estado_nombre) + "</span>") +
+               (Observacion(c.aco_id, tono) == null ? "" : "<small class=\"sg-lc-obs\">" + Server.HtmlEncode(Observacion(c.aco_id, tono)) + "</small>") + "</span>" +
                "<span class=\"f\">" + (c.aco_fecha_instalacion == null ? "—" : c.aco_fecha_instalacion.Value.ToString("dd MMM yyyy")) + "</span>" +
                "<span><a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"seccionPendiente = null; return abrirComponente('" + q + "');\"><i class=\"mdi " +
                (puedeEditar ? "mdi-pencil-outline" : "mdi-eye-outline") + "\"></i>" + (puedeEditar ? "Editar" : "Ver") + "</a></span></div>";
@@ -1063,7 +977,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("<div><h4><i class=\"mdi mdi-puzzle-outline\"></i>Componentes asociados</h4>");
 
         if (componentes.Count == 0)
-            s.Append("<p class=\"sg-ot-vacio-txt\">El equipo no tiene componentes registrados.</p>");
+            s.Append("<p class=\"sg-ot-vacio-txt\">El activo no tiene componentes registrados.</p>");
         else
             foreach (ActivoComponente c in componentes.Take(4))
                 s.Append(Fila("mdi-puzzle-outline", "", Texto(c.aco_nombre),
@@ -1079,7 +993,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("<div><h4><i class=\"mdi mdi-image-multiple-outline\"></i>Documentos y evidencias</h4>");
 
         if (archivos.Count == 0)
-            s.Append("<p class=\"sg-ot-vacio-txt\">No hay archivos del equipo todavía.</p>");
+            s.Append("<p class=\"sg-ot-vacio-txt\">No hay archivos del activo todavía.</p>");
         else
         {
             /* Agrupados por origen y no uno por uno: al analista le sirve
@@ -1093,7 +1007,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
             foreach (var g in grupos)
                 s.Append(Fila("mdi-file-multiple-outline", "",
-                         string.IsNullOrEmpty(g.origen) ? "Del equipo" : g.origen,
+                         string.IsNullOrEmpty(g.origen) ? "Del activo" : g.origen,
                          g.cuantos + (g.cuantos == 1 ? " archivo" : " archivos"),
                          BotonSeccion("documentos", "Ver")));
         }
@@ -1325,6 +1239,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hlEditar.Attributes["onclick"] = "sigmaActivo360.irA('ficha'); return false;";
 
         hlGenerarOT.NavigateUrl = ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx");
+
+        /* La etiqueta del activo (QR o codigo de barras) para imprimir y pegar en el. */
+        hlEtiqueta.Visible = Token.Puede("IMPRIMIR ETIQUETAS");
+        if (hlEtiqueta.Visible)
+            hlEtiqueta.Attributes["onclick"] = "return abrirEtiquetas('" +
+                Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + EtiquetaOrigen.Activo + "&Ids=" + a.act_id)) + "');";
     }
 
     /// <summary>"Planta Renca › Refrigeración › Línea 1": la planta y el area con su padre.</summary>
@@ -1387,6 +1307,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                  hoy.ToString("MMMM yyyy"), minutos > 0 ? "es-ambar" : "es-teal"));
 
         litKpis.Text = k.Append("</div>").ToString();
+        litNumOt.Text = Num(abiertas.Count, false);
 
         // ---- requiere atencion ----
         StringBuilder at = new StringBuilder();
@@ -1414,7 +1335,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         litAtencion.Text = at.Length > 0 ? at.ToString()
             : "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-check-circle-outline\"></i>" +
-              "<p>Nada pendiente</p><span>Sin órdenes ni fallas abiertas sobre este equipo.</span></div>";
+              "<p>Nada pendiente</p><span>Sin órdenes ni fallas abiertas sobre este activo.</span></div>";
 
         // ---- actividad reciente ----
         StringBuilder ac = new StringBuilder();
@@ -1427,7 +1348,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                      (ev.fecha == null ? "" : ev.fecha.Value.ToString("dd MMM yyyy · HH:mm")) + "</span>"));
 
         litActividad.Text = ac.Length > 0 ? ac.ToString()
-            : "<p class=\"sg-ot-vacio-txt\">Este equipo todavía no tiene eventos registrados.</p>";
+            : "<p class=\"sg-ot-vacio-txt\">Este activo todavía no tiene eventos registrados.</p>";
 
         // ---- identidad ----
         StringBuilder id = new StringBuilder();
@@ -1472,7 +1393,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             .FirstOrDefault();
 
         if (p == null)
-            return "<p class=\"sg-ot-vacio-txt\">Sin análisis predictivo para este equipo todavía.</p>";
+            return "<p class=\"sg-ot-vacio-txt\">Sin análisis predictivo para este activo todavía.</p>";
 
         StringBuilder s = new StringBuilder("<div class=\"sg-a3-ia\">");
 
@@ -1640,7 +1561,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             h.etiqueta = "Detención";
             h.icono = "mdi-power-plug-off-outline";
             h.clase = "es-detencion";
-            h.titulo = d.ain_fecha_fin_utc == null ? "El equipo se detuvo" : "Detención del equipo";
+            h.titulo = d.ain_fecha_fin_utc == null ? "El activo se detuvo" : "Detención del activo";
             h.detalle = Texto(d.motivo_nombre);
             h.responsable = Texto(d.usuario_creacion_nombre);
 
@@ -1820,7 +1741,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (ordenes.Count == 0)
         {
             litOrdenes.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-clipboard-text-outline\"></i>" +
-                              "<p>Sin órdenes de trabajo</p><span>Este equipo no registra intervenciones.</span></div>";
+                              "<p>Sin órdenes de trabajo</p><span>Este activo no registra intervenciones.</span></div>";
             return;
         }
 
@@ -2000,7 +1921,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litPlanes.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-calendar-remove-outline\"></i>" +
                              "<p>Sin plan de mantenimiento</p>" +
-                             "<span>Este equipo no está incluido en ningún plan: todo lo que se le haga será correctivo.</span></div>";
+                             "<span>Este activo no está incluido en ningún plan: todo lo que se le haga será correctivo.</span></div>";
         }
         else
         {
@@ -2069,7 +1990,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (tareas.Count == 0)
         {
-            litTareas.Text = "<p class=\"sg-ot-vacio-txt\">Este equipo no tiene tareas recurrentes.</p>";
+            litTareas.Text = "<p class=\"sg-ot-vacio-txt\">Este activo no tiene tareas recurrentes.</p>";
         }
         else
         {
@@ -2165,7 +2086,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         s.Append(BloqueAlcance("mdi-cog-outline", "Subsistemas",
                  subsistemas.Count == 0
-                    ? "El equipo no tiene subsistemas registrados"
+                    ? "El activo no tiene subsistemas registrados"
                     : string.Join(", ", subsistemas.Select(c => Texto(c.aco_nombre)).Take(6).ToArray())));
 
         s.Append(BloqueAlcance("mdi-puzzle-outline", "Componentes",
@@ -2380,6 +2301,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         /* La ficha del centro muestra cuanto cuelga del equipo. */
         frmFicha.NSubactivos = e.subactivos.Count;
         frmFicha.NComponentes = e.componentes.Count;
+        litNumComp.Text = Num(e.componentes.Count + e.subactivos.Count, false);
         frmFicha.NRepuestos = e.repuestos.Count;
 
         /* Si es subactivo, la cabecera dice de que maquina es parte. */
@@ -2496,6 +2418,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<select data-padres=\"1\"><option value=\"0\">Directamente de «").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</option>");
         foreach (ActivoEstructuraItem x in e.componentes)
             s.Append("<option value=\"").Append(x.id).Append("\">De la parte «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
+        s.Append("</select><select data-alcances=\"1\"><option value=\"a:").Append(a.act_id).Append("\">Todo el activo «")
+         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</option>");
+        foreach (ActivoEstructuraItem x in e.subactivos)
+            s.Append("<option value=\"a:").Append(x.id).Append("\">El subactivo «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
+        foreach (ActivoEstructuraItem x in e.componentes)
+            s.Append("<option value=\"c:").Append(x.id).Append("\">El componente «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
         s.Append("</select><select data-estados=\"1\">");
         foreach (ActivoComponenteEstado st in new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>())
             s.Append("<option value=\"").Append(st.ace_id).Append("\"").Append(st.ace_id == 1 ? " selected=\"selected\"" : "").Append(">")
@@ -2513,7 +2441,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     protected void lnkEsGuardarComp_Click(object sender, EventArgs e)
     {
         hdnSeccion.Value = "componentes";
-        int activo = ActivoSeleccionado();
+        /* Desde la pestaña Componentes de la planta el activo viene elegido en el formulario. */
+        int activo, elegido;
+        activo = int.TryParse(Request.Form["esc_activo"], out elegido) && elegido > 0 ? elegido : ActivoSeleccionado();
         try
         {
             if (!Token.Puede("CREAR EDITAR COMPONENTES")) throw new Exception("No tienes permiso para crear componentes.");
@@ -2560,6 +2490,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 using (System.IO.MemoryStream ms = new System.IO.MemoryStream()) { foto.InputStream.CopyTo(ms); bytes = ms.ToArray(); }
                 Archivo arc = new Archivo { arc_cliente = _cliente, arc_archivo_categoria = 10, arc_nombre_original = System.IO.Path.GetFileName(foto.FileName),
                                             arc_mime = foto.ContentType, contenido = bytes };
+                ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
                 Respuesta ra = new ArchivoController().InsertArchivo(arc, "activos");
                 if (!ra.error && ra.codigo > 0) new ActivoComponenteImagenController().VincularImagen(r.codigo, ra.codigo);
             }
@@ -2602,13 +2533,19 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             reps.Add(new[] { r.nombre, st, t });
         }
 
-        string nota = c != null && tono != "ok" && !string.IsNullOrEmpty(c.aco_motivo_estado) ? c.aco_motivo_estado : null;
+        string nota = retirada ? null : Observacion(x.id, tono);
         string det = string.Join(" · ", new[] { c != null ? c.tipo_nombre : x.tipo, c != null ? c.posicion_nombre : x.detalle }
                                         .Where(t => !string.IsNullOrEmpty(t)).ToArray());
+        if (nota != null) det = (det == "" ? "" : det + " · ") + "«" + nota + "»";
 
-        return Item("es-comp" + (hijo ? " es-hijo" : "") + (retirada ? " es-retirada" : ""),
+        /* La foto del componente, si tiene: en la tarjeta se reconoce la pieza sin abrirla. */
+        int foto = new ActivoComponenteImagenController().GetImagenId(x.id, _cliente);
+        string html = Item("es-comp" + (hijo ? " es-hijo" : "") + (retirada ? " es-retirada" : "") + (foto > 0 ? " con-foto" : ""),
                     Det("comp", x.id, x.nombre, estado, tono, nota, datos, reps, q, null, null),
                     x.nombre, det, estado, tono, "");
+        if (foto > 0)
+            html = html.Replace("<span class=\"t\">", "<span class=\"sg-es-mini\"><img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(foto)) + "\" alt=\"\" loading=\"lazy\" /></span><span class=\"t\">");
+        return html;
     }
 
     /// <summary>El boton de un elemento: nombre, una linea de que es y su estado debajo.</summary>
@@ -2695,7 +2632,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litFallas.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-check-circle-outline\"></i>" +
                              "<p>Sin fallas registradas</p>" +
-                             "<span>Este equipo no tiene fallas reportadas.</span></div>";
+                             "<span>Este activo no tiene fallas reportadas.</span></div>";
         }
         else
         {
@@ -2724,7 +2661,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
                  .Append("<span class=\"c-cod\">").Append(Server.HtmlEncode(Texto(f.fal_titulo)))
                  .Append("<span>")
-                 .Append(Server.HtmlEncode(string.IsNullOrEmpty(f.componente_nombre) ? "Equipo completo" : f.componente_nombre))
+                 .Append(Server.HtmlEncode(string.IsNullOrEmpty(f.componente_nombre) ? "Activo completo" : f.componente_nombre))
                  .Append("</span></span>")
 
                  .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(f.sintoma_nombre))).Append("</span>")
@@ -2779,7 +2716,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litIndisponibilidad.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-power-plug-outline\"></i>" +
                                        "<p>Sin períodos de detención</p>" +
-                                       "<span>El equipo no registra paradas.</span></div>";
+                                       "<span>El activo no registra paradas.</span></div>";
         }
         else
         {
@@ -2902,7 +2839,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             bool hay = r != null && r.ultimo_valor != null;
             string valor = hay ? r.ultimo_valor.Value.ToString("N2").TrimEnd('0').TrimEnd(',', '.') : "—";
             string unidad = Texto(v.unidad_simbolo);
-            string componente = string.IsNullOrEmpty(v.componente_nombre) ? "Equipo completo" : v.componente_nombre;
+            string componente = string.IsNullOrEmpty(v.componente_nombre) ? "Activo completo" : v.componente_nombre;
             string query = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id));
 
             List<MedicionSerie> serie = ctlVar.GetSerie(v.ava_id, hoy.AddDays(-90), null) ?? new List<MedicionSerie>();
@@ -2957,12 +2894,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             ? tarjetas.ToString()
             : "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-gauge-empty\"></i>" +
               "<p>Sin variables de condición</p><span>" +
-              (puedeVariable ? "Agregue una con «Configurar» y el equipo empezará a medirse."
-                             : "Todavía no se ha configurado qué se le mide a este equipo.") + "</span></div>";
+              (puedeVariable ? "Agregue una con «Configurar» y el activo empezará a medirse."
+                             : "Todavía no se ha configurado qué se le mide a este activo.") + "</span></div>";
 
         litCondLecturas.Text = lecturas.ToString();
 
         Aviso(fuera, revisar, sinLectura);
+        litNumCond.Text = Num(fuera, true);
         Medidores(a, variables.Count);
     }
 
@@ -3146,7 +3084,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             litMedidores.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-counter\"></i>" +
                                 "<p>Sin contadores</p><span>" +
                                 (puedeMedidor ? "Agregue uno con «Nuevo contador»: es lo que permite programar por uso y no solo por calendario."
-                                              : "Este equipo no tiene contadores.") + "</span></div>";
+                                              : "Este activo no tiene contadores.") + "</span></div>";
             return;
         }
 
@@ -3157,7 +3095,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             string unidad = Texto(x.unidad);
             string u = unidad.Length == 0 ? "" : " " + unidad;
             string clase = x.fecha == null ? "es-sin" : "es-contador";
-            string sub = string.IsNullOrEmpty(x.componente) ? "Equipo completo" : x.componente;
+            string sub = string.IsNullOrEmpty(x.componente) ? "Activo completo" : x.componente;
 
             string falta = x.falta == null
                 ? (string.IsNullOrEmpty(x.plan_nombre) ? "Consumo acumulado" : "Sin objetivo pendiente")
@@ -3644,7 +3582,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (costo.incompleto)
             k.Append("<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-information-outline\"></i>")
              .Append("<span>El total no incluye lo que todavía no tiene precio cargado. ")
-             .Append("Es un piso, no el costo del equipo.</span></div>");
+             .Append("Es un piso, no el costo del activo.</span></div>");
 
         litCostoKpis.Text = k.ToString();
 
@@ -3679,7 +3617,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litConsumos.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-package-variant\"></i>" +
                                "<p>Sin consumo de repuestos</p>" +
-                               "<span>Nada salió de bodega para este equipo todavía.</span></div>";
+                               "<span>Nada salió de bodega para este activo todavía.</span></div>";
             return;
         }
 
@@ -3718,7 +3656,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litDevoluciones.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-undo-variant\"></i>" +
                                    "<p>Sin devoluciones</p>" +
-                                   "<span>Todo lo que salió de bodega para este equipo se usó.</span></div>";
+                                   "<span>Todo lo que salió de bodega para este activo se usó.</span></div>";
             return;
         }
 
@@ -3727,7 +3665,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("<div data-filtra=\".sg-a3-rep\" data-nombre=\"devoluciones\">")
 
          .Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
-         .Append("<span>Lo devuelto no es gasto del equipo: volvió a bodega y no suma al costo.</span></div>")
+         .Append("<span>Lo devuelto no es gasto del activo: volvió a bodega y no suma al costo.</span></div>")
 
          .Append("<div class=\"sg-a3-tabla-cab sg-a3-rep-cab\">")
          .Append("<span></span><span>Material / Repuesto</span><span>Código</span><span>Devuelto</span>")
@@ -3794,7 +3732,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litCostos.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-calculator-variant-outline\"></i>" +
                              "<p>Sin costos de material</p>" +
-                             "<span>Todavía no hay repuestos cargados a una orden de este equipo.</span></div>";
+                             "<span>Todavía no hay repuestos cargados a una orden de este activo.</span></div>";
             return;
         }
 
@@ -3936,172 +3874,227 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     /// </summary>
     private void SigmaAi(Activo a, List<OrdenTrabajo> ordenes, List<Falla> fallas)
     {
-        List<Alerta> alertas = new AlertaController().GetAlertas(false, 200) ?? new List<Alerta>();
+        System.Globalization.CultureInfo cl = new System.Globalization.CultureInfo("es-CL");
+        AlertaController ctlAlerta = new AlertaController();
+        List<Alerta> alertas = ctlAlerta.GetAlertas(false, 200) ?? new List<Alerta>();
 
         List<Alerta> predicciones = alertas
             .Where(x => x.ES_PREDICCION && x.ale_activo == a.act_id)
             .OrderByDescending(x => x.ale_fecha_deteccion_utc)
             .ToList();
 
-        StringBuilder s = new StringBuilder("<div class=\"sg-ot-card sg-a3-ia-card\">");
-
         Alerta p = predicciones.FirstOrDefault();
+        AlertaPrediccion pred = p == null ? null : ctlAlerta.GetPrediccion(p.ale_id);
 
-        s.Append("<header class=\"sg-a3-ia-head\">")
-         .Append(IconoIa("symbol-gradient", "sg-ai-simbolo", "SIGMA AI"))
-         .Append("<div><h3>SIGMA AI<span> · ").Append(p == null ? "Sin análisis" : "Predicción por revisar").Append("</span></h3>")
-         .Append("<p class=\"sg-ot-card-sub\">Lo que el modelo observó en este equipo, para que una persona lo revise.</p></div>");
-
-        if (p != null)
-            s.Append("<span class=\"sg-a3-ia-fecha\">Último análisis: ")
-             .Append(p.ale_fecha_deteccion_utc.ToString("dd MMM yyyy · HH:mm")).Append("</span>");
-
-        s.Append("</header>");
-
-        if (p == null)
-        {
-            s.Append("<div class=\"sg-ot-vacio\">").Append(IconoIa("status-analyzing", "sg-ai-vacio", ""))
-             .Append("<p>Sin análisis predictivo para este equipo</p>")
-             .Append("<span>El modelo todavía no encontró un patrón que valga la pena mirar acá.</span></div>")
-             .Append("</div>");
-
-            litIaPanel.Text = s.ToString();
-            return;
-        }
-
-        /* Lo que el modelo dejo ademas del texto: la curva de sus corridas
-           anteriores, sus factores y la OT que ya se genero desde esta
-           prediccion. Sin esto el panel repite el aviso en grande. */
-        AlertaPrediccion pred = new AlertaController().GetPrediccion(p.ale_id);
-
-        s.Append("<div class=\"sg-a3-ia-cols\">");
-
-        // ---- el aviso ----
-        s.Append("<div class=\"sg-a3-ia-aviso\">")
-         .Append("<i class=\"mdi mdi-alert-outline\"></i>")
-         .Append("<div><strong>").Append(Server.HtmlEncode(Texto(p.ale_titulo))).Append("</strong>")
-         .Append("<span class=\"sg-a3-ia-tipo\">").Append(Server.HtmlEncode(Texto(p.alt_nombre))).Append("</span>")
-         .Append("<p>").Append(Server.HtmlEncode(Texto(p.ale_descripcion))).Append("</p>")
-         .Append("<p class=\"sg-a3-ia-limite\">El modelo detecta un patrón. <strong>No confirma una falla.</strong></p>")
-         .Append("</div></div>");
-
-        // ---- las senales que alimentan el modelo ----
-        s.Append("<div class=\"sg-a3-ia-senal\"><h4>")
-         .Append(IconoIa("status-realtime", "sg-ai-ico", ""))
-         .Append("Estado de señales de entrada</h4><div class=\"sg-a3-senales\">");
-
+        // ---- las senales que alimentan el modelo: las variables del activo ----
         List<ActivoVariable> variables = new ActivoVariableController().GetVariables(
             new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
             ?? new List<ActivoVariable>();
 
-        if (variables.Count == 0)
-            s.Append("<p class=\"sg-ot-vacio-txt\">Este equipo no tiene variables de condición configuradas.</p>");
-        else
+        DateTime hoy = global::SitioBase.Hora.Hoy;
+        ActivoVariableController ctlVar = new ActivoVariableController();
+        List<FuenteIa> fuentes = new List<FuenteIa>();
+        string vivoNombre = "";
+        object vivo = null;
+        int conDatos = 0, lecturas30 = 0, fueraRango = 0;
+
+        foreach (ActivoVariable v in variables.Take(6))
         {
-            DateTime hoy = global::SitioBase.Hora.Hoy;
-            ActivoVariableController ctlVar = new ActivoVariableController();
+            MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-30), null) ?? new MedicionSerieResumen();
+            bool hay = r.ultimo_valor != null;
+            if (hay) conDatos++;
+            lecturas30 += r.puntos;
+            int fuera = r.fuera_rango + r.criticos;
+            fueraRango += fuera;
+            fuentes.Add(new FuenteIa { n = Texto(v.variable_nombre), u = Texto(v.unidad_simbolo), v = r.ultimo_valor, fuera = fuera > 0, hay = hay });
 
-            foreach (ActivoVariable v in variables.Take(4))
+            /* La señal de la cabecera es la primera variable con lecturas: sus
+               ultimas 40 y el limite que se le configuro. */
+            if (vivo == null && hay)
             {
-                MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-30), null);
-                bool hay = r != null && r.ultimo_valor != null;
-
-                s.Append("<div class=\"sg-a3-senal ").Append(hay ? "es-ok" : "es-sin").Append("\">")
-                 .Append("<i class=\"mdi mdi-pulse\"></i>")
-                 .Append("<div><span>").Append(Server.HtmlEncode(Texto(v.variable_nombre))).Append("</span>")
-                 .Append("<b>").Append(hay ? "Disponible" : "Sin datos").Append("</b></div></div>");
+                List<MedicionSerie> serie = ctlVar.GetSerie(v.ava_id, hoy.AddDays(-30), hoy.AddDays(1)) ?? new List<MedicionSerie>();
+                List<decimal> pts = serie.OrderBy(x => x.fecha).Select(x => x.valor).ToList();
+                if (pts.Count > 40) pts = pts.Skip(pts.Count - 40).ToList();
+                if (pts.Count > 1) vivoNombre = Texto(v.variable_nombre);
+                if (pts.Count > 1)
+                    vivo = new { n = Texto(v.variable_nombre), u = Texto(v.unidad_simbolo), pts = pts, max = v.ava_valor_maximo, min = v.ava_valor_minimo, ultimo = r.ultimo_valor };
             }
         }
 
-        s.Append("</div></div></div>");
+        // ---- el pronostico: la probabilidad en cada corrida del modelo ----
+        List<object> curva = new List<object>();
+        if (pred != null && pred.Serie != null)
+            foreach (AlertaPrediccionPunto x in pred.Serie.OrderBy(x => x.Fecha))
+                curva.Add(new { f = x.Fecha.ToString("dd MMM", cl), v = x.Porcentaje });
 
-        // ---- recomendacion y acciones ----
-        s.Append("<div class=\"sg-a3-ia-cols es-abajo\">");
+        decimal? prob = pred == null || pred.pre_probabilidad == null ? (decimal?)null
+                      : (pred.pre_probabilidad.Value <= 1 ? pred.pre_probabilidad.Value * 100 : pred.pre_probabilidad.Value);
+        string riesgo = Riesgo(prob, p == null ? null : p.sev_nombre);
+        string horizonte = Horizonte(pred);
 
-        s.Append("<div class=\"sg-a3-ia-reco\"><h4>")
-         .Append(IconoIa("status-recommendation", "sg-ai-ico", ""))
-         .Append("Recomendación</h4>")
-         .Append("<p>Revisar el equipo y validar las lecturas antes de intervenir.</p>");
+        string datos = new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(new { vivo = vivo, curva = curva });
 
-        /* La alerta no guarda una recomendacion escrita: guarda el numero que
-           disparo el aviso. Se muestra ese, que es lo unico comprobable. */
-        if (p.ale_valor_observado != null)
-            s.Append("<p class=\"sg-a3-ia-dato\">Valor observado <strong>")
-             .Append(p.ale_valor_observado.Value.ToString("0.##")).Append("</strong>")
-             .Append(p.ale_valor_umbral == null ? "" : " · umbral " + p.ale_valor_umbral.Value.ToString("0.##"))
-             .Append("</p>");
+        StringBuilder s = new StringBuilder();
+        s.Append("<div class=\"sgx\" data-ai=\"").Append(System.Web.HttpUtility.HtmlAttributeEncode(datos)).Append("\">");
 
-        s
-         .Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
-         .Append("<span>Revisión humana requerida antes de cualquier acción.</span></div></div>");
+        // ================= cabecera =================
+        s.Append("<section class=\"sgx-hero\"><div class=\"sgx-hero-l\">")
+         .Append("<div class=\"sgx-marca\"><img class=\"sgx-logo-h\" src=\"").Append(ResolveUrl("~/Imagen/sigma-ai/sigma-ai-logo-horizontal-dark.svg")).Append("\" alt=\"SIGMA AI\" />")
+         .Append("")
+         .Append("<span class=\"sgx-vivo\">").Append(SvgIa("status-realtime", "sgx-anim es-realtime", 24)).Append(variables.Count > 0 ? "Revisando las lecturas" : "Esperando lecturas").Append("</span></div>");
 
-        /* EL ESTADO DE LA REVISION HUMANA
+        if (p != null)
+        {
+            s.Append("<h2>Anticipa una posible falla</h2>")
+             .Append("<p class=\"sgx-frase\"><span class=\"sgx-frase-ico\"><i class=\"mdi mdi-pulse\"></i></span><span><b>")
+             .Append(Server.HtmlEncode(Texto(p.ale_titulo))).Append("</b>")
+             .Append(string.IsNullOrEmpty(p.ale_descripcion) ? "" : " · " + Server.HtmlEncode(p.ale_descripcion)).Append("</span></p>")
+             .Append("<div class=\"sgx-stats\">")
+             .Append(Stat("Probabilidad estimada", prob == null ? "—" : prob.Value.ToString("0", cl) + "%", "es-cyan", prob == null ? "" : prob.Value.ToString("0", System.Globalization.CultureInfo.InvariantCulture)))
+             .Append(Stat("Horizonte de falla", horizonte, "es-cyan", ""))
+             .Append(Stat("Nivel de riesgo", riesgo, riesgo == "Alta" ? "es-rosa" : riesgo == "Media" ? "es-ambar" : "es-verde", ""))
+             .Append("</div>");
 
-           Una prediccion no esta "abierta" o "cerrada": esta esperando que
-           alguien la mire. Decirlo evita que dos personas la trabajen y que
-           una tercera la crea atendida porque lleva dias en pantalla. */
-        bool conOrden = pred != null && pred.ORDEN_TRABAJO != null;
+            s.Append("<p class=\"sgx-reco\">").Append(SvgIa("status-recommendation", "sgx-anim es-reco", 30))
+             .Append("<span><b>Recomendación:</b> revisar el activo y validar las lecturas antes de intervenir.")
+             .Append(p.ale_valor_observado == null ? "" : " Valor observado " + p.ale_valor_observado.Value.ToString("0.##", cl) +
+                     (p.ale_valor_umbral == null ? "" : " (umbral " + p.ale_valor_umbral.Value.ToString("0.##", cl) + ")") + ".")
+             .Append("</span></p>");
 
-        s.Append("<div class=\"sg-a3-ia-revision\">")
-         .Append("<span class=\"sg-a3-ia-revision-etq\"><i class=\"mdi mdi-account-search-outline\"></i>Estado de revisión del analista</span>")
-         .Append(conOrden
-                ? "<span class=\"sg-ot-chip es-ok\">Atendida con OT-" + pred.ORDEN_CORRELATIVO + "</span>"
-                : "<span class=\"sg-ot-chip es-aviso\">Pendiente</span>")
-         .Append("<span class=\"sg-a3-ia-revision-nota\">")
-         .Append(conOrden
-                ? "Ya se generó una orden desde esta predicción."
-                : "Un especialista debe revisar la información antes de generar una OT.")
-         .Append("</span></div>");
-
-        s.Append("<div class=\"sg-a3-ia-acc\"><h4>Acciones sugeridas</h4>")
-         .Append(BotonSeccion("condicion", "Ver señales del equipo"));
-
-        /* Si de esta prediccion ya salio una orden, lo que corresponde es
-           REVISARLA y no crear otra: el mockup la pone antes que "Crear" a
-           proposito, y el modelo ya guarda cual fue para impedir el duplicado. */
-        if (conOrden)
-            s.Append(Boton(UrlOrden(pred.ORDEN_TRABAJO.Value), "Revisar OT existente OT-" + pred.ORDEN_CORRELATIVO));
+            bool conOrden = pred != null && pred.ORDEN_TRABAJO != null;
+            s.Append("<div class=\"sgx-acc\">")
+             .Append("<a href=\"#\" class=\"sgx-btn es-brillo\" data-ir-sec=\"condicion\">Ver las señales del activo<i class=\"mdi mdi-arrow-right\"></i></a>")
+             .Append(conOrden
+                    ? "<a class=\"sgx-btn es-borde\" href=\"" + UrlOrden(pred.ORDEN_TRABAJO.Value) + "\" target=\"_blank\" rel=\"noopener\"><i class=\"mdi mdi-clipboard-check-outline\"></i>Revisar OT-" + pred.ORDEN_CORRELATIVO + "</a>"
+                    : "<a class=\"sgx-btn es-borde\" href=\"" + ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "\" target=\"_blank\" rel=\"noopener\"><i class=\"mdi mdi-plus\"></i>Crear OT predictiva</a>")
+             .Append("</div>")
+             .Append("<p class=\"sgx-limite\">El modelo detecta un patrón; <b>no confirma una falla</b>. Una persona lo revisa antes de actuar.</p>");
+        }
         else
-            s.Append(Boton(ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx"), "Crear OT predictiva", true));
+        {
+            s.Append("<h2>Sin señales de falla por ahora</h2>")
+             .Append("<p class=\"sgx-frase\"><span class=\"sgx-frase-ico\"><i class=\"mdi mdi-shield-check-outline\"></i></span><span>")
+             .Append(variables.Count == 0
+                    ? "SIGMA AI necesita saber qué medirle a este activo. Configura sus variables y empezará a buscar patrones."
+                    : "SIGMA AI revisa las lecturas de este activo. Cuando encuentre un patrón que valga la pena mirar, aparece aquí.")
+             .Append("</span></p><div class=\"sgx-stats\">")
+             .Append(Stat("Fuentes con datos", conDatos + " de " + variables.Count, "es-cyan", ""))
+             .Append(Stat("Lecturas · 30 días", lecturas30.ToString("#,0", cl), "es-cyan", lecturas30.ToString()))
+             .Append(Stat("Fuera de rango", fueraRango.ToString(), fueraRango > 0 ? "es-rosa" : "es-verde", fueraRango.ToString()))
+             .Append("</div><div class=\"sgx-acc\">")
+             .Append("<a href=\"#\" class=\"sgx-btn es-brillo\" data-ir-sec=\"condicion\">")
+             .Append(variables.Count == 0 ? "Configurar qué medir" : "Ver las señales del activo").Append("<i class=\"mdi mdi-arrow-right\"></i></a></div>")
+             .Append("<p class=\"sgx-limite\">El modelo necesita al menos 30 días de lecturas u órdenes para encontrar un patrón.</p>");
+        }
 
-        s.Append("<p class=\"sg-a3-ia-limite\">")
-         .Append(conOrden
-                ? "Esta predicción ya tiene su orden: no se crea otra."
-                : "Revise si ya existe una orden abierta antes de crear otra.")
-         .Append("</p></div>");
+        s.Append("</div><div class=\"sgx-hero-r\"><span class=\"sgx-orbe\" aria-hidden=\"true\"></span>")
+         .Append("<div class=\"sgx-senal\"><header><span><i></i>")
+         .Append(vivo == null ? "Señal" : "Señal · " + Server.HtmlEncode(vivoNombre))
+         .Append("</span><b id=\"sgAiVivoValor\"></b></header>")
+         .Append(vivo != null
+                ? "<svg id=\"sgAiVivo\" viewBox=\"0 0 400 150\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Últimas lecturas de la variable principal\"></svg>"
+                : Espera("Todavía no hay lecturas", variables.Count == 0 ? "Configura qué medirle a este activo y la señal aparece aquí." : "Las lecturas de los últimos 30 días se dibujan aquí.", variables.Count == 0 ? "Configurar qué medir" : "Ver las señales"))
+         .Append(vivo != null ? "<footer><span>Últimas lecturas</span><span id=\"sgAiVivoLim\"></span></footer>" : "")
+         .Append("")
+         .Append("</div></div></section>");
 
-        s.Append("</div>");
+        // ================= tres tarjetas =================
+        int cobertura = variables.Count == 0 ? 0 : (int)Math.Round(100.0 * conDatos / Math.Min(variables.Count, 6));
+        s.Append("<section class=\"sgx-fila\">");
 
-        /* La curva va DESPUES del aviso y antes del contexto: primero que vio
-           el modelo, despues como venia, y al final con que se relaciona. */
-        s.Append(CurvaRiesgo(pred));
+        s.Append("<article class=\"sgx-card\"><header><h3>Estado del análisis</h3>")
+         .Append(SvgIa("status-analyzing", "sgx-anim es-analiza sgx-mini", 40)).Append("</header>")
+         .Append("<small>Cobertura de señales</small><strong class=\"sgx-grande\" data-cuenta=\"").Append(cobertura).Append("\" data-sufijo=\"%\">").Append(cobertura).Append("%</strong>")
+         .Append("<p>Variables de este activo con lecturas en los últimos 30 días.</p>")
+         .Append("<div class=\"sgx-barra\"><i style=\"width:").Append(cobertura).Append("%\"></i></div>")
+         .Append("<footer><span><i class=\"sgx-punto\"></i>").Append(conDatos).Append(conDatos == 1 ? " fuente activa" : " fuentes activas").Append("</span>")
+         .Append("<span>").Append(pred != null && !string.IsNullOrEmpty(pred.MODELO_NOMBRE) ? Server.HtmlEncode(pred.MODELO_NOMBRE + (string.IsNullOrEmpty(pred.MODELO_VERSION) ? "" : " v" + pred.MODELO_VERSION)) : "Modelo predictivo").Append("</span></footer></article>");
 
-        // ---- con que se relaciona ----
+        s.Append("<article class=\"sgx-card\"><header><h3>").Append(SvgIa("status-prediction", "sgx-anim es-pred sgx-tit", 26)).Append("Pronóstico de falla</h3>")
+         .Append(p == null ? "<span class=\"sgx-chip es-verde\">Sin aviso</span>" : "<span class=\"sgx-chip " + (riesgo == "Alta" ? "es-rosa" : riesgo == "Media" ? "es-ambar" : "es-verde") + "\">" + riesgo + "</span>")
+         .Append("</header>").Append(curva.Count >= 2
+                ? "<svg id=\"sgAiCurva\" viewBox=\"0 0 400 140\" preserveAspectRatio=\"none\" role=\"img\" aria-label=\"Probabilidad por corrida del modelo\"></svg>"
+                : Espera("Aún sin pronóstico", "Aparece cuando el modelo tiene al menos dos corridas sobre este activo.", ""))
+         .Append("")
+         .Append(prob == null ? "" : "<footer><span><b class=\"es-cyan\">" + prob.Value.ToString("0", cl) + "%</b><small>probabilidad</small></span>")
+         .Append(prob == null ? "" : "<span class=\"der\"><b class=\"es-cyan\">" + Server.HtmlEncode(horizonte) + "</b><small>horizonte</small></span></footer>").Append("</article>");
+
+        s.Append("<article class=\"sgx-card\"><header><h3>Fuentes de señal</h3><span class=\"sgx-chip es-cyan\">")
+         .Append(conDatos).Append(conDatos == 1 ? " activa" : " activas").Append("</span></header><ul class=\"sgx-fuentes\">");
+        if (fuentes.Count == 0)
+            s.Append("<li class=\"vacio\">Sin variables configuradas. <a href=\"#\" data-ir-sec=\"condicion\">Configurar qué medir</a></li>");
+        foreach (FuenteIa f in fuentes)
+            s.Append("<li><span class=\"ico").Append(f.fuera ? " es-mal" : "").Append("\"><i class=\"mdi mdi-pulse\"></i></span><span><b>").Append(Server.HtmlEncode(f.n)).Append("</b><small>")
+             .Append(f.hay ? f.v.Value.ToString("0.##", cl) + (string.IsNullOrEmpty(f.u) ? "" : " " + Server.HtmlEncode(f.u)) : "Sin datos").Append("</small></span>")
+             .Append("<i class=\"mdi ").Append(!f.hay ? "mdi-minus-circle-outline es-sin" : f.fuera ? "mdi-alert-circle-outline es-mal" : "mdi-check-circle-outline es-ok").Append(" fin\"></i></li>");
+        s.Append("</ul></article></section>");
+
+        // ================= que mira el modelo =================
+        if (pred != null && pred.Factores != null && pred.Factores.Count > 0)
+        {
+            decimal tope = pred.Factores.Max(f => Math.Abs(f.Contribucion ?? 0));
+            if (tope <= 0) tope = 1;
+            s.Append("<section class=\"sgx-card sgx-factores\"><header><h3>Qué está mirando el modelo</h3><small>Lo que más pesó en esta predicción</small></header><ul>");
+            foreach (AlertaFactor f in pred.Factores.OrderByDescending(f => Math.Abs(f.Contribucion ?? 0)).Take(5))
+            {
+                int ancho = (int)Math.Round(100 * Math.Abs(f.Contribucion ?? 0) / tope);
+                bool sube = (f.Direccion ?? "").ToUpperInvariant().StartsWith("S") || (f.Direccion ?? "").Contains("+");
+                s.Append("<li><span class=\"t\">").Append(Server.HtmlEncode(Texto(f.Texto))).Append("</span>")
+                 .Append("<span class=\"b\"><i style=\"width:").Append(ancho).Append("%\"></i></span>")
+                 .Append("<span class=\"v\"><i class=\"mdi ").Append(sube ? "mdi-arrow-top-right" : "mdi-arrow-bottom-right").Append("\"></i>")
+                 .Append(f.ValorObservado == null ? "" : f.ValorObservado.Value.ToString("0.##", cl))
+                 .Append(f.ValorReferencia == null ? "" : " <small>vs " + f.ValorReferencia.Value.ToString("0.##", cl) + "</small>").Append("</span></li>");
+            }
+            s.Append("</ul></section>");
+        }
+
+        s.Append("</div>"); // .sgx (oscuro)
+
+        // ================= predicciones recientes =================
+        s.Append("<section class=\"sgx-cola\"><header><div><span class=\"sgx-eyebrow\">Cola predictiva</span><h3>Predicciones recientes</h3></div>")
+         .Append("<span class=\"sgx-vivo es-claro\"><i></i>Se actualiza con cada corrida</span></header>");
+        if (predicciones.Count == 0)
+            s.Append("<div class=\"sg-ot-vacio es-chico\">").Append(SvgIa("status-prediction", "sgx-anim es-pred sgx-vacio-img", 64))
+             .Append("<p>Todavía no hay predicciones para este activo</p><span>Aparecen aquí cuando el modelo encuentra un patrón en sus lecturas u órdenes.</span></div>");
+        foreach (Alerta x in predicciones.Take(5))
+        {
+            AlertaPrediccion px = x == p ? pred : ctlAlerta.GetPrediccion(x.ale_id);
+            decimal? pr = px == null || px.pre_probabilidad == null ? (decimal?)null : (px.pre_probabilidad.Value <= 1 ? px.pre_probabilidad.Value * 100 : px.pre_probabilidad.Value);
+            string rx = Riesgo(pr, x.sev_nombre);
+            s.Append("<article class=\"sgx-pred\"><span class=\"av\">").Append(SvgIa("status-prediction", "sgx-anim es-pred", 44)).Append("</span>")
+             .Append("<span class=\"t\"><small>PR-").Append(x.ale_id).Append(" · ").Append(Server.HtmlEncode(Texto(x.Antiguedad))).Append("</small>")
+             .Append("<b>").Append(Server.HtmlEncode(Texto(x.ale_titulo))).Append("</b>")
+             .Append("<small>").Append(Server.HtmlEncode(Texto(x.ale_descripcion))).Append("</small></span>")
+             .Append("<span class=\"n\"><small>Probabilidad</small><b class=\"es-cyan\">").Append(pr == null ? "—" : pr.Value.ToString("0", cl) + "%").Append("</b></span>")
+             .Append("<span class=\"n\"><small>Horizonte</small><b>").Append(Server.HtmlEncode(Horizonte(px))).Append("</b></span>")
+             .Append("<span class=\"sgx-chip ").Append(rx == "Alta" ? "es-rosa" : rx == "Media" ? "es-ambar" : "es-verde").Append("\">").Append(rx).Append("</span>")
+             .Append(px != null && px.ORDEN_TRABAJO != null
+                    ? "<a class=\"ir\" href=\"" + UrlOrden(px.ORDEN_TRABAJO.Value) + "\" target=\"_blank\" rel=\"noopener\" title=\"Abrir OT-" + px.ORDEN_CORRELATIVO + "\"><i class=\"mdi mdi-chevron-right\"></i></a>"
+                    : "<span class=\"ir\"></span>")
+             .Append("</article>");
+        }
+        s.Append("</section>");
+
+        // ================= con que se relaciona =================
         s.Append("<div class=\"sg-a3-ia-rel\">");
-
-        s.Append("<div><h4><i class=\"mdi mdi-clipboard-text-outline\"></i>Órdenes abiertas del equipo</h4>");
+        s.Append("<div class=\"sg-ot-card\"><h4><i class=\"mdi mdi-clipboard-text-outline\"></i>Órdenes abiertas del activo</h4>");
         List<OrdenTrabajo> abiertas = ordenes.Where(o => o.otr_orden_trabajo_estado != 4).Take(4).ToList();
-
         if (abiertas.Count == 0)
             s.Append("<p class=\"sg-ot-vacio-txt\">Sin órdenes abiertas.</p>");
         else
             foreach (OrdenTrabajo o in abiertas)
                 s.Append(Fila("mdi-clipboard-text-outline", "", "OT-" + o.otr_correlativo + " · " + Texto(o.otr_titulo),
                          Texto(o.tipo_nombre), Boton(UrlOrden(o.otr_id), "Abrir OT")));
-
         s.Append("</div>");
 
-        s.Append("<div><h4><i class=\"mdi mdi-alert-outline\"></i>Fallas registradas</h4>");
-        List<Falla> abiertasFalla = fallas.Take(4).ToList();
-
-        if (abiertasFalla.Count == 0)
+        s.Append("<div class=\"sg-ot-card\"><h4><i class=\"mdi mdi-alert-outline\"></i>Fallas registradas</h4>");
+        List<Falla> ultFallas = fallas.Take(4).ToList();
+        if (ultFallas.Count == 0)
             s.Append("<p class=\"sg-ot-vacio-txt\">Sin fallas registradas.</p>");
         else
-            foreach (Falla f in abiertasFalla)
+            foreach (Falla f in ultFallas)
                 s.Append(Fila("mdi-alert-outline", "es-rojo", Texto(f.fal_titulo),
-                         f.fal_fecha_deteccion_utc == null ? "" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy"),
-                         ""));
-
+                         f.fal_fecha_deteccion_utc == null ? "" : f.fal_fecha_deteccion_utc.Value.ToString("dd MMM yyyy"), ""));
         s.Append("</div></div>");
 
         s.Append(ContextoIa(a));
@@ -4109,10 +4102,83 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("<div class=\"sg-ot-nota es-chica\"><i class=\"mdi mdi-information-outline\"></i>")
          .Append("<span>La predicción es un apoyo al análisis. Requiere revisión humana y validación en terreno.</span></div>");
 
-        s.Append("</div>");
-
         litIaPanel.Text = s.ToString();
     }
+
+    /// <summary>Un dato de la cabecera de SIGMA AI. Con <paramref name="cuenta"/>, el numero sube animado al abrir.</summary>
+    private static string Stat(string etiqueta, string valor, string tono, string cuenta)
+    {
+        return "<div class=\"sgx-stat\"><small>" + etiqueta + "</small><b class=\"" + tono + "\"" +
+               (cuenta == "" ? "" : " data-cuenta=\"" + cuenta + "\" data-sufijo=\"" + (valor.EndsWith("%") ? "%" : "") + "\"") +
+               ">" + System.Web.HttpUtility.HtmlEncode(valor) + "</b></div>";
+    }
+
+    /// <summary>Alta, Media o Baja: la severidad de la alerta si la trae; si no, por la probabilidad.</summary>
+    private static string Riesgo(decimal? prob, string severidad)
+    {
+        string sv = (severidad ?? "").ToUpperInvariant();
+        if (sv.Contains("CRIT") || sv.Contains("ALT")) return "Alta";
+        if (sv.Contains("MED")) return "Media";
+        if (sv.Contains("BAJ")) return "Baja";
+        if (prob == null) return "Media";
+        return prob.Value >= 70 ? "Alta" : prob.Value >= 40 ? "Media" : "Baja";
+    }
+
+    /// <summary>Cuanto falta segun el modelo: «48–72 h» si es menos de tres dias, «5 días» si no.</summary>
+    private static string Horizonte(AlertaPrediccion p)
+    {
+        if (p == null) return "—";
+        int? dias = p.pre_dia_restante;
+        if (dias == null && p.pre_fecha_evento_estimada_utc != null)
+            dias = (int)Math.Ceiling((p.pre_fecha_evento_estimada_utc.Value - DateTime.UtcNow).TotalDays);
+        if (dias == null) return "—";
+        if (dias.Value <= 0) return "Hoy";
+        if (dias.Value <= 3) return ((dias.Value - 1) * 24) + "–" + (dias.Value * 24) + " h";
+        return dias.Value + " días";
+    }
+
+    private static readonly Dictionary<string, string> _svgIa = new Dictionary<string, string>();
+
+    /// <summary>
+    /// Un icono de SIGMA AI (Imagen/sigma-ai/sigma-ai-{cual}.svg) EN LINEA, no
+    /// como img: asi el CSS anima sus partes (la estrella de la prediccion,
+    /// los anillos del tiempo real, los puntos del analisis, el check de la
+    /// recomendacion). Se lee una vez y queda en memoria.
+    /// </summary>
+    private string SvgIa(string cual, string clase, int px)
+    {
+        string svg;
+        lock (_svgIa)
+        {
+            if (!_svgIa.TryGetValue(cual, out svg))
+            {
+                try { svg = System.IO.File.ReadAllText(Server.MapPath("~/Imagen/sigma-ai/sigma-ai-" + cual + ".svg")); }
+                catch (Exception) { svg = ""; }
+                int i = svg.IndexOf("<svg", StringComparison.OrdinalIgnoreCase);
+                svg = i < 0 ? "" : svg.Substring(i);
+                _svgIa[cual] = svg;
+            }
+        }
+        if (svg == "") return "";
+        /* El archivo trae width/height de 144: se cambian por el tamaño de este uso
+           para que no dependa de que el CSS cargue. */
+        int fin = svg.IndexOf('>');
+        string cab = System.Text.RegularExpressions.Regex.Replace(svg.Substring(0, fin), "\\s(width|height)=\"[^\"]*\"", "");
+        return cab.Substring(0, 4) + " class=\"" + clase + "\" width=\"" + px + "\" height=\"" + px + "\" aria-hidden=\"true\" focusable=\"false\"" +
+               cab.Substring(4) + svg.Substring(fin);
+    }
+
+    /// <summary>El grafico sin datos: una onda tenue que se mueve y lo que falta para verlo.</summary>
+    private static string Espera(string titulo, string texto, string accion)
+    {
+        return "<div class=\"sgx-espera\"><svg viewBox=\"0 0 400 90\" preserveAspectRatio=\"none\" aria-hidden=\"true\">" +
+               "<path class=\"sgx-ecg-base\" pathLength=\"1000\" d=\"M0,45 L40,45 L46,40 L52,45 L58,45 L64,14 L71,70 L77,45 L92,45 L100,38 L108,45 L170,45 L176,40 L182,45 L188,45 L194,14 L201,70 L207,45 L222,45 L230,38 L238,45 L300,45 L306,40 L312,45 L318,45 L324,14 L331,70 L337,45 L352,45 L360,38 L368,45 L430,45 L436,40 L442,45 L448,45 L454,14 L461,70 L467,45 L482,45 L490,38 L498,45 L400,45\" />" +
+               "<path class=\"sgx-ecg\" pathLength=\"1000\" d=\"M0,45 L40,45 L46,40 L52,45 L58,45 L64,14 L71,70 L77,45 L92,45 L100,38 L108,45 L170,45 L176,40 L182,45 L188,45 L194,14 L201,70 L207,45 L222,45 L230,38 L238,45 L300,45 L306,40 L312,45 L318,45 L324,14 L331,70 L337,45 L352,45 L360,38 L368,45 L430,45 L436,40 L442,45 L448,45 L454,14 L461,70 L467,45 L482,45 L490,38 L498,45 L400,45\" /></svg>" +
+               "<b>" + titulo + "</b><span>" + texto + "</span>" +
+               (accion == "" ? "" : "<a href=\"#\" data-ir-sec=\"condicion\">" + accion + "<i class=\"mdi mdi-arrow-right\"></i></a>") + "</div>";
+    }
+
+    private class FuenteIa { public string n; public string u; public decimal? v; public bool fuera; public bool hay; }
 
     #endregion
 
@@ -4167,63 +4233,117 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
+        /* EL HILO (bloque 352): cada nota con sus respuestas debajo, y las
+           respuestas de las respuestas. Los filtros y la paginacion cuentan
+           las notas principales; buscar encuentra tambien lo respondido. */
+        HashSet<int> ids = new HashSet<int>(registros.Select(x => x.bit_id));
+        ILookup<int, ActivoBitacora> hijos = registros.Where(x => x.padre != null && ids.Contains(x.padre.Value))
+                                                      .ToLookup(x => x.padre.Value);
+        List<ActivoBitacora> raices = registros.Where(x => x.padre == null || !ids.Contains(x.padre.Value)).ToList();
+
         StringBuilder s = new StringBuilder();
 
         s.Append("<div data-filtra=\".sg-bit\" data-nombre=\"anotaciones\">")
 
          .Append(BarraFiltros(
                 FiltroPeriodo(),
-                FiltroLista("quien", "mdi-account-outline", "Usuario", OpcionesDe(registros.Select(b => Texto(b.usuario)))),
-                FiltroLista("tipo", "mdi-format-list-bulleted-type", "Evento", OpcionesDe(registros.Select(b => Texto(b.tipo_nombre)))),
+                FiltroLista("quien", "mdi-account-outline", "Usuario", OpcionesDe(raices.Select(x => Texto(x.usuario)))),
+                FiltroLista("tipo", "mdi-format-list-bulleted-type", "Evento", OpcionesDe(raices.Select(x => Texto(x.tipo_nombre)))),
                 FiltroTexto("Buscar en bitácora...")))
 
-         .Append("<ul class=\"sg-a3-linea\">");
+         .Append("<ul class=\"sg-bn-lista\">");
 
-        foreach (ActivoBitacora b in registros)
+        foreach (ActivoBitacora r in raices)
         {
-            s.Append("<li class=\"sg-bit ").Append(b.requiere_atencion ? "es-aviso" : "").Append("\"")
-             .Append(" data-fecha=\"").Append(b.fecha == null ? "" : b.fecha.Value.ToString("yyyy-MM-dd"))
-             .Append("\" data-quien=\"").Append(Server.HtmlEncode(Texto(b.usuario).ToLowerInvariant()))
-             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(Texto(b.tipo_nombre).ToLowerInvariant()))
-             .Append("\" data-txt=\"")
-             .Append(Server.HtmlEncode((Texto(b.etiqueta) + " " + Texto(b.texto) + " " + Texto(b.usuario)).ToLowerInvariant()))
-             .Append("\">")
-
-             .Append("<span class=\"sg-a3-linea-ico\"><i class=\"mdi ")
-             .Append(b.tipo_icono.StartsWith("mdi-") ? b.tipo_icono : "mdi-note-text-outline").Append("\"></i></span>")
-             .Append("<div class=\"sg-a3-linea-txt\">")
-             .Append("<span class=\"sg-a3-linea-tit\">").Append(Server.HtmlEncode(b.etiqueta))
-             .Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(Texto(b.tipo_nombre))).Append("</span>");
-
-            if (b.requiere_atencion)
-                s.Append("<span class=\"sg-ot-chip es-aviso\">Requiere atención</span>");
-
-            s.Append("</span>")
-             .Append("<span class=\"sg-a3-linea-sub\">").Append(Server.HtmlEncode(Texto(b.texto))).Append("</span>")
-             .Append("<span class=\"sg-a3-linea-pie\">")
-             .Append(b.fecha == null ? "Sin fecha" : b.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
-             .Append(" · ").Append(Server.HtmlEncode(string.IsNullOrEmpty(b.usuario) ? "Sin usuario" : b.usuario))
-             .Append(" · ").Append(Server.HtmlEncode(Texto(b.origen)));
-
-            if (!string.IsNullOrEmpty(b.componente))
-                s.Append(" · ").Append(Server.HtmlEncode(b.componente));
-
-            if (b.orden_id != null && b.orden_correlativo > 0)
-                s.Append(" · OT-").Append(b.orden_correlativo);
-
-            /* Se escribio sin conexion y llego despues: la fecha del evento y
-               la de llegada no son la misma, y eso es justo lo que se revisa
-               cuando algo no cuadra. */
-            if (b.llego_tarde)
-                s.Append(" · <em>sincronizado el ")
-                 .Append(b.sincronizacion.Value.ToString("dd MMM yyyy · HH:mm")).Append("</em>");
-
-            s.Append("</span></div></li>");
+            s.Append("<li class=\"sg-bit sg-bn-li").Append(r.requiere_atencion ? " es-aviso" : "").Append("\"")
+             .Append(" data-fecha=\"").Append(r.fecha == null ? "" : r.fecha.Value.ToString("yyyy-MM-dd"))
+             .Append("\" data-quien=\"").Append(Server.HtmlEncode(Texto(r.usuario).ToLowerInvariant()))
+             .Append("\" data-tipo=\"").Append(Server.HtmlEncode(Texto(r.tipo_nombre).ToLowerInvariant()))
+             .Append("\" data-txt=\"").Append(Server.HtmlEncode(TextoHilo(r, hijos).ToLowerInvariant())).Append("\">");
+            Nota(s, r, hijos, 0);
+            s.Append("</li>");
         }
 
         s.Append("</ul>").Append(PiePaginacion("anotaciones")).Append("</div>");
 
         litBitacora.Text = s.ToString();
+    }
+
+    /// <summary>Todo lo que se busca de un hilo: la nota y lo que le respondieron.</summary>
+    private string TextoHilo(ActivoBitacora b, ILookup<int, ActivoBitacora> hijos)
+    {
+        StringBuilder t = new StringBuilder(Texto(b.etiqueta) + " " + Texto(b.texto) + " " + Texto(b.usuario));
+        foreach (ActivoBitacora h in hijos[b.bit_id]) t.Append(" ").Append(TextoHilo(h, hijos));
+        return t.ToString();
+    }
+
+    /// <summary>Las iniciales de quien escribio, para su circulo.</summary>
+    private static string Iniciales(string nombre)
+    {
+        string[] p = (nombre ?? "").Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (p.Length == 0) return "?";
+        return (p[0].Substring(0, 1) + (p.Length > 1 ? p[1].Substring(0, 1) : "")).ToUpperInvariant();
+    }
+
+    /// <summary>Una nota y, debajo, sus respuestas (recursivo).</summary>
+    private void Nota(StringBuilder s, ActivoBitacora b, ILookup<int, ActivoBitacora> hijos, int nivel)
+    {
+        List<ActivoBitacora> resp = hijos[b.bit_id].OrderBy(x => x.fecha ?? DateTime.MinValue).ThenBy(x => x.bit_id).ToList();
+        string quien = string.IsNullOrEmpty(b.usuario) ? "Sin usuario" : b.usuario;
+
+        s.Append("<article class=\"sg-bn").Append(nivel > 0 ? " es-resp" : "").Append(b.requiere_atencion ? " es-aviso" : "").Append("\" id=\"bit-").Append(b.bit_id).Append("\">")
+         .Append("<span class=\"sg-bn-av\" aria-hidden=\"true\">").Append(Server.HtmlEncode(Iniciales(quien))).Append("</span>")
+         .Append("<div class=\"sg-bn-cuerpo\"><header><b>").Append(Server.HtmlEncode(quien)).Append("</b>")
+         .Append("<span class=\"sg-bn-meta\">").Append(b.fecha == null ? "Sin fecha" : b.fecha.Value.ToString("dd MMM yyyy · HH:mm"));
+        if (nivel == 0 && !string.IsNullOrEmpty(b.origen)) s.Append(" · ").Append(Server.HtmlEncode(b.origen));
+        if (!string.IsNullOrEmpty(b.componente)) s.Append(" · ").Append(Server.HtmlEncode(b.componente));
+        if (b.orden_id != null && b.orden_correlativo > 0) s.Append(" · OT-").Append(b.orden_correlativo);
+        /* Se escribio sin conexion y llego despues: la fecha del evento y la
+           de llegada no son la misma, y eso es lo que se revisa cuando algo no cuadra. */
+        if (b.llego_tarde) s.Append(" · <em>sincronizado el ").Append(b.sincronizacion.Value.ToString("dd MMM yyyy · HH:mm")).Append("</em>");
+        s.Append("</span>");
+        if (nivel == 0 && !string.IsNullOrEmpty(b.tipo_nombre)) s.Append("<span class=\"sg-ot-chip es-tipo\">").Append(Server.HtmlEncode(b.tipo_nombre)).Append("</span>");
+        if (b.requiere_atencion) s.Append("<span class=\"sg-ot-chip es-aviso\">Requiere atención</span>");
+        s.Append("</header>");
+
+        if (nivel == 0 && !string.IsNullOrEmpty(b.etiqueta) && b.etiqueta != b.texto)
+            s.Append("<h4>").Append(Server.HtmlEncode(b.etiqueta)).Append("</h4>");
+        s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>")
+         .Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+        if (resp.Count > 0)
+            s.Append("<button type=\"button\" class=\"sg-bn-btn es-hilo\" data-bit-hilo=\"").Append(b.bit_id).Append("\" aria-expanded=\"true\"><i class=\"mdi mdi-chevron-up\"></i>")
+             .Append(resp.Count).Append(resp.Count == 1 ? " respuesta" : " respuestas").Append("</button>");
+        s.Append("</footer>")
+         .Append("<div class=\"sg-bn-form\" data-bit-form=\"").Append(b.bit_id).Append("\" hidden>")
+         .Append("<textarea rows=\"2\" maxlength=\"2000\" placeholder=\"Responde a ").Append(Server.HtmlEncode(quien.Split(' ')[0])).Append("…\"></textarea>")
+         .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
+         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>")
+         .Append("</div></article>");
+
+        if (resp.Count > 0)
+        {
+            s.Append("<ul class=\"sg-bn-hilo\" data-bit-hijos=\"").Append(b.bit_id).Append("\">");
+            foreach (ActivoBitacora h in resp)
+            {
+                s.Append("<li class=\"sg-bn-li\">");
+                Nota(s, h, hijos, nivel + 1);
+                s.Append("</li>");
+            }
+            s.Append("</ul>");
+        }
+    }
+
+    protected void lnkResponder_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "bitacora";
+        int padre;
+        if (!int.TryParse(Request.Form["bit_padre"], out padre) || padre <= 0) return;
+        if (ActivoSeleccionado() == 0) return;
+
+        Respuesta r = new ActivoCentroController().ResponderBitacora(padre, Request.Form["bit_respuesta"]);
+        litObsAviso.Text = r.error
+            ? "<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-alert-outline\"></i><span>" + Server.HtmlEncode(r.detalle) + "</span></div>"
+            : "";
     }
 
     /// <summary>
@@ -4238,7 +4358,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         {
             litTrazabilidad.Text = "<div class=\"sg-ot-vacio es-chico\"><i class=\"mdi mdi-shield-check-outline\"></i>" +
                                    "<p>Sin cambios auditables</p>" +
-                                   "<span>El equipo no registra cambios de estado ni de posición.</span></div>";
+                                   "<span>El activo no registra cambios de estado ni de posición.</span></div>";
             return;
         }
 
@@ -4393,15 +4513,27 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         return UrlRegistro("~/View/Inventario/Repuestos/Repuesto.aspx", id);
     }
 
+    /// <summary>El numero al lado del nombre de la pestaña; en rojo si es algo fuera de limite. Cero no se muestra.</summary>
+    private static string Num(int n, bool malo)
+    {
+        return n <= 0 ? "" : "<b class=\"sg-a3-num" + (malo ? " es-malo" : "") + "\">" + n + "</b>";
+    }
+
+    /// <summary>
+    /// La portada de 120 px de la cabecera. Abre «Documentos y fotos»; sin
+    /// portada, es el espacio para subirla (como en las tarjetas de la planta).
+    /// </summary>
     private string Foto(int activo)
     {
         int idArchivo = new ActivoImagenController().GetImagenId(activo, _cliente);
 
         if (idArchivo > 0)
-            return "<span class=\"sg-a3-foto\"><img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(idArchivo)) +
-                   "\" alt=\"Imagen del equipo\" /></span>";
+            return "<a href=\"#\" class=\"sg-a3-foto\" data-ir-sec=\"documentos\" title=\"Ver las fotos del activo\"><img src=\"" +
+                   Server.HtmlEncode(UrlArchivo.Ver(idArchivo)) + "\" alt=\"Foto de portada del activo\" />" +
+                   "<span class=\"sg-a3-foto-tag\"><i class=\"mdi mdi-camera-outline\"></i>Portada</span></a>";
 
-        return "<span class=\"sg-a3-foto es-vacia\"><i class=\"mdi mdi-image-off-outline\"></i></span>";
+        return "<a href=\"#\" class=\"sg-a3-foto es-vacia\" data-ir-sec=\"documentos\" title=\"Subir la foto de portada\">" +
+               "<i class=\"mdi mdi-camera-plus-outline\"></i>Subir fotos</a>";
     }
 
     private string ChipEstado(Activo a)

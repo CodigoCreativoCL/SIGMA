@@ -441,6 +441,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             arc.arc_mime = fuImagenComp.PostedFile != null ? fuImagenComp.PostedFile.ContentType : null;
             arc.contenido = contenido;
 
+            ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
             Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
             if (r.error || r.codigo <= 0)
                 return " (la imagen no se pudo guardar: " + r.detalle + ")";

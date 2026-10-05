@@ -253,7 +253,7 @@
             </button>
             <asp:HyperLink ID="hlListoRepuestos" runat="server" CssClass="af-listo-op es-rep">
                 <i class="mdi mdi-package-variant-closed"></i><b>Registrar sus repuestos</b>
-                <span>Lo que se compra para este equipo y se guarda en bodega.</span>
+                <span>Lo que se compra para este activo y se guarda en bodega.</span>
             </asp:HyperLink>
             <asp:HyperLink ID="hlListoCentro" runat="server" CssClass="af-listo-op es-centro" NavigateUrl="javascript:void(0)">
                 <i class="mdi mdi-view-dashboard-outline"></i><b>Abrir su centro 360°</b>
@@ -274,9 +274,9 @@
     <%-- ============ RIEL: pasos + ayuda del paso ============ --%>
     <aside class="af-rail">
         <nav class="af-pasos" aria-label="Pasos de la ficha">
-            <button type="button" class="af-paso" data-ir="1" onclick="fpIr(1)"><span class="af-n"><span>1</span><i class="mdi mdi-check"></i></span><span><b>Información básica</b><small>Qué es el equipo</small><span class="af-falta-dot">Falta un dato</span></span></button>
+            <button type="button" class="af-paso" data-ir="1" onclick="fpIr(1)"><span class="af-n"><span>1</span><i class="mdi mdi-check"></i></span><span><b>Información básica</b><small>Qué es el activo</small><span class="af-falta-dot">Falta un dato</span></span></button>
             <button type="button" class="af-paso" data-ir="2" onclick="fpIr(2)"><span class="af-n"><span>2</span><i class="mdi mdi-check"></i></span><span><b>Ubicación</b><small>Dónde está</small><span class="af-falta-dot">Falta un dato</span></span></button>
-            <button type="button" class="af-paso" data-ir="3" onclick="fpIr(3)"><span class="af-n"><span>3</span><i class="mdi mdi-check"></i></span><span><b>Datos técnicos</b><small>Placa, año y documentos</small><span class="af-falta-dot">Falta un dato</span></span></button>
+            <button type="button" class="af-paso" data-ir="3" onclick="fpIr(3)"><span class="af-n"><span>3</span><i class="mdi mdi-check"></i></span><span><b>Datos técnicos</b><small>Características, año y documentos</small><span class="af-falta-dot">Falta un dato</span></span></button>
             <button type="button" class="af-paso" data-ir="4" onclick="fpIr(4)"><span class="af-n"><span>4</span><i class="mdi mdi-check"></i></span><span><b>Componentes</b><small><asp:Literal ID="litPartesRail" runat="server" Text="Motor, rodamientos…" /></small></span></button>
             <button type="button" class="af-paso" data-ir="5" onclick="fpIr(5)"><span class="af-n"><span>5</span><i class="mdi mdi-check"></i></span><span><b>Variables</b><small><asp:Literal ID="litVarsRail" runat="server" Text="Qué se mide: temperatura…" /></small></span></button>
             <button type="button" class="af-paso" data-ir="6" onclick="fpIr(6)"><span class="af-n"><span>6</span><i class="mdi mdi-check"></i></span><span><b>Medidores</b><small><asp:Literal ID="litMedsRail" runat="server" Text="Horas, ciclos, kilómetros" /></small></span></button>
@@ -284,9 +284,9 @@
 
         <div class="af-tip" data-paso="1"><i class="mdi mdi-information-variant"></i><div><b>Completa lo principal.</b> Con el nombre, el tipo, el estado, la criticidad y la planta ya puedes guardar. Lo demás lo agregas cuando quieras.</div></div>
         <div class="af-tip" data-paso="2"><i class="mdi mdi-information-variant"></i><div><b>Indica dónde está.</b> Si depende de una máquina más grande, como el compresor de una cámara de frío, marca «Sí» y elígela: quedará como su subactivo.</div></div>
-        <div class="af-tip" data-paso="3"><i class="mdi mdi-information-variant"></i><div><b>Este paso es opcional.</b> Copia lo que dice la placa o el manual del equipo. Puedes hacerlo ahora o después, desde su ficha.</div></div>
+        <div class="af-tip" data-paso="3"><i class="mdi mdi-information-variant"></i><div><b>Este paso es opcional.</b> Anota sus características (potencia, capacidad, voltaje…) desde el manual o la ficha del fabricante. Puedes hacerlo ahora o después, desde su ficha.</div></div>
         <div class="af-tip" data-paso="4"><i class="mdi mdi-information-variant"></i><div><b>¿Le importa esa pieza en particular?</b> Es un componente. <b>¿Da lo mismo cuál uses de la bodega?</b> Es un repuesto y se agrega después.</div></div>
-        <div class="af-tip" data-paso="5"><i class="mdi mdi-information-variant"></i><div><b>Este paso es opcional.</b> Una variable dice <b>cómo está</b> el equipo: la temperatura, la presión, la vibración. Si anotas el rango normal, SIGMA avisa cuando una lectura se sale.</div></div>
+        <div class="af-tip" data-paso="5"><i class="mdi mdi-information-variant"></i><div><b>Este paso es opcional.</b> Una variable dice <b>cómo está</b> el activo: la temperatura, la presión, la vibración. Si anotas el rango normal, SIGMA avisa cuando una lectura se sale.</div></div>
         <div class="af-tip" data-paso="6"><i class="mdi mdi-information-variant"></i><div><b>Este paso es opcional.</b> Un medidor dice <b>cuánto ha trabajado</b>: horas de marcha, ciclos, kilómetros. Sirve para programar el mantenimiento por uso y no solo por calendario.</div></div>
 
         <%-- Solo en el centro: quien lo creo y que cuelga de el. --%>
@@ -308,7 +308,7 @@
 
         <%-- ============ PASO 1 · INFORMACIÓN BÁSICA ============ --%>
         <section class="af-seccion" data-paso="1">
-            <header class="af-cab"><i class="mdi mdi-cog-outline"></i><div><h3>Información básica</h3><p>Lo que identifica al equipo.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-cog-outline"></i><div><h3>Información básica</h3><p>Lo que identifica al activo.</p></div></header>
 
             <span class="af-oculto"><asp:Label ID="lblId" runat="server"></asp:Label></span>
 
@@ -326,7 +326,7 @@
                 <div class="sigma-modal-field">
                     <label>Nombre <span class="req">*</span></label>
                     <WebControls:TextBox2 ID="txtNombre" runat="server" MaxLength="200" placeholder="Ej.: Cámara de frío 1" />
-                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Escribe cómo le dicen al equipo en la planta.</span>
+                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Escribe cómo le dicen al activo en la planta.</span>
                     <asp:CustomValidator ID="cvNombre" runat="server" ControlToValidate="txtNombre" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
@@ -351,7 +351,7 @@
                 <div class="sigma-modal-field">
                     <label>Estado <span class="req">*</span></label>
                     <rad:RadComboBox2 ID="cboEstado" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige cómo está el equipo hoy.</span>
+                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige cómo está el activo hoy.</span>
                     <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
@@ -372,27 +372,27 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>N° de serie</label>
-                    <WebControls:TextBox2 ID="txtSerie" runat="server" MaxLength="100" placeholder="Está en la placa del equipo" />
+                    <WebControls:TextBox2 ID="txtSerie" runat="server" MaxLength="100" placeholder="Está en la placa del activo" />
                 </div>
                 <div class="sigma-modal-field af-ancho">
                     <label>Descripción</label>
                     <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="500" placeholder="Para qué sirve o algo que convenga saber" />
                 </div>
                 <div class="sigma-modal-field af-ancho">
-                    <label>Foto del equipo</label>
+                    <label>Foto del activo</label>
                     <div class="af-drop af-foto">
                         <span class="af-drop-ico">
                             <asp:Panel ID="pnlSinImagen" runat="server" CssClass="af-foto-vacia"><i class="mdi mdi-image-outline"></i></asp:Panel>
                             <asp:Panel ID="pnlImagenActual" runat="server" Visible="false" CssClass="af-foto-actual">
                                 <a id="lnkImagenActual" runat="server" target="_blank" rel="noopener" title="Ampliar">
-                                    <img id="imgActual" runat="server" alt="Foto actual del equipo" data-ampliar="1" />
+                                    <img id="imgActual" runat="server" alt="Foto actual del activo" data-ampliar="1" />
                                 </a>
                             </asp:Panel>
                             <img id="sigmaThumb" alt="Vista previa" style="display:none" />
                         </span>
                         <span class="af-drop-txt">
                             <b>Arrastra una foto aquí</b>
-                            <span>PNG o JPG. Ayuda a reconocer el equipo en la planta.</span>
+                            <span>PNG o JPG. Ayuda a reconocer el activo en la planta.</span>
                             <span id="sigmaFileName" class="sigma-img-name"></span>
                             <asp:Panel ID="pnlQuitarImagen" runat="server" Visible="false" CssClass="af-quitar-foto">
                                 <asp:CheckBox ID="chkQuitarImagen" runat="server" Text="Quitar la foto actual al guardar" />
@@ -410,13 +410,13 @@
 
         <%-- ============ PASO 2 · UBICACIÓN ============ --%>
         <section class="af-seccion" data-paso="2">
-            <header class="af-cab"><i class="mdi mdi-map-marker-outline"></i><div><h3>Ubicación</h3><p>En qué planta y área está el equipo.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-map-marker-outline"></i><div><h3>Ubicación</h3><p>En qué planta y área está el activo.</p></div></header>
 
             <div class="af-grid">
                 <div class="sigma-modal-field">
                     <label>Planta <span class="req">*</span></label>
                     <rad:RadComboBox2 ID="cboPlanta" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige la planta donde está el equipo.</span>
+                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige la planta donde está el activo.</span>
                     <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="cboPlanta" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
@@ -446,7 +446,7 @@
 
         <%-- ============ PASO 3 · DATOS TÉCNICOS ============ --%>
         <section class="af-seccion" data-paso="3">
-            <header class="af-cab"><i class="mdi mdi-tune-variant"></i><div><h3>Datos técnicos</h3><p>Año, puesta en marcha, datos de la placa y documentos.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-tune-variant"></i><div><h3>Datos técnicos</h3><p>Año, puesta en marcha, características y documentos.</p></div></header>
 
             <div class="af-grid">
                 <div class="sigma-modal-field">
@@ -473,7 +473,7 @@
 
             <%-- Datos de placa: nombre · valor · unidad, propios del activo. --%>
             <asp:Panel ID="pnlDatosTecnicos" runat="server">
-                <p class="af-sub">Datos de placa<small>Lo que dice la placa o el manual. Ej.: Potencia 5,5 kW. La foto de cada dato queda en Documentos con su nombre.</small></p>
+                <p class="af-sub">Características técnicas<small>Lo que describe al activo. Ej.: Potencia 5,5 kW. La foto de cada dato queda en Documentos con su nombre.</small></p>
                 <div class="af-filas-cab" id="ndCab"><span>Nombre</span><span>Valor</span><span>Unidad</span><span class="c">Foto</span><span></span></div>
                 <div class="af-filas">
                     <asp:Repeater ID="rptDatos" runat="server" OnItemDataBound="rptDatos_ItemDataBound">
@@ -505,7 +505,7 @@
                             <asp:HyperLink runat="server" Target="_blank" CssClass="ver"
                                 NavigateUrl='<%# VerUrl((int)Eval("arc_id")) %>'><i class="mdi mdi-open-in-new"></i> Ver</asp:HyperLink>
                             <asp:LinkButton runat="server" CssClass="quitar" CommandName="quitar" CommandArgument='<%# Eval("arc_id") %>'
-                                OnClientClick="return confirm('¿Quitar este documento del equipo?');"><i class="mdi mdi-close"></i> Quitar</asp:LinkButton>
+                                OnClientClick="return confirm('¿Quitar este documento del activo?');"><i class="mdi mdi-close"></i> Quitar</asp:LinkButton>
                         </div>
                     </ItemTemplate>
                     <FooterTemplate></div></FooterTemplate>
@@ -530,7 +530,7 @@
         <%-- ============ PASO 4 · PARTES ============
              Las partes del equipo que se quieren seguir, agregadas aqui mismo. --%>
         <section class="af-seccion" data-paso="4">
-            <header class="af-cab"><i class="mdi mdi-puzzle-outline"></i><div><h3>Componentes</h3><p>Las partes del equipo que quieres seguir por separado: el motor, un rodamiento, una válvula.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-puzzle-outline"></i><div><h3>Componentes</h3><p>Las partes del activo que quieres seguir por separado: el motor, un rodamiento, una válvula.</p></div></header>
 
             <asp:Panel ID="pnlComponentes" runat="server" CssClass="af-grid">
                 <div class="af-ancho">
@@ -548,7 +548,7 @@
 
         <%-- ============ PASO 5 · VARIABLES DE CONDICIÓN ============ --%>
         <section class="af-seccion" data-paso="5">
-            <header class="af-cab"><i class="mdi mdi-pulse"></i><div><h3>Variables de condición</h3><p>Lo que se mide para saber cómo está el equipo y entre qué valores es normal.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-pulse"></i><div><h3>Variables de condición</h3><p>Lo que se mide para saber cómo está el activo y entre qué valores es normal.</p></div></header>
             <div>
                 <asp:Literal ID="litVariables" runat="server" />
                 <div class="af-filas-cab af-fila-var" id="vaCab" style="display:none"><span>Qué se mide</span><span>Unidad</span><span>Mínimo normal</span><span>Máximo normal</span><span></span></div>
@@ -560,7 +560,7 @@
 
         <%-- ============ PASO 6 · MEDIDORES ============ --%>
         <section class="af-seccion" data-paso="6">
-            <header class="af-cab"><i class="mdi mdi-counter"></i><div><h3>Medidores</h3><p>Lo que cuenta cuánto ha trabajado el equipo, con la lectura de hoy.</p></div></header>
+            <header class="af-cab"><i class="mdi mdi-counter"></i><div><h3>Medidores</h3><p>Lo que cuenta cuánto ha trabajado el activo, con la lectura de hoy.</p></div></header>
             <div>
                 <asp:Literal ID="litMedidores" runat="server" />
                 <div class="af-filas-cab af-fila-med" id="meCab" style="display:none"><span>Qué cuenta</span><span>Unidad</span><span>Lectura de hoy</span><span></span></div>
@@ -603,7 +603,7 @@
 <div id="sigmaGuardandoOv" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(255,255,255,.82);align-items:center;justify-content:center;">
     <div style="display:flex;flex-direction:column;align-items:center;gap:12px;text-align:center;">
         <div style="width:44px;height:44px;border:4px solid #E2E7F0;border-top-color:#6732F4;border-radius:50%;animation:sigmaSpin .8s linear infinite;"></div>
-        <div style="font-size:15px;font-weight:700;color:#17223B;">Guardando el equipo…</div>
+        <div style="font-size:15px;font-weight:700;color:#17223B;">Guardando el activo…</div>
         <div style="font-size:13px;color:#68738A;">Si elegiste una foto o documentos, se están subiendo. No cierres esta ventana.</div>
     </div>
 </div>

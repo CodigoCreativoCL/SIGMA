@@ -115,6 +115,30 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// La observacion vigente de cada componente del cliente: el motivo de su
+        /// ultimo cambio de estado (bloque 356). Una consulta para toda la lista.
+        /// </summary>
+        public Dictionary<int, string> GetUltimosMotivos()
+        {
+            Dictionary<int, string> m = new Dictionary<int, string>();
+            if (!Token.TokenSeguridad()) return m;
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_COMPONENTE_ULTIMO_MOTIVO");
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                    while (dr.Read()) m[System.Convert.ToInt32(dr["COMPONENTE"])] = dr["MOTIVO"].ToString();
+                cmd.Connection.Close();
+            }
+            catch (System.Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+            return m;
+        }
+
         public ActivoComponente GetComponente(int id)
         {
             List<ActivoComponente> l = GetComponentes(new ActivoComponente { aco_id = id });

@@ -102,6 +102,75 @@ namespace SitioBase.Controller
         /// El binario viaja en entidad.contenido y no se guarda en ningún
         /// lado de acá: se envía y se suelta.
         /// </summary>
+        /// <summary>
+        /// Deja liviana una foto antes de subirla al blob: lado mayor a
+        /// <paramref name="ladoMax"/> px y JPEG con <paramref name="calidad"/>,
+        /// usando SitioBase.ReducirImagen. Respeta la orientacion EXIF (las
+        /// fotos del celular no quedan de lado) y pone fondo blanco a los PNG
+        /// con transparencia. Lo que no es imagen, o no se puede leer, queda
+        /// tal cual: nunca impide guardar el archivo.
+        /// </summary>
+        public static void Alivianar(Archivo a, int ladoMax = 1600, int calidad = 80)
+        {
+            if (a == null || a.contenido == null || a.contenido.Length == 0) return;
+            string mime = (a.arc_mime ?? "").ToLowerInvariant();
+            if (!mime.StartsWith("image/") || mime.Contains("svg") || mime.Contains("gif")) return;
+            try
+            {
+                byte[] base_;
+                int w, h;
+                using (var ms = new System.IO.MemoryStream(a.contenido))
+                using (var img = System.Drawing.Image.FromStream(ms, true))
+                {
+                    int orient = 1;
+                    if (System.Array.IndexOf(img.PropertyIdList, 0x0112) >= 0)
+                        try { orient = img.GetPropertyItem(0x0112).Value[0]; } catch { }
+                    bool girar = orient > 1 && orient <= 8;
+                    bool alfa = System.Drawing.Image.IsAlphaPixelFormat(img.PixelFormat);
+                    w = img.Width; h = img.Height;
+                    if (girar && orient >= 5) { int t = w; w = h; h = t; }
+                    if (Math.Max(w, h) <= ladoMax && a.contenido.Length <= 500 * 1024 && !girar && !alfa) return;
+
+                    if (girar || alfa)
+                    {
+                        // Se endereza y se aplana sobre blanco antes de achicar.
+                        using (var lienzo = new System.Drawing.Bitmap(img.Width, img.Height))
+                        {
+                            using (var g = System.Drawing.Graphics.FromImage(lienzo))
+                            {
+                                g.Clear(System.Drawing.Color.White);
+                                g.DrawImage(img, 0, 0, img.Width, img.Height);
+                            }
+                            System.Drawing.RotateFlipType[] giro = {
+                                System.Drawing.RotateFlipType.RotateNoneFlipNone, System.Drawing.RotateFlipType.RotateNoneFlipNone,
+                                System.Drawing.RotateFlipType.RotateNoneFlipX, System.Drawing.RotateFlipType.Rotate180FlipNone,
+                                System.Drawing.RotateFlipType.Rotate180FlipX, System.Drawing.RotateFlipType.Rotate90FlipX,
+                                System.Drawing.RotateFlipType.Rotate90FlipNone, System.Drawing.RotateFlipType.Rotate270FlipX,
+                                System.Drawing.RotateFlipType.Rotate270FlipNone };
+                            if (girar) lienzo.RotateFlip(giro[orient]);
+                            using (var o = new System.IO.MemoryStream())
+                            {
+                                lienzo.Save(o, System.Drawing.Imaging.ImageFormat.Png);
+                                base_ = o.ToArray();
+                            }
+                        }
+                    }
+                    else base_ = a.contenido;
+                }
+
+                double k = Math.Min(1.0, (double)ladoMax / Math.Max(w, h));
+                int nw = Math.Max(1, (int)Math.Round(w * k)), nh = Math.Max(1, (int)Math.Round(h * k));
+                byte[] chica = global::SitioBase.SitioBase.ReducirImagen(base_, nw, nh, calidad);
+                if (chica == null || chica.Length == 0) return;
+
+                a.contenido = chica;
+                a.arc_mime = "image/jpeg";
+                string nombre = string.IsNullOrEmpty(a.arc_nombre_original) ? "foto" : System.IO.Path.GetFileNameWithoutExtension(a.arc_nombre_original);
+                a.arc_nombre_original = nombre + ".jpg";
+            }
+            catch (Exception) { /* si no se puede leer como imagen, se sube el original */ }
+        }
+
         public Respuesta InsertArchivo(Archivo entidad, string carpeta)
         {
             Respuesta respuesta = new Respuesta();

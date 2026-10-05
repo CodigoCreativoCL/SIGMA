@@ -130,7 +130,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Las clases o categorías con que agrupas tus equipos (motor, caldera, ascensor, cámara de frío…). Se organizan en árbol; cada clase puede tener sus modelos y sus datos técnicos.
+    Las clases o categorías con que agrupas tus activos (motor, caldera, ascensor, cámara de frío…). Se organizan en árbol; cada clase puede tener sus modelos y sus datos técnicos.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">

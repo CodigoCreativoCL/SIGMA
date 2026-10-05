@@ -60,7 +60,7 @@
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=9" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
     <link href="../Css/LookAndFeel/sigma-layout.css?vrs=7" rel="stylesheet" />
@@ -111,6 +111,10 @@
          reglas de Grid.css y Button.css que traen !important, y para
          ganarles hay que cargarla al final. --%>
     <link href="../Css/LookAndFeel/sigma-botones.css?vrs=16" rel="stylesheet" />
+    <%-- WebControls:Calendar sigue emitiendo su inicializacion de PopCalendar, que ya
+         no se carga (lo reemplaza sigma-calendario.js). Sin este objeto mudo el script
+         falla; en un postback asincrono ese error cortaba la actualizacion del panel. --%>
+    <script type="text/javascript">window.PopCalendar = window.PopCalendar || { newCalendar: function () { return { forcedToday: function () { }, initCalendar: function () { } }; } };</script>
     <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
     <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
 </head>
@@ -427,16 +431,6 @@
                                 </asp:HyperLink>
                             </div>
                         </div>
-                    </li>
-
-                    <!-- Accion principal.
-                         PENDIENTE: apunta al inicio hasta que exista la
-                         pantalla de creacion de orden de trabajo. -->
-                    <li>
-                        <a href='<%=ResolveUrl("~/Default.aspx") %>' class="sg-btn-primary">
-                            <i class="mdi mdi-plus"></i>
-                            <span>Nueva OT</span>
-                        </a>
                     </li>
 
                     <li class="dropdown notification-list sg-account">
