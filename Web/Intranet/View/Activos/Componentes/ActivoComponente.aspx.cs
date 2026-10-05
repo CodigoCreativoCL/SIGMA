@@ -40,8 +40,91 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
             ActivoFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Activo");
+            Precargar();
         }
     }
+
+    /* ================================================================
+       ABRIR RAPIDO (05-10-2026)
+
+       La base esta en un hosting remoto: cada consulta es una ida y vuelta
+       de ~250 ms. La ficha hacia ~14 en fila (activos, cinco combos, el
+       componente, su placa, su imagen, su historial y sus posibles padres):
+       3,5 a 4 s con el esqueleto en pantalla. Son independientes, asi que
+       se piden EN PARALELO en dos tandas (todo lo que no depende de nada, y
+       despues los padres, que dependen del activo) y la ficha queda en
+       ~0,6 s. Cada hilo recibe el HttpContext de la peticion para que
+       Session y Token respondan igual que en el hilo de la pagina.
+       ================================================================ */
+    private List<Activo> _activos;
+    private List<ComponenteTipo> _tipos;
+    private List<ActivoComponenteEstado> _estados;
+    private List<CriticidadNivel> _criticidades;
+    private List<ComponentePosicion> _posiciones;
+    private List<FabricanteController.Fabricante> _marcas;
+    private ActivoComponente _comp, _placa;
+    private int _imagen;
+    private List<ActivoComponenteEstadoHistorial> _historial;
+    private List<ActivoComponente> _padres;
+    private bool _precargado;
+
+    private static System.Threading.Tasks.Task<T> EnParalelo<T>(System.Web.HttpContext ctx, Func<T> f)
+    {
+        return System.Threading.Tasks.Task.Run(() =>
+        {
+            System.Web.HttpContext.Current = ctx;
+            try { return f(); }
+            finally { System.Web.HttpContext.Current = null; }
+        });
+    }
+
+    private void Precargar()
+    {
+        try
+        {
+            System.Web.HttpContext ctx = System.Web.HttpContext.Current;
+            int cliente = SitioBase.Session.ClienteId();
+            Token.Permisos();   // los permisos se leen una vez, en el hilo de la pagina
+
+            var tActivos = EnParalelo(ctx, () => new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }));
+            var tTipos = EnParalelo(ctx, () => new ComponenteTipoController().GetTipos(new ComponenteTipo { filtro_cliente = cliente, filtro_habilitado = true }));
+            var tEstados = EnParalelo(ctx, () => new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }));
+            var tCrit = EnParalelo(ctx, () => new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true }));
+            var tPos = EnParalelo(ctx, () => new ComponentePosicionController().GetPosiciones(new ComponentePosicion { filtro_cliente = cliente, filtro_habilitado = true }));
+            var tMarcas = EnParalelo(ctx, () => new FabricanteController().Catalogo());
+            System.Threading.Tasks.Task<ActivoComponente> tComp = null, tPlaca = null;
+            System.Threading.Tasks.Task<int> tImg = null;
+            System.Threading.Tasks.Task<List<ActivoComponenteEstadoHistorial>> tHist = null;
+            if (Id > 0)
+            {
+                tComp = EnParalelo(ctx, () => new ActivoComponenteController().GetComponente(Id));
+                tPlaca = EnParalelo(ctx, () => new ActivoComponenteController().GetPlaca(Id, cliente));
+                tImg = EnParalelo(ctx, () => new ActivoComponenteImagenController().GetImagenId(Id, cliente));
+                tHist = EnParalelo(ctx, () => new ActivoComponenteController().GetHistorialEstado(Id, cliente));
+            }
+
+            // segunda tanda: los posibles padres son del activo (el fijo, o el del componente)
+            int activo = ActivoFijo;
+            if (tComp != null) { _comp = tComp.Result; if (_comp != null) activo = _comp.aco_activo; }
+            var tPadres = activo > 0
+                ? EnParalelo(ctx, () => new ActivoComponenteController().GetComponentes(new ActivoComponente { aco_cliente = cliente, filtro_activo = activo, filtro_habilitado = true }))
+                : null;
+
+            _activos = tActivos.Result; _tipos = tTipos.Result; _estados = tEstados.Result; _criticidades = tCrit.Result;
+            _posiciones = tPos.Result; _marcas = tMarcas.Result;
+            if (Id > 0) { _placa = tPlaca.Result; _imagen = tImg.Result; _historial = tHist.Result; }
+            if (tPadres != null) { _padres = tPadres.Result; _padresDe = activo; }
+            _precargado = true;
+        }
+        catch (Exception)
+        {
+            /* Si algo falla en paralelo, la ficha sigue como antes: cada parte
+               se pide en el hilo de la pagina. */
+            _precargado = false;
+            _comp = null; _padres = null;
+        }
+    }
+    private int _padresDe;
 
     public void LoadControls(object sender, EventArgs e)
     {
@@ -55,7 +138,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             case "cboActivo":
                 {
                     ActivoController c = new ActivoController();
-                    List<Activo> l = c.GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true });
+                    List<Activo> l = _precargado ? _activos : c.GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true });
                     ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
                     ctrl.AppendDataBoundItems = true;
                     /* Activos y subactivos: el subactivo dice de quien depende,
@@ -77,7 +160,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                     ComponenteTipoController c = new ComponenteTipoController();
                     ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
                     ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetTipos(new ComponenteTipo { filtro_cliente = cliente, filtro_habilitado = true });
+                    ctrl.DataSource = _precargado ? _tipos : c.GetTipos(new ComponenteTipo { filtro_cliente = cliente, filtro_habilitado = true });
                     ctrl.DataValueField = "cto_id"; ctrl.DataTextField = "cto_nombre"; ctrl.DataBind();
                     break;
                 }
@@ -86,7 +169,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                     ActivoComponenteEstadoController c = new ActivoComponenteEstadoController();
                     ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
                     ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetEstados(new ActivoComponenteEstado { filtro_habilitado = true });
+                    ctrl.DataSource = _precargado ? _estados : c.GetEstados(new ActivoComponenteEstado { filtro_habilitado = true });
                     ctrl.DataValueField = "ace_id"; ctrl.DataTextField = "ace_nombre"; ctrl.DataBind();
                     break;
                 }
@@ -95,7 +178,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                     CriticidadNivelController c = new CriticidadNivelController();
                     ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
                     ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true });
+                    ctrl.DataSource = _precargado ? _criticidades : c.GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true });
                     ctrl.DataValueField = "crn_id"; ctrl.DataTextField = "crn_nombre"; ctrl.DataBind();
                     break;
                 }
@@ -104,14 +187,14 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                     ComponentePosicionController c = new ComponentePosicionController();
                     ctrl.Items.Add(new RadComboBoxItem("Sin indicar", ""));
                     ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = c.GetPosiciones(new ComponentePosicion { filtro_cliente = cliente, filtro_habilitado = true });
+                    ctrl.DataSource = _precargado ? _posiciones : c.GetPosiciones(new ComponentePosicion { filtro_cliente = cliente, filtro_habilitado = true });
                     ctrl.DataValueField = "cpn_id"; ctrl.DataTextField = "cpn_nombre"; ctrl.DataBind();
                     break;
                 }
             case "cboFabricante":
                 {
                     // El catalogo de marcas compartido con activos y repuestos.
-                    foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
+                    foreach (FabricanteController.Fabricante f in (_precargado ? _marcas : new FabricanteController().Catalogo()) ?? new List<FabricanteController.Fabricante>())
                         ctrl.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
                     break;
                 }
@@ -145,12 +228,14 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         if (int.TryParse(cboActivo.SelectedValue, out activo) && activo > 0)
         {
             ActivoComponenteController c = new ActivoComponenteController();
-            List<ActivoComponente> l = c.GetComponentes(new ActivoComponente
-            {
-                aco_cliente = SitioBase.Session.ClienteId(),
-                filtro_activo = activo,
-                filtro_habilitado = true
-            });
+            List<ActivoComponente> l = _precargado && _padres != null && _padresDe == activo
+                ? new List<ActivoComponente>(_padres)
+                : c.GetComponentes(new ActivoComponente
+                {
+                    aco_cliente = SitioBase.Session.ClienteId(),
+                    filtro_activo = activo,
+                    filtro_habilitado = true
+                });
 
             if (l != null)
             {
@@ -198,7 +283,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         if (Id > 0)
         {
             ActivoComponenteController c = new ActivoComponenteController();
-            ActivoComponente x = c.GetComponente(Id);
+            ActivoComponente x = _precargado && _comp != null ? _comp : c.GetComponente(Id);
 
             lblId.Text = Id.ToString();
             txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo_Componente", x.aco_codigo);
@@ -221,7 +306,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
             /* La placa se lee con su propio SP: el SEL del componente lo
                comparte la app y no trae estas tres columnas. */
-            ActivoComponente placa = c.GetPlaca(Id, SitioBase.Session.ClienteId());
+            ActivoComponente placa = _precargado && _placa != null ? _placa : c.GetPlaca(Id, SitioBase.Session.ClienteId());
             txtNumeroSerie.Text = placa.aco_numero_serie;
             cboFabricante.Text = placa.aco_fabricante;
             txtModelo.Text = placa.aco_modelo;
@@ -233,7 +318,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
             /* La imagen vigente, si tiene. El id va cifrado en la url que la
                sirve: el archivo vive en Blob Storage, no en la pagina. */
-            int idImagen = new ActivoComponenteImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
+            int idImagen = _precargado ? _imagen : new ActivoComponenteImagenController().GetImagenId(Id, SitioBase.Session.ClienteId());
             pnlSinImagen.Visible = idImagen <= 0;
             pnlImagenActual.Visible = idImagen > 0;
             pnlQuitarImagen.Visible = idImagen > 0;
@@ -242,7 +327,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             // HU-036 #3: al editar se puede cambiar el estado (con motivo) y se ve la historia
             pnlMotivoEstado.Visible = true;
             pnlHistorialEstado.Visible = true;
-            List<ActivoComponenteEstadoHistorial> historial = c.GetHistorialEstado(Id, SitioBase.Session.ClienteId());
+            List<ActivoComponenteEstadoHistorial> historial = _precargado ? _historial : c.GetHistorialEstado(Id, SitioBase.Session.ClienteId());
             rptHistorialEstado.DataSource = historial;
             rptHistorialEstado.DataBind();
             lblSinHistorial.Visible = historial == null || historial.Count == 0;
@@ -256,7 +341,8 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             {
                 SeleccionarCombo(cboActivo, ActivoFijo);
                 /* Hereda la criticidad de su activo: casi siempre es la misma. */
-                Activo a = new ActivoController().GetActivo(ActivoFijo);
+                Activo a = _precargado && _activos != null ? _activos.Find(x => x.act_id == ActivoFijo) : null;
+                if (a == null) a = new ActivoController().GetActivo(ActivoFijo);
                 if (a != null && a.act_cliente == SitioBase.Session.ClienteId()) SeleccionarCombo(cboCriticidad, a.act_criticidad_nivel);
             }
         }
