@@ -84,20 +84,6 @@
             });
         }
 
-        /* Retirar necesita saber CUAL pieza: la elegida en la lista. Sin una
-           elegida, el boton no abre un modal vacio, lo dice. */
-        function retirarComponente() {
-            var fila = document.querySelector('.sg-comp.es-elegida[data-comp-query]')
-                    || document.querySelector('.sg-comp[data-comp-query]');
-
-            if (!fila) {
-                alert('Primero elija el componente que va a retirar.');
-                return false;
-            }
-
-            return abrirComponente(fila.getAttribute('data-comp-query'));
-        }
-
         var seccionPendiente = null;
 
         /* El campo donde vive el equipo elegido. El JS de la lista lo escribe
@@ -115,31 +101,128 @@
 
         /* Al cerrar un modal se vuelve a la seccion desde donde se abrio, no
            al Resumen: el postback repinta el bloque entero. */
-        /* ---- Estructura (bloque 343) ---- */
+        /* ---- Estructura: el diagrama y su detalle (bloque 343, rediseño 344) ---- */
         var queryNuevoSubactivo = '<%=QueryNuevoSubactivo %>';
         var queryNuevaCompat = '<%=QueryNuevaCompat %>';
+        var urlNuevaOt = '<%=ResolveUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") %>';
+        var esSeleccion = null;
+
         function esAsistente(abrir) {
             var a = document.getElementById('sgEsAsistente');
-            if (a) a.classList.toggle('es-abierto', !!abrir);
+            if (!a) return false;
+            if (abrir) {
+                esVista('elegir');
+                var nom = document.querySelector('.sg-a3-hero-nom'), donde = document.getElementById('sgEsAsisDonde');
+                if (donde) donde.textContent = nom && nom.textContent.trim() ? 'Agregar a ' + nom.textContent.trim() : 'Agregar a este activo';
+                esSeleccion = null;
+                document.querySelectorAll('.sg-es-op').forEach(function (o) { o.classList.remove('es-elegida'); o.setAttribute('aria-checked', 'false'); });
+                var c = document.getElementById('sgEsContinuar');
+                if (c) { c.disabled = true; c.firstChild.nodeValue = 'Elige una opción'; }
+            }
+            a.classList.toggle('es-abierto', !!abrir);
+            if (abrir) { var f = a.querySelector('.sg-es-op'); if (f) f.focus(); }
             return false;
         }
+        function esElegir(b) {
+            document.querySelectorAll('.sg-es-op').forEach(function (o) { o.classList.toggle('es-elegida', o === b); o.setAttribute('aria-checked', o === b ? 'true' : 'false'); });
+            esSeleccion = b.getAttribute('data-que');
+            var c = document.getElementById('sgEsContinuar');
+            if (c) { c.disabled = false; c.firstChild.nodeValue = 'Continuar con «' + b.getAttribute('data-txt') + '»'; }
+            return false;
+        }
+        function esContinuar() { return esSeleccion ? esAgregar(esSeleccion) : false; }
+
+        /* Las tres vistas del asistente: elegir, el componente aqui mismo, o
+           el formulario de subactivo/repuesto dentro de esta misma ventana. */
+        function esVista(v) {
+            document.querySelectorAll('#sgEsAsistente .sg-es-vista').forEach(function (x) { x.hidden = x.getAttribute('data-vista') !== v; });
+            var caja = document.querySelector('#sgEsAsistente .sg-es-asis-caja');
+            if (caja) caja.classList.toggle('es-ancha', v === 'marco');
+            if (v !== 'marco') { var m = document.getElementById('sgEsMarco'); if (m) m.src = 'about:blank'; }
+            return false;
+        }
+        function esMarco(url, titulo) {
+            var m = document.getElementById('sgEsMarco');
+            document.getElementById('sgEsMarcoTit').textContent = titulo;
+            /* La pagina de adentro cierra con closeWindow(): se le da una
+               "ventana" que refresca el centro y cierra este asistente. */
+            m.radWindow = { BrowserWindow: window, close: function () { esAsistente(false); } };
+            m.onload = function () {
+                try {
+                    m.contentWindow.radWindow = m.radWindow;
+                    /* Como en SigmaModal: sin el titulo propio de la pagina, que aca ya lo dice la cabecera. */
+                    m.contentDocument.documentElement.classList.add('sigma-dialog-child');
+                } catch (e) { }
+            };
+            m.src = url;
+            esVista('marco');
+            return false;
+        }
+        function escAbrir() {
+            ['escNombre', 'escTipo', 'escLado', 'escDesc'].forEach(function (id) { var e = document.getElementById(id); if (e) e.value = ''; });
+            var tpl = document.getElementById('sgEsDatos');
+            var nom = tpl ? tpl.getAttribute('data-nombre') : '';
+            var padre = document.getElementById('escPadre'), est = document.getElementById('escEstado');
+            if (padre) padre.innerHTML = tpl ? tpl.querySelector('[data-padres]').innerHTML : '';
+            if (est) est.innerHTML = tpl ? tpl.querySelector('[data-estados]').innerHTML : '';
+            var f = document.getElementById('escFecha'); if (f) f.value = new Date().toISOString().slice(0, 10);
+            var foto = document.getElementById('escFoto'); if (foto) { foto.value = ''; escFotoVer(foto); }
+            document.querySelectorAll('#sgEsAsistente .sg-es-campo.es-falta').forEach(function (x) { x.classList.remove('es-falta'); });
+            document.getElementById('sgEscFaltan').hidden = true;
+            var d = document.querySelector('[data-vista="componente"] .sg-es-donde-txt');
+            if (d) d.textContent = nom ? 'Una parte de «' + nom + '» que quieres seguir por separado.' : 'Una parte de este activo que quieres seguir por separado.';
+            esVista('componente');
+            setTimeout(function () { document.getElementById('escNombre').focus(); }, 30);
+            return false;
+        }
+        function escFotoVer(input) {
+            var ico = document.getElementById('escFotoIco'), nom = document.getElementById('escFotoNom');
+            if (input.files && input.files[0] && window.FileReader) {
+                var r = new FileReader();
+                r.onload = function (e) { ico.innerHTML = ''; var i = document.createElement('img'); i.src = e.target.result; i.alt = ''; ico.appendChild(i); };
+                r.readAsDataURL(input.files[0]);
+                nom.textContent = input.files[0].name;
+            } else { ico.innerHTML = '<i class="mdi mdi-image-outline"></i>'; nom.textContent = 'PNG o JPG. Ayuda a reconocer la pieza.'; }
+        }
+        function escGuardar() {
+            var faltan = [];
+            [['escNombre', 'Nombre'], ['escTipo', 'Qué es']].forEach(function (c) {
+                var e = document.getElementById(c[0]), ok = e && e.value.trim() !== '';
+                e.closest('.sg-es-campo').classList.toggle('es-falta', !ok);
+                if (!ok) faltan.push(c[1]);
+            });
+            var aviso = document.getElementById('sgEscFaltan');
+            if (faltan.length) {
+                document.getElementById('sgEscFaltanTxt').textContent = (faltan.length === 1 ? 'Falta: ' : 'Faltan: ') + faltan.join(' y ') + '.';
+                aviso.hidden = false;
+                document.querySelector('#sgEsAsistente .sg-es-campo.es-falta input').focus();
+                return false;
+            }
+            aviso.hidden = true;
+            __doPostBack('<%=lnkEsGuardarComp.UniqueID %>', '');
+            return false;
+        }
+        document.addEventListener('DOMContentLoaded', function () {
+            var z = document.getElementById('escFotoZona');
+            if (!z) return;
+            z.addEventListener('dragover', function (e) { e.preventDefault(); z.classList.add('es-encima'); });
+            z.addEventListener('dragleave', function () { z.classList.remove('es-encima'); });
+            z.addEventListener('drop', function (e) {
+                e.preventDefault(); z.classList.remove('es-encima');
+                var i = document.getElementById('escFoto');
+                try { i.files = e.dataTransfer.files; escFotoVer(i); } catch (x) { }
+            });
+        });
+        /* Todo se agrega dentro del mismo asistente: no se abre otra ventana. */
         function esAgregar(que) {
-            esAsistente(false);
-            if (que === 'subactivo') {
-                seccionPendiente = 'componentes';
-                return SigmaModal.open({
-                    url: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + queryNuevoSubactivo,
-                    title: 'Nuevo subactivo', width: 1060, initialHeight: 620, onClose: refresh
-                });
-            }
-            if (que === 'componente') { abrirComponente(queryNuevoComponente); seccionPendiente = 'componentes'; return false; }
-            if (que === 'repuesto') {
-                seccionPendiente = 'componentes';
-                return SigmaModal.open({
-                    url: '<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + queryNuevaCompat,
-                    title: 'Repuesto que le sirve', width: 820, initialHeight: 560, onClose: refresh
-                });
-            }
+            var a = document.getElementById('sgEsAsistente');
+            if (a && !a.classList.contains('es-abierto')) esAsistente(true);
+            seccionPendiente = 'componentes';
+            if (que === 'subactivo')
+                return esMarco('<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + queryNuevoSubactivo, 'Nuevo subactivo');
+            if (que === 'componente') return escAbrir();
+            if (que === 'repuesto')
+                return esMarco('<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + queryNuevaCompat, 'Repuesto que le sirve');
             return false;
         }
         /* Un subactivo se abre en su propio centro, directo en su estructura. */
@@ -153,7 +236,187 @@
             return false;
         }
         function esAbrirComponente(query) { abrirComponente(query); seccionPendiente = 'componentes'; return false; }
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') esAsistente(false); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { esAsistente(false); esCerrarDet(); } });
+
+        /* El detalle de lo elegido. Todo lo escrito por personas entra por
+           textContent: un nombre puede traer comillas o angulos. */
+        function esNodo(tag, cls, txt) {
+            var n = document.createElement(tag);
+            if (cls) n.className = cls;
+            if (txt != null) n.textContent = txt;
+            return n;
+        }
+        function esIco(nombre) { var i = document.createElement('i'); i.className = 'mdi ' + nombre; return i; }
+        function esBoton(clase, icono, texto, alClic) {
+            var b = esNodo('button', 'sg-ot-btn ' + clase);
+            b.type = 'button';
+            b.appendChild(esIco(icono)); b.appendChild(document.createTextNode(texto));
+            b.onclick = function () { alClic(); return false; };
+            return b;
+        }
+        var ES_CLASE = { sub: ['Subactivo', 'mdi-cogs'], comp: ['Componente', 'mdi-puzzle-outline'], rep: ['Repuesto', 'mdi-package-variant-closed'] };
+        function esPintar(d) {
+            var det = document.getElementById('sgEsDetalle');
+            if (!det || !d || !ES_CLASE[d.k]) return;
+            det.innerHTML = '';
+            det.className = 'sg-es-det es-abierto es-' + d.k;
+            var x = esNodo('button', 'sg-es-det-x'); x.type = 'button'; x.setAttribute('aria-label', 'Cerrar el detalle');
+            x.appendChild(esIco('mdi-close')); x.onclick = function () { return esCerrarDet(); };
+            det.appendChild(x);
+
+            var cab = esNodo('div', 'sg-es-det-cab');
+            var ico = esNodo('span', 'sg-es-det-ico'); ico.appendChild(esIco(ES_CLASE[d.k][1])); cab.appendChild(ico);
+            var tt = esNodo('div');
+            tt.appendChild(esNodo('b', 'sg-es-det-nom', d.n));
+            var chips = esNodo('div', 'sg-es-det-chips');
+            chips.appendChild(esNodo('span', 'sg-es-etq es-' + d.k, ES_CLASE[d.k][0]));
+            if (d.e) chips.appendChild(esNodo('span', 'sg-es-chip es-' + (d.t || 'ok'), d.e));
+            tt.appendChild(chips); cab.appendChild(tt); det.appendChild(cab);
+
+            if (d.nota) {
+                var nota = esNodo('div', 'sg-es-det-nota');
+                nota.appendChild(esIco('mdi-alert-outline'));
+                var nt = esNodo('span'); nt.appendChild(esNodo('b', '', 'Observación: ')); nt.appendChild(document.createTextNode(d.nota));
+                nota.appendChild(nt); det.appendChild(nota);
+            }
+
+            var dl = esNodo('dl', 'sg-es-det-datos');
+            (d.datos || []).forEach(function (x) {
+                if (!x[1]) return;
+                dl.appendChild(esNodo('dt', '', x[0]));
+                var dd = esNodo('dd');
+                if (x[2]) { var a = esNodo('a', '', x[1]); a.href = '#'; a.onclick = function () { return esAbrirActivo(x[2]); }; dd.appendChild(a); }
+                else dd.textContent = x[1];
+                dl.appendChild(dd);
+            });
+            det.appendChild(dl);
+
+            if (d.reps && d.reps.length) {
+                det.appendChild(esNodo('h5', '', d.reps.length === 1 ? 'Repuesto que le sirve' : 'Repuestos que le sirven'));
+                d.reps.forEach(function (r) {
+                    var f = esNodo('div', 'sg-es-det-rep');
+                    f.appendChild(esIco('mdi-package-variant-closed'));
+                    f.appendChild(esNodo('span', '', r[0]));
+                    f.appendChild(esNodo('span', 'sg-es-chip es-' + r[2], r[1]));
+                    det.appendChild(f);
+                });
+            }
+
+            var acc = esNodo('div', 'sg-es-det-acc');
+            if (d.k === 'sub') acc.appendChild(esBoton('es-primario', 'mdi-open-in-new', 'Abrir su centro 360°', function () { esAbrirActivo(d.id); }));
+            if (d.k === 'comp') {
+                var ot = esNodo('a', 'sg-ot-btn es-primario'); ot.href = urlNuevaOt; ot.appendChild(esIco('mdi-plus')); ot.appendChild(document.createTextNode('Crear OT'));
+                acc.appendChild(ot);
+                if (d.q) acc.appendChild(esBoton('es-secundario', 'mdi-pencil-outline', 'Editar esta parte', function () { esAbrirComponente(d.q); }));
+            }
+            if (d.k === 'rep' && d.url)
+                acc.appendChild(esBoton('es-contorno', 'mdi-open-in-new', 'Ver ficha del repuesto', function () {
+                    SigmaModal.open({ url: d.url, title: 'Repuesto', width: 1000, initialHeight: 620 });
+                }));
+            if (acc.children.length) det.appendChild(acc);
+            if (d.pie) det.appendChild(esNodo('p', 'sg-es-det-pie', d.pie));
+        }
+        function esVer(btn, sinMover) {
+            document.querySelectorAll('.sg-es-item.es-viendo').forEach(function (x) { x.classList.remove('es-viendo'); x.removeAttribute('aria-current'); });
+            btn.classList.add('es-viendo');
+            btn.setAttribute('aria-current', 'true');
+            var d = null;
+            try { d = JSON.parse(btn.getAttribute('data-det')); } catch (e) { return false; }
+            esPintar(d);
+            var x = document.querySelector('#sgEsDetalle .sg-es-det-x'); if (x && !sinMover) x.focus();
+            return false;
+        }
+        function esCerrarDet() {
+            var det = document.getElementById('sgEsDetalle');
+            if (det) det.classList.remove('es-abierto');
+            var v = document.querySelector('.sg-es-item.es-viendo');
+            if (v) { v.classList.remove('es-viendo'); v.removeAttribute('aria-current'); v.focus(); }
+            return false;
+        }
+        function esRetiradas(b) {
+            var col = b.closest('.sg-es-col');
+            var ver = col.classList.toggle('ver-retiradas');
+            b.textContent = ver ? 'Ocultar partes retiradas' : b.getAttribute('data-txt');
+            return false;
+        }
+        /* Ya no se abre nada solo: el detalle aparece cuando se toca algo. */
+        function esIniciar() { }
+
+        /* "Agregar qué medir" en Condición: un menu chico, se cierra al tocar afuera. */
+        function sgCondMenu(b) {
+            var w = b.closest('.sg-cond-agregar');
+            var abierto = w.classList.toggle('es-abierto');
+            b.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+            return false;
+        }
+        document.addEventListener('click', function (e) {
+            document.querySelectorAll('.sg-cond-agregar.es-abierto').forEach(function (w) { if (!w.contains(e.target)) w.classList.remove('es-abierto'); });
+        });
+
+        window.addEventListener('load', function () {
+            esIniciar();
+            if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(esIniciar);
+        });
+
+        /* ---- Listado: menus de la cabecera, vistas y "Crear" ---- */
+        function sgMenuBtn(b) {
+            var w = b.closest('.sg-menu-btn');
+            document.querySelectorAll('.sg-menu-btn.es-abierto').forEach(function (x) { if (x !== w) x.classList.remove('es-abierto'); });
+            w.classList.toggle('es-abierto');
+            return false;
+        }
+        document.addEventListener('click', function (e) {
+            document.querySelectorAll('.sg-menu-btn.es-abierto').forEach(function (w) { if (!w.contains(e.target)) w.classList.remove('es-abierto'); });
+        });
+        function crearDesdeLista(que) {
+            document.querySelectorAll('.sg-menu-btn.es-abierto').forEach(function (w) { w.classList.remove('es-abierto'); });
+            seccionPendiente = null;
+            var u = {
+                componente: ['<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=0', 'Nuevo componente', 1040, 620],
+                variable: ['<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>?query=0', 'Nueva variable de condición', 940, 600],
+                medidor: ['<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>?query=0', 'Nuevo medidor', 920, 560],
+                tipo: ['<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipo.aspx") %>?query=0', 'Nuevo tipo de activo', 820, 520],
+                modelo: ['<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=0', 'Nuevo modelo', 820, 560]
+            }[que];
+            if (que === 'tipos') { window.location.href = '<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipos.aspx") %>'; return false; }
+            if (u) SigmaModal.open({ url: u[0], title: u[1], width: u[2], initialHeight: u[3] });
+            return false;
+        }
+        function sgListaVista(v) {
+            document.querySelectorAll('.sg-lista-vista').forEach(function (b) {
+                var on = b.getAttribute('data-vista') === v;
+                b.classList.toggle('es-activa', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
+            });
+            var a = document.getElementById('sgVistaActivos'), c = document.getElementById('sgVistaComp');
+            if (a) a.hidden = v !== 'activos';
+            if (c) c.hidden = v !== 'componentes';
+            try { sessionStorage.setItem('sgListaVista', v); } catch (e) { }
+            sgCompFiltrar();
+            return false;
+        }
+        /* El buscador de arriba filtra tambien los componentes. */
+        function sgCompFiltrar() {
+            var c = document.getElementById('sgVistaComp'); if (!c || c.hidden) return;
+            var q = ((document.getElementById('sgListaBuscar') || {}).value || '').toLowerCase().trim(), hay = 0;
+            c.querySelectorAll('.sg-lc-grupo').forEach(function (g) {
+                var visibles = 0, cab = (g.getAttribute('data-txt') || '');
+                g.querySelectorAll('.sg-lc-fila').forEach(function (f) {
+                    var ok = !q || cab.indexOf(q) !== -1 || (f.getAttribute('data-txt') || '').indexOf(q) !== -1;
+                    f.hidden = !ok; if (ok) visibles++;
+                });
+                g.hidden = visibles === 0; hay += visibles;
+            });
+            var v = document.getElementById('sgCompSinRes'); if (v) v.hidden = hay > 0;
+        }
+        document.addEventListener('input', function (e) { if (e.target && e.target.id === 'sgListaBuscar') sgCompFiltrar(); });
+        function sgListaIniciar() {
+            var v = null; try { v = sessionStorage.getItem('sgListaVista'); } catch (e) { }
+            if (v === 'componentes' && document.getElementById('sgVistaComp')) sgListaVista('componentes');
+        }
+        window.addEventListener('load', function () {
+            sgListaIniciar();
+            if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(sgListaIniciar);
+        });
 
         function refresh() {
             var h = document.getElementById('hdnSeccion');
@@ -163,83 +426,321 @@
     </script>
 
     <style type="text/css">
-        /* ---- Estructura del activo (bloque 343). Un color fijo por clase de cosa:
-           morado el equipo, azul sus subactivos, turquesa sus componentes y
-           ambar los repuestos. La leyenda lo repite. ---- */
+        /* ====================================================================
+           CENTRO DEL ACTIVO · REDISEÑO 04-10-2026 (bloque 344)
+           Un color fijo por clase de cosa, igual en el diagrama, la leyenda,
+           los chips del listado y el asistente: morado el equipo, azul el
+           subactivo, turquesa el componente y ambar el repuesto.
+           ==================================================================== */
+        .sg-a3 {
+            --es-purple: #6732F4; --es-purple-dark: #4820C9; --es-purple-soft: #F2EFFF;
+            --es-blue: #087BEA; --es-blue-dark: #0565C2; --es-blue-soft: #EAF4FF;
+            --es-cyan: #16C6C9; --es-cyan-dark: #007F8A; --es-cyan-soft: #E8FBFB;
+            --es-rep: #E08A00; --es-rep-ink: #8F4E00; --es-rep-soft: #FFF4E0;
+            --es-ink: #17223B; --es-muted: #68738A; --es-line: #E2E7F0; --es-canvas: #F4F6FA;
+            --es-success: #16855B; --es-success-soft: #E7F5EE; --es-warning: #B65C00; --es-warning-soft: #FFF3E3;
+            --es-danger: #C7352B; --es-danger-soft: #FDECEA;
+        }
+
+        /* ---- cabecera: foto, nombre, estado, donde esta ---- */
+        .sg-a3-hero.es-v2 { align-items: center; gap: 16px; }
+        .sg-a3-hero.es-v2 .sg-a3-foto { flex: 0 0 auto; width: 68px; height: 68px; border-radius: 14px; border: 1px solid var(--es-line); overflow: hidden; background: var(--es-canvas); }
+        .sg-a3-hero.es-v2 .sg-a3-foto.es-vacia { font-size: 30px; color: #A9B1C3; }
+        .sg-a3-hero.es-v2 h1 { font-size: 26px; font-weight: 800; color: var(--es-ink); gap: 10px; }
+        .sg-a3-hero-chips { display: inline-flex; flex-wrap: wrap; gap: 6px; }
+        .sg-a3-hero.es-v2 .sg-a3-hero-sub { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; margin-top: 6px; font-size: 13.5px; color: var(--es-muted); }
+        .sg-a3-hero-sub .es-cod { font-weight: 800; color: var(--es-ink); }
+        .sg-a3-hero-sub .mdi { font-size: 16px; vertical-align: -2px; margin-right: 2px; }
+        .sg-a3-hero-padre { display: inline-flex; align-items: center; gap: 6px; margin: 8px 0 0; padding: 4px 10px; border-radius: 999px; background: var(--es-blue-soft); color: var(--es-blue-dark); font-size: 13px; }
+        .sg-a3-hero-padre a { color: var(--es-blue-dark); font-weight: 800; text-decoration: underline; text-underline-offset: 2px; }
+        .sg-a3-hero.es-v2 .sg-a3-hero-acc .sg-ot-btn { min-height: 40px; }
+
+        /* ---- menu "Mas": separado del contenido ---- */
+        .sg-a3-mas-menu { top: calc(100% + 8px); width: 280px; padding: 8px; border-color: var(--es-line); border-radius: 14px;
+            box-shadow: 0 20px 44px -12px rgba(23, 34, 59, .38), 0 0 0 1px rgba(23, 34, 59, .04); }
+        .sg-a3-mas-tit { padding: 6px 10px 8px; margin-bottom: 4px; border-bottom: 1px solid var(--es-line); font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--es-muted); }
+        a.sg-a3-mas-op, a.sg-a3-mas-op:hover, a.sg-a3-mas-op:focus { min-height: 40px; font-size: 14px; }
+
+        /* ---- Condicion: una sola accion morada ---- */
+        .sg-cond-agregar { position: relative; }
+        .sg-cond-agregar:not(:has(.sg-cond-op)) { display: none; }
+        .sg-cond-agregar-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 30; display: none; width: 320px; padding: 6px; background: #fff;
+            border: 1px solid var(--es-line); border-radius: 14px; box-shadow: 0 20px 44px -12px rgba(23, 34, 59, .38); }
+        .sg-cond-agregar.es-abierto .sg-cond-agregar-menu { display: block; }
+        a.sg-cond-op, a.sg-cond-op:hover { display: flex; gap: 10px; align-items: flex-start; padding: 10px; border-radius: 10px; color: var(--es-ink); text-decoration: none; }
+        a.sg-cond-op:hover { background: var(--es-canvas); }
+        a.sg-cond-op > i { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; background: var(--es-cyan-soft); color: var(--es-cyan-dark); display: grid; place-items: center; font-size: 18px; }
+        a.sg-cond-op b { display: block; font-size: 13.5px; }
+        a.sg-cond-op small { display: block; font-size: 12px; color: var(--es-muted); line-height: 1.35; }
+
+        /* ---- la pestaña Componentes ---- */
+        .sg-es-card { padding: 20px; }
         .sg-es-barra { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 14px; }
-        .sg-es-barra h3 { margin: 0; font-size: 16px; font-weight: 800; color: #17223B; }
-        .sg-es-barra p { margin: 2px 0 0; color: #68738A; font-size: 13px; }
-        .sg-es-raiz { display: flex; align-items: center; gap: 14px; padding: 16px 18px; border: 2px solid #6732F4; border-radius: 16px;
-            background: #F2EFFF; max-width: 640px; margin: 0 auto; }
-        .sg-es-raiz .ico { width: 48px; height: 48px; border-radius: 14px; background: #6732F4; color: #fff; display: flex; align-items: center; justify-content: center; font-size: 26px; flex: 0 0 auto; }
-        .sg-es-raiz b { display: block; font-size: 17px; color: #17223B; }
-        .sg-es-raiz small { color: #4A556D; font-size: 12.5px; }
-        .sg-es-etq { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; margin-bottom: 3px; }
-        .sg-es-etq.es-activo { background: #6732F4; color: #fff; }
-        .sg-es-etq.es-sub { background: #EAF4FF; color: #087BEA; }
-        .sg-es-etq.es-comp { background: #E8FBFB; color: #007F8A; }
-        .sg-es-etq.es-rep { background: #FFF4E5; color: #B65C00; }
-        .sg-es-padre { text-align: center; margin: 0 0 8px; font-size: 13px; color: #4A556D; }
-        .sg-es-padre a { color: #087BEA; font-weight: 800; text-decoration: none; }
-        .sg-es-linea { width: 2px; height: 22px; background: #CFD6E3; margin: 0 auto; }
-        .sg-es-ramas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; border-top: 2px solid #CFD6E3; padding-top: 18px; }
-        @media (max-width: 1000px) { .sg-es-ramas { grid-template-columns: 1fr; } }
-        .sg-es-col { border-radius: 14px; border: 1px solid #E2E7F0; background: #fff; padding: 14px; }
-        .sg-es-col.es-sub { border-top: 4px solid #087BEA; }
-        .sg-es-col.es-comp { border-top: 4px solid #16C6C9; }
-        .sg-es-col.es-rep { border-top: 4px solid #B65C00; }
-        .sg-es-col h4 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 800; color: #17223B; }
-        .sg-es-col h4 .n { margin-left: auto; font-size: 12px; padding: 2px 9px; border-radius: 999px; background: #F4F6FA; color: #4A556D; }
-        .sg-es-col.es-sub h4 i { color: #087BEA; } .sg-es-col.es-comp h4 i { color: #007F8A; } .sg-es-col.es-rep h4 i { color: #B65C00; }
-        .sg-es-que { margin: 4px 0 12px; font-size: 12.5px; color: #68738A; line-height: 1.45; }
-        .sg-es-item { display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; padding: 10px 12px; margin-bottom: 8px;
-            border: 1px solid #E2E7F0; border-radius: 12px; background: #fff; color: #17223B; cursor: pointer; font: inherit; }
-        .sg-es-item:hover { border-color: #087BEA; background: #FAFCFF; }
-        .sg-es-col.es-comp .sg-es-item:hover { border-color: #16C6C9; background: #FAFEFE; }
-        .sg-es-item.es-sin-clic { cursor: default; } .sg-es-item.es-sin-clic:hover { border-color: #E2E7F0; background: #fff; }
-        .sg-es-item b { display: block; font-size: 13.5px; }
-        .sg-es-item span.d { display: block; font-size: 12px; color: #68738A; }
-        .sg-es-item .der { margin-left: auto; text-align: right; flex: 0 0 auto; font-size: 12px; }
-        .sg-es-item.es-hijo { margin-left: 22px; width: calc(100% - 22px); }
-        .sg-es-chip { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-        .sg-es-chip.es-ok { background: #E9F7F0; color: #16855B; }
-        .sg-es-chip.es-ojo { background: #FFF4E5; color: #B65C00; }
-        .sg-es-chip.es-mal { background: #FDECEA; color: #C7352B; }
-        .sg-es-vacio { padding: 14px; border: 1.5px dashed #E2E7F0; border-radius: 12px; color: #68738A; font-size: 12.5px; text-align: center; }
-        .sg-es-leyenda { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; margin-top: 16px; font-size: 12px; color: #4A556D; }
-        .sg-es-leyenda i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+        .sg-es-barra h3 { margin: 0; font-size: 20px; font-weight: 800; color: var(--es-ink); }
+        .sg-es-barra p { margin: 2px 0 0; color: var(--es-muted); font-size: 13.5px; }
+        .sg-es-barra .sg-ot-btn { min-height: 40px; }
+
+        .sg-es-regla { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 20px; padding: 10px 14px; margin-bottom: 18px;
+            border-radius: 12px; background: var(--es-canvas); font-size: 13px; color: #4A556D; }
+        .sg-es-regla-txt { display: flex; gap: 8px; align-items: flex-start; flex: 1 1 360px; }
+        .sg-es-regla-txt > i { color: var(--es-purple); font-size: 18px; line-height: 1; }
+        .sg-es-regla b { color: var(--es-ink); }
+        .sg-es-leyenda { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12.5px; font-weight: 700; color: #4A556D; }
+        .sg-es-leyenda span { display: inline-flex; align-items: center; gap: 6px; }
+        .sg-es-leyenda i { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
+        .sg-es-leyenda i.es-equipo { background: var(--es-purple); } .sg-es-leyenda i.es-sub { background: var(--es-blue); }
+        .sg-es-leyenda i.es-comp { background: var(--es-cyan); } .sg-es-leyenda i.es-rep { background: var(--es-rep); }
+
+        /* El diagrama usa todo el ancho: con el detalle fijo al lado, las tres
+           columnas quedaban de 200px y los nombres se partian en tres lineas. */
+        .sg-es-layout { display: block; }
+
+        /* el recuadro de cada subactivo, con SUS componentes adentro */
+        .sg-es-grupo { margin-bottom: 10px; padding: 6px; border: 1px solid #D6E6FA; border-radius: 14px; background: #F7FBFF; }
+        .sg-es-grupo > .sg-es-item { margin-bottom: 6px; }
+        .sg-es-grupo-hijos { position: relative; margin: 0 0 2px 14px; padding-left: 12px; border-left: 2px solid #BFE9EA; }
+        .sg-es-grupo-tit { display: flex; align-items: center; gap: 4px; margin: 2px 0 6px; font-size: 11.5px; font-weight: 800; color: #007F8A; }
+        .sg-es-grupo-vacio { display: block; padding: 2px 0 6px; font-size: 12px; color: #68738A; }
+        .sg-es-item.es-mini { min-height: 40px; padding: 7px 10px; margin-bottom: 6px; }
+        .sg-es-item.es-mini b { font-size: 13px; }
+
+        /* el equipo arriba */
+        .sg-es-raiz { position: relative; display: flex; align-items: center; gap: 14px; max-width: 420px; margin: 0 auto; padding: 14px 16px;
+            border: 2px solid var(--es-purple); border-radius: 16px; background: var(--es-purple-soft); }
+        .sg-es-raiz .ico { width: 48px; height: 48px; flex: 0 0 auto; border-radius: 12px; background: var(--es-purple); color: #fff; display: grid; place-items: center; font-size: 26px; overflow: hidden; }
+        .sg-es-raiz .ico img { width: 100%; height: 100%; object-fit: cover; }
+        .sg-es-raiz b { display: block; font-size: 17px; color: var(--es-ink); line-height: 1.25; }
+        .sg-es-raiz small { display: block; color: #4A556D; font-size: 12.5px; }
+        .sg-es-raiz .sg-es-chip { margin-left: auto; }
+        .sg-es-raiz-padre { text-align: center; margin: 0 0 8px; font-size: 13px; color: #4A556D; }
+        .sg-es-raiz-padre a { color: var(--es-blue-dark); font-weight: 800; }
+        .sg-es-etq { display: inline-block; font-size: 10.5px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; padding: 2px 8px; border-radius: 999px; }
+        .sg-es-etq.es-activo { background: var(--es-purple); color: #fff; margin-bottom: 3px; }
+        .sg-es-etq.es-sub { background: var(--es-blue-soft); color: var(--es-blue-dark); }
+        .sg-es-etq.es-comp { background: var(--es-cyan-soft); color: var(--es-cyan-dark); }
+        .sg-es-etq.es-rep { background: var(--es-rep-soft); color: var(--es-rep-ink); }
+
+        /* las tres ramas, con su conector */
+        .sg-es-tronco { width: 2px; height: 18px; margin: 0 auto; background: #CFD6E3; }
+        .sg-es-ramas { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; padding-top: 18px; }
+        .sg-es-ramas::before { content: ""; position: absolute; top: 0; left: calc(100% / 6); right: calc(100% / 6); height: 2px; background: #CFD6E3; }
+        .sg-es-col { position: relative; min-width: 0; padding: 14px; border: 1px solid var(--es-line); border-radius: 14px; background: #fff; }
+        .sg-es-col::before { content: ""; position: absolute; top: -19px; left: 50%; width: 2px; height: 18px; background: #CFD6E3; }
+        .sg-es-col.es-sub { border-top: 4px solid var(--es-blue); }
+        .sg-es-col.es-comp { border-top: 4px solid var(--es-cyan); }
+        .sg-es-col.es-rep { border-top: 4px solid var(--es-rep); }
+        @media (max-width: 900px) {
+            .sg-es-ramas { grid-template-columns: minmax(0, 1fr); }
+            .sg-es-ramas::before, .sg-es-col::before { display: none; }
+        }
+        .sg-es-col h4 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 800; color: var(--es-ink); }
+        .sg-es-col h4 > i { width: 28px; height: 28px; border-radius: 8px; display: grid; place-items: center; font-size: 17px; }
+        .sg-es-col.es-sub h4 > i { background: var(--es-blue-soft); color: var(--es-blue-dark); }
+        .sg-es-col.es-comp h4 > i { background: var(--es-cyan-soft); color: var(--es-cyan-dark); }
+        .sg-es-col.es-rep h4 > i { background: var(--es-rep-soft); color: var(--es-rep-ink); }
+        .sg-es-col h4 .n { margin-left: auto; min-width: 24px; text-align: center; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--es-canvas); color: #4A556D; }
+        .sg-es-que { margin: 6px 0 12px; font-size: 12.5px; color: var(--es-muted); line-height: 1.45; }
+
+        /* cada elemento: nombre arriba, chip de estado abajo (nunca se monta) */
+        .sg-es-item { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 8px; align-items: start; width: 100%; min-height: 44px;
+            margin-bottom: 8px; padding: 10px 12px; border: 1.5px solid var(--es-line); border-radius: 12px; background: #fff; color: var(--es-ink);
+            font: inherit; text-align: left; cursor: pointer; }
+        .sg-es-item:hover { background: #FAFBFD; }
+        .sg-es-item:focus-visible { outline: 3px solid rgba(22, 198, 201, .27); outline-offset: 1px; }
+        .sg-es-item.es-sub:hover, .sg-es-item.es-sub.es-viendo { border-color: var(--es-blue); }
+        .sg-es-item.es-comp:hover, .sg-es-item.es-comp.es-viendo { border-color: var(--es-cyan); }
+        .sg-es-item.es-rep:hover, .sg-es-item.es-rep.es-viendo { border-color: var(--es-rep); }
+        .sg-es-item.es-viendo { box-shadow: 0 0 0 3px rgba(22, 198, 201, .14); }
+        .sg-es-item .t { min-width: 0; }
+        .sg-es-item b { display: block; font-size: 13.5px; line-height: 1.3; overflow-wrap: anywhere; }
+        .sg-es-item span.d { display: block; margin-top: 1px; font-size: 12px; color: var(--es-muted); overflow-wrap: anywhere; }
+        .sg-es-item .sg-es-chip { grid-column: 1; justify-self: start; }
+        .sg-es-item .flecha { grid-column: 2; grid-row: 1; color: #A9B1C3; font-size: 18px; line-height: 1; }
+        .sg-es-viendo-tag { display: none; grid-column: 2; grid-row: 2; align-self: end; font-size: 10px; font-weight: 800; letter-spacing: .06em; color: var(--es-cyan-dark); }
+        .sg-es-item.es-viendo .sg-es-viendo-tag { display: block; }
+        .sg-es-item.es-hijo { width: calc(100% - 18px); margin-left: 18px; }
+        .sg-es-item.es-hijo::before { content: ""; position: absolute; left: -12px; top: -9px; width: 10px; height: 30px; border-left: 2px solid #CFD6E3; border-bottom: 2px solid #CFD6E3; border-bottom-left-radius: 6px; }
+        .sg-es-item.es-retirada { display: none; background: var(--es-canvas); }
+        .sg-es-col.ver-retiradas .sg-es-item.es-retirada { display: grid; }
+        .sg-es-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 800; white-space: nowrap; max-width: 100%; }
+        .sg-es-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+        .sg-es-chip.es-ok { background: var(--es-success-soft); color: var(--es-success); }
+        .sg-es-chip.es-ojo { background: var(--es-warning-soft); color: var(--es-warning); }
+        .sg-es-chip.es-mal { background: var(--es-danger-soft); color: var(--es-danger); }
+        .sg-es-chip.es-neutro { background: var(--es-canvas); color: var(--es-muted); }
+        .sg-es-vacio { padding: 14px; border: 1.5px dashed var(--es-line); border-radius: 12px; color: var(--es-muted); font-size: 12.5px; text-align: center; line-height: 1.45; }
+        .sg-es-vacio a { display: inline-block; margin-top: 4px; color: var(--es-blue-dark); font-weight: 800; text-decoration: none; }
+        .sg-es-mas { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0; border: 0; background: none; color: var(--es-blue-dark);
+            font: inherit; font-size: 12.5px; font-weight: 800; cursor: pointer; text-decoration: none; }
+        .sg-es-mas:hover { text-decoration: underline; }
+
+        /* el detalle de lo elegido */
+        /* El detalle se abre como panel a la derecha al tocar un elemento y
+           se cierra con la X o con Escape. */
+        .sg-es-det { position: fixed; top: 0; right: 0; bottom: 0; z-index: 2500; width: 400px; max-width: 100vw; overflow: auto; padding: 20px;
+            background: #fff; border-left: 1px solid var(--es-line); box-shadow: -24px 0 48px -24px rgba(23, 34, 59, .45);
+            transform: translateX(105%); transition: transform .2s ease; visibility: hidden; }
+        .sg-es-det.es-abierto { transform: none; visibility: visible; }
+        .sg-es-det-x { position: absolute; top: 12px; right: 12px; width: 40px; height: 40px; border: 0; border-radius: 10px; background: #F4F6FA; color: #17223B; font-size: 20px; cursor: pointer; }
+        .sg-es-det-x:hover { background: #E9ECF3; }
+        .sg-es-det .sg-es-det-cab { padding-right: 44px; }
+        .sg-es-det.es-sub { border-top: 5px solid var(--es-blue); } .sg-es-det.es-comp { border-top: 5px solid var(--es-cyan); } .sg-es-det.es-rep { border-top: 5px solid var(--es-rep); }
+        .sg-es-det-vacio { display: grid; place-items: center; gap: 8px; margin: 0; padding: 30px 10px; text-align: center; color: var(--es-muted); font-size: 13px; }
+        .sg-es-det-vacio i { font-size: 28px; color: #A9B1C3; }
+        .sg-es-det-cab { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 12px; }
+        .sg-es-det-ico { width: 40px; height: 40px; flex: 0 0 auto; border-radius: 10px; display: grid; place-items: center; font-size: 22px; }
+        .sg-es-det.es-sub .sg-es-det-ico { background: var(--es-blue-soft); color: var(--es-blue-dark); }
+        .sg-es-det.es-comp .sg-es-det-ico { background: var(--es-cyan-soft); color: var(--es-cyan-dark); }
+        .sg-es-det.es-rep .sg-es-det-ico { background: var(--es-rep-soft); color: var(--es-rep-ink); }
+        .sg-es-det-nom { display: block; font-size: 16px; font-weight: 800; color: var(--es-ink); line-height: 1.3; overflow-wrap: anywhere; }
+        .sg-es-det-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .sg-es-det-nota { display: flex; gap: 8px; align-items: flex-start; margin-bottom: 12px; padding: 10px 12px; border-radius: 10px; background: var(--es-warning-soft); color: #7A3E00; font-size: 13px; line-height: 1.45; }
+        .sg-es-det-nota > i { color: var(--es-warning); font-size: 17px; line-height: 1.2; }
+        .sg-es-det-datos { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0; margin: 0 0 12px; font-size: 13px; }
+        .sg-es-det-datos dt, .sg-es-det-datos dd { margin: 0; padding: 7px 0; border-bottom: 1px solid #EEF1F6; }
+        .sg-es-det-datos dt { padding-right: 14px; color: var(--es-muted); font-weight: 600; }
+        .sg-es-det-datos dd { color: var(--es-ink); font-weight: 700; overflow-wrap: anywhere; }
+        .sg-es-det-datos dd a { color: var(--es-blue-dark); }
+        .sg-es-det h5 { margin: 4px 0 8px; font-size: 13px; font-weight: 800; color: var(--es-ink); }
+        .sg-es-det-rep { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; padding: 8px 10px; border: 1px solid var(--es-line); border-radius: 10px; font-size: 13px; }
+        .sg-es-det-rep > i { color: var(--es-rep); font-size: 17px; }
+        .sg-es-det-rep > span:nth-child(2) { flex: 1 1 auto; min-width: 0; font-weight: 700; }
+        .sg-es-det-acc { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+        .sg-es-det-acc .sg-ot-btn { min-height: 40px; }
+        .sg-es-det-pie { margin: 12px 0 0; font-size: 12px; color: var(--es-muted); }
 
         /* listado en arbol: chips con el mismo color del diagrama */
         .sg-lista-chips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
         .sg-lista-chips em { font-style: normal; display: inline-flex; align-items: center; gap: 3px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 800; }
-        .sg-lista-chips em.es-sub { background: #EAF4FF; color: #087BEA; }
-        .sg-lista-chips em.es-comp { background: #E8FBFB; color: #007F8A; }
-        .sg-lista-chips em.es-rep { background: #FFF4E5; color: #B65C00; }
+        .sg-lista-chips em.es-sub { background: var(--es-blue-soft); color: var(--es-blue-dark); }
+        .sg-lista-chips em.es-comp { background: var(--es-cyan-soft); color: var(--es-cyan-dark); }
+        .sg-lista-chips em.es-rep { background: var(--es-rep-soft); color: var(--es-rep-ink); }
         .sg-lista-fila.es-hijo { background: #FBFCFE; }
-        .sg-lista-rama { color: #087BEA; margin-right: 4px; }
-        .sg-es-cont { margin-bottom: 18px; }
+        .sg-lista-rama { color: var(--es-blue); margin-right: 4px; }
         /* "En mantenimiento" no cabia y se montaba sobre la criticidad: que baje de linea */
         .sg-lista-fila .sg-ot-chip { white-space: normal; max-width: 100%; line-height: 1.25; }
 
-        /* asistente "¿Qué vas a agregar?" */
-        .sg-es-asis { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; background: rgba(23,34,59,.45); padding: 16px; }
+        /* ---- asistente "¿Qué vas a agregar?" ---- */
+        .sg-es-asis { position: fixed; inset: 0; z-index: 3000; display: none; align-items: center; justify-content: center; background: rgba(23, 34, 59, .5); padding: 16px; }
         .sg-es-asis.es-abierto { display: flex; }
-        .sg-es-asis-caja { background: #fff; border-radius: 18px; max-width: 860px; width: 100%; padding: 22px; box-shadow: 0 20px 60px rgba(23,34,59,.3); }
-        .sg-es-asis-caja h3 { margin: 0 0 4px; font-size: 19px; font-weight: 800; color: #17223B; }
-        .sg-es-asis-caja > p { margin: 0 0 16px; color: #68738A; }
-        .sg-es-opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-        @media (max-width: 760px) { .sg-es-opciones { grid-template-columns: 1fr; } }
-        .sg-es-op { text-align: left; border: 2px solid #E2E7F0; border-radius: 16px; padding: 16px; background: #fff; cursor: pointer; font: inherit; color: #17223B; }
-        .sg-es-op:hover, .sg-es-op:focus { outline: none; }
-        .sg-es-op.es-sub:hover, .sg-es-op.es-sub:focus { border-color: #087BEA; background: #FAFCFF; }
-        .sg-es-op.es-comp:hover, .sg-es-op.es-comp:focus { border-color: #16C6C9; background: #FAFEFE; }
-        .sg-es-op.es-rep:hover, .sg-es-op.es-rep:focus { border-color: #B65C00; background: #FFFBF5; }
-        .sg-es-op > i { font-size: 30px; }
-        .sg-es-op.es-sub > i { color: #087BEA; } .sg-es-op.es-comp > i { color: #007F8A; } .sg-es-op.es-rep > i { color: #B65C00; }
-        .sg-es-op b { display: block; font-size: 16px; margin: 6px 0 4px; }
+        .sg-es-asis-caja { width: 100%; max-width: 880px; max-height: calc(100vh - 32px); overflow: auto; padding: 22px 24px; border-radius: 18px; background: #fff; box-shadow: 0 24px 64px rgba(23, 34, 59, .35); color: #17223B; }
+        .sg-es-asis-cab { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+        .sg-es-asis-cab small { display: block; font-size: 12.5px; font-weight: 700; color: #68738A; }
+        .sg-es-asis-cab h3 { margin: 2px 0 2px; font-size: 21px; font-weight: 800; color: #17223B; }
+        .sg-es-asis-cab p { margin: 0; color: #68738A; font-size: 13.5px; }
+        .sg-es-asis-x { width: 40px; height: 40px; flex: 0 0 auto; border: 0; border-radius: 10px; background: #F4F6FA; color: #17223B; font-size: 20px; cursor: pointer; }
+        .sg-es-asis-x:hover { background: #E9ECF3; }
+        .sg-es-opciones { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 14px; }
+        @media (max-width: 760px) { .sg-es-opciones { grid-template-columns: minmax(0, 1fr); } }
+        .sg-es-op { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 16px; border: 2px solid #E2E7F0; border-radius: 16px; background: #fff;
+            color: #17223B; font: inherit; text-align: left; cursor: pointer; }
+        .sg-es-op:hover { border-color: #C9D1E0; background: #FAFBFD; }
+        .sg-es-op:focus-visible { outline: 3px solid rgba(22, 198, 201, .3); outline-offset: 1px; }
+        .sg-es-op.es-elegida { border-color: #6732F4; background: #FBFAFF; box-shadow: 0 0 0 3px #F2EFFF; }
+        .sg-es-op-top { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .sg-es-op-ico { width: 40px; height: 40px; border-radius: 11px; display: grid; place-items: center; font-size: 22px; }
+        .sg-es-op.es-sub .sg-es-op-ico { background: #EAF4FF; color: #0565C2; }
+        .sg-es-op.es-comp .sg-es-op-ico { background: #E8FBFB; color: #007F8A; }
+        .sg-es-op.es-rep .sg-es-op-ico { background: #FFF4E0; color: #8F4E00; }
+        .sg-es-op-radio { width: 20px; height: 20px; border-radius: 50%; border: 2px solid #CFD6E3; box-sizing: border-box; }
+        .sg-es-op.es-elegida .sg-es-op-radio { border: 6px solid #6732F4; }
+        .sg-es-op b { font-size: 15.5px; line-height: 1.3; }
         .sg-es-op .regla { font-size: 13px; color: #4A556D; line-height: 1.45; }
-        .sg-es-op .ej { display: block; margin-top: 8px; font-size: 12px; color: #68738A; }
-        .sg-es-asis-pie { display: flex; justify-content: flex-end; margin-top: 16px; }
+        .sg-es-op .ej { margin-top: auto; padding-top: 8px; width: 100%; border-top: 1px solid #EEF1F6; font-size: 12.5px; color: #68738A; }
+        .sg-es-op .ej b { font-size: 12.5px; color: #17223B; }
+        .sg-es-regla.es-chica { margin-bottom: 0; }
+        .sg-es-asis-pie { display: flex; justify-content: flex-end; align-items: center; gap: 8px; margin-top: 16px; padding-top: 14px; border-top: 1px solid #E2E7F0; }
+        .sg-es-asis-pie .sg-ot-btn { min-height: 40px; }
+        .sg-es-asis-pie .sg-ot-btn:disabled { opacity: .42; cursor: not-allowed; filter: none; }
+        .sg-ot-btn.es-fantasma { background: #F2EFFF; border-color: #F2EFFF; color: #4820C9 !important; }
+        .sg-ot-btn.es-fantasma:hover { background: #E6E0FF; }
+        /* El asistente vive fuera de .sg-a3: sus botones llevan su color propio
+           (sin esto "Continuar" quedaba blanco sobre blanco). */
+        .sg-es-asis .sg-ot-btn.es-primario { background: #6732F4; border-color: #6732F4; color: #fff !important; }
+        .sg-es-asis .sg-ot-btn.es-primario:hover { background: #4820C9; filter: none; }
+        .sg-es-asis .sg-ot-btn.es-plano { background: #fff; border: 1px solid #E2E7F0; color: #17223B !important; }
+        .sg-es-volver { display: inline-flex; align-items: center; gap: 4px; min-height: 32px; padding: 0; margin-bottom: 4px; border: 0; background: none;
+            color: #0565C2; font: inherit; font-size: 13px; font-weight: 800; cursor: pointer; }
+        .sg-es-asis-caja.es-ancha { max-width: 1120px; height: calc(100vh - 32px); display: flex; flex-direction: column; }
+        .sg-es-vista.es-marco { display: flex; flex-direction: column; flex: 1 1 auto; min-height: 0; }
+        .sg-es-vista.es-marco[hidden] { display: none; }
+        #sgEsMarco { flex: 1 1 auto; width: 100%; min-height: 0; border: 0; border-top: 1px solid #E2E7F0; }
+        .sg-es-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px 20px; }
+        @media (max-width: 700px) { .sg-es-form { grid-template-columns: minmax(0, 1fr); } }
+        .sg-es-campo { display: flex; flex-direction: column; gap: 6px; min-width: 0; margin: 0; }
+        .sg-es-campo.es-ancho { grid-column: 1 / -1; }
+        .sg-es-etiq { font-size: 12px; font-weight: 800; color: #4A556D; }
+        .sg-es-etiq .req { color: #C7352B; }
+        .sg-es-campo input[type="text"], .sg-es-campo input[type="date"], .sg-es-campo select, .sg-es-campo textarea {
+            width: 100%; min-height: 40px; box-sizing: border-box; padding: 8px 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #fff;
+            color: #17223B; font: inherit; font-size: 14px; }
+        .sg-es-campo textarea { min-height: 64px; resize: vertical; }
+        .sg-es-campo input:focus, .sg-es-campo select:focus, .sg-es-campo textarea:focus { outline: 3px solid rgba(22, 198, 201, .27); border-color: #007F8A; }
+        .sg-es-ayuda { font-size: 12px; color: #68738A; }
+        .sg-es-msg { display: none; font-size: 12px; font-weight: 700; color: #C7352B; }
+        .sg-es-campo.es-falta .sg-es-msg { display: block; }
+        .sg-es-campo.es-falta .sg-es-etiq { color: #C7352B; }
+        .sg-es-campo.es-falta input { border-color: #C7352B; background: #FFFAF9; }
+        .sg-es-campo.es-falta .sg-es-ayuda { display: none; }
+        .sg-es-faltan { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; padding: 10px 12px; border: 1px solid #F2B8B3; border-radius: 12px;
+            background: #FDECEA; color: #7A1F18; font-size: 13.5px; font-weight: 700; }
+        .sg-es-faltan[hidden] { display: none; }
+        .sg-es-faltan i { font-size: 20px; color: #C7352B; }
+
+        /* ---- Listado (maqueta A1): cabecera, menus, vistas, leyenda ---- */
+        .sg-lista-top h3 { font-size: 20px; font-weight: 800; }
+        .sg-lista-acc { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+        .sg-lista-acc .sg-ot-btn { min-height: 40px; }
+        .sg-menu-btn { position: relative; }
+        .sg-menu-lista { position: absolute; right: 0; top: calc(100% + 6px); z-index: 40; display: none; width: 300px; padding: 6px; background: #fff;
+            border: 1px solid #E2E7F0; border-radius: 14px; box-shadow: 0 20px 44px -12px rgba(23, 34, 59, .38); text-align: left; }
+        .sg-menu-lista.es-ancha { width: 340px; }
+        .sg-menu-btn.es-abierto .sg-menu-lista { display: block; }
+        .sg-menu-tit { padding: 8px 10px 4px; font-size: 11px; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; color: #68738A; }
+        a.sg-menu-op, a.sg-menu-op:hover { display: flex; gap: 10px; align-items: flex-start; padding: 9px 10px; border-radius: 10px; color: #17223B; text-decoration: none; }
+        a.sg-menu-op:hover { background: #F4F6FA; }
+        a.sg-menu-op > i { width: 32px; height: 32px; flex: 0 0 auto; border-radius: 9px; background: #EAF4FF; color: #0565C2; display: grid; place-items: center; font-size: 18px; }
+        a.sg-menu-op > i.es-comp { background: #E8FBFB; color: #007F8A; }
+        a.sg-menu-op > i.es-cat { background: #F2EFFF; color: #6732F4; }
+        a.sg-menu-op b { display: block; font-size: 13.5px; }
+        a.sg-menu-op small { display: block; font-size: 12px; color: #68738A; line-height: 1.35; }
+
+        .sg-lista-vistas { display: inline-flex; gap: 4px; padding: 4px; margin: 4px 0 14px; border-radius: 12px; background: #F4F6FA; }
+        .sg-lista-vista { display: inline-flex; align-items: center; gap: 8px; min-height: 40px; padding: 0 16px; border: 0; border-radius: 9px; background: transparent;
+            color: #68738A; font: inherit; font-size: 14px; font-weight: 700; cursor: pointer; }
+        .sg-lista-vista b { min-width: 22px; padding: 1px 7px; border-radius: 999px; background: #fff; color: #4A556D; font-size: 12px; }
+        .sg-lista-vista.es-activa { background: #fff; color: #4820C9; box-shadow: 0 1px 3px rgba(23, 34, 59, .12); }
+        .sg-lista-vista.es-activa b { background: #F2EFFF; color: #4820C9; }
+        .sg-lista-vista:focus-visible { outline: 3px solid rgba(22, 198, 201, .27); }
+        .sg-lista-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 0 0 10px; font-size: 12.5px; color: #68738A; }
+        .sg-lista-leyenda em { font-style: normal; display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 800; }
+        .sg-lista-leyenda em.es-sub { background: #EAF4FF; color: #0565C2; } .sg-lista-leyenda em.es-comp { background: #E8FBFB; color: #007F8A; } .sg-lista-leyenda em.es-rep { background: #FFF4E0; color: #8F4E00; }
+
+        /* vista de componentes: un grupo por activo */
+        .sg-lc-grupo { margin-bottom: 14px; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden; background: #fff; }
+        .sg-lc-cab { display: flex; align-items: center; gap: 12px; padding: 12px 14px; background: #FBFCFE; border-bottom: 1px solid #E2E7F0; }
+        .sg-lc-cab .ico { width: 36px; height: 36px; border-radius: 10px; display: grid; place-items: center; font-size: 19px; flex: 0 0 auto; }
+        .sg-lc-cab.es-activo .ico { background: #F2EFFF; color: #6732F4; } .sg-lc-cab.es-sub .ico { background: #EAF4FF; color: #0565C2; }
+        .sg-lc-cab b { display: block; font-size: 14.5px; color: #17223B; } .sg-lc-cab small { display: block; font-size: 12px; color: #68738A; }
+        .sg-lc-cab .sg-es-etq { margin-left: 4px; vertical-align: 1px; }
+        .sg-lc-cab .der { margin-left: auto; }
+        .sg-lc-fila { display: grid; grid-template-columns: 48px minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1fr) 140px 110px; gap: 12px; align-items: center;
+            min-height: 60px; padding: 8px 14px; border-bottom: 1px solid #EEF1F6; }
+        .sg-lc-fila:last-child { border-bottom: 0; }
+        .sg-lc-fila:hover { background: #FAFBFD; }
+        .sg-lc-fila.es-hijo .t { padding-left: 22px; }
+        .sg-lc-fila .t b { display: block; font-size: 14px; color: #17223B; } .sg-lc-fila .t span { display: block; font-size: 12px; color: #68738A; }
+        .sg-lc-fila .d { font-size: 13px; color: #4A556D; } .sg-lc-fila .f { font-size: 12.5px; color: #68738A; }
+        .sg-lc-foto { width: 44px; height: 44px; border-radius: 10px; background: #E8FBFB; color: #007F8A; display: grid; place-items: center; font-size: 20px; overflow: hidden; }
+        .sg-lc-foto img { width: 100%; height: 100%; object-fit: cover; }
+        .sg-lc-cabcol { display: grid; grid-template-columns: 48px minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1fr) 140px 110px; gap: 12px; padding: 0 14px 8px;
+            font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #68738A; }
+        @media (max-width: 1000px) {
+            .sg-lc-cabcol { display: none; }
+            .sg-lc-fila { grid-template-columns: 48px minmax(0, 1fr) auto; }
+            .sg-lc-fila .d, .sg-lc-fila .f { display: none; }
+        }
+        .sg-lista-comp-vacio { padding: 24px; text-align: center; color: #68738A; }
     </style>
 
     <%-- La version sale de la fecha del archivo: con `?vrs=1` fijo, el
@@ -292,21 +793,50 @@
                 <asp:Literal ID="litListaKpis" runat="server" />
 
                 <div class="sg-ot-card">
-                    <header class="sg-ot-card-cab">
+                    <%-- CABECERA DEL LISTADO (maqueta A1). Todo lo que se crea para
+                         armar un activo esta aca, en "Crear": no hace falta ir al
+                         menu lateral a buscar tipos, componentes o medidores. --%>
+                    <header class="sg-ot-card-cab sg-lista-top">
                         <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-cog-outline"></i></span>
                         <div>
-                            <h3>Activos</h3>
-                            <p class="sg-ot-card-sub">Toque un activo para abrir su centro.</p>
+                            <h3>Activos de la planta</h3>
+                            <p class="sg-ot-card-sub">Todas las máquinas. Toca una para ver todo sobre ella.</p>
                         </div>
                         <div class="sg-ot-card-acc sg-lista-acc">
-                            <asp:LinkButton ID="lnkExportarLista" runat="server" CssClass="sg-ot-btn es-accion"
-                                OnClick="lnkExportarLista_Click"><i class="mdi mdi-download-outline"></i>Exportar</asp:LinkButton>
-                            <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sg-ot-btn es-accion"
-                                OnClientClick="return abrirCargaMasiva();"><i class="mdi mdi-upload-outline"></i>Carga masiva</asp:LinkButton>
+                            <div class="sg-menu-btn">
+                                <button type="button" class="sg-ot-btn es-contorno" aria-haspopup="true" onclick="return sgMenuBtn(this);"><i class="mdi mdi-swap-vertical"></i>Importar o exportar<i class="mdi mdi-chevron-down"></i></button>
+                                <div class="sg-menu-lista" role="menu">
+                                    <asp:LinkButton ID="lnkExportarLista" runat="server" CssClass="sg-menu-op"
+                                        OnClick="lnkExportarLista_Click"><i class="mdi mdi-download-outline"></i><span><b>Exportar a Excel</b><small>La lista tal como la ves, con sus filtros.</small></span></asp:LinkButton>
+                                    <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sg-menu-op"
+                                        OnClientClick="return abrirCargaMasiva();"><i class="mdi mdi-upload-outline"></i><span><b>Carga masiva</b><small>Muchos activos de una vez desde una planilla.</small></span></asp:LinkButton>
+                                </div>
+                            </div>
+                            <asp:Panel ID="pnlCrear" runat="server" CssClass="sg-menu-btn">
+                                <button type="button" class="sg-ot-btn es-secundario" aria-haspopup="true" onclick="return sgMenuBtn(this);"><i class="mdi mdi-plus-box-multiple-outline"></i>Crear<i class="mdi mdi-chevron-down"></i></button>
+                                <div class="sg-menu-lista es-ancha" role="menu">
+                                    <div class="sg-menu-tit">Lo que arma un activo</div>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('componente');"><i class="mdi mdi-puzzle-outline es-comp"></i><span><b>Componente</b><small>Una parte de un activo: motor, rodamiento, válvula.</small></span></a>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('variable');"><i class="mdi mdi-pulse es-comp"></i><span><b>Variable de condición</b><small>Lo que se mide para saber cómo está: temperatura, presión.</small></span></a>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('medidor');"><i class="mdi mdi-counter es-comp"></i><span><b>Medidor</b><small>Lo que cuenta cuánto trabajó: horas, ciclos.</small></span></a>
+                                    <div class="sg-menu-tit">Catálogos</div>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('tipo');"><i class="mdi mdi-shape-outline es-cat"></i><span><b>Tipo de activo</b><small>Ej.: Cámaras de frío, Hornos, Bombas.</small></span></a>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('modelo');"><i class="mdi mdi-tag-outline es-cat"></i><span><b>Modelo</b><small>Ej.: Frigorífica Sur CF-40.</small></span></a>
+                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('tipos');"><i class="mdi mdi-format-list-bulleted es-cat"></i><span><b>Ver todos los tipos de activo</b><small>Revisar, renombrar o dar de baja.</small></span></a>
+                                </div>
+                            </asp:Panel>
                             <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
                                 OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                         </div>
                     </header>
+
+                    <%-- Activos o componentes: la misma lista vista por sus maquinas
+                         o por sus partes. Antes los componentes eran otra pantalla
+                         con una grilla vieja en el menu lateral. --%>
+                    <div class="sg-lista-vistas" role="tablist" aria-label="Qué ver">
+                        <button type="button" class="sg-lista-vista es-activa" role="tab" aria-selected="true" data-vista="activos" onclick="return sgListaVista('activos');"><i class="mdi mdi-cog-outline"></i>Activos <b><asp:Literal ID="litVistaActivos" runat="server" Text="0" /></b></button>
+                        <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="componentes" onclick="return sgListaVista('componentes');"><i class="mdi mdi-puzzle-outline"></i>Componentes <b><asp:Literal ID="litVistaComp" runat="server" Text="0" /></b></button>
+                    </div>
 
                     <%-- PLANTA, AREA Y LINEA NO HACEN FALTA
 
@@ -332,25 +862,26 @@
                         <span class="sg-a3-filtro-buscar">
                             <i class="mdi mdi-magnify"></i>
                             <input type="search" id="sgListaBuscar" autocomplete="off"
-                                placeholder="Buscar por código, nombre, tipo o ubicación..." />
+                                placeholder="Buscar por código, nombre, tipo o ubicación…" />
                         </span>
 
                         <label class="sg-a3-filtro"><i class="mdi mdi-check-circle-outline"></i>
-                            <span>Estado del registro</span>
+                            <span>Mostrar</span>
                             <rad:RadComboBox2 ID="cboHabilitado" runat="server" AutoPostBack="true" Width="100%">
                                 <Items>
-                                    <rad:RadComboBoxItem Text="Solo habilitados" Value="1" />
-                                    <rad:RadComboBoxItem Text="Todos" Value="" />
-                                    <rad:RadComboBoxItem Text="Solo dados de baja" Value="0" />
+                                    <rad:RadComboBoxItem Text="Solo los que están en uso" Value="1" />
+                                    <rad:RadComboBoxItem Text="También los que ya no se usan" Value="" />
+                                    <rad:RadComboBoxItem Text="Solo los que ya no se usan" Value="0" />
                                 </Items>
                             </rad:RadComboBox2>
                         </label>
                     </div>
 
+                    <div id="sgVistaActivos" class="sg-lista-vista-panel">
                     <div class="sg-ot-ev-filtros">
                         <div class="sg-ot-ev-tipos" id="sgListaChips">
                             <a href="#" class="sg-a3-chip es-activa" data-lista="todos">Todos <b><asp:Literal ID="litListaTodos" runat="server" Text="0" /></b></a>
-                            <a href="#" class="sg-a3-chip" data-lista="atencion"><i class="mdi mdi-alert-outline"></i>Requieren atención <b><asp:Literal ID="litListaAtencion" runat="server" Text="0" /></b></a>
+                            <a href="#" class="sg-a3-chip" data-lista="atencion"><i class="mdi mdi-alert-outline"></i>Necesitan atención <b><asp:Literal ID="litListaAtencion" runat="server" Text="0" /></b></a>
                             <a href="#" class="sg-a3-chip" data-lista="ot"><i class="mdi mdi-wrench-outline"></i>Con OT abiertas <b><asp:Literal ID="litListaOt" runat="server" Text="0" /></b></a>
                         </div>
                         <select id="sgListaPorPagina" class="sg-ot-select">
@@ -361,11 +892,24 @@
                         </select>
                     </div>
 
+                    <div class="sg-lista-leyenda"><span>Debajo de cada activo:</span>
+                        <em class="es-sub"><i class="mdi mdi-cogs"></i>Subactivos</em>
+                        <em class="es-comp"><i class="mdi mdi-puzzle-outline"></i>Componentes</em>
+                        <em class="es-rep"><i class="mdi mdi-package-variant-closed"></i>Repuestos</em></div>
+
                     <asp:Literal ID="litLista" runat="server" />
 
                     <div class="sg-lista-pie">
                         <span id="sgListaConteo" class="sg-ot-vacio-txt"></span>
                         <div class="sg-lista-paginas" id="sgListaPaginas"></div>
+                    </div>
+                    </div>
+
+                    <%-- LOS COMPONENTES DE TODOS LOS ACTIVOS, agrupados por el
+                         activo (o subactivo) del que son parte. --%>
+                    <div id="sgVistaComp" class="sg-lista-vista-panel" hidden>
+                        <asp:Literal ID="litListaComp" runat="server" />
+                        <p class="sg-lista-comp-vacio" id="sgCompSinRes" hidden>Ningún componente coincide con la búsqueda.</p>
                     </div>
                 </div>
             </asp:Panel>
@@ -392,21 +936,25 @@
                     <span class="sep">/</span><asp:Literal ID="litMigaActivo" runat="server" />
                 </div>
 
-                <header class="sg-a3-hero">
+                <%-- La cabecera responde, antes de leer nada, que equipo es, como
+                     esta y donde esta; y si es subactivo, de que maquina es parte. --%>
+                <header class="sg-a3-hero es-v2">
+                    <asp:Literal ID="litHeroFoto" runat="server" />
                     <div class="sg-a3-hero-txt">
                         <h1>
-                            <asp:Literal ID="litHeroNombre" runat="server" />
-                            <asp:Literal ID="litBadges" runat="server" />
+                            <span class="sg-a3-hero-nom"><asp:Literal ID="litHeroNombre" runat="server" /></span>
+                            <span class="sg-a3-hero-chips"><asp:Literal ID="litBadges" runat="server" /></span>
                         </h1>
                         <div class="sg-a3-hero-sub"><asp:Literal ID="litHeroSub" runat="server" /></div>
+                        <asp:Literal ID="litHeroPadre" runat="server" />
                     </div>
 
                     <div class="sg-a3-hero-acc">
+                        <asp:HyperLink ID="hlEditar" runat="server" CssClass="sg-ot-btn es-contorno" NavigateUrl="javascript:void(0)"
+                            ToolTip="Editar la ficha del activo"><i class="mdi mdi-pencil-outline"></i>Editar ficha</asp:HyperLink>
                         <asp:HyperLink ID="hlGenerarOT" runat="server" CssClass="sg-ot-btn es-primario">
                             <i class="mdi mdi-plus"></i>Nueva OT
                         </asp:HyperLink>
-                        <asp:HyperLink ID="hlEditar" runat="server" CssClass="sg-ot-btn es-plano" NavigateUrl="javascript:void(0)"
-                            ToolTip="Editar la ficha del activo"><i class="mdi mdi-pencil-outline"></i></asp:HyperLink>
                     </div>
                 </header>
 
@@ -425,6 +973,7 @@
                         <a href="#" class="sg-a3-tab sg-a3-mas-btn"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
 
                         <div class="sg-a3-mas-menu">
+                            <div class="sg-a3-mas-tit">Más sobre este equipo</div>
                             <a href="#" class="sg-a3-mas-op" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i>Inspecciones y tareas</a>
                             <a href="#" class="sg-a3-mas-op" data-sec="fallas"><i class="mdi mdi-alert-outline"></i>Fallas e indisponibilidad</a>
@@ -702,98 +1251,49 @@
                      6. COMPONENTES
                      ================================================================ --%>
                 <section class="sg-a3-panel sg-a3-comp" data-panel="componentes">
-                    <%-- ESTRUCTURA (bloque 343): de que esta hecho el equipo, con un color
-                         fijo por clase de cosa, antes del detalle de sus partes. --%>
-                    <div class="sg-es-cont">
-                    <div class="sg-es-barra">
-                        <div>
-                            <h3>¿De qué está hecho este equipo?</h3>
-                            <p>Las máquinas que dependen de él, sus partes y los repuestos que le sirven.</p>
-                        </div>
-                        <asp:Panel ID="pnlEsAgregar" runat="server" CssClass="sg-es-agregar-wrap">
-                            <button type="button" class="sg-ot-btn es-primario" onclick="return esAsistente(true);"><i class="mdi mdi-plus"></i>Agregar</button>
-                        </asp:Panel>
-                    </div>
-                    <asp:Literal ID="litEstructura" runat="server" />
-                    </div>
-                    <div class="sg-comp-cols">
+                    <%-- ¿DE QUE ESTA HECHO ESTE EQUIPO? (rediseño 04-10-2026)
 
-                        <%-- La estructura a la izquierda: de que esta hecho el
-                             equipo. Es lo primero que alguien busca cuando le
-                             dicen "fallo el reductor". --%>
-                        <aside class="sg-ot-card sg-comp-arbol">
-                            <header class="sg-ot-card-cab">
-                                <span class="sg-ot-card-ico"><i class="mdi mdi-file-tree-outline"></i></span>
-                                <div><h3>Estructura del equipo</h3></div>
-                            </header>
-                            <asp:Literal ID="litArbol" runat="server" />
-                        </aside>
-
-                        <div class="sg-comp-centro">
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-puzzle-outline"></i></span>
-                                    <div>
-                                        <h3><asp:Literal ID="litCompTitulo" runat="server" Text="Componentes del equipo" /></h3>
-                                        <p class="sg-ot-card-sub">Componentes instalados, retirados y su historial de reemplazos.</p>
-                                    </div>
-                                    <asp:LinkButton ID="lnkNuevoComponente" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
-                                        OnClientClick="return abrirComponente(queryNuevoComponente);"><i class="mdi mdi-plus"></i>Asociar componente</asp:LinkButton>
-
-                                    <%-- RETIRAR ES CAMBIAR SU ESTADO, NO BORRARLO
-
-                                         La ficha del componente ya pide el motivo y
-                                         deja la huella en su historial; este boton
-                                         lleva ahi con la pieza elegida en vez de
-                                         inventar un segundo camino para lo mismo. --%>
-                                    <asp:LinkButton ID="lnkRetirarComponente" runat="server" CssClass="sg-ot-btn es-accion sg-ot-card-acc"
-                                        OnClientClick="return retirarComponente();"><i class="mdi mdi-archive-arrow-down-outline"></i>Registrar retiro</asp:LinkButton>
-                                </header>
-
-                                <div class="sg-ot-ev-filtros">
-                                    <div class="sg-ot-ev-tipos" id="sgCompTipos">
-                                        <a href="#" class="sg-a3-chip es-activa" data-comp-estado="instalados">Instalados <b><asp:Literal ID="litCompInstalados" runat="server" Text="0" /></b></a>
-                                        <a href="#" class="sg-a3-chip" data-comp-estado="retirados">Retirados <b><asp:Literal ID="litCompRetirados" runat="server" Text="0" /></b></a>
-                                    </div>
-                                    <div class="sg-ot-ev-buscar">
-                                        <i class="mdi mdi-magnify"></i>
-                                        <input type="search" id="sgCompBuscar" placeholder="Buscar por código o descripción..." autocomplete="off" />
-                                    </div>
-                                </div>
-
-                                <asp:Literal ID="litComponentes" runat="server" />
+                         Un solo diagrama con un color fijo por clase de cosa -morado
+                         el equipo, azul sus subactivos, turquesa sus partes, ambar
+                         sus repuestos- y el detalle de lo elegido AL LADO. Antes,
+                         debajo del diagrama se repetia lo mismo en un arbol, una
+                         tabla y otro detalle: cuatro vistas de la misma lista. --%>
+                    <div class="sg-ot-card sg-es-card">
+                        <div class="sg-es-barra">
+                            <div>
+                                <h3>¿De qué está hecho este activo?</h3>
+                                <p>Toca cualquier elemento para ver su detalle.</p>
                             </div>
-
-                            <div class="sg-ot-card">
-                                <header class="sg-ot-card-cab">
-                                    <span class="sg-ot-card-ico"><i class="mdi mdi-history"></i></span>
-                                    <div>
-                                        <h3>Historial de reemplazos</h3>
-                                        <p class="sg-ot-card-sub">Repuestos que se cambiaron en este equipo, con la orden que los consumió.</p>
-                                    </div>
-                                </header>
-                                <asp:Literal ID="litReemplazos" runat="server" />
-                            </div>
+                            <asp:Panel ID="pnlEsAgregar" runat="server" CssClass="sg-es-agregar-wrap">
+                                <button type="button" class="sg-ot-btn es-primario" onclick="return esAsistente(true);"><i class="mdi mdi-plus"></i>Agregar</button>
+                            </asp:Panel>
                         </div>
 
-                        <%-- El detalle se llena en el navegador con lo que ya
-                             viene en la fila: pedir el componente al servidor
-                             para mostrar lo que ya esta en pantalla es un viaje
-                             de mas. --%>
-                        <aside class="sg-ot-card sg-comp-detalle" id="sgCompDetalle">
-                            <header class="sg-ot-card-cab">
-                                <span class="sg-ot-card-ico"><i class="mdi mdi-information-outline"></i></span>
-                                <div><h3>Detalles del componente</h3></div>
-                            </header>
-                            <div class="sg-comp-detalle-cuerpo">
-                                <p class="sg-ot-vacio-txt">Elija un componente de la lista para ver su detalle.</p>
-                            </div>
-                        </aside>
-                    </div>
+                        <%-- La regla y la leyenda siempre a la vista: son lo que
+                             permite leer el diagrama sin manual. --%>
+                        <div class="sg-es-regla">
+                            <span class="sg-es-regla-txt"><i class="mdi mdi-lightbulb-on-outline"></i>
+                                <span>¿Te importa <b>esa</b> pieza en particular? → subactivo o componente. &nbsp;¿Da lo mismo cuál uses de la bodega? → repuesto.</span></span>
+                            <span class="sg-es-leyenda" aria-label="Colores">
+                                <span><i class="es-equipo"></i>Activo</span>
+                                <span><i class="es-sub"></i>Subactivo</span>
+                                <span><i class="es-comp"></i>Componente</span>
+                                <span><i class="es-rep"></i>Repuesto</span>
+                            </span>
+                        </div>
 
-                    <div class="sg-ot-nota es-chica">
-                        <i class="mdi mdi-information-outline"></i>
-                        <span>Los componentes retirados conservan su fecha de instalación: es lo que permite saber cuánto duró la pieza anterior.</span>
+                        <div class="sg-es-layout">
+                            <div class="sg-es-diagrama">
+                                <asp:Literal ID="litEstructura" runat="server" />
+                            </div>
+
+                            <%-- El detalle se arma en el navegador con lo que ya trae
+                                 cada elemento: pedirlo al servidor para mostrar lo
+                                 que ya esta en pantalla es un viaje de mas. --%>
+                            <aside class="sg-es-det" id="sgEsDetalle" aria-live="polite">
+                                <p class="sg-es-det-vacio"><i class="mdi mdi-gesture-tap"></i>Toca un elemento del diagrama para ver su detalle.</p>
+                            </aside>
+                        </div>
                     </div>
                 </section>
 
@@ -880,10 +1380,19 @@
                                     <option value="es-sin">Sin lectura</option>
                                 </select>
 
-                                <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-ot-btn es-plano"
-                                    OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-cog-outline"></i>Configurar</asp:LinkButton>
-                                <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-ot-btn es-plano"
-                                    OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-counter"></i>Nuevo contador</asp:LinkButton>
+                                <%-- UNA accion morada: registrar la lectura, que es lo
+                                     de todos los dias. Configurar que se mide es de
+                                     una vez y queda en un menu, con la regla de cada uno. --%>
+                                <div class="sg-cond-agregar">
+                                    <button type="button" class="sg-ot-btn es-plano" aria-haspopup="true" aria-expanded="false"
+                                        onclick="return sgCondMenu(this);"><i class="mdi mdi-plus"></i>Agregar qué medir<i class="mdi mdi-chevron-down"></i></button>
+                                    <div class="sg-cond-agregar-menu" role="menu">
+                                        <asp:LinkButton ID="lnkNuevaVariable" runat="server" CssClass="sg-cond-op"
+                                            OnClientClick="return abrirVariable(queryNuevaVariable);"><i class="mdi mdi-pulse"></i><span><b>Una variable de condición</b><small>Cómo está ahora. Ej.: temperatura de la cámara, en °C.</small></span></asp:LinkButton>
+                                        <asp:LinkButton ID="lnkNuevoMedidor" runat="server" CssClass="sg-cond-op"
+                                            OnClientClick="return abrirMedidor(queryNuevoMedidor);"><i class="mdi mdi-counter"></i><span><b>Un contador</b><small>Cuánto ha trabajado. Ej.: horas de marcha del compresor.</small></span></asp:LinkButton>
+                                    </div>
+                                </div>
                                 <asp:LinkButton ID="lnkRegistrarLectura" runat="server" CssClass="sg-ot-btn es-primario"
                                     OnClientClick="return abrirLectura('');"><i class="mdi mdi-plus"></i>Registrar lectura</asp:LinkButton>
                             </div>
@@ -1171,31 +1680,127 @@
          el sistema lo guarda donde corresponde. --%>
     <div class="sg-es-asis" id="sgEsAsistente" role="dialog" aria-modal="true" aria-labelledby="sgEsAsisTit" onclick="if (event.target === this) esAsistente(false);">
         <div class="sg-es-asis-caja">
-            <h3 id="sgEsAsisTit">¿Qué vas a agregar a este equipo?</h3>
-            <p>Elige según la regla. Si dudas, lee los ejemplos.</p>
-            <div class="sg-es-opciones">
-                <button type="button" class="sg-es-op es-sub" onclick="return esAgregar('subactivo');">
-                    <i class="mdi mdi-cogs"></i><b>Una máquina que depende de esta</b>
-                    <span class="regla">Tiene <strong>número de serie</strong>, se puede <strong>sacar y reparar aparte</strong> y tiene su propio mantenimiento.</span>
-                    <span class="ej">Ej.: el compresor de una cámara, la bomba de una caldera.</span>
-                    <span class="sg-es-etq es-sub" style="margin-top:10px">Subactivo</span>
+          <%-- 1) Elegir que se agrega --%>
+          <div class="sg-es-vista" data-vista="elegir">
+            <header class="sg-es-asis-cab">
+                <div>
+                    <small id="sgEsAsisDonde">Agregar a este activo</small>
+                    <h3 id="sgEsAsisTit">¿Qué vas a agregar?</h3>
+                    <p>Elige una opción. Si dudas, mira el ejemplo de cada una.</p>
+                </div>
+                <button type="button" class="sg-es-asis-x" aria-label="Cerrar" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i></button>
+            </header>
+            <div class="sg-es-opciones" role="radiogroup" aria-label="Qué vas a agregar">
+                <button type="button" role="radio" aria-checked="false" class="sg-es-op es-sub" data-que="subactivo" data-txt="Una máquina" onclick="return esElegir(this);">
+                    <span class="sg-es-op-top"><span class="sg-es-op-ico"><i class="mdi mdi-cogs"></i></span><span class="sg-es-op-radio"></span></span>
+                    <b>Un activo que depende de este</b>
+                    <span class="sg-es-etq es-sub">Subactivo</span>
+                    <span class="regla">Tiene su propio número de serie, se saca para repararlo aparte y puede tener sus propios componentes.</span>
+                    <span class="ej"><b>Ej.:</b> el compresor de la cámara, la bomba de una caldera.</span>
                 </button>
-                <button type="button" class="sg-es-op es-comp" onclick="return esAgregar('componente');">
-                    <i class="mdi mdi-puzzle-outline"></i><b>Una parte de este equipo</b>
-                    <span class="regla">Va <strong>dentro</strong> de la máquina y quieres saber <strong>qué le pasó</strong>: cuándo se cambió, si está gastada.</span>
-                    <span class="ej">Ej.: el motor, un rodamiento, una válvula, una correa.</span>
-                    <span class="sg-es-etq es-comp" style="margin-top:10px">Componente</span>
+                <button type="button" role="radio" aria-checked="false" class="sg-es-op es-comp" data-que="componente" data-txt="Una parte" onclick="return esElegir(this);">
+                    <span class="sg-es-op-top"><span class="sg-es-op-ico"><i class="mdi mdi-puzzle-outline"></i></span><span class="sg-es-op-radio"></span></span>
+                    <b>Una parte de este activo</b>
+                    <span class="sg-es-etq es-comp">Componente</span>
+                    <span class="regla">No existe fuera del activo, pero quieres saber cuándo se instaló y cuándo cambiarla.</span>
+                    <span class="ej"><b>Ej.:</b> el burlete de la puerta, el termostato, un rodamiento.</span>
                 </button>
-                <button type="button" class="sg-es-op es-rep" onclick="return esAgregar('repuesto');">
-                    <i class="mdi mdi-package-variant-closed"></i><b>Un repuesto que le sirve</b>
-                    <span class="regla">Se <strong>compra por cantidad</strong> y se guarda en bodega. <strong>Uno es igual a otro.</strong></span>
-                    <span class="ej">Ej.: filtros, correas de recambio, sellos, aceite.</span>
-                    <span class="sg-es-etq es-rep" style="margin-top:10px">Repuesto</span>
+                <button type="button" role="radio" aria-checked="false" class="sg-es-op es-rep" data-que="repuesto" data-txt="Un repuesto" onclick="return esElegir(this);">
+                    <span class="sg-es-op-top"><span class="sg-es-op-ico"><i class="mdi mdi-package-variant-closed"></i></span><span class="sg-es-op-radio"></span></span>
+                    <b>Un repuesto que le sirve</b>
+                    <span class="sg-es-etq es-rep">Repuesto</span>
+                    <span class="regla">Se compra por cantidad y se guarda en bodega. Da lo mismo cuál uses.</span>
+                    <span class="ej"><b>Ej.:</b> filtro secador, correa, refrigerante R-404A.</span>
                 </button>
             </div>
-            <div class="sg-es-asis-pie">
-                <button type="button" class="sg-ot-btn es-plano" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i>Cancelar</button>
+            <div class="sg-es-regla es-chica">
+                <span class="sg-es-regla-txt"><i class="mdi mdi-lightbulb-on-outline"></i>
+                    <span>¿Te importa <b>esa</b> pieza en particular? → subactivo o componente. &nbsp;¿Da lo mismo cuál uses de la bodega? → repuesto.</span></span>
             </div>
+            <footer class="sg-es-asis-pie">
+                <button type="button" class="sg-ot-btn es-fantasma" onclick="return esAsistente(false);">Cancelar</button>
+                <button type="button" class="sg-ot-btn es-primario" id="sgEsContinuar" disabled="disabled" onclick="return esContinuar();">Elige una opción<i class="mdi mdi-arrow-right"></i></button>
+            </footer>
+          </div>
+
+          <%-- 2) El componente se crea AQUI MISMO, sin abrir otra ventana y con
+               el diseño del asistente del activo. --%>
+          <div class="sg-es-vista" data-vista="componente" hidden>
+            <header class="sg-es-asis-cab">
+                <div>
+                    <button type="button" class="sg-es-volver" onclick="return esVista('elegir');"><i class="mdi mdi-arrow-left"></i>Cambiar lo que agrego</button>
+                    <h3>Nuevo componente</h3>
+                    <p class="sg-es-donde-txt">Una parte de este activo que quieres seguir por separado.</p>
+                </div>
+                <button type="button" class="sg-es-asis-x" aria-label="Cerrar" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i></button>
+            </header>
+
+            <div class="sg-es-faltan" id="sgEscFaltan" role="alert" hidden><i class="mdi mdi-alert-circle-outline"></i><span id="sgEscFaltanTxt"></span></div>
+
+            <div class="sg-es-form">
+                <label class="sg-es-campo">
+                    <span class="sg-es-etiq">Nombre <b class="req">*</b></span>
+                    <input type="text" name="esc_nombre" id="escNombre" maxlength="200" placeholder="Ej.: Burlete de la puerta" autocomplete="off" />
+                    <span class="sg-es-msg">Escribe cómo le dicen a esta parte.</span>
+                </label>
+                <div class="sg-es-campo">
+                    <span class="sg-es-etiq">Qué es <b class="req">*</b></span>
+                    <span class="af-combo"><input type="text" name="esc_tipo" id="escTipo" data-combo="tipos" placeholder="Ej.: Sello, Motor, Sensor" autocomplete="off" aria-label="Qué es" />
+                        <button type="button" class="af-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
+                    <span class="sg-es-ayuda">Elige de la lista o escribe uno nuevo: se crea al guardar.</span>
+                    <span class="sg-es-msg">Elige o escribe qué es esta parte.</span>
+                </div>
+                <div class="sg-es-campo">
+                    <span class="sg-es-etiq">Dónde va</span>
+                    <span class="af-combo"><input type="text" name="esc_lado" id="escLado" data-combo="lados" placeholder="Ej.: Delantero, Lado motor" autocomplete="off" aria-label="Dónde va" />
+                        <button type="button" class="af-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
+                </div>
+                <label class="sg-es-campo">
+                    <span class="sg-es-etiq">Es parte de</span>
+                    <select name="esc_padre" id="escPadre"></select>
+                    <span class="sg-es-ayuda">Si va dentro de otra parte (el rodamiento DEL motor), elígela.</span>
+                </label>
+                <label class="sg-es-campo">
+                    <span class="sg-es-etiq">Estado</span>
+                    <select name="esc_estado" id="escEstado"></select>
+                </label>
+                <label class="sg-es-campo">
+                    <span class="sg-es-etiq">Se instaló el</span>
+                    <input type="date" name="esc_fecha" id="escFecha" />
+                </label>
+                <label class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">Descripción u observación</span>
+                    <textarea name="esc_desc" id="escDesc" rows="2" maxlength="500" placeholder="Ej.: está gastado y se escapa el frío"></textarea>
+                </label>
+                <div class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">Foto del componente</span>
+                    <div class="af-drop" id="escFotoZona">
+                        <span class="af-drop-ico" id="escFotoIco"><i class="mdi mdi-image-outline"></i></span>
+                        <span class="af-drop-txt"><b>Arrastra una foto aquí</b><span id="escFotoNom">PNG o JPG. Ayuda a reconocer la pieza.</span></span>
+                        <span class="af-drop-acc"><label for="escFoto" class="sg-ot-btn es-plano"><i class="mdi mdi-camera-outline"></i>Elegir foto</label></span>
+                        <input type="file" name="esc_foto" id="escFoto" accept="image/*" style="display:none" onchange="escFotoVer(this)" />
+                    </div>
+                </div>
+            </div>
+
+            <footer class="sg-es-asis-pie">
+                <button type="button" class="sg-ot-btn es-fantasma" onclick="return esAsistente(false);">Cancelar</button>
+                <button type="button" class="sg-ot-btn es-primario" onclick="return escGuardar();"><i class="mdi mdi-check"></i>Guardar componente</button>
+                <asp:LinkButton ID="lnkEsGuardarComp" runat="server" OnClick="lnkEsGuardarComp_Click" CausesValidation="false" style="display:none" />
+            </footer>
+          </div>
+
+          <%-- 3) Subactivo y repuesto: su formulario dentro de esta misma ventana. --%>
+          <div class="sg-es-vista es-marco" data-vista="marco" hidden>
+            <header class="sg-es-asis-cab">
+                <div>
+                    <button type="button" class="sg-es-volver" onclick="return esVista('elegir');"><i class="mdi mdi-arrow-left"></i>Cambiar lo que agrego</button>
+                    <h3 id="sgEsMarcoTit">Nuevo subactivo</h3>
+                </div>
+                <button type="button" class="sg-es-asis-x" aria-label="Cerrar" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i></button>
+            </header>
+            <iframe id="sgEsMarco" title="Formulario" src="about:blank"></iframe>
+          </div>
         </div>
     </div>
 </asp:Content>
