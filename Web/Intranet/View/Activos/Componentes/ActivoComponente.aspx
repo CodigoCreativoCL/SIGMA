@@ -8,6 +8,8 @@
      pie. Sirve para crear y para editar, desde el centro y desde «Crear». --%>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <%-- El modulo de activos no muestra el velo de carga: se ve pegado. --%>
+    <script type="text/javascript">window.SIGMA_SIN_VELO = true;</script>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-asistente.css") %>' rel="stylesheet" />
     <script type="text/javascript">var AF_PASOS = 3;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-asistente.js") %>'></script>

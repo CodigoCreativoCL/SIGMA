@@ -219,7 +219,7 @@ public partial class View_Activos_Posiciones_Posicion : System.Web.UI.Page
 
         if (p.activo_id == null)
             litActual.Text = "<span class=\"grid-estado-chip is-neutro\"><i class=\"mdi mdi-map-marker-off-outline\"></i>Libre</span> "
-                           + "Ningún equipo ocupa esta posición hoy.";
+                           + "Ningún activo ocupa esta posición hoy.";
         else
             litActual.Text = "<span class=\"grid-estado-chip is-exito\"><i class=\"mdi mdi-engine-outline\"></i>"
                            + Server.HtmlEncode(p.activo_codigo) + "</span> <strong>" + Server.HtmlEncode(p.activo_nombre) + "</strong>"
@@ -235,7 +235,7 @@ public partial class View_Activos_Posiciones_Posicion : System.Web.UI.Page
         {
             string quien = (p.activo_codigo + " " + p.activo_nombre).Trim().Replace("\\", "\\\\").Replace("'", "\\'");
             btnOcupar.OnClientClick = "if (!ConfirSweetAlert(this, 'Posición ocupada', 'Hoy la ocupa " + quien +
-                                      ". ¿Asignarla al equipo elegido? El periodo de " + quien +
+                                      ". ¿Asignarla al activo elegido? El periodo de " + quien +
                                       " se cierra ahora y se abre el del nuevo.')) return false;";
         }
         else
@@ -342,7 +342,7 @@ public partial class View_Activos_Posiciones_Posicion : System.Web.UI.Page
             int activo;
             if (!int.TryParse(cboActivo.SelectedValue, out activo) || activo == 0)
             {
-                Tools.tools.ClientAlert("Elija el equipo que va a ocupar la posición.", "alerta");
+                Tools.tools.ClientAlert("Elija el activo que va a ocupar la posición.", "alerta");
                 return;
             }
 

@@ -31,7 +31,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Las máquinas y equipos del cliente.
+    Las máquinas y activos del cliente.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">

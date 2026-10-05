@@ -327,7 +327,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         Activo a = _entidad ?? new ActivoController().GetActivo(ActivoId);
         bool esSub = a != null && a.act_activo_padre != null;
 
-        litListoTitulo.Text = esSub ? "Listo, el subactivo quedó creado" : "Listo, el equipo quedó creado";
+        litListoTitulo.Text = esSub ? "Listo, el subactivo quedó creado" : "Listo, el activo quedó creado";
         litListoTexto.Text = a == null ? "" :
             "<b>" + Server.HtmlEncode(a.act_nombre) + "</b> · " + Server.HtmlEncode(a.act_codigo) +
             (string.IsNullOrEmpty(a.planta_nombre) ? " ya está en la lista de activos." : " ya está en la lista de activos de " + Server.HtmlEncode(a.planta_nombre) + ".");
@@ -485,7 +485,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             System.Text.RegularExpressions.Match m = System.Text.RegularExpressions.Regex.Match(l.Text, "<label>(.*?)</label>", System.Text.RegularExpressions.RegexOptions.Singleline);
             if (m.Success) return System.Web.HttpUtility.HtmlDecode(m.Groups[1].Value).Trim();
         }
-        return "Dato de placa";
+        return "Dato técnico";
     }
 
     // ============================================================ bloque 342
@@ -652,6 +652,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             arc.arc_mime = f.ContentType;
             arc.contenido = contenido;
 
+            ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
             Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
             return !r.error && r.codigo > 0 ? r.codigo : 0;
         }
@@ -851,6 +852,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 arc.arc_mime = mime;
                 arc.contenido = contenido;
 
+                ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
                 Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
                 if (!r.error && r.codigo > 0)
                     new ActivoArchivoController().Vincular(activo, r.codigo);
@@ -1225,6 +1227,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             arc.arc_mime = fuImagen.PostedFile != null ? fuImagen.PostedFile.ContentType : null;
             arc.contenido = contenido;
 
+            ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
             Respuesta r = new ArchivoController().InsertArchivo(arc, "activos");
             if (r.error || r.codigo <= 0)
                 return " (la imagen no se pudo guardar: " + r.detalle + ")";

@@ -11,6 +11,17 @@
          propio del centro del activo. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
+    <%-- Las vistas de la planta (rediseño 05-10-2026) y three.js bajo demanda:
+         el importmap deja que el import dinamico encuentre "three". --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-activos.css") %>' rel="stylesheet" />
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "<%=ResolveUrl("~/Js/three/three.module.min.js") %>",
+                "three/addons/": "<%=ResolveUrl("~/Js/three/addons/") %>"
+            }
+        }
+    </script>
     <%-- El asistente de la pestaña Ficha y el formulario de componente de
          «¿Qué vas a agregar?» usan la piel compartida. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-asistente.css") %>' rel="stylesheet" />
@@ -218,6 +229,47 @@
                 try { i.files = e.dataTransfer.files; escFotoVer(i); } catch (x) { }
             });
         });
+        /* La ventana de impresion de etiquetas (la misma de Posiciones y Bodega). */
+        function abrirEtiquetas(query) {
+            var w = 980, h = 760;
+            var x = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+            var y = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+            var vent = window.open('<%=ResolveUrl("~/View/Comun/Impresion/Etiquetas.aspx") %>?query=' + query, 'sigmaEtiquetas',
+                'width=' + w + ',height=' + h + ',left=' + Math.round(x) + ',top=' + Math.round(y) + ',resizable=yes,scrollbars=yes');
+            if (!vent) { alert('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.'); return false; }
+            vent.focus();
+            return false;
+        }
+
+        /* ---- Bitacora: responder en el mismo hilo (bloque 352) ---- */
+        document.addEventListener('click', function (e) {
+            var t = e.target.closest ? e.target.closest('[data-bit-responder],[data-bit-cancelar],[data-bit-enviar],[data-bit-hilo]') : null;
+            if (!t) return;
+            e.preventDefault();
+            if (t.hasAttribute('data-bit-hilo')) {
+                var ul = document.querySelector('[data-bit-hijos="' + t.getAttribute('data-bit-hilo') + '"]');
+                if (!ul) return;
+                var abierto = ul.hidden; ul.hidden = !abierto;
+                t.setAttribute('aria-expanded', abierto ? 'true' : 'false');
+                t.querySelector('i').className = 'mdi ' + (abierto ? 'mdi-chevron-up' : 'mdi-chevron-down');
+                return;
+            }
+            var id = t.getAttribute('data-bit-responder') || t.getAttribute('data-bit-cancelar') || t.getAttribute('data-bit-enviar');
+            var f = document.querySelector('[data-bit-form="' + id + '"]');
+            if (!f) return;
+            if (t.hasAttribute('data-bit-responder')) {
+                document.querySelectorAll('[data-bit-form]').forEach(function (x) { if (x !== f) x.hidden = true; });
+                f.hidden = false; f.querySelector('textarea').focus(); return;
+            }
+            if (t.hasAttribute('data-bit-cancelar')) { f.hidden = true; return; }
+            var txt = f.querySelector('textarea').value.trim();
+            if (!txt) { f.querySelector('textarea').focus(); f.classList.add('es-falta'); return; }
+            document.getElementById('bitPadre').value = id;
+            document.getElementById('bitRespuesta').value = txt;
+            t.disabled = true;
+            __doPostBack('<%=lnkResponder.UniqueID %>', '');
+        });
+
         /* Todo se agrega dentro del mismo asistente: no se abre otra ventana. */
         function esAgregar(que) {
             var a = document.getElementById('sgEsAsistente');
@@ -226,8 +278,50 @@
             if (que === 'subactivo')
                 return esMarco('<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + queryNuevoSubactivo, 'Nuevo subactivo');
             if (que === 'componente') return escAbrir();
-            if (que === 'repuesto')
-                return esMarco('<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + queryNuevaCompat, 'Repuesto que le sirve');
+            if (que === 'repuesto') return esrAbrir();
+            return false;
+        }
+
+        /* ---- Repuesto compatible en el mismo asistente (bloque 351) ----
+           El combo es el de la planta (busca al escribir, con foto y stock) y
+           se guarda con WsActivos.VincularRepuesto. */
+        var esrRepuestos = null;
+        function esrAbrir() {
+            var tpl = document.getElementById('sgEsDatos'), para = document.getElementById('esrPara');
+            if (para) para.innerHTML = tpl && tpl.querySelector('[data-alcances]') ? tpl.querySelector('[data-alcances]').innerHTML : '';
+            document.getElementById('esrObs').value = '';
+            document.getElementById('sgEsrFaltan').hidden = true;
+            esVista('repuesto');
+            var caja = document.getElementById('esrCombo'), P = window.sigmaPlanta;
+            if (!P || !P.combo) { caja.innerHTML = '<p class="sg-es-ayuda">No se pudo cargar el buscador. Recarga la página.</p>'; return false; }
+            var pintar = function () {
+                caja.innerHTML = P.combo('esrep', esrRepuestos.map(function (r) {
+                    return { id: r.id, n: r.n, txt: r.c, img: r.foto || '', sub: [r.c, r.stock + (r.u ? ' ' + r.u : '') + ' en bodega'].filter(Boolean).join(' · ') };
+                }), 0, { ph: 'Busca por nombre o código', req: true, vacio: 'Ningún repuesto se llama así' });
+                setTimeout(function () { var i = caja.querySelector('[data-sacombo]'); if (i) i.focus(); }, 40);
+            };
+            if (esrRepuestos) pintar();
+            else P.ws('Repuestos', {}).then(function (d) { esrRepuestos = d.filas || []; pintar(); })
+                  .catch(function (e) { caja.innerHTML = ''; var p = document.createElement('p'); p.className = 'sg-es-ayuda'; p.textContent = e.message; caja.appendChild(p); });
+            return false;
+        }
+        function esrFalta(txt) {
+            document.getElementById('sgEsrFaltanTxt').textContent = txt;
+            document.getElementById('sgEsrFaltan').hidden = false;
+        }
+        function esrGuardar(b) {
+            var P = window.sigmaPlanta, caja = document.getElementById('esrCombo');
+            var inp = caja.querySelector('[data-sacombo]'); if (inp && P.comboSalir) P.comboSalir(inp);
+            var h = caja.querySelector('input[name="esrep"]'), rep = h ? +h.value || 0 : 0;
+            if (!rep) { esrFalta('Elige el repuesto de la lista.'); if (inp) inp.focus(); return false; }
+            var v = (document.getElementById('esrPara').value || '').split(':');
+            b.disabled = true;
+            P.ws('VincularRepuesto', { repuesto: rep, activo: v[0] === 'a' ? +v[1] : 0, componente: v[0] === 'c' ? +v[1] : 0, observacion: document.getElementById('esrObs').value })
+             .then(function () {
+                 esAsistente(false); seccionPendiente = 'componentes';
+                 if (typeof refresh === 'function') refresh(); else location.reload();
+             })
+             .catch(function (e) { b.disabled = false; esrFalta(e.message); });
             return false;
         }
         /* Un subactivo se abre en su propio centro, directo en su estructura. */
@@ -437,7 +531,7 @@
            los chips del listado y el asistente: morado el equipo, azul el
            subactivo, turquesa el componente y ambar el repuesto.
            ==================================================================== */
-        .sg-a3 {
+        .sg-a3, [data-mpanel="componentes"], .sg-es-asis {
             --es-purple: #6732F4; --es-purple-dark: #4820C9; --es-purple-soft: #F2EFFF;
             --es-blue: #087BEA; --es-blue-dark: #0565C2; --es-blue-soft: #EAF4FF;
             --es-cyan: #16C6C9; --es-cyan-dark: #007F8A; --es-cyan-soft: #E8FBFB;
@@ -567,6 +661,13 @@
         .sg-es-item.es-hijo::before { content: ""; position: absolute; left: -12px; top: -9px; width: 10px; height: 30px; border-left: 2px solid #CFD6E3; border-bottom: 2px solid #CFD6E3; border-bottom-left-radius: 6px; }
         .sg-es-item.es-retirada { display: none; background: var(--es-canvas); }
         .sg-es-col.ver-retiradas .sg-es-item.es-retirada { display: grid; }
+        /* con foto: la foto a la izquierda, el nombre y el estado al medio, la flecha a la derecha */
+        .sg-es-item.con-foto { grid-template-columns: 48px minmax(0, 1fr) auto; gap: 4px 12px; text-align: left; align-items: center; }
+        .sg-es-item.con-foto .sg-es-mini { grid-column: 1; grid-row: 1 / span 2; width: 48px; height: 48px; border-radius: 12px; overflow: hidden; background: #fff; border: 1px solid var(--es-line); }
+        .sg-es-item .sg-es-mini img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sg-es-item.con-foto .t { grid-column: 2; grid-row: 1; }
+        .sg-es-item.con-foto .flecha { grid-column: 3; grid-row: 1 / span 2; align-self: center; }
+        .sg-es-item.con-foto .sg-es-chip { grid-column: 2; grid-row: 2; }
         .sg-es-chip { display: inline-flex; align-items: center; gap: 4px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 800; white-space: nowrap; max-width: 100%; }
         .sg-es-chip::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
         .sg-es-chip.es-ok { background: var(--es-success-soft); color: var(--es-success); }
@@ -738,6 +839,13 @@
         .sg-lc-fila .d { font-size: 13px; color: #4A556D; } .sg-lc-fila .f { font-size: 12.5px; color: #68738A; }
         .sg-lc-foto { width: 44px; height: 44px; border-radius: 10px; background: #E8FBFB; color: #007F8A; display: grid; place-items: center; font-size: 20px; overflow: hidden; }
         .sg-lc-foto img { width: 100%; height: 100%; object-fit: cover; }
+        /* la observacion del estado, debajo del chip (bloque 356) */
+        .sg-lc-fila .e { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; min-width: 0; }
+        .sg-lc-obs { font-size: 12px; color: #9A4D00; line-height: 1.35; overflow-wrap: anywhere; }
+        /* con foto: la del activo o la del componente, no el icono */
+        .sg-lc-cab .ico.es-foto { width: 48px; height: 48px; border-radius: 12px; overflow: hidden; background: #F4F6FA; padding: 0; }
+        .sg-lc-cab .ico.es-foto img, .sg-lc-foto.es-foto img { width: 100%; height: 100%; object-fit: cover; display: block; }
+        .sg-lc-foto.es-foto { background: #F4F6FA; }
         .sg-lc-cabcol { display: grid; grid-template-columns: 48px minmax(0, 2fr) minmax(0, 1.4fr) minmax(0, 1fr) 140px 110px; gap: 12px; padding: 0 14px 8px;
             font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #68738A; }
         @media (max-width: 1000px) {
@@ -753,13 +861,34 @@
          publicaban sin llegar. --%>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-activo360.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-orden.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/gsap/Flip.min.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/gsap/Draggable.min.js") %>'></script>
+    <script type="text/javascript">
+        /* El modulo de activos no muestra el velo de carga: se ve pegado. */
+        window.SIGMA_SIN_VELO = true;
+        window.SIGMA_PLANTA = {
+            ws: '<%=ResolveUrl("~/WebService/WsActivos.asmx") %>',
+            raiz: '<%=ResolveUrl("~/") %>',
+            three: '<%=ResolveUrl("~/Js/three/") %>',
+            urlComponente: '<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>',
+            urls: {
+                variables: '<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>',
+                medidores: '<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>',
+                tipos: '<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipo.aspx") %>',
+                modelos: '<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>',
+                serie: '<%=ResolveUrl("~/View/Activos/Variables/ActivoVariableSerie.aspx") %>'
+            },
+            exportar: '<%=lnkExportarLista.ClientID %>'
+        };
+    </script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-planta.js") %>'></script>
 </asp:Content>
 
 <%-- El rotulo dice el modulo, no la pantalla: el titulo ya dice cual es. --%>
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Control de activos</asp:Content>
 <asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server"><asp:Literal ID="litTitulo" runat="server" Text="Centro de activos 360°" /></asp:Content>
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    <asp:Literal ID="litSubtitulo" runat="server" Text="Historial, mantenimiento y condición de tus equipos." />
+    <asp:Literal ID="litSubtitulo" runat="server" Text="Historial, mantenimiento y condición de tus activos." />
 </asp:Content>
 
 <%-- LA BUSQUEDA AVANZADA DEL SITIO NO SIRVE EN EL CENTRO
@@ -793,7 +922,176 @@
             <asp:LinkButton ID="lnkRecargar" runat="server" style="display:none" CausesValidation="false" />
 
             <%-- ====== LA LISTA DE EQUIPOS ====== --%>
-            <asp:Panel ID="pnlLista" runat="server" Visible="false" CssClass="sg-a3 sg-ot sg-lista">
+            <asp:Panel ID="pnlLista" runat="server" Visible="false">
+<%-- ====== LAS VISTAS DE LA PLANTA (rediseño 05-10-2026) ======
+     Encabezado navy, indicadores, pestañas del modulo y, en «Activos», el
+     menu «Ver como» con Lista, Tarjetas, Mapa por areas y Vista 3D. Lo dibuja
+     Js/sigma-planta.js con los datos de WsActivos.asmx; la unica referencia
+     es docs/rediseno-activos/sigma-activos-referencia.html. --%>
+<div class="sgap is-cargando" id="saPlanta">
+<div class="wrap">
+  <header class="hero">
+    <div class="hero-top">
+      <div class="hero-title">
+        <span class="hero-eyebrow">Control de activos</span>
+        <h1>Centro de activos 360°</h1>
+        <p>Historial, mantenimiento y condición de tus activos.</p>
+      </div>
+      <div class="hero-actions">
+        <%-- la planta que se ve: un combo si la persona tiene mas de una --%><div class="sa-planta" id="saPlantaSel" hidden></div>
+        <div class="menu-wrap">
+          <button type="button" class="btn btn--hero" id="btnIO" aria-haspopup="menu" aria-expanded="false" aria-controls="menuIO"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V5M3 9l4-4 4 4M17 7v12M13 15l4 4 4-4"/></svg>Importar o exportar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+          <div class="menu" id="menuIO" role="menu" hidden>
+            <button type="button" role="menuitem" data-io="import"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5"/></svg><span><b>Importar desde Excel</b><small>Carga muchos activos de una vez</small></span></button>
+            <button type="button" role="menuitem" data-io="template"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7l-4-4zM14 3v4h4M9 13h6M9 17h6"/></svg><span><b>Descargar plantilla</b><small>El Excel con las columnas listas para llenar</small></span></button>
+            <button type="button" role="menuitem" data-io="export"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg><span><b>Exportar a Excel</b><small>Los activos que estás viendo ahora</small></span></button>
+          </div>
+        </div>
+        <button type="button" class="btn btn--primary btn--glow" id="btnNuevo"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nuevo activo</button>
+      </div>
+    </div>
+  </header>
+  <section class="kpis" id="pulse" aria-label="Resumen de los activos"></section>
+
+  <section class="panel">
+  <nav class="mtabs" id="mtabs" aria-label="Secciones de Control de activos" role="tablist"></nav>
+  <%-- Mientras llega la planta: un esqueleto de las tarjetas (la vista con la que se entra), nunca el mapa vacio. --%>
+  <div class="sa-cargando sa-esq" id="saCargando" role="status" aria-live="polite">
+    <span class="sr">Cargando los activos…</span>
+    <div class="sa-esq-barra" aria-hidden="true"><i style="height:40px;width:140px"></i><i style="height:40px;width:140px"></i><i style="height:40px;width:140px"></i></div>
+    <div class="sa-esq-cards" aria-hidden="true"><div class="sa-esq-card"><i></i><i style="height:22px;width:62%"></i><i style="height:14px;width:44%"></i><i style="height:64px"></i><i style="height:44px"></i></div><div class="sa-esq-card"><i></i><i style="height:22px;width:62%"></i><i style="height:14px;width:44%"></i><i style="height:64px"></i><i style="height:44px"></i></div><div class="sa-esq-card"><i></i><i style="height:22px;width:62%"></i><i style="height:14px;width:44%"></i><i style="height:64px"></i><i style="height:44px"></i></div><div class="sa-esq-card"><i></i><i style="height:22px;width:62%"></i><i style="height:14px;width:44%"></i><i style="height:64px"></i><i style="height:44px"></i></div></div>
+  </div>
+
+  <div class="tabpanel" role="tabpanel" aria-label="Activos" data-mpanel="activos">
+
+  <div class="viewbar">
+    <div class="viewbar-l">
+      <span class="viewbar-lbl" id="verComo">Ver como</span>
+      <div class="seg seg--views" role="group" aria-labelledby="verComo">
+        <button type="button" data-view="lista" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Lista</span></button>
+        <button type="button" data-view="tarjetas" aria-pressed="true"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Tarjetas</span></button>
+        <button type="button" data-view="2d" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="11" height="8" rx="1.5"/><rect x="16" y="4" width="5" height="16" rx="1.5"/><rect x="3" y="14" width="11" height="6" rx="1.5"/></svg><span>Mapa por áreas</span></button>
+        <button type="button" data-view="3d" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 4.5v9L12 21l-8-4.5v-9L12 3zM4 7.5l8 4.5 8-4.5M12 12v9"/></svg><span>Vista 3D</span></button>
+      </div>
+      <span class="viewbar-help" id="viewHelp"></span>
+    </div>
+    <button type="button" class="btn btn--secondary" id="btnEstructura" title="Cambia cómo se llaman y se dividen los lugares de tu planta"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l9 5-9 5-9-5 9-5zM3 12.5l9 5 9-5M3 16.5l9 5 9-5"/></svg><span id="estrLbl">Áreas y líneas</span></button>
+  </div>
+
+  <div class="hint" id="hint" hidden>
+    <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.5 1 2.5h6c0-1 .2-1.7 1-2.5A6 6 0 0 0 12 3z"/></svg>
+    <p id="hintText"></p>
+    <button type="button" id="hintClose">Entendido</button>
+  </div>
+
+  <div class="work" id="work">
+    <aside class="tray" aria-labelledby="trayTitle">
+      <div><h2 id="trayTitle">Por ubicar</h2><p id="trayText"></p></div>
+      <div class="tray-list" id="tray" data-drop="tray"></div>
+      <button type="button" class="btn" id="btnNuevo2"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Agregar activo aquí</button>
+    </aside>
+    <div id="view2d"><div class="mapcrumbs-wrap" id="mapCrumbs"></div><div class="map" id="map"></div></div>
+    <div id="viewLista" hidden><div class="lv" id="lv"></div></div>
+    <div id="viewTarjetas" hidden><div class="tv" id="tv"></div></div>
+    <div id="view3d" hidden>
+      <div class="scene-wrap" id="sceneWrap">
+        <div class="scene" id="scene"></div>
+        <div class="labels3d" id="labels3d"></div>
+        <div class="scene-fallback" id="sceneFallback" hidden>No se pudo cargar la vista 3D en este navegador. El mapa sigue funcionando igual.</div>
+        <div class="s3-top">
+          <div class="locnav" id="locnav3d"></div>
+        </div>
+        <div class="s3-ctl glass" id="ctl3d" role="toolbar" aria-label="Cámara">
+          <button type="button" class="cbtn" data-c3="in" aria-label="Acercar" title="Acercar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></button>
+          <button type="button" class="cbtn" data-c3="out" aria-label="Alejar" title="Alejar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14"/></svg></button>
+          <span class="sep"></span>
+          <button type="button" class="cbtn" data-c3="left" aria-label="Girar a la izquierda" title="Girar a la izquierda"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4h4"/></svg></button>
+          <button type="button" class="cbtn" data-c3="right" aria-label="Girar a la derecha" title="Girar a la derecha"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.4-5.7M20 4v4h-4"/></svg></button>
+          <span class="sep"></span>
+          <button type="button" class="cbtn cbtn--txt" data-c3="iso" title="Vista en ángulo">3D</button>
+          <button type="button" class="cbtn cbtn--txt" data-c3="top" title="Vista desde arriba">Planta</button>
+          <button type="button" class="cbtn cbtn--txt" data-c3="front" title="Vista de frente">Frente</button>
+          <span class="sep"></span>
+          <button type="button" class="cbtn" data-c3="home" aria-label="Ver toda la planta" title="Ver toda la planta"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7M5 10v10h14V10"/></svg></button>
+          <button type="button" class="cbtn" data-c3="spin" aria-label="Giro automático" title="Giro automático" aria-pressed="false"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9M21 3v6h-6"/></svg></button>
+        </div>
+        <aside class="s3-panel glass" id="areaPanel" hidden aria-live="polite"></aside>
+        <div class="s3-tour glass" id="tourCard" hidden aria-live="polite"></div>
+        <div class="s3-bottom">
+          <div class="glass s3-legend">
+            <span class="tone-ok"><span class="dot"></span>Operativo</span>
+            <span class="tone-warn"><span class="dot"></span>Con aviso</span>
+            <span class="tone-bad"><span class="dot"></span>Detenido o fuera de servicio</span>
+            <button type="button" class="chipbtn" id="btnOnly" aria-pressed="false">Solo con aviso</button>
+          </div>
+          <button type="button" class="btn btn--primary btn--sm" id="btnTour"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9V3z"/></svg><span id="tourLbl">Recorrer avisos</span></button>
+          <span class="s3-hint">Arrastra para girar · clic derecho para mover · doble clic para acercarte</span>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+  <%-- Las otras pestañas del modulo. Componentes es propia (todas las piezas
+       agrupadas por su activo); Variables, Medidores, Tipos y Modelos son
+       listas propias que dibuja Js/sigma-planta.js (sin grilla del servidor)
+       y abren la ficha de siempre en un modal. --%>
+  <div class="tabpanel" role="tabpanel" aria-label="Componentes" data-mpanel="componentes" hidden>
+    <asp:Literal ID="litListaComp" runat="server" />
+  </div>
+  <div class="tabpanel" role="tabpanel" aria-label="Variables" data-mpanel="variables" hidden>
+    <div class="sa-cat"></div>
+  </div>
+  <div class="tabpanel" role="tabpanel" aria-label="Medidores" data-mpanel="medidores" hidden>
+    <div class="sa-cat"></div>
+  </div>
+  <div class="tabpanel" role="tabpanel" aria-label="Tipos de activo" data-mpanel="tipos" hidden>
+    <div class="sa-cat"></div>
+  </div>
+  <div class="tabpanel" role="tabpanel" aria-label="Modelos" data-mpanel="modelos" hidden>
+    <div class="sa-cat"></div>
+  </div>
+  </section>
+</div>
+<!-- Visor de fotos con portada -->
+<div class="gal" id="gal" hidden role="dialog" aria-modal="true" aria-label="Fotos del activo"></div>
+
+<!-- Explorador del activo -->
+<div class="xp" id="xp" hidden>
+  <div class="xp-card" role="dialog" aria-modal="true" aria-labelledby="xpTitle" id="xpCard"></div>
+</div>
+
+<!-- Estructura de la planta -->
+<div class="modal" id="modalCfg" hidden>
+  <div class="modal-card modal-card--wide" role="dialog" aria-modal="true" aria-labelledby="cfgTitle">
+    <header>
+      <span class="tile-ico"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/></svg></span>
+      <h2 id="cfgTitle">Ubicaciones de la planta</h2>
+      <button type="button" class="icon-btn" data-close="modalCfg" aria-label="Cerrar"><svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </header>
+    <div class="ub-body">
+      <p class="ub-intro">Cada lugar se divide a su manera: un área en líneas, una bodega en pasillos, un edificio en pisos y salas. Un lugar también puede no dividirse. Los activos pueden ir en cualquier lugar.</p>
+      <div class="field"><label for="ubPlanta">Nombre de la planta</label><input id="ubPlanta" autocomplete="off"></div>
+      <div class="ub-tree" id="ubTree"></div>
+    </div>
+    <footer class="ub-foot"><span class="ub-note">Los cambios se guardan solos y puedes deshacerlos.</span><button type="button" class="btn btn--primary" data-close="modalCfg">Listo</button></footer>
+  </div>
+</div>
+
+<div class="lightbox" id="lightbox" hidden role="dialog" aria-modal="true" aria-label="Foto ampliada"><img id="lbImg" alt=""><button type="button" id="lbClose" aria-label="Cerrar foto"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+
+<div class="navpop" id="navpop" hidden role="dialog" aria-modal="false" aria-label="Ir a un lugar o activo">
+  <div class="np-search"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg><input id="npQ" placeholder="Busca un lugar o un activo…" autocomplete="off" role="combobox" aria-expanded="true" aria-controls="npList" aria-autocomplete="list"><kbd>Esc</kbd></div>
+  <div class="np-filters" role="group" aria-label="Filtrar"><button type="button" data-npf="all" aria-pressed="true">Todo</button><button type="button" data-npf="issues" aria-pressed="false">Con avisos</button><button type="button" data-npf="empty" aria-pressed="false">Sin activos</button></div>
+  <div class="np-list" id="npList" role="listbox"></div>
+  <div class="np-foot"><span><kbd>↑</kbd><kbd>↓</kbd> moverte</span><span><kbd>Enter</kbd> ir</span><span><kbd>/</kbd> abrir desde cualquier parte</span></div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite" hidden><span id="toastMsg"></span><button type="button" id="toastUndo">Deshacer</button></div>
+</div>
+
+                <%-- EL LISTADO ANTERIOR, OCULTO. Queda solo porque Exportar a Excel y la
+                     carga masiva siguen siendo controles del servidor; el menu
+                     «Importar o exportar» de arriba los acciona. --%>
+                <div class="sa-legado" hidden>
 
                 <asp:Literal ID="litListaKpis" runat="server" />
 
@@ -913,28 +1211,30 @@
                     <%-- LOS COMPONENTES DE TODOS LOS ACTIVOS, agrupados por el
                          activo (o subactivo) del que son parte. --%>
                     <div id="sgVistaComp" class="sg-lista-vista-panel" hidden>
-                        <asp:Literal ID="litListaComp" runat="server" />
+                        
                         <p class="sg-lista-comp-vacio" id="sgCompSinRes" hidden>Ningún componente coincide con la búsqueda.</p>
                     </div>
+                </div>
                 </div>
             </asp:Panel>
 
             <asp:Panel ID="pnlSinActivo" runat="server" Visible="false" CssClass="sg-ot-vacio">
                 <i class="mdi mdi-magnify"></i>
-                <p>No hay equipos que coincidan</p>
+                <p>No hay activos que coincidan</p>
                 <span>Ajuste la búsqueda o la ubicación.</span>
             </asp:Panel>
 
             <%-- ====================================================================
                  EL CENTRO
                  ==================================================================== --%>
-            <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sg-a3 sg-ot">
+            <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sg-a3 sg-ot sg-a3--v3">
 
                 <%-- La miga usa los nombres del menu: el modulo es "Control de
                      activos" y la pantalla de vuelta es "Activos". Dejarla con
                      los nombres viejos obliga a traducir mentalmente donde
                      esta uno. --%>
                 <div class="sg-a3-miga">
+                    <asp:LinkButton ID="lnkVolver" runat="server" CssClass="sg-a3-volver" OnClick="btnVolver_Click" CausesValidation="false"><i class="mdi mdi-chevron-left"></i>Volver</asp:LinkButton>
                     <span>Control de activos</span>
                     <span class="sep">/</span>
                     <asp:LinkButton ID="lnkVolverLista" runat="server" OnClick="btnVolver_Click" CausesValidation="false">Activos</asp:LinkButton>
@@ -955,6 +1255,10 @@
                     </div>
 
                     <div class="sg-a3-hero-acc">
+                        <%-- La etiqueta para pegar en el activo: QR o codigo de barras, en la
+                             ventana de impresion de siempre (Comun/Impresion/Etiquetas). --%>
+                        <asp:HyperLink ID="hlEtiqueta" runat="server" CssClass="sg-ot-btn es-plano" NavigateUrl="javascript:void(0)" Visible="false"
+                            ToolTip="Imprimir la etiqueta del activo con su QR o código de barras"><i class="mdi mdi-qrcode"></i>Etiqueta</asp:HyperLink>
                         <asp:HyperLink ID="hlEditar" runat="server" CssClass="sg-ot-btn es-contorno" NavigateUrl="javascript:void(0)"
                             ToolTip="Editar la ficha del activo"><i class="mdi mdi-pencil-outline"></i>Editar ficha</asp:HyperLink>
                         <asp:HyperLink ID="hlGenerarOT" runat="server" CssClass="sg-ot-btn es-primario">
@@ -964,33 +1268,41 @@
                 </header>
 
                 <%-- ---------------- navegacion: cuatro a la vista, el resto en Mas -------- --%>
-                <nav class="sg-a3-nav">
-                    <%-- Orden pedido por el cliente (04-10-2026): lo que se mira de un
-                         equipo primero -resumen, su ficha, sus partes y como esta-,
-                         despues su historia. --%>
-                    <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-home-outline"></i>Resumen</a>
-                    <a href="#" class="sg-a3-tab" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
-                    <a href="#" class="sg-a3-tab" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes</a>
-                    <a href="#" class="sg-a3-tab" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores</a>
-                    <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
-                    <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo</a>
+                <%-- Barra de pestañas (05-10-2026, como el mockup): blanca, fija al
+                     bajar, con las seis principales en una zona que se desplaza
+                     (flechas si no caben), «Más» y SIGMA AI siempre a la vista. --%>
+                <nav class="sg-a3-nav" aria-label="Secciones del activo">
+                    <button type="button" class="sg-a3-flecha es-izq" aria-label="Ver las pestañas anteriores" hidden><i class="mdi mdi-chevron-left"></i></button>
+                    <div class="sg-a3-nav-scroll">
+                        <%-- Orden pedido por el cliente (04-10-2026): lo que se mira de un
+                             activo primero -resumen, su ficha, sus partes y como esta-,
+                             despues su historia. --%>
+                        <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-home-outline"></i>Resumen</a>
+                        <a href="#" class="sg-a3-tab" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
+                        <a href="#" class="sg-a3-tab" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes<asp:Literal ID="litNumComp" runat="server" /></a>
+                        <a href="#" class="sg-a3-tab" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores<asp:Literal ID="litNumCond" runat="server" /></a>
+                        <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
+                        <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo<asp:Literal ID="litNumOt" runat="server" /></a>
+                    </div>
+                    <button type="button" class="sg-a3-flecha es-der" aria-label="Ver más pestañas" hidden><i class="mdi mdi-chevron-right"></i></button>
                     <div class="sg-a3-mas">
-                        <a href="#" class="sg-a3-tab sg-a3-mas-btn"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
+                        <a href="#" class="sg-a3-tab sg-a3-mas-btn" aria-haspopup="menu"><i class="mdi mdi-dots-horizontal"></i>Más<span class="sg-a3-mas-nombre" id="sgA3MasNombre"></span><i class="mdi mdi-chevron-down"></i></a>
 
-                        <div class="sg-a3-mas-menu">
-                            <div class="sg-a3-mas-tit">Más sobre este equipo</div>
-                            <a href="#" class="sg-a3-mas-op" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i>Mantenimiento</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i>Inspecciones y tareas</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="fallas"><i class="mdi mdi-alert-outline"></i>Fallas e indisponibilidad</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="documentos"><i class="mdi mdi-image-multiple-outline"></i>Documentos y galería</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="repuestos"><i class="mdi mdi-package-variant-closed"></i>Repuestos y costos</a>
-                            <a href="#" class="sg-a3-mas-op" data-sec="bitacora"><i class="mdi mdi-notebook-outline"></i>Bitácora y trazabilidad</a>
+                        <div class="sg-a3-mas-menu" role="menu">
+                            <div class="sg-a3-mas-tit">Más sobre este activo</div>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="mantenimiento"><i class="mdi mdi-wrench-outline"></i><span><b>Mantenimiento</b><small>Planes donde está y lo que viene</small></span></a>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="inspecciones"><i class="mdi mdi-clipboard-check-outline"></i><span><b>Inspecciones y tareas</b><small>Rondas, pautas y su resultado</small></span></a>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="fallas"><i class="mdi mdi-alert-outline"></i><span><b>Fallas e indisponibilidad</b><small>Lo reportado y cuándo estuvo detenido</small></span></a>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="documentos"><i class="mdi mdi-image-multiple-outline"></i><span><b>Documentos y fotos</b><small>Manuales, planos, fotos y la portada</small></span></a>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="repuestos"><i class="mdi mdi-package-variant-closed"></i><span><b>Repuestos y costos</b><small>Lo compatible y lo que ha consumido</small></span></a>
+                            <a href="#" class="sg-a3-mas-op" role="menuitem" data-sec="bitacora"><i class="mdi mdi-notebook-outline"></i><span><b>Bitácora y trazabilidad</b><small>Notas y cada cambio auditable</small></span></a>
                         </div>
                     </div>
+                    <span class="sg-a3-sep" aria-hidden="true"></span>
 
                     <%-- SIGMA AI va aparte y no dentro de Mas: es lo unico de esta
                          pantalla que no afirma hechos, sino que propone revisar. --%>
-                    <a href="#" class="sg-a3-tab es-ia" data-sec="ia"><span class="sg-ai-ico" role="img" aria-label="" style="background-image:url('<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-symbol-gradient.svg") %>')"></span>SIGMA AI</a>
+                    <a href="#" class="sg-a3-tab es-ia" data-sec="ia" aria-label="SIGMA AI"><img class="sgx-tab-logo" src='<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-logo-horizontal-light.svg") %>' alt="SIGMA AI" /></a>
                 </nav>
 
                 <%-- ================================================================
@@ -1006,7 +1318,7 @@
                                     <span class="sg-ot-card-ico es-alerta"><i class="mdi mdi-alert-outline"></i></span>
                                     <div>
                                         <h3>Requiere atención</h3>
-                                        <p class="sg-ot-card-sub">Lo abierto sobre este equipo, con acceso a su registro.</p>
+                                        <p class="sg-ot-card-sub">Lo abierto sobre este activo, con acceso a su registro.</p>
                                     </div>
                                     <%-- La tarjeta muestra los primeros: sin salida,
                                          el resto queda escondido sin decirlo. --%>
@@ -1020,7 +1332,7 @@
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-clock-outline"></i></span>
                                     <div>
                                         <h3>Actividad reciente</h3>
-                                        <p class="sg-ot-card-sub">Lo último que se registró sobre el equipo.</p>
+                                        <p class="sg-ot-card-sub">Lo último que se registró sobre el activo.</p>
                                     </div>
                                     <a href="#" class="sg-ot-card-acc sg-ot-link" data-ir-sec="historial">Ver todo el historial <i class="mdi mdi-arrow-right"></i></a>
                                 </header>
@@ -1062,7 +1374,7 @@
                             <div class="sg-ot-card">
                                 <header class="sg-ot-card-cab">
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-account-group-outline"></i></span>
-                                    <h3>Contexto del equipo</h3>
+                                    <h3>Contexto del activo</h3>
                                 </header>
                                 <asp:Literal ID="litContexto" runat="server" />
                             </div>
@@ -1096,7 +1408,7 @@
                                 <asp:Panel ID="pnlSinEventos" runat="server" Visible="false" CssClass="sg-ot-vacio">
                                     <i class="mdi mdi-timeline-text-outline"></i>
                                     <p>Sin eventos registrados</p>
-                                    <span>Este equipo todavía no tiene historia que mostrar.</span>
+                                    <span>Este activo todavía no tiene historia que mostrar.</span>
                                 </asp:Panel>
                             </div>
                         </div>
@@ -1161,7 +1473,7 @@
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-calendar-text-outline"></i></span>
                                     <div>
                                         <h3>Planes que lo cubren</h3>
-                                        <p class="sg-ot-card-sub">Los planes de mantenimiento donde este equipo está incluido.</p>
+                                        <p class="sg-ot-card-sub">Los planes de mantenimiento donde este activo está incluido.</p>
                                     </div>
                                 </header>
                                 <asp:Literal ID="litPlanes" runat="server" />
@@ -1184,7 +1496,7 @@
                                     <span class="sg-ot-card-ico"><i class="mdi mdi-checkbox-marked-circle-outline"></i></span>
                                     <div>
                                         <h3>Tareas recurrentes</h3>
-                                        <p class="sg-ot-card-sub">Rondas y revisiones que se repiten sobre el equipo.</p>
+                                        <p class="sg-ot-card-sub">Rondas y revisiones que se repiten sobre el activo.</p>
                                     </div>
                                 </header>
                                 <asp:Literal ID="litTareas" runat="server" />
@@ -1311,7 +1623,7 @@
                             <span class="sg-ot-card-ico es-grande es-rojo"><i class="mdi mdi-alert-outline"></i></span>
                             <div>
                                 <h3>Fallas e indisponibilidad</h3>
-                                <p class="sg-ot-card-sub">Lo que se reportó del equipo y los períodos en que estuvo detenido.</p>
+                                <p class="sg-ot-card-sub">Lo que se reportó del activo y los períodos en que estuvo detenido.</p>
                             </div>
                             <asp:Literal ID="litEstadoAhora" runat="server" />
                         </header>
@@ -1416,13 +1728,13 @@
 
                         <section class="sg-cond-seccion" data-cond-grupo="variables">
                             <h4>Variables de condición <b><asp:Literal ID="litCondVariables2" runat="server" Text="0" /></b></h4>
-                            <p>Cómo está el equipo según la última lectura.</p>
+                            <p>Cómo está el activo según la última lectura.</p>
                             <div class="sg-cond-grid"><asp:Literal ID="litCondicion" runat="server" /></div>
                         </section>
 
                         <section class="sg-cond-seccion" data-cond-grupo="medidores">
                             <h4>Contadores acumulativos <b><asp:Literal ID="litCondMedidores2" runat="server" Text="0" /></b></h4>
-                            <p>Cuánto ha trabajado o consumido el equipo.</p>
+                            <p>Cuánto ha trabajado o consumido el activo.</p>
                             <div class="sg-cond-grid"><asp:Literal ID="litMedidores" runat="server" /></div>
                         </section>
 
@@ -1440,7 +1752,7 @@
 
                         <div class="sg-a3-umbrales">
                             <i class="mdi mdi-information-outline"></i>
-                            Los rangos se configuran por equipo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
+                            Los rangos se configuran por activo en su variable. No son límites de operación: valídelos con mantención antes de usarlos para decidir.
                         </div>
                     </div>
                 </section>
@@ -1512,10 +1824,9 @@
                             <span>Se adjuntan desde la ficha del activo o llegan con las evidencias de la app.</span>
                         </asp:Panel>
 
-                        <div class="sg-cond-bloque">
-                            <h4><i class="mdi mdi-format-list-bulleted"></i>Lista de archivos</h4>
-                            <asp:Literal ID="litDocTabla" runat="server" />
-                        </div>
+                        <%-- Solo las miniaturas (05-10-2026): la lista de archivos repetia lo
+                             mismo debajo. El detalle de cada uno se abre al tocarlo. --%>
+                        <asp:Literal ID="litDocTabla" runat="server" Visible="false" />
                     </div>
                 </section>
 
@@ -1528,7 +1839,7 @@
                             <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-clipboard-check-outline"></i></span>
                             <div>
                                 <h3>Inspecciones y tareas</h3>
-                                <p class="sg-ot-card-sub">Lo que se pasó a revisar en este equipo: pautas de inspección y tareas.</p>
+                                <p class="sg-ot-card-sub">Lo que se pasó a revisar en este activo: pautas de inspección y tareas.</p>
                             </div>
                             <asp:Literal ID="litRevConteos" runat="server" />
                         </header>
@@ -1608,7 +1919,7 @@
                             <span class="sg-ot-card-ico"><i class="mdi mdi-shape-outline"></i></span>
                             <div>
                                 <h3>Repuestos compatibles</h3>
-                                <p class="sg-ot-card-sub">Lo que este equipo puede llevar, con lo que hay en bodega ahora.</p>
+                                <p class="sg-ot-card-sub">Lo que este activo puede llevar, con lo que hay en bodega ahora.</p>
                             </div>
                         </header>
 
@@ -1632,7 +1943,7 @@
                             <span class="sg-ot-card-ico es-grande"><i class="mdi mdi-notebook-outline"></i></span>
                             <div>
                                 <h3>Bitácora y trazabilidad</h3>
-                                <p class="sg-ot-card-sub">Registro cronológico de lo que se anotó del equipo y de cada cambio auditable.</p>
+                                <p class="sg-ot-card-sub">Registro cronológico de lo que se anotó del activo y de cada cambio auditable.</p>
                             </div>
                             <asp:Literal ID="litBitConteos" runat="server" />
                         </header>
@@ -1662,6 +1973,10 @@
                             </div>
 
                             <asp:Literal ID="litObsAviso" runat="server" />
+                            <%-- Responder una nota (bloque 352): el hilo escribe aca y envia lnkResponder. --%>
+                            <input type="hidden" name="bit_padre" id="bitPadre" />
+                            <input type="hidden" name="bit_respuesta" id="bitRespuesta" />
+                            <asp:LinkButton ID="lnkResponder" runat="server" OnClick="lnkResponder_Click" CausesValidation="false" style="display:none" />
                         </div>
 
                         <div class="sg-cond-vista es-oculta" data-bit-vista="auditoria">
@@ -1725,6 +2040,43 @@
             <footer class="sg-es-asis-pie">
                 <button type="button" class="sg-ot-btn es-fantasma" onclick="return esAsistente(false);">Cancelar</button>
                 <button type="button" class="sg-ot-btn es-primario" id="sgEsContinuar" disabled="disabled" onclick="return esContinuar();">Elige una opción<i class="mdi mdi-arrow-right"></i></button>
+            </footer>
+          </div>
+
+          <%-- 3) El repuesto compatible, AQUI MISMO (bloque 351): el repuesto de
+               la bodega y a que le sirve -el activo, un subactivo o una parte-. --%>
+          <div class="sg-es-vista" data-vista="repuesto" hidden>
+            <header class="sg-es-asis-cab">
+                <div>
+                    <button type="button" class="sg-es-volver" onclick="return esVista('elegir');"><i class="mdi mdi-arrow-left"></i>Cambiar lo que agrego</button>
+                    <h3>Repuesto compatible</h3>
+                    <p class="sg-es-donde-txt">Un repuesto de la bodega que le sirve a este activo.</p>
+                </div>
+                <button type="button" class="sg-es-asis-x" aria-label="Cerrar" onclick="return esAsistente(false);"><i class="mdi mdi-close"></i></button>
+            </header>
+
+            <div class="sg-es-faltan" id="sgEsrFaltan" role="alert" hidden><i class="mdi mdi-alert-circle-outline"></i><span id="sgEsrFaltanTxt"></span></div>
+
+            <div class="sg-es-form es-una">
+                <div class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">Repuesto <b class="req">*</b></span>
+                    <div class="sgap sg-es-sgap" id="esrCombo"><p class="sg-es-ayuda">Cargando repuestos…</p></div>
+                    <span class="sg-es-ayuda">Busca por nombre o código. Ves su foto y lo que hay en bodega.</span>
+                </div>
+                <label class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">Le sirve a</span>
+                    <select id="esrPara"></select>
+                    <span class="sg-es-ayuda">El activo completo, uno de sus subactivos o una de sus partes.</span>
+                </label>
+                <label class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">Observación</span>
+                    <input type="text" id="esrObs" maxlength="500" placeholder="Ej.: verificar la medida antes de montar" autocomplete="off" />
+                </label>
+            </div>
+
+            <footer class="sg-es-asis-pie">
+                <button type="button" class="sg-ot-btn es-fantasma" onclick="return esAsistente(false);">Cancelar</button>
+                <button type="button" class="sg-ot-btn es-primario" id="esrGuardar" onclick="return esrGuardar(this);"><i class="mdi mdi-plus"></i>Agregar repuesto</button>
             </footer>
           </div>
 

@@ -4,6 +4,8 @@
 <%-- La ficha del activo en modal. Todo lo que se ve vive en ActivoForm.ascx,
      que es el mismo formulario que muestra la pestaña Ficha del centro. --%>
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <%-- El modulo de activos no muestra el velo de carga: se ve pegado. --%>
+    <script type="text/javascript">window.SIGMA_SIN_VELO = true;</script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">

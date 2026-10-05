@@ -106,7 +106,7 @@ public partial class View_Activos_Variables_ActivoVariables : System.Web.UI.Page
         Serie.NavigateUrl = ResolveUrl("~/View/Activos/Variables/ActivoVariableSerie.aspx") + "?query=" + query;
         item["ava_id"].Controls.Add(Serie);
 
-        if (string.IsNullOrEmpty(v.componente_nombre)) item["COMPONENTE_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">equipo completo</span>";
+        if (string.IsNullOrEmpty(v.componente_nombre)) item["COMPONENTE_NOMBRE"].Text = "<span class=\"sigma-inv-vacio\">activo completo</span>";
         if (v.ava_frecuencia_esperada_hora == null) item["AVA_FRECUENCIA_ESPERADA_HORA"].Text = "<span class=\"sigma-inv-vacio\">—</span>";
 
         item["UMBRALES"].Controls.Add(new Literal { Text = Umbrales(v) });

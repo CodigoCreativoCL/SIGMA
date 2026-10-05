@@ -54,7 +54,7 @@
                 <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
                 <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo"
                     ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Mod" />
-                <span class="sigma-modal-ayuda">La familia de equipos a la que aplica este modelo.</span>
+                <span class="sigma-modal-ayuda">La familia de activos a la que aplica este modelo.</span>
             </div>
             <div class="sigma-modal-field is-medio">
                 <label>Fabricante</label>

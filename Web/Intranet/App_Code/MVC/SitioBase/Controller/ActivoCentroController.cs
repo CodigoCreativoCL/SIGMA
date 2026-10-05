@@ -269,6 +269,7 @@ namespace SitioBase.Controller
     public class ActivoBitacora
     {
         public int bit_id { get; set; }
+        public int? padre { get; set; }
         public string tipo_codigo { get; set; }
         public string tipo_nombre { get; set; }
         public string tipo_icono { get; set; }
@@ -1002,6 +1003,38 @@ namespace SitioBase.Controller
         /// El UUID lo pone el cliente y el SP es idempotente por ese campo: un
         /// doble clic en Publicar no deja dos veces la misma observacion.
         /// </summary>
+        /// <summary>
+        /// Responde una nota de la bitacora (bloque 352). La respuesta hereda el
+        /// contexto de la nota y queda en su hilo; como todo en la bitacora, no
+        /// se edita ni se borra despues.
+        /// </summary>
+        public Respuesta ResponderBitacora(int padre, string texto)
+        {
+            Respuesta r = new Respuesta();
+            if (!Token.TokenSeguridad()) { r.error = true; r.detalle = "La sesión expiró. Vuelve a entrar."; return r; }
+            if (string.IsNullOrWhiteSpace(texto)) { r.error = true; r.detalle = "Escribe la respuesta."; return r; }
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("INS_ACTIVO_BITACORA_RESPUESTA");
+                SqlParameter id = cmd.Parameters.AddWithValue("@ID", 0);
+                id.Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.Parameters.AddWithValue("@PADRE", padre);
+                cmd.Parameters.AddWithValue("@TEXTO", texto.Trim());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+                r.error = false; r.codigo = Convert.ToInt32(id.Value); r.detalle = "Respuesta publicada.";
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.error = true; r.codigo = -1; r.detalle = ex.Message;
+            }
+            return r;
+        }
+
         public Respuesta AgregarObservacion(int activo, int instalacion, int? area, string texto)
         {
             Respuesta r = new Respuesta();
@@ -1047,9 +1080,10 @@ namespace SitioBase.Controller
                 cmd.Parameters.AddWithValue("@LONGITUD", DBNull.Value);
                 cmd.Parameters.AddWithValue("@OFFLINE", false);
 
-                /* Entrada por la web: no hay telefono detras, y por eso
-                   tampoco van dictado ni dispositivo. */
-                cmd.Parameters.AddWithValue("@ENTRADA_MODO", 0);
+                /* Entrada por la web: se escribe con teclado (Entrada_Modo 1;
+                   el 0 no existe y rompia FK_BIT_ENTRADA_MODO). No hay telefono
+                   detras, y por eso tampoco van dictado ni dispositivo. */
+                cmd.Parameters.AddWithValue("@ENTRADA_MODO", 1);
                 cmd.Parameters.AddWithValue("@DICTADO_UUID", DBNull.Value);
                 cmd.Parameters.AddWithValue("@TEXTO_DICTADO", DBNull.Value);
                 cmd.Parameters.AddWithValue("@DICTADO_CONFIANZA", DBNull.Value);
@@ -1098,6 +1132,8 @@ namespace SitioBase.Controller
                         ActivoBitacora b = new ActivoBitacora();
 
                         b.bit_id = int.Parse(dr["bit_id"].ToString());
+                        // bloque 352: de que nota es respuesta (null = nota principal)
+                        try { if (dr["PADRE"] != DBNull.Value) b.padre = int.Parse(dr["PADRE"].ToString()); } catch (IndexOutOfRangeException) { }
                         b.tipo_codigo = dr["TIPO_CODIGO"].ToString();
                         b.tipo_nombre = dr["TIPO_NOMBRE"].ToString();
                         b.tipo_icono = dr["TIPO_ICONO"].ToString();

@@ -106,9 +106,9 @@
                             ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Posicion" />
                     </div>
                     <div class="sigma-modal-field is-chico">
-                        <label>Admite equipos del tipo</label>
+                        <label>Admite activos del tipo</label>
                         <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                        <span class="sigma-modal-ayuda">Opcional. Si se indica, solo se puede asignar un equipo de ese tipo.</span>
+                        <span class="sigma-modal-ayuda">Opcional. Si se indica, solo se puede asignar un activo de ese tipo.</span>
                     </div>
                 </div>
             </div>
@@ -135,7 +135,7 @@
                             <asp:RadioButton ID="rdbSi" runat="server" Text="SI" GroupName="Habilitado" Checked="true" />
                             <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" />
                         </div>
-                        <span class="sigma-modal-ayuda">Una posición ocupada no se puede deshabilitar: primero libere el equipo.</span>
+                        <span class="sigma-modal-ayuda">Una posición ocupada no se puede deshabilitar: primero libere el activo.</span>
                     </div>
                 </div>
             </div>
@@ -146,14 +146,14 @@
                 <div class="ayuda">
                     Una hoja con el QR, el código de la posición y su nombre. El QR codifica
                     la posición, no la máquina: al escanearlo desde la app se abre la ficha
-                    del equipo que la ocupe ese día.
+                    del activo que la ocupe ese día.
                 </div>
                 <div class="sigma-opciones">
                     <button type="button" runat="server" id="btnEtiqueta" class="sigma-opcion">
                         <span class="icono"><i class="mdi mdi-qrcode"></i></span>
                         <span class="cuerpo">
                             <span class="titulo">Etiqueta de esta posición</span>
-                            <span class="nota">Para pegar en la sala, junto al equipo.</span>
+                            <span class="nota">Para pegar en la sala, junto al activo.</span>
                         </span>
                     </button>
                 </div>
@@ -168,17 +168,17 @@
             <asp:Panel ID="pnlOcupacion" runat="server" Visible="false">
 
                 <div class="sigma-form-seccion">
-                    <div class="titulo"><i class="mdi mdi-engine-outline"></i>Equipo actual</div>
+                    <div class="titulo"><i class="mdi mdi-engine-outline"></i>Activo actual</div>
                     <asp:Literal ID="litActual" runat="server" />
                 </div>
 
                 <asp:Panel ID="pnlAsignar" runat="server" CssClass="sigma-form-seccion">
-                    <div class="titulo"><i class="mdi mdi-swap-horizontal"></i>Poner un equipo en esta posición</div>
-                    <div class="ayuda">Si ya había uno, su periodo se cierra y empieza el del nuevo. El equipo tiene que ser de la misma planta.</div>
+                    <div class="titulo"><i class="mdi mdi-swap-horizontal"></i>Poner un activo en esta posición</div>
+                    <div class="ayuda">Si ya había uno, su periodo se cierra y empieza el del nuevo. El activo tiene que ser de la misma planta.</div>
 
                     <div class="sigma-modal-grid">
                         <div class="sigma-modal-field is-medio">
-                            <label>Equipo</label>
+                            <label>Activo</label>
                             <rad:RadComboBox2 ID="cboActivo" runat="server" Filter="Contains" Width="100%" />
                         </div>
                         <div class="sigma-modal-field is-chico">
@@ -195,14 +195,14 @@
                          «Dejar libre» es la acción secundaria y va a la izquierda. --%>
                     <div class="sigma-modal-actions" style="margin-top: 6px;">
                         <WebControls:PushButton ID="btnLiberar" runat="server" Text="Dejar libre" CssClass="ButtonCerrar" OnClick="btnLiberar_Click"
-                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Dejar la posición libre? El periodo del equipo actual se cierra hoy.')) return false;" />
-                        <WebControls:PushButton ID="btnOcupar" runat="server" Text="Asignar equipo" OnClick="btnOcupar_Click" />
+                            OnClientClick="if (!ConfirSweetAlert(this, '', '¿Dejar la posición libre? El periodo del activo actual se cierra hoy.')) return false;" />
+                        <WebControls:PushButton ID="btnOcupar" runat="server" Text="Asignar activo" OnClick="btnOcupar_Click" />
                     </div>
                 </asp:Panel>
 
                 <div class="sigma-form-seccion">
                     <div class="titulo"><i class="mdi mdi-history"></i>Historial de ocupación</div>
-                    <div class="ayuda">Cada periodo dice qué equipo estuvo, desde cuándo y hasta cuándo. El vigente no tiene fecha de término.</div>
+                    <div class="ayuda">Cada periodo dice qué activo estuvo, desde cuándo y hasta cuándo. El vigente no tiene fecha de término.</div>
 
                     <rad:RadGrid2 ID="GridHistorial" runat="server" AllowPaging="false" OnItemDataBound="GridHistorial_ItemDataBound">
                         <MasterTableView DataKeyNames="aph_id" CommandItemDisplay="None" />

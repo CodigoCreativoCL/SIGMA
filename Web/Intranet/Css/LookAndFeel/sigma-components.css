@@ -2279,3 +2279,35 @@ body.sg-aviso-bloqueado { overflow: hidden; }
     border: 1px solid #f0d78a;
 }
 .sg-renovar-aviso > i { font-size: 20px; color: #b7791f; }
+
+/* ============================================================================
+   CAMPO DE SOLO LECTURA (TextBox2 ReadOnly) - en todo SIGMA (05-10-2026)
+
+   TextBox2 con ReadOnly esconde su <input> y pinta el valor en un <span> sin
+   clase, que quedaba como texto suelto y mas bajo que los campos vecinos.
+   Se le da la forma de un campo: misma altura, borde y fondo gris suave
+   (se ve que no se escribe ahi, pero se lee como un dato del formulario).
+   ============================================================================ */
+span:has(+ input[readonly][style*="display:none"]) {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    min-height: 40px;
+    box-sizing: border-box;
+    padding: 8px 12px;
+    border: 1px solid #E2E7F0;
+    border-radius: 9px;
+    background: #F4F6FA;
+    color: #4A556D;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    cursor: default;
+}
+/* Dentro del codigo (prefijo + valor) el marco es del grupo: el valor no
+   lleva otro. El grupo entero se apaga y toma la altura de un campo. */
+.sg-codigo:has(input[readonly]) { background: #F4F6FA; min-height: 40px; }
+.sg-codigo span:has(+ input[readonly][style*="display:none"]) { flex: 1 1 auto; min-width: 0; border: 0; border-radius: 0; background: transparent; }
+.sg-codigo:has(input[readonly]) .sg-codigo-prefijo { background: #EBEEF4; }
+.af .sg-codigo:has(input[readonly]), .af .sg-codigo span:has(+ input[readonly][style*="display:none"]) { min-height: 42px; }

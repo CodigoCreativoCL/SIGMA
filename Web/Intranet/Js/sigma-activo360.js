@@ -41,7 +41,8 @@
         for (var o = 0; o < ops.length; o++) {
             var esta = ops[o].getAttribute('data-sec') === nombre;
             ops[o].classList.toggle('es-activa', esta);
-            if (esta) extra = ops[o].textContent.trim();
+            // si la seccion ya esta a la vista en la barra, «Mas» no la repite
+            if (esta && !ops[o].hidden) extra = (ops[o].querySelector('b') || ops[o]).textContent.trim();
         }
 
         /* Si la seccion vive dentro de "Mas", su nombre se escribe al lado del
@@ -58,6 +59,7 @@
         var h = document.getElementById('hdnSeccion');
         if (h) h.value = nombre;
 
+        if (nombre === 'ia') animarAi();
         cerrarMas();
     }
 
@@ -67,6 +69,7 @@
     }
 
     function navegacion() {
+        crearExtras();
         var tabs = document.querySelectorAll('.sg-a3-tab[data-sec], .sg-a3-mas-op[data-sec], [data-ir-sec]');
 
         for (var i = 0; i < tabs.length; i++)
@@ -87,6 +90,88 @@
         document.addEventListener('keydown', function (ev) { if (ev.keyCode === 27) cerrarMas(); });
 
         irA(panelActivo());
+        acomodar();
+        flechas();
+
+        var espera = null;
+        window.addEventListener('resize', function () {
+            cancelAnimationFrame(espera);
+            espera = requestAnimationFrame(function () { acomodar(); irA(panelActivo()); });
+        });
+        if (document.fonts && document.fonts.ready) document.fonts.ready.then(function () { acomodar(); irA(panelActivo()); });
+    }
+
+    /* ---- Lo que cabe va en la barra; lo que no, en «Mas» ----
+
+       Las secciones de «Mas» tambien tienen su pestaña en la barra (escondida).
+       En una pantalla ancha se muestran mientras quepan sin desbordar, y en
+       el menu queda solo lo que no entro; si entra todo, «Mas» desaparece. */
+    function crearExtras() {
+        var zona = document.querySelector('.sg-a3-nav-scroll');
+        if (!zona || zona.querySelector('.es-extra')) return;
+        var ops = document.querySelectorAll('.sg-a3-mas-op[data-sec]');
+        for (var i = 0; i < ops.length; i++) {
+            var a = document.createElement('a');
+            a.href = '#';
+            a.className = 'sg-a3-tab es-extra';
+            a.setAttribute('data-sec', ops[i].getAttribute('data-sec'));
+            var ico = ops[i].querySelector('i');
+            if (ico) a.appendChild(ico.cloneNode(true));
+            a.appendChild(document.createTextNode((ops[i].querySelector('b') || ops[i]).textContent.trim()));
+            a.hidden = true;
+            zona.appendChild(a);
+        }
+    }
+
+    function acomodar() {
+        var zona = document.querySelector('.sg-a3-nav-scroll');
+        if (!zona) return;
+        var extras = zona.querySelectorAll('.es-extra');
+        var ops = document.querySelectorAll('.sg-a3-mas-op[data-sec]');
+        var mas = document.querySelector('.sg-a3-mas');
+        if (!extras.length) return;
+
+        // con «Mas» a la vista se mide el peor caso; si al final entra todo, se esconde
+        if (mas) mas.hidden = false;
+        for (var i = 0; i < extras.length; i++) extras[i].hidden = false;
+        for (var j = extras.length - 1; j >= 0 && zona.scrollWidth > zona.clientWidth + 1; j--) extras[j].hidden = true;
+
+        var quedan = 0;
+        for (var k = 0; k < ops.length; k++) {
+            ops[k].hidden = !extras[k].hidden;
+            if (!ops[k].hidden) quedan++;
+        }
+        if (mas) mas.hidden = quedan === 0;
+        var sep = document.querySelector('.sg-a3-sep');
+        if (sep) sep.hidden = false;
+    }
+
+    /* ---- Las pestañas que no caben se desplazan con flechas ----
+
+       Las flechas aparecen solo si hay pestañas escondidas hacia ese lado, y
+       la pestaña elegida queda siempre a la vista. */
+    function flechas() {
+        var zona = document.querySelector('.sg-a3-nav-scroll');
+        if (!zona) return;
+        var izq = document.querySelector('.sg-a3-flecha.es-izq');
+        var der = document.querySelector('.sg-a3-flecha.es-der');
+
+        function revisar() {
+            var max = zona.scrollWidth - zona.clientWidth;
+            if (izq) izq.hidden = zona.scrollLeft <= 2;
+            if (der) der.hidden = zona.scrollLeft >= max - 2;
+        }
+
+        function mover(d) { zona.scrollBy({ left: d * Math.max(160, zona.clientWidth * 0.6), behavior: 'smooth' }); }
+
+        if (izq) izq.onclick = function () { mover(-1); };
+        if (der) der.onclick = function () { mover(1); };
+        zona.onscroll = revisar;
+        window.addEventListener('resize', revisar);
+
+        var activa = zona.querySelector('.sg-a3-tab.es-activa');
+        if (activa) zona.scrollLeft = Math.max(0, activa.offsetLeft - zona.clientWidth / 2 + activa.offsetWidth / 2);
+        revisar();
     }
 
     /* ---- Las ordenes de trabajo se despliegan en su misma fila ---- */
@@ -187,6 +272,9 @@
             if (img.getAttribute('data-listo') === '1') continue;
             if (img.getAttribute('data-no-ampliar') !== null) continue;
             if (img.classList.contains('sg-ai-badge')) continue;
+            /* Lo que esta dentro de una pestaña, un enlace de seccion o la
+               cabecera de SIGMA AI es marca o navegacion, no una foto. */
+            if (img.closest && img.closest('.sg-a3-nav, [data-ir-sec], [data-sec], .sgx, .sgx-cola')) continue;
 
             img.setAttribute('data-listo', '1');
             img.classList.add('sg-a3-ampliable');
@@ -906,8 +994,8 @@
 
             if (conteo)
                 conteo.textContent = total === 0
-                    ? 'Ningún equipo coincide con la búsqueda'
-                    : 'Mostrando ' + (desde + 1) + '–' + hasta + ' de ' + total + (total === 1 ? ' equipo' : ' equipos');
+                    ? 'Ningún activo coincide con la búsqueda'
+                    : 'Mostrando ' + (desde + 1) + '–' + hasta + ' de ' + total + (total === 1 ? ' activo' : ' activos');
 
             if (!paginas) return;
 
@@ -1747,8 +1835,130 @@
             };
     }
 
+    /* ---- SIGMA AI: la señal en vivo y el pronostico, dibujados en SVG ----
+
+       Los datos vienen en data-ai (JSON del servidor): las ultimas lecturas
+       de la variable principal con su limite, y la probabilidad en cada
+       corrida del modelo. Se dibujan con curvas suaves y se animan (GSAP de
+       la maestra si esta; si no, CSS) cada vez que se abre la pestaña. */
+    var NS = 'http://www.w3.org/2000/svg';
+
+    function el(tag, at) {
+        var e = document.createElementNS(NS, tag);
+        for (var k in at) e.setAttribute(k, at[k]);
+        return e;
+    }
+
+    /* Catmull-Rom a Bezier: una curva que pasa por todos los puntos sin
+       inventar picos. */
+    function curva(p) {
+        if (p.length < 2) return '';
+        var d = 'M' + p[0][0].toFixed(1) + ',' + p[0][1].toFixed(1);
+        for (var i = 0; i < p.length - 1; i++) {
+            var p0 = p[i - 1] || p[i], p1 = p[i], p2 = p[i + 1], p3 = p[i + 2] || p2;
+            d += ' C' + (p1[0] + (p2[0] - p0[0]) / 6).toFixed(1) + ',' + (p1[1] + (p2[1] - p0[1]) / 6).toFixed(1) +
+                 ' ' + (p2[0] - (p3[0] - p1[0]) / 6).toFixed(1) + ',' + (p2[1] - (p3[1] - p1[1]) / 6).toFixed(1) +
+                 ' ' + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
+        }
+        return d;
+    }
+
+    function grafico(svg, valores, o) {
+        if (!svg || !valores || valores.length < 2) return;
+        var W = o.w, H = o.h, pad = 10;
+        var lo = Math.min.apply(null, valores), hi = Math.max.apply(null, valores);
+        if (o.lim != null) { lo = Math.min(lo, o.lim); hi = Math.max(hi, o.lim); }
+        if (o.rango) { lo = Math.min(lo, o.rango[0]); hi = Math.max(hi, o.rango[1]); }
+        if (hi === lo) { hi += 1; lo -= 1; }
+        var x = function (i) { return pad + i * (W - 2 * pad) / (valores.length - 1); };
+        var y = function (v) { return H - pad - (v - lo) * (H - 2 * pad) / (hi - lo); };
+        var pts = valores.map(function (v, i) { return [x(i), y(v)]; });
+        var id = svg.id + 'G';
+        svg.innerHTML = '';
+
+        var defs = el('defs', {});
+        var g1 = el('linearGradient', { id: id + 'a', x1: 0, y1: 0, x2: 0, y2: 1 });
+        g1.appendChild(el('stop', { offset: '0%', 'stop-color': o.c1, 'stop-opacity': .38 }));
+        g1.appendChild(el('stop', { offset: '100%', 'stop-color': o.c1, 'stop-opacity': 0 }));
+        var g2 = el('linearGradient', { id: id + 'l', x1: 0, y1: 0, x2: 1, y2: 0 });
+        g2.appendChild(el('stop', { offset: '0%', 'stop-color': o.c1 }));
+        g2.appendChild(el('stop', { offset: '100%', 'stop-color': o.c2 }));
+        defs.appendChild(g1); defs.appendChild(g2);
+        svg.appendChild(defs);
+
+        for (var g = 1; g < 4; g++) svg.appendChild(el('line', { 'class': 'sgx-grilla', x1: 0, x2: W, y1: g * H / 4, y2: g * H / 4 }));
+        if (o.verticales) for (var v = 1; v < 5; v++) svg.appendChild(el('line', { 'class': 'sgx-grilla', y1: 0, y2: H, x1: v * W / 5, x2: v * W / 5 }));
+
+        var d = curva(pts);
+        svg.appendChild(el('path', { 'class': 'sgx-area', d: d + ' L' + pts[pts.length - 1][0] + ',' + H + ' L' + pts[0][0] + ',' + H + ' Z', fill: 'url(#' + id + 'a)' }));
+        if (o.lim != null) svg.appendChild(el('line', { 'class': 'sgx-lim', x1: 0, x2: W, y1: y(o.lim), y2: y(o.lim) }));
+        var linea = el('path', { 'class': 'sgx-linea', d: d, stroke: 'url(#' + id + 'l)' });
+        svg.appendChild(linea);
+
+        var u = pts[pts.length - 1];
+        svg.appendChild(el('circle', { 'class': 'sgx-halo', cx: u[0], cy: u[1], r: 6, fill: o.c2, opacity: .6 }));
+        svg.appendChild(el('circle', { 'class': 'sgx-fin', cx: u[0], cy: u[1], r: 5, stroke: o.c2 }));
+        svg.setAttribute('data-listo', '1');
+    }
+
+    function sigmaAi() {
+        var caja = document.querySelector('.sgx[data-ai]');
+        if (!caja || caja.getAttribute('data-dibujado') === '1') return;
+        caja.setAttribute('data-dibujado', '1');
+        var d = {};
+        try { d = JSON.parse(caja.getAttribute('data-ai')) || {}; } catch (e) { }
+
+        var cl = function (n) { return Number(n).toLocaleString('es-CL', { maximumFractionDigits: 2 }); };
+        if (d.vivo && d.vivo.pts) {
+            grafico(document.getElementById('sgAiVivo'), d.vivo.pts, { w: 400, h: 150, c1: '#22D3D6', c2: '#7C5CFF', lim: d.vivo.max });
+            var val = document.getElementById('sgAiVivoValor');
+            if (val) val.textContent = cl(d.vivo.ultimo) + (d.vivo.u ? ' ' + d.vivo.u : '');
+            var lim = document.getElementById('sgAiVivoLim');
+            if (lim && d.vivo.max != null) lim.innerHTML = 'Límite máximo <b>' + cl(d.vivo.max) + '</b>';
+        }
+        if (d.curva && d.curva.length > 1)
+            grafico(document.getElementById('sgAiCurva'), d.curva.map(function (p) { return p.v; }),
+                    { w: 400, h: 140, c1: '#22D3D6', c2: '#A78BFA', rango: [0, 100], verticales: true });
+    }
+
+    /* Al abrir la pestaña: las curvas se dibujan de izquierda a derecha y los
+       numeros suben desde cero. Con «reducir movimiento», nada se mueve. */
+    function animarAi() {
+        var caja = document.querySelector('.sgx[data-ai]');
+        if (!caja) return;
+        sigmaAi();
+        if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+        var lineas = caja.querySelectorAll('.sgx-linea');
+        for (var i = 0; i < lineas.length; i++) {
+            var L = lineas[i].getTotalLength ? lineas[i].getTotalLength() : 0;
+            if (!L) continue;
+            lineas[i].style.strokeDasharray = L;
+            lineas[i].style.strokeDashoffset = L;
+            if (window.gsap) gsap.to(lineas[i], { strokeDashoffset: 0, duration: 1.4, ease: 'power2.out', delay: .1 * i });
+            else { lineas[i].style.transition = 'stroke-dashoffset 1.4s ease-out'; (function (n) { requestAnimationFrame(function () { n.style.strokeDashoffset = 0; }); })(lineas[i]); }
+        }
+
+        var areas = caja.querySelectorAll('.sgx-area');
+        if (window.gsap) gsap.fromTo(areas, { opacity: 0 }, { opacity: .9, duration: 1.2, delay: .4 });
+
+        var nums = caja.querySelectorAll('[data-cuenta]');
+        for (var n = 0; n < nums.length; n++) (function (b) {
+            var fin = parseFloat(b.getAttribute('data-cuenta')), suf = b.getAttribute('data-sufijo') || '';
+            if (isNaN(fin)) return;
+            var o = { v: 0 };
+            var pinta = function () { b.textContent = Math.round(o.v).toLocaleString('es-CL') + suf; };
+            if (window.gsap) gsap.to(o, { v: fin, duration: 1.2, ease: 'power2.out', onUpdate: pinta });
+            else { o.v = fin; pinta(); }
+        })(nums[n]);
+
+        if (window.gsap) gsap.from(caja.querySelectorAll('.sgx-card, .sgx-senal'), { y: 14, opacity: 0, duration: .5, stagger: .07, ease: 'power2.out', clearProps: 'opacity,transform' });
+    }
+
     function armar() {
         navegacion();
+        sigmaAi();
+        if (panelActivo() === 'ia') animarAi();
         ficha();
         componentes();
         condicion();

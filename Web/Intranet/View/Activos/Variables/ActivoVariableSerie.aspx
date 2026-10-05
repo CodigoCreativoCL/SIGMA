@@ -170,7 +170,7 @@
 
                 <div class="card-box">
                     <div class="sg-serie-cabecera">
-                        <div class="dato"><label>Equipo</label><strong><asp:Literal ID="litEquipo" runat="server" /></strong></div>
+                        <div class="dato"><label>Activo</label><strong><asp:Literal ID="litEquipo" runat="server" /></strong></div>
                         <div class="dato"><label>Variable</label><strong><asp:Literal ID="litVariable" runat="server" /></strong></div>
                         <div class="dato"><label>Unidad</label><strong><asp:Literal ID="litUnidad" runat="server" /></strong></div>
                         <div class="dato"><label>Umbrales</label><div class="sg-serie-umbrales"><asp:Literal ID="litUmbrales" runat="server" /></div></div>
