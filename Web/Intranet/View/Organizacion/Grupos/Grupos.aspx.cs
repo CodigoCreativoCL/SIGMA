@@ -126,7 +126,47 @@ public partial class View_Organizacion_Grupos_Grupos : System.Web.UI.Page
                     sinLider.CssClass = "grid-estado-chip is-alerta";
                     item["lider"].Controls.Add(sinLider);
                 }
+
+                /* Integrantes como caras y no como numero: se reconoce de un
+                   vistazo quien esta en cada turno. El numero queda en el
+                   tooltip y en "+N" cuando no caben. */
+                GrupoTrabajo g = (GrupoTrabajo)item.DataItem;
+                item["integrantes"].Text = Avatares(g.integrantes_nombres, !string.IsNullOrEmpty(g.lider));
             }
         }
+    }
+
+    private string Avatares(string nombres, bool hayLider)
+    {
+        if (string.IsNullOrEmpty(nombres))
+            return "<span class=\"sg-avatares-vacio\">Sin integrantes</span>";
+
+        string[] lista = nombres.Split(new[] { '|' }, StringSplitOptions.RemoveEmptyEntries);
+        const int max = 4;
+
+        System.Text.StringBuilder sb = new System.Text.StringBuilder();
+        sb.Append("<span class=\"sg-avatares\" title=\"" + Server.HtmlEncode(string.Join(", ", lista)) + "\">");
+
+        for (int i = 0; i < lista.Length && i < max; i++)
+        {
+            string nombre = lista[i].Trim();
+            string ini = "";
+            foreach (string parte in nombre.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
+                if (ini.Length < 2) ini += char.ToUpper(parte[0]);
+
+            /* El tono sale del nombre, asi la misma persona tiene el mismo
+               color en todos los grupos. */
+            int tono = 1 + Math.Abs(nombre.GetHashCode() % 4);
+            string clase = "sg-avatar t" + tono + (i == 0 && hayLider ? " is-lider" : "");
+            string titulo = nombre + (i == 0 && hayLider ? " (líder)" : "");
+
+            sb.Append("<span class=\"" + clase + "\" title=\"" + Server.HtmlEncode(titulo) + "\">" + Server.HtmlEncode(ini) + "</span>");
+        }
+
+        if (lista.Length > max)
+            sb.Append("<span class=\"sg-avatar is-mas\">+" + (lista.Length - max) + "</span>");
+
+        sb.Append("</span>");
+        return sb.ToString();
     }
 }

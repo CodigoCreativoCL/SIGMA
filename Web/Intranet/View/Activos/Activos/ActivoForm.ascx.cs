@@ -68,7 +68,18 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         // descifra por dentro. Descifrarlo antes lo haría descifrar dos veces
         // y la ficha se abriría en blanco como si fuera nueva.
         if (!IsPostBack)
+        {
             ActivoId = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+            // "Agregar subactivo" desde el centro: la maquina principal ya se sabe.
+            if (ActivoId == 0) PadreFijo = SitioBase.Querystring.Entero(Request.QueryString["query"], "Padre");
+        }
+    }
+
+    /// <summary>Maquina principal impuesta al crear un subactivo desde el asistente. 0 = se elige.</summary>
+    public int PadreFijo
+    {
+        get { return ViewState["PadreFijo"] != null ? (int)ViewState["PadreFijo"] : 0; }
+        set { ViewState["PadreFijo"] = value; }
     }
 
     /// <summary>
@@ -184,6 +195,14 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                     break;
                 }
 
+            case "cboFabricante":
+                {
+                    // El catalogo de marcas compartido con repuestos (bloque 333/342).
+                    foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
+                        ctrl.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
+                    break;
+                }
+
             case "cboAnio":
                 {
                     // Años del actual hacia atrás: la maquinaria industrial
@@ -201,7 +220,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                     List<Activo> lista = controller.GetActivos(
                         new Activo { act_cliente = cliente, filtro_habilitado = true });
 
-                    ctrl.Items.Add(new RadComboBoxItem("Sin activo superior", ""));
+                    ctrl.Items.Add(new RadComboBoxItem("Ninguna: es una máquina principal", ""));
                     ctrl.AppendDataBoundItems = true;
 
                     if (lista != null)
@@ -246,6 +265,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         // romper el modal del activo.
         try { CargarArchivos(); } catch { }        // documentos adjuntos
         try { CargarDatosTecnicos(); } catch { }   // valores de atributos (edición)
+        try { CargarComponentes(); } catch { }     // las partes que ya tiene
         Bloqueo();
 
         /* Guardar sube una imagen y unos PDF: un binario no sobrevive a un
@@ -361,6 +381,104 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             }
     }
 
+    // ============================================================ bloque 342
+
+    /// <summary>Id del item elegido, o del que coincide con lo escrito; 0 si es texto nuevo.</summary>
+    private static int ValorCombo(RadComboBox2 c)
+    {
+        int v;
+        string t = (c.Text ?? "").Trim();
+        if (c.SelectedItem != null && string.Equals(c.SelectedItem.Text, t, StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(c.SelectedValue, out v)) return v;
+        foreach (RadComboBoxItem it in c.Items)
+            if (string.Equals(it.Text.Trim(), t, StringComparison.OrdinalIgnoreCase) && int.TryParse(it.Value, out v)) return v;
+        return 0;
+    }
+
+    /// <summary>Lo escrito en el combo, sin el mensaje de ayuda ni las opciones vacias.</summary>
+    private static string TextoCombo(RadComboBox2 c)
+    {
+        string t = (c.Text ?? "").Trim();
+        if (t == "" || t == c.EmptyMessage || t == "Seleccione..." || t == "Sin modelo") return null;
+        return t;
+    }
+
+    private List<ComponenteTipo> _tiposComp;
+    private List<ComponenteTipo> TiposComponente()
+    {
+        return _tiposComp ?? (_tiposComp = new ComponenteTipoController().GetTipos(new ComponenteTipo()) ?? new List<ComponenteTipo>());
+    }
+
+    /// <summary>
+    /// Sugerencias de "qué es" (datalist): los comunes de SIGMA y los propios
+    /// de la empresa. Lo que no esta se escribe y se crea al guardar.
+    /// </summary>
+    public string OpcionesComponenteTipo()
+    {
+        int cli = SitioBase.Session.ClienteId();
+        System.Text.StringBuilder b = new System.Text.StringBuilder();
+        foreach (ComponenteTipo t in TiposComponente())
+            if (t.cto_habilitado && (t.cto_cliente == 0 || t.cto_cliente == cli))
+                b.Append("<option value=\"").Append(Server.HtmlEncode(t.cto_nombre)).Append("\"></option>");
+        return b.ToString();
+    }
+
+    /// <summary>&lt;option&gt; de "dónde va" (lado motor, entrada...).</summary>
+    public string OpcionesComponenteLado()
+    {
+        System.Text.StringBuilder b = new System.Text.StringBuilder();
+        foreach (ComponentePosicion p in new ComponentePosicionController().GetPosiciones(new ComponentePosicion()) ?? new List<ComponentePosicion>())
+            if (p.cpn_habilitado)
+                b.Append("<option value=\"").Append(p.cpn_id).Append("\">").Append(Server.HtmlEncode(p.cpn_nombre)).Append("</option>");
+        return b.ToString().Replace("'", "&#39;");
+    }
+
+    /// <summary>Las partes que el activo ya tiene, como chips (edición).</summary>
+    protected void CargarComponentes()
+    {
+        litComponentes.Text = "";
+        if (ActivoId <= 0) return;
+        List<ActivoComponente> l = new ActivoComponenteController().GetComponentes(new ActivoComponente { filtro_activo = ActivoId });
+        if (l == null || l.Count == 0) return;
+        System.Text.StringBuilder b = new System.Text.StringBuilder("<div class=\"sigma-co-lista\">");
+        foreach (ActivoComponente c in l)
+            b.Append("<span class=\"sigma-co-chip\"><i class=\"mdi mdi-puzzle-outline\"></i>").Append(Server.HtmlEncode(c.aco_nombre)).Append("</span>");
+        b.Append("</div>");
+        litComponentes.Text = b.ToString();
+    }
+
+    /// <summary>Crea las partes agregadas en la ficha (filas co_*). Una fila sin nombre se ignora.</summary>
+    private void GuardarComponentes(int activo, int criticidad)
+    {
+        if (activo <= 0) return;
+        string[] noms = Request.Form.GetValues("co_nombre");
+        string[] tipos = Request.Form.GetValues("co_tipo");
+        string[] lados = Request.Form.GetValues("co_lado");
+        if (noms == null) return;
+        ActivoComponenteController c = new ActivoComponenteController();
+        for (int i = 0; i < noms.Length; i++)
+        {
+            string nom = (noms[i] ?? "").Trim();
+            int lado;
+            string queEs = tipos != null && i < tipos.Length ? (tipos[i] ?? "").Trim() : "";
+            if (nom == "") continue;
+            if (queEs == "") queEs = "Otro";
+            int tipo = new ComponenteTipoController().ResolverPorNombre(queEs);
+            if (tipo <= 0) continue;
+            ActivoComponente e = new ActivoComponente();
+            e.aco_cliente = SitioBase.Session.ClienteId();
+            e.aco_activo = activo;
+            e.aco_componente_tipo = tipo;
+            if (lados != null && i < lados.Length && int.TryParse(lados[i], out lado) && lado > 0) e.aco_componente_posicion = lado;
+            e.aco_criticidad_nivel = criticidad;
+            e.aco_activo_componente_estado = 1;   // operativo
+            e.aco_codigo = "AUTO";
+            e.aco_nombre = nom;
+            e.aco_fecha_instalacion = global::SitioBase.Hora.Hoy;
+            c.InsertComponente(e);
+        }
+    }
+
     /// <summary>Lista los documentos adjuntos del activo (edición).</summary>
     protected void CargarArchivos()
     {
@@ -430,6 +548,9 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     // modelos de ese tipo.
     protected void cboTipo_SelectedIndexChanged(object sender, EventArgs e) { }
 
+    // Al cambiar el fabricante, el PreRender vuelve a armar los modelos de ese tipo y esa marca.
+    protected void cboFabricante_Changed(object sender, EventArgs e) { }
+
     // Al elegir un modelo, se hereda su fabricante (el modelo manda la marca).
     protected void cboModelo_SelectedIndexChanged(object sender, EventArgs e)
     {
@@ -438,7 +559,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         {
             ActivoModelo m = new ActivoModeloController().GetModelo(idModelo);
             if (m != null && !string.IsNullOrEmpty(m.amo_fabricante))
-                txtFabricante.Text = m.amo_fabricante;
+                cboFabricante.Text = m.amo_fabricante;
         }
     }
 
@@ -449,6 +570,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     protected void CargarModelos()
     {
         string sel = string.IsNullOrEmpty(_modeloEditar) ? cboModelo.SelectedValue : _modeloEditar;
+        string escrito = (cboModelo.Text ?? "").Trim();   // un modelo nuevo escrito a mano no se pierde
 
         cboModelo.Items.Clear();
         cboModelo.Items.Add(new RadComboBoxItem("Sin modelo", ""));
@@ -459,13 +581,23 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         {
             List<ActivoModelo> l = new ActivoModeloController().GetModelos(new ActivoModelo
             { filtro_cliente = SitioBase.Session.ClienteId(), filtro_activo_tipo = tipo, filtro_habilitado = true });
+            /* Del tipo Y del fabricante escrito (bloque 342): con "Grundfos"
+               no se ofrecen modelos de Pedrollo. Un modelo sin marca se ofrece
+               siempre. */
+            string fab = (cboFabricante.Text ?? "").Trim();
+            if (fab == cboFabricante.EmptyMessage) fab = "";
             if (l != null)
                 foreach (ActivoModelo m in l)
-                    cboModelo.Items.Add(new RadComboBoxItem(m.etiqueta, m.amo_id.ToString()));
+                    if (fab == "" || string.IsNullOrEmpty(m.amo_fabricante)
+                        || string.Compare(m.amo_fabricante.Trim(), fab, System.Globalization.CultureInfo.InvariantCulture,
+                               System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) == 0)
+                        cboModelo.Items.Add(new RadComboBoxItem(m.etiqueta, m.amo_id.ToString()));
         }
 
         RadComboBoxItem it = cboModelo.FindItemByValue(sel);
         if (it != null) it.Selected = true;
+        else if (escrito != "" && escrito != "Sin modelo" && escrito != cboModelo.EmptyMessage)
+            cboModelo.Text = escrito;
     }
 
     protected void CargarDatos()
@@ -493,7 +625,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             if (entidad.act_activo_modelo != null) _modeloEditar = entidad.act_activo_modelo.Value.ToString();
 
             txtSerie.Text = entidad.act_numero_serie;
-            txtFabricante.Text = entidad.act_fabricante;
+            cboFabricante.Text = entidad.act_fabricante;
             if (entidad.act_anio_fabricacion != null) SeleccionarCombo(cboAnio, entidad.act_anio_fabricacion.Value);
             calPuestaMarcha.Value = entidad.act_fecha_puesta_marcha;
             txtDescripcion.Text = entidad.act_descripcion;
@@ -527,6 +659,20 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         else
         {
             lblId.Text = "Nuevo";
+            /* Subactivo desde el asistente: queda colgado de su maquina
+               principal y hereda donde esta. Todo se puede cambiar. */
+            if (PadreFijo > 0)
+            {
+                Activo p = new ActivoController().GetActivo(PadreFijo);
+                if (p != null && p.act_cliente == SitioBase.Session.ClienteId())
+                {
+                    SeleccionarCombo(cboPadre, p.act_id);
+                    SeleccionarCombo(cboPlanta, p.act_cliente_instalacion);
+                    if (p.act_instalacion_area != null) SeleccionarCombo(cboArea, p.act_instalacion_area.Value);
+                    if (p.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, p.act_centro_costo.Value);
+                    SeleccionarCombo(cboCriticidad, p.act_criticidad_nivel);
+                }
+            }
         }
     }
 
@@ -550,7 +696,12 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     private void SeleccionarCombo(RadComboBox2 combo, int id)
     {
         RadComboBoxItem item = combo.FindItemByValue(id.ToString());
-        if (item != null) item.Selected = true;
+        if (item != null)
+        {
+            combo.ClearSelection();
+            item.Selected = true;
+            if (combo.AllowCustomText) combo.Text = item.Text;   // si no, se ve el mensaje vacio
+        }
     }
 
     protected void Bloqueo()
@@ -563,7 +714,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             txtCodigo.ReadOnly = ActivoId > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
-        txtFabricante.ReadOnly = !puedeEditar;
+        cboFabricante.ReadOnly = !puedeEditar;
         cboAnio.ReadOnly = !puedeEditar;
         calPuestaMarcha.Enabled = puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
@@ -598,8 +749,15 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     {
         try
         {
-            if (string.IsNullOrEmpty(cboTipo.SelectedValue))
-                throw new Exception("Debe elegir el tipo de activo.");
+            /* Tipo y modelo con texto libre (bloque 342): lo que no existe se
+               crea aqui, en una llamada, antes de guardar el activo. */
+            int tipoId = ValorCombo(cboTipo), modeloId = ValorCombo(cboModelo);
+            string tipoTxt = TextoCombo(cboTipo), modeloTxt = TextoCombo(cboModelo);
+            if (tipoId == 0 && tipoTxt == null)
+                throw new Exception("Elija o escriba el tipo de activo.");
+            string errCat = new ActivoTipoController().ResolverCatalogo(ref tipoId, tipoTxt, ref modeloId,
+                modeloId == 0 ? modeloTxt : null, string.IsNullOrWhiteSpace(cboFabricante.Text) ? null : cboFabricante.Text.Trim());
+            if (errCat != null) throw new Exception(errCat);
             if (string.IsNullOrEmpty(cboEstado.SelectedValue))
                 throw new Exception("Debe elegir el estado del activo.");
             if (string.IsNullOrEmpty(cboCriticidad.SelectedValue))
@@ -613,7 +771,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             entidad.act_id = ActivoId;
             entidad.act_cliente = SitioBase.Session.ClienteId();
             entidad.act_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);
-            entidad.act_activo_tipo = int.Parse(cboTipo.SelectedValue);
+            entidad.act_activo_tipo = tipoId;
             entidad.act_activo_estado = int.Parse(cboEstado.SelectedValue);
             entidad.act_criticidad_nivel = int.Parse(cboCriticidad.SelectedValue);
             /* ---- CODIGO AUTOMATICO ----
@@ -633,8 +791,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             entidad.act_nombre = txtNombre.Text.Trim();
             entidad.act_habilitado = rdbSi.Checked;
 
-            if (!string.IsNullOrEmpty(cboModelo.SelectedValue))
-                entidad.act_activo_modelo = int.Parse(cboModelo.SelectedValue);
+            if (modeloId > 0) entidad.act_activo_modelo = modeloId;
             if (!string.IsNullOrEmpty(cboArea.SelectedValue))
                 entidad.act_instalacion_area = int.Parse(cboArea.SelectedValue);
             if (!string.IsNullOrEmpty(cboCentroCosto.SelectedValue))
@@ -644,8 +801,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
             if (!string.IsNullOrEmpty(txtSerie.Text.Trim()))
                 entidad.act_numero_serie = txtSerie.Text.Trim();
-            if (!string.IsNullOrEmpty(txtFabricante.Text.Trim()))
-                entidad.act_fabricante = txtFabricante.Text.Trim();
+            if (!string.IsNullOrEmpty(cboFabricante.Text.Trim()))
+                entidad.act_fabricante = cboFabricante.Text.Trim();
             if (!string.IsNullOrEmpty(cboAnio.SelectedValue))
                 entidad.act_anio_fabricacion = int.Parse(cboAnio.SelectedValue);
 
@@ -672,6 +829,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 string avisoImg = GuardarImagen(ActivoId);
                 GuardarArchivos(ActivoId);        // documentos adjuntos (opcional, varios)
                 GuardarDatosTecnicos(ActivoId);   // valores de atributos técnicos
+                GuardarComponentes(ActivoId, entidad.act_criticidad_nivel);   // partes agregadas en la ficha
 
                 /* En el modal el tercer parametro cierra la ventana y refresca
                    el listado de atras. En el centro no hay ventana que cerrar:

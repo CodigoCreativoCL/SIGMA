@@ -4,6 +4,7 @@ using SitioBase.Controller;
 using SitioBase.Model;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Drawing;
 using System.Web.UI.HtmlControls;
 using System.Web.UI.WebControls;
@@ -55,6 +56,34 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
         set { ViewState.Add("Asociar", value); }
     }
 
+    /// <summary>
+    /// Modo de la ficha de planta: la grilla muestra a todo el personal del
+    /// cliente, llega con los responsables ya marcados y destacados, y el
+    /// boton Guardar de la ficha sincroniza lo que se marco o desmarco
+    /// (ver GuardarResponsables). Sin este modo, marcar filas y guardar no
+    /// hacia nada: la seleccion solo servia para los botones Asociar y
+    /// Desasociar, y al volver a entrar no quedaba nadie registrado.
+    /// </summary>
+    public bool SeleccionResponsables
+    {
+        get { return Convert.ToBoolean(ViewState["SeleccionResponsables"]); }
+        set { ViewState.Add("SeleccionResponsables", value); }
+    }
+
+    /// <summary>Los usu_id que hoy son responsables de la planta.</summary>
+    protected HashSet<int> ResponsablesActuales
+    {
+        get
+        {
+            HashSet<int> ids = new HashSet<int>();
+            string csv = Convert.ToString(ViewState["ResponsablesActuales"]);
+            foreach (string x in csv.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+                ids.Add(int.Parse(x));
+            return ids;
+        }
+        set { ViewState["ResponsablesActuales"] = string.Join(",", value); }
+    }
+
     public void LoadControls(object sender, EventArgs e)
     {
         if (!IsPostBack)
@@ -87,6 +116,8 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
                            Bodeguero mezclados, y omitiendo los perfiles
                            operativos reales. */
                         perfil.tipo = TipoPerfil > 0 ? TipoPerfil.ToString() : "2";
+                        // Cada empresa ve sus propios perfiles (bloque 341), nunca los de otra.
+                        if (perfil.tipo == "2") perfil.cliente = IdCliente > 0 ? IdCliente : SitioBase.Session.ClienteId();
                         perfil.filtro_habilitado = "1";
 
                         ctrl.DataSource = perfilController.ListoPerfiles(perfil);
@@ -115,7 +146,7 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
         {
             Grid.Columns.Clear();
 
-            if (!ReadOnly)
+            if (!ReadOnly && !SeleccionResponsables)
                 Grid.AddSelectColumn();
             if (Asociar)
             {
@@ -160,7 +191,7 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
         udPanelContenedor.Update();
 
 
-        if (ReadOnly)
+        if (ReadOnly || SeleccionResponsables)
             Grid.MasterTableView.CommandItemDisplay = GridCommandItemDisplay.None;
 
         Grid.DataBind();
@@ -213,7 +244,9 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
         ClienteUsuario clienteUsuario = new ClienteUsuario();
         clienteUsuario.ucl_id_cliente = IdCliente;
         clienteUsuario.id_perfiles = Perfiles;
-        clienteUsuario.cin_id_instalacion = IdClienteInstalacion;
+        /* En modo seleccion se lista a todo el cliente: la planta solo decide
+           quien llega marcado. */
+        clienteUsuario.cin_id_instalacion = SeleccionResponsables ? 0 : IdClienteInstalacion;
         RadComboBox2 cboPerfiles = (RadComboBox2)wucFiltro.FindControl("cboPerfiles");
         if (cboPerfiles.SelectedValue != "") clienteUsuario.id_perfiles = cboPerfiles.SelectedValue;
         RadComboBox2 cboHabilitado = (RadComboBox2)wucFiltro.FindControl("cboHabilitado");
@@ -230,6 +263,63 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
         }
 
         Grid.DataSource = clienteUsuarioController.GetClienteUsuarios(clienteUsuario);
+
+        List<ClienteUsuario> lista = (List<ClienteUsuario>)Grid.DataSource;
+
+        if (SeleccionResponsables && IdClienteInstalacion > 0)
+        {
+            ResponsablesActuales = clienteUsuarioController.GetResponsablesPlanta(IdCliente, IdClienteInstalacion);
+
+            /* Responsables primero: es lo que se viene a mirar. */
+            HashSet<int> resp = ResponsablesActuales;
+            lista = lista.OrderByDescending(u => resp.Contains(u.usu_id)).ToList();
+            Grid.DataSource = lista;
+
+            /* Se llena en ItemDataBound: solo cuentan las filas de la pagina
+               que se dibuja, que son las unicas con casilla. */
+            ViewState["IdsVisibles"] = "";
+        }
+    }
+
+    /// <summary>Nombre del campo de formulario de las casillas de responsable.</summary>
+    protected string CampoResponsable
+    {
+        get { return "resp_" + ClientID; }
+    }
+
+    /// <summary>
+    /// Sincroniza los responsables de la planta con lo marcado en la grilla:
+    /// asocia a los marcados que no lo eran y quita a los desmarcados que si.
+    /// Solo toca las filas visibles, para que un filtro de busqueda no
+    /// desasocie a quien simplemente no aparece en pantalla.
+    /// </summary>
+    public Respuesta GuardarResponsables()
+    {
+        Respuesta resultado = new Respuesta();
+        if (!SeleccionResponsables || ReadOnly || IdClienteInstalacion <= 0) return resultado;
+
+        HashSet<int> antes = ResponsablesActuales;
+
+        HashSet<int> marcados = new HashSet<int>();
+        string[] posted = Request.Form.GetValues(CampoResponsable);
+        if (posted != null)
+            foreach (string v in posted) { int n; if (int.TryParse(v, out n)) marcados.Add(n); }
+
+        List<int> marcar = new List<int>(), desmarcar = new List<int>();
+        foreach (string v in Convert.ToString(ViewState["IdsVisibles"]).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries))
+        {
+            int id = int.Parse(v);
+            bool ahora = marcados.Contains(id);
+            if (ahora && !antes.Contains(id)) marcar.Add(id);
+            if (!ahora && antes.Contains(id)) desmarcar.Add(id);
+        }
+
+        if (marcar.Count + desmarcar.Count == 0) return resultado;
+
+        resultado = new ClienteUsuarioController().GuardarResponsablesPlanta(IdCliente, IdClienteInstalacion, marcar, desmarcar);
+        if (!resultado.error)
+            resultado.detalle = "Responsables: " + marcar.Count + " agregado(s), " + desmarcar.Count + " quitado(s).";
+        return resultado;
     }
 
     protected void Grid_ItemDataBound(object sender, GridItemEventArgs e)
@@ -255,6 +345,27 @@ public partial class View_Comun_Controls_Cliente_Usuarios : System.Web.UI.UserCo
                 TableCell USU_ID = DataItem["usu_id"];
 
                 USU_ID.Controls.Add(Editar);
+
+                /* Casilla propia, no la seleccion de Telerik: la seleccion
+                   no se pinta al cargar y se pierde entre postbacks. La
+                   casilla viaja en el formulario y Guardar la lee. */
+                if (SeleccionResponsables)
+                {
+                    bool esResp = ResponsablesActuales.Contains(Convert.ToInt32(id));
+                    string chk = "<label class=\"sigma-resp-toggle\" title=\"Responsable de la planta\">"
+                        + "<input type=\"checkbox\" name=\"" + CampoResponsable + "\" value=\"" + id + "\""
+                        + (esResp ? " checked" : "") + (ReadOnly ? " disabled" : "")
+                        + " onchange=\"sigmaMarcarResponsable(this)\" /></label>";
+                    USU_ID.Controls.AddAt(0, new System.Web.UI.LiteralControl(chk));
+
+                    /* Se conserva la clase de Telerik (rgRow / rgAltRow): asignar solo
+                       la propia le quitaba el relleno a las celdas y la fila
+                       quedaba descuadrada, con la casilla pegada al borde. */
+                    if (esResp)
+                        item.CssClass = (e.Item.ItemType == GridItemType.AlternatingItem ? "rgAltRow" : "rgRow")
+                                      + " sigma-fila-responsable";
+                    ViewState["IdsVisibles"] = Convert.ToString(ViewState["IdsVisibles"]) + "," + id;
+                }
             }
         }
     }

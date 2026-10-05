@@ -220,6 +220,7 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
         wucResponsables.TipoPerfil = (int)SitioBase.SitioBase.TipoPefil.Cliente;
         wucResponsables.ReadOnly = !Token.Puede("CREAR EDITAR PLANTAS");
         wucResponsables.Asociar = true;
+        wucResponsables.SeleccionResponsables = true;
     }
 
     protected void Bloqueo()
@@ -304,7 +305,24 @@ public partial class View_Organizacion_Plantas_Planta : System.Web.UI.Page
 
             if (!respuesta.error)
             {
+                /* Los responsables se guardan con el mismo boton: se marcan en
+                   la grilla y Guardar sincroniza altas y bajas. Solo en una
+                   planta que ya existia, porque la grilla no se muestra antes. */
+                bool existia = Id > 0;
                 if (Id == 0) Id = respuesta.codigo;
+
+                if (existia)
+                {
+                    Respuesta resp = wucResponsables.GuardarResponsables();
+                    if (resp.error)
+                    {
+                        Tools.tools.ClientAlert("Planta guardada, pero hubo problemas con los responsables: " + resp.detalle, "alerta");
+                        return;
+                    }
+                    if (!string.IsNullOrEmpty(resp.detalle))
+                        respuesta.detalle += " " + resp.detalle;
+                }
+
                 Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
             }
             else

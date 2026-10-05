@@ -13,7 +13,31 @@
             if (window.BrowserWindow.refresh) window.BrowserWindow.refresh();
             window.close();
         }
+
+        /* La carga es un postback completo que con cientos de filas tarda: sin
+           aviso parece colgada y se vuelve a pulsar. Sin archivo no se muestra,
+           que el servidor diga qué falta. */
+        function mostrarCargando() {
+            var f = document.getElementById('<%=fldArchivo.ClientID %>');
+            if (!f || !f.value) return true;
+            var c = document.getElementById('cmCargando');
+            if (c.classList.contains('es-visible')) return false;
+            c.classList.add('es-visible');
+            return true;
+        }
     </script>
+    <style>
+        .cm-cargando { position: fixed; inset: 0; z-index: 9999; display: none;
+            align-items: center; justify-content: center; background: rgba(23, 34, 59, .45); }
+        .cm-cargando.es-visible { display: flex; }
+        .cm-cargando-caja { background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px;
+            box-shadow: 0 10px 30px rgba(23, 34, 59, .18); padding: 26px 34px; text-align: center; color: #17223B; }
+        .cm-cargando-caja strong { display: block; font-size: 14px; margin-top: 12px; }
+        .cm-cargando-caja span { font-size: 12px; color: #68738A; }
+        .cm-spinner { width: 38px; height: 38px; margin: 0 auto; border-radius: 50%;
+            border: 4px solid #F2EFFF; border-top-color: #6732F4; animation: cm-giro .8s linear infinite; }
+        @keyframes cm-giro { to { transform: rotate(360deg); } }
+    </style>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="server">
@@ -113,10 +137,17 @@
         <WebControls:PushButton ID="btnCerrar" runat="server" Text="Cerrar" CssClass="ButtonCerrar"
             OnClientClick="closeWindow(); return false;" />
         <WebControls:PushButton ID="btnCargar" runat="server" Text="Cargar repuestos"
-            OnClick="btnCargar_Click" />
+            OnClick="btnCargar_Click" OnClientClick="return mostrarCargando();" />
     </div>
 
         </ContentTemplate>
     </asp:UpdatePanel>
+</div>
+<div id="cmCargando" class="cm-cargando" role="status" aria-live="polite">
+    <div class="cm-cargando-caja">
+        <div class="cm-spinner"></div>
+        <strong>Cargando planilla…</strong>
+        <span>Validando y creando los repuestos, no cierre esta ventana.</span>
+    </div>
 </div>
 </asp:Content>

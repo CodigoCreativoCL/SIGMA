@@ -2382,3 +2382,44 @@ a.sg-pop-cal-dia.es-elegido.es-hoy { border-color: var(--sg-p); color: #fff; }
 .sg-aud { grid-template-columns: 130px 140px minmax(0, 2fr) minmax(0, 1fr) 90px; }
 .sg-aud .c-dato span,
 .sg-aud .c-cod span { display: block; margin-top: 2px; font-size: 11px; color: var(--sg-tenue); }
+
+/* ==== Ficha del activo, ordenada y compacta (bloque 342, 04-10-2026) =======
+   La rejilla de dos columnas estiraba cada tarjeta de la izquierda hasta la
+   altura de su vecina de la derecha: quedaban huecos enormes. Ahora es una
+   columna de tarjetas en el orden en que se piensa un equipo -que es, donde
+   esta, sus datos, sus partes- y solo imagen y documentos van lado a lado.
+   Las ayudas de procedimiento se ocultan; quedan las que explican conceptos
+   (.es-clave). Pensada para que cualquiera la lea sin ayuda. */
+@media (min-width: 1100px) {
+    .sg-a3-ficha-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-auto-flow: row; gap: 12px; }
+    .sg-a3-ficha-grid > .es-identificacion { grid-column: 1 / -1; order: 1; }
+    .sg-a3-ficha-grid > .es-ubicacion      { grid-column: 1 / -1; order: 2; }
+    .sg-a3-ficha-grid > .es-tecnica        { grid-column: 1 / -1; order: 3; }
+    .sg-a3-ficha-grid > .es-componentes    { grid-column: 1 / -1; order: 4; }
+    .sg-a3-ficha-grid > .es-datos          { grid-column: 1 / -1; order: 5; }
+    .sg-a3-ficha-grid > .es-imagen         { grid-column: 1; order: 6; }
+    .sg-a3-ficha-grid > .es-documentos     { grid-column: 2; order: 6; }
+
+    /* Identificacion: codigo · nombre · tipo  /  modelo · estado · criticidad · habilitado */
+    .sg-ot .sg-a3-ficha .es-identificacion .sigma-modal-grid > .sigma-modal-field:nth-child(1) { display: none; }
+    .sg-ot .sg-a3-ficha .es-identificacion .sigma-modal-grid > .sigma-modal-field:nth-child(2) { grid-column: span 3; }
+    .sg-ot .sg-a3-ficha .es-identificacion .sigma-modal-grid > .sigma-modal-field:nth-child(3) { grid-column: span 5; }
+    .sg-ot .sg-a3-ficha .es-identificacion .sigma-modal-grid > .sigma-modal-field:nth-child(4) { grid-column: span 4; }
+    .sg-ot .sg-a3-ficha .es-identificacion .sigma-modal-grid > .sigma-modal-field:nth-child(n+5) { grid-column: span 3; }
+    /* Ubicacion: planta · area · centro de costo · de que maquina depende, en una fila */
+    .sg-ot .sg-a3-ficha .es-ubicacion .sigma-modal-grid > .sigma-modal-field { grid-column: span 3; }
+    /* Ficha tecnica: serie · marca · año · puesta en marcha / descripcion */
+    .sg-ot .sg-a3-ficha .es-tecnica .sigma-modal-grid > .sigma-modal-field { grid-column: span 3; }
+    .sg-ot .sg-a3-ficha .es-tecnica .sigma-modal-grid > .sigma-modal-field.is-grande { grid-column: span 12; }
+}
+.sg-a3-ficha .sigma-form-seccion { padding: 14px 18px; }
+.sg-a3-ficha .sigma-form-seccion > .titulo { margin-bottom: 10px; }
+.sg-a3-ficha .sigma-modal-ayuda { display: none; }
+.sg-a3-ficha .sigma-modal-ayuda.es-clave { display: block; color: #4A556D; }
+.sg-a3-ficha .sigma-modal-field { margin-bottom: 0; }
+.sg-a3-ficha .sigma-modal-grid { row-gap: 12px; }
+.sg-a3-ficha .es-imagen .sigma-img-vacio { padding: 16px; }
+
+/* La ficha ahora es un asistente de pasos (el control lo resuelve solo): la
+   rejilla de secciones del centro deja de aplicarse. */
+.sg-a3-ficha .sg-a3-ficha-grid { display: block; }

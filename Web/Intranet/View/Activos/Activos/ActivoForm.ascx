@@ -35,6 +35,50 @@
         .sigma-doc .ver { color: #6C5CFF !important; font-weight: 600; text-decoration: none; }
         .sigma-doc .quitar { color: #b91c1c !important; font-weight: 600; text-decoration: none; }
 
+        /* ---- Asistente de tres pasos ---- */
+        .fp-pasos { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .fp-paso { display: flex; align-items: center; gap: 10px; text-align: left; padding: 12px 14px; border: 1.5px solid #E2E7F0;
+            border-radius: 14px; background: #fff; cursor: pointer; font: inherit; color: #17223B; }
+        .fp-paso b { display: block; font-size: 14px; }
+        .fp-paso small { display: block; font-size: 12px; color: #68738A; }
+        .fp-n { flex: 0 0 auto; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            background: #F2EFFF; color: #6732F4; font-weight: 800; font-size: 15px; }
+        .fp-paso.es-activo { border-color: #6732F4; background: #F2EFFF; }
+        .fp-paso.es-activo .fp-n { background: #6732F4; color: #fff; }
+        .fp-paso.es-hecho .fp-n { background: #E9F7F0; color: #16855B; }
+        .fp-paso:focus-visible { outline: 3px solid rgba(22,198,201,.27); }
+        @media (max-width: 760px) { .fp-pasos { grid-template-columns: 1fr; } }
+        .sg-paso { display: none; }
+        .sg-paso.es-activo { display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr); }
+        .sg-paso.es-activo > .sigma-form-seccion { margin: 0; }
+        @media (min-width: 900px) {
+            /* paso 1: identificacion y foto lado a lado, ubicacion debajo */
+            .sg-paso.fp-paso-1.es-activo { grid-template-columns: minmax(0, 1fr) 280px; }
+            .sg-paso.fp-paso-1 > .es-ubicacion { grid-column: 1 / -1; }
+            .sg-paso.fp-paso-2.es-activo { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+            .sg-paso.fp-paso-2 > .es-tecnica { grid-column: 1 / -1; }
+        }
+        /* Menos texto: en el asistente quedan solo las ayudas que explican un
+           concepto (.es-clave); el ID de un activo nuevo no dice nada. */
+        .sg-paso .sigma-modal-ayuda { display: none; }
+        .sg-paso .sigma-modal-ayuda.es-clave { display: block; }
+        .sg-paso .es-identificacion .es-id { display: none; }
+        .fp-nav { display: flex; align-items: center; gap: 10px; margin-top: 14px; }
+        .fp-donde { flex: 1 1 auto; text-align: center; font-size: 12.5px; color: #68738A; font-weight: 600; }
+        .fp-btn { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px 18px; border-radius: 10px; font: inherit;
+            font-weight: 700; font-size: 13.5px; cursor: pointer; border: 1.5px solid #087BEA; background: #fff; color: #087BEA; }
+        .fp-btn:hover { background: #EAF4FF; }
+        .fp-btn[hidden] { display: none; }
+
+        /* Filas de componentes (bloque 342) */
+
+        .sigma-co-cab, .sigma-co-fila { display: grid; grid-template-columns: minmax(0,1.4fr) minmax(0,1fr) minmax(0,1fr) 18px; gap: 6px; align-items: center; }
+        .sigma-co-cab { font-size: 11px; font-weight: 700; color: #8a93a6; text-transform: uppercase; letter-spacing: .03em; padding: 0 2px 6px; }
+        .sigma-co-fila { margin-bottom: 8px; }
+        .sigma-co-lista { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+        .sigma-co-chip { display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px; border-radius: 999px;
+            background: #E8FBFB; color: #007F8A; font-size: 12px; font-weight: 700; }
+
         /* El asterisco del campo obligatorio se ve, no se lee entre parentesis. */
         .req { color: #dc2626; font-weight: 700; }
 
@@ -140,7 +184,7 @@
         // Page_IsValid queda en false y no se muestra el velo (no se envió).
         function sigmaGuardando() {
             setTimeout(function () {
-                if (typeof Page_IsValid !== 'undefined' && Page_IsValid === false) return;
+                if (typeof Page_IsValid !== 'undefined' && Page_IsValid === false) { fpIr(1); return; }
                 var ov = document.getElementById('sigmaGuardandoOv');
                 if (ov) ov.style.display = 'flex';
             }, 0);
@@ -186,6 +230,63 @@
            activo ya tiene un refresh() que sabe a que seccion volver. */
         window.refresh = window.refresh || function () { __doPostBack('', ''); };
 
+        /* ---- Asistente: el paso vive en hdnPaso para sobrevivir a los
+           postbacks parciales (cambiar el tipo recarga los modelos). ---- */
+        function fpCampo() { return document.querySelector('[id$="hdnPaso"]'); }
+        function fpActual() { var h = fpCampo(); var n = h ? parseInt(h.value, 10) : 1; return n >= 1 && n <= 3 ? n : 1; }
+        function fpIr(n) {
+            n = Math.max(1, Math.min(3, n || 1));
+            var h = fpCampo(); if (h) h.value = n;
+            document.querySelectorAll('.sg-paso').forEach(function (p) { p.classList.toggle('es-activo', +p.getAttribute('data-paso') === n); });
+            document.querySelectorAll('.fp-paso').forEach(function (b) {
+                var k = +b.getAttribute('data-ir');
+                b.classList.toggle('es-activo', k === n); b.classList.toggle('es-hecho', k < n);
+                b.setAttribute('aria-current', k === n ? 'step' : 'false');
+            });
+            var ant = document.getElementById('fpBtnAnterior'), sig = document.getElementById('fpBtnSiguiente'), d = document.getElementById('fpDonde');
+            if (ant) ant.hidden = n === 1;
+            if (sig) sig.hidden = n === 3;
+            if (d) d.textContent = 'Paso ' + n + ' de 3';
+            return false;
+        }
+        /* Del paso 1 no se avanza con un obligatorio vacio: se marca ahi. */
+        function fpSiguiente() {
+            var n = fpActual();
+            if (n === 1 && typeof Page_ClientValidate === 'function' && !Page_ClientValidate('Activo')) return false;
+            return fpIr(n + 1);
+        }
+        function fpIniciar() { if (document.querySelector('.sg-paso')) fpIr(fpActual()); }
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', fpIniciar); else setTimeout(fpIniciar, 0);
+        window.addEventListener('load', function () {
+            if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(fpIniciar);
+        });
+
+        /* Un combo con texto libre es valido si tiene algo escrito, aunque no
+           este en la lista: lo que no existe se crea al guardar. */
+        function validaComboTexto(sender, args) {
+            var c = $find(sender.controltovalidate);
+            var t = c ? (c.get_text() || '').trim() : '';
+            if (c && c.get_emptyMessage && t === c.get_emptyMessage()) t = '';
+            args.IsValid = t !== '';
+            if (c && c._element) c._element.style.border = args.IsValid ? '' : 'solid 1px red';
+        }
+
+        // Componentes nuevos: nombre + que es + donde va (opciones del servidor)
+        var CO_LADOS = '<option value="">—</option><%= OpcionesComponenteLado() %>';
+        function coAgregar() {
+            var cont = document.getElementById('coContainer'); if (!cont) return;
+            var row = document.createElement('div');
+            row.className = 'sigma-co-fila co-row';
+            row.innerHTML =
+                '<input type="text" name="co_nombre" class="sigma-nd-txt" placeholder="Ej.: Motor principal" />' +
+                '<input type="text" name="co_tipo" class="sigma-nd-txt" list="coTiposLista" placeholder="Ej.: Motor, Quemador" />' +
+                '<select name="co_lado" class="sigma-nd-sel">' + CO_LADOS + '</select>' +
+                '<a href="javascript:void(0)" onclick="this.closest(\'.co-row\').remove()" class="sigma-nd-quitar">✕</a>';
+            cont.appendChild(row);
+            var cab = document.getElementById('coCab'); if (cab) cab.style.display = '';
+            row.querySelector('input').focus();
+        }
+
         // Opciones de unidad (para las filas nuevas), armadas en el servidor.
         var ND_UNIT_OPTIONS = '<option value="">— sin unidad</option><%= BuildUnidadOptions() %>';
         // Agrega una fila nueva de dato técnico (nombre + unidad + valor).
@@ -222,6 +323,19 @@
 
     <asp:Panel ID="pnlSecciones" runat="server">
 
+    <%-- ASISTENTE DE TRES PASOS (revisión del cliente, 04-10-2026). La ficha
+         entera de una vez era una pared de campos; ahora se llena por partes:
+         que es y donde esta, sus datos tecnicos y sus componentes. Lo
+         obligatorio esta todo en el paso 1, asi que se puede guardar ahi
+         mismo. Es el mismo control en el modal de alta y en la pestaña Ficha. --%>
+    <asp:HiddenField ID="hdnPaso" runat="server" Value="1" />
+    <nav class="fp-pasos" aria-label="Pasos de la ficha">
+        <button type="button" class="fp-paso" data-ir="1" onclick="fpIr(1)"><span class="fp-n">1</span><span><b>Qué es y dónde está</b><small>Nombre, tipo, foto y ubicación</small></span></button>
+        <button type="button" class="fp-paso" data-ir="2" onclick="fpIr(2)"><span class="fp-n">2</span><span><b>Datos técnicos</b><small>Serie, marca, medidas y documentos</small></span></button>
+        <button type="button" class="fp-paso" data-ir="3" onclick="fpIr(3)"><span class="fp-n">3</span><span><b>Componentes</b><small>Sus partes: motor, rodamientos…</small></span></button>
+    </nav>
+
+    <div class="sg-paso fp-paso-1" data-paso="1">
     <%-- ============ IDENTIFICACIÓN ============ --%>
     <div class="sigma-form-seccion es-identificacion">
         <div class="titulo"><i class="mdi mdi-cog-outline"></i>Identificación</div>
@@ -250,19 +364,21 @@
             </div>
             <div class="sigma-modal-field is-chico">
                 <label>Tipo <span class="req">*</span></label>
+                <%-- Texto libre (bloque 342): si el tipo no existe, se escribe y se
+                     crea al guardar. Ya no hay que ir al menu de configuracion. --%>
                 <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                    OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%" />
+                    OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%"
+                    AllowCustomText="true" EmptyMessage="Elija o escriba uno nuevo" />
                 <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo"
-                    ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
+                    ValidateEmptyText="true" ClientValidationFunction="validaComboTexto" ValidationGroup="Activo" />
+                <span class="sigma-modal-ayuda es-clave">¿No está? Escríbalo y se crea al guardar.</span>
             </div>
             <div class="sigma-modal-field is-medio is-cuarto">
                 <label>Modelo</label>
                 <rad:RadComboBox2 ID="cboModelo" runat="server" AutoPostBack="true"
-                    OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">
-                    Elija primero el tipo. ¿No está el modelo?
-                    <a href="javascript:void(0)" onclick="nuevoModelo()" style="color:#6C5CFF;font-weight:600;">+ Nuevo modelo</a>
-                </span>
+                    OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%"
+                    AllowCustomText="true" EmptyMessage="Elija o escriba uno nuevo" />
+                <span class="sigma-modal-ayuda">Opcional. Muestra los de ese tipo y fabricante. ¿No está? Escríbalo: se crea al guardar.</span>
             </div>
             <div class="sigma-modal-field is-chico is-cuarto">
                 <label>Estado <span class="req">*</span></label>
@@ -283,67 +399,6 @@
                     <asp:RadioButton ID="rdbNo" runat="server" Text="NO" GroupName="Habilitado" />
                 </div>
                 <span class="sigma-modal-ayuda">Deshabilitar es la baja lógica: el activo conserva su historia.</span>
-            </div>
-        </div>
-    </div>
-
-    <%-- ============ UBICACIÓN ============ --%>
-    <div class="sigma-form-seccion es-ubicacion">
-        <div class="titulo"><i class="mdi mdi-map-marker-outline"></i>Ubicación</div>
-
-        <div class="sigma-modal-grid">
-            <div class="sigma-modal-field is-chico">
-                <label>Planta <span class="req">*</span></label>
-                <rad:RadComboBox2 ID="cboPlanta" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="cboPlanta"
-                    ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Área</label>
-                <rad:RadComboBox2 ID="cboArea" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">Posición funcional dentro de la planta.</span>
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Centro de costo</label>
-                <rad:RadComboBox2 ID="cboCentroCosto" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-            </div>
-            <div class="sigma-modal-field is-medio">
-                <label>Activo superior</label>
-                <rad:RadComboBox2 ID="cboPadre" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">Vacío indica que es un activo de primer nivel. Úselo para un subactivo.</span>
-            </div>
-        </div>
-    </div>
-
-    <%-- ============ FICHA TÉCNICA ============ --%>
-    <div class="sigma-form-seccion es-tecnica">
-        <div class="titulo"><i class="mdi mdi-file-document-outline"></i>Ficha técnica</div>
-
-        <div class="sigma-modal-grid">
-            <div class="sigma-modal-field is-chico">
-                <label>N° de serie</label>
-                <WebControls:TextBox2 ID="txtSerie" runat="server" MaxLength="100" />
-                <span class="sigma-modal-ayuda">La identidad física real de la máquina.</span>
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Fabricante</label>
-                <WebControls:TextBox2 ID="txtFabricante" runat="server" MaxLength="200" />
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Año fabricación</label>
-                <rad:RadComboBox2 ID="cboAnio" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
-                <span class="sigma-modal-ayuda">Elija el año de la lista. Vacío indica sin dato.</span>
-            </div>
-            <div class="sigma-modal-field is-chico">
-                <label>Puesta en marcha</label>
-                <div class="sigma-modal-fecha">
-                    <WebControls:Calendar ID="calPuestaMarcha" runat="server" />
-                </div>
-                <span class="sigma-modal-ayuda">Elija la fecha en el calendario. Vacío indica sin dato.</span>
-            </div>
-            <div class="sigma-modal-field is-grande">
-                <label>Descripción</label>
-                <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="500" />
             </div>
         </div>
     </div>
@@ -387,6 +442,76 @@
                         <span>Quitar la imagen actual al guardar</span>
                     </label>
                 </asp:Panel>
+            </div>
+        </div>
+    </div>
+
+    <%-- ============ UBICACIÓN ============ --%>
+    <div class="sigma-form-seccion es-ubicacion">
+        <div class="titulo"><i class="mdi mdi-map-marker-outline"></i>Ubicación</div>
+
+        <div class="sigma-modal-grid">
+            <div class="sigma-modal-field is-chico">
+                <label>Planta <span class="req">*</span></label>
+                <rad:RadComboBox2 ID="cboPlanta" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="cboPlanta"
+                    ValidateEmptyText="true" ClientValidationFunction="validaControl" ValidationGroup="Activo" />
+            </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Área</label>
+                <rad:RadComboBox2 ID="cboArea" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <span class="sigma-modal-ayuda">Posición funcional dentro de la planta.</span>
+            </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Centro de costo</label>
+                <rad:RadComboBox2 ID="cboCentroCosto" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+            </div>
+            <div class="sigma-modal-field is-medio">
+                <label>Depende de (máquina principal)</label>
+                <rad:RadComboBox2 ID="cboPadre" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <span class="sigma-modal-ayuda es-clave">
+                    <b>¿Esta máquina depende de otra más grande?</b> Elíjala aquí y quedará como su
+                    <b>subactivo</b> (ej.: el compresor de una cámara de frío). Vacío = máquina principal.
+                </span>
+            </div>
+        </div>
+    </div>
+
+    </div>
+
+    <div class="sg-paso fp-paso-2" data-paso="2">
+    <%-- ============ FICHA TÉCNICA ============ --%>
+    <div class="sigma-form-seccion es-tecnica">
+        <div class="titulo"><i class="mdi mdi-file-document-outline"></i>Ficha técnica</div>
+
+        <div class="sigma-modal-grid">
+            <div class="sigma-modal-field is-chico">
+                <label>N° de serie</label>
+                <WebControls:TextBox2 ID="txtSerie" runat="server" MaxLength="100" />
+                <span class="sigma-modal-ayuda">La identidad física real de la máquina.</span>
+            </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Fabricante</label>
+                <rad:RadComboBox2 ID="cboFabricante" runat="server" OnLoad="LoadControls" AutoPostBack="true"
+                    OnSelectedIndexChanged="cboFabricante_Changed" OnTextChanged="cboFabricante_Changed" Filter="Contains" Width="100%" MaxLength="200"
+                    AllowCustomText="true" EmptyMessage="Elija o escriba uno nuevo" />
+                <span class="sigma-modal-ayuda">El mismo catálogo de marcas de los repuestos.</span>
+            </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Año fabricación</label>
+                <rad:RadComboBox2 ID="cboAnio" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                <span class="sigma-modal-ayuda">Elija el año de la lista. Vacío indica sin dato.</span>
+            </div>
+            <div class="sigma-modal-field is-chico">
+                <label>Puesta en marcha</label>
+                <div class="sigma-modal-fecha">
+                    <WebControls:Calendar ID="calPuestaMarcha" runat="server" />
+                </div>
+                <span class="sigma-modal-ayuda">Elija la fecha en el calendario. Vacío indica sin dato.</span>
+            </div>
+            <div class="sigma-modal-field is-grande">
+                <label>Descripción</label>
+                <WebControls:TextArea2 ID="txtDescripcion" runat="server" MaxLength="500" />
             </div>
         </div>
     </div>
@@ -454,6 +579,35 @@
             <span id="sigmaDocsLista" style="display:block;margin-top:6px;font-size:12px;color:#475569;"></span>
             <span class="sigma-modal-ayuda">Opcional. Manuales, planos, certificados… PDF o imágenes; puede subir varios a la vez.</span>
         </asp:Panel>
+    </div>
+
+    </div>
+
+    <div class="sg-paso fp-paso-3" data-paso="3">
+    <%-- ============ COMPONENTES ============
+         Las partes del equipo que se quieren seguir, agregadas aqui mismo.
+         Antes habia que guardar, ir al centro y abrir otro modal por cada una. --%>
+    <asp:Panel ID="pnlComponentes" runat="server" CssClass="sigma-form-seccion es-componentes">
+        <div class="titulo"><i class="mdi mdi-puzzle-outline"></i>Componentes</div>
+        <p class="sigma-modal-ayuda es-clave" style="margin:0 0 10px">
+            Un <b>componente</b> es una <b>parte de esta máquina</b> que quiere seguir por separado: el motor, un rodamiento,
+            una válvula. No existe fuera de ella. Si la parte tiene número de serie y se saca a reparar aparte, mejor
+            créela como <b>subactivo</b>.
+        </p>
+        <asp:Literal ID="litComponentes" runat="server" />
+        <div class="sigma-co-cab" id="coCab" style="display:none"><span>Nombre</span><span>Qué es</span><span>Dónde va</span><span></span></div>
+        <datalist id="coTiposLista"><%= OpcionesComponenteTipo() %></datalist>
+        <div id="coContainer"></div>
+        <a href="javascript:void(0)" onclick="coAgregar()" class="sigma-img-btn" style="display:inline-flex;margin-top:6px">
+            <i class="mdi mdi-plus"></i> Agregar componente</a>
+    </asp:Panel>
+
+    </div>
+
+    <div class="fp-nav">
+        <button type="button" class="fp-btn" id="fpBtnAnterior" onclick="fpIr(fpActual() - 1)"><i class="mdi mdi-arrow-left"></i>Anterior</button>
+        <span class="fp-donde" id="fpDonde"></span>
+        <button type="button" class="fp-btn es-sig" id="fpBtnSiguiente" onclick="fpSiguiente()">Siguiente<i class="mdi mdi-arrow-right"></i></button>
     </div>
 
     </asp:Panel>

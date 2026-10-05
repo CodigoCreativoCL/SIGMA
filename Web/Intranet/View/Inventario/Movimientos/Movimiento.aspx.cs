@@ -180,7 +180,23 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
     protected void Page_PreRender(object sender, EventArgs e)
     {
         if (Id > 0) CargarDetalle();
-        else CargarAlta();
+        else
+        {
+            /* Desde el centro de un repuesto el repuesto ya se sabe: no se pide.
+               Se deja elegido (los demás pasos lo leen) y el paso 2 se oculta. */
+            if (RepuestoFijo > 0)
+            {
+                if (!IsPostBack)
+                {
+                    RadComboBoxItem it = cboRepuesto.FindItemByValue(RepuestoFijo.ToString());
+                    if (it != null) { cboRepuesto.ClearSelection(); it.Selected = true; }
+                    cboRepuesto_Changed(cboRepuesto, null);
+                }
+                pnlPaso2.Visible = false;
+                cvRepuesto.Enabled = false;
+            }
+            CargarAlta();
+        }
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnRegistrar);
         udPanel.Update();
@@ -202,6 +218,7 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
     private int RepuestoElegido()
     {
+        if (RepuestoFijo > 0) return RepuestoFijo;
         int rep;
         return int.TryParse(cboRepuesto.SelectedValue, out rep) ? rep : 0;
     }
@@ -269,7 +286,7 @@ public partial class View_Inventario_Movimientos_Movimiento : System.Web.UI.Page
 
         /* Mientras no se elija el tipo no se muestra nada más: los campos
            que aparecerían no se sabe todavía cuáles son. */
-        pnlPaso2.Visible = (tipo > 0);
+        pnlPaso2.Visible = (tipo > 0) && RepuestoFijo == 0;   // desde el centro el repuesto ya se sabe
         pnlPaso3.Visible = (tipo > 0);
         pnlPaso4.Visible = (tipo > 0);
         pnlPaso6.Visible = (tipo > 0);

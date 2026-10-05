@@ -17,5 +17,10 @@ namespace SitioBase.Model
         public string Perfiles { get; set; }
         
         public string filtro_habilitado { get; set; }
+        /// <summary>
+        /// Empresa cuyos perfiles se ofrecen (bloque 341): los propios del
+        /// cliente más los del sistema. 0 = todos (mantenedor de plataforma).
+        /// </summary>
+        public int cliente { get; set; }
     }
 }
