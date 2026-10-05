@@ -85,7 +85,6 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
            guardar con CREAR EDITAR ACTIVOS: quien no lo tiene (p. ej. Bodeguero)
            abria una ficha bloqueada y sin boton Guardar. */
         lnkNuevoActivo.Visible = lnkCargaMasiva.Visible;
-        pnlCrear.Visible = lnkCargaMasiva.Visible || Token.Puede("CREAR EDITAR COMPONENTES");
 
         udPanel.Update();
     }
@@ -272,6 +271,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litLista.Text = s.ToString();
         litVistaActivos.Text = lista.Count.ToString();
         ListaComponentes(ordenada, arbol);
+        ListaCatalogos();
 
         litListaTodos.Text = lista.Count.ToString();
         litListaAtencion.Text = atencion.ToString();
@@ -299,11 +299,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                                         ?? new List<ActivoComponente>()).Where(c => c.aco_habilitado).ToList();
         litVistaComp.Text = todos.Count.ToString();
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
+        string barra = BarraVista("Las partes de cada activo: motor, rodamiento, válvula. Agrupadas por el activo del que son parte.",
+                                  "componente", "Nuevo componente", puedeEditar);
 
         if (todos.Count == 0)
         {
-            litListaComp.Text = "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i><p>Todavía no hay componentes</p>" +
-                                "<span>Agrégalos desde el asistente de cada activo (paso «Componentes») o con «Crear › Componente».</span></div>";
+            litListaComp.Text = barra + "<div class=\"sg-ot-vacio\"><i class=\"mdi mdi-puzzle-outline\"></i><p>Todavía no hay componentes</p>" +
+                                "<span>Agrégalos desde el asistente de cada activo (paso «Componentes») o con «Nuevo componente».</span></div>";
             return;
         }
 
@@ -332,7 +334,127 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             }
             s.Append("</section>");
         }
-        litListaComp.Text = s.ToString();
+        litListaComp.Text = barra + s.ToString();
+    }
+
+    /// <summary>
+    /// Las pestañas de catálogo del listado: variables, medidores, tipos y
+    /// modelos. Antes vivían escondidas en el menú «Crear», que solo dejaba
+    /// crear: no se veía lo que ya existía ni se podía editar sin salir del
+    /// centro. Cada pestaña muestra lo creado, con su «Editar» y su «Nuevo».
+    /// </summary>
+    private void ListaCatalogos()
+    {
+        bool puede = Token.Puede("CREAR EDITAR ACTIVOS") || Token.Puede("CREAR EDITAR COMPONENTES");
+        int cliente = SitioBase.Session.ClienteId();
+
+        /* ---- variables de condicion ---- */
+        List<ActivoVariable> vars = (new ActivoVariableController().GetVariables(new ActivoVariable { filtro_habilitado = true })
+                                     ?? new List<ActivoVariable>()).OrderBy(v => v.activo_nombre).ThenBy(v => v.variable_nombre).ToList();
+        litVistaVar.Text = vars.Count.ToString();
+        StringBuilder s = new StringBuilder(BarraVista("Lo que se mide para saber cómo está un activo: temperatura, presión, vibración.", "variable", "Nueva variable", puede));
+        if (vars.Count == 0) s.Append(VacioVista("mdi-pulse", "Todavía no hay variables de condición"));
+        else
+        {
+            s.Append(CabVista("Variable", "Activo · Componente", "Rango"));
+            foreach (ActivoVariable v in vars)
+            {
+                string rango = v.ava_valor_minimo == null && v.ava_valor_maximo == null ? "Sin rango"
+                             : (v.ava_valor_minimo == null ? "—" : v.ava_valor_minimo.Value.ToString("0.##")) + " a " +
+                               (v.ava_valor_maximo == null ? "—" : v.ava_valor_maximo.Value.ToString("0.##")) + " " + Texto(v.unidad_simbolo);
+                string sub = v.mediciones + (v.mediciones == 1 ? " medición" : " mediciones") +
+                             (v.ava_frecuencia_esperada_hora == null ? "" : " · cada " + v.ava_frecuencia_esperada_hora + " h");
+                string donde = string.Join(" · ", new[] { Texto(v.activo_nombre), Texto(v.componente_nombre) }.Where(x => x != "").ToArray());
+                s.Append(FilaVista("mdi-pulse", "es-comp", Texto(v.variable_nombre), sub, donde, Server.HtmlEncode(rango),
+                                   "variable", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + v.ava_id)), puede, 0));
+            }
+        }
+        litListaVar.Text = s.ToString();
+
+        /* ---- medidores ---- */
+        List<ActivoMedidor> meds = (new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor { ame_cliente = cliente, filtro_habilitado = true })
+                                    ?? new List<ActivoMedidor>()).OrderBy(m => m.activo_nombre).ThenBy(m => m.ame_nombre).ToList();
+        litVistaMed.Text = meds.Count.ToString();
+        s = new StringBuilder(BarraVista("Lo que cuenta cuánto trabajó un activo: horas de marcha, ciclos, kilómetros.", "medidor", "Nuevo medidor", puede));
+        if (meds.Count == 0) s.Append(VacioVista("mdi-counter", "Todavía no hay medidores"));
+        else
+        {
+            s.Append(CabVista("Medidor", "Activo", "Valor actual"));
+            foreach (ActivoMedidor m in meds)
+                s.Append(FilaVista("mdi-counter", "es-comp", Texto(m.ame_nombre), Texto(m.ame_codigo), Texto(m.activo_nombre),
+                                   "<b>" + m.ame_valor_actual.ToString("#,0.##") + "</b> " + Server.HtmlEncode(Texto(m.unidad_simbolo)),
+                                   "medidor", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + m.ame_id)), puede, 0));
+        }
+        litListaMed.Text = s.ToString();
+
+        /* ---- tipos de activo (vienen en orden de arbol, con su nivel) ---- */
+        List<ActivoTipo> tipos = new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = cliente, filtro_habilitado = true })
+                                 ?? new List<ActivoTipo>();
+        litVistaTipo.Text = tipos.Count.ToString();
+        s = new StringBuilder(BarraVista("Cómo se agrupan los activos: Cámaras de frío, Hornos, Bombas. Un tipo puede depender de otro.", "tipo", "Nuevo tipo", puede));
+        if (tipos.Count == 0) s.Append(VacioVista("mdi-shape-outline", "Todavía no hay tipos de activo"));
+        else
+        {
+            s.Append(CabVista("Tipo de activo", "Depende de", "Ámbito"));
+            foreach (ActivoTipo t in tipos)
+                s.Append(FilaVista("mdi-shape-outline", "es-cat", Texto(t.ati_nombre), Texto(t.ati_codigo), Texto(t.padre_nombre),
+                                   ChipAmbito(t.es_global), "tipo", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + t.ati_id)), puede, Math.Max(0, t.nivel - 1)));
+        }
+        litListaTipo.Text = s.ToString();
+
+        /* ---- modelos (los globales de la plataforma no se editan aca) ---- */
+        List<ActivoModelo> mods = (new ActivoModeloController().GetModelos(new ActivoModelo { filtro_cliente = cliente, filtro_habilitado = true })
+                                   ?? new List<ActivoModelo>()).OrderBy(m => m.amo_fabricante).ThenBy(m => m.amo_nombre).ToList();
+        litVistaMod.Text = mods.Count.ToString();
+        s = new StringBuilder(BarraVista("Fabricante y modelo de cada equipo, para no escribirlos de nuevo en cada activo.", "modelo", "Nuevo modelo", puede));
+        if (mods.Count == 0) s.Append(VacioVista("mdi-tag-outline", "Todavía no hay modelos"));
+        else
+        {
+            s.Append(CabVista("Modelo", "Tipo de activo", "Origen"));
+            foreach (ActivoModelo m in mods)
+                s.Append(FilaVista("mdi-tag-outline", "es-cat", Texto(m.amo_nombre), Texto(m.amo_fabricante), Texto(m.tipo_nombre),
+                                   ChipAmbito(m.es_global), "modelo", Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + m.amo_id)), puede && !m.es_global, 0));
+        }
+        litListaMod.Text = s.ToString();
+    }
+
+    /// <summary>La franja de cada pestaña: qué es y el botón para crear uno.</summary>
+    private static string BarraVista(string texto, string que, string boton, bool puede)
+    {
+        return "<div class=\"sg-lcat-barra\"><p>" + texto + "</p>" +
+               (puede ? "<a class=\"sg-ot-btn es-secundario\" href=\"javascript:void(0)\" onclick=\"return crearDesdeLista('" + que + "');\"><i class=\"mdi mdi-plus\"></i>" + boton + "</a>" : "") +
+               "</div>";
+    }
+
+    private static string CabVista(string c1, string c2, string c3)
+    {
+        return "<div class=\"sg-lcat-cab\"><span></span><span>" + c1 + "</span><span>" + c2 + "</span><span>" + c3 + "</span><span></span></div>";
+    }
+
+    private static string VacioVista(string icono, string texto)
+    {
+        return "<div class=\"sg-ot-vacio\"><i class=\"mdi " + icono + "\"></i><p>" + texto + "</p><span>Créalo con el botón de arriba o desde el asistente del activo.</span></div>";
+    }
+
+    private static string ChipAmbito(bool global)
+    {
+        return global ? "<span class=\"sg-lcat-chip es-azul\">Global</span>" : "<span class=\"sg-lcat-chip es-morado\">Del cliente</span>";
+    }
+
+    /// <summary>Una fila de catálogo. `dato` ya viene en HTML; lo demás se codifica aca.</summary>
+    private string FilaVista(string icono, string tono, string nombre, string sub, string donde, string dato,
+                             string que, string query, bool puedeEditar, int sangria)
+    {
+        return "<div class=\"sg-lcat-fila\" data-txt=\"" + Server.HtmlEncode((nombre + " " + sub + " " + donde).ToLower()) + "\">" +
+               "<span class=\"sg-lcat-ico " + tono + "\"><i class=\"mdi " + icono + "\"></i></span>" +
+               "<span class=\"t\"" + (sangria > 0 ? " style=\"padding-left:" + (sangria * 22) + "px\"" : "") + "><b>" +
+               (sangria > 0 ? "<i class=\"mdi mdi-subdirectory-arrow-right\" style=\"color:#68738A\"></i> " : "") +
+               Server.HtmlEncode(nombre == "" ? "—" : nombre) + "</b><span>" + Server.HtmlEncode(sub) + "</span></span>" +
+               "<span class=\"d\">" + Server.HtmlEncode(donde == "" ? "—" : donde) + "</span>" +
+               "<span class=\"v\">" + dato + "</span>" +
+               "<span>" + (puedeEditar
+                    ? "<a class=\"sg-ot-btn es-plano\" href=\"javascript:void(0)\" onclick=\"return crearDesdeLista('" + que + "', '" + query + "');\"><i class=\"mdi mdi-pencil-outline\"></i>Editar</a>"
+                    : "") + "</span></div>";
     }
 
     private string FilaComponenteLista(ActivoComponente c, bool hijo, bool puedeEditar)

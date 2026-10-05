@@ -373,50 +373,51 @@
         document.addEventListener('click', function (e) {
             document.querySelectorAll('.sg-menu-btn.es-abierto').forEach(function (w) { if (!w.contains(e.target)) w.classList.remove('es-abierto'); });
         });
-        function crearDesdeLista(que) {
-            document.querySelectorAll('.sg-menu-btn.es-abierto').forEach(function (w) { w.classList.remove('es-abierto'); });
+        /* Crear (query vacio) o editar (query cifrado por el servidor) lo que
+           muestran las pestañas del listado. Al guardar, refresh() recarga y
+           sgListaIniciar vuelve a la misma pestaña. */
+        function crearDesdeLista(que, query) {
             seccionPendiente = null;
+            var q = query || '0', nuevo = q === '0';
             var u = {
-                componente: ['<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=0', 'Nuevo componente', 1040, 620],
-                variable: ['<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>?query=0', 'Nueva variable de condición', 940, 600],
-                medidor: ['<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>?query=0', 'Nuevo medidor', 920, 560],
-                tipo: ['<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipo.aspx") %>?query=0', 'Nuevo tipo de activo', 820, 520],
-                modelo: ['<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=0', 'Nuevo modelo', 820, 560]
+                componente: ['<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>', nuevo ? 'Nuevo componente' : 'Editar componente', 1040, 620],
+                variable: ['<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>', nuevo ? 'Nueva variable de condición' : 'Editar variable de condición', 940, 600],
+                medidor: ['<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>', nuevo ? 'Nuevo medidor' : 'Editar medidor', 920, 560],
+                tipo: ['<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipo.aspx") %>', nuevo ? 'Nuevo tipo de activo' : 'Editar tipo de activo', 820, 520],
+                modelo: ['<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>', nuevo ? 'Nuevo modelo' : 'Editar modelo', 820, 560]
             }[que];
-            if (que === 'tipos') { window.location.href = '<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipos.aspx") %>'; return false; }
-            if (u) SigmaModal.open({ url: u[0], title: u[1], width: u[2], initialHeight: u[3] });
+            if (u) SigmaModal.open({ url: u[0] + '?query=' + q, title: u[1], width: u[2], initialHeight: u[3] });
             return false;
         }
         function sgListaVista(v) {
+            if (!document.querySelector('[data-vista-panel="' + v + '"]')) v = 'activos';
             document.querySelectorAll('.sg-lista-vista').forEach(function (b) {
                 var on = b.getAttribute('data-vista') === v;
                 b.classList.toggle('es-activa', on); b.setAttribute('aria-selected', on ? 'true' : 'false');
             });
-            var a = document.getElementById('sgVistaActivos'), c = document.getElementById('sgVistaComp');
-            if (a) a.hidden = v !== 'activos';
-            if (c) c.hidden = v !== 'componentes';
+            document.querySelectorAll('[data-vista-panel]').forEach(function (p) { p.hidden = p.getAttribute('data-vista-panel') !== v; });
             try { sessionStorage.setItem('sgListaVista', v); } catch (e) { }
-            sgCompFiltrar();
+            sgVistaFiltrar();
             return false;
         }
-        /* El buscador de arriba filtra tambien los componentes. */
-        function sgCompFiltrar() {
-            var c = document.getElementById('sgVistaComp'); if (!c || c.hidden) return;
-            var q = ((document.getElementById('sgListaBuscar') || {}).value || '').toLowerCase().trim(), hay = 0;
-            c.querySelectorAll('.sg-lc-grupo').forEach(function (g) {
+        /* El buscador de arriba filtra tambien la pestaña abierta. Los
+           componentes van en grupos por activo; los catalogos, fila a fila. */
+        function sgVistaFiltrar() {
+            var p = document.querySelector('[data-vista-panel]:not([hidden]):not([data-vista-panel="activos"])'); if (!p) return;
+            var q = ((document.getElementById('sgListaBuscar') || {}).value || '').toLowerCase().trim(), hay = 0, filas = 0;
+            var coincide = function (f, extra) { return !q || (extra || '').indexOf(q) !== -1 || (f.getAttribute('data-txt') || '').indexOf(q) !== -1; };
+            p.querySelectorAll('.sg-lc-grupo').forEach(function (g) {
                 var visibles = 0, cab = (g.getAttribute('data-txt') || '');
-                g.querySelectorAll('.sg-lc-fila').forEach(function (f) {
-                    var ok = !q || cab.indexOf(q) !== -1 || (f.getAttribute('data-txt') || '').indexOf(q) !== -1;
-                    f.hidden = !ok; if (ok) visibles++;
-                });
+                g.querySelectorAll('.sg-lc-fila').forEach(function (f) { var ok = coincide(f, cab); f.hidden = !ok; filas++; if (ok) visibles++; });
                 g.hidden = visibles === 0; hay += visibles;
             });
-            var v = document.getElementById('sgCompSinRes'); if (v) v.hidden = hay > 0;
+            p.querySelectorAll('.sg-lcat-fila').forEach(function (f) { var ok = coincide(f); f.hidden = !ok; filas++; if (ok) hay++; });
+            var v = p.querySelector('.es-sinres'); if (v) v.hidden = filas === 0 || hay > 0;
         }
-        document.addEventListener('input', function (e) { if (e.target && e.target.id === 'sgListaBuscar') sgCompFiltrar(); });
+        document.addEventListener('input', function (e) { if (e.target && e.target.id === 'sgListaBuscar') sgVistaFiltrar(); });
         function sgListaIniciar() {
             var v = null; try { v = sessionStorage.getItem('sgListaVista'); } catch (e) { }
-            if (v === 'componentes' && document.getElementById('sgVistaComp')) sgListaVista('componentes');
+            if (v && v !== 'activos' && document.querySelector('[data-vista-panel="' + v + '"]')) sgListaVista(v);
         }
         window.addEventListener('load', function () {
             sgListaIniciar();
@@ -746,6 +747,33 @@
             .sg-lc-fila .d, .sg-lc-fila .f { display: none; }
         }
         .sg-lista-comp-vacio { padding: 24px; text-align: center; color: #68738A; }
+        .sg-lista-vistas { flex-wrap: wrap; max-width: 100%; }
+
+        /* pestañas de catalogo: variables, medidores, tipos y modelos */
+        .sg-lcat-barra { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px 16px; margin: 0 0 14px; }
+        .sg-lcat-barra p { margin: 0; flex: 1 1 320px; font-size: 13.5px; color: #68738A; }
+        .sg-lcat-barra .sg-ot-btn { min-height: 40px; }
+        .sg-lcat-cab, .sg-lcat-fila { display: grid; grid-template-columns: 48px minmax(0, 2fr) minmax(0, 1.6fr) minmax(0, 1fr) 110px; gap: 12px; align-items: center; }
+        .sg-lcat-cab { padding: 0 14px 8px; font-size: 11.5px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: #68738A; }
+        .sg-lcat-fila { min-height: 60px; padding: 8px 14px; border: 1px solid #E2E7F0; border-bottom-width: 0; background: #fff; }
+        .sg-lcat-cab + .sg-lcat-fila { border-radius: 14px 14px 0 0; }
+        .sg-lcat-fila:last-of-type { border-bottom-width: 1px; border-radius: 0 0 14px 14px; }
+        .sg-lcat-cab + .sg-lcat-fila:last-of-type { border-radius: 14px; }
+        .sg-lcat-fila:hover { background: #FAFBFD; }
+        .sg-lcat-fila .t b { display: block; font-size: 14px; color: #17223B; } .sg-lcat-fila .t span { display: block; font-size: 12px; color: #68738A; }
+        .sg-lcat-fila .d { font-size: 13px; color: #4A556D; } .sg-lcat-fila .v { font-size: 13px; color: #4A556D; } .sg-lcat-fila .v b { color: #17223B; }
+        .sg-lcat-ico { width: 44px; height: 44px; border-radius: 10px; display: grid; place-items: center; font-size: 20px; }
+        .sg-lcat-ico.es-comp { background: #E8FBFB; color: #007F8A; } .sg-lcat-ico.es-cat { background: #F2EFFF; color: #6732F4; }
+        .sg-lcat-chip { display: inline-block; padding: 2px 10px; border-radius: 999px; font-size: 11.5px; font-weight: 800; }
+        .sg-lcat-chip.es-azul { background: #EAF4FF; color: #0565C2; } .sg-lcat-chip.es-morado { background: #F2EFFF; color: #4820C9; }
+        .sg-lcat-pie { margin: 14px 0 0; font-size: 13px; }
+        .sg-lcat-pie a { color: #087BEA; font-weight: 700; text-decoration: none; } .sg-lcat-pie a:hover { color: #0565C2; text-decoration: underline; }
+        .sg-lcat-pie .mdi { margin-right: 4px; }
+        @media (max-width: 1000px) {
+            .sg-lcat-cab { display: none; }
+            .sg-lcat-fila { grid-template-columns: 48px minmax(0, 1fr) auto; }
+            .sg-lcat-fila .d, .sg-lcat-fila .v { display: none; }
+        }
     </style>
 
     <%-- La version sale de la fecha del archivo: con `?vrs=1` fijo, el
@@ -817,19 +845,6 @@
                                         OnClientClick="return abrirCargaMasiva();"><i class="mdi mdi-upload-outline"></i><span><b>Carga masiva</b><small>Muchos activos de una vez desde una planilla.</small></span></asp:LinkButton>
                                 </div>
                             </div>
-                            <asp:Panel ID="pnlCrear" runat="server" CssClass="sg-menu-btn">
-                                <button type="button" class="sg-ot-btn es-secundario" aria-haspopup="true" onclick="return sgMenuBtn(this);"><i class="mdi mdi-plus-box-multiple-outline"></i>Crear<i class="mdi mdi-chevron-down"></i></button>
-                                <div class="sg-menu-lista es-ancha" role="menu">
-                                    <div class="sg-menu-tit">Lo que arma un activo</div>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('componente');"><i class="mdi mdi-puzzle-outline es-comp"></i><span><b>Componente</b><small>Una parte de un activo: motor, rodamiento, válvula.</small></span></a>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('variable');"><i class="mdi mdi-pulse es-comp"></i><span><b>Variable de condición</b><small>Lo que se mide para saber cómo está: temperatura, presión.</small></span></a>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('medidor');"><i class="mdi mdi-counter es-comp"></i><span><b>Medidor</b><small>Lo que cuenta cuánto trabajó: horas, ciclos.</small></span></a>
-                                    <div class="sg-menu-tit">Catálogos</div>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('tipo');"><i class="mdi mdi-shape-outline es-cat"></i><span><b>Tipo de activo</b><small>Ej.: Cámaras de frío, Hornos, Bombas.</small></span></a>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('modelo');"><i class="mdi mdi-tag-outline es-cat"></i><span><b>Modelo</b><small>Ej.: Frigorífica Sur CF-40.</small></span></a>
-                                    <a href="#" class="sg-menu-op" onclick="return crearDesdeLista('tipos');"><i class="mdi mdi-format-list-bulleted es-cat"></i><span><b>Ver todos los tipos de activo</b><small>Revisar, renombrar o dar de baja.</small></span></a>
-                                </div>
-                            </asp:Panel>
                             <asp:LinkButton ID="lnkNuevoActivo" runat="server" CssClass="sg-ot-btn es-primario"
                                 OnClientClick="return abrirActivo(0);"><i class="mdi mdi-plus"></i>Nuevo activo</asp:LinkButton>
                         </div>
@@ -841,6 +856,10 @@
                     <div class="sg-lista-vistas" role="tablist" aria-label="Qué ver">
                         <button type="button" class="sg-lista-vista es-activa" role="tab" aria-selected="true" data-vista="activos" onclick="return sgListaVista('activos');"><i class="mdi mdi-cog-outline"></i>Activos <b><asp:Literal ID="litVistaActivos" runat="server" Text="0" /></b></button>
                         <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="componentes" onclick="return sgListaVista('componentes');"><i class="mdi mdi-puzzle-outline"></i>Componentes <b><asp:Literal ID="litVistaComp" runat="server" Text="0" /></b></button>
+                        <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="variables" onclick="return sgListaVista('variables');"><i class="mdi mdi-pulse"></i>Variables <b><asp:Literal ID="litVistaVar" runat="server" Text="0" /></b></button>
+                        <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="medidores" onclick="return sgListaVista('medidores');"><i class="mdi mdi-counter"></i>Medidores <b><asp:Literal ID="litVistaMed" runat="server" Text="0" /></b></button>
+                        <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="tipos" onclick="return sgListaVista('tipos');"><i class="mdi mdi-shape-outline"></i>Tipos de activo <b><asp:Literal ID="litVistaTipo" runat="server" Text="0" /></b></button>
+                        <button type="button" class="sg-lista-vista" role="tab" aria-selected="false" data-vista="modelos" onclick="return sgListaVista('modelos');"><i class="mdi mdi-tag-outline"></i>Modelos <b><asp:Literal ID="litVistaMod" runat="server" Text="0" /></b></button>
                     </div>
 
                     <%-- PLANTA, AREA Y LINEA NO HACEN FALTA
@@ -882,7 +901,7 @@
                         </label>
                     </div>
 
-                    <div id="sgVistaActivos" class="sg-lista-vista-panel">
+                    <div id="sgVistaActivos" class="sg-lista-vista-panel" data-vista-panel="activos">
                     <div class="sg-ot-ev-filtros">
                         <div class="sg-ot-ev-tipos" id="sgListaChips">
                             <a href="#" class="sg-a3-chip es-activa" data-lista="todos">Todos <b><asp:Literal ID="litListaTodos" runat="server" Text="0" /></b></a>
@@ -912,9 +931,30 @@
 
                     <%-- LOS COMPONENTES DE TODOS LOS ACTIVOS, agrupados por el
                          activo (o subactivo) del que son parte. --%>
-                    <div id="sgVistaComp" class="sg-lista-vista-panel" hidden>
+                    <div id="sgVistaComp" class="sg-lista-vista-panel" data-vista-panel="componentes" hidden>
                         <asp:Literal ID="litListaComp" runat="server" />
-                        <p class="sg-lista-comp-vacio" id="sgCompSinRes" hidden>Ningún componente coincide con la búsqueda.</p>
+                        <p class="sg-lista-comp-vacio es-sinres" hidden>Ningún componente coincide con la búsqueda.</p>
+                    </div>
+
+                    <%-- LOS CATALOGOS: antes escondidos en el menu "Crear", que
+                         solo dejaba crear. Ahora cada uno muestra lo que ya
+                         existe, con su "Editar" y su "Nuevo". --%>
+                    <div class="sg-lista-vista-panel" data-vista-panel="variables" hidden>
+                        <asp:Literal ID="litListaVar" runat="server" />
+                        <p class="sg-lista-comp-vacio es-sinres" hidden>Ninguna variable coincide con la búsqueda.</p>
+                    </div>
+                    <div class="sg-lista-vista-panel" data-vista-panel="medidores" hidden>
+                        <asp:Literal ID="litListaMed" runat="server" />
+                        <p class="sg-lista-comp-vacio es-sinres" hidden>Ningún medidor coincide con la búsqueda.</p>
+                    </div>
+                    <div class="sg-lista-vista-panel" data-vista-panel="tipos" hidden>
+                        <asp:Literal ID="litListaTipo" runat="server" />
+                        <p class="sg-lista-comp-vacio es-sinres" hidden>Ningún tipo coincide con la búsqueda.</p>
+                        <p class="sg-lcat-pie"><a href='<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipos.aspx") %>'><i class="mdi mdi-format-list-bulleted"></i>Ver también los tipos dados de baja</a></p>
+                    </div>
+                    <div class="sg-lista-vista-panel" data-vista-panel="modelos" hidden>
+                        <asp:Literal ID="litListaMod" runat="server" />
+                        <p class="sg-lista-comp-vacio es-sinres" hidden>Ningún modelo coincide con la búsqueda.</p>
                     </div>
                 </div>
             </asp:Panel>
