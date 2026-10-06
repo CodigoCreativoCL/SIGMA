@@ -25,7 +25,9 @@ namespace WebControls
         
         public Calendar()
         {
-            RJS.Web.WebControl.PopCalendar.JavaScriptCustomPath = HttpContext.Current.Request.ApplicationPath + "/CSS/UI/WebControls/calendar";
+            /* En la raiz (produccion) ApplicationPath es "/" y la ruta quedaba "//CSS/...",
+               que el navegador lee como un servidor llamado "CSS". */
+            RJS.Web.WebControl.PopCalendar.JavaScriptCustomPath = HttpContext.Current.Request.ApplicationPath.TrimEnd('/') + "/CSS/UI/WebControls/calendar";
             this.CssClass = "form-control";
             this.Style.Add("width", "95px !important");
             this.Style.Add("display", "inline !important");
