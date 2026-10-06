@@ -76,7 +76,11 @@ public partial class View_Comun_Archivos_VerArchivo : System.Web.UI.Page
                 return;
             }
 
-            if (archivo.arc_cliente != SitioBase.Session.ClienteId())
+            /* Los adjuntos de un ticket y la ayuda publicada no son de un
+               cliente: el agente atiende a todos y una capsula la ve
+               cualquiera. Decide el SP, que sabe de quien es el ticket y que
+               esta publicado. */
+            if (archivo.arc_cliente != SitioBase.Session.ClienteId() && !DeSoporte(id))
             {
                 /* 404 y no 403: decir "existe pero no es tuyo" confirma que
                    ese id existe, que es justo lo que alguien probando
@@ -137,6 +141,21 @@ public partial class View_Comun_Archivos_VerArchivo : System.Web.UI.Page
     /// Un salto de línea o una comilla en el nombre parten la cabecera
     /// Content-Disposition en dos y dejan inyectar cabeceras propias.
     /// </summary>
+    /// <summary>¿Es un adjunto de soporte o ayuda que esta persona puede ver?</summary>
+    private bool DeSoporte(int archivo)
+    {
+        try
+        {
+            System.Collections.Generic.Dictionary<string, object> f =
+                SoporteDatos.Fila("SEL_SOPORTE_ARCHIVO_PERMITIDO", "@ARCHIVO", archivo, "@USUARIO", SoporteDatos.Usuario());
+            return f.ContainsKey("PERMITIDO") && Convert.ToBoolean(f["PERMITIDO"]);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
+    }
+
     private string Limpio(string nombre)
     {
         if (string.IsNullOrEmpty(nombre)) return "archivo";

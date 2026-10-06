@@ -153,6 +153,13 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                "' alt='' aria-hidden='true' /></span>";
     }
 
+    /* El permiso de la pagina y, para las que dependen del plan (la
+       ticketera de Soporte), que el plan del cliente las incluya. */
+    private static bool Puede(Menus m)
+    {
+        return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link);
+    }
+
     protected StringBuilder addMenu(List<Menus> menus, int padre, int countNivel, int profundidad)
     {
         StringBuilder sb = new StringBuilder();
@@ -175,8 +182,8 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                    unico visible es una pagina, el modulo lleva directo a
                    ella, con su icono y su nombre. */
                 List<Menus> visibles = menus.Where(x => x.mnu_padre == item.mnu_id && x.mnu_visible).ToList();
-                Menus unica = visibles.Count(x => x.mnu_link == "#" || SitioBase.Token.PuedeMenu(x.mnu_id)) == 1
-                              ? visibles.FirstOrDefault(x => x.mnu_link != "#" && SitioBase.Token.PuedeMenu(x.mnu_id)) : null;
+                Menus unica = visibles.Count(x => x.mnu_link == "#" || Puede(x)) == 1
+                              ? visibles.FirstOrDefault(x => x.mnu_link != "#" && Puede(x)) : null;
                 if (unica != null && !menus.Any(x => x.mnu_padre == unica.mnu_id && x.mnu_visible))
                 {
                     sb.AppendLine("<li>");
@@ -228,7 +235,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
             else
             {
                 // Pagina: aca si manda el permiso.
-                if (!SitioBase.Token.PuedeMenu(item.mnu_id)) continue;
+                if (!Puede(item)) continue;
 
                 sb.AppendLine("<li>");
                 sb.AppendLine(" <a href='" + ResolveUrl(item.mnu_link) + "'>");
