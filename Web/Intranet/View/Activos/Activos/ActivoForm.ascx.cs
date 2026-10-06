@@ -93,110 +93,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         set { ViewState["PadreFijo"] = value; }
     }
 
-    /// <summary>
-    /// Puebla los combos. Los catálogos NO se escriben a mano en el markup:
-    /// se leen de su SEL_ (el estándar lo exige). Cada combo lleva su opción
-    /// vacía cuando es opcional.
-    /// </summary>
-    /// <summary>
-    /// Puebla los combos. Corre en el Load de cada uno, antes de que el centro
-    /// diga de que activo habla: por eso la seleccion la hace CargarDatos y no
-    /// este metodo.
-    /// </summary>
-    public void LoadControls(object sender, EventArgs e)
-    {
-        if (IsPostBack || !(sender is RadComboBox2)) return;
-
-        RadComboBox2 ctrl = (RadComboBox2)sender;
-        int cliente = SitioBase.Session.ClienteId();
-
-        switch (ctrl.ID)
-        {
-            case "cboPlanta":
-                {
-                    ClienteInstalacionController controller = new ClienteInstalacionController();
-
-                    // Este modelo trae los filtros como string (convención
-                    // heredada de ClienteInstalacion); se respeta tal cual.
-                    ClienteInstalacion filtro = new ClienteInstalacion();
-                    filtro.filtro_cliente = cliente.ToString();
-                    filtro.filtro_habilitado = "1";
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = controller.GetClienteInstalaciones(filtro);
-                    ctrl.DataValueField = "cin_id";
-                    ctrl.DataTextField = "cin_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboArea":
-                {
-                    InstalacionAreaController controller = new InstalacionAreaController();
-                    List<InstalacionArea> lista = controller.GetInstalacionAreas(
-                        new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Sin área", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "iar_id";
-                    ctrl.DataTextField = "ruta";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboCentroCosto":
-                {
-                    CentroCostoController controller = new CentroCostoController();
-                    List<CentroCosto> lista = controller.GetCentrosCosto(
-                        new CentroCosto { cco_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Sin centro de costo", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "cco_id";
-                    ctrl.DataTextField = "ruta";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboAnio":
-                {
-                    // Años del actual hacia atrás: la maquinaria industrial
-                    // rara vez es anterior a 1950. Elegir de una lista evita
-                    // tipeos como "20226" o un año futuro.
-                    ctrl.Items.Add(new RadComboBoxItem("Sin dato", ""));
-                    for (int anio = global::SitioBase.Hora.Hoy.Year; anio >= 1950; anio--)
-                        ctrl.Items.Add(new RadComboBoxItem(anio.ToString(), anio.ToString()));
-                    break;
-                }
-
-            case "cboPadre":
-                {
-                    ActivoController controller = new ActivoController();
-                    List<Activo> lista = controller.GetActivos(
-                        new Activo { act_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Ninguna: es una máquina principal", ""));
-                    ctrl.AppendDataBoundItems = true;
-
-                    if (lista != null)
-                    {
-                        // Un activo no puede ser su propio padre: se quita de
-                        // la lista al editar. Los descendientes los rechaza
-                        // igual el SP; aquí se evita solo el caso evidente.
-                        if (ActivoId > 0) lista.RemoveAll(x => x.act_id == ActivoId);
-
-                        foreach (Activo a in lista)
-                            ctrl.Items.Add(new RadComboBoxItem(a.act_codigo + " — " + a.act_nombre, a.act_id.ToString()));
-                    }
-
-                    break;
-                }
-        }
-    }
-
     protected void Page_PreRender(object sender, EventArgs e)
     {
         /* El centro dice de que activo habla y lo dice tarde -su propio
@@ -451,40 +347,84 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoModelo>());
     }
 
-    private List<ActivoEstado> _estados;
-    private List<ActivoEstado> EstadosActivo()
+    /* ---- Combos de lista cerrada (SigmaCombo con id) ----
+       Estado, criticidad, planta, area, centro de costo, maquina de la que
+       depende y año: el texto visible va en txtX y el id en hdnX. Las
+       listas se leen una vez por request y son las mismas que se ofrecen
+       en el navegador (AF_CAT) y contra las que se valida al guardar. */
+    private class Opcion
     {
-        return _estados ?? (_estados = new ActivoEstadoController().GetActivoEstados(
-            new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>());
+        public int id;
+        public string n;
+        public Opcion(int id, string n) { this.id = id; this.n = n; }
     }
 
-    private List<CriticidadNivel> _criticidades;
-    private List<CriticidadNivel> Criticidades()
+    private readonly Dictionary<string, List<Opcion>> _listas = new Dictionary<string, List<Opcion>>();
+
+    private List<Opcion> Lista(string clave)
     {
-        return _criticidades ?? (_criticidades = new CriticidadNivelController().GetCriticidadNiveles(
-            new CriticidadNivel { filtro_habilitado = true }) ?? new List<CriticidadNivel>());
+        List<Opcion> l;
+        if (_listas.TryGetValue(clave, out l)) return l;
+        l = new List<Opcion>();
+        int cliente = SitioBase.Session.ClienteId();
+        try
+        {
+            switch (clave)
+            {
+                case "estados":
+                    foreach (ActivoEstado x in new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>())
+                        l.Add(new Opcion(x.aes_id, x.aes_nombre));
+                    break;
+                case "criticidades":
+                    foreach (CriticidadNivel x in new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true }) ?? new List<CriticidadNivel>())
+                        l.Add(new Opcion(x.crn_id, x.crn_nombre));
+                    break;
+                case "plantas":
+                    // Este modelo trae los filtros como string (convención heredada de ClienteInstalacion).
+                    foreach (ClienteInstalacion x in new ClienteInstalacionController().GetClienteInstalaciones(
+                                 new ClienteInstalacion { filtro_cliente = cliente.ToString(), filtro_habilitado = "1" }) ?? new List<ClienteInstalacion>())
+                        l.Add(new Opcion(x.cin_id, x.cin_nombre));
+                    break;
+                case "areas":
+                    foreach (InstalacionArea x in new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true }) ?? new List<InstalacionArea>())
+                        l.Add(new Opcion(x.iar_id, x.ruta));
+                    break;
+                case "centros":
+                    foreach (CentroCosto x in new CentroCostoController().GetCentrosCosto(new CentroCosto { cco_cliente = cliente, filtro_habilitado = true }) ?? new List<CentroCosto>())
+                        l.Add(new Opcion(x.cco_id, x.ruta));
+                    break;
+                case "padres":
+                    // Un activo no puede ser su propio padre: se quita de la
+                    // lista al editar. Los descendientes los rechaza el SP.
+                    foreach (Activo x in new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }) ?? new List<Activo>())
+                        if (x.act_id != ActivoId) l.Add(new Opcion(x.act_id, x.act_codigo + " — " + x.act_nombre));
+                    break;
+                case "anios":
+                    // Del actual hacia atras: la maquinaria industrial rara vez es
+                    // anterior a 1950. Elegir evita tipeos como "20226" o un año futuro.
+                    for (int anio = global::SitioBase.Hora.Hoy.Year; anio >= 1950; anio--)
+                        l.Add(new Opcion(anio, anio.ToString()));
+                    break;
+            }
+        }
+        catch (Exception) { }
+        _listas[clave] = l;
+        return l;
     }
 
-    /* Estado y criticidad: el texto visible y el id en el campo oculto. */
-    private void FijarEstado(int id)
+    /// <summary>Muestra la opcion con ese id (si esta en la lista; si no, deja el campo como estaba).</summary>
+    private void Fijar(TextBox t, HiddenField h, string clave, int id)
     {
-        ActivoEstado e = EstadosActivo().Find(x => x.aes_id == id);
-        if (e == null) return;
-        hdnEstado.Value = e.aes_id.ToString(); txtEstado.Text = e.aes_nombre;
+        Opcion o = Lista(clave).Find(x => x.id == id);
+        if (o == null) return;
+        h.Value = o.id.ToString(); t.Text = o.n;
     }
 
-    private void FijarCriticidad(int id)
-    {
-        CriticidadNivel c = Criticidades().Find(x => x.crn_id == id);
-        if (c == null) return;
-        hdnCriticidad.Value = c.crn_id.ToString(); txtCriticidad.Text = c.crn_nombre;
-    }
-
-    /// <summary>El id elegido, solo si es una opcion de la lista; 0 si no.</summary>
-    private static int IdElegido(HiddenField h, Predicate<int> existe)
+    /// <summary>El id elegido, solo si es una opcion de la lista; 0 si no hay o no es valido.</summary>
+    private int Elegido(HiddenField h, string clave)
     {
         int v;
-        return int.TryParse(h.Value, out v) && v > 0 && existe(v) ? v : 0;
+        return int.TryParse(h.Value, out v) && v != 0 && Lista(clave).Exists(x => x.id == v) ? v : 0;
     }
 
     /// <summary>Igual sin mayusculas, tildes ni espacios a los lados (como compara el SP).</summary>
@@ -518,12 +458,12 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     }
 
     /// <summary>
-    /// Lo que ofrecen los combos de tipo, modelo, marca, estado y criticidad, como objeto JS. El
+    /// Lo que ofrecen los combos del asistente, como objeto JS. El
     /// modelo lleva su tipo y su marca para filtrarse en el navegador.
     /// </summary>
     public string CatalogoActivoJson()
     {
-        List<object> tipos = new List<object>(), modelos = new List<object>(), estados = new List<object>(), criticidades = new List<object>();
+        List<object> tipos = new List<object>(), modelos = new List<object>();
         List<string> marcas = new List<string>();
         try
         {
@@ -531,10 +471,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 tipos.Add(new Dictionary<string, object> { { "id", t.ati_id }, { "n", t.ati_nombre } });
             foreach (ActivoModelo m in ModelosActivo())
                 modelos.Add(new Dictionary<string, object> { { "id", m.amo_id }, { "n", m.amo_nombre }, { "t", m.amo_activo_tipo }, { "f", m.amo_fabricante ?? "" } });
-            foreach (ActivoEstado e in EstadosActivo())
-                estados.Add(new Dictionary<string, object> { { "id", e.aes_id }, { "n", e.aes_nombre } });
-            foreach (CriticidadNivel c in Criticidades())
-                criticidades.Add(new Dictionary<string, object> { { "id", c.crn_id }, { "n", c.crn_nombre } });
             foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
                 if (!string.IsNullOrEmpty(f.nombre)) marcas.Add(f.nombre);
         }
@@ -542,7 +478,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
         Dictionary<string, object> d = new Dictionary<string, object>();
         d["tipos"] = tipos; d["modelos"] = modelos; d["marcas"] = marcas;
-        d["estados"] = estados; d["criticidades"] = criticidades;
+        foreach (string k in new[] { "estados", "criticidades", "plantas", "areas", "centros", "padres", "anios" })
+            d[k] = Lista(k).ConvertAll(o => (object)new Dictionary<string, object> { { "id", o.id }, { "n", o.n } });
         /* Va dentro de un <script>: "</" se corta (igual que OpcionesCombosJson). */
         return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(d).Replace("</", "<\\/");
     }
@@ -915,13 +852,13 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             ActivoTipo tipo = TiposActivo().Find(x => x.ati_id == entidad.act_activo_tipo)
                               ?? new ActivoTipoController().GetActivoTipo(entidad.act_activo_tipo);
             txtTipo.Text = tipo.ati_nombre;
-            FijarEstado(entidad.act_activo_estado);
-            FijarCriticidad(entidad.act_criticidad_nivel);
-            SeleccionarCombo(cboPlanta, entidad.act_cliente_instalacion);
+            Fijar(txtEstado, hdnEstado, "estados", entidad.act_activo_estado);
+            Fijar(txtCriticidad, hdnCriticidad, "criticidades", entidad.act_criticidad_nivel);
+            Fijar(txtPlanta, hdnPlanta, "plantas", entidad.act_cliente_instalacion);
 
-            if (entidad.act_instalacion_area != null) SeleccionarCombo(cboArea, entidad.act_instalacion_area.Value);
-            if (entidad.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, entidad.act_centro_costo.Value);
-            if (entidad.act_activo_padre != null) SeleccionarCombo(cboPadre, entidad.act_activo_padre.Value);
+            if (entidad.act_instalacion_area != null) Fijar(txtArea, hdnArea, "areas", entidad.act_instalacion_area.Value);
+            if (entidad.act_centro_costo != null) Fijar(txtCentroCosto, hdnCentroCosto, "centros", entidad.act_centro_costo.Value);
+            if (entidad.act_activo_padre != null) Fijar(txtPadre, hdnPadre, "padres", entidad.act_activo_padre.Value);
             txtModelo.Text = "";
             if (entidad.act_activo_modelo != null)
             {
@@ -932,7 +869,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
             txtSerie.Text = entidad.act_numero_serie;
             txtFabricante.Text = entidad.act_fabricante;
-            if (entidad.act_anio_fabricacion != null) SeleccionarCombo(cboAnio, entidad.act_anio_fabricacion.Value);
+            if (entidad.act_anio_fabricacion != null) Fijar(txtAnio, hdnAnio, "anios", entidad.act_anio_fabricacion.Value);
             calPuestaMarcha.Value = entidad.act_fecha_puesta_marcha;
             txtDescripcion.Text = entidad.act_descripcion;
 
@@ -972,14 +909,11 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                sola planta no tiene que elegirla. Todo se puede cambiar. */
             if (string.IsNullOrEmpty(hdnEstado.Value))
             {
-                ActivoEstado operativo = EstadosActivo().Find(x => (x.aes_nombre ?? "").IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0);
-                if (operativo != null) FijarEstado(operativo.aes_id);
+                Opcion operativo = Lista("estados").Find(x => (x.n ?? "").IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (operativo != null) Fijar(txtEstado, hdnEstado, "estados", operativo.id);
             }
-            if (string.IsNullOrEmpty(cboPlanta.SelectedValue) && cboPlanta.Items.Count == 2)
-            {
-                int planta;
-                if (int.TryParse(cboPlanta.Items[1].Value, out planta)) SeleccionarCombo(cboPlanta, planta);
-            }
+            if (string.IsNullOrEmpty(hdnPlanta.Value) && Lista("plantas").Count == 1)
+                Fijar(txtPlanta, hdnPlanta, "plantas", Lista("plantas")[0].id);
 
             /* Subactivo desde el asistente: queda colgado de su maquina
                principal y hereda donde esta. Todo se puede cambiar. */
@@ -988,21 +922,16 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 Activo p = new ActivoController().GetActivo(PadreFijo);
                 if (p != null && p.act_cliente == SitioBase.Session.ClienteId())
                 {
-                    SeleccionarCombo(cboPadre, p.act_id);
-                    SeleccionarCombo(cboPlanta, p.act_cliente_instalacion);
-                    if (p.act_instalacion_area != null) SeleccionarCombo(cboArea, p.act_instalacion_area.Value);
-                    if (p.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, p.act_centro_costo.Value);
-                    FijarCriticidad(p.act_criticidad_nivel);
+                    Fijar(txtPadre, hdnPadre, "padres", p.act_id);
+                    Fijar(txtPlanta, hdnPlanta, "plantas", p.act_cliente_instalacion);
+                    if (p.act_instalacion_area != null) Fijar(txtArea, hdnArea, "areas", p.act_instalacion_area.Value);
+                    if (p.act_centro_costo != null) Fijar(txtCentroCosto, hdnCentroCosto, "centros", p.act_centro_costo.Value);
+                    Fijar(txtCriticidad, hdnCriticidad, "criticidades", p.act_criticidad_nivel);
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Selecciona un valor en un combo solo si la opción existe. Evita la
-    /// excepción de RadComboBox cuando el id ya no está en la lista (por
-    /// ejemplo, un tipo deshabilitado después de haberse asignado).
-    /// </summary>
     /// <summary>Un dato de la barra de abajo: quien y cuando.</summary>
     private string Pie(string icono, string etiqueta, string usuario, DateTime? fecha)
     {
@@ -1013,17 +942,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                Server.HtmlEncode(string.IsNullOrEmpty(usuario) ? "Sin registro" : usuario) +
                (fecha == null ? "" : " · " + fecha.Value.ToString("dd MMM yyyy HH:mm")) +
                "</span></span>";
-    }
-
-    private void SeleccionarCombo(RadComboBox2 combo, int id)
-    {
-        RadComboBoxItem item = combo.FindItemByValue(id.ToString());
-        if (item != null)
-        {
-            combo.ClearSelection();
-            item.Selected = true;
-            if (combo.AllowCustomText) combo.Text = item.Text;   // si no, se ve el mensaje vacio
-        }
     }
 
     protected void Bloqueo()
@@ -1037,7 +955,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
         txtFabricante.ReadOnly = !puedeEditar;
-        cboAnio.ReadOnly = !puedeEditar;
+        txtAnio.ReadOnly = !puedeEditar;
         calPuestaMarcha.Enabled = puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
 
@@ -1045,10 +963,10 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         txtModelo.ReadOnly = !puedeEditar;
         txtEstado.ReadOnly = !puedeEditar;
         txtCriticidad.ReadOnly = !puedeEditar;
-        cboPlanta.ReadOnly = !puedeEditar;
-        cboArea.ReadOnly = !puedeEditar;
-        cboCentroCosto.ReadOnly = !puedeEditar;
-        cboPadre.ReadOnly = !puedeEditar;
+        txtPlanta.ReadOnly = !puedeEditar;
+        txtArea.ReadOnly = !puedeEditar;
+        txtCentroCosto.ReadOnly = !puedeEditar;
+        txtPadre.ReadOnly = !puedeEditar;
 
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
@@ -1085,13 +1003,14 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             string errCat = new ActivoTipoController().ResolverCatalogo(ref tipoId, tipoTxt, ref modeloId,
                 modeloId == 0 ? modeloTxt : null, fabricante);
             if (errCat != null) throw new Exception(errCat);
-            int estadoId = IdElegido(hdnEstado, v => EstadosActivo().Exists(x => x.aes_id == v));
-            int criticidadId = IdElegido(hdnCriticidad, v => Criticidades().Exists(x => x.crn_id == v));
+            int estadoId = Elegido(hdnEstado, "estados"), criticidadId = Elegido(hdnCriticidad, "criticidades");
+            int plantaId = Elegido(hdnPlanta, "plantas"), areaId = Elegido(hdnArea, "areas");
+            int centroId = Elegido(hdnCentroCosto, "centros"), padreId = Elegido(hdnPadre, "padres"), anio = Elegido(hdnAnio, "anios");
             if (estadoId == 0)
                 throw new Exception("Debe elegir el estado del activo.");
             if (criticidadId == 0)
                 throw new Exception("Debe elegir la criticidad del activo.");
-            if (string.IsNullOrEmpty(cboPlanta.SelectedValue))
+            if (plantaId == 0)
                 throw new Exception("Debe elegir la planta a la que pertenece el activo.");
 
             Activo entidad = new Activo();
@@ -1099,7 +1018,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
             entidad.act_id = ActivoId;
             entidad.act_cliente = SitioBase.Session.ClienteId();
-            entidad.act_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);
+            entidad.act_cliente_instalacion = plantaId;
             entidad.act_activo_tipo = tipoId;
             entidad.act_activo_estado = estadoId;
             entidad.act_criticidad_nivel = criticidadId;
@@ -1121,19 +1040,15 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             entidad.act_habilitado = rdbSi.Checked;
 
             if (modeloId > 0) entidad.act_activo_modelo = modeloId;
-            if (!string.IsNullOrEmpty(cboArea.SelectedValue))
-                entidad.act_instalacion_area = int.Parse(cboArea.SelectedValue);
-            if (!string.IsNullOrEmpty(cboCentroCosto.SelectedValue))
-                entidad.act_centro_costo = int.Parse(cboCentroCosto.SelectedValue);
-            if (!string.IsNullOrEmpty(cboPadre.SelectedValue))
-                entidad.act_activo_padre = int.Parse(cboPadre.SelectedValue);
+            if (areaId > 0) entidad.act_instalacion_area = areaId;
+            if (centroId > 0) entidad.act_centro_costo = centroId;
+            if (padreId > 0) entidad.act_activo_padre = padreId;
 
             if (!string.IsNullOrEmpty(txtSerie.Text.Trim()))
                 entidad.act_numero_serie = txtSerie.Text.Trim();
             if (fabricante != null)
                 entidad.act_fabricante = fabricante;
-            if (!string.IsNullOrEmpty(cboAnio.SelectedValue))
-                entidad.act_anio_fabricacion = int.Parse(cboAnio.SelectedValue);
+            if (anio > 0) entidad.act_anio_fabricacion = anio;
 
             // El calendario ya entrega un DateTime? válido; solo se rechaza
             // una fecha futura, que para una puesta en marcha no tiene sentido.
