@@ -125,7 +125,14 @@ public class WsActivos : System.Web.Services.WebService
                     { "foto", portada > 0 ? UrlArchivo.Ver(portada) : null }, { "nfotos", fotos.ContainsKey(id) ? fotos[id] : 0 },
                     { "ot", res != null ? res.ot_abiertas : 0 }, { "fallas", res != null ? res.fallas_abiertas : 0 },
                     { "prox", res != null && res.proxima_mantencion != null ? res.proxima_mantencion.Value.ToString("dd MMM yyyy", new CultureInfo("es-CL")) : null },
-                    { "url360", Url360(aid) }, { "qComp", Cifrar("Id=0&Activo=" + aid) } };
+                    { "url360", Url360(aid) }, { "qComp", Cifrar("Id=0&Activo=" + aid) },
+                    { "qSub", Cifrar("Id=0&Padre=" + aid) },
+                    // ISO para ordenar por fecha de creacion en el navegador (bloque 357).
+                    { "creado", r.Table.Columns.Contains("CREADO") && r["CREADO"] != DBNull.Value ? ((DateTime)r["CREADO"]).ToString("yyyy-MM-ddTHH:mm:ss") : null },
+                    /* Badge "Nuevo" de la tarjeta: las primeras 24 h desde que se creo.
+                       Con la hora del sitio, la misma con que se registra la creacion. */
+                    { "nuevo", r.Table.Columns.Contains("CREADO") && r["CREADO"] != DBNull.Value
+                               && (global::SitioBase.Hora.Ahora - (DateTime)r["CREADO"]).TotalHours < 24 } };
                 activos[id]["_area"] = r["AREA"] == DBNull.Value ? null : "u" + r["AREA"];
             }
             foreach (var kv in activos)
@@ -711,6 +718,32 @@ public class WsActivos : System.Web.Services.WebService
             x.aco_activo_componente_estado = estado;
             x.aco_motivo_estado = motivo.Trim();
             return Resultado(c.UpdateComponente(x));
+        });
+    }
+
+    /// <summary>
+    /// Mueve un componente a otro activo o subactivo (arrastrarlo en el
+    /// explorador). Lo que cuelga de el va con el; ver BD/358.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string MoverComponente(int componente, int activo)
+    {
+        return Ejecutar(P_COMP, () =>
+        {
+            ActivoComponente x = new ActivoComponenteController().GetComponente(componente);
+            if (x == null || x.aco_id == 0) throw new Exception("El componente no existe.");
+            DelCliente(x.aco_activo);
+            Activo destino = DelCliente(activo);
+            Respuesta r = new ActivoComponenteController().Mover(componente, activo);
+            /* Los mensajes del SP en palabras de la pantalla. */
+            if (r.error && r.detalle != null)
+            {
+                if (r.detalle.StartsWith("3.-")) r.detalle = "«" + destino.act_nombre + "» ya tiene un componente con el código " + x.aco_codigo + ".";
+                else if (r.detalle.StartsWith("4.-")) r.detalle = "«" + destino.act_nombre + "» ya tiene un componente de ese tipo en esa posición.";
+            }
+            else if (!r.error) r.detalle = "«" + x.aco_nombre + "» ahora es parte de «" + destino.act_nombre + "».";
+            return Resultado(r);
         });
     }
 

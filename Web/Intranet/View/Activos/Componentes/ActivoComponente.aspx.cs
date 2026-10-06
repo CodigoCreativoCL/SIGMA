@@ -8,7 +8,8 @@ using Telerik.Web.UI;
 
 /// <summary>
 /// Ficha de un componente de activo (HU-036). La escritura la habilita
-/// Token.Puede("CREAR EDITAR COMPONENTES"); el activo no se cambia al editar.
+/// Token.Puede("CREAR EDITAR COMPONENTES"). Va directo en un activo o
+/// subactivo, o dentro de otro componente; al editar no cambia de activo.
 /// </summary>
 public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.Page
 {
@@ -17,10 +18,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         get { return ViewState["Id"] != null ? (int)ViewState["Id"] : 0; }
         set { ViewState["Id"] = value; }
     }
-
-    // El componente superior a preseleccionar al ABRIR la ficha en edición.
-    // Solo aplica en el primer render; después manda lo que elige el usuario.
-    private string _padreEditar = null;
 
     /// <summary>
     /// El activo ya viene decidido: la ficha se abrió desde el centro de ESE
@@ -65,7 +62,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     private ActivoComponente _comp, _placa;
     private int _imagen;
     private List<ActivoComponenteEstadoHistorial> _historial;
-    private List<ActivoComponente> _padres;
+    private List<ActivoComponente> _componentes;
     private bool _precargado;
 
     private static System.Threading.Tasks.Task<T> EnParalelo<T>(System.Web.HttpContext ctx, Func<T> f)
@@ -91,6 +88,8 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             var tCrit = EnParalelo(ctx, () => new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true }));
             var tPos = EnParalelo(ctx, () => new ComponentePosicionController().GetPosiciones(new ComponentePosicion { filtro_cliente = cliente, filtro_habilitado = true }));
             var tMarcas = EnParalelo(ctx, () => new FabricanteController().Catalogo());
+            // los componentes del cliente: de ellos sale "de que es parte" (activo, subactivo o componente)
+            var tComps = EnParalelo(ctx, () => new ActivoComponenteController().GetComponentes(new ActivoComponente { aco_cliente = cliente, filtro_habilitado = true }));
             System.Threading.Tasks.Task<ActivoComponente> tComp = null, tPlaca = null;
             System.Threading.Tasks.Task<int> tImg = null;
             System.Threading.Tasks.Task<List<ActivoComponenteEstadoHistorial>> tHist = null;
@@ -112,17 +111,10 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                controller de la tanda consulta permisos. */
             Token.Permisos();
 
-            // segunda tanda: los posibles padres son del activo (el fijo, o el del componente)
-            int activo = ActivoFijo;
-            if (tComp != null) { _comp = tComp.Result; if (_comp != null) activo = _comp.aco_activo; }
-            var tPadres = activo > 0
-                ? EnParalelo(ctx, () => new ActivoComponenteController().GetComponentes(new ActivoComponente { aco_cliente = cliente, filtro_activo = activo, filtro_habilitado = true }))
-                : null;
-
             _activos = tActivos.Result; _tipos = tTipos.Result; _estados = tEstados.Result; _criticidades = tCrit.Result;
             _posiciones = tPos.Result; _marcas = tMarcas.Result; tPrefijo.Wait();
-            if (Id > 0) { _placa = tPlaca.Result; _imagen = tImg.Result; _historial = tHist.Result; }
-            if (tPadres != null) { _padres = tPadres.Result; _padresDe = activo; }
+            if (Id > 0) { _comp = tComp.Result; _placa = tPlaca.Result; _imagen = tImg.Result; _historial = tHist.Result; }
+            _componentes = tComps.Result;
             _precargado = true;
         }
         catch (Exception)
@@ -130,10 +122,9 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             /* Si algo falla en paralelo, la ficha sigue como antes: cada parte
                se pide en el hilo de la pagina. */
             _precargado = false;
-            _comp = null; _padres = null;
+            _comp = null; _componentes = null;
         }
     }
-    private int _padresDe;
 
     public void LoadControls(object sender, EventArgs e)
     {
@@ -144,26 +135,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
         switch (ctrl.ID)
         {
-            case "cboActivo":
-                {
-                    ActivoController c = new ActivoController();
-                    List<Activo> l = _precargado ? _activos : c.GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true });
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    /* Activos y subactivos: el subactivo dice de quien depende,
-                       porque tambien tiene sus propios componentes. */
-                    if (l != null)
-                    {
-                        Dictionary<int, string> nombres = new Dictionary<int, string>();
-                        foreach (Activo a in l) nombres[a.act_id] = a.act_nombre;
-                        foreach (Activo a in l)
-                        {
-                            string padre = a.act_activo_padre != null && nombres.ContainsKey(a.act_activo_padre.Value) ? nombres[a.act_activo_padre.Value] : null;
-                            ctrl.Items.Add(new RadComboBoxItem(a.act_nombre + " · " + a.act_codigo + (padre != null ? " (subactivo de " + padre + ")" : ""), a.act_id.ToString()));
-                        }
-                    }
-                    break;
-                }
             case "cboTipo":
                 {
                     ComponenteTipoController c = new ComponenteTipoController();
@@ -210,52 +181,123 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         }
     }
 
-    /// <summary>
-    /// Recarga la ficha al cambiar el activo: el combo de componente superior
-    /// solo debe ofrecer los del activo elegido (el SP rechaza uno de otro).
-    /// </summary>
-    protected void cboActivo_SelectedIndexChanged(object sender, EventArgs e)
+    /* ================================================================
+       ¿DE QUE ES PARTE? (06-10-2026)
+
+       Antes eran dos campos: el activo (fijo si se abria desde su centro) y
+       "va dentro de otra parte", que solo ofrecia componentes de ESE activo.
+       Ahora es uno: el activo, sus subactivos y los componentes de todos
+       ellos, en orden de arbol. "a:<id>" lo deja directo en ese activo o
+       subactivo; "c:<id>" lo pone dentro de ese componente, en el activo de
+       ese componente (el SP exige que el padre sea del mismo activo).
+       Al editar no cambia de activo: se ofrecen ese activo y sus
+       componentes, sin el propio ni los que cuelgan de el.
+       ================================================================ */
+    private class Parte
     {
-        // El trabajo lo hace Page_PreRender (CargarPadre lee el activo actual);
-        // este handler existe para que el cambio dispare el postback.
+        public string id, n, sub;
+        public int activo, componente;
     }
 
-    /// <summary>
-    /// Llena el combo de componente superior con los componentes DEL ACTIVO
-    /// seleccionado, excluyendo el propio registro. Preserva la selección del
-    /// usuario entre postbacks; al cambiar de activo, la opción vieja ya no
-    /// está en la lista y queda deseleccionada sola.
-    /// </summary>
-    protected void CargarPadre()
+    private List<Parte> _partes;
+
+    private List<Activo> Activos()
     {
-        string padreSel = string.IsNullOrEmpty(_padreEditar) ? cboPadre.SelectedValue : _padreEditar;
+        if (_activos == null)
+            _activos = new ActivoController().GetActivos(new Activo { act_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<Activo>();
+        return _activos;
+    }
 
-        cboPadre.Items.Clear();
-        cboPadre.Items.Add(new RadComboBoxItem("No, va directo en el activo", ""));
+    private List<ActivoComponente> Componentes()
+    {
+        if (_componentes == null)
+            _componentes = new ActivoComponenteController().GetComponentes(new ActivoComponente { aco_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoComponente>();
+        return _componentes;
+    }
 
-        int activo;
-        if (int.TryParse(cboActivo.SelectedValue, out activo) && activo > 0)
+    private ActivoComponente Editado()
+    {
+        if (Id <= 0) return null;
+        if (_comp == null) _comp = new ActivoComponenteController().GetComponente(Id);
+        return _comp;
+    }
+
+    private List<Parte> Partes()
+    {
+        if (_partes != null) return _partes;
+        _partes = new List<Parte>();
+        List<Activo> activos = Activos();
+        List<ActivoComponente> comps = Componentes();
+
+        /* Al editar no se ofrece el propio componente ni lo que cuelga de el:
+           quedaria dentro de si mismo. */
+        HashSet<int> fuera = new HashSet<int>();
+        ActivoComponente ed = Editado();
+        if (ed != null)
         {
-            ActivoComponenteController c = new ActivoComponenteController();
-            List<ActivoComponente> l = _precargado && _padres != null && _padresDe == activo
-                ? new List<ActivoComponente>(_padres)
-                : c.GetComponentes(new ActivoComponente
-                {
-                    aco_cliente = SitioBase.Session.ClienteId(),
-                    filtro_activo = activo,
-                    filtro_habilitado = true
-                });
-
-            if (l != null)
+            fuera.Add(ed.aco_id);
+            bool crecio = true;
+            while (crecio)
             {
-                if (Id > 0) l.RemoveAll(x => x.aco_id == Id);
-                foreach (ActivoComponente a in l)
-                    cboPadre.Items.Add(new RadComboBoxItem("Dentro de «" + a.aco_nombre + "» · " + a.aco_codigo, a.aco_id.ToString()));
+                crecio = false;
+                foreach (ActivoComponente k in comps)
+                    if (k.aco_componente_padre != null && fuera.Contains(k.aco_componente_padre.Value) && fuera.Add(k.aco_id)) crecio = true;
             }
         }
 
-        RadComboBoxItem it = cboPadre.FindItemByValue(padreSel);
-        if (it != null) it.Selected = true;
+        Action<Activo, string, bool> agregar = null;
+        agregar = (a, padre, conSubactivos) =>
+        {
+            _partes.Add(new Parte { id = "a:" + a.act_id, n = a.act_nombre + " · " + a.act_codigo,
+                                    sub = padre == null ? "Activo · directo en él" : "Subactivo de " + padre, activo = a.act_id });
+            List<ActivoComponente> suyos = comps.FindAll(k => k.aco_activo == a.act_id && !fuera.Contains(k.aco_id));
+            suyos.Sort((x, y) => string.Compare(x.aco_nombre, y.aco_nombre, StringComparison.CurrentCultureIgnoreCase));
+            foreach (ActivoComponente k in suyos)
+                _partes.Add(new Parte { id = "c:" + k.aco_id, n = k.aco_nombre + " · " + k.aco_codigo,
+                                        sub = "Componente de " + a.act_nombre, activo = a.act_id, componente = k.aco_id });
+            if (!conSubactivos) return;
+            foreach (Activo hijo in activos.FindAll(h => h.act_activo_padre == a.act_id))
+                agregar(hijo, a.act_nombre, true);
+        };
+
+        if (ed != null)
+        {
+            Activo a = activos.Find(x => x.act_id == ed.aco_activo) ?? new ActivoController().GetActivo(ed.aco_activo);
+            if (a != null) agregar(a, null, false);
+        }
+        else if (ActivoFijo > 0)
+        {
+            Activo a = activos.Find(x => x.act_id == ActivoFijo) ?? new ActivoController().GetActivo(ActivoFijo);
+            if (a != null && a.act_cliente == SitioBase.Session.ClienteId()) agregar(a, null, true);
+        }
+        else
+        {
+            HashSet<int> ids = new HashSet<int>(activos.ConvertAll(x => x.act_id));
+            foreach (Activo a in activos)
+                if (a.act_activo_padre == null || !ids.Contains(a.act_activo_padre.Value)) agregar(a, null, true);
+        }
+        return _partes;
+    }
+
+    /// <summary>Las opciones de "de que es parte", como arreglo JS para SigmaCombo.</summary>
+    public string PartesJson()
+    {
+        List<object> l = new List<object>();
+        try
+        {
+            foreach (Parte x in Partes())
+                l.Add(new Dictionary<string, object> { { "id", x.id }, { "n", x.n }, { "sub", x.sub } });
+        }
+        catch (Exception) { }
+        /* Va dentro de un <script>: "</" se corta para que un nombre no cierre la etiqueta. */
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(l).Replace("</", "<\\/");
+    }
+
+    private void FijarParte(string id)
+    {
+        Parte x = Partes().Find(o => o.id == id);
+        if (x == null) return;
+        hdnParte.Value = x.id; txtParte.Text = x.n;
     }
 
     /// <summary>El estado con que se abrio la ficha: si cambia, se pide el motivo.</summary>
@@ -279,7 +321,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         pnlForm.CssClass = "af af-modal" + (Id == 0 ? " af-es-nuevo" : "");
         btnGuardar.Text = Id > 0 ? "Guardar cambios" : "Guardar componente";
         CargarDatos();
-        CargarPadre();   // depende del activo ya seleccionado por CargarDatos
         Bloqueo();
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
         udPanel.Update();
@@ -300,15 +341,12 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             txtDescripcion.Text = x.aco_descripcion;
             calInstalacion.Value = x.aco_fecha_instalacion;
 
-            SeleccionarCombo(cboActivo, x.aco_activo);
+            FijarParte(x.aco_componente_padre != null ? "c:" + x.aco_componente_padre.Value : "a:" + x.aco_activo);
             SeleccionarCombo(cboTipo, x.aco_componente_tipo);
             SeleccionarCombo(cboEstado, x.aco_activo_componente_estado);
             EstadoOriginal = x.aco_activo_componente_estado.ToString();
             SeleccionarCombo(cboCriticidad, x.aco_criticidad_nivel);
             if (x.aco_componente_posicion != null) SeleccionarCombo(cboPosicion, x.aco_componente_posicion.Value);
-            // El padre lo selecciona CargarPadre (que se llama después y ya
-            // conoce el activo); aquí solo se guarda cuál preseleccionar.
-            if (x.aco_componente_padre != null) _padreEditar = x.aco_componente_padre.Value.ToString();
 
             rdbSi.Checked = x.aco_habilitado;
             rdbNo.Checked = !x.aco_habilitado;
@@ -348,7 +386,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             SeleccionarCombo(cboEstado, 1);   // una pieza que se registra normalmente esta operativa
             if (ActivoFijo > 0)
             {
-                SeleccionarCombo(cboActivo, ActivoFijo);
+                FijarParte("a:" + ActivoFijo);
                 /* Hereda la criticidad de su activo: casi siempre es la misma. */
                 Activo a = _precargado && _activos != null ? _activos.Find(x => x.act_id == ActivoFijo) : null;
                 if (a == null) a = new ActivoController().GetActivo(ActivoFijo);
@@ -400,13 +438,8 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR COMPONENTES");
 
-        // El activo no se cambia al editar, ni cuando la ficha se abrio desde
-        // el centro de un equipo: ahi ya esta decidido.
-        cboActivo.ReadOnly = !puedeEditar || Id > 0 || ActivoFijo > 0;
-        /* Un combo ReadOnly no arma sus items en el cliente y validaControl
-           revienta dentro de Page_ClientValidate: el Guardar moria sin aviso.
-           Al editar no hay nada que validar ahi (el servidor exige el valor). */
-        cvActivo.Enabled = Id == 0 && ActivoFijo == 0;
+        // Al editar las opciones son solo las de su activo (Partes): no cambia de activo.
+        txtParte.ReadOnly = !puedeEditar;
         litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Activo_Componente");
         txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
@@ -419,7 +452,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         cboEstado.ReadOnly = !puedeEditar;
         cboCriticidad.ReadOnly = !puedeEditar;
         cboPosicion.ReadOnly = !puedeEditar;
-        cboPadre.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
 
@@ -430,7 +462,9 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
     {
         try
         {
-            if (string.IsNullOrEmpty(cboActivo.SelectedValue)) throw new Exception("Debe elegir el activo.");
+            /* De que es parte: solo una de las opciones ofrecidas. */
+            Parte parte = Partes().Find(o => o.id == hdnParte.Value);
+            if (parte == null) throw new Exception("Elige el activo, subactivo o componente del que es parte.");
             /* "Que es" y "donde va" se eligen o se escriben: lo que no existe se
                crea como propio de la empresa (bloques 343 y 345). */
             int tipoId = ValorCombo(cboTipo);
@@ -452,7 +486,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
             x.aco_id = Id;
             x.aco_cliente = SitioBase.Session.ClienteId();
-            x.aco_activo = int.Parse(cboActivo.SelectedValue);
+            x.aco_activo = parte.activo;
             x.aco_componente_tipo = tipoId;
             x.aco_activo_componente_estado = int.Parse(cboEstado.SelectedValue);
             x.aco_criticidad_nivel = int.Parse(cboCriticidad.SelectedValue);
@@ -461,7 +495,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             x.aco_habilitado = rdbSi.Checked;
 
             if (posicionId > 0) x.aco_componente_posicion = posicionId;
-            if (!string.IsNullOrEmpty(cboPadre.SelectedValue)) x.aco_componente_padre = int.Parse(cboPadre.SelectedValue);
+            if (parte.componente > 0) x.aco_componente_padre = parte.componente;
             if (!string.IsNullOrEmpty(txtDescripcion.Text.Trim())) x.aco_descripcion = txtDescripcion.Text.Trim();
             if (!string.IsNullOrEmpty(txtMotivoEstado.Text.Trim())) x.aco_motivo_estado = txtMotivoEstado.Text.Trim();
 

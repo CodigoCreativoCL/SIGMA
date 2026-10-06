@@ -8,13 +8,17 @@
    (ActivoForm.ascx, en el modal y en la pestaña Ficha) y la del componente
    (ActivoComponente.aspx). Todo cuelga de .af para no tocar otras pantallas.
    ========================================================================= */
-.af {
+/* Las variables tambien en la confirmacion: vive fuera de .af (pnlListo) y
+   sin ellas no se veian el circulo, el borde de las cajas ni el boton Listo. */
+.af, .af-listo {
     --af-purple: #6732F4; --af-purple-dark: #4820C9; --af-purple-soft: #F2EFFF;
     --af-blue: #087BEA; --af-blue-dark: #0565C2; --af-blue-soft: #EAF4FF;
     --af-cyan: #16C6C9; --af-cyan-dark: #007F8A; --af-cyan-soft: #E8FBFB;
     --af-ink: #17223B; --af-muted: #68738A; --af-line: #E2E7F0; --af-input: #CFD6E3;
     --af-canvas: #F4F6FA; --af-success: #16855B; --af-success-soft: #E7F5EE;
     --af-warning: #B65C00; --af-warning-soft: #FFF3E3; --af-danger: #C7352B; --af-danger-soft: #FDECEA;
+}
+.af {
     display: grid; grid-template-columns: 228px minmax(0, 1fr); gap: 24px; align-items: start;
     color: var(--af-ink); font-size: 14px; line-height: 1.45;
 }
@@ -214,25 +218,28 @@
 @media (max-width: 640px) { .af-pie-donde { order: -1; flex-basis: 100%; text-align: left; } .af-pie-der { flex: 1 1 auto; } }
 
 /* ---- Confirmacion al crear ---- */
-.af-listo { display: grid; gap: 20px; max-width: 760px; margin: 8px auto; text-align: center; }
-.af-listo-ico { width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; background: var(--af-success-soft); color: var(--af-success); display: grid; place-items: center; font-size: 36px; }
+.af-listo { display: grid; gap: 20px; max-width: 760px; margin: 0 auto; padding: 28px 24px 24px; text-align: center; color: var(--af-ink); }
+/* El check arriba, centrado, en un circulo verde. */
+.af-listo-ico { width: 64px; height: 64px; margin: 0 auto; border-radius: 50%; background: var(--af-success); color: #fff; display: grid; place-items: center;
+    font-size: 34px; box-shadow: 0 0 0 8px var(--af-success-soft); }
 .af-listo h2 { margin: 0; font-size: 22px; font-weight: 800; color: var(--af-ink); }
 .af-listo > p { margin: -12px 0 0; font-size: 14px; color: var(--af-muted); }
 .af-listo > p b { color: var(--af-ink); }
-.af-listo-sig { margin: 0; font-size: 13px; font-weight: 800; color: #4A556D; text-align: left; }
-.af-listo-ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; text-align: left; }
+.af-listo-sig { margin: 4px 0 0; font-size: 13px; font-weight: 800; color: #4A556D; text-align: center; }
+.af-listo-ops { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 @media (max-width: 640px) { .af-listo-ops { grid-template-columns: minmax(0, 1fr); } }
-.af-listo-op { display: grid; gap: 6px; align-content: start; padding: 16px; border: 1.5px solid var(--af-line); border-radius: 14px; background: #fff;
-    color: var(--af-ink); font: inherit; text-align: left; cursor: pointer; text-decoration: none; }
+/* Cada opcion en su caja, con el icono centrado arriba. */
+.af-listo-op { display: grid; gap: 6px; align-content: start; justify-items: center; padding: 18px 16px; border: 1.5px solid var(--af-line); border-radius: 14px;
+    background: #fff; box-shadow: 0 1px 2px rgba(23, 34, 59, .04); color: var(--af-ink); font: inherit; text-align: center; cursor: pointer; text-decoration: none; }
 .af-listo-op:hover { border-color: var(--af-blue); background: #FAFCFF; }
 .af-listo-op:focus-visible { outline: 3px solid rgba(22,198,201,.27); }
-.af-listo-op > i { width: 38px; height: 38px; border-radius: 10px; display: grid; place-items: center; font-size: 21px; }
+.af-listo-op > i { width: 42px; height: 42px; margin-bottom: 4px; border-radius: 12px; display: grid; place-items: center; font-size: 22px; }
 .af-listo-op.es-comp > i { background: var(--af-cyan-soft); color: var(--af-cyan-dark); }
 .af-listo-op.es-rep > i { background: #FFF4E0; color: #8F4E00; }
 .af-listo-op.es-centro > i { background: var(--af-purple-soft); color: var(--af-purple); }
 .af-listo-op b { font-size: 14.5px; }
 .af-listo-op span { font-size: 12.5px; color: var(--af-muted); line-height: 1.4; }
-.af-listo-pie { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--af-line); }
+.af-listo-pie { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; padding-top: 16px; border-top: 1px solid var(--af-line); }
 .af-oculto { display: none !important; }
 
 /* ---- combo con texto libre: es el compartido (Css/LookAndFeel/sigma-combo.css) ---- */
