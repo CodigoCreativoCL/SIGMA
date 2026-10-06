@@ -513,6 +513,15 @@ public partial class Master_Default : System.Web.UI.MasterPage
         return dias[(int)f.Fecha.DayOfWeek] + " " + f.Fecha.Day;
     }
 
+    /// <summary>«CODIGO · Nombre» del repuesto o del activo de la alerta (lo que se nombra, siempre con su código).</summary>
+    private static string ItemTexto(Alerta a)
+    {
+        string cod = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : (a.ACTIVO_CODIGO ?? "");
+        string nom = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? (a.REPUESTO_NOMBRE ?? "") : (a.ACTIVO_NOMBRE ?? "");
+        if (cod == "") return nom;
+        return nom == "" || nom == cod ? cod : cod + " · " + nom;
+    }
+
     private string Etiqueta(Alerta a)
     {
         if (a.sev_codigo == "CRITICA") return "<span class=\"np-sev crit\">Crítica</span>";
@@ -546,7 +555,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
     private string HtmlFila(Alerta a, NpFila f)
     {
-        string contexto = !string.IsNullOrEmpty(a.ACTIVO_NOMBRE) ? a.ACTIVO_NOMBRE : (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : "");
+        string contexto = ItemTexto(a);
         if (!string.IsNullOrEmpty(f.Lugar)) contexto = string.IsNullOrEmpty(contexto) ? f.Lugar : contexto + " · " + f.Lugar;
 
         StringBuilder sb = new StringBuilder();
@@ -589,7 +598,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
         string detalle = f.Lugar;
         if (stock && peor.ale_valor_observado != null && peor.ale_valor_umbral != null)
             detalle += (detalle == "" ? "" : " · ") + (p.alt_codigo == "STOCK MINIMO" ? "el más bajo: " : "el más alto: ") +
-                       (peor.REPUESTO_CODIGO ?? peor.ale_titulo) + " (" + Num(peor.ale_valor_observado) + " de " + Num(peor.ale_valor_umbral) + ")";
+                       (ItemTexto(peor) != "" ? ItemTexto(peor) : peor.ale_titulo) + " (" + Num(peor.ale_valor_observado) + " de " + Num(peor.ale_valor_umbral) + ")";
 
         int sin = 0; foreach (Alerta a in f.A) if (!a.LEIDA) sin++;
 
@@ -608,14 +617,15 @@ public partial class Master_Default : System.Web.UI.MasterPage
         sb.Append("<div class=\"np-grp-b\" hidden>");
         foreach (Alerta a in f.A)
         {
-            string cod = a.REPUESTO_CODIGO ?? a.ACTIVO_CODIGO ?? a.ale_titulo;
+            string cod = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : (a.ACTIVO_CODIGO ?? a.ale_titulo);
+            string nombre = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? (a.REPUESTO_NOMBRE ?? "") : (a.ACTIVO_NOMBRE ?? "");
             string barra = "";
             if (stock && a.ale_valor_observado != null && a.ale_valor_umbral != null && a.ale_valor_umbral > 0)
             {
                 double pc = Math.Min(100, (double)a.ale_valor_observado.Value / (double)a.ale_valor_umbral.Value * 100.0);
                 barra = "<span class=\"np-bar\"><i style=\"width:" + pc.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "%\"></i></span><em>" + Num(a.ale_valor_observado) + " / " + Num(a.ale_valor_umbral) + "</em>";
             }
-            sb.Append("<div class=\"np-sub" + (a.LEIDA ? " is-leida" : "") + "\" role=\"button\" tabindex=\"0\" data-np-abre data-ids=\"" + a.ale_id + "\"" + AbrirAttrs(a) + "><code>" + Server.HtmlEncode(cod) + "</code>" + barra + (a.LEIDA ? "" : "<i class=\"np-dot\"></i>") + "</div>");
+            sb.Append("<div class=\"np-sub" + (a.LEIDA ? " is-leida" : "") + "\" role=\"button\" tabindex=\"0\" data-np-abre data-ids=\"" + a.ale_id + "\"" + AbrirAttrs(a) + "><span class=\"np-nm\"><b>" + Server.HtmlEncode(nombre == "" ? cod : nombre) + "</b>" + (nombre == "" ? "" : "<code>" + Server.HtmlEncode(cod) + "</code>") + "</span>" + barra + (a.LEIDA ? "" : "<i class=\"np-dot\"></i>") + "</div>");
         }
         sb.Append("<div class=\"np-grp-f\">");
         if (stock)

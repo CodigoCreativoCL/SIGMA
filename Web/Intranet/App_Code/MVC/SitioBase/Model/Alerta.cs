@@ -84,6 +84,7 @@ namespace SitioBase.Model
         public string ACTIVO_CODIGO { get; set; }
         public string ACTIVO_NOMBRE { get; set; }
         public string REPUESTO_CODIGO { get; set; }
+        public string REPUESTO_NOMBRE { get; set; }
         public string BODEGA_NOMBRE { get; set; }
 
         /// <summary>

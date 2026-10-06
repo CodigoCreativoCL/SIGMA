@@ -191,6 +191,7 @@ namespace SitioBase.Controller
                         a.ACTIVO_CODIGO = Texto(dr, "ACTIVO_CODIGO");
                         a.ACTIVO_NOMBRE = Texto(dr, "ACTIVO_NOMBRE");
                         a.REPUESTO_CODIGO = Texto(dr, "REPUESTO_CODIGO");
+                        a.REPUESTO_NOMBRE = Texto(dr, "REPUESTO_NOMBRE");
                         a.BODEGA_NOMBRE = Texto(dr, "BODEGA_NOMBRE");
                         a.ale_ocurrencias = Columna(dr, "ale_ocurrencias");
                         a.ale_prediccion = Entero(dr, "ale_prediccion");

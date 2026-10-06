@@ -11,6 +11,7 @@
     <title></title>
 
     <!-- Bootstrap Css -->
+    <link href="../Css/LookAndFeel/sigma-scroll.css?vrs=1" rel="stylesheet" />
     <link href="../Css/Adminto/assets/css/bootstrap.min.css" rel="stylesheet" type="text/css" />
 
     <!-- Icons Css -->

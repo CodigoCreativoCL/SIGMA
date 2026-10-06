@@ -16,6 +16,7 @@
             evaluan de forma confiable y el href sale literal.
          Con runat="server" en el propio link, HtmlLink resuelve el ~/
          del lado del servidor y funciona a cualquier profundidad. --%>
+    <link href="../Css/LookAndFeel/sigma-scroll.css?vrs=1" rel="stylesheet" />
     <link id="favicon" rel="icon" type="image/svg+xml" href="~/Imagen/sigma-favicon.svg" runat="server" />
 
     <!-- Bootstrap Css -->
@@ -104,7 +105,7 @@
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-notificaciones-np.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones-np.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -375,6 +376,7 @@
                                     <asp:Literal ID="litPanelNuevas" runat="server" />
                                 </div>
                                 <span class="np-cab-acc">
+                                    <button type="button" class="np-ib np-ai-btn" data-np-ai title="SIGMA AI: ver lo que detectó" aria-label="Ver notificaciones de SIGMA AI"><img src='<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-symbol-gradient.svg") %>' alt="" aria-hidden="true" /></button>
                                     <button type="button" ID="lnkLeerTodo" runat="server" class="np-ib np-leer-todo"
                                         data-sg-notif-leer-todo title="Marcar todo como leído" aria-label="Marcar todo como leído"><i class="mdi mdi-check-all" aria-hidden="true"></i></button>
                                     <button type="button" class="np-ib" data-np-prefs title="Preferencias" aria-label="Preferencias de notificaciones"><i class="mdi mdi-cog-outline" aria-hidden="true"></i></button>
@@ -602,7 +604,7 @@
                  de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=5"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=5"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,

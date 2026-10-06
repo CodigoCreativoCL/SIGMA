@@ -38,6 +38,8 @@
     function oculta(fila) {
         var tipo = fila.getAttribute('data-tipo') || '';
         var pref = leerLS(PREF_KEY), mute = leerLS(MUTE_KEY);
+        if (pref._leidas && fila.getAttribute('data-visto') === '1') return true;
+        if (pref._req && fila.getAttribute('data-req') !== '1') return true;
         return pref[tipo] === 'silencio' || (mute[tipo] && mute[tipo] > Date.now());
     }
 
@@ -114,7 +116,7 @@
         var aviso = panel.querySelector('[data-np-sinfiltro]');
         if (cuerpo && filas.length && !algunaVisible) {
             if (!aviso) { aviso = document.createElement('div'); aviso.className = 'np-vacio-f'; aviso.setAttribute('data-np-sinfiltro', '1'); cuerpo.appendChild(aviso); }
-            aviso.innerHTML = filtroVisto === '0' ? '<b>No queda nada sin leer</b>Estás al día.' : '<b>Nada con este filtro</b>Prueba con «Todas».';
+            aviso.innerHTML = filtroVisto === '0' ? '<b>No queda nada sin leer</b>Estás al día.' : filtroVisto === 'ai' ? '<b>Sin predicciones de SIGMA AI</b>Cuando el modelo detecte algo, aparecerá aquí.' : '<b>Nada con este filtro</b>Prueba con «Todas».';
             aviso.hidden = false;
         }
         else if (aviso) aviso.hidden = true;
@@ -165,17 +167,46 @@
         return null;
     }
 
-    function prefsHtml(panel) {
-        var tipos = {}, pref = leerLS(PREF_KEY);
-        filasDe(panel).forEach(function (f) { tipos[f.getAttribute('data-tipo')] = f.getAttribute('data-tn') || f.getAttribute('data-tipo'); });
-        var ks = Object.keys(tipos);
-        if (!ks.length) return '<h5>Preferencias</h5><p>Cuando lleguen avisos podrás elegir cómo recibir cada tipo.</p>';
-        return '<h5>Cómo quieres recibir cada tipo</h5><p>Se guarda en este navegador. «Por correo» llegará más adelante.</p>' + ks.map(function (k) {
-            return '<label class="np-pref"><span>' + tipos[k].replace(/[<>&]/g, '') + '</span><select data-np-pref="' + k.replace(/"/g, '') + '">' +
-                '<option value="panel"' + (pref[k] !== 'silencio' ? ' selected' : '') + '>En el panel</option>' +
-                '<option value="correo" disabled>Por correo (próximamente)</option>' +
-                '<option value="silencio"' + (pref[k] === 'silencio' ? ' selected' : '') + '>En silencio</option></select></label>';
-        }).join('');
+    var CAT_NOM = { ai: 'SIGMA AI', stock: 'Stock', ordenes: 'Órdenes', soporte: 'Soporte', medidores: 'Medidores', permisos: 'Permisos', otros: 'Otros' };
+    var CAT_ORD = ['ai', 'stock', 'ordenes', 'soporte', 'medidores', 'permisos', 'otros'];
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    /* El drawer de preferencias: se arma con los tipos de notificacion que hay ahora en el panel. */
+    function dibujarDrawer(panel) {
+        var dr = panel.querySelector('[data-np-drawer]');
+        if (!dr) { dr = document.createElement('div'); dr.className = 'np-drawer'; dr.setAttribute('data-np-drawer', '1'); dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-label', 'Preferencias de notificaciones'); panel.appendChild(dr); }
+        var pref = leerLS(PREF_KEY), mute = leerLS(MUTE_KEY), tipos = {};
+        filasDe(panel).forEach(function (f) {
+            var k = f.getAttribute('data-tipo');
+            var t = tipos[k] || (tipos[k] = { nombre: f.getAttribute('data-tn') || k, cat: f.getAttribute('data-cat') || 'otros', filas: 0, sin: 0 });
+            t.filas++; if (f.getAttribute('data-visto') === '0') t.sin++;
+        });
+        var porCat = {};
+        Object.keys(tipos).forEach(function (k) { (porCat[tipos[k].cat] = porCat[tipos[k].cat] || []).push(k); });
+
+        var h = '<div class="np-dr-h"><button type="button" class="np-ib" data-np-drawer-cerrar aria-label="Volver"><i class="mdi mdi-arrow-left"></i></button><h4>Preferencias</h4></div><div class="np-dr-b">';
+        h += '<h5>General</h5>'
+          + '<div class="np-sw"><span>Mostrar solo lo que requiere acción<small>Críticas y altas sin resolver.</small></span><button type="button" data-np-gen="_req" aria-pressed="' + (!!pref._req) + '" aria-label="Mostrar solo lo que requiere acción"></button></div>'
+          + '<div class="np-sw"><span>Ocultar las ya leídas<small>El panel queda solo con lo pendiente.</small></span><button type="button" data-np-gen="_leidas" aria-pressed="' + (!!pref._leidas) + '" aria-label="Ocultar las ya leídas"></button></div>';
+        var hay = false;
+        CAT_ORD.forEach(function (c) {
+            if (!porCat[c]) return; hay = true;
+            h += '<h5>' + esc(CAT_NOM[c]) + '</h5>';
+            porCat[c].forEach(function (k) {
+                var t = tipos[k], silen = pref[k] === 'silencio', m = mute[k] && mute[k] > Date.now();
+                var hasta = m ? new Date(mute[k]).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
+                h += '<div class="np-tp"><div class="np-tp-t">' + esc(t.nombre) + '<span>' + t.filas + (t.filas === 1 ? ' aviso' : ' avisos') + (t.sin ? ' · ' + t.sin + ' sin leer' : '') + '</span></div>'
+                  + '<div class="np-seg" role="group" aria-label="Cómo recibir ' + esc(t.nombre) + '">'
+                  + '<button type="button" data-np-canal="' + esc(k) + '|panel" aria-pressed="' + (!silen) + '">En el panel</button>'
+                  + '<button type="button" disabled title="Llegará más adelante">Por correo</button>'
+                  + '<button type="button" data-np-canal="' + esc(k) + '|silencio" aria-pressed="' + silen + '">En silencio</button></div>'
+                  + '<div class="np-tp-m"><span>' + (m ? 'Silenciada hasta las ' + hasta : (silen ? 'No se muestran en el panel' : 'Se muestran en el panel')) + '</span>'
+                  + '<button type="button" data-np-mute="' + esc(k) + '">' + (m ? 'Reactivar' : 'Silenciar 24 h') + '</button></div></div>';
+            });
+        });
+        if (!hay) h += '<p style="margin-top:16px">Todavía no tienes notificaciones: cuando lleguen, aquí eliges cómo recibir cada tipo.</p>';
+        h += '</div><div class="np-dr-f"><button type="button" class="np-btn out" data-np-reset>Restablecer</button></div>';
+        dr.innerHTML = h; dr.hidden = false;
     }
 
     function abrirFila(el) {
@@ -350,6 +381,33 @@
                 return;
             }
 
+            if ((c = t.closest('[data-np-drawer-cerrar]'))) { event.preventDefault(); event.stopPropagation(); var d0 = panel.querySelector('[data-np-drawer]'); if (d0) d0.hidden = true; return; }
+            if ((c = t.closest('[data-np-gen]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var pg = leerLS(PREF_KEY), kg = c.getAttribute('data-np-gen'); pg[kg] = !pg[kg]; guardarLS(PREF_KEY, pg); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-canal]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var pc = c.getAttribute('data-np-canal').split('|'), pr2 = leerLS(PREF_KEY);
+                if (pc[1] === 'silencio') pr2[pc[0]] = 'silencio'; else delete pr2[pc[0]];
+                guardarLS(PREF_KEY, pr2); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-mute]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var tp = c.getAttribute('data-np-mute'), mu = leerLS(MUTE_KEY);
+                if (mu[tp] && mu[tp] > Date.now()) delete mu[tp]; else mu[tp] = Date.now() + 24 * 3600 * 1000;
+                guardarLS(MUTE_KEY, mu); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-reset]'))) {
+                event.preventDefault(); event.stopPropagation();
+                guardarLS(PREF_KEY, {}); guardarLS(MUTE_KEY, {}); aplicarFiltro(panel); dibujarDrawer(panel); toast('Preferencias restablecidas'); return;
+            }
+            if ((c = t.closest('[data-np-ai]'))) {
+                event.preventDefault(); event.stopPropagation();
+                filtroVisto = filtroVisto === 'ai' ? '' : 'ai'; aplicarFiltro(panel);
+                return;
+            }
+
             if ((c = t.closest('[data-np-filtro]'))) {
                 event.preventDefault(); event.stopPropagation();
                 filtroVisto = c.getAttribute('data-np-filtro') || '';
@@ -359,9 +417,7 @@
 
             if ((c = t.closest('[data-np-prefs]'))) {
                 event.preventDefault(); event.stopPropagation();
-                var pp = panel.querySelector('[data-np-prefs-panel]');
-                if (pp.hidden) pp.innerHTML = prefsHtml(panel);
-                pp.hidden = !pp.hidden;
+                dibujarDrawer(panel);
                 return;
             }
 
@@ -436,6 +492,8 @@
         panel.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' || event.keyCode === 27) {
                 event.preventDefault();
+                var dd = panel.querySelector('[data-np-drawer]');
+                if (dd && !dd.hidden) { dd.hidden = true; return; }
                 closePanel(p);
                 return;
             }
