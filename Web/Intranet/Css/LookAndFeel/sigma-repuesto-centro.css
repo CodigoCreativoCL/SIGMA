@@ -318,3 +318,18 @@ body:has(#pnlLista) .content-page .container-fluid { padding-top: 12px !importan
 .rm-lista.es-fija { max-height: none; display: flex; flex-direction: column; gap: 4px }
 .rm-niv.is-over { background: var(--sigma-purple-soft) !important; border-color: var(--sigma-purple) !important }
 .rm-drawer h4 span { color: var(--sigma-purple) }
+
+/* ---- racks y niveles dinamicos ---- */
+.rm-niv-acc { display: flex; align-items: center; gap: 6px; margin-top: 6px }
+.rm-niv-acc button { height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: #fff; font-size: 11.5px; font-weight: 800; color: var(--sigma-purple); cursor: pointer; display: inline-flex; align-items: center; gap: 4px }
+.rm-niv-acc button:hover:not(:disabled) { background: var(--sigma-purple-soft); border-color: var(--sigma-purple) }
+.rm-niv-acc button:disabled { opacity: .4; cursor: not-allowed; color: var(--muted) }
+.rm-niv-acc span { margin-left: auto; font-size: 11px; color: var(--muted); font-weight: 700 }
+.rm-elev .rm-niv-nuevo { display: none; align-items: center; justify-content: center; gap: 6px; min-height: 30px; border: 2px dashed var(--sigma-purple); background: var(--sigma-purple-soft) !important; color: var(--sigma-purple); font-size: 11px; font-weight: 800; box-shadow: none }
+.es-arrastrando .rm-elev .rm-niv-nuevo { display: flex }
+.rm-form-ancho { grid-column: 1 / -1 }
+.rm-prev { grid-column: 1 / -1; margin: 0; padding: 8px 12px; border-radius: 10px; background: #fff; font-size: 12.5px; color: var(--muted) }
+.rm-prev b { color: var(--sigma-purple-dark) }
+
+.sgap .rcx-inline-sep { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px dashed #C9B8FF; font-size: 12.5px; color: var(--ink) }
+.sgap .rcx-inline-sep small { color: var(--muted); font-size: 11.5px }

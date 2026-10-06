@@ -104,6 +104,7 @@
 
     <link href="../Css/LookAndFeel/sigma-indicators.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-notificaciones-np.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=8" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
@@ -361,71 +362,35 @@
                             <asp:Literal ID="litBadgeAlertas" runat="server" />
                         </a>
 
-                        <div class="dropdown-menu dropdown-menu-right sg-notif-panel" data-sg-notif-panel role="region" aria-label="Centro de notificaciones">
+                        <div class="dropdown-menu dropdown-menu-right sg-notif-panel" data-sg-notif-panel data-np="1" data-np-ws="<%=ResolveUrl("~/WebService/WsAlertas.asmx") %>" role="region" aria-label="Centro de notificaciones">
 
                             <%-- La lectura ocurre por WsAlertas y el panel se
                                  reconcilia con un GET AJAX. No hay LinkButton ni
                                  UpdatePanel: abrir la campana nunca postea el
                                  formulario de la pantalla que queda detrás. --%>
 
-                            <div class="sg-notif-cabecera">
+                            <div class="sg-notif-cabecera np-cab">
                                 <div class="sg-notif-head">
-                                    <span class="sg-notif-head-icono" aria-hidden="true"><i class="mdi mdi-bell-outline"></i></span>
                                     <span class="titulo">Notificaciones</span>
                                     <asp:Literal ID="litPanelNuevas" runat="server" />
                                 </div>
-                                <button type="button" class="sg-notif-cerrar" data-sg-notif-dismiss
-                                        aria-label="Cerrar centro de notificaciones">
-                                    <i class="mdi mdi-close" aria-hidden="true"></i>
-                                </button>
+                                <span class="np-cab-acc">
+                                    <button type="button" ID="lnkLeerTodo" runat="server" class="np-ib np-leer-todo"
+                                        data-sg-notif-leer-todo title="Marcar todo como leído" aria-label="Marcar todo como leído"><i class="mdi mdi-check-all" aria-hidden="true"></i></button>
+                                    <button type="button" class="np-ib" data-np-prefs title="Preferencias" aria-label="Preferencias de notificaciones"><i class="mdi mdi-cog-outline" aria-hidden="true"></i></button>
+                                    <button type="button" class="np-ib sg-notif-cerrar" data-sg-notif-dismiss
+                                            aria-label="Cerrar centro de notificaciones"><i class="mdi mdi-close" aria-hidden="true"></i></button>
+                                </span>
                                 <span class="sg-notif-resumen"><asp:Literal ID="litPanelResumen" runat="server" /></span>
                             </div>
 
-                            <%-- FILTRAR SIN SALIR DEL PANEL
+                            <div class="np-chips" role="group" aria-label="Filtrar notificaciones"><asp:Literal ID="litPanelChips" runat="server" /></div>
 
-                                 La pregunta con la que se abre la campana es
-                                 "¿qué hay que no haya mirado?", y hasta ahora
-                                 había que deducirlo del fondo más tenue de
-                                 cada fila y del punto de la derecha.
+                            <div class="np-prefs" data-np-prefs-panel hidden></div>
 
-                                 No viaja al servidor: si cada fila está vista
-                                 o no ya viaja en la fila, así que filtra el
-                                 navegador y responde en el acto. --%>
-                            <div class="sg-notif-filtros" role="group"
-                                 aria-label="Filtrar notificaciones">
-                                <button type="button" class="sg-notif-filtro is-activo"
-                                        data-sg-notif-filtro="" aria-pressed="true">
-                                    Todas <span class="n"></span></button>
-                                <button type="button" class="sg-notif-filtro"
-                                        data-sg-notif-filtro="0" aria-pressed="false">
-                                    Sin leer <span class="n"></span></button>
-                                <button type="button" class="sg-notif-filtro"
-                                        data-sg-notif-filtro="ai" aria-pressed="false">
-                                    SIGMA AI <span class="n"></span></button>
-                                <button type="button" ID="lnkLeerTodo" runat="server" class="sg-notif-leer"
-                                    data-sg-notif-leer-todo>Marcar leídas</button>
-                            </div>
+                            <div class="sg-notif-cuerpo np-cuerpo">
+                                <asp:Literal ID="litPanelCuerpo" runat="server" />
 
-                            <div class="sg-notif-cuerpo">
-                                <asp:Repeater ID="rptAlertas" runat="server"
-                                    OnItemDataBound="rptAlertas_ItemDataBound">
-                                    <ItemTemplate>
-                                        <asp:Literal ID="litSeccion" runat="server" />
-                                        <button type="button" ID="lnkItem" runat="server">
-                                            <asp:Literal ID="litItem" runat="server" />
-                                        </button>
-                                    </ItemTemplate>
-                                </asp:Repeater>
-
-                                <!-- ============================================
-                                     ESPACIO PARA EL SVG DE SIGMA
-
-                                     Cuando no hay nada que avisar. Reemplace el
-                                     contenido de .sg-notif-ilustracion por el
-                                     <svg> de marca: el contenedor ya centra y
-                                     limita a 140px de alto, asi que el svg solo
-                                     necesita su viewBox y width/height al 100%.
-                                     ============================================ -->
                                 <asp:Panel ID="pnlSinAlertas" runat="server" Visible="false" CssClass="sg-notif-vacio">
                                     <div class="sg-notif-ilustracion">
                                         <img src='<%=ResolveUrl("~/Imagen/sigma-ai/sigma-ai-status-realtime.svg") %>'
@@ -440,6 +405,7 @@
                             </div>
 
                             <div class="sg-notif-pie">
+                                <asp:Literal ID="litPanelPie" runat="server" />
                                 <asp:HyperLink ID="lnkVerTodas" runat="server">
                                     Ver todas las notificaciones <i class="mdi mdi-arrow-right"></i>
                                 </asp:HyperLink>
@@ -636,7 +602,7 @@
                  de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=4"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=5"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=5"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,

@@ -189,8 +189,8 @@
        el contenedor y la busqueda. */
     function pintarMapa(D) {
         var cont = $('#rcMapa'); if (!cont) return;
-        if (!$('#rcMBody', cont)) cont.innerHTML = barra() + '<div id="rcMBody"></div>';
-        if (window.RcMapa) RcMapa.pintar($('#rcMBody', cont), { q: ST.q, abrirFicha: abrir });
+        if (!$('#rcMBody', cont)) cont.innerHTML = '<div id="rcMBody"></div>';
+        if (window.RcMapa) RcMapa.pintar($('#rcMBody', cont), { abrirFicha: abrir, planta: D.planta || 0, urlTwin: D.urlTwin || '#' });
     }
 
     /* ---------------- vista ---------------- */
@@ -327,15 +327,32 @@
             },
             form: function (x, D) {
                 var pl = (D.plantas || []).map(function (p) { return '<option value="' + p.id + '"' + (p.id === (x.plantaId || (D.plantas[0] || {}).id) ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
+                var met = [['', 'Según la configuración'], ['FEFO', 'FEFO · vence primero'], ['FIFO', 'FIFO · entró primero'], ['LIFO', 'LIFO · entró último']]
+                    .map(function (o) { return '<option value="' + o[0] + '">' + o[1] + '</option>'; }).join('');
                 return campo('nombre', 'Nombre *', x.nombre, { ph: 'Ej.: Bodega central' })
                     + '<label>Planta *<select data-f="planta">' + pl + '</select></label>'
-                    + campo('descripcion', 'Descripción', x.descripcion, { ph: 'Para qué se usa' });
+                    + campo('descripcion', 'Descripción', x.descripcion, { ph: 'Para qué se usa' })
+                    + '<label>Método de salida<select data-f="metodo">' + met + '</select></label>'
+                    + (x.id ? '' : '<div class="rcx-inline-sep"><b>Ubicaciones iniciales</b><small>Opcional · crea los primeros racks junto con la bodega. El código sale solo (PREFIJO-PASILLO-R01) y los niveles se pueden cambiar después en el mapa.</small></div>'
+                        + campo('pasillo', 'Pasillo (1 a 3 letras)', '', { ph: 'Ej.: A', max: 3 })
+                        + campo('cantidad', 'Cuántos racks', 1, { tipo: 'number', max: 2, ph: '1' })
+                        + campo('niveles', 'Niveles por rack', 4, { tipo: 'number', max: 2, ph: '4' })
+                        + campo('ubinombre', 'Nombre del rack (si es uno solo)', '', { ph: 'Vacío: «Pasillo A · Rack 01»' }));
             },
             guardar: async function (x, v) {
                 if (!v.nombre.trim()) throw new Error('Escribe el nombre de la bodega.');
+                var pas = (v.pasillo || '').trim().toUpperCase();
+                if (!x.id && pas && !/^[A-Z]{1,3}$/.test(pas)) throw new Error('El pasillo son de 1 a 3 letras (A, B, AB).');
                 var d = { id: x.id || 0, planta: parseInt(v.planta, 10), nombre: v.nombre.trim(), descripcion: v.descripcion };
+                if (v.metodo) d.metodo = v.metodo;
                 if (x.id) d.codigo = x.codigo;
-                return wsPost('WsBodegaMapa', 'GuardarBodega', { datos: JSON.stringify(d) });
+                var r = await wsPost('WsBodegaMapa', 'GuardarBodega', { datos: JSON.stringify(d) });
+                if (!x.id && pas && r.id > 0) {
+                    try {
+                        await wsPost('WsBodegaMapa', 'CrearRacks', { datos: JSON.stringify({ bodega: r.id, pasillo: pas, cantidad: +v.cantidad || 1, niveles: +v.niveles || 4, nombre: (v.ubinombre || '').trim() }) });
+                    } catch (e) { throw new Error('La bodega se creó, pero no sus ubicaciones: ' + e.message); }
+                }
+                return r;
             }
         }
     };

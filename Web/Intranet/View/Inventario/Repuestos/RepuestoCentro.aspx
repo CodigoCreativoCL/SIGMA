@@ -15,6 +15,7 @@
     <%-- Rediseño 06-10-2026: el listado y la ficha usan el diseño del Centro de activos. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activos.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-centro.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-mapa.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-paginador.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-mapa.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-centro.js") %>'></script>
@@ -498,6 +499,11 @@
                     <p>Compatibilidades, existencias, movimientos y vida útil de cada repuesto.</p>
                   </div>
                   <div class="hero-actions">
+                    <%-- La planta que se ve: un combo solo si la persona tiene mas de una (como en el Centro de activos). --%>
+                    <asp:Panel ID="pnlPlantaHero" runat="server" CssClass="sa-planta">
+                      <label for="selPlantaHero">Planta</label>
+                      <asp:DropDownList ID="selPlantaHero" runat="server" ClientIDMode="Static" AutoPostBack="true" OnSelectedIndexChanged="Planta_Changed" />
+                    </asp:Panel>
                     <div class="menu-wrap">
                       <button type="button" class="btn btn--hero" id="rcBtnIO" aria-haspopup="menu" aria-expanded="false" aria-controls="rcMenuIO"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V5M3 9l4-4 4 4M17 7v12M13 15l4 4 4-4"/></svg>Importar o exportar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
                       <div class="menu" id="rcMenuIO" role="menu" hidden>
@@ -540,7 +546,6 @@
                   <%-- Los filtros que se resuelven por los saldos: un repuesto
                        "esta" en una bodega cuando tiene saldo ahi. --%>
                   <div class="rcx-filtros" id="rcFiltros" hidden>
-                    <label><span>Planta</span><rad:RadComboBox2 ID="ddlPlanta" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Planta_Changed" /></label>
                     <label><span>Bodega</span><rad:RadComboBox2 ID="ddlBodega" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
                     <label><span>Tipo de repuesto</span><rad:RadComboBox2 ID="ddlTipo" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
                     <label><span>Existencia</span><rad:RadComboBox2 ID="ddlEstado" runat="server" Width="100%" AutoPostBack="true" OnSelectedIndexChanged="Filtro_Changed">

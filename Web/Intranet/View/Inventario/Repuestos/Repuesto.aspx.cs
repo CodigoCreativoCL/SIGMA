@@ -56,33 +56,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                     ctrl.DataBind();
                     break;
 
-                case "cboTipo":
-
-                    /* Solo los habilitados: un tipo apagado no se puede
-                       elegir, aunque los repuestos que ya lo tienen lo
-                       conserven. */
-                    RepuestoTipoController ctrlTipo = new RepuestoTipoController();
-
-                    ctrl.Items.Add(new RadComboBoxItem("Sin clasificar", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = ctrlTipo.GetRepuestoTipos(
-                        new RepuestoTipo { filtro_habilitado = true });
-                    ctrl.DataValueField = "rti_id";
-                    ctrl.DataTextField = "rti_nombre";
-                    ctrl.DataBind();
-                    break;
-
-                case "cboBodega":
-
-                    BodegaController ctrlBodega = new BodegaController();
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = ctrlBodega.GetBodegas(new Bodega { filtro_habilitado = true });
-                    ctrl.DataValueField = "bod_id";
-                    ctrl.DataTextField = "bod_nombre";
-                    ctrl.DataBind();
-                    break;
             }
         }
     }
@@ -97,7 +70,10 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         Bloqueo();
 
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardar);
-        ScriptManager.GetCurrent(Page).RegisterPostBackControl(btnGuardarUmbral);
+
+        /* Lo que necesita el constructor del navegador: si es nuevo y que puede hacer quien lo abre. */
+        litRpDatos.Text = "<div id=\"rpDatos\" hidden data-nuevo=\"" + (Id == 0 ? "1" : "0") + "\" data-stock=\"" + (Token.Puede("GESTIONAR STOCK") ? "1" : "0")
+                        + "\" data-ingreso=\"" + (Token.Puede("REGISTRAR INGRESO REPUESTO") ? "1" : "0") + "\"></div>";
 
         udPanel.Update();
     }
@@ -108,28 +84,9 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         return catalogoFab ?? (catalogoFab = new FabricanteController().Catalogo());
     }
 
-    /// <summary>Los modelos del fabricante, para la cascada al abrir la ficha.</summary>
-    private void CargarModelos(string fabricante)
-    {
-        cboModelo.Items.Clear();
-        string k = (fabricante ?? "").Trim();
-        FabricanteController.Fabricante f = CatalogoFab().Find(x => string.Compare(x.nombre, k, CultureInfo.InvariantCulture,
-            CompareOptions.IgnoreCase | CompareOptions.IgnoreNonSpace) == 0);
-        if (f != null) foreach (string m in f.modelos) cboModelo.Items.Add(new RadComboBoxItem(m, m));
-    }
-
     protected void CargarDatos()
     {
-        /* El catalogo va en cada render (tambien en los postbacks parciales):
-           el UpdatePanel reemplaza el bloque y el combo lo vuelve a leer. */
-        litFabCatalogo.Text = "<script type=\"application/json\" id=\"sgFabCatalogo\">" +
-                new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(CatalogoFab()).Replace("</", "<\\/") +
-                "</script>";
-
         if (IsPostBack) return;
-
-        foreach (FabricanteController.Fabricante f in CatalogoFab())
-            cboFabricante.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
 
         if (Id > 0)
         {
@@ -141,9 +98,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             txtNombre.Text = entidad.rep_nombre;
             /* Combos SIGMA con texto libre: la lista sale del catalogo (bloque
                333) y el valor guardado se muestra aunque no este en ella. */
-            cboFabricante.Text = entidad.rep_fabricante;
-            CargarModelos(entidad.rep_fabricante);
-            cboModelo.Text = entidad.rep_modelo;
+            txtFabricante.Text = entidad.rep_fabricante;
+            txtModelo.Text = entidad.rep_modelo;
             txtDescripcion.Text = entidad.rep_descripcion;
 
             if (entidad.rep_costo_referencia != null)
@@ -172,8 +128,10 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                 txtPeso.Text = Medida(alm["PESO"]);
             }
 
-                if (entidad.rep_repuesto_tipo > 0)
-                    cboTipo.SelectedValue = entidad.rep_repuesto_tipo.ToString();
+            if (entidad.rep_repuesto_tipo > 0) txtTipo.Text = entidad.repuesto_tipo_nombre;
+
+            // sus vinculos directos, para editarlos en el paso Compatibilidades
+            hdnCompat.Value = CompatInicial(Id);
 
             rdbLoteSi.Checked = entidad.rep_controla_lote;
             rdbLoteNo.Checked = !entidad.rep_controla_lote;
@@ -195,10 +153,8 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
     protected void CargarUmbrales()
     {
-        /* Sin repuesto guardado no hay a qué colgarle un umbral: el paso
-           Stock muestra el aviso «Primero guarda el repuesto». */
+        /* Al crear no hay umbrales que mostrar: se arman en el constructor del paso Stock. */
         pnlUmbrales.Visible = (Id > 0);
-        pnlStockNuevo.Visible = (Id == 0);
 
         if (Id == 0) return;
 
@@ -309,7 +265,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
     protected void CargarGaleria()
     {
         pnlGaleria.Visible = Id > 0;
-        pnlFotosNuevo.Visible = Id <= 0;
         /* Al crear, Siguiente guía hasta el último paso (sigma-asistente.js). */
         pnlAf.CssClass = Id > 0 ? "af" : "af af-es-nuevo";
 
@@ -317,8 +272,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
         bool puedeEditar = Token.Puede("CREAR EDITAR REPUESTOS");
 
-        fupFoto.Visible = puedeEditar;
-        lnkAgregarFoto.Visible = puedeEditar;
+        fupFotos.Visible = puedeEditar;
 
         List<RepuestoFoto> fotos = new RepuestoFotoController().GetFotos(Id);
 
@@ -419,35 +373,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         }
     }
 
-    protected void lnkAgregarFoto_Click(object sender, EventArgs e)
-    {
-        try
-        {
-            if (!Token.Puede("CREAR EDITAR REPUESTOS"))
-            {
-                Tools.tools.ClientAlert("No tiene permisos para agregar fotos.", "alerta");
-                return;
-            }
-
-            if (!fupFoto.HasFile)
-            {
-                Tools.tools.ClientAlert("Elija una imagen.", "alerta");
-                return;
-            }
-
-            RepuestoFotoController controller = new RepuestoFotoController();
-
-            Respuesta respuesta = controller.Agregar(Id, fupFoto.FileBytes,
-                fupFoto.FileName, fupFoto.PostedFile.ContentType, null);
-
-            Tools.tools.ClientAlert(respuesta.detalle, respuesta.error ? "alerta" : "ok");
-        }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message, "error");
-        }
-    }
-
     protected void Bloqueo()
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR REPUESTOS");
@@ -459,12 +384,12 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             litPrefijo.Text = SitioBase.CodigoModulo.Etiqueta("Repuesto");
             txtCodigo.ReadOnly = Id > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
-        cboFabricante.ReadOnly = !puedeEditar;
-        cboModelo.ReadOnly = !puedeEditar;
+        txtFabricante.ReadOnly = !puedeEditar;
+        txtModelo.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtCosto.ReadOnly = !puedeEditar;
         cboUnidad.ReadOnly = !puedeEditar;
-        cboTipo.ReadOnly = !puedeEditar;
+        txtTipo.ReadOnly = !puedeEditar;
         txtVidaHora.ReadOnly = !puedeEditar;
         txtVidaDia.ReadOnly = !puedeEditar;
         txtVidaCiclo.ReadOnly = !puedeEditar;
@@ -484,15 +409,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         rdbNo.Enabled = puedeEditar;
 
         btnGuardar.Visible = puedeEditar;
-
-        /* Los umbrales son otro permiso: definir cuando avisar por una pieza
-           critica es decision de quien maneja el inventario, no de quien
-           mantiene el catalogo. */
-        btnGuardarUmbral.Visible = puedeStock;
-        cboBodega.ReadOnly = !puedeStock;
-        txtMinimo.ReadOnly = !puedeStock;
-        txtMaximo.ReadOnly = !puedeStock;
-        txtReposicion.ReadOnly = !puedeStock;
     }
 
     /// <summary>
@@ -518,6 +434,14 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         return valor;
     }
 
+    /* ======================================================================
+       GUARDAR
+
+       Un solo «Guardar» crea o actualiza el repuesto y, con el, lo que se armo
+       en los pasos: las fotos (paso 1), las compatibilidades (paso 5) y el stock
+       -existencia inicial y umbrales- (paso 6). Si algo de eso falla, el repuesto
+       ya quedo guardado: se avisa que, y la ficha sigue abierta para corregirlo.
+       ====================================================================== */
     protected void btnGuardar_Click(object sender, EventArgs e)
     {
         try
@@ -530,34 +454,20 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
             entidad.rep_id = Id;
             /* ---- CODIGO AUTOMATICO ----
-               Al crear se manda AUTO y el SP lo genera como REP-<id>: el
-               codigo depende del ID, y el ID no existe hasta despues del
-               INSERT, asi que no hay forma de calcularlo antes.
-
-               AUTO y no vacio: el SP valida que el codigo venga ANTES de
-               insertar, asi que un vacio se rechaza con "indique el codigo".
-               AUTO pasa esa validacion, nunca queda guardado, y el SP lo
-               reemplaza en cuanto conoce el ID.
-
-               Al editar viaja el que ya tiene. No se regenera nunca: el
-               codigo esta impreso en su etiqueta, y cambiarlo dejaria la
-               etiqueta pegada apuntando a algo que no existe. */
+               Al crear se manda AUTO y el SP lo genera como REP-<id>. Al editar viaja
+               el que ya tiene: no se regenera nunca, esta impreso en su etiqueta. */
             entidad.rep_codigo = SitioBase.CodigoModulo.Componer("Repuesto", txtCodigo.Text);
             entidad.rep_nombre = txtNombre.Text.Trim();
-            entidad.rep_fabricante = cboFabricante.Text.Trim();
-            entidad.rep_modelo = cboModelo.Text.Trim();
+            entidad.rep_fabricante = (txtFabricante.Text ?? "").Trim();
+            entidad.rep_modelo = (txtModelo.Text ?? "").Trim();
             entidad.rep_descripcion = txtDescripcion.Text.Trim();
             entidad.rep_unidad_medida = int.Parse(cboUnidad.SelectedValue);
 
-            /* Vacio es "sin clasificar": 0 viaja como NULL a la base. */
-            int tipo;
-            entidad.rep_repuesto_tipo =
-                int.TryParse(cboTipo.SelectedValue, out tipo) ? tipo : 0;
+            /* El tipo se elige o se escribe: lo que no existe se crea como propio de la empresa. */
+            entidad.rep_repuesto_tipo = ResolverTipo(txtTipo.Text);
             entidad.rep_costo_referencia = LeerDecimal(txtCosto.Text, "costo de referencia");
 
-            /* Vida util esperada. Las tres son opcionales y pueden convivir:
-               un aceite vence a las 2.000 horas O a los 365 dias, lo que
-               ocurra primero. */
+            /* Vida util esperada. Las tres son opcionales y pueden convivir. */
             entidad.rep_vida_util_hora = LeerDecimal(txtVidaHora.Text, "vida útil en horas");
             entidad.rep_vida_util_ciclo = LeerDecimal(txtVidaCiclo.Text, "vida útil en ciclos");
 
@@ -571,8 +481,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                 entidad.rep_vida_util_dia = (int)dias.Value;
             }
 
-            /* Al EDITAR, un campo vacio significa borrar. Al crear no hay
-               nada que borrar, asi que la bandera solo viaja con Id > 0. */
+            /* Al EDITAR, un campo vacio significa borrar. Al crear no hay nada que borrar. */
             entidad.limpia_vida_util = (Id > 0);
             entidad.rep_controla_lote = rdbLoteSi.Checked;
             entidad.rep_es_consumible = rdbConsumibleSi.Checked;
@@ -584,9 +493,7 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
             decimal? alto = LeerDecimal(txtAlto.Text, "alto");
             decimal? peso = LeerDecimal(txtPeso.Text, "peso");
 
-            /* La baja pasa por DEL_REPUESTO, que rechaza si queda
-               existencia. UPD_REPUESTO con @HABILITADO = 0 tambien lo
-               deshabilitaria, pero sin comprobar nada. */
+            /* La baja pasa por DEL_REPUESTO, que rechaza si queda existencia. */
             if (Id > 0 && rdbNo.Checked)
             {
                 Respuesta baja = controller.DeleteRepuesto(Id);
@@ -598,40 +505,35 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
                 }
             }
 
+            bool eraNuevo = Id == 0;
             Respuesta respuesta = (Id > 0)
                 ? controller.UpdateRepuesto(entidad)
                 : controller.InsertRepuesto(entidad);
 
-            if (!respuesta.error)
-            {
-                /* Metodo y medidas van por sus propios SP (los mismos que usa
-                   el mapa 3D). Si fallan, el repuesto ya quedo guardado: se
-                   avisa y no se cierra, para corregir el dato. */
-                int repId = Id > 0 ? Id : respuesta.codigo;
-                RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
-                Respuesta rm = alm.GuardarMetodo(repId, ddlMetodo.SelectedValue);
-                Respuesta rd = rm.error ? rm : alm.GuardarMedidas(repId, largo, ancho, alto, peso);
-                if (rd.error)
-                {
-                    if (Id == 0) Id = repId;
-                    Tools.tools.ClientAlert(respuesta.detalle + " Pero el almacenamiento no se guardó: " + rd.detalle, "alerta");
-                    return;
-                }
-
-                // Al crear no se cierra: falta definir sus umbrales.
-                if (Id == 0)
-                {
-                    Id = respuesta.codigo;
-                    Tools.tools.ClientAlert(respuesta.detalle + " Defina sus umbrales por bodega.", "ok");
-                    return;
-                }
-
-                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
-            }
-            else
+            if (respuesta.error)
             {
                 Tools.tools.ClientAlert(respuesta.detalle, "alerta");
+                return;
             }
+
+            int repId = Id > 0 ? Id : respuesta.codigo;
+            Id = repId;          // desde aqui un reintento ACTUALIZA, no crea otro
+            List<string> avisos = new List<string>();
+
+            /* Metodo y medidas van por sus propios SP (los mismos que usa el mapa 3D). */
+            RepuestoAlmacenamientoController alm = new RepuestoAlmacenamientoController();
+            Respuesta rm = alm.GuardarMetodo(repId, ddlMetodo.SelectedValue);
+            Respuesta rd = rm.error ? rm : alm.GuardarMedidas(repId, largo, ancho, alto, peso);
+            if (rd.error) avisos.Add("el almacenamiento no se guardó (" + rd.detalle + ")");
+
+            try { GuardarFotos(repId, avisos); } catch (Exception ex) { avisos.Add("las fotos (" + ex.Message + ")"); }
+            try { GuardarCompat(repId, avisos); } catch (Exception ex) { avisos.Add("las compatibilidades (" + ex.Message + ")"); }
+            try { GuardarStock(repId, eraNuevo, entidad.rep_controla_lote, avisos); } catch (Exception ex) { avisos.Add("el stock (" + ex.Message + ")"); }
+
+            if (avisos.Count == 0)
+                Tools.tools.ClientAlert(respuesta.detalle, "ok", true);
+            else
+                Tools.tools.ClientAlert(respuesta.detalle + " Pero no se guardó: " + string.Join("; ", avisos.ToArray()) + ".", "alerta");
         }
         catch (Exception ex)
         {
@@ -639,45 +541,278 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
         }
     }
 
-    protected void btnGuardarUmbral_Click(object sender, EventArgs e)
+    // ---------------------------------------------------------------- el tipo, creado si no existe
+
+    private static string Clave(string t)
     {
+        string d = (t ?? "").Normalize(NormalizationForm.FormD);
+        StringBuilder b = new StringBuilder();
+        foreach (char c in d)
+            if (CharUnicodeInfo.GetUnicodeCategory(c) != UnicodeCategory.NonSpacingMark) b.Append(char.ToLowerInvariant(c));
+        return System.Text.RegularExpressions.Regex.Replace(b.ToString(), "\\s+", " ").Trim();
+    }
+
+    /// <summary>El id del tipo escrito: el que ya existe (sin distinguir tildes ni mayusculas) o uno nuevo. Vacio = sin clasificar.</summary>
+    private int ResolverTipo(string texto)
+    {
+        texto = (texto ?? "").Trim();
+        if (texto == "") return 0;
+
+        RepuestoTipoController c = new RepuestoTipoController();
+        List<RepuestoTipo> todos = c.GetRepuestoTipos(new RepuestoTipo { filtro_habilitado = true }) ?? new List<RepuestoTipo>();
+        RepuestoTipo t = todos.Find(x => Clave(x.rti_nombre) == Clave(texto));
+        if (t != null) return t.rti_id;
+
+        Respuesta r = c.InsertRepuestoTipo(new RepuestoTipo { rti_codigo = "AUTO", rti_nombre = texto, rti_orden = 0 });
+        if (r.error) throw new Exception("No se pudo crear el tipo «" + texto + "»: " + r.detalle);
+        return r.codigo;
+    }
+
+    // ---------------------------------------------------------------- fotos
+
+    private void GuardarFotos(int repId, List<string> avisos)
+    {
+        if (!fupFotos.HasFiles) return;
+        RepuestoFotoController fc = new RepuestoFotoController();
+
+        foreach (System.Web.HttpPostedFile f in fupFotos.PostedFiles)
+        {
+            if (f == null || f.ContentLength == 0) continue;
+            if (!(f.ContentType ?? "").StartsWith("image/", StringComparison.OrdinalIgnoreCase)) { avisos.Add("«" + f.FileName + "» no es una imagen"); continue; }
+
+            byte[] bytes = new byte[f.ContentLength];
+            f.InputStream.Position = 0;
+            f.InputStream.Read(bytes, 0, bytes.Length);
+
+            Respuesta r = fc.Agregar(repId, bytes, System.IO.Path.GetFileName(f.FileName), f.ContentType, null);
+            if (r.error) avisos.Add("la foto «" + f.FileName + "» (" + r.detalle + ")");
+        }
+    }
+
+    // ---------------------------------------------------------------- compatibilidades
+
+    private static List<Dictionary<string, object>> LeerLista(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json)) return new List<Dictionary<string, object>>();
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<List<Dictionary<string, object>>>(json)
+               ?? new List<Dictionary<string, object>>();
+    }
+    private static string Txt(Dictionary<string, object> d, string k)
+    {
+        object v; return d.TryGetValue(k, out v) && v != null ? Convert.ToString(v).Trim() : "";
+    }
+    private static decimal? Num(Dictionary<string, object> d, string k)
+    {
+        string t = Txt(d, k).Replace(",", ".");
+        decimal n; return t != "" && decimal.TryParse(t, NumberStyles.Any, CultureInfo.InvariantCulture, out n) ? (decimal?)n : null;
+    }
+
+    /// <summary>Los vinculos directos (a un activo o a un componente) que el repuesto ya tiene.</summary>
+    private System.Data.DataTable Directos(int repId)
+    {
+        System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
+        cmd.CommandText = "SEL_REPUESTO_COMPAT_DIRECTAS";
+        cmd.Parameters.AddWithValue("@CLIENTE", SitioBase.Session.ClienteId());
+        cmd.Parameters.AddWithValue("@REPUESTO", repId);
+        return Conexion.GetDataTable(cmd);
+    }
+
+    private string CompatInicial(int repId)
+    {
+        List<Dictionary<string, object>> l = new List<Dictionary<string, object>>();
         try
         {
-            if (Id == 0) throw new Exception("Primero guarde el repuesto.");
-
-            if (string.IsNullOrEmpty(cboBodega.SelectedValue))
-                throw new Exception("Debe elegir la bodega.");
-
-            decimal? minimo = LeerDecimal(txtMinimo.Text, "mínimo");
-
-            if (minimo == null)
-                throw new Exception("El stock mínimo es obligatorio: es lo que dispara el aviso.");
-
-            RepuestoBodegaStock entidad = new RepuestoBodegaStock();
-            entidad.rbs_repuesto = Id;
-            entidad.rbs_bodega = int.Parse(cboBodega.SelectedValue);
-            entidad.rbs_stock_minimo = minimo.Value;
-            entidad.rbs_stock_maximo = LeerDecimal(txtMaximo.Text, "máximo");
-            entidad.rbs_punto_reposicion = LeerDecimal(txtReposicion.Text, "punto de reposición");
-
-            RepuestoController controller = new RepuestoController();
-            Respuesta respuesta = controller.GuardarUmbral(entidad);
-
-            if (!respuesta.error)
+            List<Dictionary<string, object>> destinos = Destinos();
+            foreach (System.Data.DataRow f in Directos(repId).Rows)
             {
-                txtMinimo.Text = "";
-                txtMaximo.Text = "";
-                txtReposicion.Text = "";
-                Tools.tools.ClientAlert(respuesta.detalle, "ok");
-            }
-            else
-            {
-                Tools.tools.ClientAlert(respuesta.detalle, "alerta");
+                string v = f["rco_activo"] != DBNull.Value ? "a:" + f["rco_activo"] : "c:" + f["rco_activo_componente"];
+                Dictionary<string, object> d = destinos.Find(x => Convert.ToString(x["id"]) == v);
+                string k = d != null ? Convert.ToString(((Dictionary<string, object>)d["tag"])["k"]) : (v.StartsWith("c:") ? "c" : "a");
+                l.Add(new Dictionary<string, object> { { "v", v }, { "n", d != null ? Convert.ToString(d["n"]) : "(ya no está disponible)" }, { "k", k }, { "obs", Convert.ToString(f["rco_observacion"]) } });
             }
         }
-        catch (Exception ex)
-        {
-            Tools.tools.ClientAlert(ex.Message, "alerta");
-        }
+        catch (Exception) { }
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(l);
     }
+
+    private void GuardarCompat(int repId, List<string> avisos)
+    {
+        /* Sin lista no se toca nada: si el navegador no la mando, quitar vinculos seria perder datos. */
+        if (string.IsNullOrWhiteSpace(hdnCompat.Value)) return;
+
+        ActivoPlantaController ap = new ActivoPlantaController();
+        HashSet<string> deseados = new HashSet<string>();
+
+        foreach (Dictionary<string, object> d in LeerLista(hdnCompat.Value))
+        {
+            string v = Txt(d, "v"); int id;
+            if (v.Length < 3 || !int.TryParse(v.Substring(2), out id)) continue;
+            bool comp = v.StartsWith("c:");
+            deseados.Add(v);
+            Respuesta r = ap.VincularRepuesto(repId, comp ? 0 : id, comp ? id : 0, Txt(d, "obs"));
+            if (r.error) avisos.Add("la compatibilidad con «" + Txt(d, "n") + "» (" + r.detalle + ")");
+        }
+
+        foreach (System.Data.DataRow f in Directos(repId).Rows)
+        {
+            string key = f["rco_activo"] != DBNull.Value ? "a:" + f["rco_activo"] : "c:" + f["rco_activo_componente"];
+            if (!deseados.Contains(key)) ap.QuitarVinculoRepuesto(Convert.ToInt32(f["rco_id"]));
+        }
+
+        hdnCompat.Value = CompatInicial(repId);
+    }
+
+    // ---------------------------------------------------------------- stock
+
+    private void GuardarStock(int repId, bool eraNuevo, bool controlaLote, List<string> avisos)
+    {
+        List<Dictionary<string, object>> filas = LeerLista(hdnStock.Value);
+        if (filas.Count == 0) return;
+
+        bool puedeStock = Token.Puede("GESTIONAR STOCK");
+        bool puedeIngreso = Token.Puede("REGISTRAR INGRESO REPUESTO");
+        RepuestoController rc = new RepuestoController();
+        InventarioController ic = new InventarioController();
+        List<Dictionary<string, object>> pendientes = new List<Dictionary<string, object>>();
+
+        foreach (Dictionary<string, object> d in filas)
+        {
+            int bodega = int.Parse(Txt(d, "b") == "" ? "0" : Txt(d, "b"));
+            string nombre = Txt(d, "bn");
+            bool fallo = false;
+            decimal? mn = Num(d, "min"), mx = Num(d, "max"), rp = Num(d, "rep"), cant = Num(d, "cant");
+
+            // umbral
+            if (mn != null && bodega > 0)
+            {
+                if (!puedeStock) { avisos.Add("no tienes permiso para definir umbrales (" + nombre + ")"); fallo = true; }
+                else
+                {
+                    Respuesta r = rc.GuardarUmbral(new RepuestoBodegaStock { rbs_repuesto = repId, rbs_bodega = bodega, rbs_stock_minimo = mn.Value, rbs_stock_maximo = mx, rbs_punto_reposicion = rp });
+                    if (r.error) { avisos.Add("los umbrales de " + nombre + " (" + r.detalle + ")"); fallo = true; }
+                }
+            }
+
+            // existencia inicial: un ingreso, una sola vez
+            if (eraNuevo && cant != null && cant.Value > 0 && bodega > 0)
+            {
+                if (!puedeIngreso) { avisos.Add("no tienes permiso para ingresar existencia (" + nombre + ")"); fallo = true; }
+                else
+                {
+                    try
+                    {
+                        InventarioMovimiento m = new InventarioMovimiento { imo_repuesto = repId, imo_bodega = bodega, imo_inventario_movimiento_tipo = 1, imo_cantidad = cant.Value,
+                                                                            imo_observacion = "Existencia inicial al crear el repuesto." };
+                        int ub; if (int.TryParse(Txt(d, "u"), out ub) && ub > 0) m.imo_bodega_ubicacion = ub;
+                        if (controlaLote)
+                        {
+                            string lote = Txt(d, "lote");
+                            if (lote == "") throw new Exception("falta el código del lote");
+                            DateTime venc; DateTime? vence = DateTime.TryParseExact(Txt(d, "vence"), new[] { "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out venc) ? (DateTime?)venc : null;
+                            Respuesta rl = rc.InsertLote(new RepuestoLote { rlo_repuesto = repId, rlo_codigo = lote, rlo_fecha_ingreso = global::SitioBase.Hora.Hoy, rlo_fecha_vencimiento = vence });
+                            if (rl.error) throw new Exception("el lote: " + rl.detalle);
+                            m.imo_repuesto_lote = rl.codigo;
+                        }
+                        Respuesta ri = ic.RegistrarMovimiento(m);
+                        if (ri.error) throw new Exception(ri.detalle);
+                    }
+                    catch (Exception ex) { avisos.Add("la existencia de " + nombre + " (" + ex.Message + ")"); fallo = true; }
+                }
+            }
+
+            if (fallo) pendientes.Add(d);
+        }
+
+        // lo que quedo sin aplicar vuelve a la lista para corregirlo; lo aplicado ya no se repite
+        hdnStock.Value = pendientes.Count == 0 ? "[]" : new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(pendientes);
+    }
+
+    // ---------------------------------------------------------------- listas para el navegador
+
+    private static string EnScript(object o)
+    {
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(o).Replace("</", "<\\/");
+    }
+
+    public string TiposJson()
+    {
+        List<string> l = new List<string>();
+        try
+        {
+            foreach (RepuestoTipo t in new RepuestoTipoController().GetRepuestoTipos(new RepuestoTipo { filtro_habilitado = true }) ?? new List<RepuestoTipo>())
+                l.Add(t.rti_nombre);
+        }
+        catch (Exception) { }
+        return EnScript(l);
+    }
+
+    public string MarcasJson()
+    {
+        List<object> l = new List<object>();
+        try
+        {
+            foreach (FabricanteController.Fabricante f in CatalogoFab() ?? new List<FabricanteController.Fabricante>())
+                l.Add(new Dictionary<string, object> { { "n", f.nombre }, { "m", f.modelos ?? new List<string>() } });
+        }
+        catch (Exception) { }
+        return EnScript(l);
+    }
+
+    /// <summary>Las bodegas con sus ubicaciones (racks), para el constructor de stock.</summary>
+    public string BodegasJson()
+    {
+        List<object> l = new List<object>();
+        try
+        {
+            List<Bodega> bodegas = new BodegaController().GetBodegas(new Bodega { filtro_habilitado = true }) ?? new List<Bodega>();
+            List<BodegaUbicacion> ubic = new BodegaController().GetUbicaciones(new BodegaUbicacion { filtro_habilitado = true }) ?? new List<BodegaUbicacion>();
+            foreach (Bodega b in bodegas)
+            {
+                List<object> us = new List<object>();
+                foreach (BodegaUbicacion u in ubic)
+                    if (u.bub_bodega == b.bod_id) us.Add(new Dictionary<string, object> { { "id", u.bub_id }, { "n", u.bub_codigo + (string.IsNullOrEmpty(u.bub_nombre) || u.bub_nombre == u.bub_codigo ? "" : " · " + u.bub_nombre) } });
+                l.Add(new Dictionary<string, object> { { "id", b.bod_id }, { "n", b.bod_nombre }, { "planta", b.planta_nombre ?? "" }, { "ubic", us } });
+            }
+        }
+        catch (Exception) { }
+        return EnScript(l);
+    }
+
+    private List<Dictionary<string, object>> _destinos;
+
+    /// <summary>Activos, subactivos y componentes en orden de arbol, cada uno con su tipo para que el combo los distinga.</summary>
+    private List<Dictionary<string, object>> Destinos()
+    {
+        if (_destinos != null) return _destinos;
+        _destinos = new List<Dictionary<string, object>>();
+        try
+        {
+            int cliente = SitioBase.Session.ClienteId();
+            List<Activo> activos = new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }) ?? new List<Activo>();
+            List<ActivoComponente> comps = new ActivoComponenteController().GetComponentes(new ActivoComponente { aco_cliente = cliente, filtro_habilitado = true }) ?? new List<ActivoComponente>();
+            HashSet<int> ids = new HashSet<int>(activos.ConvertAll(x => x.act_id));
+
+            Action<Activo, string, int> agregar = null;
+            agregar = (a, padre, nivel) =>
+            {
+                string k = padre == null ? "a" : "s";
+                _destinos.Add(new Dictionary<string, object> { { "id", "a:" + a.act_id }, { "n", a.act_nombre + " · " + a.act_codigo },
+                    { "sub", padre == null ? "Todo el activo" : "Subactivo de " + padre }, { "nivel", nivel },
+                    { "tag", new Dictionary<string, object> { { "k", k }, { "t", k == "a" ? "Activo" : "Subactivo" } } } });
+                List<ActivoComponente> suyos = comps.FindAll(c => c.aco_activo == a.act_id);
+                suyos.Sort((x, y) => string.Compare(x.aco_nombre, y.aco_nombre, StringComparison.CurrentCultureIgnoreCase));
+                foreach (ActivoComponente c in suyos)
+                    _destinos.Add(new Dictionary<string, object> { { "id", "c:" + c.aco_id }, { "n", c.aco_nombre + " · " + c.aco_codigo },
+                        { "sub", "Componente de " + a.act_nombre }, { "nivel", nivel + 1 },
+                        { "tag", new Dictionary<string, object> { { "k", "c" }, { "t", "Componente" } } } });
+                foreach (Activo h in activos.FindAll(x => x.act_activo_padre == a.act_id)) agregar(h, a.act_nombre, nivel + 1);
+            };
+            foreach (Activo a in activos)
+                if (a.act_activo_padre == null || !ids.Contains(a.act_activo_padre.Value)) agregar(a, null, 0);
+        }
+        catch (Exception) { }
+        return _destinos;
+    }
+
+    public string DestinosJson() { return EnScript(Destinos()); }
 }

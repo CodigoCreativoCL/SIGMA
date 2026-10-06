@@ -111,10 +111,24 @@ public class WsCampanas : System.Web.Services.WebService
         {
             int cliente = SitioBase.Session.ClienteId();
             if (cliente <= 0) return new { campanas = new List<Dictionary<string, object>>() };
+            /* Cada consulta es un latido: asi se sabe quien esta conectado (BD/373). */
+            try { SoporteDatos.Conjuntos("UPD_PRESENCIA", "@USUARIO", U(), "@CLIENTE", cliente); } catch (Exception) { }
             List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_CAMPANA_PENDIENTES", "@USUARIO", U(), "@CLIENTE", cliente,
                                                                     "@MODULO", string.IsNullOrWhiteSpace(modulo) ? null : modulo);
             foreach (Dictionary<string, object> c in l) Imagen(c);
             return new { campanas = l };
+        });
+    }
+
+    /// <summary>De la audiencia de una campaña: quién está conectado ahora y a quién ya le llegó.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Conectados(int id)
+    {
+        return WsSoporte.Ejecutar(() =>
+        {
+            var c = SoporteDatos.Conjuntos("SEL_CAMPANA_CONECTADOS", "@CAMPANA", id, "@CLIENTE", SitioBase.Session.ClienteId());
+            return new { resumen = SoporteDatos.Del(c, 0).Count > 0 ? SoporteDatos.Del(c, 0)[0] : null, usuarios = SoporteDatos.Del(c, 1) };
         });
     }
 

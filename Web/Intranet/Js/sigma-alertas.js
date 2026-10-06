@@ -111,9 +111,12 @@ var sigmaAlertas = (function () {
     /* ============================================================
        LOS CONTADORES
        ============================================================ */
+    /* Con el panel v2 el numero de la campana sale de las filas agrupadas del panel (un solo conteo). */
+    function panelNp() { return document.querySelector('[data-sg-notif-panel][data-np]'); }
+
     function badgeCampana(n) {
         var enlace = document.querySelector('.sigma-notification');
-        if (!enlace) return;
+        if (!enlace || panelNp()) return;
 
         var badge = enlace.querySelector('.sigma-notification__count');
 
@@ -183,6 +186,7 @@ var sigmaAlertas = (function () {
        cuando llega se reescriben los dos contadores con lo que diga. Si el
        marcado fallo, el numero vuelve solo a donde estaba. */
     function descontarUno(todos) {
+        if (panelNp()) return;
         var enlace = document.querySelector('.sigma-notification');
         var badge = enlace ? enlace.querySelector('.sigma-notification__count') : null;
         if (!badge) return;
@@ -339,7 +343,13 @@ var sigmaAlertas = (function () {
 
                 /* La campana dice qué NO se ha visto. Los contadores del menú
                    siguen diciendo qué queda activo: son preguntas distintas. */
-                badgeCampana(r.noLeidas);
+                if (panelNp()) {
+                    /* Si cambio lo no leido, el panel se vuelve a pedir y la campana sale de sus filas. */
+                    var firma = r.noLeidas + '|' + r.abiertas;
+                    if (ultimaFirma !== null && ultimaFirma !== firma) avisarLectura({ error: false });
+                    ultimaFirma = firma;
+                }
+                else badgeCampana(r.noLeidas);
                 if (r.menus) badgesMenu(r.menus);
             },
             error: function () {
@@ -347,6 +357,8 @@ var sigmaAlertas = (function () {
             }
         });
     }
+
+    var ultimaFirma = null;
 
     function arrancar() {
         if (timer) return;
