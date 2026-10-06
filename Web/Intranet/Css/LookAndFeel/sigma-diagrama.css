@@ -1,0 +1,197 @@
+﻿/* ============================================================================
+   Diagrama del activo (06-10-2026) · diseño del mockup:
+   el activo arriba, de él cuelgan sus subactivos (una rama de color cada uno)
+   y, bajo cada subactivo, sus componentes y las tablas de repuestos.
+   Tokens: paleta SIGMA. Cada rama define --c (color), --bg (fondo suave) y
+   --bd (borde suave) en línea.
+   ========================================================================= */
+.dg { --k-act: #6732F4; --k-sub: #087BEA; --k-comp: #0E9AA0; --k-rep: #E08A00; --k-rep-ink: #8F4E00; --k-rep-bg: #FFF8EC; --k-rep-bd: #F8DFB0; --ink: #17223B; --muted: #68738A; --line: #E2E7F0; --canvas: #F4F6FA; --ok: #16855B; --ojo: #B65C00; --mal: #C7352B;
+      display: flex; flex-direction: column; gap: 18px; color: var(--ink); min-width: 0 }
+.dg [hidden] { display: none !important }
+
+/* ---- las cuatro vistas ---- */
+.dg-vistas { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px; border-radius: 16px; background: var(--canvas); width: fit-content; max-width: 100% }
+.dg-vistas button { height: 40px; padding: 0 16px; border: 0; border-radius: 11px; background: transparent; color: var(--muted); font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; cursor: pointer }
+.dg-vistas button:hover { color: var(--ink) }
+.dg-vistas button.es-on { background: #fff; color: #6732F4; box-shadow: 0 1px 3px rgba(23, 34, 59, .14) }
+.dg-vistas .mdi { font-size: 17px }
+
+/* ---- el activo ---- */
+.dg-cabeza { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 18px; align-items: start; max-width: 1080px; margin: 0 auto; width: 100% }
+.dg-raiz { display: flex; gap: 16px; padding: 18px; border-radius: 20px; background: #fff; border: 1.5px solid #CFC2FB; box-shadow: 0 6px 24px rgba(103, 50, 244, .12); min-width: 0 }
+.dg-raiz-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px }
+.dg-fila { display: flex; flex-wrap: wrap; align-items: center; gap: 10px }
+.dg-raiz h4 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -.01em }
+.dg-raiz small { color: var(--muted); font-size: 13px }
+.dg-raiz p { margin: 0; color: var(--muted); font-size: 13.5px }
+.dg-resumen { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px }
+.dg-resumen span { display: inline-flex; align-items: center; gap: 7px; height: 36px; padding: 0 12px; border-radius: 10px; font-size: 13px; font-weight: 700; border: 1px solid transparent }
+.dg-resumen .es-s { background: #EAF4FF; color: #0662BC; border-color: #C4DEF9 }
+.dg-resumen .es-c { background: #E8FBFB; color: #007F8A; border-color: #BDEDEE }
+.dg-resumen .es-r { background: #FFF4E0; color: #8F4E00; border-color: #F8DFB0 }
+.dg-resumen .mdi { font-size: 17px }
+.dg-repact { display: flex; align-items: center; gap: 14px; padding: 18px; border-radius: 20px; background: #fff; border: 1.5px solid var(--k-rep-bd); box-shadow: 0 6px 24px rgba(224, 138, 0, .10); color: var(--ink); text-decoration: none }
+.dg-repact:hover { border-color: var(--k-rep) }
+.dg-repact > div { flex: 1; display: flex; flex-direction: column }
+.dg-repact span { font-size: 13px; font-weight: 700 }
+.dg-repact b { font-size: 30px; line-height: 1.1; font-weight: 800 }
+.dg-repact small { color: var(--muted); font-size: 12px }
+.dg-repact > .mdi { color: var(--k-rep); font-size: 22px }
+
+/* ---- iconos en baldosa ---- */
+.dg-tile { width: 56px; height: 56px; flex: none; border-radius: 15px; display: grid; place-items: center; overflow: hidden; font-size: 28px; color: #fff }
+.dg-tile img { width: 100%; height: 100%; object-fit: cover }
+.dg-tile.es-a { background: linear-gradient(135deg, #6732F4, #8B63F7) }
+.dg-tile.es-s { background: var(--k-sub) }
+.dg-tile.es-c { width: 44px; height: 44px; font-size: 22px; background: #E2F6F6; color: var(--k-comp) }
+.dg-repact .dg-tile { width: 52px; height: 52px; background: #FFF1D6; color: var(--k-rep) }
+
+/* ---- chips de estado ---- */
+.dg-chip { display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 12px; font-weight: 700; white-space: nowrap; background: #E7F5EE; color: #12704C }
+.dg-chip i { width: 7px; height: 7px; border-radius: 50%; background: currentColor }
+.dg-chip.es-ojo { background: #FFF3E3; color: #9A4D00 }
+.dg-chip.es-mal { background: #FDECEA; color: #B02C23 }
+.dg-chip.es-neutro { background: #EEF1F6; color: #5A667E }
+
+/* ---- el tronco y las ramas ---- */
+.dg-ramas { --gap: 22px; position: relative; display: grid; grid-template-columns: repeat(var(--n, 1), minmax(0, 1fr)); gap: var(--gap); padding-top: 34px; align-items: start }
+.dg-tronco { position: absolute; left: 50%; top: -18px; width: 2px; height: 32px; margin-left: -1px; background: var(--k-act) }
+.dg-rama { position: relative; display: flex; flex-direction: column; gap: 0; min-width: 0 }
+/* la linea que baja a cada rama, con su flecha del color de la rama */
+.dg-flecha { position: absolute; left: 0; right: 0; top: -34px; height: 34px; pointer-events: none }
+.dg-flecha::before { content: ""; position: absolute; top: 0; height: 2px; background: var(--c); left: calc(var(--gap) / -2); right: calc(var(--gap) / -2) }
+.dg-rama:first-of-type > .dg-flecha::before, .dg-ramas > .dg-rama:nth-child(2) > .dg-flecha::before { left: 50% }
+.dg-ramas > .dg-rama:last-child > .dg-flecha::before { right: 50% }
+.dg-ramas > .dg-rama:nth-child(2):last-child > .dg-flecha::before { display: none }
+.dg-flecha::after { content: ""; position: absolute; left: 50%; top: 0; width: 2px; height: 28px; margin-left: -1px; background: var(--c) }
+.dg-rama > .dg-flecha > i, .dg-flecha { }
+.dg-rama::before { content: ""; position: absolute; left: 50%; top: -8px; width: 0; height: 0; margin-left: -6px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid var(--c); z-index: 1 }
+.dg-baja { display: block; position: relative; height: 30px; margin: 0 auto; width: 2px; background: var(--c) }
+.dg-baja::after { content: ""; position: absolute; left: 50%; bottom: -2px; margin-left: -6px; border-left: 6px solid transparent; border-right: 6px solid transparent; border-top: 9px solid var(--c) }
+.dg-tit-col { display: flex; align-items: center; gap: 10px; padding: 16px 18px; border-radius: 20px; background: #fff; border: 1.5px solid var(--bd); font-size: 16px; font-weight: 800; color: var(--ink) }
+.dg-tit-col .mdi { width: 40px; height: 40px; display: grid; place-items: center; border-radius: 12px; background: var(--c); color: #fff; font-size: 22px }
+.dg-tit-col small { display: block; font-size: 12px; font-weight: 600; color: var(--muted) }
+.dg-tit-col { flex-wrap: wrap }
+
+/* ---- el subactivo ---- */
+.dg-sub { display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 20px; background: var(--bg); border: 1.5px solid var(--bd); cursor: pointer; transition: box-shadow .15s, border-color .15s }
+.dg-sub:hover, .dg-sub.es-viendo { border-color: var(--c); box-shadow: 0 8px 26px color-mix(in srgb, var(--c) 18%, transparent) }
+.dg-sub-top { display: flex; gap: 12px; align-items: flex-start }
+.dg-sub-t { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; align-items: flex-start }
+.dg-sub-t h4 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.2 }
+.dg-sub-t small { color: var(--muted); font-size: 12.5px }
+.dg-stat { width: 108px; flex: none; padding: 10px; border-radius: 14px; background: #fff; border: 1px solid var(--bd); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 1px }
+.dg-stat .mdi { color: var(--k-rep); font-size: 20px }
+.dg-stat { border-color: var(--k-rep-bd) }
+.dg-stat span { font-size: 10.5px; font-weight: 700; color: var(--muted); line-height: 1.2 }
+.dg-stat b { font-size: 24px; line-height: 1.1 }
+.dg-stat small { font-size: 10.5px; color: var(--muted) }
+.dg-desc { margin: 0; font-size: 13px; color: var(--muted) }
+.dg-sub-pie { display: flex; align-items: center; gap: 10px; padding: 8px 12px; border-radius: 12px; background: #fff; border: 1px solid var(--bd); font-size: 12.5px; font-weight: 700 }
+.dg-sub-pie span { display: inline-flex; align-items: center; gap: 6px }
+.dg-sub-pie span .mdi { color: var(--k-comp); font-size: 17px }
+.dg-sub-pie span + em + span .mdi { color: var(--k-rep) }
+.dg-sub-pie em { width: 1px; height: 20px; background: var(--bd) }
+.dg-sub-pie > .mdi { margin-left: auto; color: var(--muted); font-size: 20px }
+
+/* ---- el cuerpo de la rama: componentes y repuestos en un panel suave ---- */
+.dg-cuerpo { display: flex; flex-direction: column; gap: 10px; padding: 12px; border-radius: 20px; background: #FAFBFD; border: 1.5px solid var(--bd) }
+.dg-comps { display: flex; flex-direction: column; gap: 8px }
+.dg-comps h5, .dg-reps h5 { margin: 0 0 2px; display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 800 }
+.dg-comps h5, .dg-comps h5 span { color: var(--k-comp) }
+.dg-reps h5, .dg-reps h5 span { color: var(--k-rep-ink) }
+.dg-reps h5 b { font-weight: 700; color: var(--ink) }
+.dg-reps h5 .mdi, .dg-comps h5 .mdi { font-size: 18px }
+.dg-nada { margin: 0; padding: 10px; font-size: 12.5px; color: var(--muted) }
+.dg-comp { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 14px; background: #fff; border: 1px solid #BDEDEE; cursor: pointer }
+.dg-comp:hover, .dg-comp.es-viendo { border-color: var(--k-comp); box-shadow: 0 4px 14px rgba(14, 154, 160, .16) }
+.dg-comp.es-hijo { margin-left: 22px; position: relative }
+.dg-comp.es-hijo::before { content: ""; position: absolute; left: -14px; top: -10px; bottom: 50%; width: 10px; border-left: 2px solid #BDEDEE; border-bottom: 2px solid #BDEDEE; border-bottom-left-radius: 8px }
+.dg-comp.es-retirada { opacity: .6 }
+.dg-comp-t { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 4px }
+.dg-comp-t b { font-size: 14px; font-weight: 800; line-height: 1.25; overflow-wrap: anywhere }
+.dg-comp-t small { color: var(--muted); font-size: 12px; overflow-wrap: anywhere; line-height: 1.35 }
+.dg-comp-t .dg-chip { max-width: 100%; overflow: hidden; text-overflow: ellipsis }
+.dg-comp-t .dg-padre { display: none }
+.dg-comp-r { flex: none; display: inline-flex; align-items: center; gap: 4px; font-size: 12px; font-weight: 700; color: var(--k-rep-ink); white-space: nowrap }
+.dg-comp-r .mdi { font-size: 19px; color: var(--muted) }
+.dg-comp-r .mdi-wrench-outline { font-size: 15px; color: var(--k-rep) }
+.dg-retirados summary { cursor: pointer; font-size: 12.5px; font-weight: 700; color: var(--muted); padding: 6px 4px }
+
+/* ---- tablas de repuestos ---- */
+.dg-reps { padding: 10px 12px; border-radius: 14px; background: var(--k-rep-bg); border: 1px solid var(--k-rep-bd) }
+.dg-reps table { width: 100%; border-collapse: collapse; font-size: 12.5px }
+.dg-reps th { text-align: left; font-size: 11px; font-weight: 700; color: var(--muted); padding: 6px 6px; border-bottom: 1px solid var(--k-rep-bd) }
+.dg-reps td { padding: 7px 6px; border-bottom: 1px solid #FBEBCB; vertical-align: middle }
+.dg-reps tr:last-child td { border-bottom: 0 }
+.dg-reps th.n, .dg-reps td.n { text-align: right; font-variant-numeric: tabular-nums }
+.dg-reps tbody tr { cursor: pointer }
+.dg-reps tbody tr:hover, .dg-reps tbody tr.es-viendo { background: #FFF1D6 }
+.dg-ri { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-right: 8px; border-radius: 6px; background: #FFF1D6; color: var(--k-rep); font-size: 14px; vertical-align: middle }
+
+/* ---- donde esta cada repuesto ---- */
+.dg-donde { display: flex; align-items: flex-start; gap: 6px; min-width: 120px }
+.dg-donde > .mdi { color: var(--k-rep); font-size: 17px; margin-top: 1px }
+.dg-donde > span { display: flex; flex-direction: column; min-width: 0 }
+.dg-donde b { font-size: 12.5px; font-weight: 700; line-height: 1.25 }
+.dg-donde small { font-size: 11.5px; color: var(--muted); line-height: 1.3; overflow-wrap: anywhere }
+.dg-donde em { font-style: normal; font-size: 11px; font-weight: 700; color: var(--k-rep-ink) }
+.dg-donde.es-nada { color: var(--mal); font-size: 12px; font-weight: 700; min-width: 0 }
+.dg-reps td { vertical-align: top }
+
+/* ---- rama vacia ---- */
+.dg-vacio { padding: 26px 16px; border: 2px dashed #CDD4E0; border-radius: 20px; text-align: center; color: var(--muted); font-size: 13px; line-height: 1.7 }
+.dg-vacio a { font-weight: 800; color: #087BEA }
+
+/* ---- vista lista, componentes, repuestos ---- */
+.dg-tabla-w { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px }
+.dg-tabla { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 720px }
+.dg-tabla th { text-align: left; font-size: 11.5px; font-weight: 800; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; padding: 10px 14px; background: var(--canvas) }
+.dg-tabla td { padding: 10px 14px; border-top: 1px solid var(--line) }
+.dg-tipo { display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 12px; font-size: 11.5px; font-weight: 800 }
+.dg-tipo.es-a { background: #F2EFFF; color: #4820C9 } .dg-tipo.es-s { background: #EAF4FF; color: #0662BC }
+.dg-tipo.es-c { background: #E8FBFB; color: #007F8A } .dg-tipo.es-r { background: #FFF4E0; color: #8F4E00 }
+.dg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px }
+/* la vista de componentes en tarjetas: arriba la pieza, abajo cuanto repuesto tiene */
+.dg-grid .dg-comp { display: grid; grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "ico txt" "pie pie"; column-gap: 12px; row-gap: 10px; align-items: start; padding: 14px; border-radius: 16px }
+.dg-grid .dg-comp > .dg-tile { grid-area: ico }
+.dg-grid .dg-comp .dg-comp-t { grid-area: txt }
+.dg-grid .dg-comp .dg-padre { display: block; font-weight: 600 }
+.dg-grid .dg-comp-r { grid-area: pie; justify-content: space-between; padding-top: 10px; border-top: 1px solid #E3F4F4; font-size: 12.5px }
+.dg-grid .dg-comp.es-hijo { margin-left: 0 } .dg-grid .dg-comp.es-hijo::before { display: none }
+
+/* ---- leyenda ---- */
+.dg-leyenda { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 22px; padding: 12px 16px; border-radius: 14px; background: var(--canvas); font-size: 12.5px; color: var(--muted) }
+.dg-leyenda b { color: var(--ink) }
+.dg-leyenda span { display: inline-flex; align-items: center; gap: 8px }
+.dg-leyenda i.d { width: 11px; height: 11px; border-radius: 50% }
+.dg-leyenda i.d.es-a { background: var(--k-act) } .dg-leyenda i.d.es-s { background: var(--k-sub) } .dg-leyenda i.d.es-c { background: var(--k-comp) } .dg-leyenda i.d.es-r { background: var(--k-rep) }
+.dg-leyenda i.f { width: 26px; height: 2px; position: relative; display: inline-block }
+.dg-leyenda i.f::after { content: ""; position: absolute; right: -1px; top: -4px; border-top: 5px solid transparent; border-bottom: 5px solid transparent; border-left: 7px solid currentColor }
+.dg-leyenda i.f.es-s { background: var(--k-sub); color: var(--k-sub) } .dg-leyenda i.f.es-n { background: var(--k-comp); color: var(--k-comp) }
+.dg-leyenda span .mdi { color: var(--k-rep); font-size: 16px }
+.dg-leyenda em { margin-left: auto; font-style: normal; display: inline-flex; align-items: center; gap: 6px }
+
+@media (max-width: 900px) {
+    .dg-cabeza { grid-template-columns: 1fr }
+    .dg-ramas { grid-template-columns: 1fr !important; padding-top: 0 }
+    .dg-tronco, .dg-flecha, .dg-rama::before { display: none }
+    .dg-stat { width: 92px }
+}
+
+/* ---- fotos, nombres con imagen y «le sirve a» ---- */
+.dg-tile.con-foto { background: #EEF1F6 }
+.dg-nom { display: inline-flex; align-items: center; gap: 10px; min-width: 0 }
+.dg-nom b { font-weight: 700; line-height: 1.3; overflow-wrap: anywhere }
+.dg-mini { width: 32px; height: 32px; flex: none; border-radius: 9px; overflow: hidden; display: grid; place-items: center; font-size: 17px; background: #EEF1F6; color: #68738A }
+.dg-mini img { width: 100%; height: 100%; object-fit: cover }
+.dg-mini.es-a { background: #F2EFFF; color: var(--k-act) } .dg-mini.es-s { background: #EAF4FF; color: var(--k-sub) }
+.dg-mini.es-c { background: #E2F6F6; color: var(--k-comp) } .dg-mini.es-r { background: #FFF1D6; color: var(--k-rep) }
+.dg-sirve { display: inline-block; padding: 4px 10px; border-radius: 10px; font-size: 12px; font-weight: 700; line-height: 1.35 }
+.dg-sirve.es-a { background: #F2EFFF; color: #4820C9 } .dg-sirve.es-s { background: #EAF4FF; color: #0662BC } .dg-sirve.es-c { background: #E8FBFB; color: #007F8A }
+.dg-reps-w { overflow-x: auto }
+.dg-reps table { min-width: 460px }
+.dg-tabla tbody tr.dg-item { cursor: pointer }
+.dg-tabla tbody tr.dg-item:hover, .dg-tabla tbody tr.dg-item.es-viendo { background: var(--canvas) }
+.dg-tabla td { vertical-align: top }
+.dg-tabla { min-width: 980px }

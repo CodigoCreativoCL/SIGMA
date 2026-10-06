@@ -1646,3 +1646,8 @@ body:has(.sg-a3--v3) .sg-page-head{display:none}
 .sgap .sg-pag-gap{padding:0 4px;color:var(--muted)}
 .sgap .sg-pag-tam{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;font-weight:400;color:var(--muted)}
 .sgap .sg-pag-tam select{height:36px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;color:var(--ink)}
+
+/* Opciones del menu «Importar o exportar» que son enlaces (etiquetas) */
+.sgap .menu a{display:flex;align-items:flex-start;gap:12px;padding:10px;border-radius:10px;color:var(--ink);text-decoration:none}
+.sgap .menu a svg{color:var(--sigma-purple);flex:none;margin-top:1px}
+.sgap .menu a:hover,.sgap .menu a:focus-visible{background:var(--sigma-purple-soft)}

@@ -184,56 +184,13 @@
     }
 
     /* ---------------- Mapa por ubicación ----------------
-       Planta › bodega › estante: cada repuesto cae en el estante donde tiene
-       saldo. Si esta repartido en varios, va a «Varios estantes». */
+       Lo dibuja Js/sigma-repuesto-mapa.js con WsBodegaMapa (el mismo servicio
+       de SIGMA Twin): arrastrar mueve el stock de verdad. Aqui solo se le da
+       el contenedor y la busqueda. */
     function pintarMapa(D) {
         var cont = $('#rcMapa'); if (!cont) return;
         if (!$('#rcMBody', cont)) cont.innerHTML = barra() + '<div id="rcMBody"></div>';
-        var items = filtrar(D.items), porBod = {};
-        items.forEach(function (x) {
-            (x.saldos || []).forEach(function (s) {
-                if (s.cant <= 0) return;
-                var b = porBod[s.bodega] = porBod[s.bodega] || { racks: {}, varios: [] };
-                if (s.ubic) (b.racks[s.ubic] = b.racks[s.ubic] || []).push({ x: x, s: s });
-                else b.varios.push({ x: x, s: s });
-            });
-        });
-        var plantas = {}, orden = [];
-        (D.bodegas || []).forEach(function (b) {
-            var k = b.planta || 'Sin planta';
-            if (!plantas[k]) { plantas[k] = []; orden.push(k); }
-            plantas[k].push(b);
-        });
-        var chip = function (o) {
-            var k = o.s.bajo ? 'bajo' : o.s.sobre ? 'alto' : 'ok';
-            return '<button type="button" class="rcx-mchip es-' + k + '" data-rcabrir="' + o.x.id + '" title="' + esc(o.x.nombre) + ' · ' + esc(o.s.cantTxt) + ' ' + esc(o.x.unidad) + '">'
-                + '<i></i><span>' + esc(o.x.nombre) + '</span><b>' + esc(o.s.cantTxt) + '</b></button>';
-        };
-        var html = orden.map(function (pl) {
-            return '<section class="rcx-mplanta"><h3>' + svg('<path d="M3 21V9l6-4v4l6-4v4l6-4v16z"/>', 18) + esc(pl) + '</h3><div class="rcx-mbods">'
-                + plantas[pl].map(function (b) {
-                    var d = porBod[b.id] || { racks: {}, varios: [] };
-                    var racks = (b.racks || []).slice();
-                    Object.keys(d.racks).forEach(function (c) { if (!racks.some(function (r) { return r.codigo === c; })) racks.push({ codigo: c, nombre: c }); });
-                    var n = 0, alertas = 0;
-                    Object.keys(d.racks).forEach(function (c) { d.racks[c].forEach(function (o) { n++; if (o.s.bajo) alertas++; }); });
-                    d.varios.forEach(function (o) { n++; if (o.s.bajo) alertas++; });
-                    if (ST.q && !n) return '';
-                    return '<article class="rcx-mbod"><header><div><b>' + esc(b.nombre) + '</b><small>' + esc(b.codigo) + ' · ' + racks.length + ' estantes</small></div>'
-                        + '<span class="rcx-pill ' + (alertas ? 'es-bajo' : 'es-ok') + '"><i style="background:' + (alertas ? DOT.bajo : DOT.ok) + '"></i>' + n + ' repuestos' + (alertas ? ' · ' + alertas + ' bajo mínimo' : '') + '</span></header>'
-                        + '<div class="rcx-mracks">'
-                        + racks.map(function (r) {
-                            var os = d.racks[r.codigo] || [];
-                            return '<div class="rcx-mrack' + (os.length ? '' : ' es-vacio') + (os.some(function (o) { return o.s.bajo; }) ? ' es-alerta' : '') + '"><div class="rcx-mrack-h">' + svg('<rect x="4" y="3" width="16" height="18" rx="1.5"/><path d="M4 9h16M4 15h16"/>', 16) + '<b>' + esc(r.codigo) + '</b><span>' + os.length + '</span></div>'
-                                + (os.length ? '<div class="rcx-mchips">' + os.slice(0, 6).map(chip).join('') + (os.length > 6 ? '<small>+' + (os.length - 6) + ' más</small>' : '') + '</div>' : '<small class="rcx-mvacio">Vacío</small>') + '</div>';
-                        }).join('')
-                        + (d.varios.length ? '<div class="rcx-mrack es-varios"><div class="rcx-mrack-h">' + svg('<path d="M4 7h16M4 12h16M4 17h10"/>', 16) + '<b>Varios estantes</b><span>' + d.varios.length + '</span></div><div class="rcx-mchips">' + d.varios.slice(0, 8).map(chip).join('') + (d.varios.length > 8 ? '<small>+' + (d.varios.length - 8) + ' más</small>' : '') + '</div></div>' : '')
-                        + (!racks.length && !d.varios.length ? '<small class="rcx-mvacio">Sin estantes ni saldo todavía.</small>' : '')
-                        + '</div></article>';
-                }).join('') + '</div></section>';
-        }).join('');
-        $('#rcMBody', cont).innerHTML = html.replace(/<section class="rcx-mplanta"><h3>[\s\S]*?<\/h3><div class="rcx-mbods"><\/div><\/section>/g, '')
-            || '<div class="rcx-vacio">No encontramos repuestos con esa búsqueda.</div>';
+        if (window.RcMapa) RcMapa.pintar($('#rcMBody', cont), { q: ST.q, abrirFicha: abrir });
     }
 
     /* ---------------- vista ---------------- */
@@ -298,40 +255,98 @@
 
     /* ---------------- Pestañas: Tipos y Bodegas dentro del centro ----------------
        Los mismos catalogos del Centro de activos (.sa-cat): titulo, buscador,
-       «+ Nuevo» y una fila por registro. Crear y editar abren su modal. */
+       «+ Nuevo» y una fila por registro. Crear y editar es EN LA MISMA FILA,
+       sin modal: «+ Nuevo» abre una fila de formulario arriba y «Editar»
+       convierte la fila en formulario. */
     var TAB_KEY = 'sigma.repuestos.tab';
+    var TAB = 'repuestos';
+    var EDIT = null;                      // {k, id}: la fila que se esta creando (id 0) o editando
+    try { var tb = sessionStorage.getItem(TAB_KEY); if (tb === 'tipos' || tb === 'bodegas') TAB = tb; } catch (e) { }
+
+    var WS_REP = (function () {
+        var sc = document.querySelector('script[src*="sigma-repuesto-centro.js"]');
+        return (sc ? sc.getAttribute('src').split('/Js/')[0] : '') + '/WebService/';
+    })();
+    async function wsPost(servicio, metodo, datos) {
+        var r = await fetch(WS_REP + servicio + '.asmx/' + metodo, {
+            method: 'POST', credentials: 'same-origin',
+            headers: { 'Content-Type': 'application/json; charset=utf-8' }, body: JSON.stringify(datos || {})
+        });
+        if (!r.ok) throw new Error('El servidor respondió ' + r.status + '.');
+        var d = JSON.parse((await r.json()).d);
+        if (d.error) throw new Error(d.detalle || 'No se pudo completar la operación.');
+        return d;
+    }
+    function aviso(texto, error) {
+        var t = document.createElement('div');
+        t.className = 'rm-toast' + (error ? ' es-error' : '');
+        t.innerHTML = '<span>' + esc(texto) + '</span>';
+        document.body.appendChild(t);
+        setTimeout(function () { t.classList.add('es-fuera'); setTimeout(function () { t.remove(); }, 400); }, error ? 6500 : 3200);
+    }
+    var campo = function (k, lbl, val, o) {
+        o = o || {};
+        return '<label>' + lbl + '<input type="' + (o.tipo || 'text') + '" data-f="' + k + '" value="' + esc(val == null ? '' : val) + '" maxlength="' + (o.max || 400) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + (o.ro ? ' readonly' : '') + '></label>';
+    };
+
     var CATS = {
         tipos: {
-            host: '#rcCatTipos', titulo: 'Tipos de repuesto', nuevo: 'Nuevo tipo',
+            host: '#rcCatTipos', titulo: 'Tipos de repuesto', nuevo: 'Nuevo tipo', servicio: 'WsRepuestoCentro',
             ayuda: 'Agrupan los repuestos en el listado. Un repuesto sin tipo queda «Sin clasificar».',
-            buscar: 'Busca un tipo…', cols: 'minmax(220px,2fr) minmax(200px,2fr) 120px 170px',
+            buscar: 'Busca un tipo…', cols: 'minmax(220px,2fr) minmax(200px,2fr) 110px 190px',
             cab: ['Tipo', 'Descripción', 'Repuestos', ''],
             puede: function (D) { return D.puedeEditar; },
-            abrir: function (q) { if (window.abrirTipoRepuesto) abrirTipoRepuesto(q); },
             fila: function (x) {
                 return '<span class="sa-cat-dos"><b>' + esc(x.nombre) + '</b><small>' + esc(x.codigo) + '</small></span>'
                     + '<span style="color:var(--muted);font-size:13px">' + (esc(x.descripcion) || '—') + '</span>'
                     + '<span class="sa-cat-num">' + x.repuestos + '</span>';
-            }
+            },
+            form: function (x, D) {
+                return campo('nombre', 'Nombre *', x.nombre, { ph: 'Ej.: Rodamientos' })
+                    + campo('descripcion', 'Descripción', x.descripcion, { ph: 'Qué reúne este tipo' })
+                    + campo('orden', 'Orden', x.orden || '', { tipo: 'number', max: 4, ph: '0' })
+                    + (x.id ? campo('codigo', 'Código', x.codigo, { ro: true }) : '');
+            },
+            guardar: async function (x, v) {
+                if (!v.nombre.trim()) throw new Error('Escribe el nombre del tipo.');
+                return wsPost('WsRepuestoCentro', 'GuardarTipo', { datos: JSON.stringify({ id: x.id || 0, nombre: v.nombre, descripcion: v.descripcion, orden: v.orden }) });
+            },
+            quitar: function (x) { return wsPost('WsRepuestoCentro', 'EliminarTipo', { id: x.id }); }
         },
         bodegas: {
-            host: '#rcCatBodegas', titulo: 'Bodegas', nuevo: 'Nueva bodega',
-            ayuda: 'Dónde se guardan los repuestos. Cada una con sus racks y su mapa 3D.',
-            buscar: 'Busca una bodega o una planta…', cols: 'minmax(220px,2fr) minmax(160px,1.4fr) 120px 140px 170px',
-            cab: ['Bodega', 'Planta', 'Ubicaciones', 'Repuestos con saldo', ''],
+            host: '#rcCatBodegas', titulo: 'Bodegas', nuevo: 'Nueva bodega', servicio: 'WsBodegaMapa',
+            ayuda: 'Dónde se guardan los repuestos. Las ubicaciones (racks) se crean y se reubican en «Mapa por ubicación».',
+            buscar: 'Busca una bodega o una planta…', cols: 'minmax(220px,2fr) minmax(160px,1.4fr) 110px 130px 190px',
+            cab: ['Bodega', 'Planta', 'Ubicaciones', 'Con saldo', ''],
             puede: function (D) { return D.puedeBodegas; },
-            abrir: function (q) { if (window.abrirBodega) abrirBodega(q); },
             fila: function (x) {
                 return '<span class="sa-cat-dos"><b>' + esc(x.nombre) + '</b><small>' + esc(x.codigo) + '</small></span>'
                     + '<span>' + (esc(x.planta) || '—') + '</span>'
                     + '<span class="sa-cat-num">' + x.ubicaciones + '</span>'
                     + '<span class="sa-cat-num">' + x.repuestos + '</span>';
+            },
+            form: function (x, D) {
+                var pl = (D.plantas || []).map(function (p) { return '<option value="' + p.id + '"' + (p.id === (x.plantaId || (D.plantas[0] || {}).id) ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
+                return campo('nombre', 'Nombre *', x.nombre, { ph: 'Ej.: Bodega central' })
+                    + '<label>Planta *<select data-f="planta">' + pl + '</select></label>'
+                    + campo('descripcion', 'Descripción', x.descripcion, { ph: 'Para qué se usa' });
+            },
+            guardar: async function (x, v) {
+                if (!v.nombre.trim()) throw new Error('Escribe el nombre de la bodega.');
+                var d = { id: x.id || 0, planta: parseInt(v.planta, 10), nombre: v.nombre.trim(), descripcion: v.descripcion };
+                if (x.id) d.codigo = x.codigo;
+                return wsPost('WsBodegaMapa', 'GuardarBodega', { datos: JSON.stringify(d) });
             }
         }
     };
-    var TAB = 'repuestos';
-    try { var tb = sessionStorage.getItem(TAB_KEY); if (tb === 'tipos' || tb === 'bodegas') TAB = tb; } catch (e) { }
 
+    function filaForm(k, x, D) {
+        var c = CATS[k];
+        return '<div class="sa-cat-fila is-form rcx-inline" data-rcform="' + k + '" data-id="' + (x.id || 0) + '"><div class="rcx-inline-c">' + c.form(x, D) + '</div>'
+            + '<span class="rcx-inline-acc">' + (x.id && c.quitar ? '<button type="button" class="btn btn--sm btn--borrar" data-rcquitar="' + k + '|' + x.id + '">Quitar</button>' : '')
+            + '<button type="button" class="btn btn--ghost" data-rccancelar="1">Cancelar</button>'
+            + '<button type="button" class="btn btn--primary" data-rcguardar="' + k + '">' + (x.id ? 'Guardar cambios' : 'Crear') + '</button></span></div>';
+    }
     function pintarCat(k, D) {
         var c = CATS[k], host = $(c.host); if (!host) return;
         if (!host.querySelector('.sa-cat-lista')) {
@@ -340,18 +355,21 @@
                 + (c.puede(D) ? '<button type="button" class="btn btn--primary" data-rccatnuevo="' + k + '">+ ' + c.nuevo + '</button>' : '')
                 + '</div><div class="sa-cat-lista" style="margin-top:14px"></div>';
         }
-        var q = norm((host.querySelector('input') || {}).value || '');
+        var q = norm((host.querySelector('input[type=search]') || {}).value || '');
         var filas = (D[k] || []).filter(function (x) { return !q || norm(JSON.stringify(x)).indexOf(q) >= 0; });
         var lista = host.querySelector('.sa-cat-lista');
         lista.style.setProperty('--cols', c.cols);
-        lista.innerHTML = !filas.length
+        var nuevoForm = EDIT && EDIT.k === k && EDIT.id === 0 ? filaForm(k, {}, D) : '';
+        lista.innerHTML = (!filas.length && !nuevoForm)
             ? '<p class="sa-cat-vacio"><b>' + (q ? 'Nada coincide con esa búsqueda' : 'Todavía no hay registros') + '</b></p>'
-            : '<div class="sa-cat-cab">' + c.cab.map(function (h) { return '<span>' + h + '</span>'; }).join('') + '</div>'
+            : nuevoForm + '<div class="sa-cat-cab">' + c.cab.map(function (h) { return '<span>' + h + '</span>'; }).join('') + '</div>'
               + filas.map(function (x) {
+                  if (EDIT && EDIT.k === k && EDIT.id === x.id) return filaForm(k, x, D);
                   return '<div class="sa-cat-fila">' + c.fila(x) + '<span class="sa-cat-acc">'
-                      + (c.puede(D) ? '<button type="button" class="btn btn--sm" data-rccatedit="' + k + '" data-q="' + esc(x.q) + '">Editar</button>' : '')
+                      + (c.puede(D) ? '<button type="button" class="btn btn--sm" data-rccatedit="' + k + '|' + x.id + '">Editar</button>' : '')
                       + '</span></div>';
               }).join('');
+        var f = lista.querySelector('.rcx-inline input'); if (f && EDIT) f.focus();
     }
     function pestana(k) {
         TAB = k;
@@ -364,12 +382,38 @@
         document.querySelectorAll('[data-rcpanel]').forEach(function (p) { p.hidden = p.getAttribute('data-rcpanel') !== k; });
         var D = datos(); if (!D) return;
         if (CATS[k]) pintarCat(k, D);
+        else if (k === 'repuestos' && ST.vista === 'mapa') pintar();
     }
-    document.addEventListener('click', function (e) {
+    function buscarFila(k, id) { var D = datos(); return D ? (D[k] || []).filter(function (x) { return x.id === id; })[0] : null; }
+    document.addEventListener('click', async function (e) {
         var t = e.target; if (!t.closest) return;
-        var tb = t.closest('[data-rctab]'); if (tb) { pestana(tb.getAttribute('data-rctab')); return; }
-        var nv = t.closest('[data-rccatnuevo]'); if (nv) { CATS[nv.getAttribute('data-rccatnuevo')].abrir(0); return; }
-        var ed = t.closest('[data-rccatedit]'); if (ed) { CATS[ed.getAttribute('data-rccatedit')].abrir(ed.getAttribute('data-q')); }
+        var c;
+        if ((c = t.closest('[data-rctab]'))) { EDIT = null; pestana(c.getAttribute('data-rctab')); return; }
+        if ((c = t.closest('[data-rccatnuevo]'))) { EDIT = { k: c.getAttribute('data-rccatnuevo'), id: 0 }; pintarCat(EDIT.k, datos()); return; }
+        if ((c = t.closest('[data-rccatedit]'))) { var a = c.getAttribute('data-rccatedit').split('|'); EDIT = { k: a[0], id: +a[1] }; pintarCat(a[0], datos()); return; }
+        if ((c = t.closest('[data-rccancelar]'))) { var k0 = EDIT && EDIT.k; EDIT = null; if (k0) pintarCat(k0, datos()); return; }
+        if ((c = t.closest('[data-rcguardar]'))) {
+            var k = c.getAttribute('data-rcguardar'), f = c.closest('[data-rcform]'), D = datos();
+            var v = {}; [].forEach.call(f.querySelectorAll('[data-f]'), function (i) { v[i.getAttribute('data-f')] = i.value; });
+            var id = +f.getAttribute('data-id'), x = id ? buscarFila(k, id) : {};
+            c.disabled = true;
+            try { await CATS[k].guardar(x || {}, v); aviso(id ? 'Cambios guardados.' : 'Creado.'); EDIT = null; if (window.refresh) refresh(); }
+            catch (err) { aviso(err.message, true); c.disabled = false; }
+            return;
+        }
+        if ((c = t.closest('[data-rcquitar]'))) {
+            var p = c.getAttribute('data-rcquitar').split('|'), kk = p[0], xx = buscarFila(kk, +p[1]);
+            if (!xx || !confirm('¿Quitar «' + xx.nombre + '»?')) return;
+            try { await CATS[kk].quitar(xx); aviso('Quitado.'); EDIT = null; if (window.refresh) refresh(); }
+            catch (err) { aviso(err.message, true); }
+        }
+    });
+    document.addEventListener('keydown', function (e) {
+        if (!EDIT) return;
+        if (e.key === 'Escape') { var k0 = EDIT.k; EDIT = null; pintarCat(k0, datos()); }
+        else if (e.key === 'Enter' && e.target.matches && e.target.matches('.rcx-inline input')) {
+            e.preventDefault(); var b = document.querySelector('[data-rcguardar]'); if (b) b.click();
+        }
     });
     document.addEventListener('input', function (e) {
         var k = e.target.getAttribute && e.target.getAttribute('data-rccat');

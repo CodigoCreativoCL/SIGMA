@@ -163,18 +163,6 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         return _bodegas;
     }
 
-    /// <summary>Los estantes de una bodega, para el «Mapa por ubicación».</summary>
-    private List<object> Racks(int bodega)
-    {
-        if (_racks == null)
-            _racks = new BodegaController().GetUbicaciones(new BodegaUbicacion { filtro_habilitado = true }) ?? new List<BodegaUbicacion>();
-        List<object> l = new List<object>();
-        foreach (BodegaUbicacion u in _racks)
-            if (u.bub_bodega == bodega) l.Add(new { id = u.bub_id, codigo = u.bub_codigo ?? "", nombre = u.bub_nombre ?? "" });
-        return l;
-    }
-    private List<BodegaUbicacion> _racks;
-
     private static int Entero(string v) { int n; return int.TryParse(v, out n) ? n : 0; }
 
 
@@ -223,8 +211,15 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         // La clasificacion masiva necesita seleccion multiple: eso vive en el
         // listado clasico, que sigue existiendo. El centro no la pierde.
         lnkClasificar.OnClientClick =
-            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/Repuestos.aspx") +
-            "',title:'Clasificar repuestos',width:1100,initialHeight:680,onClose:refresh});";
+            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/ClasificarRepuestos.aspx") +
+            "',title:'Clasificar repuestos',width:760,initialHeight:620,onClose:refresh});";
+        // Etiquetas de todo lo que hay en el catalogo: el centro de etiquetas, ya en REPUESTO.
+        hlEtiquetas.Visible = SitioBase.Token.Puede("IMPRIMIR ETIQUETAS");
+        hlEtiquetas.NavigateUrl = ResolveUrl("~/View/Comun/Impresion/CentroEtiquetas.aspx") + "?query=" +
+            Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + EtiquetaOrigen.Repuesto));
+        // SIGMA Twin: el mapa 3D de las bodegas, como una pestaña mas que lleva a su menu.
+        hlTwin.Visible = SitioBase.Token.Puede("VER BODEGAS");
+        hlTwin.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx");
 
         List<Repuesto> lista = new RepuestoController().GetRepuestos(FiltroActual()) ?? new List<Repuesto>();
 
@@ -393,13 +388,20 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         }
         List<object> bodegas = new List<object>();
         foreach (Bodega b in Bodegas())
-            bodegas.Add(new { racks = Racks(b.bod_id), id = b.bod_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + b.bod_id)), codigo = b.bod_codigo ?? "", nombre = b.bod_nombre ?? "", planta = b.planta_nombre ?? "", descripcion = b.bod_descripcion ?? "", ubicaciones = b.ubicaciones, repuestos = b.repuestos_con_saldo });
+            bodegas.Add(new { plantaId = b.bod_cliente_instalacion, id = b.bod_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + b.bod_id)), codigo = b.bod_codigo ?? "", nombre = b.bod_nombre ?? "", planta = b.planta_nombre ?? "", descripcion = b.bod_descripcion ?? "", ubicaciones = b.ubicaciones, repuestos = b.repuestos_con_saldo });
+
+        List<object> plantasJson = new List<object>();
+        HashSet<int> plantasVistas = new HashSet<int>();
+        foreach (Bodega b in Bodegas())
+            if (b.bod_cliente_instalacion > 0 && plantasVistas.Add(b.bod_cliente_instalacion))
+                plantasJson.Add(new { id = b.bod_cliente_instalacion, nombre = b.planta_nombre ?? "" });
 
         litLista.Text = "<script type=\"application/json\" id=\"rcDatos\">"
             + new System.Web.Script.Serialization.JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Serialize(new
             {
                 puedeEditar = puedeCrear,
-                puedeBodegas = SitioBase.Token.Puede("VER BODEGAS"),
+                puedeBodegas = SitioBase.Token.Puede("CREAR EDITAR BODEGAS"),
+                plantas = plantasJson,
                 items = datos,
                 tipos = tipos,
                 bodegas = bodegas
@@ -439,6 +441,11 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
             + (string.IsNullOrEmpty(r.repuesto_tipo_nombre) ? "" : " · " + Esc(r.repuesto_tipo_nombre))
             + (string.IsNullOrEmpty(r.rep_fabricante) ? "" : " · " + Esc(r.rep_fabricante))
             + (r.rep_habilitado ? "" : " · <span class=\"rc-badge es-off\">Deshabilitado</span>");
+
+        hlEtiqueta.Visible = SitioBase.Token.Puede("IMPRIMIR ETIQUETAS");
+        if (hlEtiqueta.Visible)
+            hlEtiqueta.Attributes["onclick"] = "return abrirEtiquetas('" +
+                Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + EtiquetaOrigen.Repuesto + "&Ids=" + r.rep_id)) + "');";
 
         /* Editar no abre un modal: vuelve editable la pestaña Ficha. */
         bool editando = puedeCrear && EditandoFicha;

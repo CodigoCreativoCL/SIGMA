@@ -115,6 +115,12 @@
             /* El cuadro de la foto va solo si la lista trae fotos (la propiedad
                img, aunque venga vacia): sin ella, una opcion con linea
                secundaria no muestra un cuadro vacio que parece casilla. */
+            if (op.x.tag) {
+                /* tag: {k:'a'|'s'|'c'|'r', t:'Activo'}; nivel: sangria del arbol */
+                return a + ' class="es-rico es-tipado es-n' + (op.x.nivel || 0) + '">' +
+                       '<span class="cb-tag es-' + esc(op.x.tag.k) + '">' + esc(op.x.tag.t) + '</span>' +
+                       '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
+            }
             if (op.x.sub != null || op.x.img != null)
                 return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : '<i></i>') + '</span>' : '') +
                        '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
@@ -131,18 +137,33 @@
         CB.act = actual >= 0 ? actual : (CB.ops.length ? 0 : -1);
         marcar();
 
-        var r = inp.getBoundingClientRect(), abajo = innerHeight - r.bottom;
-        ul.style.left = r.left + 'px'; ul.style.width = Math.max(r.width, 220) + 'px';
-        if (abajo < 240 && r.top > abajo) { ul.style.top = ''; ul.style.bottom = (innerHeight - r.top + 4) + 'px'; }
-        else { ul.style.bottom = ''; ul.style.top = (r.bottom + 4) + 'px'; }
+        CB.t = Date.now();
         ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
+        posicionar();
+    }
+
+    /* Bajo el campo, o arriba si abajo no cabe; nunca mas alta que el espacio que hay. */
+    function posicionar() {
+        var inp = CB.inp, ul = document.getElementById('sgComboLista'); if (!inp || !ul || ul.hidden) return;
+        var r = inp.getBoundingClientRect(), abajo = innerHeight - r.bottom - 12, arriba = r.top - 12;
+        ul.style.left = r.left + 'px'; ul.style.width = Math.max(r.width, 220) + 'px';
+        if (abajo < 240 && arriba > abajo) { ul.style.top = ''; ul.style.bottom = (innerHeight - r.top + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, arriba)) + 'px'; }
+        else { ul.style.bottom = ''; ul.style.top = (r.bottom + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, abajo)) + 'px'; }
     }
 
     function marcar() {
         var ul = lista();
         Array.prototype.forEach.call(ul.querySelectorAll('[data-i]'), function (li) { li.classList.toggle('is-activo', +li.getAttribute('data-i') === CB.act); });
         var li = ul.querySelector('.is-activo');
-        if (li && CB.inp) { li.scrollIntoView({ block: 'nearest' }); CB.inp.setAttribute('aria-activedescendant', li.id); }
+        /* Se desplaza SOLO la lista. scrollIntoView movia tambien la pagina cuando
+           la lista asomaba por debajo de un modal bajito, y ese scroll cerraba la
+           lista al abrirla. */
+        if (li && CB.inp) {
+            var t = li.offsetTop, b = t + li.offsetHeight;
+            if (t < ul.scrollTop) ul.scrollTop = Math.max(0, t - 6);
+            else if (b > ul.scrollTop + ul.clientHeight) ul.scrollTop = b - ul.clientHeight + 6;
+            CB.inp.setAttribute('aria-activedescendant', li.id);
+        }
     }
 
     function cerrar() {
@@ -206,8 +227,14 @@
         } else if (e.key === 'Escape' && abierta) { e.preventDefault(); e.stopPropagation(); cerrar(); }
         else if (e.key === 'Tab' && abierta && CB.act >= 0 && e.target.value.trim()) elegir(CB.act);
     }, true);
-    window.addEventListener('resize', cerrar);
-    document.addEventListener('scroll', function (e) { if (CB.inp && e.target.id !== 'sgComboLista') cerrar(); }, true);
+    /* Un modal que se ajusta a su contenido cambia de tamano al abrir la lista: se recoloca, no se cierra. */
+    window.addEventListener('resize', function () { if (CB.inp) posicionar(); });
+    document.addEventListener('scroll', function (e) {
+        if (!CB.inp || e.target.id === 'sgComboLista') return;
+        if (Date.now() - (CB.t || 0) < 400) return;                    // el acomodo de la propia apertura
+        var t = e.target;
+        if (t === document || t === document.documentElement || (t.contains && t.contains(CB.inp))) posicionar();
+    }, true);
 
     window.SigmaCombo = { html: html, definir: definir, abrir: abrir, cerrar: cerrar, salir: salir };
 })();

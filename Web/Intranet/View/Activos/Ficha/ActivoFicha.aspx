@@ -14,6 +14,7 @@
     <%-- Las vistas de la planta (rediseño 05-10-2026) y three.js bajo demanda:
          el importmap deja que el import dinamico encuentre "three". --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activos.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-diagrama.css") %>' rel="stylesheet" />
     <script type="importmap">
         {
             "imports": {
@@ -343,8 +344,17 @@
            se guarda con WsActivos.VincularRepuesto. */
         var esrRepuestos = null;
         function esrAbrir() {
-            var tpl = document.getElementById('sgEsDatos'), para = document.getElementById('esrPara');
-            if (para) para.innerHTML = tpl && tpl.querySelector('[data-alcances]') ? tpl.querySelector('[data-alcances]').innerHTML : '';
+            var tpl = document.getElementById('sgEsDatos'), para = document.getElementById('esrParaW');
+            /* «Le sirve a» con el combo de SIGMA: cada opcion dice si es el activo, un subactivo o un componente. */
+            if (para) {
+                var ops = tpl ? [].slice.call(tpl.querySelectorAll('[data-alcances] option')) : [];
+                var lista = ops.map(function (o) {
+                    var k = o.getAttribute('data-tipo') || 'a';
+                    return { id: o.value, n: o.getAttribute('data-nom') || o.textContent, sub: o.getAttribute('data-sub') || '', nivel: +o.getAttribute('data-nivel') || 0,
+                             tag: { k: k, t: k === 'a' ? 'Activo' : k === 's' ? 'Subactivo' : 'Componente' } };
+                });
+                para.innerHTML = window.SigmaCombo ? SigmaCombo.html('esrparaval', lista, lista.length ? lista[0].id : '', { clave: 'esr:para', id: 'esrPara', ph: 'Elige a qué le sirve', etiqueta: 'Le sirve a' }) : '';
+            }
             document.getElementById('esrObs').value = '';
             document.getElementById('sgEsrFaltan').hidden = true;
             esVista('repuesto');
@@ -370,7 +380,9 @@
             var inp = caja.querySelector('[data-sacombo]'); if (inp && P.comboSalir) P.comboSalir(inp);
             var h = caja.querySelector('input[name="esrep"]'), rep = h ? +h.value || 0 : 0;
             if (!rep) { esrFalta('Elige el repuesto de la lista.'); if (inp) inp.focus(); return false; }
-            var v = (document.getElementById('esrPara').value || '').split(':');
+            var ph = document.querySelector('#esrParaW input[type=hidden]'), pi = document.getElementById('esrPara');
+            if (pi && window.SigmaCombo) SigmaCombo.salir(pi);
+            var v = ((ph && ph.value) || '').split(':');
             b.disabled = true;
             P.ws('VincularRepuesto', { repuesto: rep, activo: v[0] === 'a' ? +v[1] : 0, componente: v[0] === 'c' ? +v[1] : 0, observacion: document.getElementById('esrObs').value })
              .then(function () {
@@ -472,7 +484,7 @@
             if (d.pie) det.appendChild(esNodo('p', 'sg-es-det-pie', d.pie));
         }
         function esVer(btn, sinMover) {
-            document.querySelectorAll('.sg-es-item.es-viendo').forEach(function (x) { x.classList.remove('es-viendo'); x.removeAttribute('aria-current'); });
+            document.querySelectorAll('.sg-es-item.es-viendo,.dg-item.es-viendo').forEach(function (x) { x.classList.remove('es-viendo'); x.removeAttribute('aria-current'); });
             btn.classList.add('es-viendo');
             btn.setAttribute('aria-current', 'true');
             var d = null;
@@ -484,7 +496,7 @@
         function esCerrarDet() {
             var det = document.getElementById('sgEsDetalle');
             if (det) det.classList.remove('es-abierto');
-            var v = document.querySelector('.sg-es-item.es-viendo');
+            var v = document.querySelector('.sg-es-item.es-viendo,.dg-item.es-viendo');
             if (v) { v.classList.remove('es-viendo'); v.removeAttribute('aria-current'); v.focus(); }
             return false;
         }
@@ -494,8 +506,20 @@
             b.textContent = ver ? 'Ocultar partes retiradas' : b.getAttribute('data-txt');
             return false;
         }
+        /* Diagrama: las cuatro vistas (jerarquica, lista, componentes, repuestos). Delegado: el panel se repinta. */
+        document.addEventListener('click', function (e) {
+            var b = e.target.closest ? e.target.closest('[data-dgv]') : null; if (!b) return;
+            var dg = b.closest('.dg'); if (!dg) return;
+            [].forEach.call(dg.querySelectorAll('[data-dgv]'), function (x) { x.classList.toggle('es-on', x === b); });
+            [].forEach.call(dg.querySelectorAll('[data-dgp]'), function (p) { p.hidden = p.getAttribute('data-dgp') !== b.getAttribute('data-dgv'); });
+            try { sessionStorage.setItem('sigma.diagrama.vista', b.getAttribute('data-dgv')); } catch (x) { }
+        });
+        function dgRestaurar() {
+            var v; try { v = sessionStorage.getItem('sigma.diagrama.vista'); } catch (x) { }
+            var b = v && document.querySelector('.dg [data-dgv="' + v + '"]'); if (b) b.click();
+        }
         /* Ya no se abre nada solo: el detalle aparece cuando se toca algo. */
-        function esIniciar() { }
+        function esIniciar() { dgRestaurar(); }
 
         /* "Agregar qué medir" en Condición: un menu chico, se cierra al tocar afuera. */
         function sgCondMenu(b) {
@@ -1002,6 +1026,7 @@
           <div class="menu" id="menuIO" role="menu" hidden>
             <button type="button" role="menuitem" data-io="import"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5"/></svg><span><b>Importar desde Excel</b><small>Carga muchos activos de una vez</small></span></button>
             <button type="button" role="menuitem" data-io="template"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H6v18h12V7l-4-4zM14 3v4h4M9 13h6M9 17h6"/></svg><span><b>Descargar plantilla</b><small>El Excel con las columnas listas para llenar</small></span></button>
+            <% if (SitioBase.Token.Puede("IMPRIMIR ETIQUETAS")) { %><a role="menuitem" href="<%=ResolveUrl("~/View/Comun/Impresion/CentroEtiquetas.aspx") %>?query=<%=Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + SitioBase.Model.EtiquetaOrigen.Activo)) %>"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-4M14 18h2"/></svg><span><b>Imprimir etiquetas</b><small>QR o código de barras de los activos</small></span></a><% } %>
             <button type="button" role="menuitem" data-io="export"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg><span><b>Exportar a Excel</b><small>Los activos que estás viendo ahora</small></span></button>
           </div>
         </div>
@@ -1352,7 +1377,7 @@
                              despues su historia. --%>
                         <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-home-outline"></i>Resumen</a>
                         <a href="#" class="sg-a3-tab" data-sec="ficha"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
-                        <a href="#" class="sg-a3-tab" data-sec="componentes"><i class="mdi mdi-puzzle-outline"></i>Componentes<asp:Literal ID="litNumComp" runat="server" /></a>
+                        <a href="#" class="sg-a3-tab" data-sec="componentes"><i class="mdi mdi-sitemap-outline"></i>Diagrama<asp:Literal ID="litNumComp" runat="server" /></a>
                         <a href="#" class="sg-a3-tab" data-sec="condicion"><i class="mdi mdi-gauge"></i>Condición y medidores<asp:Literal ID="litNumCond" runat="server" /></a>
                         <a href="#" class="sg-a3-tab" data-sec="historial"><i class="mdi mdi-clock-outline"></i>Historial</a>
                         <a href="#" class="sg-a3-tab" data-sec="ordenes"><i class="mdi mdi-clipboard-text-outline"></i>Órdenes de trabajo<asp:Literal ID="litNumOt" runat="server" /></a>
@@ -1651,8 +1676,8 @@
                     <div class="sg-ot-card sg-es-card">
                         <div class="sg-es-barra">
                             <div>
-                                <h3>¿De qué está hecho este activo?</h3>
-                                <p>Toca cualquier elemento para ver su detalle.</p>
+                                <h3>Diagrama del activo</h3>
+                                <p>De qué está hecho: sus subactivos, componentes y repuestos. Toca cualquier elemento para ver su detalle.</p>
                             </div>
                             <asp:Panel ID="pnlEsAgregar" runat="server" CssClass="sg-es-agregar-wrap">
                                 <button type="button" class="sg-ot-btn es-primario" onclick="return esAsistente(true);"><i class="mdi mdi-plus"></i>Agregar</button>
@@ -1664,12 +1689,6 @@
                         <div class="sg-es-regla">
                             <span class="sg-es-regla-txt"><i class="mdi mdi-lightbulb-on-outline"></i>
                                 <span>¿Te importa <b>esa</b> pieza en particular? → subactivo o componente. &nbsp;¿Da lo mismo cuál uses de la bodega? → repuesto.</span></span>
-                            <span class="sg-es-leyenda" aria-label="Colores">
-                                <span><i class="es-equipo"></i>Activo</span>
-                                <span><i class="es-sub"></i>Subactivo</span>
-                                <span><i class="es-comp"></i>Componente</span>
-                                <span><i class="es-rep"></i>Repuesto</span>
-                            </span>
                         </div>
 
                         <div class="sg-es-layout">
@@ -2136,11 +2155,11 @@
                     <div class="sgap sg-es-sgap" id="esrCombo"><p class="sg-es-ayuda">Cargando repuestos…</p></div>
                     <span class="sg-es-ayuda">Busca por nombre o código. Ves su foto y lo que hay en bodega.</span>
                 </div>
-                <label class="sg-es-campo es-ancho">
+                <div class="sg-es-campo es-ancho">
                     <span class="sg-es-etiq">Le sirve a</span>
-                    <select id="esrPara"></select>
-                    <span class="sg-es-ayuda">El activo completo, uno de sus subactivos o una de sus partes.</span>
-                </label>
+                    <div id="esrParaW"></div>
+                    <span class="sg-es-ayuda">El activo completo, uno de sus subactivos o una de sus partes: cada opción dice cuál es.</span>
+                </div>
                 <label class="sg-es-campo es-ancho">
                     <span class="sg-es-etiq">Observación</span>
                     <input type="text" id="esrObs" maxlength="500" placeholder="Ej.: verificar la medida antes de montar" autocomplete="off" />
