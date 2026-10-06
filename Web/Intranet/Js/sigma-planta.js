@@ -613,11 +613,20 @@ const SIGMA = {
   }
 };
 /* Lo que usa el resto de la pagina: el centro del activo usa el combo y la API en su asistente. */
+function distintos(l){
+  const vistos = new Map();
+  l.forEach(v => { const t = String(v || '').trim(); if (t && !vistos.has(norm(t))) vistos.set(norm(t), t); });
+  return [...vistos.values()].sort((a, b) => a.localeCompare(b, 'es'));
+}
 window.sigmaPlanta = { recargar: () => SIGMA.recargar(), pestana: k => SIGMA.pestana(k), ws, combo, comboSalir,
   /* para «+ Nuevo componente» de la pestaña Componentes (formulario del centro) */
   datos: () => S ? { activos: Object.values(S.activos).map(a => ({ id:a.aid, n:a.nombre, c:a.codigo, comps:(a.comps || []).map(x => ({ id:x.id, n:x.n })) }))
                                 .sort((x, y) => x.n.localeCompare(y.n)),
-                     estados: ((S.estados && S.estados.comp) || []).map(e => ({ id:e.id, n:e.n })) } : null,
+                     estados: ((S.estados && S.estados.comp) || []).map(e => ({ id:e.id, n:e.n })),
+                     /* «Qué es» y «Dónde va»: lo que ya usan los componentes de la planta,
+                        sin repetir (tampoco por mayúsculas o tildes) */
+                     tipos: distintos(Object.values(S.activos).flatMap(a => (a.comps || []).map(x => x.tipo))),
+                     lados: distintos(Object.values(S.activos).flatMap(a => (a.comps || []).map(x => x.lado))) } : null,
   recordar: k => { try { sessionStorage.setItem(KEY + '-volver', k); } catch(e){} } };
 
 const hasGsap = !!window.gsap;
@@ -2361,7 +2370,7 @@ function chooseNav(i){
   }
 }
 document.addEventListener('click', e => {
-  const o = e.target.closest('[data-navopen]'); if (o){ const pop = $('#navpop'); if (!pop.hidden && NAV.anchor === o) closeNav(false); else openNav(o.dataset.navopen, o); return; }
+  const o = e.target.closest('[data-navopen]'); if (o){ const pop = $('#navpop'); if (pop && !pop.hidden && NAV.anchor === o) closeNav(false); else openNav(o.dataset.navopen, o); return; }
   const st = e.target.closest('[data-lnstep]'); if (st && three){ const n = three.areaNav.length; if (!n) return; tourEnd(); const f = three.focus == null ? (+st.dataset.lnstep > 0 ? -1 : 0) : three.focus; focusArea(((f + +st.dataset.lnstep) % n + n) % n); renderLocNav(); return; }
   const it = e.target.closest('[data-npi]'); if (it){ chooseNav(+it.dataset.npi); return; }
   const nf = e.target.closest('[data-npf]'); if (nf){ NAV.f = nf.dataset.npf; NAV.active = 0; $$('[data-npf]').forEach(b => b.setAttribute('aria-pressed', b === nf)); buildNav(); $('#npQ').focus(); return; }
@@ -2370,7 +2379,7 @@ document.addEventListener('click', e => {
 document.addEventListener('input', e => { if (e.target.id === 'npQ'){ NAV.q = e.target.value; NAV.active = 0; buildNav(); } });
 document.addEventListener('keydown', e => {
   const pop = $('#navpop');
-  if (!pop.hidden){
+  if (pop && !pop.hidden){
     if (e.key === 'Escape'){ e.preventDefault(); e.stopImmediatePropagation(); closeNav(true); return; }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){ e.preventDefault(); e.stopImmediatePropagation(); NAV.active = Math.max(0, Math.min(NAV.items.length - 1, NAV.active + (e.key === 'ArrowDown' ? 1 : -1))); buildNav(); return; }
     if (e.key === 'Enter' && e.target.id === 'npQ'){ e.preventDefault(); chooseNav(NAV.active); return; }
@@ -2453,7 +2462,7 @@ document.addEventListener('click', e => {
   if (t.dataset.fstar){ e.preventDefault(); const url = fsList(t.dataset.fstar)[+t.dataset.i]; if (url && url !== fsCover(t.dataset.fstar)) fsSetCover(t.dataset.fstar, url); return; }
   if (t.dataset.fdel){ const url = fsList(t.dataset.fdel)[+t.dataset.i]; url && fsDel(t.dataset.fdel, url); return; }
   if (t.dataset.gal){ openGal(t.dataset.gal, +t.dataset.i || 0); return; }
-  if ($('#gal').hidden) return;
+  if (!$('#gal') || $('#gal').hidden) return;   // en el centro 360 la planta no se dibuja
   if (t.dataset.galclose || (t.dataset.galbg && e.target === t)){ closeGal(); return; }
   if (t.dataset.galstep){ GAL.i = (GAL.i + +t.dataset.galstep + fsList(GAL.key).length) % fsList(GAL.key).length; renderGal(); return; }
   if (t.dataset.galgo){ GAL.i = +t.dataset.galgo; renderGal(); return; }
@@ -2461,7 +2470,7 @@ document.addEventListener('click', e => {
   if (t.dataset.galdel){ const u = fsList(GAL.key)[GAL.i]; fsDel(GAL.key, u); return; }
 });
 document.addEventListener('keydown', e => {
-  if ($('#gal').hidden) return;
+  if (!$('#gal') || $('#gal').hidden) return;   // en el centro 360 la planta no se dibuja
   if (e.key === 'Escape'){ e.preventDefault(); e.stopImmediatePropagation(); closeGal(); }
   else if (e.key === 'ArrowLeft' || e.key === 'ArrowRight'){ e.preventDefault(); e.stopImmediatePropagation(); const n = fsList(GAL.key).length; GAL.i = (GAL.i + (e.key === 'ArrowRight' ? 1 : -1) + n) % n; renderGal(); }
 }, true);
