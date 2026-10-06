@@ -330,6 +330,20 @@
                          Una sola para todas: el tipo de alerta dice que ficha
                          cargar, asi que no hace falta una por modulo. -->
 
+                    <%-- SOPORTE: reportar un problema y la ayuda de ESTA pantalla.
+                         Los dibuja el servidor segun permiso; los atiende
+                         Js/sigma-soporte.js, que tambien entrega las campanas. --%>
+                    <% if (SoportePuede("SOPORTE REPORTAR") || SoportePuede("AYUDA VER")) { %>
+                    <li class="sg-sgs">
+                        <% if (SoportePuede("SOPORTE REPORTAR")) { %>
+                        <button type="button" class="sg-sgs-btn is-reportar" data-sgs-act="report" title="Reportar un problema"><i class="mdi mdi-alert-outline" aria-hidden="true"></i><span>Reportar problema</span></button>
+                        <% } %>
+                        <% if (SoportePuede("AYUDA VER")) { %>
+                        <button type="button" class="sg-sgs-btn is-ayuda" data-sgs-act="ayuda" aria-haspopup="dialog" title="Ayuda de esta pantalla"><i class="mdi mdi-help-circle-outline" aria-hidden="true"></i><span>Ayuda</span></button>
+                        <% } %>
+                    </li>
+                    <% } %>
+
                     <li class="dropdown notification-list sg-notif">
                         <%-- La campana del kit de marca. Variante LIGHT porque la
                              barra superior es clara: la dark lleva el borde del
@@ -631,6 +645,13 @@
 
             <asp:ContentPlaceHolder ID="chpScript" runat="server">
             </asp:ContentPlaceHolder>
+
+            <%-- Soporte: reportar, ayuda contextual y campañas en todas las
+                 pantallas, y las pantallas de View/Soporte. --%>
+            <% if (SitioBase.Token.TokenSeguridad()) { %>
+            <script type="text/javascript">window.SIGMA_SOPORTE = <%= SoporteConfig() %>;</script>
+            <script type="text/javascript" src="<%= SoporteAsset("~/Js/sigma-soporte.js") %>"></script>
+            <% } %>
           
         </div>
 

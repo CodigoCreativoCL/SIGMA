@@ -39,8 +39,68 @@ public partial class Master_Default : System.Web.UI.MasterPage
         SitioBase.SuscripcionAcceso.Exigir();
     }
 
+    /* ================= SOPORTE =================
+       El modulo Soporte vive en todas las paginas: «Reportar problema»,
+       «? Ayuda» y la entrega de campanas. El CSS va al <head> desde aca
+       (con <head runat="server"> no se pueden usar bloques <%= %> ahi). */
+
+    protected bool SoportePuede(string permiso)
+    {
+        return SitioBase.Token.TokenSeguridad() && SitioBase.Token.Puede(permiso);
+    }
+
+    protected string SoporteAsset(string ruta)
+    {
+        string url = ResolveUrl(ruta);
+        try
+        {
+            string fisica = Server.MapPath(ruta);
+            if (System.IO.File.Exists(fisica)) return url + "?v=" + System.IO.File.GetLastWriteTimeUtc(fisica).Ticks;
+        }
+        catch (Exception) { }
+        return url;
+    }
+
+    /// <summary>
+    /// Lo que sigma-soporte.js necesita saber de la sesion y de la pantalla,
+    /// sin una consulta extra por pagina: los permisos ya estan en cache y la
+    /// ruta Modulo > Submodulo > Pantalla sale del mapa de Menus en memoria.
+    /// </summary>
+    protected string SoporteConfig()
+    {
+        Dictionary<string, object> c = new Dictionary<string, object>();
+        int usuario;
+        int.TryParse(SitioBase.Session.UsuarioId(), out usuario);
+        c["raiz"] = ResolveUrl("~/");
+        c["usuario"] = usuario;
+        c["nombre"] = SitioBase.Session.UsuarioNombreCompleto();
+        c["clienteId"] = SitioBase.Session.ClienteId();
+        c["clienteNombre"] = SitioBase.Session.ClienteNombre();
+        c["permisos"] = new Dictionary<string, bool>
+        {
+            { "reportar", SoportePuede("SOPORTE REPORTAR") },
+            { "ayuda", SoportePuede("AYUDA VER") },
+            { "gestionar", SoportePuede("SOPORTE GESTIONAR") },
+            { "ayudaAdmin", SoportePuede("AYUDA ADMINISTRAR") },
+            { "campanas", SoportePuede("CAMPANAS ADMINISTRAR") },
+            { "analitica", SoportePuede("SOPORTE ANALITICA") }
+        };
+        string[] ctx = SitioBase.Controller.SoporteContexto.DePagina(SitioBase.Token.PaginaActual());
+        c["contexto"] = ctx == null ? null : new Dictionary<string, string> { { "modulo", ctx[0] }, { "submodulo", ctx[1] }, { "pantalla", ctx[2] } };
+        /* "</" cortaria el <script> si un nombre lo trajera. */
+        return new JavaScriptSerializer().Serialize(c).Replace("</", "<\\/");
+    }
+
     protected void Page_PreRender(object sender, EventArgs e)
     {
+        if (SitioBase.Token.TokenSeguridad() && Page.Header != null)
+        {
+            HtmlLink css = new HtmlLink();
+            css.Href = SoporteAsset("~/Css/LookAndFeel/sigma-soporte.css");
+            css.Attributes["rel"] = "stylesheet";
+            Page.Header.Controls.Add(css);
+        }
+
         if (SitioBase.Token.TokenSeguridad())
         {
             PintarClienteActual();
