@@ -20,6 +20,8 @@
 <script type="text/javascript">var AF_PASOS = 6;</script>
 <% if (!EnCentro) { %>
 <link href='<%=Asset("~/Css/LookAndFeel/sigma-asistente.css") %>' rel="stylesheet" />
+<link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+<script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
 <script type="text/javascript" src='<%=Asset("~/Js/sigma-asistente.js") %>'></script>
 <% } %>
 

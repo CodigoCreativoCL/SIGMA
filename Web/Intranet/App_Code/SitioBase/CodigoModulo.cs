@@ -16,17 +16,21 @@ namespace SitioBase
     ///   para que la etiqueta dijera "ARE-" mientras lo guardado empieza con
     ///   otra cosa.
     ///
-    /// EL CACHÉ DURA UNA PETICIÓN
+    /// EL CACHÉ ES DEL SITIO Y DURA DIEZ MINUTOS
     ///
     ///   Una ficha pregunta el prefijo dos o tres veces —al pintar el campo,
-    ///   al guardar— y sería un viaje a la base cada vez. Vive en
-    ///   `HttpContext.Items`, que se vacía al terminar la petición: dentro de
-    ///   una misma página todas las respuestas son iguales, y un cambio de
-    ///   prefijo se ve en el clic siguiente.
+    ///   al guardar—. Antes vivía en `HttpContext.Items` y se leía una vez
+    ///   por petición, pero con la base remota esa sola lectura son ~250 ms
+    ///   en fila en CADA apertura de ficha, y los prefijos son los mismos
+    ///   para todos los clientes y no tienen pantalla: cambian solo con un
+    ///   script SQL.
     ///
-    ///   No se usa `Session` a propósito. Ahí duraría hasta que la persona
-    ///   cerrara sesión, y un prefijo corregido seguiría mostrándose mal
-    ///   durante horas.
+    ///   Ahora vive en el caché de la aplicación (`HttpRuntime.Cache`) con
+    ///   vencimiento absoluto de diez minutos: un prefijo corregido por
+    ///   script se ve a más tardar diez minutos después, sin reiniciar el
+    ///   sitio. Sigue sin usarse `Session`: ahí duraría hasta que la persona
+    ///   cerrara sesión. Si la lectura falla no se guarda nada, para no dejar
+    ///   el sitio diez minutos sin prefijos por un corte de un segundo.
     ///
     /// SI NO HAY, NO SE INVENTA
     ///
@@ -115,17 +119,14 @@ namespace SitioBase
         }
 
         /// <summary>
-        /// Todos los prefijos, leídos una vez por petición.
+        /// Todos los prefijos, leídos a lo más una vez cada diez minutos.
         /// </summary>
         private static Dictionary<string, string> Mapa()
         {
-            HttpContext ctx = HttpContext.Current;
+            Dictionary<string, string> mapa = HttpRuntime.Cache[CLAVE] as Dictionary<string, string>;
+            if (mapa != null) return mapa;
 
-            if (ctx != null && ctx.Items[CLAVE] != null)
-                return (Dictionary<string, string>)ctx.Items[CLAVE];
-
-            Dictionary<string, string> mapa =
-                new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            mapa = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
             SqlCommand cmd = null;
 
@@ -146,9 +147,12 @@ namespace SitioBase
                 /* Sin prefijos la ficha deja escribir el código completo. Es
                    peor dejar la pantalla caída que dejarla sin la ayuda. */
                 if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                return mapa;
             }
 
-            if (ctx != null) ctx.Items[CLAVE] = mapa;
+            /* Se guarda una copia que nadie modifica: el diccionario se lee
+               desde varias peticiones a la vez. */
+            HttpRuntime.Cache.Insert(CLAVE, mapa, null, DateTime.UtcNow.AddMinutes(10), System.Web.Caching.Cache.NoSlidingExpiration);
 
             return mapa;
         }

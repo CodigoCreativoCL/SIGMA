@@ -1136,28 +1136,15 @@ body:has(#saPlanta) .content-page .container-fluid{padding-top:12px!important}
 .sgap .sa-planta select{height:34px;max-width:220px;padding:0 28px 0 10px;border:0;border-radius:9px;background:#1E2747;color:#fff;font:inherit;font-weight:800;cursor:pointer}
 .sgap .sa-planta select:focus{outline:3px solid rgba(22,198,201,.45)}
 /* Combo con busqueda (catalogos): filtra al escribir y ofrece «Crear» */
-.sgap .sa-combo{position:relative;display:block;min-width:0}
-.sgap .sa-combo input[type=text]{padding-right:38px}
-.sgap .sa-combo input.is-nuevo{border-color:var(--sigma-purple);background:var(--sigma-purple-soft)}
-.sgap .sa-combo-btn{position:absolute;right:3px;top:50%;transform:translateY(-50%);width:34px;height:34px;display:grid;place-items:center;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
-.sgap .sa-combo-btn:hover{background:var(--canvas);color:var(--ink)}
-.sa-combo-lista{position:fixed;z-index:3100;max-height:264px;overflow:auto;margin:0;padding:6px;list-style:none;background:#fff;border:1px solid #E2E7F0;border-radius:12px;box-shadow:0 16px 40px rgba(23,34,59,.16);font-size:14px;color:#17223B}
-.sa-combo-lista[hidden]{display:none}
-.sa-combo-lista li{display:flex;align-items:center;gap:8px;min-height:38px;padding:8px 10px;border-radius:8px;cursor:pointer;overflow-wrap:anywhere}
-.sa-combo-lista li.is-activo{background:#F2EFFF}
-.sa-combo-lista mark{background:transparent;color:#6732F4;font-weight:800;padding:0}
-.sa-combo-lista li.is-crear{color:#6732F4;font-weight:800;border-top:1px solid #E2E7F0;border-radius:0 0 8px 8px}
-.sa-combo-lista li.is-crear:first-child{border-top:0;border-radius:8px}
-.sa-combo-lista li.is-vacio{color:#68738A;cursor:default}
 .sgap .sa-cat-bar .chipbtn{height:44px;border-radius:12px;padding:0 14px;font-size:13px;color:var(--muted)}
 .sgap .sa-cat-bar .chipbtn[aria-pressed="true"]{background:var(--sigma-purple-soft);border-color:var(--sigma-purple);color:var(--sigma-purple)}
 .sgap .sa-cat-bar .chipbtn[hidden]{display:none}
 /* Scrolls finos, casi invisibles hasta que se usan */
-.sgap,.sgap *,.sa-combo-lista{scrollbar-width:thin;scrollbar-color:rgba(23,34,59,.16) transparent}
-.sgap ::-webkit-scrollbar,.sa-combo-lista::-webkit-scrollbar{width:6px;height:6px}
-.sgap ::-webkit-scrollbar-track,.sa-combo-lista::-webkit-scrollbar-track{background:transparent}
-.sgap ::-webkit-scrollbar-thumb,.sa-combo-lista::-webkit-scrollbar-thumb{background:rgba(23,34,59,.14);border-radius:6px}
-.sgap ::-webkit-scrollbar-thumb:hover,.sa-combo-lista::-webkit-scrollbar-thumb:hover{background:rgba(23,34,59,.32)}
+.sgap,.sgap *{scrollbar-width:thin;scrollbar-color:rgba(23,34,59,.16) transparent}
+.sgap ::-webkit-scrollbar{width:6px;height:6px}
+.sgap ::-webkit-scrollbar-track{background:transparent}
+.sgap ::-webkit-scrollbar-thumb{background:rgba(23,34,59,.14);border-radius:6px}
+.sgap ::-webkit-scrollbar-thumb:hover{background:rgba(23,34,59,.32)}
 .sgap ::-webkit-scrollbar-button{display:none;width:0;height:0}
 .sgap *:hover{scrollbar-color:rgba(23,34,59,.28) transparent}
 /* ================= CENTRO 360 DEL ACTIVO (mockup c3-*) ================= */
@@ -1442,13 +1429,6 @@ body:has(.sg-a3--v3) .sg-page-head{display:none}
 .sgap .co-acc{display:flex;flex-wrap:wrap;gap:8px}
 .sgap .btn--borrar{color:var(--bad-ink)}
 /* opcion del combo con foto, nombre y una linea de apoyo (repuestos) */
-.sa-combo-lista li.es-rico{gap:10px;padding:6px 8px}
-.sa-combo-lista .cb-img{width:36px;height:36px;flex:none;border-radius:9px;overflow:hidden;background:#F4F6FA;display:grid;place-items:center}
-.sa-combo-lista .cb-img img{width:100%;height:100%;object-fit:cover;display:block}
-.sa-combo-lista .cb-img i{width:14px;height:14px;border-radius:4px;border:2px solid #CFD6E3}
-.sa-combo-lista .cb-t{display:flex;flex-direction:column;min-width:0}
-.sa-combo-lista .cb-t b{font-weight:700;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.sa-combo-lista .cb-t small{font-size:11.5px;color:#68738A;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* SIGMA AI en la barra: solo su logo, como una pestaña mas (sin fondo ni punto) */
 .sg-a3--v3 a.sg-a3-tab.es-ia,.sg-a3--v3 a.sg-a3-tab.es-ia:hover{align-self:stretch;height:52px;padding:0 12px;background:transparent;border-radius:0;box-shadow:none}
 .sg-a3--v3 a.sg-a3-tab.es-ia.es-activa{background:transparent;box-shadow:none;border-bottom:3px solid #6732F4}
@@ -1492,7 +1472,7 @@ body:has(.sg-a3--v3) .sg-page-head{display:none}
 /* Asistente del centro: el formulario de repuesto en una columna, con el combo de la planta */
 .sg-es-form.es-una{grid-template-columns:minmax(0,1fr)!important}
 .sgap.sg-es-sgap{padding:0!important;background:transparent!important;font-size:inherit;line-height:inherit}
-.sgap.sg-es-sgap .sa-combo input[type=text]{width:100%}
+.sgap.sg-es-sgap .sg-combo input[type=text]{width:100%}
 /* Fotos en el explorador y en la lista: la pieza se reconoce sin abrirla */
 .sgap .co.con-foto{grid-template-columns:40px minmax(0,1fr) auto}
 .sgap .co.con-foto .co-img{grid-column:1;grid-row:1 / span 2;width:40px;height:40px;border-radius:10px;overflow:hidden;background:var(--canvas);border:1px solid var(--line);align-self:center}

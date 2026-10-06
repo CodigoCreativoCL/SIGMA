@@ -235,20 +235,7 @@
 .af-listo-pie { display: flex; justify-content: flex-end; gap: 8px; padding-top: 16px; border-top: 1px solid var(--af-line); }
 .af-oculto { display: none !important; }
 
-/* ---- combo con texto libre: se elige de la lista o se escribe y se crea ---- */
-.af-combo { position: relative; display: block; min-width: 0; }
-.af-combo input { padding-right: 36px !important; }
-.af-combo-btn { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; border: 0; border-radius: 8px;
-    background: transparent; color: var(--af-muted); display: grid; place-items: center; font-size: 19px; cursor: pointer; }
-.af-combo-btn:hover { background: var(--af-canvas); color: var(--af-ink); }
-#afComboLista { position: fixed; z-index: 100000; display: none; max-height: 240px; overflow: auto; padding: 4px; background: #fff;
-    border: 1px solid var(--af-line, #E2E7F0); border-radius: 10px; box-shadow: 0 16px 36px -12px rgba(23,34,59,.35); font-size: 13.5px; color: #17223B; }
-#afComboLista.es-abierto { display: block; }
-#afComboLista button { display: flex; align-items: center; gap: 6px; width: 100%; min-height: 36px; padding: 0 10px; border: 0; border-radius: 8px;
-    background: transparent; color: inherit; font: inherit; text-align: left; cursor: pointer; }
-#afComboLista button:hover, #afComboLista button.es-foco { background: #F2EFFF; color: #4820C9; }
-#afComboLista button.es-crear { color: #007F8A; font-weight: 700; border-top: 1px solid #EEF1F6; border-radius: 0 0 8px 8px; }
-#afComboLista .vacio { padding: 8px 10px; color: #68738A; font-size: 12.5px; }
+/* ---- combo con texto libre: es el compartido (Css/LookAndFeel/sigma-combo.css) ---- */
 
 /* ---- foto por fila (componente o dato de placa) ---- */
 .af-fila-foto { position: relative; width: 44px; height: 40px; margin: 0; border: 1.5px dashed var(--af-input); border-radius: 9px; background: #FBFCFE;
