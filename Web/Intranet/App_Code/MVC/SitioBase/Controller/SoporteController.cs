@@ -117,7 +117,78 @@ namespace SitioBase.Controller
 
             Respuesta r = new ArchivoController().InsertArchivo(arc, carpeta);
             if (r.error || r.codigo <= 0) throw new Exception(r.detalle ?? "No se pudo subir el archivo.");
+
+            /* El video queda ya en la copia local: la primera persona que lo
+               vea no espera a que se baje entero desde el almacenamiento. */
+            if (mime.StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+            {
+                try { GuardarEnCache(r.codigo, arc.arc_nombre_original, bytes); } catch (Exception) { }
+            }
             return r.codigo;
+        }
+
+        private static string RutaCache(int id, string nombre)
+        {
+            string dir = HttpContext.Current.Server.MapPath("~/App_Data/cache-video");
+            System.IO.Directory.CreateDirectory(dir);
+            string ext = System.IO.Path.GetExtension(nombre ?? "");
+            return System.IO.Path.Combine(dir, id + (string.IsNullOrEmpty(ext) ? ".bin" : ext.ToLowerInvariant()));
+        }
+
+        private static void GuardarEnCache(int id, string nombre, byte[] contenido)
+        {
+            string ruta = RutaCache(id, nombre);
+            if (System.IO.File.Exists(ruta)) return;
+            string tmp = ruta + "." + Guid.NewGuid().ToString("N") + ".tmp";
+            System.IO.File.WriteAllBytes(tmp, contenido);
+            try { System.IO.File.Move(tmp, ruta); } catch (Exception) { System.IO.File.Delete(tmp); }
+        }
+
+        /// <summary>
+        /// Entrega un video con soporte de rangos (206) desde la copia local;
+        /// si no está, la baja una vez del almacenamiento.
+        /// </summary>
+        public static void ServirVideo(Archivo a)
+        {
+            HttpContext ctx = HttpContext.Current;
+            string ruta = RutaCache(a.arc_id, a.arc_nombre_original);
+            if (!System.IO.File.Exists(ruta)) GuardarEnCache(a.arc_id, a.arc_nombre_original, ServicioArchivos.Descargar(a.arc_ruta));
+
+            long largo = new System.IO.FileInfo(ruta).Length, ini = 0, fin = largo - 1;
+            string rango = ctx.Request.Headers["Range"];
+            bool parcial = false;
+            if (!string.IsNullOrEmpty(rango) && rango.StartsWith("bytes=", StringComparison.OrdinalIgnoreCase))
+            {
+                string[] p = rango.Substring(6).Split(',')[0].Split('-');
+                long x;
+                if (p[0].Length > 0 && long.TryParse(p[0], out x)) ini = x;
+                else if (p.Length > 1 && long.TryParse(p[1], out x)) ini = Math.Max(0, largo - x);   // "bytes=-500": los últimos
+                if (p.Length > 1 && p[0].Length > 0 && p[1].Length > 0 && long.TryParse(p[1], out x)) fin = Math.Min(x, largo - 1);
+                parcial = true;
+            }
+            if (ini > fin || ini >= largo)
+            {
+                ctx.Response.StatusCode = 416;
+                ctx.Response.AddHeader("Content-Range", "bytes */" + largo);
+                ctx.ApplicationInstance.CompleteRequest();
+                return;
+            }
+
+            ctx.Response.Clear();
+            ctx.Response.Buffer = false;
+            ctx.Response.ContentType = a.arc_mime;
+            ctx.Response.AddHeader("Accept-Ranges", "bytes");
+            ctx.Response.AddHeader("X-Content-Type-Options", "nosniff");
+            ctx.Response.Cache.SetCacheability(HttpCacheability.Private);
+            ctx.Response.Cache.SetMaxAge(TimeSpan.FromDays(7));
+            if (parcial)
+            {
+                ctx.Response.StatusCode = 206;
+                ctx.Response.AddHeader("Content-Range", "bytes " + ini + "-" + fin + "/" + largo);
+            }
+            ctx.Response.AddHeader("Content-Length", (fin - ini + 1).ToString());
+            ctx.Response.TransmitFile(ruta, ini, fin - ini + 1);
+            ctx.ApplicationInstance.CompleteRequest();
         }
     }
 

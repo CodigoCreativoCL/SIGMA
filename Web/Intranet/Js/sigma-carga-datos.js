@@ -14,6 +14,10 @@ import * as THREE from 'three';
 
 const root = document.getElementById('cd');
 const WS = root.dataset.ws;
+/* Abierta desde un modulo (la carga de activos del Centro de activos) la
+   pantalla queda fija en el: sin la escena ni la grilla de modulos, y el
+   historial solo de ese modulo. */
+const FIJO = root.dataset.modulo || '';
 const $ = (id) => document.getElementById(id);
 const esc = (t) => String(t == null ? '' : t).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const num = (n) => Number(n || 0).toLocaleString('es-CL');
@@ -21,7 +25,7 @@ const reloj = (s) => { s = Math.max(0, Math.floor(s)); const h = Math.floor(s / 
 
 const S = { modulos: [], sel: null, archivo: null, existentes: 'ACTUALIZAR', carga: null, timer: 0, tick: 0, base: 0, baseLocal: 0, ultimo: null, filtroErr: '' };
 const ESTADO_FIN = ['TERMINADA', 'CON_ERRORES', 'FALLIDA'];
-const HOJA_NOMBRE = { STOCK_INICIAL: 'Stock inicial' };
+const HOJA_NOMBRE = { STOCK_INICIAL: 'Stock inicial', DATOS_TECNICOS: 'Datos técnicos', REPUESTOS_COMPATIBLES: 'Repuestos compatibles' };
 const nombreHoja = (h) => HOJA_NOMBRE[h] || (h ? h.charAt(0) + h.slice(1).toLowerCase() : '');
 
 async function ws(metodo, datos) {
@@ -532,7 +536,7 @@ function pintarErrores(lista) {
 // ============================================================================ historial
 function pintarHistorial(h) {
     $('cdHistN').textContent = h.length ? h.length + (h.length === 1 ? ' carga' : ' cargas') : '';
-    if (!h.length) { $('cdHistorial').innerHTML = '<tbody><tr><td class="cd-vacio">Todavía no se ha cargado nada. Elige un módulo arriba para empezar.</td></tr></tbody>'; return; }
+    if (!h.length) { $('cdHistorial').innerHTML = '<tbody><tr><td class="cd-vacio">' + (FIJO ? 'Todavía no se ha cargado nada aquí. Descarga la plantilla para empezar.' : 'Todavía no se ha cargado nada. Elige un módulo arriba para empezar.') + '</td></tr></tbody>'; return; }
     $('cdHistorial').innerHTML = '<thead><tr><th>N°</th><th>Fecha</th><th>Módulo</th><th>Archivo</th><th>Tipo</th><th>Resultado</th><th class="num">Filas</th><th class="num">Duración</th><th>Quién</th></tr></thead><tbody>' +
         h.map((x) => {
             const m = S.modulos.find((y) => y.clave === x.modulo);
@@ -554,14 +558,14 @@ async function refrescar() {
     Escena.modulos(S.modulos);
     pintarModulos();
     pintarAsistente();
-    pintarHistorial(d.historial || []);
+    pintarHistorial((d.historial || []).filter((x) => !FIJO || x.modulo === FIJO));
     return d;
 }
 
 (async function () {
     try {
         const d = await refrescar();
-        const primero = S.modulos.find((m) => m.disponible);
+        const primero = FIJO ? S.modulos.find((m) => m.clave === FIJO) : S.modulos.find((m) => m.disponible);
         if (primero) elegirModulo(primero.clave, false);
         // una carga que seguia corriendo (se recargo la pagina): se retoma su seguimiento
         if (d.enCurso) {

@@ -183,13 +183,13 @@ public class WsAyuda : System.Web.Services.WebService
     /// <summary>Sube el archivo de una cápsula, video o documento (hasta 60 MB).</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string Subir(string nombre, string mime, string base64)
+    public string Subir(string nombre, string mime, string base64, string destino)
     {
         return WsSoporte.Ejecutar(() =>
         {
             if (!Token.Puede("AYUDA ADMINISTRAR") && !Token.Puede("CAMPANAS ADMINISTRAR"))
                 throw new Exception("No tienes permiso para subir contenido de ayuda.");
-            int id = SoporteDatos.SubirArchivo(Cliente(), "ayuda", nombre, mime, base64, 60);
+            int id = SoporteDatos.SubirArchivo(Cliente(), destino == "campanas" ? "global/campanas" : "global/ayuda", nombre, mime, base64, 60);
             return new { id = id, url = UrlArchivo.Ver(id) };
         });
     }

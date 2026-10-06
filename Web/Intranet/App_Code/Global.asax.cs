@@ -30,6 +30,11 @@ public class Global_asax : System.Web.HttpApplication
 
 	public void Session_Start(object sender, EventArgs e)
 	{
+        /* La sesion del servidor se perdio (reciclaje del sitio o inactividad):
+           si la persona tiene la cookie firmada de SIGMA, se rearma sola y
+           sigue trabajando. Ver SitioBase.SesionPersistente. */
+        SitioBase.SesionPersistente.Restaurar();
+
         //// Code that runs when a new session is started
         //// NOTA: Se incrementa este valor en la autenticacion del usuario
         //// Application("app_usuarios") += 1

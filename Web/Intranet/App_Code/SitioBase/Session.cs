@@ -277,6 +277,9 @@ namespace SitioBase
             // conservarlo dejaría entrar a uno vencido con la vigencia del
             // otro, o bloquearía a uno al día.
             SuscripcionAcceso.Refrescar();
+
+            /* La cookie de sesion persistente lleva el cliente elegido. */
+            SesionPersistente.Emitir();
         }
 
         #endregion

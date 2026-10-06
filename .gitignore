@@ -388,3 +388,6 @@ _program files_git_intranet/
 
 # Reinicio de la base: el esquema, el plan y los respaldos son datos del cliente.
 BD/Reinicio/_datos/
+
+# Copia local de videos de soporte (VerArchivo los sirve por rangos)
+Web/Intranet/App_Data/cache-video/

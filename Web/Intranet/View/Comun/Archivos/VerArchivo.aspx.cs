@@ -97,6 +97,16 @@ public partial class View_Comun_Archivos_VerArchivo : System.Web.UI.Page
 
             bool verlo = (modo ?? "").ToUpper() == "VER";
 
+            /* Los videos se sirven desde una copia en disco y por rangos: el
+               reproductor pide de a pedazos (y para adelantar), y bajar el
+               archivo entero desde la API en cada pedido hacía que un video
+               de campaña no partiera nunca. */
+            if (verlo && (archivo.arc_mime ?? "").StartsWith("video/", StringComparison.OrdinalIgnoreCase))
+            {
+                SoporteDatos.ServirVideo(archivo);
+                return;
+            }
+
             Response.Clear();
             Response.Buffer = true;
 
