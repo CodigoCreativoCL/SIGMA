@@ -672,3 +672,25 @@ body.sgs-pagina .card-box:has(#sgs-app) > .table-responsive{overflow:visible}
    general de títulos en tinta lo dejaba invisible). */
 .sgs .hhero h1{color:#fff}
 .sgs .hhero p{color:#C9CFE0}
+
+/* Botón esperando al servidor. */
+.sgs .giro{width:14px;height:14px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;display:inline-block;flex:none;animation:sgs-giro .7s linear infinite}
+.sgs [aria-busy="true"]{cursor:progress}
+.sgs .btn[aria-busy="true"]:disabled{opacity:.85}
+@keyframes sgs-giro{to{transform:rotate(360deg)}}
+
+/* La regla portada «.pv-modal .im svg» (para la portada generada) atrapaba
+   también la X y el ícono de la etiqueta: quedaban absolutos y corridos. */
+.sgs .pv-modal .im .sgs-cerrar svg,.sgs .pv-modal .im .chip svg{position:static;inset:auto}
+.sgs .pv-modal .im .sgs-cerrar svg{width:18px;height:18px}
+.sgs .pv-modal .im .chip svg{width:13px;height:13px}
+
+/* Presentacion de la campaña (bloque 369) y la carga de la imagen */
+.sgs .sgs-pres{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px 14px;margin-top:8px;padding:12px;border-radius:14px;background:var(--canvas)}
+.sgs .sgs-pres .f{margin:0}
+.sgs .sgs-carga{position:absolute;inset:0;background:linear-gradient(100deg,#1E2747 20%,#2E3A66 40%,#1E2747 60%);background-size:220% 100%;animation:sgsBrillo 1.2s linear infinite}
+.sgs .sgs-medio{opacity:0;transition:opacity .45s ease}
+.sgs .sgs-medio.listo{opacity:1}
+.sgs .sgs-medio.listo ~ .sgs-carga,.sgs .sgs-carga:has(+ .sgs-medio.listo){display:none}
+@keyframes sgsBrillo{from{background-position:120% 0}to{background-position:-120% 0}}
+@media (prefers-reduced-motion:reduce){.sgs .sgs-carga{animation:none}.sgs .sgs-medio{transition:none}}

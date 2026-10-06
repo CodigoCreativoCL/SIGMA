@@ -19,6 +19,14 @@ public partial class Login : System.Web.UI.Page
                              "Contacta al administrador de tu empresa para regularizarla.");
             }
 
+            /* Con la sesion rearmada desde la cookie persistente no tiene
+               sentido pedir la clave otra vez. */
+            else if (Session["usu_id"] != null)
+            {
+                Response.Redirect("~/Default.aspx");
+                return;
+            }
+
             // El cursor arranca donde el usuario va a escribir.
             txtCorreo.Focus();
         }
@@ -61,6 +69,8 @@ public partial class Login : System.Web.UI.Page
         // HU-002. Adonde va depende de a cuantos clientes pertenece:
         // con uno se elige solo y no ve el selector; con varios tiene que
         // elegir antes de continuar.
+        SitioBase.SesionPersistente.Emitir();
+
         ClienteSesionController clienteSesion = new ClienteSesionController();
         string destino = clienteSesion.ResolverClienteInicial(respuesta.codigo);
 

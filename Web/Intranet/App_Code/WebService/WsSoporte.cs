@@ -165,7 +165,7 @@ public class WsSoporte : System.Web.Services.WebService
             int cliente = Convert.ToInt32(acceso[0]["stk_cliente"]);
 
             byte[] crudo = Convert.FromBase64String(base64 ?? "");
-            int id = SoporteDatos.SubirArchivo(cliente, "soporte", nombre, mime, base64, 25);
+            int id = SoporteDatos.SubirArchivo(cliente, "global/soporte-tickets", nombre, mime, base64, 25);
             SoporteDatos.Fila("INS_SOPORTE_EVENTO", "@TICKET", ticket, "@USUARIO", U(), "@TIPO", "file",
                               "@ARCHIVO", id, "@ARCHIVO_NOMBRE", nombre, "@ARCHIVO_BYTE", (long)crudo.Length);
             return new { id = id, url = UrlArchivo.Ver(id) };

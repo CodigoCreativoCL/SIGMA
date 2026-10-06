@@ -334,6 +334,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
     {
         Session.Abandon();
         Session.RemoveAll();
+        SitioBase.SesionPersistente.Borrar();
 
         /* HU-003 escenario 1: "el boton Atras del navegador no permite
            volver a la aplicacion".

@@ -20,6 +20,9 @@ using System.Web.Services;
 [ScriptService]
 public class WsCargaDatos : System.Web.Services.WebService
 {
+    /// <summary>La carga de INVENTARIO se abre tambien desde el Centro de repuestos.</summary>
+    private const string PERMISO_REPUESTOS = "CREAR EDITAR REPUESTOS";
+
     /// <summary>Los modulos con sus hojas y columnas, lo que ya tiene cada uno y la ultima carga.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
@@ -53,6 +56,7 @@ public class WsCargaDatos : System.Web.Services.WebService
     {
         return Ejecutar(() =>
         {
+            ExigirModulo(modulo);
             CargaMasivaController.Modulo m = CargaMasivaController.Buscar(modulo);
             byte[] b = new CargaMasivaController().Plantilla(modulo);
             return new { error = false, nombre = "SIGMA carga de datos - " + (m != null ? m.nombre : modulo) + ".xlsx", base64 = Convert.ToBase64String(b) };
@@ -66,6 +70,7 @@ public class WsCargaDatos : System.Web.Services.WebService
     {
         return Ejecutar(() =>
         {
+            ExigirModulo(modulo);
             byte[] archivo = Convert.FromBase64String(base64 ?? "");
             CargaMasivaController.Inicio i = new CargaMasivaController().Iniciar(modulo, nombre, archivo, (modo ?? "").ToUpperInvariant(), (existentes ?? "").ToUpperInvariant());
             return new { error = false, id = i.id, hojas = i.porHoja, avisos = i.avisos };
@@ -174,7 +179,9 @@ public class WsCargaDatos : System.Web.Services.WebService
         {
             if (!Token.TokenSeguridad())
                 return Json(new { error = true, sesion = true, detalle = "La sesión expiró. Vuelve a entrar." });
-            if (!Token.Puede(CargaMasivaController.PERMISO))
+            /* La carga de ACTIVOS tambien la usa quien crea activos (se abre
+               desde el Centro de activos); las demas exigen el permiso de cargas. */
+            if (!Token.Puede(CargaMasivaController.PERMISO) && !Token.Puede("CREAR EDITAR ACTIVOS") && !Token.Puede(PERMISO_REPUESTOS))
                 return Json(new { error = true, sinPermiso = true, detalle = "No tienes permiso para cargar datos. Pídeselo al administrador de tu empresa." });
             return Json(accion());
         }
@@ -182,6 +189,15 @@ public class WsCargaDatos : System.Web.Services.WebService
         {
             return Json(new { error = true, detalle = ex.Message });
         }
+    }
+
+    /// <summary>Sin el permiso de cargas: ACTIVOS para quien crea activos e INVENTARIO para quien crea repuestos.</summary>
+    private static void ExigirModulo(string modulo)
+    {
+        if (Token.Puede(CargaMasivaController.PERMISO)) return;
+        if (string.Equals(modulo, "ACTIVOS", StringComparison.OrdinalIgnoreCase) && Token.Puede("CREAR EDITAR ACTIVOS")) return;
+        if (string.Equals(modulo, "INVENTARIO", StringComparison.OrdinalIgnoreCase) && Token.Puede(PERMISO_REPUESTOS)) return;
+        throw new Exception("No tienes permiso para cargar datos de ese módulo.");
     }
 
     private static string Json(object o)

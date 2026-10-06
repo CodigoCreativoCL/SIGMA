@@ -393,6 +393,17 @@ namespace SitioBase
         {
             if (string.IsNullOrEmpty(contenedor)) contenedor = "sigma";
 
+            /* Lo que no es de un cliente -el centro de ayuda, las campañas,
+               los adjuntos de soporte- va a "global/<modulo>": SIGMA lo
+               publica para todos y no tiene por qué vivir bajo la carpeta
+               del cliente que estaba en sesión al subirlo. */
+            if (!string.IsNullOrEmpty(modulo) && modulo.StartsWith("global/", StringComparison.OrdinalIgnoreCase))
+                return contenedor + "/global/" +
+                       Limpiar(modulo.Substring(7)) + "/" +
+                       cuando.ToString("yyyy") + "/" +
+                       cuando.ToString("MM") + "/" +
+                       nombreAlmacenado;
+
             return contenedor + "/" +
                    CarpetaCliente(cliente, clienteNombre) + "/" +
                    Limpiar(string.IsNullOrEmpty(modulo) ? "otros" : modulo) + "/" +

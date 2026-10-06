@@ -195,11 +195,10 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
     protected void CargarUmbrales()
     {
-        /* La pestaña se oculta entera, no el panel: dejar la pestaña visible
-           y vaciarla hace que alguien la abra y crea que se rompió. Sin
-           repuesto guardado no hay a qué colgarle un umbral. */
-        tabUmbrales.Visible = (Id > 0);
+        /* Sin repuesto guardado no hay a qué colgarle un umbral: el paso
+           Stock muestra el aviso «Primero guarda el repuesto». */
         pnlUmbrales.Visible = (Id > 0);
+        pnlStockNuevo.Visible = (Id == 0);
 
         if (Id == 0) return;
 
@@ -226,7 +225,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
     {
         if (Id == 0)
         {
-            tabLotes.Visible = false;
             pnlLotes.Visible = false;
             return;
         }
@@ -235,7 +233,6 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
 
         bool controla = controller.GetRepuesto(Id).rep_controla_lote;
 
-        tabLotes.Visible = controla;
         pnlLotes.Visible = controla;
 
         if (!controla) return;
@@ -312,6 +309,9 @@ public partial class View_Inventario_Repuestos_Repuesto : System.Web.UI.Page
     protected void CargarGaleria()
     {
         pnlGaleria.Visible = Id > 0;
+        pnlFotosNuevo.Visible = Id <= 0;
+        /* Al crear, Siguiente guía hasta el último paso (sigma-asistente.js). */
+        pnlAf.CssClass = Id > 0 ? "af" : "af af-es-nuevo";
 
         if (Id <= 0) return;
 

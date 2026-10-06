@@ -1634,3 +1634,15 @@ body:has(.sg-a3--v3) .sg-page-head{display:none}
 @media (prefers-reduced-motion:reduce){.sgap .sa-esq i{animation:none}}
 
 
+
+/* Paginador comun de Tarjetas y Lista (Js/sigma-paginador.js), 06-10-2026 */
+.sgap .sg-pag{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px;margin-top:20px;padding:12px 14px;border-radius:16px;background:var(--surface);box-shadow:var(--e1)}
+.sgap .sg-pag-info{font-size:13px;font-weight:600;color:var(--muted)}
+.sgap .sg-pag-nums{display:flex;align-items:center;gap:4px}
+.sgap .sg-pag-nums button{min-width:36px;height:36px;padding:0 10px;border:0;border-radius:10px;background:transparent;color:var(--ink);font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.sgap .sg-pag-nums button:hover:not(:disabled){background:var(--canvas)}
+.sgap .sg-pag-nums button[aria-current="page"]{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
+.sgap .sg-pag-nums button:disabled{opacity:.42;cursor:not-allowed}
+.sgap .sg-pag-gap{padding:0 4px;color:var(--muted)}
+.sgap .sg-pag-tam{display:flex;align-items:center;gap:8px;margin:0;font-size:13px;font-weight:400;color:var(--muted)}
+.sgap .sg-pag-tam select{height:36px;padding:0 8px;border:1px solid var(--line);border-radius:10px;background:#fff;font-weight:700;color:var(--ink)}

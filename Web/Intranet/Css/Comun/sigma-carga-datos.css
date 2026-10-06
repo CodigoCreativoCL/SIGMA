@@ -225,3 +225,9 @@
 @media (prefers-reduced-motion: reduce) {
     .cd-loader span, .cd-girando, .cd-barra.es-indet span { animation: none; }
 }
+
+/* Fijo en un módulo (Carga masiva de activos, dentro de un modal): sin la
+   escena ni la grilla de módulos; el asistente parte arriba. */
+.cd.es-fijo { padding: 4px 2px 24px; }
+.cd.es-fijo .cd-hero,
+.cd.es-fijo .cd-modulos { display: none !important; }

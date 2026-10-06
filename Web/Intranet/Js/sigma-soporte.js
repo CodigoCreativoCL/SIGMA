@@ -85,6 +85,8 @@ async function ws(svc, metodo, datos){
 const leer64 = f => new Promise((ok, mal) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(',')[1] || ''); r.onerror = () => mal(new Error('No se pudo leer el archivo.')); r.readAsDataURL(f); });
 const pesoTxt = b => b > 1048576 ? (b / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(b / 1024)) + ' KB';
 const tipoArch = n => { const e = String(n || '').split('.').pop().toLowerCase(); return /png|jpe?g|gif|webp|bmp/.test(e) ? 'img' : /mp4|webm|mov|avi/.test(e) ? 'video' : 'doc'; };
+/* Un botón que espera al servidor lo dice: girando y con el verbo en curso. */
+function ocupado(b, txt){ if (!b) return; b.disabled = true; b.setAttribute('aria-busy', 'true'); b.innerHTML = `<span class="giro" aria-hidden="true"></span>${txt}`; }
 const fallo = e => toast(esc((e && e.message) || 'Algo falló.'), null, true);
 
 /* ================= Catálogos ================= */
@@ -95,7 +97,7 @@ const PR = {c:{l:'Crítica', bars:4, h:4, d:'Toda la planta o un proceso está d
 const CATS = [['error','Error del sistema','warn'],['func','Problema funcional','gear'],['acceso','Acceso/permisos','lock'],['datos','Datos incorrectos','list'],['rend','Rendimiento','gauge'],['integ','Integración','link'],['sug','Sugerencia','bulb'],['otro','Otro','more']];
 const CAT = Object.fromEntries(CATS.map(([k, l, i]) => [k, {l, i}]));
 const KIND = {capsula:{l:'Cápsula', i:'caps', c:'tone-p'}, video:{l:'Video', i:'video', c:'tone-b'}, manual:{l:'Manual', i:'book', c:'tone-c'}, documento:{l:'Documento', i:'doc', c:'tone-c'}, guia:{l:'Guía rápida', i:'bulb', c:'tone-w'}, faq:{l:'FAQ', i:'help', c:'tone-n'}};
-const CTYPES = [['anuncio','Anuncio','mega'],['novedad','Novedad','rocket'],['mant','Mantenimiento','wrench'],['tutorial','Tutorial','caps'],['importante','Importante','warn'],['comunicado','Comunicado','chat'],['consejo','Consejo','bulb']];
+const CTYPES = [['anuncio','Anuncio','mega'],['novedad','Novedad','spark'],['mant','Mantenimiento','wrench'],['tutorial','Tutorial','caps'],['importante','Importante','warn'],['comunicado','Comunicado','chat'],['consejo','Consejo','bulb']];
 const CT = Object.fromEntries(CTYPES.map(([k, l, i]) => [k, {l, i}]));
 const CST = {activa:['Activa','tone-s'], programada:['Programada','tone-b'], borrador:['Borrador','tone-n'], finalizada:['Finalizada','tone-n'], pausada:['Pausada','tone-w']};
 const FMT = {banner:'Banner', modal:'Modal', card:'Card', notif:'Notificación'};
@@ -284,7 +286,7 @@ function reportHTML(){
         <div class="files" id="rpFiles">${RP.files.map(fileRow).join('')}</div></div>
     </section>
   </div>
-  <div class="drawer-f"><span class="g" id="rpFoot">${cupo}${ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'}</span><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="button" class="btn pri" data-act="sendreport"${ok && !RP.enviando ? '' : ' disabled'}>${ic('send', 16)}${RP.enviando ? 'Enviando…' : 'Enviar reporte'}</button></div>`;
+  <div class="drawer-f"><span class="g" id="rpFoot">${cupo}${ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'}</span><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="button" class="btn pri" data-act="sendreport"${ok && !RP.enviando ? '' : ' disabled'}>${RP.enviando ? '<span class="giro" aria-hidden="true"></span>Enviando…' : ic('send', 16) + 'Enviar reporte'}</button></div>`;
 }
 function sugHTML(){
   const list = RP.sugDismissed ? [] : RP.sug;
@@ -355,22 +357,40 @@ async function openCtxHelp(anchor){
 const CAMP = {};
 const campDest = c => { const a = c.cam_cta_accion, d = c.cam_cta_destino; if (a === 'documento' || a === 'capsula') return URL_('kb', d, {origen:'campana'}); if (a === 'url') return d; if (a === 'modulo' || a === 'pantalla') return urlDe(d); return ''; };
 function campCardMini(c){ return `<div class="pv-card" style="margin:4px 6px;box-shadow:var(--e1)"><svg width="44" height="44" viewBox="0 0 44 44" style="border-radius:12px"><rect width="44" height="44" fill="${THEMES[c.cam_tema % 4][1]}"/><circle cx="36" cy="6" r="18" fill="${THEMES[c.cam_tema % 4][0]}"/></svg><div style="min-width:0"><b style="font-size:13px;display:block">${esc(c.cam_titulo)}</b><small class="mut" style="font-size:11.5px">${esc(String(c.cam_descripcion || '').slice(0, 90))}</small>${c.cam_cta_accion !== 'nada' || c.cam_contenido ? `<div style="margin-top:6px"><button type="button" class="link" style="font-size:12px;margin:0;padding:0" data-campcta="${c.cam_id}">${esc(c.cam_cta_texto || (c.CONTENIDO_TITULO ? 'Ver ' + KIND[c.CONTENIDO_TIPO].l.toLowerCase() : 'Ver más'))} ${ic('arrow', 12)}</button></div>` : ''}</div></div>`; }
-function campMedia(c, h){ return c.IMAGEN_URL ? (c.cam_medio === 'video' ? `<video src="${esc(c.IMAGEN_URL)}" muted playsinline loop autoplay style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>` : `<img src="${esc(c.IMAGEN_URL)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">`) : cover(c.cam_tema); }
+/* Presentacion de la campaña (bloque 369): ajuste de la imagen (llenar o
+   completa), punto de enfoque, alto de la imagen y tamaño del aviso. */
+const PRES_DEF = {ajuste:'cover', foco:'center', alto:'medio', tamano:'m'};
+const PRES_ALTO = {bajo:140, medio:200, alto:280, xalto:360};
+const PRES_TAM = {s:440, m:520, l:680, xl:860};
+const presDe = v => { let o = v; if (typeof v === 'string'){ try { o = JSON.parse(v); } catch (e){ o = null; } } return {...PRES_DEF, ...(o || {})}; };
+/* La imagen tarda en llegar: mientras, un brillo que recorre el recuadro; al
+   cargar aparece con un fundido y el brillo se va. */
+function medioHTML(url, video, pres, tema){
+  const p = presDe(pres);
+  if (!url) return cover(tema);
+  const st = `position:absolute;inset:0;width:100%;height:100%;object-fit:${p.ajuste === 'contain' ? 'contain' : 'cover'};object-position:center ${p.foco}`;
+  return `<span class="sgs-carga" aria-hidden="true"></span>` + (video
+    ? `<video class="sgs-medio" src="${esc(url)}" muted playsinline loop autoplay preload="auto" onloadeddata="this.classList.add('listo')" style="${st}"></video>`
+    : `<img class="sgs-medio" src="${esc(url)}" alt="" decoding="async" onload="this.classList.add('listo')" onerror="this.remove()" style="${st}">`);
+}
+function campMedia(c, h){ return medioHTML(c.IMAGEN_URL, c.cam_medio === 'video', c.cam_presentacion, c.cam_tema); }
 function campBotones(c, grande){
   const k = c.cam_contenido && c.CONTENIDO_TITULO;
   return `${c.cam_cta_accion !== 'nada' ? `<button type="button" class="btn ${grande ? 'pri' : 'w sm'}" data-campcta="${c.cam_id}">${esc(c.cam_cta_texto || 'Ver más')}</button>` : ''}${k ? `<button type="button" class="btn out${grande ? '' : ' sm'}" data-campkb="${c.cam_id}">${ic(KIND[c.CONTENIDO_TIPO].i, 14)}Ver ${KIND[c.CONTENIDO_TIPO].l.toLowerCase()}</button>` : ''}${c.cam_confirmar ? `<button type="button" class="btn ${grande ? 'sec' : 'w sm'}" data-campok="${c.cam_id}">${ic('check', 14)}Entendido</button>` : ''}`;
 }
 function campModal(c){
   const tp = CT[c.cam_tipo] || {l:'Aviso', i:'mega'};
-  openModal(`<div class="pv-modal sgs-camp"><div class="im">${campMedia(c)}<span class="chip tone-p sgs-camp-tipo">${ic(tp.i, 13)}${tp.l}</span>${c.cam_cerrable ? `<button type="button" class="sgs-cerrar" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>
+  const pr = presDe(c.cam_presentacion);
+  openModal(`<div class="pv-modal sgs-camp"><div class="im" style="height:${PRES_ALTO[pr.alto] || 200}px">${campMedia(c)}<span class="chip tone-p sgs-camp-tipo">${ic(tp.i, 13)}${tp.l}</span>${c.cam_cerrable ? `<button type="button" class="sgs-cerrar" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>
     <div class="tx"><h4>${esc(c.cam_titulo)}</h4>${c.cam_descripcion ? `<p>${esc(c.cam_descripcion)}</p>` : ''}
       <div class="sgs-camp-acts">${c.cam_cerrable && !c.cam_confirmar ? `<button type="button" class="btn ghost" data-campx="${c.cam_id}">Más tarde</button>` : ''}${campBotones(c, true)}</div></div></div>`, 'sgs-camp-modal');
+  const m = $('#sgs-layer .modal.sgs-camp-modal'); if (m) m.style.width = `min(${PRES_TAM[pr.tamano] || 520}px, calc(100vw - 32px))`;
 }
 function campBanner(c){
   const host = $('.sg-page-head') || $('.content-page .content .container-fluid') || document.body.firstElementChild;
   if (!host || $('#sgs-banner')) return;
   const b = document.createElement('div'); b.id = 'sgs-banner'; b.className = 'sgs sgs-banner-host';
-  b.innerHTML = `<div class="ubanner" role="region" aria-label="Aviso"><span class="bi">${ic(CT[c.cam_tipo] ? CT[c.cam_tipo].i : 'mega', 20)}</span><span class="g"><b>${esc(c.cam_titulo)}</b><small>${esc(c.cam_descripcion || '')}</small></span>${campBotones(c, false)}${c.cam_cerrable ? `<button type="button" class="x" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>`;
+  b.innerHTML = `<div class="ubanner" role="region" aria-label="Aviso"><span class="bi">${ic(CT[c.cam_tipo] ? CT[c.cam_tipo].i : 'mega', 20)}</span><span class="g"><b>${esc(c.cam_titulo)}</b><small>${esc(c.cam_descripcion || '')}</small></span><button type="button" class="btn w sm" data-campver="${c.cam_id}">${ic('eye', 14)}Ver más</button>${campBotones(c, false)}${c.cam_cerrable ? `<button type="button" class="x" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>`;
   host.parentNode.insertBefore(b, host);
 }
 async function campEntrega(id, accion){ try { await ws('c', 'Entrega', {campana:id, accion}); } catch (e){} }
@@ -796,7 +816,7 @@ function exportar(){
 const CF = {tab:'activa'};
 const condTxt = c => { const f = {estado:'Estado', perfil:'Perfil', cliente:'Cliente', planta:'Planta', usuario:'Usuario'}[c.campo] || c.campo; return `${f} ${c.op === '!=' ? 'no es' : 'es'} ${c.campo === 'usuario' ? esc(valorTxt(c)) : esc(c.valor)}`; };
 const valorTxt = c => { const v = (S.val || []).find(x => x.CAMPO === c.campo && x.VALOR === c.valor); return v ? v.ETIQUETA : c.valor; };
-const CAMPO = r => ({id:r.cam_id, st:r.cam_estado, tipo:r.cam_tipo, t:r.cam_titulo, d:r.cam_descripcion || '', theme:r.cam_tema || 0, media:r.cam_medio, img:r.IMAGEN_URL, archivo:r.cam_archivo,
+const CAMPO = r => ({pres:presDe(r.cam_presentacion), id:r.cam_id, st:r.cam_estado, tipo:r.cam_tipo, t:r.cam_titulo, d:r.cam_descripcion || '', theme:r.cam_tema || 0, media:r.cam_medio, img:r.IMAGEN_URL, archivo:r.cam_archivo,
   fmt:String(r.cam_formatos || 'banner').split(',').filter(Boolean), reach:r.cam_alcance || 0, vis:pct(r.VISTOS, r.cam_alcance), inter:pct(r.INTERACCIONES, r.cam_alcance), vistos:r.VISTOS || 0, inters:r.INTERACCIONES || 0,
   from:D(r.cam_desde), to:D(r.cam_hasta), cta:{a:r.cam_cta_accion, l:r.cam_cta_texto || '', dest:r.cam_cta_destino || ''}, kb:r.cam_contenido, kbT:r.CONTENIDO_TITULO, kbK:r.CONTENIDO_TIPO,
   conds:JSON.parse(r.CONDICIONES || '[]'), join:r.cam_union, freq:r.cam_frecuencia, every:r.cam_cada_dias || 7, where:r.cam_donde, whereMod:r.cam_donde_modulo, closable:!!r.cam_cerrable, confirm:!!r.cam_confirmar, raw:r});
@@ -813,7 +833,7 @@ VIEWS.campaigns = () => {
     ${list.length ? `<div class="grid g3">${list.map(campCard).join('')}</div>`
       : empty('mega', 'tone-b', !C.length ? 'No hay campañas' : `No hay campañas ${{activa:'activas', programada:'programadas', borrador:'en borrador', finalizada:'finalizadas'}[CF.tab]}`, 'Las campañas avisan novedades, mantenciones o cápsulas nuevas solo a quienes les sirven.', `<a class="btn pri" href="${esc(URL_('cwiz'))}">${ic('plus', 16)}Crear campaña</a>`)}`;
 };
-const campCover = c => c.img && c.media !== 'video' ? `<img src="${esc(c.img)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : cover(c.theme);
+const campCover = c => c.img && c.media !== 'video' ? `<img src="${esc(c.img)}" alt="" onerror="this.remove()" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : cover(c.theme);
 function campCard(c){
   const sched = c.st === 'programada'; const draft = c.st === 'borrador';
   return `<button type="button" class="cc" data-camp="${c.id}"><div class="cv">${campCover(c)}<span class="st">${cstChip(c.st)}</span><span class="ty">${ic(CT[c.tipo] ? CT[c.tipo].i : 'mega', 13)} ${CT[c.tipo] ? CT[c.tipo].l : ''}</span></div>
@@ -860,9 +880,9 @@ LOAD.cwiz = async () => {
   S.C = c.campanas.map(CAMPO); S.val = v.valores; S.segs = v.segmentos; S.K = k.contenidos.map(KB).filter(x => x.status === 'Publicado'); S.pant = p.pantallas.filter(x => x.apa_visible);
   const id = +APP.id || 0, copia = +(qs.get('copia') || 0); const src = S.C.find(x => x.id === (id || copia));
   CW.editing = id && src ? id : null; CW.step = 1; CW.done = null;
-  CW.d = src ? {t:src.t + (copia ? ' (copia)' : ''), desc:src.d, tipo:src.tipo, media:src.media || 'imagen', theme:src.theme, archivo:src.archivo, img:src.img, kb:src.kb || '', cta:{...src.cta}, conds:src.conds.map(x => ({...x})), join:src.join || 'AND', fmt:[...src.fmt],
+  CW.d = src ? {pres:{...presDe(src.pres)}, t:src.t + (copia ? ' (copia)' : ''), desc:src.d, tipo:src.tipo, media:src.media || 'imagen', theme:src.theme, archivo:src.archivo, img:src.img, kb:src.kb || '', cta:{...src.cta}, conds:src.conds.map(x => ({...x})), join:src.join || 'AND', fmt:[...src.fmt],
       where:src.where || 'login', whereMod:src.whereMod || '', closable:src.closable, confirm:src.confirm, when:src.from && src.from > new Date() ? 'prog' : 'now', from:src.from && src.from > new Date() ? `${src.from.getFullYear()}-${pad(src.from.getMonth() + 1)}-${pad(src.from.getDate())}` : hoyISO(), fromT:src.from ? fT(src.from) : '09:00', to:src.to ? `${src.to.getFullYear()}-${pad(src.to.getMonth() + 1)}-${pad(src.to.getDate())}` : '', perm:!src.to, freq:src.freq || 'usuario', every:src.every || 7}
-    : {t:'', desc:'', tipo:'novedad', media:'imagen', theme:0, archivo:null, img:null, kb:'', cta:{a:'modulo', l:'Ver novedad', dest:''}, conds:[{campo:'estado', op:'=', valor:'Activo'}], join:'AND', fmt:['banner'], where:'login', whereMod:'', closable:true, confirm:false, when:'now', from:hoyISO(), fromT:'09:00', to:'', perm:true, freq:'usuario', every:7};
+    : {pres:{...PRES_DEF}, t:'', desc:'', tipo:'novedad', media:'imagen', theme:0, archivo:null, img:null, kb:'', cta:{a:'modulo', l:'Ver novedad', dest:''}, conds:[{campo:'estado', op:'=', valor:'Activo'}], join:'AND', fmt:['banner'], where:'login', whereMod:'', closable:true, confirm:false, when:'now', from:hoyISO(), fromT:'09:00', to:'', perm:true, freq:'usuario', every:7};
   const pre = +(qs.get('contenido') || 0); const pk = pre && S.K.find(x => x.id === pre);
   if (pk && !src) Object.assign(CW.d, {t:(pk.kind === 'capsula' ? 'Nueva cápsula: ' : 'Nuevo: ') + pk.t.slice(0, 50), desc:pk.desc.slice(0, 220), tipo:'tutorial', kb:pk.id, cta:{a:['capsula','video'].includes(pk.kind) ? 'capsula' : 'documento', l:'Ver ' + KIND[pk.kind].l.toLowerCase(), dest:String(pk.id)}});
   if (!CW.d.cta.dest && CW.d.cta.a === 'modulo') CW.d.cta.dest = (destinos().modulo[0] || [''])[0];
@@ -891,7 +911,7 @@ VIEWS.cwiz = () => {
     <div class="wz"><nav class="steps" aria-label="Pasos">${CW_STEPS.map(([t, s], i) => `<button type="button" class="step${i + 1 < step ? ' done' : ''}" data-cwstep="${i + 1}"${i + 1 === step ? ' aria-current="step"' : ''}${!can && i ? ' disabled' : ''}><span class="n">${i + 1 < step ? ic('check', 15) : i + 1}</span><span><b>${t}</b><small>${s}</small></span></button>`).join('')}</nav>
       <div style="display:flex;flex-direction:column;gap:16px;min-width:0">${body}
         <div class="wz-foot">${step > 1 ? `<button type="button" class="btn out" data-cwstep="${step - 1}">${ic('cl', 16)}Anterior</button>` : ''}<span class="g">Paso ${step} de 6${!can ? ' · Falta el título' : ''}</span><a class="btn ghost" href="${esc(URL_('campaigns'))}">Cancelar</a>
-          ${step < 6 ? `<button type="button" class="btn pri" data-cwstep="${step + 1}"${!can ? ' disabled' : ''}>Siguiente${ic('arrow', 16)}</button>` : `<button type="button" class="btn pri" data-act="cwpublish"${can && !CW.guardando ? '' : ' disabled'}>${ic(d.when === 'now' ? 'send' : 'cal', 16)}${d.when === 'now' ? 'Publicar ahora' : 'Programar'}</button>`}</div>
+          ${step < 6 ? `<button type="button" class="btn pri" data-cwstep="${step + 1}"${!can ? ' disabled' : ''}>Siguiente${ic('arrow', 16)}</button>` : `<button type="button" class="btn pri" data-act="cwpublish"${can && !CW.guardando ? '' : ' disabled'}>${CW.guardando ? '<span class="giro" aria-hidden="true"></span>' + (d.when === 'now' ? 'Publicando…' : 'Programando…') : ic(d.when === 'now' ? 'send' : 'cal', 16) + (d.when === 'now' ? 'Publicar ahora' : 'Programar')}</button>`}</div>
       </div></div>`;
 };
 function cwContenido(d){
@@ -904,7 +924,8 @@ function cwContenido(d){
         <div class="f full"><span class="lb">Tipo</span><div class="optcards" role="group" aria-label="Tipo de campaña" style="grid-template-columns:repeat(auto-fill,minmax(130px,1fr))">${CTYPES.map(([k, l, i]) => `<button type="button" class="opt" data-cwtipo="${k}" aria-pressed="${d.tipo === k}">${ic(i, 18)}${l}</button>`).join('')}</div></div>
         <div class="f full"><span class="lb">Imagen, video o ícono</span><div class="seg" role="group" aria-label="Medio">${[['imagen','Imagen','img'],['video','Video','video'],['icono','Ícono','spark']].map(([k, l, i]) => `<button type="button" data-cwmedia="${k}" aria-pressed="${d.media === k}">${ic(i, 15)}${l}</button>`).join('')}</div>
           ${d.media === 'icono' ? `<p class="hint" style="margin-top:8px">Se usa el ícono del tipo elegido.</p>`
-            : `<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">${THEMES.map((t, i) => `<button type="button" class="ibtn" data-cwtheme="${i}" aria-label="Portada ${i + 1}" aria-pressed="${d.theme === i && !d.archivo}" style="width:56px;height:34px;border-radius:9px;overflow:hidden;position:relative;${d.theme === i && !d.archivo ? 'box-shadow:0 0 0 2px var(--sigma-purple)' : ''}"><svg viewBox="0 0 56 34" width="56" height="34"><rect width="56" height="34" fill="${t[1]}"/><circle cx="46" cy="4" r="20" fill="${t[0]}"/></svg></button>`).join('')}<label class="btn out sm" style="cursor:pointer">${ic('upload', 15)}${d.archivo ? 'Cambiar' : 'Subir'} ${d.media === 'video' ? 'video' : 'imagen'}<input type="file" accept="${d.media === 'video' ? 'video/*' : 'image/*'}" class="sr" data-cwupload="1"></label>${d.archivo ? `<span class="tag tone-p">${ic('check', 12)}Archivo propio<button type="button" class="ibtn" style="width:20px;height:20px" data-act="cwquitarimg" aria-label="Quitar">${ic('x', 12)}</button></span>` : ''}</div>`}</div>
+            : `<div style="display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap">${THEMES.map((t, i) => `<button type="button" class="ibtn" data-cwtheme="${i}" aria-label="Portada ${i + 1}" aria-pressed="${d.theme === i && !d.archivo}" style="width:56px;height:34px;border-radius:9px;overflow:hidden;position:relative;${d.theme === i && !d.archivo ? 'box-shadow:0 0 0 2px var(--sigma-purple)' : ''}"><svg viewBox="0 0 56 34" width="56" height="34"><rect width="56" height="34" fill="${t[1]}"/><circle cx="46" cy="4" r="20" fill="${t[0]}"/></svg></button>`).join('')}<label class="btn out sm" style="cursor:pointer"${CW.subiendo ? ' aria-busy="true"' : ''}>${CW.subiendo ? '<span class="giro" aria-hidden="true"></span>Subiendo ' + (d.media === 'video' ? 'video' : 'imagen') + '…' : ic('upload', 15) + (d.archivo ? 'Cambiar ' : 'Subir ') + (d.media === 'video' ? 'video' : 'imagen')}<input${CW.subiendo ? ' disabled' : ''} type="file" accept="${d.media === 'video' ? 'video/*' : 'image/*'}" class="sr" data-cwupload="1"></label>${d.archivo ? `<span class="tag tone-p">${ic('check', 12)}Archivo propio<button type="button" class="ibtn" style="width:20px;height:20px" data-act="cwquitarimg" aria-label="Quitar">${ic('x', 12)}</button></span>` : ''}</div>`}</div>
+        <div class="f full">${presControles(d)}</div>
         <div class="f full"><label for="cwKb">Promocionar contenido de ayuda <span class="mut" style="font-weight:600">(opcional)</span></label><select class="sel" id="cwKb" data-cw="kb"><option value="">Ninguno</option>${S.K.map(k => `<option value="${k.id}"${String(d.kb) === String(k.id) ? ' selected' : ''}>${KIND[k.kind].l} · ${esc(k.t)}</option>`).join('')}</select><span class="hint">Agrega un segundo botón «Ver ${d.kb && S.K.find(k => k.id === +d.kb) ? KIND[S.K.find(k => k.id === +d.kb).kind].l.toLowerCase() : 'contenido'}».</span></div>
         <div class="f"><label for="cwCa">Botón principal: qué hace</label><select class="sel" id="cwCa" data-cwcta="a">${[['modulo','Abrir módulo'],['pantalla','Abrir pantalla'],['documento','Abrir documento'],['capsula','Abrir cápsula'],['url','Abrir URL'],['nada','No hacer nada']].map(([k, l]) => `<option value="${k}"${d.cta.a === k ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
         <div class="f"><label for="cwCl">Texto del botón</label><input class="in" id="cwCl" data-cwcta="l" value="${esc(d.cta.l)}" maxlength="60" placeholder="Ej.: Explorar funcionalidad"${d.cta.a === 'nada' ? ' disabled' : ''}></div>
@@ -912,9 +933,15 @@ function cwContenido(d){
       </div></section>
     <aside style="display:flex;flex-direction:column;gap:12px;position:sticky;top:84px"><span class="sec-t">Vista rápida</span>${pvModal(d)}</aside></div>`;
 }
-const pvMedia = d => d.img && d.media !== 'video' ? `<img src="${esc(d.img)}" alt="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover">` : d.img && d.media === 'video' ? `<video src="${esc(d.img)}" muted autoplay loop playsinline style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"></video>` : cover(d.theme);
-function pvModal(d){ const k = d.kb && S.K && S.K.find(x => x.id === +d.kb);
-  return `<div class="pv-modal" style="width:100%"><div class="im">${pvMedia(d)}<span style="position:absolute;left:12px;top:12px" class="chip tone-p">${ic(CT[d.tipo].i, 13)}${CT[d.tipo].l}</span></div><div class="tx"><h4>${esc(d.t || 'Título de la campaña')}</h4><p>${esc(d.desc || 'La descripción aparece aquí.')}</p>
+const pvMedia = d => medioHTML(d.media === 'icono' ? null : d.img, d.media === 'video', d.pres, d.theme);
+function presControles(d){
+  if (d.media === 'icono') return '';
+  const p = presDe(d.pres);
+  const g = (k, lbl, ops) => `<div class="f"><span class="lb">${lbl}</span><div class="seg" role="group" aria-label="${lbl}">${ops.map(([v, l]) => `<button type="button" data-cwpres="${k}" data-v="${v}" aria-pressed="${p[k] === v}">${l}</button>`).join('')}</div></div>`;
+  return `<div class="sgs-pres">${g('ajuste', 'Imagen', [['cover', 'Llenar'], ['contain', 'Completa']])}${g('foco', 'Enfoque', [['top', 'Arriba'], ['center', 'Centro'], ['bottom', 'Abajo']])}${g('alto', 'Alto de la imagen', [['bajo', 'Bajo'], ['medio', 'Medio'], ['alto', 'Alto'], ['xalto', 'Muy alto']])}${g('tamano', 'Tamaño del aviso', [['s', 'S'], ['m', 'M'], ['l', 'L'], ['xl', 'XL']])}<p class="hint" style="grid-column:1/-1;margin:0">«Completa» muestra la imagen entera, sin recortar. Pruébalo en Vista previa › Modal.</p></div>`;
+}
+function pvModal(d){ const k = d.kb && S.K && S.K.find(x => x.id === +d.kb); const pr = presDe(d.pres);
+  return `<div class="pv-modal" style="width:100%;max-width:${PRES_TAM[pr.tamano] || 520}px;margin:0 auto"><div class="im" style="height:${Math.round((PRES_ALTO[pr.alto] || 200) * .75)}px">${pvMedia(d)}<span style="position:absolute;left:12px;top:12px" class="chip tone-p">${ic(CT[d.tipo].i, 13)}${CT[d.tipo].l}</span></div><div class="tx"><h4>${esc(d.t || 'Título de la campaña')}</h4><p>${esc(d.desc || 'La descripción aparece aquí.')}</p>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">${d.cta.a !== 'nada' ? `<span class="btn pri sm">${esc(d.cta.l || 'Ver más')}</span>` : ''}${k ? `<span class="btn out sm">${ic(KIND[k.kind].i, 14)}Ver ${KIND[k.kind].l.toLowerCase()}</span>` : ''}<span class="btn plain sm">Más tarde</span></div></div></div>`; }
 const AFIELDS = [['estado','Estado'],['perfil','Perfil'],['cliente','Cliente'],['planta','Planta'],['usuario','Usuario']];
 const valoresDe = f => (S.val || []).filter(v => v.CAMPO === f);
@@ -967,7 +994,8 @@ function cwProgramacion(d, n){
 function cwPreview(d){
   return `<section class="card">${chdr('eye', 'tone-c', 'Vista previa', 'Así la verán tus usuarios dentro de SIGMA.', `<div class="seg" role="group" aria-label="Formato">${['banner','modal','card','notif'].map(k => `<button type="button" data-pvf="${k}" aria-pressed="${CW.pv.fmt === k}">${FMT[k]}</button>`).join('')}</div><div class="seg" role="group" aria-label="Dispositivo">${[['desktop','monitor','Escritorio'],['tablet','tablet','Tablet'],['mobile','phone','Móvil']].map(([k, i, l]) => `<button type="button" data-pvd="${k}" aria-pressed="${CW.pv.dev === k}" aria-label="${l}">${ic(i, 15)}</button>`).join('')}</div>`)}
     ${!d.fmt.includes(CW.pv.fmt) ? `<p class="mut" style="font-size:12.5px;margin-bottom:10px">${ic('help', 14)} Este formato no está activo en tu campaña; lo ves solo como referencia.</p>` : ''}
-    ${pvHTML(d, CW.pv.fmt, CW.pv.dev)}</section>`;
+    ${pvHTML(d, CW.pv.fmt, CW.pv.dev)}
+    <div style="margin-top:14px"><span class="sec-t">Ajustar la presentación</span>${presControles(d)}</div></section>`;
 }
 function pvHTML(d, fmt, dev, compact){
   const k = d.kb && S.K && S.K.find(x => x.id === +d.kb); const kT = k ? k.t : d.kbT, kK = k ? k.kind : d.kbK;
@@ -991,7 +1019,7 @@ function readCW(){ if (!CW.d) return; $$('[data-cw]').forEach(el => { CW.d[el.da
 async function guardarCampana(accion){
   readCW(); const d = CW.d; CW.guardando = true;
   try {
-    const r = await ws('c', 'Guardar', {datos:JSON.stringify({id:CW.editing, accion, tipo:d.tipo, titulo:d.t, descripcion:d.desc, medio:d.media, tema:d.theme, archivo:d.archivo, formatos:d.fmt, donde:d.where, dondeModulo:d.whereMod,
+    const r = await ws('c', 'Guardar', {datos:JSON.stringify({id:CW.editing, accion, tipo:d.tipo, titulo:d.t, descripcion:d.desc, medio:d.media, tema:d.theme, archivo:d.archivo, presentacion:presDe(d.pres), formatos:d.fmt, donde:d.where, dondeModulo:d.whereMod,
       cerrable:d.closable, confirmar:d.confirm, cta:d.cta.a === 'nada' ? {a:'nada'} : d.cta, contenido:d.kb ? +d.kb : null, union:d.join, condiciones:d.conds, frecuencia:d.freq, cadaDias:d.freq === 'repetir' ? d.every : null,
       cuando:d.when, desde:d.when === 'prog' ? `${d.from}T${d.fromT}:00` : null, hasta:d.perm ? null : `${d.to || hoyISO(30)}T23:59:00`})});
     CW.guardando = false; CW.editing = r.id;
@@ -1201,7 +1229,7 @@ VIEWS.kwiz = () => {
     <div class="wz"><nav class="steps" aria-label="Pasos">${KW_STEPS.map(([t, s], i) => `<button type="button" class="step${i + 1 < st ? ' done' : ''}" data-kwstep="${i + 1}"${i + 1 === st ? ' aria-current="step"' : ''}${!can && i ? ' disabled' : ''}><span class="n">${i + 1 < st ? ic('check', 15) : i + 1}</span><span><b>${t}</b><small>${s}</small></span></button>`).join('')}</nav>
       <div style="display:flex;flex-direction:column;gap:16px;min-width:0">${body}
         <div class="wz-foot">${st > 1 ? `<button type="button" class="btn out" data-kwstep="${st - 1}">${ic('cl', 16)}Anterior</button>` : ''}<span class="g">Paso ${st} de 5${!can ? ' · Falta el título' : ''}</span><a class="btn ghost" href="${esc(d.id ? URL_('kb', d.id) : URL_('help'))}">Cancelar</a>
-          ${st < 5 ? `<button type="button" class="btn pri" data-kwstep="${st + 1}"${!can ? ' disabled' : ''}>Siguiente${ic('arrow', 16)}</button>` : `<button type="button" class="btn pri" data-act="kwsave"${can && !KW.guardando ? '' : ' disabled'}>${ic(d.pub === 'now' ? 'send' : 'check', 16)}${{now:'Publicar', review:'Enviar a revisión', draft:'Guardar borrador'}[d.pub]}</button>`}</div></div></div>`;
+          ${st < 5 ? `<button type="button" class="btn pri" data-kwstep="${st + 1}"${!can ? ' disabled' : ''}>Siguiente${ic('arrow', 16)}</button>` : `<button type="button" class="btn pri" data-act="kwsave"${can && !KW.guardando ? '' : ' disabled'}>${KW.guardando ? '<span class="giro" aria-hidden="true"></span>' + {now:'Publicando…', review:'Enviando…', draft:'Guardando…'}[d.pub] : ic(d.pub === 'now' ? 'send' : 'check', 16) + {now:'Publicar', review:'Enviar a revisión', draft:'Guardar borrador'}[d.pub]}</button>`}</div></div></div>`;
 };
 function kwInfo(d){
   return `<section class="card">${chdr('caps', 'tone-p', 'Información', 'Lo esencial para que el usuario sepa si le sirve.')}
@@ -1255,7 +1283,7 @@ function readKW(){ if (!KW.d) return; $$('[data-kw]').forEach(el => { KW.d[el.da
 async function subirKW(f){
   if (f.size > 60 * 1048576){ toast('El archivo pesa más de 60 MB.', null, true); return; }
   KW.subiendo = {n:f.name, ext:f.name.split('.').pop(), k:tipoArch(f.name), s:pesoTxt(f.size), p:30}; const box = $('#kwFiles'); box && (box.innerHTML = fileRow(KW.subiendo));
-  try { const r = await ws('a', 'Subir', {nombre:f.name, mime:f.type, base64:await leer64(f)}); readKW();
+  try { const r = await ws('a', 'Subir', {nombre:f.name, mime:f.type, base64:await leer64(f), destino:'ayuda'}); readKW();
     Object.assign(KW.d, {archivo:r.id, archivoN:f.name, fmt:(f.name.split('.').pop() || '').toUpperCase()}); KW.subiendo = null; render(); toast('Archivo cargado');
     if (/^video\//.test(f.type)){ const v = document.createElement('video'); v.preload = 'metadata'; v.onloadedmetadata = () => { if (!KW.d.dur){ KW.d.dur = Math.floor(v.duration / 60) + ':' + pad(Math.round(v.duration % 60)); render(); } URL.revokeObjectURL(v.src); }; v.src = URL.createObjectURL(f); }
   } catch (e){ KW.subiendo = null; render(); fallo(e); }
@@ -1320,6 +1348,7 @@ document.addEventListener('click', async e => {
   if (ds.campkb){ campAccion(+ds.campkb, 'kb'); return; }
   if (ds.campok){ campAccion(+ds.campok, 'ok'); return; }
   if (ds.campx){ campAccion(+ds.campx, 'x'); return; }
+  if (ds.campver){ const c = CAMP[+ds.campver]; if (c) campModal(c); return; }
   /* Reporte */
   if (ds.rpcat){ RP.cat = ds.rpcat; $$('[data-rpcat]').forEach(b => b.setAttribute('aria-pressed', b === a)); updRpFoot(); return; }
   if (ds.rpprio){ RP.prio = ds.rpprio; $$('[data-rpprio]').forEach(b => b.setAttribute('aria-pressed', b === a)); updRpFoot(); return; }
@@ -1360,6 +1389,7 @@ document.addEventListener('click', async e => {
   if (ds.cwwhen){ readCW(); CW.d.when = ds.cwwhen; render(); return; }
   if (ds.cwfreq){ readCW(); CW.d.freq = ds.cwfreq; render(); return; }
   if (ds.pvf){ CW.pv.fmt = ds.pvf; render(); return; }
+  if (ds.cwpres && CW.d){ CW.d.pres = {...presDe(CW.d.pres), [ds.cwpres]:ds.v}; if (ds.cwpres === 'tamano' || ds.cwpres === 'alto') { if (CW.step === 5) CW.pv.fmt = 'modal'; } readCW(); render(); return; }
   if (ds.pvd){ CW.pv.dev = ds.pvd; render(); return; }
   if (ds.join){ CW.d.join = ds.join; CW.n = null; render(); audiencia(); return; }
   if (ds.conddel){ CW.d.conds.splice(+ds.conddel, 1); CW.n = null; render(); audiencia(); return; }
@@ -1397,7 +1427,7 @@ document.addEventListener('click', async e => {
     case 'sugview': { RP.sugSeen = true; RP.sugId = +ds.id; open(URL_('kb', ds.id, {origen:'sugerencia'}), '_blank', 'noopener'); const box = $('#rpSug'); box && (box.innerHTML = sugHTML()); toast('Abrimos la ayuda en otra pestaña. Tu reporte sigue aquí.'); break; }
     case 'sugcontinue': RP.sugDismissed = true; { const box = $('#rpSug'); box && (box.innerHTML = ''); } setTimeout(() => $('#rpD') && $('#rpD').focus(), 20); break;
     case 'sugsolved': ws('s', 'Evitado', {contenido:RP.sugId || (RP.sug[0] || {}).ayc_id || 0, titulo:RP.t, modulo:RP.ctx.mod, pantalla:RP.ctx.pant}).catch(() => {}); closeLayer(); toast('¡Bien! Registramos que la ayuda resolvió tu duda sin crear un ticket.'); break;
-    case 'sendreport': sendReport(); break;
+    case 'sendreport': ocupado(a, 'Enviando…'); sendReport(); break;
     case 'clearf': TF.f = {}; TF.q = ''; TF.pag = 1; if (TF.tab === 'mis') TF.tab = 'todos'; render(); break;
     case 'assign': case 'chstate': case 'moreacts': if (popEl && popAnchor === a) closePop(); else ticketAct(act, a); break;
     case 'insertkb': { if (popEl && popAnchor === a){ closePop(); break; }
@@ -1422,19 +1452,19 @@ document.addEventListener('click', async e => {
     case 'condadd': { const v = valoresDe('perfil')[0]; CW.d.conds.push({campo:'perfil', op:'=', valor:v ? v.VALOR : ''}); CW.n = null; render(); audiencia(); break; }
     case 'saveseg': { const n = prompt('Nombre del segmento:', ''); if (!n || !n.trim()) break; try { await ws('c', 'GuardarSegmento', {nombre:n.trim(), union:CW.d.join, condiciones:JSON.stringify(CW.d.conds)}); S.segs = (await ws('c', 'Valores')).segmentos; render(); toast('Segmento guardado. Lo verás en «Segmentos guardados».'); } catch (err){ fallo(err); } break; }
     case 'cwquitarimg': readCW(); CW.d.archivo = null; CW.d.img = null; render(); break;
-    case 'cwdraft': guardarCampana('borrador'); break;
+    case 'cwdraft': ocupado(a, 'Guardando…'); guardarCampana('borrador'); break;
     case 'cwpublish': readCW(); confirmModal(CW.d.when === 'now' ? '¿Publicar la campaña?' : '¿Programar la campaña?', `«${esc(CW.d.t)}» llegará a ${CW.n == null ? 'la audiencia elegida' : num(CW.n) + ' usuarios'}.`, CW.d.when === 'now' ? 'Publicar' : 'Programar', 'docwpublish', false); break;
-    case 'docwpublish': guardarCampana('publicar'); break;
+    case 'docwpublish': ocupado(a, CW.d.when === 'now' ? 'Publicando…' : 'Programando…'); $$('#sgs-layer .modal-f .btn').forEach(x => x.disabled = true); guardarCampana('publicar'); break;
     case 'clearlf': LF.q = ''; LF.mod = ''; LF.st = ''; LF.kind = ''; render(); break;
     case 'newcat': catModal(0); break;
     case 'savecat': { const nombre = $('#catN').value.trim(); const ico = ($('[data-catico][aria-pressed="true"]') || {}).dataset; closeLayer();
       await accion(ws('a', 'Categoria', {id:+ds.id, nombre, modulo:$('#catM') ? $('#catM').value : '', icono:ico ? ico.catico : 'folder', tono:''}), 'Categoría guardada'); break; }
     case 'versions': openVersions(); break;
     case 'newver': newVerModal(); break;
-    case 'donewver': { const nota = $('#nvN').value.trim(); if (!nota){ $('#nvN').focus(); toast('Cuenta qué cambió.', null, true); break; } const ver = $('#nvV').value.trim(); a.disabled = true;
-      try { let arc = 0; if (NV.file){ a.textContent = 'Subiendo…'; arc = (await ws('a', 'Subir', {nombre:NV.file.name, mime:NV.file.type, base64:await leer64(NV.file)})).id; }
-        const r = await ws('a', 'NuevaVersion', {id:APP.id, version:ver, nota, archivo:arc}); closeLayer(); toast(`Versión ${esc(r.version)} publicada`); await cargar(false); }
-      catch (err){ a.disabled = false; a.textContent = 'Publicar versión'; fallo(err); } break; }
+    case 'donewver': { const nota = $('#nvN').value.trim(); if (!nota){ $('#nvN').focus(); toast('Cuenta qué cambió.', null, true); break; } const ver = $('#nvV').value.trim(); ocupado(a, NV.file ? 'Subiendo…' : 'Publicando…');
+      try { let arc = 0; if (NV.file){ arc = (await ws('a', 'Subir', {nombre:NV.file.name, mime:NV.file.type, base64:await leer64(NV.file), destino:'ayuda'})).id; }
+        ocupado(a, 'Publicando…'); const r = await ws('a', 'NuevaVersion', {id:APP.id, version:ver, nota, archivo:arc}); closeLayer(); toast(`Versión ${esc(r.version)} publicada`); await cargar(false); }
+      catch (err){ a.disabled = false; a.removeAttribute('aria-busy'); a.textContent = 'Publicar versión'; fallo(err); } break; }
     case 'dorestore': closeLayer(); try { const r = await ws('a', 'Restaurar', {version:RESTORE.id}); toast(`Se restauró ${esc(RESTORE.v)} como ${esc(r.version)}`); await cargar(false); } catch (err){ fallo(err); } break;
     case 'kwaddstep': readKW(); KW.d.steps.push({t:'', m:''}); render(); setTimeout(() => { const ins = $$('[data-kwstepn]'); ins.length && ins[ins.length - 1].focus(); }, 20); break;
     case 'kwaddrec': readKW(); KW.d.recs.push(''); render(); break;
@@ -1470,8 +1500,8 @@ document.addEventListener('change', async e => {
   if (ds.cwcta === 'dest'){ CW.d.cta.dest = t.value; return; }
   if (ds.cwfecha){ const iso = txtAIso(t.value); if (!iso){ if (t.value.trim()) toast('Escribe la fecha como dd-mm-aaaa.', null, true); return; } readCW(); CW.d[ds.cwfecha] = iso; render(); return; }
   if (ds.cw && (t.tagName === 'SELECT' || ['from','fromT','to','every'].includes(ds.cw))){ readCW(); render(); return; }
-  if (ds.cwupload && t.files.length){ const f = t.files[0]; t.value = ''; if (f.size > 60 * 1048576){ toast('El archivo pesa más de 60 MB.', null, true); return; } toast('Subiendo…');
-    try { const r = await ws('a', 'Subir', {nombre:f.name, mime:f.type, base64:await leer64(f)}); readCW(); CW.d.archivo = r.id; CW.d.img = r.url; render(); toast('Imagen cargada para la campaña.'); } catch (err){ fallo(err); } return; }
+  if (ds.cwupload && t.files.length){ const f = t.files[0]; t.value = ''; if (f.size > 60 * 1048576){ toast('El archivo pesa más de 60 MB.', null, true); return; } readCW(); CW.subiendo = true; render();
+    try { const r = await ws('a', 'Subir', {nombre:f.name, mime:f.type, base64:await leer64(f), destino:'campanas'}); CW.d.archivo = r.id; CW.d.img = r.url; CW.subiendo = false; render(); toast(/^video\//.test(f.type) ? 'Video cargado para la campaña.' : 'Imagen cargada para la campaña.'); } catch (err){ CW.subiendo = false; render(); fallo(err); } return; }
   if (ds.kwfiles && t.files.length){ const f = t.files[0]; t.value = ''; subirKW(f); return; }
   if (ds.nvfile && t.files.length){ NV.file = t.files[0]; const b = $('#nvF'); b && (b.textContent = 'Nuevo archivo: ' + NV.file.name); return; }
   if (ds.lf){ LF[ds.lf] = t.value; render(); return; }

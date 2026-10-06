@@ -1944,7 +1944,8 @@ document.addEventListener('submit', e => {
 
 
 /* ================= Vistas Lista (E1) y Tarjetas (E2): copia fiel del diseño, con datos vivos ================= */
-const LV = {q:'', f:'all', open:new Set(), group:'area', sort:'atencion', tgroup:'none', tsort:'atencion'};
+const LV = {q:'', f:'all', open:new Set(), group:'area', sort:'atencion', tgroup:'none', tsort:'atencion', tpag:1, ttam:24};
+try { const tg = parseInt(localStorage.getItem('sigma.activos.tam'), 10); if (window.SigmaPaginador && SigmaPaginador.TAMANOS.includes(tg)) LV.ttam = tg; } catch(e){}
 const IC = {
   chevR:'<path d="M9 6l6 6-6 6"/>', chevD:'<path d="M6 9l6 6 6-6"/>',
   search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
@@ -2174,22 +2175,28 @@ function renderTarjetas(){
       </div>
       <div id="tvBody"></div></div>`;
   }
-  const list = lvSort(lvItems().filter(x => lvMatch(x, 'all')), LV.tsort);
+  /* Paginadas con el paginador comun (Js/sigma-paginador.js): con cientos de equipos, dibujarlos todos traba la pantalla. */
+  const P = SigmaPaginador.cortar(lvSort(lvItems().filter(x => lvMatch(x, 'all')), LV.tsort), LV.tpag, LV.ttam), list = P.items; LV.tpag = P.pagina;
   const gs = lvGroups(list, LV.tgroup);
   const grid = its => `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(min(330px,100%),1fr));gap:20px">${its.map(tcCard).join('')}</div>`;
   $('#tvBody').innerHTML = !list.length ? `<div style="padding:28px;border-radius:18px;background:var(--surface);text-align:center;color:var(--muted)">No encontramos activos con esa búsqueda.</div>`
-    : gs.map(g => g.title ? `<section style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px"><h3 style="margin:0;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px">${esc(g.title)}<span style="font-size:13px;color:var(--muted);font-weight:600">· ${cnt(g.items.length,'Activo')}</span></h3>${grid(g.items)}</section>` : grid(g.items)).join('');
+    : gs.map(g => g.title ? `<section style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px"><h3 style="margin:0;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px">${esc(g.title)}<span style="font-size:13px;color:var(--muted);font-weight:600">· ${cnt(g.items.length,'Activo')}</span></h3>${grid(g.items)}</section>` : grid(g.items)).join('') + SigmaPaginador.html(P, 'tv', 'activos');
 }
+SigmaPaginador.escuchar('tv', (pag, tam) => {
+  if (tam){ LV.ttam = tam; try { localStorage.setItem('sigma.activos.tam', tam); } catch(e){} }
+  LV.tpag = pag; renderTarjetas();
+  const vb = document.querySelector('#saPlanta .viewbar'); if (vb && vb.getBoundingClientRect().top < 0) vb.scrollIntoView({block:'start', behavior:'smooth'});
+});
 function renderCurrent(){ if (view === 'lista') renderLista(); else if (view === 'tarjetas') renderTarjetas(); }
 document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'lvGroup'){ LV.group = t.value; renderLista(); }
   else if (t.id === 'lvSort'){ LV.sort = t.value; renderLista(); }
-  else if (t.id === 'tvGroup'){ LV.tgroup = t.value; renderTarjetas(); }
-  else if (t.id === 'tvSort'){ LV.tsort = t.value; renderTarjetas(); }
+  else if (t.id === 'tvGroup'){ LV.tgroup = t.value; LV.tpag = 1; renderTarjetas(); }
+  else if (t.id === 'tvSort'){ LV.tsort = t.value; LV.tpag = 1; renderTarjetas(); }
   else if (t.dataset && t.dataset.tcfoto && t.files[0]){ try { const url = await loadPhoto(t.files[0]); const a = S.activos[t.dataset.tcfoto]; commit(() => addFotos(t.dataset.tcfoto, [url], true), 'Foto lista: quedó como portada'); } catch(err){ toast('No se pudo leer esa imagen. Prueba con una foto JPG o PNG.'); } }
 });
-document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('lv-q')){ LV.q = e.target.value.trim(); if (view === 'lista') renderLista(); else renderTarjetas(); } });
+document.addEventListener('input', e => { if (e.target.classList && e.target.classList.contains('lv-q')){ LV.q = e.target.value.trim(); LV.tpag = 1; if (view === 'lista') renderLista(); else renderTarjetas(); } });
 function openXPsel(id, sel){ openXP(id); if (sel){ XP.sel = sel; renderXP(false); } }
 function open360(id){ SIGMA.abrir360(id); }
 function toggleIO(force){ const m = $('#menuIO'), b = $('#btnIO'); if (!m) return; const open = force != null ? force : m.hidden; m.hidden = !open; b.setAttribute('aria-expanded', open); if (open){ const f = m.querySelector('button'); f && f.focus(); } }

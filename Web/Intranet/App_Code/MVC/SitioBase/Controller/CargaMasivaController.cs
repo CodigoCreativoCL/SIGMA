@@ -98,12 +98,12 @@ namespace SitioBase.Controller
             {
                 clave = "INVENTARIO",
                 nombre = "Inventario",
-                descripcion = "Bodegas, racks, repuestos, umbrales y el stock con que parte cada bodega, con lotes y vencimientos.",
+                descripcion = "Bodegas, racks, repuestos, umbrales, el stock con que parte cada bodega y en qué equipos sirve cada repuesto.",
                 icono = "mdi-warehouse",
                 color = "#6732F4",
                 procedimiento = "PRC_CARGA_INVENTARIO",
                 disponible = true,
-                ayudas = new[] { "PLANTAS", "BODEGAS", "RACKS", "UNIDADES", "TIPOS", "FABRICANTES" },
+                ayudas = new[] { "PLANTAS", "BODEGAS", "RACKS", "UNIDADES", "TIPOS", "FABRICANTES", "ACTIVOS" },
                 hojas = new List<Hoja>
                 {
                     new Hoja { clave = "BODEGAS", titulo = "BODEGAS", icono = "mdi-warehouse",
@@ -170,14 +170,109 @@ namespace SitioBase.Controller
                             C("LOTE", "LOTE", false, "Obligatorio si el repuesto controla lote.", "", Tipo.Texto, 14),
                             C("VENCE", "VENCE", false, "Fecha de vencimiento del lote.", "", Tipo.Fecha, 13, null, null, "VENCIMIENTO", "FECHA VENCIMIENTO"),
                             C("OBSERVACION", "OBSERVACION", false, "", "", Tipo.Texto, 26)
+                        } },
+                    /* Bloque 368: donde sirve cada repuesto, lo mismo que se vincula
+                       desde la ficha del activo. */
+                    new Hoja { clave = "COMPATIBILIDADES", titulo = "COMPATIBILIDADES", icono = "mdi-puzzle-outline",
+                        descripcion = "En qué equipos o componentes sirve cada repuesto. El activo tiene que existir (carga de Activos). Si ya está vinculado, se omite.",
+                        columnas = new List<Columna> {
+                            C("REPUESTO", "REPUESTO", true, "Código o nombre del repuesto (de la base o de la hoja REPUESTOS).", "EJEMPLO-ROD-001", Tipo.Texto, 20),
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo, como en la hoja ACTIVOS EXISTENTES.", "", Tipo.Lista, 22, null, "ACTIVOS"),
+                            C("COMPONENTE", "COMPONENTE", false, "Si sirve a una pieza del activo: su nombre. Vacío: al activo entero.", "", Tipo.Texto, 20),
+                            C("OBSERVACION", "OBSERVACION", false, "", "", Tipo.Texto, 26)
                         } }
                 }
             });
 
             /* Los que siguen se encienden a medida que su PRC_CARGA_<MODULO>
                queda probado: la pantalla los muestra "en preparacion". */
-            m.Add(new Modulo { clave = "ACTIVOS", nombre = "Activos", icono = "mdi-robot-industrial", color = "#087BEA",
-                descripcion = "Equipos y su jerarquía, componentes, medidores y los repuestos compatibles con cada uno.", procedimiento = "PRC_CARGA_ACTIVOS", hojas = new List<Hoja>() });
+            /* ACTIVOS (bloque 367): todo lo que pide la ficha de «Nuevo activo»
+               en sus 6 pasos, más los repuestos compatibles. Las fotos se
+               agregan después desde el Centro de activos. */
+            m.Add(new Modulo
+            {
+                clave = "ACTIVOS",
+                nombre = "Activos",
+                descripcion = "Equipos y su jerarquía, datos técnicos, componentes, variables, medidores y los repuestos compatibles con cada uno.",
+                icono = "mdi-robot-industrial",
+                color = "#087BEA",
+                procedimiento = "PRC_CARGA_ACTIVOS",
+                disponible = true,
+                ayudas = new[] { "PLANTAS", "AREAS", "TIPOS ACTIVO", "ESTADOS", "CRITICIDADES", "CENTROS COSTO", "UNIDADES", "ACTIVOS", "TIPOS COMPONENTE", "POSICIONES", "REPUESTOS" },
+                hojas = new List<Hoja>
+                {
+                    new Hoja { clave = "ACTIVOS", titulo = "ACTIVOS", icono = "mdi-robot-industrial",
+                        descripcion = "Una fila por equipo, como los pasos 1 y 2 de la ficha. Con el mismo código (o el mismo nombre en la planta, si no lleva código) se actualiza.",
+                        columnas = new List<Columna> {
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (ACT-<n>). Si lo escribe, queda ACT-<lo escrito>. No se cambia después: va en la etiqueta.", "EJEMPLO-HORNO-01", Tipo.Texto, 18),
+                            C("NOMBRE", "NOMBRE", true, "Cómo lo reconoce la gente.", "Horno túnel línea 1", Tipo.Texto, 30),
+                            C("PLANTA", "PLANTA", true, "Tal como aparece en la hoja PLANTAS.", "Planta Renca", Tipo.Lista, 20, null, "PLANTAS"),
+                            C("AREA", "AREA", false, "Área de esa planta, como en la hoja AREAS.", "Producción", Tipo.Lista, 20, null, "AREAS", "UBICACION"),
+                            C("TIPO", "TIPO", true, "Como en la hoja TIPOS ACTIVO. Si no existe, se crea.", "Horno", Tipo.Lista, 18, null, "TIPOS ACTIVO", "TIPO ACTIVO"),
+                            C("MODELO", "MODELO", false, "Si no existe para ese tipo, se crea.", "HT-2000", Tipo.Texto, 16),
+                            C("MARCA", "MARCA", false, "El fabricante.", "Siemens", Tipo.Texto, 16, null, null, "FABRICANTE"),
+                            C("SERIE", "N SERIE", false, "Número de serie de la placa.", "SN-88231", Tipo.Texto, 16, null, null, "SERIE", "NUMERO SERIE"),
+                            C("ESTADO", "ESTADO", true, "Como en la hoja ESTADOS.", "Operativo", Tipo.Lista, 16, null, "ESTADOS"),
+                            C("CRITICIDAD", "CRITICIDAD", true, "Baja, Media, Alta o Crítica.", "Alta", Tipo.Lista, 13, null, "CRITICIDADES"),
+                            C("CENTRO_COSTO", "CENTRO COSTO", false, "Como en la hoja CENTROS COSTO.", "", Tipo.Lista, 18, null, "CENTROS COSTO", "CENTRO DE COSTO"),
+                            C("DEPENDE_DE", "DEPENDE DE", false, "Código o nombre del activo principal (de la base o de esta hoja). Vacío: es una máquina principal.", "", Tipo.Texto, 20, null, null, "ACTIVO PADRE", "PADRE"),
+                            C("ANIO_FABRICACION", "ANIO FABRICACION", false, "Año, por ejemplo 2019.", "2019", Tipo.Entero, 14, null, null, "AÑO FABRICACION", "AÑO"),
+                            C("PUESTA_MARCHA", "PUESTA EN MARCHA", false, "Fecha dd-mm-aaaa. No puede ser futura.", "", Tipo.Fecha, 16, null, null, "PUESTA MARCHA", "FECHA PUESTA EN MARCHA"),
+                            C("EN_USO", "EN USO", false, "NO lo deja deshabilitado. Vacío: SI.", "SI", Tipo.SiNo, 9, SINO),
+                            C("DESCRIPCION", "DESCRIPCION", false, "", "Horno a gas de 3 zonas", Tipo.Texto, 34)
+                        } },
+                    new Hoja { clave = "DATOS_TECNICOS", titulo = "DATOS TECNICOS", icono = "mdi-format-list-bulleted-type",
+                        descripcion = "Paso 3 de la ficha: una fila por dato (potencia, voltaje, capacidad…). Si el activo ya tenía ese dato, se reemplaza.",
+                        columnas = new List<Columna> {
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo (de la base o de la hoja ACTIVOS).", "EJEMPLO-HORNO-01", Tipo.Texto, 20),
+                            C("DATO", "DATO", true, "Qué característica: Potencia, Voltaje, Capacidad…", "Potencia", Tipo.Texto, 20, null, null, "ATRIBUTO", "CARACTERISTICA"),
+                            C("VALOR", "VALOR", true, "El valor tal como está en la placa o el manual.", "75", Tipo.Texto, 14),
+                            C("UNIDAD", "UNIDAD", false, "Como en la hoja UNIDADES.", "KW", Tipo.Lista, 12, null, "UNIDADES")
+                        } },
+                    new Hoja { clave = "COMPONENTES", titulo = "COMPONENTES", icono = "mdi-cog-outline",
+                        descripcion = "Paso 4: las piezas que importan de cada equipo. Con el mismo nombre en el mismo activo se omite (no se duplica).",
+                        columnas = new List<Columna> {
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo.", "EJEMPLO-HORNO-01", Tipo.Texto, 20),
+                            C("NOMBRE", "NOMBRE", true, "Cómo se le dice a esa pieza.", "Motor ventilador", Tipo.Texto, 26),
+                            C("QUE_ES", "QUE ES", false, "Como en la hoja TIPOS COMPONENTE. Si no existe, se crea. Vacío: Otro.", "Motor", Tipo.Lista, 16, null, "TIPOS COMPONENTE", "TIPO"),
+                            C("DONDE_VA", "DONDE VA", false, "Como en la hoja POSICIONES. Si no existe, se crea.", "Lado accionamiento", Tipo.Lista, 18, null, "POSICIONES", "POSICION"),
+                            C("CRITICIDAD", "CRITICIDAD", false, "Vacío: la del activo.", "", Tipo.Lista, 13, null, "CRITICIDADES"),
+                            C("FECHA_INSTALACION", "FECHA INSTALACION", false, "Vacío: hoy.", "", Tipo.Fecha, 16, null, null, "INSTALACION"),
+                            C("DESCRIPCION", "DESCRIPCION", false, "", "", Tipo.Texto, 30)
+                        } },
+                    new Hoja { clave = "VARIABLES", titulo = "VARIABLES", icono = "mdi-thermometer",
+                        descripcion = "Paso 5: lo que se mide para saber cómo está (temperatura, presión, vibración) y su rango normal. Si ya existe en ese activo, se omite.",
+                        columnas = new List<Columna> {
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo.", "EJEMPLO-HORNO-01", Tipo.Texto, 20),
+                            C("COMPONENTE", "COMPONENTE", false, "Si se mide en una pieza: su nombre (de la base o de la hoja COMPONENTES).", "", Tipo.Texto, 20),
+                            C("VARIABLE", "VARIABLE", true, "Qué se mide. Si no existe, se crea.", "Temperatura", Tipo.Texto, 18, null, null, "QUE SE MIDE"),
+                            C("UNIDAD", "UNIDAD", true, "Como en la hoja UNIDADES.", "°C", Tipo.Lista, 10, null, "UNIDADES"),
+                            C("MINIMO", "MINIMO", false, "Debajo de esto, SIGMA avisa.", "180", Tipo.Numero, 10),
+                            C("MAXIMO", "MAXIMO", false, "Encima de esto, SIGMA avisa.", "240", Tipo.Numero, 10),
+                            C("ADVERTENCIA", "ADVERTENCIA", false, "Valor de advertencia.", "", Tipo.Numero, 12),
+                            C("CRITICO", "CRITICO", false, "Valor crítico.", "", Tipo.Numero, 10),
+                            C("FRECUENCIA_HORAS", "FRECUENCIA HORAS", false, "Cada cuántas horas se espera una lectura.", "", Tipo.Entero, 16, null, null, "FRECUENCIA")
+                        } },
+                    new Hoja { clave = "MEDIDORES", titulo = "MEDIDORES", icono = "mdi-speedometer",
+                        descripcion = "Paso 6: cuánto ha trabajado (horas, ciclos, km), con la lectura de hoy. Si ya existe en ese activo, se omite.",
+                        columnas = new List<Columna> {
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo.", "EJEMPLO-HORNO-01", Tipo.Texto, 20),
+                            C("NOMBRE", "NOMBRE", true, "Horómetro, Contador de ciclos, Odómetro…", "Horómetro", Tipo.Texto, 20),
+                            C("UNIDAD", "UNIDAD", true, "Como en la hoja UNIDADES (HORA, CICLO, KM…).", "HORA", Tipo.Lista, 10, null, "UNIDADES"),
+                            C("LECTURA_ACTUAL", "LECTURA ACTUAL", false, "Lo que marca hoy. Vacío: 0.", "12500", Tipo.Numero, 14, null, null, "LECTURA", "VALOR ACTUAL"),
+                            C("PERMITE_REINICIO", "PERMITE REINICIO", false, "SI si el contador puede volver a cero.", "NO", Tipo.SiNo, 14, SINO, null, "REINICIO"),
+                            C("VALOR_REINICIO", "VALOR REINICIO", false, "Desde qué valor parte al reiniciar.", "", Tipo.Numero, 13)
+                        } },
+                    new Hoja { clave = "REPUESTOS_COMPATIBLES", titulo = "REPUESTOS COMPATIBLES", icono = "mdi-puzzle-outline",
+                        descripcion = "Los repuestos de bodega que le sirven a cada equipo o componente. El repuesto tiene que existir (carga de Inventario). Si ya está vinculado, se omite.",
+                        columnas = new List<Columna> {
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo.", "EJEMPLO-HORNO-01", Tipo.Texto, 20),
+                            C("COMPONENTE", "COMPONENTE", false, "Si es para una pieza: su nombre.", "", Tipo.Texto, 20),
+                            C("REPUESTO", "REPUESTO", true, "Código o nombre del repuesto, como en la hoja REPUESTOS.", "ROD-6205", Tipo.Lista, 20, null, "REPUESTOS"),
+                            C("OBSERVACION", "OBSERVACION", false, "", "", Tipo.Texto, 26)
+                        } }
+                }
+            });
             m.Add(new Modulo { clave = "MANTENIMIENTO", nombre = "Mantenimiento", icono = "mdi-calendar-check", color = "#007F8A",
                 descripcion = "Tareas, checklists con sus ítems, planes y su programación sobre cada equipo.", procedimiento = "PRC_CARGA_MANTENIMIENTO", hojas = new List<Hoja>() });
 
@@ -323,7 +418,7 @@ namespace SitioBase.Controller
            y al leer se reconocen las de datos por su nombre exacto. */
         private static string NombreAyuda(string lista)
         {
-            return lista == "BODEGAS" || lista == "RACKS" ? lista + " EXISTENTES" : lista;
+            return lista == "BODEGAS" || lista == "RACKS" || lista == "ACTIVOS" ? lista + " EXISTENTES" : lista;
         }
 
         private static DataTable Ayuda(int cliente, string lista)
