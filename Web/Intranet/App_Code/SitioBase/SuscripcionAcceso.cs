@@ -182,6 +182,7 @@ namespace SitioBase
 
             ctx.Session.Clear();
             ctx.Session.Abandon();
+            SesionPersistente.Borrar();
 
             ctx.Response.Redirect("~/Login.aspx?motivo=suscripcion");
         }
