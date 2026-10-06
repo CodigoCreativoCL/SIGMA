@@ -144,7 +144,7 @@ function capa(){
 }
 const layer = () => (capa(), $('#sgs-layer'));
 let lastFocus = null;
-function openModal(html, cls = ''){ lastFocus = document.activeElement; layer().innerHTML = `<div class="scrim" data-scrim="1"><div class="modal ${cls}" role="dialog" aria-modal="true">${html}</div></div>`; setTimeout(() => { const f = $('#sgs-layer .modal [autofocus]') || $('#sgs-layer .modal textarea, #sgs-layer .modal input, #sgs-layer .modal button'); f && f.focus(); }, 30); }
+function openModal(html, cls = ''){ lastFocus = document.activeElement; layer().innerHTML = `<div class="scrim" data-scrim="1"><div class="modal ${cls}" role="dialog" aria-modal="true">${html}</div></div>`; setTimeout(() => { const f = $('#sgs-layer .modal [autofocus]') || $('#sgs-layer .modal textarea, #sgs-layer .modal input:not([type=hidden]), #sgs-layer .modal .btn.pri'); f && f.focus({preventScroll:true}); }, 30); }
 function openDrawer(html){ lastFocus = document.activeElement; layer().innerHTML = `<div class="scrim" data-scrim="1" style="justify-content:flex-end;padding:0"></div><aside class="drawer" role="dialog" aria-modal="true">${html}</aside>`; setTimeout(() => { const f = $('#sgs-layer .drawer [autofocus]') || $('#sgs-layer .drawer input, #sgs-layer .drawer button'); f && f.focus(); }, 30); }
 function setModal(html){ const m = $('#sgs-layer .modal'); if (m) m.innerHTML = html; }
 function setDrawer(html){ const m = $('#sgs-layer .drawer'); if (m) m.innerHTML = html; }
@@ -348,8 +348,10 @@ function campBotones(c, grande){
   return `${c.cam_cta_accion !== 'nada' ? `<button type="button" class="btn ${grande ? 'pri' : 'w sm'}" data-campcta="${c.cam_id}">${esc(c.cam_cta_texto || 'Ver más')}</button>` : ''}${k ? `<button type="button" class="btn out${grande ? '' : ' sm'}" data-campkb="${c.cam_id}">${ic(KIND[c.CONTENIDO_TIPO].i, 14)}Ver ${KIND[c.CONTENIDO_TIPO].l.toLowerCase()}</button>` : ''}${c.cam_confirmar ? `<button type="button" class="btn ${grande ? 'sec' : 'w sm'}" data-campok="${c.cam_id}">${ic('check', 14)}Entendido</button>` : ''}`;
 }
 function campModal(c){
-  openModal(`<div class="pv-modal" style="width:100%;box-shadow:none"><div class="im" style="height:180px">${campMedia(c)}<span style="position:absolute;left:14px;top:14px" class="chip tone-p">${ic(CT[c.cam_tipo] ? CT[c.cam_tipo].i : 'mega', 13)}${CT[c.cam_tipo] ? CT[c.cam_tipo].l : 'Aviso'}</span>${c.cam_cerrable ? `<button type="button" class="ibtn" data-campx="${c.cam_id}" aria-label="Cerrar" style="position:absolute;right:10px;top:10px;background:rgba(255,255,255,.9)">${ic('x', 18)}</button>` : ''}</div>
-    <div class="tx" style="padding:20px 22px 22px"><h4 style="font-size:20px">${esc(c.cam_titulo)}</h4><p style="font-size:14px">${esc(c.cam_descripcion || '')}</p><div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:8px">${campBotones(c, true)}${c.cam_cerrable && !c.cam_confirmar ? `<button type="button" class="btn plain" data-campx="${c.cam_id}">Más tarde</button>` : ''}</div></div></div>`, 'sgs-camp-modal');
+  const tp = CT[c.cam_tipo] || {l:'Aviso', i:'mega'};
+  openModal(`<div class="pv-modal sgs-camp"><div class="im">${campMedia(c)}<span class="chip tone-p sgs-camp-tipo">${ic(tp.i, 13)}${tp.l}</span>${c.cam_cerrable ? `<button type="button" class="sgs-cerrar" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>
+    <div class="tx"><h4>${esc(c.cam_titulo)}</h4>${c.cam_descripcion ? `<p>${esc(c.cam_descripcion)}</p>` : ''}
+      <div class="sgs-camp-acts">${c.cam_cerrable && !c.cam_confirmar ? `<button type="button" class="btn ghost" data-campx="${c.cam_id}">Más tarde</button>` : ''}${campBotones(c, true)}</div></div></div>`, 'sgs-camp-modal');
 }
 function campBanner(c){
   const host = $('.sg-page-head') || $('.content-page .content .container-fluid') || document.body.firstElementChild;
@@ -397,7 +399,7 @@ document.addEventListener('click', e => {
 const APP = {vista:null, id:null, el:null, recargar:null};
 const VIEWS = {}, LOAD = {}, AFTER = {};
 const S = {};          // datos de la vista actual
-function render(){ if (!APP.el) return; const f = VIEWS[APP.vista]; APP.el.innerHTML = f ? f() : ''; const a = AFTER[APP.vista]; a && a(); }
+function render(){ if (!APP.el) return; const f = VIEWS[APP.vista]; APP.el.innerHTML = f ? f() : ''; const a = AFTER[APP.vista]; a && a(); if (window.SigmaCalendario) window.SigmaCalendario.conectar(APP.el); }
 async function cargar(sk){
   if (sk !== false) APP.el.innerHTML = skeleton();
   try { await LOAD[APP.vista](); render(); }
@@ -829,6 +831,14 @@ async function openCamp(id){
 /* ---------- Asistente de campaña ---------- */
 const CW = {step:1, d:null, pv:{fmt:'banner', dev:'desktop'}, done:null, editing:null, n:null, aud:null, guardando:false};
 const CW_STEPS = [['Contenido','Qué vas a comunicar'],['Audiencia','A quién le llega'],['Comportamiento','Dónde y cómo aparece'],['Programación','Cuándo y cuántas veces'],['Vista previa','Cómo se verá'],['Publicar','Revisa y publica']];
+/* Fechas con el calendario de SIGMA (Js/sigma-calendario.js): el campo va
+   dentro de .sigma-modal-fecha y el componente escribe dd-mm-aaaa. Por
+   dentro el asistente guarda aaaa-mm-dd. */
+const isoATxt = iso => { const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(iso || ''); return m ? `${m[3]}-${m[2]}-${m[1]}` : ''; };
+const txtAIso = t => { const m = /^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/.exec(String(t || '').trim()); return m ? `${m[3]}-${pad(m[2])}-${pad(m[1])}` : ''; };
+const campoFecha = (clave, iso, id) => `<span class="sigma-modal-fecha sgs-fecha"><input type="text" class="in" id="${id}" data-cwfecha="${clave}" value="${isoATxt(iso)}" placeholder="dd-mm-aaaa" autocomplete="off" inputmode="numeric"><a role="button" tabindex="0" aria-label="Abrir calendario"></a></span>`;
+const HORAS = Array.from({length:48}, (_, i) => `${pad(Math.floor(i / 2))}:${i % 2 ? '30' : '00'}`);
+const campoHora = (clave, v, id) => `<select class="sel" id="${id}" data-cw="${clave}">${(HORAS.includes(v) ? HORAS : [v, ...HORAS]).map(h => `<option${h === v ? ' selected' : ''}>${h}</option>`).join('')}</select>`;
 const hoyISO = (dias = 2) => { const d = new Date(); d.setDate(d.getDate() + dias); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
 LOAD.cwiz = async () => {
   const [c, v, k, p] = await Promise.all([ws('c', 'Campanas'), ws('c', 'Valores'), ws('a', 'Contenidos'), ws('a', 'Pantallas')]);
@@ -931,9 +941,9 @@ function cwProgramacion(d, n){
   return `<section class="card">${chdr('cal', 'tone-b', 'Programación', 'Cuándo empieza, cuándo termina y cuántas veces se muestra.')}
     <div class="fg">
       <div class="f full"><span class="lb">Publicación</span><div class="optcards" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button type="button" class="opt" data-cwwhen="now" aria-pressed="${d.when === 'now'}">${ic('send', 18)}Publicar ahora<small>Apenas termines este asistente.</small></button><button type="button" class="opt" data-cwwhen="prog" aria-pressed="${d.when === 'prog'}">${ic('cal', 18)}Programar<small>Elige día y hora de inicio.</small></button></div></div>
-      ${d.when === 'prog' ? `<div class="f"><label for="cwFrom">Fecha de inicio</label><input type="date" class="in" id="cwFrom" data-cw="from" value="${d.from}" min="${hoyISO(0)}"></div><div class="f"><label for="cwFromT">Hora</label><input type="time" class="in" id="cwFromT" data-cw="fromT" value="${d.fromT}"></div>` : ''}
+      ${d.when === 'prog' ? `<div class="f"><label for="cwFrom">Fecha de inicio</label>${campoFecha('from', d.from, 'cwFrom')}</div><div class="f"><label for="cwFromT">Hora</label>${campoHora('fromT', d.fromT, 'cwFromT')}</div>` : ''}
       <div class="f full"><span class="lb">Término</span><label style="display:flex;align-items:center;gap:12px;font-size:13.5px"><button type="button" class="switch" role="switch" aria-checked="${d.perm}" data-cwsw="perm" aria-label="Permanente"></button><b>Permanente</b><span class="mut" style="font-size:12px">Sin fecha de término.</span></label></div>
-      ${d.perm ? '' : `<div class="f"><label for="cwTo">Fecha de término</label><input type="date" class="in" id="cwTo" data-cw="to" value="${d.to || hoyISO(30)}" min="${hoyISO(0)}"></div><div></div>`}
+      ${d.perm ? '' : `<div class="f"><label for="cwTo">Fecha de término</label>${campoFecha('to', d.to || hoyISO(30), 'cwTo')}</div><div></div>`}
       <div class="f full"><span class="lb">Frecuencia</span><div class="pills">${[['una','Una vez'],['usuario','Una vez por usuario'],['leer','Hasta que lo lea'],['repetir','Repetir cada X días']].map(([k, l]) => `<button type="button" class="pill" data-cwfreq="${k}" aria-pressed="${d.freq === k}">${l}</button>`).join('')}</div>
         ${d.freq === 'repetir' ? `<div style="display:flex;align-items:center;gap:8px;margin-top:8px"><span class="mut">Cada</span><input type="number" min="1" max="60" class="in" style="width:80px" data-cw="every" value="${d.every}" aria-label="Días"><span class="mut">días</span></div>` : ''}</div>
     </div>
@@ -1443,6 +1453,7 @@ document.addEventListener('change', async e => {
   if (ds.condv != null){ CW.d.conds[+ds.condv].valor = t.value; CW.n = null; render(); audiencia(); return; }
   if (ds.cwcta === 'a'){ readCW(); const dd = destinos()[t.value] || []; CW.d.cta.dest = t.value === 'url' ? 'https://' : dd[0] ? dd[0][0] : ''; CW.d.cta.l = {modulo:'Abrir módulo', pantalla:'Abrir pantalla', documento:'Ver documento', capsula:'Ver cápsula', url:'Abrir enlace', nada:''}[t.value]; render(); return; }
   if (ds.cwcta === 'dest'){ CW.d.cta.dest = t.value; return; }
+  if (ds.cwfecha){ const iso = txtAIso(t.value); if (!iso){ if (t.value.trim()) toast('Escribe la fecha como dd-mm-aaaa.', null, true); return; } readCW(); CW.d[ds.cwfecha] = iso; render(); return; }
   if (ds.cw && (t.tagName === 'SELECT' || ['from','fromT','to','every'].includes(ds.cw))){ readCW(); render(); return; }
   if (ds.cwupload && t.files.length){ const f = t.files[0]; t.value = ''; if (f.size > 60 * 1048576){ toast('El archivo pesa más de 60 MB.', null, true); return; } toast('Subiendo…');
     try { const r = await ws('a', 'Subir', {nombre:f.name, mime:f.type, base64:await leer64(f)}); readCW(); CW.d.archivo = r.id; CW.d.img = r.url; render(); toast('Imagen cargada para la campaña.'); } catch (err){ fallo(err); } return; }
@@ -1489,5 +1500,5 @@ function iniciar(){
   if (puede('ayuda') || puede('reportar')) cargarCampanas();
 }
 if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', iniciar); else iniciar();
-window.sigmaSoporte = {reportar:openReport, ayuda:a => openCtxHelp(a)};
+window.sigmaSoporte = {reportar:openReport, ayuda:a => openCtxHelp(a), verCampana:c => { CAMP[c.cam_id] = c; campModal(c); }};
 })();
