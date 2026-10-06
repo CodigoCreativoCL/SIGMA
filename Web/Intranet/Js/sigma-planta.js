@@ -1552,6 +1552,7 @@ function itemDetail(it, M){
     return `<div class="co-det">
       <div class="field"><label for="dEstado">Estado de esta pieza</label><select id="dEstado" data-comp="${it.i}">${Object.entries(EST).map(([k, v]) => `<option value="${k}"${k === c.e ? ' selected' : ''}>${v.l}</option>`).join('')}</select></div>
       <span class="co-note">${n ? `${cnt(n,'Repuesto')} le ${n === 1 ? 'sirve' : 'sirven'}. Lo ves filtrado en «Repuestos».` : 'Aún no tiene repuestos vinculados.'}</span>
+      ${puedeMover() && c.id && destinosMover(a).length ? `<label class="co-mover"><span>Mover a</span><select data-mover="${c.id}"><option value="">Elige dónde…</option>${destinosMover(a).map(d => `<option value="${d.aid}">${esc(d.l)}</option>`).join('')}</select></label>` : ''}
       <button type="button" class="btn btn--primary btn--sm" data-xp="ot">Crear OT para esta pieza</button></div>`;
   }
   if (it.kind === 'rep'){
@@ -1563,9 +1564,37 @@ function itemDetail(it, M){
   }
   return '';
 }
+/* ---- Mover un componente a un subactivo (06-10-2026) ----
+   Se arrastra desde «Componentes» (o desde el arbol de un subactivo) y se
+   suelta sobre un subactivo, o sobre «Componentes» para volverlo al activo
+   abierto. Sin mouse, el detalle del componente trae «Mover a». Lo hace
+   WsActivos.MoverComponente (BD/358): lo que cuelga de la pieza va con ella. */
+const puedeMover = () => !!(S.permisos && S.permisos.comp);
+const XD = {drag:null};
+function destinosMover(a){
+  /* a donde puede ir una pieza de este activo: sus subactivos y, si es un subactivo, su activo */
+  const out = (a.subs || []).map(sid => S.activos[sid]).filter(Boolean).map(s => ({aid:s.aid, l:'Subactivo «' + s.nombre + '»'}));
+  if (a.padre && S.activos[a.padre]) out.unshift({aid:S.activos[a.padre].aid, l:'Su activo «' + S.activos[a.padre].nombre + '»'});
+  return out;
+}
+async function moverComp(comp, activo){
+  try { const r = await ws('MoverComponente', {componente:comp, activo}); XP.sel = null; toast((r && r.detalle) || 'Componente movido'); await SIGMA.recargar(); }
+  catch(err){ toast(err.message); }
+}
+/* El subactivo con sus componentes debajo, como arbol. Todo el bloque recibe lo que se suelta. */
+function subTree(it, M){
+  const s = S.activos[it.id]; if (!s) return itemHTML(it, M);
+  const comps = s.comps || [], mov = puedeMover();
+  const filas = comps.map(c => { const e = EST[c.e] || EST.operativo;
+    return `<li class="sub-comp"${mov ? ` draggable="true" data-drag-comp="${c.id}" data-drag-desde="${s.aid}" title="Arrástralo para moverlo"` : ''}><i style="background:${DOTC[e.t]}"></i><span>${esc(c.n)}</span><small>${esc(e.l)}</small></li>`; }).join('');
+  return `<div class="sub-tree"${mov ? ` data-drop-activo="${s.aid}" data-drop-nombre="${esc(s.nombre)}"` : ''}>${itemHTML(it, M)}
+    ${comps.length ? `<ul class="sub-comps" aria-label="Componentes de ${esc(s.nombre)}">${filas}</ul>`
+                   : `<div class="sub-comps-vacio">${mov ? 'Sin componentes · suelta uno aquí' : 'Sin componentes'}</div>`}</div>`;
+}
 function itemHTML(it, M){
   const sel = XP.sel === it.key;
-  return `<div class="co-wrap${sel ? ' is-open' : ''}" data-name="${esc(norm(it.name + ' ' + (it.para||'')))}" data-tone="${it.tone}"${it.para ? ` data-para="${esc(norm(it.para))}"` : ''}>
+  const arrastra = it.kind === 'comp' && puedeMover() && M.a.comps[it.i] && M.a.comps[it.i].id;
+  return `<div class="co-wrap${sel ? ' is-open' : ''}"${arrastra ? ` draggable="true" data-drag-comp="${M.a.comps[it.i].id}" data-drag-desde="${M.a.aid}"` : ''} data-name="${esc(norm(it.name + ' ' + (it.para||'')))}" data-tone="${it.tone}"${it.para ? ` data-para="${esc(norm(it.para))}"` : ''}>
     <button type="button" class="co co--${it.kind}${sel ? ' is-sel' : ''}${it.foto ? ' con-foto' : ''}" data-co="${it.key}" aria-expanded="${it.kind === 'sub' ? 'false' : sel}">
       ${it.foto ? `<span class="co-img"><img src="${esc(it.foto)}" alt="" loading="lazy"></span>` : ''}<span class="co-main"><strong>${esc(it.name)}</strong>${it.para ? `<small class="co-para">Para: ${esc(it.para)}</small>` : ''}${it.nota ? `<small class="co-obs">«${esc(it.nota)}»</small>` : ''}</span>
       <span class="co-side">${it.kind === 'sub' ? svg('<path d="M9 6l6 6-6 6"/>',18) : svg(sel ? '<path d="M6 15l6-6 6 6"/>' : '<path d="M6 9l6 6 6-6"/>',16)}</span>
@@ -1576,16 +1605,18 @@ function groupHTML(kind, list, side, M){
   const k = KIND[kind]; const bad = list.filter(x => x.tone !== 'ok').length;
   const big = list.length > 6;
   const items = list.length
-    ? `<div class="grp-items">${list.map(it => itemHTML(it, M)).join('')}</div><div class="grp-none" hidden>Nada coincide.</div>`
+    ? `<div class="grp-items">${list.map(it => kind === 'sub' ? subTree(it, M) : itemHTML(it, M)).join('')}</div><div class="grp-none" hidden>Nada coincide.</div>`
     : `<div class="xp-empty">${kind === 'sub' ? 'No tiene subactivos.' : kind === 'comp' ? 'Aún no tiene componentes.' : 'Sin repuestos vinculados.'}</div>`;
   const status = bad ? `<span class="chip chip--${list.some(x => x.tone === 'bad') ? 'bad' : 'warn'}"><i></i>${bad} ${kind === 'rep' ? 'por reponer' : 'con aviso'}</span>` : list.length ? '<span class="chip chip--ok"><i></i>Todo bien</span>' : '';
-  return `<section class="grp grp--${kind} grp--${side}" style="--c:${k.c}" data-grp="${kind}" aria-label="${k.l}">
+  const recibe = kind === 'comp' && puedeMover() ? ` data-drop-activo="${M.a.aid}" data-drop-nombre="${esc(M.a.nombre)}"` : '';
+  return `<section class="grp grp--${kind} grp--${side}" style="--c:${k.c}" data-grp="${kind}" aria-label="${k.l}"${recibe}>
     <header class="grp-head"><span class="grp-ico"></span><h3>${k.l}</h3><span class="grp-n">${list.length}</span><span class="grp-st">${status}</span>
 </header>
     ${kind === 'comp' && XP.adding ? `<div data-form="1" class="addform" id="formComp"><label for="iComp" class="sr">Nombre del componente</label><input id="iComp" placeholder="Ej.: Motor" autocomplete="off"><button type="button" class="btn btn--primary btn--sm" data-submit="1">Agregar</button><button type="button" class="icon-btn" style="width:36px;height:36px" data-xp="addcancel" aria-label="Cancelar">${svg(I.close,16)}</button></div>` : ''}
     ${big ? `<div class="grp-tools"><label class="sr" for="q-${kind}">Buscar ${k.one}</label><input class="grp-q" id="q-${kind}" data-q="${kind}" placeholder="Buscar ${k.one}…" autocomplete="off">${bad ? `<button type="button" class="grp-only" data-only="${kind}" aria-pressed="false">${kind === 'rep' ? 'Por reponer' : 'Con aviso'}</button>` : ''}</div>` : ''}
     ${kind === 'rep' ? `<div class="grp-for" id="repFor" hidden></div>` : ''}
     <div class="grp-list">${items}</div>
+    ${kind === 'sub' && list.length && M.comp.length && puedeMover() ? '<p class="grp-hint">Arrastra un componente sobre un subactivo para moverlo.</p>' : ''}
     ${kind === 'sub' && S.permisos && S.permisos.editar ? `<button type="button" class="grp-add" data-xp="addsub">${svg(I.plus,16)}Agregar subactivo</button>` : ''}
     ${kind === 'comp' && !XP.adding ? `<button type="button" class="grp-add" data-xp="add">${svg(I.plus,16)}Agregar componente</button>` : ''}
     ${kind === 'rep' && S.permisos && S.permisos.editar ? (XP.addRep ? SIGMA.formRepuesto(curId()) : `<button type="button" class="grp-add grp-add--rep" data-xp="addrep">${svg(I.plus,16)}Agregar repuesto compatible</button>`) : ''}
@@ -1732,6 +1763,39 @@ document.addEventListener('click', e => {
   else if (e.target.id === 'lightbox' || e.target.closest('#lbClose')) closeLightbox();
 });
 document.addEventListener('keydown', e => { if (e.key === 'Escape' && abierto('#lightbox')){ e.stopImmediatePropagation(); closeLightbox(); } }, true);
+document.addEventListener('dragstart', e => {
+  const d = e.target.closest && e.target.closest('#xpCard [data-drag-comp]'); if (!d) return;
+  XD.drag = {comp:+d.dataset.dragComp, desde:+d.dataset.dragDesde};
+  e.dataTransfer.effectAllowed = 'move';
+  try { e.dataTransfer.setData('text/plain', String(XD.drag.comp)); } catch(_){}
+  d.classList.add('is-arrastrando'); $('#xpCard').classList.add('xp-arrastrando');
+  /* donde ya esta no se marca como destino */
+  $$('#xpCard [data-drop-activo]').forEach(x => x.classList.toggle('es-origen', +x.dataset.dropActivo === XD.drag.desde));
+});
+document.addEventListener('dragend', () => {
+  XD.drag = null;
+  $$('#xpCard .is-arrastrando, #xpCard .is-sobre, #xpCard .es-origen').forEach(x => x.classList.remove('is-arrastrando', 'is-sobre', 'es-origen'));
+  const c = $('#xpCard'); if (c) c.classList.remove('xp-arrastrando');
+});
+document.addEventListener('dragover', e => {
+  if (!XD.drag) return;
+  const t = e.target.closest && e.target.closest('#xpCard [data-drop-activo]');
+  $$('#xpCard .is-sobre').forEach(x => { if (x !== t) x.classList.remove('is-sobre'); });
+  if (!t || +t.dataset.dropActivo === XD.drag.desde) return;   // soltarlo donde ya esta no hace nada
+  e.preventDefault(); e.dataTransfer.dropEffect = 'move'; t.classList.add('is-sobre');
+});
+document.addEventListener('drop', e => {
+  if (!XD.drag) return;
+  const t = e.target.closest && e.target.closest('#xpCard [data-drop-activo]');
+  if (!t || +t.dataset.dropActivo === XD.drag.desde) return;
+  e.preventDefault();
+  const comp = XD.drag.comp; XD.drag = null;
+  moverComp(comp, +t.dataset.dropActivo);
+});
+document.addEventListener('change', e => {
+  const sel = e.target.closest && e.target.closest('#xpCard select[data-mover]');
+  if (sel && sel.value) moverComp(+sel.dataset.mover, +sel.value);
+});
 if ($('#xpCard')) new ResizeObserver(() => { if (abierto('#xp')){ sizeCols(); drawLines(false); } }).observe($('#xpCard'));
 document.addEventListener('input', e => { if (e.target.dataset && e.target.dataset.q) filterGroup(e.target.dataset.q); });
 

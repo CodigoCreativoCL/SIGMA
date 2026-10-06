@@ -722,6 +722,32 @@ public class WsActivos : System.Web.Services.WebService
     }
 
     /// <summary>
+    /// Mueve un componente a otro activo o subactivo (arrastrarlo en el
+    /// explorador). Lo que cuelga de el va con el; ver BD/358.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string MoverComponente(int componente, int activo)
+    {
+        return Ejecutar(P_COMP, () =>
+        {
+            ActivoComponente x = new ActivoComponenteController().GetComponente(componente);
+            if (x == null || x.aco_id == 0) throw new Exception("El componente no existe.");
+            DelCliente(x.aco_activo);
+            Activo destino = DelCliente(activo);
+            Respuesta r = new ActivoComponenteController().Mover(componente, activo);
+            /* Los mensajes del SP en palabras de la pantalla. */
+            if (r.error && r.detalle != null)
+            {
+                if (r.detalle.StartsWith("3.-")) r.detalle = "«" + destino.act_nombre + "» ya tiene un componente con el código " + x.aco_codigo + ".";
+                else if (r.detalle.StartsWith("4.-")) r.detalle = "«" + destino.act_nombre + "» ya tiene un componente de ese tipo en esa posición.";
+            }
+            else if (!r.error) r.detalle = "«" + x.aco_nombre + "» ahora es parte de «" + destino.act_nombre + "».";
+            return Resultado(r);
+        });
+    }
+
+    /// <summary>
     /// Los numeros de las pestañas del modulo. Cada conteo va blindado: si uno
     /// falla, la planta igual se dibuja con un cero en esa pestaña.
     /// </summary>

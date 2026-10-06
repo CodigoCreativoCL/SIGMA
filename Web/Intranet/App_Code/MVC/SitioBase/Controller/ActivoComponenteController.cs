@@ -360,6 +360,43 @@ namespace SitioBase.Controller
 
             return r;
         }
+
+        /// <summary>
+        /// Mueve el componente (con lo que cuelga de el) a otro activo o
+        /// subactivo, directo en el (UPD_ACTIVO_COMPONENTE_MOVER, bloque 358).
+        /// </summary>
+        public Respuesta Mover(int componente, int activo)
+        {
+            Respuesta r = new Respuesta();
+
+            if (Token.TokenSeguridad())
+            {
+                SqlCommand cmd = null;
+                try
+                {
+                    cmd = Conexion.GetCommand("UPD_ACTIVO_COMPONENTE_MOVER");
+                    cmd.Parameters.AddWithValue("@ID", componente);
+                    cmd.Parameters.AddWithValue("@ACTIVO", activo);
+                    cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmd.ExecuteNonQuery();
+                    cmd.Connection.Close();
+                    r.codigo = componente; r.detalle = "Componente movido."; r.error = false;
+                }
+                catch (Exception ex)
+                {
+                    if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                    r.codigo = -1; r.detalle = ex.Message; r.error = true;
+                }
+            }
+            else
+            {
+                r.codigo = -1;
+                r.detalle = "La sesion no es valida o expiro. Vuelva a entrar y repita la operacion.";
+                r.error = true;
+            }
+
+            return r;
+        }
     }
 
 
