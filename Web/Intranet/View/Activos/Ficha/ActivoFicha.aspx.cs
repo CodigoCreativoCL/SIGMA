@@ -2412,13 +2412,25 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("</section></div>");
 
         /* Lo que necesita el formulario de componente del asistente: de que
-           parte puede colgar y los estados. Va DENTRO del panel que se repinta,
-           para que siempre sea del activo abierto. */
-        s.Append("<div id=\"sgEsDatos\" hidden data-nombre=\"").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("\">")
-         .Append("<select data-padres=\"1\"><option value=\"0\">Directamente de «").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</option>");
+           es parte (el activo, sus subactivos y los componentes de todos
+           ellos, en orden de arbol; "a:<id>" o "c:<id>") y los estados. Va
+           DENTRO del panel que se repinta, para que siempre sea del activo abierto. */
+        List<object> partes = new List<object>();
+        Func<string, string, string> etq = (nombre, codigo) => Texto(nombre) + (string.IsNullOrEmpty(codigo) ? "" : " · " + codigo);
+        partes.Add(new Dictionary<string, object> { { "id", "a:" + a.act_id }, { "n", etq(a.act_nombre, a.act_codigo) }, { "sub", "Activo · directo en él" } });
         foreach (ActivoEstructuraItem x in e.componentes)
-            s.Append("<option value=\"").Append(x.id).Append("\">De la parte «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
-        s.Append("</select><select data-alcances=\"1\"><option value=\"a:").Append(a.act_id).Append("\">Todo el activo «")
+            partes.Add(new Dictionary<string, object> { { "id", "c:" + x.id }, { "n", etq(x.nombre, x.codigo) }, { "sub", "Componente de " + Texto(a.act_nombre) } });
+        foreach (ActivoEstructuraItem sa in e.subactivos)
+        {
+            partes.Add(new Dictionary<string, object> { { "id", "a:" + sa.id }, { "n", etq(sa.nombre, sa.codigo) }, { "sub", "Subactivo de " + Texto(a.act_nombre) } });
+            foreach (ActivoEstructuraItem x in e.subcomponentes)
+                if (x.padre == sa.id)
+                    partes.Add(new Dictionary<string, object> { { "id", "c:" + x.id }, { "n", etq(x.nombre, x.codigo) }, { "sub", "Componente de " + Texto(sa.nombre) } });
+        }
+        s.Append("<div id=\"sgEsDatos\" hidden data-nombre=\"").Append(Server.HtmlEncode(Texto(a.act_nombre)))
+         .Append("\" data-activo=\"").Append(a.act_id)
+         .Append("\" data-partes=\"").Append(Server.HtmlEncode(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(partes))).Append("\">");
+        s.Append("<select data-alcances=\"1\"><option value=\"a:").Append(a.act_id).Append("\">Todo el activo «")
          .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</option>");
         foreach (ActivoEstructuraItem x in e.subactivos)
             s.Append("<option value=\"a:").Append(x.id).Append("\">El subactivo «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
@@ -2441,12 +2453,21 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     protected void lnkEsGuardarComp_Click(object sender, EventArgs e)
     {
         hdnSeccion.Value = "componentes";
-        /* Desde la pestaña Componentes de la planta el activo viene elegido en el formulario. */
-        int activo, elegido;
-        activo = int.TryParse(Request.Form["esc_activo"], out elegido) && elegido > 0 ? elegido : ActivoSeleccionado();
         try
         {
             if (!Token.Puede("CREAR EDITAR COMPONENTES")) throw new Exception("No tienes permiso para crear componentes.");
+            /* ¿De que es parte?: "a:<id>" lo deja directo en ese activo o
+               subactivo; "c:<id>" lo pone dentro de ese componente y en SU
+               activo (el SP exige que el padre sea del mismo activo). */
+            string parte = (Request.Form["esc_parte"] ?? "").Trim();
+            int activo = 0, padre = 0, idParte;
+            if (parte.StartsWith("a:") && int.TryParse(parte.Substring(2), out idParte)) activo = idParte;
+            else if (parte.StartsWith("c:") && int.TryParse(parte.Substring(2), out idParte))
+            {
+                ActivoComponente dentro = new ActivoComponenteController().GetComponente(idParte);
+                if (dentro != null && dentro.aco_cliente == _cliente) { activo = dentro.aco_activo; padre = dentro.aco_id; }
+            }
+            if (activo <= 0) throw new Exception("Elige de qué es parte: el activo, un subactivo o un componente.");
             Activo a = new ActivoController().GetActivo(activo);
             if (a == null || a.act_cliente != _cliente) throw new Exception("El activo no existe.");
 
@@ -2468,8 +2489,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 int lado = new ComponentePosicionController().ResolverPorNombre(dondeVa);
                 if (lado > 0) c.aco_componente_posicion = lado;
             }
-            int padre, estado;
-            if (int.TryParse(Request.Form["esc_padre"], out padre) && padre > 0) c.aco_componente_padre = padre;
+            int estado;
+            if (padre > 0) c.aco_componente_padre = padre;
             c.aco_activo_componente_estado = int.TryParse(Request.Form["esc_estado"], out estado) && estado > 0 ? estado : 1;
             c.aco_criticidad_nivel = a.act_criticidad_nivel;
             c.aco_codigo = "AUTO";

@@ -177,14 +177,25 @@
             esVista('marco');
             return false;
         }
+        /* ¿De que es parte?: el activo, sus subactivos y los componentes de
+           todos ellos. En el centro vienen del servidor (sgEsDatos); en la
+           planta se arman con la planta ya cargada (escDesdePlanta). */
+        var ESC_PARTES = [];
+        SigmaCombo.definir('esc:partes', { fuente: function () { return ESC_PARTES; } });
+        function escParteFijar(id) {
+            var inp = document.getElementById('escParte'), h = document.getElementById('escParteId');
+            var x = ESC_PARTES.filter(function (o) { return o.id === id; })[0];
+            if (inp) { inp.value = x ? x.n : ''; inp.classList.remove('is-nuevo'); }
+            if (h) h.value = x ? x.id : '';
+        }
         function escAbrir() {
             escEnPlanta = false;
-            var ca = document.getElementById('escActivoCampo'); if (ca) ca.hidden = true;
             ['escNombre', 'escTipo', 'escLado', 'escDesc'].forEach(function (id) { var e = document.getElementById(id); if (e) { e.value = ''; e.classList.remove('is-nuevo'); } });
             var tpl = document.getElementById('sgEsDatos');
             var nom = tpl ? tpl.getAttribute('data-nombre') : '';
-            var padre = document.getElementById('escPadre'), est = document.getElementById('escEstado');
-            if (padre) padre.innerHTML = tpl ? tpl.querySelector('[data-padres]').innerHTML : '';
+            var est = document.getElementById('escEstado');
+            try { ESC_PARTES = tpl ? JSON.parse(tpl.getAttribute('data-partes') || '[]') : []; } catch (e) { ESC_PARTES = []; }
+            escParteFijar(tpl ? 'a:' + tpl.getAttribute('data-activo') : '');   // por defecto, directo en el activo abierto
             if (est) est.innerHTML = tpl ? tpl.querySelector('[data-estados]').innerHTML : '';
             var f = document.getElementById('escFecha'); if (f) { var h = new Date(); f.value = ('0' + h.getDate()).slice(-2) + '-' + ('0' + (h.getMonth() + 1)).slice(-2) + '-' + h.getFullYear(); }
             var foto = document.getElementById('escFoto'); if (foto) { foto.value = ''; escFotoVer(foto); }
@@ -212,31 +223,26 @@
             esAsistente(true);
             escAbrir();
             escEnPlanta = true;
-            document.getElementById('escActivoCampo').hidden = false;
-            var sel = document.getElementById('escActivo');
-            sel.innerHTML = '<option value="">Elige el activo</option>';
-            d.activos.forEach(function (a) {
-                var o = document.createElement('option'); o.value = a.id; o.textContent = a.n + (a.c ? ' · ' + a.c : ''); sel.appendChild(o);
-            });
+            /* Todos los activos de la planta en arbol: cada activo, sus
+               componentes y despues sus subactivos con los suyos. */
+            ESC_PARTES = [];
+            var porId = {}; d.activos.forEach(function (a) { porId[a.id] = a; });
+            var agregar = function (a, padre) {
+                ESC_PARTES.push({ id: 'a:' + a.id, n: a.n + (a.c ? ' · ' + a.c : ''), sub: padre ? 'Subactivo de ' + padre.n : 'Activo · directo en él' });
+                (a.comps || []).forEach(function (c) { ESC_PARTES.push({ id: 'c:' + c.id, n: c.n + (c.c ? ' · ' + c.c : ''), sub: 'Componente de ' + a.n }); });
+                d.activos.filter(function (h) { return h.p === a.id; }).forEach(function (h) { agregar(h, a); });
+            };
+            d.activos.filter(function (a) { return !a.p || !porId[a.p]; }).forEach(function (a) { agregar(a, null); });
+            escParteFijar('');   // desde la planta no hay activo de partida: se elige
             var est = document.getElementById('escEstado'); est.innerHTML = '';
             d.estados.forEach(function (e) {
                 var o = document.createElement('option'); o.value = e.id; o.textContent = e.n; if (/operativ/i.test(e.n) && !est.value) o.selected = true; est.appendChild(o);
             });
-            escActivoCambia();
             var txt = document.querySelector('[data-vista="componente"] .sg-es-donde-txt');
             if (txt) txt.textContent = 'Una parte de un activo que quieres seguir por separado.';
-            setTimeout(function () { sel.focus(); }, 40);
+            setTimeout(function () { document.getElementById('escParte').focus(); }, 40);
             return false;
         }
-        function escActivoCambia() {
-            var P = window.sigmaPlanta, d = P && P.datos ? P.datos() : null; if (!d) return;
-            var id = document.getElementById('escActivo').value, padre = document.getElementById('escPadre');
-            var a = d.activos.filter(function (x) { return String(x.id) === id; })[0];
-            padre.innerHTML = '';
-            var o0 = document.createElement('option'); o0.value = '0'; o0.textContent = a ? 'Directamente de «' + a.n + '»' : 'Directamente del activo'; padre.appendChild(o0);
-            (a ? a.comps : []).forEach(function (c) { var o = document.createElement('option'); o.value = c.id; o.textContent = 'De la parte «' + c.n + '»'; padre.appendChild(o); });
-        }
-
         function escFotoVer(input) {
             var ico = document.getElementById('escFotoIco'), nom = document.getElementById('escFotoNom');
             if (input.files && input.files[0] && window.FileReader) {
@@ -248,8 +254,10 @@
         }
         function escGuardar() {
             var faltan = [];
-            (escEnPlanta ? [['escActivo', 'Activo'], ['escNombre', 'Nombre'], ['escTipo', 'Qué es']] : [['escNombre', 'Nombre'], ['escTipo', 'Qué es']]).forEach(function (c) {
-                var e = document.getElementById(c[0]), ok = e && e.value.trim() !== '';
+            [['escParte', '¿De qué es parte?'], ['escNombre', 'Nombre'], ['escTipo', 'Qué es']].forEach(function (c) {
+                /* de que es parte vale por la opcion elegida (el id oculto), no por lo escrito */
+                var e = document.getElementById(c[0]), v = c[0] === 'escParte' ? document.getElementById('escParteId') : e;
+                var ok = e && v && v.value.trim() !== '';
                 e.closest('.sg-es-campo').classList.toggle('es-falta', !ok);
                 if (!ok) faltan.push(c[1]);
             });
@@ -2159,12 +2167,17 @@
             <div class="sg-es-faltan" id="sgEscFaltan" role="alert" hidden><i class="mdi mdi-alert-circle-outline"></i><span id="sgEscFaltanTxt"></span></div>
 
             <div class="sg-es-form">
-                <label class="sg-es-campo es-ancho" id="escActivoCampo" hidden>
-                    <span class="sg-es-etiq">Activo <b class="req">*</b></span>
-                    <select name="esc_activo" id="escActivo" onchange="escActivoCambia();"></select>
-                    <span class="sg-es-ayuda">El activo o subactivo al que pertenece esta parte.</span>
-                    <span class="sg-es-msg">Elige a qué activo pertenece.</span>
-                </label>
+                <%-- ¿De que es parte? (06-10-2026): el activo, sus subactivos o uno de
+                     sus componentes, en un solo combo (SigmaCombo con id). Antes eran
+                     el activo (solo desde la planta) y "Es parte de", que solo ofrecia
+                     los componentes del activo. El valor es "a:<id>" o "c:<id>". --%>
+                <div class="sg-es-campo es-ancho">
+                    <span class="sg-es-etiq">¿De qué es parte? <b class="req">*</b></span>
+                    <span class="sg-combo"><input type="text" id="escParte" data-sgcombo="esc:partes" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" placeholder="Busca el activo, subactivo o componente" autocomplete="off" spellcheck="false" aria-label="¿De qué es parte?" /><input type="hidden" name="esc_parte" id="escParteId" />
+                        <button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
+                    <span class="sg-es-ayuda">Directo en el activo o en uno de sus subactivos, o dentro de otro componente (el rodamiento DEL motor).</span>
+                    <span class="sg-es-msg">Elige el activo, subactivo o componente del que es parte.</span>
+                </div>
                 <label class="sg-es-campo">
                     <span class="sg-es-etiq">Nombre <b class="req">*</b></span>
                     <input type="text" name="esc_nombre" id="escNombre" maxlength="200" placeholder="Ej.: Burlete de la puerta" autocomplete="off" />
@@ -2182,11 +2195,6 @@
                     <span class="sg-combo"><input type="text" name="esc_lado" id="escLado" data-sgcombo="af:lados" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" placeholder="Ej.: Delantero, Lado motor" autocomplete="off" spellcheck="false" aria-label="Dónde va" />
                         <button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
                 </div>
-                <label class="sg-es-campo">
-                    <span class="sg-es-etiq">Es parte de</span>
-                    <select name="esc_padre" id="escPadre"></select>
-                    <span class="sg-es-ayuda">Si va dentro de otra parte (el rodamiento DEL motor), elígela.</span>
-                </label>
                 <label class="sg-es-campo">
                     <span class="sg-es-etiq">Estado</span>
                     <select name="esc_estado" id="escEstado"></select>

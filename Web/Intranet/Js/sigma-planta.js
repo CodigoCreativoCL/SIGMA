@@ -625,7 +625,8 @@ function distintos(l){
 }
 window.sigmaPlanta = { recargar: () => SIGMA.recargar(), pestana: k => SIGMA.pestana(k), ws, combo, comboSalir,
   /* para «+ Nuevo componente» de la pestaña Componentes (formulario del centro) */
-  datos: () => S ? { activos: Object.values(S.activos).map(a => ({ id:a.aid, n:a.nombre, c:a.codigo, comps:(a.comps || []).map(x => ({ id:x.id, n:x.n })) }))
+  datos: () => S ? { activos: Object.values(S.activos).map(a => ({ id:a.aid, n:a.nombre, c:a.codigo, p:a.padre && S.activos[a.padre] ? S.activos[a.padre].aid : 0,
+                                                                   comps:(a.comps || []).map(x => ({ id:x.id, n:x.n, c:x.c || '' })) }))
                                 .sort((x, y) => x.n.localeCompare(y.n)),
                      estados: ((S.estados && S.estados.comp) || []).map(e => ({ id:e.id, n:e.n })),
                      /* «Qué es» y «Dónde va»: lo que ya usan los componentes de la planta,
