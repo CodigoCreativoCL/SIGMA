@@ -1,0 +1,92 @@
+# Despliegue de SIGMA a MonsterASP en cada push a PRODUCCION.
+#   Web  -> sigma.tryasp.net      (site96410)
+#   API  -> sigma-api.tryasp.net  (site96413)
+# Secretos del repo (Settings > Secrets and variables > Actions):
+#   WEB_DEPLOY_PASSWORD  contraseña de WebDeploy de site96410
+#   API_DEPLOY_PASSWORD  contraseña de WebDeploy de site96413
+name: Deploy PRODUCCION
+
+on:
+  push:
+    branches: [PRODUCCION]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - uses: NuGet/setup-nuget@v2
+
+      - name: Instalar Web Deploy
+        shell: pwsh
+        run: |
+          choco install webdeploy -y --no-progress
+          if (-not (Test-Path "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe")) { throw "Web Deploy no quedó instalado" }
+
+      - name: Restaurar paquetes de la solución
+        run: nuget restore Solucion\SIGMA\SIGMA.sln
+
+      - name: Compilar Library y dejarla en el bin de la web
+        shell: pwsh
+        run: |
+          msbuild Librerias\Library\Library.csproj /p:Configuration=Release /v:minimal /nologo
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Copy-Item Librerias\Library\bin\Release\Library.dll Web\Intranet\bin\ -Force
+
+      - name: Precompilar la web
+        shell: pwsh
+        run: |
+          & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe" -v / -p "$pwd\Web\Intranet" -u "$pwd\_publicar\web" -f
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Remove-Item "_publicar\web\website.publishproj" -ErrorAction SilentlyContinue
+
+      - name: Compilar la API
+        shell: pwsh
+        run: |
+          msbuild Solucion\SIGMA\API\API.csproj /p:Configuration=Release /p:SolutionDir="$pwd\Solucion\SIGMA\" /v:minimal /nologo
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          robocopy Solucion\SIGMA\API _publicar\api /E /XD obj Properties Controllers Models App_Start Servicios .vs .postman postman /XF *.cs *.csproj *.user *.pdb packages.config /NFL /NDL /NJH /NJS
+          if ($LASTEXITCODE -ge 8) { exit 1 } else { exit 0 }
+
+      - name: Publicar la web (sigma.tryasp.net)
+        shell: pwsh
+        env:
+          PASS: ${{ secrets.WEB_DEPLOY_PASSWORD }}
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync `
+            -source:contentPath="$pwd\_publicar\web" `
+            "-dest:contentPath=site96410,computerName=https://site96410.siteasp.net:8172/msdeploy.axd?site=site96410,userName=site96410,password=$env:PASS,authType=Basic" `
+            -allowUntrusted -enableRule:DoNotDeleteRule -retryAttempts:3
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Publicar la API (sigma-api.tryasp.net)
+        shell: pwsh
+        env:
+          PASS: ${{ secrets.API_DEPLOY_PASSWORD }}
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync `
+            -source:contentPath="$pwd\_publicar\api" `
+            "-dest:contentPath=site96413,computerName=https://site96413.siteasp.net:8172/msdeploy.axd?site=site96413,userName=site96413,password=$env:PASS,authType=Basic" `
+            -allowUntrusted -retryAttempts:3
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Verificar que respondan
+        shell: pwsh
+        run: |
+          foreach ($u in 'http://sigma.tryasp.net/Login.aspx', 'http://sigma-api.tryasp.net/') {
+            $ok = $false
+            foreach ($i in 1..6) {
+              try { $r = Invoke-WebRequest $u -UseBasicParsing -TimeoutSec 120; if ($r.StatusCode -eq 200) { $ok = $true; break } } catch { Start-Sleep 10 }
+            }
+            if (-not $ok) { throw "$u no respondió 200" }
+            "$u OK"
+          }
