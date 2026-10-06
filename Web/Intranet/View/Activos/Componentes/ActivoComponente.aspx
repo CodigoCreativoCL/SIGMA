@@ -68,6 +68,9 @@
             if (window.Sys && Sys.WebForms) Sys.WebForms.PageRequestManager.getInstance().add_endRequest(acIniciar);
         });
         var AF_OPC = { tipos: [], lados: [], vars: [], meds: [] };
+        /* De que es parte: el activo, sus subactivos y los componentes de ambos. */
+        var AC_PARTES = <%= PartesJson() %>;
+        SigmaCombo.definir('ac:partes', { fuente: function () { return AC_PARTES; } });
     </script>
 </asp:Content>
 
@@ -82,7 +85,7 @@
 
     <aside class="af-rail">
         <nav class="af-pasos" aria-label="Pasos de la ficha del componente">
-            <button type="button" class="af-paso" data-ir="1" onclick="fpIr(1)"><span class="af-n"><span>1</span><i class="mdi mdi-check"></i></span><span><b>Qué es</b><small>Nombre y de qué activo es</small><span class="af-falta-dot">Falta un dato</span></span></button>
+            <button type="button" class="af-paso" data-ir="1" onclick="fpIr(1)"><span class="af-n"><span>1</span><i class="mdi mdi-check"></i></span><span><b>Qué es</b><small>Nombre y de qué es parte</small><span class="af-falta-dot">Falta un dato</span></span></button>
             <button type="button" class="af-paso" data-ir="2" onclick="fpIr(2)"><span class="af-n"><span>2</span><i class="mdi mdi-check"></i></span><span><b>Estado</b><small>Cómo está y desde cuándo</small><span class="af-falta-dot">Falta un dato</span></span></button>
             <button type="button" class="af-paso" data-ir="3" onclick="fpIr(3)"><span class="af-n"><span>3</span><i class="mdi mdi-check"></i></span><span><b>Placa y foto</b><small>Serie, marca y una foto</small></span></button>
         </nav>
@@ -108,12 +111,15 @@
             <span class="af-oculto"><asp:Label ID="lblId" runat="server"></asp:Label></span>
             <div class="af-grid">
                 <div class="sigma-modal-field af-ancho">
-                    <label>Es parte del activo <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboActivo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboActivo_SelectedIndexChanged" Filter="Contains" Width="100%" />
-                    <span class="sigma-modal-ayuda">Puede ser un activo o un subactivo (el compresor de una cámara también tiene sus componentes). No se cambia después.</span>
-                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige el activo o subactivo del que es parte.</span>
-                    <asp:CustomValidator ID="cvActivo" runat="server" ControlToValidate="cboActivo" Display="None"
+                    <label>¿De qué es parte? <span class="req">*</span></label>
+                    <%-- Un solo combo (SigmaCombo con id): el activo, sus subactivos o uno de
+                         sus componentes. El valor es "a:<activo>" o "c:<componente>". --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtParte" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="ac:partes" aria-label="¿De qué es parte?" placeholder="Busca el activo, subactivo o componente" /><asp:HiddenField ID="hdnParte" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
+                    <span class="sigma-modal-ayuda">Directo en el activo o en uno de sus subactivos, o dentro de otro componente (como el rodamiento DEL motor).</span>
+                    <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige el activo, subactivo o componente del que es parte.</span>
+                    <asp:CustomValidator ID="cvParte" runat="server" ControlToValidate="txtParte" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
@@ -145,11 +151,6 @@
                     <rad:RadComboBox2 ID="cboPosicion" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
                         AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
                     <span class="sigma-modal-ayuda">Ej.: Delantero, Lado motor. ¿No está? Escríbelo y se crea.</span>
-                </div>
-                <div class="sigma-modal-field af-ancho">
-                    <label>Va dentro de otra parte</label>
-                    <rad:RadComboBox2 ID="cboPadre" runat="server" Filter="Contains" Width="100%" />
-                    <span class="sigma-modal-ayuda">Solo si va dentro de otro componente del mismo activo, como el rodamiento DEL motor.</span>
                 </div>
             </div>
         </section>

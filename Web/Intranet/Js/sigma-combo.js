@@ -112,9 +112,12 @@
         ul.innerHTML = CB.ops.length ? CB.ops.map(function (op, i) {
             var a = '<li role="option" id="sgCbo' + i + '" data-i="' + i + '"';
             if (op.crear) return a + ' class="is-crear">' + MAS + 'Crear «' + esc(op.crear) + '»</li>';
+            /* El cuadro de la foto va solo si la lista trae fotos (la propiedad
+               img, aunque venga vacia): sin ella, una opcion con linea
+               secundaria no muestra un cuadro vacio que parece casilla. */
             if (op.x.sub != null || op.x.img != null)
-                return a + ' class="es-rico"><span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : '<i></i>') +
-                       '</span><span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
+                return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : '<i></i>') + '</span>' : '') +
+                       '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
             /* En un span: la <li> es flex con gap y, suelto, el <mark>
                quedaba separado del resto de la palabra ("Mot  or"). */
             return a + '><span>' + marca(op.x.n) + '</span></li>';
@@ -172,7 +175,8 @@
         inp.value = prev ? prev.n : '';
     }
 
-    function esCombo(el) { return el && el.matches && el.matches('[data-sgcombo]'); }
+    /* Un campo de solo lectura (sin permiso para editar) no ofrece la lista. */
+    function esCombo(el) { return el && el.matches && el.matches('[data-sgcombo]') && !el.readOnly; }
 
     document.addEventListener('focusin', function (e) { if (esCombo(e.target)) abrir(e.target, true); });
     document.addEventListener('input', function (e) { if (esCombo(e.target)) abrir(e.target); });
