@@ -316,6 +316,23 @@
             <button type="button" class="af-btn es-primario" onclick="closeWindow(); return false;"><i class="mdi mdi-check"></i>Listo</button>
         </div>
     </div>
+    <script type="text/javascript">
+        /* La ventana se ajusta a la confirmacion. El modal solo crece al medir
+           (scrollHeight nunca baja del alto actual del marco), y la ficha que
+           venia antes era mas alta: se fija el alto al de lo que se ve y se le
+           pide al modal que vuelva a medir. */
+        (function () {
+            function ajustar() {
+                var l = document.getElementById('afListo'), f = null;
+                try { f = window.frameElement; } catch (e) { }
+                if (!l || !f) return;
+                var alto = Math.ceil(l.getBoundingClientRect().bottom + (window.pageYOffset || 0)) + 16;
+                f.style.height = Math.max(alto, 250) + 'px';
+                try { if (parent.SigmaModal && parent.SigmaModal.resize) parent.SigmaModal.resize(); } catch (e) { }
+            }
+            if (document.readyState === 'complete') setTimeout(ajustar, 0); else window.addEventListener('load', ajustar);
+        })();
+    </script>
 </asp:Panel>
 
 <asp:Panel ID="pnlSecciones" runat="server" CssClass="af">
