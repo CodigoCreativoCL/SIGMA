@@ -1868,6 +1868,11 @@ function lvSort(list, mode){
     const A = S.activos[p.id], B = S.activos[q.id];
     if (mode === 'nombre') return A.nombre.localeCompare(B.nombre, 'es');
     if (mode === 'criticidad') return cr[A.crit] - cr[B.crit] || A.nombre.localeCompare(B.nombre, 'es');
+    /* Por fecha de creacion (ISO, se compara como texto); a igual fecha, el id. */
+    if (mode === 'recientes' || mode === 'antiguos'){
+      const d = (A.creado || '').localeCompare(B.creado || '') || A.aid - B.aid;
+      return mode === 'recientes' ? -d : d;
+    }
     return RANKT[tone(p.id)] - RANKT[tone(q.id)];
   });
 }
@@ -1964,7 +1969,7 @@ function renderLista(){
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px">
           <label style="flex:1 1 300px;display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border:1px solid var(--field);border-radius:10px;color:var(--muted)">${sv(IC.search, 20)}<input class="lv-q" aria-label="Buscar activos, partes o repuestos" placeholder="Busca un activo, una parte o un repuesto…" value="${esc(LV.q)}" style="flex:1;min-width:0;border:0;outline:none;font-size:15px;color:var(--ink);background:transparent"></label>
           ${selectHTML('lvGroup','Agrupar por',[['area','Ubicación'],['tipo','Tipo de activo'],['estado','Estado'],['none','Sin agrupar']], LV.group, true)}
-          ${selectHTML('lvSort','Ordenar',[['atencion','Primero los que necesitan atención'],['nombre','Nombre'],['criticidad','Criticidad']], LV.sort, true)}
+          ${selectHTML('lvSort','Ordenar',[['atencion','Primero los que necesitan atención'],['nombre','Nombre'],['criticidad','Criticidad'],['recientes','Más nuevos primero'],['antiguos','Más antiguos primero']], LV.sort, true)}
         </div>
         <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px"><span id="lvChips" style="display:contents"></span><div style="flex:1 1 20px"></div>${LEGEND}</div>
       </div>
@@ -2038,7 +2043,7 @@ function renderTarjetas(){
       <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:12px;border-radius:18px;background:var(--surface);box-shadow:var(--e1)">
         <label style="flex:1 1 280px;display:flex;align-items:center;gap:10px;height:44px;padding:0 14px;border-radius:12px;background:var(--canvas);color:var(--muted)">${sv(IC.search, 20)}<input class="lv-q" aria-label="Buscar activos, componentes o repuestos" placeholder="Busca un activo, un componente o un repuesto…" value="${esc(LV.q)}" style="flex:1;min-width:0;border:0;outline:none;font-size:15px;color:var(--ink);background:transparent"></label>
         ${selectHTML('tvGroup','Agrupar',[['none','Sin agrupar'],['area','Ubicación'],['tipo','Tipo de activo'],['estado','Estado']], LV.tgroup)}
-        ${selectHTML('tvSort','Orden',[['atencion','Primero los que necesitan atención'],['nombre','Nombre'],['criticidad','Criticidad']], LV.tsort)}
+        ${selectHTML('tvSort','Orden',[['atencion','Primero los que necesitan atención'],['nombre','Nombre'],['criticidad','Criticidad'],['recientes','Más nuevos primero'],['antiguos','Más antiguos primero']], LV.tsort)}
       </div>
       <div id="tvBody"></div></div>`;
   }

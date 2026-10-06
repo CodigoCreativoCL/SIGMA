@@ -126,7 +126,9 @@ public class WsActivos : System.Web.Services.WebService
                     { "ot", res != null ? res.ot_abiertas : 0 }, { "fallas", res != null ? res.fallas_abiertas : 0 },
                     { "prox", res != null && res.proxima_mantencion != null ? res.proxima_mantencion.Value.ToString("dd MMM yyyy", new CultureInfo("es-CL")) : null },
                     { "url360", Url360(aid) }, { "qComp", Cifrar("Id=0&Activo=" + aid) },
-                    { "qSub", Cifrar("Id=0&Padre=" + aid) } };
+                    { "qSub", Cifrar("Id=0&Padre=" + aid) },
+                    // ISO para ordenar por fecha de creacion en el navegador (bloque 357).
+                    { "creado", r.Table.Columns.Contains("CREADO") && r["CREADO"] != DBNull.Value ? ((DateTime)r["CREADO"]).ToString("yyyy-MM-ddTHH:mm:ss") : null } };
                 activos[id]["_area"] = r["AREA"] == DBNull.Value ? null : "u" + r["AREA"];
             }
             foreach (var kv in activos)
