@@ -21,6 +21,56 @@
     })();
     /* Los nombres de las cosas viven aqui: SIGMA es multicliente y no van sueltos por el codigo. */
     var T = { nivel: 'Nivel', pasillo: 'Pasillo', rack: 'Rack', sinNivel: 'Sin nivel' };
+    /* El «pasillo» es un TIPO DE AREA (Pasillo, Sala, Zona...): catalogo por cliente, se crean desde el combo. */
+    var TIPOS = ['Pasillo', 'Sala', 'Zona', 'Sector', 'Nave', 'Patio', 'Cámara'];
+    var arN = 0;
+    function areaRow(o) {
+        o = o || {};
+        var n = ++arN, tipo = o.tipo || 'Pasillo';
+        var combo = window.SigmaCombo
+            ? SigmaCombo.html('mpTipo_' + n, TIPOS, tipo, { libre: true, ph: 'Pasillo, Sala, Zona…', clave: 'mpTipoArea', fuente: function () { return TIPOS; } })
+            : '<input type="text" name="mpTipo_' + n + '" value="' + esc(tipo) + '" maxlength="60">';
+        return '<div class="mp-ar" data-mp-ar><label class="mp-ar-t">Tipo de área' + combo + '</label>'
+            + '<label>Código <small>(1 a 3 letras)</small><input type="text" data-ar="cod" maxlength="3" value="' + esc(o.cod || '') + '" autocapitalize="characters" placeholder="A" autocomplete="off"></label>'
+            + '<label>Cuántos racks<input type="number" data-ar="cant" min="1" max="30" value="' + (o.cant || 1) + '"></label>'
+            + '<label>Niveles<input type="number" data-ar="niv" min="1" max="10" value="' + (o.niv || 4) + '"></label>'
+            + '<button type="button" class="mp-ib mp-ar-x" data-mp-del-area title="Quitar esta área" aria-label="Quitar esta área">' + ic('x', 16) + '</button></div>';
+    }
+    function areasHtml(o) {
+        return '<div class="mp-areas" data-mp-areas>' + areaRow(o) + '</div>'
+            + '<button type="button" class="mp-btn out sm mp-ar-add" data-mp-add-area>' + ic('plus', 15) + 'Agregar otra área</button>';
+    }
+    /* Lee las filas de area de un contenedor y las valida. Devuelve [{tipo, pasillo, cantidad, niveles}]. */
+    function leerAreas(cont) {
+        var out = [];
+        $$('[data-mp-ar]', cont).forEach(function (row) {
+            var inp = row.querySelector('input[name^="mpTipo_"]');
+            if (inp && window.SigmaCombo && SigmaCombo.salir) SigmaCombo.salir(inp);
+            var cod = (row.querySelector('[data-ar="cod"]').value || '').trim().toUpperCase();
+            var tipo = ((inp || {}).value || '').trim() || 'Pasillo';
+            if (!cod && out.length === 0 && $$('[data-mp-ar]', cont).length === 1) return;
+            if (!/^[A-Z]{1,3}$/.test(cod)) throw new Error('El código del área (' + tipo + ') son de 1 a 3 letras: A, B, AB.');
+            out.push({ tipo: tipo, pasillo: cod, cantidad: Math.max(1, +row.querySelector('[data-ar="cant"]').value || 1), niveles: Math.max(1, Math.min(10, +row.querySelector('[data-ar="niv"]').value || 4)) });
+        });
+        return out;
+    }
+    function siguienteCodigo(c) {
+        c = String(c || '').toUpperCase();
+        if (c.length === 1 && c >= 'A' && c < 'Z') return String.fromCharCode(c.charCodeAt(0) + 1);
+        return '';
+    }
+    document.addEventListener('click', function (e) {
+        var add = e.target.closest && e.target.closest('[data-mp-add-area]');
+        if (add) {
+            var cont = add.parentNode.querySelector('[data-mp-areas]'), filas = $$('[data-mp-ar]', cont), ult = filas[filas.length - 1];
+            var inp = ult && ult.querySelector('input[name^="mpTipo_"]');
+            cont.insertAdjacentHTML('beforeend', areaRow({ tipo: inp ? inp.value : 'Pasillo', cod: ult ? siguienteCodigo(ult.querySelector('[data-ar="cod"]').value) : '', niv: ult ? ult.querySelector('[data-ar="niv"]').value : 4 }));
+            var nu = cont.lastElementChild.querySelector('[data-ar="cod"]'); if (nu) nu.focus();
+            return;
+        }
+        var del = e.target.closest && e.target.closest('[data-mp-del-area]');
+        if (del) { var c2 = del.closest('[data-mp-areas]'); if ($$('[data-mp-ar]', c2).length > 1) del.closest('[data-mp-ar]').remove(); }
+    });
 
     var M = null, planta = 0, OPT = {}, host = null;
     var BODS = [], RACKS = [], ITEMS = [], posBy = {};
@@ -86,19 +136,20 @@
         finally { cargando = false; }
     }
     function pasillo(u) {
-        var m = /-([A-Z]{1,3})-R?\d+$/i.exec(u.codigo || '') || /pasillo\s+([A-Za-z0-9]+)/i.exec(u.nombre || '');
+        var m = /-([A-Z]{1,3})-R?\d+$/i.exec(u.codigo || '') || /(?:pasillo|sala|zona|sector|nave|patio|c[aá]mara)\s+([A-Za-z0-9]+)/i.exec(u.nombre || '');
         return m ? m[1].toUpperCase() : '';
     }
     function indexar() {
         posBy = {};
         (M.posiciones || []).forEach(function (x) { posBy[x.u + '_' + x.rep] = x; });
+        if (M.tiposArea && M.tiposArea.length) TIPOS = M.tiposArea.slice();
         BODS = (M.bodegas || []).filter(function (b) { return b.plantaId === planta; });
         RACKS = [];
         BODS.forEach(function (b) {
             (b.ubicaciones || []).slice().sort(function (a, c) { return String(a.codigo).localeCompare(String(c.codigo), 'es', { numeric: true }); }).forEach(function (u) {
                 var niv = (M.niveles && M.niveles[u.id]) || 4;
                 (M.posiciones || []).forEach(function (x) { if (x.u === u.id && x.n > niv) niv = x.n; });
-                RACKS.push({ id: u.id, cod: u.codigo, nombre: u.nombre || u.codigo, b: b.id, pas: pasillo(u), L: Math.min(10, niv), carga: u.carga });
+                RACKS.push({ id: u.id, cod: u.codigo, nombre: u.nombre || u.codigo, b: b.id, pas: pasillo(u), area: (M.areas && M.areas[u.id]) || 'Pasillo', L: Math.min(10, niv), carga: u.carga });
             });
         });
         var ids = {}; BODS.forEach(function (b) { ids[b.id] = 1; });
@@ -177,16 +228,11 @@
             + '<span class="rm-form-acc"><button type="button" class="rm-bt es-ghost" data-cancelar="1">Cancelar</button><button type="button" class="rm-bt es-pri" data-guardarbodega="' + (b ? b.id : 0) + '">' + (nueva ? 'Crear bodega' : 'Guardar cambios') + '</button></span></div>';
     }
     function formUbic(b) {
-        var pas = {}; RACKS.filter(function (r) { return r.b === b.id && r.pas; }).forEach(function (r) { pas[r.pas] = 1; });
-        var lista = Object.keys(pas).sort(), sug = lista.length ? lista[lista.length - 1] : 'A';
-        return '<div class="rm-form" data-formubic="' + b.id + '"><b>Nuevos racks en ' + esc(b.nombre) + '</b>'
-            + '<label>' + T.pasillo + ' (1 a 3 letras)<input type="text" data-f="pasillo" maxlength="3" value="' + esc(sug) + '" autocapitalize="characters"' + (lista.length ? ' list="mpPasillos"' : '') + '>'
-            + (lista.length ? '<datalist id="mpPasillos">' + lista.map(function (x) { return '<option value="' + x + '">'; }).join('') + '</datalist>' : '') + '</label>'
-            + '<label>Cuántos<input type="number" data-f="cantidad" min="1" max="30" value="1"></label>'
-            + '<label>Niveles<input type="number" data-f="niveles" min="1" max="10" value="4"></label>'
-            + '<label class="rm-form-ancho">Nombre <small>(opcional, si es uno solo)</small><input type="text" data-f="nombre" maxlength="100" placeholder="Se arma solo: Pasillo A · Rack 01"></label>'
-            + '<p class="rm-prev" data-prev="1">Escribe el pasillo para ver el código.</p>'
-            + '<span class="rm-form-acc"><button type="button" class="rm-bt es-ghost" data-cancelar="1">Cancelar</button><button type="button" class="rm-bt es-pri" data-guardarubic="' + b.id + '">Crear</button></span></div>';
+        var rs = RACKS.filter(function (r) { return r.b === b.id && r.pas; }), ult = rs[rs.length - 1];
+        return '<div class="rm-form rm-form-areas" data-formubic="' + b.id + '"><b>Nuevas ubicaciones en ' + esc(b.nombre) + '</b>'
+            + '<p class="rm-prev">Elige el tipo de área (pasillo, sala, zona… o crea uno), su código y cuántos racks. Agrega tantas áreas como necesites.</p>'
+            + areasHtml({ tipo: ult ? ult.area : 'Pasillo', cod: ult ? siguienteCodigo(ult.pas) : 'A' })
+            + '<span class="rm-form-acc"><button type="button" class="rm-bt es-ghost" data-cancelar="1">Cancelar</button><button type="button" class="rm-bt es-pri" data-guardarubic="' + b.id + '">Crear ubicaciones</button></span></div>';
     }
     function renderForms() {
         var h = '';
@@ -195,20 +241,7 @@
         else if (forms.ubic) { var bu = bodById(forms.ubic); if (bu) h = formUbic(bu); }
         $('#mpForms', host).innerHTML = h;
     }
-    var tPrev = null;
-    function prevRack(bId) {
-        clearTimeout(tPrev);
-        tPrev = setTimeout(async function () {
-            var f = $('[data-formubic="' + bId + '"]', host); if (!f) return;
-            var pas = (($('[data-f="pasillo"]', f) || {}).value || '').trim().toUpperCase(), cant = Math.max(1, +($('[data-f="cantidad"]', f) || {}).value || 1), el = $('[data-prev]', f);
-            if (!el) return;
-            if (!/^[A-Z]{1,3}$/.test(pas)) { el.textContent = 'El pasillo son de 1 a 3 letras (A, B, AB).'; return; }
-            try {
-                var d = await ws('SiguienteRack', { bodega: bId, pasillo: pas });
-                el.innerHTML = cant === 1 ? 'Se creará <b>' + esc(d.codigo) + '</b> · ' + esc(d.nombre) : 'Se crearán <b>' + cant + ' racks</b> desde <b>' + esc(d.codigo) + '</b> en adelante.';
-            } catch (e) { el.textContent = e.message; }
-        }, 250);
-    }
+    function prevRack() { }
 
     /* ------------------------------------------------------------ plano */
     function puntos(arr) {
@@ -237,16 +270,17 @@
         $('#mpPlan', host).innerHTML = bs.length ? bs.map(function (b) {
             var its = ITEMS.filter(function (i) { return i.b === b.id; }), rs = RACKS.filter(function (r) { return r.b === b.id; });
             var sinU = its.filter(function (i) { return !i.u; });
-            var pas = []; rs.forEach(function (r) { if (pas.indexOf(r.pas) < 0) pas.push(r.pas); });
+            var pas = []; rs.forEach(function (r) { var k = r.area + '|' + r.pas; if (pas.indexOf(k) < 0) pas.push(k); });
             var nuevo = puedeCrear() ? '<button type="button" class="mp-rk-new" data-nueva-ubic="' + b.id + '">' + ic('plus', 20) + 'Nueva ubicación</button>' : '';
             return '<section class="mp-bod"><div class="mp-bod-h"><h2>' + esc(b.nombre) + '</h2><small>' + esc(b.codigo) + ' · ' + rs.length + ' ubicaciones' + (b.metodo ? ' · ' + esc(b.metodo) : '') + '</small>'
                 + (puedeCrear() ? '<button type="button" class="mp-ib" data-editar-bod="' + b.id + '" title="Editar la bodega">' + ic('lapiz', 15) + '</button>' : '')
                 + '<div class="st"><span><b class="tn">' + its.length + '</b> repuestos</span><span class="r"><b class="tn">' + its.filter(function (i) { return tone(i) === 'bajo'; }).length + '</b> bajo el mínimo</span>'
                 + '<span class="p"><b class="tn">' + its.filter(function (i) { return i.u > 0 && !i.lv; }).length + '</b> sin nivel</span></div></div>'
                 + (sinU.length ? '<button type="button" class="mp-sinu" data-sinu="' + b.id + '">' + ic('alert', 15) + '<b>' + sinU.length + '</b> repuestos sin ubicar · asígnalos a un rack</button>' : '')
-                + (pas.length ? pas.map(function (p, pi) {
-                    return '<div class="mp-psl' + (p ? '' : ' es-sola') + '">' + (p ? '<div class="mp-psl-l">' + T.pasillo + ' ' + esc(p) + '</div>' : '')
-                        + '<div class="mp-racks">' + rs.filter(function (r) { return r.pas === p; }).map(rackCard).join('') + (pi === pas.length - 1 ? nuevo : '') + '</div></div>';
+                + (pas.length ? pas.map(function (k, pi) {
+                    var tp = k.split('|')[0], p = k.split('|')[1];
+                    return '<div class="mp-psl' + (p ? '' : ' es-sola') + '">' + (p ? '<div class="mp-psl-l">' + esc(tp) + ' ' + esc(p) + '</div>' : '')
+                        + '<div class="mp-racks">' + rs.filter(function (r) { return r.area + '|' + r.pas === k; }).map(rackCard).join('') + (pi === pas.length - 1 ? nuevo : '') + '</div></div>';
                 }).join('') : '<div class="mp-psl es-sola"><div class="mp-racks">' + (nuevo || '<p class="mp-nada">Esta bodega aún no tiene ubicaciones.</p>') + '</div></div>')
                 + '</section>';
         }).join('') : '<div class="rm-vacio">' + ic('rack', 34) + '<b>No hay bodegas en esta planta</b><span>' + (puedeCrear() ? 'Crea la primera con «Nueva bodega».' : 'Pide a un administrador que cree una.') + '</span></div>';
@@ -457,11 +491,17 @@
     }
     async function crearRacks(bId) {
         var f = $('[data-formubic="' + bId + '"]', host); if (!f) return;
-        var v = function (k) { return ($('[data-f="' + k + '"]', f) || {}).value || ''; };
-        var pas = v('pasillo').trim().toUpperCase();
-        if (!/^[A-Z]{1,3}$/.test(pas)) { toast('El pasillo son de 1 a 3 letras (A, B, AB).', null, true); return; }
-        try { var d = await ws('CrearRacks', { datos: JSON.stringify({ bodega: bId, pasillo: pas, cantidad: +v('cantidad') || 1, niveles: +v('niveles') || 4, nombre: v('nombre').trim() }) }); forms = { bodega: false, ubic: 0, editar: 0 }; await recargar(d.detalle); }
-        catch (e) { toast(e.message, null, true); }
+        try {
+            var areas = leerAreas(f);
+            if (!areas.length) throw new Error('Escribe el código del área (A, B, AB).');
+            var total = 0;
+            for (var i = 0; i < areas.length; i++) {
+                await ws('CrearRacks', { datos: JSON.stringify({ bodega: bId, pasillo: areas[i].pasillo, tipo: areas[i].tipo, cantidad: areas[i].cantidad, niveles: areas[i].niveles }) });
+                total += areas[i].cantidad;
+            }
+            forms = { bodega: false, ubic: 0, editar: 0 };
+            await recargar(total === 1 ? 'Ubicación creada.' : total + ' ubicaciones creadas.');
+        } catch (e) { toast(e.message, null, true); }
     }
     async function cambiarNiveles(uid, n) {
         try { await ws('GuardarNiveles', { ubicacion: uid, niveles: n }); await recargar(); } catch (e) { toast(e.message, null, true); }
@@ -561,6 +601,9 @@
     }
 
     window.RcMapa = {
+        areasHtml: areasHtml, leerAreas: leerAreas,
+        setTipos: function (l) { if (l && l.length) TIPOS = l.slice(); },
+        cargarTipos: async function () { try { var d = await ws('TiposArea', {}); if (d.tipos && d.tipos.length) TIPOS = d.tipos.slice(); } catch (e) { } },
         /* host: el contenedor; opts: {abrirFicha(id), planta, urlTwin}. La primera vez trae los datos; despues solo redibuja. */
         pintar: async function (el, opts) {
             host = el; OPT = opts || {};

@@ -17,6 +17,8 @@
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-centro.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-mapa.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-paginador.js") %>'></script>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-mapa.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-centro.js") %>'></script>
     <style type="text/css">

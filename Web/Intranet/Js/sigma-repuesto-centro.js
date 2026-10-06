@@ -333,24 +333,26 @@
                     + '<label>Planta *<select data-f="planta">' + pl + '</select></label>'
                     + campo('descripcion', 'Descripción', x.descripcion, { ph: 'Para qué se usa' })
                     + '<label>Método de salida<select data-f="metodo">' + met + '</select></label>'
-                    + (x.id ? '' : '<div class="rcx-inline-sep"><b>Ubicaciones iniciales</b><small>Opcional · crea los primeros racks junto con la bodega. El código sale solo (PREFIJO-PASILLO-R01) y los niveles se pueden cambiar después en el mapa.</small></div>'
-                        + campo('pasillo', 'Pasillo (1 a 3 letras)', '', { ph: 'Ej.: A', max: 3 })
-                        + campo('cantidad', 'Cuántos racks', 1, { tipo: 'number', max: 2, ph: '1' })
-                        + campo('niveles', 'Niveles por rack', 4, { tipo: 'number', max: 2, ph: '4' })
-                        + campo('ubinombre', 'Nombre del rack (si es uno solo)', '', { ph: 'Vacío: «Pasillo A · Rack 01»' }));
+                    + (x.id ? '' : '<div class="rcx-inline-sep"><b>Ubicaciones iniciales</b><small>Opcional · elige el tipo de área (pasillo, sala, zona… o crea uno), su código y cuántos racks. Agrega todas las áreas que necesites; el código del rack sale solo.</small></div>'
+                        + '<div class="rcx-inline-areas">' + (window.RcMapa ? RcMapa.areasHtml({ tipo: 'Pasillo', cod: 'A' }) : '') + '</div>');
             },
             guardar: async function (x, v) {
                 if (!v.nombre.trim()) throw new Error('Escribe el nombre de la bodega.');
-                var pas = (v.pasillo || '').trim().toUpperCase();
-                if (!x.id && pas && !/^[A-Z]{1,3}$/.test(pas)) throw new Error('El pasillo son de 1 a 3 letras (A, B, AB).');
+                var cont = document.querySelector('.rcx-inline[data-rcform="bodegas"]');
+                var areas = [];
+                if (!x.id && cont && window.RcMapa) {
+                    var filas = cont.querySelectorAll('[data-mp-ar]'), vacia = filas.length === 1 && !filas[0].querySelector('[data-ar="cod"]').value.trim();
+                    if (!vacia) areas = RcMapa.leerAreas(cont);
+                }
                 var d = { id: x.id || 0, planta: parseInt(v.planta, 10), nombre: v.nombre.trim(), descripcion: v.descripcion };
                 if (v.metodo) d.metodo = v.metodo;
                 if (x.id) d.codigo = x.codigo;
                 var r = await wsPost('WsBodegaMapa', 'GuardarBodega', { datos: JSON.stringify(d) });
-                if (!x.id && pas && r.id > 0) {
+                if (!x.id && areas.length && r.id > 0) {
                     try {
-                        await wsPost('WsBodegaMapa', 'CrearRacks', { datos: JSON.stringify({ bodega: r.id, pasillo: pas, cantidad: +v.cantidad || 1, niveles: +v.niveles || 4, nombre: (v.ubinombre || '').trim() }) });
-                    } catch (e) { throw new Error('La bodega se creó, pero no sus ubicaciones: ' + e.message); }
+                        for (var i = 0; i < areas.length; i++)
+                            await wsPost('WsBodegaMapa', 'CrearRacks', { datos: JSON.stringify({ bodega: r.id, pasillo: areas[i].pasillo, tipo: areas[i].tipo, cantidad: areas[i].cantidad, niveles: areas[i].niveles }) });
+                    } catch (e) { throw new Error('La bodega se creó, pero no todas sus ubicaciones: ' + e.message); }
                 }
                 return r;
             }
@@ -406,7 +408,7 @@
         var t = e.target; if (!t.closest) return;
         var c;
         if ((c = t.closest('[data-rctab]'))) { EDIT = null; pestana(c.getAttribute('data-rctab')); return; }
-        if ((c = t.closest('[data-rccatnuevo]'))) { EDIT = { k: c.getAttribute('data-rccatnuevo'), id: 0 }; pintarCat(EDIT.k, datos()); return; }
+        if ((c = t.closest('[data-rccatnuevo]'))) { if (window.RcMapa) RcMapa.cargarTipos(); EDIT = { k: c.getAttribute('data-rccatnuevo'), id: 0 }; pintarCat(EDIT.k, datos()); return; }
         if ((c = t.closest('[data-rccatedit]'))) { var a = c.getAttribute('data-rccatedit').split('|'); EDIT = { k: a[0], id: +a[1] }; pintarCat(a[0], datos()); return; }
         if ((c = t.closest('[data-rccancelar]'))) { var k0 = EDIT && EDIT.k; EDIT = null; if (k0) pintarCat(k0, datos()); return; }
         if ((c = t.closest('[data-rcguardar]'))) {

@@ -333,3 +333,7 @@ body:has(#pnlLista) .content-page .container-fluid { padding-top: 12px !importan
 
 .sgap .rcx-inline-sep { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 2px; padding-top: 6px; border-top: 1px dashed #C9B8FF; font-size: 12.5px; color: var(--ink) }
 .sgap .rcx-inline-sep small { color: var(--muted); font-size: 11.5px }
+
+.sgap .rcx-inline-areas { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px }
+.sgap .rcx-inline-areas .mp-areas, .rm-form-areas .mp-areas { display: flex; flex-direction: column; gap: 8px }
+.sgap .rcx-inline-areas .mp-ar-add { align-self: flex-start }
