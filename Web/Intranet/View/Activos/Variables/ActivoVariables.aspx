@@ -31,7 +31,7 @@
 </asp:Content>
 
 <asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    Qué mide cada equipo —temperatura, vibración, corriente— con qué unidad y con qué umbrales. Las mediciones y las programaciones por condición se validan contra esto.
+    Qué mide cada activo —temperatura, vibración, corriente— con qué unidad y con qué umbrales. Las mediciones y las programaciones por condición se validan contra esto.
 </asp:Content>
 
 <asp:Content ID="ContentFiltro" ContentPlaceHolderID="cphFiltro" runat="Server">

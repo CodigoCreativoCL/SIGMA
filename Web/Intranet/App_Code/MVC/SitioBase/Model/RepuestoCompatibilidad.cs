@@ -62,6 +62,7 @@ namespace SitioBase.Model
         {
             get
             {
+                if (alcance == "ACTIVO") return "Activo";
                 if (alcance == "COMPONENTE") return "Componente";
                 if (alcance == "MODELO") return "Modelo";
                 return "Tipo de activo";
@@ -75,6 +76,7 @@ namespace SitioBase.Model
         {
             get
             {
+                if (alcance == "ACTIVO") return "mdi mdi-engine-outline";
                 if (alcance == "COMPONENTE") return "mdi mdi-cog-outline";
                 if (alcance == "MODELO") return "mdi mdi-tag-outline";
                 return "mdi mdi-shape-outline";

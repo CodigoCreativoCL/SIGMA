@@ -47,6 +47,37 @@ namespace SitioBase.Controller
         }
 
         /// <summary>
+        /// La imagen de TODOS los activos y componentes del cliente en una
+        /// consulta (bloque 349), para las listas: clave "A" + id de activo o
+        /// "C" + id de componente, valor el id del Archivo.
+        /// </summary>
+        public System.Collections.Generic.Dictionary<string, int> GetImagenesLista(int cliente)
+        {
+            var mapa = new System.Collections.Generic.Dictionary<string, int>();
+            if (!Token.TokenSeguridad()) return mapa;
+
+            SqlCommand cmd = new SqlCommand();
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_IMAGENES_LISTA";
+                cmd.Parameters.AddWithValue("@CLIENTE", cliente);
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                        mapa[dr["TIPO"].ToString() + dr["ID"]] = int.Parse(dr["ARC_ID"].ToString());
+                }
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            return mapa;
+        }
+
+        /// <summary>
         /// Enlaza un Archivo ya subido como LA imagen del activo (deja una sola
         /// vigente). Devuelve el id del vínculo, o -1 si falla.
         /// </summary>

@@ -115,6 +115,30 @@ namespace SitioBase.Controller
             return lista;
         }
 
+        /// <summary>
+        /// La observacion vigente de cada componente del cliente: el motivo de su
+        /// ultimo cambio de estado (bloque 356). Una consulta para toda la lista.
+        /// </summary>
+        public Dictionary<int, string> GetUltimosMotivos()
+        {
+            Dictionary<int, string> m = new Dictionary<int, string>();
+            if (!Token.TokenSeguridad()) return m;
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("SEL_COMPONENTE_ULTIMO_MOTIVO");
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                using (SqlDataReader dr = cmd.ExecuteReader())
+                    while (dr.Read()) m[System.Convert.ToInt32(dr["COMPONENTE"])] = dr["MOTIVO"].ToString();
+                cmd.Connection.Close();
+            }
+            catch (System.Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+            }
+            return m;
+        }
+
         public ActivoComponente GetComponente(int id)
         {
             List<ActivoComponente> l = GetComponentes(new ActivoComponente { aco_id = id });
@@ -438,6 +462,33 @@ namespace SitioBase.Controller
     /// <summary>Posiciones de componente para el combo (SEL_COMPONENTE_POSICION).</summary>
     public class ComponentePosicionController
     {
+
+        /// <summary>
+        /// Id de la posicion ("donde va") con ese nombre (comun o de la empresa);
+        /// si no existe la crea como propia (bloque 345). 0 si falla.
+        /// </summary>
+        public int ResolverPorNombre(string nombre)
+        {
+            if (!Token.TokenSeguridad() || string.IsNullOrWhiteSpace(nombre)) return 0;
+            SqlCommand cmd = null;
+            try
+            {
+                cmd = Conexion.GetCommand("UPS_COMPONENTE_POSICION_NOMBRE");
+                cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@NOMBRE", nombre.Trim());
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.ExecuteNonQuery();
+                cmd.Connection.Close();
+                return cmd.Parameters["@ID"].Value == DBNull.Value ? 0 : (int)cmd.Parameters["@ID"].Value;
+            }
+            catch (Exception)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                return 0;
+            }
+        }
+
         public List<ComponentePosicion> GetPosiciones(ComponentePosicion filtro = null)
         {
             List<ComponentePosicion> lista = new List<ComponentePosicion>();

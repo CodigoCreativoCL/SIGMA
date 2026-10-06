@@ -168,6 +168,26 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                 string hijos = addMenu(menus, item.mnu_id, 0, profundidad + 1).ToString();
                 if (string.IsNullOrEmpty(hijos)) continue;
 
+                /* UNA SOLA PANTALLA ADENTRO: EL MODULO ES EL ENLACE (05-10-2026)
+
+                   Un desplegable con un unico item obliga a dos clics para
+                   llegar a lo mismo (Control de activos › Activos). Si lo
+                   unico visible es una pagina, el modulo lleva directo a
+                   ella, con su icono y su nombre. */
+                List<Menus> visibles = menus.Where(x => x.mnu_padre == item.mnu_id && x.mnu_visible).ToList();
+                Menus unica = visibles.Count(x => x.mnu_link == "#" || SitioBase.Token.PuedeMenu(x.mnu_id)) == 1
+                              ? visibles.FirstOrDefault(x => x.mnu_link != "#" && SitioBase.Token.PuedeMenu(x.mnu_id)) : null;
+                if (unica != null && !menus.Any(x => x.mnu_padre == unica.mnu_id && x.mnu_visible))
+                {
+                    sb.AppendLine("<li>");
+                    sb.AppendLine(" <a href='" + ResolveUrl(unica.mnu_link) + "'>");
+                    if (countNivel != 0) sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+                    sb.AppendLine("     <span>" + item.mnu_nombre + "</span>" + BadgeDe(unica.mnu_link));
+                    sb.AppendLine(" </a>");
+                    sb.AppendLine("</li>");
+                    continue;
+                }
+
                 string clase = profundidad == 0 ? "nav-second-level" : "nav-third-level";
 
                 sb.AppendLine("<li>");

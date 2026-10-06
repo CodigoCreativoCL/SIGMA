@@ -21,6 +21,9 @@ namespace SitioBase.Controller
         public decimal existencia { get; set; }
         public decimal minimo { get; set; }
         public string unidad { get; set; }
+        /// <summary>Repuesto que calza por una parte: cual (bloque 344). 0 = le sirve a todo el equipo.</summary>
+        public int para_id { get; set; }
+        public string para { get; set; }
     }
 
     /// <summary>Todo lo que cuelga de un activo (bloque 343).</summary>
@@ -30,6 +33,8 @@ namespace SitioBase.Controller
         public List<ActivoEstructuraItem> subactivos = new List<ActivoEstructuraItem>();
         public List<ActivoEstructuraItem> componentes = new List<ActivoEstructuraItem>();
         public List<ActivoEstructuraItem> repuestos = new List<ActivoEstructuraItem>();
+        /// <summary>Las partes de sus subactivos; padre = el subactivo (bloque 344).</summary>
+        public List<ActivoEstructuraItem> subcomponentes = new List<ActivoEstructuraItem>();
     }
 
     /// <summary>Padre, contadores y area completa de una fila del listado (bloque 343).</summary>
@@ -95,8 +100,17 @@ namespace SitioBase.Controller
                             id = Int(dr, "ID"), codigo = Txt(dr, "CODIGO"), nombre = Txt(dr, "NOMBRE"),
                             detalle = Txt(dr, "ALCANCE"), unidad = Txt(dr, "UNIDAD"),
                             existencia = dr["EXISTENCIA"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["EXISTENCIA"]),
-                            minimo = dr["MINIMO"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["MINIMO"])
+                            minimo = dr["MINIMO"] == DBNull.Value ? 0 : Convert.ToDecimal(dr["MINIMO"]),
+                            para_id = Int(dr, "PARA_ID"), para = Txt(dr, "PARA")
                         });
+
+                    if (dr.NextResult())
+                        while (dr.Read())
+                            e.subcomponentes.Add(new ActivoEstructuraItem
+                            {
+                                id = Int(dr, "ID"), padre = Int(dr, "ACTIVO"), codigo = Txt(dr, "CODIGO"), nombre = Txt(dr, "NOMBRE"),
+                                tipo = Txt(dr, "TIPO"), estado = Txt(dr, "ESTADO"), estado_codigo = Txt(dr, "ESTADO_CODIGO")
+                            });
                 }
                 cmd.Connection.Close();
             }

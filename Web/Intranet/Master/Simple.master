@@ -54,7 +54,7 @@
          mientras el resto del sitio ya estaba relookeado. Va DESPUES de v2
          para que los tokens de marca ganen. -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-components.css?vrs=11" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-components.css?vrs=12" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-modal.css?vrs=9" rel="stylesheet" />
 
@@ -76,6 +76,10 @@
          reglas de Grid.css y Button.css que traen !important, y para
          ganarles hay que cargarla al final. --%>
     <link href="../Css/LookAndFeel/sigma-botones.css?vrs=16" rel="stylesheet" />
+    <%-- WebControls:Calendar sigue emitiendo su inicializacion de PopCalendar, que ya
+         no se carga (lo reemplaza sigma-calendario.js). Sin este objeto mudo el script
+         falla; en un postback asincrono ese error cortaba la actualizacion del panel. --%>
+    <script type="text/javascript">window.PopCalendar = window.PopCalendar || { newCalendar: function () { return { forcedToday: function () { }, initCalendar: function () { } }; } };</script>
     <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
     <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
 

@@ -172,6 +172,7 @@ public partial class View_Activos_Modelos_ActivoModelo : System.Web.UI.Page
                 arc.arc_mime = mime;
                 arc.contenido = contenido;
 
+                ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
                 Respuesta r = new ArchivoController().InsertArchivo(arc, "modelos");
                 if (!r.error && r.codigo > 0)
                     new ActivoModeloArchivoController().Vincular(modelo, r.codigo);

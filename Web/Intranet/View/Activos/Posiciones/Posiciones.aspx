@@ -74,7 +74,7 @@
                     <rad:RadComboBox2 ID="cboOcupacion" runat="server" Width="100%">
                         <Items>
                             <rad:RadComboBoxItem Text="Todas" Value="" />
-                            <rad:RadComboBoxItem Text="Con equipo" Value="0" />
+                            <rad:RadComboBoxItem Text="Con activo" Value="0" />
                             <rad:RadComboBoxItem Text="Libres" Value="1" />
                         </Items>
                     </rad:RadComboBox2>
@@ -107,7 +107,7 @@
                         <div style="margin-bottom: 5px;">
                             <asp:LinkButton ID="lnkNuevo" runat="server" Text="Nueva posición" CssClass="icono_guardar" OnClientClick="return abrirPosicion(0);" />
                             <asp:LinkButton ID="lnkEliminar" runat="server" Text="Eliminar" CssClass="icono_eliminar" OnClick="lnkEliminar_Click"
-                                OnClientClick="return ConfirSweetAlert(this, '', '¿Eliminar las posiciones seleccionadas? Las que ya tuvieron un equipo no se borran: se deshabilitan desde su ficha.');" />
+                                OnClientClick="return ConfirSweetAlert(this, '', '¿Eliminar las posiciones seleccionadas? Las que ya tuvieron un activo no se borran: se deshabilitan desde su ficha.');" />
                             <%-- HU-034 #2: varias posiciones de un area en una sola hoja.
                                  Se seleccionan en la grilla (o se filtra por area y se
                                  marcan todas) y sale un documento con una etiqueta por
