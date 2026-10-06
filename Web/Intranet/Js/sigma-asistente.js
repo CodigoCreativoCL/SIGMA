@@ -96,6 +96,11 @@ function afValor(id, libre) {
         return it && it.get_value() !== '' ? t : '';
     }
     var e = document.getElementById(id);
+    /* Combo SIGMA de lista cerrada: vale el id elegido (campo oculto), no lo escrito. */
+    if (e && !libre && e.matches && e.matches('[data-sgcombo]')) {
+        var h = e.parentNode.querySelector('input[type=hidden]');
+        if (h) return (h.value || '').trim();
+    }
     return e ? (e.value || '').trim() : '';
 }
 function afMarcar(id, ok) {

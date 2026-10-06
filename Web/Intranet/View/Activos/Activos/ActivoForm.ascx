@@ -89,18 +89,19 @@
     window.refresh = window.refresh || function () { __doPostBack('', ''); };
 
     /* ---- ¿Depende de otra maquina? Si/No y, si es Si, cual ---- */
-    function afPadreCombo() { var e = document.querySelector('.af-padre .RadComboBox'); return e && window.$find ? $find(e.id) : null; }
+    function afPadreCombo() { return document.querySelector('.af-padre [data-sgcombo]'); }
+    function afPadreId() { var c = afPadreCombo(), h = c ? c.parentNode.querySelector('input[type=hidden]') : null; return h || null; }
     /* No se llama afDepende: el radio se llama asi y, dentro del form, el
        nombre del control tapa a la funcion en el onclick (trampa conocida). */
     function afMarcarDepende(si) {
         var w = document.querySelector('.af-padre'); if (!w) return;
         w.hidden = !si;
-        if (!si) { var c = afPadreCombo(); if (c && c.get_items().get_count()) c.get_items().getItem(0).select(); }
+        if (!si) { var c = afPadreCombo(), h = afPadreId(); if (c) c.value = ''; if (h) h.value = ''; }
     }
     function afIniciarDepende() {
-        var c = afPadreCombo(), si = document.getElementById('afDependeSi'), no = document.getElementById('afDependeNo');
+        var h = afPadreId(), si = document.getElementById('afDependeSi'), no = document.getElementById('afDependeNo');
         if (!si || !no) return;
-        var tiene = c && c.get_value && c.get_value() !== '';
+        var tiene = !!(h && h.value !== '');
         si.checked = !!tiene; no.checked = !tiene;
         var w = document.querySelector('.af-padre'); if (w) w.hidden = !tiene;
     }
@@ -187,6 +188,54 @@
     var ND_UNIT_OPTIONS = '<option value="">Sin unidad</option>' + AF_UNIDADES;
     // Opciones de los combos con texto libre: tipos, lugares, variables y contadores.
     var AF_OPC = <%= OpcionesCombosJson() %>;
+
+    /* ---- Tipo, modelo y marca: el combo compartido (SigmaCombo, modo libre) ----
+       AF_CAT trae los tipos, los modelos (con su tipo y marca) y las marcas.
+       El modelo ofrece solo los del tipo y la marca escritos: lo que antes
+       hacia un postback por cada cambio ahora se filtra aqui. */
+    var AF_CAT = <%= CatalogoActivoJson() %>;
+    function afCatNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+    function afCatInp(c) { return document.querySelector('.af [data-sgcombo="af:' + c + '"]'); }
+    function afCatTipoId() {
+        var i = afCatInp('atipos'), t = afCatNorm(i ? i.value : '');
+        var x = t ? AF_CAT.tipos.filter(function (o) { return afCatNorm(o.n) === t; })[0] : null;
+        return x ? x.id : 0;
+    }
+    function afCatModelos() {
+        var tipo = afCatTipoId(); if (!tipo) return [];
+        var m = afCatInp('amarcas'), fab = afCatNorm(m ? m.value : '');
+        /* Un modelo sin marca se ofrece siempre (igual que antes en el servidor). */
+        return AF_CAT.modelos.filter(function (o) { return o.t === tipo && (!fab || !o.f || afCatNorm(o.f) === fab); })
+                             .map(function (o) { return { id: o.id, n: o.n, txt: o.f }; });
+    }
+    SigmaCombo.definir('af:atipos', { libre: true, fuente: function () { return AF_CAT.tipos; } });
+    SigmaCombo.definir('af:amarcas', { libre: true, fuente: function () { return AF_CAT.marcas; } });
+    /* Listas cerradas (estado, criticidad, ubicacion, maquina, año): el combo
+       guarda el id en su campo oculto y no ofrece crear. */
+    ['estados', 'criticidades', 'plantas', 'areas', 'centros', 'padres', 'anios'].forEach(function (k) {
+        SigmaCombo.definir('af:' + k, { fuente: function () { return AF_CAT[k] || []; } });
+    });
+    SigmaCombo.definir('af:amodelos', { libre: true, fuente: afCatModelos, vacio: 'Sin modelos de ese tipo y marca. Escribe uno nuevo.' });
+    if (!window.afCatEscucha) {
+        window.afCatEscucha = true;
+        document.addEventListener('change', function (e) {
+            var c = e.target && e.target.getAttribute ? e.target.getAttribute('data-sgcombo') : null;
+            if (!c || c.indexOf('af:a') !== 0 || !window.AF_CAT) return;
+            var mod = afCatInp('amodelos'); if (!mod) return;
+            var t = afCatNorm(mod.value); if (!t) return;
+            var deEste = afCatModelos().filter(function (o) { return afCatNorm(o.n) === t; })[0];
+            if (c === 'af:amodelos') {
+                /* El modelo manda la marca. */
+                var marca = afCatInp('amarcas');
+                if (deEste && deEste.txt && marca) { marca.value = deEste.txt; marca.classList.remove('is-nuevo'); }
+            } else if (!deEste && AF_CAT.modelos.some(function (o) { return afCatNorm(o.n) === t; })) {
+                /* Cambio el tipo o la marca y el modelo elegido ya no es de ellos:
+                   se limpia, para no crear una copia con otro tipo. Uno escrito
+                   a mano (nuevo) se conserva. */
+                mod.value = ''; mod.classList.remove('is-nuevo');
+            }
+        });
+    }
     function ndAgregar() {
         var cont = document.getElementById('ndContainer');
         if (!cont) return;
@@ -267,6 +316,23 @@
             <button type="button" class="af-btn es-primario" onclick="closeWindow(); return false;"><i class="mdi mdi-check"></i>Listo</button>
         </div>
     </div>
+    <script type="text/javascript">
+        /* La ventana se ajusta a la confirmacion. El modal solo crece al medir
+           (scrollHeight nunca baja del alto actual del marco), y la ficha que
+           venia antes era mas alta: se fija el alto al de lo que se ve y se le
+           pide al modal que vuelva a medir. */
+        (function () {
+            function ajustar() {
+                var l = document.getElementById('afListo'), f = null;
+                try { f = window.frameElement; } catch (e) { }
+                if (!l || !f) return;
+                var alto = Math.ceil(l.getBoundingClientRect().bottom + (window.pageYOffset || 0)) + 16;
+                f.style.height = Math.max(alto, 250) + 'px';
+                try { if (parent.SigmaModal && parent.SigmaModal.resize) parent.SigmaModal.resize(); } catch (e) { }
+            }
+            if (document.readyState === 'complete') setTimeout(ajustar, 0); else window.addEventListener('load', ajustar);
+        })();
+    </script>
 </asp:Panel>
 
 <asp:Panel ID="pnlSecciones" runat="server" CssClass="af">
@@ -334,42 +400,49 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Tipo <span class="req">*</span></label>
-                    <%-- Texto libre (bloque 342): si el tipo no existe, se escribe y se crea al guardar. --%>
-                    <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <%-- Texto libre (bloque 342): si el tipo no existe, se escribe y se crea al guardar.
+                         Es el combo compartido de SIGMA (SigmaCombo, modo libre): sin postback. --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtTipo" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:atipos" aria-label="Tipo" placeholder="Elige o escribe uno nuevo" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿No está? Escríbelo y se crea al guardar.</span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige el tipo de la lista o escribe uno nuevo.</span>
-                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo" Display="None"
+                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="txtTipo" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequeridoLibre" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Modelo</label>
-                    <rad:RadComboBox2 ID="cboModelo" runat="server" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <%-- Ofrece los modelos del tipo y la marca escritos (se filtra en el navegador). --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtModelo" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:amodelos" aria-label="Modelo" placeholder="Sin modelo · elige o escribe uno" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">Muestra los de ese tipo y esa marca. ¿No está? Escríbelo y se crea.</span>
                 </div>
                 <div class="sigma-modal-field">
                     <label>Estado <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboEstado" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <%-- Lista cerrada: el combo SIGMA con id (el id viaja en hdnEstado). --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtEstado" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:estados" aria-label="Estado" placeholder="Seleccione..." /><asp:HiddenField ID="hdnEstado" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige cómo está el activo hoy.</span>
-                    <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado" Display="None"
+                    <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="txtEstado" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Criticidad <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboCriticidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtCriticidad" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:criticidades" aria-label="Criticidad" placeholder="Seleccione..." /><asp:HiddenField ID="hdnCriticidad" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿Qué tan grave es si se detiene?</span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige qué tan grave es si se detiene.</span>
-                    <asp:CustomValidator ID="cvCriticidad" runat="server" ControlToValidate="cboCriticidad" Display="None"
+                    <asp:CustomValidator ID="cvCriticidad" runat="server" ControlToValidate="txtCriticidad" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Marca</label>
-                    <rad:RadComboBox2 ID="cboFabricante" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboFabricante_Changed" OnTextChanged="cboFabricante_Changed" Filter="Contains" Width="100%" MaxLength="200"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe una nueva" />
+                    <span class="sg-combo"><asp:TextBox ID="txtFabricante" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:amarcas" aria-label="Marca" placeholder="Elige o escribe una nueva" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿No está? Escríbela y se crea al guardar.</span>
                 </div>
                 <div class="sigma-modal-field">
@@ -417,19 +490,25 @@
             <div class="af-grid">
                 <div class="sigma-modal-field">
                     <label>Planta <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboPlanta" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtPlanta" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:plantas" aria-label="Planta" placeholder="Seleccione..." /><asp:HiddenField ID="hdnPlanta" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige la planta donde está el activo.</span>
-                    <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="cboPlanta" Display="None"
+                    <asp:CustomValidator ID="cvPlanta" runat="server" ControlToValidate="txtPlanta" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Área</label>
-                    <rad:RadComboBox2 ID="cboArea" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtArea" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:areas" aria-label="Área" placeholder="Sin área" /><asp:HiddenField ID="hdnArea" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">Ej.: Refrigeración › Línea 1.</span>
                 </div>
                 <div class="sigma-modal-field">
                     <label>Centro de costo</label>
-                    <rad:RadComboBox2 ID="cboCentroCosto" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtCentroCosto" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:centros" aria-label="Centro de costo" placeholder="Sin centro de costo" /><asp:HiddenField ID="hdnCentroCosto" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                 </div>
                 <div class="sigma-modal-field af-ancho">
                     <label>¿Depende de otra máquina?</label>
@@ -441,7 +520,9 @@
                 </div>
                 <div class="sigma-modal-field af-padre" hidden>
                     <label>¿De cuál máquina depende?</label>
-                    <rad:RadComboBox2 ID="cboPadre" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtPadre" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:padres" aria-label="¿De cuál máquina depende?" placeholder="Busca la máquina por código o nombre" /><asp:HiddenField ID="hdnPadre" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                 </div>
             </div>
         </section>
@@ -453,7 +534,9 @@
             <div class="af-grid">
                 <div class="sigma-modal-field">
                     <label>Año de fabricación</label>
-                    <rad:RadComboBox2 ID="cboAnio" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtAnio" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:anios" aria-label="Año de fabricación" placeholder="Sin dato" /><asp:HiddenField ID="hdnAnio" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                 </div>
                 <div class="sigma-modal-field">
                     <label>Puesta en marcha</label>

@@ -34,9 +34,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         set { ViewState["ActivoId"] = value; }
     }
 
-    // Modelo a preseleccionar al abrir en edición (solo el primer render).
-    private string _modeloEditar = null;
-
     /* El centro elige el activo haciendo clic en su lista, o sea EN UN
        POSTBACK. Los "if (IsPostBack) return" que protegen lo tecleado dejaban
        el formulario en blanco justo cuando recien se abria el equipo. Esta
@@ -96,163 +93,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         set { ViewState["PadreFijo"] = value; }
     }
 
-    /// <summary>
-    /// Puebla los combos. Los catálogos NO se escriben a mano en el markup:
-    /// se leen de su SEL_ (el estándar lo exige). Cada combo lleva su opción
-    /// vacía cuando es opcional.
-    /// </summary>
-    /// <summary>
-    /// Puebla los combos. Corre en el Load de cada uno, antes de que el centro
-    /// diga de que activo habla: por eso la seleccion la hace CargarDatos y no
-    /// este metodo.
-    /// </summary>
-    public void LoadControls(object sender, EventArgs e)
-    {
-        if (IsPostBack || !(sender is RadComboBox2)) return;
-
-        RadComboBox2 ctrl = (RadComboBox2)sender;
-        int cliente = SitioBase.Session.ClienteId();
-
-        switch (ctrl.ID)
-        {
-            case "cboTipo":
-                {
-                    ActivoTipoController controller = new ActivoTipoController();
-                    List<ActivoTipo> lista = controller.GetActivoTipos(
-                        new ActivoTipo { filtro_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "ati_id";
-                    ctrl.DataTextField = "ati_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboEstado":
-                {
-                    ActivoEstadoController controller = new ActivoEstadoController();
-                    List<ActivoEstado> lista = controller.GetActivoEstados(
-                        new ActivoEstado { filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "aes_id";
-                    ctrl.DataTextField = "aes_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboCriticidad":
-                {
-                    CriticidadNivelController controller = new CriticidadNivelController();
-                    List<CriticidadNivel> lista = controller.GetCriticidadNiveles(
-                        new CriticidadNivel { filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "crn_id";
-                    ctrl.DataTextField = "crn_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboPlanta":
-                {
-                    ClienteInstalacionController controller = new ClienteInstalacionController();
-
-                    // Este modelo trae los filtros como string (convención
-                    // heredada de ClienteInstalacion); se respeta tal cual.
-                    ClienteInstalacion filtro = new ClienteInstalacion();
-                    filtro.filtro_cliente = cliente.ToString();
-                    filtro.filtro_habilitado = "1";
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = controller.GetClienteInstalaciones(filtro);
-                    ctrl.DataValueField = "cin_id";
-                    ctrl.DataTextField = "cin_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboArea":
-                {
-                    InstalacionAreaController controller = new InstalacionAreaController();
-                    List<InstalacionArea> lista = controller.GetInstalacionAreas(
-                        new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Sin área", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "iar_id";
-                    ctrl.DataTextField = "ruta";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboCentroCosto":
-                {
-                    CentroCostoController controller = new CentroCostoController();
-                    List<CentroCosto> lista = controller.GetCentrosCosto(
-                        new CentroCosto { cco_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Sin centro de costo", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "cco_id";
-                    ctrl.DataTextField = "ruta";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboFabricante":
-                {
-                    // El catalogo de marcas compartido con repuestos (bloque 333/342).
-                    foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
-                        ctrl.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
-                    break;
-                }
-
-            case "cboAnio":
-                {
-                    // Años del actual hacia atrás: la maquinaria industrial
-                    // rara vez es anterior a 1950. Elegir de una lista evita
-                    // tipeos como "20226" o un año futuro.
-                    ctrl.Items.Add(new RadComboBoxItem("Sin dato", ""));
-                    for (int anio = global::SitioBase.Hora.Hoy.Year; anio >= 1950; anio--)
-                        ctrl.Items.Add(new RadComboBoxItem(anio.ToString(), anio.ToString()));
-                    break;
-                }
-
-            case "cboPadre":
-                {
-                    ActivoController controller = new ActivoController();
-                    List<Activo> lista = controller.GetActivos(
-                        new Activo { act_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Ninguna: es una máquina principal", ""));
-                    ctrl.AppendDataBoundItems = true;
-
-                    if (lista != null)
-                    {
-                        // Un activo no puede ser su propio padre: se quita de
-                        // la lista al editar. Los descendientes los rechaza
-                        // igual el SP; aquí se evita solo el caso evidente.
-                        if (ActivoId > 0) lista.RemoveAll(x => x.act_id == ActivoId);
-
-                        foreach (Activo a in lista)
-                            ctrl.Items.Add(new RadComboBoxItem(a.act_codigo + " — " + a.act_nombre, a.act_id.ToString()));
-                    }
-
-                    break;
-                }
-        }
-    }
-
     protected void Page_PreRender(object sender, EventArgs e)
     {
         /* El centro dice de que activo habla y lo dice tarde -su propio
@@ -279,7 +119,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         btnGuardar.Text = ActivoId > 0 ? "Guardar cambios" : "Guardar activo";
 
         CargarDatos();
-        CargarModelos();   // depende del tipo ya seleccionado por CargarDatos
         // Las secciones nuevas van blindadas: si algo falla, no debe colgar ni
         // romper el modal del activo.
         try { CargarArchivos(); } catch { }        // documentos adjuntos
@@ -490,24 +329,159 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
     // ============================================================ bloque 342
 
-    /// <summary>Id del item elegido, o del que coincide con lo escrito; 0 si es texto nuevo.</summary>
-    private static int ValorCombo(RadComboBox2 c)
+    /* Tipo, modelo y marca son el combo compartido (SigmaCombo) en modo
+       libre: el servidor recibe el texto. Se busca su id en los mismos
+       catalogos que se le ofrecieron; lo que no esta lo crea
+       UPS_ACTIVO_CATALOGO al guardar. */
+    private List<ActivoTipo> _tiposActivo;
+    private List<ActivoTipo> TiposActivo()
     {
-        int v;
-        string t = (c.Text ?? "").Trim();
-        if (c.SelectedItem != null && string.Equals(c.SelectedItem.Text, t, StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(c.SelectedValue, out v)) return v;
-        foreach (RadComboBoxItem it in c.Items)
-            if (string.Equals(it.Text.Trim(), t, StringComparison.OrdinalIgnoreCase) && int.TryParse(it.Value, out v)) return v;
-        return 0;
+        return _tiposActivo ?? (_tiposActivo = new ActivoTipoController().GetActivoTipos(
+            new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoTipo>());
     }
 
-    /// <summary>Lo escrito en el combo, sin el mensaje de ayuda ni las opciones vacias.</summary>
-    private static string TextoCombo(RadComboBox2 c)
+    private List<ActivoModelo> _modelosActivo;
+    private List<ActivoModelo> ModelosActivo()
     {
-        string t = (c.Text ?? "").Trim();
-        if (t == "" || t == c.EmptyMessage || t == "Seleccione..." || t == "Sin modelo") return null;
-        return t;
+        return _modelosActivo ?? (_modelosActivo = new ActivoModeloController().GetModelos(
+            new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoModelo>());
+    }
+
+    /* ---- Combos de lista cerrada (SigmaCombo con id) ----
+       Estado, criticidad, planta, area, centro de costo, maquina de la que
+       depende y año: el texto visible va en txtX y el id en hdnX. Las
+       listas se leen una vez por request y son las mismas que se ofrecen
+       en el navegador (AF_CAT) y contra las que se valida al guardar. */
+    private class Opcion
+    {
+        public int id;
+        public string n;
+        public Opcion(int id, string n) { this.id = id; this.n = n; }
+    }
+
+    private readonly Dictionary<string, List<Opcion>> _listas = new Dictionary<string, List<Opcion>>();
+
+    private List<Opcion> Lista(string clave)
+    {
+        List<Opcion> l;
+        if (_listas.TryGetValue(clave, out l)) return l;
+        l = new List<Opcion>();
+        int cliente = SitioBase.Session.ClienteId();
+        try
+        {
+            switch (clave)
+            {
+                case "estados":
+                    foreach (ActivoEstado x in new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>())
+                        l.Add(new Opcion(x.aes_id, x.aes_nombre));
+                    break;
+                case "criticidades":
+                    foreach (CriticidadNivel x in new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true }) ?? new List<CriticidadNivel>())
+                        l.Add(new Opcion(x.crn_id, x.crn_nombre));
+                    break;
+                case "plantas":
+                    // Este modelo trae los filtros como string (convención heredada de ClienteInstalacion).
+                    foreach (ClienteInstalacion x in new ClienteInstalacionController().GetClienteInstalaciones(
+                                 new ClienteInstalacion { filtro_cliente = cliente.ToString(), filtro_habilitado = "1" }) ?? new List<ClienteInstalacion>())
+                        l.Add(new Opcion(x.cin_id, x.cin_nombre));
+                    break;
+                case "areas":
+                    foreach (InstalacionArea x in new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true }) ?? new List<InstalacionArea>())
+                        l.Add(new Opcion(x.iar_id, x.ruta));
+                    break;
+                case "centros":
+                    foreach (CentroCosto x in new CentroCostoController().GetCentrosCosto(new CentroCosto { cco_cliente = cliente, filtro_habilitado = true }) ?? new List<CentroCosto>())
+                        l.Add(new Opcion(x.cco_id, x.ruta));
+                    break;
+                case "padres":
+                    // Un activo no puede ser su propio padre: se quita de la
+                    // lista al editar. Los descendientes los rechaza el SP.
+                    foreach (Activo x in new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }) ?? new List<Activo>())
+                        if (x.act_id != ActivoId) l.Add(new Opcion(x.act_id, x.act_codigo + " — " + x.act_nombre));
+                    break;
+                case "anios":
+                    // Del actual hacia atras: la maquinaria industrial rara vez es
+                    // anterior a 1950. Elegir evita tipeos como "20226" o un año futuro.
+                    for (int anio = global::SitioBase.Hora.Hoy.Year; anio >= 1950; anio--)
+                        l.Add(new Opcion(anio, anio.ToString()));
+                    break;
+            }
+        }
+        catch (Exception) { }
+        _listas[clave] = l;
+        return l;
+    }
+
+    /// <summary>Muestra la opcion con ese id (si esta en la lista; si no, deja el campo como estaba).</summary>
+    private void Fijar(TextBox t, HiddenField h, string clave, int id)
+    {
+        Opcion o = Lista(clave).Find(x => x.id == id);
+        if (o == null) return;
+        h.Value = o.id.ToString(); t.Text = o.n;
+    }
+
+    /// <summary>El id elegido, solo si es una opcion de la lista; 0 si no hay o no es valido.</summary>
+    private int Elegido(HiddenField h, string clave)
+    {
+        int v;
+        return int.TryParse(h.Value, out v) && v != 0 && Lista(clave).Exists(x => x.id == v) ? v : 0;
+    }
+
+    /// <summary>Igual sin mayusculas, tildes ni espacios a los lados (como compara el SP).</summary>
+    private static bool MismoTexto(string a, string b)
+    {
+        return string.Compare((a ?? "").Trim(), (b ?? "").Trim(), System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) == 0;
+    }
+
+    /// <summary>Lo escrito en el campo, o null si quedo vacio.</summary>
+    private static string Escrito(TextBox t)
+    {
+        string v = (t.Text ?? "").Trim();
+        return v == "" ? null : v;
+    }
+
+    private int IdTipo(string texto)
+    {
+        if (texto == null) return 0;
+        ActivoTipo t = TiposActivo().Find(x => MismoTexto(x.ati_nombre, texto));
+        return t != null ? t.ati_id : 0;
+    }
+
+    /// <summary>El modelo escrito, entre los de ese tipo y esa marca (un modelo sin marca sirve con cualquiera).</summary>
+    private ActivoModelo ModeloEscrito(int tipo, string texto, string fabricante)
+    {
+        if (tipo <= 0 || texto == null) return null;
+        return ModelosActivo().Find(m => m.amo_activo_tipo == tipo
+            && (MismoTexto(m.amo_nombre, texto) || MismoTexto(m.etiqueta, texto))
+            && (fabricante == null || string.IsNullOrEmpty(m.amo_fabricante) || MismoTexto(m.amo_fabricante, fabricante)));
+    }
+
+    /// <summary>
+    /// Lo que ofrecen los combos del asistente, como objeto JS. El
+    /// modelo lleva su tipo y su marca para filtrarse en el navegador.
+    /// </summary>
+    public string CatalogoActivoJson()
+    {
+        List<object> tipos = new List<object>(), modelos = new List<object>();
+        List<string> marcas = new List<string>();
+        try
+        {
+            foreach (ActivoTipo t in TiposActivo())
+                tipos.Add(new Dictionary<string, object> { { "id", t.ati_id }, { "n", t.ati_nombre } });
+            foreach (ActivoModelo m in ModelosActivo())
+                modelos.Add(new Dictionary<string, object> { { "id", m.amo_id }, { "n", m.amo_nombre }, { "t", m.amo_activo_tipo }, { "f", m.amo_fabricante ?? "" } });
+            foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
+                if (!string.IsNullOrEmpty(f.nombre)) marcas.Add(f.nombre);
+        }
+        catch (Exception) { }
+
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d["tipos"] = tipos; d["modelos"] = modelos; d["marcas"] = marcas;
+        foreach (string k in new[] { "estados", "criticidades", "plantas", "areas", "centros", "padres", "anios" })
+            d[k] = Lista(k).ConvertAll(o => (object)new Dictionary<string, object> { { "id", o.id }, { "n", o.n } });
+        /* Va dentro de un <script>: "</" se corta (igual que OpcionesCombosJson). */
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(d).Replace("</", "<\\/");
     }
 
     private List<ComponenteTipo> _tiposComp;
@@ -861,62 +835,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         }
     }
 
-    // Al cambiar el tipo, el postback recarga y CargarModelos ofrece solo los
-    // modelos de ese tipo.
-    protected void cboTipo_SelectedIndexChanged(object sender, EventArgs e) { }
-
-    // Al cambiar el fabricante, el PreRender vuelve a armar los modelos de ese tipo y esa marca.
-    protected void cboFabricante_Changed(object sender, EventArgs e) { }
-
-    // Al elegir un modelo, se hereda su fabricante (el modelo manda la marca).
-    protected void cboModelo_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        int idModelo;
-        if (int.TryParse(cboModelo.SelectedValue, out idModelo) && idModelo > 0)
-        {
-            ActivoModelo m = new ActivoModeloController().GetModelo(idModelo);
-            if (m != null && !string.IsNullOrEmpty(m.amo_fabricante))
-                cboFabricante.Text = m.amo_fabricante;
-        }
-    }
-
-    /// <summary>
-    /// Llena el combo de modelos con los del TIPO elegido (más los globales),
-    /// preservando la selección entre postbacks. Sin tipo, el combo va vacío.
-    /// </summary>
-    protected void CargarModelos()
-    {
-        string sel = string.IsNullOrEmpty(_modeloEditar) ? cboModelo.SelectedValue : _modeloEditar;
-        string escrito = (cboModelo.Text ?? "").Trim();   // un modelo nuevo escrito a mano no se pierde
-
-        cboModelo.Items.Clear();
-        cboModelo.Items.Add(new RadComboBoxItem("Sin modelo", ""));
-        cboModelo.AppendDataBoundItems = true;
-
-        int tipo;
-        if (int.TryParse(cboTipo.SelectedValue, out tipo) && tipo > 0)
-        {
-            List<ActivoModelo> l = new ActivoModeloController().GetModelos(new ActivoModelo
-            { filtro_cliente = SitioBase.Session.ClienteId(), filtro_activo_tipo = tipo, filtro_habilitado = true });
-            /* Del tipo Y del fabricante escrito (bloque 342): con "Grundfos"
-               no se ofrecen modelos de Pedrollo. Un modelo sin marca se ofrece
-               siempre. */
-            string fab = (cboFabricante.Text ?? "").Trim();
-            if (fab == cboFabricante.EmptyMessage) fab = "";
-            if (l != null)
-                foreach (ActivoModelo m in l)
-                    if (fab == "" || string.IsNullOrEmpty(m.amo_fabricante)
-                        || string.Compare(m.amo_fabricante.Trim(), fab, System.Globalization.CultureInfo.InvariantCulture,
-                               System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) == 0)
-                        cboModelo.Items.Add(new RadComboBoxItem(m.etiqueta, m.amo_id.ToString()));
-        }
-
-        RadComboBoxItem it = cboModelo.FindItemByValue(sel);
-        if (it != null) it.Selected = true;
-        else if (escrito != "" && escrito != "Sin modelo" && escrito != cboModelo.EmptyMessage)
-            cboModelo.Text = escrito;
-    }
-
     protected void CargarDatos()
     {
         if (IsPostBack && !_activoNuevo) return;
@@ -931,20 +849,27 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo", entidad.act_codigo);
             txtNombre.Text = entidad.act_nombre;
 
-            SeleccionarCombo(cboTipo, entidad.act_activo_tipo);
-            SeleccionarCombo(cboEstado, entidad.act_activo_estado);
-            SeleccionarCombo(cboCriticidad, entidad.act_criticidad_nivel);
-            SeleccionarCombo(cboPlanta, entidad.act_cliente_instalacion);
+            ActivoTipo tipo = TiposActivo().Find(x => x.ati_id == entidad.act_activo_tipo)
+                              ?? new ActivoTipoController().GetActivoTipo(entidad.act_activo_tipo);
+            txtTipo.Text = tipo.ati_nombre;
+            Fijar(txtEstado, hdnEstado, "estados", entidad.act_activo_estado);
+            Fijar(txtCriticidad, hdnCriticidad, "criticidades", entidad.act_criticidad_nivel);
+            Fijar(txtPlanta, hdnPlanta, "plantas", entidad.act_cliente_instalacion);
 
-            if (entidad.act_instalacion_area != null) SeleccionarCombo(cboArea, entidad.act_instalacion_area.Value);
-            if (entidad.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, entidad.act_centro_costo.Value);
-            if (entidad.act_activo_padre != null) SeleccionarCombo(cboPadre, entidad.act_activo_padre.Value);
-            // El modelo lo selecciona CargarModelos (corre después y ya conoce el tipo).
-            if (entidad.act_activo_modelo != null) _modeloEditar = entidad.act_activo_modelo.Value.ToString();
+            if (entidad.act_instalacion_area != null) Fijar(txtArea, hdnArea, "areas", entidad.act_instalacion_area.Value);
+            if (entidad.act_centro_costo != null) Fijar(txtCentroCosto, hdnCentroCosto, "centros", entidad.act_centro_costo.Value);
+            if (entidad.act_activo_padre != null) Fijar(txtPadre, hdnPadre, "padres", entidad.act_activo_padre.Value);
+            txtModelo.Text = "";
+            if (entidad.act_activo_modelo != null)
+            {
+                ActivoModelo modelo = ModelosActivo().Find(x => x.amo_id == entidad.act_activo_modelo.Value)
+                                      ?? new ActivoModeloController().GetModelo(entidad.act_activo_modelo.Value);
+                if (modelo != null) txtModelo.Text = modelo.amo_nombre;
+            }
 
             txtSerie.Text = entidad.act_numero_serie;
-            cboFabricante.Text = entidad.act_fabricante;
-            if (entidad.act_anio_fabricacion != null) SeleccionarCombo(cboAnio, entidad.act_anio_fabricacion.Value);
+            txtFabricante.Text = entidad.act_fabricante;
+            if (entidad.act_anio_fabricacion != null) Fijar(txtAnio, hdnAnio, "anios", entidad.act_anio_fabricacion.Value);
             calPuestaMarcha.Value = entidad.act_fecha_puesta_marcha;
             txtDescripcion.Text = entidad.act_descripcion;
 
@@ -982,15 +907,13 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             /* Lo que casi siempre es igual ya viene puesto: un equipo que se
                da de alta normalmente esta operativo, y una empresa con una
                sola planta no tiene que elegirla. Todo se puede cambiar. */
-            if (string.IsNullOrEmpty(cboEstado.SelectedValue))
-                foreach (RadComboBoxItem it in cboEstado.Items)
-                    if (it.Value != "" && it.Text.IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0)
-                    { SeleccionarCombo(cboEstado, int.Parse(it.Value)); break; }
-            if (string.IsNullOrEmpty(cboPlanta.SelectedValue) && cboPlanta.Items.Count == 2)
+            if (string.IsNullOrEmpty(hdnEstado.Value))
             {
-                int planta;
-                if (int.TryParse(cboPlanta.Items[1].Value, out planta)) SeleccionarCombo(cboPlanta, planta);
+                Opcion operativo = Lista("estados").Find(x => (x.n ?? "").IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (operativo != null) Fijar(txtEstado, hdnEstado, "estados", operativo.id);
             }
+            if (string.IsNullOrEmpty(hdnPlanta.Value) && Lista("plantas").Count == 1)
+                Fijar(txtPlanta, hdnPlanta, "plantas", Lista("plantas")[0].id);
 
             /* Subactivo desde el asistente: queda colgado de su maquina
                principal y hereda donde esta. Todo se puede cambiar. */
@@ -999,21 +922,16 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 Activo p = new ActivoController().GetActivo(PadreFijo);
                 if (p != null && p.act_cliente == SitioBase.Session.ClienteId())
                 {
-                    SeleccionarCombo(cboPadre, p.act_id);
-                    SeleccionarCombo(cboPlanta, p.act_cliente_instalacion);
-                    if (p.act_instalacion_area != null) SeleccionarCombo(cboArea, p.act_instalacion_area.Value);
-                    if (p.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, p.act_centro_costo.Value);
-                    SeleccionarCombo(cboCriticidad, p.act_criticidad_nivel);
+                    Fijar(txtPadre, hdnPadre, "padres", p.act_id);
+                    Fijar(txtPlanta, hdnPlanta, "plantas", p.act_cliente_instalacion);
+                    if (p.act_instalacion_area != null) Fijar(txtArea, hdnArea, "areas", p.act_instalacion_area.Value);
+                    if (p.act_centro_costo != null) Fijar(txtCentroCosto, hdnCentroCosto, "centros", p.act_centro_costo.Value);
+                    Fijar(txtCriticidad, hdnCriticidad, "criticidades", p.act_criticidad_nivel);
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Selecciona un valor en un combo solo si la opción existe. Evita la
-    /// excepción de RadComboBox cuando el id ya no está en la lista (por
-    /// ejemplo, un tipo deshabilitado después de haberse asignado).
-    /// </summary>
     /// <summary>Un dato de la barra de abajo: quien y cuando.</summary>
     private string Pie(string icono, string etiqueta, string usuario, DateTime? fecha)
     {
@@ -1026,17 +944,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                "</span></span>";
     }
 
-    private void SeleccionarCombo(RadComboBox2 combo, int id)
-    {
-        RadComboBoxItem item = combo.FindItemByValue(id.ToString());
-        if (item != null)
-        {
-            combo.ClearSelection();
-            item.Selected = true;
-            if (combo.AllowCustomText) combo.Text = item.Text;   // si no, se ve el mensaje vacio
-        }
-    }
-
     protected void Bloqueo()
     {
         bool puedeEditar = Token.Puede("CREAR EDITAR ACTIVOS");
@@ -1047,19 +954,19 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             txtCodigo.ReadOnly = ActivoId > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
-        cboFabricante.ReadOnly = !puedeEditar;
-        cboAnio.ReadOnly = !puedeEditar;
+        txtFabricante.ReadOnly = !puedeEditar;
+        txtAnio.ReadOnly = !puedeEditar;
         calPuestaMarcha.Enabled = puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
 
-        cboTipo.ReadOnly = !puedeEditar;
-        cboModelo.ReadOnly = !puedeEditar;
-        cboEstado.ReadOnly = !puedeEditar;
-        cboCriticidad.ReadOnly = !puedeEditar;
-        cboPlanta.ReadOnly = !puedeEditar;
-        cboArea.ReadOnly = !puedeEditar;
-        cboCentroCosto.ReadOnly = !puedeEditar;
-        cboPadre.ReadOnly = !puedeEditar;
+        txtTipo.ReadOnly = !puedeEditar;
+        txtModelo.ReadOnly = !puedeEditar;
+        txtEstado.ReadOnly = !puedeEditar;
+        txtCriticidad.ReadOnly = !puedeEditar;
+        txtPlanta.ReadOnly = !puedeEditar;
+        txtArea.ReadOnly = !puedeEditar;
+        txtCentroCosto.ReadOnly = !puedeEditar;
+        txtPadre.ReadOnly = !puedeEditar;
 
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
@@ -1084,18 +991,26 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         {
             /* Tipo y modelo con texto libre (bloque 342): lo que no existe se
                crea aqui, en una llamada, antes de guardar el activo. */
-            int tipoId = ValorCombo(cboTipo), modeloId = ValorCombo(cboModelo);
-            string tipoTxt = TextoCombo(cboTipo), modeloTxt = TextoCombo(cboModelo);
-            if (tipoId == 0 && tipoTxt == null)
+            string tipoTxt = Escrito(txtTipo), modeloTxt = Escrito(txtModelo), fabricante = Escrito(txtFabricante);
+            if (tipoTxt == null)
                 throw new Exception("Elija o escriba el tipo de activo.");
+            int tipoId = IdTipo(tipoTxt);
+            ActivoModelo modeloElegido = ModeloEscrito(tipoId, modeloTxt, fabricante);
+            int modeloId = modeloElegido != null ? modeloElegido.amo_id : 0;
+            // El modelo manda la marca: si no se escribio, se hereda la suya.
+            if (fabricante == null && modeloElegido != null && !string.IsNullOrEmpty(modeloElegido.amo_fabricante))
+                fabricante = modeloElegido.amo_fabricante.Trim();
             string errCat = new ActivoTipoController().ResolverCatalogo(ref tipoId, tipoTxt, ref modeloId,
-                modeloId == 0 ? modeloTxt : null, string.IsNullOrWhiteSpace(cboFabricante.Text) ? null : cboFabricante.Text.Trim());
+                modeloId == 0 ? modeloTxt : null, fabricante);
             if (errCat != null) throw new Exception(errCat);
-            if (string.IsNullOrEmpty(cboEstado.SelectedValue))
+            int estadoId = Elegido(hdnEstado, "estados"), criticidadId = Elegido(hdnCriticidad, "criticidades");
+            int plantaId = Elegido(hdnPlanta, "plantas"), areaId = Elegido(hdnArea, "areas");
+            int centroId = Elegido(hdnCentroCosto, "centros"), padreId = Elegido(hdnPadre, "padres"), anio = Elegido(hdnAnio, "anios");
+            if (estadoId == 0)
                 throw new Exception("Debe elegir el estado del activo.");
-            if (string.IsNullOrEmpty(cboCriticidad.SelectedValue))
+            if (criticidadId == 0)
                 throw new Exception("Debe elegir la criticidad del activo.");
-            if (string.IsNullOrEmpty(cboPlanta.SelectedValue))
+            if (plantaId == 0)
                 throw new Exception("Debe elegir la planta a la que pertenece el activo.");
 
             Activo entidad = new Activo();
@@ -1103,10 +1018,10 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
             entidad.act_id = ActivoId;
             entidad.act_cliente = SitioBase.Session.ClienteId();
-            entidad.act_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);
+            entidad.act_cliente_instalacion = plantaId;
             entidad.act_activo_tipo = tipoId;
-            entidad.act_activo_estado = int.Parse(cboEstado.SelectedValue);
-            entidad.act_criticidad_nivel = int.Parse(cboCriticidad.SelectedValue);
+            entidad.act_activo_estado = estadoId;
+            entidad.act_criticidad_nivel = criticidadId;
             /* ---- CODIGO AUTOMATICO ----
                Al crear se manda AUTO y el SP lo genera como ACT-<id>: el
                codigo depende del ID, y el ID no existe hasta despues del
@@ -1125,19 +1040,15 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             entidad.act_habilitado = rdbSi.Checked;
 
             if (modeloId > 0) entidad.act_activo_modelo = modeloId;
-            if (!string.IsNullOrEmpty(cboArea.SelectedValue))
-                entidad.act_instalacion_area = int.Parse(cboArea.SelectedValue);
-            if (!string.IsNullOrEmpty(cboCentroCosto.SelectedValue))
-                entidad.act_centro_costo = int.Parse(cboCentroCosto.SelectedValue);
-            if (!string.IsNullOrEmpty(cboPadre.SelectedValue))
-                entidad.act_activo_padre = int.Parse(cboPadre.SelectedValue);
+            if (areaId > 0) entidad.act_instalacion_area = areaId;
+            if (centroId > 0) entidad.act_centro_costo = centroId;
+            if (padreId > 0) entidad.act_activo_padre = padreId;
 
             if (!string.IsNullOrEmpty(txtSerie.Text.Trim()))
                 entidad.act_numero_serie = txtSerie.Text.Trim();
-            if (!string.IsNullOrEmpty(cboFabricante.Text.Trim()))
-                entidad.act_fabricante = cboFabricante.Text.Trim();
-            if (!string.IsNullOrEmpty(cboAnio.SelectedValue))
-                entidad.act_anio_fabricacion = int.Parse(cboAnio.SelectedValue);
+            if (fabricante != null)
+                entidad.act_fabricante = fabricante;
+            if (anio > 0) entidad.act_anio_fabricacion = anio;
 
             // El calendario ya entrega un DateTime? válido; solo se rechaza
             // una fecha futura, que para una puesta en marcha no tiene sentido.
