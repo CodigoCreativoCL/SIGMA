@@ -26,6 +26,9 @@
     var host = null;
     var sel = null;          // {rep, b, u}: el repuesto del drawer
     var forms = { bodega: null, ubic: null, editar: null };   // formularios inline abiertos
+    var filtro = 'todos';    // todos | bajo | sin
+    var abiertos = {};       // niveles desplegados: 'u|n' -> true
+    var selRack = null;      // {b, u}: el rack del drawer
     var drag = null;
     var cargando = false;
     var posBy = {}, saldos = [];
@@ -93,9 +96,13 @@
     function puedeMover() { return !!(M && M.permisos && M.permisos.ajuste); }
     function puedeCrear() { return !!(M && M.permisos && M.permisos.bodegas); }
     function coincide(s) {
+        if (filtro === 'bajo' && tono(s) !== 'bajo') return false;
+        if (filtro === 'sin' && (!s.u || nivelDe(s) > 0)) return false;
         if (!OPT.q) return true;
         return norm([s.c, s.n, s.fab, s.mod, s.tn].join(' ')).indexOf(norm(OPT.q)) >= 0;
     }
+    function nivelDe(s) { var p = posBy[s.u + '_' + s.id]; return p ? p.n : 0; }
+    function filtrando() { return !!OPT.q || filtro !== 'todos'; }
 
     /* ------------------------------------------------------------ dibujo */
     function chip(s) {
@@ -106,25 +113,46 @@
             + '<span class="rm-n">' + esc(s.n) + '</span><b>' + num(s.q) + '<small>' + esc(s.un) + '</small></b></button>';
     }
 
+    function caja(s) {
+        var on = sel && sel.rep === s.id && sel.u === s.u && sel.b === s.b;
+        return '<button type="button" class="rm-caja es-' + tono(s) + (coincide(s) ? '' : ' is-dim') + (on ? ' is-sel' : '') + '"'
+            + (puedeMover() ? ' draggable="true"' : '') + ' data-rep="' + s.id + '" data-b="' + s.b + '" data-u="' + s.u + '" title="' + esc(s.n) + ' · ' + num(s.q) + ' ' + esc(s.un) + '">'
+            + (s.foto ? '<img src="' + esc(s.foto) + '" alt="" loading="lazy">' : svg(IC.caja, 14)) + '</button>';
+    }
+
     function rack(b, u) {
         var items = saldos.filter(function (s) { return s.b === b.id && s.u === u.id; });
         var porN = {}, maxN = 4;
         items.forEach(function (s) {
-            var p = posBy[u.id + '_' + s.id], n = p ? p.n : 0;
+            var n = nivelDe(s);
             if (n > maxN) maxN = n;
             (porN[n] = porN[n] || []).push(s);
         });
-        var h = '';
-        for (var n = maxN; n >= 1; n--)
-            h += '<div class="rm-niv" data-b="' + b.id + '" data-u="' + u.id + '" data-n="' + n + '"><span class="rm-niv-l">N' + n + '</span><div class="rm-niv-c">' + (porN[n] || []).map(chip).join('') + '</div></div>';
-        h += '<div class="rm-niv es-sin" data-b="' + b.id + '" data-u="' + u.id + '" data-n="0"><span class="rm-niv-l">Sin<br>nivel</span><div class="rm-niv-c">' + (porN[0] || []).map(chip).join('') + '</div></div>';
+        var visibles = items.filter(coincide);
+        if (filtrando() && !visibles.length) return '';
         var alertas = items.filter(function (s) { return tono(s) === 'bajo'; }).length;
-        return '<div class="rm-rack' + (alertas ? ' es-alerta' : '') + (items.length ? '' : ' es-vacio') + '">'
-            + '<div class="rm-rack-h">' + svg(IC.rack, 15) + '<b>' + esc(u.codigo) + '</b><span title="Repuestos en esta ubicación">' + items.length + '</span>'
+        var MAX = 8;
+        var fila = function (n) {
+            var l = porN[n] || [], hay = l.filter(coincide).length, k = u.id + '|' + n, abierto = !!abiertos[k];
+            var cajas = l.slice().sort(function (a, c) { return (tono(c) === 'bajo') - (tono(a) === 'bajo') || (coincide(c) ? 1 : 0) - (coincide(a) ? 1 : 0); });
+            var h = '<div class="rm-niv' + (n === 0 ? ' es-sin' : '') + (abierto ? ' es-abierto' : '') + (l.length ? '' : ' es-nada') + '" data-b="' + b.id + '" data-u="' + u.id + '" data-n="' + n + '">'
+                + '<div class="rm-niv-f"><span class="rm-niv-l">' + (n === 0 ? 'Sin nivel' : 'Nivel ' + n) + '</span>'
+                + '<div class="rm-cajas">' + (l.length ? cajas.slice(0, abierto ? 0 : MAX).map(caja).join('') : '<em>Suelta aquí</em>') + '</div>'
+                + (l.length > MAX || abierto ? '<button type="button" class="rm-ver" data-ver-niv="' + k + '" aria-expanded="' + abierto + '">' + (abierto ? 'Ocultar' : '+' + (l.length - MAX)) + '</button>' : '')
+                + (l.length ? '<b class="rm-niv-n" title="Repuestos en este nivel">' + l.length + '</b>' : '') + '</div>';
+            if (abierto) h += '<div class="rm-lista">' + cajas.map(chip).join('') + '</div>';
+            return h + '</div>';
+        };
+        var h = '<div class="rm-rack' + (alertas ? ' es-alerta' : '') + (items.length ? '' : ' es-vacio') + '">'
+            + '<div class="rm-rack-h" data-rack="' + b.id + '|' + u.id + '" role="button" tabindex="0" title="Ver todo lo que hay en esta ubicación">' + svg(IC.rack, 15) + '<b>' + esc(u.codigo) + '</b>'
+            + (alertas ? '<i class="rm-alerta" title="' + alertas + ' bajo el mínimo">' + alertas + '</i>' : '') + '<span title="Repuestos en esta ubicación">' + items.length + '</span>'
             + (puedeCrear() && !items.length ? '<button type="button" class="rm-ib" data-delubic="' + u.id + '" title="Eliminar la ubicación vacía">' + svg(IC.basura, 14) + '</button>' : '')
             + '</div>'
             + (u.nombre && u.nombre !== u.codigo ? '<small class="rm-rack-n">' + esc(u.nombre) + '</small>' : '')
-            + h + '</div>';
+            + '<div class="rm-elev">';
+        for (var n = maxN; n >= 1; n--) h += fila(n);
+        h += fila(0) + '</div></div>';
+        return h;
     }
 
     function formUbic(b) {
@@ -160,8 +188,9 @@
         if (forms.ubic === b.id) h += formUbic(b);
         if (sinUbicar.length)
             h += '<div class="rm-tray"><span>' + svg(IC.alerta, 14) + 'Sin ubicar · arrástralos a un rack</span><div class="rm-niv-c">' + sinUbicar.map(chip).join('') + '</div></div>';
-        h += '<div class="rm-racks">' + ((b.ubicaciones || []).map(function (u) { return rack(b, u); }).join('')
-            || '<div class="rm-vacio-b">' + (puedeCrear() ? 'Esta bodega aún no tiene ubicaciones. Crea la primera con «+ Ubicación».' : 'Esta bodega aún no tiene ubicaciones.') + '</div>') + '</div></article>';
+        var racksHtml = (b.ubicaciones || []).map(function (u) { return rack(b, u); }).join('');
+        h += '<div class="rm-racks">' + (racksHtml
+            || '<div class="rm-vacio-b">' + (filtrando() ? 'Nada coincide con el filtro en esta bodega.' : (puedeCrear() ? 'Esta bodega aún no tiene ubicaciones. Crea la primera con «+ Ubicación».' : 'Esta bodega aún no tiene ubicaciones.')) + '</div>') + '</div></article>';
         return h;
     }
 
@@ -203,19 +232,54 @@
             + '<button type="button" class="rm-bt es-pri" data-ficha-dr="' + s.id + '">Abrir ficha' + svg(IC.flecha, 15) + '</button></footer></aside>';
     }
 
+    function drawerRack() {
+        var b = bodega(selRack.b), u = ubic(b, selRack.u); if (!b || !u) return '';
+        var items = saldos.filter(function (s) { return s.b === b.id && s.u === u.id; });
+        var por = {};
+        items.forEach(function (s) { var n = nivelDe(s); (por[n] = por[n] || []).push(s); });
+        var niveles = Object.keys(por).map(Number).sort(function (a, c) { return (c || -1) - (a || -1); });
+        var tot = items.reduce(function (a, s) { return a + s.q; }, 0);
+        var bajos = items.filter(function (s) { return tono(s) === 'bajo'; }).length;
+        var h = '<div class="rm-scrim" data-cerrar-dr="1"></div><aside class="rm-drawer" role="dialog" aria-label="Detalle de la ubicación">'
+            + '<header><span class="rm-dr-foto">' + svg(IC.rack, 28) + '</span><div><small>' + esc(b.planta) + ' › ' + esc(b.nombre) + '</small><h3>' + esc(u.codigo) + (u.nombre && u.nombre !== u.codigo ? ' · ' + esc(u.nombre) : '') + '</h3>'
+            + '<span class="rm-pill ' + (bajos ? 'es-bajo' : 'es-ok') + '"><i></i>' + items.length + ' repuestos' + (bajos ? ' · ' + bajos + ' bajo el mínimo' : '') + '</span></div>'
+            + '<button type="button" class="rm-ib" data-cerrar-dr="1" aria-label="Cerrar">' + svg(IC.x, 18) + '</button></header>'
+            + '<section><h4>Resumen</h4><div class="rm-dl"><div><span>Bodega</span><b>' + esc(b.nombre) + '</b></div><div><span>Ubicación</span><b>' + esc(u.codigo) + '</b></div>'
+            + '<div><span>Repuestos</span><b>' + items.length + '</b></div><div><span>Carga por nivel</span><b>' + (u.carga != null ? num(u.carga) + ' kg' : '—') + '</b></div></div></section>';
+        if (!niveles.length) h += '<section><p class="rm-ayuda">Esta ubicación está vacía. Arrastra repuestos aquí desde otro rack.</p></section>';
+        niveles.forEach(function (n) {
+            h += '<section><h4>' + (n ? 'Nivel ' + n : 'Sin nivel asignado') + ' <span>(' + por[n].length + ')</span></h4><div class="rm-lista es-fija">'
+                + por[n].sort(function (a, c) { return (tono(c) === 'bajo') - (tono(a) === 'bajo'); }).map(chip).join('') + '</div></section>';
+        });
+        return h + '<footer><button type="button" class="rm-bt" data-etiqueta-ub="' + u.id + '">' + svg(IC.qr, 15) + 'Etiqueta de la ubicación</button>'
+            + '<button type="button" class="rm-bt es-pri" data-cerrar-dr="1">Cerrar</button></footer></aside>';
+    }
+
     function dibujar() {
         if (!host || !M) return;
         var plOps = (M.plantas || []).map(function (p) { return '<option value="' + p.id + '"' + (p.id === planta ? ' selected' : '') + '>' + esc(p.nombre) + '</option>'; }).join('');
         var bods = bodegasDePlanta();
-        host.innerHTML = '<div class="rm">'
+        var enPlanta = saldos.filter(function (x) { var bb = bodega(x.b); return bb && bb.plantaId === planta; });
+        var nUbic = bods.reduce(function (a, bb) { return a + (bb.ubicaciones || []).length; }, 0);
+        var nBajo = enPlanta.filter(function (x) { return tono(x) === 'bajo'; }).length;
+        var nSinN = enPlanta.filter(function (x) { return x.u && !nivelDe(x); }).length;
+        var nSinU = enPlanta.filter(function (x) { return !x.u; }).length;
+        var resumen = '<div class="rm-resumen"><div><b>' + bods.length + '</b><span>bodegas</span></div><div><b>' + nUbic + '</b><span>ubicaciones</span></div>'
+            + '<div><b>' + enPlanta.length + '</b><span>repuestos con stock</span></div><div class="' + (nBajo ? 'es-bajo' : '') + '"><b>' + nBajo + '</b><span>bajo el mínimo</span></div>'
+            + '<div class="' + (nSinN ? 'es-ojo' : '') + '"><b>' + nSinN + '</b><span>sin nivel asignado</span></div><div class="' + (nSinU ? 'es-ojo' : '') + '"><b>' + nSinU + '</b><span>sin ubicar</span></div></div>';
+        var chipsF = '<div class="rm-filtros" role="group" aria-label="Filtrar el mapa">'
+            + [['todos', 'Todo', ''], ['bajo', 'Bajo el mínimo', nBajo], ['sin', 'Sin nivel', nSinN]].map(function (f) {
+                return '<button type="button" data-filtro="' + f[0] + '" aria-pressed="' + (filtro === f[0]) + '">' + f[1] + (f[2] !== '' ? ' <b>' + f[2] + '</b>' : '') + '</button>';
+            }).join('') + '</div>';
+        host.innerHTML = '<div class="rm">' + resumen
             + '<div class="rm-top"><div class="rm-top-l">' + ((M.plantas || []).length > 1 ? '<label class="rm-sel">Planta<select id="rmPlanta">' + plOps + '</select></label>' : '<span class="rm-planta">' + svg('<path d="M3 21V9l6-4v4l6-4v4l6-4v16z"/>', 17) + esc(((M.plantas || [])[0] || {}).nombre || '') + '</span>')
-            + '<span class="rm-leyenda"><i class="es-ok"></i>En orden<i class="es-bajo"></i>Bajo el mínimo<i class="es-alto"></i>Sobre el máximo</span></div>'
+            + chipsF + '<span class="rm-leyenda"><i class="es-ok"></i>En orden<i class="es-bajo"></i>Bajo el mínimo<i class="es-alto"></i>Sobre el máximo</span></div>'
             + (puedeCrear() ? '<button type="button" class="rm-bt es-pri" data-nueva-bod="1">' + svg(IC.mas, 15) + 'Nueva bodega</button>' : '') + '</div>'
             + (forms.bodega ? formBodega(null) : '')
             + (puedeMover() ? '<p class="rm-ayuda es-top">' + svg(IC.flecha, 14) + 'Arrastra un repuesto a otro rack o nivel para reubicarlo. Haz clic para ver su detalle.</p>' : '')
             + (bods.length ? '<div class="rm-bods">' + bods.map(tarjetaBodega).join('') + '</div>'
                 : '<div class="rm-vacio">' + svg(IC.rack, 34) + '<b>No hay bodegas en esta planta</b><span>' + (puedeCrear() ? 'Crea la primera con «Nueva bodega».' : 'Pide a un administrador que cree una.') + '</span></div>')
-            + '</div>' + drawer();
+            + '</div>' + (selRack ? drawerRack() : drawer());
     }
 
     /* ------------------------------------------------------------ acciones */
@@ -291,7 +355,15 @@
         host.addEventListener('click', async function (e) {
             var t = e.target; if (!t.closest) return;
             var c;
-            if ((c = t.closest('[data-cerrar-dr]'))) { sel = null; dibujar(); return; }
+            if ((c = t.closest('[data-cerrar-dr]'))) { sel = null; selRack = null; dibujar(); return; }
+            if ((c = t.closest('[data-filtro]'))) { filtro = c.dataset.filtro; dibujar(); return; }
+            if ((c = t.closest('[data-ver-niv]'))) { var k = c.dataset.verNiv; abiertos[k] = !abiertos[k]; dibujar(); return; }
+            if ((c = t.closest('[data-rack]')) && !t.closest('[data-delubic]')) { var a0 = c.dataset.rack.split('|'); selRack = { b: +a0[0], u: +a0[1] }; sel = null; dibujar(); return; }
+            if ((c = t.closest('[data-etiqueta-ub]'))) {
+                try { var ru = await ws('UrlEtiquetas', { origen: 'UBICACION', ids: c.dataset.etiquetaUb, bodega: 0, simbolo: '' }); window.open(ru.url, 'sigmaEtiquetas', 'width=980,height=760,resizable=yes,scrollbars=yes'); }
+                catch (x) { aviso(x.message, true); }
+                return;
+            }
             if ((c = t.closest('[data-nueva-bod]'))) { forms.bodega = true; forms.editar = null; forms.ubic = null; dibujar(); return; }
             if ((c = t.closest('[data-editar-bod]'))) { forms.editar = parseInt(c.dataset.editarBod, 10); forms.bodega = null; forms.ubic = null; dibujar(); return; }
             if ((c = t.closest('[data-nueva-ubic]'))) { forms.ubic = parseInt(c.dataset.nuevaUbic, 10); forms.bodega = null; forms.editar = null; dibujar(); return; }
@@ -314,16 +386,19 @@
                 catch (x) { aviso(x.message, true); }
                 return;
             }
-            if ((c = t.closest('.rm-chip'))) { sel = { rep: +c.dataset.rep, b: +c.dataset.b, u: +c.dataset.u }; dibujar(); return; }
+            if ((c = t.closest('.rm-chip,.rm-caja'))) { sel = { rep: +c.dataset.rep, b: +c.dataset.b, u: +c.dataset.u }; selRack = null; dibujar(); return; }
         });
         host.addEventListener('change', function (e) {
             if (e.target.id === 'rmPlanta') { planta = parseInt(e.target.value, 10); forms = { bodega: null, ubic: null, editar: null }; sel = null; recargar(); }
         });
-        host.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sel) { sel = null; dibujar(); } });
+        host.addEventListener('keydown', function (e) {
+            if (e.key === 'Escape' && (sel || selRack)) { sel = null; selRack = null; dibujar(); }
+            else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches && e.target.matches('[data-rack]')) { e.preventDefault(); e.target.click(); }
+        });
 
         /* Arrastrar y soltar */
         host.addEventListener('dragstart', function (e) {
-            var c = e.target.closest && e.target.closest('.rm-chip'); if (!c) return;
+            var c = e.target.closest && e.target.closest('.rm-chip,.rm-caja'); if (!c) return;
             var s = saldos.filter(function (x) { return x.id === +c.dataset.rep && x.b === +c.dataset.b && x.u === +c.dataset.u; })[0];
             var p = s ? posBy[s.u + '_' + s.id] : null;
             drag = { rep: +c.dataset.rep, b: +c.dataset.b, u: +c.dataset.u, n: p ? p.n : 0 };
@@ -351,7 +426,7 @@
             if (+z.dataset.b !== d.b) { aviso('Cambiar de bodega es un traslado: regístralo en Movimientos.', true); return; }
             mover(d.rep, d.b, d.u, +z.dataset.u, +z.dataset.n);
         });
-        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sel && host.isConnected) { sel = null; dibujar(); } });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && (sel || selRack) && host.isConnected) { sel = null; selRack = null; dibujar(); } });
     }
 
     window.RcMapa = {

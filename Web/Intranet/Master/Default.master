@@ -63,7 +63,7 @@
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
-    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=7" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=8" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=6" rel="stylesheet" />
@@ -253,7 +253,7 @@
                 <div class="logo-box">
                     <a href='<%=ResolveUrl("~/Default.aspx") %>' class="logo logo-light" title="SIGMA">
                         <span class="logo-lg">
-                            <asp:Image ID="imgLogo" runat="server" AlternateText="SIGMA" ImageUrl="~/Imagen/sigma-logo-primary-dark.svg" />
+                            <asp:Image ID="imgLogo" runat="server" AlternateText="SIGMA" ImageUrl="~/Imagen/sigma-logo-horizontal-dark.svg" />
                         </span>
                         <span class="logo-sm">
                             <asp:Image ID="imgLogoSm" runat="server" AlternateText="SIGMA" ImageUrl="~/Imagen/sigma-isotipo-white.svg" />
