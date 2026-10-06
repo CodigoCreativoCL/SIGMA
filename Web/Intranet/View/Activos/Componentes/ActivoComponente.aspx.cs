@@ -84,7 +84,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         {
             System.Web.HttpContext ctx = System.Web.HttpContext.Current;
             int cliente = SitioBase.Session.ClienteId();
-            Token.Permisos();   // los permisos se leen una vez, en el hilo de la pagina
 
             var tActivos = EnParalelo(ctx, () => new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }));
             var tTipos = EnParalelo(ctx, () => new ComponenteTipoController().GetTipos(new ComponenteTipo { filtro_cliente = cliente, filtro_habilitado = true }));
@@ -102,6 +101,16 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                 tImg = EnParalelo(ctx, () => new ActivoComponenteImagenController().GetImagenId(Id, cliente));
                 tHist = EnParalelo(ctx, () => new ActivoComponenteController().GetHistorialEstado(Id, cliente));
             }
+            // el prefijo del codigo: queda en el cache del sitio (CodigoModulo)
+            var tPrefijo = EnParalelo(ctx, () => SitioBase.CodigoModulo.Prefijo("Activo_Componente"));
+
+            /* Mientras la primera tanda viaja, el hilo de la pagina lee los
+               permisos: es la consulta que despues usa la maestra para validar
+               la pagina (Token.ExigirPagina). Antes iba sola y en fila, antes
+               de lanzar la tanda. Se lee aca y no en una tarea porque se guarda
+               en HttpContext.Items, que no es seguro entre hilos; ningun
+               controller de la tanda consulta permisos. */
+            Token.Permisos();
 
             // segunda tanda: los posibles padres son del activo (el fijo, o el del componente)
             int activo = ActivoFijo;
@@ -111,7 +120,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                 : null;
 
             _activos = tActivos.Result; _tipos = tTipos.Result; _estados = tEstados.Result; _criticidades = tCrit.Result;
-            _posiciones = tPos.Result; _marcas = tMarcas.Result;
+            _posiciones = tPos.Result; _marcas = tMarcas.Result; tPrefijo.Wait();
             if (Id > 0) { _placa = tPlaca.Result; _imagen = tImg.Result; _historial = tHist.Result; }
             if (tPadres != null) { _padres = tPadres.Result; _padresDe = activo; }
             _precargado = true;

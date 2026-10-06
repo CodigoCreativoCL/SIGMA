@@ -1,0 +1,38 @@
+﻿/* ============================================================================
+   SIGMA · COMBO CON BÚSQUEDA (compartido) — va con Js/sigma-combo.js
+
+   El campo hereda el estilo de los inputs de cada pantalla (planta,
+   asistente, modales); aquí solo va lo propio del combo: la flecha, la marca
+   de «se va a crear» y la lista. Colores de la paleta SIGMA.
+   ========================================================================= */
+.sg-combo { position: relative; display: block; min-width: 0; }
+.sg-combo > input[type=text] { width: 100%; box-sizing: border-box; padding-right: 38px !important; }
+/* Lo que no existe y se creará al guardar: morado suave = selección. */
+.sg-combo > input[type=text].is-nuevo { border-color: #6732F4; background: #F2EFFF; }
+.sg-combo-btn { position: absolute; right: 3px; top: 50%; transform: translateY(-50%); width: 34px; height: 34px; display: grid; place-items: center;
+    border: 0; border-radius: 8px; background: transparent; color: #68738A; cursor: pointer; }
+.sg-combo-btn:hover { background: #F4F6FA; color: #17223B; }
+
+.sg-combo-lista { position: fixed; z-index: 100000; max-height: 264px; overflow: auto; margin: 0; padding: 6px; list-style: none; background: #fff;
+    border: 1px solid #E2E7F0; border-radius: 12px; box-shadow: 0 16px 40px rgba(23, 34, 59, .16); font-size: 14px; color: #17223B; text-align: left;
+    scrollbar-width: thin; scrollbar-color: rgba(23, 34, 59, .16) transparent; }
+.sg-combo-lista[hidden] { display: none; }
+.sg-combo-lista::-webkit-scrollbar { width: 6px; height: 6px; }
+.sg-combo-lista::-webkit-scrollbar-track { background: transparent; }
+.sg-combo-lista::-webkit-scrollbar-thumb { background: rgba(23, 34, 59, .14); border-radius: 6px; }
+.sg-combo-lista::-webkit-scrollbar-thumb:hover { background: rgba(23, 34, 59, .32); }
+.sg-combo-lista li { display: flex; align-items: center; gap: 8px; min-height: 38px; padding: 8px 10px; border-radius: 8px; cursor: pointer; overflow-wrap: anywhere; }
+.sg-combo-lista li.is-activo { background: #F2EFFF; }
+.sg-combo-lista mark { background: transparent; color: #6732F4; font-weight: 800; padding: 0; }
+.sg-combo-lista li.is-crear { color: #6732F4; font-weight: 800; border-top: 1px solid #E2E7F0; border-radius: 0 0 8px 8px; }
+.sg-combo-lista li.is-crear:first-child { border-top: 0; border-radius: 8px; }
+.sg-combo-lista li.is-vacio { color: #68738A; cursor: default; }
+
+/* opción con foto y línea secundaria (repuestos, activos) */
+.sg-combo-lista li.es-rico { gap: 10px; padding: 6px 8px; }
+.sg-combo-lista .cb-img { width: 36px; height: 36px; flex: none; border-radius: 9px; overflow: hidden; background: #F4F6FA; display: grid; place-items: center; }
+.sg-combo-lista .cb-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.sg-combo-lista .cb-img i { width: 14px; height: 14px; border-radius: 4px; border: 2px solid #CFD6E3; }
+.sg-combo-lista .cb-t { display: flex; flex-direction: column; min-width: 0; }
+.sg-combo-lista .cb-t b { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sg-combo-lista .cb-t small { font-size: 11.5px; color: #68738A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

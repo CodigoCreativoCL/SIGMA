@@ -3,7 +3,7 @@
 
    Lo comun a los formularios guiados: pasos (fpIr/fpSiguiente con hdnPaso),
    validacion amable (afRequerido/afRequeridoLibre + banda de lo que falta),
-   combo con texto libre (input[data-combo] contra AF_OPC), foto por fila y
+   combo con texto libre (SigmaCombo en modo libre contra AF_OPC), foto por fila y
    soltar archivos. Lo propio de cada ficha queda en su pagina.
 
    Antes de cargarlo, la pagina puede fijar var AF_PASOS (por defecto 4).
@@ -165,74 +165,21 @@ document.addEventListener('focusout', function (e) {
 
 /* ---- Combo con texto libre ----
    Una caja que se elige de la lista o se escribe: lo que no existe se crea
-   al guardar. Las opciones vienen del servidor en AF_OPC. */
+   al guardar. Es el combo compartido de SIGMA (Js/sigma-combo.js) en modo
+   libre: el input visible lleva el name, asi el servidor lee lo escrito
+   como siempre. Las opciones vienen del servidor en AF_OPC y se leen al
+   abrir, porque la pagina puede cambiarlas despues de cargar. */
+function afComboDef(cual) {
+    return { libre: true, fuente: function () { return (window.AF_OPC && AF_OPC[cual]) || []; } };
+}
 function afComboHtml(nombre, cual, ph, etiqueta) {
-    return '<span class="af-combo"><input type="text" name="' + nombre + '" class="sigma-nd-txt" data-combo="' + cual +
-           '" placeholder="' + ph + '" aria-label="' + etiqueta + '" autocomplete="off" />' +
-           '<button type="button" class="af-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>';
+    var o = afComboDef(cual);
+    o.clave = 'af:' + cual; o.ph = ph; o.etiqueta = etiqueta; o.clase = 'sigma-nd-txt';
+    return SigmaCombo.html(nombre, null, '', o);
 }
-var afComboInput = null;
-function afComboLista() {
-    var l = document.getElementById('afComboLista');
-    if (!l) { l = document.createElement('div'); l.id = 'afComboLista'; l.setAttribute('role', 'listbox'); document.body.appendChild(l); }
-    return l;
-}
-function afComboAbrir(inp) {
-    var opc = (window.AF_OPC && AF_OPC[inp.getAttribute('data-combo')]) || [];
-    var l = afComboLista(), t = (inp.value || '').trim(), tl = t.toLowerCase();
-    afComboInput = inp;
-    l.innerHTML = '';
-    var exacta = false, n = 0;
-    opc.forEach(function (o) {
-        if (tl && o.toLowerCase().indexOf(tl) === -1) return;
-        if (o.toLowerCase() === tl) exacta = true;
-        if (n++ > 60) return;
-        var b = document.createElement('button'); b.type = 'button'; b.textContent = o;
-        b.onmousedown = function (e) { e.preventDefault(); afComboElegir(o); };
-        l.appendChild(b);
-    });
-    if (t && !exacta) {
-        var c = document.createElement('button'); c.type = 'button'; c.className = 'es-crear';
-        c.innerHTML = '<i class="mdi mdi-plus"></i>'; c.appendChild(document.createTextNode('Crear «' + t + '»'));
-        c.onmousedown = function (e) { e.preventDefault(); afComboElegir(t); };
-        l.appendChild(c);
-    }
-    if (!l.children.length) { var v = document.createElement('div'); v.className = 'vacio'; v.textContent = 'Escribe para crear uno nuevo.'; l.appendChild(v); }
-    var r = inp.getBoundingClientRect();
-    l.style.left = r.left + 'px'; l.style.width = Math.max(r.width, 200) + 'px';
-    var abajo = window.innerHeight - r.bottom;
-    if (abajo < 200 && r.top > abajo) { l.style.top = ''; l.style.bottom = (window.innerHeight - r.top + 4) + 'px'; }
-    else { l.style.bottom = ''; l.style.top = (r.bottom + 4) + 'px'; }
-    l.classList.add('es-abierto');
-}
-function afComboCerrar() { var l = document.getElementById('afComboLista'); if (l) l.classList.remove('es-abierto'); afComboInput = null; }
-function afComboElegir(v) {
-    if (!afComboInput) return;
-    afComboInput.value = v;
-    afComboInput.dispatchEvent(new Event('change', { bubbles: true }));
-    afComboCerrar();
-}
-document.addEventListener('focusin', function (e) { if (e.target.matches && e.target.matches('input[data-combo]')) afComboAbrir(e.target); });
-document.addEventListener('input', function (e) { if (e.target.matches && e.target.matches('input[data-combo]')) afComboAbrir(e.target); });
-document.addEventListener('focusout', function (e) { if (e.target === afComboInput) setTimeout(function () { if (document.activeElement !== afComboInput) afComboCerrar(); }, 120); });
-document.addEventListener('click', function (e) {
-    var b = e.target.closest ? e.target.closest('.af-combo-btn') : null;
-    if (b) { var i = b.parentNode.querySelector('input'); i.focus(); afComboAbrir(i); }
-});
-document.addEventListener('keydown', function (e) {
-    if (!afComboInput || e.target !== afComboInput) return;
-    var l = afComboLista(), bs = Array.prototype.slice.call(l.querySelectorAll('button')), k = bs.indexOf(l.querySelector('.es-foco'));
-    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
-        e.preventDefault(); if (!bs.length) return;
-        k = e.key === 'ArrowDown' ? Math.min(bs.length - 1, k + 1) : Math.max(0, k - 1);
-        bs.forEach(function (x, j) { x.classList.toggle('es-foco', j === k); });
-        bs[k].scrollIntoView({ block: 'nearest' });
-    } else if (e.key === 'Enter') {
-        e.preventDefault();
-        var f = l.querySelector('.es-foco'); if (f) f.onmousedown(e); else afComboCerrar();
-    } else if (e.key === 'Escape') afComboCerrar();
-});
-window.addEventListener('scroll', function () { if (afComboInput) afComboAbrir(afComboInput); }, true);
+/* Los combos escritos a mano en la pagina (data-sgcombo="af:tipos") usan
+   las mismas listas. */
+['tipos', 'lados', 'vars', 'meds'].forEach(function (c) { SigmaCombo.definir('af:' + c, afComboDef(c)); });
 
 /* La foto de una fila: se ve al instante y sube al guardar. */
 function afFotoHtml(nombre) {

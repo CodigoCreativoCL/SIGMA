@@ -157,107 +157,13 @@ const numero = (nombre, valor, ph) => `<input type="number" step="any" inputmode
 const lee = (fila, n) => { const el = fila.querySelector(`[name="${n}"]`); return !el ? '' : el.type === 'checkbox' ? el.checked : el.value.trim(); };
 const txtN = v => v == null ? '' : String(v);
 
-/* ---- combo con busqueda: filtra mientras se escribe y, si se permite y no
-   existe, ofrece «Crear "lo escrito"». El valor va en un input oculto con el
-   name del campo: el id elegido, el texto (listas de texto) o «nuevo:texto». */
-const COMBOS = {};
-function combo(nombre, lista, sel, o){
-  o = o || {};
-  const items = (lista || []).map(x => typeof x === 'string' ? {id:x, n:x} : x);
-  COMBOS[nombre] = {items, crear:!!o.crear, texto:!!o.texto, vacio:o.vacio || 'Sin coincidencias'};
-  const elegido = items.find(x => String(x.id) === String(sel));
-  const etiqueta = elegido ? elegido.n : (o.texto ? txtN(sel) : '');
-  const valor = elegido ? elegido.id : (o.texto ? txtN(sel) : '');
-  return `<span class="sa-combo"><input type="text" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="saComboLista" autocomplete="off" spellcheck="false"
-      data-sacombo="${nombre}" value="${esc(etiqueta)}" placeholder="${esc(o.ph || 'Escribe para buscar')}"${o.req ? ' data-req="1"' : ''}>
-    <input type="hidden" name="${nombre}" value="${esc(valor)}">
-    <button type="button" class="sa-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>`;
-}
-const CB = { inp:null, act:-1, ops:[] };
-function comboLista(){
-  let ul = document.getElementById('saComboLista');
-  if (!ul){
-    ul = document.createElement('ul'); ul.id = 'saComboLista'; ul.className = 'sa-combo-lista'; ul.setAttribute('role', 'listbox'); ul.hidden = true;
-    (document.getElementById('saPortal') || document.body).appendChild(ul);
-    ul.addEventListener('mousedown', e => e.preventDefault());
-    ul.addEventListener('click', e => { const li = e.target.closest('[data-i]'); if (li) comboElegir(+li.dataset.i); });
-  }
-  return ul;
-}
-function comboAbrir(inp, todo){
-  const def = COMBOS[inp.dataset.sacombo]; if (!def) return;
-  CB.inp = inp; const ul = comboLista();
-  const txt = inp.value.trim(), q = todo ? '' : norm(txt);
-  const hits = def.items.filter(x => !q || norm(x.n + ' ' + (x.txt || '')).includes(q)).slice(0, 60);
-  CB.ops = hits.map(x => ({x}));
-  if (def.crear && txt && !def.items.some(x => norm(x.n) === norm(txt))) CB.ops.push({crear:txt});
-  const marca = s => { if (!q) return esc(s); const i = norm(s).indexOf(q); return i < 0 ? esc(s) : esc(s.slice(0, i)) + '<mark>' + esc(s.slice(i, i + q.length)) + '</mark>' + esc(s.slice(i + q.length)); };
-  ul.innerHTML = CB.ops.length ? CB.ops.map((op, i) => op.crear
-      ? `<li role="option" id="saCbo${i}" data-i="${i}" class="is-crear"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Crear «${esc(op.crear)}»</li>`
-      : (op.x.sub != null || op.x.img != null)
-        ? `<li role="option" id="saCbo${i}" data-i="${i}" class="es-rico"><span class="cb-img">${op.x.img ? `<img src="${esc(op.x.img)}" alt="" loading="lazy">` : '<i></i>'}</span><span class="cb-t"><b>${marca(op.x.n)}</b>${op.x.sub ? `<small>${esc(op.x.sub)}</small>` : ''}</span></li>`
-        : `<li role="option" id="saCbo${i}" data-i="${i}">${marca(op.x.n)}</li>`).join('')
-    : `<li class="is-vacio" aria-disabled="true">${esc(def.vacio)}</li>`;
-  CB.act = CB.ops.length ? 0 : -1;
-  const hid = inp.parentNode.querySelector('input[type=hidden]');
-  const actual = CB.ops.findIndex(op => op.x && String(op.x.id) === hid.value); if (actual >= 0) CB.act = actual;
-  comboMarcar();
-  const r = inp.getBoundingClientRect(), abajo = innerHeight - r.bottom;
-  ul.style.left = r.left + 'px'; ul.style.width = Math.max(r.width, 220) + 'px';
-  if (abajo < 240 && r.top > abajo){ ul.style.top = ''; ul.style.bottom = (innerHeight - r.top + 4) + 'px'; }
-  else { ul.style.bottom = ''; ul.style.top = (r.bottom + 4) + 'px'; }
-  ul.hidden = false; inp.setAttribute('aria-expanded', 'true');
-}
-function comboMarcar(){
-  const ul = comboLista();
-  ul.querySelectorAll('[data-i]').forEach(li => li.classList.toggle('is-activo', +li.dataset.i === CB.act));
-  const li = ul.querySelector('.is-activo'); if (li){ li.scrollIntoView({block:'nearest'}); CB.inp.setAttribute('aria-activedescendant', li.id); }
-}
-function comboCerrar(){
-  const ul = document.getElementById('saComboLista'); if (ul) ul.hidden = true;
-  if (CB.inp){ CB.inp.setAttribute('aria-expanded', 'false'); CB.inp.removeAttribute('aria-activedescendant'); }
-  CB.inp = null; CB.act = -1;
-}
-function comboElegir(i){
-  const inp = CB.inp, op = CB.ops[i]; if (!inp || !op) return;
-  const hid = inp.parentNode.querySelector('input[type=hidden]'), def = COMBOS[inp.dataset.sacombo];
-  if (op.crear){ inp.value = op.crear; hid.value = def.texto ? op.crear : 'nuevo:' + op.crear; }
-  else { inp.value = op.x.n; hid.value = op.x.id; }
-  inp.classList.toggle('is-nuevo', !!op.crear);
-  comboCerrar();
-}
-/* Al salir: si lo escrito es una opcion, queda elegida; si no, se crea (si se
-   permite) o se vuelve a lo que estaba. */
-function comboSalir(inp){
-  const def = COMBOS[inp.dataset.sacombo]; if (!def) return;
-  const hid = inp.parentNode.querySelector('input[type=hidden]'), txt = inp.value.trim();
-  const igual = def.items.find(x => norm(x.n) === norm(txt));
-  if (!txt){ hid.value = ''; inp.classList.remove('is-nuevo'); return; }
-  if (igual){ inp.value = igual.n; hid.value = igual.id; inp.classList.remove('is-nuevo'); return; }
-  if (def.crear){ hid.value = def.texto ? txt : 'nuevo:' + txt; inp.classList.add('is-nuevo'); return; }
-  const prev = def.items.find(x => String(x.id) === hid.value); inp.value = prev ? prev.n : '';
-}
-document.addEventListener('focusin', e => { if (e.target.matches && e.target.matches('.sgap [data-sacombo]')) comboAbrir(e.target, true); });
-document.addEventListener('input', e => { if (e.target.matches && e.target.matches('.sgap [data-sacombo]')) comboAbrir(e.target); });
-document.addEventListener('focusout', e => { if (e.target.matches && e.target.matches('.sgap [data-sacombo]')){ comboSalir(e.target); if (CB.inp === e.target) comboCerrar(); } });
-document.addEventListener('click', e => {
-  const b = e.target.closest && e.target.closest('.sgap .sa-combo-btn'); if (!b) return;
-  const inp = b.parentNode.querySelector('[data-sacombo]');
-  if (CB.inp === inp) comboCerrar(); else { inp.focus(); comboAbrir(inp, true); }
-});
-document.addEventListener('keydown', e => {
-  if (!e.target.matches || !e.target.matches('.sgap [data-sacombo]')) return;
-  const ul = document.getElementById('saComboLista'), abierta = ul && !ul.hidden && CB.inp === e.target;
-  if (e.key === 'ArrowDown' || e.key === 'ArrowUp'){
-    e.preventDefault(); if (!abierta) return comboAbrir(e.target, true);
-    if (!CB.ops.length) return;
-    CB.act = (CB.act + (e.key === 'ArrowDown' ? 1 : -1) + CB.ops.length) % CB.ops.length; comboMarcar();
-  } else if (e.key === 'Enter' && abierta && CB.act >= 0){ e.preventDefault(); e.stopPropagation(); comboElegir(CB.act); }
-  else if (e.key === 'Escape' && abierta){ e.preventDefault(); e.stopPropagation(); comboCerrar(); }
-  else if (e.key === 'Tab' && abierta && CB.act >= 0 && e.target.value.trim()) comboElegir(CB.act);
-}, true);
-addEventListener('resize', comboCerrar);
-document.addEventListener('scroll', e => { if (CB.inp && !(e.target.id === 'saComboLista')) comboCerrar(); }, true);
+/* ---- combo con busqueda: el compartido de SIGMA (Js/sigma-combo.js, se
+   carga antes que este archivo). Filtra mientras se escribe y, si se permite
+   y no existe, ofrece «Crear "lo escrito"». El valor va en un input oculto
+   con el name del campo: el id elegido, el texto o «nuevo:texto». */
+const combo = (nombre, lista, sel, o) => SigmaCombo.html(nombre, lista, sel, o);
+const comboSalir = inp => SigmaCombo.salir(inp);
+const comboCerrar = () => SigmaCombo.cerrar();
 
 const CAT = {
   variables:{ titulo:'Variables de condición', ayuda:'Lo que se mide para saber cómo está cada activo y entre qué valores es normal.', buscar:'Busca por activo o por lo que se mide…',
@@ -438,7 +344,7 @@ const SIGMA = {
     html += filas.map(fila).join('');
     lista.innerHTML = (filas.length ? `<div class="sa-cat-cab">${c.cab.map(h => `<span>${h}</span>`).join('')}<span></span></div>` : '') + html;
     const abierta = lista.querySelector('.is-form');
-    if (abierta){ const p = abierta.querySelector('input:not([type=checkbox]):not([type=hidden]),select'); if (p) setTimeout(() => { p.focus(); if (p.dataset.sacombo) comboCerrar(); }, 20); }
+    if (abierta){ const p = abierta.querySelector('input:not([type=checkbox]):not([type=hidden]),select'); if (p) setTimeout(() => { p.focus(); if (p.dataset.sgcombo) comboCerrar(); }, 20); }
     const conf = lista.querySelector('.is-borrar [data-cat="noborrar"]'); if (conf) setTimeout(() => conf.focus(), 20);
   },
   async clicCatalogo(k, e){
@@ -479,8 +385,8 @@ const SIGMA = {
     const c = CAT[k], d = SIGMA['_cat_' + k], id = +fila.dataset.id;
     const f = id ? d.filas.find(x => x.id === id) : {};
     const err = fila.querySelector('.sa-cat-err'), b = fila.querySelector('[data-cat="guardar"]');
-    fila.querySelectorAll('[data-sacombo]').forEach(comboSalir);
-    const vacio = el => { const h = el.dataset.sacombo ? el.parentNode.querySelector('input[type=hidden]') : el; return !h.value.trim() || h.value === '0'; };
+    fila.querySelectorAll('[data-sgcombo]').forEach(comboSalir);
+    const vacio = el => { const h = (el.dataset.sgcombo && el.parentNode.querySelector('input[type=hidden]')) || el; return !h.value.trim() || h.value === '0'; };
     const falta = [...fila.querySelectorAll('[required],[data-req]')].find(vacio);
     if (falta){ err.textContent = 'Completa «' + falta.closest('.sa-cf').querySelector('span').textContent + '».'; err.hidden = false; falta.focus(); return; }
     err.hidden = true; b.disabled = true;
@@ -531,7 +437,7 @@ const SIGMA = {
       catch(err){ XP.addRep = false; toast(err.message); }
     }
     renderXP(false);
-    setTimeout(() => { const i = document.querySelector('#formRep [data-sacombo]'); if (i) i.focus(); }, 40);
+    setTimeout(() => { const i = document.querySelector('#formRep [data-sgcombo]'); if (i) i.focus(); }, 40);
   },
   formRepuesto(id){
     const a = S.activos[id];
@@ -547,7 +453,7 @@ const SIGMA = {
   },
   async vincularRepuesto(b){
     const f = document.getElementById('formRep'); if (!f) return;
-    const inp = f.querySelector('[data-sacombo]'); if (inp) comboSalir(inp);
+    const inp = f.querySelector('[data-sgcombo]'); if (inp) comboSalir(inp);
     const rep = +(f.querySelector('input[name="xprep"]').value || 0), para = +f.querySelector('#xpRepPara').value;
     const err = f.querySelector('.addrep-err');
     if (!rep){ err.textContent = 'Elige el repuesto de la lista.'; err.hidden = false; if (inp) inp.focus(); return; }

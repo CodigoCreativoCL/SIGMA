@@ -54,14 +54,34 @@ public class WsActivos : System.Web.Services.WebService
             ClienteInstalacion fp = new ClienteInstalacion();
             fp.filtro_cliente = cliente.ToString();
             fp.filtro_habilitado = "1";
+
+            /* TODO A LA VEZ (05-10-2026)
+               Eran trece consultas en fila a ~250 ms cada una: ~3,4 s antes
+               de dibujar nada. Las que no dependen de nada salen juntas; la
+               planta sale tambien de inmediato con la que pidio el navegador
+               (la ultima que se vio) y solo se vuelve a pedir si esa no es una
+               de las plantas de la persona. Los permisos ya los leyo Ejecutar
+               en este hilo. Ver SitioBase.Paralelo. */
+            var tMias = Paralelo.Pedir(() => PlantasPermitidas());
+            var tPlantas = Paralelo.Pedir(() => new ClienteInstalacionController().GetClienteInstalaciones(fp) ?? new List<ClienteInstalacion>());
+            int pedida = planta;
+            var tPlanta = pedida > 0 ? Paralelo.Pedir(() => new ActivoPlantaController().GetPlanta(pedida)) : null;
+            var tResumen = Paralelo.Pedir(() => new ActivoCentroController().GetResumenLista() ?? new Dictionary<int, ActivoResumenLista>());
+            var tImgs = Paralelo.Pedir(() => new ActivoImagenController().GetImagenesLista(cliente));
+            var tFotosRep = Paralelo.Pedir(() => PortadasRepuesto());
+            var tEstAct = Paralelo.Pedir(() => new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>());
+            var tEstComp = Paralelo.Pedir(() => new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>());
+            var tConteos = ConteosEnParalelo();
+
             /* Solo las plantas de la persona (si tiene asignadas); sin asignacion, todas. */
-            HashSet<int> mias = PlantasPermitidas();
-            var plantas = (new ClienteInstalacionController().GetClienteInstalaciones(fp) ?? new List<ClienteInstalacion>())
+            HashSet<int> mias = tMias.Result;
+            var plantas = tPlantas.Result
                 .Where(p => mias == null || mias.Contains(p.cin_id))
                 .Select(p => new { id = p.cin_id, nombre = p.cin_nombre }).ToList();
             if (planta <= 0 || !plantas.Any(p => p.id == planta)) planta = plantas.Count > 0 ? plantas[0].id : 0;
 
-            DataSet ds = new ActivoPlantaController().GetPlanta(planta);
+            /* La que se adelanto solo sirve si es la que quedo. */
+            DataSet ds = tPlanta != null && planta == pedida ? tPlanta.Result : new ActivoPlantaController().GetPlanta(planta);
             if (ds.Tables.Count < 6) return new { error = false, vacio = true, planta = planta, plantas = plantas };
 
             // ---- tipos de lugar
@@ -85,7 +105,7 @@ public class WsActivos : System.Web.Services.WebService
             }
 
             // ---- activos
-            Dictionary<int, ActivoResumenLista> resumen = new ActivoCentroController().GetResumenLista() ?? new Dictionary<int, ActivoResumenLista>();
+            Dictionary<int, ActivoResumenLista> resumen = tResumen.Result;
             Dictionary<string, int> fotos = ds.Tables[5].Rows.Cast<DataRow>().ToDictionary(r => "a" + r["ACTIVO"], r => Convert.ToInt32(r["FOTOS"]));
             Dictionary<string, Dictionary<string, object>> activos = new Dictionary<string, Dictionary<string, object>>();
             List<string> tray = new List<string>();
@@ -120,7 +140,7 @@ public class WsActivos : System.Web.Services.WebService
             foreach (var a in activos.Values) a.Remove("_area");
 
             // ---- componentes y repuestos (con su foto: bloque 349/353)
-            Dictionary<string, int> imgs = new ActivoImagenController().GetImagenesLista(cliente);
+            Dictionary<string, int> imgs = tImgs.Result;
             foreach (DataRow r in ds.Tables[3].Rows)
             {
                 string id = "a" + r["ACTIVO"];
@@ -132,7 +152,7 @@ public class WsActivos : System.Web.Services.WebService
                     foto = imgs.ContainsKey("C" + r["ID"]) ? UrlArchivo.Ver(imgs["C" + r["ID"]]) : null,
                     q = Cifrar("Id=" + r["ID"]) });
             }
-            Dictionary<int, int> fotosRep = PortadasRepuesto();
+            Dictionary<int, int> fotosRep = tFotosRep.Result;
             foreach (DataRow r in ds.Tables[4].Rows)
             {
                 string id = "a" + r["ACTIVO"];
@@ -161,13 +181,13 @@ public class WsActivos : System.Web.Services.WebService
                 activos = activos,
                 estados = new
                 {
-                    activo = (new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>())
+                    activo = tEstAct.Result
                              .Select(e => new { id = e.aes_id, n = e.aes_nombre, k = ClaveEstado(e.aes_codigo + " " + e.aes_nombre) }),
-                    comp = (new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>())
+                    comp = tEstComp.Result
                              .Select(e => new { id = e.ace_id, n = e.ace_nombre, k = ClaveEstado(e.ace_codigo + " " + e.ace_nombre) })
                 },
                 urlOt = ResolverUrl("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx"),
-                conteos = Conteos(ds.Tables[3].Rows.Count)
+                conteos = Conteos(ds.Tables[3].Rows.Count, tConteos)
             };
         });
     }
@@ -698,18 +718,22 @@ public class WsActivos : System.Web.Services.WebService
     /// Los numeros de las pestañas del modulo. Cada conteo va blindado: si uno
     /// falla, la planta igual se dibuja con un cero en esa pestaña.
     /// </summary>
-    private static object Conteos(int componentes)
+    private static System.Threading.Tasks.Task<int>[] ConteosEnParalelo()
     {
         int cli = SitioBase.Session.ClienteId();
-        Func<Func<int>, int> n = f => { try { return f(); } catch (Exception) { return 0; } };
-        return new
+        return new[]
         {
-            componentes = componentes,
-            variables = n(() => (new ActivoVariableController().GetVariables(new ActivoVariable { filtro_habilitado = true }) ?? new List<ActivoVariable>()).Count),
-            medidores = n(() => (new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor { ame_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoMedidor>()).Count),
-            tipos = n(() => (new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoTipo>()).Count),
-            modelos = n(() => (new ActivoModeloController().GetModelos(new ActivoModelo { filtro_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoModelo>()).Count)
+            Paralelo.Pedir(() => (new ActivoVariableController().GetVariables(new ActivoVariable { filtro_habilitado = true }) ?? new List<ActivoVariable>()).Count, 0),
+            Paralelo.Pedir(() => (new ActivoMedidorController().GetActivoMedidores(new ActivoMedidor { ame_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoMedidor>()).Count, 0),
+            Paralelo.Pedir(() => (new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoTipo>()).Count, 0),
+            Paralelo.Pedir(() => (new ActivoModeloController().GetModelos(new ActivoModelo { filtro_cliente = cli, filtro_habilitado = true }) ?? new List<ActivoModelo>()).Count, 0)
         };
+    }
+
+    /// <param name="n">Los cuatro conteos ya lanzados por ConteosEnParalelo.</param>
+    private static object Conteos(int componentes, System.Threading.Tasks.Task<int>[] n)
+    {
+        return new { componentes = componentes, variables = n[0].Result, medidores = n[1].Result, tipos = n[2].Result, modelos = n[3].Result };
     }
 
     // ================================================================ ayuda
@@ -726,6 +750,10 @@ public class WsActivos : System.Web.Services.WebService
         }
         catch (Exception ex)
         {
+            /* Lo que falla en una consulta en paralelo llega envuelto: se
+               muestra el error de verdad, no "One or more errors occurred". */
+            AggregateException ag = ex as AggregateException;
+            if (ag != null && ag.Flatten().InnerException != null) ex = ag.Flatten().InnerException;
             return Json(new { error = true, detalle = ex.Message });
         }
     }
