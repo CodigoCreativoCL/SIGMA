@@ -209,6 +209,9 @@
     }
     SigmaCombo.definir('af:atipos', { libre: true, fuente: function () { return AF_CAT.tipos; } });
     SigmaCombo.definir('af:amarcas', { libre: true, fuente: function () { return AF_CAT.marcas; } });
+    /* Estado y criticidad son listas cerradas: el combo guarda el id en su campo oculto. */
+    SigmaCombo.definir('af:estados', { fuente: function () { return AF_CAT.estados; } });
+    SigmaCombo.definir('af:criticidades', { fuente: function () { return AF_CAT.criticidades; } });
     SigmaCombo.definir('af:amodelos', { libre: true, fuente: afCatModelos, vacio: 'Sin modelos de ese tipo y marca. Escribe uno nuevo.' });
     if (!window.afCatEscucha) {
         window.afCatEscucha = true;
@@ -397,17 +400,22 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Estado <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboEstado" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <%-- Lista cerrada: el combo SIGMA con id (el id viaja en hdnEstado). --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtEstado" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:estados" aria-label="Estado" placeholder="Seleccione..." /><asp:HiddenField ID="hdnEstado" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige cómo está el activo hoy.</span>
-                    <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="cboEstado" Display="None"
+                    <asp:CustomValidator ID="cvEstado" runat="server" ControlToValidate="txtEstado" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Criticidad <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboCriticidad" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                    <span class="sg-combo"><asp:TextBox ID="txtCriticidad" runat="server" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:criticidades" aria-label="Criticidad" placeholder="Seleccione..." /><asp:HiddenField ID="hdnCriticidad" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿Qué tan grave es si se detiene?</span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige qué tan grave es si se detiene.</span>
-                    <asp:CustomValidator ID="cvCriticidad" runat="server" ControlToValidate="cboCriticidad" Display="None"
+                    <asp:CustomValidator ID="cvCriticidad" runat="server" ControlToValidate="txtCriticidad" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">

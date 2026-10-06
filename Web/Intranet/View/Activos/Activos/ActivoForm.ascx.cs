@@ -112,36 +112,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
         switch (ctrl.ID)
         {
-            case "cboEstado":
-                {
-                    ActivoEstadoController controller = new ActivoEstadoController();
-                    List<ActivoEstado> lista = controller.GetActivoEstados(
-                        new ActivoEstado { filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "aes_id";
-                    ctrl.DataTextField = "aes_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
-            case "cboCriticidad":
-                {
-                    CriticidadNivelController controller = new CriticidadNivelController();
-                    List<CriticidadNivel> lista = controller.GetCriticidadNiveles(
-                        new CriticidadNivel { filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "crn_id";
-                    ctrl.DataTextField = "crn_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
             case "cboPlanta":
                 {
                     ClienteInstalacionController controller = new ClienteInstalacionController();
@@ -481,6 +451,42 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoModelo>());
     }
 
+    private List<ActivoEstado> _estados;
+    private List<ActivoEstado> EstadosActivo()
+    {
+        return _estados ?? (_estados = new ActivoEstadoController().GetActivoEstados(
+            new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>());
+    }
+
+    private List<CriticidadNivel> _criticidades;
+    private List<CriticidadNivel> Criticidades()
+    {
+        return _criticidades ?? (_criticidades = new CriticidadNivelController().GetCriticidadNiveles(
+            new CriticidadNivel { filtro_habilitado = true }) ?? new List<CriticidadNivel>());
+    }
+
+    /* Estado y criticidad: el texto visible y el id en el campo oculto. */
+    private void FijarEstado(int id)
+    {
+        ActivoEstado e = EstadosActivo().Find(x => x.aes_id == id);
+        if (e == null) return;
+        hdnEstado.Value = e.aes_id.ToString(); txtEstado.Text = e.aes_nombre;
+    }
+
+    private void FijarCriticidad(int id)
+    {
+        CriticidadNivel c = Criticidades().Find(x => x.crn_id == id);
+        if (c == null) return;
+        hdnCriticidad.Value = c.crn_id.ToString(); txtCriticidad.Text = c.crn_nombre;
+    }
+
+    /// <summary>El id elegido, solo si es una opcion de la lista; 0 si no.</summary>
+    private static int IdElegido(HiddenField h, Predicate<int> existe)
+    {
+        int v;
+        return int.TryParse(h.Value, out v) && v > 0 && existe(v) ? v : 0;
+    }
+
     /// <summary>Igual sin mayusculas, tildes ni espacios a los lados (como compara el SP).</summary>
     private static bool MismoTexto(string a, string b)
     {
@@ -512,12 +518,12 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     }
 
     /// <summary>
-    /// Lo que ofrecen los combos de tipo, modelo y marca, como objeto JS. El
+    /// Lo que ofrecen los combos de tipo, modelo, marca, estado y criticidad, como objeto JS. El
     /// modelo lleva su tipo y su marca para filtrarse en el navegador.
     /// </summary>
     public string CatalogoActivoJson()
     {
-        List<object> tipos = new List<object>(), modelos = new List<object>();
+        List<object> tipos = new List<object>(), modelos = new List<object>(), estados = new List<object>(), criticidades = new List<object>();
         List<string> marcas = new List<string>();
         try
         {
@@ -525,6 +531,10 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                 tipos.Add(new Dictionary<string, object> { { "id", t.ati_id }, { "n", t.ati_nombre } });
             foreach (ActivoModelo m in ModelosActivo())
                 modelos.Add(new Dictionary<string, object> { { "id", m.amo_id }, { "n", m.amo_nombre }, { "t", m.amo_activo_tipo }, { "f", m.amo_fabricante ?? "" } });
+            foreach (ActivoEstado e in EstadosActivo())
+                estados.Add(new Dictionary<string, object> { { "id", e.aes_id }, { "n", e.aes_nombre } });
+            foreach (CriticidadNivel c in Criticidades())
+                criticidades.Add(new Dictionary<string, object> { { "id", c.crn_id }, { "n", c.crn_nombre } });
             foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
                 if (!string.IsNullOrEmpty(f.nombre)) marcas.Add(f.nombre);
         }
@@ -532,6 +542,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
         Dictionary<string, object> d = new Dictionary<string, object>();
         d["tipos"] = tipos; d["modelos"] = modelos; d["marcas"] = marcas;
+        d["estados"] = estados; d["criticidades"] = criticidades;
         /* Va dentro de un <script>: "</" se corta (igual que OpcionesCombosJson). */
         return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(d).Replace("</", "<\\/");
     }
@@ -904,8 +915,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             ActivoTipo tipo = TiposActivo().Find(x => x.ati_id == entidad.act_activo_tipo)
                               ?? new ActivoTipoController().GetActivoTipo(entidad.act_activo_tipo);
             txtTipo.Text = tipo.ati_nombre;
-            SeleccionarCombo(cboEstado, entidad.act_activo_estado);
-            SeleccionarCombo(cboCriticidad, entidad.act_criticidad_nivel);
+            FijarEstado(entidad.act_activo_estado);
+            FijarCriticidad(entidad.act_criticidad_nivel);
             SeleccionarCombo(cboPlanta, entidad.act_cliente_instalacion);
 
             if (entidad.act_instalacion_area != null) SeleccionarCombo(cboArea, entidad.act_instalacion_area.Value);
@@ -959,10 +970,11 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             /* Lo que casi siempre es igual ya viene puesto: un equipo que se
                da de alta normalmente esta operativo, y una empresa con una
                sola planta no tiene que elegirla. Todo se puede cambiar. */
-            if (string.IsNullOrEmpty(cboEstado.SelectedValue))
-                foreach (RadComboBoxItem it in cboEstado.Items)
-                    if (it.Value != "" && it.Text.IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0)
-                    { SeleccionarCombo(cboEstado, int.Parse(it.Value)); break; }
+            if (string.IsNullOrEmpty(hdnEstado.Value))
+            {
+                ActivoEstado operativo = EstadosActivo().Find(x => (x.aes_nombre ?? "").IndexOf("operativ", StringComparison.OrdinalIgnoreCase) >= 0);
+                if (operativo != null) FijarEstado(operativo.aes_id);
+            }
             if (string.IsNullOrEmpty(cboPlanta.SelectedValue) && cboPlanta.Items.Count == 2)
             {
                 int planta;
@@ -980,7 +992,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                     SeleccionarCombo(cboPlanta, p.act_cliente_instalacion);
                     if (p.act_instalacion_area != null) SeleccionarCombo(cboArea, p.act_instalacion_area.Value);
                     if (p.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, p.act_centro_costo.Value);
-                    SeleccionarCombo(cboCriticidad, p.act_criticidad_nivel);
+                    FijarCriticidad(p.act_criticidad_nivel);
                 }
             }
         }
@@ -1031,8 +1043,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
         txtTipo.ReadOnly = !puedeEditar;
         txtModelo.ReadOnly = !puedeEditar;
-        cboEstado.ReadOnly = !puedeEditar;
-        cboCriticidad.ReadOnly = !puedeEditar;
+        txtEstado.ReadOnly = !puedeEditar;
+        txtCriticidad.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
         cboArea.ReadOnly = !puedeEditar;
         cboCentroCosto.ReadOnly = !puedeEditar;
@@ -1073,9 +1085,11 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             string errCat = new ActivoTipoController().ResolverCatalogo(ref tipoId, tipoTxt, ref modeloId,
                 modeloId == 0 ? modeloTxt : null, fabricante);
             if (errCat != null) throw new Exception(errCat);
-            if (string.IsNullOrEmpty(cboEstado.SelectedValue))
+            int estadoId = IdElegido(hdnEstado, v => EstadosActivo().Exists(x => x.aes_id == v));
+            int criticidadId = IdElegido(hdnCriticidad, v => Criticidades().Exists(x => x.crn_id == v));
+            if (estadoId == 0)
                 throw new Exception("Debe elegir el estado del activo.");
-            if (string.IsNullOrEmpty(cboCriticidad.SelectedValue))
+            if (criticidadId == 0)
                 throw new Exception("Debe elegir la criticidad del activo.");
             if (string.IsNullOrEmpty(cboPlanta.SelectedValue))
                 throw new Exception("Debe elegir la planta a la que pertenece el activo.");
@@ -1087,8 +1101,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             entidad.act_cliente = SitioBase.Session.ClienteId();
             entidad.act_cliente_instalacion = int.Parse(cboPlanta.SelectedValue);
             entidad.act_activo_tipo = tipoId;
-            entidad.act_activo_estado = int.Parse(cboEstado.SelectedValue);
-            entidad.act_criticidad_nivel = int.Parse(cboCriticidad.SelectedValue);
+            entidad.act_activo_estado = estadoId;
+            entidad.act_criticidad_nivel = criticidadId;
             /* ---- CODIGO AUTOMATICO ----
                Al crear se manda AUTO y el SP lo genera como ACT-<id>: el
                codigo depende del ID, y el ID no existe hasta despues del
