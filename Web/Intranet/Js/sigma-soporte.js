@@ -254,6 +254,10 @@ function reportHTML(){
       <div class="ctx-card" style="width:100%;max-width:420px;text-align:left;margin-top:8px"><dl class="dl"><dt>Tiempo de respuesta</dt><dd>Según prioridad: hasta ${PR[RP.prio || 'm'].h} h</dd><dt>Prioridad</dt><dd>${prChip(RP.prio || 'm')}</dd><dt>Desde</dt><dd>${esc([RP.ctx.mod, RP.ctx.pant].filter(Boolean).join(' › ') || '—')}</dd></dl></div>
       <div style="display:flex;gap:10px;margin-top:10px;flex-wrap:wrap;justify-content:center"><a class="btn out" href="${esc(URL_('ticket', RP.done.id))}">Ver mi reporte</a><button type="button" class="btn pri" data-act="close">Listo</button></div></div></div>`;
   const c = RP.ctx; const ok = RP.t.trim() && RP.cat && RP.prio;
+  const tk = CFG.tickets || {}; const agotado = !puede('gestionar') && tk.incluido && !tk.disponible;
+  if (agotado) return `<div class="drawer-h"><h2>Reportar un problema</h2><button type="button" class="ibtn" data-act="close" aria-label="Cerrar">${ic('x', 20)}</button></div>
+    <div class="drawer-b">${empty('clock', 'tone-w', 'Tu empresa usó los tickets de este mes', `El plan incluye ${num(tk.limite)} tickets de soporte al mes y ya se usaron todos. El cupo se renueva el día 1. Mientras tanto, la respuesta puede estar en el centro de ayuda.`, puede('ayuda') ? `<a class="btn out" href="${esc(URL_('help'))}">${ic('book', 16)}Ir al centro de ayuda</a>` : '')}</div>`;
+  const cupo = !puede('gestionar') && tk.limite != null && tk.limite < 1000 ? `Te quedan ${num(Math.max(0, tk.limite - tk.consumo))} de ${num(tk.limite)} tickets este mes. ` : '';
   const quien = puede('gestionar') ? `<select class="sel" data-rp="onBehalf" aria-label="Usuario que reporta"><option value="">Yo (${esc(CFG.nombre)})</option>${(RP.usuarios || []).map(u => `<option value="${u.usu_id}"${String(RP.onBehalf) === String(u.usu_id) ? ' selected' : ''}>${esc(u.NOMBRE)}${u.PERFIL ? ' · ' + esc(u.PERFIL) : ''}</option>`).join('')}</select>` : esc(CFG.nombre);
   return `<div class="drawer-h"><span class="ico tone-d" style="width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center">${ic('warn', 20)}</span><h2>${puede('gestionar') ? 'Nuevo problema' : 'Reportar un problema'}<small style="display:block;font-size:12.5px;font-weight:500;color:var(--muted)">Cuéntanos qué pasó. Lo demás ya lo sabemos.</small></h2><button type="button" class="ibtn" data-act="close" aria-label="Cerrar">${ic('x', 20)}</button></div>
   <div class="drawer-b">
@@ -274,13 +278,13 @@ function reportHTML(){
       <div class="f"><span class="lb">Categoría <span class="req">*</span></span><div class="optcards" role="group" aria-label="Categoría">${CATS.map(([k, l, i]) => `<button type="button" class="opt" data-rpcat="${k}" aria-pressed="${RP.cat === k}">${ic(i, 18)}${l}</button>`).join('')}</div></div>
       <div class="f"><label for="rpD">Descripción</label><textarea class="ta" id="rpD" data-rp="d" placeholder="¿Qué estabas haciendo? ¿Qué esperabas que pasara y qué pasó?">${esc(RP.d)}</textarea></div>
       <div id="rpSug">${sugHTML()}</div>
-      <div class="f"><span class="lb">¿Cuánto te afecta? <span class="req">*</span></span><div class="optcards" role="group" aria-label="Prioridad" style="grid-template-columns:repeat(auto-fill,minmax(170px,1fr))">
+      <div class="f"><span class="lb">¿Cuánto te afecta? <span class="req">*</span></span><div class="optcards" role="group" aria-label="Prioridad" style="grid-template-columns:repeat(auto-fill,minmax(140px,1fr))">
         ${['b','m','a','c'].map(k => `<button type="button" class="opt" data-rpprio="${k}" aria-pressed="${RP.prio === k}"><span style="display:flex;align-items:center;gap:6px">${prChip(k)}</span><small>${PR[k].d}</small></button>`).join('')}</div></div>
       <div class="f"><span class="lb">Adjuntos</span><label class="drop" data-drop="rp"><span class="di">${ic('upload', 20)}</span><span class="dt"><b>Arrastra capturas, videos o documentos</b>PNG, JPG, MP4, PDF o DOCX · hasta 25 MB cada uno</span><span class="btn out sm">Elegir archivos</span><input type="file" multiple class="sr" data-rpfiles="1"></label>
         <div class="files" id="rpFiles">${RP.files.map(fileRow).join('')}</div></div>
     </section>
   </div>
-  <div class="drawer-f"><span class="g" id="rpFoot">${ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'}</span><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="button" class="btn pri" data-act="sendreport"${ok && !RP.enviando ? '' : ' disabled'}>${ic('send', 16)}${RP.enviando ? 'Enviando…' : 'Enviar reporte'}</button></div>`;
+  <div class="drawer-f"><span class="g" id="rpFoot">${cupo}${ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'}</span><button type="button" class="btn ghost" data-act="close">Cancelar</button><button type="button" class="btn pri" data-act="sendreport"${ok && !RP.enviando ? '' : ' disabled'}>${ic('send', 16)}${RP.enviando ? 'Enviando…' : 'Enviar reporte'}</button></div>`;
 }
 function sugHTML(){
   const list = RP.sugDismissed ? [] : RP.sug;
@@ -289,8 +293,17 @@ function sugHTML(){
     <div class="rows">${list.map(k => `<div class="row" style="background:#fff"><span class="ico ${KIND[k.ayc_tipo].c}">${ic(KIND[k.ayc_tipo].i, 17)}</span><span style="min-width:0"><strong>${esc(k.ayc_titulo)}</strong><small>${KIND[k.ayc_tipo].l}${k.ayc_duracion ? ' · ' + esc(k.ayc_duracion) + ' min' : k.ayc_paginas ? ' · ' + k.ayc_paginas + ' páginas' : k.ayc_lectura ? ' · ' + esc(k.ayc_lectura) : ''}</small></span><span class="e"><button type="button" class="btn sec xs" data-act="sugview" data-id="${k.ayc_id}">${['capsula','video'].includes(k.ayc_tipo) ? 'Ver cápsula' : 'Abrir'}</button></span></div>`).join('')}</div>
     <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;border-top:1px solid rgba(0,127,138,.18);padding-top:10px"><span style="flex:1;font-size:12.5px;color:#0B5F67;font-weight:600">${RP.sugSeen ? '¿Te sirvió? Si se resolvió, no hace falta crear el reporte.' : '¿Tu problema continúa?'}</span>${RP.sugSeen ? `<button type="button" class="btn plain xs" data-act="sugsolved">Sí, se resolvió</button>` : ''}<button type="button" class="btn out xs" data-act="sugcontinue">Continuar con el reporte</button></div></div>`;
 }
-function refreshReport(){ const dr = $('#sgs-layer .drawer'); if (!dr || !RP.ctx) return; const ae = document.activeElement; const id = ae && ae.id; const sel = ae && ae.selectionStart; dr.innerHTML = reportHTML(); if (id && $('#' + id)){ const el = $('#' + id); el.focus(); try { el.setSelectionRange(sel, sel); } catch(e){} } }
-function updRpFoot(){ const ok = RP.t.trim() && RP.cat && RP.prio; const b = $('#sgs-layer [data-act="sendreport"]'); b && (b.disabled = !ok || RP.enviando); const f = $('#rpFoot'); f && (f.textContent = ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'); }
+function refreshReport(){
+  const dr = $('#sgs-layer .drawer'); if (!dr || !RP.ctx) return;
+  /* Redibujar el drawer lo devolvía arriba: se guarda el scroll del cuerpo y
+     el foco, y se restauran sin mover la vista. */
+  const cuerpo = $('.drawer-b', dr); const y = cuerpo ? cuerpo.scrollTop : 0;
+  const ae = document.activeElement; const id = ae && ae.id; const sel = ae && ae.selectionStart;
+  dr.innerHTML = reportHTML();
+  const nuevo = $('.drawer-b', dr); if (nuevo) nuevo.scrollTop = y;
+  if (id && $('#' + id)){ const el = $('#' + id); el.focus({preventScroll:true}); try { el.setSelectionRange(sel, sel); } catch(e){} }
+}
+function updRpFoot(){ const ok = RP.t.trim() && RP.cat && RP.prio; const b = $('#sgs-layer [data-act="sendreport"]'); b && (b.disabled = !ok || RP.enviando); const f = $('#rpFoot'); if (f){ const tk = CFG.tickets || {}; const cupo = !puede('gestionar') && tk.limite != null && tk.limite < 1000 ? `Te quedan ${num(Math.max(0, tk.limite - tk.consumo))} de ${num(tk.limite)} tickets este mes. ` : ''; f.textContent = cupo + (ok ? 'Todo listo. Recibirás la respuesta en Notificaciones.' : 'Completa el título, la categoría y cuánto te afecta.'); } }
 const buscarSug = debounce(async () => {
   const txt = (RP.t + ' ' + RP.d).trim(); if (txt.length < 6 || RP.sugDismissed){ return; }
   try { const d = await ws('s', 'Sugerencia', {texto:txt, modulo:RP.ctx.mod, pantalla:RP.ctx.pant}); RP.sug = d.sugerencias || []; if (RP.sug[0] && !RP.sugId) RP.sugId = RP.sug[0].ayc_id; const box = $('#rpSug'); box && (box.innerHTML = sugHTML()); } catch (e){}
@@ -309,7 +322,7 @@ async function sendReport(){
       catch (e){ f.err = e.message; f.p = 100; }
       const b2 = $('#rpFiles'); b2 && (b2.innerHTML = RP.files.map(fileRow).join(''));
     }
-    RP.done = d; RP.enviando = false; setDrawer(reportHTML());
+    RP.done = d; RP.enviando = false; if (CFG.tickets && CFG.tickets.limite != null){ CFG.tickets.consumo++; CFG.tickets.disponible = CFG.tickets.consumo < CFG.tickets.limite; } setDrawer(reportHTML());
     if (APP.recargar) APP.recargar();
   } catch (e){ RP.enviando = false; updRpFoot(); fallo(e); }
 }
@@ -711,12 +724,14 @@ async function openRecur(id){
 LOAD.umine = async () => { const b = await ws('s', 'Bandeja', {soloMios:true}); S.T = b.tickets.map(TK); };
 VIEWS.umine = () => {
   const mine = S.T;
+  const sinPlan = !puede('reportar') && !puede('gestionar');
   return `${crumbs([['Soporte'], ['Mis problemas']])}
-    <div class="ph"><div class="t"><h1>Mis problemas</h1><p>Lo que reportaste y en qué va cada uno.</p></div><div class="acts">${puede('ayuda') ? `<a class="btn out" href="${esc(URL_('help'))}">${ic('book', 16)}Centro de ayuda</a>` : ''}${btn('pri', 'data-act="report"', 'Reportar un problema', 'warn')}</div></div>
+    <div class="ph"><div class="t"><h1>Mis problemas</h1><p>Lo que reportaste y en qué va cada uno.</p></div><div class="acts">${puede('ayuda') ? `<a class="btn out" href="${esc(URL_('help'))}">${ic('book', 16)}Centro de ayuda</a>` : ''}${sinPlan ? '' : btn('pri', 'data-act="report"', 'Reportar un problema', 'warn')}</div></div>
+    ${sinPlan ? `<section class="card" style="display:flex;gap:14px;align-items:center;flex-wrap:wrap;background:var(--sigma-blue-soft);box-shadow:none"><span style="color:var(--sigma-blue)">${ic('lock', 24)}</span><div style="flex:1;min-width:220px"><b>El plan de tu empresa no incluye atención por tickets</b><p style="font-size:12.5px;color:var(--ink-2)">El centro de ayuda sigue disponible para todos. Si necesitas la mesa de ayuda, habla con el administrador de tu empresa.</p></div></section>` : ''}
     <div id="sgs-te-interesa"></div>
     ${mine.length ? `<div class="rows" style="gap:10px">${mine.map(t => { const ask = t.st === 'esp'; const fb = t.st === 'res' && !t.enc;
       return `<a class="tk" href="${esc(URL_('ticket', t.id))}" style="grid-template-columns:minmax(0,1fr) auto 24px"><span style="min-width:0"><span class="id">${t.unread ? '<span class="unread" title="Con novedades"></span>' : ''}${esc(t.folio)}</span><h3>${esc(t.t)}</h3><span class="meta"><span>${ic(CAT[t.cat] ? CAT[t.cat].i : 'more', 14)}${esc(t.mod)}</span><span>${ic('clock', 14)}${ago(t.upd)}</span>${ask ? '<span style="color:var(--sigma-purple);font-weight:700">' + ic('help', 14) + 'Soporte te pidió información</span>' : ''}${fb ? '<span style="color:var(--success);font-weight:700">' + ic('smile', 14) + 'Cuéntanos si se solucionó</span>' : ''}</span></span><span class="st">${stChip(t.st)}</span><span class="go">${ic('cr', 18)}</span></a>`; }).join('')}</div>`
-      : empty('flag', 'tone-s', 'No tienes problemas reportados', 'Cuando algo no funcione, repórtalo desde la misma pantalla con «Reportar problema» y te avisaremos cada avance.', `${btn('pri', 'data-act="report"', 'Reportar un problema', 'warn')}${puede('ayuda') ? `<a class="btn out" href="${esc(URL_('help'))}">Ir al centro de ayuda</a>` : ''}`)}`;
+      : sinPlan ? '' : empty('flag', 'tone-s', 'No tienes problemas reportados', 'Cuando algo no funcione, repórtalo desde la misma pantalla con «Reportar problema» y te avisaremos cada avance.', `${btn('pri', 'data-act="report"', 'Reportar un problema', 'warn')}${puede('ayuda') ? `<a class="btn out" href="${esc(URL_('help'))}">Ir al centro de ayuda</a>` : ''}`)}`;
 };
 AFTER.umine = () => { const z = $('#sgs-te-interesa'); if (z && CAMP_CARDS.length) z.innerHTML = `<div class="sec-t" style="margin-bottom:10px">💡 Te puede interesar</div><div class="grid g2">${CAMP_CARDS.map(campCardMini).join('')}</div>`; };
 
@@ -1306,8 +1321,8 @@ document.addEventListener('click', async e => {
   if (ds.campok){ campAccion(+ds.campok, 'ok'); return; }
   if (ds.campx){ campAccion(+ds.campx, 'x'); return; }
   /* Reporte */
-  if (ds.rpcat){ RP.cat = ds.rpcat; refreshReport(); return; }
-  if (ds.rpprio){ RP.prio = ds.rpprio; refreshReport(); return; }
+  if (ds.rpcat){ RP.cat = ds.rpcat; $$('[data-rpcat]').forEach(b => b.setAttribute('aria-pressed', b === a)); updRpFoot(); return; }
+  if (ds.rpprio){ RP.prio = ds.rpprio; $$('[data-rpprio]').forEach(b => b.setAttribute('aria-pressed', b === a)); updRpFoot(); return; }
   if (ds.rmfile && RP.files){ RP.files = RP.files.filter(f => f.n !== ds.rmfile); const b = $('#rpFiles'); b && (b.innerHTML = RP.files.map(fileRow).join('')); return; }
   /* Bandeja */
   if (ds.tftab){ TF.tab = ds.tftab; TF.pag = 1; render(); return; }

@@ -49,6 +49,12 @@ public partial class Master_Default : System.Web.UI.MasterPage
         return SitioBase.Token.TokenSeguridad() && SitioBase.Token.Puede(permiso);
     }
 
+    /// <summary>Reportar problemas: permiso y, ademas, la ticketera en el plan del cliente.</summary>
+    protected bool SoporteTickets()
+    {
+        return SoportePuede("SOPORTE REPORTAR") && SitioBase.Controller.SoportePlan.Incluido();
+    }
+
     protected string SoporteAsset(string ruta)
     {
         string url = ResolveUrl(ruta);
@@ -78,12 +84,20 @@ public partial class Master_Default : System.Web.UI.MasterPage
         c["clienteNombre"] = SitioBase.Session.ClienteNombre();
         c["permisos"] = new Dictionary<string, bool>
         {
-            { "reportar", SoportePuede("SOPORTE REPORTAR") },
+            { "reportar", SoporteTickets() },
             { "ayuda", SoportePuede("AYUDA VER") },
             { "gestionar", SoportePuede("SOPORTE GESTIONAR") },
             { "ayudaAdmin", SoportePuede("AYUDA ADMINISTRAR") },
             { "campanas", SoportePuede("CAMPANAS ADMINISTRAR") },
             { "analitica", SoportePuede("SOPORTE ANALITICA") }
+        };
+        Dictionary<string, object> plan = SitioBase.Controller.SoportePlan.Estado();
+        c["tickets"] = new Dictionary<string, object>
+        {
+            { "incluido", plan.ContainsKey("INCLUIDO") && Convert.ToBoolean(plan["INCLUIDO"]) },
+            { "disponible", plan.ContainsKey("DISPONIBLE") && Convert.ToBoolean(plan["DISPONIBLE"]) },
+            { "limite", plan.ContainsKey("LIMITE") ? plan["LIMITE"] : null },
+            { "consumo", plan.ContainsKey("CONSUMO") ? plan["CONSUMO"] : 0 }
         };
         string[] ctx = SitioBase.Controller.SoporteContexto.DePagina(SitioBase.Token.PaginaActual());
         c["contexto"] = ctx == null ? null : new Dictionary<string, string> { { "modulo", ctx[0] }, { "submodulo", ctx[1] }, { "pantalla", ctx[2] } };

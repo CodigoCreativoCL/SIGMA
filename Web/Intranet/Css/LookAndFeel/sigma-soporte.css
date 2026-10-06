@@ -667,3 +667,8 @@ body.sgs-pagina .card-box:has(#sgs-app) > .table-responsive{overflow:visible}
 /* Campo de fecha del calendario de SIGMA dentro del asistente. */
 .sgs .sgs-fecha{display:flex !important;width:100% !important}
 .sgs .sgs-fecha input[type="text"]{flex:1;max-width:none !important;height:42px !important;border-radius:9px !important}
+
+/* La portada del centro de ayuda es navy: el título va en blanco (la regla
+   general de títulos en tinta lo dejaba invisible). */
+.sgs .hhero h1{color:#fff}
+.sgs .hhero p{color:#C9CFE0}

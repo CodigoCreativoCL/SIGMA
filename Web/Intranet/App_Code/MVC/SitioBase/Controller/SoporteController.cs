@@ -165,4 +165,67 @@ namespace SitioBase.Controller
             return mapa;
         }
     }
+
+    /// <summary>
+    /// ¿El plan del cliente incluye atención por tickets, y le queda cupo?
+    ///
+    /// El centro de ayuda y las campañas son para todos; la ticketera es del
+    /// plan (funcionalidad SOPORTE TICKETS, bloque 365). El menú y la cabecera
+    /// lo preguntan en cada página, así que se guarda cinco minutos en la
+    /// sesión por cliente: el plan cambia muy de vez en cuando, y el cupo lo
+    /// vuelve a validar INS_SOPORTE_TICKET al crear.
+    /// </summary>
+    public static class SoportePlan
+    {
+        /* Las pantallas que solo existen si hay ticketera. */
+        private static readonly HashSet<string> PANTALLAS = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "~/View/Soporte/MisProblemas.aspx"
+        };
+
+        public static Dictionary<string, object> Estado()
+        {
+            HttpContext ctx = HttpContext.Current;
+            int cliente = Session.ClienteId();
+            string clave = "SGS_PLAN_" + cliente;
+            Dictionary<string, object> e = null;
+
+            if (ctx != null && ctx.Session != null)
+            {
+                object[] guardado = ctx.Session[clave] as object[];
+                if (guardado != null && (DateTime)guardado[0] > DateTime.UtcNow) e = (Dictionary<string, object>)guardado[1];
+            }
+            if (e != null) return e;
+
+            try { e = SoporteDatos.Fila("SEL_SOPORTE_PLAN", "@USUARIO", SoporteDatos.Usuario(), "@CLIENTE", cliente); }
+            catch (Exception) { e = new Dictionary<string, object>(); }
+
+            if (ctx != null && ctx.Session != null) ctx.Session[clave] = new object[] { DateTime.UtcNow.AddMinutes(5), e };
+            return e;
+        }
+
+        /// <summary>La ve quien tiene el plan, o el equipo de soporte.</summary>
+        public static bool Incluido()
+        {
+            Dictionary<string, object> e = Estado();
+            return Bit(e, "AGENTE") || Bit(e, "INCLUIDO");
+        }
+
+        public static bool PermiteMenu(string link)
+        {
+            return string.IsNullOrEmpty(link) || !PANTALLAS.Contains(link) || Incluido();
+        }
+
+        /// <summary>Tras crear un ticket el consumo cambió: se vuelve a leer.</summary>
+        public static void Olvidar()
+        {
+            HttpContext ctx = HttpContext.Current;
+            if (ctx != null && ctx.Session != null) ctx.Session.Remove("SGS_PLAN_" + Session.ClienteId());
+        }
+
+        private static bool Bit(Dictionary<string, object> e, string k)
+        {
+            return e != null && e.ContainsKey(k) && e[k] != null && Convert.ToBoolean(e[k]);
+        }
+    }
 }

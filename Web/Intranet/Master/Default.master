@@ -333,9 +333,9 @@
                     <%-- SOPORTE: reportar un problema y la ayuda de ESTA pantalla.
                          Los dibuja el servidor segun permiso; los atiende
                          Js/sigma-soporte.js, que tambien entrega las campanas. --%>
-                    <% if (SoportePuede("SOPORTE REPORTAR") || SoportePuede("AYUDA VER")) { %>
+                    <% if (SoporteTickets() || SoportePuede("AYUDA VER")) { %>
                     <li class="sg-sgs">
-                        <% if (SoportePuede("SOPORTE REPORTAR")) { %>
+                        <% if (SoporteTickets()) { %>
                         <button type="button" class="sg-sgs-btn is-reportar" data-sgs-act="report" title="Reportar un problema"><i class="mdi mdi-alert-outline" aria-hidden="true"></i><span>Reportar problema</span></button>
                         <% } %>
                         <% if (SoportePuede("AYUDA VER")) { %>

@@ -90,6 +90,7 @@ public class WsSoporte : System.Web.Services.WebService
                 "@NAVEGADOR", Texto(d, "navegador"),
                 "@SUGERIDO", Entero(d, "sugerido") > 0 ? (object)Entero(d, "sugerido") : null,
                 "@SUGERIDO_VISTO", Entero(d, "sugeridoVisto") > 0);
+            SoportePlan.Olvidar();
             return new { id = f["stk_id"], folio = f["stk_folio"] };
         });
     }

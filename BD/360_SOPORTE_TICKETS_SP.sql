@@ -10,7 +10,8 @@ GO
 -- DESCRIPTION:     MODULO SOPORTE: audiencia, tickets, trazabilidad,
 --                  encuesta, problemas recurrentes y analitica de la mesa.
 -- =============================================
--- Va DESPUES de 359_SOPORTE_ESQUEMA.
+-- Va DESPUES de 359_SOPORTE_ESQUEMA. El cupo de tickets lo define el bloque
+-- 365 (funcionalidad SOPORTE TICKETS); sin ella nadie fuera de soporte crea.
 --
 -- LA AUTORIZACION VIVE ACA, NO EN LA PANTALLA
 --   Cada SP recibe @USUARIO y decide: el agente (SOPORTE GESTIONAR) ve todo;
@@ -417,6 +418,22 @@ SET XACT_ABORT ON
     BEGIN RAISERROR(N'No tienes permiso para reportar problemas.', 16, 1) RETURN END
 
     DECLARE @AGENTE BIT = [dbo].[FNC_SOPORTE_ES_AGENTE](@USUARIO_CREACION)
+
+    /* La atencion por tickets es del PLAN del cliente y tiene cupo mensual
+       (bloque 365, funcionalidad SOPORTE TICKETS). El equipo de soporte
+       puede registrar igual: es quien decide atender fuera del plan. */
+    IF @AGENTE = 0
+    BEGIN
+        IF [dbo].[FNC_CLIENTE_TIENE_FUNCIONALIDAD](@CLIENTE, N'SOPORTE TICKETS') = 0
+        BEGIN RAISERROR(N'El plan de tu empresa no incluye atención por tickets. Busca tu respuesta en el centro de ayuda o habla con tu administrador.', 16, 1) RETURN END
+        DECLARE @TOPE DECIMAL(18,2) = [dbo].[FNC_CLIENTE_LIMITE](@CLIENTE, N'SOPORTE TICKETS')
+        IF @TOPE IS NOT NULL AND [dbo].[FNC_CLIENTE_CONSUMO](@CLIENTE, N'SOPORTE TICKETS') >= @TOPE
+        BEGIN
+            DECLARE @TOPE_I INT = CAST(@TOPE AS INT)
+            RAISERROR(N'Tu empresa ya usó los %d tickets de soporte de este mes. El cupo se renueva el día 1.', 16, 1, @TOPE_I) RETURN
+        END
+    END
+
     IF @USUARIO <> @USUARIO_CREACION
     BEGIN
         IF @AGENTE = 0 BEGIN RAISERROR(N'Solo soporte puede registrar un problema en nombre de otra persona.', 16, 1) RETURN END
