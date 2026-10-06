@@ -186,7 +186,7 @@
             var padre = document.getElementById('escPadre'), est = document.getElementById('escEstado');
             if (padre) padre.innerHTML = tpl ? tpl.querySelector('[data-padres]').innerHTML : '';
             if (est) est.innerHTML = tpl ? tpl.querySelector('[data-estados]').innerHTML : '';
-            var f = document.getElementById('escFecha'); if (f) f.value = new Date().toISOString().slice(0, 10);
+            var f = document.getElementById('escFecha'); if (f) { var h = new Date(); f.value = ('0' + h.getDate()).slice(-2) + '-' + ('0' + (h.getMonth() + 1)).slice(-2) + '-' + h.getFullYear(); }
             var foto = document.getElementById('escFoto'); if (foto) { foto.value = ''; escFotoVer(foto); }
             document.querySelectorAll('#sgEsAsistente .sg-es-campo.es-falta').forEach(function (x) { x.classList.remove('es-falta'); });
             document.getElementById('sgEscFaltan').hidden = true;
@@ -202,6 +202,13 @@
         function escDesdePlanta() {
             var P = window.sigmaPlanta, d = P && P.datos ? P.datos() : null;
             if (!d) return false;
+            /* En la planta no esta el formulario del activo, que es el que trae
+               AF_OPC del servidor: sin esto «Qué es» y «Dónde va» solo ofrecian
+               «Crear». Se llenan con lo que ya usan los componentes de la
+               planta; si AF_OPC ya viene del servidor (centro 360), manda ese. */
+            window.AF_OPC = window.AF_OPC || {};
+            if (!(AF_OPC.tipos || []).length) AF_OPC.tipos = d.tipos || [];
+            if (!(AF_OPC.lados || []).length) AF_OPC.lados = d.lados || [];
             esAsistente(true);
             escAbrir();
             escEnPlanta = true;
@@ -2183,10 +2190,13 @@
                     <span class="sg-es-etiq">Estado</span>
                     <select name="esc_estado" id="escEstado"></select>
                 </label>
-                <label class="sg-es-campo">
+                <%-- El calendario de SIGMA (sigma-calendario.js) toma el campo por el
+                     envoltorio .sigma-modal-fecha y escribe dd-mm-aaaa. Es un div y no
+                     un label: dentro de un label, el clic en el icono enfocaba el campo. --%>
+                <div class="sg-es-campo">
                     <span class="sg-es-etiq">Se instaló el</span>
-                    <input type="date" name="esc_fecha" id="escFecha" />
-                </label>
+                    <span class="sigma-modal-fecha"><input type="text" name="esc_fecha" id="escFecha" maxlength="10" placeholder="dd-mm-aaaa" autocomplete="off" aria-label="Se instaló el" /><a href="javascript:void(0)" title="Elegir fecha" aria-label="Elegir fecha"></a></span>
+                </div>
                 <label class="sg-es-campo es-ancho">
                     <span class="sg-es-etiq">Descripción u observación</span>
                     <textarea name="esc_desc" id="escDesc" rows="2" maxlength="500" placeholder="Ej.: está gastado y se escapa el frío"></textarea>

@@ -2475,8 +2475,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             c.aco_codigo = "AUTO";
             c.aco_nombre = nombre;
             DateTime fecha;
-            c.aco_fecha_instalacion = DateTime.TryParse(Request.Form["esc_fecha"], System.Globalization.CultureInfo.InvariantCulture,
-                System.Globalization.DateTimeStyles.None, out fecha) && fecha.Date <= global::SitioBase.Hora.Hoy ? fecha.Date : global::SitioBase.Hora.Hoy;
+            /* dd-mm-aaaa es lo que escribe el calendario de SIGMA; aaaa-mm-dd queda por si llega del campo nativo. */
+            c.aco_fecha_instalacion = DateTime.TryParseExact((Request.Form["esc_fecha"] ?? "").Trim(), new[] { "dd-MM-yyyy", "d-M-yyyy", "yyyy-MM-dd" },
+                System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out fecha) && fecha.Date <= global::SitioBase.Hora.Hoy ? fecha.Date : global::SitioBase.Hora.Hoy;
             string desc = (Request.Form["esc_desc"] ?? "").Trim();
             if (desc != "") c.aco_descripcion = desc.Length > 500 ? desc.Substring(0, 500) : desc;
 
