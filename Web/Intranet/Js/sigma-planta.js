@@ -232,6 +232,11 @@ const SIGMA = {
     const a = S.activos[id]; if (!a || !window.SigmaModal) return;
     window.SigmaModal.open({ url:CFG.urlComponente + '?query=' + a.qComp, title:'Nuevo componente de ' + a.nombre, width:1040, initialHeight:620 });
   },
+  /* La ficha del activo con el padre ya elegido (Padre= -> ActivoForm.PadreFijo), como en el centro 360. */
+  nuevoSubactivo(id){
+    const a = S.activos[id]; if (!a || !a.qSub || !CFG.urlActivo || !window.SigmaModal) return;
+    window.SigmaModal.open({ url:CFG.urlActivo + '?query=' + a.qSub, title:'Nuevo subactivo de ' + a.nombre, width:1060, initialHeight:620 });
+  },
   /* Cambiar el estado pide decir por que, como en la ficha: queda en la historia. */
   pedirMotivo(kind, id, idx, select){
     const a = S.activos[id]; if (!a) return;
@@ -1580,6 +1585,7 @@ function groupHTML(kind, list, side, M){
     ${big ? `<div class="grp-tools"><label class="sr" for="q-${kind}">Buscar ${k.one}</label><input class="grp-q" id="q-${kind}" data-q="${kind}" placeholder="Buscar ${k.one}…" autocomplete="off">${bad ? `<button type="button" class="grp-only" data-only="${kind}" aria-pressed="false">${kind === 'rep' ? 'Por reponer' : 'Con aviso'}</button>` : ''}</div>` : ''}
     ${kind === 'rep' ? `<div class="grp-for" id="repFor" hidden></div>` : ''}
     <div class="grp-list">${items}</div>
+    ${kind === 'sub' && S.permisos && S.permisos.editar ? `<button type="button" class="grp-add" data-xp="addsub">${svg(I.plus,16)}Agregar subactivo</button>` : ''}
     ${kind === 'comp' && !XP.adding ? `<button type="button" class="grp-add" data-xp="add">${svg(I.plus,16)}Agregar componente</button>` : ''}
     ${kind === 'rep' && S.permisos && S.permisos.editar ? (XP.addRep ? SIGMA.formRepuesto(curId()) : `<button type="button" class="grp-add grp-add--rep" data-xp="addrep">${svg(I.plus,16)}Agregar repuesto compatible</button>`) : ''}
   </section>`;
@@ -1744,6 +1750,7 @@ document.addEventListener('click', e => {
   else if (x === 'unsel'){ XP.sel = null; renderXP(false); }
   else if (x === 'repall'){ XP.repFor = null; applyRepFor(); }
   else if (x === 'add'){ SIGMA.nuevoComponente(curId()); }
+  else if (x === 'addsub'){ SIGMA.nuevoSubactivo(curId()); }
   else if (x === 'addcancel'){ XP.adding = false; renderXP(false); }
   else if (x === 'addrep') SIGMA.abrirRepuesto();
   else if (x === 'addrepcancel'){ XP.addRep = false; renderXP(false); }

@@ -919,6 +919,7 @@
             raiz: '<%=ResolveUrl("~/") %>',
             three: '<%=ResolveUrl("~/Js/three/") %>',
             urlComponente: '<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>',
+            urlActivo: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>',
             urls: {
                 variables: '<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>',
                 medidores: '<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>',

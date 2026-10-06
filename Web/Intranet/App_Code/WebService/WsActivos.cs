@@ -125,7 +125,8 @@ public class WsActivos : System.Web.Services.WebService
                     { "foto", portada > 0 ? UrlArchivo.Ver(portada) : null }, { "nfotos", fotos.ContainsKey(id) ? fotos[id] : 0 },
                     { "ot", res != null ? res.ot_abiertas : 0 }, { "fallas", res != null ? res.fallas_abiertas : 0 },
                     { "prox", res != null && res.proxima_mantencion != null ? res.proxima_mantencion.Value.ToString("dd MMM yyyy", new CultureInfo("es-CL")) : null },
-                    { "url360", Url360(aid) }, { "qComp", Cifrar("Id=0&Activo=" + aid) } };
+                    { "url360", Url360(aid) }, { "qComp", Cifrar("Id=0&Activo=" + aid) },
+                    { "qSub", Cifrar("Id=0&Padre=" + aid) } };
                 activos[id]["_area"] = r["AREA"] == DBNull.Value ? null : "u" + r["AREA"];
             }
             foreach (var kv in activos)
