@@ -20,6 +20,9 @@ using System.Web.Services;
 [ScriptService]
 public class WsCargaDatos : System.Web.Services.WebService
 {
+    /// <summary>La carga de INVENTARIO se abre tambien desde el Centro de repuestos.</summary>
+    private const string PERMISO_REPUESTOS = "CREAR EDITAR REPUESTOS";
+
     /// <summary>Los modulos con sus hojas y columnas, lo que ya tiene cada uno y la ultima carga.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
@@ -178,7 +181,7 @@ public class WsCargaDatos : System.Web.Services.WebService
                 return Json(new { error = true, sesion = true, detalle = "La sesión expiró. Vuelve a entrar." });
             /* La carga de ACTIVOS tambien la usa quien crea activos (se abre
                desde el Centro de activos); las demas exigen el permiso de cargas. */
-            if (!Token.Puede(CargaMasivaController.PERMISO) && !Token.Puede("CREAR EDITAR ACTIVOS"))
+            if (!Token.Puede(CargaMasivaController.PERMISO) && !Token.Puede("CREAR EDITAR ACTIVOS") && !Token.Puede(PERMISO_REPUESTOS))
                 return Json(new { error = true, sinPermiso = true, detalle = "No tienes permiso para cargar datos. Pídeselo al administrador de tu empresa." });
             return Json(accion());
         }
@@ -188,11 +191,12 @@ public class WsCargaDatos : System.Web.Services.WebService
         }
     }
 
-    /// <summary>Sin el permiso de cargas, solo el modulo ACTIVOS (y con permiso de crear activos).</summary>
+    /// <summary>Sin el permiso de cargas: ACTIVOS para quien crea activos e INVENTARIO para quien crea repuestos.</summary>
     private static void ExigirModulo(string modulo)
     {
         if (Token.Puede(CargaMasivaController.PERMISO)) return;
         if (string.Equals(modulo, "ACTIVOS", StringComparison.OrdinalIgnoreCase) && Token.Puede("CREAR EDITAR ACTIVOS")) return;
+        if (string.Equals(modulo, "INVENTARIO", StringComparison.OrdinalIgnoreCase) && Token.Puede(PERMISO_REPUESTOS)) return;
         throw new Exception("No tienes permiso para cargar datos de ese módulo.");
     }
 

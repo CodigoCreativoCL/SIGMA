@@ -67,6 +67,8 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
 
         // Un postback asíncrono no lleva el archivo: Adjuntar debe enviar la página completa.
         ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkSubir);
+        // El Excel sale en la respuesta: exportar no puede ser un postback asincrono.
+        ScriptManager.GetCurrent(Page).RegisterPostBackControl(lnkExportar);
         /* La ficha (y su FileUpload) llega por un postback asíncrono, así que el
            <form> se pintó sin multipart y el navegador no enviaba el archivo. */
         Page.Form.Enctype = "multipart/form-data";
@@ -161,20 +163,20 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         return _bodegas;
     }
 
+    /// <summary>Los estantes de una bodega, para el «Mapa por ubicación».</summary>
+    private List<object> Racks(int bodega)
+    {
+        if (_racks == null)
+            _racks = new BodegaController().GetUbicaciones(new BodegaUbicacion { filtro_habilitado = true }) ?? new List<BodegaUbicacion>();
+        List<object> l = new List<object>();
+        foreach (BodegaUbicacion u in _racks)
+            if (u.bub_bodega == bodega) l.Add(new { id = u.bub_id, codigo = u.bub_codigo ?? "", nombre = u.bub_nombre ?? "" });
+        return l;
+    }
+    private List<BodegaUbicacion> _racks;
+
     private static int Entero(string v) { int n; return int.TryParse(v, out n) ? n : 0; }
 
-    /* Los controles del filtro viven dentro de la plantilla del wuc, asi que
-       no son campos de la pagina: hay que pedirlos por su id. */
-    private RadComboBox2 Cbo(string id) { return (RadComboBox2)wucFiltro.FindControl(id); }
-    private System.Web.UI.WebControls.CheckBox Chk(string id)
-    { return (System.Web.UI.WebControls.CheckBox)wucFiltro.FindControl(id); }
-
-    private RadComboBox2 ddlPlanta { get { return Cbo("ddlPlanta"); } }
-    private RadComboBox2 ddlBodega { get { return Cbo("ddlBodega"); } }
-    private RadComboBox2 ddlTipo { get { return Cbo("ddlTipo"); } }
-    private RadComboBox2 ddlEstado { get { return Cbo("ddlEstado"); } }
-    private System.Web.UI.WebControls.CheckBox chkLote { get { return Chk("chkLote"); } }
-    private System.Web.UI.WebControls.CheckBox chkInhabilitados { get { return Chk("chkInhabilitados"); } }
 
     /// <summary>Tipos de movimiento, para filtrar la pestana Movimientos.</summary>
     private void CargarTiposMovimiento()
@@ -205,7 +207,6 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     {
         Repuesto f = new Repuesto();
         if (!chkInhabilitados.Checked) f.filtro_habilitado = true;
-        if (!string.IsNullOrWhiteSpace(wucFiltro.Filtro())) f.filtro = wucFiltro.Filtro().Trim();
         int tipo = Entero(ddlTipo.SelectedValue);
         if (tipo > 0) f.rep_repuesto_tipo = tipo;
         return f;
@@ -218,14 +219,12 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         lnkClasificar.Visible = puedeCrear;
         lnkCargaMasiva.OnClientClick =
             "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") +
-            "',title:'Carga masiva de repuestos',width:900,initialHeight:600,onClose:refresh});";
+            "',title:'Carga masiva de repuestos',width:1080,initialHeight:640,onClose:refresh});";
         // La clasificacion masiva necesita seleccion multiple: eso vive en el
         // listado clasico, que sigue existiendo. El centro no la pierde.
         lnkClasificar.OnClientClick =
             "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/Repuestos.aspx") +
             "',title:'Clasificar repuestos',width:1100,initialHeight:680,onClose:refresh});";
-        hlBodegas.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/Bodegas.aspx");
-        hlTipos.NavigateUrl = ResolveUrl("~/View/Inventario/Repuestos/RepuestoTipos.aspx");
 
         List<Repuesto> lista = new RepuestoController().GetRepuestos(FiltroActual()) ?? new List<Repuesto>();
 
@@ -274,11 +273,28 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
 
         // Una lectura para todo el listado, no una por tarjeta.
         Dictionary<int, string> alerta = new Dictionary<int, string>();
+        Dictionary<int, List<object>> saldosPorRep = new Dictionary<int, List<object>>();
         foreach (InventarioSaldo x in (new InventarioController().GetSaldos(new InventarioSaldo())
                                        ?? new List<InventarioSaldo>()))
         {
             if (x.bajo_minimo) alerta[x.isa_repuesto] = "bajo";
             else if (x.sobre_maximo && !alerta.ContainsKey(x.isa_repuesto)) alerta[x.isa_repuesto] = "sobre";
+            /* Cada saldo con su umbral y su estante: la tarjeta muestra los
+               umbrales y el «Mapa por ubicación» pone el repuesto en su rack. */
+            if (!saldosPorRep.ContainsKey(x.isa_repuesto)) saldosPorRep[x.isa_repuesto] = new List<object>();
+            saldosPorRep[x.isa_repuesto].Add(new
+            {
+                bodega = x.isa_bodega,
+                cant = x.isa_cantidad,
+                cantTxt = Num(x.isa_cantidad),
+                min = x.rbs_stock_minimo,
+                max = x.rbs_stock_maximo,
+                rep = x.rbs_punto_reposicion,
+                bajo = x.bajo_minimo,
+                sobre = x.sobre_maximo,
+                ubic = x.ubicacion_codigo ?? "",
+                ubicTxt = x.ubicacion_texto ?? ""
+            });
         }
 
         Dictionary<int, List<RepuestoCompatibilidad>> compatPorRep =
@@ -292,114 +308,103 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
             compatPorRep[x.rco_repuesto].Add(x);
         }
 
-        // ---- KPIs ----
-        int conStock = 0, sinStock = 0, conLote = 0;
-        decimal unidades = 0;
+        // ---- KPIs (los del Centro de activos: icono, numero y una nota) ----
+        int conStock = 0, sinStock = 0, conLote = 0, enAlerta = 0;
         foreach (Repuesto r in lista)
         {
-            if (r.existencia_total > 0) { conStock++; unidades += r.existencia_total; } else sinStock++;
+            if (r.existencia_total > 0) conStock++; else sinStock++;
             if (r.rep_controla_lote) conLote++;
+            if (alerta.ContainsKey(r.rep_id)) enAlerta++;
         }
         StringBuilder k = new StringBuilder();
-        k.Append(Kpi("package-variant-closed", "lila", "Repuestos", lista.Count.ToString(CL), Contexto()));
-        k.Append(Kpi("check-circle-outline", "ok", "Con existencia", conStock.ToString(CL), ""));
-        k.Append(Kpi(sinStock > 0 ? "alert-circle-outline" : "circle-outline",
-                     sinStock > 0 ? "ambar" : "teal", "Sin existencia", sinStock.ToString(CL), ""));
-        int enAlerta = 0;
-        foreach (Repuesto r in lista) if (alerta.ContainsKey(r.rep_id)) enAlerta++;
-        k.Append(Kpi(enAlerta > 0 ? "bell-alert-outline" : "counter", enAlerta > 0 ? "alerta" : "azul",
-                     enAlerta > 0 ? "Fuera de umbral" : "Unidades en bodega",
-                     enAlerta > 0 ? enAlerta.ToString(CL) : Num(unidades),
-                     enAlerta > 0 ? "Revisar minimo y maximo" : (conLote > 0 ? conLote + " controlan lote" : "")));
+        k.Append(KpiV3("<path d=\"M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8\"/>", "#F2EFFF", "#6732F4",
+                       "Repuestos", lista.Count.ToString(CL), Contexto()));
+        k.Append(KpiV3("<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M8 12.5l2.7 2.7L16 9.5\"/>", "#E7F5EE", "#12704C",
+                       "Con existencia", conStock.ToString(CL), "Hay en al menos una bodega"));
+        k.Append(KpiV3("<circle cx=\"12\" cy=\"12\" r=\"9\"/><path d=\"M12 7v6M12 16.5v.5\"/>", sinStock > 0 ? "#FFF3E3" : "#F4F6FA", sinStock > 0 ? "#9A4D00" : "#5F6A80",
+                       "Sin existencia", sinStock.ToString(CL), "No hay en ninguna bodega"));
+        k.Append(KpiV3("<path d=\"M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.9 1.9 0 0 0 3.4 0\"/>", enAlerta > 0 ? "#FDECEA" : "#EAF4FF", enAlerta > 0 ? "#C7352B" : "#0662BC",
+                       "Fuera de umbral", enAlerta.ToString(CL), enAlerta > 0 ? "Bajo el mínimo o sobre el máximo" : "Todo dentro de su mínimo y máximo"));
         litKpis.Text = k.ToString();
 
-        // ---- tarjetas, con la foto de portada del repuesto ----
-        pnlListaVacia.Visible = lista.Count == 0;
-        litResultado.Text = lista.Count == 0 ? "" :
-            "<p class=\"rc-resultado\">" + lista.Count.ToString(CL) + " repuesto" +
-            (lista.Count == 1 ? "" : "s") + "</p>";
-        if (lista.Count == 0) { litLista.Text = ""; return; }
+        // ---- pestañas y filtros activos ----
+        litNumRep.Text = lista.Count.ToString(CL);
+        litNumTipos.Text = Math.Max(0, ddlTipo.Items.Count - 1).ToString(CL);
+        litNumBodegas.Text = Math.Max(0, ddlBodega.Items.Count - 1).ToString(CL);
+        int filtros = (Entero(ddlPlanta.SelectedValue) > 0 ? 1 : 0) + (Entero(ddlBodega.SelectedValue) > 0 ? 1 : 0)
+                    + (Entero(ddlTipo.SelectedValue) > 0 ? 1 : 0) + (string.IsNullOrEmpty(ddlEstado.SelectedValue) ? 0 : 1)
+                    + (chkLote.Checked ? 1 : 0) + (chkInhabilitados.Checked ? 1 : 0);
+        litNumFiltros.Text = filtros > 0 ? "<b class=\"rcx-nfil\">" + filtros + "</b>" : "";
 
-        StringBuilder s2 = new StringBuilder("<div class=\"rc-grid\">");
+        // ---- los datos de las dos vistas: Js de la pagina dibuja Lista y Tarjetas ----
+        List<object> datos = new List<object>();
         foreach (Repuesto r in lista)
         {
-            // Las imagenes del repuesto viajan en la tarjeta para que el visor
-            // no tenga que ir a buscarlas al abrirse.
             List<RepuestoFoto> suyas;
             List<string> urls = new List<string>();
             if (fotosPorRep.TryGetValue(r.rep_id, out suyas))
                 foreach (RepuestoFoto f in suyas)
                     if (string.IsNullOrEmpty(f.mime) || f.mime.StartsWith("image/"))
                         urls.Add(SitioBase.UrlArchivo.Ver(f.archivo));
-
             int archivo;
-            string foto;
-            if (portadas.TryGetValue(r.rep_id, out archivo) && archivo > 0)
-            {
-                string srcs = Esc(string.Join("|", urls.ToArray()));
-                foto = "<span class=\"rc-thumb\" data-fotos=\"" + srcs + "\" data-titulo=\"" + Esc(r.rep_nombre)
-                     + "\" onclick=\"return rcVisor(this);\">"
-                     + "<img src=\"" + Esc(SitioBase.UrlArchivo.Ver(archivo)) + "\" alt=\"" + Esc(r.rep_nombre) + "\" />"
-                     + "<i class=\"mdi mdi-magnify-plus-outline rc-lupa\"></i></span>";
-            }
-            else
-            {
-                foto = "<span class=\"rc-thumb es-vacia\"><i class=\"mdi mdi-image-off-outline\"></i></span>";
-            }
+            string portada = portadas.TryGetValue(r.rep_id, out archivo) && archivo > 0 ? SitioBase.UrlArchivo.Ver(archivo) : "";
 
-            string chipTipo = string.IsNullOrEmpty(r.repuesto_tipo_nombre) ? "" :
-                "<span class=\"rc-badge es-tipo\">" + Esc(r.repuesto_tipo_nombre) + "</span>";
-            string chipStock = r.existencia_total > 0
-                ? "<span class=\"rc-badge es-ok\">En " + r.bodegas_con_saldo + " bodega" + (r.bodegas_con_saldo == 1 ? "" : "s") + "</span>"
-                : "<span class=\"rc-badge es-off\">Sin existencia</span>";
-            string chipLote = r.rep_controla_lote ? "<span class=\"rc-badge es-lote\">Por lote</span>" : "";
-            string chipOff = r.rep_habilitado ? "" : "<span class=\"rc-badge es-off\">Deshabilitado</span>";
-
-            // El aviso de umbral va en la tarjeta: es lo que hace entrar.
-            string chipUmbral = "";
-            string umb;
-            if (alerta.TryGetValue(r.rep_id, out umb))
-                chipUmbral = umb == "bajo"
-                    ? "<span class=\"rc-badge es-bajo\"><i class=\"mdi mdi-arrow-down-bold-outline\"></i> Bajo el minimo</span>"
-                    : "<span class=\"rc-badge es-alto\"><i class=\"mdi mdi-arrow-up-bold-outline\"></i> Sobre el maximo</span>";
-
-            // Con que calza, sin entrar al repuesto.
-            string compatHtml = "";
+            List<string> compat = new List<string>();
             List<RepuestoCompatibilidad> cs;
-            if (compatPorRep.TryGetValue(r.rep_id, out cs) && cs.Count > 0)
-            {
-                StringBuilder li = new StringBuilder();
-                foreach (RepuestoCompatibilidad x in cs)
-                    li.Append("<li><span class=\"rc-badge es-info\">")
-                      .Append(Esc(string.IsNullOrEmpty(x.alcance_etiqueta) ? x.alcance : x.alcance_etiqueta))
-                      .Append("</span> ").Append(Esc(x.alcance_nombre)).Append("</li>");
-                compatHtml = "<details class=\"rc-compat\" onclick=\"event.stopPropagation();\">"
-                           + "<summary><i class=\"mdi mdi-puzzle-outline\"></i> Compatible con "
-                           + cs.Count + (cs.Count == 1 ? " equipo" : " equipos") + "</summary>"
-                           + "<ul>" + li + "</ul></details>";
-            }
-            else
-            {
-                compatHtml = "<div class=\"rc-compat es-vacia\"><i class=\"mdi mdi-puzzle-outline\"></i> "
-                           + "Sin compatibilidades declaradas</div>";
-            }
+            if (compatPorRep.TryGetValue(r.rep_id, out cs))
+                foreach (RepuestoCompatibilidad x in cs) compat.Add(x.alcance_nombre);
 
-            s2.Append("<div class=\"rc-item\" onclick=\"abrirCentroRepuesto(").Append(r.rep_id).Append(")\">")
-              .Append("<div class=\"rc-item-top\">").Append(foto).Append("<div class=\"rc-item-id\">")
-              .Append("<div class=\"cod\">").Append(Esc(r.rep_codigo)).Append("</div>")
-              .Append("<div class=\"nom\">").Append(Esc(r.rep_nombre)).Append("</div>")
-              .Append("</div></div>")
-              .Append("<div class=\"rc-item-chips\">").Append(chipTipo).Append(chipLote)
-              .Append(chipUmbral).Append(chipOff).Append("</div>")
-              .Append(compatHtml)
-              .Append("<div class=\"pie\">")
-              .Append("<div class=\"stock\">").Append(Num(r.existencia_total))
-              .Append("<small>").Append(Esc(r.unidad_simbolo)).Append("</small></div>")
-              .Append(chipStock)
-              .Append("</div></div>");
+            string umb;
+            alerta.TryGetValue(r.rep_id, out umb);
+            datos.Add(new
+            {
+                id = r.rep_id,
+                q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + r.rep_id)),
+                codigo = r.rep_codigo ?? "",
+                nombre = r.rep_nombre ?? "",
+                tipo = r.repuesto_tipo_nombre ?? "",
+                fabricante = r.rep_fabricante ?? "",
+                modelo = r.rep_modelo ?? "",
+                stock = r.existencia_total,
+                stockTxt = Num(r.existencia_total),
+                unidad = r.unidad_simbolo ?? "",
+                bodegas = r.bodegas_con_saldo,
+                lote = r.rep_controla_lote,
+                habilitado = r.rep_habilitado,
+                umbral = umb ?? "",
+                compat = compat,
+                foto = portada,
+                fotos = urls,
+                saldos = saldosPorRep.ContainsKey(r.rep_id) ? saldosPorRep[r.rep_id] : new List<object>()
+            });
         }
-        s2.Append("</div>");
-        litLista.Text = s2.ToString();
+        /* Las pestañas Tipos y Bodegas se ven dentro del centro, como los
+           catalogos del Centro de activos: crear y editar abren su modal. */
+        Dictionary<int, int> porTipo = new Dictionary<int, int>();
+        foreach (Repuesto r in (new RepuestoController().GetRepuestos(new Repuesto { filtro_habilitado = true }) ?? new List<Repuesto>()))
+        {
+            int c; porTipo.TryGetValue(r.rep_repuesto_tipo, out c); porTipo[r.rep_repuesto_tipo] = c + 1;
+        }
+        List<object> tipos = new List<object>();
+        foreach (RepuestoTipo t in (new RepuestoTipoController().GetRepuestoTipos(new RepuestoTipo { filtro_habilitado = true }) ?? new List<RepuestoTipo>()))
+        {
+            int c; porTipo.TryGetValue(t.rti_id, out c);
+            tipos.Add(new { id = t.rti_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + t.rti_id)), codigo = t.rti_codigo ?? "", nombre = t.rti_nombre ?? "", descripcion = t.rti_descripcion ?? "", repuestos = c });
+        }
+        List<object> bodegas = new List<object>();
+        foreach (Bodega b in Bodegas())
+            bodegas.Add(new { racks = Racks(b.bod_id), id = b.bod_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + b.bod_id)), codigo = b.bod_codigo ?? "", nombre = b.bod_nombre ?? "", planta = b.planta_nombre ?? "", descripcion = b.bod_descripcion ?? "", ubicaciones = b.ubicaciones, repuestos = b.repuestos_con_saldo });
+
+        litLista.Text = "<script type=\"application/json\" id=\"rcDatos\">"
+            + new System.Web.Script.Serialization.JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Serialize(new
+            {
+                puedeEditar = puedeCrear,
+                puedeBodegas = SitioBase.Token.Puede("VER BODEGAS"),
+                items = datos,
+                tipos = tipos,
+                bodegas = bodegas
+            }).Replace("</", "<\\/")
+            + "</script>";
     }
 
     /// <summary>Texto del contexto de filtro, para el pie del primer KPI.</summary>
@@ -424,6 +429,12 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
 
         litMiga.Text = Esc(r.rep_codigo);
         litHeroNombre.Text = Esc(r.rep_nombre);
+        /* La portada en la cabecera, como en la ficha del activo. */
+        Dictionary<int, int> portadasHero = new RepuestoFotoController().GetPortadas() ?? new Dictionary<int, int>();
+        int fotoHero;
+        litHeroFoto.Text = portadasHero.TryGetValue(r.rep_id, out fotoHero) && fotoHero > 0
+            ? "<span class=\"sg-a3-foto\"><img src=\"" + Esc(SitioBase.UrlArchivo.Ver(fotoHero)) + "\" alt=\"" + Esc(r.rep_nombre) + "\" /></span>"
+            : "<span class=\"sg-a3-foto es-vacia\" data-sec=\"evidencia\" title=\"Agregar fotos en Evidencia\"><i class=\"mdi mdi-camera-plus-outline\"></i>Sin foto</span>";
         litHeroSub.Text = Esc(r.rep_codigo)
             + (string.IsNullOrEmpty(r.repuesto_tipo_nombre) ? "" : " · " + Esc(r.repuesto_tipo_nombre))
             + (string.IsNullOrEmpty(r.rep_fabricante) ? "" : " · " + Esc(r.rep_fabricante))
@@ -1383,6 +1394,14 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     /// (etq/val/pie): sin ellas el numero y la etiqueta se pegan, que era el
     /// "8Repuestos" del primer intento.
     /// </summary>
+    /// <summary>Indicador con el diseño del Centro de activos (.sgap .kpi).</summary>
+    private static string KpiV3(string svg, string fondo, string color, string etiqueta, string valor, string nota)
+    {
+        return "<div class=\"kpi\"><span class=\"kpi-ico\" style=\"--kb:" + fondo + ";--kc:" + color + "\">"
+             + "<svg width=\"22\" height=\"22\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.8\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" + svg + "</svg></span>"
+             + "<div><span>" + Esc(etiqueta) + "</span><strong>" + valor + "</strong><small>" + Esc(nota) + "</small></div></div>";
+    }
+
     private static string Kpi(string icono, string tono, string etiqueta, string valor, string pie)
     {
         return "<div class=\"sg-a3-kpi\"><span class=\"sg-a3-kpi-ico es-" + tono + "\">"

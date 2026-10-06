@@ -1,0 +1,146 @@
+﻿/* ============================================================================
+   Centro de repuestos · el diseño del Centro de activos 360° (06-10-2026)
+   Usa los tokens y piezas de sigma-activos.css (.sgap: hero, kpis, panel,
+   mtabs, viewbar, seg). Aqui va solo lo propio: los enlaces de las pestañas,
+   el menu con LinkButtons, los filtros por saldo y las dos vistas.
+   ========================================================================= */
+
+/* La pantalla va sobre el lienzo: sin la tarjeta blanca ni el titulo de la maestra */
+body:has(#pnlLista) .sg-page-head { display: none }
+.card-box:has(#pnlLista), .card-box:has(.rcx-ficha) { display: block !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important }
+body:has(#pnlLista) .content-page .container-fluid { padding-top: 12px !important }
+.card-box:has(#pnlLista) .table-responsive { overflow: visible }
+
+/* Pestañas que llevan a otra pantalla: iguales a los botones */
+.sgap .mtabs a { flex: none; height: 46px; padding: 0 14px; border-bottom: 3px solid transparent; color: var(--muted); font-size: 14px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; white-space: nowrap; text-decoration: none }
+.sgap .mtabs a:hover { color: var(--ink) }
+.sgap .mtabs a b { min-width: 22px; height: 22px; padding: 0 7px; border-radius: 11px; background: var(--canvas); color: var(--muted); font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center }
+
+/* El menu «Importar o exportar» con LinkButtons */
+.sgap .menu a { display: flex; align-items: flex-start; gap: 12px; padding: 10px; border-radius: 10px; color: var(--ink); text-decoration: none }
+.sgap .menu a svg { color: var(--sigma-purple); flex: none; margin-top: 1px }
+.sgap .menu a:hover, .sgap .menu a:focus-visible { background: var(--sigma-purple-soft) }
+
+/* Filtros por saldo (planta, bodega, tipo, existencia) */
+.rcx .rcx-nfil { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--sigma-purple); color: #fff; font-size: 11px; display: inline-flex; align-items: center; justify-content: center }
+.rcx .rcx-filtros { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(210px, 100%), 1fr)); gap: 12px; padding: 14px; border-radius: 16px; background: var(--canvas) }
+.rcx .rcx-filtros > label { display: flex; flex-direction: column; gap: 6px; margin: 0; font-size: 12px; font-weight: 700; color: var(--muted) }
+.rcx .rcx-checks { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; font-size: 13px; font-weight: 600 }
+.rcx .rcx-checks label { margin: 0 0 0 4px; font-weight: 600 }
+
+/* Barra de busqueda comun a las dos vistas */
+.rcx .rcx-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 12px; border-radius: 18px; background: var(--surface); box-shadow: var(--e1) }
+.rcx .rcx-q { flex: 1 1 280px; display: flex; align-items: center; gap: 10px; height: 44px; padding: 0 14px; border-radius: 12px; background: var(--canvas); color: var(--muted); margin: 0 }
+.rcx .rcx-q input { flex: 1; min-width: 0; border: 0; outline: none; font-size: 15px; color: var(--ink); background: transparent }
+.rcx .rcx-sel { display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 12px; background: var(--canvas); border-radius: 12px; font-size: 13px; color: var(--muted); margin: 0; font-weight: 400 }
+.rcx .rcx-sel select { border: 0; background: transparent; font-size: 14px; font-weight: 700; color: var(--ink); cursor: pointer }
+.rcx .rcx-grupo { display: flex; flex-direction: column; gap: 12px; margin-top: 20px }
+.rcx .rcx-grupo h3 { margin: 0; font-size: 14px; font-weight: 800; display: flex; align-items: center; gap: 8px }
+.rcx .rcx-grupo h3 span { font-size: 13px; color: var(--muted); font-weight: 600 }
+.rcx .rcx-vacio { padding: 28px; border-radius: 18px; background: var(--surface); text-align: center; color: var(--muted); margin-top: 20px }
+
+/* ---- Tarjetas ---- */
+.rcx .rcx-tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(310px, 100%), 1fr)); gap: 20px }
+.rcx .rcx-card { background: var(--surface); border-radius: 22px; box-shadow: var(--e2, 0 0 0 1px rgba(23,34,59,.04), 0 2px 4px rgba(23,34,59,.04), 0 12px 32px rgba(23,34,59,.08)); display: flex; flex-direction: column; overflow: hidden; cursor: pointer; transition: transform .15s, box-shadow .15s }
+.rcx .rcx-card:hover { transform: translateY(-2px) }
+.rcx .rcx-card.es-alerta { box-shadow: 0 0 0 1.5px rgba(199,53,43,.35), 0 12px 32px rgba(199,53,43,.10) }
+.rcx .rcx-cover { position: relative; height: 176px; background: #2C3448 center/cover no-repeat }
+.rcx .rcx-cover::after { content: ""; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(20,27,51,0) 40%, rgba(20,27,51,.55) 100%) }
+.rcx .rcx-cover.es-vacia { margin: 10px 10px 0; border-radius: 16px; border: 2px dashed #CDD4E0; background: var(--rail); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; color: var(--muted); font-size: 13px; font-weight: 700 }
+.rcx .rcx-cover.es-vacia::after { display: none }
+.rcx .rcx-chip { position: absolute; top: 14px; z-index: 1; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--surface); font-size: 12px; font-weight: 800; box-shadow: 0 1px 3px rgba(23,34,59,.1); max-width: calc(50% - 20px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.rcx .rcx-chip.es-izq { left: 14px }
+.rcx .rcx-chip.es-der { right: 14px; color: var(--sigma-purple) }
+.rcx .rcx-chip i { width: 8px; height: 8px; border-radius: 50%; flex: none }
+.rcx .rcx-aviso { position: absolute; bottom: 14px; left: 14px; z-index: 1; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 15px; background: var(--danger); color: #fff; font-size: 12px; font-weight: 800 }
+.rcx .rcx-aviso.es-alto { background: var(--warning) }
+.rcx .rcx-lupa { position: absolute; right: 14px; bottom: 14px; z-index: 1; width: 34px; height: 34px; border: 0; border-radius: 50%; background: rgba(255,255,255,.92); color: var(--ink); display: grid; place-items: center; cursor: zoom-in }
+.rcx .rcx-cuerpo { padding: 18px 20px; display: flex; flex-direction: column; gap: 14px }
+.rcx .rcx-nom { display: flex; flex-direction: column; gap: 3px }
+.rcx .rcx-nom strong { font-size: 18px; font-weight: 800; letter-spacing: -.01em; line-height: 1.25 }
+.rcx .rcx-nom span { font-size: 13px; color: var(--muted) }
+.rcx .rcx-celdas { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: 14px; background: var(--canvas) }
+.rcx .rcx-celdas > div { padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; min-width: 0 }
+.rcx .rcx-celdas > div + div { border-left: 1px solid var(--line) }
+.rcx .rcx-celdas span { font-size: 11px; font-weight: 700 }
+.rcx .rcx-celdas strong { font-size: 22px; line-height: 1.1; font-variant-numeric: tabular-nums }
+.rcx .rcx-celdas strong small { font-size: 12px; font-weight: 700; color: var(--muted); margin-left: 3px }
+.rcx .rcx-celdas em { font-style: normal; font-size: 11px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.rcx .rcx-estado { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; font-size: 13px; font-weight: 700 }
+.rcx .rcx-estado.es-ok { background: var(--success-soft); color: var(--success-ink) }
+.rcx .rcx-estado.es-bajo { background: var(--danger-soft); color: var(--bad-ink) }
+.rcx .rcx-estado.es-alto, .rcx .rcx-estado.es-sin { background: var(--warning-soft); color: var(--warning-ink) }
+.rcx .rcx-estado.es-off { background: var(--canvas); color: var(--muted) }
+.rcx .rcx-pie { margin-top: auto; display: flex; gap: 10px; padding: 0 20px 20px }
+.rcx .rcx-pie button { flex: 1; height: 44px; border: 0; border-radius: 12px; font-size: 13px; font-weight: 700; display: flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; background: var(--canvas); color: var(--ink) }
+.rcx .rcx-pie button.es-primario { background: var(--sigma-purple); color: #fff }
+.rcx .rcx-pie button.es-primario:hover { background: var(--sigma-purple-dark) }
+
+/* ---- Lista ---- */
+.rcx .rcx-tabla { background: var(--surface); border-radius: 20px; box-shadow: var(--e1); overflow: hidden; margin-top: 16px }
+.rcx .rcx-tabla-scroll { overflow-x: auto }
+.rcx .rcx-fila { display: grid; grid-template-columns: 56px minmax(220px, 2.2fr) minmax(130px, 1.1fr) 120px 90px minmax(150px, 1.2fr) 150px 28px; align-items: center; gap: 14px; padding: 12px 20px; border-top: 1px solid var(--line); min-width: 1040px; cursor: pointer }
+.rcx .rcx-fila:hover { background: var(--rail) }
+.rcx .rcx-fila.es-cab { background: var(--canvas); border-top: 0; font-size: 12px; font-weight: 700; color: var(--muted); padding-block: 10px; cursor: default }
+.rcx .rcx-fila.es-gcab { display: block; background: var(--rail); font-size: 13px; font-weight: 800; padding-block: 10px; cursor: default }
+.rcx .rcx-fila.es-gcab span { color: var(--muted); font-weight: 600 }
+.rcx .rcx-mini { width: 44px; height: 44px; border-radius: 12px; background: var(--canvas) center/cover no-repeat; display: grid; place-items: center; color: #A3ACBE }
+.rcx .rcx-fila b { display: block; font-size: 14px; font-weight: 800; line-height: 1.3 }
+.rcx .rcx-fila small { display: block; font-size: 12px; color: var(--muted) }
+.rcx .rcx-num { font-variant-numeric: tabular-nums; font-weight: 800; font-size: 15px }
+.rcx .rcx-num small { display: inline; margin-left: 3px; font-weight: 700 }
+.rcx .rcx-pill { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 13px; font-size: 12px; font-weight: 800; white-space: nowrap }
+.rcx .rcx-pill i { width: 8px; height: 8px; border-radius: 50% }
+.rcx .rcx-pill.es-ok { background: var(--success-soft); color: var(--success-ink) }
+.rcx .rcx-pill.es-bajo { background: var(--danger-soft); color: var(--bad-ink) }
+.rcx .rcx-pill.es-alto, .rcx .rcx-pill.es-sin { background: var(--warning-soft); color: var(--warning-ink) }
+.rcx .rcx-pill.es-off { background: var(--canvas); color: var(--muted) }
+.rcx .rcx-pill.es-tipo { background: var(--sigma-purple-soft); color: var(--sigma-purple-dark) }
+
+/* ---- Interior: la ficha con la misma cabecera del activo (sg-a3--v3) ---- */
+.sg-a3--v3.rcx-ficha .rc-card { background: #fff; border: 0; border-radius: 20px; box-shadow: var(--c3-e1); padding: 18px 20px; margin: 0 }
+.sg-a3--v3.rcx-ficha .sg-a3-kpis { margin: 0 }
+.sg-a3--v3.rcx-ficha .sg-a3-panel.es-activo > .rc-card + .rc-card { margin-top: 0 }
+
+/* ---- Umbrales por bodega en la tarjeta ---- */
+.rcx .rcx-umb { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; border-radius: 12px; background: var(--canvas) }
+.rcx .rcx-umb.es-vacio { font-size: 12px; color: var(--muted); font-weight: 600 }
+.rcx .rcx-umb-h { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted) }
+.rcx .rcx-umb > small { font-size: 11px; color: var(--muted) }
+.rcx .rcx-umb-t { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; color: var(--muted) }
+.rcx .rcx-umb-t b { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.rcx .rcx-umb-t strong { color: var(--ink) }
+.rcx .rcx-umb-bar { position: relative; height: 6px; margin-top: 5px; border-radius: 3px; background: #E2E7F0 }
+.rcx .rcx-umb-bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; background: var(--success) }
+.rcx .rcx-umb-f.es-bajo .rcx-umb-bar i { background: var(--danger) }
+.rcx .rcx-umb-f.es-alto .rcx-umb-bar i { background: var(--warning) }
+.rcx .rcx-umb-f.es-bajo .rcx-umb-t strong { color: var(--danger) }
+.rcx .rcx-umb-bar em { position: absolute; top: -3px; width: 2px; height: 12px; margin-left: -1px; background: var(--ink); border-radius: 1px }
+.rcx .rcx-umb-bar em.es-max { background: var(--muted) }
+
+/* ---- Mapa por ubicación: planta › bodega › estante ---- */
+.rcx .rcx-mplanta { margin-top: 20px; display: flex; flex-direction: column; gap: 12px }
+.rcx .rcx-mplanta h3 { margin: 0; font-size: 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; color: var(--ink) }
+.rcx .rcx-mplanta h3 svg { color: var(--sigma-purple) }
+.rcx .rcx-mbods { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(520px, 100%), 1fr)); gap: 16px }
+.rcx .rcx-mbod { background: var(--surface); border-radius: 20px; box-shadow: var(--e1); padding: 16px; display: flex; flex-direction: column; gap: 14px }
+.rcx .rcx-mbod header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap }
+.rcx .rcx-mbod header b { display: block; font-size: 16px; font-weight: 800 }
+.rcx .rcx-mbod header small { font-size: 12px; color: var(--muted) }
+.rcx .rcx-mracks { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; padding: 12px; border-radius: 16px; background: var(--map-bg); background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px); background-size: 20px 20px }
+.rcx .rcx-mrack { background: #fff; border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 6px; border-top: 3px solid var(--sigma-blue); min-height: 84px; box-shadow: 0 1px 2px rgba(23,34,59,.06) }
+.rcx .rcx-mrack.es-vacio { opacity: .6; border-top-color: #CDD4E0 }
+.rcx .rcx-mrack.es-alerta { border-top-color: var(--danger) }
+.rcx .rcx-mrack.es-varios { border-top-color: var(--sigma-cyan-dark); grid-column: span 2 }
+.rcx .rcx-mrack-h { display: flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted) }
+.rcx .rcx-mrack-h b { flex: 1; color: var(--ink); font-weight: 800; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.rcx .rcx-mrack-h span { min-width: 20px; height: 20px; padding: 0 6px; border-radius: 10px; background: var(--canvas); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center }
+.rcx .rcx-mchips { display: flex; flex-direction: column; gap: 4px }
+.rcx .rcx-mchips small, .rcx .rcx-mvacio { font-size: 11px; color: var(--muted) }
+.rcx .rcx-mchip { display: flex; align-items: center; gap: 6px; width: 100%; height: 26px; padding: 0 8px; border: 0; border-radius: 8px; background: var(--canvas); font-size: 12px; color: var(--ink); cursor: pointer; text-align: left }
+.rcx .rcx-mchip:hover { background: var(--sigma-purple-soft) }
+.rcx .rcx-mchip i { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--success) }
+.rcx .rcx-mchip.es-bajo i { background: var(--danger) }
+.rcx .rcx-mchip.es-alto i { background: var(--warning) }
+.rcx .rcx-mchip span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.rcx .rcx-mchip b { font-variant-numeric: tabular-nums; font-size: 11px }
