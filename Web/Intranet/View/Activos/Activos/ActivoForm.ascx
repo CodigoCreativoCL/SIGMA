@@ -187,6 +187,49 @@
     var ND_UNIT_OPTIONS = '<option value="">Sin unidad</option>' + AF_UNIDADES;
     // Opciones de los combos con texto libre: tipos, lugares, variables y contadores.
     var AF_OPC = <%= OpcionesCombosJson() %>;
+
+    /* ---- Tipo, modelo y marca: el combo compartido (SigmaCombo, modo libre) ----
+       AF_CAT trae los tipos, los modelos (con su tipo y marca) y las marcas.
+       El modelo ofrece solo los del tipo y la marca escritos: lo que antes
+       hacia un postback por cada cambio ahora se filtra aqui. */
+    var AF_CAT = <%= CatalogoActivoJson() %>;
+    function afCatNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+    function afCatInp(c) { return document.querySelector('.af [data-sgcombo="af:' + c + '"]'); }
+    function afCatTipoId() {
+        var i = afCatInp('atipos'), t = afCatNorm(i ? i.value : '');
+        var x = t ? AF_CAT.tipos.filter(function (o) { return afCatNorm(o.n) === t; })[0] : null;
+        return x ? x.id : 0;
+    }
+    function afCatModelos() {
+        var tipo = afCatTipoId(); if (!tipo) return [];
+        var m = afCatInp('amarcas'), fab = afCatNorm(m ? m.value : '');
+        /* Un modelo sin marca se ofrece siempre (igual que antes en el servidor). */
+        return AF_CAT.modelos.filter(function (o) { return o.t === tipo && (!fab || !o.f || afCatNorm(o.f) === fab); })
+                             .map(function (o) { return { id: o.id, n: o.n, txt: o.f }; });
+    }
+    SigmaCombo.definir('af:atipos', { libre: true, fuente: function () { return AF_CAT.tipos; } });
+    SigmaCombo.definir('af:amarcas', { libre: true, fuente: function () { return AF_CAT.marcas; } });
+    SigmaCombo.definir('af:amodelos', { libre: true, fuente: afCatModelos, vacio: 'Sin modelos de ese tipo y marca. Escribe uno nuevo.' });
+    if (!window.afCatEscucha) {
+        window.afCatEscucha = true;
+        document.addEventListener('change', function (e) {
+            var c = e.target && e.target.getAttribute ? e.target.getAttribute('data-sgcombo') : null;
+            if (!c || c.indexOf('af:a') !== 0 || !window.AF_CAT) return;
+            var mod = afCatInp('amodelos'); if (!mod) return;
+            var t = afCatNorm(mod.value); if (!t) return;
+            var deEste = afCatModelos().filter(function (o) { return afCatNorm(o.n) === t; })[0];
+            if (c === 'af:amodelos') {
+                /* El modelo manda la marca. */
+                var marca = afCatInp('amarcas');
+                if (deEste && deEste.txt && marca) { marca.value = deEste.txt; marca.classList.remove('is-nuevo'); }
+            } else if (!deEste && AF_CAT.modelos.some(function (o) { return afCatNorm(o.n) === t; })) {
+                /* Cambio el tipo o la marca y el modelo elegido ya no es de ellos:
+                   se limpia, para no crear una copia con otro tipo. Uno escrito
+                   a mano (nuevo) se conserva. */
+                mod.value = ''; mod.classList.remove('is-nuevo');
+            }
+        });
+    }
     function ndAgregar() {
         var cont = document.getElementById('ndContainer');
         if (!cont) return;
@@ -334,20 +377,22 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Tipo <span class="req">*</span></label>
-                    <%-- Texto libre (bloque 342): si el tipo no existe, se escribe y se crea al guardar. --%>
-                    <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboTipo_SelectedIndexChanged" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <%-- Texto libre (bloque 342): si el tipo no existe, se escribe y se crea al guardar.
+                         Es el combo compartido de SIGMA (SigmaCombo, modo libre): sin postback. --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtTipo" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:atipos" aria-label="Tipo" placeholder="Elige o escribe uno nuevo" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿No está? Escríbelo y se crea al guardar.</span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige el tipo de la lista o escribe uno nuevo.</span>
-                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo" Display="None"
+                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="txtTipo" Display="None"
                         ValidateEmptyText="true" ClientValidationFunction="afRequeridoLibre" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Modelo</label>
-                    <rad:RadComboBox2 ID="cboModelo" runat="server" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboModelo_SelectedIndexChanged" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <%-- Ofrece los modelos del tipo y la marca escritos (se filtra en el navegador). --%>
+                    <span class="sg-combo"><asp:TextBox ID="txtModelo" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:amodelos" aria-label="Modelo" placeholder="Sin modelo · elige o escribe uno" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">Muestra los de ese tipo y esa marca. ¿No está? Escríbelo y se crea.</span>
                 </div>
                 <div class="sigma-modal-field">
@@ -367,9 +412,9 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Marca</label>
-                    <rad:RadComboBox2 ID="cboFabricante" runat="server" OnLoad="LoadControls" AutoPostBack="true"
-                        OnSelectedIndexChanged="cboFabricante_Changed" OnTextChanged="cboFabricante_Changed" Filter="Contains" Width="100%" MaxLength="200"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe una nueva" />
+                    <span class="sg-combo"><asp:TextBox ID="txtFabricante" runat="server" MaxLength="200" autocomplete="off" spellcheck="false"
+                        role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                        data-sgcombo="af:amarcas" aria-label="Marca" placeholder="Elige o escribe una nueva" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">¿No está? Escríbela y se crea al guardar.</span>
                 </div>
                 <div class="sigma-modal-field">

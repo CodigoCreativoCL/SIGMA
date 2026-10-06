@@ -172,7 +172,8 @@
         inp.value = prev ? prev.n : '';
     }
 
-    function esCombo(el) { return el && el.matches && el.matches('[data-sgcombo]'); }
+    /* Un campo de solo lectura (sin permiso para editar) no ofrece la lista. */
+    function esCombo(el) { return el && el.matches && el.matches('[data-sgcombo]') && !el.readOnly; }
 
     document.addEventListener('focusin', function (e) { if (esCombo(e.target)) abrir(e.target, true); });
     document.addEventListener('input', function (e) { if (esCombo(e.target)) abrir(e.target); });

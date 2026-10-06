@@ -34,9 +34,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         set { ViewState["ActivoId"] = value; }
     }
 
-    // Modelo a preseleccionar al abrir en edición (solo el primer render).
-    private string _modeloEditar = null;
-
     /* El centro elige el activo haciendo clic en su lista, o sea EN UN
        POSTBACK. Los "if (IsPostBack) return" que protegen lo tecleado dejaban
        el formulario en blanco justo cuando recien se abria el equipo. Esta
@@ -115,21 +112,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
         switch (ctrl.ID)
         {
-            case "cboTipo":
-                {
-                    ActivoTipoController controller = new ActivoTipoController();
-                    List<ActivoTipo> lista = controller.GetActivoTipos(
-                        new ActivoTipo { filtro_cliente = cliente, filtro_habilitado = true });
-
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = lista;
-                    ctrl.DataValueField = "ati_id";
-                    ctrl.DataTextField = "ati_nombre";
-                    ctrl.DataBind();
-                    break;
-                }
-
             case "cboEstado":
                 {
                     ActivoEstadoController controller = new ActivoEstadoController();
@@ -209,14 +191,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
                     break;
                 }
 
-            case "cboFabricante":
-                {
-                    // El catalogo de marcas compartido con repuestos (bloque 333/342).
-                    foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
-                        ctrl.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
-                    break;
-                }
-
             case "cboAnio":
                 {
                     // Años del actual hacia atrás: la maquinaria industrial
@@ -279,7 +253,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         btnGuardar.Text = ActivoId > 0 ? "Guardar cambios" : "Guardar activo";
 
         CargarDatos();
-        CargarModelos();   // depende del tipo ya seleccionado por CargarDatos
         // Las secciones nuevas van blindadas: si algo falla, no debe colgar ni
         // romper el modal del activo.
         try { CargarArchivos(); } catch { }        // documentos adjuntos
@@ -490,24 +463,77 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
     // ============================================================ bloque 342
 
-    /// <summary>Id del item elegido, o del que coincide con lo escrito; 0 si es texto nuevo.</summary>
-    private static int ValorCombo(RadComboBox2 c)
+    /* Tipo, modelo y marca son el combo compartido (SigmaCombo) en modo
+       libre: el servidor recibe el texto. Se busca su id en los mismos
+       catalogos que se le ofrecieron; lo que no esta lo crea
+       UPS_ACTIVO_CATALOGO al guardar. */
+    private List<ActivoTipo> _tiposActivo;
+    private List<ActivoTipo> TiposActivo()
     {
-        int v;
-        string t = (c.Text ?? "").Trim();
-        if (c.SelectedItem != null && string.Equals(c.SelectedItem.Text, t, StringComparison.OrdinalIgnoreCase)
-            && int.TryParse(c.SelectedValue, out v)) return v;
-        foreach (RadComboBoxItem it in c.Items)
-            if (string.Equals(it.Text.Trim(), t, StringComparison.OrdinalIgnoreCase) && int.TryParse(it.Value, out v)) return v;
-        return 0;
+        return _tiposActivo ?? (_tiposActivo = new ActivoTipoController().GetActivoTipos(
+            new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoTipo>());
     }
 
-    /// <summary>Lo escrito en el combo, sin el mensaje de ayuda ni las opciones vacias.</summary>
-    private static string TextoCombo(RadComboBox2 c)
+    private List<ActivoModelo> _modelosActivo;
+    private List<ActivoModelo> ModelosActivo()
     {
-        string t = (c.Text ?? "").Trim();
-        if (t == "" || t == c.EmptyMessage || t == "Seleccione..." || t == "Sin modelo") return null;
-        return t;
+        return _modelosActivo ?? (_modelosActivo = new ActivoModeloController().GetModelos(
+            new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoModelo>());
+    }
+
+    /// <summary>Igual sin mayusculas, tildes ni espacios a los lados (como compara el SP).</summary>
+    private static bool MismoTexto(string a, string b)
+    {
+        return string.Compare((a ?? "").Trim(), (b ?? "").Trim(), System.Globalization.CultureInfo.InvariantCulture,
+            System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) == 0;
+    }
+
+    /// <summary>Lo escrito en el campo, o null si quedo vacio.</summary>
+    private static string Escrito(TextBox t)
+    {
+        string v = (t.Text ?? "").Trim();
+        return v == "" ? null : v;
+    }
+
+    private int IdTipo(string texto)
+    {
+        if (texto == null) return 0;
+        ActivoTipo t = TiposActivo().Find(x => MismoTexto(x.ati_nombre, texto));
+        return t != null ? t.ati_id : 0;
+    }
+
+    /// <summary>El modelo escrito, entre los de ese tipo y esa marca (un modelo sin marca sirve con cualquiera).</summary>
+    private ActivoModelo ModeloEscrito(int tipo, string texto, string fabricante)
+    {
+        if (tipo <= 0 || texto == null) return null;
+        return ModelosActivo().Find(m => m.amo_activo_tipo == tipo
+            && (MismoTexto(m.amo_nombre, texto) || MismoTexto(m.etiqueta, texto))
+            && (fabricante == null || string.IsNullOrEmpty(m.amo_fabricante) || MismoTexto(m.amo_fabricante, fabricante)));
+    }
+
+    /// <summary>
+    /// Lo que ofrecen los combos de tipo, modelo y marca, como objeto JS. El
+    /// modelo lleva su tipo y su marca para filtrarse en el navegador.
+    /// </summary>
+    public string CatalogoActivoJson()
+    {
+        List<object> tipos = new List<object>(), modelos = new List<object>();
+        List<string> marcas = new List<string>();
+        try
+        {
+            foreach (ActivoTipo t in TiposActivo())
+                tipos.Add(new Dictionary<string, object> { { "id", t.ati_id }, { "n", t.ati_nombre } });
+            foreach (ActivoModelo m in ModelosActivo())
+                modelos.Add(new Dictionary<string, object> { { "id", m.amo_id }, { "n", m.amo_nombre }, { "t", m.amo_activo_tipo }, { "f", m.amo_fabricante ?? "" } });
+            foreach (FabricanteController.Fabricante f in new FabricanteController().Catalogo())
+                if (!string.IsNullOrEmpty(f.nombre)) marcas.Add(f.nombre);
+        }
+        catch (Exception) { }
+
+        Dictionary<string, object> d = new Dictionary<string, object>();
+        d["tipos"] = tipos; d["modelos"] = modelos; d["marcas"] = marcas;
+        /* Va dentro de un <script>: "</" se corta (igual que OpcionesCombosJson). */
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(d).Replace("</", "<\\/");
     }
 
     private List<ComponenteTipo> _tiposComp;
@@ -861,62 +887,6 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         }
     }
 
-    // Al cambiar el tipo, el postback recarga y CargarModelos ofrece solo los
-    // modelos de ese tipo.
-    protected void cboTipo_SelectedIndexChanged(object sender, EventArgs e) { }
-
-    // Al cambiar el fabricante, el PreRender vuelve a armar los modelos de ese tipo y esa marca.
-    protected void cboFabricante_Changed(object sender, EventArgs e) { }
-
-    // Al elegir un modelo, se hereda su fabricante (el modelo manda la marca).
-    protected void cboModelo_SelectedIndexChanged(object sender, EventArgs e)
-    {
-        int idModelo;
-        if (int.TryParse(cboModelo.SelectedValue, out idModelo) && idModelo > 0)
-        {
-            ActivoModelo m = new ActivoModeloController().GetModelo(idModelo);
-            if (m != null && !string.IsNullOrEmpty(m.amo_fabricante))
-                cboFabricante.Text = m.amo_fabricante;
-        }
-    }
-
-    /// <summary>
-    /// Llena el combo de modelos con los del TIPO elegido (más los globales),
-    /// preservando la selección entre postbacks. Sin tipo, el combo va vacío.
-    /// </summary>
-    protected void CargarModelos()
-    {
-        string sel = string.IsNullOrEmpty(_modeloEditar) ? cboModelo.SelectedValue : _modeloEditar;
-        string escrito = (cboModelo.Text ?? "").Trim();   // un modelo nuevo escrito a mano no se pierde
-
-        cboModelo.Items.Clear();
-        cboModelo.Items.Add(new RadComboBoxItem("Sin modelo", ""));
-        cboModelo.AppendDataBoundItems = true;
-
-        int tipo;
-        if (int.TryParse(cboTipo.SelectedValue, out tipo) && tipo > 0)
-        {
-            List<ActivoModelo> l = new ActivoModeloController().GetModelos(new ActivoModelo
-            { filtro_cliente = SitioBase.Session.ClienteId(), filtro_activo_tipo = tipo, filtro_habilitado = true });
-            /* Del tipo Y del fabricante escrito (bloque 342): con "Grundfos"
-               no se ofrecen modelos de Pedrollo. Un modelo sin marca se ofrece
-               siempre. */
-            string fab = (cboFabricante.Text ?? "").Trim();
-            if (fab == cboFabricante.EmptyMessage) fab = "";
-            if (l != null)
-                foreach (ActivoModelo m in l)
-                    if (fab == "" || string.IsNullOrEmpty(m.amo_fabricante)
-                        || string.Compare(m.amo_fabricante.Trim(), fab, System.Globalization.CultureInfo.InvariantCulture,
-                               System.Globalization.CompareOptions.IgnoreCase | System.Globalization.CompareOptions.IgnoreNonSpace) == 0)
-                        cboModelo.Items.Add(new RadComboBoxItem(m.etiqueta, m.amo_id.ToString()));
-        }
-
-        RadComboBoxItem it = cboModelo.FindItemByValue(sel);
-        if (it != null) it.Selected = true;
-        else if (escrito != "" && escrito != "Sin modelo" && escrito != cboModelo.EmptyMessage)
-            cboModelo.Text = escrito;
-    }
-
     protected void CargarDatos()
     {
         if (IsPostBack && !_activoNuevo) return;
@@ -931,7 +901,9 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             txtCodigo.Text = SitioBase.CodigoModulo.Sufijo("Activo", entidad.act_codigo);
             txtNombre.Text = entidad.act_nombre;
 
-            SeleccionarCombo(cboTipo, entidad.act_activo_tipo);
+            ActivoTipo tipo = TiposActivo().Find(x => x.ati_id == entidad.act_activo_tipo)
+                              ?? new ActivoTipoController().GetActivoTipo(entidad.act_activo_tipo);
+            txtTipo.Text = tipo.ati_nombre;
             SeleccionarCombo(cboEstado, entidad.act_activo_estado);
             SeleccionarCombo(cboCriticidad, entidad.act_criticidad_nivel);
             SeleccionarCombo(cboPlanta, entidad.act_cliente_instalacion);
@@ -939,11 +911,16 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             if (entidad.act_instalacion_area != null) SeleccionarCombo(cboArea, entidad.act_instalacion_area.Value);
             if (entidad.act_centro_costo != null) SeleccionarCombo(cboCentroCosto, entidad.act_centro_costo.Value);
             if (entidad.act_activo_padre != null) SeleccionarCombo(cboPadre, entidad.act_activo_padre.Value);
-            // El modelo lo selecciona CargarModelos (corre después y ya conoce el tipo).
-            if (entidad.act_activo_modelo != null) _modeloEditar = entidad.act_activo_modelo.Value.ToString();
+            txtModelo.Text = "";
+            if (entidad.act_activo_modelo != null)
+            {
+                ActivoModelo modelo = ModelosActivo().Find(x => x.amo_id == entidad.act_activo_modelo.Value)
+                                      ?? new ActivoModeloController().GetModelo(entidad.act_activo_modelo.Value);
+                if (modelo != null) txtModelo.Text = modelo.amo_nombre;
+            }
 
             txtSerie.Text = entidad.act_numero_serie;
-            cboFabricante.Text = entidad.act_fabricante;
+            txtFabricante.Text = entidad.act_fabricante;
             if (entidad.act_anio_fabricacion != null) SeleccionarCombo(cboAnio, entidad.act_anio_fabricacion.Value);
             calPuestaMarcha.Value = entidad.act_fecha_puesta_marcha;
             txtDescripcion.Text = entidad.act_descripcion;
@@ -1047,13 +1024,13 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             txtCodigo.ReadOnly = ActivoId > 0;   // se escribe al crear; despues el codigo ya esta impreso en su etiqueta
         txtNombre.ReadOnly = !puedeEditar;
         txtSerie.ReadOnly = !puedeEditar;
-        cboFabricante.ReadOnly = !puedeEditar;
+        txtFabricante.ReadOnly = !puedeEditar;
         cboAnio.ReadOnly = !puedeEditar;
         calPuestaMarcha.Enabled = puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
 
-        cboTipo.ReadOnly = !puedeEditar;
-        cboModelo.ReadOnly = !puedeEditar;
+        txtTipo.ReadOnly = !puedeEditar;
+        txtModelo.ReadOnly = !puedeEditar;
         cboEstado.ReadOnly = !puedeEditar;
         cboCriticidad.ReadOnly = !puedeEditar;
         cboPlanta.ReadOnly = !puedeEditar;
@@ -1084,12 +1061,17 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         {
             /* Tipo y modelo con texto libre (bloque 342): lo que no existe se
                crea aqui, en una llamada, antes de guardar el activo. */
-            int tipoId = ValorCombo(cboTipo), modeloId = ValorCombo(cboModelo);
-            string tipoTxt = TextoCombo(cboTipo), modeloTxt = TextoCombo(cboModelo);
-            if (tipoId == 0 && tipoTxt == null)
+            string tipoTxt = Escrito(txtTipo), modeloTxt = Escrito(txtModelo), fabricante = Escrito(txtFabricante);
+            if (tipoTxt == null)
                 throw new Exception("Elija o escriba el tipo de activo.");
+            int tipoId = IdTipo(tipoTxt);
+            ActivoModelo modeloElegido = ModeloEscrito(tipoId, modeloTxt, fabricante);
+            int modeloId = modeloElegido != null ? modeloElegido.amo_id : 0;
+            // El modelo manda la marca: si no se escribio, se hereda la suya.
+            if (fabricante == null && modeloElegido != null && !string.IsNullOrEmpty(modeloElegido.amo_fabricante))
+                fabricante = modeloElegido.amo_fabricante.Trim();
             string errCat = new ActivoTipoController().ResolverCatalogo(ref tipoId, tipoTxt, ref modeloId,
-                modeloId == 0 ? modeloTxt : null, string.IsNullOrWhiteSpace(cboFabricante.Text) ? null : cboFabricante.Text.Trim());
+                modeloId == 0 ? modeloTxt : null, fabricante);
             if (errCat != null) throw new Exception(errCat);
             if (string.IsNullOrEmpty(cboEstado.SelectedValue))
                 throw new Exception("Debe elegir el estado del activo.");
@@ -1134,8 +1116,8 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
 
             if (!string.IsNullOrEmpty(txtSerie.Text.Trim()))
                 entidad.act_numero_serie = txtSerie.Text.Trim();
-            if (!string.IsNullOrEmpty(cboFabricante.Text.Trim()))
-                entidad.act_fabricante = cboFabricante.Text.Trim();
+            if (fabricante != null)
+                entidad.act_fabricante = fabricante;
             if (!string.IsNullOrEmpty(cboAnio.SelectedValue))
                 entidad.act_anio_fabricacion = int.Parse(cboAnio.SelectedValue);
 
