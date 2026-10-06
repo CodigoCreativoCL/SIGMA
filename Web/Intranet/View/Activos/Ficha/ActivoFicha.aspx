@@ -25,6 +25,9 @@
     <%-- El asistente de la pestaña Ficha y el formulario de componente de
          «¿Qué vas a agregar?» usan la piel compartida. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-asistente.css") %>' rel="stylesheet" />
+    <%-- El combo con busqueda es uno solo para la planta y el asistente. --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
     <script type="text/javascript">var AF_PASOS = 6;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-asistente.js") %>'></script>
 </asp:Content>
@@ -177,7 +180,7 @@
         function escAbrir() {
             escEnPlanta = false;
             var ca = document.getElementById('escActivoCampo'); if (ca) ca.hidden = true;
-            ['escNombre', 'escTipo', 'escLado', 'escDesc'].forEach(function (id) { var e = document.getElementById(id); if (e) e.value = ''; });
+            ['escNombre', 'escTipo', 'escLado', 'escDesc'].forEach(function (id) { var e = document.getElementById(id); if (e) { e.value = ''; e.classList.remove('is-nuevo'); } });
             var tpl = document.getElementById('sgEsDatos');
             var nom = tpl ? tpl.getAttribute('data-nombre') : '';
             var padre = document.getElementById('escPadre'), est = document.getElementById('escEstado');
@@ -2161,15 +2164,15 @@
                 </label>
                 <div class="sg-es-campo">
                     <span class="sg-es-etiq">Qué es <b class="req">*</b></span>
-                    <span class="af-combo"><input type="text" name="esc_tipo" id="escTipo" data-combo="tipos" placeholder="Ej.: Sello, Motor, Sensor" autocomplete="off" aria-label="Qué es" />
-                        <button type="button" class="af-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
+                    <span class="sg-combo"><input type="text" name="esc_tipo" id="escTipo" data-sgcombo="af:tipos" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" placeholder="Ej.: Sello, Motor, Sensor" autocomplete="off" spellcheck="false" aria-label="Qué es" />
+                        <button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
                     <span class="sg-es-ayuda">Elige de la lista o escribe uno nuevo: se crea al guardar.</span>
                     <span class="sg-es-msg">Elige o escribe qué es esta parte.</span>
                 </div>
                 <div class="sg-es-campo">
                     <span class="sg-es-etiq">Dónde va</span>
-                    <span class="af-combo"><input type="text" name="esc_lado" id="escLado" data-combo="lados" placeholder="Ej.: Delantero, Lado motor" autocomplete="off" aria-label="Dónde va" />
-                        <button type="button" class="af-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
+                    <span class="sg-combo"><input type="text" name="esc_lado" id="escLado" data-sgcombo="af:lados" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" placeholder="Ej.: Delantero, Lado motor" autocomplete="off" spellcheck="false" aria-label="Dónde va" />
+                        <button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><i class="mdi mdi-chevron-down"></i></button></span>
                 </div>
                 <label class="sg-es-campo">
                     <span class="sg-es-etiq">Es parte de</span>
