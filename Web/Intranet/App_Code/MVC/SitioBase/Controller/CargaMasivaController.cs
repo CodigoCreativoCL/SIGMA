@@ -98,12 +98,12 @@ namespace SitioBase.Controller
             {
                 clave = "INVENTARIO",
                 nombre = "Inventario",
-                descripcion = "Bodegas, racks, repuestos, umbrales y el stock con que parte cada bodega, con lotes y vencimientos.",
+                descripcion = "Bodegas, racks, repuestos, umbrales, el stock con que parte cada bodega y en qué equipos sirve cada repuesto.",
                 icono = "mdi-warehouse",
                 color = "#6732F4",
                 procedimiento = "PRC_CARGA_INVENTARIO",
                 disponible = true,
-                ayudas = new[] { "PLANTAS", "BODEGAS", "RACKS", "UNIDADES", "TIPOS", "FABRICANTES" },
+                ayudas = new[] { "PLANTAS", "BODEGAS", "RACKS", "UNIDADES", "TIPOS", "FABRICANTES", "ACTIVOS" },
                 hojas = new List<Hoja>
                 {
                     new Hoja { clave = "BODEGAS", titulo = "BODEGAS", icono = "mdi-warehouse",
@@ -169,6 +169,16 @@ namespace SitioBase.Controller
                             C("COSTO_UNITARIO", "COSTO UNITARIO", false, "En pesos. Valoriza el stock.", "8500", Tipo.Numero, 14, null, null, "COSTO"),
                             C("LOTE", "LOTE", false, "Obligatorio si el repuesto controla lote.", "", Tipo.Texto, 14),
                             C("VENCE", "VENCE", false, "Fecha de vencimiento del lote.", "", Tipo.Fecha, 13, null, null, "VENCIMIENTO", "FECHA VENCIMIENTO"),
+                            C("OBSERVACION", "OBSERVACION", false, "", "", Tipo.Texto, 26)
+                        } },
+                    /* Bloque 368: donde sirve cada repuesto, lo mismo que se vincula
+                       desde la ficha del activo. */
+                    new Hoja { clave = "COMPATIBILIDADES", titulo = "COMPATIBILIDADES", icono = "mdi-puzzle-outline",
+                        descripcion = "En qué equipos o componentes sirve cada repuesto. El activo tiene que existir (carga de Activos). Si ya está vinculado, se omite.",
+                        columnas = new List<Columna> {
+                            C("REPUESTO", "REPUESTO", true, "Código o nombre del repuesto (de la base o de la hoja REPUESTOS).", "EJEMPLO-ROD-001", Tipo.Texto, 20),
+                            C("ACTIVO", "ACTIVO", true, "Código o nombre del activo, como en la hoja ACTIVOS EXISTENTES.", "", Tipo.Lista, 22, null, "ACTIVOS"),
+                            C("COMPONENTE", "COMPONENTE", false, "Si sirve a una pieza del activo: su nombre. Vacío: al activo entero.", "", Tipo.Texto, 20),
                             C("OBSERVACION", "OBSERVACION", false, "", "", Tipo.Texto, 26)
                         } }
                 }

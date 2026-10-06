@@ -116,7 +116,7 @@ function validaComboTexto(sender, args) { afRequeridoLibre(sender, args); }
 function afValidadores(dentro) {
     if (typeof Page_Validators === 'undefined') return [];
     return Array.prototype.filter.call(Page_Validators, function (v) {
-        if (v.validationGroup !== 'Activo') return false;
+        if (v.validationGroup !== (window.AF_GRUPO || 'Activo')) return false;
         var e = document.getElementById(v.controltovalidate);
         return !dentro || (e && dentro.contains(e));
     });

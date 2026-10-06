@@ -938,6 +938,7 @@
             exportar: '<%=lnkExportarLista.ClientID %>'
         };
     </script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-paginador.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-planta.js") %>'></script>
 </asp:Content>
 

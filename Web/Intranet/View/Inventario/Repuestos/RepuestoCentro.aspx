@@ -1,6 +1,5 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="RepuestoCentro.aspx.cs" Inherits="View_Inventario_Repuestos_RepuestoCentro" %>
 
-<%@ Register TagPrefix="wuc" TagName="Filtro" Src="~/View/Comun/Controls/FiltroAvanzado.ascx" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
     <%-- Centro de repuestos. La cáscara -hero, pestañas, tarjetas, chips- es la
@@ -13,6 +12,11 @@
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-orden.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activo360.css") %>' rel="stylesheet" />
     <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-fabricante.js") %>?vrs=2"></script>
+    <%-- Rediseño 06-10-2026: el listado y la ficha usan el diseño del Centro de activos. --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-activos.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-centro.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-paginador.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-centro.js") %>'></script>
     <style type="text/css">
         /* Tokens de la paleta SIGMA (CLAUDE.md). No se repiten hex sueltos. */
         .sg-rc {
@@ -361,7 +365,7 @@
             return SigmaModal.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo repuesto' : 'Editar repuesto',
-                width: 880, initialHeight: 580, onClose: refresh
+                width: 1080, initialHeight: 680, onClose: refresh
             });
         }
         function abrirCompatibilidad(query) {
@@ -383,6 +387,13 @@
             return SigmaModal.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Bodegas/Bodega.aspx") %>?query=' + query,
                 title: 'Bodega y sus ubicaciones', width: 900, initialHeight: 620, onClose: refresh
+            });
+        }
+        function abrirTipoRepuesto(query) {
+            return SigmaModal.open({
+                url: '<%=ResolveUrl("~/View/Inventario/Repuestos/RepuestoTipo.aspx") %>?query=' + query,
+                title: String(query) === '0' ? 'Nuevo tipo de repuesto' : 'Editar tipo de repuesto',
+                width: 720, initialHeight: 470, onClose: refresh
             });
         }
         function abrirExistencia(query) {
@@ -459,134 +470,113 @@
     <asp:UpdatePanel ID="upCentro" runat="server" UpdateMode="Always">
         <ContentTemplate>
 
-            <%-- ===================== LISTADO =====================
-                 Sin hero propio: el encabezado del sitio (Default.master) ya
-                 pone modulo, titulo y subtitulo. Repetirlo aqui era el titulo
-                 duplicado. Las acciones viven en la barra de la tarjeta. --%>
-            <asp:Panel ID="pnlLista" runat="server" CssClass="sg-a3 sg-ot sg-rc">
-
-            <%-- El filtro de planta y el de bodega se resuelven por los
-                 saldos: un repuesto "esta" en una bodega cuando tiene
-                 saldo ahi. --%>
-                <wuc:Filtro runat="server" ID="wucFiltro">
-                    <FiltroPersonalizado>
-                        <div class="row col-lg-12 col-md-12 col-xs-12">
-                            <div class="col-lg-3 col-md-3 col-xs-12">
-                                <label for="ddlPlanta" style="display:block; margin:0 0 4px;">Planta:</label>
-                                <rad:RadComboBox2 ID="ddlPlanta" runat="server" Width="100%"
-                                    AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Planta_Changed" />
-                            </div>
-                            <div class="col-lg-3 col-md-3 col-xs-12">
-                                <label for="ddlBodega" style="display:block; margin:0 0 4px;">Bodega:</label>
-                                <rad:RadComboBox2 ID="ddlBodega" runat="server" Width="100%"
-                                    AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" />
-                            </div>
-                            <div class="col-lg-3 col-md-3 col-xs-12">
-                                <label for="ddlTipo" style="display:block; margin:0 0 4px;">Tipo de repuesto:</label>
-                                <rad:RadComboBox2 ID="ddlTipo" runat="server" Width="100%"
-                                    AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" />
-                            </div>
-                            <div class="col-lg-3 col-md-3 col-xs-12">
-                                <label for="ddlEstado" style="display:block; margin:0 0 4px;">Existencia:</label>
-                                <rad:RadComboBox2 ID="ddlEstado" runat="server" Width="100%"
-                                    AutoPostBack="true" OnSelectedIndexChanged="Filtro_Changed">
-                                    <Items>
-                                        <rad:RadComboBoxItem Text="Todas" Value="" />
-                                        <rad:RadComboBoxItem Text="Con existencia" Value="con" />
-                                        <rad:RadComboBoxItem Text="Sin existencia" Value="sin" />
-                                        <rad:RadComboBoxItem Text="Bajo el mínimo" Value="bajo" />
-                                        <rad:RadComboBoxItem Text="Sobre el máximo" Value="sobre" />
-                                    </Items>
-                                </rad:RadComboBox2>
-                            </div>
-                        </div>
-                        <div class="row col-lg-12 col-md-12 col-xs-12" style="margin-top:10px;">
-                            <div class="col-lg-4 col-md-4 col-xs-12">
-                                <asp:CheckBox ID="chkLote" runat="server" Text=" Controla lote"
-                                    AutoPostBack="true" OnCheckedChanged="Filtro_Changed" />
-                            </div>
-                            <div class="col-lg-4 col-md-4 col-xs-12">
-                                <asp:CheckBox ID="chkInhabilitados" runat="server" Text=" Incluir deshabilitados"
-                                    AutoPostBack="true" OnCheckedChanged="Filtro_Changed" />
-                            </div>
-                        </div>
-                    </FiltroPersonalizado>
-                </wuc:Filtro>
-
-                <div class="sg-a3-kpis">
-                    <asp:Literal ID="litKpis" runat="server" />
-                </div>
-
-                <div class="rc-cols">
-                    <div>
-                        <div class="rc-card">
-                            <div class="rc-barra">
-                                <h3>Repuestos</h3>
-                                <div class="rc-acciones">
-                                    <asp:LinkButton ID="lnkExportar" runat="server" CssClass="sg-ot-btn es-plano"
-                                        OnClick="lnkExportar_Click" CausesValidation="false"
-                                        ToolTip="Descargar a Excel lo que muestra el filtro">
-                                        <i class="mdi mdi-file-excel-outline"></i>Exportar</asp:LinkButton>
-                                    <asp:LinkButton ID="lnkCargaMasiva" runat="server" CssClass="sg-ot-btn es-contorno"
-                                        CausesValidation="false"><i class="mdi mdi-file-upload-outline"></i>Carga masiva</asp:LinkButton>
-                                    <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="sg-ot-btn es-primario"
-                                        OnClientClick="return abrirRepuesto(0);" CausesValidation="false">
-                                        <i class="mdi mdi-plus"></i>Nuevo repuesto</asp:LinkButton>
-                                </div>
-                            </div>
-
-                            <asp:Literal ID="litResultado" runat="server" />
-                            <asp:Literal ID="litLista" runat="server" />
-
-                            <asp:Panel ID="pnlListaVacia" runat="server" Visible="false" CssClass="rc-vacio">
-                                <i class="mdi mdi-package-variant"></i>
-                                <p>No hay repuestos que coincidan</p>
-                                <span>Ajuste el filtro o cree un repuesto nuevo.</span>
-                            </asp:Panel>
-                        </div>
+            <%-- ===================== LISTADO (rediseño 06-10-2026) =====================
+                 El mismo diseño del Centro de activos 360°: encabezado navy con
+                 las acciones, indicadores, pestañas del modulo y «Ver como»
+                 Lista o Tarjetas. Los datos los arma el servidor (litLista, un
+                 JSON) y Js en esta pagina dibuja las dos vistas; buscar, agrupar
+                 y ordenar no van al servidor. Planta, bodega, tipo y existencia
+                 siguen en el filtro: resuelven por saldos en el servidor. --%>
+            <asp:Panel ID="pnlLista" runat="server" CssClass="sgap rcx" ClientIDMode="Static">
+            <div class="wrap">
+              <header class="hero">
+                <div class="hero-top">
+                  <div class="hero-title">
+                    <span class="hero-eyebrow">Inventario</span>
+                    <h1>Centro de repuestos</h1>
+                    <p>Compatibilidades, existencias, movimientos y vida útil de cada repuesto.</p>
+                  </div>
+                  <div class="hero-actions">
+                    <div class="menu-wrap">
+                      <button type="button" class="btn btn--hero" id="rcBtnIO" aria-haspopup="menu" aria-expanded="false" aria-controls="rcMenuIO"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V5M3 9l4-4 4 4M17 7v12M13 15l4 4 4-4"/></svg>Importar o exportar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
+                      <div class="menu" id="rcMenuIO" role="menu" hidden>
+                        <asp:LinkButton ID="lnkCargaMasiva" runat="server" role="menuitem" CausesValidation="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5"/></svg><span><b>Importar desde Excel</b><small>Repuestos completos, umbrales, stock y compatibilidades</small></span></asp:LinkButton>
+                        <asp:LinkButton ID="lnkExportar" runat="server" role="menuitem" OnClick="lnkExportar_Click" CausesValidation="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11M7 10l5 5 5-5M4 20h16"/></svg><span><b>Exportar a Excel</b><small>Los repuestos que estás viendo ahora</small></span></asp:LinkButton>
+                        <asp:LinkButton ID="lnkClasificar" runat="server" role="menuitem" CausesValidation="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h7v7H4zM13 6h7v7h-7zM4 15h16v4H4z"/></svg><span><b>Clasificar varios</b><small>Asignar el tipo a muchos a la vez</small></span></asp:LinkButton>
+                      </div>
                     </div>
-
-                    <aside class="rc-aside">
-                        <div class="rc-card">
-                            <div class="rc-aside-ico"><i class="mdi mdi-package-variant-closed"></i></div>
-                            <h3>Un solo centro</h3>
-                            <p>
-                                El repuesto se define una vez y desde aca se ve todo lo que le pasa:
-                                con que equipos calza, cuanto queda en cada bodega, quien lo movio y
-                                cuanto dura antes de reemplazarse.
-                            </p>
-                            <asp:LinkButton ID="lnkClasificar" runat="server" CssClass="link" CausesValidation="false">
-                                <i class="mdi mdi-shape-plus-outline"></i>Clasificar varios a la vez</asp:LinkButton>
-                            <br />
-                            <asp:HyperLink ID="hlBodegas" runat="server" CssClass="link">
-                                <i class="mdi mdi-warehouse"></i>Ir a bodegas</asp:HyperLink>
-                            <br />
-                            <asp:HyperLink ID="hlTipos" runat="server" CssClass="link">
-                                <i class="mdi mdi-shape-outline"></i>Ir a tipos de repuesto</asp:HyperLink>
-                        </div>
-                    </aside>
+                    <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="btn btn--primary btn--glow"
+                        OnClientClick="return abrirRepuesto(0);" CausesValidation="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nuevo repuesto</asp:LinkButton>
+                  </div>
                 </div>
+              </header>
+
+              <section class="kpis" aria-label="Resumen de los repuestos"><asp:Literal ID="litKpis" runat="server" /></section>
+
+              <section class="panel">
+                <nav class="mtabs" aria-label="Secciones de Inventario">
+                  <button type="button" role="tab" data-rctab="repuestos" aria-current="page" aria-selected="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Repuestos<b><asp:Literal ID="litNumRep" runat="server" Text="0" /></b></button>
+                  <button type="button" role="tab" data-rctab="tipos" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>Tipos de repuesto<b><asp:Literal ID="litNumTipos" runat="server" Text="0" /></b></button>
+                  <button type="button" role="tab" data-rctab="bodegas" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M7 17h10"/></svg>Bodegas<b><asp:Literal ID="litNumBodegas" runat="server" Text="0" /></b></button>
+                </nav>
+
+                <div class="tabpanel" data-rcpanel="repuestos">
+                  <div class="viewbar">
+                    <div class="viewbar-l">
+                      <span class="viewbar-lbl" id="rcVerComo">Ver como</span>
+                      <div class="seg seg--views" role="group" aria-labelledby="rcVerComo">
+                        <button type="button" data-rcview="lista" aria-pressed="false"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h12M8 12h12M8 18h12M4 6h.01M4 12h.01M4 18h.01"/></svg><span>Lista</span></button>
+                        <button type="button" data-rcview="tarjetas" aria-pressed="true"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg><span>Tarjetas</span></button>
+                        <button type="button" data-rcview="mapa" aria-pressed="false"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="11" height="8" rx="1.5"/><rect x="16" y="4" width="5" height="16" rx="1.5"/><rect x="3" y="14" width="11" height="6" rx="1.5"/></svg><span>Mapa por ubicación</span></button>
+                      </div>
+                      <span class="viewbar-help" id="rcViewHelp"></span>
+                    </div>
+                    <button type="button" class="btn" id="rcBtnFiltros" aria-expanded="false" aria-controls="rcFiltros"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5h16l-6 8v6l-4-2v-4z"/></svg>Filtrar por planta, bodega o tipo<asp:Literal ID="litNumFiltros" runat="server" /></button>
+                  </div>
+
+                  <%-- Los filtros que se resuelven por los saldos: un repuesto
+                       "esta" en una bodega cuando tiene saldo ahi. --%>
+                  <div class="rcx-filtros" id="rcFiltros" hidden>
+                    <label><span>Planta</span><rad:RadComboBox2 ID="ddlPlanta" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Planta_Changed" /></label>
+                    <label><span>Bodega</span><rad:RadComboBox2 ID="ddlBodega" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
+                    <label><span>Tipo de repuesto</span><rad:RadComboBox2 ID="ddlTipo" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
+                    <label><span>Existencia</span><rad:RadComboBox2 ID="ddlEstado" runat="server" Width="100%" AutoPostBack="true" OnSelectedIndexChanged="Filtro_Changed">
+                        <Items>
+                            <rad:RadComboBoxItem Text="Todas" Value="" />
+                            <rad:RadComboBoxItem Text="Con existencia" Value="con" />
+                            <rad:RadComboBoxItem Text="Sin existencia" Value="sin" />
+                            <rad:RadComboBoxItem Text="Bajo el mínimo" Value="bajo" />
+                            <rad:RadComboBoxItem Text="Sobre el máximo" Value="sobre" />
+                        </Items>
+                    </rad:RadComboBox2></label>
+                    <div class="rcx-checks">
+                      <asp:CheckBox ID="chkLote" runat="server" Text=" Controla lote" AutoPostBack="true" OnCheckedChanged="Filtro_Changed" />
+                      <asp:CheckBox ID="chkInhabilitados" runat="server" Text=" Incluir deshabilitados" AutoPostBack="true" OnCheckedChanged="Filtro_Changed" />
+                    </div>
+                  </div>
+
+                  <div id="rcLista" hidden></div>
+                  <div id="rcTarjetas"></div>
+                  <div id="rcMapa" hidden></div>
+                </div>
+                <div class="tabpanel" data-rcpanel="tipos" hidden><div class="sa-cat" id="rcCatTipos"></div></div>
+                <div class="tabpanel" data-rcpanel="bodegas" hidden><div class="sa-cat" id="rcCatBodegas"></div></div>
+                <asp:Literal ID="litLista" runat="server" />
+              </section>
+            </div>
             </asp:Panel>
 
             <%-- ===================== CENTRO DEL REPUESTO ===================== --%>
-            <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sg-a3 sg-ot sg-rc">
+            <asp:Panel ID="pnlFicha" runat="server" Visible="false" CssClass="sg-a3 sg-ot sg-rc sg-a3--v3 rcx-ficha">
 
+                <%-- Volver + miga y la cabecera blanca con la portada: las mismas
+                     de la ficha del activo. --%>
                 <div class="sg-a3-miga">
+                    <asp:LinkButton ID="lnkVolver" runat="server" CssClass="sg-a3-volver"
+                        OnClientClick="return volverListado();" CausesValidation="false"><i class="mdi mdi-chevron-left"></i>Volver</asp:LinkButton>
                     <span>Inventario</span>
                     <span class="sep">/</span>
                     <a href="#" onclick="return volverListado();">Centro de repuestos</a>
                     <span class="sep">/</span><asp:Literal ID="litMiga" runat="server" />
                 </div>
 
-                <header class="sg-a3-hero">
+                <header class="sg-a3-hero es-v2">
+                    <asp:Literal ID="litHeroFoto" runat="server" />
                     <div class="sg-a3-hero-txt">
-                        <h1><asp:Literal ID="litHeroNombre" runat="server" /></h1>
+                        <h1><span class="sg-a3-hero-nom"><asp:Literal ID="litHeroNombre" runat="server" /></span></h1>
                         <div class="sg-a3-hero-sub"><asp:Literal ID="litHeroSub" runat="server" /></div>
                     </div>
                     <div class="sg-a3-hero-acc">
-                        <asp:LinkButton ID="lnkVolver" runat="server" CssClass="sg-ot-btn es-contorno"
-                            OnClientClick="return volverListado();" CausesValidation="false">
-                            <i class="mdi mdi-arrow-left"></i>Volver al listado</asp:LinkButton>
                         <%-- El mapa en otra pestana: quien esta en la ficha no pierde lo que miraba. --%>
                         <asp:HyperLink ID="hlMapa" runat="server" CssClass="sg-ot-btn es-contorno" Target="_blank" Visible="false">
                             <i class="mdi mdi-cube-scan"></i>Ver en el mapa 3D</asp:HyperLink>
@@ -599,7 +589,8 @@
                     <asp:Literal ID="litKpisFicha" runat="server" />
                 </div>
 
-                <nav class="sg-a3-nav">
+                <nav class="sg-a3-nav" aria-label="Secciones del repuesto">
+                    <div class="sg-a3-nav-scroll">
                     <a href="#" class="sg-a3-tab" data-sec="resumen"><i class="mdi mdi-file-document-outline"></i>Ficha</a>
                     <a href="#" class="sg-a3-tab" data-sec="compatibilidades"><i class="mdi mdi-puzzle-outline"></i>Compatibilidades</a>
                     <a href="#" class="sg-a3-tab" data-sec="existencias"><i class="mdi mdi-warehouse"></i>Existencias</a>
@@ -608,6 +599,7 @@
                     <a href="#" class="sg-a3-tab" data-sec="movimientos"><i class="mdi mdi-swap-horizontal"></i>Movimientos</a>
                     <a href="#" class="sg-a3-tab" data-sec="vidautil"><i class="mdi mdi-timer-sand"></i>Vida útil</a>
                     <a href="#" class="sg-a3-tab" data-sec="evidencia"><i class="mdi mdi-image-multiple-outline"></i>Evidencia y documentos</a>
+                    </div>
                 </nav>
 
                 <%-- FICHA. Una sola pestaña para leer y editar el repuesto: Editar no abre
