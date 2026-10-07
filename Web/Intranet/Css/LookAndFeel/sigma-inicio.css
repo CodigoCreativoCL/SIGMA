@@ -1,0 +1,370 @@
+﻿/* SIGMA · Inicio (Default.aspx) · Propuesta 1 (06-10-2026)
+   Referencia: docs/rediseno-inicio/sigma-inicio-referencia.html. Todo va dentro de .sgin para no chocar con el resto del sitio.
+   Esta hoja la genera _scratch/gen_inicio_css.py a partir de la referencia y le suma lo propio de la integracion. */
+:root { --in-ai-bg: #070B16; }
+.sgin {
+  --sg-purple: #6C5CFF; --sg-teal: #00E0C2; --sg-blue: #2563EB; --sg-pink: #FF4D9D;
+  --sigma-purple: #6732F4; --sigma-purple-dark: #4820C9; --sigma-purple-soft: #F2EFFF;
+  --sigma-blue: #087BEA; --sigma-blue-soft: #EAF4FF; --sigma-cyan: #16C6C9; --sigma-cyan-dark: #007F8A;
+  --ink: #0B0F1A; --ink-2: #334155; --muted: #64748B; --faint: #94A3B8; --line: #E2E8F0; --line-2: #EEF1F6;
+  --bg: #F3F4F8; --surface-2: #F8FAFC; --chip: #F3F5F8;
+  --ok: #16855B; --ok-soft: #E7F5EE; --warn: #B65C00; --warn-soft: #FFF4E6; --bad: #C7352B; --bad-soft: #FDECEA;
+  --ai-bg: #070B16; --ai-card: rgba(255,255,255,.045); --ai-line: rgba(148,163,214,.16); --ai-ink: #F4F6FF; --ai-ink-2: #B7BED6; --ai-muted: #7E87A6;
+  --e1: 0 0 0 1px rgba(15,23,42,.04), 0 1px 2px rgba(15,23,42,.04), 0 6px 16px rgba(15,23,42,.04);
+  --e2: 0 0 0 1px rgba(15,23,42,.05), 0 4px 10px rgba(15,23,42,.05), 0 18px 36px rgba(15,23,42,.08);
+  font-family: 'Sora', 'Segoe UI', system-ui, sans-serif; color: var(--ink); font-size: 13.5px; line-height: 1.5;
+  display: flex; flex-direction: column; gap: 22px; max-width: 1480px; margin: 0 auto; padding: 4px 0 70px; min-width: 0;
+}
+.sgin h1, .sgin h2, .sgin h3, .sgin h4, .sgin p { margin: 0; color: inherit; font-family: inherit }
+.sgin a { color: inherit }
+.sgin button, .sgin input { font: inherit; color: inherit }
+.sgin button { cursor: pointer }
+.sgin .ic { width: 18px; height: 18px; flex: none; display: inline-block; vertical-align: middle }
+.sgin .tn { font-variant-numeric: tabular-nums }
+.sgin :focus-visible { outline: 3px solid rgba(22,198,201,.45); outline-offset: 2px }
+.sgin [hidden] { display: none !important }
+@media (prefers-reduced-motion: reduce) { .sgin *, .sgin *::before, .sgin *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important } }
+
+/* la pagina conserva su encabezado de la master; el cuerpo no lleva tarjeta alrededor */
+.card-box:has(.sgin) { display: block !important; margin: 0 !important; background: transparent !important; box-shadow: none !important; border: 0 !important; padding: 0 !important }
+.card-box:has(.sgin) .table-responsive { overflow: visible }
+body:has(.sgin) .sg-page-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 18px; align-items: end }
+body:has(.sgin) .sg-page-head > :not(.in-acts) { grid-column: 1 }
+body:has(.sgin) .sg-page-head .in-acts { grid-column: 2; grid-row: 1 / span 3; align-self: end }
+.in-acts { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; justify-content: flex-end }
+.in-acts:empty { display: none }
+
+.sgin .btn { height: 40px; padding: 0 16px; border: 1px solid transparent; border-radius: 11px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 8px; white-space: nowrap; background: #fff; color: var(--ink); text-decoration: none; line-height: 1; transition: background .15s, transform .1s, box-shadow .15s }
+.sgin .btn:active { transform: translateY(1px) }
+.sgin .btn:disabled { opacity: .42; cursor: not-allowed }
+.sgin .btn.sm { height: 34px; padding: 0 12px; font-size: 12.5px }
+.sgin .btn.pri { background: var(--sigma-purple); color: #fff; box-shadow: 0 6px 16px rgba(103,50,244,.25) }
+.sgin .btn.pri:hover { background: var(--sigma-purple-dark) }
+.sgin .btn.out { border-color: var(--sigma-blue); color: var(--sigma-blue); background: #fff }
+.sgin .btn.out:hover { background: var(--sigma-blue-soft) }
+.sgin .btn.plain { background: transparent; color: var(--ink-2) }
+.sgin .btn.plain:hover { background: var(--chip) }
+.sgin .btn.ghost { background: var(--sigma-purple-soft); color: var(--sigma-purple) }
+.sgin .btn.ghost:hover { background: #E6E0FF }
+.in-acts .btn { height: 40px; padding: 0 16px; border: 1px solid transparent; border-radius: 11px; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; gap: 8px; text-decoration: none; white-space: nowrap; line-height: 1; cursor: pointer }
+.in-acts .btn.pri { background: #6732F4; color: #fff; box-shadow: 0 6px 16px rgba(103,50,244,.25) }
+.in-acts .btn.pri:hover { background: #4820C9; color: #fff }
+.in-acts .btn.out { border-color: #087BEA; color: #087BEA; background: #fff }
+.in-acts .btn.out:hover { background: #EAF4FF }
+.in-acts .ic { width: 16px; height: 16px }
+
+.sgin .skel { border-radius: 20px; background: linear-gradient(90deg, #fff 25%, #F3F5F8 45%, #fff 65%); background-size: 200% 100%; animation: inskel 1.4s ease-in-out infinite; min-height: 120px; box-shadow: var(--e1) }
+@keyframes inskel { to { background-position: -200% 0 } }
+.sgin .tile .ti img { width: 32px; height: 32px; display: block }
+.sgin .tile.dark .ti img { width: 36px; height: 36px }
+.sgin .tile.nope { opacity: .6 }
+.sgin .tile small { min-height: 18px }
+.sgin .sec-h .btn.plain { padding: 0 10px }
+.sgin .ai-t img { height: 17px; display: block }
+.sgin .ai-logo img { width: 30px; height: 30px }
+.sgin .ask-in .send:disabled { opacity: .5; cursor: not-allowed; box-shadow: none }
+.sgin .ask-in input:disabled { cursor: not-allowed }
+.sgin .soon { display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: rgba(124,108,255,.18); color: #C9D2FF; font-size: 11px; font-weight: 800; letter-spacing: .04em }
+.sgin .sugs button:disabled { opacity: .55; cursor: not-allowed }
+.sgin .ai-vacia { grid-column: 1 / -1; padding: 18px 4px; color: var(--ai-ink-2); font-size: 13px }
+.sgin .plot .nodata { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--ai-muted); font-size: 12.5px; padding: 0 16px }
+.sgin .kpi .n b.vacio { color: var(--faint) }
+.sgin .tile.add { min-height: 132px }
+.sgin .al button .tag:empty { display: none }
+.sgin .al a { display: grid; grid-template-columns: 36px minmax(0, 1fr) auto; gap: 10px; align-items: center; text-align: left; padding: 9px 8px; border-radius: 12px; width: 100%; color: inherit; text-decoration: none }
+.sgin .al a:hover, .sgin .al button:hover { background: var(--surface-2) }
+.sgin .al a b { display: block; font-size: 12.5px; font-weight: 700; line-height: 1.3 }
+.sgin .al a small { display: block; font-size: 11.5px; color: var(--muted) }
+/* el tema global pinta inputs y botones: el widget oscuro los redefine por completo */
+.sgin .ai form { margin: 0 }
+.sgin .ask-in { display: flex !important; align-items: center; gap: 10px; height: 50px; padding: 0 6px 0 16px; border-radius: 15px; background: rgba(255,255,255,.05) !important; box-shadow: inset 0 0 0 1px rgba(124,108,255,.35) }
+.sgin .ask-in:focus-within { box-shadow: inset 0 0 0 1px #7C8CFF, 0 0 0 4px rgba(124,140,255,.15) }
+.sgin .ask-in input { flex: 1 1 auto; min-width: 0; height: auto !important; padding: 0 !important; margin: 0 !important; border: 0 !important; border-radius: 0 !important; background: transparent !important; box-shadow: none !important; outline: 0 !important; color: #fff !important; font-size: 13px }
+.sgin .ask-in input::placeholder { color: var(--ai-muted); opacity: 1 }
+.sgin .ask-in .send { flex: none; width: 38px !important; height: 38px !important; min-width: 0; padding: 0 !important; border: 0 !important; border-radius: 11px !important; background: var(--sigma-purple) !important; color: #fff !important; display: flex !important; align-items: center; justify-content: center; box-shadow: 0 6px 16px rgba(103,50,244,.45) !important }
+.sgin .ask-in .soon { flex: none }
+.sgin .sugs { display: flex; gap: 6px; flex-wrap: wrap }
+.sgin .sugs button { height: 30px !important; padding: 0 12px !important; border: 0 !important; border-radius: 999px !important; background: rgba(255,255,255,.06) !important; color: var(--ai-ink-2) !important; font-size: 12px; font-weight: 600; box-shadow: none !important }
+.sgin .sugs button:hover { background: rgba(255,255,255,.12) !important; color: #fff !important }
+.sgin .ask #ans:empty { display: none }
+.sgin .ans { color: #E6E9FF }
+.sgin .ai .btn.dk { background: rgba(255,255,255,.08); color: #fff; box-shadow: inset 0 0 0 1px rgba(255,255,255,.12) }
+.sgin .ai .btn.dkp { background: transparent; color: var(--ai-ink-2) }
+.sgin .ai .btn.dk:hover { background: rgba(255,255,255,.14) }
+.sgin .ai .btn.dkp:hover { background: rgba(255,255,255,.06); color: #fff }
+.sgin .ai .btn.okd { background: rgba(22,133,91,.18); color: #7EE2C0; box-shadow: none; cursor: default }
+.sgin .pi { border: 0 !important; width: 100%; color: inherit }
+.sgin .pi b, .sgin .feat h3, .sgin .when b { color: inherit }
+.sgin .pi b { color: #fff }
+.sgin .feat h3 { color: #fff }
+.sgin .lab { color: #5CF2DB }
+.sgin .thr { left: 6px; right: auto }
+.in-toasts { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1500; display: flex; flex-direction: column; gap: 8px; align-items: center; width: max-content; max-width: calc(100vw - 32px); pointer-events: none }
+.in-toast { pointer-events: auto; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 14px; background: #0B0F1A; color: #fff; font-size: 13px; box-shadow: 0 12px 32px rgba(15,23,42,.3); animation: inarrive .25s ease-out }
+.in-toast a, .in-toast button { border: 0; background: rgba(255,255,255,.14); color: #fff; font-weight: 700; font-size: 12.5px; height: 30px; padding: 0 10px; border-radius: 8px; display: inline-flex; align-items: center; text-decoration: none; cursor: pointer }
+.in-pop { position: fixed; z-index: 1400; background: #fff; border-radius: 16px; box-shadow: 0 0 0 1px rgba(15,23,42,.05), 0 4px 10px rgba(15,23,42,.05), 0 30px 60px rgba(15,23,42,.18); padding: 8px; width: 280px; animation: inarrive .2s ease-out }
+.in-pop button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: transparent; border-radius: 10px; padding: 8px; text-align: left; font-size: 13px; font-weight: 600; cursor: pointer }
+.in-pop button:hover { background: #F8FAFC }
+.in-pop .ti { width: 34px; height: 34px; border-radius: 10px; background: #F4F3FF; display: flex; align-items: center; justify-content: center }
+.in-pop .ti img { width: 24px; height: 24px }
+.in-pop p { font-size: 12px; color: #64748B; padding: 6px 8px; margin: 0 }
+
+.sgin .btn{height:40px;padding:0 16px;border:1px solid transparent;border-radius:11px;font-size:13px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;gap:8px;white-space:nowrap;background:#fff;color:var(--ink);text-decoration:none;transition:background .15s,transform .1s,box-shadow .15s}
+.sgin .btn:active{transform:translateY(1px)}
+.sgin .btn.sm{height:34px;padding:0 12px;font-size:12.5px}
+.sgin .btn.pri{background:var(--sigma-purple);color:#fff;box-shadow:0 6px 16px rgba(103,50,244,.25)}
+.sgin .btn.pri:hover{background:var(--sigma-purple-dark)}
+.sgin .btn.out{border-color:var(--sigma-blue);color:var(--sigma-blue);background:#fff}
+.sgin .btn.out:hover{background:var(--sigma-blue-soft)}
+.sgin .btn.plain{background:transparent;color:var(--ink-2)}
+.sgin .btn.plain:hover{background:var(--chip)}
+.sgin .btn.ghost{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
+.sgin .btn.ghost:hover{background:#E6E0FF}
+.sgin .card{background:#fff;border-radius:20px;box-shadow:var(--e1)}
+.sgin .sec-h{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+.sgin .sec-h h2{font-size:15.5px;font-weight:800}
+.sgin .sec-h small{color:var(--muted);font-size:12.5px;margin-left:8px;font-weight:500}
+.sgin .tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(164px,1fr));gap:14px}
+.sgin .tile{position:relative;display:flex;flex-direction:column;gap:12px;padding:16px;border-radius:18px;background:#fff;box-shadow:var(--e1);text-decoration:none;color:var(--ink);border:0;text-align:left;transition:transform .18s,box-shadow .18s;min-width:0}
+.sgin .tile:hover{transform:translateY(-3px);box-shadow:var(--e2)}
+.sgin .tile .ti{width:52px;height:52px;border-radius:16px;background:#F4F3FF;display:flex;align-items:center;justify-content:center}
+.sgin .tile.dark .ti{background:radial-gradient(circle at 30% 20%,rgba(0,224,194,.25),transparent 55%),radial-gradient(circle at 80% 90%,rgba(108,92,255,.45),transparent 60%),#0B0F1A;box-shadow:0 8px 18px rgba(37,22,120,.28),inset 0 0 0 1px rgba(255,255,255,.08)}
+.sgin .tile b{font-size:13.5px;font-weight:700;line-height:1.3}
+.sgin .tile small{display:flex;align-items:center;gap:6px;color:var(--muted);font-size:12px;margin-top:2px}
+.sgin .tile small i{width:7px;height:7px;border-radius:50%;flex:none}
+.sgin .tile .go{position:absolute;top:16px;right:14px;color:var(--faint);opacity:0;transform:translateX(-4px);transition:.18s}
+.sgin .tile:hover .go{opacity:1;transform:none;color:var(--sigma-purple)}
+.sgin .tile .kb{position:absolute;top:14px;right:14px;font-size:10.5px;font-weight:700;color:var(--faint)}
+.sgin .tile:hover .kb{opacity:0}
+.sgin .tile .x{position:absolute;top:-7px;right:-7px;width:24px;height:24px;border-radius:50%;border:0;background:var(--ink);color:#fff;display:none;align-items:center;justify-content:center;box-shadow:0 0 0 3px var(--bg)}
+.sgin .editing .tile:not(.add){animation:injig .35s ease-in-out infinite alternate}
+.sgin .editing .tile .x{display:flex}
+.sgin .editing .tile .go{display:none}
+@keyframes injig{from{transform:rotate(-.6deg)}to{transform:rotate(.6deg)}}
+.sgin .tile.add{border:1.5px dashed #CBD5E1;background:transparent;box-shadow:none;align-items:center;justify-content:center;color:var(--muted);font-weight:700;font-size:12.5px;min-height:132px}
+.sgin .tile.add:hover{border-color:var(--sigma-purple);color:var(--sigma-purple);transform:none;box-shadow:none}
+.sgin .grid{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:22px;align-items:start}
+.sgin .col{display:flex;flex-direction:column;gap:22px;min-width:0}
+.sgin .ai{position:relative;overflow:hidden;border-radius:26px;color:var(--ai-ink);isolation:isolate;
+  background:radial-gradient(900px 380px at -10% -20%,rgba(0,224,194,.16),transparent 60%),radial-gradient(700px 420px at 110% 120%,rgba(108,92,255,.38),transparent 60%),radial-gradient(500px 300px at 70% -30%,rgba(255,77,157,.12),transparent 60%),var(--ai-bg);
+  box-shadow:0 24px 60px rgba(13,10,48,.35),inset 0 0 0 1px rgba(124,108,255,.28)}
+.sgin .ai::before{content:"";position:absolute;inset:0;z-index:-1;background-image:linear-gradient(rgba(148,163,214,.07) 1px,transparent 1px),linear-gradient(90deg,rgba(148,163,214,.07) 1px,transparent 1px);background-size:32px 32px;-webkit-mask-image:radial-gradient(ellipse at 40% 30%,#000 20%,transparent 75%);mask-image:radial-gradient(ellipse at 40% 30%,#000 20%,transparent 75%)}
+.sgin .ai::after{content:"";position:absolute;left:0;right:0;top:-30%;height:30%;z-index:-1;background:linear-gradient(180deg,transparent,rgba(0,224,194,.06),transparent);animation:inscan 7s linear infinite}
+@keyframes inscan{to{top:110%}}
+.sgin .ai-h{display:flex;align-items:center;gap:14px;padding:20px 22px 0;flex-wrap:wrap}
+.sgin .ai-logo{position:relative;width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.sgin .ai-logo::before{content:"";position:absolute;inset:-3px;border-radius:16px;background:conic-gradient(from 0deg,transparent 0 70%,#00E0C2 80%,#6C5CFF 90%,transparent);-webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask-composite:exclude;padding:1.5px;animation:inspin 3.2s linear infinite}
+@keyframes inspin{to{transform:rotate(360deg)}}
+.sgin .ai-t img{height:17px;display:block}
+.sgin .ai-t small{display:block;font-size:12px;color:var(--ai-muted);margin-top:5px}
+.sgin .live{margin-left:auto;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sgin .pill-live{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 12px;border-radius:999px;background:rgba(0,224,194,.1);box-shadow:inset 0 0 0 1px rgba(0,224,194,.35);font-size:11px;font-weight:800;letter-spacing:.12em;color:#5CF2DB}
+.sgin .pill-live i{position:relative;width:8px;height:8px;border-radius:50%;background:#00E0C2}
+.sgin .pill-live i::after{content:"";position:absolute;inset:-5px;border-radius:50%;border:2px solid #00E0C2;animation:inping 1.6s ease-out infinite}
+@keyframes inping{from{transform:scale(.4);opacity:.9}to{transform:scale(1.5);opacity:0}}
+.sgin .sig{font-size:12px;color:var(--ai-ink-2)}
+.sgin .sig b{color:#fff;font-weight:700}
+.sgin .ai-b{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr);gap:18px;padding:18px 22px 0}
+.sgin .lab{font-size:10.5px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#5CF2DB;display:flex;align-items:center;gap:8px}
+.sgin .lab .conf{letter-spacing:.02em;text-transform:none;font-weight:700;color:var(--ai-ink-2);background:rgba(255,255,255,.06);border-radius:999px;padding:2px 9px}
+.sgin .feat{display:flex;flex-direction:column;gap:14px;min-width:0}
+.sgin .feat h3{font-size:21px;font-weight:800;line-height:1.25;letter-spacing:-.01em}
+.sgin .feat .ctx{color:var(--ai-ink-2);font-size:12.5px;margin-top:2px}
+.sgin .hero{display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.sgin .gauge{position:relative;width:118px;height:118px;flex:none}
+.sgin .gauge svg{display:block}
+.sgin .gauge .v{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.sgin .gauge .v b{font-size:28px;font-weight:800;line-height:1}
+.sgin .gauge .v small{font-size:10.5px;color:var(--ai-muted);margin-top:4px;text-align:center;line-height:1.2}
+.sgin .when{display:flex;flex-direction:column;gap:2px;min-width:0}
+.sgin .when small{font-size:11.5px;color:var(--ai-muted)}
+.sgin .when b{font-size:26px;font-weight:800;line-height:1.1;background:linear-gradient(90deg,#00E0C2,#7C8CFF 60%,#FF4D9D);-webkit-background-clip:text;background-clip:text;color:transparent}
+.sgin .when span{font-size:12.5px;color:var(--ai-ink-2)}
+.sgin .why{display:flex;flex-direction:column;gap:6px;padding-left:18px;border-left:1px solid var(--ai-line);min-width:0;flex:1}
+.sgin .why div{display:flex;gap:8px;font-size:12px;color:var(--ai-ink-2);align-items:baseline}
+.sgin .why div b{color:#fff;font-weight:700}
+.sgin .why div::before{content:"";width:5px;height:5px;border-radius:50%;background:#7C8CFF;flex:none;transform:translateY(-2px)}
+.sgin .chart{position:relative;border-radius:16px;background:rgba(255,255,255,.03);box-shadow:inset 0 0 0 1px var(--ai-line);padding:12px 12px 26px 40px}
+.sgin .chart-h{display:flex;justify-content:space-between;align-items:baseline;gap:10px;margin:0 0 6px -28px;font-size:11.5px;color:var(--ai-muted)}
+.sgin .chart-h b{font-size:18px;color:#fff;font-weight:800;margin-right:4px}
+.sgin .chart-h .lg{display:flex;gap:12px;flex-wrap:wrap}
+.sgin .chart-h .lg span{display:inline-flex;align-items:center;gap:6px}
+.sgin .chart-h .lg i{width:14px;height:2px;border-radius:1px;background:#7C8CFF}
+.sgin .chart-h .lg i.p{background:repeating-linear-gradient(90deg,#FF4D9D 0 4px,transparent 4px 7px)}
+.sgin .chart-h .lg i.t{background:repeating-linear-gradient(90deg,#FFB547 0 6px,transparent 6px 9px)}
+.sgin .plot{position:relative;height:150px}
+.sgin .plot svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.sgin .ylab{position:absolute;left:-30px;font-size:10px;color:var(--ai-muted);transform:translateY(-50%)}
+.sgin .xlab{position:absolute;bottom:-20px;font-size:10px;color:var(--ai-muted);transform:translateX(-50%);white-space:nowrap}
+.sgin .thr{position:absolute;right:4px;font-size:10px;font-weight:700;color:#FFB547;transform:translateY(-120%)}
+.sgin .nowdot{position:absolute;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;background:#fff;box-shadow:0 0 0 3px #7C8CFF,0 0 18px #7C8CFF}
+.sgin .cross{position:absolute;top:0;bottom:0;width:1px;background:rgba(255,255,255,.35);pointer-events:none;display:none}
+.sgin .tip{position:absolute;z-index:3;pointer-events:none;display:none;background:#fff;color:var(--ink);border-radius:10px;padding:7px 10px;font-size:11.5px;box-shadow:0 10px 30px rgba(0,0,0,.4);white-space:nowrap;transform:translate(-50%,-110%)}
+.sgin .tip b{display:block;font-size:12.5px}
+.sgin .ai-acts{display:flex;gap:8px;flex-wrap:wrap}
+.sgin .btn.dk{background:rgba(255,255,255,.08);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.12)}
+.sgin .btn.dk:hover{background:rgba(255,255,255,.14)}
+.sgin .btn.dkp{background:transparent;color:var(--ai-ink-2)}
+.sgin .btn.dkp:hover{background:rgba(255,255,255,.06);color:#fff}
+.sgin .stream{display:flex;flex-direction:column;gap:10px;min-width:0}
+.sgin .stream-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.sgin .stream-h span{font-size:12px;color:var(--ai-muted)}
+.sgin .pl{display:flex;flex-direction:column;gap:8px}
+.sgin .pi{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;align-items:center;padding:10px 12px;border-radius:14px;background:var(--ai-card);box-shadow:inset 0 0 0 1px var(--ai-line);border:0;color:inherit;text-align:left;width:100%;transition:background .2s}
+.sgin .pi:hover{background:rgba(255,255,255,.08)}
+.sgin .pi.on{background:rgba(124,108,255,.16);box-shadow:inset 0 0 0 1px rgba(124,108,255,.6)}
+.sgin .pi.new{animation:inarrive .7s ease-out}
+@keyframes inarrive{0%{opacity:0;transform:translateY(-10px);box-shadow:inset 0 0 0 1px #00E0C2,0 0 24px rgba(0,224,194,.35)}60%{opacity:1;transform:none;box-shadow:inset 0 0 0 1px #00E0C2,0 0 24px rgba(0,224,194,.25)}}
+.sgin .pi .pic{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.06)}
+.sgin .pi .pic i{width:9px;height:9px;border-radius:50%}
+.sgin .pi b{display:block;font-size:12.5px;font-weight:700;color:#fff;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sgin .pi small{display:block;font-size:11.5px;color:var(--ai-ink-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sgin .pi small em{font-style:normal;color:var(--ai-muted)}
+.sgin .pr{display:flex;flex-direction:column;align-items:flex-end;gap:5px}
+.sgin .pr b{font-size:13.5px}
+.sgin .pr span{width:56px;height:4px;border-radius:2px;background:rgba(255,255,255,.1);overflow:hidden;display:block}
+.sgin .pr span i{display:block;height:100%;border-radius:2px}
+.sgin .stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:2px}
+.sgin .stats div{border-radius:14px;padding:10px 12px;background:var(--ai-card);box-shadow:inset 0 0 0 1px var(--ai-line)}
+.sgin .stats b{display:block;font-size:18px;font-weight:800}
+.sgin .stats small{display:block;font-size:10.5px;color:var(--ai-muted);line-height:1.3}
+.sgin .ask #ans:empty{display:none}
+.sgin .ask{margin:18px 22px 20px;display:flex;flex-direction:column;gap:10px}
+.sgin .ask-in{display:flex;align-items:center;gap:10px;height:50px;padding:0 6px 0 16px;border-radius:15px;background:rgba(255,255,255,.05);box-shadow:inset 0 0 0 1px rgba(124,108,255,.35)}
+.sgin .ask-in:focus-within{box-shadow:inset 0 0 0 1px #7C8CFF,0 0 0 4px rgba(124,140,255,.15)}
+.sgin .ask-in input{flex:1;min-width:0;border:0;background:transparent;outline:0;color:#fff;font-size:13px}
+.sgin .ask-in input::placeholder{color:var(--ai-muted)}
+.sgin .ask-in .send{width:38px;height:38px;border:0;border-radius:11px;background:var(--sigma-purple);color:#fff;display:flex;align-items:center;justify-content:center;box-shadow:0 6px 16px rgba(103,50,244,.45)}
+.sgin .sugs{display:flex;gap:6px;flex-wrap:wrap}
+.sgin .sugs button{height:30px;padding:0 12px;border:0;border-radius:999px;background:rgba(255,255,255,.06);color:var(--ai-ink-2);font-size:12px;font-weight:600}
+.sgin .sugs button:hover{background:rgba(255,255,255,.12);color:#fff}
+.sgin .ans{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border-radius:14px;background:rgba(124,108,255,.12);box-shadow:inset 0 0 0 1px rgba(124,108,255,.3);font-size:12.5px;color:#E6E9FF;line-height:1.55;animation:inarrive .5s ease-out}
+.sgin .ans .q{display:block;color:var(--ai-muted);font-size:11.5px;margin-bottom:2px}
+.sgin .caret{display:inline-block;width:7px;height:14px;background:#7C8CFF;vertical-align:-2px;margin-left:2px;animation:inblink .9s steps(1) infinite}
+@keyframes inblink{50%{opacity:0}}
+.sgin .learn{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center;padding:22px}
+.sgin .learn h3{font-size:20px;font-weight:800}
+.sgin .learn p{color:var(--ai-ink-2);font-size:13px;margin-top:6px;max-width:58ch}
+.sgin .learn .steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.sgin .learn .steps span{font-size:12px;padding:6px 10px;border-radius:10px;background:var(--ai-card);box-shadow:inset 0 0 0 1px var(--ai-line);color:var(--ai-ink-2)}
+.sgin .learn .steps span b{color:#fff}
+.sgin .today{padding:18px}
+.sgin .tl{display:flex;flex-direction:column}
+.sgin .tl-i{display:grid;grid-template-columns:48px 18px minmax(0,1fr);gap:8px;align-items:start;padding:0 0 14px}
+.sgin .tl-i time{font-size:12px;font-weight:700;color:var(--ink-2);padding-top:1px}
+.sgin .tl-i .dot{position:relative;width:18px;display:flex;justify-content:center;align-self:stretch}
+.sgin .tl-i .dot::before{content:"";position:absolute;top:16px;bottom:-14px;width:2px;background:var(--line)}
+.sgin .tl-i:last-child .dot::before{display:none}
+.sgin .tl-i .dot i{width:12px;height:12px;border-radius:50%;border:2px solid var(--faint);background:#fff;margin-top:3px;position:relative}
+.sgin .tl-i.done .dot i{border-color:var(--ok);background:var(--ok)}
+.sgin .tl-i.now .dot i{border-color:var(--sigma-purple);background:var(--sigma-purple);box-shadow:0 0 0 4px rgba(103,50,244,.15)}
+.sgin .tl-i b{display:block;font-size:13px;font-weight:600;line-height:1.35}
+.sgin .tl-i small{display:block;font-size:12px;color:var(--muted)}
+.sgin .tl-i.done b{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.sgin .st{display:inline-flex;align-items:center;gap:5px;font-size:11px;font-weight:700;border-radius:999px;padding:1px 8px;margin-top:4px}
+.sgin .st.now{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
+.sgin .st.done{background:var(--ok-soft);color:var(--ok)}
+.sgin .st.next{background:var(--chip);color:var(--ink-2)}
+.sgin .att{padding:18px}
+.sgin .al{display:flex;flex-direction:column;gap:4px}
+.sgin .al button{display:grid;grid-template-columns:36px minmax(0,1fr) auto;gap:10px;align-items:center;border:0;background:transparent;text-align:left;padding:9px 8px;border-radius:12px;width:100%}
+.sgin .al button:hover{background:var(--surface-2)}
+.sgin .al .ai2{width:36px;height:36px;border-radius:11px;display:flex;align-items:center;justify-content:center}
+.sgin .al b{display:block;font-size:12.5px;font-weight:700;line-height:1.3}
+.sgin .al small{display:block;font-size:11.5px;color:var(--muted)}
+.sgin .al .tag{font-size:11px;font-weight:700;padding:1px 8px;border-radius:999px}
+.sgin .tag.c{background:var(--bad-soft);color:var(--bad)}
+.sgin .tag.a{background:var(--warn-soft);color:var(--warn)}
+.sgin .kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.sgin .kpi{padding:16px 18px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sgin .kpi .k{display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12.5px;color:var(--muted);font-weight:600}
+.sgin .kpi .k .ic{color:var(--faint)}
+.sgin .kpi .n{display:flex;align-items:baseline;gap:8px}
+.sgin .kpi .n b{font-size:28px;font-weight:800;letter-spacing:-.01em;line-height:1.1}
+.sgin .kpi .n span{font-size:12px;font-weight:700}
+.sgin .up{color:var(--ok)}
+.sgin .dn{color:var(--bad)}
+.sgin .neu{color:var(--muted)}
+.sgin .kpi .d{font-size:12px;color:var(--muted)}
+.sgin .kpi .d b{color:var(--bad);font-weight:700}
+.sgin .meter{position:relative;height:8px;border-radius:4px;background:var(--line-2);margin-top:8px}
+.sgin .meter i{position:absolute;left:0;top:0;bottom:0;border-radius:4px;background:var(--sigma-cyan-dark)}
+.sgin .meter em{position:absolute;top:-4px;width:2px;height:16px;background:var(--ink);border-radius:1px}
+.sgin .spark{height:38px;margin-top:4px;position:relative}
+.sgin .spark svg{width:100%;height:100%;display:block;overflow:visible}
+.sgin .ots{padding:18px 18px 8px}
+.sgin .ot{display:grid;grid-template-columns:86px minmax(0,1.6fr) minmax(0,1fr) 104px 116px 32px;gap:12px;align-items:center;padding:11px 8px;border-top:1px solid var(--line-2);border-radius:0;font-size:12.5px}
+.sgin .ot:hover{background:var(--surface-2)}
+.sgin .ot.h{border-top:0;font-size:11px;font-weight:700;color:var(--faint);letter-spacing:.06em;text-transform:uppercase;padding-block:4px 8px}
+.sgin .ot.h:hover{background:transparent}
+.sgin .ot code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:700;color:var(--ink-2);font-size:12px}
+.sgin .ot .t b{display:block;font-weight:600;font-size:13px;line-height:1.3;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sgin .ot .t small{color:var(--muted);font-size:11.5px}
+.sgin .ot .who{display:flex;align-items:center;gap:8px;min-width:0;color:var(--ink-2)}
+.sgin .ot .who span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sgin .ini{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10.5px;font-weight:800;flex:none}
+.sgin .es{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:999px;white-space:nowrap}
+.sgin .es i{width:6px;height:6px;border-radius:50%;background:currentColor}
+.sgin .es.venc{background:var(--bad-soft);color:var(--bad)}
+.sgin .es.curso{background:var(--sigma-blue-soft);color:var(--sigma-blue)}
+.sgin .es.prog{background:var(--chip);color:var(--ink-2)}
+.sgin .es.fin{background:var(--ok-soft);color:var(--ok)}
+.sgin .pri-t{font-size:11.5px;font-weight:700}
+.sgin .pri-t.c{color:var(--bad)}
+.sgin .pri-t.a{color:var(--warn)}
+.sgin .pri-t.m{color:var(--ink-2)}
+.sgin .ot .ib{width:32px;height:32px;border:0;border-radius:9px;background:transparent;color:var(--faint);display:flex;align-items:center;justify-content:center}
+.sgin .ot .ib:hover{background:var(--chip);color:var(--ink)}
+.sgin .empty{padding:26px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:center}
+.sgin .empty h3{font-size:18px;font-weight:800}
+.sgin .empty p{color:var(--muted);margin-top:6px;max-width:60ch}
+.sgin .steps3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:18px}
+.sgin .steps3 div{border-radius:16px;background:var(--surface-2);padding:14px;display:flex;flex-direction:column;gap:4px}
+.sgin .steps3 b{font-size:13px}
+.sgin .steps3 small{color:var(--muted);font-size:12px}
+.sgin .steps3 .ok{color:var(--ok);font-weight:700;font-size:12px;display:flex;align-items:center;gap:5px}
+.sgin .steps3 .nx{color:var(--sigma-purple);font-weight:700;font-size:12px}
+.sgin .pop{position:fixed;z-index:70;background:#fff;border-radius:16px;box-shadow:var(--e2),0 30px 60px rgba(15,23,42,.18);padding:8px;width:280px;animation:inarrive .2s ease-out}
+.sgin .pop button{display:flex;align-items:center;gap:10px;width:100%;border:0;background:transparent;border-radius:10px;padding:8px;text-align:left;font-size:13px;font-weight:600}
+.sgin .pop button:hover{background:var(--surface-2)}
+.sgin .pop .ti{width:34px;height:34px;border-radius:10px;background:#F4F3FF;display:flex;align-items:center;justify-content:center}
+.sgin .pop p{font-size:12px;color:var(--muted);padding:6px 8px}
+
+.sgin { container-type: inline-size; container-name: sgin }
+@container sgin (max-width: 1180px) {
+  .sgin .grid { grid-template-columns: minmax(0, 1fr) }
+  .sgin .side-col { display: grid !important; grid-template-columns: 1fr 1fr; align-items: start }
+}
+@container sgin (max-width: 860px) {
+  .sgin .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)) }
+  .sgin .ai-b { grid-template-columns: minmax(0, 1fr) }
+  .sgin .ot { grid-template-columns: 76px minmax(0, 1fr) 104px 32px }
+  .sgin .ot .c3, .sgin .ot .c5 { display: none }
+}
+@container sgin (max-width: 640px) {
+  .sgin .learn, .sgin .empty, .sgin .steps3 { grid-template-columns: minmax(0, 1fr) }
+}
+@media (max-width: 900px) {
+  body:has(.sgin) .sg-page-head { grid-template-columns: minmax(0, 1fr) }
+  body:has(.sgin) .sg-page-head .in-acts { grid-column: 1; grid-row: auto; justify-content: flex-start; margin-top: 10px }
+  .sgin .side-col { grid-template-columns: minmax(0, 1fr) !important }
+  .sgin .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+  .sgin .tile .kb { display: none }
+  .sgin .hero { gap: 14px }
+  .sgin .why { padding-left: 0; border-left: 0; flex-basis: 100% }
+  .sgin .stats { grid-template-columns: repeat(3, minmax(0, 1fr)) }
+}
+@media (max-width: 560px) {
+  .sgin .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px }
+  .sgin .kpi { padding: 14px }
+  .sgin .kpi .n b { font-size: 23px }
+  .sgin .kpi .n { flex-wrap: wrap; gap: 2px 6px }
+  .sgin .xs-h { display: none }
+  .sgin .ai-h { padding: 18px 16px 0 }
+  .sgin .ai-b { padding: 16px 16px 0 }
+  .sgin .ask { margin: 16px }
+  .sgin .live .sig { display: none }
+  .sgin .ot { grid-template-columns: minmax(0, 1fr) auto }
+  .sgin .ot code, .sgin .ot .ib, .sgin .ot.h { display: none }
+  .in-acts .btn { height: 38px; padding: 0 12px }
+}
