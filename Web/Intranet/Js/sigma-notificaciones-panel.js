@@ -22,106 +22,199 @@
     }
 
     /* ======================================================================
-       VISTAS / SIN VER
+       PANEL v2 (06-10-2026)
 
-       No sale del navegador. Cada fila trae `data-visto`, asi que filtrar es
-       esconder las que no calzan: responde en el mismo fotograma del clic.
-       Ir al servidor a pedir la misma lista para mostrar un subconjunto de si
-       misma seria media pantalla de espera por un dato que ya esta aca.
-
-       El estado elegido se recuerda entre recargas del panel: si alguien dejo
-       puesto "Sin ver" y llega una alerta nueva, el panel se repinta y seria
-       molesto tener que volver a elegirlo cada vez.
+       Todo lo que se ve se cuenta sobre las MISMAS filas ya agrupadas que
+       dibuja el servidor: la campana, el encabezado y los chips no pueden
+       discrepar porque salen de aqui. Filtrar, silenciar y marcar leidas se
+       resuelve en el navegador; al servidor solo viaja la lectura.
        ====================================================================== */
     var filtroVisto = '';
+    var PREF_KEY = 'sg-np-pref', MUTE_KEY = 'sg-np-mute';
+
+    function leerLS(k) { try { return JSON.parse(localStorage.getItem(k) || '{}') || {}; } catch (e) { return {}; } }
+    function guardarLS(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch (e) { } }
+
+    function oculta(fila) {
+        var tipo = fila.getAttribute('data-tipo') || '';
+        var pref = leerLS(PREF_KEY), mute = leerLS(MUTE_KEY);
+        if (pref._leidas && fila.getAttribute('data-visto') === '1') return true;
+        if (pref._req && fila.getAttribute('data-req') !== '1') return true;
+        return pref[tipo] === 'silencio' || (mute[tipo] && mute[tipo] > Date.now());
+    }
+
+    function filasDe(panel) { return Array.prototype.slice.call(panel.querySelectorAll('[data-np-row]')); }
+
+    function pasa(fila, f) {
+        if (!f) return true;
+        if (f === 'req') return fila.getAttribute('data-req') === '1';
+        if (f === '0') return fila.getAttribute('data-visto') === '0';
+        return fila.getAttribute('data-cat') === f;
+    }
+
+    function badgeDe(n, critica) {
+        var enlace = document.querySelector('.sigma-notification');
+        if (!enlace) return;
+        var b = enlace.querySelector('.sigma-notification__count');
+        if (n > 0) {
+            if (!b) { b = document.createElement('span'); b.className = 'sigma-notification__count'; b.setAttribute('aria-hidden', 'true'); enlace.appendChild(b); }
+            b.textContent = n > 99 ? '99+' : n;
+            enlace.setAttribute('aria-label', n + ' notificaciones sin leer');
+        }
+        else if (b) { b.parentNode.removeChild(b); enlace.setAttribute('aria-label', 'Notificaciones'); }
+        enlace.classList.toggle('sigma-notification--critical', !!critica && n > 0);
+    }
 
     function aplicarFiltro(panel) {
         if (!panel) return;
+        var filas = filasDe(panel), vis = filas.filter(function (f) { return !oculta(f); });
+        var cuenta = { '': vis.length, req: 0, '0': 0 }, cats = {}, critSin = false;
 
-        var filas = panel.querySelectorAll('[data-alerta-id]');
-        var visibles = 0;
+        vis.forEach(function (f) {
+            if (f.getAttribute('data-req') === '1') cuenta.req++;
+            if (f.getAttribute('data-visto') === '0') { cuenta['0']++; if (f.getAttribute('data-req') === '1' && f.querySelector('.np-sev.crit')) critSin = true; }
+            var c = f.getAttribute('data-cat'); cats[c] = (cats[c] || 0) + 1;
+        });
 
-        for (var i = 0; i < filas.length; i++) {
-            var pasa = !filtroVisto
-                     ? true
-                     : (filtroVisto === 'ai'
-                            ? filas[i].getAttribute('data-ai') === '1'
-                            : filas[i].getAttribute('data-visto') === filtroVisto);
-            filas[i].hidden = !pasa;
-            if (pasa) visibles++;
-        }
+        var algunaVisible = false;
+        filas.forEach(function (f) {
+            var ver = !oculta(f) && pasa(f, filtroVisto);
+            f.hidden = !ver;
+            if (ver) algunaVisible = true;
+        });
 
-        /* Los numeros de cada opcion. Se cuentan sobre lo que hay en el panel,
-           que es la misma fuente que usa el filtro: asi el numero y lo que se
-           ve al tocar no pueden discrepar.
+        /* El rotulo de fecha solo si le queda alguna fila debajo. */
+        var secs = panel.querySelectorAll('.np-sec');
+        Array.prototype.forEach.call(secs, function (s) {
+            var el = s.nextElementSibling, hay = false;
+            while (el && !el.classList.contains('np-sec')) { if (el.hasAttribute('data-np-row') && !el.hidden) hay = true; el = el.nextElementSibling; }
+            s.hidden = !hay;
+        });
 
-           Van en el propio boton y no en un rotulo aparte: un filtro que dice
-           "Sin ver" y al tocarlo no muestra nada ya hizo perder un clic. Con
-           el numero al lado se sabe antes si vale la pena. */
-        var sinVer = 0;
+        Array.prototype.forEach.call(panel.querySelectorAll('[data-np-filtro]'), function (b) {
+            var v = b.getAttribute('data-np-filtro') || '', suyo = v === filtroVisto;
+            var n = v === '' || v === 'req' || v === '0' ? cuenta[v] : (cats[v] || 0);
+            b.classList.toggle('is-activo', suyo);
+            b.setAttribute('aria-pressed', suyo ? 'true' : 'false');
+            b.classList.toggle('is-vacia', n === 0 && !suyo);
+            /* Los tipos sin nada no se muestran; los tres primeros siempre. */
+            b.hidden = (v !== '' && v !== 'req' && v !== '0') && n === 0 && !suyo;
+            var hueco = b.querySelector('b'); if (hueco) hueco.textContent = n;
+        });
 
-        for (var k = 0; k < filas.length; k++)
-            if (filas[k].getAttribute('data-visto') === '0') sinVer++;
+        var res = panel.querySelector('.sg-notif-resumen');
+        if (res) res.innerHTML = (cuenta.req === 0 && cuenta['0'] === 0)
+            ? 'Estás al día'
+            : '<strong>' + cuenta.req + ' requieren acción</strong> · <span>' + cuenta['0'] + ' sin leer</span>';
 
-        var conAi = 0;
+        var todo = panel.querySelector('[data-sg-notif-leer-todo]');
+        if (todo) todo.hidden = cuenta['0'] === 0;
 
-        for (var q = 0; q < filas.length; q++)
-            if (filas[q].getAttribute('data-ai') === '1') conAi++;
+        badgeDe(cuenta['0'], critSin);
 
-        var cuenta = { '': filas.length, '0': sinVer, '1': filas.length - sinVer, 'ai': conAi };
-
-        var botones = panel.querySelectorAll('[data-sg-notif-filtro]');
-
-        for (var j = 0; j < botones.length; j++) {
-            var valor = botones[j].getAttribute('data-sg-notif-filtro') || '';
-            var suyo = valor === filtroVisto;
-            var n = cuenta[valor];
-
-            botones[j].classList.toggle('is-activo', suyo);
-            botones[j].setAttribute('aria-pressed', suyo ? 'true' : 'false');
-
-            /* Una opcion sin nada no se esconde -al desaparecer correria las
-               otras de lugar y se tocaria la equivocada- pero se apaga. */
-            botones[j].classList.toggle('is-vacia', n === 0 && !suyo);
-
-            var hueco = botones[j].querySelector('.n');
-            if (hueco) hueco.textContent = n;
-        }
-
-        /* Cuando el filtro deja la lista vacia hay que decirlo, y decir por
-           que: el vacio de "no hay nada" ya tiene su propio mensaje, y
-           confundirlos deja a alguien pensando que no le llego nada cuando lo
-           que pasa es que puso un filtro. */
-        var aviso = panel.querySelector('[data-sg-notif-sinfiltro]');
-        var hayFilas = filas.length > 0;
-
-        if (hayFilas && visibles === 0) {
-            if (!aviso) {
-                var cuerpo = panel.querySelector('.sg-notif-cuerpo');
-                if (!cuerpo) return;
-
-                aviso = document.createElement('div');
-                aviso.className = 'sg-notif-vacio';
-                aviso.setAttribute('data-sg-notif-sinfiltro', '1');
-                cuerpo.appendChild(aviso);
-            }
-
-            var titulo = filtroVisto === '0' ? 'No queda nada sin leer'
-                       : filtroVisto === 'ai' ? 'Ninguna vino de SIGMA AI'
-                       : 'Todavía no has visto ninguna';
-
-            var texto = filtroVisto === '0'
-                        ? 'Ya revisaste las ' + filas.length + ' notificaciones del panel.'
-                        : filtroVisto === 'ai'
-                            ? 'Las ' + filas.length + ' del panel las detectaron las reglas de operación.'
-                            : 'Las ' + filas.length + ' que hay siguen sin abrirse.';
-
-            aviso.innerHTML = '<div class="sg-notif-vacio-titulo">' + titulo +
-                              '</div><div class="sg-notif-vacio-texto">' + texto + '</div>';
-
+        var cuerpo = panel.querySelector('.np-cuerpo');
+        var aviso = panel.querySelector('[data-np-sinfiltro]');
+        if (cuerpo && filas.length && !algunaVisible) {
+            if (!aviso) { aviso = document.createElement('div'); aviso.className = 'np-vacio-f'; aviso.setAttribute('data-np-sinfiltro', '1'); cuerpo.appendChild(aviso); }
+            aviso.innerHTML = filtroVisto === '0' ? '<b>No queda nada sin leer</b>Estás al día.' : filtroVisto === 'ai' ? '<b>Sin predicciones de SIGMA AI</b>Cuando el modelo detecte algo, aparecerá aquí.' : '<b>Nada con este filtro</b>Prueba con «Todas».';
             aviso.hidden = false;
         }
         else if (aviso) aviso.hidden = true;
+    }
+
+    /* Marca como leidas, en el DOM, las alertas con esos ids. */
+    function marcarDom(panel, ids) {
+        var set = {}; ids.forEach(function (i) { set[String(i)] = 1; });
+        Array.prototype.forEach.call(panel.querySelectorAll('.np-row[data-np-abre], .np-sub, .np-ai'), function (el) {
+            var id = (el.getAttribute('data-np-id') || el.getAttribute('data-ids') || '');
+            if (!set[id]) return;
+            el.classList.add('is-leida'); el.classList.remove('is-nueva');
+            Array.prototype.forEach.call(el.querySelectorAll(':scope > .np-dot, :scope > .np-ai-h .np-dot'), function (d) { d.remove(); });
+            if (el.hasAttribute('data-np-row')) el.setAttribute('data-visto', '1');
+        });
+        Array.prototype.forEach.call(panel.querySelectorAll('.np-grp'), function (g) {
+            var subs = g.querySelectorAll('.np-sub'), sin = g.querySelectorAll('.np-sub:not(.is-leida)').length;
+            var go = g.querySelector('.np-grp-h .np-go');
+            if (go && go.firstChild) go.firstChild.textContent = (sin > 0 ? sin + ' sin leer' : 'todas leídas') + ' ';
+            if (sin === 0 && subs.length) {
+                g.setAttribute('data-visto', '1'); g.classList.add('is-leida'); g.classList.remove('is-nueva');
+                var d = g.querySelector('.np-grp-h > .np-dot'); if (d) d.remove();
+            }
+        });
+    }
+
+    function idsSinLeer(panel) {
+        var ids = [];
+        Array.prototype.forEach.call(panel.querySelectorAll('.np-row[data-np-abre]:not(.is-leida), .np-sub:not(.is-leida), .np-ai:not(.is-leida)'), function (el) {
+            var id = el.getAttribute('data-np-id') || el.getAttribute('data-ids'); if (id) ids.push(id);
+        });
+        return ids;
+    }
+
+    function toast(texto, deshacer, alCerrar) {
+        var viejo = document.querySelector('.np-toast'); if (viejo) viejo.remove();
+        var t = document.createElement('div'); t.className = 'np-toast'; t.setAttribute('role', 'status');
+        t.innerHTML = '<span></span>' + (deshacer ? '<button type="button">Deshacer</button>' : '');
+        t.firstChild.textContent = texto;
+        var deshecho = false;
+        if (deshacer) t.querySelector('button').onclick = function () { deshecho = true; deshacer(); t.remove(); };
+        document.body.appendChild(t);
+        setTimeout(function () { if (t.parentNode) t.remove(); if (!deshecho && alCerrar) alCerrar(); }, 6000);
+    }
+
+    function leerEnServidor(csv) {
+        if (window.sigmaAlertas) return sigmaAlertas.leer(csv);
+        return null;
+    }
+
+    var CAT_NOM = { ai: 'SIGMA AI', stock: 'Stock', ordenes: 'Órdenes', soporte: 'Soporte', medidores: 'Medidores', permisos: 'Permisos', otros: 'Otros' };
+    var CAT_ORD = ['ai', 'stock', 'ordenes', 'soporte', 'medidores', 'permisos', 'otros'];
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+
+    /* El drawer de preferencias: se arma con los tipos de notificacion que hay ahora en el panel. */
+    function dibujarDrawer(panel) {
+        var dr = panel.querySelector('[data-np-drawer]');
+        if (!dr) { dr = document.createElement('div'); dr.className = 'np-drawer'; dr.setAttribute('data-np-drawer', '1'); dr.setAttribute('role', 'dialog'); dr.setAttribute('aria-label', 'Preferencias de notificaciones'); panel.appendChild(dr); }
+        var pref = leerLS(PREF_KEY), mute = leerLS(MUTE_KEY), tipos = {};
+        filasDe(panel).forEach(function (f) {
+            var k = f.getAttribute('data-tipo');
+            var t = tipos[k] || (tipos[k] = { nombre: f.getAttribute('data-tn') || k, cat: f.getAttribute('data-cat') || 'otros', filas: 0, sin: 0 });
+            t.filas++; if (f.getAttribute('data-visto') === '0') t.sin++;
+        });
+        var porCat = {};
+        Object.keys(tipos).forEach(function (k) { (porCat[tipos[k].cat] = porCat[tipos[k].cat] || []).push(k); });
+
+        var h = '<div class="np-dr-h"><button type="button" class="np-ib" data-np-drawer-cerrar aria-label="Volver"><i class="mdi mdi-arrow-left"></i></button><h4>Preferencias</h4></div><div class="np-dr-b">';
+        h += '<h5>General</h5>'
+          + '<div class="np-sw"><span>Mostrar solo lo que requiere acción<small>Críticas y altas sin resolver.</small></span><button type="button" data-np-gen="_req" aria-pressed="' + (!!pref._req) + '" aria-label="Mostrar solo lo que requiere acción"></button></div>'
+          + '<div class="np-sw"><span>Ocultar las ya leídas<small>El panel queda solo con lo pendiente.</small></span><button type="button" data-np-gen="_leidas" aria-pressed="' + (!!pref._leidas) + '" aria-label="Ocultar las ya leídas"></button></div>';
+        var hay = false;
+        CAT_ORD.forEach(function (c) {
+            if (!porCat[c]) return; hay = true;
+            h += '<h5>' + esc(CAT_NOM[c]) + '</h5>';
+            porCat[c].forEach(function (k) {
+                var t = tipos[k], silen = pref[k] === 'silencio', m = mute[k] && mute[k] > Date.now();
+                var hasta = m ? new Date(mute[k]).toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit' }) : '';
+                h += '<div class="np-tp"><div class="np-tp-t">' + esc(t.nombre) + '<span>' + t.filas + (t.filas === 1 ? ' aviso' : ' avisos') + (t.sin ? ' · ' + t.sin + ' sin leer' : '') + '</span></div>'
+                  + '<div class="np-seg" role="group" aria-label="Cómo recibir ' + esc(t.nombre) + '">'
+                  + '<button type="button" data-np-canal="' + esc(k) + '|panel" aria-pressed="' + (!silen) + '">En el panel</button>'
+                  + '<button type="button" disabled title="Llegará más adelante">Por correo</button>'
+                  + '<button type="button" data-np-canal="' + esc(k) + '|silencio" aria-pressed="' + silen + '">En silencio</button></div>'
+                  + '<div class="np-tp-m"><span>' + (m ? 'Silenciada hasta las ' + hasta : (silen ? 'No se muestran en el panel' : 'Se muestran en el panel')) + '</span>'
+                  + '<button type="button" data-np-mute="' + esc(k) + '">' + (m ? 'Reactivar' : 'Silenciar 24 h') + '</button></div></div>';
+            });
+        });
+        if (!hay) h += '<p style="margin-top:16px">Todavía no tienes notificaciones: cuando lleguen, aquí eliges cómo recibir cada tipo.</p>';
+        h += '</div><div class="np-dr-f"><button type="button" class="np-btn out" data-np-reset>Restablecer</button></div>';
+        dr.innerHTML = h; dr.hidden = false;
+    }
+
+    function abrirFila(el) {
+        var url = el.getAttribute('data-np-url'), q = el.getAttribute('data-np-q'), id = el.getAttribute('data-np-id');
+        if (!url) return;
+        marcarDom(el.closest('[data-sg-notif-panel]'), [id]);
+        aplicarFiltro(el.closest('[data-sg-notif-panel]'));
+        if (window.abrirNotificacion) window.abrirNotificacion(url, q, +id);
     }
 
     /* ======================================================================
@@ -266,56 +359,154 @@
         if (!p || p.panel.getAttribute('data-sg-ready') === '1') return;
         p.panel.setAttribute('data-sg-ready', '1');
 
-        p.panel.addEventListener('click', function (event) {
-            var dismiss = event.target.closest && event.target.closest('[data-sg-notif-dismiss]');
-            if (dismiss) {
-                event.preventDefault();
-                event.stopPropagation();
-                closePanel(p);
+        var panel = p.panel;
+        var pendienteLeerTodo = null;
+
+        panel.addEventListener('click', function (event) {
+            var t = event.target.closest ? event.target : null;
+            if (!t) return;
+            var c;
+
+            if ((c = t.closest('[data-sg-notif-dismiss]'))) { event.preventDefault(); event.stopPropagation(); closePanel(p); return; }
+
+            /* Marcar todo: se ve al instante y el POST sale al cerrarse el aviso. */
+            if ((c = t.closest('[data-sg-notif-leer-todo]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var ids = idsSinLeer(panel);
+                var cuerpo = panel.querySelector('.np-cuerpo'), antes = cuerpo.innerHTML;
+                marcarDom(panel, ids); aplicarFiltro(panel);
+                toast('Todo marcado como leído', function () {
+                    cuerpo.innerHTML = antes; aplicarFiltro(panel);
+                }, function () { leerEnServidor(null); });
                 return;
             }
 
-            var leerTodo = event.target.closest && event.target.closest('[data-sg-notif-leer-todo]');
-            if (leerTodo) {
-                event.preventDefault();
-                event.stopPropagation();
-                leerTodo.disabled = true;
-                if (window.sigmaAlertas) {
-                    var viaje = sigmaAlertas.leer(null);
-                    if (viaje && viaje.always) viaje.always(recargar);
-                    else leerTodo.disabled = false;
-                }
-                else leerTodo.disabled = false;
+            if ((c = t.closest('[data-np-drawer-cerrar]'))) { event.preventDefault(); event.stopPropagation(); var d0 = panel.querySelector('[data-np-drawer]'); if (d0) d0.hidden = true; return; }
+            if ((c = t.closest('[data-np-gen]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var pg = leerLS(PREF_KEY), kg = c.getAttribute('data-np-gen'); pg[kg] = !pg[kg]; guardarLS(PREF_KEY, pg); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-canal]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var pc = c.getAttribute('data-np-canal').split('|'), pr2 = leerLS(PREF_KEY);
+                if (pc[1] === 'silencio') pr2[pc[0]] = 'silencio'; else delete pr2[pc[0]];
+                guardarLS(PREF_KEY, pr2); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-mute]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var tp = c.getAttribute('data-np-mute'), mu = leerLS(MUTE_KEY);
+                if (mu[tp] && mu[tp] > Date.now()) delete mu[tp]; else mu[tp] = Date.now() + 24 * 3600 * 1000;
+                guardarLS(MUTE_KEY, mu); aplicarFiltro(panel); dibujarDrawer(panel); return;
+            }
+            if ((c = t.closest('[data-np-reset]'))) {
+                event.preventDefault(); event.stopPropagation();
+                guardarLS(PREF_KEY, {}); guardarLS(MUTE_KEY, {}); aplicarFiltro(panel); dibujarDrawer(panel); toast('Preferencias restablecidas'); return;
+            }
+            if ((c = t.closest('[data-np-ai]'))) {
+                event.preventDefault(); event.stopPropagation();
+                filtroVisto = filtroVisto === 'ai' ? '' : 'ai'; aplicarFiltro(panel);
                 return;
             }
 
-            var filtro = event.target.closest && event.target.closest('[data-sg-notif-filtro]');
-            if (filtro) {
-                event.preventDefault();
-                event.stopPropagation();
-                filtroVisto = filtro.getAttribute('data-sg-notif-filtro') || '';
-                aplicarFiltro(p.panel);
+            if ((c = t.closest('[data-np-filtro]'))) {
+                event.preventDefault(); event.stopPropagation();
+                filtroVisto = c.getAttribute('data-np-filtro') || '';
+                aplicarFiltro(panel);
                 return;
             }
 
-            var item = event.target.closest && event.target.closest('[data-sg-notif-close]');
-            if (item) return;
+            if ((c = t.closest('[data-np-prefs]'))) {
+                event.preventDefault(); event.stopPropagation();
+                dibujarDrawer(panel);
+                return;
+            }
+
+            if ((c = t.closest('[data-np-leer]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var lista = (c.getAttribute('data-np-leer') || '').split(',').filter(Boolean);
+                marcarDom(panel, lista); aplicarFiltro(panel); leerEnServidor(lista.join(','));
+                return;
+            }
+
+            if ((c = t.closest('[data-np-silenciar]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var tipo = c.getAttribute('data-np-silenciar'), mute = leerLS(MUTE_KEY), antesM = mute[tipo];
+                mute[tipo] = Date.now() + 24 * 3600 * 1000; guardarLS(MUTE_KEY, mute); aplicarFiltro(panel);
+                toast('Silenciadas por 24 h las de este tipo', function () {
+                    var m = leerLS(MUTE_KEY); if (antesM) m[tipo] = antesM; else delete m[tipo]; guardarLS(MUTE_KEY, m); aplicarFiltro(panel);
+                });
+                return;
+            }
+
+            if ((c = t.closest('[data-np-crear-ot]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var id = c.getAttribute('data-np-crear-ot'), ws = panel.getAttribute('data-np-ws');
+                if (typeof jQuery === 'undefined' || !ws) return;
+                c.disabled = true;
+                jQuery.ajax({ type: 'POST', url: ws + '/GenerarOrden', data: JSON.stringify({ alerta: +id }), contentType: 'application/json; charset=utf-8', dataType: 'json' })
+                    .done(function (r) {
+                        var d = {}; try { d = JSON.parse(r.d); } catch (e) { }
+                        toast(d.error ? (d.detalle || 'No se pudo crear la OT.') : (d.detalle || 'Orden de trabajo creada.'));
+                        if (!d.error) { marcarDom(panel, [id]); aplicarFiltro(panel); leerEnServidor(id); }
+                        c.disabled = false;
+                    })
+                    .fail(function () { toast('No se pudo crear la OT.'); c.disabled = false; });
+                return;
+            }
+
+            if ((c = t.closest('[data-np-expandir]'))) {
+                event.preventDefault(); event.stopPropagation();
+                var abierto = c.getAttribute('aria-expanded') === 'true';
+                c.setAttribute('aria-expanded', abierto ? 'false' : 'true');
+                var cuerpoG = c.parentNode.querySelector('.np-grp-b'); if (cuerpoG) cuerpoG.hidden = abierto;
+                return;
+            }
+
+            if ((c = t.closest('[data-np-primera]'))) {
+                event.preventDefault();
+                var sub = c.closest('.np-grp').querySelector('.np-sub'); if (sub) abrirFila(sub);
+                return;
+            }
+
+            if ((c = t.closest('[data-np-ir]'))) {
+                var idsIr = (c.getAttribute('data-np-ir') || '').split(',').filter(Boolean);
+                marcarDom(panel, idsIr); leerEnServidor(idsIr.join(','));
+                return;
+            }
+
+            if ((c = t.closest('[data-np-abre]'))) { event.preventDefault(); abrirFila(c); return; }
+
+            if (t.closest('a[href]')) return;
             event.stopPropagation();
         });
 
-        aplicarFiltro(p.panel);
-        encenderIconos(p.panel);
+        panel.addEventListener('change', function (e) {
+            var s = e.target.closest && e.target.closest('[data-np-pref]');
+            if (!s) return;
+            var pref = leerLS(PREF_KEY); pref[s.getAttribute('data-np-pref')] = s.value; guardarLS(PREF_KEY, pref);
+            aplicarFiltro(panel);
+        });
 
-        p.panel.addEventListener('keydown', function (event) {
+        aplicarFiltro(panel);
+
+        panel.addEventListener('keydown', function (event) {
             if (event.key === 'Escape' || event.keyCode === 27) {
                 event.preventDefault();
+                var dd = panel.querySelector('[data-np-drawer]');
+                if (dd && !dd.hidden) { dd.hidden = true; return; }
                 closePanel(p);
                 return;
             }
+            var el = event.target;
+            if ((event.key === 'Enter' || event.key === ' ') && el.matches && el.matches('.np-row, .np-sub')) {
+                event.preventDefault();
+                el.click();
+                return;
+            }
             if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
-            var focusable = p.panel.querySelectorAll('a:not([hidden]), button:not([hidden])');
+            var focusable = Array.prototype.filter.call(panel.querySelectorAll('a, button, .np-row, .np-sub'), function (n) { return !n.closest('[hidden]') && n.offsetParent !== null; });
             if (!focusable.length) return;
-            var index = Array.prototype.indexOf.call(focusable, document.activeElement);
+            var index = focusable.indexOf(document.activeElement);
             index += event.key === 'ArrowDown' ? 1 : -1;
             if (index < 0) index = focusable.length - 1;
             if (index >= focusable.length) index = 0;

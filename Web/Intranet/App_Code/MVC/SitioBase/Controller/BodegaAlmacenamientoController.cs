@@ -135,16 +135,44 @@ namespace SitioBase.Controller
             return prefijo + "-" + pasillo + "-R" + numero.ToString("00");
         }
 
+        /// <summary>Los tipos de area (Pasillo, Sala, Zona...) que ve este cliente (BD 375).</summary>
+        public List<string> TiposArea()
+        {
+            List<string> l = new List<string>();
+            foreach (DataRow f in Leer("SEL_AREA_TIPOS").Rows) l.Add(Convert.ToString(f["NOMBRE"]));
+            return l;
+        }
+
+        /// <summary>El tipo de area de cada rack de la bodega: {ubicacion: tipo}.</summary>
+        public Dictionary<int, string> AreasDeBodega()
+        {
+            Dictionary<int, string> d = new Dictionary<int, string>();
+            foreach (DataRow f in Leer("SEL_BODEGA_UBICACION_NIVELES").Rows) d[Convert.ToInt32(f["BUB_ID"])] = Convert.ToString(f["AREA_TIPO"]);
+            return d;
+        }
+
+        private static void AsignarArea(int ubicacion, string tipo)
+        {
+            try
+            {
+                DataTable t = Leer("INS_AREA_TIPO", "@NOMBRE", tipo);
+                if (t.Rows.Count > 0) Leer("UPD_UBICACION_AREA_TIPO", "@UBICACION", ubicacion, "@TIPO", Convert.ToInt32(t.Rows[0]["ID"]));
+            }
+            catch (Exception) { /* el rack ya existe; sin tipo se llama «Pasillo» */ }
+        }
+
         /// <summary>
-        /// Crea <paramref name="cantidad"/> racks seguidos en el pasillo, desde
+        /// Crea <paramref name="cantidad"/> racks seguidos en el area, desde
         /// el siguiente numero libre. Para en el primero que falle y dice
         /// cuantos alcanzo a crear: no deja la mitad sin avisar.
         /// </summary>
-        public Respuesta CrearRacks(int bodega, string codigoBodega, IList<string> codigosActuales, string pasillo, int cantidad, string nombre)
+        public Respuesta CrearRacks(int bodega, string codigoBodega, IList<string> codigosActuales, string pasillo, int cantidad, string nombre, string tipoArea = null)
         {
             Respuesta r = new Respuesta();
             pasillo = (pasillo ?? "").Trim().ToUpperInvariant();
-            if (!Regex.IsMatch(pasillo, "^[A-Z]{1,3}$")) { r.error = true; r.detalle = "El pasillo es de 1 a 3 letras, como A o AB."; return r; }
+            tipoArea = string.IsNullOrWhiteSpace(tipoArea) ? "Pasillo" : tipoArea.Trim();
+            if (tipoArea.Length > 60) { r.error = true; r.detalle = "El tipo de área es muy largo (máximo 60 letras)."; return r; }
+            if (!Regex.IsMatch(pasillo, "^[A-Z]{1,3}$")) { r.error = true; r.detalle = "El código del área es de 1 a 3 letras, como A o AB."; return r; }
             if (cantidad < 1 || cantidad > 30) { r.error = true; r.detalle = "Se crean de 1 a 30 racks por vez."; return r; }
 
             string prefijo = Prefijo(codigosActuales, codigoBodega);
@@ -161,7 +189,7 @@ namespace SitioBase.Controller
             {
                 int n = desde + k;
                 string codigo = CodigoRack(prefijo, pasillo, n);
-                string nom = string.IsNullOrEmpty(nombre) ? "Pasillo " + pasillo + " · Rack " + n.ToString("00")
+                string nom = string.IsNullOrEmpty(nombre) ? tipoArea + " " + pasillo + " · Rack " + n.ToString("00")
                            : (cantidad == 1 ? nombre : nombre + " " + n.ToString("00"));
                 Respuesta x = bc.GuardarUbicacion(new BodegaUbicacion { bub_id = 0, bub_bodega = bodega, bub_codigo = codigo, bub_nombre = nom, bub_habilitado = true });
                 if (x.error)
@@ -171,6 +199,7 @@ namespace SitioBase.Controller
                     return r;
                 }
                 creados.Add(codigo);
+                if (x.codigo > 0) AsignarArea(x.codigo, tipoArea);
             }
             r.codigo = creados.Count;
             r.detalle = creados.Count == 1 ? "Rack " + creados[0] + " creado." : "Racks " + creados[0] + " a " + creados[creados.Count - 1] + " creados.";

@@ -129,17 +129,39 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
 
     // ===================================================================== listado
 
-    /// <summary>Plantas del cliente, deducidas de sus bodegas.</summary>
+    /// <summary>El combo de planta del encabezado (aqui se llama como el filtro de siempre).</summary>
+    private System.Web.UI.WebControls.DropDownList ddlPlanta { get { return selPlantaHero; } }
+
+    /// <summary>
+    /// Las plantas asignadas a la persona en este cliente, vigentes. Null = no tiene
+    /// asignacion (por ejemplo, el administrador de SIGMA): ve todas. Igual que el Centro de activos.
+    /// </summary>
+    private HashSet<int> PlantasPermitidas()
+    {
+        if (_mias != null || _miasLeidas) return _mias;
+        _miasLeidas = true;
+        int u; if (!int.TryParse(SitioBase.Session.UsuarioId(), out u)) return null;
+        List<ClienteUsuarioPlanta> l;
+        try { l = new ClienteUsuarioController().PlantasDelUsuario(u, SitioBase.Session.ClienteId()) ?? new List<ClienteUsuarioPlanta>(); }
+        catch (Exception) { return null; }
+        if (l.Count == 0) return null;
+        DateTime hoy = global::SitioBase.Hora.Hoy;
+        _mias = new HashSet<int>(l.FindAll(pl => pl.habilitada && (pl.fecha_inicio == null || pl.fecha_inicio.Value.Date <= hoy) && (pl.fecha_fin == null || pl.fecha_fin.Value.Date >= hoy))
+                                  .ConvertAll(pl => pl.instalacion));
+        return _mias;
+    }
+    private HashSet<int> _mias; private bool _miasLeidas;
+
+    /// <summary>Plantas de la persona, deducidas de las bodegas. El combo solo se ve si hay mas de una.</summary>
     private void CargarPlantas()
     {
         ddlPlanta.Items.Clear();
-        ddlPlanta.Items.Add(new RadComboBoxItem("Todas las plantas", ""));
+        ddlPlanta.Items.Add(new System.Web.UI.WebControls.ListItem("Todas las plantas", ""));
         HashSet<int> vistas = new HashSet<int>();
         foreach (Bodega b in Bodegas())
-            if (b.bod_cliente_instalacion > 0 && !string.IsNullOrEmpty(b.planta_nombre)
-                && vistas.Add(b.bod_cliente_instalacion))
-                ddlPlanta.Items.Add(new RadComboBoxItem(
-                    b.planta_nombre, b.bod_cliente_instalacion.ToString()));
+            if (b.bod_cliente_instalacion > 0 && !string.IsNullOrEmpty(b.planta_nombre) && vistas.Add(b.bod_cliente_instalacion))
+                ddlPlanta.Items.Add(new System.Web.UI.WebControls.ListItem(b.planta_nombre, b.bod_cliente_instalacion.ToString()));
+        pnlPlantaHero.Style["display"] = vistas.Count >= 1 ? "" : "none";
     }
 
     /// <summary>Bodegas, acotadas a la planta elegida si hay una.</summary>
@@ -158,22 +180,10 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
     private List<Bodega> Bodegas()
     {
         if (_bodegas == null)
-            _bodegas = new BodegaController().GetBodegas(new Bodega { bod_habilitado = true })
-                       ?? new List<Bodega>();
+            _bodegas = (new BodegaController().GetBodegas(new Bodega { bod_habilitado = true }) ?? new List<Bodega>())
+                       .FindAll(b => PlantasPermitidas() == null || PlantasPermitidas().Contains(b.bod_cliente_instalacion));
         return _bodegas;
     }
-
-    /// <summary>Los estantes de una bodega, para el «Mapa por ubicación».</summary>
-    private List<object> Racks(int bodega)
-    {
-        if (_racks == null)
-            _racks = new BodegaController().GetUbicaciones(new BodegaUbicacion { filtro_habilitado = true }) ?? new List<BodegaUbicacion>();
-        List<object> l = new List<object>();
-        foreach (BodegaUbicacion u in _racks)
-            if (u.bub_bodega == bodega) l.Add(new { id = u.bub_id, codigo = u.bub_codigo ?? "", nombre = u.bub_nombre ?? "" });
-        return l;
-    }
-    private List<BodegaUbicacion> _racks;
 
     private static int Entero(string v) { int n; return int.TryParse(v, out n) ? n : 0; }
 
@@ -223,8 +233,15 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         // La clasificacion masiva necesita seleccion multiple: eso vive en el
         // listado clasico, que sigue existiendo. El centro no la pierde.
         lnkClasificar.OnClientClick =
-            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/Repuestos.aspx") +
-            "',title:'Clasificar repuestos',width:1100,initialHeight:680,onClose:refresh});";
+            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/ClasificarRepuestos.aspx") +
+            "',title:'Clasificar repuestos',width:760,initialHeight:620,onClose:refresh});";
+        // Etiquetas de todo lo que hay en el catalogo: el centro de etiquetas, ya en REPUESTO.
+        hlEtiquetas.Visible = SitioBase.Token.Puede("IMPRIMIR ETIQUETAS");
+        hlEtiquetas.NavigateUrl = ResolveUrl("~/View/Comun/Impresion/CentroEtiquetas.aspx") + "?query=" +
+            Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + EtiquetaOrigen.Repuesto));
+        // SIGMA Twin: el mapa 3D de las bodegas, como una pestaña mas que lleva a su menu.
+        hlTwin.Visible = SitioBase.Token.Puede("VER BODEGAS");
+        hlTwin.NavigateUrl = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx");
 
         List<Repuesto> lista = new RepuestoController().GetRepuestos(FiltroActual()) ?? new List<Repuesto>();
 
@@ -393,13 +410,27 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         }
         List<object> bodegas = new List<object>();
         foreach (Bodega b in Bodegas())
-            bodegas.Add(new { racks = Racks(b.bod_id), id = b.bod_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + b.bod_id)), codigo = b.bod_codigo ?? "", nombre = b.bod_nombre ?? "", planta = b.planta_nombre ?? "", descripcion = b.bod_descripcion ?? "", ubicaciones = b.ubicaciones, repuestos = b.repuestos_con_saldo });
+            bodegas.Add(new { plantaId = b.bod_cliente_instalacion, id = b.bod_id, q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + b.bod_id)), codigo = b.bod_codigo ?? "", nombre = b.bod_nombre ?? "", planta = b.planta_nombre ?? "", descripcion = b.bod_descripcion ?? "", ubicaciones = b.ubicaciones, repuestos = b.repuestos_con_saldo });
+
+        List<object> plantasJson = new List<object>();
+        HashSet<int> plantasVistas = new HashSet<int>();
+        int plantasUnica = 0;
+        foreach (Bodega b in Bodegas())
+            if (b.bod_cliente_instalacion > 0 && plantasVistas.Add(b.bod_cliente_instalacion))
+            {
+                plantasJson.Add(new { id = b.bod_cliente_instalacion, nombre = b.planta_nombre ?? "" });
+                plantasUnica = b.bod_cliente_instalacion;
+            }
+        int plantasVistasN = plantasVistas.Count;
 
         litLista.Text = "<script type=\"application/json\" id=\"rcDatos\">"
             + new System.Web.Script.Serialization.JavaScriptSerializer { MaxJsonLength = int.MaxValue }.Serialize(new
             {
                 puedeEditar = puedeCrear,
-                puedeBodegas = SitioBase.Token.Puede("VER BODEGAS"),
+                urlTwin = ResolveUrl("~/View/Inventario/Bodegas/BodegaMapa3D.aspx"),
+                planta = Entero(ddlPlanta.SelectedValue) > 0 ? Entero(ddlPlanta.SelectedValue) : (plantasVistasN == 1 ? plantasUnica : 0),
+                puedeBodegas = SitioBase.Token.Puede("CREAR EDITAR BODEGAS"),
+                plantas = plantasJson,
                 items = datos,
                 tipos = tipos,
                 bodegas = bodegas
@@ -439,6 +470,11 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
             + (string.IsNullOrEmpty(r.repuesto_tipo_nombre) ? "" : " · " + Esc(r.repuesto_tipo_nombre))
             + (string.IsNullOrEmpty(r.rep_fabricante) ? "" : " · " + Esc(r.rep_fabricante))
             + (r.rep_habilitado ? "" : " · <span class=\"rc-badge es-off\">Deshabilitado</span>");
+
+        hlEtiqueta.Visible = SitioBase.Token.Puede("IMPRIMIR ETIQUETAS");
+        if (hlEtiqueta.Visible)
+            hlEtiqueta.Attributes["onclick"] = "return abrirEtiquetas('" +
+                Server.UrlEncode(Tools.Crypto.Encrypt("Origen=" + EtiquetaOrigen.Repuesto + "&Ids=" + r.rep_id)) + "');";
 
         /* Editar no abre un modal: vuelve editable la pestaña Ficha. */
         bool editando = puedeCrear && EditandoFicha;

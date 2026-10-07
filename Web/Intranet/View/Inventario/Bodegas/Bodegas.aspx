@@ -83,8 +83,8 @@
                 en dos plantas y son existencias distintas.<br />
                 Una bodega con existencia <strong>no se puede dar de baja</strong>: esconderla no
                 vacía la estantería. Primero se traslada o se ajusta lo que queda.<br />
-                Los racks se crean por pasillo con el código que lee el <strong>mapa 3D</strong>
-                (<em>P1-A-R01</em> = pasillo A, rack 01): así cada bodega se dibuja tal como está en el piso.
+                Los racks se crean por área (pasillo, sala, zona…) con el código que lee el <strong>mapa 3D</strong>
+                (<em>P1-A-R01</em> = área A, rack 01): así cada bodega se dibuja tal como está en el piso.
             </div>
 
         </ContentTemplate>

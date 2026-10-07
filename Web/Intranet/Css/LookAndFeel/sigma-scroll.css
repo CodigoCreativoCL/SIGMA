@@ -1,0 +1,10 @@
+﻿/* Scroll delgado y de la marca en todo SIGMA (navegador, paneles, modales). */
+:root { --sg-scroll: #C4B5FD; --sg-scroll-hover: #6732F4 }
+* { scrollbar-width: thin; scrollbar-color: var(--sg-scroll) transparent }
+*::-webkit-scrollbar { width: 8px; height: 8px }
+*::-webkit-scrollbar-track { background: transparent }
+*::-webkit-scrollbar-thumb { background: var(--sg-scroll); border-radius: 999px; border: 2px solid transparent; background-clip: content-box }
+*::-webkit-scrollbar-thumb:hover { background: var(--sg-scroll-hover); background-clip: content-box }
+*::-webkit-scrollbar-corner { background: transparent }
+html { scrollbar-color: var(--sg-scroll) #F4F6FA }
+html::-webkit-scrollbar-track { background: #F4F6FA }

@@ -135,15 +135,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
 
         switch (ctrl.ID)
         {
-            case "cboTipo":
-                {
-                    ComponenteTipoController c = new ComponenteTipoController();
-                    ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = _precargado ? _tipos : c.GetTipos(new ComponenteTipo { filtro_cliente = cliente, filtro_habilitado = true });
-                    ctrl.DataValueField = "cto_id"; ctrl.DataTextField = "cto_nombre"; ctrl.DataBind();
-                    break;
-                }
             case "cboEstado":
                 {
                     ActivoComponenteEstadoController c = new ActivoComponenteEstadoController();
@@ -160,22 +151,6 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                     ctrl.AppendDataBoundItems = true;
                     ctrl.DataSource = _precargado ? _criticidades : c.GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true });
                     ctrl.DataValueField = "crn_id"; ctrl.DataTextField = "crn_nombre"; ctrl.DataBind();
-                    break;
-                }
-            case "cboPosicion":
-                {
-                    ComponentePosicionController c = new ComponentePosicionController();
-                    ctrl.Items.Add(new RadComboBoxItem("Sin indicar", ""));
-                    ctrl.AppendDataBoundItems = true;
-                    ctrl.DataSource = _precargado ? _posiciones : c.GetPosiciones(new ComponentePosicion { filtro_cliente = cliente, filtro_habilitado = true });
-                    ctrl.DataValueField = "cpn_id"; ctrl.DataTextField = "cpn_nombre"; ctrl.DataBind();
-                    break;
-                }
-            case "cboFabricante":
-                {
-                    // El catalogo de marcas compartido con activos y repuestos.
-                    foreach (FabricanteController.Fabricante f in (_precargado ? _marcas : new FabricanteController().Catalogo()) ?? new List<FabricanteController.Fabricante>())
-                        ctrl.Items.Add(new RadComboBoxItem(f.nombre, f.nombre));
                     break;
                 }
         }
@@ -195,8 +170,8 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
        ================================================================ */
     private class Parte
     {
-        public string id, n, sub;
-        public int activo, componente;
+        public string id, n, sub, tipo = "a";
+        public int activo, componente, nivel;
     }
 
     private List<Parte> _partes;
@@ -249,12 +224,14 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         agregar = (a, padre, conSubactivos) =>
         {
             _partes.Add(new Parte { id = "a:" + a.act_id, n = a.act_nombre + " · " + a.act_codigo,
-                                    sub = padre == null ? "Activo · directo en él" : "Subactivo de " + padre, activo = a.act_id });
+                                    sub = padre == null ? "Directo en el activo" : "Subactivo de " + padre, activo = a.act_id,
+                                    tipo = padre == null ? "a" : "s", nivel = padre == null ? 0 : 1 });
             List<ActivoComponente> suyos = comps.FindAll(k => k.aco_activo == a.act_id && !fuera.Contains(k.aco_id));
             suyos.Sort((x, y) => string.Compare(x.aco_nombre, y.aco_nombre, StringComparison.CurrentCultureIgnoreCase));
             foreach (ActivoComponente k in suyos)
                 _partes.Add(new Parte { id = "c:" + k.aco_id, n = k.aco_nombre + " · " + k.aco_codigo,
-                                        sub = "Componente de " + a.act_nombre, activo = a.act_id, componente = k.aco_id });
+                                        sub = "Componente de " + a.act_nombre, activo = a.act_id, componente = k.aco_id,
+                                        tipo = "c", nivel = (padre == null ? 0 : 1) + 1 });
             if (!conSubactivos) return;
             foreach (Activo hijo in activos.FindAll(h => h.act_activo_padre == a.act_id))
                 agregar(hijo, a.act_nombre, true);
@@ -286,11 +263,52 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         try
         {
             foreach (Parte x in Partes())
-                l.Add(new Dictionary<string, object> { { "id", x.id }, { "n", x.n }, { "sub", x.sub } });
+                l.Add(new Dictionary<string, object> { { "id", x.id }, { "n", x.n }, { "sub", x.sub },
+                    { "tag", new Dictionary<string, object> { { "k", x.tipo }, { "t", x.tipo == "a" ? "Activo" : x.tipo == "s" ? "Subactivo" : "Componente" } } },
+                    { "nivel", x.nivel } });
         }
         catch (Exception) { }
         /* Va dentro de un <script>: "</" se corta para que un nombre no cierre la etiqueta. */
         return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(l).Replace("</", "<\\/");
+    }
+
+    /* Las listas de los combos libres (tipo, donde va, marca y sus modelos), como JSON para el <script>. */
+    private static string EnScript(object o)
+    {
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(o).Replace("</", "<\\/");
+    }
+    public string TiposJson()
+    {
+        List<string> l = new List<string>();
+        try
+        {
+            foreach (ComponenteTipo t in _precargado ? _tipos : new ComponenteTipoController().GetTipos(new ComponenteTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ComponenteTipo>())
+                l.Add(t.cto_nombre);
+        }
+        catch (Exception) { }
+        return EnScript(l);
+    }
+    public string LadosJson()
+    {
+        List<string> l = new List<string>();
+        try
+        {
+            foreach (ComponentePosicion p in _precargado ? _posiciones : new ComponentePosicionController().GetPosiciones(new ComponentePosicion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ComponentePosicion>())
+                l.Add(p.cpn_nombre);
+        }
+        catch (Exception) { }
+        return EnScript(l);
+    }
+    public string MarcasJson()
+    {
+        List<object> l = new List<object>();
+        try
+        {
+            foreach (FabricanteController.Fabricante f in (_precargado ? _marcas : new FabricanteController().Catalogo()) ?? new List<FabricanteController.Fabricante>())
+                l.Add(new Dictionary<string, object> { { "n", f.nombre }, { "m", f.modelos ?? new List<string>() } });
+        }
+        catch (Exception) { }
+        return EnScript(l);
     }
 
     private void FijarParte(string id)
@@ -342,11 +360,11 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             calInstalacion.Value = x.aco_fecha_instalacion;
 
             FijarParte(x.aco_componente_padre != null ? "c:" + x.aco_componente_padre.Value : "a:" + x.aco_activo);
-            SeleccionarCombo(cboTipo, x.aco_componente_tipo);
+            txtTipo.Text = x.tipo_nombre;
             SeleccionarCombo(cboEstado, x.aco_activo_componente_estado);
             EstadoOriginal = x.aco_activo_componente_estado.ToString();
             SeleccionarCombo(cboCriticidad, x.aco_criticidad_nivel);
-            if (x.aco_componente_posicion != null) SeleccionarCombo(cboPosicion, x.aco_componente_posicion.Value);
+            if (x.aco_componente_posicion != null) txtPosicion.Text = x.posicion_nombre;
 
             rdbSi.Checked = x.aco_habilitado;
             rdbNo.Checked = !x.aco_habilitado;
@@ -355,7 +373,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                comparte la app y no trae estas tres columnas. */
             ActivoComponente placa = _precargado && _placa != null ? _placa : c.GetPlaca(Id, SitioBase.Session.ClienteId());
             txtNumeroSerie.Text = placa.aco_numero_serie;
-            cboFabricante.Text = placa.aco_fabricante;
+            txtMarca.Text = placa.aco_fabricante;
             txtModelo.Text = placa.aco_modelo;
 
             /* Quien la creo y quien la toco por ultima vez, al lado de los pasos. */
@@ -445,13 +463,13 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
         txtNombre.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
         txtNumeroSerie.ReadOnly = !puedeEditar;
-        cboFabricante.ReadOnly = !puedeEditar;
+        txtMarca.ReadOnly = !puedeEditar;
         txtModelo.ReadOnly = !puedeEditar;
         calInstalacion.Enabled = puedeEditar;
-        cboTipo.ReadOnly = !puedeEditar;
+        txtTipo.ReadOnly = !puedeEditar;
         cboEstado.ReadOnly = !puedeEditar;
         cboCriticidad.ReadOnly = !puedeEditar;
-        cboPosicion.ReadOnly = !puedeEditar;
+        txtPosicion.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
 
@@ -467,17 +485,12 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
             if (parte == null) throw new Exception("Elige el activo, subactivo o componente del que es parte.");
             /* "Que es" y "donde va" se eligen o se escriben: lo que no existe se
                crea como propio de la empresa (bloques 343 y 345). */
-            int tipoId = ValorCombo(cboTipo);
-            if (tipoId == 0)
-            {
-                string tipoTxt = TextoCombo(cboTipo);
-                if (tipoTxt == null) throw new Exception("Elige o escribe qué es el componente.");
-                tipoId = new ComponenteTipoController().ResolverPorNombre(tipoTxt);
-                if (tipoId <= 0) throw new Exception("No se pudo guardar «" + tipoTxt + "» como tipo de componente.");
-            }
-            int posicionId = ValorCombo(cboPosicion);
-            string posicionTxt = TextoCombo(cboPosicion);
-            if (posicionId == 0 && posicionTxt != null) posicionId = new ComponentePosicionController().ResolverPorNombre(posicionTxt);
+            string tipoTxt = (txtTipo.Text ?? "").Trim();
+            if (tipoTxt == "") throw new Exception("Elige o escribe qué es el componente.");
+            int tipoId = new ComponenteTipoController().ResolverPorNombre(tipoTxt);
+            if (tipoId <= 0) throw new Exception("No se pudo guardar «" + tipoTxt + "» como tipo de componente.");
+            string posicionTxt = (txtPosicion.Text ?? "").Trim();
+            int posicionId = posicionTxt != "" ? new ComponentePosicionController().ResolverPorNombre(posicionTxt) : 0;
             if (string.IsNullOrEmpty(cboEstado.SelectedValue)) throw new Exception("Elige el estado del componente.");
             if (string.IsNullOrEmpty(cboCriticidad.SelectedValue)) throw new Exception("Elige la criticidad del componente.");
 
@@ -521,8 +534,7 @@ public partial class View_Activos_Componentes_ActivoComponente : System.Web.UI.P
                 ActivoComponente placa = new ActivoComponente();
                 placa.aco_id = Id;
                 placa.aco_numero_serie = txtNumeroSerie.Text.Trim();
-                string marca = TextoCombo(cboFabricante);
-                placa.aco_fabricante = marca ?? "";
+                placa.aco_fabricante = (txtMarca.Text ?? "").Trim();
                 placa.aco_modelo = txtModelo.Text.Trim();
                 Respuesta rp = c.GuardarPlaca(placa);
 

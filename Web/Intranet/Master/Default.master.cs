@@ -361,246 +361,304 @@ public partial class Master_Default : System.Web.UI.MasterPage
     /// </summary>
     protected void CargarAlertas()
     {
-        /* El pie del panel no llevaba a ninguna parte. La bandeja completa
-           vive en su propia pantalla, agrupada por categoria. */
         lnkVerTodas.NavigateUrl = ResolveUrl("~/View/Comun/Notificaciones/Notificaciones.aspx");
 
         AlertaController controller = new AlertaController();
         AlertaResumen resumen = controller.GetResumen();
 
-        /* El punto cuenta lo NO LEIDO. Sin no leidas no hay punto: un badge
-           permanente deja de significar "mira esto" y pasa a ser decoracion. */
-        litBadgeAlertas.Text = resumen.NoLeidas > 0
-            ? "<span class=\"sigma-notification__count\" aria-hidden=\"true\">" +
-              (resumen.NoLeidas > 99 ? "99+" : resumen.NoLeidas.ToString()) + "</span>"
-            : "";
-
-        lnkCampana.Attributes["aria-label"] = resumen.NoLeidas > 0
-            ? resumen.NoLeidas.ToString() + " alertas sin leer"
-            : "Alertas";
-
-        /* El modificador critico solo cuando lo hay: si todo se pintara rojo,
-           el rojo dejaria de querer decir algo. */
-        string clase = "dropdown-toggle sigma-notification sigma-notification--light";
-
-        /* La bandeja muestra también las últimas resueltas: una alerta leída
-           no es lo mismo que una cerrada, y sin ese contexto ambos estados
-           parecían desaparecer. El SP conserva el orden operacional. */
-        List<Alerta> lista = controller.GetAlertas(false, 12);
+        List<Alerta> lista = controller.GetAlertas(false, 60);
         if (lista == null) lista = new List<Alerta>();
 
-        /* La pastilla dice lo que llegó sin mirar; la línea de abajo dice si
-           algo de eso pide una decisión hoy. Son dos preguntas distintas y
-           por eso van separadas. */
-        /* LA PREDICCION, ARRIBA
+        DateTime ahora = SitioBase.Hora.Ahora;
 
-           El panel llega ordenado por fecha y una predicción de hace tres
-           días quedaba en el medio de diez avisos de stock de hace una hora.
-           Es la única fila que pide entender algo antes de actuar, así que
-           se sube al principio: es la que se dibuja como tarjeta y la que le
-           da sentido al rótulo "En tu operación" que separa el resto.
+        /* LAS FILAS SE ARMAN UNA VEZ Y DE AHI SALE TODO
 
-           Se mueve UNA, la más reciente. Subirlas todas volvería a ser una
-           lista ordenada por tipo y no por urgencia. */
-        int iPred = lista.FindIndex(x => x.ES_PREDICCION);
-        if (iPred > 0)
-        {
-            Alerta pred = lista[iPred];
-            lista.RemoveAt(iPred);
-            lista.Insert(0, pred);
-        }
-
-        int sinLeer = 0;
-        foreach (Alerta c in lista) if (!c.LEIDA) sinLeer++;
-
-        litPanelNuevas.Text = sinLeer > 0
-            ? "<span class=\"sg-notif-pill\">" + sinLeer +
-              (sinLeer == 1 ? " nueva" : " nuevas") + "</span>"
-            : "";
-
-        int criticas = 0;
-        foreach (Alerta c in lista)
-            if (c.Activa && (c.sev_codigo == "CRITICA" || c.sev_codigo == "ALTA")) criticas++;
-
-        litPanelResumen.Text = criticas > 0
-            ? "<strong>" + criticas + (criticas == 1 ? " crítica requiere" : " críticas requieren") +
-              "</strong> tu atención"
-            : (resumen.Abiertas > 0
-                ? resumen.Abiertas + (resumen.Abiertas == 1 ? " activa" : " activas") + ", nada urgente"
-                : "Estás al día");
-
-        _primeraOperacion = true;
-        _aiDestacada = false;
+           La campana, el encabezado y los chips cuentan sobre las mismas
+           filas ya agrupadas: antes la campana decia 63, el encabezado 12 y
+           ocho avisos de stock de una misma bodega eran ocho filas. */
+        List<NpFila> filas = new List<NpFila>();
+        Dictionary<string, NpFila> grupos = new Dictionary<string, NpFila>();
 
         foreach (Alerta a in lista)
         {
-            if (a.LEIDA) continue;
-            if (a.sev_codigo != "CRITICA" && a.sev_codigo != "ALTA") continue;
+            string lugar = !string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : (a.INSTALACION_NOMBRE ?? "");
+            string clave = a.alt_codigo + "|" + lugar;
 
-            clase += " sigma-notification--critical";
-            break;
+            NpFila f;
+            if (!a.ES_PREDICCION && grupos.TryGetValue(clave, out f)) { f.A.Add(a); continue; }
+
+            f = new NpFila { Lugar = lugar };
+            f.A.Add(a);
+            filas.Add(f);
+            if (!a.ES_PREDICCION) grupos[clave] = f;
         }
 
-        lnkCampana.Attributes["class"] = clase;
+        foreach (NpFila f in filas) f.Calcular(ahora);
 
-        pnlSinAlertas.Visible = (lista.Count == 0);
-        rptAlertas.Visible = (lista.Count > 0);
-
-        lnkLeerTodo.Visible = (resumen.NoLeidas > 0);
-
-        rptAlertas.DataSource = lista;
-        rptAlertas.DataBind();
-    }
-
-    /* La primera predicción se dibuja como tarjeta y el resto de la lista va
-       bajo el rótulo "En tu operación". Las dos cosas dependen de por dónde
-       va la pasada del repetidor, así que el estado vive acá. */
-    private bool _primeraOperacion = true;
-    private bool _aiDestacada = false;
-
-    protected void rptAlertas_ItemDataBound(object sender, RepeaterItemEventArgs e)
-    {
-        if (e.Item.ItemType != ListItemType.Item && e.Item.ItemType != ListItemType.AlternatingItem)
-            return;
-
-        Alerta a = (Alerta)e.Item.DataItem;
-
-        HtmlButton enlace = (HtmlButton)e.Item.FindControl("lnkItem");
-        Literal lit = (Literal)e.Item.FindControl("litItem");
-
-        /* El id y el destino viajan como datos del boton. El clic no dispara
-           el ciclo de pagina: WsAlertas marca la lectura y el modal se abre
-           con el token cifrado que preparo el servidor. */
-        enlace.Attributes["data-alerta-id"] = a.ale_id.ToString();
-
-        /* Si esta vista o no, como dato de la fila: con eso el filtro del
-           panel trabaja sin ir al servidor. Es la misma informacion que ya se
-           usa para pintarla —la clase `is-nueva`—, pero en un atributo, que es
-           lo que se puede consultar sin depender de como se vea. */
-        enlace.Attributes["data-visto"] = a.LEIDA ? "1" : "0";
-
-        /* La gravedad va en la FILA, no solo en el icono: tine el borde
-           izquierdo, el halo y el rotulo. Al pasar a los SVG de marca se
-           perdio esa clase y las tres alertas se veian identicas — un stock
-           critico y uno sobre el maximo pedian la misma atencion. */
-        string sev = Clase(a.sev_codigo);
-
-        enlace.Attributes["class"] = "sg-notif-item " + sev +
-                                     (a.LEIDA ? " is-leida" : " is-nueva") +
-                                     (a.Activa ? " is-activa" : " is-resuelta") +
-                                     (a.ES_PREDICCION ? " is-ai" : "");
-        enlace.Attributes["aria-label"] = (a.LEIDA ? "" : "Nueva. ") +
-                                           Server.HtmlEncode(a.ale_titulo) + ". " +
-                                           Server.HtmlEncode(a.aet_nombre);
-        enlace.Attributes["data-sg-notif-close"] = "1";
-
-        JavaScriptSerializer js = new JavaScriptSerializer();
-
-        /* TOCAR LA FILA ABRE LA ALERTA, NO EL REGISTRO
-
-           Antes llevaba a la ficha del origen -el repuesto, el permiso, el
-           medidor- y de los quince tipos solo unos pocos la tienen
-           configurada: el resto terminaba en "esta notificación no tiene un
-           registro relacionado configurado", que es una puerta cerrada.
-
-           Ahora abre la ficha de la alerta, que existe siempre: cuenta qué se
-           detectó, contra qué umbral, cuántas veces se repitió, su línea de
-           tiempo y qué hacer con ella. Abrir el registro de origen queda como
-           un botón adentro, para cuando haga falta. */
-        string qAlerta = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.ale_id));
-
-        enlace.Attributes["onclick"] = "return abrirNotificacion(" +
-            js.Serialize(ResolveUrl("~/View/Comun/Notificaciones/AlertaDetalle.aspx")) + "," +
-            js.Serialize(qAlerta) + "," + a.ale_id + ");";
-
-        bool destacada = a.ES_PREDICCION && !_aiDestacada;
-        if (destacada) _aiDestacada = true;
-
-        enlace.Attributes["data-ai"] = a.ES_PREDICCION ? "1" : "0";
-        if (destacada) enlace.Attributes["class"] += " es-destacada";
-
-        /* El rótulo de sección, una sola vez y solo si arriba quedó la
-           tarjeta de la predicción: sin ella no hay dos grupos que separar. */
-        Literal sec = (Literal)e.Item.FindControl("litSeccion");
-        if (!a.ES_PREDICCION && _primeraOperacion)
+        int sinLeer = 0, requieren = 0;
+        bool critSinLeer = false;
+        foreach (NpFila f in filas)
         {
-            _primeraOperacion = false;
-            if (_aiDestacada) sec.Text = "<div class=\"sg-notif-seccion\">En tu operación</div>";
+            if (f.SinLeer) sinLeer++;
+            if (f.Requiere) requieren++;
+            if (f.SinLeer && f.Critica) critSinLeer = true;
         }
 
+        litBadgeAlertas.Text = sinLeer > 0
+            ? "<span class=\"sigma-notification__count\" aria-hidden=\"true\">" + (sinLeer > 99 ? "99+" : sinLeer.ToString()) + "</span>"
+            : "";
+        lnkCampana.Attributes["aria-label"] = sinLeer > 0 ? sinLeer + " notificaciones sin leer" : "Notificaciones";
+        lnkCampana.Attributes["class"] = "dropdown-toggle sigma-notification sigma-notification--light" + (critSinLeer ? " sigma-notification--critical" : "");
+
+        litPanelNuevas.Text = "";
+        litPanelResumen.Text = (requieren == 0 && sinLeer == 0)
+            ? "Estás al día"
+            : "<strong data-np-n-req>" + requieren + " requieren acción</strong> · <span data-np-n-sin>" + sinLeer + " sin leer</span>";
+
+        pnlSinAlertas.Visible = (filas.Count == 0);
+        lnkLeerTodo.Visible = (sinLeer > 0);
+
+        /* Chips: Todas · Requieren acción · Sin leer y solo los tipos que
+           tienen algo. Se ocultan los filtros en cero. */
+        StringBuilder chips = new StringBuilder();
+        chips.Append(Chip("", "Todas", filas.Count));
+        chips.Append(Chip("req", "Requieren acción", requieren));
+        chips.Append(Chip("0", "Sin leer", sinLeer));
+
+        string[] cats = { "ai", "stock", "ordenes", "soporte", "medidores", "permisos" };
+        string[] catNom = { "SIGMA AI", "Stock", "Órdenes", "Soporte", "Medidores", "Permisos" };
+        for (int i = 0; i < cats.Length; i++)
+        {
+            int n = 0;
+            foreach (NpFila f in filas) if (f.Cat == cats[i]) n++;
+            if (n > 0) chips.Append(Chip(cats[i], catNom[i], n));
+        }
+        litPanelChips.Text = chips.ToString();
+
+        /* El cuerpo: la tarjeta de SIGMA AI arriba y el resto por fecha. */
         StringBuilder sb = new StringBuilder();
 
-        /* EL ICONO LO DICE EL TIPO
+        NpFila ai = filas.Find(x => x.Prediccion);
+        if (ai != null) sb.Append(HtmlAi(ai));
 
-           Sale de Alerta_Tipo.alt_icono, que es catálogo: el día que se
-           agregue una clase de alerta, su icono entra con el mismo INSERT y
-           nadie tiene que tocar esta pantalla. La predicción conserva el SVG
-           de SIGMA AI: es la única fila que sale de un modelo. */
-        if (a.ES_PREDICCION)
+        string seccion = null;
+        foreach (NpFila f in filas)
         {
-            sb.Append("<span class=\"icono es-ai\">");
-            sb.Append("<img src=\"" + ResolveUrl("~/Imagen/sigma-ai/sigma-ai-status-prediction.svg") +
-                      "\" alt=\"\" aria-hidden=\"true\" /></span>");
+            if (f == ai) continue;
+            if (f.Seccion != seccion)
+            {
+                seccion = f.Seccion;
+                sb.Append("<div class=\"np-sec\">" + Server.HtmlEncode(seccion) + "</div>");
+            }
+            sb.Append(f.A.Count > 1 ? HtmlGrupo(f) : HtmlFila(f.A[0], f));
+        }
+        litPanelCuerpo.Text = sb.ToString();
+
+        int semana = 0;
+        foreach (Alerta a in lista) if (a.MINUTOS <= 7 * 24 * 60) semana++;
+        litPanelPie.Text = "<span class=\"np-pie-n\">" + semana + (semana == 1 ? " notificación" : " notificaciones") + " en los últimos 7 días</span>";
+    }
+
+    /* Una fila del panel: una alerta suelta o un grupo (mismo tipo y mismo lugar). */
+    private class NpFila
+    {
+        public List<Alerta> A = new List<Alerta>();
+        public string Lugar;
+        public bool SinLeer, Critica, Requiere, Prediccion;
+        public string Cat, Seccion;
+        public DateTime Fecha;
+
+        public void Calcular(DateTime ahora)
+        {
+            Alerta p = A[0];
+            Prediccion = p.ES_PREDICCION;
+            int min = int.MaxValue;
+            foreach (Alerta a in A)
+            {
+                if (!a.LEIDA) SinLeer = true;
+                if (a.Activa && (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")) Requiere = true;
+                if (a.Activa && a.sev_codigo == "CRITICA") Critica = true;
+                if (a.MINUTOS < min) min = a.MINUTOS;
+            }
+            Fecha = ahora.AddMinutes(-min);
+
+            DateTime hoy = ahora.Date;
+            Seccion = Fecha.Date >= hoy ? "Hoy" : (Fecha.Date >= hoy.AddDays(-1) ? "Ayer" : (Fecha.Date >= hoy.AddDays(-7) ? "Esta semana" : "Antes"));
+
+            string cod = p.alt_codigo ?? "";
+            switch (cod)
+            {
+                case "STOCK MINIMO": case "STOCK MAXIMO": case "LOTE VENCIDO": case "LOTE POR VENCER": Cat = "stock"; break;
+                case "MEDICION FUERA RANGO": case "LECTURA A REVISAR": case "MEDIDOR SIN LECTURA": case "MEDIDOR PROXIMO MANTENIMIENTO": Cat = "medidores"; break;
+                case "PERMISO VENCIDO": case "CERTIFICACION POR VENCER": Cat = "permisos"; break;
+                case "OCURRENCIA VENCIDA": case "HALLAZGO CRITICO": case "COMPARTIDO": Cat = "ordenes"; break;
+                default: Cat = (cod.StartsWith("TICKET") || cod.StartsWith("SOPORTE") || cod == "CAMPANA") ? "soporte" : "otros"; break;
+            }
+            if (Prediccion) Cat = "ai";
+        }
+    }
+
+    private string Chip(string valor, string texto, int n)
+    {
+        return "<button type=\"button\" class=\"np-chip" + (valor == "" ? " is-activo" : "") + (n == 0 ? " is-vacia" : "") + "\" data-np-filtro=\"" + valor +
+               "\" aria-pressed=\"" + (valor == "" ? "true" : "false") + "\">" + Server.HtmlEncode(texto) + " <b>" + n + "</b></button>";
+    }
+
+    /// <summary>La hora relativa a la sección: 06:00 · Ayer 18:00 · sáb 3.</summary>
+    private string Cuando(NpFila f)
+    {
+        if (f.Seccion == "Hoy") return f.Fecha.ToString("HH:mm");
+        if (f.Seccion == "Ayer") return "Ayer " + f.Fecha.ToString("HH:mm");
+        string[] dias = { "dom", "lun", "mar", "mié", "jue", "vie", "sáb" };
+        return dias[(int)f.Fecha.DayOfWeek] + " " + f.Fecha.Day;
+    }
+
+    /// <summary>«CODIGO · Nombre» del repuesto o del activo de la alerta (lo que se nombra, siempre con su código).</summary>
+    private static string ItemTexto(Alerta a)
+    {
+        string cod = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : (a.ACTIVO_CODIGO ?? "");
+        string nom = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? (a.REPUESTO_NOMBRE ?? "") : (a.ACTIVO_NOMBRE ?? "");
+        if (cod == "") return nom;
+        return nom == "" || nom == cod ? cod : cod + " · " + nom;
+    }
+
+    private string Etiqueta(Alerta a)
+    {
+        if (a.sev_codigo == "CRITICA") return "<span class=\"np-sev crit\">Crítica</span>";
+        if (a.sev_codigo == "ALTA") return "<span class=\"np-sev alta\">Alta</span>";
+        return "";
+    }
+
+    private string IcoTono(Alerta a)
+    {
+        switch (a.alt_codigo)
+        {
+            case "STOCK MINIMO": case "STOCK MAXIMO": case "LOTE VENCIDO": case "LOTE POR VENCER": return "t-stock";
+            case "PERMISO VENCIDO": case "CERTIFICACION POR VENCER": return "t-perm";
+            case "MEDICION FUERA RANGO": case "LECTURA A REVISAR": case "MEDIDOR SIN LECTURA": case "MEDIDOR PROXIMO MANTENIMIENTO": return "t-med";
+            case "PREDICCION RIESGO": return "t-ai";
+        }
+        return "t-gen";
+    }
+
+    private string AbrirAttrs(Alerta a)
+    {
+        return " data-np-url=\"" + Server.HtmlEncode(ResolveUrl("~/View/Comun/Notificaciones/AlertaDetalle.aspx")) + "\" data-np-q=\"" +
+               Server.HtmlEncode(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.ale_id))) + "\" data-np-id=\"" + a.ale_id + "\"";
+    }
+
+    private string Acciones(string ids, string tipo)
+    {
+        return "<span class=\"np-acts\"><button type=\"button\" class=\"np-ib\" data-np-leer=\"" + ids + "\" title=\"Marcar leída\" aria-label=\"Marcar leída\"><i class=\"mdi mdi-check\"></i></button>" +
+               "<button type=\"button\" class=\"np-ib\" data-np-silenciar=\"" + Server.HtmlEncode(tipo) + "\" title=\"Silenciar este tipo por 24 h\" aria-label=\"Silenciar este tipo por 24 horas\"><i class=\"mdi mdi-bell-off-outline\"></i></button></span>";
+    }
+
+    private string HtmlFila(Alerta a, NpFila f)
+    {
+        string contexto = ItemTexto(a);
+        if (!string.IsNullOrEmpty(f.Lugar)) contexto = string.IsNullOrEmpty(contexto) ? f.Lugar : contexto + " · " + f.Lugar;
+
+        StringBuilder sb = new StringBuilder();
+        sb.Append("<div class=\"np-row" + (a.LEIDA ? " is-leida" : " is-nueva") + "\" role=\"button\" tabindex=\"0\" data-np-row data-np-abre data-ids=\"" + a.ale_id + "\" data-tipo=\"" + Server.HtmlEncode(a.alt_codigo) + "\" data-tn=\"" + Server.HtmlEncode(a.alt_nombre) +
+                  "\" data-visto=\"" + (a.LEIDA ? "1" : "0") + "\" data-req=\"" + (f.Requiere ? "1" : "0") + "\" data-cat=\"" + f.Cat + "\"" + AbrirAttrs(a) +
+                  " aria-label=\"" + (a.LEIDA ? "" : "Sin leer. ") + Server.HtmlEncode(a.ale_titulo) + "\">");
+        sb.Append("<span class=\"np-ico " + IcoTono(a) + "\"><i class=\"" + IconoTipo(a.alt_icono) + "\" aria-hidden=\"true\"></i></span>");
+        sb.Append("<span class=\"np-tx\"><b>" + Server.HtmlEncode(a.ale_titulo) + "</b>");
+        if (contexto != "") sb.Append("<small>" + Server.HtmlEncode(contexto) + "</small>");
+        sb.Append("<span class=\"np-meta\"><time>" + Cuando(f) + "</time>" + Etiqueta(a) + (a.Activa ? "" : "<em>" + Server.HtmlEncode((a.aet_nombre ?? "").ToLower()) + "</em>") + "<span class=\"np-go\">" + Server.HtmlEncode(Accion(a.alt_codigo)) + " <i class=\"mdi mdi-arrow-right\"></i></span></span></span>");
+        sb.Append(Acciones(a.ale_id.ToString(), a.alt_codigo));
+        sb.Append(a.LEIDA ? "" : "<i class=\"np-dot\" aria-hidden=\"true\"></i>");
+        sb.Append("</div>");
+        return sb.ToString();
+    }
+
+    private string HtmlGrupo(NpFila f)
+    {
+        Alerta p = f.A[0];
+        bool stock = p.alt_codigo == "STOCK MINIMO" || p.alt_codigo == "STOCK MAXIMO";
+        int n = f.A.Count;
+
+        string ids = "";
+        foreach (Alerta a in f.A) ids += (ids == "" ? "" : ",") + a.ale_id;
+
+        string titulo = p.alt_codigo == "STOCK MINIMO" ? n + " repuestos bajo el mínimo"
+                      : p.alt_codigo == "STOCK MAXIMO" ? n + " repuestos sobre el máximo"
+                      : n + " avisos de " + (p.alt_nombre ?? "").ToLower();
+
+        /* El más grave del grupo: el que está más lejos de su umbral. */
+        Alerta peor = p;
+        double peorR = double.MaxValue;
+        foreach (Alerta a in f.A)
+        {
+            if (a.ale_valor_observado == null || a.ale_valor_umbral == null || a.ale_valor_umbral == 0) continue;
+            double r = (double)a.ale_valor_observado.Value / (double)a.ale_valor_umbral.Value;
+            if (p.alt_codigo == "STOCK MAXIMO") r = -r;
+            if (r < peorR) { peorR = r; peor = a; }
+        }
+        string detalle = f.Lugar;
+        if (stock && peor.ale_valor_observado != null && peor.ale_valor_umbral != null)
+            detalle += (detalle == "" ? "" : " · ") + (p.alt_codigo == "STOCK MINIMO" ? "el más bajo: " : "el más alto: ") +
+                       (ItemTexto(peor) != "" ? ItemTexto(peor) : peor.ale_titulo) + " (" + Num(peor.ale_valor_observado) + " de " + Num(peor.ale_valor_umbral) + ")";
+
+        int sin = 0; foreach (Alerta a in f.A) if (!a.LEIDA) sin++;
+
+        StringBuilder sb = new StringBuilder();
+        sb.Append("<div class=\"np-grp" + (f.SinLeer ? " is-nueva" : " is-leida") + "\" data-np-row data-np-grupo data-ids=\"" + ids + "\" data-tipo=\"" + Server.HtmlEncode(p.alt_codigo) + "\" data-tn=\"" + Server.HtmlEncode(p.alt_nombre) +
+                  "\" data-visto=\"" + (f.SinLeer ? "0" : "1") + "\" data-req=\"" + (f.Requiere ? "1" : "0") + "\" data-cat=\"" + f.Cat + "\">");
+        sb.Append("<div class=\"np-row np-grp-h\" role=\"button\" tabindex=\"0\" aria-expanded=\"false\" data-np-expandir>");
+        sb.Append("<span class=\"np-ico " + IcoTono(p) + "\"><i class=\"" + IconoTipo(p.alt_icono) + "\" aria-hidden=\"true\"></i><span class=\"np-cant\">" + n + "</span></span>");
+        sb.Append("<span class=\"np-tx\"><b>" + Server.HtmlEncode(titulo) + "</b>");
+        if (detalle != "") sb.Append("<small>" + Server.HtmlEncode(detalle) + "</small>");
+        sb.Append("<span class=\"np-meta\"><time>" + Cuando(f) + "</time>" + Etiqueta(peor) + "<span class=\"np-go\">" + (sin > 0 ? sin + " sin leer" : "todas leídas") + " <i class=\"mdi mdi-chevron-down np-chev\"></i></span></span></span>");
+        sb.Append(Acciones(ids, p.alt_codigo));
+        sb.Append(f.SinLeer ? "<i class=\"np-dot\" aria-hidden=\"true\"></i>" : "");
+        sb.Append("</div>");
+
+        sb.Append("<div class=\"np-grp-b\" hidden>");
+        foreach (Alerta a in f.A)
+        {
+            string cod = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : (a.ACTIVO_CODIGO ?? a.ale_titulo);
+            string nombre = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? (a.REPUESTO_NOMBRE ?? "") : (a.ACTIVO_NOMBRE ?? "");
+            string barra = "";
+            if (stock && a.ale_valor_observado != null && a.ale_valor_umbral != null && a.ale_valor_umbral > 0)
+            {
+                double pc = Math.Min(100, (double)a.ale_valor_observado.Value / (double)a.ale_valor_umbral.Value * 100.0);
+                barra = "<span class=\"np-bar\"><i style=\"width:" + pc.ToString("0", System.Globalization.CultureInfo.InvariantCulture) + "%\"></i></span><em>" + Num(a.ale_valor_observado) + " / " + Num(a.ale_valor_umbral) + "</em>";
+            }
+            sb.Append("<div class=\"np-sub" + (a.LEIDA ? " is-leida" : "") + "\" role=\"button\" tabindex=\"0\" data-np-abre data-ids=\"" + a.ale_id + "\"" + AbrirAttrs(a) + "><span class=\"np-nm\"><b>" + Server.HtmlEncode(nombre == "" ? cod : nombre) + "</b>" + (nombre == "" ? "" : "<code>" + Server.HtmlEncode(cod) + "</code>") + "</span>" + barra + (a.LEIDA ? "" : "<i class=\"np-dot\"></i>") + "</div>");
+        }
+        sb.Append("<div class=\"np-grp-f\">");
+        if (stock)
+        {
+            sb.Append("<a class=\"np-btn out\" href=\"" + Server.HtmlEncode(ResolveUrl("~/View/Inventario/Existencias/Existencias.aspx")) + "\" data-np-ir=\"" + ids + "\">Ver existencias</a>");
+            sb.Append("<a class=\"np-btn pri\" href=\"" + Server.HtmlEncode(ResolveUrl("~/View/Inventario/Movimientos/Movimientos.aspx")) + "\" data-np-ir=\"" + ids + "\">Registrar ingreso</a>");
         }
         else
         {
-            sb.Append("<span class=\"icono\"><i class=\"" + IconoTipo(a.alt_icono) +
-                      "\" aria-hidden=\"true\"></i></span>");
+            sb.Append("<button type=\"button\" class=\"np-btn pri\" data-np-primera=\"1\">Ver detalle</button>");
         }
+        sb.Append("</div></div></div>");
+        return sb.ToString();
+    }
 
-        sb.Append("<span class=\"texto\">");
+    private string HtmlAi(NpFila f)
+    {
+        Alerta a = f.A[0];
+        StringBuilder sb = new StringBuilder();
+        sb.Append("<div class=\"np-ai" + (a.LEIDA ? " is-leida" : " is-nueva") + "\" data-np-row data-ids=\"" + a.ale_id + "\" data-tipo=\"" + Server.HtmlEncode(a.alt_codigo) + "\" data-tn=\"" + Server.HtmlEncode(a.alt_nombre) + "\" data-visto=\"" + (a.LEIDA ? "1" : "0") +
+                  "\" data-req=\"" + (f.Requiere ? "1" : "0") + "\" data-cat=\"ai\">");
+        sb.Append("<div class=\"np-ai-h\"><img src=\"" + ResolveUrl("~/Imagen/sigma-ai/sigma-ai-status-prediction.svg") + "\" alt=\"\" aria-hidden=\"true\" /><span>SIGMA AI · " +
+                  Server.HtmlEncode(a.alt_nombre) + " · " + Server.HtmlEncode(a.Antiguedad) + "</span>" + (a.LEIDA ? "" : "<i class=\"np-dot\"></i>") + "</div>");
+        sb.Append("<b>" + Server.HtmlEncode(a.ale_titulo) + "</b>");
+        if (!string.IsNullOrEmpty(a.ale_descripcion)) sb.Append("<p>" + Server.HtmlEncode(a.ale_descripcion) + "</p>");
+        sb.Append("<div class=\"np-ai-f\"><button type=\"button\" class=\"np-btn out\" data-np-abre" + AbrirAttrs(a) + ">Ver análisis</button>");
+        sb.Append("<button type=\"button\" class=\"np-btn pri\" data-np-crear-ot=\"" + a.ale_id + "\">Crear OT</button></div></div>");
+        return sb.ToString();
+    }
 
-        /* En la tarjeta, la marca va arriba: quien la mira tiene que saber
-           que esto lo dijo un modelo antes de leer lo que dice. */
-        if (destacada)
-            sb.Append("<span class=\"sg-notif-marca\">SIGMA AI · " +
-                      Server.HtmlEncode(a.alt_nombre) + " · " + Server.HtmlEncode(a.Antiguedad) + "</span>");
-
-        sb.Append("<span class=\"titulo\">" + Server.HtmlEncode(a.ale_titulo) + "</span>");
-
-        string contexto = !string.IsNullOrEmpty(a.ACTIVO_NOMBRE) ? a.ACTIVO_NOMBRE :
-                          (!string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : "");
-        string lugar = !string.IsNullOrEmpty(a.BODEGA_NOMBRE) ? a.BODEGA_NOMBRE : a.INSTALACION_NOMBRE;
-
-        if (!string.IsNullOrEmpty(lugar))
-            contexto = string.IsNullOrEmpty(contexto) ? lugar : contexto + " · " + lugar;
-
-        if (!string.IsNullOrEmpty(contexto))
-            sb.Append("<span class=\"contexto\">" + Server.HtmlEncode(contexto) + "</span>");
-
-        if (destacada)
-            sb.Append("<span class=\"detalle\">" + Server.HtmlEncode(a.ale_descripcion) + "</span>");
-
-        /* La línea de abajo: cuándo, y la gravedad solo cuando pide decidir.
-           En la tarjeta el cuándo ya está arriba, junto a la marca. */
-        sb.Append("<span class=\"cuando\">");
-
-        if (!destacada) sb.Append(Server.HtmlEncode(a.Antiguedad));
-
-        if (a.sev_codigo == "CRITICA" || a.sev_codigo == "ALTA")
-            sb.Append((destacada ? "" : " · ") + "<span class=\"sev\">" +
-                      Server.HtmlEncode(a.sev_nombre) + "</span>");
-
-        if (!a.Activa)
-            sb.Append(" · " + Server.HtmlEncode(a.aet_nombre.ToLower()));
-
-        sb.Append("</span>");
-
-        if (destacada)
-            sb.Append("<span class=\"sg-notif-cta\">" + Server.HtmlEncode(Accion(a.alt_codigo)) +
-                      " <i class=\"mdi mdi-arrow-right\"></i></span>");
-
-        sb.Append("</span>");
-
-        if (!destacada)
-            sb.Append("<span class=\"sg-notif-action\">" + Server.HtmlEncode(Accion(a.alt_codigo)) +
-                      " <i class=\"mdi mdi-arrow-right\"></i></span>");
-
-        /* El punto de "sin leer" a la derecha, como en cualquier bandeja: se
-           recorre la columna de un vistazo. */
-        if (!a.LEIDA) sb.Append("<span class=\"punto\"></span>");
-
-        lit.Text = sb.ToString();
+    private static string Num(decimal? v)
+    {
+        return v == null ? "—" : v.Value.ToString("0.##", new System.Globalization.CultureInfo("es-CL"));
     }
 
     /// <summary>

@@ -1537,38 +1537,19 @@ const KIND = {comp:{l:'Componentes', one:'componente', c:'#007F8A'}, sub:{l:'Sub
 const RANK = {bad:0, warn:1, ok:2};
 const curId = () => XP.stack[XP.stack.length - 1];
 
-function xpModel(id){
-  const a = S.activos[id];
-  const subs = (a.subs||[]).map(sid => S.activos[sid] && {key:'s:' + sid, kind:'sub', id:sid, name:S.activos[sid].nombre, tone:tone(sid), label:toneText(sid), foto:S.activos[sid].foto || null}).filter(Boolean);
-  const comps = a.comps.map((c, i) => ({key:'c:' + i, kind:'comp', i, name:c.n, tone:EST[c.e].t, label:EST[c.e].l, foto:c.foto || null, nota:c.e !== 'operativo' ? (c.nota || '') : ''}));
-  const reps = (a.reps||[]).map((r, i) => { const s = stock(r); return {key:'r:' + i, kind:'rep', i, name:r.n, tone:s.t, label:s.l, para:r.para || '', foto:r.foto || null}; });
-  const sort = list => list.map((x, o) => ({x, o})).sort((p, q) => RANK[p.x.tone] - RANK[q.x.tone] || p.o - q.o).map(p => p.x);
-  return {a, sub:sort(subs), comp:sort(comps), rep:sort(reps)};
-}
-function itemDetail(it, M){
-  const a = M.a;
-  if (it.kind === 'comp'){
-    const c = a.comps[it.i]; const n = M.rep.filter(r => r.para && norm(r.para) === norm(c.n)).length;
-    return `<div class="co-det">
-      <div class="field"><label for="dEstado">Estado de esta pieza</label><select id="dEstado" data-comp="${it.i}">${Object.entries(EST).map(([k, v]) => `<option value="${k}"${k === c.e ? ' selected' : ''}>${v.l}</option>`).join('')}</select></div>
-      <span class="co-note">${n ? `${cnt(n,'Repuesto')} le ${n === 1 ? 'sirve' : 'sirven'}. Lo ves filtrado en «Repuestos».` : 'Aún no tiene repuestos vinculados.'}</span>
-      ${puedeMover() && c.id && destinosMover(a).length ? `<label class="co-mover"><span>Mover a</span><select data-mover="${c.id}"><option value="">Elige dónde…</option>${destinosMover(a).map(d => `<option value="${d.aid}">${esc(d.l)}</option>`).join('')}</select></label>` : ''}
-      <button type="button" class="btn btn--primary btn--sm" data-xp="ot">Crear OT para esta pieza</button></div>`;
-  }
-  if (it.kind === 'rep'){
-    const r = a.reps[it.i]; const target = it.para ? M.comp.find(x => norm(x.name) === norm(it.para)) : null;
-    return `<div class="co-det">
-      <div class="co-stock"><span class="big tone-${it.tone}">${r.stock}</span><span>en bodega<br>mínimo recomendado ${r.min}</span></div>
-      ${target ? `<button type="button" class="btn-text" style="height:32px;justify-content:flex-start;padding:0" data-co-go="${target.key}">Ver la pieza: ${esc(target.name)} ›</button>` : '<span class="co-note">Sirve para este activo en general.</span>'}
-      <span class="co-acc">${r.url ? `<a class="btn btn--sm" href="${SIGMA.url(r.url)}" target="_blank" rel="noopener">Ver ficha del repuesto</a>` : ''}${r.vinculo && S.permisos && S.permisos.editar ? `<button type="button" class="btn btn--sm btn--borrar" data-xp="quitarrep" data-v="${r.vinculo}">Quitar vínculo</button>` : ''}</span></div>`;
-  }
-  return '';
-}
-/* ---- Mover un componente a un subactivo (06-10-2026) ----
-   Se arrastra desde «Componentes» (o desde el arbol de un subactivo) y se
-   suelta sobre un subactivo, o sobre «Componentes» para volverlo al activo
-   abierto. Sin mouse, el detalle del componente trae «Mover a». Lo hace
-   WsActivos.MoverComponente (BD/358): lo que cuelga de la pieza va con ella. */
+/* ===== Explorador: el activo como organigrama (06-10-2026 · v2) =====
+   Un árbol con ramas y flechas, como se piensa un equipo y como el mockup:
+   del ACTIVO salen sus COMPONENTES y sus SUBACTIVOS; de cada componente
+   cuelgan SUS repuestos (los de su modelo en bodega); de cada subactivo,
+   sus componentes —con sus repuestos— y los repuestos del subactivo. Así se
+   ve de un vistazo de quién es cada repuesto. El color de la rama dice qué
+   es: turquesa un componente, azul un subactivo, ámbar un repuesto. */
+const COMP_ICO = '<rect x="4" y="4" width="16" height="16" rx="3"/><path d="M9 9h6v6H9z"/>';
+const BOX_ICO = '<path d="M3 7l9-4 9 4-9 4-9-4z"/><path d="M3 7v10l9 4 9-4V7"/><path d="M12 11v10"/>';
+const estOpts = cur => Object.entries(EST).map(([k, v]) => `<option value="${k}"${k === cur ? ' selected' : ''}>${v.l}</option>`).join('');
+
+/* Mover una pieza: se arrastra, o se elige «Mover a» en el detalle del
+   componente. Lo hace WsActivos.MoverComponente (BD/358). */
 const puedeMover = () => !!(S.permisos && S.permisos.comp);
 const XD = {drag:null};
 function destinosMover(a){
@@ -1581,54 +1562,137 @@ async function moverComp(comp, activo){
   try { const r = await ws('MoverComponente', {componente:comp, activo}); XP.sel = null; toast((r && r.detalle) || 'Componente movido'); await SIGMA.recargar(); }
   catch(err){ toast(err.message); }
 }
-/* El subactivo con sus componentes debajo, como arbol. Todo el bloque recibe lo que se suelta. */
-function subTree(it, M){
-  const s = S.activos[it.id]; if (!s) return itemHTML(it, M);
-  const comps = s.comps || [], mov = puedeMover();
-  const filas = comps.map(c => { const e = EST[c.e] || EST.operativo;
-    return `<li class="sub-comp"${mov ? ` draggable="true" data-drag-comp="${c.id}" data-drag-desde="${s.aid}" title="Arrástralo para moverlo"` : ''}><i style="background:${DOTC[e.t]}"></i><span>${esc(c.n)}</span><small>${esc(e.l)}</small></li>`; }).join('');
-  return `<div class="sub-tree"${mov ? ` data-drop-activo="${s.aid}" data-drop-nombre="${esc(s.nombre)}"` : ''}>${itemHTML(it, M)}
-    ${comps.length ? `<ul class="sub-comps" aria-label="Componentes de ${esc(s.nombre)}">${filas}</ul>`
-                   : `<div class="sub-comps-vacio">${mov ? 'Sin componentes · suelta uno aquí' : 'Sin componentes'}</div>`}</div>`;
+
+/* Los repuestos de un activo/subactivo, repartidos: los del equipo en general
+   y los de cada componente. Se agrupa por PARA_ID (el componente al que sirve);
+   si no viene, se intenta por nombre; si no, es del activo/subactivo. */
+function repsSplit(a){
+  const gen = [], porComp = {};
+  (a.reps || []).forEach(r => {
+    const s = stock(r);
+    const row = {id:r.id, n:r.n, c:r.c, stock:r.stock, min:r.min, u:r.u || '', tone:s.t, label:s.l, foto:r.foto || null};
+    let cid = r.paraId || 0;
+    if (!cid && r.para){ const c = (a.comps || []).find(x => norm(x.n) === norm(r.para)); if (c) cid = c.id; }
+    if (cid && (a.comps || []).some(x => x.id === cid)) (porComp[cid] = porComp[cid] || []).push(row);
+    else gen.push(row);
+  });
+  const ord = l => l.sort((p, q) => RANK[p.tone] - RANK[q.tone]);
+  ord(gen); Object.keys(porComp).forEach(k => ord(porComp[k]));
+  return {gen, porComp};
 }
-function itemHTML(it, M){
-  const sel = XP.sel === it.key;
-  const arrastra = it.kind === 'comp' && puedeMover() && M.a.comps[it.i] && M.a.comps[it.i].id;
-  return `<div class="co-wrap${sel ? ' is-open' : ''}"${arrastra ? ` draggable="true" data-drag-comp="${M.a.comps[it.i].id}" data-drag-desde="${M.a.aid}"` : ''} data-name="${esc(norm(it.name + ' ' + (it.para||'')))}" data-tone="${it.tone}"${it.para ? ` data-para="${esc(norm(it.para))}"` : ''}>
-    <button type="button" class="co co--${it.kind}${sel ? ' is-sel' : ''}${it.foto ? ' con-foto' : ''}" data-co="${it.key}" aria-expanded="${it.kind === 'sub' ? 'false' : sel}">
-      ${it.foto ? `<span class="co-img"><img src="${esc(it.foto)}" alt="" loading="lazy"></span>` : ''}<span class="co-main"><strong>${esc(it.name)}</strong>${it.para ? `<small class="co-para">Para: ${esc(it.para)}</small>` : ''}${it.nota ? `<small class="co-obs">«${esc(it.nota)}»</small>` : ''}</span>
-      <span class="co-side">${it.kind === 'sub' ? svg('<path d="M9 6l6 6-6 6"/>',18) : svg(sel ? '<path d="M6 15l6-6 6 6"/>' : '<path d="M6 9l6 6 6-6"/>',16)}</span>
-      <span class="chip chip--${it.tone}"><i></i>${esc(it.label)}</span>
-    </button>${sel ? itemDetail(it, M) : ''}</div>`;
+const toneChip = (t, l) => `<span class="chip chip--${t}"><i></i>${esc(l)}</span>`;
+
+/* Una hoja del árbol: un repuesto, colgando de su dueño. */
+function repNodo(r){
+  return `<div class="xt-node xt-leaf">
+    <div class="xt-rep">
+      <span class="xt-rep-img">${r.foto ? `<img src="${esc(r.foto)}" alt="" loading="lazy">` : svg(BOX_ICO, 14)}</span>
+      <span class="xt-rep-m"><strong>${esc(r.n)}</strong><small>${esc(r.c || '—')}</small></span>
+      <span class="xt-rep-k"><b>${r.stock}${r.u ? ' ' + esc(r.u) : ''}</b><small>mín. ${r.min}</small></span>
+      ${toneChip(r.tone, r.label)}
+    </div></div>`;
 }
-function groupHTML(kind, list, side, M){
-  const k = KIND[kind]; const bad = list.filter(x => x.tone !== 'ok').length;
-  const big = list.length > 6;
-  const items = list.length
-    ? `<div class="grp-items">${list.map(it => kind === 'sub' ? subTree(it, M) : itemHTML(it, M)).join('')}</div><div class="grp-none" hidden>Nada coincide.</div>`
-    : `<div class="xp-empty">${kind === 'sub' ? 'No tiene subactivos.' : kind === 'comp' ? 'Aún no tiene componentes.' : 'Sin repuestos vinculados.'}</div>`;
-  const status = bad ? `<span class="chip chip--${list.some(x => x.tone === 'bad') ? 'bad' : 'warn'}"><i></i>${bad} ${kind === 'rep' ? 'por reponer' : 'con aviso'}</span>` : list.length ? '<span class="chip chip--ok"><i></i>Todo bien</span>' : '';
-  const recibe = kind === 'comp' && puedeMover() ? ` data-drop-activo="${M.a.aid}" data-drop-nombre="${esc(M.a.nombre)}"` : '';
-  return `<section class="grp grp--${kind} grp--${side}" style="--c:${k.c}" data-grp="${kind}" aria-label="${k.l}"${recibe}>
-    <header class="grp-head"><span class="grp-ico"></span><h3>${k.l}</h3><span class="grp-n">${list.length}</span><span class="grp-st">${status}</span>
-</header>
-    ${kind === 'comp' && XP.adding ? `<div data-form="1" class="addform" id="formComp"><label for="iComp" class="sr">Nombre del componente</label><input id="iComp" placeholder="Ej.: Motor" autocomplete="off"><button type="button" class="btn btn--primary btn--sm" data-submit="1">Agregar</button><button type="button" class="icon-btn" style="width:36px;height:36px" data-xp="addcancel" aria-label="Cancelar">${svg(I.close,16)}</button></div>` : ''}
-    ${big ? `<div class="grp-tools"><label class="sr" for="q-${kind}">Buscar ${k.one}</label><input class="grp-q" id="q-${kind}" data-q="${kind}" placeholder="Buscar ${k.one}…" autocomplete="off">${bad ? `<button type="button" class="grp-only" data-only="${kind}" aria-pressed="false">${kind === 'rep' ? 'Por reponer' : 'Con aviso'}</button>` : ''}</div>` : ''}
-    ${kind === 'rep' ? `<div class="grp-for" id="repFor" hidden></div>` : ''}
-    <div class="grp-list">${items}</div>
-    ${kind === 'sub' && list.length && M.comp.length && puedeMover() ? '<p class="grp-hint">Arrastra un componente sobre un subactivo para moverlo.</p>' : ''}
-    ${kind === 'sub' && S.permisos && S.permisos.editar ? `<button type="button" class="grp-add" data-xp="addsub">${svg(I.plus,16)}Agregar subactivo</button>` : ''}
-    ${kind === 'comp' && !XP.adding ? `<button type="button" class="grp-add" data-xp="add">${svg(I.plus,16)}Agregar componente</button>` : ''}
-    ${kind === 'rep' && S.permisos && S.permisos.editar ? (XP.addRep ? SIGMA.formRepuesto(curId()) : `<button type="button" class="grp-add grp-add--rep" data-xp="addrep">${svg(I.plus,16)}Agregar repuesto compatible</button>`) : ''}
-  </section>`;
+
+/* Un componente, con sus repuestos colgando de él. Al tocarlo se abre su
+   detalle (estado, mover, OT); sus repuestos se ven siempre como ramas. */
+function compNodo(nodeId, c, idx, reps){
+  const e = EST[c.e] || EST.operativo; const a = S.activos[nodeId];
+  const sel = XP.sel === 'c:' + nodeId + ':' + idx;
+  const dest = puedeMover() && c.id ? destinosMover(a) : [];
+  const arrastra = puedeMover() && c.id;
+  const kids = reps.length ? `<div class="xt-children xt-children--rep">${reps.map(repNodo).join('')}</div>` : '';
+  return `<div class="xt-node xt-n-comp"${arrastra ? ` draggable="true" data-drag-comp="${c.id}" data-drag-desde="${a.aid}"` : ''}>
+    <div class="xt-card xt-card--comp tone-${e.t}${sel ? ' is-open' : ''}">
+      <button type="button" class="xt-h" data-co="c:${nodeId}:${idx}" aria-expanded="${sel}">
+        <span class="xt-ico">${c.foto ? `<img src="${esc(c.foto)}" alt="">` : svg(COMP_ICO, 18)}</span>
+        <span class="xt-m"><strong>${esc(c.n)}</strong><small>${esc(c.c || '')}${c.lado ? ' · ' + esc(c.lado) : ''}</small></span>
+        ${toneChip(e.t, e.l)}
+        <span class="xt-repn">${svg(BOX_ICO, 13)}${reps.length ? cnt(reps.length, 'repuesto') : 'sin repuestos'}</span>
+        <span class="xt-ch">${svg(sel ? '<path d="M6 15l6-6 6 6"/>' : '<path d="M6 9l6 6 6-6"/>', 16)}</span>
+      </button>
+      ${sel ? `<div class="xt-det">
+        ${c.nota && e.t !== 'ok' ? `<p class="xt-obs">«${esc(c.nota)}»</p>` : ''}
+        <div class="field"><label>Estado de esta pieza</label><select class="xp-est-comp" data-nodo="${nodeId}" data-comp="${idx}">${estOpts(c.e)}</select></div>
+        ${dest.length ? `<label class="co-mover"><span>Mover a</span><select data-mover="${c.id}"><option value="">Elige dónde…</option>${dest.map(d => `<option value="${d.aid}">${esc(d.l)}</option>`).join('')}</select></label>` : ''}
+        <button type="button" class="btn btn--primary btn--sm" data-xp-ot="${nodeId}">Crear OT para esta pieza</button>
+      </div>` : ''}
+    </div>
+    ${kids}
+  </div>`;
 }
+
+/* El grupo «Repuestos del activo / del subactivo»: los que sirven al equipo en
+   general (no a un componente), con sus repuestos colgando. */
+function repGrupoNodo(titulo, reps){
+  if (!reps.length) return '';
+  return `<div class="xt-node xt-n-rep">
+    <div class="xt-card xt-card--repgrp">
+      <span class="xt-ico xt-ico--rep">${svg(BOX_ICO, 18)}</span>
+      <span class="xt-m"><strong>${esc(titulo)}</strong><small>${cnt(reps.length, 'repuesto')} · ${reps.filter(r => r.stock > 0).length} en bodega</small></span>
+    </div>
+    <div class="xt-children xt-children--rep">${reps.map(repNodo).join('')}</div>
+  </div>`;
+}
+
+/* Un subactivo: su propia rama, con sus componentes (y los repuestos de cada
+   uno) y los repuestos del subactivo. Para gestionarlo a fondo, «Abrir». */
+function subNodo(id){
+  const a = S.activos[id]; if (!a) return '';
+  const e = EST[a.estado] || EST.operativo;
+  const {gen, porComp} = repsSplit(a); const comps = a.comps || [];
+  const nRep = (a.reps || []).length;
+  const kids = comps.map((c, i) => compNodo(id, c, i, porComp[c.id] || [])).join('') + repGrupoNodo('Repuestos del subactivo', gen);
+  return `<div class="xt-node xt-n-sub">
+    <div class="xt-card xt-card--sub"${puedeMover() ? ` data-drop-activo="${a.aid}" data-drop-nombre="${esc(a.nombre)}"` : ''}>
+      <span class="xt-ico xt-ico--sub">${icoHTML(id, 20)}</span>
+      <span class="xt-m"><strong>${esc(a.nombre)}</strong><small>${esc(a.codigo)} · ${cnt(comps.length, 'componente')} · ${cnt(nRep, 'repuesto')}</small></span>
+      ${toneChip(e.t, e.l)}
+      <button type="button" class="btn btn--sm xt-abrir" data-abrir="${id}">Abrir${svg('<path d="M9 6l6 6-6 6"/>', 14)}</button>
+    </div>
+    ${kids ? `<div class="xt-children">${kids}</div>` : `<div class="xt-children"><p class="xt-vacio">Sin componentes ni repuestos.</p></div>`}
+  </div>`;
+}
+
+/* La foto de portada del activo (va en la tarjeta raíz del árbol). */
+function xpFoto(id, a){
+  const photo = a.foto;
+  return photo ? `<figure class="xp-photo is-real" id="xpPhoto">
+      <img src="${photo}" alt="Foto de portada de ${esc(a.nombre)}">
+      <figcaption class="xp-badge">${svg(I.camera,14)}${fotosOf(id).length > 1 ? 'Portada · ' + fotosOf(id).length + ' fotos' : 'Foto de portada'}</figcaption>
+      <div class="ph-actions">
+        <button type="button" class="ph-btn" data-xp="zoom">${svg('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',16)}Ampliar</button>
+        <label class="ph-btn" for="xpFoto">${svg(I.camera,16)}Agregar fotos</label><input type="file" id="xpFoto" accept="image/*" multiple class="sr">
+        <button type="button" class="ph-btn" data-xp="nofoto" aria-label="Quitar foto" title="Quitar foto">${svg(I.close,16)}</button>
+      </div>
+    </figure>` : `<figure class="xp-photo xp-photo--vacia" id="xpPhoto">
+      <span class="xp-vacia-ico">${svg(I.camera,32)}</span>
+      <b>Este activo todavía no tiene foto</b>
+      <span>PNG o JPG. La primera que subas queda de portada.</span>
+      <label class="ph-btn" for="xpFoto">${svg(I.camera,16)}Agregar foto de portada</label><input type="file" id="xpFoto" accept="image/*" multiple class="sr">
+    </figure>`;
+}
+
 function renderXP(intro){
   const id = curId(); const a = S.activos[id]; if (!a){ closeXP(); return; }
-  const M = xpModel(id); const e = EST[a.estado]; const iss = issues(id);
-  const photo = a.foto;
+  const e = EST[a.estado]; const iss = issues(id);
   const crumbs = XP.stack.map((sid, i) => i < XP.stack.length - 1 ? `<button type="button" data-crumb="${i}">${esc(S.activos[sid].nombre)}</button><span aria-hidden="true">›</span>` : '').join('');
   const w = whereIs(id); const cur = w ? 'L:' + w : 'tray';
-  XP.repFor = null; if (XP.sel && XP.sel.startsWith('c:')){ const c = a.comps[+XP.sel.slice(2)]; if (c) XP.repFor = c.n; }
+  const {gen, porComp} = repsSplit(a);
+  const comps = a.comps || [];
+  const subs = (a.subs || []).filter(sid => S.activos[sid]);
+  const enBodega = (a.reps || []).filter(r => r.stock > 0).length;
+  const editable = !!(S.permisos && S.permisos.editar);
+
+  const ramas = comps.map((c, i) => compNodo(id, c, i, porComp[c.id] || [])).join('')
+    + repGrupoNodo('Repuestos del activo', gen)
+    + subs.map(subNodo).join('');
+
+  const acc = editable ? `<div class="xt-acc">
+      <button type="button" class="grp-add" data-xp="addsub">${svg(I.plus,16)}Agregar subactivo</button>
+      <button type="button" class="grp-add" data-addcomp="${id}">${svg(I.plus,16)}Agregar componente</button>
+      ${XP.addRep ? '' : `<button type="button" class="grp-add grp-add--rep" data-xp="addrep">${svg(I.plus,16)}Agregar repuesto</button>`}
+    </div>${XP.addRep ? SIGMA.formRepuesto(id) : ''}` : '';
+
   $('#xpCard').innerHTML = `
     <header class="xp-head">
       <span class="tile-ico">${icoHTML(id, 26)}</span>
@@ -1641,27 +1705,19 @@ function renderXP(intro){
       ${XP.stack.length > 1 ? `<button type="button" class="btn btn--sm" data-crumb="${XP.stack.length - 2}">${svg(I.back,16)}Volver</button>` : ''}
       <button type="button" class="icon-btn" data-xp="close" aria-label="Cerrar">${svg(I.close)}</button>
     </header>
-    <div class="xp-scroll"><div class="xp-body" id="xpBody">
-      <svg class="xp-lines" id="xpLines" aria-hidden="true"></svg>
-      <div class="xp-stage">
-        ${photo ? `<figure class="xp-photo is-real" id="xpPhoto">
-          <img src="${photo}" alt="Foto de portada de ${esc(a.nombre)}">
-          <figcaption class="xp-badge">${svg(I.camera,14)}${fotosOf(id).length > 1 ? 'Portada · ' + fotosOf(id).length + ' fotos' : 'Foto de portada'}</figcaption>
-          <div class="ph-actions">
-            <button type="button" class="ph-btn" data-xp="zoom">${svg('<path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>',16)}Ampliar</button>
-            <label class="ph-btn" for="xpFoto">${svg(I.camera,16)}Agregar fotos</label><input type="file" id="xpFoto" accept="image/*" multiple class="sr">
-            <button type="button" class="ph-btn" data-xp="nofoto" aria-label="Quitar foto" title="Quitar foto">${svg(I.close,16)}</button>
+    <div class="xp-scroll"><div class="xt" id="xpTree">
+      <div class="xt-node xt-node--root">
+        <div class="xt-card xt-card--act"${editable ? ` data-drop-activo="${a.aid}" data-drop-nombre="${esc(a.nombre)}"` : ''}>
+          <div class="xt-foto">${xpFoto(id, a)}</div>
+          <div class="xt-act-chips">
+            <span class="xt-ac xt-ac--comp">${svg(COMP_ICO,14)}${cnt(comps.length, 'componente')}</span>
+            <span class="xt-ac xt-ac--rep">${svg(BOX_ICO,14)}${cnt((a.reps || []).length, 'repuesto')}${(a.reps || []).length ? ' · ' + enBodega + ' en bodega' : ''}</span>
+            ${subs.length ? `<span class="xt-ac xt-ac--sub">${cnt(subs.length, 'subactivo')}</span>` : ''}
           </div>
-        </figure>` : `<figure class="xp-photo xp-photo--vacia" id="xpPhoto">
-          <span class="xp-vacia-ico">${svg(I.camera,32)}</span>
-          <b>Este activo todavía no tiene foto</b>
-          <span>PNG o JPG. La primera que subas queda de portada.</span>
-          <label class="ph-btn" for="xpFoto">${svg(I.camera,16)}Agregar foto de portada</label><input type="file" id="xpFoto" accept="image/*" multiple class="sr">
-        </figure>`}
+          ${acc}
+        </div>
+        ${ramas ? `<div class="xt-children">${ramas}</div>` : `<div class="xt-children"><p class="xt-vacio">Este activo todavía no tiene componentes, subactivos ni repuestos.</p></div>`}
       </div>
-      ${groupHTML('sub', M.sub, 'c', M)}
-      ${groupHTML('comp', M.comp, 'c', M)}
-      ${groupHTML('rep', M.rep, 'c', M)}
     </div></div>
     <footer class="xp-foot">
       <div class="field"><label for="xEstado">Estado del ${a.padre ? 'subactivo' : 'activo'}</label><select id="xEstado">${Object.entries(EST).map(([k, v]) => `<option value="${k}"${k === a.estado ? ' selected' : ''}>${v.l}</option>`).join('')}</select></div>
@@ -1671,9 +1727,7 @@ function renderXP(intro){
       <button type="button" class="btn" data-xp="centro">Abrir centro 360°</button>
       <button type="button" class="btn btn--primary" data-xp="ot">Crear OT</button>
     </footer>`;
-  XP.model = M;
-  applyRepFor();
-  requestAnimationFrame(() => { sizeCols(); drawLines(intro); if (intro) animXP(); });
+  requestAnimationFrame(() => { sizeCols(); if (intro) animXP(); });
 }
 function applyRepFor(){
   const box = $('#repFor'); if (!box) return;
@@ -1695,7 +1749,7 @@ function filterGroup(kind){
   const none = g.querySelector('.grp-none'); if (none) none.hidden = shown > 0 || !g.querySelector('.co-wrap');
   requestAnimationFrame(() => drawLines(false));
 }
-function sizeCols(){ const ph = $('#xpPhoto'); if (ph) $('#xpBody').style.setProperty('--ph', Math.round(ph.getBoundingClientRect().height) + 'px'); }
+function sizeCols(){ const ph = $('#xpPhoto'), b = $('#xpBody'); if (ph && b) b.style.setProperty('--ph', Math.round(ph.getBoundingClientRect().height) + 'px'); }
 /* Flechas tipo organigrama: foto → subactivos, componentes y repuestos */
 function drawLines(animate){
   const body = $('#xpBody'), svgEl = $('#xpLines'), ph = $('#xpPhoto'); if (!body || !svgEl || !ph) return;
@@ -1721,23 +1775,25 @@ function animXP(){
   gsap.fromTo('#xpPhoto', {scale:.97, opacity:0}, {scale:1, opacity:1, duration:.5, ease:'power3.out', clearProps:'transform,opacity'});
   gsap.fromTo('.grp', {y:16, opacity:0}, {y:0, opacity:1, duration:.45, stagger:.08, delay:.5, ease:'power2.out', clearProps:'transform,opacity'});
 }
+/* Abrir o cerrar el detalle de un componente (clave «c:<activo>:<idx>»),
+   conservando el scroll del árbol. */
 function selectItem(key){
-  const M = XP.model; const it = M && [...M.sub, ...M.comp, ...M.rep].find(x => x.key === key); if (!it) return;
-  if (it.kind === 'sub'){ drill(it); return; }
-  const scrolls = $$('.grp-list').map(l => l.scrollTop); const xs = $('.xp-scroll') ? $('.xp-scroll').scrollTop : 0;
+  if (!key || key[0] !== 'c') return;
+  const xs = $('.xp-scroll') ? $('.xp-scroll').scrollTop : 0;
   XP.sel = XP.sel === key ? null : key; renderXP(false);
-  $$('.grp-list').forEach((l, i) => { l.scrollTop = scrolls[i] || 0; }); if ($('.xp-scroll')) $('.xp-scroll').scrollTop = xs;
-  const det = document.querySelector('.co-wrap.is-open .co-det'); if (det && hasGsap && !RM) gsap.from(det, {height:0, opacity:0, duration:.3, ease:'power2.out', clearProps:'height,opacity', onUpdate:() => drawLines(false)});
+  if ($('.xp-scroll')) $('.xp-scroll').scrollTop = xs;
+  const det = document.querySelector('.xt-card.is-open .xt-det');
+  if (det){ if (hasGsap && !RM) gsap.from(det, {height:0, opacity:0, duration:.28, ease:'power2.out', clearProps:'height,opacity'}); det.closest('.xt-node').scrollIntoView({block:'nearest'}); }
   const sel = document.querySelector(`[data-co="${key}"]`); if (sel) sel.focus({preventScroll:true});
 }
 function drill(it){
   const img = $('#xpPhoto > img');
-  const go = () => { XP.stack.push(it.id); XP.sel = null; XP.adding = false; renderXP(true); };
+  const go = () => { XP.stack.push(it.id); XP.sel = null; XP.adding = false; XP.addRep = false; renderXP(true); };
   if (img && hasGsap && !RM) gsap.to(img, {scale:1.4, opacity:0, duration:.35, ease:'power2.in', onComplete:go}); else go();
 }
 function openXP(id){ SIGMA.cargarFotos(id).then(() => { if (abierto('#xp') && curId() === id) renderXP(false); }).catch(() => {});
   if (!S.activos[id]) return;
-  XP.stack = [id]; XP.sel = null; XP.adding = false;
+  XP.stack = [id]; XP.sel = null; XP.adding = false; XP.addRep = false;
   openId = id; $$('.tile.is-selected').forEach(t => t.classList.remove('is-selected')); $$(`.tile[data-id="${id}"]`).forEach(t => t.classList.add('is-selected'));
   const el = $('#xp'); el.hidden = false; document.body.style.overflow = 'hidden';
   renderXP(true);
@@ -1804,6 +1860,9 @@ document.addEventListener('click', e => {
   const tileEl = e.target.closest('.tile');
   if (tileEl && !drags.length){ openXP(tileEl.dataset.id); return; }
   const co = e.target.closest('[data-co]'); if (co){ selectItem(co.dataset.co); return; }
+  const ab = e.target.closest('[data-abrir]'); if (ab){ drill({id:ab.dataset.abrir}); return; }
+  const anc = e.target.closest('[data-addcomp]'); if (anc){ SIGMA.nuevoComponente(anc.dataset.addcomp); return; }
+  const got = e.target.closest('[data-xp-ot]'); if (got){ SIGMA.nuevaOT(got.dataset.xpOt); return; }
   const go = e.target.closest('[data-co-go]'); if (go){ selectItem(go.dataset.coGo); return; }
   const t = e.target.closest('button, a'); if (!t) return;
   if (t.dataset.crumb != null){ XP.stack = XP.stack.slice(0, +t.dataset.crumb + 1); XP.sel = null; XP.adding = false; renderXP(true); return; }
@@ -1848,6 +1907,7 @@ document.addEventListener('change', async e => {
   const t = e.target;
   if (t.id === 'xEstado'){ SIGMA.pedirMotivo('activo', curId(), null, t); }
   else if (t.id === 'dEstado'){ SIGMA.pedirMotivo('comp', curId(), +t.dataset.comp, t); }
+  else if (t.classList && t.classList.contains('xp-est-comp')){ SIGMA.pedirMotivo('comp', t.dataset.nodo, +t.dataset.comp, t); }
   else if (t.id === 'xMover'){ const id = curId(); const v = t.value; const name = S.activos[id].nombre;
     if (v === 'tray') commit(() => moveTo(id, {type:'tray'}), `${name} volvió a «Por ubicar»`);
     else { const d = parseDonde(v); commit(() => moveTo(id, d), `${name} quedó en ${placeName(d.lugar)}`); } }

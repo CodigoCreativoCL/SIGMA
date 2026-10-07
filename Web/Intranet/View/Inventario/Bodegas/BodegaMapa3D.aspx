@@ -35,7 +35,7 @@
 
         <!-- ---------- barra superior ---------- -->
         <header class="bm3d-barra">
-            <div class="bm3d-marca" title="SIGMA Twin · gemelo digital de bodegas"><i class="mdi mdi-cube-scan"></i><span>SIGMA <b>Twin</b></span></div>
+            <div class="bm3d-marca" title="SIGMA Twin · gemelo digital de bodegas"><img class="bm3d-logo" src="<%=ResolveUrl("~/Imagen/sigma-twin/sigma-twin-logo-horizontal-light.svg") %>" alt="SIGMA Twin" /><img class="bm3d-logo-sm" src="<%=ResolveUrl("~/Imagen/sigma-twin/sigma-twin-symbol-gradient.svg") %>" alt="SIGMA Twin" /></div>
             <div class="bm3d-sep"></div>
             <select id="bm3dPlanta" class="bm3d-select" aria-label="Planta"></select>
             <nav class="bm3d-bodegas" id="bm3dBodegas" role="tablist" aria-label="Bodegas"></nav>

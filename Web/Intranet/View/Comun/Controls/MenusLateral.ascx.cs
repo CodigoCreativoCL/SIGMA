@@ -153,6 +153,18 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                "' alt='' aria-hidden='true' /></span>";
     }
 
+    /* SIGMA Twin lleva su logo en el menu (Imagen/sigma-twin): el simbolo solo si hay un icono que reemplazar. */
+    private static bool EsTwin(string link)
+    {
+        return !string.IsNullOrEmpty(link) && link.EndsWith("BodegaMapa3D.aspx", StringComparison.OrdinalIgnoreCase);
+    }
+    private string LogoTwin(string nombre, bool soloSimbolo)
+    {
+        return soloSimbolo
+            ? "<img class='sg-menu-twin-ico' src='" + ResolveUrl("~/Imagen/sigma-twin/sigma-twin-symbol-white.svg") + "' alt='' />"
+            : "<img class='sg-menu-twin' src='" + ResolveUrl("~/Imagen/sigma-twin/sigma-twin-logo-horizontal-dark.svg") + "' alt='" + nombre + "' title='" + nombre + "' />";
+    }
+
     /* El permiso de la pagina y, para las que dependen del plan (la
        ticketera de Soporte), que el plan del cliente las incluya. */
     private static bool Puede(Menus m)
@@ -244,11 +256,11 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 
                 if (countNivel == 0)
                 {
-                    sb.AppendLine(item.mnu_nombre + badge);
+                    sb.AppendLine((EsTwin(item.mnu_link) ? LogoTwin(item.mnu_nombre, false) : item.mnu_nombre) + badge);
                 }
                 else
                 {
-                    sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
+                    sb.AppendLine(EsTwin(item.mnu_link) ? "     " + LogoTwin(item.mnu_nombre, true) : "     <i class='" + item.mnu_icon + "'></i>");
                     sb.AppendLine("     <span>" + item.mnu_nombre + "</span>" + badge);
                 }
                 sb.AppendLine(" </a>");

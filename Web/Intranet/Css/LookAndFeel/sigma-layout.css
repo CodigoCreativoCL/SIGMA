@@ -486,7 +486,8 @@ body[data-sidebar="dark"] .logo-box,
 }
 
 .logo-box .logo-lg img {
-    height: 80px;
+    /* Logo horizontal (960x318): 64px de alto son ~193px de ancho dentro de la caja de 240px. */
+    height: 64px;
     width: auto;
     display: block;
 }
@@ -1017,3 +1018,7 @@ a.sg-cliente-chip:focus {
     margin-top: -4px;
     z-index: 1;
 }
+
+/* SIGMA Twin en el menu lateral: su logo en lugar del texto */
+.sg-menu-twin { height: 22px; width: auto; vertical-align: middle; display: inline-block }
+.sg-menu-twin-ico { width: 20px; height: 20px; vertical-align: middle; margin-right: 12px }

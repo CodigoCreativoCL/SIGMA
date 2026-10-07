@@ -1,0 +1,42 @@
+﻿/* Ficha del repuesto: fotos, compatibilidades y stock del asistente (06-10-2026) */
+.af .rp-drop { display: flex; align-items: center; gap: 14px; padding: 16px; border: 2px dashed #CDD4E0; border-radius: 14px; background: #FAFBFD; transition: border-color .15s, background .15s }
+.af .rp-drop.es-sobre { border-color: #6732F4; background: #F2EFFF }
+.af .rp-drop-ico { width: 48px; height: 48px; flex: none; border-radius: 12px; display: grid; place-items: center; background: #F2EFFF; color: #6732F4; font-size: 24px }
+.af .rp-drop > div { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px }
+.af .rp-drop b { font-size: 14px; font-weight: 800; color: #17223B }
+.af .rp-drop small { font-size: 12px; color: #68738A }
+.af .rp-elegir { position: relative; overflow: hidden; cursor: pointer }
+.af .rp-file { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100% }
+.af .rp-previas { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px }
+.af .rp-prev { position: relative; width: 92px; height: 92px; border-radius: 12px; overflow: hidden; background: #F4F6FA; box-shadow: 0 1px 3px rgba(23,34,59,.12) }
+.af .rp-prev img { width: 100%; height: 100%; object-fit: cover; display: block }
+.af .rp-prev em { position: absolute; left: 6px; top: 6px; padding: 2px 8px; border-radius: 10px; background: #fff; color: #6732F4; font-size: 10.5px; font-weight: 800; font-style: normal }
+.af .rp-prev small { position: absolute; left: 0; right: 0; bottom: 0; padding: 14px 6px 4px; background: linear-gradient(transparent, rgba(23,34,59,.65)); color: #fff; font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+
+/* constructores: compatibilidades y stock */
+.af .rp-add { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr) auto; gap: 12px; align-items: end }
+.af .rp-lb { display: block; margin-bottom: 4px; font-size: 11px; font-weight: 800; color: #4A556D }
+.af .rp-add input[type=text], .af .rp-f input[type=text], .af .rp-stock .sg-combo > input[type=text] { width: 100%; height: 44px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #fff; font-size: 14px; color: #17223B; box-sizing: border-box }
+.af .rp-add input:focus, .af .rp-f input:focus { outline: 3px solid rgba(22,198,201,.27); border-color: #007F8A }
+.af .rp-msg { margin: 8px 0 0; padding: 8px 12px; border-radius: 10px; background: #FDECEA; color: #B02C23; font-size: 12.5px; font-weight: 700 }
+.af .rp-msg[hidden] { display: none }
+.af .rp-nada { margin: 10px 0 0; padding: 14px; border-radius: 12px; background: #F4F6FA; color: #68738A; font-size: 13px }
+.af .rp-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px }
+.af .rp-chip { display: inline-flex; align-items: center; gap: 8px; padding: 6px 6px 6px 10px; border-radius: 12px; font-size: 13px; font-weight: 700; max-width: 100% }
+.af .rp-chip b { font-size: 10px; font-weight: 800; text-transform: uppercase; letter-spacing: .03em; padding: 2px 7px; border-radius: 7px; background: rgba(255,255,255,.7) }
+.af .rp-chip small { font-weight: 600; color: #68738A }
+.af .rp-chip.es-a { background: #F2EFFF; color: #4820C9 } .af .rp-chip.es-s { background: #EAF4FF; color: #0662BC } .af .rp-chip.es-c { background: #E8FBFB; color: #007F8A }
+.af .rp-chip button, .af .rp-x { width: 24px; height: 24px; border: 0; border-radius: 8px; background: rgba(255,255,255,.7); color: inherit; display: grid; place-items: center; cursor: pointer }
+.af .rp-chip button:hover, .af .rp-x:hover { background: #fff; color: #C7352B }
+.af .rp-stock { display: flex; flex-direction: column; gap: 10px; padding: 14px; border-radius: 16px; background: #F4F6FA }
+.af .rp-stock-g { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; align-items: end }
+.af .rp-stock-g .rp-lote { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 12px }
+.af .rp-stock-g .rp-lote[hidden] { display: none }
+.af .rp-stock-b { display: flex; align-items: center; justify-content: flex-end; gap: 12px; flex-wrap: wrap }
+.af .rp-stock-b .rp-msg { margin: 0; flex: 1 }
+.af .rp-tabla { width: 100%; margin-top: 12px; border-collapse: collapse; font-size: 13px; background: #fff; border-radius: 12px; overflow: hidden; box-shadow: 0 1px 3px rgba(23,34,59,.1) }
+.af .rp-tabla th { text-align: left; padding: 9px 12px; background: #F4F6FA; font-size: 11px; font-weight: 800; color: #68738A; text-transform: uppercase; letter-spacing: .04em }
+.af .rp-tabla td { padding: 10px 12px; border-top: 1px solid #E2E7F0; vertical-align: top }
+.af .rp-tabla .n { text-align: right; font-variant-numeric: tabular-nums }
+.af .rp-tabla td small { display: block; color: #68738A; font-size: 11.5px }
+@media (max-width: 760px) { .af .rp-add { grid-template-columns: 1fr } .af .rp-drop { flex-wrap: wrap } }

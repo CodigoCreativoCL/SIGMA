@@ -2309,107 +2309,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             "<p class=\"sg-a3-hero-padre\"><i class=\"mdi mdi-arrow-up-left\"></i>Es parte de: " +
             "<a href=\"#\" onclick=\"return esAbrirActivo(" + e.principal.id + ");\">" + Server.HtmlEncode(e.principal.nombre) + "</a></p>";
 
+        /* El diagrama de que esta hecho el activo (mockup 06-10-2026): ver Diagrama(). */
+        List<ActivoComponente> retiradosDg = lista.Where(c => !c.aco_habilitado).OrderBy(c => c.aco_nombre).ToList();
         StringBuilder s = new StringBuilder();
-
-        // ---- el equipo
-        int foto = new ActivoImagenController().GetImagenId(a.act_id, _cliente);
-        s.Append("<div class=\"sg-es-raiz\"><span class=\"ico\">")
-         .Append(foto > 0 ? "<img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(foto)) + "\" alt=\"\" />" : "<i class=\"mdi mdi-cog-outline\"></i>")
-         .Append("</span><div><span class=\"sg-es-etq es-activo\">").Append(e.principal != null ? "Subactivo" : "Activo").Append("</span>")
-         .Append("<b>").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</b>")
-         .Append("<small>").Append(Server.HtmlEncode(string.Join(" · ", new[] { Texto(a.act_codigo), Texto(a.tipo_nombre) }.Where(x => x != "").ToArray())))
-         .Append("</small></div>").Append(ChipSimple(a.estado_nombre, EstadoCodigoActivo(a))).Append("</div>")
-         .Append("<div class=\"sg-es-tronco\"></div><div class=\"sg-es-ramas\">");
-
-        // ---- subactivos (con sus partes debajo)
-        s.Append("<section class=\"sg-es-col es-sub\"><h4><i class=\"mdi mdi-cogs\"></i>Subactivos<span class=\"n\">")
-         .Append(e.subactivos.Count).Append("</span></h4><p class=\"sg-es-que\">Activos que dependen de este. Tienen su número de serie, se reparan aparte y pueden tener sus propios componentes.</p>");
-        if (e.subactivos.Count == 0)
-            s.Append("<div class=\"sg-es-vacio\">No tiene. ¿Algún activo depende de este?")
-             .Append(puedeAgregar ? "<br /><a href=\"#\" onclick=\"return esAgregar('subactivo');\">+ Agregar subactivo</a>" : "").Append("</div>");
-        foreach (ActivoEstructuraItem x in e.subactivos)
-        {
-            List<object[]> datos = new List<object[]>
-            {
-                new object[] { "Qué es", x.tipo },
-                new object[] { "Es parte de", a.act_nombre },
-                new object[] { "Criticidad", x.detalle },
-                new object[] { "Código", x.codigo },
-                new object[] { "Sus componentes", x.componentes == 0 ? "Sin componentes" : x.componentes + (x.componentes == 1 ? " componente" : " componentes") }
-            };
-            string d = Det("sub", x.id, x.nombre, x.estado, Tono(x.estado_codigo), null, datos, null, null, null, null);
-            /* Cada subactivo es un recuadro con SUS componentes adentro: se lee
-               de un vistazo que la valvula es del compresor y no del activo. */
-            List<ActivoEstructuraItem> suyos = e.subcomponentes.Where(c => c.padre == x.id).ToList();
-            s.Append("<div class=\"sg-es-grupo\">");
-            s.Append(Item("es-sub", d, x.nombre, x.codigo, x.estado, Tono(x.estado_codigo), ""));
-            s.Append("<div class=\"sg-es-grupo-hijos\"><span class=\"sg-es-grupo-tit\"><i class=\"mdi mdi-puzzle-outline\"></i>Sus componentes · ")
-             .Append(suyos.Count).Append("</span>");
-            if (suyos.Count == 0) s.Append("<span class=\"sg-es-grupo-vacio\">Sin componentes registrados.</span>");
-
-            foreach (ActivoEstructuraItem h in suyos)
-            {
-                List<object[]> dh = new List<object[]>
-                {
-                    new object[] { "Es parte de", x.nombre, x.id },
-                    new object[] { "Qué es", h.tipo },
-                    new object[] { "Código", h.codigo }
-                };
-                string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + h.id));
-                s.Append(Item("es-comp es-mini", Det("comp", h.id, h.nombre, h.estado, Tono(h.estado_codigo), null, dh, null, q, null, null),
-                              h.nombre, h.tipo, h.estado, Tono(h.estado_codigo), ""));
-            }
-            s.Append("</div></div>");
-        }
-        s.Append("</section>");
-
-        // ---- componentes (los hijos van debajo de su parte; los retirados, a pedido)
-        List<ActivoComponente> retirados = lista.Where(c => !c.aco_habilitado).OrderBy(c => c.aco_nombre).ToList();
-        s.Append("<section class=\"sg-es-col es-comp\"><h4><i class=\"mdi mdi-puzzle-outline\"></i>Componentes del activo<span class=\"n\">")
-         .Append(e.componentes.Count).Append("</span></h4><p class=\"sg-es-que\">Partes de este activo que se siguen por separado. No existen fuera de él.</p>");
-        if (e.componentes.Count == 0)
-            s.Append("<div class=\"sg-es-vacio\">Sin componentes registrados. Agrega el motor, los rodamientos, las válvulas…")
-             .Append(Token.Puede("CREAR EDITAR COMPONENTES") ? "<br /><a href=\"#\" onclick=\"return esAgregar('componente');\">+ Agregar componente</a>" : "").Append("</div>");
-        foreach (ActivoEstructuraItem x in e.componentes.Where(c => c.padre == 0))
-        {
-            s.Append(ItemComponente(a, x, false, porId, e));
-            foreach (ActivoEstructuraItem h in e.componentes.Where(c => c.padre == x.id)) s.Append(ItemComponente(a, h, true, porId, e));
-        }
-        foreach (ActivoComponente c in retirados)
-        {
-            ActivoEstructuraItem x = new ActivoEstructuraItem { id = c.aco_id, codigo = c.aco_codigo, nombre = c.aco_nombre, tipo = c.tipo_nombre, detalle = c.posicion_nombre };
-            s.Append(ItemComponente(a, x, false, porId, e, true));
-        }
-        if (retirados.Count > 0)
-        {
-            string txt = "Ver componentes retirados (" + retirados.Count + ")";
-            s.Append("<button type=\"button\" class=\"sg-es-mas\" data-txt=\"").Append(txt).Append("\" onclick=\"return esRetiradas(this);\">").Append(txt).Append("</button>");
-        }
-        s.Append("</section>");
-
-        // ---- repuestos (el stock en palabras)
-        s.Append("<section class=\"sg-es-col es-rep\"><h4><i class=\"mdi mdi-package-variant-closed\"></i>Repuestos<span class=\"n\">")
-         .Append(e.repuestos.Count).Append("</span></h4><p class=\"sg-es-que\">Se compran por cantidad y se guardan en bodega. Le sirven a este activo o a uno de sus componentes.</p>");
-        if (e.repuestos.Count == 0)
-            s.Append("<div class=\"sg-es-vacio\">Aún no se indica qué repuestos le sirven.")
-             .Append(puedeAgregar ? "<br /><a href=\"#\" onclick=\"return esAgregar('repuesto');\">+ Agregar repuesto</a>" : "").Append("</div>");
-        foreach (ActivoEstructuraItem x in e.repuestos)
-        {
-            string tono, stock = Stock(x, out tono);
-            string para = x.para_id > 0 && !string.IsNullOrEmpty(x.para) ? "Para: " + x.para : "Le sirve a todo el activo";
-            List<object[]> datos = new List<object[]>
-            {
-                new object[] { "Le sirve a", x.para_id > 0 && !string.IsNullOrEmpty(x.para) ? x.para : "Todo el activo (por su " + (x.detalle == "MODELO" ? "modelo" : "tipo") + ")" },
-                new object[] { "En bodega", x.existencia.ToString("0.##") + (string.IsNullOrEmpty(x.unidad) ? "" : " " + x.unidad) },
-                new object[] { "Mínimo", x.minimo > 0 ? x.minimo.ToString("0.##") + (string.IsNullOrEmpty(x.unidad) ? "" : " " + x.unidad) : "" },
-                new object[] { "Código", x.codigo }
-            };
-            string d = Det("rep", x.id, x.nombre, stock, tono, null, datos, null, null, UrlRepuesto(x.id),
-                           "Uno es igual a otro: da lo mismo cuál uses de la bodega.");
-            s.Append(Item("es-rep", d, x.nombre, para, stock, tono, ""));
-        }
-        s.Append("<a href=\"#\" class=\"sg-es-mas\" data-ir-sec=\"repuestos\">Ver repuestos y costos <i class=\"mdi mdi-arrow-right\"></i></a>");
-        s.Append("</section></div>");
+        s.Append(Diagrama(a, e, porId, retiradosDg, puedeAgregar));
 
         /* Lo que necesita el formulario de componente del asistente: de que
            es parte (el activo, sus subactivos y los componentes de todos
@@ -2430,12 +2333,24 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         s.Append("<div id=\"sgEsDatos\" hidden data-nombre=\"").Append(Server.HtmlEncode(Texto(a.act_nombre)))
          .Append("\" data-activo=\"").Append(a.act_id)
          .Append("\" data-partes=\"").Append(Server.HtmlEncode(new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(partes))).Append("\">");
-        s.Append("<select data-alcances=\"1\"><option value=\"a:").Append(a.act_id).Append("\">Todo el activo «")
-         .Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</option>");
+        /* «Le sirve a»: el activo, sus partes y sus subactivos (con las partes de cada uno), en orden de arbol.
+           Cada opcion trae su tipo y su nivel para que el combo los distinga. */
+        Func<string, string, string, string, string, string> opcion = (valor, texto, tipo, nivel, sub) =>
+            "<option value=\"" + valor + "\" data-tipo=\"" + tipo + "\" data-nivel=\"" + nivel + "\" data-sub=\"" + Server.HtmlEncode(sub) + "\" data-nom=\"" + Server.HtmlEncode(texto) + "\">" + Server.HtmlEncode(texto) + "</option>";
+        s.Append("<select data-alcances=\"1\">")
+         .Append(opcion("a:" + a.act_id, Texto(a.act_nombre), "a", "0", "Le sirve a todo el activo"));
+        foreach (ActivoEstructuraItem x in e.componentes.Where(c0 => c0.padre == 0 || !e.componentes.Any(p0 => p0.id == c0.padre)))
+        {
+            s.Append(opcion("c:" + x.id, Texto(x.nombre), "c", "1", "Solo a esta parte del activo"));
+            foreach (ActivoEstructuraItem h in e.componentes.Where(c0 => c0.padre == x.id))
+                s.Append(opcion("c:" + h.id, Texto(h.nombre), "c", "2", "Parte de «" + Texto(x.nombre) + "»"));
+        }
         foreach (ActivoEstructuraItem x in e.subactivos)
-            s.Append("<option value=\"a:").Append(x.id).Append("\">El subactivo «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
-        foreach (ActivoEstructuraItem x in e.componentes)
-            s.Append("<option value=\"c:").Append(x.id).Append("\">El componente «").Append(Server.HtmlEncode(x.nombre)).Append("»</option>");
+        {
+            s.Append(opcion("a:" + x.id, Texto(x.nombre), "s", "1", "Solo a este subactivo"));
+            foreach (ActivoEstructuraItem h in e.subcomponentes.Where(c0 => c0.padre == x.id))
+                s.Append(opcion("c:" + h.id, Texto(h.nombre), "c", "2", "Parte del subactivo «" + Texto(x.nombre) + "»"));
+        }
         s.Append("</select><select data-estados=\"1\">");
         foreach (ActivoComponenteEstado st in new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>())
             s.Append("<option value=\"").Append(st.ace_id).Append("\"").Append(st.ace_id == 1 ? " selected=\"selected\"" : "").Append(">")
@@ -2524,6 +2439,473 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             Tools.tools.ClientAlert(ex.Message, "alerta");
         }
     }
+
+    #region Diagrama del activo (rediseño 06-10-2026)
+
+    /* El diagrama de que esta hecho el activo, con el diseño del mockup:
+       el activo arriba, de el cuelgan sus subactivos y, debajo de cada
+       subactivo, sus componentes y sus repuestos. El color dice QUE ES, no
+       en que rama esta: activo morado, subactivo azul, componente turquesa,
+       repuesto ambar. Cada elemento abre el detalle de la derecha (esVer).
+       Cada repuesto dice donde esta (bodega, ubicacion, nivel) y a que le sirve. */
+
+    private static readonly string[][] DG_PAL = new[]
+    {
+        new[] { "#087BEA", "#F2F8FF", "#C4DEF9" },   // [0] subactivo: azul
+        new[] { "#0E9AA0", "#F0FCFC", "#BDEDEE" }    // [1] componente: turquesa
+    };
+
+    /// <summary>Donde esta guardado un repuesto: planta, bodega, ubicacion (rack), nivel y posicion.</summary>
+    private class DgUbic
+    {
+        public string planta = "", bodega = "", ubic = "", ubicNombre = "";
+        public int nivel, pos, fila;
+        public decimal cant;
+    }
+    private Dictionary<int, List<DgUbic>> _dgU = new Dictionary<int, List<DgUbic>>();
+    private Dictionary<int, int> _dgFotoRep = new Dictionary<int, int>();
+    private Dictionary<int, int> _dgFotoComp = new Dictionary<int, int>();
+    private Dictionary<int, int> _dgFotoAct = new Dictionary<int, int>();
+
+    private int DgFotoComp(int id)
+    {
+        int f; if (_dgFotoComp.TryGetValue(id, out f)) return f;
+        f = new ActivoComponenteImagenController().GetImagenId(id, _cliente);
+        _dgFotoComp[id] = f; return f;
+    }
+    private int DgFotoAct(int id)
+    {
+        int f; if (_dgFotoAct.TryGetValue(id, out f)) return f;
+        f = new ActivoImagenController().GetImagenId(id, _cliente);
+        _dgFotoAct[id] = f; return f;
+    }
+    private int DgFotoRep(int id)
+    {
+        int f; return _dgFotoRep.TryGetValue(id, out f) ? f : 0;
+    }
+
+    /// <summary>Todas las ubicaciones con stock, por repuesto. Una lectura para todo el diagrama.</summary>
+    private Dictionary<int, List<DgUbic>> DgUbicaciones()
+    {
+        Dictionary<int, List<DgUbic>> res = new Dictionary<int, List<DgUbic>>();
+        try
+        {
+            BodegaMapaController bm = new BodegaMapaController();
+            System.Data.DataTable est = bm.GetEstructura(0), sal = bm.GetSaldos(0);
+            Dictionary<int, string[]> bod = new Dictionary<int, string[]>(), ubi = new Dictionary<int, string[]>();
+            foreach (System.Data.DataRow f in est.Rows)
+            {
+                bod[Convert.ToInt32(f["BOD_ID"])] = new[] { Convert.ToString(f["BOD_NOMBRE"]), Convert.ToString(f["CIN_NOMBRE"]) };
+                if (f["BUB_ID"] != DBNull.Value) ubi[Convert.ToInt32(f["BUB_ID"])] = new[] { Convert.ToString(f["BUB_CODIGO"]), Convert.ToString(f["BUB_NOMBRE"]) };
+            }
+            System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
+            cmd.CommandText = "SEL_BODEGA_MAPA_POSICIONES";
+            cmd.Parameters.AddWithValue("@CLIENTE", _cliente);
+            cmd.Parameters.AddWithValue("@INSTALACION", DBNull.Value);
+            Dictionary<string, System.Data.DataRow> pos = new Dictionary<string, System.Data.DataRow>();
+            foreach (System.Data.DataRow f in Conexion.GetDataTable(cmd).Rows) pos[f["BUB_ID"] + "_" + f["REP_ID"]] = f;
+
+            foreach (System.Data.DataRow f in sal.Rows)
+            {
+                int rep = Convert.ToInt32(f["REP_ID"]), b = Convert.ToInt32(f["BOD_ID"]);
+                DgUbic u = new DgUbic { cant = Convert.ToDecimal(f["CANTIDAD"]) };
+                string[] nb; if (bod.TryGetValue(b, out nb)) { u.bodega = nb[0]; u.planta = nb[1]; }
+                if (f["BUB_ID"] != DBNull.Value)
+                {
+                    int bu = Convert.ToInt32(f["BUB_ID"]);
+                    string[] nu; if (ubi.TryGetValue(bu, out nu)) { u.ubic = nu[0]; u.ubicNombre = nu[1]; }
+                    System.Data.DataRow pr;
+                    if (pos.TryGetValue(bu + "_" + rep, out pr)) { u.nivel = Convert.ToInt32(pr["NIVEL"]); u.pos = Convert.ToInt32(pr["POSICION"]); u.fila = Convert.ToInt32(pr["FILA"]); }
+                }
+                List<DgUbic> l; if (!res.TryGetValue(rep, out l)) res[rep] = l = new List<DgUbic>();
+                l.Add(u);
+            }
+        }
+        catch { /* sin permiso de bodegas o sin datos: el diagrama se dibuja igual, sin la ubicacion */ }
+        return res;
+    }
+
+    /// <summary>«P1-A-R03 › Nivel 2 · Posición 3» tal como se lee.</summary>
+    private static string DgRuta(DgUbic u, bool conBodega)
+    {
+        List<string> p = new List<string>();
+        if (conBodega && u.bodega != "") p.Add(u.bodega);
+        p.Add(u.ubic != "" ? u.ubic : "sin ubicar");
+        string fin = u.nivel > 0 ? "Nivel " + u.nivel + (u.pos > 0 ? " · Posición " + u.pos + (u.fila == 1 ? " (fila trasera)" : "") : "") : (u.ubic != "" ? "sin nivel" : "");
+        return string.Join(" › ", p.ToArray()) + (fin != "" ? " › " + fin : "");
+    }
+
+    /// <summary>Las filas «Bodega → ubicacion, nivel, posicion, cantidad» para el detalle.</summary>
+    private List<object[]> DgDatosUbic(int rep, string unidad)
+    {
+        List<object[]> l = new List<object[]>();
+        List<DgUbic> us;
+        if (!_dgU.TryGetValue(rep, out us) || us.Count == 0) { l.Add(new object[] { "Dónde está", "Sin existencia en ninguna bodega" }); return l; }
+        l.Add(new object[] { "Dónde está", us.Count + (us.Count == 1 ? " ubicación" : " ubicaciones") });
+        foreach (DgUbic u in us.Take(6))
+            l.Add(new object[] { (u.planta != "" ? u.planta + " · " : "") + u.bodega,
+                                 (u.ubic != "" ? u.ubic + (u.ubicNombre != "" && u.ubicNombre != u.ubic ? " (" + u.ubicNombre + ")" : "") : "Sin ubicar")
+                                 + (u.nivel > 0 ? " · Nivel " + u.nivel : " · sin nivel") + (u.pos > 0 ? " · Posición " + u.pos : "")
+                                 + " · " + u.cant.ToString("0.##") + (string.IsNullOrEmpty(unidad) ? "" : " " + unidad) });
+        if (us.Count > 6) l.Add(new object[] { "…", "y " + (us.Count - 6) + " ubicaciones más" });
+        return l;
+    }
+
+    /// <summary>La celda «Dónde está» de las tablas.</summary>
+    private string DgCeldaDonde(int rep)
+    {
+        List<DgUbic> us;
+        if (!_dgU.TryGetValue(rep, out us) || us.Count == 0) return "<span class=\"dg-donde es-nada\">Sin existencia</span>";
+        DgUbic u = us[0];
+        return "<span class=\"dg-donde\"><i class=\"mdi mdi-map-marker-outline\"></i><span><b>" + Server.HtmlEncode((u.planta != "" ? u.planta + " · " : "") + u.bodega) + "</b><small>" + Server.HtmlEncode(DgRuta(u, false)) + "</small>" +
+               (us.Count > 1 ? "<em>+ " + (us.Count - 1) + (us.Count == 2 ? " ubicación más" : " ubicaciones más") + "</em>" : "") + "</span></span>";
+    }
+
+    /// <summary>«Componente «Motor» del subactivo «Compresor»» / «Todo el activo «Cámara»».</summary>
+    private string DgLeSirve(ActivoEstructuraItem x, string duenio, bool esSub)
+    {
+        string de = (esSub ? "subactivo «" : "activo «") + Texto(duenio) + "»";
+        if (x.para_id > 0 && !string.IsNullOrEmpty(x.para)) return "Componente «" + x.para + "» del " + de;
+        return "Todo el " + de + (x.detalle == "MODELO" ? " (por su modelo)" : x.detalle == "TIPO" ? " (por su tipo)" : "");
+    }
+    private static string DgLeSirveCls(ActivoEstructuraItem x, bool esSub)
+    {
+        return x.para_id > 0 && !string.IsNullOrEmpty(x.para) ? "es-c" : esSub ? "es-s" : "es-a";
+    }
+
+    private class DgSub
+    {
+        public ActivoEstructuraItem item;
+        public ActivoEstructura est;
+        public string desc = "";
+        public int foto;
+    }
+
+    /// <summary>El icono de una pieza, por lo que es.</summary>
+    private static string DgIcono(string texto)
+    {
+        string t = (texto ?? "").ToLowerInvariant();
+        if (t.Contains("motor")) return "engine-outline";
+        if (t.Contains("bomba")) return "water-pump";
+        if (t.Contains("ventilador")) return "fan";
+        if (t.Contains("sensor") || t.Contains("termo") || t.Contains("temperatura")) return "thermometer";
+        if (t.Contains("valvula") || t.Contains("válvula")) return "valve";
+        if (t.Contains("reductor") || t.Contains("engran") || t.Contains("rodamiento")) return "cogs";
+        if (t.Contains("quemador")) return "fire";
+        if (t.Contains("filtro")) return "filter-outline";
+        if (t.Contains("correa") || t.Contains("cadena")) return "link-variant";
+        if (t.Contains("tablero") || t.Contains("electr") || t.Contains("contactor")) return "flash-outline";
+        return "puzzle-outline";
+    }
+
+    private static string DgStockEstado(ActivoEstructuraItem x, out string tono)
+    {
+        if (x.existencia <= 0) { tono = "mal"; return "Agotado"; }
+        if (x.minimo > 0 && x.existencia < x.minimo) { tono = "ojo"; return "Bajo"; }
+        tono = "ok"; return "OK";
+    }
+
+    private string DgTile(int foto, string icono, string clase)
+    {
+        return "<span class=\"dg-tile " + clase + (foto > 0 ? " con-foto" : "") + "\">" +
+               (foto > 0 ? "<img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(foto)) + "\" alt=\"\" loading=\"lazy\" />" : "<i class=\"mdi mdi-" + icono + "\"></i>") + "</span>";
+    }
+
+    /// <summary>La baldosa chica de las tablas y la lista: la foto si hay, si no el icono.</summary>
+    private string DgMini(int foto, string icono, string clase)
+    {
+        return "<span class=\"dg-mini " + clase + "\">" +
+               (foto > 0 ? "<img src=\"" + Server.HtmlEncode(UrlArchivo.Ver(foto)) + "\" alt=\"\" loading=\"lazy\" />" : "<i class=\"mdi mdi-" + icono + "\"></i>") + "</span>";
+    }
+
+    private string DgChip(string estado, string tono)
+    {
+        return string.IsNullOrEmpty(estado) ? "" : "<span class=\"dg-chip es-" + tono + "\"><i></i>" + Server.HtmlEncode(estado) + "</span>";
+    }
+
+    /// <summary>Atributos para que un elemento abra el detalle de la derecha.</summary>
+    private string DgAbre(string det)
+    {
+        return " data-det=\"" + Server.HtmlEncode(det) + "\" role=\"button\" tabindex=\"0\" onclick=\"return esVer(this);\"" +
+               " onkeydown=\"if(event.key==='Enter'||event.key===' '){event.preventDefault();return esVer(this);}\"";
+    }
+
+    private string DetRep(ActivoEstructuraItem x, string duenio, bool esSub)
+    {
+        string tono, stock = Stock(x, out tono);
+        List<object[]> datos = new List<object[]>
+        {
+            new object[] { "Le sirve a", DgLeSirve(x, duenio, esSub) },
+            new object[] { "En bodega", x.existencia.ToString("0.##") + (string.IsNullOrEmpty(x.unidad) ? "" : " " + x.unidad) },
+            new object[] { "Mínimo", x.minimo > 0 ? x.minimo.ToString("0.##") + (string.IsNullOrEmpty(x.unidad) ? "" : " " + x.unidad) : "" },
+            new object[] { "Código", x.codigo }
+        };
+        datos.AddRange(DgDatosUbic(x.id, x.unidad));
+        return Det("rep", x.id, x.nombre, stock, tono, null, datos, null, null, UrlRepuesto(x.id), "Uno es igual a otro: da lo mismo cuál uses de la bodega.");
+    }
+
+    /// <summary>
+    /// La tabla de repuestos de un subactivo, de un componente o del activo.
+    /// conSirve agrega «Le sirve a» (cuando la tabla mezcla duenos distintos).
+    /// duenios: de que activo/subactivo viene cada repuesto (para esa columna y el detalle).
+    /// </summary>
+    private string DgTablaRep(string titulo, List<ActivoEstructuraItem> reps, string duenio, bool esSub, bool conSirve = false,
+                              Dictionary<ActivoEstructuraItem, KeyValuePair<string, bool>> duenios = null)
+    {
+        if (reps.Count == 0) return "";
+        StringBuilder s = new StringBuilder();
+        s.Append("<div class=\"dg-reps\"><h5><i class=\"mdi mdi-wrench-outline\"></i>").Append(titulo).Append(" <span>(").Append(reps.Count).Append(")</span></h5>")
+         .Append("<div class=\"dg-reps-w\"><table><thead><tr><th>Repuesto</th><th>Código</th>").Append(conSirve ? "<th>Le sirve a</th>" : "")
+         .Append("<th>Dónde está</th><th class=\"n\">Stock</th><th>Estado</th></tr></thead><tbody>");
+        foreach (ActivoEstructuraItem x in reps)
+        {
+            string d = duenio; bool sub = esSub;
+            KeyValuePair<string, bool> kv;
+            if (duenios != null && duenios.TryGetValue(x, out kv)) { d = kv.Key; sub = kv.Value; }
+            string tono, est = DgStockEstado(x, out tono);
+            s.Append("<tr class=\"dg-item es-rep\"").Append(DgAbre(DetRep(x, d, sub))).Append("><td><span class=\"dg-nom\">")
+             .Append(DgMini(DgFotoRep(x.id), "cube-outline", "es-r")).Append("<b>").Append(Server.HtmlEncode(x.nombre)).Append("</b></span></td><td>")
+             .Append(Server.HtmlEncode(x.codigo ?? "")).Append("</td>");
+            if (conSirve) s.Append("<td><span class=\"dg-sirve ").Append(DgLeSirveCls(x, sub)).Append("\">").Append(Server.HtmlEncode(DgLeSirve(x, d, sub))).Append("</span></td>");
+            s.Append("<td>").Append(DgCeldaDonde(x.id)).Append("</td><td class=\"n\">").Append(x.existencia.ToString("0.##")).Append("</td><td>").Append(DgChip(est, tono)).Append("</td></tr>");
+        }
+        s.Append("</tbody></table></div></div>");
+        return s.ToString();
+    }
+
+    /// <summary>La tarjeta de un componente. est trae los repuestos del dueño (activo o subactivo).</summary>
+    private string DgComponente(Activo a, ActivoEstructuraItem x, ActivoEstructura est, bool hijo, Dictionary<int, ActivoComponente> porId,
+                                string padreNombre, int padreId, bool retirada)
+    {
+        ActivoComponente c;
+        porId.TryGetValue(x.id, out c);
+        string q = Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + x.id));
+        string estado = retirada ? "Retirado" : (c != null && !string.IsNullOrEmpty(c.estado_nombre) ? c.estado_nombre : x.estado);
+        string tono = retirada ? "neutro" : Tono(c != null && !string.IsNullOrEmpty(c.estado_nombre) ? c.estado_nombre : x.estado_codigo);
+
+        List<object[]> datos = new List<object[]>
+        {
+            new object[] { "Es parte de", c != null && !string.IsNullOrEmpty(c.padre_nombre) ? c.padre_nombre : padreNombre, padreId },
+            new object[] { "Qué es", c != null ? c.tipo_nombre : x.tipo },
+            new object[] { "Dónde va", c != null ? c.posicion_nombre : x.detalle },
+            new object[] { "Criticidad", c != null ? c.criticidad_nombre : "" },
+            new object[] { "Instalado el", c != null && c.aco_fecha_instalacion != null ? c.aco_fecha_instalacion.Value.ToString("dd MMM yyyy") : "" },
+            new object[] { "Código", x.codigo },
+            new object[] { "Descripción", c != null ? c.aco_descripcion : "" }
+        };
+        List<ActivoEstructuraItem> suyos = est.repuestos.Where(r => r.para_id == x.id).ToList();
+        List<string[]> reps = new List<string[]>();
+        foreach (ActivoEstructuraItem r in suyos)
+        {
+            string t, st = Stock(r, out t);
+            List<DgUbic> us; string donde = "";
+            if (_dgU.TryGetValue(r.id, out us) && us.Count > 0) donde = " · " + (us[0].bodega != "" ? us[0].bodega + " › " : "") + DgRuta(us[0], false);
+            reps.Add(new[] { r.nombre, st + donde, t });
+        }
+        string nota = retirada ? null : Observacion(x.id, tono);
+        string det = Det("comp", x.id, x.nombre, estado, tono, nota, datos, reps, q, null, null);
+
+        int foto = DgFotoComp(x.id);
+        string tipo = c != null && !string.IsNullOrEmpty(c.tipo_nombre) ? c.tipo_nombre : x.tipo;
+        StringBuilder s = new StringBuilder();
+        s.Append("<div class=\"dg-comp dg-item es-comp").Append(hijo ? " es-hijo" : "").Append(retirada ? " es-retirada" : "").Append("\"").Append(DgAbre(det)).Append(">")
+         .Append(DgTile(foto, DgIcono(x.nombre + " " + tipo), "es-c"))
+         .Append("<div class=\"dg-comp-t\"><b>").Append(Server.HtmlEncode(Texto(x.nombre))).Append("</b>").Append(DgChip(estado, tono))
+         .Append("<small>").Append(Server.HtmlEncode(Texto(x.codigo))).Append(string.IsNullOrEmpty(tipo) ? "" : " · " + Server.HtmlEncode(tipo)).Append("</small>")
+         .Append("<small class=\"dg-padre\">Parte de: ").Append(Server.HtmlEncode(Texto(padreNombre))).Append("</small></div>")
+         .Append("<span class=\"dg-comp-r\"><i class=\"mdi mdi-wrench-outline\"></i>").Append(suyos.Count == 0 ? "sin repuestos" : suyos.Count + (suyos.Count == 1 ? " repuesto" : " repuestos"))
+         .Append("<i class=\"mdi mdi-chevron-right\"></i></span></div>");
+        return s.ToString();
+    }
+
+    /// <summary>El panel «Componentes (n)» con sus tarjetas y las tablas de repuestos.</summary>
+    private string DgPanelComponentes(Activo a, List<ActivoEstructuraItem> comps, ActivoEstructura est, Dictionary<int, ActivoComponente> porId,
+                                      string duenio, int duenioId, bool esSub, string tablaPropia, List<ActivoComponente> retirados)
+    {
+        StringBuilder s = new StringBuilder();
+        s.Append("<div class=\"dg-comps\"><h5><i class=\"mdi mdi-puzzle-outline\"></i>Componentes <span>(").Append(comps.Count).Append(")</span></h5>");
+        if (comps.Count == 0) s.Append("<p class=\"dg-nada\">Sin componentes registrados.</p>");
+        foreach (ActivoEstructuraItem x in comps.Where(c => c.padre == 0 || !comps.Any(p => p.id == c.padre)))
+        {
+            s.Append(DgComponente(a, x, est, false, porId, duenio, duenioId, false));
+            foreach (ActivoEstructuraItem h in comps.Where(c => c.padre == x.id)) s.Append(DgComponente(a, h, est, true, porId, x.nombre, x.id, false));
+        }
+        if (retirados != null && retirados.Count > 0)
+        {
+            s.Append("<details class=\"dg-retirados\"><summary>Componentes retirados (").Append(retirados.Count).Append(")</summary>");
+            foreach (ActivoComponente c in retirados)
+                s.Append(DgComponente(a, new ActivoEstructuraItem { id = c.aco_id, codigo = c.aco_codigo, nombre = c.aco_nombre, tipo = c.tipo_nombre, detalle = c.posicion_nombre }, est, false, porId, duenio, duenioId, true));
+            s.Append("</details>");
+        }
+        s.Append("</div>").Append(tablaPropia);
+        foreach (ActivoEstructuraItem x in comps)
+            s.Append(DgTablaRep("Repuestos del componente <b>(" + Server.HtmlEncode(Texto(x.nombre)) + ")</b>", est.repuestos.Where(r => r.para_id == x.id).ToList(), duenio, esSub));
+        return s.ToString();
+    }
+
+    private string Diagrama(Activo a, ActivoEstructura e, Dictionary<int, ActivoComponente> porId, List<ActivoComponente> retirados, bool puedeAgregar)
+    {
+        _dgU = DgUbicaciones();
+        try { _dgFotoRep = new RepuestoFotoController().GetPortadas() ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
+        ActivoEstructuraController ec = new ActivoEstructuraController();
+        ActivoController ac = new ActivoController();
+        List<DgSub> subs = new List<DgSub>();
+        foreach (ActivoEstructuraItem x in e.subactivos)
+        {
+            DgSub d = new DgSub { item = x, est = ec.GetEstructura(x.id) ?? new ActivoEstructura() };
+            Activo sa = ac.GetActivo(x.id);
+            d.desc = sa != null ? Texto(sa.act_descripcion) : "";
+            d.foto = DgFotoAct(x.id);
+            subs.Add(d);
+        }
+
+        int enBodegaA = e.repuestos.Count(r => r.existencia > 0);
+        int fotoA = DgFotoAct(a.act_id);
+        StringBuilder s = new StringBuilder();
+        s.Append("<div class=\"dg\">");
+
+        // ---- las vistas
+        s.Append("<div class=\"dg-vistas\" role=\"tablist\" aria-label=\"Vista del diagrama\">")
+         .Append("<button type=\"button\" class=\"es-on\" data-dgv=\"jer\"><i class=\"mdi mdi-sitemap-outline\"></i>Vista jerárquica</button>")
+         .Append("<button type=\"button\" data-dgv=\"lis\"><i class=\"mdi mdi-format-list-bulleted\"></i>Vista lista</button>")
+         .Append("<button type=\"button\" data-dgv=\"com\"><i class=\"mdi mdi-puzzle-outline\"></i>Componentes</button>")
+         .Append("<button type=\"button\" data-dgv=\"rep\"><i class=\"mdi mdi-wrench-outline\"></i>Repuestos</button></div>");
+
+        // ======================= VISTA JERARQUICA =======================
+        s.Append("<div class=\"dg-vista\" data-dgp=\"jer\">");
+        s.Append("<div class=\"dg-cabeza\"><article class=\"dg-raiz\">")
+         .Append(DgTile(fotoA, "cog-outline", "es-a"))
+         .Append("<div class=\"dg-raiz-t\"><div class=\"dg-fila\"><h4>").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("</h4>")
+         .Append(DgChip(a.estado_nombre, Tono(EstadoCodigoActivo(a)))).Append("</div>")
+         .Append("<small>").Append(Server.HtmlEncode(string.Join(" · ", new[] { Texto(a.act_codigo), Texto(a.area_nombre) != "" ? Texto(a.area_nombre) : Texto(a.tipo_nombre) }.Where(x => x != "").ToArray()))).Append("</small>")
+         .Append(Texto(a.act_descripcion) != "" ? "<p>" + Server.HtmlEncode(Texto(a.act_descripcion)) + "</p>" : "")
+         .Append("<div class=\"dg-resumen\"><span class=\"es-s\"><i class=\"mdi mdi-cogs\"></i>").Append(e.subactivos.Count).Append(e.subactivos.Count == 1 ? " subactivo" : " subactivos").Append("</span>")
+         .Append("<span class=\"es-c\"><i class=\"mdi mdi-puzzle-outline\"></i>").Append(e.componentes.Count).Append(e.componentes.Count == 1 ? " componente" : " componentes").Append("</span>")
+         .Append("<span class=\"es-r\"><i class=\"mdi mdi-wrench-outline\"></i>").Append(e.repuestos.Count).Append(e.repuestos.Count == 1 ? " repuesto" : " repuestos").Append("</span></div></div></article>")
+         .Append("<a href=\"#\" class=\"dg-repact\" data-ir-sec=\"repuestos\">").Append(DgTile(0, "cube-outline", "es-a"))
+         .Append("<div><span>Repuestos del activo</span><b>").Append(e.repuestos.Count).Append("</b><small>En bodega: ").Append(enBodegaA).Append("</small></div><i class=\"mdi mdi-chevron-right\"></i></a></div>");
+
+        // ---- las ramas
+        List<ActivoEstructuraItem> generales = e.repuestos.Where(r => r.para_id == 0).ToList();
+        bool columnaRaiz = e.componentes.Count > 0 || retirados.Count > 0 || generales.Count > 0;
+        int columnas = subs.Count + (columnaRaiz ? 1 : 0) + (subs.Count == 0 && puedeAgregar ? 1 : 0);
+        if (columnas == 0) columnas = 1;
+        s.Append("<div class=\"dg-ramas\" style=\"--n:").Append(columnas).Append("\"><span class=\"dg-tronco\"></span>");
+
+        if (columnaRaiz)
+        {
+            string[] c = DG_PAL[1];
+            s.Append("<section class=\"dg-rama es-raiz\" style=\"--c:").Append(c[0]).Append(";--bg:").Append(c[1]).Append(";--bd:").Append(c[2]).Append("\"><span class=\"dg-flecha\"></span>");
+            s.Append("<div class=\"dg-tit-col\"><i class=\"mdi mdi-cube-outline\"></i>Del activo<small>Lo que es parte directa de «").Append(Server.HtmlEncode(Texto(a.act_nombre))).Append("»</small></div><span class=\"dg-baja\"></span>");
+            s.Append("<div class=\"dg-cuerpo\">").Append(DgPanelComponentes(a, e.componentes, e, porId, a.act_nombre, a.act_id, false,
+                       DgTablaRep("Repuestos del activo", generales, a.act_nombre, false), retirados)).Append("</div></section>");
+        }
+        if (subs.Count == 0 && puedeAgregar)
+            s.Append("<section class=\"dg-rama es-vacia\" style=\"--c:#B7BECC;--bg:#fff;--bd:#CDD4E0\"><span class=\"dg-flecha\"></span><div class=\"dg-vacio\">No tiene subactivos.<br />¿Algún activo depende de este?<br /><a href=\"#\" onclick=\"return esAgregar('subactivo');\">+ Agregar subactivo</a></div></section>");
+
+        for (int i = 0; i < subs.Count; i++)
+        {
+            DgSub d = subs[i]; ActivoEstructuraItem x = d.item;
+            string[] c = DG_PAL[0];
+            List<object[]> datos = new List<object[]>
+            {
+                new object[] { "Qué es", x.tipo },
+                new object[] { "Es parte de", a.act_nombre },
+                new object[] { "Criticidad", x.detalle },
+                new object[] { "Código", x.codigo },
+                new object[] { "Sus componentes", x.componentes == 0 ? "Sin componentes" : x.componentes + (x.componentes == 1 ? " componente" : " componentes") }
+            };
+            string det = Det("sub", x.id, x.nombre, x.estado, Tono(x.estado_codigo), null, datos, null, null, null, null);
+            List<ActivoEstructuraItem> propios = d.est.repuestos.Where(r => r.para_id == 0).ToList();
+            List<ActivoEstructuraItem> suyos = e.subcomponentes.Where(h => h.padre == x.id).ToList();
+            int enBod = d.est.repuestos.Count(r => r.existencia > 0);
+
+            s.Append("<section class=\"dg-rama\" style=\"--c:").Append(c[0]).Append(";--bg:").Append(c[1]).Append(";--bd:").Append(c[2]).Append("\"><span class=\"dg-flecha\"></span>");
+            s.Append("<article class=\"dg-sub dg-item es-sub\"").Append(DgAbre(det)).Append(">")
+             .Append("<div class=\"dg-sub-top\">").Append(DgTile(d.foto, "cogs", "es-s"))
+             .Append("<div class=\"dg-sub-t\"><h4>").Append(Server.HtmlEncode(Texto(x.nombre))).Append("</h4>").Append(DgChip(x.estado, Tono(x.estado_codigo)))
+             .Append("<small>").Append(Server.HtmlEncode(Texto(x.codigo))).Append(string.IsNullOrEmpty(x.tipo) ? "" : " · " + Server.HtmlEncode(x.tipo)).Append("</small></div>")
+             .Append("<div class=\"dg-stat\"><i class=\"mdi mdi-cube-outline\"></i><span>Repuestos del subactivo</span><b>").Append(d.est.repuestos.Count).Append("</b><small>En bodega: ").Append(enBod).Append("</small></div></div>")
+             .Append(d.desc != "" ? "<p class=\"dg-desc\">" + Server.HtmlEncode(d.desc) + "</p>" : "")
+             .Append("<footer class=\"dg-sub-pie\"><span><i class=\"mdi mdi-cube-outline\"></i>").Append(suyos.Count).Append(suyos.Count == 1 ? " componente" : " componentes")
+             .Append("</span><em></em><span><i class=\"mdi mdi-wrench-outline\"></i>").Append(propios.Count).Append(propios.Count == 1 ? " repuesto" : " repuestos").Append(" (propio").Append(propios.Count == 1 ? "" : "s").Append(")</span><i class=\"mdi mdi-chevron-right\"></i></footer></article>")
+             .Append("<span class=\"dg-baja\"></span><div class=\"dg-cuerpo\">")
+             .Append(DgPanelComponentes(a, suyos, d.est, porId, x.nombre, x.id, true, DgTablaRep("Repuestos del subactivo", propios, x.nombre, true), null))
+             .Append("</div></section>");
+        }
+        s.Append("</div></div>");   // ramas + vista jerarquica
+
+        // ======================= VISTA LISTA =======================
+        s.Append("<div class=\"dg-vista\" data-dgp=\"lis\" hidden><div class=\"dg-tabla-w\"><table class=\"dg-tabla\"><thead><tr><th>Qué es</th><th>Nombre</th><th>Código</th><th>Es parte de · le sirve a</th><th>Dónde está</th><th>Estado</th></tr></thead><tbody>");
+        // una fila: tipo, foto/icono, nombre, codigo, de quien es parte, donde esta, estado, detalle
+        Func<string, int, string, string, string, string, string, string, string, int, string> fila = (tipoEt, foto, icono, nombre, codigo, parte, donde, chip, det, nivel) =>
+            "<tr class=\"es-n" + nivel + (det != "" ? " dg-item\"" + DgAbre(det) : "\"") + "><td><span class=\"dg-tipo es-" + tipoEt + "\">" + (tipoEt == "a" ? "Activo" : tipoEt == "s" ? "Subactivo" : tipoEt == "c" ? "Componente" : "Repuesto") + "</span></td>" +
+            "<td style=\"padding-left:" + (14 + nivel * 22) + "px\"><span class=\"dg-nom\">" + DgMini(foto, icono, "es-" + tipoEt) + "<b>" + Server.HtmlEncode(Texto(nombre)) + "</b></span></td>" +
+            "<td>" + Server.HtmlEncode(Texto(codigo)) + "</td><td>" + parte + "</td><td>" + donde + "</td><td>" + chip + "</td></tr>";
+        Func<string, string> parteTxt = t => Server.HtmlEncode(Texto(t));
+        s.Append(fila("a", fotoA, "cog-outline", a.act_nombre, a.act_codigo, "", Texto(a.planta_nombre) != "" || Texto(a.area_nombre) != ""
+                      ? "<span class=\"dg-donde\"><i class=\"mdi mdi-map-marker-outline\"></i><span><b>" + Server.HtmlEncode(Texto(a.planta_nombre)) + "</b><small>" + Server.HtmlEncode(Texto(a.area_nombre)) + "</small></span></span>" : "",
+                      DgChip(a.estado_nombre, Tono(EstadoCodigoActivo(a))), "", 0));
+        Func<ActivoEstructuraItem, ActivoEstructura, string, int, bool, int, string> filaRep = (r, est, duenio, nivel, esSub, _) =>
+        {
+            string t; string st = DgStockEstado(r, out t);
+            return fila("r", DgFotoRep(r.id), "cube-outline", r.nombre, r.codigo, "<span class=\"dg-sirve " + DgLeSirveCls(r, esSub) + "\">" + Server.HtmlEncode(DgLeSirve(r, duenio, esSub)) + "</span>",
+                        DgCeldaDonde(r.id), DgChip(st, t), DetRep(r, duenio, esSub), nivel);
+        };
+        /* cada componente, y justo debajo sus partes */
+        List<ActivoEstructuraItem> ordenC = e.componentes.Where(c0 => c0.padre == 0 || !e.componentes.Any(p0 => p0.id == c0.padre))
+            .SelectMany(p0 => new[] { p0 }.Concat(e.componentes.Where(h0 => h0.padre == p0.id))).ToList();
+        foreach (ActivoEstructuraItem x in ordenC)
+        {
+            ActivoComponente cc; porId.TryGetValue(x.id, out cc);
+            string pn = x.padre > 0 ? (e.componentes.FirstOrDefault(p => p.id == x.padre) ?? new ActivoEstructuraItem()).nombre : a.act_nombre;
+            s.Append(fila("c", DgFotoComp(x.id), DgIcono(x.nombre + " " + x.tipo), x.nombre, x.codigo, parteTxt(pn), "", DgChip(x.estado, Tono(x.estado_codigo)), "", x.padre > 0 ? 2 : 1));
+            foreach (ActivoEstructuraItem r in e.repuestos.Where(r => r.para_id == x.id)) s.Append(filaRep(r, e, a.act_nombre, x.padre > 0 ? 3 : 2, false, 0));
+        }
+        foreach (ActivoEstructuraItem r in generales) s.Append(filaRep(r, e, a.act_nombre, 1, false, 0));
+        foreach (DgSub d in subs)
+        {
+            s.Append(fila("s", d.foto, "cogs", d.item.nombre, d.item.codigo, parteTxt(a.act_nombre), "", DgChip(d.item.estado, Tono(d.item.estado_codigo)), "", 1));
+            foreach (ActivoEstructuraItem h in e.subcomponentes.Where(h => h.padre == d.item.id))
+            {
+                s.Append(fila("c", DgFotoComp(h.id), DgIcono(h.nombre + " " + h.tipo), h.nombre, h.codigo, parteTxt(d.item.nombre), "", DgChip(h.estado, Tono(h.estado_codigo)), "", 2));
+                foreach (ActivoEstructuraItem r in d.est.repuestos.Where(r => r.para_id == h.id)) s.Append(filaRep(r, d.est, d.item.nombre, 3, true, 0));
+            }
+            foreach (ActivoEstructuraItem r in d.est.repuestos.Where(r => r.para_id == 0)) s.Append(filaRep(r, d.est, d.item.nombre, 2, true, 0));
+        }
+        s.Append("</tbody></table></div></div>");
+
+        // ======================= SOLO COMPONENTES =======================
+        s.Append("<div class=\"dg-vista\" data-dgp=\"com\" hidden><div class=\"dg-grid\">");
+        foreach (ActivoEstructuraItem x in e.componentes)
+            s.Append(DgComponente(a, x, e, false, porId, x.padre > 0 ? (e.componentes.FirstOrDefault(p => p.id == x.padre) ?? new ActivoEstructuraItem()).nombre : a.act_nombre, x.padre > 0 ? x.padre : a.act_id, false));
+        foreach (DgSub d in subs)
+            foreach (ActivoEstructuraItem h in e.subcomponentes.Where(h => h.padre == d.item.id))
+                s.Append(DgComponente(a, h, d.est, false, porId, d.item.nombre, d.item.id, false));
+        if (e.componentes.Count == 0 && e.subcomponentes.Count == 0) s.Append("<p class=\"dg-nada\">Sin componentes registrados.</p>");
+        s.Append("</div></div>");
+
+        // ======================= SOLO REPUESTOS =======================
+        List<ActivoEstructuraItem> todos = new List<ActivoEstructuraItem>();
+        Dictionary<ActivoEstructuraItem, KeyValuePair<string, bool>> duenios = new Dictionary<ActivoEstructuraItem, KeyValuePair<string, bool>>();
+        foreach (ActivoEstructuraItem r in e.repuestos) { todos.Add(r); duenios[r] = new KeyValuePair<string, bool>(a.act_nombre, false); }
+        foreach (DgSub d in subs)
+            foreach (ActivoEstructuraItem r in d.est.repuestos)
+                if (!todos.Any(t => t.id == r.id && t.para_id == r.para_id)) { todos.Add(r); duenios[r] = new KeyValuePair<string, bool>(d.item.nombre, true); }
+        s.Append("<div class=\"dg-vista\" data-dgp=\"rep\" hidden>").Append(DgTablaRep("Todos los repuestos que le sirven", todos, a.act_nombre, false, true, duenios))
+         .Append(todos.Count == 0 ? "<p class=\"dg-nada\">Aún no se indica qué repuestos le sirven.</p>" : "").Append("</div>");
+
+        // ---- leyenda
+        s.Append("<div class=\"dg-leyenda\"><b>Leyenda:</b><span><i class=\"d es-a\"></i>Activo</span><span><i class=\"d es-s\"></i>Subactivo</span>")
+         .Append("<span><i class=\"d es-c\"></i>Componente</span><span><i class=\"d es-r\"></i>Repuesto</span>")
+         .Append("<span><i class=\"f es-s\"></i>Tiene subactivos</span><span><i class=\"f es-n\"></i>Tiene componentes</span>")
+         .Append("<em><i class=\"mdi mdi-clock-outline\"></i>Última actualización: ").Append(global::SitioBase.Hora.Ahora.ToString("dd-MM-yyyy HH:mm")).Append("</em></div>");
+        s.Append("</div>");
+        return s.ToString();
+    }
+
+    #endregion
+
 
     /// <summary>Una parte del equipo, con su detalle completo cuando se tiene.</summary>
     private string ItemComponente(Activo a, ActivoEstructuraItem x, bool hijo, Dictionary<int, ActivoComponente> porId,

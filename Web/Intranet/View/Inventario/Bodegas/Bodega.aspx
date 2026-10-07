@@ -2,7 +2,21 @@
 <%@ Register TagPrefix="wuc" TagName="Auditoria" Src="~/View/Comun/Controls/Auditoria.ascx" %>
 
 <asp:Content ID="ContentHeder" ContentPlaceHolderID="cphHeder" runat="server">
+    <link href='<%=ResolveUrl("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=ResolveUrl("~/Js/sigma-combo.js") %>'></script>
     <script type="text/javascript">
+        var BOD_TIPOS = <%= TiposJson %>;
+        function bodTipo() { var t = bodCampo('bod-in-tipo'); return ((t && t.value) || 'Pasillo').trim() || 'Pasillo'; }
+        /* El tipo de area se elige con el combo de SIGMA (se puede crear uno nuevo) y se copia al campo oculto que lee el servidor. */
+        function bodMontarTipo() {
+            var host = document.getElementById('bodTipoHost'), tb = bodCampo('bod-in-tipo');
+            if (!host || !tb || !window.SigmaCombo || host.firstChild) return;
+            host.innerHTML = SigmaCombo.html('bodTipoCombo', BOD_TIPOS, tb.value || 'Pasillo', { libre: true, ph: 'Pasillo, Sala, Zona…', clave: 'bodTipoArea', fuente: function () { return BOD_TIPOS; } });
+            var inp = host.querySelector('input[name="bodTipoCombo"]');
+            if (!inp) return;
+            var sync = function () { tb.value = inp.value.trim() || 'Pasillo'; bodPreview(); };
+            inp.addEventListener('input', sync); inp.addEventListener('change', sync); inp.addEventListener('blur', sync);
+        }
         function getRadWindow() {
             var oWindow = null;
             if (window.radWindow) oWindow = window.radWindow;
@@ -65,6 +79,8 @@
         }
 
         function bodPreview() {
+            bodMontarTipo();
+            var tipo = bodTipo(), tl = tipo.toLowerCase();
             var datos = document.getElementById('bodRacksDatos'),
                 pas = bodCampo('bod-in-pasillo'), can = bodCampo('bod-in-cantidad'),
                 out = document.getElementById('bodRacksPrevia'),
@@ -80,18 +96,18 @@
 
             var ok = /^[A-Z]{1,3}$/.test(p) && n >= 1 && n <= 30;
             if (btn) { btn.disabled = !ok; btn.style.opacity = ok ? '' : '.42'; btn.style.cursor = ok ? '' : 'not-allowed'; }
-            if (!/^[A-Z]{1,3}$/.test(p)) { out.innerHTML = '<span class="bod-falta">Elija un pasillo o escriba su letra.</span>'; if (btn) btn.value = 'Agregar racks'; return; }
+            if (!/^[A-Z]{1,3}$/.test(p)) { out.innerHTML = '<span class="bod-falta">Elija el área o escriba su letra.</span>'; if (btn) btn.value = 'Agregar racks'; return; }
             if (n < 1 || n > 30) { out.innerHTML = '<span class="bod-falta">Se crean de 1 a 30 racks por vez.</span>'; if (btn) btn.value = 'Agregar racks'; return; }
 
             var max = JSON.parse(datos.getAttribute('data-max') || '{}'), desde = (max[p] || 0) + 1, hasta = desde + n - 1;
             var cod = function (k) { return datos.getAttribute('data-prefijo') + '-' + p + '-R' + (k < 10 ? '0' + k : k); };
             var nuevo = !max[p];
             out.innerHTML = '<i class="mdi ' + (nuevo ? 'mdi-road-variant' : 'mdi-plus-box-multiple-outline') + '"></i>' +
-                (nuevo ? 'Se crea el <b>pasillo ' + p + '</b> con ' : 'Al <b>pasillo ' + p + '</b> (tiene ' + max[p] + ') se suman ') +
+                (nuevo ? 'Se crea <b>' + tl + ' ' + p + '</b> con ' : 'A <b>' + tl + ' ' + p + '</b> (tiene ' + max[p] + ') se suman ') +
                 '<b>' + cod(desde) + '</b>' + (n > 1 ? ' a <b>' + cod(hasta) + '</b>' : '');
-            if (btn) btn.value = (nuevo ? 'Crear pasillo ' + p + ' con ' : 'Agregar ') + n + (n === 1 ? ' rack' : ' racks');
+            if (btn) btn.value = (nuevo ? 'Crear ' + tl + ' ' + p + ' con ' : 'Agregar ') + n + (n === 1 ? ' rack' : ' racks');
             var nom = bodCampo('bod-in-nombre');
-            if (nom) nom.placeholder = 'Vacío: «Pasillo ' + p + ' · Rack ' + (desde < 10 ? '0' + desde : desde) + '»';
+            if (nom) nom.placeholder = 'Vacío: «' + tipo + ' ' + p + ' · Rack ' + (desde < 10 ? '0' + desde : desde) + '»';
         }
 
         // tambien despues de cada postback parcial del UpdatePanel
@@ -301,7 +317,7 @@
                     <div>
                         Cada rack se crea con el código que lee el <strong>mapa 3D</strong>:
                         <strong><asp:Literal ID="litConvencion" runat="server" /></strong> es
-                        pasillo A, rack 01 (impares a la izquierda, pares a la derecha). Es el que va
+                        área A, rack 01 (impares a la izquierda, pares a la derecha). Es el que va
                         impreso en la etiqueta y <strong>no cambia después</strong>; el nombre sí.
                     </div>
                 </div>
@@ -316,7 +332,10 @@
                     <div class="bod-paso">
                         <span class="bod-paso-n">1</span>
                         <div class="bod-paso-cuerpo">
-                            <label>Elija el pasillo</label>
+                            <label>Tipo de área</label>
+                            <div id="bodTipoHost" class="bod-tipo-host"></div>
+                            <asp:TextBox ID="txtTipoArea" runat="server" MaxLength="60" CssClass="bod-in-tipo" Text="Pasillo" Style="display:none" />
+                            <label style="margin-top:10px">Elija el área</label>
                             <div class="bod-pasillos" id="bodPasillos"><asp:Literal ID="litPasillos" runat="server" /></div>
                             <div class="bod-otra">
                                 o escriba la letra:
@@ -342,7 +361,7 @@
                         <div class="bod-paso-cuerpo">
                             <label>Nombre <span style="font-weight:600;color:#68738A">(opcional)</span></label>
                             <asp:TextBox ID="txtUbiNombre" runat="server" MaxLength="400" CssClass="bod-in-nombre"
-                                placeholder="Vacío: «Pasillo C · Rack 06»" autocomplete="off" />
+                                placeholder="Vacío: «Pasillo C · Rack 06» (con el tipo de área elegido)" autocomplete="off" />
                         </div>
                     </div>
                     <div class="bod-confirmar">
@@ -430,7 +449,7 @@
                     </asp:Repeater>
 
                     <asp:Panel ID="pnlSinUbicaciones" runat="server" Visible="false" CssClass="sigma-lista-vacia">
-                        Todavía no hay racks. Indique el pasillo y cuántos racks tiene, arriba.
+                        Todavía no hay racks. Indique el tipo de área, su código y cuántos racks tiene, arriba.
                     </asp:Panel>
 
                 </div>

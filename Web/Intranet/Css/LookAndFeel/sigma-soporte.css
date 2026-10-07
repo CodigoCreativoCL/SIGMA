@@ -694,3 +694,16 @@ body.sgs-pagina .card-box:has(#sgs-app) > .table-responsive{overflow:visible}
 .sgs .sgs-medio.listo ~ .sgs-carga,.sgs .sgs-carga:has(+ .sgs-medio.listo){display:none}
 @keyframes sgsBrillo{from{background-position:120% 0}to{background-position:-120% 0}}
 @media (prefers-reduced-motion:reduce){.sgs .sgs-carga{animation:none}.sgs .sgs-medio{transition:none}}
+
+/* Conectados al publicar (BD/373) y reproductor incrustado */
+.sgs .sgs-embed{display:block;border:0;background:#000}
+.sgs .sgs-conect{width:min(460px,100%);text-align:left;background:var(--surface-2,#F8F9FC);border-radius:14px;padding:12px 14px;margin:6px 0 12px}
+.sgs .sgs-conect-t{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px}
+.sgs .sgs-conect-t small{color:var(--muted);font-size:12px}
+.sgs .sgs-conect .live{width:9px;height:9px;border-radius:50%;background:var(--success);box-shadow:0 0 0 0 rgba(22,133,91,.5);animation:sgsLive 1.6s infinite}
+@keyframes sgsLive{70%{box-shadow:0 0 0 8px rgba(22,133,91,0)}100%{box-shadow:0 0 0 0 rgba(22,133,91,0)}}
+.sgs .sgs-conect-l{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:4px;max-height:200px;overflow:auto}
+.sgs .sgs-conect-l li{display:flex;align-items:center;gap:9px;font-size:12.5px}
+.sgs .sgs-conect-l .av{width:24px;height:24px;border-radius:50%;background:var(--sigma-purple-soft);color:var(--sigma-purple);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex:none}
+.sgs .sgs-conect-l em{margin-left:auto;font-style:normal;font-size:11px;font-weight:800;color:var(--muted)}
+.sgs .sgs-conect-l em.ok{color:var(--success)}

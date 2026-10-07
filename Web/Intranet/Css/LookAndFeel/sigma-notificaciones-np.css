@@ -1,0 +1,148 @@
+﻿/* Panel de notificaciones v2 (06-10-2026): un solo conteo, grupos por tipo + lugar, filas blancas,
+   secciones por fecha, chips, tarjeta de SIGMA AI, acciones al pasar el mouse, preferencias y bottom sheet.
+   Va despues de sigma-notificaciones.css y se apoya en [data-np] para ganarle sin pelear con !important. */
+.sg-notif-panel[data-np] { width: min(440px, calc(100vw - 24px)) !important; background: #fff !important; border-radius: 18px !important }
+.sg-notif-panel[data-np].show { display: flex !important; flex-direction: column }
+.sg-notif-panel[data-np] > div { flex: none }
+.sg-notif-panel[data-np] .np-cab { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 8px; padding: 14px 14px 6px 18px; border: 0 }
+.sg-notif-panel[data-np] .np-cab .sg-notif-head { display: flex; align-items: center; gap: 8px }
+.sg-notif-panel[data-np] .np-cab .titulo { margin: 0; font-size: 17px; font-weight: 800; color: #17223B }
+.sg-notif-panel[data-np] .np-cab .sg-notif-resumen { grid-column: 1 / -1; margin: 0; font-size: 12.5px; color: #68738A }
+.sg-notif-panel[data-np] .np-cab .sg-notif-resumen strong { color: #17223B }
+.np-cab-acc { display: inline-flex; gap: 2px }
+.np-ib { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: #68738A; display: inline-flex; align-items: center; justify-content: center; font-size: 18px; cursor: pointer; padding: 0 }
+.np-ib:hover { background: #F4F6FA; color: #17223B }
+.np-ib:focus-visible, .np-chip:focus-visible, .np-row:focus-visible, .np-btn:focus-visible { outline: 3px solid rgba(22, 198, 201, .35); outline-offset: 1px }
+.sg-notif-panel[data-np] .sg-notif-cerrar { position: static; width: 32px; height: 32px; border: 0; background: transparent; color: #68738A; border-radius: 9px }
+.sg-notif-panel[data-np] .sg-notif-cerrar:hover { background: #F4F6FA; color: #17223B; border: 0 }
+
+.sg-notif-panel[data-np] > .np-chips { display: flex; flex-direction: row !important; align-items: center; gap: 6px; padding: 4px 14px 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; flex-wrap: nowrap !important; min-height: 0 }
+.np-chips::-webkit-scrollbar { display: none }
+.sg-notif-panel[data-np] .np-chip { flex: 0 0 auto; width: auto; height: 28px; line-height: 1; margin: 0; padding: 0 11px; border: 0; border-radius: 999px; background: #F4F6FA; color: #3C4760; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer }
+.np-chip b { font-weight: 800; color: #68738A; font-variant-numeric: tabular-nums }
+.np-chip:hover { background: #ECEFF5 }
+.np-chip.is-activo { background: #17223B; color: #fff }
+.np-chip.is-activo b { color: #C9CFE0 }
+.np-chip.is-vacia:not(.is-activo) { opacity: .5 }
+
+.sg-notif-panel[data-np] .np-cuerpo { max-height: min(520px, calc(100dvh - 260px)); overflow-y: auto; padding: 0 8px 6px; display: block; overscroll-behavior: contain }
+.np-sec { position: sticky; top: 0; z-index: 2; background: #fff; padding: 10px 10px 4px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8892A6 }
+
+.np-row, .np-sub { position: relative; display: grid; grid-template-columns: 38px minmax(0, 1fr) auto; gap: 12px; align-items: flex-start; padding: 10px; border-radius: 12px; background: #fff; cursor: pointer; color: #17223B }
+.np-row:hover, .np-sub:hover { background: #F8F9FC }
+.np-ico { position: relative; width: 38px; height: 38px; border-radius: 11px; display: inline-flex; align-items: center; justify-content: center; font-size: 19px; background: #F4F6FA; color: #68738A }
+.np-ico.t-stock { background: #FFF4E6; color: #B65C00 }
+.np-ico.t-perm { background: #F2EFFF; color: #6732F4 }
+.np-ico.t-med { background: #E8FBFB; color: #007F8A }
+.np-ico.t-ai { background: #F2EFFF; color: #6732F4 }
+.np-ico.t-gen { background: #EAF4FF; color: #087BEA }
+.np-cant { position: absolute; right: -6px; bottom: -6px; min-width: 19px; height: 19px; padding: 0 5px; border-radius: 999px; background: #17223B; color: #fff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; border: 2px solid #fff; font-variant-numeric: tabular-nums }
+.np-tx { min-width: 0; display: flex; flex-direction: column; gap: 1px }
+.np-tx b { font-size: 13.5px; font-weight: 700; line-height: 1.3 }
+.np-tx small { font-size: 12px; color: #68738A; line-height: 1.35; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical }
+.np-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 2px; font-size: 11.5px; color: #8892A6 }
+.np-meta em { font-style: normal }
+.np-sev { font-size: 11px; font-weight: 800; border-radius: 6px; padding: 0 6px }
+.np-sev.crit { background: #FDECEA; color: #C7352B }
+.np-sev.alta { background: #FFF4E6; color: #B65C00 }
+.np-go { color: #087BEA; font-weight: 700; display: inline-flex; align-items: center; gap: 3px; opacity: 0; transition: opacity .15s }
+.np-row:hover .np-go, .np-row:focus-visible .np-go, .np-grp-h .np-go { opacity: 1 }
+.np-dot { width: 8px; height: 8px; border-radius: 50%; background: #087BEA; margin-top: 6px; flex: none }
+.np-row.is-leida .np-tx b { font-weight: 500; color: #3C4760 }
+.np-row.is-leida .np-ico { background: #F4F6FA !important; color: #A3ACBE !important }
+.np-acts { position: absolute; top: 6px; right: 8px; display: none; gap: 2px; background: #fff; border-radius: 9px; box-shadow: 0 0 0 1px #E2E7F0, 0 4px 10px rgba(23, 34, 59, .08) }
+.np-row:hover .np-acts, .np-row:focus-within .np-acts { display: inline-flex }
+.np-row:hover .np-dot, .np-row:focus-within .np-dot { visibility: hidden }
+.np-acts .np-ib { width: 28px; height: 28px; font-size: 16px }
+
+.np-grp-h .np-chev { transition: transform .2s }
+.np-grp-h[aria-expanded="true"] .np-chev { transform: rotate(180deg) }
+.np-grp-b { margin: 0 6px 6px 58px; border-left: 2px solid #E2E7F0; padding-left: 10px; display: flex; flex-direction: column; gap: 2px }
+.np-grp-b[hidden] { display: none }
+.np-sub { grid-template-columns: minmax(0, 1.3fr) minmax(40px, .7fr) auto auto; align-items: center; gap: 10px; padding: 7px 8px }
+.np-sub code { font-size: 12px; font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.np-sub em { font-style: normal; font-size: 11.5px; color: #68738A; font-variant-numeric: tabular-nums }
+.np-sub.is-leida code { font-weight: 500; color: #68738A }
+.np-sub .np-dot { margin: 0 }
+.np-bar { height: 5px; border-radius: 3px; background: #E7EAF2; overflow: hidden }
+.np-bar i { display: block; height: 100%; border-radius: 3px; background: #C7352B }
+.np-grp-f { display: flex; gap: 8px; padding: 8px 0 4px; flex-wrap: wrap }
+
+.np-btn { height: 32px; padding: 0 12px; border: 1px solid transparent; border-radius: 9px; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; text-decoration: none !important; cursor: pointer; background: #fff; white-space: nowrap }
+.np-btn.pri { background: #6732F4; color: #fff !important }
+.np-btn.pri:hover { background: #4820C9 }
+.np-btn.out { border-color: #087BEA; color: #087BEA !important }
+.np-btn.out:hover { background: #EAF4FF }
+.np-btn:disabled { opacity: .42; cursor: not-allowed }
+
+.np-ai { margin: 2px 4px 8px; padding: 12px 14px; border-radius: 14px; background: linear-gradient(180deg, #F7F4FF, #FFFFFF); box-shadow: 0 0 0 1px #E3DAFF; display: flex; flex-direction: column; gap: 4px }
+.np-ai-h { display: flex; align-items: center; gap: 8px; font-size: 11.5px; font-weight: 800; color: #6732F4 }
+.np-ai-h img { width: 22px; height: 22px }
+.np-ai-h .np-dot { margin: 0 0 0 auto }
+.np-ai > b { font-size: 14px; font-weight: 700; line-height: 1.3 }
+.np-ai > p { margin: 0; font-size: 12.5px; color: #3C4760; line-height: 1.45 }
+.np-ai-f { display: flex; gap: 8px; margin-top: 6px }
+.np-ai.is-leida { background: #fff }
+
+.sg-notif-panel[data-np] .sg-notif-pie { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 10px 16px; border-top: 1px solid #E2E7F0; background: #fff }
+.np-pie-n { font-size: 11.5px; color: #8892A6 }
+.sg-notif-panel[data-np] .sg-notif-pie a { font-size: 12.5px; font-weight: 700; color: #087BEA; display: inline-flex; gap: 4px }
+
+.np-prefs { padding: 4px 14px 12px; border-bottom: 1px solid #E2E7F0 }
+.np-prefs h5 { margin: 0 0 6px; font-size: 12px; font-weight: 800; color: #17223B }
+.np-prefs p { margin: 0 0 8px; font-size: 11.5px; color: #68738A }
+.np-pref { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 5px 0; font-size: 12.5px }
+.np-pref select { height: 30px; border: 1px solid #CFD6E3; border-radius: 8px; padding: 0 8px; background: #fff; font-size: 12px }
+.np-prefs[hidden] { display: none }
+
+.np-vacio-f { padding: 28px 16px; text-align: center; color: #68738A; font-size: 12.5px }
+.np-vacio-f b { display: block; color: #17223B; font-size: 14px; margin-bottom: 2px }
+
+.np-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 1400; display: flex; align-items: center; gap: 12px; padding: 10px 12px 10px 14px; border-radius: 14px; background: #17223B; color: #fff; font-size: 13px; box-shadow: 0 12px 32px rgba(23, 34, 59, .3) }
+.np-toast button { border: 0; background: rgba(255, 255, 255, .14); color: #fff; font-weight: 700; font-size: 12.5px; height: 30px; padding: 0 10px; border-radius: 8px; cursor: pointer }
+
+@media (hover: none) {
+  .np-acts { display: inline-flex; box-shadow: none; background: transparent }
+  .np-go { opacity: 1 }
+}
+
+/* Móvil: bottom sheet al 86 % del alto */
+@media (max-width: 719.98px) {
+  .sg-notif-panel[data-np].show { position: fixed !important; left: 0 !important; right: 0 !important; bottom: 0 !important; top: auto !important; width: 100% !important; max-width: 100% !important; height: 86dvh; max-height: 86dvh !important; transform: none !important; margin: 0 !important; border-radius: 22px 22px 0 0 !important; z-index: 1300; box-shadow: 0 -12px 40px rgba(20, 30, 54, .28) !important; animation: npSheet .24s ease-out }
+  .sg-notif-panel[data-np].show::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: #E2E7F0; margin: 8px auto 0; flex: none }
+  .sg-notif-panel[data-np] .np-cuerpo { flex: 1; max-height: none }
+  .np-sub { grid-template-columns: minmax(0, 1fr) auto auto }
+  .np-sub .np-bar { display: none }
+}
+@keyframes npSheet { from { transform: translateY(40px); opacity: 0 } }
+
+.np-ai-btn img { width: 20px; height: 20px }
+.np-ai-btn:hover { background: #F2EFFF }
+.np-drawer { position: absolute; inset: 0; z-index: 5; background: #fff; display: flex; flex-direction: column; border-radius: inherit; animation: npDr .2s ease-out }
+.np-drawer[hidden] { display: none }
+@keyframes npDr { from { transform: translateX(24px); opacity: 0 } }
+.np-dr-h { display: flex; align-items: center; gap: 8px; padding: 12px 12px 10px; border-bottom: 1px solid #E2E7F0 }
+.np-dr-h h4 { margin: 0; font-size: 16px; font-weight: 800; color: #17223B; flex: 1 }
+.np-dr-b { flex: 1; overflow-y: auto; padding: 6px 16px 16px }
+.np-dr-b h5 { margin: 16px 0 6px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #8892A6 }
+.np-dr-b p { margin: 0 0 6px; font-size: 12px; color: #68738A }
+.np-sw { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 9px 0; font-size: 13px; color: #17223B; border-bottom: 1px solid #F0F2F7 }
+.np-sw small { display: block; color: #68738A; font-size: 11.5px }
+.np-sw button { flex: none; width: 38px; height: 22px; border: 0; border-radius: 999px; background: #CFD6E3; position: relative; cursor: pointer; padding: 0 }
+.np-sw button::after { content: ""; position: absolute; top: 3px; left: 3px; width: 16px; height: 16px; border-radius: 50%; background: #fff; transition: transform .15s }
+.np-sw button[aria-pressed="true"] { background: #6732F4 }
+.np-sw button[aria-pressed="true"]::after { transform: translateX(16px) }
+.np-tp { padding: 10px 0; border-bottom: 1px solid #F0F2F7; display: grid; gap: 8px }
+.np-tp-t { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; font-size: 13px; font-weight: 700; color: #17223B }
+.np-tp-t span { font-size: 11.5px; font-weight: 600; color: #68738A }
+.np-seg { display: inline-flex; gap: 2px; background: #F4F6FA; border-radius: 10px; padding: 3px; flex-wrap: wrap }
+.np-seg button { border: 0; background: transparent; height: 28px; padding: 0 11px; border-radius: 8px; font-size: 12px; font-weight: 700; color: #68738A; cursor: pointer }
+.np-seg button[aria-pressed="true"] { background: #fff; color: #6732F4; box-shadow: 0 0 0 1px rgba(23,34,59,.06), 0 1px 3px rgba(23,34,59,.08) }
+.np-seg button:disabled { opacity: .45; cursor: not-allowed }
+.np-tp-m { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11.5px; color: #68738A }
+.np-tp-m button { border: 0; background: transparent; color: #087BEA; font-weight: 700; font-size: 12px; cursor: pointer; padding: 0 }
+.np-dr-f { padding: 10px 16px; border-top: 1px solid #E2E7F0; display: flex; justify-content: flex-end }
+.np-nm { min-width: 0; display: flex; flex-direction: column }
+.np-nm b { font-size: 12.5px; font-weight: 600; line-height: 1.25; color: #17223B; overflow: hidden; text-overflow: ellipsis; white-space: nowrap }
+.np-nm code { font-size: 11px; color: #68738A }
+.np-sub.is-leida .np-nm b { font-weight: 500; color: #68738A }

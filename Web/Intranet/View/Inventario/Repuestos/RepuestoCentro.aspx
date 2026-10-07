@@ -15,7 +15,11 @@
     <%-- Rediseño 06-10-2026: el listado y la ficha usan el diseño del Centro de activos. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-activos.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-centro.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-repuesto-mapa.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-paginador.js") %>'></script>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-mapa.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-repuesto-centro.js") %>'></script>
     <style type="text/css">
         /* Tokens de la paleta SIGMA (CLAUDE.md). No se repiten hex sueltos. */
@@ -256,6 +260,16 @@
             __doPostBack('<%=lnkRecargar.UniqueID %>', '');
             return false;
         }
+        function abrirEtiquetas(query) {
+            var w = 980, h = 760;
+            var x = window.screenX + Math.max(0, (window.outerWidth - w) / 2);
+            var y = window.screenY + Math.max(0, (window.outerHeight - h) / 2);
+            var vent = window.open('<%=ResolveUrl("~/View/Comun/Impresion/Etiquetas.aspx") %>?query=' + query, 'sigmaEtiquetas',
+                'width=' + w + ',height=' + h + ',left=' + Math.round(x) + ',top=' + Math.round(y) + ',resizable=yes,scrollbars=yes');
+            if (!vent) { alert('El navegador bloqueó la ventana de impresión. Permite las ventanas emergentes para este sitio y vuelve a intentarlo.'); return false; }
+            vent.focus();
+            return false;
+        }
         function refresh() { __doPostBack('<%=lnkRecargar.UniqueID %>', ''); }
 
         /* Visor de las imagenes del repuesto. Las URL viajan en la tarjeta, asi
@@ -487,6 +501,11 @@
                     <p>Compatibilidades, existencias, movimientos y vida útil de cada repuesto.</p>
                   </div>
                   <div class="hero-actions">
+                    <%-- La planta que se ve: un combo solo si la persona tiene mas de una (como en el Centro de activos). --%>
+                    <asp:Panel ID="pnlPlantaHero" runat="server" CssClass="sa-planta">
+                      <label for="selPlantaHero">Planta</label>
+                      <asp:DropDownList ID="selPlantaHero" runat="server" ClientIDMode="Static" AutoPostBack="true" OnSelectedIndexChanged="Planta_Changed" />
+                    </asp:Panel>
                     <div class="menu-wrap">
                       <button type="button" class="btn btn--hero" id="rcBtnIO" aria-haspopup="menu" aria-expanded="false" aria-controls="rcMenuIO"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17V5M3 9l4-4 4 4M17 7v12M13 15l4 4 4-4"/></svg>Importar o exportar<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button>
                       <div class="menu" id="rcMenuIO" role="menu" hidden>
@@ -495,6 +514,7 @@
                         <asp:LinkButton ID="lnkClasificar" runat="server" role="menuitem" CausesValidation="false"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h7v7H4zM13 6h7v7h-7zM4 15h16v4H4z"/></svg><span><b>Clasificar varios</b><small>Asignar el tipo a muchos a la vez</small></span></asp:LinkButton>
                       </div>
                     </div>
+                    <asp:HyperLink ID="hlEtiquetas" runat="server" CssClass="btn btn--hero"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h2v2h-2zM18 14h2v6h-4M14 18h2"/></svg>Etiquetas</asp:HyperLink>
                     <asp:LinkButton ID="lnkNuevo" runat="server" CssClass="btn btn--primary btn--glow"
                         OnClientClick="return abrirRepuesto(0);" CausesValidation="false"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>Nuevo repuesto</asp:LinkButton>
                   </div>
@@ -508,6 +528,7 @@
                   <button type="button" role="tab" data-rctab="repuestos" aria-current="page" aria-selected="true"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/></svg>Repuestos<b><asp:Literal ID="litNumRep" runat="server" Text="0" /></b></button>
                   <button type="button" role="tab" data-rctab="tipos" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12l9-9 9 9-9 9-9-9z"/></svg>Tipos de repuesto<b><asp:Literal ID="litNumTipos" runat="server" Text="0" /></b></button>
                   <button type="button" role="tab" data-rctab="bodegas" aria-selected="false"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M7 17h10"/></svg>Bodegas<b><asp:Literal ID="litNumBodegas" runat="server" Text="0" /></b></button>
+                  <asp:HyperLink ID="hlTwin" runat="server" CssClass="rcx-twin" Visible="false" ToolTip="Abre el mapa 3D de las bodegas"><img class="rcx-twin-logo" src="<%=ResolveUrl("~/Imagen/sigma-twin/sigma-twin-logo-horizontal-light.svg") %>" alt="SIGMA Twin" /><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M9 7h8v8"/></svg></asp:HyperLink>
                 </nav>
 
                 <div class="tabpanel" data-rcpanel="repuestos">
@@ -527,7 +548,6 @@
                   <%-- Los filtros que se resuelven por los saldos: un repuesto
                        "esta" en una bodega cuando tiene saldo ahi. --%>
                   <div class="rcx-filtros" id="rcFiltros" hidden>
-                    <label><span>Planta</span><rad:RadComboBox2 ID="ddlPlanta" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Planta_Changed" /></label>
                     <label><span>Bodega</span><rad:RadComboBox2 ID="ddlBodega" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
                     <label><span>Tipo de repuesto</span><rad:RadComboBox2 ID="ddlTipo" runat="server" Width="100%" AutoPostBack="true" Filter="Contains" OnSelectedIndexChanged="Filtro_Changed" /></label>
                     <label><span>Existencia</span><rad:RadComboBox2 ID="ddlEstado" runat="server" Width="100%" AutoPostBack="true" OnSelectedIndexChanged="Filtro_Changed">
@@ -580,6 +600,9 @@
                         <%-- El mapa en otra pestana: quien esta en la ficha no pierde lo que miraba. --%>
                         <asp:HyperLink ID="hlMapa" runat="server" CssClass="sg-ot-btn es-contorno" Target="_blank" Visible="false">
                             <i class="mdi mdi-cube-scan"></i>Ver en el mapa 3D</asp:HyperLink>
+                        <%-- La etiqueta para pegar en el repuesto: QR o codigo de barras. --%>
+                        <asp:HyperLink ID="hlEtiqueta" runat="server" CssClass="sg-ot-btn es-plano" NavigateUrl="javascript:void(0)" Visible="false"
+                            ToolTip="Imprimir la etiqueta del repuesto con su QR o código de barras"><i class="mdi mdi-qrcode"></i>Etiqueta</asp:HyperLink>
                         <asp:LinkButton ID="lnkEditar" runat="server" CssClass="sg-ot-btn es-primario" CausesValidation="false" OnClick="lnkEditar_Click">
                             <i class="mdi mdi-pencil-outline"></i>Editar</asp:LinkButton>
                     </div>

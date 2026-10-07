@@ -63,7 +63,9 @@ public class WsBodegaMapa : System.Web.Services.WebService
             filtroPlanta.filtro_cliente = SitioBase.Session.ClienteId().ToString();
             filtroPlanta.filtro_habilitado = "1";
 
+            HashSet<int> mias = PlantasPermitidas();
             var plantas = new ClienteInstalacionController().GetClienteInstalaciones(filtroPlanta)
+                .Where(p => mias == null || mias.Contains(p.cin_id))
                 .Select(p => new { id = p.cin_id, nombre = p.cin_nombre })
                 .ToList();
 
@@ -85,6 +87,9 @@ public class WsBodegaMapa : System.Web.Services.WebService
                 qr = Qrs(estructura),
                 conteos = ArmarConteos(new InventarioConteoController().GetUltimos(planta)),
                 posiciones = ArmarPosiciones(Sp("SEL_BODEGA_MAPA_POSICIONES", "@INSTALACION", Planta(planta))),
+                niveles = ArmarNiveles(Sp("SEL_BODEGA_UBICACION_NIVELES", "@INSTALACION", Planta(planta))),
+                areas = ArmarAreas(Sp("SEL_BODEGA_UBICACION_NIVELES", "@INSTALACION", Planta(planta))),
+                tiposArea = TiposAreaLista(),
                 plano = ArmarPlano(Sp("SEL_BODEGA_MAPA_PLANO", "@INSTALACION", Planta(planta))),
                 version = ArmarVersion(Sp("SEL_BODEGA_MAPA_VERSION", "@INSTALACION", Planta(planta))),
                 // QR o BARRAS (bloque 331): las etiquetas del mapa salen como las impresas
@@ -354,7 +359,90 @@ public class WsBodegaMapa : System.Web.Services.WebService
             if (u.bub_id == 0 && string.IsNullOrEmpty(u.bub_codigo)) throw new Exception("Indique el código de la ubicación.");
             if (string.IsNullOrEmpty(u.bub_nombre)) u.bub_nombre = u.bub_codigo;
 
-            return Resultado(new BodegaController().GuardarUbicacion(u), u.bub_id);
+            Respuesta res = new BodegaController().GuardarUbicacion(u);
+            int idU = res.error ? 0 : (res.codigo > 0 ? res.codigo : u.bub_id);
+            string tipo = Texto(d, "tipo").Trim();
+            if (idU > 0 && tipo.Length > 0)
+            {
+                if (tipo.Length > 60) throw new Exception("El tipo de área es muy largo (máximo 60 letras).");
+                int idTipo = Convert.ToInt32(Sp("INS_AREA_TIPO", "@NOMBRE", tipo).Rows[0]["ID"]);
+                Sp("UPD_UBICACION_AREA_TIPO", "@UBICACION", idU, "@TIPO", idTipo);
+            }
+            return Resultado(res, u.bub_id);
+        });
+    }
+
+    /// <summary>Los tipos de area de la bodega (Pasillo, Sala, Zona...) del cliente.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string TiposArea()
+    {
+        return Ejecutar(P_VER, () => new { error = false, tipos = TiposAreaLista() });
+    }
+
+    /// <summary>El codigo y nombre del siguiente rack libre de un pasillo: &lt;prefijo&gt;-&lt;pasillo&gt;-R&lt;nn&gt;.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string SiguienteRack(int bodega, string pasillo, string tipo)
+    {
+        return Ejecutar(P_VER, () =>
+        {
+            DataTable dt = Sp("SEL_RACK_SIGUIENTE", "@BODEGA", bodega, "@PASILLO", pasillo ?? "", "@TIPO", string.IsNullOrWhiteSpace(tipo) ? "Pasillo" : tipo.Trim());
+            DataRow f = dt.Rows[0];
+            return new { error = false, codigo = Convert.ToString(f["CODIGO"]), nombre = Convert.ToString(f["NOMBRE"]), numero = Convert.ToInt32(f["NUMERO"]) };
+        });
+    }
+
+    /// <summary>
+    /// Crea uno o varios racks seguidos en un pasillo, con sus niveles. El codigo sale de la
+    /// misma regla de la carga masiva y del mapa 3D. datos: {bodega, pasillo, cantidad, niveles, nombre?}.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CrearRacks(string datos)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            var d = Leer(datos);
+            int bodega = Entero(d, "bodega"), cantidad = Math.Max(1, Entero(d, "cantidad")), niveles = Entero(d, "niveles");
+            string pasillo = Texto(d, "pasillo").ToUpperInvariant();
+            string tipoArea = string.IsNullOrWhiteSpace(Texto(d, "tipo")) ? "Pasillo" : Texto(d, "tipo").Trim();
+            if (tipoArea.Length > 60) throw new Exception("El tipo de área es muy largo (máximo 60 letras).");
+            if (bodega <= 0) throw new Exception("Indique la bodega.");
+            if (niveles <= 0) niveles = 4;
+            if (niveles > 10) throw new Exception("Un rack tiene de 1 a 10 niveles.");
+            if (cantidad > 30) throw new Exception("Se pueden crear hasta 30 racks de una vez.");
+            if (pasillo.Length < 1 || pasillo.Length > 3 || !pasillo.All(ch => ch >= 'A' && ch <= 'Z'))
+                throw new Exception("Escriba el código del área: de 1 a 3 letras (A, B, AB).");
+            /* El tipo se crea si no existe: el combo permite escribir uno nuevo. */
+            int idTipo = Convert.ToInt32(Sp("INS_AREA_TIPO", "@NOMBRE", tipoArea).Rows[0]["ID"]);
+
+            BodegaController bc = new BodegaController();
+            var creados = new List<object>();
+            for (int i = 0; i < cantidad; i++)
+            {
+                DataRow sig = Sp("SEL_RACK_SIGUIENTE", "@BODEGA", bodega, "@PASILLO", pasillo, "@TIPO", tipoArea).Rows[0];
+                string codigo = Convert.ToString(sig["CODIGO"]), nombre = Convert.ToString(sig["NOMBRE"]);
+                if (cantidad == 1 && Texto(d, "nombre") != "") nombre = Texto(d, "nombre");
+                Respuesta res = bc.GuardarUbicacion(new BodegaUbicacion { bub_id = 0, bub_bodega = bodega, bub_codigo = codigo, bub_nombre = nombre, bub_habilitado = true });
+                if (res.error) throw new Exception(res.detalle);
+                Sp("UPD_UBICACION_AREA_TIPO", "@UBICACION", res.codigo, "@TIPO", idTipo);
+                if (niveles != 4) Sp("UPD_UBICACION_NIVELES", "@UBICACION", res.codigo, "@NIVELES", niveles, "@USUARIO", SitioBase.Session.UsuarioId());
+                creados.Add(new { id = res.codigo, codigo = codigo });
+            }
+            return new { error = false, creados = creados, detalle = cantidad == 1 ? "Rack creado." : cantidad + " racks creados." };
+        });
+    }
+
+    /// <summary>Cuantos niveles tiene un rack. No deja quitar los que tienen repuestos.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarNiveles(int ubicacion, int niveles)
+    {
+        return Ejecutar(P_BODEGAS, () =>
+        {
+            Sp("UPD_UBICACION_NIVELES", "@UBICACION", ubicacion, "@NIVELES", niveles, "@USUARIO", SitioBase.Session.UsuarioId());
+            return new { error = false, detalle = "Niveles guardados.", id = ubicacion, niveles = niveles };
         });
     }
 
@@ -835,7 +923,42 @@ public class WsBodegaMapa : System.Web.Services.WebService
             cmd.Parameters.AddWithValue((string)pares[i], pares[i + 1] ?? DBNull.Value);
         return Conexion.GetDataTable(cmd);
     }
+    /// <summary>Las plantas asignadas a la persona (null = sin asignacion: ve todas). Igual que WsActivos.</summary>
+    private static HashSet<int> PlantasPermitidas()
+    {
+        int u; if (!int.TryParse(SitioBase.Session.UsuarioId(), out u)) return null;
+        List<ClienteUsuarioPlanta> l;
+        try { l = new ClienteUsuarioController().PlantasDelUsuario(u, SitioBase.Session.ClienteId()) ?? new List<ClienteUsuarioPlanta>(); }
+        catch (Exception) { return null; }
+        if (l.Count == 0) return null;
+        DateTime hoy = global::SitioBase.Hora.Hoy;
+        return new HashSet<int>(l.Where(p => p.habilitada && (p.fecha_inicio == null || p.fecha_inicio.Value.Date <= hoy) && (p.fecha_fin == null || p.fecha_fin.Value.Date >= hoy))
+                                 .Select(p => p.instalacion));
+    }
     private static object Planta(int planta) { return planta > 0 ? (object)planta : DBNull.Value; }
+
+    /// <summary>Cuantos niveles tiene cada rack (por defecto los 4 de siempre): {ubicacion: niveles}.</summary>
+    /// <summary>El tipo de area (Pasillo, Sala, Zona...) de cada rack: {ubicacion: tipo}.</summary>
+    private static Dictionary<string, string> ArmarAreas(DataTable dt)
+    {
+        var d = new Dictionary<string, string>();
+        foreach (DataRow r in dt.Rows) d[Convert.ToString(r["BUB_ID"])] = Convert.ToString(r["AREA_TIPO"]);
+        return d;
+    }
+
+    private static List<string> TiposAreaLista()
+    {
+        var l = new List<string>();
+        foreach (DataRow r in Sp("SEL_AREA_TIPOS").Rows) l.Add(Convert.ToString(r["NOMBRE"]));
+        return l;
+    }
+
+    private static Dictionary<string, int> ArmarNiveles(DataTable dt)
+    {
+        var d = new Dictionary<string, int>();
+        foreach (DataRow r in dt.Rows) d[Convert.ToString(r["BUB_ID"])] = Convert.ToInt32(r["NIVELES"]);
+        return d;
+    }
 
     private static List<object> ArmarPosiciones(DataTable dt)
     {

@@ -36,3 +36,13 @@
 .sg-combo-lista .cb-t { display: flex; flex-direction: column; min-width: 0; }
 .sg-combo-lista .cb-t b { font-weight: 700; font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .sg-combo-lista .cb-t small { font-size: 11.5px; color: #68738A; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Etiqueta de tipo en las opciones: el color dice que es (activo, subactivo, componente, repuesto) */
+.sg-combo-lista .cb-tag { flex: none; min-width: 78px; text-align: center; padding: 3px 8px; border-radius: 8px; font-size: 10.5px; font-weight: 800; letter-spacing: .02em; text-transform: uppercase }
+.sg-combo-lista .cb-tag.es-a { background: #F2EFFF; color: #4820C9 }
+.sg-combo-lista .cb-tag.es-s { background: #EAF4FF; color: #0662BC }
+.sg-combo-lista .cb-tag.es-c { background: #E8FBFB; color: #007F8A }
+.sg-combo-lista .cb-tag.es-r { background: #FFF4E0; color: #8F4E00 }
+.sg-combo-lista li.es-tipado.es-n1 { padding-left: 22px }
+.sg-combo-lista li.es-tipado.es-n2 { padding-left: 36px }
+.sg-combo-lista li.es-tipado.es-n3 { padding-left: 50px }

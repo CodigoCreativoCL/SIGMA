@@ -71,6 +71,19 @@
         /* De que es parte: el activo, sus subactivos y los componentes de ambos. */
         var AC_PARTES = <%= PartesJson() %>;
         SigmaCombo.definir('ac:partes', { fuente: function () { return AC_PARTES; } });
+        /* Los cuatro de abajo son el MISMO combo, en modo libre: el texto ES el valor y lo que no
+           existe se crea al guardar. Regla para todo catalogo que crean los usuarios. */
+        var AC_TIPOS = <%= TiposJson() %>, AC_LADOS = <%= LadosJson() %>, AC_MARCAS = <%= MarcasJson() %>;
+        function acNorm(s) { return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim(); }
+        function acModelos() {
+            var m = document.querySelector('[data-sgcombo="ac:marca"]'), t = acNorm(m ? m.value : ''), r = [], vistos = {};
+            AC_MARCAS.forEach(function (x) { if (!t || acNorm(x.n) === t) x.m.forEach(function (n) { if (!vistos[acNorm(n)]) { vistos[acNorm(n)] = 1; r.push(n); } }); });
+            return r;
+        }
+        SigmaCombo.definir('ac:tipo', { libre: true, fuente: function () { return AC_TIPOS; } });
+        SigmaCombo.definir('ac:lado', { libre: true, fuente: function () { return AC_LADOS; } });
+        SigmaCombo.definir('ac:marca', { libre: true, fuente: function () { return AC_MARCAS.map(function (x) { return x.n; }); } });
+        SigmaCombo.definir('ac:modelo', { libre: true, fuente: acModelos });
     </script>
 </asp:Content>
 
@@ -139,17 +152,15 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Qué es <span class="req">*</span></label>
-                    <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <span class="sg-combo"><asp:TextBox ID="txtTipo" runat="server" autocomplete="off" spellcheck="false" MaxLength="150" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" data-sgcombo="ac:tipo" placeholder="Elige o escribe uno nuevo" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">Ej.: Motor, Sello, Sensor. ¿No está? Escríbelo y se crea al guardar.</span>
                     <span class="af-msg"><i class="mdi mdi-alert-circle-outline"></i>Elige o escribe qué es esta pieza.</span>
-                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="cboTipo" Display="None"
-                        ValidateEmptyText="true" ClientValidationFunction="afRequeridoLibre" ValidationGroup="Activo" />
+                    <asp:CustomValidator ID="cvTipo" runat="server" ControlToValidate="txtTipo" Display="None"
+                        ValidateEmptyText="true" ClientValidationFunction="afRequerido" ValidationGroup="Activo" />
                 </div>
                 <div class="sigma-modal-field">
                     <label>Dónde va</label>
-                    <rad:RadComboBox2 ID="cboPosicion" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe uno nuevo" />
+                    <span class="sg-combo"><asp:TextBox ID="txtPosicion" runat="server" autocomplete="off" spellcheck="false" MaxLength="150" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" data-sgcombo="ac:lado" placeholder="Elige o escribe uno nuevo" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">Ej.: Delantero, Lado motor. ¿No está? Escríbelo y se crea.</span>
                 </div>
             </div>
@@ -232,14 +243,13 @@
                 </div>
                 <div class="sigma-modal-field">
                     <label>Marca</label>
-                    <rad:RadComboBox2 ID="cboFabricante" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" MaxLength="150"
-                        AllowCustomText="true" EmptyMessage="Elige o escribe una nueva" />
+                    <span class="sg-combo"><asp:TextBox ID="txtMarca" runat="server" autocomplete="off" spellcheck="false" MaxLength="150" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" data-sgcombo="ac:marca" placeholder="Elige o escribe una nueva" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                     <span class="sigma-modal-ayuda">El mismo catálogo de marcas de activos y repuestos.</span>
                 </div>
                 <div class="sigma-modal-field af-ancho">
                     <label>Modelo</label>
-                    <WebControls:TextBox2 ID="txtModelo" runat="server" MaxLength="150" placeholder="Ej.: 6205-2RS" />
-                    <span class="sigma-modal-ayuda">Con la marca y el modelo se pide el repuesto sin abrir la máquina.</span>
+                    <span class="sg-combo"><asp:TextBox ID="txtModelo" runat="server" autocomplete="off" spellcheck="false" MaxLength="150" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista" data-sgcombo="ac:modelo" placeholder="Elige o escribe: Ej. 6205-2RS" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
+                    <span class="sigma-modal-ayuda">Muestra los modelos de esa marca; ¿no está? Escríbelo y se crea. Con la marca y el modelo se pide el repuesto sin abrir la máquina.</span>
                 </div>
                 <div class="sigma-modal-field af-ancho">
                     <label>Foto del componente</label>
