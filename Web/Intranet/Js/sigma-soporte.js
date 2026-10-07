@@ -415,6 +415,16 @@ function campPantallaCompleta(c){
   o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-fsx]')) cerrar(); });
   document.addEventListener('keydown', tecla, true); document.body.appendChild(o);
 }
+/* Desde el panel de alertas: vuelve a mostrar la campaña de ese aviso como modal. */
+window.sgsAbrirCampana = async function(alerta){
+  try {
+    const d = await ws('c', 'DeAlerta', {alerta});
+    if (!d.campana) return;
+    CAMP[d.campana.cam_id] = d.campana;
+    if (typeof closePop === 'function') closePop();
+    campModal(d.campana);
+  } catch (e){ toast(e.message || 'No se pudo abrir la campaña.'); }
+};
 function campBanner(c){
   const host = $('.sg-page-head') || $('.content-page .content .container-fluid') || document.body.firstElementChild;
   if (!host || $('#sgs-banner')) return;

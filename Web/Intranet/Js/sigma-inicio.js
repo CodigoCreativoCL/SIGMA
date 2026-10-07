@@ -163,12 +163,12 @@
     function sideHTML() {
         var u = D.urls || {}, H = D.hoy || [];
         var ES = { done: 'Hecha', now: 'En curso', next: 'Pendiente' };
-        var hoy = '<section class="card today"><div class="sec-h"><h2>Hoy en tu turno<small>' + (H.length ? H.length + (H.length === 1 ? ' tarea' : ' tareas') : 'sin tareas') + '</small></h2><a class="btn plain sm" href="' + esc(u.plan) + '">Agenda' + ic('arrow', 15) + '</a></div>'
+        var hoy = '<section class="card today"><div class="sec-h"><h2>Hoy<small>' + (H.length ? H.length + (H.length === 1 ? ' tarea' : ' tareas') : 'sin tareas') + '</small></h2><a class="btn plain sm" href="' + esc(u.plan) + '">Agenda' + ic('arrow', 15) + '</a></div>'
             + (H.length ? '<div class="tl">' + H.map(function (t) {
                 var f = t.HORA ? new Date(t.HORA) : null;
                 return '<div class="tl-i ' + t.ESTADO + '"><time class="tn">' + (f ? f.toLocaleTimeString('es-CL', { hour: '2-digit', minute: '2-digit', hour12: false }) : '') + '</time><span class="dot"><i></i></span><div><b>' + esc(t.TITULO) + '</b><small>' + esc(t.DETALLE) + '</small><span class="st ' + t.ESTADO + '">' + ES[t.ESTADO] + '</span></div></div>';
             }).join('') + '</div>'
-              : '<div style="text-align:center;padding:14px 6px 8px;color:var(--muted);font-size:12.5px"><b style="display:block;color:var(--ink);font-size:13.5px;margin-bottom:4px">No hay tareas programadas para hoy</b>Cuando planifiques la semana, aquí verás qué toca en cada turno.<div style="margin-top:12px"><a class="btn ghost sm" href="' + esc(u.plan) + '">Planificar la semana</a></div></div>')
+              : '<div style="text-align:center;padding:14px 6px 8px;color:var(--muted);font-size:12.5px"><b style="display:block;color:var(--ink);font-size:13.5px;margin-bottom:4px">No hay tareas programadas para hoy</b>Cuando planifiques la semana, aquí verás qué toca cada día.<div style="margin-top:12px"><a class="btn ghost sm" href="' + esc(u.plan) + '">Planificar la semana</a></div></div>')
             + '</section>';
         var A = D.atencion || [];
         var TONO = { c: ['#FDECEA', '#C7352B'], a: ['#FFF4E6', '#B65C00'], '': ['#F3F5F8', '#64748B'] };
