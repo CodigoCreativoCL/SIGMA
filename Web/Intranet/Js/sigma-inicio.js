@@ -52,6 +52,7 @@
     /* ------------------------------------------------------------ estado */
     var D = null;                  // lo ultimo que devolvio Resumen
     var S = { editing: false, pins: [] };
+    var planta = 0; try { planta = +localStorage.getItem('sigmaAiPlanta') || 0; } catch (x) { }
     var AI = { pred: [], razones: {}, curvas: {}, modelo: {}, sel: null, desde: null, feed: [], fresh: {} };
     var guardarT = null, askAbierto = false;
 
@@ -189,18 +190,25 @@
         return s < 50 ? 'ahora' : s < 3600 ? 'hace ' + Math.max(1, Math.round(s / 60)) + ' min' : s < 86400 ? 'hace ' + Math.round(s / 3600) + ' h' : 'hace ' + Math.round(s / 86400) + ' d';
     }
     function ordenarPred() { AI.pred.sort(function (a, b) { return num(b.PROB) - num(a.PROB); }); }
+    function plantaSel() {
+        var L = (D && D.plantas) || [];
+        if (!L.length) return '';
+        if (L.length === 1) return '<span class="plsel"><span>Planta</span><span class="plchip">' + esc(L[0].nombre) + '</span></span>';
+        return '<label class="plsel"><span>Planta</span><select id="aiPlanta" aria-label="Filtrar SIGMA AI por planta"><option value="0">Todas las plantas</option>'
+            + L.map(function (x) { return '<option value="' + x.id + '"' + (+planta === +x.id ? ' selected' : '') + '>' + esc(x.nombre) + '</option>'; }).join('') + '</select></label>';
+    }
     function aiHead() {
         var c = D.cifras || {};
-        var senales = num(c.SENALES_MIN) || 0, conectados = num(c.ACTIVOS_CON_LECTURA) || 0, activos = num(c.ACTIVOS) || 0;
+        var senales = num(c.SENALES_MIN) || 0, conectados = num(c.ACTIVOS_CON_LECTURA) || 0, activos = num(c.AI_ACTIVOS) || 0;
         return '<div class="ai-h"><span class="ai-logo"><img src="' + esc(IMG + 'sigma-ai/sigma-ai-symbol-gradient.svg') + '" alt=""></span>'
             + '<div class="ai-t"><img src="' + esc(IMG + 'sigma-ai/sigma-ai-wordmark-dark.svg') + '" alt="SIGMA AI"><small>Mantenimiento predictivo · ' + esc(D.cliente || '') + '</small></div>'
-            + '<div class="live"><span class="sig">Analizando <b>' + conectados + '</b> de ' + activos + ' activos · <b class="tn">' + fmt(senales, 1) + '</b> señales/min</span><span class="pill-live"><i></i>EN VIVO</span></div></div>';
+            + '<div class="live">' + plantaSel() + '<span class="sig">Analizando <b>' + conectados + '</b> de ' + activos + ' activos · <b class="tn">' + fmt(senales, 1) + '</b> señales/min</span><span class="pill-live"><i></i>EN VIVO</span></div></div>';
     }
     /* El chat se ve igual que en el mockup. La conversacion todavia no existe: cada pregunta recibe el aviso «Próximamente». */
     function aiAsk() {
         return '<div class="ask"><div id="ans"></div><div class="ask-in" id="askF"><span style="color:#7C8CFF;display:flex">' + ic('bot', 18) + '</span>'
             + '<input id="askQ" placeholder="Pregúntale a SIGMA AI: ¿qué activos reviso esta semana?" aria-label="Pregunta para SIGMA AI"><span class="soon">Próximamente</span><button type="button" class="send" data-enviar="1" aria-label="Enviar">' + ic('send', 17) + '</button></div>'
-            + '<div class="sugs">' + ['¿Qué reviso primero hoy?', 'Resumen del turno', 'Repuestos en riesgo'].map(function (s) { return '<button type="button" data-sug="' + esc(s) + '">' + s + '</button>'; }).join('') + '</div></div>';
+            + '<div class="sugs">' + ['¿Qué reviso primero hoy?', 'Resumen del día', 'Repuestos en riesgo'].map(function (s) { return '<button type="button" data-sug="' + esc(s) + '">' + s + '</button>'; }).join('') + '</div></div>';
     }
     var typing = null;
     function responder(q) {
@@ -308,8 +316,9 @@
         $('#ops').innerHTML = opsHTML(); $('#sideCol').innerHTML = sideHTML();
     }
     function cargar(primera) {
-        return Promise.all([post('Resumen'), post('Predicciones', { desde: primera ? '' : AI.desde || '' })]).then(function (r) {
+        return Promise.all([post('Resumen', { planta: planta }), post('Predicciones', { desde: primera ? '' : AI.desde || '', planta: planta })]).then(function (r) {
             D = r[0];
+            if (planta && !(D.plantas || []).some(function (x) { return +x.id === +planta; })) { planta = 0; return cargar(primera); }
             if (primera) { S.pins = (D.pins || []).slice(); integrar(r[1], false); render(); }
             else {
                 /* sondeo: se redibujan las cifras, las predicciones nuevas entran arriba con destello */
@@ -361,6 +370,13 @@
             return;
         }
         if ((c = t.closest('[data-aten]'))) { var a = (D.atencion || [])[+c.getAttribute('data-aten')]; if (a && window.abrirNotificacion) window.abrirNotificacion(a.url, a.q, a.id); return; }
+    });
+    document.addEventListener('change', function (e) {
+        if (!e.target || e.target.id !== 'aiPlanta') return;
+        planta = +e.target.value || 0;
+        try { localStorage.setItem('sigmaAiPlanta', String(planta)); } catch (x) { }
+        AI = { pred: [], razones: {}, curvas: {}, modelo: {}, sel: null, desde: null, feed: [], fresh: {} };
+        cargar(true).catch(function (er) { toast(er.message); });
     });
     document.addEventListener('click', function (e) { if (!e.target.closest('.in-pop') && !e.target.closest('[data-addpin]')) cerrarPop(); });
     document.addEventListener('keydown', function (e) {

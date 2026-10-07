@@ -54,12 +54,14 @@ public class WsInicio : System.Web.Services.WebService
     /// <summary>Todo lo que necesita el inicio para dibujarse, en una sola llamada.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string Resumen()
+    public string Resumen(int planta)
     {
         return WsSoporte.Ejecutar(() =>
         {
             int cli = Cliente(), usu = U();
             Dictionary<string, object> r = SoporteDatos.Fila("SEL_INICIO_RESUMEN", "@CLIENTE", cli, "@USUARIO", usu);
+            /* el widget SIGMA AI se puede filtrar por planta: sus cifras pisan a las de toda la empresa */
+            foreach (KeyValuePair<string, object> kv in SoporteDatos.Fila("SEL_INICIO_AI", "@CLIENTE", cli, "@PLANTAS", AiPlantas.Filtro(planta))) r[kv.Key] = kv.Value;
             List<Dictionary<string, object>> guardados = SoporteDatos.Filas("SEL_INICIO_ACCESOS", "@CLIENTE", cli, "@USUARIO", usu);
 
             List<Dictionary<string, object>> ind = null;
@@ -116,6 +118,8 @@ public class WsInicio : System.Web.Services.WebService
                 pins = pins,
                 personalizado = guardados.Count > 0,
                 cifras = r,
+                plantas = AiPlantas.Lista(),
+                planta = planta,
                 indicadores = indicadores,
                 semanas = ind,
                 ordenes = ordenes,
@@ -163,13 +167,13 @@ public class WsInicio : System.Web.Services.WebService
     /// <summary>Las predicciones activas. Con «desde» (hora de la plataforma, ISO) solo las calculadas despues: es el sondeo del widget.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string Predicciones(string desde)
+    public string Predicciones(string desde, int planta)
     {
         return WsSoporte.Ejecutar(() =>
         {
             DateTime d;
             object desdeDb = DateTime.TryParse(desde, null, System.Globalization.DateTimeStyles.None, out d) ? (object)d : null;
-            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_INICIO_PREDICCIONES", "@CLIENTE", Cliente(), "@USUARIO", U(), "@DESDE", desdeDb);
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_INICIO_PREDICCIONES", "@CLIENTE", Cliente(), "@USUARIO", U(), "@DESDE", desdeDb, "@PLANTAS", AiPlantas.Filtro(planta));
             Dictionary<string, List<string>> razones = new Dictionary<string, List<string>>();
             foreach (Dictionary<string, object> f in SoporteDatos.Del(c, 1))
             {
