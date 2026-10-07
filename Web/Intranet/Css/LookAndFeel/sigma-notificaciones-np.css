@@ -16,7 +16,7 @@
 .sg-notif-panel[data-np] .sg-notif-cerrar { position: static; width: 32px; height: 32px; border: 0; background: transparent; color: #68738A; border-radius: 9px }
 .sg-notif-panel[data-np] .sg-notif-cerrar:hover { background: #F4F6FA; color: #17223B; border: 0 }
 
-.sg-notif-panel[data-np] > .np-chips { display: flex; flex-direction: row !important; align-items: center; gap: 6px; padding: 4px 14px 8px; overflow-x: auto; overflow-y: hidden; scrollbar-width: none; flex-wrap: nowrap !important; min-height: 0 }
+.sg-notif-panel[data-np] > .np-chips { display: flex; flex-direction: row !important; align-items: center; gap: 6px; padding: 4px 14px 10px; overflow: visible; flex-wrap: wrap !important; min-height: 0 }
 .np-chips::-webkit-scrollbar { display: none }
 .sg-notif-panel[data-np] .np-chip { flex: 0 0 auto; width: auto; height: 28px; line-height: 1; margin: 0; padding: 0 11px; border: 0; border-radius: 999px; background: #F4F6FA; color: #3C4760; font-size: 12.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px; cursor: pointer }
 .np-chip b { font-weight: 800; color: #68738A; font-variant-numeric: tabular-nums }
