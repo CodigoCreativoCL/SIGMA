@@ -31,7 +31,7 @@ const P = {
   search:'<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>', plus:'<path d="M12 5v14M5 12h14"/>', bell:'<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
   help:'<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.7.3-1 .9-1 1.7M12 17h.01"/>', warn:'<path d="M12 4L2.8 19.5h18.4z"/><path d="M12 10v4M12 17h.01"/>', user:'<circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/>',
   users:'<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0"/><path d="M16 4.5a3 3 0 0 1 0 6M18 19a6 6 0 0 0-3-5.2"/>', filter:'<path d="M4 5h16l-6 8v5l-4 2v-7z"/>', cr:'<path d="M9 6l6 6-6 6"/>', cd:'<path d="M6 9l6 6 6-6"/>', cl:'<path d="M15 6l-6 6 6 6"/>',
-  x:'<path d="M6 6l12 12M18 6L6 18"/>', check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', building:'<path d="M4 21V5l8-2v18M12 9h8v12M8 8h.01M8 12h.01M8 16h.01M16 13h.01M16 17h.01"/>',
+  x:'<path d="M6 6l12 12M18 6L6 18"/>', expand:'<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>', check:'<path d="M5 12.5l4.5 4.5L19 7.5"/>', clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', building:'<path d="M4 21V5l8-2v18M12 9h8v12M8 8h.01M8 12h.01M8 16h.01M16 13h.01M16 17h.01"/>',
   gear:'<circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M2.8 12h2.4M18.8 12h2.4M5.5 5.5l1.7 1.7M16.8 16.8l1.7 1.7M5.5 18.5l1.7-1.7M16.8 7.2l1.7-1.7"/>', upload:'<path d="M12 15V4M7 9l5-5 5 5M4 15v5h16v-5"/>',
   clip:'<path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.7 17.2a1.7 1.7 0 0 1-2.4-2.4L15 7"/>', img:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-8 8"/>', send:'<path d="M4 12l16-8-6 16-3-7z"/>',
   star:'<path d="M12 3.2l2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17.2 6.6 20.1l1-6.1L3.2 9.7l6.1-.9z"/>', edit:'<path d="M4 20h4l10-10-4-4L4 16z"/><path d="M13 7l4 4"/>', eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
@@ -395,10 +395,25 @@ function campBotones(c, grande){
 function campModal(c){
   const tp = CT[c.cam_tipo] || {l:'Aviso', i:'mega'};
   const pr = presDe(c.cam_presentacion);
-  openModal(`<div class="pv-modal sgs-camp"><div class="im" style="height:${PRES_ALTO[pr.alto] || 200}px">${campMedia(c)}<span class="chip tone-p sgs-camp-tipo">${ic(tp.i, 13)}${tp.l}</span>${c.cam_cerrable ? `<button type="button" class="sgs-cerrar" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>
+  openModal(`<div class="pv-modal sgs-camp"><div class="im" style="height:${PRES_ALTO[pr.alto] || 200}px">${campMedia(c)}<span class="chip tone-p sgs-camp-tipo">${ic(tp.i, 13)}${tp.l}</span>${c.IMAGEN_URL || videoEmb(presDe(c.cam_presentacion).video) ? `<button type="button" class="sgs-cerrar sgs-expandir" data-campexp="${c.cam_id}" aria-label="Ver en pantalla completa" title="Pantalla completa">${ic('expand', 17)}</button>` : ''}${c.cam_cerrable ? `<button type="button" class="sgs-cerrar" data-campx="${c.cam_id}" aria-label="Cerrar aviso">${ic('x', 18)}</button>` : ''}</div>
     <div class="tx"><h4>${esc(c.cam_titulo)}</h4>${c.cam_descripcion ? `<p>${esc(c.cam_descripcion)}</p>` : ''}
       <div class="sgs-camp-acts">${c.cam_cerrable && !c.cam_confirmar ? `<button type="button" class="btn ghost" data-campx="${c.cam_id}">Más tarde</button>` : ''}${campBotones(c, true)}</div></div></div>`, 'sgs-camp-modal');
   const m = $('#sgs-layer .modal.sgs-camp-modal'); if (m) m.style.width = `min(${PRES_TAM[pr.tamano] || 520}px, calc(100vw - 32px))`;
+}
+/* El aviso a pantalla completa: la imagen o el video enteros, sin recortar. Esc, clic fuera o la cruz lo cierran. */
+function campPantallaCompleta(c){
+  const url = c.IMAGEN_URL, emb = videoEmb(presDe(c.cam_presentacion).video);
+  const cuerpo = emb ? `<iframe src="${esc(emb)}" title="Video" allow="accelerometer; encrypted-media; picture-in-picture; fullscreen" allowfullscreen style="width:min(96vw,1280px);aspect-ratio:16/9;max-height:92vh;border:0;background:#000;border-radius:12px"></iframe>`
+    : c.cam_medio === 'video' ? `<video src="${esc(url)}" controls autoplay playsinline style="max-width:96vw;max-height:92vh;border-radius:12px"></video>`
+    : `<img src="${esc(url)}" alt="${esc(c.cam_titulo)}" style="max-width:96vw;max-height:92vh;object-fit:contain;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.5)">`;
+  const o = document.createElement('div'); o.id = 'sgs-fs'; o.className = 'sgs';
+  o.setAttribute('role', 'dialog'); o.setAttribute('aria-label', 'Aviso en pantalla completa');
+  o.style.cssText = 'position:fixed;inset:0;z-index:2147483000;background:rgba(10,14,26,.92);display:flex;align-items:center;justify-content:center;padding:16px';
+  o.innerHTML = cuerpo + `<button type="button" class="sgs-cerrar" data-fsx="1" aria-label="Cerrar pantalla completa" style="position:fixed;right:18px;top:18px">${ic('x', 18)}</button>`;
+  const cerrar = () => { o.remove(); document.removeEventListener('keydown', tecla, true); };
+  const tecla = e => { if (e.key === 'Escape'){ e.stopPropagation(); cerrar(); } };
+  o.addEventListener('click', e => { if (e.target === o || e.target.closest('[data-fsx]')) cerrar(); });
+  document.addEventListener('keydown', tecla, true); document.body.appendChild(o);
 }
 function campBanner(c){
   const host = $('.sg-page-head') || $('.content-page .content .container-fluid') || document.body.firstElementChild;
@@ -1153,14 +1168,16 @@ VIEWS.kb = () => {
   const uso = d.uso || {}; const v0 = d.vinculos[0]; const screen = v0 ? (v0.acv_pantalla || v0.acv_submodulo || v0.acv_modulo) : '';
   const media = String(c.ARCHIVO_MIME || '');
   let player = '';
+  const embUrl = videoEmb(c.ayc_url);
+  const embedPlayer = `<div class="player"><iframe src="${esc(embUrl || '')}" title="${esc(c.ayc_titulo)}" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture; fullscreen" allowfullscreen referrerpolicy="strict-origin-when-cross-origin"></iframe></div>`;
   if (vid){
     if (c.ARCHIVO_URL && media.startsWith('video/')) player = `<div class="player" style="background:#0B1020"><video id="kbVideo" src="${esc(c.ARCHIVO_URL)}" controls preload="metadata" style="position:absolute;inset:0;width:100%;height:100%"></video></div>`;
-    else if (c.ayc_url && embed(c.ayc_url)) player = `<div class="player"><iframe src="${esc(embed(c.ayc_url))}" title="${esc(c.ayc_titulo)}" style="position:absolute;inset:0;width:100%;height:100%;border:0" allow="encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
+    else if (embUrl) player = embedPlayer;
     else player = `<div class="player">${cover(c.ayc_tema)}<div class="ctr">${c.ayc_url ? `<a class="bigplay" href="${esc(c.ayc_url)}" target="_blank" rel="noopener" data-kbplay="1" aria-label="Abrir el video">${ic('play', 30)}</a>` : `<span class="mut" style="color:#fff">Aún no se subió el video</span>`}</div></div>`;
   } else if (doc){
-    player = (c.ARCHIVO_URL && media === 'application/pdf' ? `<section class="card pad0" style="overflow:hidden;height:min(70vh,640px)"><iframe src="${esc(c.ARCHIVO_URL)}" title="${esc(c.ayc_titulo)}" style="width:100%;height:100%;border:0"></iframe></section>` : '')
+    player = (embUrl ? embedPlayer : '') + (c.ARCHIVO_URL && media === 'application/pdf' ? `<section class="card pad0" style="overflow:hidden;height:min(70vh,640px)"><iframe src="${esc(c.ARCHIVO_URL)}" title="${esc(c.ayc_titulo)}" style="width:100%;height:100%;border:0"></iframe></section>` : '')
       + `<div style="display:flex;gap:8px;flex-wrap:wrap">${c.ARCHIVO_URL ? `<a class="btn out" href="${esc(c.ARCHIVO_BAJAR)}" data-kbdl="1">${ic('down', 16)}Descargar ${esc(c.ayc_formato || '')}${c.ARCHIVO_BYTE ? ' · ' + pesoTxt(c.ARCHIVO_BYTE) : ''}</a><a class="btn plain" href="${esc(c.ARCHIVO_URL)}" target="_blank" rel="noopener">${ic('ext', 16)}Abrir</a>` : c.ayc_url ? `<a class="btn out" href="${esc(c.ayc_url)}" target="_blank" rel="noopener">${ic('ext', 16)}Abrir documento</a>` : '<p class="mut">Aún no se subió el archivo.</p>'}</div>`;
-  } else player = `<section class="card"><div style="font-size:14px;line-height:1.7">${esc(c.ayc_cuerpo || c.ayc_descripcion || '').split(/\n{2,}/).map(p => `<p style="margin-bottom:10px">${p.replace(/\n/g, '<br>')}</p>`).join('')}</div>${c.ayc_url ? `<a class="link" href="${esc(c.ayc_url)}" target="_blank" rel="noopener">${ic('ext', 14)}Ver más</a>` : ''}</section>`;
+  } else player = (embUrl ? embedPlayer : '') + `<section class="card"><div style="font-size:14px;line-height:1.7">${esc(c.ayc_cuerpo || c.ayc_descripcion || '').split(/\n{2,}/).map(p => `<p style="margin-bottom:10px">${p.replace(/\n/g, '<br>')}</p>`).join('')}</div>${c.ayc_url && !embUrl ? `<a class="link" href="${esc(c.ayc_url)}" target="_blank" rel="noopener">${ic('ext', 14)}Ver más</a>` : ''}</section>`;
   const mia = d.mia;
   return `${crumbs([['Soporte'], ['Centro de ayuda','help'], [KIND[kind].l, 'lib', null], [c.ayc_titulo]])}
     <header style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
@@ -1370,6 +1387,7 @@ document.addEventListener('click', async e => {
   if (ds.campcta){ campAccion(+ds.campcta, 'cta'); return; }
   if (ds.campkb){ campAccion(+ds.campkb, 'kb'); return; }
   if (ds.campok){ campAccion(+ds.campok, 'ok'); return; }
+  if (ds.campexp){ const c = CAMP[+ds.campexp]; if (c) campPantallaCompleta(c); return; }
   if (ds.campx){ campAccion(+ds.campx, 'x'); return; }
   if (ds.campver){ const c = CAMP[+ds.campver]; if (c) campModal(c); return; }
   /* Reporte */
