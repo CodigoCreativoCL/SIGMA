@@ -1,7 +1,9 @@
 ﻿USE [db_acd593_sigma]
 GO
 /* 381 — «Te puede interesar»: la card no desaparece tras la primera vista.
-   SEL_CAMPANA_PENDIENTES devuelve ahora la columna MOSTRAR (1 = la frecuencia permite interrumpir con modal/banner). IDEMPOTENTE. */
+   SEL_CAMPANA_PENDIENTES devuelve ahora la columna MOSTRAR (1 = la frecuencia permite interrumpir con modal/banner). 
+   El aviso de la campana (formato notificacion) quedaba al final del panel de alertas: SEL_ALERTA ordena por
+   ale_fecha_deteccion_utc DESC y la alerta nacia con ese campo en NULL. Ahora nace con la fecha y se corrigen las ya creadas. IDEMPOTENTE. */
 CREATE OR ALTER PROCEDURE [dbo].[SEL_CAMPANA_PENDIENTES]
     @USUARIO INT,
     @CLIENTE INT,
@@ -38,8 +40,8 @@ SET NOCOUNT ON
     WHILE @@FETCH_STATUS = 0
     BEGIN
         INSERT INTO [dbo].[Alerta] (ale_cliente, ale_alerta_tipo, ale_alerta_estado, ale_titulo, ale_descripcion, ale_usuario_destinatario,
-                                    ale_campana, ale_ayuda_contenido, ale_usuario_creacion, ale_fecha_primera_ocurrencia_utc, ale_fecha_ultima_ocurrencia_utc)
-        SELECT @CLIENTE, @TIPO, @NUEVA, k.cam_titulo, k.cam_descripcion, @USUARIO, k.cam_id, k.cam_contenido, k.cam_usuario_creacion, GETUTCDATE(), GETUTCDATE()
+                                    ale_campana, ale_ayuda_contenido, ale_usuario_creacion, ale_fecha_primera_ocurrencia_utc, ale_fecha_ultima_ocurrencia_utc, ale_fecha_deteccion_utc)
+        SELECT @CLIENTE, @TIPO, @NUEVA, k.cam_titulo, k.cam_descripcion, @USUARIO, k.cam_id, k.cam_contenido, k.cam_usuario_creacion, GETUTCDATE(), GETUTCDATE(), GETUTCDATE()
           FROM [dbo].[Campana] k WHERE k.cam_id = @CAM
         UPDATE [dbo].[Campana_Entrega] SET cen_alerta = SCOPE_IDENTITY() WHERE cen_id = @E
         FETCH NEXT FROM cur INTO @E, @CAM
@@ -79,4 +81,8 @@ SET NOCOUNT ON
                 ELSE 0 END = 1
              OR ((',' + k.cam_formatos + ',') LIKE '%,card,%' AND e.cen_fecha_descarte IS NULL))
     ORDER BY CASE k.cam_tipo WHEN 'importante' THEN 1 WHEN 'mant' THEN 2 ELSE 3 END, k.cam_desde DESC
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+UPDATE [dbo].[Alerta] SET ale_fecha_deteccion_utc = ale_fecha_primera_ocurrencia_utc WHERE ale_campana IS NOT NULL AND ale_fecha_deteccion_utc IS NULL
 GO
