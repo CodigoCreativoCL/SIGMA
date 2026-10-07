@@ -544,7 +544,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
     private string AbrirAttrs(Alerta a)
     {
         return " data-np-url=\"" + Server.HtmlEncode(ResolveUrl("~/View/Comun/Notificaciones/AlertaDetalle.aspx")) + "\" data-np-q=\"" +
-               Server.HtmlEncode(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.ale_id))) + "\" data-np-id=\"" + a.ale_id + "\"";
+               Server.HtmlEncode(Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + a.ale_id))) + "\" data-np-id=\"" + a.ale_id + "\"" + (a.alt_codigo == "CAMPANA" ? " data-np-camp=\"" + a.ale_id + "\"" : "");
     }
 
     private string Acciones(string ids, string tipo)
@@ -583,6 +583,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         string titulo = p.alt_codigo == "STOCK MINIMO" ? n + " repuestos bajo el mínimo"
                       : p.alt_codigo == "STOCK MAXIMO" ? n + " repuestos sobre el máximo"
+                      : p.alt_codigo == "CAMPANA" ? n + (n == 1 ? " campaña" : " campañas")
                       : n + " avisos de " + (p.alt_nombre ?? "").ToLower();
 
         /* El más grave del grupo: el que está más lejos de su umbral. */
@@ -619,6 +620,8 @@ public partial class Master_Default : System.Web.UI.MasterPage
         {
             string cod = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? a.REPUESTO_CODIGO : (a.ACTIVO_CODIGO ?? a.ale_titulo);
             string nombre = !string.IsNullOrEmpty(a.REPUESTO_CODIGO) ? (a.REPUESTO_NOMBRE ?? "") : (a.ACTIVO_NOMBRE ?? "");
+            if (a.alt_codigo == "CAMPANA") { nombre = a.ale_titulo ?? ""; cod = a.ale_descripcion ?? ""; }
+            else if (string.IsNullOrEmpty(cod)) cod = a.ale_titulo ?? "";
             string barra = "";
             if (stock && a.ale_valor_observado != null && a.ale_valor_umbral != null && a.ale_valor_umbral > 0)
             {
@@ -635,7 +638,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
         }
         else
         {
-            sb.Append("<button type=\"button\" class=\"np-btn pri\" data-np-primera=\"1\">Ver detalle</button>");
+            sb.Append("<button type=\"button\" class=\"np-btn pri\" data-np-primera=\"1\">" + (p.alt_codigo == "CAMPANA" ? "Ver campaña" : "Ver detalle") + "</button>");
         }
         sb.Append("</div></div></div>");
         return sb.ToString();

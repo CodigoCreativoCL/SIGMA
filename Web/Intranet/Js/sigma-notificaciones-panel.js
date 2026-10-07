@@ -211,6 +211,13 @@
 
     function abrirFila(el) {
         var url = el.getAttribute('data-np-url'), q = el.getAttribute('data-np-q'), id = el.getAttribute('data-np-id');
+        var camp = el.getAttribute('data-np-camp');
+        if (camp && window.sgsAbrirCampana) {
+            marcarDom(el.closest('[data-sg-notif-panel]'), [id]);
+            aplicarFiltro(el.closest('[data-sg-notif-panel]'));
+            window.sgsAbrirCampana(+camp);
+            return;
+        }
         if (!url) return;
         marcarDom(el.closest('[data-sg-notif-panel]'), [id]);
         aplicarFiltro(el.closest('[data-sg-notif-panel]'));

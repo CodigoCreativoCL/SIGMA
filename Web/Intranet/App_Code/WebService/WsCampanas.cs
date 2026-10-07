@@ -120,6 +120,20 @@ public class WsCampanas : System.Web.Services.WebService
         });
     }
 
+    /// <summary>La campaña de un aviso del panel de alertas, para abrirla de nuevo como modal.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string DeAlerta(int alerta)
+    {
+        return WsSoporte.Ejecutar(() =>
+        {
+            Dictionary<string, object> c = SoporteDatos.Fila("SEL_CAMPANA_DE_ALERTA", "@ALERTA", alerta, "@USUARIO", U());
+            if (c == null || !c.ContainsKey("cam_id")) throw new Exception("Esa campaña ya no está disponible.");
+            Imagen(c);
+            return new { campana = c };
+        });
+    }
+
     /// <summary>De la audiencia de una campaña: quién está conectado ahora y a quién ya le llegó.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
