@@ -95,6 +95,27 @@ SELECT
                             WHERE l.aml_cliente = @CLIENTE AND l.aml_fecha_lectura_utc >= DATEADD(DAY, -7, @UTC))
 GO
 
+/* Las cifras del widget SIGMA AI, de toda la empresa o solo de las plantas de @PLANTAS (lista separada por comas). */
+CREATE OR ALTER PROCEDURE [dbo].[SEL_INICIO_AI]
+    @CLIENTE INT,
+    @PLANTAS NVARCHAR(MAX) = NULL
+AS
+SET NOCOUNT ON
+DECLARE @UTC DATETIME = GETUTCDATE()
+SELECT act_id INTO #a FROM [dbo].[Activo]
+WHERE  act_cliente = @CLIENTE AND act_habilitado = 1 AND act_fecha_baja IS NULL
+  AND  (@PLANTAS IS NULL OR act_cliente_instalacion IN (SELECT CAST(value AS INT) FROM STRING_SPLIT(@PLANTAS, N',')))
+SELECT
+    AI_ACTIVOS   = (SELECT COUNT(*) FROM #a),
+    PRED_NUEVAS  = (SELECT COUNT(*) FROM [dbo].[Prediccion] WHERE pre_cliente = @CLIENTE AND pre_habilitado = 1 AND pre_usuario_revision IS NULL AND pre_fecha_calculo_utc >= DATEADD(HOUR, -24, @UTC) AND pre_activo IN (SELECT act_id FROM #a)),
+    PRED_ACTIVAS = (SELECT COUNT(*) FROM [dbo].[Prediccion] WHERE pre_cliente = @CLIENTE AND pre_habilitado = 1 AND pre_usuario_revision IS NULL AND pre_activo IN (SELECT act_id FROM #a)
+                     AND (pre_fecha_vigencia_hasta_utc IS NULL OR pre_fecha_vigencia_hasta_utc >= @UTC)),
+    DIAS_LECTURAS = ISNULL((SELECT DATEDIFF(DAY, MIN(l.aml_fecha_lectura_utc), @UTC) FROM [dbo].[Activo_Medidor_Lectura] l JOIN [dbo].[Activo_Medidor] m ON m.ame_id = l.aml_activo_medidor WHERE l.aml_cliente = @CLIENTE AND m.ame_activo IN (SELECT act_id FROM #a)), 0),
+    SENALES_MIN  = CAST(ISNULL((SELECT COUNT(*) FROM [dbo].[Activo_Medidor_Lectura] l JOIN [dbo].[Activo_Medidor] m ON m.ame_id = l.aml_activo_medidor WHERE l.aml_cliente = @CLIENTE AND l.aml_fecha_lectura_utc >= DATEADD(HOUR, -1, @UTC) AND m.ame_activo IN (SELECT act_id FROM #a)), 0) / 60.0 AS DECIMAL(9,1)),
+    ACTIVOS_CON_LECTURA = (SELECT COUNT(DISTINCT m.ame_activo) FROM [dbo].[Activo_Medidor_Lectura] l JOIN [dbo].[Activo_Medidor] m ON m.ame_id = l.aml_activo_medidor
+                            WHERE l.aml_cliente = @CLIENTE AND l.aml_fecha_lectura_utc >= DATEADD(DAY, -7, @UTC) AND m.ame_activo IN (SELECT act_id FROM #a))
+GO
+
 /* OT abiertas, cumplimiento del preventivo, disponibilidad y MTTR. El 2.o resultado son las 8 ultimas semanas. */
 CREATE OR ALTER PROCEDURE [dbo].[SEL_INICIO_INDICADORES]
     @CLIENTE INT,
@@ -206,7 +227,8 @@ GO
 CREATE OR ALTER PROCEDURE [dbo].[SEL_INICIO_PREDICCIONES]
     @CLIENTE INT,
     @USUARIO INT,
-    @DESDE   DATETIME = NULL
+    @DESDE   DATETIME = NULL,
+    @PLANTAS NVARCHAR(MAX) = NULL
 AS
 SET NOCOUNT ON
 DECLARE @UTC DATETIME = GETUTCDATE()
@@ -216,6 +238,7 @@ DECLARE @P TABLE (id INT PRIMARY KEY)
 INSERT INTO @P (id)
 SELECT TOP 8 p.pre_id FROM [dbo].[Prediccion] p
 WHERE  p.pre_cliente = @CLIENTE AND p.pre_habilitado = 1 AND p.pre_usuario_revision IS NULL
+  AND  (@PLANTAS IS NULL OR p.pre_activo IN (SELECT act_id FROM [dbo].[Activo] WHERE act_cliente = @CLIENTE AND act_cliente_instalacion IN (SELECT CAST(value AS INT) FROM STRING_SPLIT(@PLANTAS, N','))))
   AND  (p.pre_fecha_vigencia_hasta_utc IS NULL OR p.pre_fecha_vigencia_hasta_utc >= @UTC)
   AND  (@DESDE_UTC IS NULL OR p.pre_fecha_calculo_utc > @DESDE_UTC)
 ORDER BY CASE WHEN @DESDE_UTC IS NULL THEN p.pre_probabilidad END DESC, p.pre_fecha_calculo_utc DESC
