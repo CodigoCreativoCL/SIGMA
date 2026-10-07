@@ -503,7 +503,8 @@
                   <div class="hero-actions">
                     <%-- La planta que se ve: un combo solo si la persona tiene mas de una (como en el Centro de activos). --%>
                     <asp:Panel ID="pnlPlantaHero" runat="server" CssClass="sa-planta">
-                      <label for="selPlantaHero">Planta</label>
+                      <asp:Literal ID="litPlantaFija" runat="server" />
+                      <label for="selPlantaHero" id="lblPlantaHero">Planta</label>
                       <asp:DropDownList ID="selPlantaHero" runat="server" ClientIDMode="Static" AutoPostBack="true" OnSelectedIndexChanged="Planta_Changed" />
                     </asp:Panel>
                     <div class="menu-wrap">
