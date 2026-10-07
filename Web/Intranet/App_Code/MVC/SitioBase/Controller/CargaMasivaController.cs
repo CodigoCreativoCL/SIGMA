@@ -116,13 +116,14 @@ namespace SitioBase.Controller
                             C("METODO_SALIDA", "METODO SALIDA", false, "FEFO (vence primero), FIFO (entró primero) o LIFO. Vacío: FEFO.", "FEFO", Tipo.Lista, 16, METODOS_BODEGA, null, "METODO")
                         } },
                     new Hoja { clave = "RACKS", titulo = "RACKS", icono = "mdi-view-grid-outline",
-                        descripcion = "Una fila por rack. Sin código, se arma como en el mapa 3D: <prefijo>-<pasillo>-R<nn>, desde el siguiente número libre del pasillo.",
+                        descripcion = "Una fila por rack. Sin código, se arma como en el mapa 3D: <prefijo>-<área>-R<nn>, desde el siguiente número libre del área (pasillo, sala, zona…).",
                         columnas = new List<Columna> {
                             C("BODEGA", "BODEGA", true, "Código o nombre de la bodega (de la base o de la hoja BODEGAS).", "EJEMPLO-CENTRAL", Tipo.Texto, 22),
-                            C("PASILLO", "PASILLO", false, "1 a 3 letras: A, B, AB. Obligatorio si no escribe el código.", "A", Tipo.Texto, 10),
-                            C("NUMERO", "NUMERO", false, "Número del rack en el pasillo. Vacío: el siguiente libre.", "1", Tipo.Entero, 10),
+                            C("TIPO_AREA", "TIPO AREA", false, "Pasillo, Sala, Zona, Sector… Vacío: Pasillo. Si no existe, se crea.", "Pasillo", Tipo.Texto, 14),
+                            C("PASILLO", "AREA", false, "Código del área: 1 a 3 letras (A, B, AB). Obligatorio si no escribe el código.", "A", Tipo.Texto, 10, null, null, "PASILLO"),
+                            C("NUMERO", "NUMERO", false, "Número del rack en el área. Vacío: el siguiente libre.", "1", Tipo.Entero, 10),
                             C("CODIGO", "CODIGO", false, "Solo si ya tiene un código impreso. Vacío: se arma solo.", "", Tipo.Texto, 18),
-                            C("NOMBRE", "NOMBRE", false, "Vacío: «Pasillo A · Rack 01».", "", Tipo.Texto, 26),
+                            C("NOMBRE", "NOMBRE", false, "Vacío: «Pasillo A · Rack 01» (con el tipo de área).", "", Tipo.Texto, 26),
                             C("CARGA_NIVEL_KG", "CARGA NIVEL KG", false, "Carga admisible por nivel. Vacío: 1.000 kg.", "1000", Tipo.Numero, 16, null, null, "CARGA KG", "CARGA")
                         } },
                     new Hoja { clave = "REPUESTOS", titulo = "REPUESTOS", icono = "mdi-package-variant-closed",

@@ -129,11 +129,15 @@
     function mobile() { return matchMedia('(max-width:900px)').matches; }
 
     /* ------------------------------------------------------------ datos */
-    async function cargar(p) {
-        if (cargando) return;
-        cargando = true;
-        try { M = await ws('Cargar', { planta: p || planta || 0 }); planta = M.planta; indexar(); }
-        finally { cargando = false; }
+    var pCarga = null;
+    /* Una sola carga a la vez; quien llega mientras tanto espera la misma. */
+    function cargar(p) {
+        if (pCarga) return pCarga;
+        pCarga = (async function () {
+            try { M = await ws('Cargar', { planta: p || planta || 0 }); planta = M.planta; indexar(); }
+            finally { pCarga = null; }
+        })();
+        return pCarga;
     }
     function pasillo(u) {
         var m = /-([A-Z]{1,3})-R?\d+$/i.exec(u.codigo || '') || /(?:pasillo|sala|zona|sector|nave|patio|c[aá]mara)\s+([A-Za-z0-9]+)/i.exec(u.nombre || '');
@@ -143,6 +147,8 @@
         posBy = {};
         (M.posiciones || []).forEach(function (x) { posBy[x.u + '_' + x.rep] = x; });
         if (M.tiposArea && M.tiposArea.length) TIPOS = M.tiposArea.slice();
+        /* Sin planta elegida se toma la primera: el mapa se dibuja por planta. */
+        if (!planta || !(M.plantas || []).some(function (pl) { return pl.id === planta; })) planta = ((M.plantas || [])[0] || {}).id || planta || 0;
         BODS = (M.bodegas || []).filter(function (b) { return b.plantaId === planta; });
         RACKS = [];
         BODS.forEach(function (b) {
@@ -188,7 +194,7 @@
             + '<span class="mp-acc" id="mpAcc"></span></div>'
             + '<div class="mp-chips" id="mpChips"></div><div id="mpForms"></div>'
             + '<div class="mp-body"><div class="mp-plan" id="mpPlan"></div><aside class="mp-pn" id="mpPn" aria-label="Detalle"><div class="mp-pn-in" id="mpPnIn"></div></aside></div>'
-            + '</div><div id="mpSheet"></div><div id="mpLayer"></div>';
+            + '</div><div id="mpSheet"></div><aside class="mp-drawer" id="mpDrw" aria-label="Detalle de la ubicación" hidden><div class="mp-pn-in" id="mpDrwIn"></div></aside><div id="mpLayer"></div>';
         $('#mpQ', host).addEventListener('input', function (e) {
             U.q = e.target.value.trim();
             if (U.q) { U.rack = 0; U.ord = false; U.sinu = 0; }
@@ -372,14 +378,20 @@
         }).join('') + '</div>' + (bajo.length > 6 ? '<p class="mp-more"><button type="button" data-st="bajo">Ver los ' + bajo.length + ' en el mapa</button></p>' : '') + '</div>';
         return h;
     }
+    /* El detalle de un rack (o los sin ubicar) se abre como DRAWER; el panel de al lado queda con el resumen o la búsqueda. */
+    function scr() { return U.rack || U.sinu ? $('#mpDrwIn', host) : $('#mpPnIn', host); }
     function renderPanel() {
-        var pn = $('#mpPn', host), el = $('#mpPnIn', host), keep = U.rack && el.dataset.rack === String(U.rack) ? el.scrollTop : 0;
-        el.innerHTML = U.rack ? rackPanel() : U.sinu ? sinUbicarPanel() : active() ? searchPanel() : summaryPanel();
-        el.dataset.rack = U.rack || '';
-        el.scrollTop = keep;
-        var sheet = !!U.rack && mobile();
-        pn.classList.toggle('sheet', sheet);
-        $('#mpSheet', host).innerHTML = sheet ? '<div class="mp-scrim s" data-close="1"></div>' : '';
+        var el = $('#mpPnIn', host), dw = $('#mpDrw', host), di = $('#mpDrwIn', host);
+        var abierto = !!(U.rack || U.sinu);
+        el.innerHTML = active() ? searchPanel() : summaryPanel();
+        if (abierto) {
+            var keep = U.rack && di.dataset.rack === String(U.rack) ? di.scrollTop : 0;
+            di.innerHTML = U.rack ? rackPanel() : sinUbicarPanel();
+            di.dataset.rack = U.rack || '';
+            di.scrollTop = keep;
+        }
+        dw.hidden = !abierto;
+        $('#mpSheet', host).innerHTML = abierto ? '<div class="mp-scrim s" data-close="1"></div>' : '';
     }
 
     /* ------------------------------------------------------------ drawer del repuesto */
@@ -466,16 +478,15 @@
         toast(etq, function () { var cur = ITEMS.filter(function (x) { return x.rep === it.rep && x.b === it.b && x.u === rackId; })[0] || it; mover(cur, prev.u, prev.lv); });
     }
     function abrirRack(id, lv, ord, flash) {
-        if (U.rack !== id) $('#mpPnIn', host).scrollTop = 0;
+        if (U.rack !== id) if (scr()) scr().scrollTop = 0;
         U.rack = id; U.lv = lv; U.flash = flash || null; U.sinu = 0;
         var sin = itemsOf(id).filter(function (i) { return !i.lv; }).length;
         if (ord && sin) { U.ord = true; U.ordTotal = sin; } else if (!ord) U.ord = false;
         if (!flash && !ord) { U.q = ''; U.st = 'all'; $('#mpQ', host).value = ''; }
         render();
         requestAnimationFrame(function () {
-            var el = $('#mpPnIn', host), sec = flash ? $('.mp-pr[data-part="' + cssEsc(flash) + '"]', el) : $('#lv-' + (lv == null ? 'x' : lv), el);
+            var el = scr(), sec = flash ? $('.mp-pr[data-part="' + cssEsc(flash) + '"]', el) : $('#lv-' + (lv == null ? 'x' : lv), el);
             if (sec) el.scrollTop = Math.max(0, sec.offsetTop - (flash ? 160 : 58));
-            if (!mobile()) { var pn = $('#mpPn', host).getBoundingClientRect(); if (pn.top > innerHeight * .6 || pn.bottom < 0) $('#mpPn', host).scrollIntoView({ block: 'start', behavior: 'smooth' }); }
             U.flash = null;
         });
     }
@@ -547,7 +558,7 @@
             if ('close' in d) { U.rack = 0; U.sinu = 0; U.ord = false; U.lv = null; render(); return; }
             if ('ord' in d) { abrirRack(U.rack, 0, true); return; }
             if ('endord' in d) { U.ord = false; render(); return; }
-            if ('jump' in d) { var el2 = $('#mpPnIn', host), s2 = $('#lv-' + d.jump, el2); if (s2) el2.scrollTo({ top: s2.offsetTop - 58, behavior: 'smooth' }); return; }
+            if ('jump' in d) { var el2 = scr(), s2 = $('#lv-' + d.jump, el2); if (s2) el2.scrollTo({ top: s2.offsetTop - 58, behavior: 'smooth' }); return; }
             if ('clear' in d) { U.q = ''; U.st = 'all'; $('#mpQ', host).value = ''; render(); return; }
         });
         host.addEventListener('input', function (e) {

@@ -156,6 +156,8 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             "<script>setTimeout(bodPreview, 0);</script>";
         /* Un boton por pasillo que ya existe y uno para abrir el siguiente:
            elegir con un clic en vez de adivinar que letra escribir. */
+        TiposArea = alm.TiposArea();
+        Areas = alm.AreasDeBodega();
         string siguiente = SiguientePasillo(max.Keys);
         System.Text.StringBuilder chips = new System.Text.StringBuilder();
         foreach (string k in max.Keys.OrderBy(x => x.Length).ThenBy(x => x))
@@ -163,7 +165,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
                  .Append(k).Append("')\"><i class=\"mdi mdi-road-variant\"></i>").Append(k).Append(" <small>").Append(max[k])
                  .Append(max[k] == 1 ? " rack" : " racks").Append("</small></button>");
         chips.Append("<button type=\"button\" class=\"bod-pas es-nuevo\" data-nuevo=\"1\" data-pasillo=\"").Append(siguiente)
-             .Append("\" onclick=\"bodElegir('").Append(siguiente).Append("')\"><i class=\"mdi mdi-plus\"></i>Nuevo pasillo ").Append(siguiente).Append("</button>");
+             .Append("\" onclick=\"bodElegir('").Append(siguiente).Append("')\"><i class=\"mdi mdi-plus\"></i>Nueva área ").Append(siguiente).Append("</button>");
         litPasillos.Text = chips.ToString();
         if (!IsPostBack && string.IsNullOrEmpty(txtPasillo.Text))
             txtPasillo.Text = max.Count > 0 ? max.Keys.OrderBy(k => k.Length).ThenBy(k => k).Last() : "A";
@@ -174,7 +176,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
         {
             DataRow r0 = res.Rows[0];
             int movidos = Convert.ToInt32(r0["MOVIDOS"]), contados = Convert.ToInt32(r0["CONTADOS_30"]);
-            litResumenMapa.Text = "<div class=\"bod-dato\"><b>" + racks.Rows.Count + "</b> racks en <b>" + max.Count + "</b> pasillo" + (max.Count == 1 ? "" : "s") +
+            litResumenMapa.Text = "<div class=\"bod-dato\"><b>" + racks.Rows.Count + "</b> racks en <b>" + max.Count + "</b> " + (max.Count == 1 ? "área" : "áreas") +
                 " · <b>" + contados + "</b> contados en 30 días" + (movidos > 0 ? " · <b>" + movidos + "</b> movidos en el plano" : "") + "</div>";
         }
 
@@ -185,6 +187,20 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
     }
 
     private DataTable Racks;
+    protected List<string> TiposArea = new List<string>();
+    private Dictionary<int, string> Areas = new Dictionary<int, string>();
+
+    /// <summary>Los tipos de area como arreglo JSON para el combo de la ficha.</summary>
+    protected string TiposJson
+    {
+        get
+        {
+            List<string> l = TiposArea.Count > 0 ? TiposArea : new List<string> { "Pasillo", "Sala", "Zona", "Sector", "Nave", "Patio", "Cámara" };
+            return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(l).Replace("</", "<\\/");
+        }
+    }
+
+    private string TipoDe(int ubicacion) { string t; return Areas.TryGetValue(ubicacion, out t) && !string.IsNullOrEmpty(t) ? t : "Pasillo"; }
     private string pasilloAnterior;
 
     private string CodigoBodega()
@@ -244,9 +260,9 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
                 return (BodegaAlmacenamientoController.LeerCodigo(Convert.ToString(r["CODIGO"]), out p2, out n2) ? p2 : "·") == grupo;
             });
             ((Literal)e.Item.FindControl("litPasillo")).Text = "<div class=\"bod-pasillo\"><i class=\"mdi mdi-road-variant\"></i>" +
-                (grupo == "·" ? "Fuera de la convención" : "Pasillo " + Server.HtmlEncode(grupo)) +
+                (grupo == "·" ? "Fuera de la convención" : Server.HtmlEncode(TipoDe(bubId)) + " " + Server.HtmlEncode(grupo)) +
                 "<span class=\"bod-chip es-muted chip\">" + cuantos + " rack" + (cuantos == 1 ? "" : "s") +
-                (grupo == "·" ? " · el mapa los pone en un pasillo aparte" : "") + "</span></div>";
+                (grupo == "·" ? " · el mapa los pone en un área aparte" : "") + "</span></div>";
             pasilloAnterior = grupo;
         }
 
@@ -531,7 +547,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
                 if (Id == 0)
                 {
                     Id = respuesta.codigo;
-                    Tools.tools.ClientAlert(respuesta.detalle + " Agregue sus racks por pasillo.", "ok");
+                    Tools.tools.ClientAlert(respuesta.detalle + " Agregue sus racks por área.", "ok");
                     return;
                 }
 
@@ -569,7 +585,7 @@ public partial class View_Inventario_Bodegas_Bodega : System.Web.UI.Page
             List<string> codigos = new BodegaAlmacenamientoController().Ubicaciones(Id).Rows.Cast<DataRow>()
                 .Select(r => Convert.ToString(r["CODIGO"])).ToList();
             Respuesta respuesta = new BodegaAlmacenamientoController().CrearRacks(Id, CodigoBodega(), codigos,
-                txtPasillo.Text, cantidad, txtUbiNombre.Text.Trim());
+                txtPasillo.Text, cantidad, txtUbiNombre.Text.Trim(), txtTipoArea.Text);
 
             if (!respuesta.error)
             {

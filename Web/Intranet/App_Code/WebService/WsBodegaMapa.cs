@@ -359,7 +359,16 @@ public class WsBodegaMapa : System.Web.Services.WebService
             if (u.bub_id == 0 && string.IsNullOrEmpty(u.bub_codigo)) throw new Exception("Indique el código de la ubicación.");
             if (string.IsNullOrEmpty(u.bub_nombre)) u.bub_nombre = u.bub_codigo;
 
-            return Resultado(new BodegaController().GuardarUbicacion(u), u.bub_id);
+            Respuesta res = new BodegaController().GuardarUbicacion(u);
+            int idU = res.error ? 0 : (res.codigo > 0 ? res.codigo : u.bub_id);
+            string tipo = Texto(d, "tipo").Trim();
+            if (idU > 0 && tipo.Length > 0)
+            {
+                if (tipo.Length > 60) throw new Exception("El tipo de área es muy largo (máximo 60 letras).");
+                int idTipo = Convert.ToInt32(Sp("INS_AREA_TIPO", "@NOMBRE", tipo).Rows[0]["ID"]);
+                Sp("UPD_UBICACION_AREA_TIPO", "@UBICACION", idU, "@TIPO", idTipo);
+            }
+            return Resultado(res, u.bub_id);
         });
     }
 

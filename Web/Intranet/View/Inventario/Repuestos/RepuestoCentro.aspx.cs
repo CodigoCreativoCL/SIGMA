@@ -161,7 +161,7 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         foreach (Bodega b in Bodegas())
             if (b.bod_cliente_instalacion > 0 && !string.IsNullOrEmpty(b.planta_nombre) && vistas.Add(b.bod_cliente_instalacion))
                 ddlPlanta.Items.Add(new System.Web.UI.WebControls.ListItem(b.planta_nombre, b.bod_cliente_instalacion.ToString()));
-        pnlPlantaHero.Style["display"] = vistas.Count > 1 ? "" : "none";
+        pnlPlantaHero.Style["display"] = vistas.Count >= 1 ? "" : "none";
     }
 
     /// <summary>Bodegas, acotadas a la planta elegida si hay una.</summary>

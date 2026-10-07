@@ -258,3 +258,19 @@
 .rm-form-areas { display: flex; flex-direction: column; gap: 10px }
 .rm-form-areas .mp-ar-add { align-self: flex-start }
 @media (max-width: 720px) { .mp-ar { grid-template-columns: 1fr 1fr } .mp-ar-t { grid-column: 1 / -1 } }
+
+/* drawer del rack: se abre encima, no al lado */
+.mp-drawer { position: fixed; top: 70px; right: 0; bottom: 0; width: min(480px, 100vw); z-index: 61; background: #fff; box-shadow: var(--e3); animation: slide .24s ease-out; display: flex; flex-direction: column }
+.mp-drawer[hidden] { display: none }
+.mp-drawer .mp-pn-in { position: static; flex: 1; max-height: none; height: 100%; overflow-y: auto; padding: 18px 18px 28px }
+.mp-scrim.s { z-index: 60 }
+.mp-pr-ic img { width: 100%; height: 100%; object-fit: cover; border-radius: 10px; display: block }
+.mp-pr-ic { overflow: hidden }
+.mp-dr-h .ph img { width: 100%; height: 100%; object-fit: cover; border-radius: 14px }
+.mp-dr-h .ph { overflow: hidden }
+@media (max-width: 900px) {
+  .mp-drawer { top: auto; left: 0; right: 0; width: auto; height: 88vh; border-radius: 22px 22px 0 0 }
+  .mp-drawer::before { content: ""; display: block; width: 40px; height: 4px; border-radius: 2px; background: var(--line); margin: 8px auto 0; flex: none }
+}
+.mp-scrim.s { background: rgba(20, 27, 51, .16) }
+.es-arrastrando .mp-scrim.s { pointer-events: none }

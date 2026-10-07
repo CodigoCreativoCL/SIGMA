@@ -296,6 +296,11 @@ function aviso(texto, error) {
     setTimeout(() => { t.style.transition = 'opacity .4s'; t.style.opacity = '0'; setTimeout(() => t.remove(), 400); }, error ? 6500 : 3200);
 }
 
+/* El «pasillo» es un TIPO DE AREA (Pasillo, Sala, Zona...): sale de la bodega (BD 375). */
+const areaDe = (id) => ((S.datos && S.datos.areas) || {})[id] || 'Pasillo';
+const tiposDeArea = () => ((S.datos && S.datos.tiposArea) || []).length ? S.datos.tiposArea : ['Pasillo', 'Sala', 'Zona', 'Sector', 'Nave', 'Patio', 'Cámara'];
+const art = (t) => t || 'Pasillo';
+
 /** Interpreta P1-A-R01 como pasillo A, rack 1. Lo que no calce va a un pasillo aparte. */
 function leerUbicacion(codigo, i) {
     const partes = String(codigo || '').toUpperCase().split(/[-_\s.]+/).filter(Boolean);
@@ -738,7 +743,7 @@ function construir(datos) {
         const lista = pasillos.map((nom, i) => {
             const racks = grupos.get(nom).sort((a, c) => a.num - c.num);
             largo = Math.max(largo, Math.ceil(racks.length / 2) * (RACK.ancho + ENTRE_RACKS));
-            return { nom, racks, x: i * (BLOQUE + ESPALDA) };
+            return { nom, racks, tipo: nom === '·' ? '' : areaDe((racks[0] || {}).id), x: i * (BLOQUE + ESPALDA) };
         });
         const anchoUtil = pasillos.length ? (pasillos.length - 1) * (BLOQUE + ESPALDA) + BLOQUE : 8;
         const hayRecepcion = sinUbic.has(b.id);
@@ -847,9 +852,9 @@ function construirBodega(pl, ox, porUbic, recepcion, detalle) {
             lm.rotation.x = -Math.PI / 2; lm.rotation.z = Math.PI; lm.position.set(xc, 0.013, zIni - 0.9);
             g.add(lm);
         }
-        letreroPasillo(g, xc, zIni - 0.2, pa.nom, pa.racks.length);
+        letreroPasillo(g, xc, zIni - 0.2, pa.nom, pa.racks.length, pa.tipo);
 
-        const infoPa = { nom: pa.nom, x: ox + xc, xLocal: xc, z0: zIni, z1: zIni + largo, racks: [], info };
+        const infoPa = { nom: pa.nom, tipo: pa.tipo, x: ox + xc, xLocal: xc, z0: zIni, z1: zIni + largo, racks: [], info };
         info.pasillos.push(infoPa);
 
         pa.racks.forEach((u, i) => {
@@ -863,7 +868,7 @@ function construirBodega(pl, ox, porUbic, recepcion, detalle) {
             if (pl) { px = ox + pl.x; pz = pl.z; rot = pl.rot; izq = Math.sin(rot) > 0; }
             const nx = Math.round(Math.sin(rot) * 1e6) / 1e6, nz = Math.round(Math.cos(rot) * 1e6) / 1e6;
             const rack = {
-                id: u.id, codigo: u.codigo, nombre: u.nombre, pasillo: pa.nom, num: u.num, bodega: b, info, infoPa,
+                id: u.id, codigo: u.codigo, nombre: u.nombre, pasillo: pa.nom, tipo: pa.tipo, num: u.num, bodega: b, info, infoPa,
                 pos: new THREE.Vector3(px, 0, pz), rot,
                 normal: new THREE.Vector3(nx, 0, nz), lado: izq ? 'izq' : 'der', movido: !!pl, carga: u.carga,
                 items: porUbic.get(u.id) || [], cajas: [], cols: 3, indice: S.racks.length, vigas: []
@@ -917,11 +922,11 @@ function letreroBodega(g, b, W) {
     S.basura.push(atril.geometry, poste.geometry);
 }
 
-function letreroPasillo(g, x, z, nom, racks) {
+function letreroPasillo(g, x, z, nom, racks, tipo) {
     const alto = 4.9;
     const t = placaTexto([
         { texto: nom === '·' ? 'OTRAS' : nom, color: '#FFFFFF', fuente: `900 150px ${FUENTE}`, y: 118 },
-        { texto: nom === '·' ? 'UBICACIONES' : 'PASILLO ' + nom + ' · ' + racks + ' RACK' + (racks === 1 ? '' : 'S'), color: '#16C6C9', fuente: `800 38px ${FUENTE}`, y: 224 }
+        { texto: nom === '·' ? 'UBICACIONES' : art(tipo).toUpperCase() + ' ' + nom + ' · ' + racks + ' RACK' + (racks === 1 ? '' : 'S'), color: '#16C6C9', fuente: `800 38px ${FUENTE}`, y: 224 }
     ], 512, 270, '#17223B', { radio: 24, borde: '#16C6C9' });
     const m = planoTexto(t, 1.7, 0.9);
     m.material.side = THREE.DoubleSide;
@@ -1195,20 +1200,20 @@ function armarEdicion() {
     S.basuraEdicion.push(geo, bordes);
     for (const info of S.porBodega.values()) {
         const pref = prefijoBodega(info);
-        const fantasma = (x, z, rot, pasillo, num, nuevoPasillo) => {
+        const fantasma = (x, z, rot, pasillo, num, nuevoPasillo, tipo) => {
             const m = new THREE.Mesh(geo, MAT.fantasma);
             m.position.set(x, RACK.alto / 2, z); m.rotation.y = rot;
             const l = new THREE.LineSegments(bordes, MAT.fantasmaLinea); l.computeLineDistances(); m.add(l);
             const t = placaTexto([
                 { texto: '+', color: '#16C6C9', fuente: `300 180px ${FUENTE}`, y: 120 },
-                { texto: nuevoPasillo ? 'NUEVO PASILLO ' + pasillo : 'NUEVO RACK', color: '#FFFFFF', fuente: `800 40px ${FUENTE}`, y: 236 }
+                { texto: nuevoPasillo ? 'NUEVA ÁREA ' + pasillo : 'NUEVO RACK', color: '#FFFFFF', fuente: `800 40px ${FUENTE}`, y: 236 }
             ], 512, 280, 'rgba(11,17,32,.75)', { radio: 28, borde: '#16C6C9' });
             S.basuraEdicion.push(t);
             const p = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 0.77), new THREE.MeshBasicMaterial({ map: t, transparent: true, toneMapped: false, depthWrite: false }));
             S.basuraEdicion.push(p.geometry, p.material);
             p.position.set(0, 0.2, RACK.prof / 2 + 0.02);
             m.add(p);
-            m.userData.fantasma = { info, pasillo, codigo: pref + '-' + pasillo + '-R' + pad2(num), nombre: 'Pasillo ' + pasillo + ' · Rack ' + pad2(num), nuevoPasillo };
+            m.userData.fantasma = { info, pasillo, codigo: pref + '-' + pasillo + '-R' + pad2(num), nombre: art(tipo) + ' ' + pasillo + ' · Rack ' + pad2(num), tipo: art(tipo), nuevoPasillo };
             capaEdicion.add(m); S.fantasmas.push(m);
         };
         const letras = info.pasillos.filter((p) => p.nom !== '·');
@@ -1216,12 +1221,12 @@ function armarEdicion() {
             const i = pa.racks.length, izq = i % 2 === 0, slot = Math.floor(i / 2);
             const n = Math.max(0, ...pa.racks.map((r) => r.num < 1000 ? r.num : 0)) + 1;
             fantasma(pa.x + (izq ? -1 : 1) * (PASILLO / 2 + RACK.prof / 2), info.zIni + slot * (RACK.ancho + ENTRE_RACKS) + RACK.ancho / 2,
-                     izq ? Math.PI / 2 : -Math.PI / 2, pa.nom, n, false);
+                     izq ? Math.PI / 2 : -Math.PI / 2, pa.nom, n, false, pa.tipo);
         }
         const ultima = letras.length ? letras[letras.length - 1].nom : '';
         const sig = ultima ? String.fromCharCode(ultima.charCodeAt(0) + 1) : 'A';
         const xNuevo = letras.length ? letras[letras.length - 1].x + BLOQUE + ESPALDA : info.ox + MARGEN + BLOQUE / 2;
-        fantasma(xNuevo - (PASILLO / 2 + RACK.prof / 2), info.zIni + RACK.ancho / 2, Math.PI / 2, sig, 1, true);
+        fantasma(xNuevo - (PASILLO / 2 + RACK.prof / 2), info.zIni + RACK.ancho / 2, Math.PI / 2, sig, 1, true, letras.length ? letras[letras.length - 1].tipo : 'Pasillo');
     }
 }
 
@@ -1493,7 +1498,7 @@ renderer.domElement.addEventListener('pointermove', (ev) => {
     if (fantasmaHover && (!h || h.fantasma !== fantasmaHover)) { fantasmaHover.material = MAT.fantasma; fantasmaHover = null; }
     if (h && h.fantasma) {
         fantasmaHover = h.fantasma; h.fantasma.material = MAT.fantasmaHover;
-        mostrarTip(ev, '<div><b>Crear ' + esc(h.fantasma.userData.fantasma.codigo) + '</b><span>' + (h.fantasma.userData.fantasma.nuevoPasillo ? 'Abre un pasillo nuevo' : 'Nuevo rack en este pasillo') + '</span></div>');
+        mostrarTip(ev, '<div><b>Crear ' + esc(h.fantasma.userData.fantasma.codigo) + '</b><span>' + (h.fantasma.userData.fantasma.nuevoPasillo ? 'Abre un área nueva' : 'Nuevo rack en ' + (h.fantasma.userData.fantasma.tipo || 'Pasillo').toLowerCase()) + '</span></div>');
         renderer.domElement.style.cursor = 'pointer';
         return;
     }
@@ -1714,7 +1719,7 @@ function panelRack(r) {
     if (!r.recepcion && p.bodegas) rapidas.push('<button type="button" class="bm3d-rapida" id="bm3dMoverRack"><i class="mdi mdi-cursor-move"></i>Mover en el plano</button>');
     if (!r.recepcion && p.ajuste && r.items.length && r.pasillo !== '·') rapidas.push('<button type="button" class="bm3d-rapida es-cyan" id="bm3dContarRack"><i class="mdi mdi-clipboard-check-outline"></i>Contar este rack</button>');
 
-    abrirPanel(cab(r.bodega.nombre + (r.pasillo && r.pasillo !== '·' ? ' · Pasillo ' + r.pasillo : ''), r.codigo, r.nombre || '', 'mdi-view-grid-outline'),
+    abrirPanel(cab(r.bodega.nombre + (r.pasillo && r.pasillo !== '·' ? ' · ' + art(r.tipo) + ' ' + r.pasillo : ''), r.codigo, r.nombre || '', 'mdi-view-grid-outline'),
         (r.recepcion ? '' : '<div class="bm3d-ocup"><div class="bm3d-barra-stock"><i style="width:' + Math.max(pct, 2) + '%;background:#16C6C9"></i></div><b>' + pct + '%</b>' +
             (bajos ? '<span class="bm3d-estado-chip es-bajo">' + bajos + ' bajo mín.</span>' : '') + '</div>') +
         (conFoto.length ? '<div class="bm3d-galeria">' + conFoto.map((c) => '<span class="bm3d-mini" data-foto="' + r.cajas.indexOf(c) + '" title="' + esc(c.userData.item.n) + '"><img src="' + esc(c.userData.item.foto) + '" alt="" loading="lazy" /></span>').join('') + '</div>' : '') +
@@ -1722,8 +1727,8 @@ function panelRack(r) {
         ((r.sobrecarga || []).length ? '<div class="bm3d-nota es-alerta" style="margin-bottom:12px"><i class="mdi mdi-weight-kilogram"></i><span>' + r.sobrecarga.map((x) => 'Nivel ' + x.nivel + ': ' + num(Math.round(x.kg)) + ' kg de ' + num(x.limite)).join(' · ') + ' — supera la carga admisible.</span></div>' : '') +
         (rapidas.length ? '<div class="bm3d-rapidas">' + rapidas.join('') + '</div>' : '') +
         (r.items.length ? niveles : '<div class="bm3d-vacio-txt">Este rack no tiene stock registrado.</div>'),
-        (r.pasillo && r.pasillo !== '·' && !r.recepcion ? '<button type="button" class="bm3d-btn es-primario" id="bm3dRecorrer"><i class="mdi mdi-walk"></i>Recorrer pasillo ' + esc(r.pasillo) + '</button>' +
-            (p.ajuste ? '<button type="button" class="bm3d-btn es-secundario" id="bm3dContarPasillo"><i class="mdi mdi-clipboard-check-outline"></i>Contar pasillo</button>' : '') : '') +
+        (r.pasillo && r.pasillo !== '·' && !r.recepcion ? '<button type="button" class="bm3d-btn es-primario" id="bm3dRecorrer"><i class="mdi mdi-walk"></i>Recorrer ' + esc(art(r.tipo).toLowerCase()) + ' ' + esc(r.pasillo) + '</button>' +
+            (p.ajuste ? '<button type="button" class="bm3d-btn es-secundario" id="bm3dContarPasillo"><i class="mdi mdi-clipboard-check-outline"></i>Contar ' + esc(art(r.tipo).toLowerCase()) + '</button>' : '') : '') +
         '<button type="button" class="bm3d-btn es-contorno" id="bm3dGeneral"><i class="mdi mdi-fit-to-screen-outline"></i>Vista general</button>');
 
     panel.querySelectorAll('[data-caja]').forEach((el) => el.onclick = () => seleccionarCaja(r.cajas[+el.dataset.caja], true));
@@ -1753,7 +1758,7 @@ function panelBodega(info) {
     const b = info.bodega, p = S.permisos;
     const reps = new Set(info.cajas.map((c) => c.userData.item.id)).size;
     const pasillos = info.pasillos.map((pa, ip) =>
-        '<div class="bm3d-pasillo"><div class="bm3d-pasillo-cab"><span>' + (pa.nom === '·' ? 'Otras ubicaciones' : 'Pasillo ' + esc(pa.nom)) + ' · ' + pa.racks.length + ' racks</span>' +
+        '<div class="bm3d-pasillo"><div class="bm3d-pasillo-cab"><span>' + (pa.nom === '·' ? 'Otras ubicaciones' : esc(art(pa.tipo)) + ' ' + esc(pa.nom)) + ' · ' + pa.racks.length + ' racks</span>' +
         (pa.nom !== '·' && pa.racks.length ? '<span class="bm3d-pasillo-acc"><button type="button" class="bm3d-btn es-contorno es-chico" data-recorrer="' + ip + '" style="height:28px"><i class="mdi mdi-walk"></i>Recorrer</button>' +
             (p.ajuste ? '<button type="button" class="bm3d-btn es-secundario es-chico" data-contar="' + ip + '" style="height:28px" title="Recorrer y contar"><i class="mdi mdi-clipboard-check-outline"></i>Contar</button>' : '') + '</span>' : '') + '</div>' +
         '<div class="bm3d-racks">' + pa.racks.map((r) => '<button type="button" class="bm3d-rackchip" data-rack="' + r.indice + '">' + esc(r.codigo) + '</button>').join('') +
@@ -1761,7 +1766,7 @@ function panelBodega(info) {
     abrirPanel(cab(b.planta + ' · ' + b.codigo, b.nombre, '', 'mdi-warehouse'),
         (b.descripcion ? '<p style="color:#4A556D;margin:0 0 12px;line-height:1.45">' + esc(b.descripcion) + '</p>' : '') +
         '<div class="bm3d-metodo"><i class="mdi mdi-sort-clock-ascending-outline"></i><span><b>Salida ' + esc(b.metodo || 'FEFO') + '</b>' + esc(METODO_TXT[b.metodo || 'FEFO']) + '</span></div>' +
-        '<div class="bm3d-stock"><div><b>' + info.racks.length + '</b><span>Racks</span></div><div><b>' + reps + '</b><span>Repuestos</span></div><div><b>' + info.pasillos.length + '</b><span>Pasillos</span></div></div>' +
+        '<div class="bm3d-stock"><div><b>' + info.racks.length + '</b><span>Racks</span></div><div><b>' + reps + '</b><span>Repuestos</span></div><div><b>' + info.pasillos.length + '</b><span>Áreas</span></div></div>' +
         '<div class="bm3d-rapidas">' +
         (p.bodegas ? '<button type="button" class="bm3d-rapida es-lila" id="bm3dEditBod"><i class="mdi mdi-pencil-outline"></i>Editar bodega</button>' : '') +
         (p.bodegas ? '<button type="button" class="bm3d-rapida es-cyan" id="bm3dModoEd"><i class="mdi mdi-pencil-ruler"></i>' + (S.edicion ? 'Salir de edición' : 'Crear racks en el mapa') + '</button>' : '') +
@@ -1772,8 +1777,8 @@ function panelBodega(info) {
         '<button type="button" class="bm3d-rapida" id="bm3dZonas"><i class="mdi mdi-vector-square"></i>Zonas del piso</button>' +
         (info.recepcion ? '<button type="button" class="bm3d-rapida es-ambar" id="bm3dVerRec"><i class="mdi mdi-truck-delivery-outline"></i>Recepción · ' + info.recepcion.items.length + '</button>' : '') +
         '</div>' +
-        '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>Pasillos y racks</span>' +
-        (p.bodegas ? '<button type="button" id="bm3dNuevoPas"><i class="mdi mdi-plus"></i>Nuevo pasillo</button>' : '') + '</div>' +
+        '<div class="bm3d-seccion"><div class="bm3d-seccion-tit"><span>Áreas y racks</span>' +
+        (p.bodegas ? '<button type="button" id="bm3dNuevoPas"><i class="mdi mdi-plus"></i>Nueva área</button>' : '') + '</div>' +
         (pasillos || '<div class="bm3d-vacio-txt">Aún no hay ubicaciones. Crea el primer rack.</div>') + '</div>',
         '<button type="button" class="bm3d-btn es-contorno" id="bm3dEncuadrar"><i class="mdi mdi-fit-to-screen-outline"></i>Encuadrar</button>' +
         '<button type="button" class="bm3d-btn es-ghost" id="bm3dPlanta2"><i class="mdi mdi-floor-plan"></i>Planta</button>');
@@ -1801,7 +1806,8 @@ function sugerirRack(info, pasillo) {
     if (!pasillo) pasillo = letras.length ? String.fromCharCode(letras[letras.length - 1].charCodeAt(0) + 1) : 'A';
     const pa = info.pasillos.find((p) => p.nom === pasillo);
     const n = pa ? Math.max(0, ...pa.racks.map((r) => r.num < 1000 ? r.num : 0)) + 1 : 1;
-    return { pasillo, codigo: pref + '-' + pasillo + '-R' + pad2(n), nombre: 'Pasillo ' + pasillo + ' · Rack ' + pad2(n), nuevoPasillo: !pa };
+    const tipo = pa ? art(pa.tipo) : (letras.length ? art((info.pasillos.filter((p) => p.nom !== '·').slice(-1)[0] || {}).tipo) : 'Pasillo');
+    return { pasillo, tipo, codigo: pref + '-' + pasillo + '-R' + pad2(n), nombre: tipo + ' ' + pasillo + ' · Rack ' + pad2(n), nuevoPasillo: !pa };
 }
 
 // ===================================================================== ficha
@@ -1955,7 +1961,7 @@ function formBodega(b, volver) {
         campo('Descripción', '<textarea id="fBodDesc" placeholder="Para qué se usa: alta rotación, críticos…">' + esc(nueva ? '' : b.descripcion) + '</textarea>', { ancho: true }) +
         campo('Método de salida', sel('fBodMet', [['FEFO', 'FEFO · lo que vence antes sale antes'], ['FIFO', 'FIFO · lo que entró antes sale antes'], ['LIFO', 'LIFO · lo que entró último sale antes']], nueva ? 'FEFO' : (b.metodo || 'FEFO')),
               { ancho: true, ayuda: 'Decide de qué caja y de qué lote se saca primero en entregas, picking y ajustes. Un repuesto puede tener su propia excepción.' }) +
-        '</div>' + (nueva ? '<div class="bm3d-nota" style="margin-top:12px"><i class="mdi mdi-lightbulb-on-outline"></i>Después de crearla, activa el modo edición para dibujar sus pasillos y racks directo en el mapa.</div>' : ''),
+        '</div>' + (nueva ? '<div class="bm3d-nota" style="margin-top:12px"><i class="mdi mdi-lightbulb-on-outline"></i>Después de crearla, activa el modo edición para dibujar sus áreas y racks directo en el mapa.</div>' : ''),
         '<button type="button" class="bm3d-btn es-ghost" id="fCancelar">Cancelar</button><button type="button" class="bm3d-btn es-primario" id="fGuardar"><i class="mdi mdi-content-save-outline"></i>' + (nueva ? 'Crear bodega' : 'Guardar') + '</button>',
         volver);
     $('fCancelar').onclick = () => (volver ? volver() : cerrarPanel());
@@ -1972,16 +1978,18 @@ function formBodega(b, volver) {
 // ---------------------------------------------------------------- rack
 function formRack(info, d, volver) {
     const nuevo = !d.id;
-    abrirPanel(cab(info.bodega.nombre + (d.pasillo ? ' · Pasillo ' + d.pasillo : ''), nuevo ? 'Nuevo rack' : 'Editar rack', nuevo ? '' : d.codigo, 'mdi-view-grid-plus-outline'),
+    const tipoRack = d.tipo || areaDe(d.id);
+    abrirPanel(cab(info.bodega.nombre + (d.pasillo ? ' · ' + tipoRack + ' ' + d.pasillo : ''), nuevo ? 'Nuevo rack' : 'Editar rack', nuevo ? '' : d.codigo, 'mdi-view-grid-plus-outline'),
         '<div class="bm3d-form">' +
-        campo('Código', inp('fRackCod', d.codigo, { ro: !nuevo }), { ancho: true, req: true, ayuda: nuevo ? 'Sigue la convención de la bodega: <prefijo>-<pasillo>-R<número>. El mapa lo lee para ubicarlo.' : 'El código no se cambia: identifica la ubicación y va en su etiqueta.' }) +
+        campo('Código', inp('fRackCod', d.codigo, { ro: !nuevo }), { ancho: true, req: true, ayuda: nuevo ? 'Sigue la convención de la bodega: <prefijo>-<área>-R<número>. El mapa lo lee para ubicarlo.' : 'El código no se cambia: identifica la ubicación y va en su etiqueta.' }) +
+        campo('Tipo de área', '<input id="fRackTipo" list="fRackTipos" value="' + esc(tipoRack) + '" maxlength="60" placeholder="Pasillo, Sala, Zona…" autocomplete="off"><datalist id="fRackTipos">' + tiposDeArea().map((t) => '<option value="' + esc(t) + '">').join('') + '</datalist>', { ancho: true, ayuda: 'Pasillo, sala, zona… Escribe uno nuevo para crearlo.' }) +
         campo('Nombre', inp('fRackNom', d.nombre), { ancho: true }) +
         (!nuevo ? campo('Estado', '<div class="bm3d-checks">' + chk('fRackHab', 'Habilitado', true) + '</div>', { ancho: true, ayuda: 'Deshabilitado deja de aparecer en el mapa y en los combos.' }) : '') +
         (!nuevo ? campo('Carga admisible por nivel (kg)', inp('fRackCarga', d.rack && d.rack.carga != null ? d.rack.carga : '', { paso: true, ph: '1000' }), { ancho: true, ayuda: 'Con el peso de cada repuesto, el mapa avisa cuando un nivel la supera. Vacío = 1.000 kg.' }) : '') +
         '</div>' +
         (!nuevo && d.rack && S.permisos.bodegas ? '<div class="bm3d-rapidas" style="margin-top:12px"><button type="button" class="bm3d-rapida es-cyan" id="fRackMover"><i class="mdi mdi-cursor-move"></i>Mover en el plano</button>' +
             (d.rack.movido ? '<button type="button" class="bm3d-rapida" id="fRackPlano0"><i class="mdi mdi-restore"></i>Volver a su posición por código</button>' : '') + '</div>' : '') +
-        (d.nuevoPasillo ? '<div class="bm3d-nota" style="margin-top:12px"><i class="mdi mdi-information-outline"></i>Este rack abre el pasillo ' + esc(d.pasillo) + '.</div>' : ''),
+        (d.nuevoPasillo ? '<div class="bm3d-nota" style="margin-top:12px"><i class="mdi mdi-information-outline"></i>Este rack abre el área ' + esc(d.pasillo) + '.</div>' : ''),
         (!nuevo ? '<button type="button" class="bm3d-btn es-peligro es-chico" id="fEliminar"><i class="mdi mdi-delete-outline"></i></button>' : '') +
         '<button type="button" class="bm3d-btn es-ghost" id="fCancelar">Cancelar</button><button type="button" class="bm3d-btn es-primario" id="fGuardar"><i class="mdi mdi-content-save-outline"></i>' + (nuevo ? 'Crear rack' : 'Guardar') + '</button>',
         volver);
@@ -1989,7 +1997,7 @@ function formRack(info, d, volver) {
     $('fCancelar').onclick = () => (volver ? volver() : cerrarPanel());
     const codigoFinal = () => val('fRackCod').toUpperCase().replace(/\s+/g, '');
     $('fGuardar').onclick = (e) => guardando(e.currentTarget, async () => {
-        const r = await ws('GuardarUbicacion', { datos: JSON.stringify({ id: d.id || 0, bodega: info.id, codigo: codigoFinal(), nombre: val('fRackNom'), habilitado: nuevo ? true : val('fRackHab') }) });
+        const r = await ws('GuardarUbicacion', { datos: JSON.stringify({ id: d.id || 0, bodega: info.id, codigo: codigoFinal(), nombre: val('fRackNom'), tipo: val('fRackTipo'), habilitado: nuevo ? true : val('fRackHab') }) });
         if (!nuevo && $('fRackCarga') && val('fRackCarga') !== String(d.rack && d.rack.carga != null ? d.rack.carga : '')) await ws('GuardarCarga', { ubicacion: d.id, carga: val('fRackCarga') });
         aviso(r.detalle || 'Ubicación guardada.');
         await recargar(true);
@@ -2362,10 +2370,10 @@ function armarCine(titulo) {
     const reps = pa.racks.reduce((s, r) => s + r.items.length, 0);
     const bajos = pa.racks.reduce((s, r) => s + r.items.filter((i) => estadoDe(i) === 'bajo').length, 0);
     cine.innerHTML =
-        '<div class="bm3d-cine-barra es-arriba"><span class="bm3d-cine-rec"><i></i>REC</span><span class="bm3d-cine-nom">RECORRIDO · PASILLO ' + esc(pa.nom) + ' · ' + esc(pa.info.bodega.nombre.toUpperCase()) + '</span><span class="bm3d-cine-tc" id="cineTc">00:00</span></div>' +
+        '<div class="bm3d-cine-barra es-arriba"><span class="bm3d-cine-rec"><i></i>REC</span><span class="bm3d-cine-nom">RECORRIDO · ' + esc(art(pa.tipo).toUpperCase()) + ' ' + esc(pa.nom) + ' · ' + esc(pa.info.bodega.nombre.toUpperCase()) + '</span><span class="bm3d-cine-tc" id="cineTc">00:00</span></div>' +
         '<div class="bm3d-cine-barra es-abajo"><span><kbd>Espacio</kbd> pausa</span><span><kbd>←</kbd><kbd>→</kbd> rack anterior / siguiente</span><span>Arrastra para mirar · clic en una caja para su detalle</span><span><kbd>Esc</kbd> salir</span></div>' +
         '<div class="bm3d-cine-vineta"></div>' +
-        '<div class="bm3d-cine-titulo' + (titulo ? '' : ' es-sale') + '" id="cineTitulo"><small>' + esc(pa.info.bodega.nombre) + '</small><b>Pasillo ' + esc(pa.nom) + '</b>' +
+        '<div class="bm3d-cine-titulo' + (titulo ? '' : ' es-sale') + '" id="cineTitulo"><small>' + esc(pa.info.bodega.nombre) + '</small><b>' + esc(art(pa.tipo)) + ' ' + esc(pa.nom) + '</b>' +
             '<span>' + pa.racks.length + ' racks · ' + reps + ' repuestos' + (bajos ? ' · <em>' + bajos + ' bajo mínimo</em>' : '') + '</span></div>';
     cine.hidden = false;
     requestAnimationFrame(() => cine.classList.add('is-visible'));
@@ -2381,7 +2389,7 @@ function armarTablet() {
         '<div class="bm3d-tb-equipo"><span class="bm3d-tb-camara"></span><div class="bm3d-tb-pantalla">' +
             '<div class="bm3d-tb-sb"><b>SIGMA</b><span id="tbHora"></span><span><i class="mdi mdi-wifi"></i><i class="mdi mdi-battery-80"></i></span></div>' +
             '<div class="bm3d-tb-app">' +
-                '<div class="bm3d-tb-cab"><div><small>' + esc(pa.info.bodega.nombre) + '</small><b>Pasillo ' + esc(pa.nom) + '</b></div><span class="bm3d-tb-rec" id="tbRec"><i></i>EN VIVO</span></div>' +
+                '<div class="bm3d-tb-cab"><div><small>' + esc(pa.info.bodega.nombre) + '</small><b>' + esc(art(pa.tipo)) + ' ' + esc(pa.nom) + '</b></div><span class="bm3d-tb-rec" id="tbRec"><i></i>EN VIVO</span></div>' +
                 '<div class="bm3d-tb-stats" id="tbStats"></div>' +
                 '<div class="bm3d-tb-racks" id="tbRacks">' + T.paradas.map((p, i) =>
                     '<button type="button" class="bm3d-tb-rack" data-tb-rack="' + i + '" title="' + esc(p.rack.codigo) + '"><span>' + esc(corto(p.rack.codigo)) + '</span><small>' + (p.lado === 'izq' ? 'IZQ' : 'DER') + '</small></button>').join('') + '</div>' +
@@ -2417,7 +2425,7 @@ function armarTablet() {
         if (t2.conteo && t2.seg && t2.seg.tipo === 'mira' && t2.seg.hecho && !t2.contados.has(t2.seg.parada.rack)) { t2.pausado = true; mostrarConteo(t2.seg.parada); }
         estadoTablet();
     };
-    $('tbActual').innerHTML = '<div class="bm3d-tb-espera"><i class="mdi mdi-walk"></i>Entrando al pasillo…</div>';
+    $('tbActual').innerHTML = '<div class="bm3d-tb-espera"><i class="mdi mdi-walk"></i>Entrando al área…</div>';
     estadoTablet();
 }
 function estadoTablet() {
@@ -2516,11 +2524,11 @@ function resumenTablet() {
     $('tbActual').innerHTML =
         '<div class="bm3d-tb-resumen"><i class="mdi mdi-check-decagram"></i><b>Recorrido completo</b>' +
         '<span>' + T.vistos.size + ' racks · ' + T.revisados.size + ' repuestos revisados en ' + Math.floor(seg / 60) + ':' + pad2(seg % 60) + '</span>' +
-        (T.alertas.length ? '<em>' + T.alertas.length + ' bajo mínimo: revisa la lista y gestiona la reposición.</em>' : '<em class="es-ok">Todo el pasillo dentro de umbral.</em>') + '</div>';
+        (T.alertas.length ? '<em>' + T.alertas.length + ' bajo mínimo: revisa la lista y gestiona la reposición.</em>' : '<em class="es-ok">Toda el área dentro de umbral.</em>') + '</div>';
     $('tbLista').innerHTML =
         '<div class="bm3d-tb-fin">' +
         '<button type="button" class="bm3d-btn es-primario es-chico" id="tbRepetir"><i class="mdi mdi-replay"></i>Repetir</button>' +
-        otros.map((p) => '<button type="button" class="bm3d-btn es-contorno es-chico" data-tb-pasillo="' + info.pasillos.indexOf(p) + '"><i class="mdi mdi-walk"></i>Pasillo ' + esc(p.nom) + '</button>').join('') +
+        otros.map((p) => '<button type="button" class="bm3d-btn es-contorno es-chico" data-tb-pasillo="' + info.pasillos.indexOf(p) + '"><i class="mdi mdi-walk"></i>' + esc(art(p.tipo)) + ' ' + esc(p.nom) + '</button>').join('') +
         '<button type="button" class="bm3d-btn es-ghost es-chico" id="tbSalir2"><i class="mdi mdi-exit-run"></i>Salir</button></div>';
     if (T.conteoId) resumenConteo(T);
     $('tbRepetir').onclick = () => iniciarRecorrido(pa);
@@ -3034,7 +3042,7 @@ async function confirmarConteo(p, btn) {
     if (!lineas.length) { aviso('Escribe al menos una cantidad, o usa «Todo coincide».', true); return; }
     await guardando(btn, async () => {
         if (!T.conteoId) {
-            const r0 = await ws('IniciarConteo', { bodega: T.pa.info.id, alcance: T.pa.info.bodega.nombre + ' · Pasillo ' + T.pa.nom + ' (recorrido 3D)' });
+            const r0 = await ws('IniciarConteo', { bodega: T.pa.info.id, alcance: T.pa.info.bodega.nombre + ' · ' + art(T.pa.tipo) + ' ' + T.pa.nom + ' (recorrido 3D)' });
             T.conteoId = r0.id;
         }
         const r = await ws('ContarRack', { datos: JSON.stringify({ conteo: T.conteoId, bodega: T.pa.info.id, ubicacion: p.rack.id, lineas: lineas.map((l) => ({ repuesto: l.repuesto, contado: l.contado, loteNuevo: l.loteNuevo })) }) });
@@ -3328,7 +3336,7 @@ function armarCinePicking() {
         '<div class="bm3d-cine-barra es-abajo"><span><kbd>Espacio</kbd> pausa</span><span><kbd>←</kbd><kbd>→</kbd> parada anterior / siguiente</span><span>Arrastra para mirar</span><span><kbd>Esc</kbd> salir</span></div>' +
         '<div class="bm3d-cine-vineta"></div>' +
         '<div class="bm3d-cine-titulo" id="cineTitulo"><small>Picking · ' + esc(info.bodega.nombre) + '</small><b>' + esc(titulo) + '</b>' +
-            '<span>' + T.plan.lineas.filter((l) => l.asignada > 0).length + ' repuestos · ' + T.paradas.length + ' paradas · pasillo' + (T.plan.pasillos.length === 1 ? ' ' : 's ') + esc(T.plan.pasillos.map((p) => p.nom).join(' → ')) + '</span></div>';
+            '<span>' + T.plan.lineas.filter((l) => l.asignada > 0).length + ' repuestos · ' + T.paradas.length + ' paradas · ' + (T.plan.pasillos.length === 1 ? 'área ' : 'áreas ') + esc(T.plan.pasillos.map((p) => p.nom).join(' → ')) + '</span></div>';
     cine.hidden = false;
     requestAnimationFrame(() => cine.classList.add('is-visible'));
 }
