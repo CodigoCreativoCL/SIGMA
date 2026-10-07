@@ -17,6 +17,7 @@
          Con runat="server" en el propio link, HtmlLink resuelve el ~/
          del lado del servidor y funciona a cualquier profundidad. --%>
     <link href="../Css/LookAndFeel/sigma-scroll.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-sidebar.css?vrs=1" rel="stylesheet" />
     <link id="favicon" rel="icon" type="image/svg+xml" href="~/Imagen/sigma-favicon.svg" runat="server" />
 
     <!-- Bootstrap Css -->
@@ -282,7 +283,7 @@
                          conectarlo a una busqueda real antes de publicarlo. -->
                     <div class="sg-search">
                         <i class="mdi mdi-magnify sg-search-icon"></i>
-                        <input type="search" id="txtBuscarGlobal" placeholder="Buscar..." aria-label="Buscar" disabled="disabled" />
+                        <input type="search" id="txtBuscarGlobal" placeholder="Buscar..." aria-label="Buscar" readonly="readonly" />
                     </div>
                 </div>
 
@@ -449,12 +450,12 @@
             <div class="left-side-menu">
                 <div class="slimscroll-menu">
 
-                    <!--- Sidemenu -->
-                    <div id="sidebar-menu">
-                        <ul class="metismenu" id="side-menu">
-                            <UserControl:MenusLateral runat="server" ID="wucMenus" />
-                        </ul>
-                    </div>
+                    <!--- Sidemenu: sidebar propuesto (BD/378, Js/sigma-sidebar.js) -->
+                    <nav id="sgnav" class="sgnav" aria-label="Menú principal" data-usuario="<%= SitioBase.Session.UsuarioId() %>" data-cliente="<%= SitioBase.Session.ClienteId() %>"
+                         data-buscar="<%=ResolveUrl("~/WebService/WsBuscar.asmx") %>" data-inicio="<%=ResolveUrl("~/WebService/WsInicio.asmx") %>">
+                        <UserControl:MenusLateral runat="server" ID="wucMenus" />
+                    </nav>
+                    <div class="sgnav-foot"><button type="button" class="nv-col" data-sg-collapse="1" title="Contraer menú" aria-label="Contraer menú"><svg class="ic" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 6l-6 6 6 6M19 6l-6 6 6 6"/></svg><span>Contraer menú</span></button></div>
                     <!-- End Sidebar -->
 
                     <!-- User box -->
@@ -605,6 +606,7 @@
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=5"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,

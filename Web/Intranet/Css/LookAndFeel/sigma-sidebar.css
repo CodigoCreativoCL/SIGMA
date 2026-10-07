@@ -1,0 +1,143 @@
+﻿/* SIGMA · Sidebar propuesto (06-10-2026). Referencia: docs/rediseno-inicio/sigma-inicio-referencia.html (.side.v2).
+   El HTML lo arma View/Comun/Controls/MenusLateral.ascx.cs desde la tabla de menus (BD/378) y el comportamiento
+   (acordeon, «Ir a…», recientes, contraer) vive en Js/sigma-sidebar.js. El fondo del panel, el logo y la ficha del
+   usuario siguen siendo los de sigma-layout.css. */
+
+.sgnav { flex: 1 1 auto; padding: 12px 14px 10px; min-height: 0 }
+.sgnav a { text-decoration: none }
+.sgnav .nav-t { padding: 14px 13px 6px; color: rgba(255,255,255,.55); font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase }
+.sgnav .nav-t[hidden] { display: none }
+
+/* Ir a… */
+.sgnav .nv-find { display: flex; align-items: center; gap: 10px; width: 100%; height: 38px; padding: 0 10px 0 13px; margin: 0 0 4px; border: 0; border-radius: 11px; background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); color: #9AA3BD; font-size: 12.5px; text-align: left; cursor: pointer }
+.sgnav .nv-find:hover { background: rgba(255,255,255,.1); color: #fff }
+.sgnav .nv-find span { flex: 1 }
+.sgnav kbd, .sgck kbd { font: 600 10.5px 'Sora', 'Segoe UI', sans-serif; border-radius: 6px; padding: 1px 6px; background: rgba(255,255,255,.08); color: #AEB6CC; border: 0 }
+
+/* Items */
+.sgnav .nv-li { position: relative }
+.sgnav .nv-a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 5px 42px 5px 13px; margin-bottom: 2px; border-radius: 11px; color: #C3C8DA; font-size: 12.5px; font-weight: 500; line-height: 1.25; transition: background-color .12s, color .12s }
+.sgnav .nv-a:hover { background: rgba(255,255,255,.06); color: #fff }
+.sgnav .nv-a:focus-visible, .sgnav .sbl:focus-visible, .sgnav .nv-find:focus-visible, .sgnav .rc:focus-visible { outline: 3px solid rgba(22,198,201,.55); outline-offset: -2px }
+.sgnav .nv-a .nv-n { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere }
+.sgnav .nv-a.on { background-image: linear-gradient(100deg, #6C5CFF, #7B3FF2); color: #fff; font-weight: 600; box-shadow: 0 8px 20px rgba(91,56,235,.35) }
+.sgnav .nv-a.on::before { content: ""; position: absolute; left: -14px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #00E0C2 }
+.sgnav .nv-li.open > .nv-a:not(.on) { color: #fff }
+.sgnav .nv-ic { width: 30px; height: 30px; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; flex: none; font-style: normal; font-size: 17px; line-height: 1 }
+.sgnav .nv-ic .mdi { font-size: 17px; line-height: 1 }
+.sgnav .nv-a.on .nv-ic { background: rgba(255,255,255,.18) }
+.sgnav .nv-ic.br { background: rgba(255,255,255,.06); box-shadow: inset 0 0 0 1px rgba(255,255,255,.08) }
+.sgnav .nv-a.on .nv-ic.br { background: rgba(255,255,255,.18) }
+.sgnav .nv-ic img { width: 22px; height: 22px; display: block }
+.sgnav .chev { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); opacity: .6; transition: transform .18s; display: inline-flex }
+.sgnav .nv-li.open > .nv-a .chev { transform: translateY(-50%) rotate(90deg) }
+
+/* Contadores */
+.sgnav .nb { margin-left: auto; font-style: normal; font-size: 10.5px; font-weight: 800; min-width: 20px; height: 18px; padding: 0 6px; border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums; flex: none }
+.sgnav .nb.r { background: rgba(255,92,138,.2); color: #FFA3BD }
+.sgnav .nb.a { background: rgba(255,181,71,.18); color: #FFCB7A }
+.sgnav .nb.n { background: rgba(0,224,194,.16); color: #5CF2DB }
+.sgnav .nb.g { background: rgba(255,255,255,.1); color: #D3D8E8 }
+
+/* Submenus en acordeon con linea guia */
+.sgnav .sub { display: none; position: relative; padding: 0 0 6px }
+.sgnav .nv-li.open > .sub { display: block; animation: sgnavIn .18s ease-out }
+@keyframes sgnavIn { from { opacity: 0; transform: translateY(-4px) } }
+.sgnav .sub::before { content: ""; position: absolute; left: 28px; top: 0; bottom: 12px; width: 1px; background: rgba(255,255,255,.12) }
+.sgnav .sub-t { display: none }
+.sgnav .sbl { display: block; min-height: 32px; padding: 7px 12px 7px 55px; margin: 0 0 1px; font-size: 12px; font-weight: 500; line-height: 1.3; color: #AEB4CB; border-radius: 9px; position: relative }
+.sgnav .sbl:hover { color: #fff; background: rgba(255,255,255,.05) }
+.sgnav .sbl.on { color: #fff; font-weight: 600; background: rgba(255,255,255,.08) }
+.sgnav .sbl.on::before { content: ""; position: absolute; left: 25px; top: 50%; width: 7px; height: 7px; margin-top: -3.5px; border-radius: 50%; background: #00E0C2; box-shadow: 0 0 0 3px rgba(0,224,194,.18) }
+.sgnav .sbl.d1 { padding-left: 67px }
+.sgnav .sbl.d2 { padding-left: 79px }
+.sgnav .sg-g { position: relative }
+.sgnav .sub-gt { display: flex; align-items: center; gap: 8px; min-height: 30px; padding: 6px 14px 6px 55px; margin: 2px 0 1px; font-size: 11px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: rgba(255,255,255,.55); border-radius: 9px; position: relative }
+.sgnav .sub-gt.d1 { padding-left: 67px }
+.sgnav .sub-gt:hover { color: #fff; background: rgba(255,255,255,.05) }
+.sgnav .sub-gt span { flex: 1 }
+.sgnav .sub-gt .chev { position: static; transform: none; opacity: .6; transition: transform .18s }
+.sgnav .sg-g.open > .sub-gt .chev { transform: rotate(90deg) }
+.sgnav .sg-g.open > .sub-gt { color: #fff }
+.sgnav .sub-gb { display: none }
+.sgnav .sg-g.open > .sub-gb { display: block }
+
+/* Recientes */
+.sgnav .rc { display: flex; align-items: center; gap: 10px; min-height: 34px; padding: 5px 12px; font-size: 12px; color: #AEB4CB; border-radius: 9px }
+.sgnav .rc:hover { color: #fff; background: rgba(255,255,255,.06) }
+.sgnav .rc span:not(.mdi) { white-space: nowrap; overflow: hidden; text-overflow: ellipsis }
+.sgnav .rc .nv-ic { width: 28px; height: 28px; background: rgba(255,255,255,.05) }
+.sgnav .rc .nv-ic .mdi { font-size: 15px }
+
+/* Contraer menu */
+.sgnav-foot { padding: 0 14px 8px }
+.sgnav-foot .nv-col { display: flex; align-items: center; gap: 12px; width: 100%; height: 36px; padding: 0 13px; border: 0; border-radius: 10px; background: transparent; color: rgba(255,255,255,.5); font-size: 12px; font-weight: 600; cursor: pointer }
+.sgnav-foot .nv-col:hover { background: rgba(255,255,255,.06); color: #fff }
+.sgnav-foot .nv-col:focus-visible { outline: 3px solid rgba(22,198,201,.55); outline-offset: -2px }
+.sgnav-foot .nv-col .ic { transition: transform .2s; flex: none }
+body:not(.enlarged) .left-side-menu { display: flex; flex-direction: column }
+body:not(.enlarged) .left-side-menu .slimScrollDiv { flex: 1 1 auto; min-height: 0; height: auto !important; display: flex; flex-direction: column; overflow: hidden !important }
+body:not(.enlarged) .left-side-menu .slimscroll-menu { flex: 1 1 auto; min-height: 0; height: auto !important; display: flex; flex-direction: column; overflow: hidden !important }
+body:not(.enlarged) .left-side-menu .slimScrollBar, body:not(.enlarged) .left-side-menu .slimScrollRail { display: none !important }
+body:not(.enlarged) .sgnav { overflow-y: auto; overflow-x: hidden; flex: 1 1 auto; min-height: 0; scrollbar-width: thin }
+body:not(.enlarged) .sgnav-foot, body:not(.enlarged) .left-side-menu .user-box { flex: none }
+
+/* Colapsado */
+body.enlarged .sgnav { overflow: visible; padding-inline: 10px }
+body.enlarged .sgnav .nav-t { font-size: 0; height: 1px; padding: 0; margin: 10px 8px; background: rgba(255,255,255,.1) }
+body.enlarged .sgnav .rec-t, body.enlarged .sgnav .rec { display: none }
+body.enlarged .sgnav .nv-find { width: 50px; padding: 0; justify-content: center }
+body.enlarged .sgnav .nv-find span, body.enlarged .sgnav .nv-find kbd { display: none }
+body.enlarged .sgnav .nv-a { justify-content: center; padding: 5px 0; gap: 0; margin-bottom: 2px }
+body.enlarged .sgnav .nv-a .nv-n, body.enlarged .sgnav .chev { display: none }
+body.enlarged .sgnav .nv-a.on { background-image: none; box-shadow: none }
+body.enlarged .sgnav .nv-a.on::before { display: none }
+body.enlarged .sgnav .nv-a.on .nv-ic { background-image: linear-gradient(100deg, #6C5CFF, #7B3FF2); box-shadow: 0 8px 20px rgba(91,56,235,.35) }
+body.enlarged .sgnav .nb { position: absolute; top: 6px; right: 6px; min-width: 8px; width: 8px; height: 8px; padding: 0; font-size: 0; margin: 0; box-shadow: 0 0 0 2px #121630 }
+body.enlarged .sgnav .nb.r { background: #FF5C8A }
+body.enlarged .sgnav .nb.a { background: #FFB547 }
+body.enlarged .sgnav .nb.n { background: #00E0C2 }
+body.enlarged .sgnav .nb.g { background: #C9CFE0 }
+body.enlarged .sgnav .nv-li.open > .sub { display: none }
+body.enlarged .sgnav .nv-li:hover > .sub, body.enlarged .sgnav .nv-li:focus-within > .sub { display: block; position: absolute; left: 54px; top: 0; width: 240px; padding: 8px; border-radius: 14px; background: #151A33; box-shadow: 0 18px 40px rgba(0,0,0,.45), inset 0 0 0 1px rgba(255,255,255,.08); z-index: 1100; animation: none }
+body.enlarged .sgnav .nv-li:hover > .sub::after, body.enlarged .sgnav .nv-li:focus-within > .sub::after { content: ""; position: absolute; left: -10px; top: 0; width: 10px; height: 100% }
+body.enlarged .sgnav .sub::before { display: none }
+body.enlarged .sgnav .sub-t { display: block; padding: 6px 10px 8px; font-size: 12.5px; font-weight: 700; color: #fff; border-bottom: 1px solid rgba(255,255,255,.08); margin-bottom: 6px }
+body.enlarged .sgnav .sbl, body.enlarged .sgnav .sbl.d1, body.enlarged .sgnav .sbl.d2 { padding: 7px 10px }
+body.enlarged .sgnav .sbl.on::before { left: 0 }
+body.enlarged .sgnav .sub-gt, body.enlarged .sgnav .sub-gt.d1 { padding-left: 10px }
+body.enlarged .sgnav .sub-gb { display: block }
+body.enlarged .sgnav .sub-gt .chev { display: none }
+body.enlarged .sgnav-foot { padding: 0 10px 8px }
+body.enlarged .sgnav-foot .nv-col { justify-content: center; padding: 0 }
+body.enlarged .sgnav-foot .nv-col span { display: none }
+body.enlarged .sgnav-foot .nv-col .ic { transform: rotate(180deg) }
+body.enlarged .left-side-menu, body.enlarged .left-side-menu .slimscroll-menu { overflow: visible !important }
+
+/* Ir a… */
+.sgck-scrim { position: fixed; inset: 0; background: rgba(11,15,26,.5); z-index: 1600; animation: sgckFade .15s }
+@keyframes sgckFade { from { opacity: 0 } }
+.sgck { position: fixed; top: 12vh; left: 50%; transform: translateX(-50%); z-index: 1601; width: min(620px, calc(100vw - 32px)); background: #fff; border-radius: 18px; box-shadow: 0 30px 80px rgba(11,15,26,.35); overflow: hidden; font-family: 'Sora', 'Segoe UI', sans-serif; color: #0B0F1A; animation: sgckIn .2s ease-out }
+@keyframes sgckIn { from { opacity: 0; transform: translateX(-50%) translateY(8px) } }
+.sgck-in { display: flex; align-items: center; gap: 12px; height: 58px; padding: 0 16px; border-bottom: 1px solid #E2E8F0; color: #64748B }
+.sgck-in input { flex: 1; min-width: 0; border: 0 !important; outline: 0 !important; box-shadow: none !important; background: transparent !important; font-size: 15px; color: #0B0F1A; padding: 0 !important; height: auto !important }
+.sgck kbd { background: #F3F5F8; color: #64748B; font: 600 10.5px 'Sora', sans-serif; border-radius: 6px; padding: 1px 6px }
+.sgck-l { max-height: min(52vh, 420px); overflow: auto; padding: 6px 8px 10px }
+.sgck-g { font-size: 10.5px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #94A3B8; padding: 10px 10px 4px }
+.sgck-i { display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; gap: 10px; align-items: center; width: 100%; border: 0; background: transparent; border-radius: 11px; padding: 8px 10px; text-align: left; cursor: pointer; color: inherit }
+.sgck-i b { display: block; font-size: 13px; font-weight: 600 }
+.sgck-i small { display: block; font-size: 11.5px; color: #64748B }
+.sgck-i.sel { background: #F2EFFF }
+.sgck-i.sel b { color: #6732F4 }
+.sgck-ic { width: 34px; height: 34px; border-radius: 10px; background: #F3F5F8; color: #334155; display: flex; align-items: center; justify-content: center; font-size: 18px }
+.sgck-i.sel .sgck-ic { background: #fff; color: #6732F4 }
+.sgck-e { padding: 24px; text-align: center; color: #64748B }
+.sgck-f { display: flex; gap: 16px; padding: 10px 16px; border-top: 1px solid #E2E8F0; font-size: 11.5px; color: #64748B }
+.sgck-f kbd { margin-right: 3px }
+@media (max-width: 640px) { .sgck-f { display: none } .sgck { top: 6vh } }
+@media (prefers-reduced-motion: reduce) { .sgnav *, .sgck, .sgck-scrim { animation: none !important; transition: none !important } }
+
+/* busqueda en vivo de la barra superior */
+.sg-search { position: relative }
+.sgck.sgck-top { position: absolute; top: calc(100% + 8px); left: 0; transform: none; width: min(640px, 92vw); z-index: 1300; animation: none }
+.sgck.sgck-top .sgck-l { max-height: min(60vh, 440px) }

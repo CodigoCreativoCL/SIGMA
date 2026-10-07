@@ -7,268 +7,239 @@ using SitioBase.Controller;
 using SitioBase.Model;
 
 /// <summary>
-/// Menu lateral.
+/// Menu lateral (diseno «sidebar propuesto», 06-10-2026).
 ///
-/// QUE CAMBIO
-///   Antes preguntaba por CADA NODO si el usuario tenia permiso, y cada
-///   pregunta era un viaje a la base: con 17 menus eran 17 consultas en
-///   cada render de cada pagina. Ahora Token cachea el set de permisos del
-///   usuario en la sesion, asi que estas verificaciones son lookups en
-///   memoria y el render no consulta nada.
+/// TODO SALE DE LA TABLA DE MENUS
+///   Los grupos con titulo (Configuracion, Gestion, Operacion, Centro de Ayuda, Inteligencia), el nombre corto de una linea y
+///   el contador de cada modulo viven en Menus.mnu_grupo / mnu_nombre_corto / mnu_contador (BD/378);
+///   los permisos siguen siendo los de siempre. Nada del menu esta fijo en el HTML, salvo «Inicio»,
+///   que no es una pantalla con permiso sino la puerta de entrada de todos.
 ///
-///   Ademas los contenedores (mnu_link = '#') ya no necesitan permiso
-///   propio: se muestran solo si alguno de sus hijos se muestra. Asi no
-///   hay que mantener permisos de carpetas y no aparecen menus vacios que
-///   no llevan a ninguna parte.
+///   - Una opcion con mnu_grupo se dibuja como modulo propio aunque cuelgue de otra (SIGMA Twin
+///     sigue en Inventario para los permisos y se ve en Inteligencia).
+///   - mnu_grupo = '~' la saca del sidebar (Alertas: vive en la campana).
+///   - Un modulo con una sola pantalla visible lleva directo a ella, sin desplegable.
+///   - Los contenedores (mnu_link = '#') solo se ven si alguno de sus hijos se ve.
+///
+/// QUE QUEDA PARA EL NAVEGADOR (Js/sigma-sidebar.js)
+///   El acordeon recordado por persona, «Ir a…» (Ctrl K), los recientes, el boton de contraer y el
+///   refresco de los contadores.
 /// </summary>
 public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserControl
 {
     private MenusController menusController = new MenusController();
+
+    private class Meta { public string Grupo, Corto, Contador; }
+    private Dictionary<int, Meta> _meta = new Dictionary<int, Meta>();
+    private Dictionary<string, int> _cont = new Dictionary<string, int>();
+    private string _actual = "";
+
+    /* Configuración (la de root) primero; Inteligencia al final. */
+    private static readonly string[] GRUPOS = { "Configuración", "Gestión", "Operación", "Centro de Ayuda", "Inteligencia" };
 
     protected void Page_Load(object sender, EventArgs e)
     {
         CargarMenus();
     }
 
-    protected void CargarMenus()
+    private void CargarMeta()
     {
-        List<Menus> menus = menusController.GetMenus(new Menus());
-        StringBuilder sbMenus = new StringBuilder();
-
-        foreach (Menus item in menus.Where(x => x.mnu_nivel == 1).OrderBy(x => x.mnu_orden))
+        try
         {
-            if (!item.mnu_visible) continue;
-
-            // Una seccion de nivel 1 es un titulo: solo vale si trae algo debajo.
-            string hijos = addMenu(menus, item.mnu_id, 1, 0).ToString();
-            if (string.IsNullOrEmpty(hijos)) continue;
-
-            sbMenus.AppendLine("<li class='menu-title'>");
-            sbMenus.AppendLine(item.mnu_nombre);
-            sbMenus.AppendLine("</li>");
-            sbMenus.AppendLine(hijos);
+            foreach (Dictionary<string, object> f in SoporteDatos.Filas("SEL_MENUS_SIDEBAR"))
+                _meta[Convert.ToInt32(f["ID"])] = new Meta
+                {
+                    Grupo = f["GRUPO"] as string,
+                    Corto = f["CORTO"] as string,
+                    Contador = f["CONTADOR"] as string
+                };
         }
+        catch (Exception) { /* sin las columnas el menu se arma igual, sin grupos ni contadores */ }
 
-        LiteralControl lc = new LiteralControl();
-        lc.Text = sbMenus.ToString();
-        phdMenus.Controls.Add(lc);
-    }
-
-    /// <summary>
-    /// Dibuja los hijos de un nodo.
-    ///
-    /// <paramref name="countNivel"/> decide si el item lleva icono: los que
-    /// cuelgan directo de un titulo si, los de un submenu no.
-    ///
-    /// <paramref name="profundidad"/> es otra cosa: cuenta cuantos submenus
-    /// llevamos abiertos, para nombrar el &lt;ul&gt; como Adminto espera
-    /// -nav-second-level el primero, nav-third-level de ahi para dentro-.
-    /// Antes todos los niveles salian como nav-second-level, asi que un
-    /// tercer nivel se dibujaba con la misma sangria que el segundo y no se
-    /// leia como algo que esta adentro.
-    /// </summary>
-    /// <summary>
-    /// Cuantas alertas abiertas tiene cada pantalla.
-    ///
-    /// Se pide UNA vez por peticion -el controlador lo cachea- y no una por
-    /// item: con veinte menus serian veinte consultas para pintar tres
-    /// numeros.
-    /// </summary>
-    private Dictionary<string, int> _alertas;
-
-    private Dictionary<string, int> Alertas
-    {
-        get
+        try
         {
-            if (_alertas == null)
-                _alertas = new AlertaController().GetResumen().PorMenu;
-
-            return _alertas;
+            Dictionary<string, object> c = SoporteDatos.Fila("SEL_MENU_CONTADORES", "@CLIENTE", SitioBase.Session.ClienteId(), "@USUARIO", SoporteDatos.Usuario());
+            foreach (KeyValuePair<string, object> kv in c)
+                _cont[kv.Key.ToLowerInvariant()] = kv.Value == null ? 0 : Convert.ToInt32(kv.Value);
         }
+        catch (Exception) { }
     }
 
-    /// <summary>
-    /// El numero al lado del nombre del menu.
-    ///
-    /// Es el mismo hallazgo que muestra la campana, visto desde donde se
-    /// resuelve: la campana dice "hay tres cosas", el menu dice "las tres son
-    /// de Existencias". Sin esto habria que abrir la campana para saber
-    /// adonde ir.
-    /// </summary>
-    protected string BadgeDe(string link)
+    private Meta MetaDe(int id)
     {
-        if (string.IsNullOrEmpty(link)) return "";
-
-        int n;
-        if (!Alertas.TryGetValue(link, out n) || n <= 0) return "";
-
-        return " <span class='sg-menu-badge'>" + (n > 99 ? "99+" : n.ToString()) + "</span>";
+        Meta m;
+        return _meta.TryGetValue(id, out m) ? m : new Meta();
     }
 
-    /// <summary>
-    /// Todas las alertas de una rama, por hondo que este la pantalla.
-    ///
-    /// Recursivo y no un nivel: Inventario contiene Operacion y Operacion
-    /// contiene Existencias. Sumando solo los hijos directos, el modulo
-    /// marcaba cero teniendo tres alertas dos niveles mas abajo.
-    /// </summary>
-    protected int TotalRama(List<Menus> menus, int padre)
-    {
-        int total = 0;
-
-        foreach (Menus h in menus.Where(x => x.mnu_padre == padre))
-        {
-            int n;
-
-            if (!string.IsNullOrEmpty(h.mnu_link) && h.mnu_link != "#" &&
-                Alertas.TryGetValue(h.mnu_link, out n)) total += n;
-
-            total += TotalRama(menus, h.mnu_id);
-        }
-
-        return total;
-    }
-
-    /// <summary>
-    /// El punto que late en el modulo.
-    ///
-    /// Va como SVG y no como un div con box-shadow porque el anillo tiene que
-    /// expandirse por fuera del punto sin empujar el texto del menu: dentro
-    /// del svg el dibujo se sale de su caja sin afectar el layout.
-    /// </summary>
-    /// <summary>
-    /// El indicador de novedades del menú, del kit de marca.
-    ///
-    /// Es el SVG de SIGMA y no un punto dibujado a mano: la animación y la
-    /// geometría neuronal vienen dentro del vector, así que el menú no tiene
-    /// que saber nada de cómo late.
-    ///
-    /// Solo se dibuja cuando hay algo. El README del kit lo dice y tiene
-    /// razón: un indicador siempre presente deja de indicar.
-    /// </summary>
-    protected string PuntoPulso()
-    {
-        return "<span class='sigma-menu-alert' title='Hay alertas en este módulo'>" +
-               "<img src='" + ResolveUrl("~/Imagen/indicadores/sigma-menu-pulse.svg") +
-               "' alt='' aria-hidden='true' /></span>";
-    }
-
-    /* SIGMA Twin lleva su logo en el menu (Imagen/sigma-twin): el simbolo solo si hay un icono que reemplazar. */
-    private static bool EsTwin(string link)
-    {
-        return !string.IsNullOrEmpty(link) && link.EndsWith("BodegaMapa3D.aspx", StringComparison.OrdinalIgnoreCase);
-    }
-    private string LogoTwin(string nombre, bool soloSimbolo)
-    {
-        return soloSimbolo
-            ? "<img class='sg-menu-twin-ico' src='" + ResolveUrl("~/Imagen/sigma-twin/sigma-twin-symbol-white.svg") + "' alt='' />"
-            : "<img class='sg-menu-twin' src='" + ResolveUrl("~/Imagen/sigma-twin/sigma-twin-logo-horizontal-dark.svg") + "' alt='" + nombre + "' title='" + nombre + "' />";
-    }
-
-    /* El permiso de la pagina y, para las que dependen del plan (la
-       ticketera de Soporte), que el plan del cliente las incluya. */
+    /* El permiso de la pagina y, para las que dependen del plan (la ticketera de Soporte), que el plan del cliente las incluya. */
     private static bool Puede(Menus m)
     {
         return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link);
     }
 
-    protected StringBuilder addMenu(List<Menus> menus, int padre, int countNivel, int profundidad)
+    private static string Ico(string k, int n)
     {
+        string d;
+        switch (k)
+        {
+            case "search": d = "<circle cx=\"11\" cy=\"11\" r=\"7\"/><path d=\"M20 20l-3.5-3.5\"/>"; break;
+            case "chev": d = "<path d=\"M9 6l6 6-6 6\"/>"; break;
+            default: d = ""; break;
+        }
+        return "<svg class=\"ic\" style=\"width:" + n + "px;height:" + n + "px\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"1.9\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\">" + d + "</svg>";
+    }
+
+    private bool EsActual(string link)
+    {
+        if (string.IsNullOrEmpty(link) || link == "#" || link.StartsWith("app://")) return false;
+        string p = ResolveUrl(link).ToLowerInvariant();
+        int q = p.IndexOf('?'); if (q >= 0) p = p.Substring(0, q);
+        return _actual == p;
+    }
+
+    protected void CargarMenus()
+    {
+        CargarMeta();
+        _actual = Request.Url.AbsolutePath.ToLowerInvariant();
+
+        List<Menus> menus = menusController.GetMenus(new Menus());
+
+        /* Los modulos: cada opcion de nivel 2, y cualquiera con grupo propio. Los de grupo «~» no van. */
+        List<Menus> modulos = menus.Where(x => x.mnu_visible && (x.mnu_nivel == 2 || MetaDe(x.mnu_id).Grupo != null))
+                                   .Where(x => MetaDe(x.mnu_id).Grupo != "~")
+                                   .OrderBy(x => x.mnu_nivel == 2 ? 0 : 1).ThenBy(x => x.mnu_orden).ToList();
+
         StringBuilder sb = new StringBuilder();
 
-        foreach (Menus item in menus.Where(x => x.mnu_padre == padre).OrderBy(x => x.mnu_orden))
+        sb.Append("<button type=\"button\" class=\"nv-find\" data-sg-cmdk=\"1\" title=\"Ir a… (Ctrl K)\">" + Ico("search", 15) + "<span>Ir a…</span><kbd>Ctrl K</kbd></button>");
+
+        string home = ResolveUrl("~/Default.aspx");
+        bool enInicio = _actual == home.ToLowerInvariant() || _actual == ResolveUrl("~/").ToLowerInvariant();
+        sb.Append("<div class=\"nv-li\"><a href=\"" + home + "\" class=\"nv-a" + (enInicio ? " on" : "") + "\" title=\"Inicio\"" + (enInicio ? " aria-current=\"page\"" : "") +
+                  " data-sg-t=\"Inicio\"><i class=\"nv-ic\"><span class=\"mdi mdi-home-outline\"></span></i><span class=\"nv-n\">Inicio</span></a></div>");
+
+        foreach (string grupo in GRUPOS)
         {
-            if (!item.mnu_visible) continue;
-
-            if (item.mnu_link == "#")
-            {
-                // Contenedor: se arma primero el contenido y si queda vacio
-                // no se dibuja. No se le pide permiso propio.
-                string hijos = addMenu(menus, item.mnu_id, 0, profundidad + 1).ToString();
-                if (string.IsNullOrEmpty(hijos)) continue;
-
-                /* UNA SOLA PANTALLA ADENTRO: EL MODULO ES EL ENLACE (05-10-2026)
-
-                   Un desplegable con un unico item obliga a dos clics para
-                   llegar a lo mismo (Control de activos › Activos). Si lo
-                   unico visible es una pagina, el modulo lleva directo a
-                   ella, con su icono y su nombre. */
-                List<Menus> visibles = menus.Where(x => x.mnu_padre == item.mnu_id && x.mnu_visible).ToList();
-                Menus unica = visibles.Count(x => x.mnu_link == "#" || Puede(x)) == 1
-                              ? visibles.FirstOrDefault(x => x.mnu_link != "#" && Puede(x)) : null;
-                if (unica != null && !menus.Any(x => x.mnu_padre == unica.mnu_id && x.mnu_visible))
-                {
-                    sb.AppendLine("<li>");
-                    sb.AppendLine(" <a href='" + ResolveUrl(unica.mnu_link) + "'>");
-                    if (countNivel != 0) sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
-                    sb.AppendLine("     <span>" + item.mnu_nombre + "</span>" + BadgeDe(unica.mnu_link));
-                    sb.AppendLine(" </a>");
-                    sb.AppendLine("</li>");
-                    continue;
-                }
-
-                string clase = profundidad == 0 ? "nav-second-level" : "nav-third-level";
-
-                sb.AppendLine("<li>");
-                sb.AppendLine(" <a href='javascript: void(0);'>");
-
-                // El icono, con el mismo criterio que las paginas: solo en el
-                // primer nivel. Un contenedor anidado con icono se leeria
-                // como si estuviera al mismo nivel que los de arriba.
-                if (countNivel != 0)
-                    sb.AppendLine("     <i class='" + item.mnu_icon + "'></i>");
-
-                /* El contenedor suma lo de TODA su rama, no solo sus hijos
-                   directos: Inventario cuelga de Operacion y Operacion de
-                   Existencias, asi que mirando un nivel el modulo quedaba en
-                   cero justo cuando tenia tres alertas adentro. */
-                int enRama = TotalRama(menus, item.mnu_id);
-
-                sb.AppendLine("     <span>" + item.mnu_nombre + "</span>");
-
-                /* EL PULSO BAJA EN CASCADA; EL NUMERO SE QUEDA DONDE ESTA
-
-                   Las CARPETAS -Inventario, Operacion- solo laten: dicen "hay
-                   algo por aca" y guian hacia abajo. El numero aparece una
-                   sola vez, en la pantalla que realmente tiene la alerta.
-
-                   Antes el contador se repetia en cada nivel: Operacion decia
-                   3 y Existencias decia 3, y las dos eran las MISMAS tres. Un
-                   numero repetido se lee como si fueran seis. */
-                if (enRama > 0) sb.AppendLine("     " + PuntoPulso());
-
-                sb.AppendLine("     <span class='menu-arrow'></span>");
-                sb.AppendLine(" </a>");
-                sb.AppendLine(" <ul class='" + clase + "' aria-expanded='false'>");
-                sb.AppendLine(hijos);
-                sb.AppendLine(" </ul>");
-                sb.AppendLine("</li>");
-            }
-            else
-            {
-                // Pagina: aca si manda el permiso.
-                if (!Puede(item)) continue;
-
-                sb.AppendLine("<li>");
-                sb.AppendLine(" <a href='" + ResolveUrl(item.mnu_link) + "'>");
-
-                string badge = BadgeDe(item.mnu_link);
-
-                if (countNivel == 0)
-                {
-                    sb.AppendLine((EsTwin(item.mnu_link) ? LogoTwin(item.mnu_nombre, false) : item.mnu_nombre) + badge);
-                }
-                else
-                {
-                    sb.AppendLine(EsTwin(item.mnu_link) ? "     " + LogoTwin(item.mnu_nombre, true) : "     <i class='" + item.mnu_icon + "'></i>");
-                    sb.AppendLine("     <span>" + item.mnu_nombre + "</span>" + badge);
-                }
-                sb.AppendLine(" </a>");
-                sb.AppendLine(addMenu(menus, item.mnu_id, 1, profundidad + 1).ToString());
-                sb.AppendLine("</li>");
-            }
+            string html = "";
+            foreach (Menus m in modulos.Where(x => (MetaDe(x.mnu_id).Grupo ?? "Gestión") == grupo))
+                html += Modulo(menus, m);
+            if (html == "") continue;
+            sb.Append("<div class=\"nav-t\">" + Server.HtmlEncode(grupo) + "</div>");
+            sb.Append(html);
         }
 
-        return sb;
+        /* Los modulos con un grupo que no es ninguno de los cuatro conocidos van al final, sin titulo propio. */
+        foreach (string otro in modulos.Select(x => MetaDe(x.mnu_id).Grupo).Where(g => g != null && !GRUPOS.Contains(g)).Distinct())
+        {
+            string html = "";
+            foreach (Menus m in modulos.Where(x => MetaDe(x.mnu_id).Grupo == otro)) html += Modulo(menus, m);
+            if (html != "") sb.Append("<div class=\"nav-t\">" + Server.HtmlEncode(otro) + "</div>" + html);
+        }
+
+        sb.Append("<div class=\"nav-t rec-t\" id=\"sgRecT\" hidden>Recientes</div><div class=\"rec\" id=\"sgRec\"></div>");
+
+        LiteralControl lc = new LiteralControl();
+        lc.Text = sb.ToString();
+        phdMenus.Controls.Add(lc);
+    }
+
+    /// <summary>Un modulo del menu: desplegable con sus pantallas, o enlace directo si solo tiene una.</summary>
+    private string Modulo(List<Menus> menus, Menus m)
+    {
+        Meta mt = MetaDe(m.mnu_id);
+        string nombre = string.IsNullOrEmpty(mt.Corto) ? m.mnu_nombre : mt.Corto;
+        string icono = IconoModulo(m);
+
+        int hojas = 0; string unica = null; bool activo = false;
+        string sub = m.mnu_link == "#" ? Hijos(menus, m.mnu_id, 0, nombre, m.mnu_icon, ref hojas, ref unica, ref activo) : "";
+
+        bool directo;
+        string href;
+        if (m.mnu_link != "#")
+        {
+            if (!Puede(m)) return "";
+            directo = true; href = ResolveUrl(m.mnu_link); activo = EsActual(m.mnu_link);
+        }
+        else
+        {
+            if (sub == "") return "";
+            directo = hojas == 1 && unica != null;
+            href = directo ? ResolveUrl(unica) : "#";
+            if (directo) activo = EsActual(unica);
+        }
+
+        string badge = Contador(mt.Contador);
+        string title = Server.HtmlEncode(m.mnu_nombre);
+        StringBuilder sb = new StringBuilder();
+
+        if (directo)
+        {
+            sb.Append("<div class=\"nv-li\"><a href=\"" + href + "\" class=\"nv-a" + (activo ? " on" : "") + "\" title=\"" + title + "\"" + (activo ? " aria-current=\"page\"" : "") +
+                      " data-sg-t=\"" + Server.HtmlEncode(m.mnu_nombre) + "\" data-sg-i=\"" + Server.HtmlEncode(m.mnu_icon ?? "") + "\"" + AtrCont(mt.Contador) + ">" + icono + "<span class=\"nv-n\">" + Server.HtmlEncode(nombre) + "</span>" + badge + "</a></div>");
+            return sb.ToString();
+        }
+
+        sb.Append("<div class=\"nv-li" + (activo ? " open has-on" : "") + "\" data-sg-key=\"m" + m.mnu_id + "\">");
+        sb.Append("<a href=\"#\" role=\"button\" class=\"nv-a" + (activo ? " on" : "") + "\" data-sg-tog=\"m" + m.mnu_id + "\" aria-expanded=\"" + (activo ? "true" : "false") + "\" title=\"" + title + "\"" + AtrCont(mt.Contador) + ">" +
+                  icono + "<span class=\"nv-n\">" + Server.HtmlEncode(nombre) + "</span>" + badge + "<b class=\"chev\">" + Ico("chev", 13) + "</b></a>");
+        sb.Append("<div class=\"sub\"><div class=\"sub-t\">" + title + "</div>" + sub + "</div></div>");
+        return sb.ToString();
+    }
+
+    /// <summary>El chip del icono: el simbolo de marca para SIGMA AI y SIGMA Twin, el icono del menu para el resto.</summary>
+    private string IconoModulo(Menus m)
+    {
+        string link = m.mnu_link ?? "";
+        if (link.EndsWith("BodegaMapa3D.aspx", StringComparison.OrdinalIgnoreCase))
+            return "<i class=\"nv-ic br\"><img src=\"" + ResolveUrl("~/Imagen/sigma-twin/sigma-twin-symbol-gradient.svg") + "\" alt=\"\" /></i>";
+        if (m.mnu_nivel == 2 && string.Equals(m.mnu_nombre, "SIGMA AI", StringComparison.OrdinalIgnoreCase))
+            return "<i class=\"nv-ic br\"><img src=\"" + ResolveUrl("~/Imagen/sigma-ai/sigma-ai-symbol-gradient.svg") + "\" alt=\"\" /></i>";
+        return "<i class=\"nv-ic\"><span class=\"" + Server.HtmlEncode(string.IsNullOrEmpty(m.mnu_icon) ? "mdi mdi-circle-outline" : m.mnu_icon) + "\"></span></i>";
+    }
+
+    private static string AtrCont(string clave) { return string.IsNullOrEmpty(clave) ? "" : " data-sg-c=\"" + clave + "\""; }
+
+    /// <summary>La pastilla del contador: rojo vencidas, ambar umbrales, teal novedades, gris abiertos.</summary>
+    private string Contador(string clave)
+    {
+        if (string.IsNullOrEmpty(clave)) return "";
+        int n; if (!_cont.TryGetValue(clave.ToLowerInvariant(), out n) || n <= 0) return "";
+        string tono = clave == "ot" ? "r" : clave == "stock" ? "a" : clave == "ai" ? "n" : "g";
+        string txt = clave == "ot" ? " vencidas" : clave == "stock" ? " fuera de umbral" : clave == "ai" ? " predicciones nuevas" : " abiertos";
+        return "<em class=\"nb " + tono + "\" data-sg-cont=\"" + clave + "\" title=\"" + n + txt + "\">" + (n > 99 ? "99+" : n.ToString()) + "</em>";
+    }
+
+    /// <summary>
+    /// Las pantallas de un modulo, planas y con los contenedores intermedios como rotulo.
+    /// Cuenta las pantallas visibles y recuerda la unica, para decidir si el modulo es un enlace directo.
+    /// </summary>
+    private string Hijos(List<Menus> menus, int padre, int profundidad, string modulo, string icono, ref int hojas, ref string unica, ref bool activo)
+    {
+        StringBuilder sb = new StringBuilder();
+        foreach (Menus h in menus.Where(x => x.mnu_padre == padre && x.mnu_visible).OrderBy(x => x.mnu_orden))
+        {
+            if (MetaDe(h.mnu_id).Grupo != null) continue;           // ya se dibuja como modulo propio
+
+            if (h.mnu_link == "#")
+            {
+                int n0 = 0; string u0 = null; bool a0 = false;
+                string dentro = Hijos(menus, h.mnu_id, profundidad + 1, modulo, icono, ref n0, ref u0, ref a0);
+                if (dentro == "") continue;
+                hojas += n0 + 1;                                     // un contenedor visible ya obliga al desplegable
+                if (a0) activo = true;
+                /* Un nivel intermedio con pantallas adentro es su propio acordeon: chevron a la derecha y abierto solo si la pagina actual esta adentro. */
+                sb.Append("<div class=\"sg-g" + (a0 ? " open" : "") + "\" data-sg-key=\"g" + h.mnu_id + "\"><a href=\"#\" role=\"button\" class=\"sub-gt d" + profundidad + "\" data-sg-gtog=\"g" + h.mnu_id + "\" aria-expanded=\"" + (a0 ? "true" : "false") + "\">" +
+                          "<span>" + Server.HtmlEncode(h.mnu_nombre) + "</span><b class=\"chev\">" + Ico("chev", 12) + "</b></a><div class=\"sub-gb\">" + dentro + "</div></div>");
+                continue;
+            }
+
+            if (!Puede(h)) continue;
+            hojas++; unica = h.mnu_link;
+            bool es = EsActual(h.mnu_link);
+            if (es) activo = true;
+            sb.Append("<a href=\"" + ResolveUrl(h.mnu_link) + "\" class=\"sbl d" + profundidad + (es ? " on" : "") + "\"" + (es ? " aria-current=\"page\"" : "") +
+                      " data-sg-t=\"" + Server.HtmlEncode(h.mnu_nombre) + "\" data-sg-m=\"" + Server.HtmlEncode(modulo) + "\" data-sg-i=\"" + Server.HtmlEncode(icono ?? "") + "\">" + Server.HtmlEncode(h.mnu_nombre) + "</a>");
+        }
+        return sb.ToString();
     }
 }

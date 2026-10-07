@@ -138,6 +138,14 @@ public class WsInicio : System.Web.Services.WebService
         });
     }
 
+    /// <summary>Los numeros de los contadores del sidebar (se refrescan cada minuto).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Contadores()
+    {
+        return WsSoporte.Ejecutar(() => new { cont = SoporteDatos.Fila("SEL_MENU_CONTADORES", "@CLIENTE", Cliente(), "@USUARIO", U()) });
+    }
+
     /// <summary>Guarda los accesos directos de la persona (lista de claves). Solo se aceptan modulos que existen.</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
