@@ -433,10 +433,10 @@ async function cargarCampanas(){
   /* Conectado: la pantalla vuelve a preguntar cada ~30 s y lo nuevo aparece sin recargar. */
   const N = L.filter(c => !CAMP_VISTAS.has(c.cam_id));
   const vistas = new Set();
-  const banner = N.find(c => tiene(c, 'banner'));
+  const banner = N.find(c => tiene(c, 'banner') && c.MOSTRAR !== 0);
   if (banner && !$('#sgs-banner')){ campBanner(banner); vistas.add(banner.cam_id); }
   let ya = {}; try { ya = JSON.parse(sessionStorage.getItem('sgs-modal') || '{}'); } catch (e){}
-  const modal = N.find(c => tiene(c, 'modal') && !ya[c.cam_id]);
+  const modal = N.find(c => tiene(c, 'modal') && c.MOSTRAR !== 0 && !ya[c.cam_id]);
   if (modal && !layer().innerHTML){ setTimeout(() => { if (!layer().innerHTML){ campModal(modal); ya[modal.cam_id] = 1; try { sessionStorage.setItem('sgs-modal', JSON.stringify(ya)); } catch (e){} } }, primera ? 700 : 50); vistas.add(modal.cam_id); }
   CAMP_CARDS = L.filter(c => tiene(c, 'card'));
   CAMP_CARDS.forEach(c => vistas.add(c.cam_id));
