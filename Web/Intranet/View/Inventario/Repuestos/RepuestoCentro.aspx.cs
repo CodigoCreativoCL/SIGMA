@@ -162,6 +162,11 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
             if (b.bod_cliente_instalacion > 0 && !string.IsNullOrEmpty(b.planta_nombre) && vistas.Add(b.bod_cliente_instalacion))
                 ddlPlanta.Items.Add(new System.Web.UI.WebControls.ListItem(b.planta_nombre, b.bod_cliente_instalacion.ToString()));
         pnlPlantaHero.Style["display"] = vistas.Count >= 1 ? "" : "none";
+        /* Igual que el Centro de activos: con una sola planta se muestra «Planta · nombre»; con más, el combo. */
+        bool fija = vistas.Count == 1;
+        litPlantaFija.Text = fija ? "<span>Planta</span><b>" + Server.HtmlEncode(ddlPlanta.Items[ddlPlanta.Items.Count - 1].Text) + "</b>" : "";
+        ddlPlanta.Style["display"] = fija ? "none" : "";
+        if (fija && ddlPlanta.Items.Count > 1) ddlPlanta.SelectedIndex = ddlPlanta.Items.Count - 1;
     }
 
     /// <summary>Bodegas, acotadas a la planta elegida si hay una.</summary>
