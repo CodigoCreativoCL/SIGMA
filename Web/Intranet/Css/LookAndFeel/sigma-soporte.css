@@ -707,3 +707,5 @@ body.sgs-pagina .card-box:has(#sgs-app) > .table-responsive{overflow:visible}
 .sgs .sgs-conect-l .av{width:24px;height:24px;border-radius:50%;background:var(--sigma-purple-soft);color:var(--sigma-purple);font-weight:800;font-size:11px;display:flex;align-items:center;justify-content:center;flex:none}
 .sgs .sgs-conect-l em{margin-left:auto;font-style:normal;font-size:11px;font-weight:800;color:var(--muted)}
 .sgs .sgs-conect-l em.ok{color:var(--success)}
+
+.sgs .sgs-expandir{right:56px}
