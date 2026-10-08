@@ -333,7 +333,15 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                 case "parada": p.AddRange(new object[] { "@REQUIERE_PARADA", Si(valor) }); break;
                 case "overhaul": p.AddRange(new object[] { "@ES_OVERHAUL", Si(valor) }); break;
                 case "habilitado": p.AddRange(new object[] { "@HABILITADO", Si(valor) }); break;
-                case "tipo": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN_TRABAJO_TIPO", n }); else p.AddRange(new object[] { "@QUITA_OT_TIPO", true }); break;
+                case "tipo":
+                    if (!vacio && valor.StartsWith("nuevo:", StringComparison.OrdinalIgnoreCase))
+                    {
+                        // «Crear "Mantención mayor"» desde el combo: nace el tipo (si no existe) y se asigna.
+                        int nuevo = ExecId("INS_ORDEN_TRABAJO_TIPO", "@NOMBRE", valor.Substring(6).Trim(), "@USUARIO", U());
+                        p.AddRange(new object[] { "@ORDEN_TRABAJO_TIPO", nuevo });
+                    }
+                    else if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN_TRABAJO_TIPO", n }); else p.AddRange(new object[] { "@QUITA_OT_TIPO", true });
+                    break;
                 case "prioridad": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN_TRABAJO_PRIORIDAD", n }); else p.AddRange(new object[] { "@QUITA_OT_PRIORIDAD", true }); break;
                 case "responsable": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@USUARIO_RESPONSABLE", n }); else p.AddRange(new object[] { "@QUITA_RESPONSABLE", true }); break;
                 case "grupo": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@GRUPO_TRABAJO", n }); else p.AddRange(new object[] { "@QUITA_GRUPO", true }); break;
@@ -967,12 +975,35 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             e.pro_permite_anticipada = Bool(d, "anticipada"); e.pro_permite_atrasada = Bool(d, "atrasada");
             e.pro_genera_automaticamente = Bool(d, "genera"); e.pro_habilitado = true;
 
-            Respuesta r = pc.InsertProgramacion(e);
-            if (r.error) throw new Exception(r.detalle);
-            int pro = r.codigo, cli = Cli(), usu = U();
+            int id = Entero(d, "id"), pro, cli = Cli(), usu = U();
+            if (id > 0)
+            {
+                Programacion ex = pc.GetProgramacion(id, false);
+                if (ex == null || ex.pro_cliente != cli) throw new Exception("El calendario no existe para este cliente.");
+                if (ex.pro_programacion_tipo != tipo.id) throw new Exception("El tipo de un calendario no se puede cambiar una vez guardado.");
+                e.pro_id = id;
+                Respuesta ru = pc.UpdateProgramacion(e);
+                if (ru.error) throw new Exception(ru.detalle);
+                pro = id;
+            }
+            else
+            {
+                Respuesta r = pc.InsertProgramacion(e);
+                if (r.error) throw new Exception(r.detalle);
+                pro = r.codigo;
+            }
             try
             {
+                if (id > 0)
+                {
+                    // En una edición se reemplaza lo anterior: fechas y exclusiones se rehacen desde el asistente.
+                    foreach (Dictionary<string, object> f0 in SoporteDatos.Filas("SEL_PROGRAMACION_FECHA", "@PROGRAMACION", pro, "@CLIENTE", cli))
+                        SoporteDatos.Conjuntos("DEL_PROGRAMACION_FECHA", "@ID", Valor(f0, "PFE_ID", "pfe_id", "ID"), "@CLIENTE", cli);
+                    foreach (Dictionary<string, object> x0 in SoporteDatos.Filas("SEL_PROGRAMACION_EXCLUSION", "@PROGRAMACION", pro, "@CLIENTE", cli, "@HABILITADO", true))
+                        SoporteDatos.Conjuntos("DEL_PROGRAMACION_EXCLUSION", "@ID", Valor(x0, "PXC_ID", "pxc_id", "ID"), "@CLIENTE", cli, "@USUARIO", usu);
+                }
                 if (modo == "persona") { Respuesta rp = pc.GuardarResponsables(pro, string.Join(",", personas)); if (rp.error) throw new Exception(rp.detalle); }
+                else if (id > 0) pc.GuardarResponsables(pro, "");
                 switch (tipoCod)
                 {
                     case "CALENDARIO":
@@ -1009,6 +1040,39 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                 throw new Exception("El calendario se creó, pero no se pudo completar: " + Limpio(ex.Message) + " Revísalo en Programaciones.");
             }
             return new { id = pro };
+        });
+    }
+
+    /// <summary>Todo lo que el asistente necesita para EDITAR un calendario compartido.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CalendarioDetalle(int id)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede(P_PROG_VER)) throw new Exception("No tienes permiso para ver calendarios.");
+            ProgramacionController pc = new ProgramacionController();
+            Programacion p = pc.GetProgramacion(id, true);
+            if (p == null || p.pro_cliente != Cli()) throw new Exception("El calendario no existe para este cliente.");
+            ProgramacionCalendario c = p.tipo_codigo == "CALENDARIO" ? pc.GetCalendario(id) : null;
+            ProgramacionIntervalo i = p.tipo_codigo == "INTERVALO TIEMPO" ? pc.GetIntervalo(id) : null;
+            List<ProgramacionFecha> fe = p.tipo_codigo == "FECHA UNICA" ? pc.GetFechas(id) : new List<ProgramacionFecha>();
+            List<ProgramacionExclusion> ex = pc.GetExclusiones(id) ?? new List<ProgramacionExclusion>();
+            int usos = (new Planificacion360Controller().GetUsosProgramacion() ?? new List<PlanificacionProgramacionUso>()).Count(x => x.programacion_id == id);
+            return new
+            {
+                id = p.pro_id, nombre = p.pro_nombre, tipoCodigo = p.tipo_codigo, usos = usos,
+                desde = p.pro_fecha_inicio.HasValue ? p.pro_fecha_inicio.Value.ToString("yyyy-MM-dd") : "", hasta = p.pro_fecha_fin.HasValue ? p.pro_fecha_fin.Value.ToString("yyyy-MM-dd") : "",
+                zona = p.pro_zona_horaria, planta = p.pro_cliente_instalacion, area = p.pro_instalacion_area, activo = p.pro_activo, grupo = p.pro_grupo_trabajo,
+                politica = p.pro_cumplimiento_politica, tolAntes = p.pro_tolerancia_antes_minuto, tolDespues = p.pro_tolerancia_despues_minuto,
+                anticipada = p.pro_permite_anticipada, atrasada = p.pro_permite_atrasada, genera = p.pro_genera_automaticamente,
+                personas = (p.RESPONSABLES_IDS ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList(),
+                calendario = c == null ? null : new { frecuencia = c.pca_frecuencia_tipo, intervalo = c.pca_intervalo, ordinal = c.pca_semana_ordinal, diaMes = c.pca_dia_mes, mes = c.pca_mes,
+                    hora = c.pca_hora_local.HasValue ? c.pca_hora_local.Value.ToString(@"hh\:mm") : "08:00", dias = (c.dias ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList() },
+                intervalo = i == null ? null : new { unidad = i.pin_unidad_tiempo, cantidad = i.pin_cantidad, ancla = i.pin_fecha_ancla_utc.HasValue ? i.pin_fecha_ancla_utc.Value.ToString("yyyy-MM-ddTHH:mm") : "" },
+                fechas = fe.Select(x => new { fecha = x.pfe_fecha.ToString("yyyy-MM-dd"), hora = x.pfe_hora.HasValue ? x.pfe_hora.Value.ToString(@"hh\:mm") : "" }).ToList(),
+                exclusiones = ex.Select(x => new { desde = x.pxc_fecha_inicio_utc.ToString("yyyy-MM-dd"), hasta = x.pxc_fecha_fin_utc.ToString("yyyy-MM-dd"), motivo = x.pxc_motivo, desplaza = x.pxc_desplaza }).ToList()
+            };
         });
     }
 

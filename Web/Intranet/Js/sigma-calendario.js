@@ -200,7 +200,24 @@
 
     /* El mismo pie en las tres vistas: "Hoy" y "Limpiar" tienen sentido
        siempre, y moverlos de lugar segun la vista obliga a buscarlos. */
+    function esModoMes(c) { return !!c && c.getAttribute && c.getAttribute('data-sgcal-modo') === 'mes'; }
+
+    /* «2026-10» -> primer dia de ese mes. */
+    function aMes(txt) {
+        var m = /^(\d{4})-(\d{2})$/.exec(String(txt || ''));
+        return m ? new Date(parseInt(m[1], 10), parseInt(m[2], 10) - 1, 1) : null;
+    }
+
+    /* El campo muestra «Octubre 2026» y su valor va en data-valor («2026-10»). */
+    function escribirMes(campo, anio, mes) {
+        campo.value = MESES[mes] + ' ' + anio;
+        campo.setAttribute('data-valor', anio + '-' + ('0' + (mes + 1)).slice(-2));
+        disparar(campo, 'input');
+        disparar(campo, 'change');
+    }
+
     function pie() {
+        if (esModoMes(campoActivo)) return '';
         return '<div class="sg-cal-pie">' +
             '<button type="button" class="sg-cal-accion" data-cal-hoy="1">Hoy</button>' +
             '<button type="button" class="sg-cal-accion is-limpiar" data-cal-limpiar="1">Limpiar</button>' +
@@ -251,10 +268,12 @@
         campoActivo = campo;
 
         /* Siempre se abre en los dias, aunque la vez anterior se haya quedado
-           en la lista de años: lo que se viene a hacer es elegir un dia. */
-        vista = 'dias';
+           en la lista de años: lo que se viene a hacer es elegir un dia.
+           Salvo en el campo de MES Y AÑO (data-sgcal-modo="mes"): ese abre en
+           los meses y elegir uno lo cierra, sin pasar por los dias. */
+        vista = esModoMes(campo) ? 'meses' : 'dias';
 
-        var actual = aFecha(campo.value);
+        var actual = esModoMes(campo) ? aMes(campo.getAttribute('data-valor')) : aFecha(campo.value);
         mesVista = actual ? new Date(actual.getFullYear(), actual.getMonth(), 1)
                           : new Date(new Date().getFullYear(), new Date().getMonth(), 1);
 
@@ -439,6 +458,12 @@
         }
 
         /* Y elegir baja de vuelta, un nivel a la vez. */
+        if (boton.hasAttribute('data-mes') && esModoMes(campoActivo)) {
+            escribirMes(campoActivo, mesVista.getFullYear(), parseInt(boton.getAttribute('data-mes'), 10));
+            cerrar();
+            return;
+        }
+
         if (boton.hasAttribute('data-mes')) {
             mesVista = new Date(mesVista.getFullYear(),
                                 parseInt(boton.getAttribute('data-mes'), 10), 1);

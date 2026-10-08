@@ -607,7 +607,7 @@
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=9"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=1"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=5"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=6"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,
                  filtros, permisos y postbacks; agrega la lectura en drawer. --%>

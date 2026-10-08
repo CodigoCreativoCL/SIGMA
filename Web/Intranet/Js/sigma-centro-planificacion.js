@@ -134,7 +134,7 @@ var avatar = function (n) { if (!n) return ''; var h = 0; for (var i = 0; i < n.
 var combo = function (nombre, lista, sel, o) {
   o = o || {};
   if (!window.SigmaCombo) return '';
-  var h = window.SigmaCombo.html(nombre, lista, sel == null ? '' : sel, { ph: o.ph || 'Elige una opción', clave: o.clave || nombre, etiqueta: o.etiqueta, id: o.id, vacio: o.vacio });
+  var h = window.SigmaCombo.html(nombre, lista, sel == null ? '' : sel, { ph: o.ph || 'Elige una opción', clave: o.clave || nombre, etiqueta: o.etiqueta, id: o.id, vacio: o.vacio, crear: !!o.crear });
   h = h.replace('<span class="sg-combo">', '<span class="sg-combo' + (o.err ? ' cp-err' : '') + '" data-cb="' + esc(nombre) + '"' + (o.data || '') + '>');
   if (o.dis) h = h.replace('<input type="text"', '<input type="text" readonly tabindex="-1"');
   return h;
@@ -259,7 +259,8 @@ function heroAcciones() {
   var pla = plantas.length === 1
     ? '<span class="cp-hsel">Planta <b>' + esc(plantas[0].n) + '</b></span>'
     : '<label class="cp-hsel">Planta' + combo('cpPlanta', [{ id: 0, n: 'Todas las plantas' }].concat(plantas), U.planta, { etiqueta: 'Planta', ph: 'Todas las plantas' }) + '</label>';
-  var per = '<label class="cp-hsel">Período' + combo('cpPeriodo', CFG.periodos || [], U.periodo, { etiqueta: 'Período', ph: 'Mes y año' }) + '</label>';
+  var mesTxt = function (v) { var m = /^(\d{4})-(\d{2})$/.exec(v || ''); return m ? MES[+m[2] - 1].charAt(0).toUpperCase() + MES[+m[2] - 1].slice(1) + ' ' + m[1] : ''; };
+  var per = '<label class="cp-hsel">Período<span class="sigma-modal-fecha cp-mes"><input type="text" id="cpPeriodo" data-sgcal-modo="mes" data-valor="' + esc(U.periodo) + '" value="' + esc(mesTxt(U.periodo)) + '" aria-label="Período: mes y año" autocomplete="off"><a role="button" tabindex="0" aria-label="Elegir mes y año"></a></span></label>';
   var ed = U.permisos.editar;
   return pla + per +
     '<button type="button" class="cp-hbtn cp-teal" data-a="bulkload"' + (ed ? '' : ' disabled title="No tienes permiso para crear planes"') + '>' + ic('upload', 17) + 'Carga masiva</button>' +
@@ -288,7 +289,7 @@ function tabsHTML() {
 }
 function pintarCascara() {
   $('#cpTituloPlanta').textContent = U.planta ? ' · ' + plantaN(U.planta) : '';
-  var acc = $('#cpHeroAcc'); if (!acc.dataset.ok) { acc.innerHTML = heroAcciones(); acc.dataset.ok = '1'; }
+  var acc = $('#cpHeroAcc'); if (!acc.dataset.ok) { acc.innerHTML = heroAcciones(); acc.dataset.ok = '1'; conectarFechas(acc); }
   $('#cpKpis').innerHTML = kpisHTML();
   $('#cpTabs').innerHTML = tabsHTML();
 }
@@ -550,7 +551,7 @@ function s2HTML(E) {
   return intTabs(i, E, 2) + '<div class="cp-ipanel" id="cpInt' + id + '">' +
     '<div class="cp-blk"><div class="cp-blk-h"><h4>' + esc(i.CODIGO) + ' · Datos de la orden de trabajo</h4><div class="cp-r"><label class="cp-sw"><input type="checkbox" data-iv="habilitado" data-i="' + id + '"' + (i.HABILITADO ? ' checked' : '') + dis + '><i></i>' + (i.HABILITADO ? 'Habilitada' : 'Deshabilitada') + '</label></div></div>' +
     '<div class="cp-grid4c"><div class="cp-fld" style="grid-column:span 2"><label>Nombre de la intervención</label><input class="cp-inp' + (nombre ? '' : ' cp-err') + '" data-iv="nombre" data-i="' + id + '" value="' + esc(i.NOMBRE) + '"' + dis + ' placeholder="Ej.: Mantención 2.000 h" maxlength="200">' + (nombre ? '' : mc('', 'La intervención necesita un nombre.')) + '</div>' +
-    '<div class="cp-fld"><label>Tipo de OT</label>' + combo('cpIvTipo' + id, catL('otTipos'), i.OT_TIPO_ID || '', { etiqueta: 'Tipo de OT', dis: !E, data: ' data-iv="tipo" data-i="' + id + '"', clave: 'cpOtTipos' }) + '</div>' +
+    '<div class="cp-fld"><label>Tipo de OT</label>' + combo('cpIvTipo' + id, catL('otTipos'), i.OT_TIPO_ID || '', { etiqueta: 'Tipo de OT', dis: !E, crear: E, ph: 'Elige o escribe uno nuevo', data: ' data-iv="tipo" data-i="' + id + '"', clave: 'cpOtTipos' }) + '</div>' +
     '<div class="cp-fld"><label>Prioridad</label>' + combo('cpIvPrio' + id, catL('prioridades'), i.OT_PRIORIDAD_ID || '', { etiqueta: 'Prioridad', dis: !E, data: ' data-iv="prioridad" data-i="' + id + '"', clave: 'cpPrioridades' }) + '</div>' +
     '<div class="cp-fld"><label>Duración estimada</label><div class="cp-unit"><input class="cp-inp' + (+i.DURACION > 0 ? '' : ' cp-err') + '" type="number" min="0.25" step="0.25" data-iv="duracion" data-i="' + id + '" value="' + (i.DURACION ? hrs(i.DURACION) : '') + '"' + dis + '><span class="cp-u">horas</span></div>' + (+i.DURACION > 0 ? '' : mc('', 'La duración debe ser mayor que 0.')) + '</div>' +
     '<div class="cp-fld" style="grid-column:2/-1;justify-content:flex-end"><div style="display:flex;gap:18px;flex-wrap:wrap;padding-bottom:9px"><label class="cp-sw"><input type="checkbox" data-iv="parada" data-i="' + id + '"' + (i.PARADA ? ' checked' : '') + dis + '><i></i>Requiere parada del activo</label><label class="cp-sw"><input type="checkbox" data-iv="overhaul" data-i="' + id + '"' + (i.OVERHAUL ? ' checked' : '') + dis + '><i></i>Es overhaul</label></div></div>' +
@@ -856,7 +857,7 @@ function abrirPlan(id, o) {
 /* =====================================================================
    Pintar: foco, lo escrito y el scroll sobreviven al repintado
    ===================================================================== */
-var FKEYS = ['pf', 'iv', 'act', 'fk', 'fe', 'xv', 'rq', 'repq', 'pv', 'mv', 'ppv'];
+var FKEYS = ['pf', 'iv', 'act', 'fk', 'fe', 'xv', 'xp', 'rq', 'repq', 'pv', 'pp', 'mv', 'ppv'];
 function grabFocus(root) {
   var a = document.activeElement; if (!a || !root || !root.contains(a) || a === document.body) return null;
   var sel = null, cb = a.closest('[data-cb]');
@@ -931,7 +932,10 @@ function panel() {
   var L = $('#cpLayer'); if (!PN) { L.innerHTML = ''; return; }
   var fo = grabFocus(L), sb = $('#cpLayer .cp-pnl-b'), st = sb ? sb.scrollTop : 0;
   var r = PANELS[PN.t]();
-  L.innerHTML = '<div class="cp-scr" data-a="pclose"></div><aside class="cp-pnl ' + (r.w ? 'cp-' + r.w : '') + '" role="dialog" aria-modal="true" aria-labelledby="cpPnlT"><div class="cp-pnl-h"><div class="cp-t">' + (r.s ? '<small>' + r.s + '</small>' : '') + '<h3 id="cpPnlT">' + r.t + '</h3></div><button type="button" class="cp-ibx" data-a="pclose" aria-label="Cerrar panel">' + ic('x', 18) + '</button></div><div class="cp-pnl-b">' + r.b + '</div>' + (r.f ? '<div class="cp-pnl-f">' + r.f + '</div>' : '') + '</aside>';
+  var inner = '<div class="cp-pnl-h"><div class="cp-t">' + (r.s ? '<small>' + r.s + '</small>' : '') + '<h3 id="cpPnlT">' + r.t + '</h3></div><button type="button" class="cp-ibx" data-a="pclose" aria-label="Cerrar panel">' + ic('x', 18) + '</button></div><div class="cp-pnl-b">' + r.b + '</div>' + (r.f ? '<div class="cp-pnl-f">' + r.f + '</div>' : '');
+  var ex = $('#cpLayer .cp-pnl');
+  if (ex) { ex.className = 'cp-pnl ' + (r.w ? 'cp-' + r.w : ''); ex.innerHTML = inner; }   // el cajón y su animación de entrada se conservan
+  else L.innerHTML = '<div class="cp-scr" data-a="pclose"></div><aside class="cp-pnl ' + (r.w ? 'cp-' + r.w : '') + '" role="dialog" aria-modal="true" aria-labelledby="cpPnlT">' + inner + '</aside>';
   var nb = $('#cpLayer .cp-pnl-b'); if (nb) nb.scrollTop = st;
   putFocus(fo, L); conectarFechas(L);
 }
@@ -1447,6 +1451,7 @@ A.bulkgo = function () {
 function valorCombo(span) { var h = span.querySelector('input[type=hidden]'); return h ? h.value : ''; }
 function alCambiar(e) {
   var t = e.target; if (!$('#cpRoot').contains(t)) return;
+  if (t.id === 'cpPeriodo') { var pv = t.getAttribute('data-valor'); if (pv && pv !== U.periodo) { U.periodo = pv; if (TABR[U.tab] && TABR[U.tab].periodo) TABR[U.tab].periodo(); } return; }
   var span = t.closest('[data-cb]');
   if (span && t.type === 'text') return comboCambio(span);
   if (t.hasAttribute('data-fe')) return fechaCambio(t);
@@ -1463,7 +1468,6 @@ function alCambiar(e) {
 function comboCambio(span) {
   var v = valorCombo(span), nombre = span.getAttribute('data-cb');
   if (nombre === 'cpPlanta') { if (+v !== U.planta) { U.planta = +v || 0; pintarCascara(); recargarTodo(); } return; }
-  if (nombre === 'cpPeriodo') { if (v && v !== U.periodo) { U.periodo = v; if (TABR[U.tab] && TABR[U.tab].periodo) TABR[U.tab].periodo(); } return; }
   if (span.hasAttribute('data-ar')) return asignarTodas(v);
   if (span.hasAttribute('data-pp') && PN && PN.d) return setPP(span, v);
   if (span.hasAttribute('data-pf')) return planCampo(span.getAttribute('data-pf'), v);
@@ -1497,7 +1501,9 @@ function ivCampo(el, campo, v) {
   if (campo === 'duracion') { var hh = parseFloat(String(v).replace(',', '.')); if (!(hh > 0)) { el.classList.add('cp-err'); noGuardado('La duración debe ser mayor que 0.'); return; } v = String(Math.round(hh * 60)); }
   if (campo === 'nombre' && !String(v).trim()) { el.classList.add('cp-err'); noGuardado('La intervención necesita un nombre.'); return; }
   if (sinCambio(actual, v)) return;
-  escribir('GuardarIntervencion', { plan: pid(), hito: id, campo: campo, valor: String(v == null ? '' : v) }).catch(toastError);
+  escribir('GuardarIntervencion', { plan: pid(), hito: id, campo: campo, valor: String(v == null ? '' : v) }).then(function () {
+    if (campo === 'tipo' && /^nuevo:/i.test(String(v))) return recargarCatalogos().then(function () { render(); toast('Tipo de OT creado: ya está disponible para todas las intervenciones.'); });
+  }).catch(toastError);
 }
 function actCampo(el, campo, v) {
   var id = +el.getAttribute('data-c'), ac = aById(id); if (!ac) return;
@@ -1577,7 +1583,7 @@ function alClic(e) {
   var a = t.getAttribute('data-a'), fn = A[a] || (TABR[U.tab] && TABR[U.tab].A && TABR[U.tab].A[a]);
   if (!fn) return;
   if (t.tagName === 'A' && t.getAttribute('href')) return;
-  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1 };
+  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1, calpers: 1 };
   if (t.type === 'checkbox' && !esCbx[a]) return;
   if (!(t.type === 'checkbox' && esCbx[a])) e.preventDefault();
   fn(t.dataset, t, e);
@@ -2003,7 +2009,7 @@ function calLibHTML() {
   return '<div style="display:flex;justify-content:flex-end">' + (ed ? '<button type="button" class="cp-btn cp-pri cp-sm" data-a="newcal">' + ic('plus', 15) + 'Nuevo calendario</button>' : '') + '</div>' +
     (LB.cals.map(function (c) {
       var n = c.usos.length;
-      return '<div class="cp-card cp-shc"><div class="cp-shc-h"><span class="cp-pci2">' + ic('link', 18) + '</span><div style="min-width:0;flex:1"><b>' + esc(c.nombre) + '</b><small>' + esc(c.tipo || '') + (c.detalle ? ' · ' + esc(c.detalle) : '') + '</small></div><div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="libcal" data-u="' + esc(c.url) + '" data-t="' + esc(c.nombre) + '">' + (ed ? 'Editar' : 'Ver') + '</button></div></div>' +
+      return '<div class="cp-card cp-shc"><div class="cp-shc-h"><span class="cp-pci2">' + ic('link', 18) + '</span><div style="min-width:0;flex:1"><b>' + esc(c.nombre) + '</b><small>' + esc(c.tipo || '') + (c.detalle ? ' · ' + esc(c.detalle) : '') + '</small></div><div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="libcal" data-id="' + c.id + '">' + (ed ? 'Editar' : 'Ver') + '</button></div></div>' +
         '<div class="cp-shc-b"><div><span class="cp-lb2">Próximas fechas</span><div>' + (c.fechas.length ? c.fechas.map(function (d) { return '<span class="cp-tg">' + fD(d) + '</span>'; }).join(' ') : '<span style="font-size:12px;color:var(--muted)">' + (c.tipoCodigo === 'MEDIDOR' ? 'Se dispara por medidor' : c.tipoCodigo === 'CONDICION' ? 'Se dispara por condición' : 'Sin fechas próximas') + '</span>') + '</div></div>' +
         '<div><span class="cp-lb2">Dónde se usa · ' + n + '</span><div class="cp-uses">' + c.usos.map(function (u) { return '<span class="cp-tg ' + (u.origen === 'Plan' ? 'cp-c' : '') + '">' + esc(u.origen) + ' · ' + esc(u.nombre) + '</span>'; }).join('') + (n ? '' : '<span style="font-size:12px;color:var(--muted)">Nadie lo usa</span>') + '</div></div></div></div>';
     }).join('') || '<div class="cp-empty">' + ic('link', 18) + '<b>Aún no hay calendarios compartidos</b>Se crean en Programaciones y se pueden usar desde cualquier intervención.</div>');
@@ -2027,7 +2033,7 @@ TABR.biblioteca = {
     newproc: function () { abrirProc(0); },
     editproc: function (d) { abrirProc(+d.id); },
     newcal: function () { abrirCal(); },
-    libcal: function (d) { abrirModalSitio(d.u, d.t || 'Calendario', function () { LB.cals = null; libCargar(); recargarCatalogos(); }); }
+    libcal: function (d) { abrirCal(+d.id); }
   }
 };
 function recargarCatalogos() { return api('Catalogos', {}).then(function (c) { U.cat = c; }).catch(function () { }); }
@@ -2041,7 +2047,7 @@ function setPP(el, v) {
   var path = el.getAttribute('data-pp'), d = PN.d, m;
   if ((m = /^s:(\d+)\.(\w+)$/.exec(path))) { var s = d.pasos[+m[1]]; if (s) s[m[2]] = v; }
   else if (/^f\./.test(path)) { var k = path.slice(2); d.f[k] = (k === 'hour' || k === 'mmode' || k === 'rep' || k === 't') ? v : (v === '' ? '' : isNaN(+v) ? v : +v); if (k === 't') panel(); }
-  else { d[path] = v; if (path === 'planta' && PN.t === 'cal') { d.area = ''; d.activo = ''; d.grupo = ''; calAlcance(); } }
+  else { d[path] = v; if (path === 'pq') panel(); if (path === 'planta' && PN.t === 'cal') { d.area = ''; d.activo = ''; d.grupo = ''; calAlcance(); } }
 }
 var ppTxt = function (path, val, o) {
   o = o || {};
@@ -2107,19 +2113,52 @@ var CAL_PASOS = ['Información general', 'Alcance', 'Asignación', 'Frecuencia',
 var CAL_TIPOS = [{ id: 'cal', n: 'Calendario (días y horas fijas)' }, { id: 'int', n: 'Intervalo de tiempo' }, { id: 'fec', n: 'Fechas puntuales' }];
 var CAL_ASIG = [['nadie', 'Sin asignar'], ['persona', 'Personas'], ['grupo', 'Grupo de trabajo']];
 var calCat = null;
-function abrirCal() {
-  openPanel({ t: 'cal', paso: 1, err: false, alc: null, xf: null, d: {
-    nombre: '', zona: '', planta: (CFG.plantas || []).length === 1 ? CFG.plantas[0].id : (U.planta || ''), area: '', activo: '', modo: 'nadie', personas: {}, grupo: '',
+var calCat = null;
+function calVacio() {
+  return { id: 0, usos: 0, nombre: '', zona: '', planta: (CFG.plantas || []).length === 1 ? CFG.plantas[0].id : (U.planta || ''), area: '', activo: '', modo: 'nadie', personas: {}, grupo: '',
     anticipada: true, atrasada: true, politica: '', genera: true, excl: [],
-    f: { t: 'cal', rep: 'm', n: 1, days: [], mmode: 'day', md: +TODAY.slice(8, 10), ord: 1, wd: 1, month: +TODAY.slice(5, 7), hour: '08:00', iu: uniId('MES'), anchor: TODAY, dates: [], from: TODAY, to: '', tb: 0, ta: 0 } },
+    f: { t: 'cal', rep: 'm', n: 1, days: [], mmode: 'day', md: +TODAY.slice(8, 10), ord: 1, wd: 1, month: +TODAY.slice(5, 7), hour: '08:00', iu: uniId('MES'), anchor: TODAY, dates: [], from: TODAY, to: '', tb: 0, ta: 0 } };
+}
+/* Lo que devuelve CalendarioDetalle, en la forma que usa el asistente. */
+function calDesdeDetalle(r) {
+  var d = calVacio(), f = d.f, c = r.calendario, i = r.intervalo;
+  d.id = r.id; d.usos = r.usos || 0; d.nombre = r.nombre; d.zona = r.zona || ''; d.planta = r.planta || ''; d.area = r.area || ''; d.activo = r.activo || ''; d.grupo = r.grupo || ''; d.politica = r.politica || '';
+  d.anticipada = !!r.anticipada; d.atrasada = !!r.atrasada; d.genera = !!r.genera;
+  (r.personas || []).forEach(function (x) { d.personas[x] = 1; });
+  d.modo = (r.personas || []).length ? 'persona' : r.grupo ? 'grupo' : 'nadie';
+  f.t = { 'CALENDARIO': 'cal', 'INTERVALO TIEMPO': 'int', 'FECHA UNICA': 'fec' }[r.tipoCodigo];
+  f.from = r.desde || TODAY; f.to = r.hasta || ''; f.tb = Math.round((+r.tolAntes || 0) / 1440); f.ta = Math.round((+r.tolDespues || 0) / 1440);
+  if (c) {
+    var fc = (U.cat.frecuencias || []).filter(function (x) { return x.ID === c.frecuencia; })[0];
+    f.rep = REP[fc ? fc.CODIGO : 'MENSUAL'] || 'm'; f.n = +c.intervalo || 1; f.hour = c.hora || '08:00'; f.days = (c.dias || []).map(Number).sort();
+    if (c.ordinal != null) { f.mmode = 'ord'; f.ord = +c.ordinal; f.wd = f.days[0] || 1; f.days = f.rep === 'w' ? f.days : []; } else { f.mmode = 'day'; f.md = c.diaMes && c.diaMes > 0 ? +c.diaMes : 31; }
+    f.month = +c.mes || f.month;
+  }
+  if (i) { f.n = +i.cantidad || 1; f.iu = +i.unidad; f.anchor = String(i.ancla || '').slice(0, 10) || TODAY; f.hour = String(i.ancla || '').slice(11, 16) || f.hour; }
+  f.dates = (r.fechas || []).map(function (x) { return { fecha: x.fecha, hora: x.hora || '' }; });
+  d.excl = (r.exclusiones || []).map(function (x) { return { a: x.desde, b: x.hasta, why: x.motivo || '', shift: !!x.desplaza }; });
+  return d;
+}
+/* Nuevo (id = 0) o editar (id > 0): el mismo asistente de seis pasos, en el cajón. */
+function abrirCal(id) {
+  id = +id || 0;
+  openPanel({ t: 'cal', paso: 1, err: false, alc: null, xf: null, cargando: id > 0, d: calVacio(),
     fecha: function (b, v) {
       var k = b.slice(2), x = PN.xf;
       if (k === 'xa' || k === 'xb') { if (x) x[k.slice(1)] = v; }
       else if (k === 'fadd') { var f = PN.d.f; if (v && !f.dates.some(function (y) { return y.fecha === v; })) { f.dates.push({ fecha: v, hora: f.hour }); panel(); } }
       else PN.d.f[k] = v;
     } });
-  var cargar = function () { if (PN && PN.t === 'cal') { panel(); calAlcance(); } };
-  if (calCat) cargar(); else api('CalendarioCatalogos', {}).then(function (r) { calCat = r; cargar(); }).catch(function (e) { closePanel(); toastError(e); });
+  var listo = function (r) {
+    if (!PN || PN.t !== 'cal') return;
+    if (r) {
+      if (!r.calendario && !r.intervalo && r.tipoCodigo !== 'FECHA UNICA') { closePanel(); toast('Este calendario es por medidor o por condición: se edita en Programaciones.'); return; }
+      PN.d = calDesdeDetalle(r); PN.cargando = false;
+    }
+    panel(); calAlcance();
+  };
+  var pideCat = calCat ? Promise.resolve() : api('CalendarioCatalogos', {}).then(function (c) { calCat = c; });
+  pideCat.then(function () { return id ? api('CalendarioDetalle', { id: id }) : null; }).then(listo).catch(function (e) { closePanel(); toastError(e); });
 }
 function calAlcance() {
   if (!PN || PN.t !== 'cal') return;
@@ -2139,13 +2178,14 @@ var calErr = function () {
 function calSeg(f, k, opts) { return '<div class="cp-segc" role="group">' + opts.map(function (o) { return '<button type="button" data-a="calset" data-k="' + k + '" data-v="' + o[0] + '" aria-pressed="' + (String(f[k]) === String(o[0])) + '">' + o[1] + '</button>'; }).join('') + '</div>'; }
 function calCombo(k, lista, val, etq, ph, extra) { return combo('cpCal' + k, lista, val, { etiqueta: etq, ph: ph || etq, data: ' data-pp="' + k + '"' + (extra || ''), clave: 'cpCal' + k }); }
 PANELS.cal = function () {
+  if (PN.cargando) return { t: 'Calendario compartido', s: 'Biblioteca · Calendarios', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:260px"></div>' };
   var d = PN.d, f = d.f, e = PN.err, errs = calErr(), paso = PN.paso, alc = PN.alc || { areas: [], activos: [], grupos: [] }, cat = calCat || { zonas: [], politicas: [], personas: [] };
   var errDe = function (n) { return errs.filter(function (x) { return x[0] === n; }); };
   var nav = '<nav class="cp-wiz" aria-label="Pasos">' + CAL_PASOS.map(function (n, k) { var i = k + 1, mal = e && errDe(i).length; return '<button type="button" class="' + (paso === i ? 'cp-on' : '') + (mal ? ' cp-bad' : '') + '" data-a="calpaso" data-v="' + i + '"' + (paso === i ? ' aria-current="step"' : '') + '><i>' + (mal ? '!' : i) + '</i>' + n + '</button>'; }).join('') + '</nav>';
   var b = '';
   if (paso === 1) {
-    b = '<div class="cp-fld"><label>Nombre del calendario</label>' + ppTxt('nombre', d.nombre, { err: e && !String(d.nombre).trim(), af: true, max: 400, ph: 'Ej.: Inspección semanal de bombas', lbl: 'Nombre del calendario' }) + (e && !String(d.nombre).trim() ? mc('', 'Falta el nombre.') : '') + '</div>' +
-      '<div class="cp-fld"><label>Tipo</label>' + combo('cpCalTipo', CAL_TIPOS, f.t, { etiqueta: 'Tipo', ph: 'Elige el tipo', data: ' data-pp="f.t"', clave: 'cpCalTipos' }) + '<small style="color:var(--muted);font-size:11.5px">Por medidor o por condición se crean en Programaciones.</small></div>' +
+    b = (d.id && d.usos ? mc('w', 'Lo usan <b>' + pl(d.usos, 'plan, tarea o pauta', 'planes, tareas o pautas') + '</b>: un cambio aquí cambia las fechas de todos.') : '') + '<div class="cp-fld"><label>Nombre del calendario</label>' + ppTxt('nombre', d.nombre, { err: e && !String(d.nombre).trim(), af: true, max: 400, ph: 'Ej.: Inspección semanal de bombas', lbl: 'Nombre del calendario' }) + (e && !String(d.nombre).trim() ? mc('', 'Falta el nombre.') : '') + '</div>' +
+      '<div class="cp-fld"><label>Tipo</label>' + combo('cpCalTipo', CAL_TIPOS, f.t, { etiqueta: 'Tipo', ph: 'Elige el tipo', dis: !!d.id, data: ' data-pp="f.t"', clave: 'cpCalTipos' }) + '<small style="color:var(--muted);font-size:11.5px">' + (d.id ? 'El tipo no se puede cambiar una vez guardado.' : 'Por medidor o por condición se crean en Programaciones.') + '</small></div>' +
       '<div class="cp-grid2c"><div class="cp-fld"><label>Vigente desde</label>' + fecha('p:from', f.from, { etiqueta: 'Vigente desde', err: e && !f.from }) + '</div><div class="cp-fld"><label>Hasta <small>opcional</small></label>' + fecha('p:to', f.to, { ph: 'Sin fin', etiqueta: 'Hasta', err: f.to && f.to < f.from }) + '</div></div>' +
       '<div class="cp-fld"><label>Zona horaria <small>opcional</small></label>' + calCombo('zona', [{ id: '', n: '(sin definir)' }].concat(cat.zonas), d.zona, 'Zona horaria', '(sin definir)') + '<small style="color:var(--muted);font-size:11.5px">La hora se guarda en UTC y se muestra en esta zona. Sin ella, el horario de verano corre las ocurrencias una hora dos veces al año.</small></div>';
   }
@@ -2157,7 +2197,13 @@ PANELS.cal = function () {
   }
   if (paso === 3) {
     b = '<div class="cp-fld"><span class="cp-lb">Quién ejecuta lo que genere</span>' + calSeg(d, 'modo', CAL_ASIG) + '</div>' +
-      (d.modo === 'persona' ? '<div class="cp-fld"><span class="cp-lb">Personas</span><div class="cp-pers">' + cat.personas.map(function (p) { return '<label class="cp-sw"><input type="checkbox" data-a="calpers" data-v="' + p.id + '"' + (d.personas[p.id] ? ' checked' : '') + '><i></i>' + esc(p.n) + '</label>'; }).join('') + '</div>' + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>' : '') +
+      (d.modo === 'persona' ? (function () {
+        var q = nrm(d.pq || ''), nSel = Object.keys(d.personas).length;
+        var lista = cat.personas.filter(function (p) { return !q || nrm(p.n).indexOf(q) >= 0; }).sort(function (x, y) { return x.n.localeCompare(y.n); });
+        return '<div class="cp-fld"><span class="cp-lb">Personas <small>' + (nSel ? pl(nSel, 'elegida', 'elegidas') : 'elige una o varias') + '</small></span>' +
+          '<label class="cp-srch2" style="height:36px">' + ic('search', 14) + '<input data-pp="pq" value="' + esc(d.pq || '') + '" placeholder="Buscar por nombre o cargo" aria-label="Buscar personas" autocomplete="off"></label>' +
+          '<div class="cp-pers">' + (lista.map(function (p) { return '<label class="cp-sw"><input type="checkbox" data-a="calpers" data-v="' + p.id + '"' + (d.personas[p.id] ? ' checked' : '') + '><i></i>' + esc(p.n) + '</label>'; }).join('') || '<span style="font-size:12.5px;color:var(--muted)">Nadie coincide con «' + esc(d.pq) + '».</span>') + '</div>' + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>';
+      })() : '') +
       (d.modo === 'grupo' ? '<div class="cp-fld"><label>Grupo de trabajo</label>' + calCombo('grupo', [{ id: '', n: 'Elige el grupo' }].concat(alc.grupos), d.grupo, 'Grupo de trabajo', 'Elige el grupo') + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>' : '') +
       (d.modo === 'nadie' ? mc('i', 'Sin asignar: lo que se genere nace sin responsable y se asigna una por una.', 'help') : '');
   }
@@ -2197,10 +2243,10 @@ PANELS.cal = function () {
       fila('Asignación', d.modo === 'persona' ? esc(cat.personas.filter(function (p) { return d.personas[p.id]; }).map(function (p) { return p.n; }).join(', ')) : d.modo === 'grupo' ? esc(nm(alc.grupos, d.grupo) || '—') : 'Sin asignar') +
       fila('Exclusiones', d.excl.length ? pl(d.excl.length, 'exclusión', 'exclusiones') : 'Ninguna') + fila('Generación', d.genera ? 'Automática' : 'Manual') + '</div>' + (PN.err2 ? mc('', esc(PN.err2)) : '');
   }
-  return { t: 'Nuevo calendario compartido', s: 'Biblioteca · Calendarios · paso ' + paso + ' de 6', w: 'w',
+  return { t: d.id ? 'Editar calendario compartido' : 'Nuevo calendario compartido', s: 'Biblioteca · Calendarios · paso ' + paso + ' de 6', w: 'w',
     b: nav + '<div class="cp-wiz-b">' + b + '</div>',
     f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r">' + (paso > 1 ? '<button type="button" class="cp-btn cp-plain" data-a="calpaso" data-v="' + (paso - 1) + '">Anterior</button>' : '') +
-      (paso < 6 ? '<button type="button" class="cp-btn cp-pri" data-a="calpaso" data-v="' + (paso + 1) + '">Siguiente</button>' : '<button type="button" class="cp-btn cp-pri" data-a="calsave">' + ic('check', 16) + 'Crear calendario</button>') + '</span>' };
+      (paso < 6 ? '<button type="button" class="cp-btn cp-pri" data-a="calpaso" data-v="' + (paso + 1) + '">Siguiente</button>' : '<button type="button" class="cp-btn cp-pri" data-a="calsave">' + ic('check', 16) + (d.id ? 'Guardar cambios' : 'Crear calendario') + '</button>') + '</span>' };
 };
 A.calpaso = function (d) { PN.paso = +d.v; PN.err2 = null; panel(); };
 A.calset = function (d) {
@@ -2210,7 +2256,7 @@ A.calset = function (d) {
 };
 A.calday = function (d) { var f = PN.d.f, x = +d.v, i = f.days.indexOf(x); if (i >= 0) f.days.splice(i, 1); else f.days.push(x); f.days.sort(); panel(); };
 A.calrmdate = function (d) { var f = PN.d.f; f.dates = f.dates.filter(function (x) { return x.fecha !== d.v; }); panel(); };
-A.calpers = function (d, t, e) { if (e) e.stopPropagation(); var p = PN.d.personas, id = d.v; if (p[id]) delete p[id]; else p[id] = 1; };
+A.calpers = function (d, t, e) { if (e) e.stopPropagation(); var p = PN.d.personas, id = d.v; if (p[id]) delete p[id]; else p[id] = 1; panel(); };
 A.calxadd = function () { PN.xf = { a: '', b: '', why: '', shift: false }; panel(); };
 A.calxx = function () { PN.xf = null; panel(); };
 A.calxeff = function (d) { PN.xf.shift = d.v === '1'; panel(); };
@@ -2224,10 +2270,10 @@ A.calsave = function (d, t) {
   var x = PN.d, f = x.f, errs = calErr();
   if (errs.length) { PN.err = true; PN.paso = errs[0][0]; panel(); return; }
   t.classList.add('cp-load');
-  var datos = datosDe(f); datos.nombre = String(x.nombre).trim(); datos.tipo = TIPOFC[f.t]; datos.zona = +x.zona || 0; datos.planta = +x.planta || 0; datos.area = +x.area || 0; datos.activo = +x.activo || 0; datos.modo = x.modo;
+  var datos = datosDe(f); datos.nombre = String(x.nombre).trim(); datos.tipo = TIPOFC[f.t]; datos.zona = +x.zona || 0; datos.planta = +x.planta || 0; datos.area = +x.area || 0; datos.activo = +x.activo || 0; datos.modo = x.modo; datos.id = x.id || 0;
   datos.personas = Object.keys(x.personas); datos.grupo = +x.grupo || 0; datos.politica = +x.politica || 0; datos.anticipada = !!x.anticipada; datos.atrasada = !!x.atrasada; datos.genera = !!x.genera;
   api('CrearCalendario', { datos: JSON.stringify(datos) }).then(function () {
-    closePanel(); toast('Calendario creado. Ya se puede usar desde cualquier intervención.'); LB.cals = null; return Promise.all([libCargar(), recargarCatalogos()]);
+    closePanel(); toast(x.id ? 'Calendario guardado.' : 'Calendario creado. Ya se puede usar desde cualquier intervención.'); LB.cals = null; U.fq = {}; return Promise.all([libCargar(), recargarCatalogos()]);
   }).catch(function (e) { t.classList.remove('cp-load'); PN.err2 = e.message; PN.paso = 6; panel(); });
 };
 

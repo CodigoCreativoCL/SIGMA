@@ -1254,6 +1254,10 @@ body:has(#cpRoot) .content-page .container-fluid{padding-top:12px!important;max-
 .cp-root .cp-fecha input[type=text]:disabled{background:var(--surface-2);color:var(--muted)}
 .cp-root .cp-fecha.cp-err input[type=text]{border-color:var(--red)}
 
+.cp-root .cp-hsel .cp-mes{display:flex;align-items:center;gap:6px;width:auto}
+.cp-root .cp-hsel .cp-mes input[type=text]{width:150px;min-width:0!important;min-height:34px;height:34px;border:0;border-radius:9px;background:#1E2747;color:#fff;font-weight:800;padding:0 10px;cursor:pointer}
+.cp-root .cp-hsel .cp-mes input[type=text]:focus{outline:3px solid rgba(22,198,201,.45)}
+
 /* ---- ficha por pasos: sin lista lateral, barra fija bajo la topbar ---- */
 .cp-root .cp-ws{grid-template-columns:minmax(0,1fr)}
 .cp-root .cp-stc-f{bottom:0!important}
