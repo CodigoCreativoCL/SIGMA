@@ -153,7 +153,7 @@ function pintarGuardado() {
   var el = $('#cpSaved'); if (!el) return;
   var s = U.saved;
   el.className = 'cp-saved' + (s.s === 'ing' ? ' cp-ing' : s.s === 'bad' ? ' cp-bad' : '');
-  el.innerHTML = s.s === 'ing' ? ic('clock', 14) + 'Guardando…' : s.s === 'bad' ? ic('alert', 14) + 'No se pudo guardar: ' + esc(s.m) : ic('check', 14) + 'Cambios guardados';
+  el.innerHTML = s.s === 'ing' ? ic('clock', 14) + 'Guardando…' : s.s === 'bad' ? ic('alert', 14) + 'No se pudo guardar: ' + esc(s.m) : ic('check', 14) + 'Guardado';
 }
 function toast(msg, deshacer) {
   var t = document.createElement('div'); t.className = 'cp-toast'; t.setAttribute('role', 'status');
@@ -252,31 +252,6 @@ function freqText(f, corto, unidadMed) {
 var unidadMedidor = function () { var a = (F && F.activos || []).filter(function (x) { return x.MEDIDOR_UNIDAD; })[0]; return a ? a.MEDIDOR_UNIDAD : ''; };
 
 /* =====================================================================
-   «Listo para activar» (§11.2): lo que bloquea y lo que conviene revisar
-   ===================================================================== */
-function checks() {
-  var B = [], W = [], p = F.plan, act = F.activos, ints = F.intervenciones;
-  B.push({ ok: act.length > 0, t: act.length ? pl(act.length, 'activo', 'activos') : 'La planificación necesita al menos un activo', go: 'cpSecEq' });
-  var en = ints.filter(function (i) { return i.HABILITADO; });
-  B.push({ ok: en.length > 0, t: en.length ? pl(en.length, 'intervención habilitada', 'intervenciones habilitadas') : 'Agrega al menos una intervención', go: 'cpSecInt' });
-  var nof = en.filter(function (i) { return !TIPOF[i.TIPO_CODIGO]; });
-  B.push({ ok: en.length > 0 && !nof.length, t: nof.length ? nof.map(function (i) { return i.NOMBRE; }).join(', ') + ': falta definir cuándo se hace' : 'Cada intervención tiene frecuencia', go: 'cpSecInt', int: nof[0] && nof[0].HITO_ID, blk: 'when' });
-  var perm = []; en.forEach(function (i) { (i.ACTIVIDADES || []).forEach(function (a) { if (U.pend['perm' + i.CODIGO + a.CODIGO]) perm.push([i, a]); }); });
-  B.push({ ok: !perm.length, t: perm.length ? perm[0][1].NOMBRE + ': indica el tipo de permiso' : 'Las actividades con permiso tienen su tipo', go: 'cpSecInt', int: perm[0] && perm[0][0].HITO_ID, act: perm[0] && perm[0][1].ACTIVIDAD_ID });
-  var um = unidadMedidor();
-  en.forEach(function (i) {
-    if (!(i.ACTIVIDADES || []).length) W.push({ t: i.NOMBRE + ': sin actividades, la OT tendrá un solo paso', int: i.HITO_ID });
-    var t = TIPOF[i.TIPO_CODIGO];
-    if (t && t !== 'med' && t !== 'cond' && !(i.FECHAS || []).some(function (x) { return !x.DESCARTADA && dIso(x.FECHA) <= addD(TODAY, 90); }))
-      W.push({ t: i.NOMBRE + ': no tiene fechas en los próximos 90 días', int: i.HITO_ID, blk: 'when' });
-    if (t === 'med') { var sin = act.filter(function (a) { return !a.MEDIDOR_ID; }); if (sin.length) W.push({ t: i.NOMBRE + ': ' + sin.map(function (a) { return a.CODIGO; }).join(', ') + ' no ' + (sin.length === 1 ? 'tiene medidor y nunca generará' : 'tienen medidor y nunca generarán'), int: i.HITO_ID, blk: 'when' }); }
-    if (!i.RESPONSABLE_ID && !i.GRUPO_ID) W.push({ t: i.NOMBRE + ': sin responsable, las OT nacerán sin asignar', int: i.HITO_ID, blk: 'who' });
-  });
-  act.forEach(function (a) { if (a.OTROS_PLANES) W.push({ t: a.CODIGO + ' ya está en ' + a.OTROS_PLANES, go: 'cpSecEq' }); });
-  return { B: B, W: W, ok: B.every(function (b) { return b.ok; }) && !!String(p.NOMBRE || '').trim() };
-}
-
-/* =====================================================================
    Cáscara: cabecera, KPI y pestañas
    ===================================================================== */
 function heroAcciones() {
@@ -339,13 +314,14 @@ function listHTML() {
     (nm ? '<div class="cp-plist-bulk"><span>' + pl(nm, 'seleccionado', 'seleccionados') + '</span><span style="flex:1"></span><button type="button" class="cp-btn cp-out cp-xs" data-a="bulkdup"' + (nm > 1 ? ' disabled title="Duplicar funciona de a un plan"' : '') + '>Duplicar</button><button type="button" class="cp-btn cp-out cp-xs" data-a="bulkoff">Desactivar</button><button type="button" class="cp-ibx" data-a="bulkclr" aria-label="Quitar selección">' + ic('x', 15) + '</button></div>' : '') +
     '</aside>';
 }
+function cmpPlanes(a, b) {
+  var aa = (+a.VENCIDAS || 0) + (+a.ATRASADAS || 0) > 0, bb = (+b.VENCIDAS || 0) + (+b.ATRASADAS || 0) > 0;
+  return (bb - aa) || String(a.PROXIMA_FECHA || '9').localeCompare(String(b.PROXIMA_FECHA || '9')) || String(a.NOMBRE).localeCompare(String(b.NOMBRE));
+}
 function listBody() {
   if (!U.lista) return '<div style="padding:10px;display:flex;flex-direction:column;gap:10px">' + [1, 2, 3, 4].map(function () { return '<div class="cp-sk" style="height:84px"></div>'; }).join('') + '</div>';
   var ps = U.lista.filter(planMatch);
-  ps.sort(function (a, b) {
-    var aa = (+a.VENCIDAS || 0) + (+a.ATRASADAS || 0) > 0, bb = (+b.VENCIDAS || 0) + (+b.ATRASADAS || 0) > 0;
-    return (bb - aa) || String(a.PROXIMA_FECHA || '9').localeCompare(String(b.PROXIMA_FECHA || '9')) || String(a.NOMBRE).localeCompare(String(b.NOMBRE));
-  });
+  ps.sort(cmpPlanes);
   if (!ps.length) return U.lista.length
     ? '<div class="cp-empty" style="margin:8px"><span class="cp-ei">' + ic('search', 20) + '</span><b>Ningún plan coincide</b>Prueba con otro nombre, código o activo.<button type="button" class="cp-lnk" data-a="pfclear">Limpiar filtros</button></div>'
     : '<div class="cp-empty" style="margin:8px"><span class="cp-ei">' + ic('calw', 20) + '</span><b>Aún no hay planes</b>Crea el primero con «Nuevo plan».</div>';
@@ -368,58 +344,6 @@ function listBody() {
 /* =====================================================================
    PLANES · ficha
    ===================================================================== */
-function fichaVacia() {
-  return '<section class="cp-fi"><div class="cp-sc"><div class="cp-empty" style="border:0;padding:50px 20px"><span class="cp-ei">' + ic('calw', 22) + '</span><b>Elige un plan o crea uno nuevo</b><span style="max-width:52ch">Un plan reúne todo el mantenimiento preventivo de uno o varios activos: qué se hace, cómo, cada cuánto y quién lo ejecuta. Al activarlo, SIGMA programa las ejecuciones y las convierte en órdenes de trabajo.</span>' +
-    (U.permisos.editar ? '<button type="button" class="cp-btn cp-pri" data-a="newplan">' + ic('plus', 16) + 'Nuevo plan</button>' : '') +
-    '<div class="cp-orient"><a href="' + CFG.base_ + 'View/Mantenimiento/Checklist/ChecklistCentro.aspx">' + ic('clip', 18) + '<span><b>¿Una ronda con checklist?</b>Úsala en Pautas de inspección.</span></a><a href="' + CFG.base_ + 'View/Mantenimiento/Tareas/Tareas.aspx">' + ic('check', 18) + '<span><b>¿Una rutina sin orden de trabajo?</b>Aseo, lecturas o verificaciones rápidas: Tareas recurrentes.</span></a></div></div></div></section>';
-}
-function fichaHTML() {
-  if (!U.plan) return fichaVacia();
-  if (!F || F.plan.PLAN_ID !== U.plan) return '<section class="cp-fi"><div class="cp-card" style="display:flex;flex-direction:column;gap:12px" aria-busy="true" aria-label="Cargando"><div class="cp-sk" style="height:34px;width:46%"></div><div class="cp-sk" style="height:90px"></div><div class="cp-sk" style="height:220px"></div></div></section>';
-  var p = F.plan, E = editable(), ck = checks(), e = estado(p)[0];
-  var ints = F.intervenciones, nAct = 0, procs = {}, resps = {}, grps = {}, fqs = {}, areas = {};
-  ints.forEach(function (i) {
-    (i.ACTIVIDADES || []).forEach(function (a) { nAct++; if (a.PROCEDIMIENTO_ID) procs[a.PROCEDIMIENTO_ID] = 1; });
-    if (i.RESPONSABLE) resps[i.RESPONSABLE] = 1; if (i.GRUPO) grps[i.GRUPO] = 1;
-    if (i.HABILITADO && TIPOF[i.TIPO_CODIGO]) fqs[freqCorta(fqDe2(i))] = 1;
-  });
-  F.activos.forEach(function (a) { if (a.AREA) areas[a.AREA] = 1; });
-  var nx = proxima();
-  var ver = e === 'active' ? '<button type="button" class="cp-lnk" data-a="go" data-s="cpSecHist">v' + p.VERSION_VIGENTE + ' activa desde ' + fDN(p.VERSION_DESDE) + '</button>'
-    : e === 'changes' ? '<button type="button" class="cp-lnk" data-a="go" data-s="cpSecHist">v' + p.VERSION_VIGENTE + ' activa · cambios en v' + p.VERSION_BORRADOR + '</button>'
-    : e === 'draft' ? '<span>Nunca activado</span>' : '<span>Inactivo desde ' + fDN(p.RETIRO_FECHA) + '</span>';
-  var acts = '';
-  if (U.permisos.editar) {
-    if (e === 'draft') acts = '<button type="button" class="cp-btn cp-pri" data-a="activate"' + (ck.ok ? '' : ' aria-disabled="true" title="Completa lo que falta en «Listo para activar»"') + '>' + ic('check', 16) + 'Activar plan</button>';
-    if (e === 'changes') acts = '<button type="button" class="cp-btn cp-plain" data-a="discard">Descartar cambios</button><button type="button" class="cp-btn cp-pri" data-a="apply"' + (ck.ok ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Aplicar cambios</button>';
-    if (e === 'inactive') acts = '<button type="button" class="cp-btn cp-pri" data-a="reactivate">' + ic('trend', 16) + 'Reactivar</button>';
-  }
-  var mas = '<button type="button" class="cp-ibx" data-a="more" aria-label="Más acciones" aria-haspopup="menu">' + ic('dots', 18) + '</button>';
-  var vv = +p.VENCIDAS || 0, aa = +p.ATRASADAS || 0;
-  var fl = U.flash[p.PLAN_ID];
-  var banner = fl ? '<div class="cp-bnr cp-' + (fl.w ? 'w' : 'ok') + '">' + ic(fl.w ? 'alert' : 'check', 18) + '<span>' + fl.t + '</span><span class="cp-r">' + (fl.retry ? '<button type="button" class="cp-btn cp-sec cp-xs" data-a="retrygen">Reintentar</button>' : '<button type="button" class="cp-btn cp-out cp-xs" data-a="tab" data-t="ejecuciones" data-fp="' + p.PLAN_ID + '">Ver ejecuciones</button>') + '<button type="button" class="cp-ibx" data-a="flashx" aria-label="Cerrar">' + ic('x', 15) + '</button></span></div>'
-    : e === 'changes' ? '<div class="cp-bnr cp-p">' + ic('pencil', 18) + '<span><b>Estás editando cambios sin aplicar.</b> La versión activa (v' + p.VERSION_VIGENTE + ') sigue generando trabajo hasta que apliques. ' + pl(+p.CAMBIOS || 0, 'cambio', 'cambios') + ' respecto de la versión activa.</span></div>'
-    : e === 'inactive' ? '<div class="cp-bnr cp-i">' + ic('alert', 18) + '<span><b>Plan inactivo.</b> No genera ejecuciones desde el ' + fDN(p.RETIRO_FECHA) + '. Motivo: ' + esc(p.RETIRO_MOTIVO || '—') + ' — ' + esc(p.RETIRO_USUARIO || '') + '</span></div>'
-    : vv + aa ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span>' + (vv ? '<b>' + pl(vv, 'ejecución vencida', 'ejecuciones vencidas') + '</b>' : '') + (vv && aa ? ' y ' : '') + (aa ? '<b>' + pl(aa, 'atrasada', 'atrasadas') + '</b>' : '') + ' sin orden de trabajo.</span><span class="cp-r"><button type="button" class="cp-btn cp-sec cp-xs" data-a="tab" data-t="ejecuciones" data-fp="' + p.PLAN_ID + '" data-ff="att">Revisar y generar OT</button></span></div>' : '';
-  var cell = function (k, b, sm, go, miss) { return '<button type="button" data-a="go" data-s="' + go + '"><span>' + k + '</span><b class="' + (miss ? 'cp-miss' : '') + '">' + b + '</b><small>' + sm + '</small></button>'; };
-  var rl = Object.keys(resps), gl = Object.keys(grps), fl2 = Object.keys(fqs);
-  var corto = function (n) { var w = n.split(' '); return w[0] + (w[1] ? ' ' + w[1][0] + '.' : ''); };
-  return '<section class="cp-fi" aria-label="Ficha del plan">' +
-    '<div class="cp-fh"><div class="cp-fh-1"><button type="button" class="cp-btn cp-plain cp-sm cp-backp" style="display:none" data-a="back">' + ic('chevl', 15) + 'Planes</button>' +
-    '<div class="cp-nm"><input class="cp-ie" data-pf="nombre" value="' + esc(p.NOMBRE) + '" aria-label="Nombre del plan"' + (E ? '' : ' disabled') + ' maxlength="200">' +
-    '<div class="cp-meta"><code>' + esc(p.CODIGO) + '</code>' + stChip(p) + ver + '<span class="cp-sep">·</span><span>' + esc(p.PLANTA || 'Sin planta') + (p.TIPO ? ' · ' + esc(p.TIPO) : '') + (p.MODELO ? ' · ' + esc(p.MODELO) : '') + '</span></div>' +
-    (String(p.NOMBRE || '').trim() ? '' : mc('', 'El plan necesita un nombre.')) + '</div>' +
-    '<div class="cp-acts"><span class="cp-saved" id="cpSaved"></span>' + acts + mas + '</div></div>' + banner +
-    '<div class="cp-sum">' +
-    cell('Qué', ints.length ? pl(ints.length, 'intervención', 'intervenciones') : 'Falta', esc(ints.map(function (i) { return i.NOMBRE; }).join(' · ')) || 'Agrega una intervención', 'cpSecInt', !ints.length) +
-    cell('Sobre qué', F.activos.length ? pl(F.activos.length, 'activo', 'activos') : 'Falta', esc(F.activos.map(function (a) { return a.CODIGO; }).join(', ')) || 'Agrega activos', 'cpSecEq', !F.activos.length) +
-    cell('Dónde', esc(p.PLANTA || 'Sin planta'), esc(Object.keys(areas).join(' · ')) || 'Sin activos aún', 'cpSecEq') +
-    cell('Cómo', pl(nAct, 'actividad', 'actividades'), Object.keys(procs).length ? pl(Object.keys(procs).length, 'procedimiento', 'procedimientos') : 'Sin procedimientos', 'cpSecInt') +
-    cell('Cuándo', fl2.length ? esc(fl2.join(' · ')) : 'Falta', nx ? (nx.proj ? 'Proyección: ' : 'Próxima: ') + fDL(nx.d) : 'Sin fechas', 'cpSecNext', !fl2.length) +
-    cell('Quién', rl.length ? esc(rl.map(corto).join(', ')) : 'Sin responsable', esc(gl.join(' · ')) || 'Sin grupo', 'cpSecInt', !rl.length) +
-    '</div></div>' +
-    '<div class="cp-fb"><div class="cp-fsec">' + eqHTML(E) + intsHTML(E) + nextHTML() + otHTML() + histHTML() + '</div>' + rdyHTML(ck) + '</div></section>';
-}
 function freqCorta(f) {
   if (!f || !f.t) return '—';
   if (f.t === 'med') return 'Cada ' + fN(f.mn) + ' ' + (unidadMedidor() || 'u.');
@@ -436,67 +360,266 @@ function proxima() {
   return x ? { d: dIso(x.FECHA) } : null;
 }
 
-/* ---- 1 · qué mantener ---- */
-function eqHTML(E) {
-  var p = F.plan, act = F.activos;
-  var fuera = act.filter(function (a) { return a.FUERA_ALCANCE; });
-  var modelos = (U.cat.modelos || []).filter(function (m) { return p.TIPO_ID && m.TIPO_ID === p.TIPO_ID; }).map(function (m) { return { id: m.ID, n: m.NOMBRE }; });
-  var plantas = CFG.plantas || [];
-  return '<section class="cp-sc" id="cpSecEq"><div class="cp-sc-h"><span class="cp-n">1</span><h3>Qué mantener</h3><small>' + pl(act.length, 'activo', 'activos') + '</small><div class="cp-r">' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addeq">' + ic('plus', 15) + 'Agregar activos</button>' : '') + '</div></div>' +
-    '<div class="cp-scope"><div class="cp-fld"><label>Planta</label>' + combo('cpScPlanta', [{ id: '', n: 'Sin planta' }].concat(plantas), p.PLANTA_ID || '', { etiqueta: 'Planta', dis: !E, data: ' data-pf="planta"' }) + '</div>' +
-    '<div class="cp-fld"><label>Tipo de activo <small>opcional</small></label>' + combo('cpScTipo', [{ id: '', n: 'Cualquier tipo' }].concat(catL('tipos')), p.TIPO_ID || '', { etiqueta: 'Tipo de activo', ph: 'Cualquier tipo', dis: !E, data: ' data-pf="tipo"' }) + '</div>' +
-    '<div class="cp-fld"><label>Modelo <small>opcional</small></label>' + combo('cpScModelo', [{ id: '', n: p.TIPO_ID ? 'Cualquier modelo' : 'Elige primero el tipo' }].concat(modelos), p.MODELO_ID || '', { etiqueta: 'Modelo', ph: p.TIPO_ID ? 'Cualquier modelo' : 'Elige primero el tipo', dis: !E || !p.TIPO_ID, data: ' data-pf="modelo"' }) + '</div></div>' +
-    (fuera.length ? '<div class="cp-bnr cp-w" style="margin-bottom:12px">' + ic('alert', 18) + '<span><b>' + esc(fuera.map(function (a) { return a.CODIGO; }).join(', ')) + '</b> ' + (fuera.length === 1 ? 'queda' : 'quedan') + ' fuera del alcance. Ajusta el alcance o quítalos: SIGMA no generará trabajo para activos fuera del alcance.</span></div>' : '') +
-    (act.length ? '<div class="cp-eqs">' + act.map(function (a) {
-      return '<div class="cp-eq"><span class="cp-ph">' + (a.FOTO ? '<img class="cp-ph-img" src="' + esc(a.FOTO) + '" alt="">' : ic('cog', 20)) + '</span><div style="min-width:0"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + (a.AREA ? ' · ' + esc(a.AREA) : '') + '</small>' +
-        '<div class="cp-tgs"><span class="cp-tg">' + (a.COMPONENTE ? esc(a.COMPONENTE) : 'Activo completo') + '</span>' + (a.MEDIDOR_ID ? '<span class="cp-tg cp-c">' + ic('gauge', 11) + fN(a.MEDIDOR_VALOR) + ' ' + esc(a.MEDIDOR_UNIDAD || '') + '</span>' : '') +
-        (a.OTROS_PLANES ? '<span class="cp-tg cp-w" title="También en ' + esc(a.OTROS_PLANES) + '">También en ' + esc(a.OTROS_PLANES) + '</span>' : '') + (a.FUERA_ALCANCE ? '<span class="cp-tg cp-w">' + esc(a.FUERA_ALCANCE) + '</span>' : '') + '</div></div>' +
-        '<div class="cp-x"><a class="cp-ibx" href="' + esc(a.URL) + '" target="_blank" rel="noopener" aria-label="Ver ficha del activo ' + esc(a.CODIGO) + '">' + ic('arrow', 15) + '</a>' + (E ? '<button type="button" class="cp-ibx cp-dn" data-a="rmeq" data-v="' + a.VINCULO_ID + '" data-c="' + esc(a.CODIGO) + '" aria-label="Quitar ' + esc(a.CODIGO) + ' del plan">' + ic('x', 15) + '</button>' : '') + '</div></div>';
-    }).join('') + '</div>'
-      : '<div class="cp-empty' + (U.vp.err ? ' cp-err' : '') + '"><span class="cp-ei">' + ic('cog', 20) + '</span><b>La planificación necesita al menos un activo</b>Elige los activos que recibirán este mantenimiento. Puedes agregar varios a la vez.' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addeq">' + ic('plus', 15) + 'Agregar activos</button>' : '') + '</div>') +
-    '</section>';
+/* =====================================================================
+   FICHA POR PASOS (§ «Planes por pasos»)
+   Cinco pasos con barra fija: Activos · Trabajo · Frecuencia ·
+   Responsable · Activar / Aplicar / Resumen. Una sola fuente de
+   validación (checks) alimenta la barra, el pie, la Revisión y el
+   bloqueo de «Siguiente»; el servidor valida lo mismo al activar.
+   ===================================================================== */
+var STEPS = {
+  1: ['Activos', '¿Qué activos se mantienen?', 'Elige los activos que recibirán este mantenimiento. Puedes agregar varios a la vez.'],
+  2: ['Trabajo', '¿Qué trabajo se hace?', 'Cada intervención es un trabajo que se repite y genera su propia orden de trabajo, por ejemplo «Mantención 2.000 h» o «Inspección mensual».'],
+  3: ['Frecuencia', '¿Cada cuánto se hace?', 'Define cuándo toca cada intervención. Las fechas se recalculan mientras editas.'],
+  4: ['Responsable', '¿Quién lo ejecuta?', 'Cada orden de trabajo nacerá asignada a esta persona y grupo. El detalle se ajusta después en la OT.'],
+  5: ['Revisar', '', '']
+};
+Object.assign(U, { step: {}, vis: {}, t5: {}, nx: {}, tried: {} });
+var short = function (n) { var w = String(n || '').split(' ').filter(Boolean); return w[0] ? w[0] + (w[1] ? ' ' + w[1][0] + '.' : '') : ''; };
+var chL = function (n) { return ic('chevl', n); };
+var planEst = function () { return estado(F.plan)[0]; };            // draft | active | changes | inactive
+var ints = function () { return F ? F.intervenciones : []; };
+var enab = function () { return ints().filter(function (i) { return i.HABILITADO; }); };
+
+/* Lo que impide guardar una frecuencia, en una frase (vacío si está bien). */
+function freqIssue(f) {
+  if (!f || !f.t) return 'falta definir cada cuánto se hace';
+  if (f.t === 'cal' && f.rep === 'w' && !f.days.length) return 'elige al menos un día de la semana';
+  if (f.t === 'fec' && !f.dates.length) return 'agrega al menos una fecha';
+  if (f.t === 'cond' && !f.ctext) return 'define la condición que la dispara';
+  if ((f.t === 'cal' || f.t === 'int') && !(+f.n > 0)) return '«cada» debe ser mayor que 0';
+  if (f.t === 'med' && !(+f.mn > 0)) return '«cada» debe ser mayor que 0';
+  if (f.to && f.from && f.to < f.from) return 'la fecha «hasta» es anterior a «desde»';
+  return '';
+}
+var permPend = function (i, a) { return !!U.pend['perm' + i.CODIGO + a.CODIGO]; };
+function intIssue(i) {
+  return !String(i.NOMBRE || '').trim() || !(+i.DURACION > 0) || (i.ACTIVIDADES || []).some(function (a) { return !String(a.NOMBRE || '').trim() || permPend(i, a); });
 }
 
-/* ---- 2 · qué hacer, cómo y cuándo ---- */
-function intsHTML(E) {
-  var ints = F.intervenciones;
-  return '<section class="cp-sc" id="cpSecInt"><div class="cp-sc-h"><span class="cp-n">2</span><h3>Qué hacer, cómo y cuándo</h3><small>' + pl(ints.length, 'intervención', 'intervenciones') + '</small><div class="cp-r">' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addint">' + ic('plus', 15) + 'Agregar intervención</button>' : '') + '</div></div>' +
-    (ints.length ? '<div class="cp-ints">' + ints.map(function (i) { return ivHTML(i, E); }).join('') + '</div>'
-      : '<div class="cp-empty' + (U.vp.err ? ' cp-err' : '') + '"><span class="cp-ei">' + ic('wrench', 20) + '</span><b>Agrega la primera intervención</b><span style="max-width:56ch">Una intervención es un trabajo que se repite, como «Mantención 2.000 h» o «Inspección mensual». En ella defines qué se hace, cada cuánto y quién lo ejecuta.</span>' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addint">' + ic('plus', 15) + 'Agregar intervención</button>' : '') + '</div>') +
-    '</section>';
+function checks() {
+  var B = [], W = [], act = F.activos, en = enab(), nm = function (i) { return i.NOMBRE || i.CODIGO; };
+  B.push({ ok: act.length > 0, step: 1, t: act.length ? pl(act.length, 'activo', 'activos') : 'La planificación necesita al menos un activo' });
+  B.push({ ok: en.length > 0, step: 2, t: en.length ? pl(en.length, 'intervención habilitada', 'intervenciones habilitadas') : 'Agrega al menos una intervención' });
+  var bad = en.filter(function (i) { return !String(i.NOMBRE || '').trim() || !(+i.DURACION > 0); })[0], badA = null;
+  en.forEach(function (i) { (i.ACTIVIDADES || []).forEach(function (a) { if (!badA && !String(a.NOMBRE || '').trim()) badA = [i, a]; }); });
+  B.push({ ok: !bad && !badA, step: 2, t: bad ? bad.CODIGO + ': ' + (!String(bad.NOMBRE || '').trim() ? 'falta el nombre' : 'la duración debe ser mayor que 0') : badA ? badA[1].CODIGO + ' de ' + nm(badA[0]) + ': falta el nombre de la actividad' : 'Cada intervención tiene nombre y duración', int: bad ? bad.HITO_ID : badA && badA[0].HITO_ID, act: !bad && badA ? badA[1].ACTIVIDAD_ID : null });
+  var np = null; en.forEach(function (i) { (i.ACTIVIDADES || []).forEach(function (a) { if (!np && permPend(i, a)) np = [i, a]; }); });
+  B.push({ ok: !np, step: 2, t: np ? (np[1].NOMBRE || np[1].CODIGO) + ': indica el tipo de permiso' : 'Las actividades con permiso tienen su tipo', int: np && np[0].HITO_ID, act: np && np[1].ACTIVIDAD_ID });
+  var nof = en.filter(function (i) { return freqIssue(fqDe2(i)); })[0];
+  B.push({ ok: en.length > 0 && !nof, step: 3, t: nof ? nm(nof) + ': ' + freqIssue(fqDe2(nof)) : 'Cada intervención tiene frecuencia', int: nof && nof.HITO_ID });
+  en.forEach(function (i) {
+    if (!(i.ACTIVIDADES || []).length) W.push({ step: 2, t: nm(i) + ': sin actividades, la OT tendrá un solo paso', int: i.HITO_ID });
+    var f = fqDe2(i);
+    if (f.t && !freqIssue(f) && f.t !== 'med' && f.t !== 'cond' && !(i.FECHAS || []).some(function (x) { return !x.DESCARTADA && dIso(x.FECHA) <= addD(TODAY, 90); })) W.push({ step: 3, t: nm(i) + ': no tiene fechas en los próximos 90 días', int: i.HITO_ID });
+    if (f.t === 'med') { var sin = act.filter(function (a) { return !a.MEDIDOR_ID; }); if (sin.length) W.push({ step: 3, t: nm(i) + ': ' + sin.map(function (a) { return a.CODIGO; }).join(', ') + ' no ' + (sin.length === 1 ? 'tiene medidor y nunca generará' : 'tienen medidor y nunca generarán'), int: i.HITO_ID }); }
+    if (!i.RESPONSABLE_ID && !i.GRUPO_ID) W.push({ step: 4, t: nm(i) + ': sin responsable, las OT nacerán sin asignar', int: i.HITO_ID });
+  });
+  act.forEach(function (a) {
+    if (a.FUERA_ALCANCE) W.push({ step: 1, t: a.CODIGO + ' queda fuera del alcance del plan: no generará trabajo' });
+    if (a.OTROS_PLANES) W.push({ step: 1, t: a.CODIGO + ' ya está en ' + a.OTROS_PLANES });
+  });
+  var okNombre = !!String(F.plan.NOMBRE || '').trim();
+  return { B: B, W: W, ok: B.every(function (b) { return b.ok; }) && okNombre };
 }
-function ivHTML(i, E) {
-  var id = i.HITO_ID, open = U.oi[F.plan.PLAN_ID] === i.CODIGO, f = fqDe2(i), tiene = !!f.t;
-  var nd = (i.FECHAS || []).filter(function (x) { return !x.DESCARTADA && dIso(x.FECHA) >= TODAY; }).slice(0, 3).map(function (x) { return fD(x.FECHA); });
-  var acts = i.ACTIVIDADES || [], dis = E ? '' : ' disabled';
-  var nombre = String(i.NOMBRE || '').trim();
-  return '<article class="cp-iv' + (open ? ' cp-open' : '') + (i.HABILITADO ? '' : ' cp-off') + '" id="cpInt' + id + '">' +
-    '<div class="cp-iv-h" data-a="toggleint" data-i="' + id + '" role="button" tabindex="0" aria-expanded="' + open + '">' +
-    '<span class="cp-cd">' + esc(i.CODIGO) + '</span>' +
-    '<div class="cp-tt"><b>' + (nombre ? esc(nombre) : '<span style="color:var(--red)">Sin nombre</span>') + '</b>' +
-    '<div class="cp-fq' + (tiene ? '' : ' cp-miss') + '">' + ic(tiene ? 'calw' : 'alert', 14) + (tiene ? esc(freqText(f, false, unidadMedidor())) + (i.PRIVADA ? '' : ' <span class="cp-tg cp-p">Compartido</span>') : 'Falta definir cuándo se hace') + '</div>' +
-    '<div class="cp-mt">' + (i.PARADA ? '<span class="cp-tg cp-w">Requiere parada</span>' : '') + (i.OVERHAUL ? '<span class="cp-tg cp-p">Overhaul</span>' : '') + '<span class="cp-tg">' + pl(acts.length, 'actividad', 'actividades') + '</span><span class="cp-tg">' + fH(i.DURACION) + '</span><span class="cp-tg">' + esc(i.OT_TIPO || 'Sin tipo') + ' · ' + esc(i.OT_PRIORIDAD || 'Sin prioridad') + '</span>' +
-    (i.RESPONSABLE ? '<span class="cp-tg">' + esc(i.RESPONSABLE) + '</span>' : i.GRUPO ? '<span class="cp-tg">' + esc(i.GRUPO) + '</span>' : '<span class="cp-tg cp-w">Sin responsable</span>') + '</div></div>' +
-    '<div class="cp-rt"><div class="cp-nd">' + (nd.length ? 'Próximas: <b>' + nd.join(', ') + '</b>' : '') + '</div><div style="display:flex;align-items:center;gap:10px"><label class="cp-sw" title="' + (i.HABILITADO ? 'Habilitada' : 'Deshabilitada') + '" data-stop="1"><input type="checkbox" data-iv="habilitado" data-i="' + id + '"' + (i.HABILITADO ? ' checked' : '') + dis + ' aria-label="Intervención habilitada"><i></i></label><span class="cp-chev">' + ic('chev', 16) + '</span></div></div>' +
-    '</div>' +
-    (open ? '<div class="cp-iv-b">' +
-      '<div class="cp-blk"><div class="cp-blk-h"><h4>Datos de la orden de trabajo</h4><small>Así nace cada OT de esta intervención</small></div>' +
-      '<div class="cp-grid4c"><div class="cp-fld" style="grid-column:span 2"><label>Nombre</label><input class="cp-inp' + (nombre ? '' : ' cp-err') + '" data-iv="nombre" data-i="' + id + '" value="' + esc(i.NOMBRE) + '"' + dis + ' placeholder="Ej.: Mantención 2.000 h" maxlength="200">' + (nombre ? '' : mc('', 'La intervención necesita un nombre.')) + '</div>' +
-      '<div class="cp-fld"><label>Tipo de OT</label>' + combo('cpIvTipo' + id, catL('otTipos'), i.OT_TIPO_ID || '', { etiqueta: 'Tipo de OT', dis: !E, data: ' data-iv="tipo" data-i="' + id + '"', clave: 'cpOtTipos' }) + '</div>' +
-      '<div class="cp-fld"><label>Prioridad</label>' + combo('cpIvPrio' + id, catL('prioridades'), i.OT_PRIORIDAD_ID || '', { etiqueta: 'Prioridad', dis: !E, data: ' data-iv="prioridad" data-i="' + id + '"', clave: 'cpPrioridades' }) + '</div>' +
-      '<div class="cp-fld"><label>Duración estimada</label><div class="cp-unit"><input class="cp-inp' + (+i.DURACION > 0 ? '' : ' cp-err') + '" type="number" min="0.25" step="0.25" data-iv="duracion" data-i="' + id + '" value="' + (i.DURACION ? hrs(i.DURACION) : '') + '"' + dis + '><span class="cp-u">horas</span></div>' + (+i.DURACION > 0 ? '' : mc('', 'La duración debe ser mayor que 0.')) + '</div>' +
-      '<div class="cp-fld" style="grid-column:2/-1;justify-content:flex-end"><div style="display:flex;gap:18px;flex-wrap:wrap;padding-bottom:9px"><label class="cp-sw"><input type="checkbox" data-iv="parada" data-i="' + id + '"' + (i.PARADA ? ' checked' : '') + dis + '><i></i>Requiere parada del activo</label><label class="cp-sw"><input type="checkbox" data-iv="overhaul" data-i="' + id + '"' + (i.OVERHAUL ? ' checked' : '') + dis + '><i></i>Es overhaul</label></div></div>' +
-      '<div class="cp-fld" style="grid-column:1/-1"><label>Descripción <small>se copia a la OT</small></label><textarea class="cp-inp" rows="2" data-iv="descripcion" data-i="' + id + '"' + dis + ' placeholder="Qué debe saber el técnico antes de empezar">' + esc(i.DESCRIPCION || '') + '</textarea></div></div></div>' +
-      whenHTML(i, E) + actsHTML(i, E) +
-      '<div class="cp-blk" id="cpWho' + id + '"><div class="cp-blk-h"><h4>Quién</h4><small>Se aplica a cada OT que genere esta intervención</small></div>' +
-      '<div class="cp-who"><div class="cp-fld"><label>Responsable</label>' + combo('cpIvResp' + id, [{ id: '', n: 'Sin responsable' }].concat(catL('personas')), i.RESPONSABLE_ID || '', { etiqueta: 'Responsable', ph: 'Sin responsable', dis: !E, data: ' data-iv="responsable" data-i="' + id + '"', clave: 'cpPersonas' }) + '</div>' +
-      '<div class="cp-fld"><label>Grupo de trabajo <small>opcional</small></label>' + combo('cpIvGrupo' + id, [{ id: '', n: 'Sin grupo' }].concat(catL('grupos')), i.GRUPO_ID || '', { etiqueta: 'Grupo de trabajo', ph: 'Sin grupo', dis: !E, data: ' data-iv="grupo" data-i="' + id + '"', clave: 'cpGrupos' }) + '</div></div>' +
-      '<div class="cp-whn">' + (i.RESPONSABLE ? ic('check', 14) + '<span>Cada OT nacerá asignada a <b>' + esc(i.RESPONSABLE) + '</b> como responsable' + (i.GRUPO ? ' y al grupo <b>' + esc(i.GRUPO) + '</b>' : '') + '. El detalle se ajusta después en la OT.</span>'
-        : i.GRUPO ? ic('check', 14) + '<span>Cada OT nacerá asignada al grupo <b>' + esc(i.GRUPO) + '</b> (responsable: su líder).</span>'
-        : '<span style="color:var(--amber);display:flex;gap:6px">' + ic('alert', 14) + 'Sin responsable, las OT nacerán sin asignar y habrá que asignarlas una por una.</span>') + '</div></div>' +
-      (E ? '<div style="display:flex;justify-content:flex-end">' + (!i.GENERO ? '<button type="button" class="cp-btn cp-dano cp-xs" data-a="rmint" data-i="' + id + '">' + ic('x', 14) + 'Quitar intervención</button>' : '<span class="cp-msg cp-i">' + ic('help', 13) + '<span>Ya generó ejecuciones: para dejar de usarla, deshabilítala con el interruptor.</span></span>') + '</div>' : '') +
-      '</div>' : '') +
-    '</article>';
+function stepInfo() {
+  var ck = checks(), en = enab(), nAct = ints().reduce(function (t, i) { return t + (i.ACTIVIDADES || []).length; }, 0), est = planEst();
+  var fqs = [], seen = {};
+  en.forEach(function (i) { var f = fqDe2(i); if (!freqIssue(f)) { var s = freqCorta(f); if (!seen[s]) { seen[s] = 1; fqs.push(s); } } });
+  var resps = []; en.forEach(function (i) { var n = i.RESPONSABLE || i.GRUPO; if (n && resps.indexOf(short(n)) < 0) resps.push(short(n)); });
+  var nb = ck.B.filter(function (b) { return !b.ok; }).length;
+  return {
+    ck: ck,
+    err: function (k) { return ck.B.filter(function (b) { return !b.ok && b.step === k; }); },
+    warn: function (k) { return ck.W.filter(function (w) { return w.step === k; }); },
+    done: { 1: F.activos.length > 0, 2: en.length > 0, 3: en.length > 0, 4: en.length > 0 && en.every(function (i) { return i.RESPONSABLE_ID || i.GRUPO_ID; }), 5: ck.ok },
+    sub: { 1: F.activos.length ? pl(F.activos.length, 'activo', 'activos') : 'Sin activos', 2: ints().length ? pl(ints().length, 'intervención', 'intervenciones') + ' · ' + pl(nAct, 'actividad', 'actividades') : 'Sin intervenciones', 3: fqs.join(' · ') || 'Sin definir', 4: resps.join(', ') || 'Sin responsable', 5: nb ? 'Falta ' + nb : est === 'draft' ? 'Listo para activar' : est === 'changes' ? 'Listo para aplicar' : 'Todo en orden' }
+  };
+}
+function pasoInicial(info) {
+  var est = planEst();
+  if (est !== 'draft') return 5;
+  if (!F.activos.length && !ints().length) return 1;
+  return [1, 2, 3].filter(function (k) { return info.err(k).length; })[0] || 5;
+}
+function curStep(info) {
+  var id = F.plan.PLAN_ID;
+  if (!U.step[id]) U.step[id] = pasoInicial(info);
+  return U.step[id];
+}
+var step5Name = function () { var e = planEst(); return e === 'draft' ? 'Activar' : e === 'changes' ? 'Aplicar' : 'Resumen'; };
+function nextLabel(i) {
+  var f = fqDe2(i); if (!i.HABILITADO || freqIssue(f)) return '';
+  if (f.t === 'cond') return 'Cuando ' + f.ctext;
+  if (f.t === 'med') {
+    var m = F.activos.map(function (a) { return medNext(f, a); }).filter(Boolean).sort(function (a, b) { return a - b; })[0];
+    return m ? 'al llegar a ' + fN(m) + ' ' + (unidadMedidor() || '') : '';
+  }
+  var d = (i.FECHAS || []).filter(function (x) { return !x.DESCARTADA && dIso(x.FECHA) >= TODAY; })[0];
+  return d ? fDL(dIso(d.FECHA)) : '';
+}
+/* Intervención seleccionada en los pasos 2 y 3 (por código: sobrevive a las copias de borrador). */
+function selInt() {
+  var id = F.plan.PLAN_ID, list = ints(), cur = U.oi[id];
+  var h = list.filter(function (i) { return i.CODIGO === cur; })[0];
+  if (!h) { h = list[0] || null; U.oi[id] = h ? h.CODIGO : null; }
+  return h;
+}
+/* El orden de la lista (atención primero) también rige las flechas de la ficha. */
+function ordenPlanes() { return (U.lista || []).filter(planMatch).slice().sort(cmpPlanes); }
+
+/* ---- la ficha ---- */
+function fichaHTML() {
+  if (!U.plan) return '';
+  if (!F || F.plan.PLAN_ID !== U.plan) return '<section class="cp-fi"><div class="cp-card" style="display:flex;flex-direction:column;gap:12px" aria-busy="true" aria-label="Cargando"><div class="cp-sk" style="height:34px;width:46%"></div><div class="cp-sk" style="height:60px"></div><div class="cp-sk" style="height:260px"></div></div></section>';
+  var p = F.plan, E = editable(), info = stepInfo(), ck = info.ck, k = curStep(info), est = planEst(), id = p.PLAN_ID;
+  U.step[id] = k; (U.vis[id] = U.vis[id] || {})[k] = 1;
+  var ver = est === 'active' ? '<button type="button" class="cp-lnk" data-a="stp" data-v="5" data-t5="hist">v' + p.VERSION_VIGENTE + ' activa desde ' + fDN(p.VERSION_DESDE) + '</button>'
+    : est === 'changes' ? '<button type="button" class="cp-lnk" data-a="stp" data-v="5" data-t5="hist">v' + p.VERSION_VIGENTE + ' activa · cambios en v' + p.VERSION_BORRADOR + '</button>'
+    : est === 'draft' ? '<span>Nunca activado</span>' : '<span>Inactivo desde ' + fDN(p.RETIRO_FECHA) + '</span>';
+  var nb = ck.B.filter(function (b) { return !b.ok; }).length, acts = '';
+  if (est === 'draft') acts = '<button type="button" class="cp-rpill' + (ck.ok ? ' cp-ok' : '') + '" data-a="stp" data-v="5">' + ic(ck.ok ? 'check' : 'clip', 15) + (ck.ok ? 'Listo para activar' : 'Falta ' + pl(nb, 'dato', 'datos') + ' para activar') + '</button>';
+  if (est === 'changes') acts = '<button type="button" class="cp-rpill cp-p" data-a="stp" data-v="5">' + ic('pencil', 15) + pl(+p.CAMBIOS || 0, 'cambio sin aplicar', 'cambios sin aplicar') + '</button>';
+  if (est === 'inactive' && U.permisos.editar) acts = '<button type="button" class="cp-btn cp-pri" data-a="reactivate">' + ic('trend', 16) + 'Reactivar</button>';
+  var vv = +p.VENCIDAS || 0, aa = +p.ATRASADAS || 0, fl = U.flash[id];
+  var banner = fl ? '<div class="cp-bnr cp-' + (fl.w ? 'w' : 'ok') + '">' + ic(fl.w ? 'alert' : 'check', 18) + '<span>' + fl.t + '</span><span class="cp-r">' + (fl.retry ? '<button type="button" class="cp-btn cp-sec cp-xs" data-a="retrygen">Reintentar</button>' : '<button type="button" class="cp-btn cp-out cp-xs" data-a="tab" data-t="ejecuciones" data-fp="' + id + '">Ver ejecuciones</button>') + '<button type="button" class="cp-ibx" data-a="flashx" aria-label="Cerrar">' + ic('x', 15) + '</button></span></div>'
+    : est === 'changes' ? '<div class="cp-bnr cp-p">' + ic('pencil', 18) + '<span><b>Estás editando cambios sin aplicar.</b> La v' + p.VERSION_VIGENTE + ' sigue generando trabajo hasta que apliques en el paso 5.</span></div>'
+    : est === 'inactive' ? '<div class="cp-bnr cp-i">' + ic('alert', 18) + '<span><b>Plan inactivo:</b> no genera ejecuciones. Motivo: ' + esc(p.RETIRO_MOTIVO || '—') + ' — ' + esc(p.RETIRO_USUARIO || '') + '</span></div>'
+    : vv + aa ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + pl(vv + aa, 'ejecución vencida o atrasada', 'ejecuciones vencidas o atrasadas') + '</b> sin orden de trabajo.</span><span class="cp-r"><button type="button" class="cp-btn cp-sec cp-xs" data-a="tab" data-t="ejecuciones" data-fp="' + id + '" data-ff="att">Revisar y generar OT</button></span></div>' : '';
+  var bar = [1, 2, 3, 4, 5].map(function (n) {
+    var e = info.err(n).length, w = n === 4 ? info.warn(n).length : 0, seen = U.tried[id] || est !== 'draft' || (U.vis[id][n] && n !== k);
+    var state = n === k ? 'cur' : seen && e ? 'err' : info.done[n] && !e ? (w ? 'wa' : 'ok') : '';
+    var c = state === 'ok' ? ic('check', 15) : state === 'err' ? '!' : n;
+    return '<button type="button" class="cp-sti ' + (state ? 'cp-' + state : '') + '" data-a="stp" data-v="' + n + '"' + (n === k ? ' aria-current="step"' : '') + '><span class="cp-c">' + c + '</span><span class="cp-tx"><b>' + (n === 5 ? step5Name() : STEPS[n][0]) + '</b><small>' + esc(info.sub[n]) + '</small></span></button>';
+  }).join('<span class="cp-ln" aria-hidden="true"></span>');
+  var orden = ordenPlanes(), x = orden.findIndex(function (q) { return q.PLAN_ID === id; });
+  var cnav = orden.length > 1 && x >= 0 ? '<span>' + (x + 1) + ' de ' + orden.length + '</span><button type="button" class="cp-ibx" data-a="pnav" data-v="-1" aria-label="Plan anterior"' + (x > 0 ? '' : ' disabled') + '>' + chL(15) + '</button><button type="button" class="cp-ibx" data-a="pnav" data-v="1" aria-label="Plan siguiente"' + (x < orden.length - 1 ? '' : ' disabled') + '>' + ic('chev', 15) + '</button>' : '';
+  return '<section class="cp-fi" aria-label="Plan ' + esc(p.NOMBRE) + '">' +
+    '<div class="cp-fh"><div class="cp-crumb"><button type="button" class="cp-lnk" data-a="back">' + chL(15) + 'Planes</button><span class="cp-sep">/</span><button type="button" class="cp-psw" data-a="psw" aria-haspopup="dialog">' + (esc(p.NOMBRE) || esc(p.CODIGO)) + ic('chevd', 14) + '</button><span class="cp-cnav">' + cnav + '</span></div>' +
+    '<div class="cp-fh-1"><div class="cp-nm"><input class="cp-ie' + (String(p.NOMBRE).trim() ? '' : ' cp-err') + '" data-pf="nombre" value="' + esc(p.NOMBRE) + '" aria-label="Nombre del plan" placeholder="Nombre del plan"' + (E ? '' : ' disabled') + ' maxlength="200">' +
+    '<div class="cp-meta"><code>' + esc(p.CODIGO) + '</code>' + stChip(p) + ver + '<span class="cp-sep">·</span><span>' + esc(p.PLANTA || 'Sin planta') + (p.TIPO ? ' · ' + esc(p.TIPO) : '') + '</span><span class="cp-saved" id="cpSaved"></span></div>' + (String(p.NOMBRE).trim() ? '' : mc('', 'El plan necesita un nombre.')) + '</div>' +
+    '<div class="cp-acts">' + acts + '<button type="button" class="cp-ibx" data-a="more" aria-label="Más acciones" aria-haspopup="menu">' + ic('dots', 18) + '</button></div></div>' + banner + '</div>' +
+    '<nav class="cp-stb" aria-label="Pasos del plan">' + bar + '</nav>' + stepHTML(E, info, k) + '</section>';
+}
+function stepHTML(E, info, k) {
+  var id = F.plan.PLAN_ID, est = planEst(), errs = info.err(k), warns = k === 5 ? [] : info.warn(k), tried = U.nx[id] === k || U.tried[id];
+  var body = k === 1 ? s1HTML(E) : k === 2 ? s2HTML(E) : k === 3 ? s3HTML(E) : k === 4 ? s4HTML(E) : s5HTML(E, info);
+  var head = k === 5 ? s5Head(info) : '<span class="cp-ey">Paso ' + k + ' de 5</span><h2>' + STEPS[k][1] + '</h2><p>' + STEPS[k][2] + '</p>';
+  var msg = errs.length && tried ? '<span class="cp-msg">' + ic('alert', 14) + '<span>Falta: ' + esc(errs[0].t) + '</span></span>' : errs.length ? '<span class="cp-msg cp-i">' + ic('help', 14) + '<span>' + pl(errs.length, 'dato pendiente', 'datos pendientes') + ' en este paso</span></span>' : warns.length ? '<span class="cp-msg cp-w">' + ic('alert', 14) + '<span>' + pl(warns.length, 'punto', 'puntos') + ' por revisar</span></span>' : k < 5 ? '<span class="cp-msg cp-ok2">' + ic('check', 14) + '<span>Paso completo</span></span>' : '';
+  var ed = U.permisos.editar, right = '';
+  if (k < 5) right = '<button type="button" class="cp-btn cp-pri" data-a="next">Siguiente: ' + (k + 1 === 5 ? 'revisar' : STEPS[k + 1][0].toLowerCase()) + ic('chev', 16) + '</button>';
+  else if (est === 'draft') right = ed ? '<button type="button" class="cp-btn cp-pri" data-a="activate"' + (info.ck.ok ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Activar plan</button>' : '';
+  else if (est === 'changes') right = ed ? '<button type="button" class="cp-btn cp-plain" data-a="discard">Descartar cambios</button><button type="button" class="cp-btn cp-pri" data-a="apply"' + (info.ck.ok ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Aplicar cambios</button>' : '';
+  else if (est === 'inactive') right = ed ? '<button type="button" class="cp-btn cp-pri" data-a="reactivate">' + ic('trend', 16) + 'Reactivar plan</button>' : '';
+  else right = '<button type="button" class="cp-btn cp-out" data-a="tab" data-t="ejecuciones" data-fp="' + id + '" data-ff="all">Ver ejecuciones</button>';
+  return '<div class="cp-stc" id="cpStc"><div class="cp-stc-h">' + head + '</div><div class="cp-stc-b">' + body + '</div><div class="cp-stc-f">' + (k > 1 ? '<button type="button" class="cp-btn cp-plain" data-a="stp" data-v="' + (k - 1) + '">' + chL(16) + 'Anterior</button>' : '<span></span>') + '<span class="cp-fm">' + msg + '</span><span class="cp-r">' + right + '</span></div></div>';
+}
+
+/* ---- paso 1 · activos ---- */
+function s1HTML(E) {
+  var p = F.plan, act = F.activos, fuera = act.filter(function (a) { return a.FUERA_ALCANCE; });
+  var modelos = (U.cat.modelos || []).filter(function (m) { return p.TIPO_ID && m.TIPO_ID === p.TIPO_ID; }).map(function (m) { return { id: m.ID, n: m.NOMBRE }; });
+  return '<div class="cp-scope"><div class="cp-fld"><label>Planta</label>' + combo('cpScPlanta', CFG.plantas || [], p.PLANTA_ID || '', { etiqueta: 'Planta', ph: 'Elige la planta', dis: !E, data: ' data-pf="planta"' }) + '</div>' +
+    '<div class="cp-fld"><label>Tipo de activo <small>opcional</small></label>' + combo('cpScTipo', [{ id: '', n: 'Cualquier tipo' }].concat(catL('tipos')), p.TIPO_ID || '', { etiqueta: 'Tipo de activo', ph: 'Cualquier tipo', dis: !E, data: ' data-pf="tipo"' }) + '</div>' +
+    '<div class="cp-fld"><label>Modelo <small>opcional</small></label>' + combo('cpScModelo', [{ id: '', n: p.TIPO_ID ? 'Cualquier modelo' : 'Elige primero el tipo' }].concat(modelos), p.MODELO_ID || '', { etiqueta: 'Modelo', ph: p.TIPO_ID ? 'Cualquier modelo' : 'Elige primero el tipo', dis: !E || !p.TIPO_ID, data: ' data-pf="modelo"' }) + '</div></div>' +
+    (act.length ? '<div class="cp-s-row"><b>' + pl(act.length, 'activo en el plan', 'activos en el plan') + '</b>' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addeq">' + ic('plus', 15) + 'Agregar activos</button>' : '') + '</div>' +
+      (fuera.length ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + esc(fuera.map(function (a) { return a.CODIGO; }).join(', ')) + '</b> ' + (fuera.length === 1 ? 'queda' : 'quedan') + ' fuera del alcance y no generará trabajo. Ajusta el alcance o quítalos.</span></div>' : '') +
+      '<div class="cp-eqs">' + act.map(function (a) {
+        return '<div class="cp-eq' + (a.FUERA_ALCANCE ? ' cp-outx' : '') + '"><span class="cp-ph">' + (a.FOTO ? '<img class="cp-ph-img" src="' + esc(a.FOTO) + '" alt="">' : ic('cog', 20)) + '</span><div style="min-width:0"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + (a.AREA ? ' · ' + esc(a.AREA) : '') + '</small><div class="cp-tgs"><span class="cp-tg">' + (a.COMPONENTE ? esc(a.COMPONENTE) : 'Activo completo') + '</span>' + (a.MEDIDOR_ID ? '<span class="cp-tg cp-c">' + ic('gauge', 11) + fN(a.MEDIDOR_VALOR) + ' ' + esc(a.MEDIDOR_UNIDAD || '') + '</span>' : '') + (a.FUERA_ALCANCE ? '<span class="cp-tg cp-w">Fuera del alcance</span>' : '') + (a.OTROS_PLANES ? '<span class="cp-tg cp-w" title="También en ' + esc(a.OTROS_PLANES) + '">También en ' + esc(a.OTROS_PLANES) + '</span>' : '') + '</div></div>' +
+          '<div class="cp-x"><a class="cp-ibx" href="' + esc(a.URL) + '" target="_blank" rel="noopener" aria-label="Ver ficha del activo ' + esc(a.CODIGO) + '">' + ic('arrow', 15) + '</a>' + (E ? '<button type="button" class="cp-ibx cp-dn" data-a="rmeq" data-v="' + a.VINCULO_ID + '" data-c="' + esc(a.CODIGO) + '" aria-label="Quitar ' + esc(a.CODIGO) + ' del plan">' + ic('x', 15) + '</button>' : '') + '</div></div>';
+      }).join('') + '</div>'
+      : '<div class="cp-empty cp-big' + (U.tried[F.plan.PLAN_ID] ? ' cp-err' : '') + '"><span class="cp-ei">' + ic('cog', 22) + '</span><b>Todavía no hay activos</b><span>Agrega los activos' + (p.PLANTA ? ' de ' + esc(p.PLANTA) : '') + ' que recibirán este mantenimiento.</span>' + (E ? '<button type="button" class="cp-btn cp-pri" data-a="addeq">' + ic('plus', 16) + 'Agregar activos</button>' : '') + '</div>');
+}
+
+/* ---- selector de intervención (pasos 2 y 3) ---- */
+function intTabs(cur, E, mode) {
+  return '<div class="cp-itabs" role="tablist" aria-label="Intervenciones">' + ints().map(function (i) {
+    var bad = mode === 2 ? intIssue(i) : !!freqIssue(fqDe2(i));
+    return '<button type="button" role="tab" class="cp-itab' + (i === cur ? ' cp-on' : '') + (i.HABILITADO ? '' : ' cp-off') + '" data-a="isel" data-i="' + i.HITO_ID + '" aria-selected="' + (i === cur) + '"><span class="cp-cd">' + esc(i.CODIGO) + '</span><span class="cp-nm">' + (esc(i.NOMBRE) || '<em>Sin nombre</em>') +
+      (mode === 3 ? '<small>' + (i.HABILITADO && !bad ? esc(freqCorta(fqDe2(i))) : i.HABILITADO ? 'Sin frecuencia' : 'Deshabilitada') + '</small>' : '<small>' + (i.HABILITADO ? pl((i.ACTIVIDADES || []).length, 'actividad', 'actividades') : 'Deshabilitada') + '</small>') + '</span>' +
+      (!i.HABILITADO ? '' : bad ? '<span class="cp-ix" title="Falta completar">!</span>' : '<span class="cp-iok">' + ic('check', 12) + '</span>') + '</button>';
+  }).join('') + (mode === 2 && E ? '<button type="button" class="cp-itab cp-add" data-a="addint">' + ic('plus', 15) + 'Agregar intervención</button>' : '') + '</div>';
+}
+
+/* ---- paso 2 · trabajo ---- */
+function s2HTML(E) {
+  var list = ints(), tried = U.tried[F.plan.PLAN_ID];
+  if (!list.length) return '<div class="cp-empty cp-big' + (tried ? ' cp-err' : '') + '"><span class="cp-ei">' + ic('wrench', 22) + '</span><b>Agrega la primera intervención</b><span>Escribe un nombre o elige uno frecuente para empezar.</span>' + (E ? '<div class="cp-quick">' + ['Inspección mensual', 'Lubricación', 'Mantención 500 h', 'Limpieza'].map(function (n) { return '<button type="button" class="cp-fc" data-a="addint" data-n="' + n + '">' + ic('plus', 13) + n + '</button>'; }).join('') + '</div><button type="button" class="cp-btn cp-pri" data-a="addint">' + ic('plus', 16) + 'Agregar intervención</button>' : '') + '</div>';
+  var i = selInt(), id = i.HITO_ID, dis = E ? ' disabled' : '', nombre = String(i.NOMBRE || '').trim();
+  dis = E ? '' : ' disabled';
+  return intTabs(i, E, 2) + '<div class="cp-ipanel" id="cpInt' + id + '">' +
+    '<div class="cp-blk"><div class="cp-blk-h"><h4>' + esc(i.CODIGO) + ' · Datos de la orden de trabajo</h4><div class="cp-r"><label class="cp-sw"><input type="checkbox" data-iv="habilitado" data-i="' + id + '"' + (i.HABILITADO ? ' checked' : '') + dis + '><i></i>' + (i.HABILITADO ? 'Habilitada' : 'Deshabilitada') + '</label></div></div>' +
+    '<div class="cp-grid4c"><div class="cp-fld" style="grid-column:span 2"><label>Nombre de la intervención</label><input class="cp-inp' + (nombre ? '' : ' cp-err') + '" data-iv="nombre" data-i="' + id + '" value="' + esc(i.NOMBRE) + '"' + dis + ' placeholder="Ej.: Mantención 2.000 h" maxlength="200">' + (nombre ? '' : mc('', 'La intervención necesita un nombre.')) + '</div>' +
+    '<div class="cp-fld"><label>Tipo de OT</label>' + combo('cpIvTipo' + id, catL('otTipos'), i.OT_TIPO_ID || '', { etiqueta: 'Tipo de OT', dis: !E, data: ' data-iv="tipo" data-i="' + id + '"', clave: 'cpOtTipos' }) + '</div>' +
+    '<div class="cp-fld"><label>Prioridad</label>' + combo('cpIvPrio' + id, catL('prioridades'), i.OT_PRIORIDAD_ID || '', { etiqueta: 'Prioridad', dis: !E, data: ' data-iv="prioridad" data-i="' + id + '"', clave: 'cpPrioridades' }) + '</div>' +
+    '<div class="cp-fld"><label>Duración estimada</label><div class="cp-unit"><input class="cp-inp' + (+i.DURACION > 0 ? '' : ' cp-err') + '" type="number" min="0.25" step="0.25" data-iv="duracion" data-i="' + id + '" value="' + (i.DURACION ? hrs(i.DURACION) : '') + '"' + dis + '><span class="cp-u">horas</span></div>' + (+i.DURACION > 0 ? '' : mc('', 'La duración debe ser mayor que 0.')) + '</div>' +
+    '<div class="cp-fld" style="grid-column:2/-1;justify-content:flex-end"><div style="display:flex;gap:18px;flex-wrap:wrap;padding-bottom:9px"><label class="cp-sw"><input type="checkbox" data-iv="parada" data-i="' + id + '"' + (i.PARADA ? ' checked' : '') + dis + '><i></i>Requiere parada del activo</label><label class="cp-sw"><input type="checkbox" data-iv="overhaul" data-i="' + id + '"' + (i.OVERHAUL ? ' checked' : '') + dis + '><i></i>Es overhaul</label></div></div>' +
+    '<div class="cp-fld" style="grid-column:1/-1"><label>Descripción <small>opcional · se copia a la OT</small></label><textarea class="cp-inp" rows="2" data-iv="descripcion" data-i="' + id + '"' + dis + ' placeholder="Qué debe saber el técnico antes de empezar">' + esc(i.DESCRIPCION || '') + '</textarea></div></div></div>' +
+    actsHTML(i, E) +
+    (E ? '<div class="cp-ifoot">' + (!i.GENERO ? '<button type="button" class="cp-btn cp-dano cp-xs" data-a="rmint" data-i="' + id + '">' + ic('x', 14) + 'Quitar ' + esc(i.CODIGO) + '</button>' : '<span class="cp-msg cp-i">' + ic('help', 13) + '<span>' + esc(i.CODIGO) + ' ya generó ejecuciones: para dejar de usarla, deshabilítala.</span></span>') + '</div>' : '') + '</div>';
+}
+
+/* ---- paso 3 · frecuencia ---- */
+function s3HTML(E) {
+  if (!ints().length) return '<div class="cp-empty cp-big"><span class="cp-ei">' + ic('calw', 22) + '</span><b>Primero define el trabajo</b><span>La frecuencia se configura para cada intervención.</span><button type="button" class="cp-btn cp-out" data-a="stp" data-v="2">' + chL(15) + 'Ir a Trabajo</button></div>';
+  var i = selInt(), nx = nextLabel(i), iss = freqIssue(fqDe2(i)), nm = i.NOMBRE || i.CODIGO;
+  return intTabs(i, E, 3) +
+    '<div class="cp-nxt' + (nx ? '' : ' cp-no') + '">' + ic('calw', 20) + '<span>' + (nx ? '<small>Próxima ejecución de ' + esc(nm) + '</small><b>' + esc(nx) + '</b>' : '<small>' + esc(nm) + '</small><b>' + (i.HABILITADO ? (iss ? esc(iss.charAt(0).toUpperCase() + iss.slice(1)) : 'Sin fechas próximas') : 'Intervención deshabilitada') + '</b>') + '</span></div>' + whenHTML(i, E);
+}
+
+/* ---- paso 4 · responsable ---- */
+function s4HTML(E) {
+  if (!ints().length) return '<div class="cp-empty cp-big"><span class="cp-ei">' + ic('users', 22) + '</span><b>Primero define el trabajo</b><span>El responsable se asigna a cada intervención.</span><button type="button" class="cp-btn cp-out" data-a="stp" data-v="2">' + chL(15) + 'Ir a Trabajo</button></div>';
+  var list = ints(), dis = !E, ids = {}; list.forEach(function (i) { ids[i.RESPONSABLE_ID || 0] = 1; });
+  var same = Object.keys(ids).length === 1 ? (list[0].RESPONSABLE_ID || '') : '';
+  var personas = [{ id: '', n: 'Sin responsable' }].concat(catL('personas'));
+  return (E && list.length > 1 ? '<div class="cp-allr"><span>' + ic('users', 16) + 'Asignar todas las intervenciones a</span><span style="min-width:240px">' + combo('cpAllResp', [{ id: '', n: 'Elegir persona…' }].concat(catL('personas')), same, { etiqueta: 'Responsable para todas', ph: 'Elegir persona…', data: ' data-ar="1"', clave: 'cpAllResps' }) + '</span></div>' : '') +
+    '<div class="cp-rtbl"><div class="cp-rh"><span>Intervención</span><span>Responsable</span><span>Grupo de trabajo <small>opcional</small></span></div>' +
+    list.map(function (i) {
+      var f = fqDe2(i);
+      return '<div class="cp-rr' + (i.HABILITADO ? '' : ' cp-off') + '"><span class="cp-s"><b>' + esc(i.CODIGO) + ' · ' + (esc(i.NOMBRE) || 'Sin nombre') + '</b><small>' + (freqIssue(f) ? 'Sin frecuencia' : esc(freqCorta(f))) + ' · ' + fH(i.DURACION) + '</small></span>' +
+        '<span>' + combo('cpIvResp' + i.HITO_ID, personas, i.RESPONSABLE_ID || '', { etiqueta: 'Responsable de ' + (i.NOMBRE || i.CODIGO), ph: 'Sin responsable', dis: dis, data: ' data-iv="responsable" data-i="' + i.HITO_ID + '"', clave: 'cpPersonas', err: false }) + '</span>' +
+        '<span>' + combo('cpIvGrupo' + i.HITO_ID, [{ id: '', n: 'Sin grupo' }].concat(catL('grupos')), i.GRUPO_ID || '', { etiqueta: 'Grupo de ' + (i.NOMBRE || i.CODIGO), ph: 'Sin grupo', dis: dis, data: ' data-iv="grupo" data-i="' + i.HITO_ID + '"', clave: 'cpGrupos' }) + '</span></div>';
+    }).join('') + '</div>' +
+    (enab().some(function (i) { return !i.RESPONSABLE_ID && !i.GRUPO_ID; }) ? mc('w', 'Sin responsable, las OT nacerán sin asignar y habrá que asignarlas una por una. Puedes activar igual.') : mc('i', 'Al generar cada OT, SIGMA la asigna a este responsable y su grupo.', 'help'));
+}
+
+/* ---- paso 5 · revisar / activar / aplicar / resumen ---- */
+function s5Head(info) {
+  var e = planEst(), p = F.plan, ok = info.ck.ok;
+  if (e === 'draft') return '<span class="cp-ey">Paso 5 de 5</span><h2>' + (ok ? 'Todo listo para activar' : 'Revisa antes de activar') + '</h2><p>' + (ok ? 'Así funcionará el plan. Al activarlo, SIGMA programa las ejecuciones de los próximos 90 días.' : 'Completa lo que falta: cada punto te lleva directo al campo.') + '</p>';
+  if (e === 'changes') return '<span class="cp-ey">Paso 5 de 5</span><h2>Revisa los cambios antes de aplicar</h2><p>La v' + p.VERSION_VIGENTE + ' sigue activa hasta que apliques. Abajo ves cómo quedan las ejecuciones.</p>';
+  if (e === 'inactive') return '<span class="cp-ey">Resumen</span><h2>Plan inactivo</h2><p>No genera ejecuciones desde el ' + fDN(p.RETIRO_FECHA) + '. Al reactivarlo, SIGMA vuelve a programar los próximos 90 días.</p>';
+  return '<span class="cp-ey">Resumen</span><h2>Así funciona este plan</h2><p>Para cambiar algo, entra al paso que corresponda: lo activo sigue igual hasta que apliques los cambios.</p>';
+}
+function planStory() {
+  var en = enab(); if (!en.length) return '';
+  var eqs = F.activos.length ? pl(F.activos.length, 'activo', 'activos') + ' (' + F.activos.slice(0, 3).map(function (a) { return esc(a.CODIGO); }).join(', ') + (F.activos.length > 3 ? '…' : '') + ')' : '<span class="cp-miss">ningún activo</span>';
+  return '<ul class="cp-story">' + en.map(function (i) {
+    var f = fqDe2(i), iss = freqIssue(f), who = i.RESPONSABLE || i.GRUPO;
+    return '<li><span class="cp-cd">' + esc(i.CODIGO) + '</span><span><b>' + (esc(i.NOMBRE) || '<span class="cp-miss">Sin nombre</span>') + '</b> ' + (iss ? '<span class="cp-miss">· ' + esc(iss) + '</span>' : '· ' + esc(freqText(f, true, unidadMedidor()).replace(/^C/, 'c'))) + ' · en ' + eqs + ' · ' + pl((i.ACTIVIDADES || []).length || 1, 'paso', 'pasos') + ' en la OT · ' + (who ? 'asignada a <b>' + esc(who) + '</b>' : '<span class="cp-wmiss">sin responsable</span>') + '</span></li>';
+  }).join('') + '</ul>';
+}
+function s5HTML(E, info) {
+  var p = F.plan, est = planEst(), ck = info.ck, id = p.PLAN_ID, t = U.t5[id] || 'rev', im = U.imp || {};
+  var tabs = est === 'draft' ? [['rev', 'Revisión'], ['next', 'Proyección']] : [['rev', est === 'changes' ? 'Revisión' : 'Resumen'], ['next', 'Próximas ejecuciones'], ['ot', 'OT generadas'], ['hist', 'Historial']];
+  var seg = '<div class="cp-segc cp-t5" role="tablist">' + tabs.map(function (x) { return '<button type="button" role="tab" data-a="t5" data-v="' + x[0] + '" aria-pressed="' + (t === x[0]) + '">' + x[1] + '</button>'; }).join('') + '</div>';
+  if (t === 'next') return seg + nextHTML();
+  if (t === 'ot') return seg + otHTML();
+  if (t === 'hist') return seg + histHTML();
+  var item = function (o, cls) { return '<button type="button" class="cp-' + cls + '" data-a="fix" data-step="' + o.step + '" data-i="' + (o.int || '') + '" data-c="' + (o.act || '') + '">' + ic(cls === 'ok' ? 'check' : cls === 'no' ? 'x' : 'alert', 15) + '<span>' + esc(o.t) + '</span><em>Paso ' + o.step + ' · ' + STEPS[o.step][0] + (cls === 'ok' ? '' : ' ›') + '</em></button>'; };
+  if (est === 'draft' || est === 'changes') {
+    var nb = ck.B.filter(function (b) { return b.ok; }).length;
+    return seg + '<div class="cp-rv"><div class="cp-rv-l"><div class="cp-pgx"><div class="cp-pg' + (ck.ok ? ' cp-ok' : '') + '"><i style="width:' + Math.round(nb / ck.B.length * 100) + '%"></i></div><span>' + nb + ' de ' + ck.B.length + ' obligatorios</span></div>' +
+      '<div class="cp-chk">' + ck.B.map(function (b) { return item(b, b.ok ? 'ok' : 'no'); }).join('') + '</div>' + (ck.W.length ? '<h5>Conviene revisar <small>no impide ' + (est === 'draft' ? 'activar' : 'aplicar') + '</small></h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '') + '</div>' +
+      '<div class="cp-rv-r"><h5>Así funcionará</h5>' + (planStory() || '<p class="cp-miss2">Cuando agregues intervenciones, aquí verás en palabras simples qué hará el plan.</p>') +
+      (est === 'draft' ? '<div class="cp-imp">' + (ck.ok ? (im.CREAN != null ? 'Al activar se generarán <b>' + pl(+im.CREAN, 'ejecución', 'ejecuciones') + '</b> entre hoy y el ' + fDY(dIso(im.HASTA) || addD(TODAY, 90)) + ' para <b>' + pl(F.activos.length, 'activo', 'activos') + '</b>.' : 'Al activar, SIGMA programa las ejecuciones de los próximos 90 días.') : 'Cuando completes lo obligatorio, aquí verás cuántas ejecuciones se generarán.') + '</div>'
+        : '<h5>Al aplicar, desde hoy</h5>' + imp4(im)) + '</div></div>';
+  }
+  var nProg = (F.proximas || []).filter(function (o) { return dIso(o.FECHA) >= TODAY; }).length, nx = proxima(), aten = (+p.VENCIDAS || 0) + (+p.ATRASADAS || 0);
+  return seg + '<div class="cp-rv"><div class="cp-rv-l"><h5>Así funciona</h5>' + planStory() + '</div><div class="cp-rv-r">' + (est === 'inactive'
+    ? '<div class="cp-bnr cp-i">' + ic('alert', 18) + '<span>' + esc(p.RETIRO_MOTIVO || '') + '<br><small style="color:var(--muted)">' + esc(p.RETIRO_USUARIO || '') + ' · ' + fDN(p.RETIRO_FECHA) + '</small></span></div>'
+    : '<div class="cp-facts"><div><span>Próxima ejecución</span><b>' + (nx ? fDL(nx.d) : '—') + '</b></div><div><span>Pendientes · próximos 90 días</span><b>' + (im.DESACTIVAR_CANCELAN != null ? im.DESACTIVAR_CANCELAN : nProg) + '</b></div><div><span>Requieren atención</span><b style="' + (aten ? 'color:var(--red)' : '') + '">' + aten + '</b></div><div><span>Versión</span><b>v' + p.VERSION_VIGENTE + '</b><small>desde ' + fDN(p.VERSION_DESDE) + '</small></div></div>' + (ck.W.length ? '<h5>Conviene revisar</h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '')) + '</div></div>';
 }
 
 /* ---- cuándo (editor de frecuencia, §15) ---- */
@@ -668,23 +791,6 @@ function histHTML() {
     '<p style="font-size:11.5px;color:var(--muted);margin-top:10px">Creado por ' + esc(p.CREADO_POR || '—') + ' el ' + fDN(p.CREADO_EL) + (p.MODIFICADO_EL ? ' · última modificación ' + fDN(p.MODIFICADO_EL) + ' por ' + esc(p.MODIFICADO_POR || '') : '') + '</p></section>';
 }
 
-/* ---- listo para activar ---- */
-function rdyHTML(ck) {
-  var p = F.plan, e = estado(p)[0], im = U.imp || {};
-  var nb = ck.B.filter(function (b) { return b.ok; }).length, tot = ck.B.length;
-  var item = function (o, cls) { return '<button type="button" class="cp-' + cls + '" data-a="fix" data-s="' + (o.go || '') + '" data-i="' + (o.int || '') + '" data-c="' + (o.act || '') + '" data-blk="' + (o.blk || '') + '">' + ic(cls === 'ok' ? 'check' : cls === 'no' ? 'x' : 'alert', 15) + '<span>' + esc(o.t) + '</span></button>'; };
-  var warn = ck.W.length ? '<h5>Conviene revisar</h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '';
-  var ed = U.permisos.editar;
-  if (e === 'inactive') return '<aside class="cp-rdy"><h3>' + ic('alert', 17) + 'Plan inactivo</h3><p style="font-size:12.5px;color:var(--ink-2)">' + esc(p.RETIRO_MOTIVO || '') + '</p><p style="font-size:12px;color:var(--muted)">Al reactivar, SIGMA publica la última versión, reabre las ejecuciones futuras que se cancelaron y genera lo que falte de los próximos 90 días.</p>' + (ed ? '<button type="button" class="cp-btn cp-pri" data-a="reactivate">' + ic('trend', 16) + 'Reactivar</button>' : '') + '</aside>';
-  if (e === 'active') return '<aside class="cp-rdy"><h3>' + ic('check', 17) + 'Plan activo</h3><div class="cp-imp">' + (im.DESACTIVAR_CANCELAN != null ? 'Tiene <b>' + pl(+im.DESACTIVAR_CANCELAN, 'ejecución pendiente', 'ejecuciones pendientes') + '</b> sin OT y <b>' + pl(+im.CON_OT || 0, 'con OT', 'con OT') + '</b> para <b>' + pl(F.activos.length, 'activo', 'activos') + '</b>. ' : '') + 'Editar cualquier campo abre una versión de cambios: lo activo sigue igual hasta que apliques.</div>' + warn + (ed ? '<button type="button" class="cp-btn cp-out" data-a="mdup">' + ic('copy', 15) + 'Duplicar plan</button>' : '') + '</aside>';
-  var pg = '<div class="cp-pg' + (ck.ok ? ' cp-ok' : '') + '"><i style="width:' + Math.round(nb / tot * 100) + '%"></i></div>';
-  if (e === 'changes') return '<aside class="cp-rdy"><h3>' + ic('pencil', 17) + 'Cambios sin aplicar</h3>' + pg + '<div class="cp-chk">' + ck.B.map(function (b) { return item(b, b.ok ? 'ok' : 'no'); }).join('') + '</div>' + warn +
-    '<h5>Al aplicar</h5>' + imp4(im) + (ed ? '<button type="button" class="cp-btn cp-pri" data-a="apply"' + (ck.ok ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Aplicar cambios</button><button type="button" class="cp-btn cp-plain" data-a="discard">Descartar cambios</button>' : '') + '</aside>';
-  return '<aside class="cp-rdy"><h3>' + (ck.ok ? ic('check', 17) : ic('clip', 17)) + 'Listo para activar</h3>' + pg +
-    '<h5>' + (ck.ok ? 'Todo lo necesario' : 'Falta ' + (tot - nb) + ' de ' + tot) + '</h5><div class="cp-chk">' + ck.B.map(function (b) { return item(b, b.ok ? 'ok' : 'no'); }).join('') + '</div>' + warn +
-    '<div class="cp-imp">' + (ck.ok ? (im.CREAN != null ? 'Al activar se generarán <b>' + pl(+im.CREAN, 'ejecución', 'ejecuciones') + '</b> entre hoy y el ' + fDY(dIso(im.HASTA) || addD(TODAY, 90)) + ' para <b>' + pl(F.activos.length, 'activo', 'activos') + '</b>.' : 'Al activar, SIGMA programa las ejecuciones de los próximos 90 días.') : 'Cuando completes lo que falta, aquí verás cuántas ejecuciones se generarán.') + '</div>' +
-    (ed ? '<button type="button" class="cp-btn cp-pri" data-a="activate"' + (ck.ok ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Activar plan</button>' : '') + (ck.ok ? '' : '<p class="cp-msg cp-i" style="justify-content:center">' + ic('help', 13) + '<span>Toca lo que falta para ir directo al campo.</span></p>') + '</aside>';
-}
 function imp4(im) {
   var n = function (x) { return x == null ? '…' : x; };
   return '<div class="cp-imp4"><div class="cp-t"><b class="cp-tn">' + n(im.TRASPASAN) + '</b><span>Se mantienen</span><small>pasan a la versión nueva</small></div><div class="cp-n"><b class="cp-tn">' + n(im.CREAN) + '</b><span>Se crean</span><small>fechas nuevas</small></div><div class="cp-c"><b class="cp-tn">' + n(im.CANCELAN) + '</b><span>Se cancelan</span><small>ya no corresponden</small></div><div><b class="cp-tn">' + n(im.CON_OT) + '</b><span>Con OT</span><small>no se tocan</small></div></div>' +
@@ -725,7 +831,7 @@ function recargarFicha() {
     if (U.plan !== id) return;
     F = r; U.permisos = r.permisos || U.permisos;
     render();
-    if (F.plan.ESTADO !== 'INACTIVO') api('Impacto', { plan: id }).then(function (im) { if (U.plan === id) { U.imp = im; pintarRdy(); } }).catch(function () { });
+    if (F.plan.ESTADO !== 'INACTIVO') api('Impacto', { plan: id }).then(function (im) { if (U.plan === id) { U.imp = im; if (U.step[id] === 5) render(); } }).catch(function () { });
   });
 }
 function recargarLista() {
@@ -738,14 +844,11 @@ function recargarLista() {
 function recargarKpis() {
   return p360('kpis').then(function (k) { U.kpis = k; $('#cpKpis').innerHTML = kpisHTML(); $('#cpTabs').innerHTML = tabsHTML(); }).catch(function () { });
 }
-function pintarRdy() {
-  var a = $('.cp-rdy'); if (!a || !F) return;
-  var fo = grabFocus(a); a.outerHTML = rdyHTML(checks()); putFocus(fo, $('.cp-fb'));
-}
 function abrirPlan(id, o) {
   o = o || {};
   if (U.plan !== id) { F = null; U.imp = null; U.vp = {}; U.pend = {}; U.fq = {}; }
   U.plan = id; U.tab = 'planes';
+  if (o.paso) U.step[id] = o.paso;
   render(); hashOut();
   return recargarFicha().then(function () { if (o.top !== false && matchMedia('(max-width:1100px)').matches) window.scrollTo(0, 0); }).catch(toastError);
 }
@@ -775,7 +878,7 @@ function putFocus(fo, root) {
 }
 var TABR = {};   // las otras pestañas se registran aquí (bloques C y D)
 function cuerpoHTML() {
-  if (U.tab === 'planes') return '<div class="cp-ws' + (U.plan ? ' cp-has-plan' : '') + '">' + listHTML() + fichaHTML() + '</div>';
+  if (U.tab === 'planes') return U.plan ? fichaHTML() : '<div class="cp-ws">' + listHTML() + '</div>';
   var t = TABR[U.tab];
   return t ? t.html() : '<div class="cp-card" style="padding:24px">Esta pestaña se habilita en el siguiente bloque.</div>';
 }
@@ -808,7 +911,7 @@ function switchTab(t, extra) {
 /* ---- la URL: #tab=planes&plan=<id cifrado> ---- */
 function hashOut() {
   var h = 'tab=' + U.tab;
-  if (U.tab === 'planes' && U.plan && U.lista) { var p = U.lista.filter(function (x) { return x.PLAN_ID === U.plan; })[0]; if (p) h += '&plan=' + p.Q; }
+  if (U.tab === 'planes' && U.plan && U.lista) { var p = U.lista.filter(function (x) { return x.PLAN_ID === U.plan; })[0]; if (p) h += '&plan=' + p.Q + (U.step[U.plan] ? '&paso=' + U.step[U.plan] : ''); }
   if (U.tab === 'biblioteca' && U.lib.v) h += '&lib=' + U.lib.v;
   try { history.replaceState(null, '', '#' + h); } catch (e) { }
 }
@@ -975,6 +1078,11 @@ POPS.more = function () {
     ed && (e === 'active' || e === 'changes') ? '<hr>' + mi('mdeactq', 'alert', 'Desactivar plan…') : '',
     ed && (e === 'draft' || (e === 'inactive' && !p.GENERO)) ? '<hr>' + mi('mdelq', 'x', 'Eliminar plan', 'dn') : ''].join('') || '<p style="padding:10px;font-size:12.5px;color:var(--muted)">Sin acciones disponibles.</p>';
 };
+POPS.psw = function () {
+  var q = nrm(POP.q || ''), l = ordenPlanes().filter(function (p) { return !q || nrm(p.NOMBRE + ' ' + p.CODIGO).indexOf(q) >= 0; }).slice(0, 12);
+  return '<div class="cp-ppt"><b>Cambiar de plan</b></div><label class="cp-srch2" style="margin:0 6px 6px">' + ic('search', 14) + '<input data-ppv="q" value="' + esc(POP.q || '') + '" placeholder="Buscar plan" aria-label="Buscar plan" data-autofocus="1" autocomplete="off"></label><div class="cp-srchres">' +
+    (l.map(function (p) { return '<button type="button" class="cp-mi2 cp-sh2" data-a="pgo" data-p="' + p.PLAN_ID + '"' + (p.PLAN_ID === U.plan ? ' aria-current="true"' : '') + '>' + ic('calw', 16) + '<span><b>' + esc(p.NOMBRE) + '</b><small>' + esc(p.CODIGO) + ' · ' + estado(p)[1] + '</small></span></button>'; }).join('') || '<p style="padding:10px;font-size:12.5px;color:var(--muted)">Ningún plan coincide.</p>') + '</div>';
+};
 POPS.shared = function () {
   return '<div class="cp-ppt"><b>Usar un calendario compartido</b><small>La intervención tomará sus fechas. Si alguien lo cambia en la Biblioteca, cambia aquí también.</small></div>' + (U.cat.calendarios || []).map(function (c) { return '<button type="button" class="cp-mi2 cp-sh2" data-a="pickshared" data-c="' + c.ID + '">' + ic('link', 16) + '<span><b>' + esc(c.NOMBRE) + '</b><small>' + esc(c.TIPO || '') + '</small></span></button>'; }).join('');
 };
@@ -1016,21 +1124,39 @@ A.bulkoff = function () {
 };
 A.flashx = function () { delete U.flash[pid()]; render(); };
 A.go = function (d) { goEl('#' + d.s); };
+function toFicha() { var el = $('.cp-fi'); if (!el) return; var t = el.getBoundingClientRect().top; if (t < 76 || t > innerHeight * .5) window.scrollTo({ top: window.scrollY + t - 84, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); }
+function focusIn(sel) { setTimeout(function () { var el = sel && $(sel); if (el) { el.focus({ preventScroll: true }); el.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' }); el.classList.remove('cp-flashb'); void el.offsetWidth; el.classList.add('cp-flashb'); } }, 80); }
+/* Lleva a un pendiente: abre el paso, la intervención y la actividad, y enfoca el campo. */
 A.fix = function (d) {
-  var h = d.i ? hById(d.i) : null;
-  if (h) U.oi[pid()] = h.CODIGO;
+  var id = pid(), k = +d.step, h = d.i ? hById(d.i) : null;
+  U.step[id] = k; if (d.t5) U.t5[id] = d.t5;
+  if (h) U.oi[id] = h.CODIGO;
   var ac = d.c ? aById(d.c) : null; if (ac) U.oa[ac.h.CODIGO] = ac.a.CODIGO;
-  render();
-  var sel = d.c ? '.cp-ac[data-ac="' + d.c + '"]' : d.blk === 'when' ? '#cpWhen' + d.i : d.blk === 'who' ? '#cpWho' + d.i : d.i ? '#cpInt' + d.i : '#' + (d.s || 'cpSecEq');
-  goEl(sel, d.c ? '.cp-err input,.cp-inp.cp-err' : d.blk === 'when' ? '.cp-segc button,.cp-inp' : d.blk === 'who' ? 'input[type=text]' : d.s === 'cpSecEq' ? '[data-a="addeq"]' : d.s === 'cpSecInt' ? '[data-a="addint"]' : null);
+  render(); toFicha();
+  var sel = k === 1 ? (F.activos.length ? '[data-cb="cpScPlanta"] input[type=text]' : '#cpStc [data-a="addeq"]')
+    : k === 2 ? (!ints().length ? '#cpStc [data-a="addint"]' : ac ? '.cp-ac[data-ac="' + d.c + '"] .cp-err, .cp-ac[data-ac="' + d.c + '"] .cp-inp' : '.cp-ipanel .cp-err, .cp-ipanel [data-iv="nombre"]')
+    : k === 3 ? (d.i ? '#cpWhen' + d.i + ' .cp-err, #cpWhen' + d.i + ' .cp-segc button, #cpWhen' + d.i + ' .cp-inp' : null)
+    : k === 4 ? (d.i ? '[data-cb="cpIvResp' + d.i + '"] input[type=text]' : '.cp-rtbl input[type=text]') : null;
+  focusIn(sel);
 };
-function bloqueado() {
-  U.vp.err = true; var b = checks().B.filter(function (x) { return !x.ok; })[0]; render();
-  if (b) A.fix({ s: b.go, i: b.int, c: b.act, blk: b.blk });
-  toast('Completa lo que falta para activar: te llevé al primer punto.');
+A.stp = function (d) { U.step[pid()] = +d.v; if (d.t5) U.t5[pid()] = d.t5; cerrarPop(); render(); hashOut(); toFicha(); };
+A.t5 = function (d) { U.t5[pid()] = d.v; render(); };
+A.isel = function (d) { var h = hById(d.i); if (h) { U.oi[pid()] = h.CODIGO; render(); } };
+A.next = function () {
+  var id = pid(), info = stepInfo(), k = U.step[id] || 1, e = info.err(k);
+  if (e.length) { U.nx[id] = k; (U.vis[id] = U.vis[id] || {})[k] = 1; A.fix({ step: k, i: e[0].int, c: e[0].act }); return; }
+  U.step[id] = Math.min(5, k + 1); render(); hashOut(); toFicha();
+};
+function blockFail() {
+  var id = pid(), b = checks().B.filter(function (x) { return !x.ok; })[0]; U.tried[id] = true;
+  if (b) A.fix({ step: b.step, i: b.int, c: b.act });
+  toast('Falta completar un dato: te llevé directo a él.');
 }
-A.activate = function (d, t) { if (t.getAttribute('aria-disabled') === 'true') return bloqueado(); openModal({ t: 'activate' }); };
-A.apply = function (d, t) { if (t.getAttribute('aria-disabled') === 'true') return bloqueado(); openModal({ t: 'apply', obs: '' }); };
+A.psw = function (d, t) { openPop(t, { t: 'psw', q: '' }); };
+A.pnav = function (d) { var l = ordenPlanes(), x = l.findIndex(function (q) { return q.PLAN_ID === U.plan; }), n = l[x + (+d.v)]; if (n) abrirPlan(n.PLAN_ID, { top: false }); };
+A.pgo = function (d) { cerrarPop(); abrirPlan(+d.p, { top: false }); };
+A.activate = function (d, t) { if (t.getAttribute('aria-disabled') === 'true') return blockFail(); openModal({ t: 'activate' }); };
+A.apply = function (d, t) { if (t.getAttribute('aria-disabled') === 'true') return blockFail(); openModal({ t: 'apply', obs: '' }); };
 A.discard = function () { openModal({ t: 'discard' }); };
 A.reactivate = function () { openModal({ t: 'react' }); };
 A.more = function (d, t) { t.setAttribute('aria-expanded', 'true'); openPop(t, { t: 'more', right: true }); };
@@ -1074,7 +1200,7 @@ A.npok = function () {
 A.mact = function () {
   var id = pid();
   confirmar(function () { return api('Activar', { plan: id, observacion: '' }); }).then(function (r) {
-    U.vp.err = false;
+    U.tried[id] = false; U.step[id] = 5; U.t5[id] = 'rev';
     U.flash[id] = r.ERROR_GENERACION ? { t: 'Plan activado (v' + r.VERSION + '), pero no se pudieron generar las ejecuciones: ' + esc(r.ERROR_GENERACION), w: true, retry: true }
       : { t: 'Plan activado · ' + pl(+r.GENERADAS || 0, 'ejecución programada', 'ejecuciones programadas') + ' hasta el ' + fDY(addD(TODAY, 90)) + '.' };
     toast('Plan activo. SIGMA ya programó sus ejecuciones.');
@@ -1152,14 +1278,12 @@ A.rmeq = function (d) {
 };
 
 /* ---- intervenciones ---- */
-A.toggleint = function (d, t, e) {
-  if (e && e.target.closest('[data-stop]')) return;
-  var h = hById(d.i); if (!h) return;
-  U.oi[pid()] = U.oi[pid()] === h.CODIGO ? null : h.CODIGO; render();
-};
-A.addint = function () {
-  escribir('AgregarIntervencion', { plan: pid(), nombre: '' }).then(function (r) {
-    var h = hById(r.hito); if (h) { U.oi[pid()] = h.CODIGO; render(); goEl('#cpInt' + h.HITO_ID, '[data-iv="nombre"]'); var n = $('#cpInt' + h.HITO_ID + ' [data-iv="nombre"]'); if (n) n.select(); }
+A.addint = function (d) {
+  var id = pid();
+  escribir('AgregarIntervencion', { plan: id, nombre: d.n || '' }).then(function (r) {
+    var h = hById(r.hito); if (!h) return;
+    U.oi[id] = h.CODIGO; U.step[id] = 2; U.oa[h.CODIGO] = null; render(); hashOut();
+    if (d.n) { goEl('#cpActs' + h.HITO_ID); } else { var n = $('#cpInt' + h.HITO_ID + ' [data-iv="nombre"]'); if (n) { n.focus(); n.select(); } }
   }).catch(toastError);
 };
 A.rmint = function (d) {
@@ -1340,6 +1464,7 @@ function comboCambio(span) {
   var v = valorCombo(span), nombre = span.getAttribute('data-cb');
   if (nombre === 'cpPlanta') { if (+v !== U.planta) { U.planta = +v || 0; pintarCascara(); recargarTodo(); } return; }
   if (nombre === 'cpPeriodo') { if (v && v !== U.periodo) { U.periodo = v; if (TABR[U.tab] && TABR[U.tab].periodo) TABR[U.tab].periodo(); } return; }
+  if (span.hasAttribute('data-ar')) return asignarTodas(v);
   if (span.hasAttribute('data-pp') && PN && PN.d) return setPP(span, v);
   if (span.hasAttribute('data-pf')) return planCampo(span.getAttribute('data-pf'), v);
   if (span.hasAttribute('data-iv')) return ivCampo(span, span.getAttribute('data-iv'), v);
@@ -1353,11 +1478,17 @@ function comboCambio(span) {
   if (span.hasAttribute('data-ppq') && POP) { POP[span.getAttribute('data-ppq')] = v; return; }
   if (TABR[U.tab] && TABR[U.tab].combo) TABR[U.tab].combo(span, v);
 }
+function asignarTodas(v) {
+  var list = ints().filter(function (i) { return String(i.RESPONSABLE_ID || '') !== String(v || ''); });
+  if (!v || !list.length) return;
+  list.forEach(function (i, k) { escribir('GuardarIntervencion', { plan: pid(), hito: i.HITO_ID, campo: 'responsable', valor: String(v) }, k < list.length - 1 ? { sinFicha: true } : {}).catch(toastError); });
+}
 function planCampo(campo, v) {
   var p = F.plan;
   var actual = { nombre: p.NOMBRE, planta: p.PLANTA_ID, tipo: p.TIPO_ID, modelo: p.MODELO_ID }[campo];
   if (sinCambio(actual, v)) return;
   if (campo === 'nombre' && !String(v).trim()) { render(); toast('El plan necesita un nombre.'); return; }
+  if (campo === 'planta' && !String(v).trim()) { render(); return; }
   escribir('GuardarPlan', { plan: pid(), campo: campo, valor: String(v == null ? '' : v) }).catch(toastError);
 }
 function ivCampo(el, campo, v) {
@@ -1504,7 +1635,7 @@ function iniciar() {
     $('#cpHeroAcc').dataset.ok = ''; pintarCascara();
     var sel = h.plan ? U.lista.filter(function (p) { return mismoQ(p.Q, h.plan); })[0] : null;
     if (U.tab !== 'planes' && TABR[U.tab] && TABR[U.tab].entrar) TABR[U.tab].entrar({});
-    if (sel) abrirPlan(sel.PLAN_ID, { top: false }); else render();
+    if (sel) abrirPlan(sel.PLAN_ID, { top: false, paso: +h.paso >= 1 && +h.paso <= 5 ? +h.paso : 0 }); else render();
     if (U.tab !== 'cobertura' && TABR.cobertura) cobCargar();
     recargarKpis();
   }).catch(function (e) { toastError(e); $('#cpBody').innerHTML = '<div class="cp-empty" style="margin:20px"><span class="cp-ei">' + ic('alert', 20) + '</span><b>No se pudo cargar el Centro de Planificación</b>' + esc(e.message) + '<button type="button" class="cp-btn cp-out cp-sm" onclick="location.reload()">Reintentar</button></div>'; });

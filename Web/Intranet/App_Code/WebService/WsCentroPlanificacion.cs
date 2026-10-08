@@ -302,7 +302,7 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             Dictionary<string, object> m = Asegurar(plan, null, null, null, null);
             int id = ExecId("INS_PLAN_HITO", "@CLIENTE", Cli(), "@PLAN", plan,
                 "@NOMBRE", string.IsNullOrWhiteSpace(nombre) ? "Nueva intervención" : nombre.Trim(),
-                "@ORDEN_TRABAJO_TIPO", 1, "@ORDEN_TRABAJO_PRIORIDAD", 2, "@USUARIO", U());
+                "@DURACION_ESTIMADA_MINUTO", 60, "@ORDEN_TRABAJO_TIPO", 1, "@ORDEN_TRABAJO_PRIORIDAD", 2, "@USUARIO", U());
             return new { hito = id, recargar = true, borradorCreado = Bool(m, "CREADO") };
         });
     }
