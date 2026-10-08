@@ -1147,6 +1147,31 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         });
     }
 
+    /// <summary>
+    /// Monitoreo (sala de control y programa por ubicación): ejecuciones reales
+    /// del rango, la proyección de lo que aún no existe y las áreas de la planta.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Monitoreo(int planta, string desde, string hasta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            object d = FechaTxt(desde), h = FechaTxt(hasta);
+            if (d == null || h == null || (DateTime)h < (DateTime)d || ((DateTime)h - (DateTime)d).TotalDays > 60) throw new Exception("El rango de fechas no es válido.");
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_PLAN_MONITOREO", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null, "@DESDE", d, "@HASTA", h);
+            List<Dictionary<string, object>> reales = SoporteDatos.Del(c, 0);
+            string urlOt = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?query=";
+            foreach (Dictionary<string, object> f in reales)
+            {
+                f["TOKEN"] = Q(Entero(f, "PMO_ID"));
+                if (Entero(f, "OT_ID") > 0) f["OT_URL"] = urlOt + Q(Entero(f, "OT_ID"));
+            }
+            return new { reales = reales, proyeccion = SoporteDatos.Del(c, 1), areas = SoporteDatos.Del(c, 2) };
+        });
+    }
+
     private static object FechaTxt(string s)
     {
         DateTime f;

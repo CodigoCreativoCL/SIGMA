@@ -1072,15 +1072,15 @@
 .cp-root .cp-at-w small{display:block;font-size:11.5px;color:var(--m-mut);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
 .cp-root .cp-cmp{color:#C9BDFF}
 .cp-root .cp-pz{color:var(--m-amb);font-weight:700}
-.cp-root .cp-xs{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;white-space:nowrap;color:var(--m-mut)}
-.cp-root .cp-xs i{width:7px;height:7px;border-radius:50%;background:currentColor}
-.cp-root .cp-xs.cp-s-live{color:var(--m-tea)}
-.cp-root .cp-xs.cp-s-venc{color:var(--m-red)}
-.cp-root .cp-xs.cp-s-atr{color:var(--m-amb)}
-.cp-root .cp-xs.cp-s-disp{color:#C9BDFF}
-.cp-root .cp-xs.cp-s-ot{color:#7DB7FF}
-.cp-root .cp-xs.cp-s-cer{color:var(--m-grn)}
-.cp-root .cp-xs.cp-s-pj{color:var(--m-mut)}
+.cp-root .cp-xst{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;white-space:nowrap;color:var(--m-mut)}
+.cp-root .cp-xst i{width:7px;height:7px;border-radius:50%;background:currentColor}
+.cp-root .cp-xst.cp-s-live{color:var(--m-tea)}
+.cp-root .cp-xst.cp-s-venc{color:var(--m-red)}
+.cp-root .cp-xst.cp-s-atr{color:var(--m-amb)}
+.cp-root .cp-xst.cp-s-disp{color:#C9BDFF}
+.cp-root .cp-xst.cp-s-ot{color:#7DB7FF}
+.cp-root .cp-xst.cp-s-cer{color:var(--m-grn)}
+.cp-root .cp-xst.cp-s-pj{color:var(--m-mut)}
 .cp-root .cp-at-more{border:0;background:transparent;color:var(--m-pur);font-size:12px;font-weight:700;padding:6px;align-self:flex-start}
 .cp-root .cp-mon-e{display:flex;flex-direction:column;align-items:center;gap:8px;text-align:center;padding:30px 16px;border-radius:18px;background:var(--m-card);box-shadow:inset 0 0 0 1px var(--m-line);color:var(--m-mut);font-size:13px}
 .cp-root .cp-mon-e .cp-ic{color:var(--m-grn)}
@@ -1159,7 +1159,7 @@
 .cp-root .cp-mon-strip{grid-template-columns:repeat(21,44px)}
 .cp-root .cp-at li button{grid-template-columns:minmax(0,1fr) auto}
 .cp-root .cp-at-w{grid-column:1;grid-row:2}
-.cp-root .cp-xs{grid-row:1/3;grid-column:2}
+.cp-root .cp-xst{grid-row:1/3;grid-column:2}
 .cp-root .cp-gr{grid-template-columns:170px repeat(14,minmax(38px,1fr))}
 .cp-root .cp-prog-t{min-width:720px}
 .cp-root .cp-lv2 .cp-gr-h{padding-left:30px}
@@ -1257,6 +1257,9 @@ body:has(#cpRoot) .content-page .container-fluid{padding-top:12px!important;max-
 .cp-root .cp-hsel .cp-mes{display:flex;align-items:center;gap:6px;width:auto}
 .cp-root .cp-hsel .cp-mes input[type=text]{width:150px;min-width:0!important;min-height:34px;height:34px;border:0;border-radius:9px;background:#1E2747;color:#fff;font-weight:800;padding:0 10px;cursor:pointer}
 .cp-root .cp-hsel .cp-mes input[type=text]:focus{outline:3px solid rgba(22,198,201,.45)}
+
+.cp-root .cp-mon h2,.cp-root .cp-mon h3,.cp-root .cp-mon h4{color:var(--m-ink)}
+.cp-root .cp-mon .cp-ey{color:var(--m-tea)}
 
 /* ---- ficha por pasos: sin lista lateral, barra fija bajo la topbar ---- */
 .cp-root .cp-ws{grid-template-columns:minmax(0,1fr)}

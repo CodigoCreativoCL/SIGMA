@@ -306,59 +306,76 @@ function planMatch(p) {
   if (U.pf === 'active') return e === 'active' || e === 'changes';
   return e === U.pf;
 }
-function listHTML() {
-  var c = U.conteos || {}, nm = Object.keys(U.multi).length;
-  return '<aside class="cp-plist' + (nm ? ' cp-multi' : '') + '" aria-label="Planes">' +
-    '<div class="cp-plist-h"><label class="cp-srch2">' + ic('search', 15) + '<input id="cpQ" value="' + esc(U.q) + '" placeholder="Plan, código, activo o intervención" aria-label="Buscar planes" autocomplete="off"></label>' +
-    '<div class="cp-chips" role="group" aria-label="Filtrar planes">' + CHIPS.map(function (x) { return '<button type="button" class="cp-fc" data-a="pf" data-v="' + x[0] + '" aria-pressed="' + (U.pf === x[0]) + '">' + (x[0] === 'att' ? '<i style="background:var(--red)"></i>' : '') + x[1] + '<b>' + (c[x[2]] || 0) + '</b></button>'; }).join('') + '</div></div>' +
-    '<div class="cp-plist-b" id="cpPlb">' + listBody() + '</div>' +
-    (nm ? '<div class="cp-plist-bulk"><span>' + pl(nm, 'seleccionado', 'seleccionados') + '</span><span style="flex:1"></span><button type="button" class="cp-btn cp-out cp-xs" data-a="bulkdup"' + (nm > 1 ? ' disabled title="Duplicar funciona de a un plan"' : '') + '>Duplicar</button><button type="button" class="cp-btn cp-out cp-xs" data-a="bulkoff">Desactivar</button><button type="button" class="cp-ibx" data-a="bulkclr" aria-label="Quitar selección">' + ic('x', 15) + '</button></div>' : '') +
-    '</aside>';
-}
 function cmpPlanes(a, b) {
   var aa = (+a.VENCIDAS || 0) + (+a.ATRASADAS || 0) > 0, bb = (+b.VENCIDAS || 0) + (+b.ATRASADAS || 0) > 0;
   return (bb - aa) || String(a.PROXIMA_FECHA || '9').localeCompare(String(b.PROXIMA_FECHA || '9')) || String(a.NOMBRE).localeCompare(String(b.NOMBRE));
 }
-function listBody() {
-  if (!U.lista) return '<div style="padding:10px;display:flex;flex-direction:column;gap:10px">' + [1, 2, 3, 4].map(function () { return '<div class="cp-sk" style="height:84px"></div>'; }).join('') + '</div>';
-  var ps = U.lista.filter(planMatch);
-  ps.sort(cmpPlanes);
-  if (!ps.length) return U.lista.length
-    ? '<div class="cp-empty" style="margin:8px"><span class="cp-ei">' + ic('search', 20) + '</span><b>Ningún plan coincide</b>Prueba con otro nombre, código o activo.<button type="button" class="cp-lnk" data-a="pfclear">Limpiar filtros</button></div>'
-    : '<div class="cp-empty" style="margin:8px"><span class="cp-ei">' + ic('calw', 20) + '</span><b>Aún no hay planes</b>Crea el primero con «Nuevo plan».</div>';
+/* =====================================================================
+   PLANES · lista a ancho completo: Lista · Tarjetas · Monitoreo
+   (nunca conviven con la ficha: o se ve la lista o se ve el plan)
+   ===================================================================== */
+var PF = [['all', 'Todos', 'todos'], ['active', 'Activos', 'activos'], ['draft', 'Borradores', 'borradores'], ['changes', 'Con cambios', 'cambios'], ['inactive', 'Inactivos', 'inactivos'], ['att', 'Requieren atención', 'atencion']];
+var PCOLS = 'grid-template-columns:24px minmax(0,2.1fr) 214px minmax(0,1fr) minmax(0,1.1fr) minmax(0,1fr) minmax(0,1.05fr) 18px';
+Object.assign(P, {
+  vlist: '<path d="M8 6h12M8 12h12M8 18h12"/><circle cx="4" cy="6" r="1"/><circle cx="4" cy="12" r="1"/><circle cx="4" cy="18" r="1"/>',
+  vgrid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>'
+});
+var vistaKey = function () { return 'cpVista:' + (CFG.usuario || 0); };
+U.pv = (function () { try { var v = localStorage.getItem(vistaKey()); return v === 'cards' || v === 'cal' ? v : 'list'; } catch (e) { return 'list'; } })();
+
+function planAttn(p) {
+  var venc = +p.VENCIDAS || 0, atr = +p.ATRASADAS || 0, e = estado(p)[0];
+  if (venc || atr) return '<span class="cp-atn ' + (venc ? 'cp-r' : 'cp-a') + '"><i></i>' + (venc ? pl(venc, 'vencida', 'vencidas') : '') + (venc && atr ? ' · ' : '') + (atr ? pl(atr, 'atrasada', 'atrasadas') : '') + '</span>';
+  if (e === 'draft') { var n = +p.FALTAN || 0; return n ? '<span class="cp-atn cp-a">' + ic('alert', 12) + 'Falta ' + pl(n, 'dato', 'datos') + '</span>' : '<span class="cp-atn" style="color:var(--ok-ink)">' + ic('check', 12) + 'Listo para activar</span>'; }
+  if (e === 'changes') return '<span class="cp-atn" style="color:var(--sigma-purple)">' + ic('pencil', 12) + 'Cambios sin aplicar</span>';
+  if (e === 'inactive') return '<span class="cp-muted2">—</span>';
+  return '<span class="cp-atn" style="color:var(--ok-ink)">' + ic('check', 12) + 'Al día</span>';
+}
+var respDe = function (p) { return String(p.RESPONSABLES || p.RESPONSABLE || '').split('|').filter(Boolean); };
+var proxTxt = function (p) { return p.PROXIMA_FECHA ? '<b>' + fD(dIso(p.PROXIMA_FECHA)) + '</b>' : ''; };
+
+function cardsBody(ps) {
   return ps.map(function (p) {
-    var e = estado(p)[0], venc = +p.VENCIDAS || 0, atr = +p.ATRASADAS || 0, sel = U.plan === p.PLAN_ID;
-    var nx = p.PROXIMA_FECHA ? (p.PROXIMA_PROYECCION ? 'Proyección: ' : '') + '<b>' + fD(p.PROXIMA_FECHA) + '</b>' + (p.PROXIMA_ACTIVO ? ' · ' + esc(p.PROXIMA_ACTIVO) : '')
-      : e === 'inactive' ? 'No genera ejecuciones' : '<span style="color:var(--muted)">Sin próximas ejecuciones</span>';
-    return '<div class="cp-prow' + (sel ? ' cp-on' : '') + '" data-a="open" data-p="' + p.PLAN_ID + '" role="button" tabindex="0" aria-current="' + sel + '">' +
-      '<input type="checkbox" class="cp-cbx" data-a="mul" data-p="' + p.PLAN_ID + '"' + (U.multi[p.PLAN_ID] ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(p.NOMBRE) + '">' +
-      '<div class="cp-b"><div class="cp-r1"><b>' + esc(p.NOMBRE) + '</b>' + stChip(p) + '</div>' +
-      '<div class="cp-r2"><span class="cp-mono" style="font-size:11px">' + esc(p.CODIGO) + '</span><span class="cp-sep">·</span><span>' + esc(p.PLANTA || 'Sin planta') + '</span><span class="cp-sep">·</span><span>' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + ' · ' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</span></div>' +
-      '<div class="cp-r3"><span class="cp-nx">' + ic('calw', 14) + nx + '</span></div>' +
-      '<div class="cp-r4"><span>' + esc(p.FRECUENCIAS || 'Sin frecuencias') + '</span>' + (p.RESPONSABLE ? '<span class="cp-sep">·</span>' + avatar(p.RESPONSABLE) + '<span>' + esc(p.RESPONSABLE) + '</span>' : '') +
-      (venc ? '<span class="cp-atn cp-r"><i></i>' + pl(venc, 'vencida', 'vencidas') + '</span>' : '') + (atr ? '<span class="cp-atn cp-a"><i></i>' + pl(atr, 'atrasada', 'atrasadas') + '</span>' : '') +
-      (e === 'draft' && !p.LISTO ? '<span class="cp-atn cp-a">' + ic('alert', 12) + 'Configuración incompleta</span>' : '') +
-      (e === 'draft' && p.LISTO ? '<span class="cp-atn" style="color:var(--ok-ink)">' + ic('check', 12) + 'Listo para activar</span>' : '') + '</div></div></div>';
+    var e = estado(p)[0], fq = String(p.FRECUENCIAS || ''), resp = respDe(p), sel = !!U.multi[p.PLAN_ID];
+    var ok = e === 'draft' ? 5 - Math.min(5, +p.FALTAN || 0) : 0;
+    var nx = e === 'draft' ? '<li class="cp-pc-pg">' + ic('clip', 15) + '<span><span class="cp-pg' + (+p.FALTAN ? '' : ' cp-ok') + '"><i style="width:' + (ok / 5 * 100) + '%"></i></span><small>' + ok + ' de 5 obligatorios</small></span></li>'
+      : '<li>' + ic('calw', 15) + '<span>' + (p.PROXIMA_FECHA ? 'Próxima: ' + proxTxt(p) + (p.PROXIMA_ACTIVO ? ' · ' + esc(p.PROXIMA_ACTIVO) : '') : '<span class="cp-muted2">' + (e === 'inactive' ? 'No genera ejecuciones' : 'Sin próximas ejecuciones') + '</span>') + '</span></li>';
+    return '<div class="cp-pcard' + (sel ? ' cp-rsel' : '') + ' cp-st-' + e + '" data-a="open" data-p="' + p.PLAN_ID + '" role="button" tabindex="0" aria-label="Abrir ' + esc(p.NOMBRE) + '">' +
+      '<div class="cp-pc-top"><div class="cp-pc-t"><b title="' + esc(p.NOMBRE) + '">' + (esc(p.NOMBRE) || '<em class="cp-miss">Sin nombre</em>') + '</b><small>' + esc(p.CODIGO) + ' · ' + esc(p.PLANTA || 'Sin planta') + '</small></div><input type="checkbox" class="cp-cbx" data-a="mul" data-p="' + p.PLAN_ID + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(p.NOMBRE) + '"></div>' +
+      '<div class="cp-pc-s">' + stChip(p) + '</div>' +
+      '<ul class="cp-pc-m"><li>' + ic('cog', 15) + '<span>' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + ' · ' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</span></li>' +
+      '<li>' + ic('clock', 15) + '<span title="' + esc(fq) + '">' + (fq ? esc(fq) : '<span class="cp-muted2">Frecuencia sin definir</span>') + '</span></li>' + nx + '</ul>' +
+      '<div class="cp-pc-f"><span class="cp-pc-at">' + planAttn(p) + '</span><span class="cp-pc-av">' + resp.slice(0, 3).map(avatar).join('') + (resp.length > 3 ? '<span class="cp-av cp-more">+' + (resp.length - 3) + '</span>' : '') + '</span></div></div>';
   }).join('');
 }
-
-/* =====================================================================
-   PLANES · ficha
-   ===================================================================== */
-function freqCorta(f) {
-  if (!f || !f.t) return '—';
-  if (f.t === 'med') return 'Cada ' + fN(f.mn) + ' ' + (unidadMedidor() || 'u.');
-  if (f.t === 'cond') return 'Por condición';
-  if (f.t === 'fec') return 'Fechas puntuales';
-  if (f.t === 'int') { var u = UNI[uniCod(f.iu)] || ['', '']; return 'Cada ' + f.n + ' ' + (+f.n === 1 ? u[0] : u[1]); }
-  var n = +f.n;
-  return f.rep === 'd' ? (n === 1 ? 'Diaria' : 'Cada ' + n + ' días') : f.rep === 'w' ? (n === 1 ? (f.days.length > 1 ? f.days.length + ' veces por semana' : 'Semanal') : 'Cada ' + n + ' semanas') : f.rep === 'm' ? (n === 1 ? 'Mensual' : n === 3 ? 'Trimestral' : n === 6 ? 'Semestral' : 'Cada ' + n + ' meses') : 'Anual';
+function listBody() {
+  if (!U.lista) return '<div style="padding:10px;display:flex;flex-direction:column;gap:10px">' + [1, 2, 3, 4].map(function () { return '<div class="cp-sk" style="height:64px"></div>'; }).join('') + '</div>';
+  var ps = U.lista.filter(planMatch).slice().sort(function (a, b) { return cmpPlanes(a, b) || ((estado(a)[0] === 'draft') - (estado(b)[0] === 'draft')); });
+  if (!ps.length) return '<div class="cp-empty" style="margin:10px"><span class="cp-ei">' + ic('search', 20) + '</span><b>Ningún plan coincide</b>Prueba con otro nombre, código o activo.<button type="button" class="cp-lnk" data-a="pfclear">Limpiar filtros</button></div>';
+  if (U.pv === 'cards') return cardsBody(ps);
+  return ps.map(function (p) {
+    var e = estado(p)[0], fq = String(p.FRECUENCIAS || '').split(' · ').filter(Boolean), resp = respDe(p)[0], sel = !!U.multi[p.PLAN_ID];
+    return '<div class="cp-rw cp-click cp-prw' + (sel ? ' cp-rsel' : '') + '" style="' + PCOLS + '" data-a="open" data-p="' + p.PLAN_ID + '" role="button" tabindex="0" aria-label="Abrir ' + esc(p.NOMBRE) + '">' +
+      '<span><input type="checkbox" class="cp-cbx" data-a="mul" data-p="' + p.PLAN_ID + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(p.NOMBRE) + '"></span>' +
+      '<span class="cp-s cp-c-pl"><b>' + (esc(p.NOMBRE) || '<em class="cp-miss">Sin nombre</em>') + '</b><small>' + esc(p.CODIGO) + ' · ' + esc(p.PLANTA || 'Sin planta') + (resp ? ' · ' + esc(resp) : '') + '</small></span>' +
+      '<span class="cp-c-st">' + stChip(p) + '</span>' +
+      '<span class="cp-s cp-c-al"><b style="font-weight:600">' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + '</b><small>' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</small></span>' +
+      '<span class="cp-s cp-c-fq"><b style="font-weight:600">' + (fq.slice(0, 2).join(' · ') || '<span class="cp-muted2">Sin definir</span>') + '</b>' + (fq.length > 2 ? '<small>y ' + (fq.length - 2) + ' más</small>' : '') + '</span>' +
+      '<span class="cp-dt cp-c-nx">' + (p.PROXIMA_FECHA ? proxTxt(p) + '<small>' + (p.PROXIMA_PROYECCION ? 'Proyección · ' : '') + esc(p.PROXIMA_ACTIVO || '') + '</small>' : '<small>' + (e === 'inactive' ? 'No genera ejecuciones' : 'Sin próximas') + '</small>') + '</span>' +
+      '<span class="cp-c-at">' + planAttn(p) + '</span><span class="cp-c-go">' + ic('chev', 15) + '</span></div>';
+  }).join('');
 }
-function proxima() {
-  var e = estado(F.plan)[0];
-  if (e === 'draft') { var p = (F.proyeccion || [])[0]; return p ? { d: dIso(p.FECHA), proj: true } : null; }
-  var x = (F.proximas || []).filter(function (o) { return dIso(o.FECHA) >= TODAY; })[0];
-  return x ? { d: dIso(x.FECHA) } : null;
+function listHTML() {
+  var c = U.conteos || {}, nm = Object.keys(U.multi).length;
+  if (U.lista && !U.lista.length) return '<div class="cp-card"><div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('calw', 22) + '</span><b>Todavía no hay planes' + (U.planta ? ' en ' + esc(plantaN(U.planta)) : '') + '</b><span style="max-width:52ch">Un plan reúne el mantenimiento preventivo de uno o varios activos: qué se hace, cada cuánto y quién lo ejecuta.</span>' + (U.permisos.editar ? '<button type="button" class="cp-btn cp-pri" data-a="newplan">' + ic('plus', 16) + 'Nuevo plan</button>' : '') + '</div></div>';
+  var vistas = [['list', 'Lista', 'vlist'], ['cards', 'Tarjetas', 'vgrid'], ['cal', 'Monitoreo', 'gauge']];
+  return '<section class="cp-card cp-plt" aria-label="Planes"><div class="cp-plt-bar"><div class="cp-plt-r1"><label class="cp-srch2">' + ic('search', 15) + '<input id="cpQ" value="' + esc(U.q) + '" placeholder="Buscar por plan, código, activo o intervención" aria-label="Buscar planes" autocomplete="off"></label>' +
+    '<div class="cp-vt" role="group" aria-label="Ver como">' + vistas.map(function (v) { return '<button type="button" data-a="pview" data-v="' + v[0] + '" aria-pressed="' + (U.pv === v[0]) + '" title="Ver como ' + v[1].toLowerCase() + '">' + ic(v[2], 16) + '<span>' + v[1] + '</span></button>'; }).join('') + '</div></div>' +
+    '<div class="cp-chips">' + PF.map(function (x) { return '<button type="button" class="cp-fc" data-a="pf" data-v="' + x[0] + '" aria-pressed="' + (U.pf === x[0]) + '">' + (x[0] === 'att' ? '<i style="background:var(--red)"></i>' : '') + x[1] + '<b>' + (c[x[2]] || 0) + '</b></button>'; }).join('') + '</div></div>' +
+    (U.pv === 'cal' ? '' : U.pv === 'cards' ? '<div class="cp-pcards" id="cpPlb">' + listBody() + '</div>'
+      : '<div class="cp-rows cp-plr"><div class="cp-rw cp-h" style="' + PCOLS + '"><span></span><span>Plan</span><span>Estado</span><span>Alcance</span><span>Frecuencia</span><span>Próxima ejecución</span><span>Atención</span><span></span></div><div id="cpPlb">' + listBody() + '</div></div>') +
+    (nm ? '<div class="cp-exbulk"><b>' + pl(nm, 'plan seleccionado', 'planes seleccionados') + '</b><span style="flex:1"></span><button type="button" class="cp-btn cp-plain cp-sm" data-a="bulkclr">Quitar selección</button><button type="button" class="cp-btn cp-out cp-sm" data-a="bulkdup"' + (nm > 1 ? ' disabled title="Duplicar funciona de a un plan"' : '') + '>Duplicar</button><button type="button" class="cp-btn cp-out cp-sm" data-a="bulkoff">Desactivar…</button></div>' : '') +
+    '</section>' + (U.pv === 'cal' ? monHTML() : '');
 }
 
 /* =====================================================================
@@ -838,7 +855,7 @@ function recargarFicha() {
 function recargarLista() {
   return api('Lista', { planta: U.planta }).then(function (r) {
     U.lista = r.planes; U.conteos = r.conteos; U.permisos = r.permisos || U.permisos;
-    if (U.tab === 'planes') { var b = $('#cpPlb'); if (b) { var st = b.scrollTop; var l = $('.cp-plist'); if (l) { l.outerHTML = listHTML(); var nb = $('#cpPlb'); if (nb) nb.scrollTop = st; } } }
+    if (U.tab === 'planes' && !U.plan) render();
     $('#cpTabs').innerHTML = tabsHTML();
   });
 }
@@ -1115,6 +1132,18 @@ A.kpi = function (d) {
   switchTab('ejecuciones', d.go === 'att' ? { f: 'att', vista: 'lista', plan: 0 } : d.go === 'disp' ? { f: 'disp', vista: 'lista', plan: 0 } : { vista: 'semana', plan: 0 });
 };
 A.pf = function (d) { U.pf = d.v; render(); };
+/* ---- Monitoreo ---- */
+A.mday = function (d) { U.md = d.v; if (U.md < MON.rango.split('|')[0] || U.md > MON.rango.split('|')[1]) { MON.filas = null; } render(); if (!MON.filas) monCargar(); };
+A.mstep = function (d) { A.mday({ v: addD(U.md, +d.v) }); };
+A.mweek = function (d) { A.mday({ v: addD(U.md, +d.v) }); };
+A.mtog = function (d) { if (U.mc[d.v]) delete U.mc[d.v]; else U.mc[d.v] = 1; render(); };
+A.mfoc = function (d) { U.mf = d.v; var ps = d.v.split('|'); delete U.mc['p:' + ps[0]]; delete U.mc['a:' + d.v]; render(); var el = document.getElementById('cpAr' + ps[0] + '_' + ps[1]); if (el) goEl(el); };
+A.mplan = function (d) { abrirPlan(+d.p); };
+A.cplans = function (d, t) { openPop(t, { t: 'cplans' }); };
+A.cpl = function (d, t, e) { if (e) e.stopPropagation(); var id = +d.p; if (U.ch[id]) delete U.ch[id]; else U.ch[id] = 1; var o = POP; render(); if (o) { POP = o; paintPop(); } };
+A.cpall = function () { U.ch = {}; var o = POP; render(); if (o) { POP = o; paintPop(); } };
+
+A.pview = function (d) { U.pv = d.v; U.multi = {}; try { localStorage.setItem(vistaKey(), d.v); } catch (e) { } render(); if (d.v === 'cal' && window.monCargar) monCargar(); };
 A.pfclear = function () { U.pf = 'all'; U.q = ''; render(); };
 A.open = function (d, t, e) { if (e && e.target && e.target.closest('.cp-cbx')) return; abrirPlan(+d.p); };
 A.back = function () { U.plan = null; F = null; render(); hashOut(); window.scrollTo(0, 0); };
@@ -1583,7 +1612,7 @@ function alClic(e) {
   var a = t.getAttribute('data-a'), fn = A[a] || (TABR[U.tab] && TABR[U.tab].A && TABR[U.tab].A[a]);
   if (!fn) return;
   if (t.tagName === 'A' && t.getAttribute('href')) return;
-  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1, calpers: 1 };
+  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1, calpers: 1, cpl: 1 };
   if (t.type === 'checkbox' && !esCbx[a]) return;
   if (!(t.type === 'checkbox' && esCbx[a])) e.preventDefault();
   fn(t.dataset, t, e);
@@ -2275,6 +2304,181 @@ A.calsave = function (d, t) {
   api('CrearCalendario', { datos: JSON.stringify(datos) }).then(function () {
     closePanel(); toast(x.id ? 'Calendario guardado.' : 'Calendario creado. Ya se puede usar desde cualquier intervención.'); LB.cals = null; U.fq = {}; return Promise.all([libCargar(), recargarCatalogos()]);
   }).catch(function (e) { t.classList.remove('cp-load'); PN.err2 = e.message; PN.paso = 6; panel(); });
+};
+/* =====================================================================
+   MONITOREO · sala de control + programa por ubicación
+   Responde de un vistazo: ¿qué área está en mantención hoy, con qué
+   activos, y qué viene? Los datos salen de SEL_PLAN_MONITOREO: las
+   ejecuciones reales y la proyección de borradores y de lo que está
+   más allá del horizonte generado.
+   ===================================================================== */
+var MON = { filas: null, rango: '', cargando: false, areas: [] };
+Object.assign(U, { md: TODAY, mc: {}, ch: {}, mf: '' });
+var hmin = function (h) { var a = String(h || '08:00').split(':').map(Number); return (a[0] || 0) * 60 + (a[1] || 0); };
+var addH = function (h, min) { var m = hmin(h) + Math.round(+min || 0); return pad(Math.floor(m / 60) % 24) + ':' + pad(m % 60); };
+var weekMon = function (s) { return addD(s, -(wday(s) - 1)); };
+var capF = function (s) { return String(s || '').replace(/^./, function (c) { return c.toUpperCase(); }); };
+var fechaDe = function (v) { return dIso(v); };
+
+function normMon(r, proj) {
+  var d = dIso(r.FECHA), hora = hIso(r.FECHA) || '08:00';
+  return { proj: !!proj, borrador: !!r.BORRADOR, d: d, hora: hora, dur: +r.DURACION || 0, parada: !!r.PARADA, plan: r.PLAN_ID, planCod: r.PLAN_CODIGO, planN: r.PLAN_NOMBRE,
+    hito: r.HITO_ID, hitoN: r.HITO_NOMBRE, eq: r.ACTIVO_ID, eqCod: r.ACTIVO_CODIGO, eqN: r.ACTIVO_NOMBRE, pl: r.PLANTA_ID, plN: r.PLANTA || 'Sin planta', ar: r.AREA_ID || 0, arN: r.AREA || 'Sin área',
+    comp: r.COMPONENTE || '', resp: r.RESPONSABLE || '', sit: r.SITUACION, estado: r.ESTADO_ID, ot: r.OT_ID || 0, otNum: r.OT_NUMERO, otEst: r.OT_ESTADO_ID, token: r.TOKEN, otUrl: r.OT_URL };
+}
+function monItems() {
+  if (!MON.filas) return [];
+  var ok = {}; (U.lista || []).filter(function (p) { return estado(p)[0] !== 'inactive' && planMatch(p) && !U.ch[p.PLAN_ID]; }).forEach(function (p) { ok[p.PLAN_ID] = 1; });
+  return MON.filas.filter(function (x) { return ok[x.plan]; });
+}
+function sitM(x) {
+  if (x.proj) return 'pj';
+  if (x.estado === 4 || x.estado === 5 || x.sit === 'CERRADA') return 'cer';
+  if (x.ot) return 'ot';
+  return { VENCIDA: 'venc', ATRASADA: 'atr', DISPONIBLE: 'disp' }[x.sit] || 'fut';
+}
+function nowLive(x) {
+  if (x.d !== TODAY || x.proj || sitM(x) === 'cer') return false;
+  if (x.ot && x.otEst === 2) return true;
+  var n = new Date(), m = n.getHours() * 60 + n.getMinutes(), s = hmin(x.hora);
+  return m >= s && m < s + Math.max(30, x.dur);
+}
+function xState(x) {
+  if (x.proj) return ['pj', x.borrador ? 'Proyección' : 'Proyección'];
+  if (nowLive(x)) return ['live', 'En curso'];
+  var s = sitM(x);
+  if (s === 'venc') return ['venc', 'Vencida']; if (s === 'atr') return ['atr', 'Atrasada']; if (s === 'cer') return ['cer', 'Cerrada'];
+  if (s === 'ot') return ['ot', (OTX[x.otEst] || OTX[1])[1]];
+  if (s === 'disp') return ['disp', 'Sin OT'];
+  return ['fut', 'Programada'];
+}
+var RANK = { venc: 0, atr: 1, live: 2, disp: 3, ot: 4, fut: 5, pj: 6, cer: 7 };
+var attn = function (x) { return !x.proj && (sitM(x) === 'venc' || sitM(x) === 'atr'); };
+var AREA_MODE = { live: ['En mantención ahora', 'gauge'], stop: ['Activo detenido por mantención', 'alert'], att: ['Requiere atención', 'alert'], sched: ['Mantención programada', 'calw'], done: ['Mantención terminada', 'check'] };
+var MORD = ['live', 'stop', 'att', 'sched', 'done'];
+
+function monAreas(items) {
+  var m = {};
+  items.forEach(function (x) { var k = x.pl + '|' + x.ar; (m[k] = m[k] || { k: k, pl: x.pl, plN: x.plN, ar: x.ar, arN: x.arN, xs: [] }).xs.push(x); });
+  return Object.keys(m).map(function (k) {
+    var g = m[k], st = g.xs.map(xState), att = g.xs.some(attn), stop = g.xs.some(function (x) { return x.parada && xState(x)[0] !== 'cer'; });
+    var live = st.some(function (s) { return s[0] === 'live'; }), done = st.every(function (s) { return s[0] === 'cer'; });
+    g.mode = done ? 'done' : live ? 'live' : stop ? 'stop' : att ? 'att' : 'sched';
+    g.eqs = Object.keys(g.xs.reduce(function (o, x) { o[x.eq] = 1; return o; }, {}));
+    g.min = g.xs.reduce(function (t, x) { return t + x.dur; }, 0);
+    return g;
+  }).sort(function (a, b) { return MORD.indexOf(a.mode) - MORD.indexOf(b.mode) || b.xs.length - a.xs.length; });
+}
+
+/* ---- carga ---- */
+function monRango() { var s0 = addD(weekMon(U.md), -7); return [s0, addD(s0, 20)]; }
+function monCargar(forzar) {
+  var r = monRango(), key = [r[0], r[1], U.planta].join('|');
+  if (!forzar && MON.rango === key && MON.filas) return Promise.resolve();
+  MON.cargando = true;
+  return api('Monitoreo', { planta: U.planta, desde: r[0], hasta: r[1] }).then(function (x) {
+    MON.filas = x.reales.map(function (f) { return normMon(f, false); }).concat(x.proyeccion.map(function (f) { return normMon(f, true); }));
+    MON.areas = x.areas; MON.rango = key; MON.cargando = false;
+    if (U.tab === 'planes' && !U.plan && U.pv === 'cal') render();
+  }).catch(function (e) { MON.cargando = false; toastError(e); });
+}
+var monTimer = null;
+function monReloj() {
+  clearInterval(monTimer);
+  monTimer = setInterval(function () {
+    var el = document.getElementById('cpMonClock'); if (!el) { clearInterval(monTimer); return; }
+    var n = new Date(); el.textContent = pad(n.getHours()) + ':' + pad(n.getMinutes());
+  }, 30000);
+}
+
+/* ---- vista ---- */
+function monHTML() {
+  if (!MON.filas) { if (!MON.cargando) monCargar(); return '<div class="cp-card" style="padding:18px"><div class="cp-sk" style="height:34px;width:40%"></div><div class="cp-sk" style="height:120px;margin-top:12px"></div></div>'; }
+  var items = monItems(), d = U.md, isT = d === TODAY;
+  var all = (U.lista || []).filter(function (p) { return estado(p)[0] !== 'inactive'; });
+  var r = monRango(), strip = []; for (var k = 0; k < 21; k++) strip.push(addD(r[0], k));
+  var perDay = {}; items.forEach(function (x) { (perDay[x.d] = perDay[x.d] || []).push(x); });
+  var maxH = Math.max(1, Math.max.apply(null, strip.map(function (s) { return (perDay[s] || []).reduce(function (t, x) { return t + x.dur; }, 0); })));
+  var dayItems = (perDay[d] || []).slice().sort(function (a, b) { return hmin(a.hora) - hmin(b.hora); });
+  var areas = monAreas(dayItems);
+  var allAreas = (MON.areas || []).map(function (a) { return { k: a.PLANTA_ID + '|' + a.AREA_ID, n: a.AREA, pl: a.PLANTA }; });
+  var quiet = allAreas.filter(function (a) { return !areas.some(function (g) { return g.k === a.k; }); });
+  var nEq = Object.keys(dayItems.reduce(function (o, x) { o[x.eq] = 1; return o; }, {})).length;
+  var nStop = Object.keys(dayItems.filter(function (x) { return x.parada; }).reduce(function (o, x) { o[x.eq] = 1; return o; }, {})).length;
+  var nAtt = dayItems.filter(attn).length, mins = dayItems.reduce(function (t, x) { return t + x.dur; }, 0);
+  var now = new Date(), clock = pad(now.getHours()) + ':' + pad(now.getMinutes());
+  var kpi = function (v, l, cls) { return '<div class="cp-mk ' + (cls || '') + '"><b>' + v + '</b><span>' + l + '</span></div>'; };
+  var tile = function (g) {
+    var lab = AREA_MODE[g.mode], byEq = {};
+    g.xs.forEach(function (x) { (byEq[x.eq] = byEq[x.eq] || []).push(x); });
+    var rows = Object.keys(byEq).map(function (k2) { return byEq[k2]; }).sort(function (a, b) { return Math.min.apply(null, a.map(function (x) { return RANK[xState(x)[0]]; })) - Math.min.apply(null, b.map(function (x) { return RANK[xState(x)[0]]; })); });
+    return '<article class="cp-at cp-m-' + g.mode + '"><header><div><span class="cp-at-pl">' + esc(g.plN) + '</span><h4>' + esc(g.arN) + '</h4></div><span class="cp-at-st">' + (g.mode === 'live' ? '<i class="cp-pulse"></i>' : ic(lab[1], 13)) + lab[0] + '</span></header>' +
+      '<div class="cp-at-m"><span>' + pl(g.eqs.length, 'activo', 'activos') + '</span><span>' + pl(g.xs.length, 'trabajo', 'trabajos') + '</span><span>' + fH(g.min) + '</span></div><ul>' +
+      rows.slice(0, 4).map(function (xs) {
+        var top = xs.slice().sort(function (p, q) { return RANK[xState(p)[0]] - RANK[xState(q)[0]]; })[0], s = xState(top);
+        return '<li><button type="button" data-a="' + (top.proj ? 'mplan' : 'exopen') + '" data-p="' + top.plan + '" data-k="' + esc(top.token || '') + '"><span class="cp-at-a"><b>' + esc(top.eqN) + '</b><small>' + esc(top.eqCod) + (top.comp ? ' <span class="cp-cmp">› ' + esc(top.comp) + '</span>' : '') + '</small></span>' +
+          '<span class="cp-at-w"><b>' + esc(top.hitoN) + (xs.length > 1 ? ' <em>+' + (xs.length - 1) + '</em>' : '') + '</b><small>' + top.hora + '–' + addH(top.hora, top.dur) + (top.parada ? ' · <span class="cp-pz">parada</span>' : '') + (top.resp ? ' · ' + esc(short(top.resp)) : '') + '</small></span>' +
+          '<span class="cp-xst cp-s-' + s[0] + '">' + (s[0] === 'live' ? '<i class="cp-pulse"></i>' : '<i></i>') + s[1] + '</span></button></li>';
+      }).join('') + '</ul>' + (rows.length > 4 ? '<button type="button" class="cp-at-more" data-a="mfoc" data-v="' + esc(g.k) + '">Ver ' + (rows.length - 4) + ' activos más en el programa</button>' : '') + '</article>';
+  };
+  var strp = strip.map(function (s) {
+    var xs = perDay[s] || [], h = xs.reduce(function (t, x) { return t + x.dur; }, 0), bad = xs.some(attn);
+    return '<button type="button" class="cp-sd' + (s === d ? ' cp-on' : '') + (s === TODAY ? ' cp-tdy' : '') + (wday(s) > 5 ? ' cp-we' : '') + (s < TODAY ? ' cp-past' : '') + '" data-a="mday" data-v="' + s + '" aria-pressed="' + (s === d) + '" aria-label="' + fDL(s) + ': ' + pl(xs.length, 'trabajo', 'trabajos') + '"><span class="cp-w">' + DIAC[wday(s)] + '</span><span class="cp-n">' + D(s).getDate() + '</span><span class="cp-b"><i style="height:' + (h ? Math.max(12, h / maxH * 100) : 0) + '%"' + (bad ? ' class="cp-r"' : '') + '></i></span><span class="cp-c">' + (xs.length || '') + '</span></button>';
+  }).join('');
+  var hidden = Object.keys(U.ch).length;
+  monReloj();
+  return '<section class="cp-mon" aria-label="Monitoreo de mantenimiento"><div class="cp-mon-top"><div class="cp-mon-t"><span class="cp-ey"><i class="cp-pulse"></i>Sala de control · mantenimiento</span><h2>' + (isT ? 'Hoy, ' : '') + fDL(d) + '</h2><p>' + (isT ? 'Son las <b id="cpMonClock">' + clock + '</b> · ' : capF(rel(d)) + ' · ') + esc(U.planta ? plantaN(U.planta) : 'Todas las plantas') + '</p></div>' +
+    '<div class="cp-mon-ctl"><button type="button" class="cp-mbtn" data-a="mstep" data-v="-1" aria-label="Día anterior">' + chL(16) + '</button>' + (isT ? '' : '<button type="button" class="cp-mbtn cp-txt" data-a="mday" data-v="' + TODAY + '">Ir a hoy</button>') + '<button type="button" class="cp-mbtn" data-a="mstep" data-v="1" aria-label="Día siguiente">' + ic('chev', 16) + '</button>' +
+    '<button type="button" class="cp-mbtn cp-txt" data-a="cplans" aria-haspopup="dialog">' + ic('calw', 15) + (hidden ? (all.length - hidden) + ' de ' + all.length + ' planes' : 'Todos los planes') + ic('chevd', 14) + '</button></div></div>' +
+    '<div class="cp-mon-strip" role="group" aria-label="Elegir día">' + strp + '</div>' +
+    '<div class="cp-mon-k">' + kpi(areas.length + '<small>/' + allAreas.length + '</small>', 'áreas con mantención', areas.some(function (a) { return a.mode === 'live'; }) ? 'cp-k-live' : '') + kpi(nEq, 'activos intervenidos') + kpi(nStop, 'con parada de activo', nStop ? 'cp-k-stop' : '') + kpi(fH(mins), 'horas de trabajo') + kpi(nAtt, 'requieren atención', nAtt ? 'cp-k-att' : '') + '</div>' +
+    (areas.length ? '<div class="cp-mon-g">' + areas.map(tile).join('') + '</div>' : '<div class="cp-mon-e">' + ic('check', 26) + '<b>' + (isT ? 'Hoy' : capF(fDL(d))) + ' no hay mantención programada</b><span>Todas las áreas operan con normalidad. Elige otro día en la barra de arriba.</span></div>') +
+    (quiet.length ? '<div class="cp-mon-q"><span>' + ic('check', 14) + 'Operando sin mantención</span>' + quiet.map(function (a) { return '<em>' + esc(a.n) + (!U.planta && (CFG.plantas || []).length > 1 ? ' <small>· ' + esc(a.pl) + '</small>' : '') + '</em>'; }).join('') + '</div>' : '') + '</section>' + progHTML(items);
+}
+
+/* ---- programa por ubicación: planta › área › activo › componente ---- */
+function progHTML(items) {
+  var d0 = weekMon(U.md), days = []; for (var k = 0; k < 14; k++) days.push(addD(d0, k));
+  var win = items.filter(function (x) { return x.d >= days[0] && x.d <= days[13]; });
+  var cellCls = function (xs) { var st = xs.map(function (x) { return xState(x)[0]; }).sort(function (a, b) { return RANK[a] - RANK[b]; })[0]; return 'cp-s-' + st + (xs.some(function (x) { return x.parada; }) ? ' cp-s-pz' : ''); };
+  var cells = function (getXs, lvl) {
+    return days.map(function (dd) {
+      var xs = getXs(dd), cls = (dd === TODAY ? ' cp-tdy' : '') + (dd === U.md ? ' cp-sel' : '') + (wday(dd) > 5 ? ' cp-we' : '');
+      if (!xs.length) return '<span class="cp-pc' + cls + '"></span>';
+      var tip = fDL(dd) + '\n' + Object.keys(xs.reduce(function (o, x) { o[(lvl === 'eq' ? '' : x.eqCod + ' · ') + x.hitoN] = 1; return o; }, {})).join('\n');
+      return '<button type="button" class="cp-pc' + cls + '" data-a="mday" data-v="' + dd + '" title="' + esc(tip) + '"><span class="cp-mb cp-' + lvl + ' ' + cellCls(xs) + '">' + (lvl === 'eq' ? (xs.length > 1 ? xs.length : '') : xs.length) + '</span></button>';
+    }).join('');
+  };
+  var plantas = {}; win.forEach(function (x) { (plantas[x.pl] = plantas[x.pl] || { n: x.plN, xs: [] }).xs.push(x); });
+  var rows = '';
+  Object.keys(plantas).forEach(function (pk) {
+    var P0 = plantas[pk], key = 'p:' + pk, open = !U.mc[key], pEq = Object.keys(P0.xs.reduce(function (o, x) { o[x.eq] = 1; return o; }, {}));
+    rows += '<div class="cp-gr cp-lv0"><button type="button" class="cp-gr-h" data-a="mtog" data-v="' + key + '" aria-expanded="' + open + '">' + ic(open ? 'chevd' : 'chev', 14) + ic('cog', 15) + '<b>' + esc(P0.n) + '</b><small>' + pl(pEq.length, 'activo', 'activos') + '</small></button>' + cells(function (dd) { return P0.xs.filter(function (x) { return x.d === dd; }); }, 'pl') + '</div>';
+    if (!open) return;
+    var ars = {}; P0.xs.forEach(function (x) { (ars[x.ar] = ars[x.ar] || { n: x.arN, xs: [] }).xs.push(x); });
+    Object.keys(ars).sort(function (a, b) { return ars[a].n.localeCompare(ars[b].n); }).forEach(function (ak) {
+      var A0 = ars[ak], k2 = 'a:' + pk + '|' + ak, aOpen = !U.mc[k2], eqs = {};
+      A0.xs.forEach(function (x) { (eqs[x.eq] = eqs[x.eq] || { n: x.eqN, cod: x.eqCod, xs: [], comps: {} }).xs.push(x); if (x.comp) eqs[x.eq].comps[x.comp] = 1; });
+      rows += '<div class="cp-gr cp-lv1' + (U.mf === pk + '|' + ak ? ' cp-foc' : '') + '" id="cpAr' + pk + '_' + ak + '"><button type="button" class="cp-gr-h" data-a="mtog" data-v="' + k2 + '" aria-expanded="' + aOpen + '">' + ic(aOpen ? 'chevd' : 'chev', 14) + '<b>' + esc(A0.n) + '</b><small>' + pl(Object.keys(eqs).length, 'activo', 'activos') + '</small></button>' + cells(function (dd) { return A0.xs.filter(function (x) { return x.d === dd; }); }, 'ar') + '</div>';
+      if (!aOpen) return;
+      Object.keys(eqs).sort(function (a, b) { return eqs[a].cod.localeCompare(eqs[b].cod); }).forEach(function (ek) {
+        var E0 = eqs[ek], comps = Object.keys(E0.comps);
+        rows += '<div class="cp-gr cp-lv2"><div class="cp-gr-h" title="' + esc(E0.n) + '"><span class="cp-eqn"><b>' + esc(E0.n) + '</b><small>' + esc(E0.cod) + (comps.length ? ' › ' + esc(comps.join(', ')) : '') + '</small></span></div>' + cells(function (dd) { return E0.xs.filter(function (x) { return x.d === dd; }); }, 'eq') + '</div>';
+      });
+    });
+  });
+  return '<section class="cp-card cp-prog" aria-label="Programa por ubicación"><div class="cp-prog-h"><div><h3>Programa por ubicación</h3><p>Planta › área › activo › componente · ' + fD(days[0]) + ' al ' + fD(days[13]) + '</p></div>' +
+    '<div class="cp-prog-n"><button type="button" class="cp-ibx" data-a="mweek" data-v="-14" aria-label="Dos semanas antes">' + chL(16) + '</button><button type="button" class="cp-ibx" data-a="mweek" data-v="14" aria-label="Dos semanas después">' + ic('chev', 16) + '</button></div>' +
+    '<div class="cp-prog-lg"><span><i class="cp-mb cp-eq cp-s-fut"></i>Programada</span><span><i class="cp-mb cp-eq cp-s-ot"></i>Con OT</span><span><i class="cp-mb cp-eq cp-s-venc"></i>Vencida o atrasada</span><span><i class="cp-mb cp-eq cp-s-fut cp-s-pz"></i>Con parada</span><span><i class="cp-mb cp-eq cp-s-pj"></i>Proyección</span></div></div>' +
+    '<div class="cp-prog-s"><div class="cp-prog-t"><div class="cp-gr cp-hd"><span class="cp-gr-h"></span>' + days.map(function (dd) { return '<span class="cp-pc cp-hd' + (dd === TODAY ? ' cp-tdy' : '') + (dd === U.md ? ' cp-sel' : '') + (wday(dd) > 5 ? ' cp-we' : '') + '"><small>' + DIAC[wday(dd)] + '</small><b>' + D(dd).getDate() + '</b>' + (dd === TODAY ? '<em>Hoy</em>' : '') + '</span>'; }).join('') + '</div>' +
+    (rows || '<div class="cp-mon-e cp-light">' + ic('calw', 22) + '<b>Sin trabajo en estas dos semanas</b></div>') + '</div></div></section>';
+}
+
+POPS.cplans = function () {
+  var l = (U.lista || []).filter(function (p) { return estado(p)[0] !== 'inactive'; }).sort(cmpPlanes);
+  return '<div class="cp-ppt"><b>Planes a monitorear</b></div><div class="cp-srchres">' + l.map(function (p) {
+    return '<label class="cp-mi2 cp-sh2" style="cursor:pointer"><input type="checkbox" class="cp-cbx" data-a="cpl" data-p="' + p.PLAN_ID + '"' + (U.ch[p.PLAN_ID] ? '' : ' checked') + '><span><b>' + esc(p.NOMBRE) + '</b><small>' + esc(p.CODIGO) + '</small></span></label>';
+  }).join('') + '</div><div style="display:flex;justify-content:space-between;padding:6px"><button type="button" class="cp-btn cp-plain cp-xs" data-a="cpall">Mostrar todos</button><button type="button" class="cp-btn cp-plain cp-xs" data-a="popx">Cerrar</button></div>';
 };
 
 
