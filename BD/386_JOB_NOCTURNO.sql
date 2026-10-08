@@ -7,9 +7,12 @@
         1. GEN_PLAN_OCURRENCIAS      (planes, solo programaciones automáticas)
         2. GEN_TAREA_OCURRENCIAS     (tareas recurrentes, solo automáticas)
         3. GEN_CHECKLIST_OCURRENCIAS (rondas de las pautas)
-        4. GEN_ALERTA_OPERACION      (ocurrencias atrasadas, permisos, hallazgos)
-        5. GEN_ALERTA_INVENTARIO     (mínimos, máximos y vencimientos)
 
+     Las ALERTAS no están aquí a propósito: deben aparecer a medida que
+     ocurren, no a la noche. Ya funcionan así: el navegador consulta
+     WsAlertas cada pocos segundos y GEN_ALERTA_DETECTAR (freno de 5 minutos
+     en la base) abre y cierra las alertas; los movimientos de inventario las
+     disparan en el momento.
    Por qué un solo procedimiento
      Azure SQL Database no tiene SQL Agent. Lo que programa la hora (Elastic
      Jobs, Azure Functions, Logic Apps o Automation) solo tiene que ejecutar
@@ -59,9 +62,9 @@ FETCH NEXT FROM c INTO @CLIENTE
 WHILE @@FETCH_STATUS = 0
 BEGIN
     DECLARE @PASO VARCHAR(60), @N INT = 1
-    WHILE @N <= 5
+    WHILE @N <= 3
     BEGIN
-        SET @PASO = CHOOSE(@N, 'PLANES', 'TAREAS', 'RONDAS', 'ALERTAS_OPERACION', 'ALERTAS_INVENTARIO')
+        SET @PASO = CHOOSE(@N, 'PLANES', 'TAREAS', 'RONDAS')
         SET @GEN = NULL
         INSERT [dbo].[Job_Ejecucion] (jex_job, jex_paso, jex_cliente) VALUES ('JOB_SIGMA_NOCTURNO', @PASO, @CLIENTE)
         SET @ID = SCOPE_IDENTITY()
@@ -72,10 +75,6 @@ BEGIN
                 EXEC [dbo].[GEN_TAREA_OCURRENCIAS] @CLIENTE = @CLIENTE, @TAREA = NULL, @HORIZONTE_DIA = @HORIZONTE_DIA, @SOLO_AUTOMATICAS = 1, @USUARIO = @USUARIO, @GENERADAS = @GEN OUTPUT
             ELSE IF @PASO = 'RONDAS'
                 EXEC [dbo].[GEN_CHECKLIST_OCURRENCIAS] @CLIENTE = @CLIENTE, @CHECKLIST_PROGRAMACION = NULL, @HORIZONTE_DIA = @HORIZONTE_DIA, @USUARIO = @USUARIO, @GENERADAS = @GEN OUTPUT
-            ELSE IF @PASO = 'ALERTAS_OPERACION'
-                EXEC [dbo].[GEN_ALERTA_OPERACION] @CLIENTE = @CLIENTE, @USUARIO = @USUARIO
-            ELSE IF @PASO = 'ALERTAS_INVENTARIO'
-                EXEC [dbo].[GEN_ALERTA_INVENTARIO] @CLIENTE = @CLIENTE, @USUARIO = @USUARIO
 
             UPDATE [dbo].[Job_Ejecucion] SET jex_fin = GETUTCDATE(), jex_generadas = @GEN WHERE jex_id = @ID
         END TRY
@@ -118,7 +117,7 @@ GO
         EXEC jobs.sp_add_target_group_member @target_group_name = N'SIGMA',
              @target_type = N'SqlDatabase', @server_name = N'codigocreativo.database.windows.net',
              @database_name = N'SIGMA';
-        EXEC jobs.sp_add_job @job_name = N'SIGMA nocturno', @description = N'Ocurrencias, rondas y alertas',
+        EXEC jobs.sp_add_job @job_name = N'SIGMA nocturno', @description = N'Ocurrencias y rondas',
              @enabled = 1, @schedule_interval_type = N'Days', @schedule_interval_count = 1,
              @schedule_start_time = N'2026-10-09T05:00:00';   -- UTC: 02:00 en Chile (verano) / 01:00 (invierno)
         EXEC jobs.sp_add_jobstep @job_name = N'SIGMA nocturno', @step_name = N'Ejecutar',
