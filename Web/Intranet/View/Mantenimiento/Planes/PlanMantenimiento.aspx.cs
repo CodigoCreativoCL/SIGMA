@@ -52,6 +52,29 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        /* El Centro del plan vive ahora en el Centro de Planificación (ficha del
+           plan, #tab=planes&plan=<id cifrado>). Esta página queda solo para que
+           los enlaces y favoritos viejos sigan llegando al plan. */
+        if (!IsPostBack)
+        {
+            string destino = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx") + "#tab=planes";
+            if (Request.QueryString["query"] != null)
+            {
+                try
+                {
+                    foreach (string arr in SitioBase.Querystring.Descifrar(Request.QueryString["query"]).Split('&'))
+                    {
+                        string[] kv = arr.Split('=');
+                        if (kv[0] == "Id" && kv.Length > 1 && kv[1] != "0")
+                            destino += "&plan=" + Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + kv[1]));
+                    }
+                }
+                catch (Exception) { /* un enlace roto lleva a la lista */ }
+            }
+            Response.Redirect(destino, false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         if (!IsPostBack)
         {
             if (Request.QueryString["query"] != null)
@@ -1234,7 +1257,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     private string ResumenCalendario(List<PlanOcurrencia> lista)
     {
         if (lista.Count == 0)
-            return "<span class=\"sigma-inv-vacio\">Sin ocurrencias en el período. Se generan al publicar la versión.</span>";
+            return "<span class=\"sigma-inv-vacio\">Sin ocurrencias en el período. Publicar no las crea: genérelas con «Generar ocurrencias».</span>";
 
         int cerradas = 0, vencidas = 0, atrasadas = 0, disponibles = 0, futuras = 0;
         foreach (PlanOcurrencia o in lista)

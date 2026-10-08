@@ -28,7 +28,7 @@ public class WsInicio : System.Web.Services.WebService
     private const string URL_OT = "~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx";
     private const string URL_OTS = "~/View/Mantenimiento/Ordenes/OrdenTrabajos.aspx";
     private const string URL_PLAN = "~/View/Mantenimiento/Planificacion.aspx";
-    private const string URL_PLANES = "~/View/Mantenimiento/Planes/PlanMantenimientos.aspx";
+    private const string URL_PLANES = "~/View/Mantenimiento/Planificacion.aspx";
     private const string URL_NOTIF = "~/View/Comun/Notificaciones/Notificaciones.aspx";
 
     /// <summary>Los modulos que se pueden fijar como acceso directo: clave, nombre, pagina, si va en oscuro.</summary>

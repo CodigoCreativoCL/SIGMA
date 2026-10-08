@@ -336,6 +336,7 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
         hlNuevaProg.NavigateUrl = "javascript:void(0)";
         hlNuevaProg.Attributes["onclick"] = "return abrirProgramacion(0)";
         hlNuevaProg.Visible = Token.Puede("CREAR EDITAR PAUTAS");
+        lnkGenerarRondas.Visible = Token.Puede("CREAR EDITAR PAUTAS") && hayProgActiva;
         RenderProgramaciones(progs);
 
         // Hallazgos de la pauta (se usan en Ocurrencias y en su propia pestaña).
@@ -428,6 +429,42 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
         tb.Append("</tbody></table>");
         litHallazgosPauta.Text = tb.ToString();
         litHallazgoDet.Text = det.ToString();
+    }
+
+    /// <summary>
+    /// Genera las rondas de las programaciones habilitadas de esta pauta para
+    /// 90 días (GEN_CHECKLIST_OCURRENCIAS, idempotente). Antes solo se podía
+    /// desde ChecklistProgramacions.aspx, que está fuera del menú: una pauta
+    /// programada desde este centro nunca producía rondas.
+    /// </summary>
+    protected void lnkGenerarRondas_Click(object sender, EventArgs e)
+    {
+        try
+        {
+            if (!Token.Puede("CREAR EDITAR PAUTAS"))
+                throw new Exception("No tiene permiso para programar pautas.");
+
+            List<ChecklistProgramacion> progs = new ChecklistProgramacionController()
+                .GetProgramaciones(new ChecklistProgramacion { filtro_cliente = SitioBase.Session.ClienteId(), filtro_checklist_plantilla = Plantilla })
+                ?? new List<ChecklistProgramacion>();
+
+            int total = 0;
+            ChecklistProgramacionController controller = new ChecklistProgramacionController();
+            foreach (ChecklistProgramacion p in progs.FindAll(x => x.cpr_habilitado))
+            {
+                Respuesta r = controller.GenerarOcurrencias(p.cpr_id, 90);
+                if (r.error) { Tools.tools.ClientAlert(r.detalle, "alerta"); return; }
+                total += r.codigo;
+            }
+
+            Tools.tools.ClientAlert(total == 0
+                ? "No había rondas nuevas que generar en los próximos 90 días."
+                : total + (total == 1 ? " ronda generada" : " rondas generadas") + " para los próximos 90 días.", "ok");
+        }
+        catch (Exception ex)
+        {
+            Tools.tools.ClientAlert(ex.Message, "alerta");
+        }
     }
 
     /// <summary>Programaciones (mockup 06): tabla (izq) + detalle (der).</summary>
