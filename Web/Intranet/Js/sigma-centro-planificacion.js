@@ -379,6 +379,25 @@ function listHTML() {
 }
 
 /* =====================================================================
+   PLANES · ficha
+   ===================================================================== */
+function freqCorta(f) {
+  if (!f || !f.t) return '—';
+  if (f.t === 'med') return 'Cada ' + fN(f.mn) + ' ' + (unidadMedidor() || 'u.');
+  if (f.t === 'cond') return 'Por condición';
+  if (f.t === 'fec') return 'Fechas puntuales';
+  if (f.t === 'int') { var u = UNI[uniCod(f.iu)] || ['', '']; return 'Cada ' + f.n + ' ' + (+f.n === 1 ? u[0] : u[1]); }
+  var n = +f.n;
+  return f.rep === 'd' ? (n === 1 ? 'Diaria' : 'Cada ' + n + ' días') : f.rep === 'w' ? (n === 1 ? (f.days.length > 1 ? f.days.length + ' veces por semana' : 'Semanal') : 'Cada ' + n + ' semanas') : f.rep === 'm' ? (n === 1 ? 'Mensual' : n === 3 ? 'Trimestral' : n === 6 ? 'Semestral' : 'Cada ' + n + ' meses') : 'Anual';
+}
+function proxima() {
+  var e = estado(F.plan)[0];
+  if (e === 'draft') { var p = (F.proyeccion || [])[0]; return p ? { d: dIso(p.FECHA), proj: true } : null; }
+  var x = (F.proximas || []).filter(function (o) { return dIso(o.FECHA) >= TODAY; })[0];
+  return x ? { d: dIso(x.FECHA) } : null;
+}
+
+/* =====================================================================
    FICHA POR PASOS (§ «Planes por pasos»)
    Cinco pasos con barra fija: Activos · Trabajo · Frecuencia ·
    Responsable · Activar / Aplicar / Resumen. Una sola fuente de
