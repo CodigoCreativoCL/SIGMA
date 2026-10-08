@@ -421,9 +421,12 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                     {
                         Dictionary<string, object> c = Dicc(d, "medidor");
                         object cada = Decimal(c, "cada");
+                        // CK_PME_ANTICIPACION: el aviso es NULL o mayor que 0; «0» = sin aviso.
+                        object aviso = Decimal(c, "aviso");
+                        if (aviso is decimal && (decimal)aviso <= 0) aviso = null;
                         SoporteDatos.Conjuntos("UPS_PROGRAMACION_MEDIDOR", "@PROGRAMACION", pro, "@CLIENTE", cli,
                             "@ACTIVO_MEDIDOR", null, "@VALOR_INICIAL", Decimal(c, "inicial"), "@CADA_CANTIDAD", cada,
-                            "@AVISO_ANTICIPACION", Decimal(c, "aviso"), "@USUARIO", usu);
+                            "@AVISO_ANTICIPACION", aviso, "@USUARIO", usu);
                         // RP-18: el «cada N» se escribe una sola vez; el hito lo refleja.
                         Exec("UPD_PLAN_HITO", "@ID", h, "@VALOR_MEDIDOR", cada, "@USUARIO", usu);
                         break;
@@ -480,27 +483,102 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
     }
 
     /// <summary>
-    /// Antes de abrir el editor de condición (la ficha de programación de
-    /// siempre, en un panel): asegura que la intervención tenga su copia
-    /// privada, para que el editor nunca toque la versión activa (RP-03).
+    /// El editor de condición en línea (paso Frecuencia): las condiciones de
+    /// la programación que muestra la ficha y los combos (variables de los
+    /// activos del cliente, operadores y severidades). Solo lectura.
     /// </summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
-    public string PrepararCondicion(int plan, int hito)
+    public string Condiciones(int plan, int programacion)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            DelCliente(plan);
+            return new
+            {
+                condiciones = CondicionesDe(programacion),
+                variables = SoporteDatos.Filas("SEL_ACTIVO_VARIABLE", "@CLIENTE", Cli(), "@HABILITADO", true).Select(v => new
+                {
+                    ID = Entero(v, "ava_id"), ACTIVO_ID = Entero(v, "ava_activo"),
+                    ACTIVO = Texto(v, "ACTIVO_CODIGO"), COMPONENTE = Texto(v, "COMPONENTE_NOMBRE"),
+                    VARIABLE = Texto(v, "VARIABLE_NOMBRE"), UNIDAD = Texto(v, "UNIDAD_SIMBOLO")
+                }).ToList(),
+                operadores = SoporteDatos.Filas("SEL_PROGRAMACION_CATALOGO", "@CATALOGO", "OPERADOR_COMPARACION"),
+                severidades = SoporteDatos.Filas("SEL_PROGRAMACION_CATALOGO", "@CATALOGO", "SEVERIDAD")
+            };
+        });
+    }
+
+    /// <summary>
+    /// Agrega una condición a la intervención. Pasa por UPS_PLAN_HITO_FRECUENCIA
+    /// (tipo CONDICION) para tener la copia privada del borrador: nunca se
+    /// toca la versión activa (RP-03).
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string AgregarCondicion(int plan, int hito, string datos)
     {
         return Ejecutar(() =>
         {
             Exigir(P_EDITAR);
-            Dictionary<string, object> m = Asegurar(plan, hito, null, null, null);
-            int h = Entero(m, "HITO");
-            Dictionary<string, object> r = SoporteDatos.Fila("UPS_PLAN_HITO_FRECUENCIA", "@CLIENTE", Cli(), "@HITO", h, "@TIPO_CODIGO", "CONDICION", "@USUARIO", U());
-            int pro = Entero(r, "PROGRAMACION");
-            return new
-            {
-                hito = h, recargar = true,
-                url = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Programaciones/Programacion.aspx") + "?query=" + Q(pro)
-            };
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            if (Entero(d, "variable") <= 0) throw new Exception("Elige la variable que se mide.");
+            if (Entero(d, "operador") <= 0) throw new Exception("Elige cómo se compara.");
+            if (Decimal(d, "umbral") == null) throw new Exception("Indica el valor de la condición.");
+            if (Entero(d, "severidad") <= 0) throw new Exception("Elige la severidad.");
+
+            int pro = ProgramacionCondicion(plan, hito);
+            ExecId("INS_PROGRAMACION_CONDICION", "@PROGRAMACION", pro, "@CLIENTE", Cli(),
+                "@ACTIVO_VARIABLE", Entero(d, "variable"), "@OPERADOR", Entero(d, "operador"),
+                "@UMBRAL", Decimal(d, "umbral"), "@UMBRAL_HASTA", Decimal(d, "hasta"),
+                "@DURACION_MINIMA", EnteroNulo(d, "duracion") > 0 ? EnteroNulo(d, "duracion") : null,
+                "@SEVERIDAD", Entero(d, "severidad"), "@USUARIO", U());
+            return new { programacion = pro, condiciones = CondicionesDe(pro) };
         });
+    }
+
+    /// <summary>
+    /// Quita una condición. Si la intervención compartía la programación, la
+    /// copia privada trae condiciones con otros ids: se busca la equivalente
+    /// por su contenido.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarCondicion(int plan, int hito, int programacion, int condicion)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EDITAR);
+            Dictionary<string, object> c = CondicionesDe(programacion).FirstOrDefault(x => Entero(x, "pco_id") == condicion);
+            if (c == null) throw new Exception("La condición ya no existe.");
+
+            int pro = ProgramacionCondicion(plan, hito), id = condicion;
+            if (pro != programacion)
+            {
+                Func<Dictionary<string, object>, string> firma = x => string.Join("|", new[] { "pco_activo_variable", "pco_operador_comparacion", "pco_umbral", "pco_umbral_hasta", "pco_duracion_minima_minuto", "pco_severidad" }.Select(k => Convert.ToString(Valor(x, k), CultureInfo.InvariantCulture)));
+                Dictionary<string, object> igual = CondicionesDe(pro).FirstOrDefault(x => firma(x) == firma(c));
+                if (igual == null) throw new Exception("La condición ya no existe.");
+                id = Entero(igual, "pco_id");
+            }
+            Exec("DEL_PROGRAMACION_CONDICION", "@ID", id, "@CLIENTE", Cli(), "@USUARIO", U());
+            return new { programacion = pro, condiciones = CondicionesDe(pro) };
+        });
+    }
+
+    /// <summary>Abre el borrador, deja la intervención en tipo CONDICION con su copia privada y devuelve esa programación.</summary>
+    private int ProgramacionCondicion(int plan, int hito)
+    {
+        Dictionary<string, object> m = Asegurar(plan, hito, null, null, null);
+        int h = Entero(m, "HITO");
+        if (h <= 0) throw new Exception("La intervención ya no está en la planificación.");
+        Dictionary<string, object> r = SoporteDatos.Fila("UPS_PLAN_HITO_FRECUENCIA", "@CLIENTE", Cli(), "@HITO", h, "@TIPO_CODIGO", "CONDICION", "@USUARIO", U());
+        return Entero(r, "PROGRAMACION");
+    }
+
+    private static List<Dictionary<string, object>> CondicionesDe(int programacion)
+    {
+        return SoporteDatos.Filas("SEL_PROGRAMACION_CONDICION", "@PROGRAMACION", programacion, "@CLIENTE", Cli(), "@HABILITADO", true);
     }
 
     // =====================================================================
