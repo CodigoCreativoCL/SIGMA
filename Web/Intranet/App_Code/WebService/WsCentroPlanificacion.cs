@@ -155,7 +155,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             if (!Token.Puede(P_PROC_VER) && !Token.Puede(P_EDITAR)) throw new Exception("No tienes permiso para ver procedimientos.");
             List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PROCEDIMIENTO", "@CLIENTE", Cli(), "@FILTRO", Nulo(filtro),
                 "@HABILITADO", true, "@ACTIVO_TIPO", tipo > 0 ? (object)tipo : null, "@SOLO_ULTIMA", true);
-            return new { procedimientos = l.Where(x => !Bool(x, "ES_GLOBAL")).ToList() };
+            List<Dictionary<string, object>> r = l.Where(x => !Bool(x, "ES_GLOBAL")).ToList();
+            foreach (Dictionary<string, object> x in r) x["Q"] = Q(Entero(x, "PRC_ID"));
+            return new { procedimientos = r };
         });
     }
 
@@ -727,6 +729,364 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             if (r.error) throw new Exception(r.detalle);
             return new { ok = true, nueva = r.codigo };
         });
+    }
+
+    /// <summary>
+    /// Las ejecuciones de la pestaña (§10.4). Lista: lo abierto hasta el
+    /// horizonte. Semana y mes: todo lo del rango, también lo cerrado. Las
+    /// cuentas por situación son las de lo que vuelve, para los chips.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Ejecuciones(int planta, string desde, string hasta, int plan, int activo, bool abiertas)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<Dictionary<string, object>> filas = SoporteDatos.Filas("SEL_PLAN_OCURRENCIA_BANDEJA", "@CLIENTE", Cli(),
+                "@PLAN", plan > 0 ? (object)plan : null, "@ACTIVO", activo > 0 ? (object)activo : null,
+                "@INSTALACION", planta > 0 ? (object)planta : null,
+                "@DESDE", FechaTxt(desde), "@HASTA", FechaTxt(hasta), "@SOLO_ABIERTAS", abiertas, "@PAGINA", 1, "@TAMANO", 3000);
+            string urlOt = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?query=";
+            foreach (Dictionary<string, object> f in filas)
+            {
+                f["TOKEN"] = Q(Entero(f, "PMO_ID"));
+                if (Entero(f, "ORDEN_TRABAJO_ID") > 0) f["OT_URL"] = urlOt + Q(Entero(f, "ORDEN_TRABAJO_ID"));
+            }
+            return new { filas = filas, permisos = Permisos() };
+        });
+    }
+
+    /// <summary>Lo que la OT hará: las actividades vigentes de la intervención de una ejecución.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string EjecucionActividades(int hito)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            return new { actividades = SoporteDatos.Filas("SEL_PLAN_ACTIVIDAD", "@CLIENTE", Cli(), "@HITO", hito, "@HABILITADO", true) };
+        });
+    }
+
+    /// <summary>
+    /// Generar OT de una o varias ejecuciones (CA-24): el resultado va por
+    /// fila; una que ya tenía OT no se duplica y una que falla no corta a las demás.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GenerarOt(string tokens)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_OT);
+            List<object> res = new List<object>();
+            string urlOt = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?query=";
+            foreach (string t in (tokens ?? "").Split(',').Where(x => !string.IsNullOrWhiteSpace(x)))
+            {
+                try
+                {
+                    Dictionary<string, object> r = SoporteDatos.Fila("INS_ORDEN_TRABAJO_OCURRENCIA", "@ID", 0, "@CLIENTE", Cli(), "@OCURRENCIA", IdDe(t), "@USUARIO", U());
+                    res.Add(new { token = t, r = Bool(r, "YA_EXISTIA") ? "ya" : "ok", ot = Valor(r, "OTR_CORRELATIVO"), url = urlOt + Q(Entero(r, "OTR_ID")), detalle = "" });
+                }
+                catch (Exception ex) { res.Add(new { token = t, r = "no", ot = (object)null, url = "", detalle = Limpio(ex.Message) }); }
+            }
+            return new { resultados = res };
+        });
+    }
+
+    /// <summary>
+    /// Cumplimiento (§10.5): el año, los últimos seis meses hasta el período
+    /// elegido, y el período por plan y por activo. Se mide contra la fecha
+    /// ORIGINAL, como en Planificación 360.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Cumplimiento(int planta, string periodo)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            int? inst = planta > 0 ? (int?)planta : null;
+            DateTime hoy = global::SitioBase.Hora.Hoy.Date, m0;
+            if (!DateTime.TryParseExact((periodo ?? "") + "-01", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out m0)) m0 = new DateTime(hoy.Year, hoy.Month, 1);
+            Planificacion360Controller c = new Planificacion360Controller();
+            Func<DateTime, DateTime, object> medir = (d, h) =>
+            {
+                List<PlanificacionCumplimientoEquipo> eq = c.GetCumplimientoEquipos(inst, d, h) ?? new List<PlanificacionCumplimientoEquipo>();
+                int prog = eq.Sum(x => x.programadas), aT = eq.Sum(x => x.a_tiempo);
+                return new { programadas = prog, aTiempo = aT, pc = prog == 0 ? (decimal?)null : Math.Round(100m * aT / prog, 0),
+                    vencidas = eq.Sum(x => x.vencidas), reprogramadas = eq.Sum(x => x.reprogramadas) };
+            };
+            DateTime finPer = m0.AddMonths(1).AddDays(-1); if (finPer > hoy) finPer = hoy;
+            var meses = new List<object>();
+            for (int k = 5; k >= 0; k--)
+            {
+                DateTime a = m0.AddMonths(-k), b = a.AddMonths(1).AddDays(-1);
+                if (a > hoy) continue;
+                if (b > hoy) b = hoy;
+                meses.Add(new { mes = a.ToString("yyyy-MM", CultureInfo.InvariantCulture), actual = b == hoy, datos = medir(a, b) });
+            }
+            List<PlanificacionCumplimientoEquipo> equipos = m0 > hoy ? new List<PlanificacionCumplimientoEquipo>() : (c.GetCumplimientoEquipos(inst, m0, finPer) ?? new List<PlanificacionCumplimientoEquipo>());
+            PlanOcurrenciaController oc = new PlanOcurrenciaController();
+            var planes = new List<Dictionary<string, object>>();
+            if (m0 <= hoy)
+                foreach (Dictionary<string, object> p in SoporteDatos.Filas("SEL_PLAN_CENTRO", "@CLIENTE", Cli(), "@INSTALACION", inst))
+                {
+                    if (Texto(p, "ESTADO") == "BORRADOR") continue;
+                    PlanCumplimiento pc = oc.GetCumplimiento(Entero(p, "PLAN_ID"), m0, finPer);
+                    if (pc == null || pc.programadas == 0) continue;
+                    planes.Add(new Dictionary<string, object> { { "id", Entero(p, "PLAN_ID") }, { "codigo", Texto(p, "CODIGO") }, { "nombre", Texto(p, "NOMBRE") },
+                        { "programadas", pc.programadas }, { "cumplidas", pc.cumplidas }, { "aTiempo", pc.a_tiempo_original }, { "vencidas", pc.vencidas },
+                        { "reprogramadas", pc.reprogramadas }, { "pc", Math.Round(pc.cumplimiento, 0) } });
+                }
+            return new
+            {
+                anio = medir(new DateTime(hoy.Year, 1, 1), hoy),
+                periodo = m0 > hoy ? null : medir(m0, finPer),
+                desde = m0.ToString("yyyy-MM-dd"), hasta = finPer.ToString("yyyy-MM-dd"),
+                meses = meses,
+                planes = planes.OrderBy(x => (decimal)x["pc"]).ToList(),
+                activos = equipos.OrderBy(x => x.cumplimiento).ThenBy(x => x.activo_nombre).Select(x => new { id = x.activo_id, codigo = x.activo_codigo, nombre = x.activo_nombre,
+                    programadas = x.programadas, cumplidas = x.cumplidas, aTiempo = x.a_tiempo, vencidas = x.vencidas, pc = Math.Round(x.cumplimiento, 0) }).ToList()
+            };
+        });
+    }
+
+    /// <summary>Cobertura (§10.6): cada activo con los planes activos que lo cubren.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Cobertura(int planta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<Dictionary<string, object>> a = SoporteDatos.Del(SoporteDatos.Conjuntos("SEL_PLAN_ACTIVO_CANDIDATO", "@CLIENTE", Cli(), "@PLAN", null, "@FILTRO", null), 0);
+            if (planta > 0) a = a.Where(x => Entero(x, "PLANTA_ID") == planta).ToList();
+            return new { activos = a };
+        });
+    }
+
+    /// <summary>Calendarios compartidos de la Biblioteca: próximas fechas y dónde se usan (§10.7).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Calendarios()
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede(P_PROG_VER)) throw new Exception("No tienes permiso para ver calendarios.");
+            ProgramacionController pc = new ProgramacionController();
+            List<PlanificacionProgramacionUso> usos = new Planificacion360Controller().GetUsosProgramacion() ?? new List<PlanificacionProgramacionUso>();
+            var lista = new List<object>();
+            foreach (Programacion p in (pc.GetProgramaciones(new Programacion { pro_cliente = Cli(), filtro_habilitado = true }) ?? new List<Programacion>()).Where(x => x.tipo_codigo != "ABIERTA"))
+            {
+                int n = p.tipo_codigo == "FECHA UNICA" ? 1 : (p.tipo_codigo == "CALENDARIO" || p.tipo_codigo == "INTERVALO TIEMPO") ? 4 : 0;
+                List<ProgramacionProyeccion> proy = n == 0 ? new List<ProgramacionProyeccion>() : (pc.GetProyeccion(p.pro_id, n) ?? new List<ProgramacionProyeccion>());
+                lista.Add(new
+                {
+                    id = p.pro_id, nombre = p.pro_nombre, tipo = p.tipo_nombre, tipoCodigo = p.tipo_codigo, detalle = p.detalle,
+                    fechas = proy.Take(n).Select(x => x.fecha.ToString("yyyy-MM-dd")).ToArray(),
+                    usos = usos.Where(x => x.programacion_id == p.pro_id).Select(x => new { origen = x.origen, nombre = (string.IsNullOrEmpty(x.codigo) ? "" : x.codigo + " · ") + x.nombre }).ToList(),
+                    url = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Programaciones/Programacion.aspx") + "?query=" + Q(p.pro_id)
+                });
+            }
+            return new { calendarios = lista, nuevaUrl = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Programaciones/Programacion.aspx") };
+        });
+    }
+
+    /// <summary>Combos del asistente «Nuevo calendario»: lo que no depende de la planta.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CalendarioCatalogos()
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede("CREAR EDITAR PROGRAMACIONES")) throw new Exception("No tienes permiso para crear calendarios.");
+            ProgramacionController pc = new ProgramacionController();
+            Func<List<CatalogoItem>, object> m = l => (l ?? new List<CatalogoItem>()).Select(x => new { id = x.id, n = x.nombre, codigo = x.codigo }).ToList();
+            return new { zonas = m(pc.GetCatalogo("ZONA_HORARIA")), politicas = m(pc.GetCatalogo("CUMPLIMIENTO_POLITICA")), personas = m(pc.GetCatalogoAlcance("RESPONSABLE")) };
+        });
+    }
+
+    /// <summary>Áreas, activos y grupos de una planta (paso Alcance y Asignación).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CalendarioAlcance(int planta)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede("CREAR EDITAR PROGRAMACIONES")) throw new Exception("No tienes permiso para crear calendarios.");
+            ProgramacionController pc = new ProgramacionController();
+            int? inst = planta > 0 ? (int?)planta : null;
+            Func<List<CatalogoItem>, object> m = l => (l ?? new List<CatalogoItem>()).Select(x => new { id = x.id, n = x.nombre }).ToList();
+            return new { areas = m(pc.GetCatalogoAlcance("AREA", inst)), activos = m(pc.GetCatalogoAlcance("ACTIVO", inst)), grupos = m(pc.GetGrupos(inst)) };
+        });
+    }
+
+    /// <summary>
+    /// «Nuevo calendario» de la Biblioteca: los seis pasos del asistente de
+    /// Programación (información, alcance, asignación, frecuencia,
+    /// exclusiones y revisión) en una sola llamada, dentro del Centro. Crea
+    /// una programación NO privada de tipo calendario, intervalo o fechas
+    /// puntuales, que cualquier intervención, tarea o pauta puede usar.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CrearCalendario(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede("CREAR EDITAR PROGRAMACIONES")) throw new Exception("No tienes permiso para crear calendarios.");
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            string nombre = Texto(d, "nombre").Trim(), tipoCod = Texto(d, "tipo").ToUpperInvariant();
+            if (nombre.Length == 0) throw new Exception("Indica el nombre del calendario.");
+            if (tipoCod != "CALENDARIO" && tipoCod != "INTERVALO TIEMPO" && tipoCod != "FECHA UNICA") throw new Exception("Elige el tipo de frecuencia.");
+            object desde = Fecha(d, "desde");
+            if (desde == null) throw new Exception("Indica desde cuándo es vigente.");
+            ValidarFrecuencia(tipoCod, d);
+
+            int? planta = EnteroNulo(d, "planta") > 0 ? EnteroNulo(d, "planta") : null, area = EnteroNulo(d, "area") > 0 ? EnteroNulo(d, "area") : null, activo = EnteroNulo(d, "activo") > 0 ? EnteroNulo(d, "activo") : null;
+            if (planta == null && (area != null || activo != null)) throw new Exception("Alcance: indica la planta antes del área o del activo.");
+            string modo = Texto(d, "modo");
+            List<string> personas = ListaTexto(d, "personas");
+            if (modo == "persona" && personas.Count == 0) throw new Exception("Asignación: elige al menos una persona.");
+            if (modo == "grupo" && !(EnteroNulo(d, "grupo") > 0)) throw new Exception("Asignación: elige el grupo de trabajo.");
+
+            ProgramacionController pc = new ProgramacionController();
+            CatalogoItem tipo = (pc.GetCatalogo("PROGRAMACION_TIPO") ?? new List<CatalogoItem>()).FirstOrDefault(x => string.Equals(x.codigo, tipoCod, StringComparison.OrdinalIgnoreCase));
+            if (tipo == null) throw new Exception("El tipo de frecuencia no existe.");
+
+            Programacion e = new Programacion();
+            e.pro_nombre = nombre; e.pro_programacion_tipo = tipo.id;
+            e.pro_fecha_inicio = (DateTime)desde; e.pro_fecha_fin = Fecha(d, "hasta") as DateTime?;
+            if (EnteroNulo(d, "zona") > 0) e.pro_zona_horaria = EnteroNulo(d, "zona");
+            e.pro_cliente_instalacion = planta; e.pro_instalacion_area = area; e.pro_activo = activo;
+            if (modo == "grupo") e.pro_grupo_trabajo = EnteroNulo(d, "grupo");
+            if (EnteroNulo(d, "politica") > 0) e.pro_cumplimiento_politica = EnteroNulo(d, "politica");
+            e.pro_tolerancia_antes_minuto = Entero(d, "tolAntes"); e.pro_tolerancia_despues_minuto = Entero(d, "tolDespues");
+            e.pro_permite_anticipada = Bool(d, "anticipada"); e.pro_permite_atrasada = Bool(d, "atrasada");
+            e.pro_genera_automaticamente = Bool(d, "genera"); e.pro_habilitado = true;
+
+            Respuesta r = pc.InsertProgramacion(e);
+            if (r.error) throw new Exception(r.detalle);
+            int pro = r.codigo, cli = Cli(), usu = U();
+            try
+            {
+                if (modo == "persona") { Respuesta rp = pc.GuardarResponsables(pro, string.Join(",", personas)); if (rp.error) throw new Exception(rp.detalle); }
+                switch (tipoCod)
+                {
+                    case "CALENDARIO":
+                        {
+                            Dictionary<string, object> c = Dicc(d, "calendario");
+                            TimeSpan hora; if (!TimeSpan.TryParse(Texto(c, "hora"), out hora)) hora = new TimeSpan(8, 0, 0);
+                            SoporteDatos.Conjuntos("UPS_PROGRAMACION_CALENDARIO", "@PROGRAMACION", pro, "@CLIENTE", cli,
+                                "@FRECUENCIA", Entero(c, "frecuencia"), "@INTERVALO", Math.Max(1, Entero(c, "intervalo")),
+                                "@SEMANA_ORDINAL", EnteroNulo(c, "ordinal"), "@DIA_MES", EnteroNulo(c, "diaMes"), "@MES", EnteroNulo(c, "mes"),
+                                "@HORA_LOCAL", hora, "@DIAS", Nulo(string.Join(",", ListaTexto(c, "dias"))), "@USUARIO", usu);
+                            break;
+                        }
+                    case "INTERVALO TIEMPO":
+                        {
+                            Dictionary<string, object> c = Dicc(d, "intervalo");
+                            SoporteDatos.Conjuntos("UPS_PROGRAMACION_INTERVALO", "@PROGRAMACION", pro, "@CLIENTE", cli, "@UNIDAD_TIEMPO", Entero(c, "unidad"),
+                                "@CANTIDAD", Entero(c, "cantidad"), "@FECHA_ANCLA_UTC", FechaHora(c, "ancla"), "@USUARIO", usu);
+                            break;
+                        }
+                    case "FECHA UNICA":
+                        foreach (Dictionary<string, object> f in Lista(d, "fechas"))
+                        {
+                            TimeSpan hh; object hora = TimeSpan.TryParse(Texto(f, "hora"), out hh) ? (object)hh : null;
+                            SoporteDatos.Conjuntos("INS_PROGRAMACION_FECHA", "@ID", null, "@PROGRAMACION", pro, "@CLIENTE", cli, "@FECHA", Fecha(f, "fecha"), "@HORA", hora, "@INCLUIDA", true, "@USUARIO", usu);
+                        }
+                        break;
+                }
+                foreach (Dictionary<string, object> x in Lista(d, "exclusiones"))
+                    SoporteDatos.Conjuntos("INS_PROGRAMACION_EXCLUSION", "@ID", null, "@PROGRAMACION", pro, "@CLIENTE", cli,
+                        "@FECHA_INICIO", FechaHora(x, "desde"), "@FECHA_FIN", FinDelDia(x, "hasta"), "@MOTIVO", Texto(x, "motivo"), "@DESPLAZA", Bool(x, "desplaza"), "@USUARIO", usu);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("El calendario se creó, pero no se pudo completar: " + Limpio(ex.Message) + " Revísalo en Programaciones.");
+            }
+            return new { id = pro };
+        });
+    }
+
+    /// <summary>La cabecera y los pasos de un procedimiento, para editarlo en el panel.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ProcedimientoDetalle(int id)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede(P_PROC_VER)) throw new Exception("No tienes permiso para ver procedimientos.");
+            Dictionary<string, object> h = SoporteDatos.Filas("SEL_PROCEDIMIENTO", "@CLIENTE", Cli(), "@ID", id).FirstOrDefault();
+            if (h == null) throw new Exception("El procedimiento no existe.");
+            return new { cabecera = h, pasos = SoporteDatos.Filas("SEL_PROCEDIMIENTO_PASO", "@CLIENTE", Cli(), "@PROCEDIMIENTO", id, "@HABILITADO", true) };
+        });
+    }
+
+    /// <summary>
+    /// Crea o edita un procedimiento con sus pasos, en una sola llamada.
+    /// Editar cambia la misma versión (nueva versión queda fuera de alcance);
+    /// los pasos que ya no vienen se dan de baja y los nuevos se agregan.
+    /// La medición de un paso existente no se toca aquí.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarProcedimiento(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PROC_EDITAR);
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            int cli = Cli(), usu = U(), id = Entero(d, "id");
+            string nombre = Texto(d, "nombre").Trim();
+            if (nombre.Length == 0) throw new Exception("El procedimiento necesita un nombre.");
+            List<Dictionary<string, object>> pasos = Lista(d, "pasos");
+            if (pasos.Count == 0 || pasos.Any(p => Texto(p, "nombre").Trim().Length == 0)) throw new Exception("Cada paso necesita un nombre.");
+            object tipo = EnteroNulo(d, "tipo") > 0 ? EnteroNulo(d, "tipo") : null;
+            object dur = EnteroNulo(d, "duracion") > 0 ? EnteroNulo(d, "duracion") : null;
+            int permiso = Entero(d, "permiso");
+            if (id <= 0)
+            {
+                int max = 0;
+                foreach (Dictionary<string, object> r in SoporteDatos.Filas("SEL_PROCEDIMIENTO", "@CLIENTE", Cli(), "@SOLO_ULTIMA", true))
+                {
+                    int n; string c = Texto(r, "PRC_CODIGO"); if (c.StartsWith("PRC-") && int.TryParse(c.Substring(4), out n) && n > max) max = n;
+                }
+                id = ExecId("INS_PROCEDIMIENTO", "@CLIENTE", cli, "@CODIGO", "PRC-" + (max + 1).ToString("000"), "@NOMBRE", nombre, "@ACTIVO_TIPO", tipo,
+                    "@DESCRIPCION", Nulo(Texto(d, "descripcion")), "@DURACION", dur, "@REQUIERE_PERMISO", permiso > 0, "@PERMISO_TIPO", permiso > 0 ? (object)permiso : null, "@USUARIO", usu);
+            }
+            else
+            {
+                Exec("UPD_PROCEDIMIENTO", "@ID", id, "@CLIENTE", cli, "@NOMBRE", nombre, "@ACTIVO_TIPO", tipo, "@QUITA_TIPO", tipo == null,
+                    "@DESCRIPCION", Texto(d, "descripcion"), "@DURACION", dur, "@REQUIERE_PERMISO", permiso > 0, "@PERMISO_TIPO", permiso > 0 ? (object)permiso : null, "@USUARIO", usu);
+                HashSet<int> quedan = new HashSet<int>(pasos.Select(p => Entero(p, "id")).Where(x => x > 0));
+                foreach (Dictionary<string, object> e in SoporteDatos.Filas("SEL_PROCEDIMIENTO_PASO", "@CLIENTE", cli, "@PROCEDIMIENTO", id, "@HABILITADO", true))
+                {
+                    int pid = Entero(e, "PPA_ID"); if (!quedan.Contains(pid)) Exec("DEL_PROCEDIMIENTO_PASO", "@ID", pid, "@CLIENTE", cli, "@USUARIO", usu);
+                }
+            }
+            int orden = 0;
+            foreach (Dictionary<string, object> p in pasos)
+            {
+                orden++; int pid = Entero(p, "id"); object pdur = EnteroNulo(p, "duracion") > 0 ? EnteroNulo(p, "duracion") : null;
+                if (pid > 0)
+                    Exec("UPD_PROCEDIMIENTO_PASO", "@ID", pid, "@CLIENTE", cli, "@ORDEN", orden, "@NOMBRE", Texto(p, "nombre").Trim(), "@INSTRUCCION", Texto(p, "instruccion"),
+                        "@ES_PUNTO_CONTROL", Bool(p, "ctrl"), "@REQUIERE_EVIDENCIA", Bool(p, "ev"), "@DURACION", pdur, "@USUARIO", usu);
+                else
+                    ExecId("INS_PROCEDIMIENTO_PASO", "@CLIENTE", cli, "@PROCEDIMIENTO", id, "@ORDEN", orden, "@NOMBRE", Texto(p, "nombre").Trim(), "@INSTRUCCION", Nulo(Texto(p, "instruccion")),
+                        "@ES_PUNTO_CONTROL", Bool(p, "ctrl"), "@REQUIERE_EVIDENCIA", Bool(p, "ev"), "@DURACION", pdur, "@USUARIO", usu);
+            }
+            return new { id = id };
+        });
+    }
+
+    private static object FechaTxt(string s)
+    {
+        DateTime f;
+        return DateTime.TryParseExact(s ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out f) ? (object)f : null;
     }
 
     // =====================================================================

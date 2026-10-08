@@ -23,6 +23,13 @@ public partial class View_Mantenimiento_Planes_PlanMantenimientos : System.Web.U
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // La lista de planes es la pestaña Planes del Centro de Planificación.
+        if (!IsPostBack)
+        {
+            Response.Redirect(ResolveUrl("~/View/Mantenimiento/Planificacion.aspx") + "#tab=planes", false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();
