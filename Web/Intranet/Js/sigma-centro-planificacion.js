@@ -711,7 +711,7 @@ function whenHTML(i, E) {
     body = '<div class="cp-grid3c"><div class="cp-fld"><label>Cada</label><div class="cp-unit">' + num('mn', f.mn, 1, 'Cada cuántas unidades') + '<span class="cp-u">' + esc(um) + '</span></div></div><div class="cp-fld"><label>Desde la lectura</label><div class="cp-unit">' + num('mstart', f.mstart, 0, 'Desde la lectura') + '<span class="cp-u">' + esc(um) + '</span></div></div><div class="cp-fld"><label>Avisar antes</label><div class="cp-unit">' + num('mwarn', f.mwarn, 0, 'Avisar antes') + '<span class="cp-u">' + esc(um) + '</span></div></div></div>' +
       '<div class="cp-fld"><span class="cp-lb">Medidor de cada activo del plan</span>' + (F.activos.length ? '<div class="cp-mtr">' + rows + '</div>' : mc('i', 'Agrega activos para ver cuándo se dispara en cada uno.')) + '</div>';
   }
-  if (f.t === 'cond') body = '<div class="cp-shrd">' + ic('trend', 18) + '<div style="flex:1;min-width:0"><b style="font-size:13px">' + (f.ctext ? 'Cuando ' + esc(f.ctext) : 'Sin condición definida') + '</b><div style="font-size:12px;color:var(--muted)">Se dispara al registrar una medición que cumple la condición.</div></div>' + (E ? '<button type="button" class="cp-btn cp-out cp-xs" data-a="condpanel" data-i="' + id + '">Editar condición</button>' : '') + '</div>' + (f.ctext ? '' : mc('', 'Define la condición que dispara la intervención.'));
+  if (f.t === 'cond') body = condHTML(i, E);
   var tolU = function (k, l) { return '<div class="cp-fld"><label>' + l + '</label><div class="cp-unit">' + num(k, f[k] || 0, 0, l) + '<span class="cp-u">días</span></div></div>'; };
   var vx = U.vp['exc' + i.CODIGO];
   var comun = f.t === 'med' || f.t === 'cond' ? '' :
@@ -722,6 +722,66 @@ function whenHTML(i, E) {
     (vx ? excForm(id, vx) : E ? '<button type="button" class="cp-btn cp-plain cp-xs" style="align-self:flex-start" data-a="addexc" data-i="' + id + '">' + ic('plus', 14) + 'Agregar exclusión</button>' : '') + '</div></div>';
   return '<div class="cp-blk' + (err ? ' cp-err' : '') + '" id="cpWhen' + id + '"><div class="cp-blk-h"><h4>Cuándo</h4><small>' + (f.t === 'med' ? 'Se dispara con las lecturas del medidor' : 'Las fechas se recalculan al guardar') + '</small><div class="cp-r">' + (E && (U.cat.calendarios || []).length ? '<button type="button" class="cp-lnk" data-a="useshared" data-i="' + id + '">' + ic('link', 14) + 'Usar calendario compartido</button>' : '') + '</div></div>' +
     '<div class="cp-fq-ed"><div class="cp-fq-f"><div class="cp-fld"><span class="cp-lb">Tipo</span>' + segT(f.t) + '</div>' + body + comun + (err && f.t !== 'cal' && f.t !== 'fec' ? mc('', esc(err)) : '') + '</div>' + pvHTML(i, f) + '</div></div>';
+}
+/* ---- condición en línea: las reglas de la programación y el alta ----
+   CND[programación] = condiciones (o { err }), CCAT = combos (una vez),
+   CF[código de intervención] = lo que se está escribiendo. */
+var CND = {}, CCAT = null, CF = {};
+function cargarCond(pro) {
+  if (CND[pro]) return;
+  CND[pro] = { cargando: true };
+  api('Condiciones', { plan: pid(), programacion: pro }).then(function (r) {
+    CND[pro] = r.condiciones; CCAT = { variables: r.variables, operadores: r.operadores, severidades: r.severidades };
+    render();
+  }).catch(function (e) { CND[pro] = { err: e.message }; render(); });
+}
+function condForm(i) {
+  var v = CF[i.CODIGO];
+  if (!v) {
+    var cod = function (lista, c) { var x = (lista || []).filter(function (o) { return o.CODIGO === c; })[0]; return x ? x.ID : ''; };
+    var vars = condVars();
+    v = CF[i.CODIGO] = { variable: vars.length === 1 ? vars[0].ID : '', operador: cod(CCAT.operadores, 'MAYOR'), umbral: '', hasta: '', duracion: '', severidad: cod(CCAT.severidades, 'ADVERTENCIA') };
+  }
+  return v;
+}
+/* Solo las variables de los activos del plan: una condición sobre otro equipo no dispararía esta intervención. */
+function condVars() {
+  var ids = {}; F.activos.forEach(function (a) { ids[a.ACTIVO_ID] = 1; });
+  return ((CCAT && CCAT.variables) || []).filter(function (x) { return ids[x.ACTIVO_ID]; });
+}
+function condHTML(i, E) {
+  var id = i.HITO_ID, pro = i.PROGRAMACION_ID, lista = CND[pro];
+  var nota = '<div style="font-size:12px;color:var(--muted)">Se dispara al registrar una medición que cumple la condición.</div>';
+  if (!lista) { cargarCond(pro); lista = { cargando: true }; }
+  if (lista.cargando) return '<div class="cp-fld">' + nota + mc('i', 'Cargando condiciones…') + '</div>';
+  if (lista.err) return '<div class="cp-fld">' + mc('', esc(lista.err)) + '</div>';
+  var unica = lista.length === 1;
+  var filas = lista.map(function (c) {
+    return '<div class="cp-exr"><span>' + ic('trend', 14) + ' <b>' + esc(c.ACTIVO_NOMBRE) + '</b> <small>· ' + esc(c.REGLA) + '</small></span><span class="cp-tg">' + esc(c.SEVERIDAD_NOMBRE) + '</span>' +
+      (E ? '<button type="button" class="cp-ibx cp-dn" data-a="condrm" data-i="' + id + '" data-v="' + c.pco_id + '"' + (unica ? ' disabled title="Es la única condición: agrega otra antes de quitarla"' : '') + ' aria-label="Quitar condición">' + ic('x', 14) + '</button>' : '<span></span>') + '</div>';
+  }).join('');
+  var form = '';
+  if (E) {
+    var vars = condVars();
+    if (!vars.length) form = mc('i', F.activos.length ? 'Los activos del plan no tienen variables de medición. Defínelas en la ficha del activo para poder dispararla por condición.' : 'Agrega activos al plan para elegir la variable que se mide.');
+    else {
+      var v = condForm(i);
+      var op = (CCAT.operadores || []).filter(function (o) { return String(o.ID) === String(v.operador); })[0];
+      var entre = op && op.CODIGO === 'ENTRE';
+      var cb = function (k, l, val, etq, ph) { return combo('cpCf' + k + id, l, val, { etiqueta: etq, ph: ph, data: ' data-cf="' + k + '" data-i="' + id + '"', clave: 'cpCf' + k }); };
+      var nm = function (k, etq, ph) { return '<input class="cp-inp" type="number" step="any" data-cf="' + k + '" data-i="' + id + '" value="' + esc(v[k]) + '" placeholder="' + (ph || '') + '" aria-label="' + etq + '">'; };
+      form = '<div class="cp-exr" style="grid-template-columns:1fr;gap:10px;background:var(--surface-2)">' +
+        '<div class="cp-grid3c"><div class="cp-fld" style="grid-column:span 2"><label>Variable</label>' + cb('variable', vars.map(function (x) { return { id: x.ID, n: x.ACTIVO + (x.COMPONENTE ? ' · ' + x.COMPONENTE : '') + ' · ' + x.VARIABLE + (x.UNIDAD ? ' (' + x.UNIDAD + ')' : '') }; }), v.variable, 'Variable', 'Elige la variable') + '</div>' +
+        '<div class="cp-fld"><label>Se cumple si es</label>' + cb('operador', (CCAT.operadores || []).map(function (o) { return { id: o.ID, n: o.NOMBRE }; }), v.operador, 'Operador', 'Operador') + '</div></div>' +
+        '<div class="cp-grid4c"><div class="cp-fld"><label>' + (entre ? 'Desde' : 'Valor') + '</label>' + nm('umbral', 'Valor') + '</div>' +
+        (entre ? '<div class="cp-fld"><label>Hasta</label>' + nm('hasta', 'Hasta') + '</div>' : '') +
+        '<div class="cp-fld"><label>Durante <small>opcional</small></label><div class="cp-unit">' + nm('duracion', 'Durante', '0') + '<span class="cp-u">min</span></div></div>' +
+        '<div class="cp-fld"><label>Severidad</label>' + cb('severidad', (CCAT.severidades || []).map(function (s) { return { id: s.ID, n: s.NOMBRE }; }), v.severidad, 'Severidad', 'Severidad') + '</div></div>' +
+        '<div style="display:flex;gap:10px;align-items:center"><span style="flex:1"></span><button type="button" class="cp-btn cp-pri cp-xs" data-a="condadd" data-i="' + id + '">' + ic('plus', 14) + 'Agregar condición</button></div>' +
+        (v.err ? mc('', esc(v.err)) : '') + '</div>';
+    }
+  }
+  return '<div class="cp-fld"><span class="cp-lb">Condiciones</span>' + nota + '<div class="cp-exc">' + filas + form + '</div></div>';
 }
 function medNext(f, a) {
   if (!a.MEDIDOR_ID) return null;
@@ -1361,7 +1421,6 @@ function guardarFq(hid, k) {
 }
 A.ftype = function (d) {
   var h = hById(d.i); if (!h) return;
-  if (d.v === 'cond') return A.condpanel(d);
   fqEditar(d.i, function (f) {
     var antes = f.t; f.t = d.v;
     if (d.v === 'cal' && antes !== 'cal') { f.rep = f.rep || 'm'; f.n = 1; }
@@ -1401,19 +1460,34 @@ A.pickshared = function (d) {
 A.ownfreq = function (d) {
   escribir('CalendarioCompartido', { plan: pid(), hito: +d.i, programacion: 0 }).then(function () { toast('La frecuencia ahora es propia de esta intervención.'); }).catch(toastError);
 };
-A.condpanel = function (d) {
-  guardando();
-  cola = cola.then(function () {
-    return api('PrepararCondicion', { plan: pid(), hito: +d.i }).then(function (r) {
-      guardado();
-      if (window.SigmaModal) {
-        SigmaModal.open({ url: r.url, title: 'Condición que dispara la intervención', width: 1000, initialHeight: 680 });
-        var al = function () { document.removeEventListener('sigma:modalclosed', al); recargarFicha(); };
-        document.addEventListener('sigma:modalclosed', al);
-      } else window.open(r.url, '_blank');
-      return recargarFicha();
-    });
-  }).catch(function (e) { noGuardado(e.message); toastError(e); });
+/* La respuesta trae las condiciones de la programación que quedó (puede ser
+   la copia privada): se guardan antes de pedir la ficha para no recargarlas. */
+function condEscribir(metodo, datos, msg) {
+  return escribir(metodo, datos, { sinFicha: true }).then(function (r) {
+    CND[r.programacion] = r.condiciones;
+    return recargarFicha().then(function () { recargarLista(); toast(msg); });
+  });
+}
+function cfCampo(hid, k, v) {
+  var h = hById(hid); if (!h || !CF[h.CODIGO]) return;
+  CF[h.CODIGO][k] = v; CF[h.CODIGO].err = '';
+  if (k === 'operador') render();
+}
+A.condadd = function (d) {
+  var h = hById(d.i); if (!h) return; var v = CF[h.CODIGO]; if (!v) return;
+  var op = (CCAT.operadores || []).filter(function (o) { return String(o.ID) === String(v.operador); })[0];
+  var entre = op && op.CODIGO === 'ENTRE', num = function (x) { return String(x).trim() !== '' && !isNaN(+x); };
+  v.err = !v.variable ? 'Elige la variable que se mide.' : !v.operador ? 'Elige cómo se compara.' : !num(v.umbral) ? 'Indica el valor de la condición.'
+    : entre && !num(v.hasta) ? 'Indica hasta qué valor.' : entre && +v.hasta <= +v.umbral ? '«Hasta» debe ser mayor que «Desde».'
+    : String(v.duracion).trim() !== '' && !(+v.duracion >= 0) ? 'La duración no puede ser negativa.' : !v.severidad ? 'Elige la severidad.' : '';
+  if (v.err) { render(); return; }
+  var datos = { variable: +v.variable, operador: +v.operador, umbral: +v.umbral, hasta: entre ? +v.hasta : '', duracion: String(v.duracion).trim() === '' ? '' : +v.duracion, severidad: +v.severidad };
+  condEscribir('AgregarCondicion', { plan: pid(), hito: +d.i, datos: JSON.stringify(datos) }, 'Condición agregada.')
+    .then(function () { delete CF[h.CODIGO]; render(); }).catch(toastError);
+};
+A.condrm = function (d) {
+  var h = hById(d.i); if (!h) return;
+  condEscribir('QuitarCondicion', { plan: pid(), hito: +d.i, programacion: h.PROGRAMACION_ID, condicion: +d.v }, 'Condición quitada.').catch(toastError);
 };
 
 /* ---- actividades, procedimientos y repuestos ---- */
@@ -1508,6 +1582,7 @@ function alCambiar(e) {
   if (t.hasAttribute('data-iv')) return ivCampo(t, t.getAttribute('data-iv'), t.type === 'checkbox' ? (t.checked ? '1' : '0') : t.value);
   if (t.hasAttribute('data-act')) return actCampo(t, t.getAttribute('data-act'), t.type === 'checkbox' ? t.checked : t.value);
   if (t.hasAttribute('data-fk')) return fqCampo(t.getAttribute('data-i'), t.getAttribute('data-fk'), t.value);
+  if (t.hasAttribute('data-cf')) return cfCampo(t.getAttribute('data-i'), t.getAttribute('data-cf'), t.value);
   if (t.hasAttribute('data-rq')) return repCantidad(t);
   if (t.hasAttribute('data-pv') && PN) { var k = t.getAttribute('data-pv'); PN[k] = t.type === 'checkbox' ? t.checked : t.value; if (PN.t === 'pick' && k === 'only') { PN.lista = null; panel(); cargarProcs(); } else if (t.type === 'checkbox') panel(); return; }
   if (t.hasAttribute('data-mv') && MD) { MD[t.getAttribute('data-mv')] = t.value; return; }
@@ -1522,6 +1597,7 @@ function comboCambio(span) {
   if (span.hasAttribute('data-iv')) return ivCampo(span, span.getAttribute('data-iv'), v);
   if (span.hasAttribute('data-act')) return actCampo(span, span.getAttribute('data-act'), v);
   if (span.hasAttribute('data-fk')) return fqCampo(span.getAttribute('data-i'), span.getAttribute('data-fk'), v);
+  if (span.hasAttribute('data-cf')) return cfCampo(span.getAttribute('data-i'), span.getAttribute('data-cf'), v);
   if (span.hasAttribute('data-pq') && PN) {
     var k = span.getAttribute('data-pq');
     if (k === 'area') { PN.fa = v; panel(); return; }
@@ -1612,6 +1688,7 @@ function alEscribir(e) {
   }
   if (t.hasAttribute('data-pp') && PN && PN.d && t.type !== 'checkbox') { setPP(t, t.value); return; }
   if (t.hasAttribute('data-xp') && PN && PN.xf) { PN.xf[t.getAttribute('data-xp')] = t.value; return; }
+  if (t.hasAttribute('data-cf')) { cfCampo(t.getAttribute('data-i'), t.getAttribute('data-cf'), t.value); return; }
   if (t.hasAttribute('data-xv')) { var h = hById(t.getAttribute('data-i')); if (h && U.vp['exc' + h.CODIGO]) U.vp['exc' + h.CODIGO][t.getAttribute('data-xv')] = t.value; return; }
   if (t.hasAttribute('data-pv') && PN && t.type !== 'checkbox') { PN[t.getAttribute('data-pv')] = t.value; if (t.getAttribute('data-pv') === 'q') panel(); return; }
   if (t.hasAttribute('data-ppv') && POP) { POP[t.getAttribute('data-ppv')] = t.value; if (POP.err && t.value.trim()) { POP.err = false; paintPop(); } return; }
