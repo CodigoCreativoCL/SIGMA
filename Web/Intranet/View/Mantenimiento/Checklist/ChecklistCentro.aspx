@@ -627,7 +627,7 @@
                             <div class="pc-card">
                                 <div class="pc-list-cab">
                                     <div><h3>Programaciones</h3><span class="s">Define cuándo y sobre qué activos o áreas se ejecuta esta pauta.</span></div>
-                                    <asp:HyperLink ID="hlNuevaProg" runat="server" CssClass="pc-btn prim" NavigateUrl="javascript:void(0)"><i class="mdi mdi-plus"></i>Nueva programación</asp:HyperLink>
+                                    <span style="display:flex;gap:8px;flex-wrap:wrap;"><asp:LinkButton ID="lnkGenerarRondas" runat="server" CssClass="pc-btn sec" OnClick="lnkGenerarRondas_Click" ToolTip="Crea las rondas de las programaciones habilitadas para los próximos 90 días. Las que ya existen no se duplican."><i class="mdi mdi-calendar-sync-outline"></i>Generar rondas (90 días)</asp:LinkButton><asp:HyperLink ID="hlNuevaProg" runat="server" CssClass="pc-btn prim" NavigateUrl="javascript:void(0)"><i class="mdi mdi-plus"></i>Nueva programación</asp:HyperLink></span>
                                 </div>
                                 <asp:Literal ID="litProgramaciones" runat="server" />
                             </div>

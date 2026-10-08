@@ -1234,7 +1234,7 @@ public partial class View_Mantenimiento_Planes_PlanMantenimiento : System.Web.UI
     private string ResumenCalendario(List<PlanOcurrencia> lista)
     {
         if (lista.Count == 0)
-            return "<span class=\"sigma-inv-vacio\">Sin ocurrencias en el período. Se generan al publicar la versión.</span>";
+            return "<span class=\"sigma-inv-vacio\">Sin ocurrencias en el período. Publicar no las crea: genérelas con «Generar ocurrencias».</span>";
 
         int cerradas = 0, vencidas = 0, atrasadas = 0, disponibles = 0, futuras = 0;
         foreach (PlanOcurrencia o in lista)
