@@ -24,7 +24,7 @@ Reordenar el menú Mantenimiento de SIGMA en **cinco lugares**, sin duplicar pan
 
 | **Planificación** | ¿Qué se hace, cada cuánto y quién? | Planes · Inspecciones · Tareas recurrentes · Cobertura |
 
-| **Base de trabajo** | ¿Qué se reutiliza? | Procedimientos · Pautas de inspección · Calendarios compartidos · Ajustes |
+| **Recursos** | ¿Qué se reutiliza? | Procedimientos · Pautas de inspección · Calendarios compartidos · Ajustes |
 
 Regla de oro: **en el trabajo diario, ningún flujo pide más de 3 lugares**. Todo enlace «Viene de» y «Abrir OT» lleva al lugar real, no a una copia.
 
@@ -48,7 +48,7 @@ Sidebar › Mantenimiento con exactamente estos sub-ítems, en este orden:
 2. Órdenes de trabajo → `Ordenes/OrdenesTrabajo.aspx` (existente, rediseñada)
 3. Avisos → `Avisos/Avisos.aspx` (nueva; vista unificada) · badge rojo con avisos sin tratar
 4. Planificación → Centro de Planificación existente, con las pestañas nuevas
-5. Base de trabajo → `Biblioteca/Biblioteca.aspx` (nueva; contenedor con pestañas)
+5. Recursos → `Biblioteca/Biblioteca.aspx` (nueva; contenedor con pestañas)
 
 Script nuevo `BD/3xx_MENU_MANTENIMIENTO_5_LUGARES.sql`, idempotente:
 
@@ -262,7 +262,7 @@ Cada fila trae: código, origen, título, activo, componente, severidad, fecha y
 
 ---
 
-## 8. Base de trabajo
+## 8. Recursos
 
 - **Procedimientos** y **Calendarios compartidos:** sin cambios (se mueven aquí).
 - **Pautas de inspección** (`Checklist_Plantilla` + `Version`):
@@ -332,7 +332,7 @@ Entrega por partes:
 - (b) Avisos y su vista;
 - (c) ficha de OT;
 - (d) Operación;
-- (e) Inspecciones, Tareas y Base de trabajo.
+- (e) Inspecciones, Tareas y Recursos.
 
 Cada parte va con una prueba manual descrita paso a paso.
 
@@ -549,7 +549,7 @@ Sub-ítems de Mantenimiento en el orden del ciclo de vida:
 3. **Órdenes de trabajo** · Ejecutar
 4. **Avisos** · Detectar
 
-Después de un separador «Recursos» va **Base de trabajo** (transversal).
+Después de un separador «Recursos» va **Recursos** (transversal).
 
 - Una línea vertical une los cuatro pasos con un punto por ítem; el del lugar activo va relleno en cian.
 - Cada ítem lleva un tooltip con su rol, por ejemplo «2 · Controlar: lo programado, lo que pasa hoy y lo atrasado».
@@ -590,7 +590,7 @@ Después de un separador «Recursos» va **Base de trabajo** (transversal).
 
 ## Criterios adicionales
 
-19. El menú muestra Planificación → Operación → Órdenes de trabajo → Avisos y, bajo «Recursos», Base de trabajo.
+19. El menú muestra Planificación → Operación → Órdenes de trabajo → Avisos y, bajo «Recursos», Recursos.
 20. En Estado por área, un área con una OT en progreso que detiene un activo aparece primero como «Activo detenido». Al tocarla, la agenda, los indicadores y Atención quedan filtrados por esa área.
 
 ---
@@ -603,7 +603,7 @@ Todas las vistas del menú Mantenimiento usan la misma cabecera:
 - Órdenes de trabajo;
 - Avisos;
 - Centro de Planificación;
-- Base de trabajo.
+- Recursos.
 
 **Banda:** fondo sólido `#161A33`, sin gradiente; radio 20 px; padding 22 × 28 px.
 
@@ -627,7 +627,7 @@ Todas las vistas del menú Mantenimiento usan la misma cabecera:
 
 | Planificación | Centro de Planificación | «Qué se mantiene, cómo, cada cuánto y quién lo ejecuta.» |
 
-| Base de trabajo | Base de trabajo | (frase propia) |
+| Recursos | Recursos | (frase propia) |
 
 **Controles a la derecha:**
 

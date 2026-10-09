@@ -2,7 +2,7 @@
 using System.Web.Script.Serialization;
 
 /// <summary>
-/// Base de trabajo: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
+/// Recursos: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
 /// cinco lugares). El servidor solo entrega la configuración; cada pestaña se
 /// pinta en el navegador (Js/sigma-mant-lugar.js y el JS de su parte).
 /// </summary>
@@ -20,7 +20,7 @@ public partial class View_Mantenimiento_Biblioteca_Biblioteca : System.Web.UI.Pa
         ConfigJson = new JavaScriptSerializer().Serialize(new
         {
             lugar = "biblioteca",
-            titulo = "Base de trabajo",
+            titulo = "Recursos",
             base_ = ResolveUrl("~/"),
             cliente = SitioBase.Session.ClienteId(),
             usuario = SitioBase.Session.UsuarioId(),
