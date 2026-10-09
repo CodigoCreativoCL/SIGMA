@@ -31,6 +31,14 @@
         }
         .sg-pr-pie .sg-proc-cab-acciones input[type="button"]:not(.ButtonCerrar):hover { filter: brightness(1.07); }
     </style>
+
+    <%-- Tipo de activo con el combo de SIGMA (búsqueda, teclado), como el Centro de Planificación. --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
+    <script type="text/javascript">
+        var PR_TIPOS = <%= TiposJson() %>;
+        SigmaCombo.definir('pr:tipo', { fuente: function () { return PR_TIPOS; } });
+    </script>
 </asp:Content>
 
 <asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">Mantenimiento · Procedimientos</asp:Content>
@@ -154,7 +162,9 @@
                         </div>
                         <div class="sigma-modal-field is-medio">
                             <label>Tipo de activo</label>
-                            <rad:RadComboBox2 ID="cboTipo" runat="server" OnLoad="LoadControls" Filter="Contains" Width="100%" />
+                            <span class="sg-combo"><asp:TextBox ID="txtTipo" runat="server" autocomplete="off" spellcheck="false"
+                                role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="sgComboLista"
+                                data-sgcombo="pr:tipo" aria-label="Tipo de activo" placeholder="Cualquier tipo" /><asp:HiddenField ID="hdnTipo" runat="server" /><button type="button" class="sg-combo-btn" tabindex="-1" aria-label="Ver opciones"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></span>
                             <span class="sigma-modal-ayuda">A qué familia de equipos aplica. Vacío = cualquiera.</span>
                         </div>
                         <div class="sigma-modal-field is-chico">

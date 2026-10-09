@@ -786,6 +786,21 @@
 .cp-root .cp-rtbl .cp-rr.cp-off{opacity:.6}
 .cp-root .cp-rtbl .cp-s b{display:block;font-size:13px}
 .cp-root .cp-rtbl .cp-s small{display:block;font-size:11.5px;color:var(--muted)}
+/* 391 · responsables (uno o más) e integrantes del grupo, con foto o iniciales */
+.cp-root .cp-rtbl2 .cp-rr{align-items:start}
+.cp-root .cp-rps{display:flex;flex-direction:column;gap:8px;min-width:0}
+.cp-root .cp-rp{display:flex;align-items:center;gap:10px;min-width:0;padding:6px 8px;border-radius:10px;background:var(--surface-2)}
+.cp-root .cp-rp .cp-s{flex:1;min-width:0}
+.cp-root .cp-rp .cp-s b{display:flex;align-items:center;gap:6px;font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-root .cp-rp .cp-s small{display:block;font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-root .cp-rp .cp-ibx{width:26px;height:26px;flex:none}
+.cp-root .cp-rp .cp-tg{font-size:10px;padding:1px 7px}
+.cp-root img.cp-av{object-fit:cover;background:var(--surface-2)}
+.cp-root .cp-gm{display:flex;flex-direction:column;gap:6px;padding:8px;border-radius:12px;box-shadow:inset 0 0 0 1px var(--line3)}
+.cp-root .cp-gm .cp-lb2{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.cp-root .cp-gm .cp-rp{background:transparent;padding:2px 0}
+.cp-root .cp-mut{font-size:12px;color:var(--muted)}
+.cp-root .cp-avl{display:flex;flex-direction:column;gap:6px}
 .cp-root .cp-sel.cp-wrn{border-color:#E9B77A}
 .cp-root .cp-t5{align-self:flex-start}
 .cp-root .cp-rv{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:18px;align-items:start}
@@ -1277,6 +1292,12 @@ body:has(#cpRoot) .content-page .container-fluid{padding-top:12px!important;max-
 .cp-root .cp-wiz button.cp-bad i{background:var(--red);color:#fff}
 .cp-root .cp-wiz-b{display:flex;flex-direction:column;gap:14px}
 .cp-root .cp-pers{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px 14px}
+/* 391 · cada persona con su foto o iniciales, perfil y especialidad */
+.cp-root .cp-pers .cp-swp{display:flex;min-width:0;padding:6px 8px;border-radius:10px;background:var(--surface-2)}
+.cp-root .cp-swp .cp-s{min-width:0;display:flex;flex-direction:column}
+.cp-root .cp-swp .cp-s b{font-size:12.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-root .cp-swp .cp-s small{font-size:11px;font-weight:500;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cp-root .cp-pers{grid-template-columns:repeat(auto-fill,minmax(240px,1fr))}
 
 /* ---- el panel, la confirmación y el popover van sobre la topbar del sitio ---- */
 .cp-root .cp-scr{z-index:1040}

@@ -129,15 +129,7 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
         RadComboBox2 ctrl = (RadComboBox2)sender;
         int cliente = SitioBase.Session.ClienteId();
 
-        if (ctrl.ID == "cboTipo")
-        {
-            ActivoTipoController c = new ActivoTipoController();
-            ctrl.Items.Add(new RadComboBoxItem("Cualquier tipo", ""));
-            ctrl.AppendDataBoundItems = true;
-            ctrl.DataSource = c.GetActivoTipos(new ActivoTipo { filtro_cliente = cliente, filtro_habilitado = true });
-            ctrl.DataValueField = "ati_id"; ctrl.DataTextField = "ati_nombre"; ctrl.DataBind();
-        }
-        else if (ctrl.ID == "cboPermisoTipo")
+        if (ctrl.ID == "cboPermisoTipo")
         {
             PermisoTrabajoController c = new PermisoTrabajoController();
             ctrl.Items.Add(new RadComboBoxItem("Seleccione...", ""));
@@ -235,7 +227,12 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
         txtDuracion.Text = x.prc_duracion_estimada_minuto != null ? x.prc_duracion_estimada_minuto.ToString() : "";
         EsGlobal = x.es_global;
 
-        if (x.prc_activo_tipo != null) SeleccionarCombo(cboTipo, x.prc_activo_tipo.Value);
+        if (x.prc_activo_tipo != null)
+        {
+            ActivoTipo t = Tipos().Find(o => o.ati_id == x.prc_activo_tipo.Value);
+            hdnTipo.Value = x.prc_activo_tipo.Value.ToString();
+            txtTipo.Text = t != null ? t.ati_nombre : "";
+        }
 
         rdbPermisoSi.Checked = x.prc_requiere_permiso;
         rdbPermisoNo.Checked = !x.prc_requiere_permiso;
@@ -298,6 +295,36 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
         return i != null ? i.Text : "";
     }
 
+    /* Tipos de activo del cliente para el combo de SIGMA (se piden una vez por carga). */
+    private List<ActivoTipo> _tipos;
+    private List<ActivoTipo> Tipos()
+    {
+        if (_tipos == null)
+        {
+            try { _tipos = new ActivoTipoController().GetActivoTipos(new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }); }
+            catch (Exception) { _tipos = null; }
+            if (_tipos == null) _tipos = new List<ActivoTipo>();
+        }
+        return _tipos;
+    }
+
+    /// <summary>Las opciones de «Tipo de activo» como arreglo JS para SigmaCombo.</summary>
+    public string TiposJson()
+    {
+        List<object> l = new List<object> { new Dictionary<string, object> { { "id", "" }, { "n", "Cualquier tipo" } } };
+        foreach (ActivoTipo t in Tipos())
+            l.Add(new Dictionary<string, object> { { "id", t.ati_id.ToString() }, { "n", t.ati_nombre } });
+        /* Va dentro de un <script>: "</" se corta para que un nombre no cierre la etiqueta. */
+        return new System.Web.Script.Serialization.JavaScriptSerializer().Serialize(l).Replace("</", "<\\/");
+    }
+
+    /// <summary>La url de una hoja o un script con la fecha del archivo como version.</summary>
+    protected string Asset(string ruta)
+    {
+        string f = Server.MapPath(ruta);
+        return ResolveUrl(ruta) + "?v=" + (System.IO.File.Exists(f) ? System.IO.File.GetLastWriteTimeUtc(f).Ticks.ToString() : "1");
+    }
+
     private void SeleccionarCombo(RadComboBox2 combo, int id)
     {
         RadComboBoxItem item = combo.FindItemByValue(id.ToString());
@@ -324,7 +351,7 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
             : "<span class=\"sg-pr-res-ver\">Sin código todavía</span>";
 
         litChipTipo.Text = Server.HtmlEncode(
-            !string.IsNullOrEmpty(cboTipo.SelectedValue) ? TextoCombo(cboTipo) : "Cualquier tipo de activo");
+            !string.IsNullOrEmpty(hdnTipo.Value) && txtTipo.Text.Trim().Length > 0 ? txtTipo.Text.Trim() : "Cualquier tipo de activo");
 
         string estimacion = txtDuracion.Text.Trim();
         litChipEstimacion.Text = estimacion.Length > 0
@@ -459,7 +486,7 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
         txtNombre.ReadOnly = !puedeEditar;
         txtDuracion.ReadOnly = !puedeEditar;
         txtDescripcion.ReadOnly = !puedeEditar;
-        cboTipo.ReadOnly = !puedeEditar;
+        txtTipo.ReadOnly = !puedeEditar;
         rdbSi.Enabled = puedeEditar;
         rdbNo.Enabled = puedeEditar;
         rdbPermisoSi.Enabled = puedeEditar;
@@ -832,8 +859,9 @@ public partial class View_Mantenimiento_Procedimientos_Procedimiento : System.We
             int duracion;
             if (int.TryParse(txtDuracion.Text.Trim(), out duracion)) x.prc_duracion_estimada_minuto = duracion;
 
-            if (!string.IsNullOrEmpty(cboTipo.SelectedValue))
-                x.prc_activo_tipo = int.Parse(cboTipo.SelectedValue);
+            int tipo;
+            if (int.TryParse(hdnTipo.Value, out tipo) && tipo > 0)
+                x.prc_activo_tipo = tipo;
             else
                 x.quita_tipo = true;   // al editar, dejarlo sin tipo
 
