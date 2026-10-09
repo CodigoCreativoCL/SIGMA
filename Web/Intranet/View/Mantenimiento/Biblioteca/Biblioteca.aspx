@@ -1,7 +1,7 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="Biblioteca.aspx.cs" Inherits="View_Mantenimiento_Biblioteca_Biblioteca" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <%-- Biblioteca (09-10-2026, parte a del rediseño de Mantenimiento en cinco lugares).
+    <%-- Procedimientos y pautas (09-10-2026, parte a del rediseño de Mantenimiento en cinco lugares).
          Misma cáscara que el Centro de Planificación: header .cp-hero, pestañas por hash
          y panel; el contenido de cada pestaña lo registra su parte (MantLugar.tab).
          Plan: MD/PLAN_MODERNIZACION_MANTENIMIENTO.md --%>
@@ -19,13 +19,13 @@
             <header class="cp-hero">
                 <div class="cp-hero-title">
                     <span class="cp-hero-eyebrow">Mantenimiento</span>
-                    <h1>Biblioteca</h1>
-                    <p>Lo que se reutiliza: procedimientos, pautas de inspección, calendarios y ajustes.</p>
+                    <h1>Procedimientos y pautas</h1>
+                    <p>Cómo se hace el trabajo y qué se revisa: procedimientos, pautas de inspección, calendarios compartidos y ajustes.</p>
                 </div>
                 <div class="cp-hero-actions" id="mlAcc"></div>
             </header>
             <section class="cp-panel">
-                <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Biblioteca" id="mlTabs"></nav>
+                <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Procedimientos y pautas" id="mlTabs"></nav>
                 <div id="mlBody" role="tabpanel" aria-live="polite"></div>
             </section>
         </div>

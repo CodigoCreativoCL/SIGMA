@@ -2,7 +2,7 @@
 using System.Web.Script.Serialization;
 
 /// <summary>
-/// Biblioteca: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
+/// Procedimientos y pautas: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
 /// cinco lugares). El servidor solo entrega la configuración; cada pestaña se
 /// pinta en el navegador (Js/sigma-mant-lugar.js y el JS de su parte).
 /// </summary>
@@ -20,12 +20,12 @@ public partial class View_Mantenimiento_Biblioteca_Biblioteca : System.Web.UI.Pa
         ConfigJson = new JavaScriptSerializer().Serialize(new
         {
             lugar = "biblioteca",
-            titulo = "Biblioteca",
+            titulo = "Procedimientos y pautas",
             base_ = ResolveUrl("~/"),
             cliente = SitioBase.Session.ClienteId(),
             usuario = SitioBase.Session.UsuarioId(),
             tabs = new object[] {
-                new { k = "procedimientos", n = "Procedimientos", parte = "e", hace = "Los procedimientos reutilizables de los planes.", enlaces = new object[] { new { n = "Abrir Biblioteca", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=biblioteca&lib=proc") } } },
+                new { k = "procedimientos", n = "Procedimientos", parte = "e", hace = "Los procedimientos reutilizables de los planes.", enlaces = new object[] { new { n = "Abrir procedimientos", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=biblioteca&lib=proc") } } },
                 new { k = "pautas", n = "Pautas de inspección", parte = "e", hace = "Pautas con secciones, ítems críticos, umbrales y versiones.", enlaces = new object[] { new { n = "Pautas de inspección", url = ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistCentro.aspx?legacy=1") } } },
                 new { k = "calendarios", n = "Calendarios compartidos", parte = "e", hace = "Calendarios compartidos entre planes, inspecciones y tareas.", enlaces = new object[] { new { n = "Abrir calendarios", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=biblioteca&lib=cal") } } },
                 new { k = "ajustes", n = "Ajustes", parte = "e", hace = "Categorías de tarea, tipos de OT y motivos de descarte, con su conteo de uso.", enlaces = new object[] { new { n = "Categorías de tarea", url = ResolveUrl("~/View/Mantenimiento/Tareas/TareaCategorias.aspx?legacy=1") } } }
