@@ -16,6 +16,14 @@ public partial class View_Mantenimiento_Tareas_Tareas : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Rediseño de Mantenimiento en cinco lugares: esta lista vive ahora en su lugar nuevo.
+        // «?legacy=1» abre la pantalla de antes mientras la pestaña nueva no la reemplace.
+        if (!IsPostBack && Request.QueryString["legacy"] != "1")
+        {
+            Response.Redirect("~/View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones", false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();

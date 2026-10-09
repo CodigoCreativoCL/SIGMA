@@ -31,6 +31,14 @@ public partial class View_Mantenimiento_Checklist_ChecklistCentro : System.Web.U
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Rediseño de Mantenimiento en cinco lugares: esta lista vive ahora en su lugar nuevo.
+        // «?legacy=1» abre la pantalla de antes mientras la pestaña nueva no la reemplace.
+        if (!IsPostBack && Request.QueryString["legacy"] != "1")
+        {
+            Response.Redirect("~/View/Mantenimiento/Biblioteca/Biblioteca.aspx#pautas", false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         // Enlace directo: ?query cifrado con Id de la pauta (para las
         // redirecciones de los accesos históricos).
         if (!IsPostBack && Request.QueryString["query"] != null)

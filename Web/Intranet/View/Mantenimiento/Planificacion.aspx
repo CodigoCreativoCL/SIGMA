@@ -25,8 +25,8 @@
         <div class="cp-wrap">
             <header class="cp-hero">
                 <div class="cp-hero-title">
-                    <span class="cp-hero-eyebrow">Centro de Mantenimiento</span>
-                    <h1>Centro de Planificación<span id="cpTituloPlanta"></span></h1>
+                    <span class="cp-hero-eyebrow">Mantenimiento</span>
+                    <h1>Planificación<span id="cpTituloPlanta"></span></h1>
                     <p>Qué se mantiene, cómo, cada cuánto y quién lo ejecuta.</p>
                 </div>
                 <div class="cp-hero-actions" id="cpHeroAcc"></div>

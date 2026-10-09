@@ -16,13 +16,13 @@ Reordenar el menú Mantenimiento de SIGMA en **cinco lugares**, sin duplicar pan
 
 |---|---|---|
 
-| **Operación** | ¿Qué pasa hoy y qué está atrasado? | Monitoreo · Ejecuciones (planes + rondas + tareas) · Cumplimiento |
+| **Operación** | ¿Qué pasa hoy y qué está atrasado? | Monitoreo · Ejecuciones (planes + inspecciones + tareas) · Cumplimiento |
 
 | **Órdenes de trabajo** | ¿Qué trabajo se ejecuta y en qué estado está? | Lista única de OT + ficha de OT |
 
-| **Avisos** | ¿Qué se detectó y todavía no es trabajo? | Bandeja única: fallas, hallazgos de ronda, hallazgos en OT, predicciones, alertas |
+| **Avisos** | ¿Qué se detectó y todavía no es trabajo? | Bandeja única: fallas, hallazgos de inspección, hallazgos en OT, predicciones, alertas |
 
-| **Planificación** | ¿Qué se hace, cada cuánto y quién? | Planes · Rondas de inspección · Tareas recurrentes · Cobertura |
+| **Planificación** | ¿Qué se hace, cada cuánto y quién? | Planes · Inspecciones · Tareas recurrentes · Cobertura |
 
 | **Biblioteca** | ¿Qué se reutiliza? | Procedimientos · Pautas de inspección · Calendarios compartidos · Ajustes |
 
@@ -78,7 +78,7 @@ Script nuevo `BD/3xx_MENU_MANTENIMIENTO_5_LUGARES.sql`, idempotente:
 
 **Monitoreo:** el módulo de sala de control ya especificado en `prompt-claude-code-planes-por-pasos.md`, ahora en su propio lugar. Además de las ejecuciones de planes, incluye:
 
-- ocurrencias de rondas (etiqueta «Ronda»);
+- ocurrencias de inspecciones (etiqueta «Inspección»);
 - ocurrencias de tareas (etiqueta «Tarea»);
 - OT no generadas por plan (etiqueta «OT»), por ejemplo una correctiva en ejecución que detiene un activo.
 
@@ -91,15 +91,15 @@ Un clic en una OT abre su ficha.
   - `Plan_Mantenimiento_Ocurrencia`;
   - ocurrencias de `Checklist_Programacion`;
   - ocurrencias de `Tarea`.
-- Segmento de tipo: Todo · Planes · Rondas · Tareas. Vistas: Lista · Semana · Mes. Chips de situación: Requieren atención, Vencidas, Atrasadas, Disponibles, Futuras, Con OT, Cerradas, Todas.
+- Segmento de tipo: Todo · Planes · Inspecciones · Tareas. Vistas: Lista · Semana · Mes. Chips de situación: Requieren atención, Vencidas, Atrasadas, Disponibles, Futuras, Con OT, Cerradas, Todas.
 - Acción por fila:
 
   - Plan: **Generar OT** (turquesa), individual o en lote. Mantiene las reglas actuales: no duplica y rechaza con motivo.
-  - Ronda: **Registrar**, que abre el panel con la pauta. Una vez hecha, muestra «Sin hallazgos» o «N hallazgos».
+  - Inspección: **Registrar**, que abre el panel con la pauta. Una vez hecha, muestra «Sin hallazgos» o «N hallazgos».
   - Tarea: **Hecha** con un clic y Deshacer. El panel permite **Escalar a OT**.
-- Solo los planes entran en la selección en lote. Las rondas y tareas muestran la casilla deshabilitada con un tooltip.
+- Solo los planes entran en la selección en lote. Las inspecciones y tareas muestran la casilla deshabilitada con un tooltip.
 
-**Registrar ronda (panel):**
+**Registrar inspección (panel):**
 
 - Ítems de la pauta vigente, agrupados por sección. Respuestas según el tipo de ítem:
 
@@ -125,12 +125,12 @@ Un clic en una OT abre su ficha.
 **Cumplimiento:**
 
 - Base: lo programado que venció en los últimos 40 días.
-- «Hecho» significa OT cerrada para los planes, o registro hecho para rondas y tareas.
+- «Hecho» significa OT cerrada para los planes, o registro hecho para inspecciones y tareas.
 - Bloques:
 
   - gráfico mensual;
-  - «Por tipo de trabajo» (Planes, Rondas, Tareas), donde cada fila filtra Ejecuciones;
-  - «Por plan, ronda o tarea», con el peor primero;
+  - «Por tipo de trabajo» (Planes, Inspecciones, Tareas), donde cada fila filtra Ejecuciones;
+  - «Por plan, inspección o tarea», con el peor primero;
   - «Por activo».
 - Las reprogramaciones se miden contra la fecha original.
 
@@ -166,7 +166,7 @@ Un clic en una OT abre su ficha.
 - Caja **Viene de** con un enlace real al origen:
 
   - Plan → ficha del plan;
-  - Aviso → panel del aviso, y desde ahí a la ronda u OT que lo encontró;
+  - Aviso → panel del aviso, y desde ahí a la inspección u OT que lo encontró;
   - Tarea → programación de la tarea;
   - Manual.
 - Barra de flujo de 4 estados.
@@ -194,7 +194,7 @@ Un clic en una OT abre su ficha.
 Implementa una vista o servicio `VW_AVISOS` que una:
 
 - `Falla` → origen Falla;
-- `Checklist_Hallazgo` → Hallazgo de ronda;
+- `Checklist_Hallazgo` → Hallazgo de inspección;
 - hallazgos registrados al ejecutar una OT → Hallazgo en OT;
 - `Prediccion` → Predicción, con su confianza;
 - alertas de medidor → Alerta.
@@ -238,11 +238,11 @@ Cada fila trae: código, origen, título, activo, componente, severidad, fecha y
 ## 7. Planificación
 
 - **Planes:** sin cambios respecto del prompt por pasos, salvo que **Monitoreo sale de aquí**. El conmutador de vista queda en Lista · Tarjetas.
-- **Rondas de inspección** (`Checklist_Programacion`):
+- **Inspecciones** (`Checklist_Programacion`):
 
   - Columnas de la lista:
 
-    - ronda;
+    - inspección;
     - pauta y versión, con el número de ítems;
     - activos;
     - frecuencia, o el calendario compartido;
@@ -267,13 +267,13 @@ Cada fila trae: código, origen, título, activo, componente, severidad, fecha y
 - **Procedimientos** y **Calendarios compartidos:** sin cambios (se mueven aquí).
 - **Pautas de inspección** (`Checklist_Plantilla` + `Version`):
 
-  - Lista con código y versión, área, ítems (y cuántos son críticos), umbrales y rondas que la usan.
+  - Lista con código y versión, área, ítems (y cuántos son críticos), umbrales y inspecciones que la usan.
   - El panel:
 
     - muestra secciones e ítems con su tipo, rango y marca de crítico;
     - muestra las dependencias;
     - permite agregar un ítem con su tipo, sección, mínimo, máximo, unidad y si es crítico;
-    - avisa qué rondas la usan («la versión nueva rige desde su próxima ronda»).
+    - avisa qué inspecciones la usan («la versión nueva rige desde su próxima inspección»).
   - El botón «Publicar vN+1» queda deshabilitado mientras no haya cambios.
 - **Ajustes:** tres catálogos con conteo de uso:
 
@@ -308,7 +308,7 @@ Cada fila trae: código, origen, título, activo, componente, severidad, fecha y
   - a 400 px no hay scroll horizontal de página;
   - las listas pasan a filas apiladas;
   - en la ficha de OT, el botón de estado baja bajo el título.
-- Cada estado del módulo tiene URL propia: `#operacion`, `#ejecuciones`, `#cumplimiento`, `#ordenes`, `#ot-OT-4688`, `#avisos`, `#planes`, `#plan-PLN-0012`, `#rondas`, `#tareas`, `#cobertura`, `#biblioteca`, `#pautas`, `#calendarios`, `#ajustes`.
+- Cada estado del módulo tiene URL propia: `#operacion`, `#ejecuciones`, `#cumplimiento`, `#ordenes`, `#ot-OT-4688`, `#avisos`, `#planes`, `#plan-PLN-0012`, `#inspecciones`, `#tareas`, `#cobertura`, `#biblioteca`, `#pautas`, `#calendarios`, `#ajustes`.
 
 ---
 
@@ -317,12 +317,12 @@ Cada fila trae: código, origen, título, activo, componente, severidad, fecha y
 1. Aviso de falla → Generar OT → Iniciar → marcar pasos → informe de cierre (valida el mínimo de 10 caracteres) → Cerrar. El aviso queda «Con OT», la OT queda cerrada y la bitácora tiene las 4 entradas.
 2. Aviso de un activo con una OT abierta: el panel sugiere vincular. Al vincular no se crea otra OT y el contador de Avisos baja.
 3. Descartar un aviso sin motivo muestra un error. Con un motivo de atajo queda descartado y se puede deshacer.
-4. Registrar una ronda con una medición fuera de rango y un «No cumple» crea 2 avisos de origen Hallazgo de ronda, enlazados a esa ronda. La ronda queda «2 hallazgos».
+4. Registrar una inspección con una medición fuera de rango y un «No cumple» crea 2 avisos de origen Hallazgo de inspección, enlazados a esa inspección. La inspección queda «2 hallazgos».
 5. Escalar una tarea atrasada crea una OT con origen Tarea. La ocurrencia queda «Con OT» y la ficha de la OT enlaza a la tarea.
 6. En Ejecuciones, Generar OT en lote solo acepta planes y respeta la regla de rechazo existente (PH-205 con correctiva en curso).
 7. Monitoreo muestra la correctiva en ejecución de PH-205 como «En mantención ahora / con parada», y el clic abre su ficha.
-8. Cumplimiento «Por tipo» suma planes, rondas y tareas. Las rondas no registradas cuentan como no cumplidas.
-9. Publicar una pauta sube la versión y las rondas que la usan muestran la versión nueva.
+8. Cumplimiento «Por tipo» suma planes, inspecciones y tareas. Las inspecciones no registradas cuentan como no cumplidas.
+9. Publicar una pauta sube la versión y las inspecciones que la usan muestran la versión nueva.
 10. Las URL antiguas del menú redirigen. No hay pantallas huérfanas en el menú y ningún permiso se pierde.
 11. Ningún texto visible dice «equipo». Ningún botón rojo hace algo reversible.
 
@@ -332,7 +332,7 @@ Entrega por partes:
 - (b) Avisos y su vista;
 - (c) ficha de OT;
 - (d) Operación;
-- (e) Rondas, Tareas y Biblioteca.
+- (e) Inspecciones, Tareas y Biblioteca.
 
 Cada parte va con una prueba manual descrita paso a paso.
 
@@ -368,7 +368,7 @@ Cada parte va con una prueba manual descrita paso a paso.
 
 **Agenda de hoy** (columna principal): línea de tiempo por hora.
 
-- Mezcla ejecuciones de planes, rondas, tareas y OT con fecha de hoy.
+- Mezcla ejecuciones de planes, inspecciones, tareas y OT con fecha de hoy.
 - Una línea roja marca la hora actual.
 - Cada fila tiene un estado: Completada, En curso, Atrasada, Pendiente, Programada o Pausada.
 - Cada fila tiene una acción directa: Generar OT, Registrar, Hecha o el número de la OT.
@@ -422,7 +422,7 @@ Cada parte va con una prueba manual descrita paso a paso.
 
   - gráfico por período con la meta;
   - «Por tipo de trabajo»;
-  - «Por plan, ronda o tarea»;
+  - «Por plan, inspección o tarea»;
   - «Por activo», con su criticidad;
   - **«Por responsable»**: un clic filtra toda Operación por esa persona.
 
@@ -506,7 +506,7 @@ Un plan, una OT o un aviso apunta a uno de estos niveles:
   - árbol del objeto mantenible, con conteo de registros por componente.
 - **Historial:** OT, fallas, hallazgos e inspecciones en una sola línea de tiempo, con filtros.
 - **Variables:** 30 días con umbrales de advertencia y crítico, valor actual y estado.
-- **Planes y rondas:** planes con su objeto mantenible, rondas y tareas.
+- **Planes y inspecciones:** planes con su objeto mantenible, inspecciones y tareas.
 - **Repuestos:** los instalados (`Componente_Repuesto_Instalacion`) y los consumidos en sus OT.
 - **SIGMA AI:** probabilidad, ventana, «Por qué lo dice» y recomendación. No crea trabajo por sí sola.
 
@@ -644,7 +644,7 @@ Todas las vistas del menú Mantenimiento usan la misma cabecera:
 
 # Anexo v5 · Asignación de activos, intervenciones y cierre con firmas
 
-## Rondas · activos que recorre (panel Nueva ronda / editar)
+## Inspecciones · activos que recorre (panel Nueva inspección / editar)
 
 **Recorrido**
 
@@ -664,7 +664,7 @@ Si la pauta elegida tiene área, se ofrece «Agregar sus N activos».
 
   - nombre, código y tipo;
   - la criticidad;
-  - «En RON-xxx» si otra ronda ya lo recorre;
+  - «En RON-xxx» si otra inspección ya lo recorre;
   - el número de orden si está elegido.
 - La lista tiene alto máximo con scroll interno; el encabezado de área queda fijo.
 
@@ -738,7 +738,7 @@ El cierre valida las firmas en el servidor, no solo en la interfaz.
 
 ## Criterios adicionales
 
-21. En la ronda, el recorrido respeta el orden elegido; «Agregar sus N activos» toma el área de la pauta, y marcar un área agrega o quita todos sus activos.
+21. En la inspección, el recorrido respeta el orden elegido; «Agregar sus N activos» toma el área de la pauta, y marcar un área agrega o quita todos sus activos.
 22. En el paso 1 del plan no hay controles que desborden la fila; el nivel del objeto mantenible y su ruta se ven a la vez.
 23. Una OT no pasa a Completada sin informe y firma del técnico, ni a Cerrada sin la firma del supervisor (y la de recepción si detuvo el activo).
 
@@ -766,7 +766,7 @@ El **mismo selector de objeto mantenible** aparece en todos los puntos donde nac
 
 | Escalar tarea a OT | OT de origen Tarea | hereda el componente de la tarea |
 
-| Ronda · cada activo del recorrido | Qué se inspecciona de ese activo | `Checklist_Programacion_Activo.componente` (nuevo) |
+| Inspección · cada activo del recorrido | Qué se inspecciona de ese activo | `Checklist_Programacion_Activo.componente` (nuevo) |
 
 | Plan · paso 1 | Intervención preventiva | `pac_activo_componente` |
 
@@ -777,7 +777,7 @@ El **mismo selector de objeto mantenible** aparece en todos los puntos donde nac
 - Si se cambia el activo, un componente que no le pertenece se descarta.
 - Un nivel sin registros se deshabilita y explica por qué.
 
-**Visualización:** la ficha de la OT, el aviso, las listas de tareas y rondas, y las ocurrencias muestran el **nombre del activo** y la ruta, nunca solo el código. El dato «Objeto mantenible» de la OT muestra el chip del nivel, el nombre completo y, debajo, el código.
+**Visualización:** la ficha de la OT, el aviso, las listas de tareas y inspecciones, y las ocurrencias muestran el **nombre del activo** y la ruta, nunca solo el código. El dato «Objeto mantenible» de la OT muestra el chip del nivel, el nombre completo y, debajo, el código.
 
 ## SIGMA AI (predicciones)
 
@@ -822,7 +822,7 @@ Todo lo que viene de una predicción usa la identidad de SIGMA AI, con los recur
 
 SIGMA AI nunca crea trabajo por sí sola: la OT predictiva se genera solo con la confirmación del usuario.
 
-## Rondas · fila del recorrido (corrección)
+## Inspecciones · fila del recorrido (corrección)
 
 - Nombre y código van en la primera línea.
 - El selector de «qué se inspecciona» va en una segunda línea a todo el ancho.
@@ -915,13 +915,13 @@ Lo mismo con SIGMA Twin deberian ser parte del plan si no lo tiene el cliente de
 1. **Varios responsables por intervención** (`BD/391`, tabla `Plan_Mantenimiento_Hito_Responsable`).
    - El primero es el **Principal** y sigue guardado en `pmh_usuario_responsable`; lista, Monitoreo y validaciones lo leen igual que antes.
    - Al generar la OT, el principal queda como responsable y los demás entran como **Apoyo** (`ota_rol_ejecucion = 2`).
-   - **Efecto:** en Operación (Hoy, Agenda, filtro «Responsable»), Ejecuciones, Rondas, Tareas y la ficha de OT, «Responsable» se muestra como avatares con el principal primero y «+N». El filtro Responsable incluye a quien sea apoyo. La asignación editable de la ficha de OT (Resumen) admite principal + apoyos, no solo uno.
-2. **Personas con foto, perfil y especialidad** (`SEL_PLAN_CENTRO_PERSONAS`). Todo selector de personas del módulo (OT nueva, Rondas, Tareas, Reasignar) usa el combo SIGMA con foto o iniciales y «perfil · especialidad». `sigma-combo.js` acepta `ini` para las iniciales.
-3. **Grupo de trabajo desglosado** (`SEL_PLAN_CENTRO_GRUPO_INTEGRANTE`): el combo muestra cuántos integrantes tiene y, elegido, los lista con el chip «Líder». Se reutiliza en OT, Rondas y Tareas.
+   - **Efecto:** en Operación (Hoy, Agenda, filtro «Responsable»), Ejecuciones, Inspecciones, Tareas y la ficha de OT, «Responsable» se muestra como avatares con el principal primero y «+N». El filtro Responsable incluye a quien sea apoyo. La asignación editable de la ficha de OT (Resumen) admite principal + apoyos, no solo uno.
+2. **Personas con foto, perfil y especialidad** (`SEL_PLAN_CENTRO_PERSONAS`). Todo selector de personas del módulo (OT nueva, Inspecciones, Tareas, Reasignar) usa el combo SIGMA con foto o iniciales y «perfil · especialidad». `sigma-combo.js` acepta `ini` para las iniciales.
+3. **Grupo de trabajo desglosado** (`SEL_PLAN_CENTRO_GRUPO_INTEGRANTE`): el combo muestra cuántos integrantes tiene y, elegido, los lista con el chip «Líder». Se reutiliza en OT, Inspecciones y Tareas.
 4. **Áreas en árbol** (`SEL_PLAN_AREA_ARBOL`, `AreasArbol()`): el filtro **Área** de Operación y el selector de activo agrupado por área de «Nueva OT» y «Reportar falla» muestran área madre y líneas con sangría. Nunca una lista plana de «Línea 1» repetidas.
 5. **«Hoy» y «ahora» en hora de la planta** (`BD/392`, `BD/393`). Las fechas de las ejecuciones se guardan en hora de la planta pese al sufijo `_utc`. Todo SP o servicio nuevo compara con `[dbo].[FNC_AHORA]()`, **nunca con `GETUTCDATE()`**. Aplica a: Hoy, Agenda con la línea de la hora actual, vencida/atrasada/disponible, Cumplimiento (corte de 40 días), Monitoreo, `VW_AVISOS` (fecha y hora) y la regla «Generar OTs pendientes».
 6. **Ejecuciones se refrescan al activar, aplicar o desactivar un plan:** el estado de la pestaña se invalida (`EX.rango = null`). Toda pestaña nueva con caché por rango debe hacer lo mismo. Al reprogramar se conserva la **hora** de la ejecución.
-7. **Condición en línea en el paso Frecuencia** (`Condiciones`, `AgregarCondicion`, `QuitarCondicion`): «Por condición» ya no abre `Programacion.aspx` en modal. Rondas y Tareas **no** vuelven al modal para condiciones.
+7. **Condición en línea en el paso Frecuencia** (`Condiciones`, `AgregarCondicion`, `QuitarCondicion`): «Por condición» ya no abre `Programacion.aspx` en modal. Inspecciones y Tareas **no** vuelven al modal para condiciones.
 8. **Volver a «Calendario» o «Intervalo»** reactiva la regla deshabilitada (`BD/390`); y «Por medidor» guarda «Avisar antes» = 0 como NULL (`CK_PME_ANTICIPACION`).
 9. **Campañas y alertas:** `BD/381`–`383` ya fijan `QUOTED_IDENTIFIER ON`; sin eso las campañas no llegaban a nadie. Los avisos de tipo Alerta de `VW_AVISOS` dependen de esto.
 
@@ -929,7 +929,7 @@ Lo mismo con SIGMA Twin deberian ser parte del plan si no lo tiene el cliente de
 
 - **Todo script que cree un SP abre con `SET ANSI_NULLS ON` y `SET QUOTED_IDENTIFIER ON`.** Se aplica con `-I`. Revisar `sys.sql_modules` (`uses_quoted_identifier = 0`) antes de entregar. Los SP pendientes de revisar son `SEL_FALLA`, `RPT_CHECKLIST_HALLAZGO_EXCEL`, `UPS_AYUDA_PANTALLA_SINCRONIZAR`, `JOB_SIGMA_NOCTURNO` e `INS_ORDEN_TRABAJO_TIPO`. `SEL_FALLA` entra en `VW_AVISOS`, así que se corrige primero.
 - **Responsables múltiples en la OT:** «Mis OT» y la bandeja de quien es apoyo deben incluir las OT donde figura con `ota_rol_ejecucion = 2`.
-- **Monitoreo** (se mueve de Planificación a Operación): lo de BD/389 + BD/392 es la base. Al sumarle rondas, tareas y OT se mantiene la hora de planta.
+- **Monitoreo** (se mueve de Planificación a Operación): lo de BD/389 + BD/392 es la base. Al sumarle inspecciones, tareas y OT se mantiene la hora de planta.
 - **Planes:** la ficha por pasos queda como está, con el Paso 4 «Responsable» de varios responsables y el grupo desglosado. No se rehace.
 
 ## Criterios adicionales
