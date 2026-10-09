@@ -129,6 +129,27 @@ var editable = function () { return F && U.permisos.editar && F.plan.ESTADO !== 
 var ini = function (n) { return String(n || '').split(' ').filter(Boolean).map(function (w) { return w[0]; }).slice(0, 2).join('').toUpperCase(); };
 var AVC = [['#E6F0FE', '#1675F2'], ['#FFF4E6', '#B65C00'], ['#EFEBFE', '#5A30F2'], ['#DFF8F8', '#007F8A'], ['#FDECEA', '#C7352B'], ['#E7F5EE', '#16855B']];
 var avatar = function (n) { if (!n) return ''; var h = 0; for (var i = 0; i < n.length; i++) h = (h * 31 + n.charCodeAt(i)) >>> 0; var c = AVC[h % AVC.length]; return '<span class="cp-av" style="background:' + c[0] + ';color:' + c[1] + '" title="' + esc(n) + '">' + esc(ini(n)) + '</span>'; };
+/* Personas del cliente (Catalogos: NOMBRE, PERFIL, ESPECIALIDAD, FOTO): la foto si
+   tiene, si no las iniciales; perfil y especialidad en la línea secundaria. */
+var persona = function (id) { return (U.cat && U.cat.personas || []).filter(function (p) { return String(p.ID) === String(id); })[0] || null; };
+var persSub = function (p) { return p ? [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') : ''; };
+var avatarP = function (p, lg) {
+  if (!p) return '';
+  if (p.FOTO) return '<img class="cp-av cp-avi' + (lg ? ' cp-lg' : '') + '" src="' + esc(p.FOTO) + '" alt="" title="' + esc(p.NOMBRE) + '" loading="lazy">';
+  return lg ? avatar(p.NOMBRE).replace('class="cp-av"', 'class="cp-av cp-lg"') : avatar(p.NOMBRE);
+};
+var persItems = function (fuera) {
+  fuera = fuera || [];
+  return (U.cat && U.cat.personas || []).filter(function (p) { return fuera.indexOf(+p.ID) < 0; })
+    .map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: persSub(p) || 'Sin perfil', img: p.FOTO || '', ini: ini(p.NOMBRE) }; });
+};
+var persFila = function (p, extra, quitar) {
+  return '<div class="cp-rp">' + avatarP(p, true) + '<span class="cp-s"><b>' + esc(p.NOMBRE) + (extra || '') + '</b><small>' + esc(persSub(p) || 'Sin perfil') + '</small></span>' + (quitar || '') + '</div>';
+};
+/* Responsables de una intervención: ids en orden, el primero es el principal. */
+var respIds = function (i) { return (i.RESPONSABLES && i.RESPONSABLES.length ? i.RESPONSABLES : i.RESPONSABLE_ID ? [i.RESPONSABLE_ID] : []).map(Number); };
+var respNombres = function (i) { return respIds(i).map(function (id) { var p = persona(id); return p ? p.NOMBRE : ''; }).filter(Boolean); };
+var integrantes = function (g) { return (U.cat && U.cat.integrantes || []).filter(function (x) { return String(x.GRUPO_ID) === String(g); }); };
 
 /* ------------------------------------------------------------ combos y fechas del sitio */
 var combo = function (nombre, lista, sel, o) {
@@ -463,7 +484,7 @@ function stepInfo() {
   var ck = checks(), en = enab(), nAct = ints().reduce(function (t, i) { return t + (i.ACTIVIDADES || []).length; }, 0), est = planEst();
   var fqs = [], seen = {};
   en.forEach(function (i) { var f = fqDe2(i); if (!freqIssue(f)) { var s = freqCorta(f); if (!seen[s]) { seen[s] = 1; fqs.push(s); } } });
-  var resps = []; en.forEach(function (i) { var n = i.RESPONSABLE || i.GRUPO; if (n && resps.indexOf(short(n)) < 0) resps.push(short(n)); });
+  var resps = []; en.forEach(function (i) { var ns = respNombres(i); if (!ns.length && i.GRUPO) ns = [i.GRUPO]; ns.forEach(function (n) { if (resps.indexOf(short(n)) < 0) resps.push(short(n)); }); });
   var nb = ck.B.filter(function (b) { return !b.ok; }).length;
   return {
     ck: ck,
@@ -607,18 +628,32 @@ function s3HTML(E) {
 /* ---- paso 4 · responsable ---- */
 function s4HTML(E) {
   if (!ints().length) return '<div class="cp-empty cp-big"><span class="cp-ei">' + ic('users', 22) + '</span><b>Primero define el trabajo</b><span>El responsable se asigna a cada intervención.</span><button type="button" class="cp-btn cp-out" data-a="stp" data-v="2">' + chL(15) + 'Ir a Trabajo</button></div>';
-  var list = ints(), dis = !E, ids = {}; list.forEach(function (i) { ids[i.RESPONSABLE_ID || 0] = 1; });
-  var same = Object.keys(ids).length === 1 ? (list[0].RESPONSABLE_ID || '') : '';
-  var personas = [{ id: '', n: 'Sin responsable' }].concat(catL('personas'));
-  return (E && list.length > 1 ? '<div class="cp-allr"><span>' + ic('users', 16) + 'Asignar todas las intervenciones a</span><span style="min-width:240px">' + combo('cpAllResp', [{ id: '', n: 'Elegir persona…' }].concat(catL('personas')), same, { etiqueta: 'Responsable para todas', ph: 'Elegir persona…', data: ' data-ar="1"', clave: 'cpAllResps' }) + '</span></div>' : '') +
-    '<div class="cp-rtbl"><div class="cp-rh"><span>Intervención</span><span>Responsable</span><span>Grupo de trabajo <small>opcional</small></span></div>' +
+  var list = ints(), dis = !E;
+  var firmas = list.map(function (i) { return respIds(i).join(','); });
+  var same = firmas.every(function (x) { return x === firmas[0]; }) && respIds(list[0]).length === 1 ? respIds(list[0])[0] : '';
+  var grupos = [{ id: '', n: 'Sin grupo' }].concat((U.cat && U.cat.grupos || []).map(function (g) { var n = integrantes(g.ID).length; return { id: g.ID, n: g.NOMBRE, sub: n ? pl(n, 'integrante', 'integrantes') : 'Sin integrantes' }; }));
+  return (E && list.length > 1 ? '<div class="cp-allr"><span>' + ic('users', 16) + 'Asignar todas las intervenciones a</span><span style="min-width:280px">' + combo('cpAllResp', persItems(), same, { etiqueta: 'Responsable para todas', ph: 'Elegir persona…', data: ' data-ar="1"', clave: 'cpAllResps' }) + '</span></div>' : '') +
+    '<div class="cp-rtbl cp-rtbl2"><div class="cp-rh"><span>Intervención</span><span>Responsables <small>uno o más</small></span><span>Grupo de trabajo <small>opcional</small></span></div>' +
     list.map(function (i) {
-      var f = fqDe2(i);
+      var f = fqDe2(i), ids = respIds(i), id = i.HITO_ID, nom = i.NOMBRE || i.CODIGO;
+      var resp = ids.map(function (u, k) {
+        var p = persona(u) || { NOMBRE: 'Usuario ' + u };
+        return persFila(p, k === 0 && ids.length > 1 ? ' <span class="cp-tg cp-p">Principal</span>' : '',
+          E ? '<button type="button" class="cp-ibx" data-a="rrm" data-i="' + id + '" data-v="' + u + '" aria-label="Quitar a ' + esc(p.NOMBRE) + '">' + ic('x', 13) + '</button>' : '');
+      }).join('') +
+        (E ? combo('cpIvResp' + id, persItems(ids), '', { etiqueta: 'Agregar responsable a ' + nom, ph: ids.length ? 'Agregar otro responsable…' : 'Elegir responsable…', data: ' data-radd="' + id + '"', clave: 'cpRespAdd' + id })
+          : ids.length ? '' : '<small class="cp-mut">Sin responsable</small>');
+      var miembros = i.GRUPO_ID ? integrantes(i.GRUPO_ID) : [];
+      var grupo = combo('cpIvGrupo' + id, grupos, i.GRUPO_ID || '', { etiqueta: 'Grupo de ' + nom, ph: 'Sin grupo', dis: dis, data: ' data-iv="grupo" data-i="' + id + '"', clave: 'cpGrupos' }) +
+        (i.GRUPO_ID ? '<div class="cp-gm"><span class="cp-lb2">Integrantes · ' + miembros.length + '</span>' + (miembros.length ? miembros.map(function (m) {
+          var p = persona(m.USUARIO_ID) || { NOMBRE: 'Usuario ' + m.USUARIO_ID };
+          return persFila(p, m.LIDER ? ' <span class="cp-tg cp-c">Líder</span>' : '');
+        }).join('') : '<small class="cp-mut">El grupo no tiene integrantes vigentes.</small>') + '</div>' : '');
       return '<div class="cp-rr' + (i.HABILITADO ? '' : ' cp-off') + '"><span class="cp-s"><b>' + esc(i.CODIGO) + ' · ' + (esc(i.NOMBRE) || 'Sin nombre') + '</b><small>' + (freqIssue(f) ? 'Sin frecuencia' : esc(freqCorta(f))) + ' · ' + fH(i.DURACION) + '</small></span>' +
-        '<span>' + combo('cpIvResp' + i.HITO_ID, personas, i.RESPONSABLE_ID || '', { etiqueta: 'Responsable de ' + (i.NOMBRE || i.CODIGO), ph: 'Sin responsable', dis: dis, data: ' data-iv="responsable" data-i="' + i.HITO_ID + '"', clave: 'cpPersonas', err: false }) + '</span>' +
-        '<span>' + combo('cpIvGrupo' + i.HITO_ID, [{ id: '', n: 'Sin grupo' }].concat(catL('grupos')), i.GRUPO_ID || '', { etiqueta: 'Grupo de ' + (i.NOMBRE || i.CODIGO), ph: 'Sin grupo', dis: dis, data: ' data-iv="grupo" data-i="' + i.HITO_ID + '"', clave: 'cpGrupos' }) + '</span></div>';
+        '<div class="cp-rps">' + resp + '</div><div class="cp-rps">' + grupo + '</div></div>';
     }).join('') + '</div>' +
-    (enab().some(function (i) { return !i.RESPONSABLE_ID && !i.GRUPO_ID; }) ? mc('w', 'Sin responsable, las OT nacerán sin asignar y habrá que asignarlas una por una. Puedes activar igual.') : mc('i', 'Al generar cada OT, SIGMA la asigna a este responsable y su grupo.', 'help'));
+    (enab().some(function (i) { return !i.RESPONSABLE_ID && !i.GRUPO_ID; }) ? mc('w', 'Sin responsable, las OT nacerán sin asignar y habrá que asignarlas una por una. Puedes activar igual.')
+      : mc('i', 'Al generar cada OT, SIGMA la asigna al responsable principal; los demás responsables entran como apoyo.', 'help'));
 }
 
 /* ---- paso 5 · revisar / activar / aplicar / resumen ---- */
@@ -633,7 +668,7 @@ function planStory() {
   var en = enab(); if (!en.length) return '';
   var eqs = F.activos.length ? pl(F.activos.length, 'activo', 'activos') + ' (' + F.activos.slice(0, 3).map(function (a) { return esc(a.CODIGO); }).join(', ') + (F.activos.length > 3 ? '…' : '') + ')' : '<span class="cp-miss">ningún activo</span>';
   return '<ul class="cp-story">' + en.map(function (i) {
-    var f = fqDe2(i), iss = freqIssue(f), who = i.RESPONSABLE || i.GRUPO;
+    var f = fqDe2(i), iss = freqIssue(f), who = respNombres(i).join(', ') || i.RESPONSABLE || i.GRUPO;
     return '<li><span class="cp-cd">' + esc(i.CODIGO) + '</span><span><b>' + (esc(i.NOMBRE) || '<span class="cp-miss">Sin nombre</span>') + '</b> ' + (iss ? '<span class="cp-miss">· ' + esc(iss) + '</span>' : '· ' + esc(freqText(f, true, unidadMedidor()).replace(/^C/, 'c'))) + ' · en ' + eqs + ' · ' + pl((i.ACTIVIDADES || []).length || 1, 'paso', 'pasos') + ' en la OT · ' + (who ? 'asignada a <b>' + esc(who) + '</b>' : '<span class="cp-wmiss">sin responsable</span>') + '</span></li>';
   }).join('') + '</ul>';
 }
@@ -1140,7 +1175,9 @@ MODALS.del = function () { var p = F.plan; return { i: 'x', c: 'r', t: 'Eliminar
 function confirmar(fn) {
   if (U.plan) delete U.flash[U.plan];
   MD.busy = true; MD.err2 = null; modal();
-  return fn().then(function (r) { closeModal(); return r; }, function (e) { if (MD) { MD.busy = false; MD.err2 = e.message; modal(); } throw e; });
+  /* Activar, aplicar, desactivar o reactivar cambia las ejecuciones: la pestaña
+     las vuelve a pedir al entrar (antes mostraba las de antes hasta un F5). */
+  return fn().then(function (r) { closeModal(); EX.rango = null; return r; }, function (e) { if (MD) { MD.busy = false; MD.err2 = e.message; modal(); } throw e; });
 }
 
 /* =====================================================================
@@ -1592,6 +1629,7 @@ function comboCambio(span) {
   var v = valorCombo(span), nombre = span.getAttribute('data-cb');
   if (nombre === 'cpPlanta') { if (+v !== U.planta) { U.planta = +v || 0; pintarCascara(); recargarTodo(); } return; }
   if (span.hasAttribute('data-ar')) return asignarTodas(v);
+  if (span.hasAttribute('data-radd')) return respAgregar(span.getAttribute('data-radd'), v);
   if (span.hasAttribute('data-pp') && PN && PN.d) return setPP(span, v);
   if (span.hasAttribute('data-pf')) return planCampo(span.getAttribute('data-pf'), v);
   if (span.hasAttribute('data-iv')) return ivCampo(span, span.getAttribute('data-iv'), v);
@@ -1607,10 +1645,24 @@ function comboCambio(span) {
   if (TABR[U.tab] && TABR[U.tab].combo) TABR[U.tab].combo(span, v);
 }
 function asignarTodas(v) {
-  var list = ints().filter(function (i) { return String(i.RESPONSABLE_ID || '') !== String(v || ''); });
+  var list = ints().filter(function (i) { return respIds(i).join(',') !== String(v || ''); });
   if (!v || !list.length) return;
   list.forEach(function (i, k) { escribir('GuardarIntervencion', { plan: pid(), hito: i.HITO_ID, campo: 'responsable', valor: String(v) }, k < list.length - 1 ? { sinFicha: true } : {}).catch(toastError); });
 }
+/* 391 · responsables: la lista completa viaja en cada cambio (ids en orden). */
+function respGuardar(h, ids, msg) {
+  escribir('GuardarIntervencion', { plan: pid(), hito: h.HITO_ID, campo: 'responsable', valor: ids.join(',') }).then(function () { if (msg) toast(msg); }).catch(toastError);
+}
+function respAgregar(hid, v) {
+  var h = hById(hid); if (!h || !v) return;
+  var ids = respIds(h); if (ids.indexOf(+v) >= 0) return;
+  var p = persona(v);
+  respGuardar(h, ids.concat([+v]), p ? p.NOMBRE + (ids.length ? ' se agregó como responsable.' : ' es el responsable.') : '');
+}
+A.rrm = function (d) {
+  var h = hById(d.i); if (!h) return;
+  respGuardar(h, respIds(h).filter(function (x) { return x !== +d.v; }));
+};
 function planCampo(campo, v) {
   var p = F.plan;
   var actual = { nombre: p.NOMBRE, planta: p.PLANTA_ID, tipo: p.TIPO_ID, modelo: p.MODELO_ID }[campo];
@@ -2044,10 +2096,14 @@ XA.rpok = function (d, t) {
   var x = PN.x || exDe(PN.k);
   if (!PN.nd || String(PN.why || '').trim().length < 5) { PN.err = true; panel(); return; }
   t.classList.add('cp-load');
-  api('Reprogramar', { token: x.TOKEN, fecha: PN.nd, motivo: PN.why.trim() }).then(function () {
-    closePanel(); toast('Ejecución reprogramada al ' + fDL(PN.nd) + '. El cumplimiento sigue midiendo la fecha original.');
+  /* La fecha se guarda ANTES de cerrar: closePanel() deja PN en null y el aviso
+     fallaba, cortando la recarga (la ejecución seguía «Vencida» hasta un F5).
+     Se conserva la hora de la ejecución: sin ella quedaba a las 00:00. */
+  var nd = PN.nd, hora = hIso(x.FECHA_PROGRAMADA);
+  api('Reprogramar', { token: x.TOKEN, fecha: nd + (hora ? 'T' + hora : ''), motivo: PN.why.trim() }).then(function () {
+    closePanel(); toast('Ejecución reprogramada al ' + fDL(nd) + '. El cumplimiento sigue midiendo la fecha original.');
     return Promise.all([exCargar(true), recargarKpis(), recargarLista(), U.plan ? recargarFicha() : null]);
-  }).catch(function (e) { t.classList.remove('cp-load'); PN.err2 = e.message; PN.err = false; panel(); });
+  }).catch(function (e) { t.classList.remove('cp-load'); if (!PN) { toastError(e); return; } PN.err2 = e.message; PN.err = false; panel(); });
 };
 XA.gen1 = function (d, t, e) { if (e) e.stopPropagation(); generar([d.k], t); };
 XA.genbulk = function (d, t) { generar(Object.keys(EX.sel), t); };
@@ -2301,6 +2357,35 @@ var calErr = function () {
   return e;
 };
 function calSeg(f, k, opts) { return '<div class="cp-segc" role="group">' + opts.map(function (o) { return '<button type="button" data-a="calset" data-k="' + k + '" data-v="' + o[0] + '" aria-pressed="' + (String(f[k]) === String(o[0])) + '">' + o[1] + '</button>'; }).join('') + '</div>'; }
+/* 391 · Área desglosada: cada área seguida de sus hijas, con su tipo y sangría
+   (Panadería › Línea 1). La búsqueda encuentra también por el área madre. */
+function calAreas(alc) {
+  return [{ id: '', n: 'Cualquier área' }].concat((alc.areas || []).map(function (a) {
+    return { id: a.id, n: a.n, sub: a.sub ? 'En ' + a.sub : '', txt: a.ruta, tag: { k: a.nivel ? 's' : 'a', t: a.tipo || 'Área' }, nivel: Math.min(+a.nivel || 0, 3) };
+  }));
+}
+function calAreaRuta(alc, id) { var a = (alc.areas || []).filter(function (x) { return String(x.id) === String(id); })[0]; return a ? a.ruta || a.n : ''; }
+/* Personas del calendario ({id, n, sub, foto}): la foto o las iniciales. */
+function calAvatar(p) { return p.foto ? '<img class="cp-av cp-avi cp-lg" src="' + esc(p.foto) + '" alt="" loading="lazy">' : avatar(p.n).replace('class="cp-av"', 'class="cp-av cp-lg"'); }
+function calPersFila(p, extra) { return '<div class="cp-rp">' + calAvatar(p) + '<span class="cp-s"><b>' + esc(p.n) + (extra || '') + '</b><small>' + esc(p.sub || 'Sin perfil') + '</small></span></div>'; }
+/* Revisión · Asignación: en lista, cada persona con su foto o sus iniciales;
+   un grupo muestra sus integrantes vigentes. */
+function calAsignacion(d, cat, alc) {
+  if (d.modo === 'persona') {
+    var sel = cat.personas.filter(function (p) { return d.personas[p.id]; });
+    return sel.length ? '<div class="cp-avl">' + sel.map(function (p) { return calPersFila(p); }).join('') + '</div>' : '—';
+  }
+  if (d.modo === 'grupo') {
+    var g = (alc.grupos || []).filter(function (z) { return String(z.id) === String(d.grupo); })[0];
+    if (!g) return '—';
+    var ms = integrantes(g.id).map(function (m) {
+      var p = cat.personas.filter(function (x) { return String(x.id) === String(m.USUARIO_ID); })[0];
+      return p ? calPersFila(p, m.LIDER ? ' <span class="cp-tg cp-c">Líder</span>' : '') : '';
+    }).join('');
+    return '<div class="cp-avl"><b>' + esc(g.n) + '</b>' + (ms || '<small class="cp-mut">El grupo no tiene integrantes vigentes.</small>') + '</div>';
+  }
+  return 'Sin asignar';
+}
 function calCombo(k, lista, val, etq, ph, extra) { return combo('cpCal' + k, lista, val, { etiqueta: etq, ph: ph || etq, data: ' data-pp="' + k + '"' + (extra || ''), clave: 'cpCal' + k }); }
 PANELS.cal = function () {
   if (PN.cargando) return { t: 'Calendario compartido', s: 'Biblioteca · Calendarios', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:260px"></div>' };
@@ -2317,17 +2402,17 @@ PANELS.cal = function () {
   if (paso === 2) {
     b = mc('i', 'El alcance dice dónde aplica el calendario. Es opcional: sin él, aplica a quien lo use.', 'help') +
       '<div class="cp-fld"><label>Planta</label>' + calCombo('planta', [{ id: '', n: 'Todas las plantas' }].concat(CFG.plantas || []), d.planta, 'Planta', 'Todas las plantas') + '</div>' +
-      '<div class="cp-grid2c"><div class="cp-fld"><label>Área</label>' + calCombo('area', [{ id: '', n: 'Cualquier área' }].concat(alc.areas), d.area, 'Área', 'Cualquier área') + '</div><div class="cp-fld"><label>Activo</label>' + calCombo('activo', [{ id: '', n: 'Cualquier activo' }].concat(alc.activos), d.activo, 'Activo', 'Cualquier activo') + '</div></div>' +
+      '<div class="cp-grid2c"><div class="cp-fld"><label>Área</label>' + calCombo('area', calAreas(alc), d.area, 'Área', 'Cualquier área') + '</div><div class="cp-fld"><label>Activo</label>' + calCombo('activo', [{ id: '', n: 'Cualquier activo' }].concat(alc.activos), d.activo, 'Activo', 'Cualquier activo') + '</div></div>' +
       (PN.alc ? '' : '<div class="cp-sk" style="height:20px"></div>') + (errDe(2).length ? mc('', esc(errDe(2)[0][1])) : '');
   }
   if (paso === 3) {
     b = '<div class="cp-fld"><span class="cp-lb">Quién ejecuta lo que genere</span>' + calSeg(d, 'modo', CAL_ASIG) + '</div>' +
       (d.modo === 'persona' ? (function () {
         var q = nrm(d.pq || ''), nSel = Object.keys(d.personas).length;
-        var lista = cat.personas.filter(function (p) { return !q || nrm(p.n).indexOf(q) >= 0; }).sort(function (x, y) { return x.n.localeCompare(y.n); });
+        var lista = cat.personas.filter(function (p) { return !q || nrm(p.n + ' ' + (p.sub || '')).indexOf(q) >= 0; }).sort(function (x, y) { return x.n.localeCompare(y.n); });
         return '<div class="cp-fld"><span class="cp-lb">Personas <small>' + (nSel ? pl(nSel, 'elegida', 'elegidas') : 'elige una o varias') + '</small></span>' +
           '<label class="cp-srch2" style="height:36px">' + ic('search', 14) + '<input data-pp="pq" value="' + esc(d.pq || '') + '" placeholder="Buscar por nombre o cargo" aria-label="Buscar personas" autocomplete="off"></label>' +
-          '<div class="cp-pers">' + (lista.map(function (p) { return '<label class="cp-sw"><input type="checkbox" data-a="calpers" data-v="' + p.id + '"' + (d.personas[p.id] ? ' checked' : '') + '><i></i>' + esc(p.n) + '</label>'; }).join('') || '<span style="font-size:12.5px;color:var(--muted)">Nadie coincide con «' + esc(d.pq) + '».</span>') + '</div>' + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>';
+          '<div class="cp-pers">' + (lista.map(function (p) { return '<label class="cp-sw cp-swp"><input type="checkbox" data-a="calpers" data-v="' + p.id + '"' + (d.personas[p.id] ? ' checked' : '') + '><i></i>' + calAvatar(p) + '<span class="cp-s"><b>' + esc(p.n) + '</b><small>' + esc(p.sub || 'Sin perfil') + '</small></span></label>'; }).join('') || '<span style="font-size:12.5px;color:var(--muted)">Nadie coincide con «' + esc(d.pq) + '».</span>') + '</div>' + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>';
       })() : '') +
       (d.modo === 'grupo' ? '<div class="cp-fld"><label>Grupo de trabajo</label>' + calCombo('grupo', [{ id: '', n: 'Elige el grupo' }].concat(alc.grupos), d.grupo, 'Grupo de trabajo', 'Elige el grupo') + (e && errDe(3).length ? mc('', esc(errDe(3)[0][1])) : '') + '</div>' : '') +
       (d.modo === 'nadie' ? mc('i', 'Sin asignar: lo que se genere nace sin responsable y se asigna una por una.', 'help') : '');
@@ -2364,8 +2449,8 @@ PANELS.cal = function () {
     var fila = function (k, v) { return '<div class="cp-rw" style="grid-template-columns:150px minmax(0,1fr)"><span style="color:var(--muted);font-weight:700">' + k + '</span><span>' + v + '</span></div>'; };
     b = (errs.length ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>Falta completar:</b><ul style="margin:4px 0 0;padding-left:18px">' + errs.map(function (x) { return '<li><button type="button" class="cp-lnk" data-a="calpaso" data-v="' + x[0] + '">' + CAL_PASOS[x[0] - 1] + '</button>: ' + esc(x[1]) + '</li>'; }).join('') + '</ul></span></div>' : '<div class="cp-bnr cp-ok">' + ic('check', 18) + '<span>Todo listo para crear el calendario.</span></div>') +
       '<div class="cp-rows">' + fila('Nombre', esc(d.nombre || '—')) + fila('Frecuencia', esc(freqText(f, false)) || '—') + fila('Vigencia', fDN(f.from) + (f.to ? ' al ' + fDN(f.to) : ' · sin fin')) +
-      fila('Zona horaria', esc(nm(cat.zonas, d.zona) || '(sin definir)')) + fila('Alcance', esc([nm(CFG.plantas || [], d.planta) || 'Todas las plantas', nm(alc.areas, d.area), nm(alc.activos, d.activo)].filter(Boolean).join(' · '))) +
-      fila('Asignación', d.modo === 'persona' ? esc(cat.personas.filter(function (p) { return d.personas[p.id]; }).map(function (p) { return p.n; }).join(', ')) : d.modo === 'grupo' ? esc(nm(alc.grupos, d.grupo) || '—') : 'Sin asignar') +
+      fila('Zona horaria', esc(nm(cat.zonas, d.zona) || '(sin definir)')) + fila('Alcance', esc([nm(CFG.plantas || [], d.planta) || 'Todas las plantas', calAreaRuta(alc, d.area), nm(alc.activos, d.activo)].filter(Boolean).join(' · '))) +
+      fila('Asignación', calAsignacion(d, cat, alc)) +
       fila('Exclusiones', d.excl.length ? pl(d.excl.length, 'exclusión', 'exclusiones') : 'Ninguna') + fila('Generación', d.genera ? 'Automática' : 'Manual') + '</div>' + (PN.err2 ? mc('', esc(PN.err2)) : '');
   }
   return { t: d.id ? 'Editar calendario compartido' : 'Nuevo calendario compartido', s: 'Biblioteca · Calendarios · paso ' + paso + ' de 6', w: 'w',

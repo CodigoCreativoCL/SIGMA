@@ -8,6 +8,7 @@
        marca lo que coincide;
      - ofrece «Crear "lo escrito"» solo si se permite y no existe ya;
      - cada opción puede traer foto (img) y una línea secundaria (sub);
+       sin foto, ini pinta las iniciales en su lugar (personas);
      - teclado completo: flechas, Enter, Tab y Escape.
 
    DOS MODOS
@@ -19,7 +20,7 @@
 
    USO
      SigmaCombo.html(nombre, lista, sel, o) -> el HTML del campo.
-       lista: [{id, n, txt?, sub?, img?}] o ['texto', ...]
+       lista: [{id, n, txt?, sub?, img?, ini?}] o ['texto', ...]
        o: { ph, req, crear, texto, libre, vacio, clave, fuente, etiqueta, clase, id }
          clave  : nombre de la definición (por defecto, el nombre del campo).
                   Varias filas con el mismo campo comparten la clave.
@@ -122,7 +123,7 @@
                        '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
             }
             if (op.x.sub != null || op.x.img != null)
-                return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : '<i></i>') + '</span>' : '') +
+                return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : op.x.ini ? '<b class="cb-ini">' + esc(op.x.ini) + '</b>' : '<i></i>') + '</span>' : '') +
                        '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
             /* En un span: la <li> es flex con gap y, suelto, el <mark>
                quedaba separado del resto de la palabra ("Mot  or"). */
