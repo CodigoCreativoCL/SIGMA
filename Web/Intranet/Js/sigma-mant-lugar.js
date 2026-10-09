@@ -60,6 +60,7 @@
     tab: function (k, def) { REG[k] = typeof def === 'function' ? { mount: def } : def; if (cur === k) ir(k, true); },
     badge: function (k, n) { badges[k] = n; if (cur) pintarTabs(); },
     heroRefresh: pintarHero,
+    lead: function (t) { var p = $('.cp-hero-title p'); if (p) p.textContent = t; },
     ir: ir,
     on: function (o) { ['pv', 'combo', 'fecha', 'key'].forEach(function (n) { if (o[n]) H[n].push(o[n]); }); }
   };

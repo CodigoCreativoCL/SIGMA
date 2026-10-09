@@ -113,3 +113,14 @@
 .cp-root .cp-og.cp-o5{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
 .cp-root .cp-og.cp-o6{background:var(--sigma-blue-soft);color:var(--sigma-blue-dark)}
 .cp-root .cp-og.cp-o3{background:#E7F5EE;color:var(--ok-ink)}
+
+/* Sin espacios muertos: las tarjetas se acomodan en columnas según su alto (mampostería) */
+.cp-root .cp-mas{columns:2 440px;column-gap:14px}
+.cp-root .cp-mas > *{break-inside:avoid;display:block;margin:0 0 14px}
+.cp-root .cp-sgg{align-items:start}
+.cp-root .cp-mas-op .cp-trd-g{grid-template-columns:1fr 1fr}
+.cp-root .cp-mas-op .cp-arb-g{grid-template-columns:repeat(auto-fill,minmax(158px,1fr))}
+.cp-root .cp-otsum{flex-wrap:wrap}
+.cp-root .cp-mas-op .cp-at3-m{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:2px}
+.cp-root .cp-mas-op .cp-at3-m span{min-width:0;font-size:10.5px;text-align:center;overflow:hidden;text-overflow:ellipsis}
+.cp-root .cp-mas-op .cp-at3-m span b{display:block;font-size:15px}

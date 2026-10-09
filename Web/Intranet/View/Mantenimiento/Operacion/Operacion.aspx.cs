@@ -7,7 +7,7 @@ using System.Linq;
 using System.Web.Script.Serialization;
 
 /// <summary>
-/// Operación: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
+/// Operación de mantenimiento: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
 /// cinco lugares). El servidor solo entrega la configuración; cada pestaña se
 /// pinta en el navegador (Js/sigma-mant-lugar.js y el JS de su parte).
 /// </summary>
@@ -27,9 +27,9 @@ public partial class View_Mantenimiento_Operacion_Operacion : System.Web.UI.Page
         ConfigJson = new JavaScriptSerializer().Serialize(new
         {
             lugar = "operacion",
-            titulo = "Operación",
+            titulo = "Operación de mantenimiento",
             base_ = ResolveUrl("~/"),
-            ws = ResolveUrl("~/WebService/"),
+            ws = ResolveUrl("~/WebService/WsOperacion.asmx/"),
             hoy = Hora.Hoy.ToString("yyyy-MM-dd"),
             plantas = plantas.OrderBy(p => p.cin_nombre).Select(p => new { id = p.cin_id, n = p.cin_nombre }).ToList(),
             cliente = SitioBase.Session.ClienteId(),

@@ -256,7 +256,7 @@
 
   /* ------------------------------------------------------------ registro de la pestaña */
   L.tab('avisos', {
-    mount: function (body) { body.innerHTML = '<div id="avRoot"></div>'; cargar(); },
+    mount: function (body) { body.innerHTML = '<div id="avRoot"></div>'; var abrir = /[#&]nuevo=1/.test(location.hash); cargar().then(function () { if (abrir && U.perm.reportar) { try { history.replaceState(null, '', '#avisos'); } catch (e) { } panelFalla(); } }); },
     hero: function () { return U.perm.reportar ? '<button type="button" class="cp-btn cp-pri" data-a="falla">' + ic('alert', 16) + 'Reportar falla</button>' : ''; },
     planta: function () { cargar(); }
   });
