@@ -1,4 +1,9 @@
-﻿using System;
+﻿using SitioBase;
+using SitioBase.Controller;
+using SitioBase.Model;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Web.Script.Serialization;
 
 /// <summary>
@@ -17,11 +22,16 @@ public partial class View_Mantenimiento_Avisos_Avisos : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        List<ClienteInstalacion> plantas = new ClienteInstalacionController().GetClienteInstalaciones(
+            new ClienteInstalacion { cin_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = "1" }) ?? new List<ClienteInstalacion>();
         ConfigJson = new JavaScriptSerializer().Serialize(new
         {
             lugar = "avisos",
             titulo = "Avisos",
             base_ = ResolveUrl("~/"),
+            ws = ResolveUrl("~/WebService/WsAvisos.asmx/"),
+            hoy = Hora.Hoy.ToString("yyyy-MM-dd"),
+            plantas = plantas.OrderBy(p => p.cin_nombre).Select(p => new { id = p.cin_id, n = p.cin_nombre }).ToList(),
             cliente = SitioBase.Session.ClienteId(),
             usuario = SitioBase.Session.UsuarioId(),
             tabs = new object[] {
