@@ -98,7 +98,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             return new
             {
                 plantas = SoporteDatos.Del(c, 0), tipos = SoporteDatos.Del(c, 1), modelos = SoporteDatos.Del(c, 2),
-                personas = SoporteDatos.Del(c, 3), grupos = SoporteDatos.Del(c, 4), otTipos = SoporteDatos.Del(c, 5),
+                personas = Personas(), grupos = SoporteDatos.Del(c, 4),
+                integrantes = SoporteDatos.Filas("SEL_PLAN_CENTRO_GRUPO_INTEGRANTE", "@CLIENTE", Cli()),
+                otTipos = SoporteDatos.Del(c, 5),
                 prioridades = SoporteDatos.Del(c, 6), permisos = SoporteDatos.Del(c, 7), frecuencias = SoporteDatos.Del(c, 8),
                 unidades = SoporteDatos.Del(c, 9), dias = SoporteDatos.Del(c, 10), calendarios = SoporteDatos.Del(c, 11),
                 hoy = global::SitioBase.Hora.Hoy.ToString("yyyy-MM-dd"),
@@ -343,7 +345,10 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                     else if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN_TRABAJO_TIPO", n }); else p.AddRange(new object[] { "@QUITA_OT_TIPO", true });
                     break;
                 case "prioridad": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN_TRABAJO_PRIORIDAD", n }); else p.AddRange(new object[] { "@QUITA_OT_PRIORIDAD", true }); break;
-                case "responsable": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@USUARIO_RESPONSABLE", n }); else p.AddRange(new object[] { "@QUITA_RESPONSABLE", true }); break;
+                case "responsable":
+                    // 391: uno o más responsables, ids en orden separados por coma; el primero queda como principal.
+                    SoporteDatos.Conjuntos("UPS_PLAN_HITO_RESPONSABLE", "@CLIENTE", Cli(), "@HITO", h, "@USUARIOS", vacio ? "" : valor, "@USUARIO", U());
+                    return new { ok = true, hito = h, recargar = Bool(m, "CREADO") };
                 case "grupo": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@GRUPO_TRABAJO", n }); else p.AddRange(new object[] { "@QUITA_GRUPO", true }); break;
                 case "orden": if (int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN", n }); break;
                 default: throw new Exception("El campo no existe.");
@@ -574,6 +579,52 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         if (h <= 0) throw new Exception("La intervención ya no está en la planificación.");
         Dictionary<string, object> r = SoporteDatos.Fila("UPS_PLAN_HITO_FRECUENCIA", "@CLIENTE", Cli(), "@HITO", h, "@TIPO_CODIGO", "CONDICION", "@USUARIO", U());
         return Entero(r, "PROGRAMACION");
+    }
+
+    /// <summary>
+    /// Las personas del cliente para elegir responsables: nombre, perfil,
+    /// especialidad y la URL de su foto (vacía si no tiene: la pantalla pinta
+    /// las iniciales). ID y NOMBRE se mantienen para los combos de siempre.
+    /// </summary>
+    private static List<Dictionary<string, object>> Personas()
+    {
+        List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_CENTRO_PERSONAS", "@CLIENTE", Cli());
+        foreach (Dictionary<string, object> p in l)
+        {
+            int foto = Entero(p, "FOTO_ID");
+            p["FOTO"] = foto > 0 ? SitioBase.UrlArchivo.Ver(foto) : "";
+        }
+        return l;
+    }
+
+    /// <summary>
+    /// Las áreas de una planta desglosadas: cada madre seguida de sus hijas,
+    /// con su nivel y su tipo (Panadería › Línea 1). Sin planta no hay áreas:
+    /// devolver todas invitaría a elegir un área de otra planta.
+    /// </summary>
+    private static List<object> AreasArbol(int planta)
+    {
+        List<object> r = new List<object>();
+        if (planta <= 0) return r;
+        List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_AREA_ARBOL", "@CLIENTE", Cli(), "@INSTALACION", planta);
+        HashSet<int> ids = new HashSet<int>(l.Select(a => Entero(a, "ID")));
+        // Una hija cuya madre no vino (deshabilitada) se muestra como raíz.
+        ILookup<int, Dictionary<string, object>> hijas = l.ToLookup(a => ids.Contains(Entero(a, "PADRE_ID")) ? Entero(a, "PADRE_ID") : 0);
+        HashSet<int> vistos = new HashSet<int>();
+        Action<int, int, string> bajar = null;
+        bajar = (padre, nivel, ruta) =>
+        {
+            foreach (Dictionary<string, object> a in hijas[padre])
+            {
+                int id = Entero(a, "ID");
+                if (!vistos.Add(id)) continue;
+                string nombre = Texto(a, "NOMBRE");
+                r.Add(new { id = id, n = nombre, nivel = nivel, tipo = Texto(a, "TIPO"), ruta = ruta.Length > 0 ? ruta + " › " + nombre : nombre, sub = ruta });
+                bajar(id, nivel + 1, ruta.Length > 0 ? ruta + " › " + nombre : nombre);
+            }
+        };
+        bajar(0, 0, "");
+        return r;
     }
 
     private static List<Dictionary<string, object>> CondicionesDe(int programacion)
@@ -990,7 +1041,13 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             if (!Token.Puede("CREAR EDITAR PROGRAMACIONES")) throw new Exception("No tienes permiso para crear calendarios.");
             ProgramacionController pc = new ProgramacionController();
             Func<List<CatalogoItem>, object> m = l => (l ?? new List<CatalogoItem>()).Select(x => new { id = x.id, n = x.nombre, codigo = x.codigo }).ToList();
-            return new { zonas = m(pc.GetCatalogo("ZONA_HORARIA")), politicas = m(pc.GetCatalogo("CUMPLIMIENTO_POLITICA")), personas = m(pc.GetCatalogoAlcance("RESPONSABLE")) };
+            // 391: las personas con perfil, especialidad y foto (la revisión las lista con su avatar).
+            object personas = Personas().Select(p => new
+            {
+                id = Entero(p, "ID"), n = Texto(p, "NOMBRE"), foto = Texto(p, "FOTO"),
+                sub = string.Join(" · ", new[] { Texto(p, "PERFIL"), Texto(p, "ESPECIALIDAD") }.Where(x => x.Length > 0))
+            }).ToList();
+            return new { zonas = m(pc.GetCatalogo("ZONA_HORARIA")), politicas = m(pc.GetCatalogo("CUMPLIMIENTO_POLITICA")), personas = personas };
         });
     }
 
@@ -1005,7 +1062,7 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             ProgramacionController pc = new ProgramacionController();
             int? inst = planta > 0 ? (int?)planta : null;
             Func<List<CatalogoItem>, object> m = l => (l ?? new List<CatalogoItem>()).Select(x => new { id = x.id, n = x.nombre }).ToList();
-            return new { areas = m(pc.GetCatalogoAlcance("AREA", inst)), activos = m(pc.GetCatalogoAlcance("ACTIVO", inst)), grupos = m(pc.GetGrupos(inst)) };
+            return new { areas = AreasArbol(planta), activos = m(pc.GetCatalogoAlcance("ACTIVO", inst)), grupos = m(pc.GetGrupos(inst)) };
         });
     }
 
@@ -1278,6 +1335,8 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         foreach (Dictionary<string, object> a in acts) a["REPUESTOS"] = rep[Entero(a, "ACTIVIDAD_ID")].ToList();
         ILookup<int, Dictionary<string, object>> actPorHito = acts.ToLookup(r => Entero(r, "HITO_ID"));
         ILookup<int, Dictionary<string, object>> proxPorHito = SoporteDatos.Del(c, 15).ToLookup(r => Entero(r, "HITO_ID"));
+        // 391: los responsables de cada intervención (ids en orden; el primero es el principal).
+        ILookup<int, int> respPorHito = SoporteDatos.Filas("SEL_PLAN_HITO_RESPONSABLE", "@CLIENTE", cli, "@PLAN", plan).ToLookup(r => Entero(r, "HITO_ID"), r => Entero(r, "USUARIO_ID"));
 
         foreach (Dictionary<string, object> h in hitos)
         {
@@ -1290,6 +1349,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             h["CONDICIONES"] = con[p].ToList();
             h["ACTIVIDADES"] = actPorHito[Entero(h, "HITO_ID")].ToList();
             h["FECHAS"] = proxPorHito[Entero(h, "HITO_ID")].ToList();
+            List<int> resp = respPorHito[Entero(h, "HITO_ID")].ToList();
+            if (resp.Count == 0 && Entero(h, "RESPONSABLE_ID") > 0) resp.Add(Entero(h, "RESPONSABLE_ID"));
+            h["RESPONSABLES"] = resp;
         }
 
         ActivoImagenController imagenes = new ActivoImagenController();
