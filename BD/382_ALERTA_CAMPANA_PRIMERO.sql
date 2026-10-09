@@ -1,5 +1,11 @@
 ﻿USE [db_acd593_sigma]
 GO
+SET ANSI_NULLS ON
+GO
+/* QUOTED_IDENTIFIER ON al crear: Alerta tiene un indice filtrado (IX_ALE_ABIERTA) y sin esto
+   el SP queda compilado con OFF y su INSERT falla (error 1934). Asi se corto la entrega de campanas. */
+SET QUOTED_IDENTIFIER ON
+GO
 /* 382 — El aviso de una campana (formato notificacion) aparece primero en el panel de alertas mientras no se lea y durante 7 dias.
    Antes SEL_ALERTA ordenaba solo por severidad y el aviso (sin severidad) quedaba al final, fuera de lo que muestra la campana. IDEMPOTENTE. */
 CREATE OR ALTER PROCEDURE [dbo].[SEL_ALERTA]

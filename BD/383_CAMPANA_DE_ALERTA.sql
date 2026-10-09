@@ -1,5 +1,11 @@
 ﻿USE [db_acd593_sigma]
 GO
+SET ANSI_NULLS ON
+GO
+/* QUOTED_IDENTIFIER ON al crear: Alerta tiene un indice filtrado (IX_ALE_ABIERTA) y sin esto
+   el SP queda compilado con OFF y su INSERT falla (error 1934). Asi se corto la entrega de campanas. */
+SET QUOTED_IDENTIFIER ON
+GO
 /* 383 — Abrir de nuevo la campana desde su aviso del panel de alertas (como modal).
    Devuelve la campana de una alerta dirigida a la persona, sin mirar la frecuencia. IDEMPOTENTE. */
 CREATE OR ALTER PROCEDURE [dbo].[SEL_CAMPANA_DE_ALERTA]

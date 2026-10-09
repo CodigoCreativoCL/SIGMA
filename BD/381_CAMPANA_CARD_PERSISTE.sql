@@ -1,5 +1,11 @@
 ﻿USE [db_acd593_sigma]
 GO
+SET ANSI_NULLS ON
+GO
+/* QUOTED_IDENTIFIER ON al crear: Alerta tiene un indice filtrado (IX_ALE_ABIERTA) y sin esto
+   el SP queda compilado con OFF y su INSERT falla (error 1934). Asi se corto la entrega de campanas. */
+SET QUOTED_IDENTIFIER ON
+GO
 /* 381 — «Te puede interesar»: la card no desaparece tras la primera vista.
    SEL_CAMPANA_PENDIENTES devuelve ahora la columna MOSTRAR (1 = la frecuencia permite interrumpir con modal/banner). 
    El aviso de la campana (formato notificacion) quedaba al final del panel de alertas: SEL_ALERTA ordena por
