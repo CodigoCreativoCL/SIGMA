@@ -214,11 +214,24 @@ CREATE OR ALTER PROCEDURE [dbo].[SEL_OPERACION_AREAS]
     @INSTALACION INT = NULL
 AS
 SET NOCOUNT ON
-SELECT iar.iar_id AS ID, iar.iar_nombre AS NOMBRE, cin.cin_nombre AS PLANTA
-FROM   [dbo].[Instalacion_Area] iar
-JOIN   [dbo].[Cliente_Instalacion] cin ON cin.cin_id = iar.iar_cliente_instalacion
-WHERE  iar.iar_cliente = @CLIENTE AND iar.iar_habilitado = 1 AND (@INSTALACION IS NULL OR iar.iar_cliente_instalacion = @INSTALACION)
-ORDER BY cin.cin_nombre, iar.iar_orden, iar.iar_nombre
+/* RUTA = «Planta › área padre › …» (sin la propia área): así «Línea 1» se distingue de otra «Línea 1». */
+;WITH T AS (
+    SELECT iar.iar_id AS ID, iar.iar_nombre AS NOMBRE, iar.iar_area_padre AS PADRE, iar.iar_cliente_instalacion AS PLANTA_ID, iar.iar_orden AS ORDEN,
+           CAST(N'' AS NVARCHAR(500)) AS RUTA, CAST(RIGHT('0000' + CAST(iar.iar_orden AS VARCHAR(4)), 4) + iar.iar_nombre AS NVARCHAR(900)) AS CLAVE
+    FROM   [dbo].[Instalacion_Area] iar
+    WHERE  iar.iar_cliente = @CLIENTE AND iar.iar_habilitado = 1 AND iar.iar_area_padre IS NULL
+    UNION ALL
+    SELECT h.iar_id, h.iar_nombre, h.iar_area_padre, h.iar_cliente_instalacion, h.iar_orden,
+           CAST(CASE WHEN t.RUTA = N'' THEN t.NOMBRE ELSE t.RUTA + N' › ' + t.NOMBRE END AS NVARCHAR(500)),
+           CAST(t.CLAVE + N'/' + RIGHT('0000' + CAST(h.iar_orden AS VARCHAR(4)), 4) + h.iar_nombre AS NVARCHAR(900))
+    FROM   [dbo].[Instalacion_Area] h JOIN T t ON t.ID = h.iar_area_padre
+    WHERE  h.iar_cliente = @CLIENTE AND h.iar_habilitado = 1
+)
+SELECT t.ID, t.NOMBRE, cin.cin_nombre AS PLANTA, t.RUTA, cin.cin_nombre + CASE WHEN t.RUTA = N'' THEN N'' ELSE N' › ' + t.RUTA END AS UBICACION
+FROM   T t JOIN [dbo].[Cliente_Instalacion] cin ON cin.cin_id = t.PLANTA_ID
+WHERE  (@INSTALACION IS NULL OR t.PLANTA_ID = @INSTALACION)
+ORDER BY cin.cin_nombre, t.CLAVE
+OPTION (MAXRECURSION 20)
 RETURN 0
 GO
 PRINT '400_OPERACION_HOY aplicado.'

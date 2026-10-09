@@ -157,3 +157,28 @@
 .cp-root .cp-ex-f{display:flex;flex-wrap:wrap;gap:8px;align-items:center;flex:1 1 100%}
 .cp-root .cp-ex-f .sg-combo{flex:0 1 260px;min-width:180px}
 .cp-root .cp-ex-bar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px}
+.cp-root .cp-kq-row + .cp-kq-row{margin-top:10px}
+.cp-root .cp-cm-bar{margin-bottom:12px}
+.cp-root .cp-byk-i{grid-template-columns:128px minmax(0,1fr) 52px 74px}
+.cp-root .cp-byk-i > span:first-child{white-space:nowrap}
+/* Cumplimiento aireado (09-10-2026): separación entre bloques y tarjetas con respiro */
+.cp-root #cmRoot{display:flex;flex-direction:column;gap:18px}
+.cp-root #cmRoot > *{margin:0!important}
+.cp-root #cmRoot .cp-cm-bar{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:2px 2px 0}
+.cp-root #cmRoot .cp-kq{padding:18px 20px 16px;gap:4px}
+.cp-root #cmRoot .cp-kq-row{box-shadow:var(--e1)}
+.cp-root #cmRoot .cp-mas{column-gap:18px}
+.cp-root #cmRoot .cp-mas > *{margin-bottom:18px;padding:22px 24px}
+.cp-root #cmRoot .cp-mas .cp-sc-h{margin-bottom:12px!important}
+.cp-root #cmRoot .cp-byk{display:flex;flex-direction:column;gap:12px}
+.cp-root #cmRoot .cp-rows{display:flex;flex-direction:column;gap:6px}
+.cp-root #cmRoot .cp-rw{padding:10px 12px;border-radius:10px}
+.cp-root .cp-cm-per{display:flex;align-items:center;gap:10px;height:44px;padding:0 6px 0 14px;border-radius:12px;background:#fff;border:1px solid var(--line3);color:var(--muted);font-weight:800;font-size:12px;box-shadow:var(--e1)}
+.cp-root .cp-cm-per .cp-mes{display:flex;align-items:center;gap:6px}
+.cp-root .cp-cm-per .cp-mes input[type=text]{width:150px;height:34px;border:0;border-radius:9px;background:var(--surface-2);color:var(--ink);font-weight:800;padding:0 10px;cursor:pointer}
+.cp-root label.cp-cm-per,.cp-root .cp-hsel.cp-cm-per{color:var(--ink)!important}
+.cp-root #cmRoot .cp-byk-i{grid-template-columns:150px minmax(0,1fr) 52px 74px;gap:12px}
+/* Ficha de OT: las tarjetas de cada pestaña van una bajo otra con aire, como el mockup */
+.cp-root .cp-otb{display:flex;flex-direction:column;gap:14px}
+.cp-root .cp-otb > .cp-card,.cp-root .cp-otg .cp-card{margin:0}
+.cp-root .cp-otg .cp-rp + .cp-rp{margin-top:6px}

@@ -109,7 +109,7 @@ var p360 = function (seccion, extra) {
 
 /* ------------------------------------------------------------ estado */
 var EST = { BORRADOR: ['draft', 'Borrador'], ACTIVO: ['active', 'Activo'], CAMBIOS: ['changes', 'Activo · cambios sin aplicar'], INACTIVO: ['inactive', 'Inactivo'] };
-var TABS = [['planes', 'Planes'], ['ejecuciones', 'Ejecuciones'], ['cumplimiento', 'Cumplimiento'], ['cobertura', 'Cobertura'], ['biblioteca', 'Biblioteca']];
+var TABS = [['planes', 'Planes'], ['inspecciones', 'Inspecciones'], ['tareas', 'Tareas recurrentes'], ['cobertura', 'Cobertura']];
 var U = {
   tab: 'planes', planta: 0, periodo: CFG.periodo, plan: null, pf: 'all', q: '', multi: {},
   lista: null, conteos: null, permisos: {}, cat: null, kpis: null,
@@ -281,9 +281,11 @@ function heroAcciones() {
     ? '<span class="cp-hsel">Planta <b>' + esc(plantas[0].n) + '</b></span>'
     : '<label class="cp-hsel">Planta' + combo('cpPlanta', [{ id: 0, n: 'Todas las plantas' }].concat(plantas), U.planta, { etiqueta: 'Planta', ph: 'Todas las plantas' }) + '</label>';
   var mesTxt = function (v) { var m = /^(\d{4})-(\d{2})$/.exec(v || ''); return m ? MES[+m[2] - 1].charAt(0).toUpperCase() + MES[+m[2] - 1].slice(1) + ' ' + m[1] : ''; };
-  var per = '<label class="cp-hsel">Período<span class="sigma-modal-fecha cp-mes"><input type="text" id="cpPeriodo" data-sgcal-modo="mes" data-valor="' + esc(U.periodo) + '" value="' + esc(mesTxt(U.periodo)) + '" aria-label="Período: mes y año" autocomplete="off"><a role="button" tabindex="0" aria-label="Elegir mes y año"></a></span></label>';
   var ed = U.permisos.editar;
-  return pla + per +
+  if (U.tab === 'inspecciones') return pla + '<button type="button" class="cp-hbtn cp-pri" data-a="insnueva"' + (ed ? '' : ' disabled') + '>' + ic('plus', 17) + 'Nueva inspección</button>';
+  if (U.tab === 'tareas') return pla + '<button type="button" class="cp-hbtn cp-pri" data-a="tarnueva"' + (ed ? '' : ' disabled') + '>' + ic('plus', 17) + 'Nueva tarea</button>';
+  if (U.tab !== 'planes') return pla;
+  return pla +
     '<button type="button" class="cp-hbtn cp-teal" data-a="bulkload"' + (ed ? '' : ' disabled title="No tienes permiso para crear planes"') + '>' + ic('upload', 17) + 'Carga masiva</button>' +
     '<button type="button" class="cp-hbtn cp-pri" data-a="newplan"' + (ed ? '' : ' disabled title="No tienes permiso para crear planes"') + ' aria-haspopup="dialog">' + ic('plus', 17) + 'Nuevo plan</button>';
 }
@@ -301,11 +303,11 @@ function kpisHTML() {
 }
 function tabsHTML() {
   var c = U.conteos || {}, att = (U.kpis || {}).urgente || 0, sin = U.cob.sinPlan;
-  var n = { planes: c.todos, ejecuciones: att, cobertura: sin };
+  var n = { planes: c.todos, inspecciones: INS.filas ? INS.filas.length : null, tareas: TAR.filas ? TAR.filas.length : null, cobertura: sin };
   return TABS.map(function (t) {
     var k = t[0], v = n[k];
     return '<button type="button" role="tab" id="cpTab-' + k + '" aria-selected="' + (U.tab === k) + '" tabindex="' + (U.tab === k ? 0 : -1) + '" data-a="tab" data-t="' + k + '">' + t[1] +
-      (v != null ? '<b class="' + (k === 'ejecuciones' && v ? 'cp-r' : '') + '">' + v + '</b>' : '') + '</button>';
+      (v != null ? '<b class="' + (k === 'cobertura' && v ? 'cp-r' : '') + '">' + v + '</b>' : '') + '</button>';
   }).join('');
 }
 function pintarCascara() {
@@ -389,7 +391,8 @@ function listBody() {
 function listHTML() {
   var c = U.conteos || {}, nm = Object.keys(U.multi).length;
   if (U.lista && !U.lista.length) return '<div class="cp-card"><div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('calw', 22) + '</span><b>Todavía no hay planes' + (U.planta ? ' en ' + esc(plantaN(U.planta)) : '') + '</b><span style="max-width:52ch">Un plan reúne el mantenimiento preventivo de uno o varios activos: qué se hace, cada cuánto y quién lo ejecuta.</span>' + (U.permisos.editar ? '<button type="button" class="cp-btn cp-pri" data-a="newplan">' + ic('plus', 16) + 'Nuevo plan</button>' : '') + '</div></div>';
-  var vistas = [['list', 'Lista', 'vlist'], ['cards', 'Tarjetas', 'vgrid'], ['cal', 'Monitoreo', 'gauge']];
+  if (U.pv === 'cal') U.pv = 'list';
+  var vistas = [['list', 'Lista', 'vlist'], ['cards', 'Tarjetas', 'vgrid']];
   return '<section class="cp-card cp-plt" aria-label="Planes"><div class="cp-plt-bar"><div class="cp-plt-r1"><label class="cp-srch2">' + ic('search', 15) + '<input id="cpQ" value="' + esc(U.q) + '" placeholder="Buscar por plan, código, activo o intervención" aria-label="Buscar planes" autocomplete="off"></label>' +
     '<div class="cp-vt" role="group" aria-label="Ver como">' + vistas.map(function (v) { return '<button type="button" data-a="pview" data-v="' + v[0] + '" aria-pressed="' + (U.pv === v[0]) + '" title="Ver como ' + v[1].toLowerCase() + '">' + ic(v[2], 16) + '<span>' + v[1] + '</span></button>'; }).join('') + '</div></div>' +
     '<div class="cp-chips">' + PF.map(function (x) { return '<button type="button" class="cp-fc" data-a="pf" data-v="' + x[0] + '" aria-pressed="' + (U.pf === x[0]) + '">' + (x[0] === 'att' ? '<i style="background:var(--red)"></i>' : '') + x[1] + '<b>' + (c[x[2]] || 0) + '</b></button>'; }).join('') + '</div></div>' +
@@ -1036,6 +1039,7 @@ function goEl(sel, focusSel) {
 function switchTab(t, extra) {
   if (!TABS.some(function (x) { return x[0] === t; })) t = 'planes';
   U.tab = t; cerrarPop();
+  var ha = $('#cpHeroAcc'); if (ha) { ha.dataset.ok = ''; pintarCascara(); }
   if (TABR[t] && TABR[t].entrar) { TABR[t].entrar(extra || {}); }
   render(); hashOut();
 }
@@ -1795,6 +1799,7 @@ function recargarTodo() {
   return Promise.all([recargarLista(), recargarKpis()]).then(function () {
     if (U.plan && !U.lista.some(function (p) { return p.PLAN_ID === U.plan; })) { U.plan = null; F = null; }
     Object.keys(TABR).forEach(function (k) { if (TABR[k].planta) TABR[k].planta(); });
+    insCargar(); tarCargar();
     render(); hashOut();
   }).catch(toastError);
 }
@@ -1820,6 +1825,7 @@ function iniciar() {
     if (U.tab !== 'planes' && TABR[U.tab] && TABR[U.tab].entrar) TABR[U.tab].entrar({});
     if (sel) abrirPlan(sel.PLAN_ID, { top: false, paso: +h.paso >= 1 && +h.paso <= 5 ? +h.paso : 0 }); else render();
     if (U.tab !== 'cobertura' && TABR.cobertura) cobCargar();
+    insCargar(); tarCargar();
     recargarKpis();
   }).catch(function (e) { toastError(e); $('#cpBody').innerHTML = '<div class="cp-empty" style="margin:20px"><span class="cp-ei">' + ic('alert', 20) + '</span><b>No se pudo cargar el Centro de Planificación</b>' + esc(e.message) + '<button type="button" class="cp-btn cp-out cp-sm" onclick="location.reload()">Reintentar</button></div>'; });
 }
@@ -2114,6 +2120,79 @@ TABR.cumplimiento = {
   html: cumHTML, entrar: function () { setTimeout(function () { cumCargar(); }, 0); },
   periodo: function () { cumCargar(); }, planta: function () { CU.d = null; if (U.tab === 'cumplimiento') cumCargar(); },
   A: { cumplan: function (d) { U.tab = 'planes'; abrirPlan(+d.v); } }
+};
+/* =====================================================================
+   INSPECCIONES y TAREAS RECURRENTES (mockup · parte e)
+   Una fila por programación de inspección / por tarea, con su pauta o categoría, dónde, frecuencia,
+   responsable, próxima y el cumplimiento de los últimos 30 días. Editar abre el formulario del sitio.
+   ===================================================================== */
+var INS = { filas: null, q: '', error: '' }, TAR = { filas: null, q: '', error: '' };
+function insCargar() { INS.error = ''; return api('Inspecciones', { planta: U.planta }).then(function (r) { INS.filas = r.filas || []; $('#cpTabs').innerHTML = tabsHTML(); if (U.tab === 'inspecciones') render(); }).catch(function (e) { INS.filas = INS.filas || []; INS.error = e.message || 'Error'; if (U.tab === 'inspecciones') render(); }); }
+function tarCargar() { TAR.error = ''; return api('Tareas', { planta: U.planta }).then(function (r) { TAR.filas = r.filas || []; $('#cpTabs').innerHTML = tabsHTML(); if (U.tab === 'tareas') render(); }).catch(function (e) { TAR.filas = TAR.filas || []; TAR.error = e.message || 'Error'; if (U.tab === 'tareas') render(); }); }
+var lNorm = function (t) { return String(t || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); };
+function proxCell(x) { return x.PROXIMA ? '<b>' + fD(x.PROXIMA) + '</b><small>' + rel(String(x.PROXIMA).slice(0, 10)) + '</small>' : '<b>—</b><small>Sin próxima</small>'; }
+function ultCell(x) {
+  var t = +x.TOTAL, h = +x.HECHAS;
+  if (!t) return '<small>Sin registros aún</small>';
+  var p = Math.round(100 * h / t);
+  return '<span class="cp-mbar"><i class="' + (p < 90 ? 'cp-low' : '') + '" style="width:' + p + '%"></i></span><small>' + h + ' de ' + t + '</small>';
+}
+function ayudaHTML(t) { return '<div class="cp-hint2">' + ic('help', 15) + '<span>' + t + '</span></div>'; }
+function insHTML() {
+  var f = INS.filas;
+  if (!f) return skel();
+  var q = lNorm(INS.q), l = f.filter(function (x) { return !q || lNorm([x.NOMBRE, x.CODIGO, x.PAUTA, x.DONDE, x.DONDE_CODIGO].join(' ')).indexOf(q) >= 0; });
+  var cols = 'minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.1fr) 130px minmax(0,1fr) 22px';
+  var rows = l.map(function (x) {
+    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="insabrir" data-q="' + esc(x.Q) + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + '</b><small>' + esc(x.CODIGO) + (x.PLANTA ? ' · ' + esc(x.PLANTA) : '') + '</small></span>' +
+      '<span class="cp-s"><b>' + esc(x.PAUTA) + '</b><small>' + pl(+x.ITEMS, 'ítem', 'ítems') + ' · ' + esc(x.PAUTA_NOMBRE) + '</small></span>' +
+      '<span class="cp-s"><b>' + esc(x.DONDE) + '</b><small>' + esc(x.DONDE_CODIGO) + '</small></span>' +
+      '<span class="cp-s"><b>' + esc(x.FRECUENCIA) + '</b></span>' +
+      '<span class="cp-who">' + avatar(x.RESPONSABLE) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
+      '<span class="cp-ult">' + ultCell(x) + '</span><span class="cp-go">' + ic('chev', 15) + '</span></div>';
+  }).join('');
+  return ayudaHTML('Una inspección recorre activos con una <b>pauta</b>. Se programa aquí, se registra en <a class="cp-lnk" href="' + esc(CFG.base_ + 'View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones') + '">Operación › Ejecuciones</a> y lo que no cumple llega a <a class="cp-lnk" href="' + esc(CFG.base_ + 'View/Mantenimiento/Avisos/Avisos.aspx') + '">Avisos</a>.') +
+    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpInsQ" value="' + esc(INS.q) + '" placeholder="Inspección, código o activo" aria-label="Buscar inspección" autocomplete="off"></div>' +
+    (l.length ? '<div class="cp-rows"><div class="cp-rw cp-h" style="grid-template-columns:' + cols + '"><span>Inspección</span><span>Pauta</span><span>Activos</span><span>Frecuencia</span><span>Próxima</span><span>Últimos 30 días</span><span></span></div>' + rows + '</div>'
+      : '<div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('clip', 22) + '</span><b>' + (f.length ? 'Ninguna inspección coincide' : 'Todavía no hay inspecciones programadas') + '</b>' + (INS.error ? esc(INS.error) : 'Crea la primera con «Nueva inspección».') + '</div>') + '</div>';
+}
+function tarHTML() {
+  var f = TAR.filas;
+  if (!f) return skel();
+  var q = lNorm(TAR.q), l = f.filter(function (x) { return !q || lNorm([x.NOMBRE, x.CODIGO, x.CATEGORIA, x.DONDE, x.DONDE_CODIGO].join(' ')).indexOf(q) >= 0; });
+  var cols = 'minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.1fr) 130px minmax(0,1fr) 22px';
+  var rows = l.map(function (x) {
+    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="tarabrir" data-q="' + esc(x.Q) + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + '</b><small>' + esc(x.CODIGO) + (+x.ESCALADAS ? ' · <span class="cp-lnk">' + pl(+x.ESCALADAS, 'escalada a OT', 'escaladas a OT') + '</span>' : '') + '</small></span>' +
+      '<span class="cp-s"><b class="cp-cat"><i style="background:' + esc(x.COLOR) + '"></i>' + esc(x.CATEGORIA) + '</b></span>' +
+      '<span class="cp-s"><b>' + esc(x.DONDE) + '</b><small>' + esc(x.DONDE_CODIGO) + '</small></span>' +
+      '<span class="cp-s"><b>' + esc(x.FRECUENCIA) + '</b></span>' +
+      '<span class="cp-who">' + avatar(x.RESPONSABLE) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
+      '<span class="cp-ult">' + ultCell(x) + '</span><span class="cp-go">' + ic('chev', 15) + '</span></div>';
+  }).join('');
+  return ayudaHTML('Una tarea es trabajo rutinario y breve: <b>no es una OT</b>. Si al hacerla aparece un problema, se escala a OT desde Operación › Ejecuciones.') +
+    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpTarQ" value="' + esc(TAR.q) + '" placeholder="Tarea, categoría o activo" aria-label="Buscar tarea" autocomplete="off"></div>' +
+    (l.length ? '<div class="cp-rows"><div class="cp-rw cp-h" style="grid-template-columns:' + cols + '"><span>Tarea</span><span>Categoría</span><span>Dónde</span><span>Frecuencia</span><span>Próxima</span><span>Últimos 30 días</span><span></span></div>' + rows + '</div>'
+      : '<div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('check', 22) + '</span><b>' + (f.length ? 'Ninguna tarea coincide' : 'Todavía no hay tareas recurrentes') + '</b>' + (TAR.error ? esc(TAR.error) : 'Crea la primera con «Nueva tarea».') + '</div>') + '</div>';
+}
+var URL_INS = function (q) { return CFG.base_ + 'View/Mantenimiento/Checklist/ChecklistProgramacion.aspx' + (q ? '?query=' + q : ''); };
+var URL_TAR = function (q) { return CFG.base_ + 'View/Mantenimiento/Tareas/Tarea.aspx' + (q ? '?query=' + q : ''); };
+TABR.inspecciones = {
+  html: insHTML, entrar: function () { if (!INS.filas) insCargar(); },
+  planta: function () { INS.filas = null; insCargar(); },
+  escribir: function (t) { if (t.id === 'cpInsQ') { INS.q = t.value; render(); } },
+  A: {
+    insabrir: function (d) { abrirModalSitio(URL_INS(d.q), 'Inspección programada', insCargar); },
+    insnueva: function () { abrirModalSitio(URL_INS(''), 'Nueva inspección', insCargar); }
+  }
+};
+TABR.tareas = {
+  html: tarHTML, entrar: function () { if (!TAR.filas) tarCargar(); },
+  planta: function () { TAR.filas = null; tarCargar(); },
+  escribir: function (t) { if (t.id === 'cpTarQ') { TAR.q = t.value; render(); } },
+  A: {
+    tarabrir: function (d) { location.href = URL_TAR(d.q); },
+    tarnueva: function () { location.href = URL_TAR(''); }
+  }
 };
 TABR.cobertura = {
   html: covHTML, entrar: function () { setTimeout(function () { cobCargar(); }, 0); },

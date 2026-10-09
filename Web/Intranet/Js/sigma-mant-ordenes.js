@@ -149,12 +149,13 @@
   }
   function cabecera(F) {
     var o = F.ot, e = +o.otr_orden_trabajo_estado, parada = necesitaRec(F), fi = estadoVisual(F), resp = F.asignaciones.filter(function (a) { return +a.ota_es_responsable === 1; })[0];
+    var nResp = F.asignaciones.filter(function (a) { return +a.ota_es_responsable === 1; }).length;
     var nombreResp = resp ? (resp.USUARIO_NOMBRE || resp.PROVEEDOR_NOMBRE) : '', est = +o.otr_duracion_estimada_minuto || 0, hrs = minutosReg(F), ratio = est ? hrs / est : 0;
     var prog = o.otr_fecha_programada_utc ? K.dIso(o.otr_fecha_programada_utc) : '';
     return '<section class="cp-card cp-oth"><div class="cp-oth-t"><div style="min-width:0"><div class="cp-oth-id"><span class="cp-mono">' + otTxt(o.otr_correlativo) + '</span>' + estChip(e, tieneAsignado(F)) + '<span class="cp-tg">' + (TIPOS[o.otr_orden_trabajo_tipo] || '') + '</span><span class="cp-tg' + (+o.otr_orden_trabajo_prioridad >= 3 ? ' cp-w' : '') + '">Prioridad ' + (PRIO[o.otr_orden_trabajo_prioridad] || '').toLowerCase() + '</span>' + (parada ? '<span class="cp-tg cp-w">Con parada</span>' : '') + '</div>' +
       '<h2>' + esc(o.otr_titulo) + '</h2><p class="cp-oth-a">' + ic('cog', 15) + '<span><b>' + esc(o.ACTIVO_NOMBRE) + '</b> <span class="cp-cmpp">' + esc(o.ACTIVO_CODIGO) + (o.COMPONENTE_NOMBRE ? ' › ' + esc(o.COMPONENTE_NOMBRE) : '') + '</span> · ' + esc(o.AREA_NOMBRE || '') + (o.PLANTA_NOMBRE ? ' · ' + esc(o.PLANTA_NOMBRE) : '') + '</span></p></div>' +
       '<div class="cp-oth-r">' + accionPrincipal(F) + '</div></div>' +
-      '<div class="cp-otm"><div><span>Responsable</span><b>' + (nombreResp ? K.avatar(nombreResp) + esc(nombreResp) : '<span style="color:var(--amber)">Sin asignar</span>') + '</b><small>' + (resp && resp.GRUPO_NOMBRE ? esc(resp.GRUPO_NOMBRE) : resp ? esc(resp.ROL_NOMBRE || '') : 'Elige un responsable') + '</small></div>' +
+      '<div class="cp-otm"><div><span>' + (nResp > 1 ? 'Responsables' : 'Responsable') + '</span><b>' + (nombreResp ? K.avatar(nombreResp) + esc(nombreResp) + (nResp > 1 ? ' <span class="cp-tg">+' + (nResp - 1) + '</span>' : '') : '<span style="color:var(--amber)">Sin asignar</span>') + '</b><small>' + (resp && resp.GRUPO_NOMBRE ? esc(resp.GRUPO_NOMBRE) : resp ? esc(resp.ROL_NOMBRE || '') : 'Elige un responsable') + '</small></div>' +
       '<div><span>Programada</span><b>' + (prog ? K.fD(prog) : '—') + '</b><small>' + (prog ? (e === 4 ? 'cerrada' : K.rel(prog)) : 'Sin fecha') + '</small></div>' +
       '<div><span>Duración estimada</span><b>' + (est ? K.fH(est) : '—') + '</b><small>' + (+o.otr_requiere_permiso ? 'Requiere permiso de trabajo' : 'Sin permiso especial') + '</small></div>' +
       '<div><span>Tiempo registrado</span><b>' + fHM(hrs) + '</b><small><span class="cp-tbar"><i class="' + (ratio > 1 ? 'cp-ov' : '') + '" style="width:' + Math.min(100, ratio * 100) + '%"></i></span>de ' + (est ? K.fH(est) : '—') + ' estimadas' + (e === 2 ? ' · <span class="cp-pulse2"></span>en curso' : '') + '</small></div></div>' +
@@ -163,7 +164,7 @@
   }
   function tabsF(F) {
     var np = F.pasos.length, hechos = F.pasos.filter(function (p) { return +p.otp_resultado_paso !== 4; }).length, ne = (F.evidencias || []).filter(function (a) { return !a.ES_FIRMA; }).length;
-    var T = [['resumen', 'Resumen', null], ['pasos', 'Trabajo', np ? hechos + '/' + np : null], ['evi', 'Evidencias', ne], ['rep', 'Repuestos', F.repuestos.length], ['his', 'Historial', null], ['cierre', 'Cierre', null]];
+    var T = [['resumen', 'Resumen', null], ['pasos', 'Pasos', np ? hechos + '/' + np : null], ['rep', 'Repuestos', F.repuestos.length], ['cierre', 'Cierre', null]];
     return '<div class="cp-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (U.tab === t[0]) + '" data-a="ottab" data-v="' + t[0] + '">' + t[1] + (t[2] != null ? '<em>' + t[2] + '</em>' : '') + '</button>'; }).join('') + '</div>';
   }
   var fact = function (k, v) { return '<div><span>' + k + '</span><b>' + v + '</b></div>'; };
@@ -187,9 +188,9 @@
   };
   var PQ = function (a) {
     var c = U.cat, ya = U.ficha.asignaciones.map(function (x) { return +x.ota_usuario; });
-    if (!c) return { t: 'Agregar al equipo', b: '<div class="cp-sk" style="height:46px"></div>', w: 'n' };
+    if (!c) return { t: a.resp ? 'Agregar responsable' : 'Agregar al equipo', b: '<div class="cp-sk" style="height:46px"></div>', w: 'n' };
     var lista = a.tipo === 1 ? c.personas.filter(function (p) { return ya.indexOf(+p.ID) < 0; }).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; }) : c.proveedores.map(function (p) { return { id: p.ID, n: p.NOMBRE }; });
-    return { t: 'Agregar al equipo', s: otTxt(U.ficha.ot.otr_correlativo) + ' · queda en la bitácora', w: 'n',
+    return { t: a.resp ? 'Agregar responsable' : 'Agregar al equipo', s: otTxt(U.ficha.ot.otr_correlativo) + ' · queda en la bitácora', w: 'n',
       b: '<div class="cp-segc" style="margin-bottom:12px"><button type="button" data-a="otatipo" data-v="1" aria-pressed="' + (a.tipo === 1) + '">Persona</button><button type="button" data-a="otatipo" data-v="2" aria-pressed="' + (a.tipo === 2) + '">Empresa externa</button></div>' +
         '<div class="cp-fld"><label>' + (a.tipo === 1 ? 'Persona' : 'Empresa externa') + '</label>' + K.combo('otaQuien', lista, a.quien || '', { etiqueta: a.tipo === 1 ? 'Persona' : 'Empresa externa', ph: a.tipo === 1 ? 'Elige la persona…' : 'Elige la empresa…' }) + '</div>' +
         '<div class="cp-fld"><label>Grupo de trabajo</label>' + K.combo('otaGrupo', [{ id: 0, n: 'Sin grupo' }].concat(c.grupos.map(function (g) { return { id: g.ID, n: g.NOMBRE }; })), a.grupo || 0, { etiqueta: 'Grupo de trabajo', ph: 'Sin grupo' }) + '</div>' +
@@ -199,27 +200,30 @@
   };
   function resumenHTML(F) {
     var o = F.ot, e = +o.otr_orden_trabajo_estado, np = F.pasos.length, hechos = F.pasos.filter(function (p) { return +p.otp_resultado_paso !== 4; }).length, ne = (F.evidencias || []).filter(function (a) { return !a.ES_FIRMA; }).length;
-    var puede = editable(F), c = U.cat, resp = F.asignaciones.filter(function (a) { return +a.ota_es_responsable === 1; })[0];
+    var puede = editable(F), c = U.cat;
+    var resps = F.asignaciones.filter(function (a) { return +a.ota_es_responsable === 1; });
     var apoyo = F.asignaciones.filter(function (a) { return +a.ota_es_responsable !== 1; });
-    var personas = c ? [{ id: 0, n: 'Sin asignar' }].concat(c.personas.map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; })) : [];
-    var grupos = c ? [{ id: 0, n: 'Sin grupo' }].concat(c.grupos.map(function (g) { return { id: g.ID, n: g.NOMBRE }; })) : [];
-    var asig = '<section class="cp-card" id="asig"><div class="cp-sc-h"><h3>Asignación</h3>' + (e === 4 ? '<small>OT cerrada</small>' : !tieneAsignado(F) ? '<small style="color:var(--amber)">Elige un responsable para pasarla a Asignada</small>' : '') + '</div>' +
-      '<div class="cp-grid2c"><div class="cp-fld"><label>Responsable</label>' + (puede && c ? K.combo('otResp', personas, resp && resp.ota_usuario ? resp.ota_usuario : 0, { etiqueta: 'Responsable', ph: 'Sin asignar' }) : '<b>' + esc(resp ? (resp.USUARIO_NOMBRE || resp.PROVEEDOR_NOMBRE) : 'Sin asignar') + '</b>') + '</div>' +
-      '<div class="cp-fld"><label>Grupo de trabajo</label>' + (puede && c ? K.combo('otGrupoR', grupos, resp && resp.ota_grupo_trabajo ? resp.ota_grupo_trabajo : 0, { etiqueta: 'Grupo de trabajo', ph: 'Sin grupo' }) : '<b>' + esc(resp && resp.GRUPO_NOMBRE ? resp.GRUPO_NOMBRE : 'Sin grupo') + '</b>') + '</div></div>' +
-      (apoyo.length || puede ? '<div class="cp-sc-h" style="margin:14px 0 4px"><h3 style="font-size:13px">Equipo de apoyo</h3>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otaadd">' + ic('plus', 13) + 'Agregar</button></div>' : '') + '</div>' +
-        (apoyo.length ? apoyo.map(function (a) {
-          var nombre = a.USUARIO_NOMBRE || a.PROVEEDOR_NOMBRE || a.GRUPO_NOMBRE || 'Sin nombre';
-          return '<div class="cp-rp">' + K.avatar(nombre) + '<span class="cp-s"><b>' + esc(nombre) + (a.PROVEEDOR_NOMBRE && !a.USUARIO_NOMBRE ? ' <span class="cp-tg">Empresa externa</span>' : '') + '</b><small>' + esc(a.ROL_NOMBRE || '') + (a.GRUPO_NOMBRE && a.USUARIO_NOMBRE ? ' · ' + esc(a.GRUPO_NOMBRE) : '') + '</small></span>' +
-            (puede ? '<button type="button" class="cp-btn cp-plain cp-xs" data-a="otresp" data-v="' + a.ota_id + '">Hacer responsable</button><button type="button" class="cp-ibx" data-a="otquitar" data-v="' + a.ota_id + '" aria-label="Quitar a ' + esc(nombre) + '">' + ic('x', 13) + '</button>' : '') + '</div>';
-        }).join('') : '<small class="cp-muted2">Sin personas de apoyo.</small>') : '') + '</section>';
+    var fila = function (a, esResp) {
+      var nombre = a.USUARIO_NOMBRE || a.PROVEEDOR_NOMBRE || a.GRUPO_NOMBRE || 'Sin nombre', pr = c && a.ota_usuario ? c.personas.filter(function (x) { return +x.ID === +a.ota_usuario; })[0] : null;
+      var av = pr && pr.FOTO ? '<img class="cp-av cp-avi cp-lg" src="' + esc(pr.FOTO) + '" alt="" loading="lazy">' : K.avatar(nombre).replace('class="cp-av"', 'class="cp-av cp-lg"');
+      var sub = pr ? [pr.PERFIL, pr.ESPECIALIDAD].filter(Boolean).join(' · ') : (a.ROL_NOMBRE || '');
+      return '<div class="cp-rp">' + av + '<span class="cp-s"><b>' + esc(nombre) + (a.PROVEEDOR_NOMBRE && !a.USUARIO_NOMBRE ? ' <span class="cp-tg">Empresa externa</span>' : '') + '</b><small>' + esc(sub || 'Sin perfil') + (a.GRUPO_NOMBRE && a.USUARIO_NOMBRE ? ' · ' + esc(a.GRUPO_NOMBRE) : '') + '</small></span>' +
+        (puede ? (esResp ? '' : '<button type="button" class="cp-btn cp-plain cp-xs" data-a="otresp" data-v="' + a.ota_id + '">Hacer responsable</button>') + '<button type="button" class="cp-ibx" data-a="otquitar" data-v="' + a.ota_id + '" aria-label="Quitar a ' + esc(nombre) + '">' + ic('x', 13) + '</button>' : '') + '</div>';
+    };
+    var asig = '<section class="cp-card" id="asig"><div class="cp-sc-h"><h3>Asignación</h3>' + (e === 4 ? '<small>OT cerrada</small>' : !tieneAsignado(F) ? '<small style="color:var(--amber)">Elige al menos un responsable para pasarla a Asignada</small>' : '<small>Puede haber más de un responsable</small>') + '</div>' +
+      '<div class="cp-sc-h" style="margin:4px 0"><h3 style="font-size:13px">Responsables</h3>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otaadd" data-v="1">' + ic('plus', 13) + 'Agregar responsable</button></div>' : '') + '</div>' +
+      (resps.length ? resps.map(function (a) { return fila(a, true); }).join('') : '<small class="cp-muted2">Sin responsable asignado.</small>') +
+      (apoyo.length || puede ? '<div class="cp-sc-h" style="margin:16px 0 4px"><h3 style="font-size:13px">Equipo de apoyo</h3>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otaadd">' + ic('plus', 13) + 'Agregar apoyo</button></div>' : '') + '</div>' +
+        (apoyo.length ? apoyo.map(function (a) { return fila(a, false); }).join('') : '<small class="cp-muted2">Sin personas de apoyo.</small>') : '') + '</section>';
     var av = F.avisos.length ? '<div class="cp-mini">' + F.avisos.map(function (a) { return '<a class="cp-mini-r" href="' + esc(CFG.base_ + 'View/Mantenimiento/Avisos/Avisos.aspx#avisos') + '"><span class="cp-og">' + ic((ORIGEN[a.ORIGEN] || ORIGEN[1])[1], 13) + (ORIGEN[a.ORIGEN] || ORIGEN[1])[0] + '</span><span class="cp-s"><b>' + esc(a.TITULO) + '</b><small>' + esc(a.AVISO) + (a.RESUELTO_AQUI ? ' · resuelto por esta OT' : ' · encontrado al ejecutarla') + '</small></span>' + ic('chev', 14) + '</a>'; }).join('') + '</div>' : '<p class="cp-foot" style="margin:0">Cuando un aviso del mismo activo se vincula a esta OT aparece aquí.</p>';
-    return '<div class="cp-mas">' +
+    var COL = '<div style="min-width:0;display:flex;flex-direction:column;gap:14px">';
+    return '<div class="cp-otg">' + COL +
       '<section class="cp-card"><div class="cp-sc-h"><h3>Qué hay que hacer</h3>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otedit">' + ic('pencil', 13) + 'Editar</button></div>' : '') + '</div>' +
       '<p class="cp-otd">' + esc(o.otr_descripcion || 'Ejecutar la intervención según las tareas y procedimientos vinculados.') + '</p>' +
       '<div class="cp-facts" style="margin-top:12px">' + fact('Objeto mantenible', objChip(o)) + fact('Duración estimada', o.otr_duracion_estimada_minuto ? K.fH(o.otr_duracion_estimada_minuto) : '—') +
       fact('Requiere parada', necesitaRec(F) ? '<span style="color:var(--amber)">Sí, detiene el activo</span>' : 'No') + fact('Creada', f2(o.otr_fecha_creacion)) + (o.otr_notas ? fact('Notas', esc(o.otr_notas)) : '') + '</div>' +
-      '<div class="cp-otsum"><button type="button" data-a="ottab" data-v="pasos">' + ic('check', 15) + '<b>' + hechos + '/' + np + '</b>tareas</button><button type="button" data-a="ottab" data-v="evi">' + ic('clip', 15) + '<b>' + ne + '</b>evidencias</button><button type="button" data-a="ottab" data-v="rep">' + ic('box', 15) + '<b>' + F.repuestos.length + '</b>repuestos</button><button type="button" data-a="ottab" data-v="pasos">' + ic('clock', 15) + '<b>' + F.indisponibilidades.length + '</b>detenciones</button></div></section>' + asig +
-      '<section class="cp-card"><div class="cp-sc-h"><h3>Avisos vinculados</h3><small>' + (F.avisos.length ? pl(F.avisos.length, 'aviso', 'avisos') : 'Ninguno') + '</small></div>' + av + '</section></div>';
+      '<div class="cp-otsum"><button type="button" data-a="ottab" data-v="pasos">' + ic('check', 15) + '<b>' + hechos + '/' + np + '</b>tareas</button><button type="button" data-a="ottab" data-v="pasos">' + ic('clip', 15) + '<b>' + ne + '</b>evidencias</button><button type="button" data-a="ottab" data-v="rep">' + ic('box', 15) + '<b>' + F.repuestos.length + '</b>repuestos</button><button type="button" data-a="ottab" data-v="pasos">' + ic('clock', 15) + '<b>' + F.indisponibilidades.length + '</b>detenciones</button></div></section>' + asig + '</div>' + COL +
+      '<section class="cp-card"><div class="cp-sc-h"><h3>Avisos vinculados</h3><small>' + (F.avisos.length ? pl(F.avisos.length, 'aviso', 'avisos') : 'Ninguno') + '</small></div>' + av + '</section>' + historialHTML(F) + '</div></div>';
   }
 
   /* ---------------------------------------------------------------- Trabajo (tareas, mano de obra, servicios, indisponibilidad) */
@@ -236,7 +240,7 @@
     var sv = tabla('minmax(0,1.4fr) minmax(0,1.6fr) 70px 110px', ['Proveedor', 'Servicio', 'Cant.', 'Costo'], F.servicios.map(function (s) { return '<div class="cp-rw" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1.6fr) 70px 110px"><span class="cp-s"><b>' + esc(s.PROVEEDOR_NOMBRE || '—') + '</b>' + (s.DOCUMENTO ? '<small>' + esc(s.DOCUMENTO) + '</small>' : '') + '</span><span>' + esc(s.DESCRIPCION || s.TIPO || '') + '</span><span>' + K.fN(s.CANTIDAD, 0) + '</span><span>' + (s.COSTO != null ? esc(s.MONEDA || '') + ' ' + K.fN(s.COSTO, 0) : '—') + '</span></div>'; }), 'Sin servicios contratados.');
     return aviso + '<section class="cp-card"><div class="cp-sc-h"><h3>Tareas</h3><small>Acciones concretas que alguien realiza</small></div>' + lista + agregar + '</section>' +
       '<section class="cp-card"><div class="cp-sc-h"><h3>Mano de obra</h3><small>Horas registradas por quienes ejecutan</small></div>' + mo + '</section>' +
-      '<section class="cp-card"><div class="cp-sc-h"><h3>Servicios contratados</h3></div>' + sv + '</section>' + indispHTML(F);
+      '<section class="cp-card"><div class="cp-sc-h"><h3>Servicios contratados</h3></div>' + sv + '</section>' + indispHTML(F) + evidenciasHTML(F);
   }
   function indispHTML(F) {
     var puede = F.permisos.reportar && +F.ot.otr_orden_trabajo_estado < 4 && +F.ot.otr_activo > 0;
@@ -272,7 +276,7 @@
   }
   function historialHTML(F) {
     var items = F.bitacora.map(function (b) { return { t: b.MOTIVO || (b.ESTADO_NUEVO ? 'Pasó a ' + (ESTADOS[b.ESTADO_NUEVO] || [''])[0].toLowerCase() : ''), s: f2(b.FECHA) + (b.QUIEN ? ' · ' + b.QUIEN : '') }; });
-    return '<section class="cp-card">' + (items.length ? '<ol class="cp-tl cp-tl2">' + items.map(function (x) { return '<li><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></li>'; }).join('') + '</ol>' : '<p class="cp-foot" style="margin:0">Sin movimientos.</p>') + '</section>';
+    return '<section class="cp-card"><div class="cp-sc-h"><h3>Bitácora</h3></div>' + (items.length ? '<ol class="cp-tl cp-tl2">' + items.map(function (x) { return '<li><b>' + esc(x.t) + '</b><small>' + esc(x.s) + '</small></li>'; }).join('') + '</ol>' : '<p class="cp-foot" style="margin:0">Sin movimientos.</p>') + '</section>';
   }
 
   /* ---------------------------------------------------------------- Cierre */
@@ -330,7 +334,8 @@
   }
   function fichaHTML() {
     var F = U.ficha; if (!F) return '';
-    var cuerpo = U.tab === 'pasos' ? trabajoHTML(F) : U.tab === 'evi' ? evidenciasHTML(F) : U.tab === 'rep' ? repuestosHTML(F) : U.tab === 'his' ? historialHTML(F) : U.tab === 'cierre' ? cierreHTML(F) : resumenHTML(F);
+    var t = U.tab === 'evi' ? 'pasos' : U.tab === 'his' ? 'resumen' : U.tab;
+    var cuerpo = t === 'pasos' ? '<div class="cp-otb">' + trabajoHTML(F) + '</div>' : t === 'rep' ? '<div class="cp-otb">' + repuestosHTML(F) + '</div>' : t === 'cierre' ? '<div class="cp-otb">' + cierreHTML(F) + '</div>' : resumenHTML(F);
     return bc(F.ot) + cabecera(F) + tabsF(F) + cuerpo;
   }
 
@@ -374,7 +379,7 @@
     return Promise.all([api('Ficha', { token: q }), catalogos().catch(function () { return null; })]).then(function (r) {
       U.cargandoFicha = false; U.ficha = r[0]; reiniciarFormularios();
       hashOt(q, U.tab); document.title = otTxt(U.ficha.ot.otr_correlativo) + ' · Órdenes de trabajo · SIGMA'; pintar(); window.scrollTo(0, 0);
-    }).catch(function (e) { U.cargandoFicha = false; K.toastError(e); hashOt(''); pintar(); });
+    }).catch(function (e) { try { console.error('OT ficha', e && e.stack || e); } catch (x) { } U.cargandoFicha = false; K.toastError(e); hashOt(''); pintar(); });
   }
   function aplicar(F, msg) { U.ficha = F; if (msg) K.toast(msg); pintar(); refrescarFila(F); }
   function refrescarFila(F) { (U.lista || []).forEach(function (o) { if (o.Q === F.q) o.ESTADO_ID = +F.ot.otr_orden_trabajo_estado; }); }
@@ -413,7 +418,7 @@
     llamar('Guardar', { titulo: e.titulo.trim(), descripcion: e.desc, notas: e.notas, prioridad: e.prio, estrategia: e.estr, fecha: f ? f + ' ' + (e.hora || '08:00') : '', duracionMin: Math.round(dur * 60), requierePermiso: !!e.permiso }, 'Cambios guardados.').then(function () { U.ed = null; K.Panel.close(); }).catch(function () { e.busy = false; K.Panel.paint(); });
   };
   /* equipo */
-  A.otaadd = function () { U.asig = { tipo: 1, quien: 0, grupo: 0, resp: false, obs: '', busy: false }; K.Panel.open({ render: function () { return PQ(U.asig); }, st: U.asig, onclose: function () { U.asig = null; } }); };
+  A.otaadd = function (d) { U.asig = { tipo: 1, quien: 0, grupo: 0, resp: !!(d && d.v), obs: '', busy: false }; K.Panel.open({ render: function () { return PQ(U.asig); }, st: U.asig, onclose: function () { U.asig = null; } }); };
   A.otatipo = function (d) { U.asig.tipo = +d.v; U.asig.quien = 0; K.Panel.paint(); };
   A.otasignar = function () {
     var a = U.asig; if (!a || !a.quien) return;
@@ -551,8 +556,6 @@
       if (n === 'otTipo') { U.t = +v || 0; pintar(); return; }
       if (n === 'ciMotivo') { U.formCierre.motivo = +v || 1; return; }
       if (n === 'ciCausa') { U.formCierre.causa = v; return; }
-      if (n === 'otResp') { if (+v) llamar('Asignar', { usuario: +v, proveedor: 0, grupo: 0, responsable: true, observacion: '' }, 'Responsable actualizado.').catch(nada); return; }
-      if (n === 'otGrupoR') { llamar('GrupoDelResponsable', { grupo: +v || 0 }, 'Grupo de trabajo actualizado.').catch(nada); return; }
       if (n === 'otProc') { U.proc = v; pintar(); return; }
       if (n === 'inHIni' && U.ind) { U.ind.hini = v; return; }
       if (n === 'inHFin' && U.ind) { U.ind.hfin = v; return; }

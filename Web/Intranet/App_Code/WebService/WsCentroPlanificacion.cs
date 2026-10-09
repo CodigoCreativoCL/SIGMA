@@ -1004,6 +1004,34 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         });
     }
 
+    /// <summary>Pestaña «Inspecciones» (mockup): programaciones de inspección con su pauta, frecuencia y últimos 30 días.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Inspecciones(int planta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_INSPECCIONES", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
+            foreach (Dictionary<string, object> f in l) f["Q"] = Q(Convert.ToInt32(f["ID"]));
+            return new { filas = l };
+        });
+    }
+
+    /// <summary>Pestaña «Tareas» (mockup): tareas recurrentes con categoría, frecuencia y últimos 30 días.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Tareas(int planta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_TAREAS", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
+            foreach (Dictionary<string, object> f in l) f["Q"] = Q(Convert.ToInt32(f["ID"]));
+            return new { filas = l };
+        });
+    }
+
     /// <summary>Calendarios compartidos de la Biblioteca: próximas fechas y dónde se usan (§10.7).</summary>
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]

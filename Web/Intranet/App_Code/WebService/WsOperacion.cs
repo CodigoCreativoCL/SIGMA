@@ -66,7 +66,8 @@ public class WsOperacion : System.Web.Services.WebService
             Exigir();
             List<Dictionary<string, object>> areas = SoporteDatos.Filas("SEL_OPERACION_AREAS", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
             List<Dictionary<string, object>> personas = SoporteDatos.Filas("SEL_PLAN_CENTRO_PERSONAS", "@CLIENTE", Cli());
-            return new { areas = areas, personas = personas.Select(p => new { ID = p["ID"], NOMBRE = p["NOMBRE"] }).ToList() };
+            foreach (Dictionary<string, object> p in personas) { int foto = p["FOTO_ID"] == null || p["FOTO_ID"] is DBNull ? 0 : Convert.ToInt32(p["FOTO_ID"]); p["FOTO"] = foto > 0 ? SitioBase.UrlArchivo.Ver(foto) : ""; }
+            return new { areas = areas, personas = personas.Select(p => new { ID = p["ID"], NOMBRE = p["NOMBRE"], PERFIL = p["PERFIL"], ESPECIALIDAD = p["ESPECIALIDAD"], FOTO = p["FOTO"] }).ToList() };
         });
     }
 
@@ -104,6 +105,49 @@ public class WsOperacion : System.Web.Services.WebService
             Exigir();
             SoporteDatos.Filas("UPD_OPERACION_TAREA_HECHA", "@CLIENTE", Cli(), "@ID", id, "@HECHA", hecha, "@USUARIO", SoporteDatos.Usuario());
             return new { ok = true };
+        });
+    }
+
+    /// <summary>El cumplimiento del mes elegido (planes, inspecciones y tareas).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Cumplimiento(int planta, int area, int responsable, int criticidad, string mes)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            DateTime m;
+            object mm = DateTime.TryParseExact(mes ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out m) ? (object)m : null;
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OPERACION_CUMPLIMIENTO", "@CLIENTE", Cli(),
+                "@INSTALACION", planta > 0 ? (object)planta : null, "@AREA", area > 0 ? (object)area : null,
+                "@RESPONSABLE", responsable > 0 ? (object)responsable : null, "@CRITICIDAD", criticidad > 0 ? (object)criticidad : null, "@MES", mm);
+            List<Dictionary<string, object>> k = SoporteDatos.Del(c, 0);
+            return new { kpi = k.Count > 0 ? k[0] : null, serie = SoporteDatos.Del(c, 1), tipos = SoporteDatos.Del(c, 2), fuentes = SoporteDatos.Del(c, 3), activos = SoporteDatos.Del(c, 4), responsables = SoporteDatos.Del(c, 5) };
+        });
+    }
+
+    /// <summary>Lo que la sala de control dibuja entre dos fechas (trabajos y áreas).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Monitoreo(int planta, int area, int responsable, int criticidad, string desde, string hasta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            DateTime d, h;
+            if (!DateTime.TryParseExact(desde ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out d) ||
+                !DateTime.TryParseExact(hasta ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out h) || h < d || (h - d).TotalDays > 60)
+                throw new Exception("El rango de fechas no es válido.");
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OPERACION_MONITOREO", "@CLIENTE", Cli(),
+                "@INSTALACION", planta > 0 ? (object)planta : null, "@AREA", area > 0 ? (object)area : null,
+                "@RESPONSABLE", responsable > 0 ? (object)responsable : null, "@CRITICIDAD", criticidad > 0 ? (object)criticidad : null, "@DESDE", d, "@HASTA", h);
+            List<Dictionary<string, object>> filas = SoporteDatos.Del(c, 0);
+            foreach (Dictionary<string, object> f in filas)
+            {
+                f["KEY"] = Convert.ToString(f["TIPO"]) + "-" + Convert.ToString(f["ID"]);
+                if (f["OT_ID"] != null && f["OT_ID"] != DBNull.Value) f["QOT"] = Q(Convert.ToInt32(f["OT_ID"]));
+            }
+            return new { filas = filas, areas = SoporteDatos.Del(c, 1) };
         });
     }
 

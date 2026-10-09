@@ -36,7 +36,7 @@ public partial class View_Mantenimiento_Operacion_Operacion : System.Web.UI.Page
             usuario = SitioBase.Session.UsuarioId(),
             tabs = new object[] {
                 new { k = "hoy", n = "Hoy", parte = "d", hace = "Centro de control del día: seis indicadores, agenda por hora, atención requerida y tendencia.", enlaces = new object[] { new { n = "Ver ejecuciones", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=ejecuciones") } } },
-                new { k = "monitoreo", n = "Monitoreo", parte = "d", hace = "Sala de control: áreas en mantención ahora, con parada, y el programa por ubicación.", enlaces = new object[] { new { n = "Abrir Monitoreo", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=planes") } } },
+                new { k = "monitoreo", n = "Sala de control", parte = "d", hace = "Sala de control: áreas en mantención ahora, con parada, y el programa por ubicación.", enlaces = new object[] {  } },
                 new { k = "ejecuciones", n = "Ejecuciones", parte = "d", hace = "Lista única de lo programado: planes, inspecciones y tareas, con Generar OT, Registrar y Hecha.", enlaces = new object[] { new { n = "Ver ejecuciones", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=ejecuciones") }, new { n = "Tareas recurrentes", url = ResolveUrl("~/View/Mantenimiento/Tareas/Tareas.aspx?legacy=1") } } },
                 new { k = "cumplimiento", n = "Cumplimiento", parte = "d", hace = "Cumplimiento de los últimos 40 días por tipo de trabajo, por plan y por activo.", enlaces = new object[] { new { n = "Ver cumplimiento", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=cumplimiento") } } }
             }

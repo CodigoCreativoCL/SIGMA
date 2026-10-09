@@ -229,7 +229,9 @@
   L.tab('ejecuciones', {
     mount: function (body) {
       body.innerHTML = '<div id="exRoot"></div>';
-      if (window.OperacionFiltroEj) { U.f = window.OperacionFiltroEj; window.OperacionFiltroEj = null; }
+      var fi = window.OperacionFiltroEj; window.OperacionFiltroEj = null;
+      if (typeof fi === 'string') U.f = fi;
+      else if (fi) { U.f = fi.f || 'all'; U.k = fi.k || 'all'; U.plan = fi.plan || ''; U.activo = fi.activo ? String(fi.activo) : ''; }
       cargar();
     },
     hero: function () { return OP.hero(); }

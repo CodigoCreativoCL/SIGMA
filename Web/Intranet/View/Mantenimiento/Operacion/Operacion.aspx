@@ -16,6 +16,8 @@
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-lugar.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-operacion.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-ejecuciones.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-cumplimiento.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-sala.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
