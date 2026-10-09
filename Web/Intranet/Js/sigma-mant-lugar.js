@@ -11,7 +11,7 @@
    ===================================================================== */
 (function () {
   var K = window.MantKit, CFG = K.CFG, esc = K.esc, $ = K.$;
-  var REG = {}, cur = null, badges = {}, H = { pv: [], combo: [], fecha: [], key: [] };
+  var REG = {}, cur = null, badges = {}, H = { pv: [], combo: [], fecha: [], key: [] }, ONP = [];
   var plantas = CFG.plantas || [];
   var planta = (function () { try { var v = +sessionStorage.getItem('mantPlanta') || 0; return plantas.some(function (p) { return p.id === v; }) ? v : 0; } catch (e) { return 0; } })();
 
@@ -60,6 +60,7 @@
     tab: function (k, def) { REG[k] = typeof def === 'function' ? { mount: def } : def; if (cur === k) ir(k, true); },
     badge: function (k, n) { badges[k] = n; if (cur) pintarTabs(); },
     heroRefresh: pintarHero,
+    onPlanta: function (f) { ONP.push(f); },
     lead: function (t) { var p = $('.cp-hero-title p'); if (p) p.textContent = t; },
     ir: ir,
     on: function (o) { ['pv', 'combo', 'fecha', 'key'].forEach(function (n) { if (o[n]) H[n].push(o[n]); }); }
@@ -73,7 +74,7 @@
       combo: function (span, v) {
         if (span.getAttribute('data-cb') === 'mlPlanta') {
           planta = +v || 0; try { sessionStorage.setItem('mantPlanta', String(planta)); } catch (e) { }
-          if (REG[cur] && REG[cur].planta) REG[cur].planta();
+          if (ONP.length) ONP.forEach(function (f) { f(planta); }); else if (REG[cur] && REG[cur].planta) REG[cur].planta();
           return;
         }
         H.combo.forEach(function (f) { f(span, v); });

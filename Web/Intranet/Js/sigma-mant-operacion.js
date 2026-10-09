@@ -17,6 +17,7 @@
   var lsSet = function (o) { try { sessionStorage.setItem('opFiltros', JSON.stringify(o)); } catch (e) { } };
   var F0 = lsGet();
   var U = { area: +F0.area || 0, resp: +F0.resp || 0, crit: +F0.crit || 0, agf: 'all', aqo: null, filtros: null, hoy: null, error: '', cargando: true };
+  var SUB = [];   // quienes quieren saber cuando cambian los filtros (las otras pestañas)
   var CRIT = { 1: 'Baja', 2: 'Media', 3: 'Alta', 4: 'Crítica' };
   var MODOS = { DETENIDO: ['stop', 'Activo detenido', 'alert'], MANTENCION: ['live', 'En mantención ahora', 'wrench'], ATENCION: ['att', 'Requiere atención', 'alert'], PROGRAMADO: ['sched', 'Mantención programada', 'calw'], NORMAL: ['ok', 'Operando normal', 'check'] };
   var ORDEN_MODO = ['stop', 'live', 'att', 'sched', 'ok'];
@@ -159,9 +160,14 @@
     if (!U.hoy) return '<div class="cp-kq-row">' + [1, 2, 3, 4, 5, 6].map(function () { return '<div class="cp-sk" style="height:84px"></div>'; }).join('') + '</div><div class="cp-sk" style="height:360px;margin-top:14px"></div>';
     var H = U.hoy;
     /* una sola mampostería: las tarjetas se acomodan por su alto y no quedan huecos entre ellas */
-    return kpis(H.kpi) + '<div class="cp-mas cp-mas-op" style="margin-top:14px">' + agendaHTML(H) + tableroHTML(H) + atencionHTML(H) + iaHTML(H) + tendenciaHTML(H) + '</div>';
+    return '<div class="cp-mas cp-mas-op" style="margin-top:14px">' + agendaHTML(H) + tableroHTML(H) + atencionHTML(H) + iaHTML(H) + tendenciaHTML(H) + '</div>';
+  }
+  function pintarKpis() {
+    var el = $('#opKpis'); if (!el) return;
+    el.innerHTML = U.hoy ? kpis(U.hoy.kpi) : '<div class="cp-kq-row">' + [1, 2, 3, 4, 5, 6].map(function () { return '<div class="cp-sk" style="height:84px"></div>'; }).join('') + '</div>';
   }
   function pintar() {
+    pintarKpis();
     var b = $('#opRoot'); if (!b) return;
     var fo = K.grabFocus(b), sy = window.scrollY;
     b.innerHTML = hoyHTML(); K.putFocus(fo, b); window.scrollTo(0, sy);
@@ -176,7 +182,16 @@
   function cargarFiltros() {
     return api('Filtros', { planta: L.planta() }).then(function (r) { U.filtros = r; L.heroRefresh(); }).catch(function () { U.filtros = { areas: [], personas: [] }; });
   }
-  function guardarFiltros() { lsSet({ area: U.area, resp: U.resp, crit: U.crit }); }
+  function guardarFiltros() { lsSet({ area: U.area, resp: U.resp, crit: U.crit }); SUB.forEach(function (f) { f(); }); }
+  /* lo que comparten las pestañas de Operación */
+  window.OpShared = {
+    filtros: function () { return { planta: L.planta(), area: U.area, responsable: U.resp, criticidad: U.crit }; },
+    suscribir: function (f) { SUB.push(f); },
+    datos: function () { return U.hoy; },
+    recargar: function () { return cargar(); },
+    hero: function () { return heroFiltros(); },
+    filtroInicial: null
+  };
 
   /* ---------------------------------------------------------------- acciones */
   var A = L.A;
@@ -248,9 +263,16 @@
       (n ? '<button type="button" class="cp-btn cp-plain cp-sm" data-a="opfltclr">Quitar ' + n + (n === 1 ? ' filtro' : ' filtros') + '</button>' : '') +
       '<a class="cp-btn cp-pri" href="' + esc(URL_AV + '#avisos&nuevo=1') + '">' + ic('alert', 16) + 'Reportar falla</a>';
   }
+  /* los indicadores y los filtros van arriba de TODAS las pestañas */
+  document.addEventListener('DOMContentLoaded', function () {
+    var panel = document.querySelector('.cp-panel');
+    if (panel) panel.classList.add('cp-bare');
+    if (panel && !$('#opKpis')) panel.insertAdjacentHTML('beforebegin', '<div id="opKpis" style="margin-bottom:14px"></div>');
+    pintarKpis(); cargarFiltros(); cargar();
+  });
+  L.onPlanta(function () { U.area = 0; guardarFiltros(); cargarFiltros(); cargar(); });
   L.tab('hoy', {
-    mount: function (body) { body.innerHTML = '<div id="opRoot"></div>'; cargarFiltros(); cargar(); },
-    hero: heroFiltros,
-    planta: function () { U.area = 0; guardarFiltros(); cargarFiltros(); cargar(); }
+    mount: function (body) { body.innerHTML = '<div id="opRoot"></div>'; pintar(); },
+    hero: heroFiltros
   });
 })();

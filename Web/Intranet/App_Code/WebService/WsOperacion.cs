@@ -70,6 +70,43 @@ public class WsOperacion : System.Web.Services.WebService
         });
     }
 
+    /// <summary>La lista única de ejecuciones (planes, inspecciones y tareas) con los filtros de Operación.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Ejecuciones(int planta, int area, int responsable, int criticidad, string desde, string hasta)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            DateTime d, h;
+            object dd = DateTime.TryParseExact(desde ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out d) ? (object)d : null;
+            object hh = DateTime.TryParseExact(hasta ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out h) ? (object)h : null;
+            List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_OPERACION_EJECUCIONES", "@CLIENTE", Cli(),
+                "@INSTALACION", planta > 0 ? (object)planta : null, "@AREA", area > 0 ? (object)area : null,
+                "@RESPONSABLE", responsable > 0 ? (object)responsable : null, "@CRITICIDAD", criticidad > 0 ? (object)criticidad : null, "@DESDE", dd, "@HASTA", hh);
+            foreach (Dictionary<string, object> f in l)
+            {
+                f["KEY"] = Convert.ToString(f["TIPO"]) + "-" + Convert.ToString(f["ID"]);
+                if (Convert.ToString(f["TIPO"]) == "PLAN") f["Q"] = Q(Convert.ToInt32(f["ID"]));
+                if (f["OT_ID"] != null && f["OT_ID"] != DBNull.Value) f["QOT"] = Q(Convert.ToInt32(f["OT_ID"]));
+            }
+            return new { filas = l };
+        });
+    }
+
+    /// <summary>Marca una tarea como hecha, o la deja pendiente (el «Deshacer»).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string TareaHecha(int id, bool hecha)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            SoporteDatos.Filas("UPD_OPERACION_TAREA_HECHA", "@CLIENTE", Cli(), "@ID", id, "@HECHA", hecha, "@USUARIO", SoporteDatos.Usuario());
+            return new { ok = true };
+        });
+    }
+
     private static void Exigir()
     {
         if (!P_VER.Any(p => Token.Puede(p))) throw new Exception("No tienes permiso para ver Operación.");
