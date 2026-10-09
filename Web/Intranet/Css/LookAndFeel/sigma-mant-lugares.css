@@ -78,3 +78,38 @@
   .cp-root .cp-avbar-f{justify-content:flex-start}
   .cp-root .cp-kv{grid-template-columns:100px minmax(0,1fr)}
 }
+
+/* ---------------- Órdenes de trabajo: lista (la ficha usa sigma-mant-ot.css, generado del mockup) ---------------- */
+.cp-root .cp-mono{font-variant-numeric:tabular-nums;font-weight:700;color:var(--sigma-purple);font-size:12.5px}
+.cp-root .cp-fld2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.cp-root .cp-oe{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:12px;font-size:12px;font-weight:700;background:var(--chip);color:var(--ink-2)}
+.cp-root .cp-oe i{width:7px;height:7px;border-radius:50%;background:var(--muted)}
+.cp-root .cp-oe-a{background:var(--sigma-blue-soft);color:var(--sigma-blue-dark)} .cp-root .cp-oe-a i{background:var(--sigma-blue)}
+.cp-root .cp-oe-e{background:var(--sigma-cyan-soft);color:var(--sigma-cyan-dark)} .cp-root .cp-oe-e i{background:var(--sigma-cyan)}
+.cp-root .cp-oe-w{background:var(--amber-soft);color:var(--amber)} .cp-root .cp-oe-w i{background:var(--amber)}
+.cp-root .cp-oe-c{background:#E7F5EE;color:var(--ok-ink)} .cp-root .cp-oe-c i{background:var(--ok-ink)}
+.cp-root .cp-og-r{margin-left:6px;font-size:11.5px;font-weight:700;color:var(--faint)}
+.cp-root .cp-otl{padding:8px 10px;margin-top:6px}
+.cp-root .cp-avs{display:inline-flex;align-items:center}
+.cp-root .cp-avs .cp-av{margin-left:-6px;box-shadow:0 0 0 2px #fff}
+.cp-root .cp-avs .cp-av:first-child{margin-left:0}
+.cp-root .cp-segc.cp-sm button{height:28px;padding:0 10px;font-size:12px}
+.cp-root .cp-ev-i{height:120px;display:grid;place-items:center;background:var(--surface-2);color:var(--muted)}
+.cp-root .cp-rp .cp-s b{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+@media (max-width:760px){
+  .cp-root .cp-otl .cp-rw{grid-template-columns:minmax(0,1fr)!important;gap:4px;padding:12px 8px}
+  .cp-root .cp-otl .cp-rw.cp-h{display:none}
+  .cp-root .cp-fld2{grid-template-columns:1fr}
+}
+.cp-root .cp-panel.cp-bare{background:none;box-shadow:none;padding:0;border-radius:0}
+.cp-root .cp-exc{padding:6px 8px}
+/* origen y estado de la OT, con el color del mockup */
+.cp-root .cp-oe-n{background:var(--chip);color:var(--ink-2)} .cp-root .cp-oe-n i{background:var(--muted)}
+.cp-root .cp-oe-e{background:var(--sigma-purple-soft);color:var(--sigma-purple)} .cp-root .cp-oe-e i{background:var(--sigma-purple)}
+.cp-root .cp-oe-w{background:#FFF1DA;color:#B65C00} .cp-root .cp-oe-w i{background:#B65C00}
+.cp-root .cp-og.cp-o7{background:#FDECEA;color:#C7352B}
+.cp-root .cp-og.cp-o4,.cp-root .cp-og.cp-o9{background:#E6F7F7;color:#007F8A}
+.cp-root .cp-og.cp-o2{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
+.cp-root .cp-og.cp-o5{background:var(--sigma-purple-soft);color:var(--sigma-purple)}
+.cp-root .cp-og.cp-o6{background:var(--sigma-blue-soft);color:var(--sigma-blue-dark)}
+.cp-root .cp-og.cp-o3{background:#E7F5EE;color:var(--ok-ink)}

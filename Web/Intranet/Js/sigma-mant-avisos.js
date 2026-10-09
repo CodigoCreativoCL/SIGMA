@@ -142,7 +142,7 @@
       '<label class="cp-sw"><input type="checkbox" data-pv="detuvo"' + (st.detuvo ? ' checked' : '') + '><i></i>Detuvo la producción</label>' +
       '<div class="cp-fld" style="margin-top:12px"><label for="fd">Detalle</label><textarea id="fd" class="cp-inp" rows="3" data-pv="det" placeholder="Qué viste, cuándo empezó, qué hiciste">' + esc(st.det || '') + '</textarea></div>' +
       (U.perm.generar ? '<label class="cp-sw"><input type="checkbox" data-pv="gen"' + (st.gen ? ' checked' : '') + '><i></i>Generar la OT de inmediato</label>' +
-        '<div class="cp-msg cp-i" style="margin-top:8px">' + ic('help', 13) + '<span>' + (st.gen ? 'Se crea el aviso y su OT correctiva.' : 'El aviso queda en la bandeja para que el supervisor decida.') + '</span></div>' : '');
+        '<div class="cp-msg cp-i" style="margin-top:8px">' + ic('help', 13) + '<span>' + (st.gen ? 'Se crea el aviso y su OT correctiva.' : 'El aviso queda en la bandeja para que se decida qué hacer con él.') + '</span></div>' : '');
     return { t: 'Reportar falla', s: 'Avisos · lo detectado pasa a la bandeja y de ahí a una OT', b: b,
       f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="fallaok">' + ic('send', 16) + 'Reportar falla</button></span>', w: 'n' };
   };

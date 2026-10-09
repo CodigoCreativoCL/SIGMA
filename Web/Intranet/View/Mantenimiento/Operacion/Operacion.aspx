@@ -9,6 +9,7 @@
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-centro-planificacion.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-mant-lugares.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-mant-ot.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
     <script type="text/javascript">window.MantLugarConfig = <%=ConfigJson %>;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-comun.js") %>'></script>

@@ -25,6 +25,13 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajos : System.Web.UI.Pa
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Rediseño de Mantenimiento: la lista vive en Ordenes/Ordenes.aspx. «?legacy=1» abre la de antes.
+        if (!IsPostBack && Request.QueryString["legacy"] != "1")
+        {
+            Response.Redirect("~/View/Mantenimiento/Ordenes/Ordenes.aspx#ordenes", false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         if (!IsPostBack)
         {
             Grid.AddSelectColumn();

@@ -9,7 +9,7 @@ GO
    nueva, lo que ya existe:
      7 Falla ............................. Falla
      4 Hallazgo de inspección ............ Checklist_Hallazgo (de una pauta)
-     9 Hallazgo en OT .................... Checklist_Hallazgo cuya ejecución es la de una OT
+     9 Hallazgo en OT .................... Checklist_Hallazgo hallado en una OT (cha_orden_trabajo_origen) o en su ejecución
      5 SIGMA AI .......................... Alerta con predicción (PREDICCION RIESGO)
      6 Alerta de medidor ................. Alerta de medidor (fuera de rango, sin lectura,
                                            próximo mantenimiento, lectura a revisar)
@@ -34,6 +34,7 @@ IF COL_LENGTH('dbo.Falla', 'fal_orden_trabajo') IS NULL ALTER TABLE [dbo].[Falla
 IF COL_LENGTH('dbo.Falla', 'fal_motivo_descarte') IS NULL ALTER TABLE [dbo].[Falla] ADD fal_motivo_descarte NVARCHAR(1000) NULL
 IF COL_LENGTH('dbo.Falla', 'fal_usuario_descarte') IS NULL ALTER TABLE [dbo].[Falla] ADD fal_usuario_descarte INT NULL
 IF COL_LENGTH('dbo.Falla', 'fal_fecha_descarte_utc') IS NULL ALTER TABLE [dbo].[Falla] ADD fal_fecha_descarte_utc DATETIME NULL
+IF COL_LENGTH('dbo.Checklist_Hallazgo', 'cha_orden_trabajo_origen') IS NULL ALTER TABLE [dbo].[Checklist_Hallazgo] ADD cha_orden_trabajo_origen INT NULL
 GO
 IF NOT EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = 'FK_FAL_ORDEN_TRABAJO')
     ALTER TABLE [dbo].[Falla] ADD CONSTRAINT FK_FAL_ORDEN_TRABAJO FOREIGN KEY (fal_orden_trabajo) REFERENCES [dbo].[Orden_Trabajo] (otr_id)
@@ -93,14 +94,14 @@ WHERE   f.fal_habilitado = 1
 UNION ALL
 /* Hallazgos de inspección y hallazgos al ejecutar una OT */
 SELECT  CAST('HAL-' + CAST(h.cha_id AS VARCHAR(12)) AS VARCHAR(20)),
-        CASE WHEN oc.otc_orden_trabajo IS NOT NULL THEN 9 ELSE 4 END, h.cha_id, h.cha_cliente,
+        CASE WHEN h.cha_orden_trabajo_origen IS NOT NULL OR oc.otc_orden_trabajo IS NOT NULL THEN 9 ELSE 4 END, h.cha_id, h.cha_cliente,
         act.act_cliente_instalacion, act.act_instalacion_area,
         h.cha_activo, h.cha_activo_componente,
         h.cha_titulo, h.cha_descripcion,
         CASE h.cha_severidad WHEN 5 THEN 4 WHEN 4 THEN 3 WHEN 3 THEN 2 ELSE 1 END,
         h.cha_fecha_creacion,
         LTRIM(RTRIM(ISNULL(ur.usu_nombre, N'') + N' ' + ISNULL(ur.usu_apellido_paterno, N''))),
-        CAST(0 AS BIT), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS INT), oc.otc_orden_trabajo,
+        CAST(0 AS BIT), CAST(NULL AS NVARCHAR(100)), CAST(NULL AS INT), ISNULL(h.cha_orden_trabajo_origen, oc.otc_orden_trabajo),
         CASE WHEN h.cha_proceso_estado = 5 THEN 'DESCARTADO'
              WHEN h.cha_proceso_estado = 3 OR h.cha_orden_trabajo IS NOT NULL THEN 'OT'
              WHEN h.cha_proceso_estado IN (1, 2) THEN 'NUEVO'

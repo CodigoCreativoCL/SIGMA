@@ -8,6 +8,8 @@
 
 ---
 
+> **Perfiles dinámicos (regla del 09-10-2026):** los perfiles los define cada cliente. Donde este documento dice «supervisor», «técnico» o «jefe de turno» se entiende «quien tiene la facultad de cerrar OT», «quien ejecuta» o «quien revisa». En la interfaz, los mensajes y los comentarios nunca nombran un perfil fijo.
+
 ## 1. Objetivo
 
 Reordenar el menú Mantenimiento de SIGMA en **cinco lugares**, sin duplicar pantallas ni datos:

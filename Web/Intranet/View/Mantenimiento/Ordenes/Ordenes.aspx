@@ -1,7 +1,7 @@
-﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="Avisos.aspx.cs" Inherits="View_Mantenimiento_Avisos_Avisos" %>
+﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="Ordenes.aspx.cs" Inherits="View_Mantenimiento_Ordenes_Ordenes" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-    <%-- Avisos (09-10-2026, parte a del rediseño de Mantenimiento en cinco lugares).
+    <%-- Órdenes de trabajo (09-10-2026, parte a del rediseño de Mantenimiento en cinco lugares).
          Misma cáscara que el Centro de Planificación: header .cp-hero, pestañas por hash
          y panel; el contenido de cada pestaña lo registra su parte (MantLugar.tab).
          Plan: MD/PLAN_MODERNIZACION_MANTENIMIENTO.md --%>
@@ -14,7 +14,7 @@
     <script type="text/javascript">window.MantLugarConfig = <%=ConfigJson %>;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-comun.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-lugar.js") %>'></script>
-    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-avisos.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-ordenes.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
@@ -23,13 +23,13 @@
             <header class="cp-hero">
                 <div class="cp-hero-title">
                     <span class="cp-hero-eyebrow">Mantenimiento</span>
-                    <h1>Avisos</h1>
-                    <p>Lo que se detectó y todavía no es trabajo: fallas, hallazgos, predicciones y alertas.</p>
+                    <h1>Órdenes de trabajo</h1>
+                    <p>Todo el trabajo que se ejecuta, venga de un plan, una tarea, un aviso o se cree a mano.</p>
                 </div>
                 <div class="cp-hero-actions" id="mlAcc"></div>
             </header>
             <section class="cp-panel">
-                <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Avisos" id="mlTabs"></nav>
+                <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Órdenes de trabajo" id="mlTabs"></nav>
                 <div id="mlBody" role="tabpanel" aria-live="polite"></div>
             </section>
         </div>
