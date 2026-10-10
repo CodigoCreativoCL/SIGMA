@@ -146,10 +146,23 @@ var avatarP = function (p, lg) {
   if (p.FOTO) return '<img class="cp-av cp-avi' + (lg ? ' cp-lg' : '') + '" src="' + esc(p.FOTO) + '" alt="" title="' + esc(p.NOMBRE) + '" loading="lazy">';
   return lg ? avatar(p.NOMBRE).replace('class="cp-av"', 'class="cp-av cp-lg"') : avatar(p.NOMBRE);
 };
+/* 429 · Carga de los próximos 30 días dentro de las opciones de personas (se pide una vez para todas). */
+var CARGA = null, CARGA_PIDE = false;
+function cargaDe(personas) {
+  if (!window.SigmaCarga || CARGA_PIDE || !personas || !personas.length) return;
+  CARGA_PIDE = true;
+  SigmaCarga.resumen(personas.map(function (p) { return 'U:' + p.ID; })).then(function (m) { CARGA = m; render(); if (PN) panel(); }).catch(function () { });
+}
+function cargaSub(id, base) {
+  var r = CARGA && CARGA['U:' + id]; if (!r) return base;
+  var h = Math.round((+r.MINUTOS || 0) / 6) / 10;
+  return String(h).replace('.', ',') + ' h en 30 días' + (+r.CHOQUES ? ' · ⚠ ' + r.CHOQUES + (+r.CHOQUES === 1 ? ' choque' : ' choques') : '') + (+r.DIAS_SOBRE ? ' · ' + r.DIAS_SOBRE + ' días sobre 8 h' : '') + ' · ' + base;
+}
 var persItems = function (fuera) {
   fuera = fuera || [];
+  cargaDe(U.cat && U.cat.personas);
   return (U.cat && U.cat.personas || []).filter(function (p) { return fuera.indexOf(+p.ID) < 0; })
-    .map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: persSub(p) || 'Sin perfil', img: p.FOTO || '', ini: ini(p.NOMBRE) }; });
+    .map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: cargaSub(p.ID, persSub(p) || 'Sin perfil'), img: p.FOTO || '', ini: ini(p.NOMBRE) }; });
 };
 var persFila = function (p, extra, quitar) {
   return '<div class="cp-rp">' + avatarP(p, true) + '<span class="cp-s"><b>' + esc(p.NOMBRE) + (extra || '') + '</b><small>' + esc(persSub(p) || 'Sin perfil') + '</small></span>' + (quitar || '') + '</div>';
@@ -2344,7 +2357,7 @@ function pgObjTxt(o) {
   var a = pgAct(m[2]); return a && a.PADRE_ID ? 'Subactivo · ' + a.NOMBRE : 'Activo completo';
 }
 var pgObjDesde = function (act, comp) { return +comp ? 'c:' + comp : 'a:' + act; };
-function pgPersonas() { return (PG.personas || []).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · '), img: p.FOTO || '', ini: ini(p.NOMBRE) }; }); }
+function pgPersonas() { cargaDe(PG.personas); return (PG.personas || []).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: cargaSub(p.ID, [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ')), img: p.FOTO || '', ini: ini(p.NOMBRE) }; }); }
 function pgFreqVacia() { return { modo: 'w', dias: [wday(TODAY)], diaMes: +TODAY.slice(8, 10), hora: '08:00', sh: '', pro: 0 }; }
 function pgFreqDesde(r) {
   var f = pgFreqVacia(); if (!r) return f;

@@ -55,13 +55,24 @@
   function chat(v) {
     if (!CH) {
       CH = document.createElement('div'); CH.className = 'sgl-chat'; CH.setAttribute('role', 'dialog'); CH.setAttribute('aria-label', 'SIGMA AI Chat');
-      CH.innerHTML = '<div class="sgl-chat-bk"></div><div class="sgl-chat-p"><div class="sgl-chat-h"><img src="' + esc(P.img + 'sigma-ai/sigma-ai-wordmark-dark.svg') + '" alt="SIGMA AI"><span>Chat</span><a href="' + esc(P.urlAi) + '" title="Abrir SIGMA AI completo">Abrir SIGMA AI</a><button type="button" aria-label="Cerrar el chat">×</button></div><iframe title="SIGMA AI Chat" src="about:blank"></iframe></div>';
+      CH.innerHTML = '<div class="sgl-chat-bk"></div><div class="sgl-chat-p"><div class="sgl-chat-h"><img src="' + esc(P.img + 'sigma-ai/sigma-ai-wordmark-dark.svg') + '" alt="SIGMA AI"><span>Chat</span><a href="' + esc(P.urlAi) + '" title="Abrir SIGMA AI completo">Abrir SIGMA AI</a><button type="button" aria-label="Cerrar el chat">×</button></div><div class="sgl-chat-ld"><span></span><b>Conectando con SIGMA AI…</b><button type="button" hidden>Reintentar</button></div><iframe title="SIGMA AI Chat" src="about:blank"></iframe></div>';
       document.body.appendChild(CH);
       CH.querySelector('.sgl-chat-bk').addEventListener('click', function () { chat(false); });
       CH.querySelector('.sgl-chat-h button').addEventListener('click', function () { chat(false); });
       document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && CH.classList.contains('sgl-chat-on')) chat(false); });
     }
-    var f = CH.querySelector('iframe');
+    var f = CH.querySelector('iframe'), ld = CH.querySelector('.sgl-chat-ld'), rb = ld.querySelector('button');
+    if (!f.dataset.w) {
+      f.dataset.w = '1';
+      /* Mientras carga se ve «Conectando…»; si la vista no trae el chat, se ofrece reintentar. */
+      f.addEventListener('load', function () {
+        if (f.getAttribute('src') === 'about:blank') return;
+        var d = null; try { d = f.contentDocument; } catch (e) { }
+        if (d && d.getElementById('rail')) ld.hidden = true;
+        else { ld.querySelector('b').textContent = 'No se pudo abrir el chat.'; rb.hidden = false; }
+      });
+      rb.addEventListener('click', function () { rb.hidden = true; ld.querySelector('b').textContent = 'Conectando con SIGMA AI…'; f.setAttribute('src', P.urlAi + (P.urlAi.indexOf('?') < 0 ? '?' : '&') + 'solo=chat&r=' + Date.now()); });
+    }
     if (v && f.getAttribute('src') === 'about:blank') f.setAttribute('src', P.urlAi + (P.urlAi.indexOf('?') < 0 ? '?' : '&') + 'solo=chat');
     CH.classList.toggle('sgl-chat-on', v); document.documentElement.classList.toggle('sgl-chat-abierto', v);
     if (v) setTimeout(function () { f.focus(); }, 300);
