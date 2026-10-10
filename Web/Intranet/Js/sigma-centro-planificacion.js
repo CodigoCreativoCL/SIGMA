@@ -2386,7 +2386,13 @@ function pgFreqHTML(f, e) {
   var nx = f.modo === 'sh' ? '' : '<div class="cp-nxd"><span class="cp-lb2">Próximas fechas</span><div>' + (pgProximas(f, 5).map(function (d) { return '<span class="cp-tg">' + fD(d) + '</span>'; }).join(' ') || '<small style="color:var(--muted)">Sin fechas</small>') + '</div></div>';
   return '<div class="cp-fld"><label>Cada cuánto</label>' + seg + '</div>' + cuerpo + hora + nx;
 }
-function pgFacts(h) { var t = +h.TOTAL || 0; return '<div class="cp-facts">' + '<div><span>Cumplimiento 30 días</span><b>' + (t ? (+h.HECHAS || 0) + ' de ' + t : 'Sin registros aún') + '</b></div>' + (h.ESCALADAS != null ? '<div><span>Escaladas a OT</span><b>' + (+h.ESCALADAS || 0) + '</b></div>' : '<div><span>Activos</span><b>' + (+h.ACTIVOS || 0) + '</b></div>') + '</div>'; }
+/* 430 · Lo que se respondió en terreno (app o web) se ve en Operación › Ejecuciones › Completadas → «ver». */
+function pgEjecutado(h) {
+  var k = PN && PN.t === 'ins' ? 'ron' : 'tar';
+  return '<div class="cp-pgej">' + ic('clip', 15) + '<span>Respuestas, comentarios, fotos y hallazgos de cada ejecución en terreno.</span><a class="cp-btn cp-out cp-xs" href="' + esc(CFG.base_ + 'View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones&k=' + k + '&f=cer&q=' + encodeURIComponent(h.NOMBRE || PN.n || '')) + '">Ver lo ejecutado</a></div>';
+}
+function pgFacts(h) { return pgFacts0(h) + pgEjecutado(h); }
+function pgFacts0(h) { var t = +h.TOTAL || 0; return '<div class="cp-facts">' + '<div><span>Cumplimiento 30 días</span><b>' + (t ? (+h.HECHAS || 0) + ' de ' + t : 'Sin registros aún') + '</b></div>' + (h.ESCALADAS != null ? '<div><span>Escaladas a OT</span><b>' + (+h.ESCALADAS || 0) + '</b></div>' : '<div><span>Activos</span><b>' + (+h.ACTIVOS || 0) + '</b></div>') + '</div>'; }
 /* Quién la ejecuta: Disponible (nadie asignado: en la app la ve quien puede ejecutarla y la toma quien
    llegue primero; ahí puede sumar integrantes, un grupo o una empresa externa), una o varias personas,
    un grupo de trabajo o una empresa externa. */

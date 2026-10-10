@@ -227,9 +227,19 @@
       (e.LAT != null && e.LNG != null ? '<div><span>Ubicación</span><b><a class="cp-lnk" href="https://www.google.com/maps?q=' + (+e.LAT) + ',' + (+e.LNG) + '" target="_blank" rel="noopener">Ver en el mapa</a></b></div>' : '') + '</div>' +
       (e.OBSERVACION ? '<p class="cp-obs">' + ic('help', 13) + esc(e.OBSERVACION) + '</p>' : '') + '</div>';
   }
+  /* 427 · trazabilidad completa: línea de tiempo de la ocurrencia. */
+  var TZI = { prog: 'calw', estado: 'clock', asig: 'check', acepta: 'check', inicio: 'clock', sync: 'arrow', fin: 'check', hallazgo: 'alert', descarte: 'x', ot: 'wrench', otini: 'wrench', otfin: 'check' };
+  function trazaHTML(l) {
+    if (!l || !l.length) return '';
+    return '<div class="cp-blk"><div class="cp-blk-h"><h4>Trazabilidad</h4><small>' + pl(l.length, 'evento', 'eventos') + ', de lo más antiguo a lo más nuevo</small></div><ol class="cp-tz">' + l.map(function (e) {
+      var cls = e.CLASE === 'hallazgo' ? (+e.SEVERIDAD >= 4 ? ' cp-tz-r' : ' cp-tz-a') : e.CLASE === 'fin' || e.CLASE === 'otfin' ? ' cp-tz-ok' : e.CLASE.indexOf('ot') === 0 ? ' cp-tz-p' : '';
+      return '<li class="cp-tz-' + e.CLASE + cls + '"><span class="cp-tz-i">' + ic(TZI[e.CLASE] || 'clock', 12) + '</span><div class="cp-tz-b"><b>' + esc(e.TITULO) + '</b>' + (e.DETALLE ? '<small>' + esc(e.DETALLE) + '</small>' : '') +
+        '<em>' + fHM(e.FECHA) + (e.QUIEN ? ' · ' + esc(e.QUIEN) : '') + '</em>' + (e.URL ? '<a class="cp-lnk" href="' + esc(e.URL) + '">Abrir la OT</a>' : '') + '</div></li>';
+    }).join('') + '</ol></div>';
+  }
   function regHTML(r, secs) {
     var res = {}, fot = {}; (r.respuestas || []).forEach(function (x) { res[x.ITEM] = x; }); (r.fotos || []).forEach(function (f) { (fot[f.ITEM] = fot[f.ITEM] || []).push(f); });
-    return ejecFacts(r.ejecucion, r.cab.HECHA_POR) + '<div class="cp-rgf2">' + secs.map(function (sc) {
+    return ejecFacts(r.ejecucion, r.cab.HECHA_POR) + trazaHTML(r.traza) + '<div class="cp-rgf2">' + secs.map(function (sc) {
       return '<div class="cp-rgs"><h5>' + esc(sc.n) + '</h5>' + sc.items.map(function (it) {
         var x = res[it.ID];
         return '<div class="cp-rgr' + (x && x.FUERA ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (x && x.COMENTARIO ? '<small>«' + esc(x.COMENTARIO) + '»' + (x.VOZ ? ' · dictado por voz' : '') + '</small>' : '') + fotosHTML(fot[it.ID]) + '</div>' +
@@ -246,7 +256,7 @@
       (c.DESCRIPCION ? '<p class="cp-obs">' + esc(c.DESCRIPCION) + '</p>' : '') +
       (ej.length ? ej.map(function (e) {
         return ejecFacts(e, e.QUIEN) + '<div class="cp-rgr' + (e.CONFORME === false ? ' cp-bad' : '') + '" style="border:0"><div class="cp-rgn"><b>Resultado</b><small>' + (esc(e.RESULTADO) || 'Sin comentario') + '</small>' + fotosHTML(fot[e.ID]) + '</div><span class="cp-rgv' + (e.CONFORME === false ? ' cp-bad' : '') + '">' + (e.CONFORME == null ? '—' : e.CONFORME ? 'Conforme' : 'No conforme') + '</span></div>';
-      }).join('') : (c.ESTADO_ID === 4 || c.ESTADO_ID === 5 ? mc('i', 'Se marcó como hecha desde la web, sin registro de terreno.' + (c.OBSERVACION ? ' Observación: ' + esc(c.OBSERVACION) : ''), 'help') : mc('i', 'Todavía no se ejecuta.', 'help')));
+      }).join('') + trazaHTML(st.r.traza) : trazaHTML(st.r.traza) + (c.ESTADO_ID === 4 || c.ESTADO_ID === 5 ? mc('i', 'Se marcó como hecha desde la web, sin registro de terreno.' + (c.OBSERVACION ? ' Observación: ' + esc(c.OBSERVACION) : ''), 'help') : mc('i', 'Todavía no se ejecuta.', 'help')));
     return { t: esc(c.NOMBRE), s: esc(c.CODIGO) + ' · tarea recurrente', w: 'n', b: b, f: '<span></span><span class="cp-r"><button type="button" class="cp-btn cp-plain" data-a="pclose">Cerrar</button></span>' };
   };
   A.exver = function (d) {
@@ -336,6 +346,8 @@
       if (typeof fi === 'string') U.f = fi;
       else if (fi) { U.f = fi.f || 'all'; U.k = fi.k || 'all'; U.plan = fi.plan || ''; U.activo = fi.activo ? String(fi.activo) : ''; }
       /* #ejecuciones&plan=PMA-1 (desde el menú «…» del plan en Planificación) */
+      var hk = /[#&]k=(\w+)/.exec(location.hash), hf = /[#&]f=(\w+)/.exec(location.hash), hq = /[#&]q=([^&]*)/.exec(location.hash);
+      if (hk || hf || hq) { if (hk) U.k = hk[1]; if (hf) U.f = hf[1]; if (hq) U.q = decodeURIComponent(hq[1]); if (!/[#&]plan=/.test(location.hash)) { try { history.replaceState(null, '', '#ejecuciones'); } catch (e) { } } }
       var mp = /[#&]plan=([^&]+)/.exec(location.hash); if (mp) { U.plan = decodeURIComponent(mp[1]); U.k = 'plan'; U.f = 'all'; try { history.replaceState(null, '', '#ejecuciones'); } catch (e) { } }
       cargar();
     },

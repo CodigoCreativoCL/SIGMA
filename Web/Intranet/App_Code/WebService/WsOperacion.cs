@@ -175,7 +175,7 @@ public class WsOperacion : System.Web.Services.WebService
             List<Dictionary<string, object>> fotos = SoporteDatos.Del(c, 4);
             foreach (Dictionary<string, object> f in fotos) f["URL"] = SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["ARCHIVO"]));
             List<Dictionary<string, object>> ej = SoporteDatos.Del(c, 5);
-            return new { cab = cab[0], items = SoporteDatos.Del(c, 1), hallazgos = SoporteDatos.Del(c, 2), respuestas = SoporteDatos.Del(c, 3), fotos = fotos, ejecucion = ej.Count > 0 ? ej[0] : null, puede = Token.Puede(P_EJECUTAR) };
+            return new { cab = cab[0], items = SoporteDatos.Del(c, 1), hallazgos = SoporteDatos.Del(c, 2), respuestas = SoporteDatos.Del(c, 3), fotos = fotos, ejecucion = ej.Count > 0 ? ej[0] : null, traza = Traza("INS", ocurrencia), puede = Token.Puede(P_EJECUTAR) };
         });
     }
 
@@ -245,8 +245,17 @@ public class WsOperacion : System.Web.Services.WebService
             foreach (Dictionary<string, object> f in fotos) f["URL"] = SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["ARCHIVO"]));
             object ot = cab[0]["OT_ID"];
             if (ot != null) cab[0]["QOT"] = Q(Convert.ToInt32(ot));
-            return new { cab = cab[0], ejecuciones = SoporteDatos.Del(c, 1), fotos = fotos };
+            return new { cab = cab[0], ejecuciones = SoporteDatos.Del(c, 1), fotos = fotos, traza = Traza("TAR", ocurrencia) };
         });
+    }
+
+    /// <summary>427 · Trazabilidad completa de una ocurrencia (programada → asignada → app → enviada → hallazgos → OT).</summary>
+    private static List<Dictionary<string, object>> Traza(string tipo, int ocurrencia)
+    {
+        List<Dictionary<string, object>> t = SoporteDatos.Filas("SEL_TRAZA_EJECUCION", "@CLIENTE", Cli(), "@TIPO", tipo, "@OCURRENCIA", ocurrencia);
+        string url = System.Web.VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/Ordenes.aspx") + "#ordenes&ot=";
+        foreach (Dictionary<string, object> f in t) if (f["OT_ID"] != null) f["URL"] = url + Q(Convert.ToInt32(f["OT_ID"]));
+        return t;
     }
 
     private static void Exigir()

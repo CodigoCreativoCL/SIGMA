@@ -1547,3 +1547,5 @@ body:has(#cpRoot) .content-page .container-fluid{padding-top:12px!important;max-
 .cp-root .cp-pv-f{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)}
 .cp-root .cp-pv-f small{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--muted);flex:1;min-width:200px}
 .cp-root .cp-pv-f span{display:flex;gap:6px}
+.cp-root .cp-pgej{display:flex;align-items:center;gap:10px;margin:-6px 0 14px;padding:9px 12px;border-radius:12px;background:var(--sigma-blue-soft);font-size:12.5px;color:var(--ink)}
+.cp-root .cp-pgej > svg{color:var(--sigma-blue);flex:none}.cp-root .cp-pgej span{flex:1}
