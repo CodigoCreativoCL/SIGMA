@@ -1,0 +1,40 @@
+﻿/* ============================================================================
+   414 · Choques de horario en las listas (09-10-2026)
+
+   SEL_AGENDA_CHOQUES_RESUMEN: qué ocurrencias (y qué planes, inspecciones y tareas) chocan en los
+   próximos 90 días, por objeto mantenible o por persona/grupo/empresa (criterios en BD/413). Lo usan:
+   Planificación (listas de Planes, Inspecciones y Tareas: «N choques») y Operación › Ejecuciones
+   (marca en la fila). Dos conjuntos: 0 · por ocurrencia (TIPO, OCURRENCIA, N, DETALLE) ·
+   1 · por plan / inspección / tarea (TIPO, REF, N = ocurrencias que chocan).
+   Aplicar con -I. Idempotente.
+   ============================================================================ */
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE OR ALTER PROCEDURE [dbo].[SEL_AGENDA_CHOQUES_RESUMEN]
+    @CLIENTE INT
+AS
+SET NOCOUNT ON
+DECLARE @HOY DATE = CAST([dbo].[FNC_AHORA]() AS DATE)
+DECLARE @HASTA DATE = DATEADD(DAY, 90, @HOY)
+DECLARE @A TABLE (TIPO VARCHAR(4), REF INT, OCURRENCIA INT, ACTIVO INT, RAIZ INT, COMPONENTE INT, INICIO DATETIME, FIN DATETIME, OT_ID INT, REF_CODIGO NVARCHAR(60))
+INSERT @A SELECT TIPO, REF, OCURRENCIA, ACTIVO, RAIZ, COMPONENTE, INICIO, FIN, OT_ID, REF_CODIGO FROM [dbo].[VW_AGENDA_OBJETO] WHERE CLIENTE = @CLIENTE AND INICIO >= @HOY AND INICIO < @HASTA
+DECLARE @R TABLE (TIPO VARCHAR(4), REF INT, OCURRENCIA INT, CLAVE VARCHAR(20), RECURSO NVARCHAR(300), INICIO DATETIME, FIN DATETIME, OT_ID INT, REF_CODIGO NVARCHAR(60))
+INSERT @R SELECT TIPO, REF, OCURRENCIA, CLAVE, RECURSO, INICIO, FIN, OT_ID, REF_CODIGO FROM [dbo].[VW_AGENDA_RECURSO] WHERE CLIENTE = @CLIENTE AND INICIO >= @HOY AND INICIO < @HASTA
+
+DECLARE @X TABLE (TIPO VARCHAR(4), REF INT, OCURRENCIA INT, DETALLE NVARCHAR(400))
+INSERT @X
+SELECT m.TIPO, m.REF, m.OCURRENCIA, N'Mismo activo que ' + o.REF_CODIGO
+FROM   @A m JOIN @A o ON o.RAIZ = m.RAIZ AND NOT (o.TIPO = m.TIPO AND o.REF = m.REF) AND o.INICIO < m.FIN AND m.INICIO < o.FIN
+       AND [dbo].[FNC_OBJETOS_SE_PISAN](m.RAIZ, m.ACTIVO, m.COMPONENTE, o.RAIZ, o.ACTIVO, o.COMPONENTE) = 1
+UNION ALL
+SELECT m.TIPO, m.REF, m.OCURRENCIA, m.RECURSO + N' también en ' + o.REF_CODIGO
+FROM   @R m JOIN @R o ON o.CLAVE = m.CLAVE AND NOT (o.TIPO = m.TIPO AND o.REF = m.REF) AND NOT (ISNULL(o.OT_ID, -1) = ISNULL(m.OT_ID, -2))
+       AND o.INICIO < m.FIN AND m.INICIO < o.FIN
+
+SELECT TIPO, OCURRENCIA, COUNT(*) AS N, MIN(DETALLE) AS DETALLE FROM @X GROUP BY TIPO, OCURRENCIA
+SELECT TIPO, REF, COUNT(DISTINCT OCURRENCIA) AS N FROM @X GROUP BY TIPO, REF
+GO
+PRINT '414_CHOQUES_LISTAS aplicado.'
+GO

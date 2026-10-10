@@ -84,6 +84,14 @@ public partial class View_Mantenimiento_Ordenes_OrdenTrabajo : System.Web.UI.Pag
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Rediseño de Mantenimiento: la ficha de una OT existente vive en Ordenes/Ordenes.aspx.
+        // «?legacy=1» abre la ficha completa de antes (mano de obra, servicios, permisos y firma).
+        if (!IsPostBack && Request.QueryString["legacy"] != "1" && !string.IsNullOrEmpty(Request.QueryString["query"]))
+        {
+            Response.Redirect("~/View/Mantenimiento/Ordenes/Ordenes.aspx#ordenes&ot=" + Server.UrlEncode(Request.QueryString["query"]), false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        }
         if (!IsPostBack)
         {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");

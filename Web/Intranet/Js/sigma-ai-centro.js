@@ -74,6 +74,11 @@
     var V = { planta: 0, sel: null, qf: 'all', pf: 'all', det: null, detId: null, ev: [], desde: null, greeted: false, rail: true, ordered: {} };
     var G3 = null, G3Cargando = false;
     try { V.rail = localStorage.getItem('sg-ai-rail') === '1'; V.full = false; } catch (e) { V.rail = false; }
+    /* 423 · sin SIGMA AI Chat en el plan comercial no hay chat (ni su botón). */
+    var CHAT = (document.getElementById('sgai') || {}).getAttribute ? document.getElementById('sgai').getAttribute('data-chat') !== '0' : true;
+    if (!CHAT) V.rail = false;
+    var SOLO = /[?&]solo=chat/.test(location.search); if (SOLO) document.body.classList.add('sgai-solo');
+    if (SOLO && CHAT) { V.rail = true; V.full = false; }
     function guardarRail() { try { localStorage.setItem('sg-ai-rail', V.rail ? '1' : '0'); } catch (e) { } document.body.classList.toggle('rail-off', !V.rail); if (!V.rail) { V.full = false; } document.body.classList.toggle('rail-full', !!V.full); var fs = $('[data-railfs]'); if (fs) { fs.setAttribute('aria-label', V.full ? 'Salir de pantalla completa' : 'Pantalla completa'); fs.innerHTML = ic(V.full ? 'compress' : 'expand', 17); } }
 
     function cola() { return (D && D.cola) || []; }
@@ -516,10 +521,11 @@
             ws('ConfirmarFoto', { deteccion: +q[0], etiqueta: et, anterior: q[1], activo: f2 ? f2.nombre : '' }).then(function () { cerrarPop(); toast('Corregida. Las correcciones enseñan más que las confirmaciones.'); return cargar(); }).catch(function (er) { toast(er.message); });
             return;
         }
+        if (!CHAT && ('ask' in d || 'rail' in d)) return;
         if ('ask' in d) { if (!V.rail) { V.rail = true; guardarRail(); } preguntar(d.ask); return; }
         if ('enviar' in d) { enviarPregunta(); return; }
         if ('railfs' in d) { V.full = !V.full; guardarRail(); return; }
-        if ('railx' in d) { V.rail = false; guardarRail(); return; }
+        if ('railx' in d) { if (SOLO) { try { parent.postMessage('sgl-cerrar-chat', location.origin); } catch (e2) { } return; } V.rail = false; guardarRail(); return; }
         if ('rail' in d) { V.rail = true; guardarRail(); return; }
     });
     root.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.id === 'rinQ') { e.preventDefault(); enviarPregunta(); } });

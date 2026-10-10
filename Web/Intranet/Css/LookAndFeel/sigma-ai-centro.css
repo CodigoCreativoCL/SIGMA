@@ -449,3 +449,10 @@ body:not(.rail-off) .rail{transform:none}
 .sgai .plsel select:focus-visible{outline:3px solid rgba(22,198,201,.27);border-color:#16C6C9}
 .sgai .plsel select option{color:#17223B;background:#fff}
 @media (max-width:640px){.sgai .plsel{width:100%}.sgai .plsel select{flex:1;max-width:none}}
+/* 423 · el plan comercial no incluye SIGMA AI Chat */
+.sgai[data-chat="0"] .rail,.sgai[data-chat="0"] .railbtn,.sgai[data-chat="0"] [data-ask]{display:none !important}
+/* 428 · modo solo chat (?solo=chat), dentro del panel lateral del lanzador */
+.sgai-solo .navbar-custom,.sgai-solo .left-side-menu,.sgai-solo .sgai .ccm,.sgai-solo .sgai .railbtn,.sgai-solo .sgl,.sgai-solo .fab-help,.sgai-solo .footer,.sgai-solo [data-railfs]{display:none !important}
+.sgai-solo .content-page{margin:0 !important;padding:0 !important;min-height:100vh}
+body.sgai-solo{overflow:hidden}
+.sgai-solo .sgai .rail{top:0 !important;width:100vw !important;transform:none !important;box-shadow:none !important;border-left:0 !important}

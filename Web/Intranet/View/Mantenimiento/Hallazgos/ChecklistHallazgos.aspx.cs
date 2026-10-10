@@ -17,7 +17,15 @@ using Telerik.Web.UI;
 /// </summary>
 public partial class View_Mantenimiento_Hallazgos_ChecklistHallazgos : System.Web.UI.Page
 {
-    protected void Page_Load(object sender, EventArgs e) { }
+    protected void Page_Load(object sender, EventArgs e) {
+        // Rediseño de Mantenimiento en cinco lugares: esta lista vive ahora en su lugar nuevo.
+        // «?legacy=1» abre la pantalla de antes mientras la pestaña nueva no la reemplace.
+        if (!IsPostBack && Request.QueryString["legacy"] != "1")
+        {
+            Response.Redirect("~/View/Mantenimiento/Avisos/Avisos.aspx#avisos", false);
+            Context.ApplicationInstance.CompleteRequest();
+            return;
+        } }
 
     protected void Page_PreRender(object sender, EventArgs e)
     {

@@ -60,6 +60,7 @@ public partial class View_Mantenimiento_Planificacion : System.Web.UI.Page
             periodo = hoy.ToString("yyyy-MM", CultureInfo.InvariantCulture),
             plantas = plantas.OrderBy(p => p.cin_nombre).Select(p => new { id = p.cin_id, n = p.cin_nombre }).ToList(),
             periodos = periodos,
+            usuario = SitioBase.Session.UsuarioId(),
             puedeVer = Token.Puede("VER PLANES MANTENIMIENTO")
         }).Replace("</", "<\\/");
     }

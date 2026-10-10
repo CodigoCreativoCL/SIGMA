@@ -7,7 +7,11 @@
 /// </summary>
 public partial class View_SigmaAI_Centro : System.Web.UI.Page
 {
+    /// <summary>423 · El chat de SIGMA AI se vende por plan comercial (Funcionalidad SIGMA AI CHAT).</summary>
+    protected bool ChatIncluido;
+
     protected void Page_Load(object sender, EventArgs e)
     {
+        ChatIncluido = SitioBase.Controller.PlanFuncion.Incluye(SitioBase.Controller.PlanFuncion.AI_CHAT);
     }
 }

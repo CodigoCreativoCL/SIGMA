@@ -29,7 +29,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 {
     private MenusController menusController = new MenusController();
 
-    private class Meta { public string Grupo, Corto, Contador; }
+    private class Meta { public string Grupo, Corto, Contador, Separador; }
     private Dictionary<int, Meta> _meta = new Dictionary<int, Meta>();
     private Dictionary<string, int> _cont = new Dictionary<string, int>();
     private string _actual = "";
@@ -51,7 +51,8 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
                 {
                     Grupo = f["GRUPO"] as string,
                     Corto = f["CORTO"] as string,
-                    Contador = f["CONTADOR"] as string
+                    Contador = f["CONTADOR"] as string,
+                    Separador = f.ContainsKey("SEPARADOR") ? f["SEPARADOR"] as string : null
                 };
         }
         catch (Exception) { /* sin las columnas el menu se arma igual, sin grupos ni contadores */ }
@@ -74,7 +75,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
     /* El permiso de la pagina y, para las que dependen del plan (la ticketera de Soporte), que el plan del cliente las incluya. */
     private static bool Puede(Menus m)
     {
-        return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link);
+        return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link) && SitioBase.Controller.PlanFuncion.PermiteMenu(m.mnu_link);
     }
 
     private static string Ico(string k, int n)
@@ -204,8 +205,8 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
     {
         if (string.IsNullOrEmpty(clave)) return "";
         int n; if (!_cont.TryGetValue(clave.ToLowerInvariant(), out n) || n <= 0) return "";
-        string tono = clave == "ot" ? "r" : clave == "stock" ? "a" : clave == "ai" ? "n" : "g";
-        string txt = clave == "ot" ? " vencidas" : clave == "stock" ? " fuera de umbral" : clave == "ai" ? " predicciones nuevas" : " abiertos";
+        string tono = clave == "ot" || clave == "avisos" ? "r" : clave == "stock" ? "a" : clave == "ai" ? "n" : "g";
+        string txt = clave == "ot" ? " vencidas" : clave == "avisos" ? " avisos sin tratar" : clave == "stock" ? " fuera de umbral" : clave == "ai" ? " predicciones nuevas" : " abiertos";
         return "<em class=\"nb " + tono + "\" data-sg-cont=\"" + clave + "\" title=\"" + n + txt + "\">" + (n > 99 ? "99+" : n.ToString()) + "</em>";
     }
 
@@ -237,8 +238,11 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
             hojas++; unica = h.mnu_link;
             bool es = EsActual(h.mnu_link);
             if (es) activo = true;
+            /* Rotulo de grupo antes de la opcion (Menus.mnu_separador, p. ej. «Recursos» antes de Biblioteca). */
+            if (!string.IsNullOrEmpty(MetaDe(h.mnu_id).Separador))
+                sb.Append("<div class=\"sub-sep\" aria-hidden=\"true\">" + Server.HtmlEncode(MetaDe(h.mnu_id).Separador) + "</div>");
             sb.Append("<a href=\"" + ResolveUrl(h.mnu_link) + "\" class=\"sbl d" + profundidad + (es ? " on" : "") + "\"" + (es ? " aria-current=\"page\"" : "") +
-                      " data-sg-t=\"" + Server.HtmlEncode(h.mnu_nombre) + "\" data-sg-m=\"" + Server.HtmlEncode(modulo) + "\" data-sg-i=\"" + Server.HtmlEncode(icono ?? "") + "\">" + Server.HtmlEncode(h.mnu_nombre) + "</a>");
+                      " data-sg-t=\"" + Server.HtmlEncode(h.mnu_nombre) + "\" data-sg-m=\"" + Server.HtmlEncode(modulo) + "\" data-sg-i=\"" + Server.HtmlEncode(icono ?? "") + "\">" + Server.HtmlEncode(h.mnu_nombre) + Contador(MetaDe(h.mnu_id).Contador) + "</a>");
         }
         return sb.ToString();
     }

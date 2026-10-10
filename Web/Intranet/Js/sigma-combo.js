@@ -8,6 +8,7 @@
        marca lo que coincide;
      - ofrece «Crear "lo escrito"» solo si se permite y no existe ya;
      - cada opción puede traer foto (img) y una línea secundaria (sub);
+       sin foto, ini pinta las iniciales en su lugar (personas);
      - teclado completo: flechas, Enter, Tab y Escape.
 
    DOS MODOS
@@ -19,7 +20,7 @@
 
    USO
      SigmaCombo.html(nombre, lista, sel, o) -> el HTML del campo.
-       lista: [{id, n, txt?, sub?, img?}] o ['texto', ...]
+       lista: [{id, n, txt?, sub?, img?, ini?}] o ['texto', ...]
        o: { ph, req, crear, texto, libre, vacio, clave, fuente, etiqueta, clase, id }
          clave  : nombre de la definición (por defecto, el nombre del campo).
                   Varias filas con el mismo campo comparten la clave.
@@ -122,7 +123,7 @@
                        '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
             }
             if (op.x.sub != null || op.x.img != null)
-                return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : '<i></i>') + '</span>' : '') +
+                return a + ' class="es-rico">' + ('img' in op.x ? '<span class="cb-img">' + (op.x.img ? '<img src="' + esc(op.x.img) + '" alt="" loading="lazy">' : op.x.ini ? '<b class="cb-ini">' + esc(op.x.ini) + '</b>' : '<i></i>') + '</span>' : '') +
                        '<span class="cb-t"><b>' + marca(op.x.n) + '</b>' + (op.x.sub ? '<small>' + esc(op.x.sub) + '</small>' : '') + '</span></li>';
             /* En un span: la <li> es flex con gap y, suelto, el <mark>
                quedaba separado del resto de la palabra ("Mot  or"). */
@@ -146,7 +147,9 @@
     function posicionar() {
         var inp = CB.inp, ul = document.getElementById('sgComboLista'); if (!inp || !ul || ul.hidden) return;
         var r = inp.getBoundingClientRect(), abajo = innerHeight - r.bottom - 12, arriba = r.top - 12;
-        ul.style.left = r.left + 'px'; ul.style.width = Math.max(r.width, 220) + 'px';
+        /* Con etiquetas (árbol de activo, subactivo y componente) la lista necesita aire para leer los nombres. */
+        var ancho = Math.min(innerWidth - 24, Math.max(r.width, ul.querySelector('.es-tipado') ? 380 : 220));
+        ul.style.left = Math.max(12, Math.min(r.left, innerWidth - ancho - 12)) + 'px'; ul.style.width = ancho + 'px';
         if (abajo < 240 && arriba > abajo) { ul.style.top = ''; ul.style.bottom = (innerHeight - r.top + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, arriba)) + 'px'; }
         else { ul.style.bottom = ''; ul.style.top = (r.bottom + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, abajo)) + 'px'; }
     }

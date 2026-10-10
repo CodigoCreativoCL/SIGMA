@@ -12,5 +12,7 @@ public partial class View_Inventario_Bodegas_BodegaMapa3D : System.Web.UI.Page
     protected void Page_Load(object sender, EventArgs e)
     {
         SitioBase.Token.ExigirPagina();
+        // 423 · SIGMA Twin se vende por plan comercial (Funcionalidad SIGMA TWIN).
+        SitioBase.Controller.PlanFuncion.ExigirPantalla(SitioBase.Controller.PlanFuncion.TWIN);
     }
 }

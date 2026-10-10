@@ -289,6 +289,7 @@ public class WsAiCentro : System.Web.Services.WebService
         return WsSoporte.Ejecutar(() =>
         {
             Exigir(P_VER);
+            if (!SitioBase.Controller.PlanFuncion.Incluye(SitioBase.Controller.PlanFuncion.AI_CHAT)) throw new Exception("SIGMA AI Chat no está incluido en el plan de tu empresa.");
             int cli = Cli(); string pls = AiPlantas.Filtro(planta);
             string n = Norm(pregunta);
             var cola = SoporteDatos.Filas("SEL_AI_COLA", "@CLIENTE", cli, "@PLANTAS", pls).Where(x => V(x, "ESTADO", "") != "d").ToList();
