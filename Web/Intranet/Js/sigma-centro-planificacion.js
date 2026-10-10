@@ -2386,10 +2386,74 @@ function pgFreqHTML(f, e) {
   var nx = f.modo === 'sh' ? '' : '<div class="cp-nxd"><span class="cp-lb2">Próximas fechas</span><div>' + (pgProximas(f, 5).map(function (d) { return '<span class="cp-tg">' + fD(d) + '</span>'; }).join(' ') || '<small style="color:var(--muted)">Sin fechas</small>') + '</div></div>';
   return '<div class="cp-fld"><label>Cada cuánto</label>' + seg + '</div>' + cuerpo + hora + nx;
 }
+/* 431 · «Ver lo ejecutado» en el mismo cajón: lista de ejecuciones y, al tocar una, su detalle completo
+   (trazabilidad, respuestas, comentarios, fotos y hallazgos) con los mismos datos de Operación (WsOperacion). */
+var WSO = function (m, d) { return llamar(CFG.base_ + 'WebService/WsOperacion.asmx/', m, d); };
+var EJTZ = { prog: 'calw', estado: 'clock', asig: 'check', acepta: 'check', inicio: 'clock', sync: 'arrow', fin: 'check', hallazgo: 'alert', descarte: 'x', ot: 'wrench', otini: 'wrench', otfin: 'check' };
+var fHMe = function (x) { return x ? fD(dIso(x)) + ' ' + String(x).slice(11, 16) : '—'; };
+A.pgej = function () {
+  var tipo = PN.t === 'ins' ? 'INS' : 'TAR', st = PN;
+  PN.ejv = { lista: null, det: null, oc: 0 }; panel();
+  api('Ejecutadas', { tipo: tipo, id: PN.id }).then(function (r) { if (PN !== st || !PN.ejv) return; PN.ejv.lista = r.filas || []; panel(); }).catch(function (e) { if (PN === st) { PN.ejv = null; panel(); } toastError(e); });
+};
+A.pgejx = function () { if (PN.ejv && PN.ejv.oc) { PN.ejv.oc = 0; PN.ejv.det = null; } else PN.ejv = null; panel(); var b = $('#cpLayer .cp-pnl-b'); if (b) b.scrollTop = 0; };
+A.pgejo = function (d) {
+  var st = PN, tipo = PN.t === 'ins' ? 'INS' : 'TAR', oc = +d.v;
+  PN.ejv.oc = oc; PN.ejv.det = null; panel();
+  WSO(tipo === 'INS' ? 'Inspeccion' : 'Tarea', { ocurrencia: oc }).then(function (r) { if (PN !== st || !PN.ejv || PN.ejv.oc !== oc) return; PN.ejv.det = r; panel(); var b = $('#cpLayer .cp-pnl-b'); if (b) b.scrollTop = 0; }).catch(function (e) { if (PN === st && PN.ejv) { PN.ejv.oc = 0; panel(); } toastError(e); });
+};
+function ejFotos(l) { return l && l.length ? '<div class="cp-fot">' + l.map(function (f) { return '<a href="' + esc(f.URL) + '" target="_blank" rel="noopener"><img src="' + esc(f.URL) + '" alt="' + esc(f.TITULO || 'Foto de evidencia') + '" loading="lazy"></a>'; }).join('') + '</div>' : ''; }
+function ejTraza(l) {
+  if (!l || !l.length) return '';
+  return '<div class="cp-blk"><div class="cp-blk-h"><h4>Trazabilidad</h4><small>' + pl(l.length, 'evento', 'eventos') + '</small></div><ol class="cp-tz">' + l.map(function (e) {
+    var cls = e.CLASE === 'hallazgo' ? (+e.SEVERIDAD >= 4 ? ' cp-tz-r' : ' cp-tz-a') : e.CLASE === 'fin' || e.CLASE === 'otfin' ? ' cp-tz-ok' : e.CLASE.indexOf('ot') === 0 ? ' cp-tz-p' : '';
+    return '<li class="' + cls + '"><span class="cp-tz-i">' + ic(EJTZ[e.CLASE] || 'clock', 12) + '</span><div class="cp-tz-b"><b>' + esc(e.TITULO) + '</b>' + (e.DETALLE ? '<small>' + esc(e.DETALLE) + '</small>' : '') + '<em>' + fHMe(e.FECHA) + (e.QUIEN ? ' · ' + esc(e.QUIEN) : '') + '</em>' + (e.URL ? '<a class="cp-lnk" href="' + esc(e.URL) + '">Abrir la OT</a>' : '') + '</div></li>';
+  }).join('') + '</ol></div>';
+}
+function ejFacts(e, quien) {
+  if (!e) return '';
+  var dur = e.DURACION != null ? (+e.DURACION >= 60 ? fH(+e.DURACION / 60) : (+e.DURACION) + ' min') : '—';
+  return '<div class="cp-facts"><div><span>Quién</span><b>' + esc(quien || '—') + '</b><small>' + esc(e.DISPOSITIVO || 'App') + (e.SIN_SENAL ? ' · sin señal' : '') + '</small></div><div><span>Duración</span><b>' + dur + '</b><small>' + fHMe(e.INICIO) + ' → ' + String(e.FIN || '').slice(11, 16) + '</small></div>' +
+    (e.TOTAL != null ? '<div><span>Ítems</span><b>' + (+e.RESPONDIDOS || 0) + ' de ' + (+e.TOTAL || 0) + '</b><small>' + (+e.NO_CONFORMES ? pl(+e.NO_CONFORMES, 'no conforme', 'no conformes') : 'Todo conforme') + '</small></div>' : '') +
+    (e.LAT != null && e.LNG != null ? '<div><span>Ubicación</span><b><a class="cp-lnk" href="https://www.google.com/maps?q=' + (+e.LAT) + ',' + (+e.LNG) + '" target="_blank" rel="noopener">Ver en el mapa</a></b></div>' : '') + '</div>' +
+    (e.OBSERVACION ? '<p class="cp-obs">' + ic('help', 13) + esc(e.OBSERVACION) + '</p>' : '');
+}
+function ejDetalle(r, tipo) {
+  if (tipo === 'TAR') {
+    var c = r.cab, fot = {}; (r.fotos || []).forEach(function (f) { (fot[f.EJECUCION] = fot[f.EJECUCION] || []).push(f); });
+    return '<div class="cp-exh"><span class="cp-tg">' + esc(c.ESTADO) + '</span><span class="cp-tg">' + fHMe(c.FECHA) + '</span></div>' +
+      (r.ejecuciones || []).map(function (e) { return ejFacts(e, e.QUIEN) + '<div class="cp-rgr' + (e.CONFORME === false ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>Resultado</b><small>' + (esc(e.RESULTADO) || 'Sin comentario') + '</small>' + ejFotos(fot[e.ID]) + '</div><span class="cp-rgv' + (e.CONFORME === false ? ' cp-bad' : '') + '">' + (e.CONFORME == null ? '—' : e.CONFORME ? 'Conforme' : 'No conforme') + '</span></div>'; }).join('') +
+      (!(r.ejecuciones || []).length ? mc('i', 'Se marcó como hecha desde la web, sin registro de terreno.' + (c.OBSERVACION ? ' Observación: ' + esc(c.OBSERVACION) : ''), 'help') : '') + ejTraza(r.traza);
+  }
+  var res = {}, fot2 = {}; (r.respuestas || []).forEach(function (x) { res[x.ITEM] = x; }); (r.fotos || []).forEach(function (f) { (fot2[f.ITEM] = fot2[f.ITEM] || []).push(f); });
+  var secs = []; (r.items || []).forEach(function (it) { var sc = secs.filter(function (z) { return z.n === it.SECCION; })[0]; if (!sc) { sc = { n: it.SECCION, items: [] }; secs.push(sc); } sc.items.push(it); });
+  return '<div class="cp-exh"><span class="cp-tg">' + esc(r.cab.ESTADO) + '</span><span class="cp-tg">' + esc(r.cab.PAUTA_CODIGO) + ' v' + esc(r.cab.PAUTA_VERSION) + '</span><span class="cp-tg">' + esc(r.cab.ACTIVO_CODIGO || '') + '</span></div>' +
+    ejFacts(r.ejecucion, r.cab.HECHA_POR) +
+    ((r.hallazgos || []).length ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + pl(r.hallazgos.length, 'hallazgo pasó', 'hallazgos pasaron') + ' a Avisos:</b> ' + r.hallazgos.map(function (h) { return esc(h.ITEM) + ' (' + (+h.SEVERIDAD >= 4 ? 'alta' : 'media') + ')'; }).join(', ') + '</span></div>' : '') +
+    '<div class="cp-rgf2">' + secs.map(function (sc) {
+      return '<div class="cp-rgs"><h5>' + esc(sc.n) + '</h5>' + sc.items.map(function (it) {
+        var x = res[it.ID];
+        return '<div class="cp-rgr' + (x && x.FUERA ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (x && x.COMENTARIO ? '<small>«' + esc(x.COMENTARIO) + '»' + (x.VOZ ? ' · dictado por voz' : '') + '</small>' : '') + ejFotos(fot2[it.ID]) + '</div>' +
+          '<span class="cp-rgv' + (x && x.FUERA ? ' cp-bad' : x && x.NA ? ' cp-na' : '') + '">' + (x ? esc(x.VALOR || '—') : '<span class="cp-muted2">Sin respuesta</span>') + (x && x.FUERA ? '<small>' + ic('alert', 11) + 'Fuera de rango</small>' : '') + '</span></div>';
+      }).join('') + '</div>';
+    }).join('') + '</div>' + ejTraza(r.traza);
+}
+function ejPanel() {
+  var v = PN.ejv, tipo = PN.t === 'ins' ? 'INS' : 'TAR', nom = esc(PN.n || (PN.fila && PN.fila.NOMBRE) || '');
+  var vol = '<button type="button" class="cp-btn cp-plain cp-xs cp-ejback" data-a="pgejx">' + ic('chevl', 14) + (v.oc ? 'Volver a la lista' : 'Volver a la programación') + '</button>';
+  var b;
+  if (v.oc) b = vol + (v.det ? ejDetalle(v.det, tipo) : '<div class="cp-sk" style="height:80px;margin-top:10px"></div><div class="cp-sk" style="height:220px;margin-top:10px"></div>');
+  else if (!v.lista) b = vol + '<div class="cp-sk" style="height:60px;margin-top:10px"></div><div class="cp-sk" style="height:60px;margin-top:8px"></div>';
+  else b = vol + (v.lista.length ? '<div class="cp-ejl">' + v.lista.map(function (x) {
+    var chip = tipo === 'INS' ? (+x.HALLAZGOS ? '<span class="cp-tg cp-w">' + pl(+x.HALLAZGOS, 'hallazgo', 'hallazgos') + '</span>' : (x.QUIEN ? '<span class="cp-tg cp-c">Sin hallazgos</span>' : '')) : (x.CONFORME === false ? '<span class="cp-tg cp-w">No conforme</span>' : x.CONFORME ? '<span class="cp-tg cp-c">Conforme</span>' : '');
+    return '<button type="button" class="cp-ejr" data-a="pgejo" data-v="' + x.OCURRENCIA + '"><span class="cp-ejr-d"><b>' + fD(dIso(x.FECHA)) + '</b><small>' + String(x.FECHA).slice(11, 16) + '</small></span><span class="cp-s"><b>' + esc(x.ACTIVO || '—') + '</b><small>' + (x.QUIEN ? esc(x.QUIEN) + ' · ' + fHMe(x.HECHA_EL) + (x.DISPOSITIVO ? ' · ' + esc(x.DISPOSITIVO) : '') : esc(x.ESTADO)) + '</small></span>' + chip + (+x.FOTOS ? '<span class="cp-tg">' + pl(+x.FOTOS, 'foto', 'fotos') + '</span>' : '') + ic('chev', 14) + '</button>';
+  }).join('') + '</div>' : '<div class="cp-empty" style="margin-top:10px">' + ic('clip', 18) + '<b>Todavía no hay ejecuciones</b>Cuando alguien la registre en la app (o desde Operación), aparecerá aquí con sus respuestas, fotos y trazabilidad.</div>');
+  return { t: nom || (tipo === 'INS' ? 'Inspección' : 'Tarea'), s: (v.oc ? 'Lo ejecutado · detalle' : 'Lo ejecutado · últimas 30'), w: 'w', b: b, f: '<span></span><span class="cp-r"><button type="button" class="cp-btn cp-ghost" data-a="pgejx">Volver</button></span>' };
+}
 /* 430 · Lo que se respondió en terreno (app o web) se ve en Operación › Ejecuciones › Completadas → «ver». */
 function pgEjecutado(h) {
   var k = PN && PN.t === 'ins' ? 'ron' : 'tar';
-  return '<div class="cp-pgej">' + ic('clip', 15) + '<span>Respuestas, comentarios, fotos y hallazgos de cada ejecución en terreno.</span><a class="cp-btn cp-out cp-xs" href="' + esc(CFG.base_ + 'View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones&k=' + k + '&f=cer&q=' + encodeURIComponent(h.NOMBRE || PN.n || '')) + '">Ver lo ejecutado</a></div>';
+  return '<div class="cp-pgej">' + ic('clip', 15) + '<span>Respuestas, comentarios, fotos, hallazgos y trazabilidad de cada ejecución en terreno.</span><button type="button" class="cp-btn cp-out cp-xs" data-a="pgej">Ver lo ejecutado</button></div>';
 }
 function pgFacts(h) { return pgFacts0(h) + pgEjecutado(h); }
 function pgFacts0(h) { var t = +h.TOTAL || 0; return '<div class="cp-facts">' + '<div><span>Cumplimiento 30 días</span><b>' + (t ? (+h.HECHAS || 0) + ' de ' + t : 'Sin registros aún') + '</b></div>' + (h.ESCALADAS != null ? '<div><span>Escaladas a OT</span><b>' + (+h.ESCALADAS || 0) + '</b></div>' : '<div><span>Activos</span><b>' + (+h.ACTIVOS || 0) + '</b></div>') + '</div>'; }
@@ -2559,6 +2623,7 @@ A.pvpub = function (d, el) {
 };
 
 PANELS.ins = function () {
+  if (PN.ejv && !PN.cargando) return ejPanel();
   if (PN.cargando) return { t: PN.id ? 'Inspección' : 'Nueva inspección', s: 'Planificación · inspecciones', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:300px;margin-top:12px"></div>' };
   var e = PN.err, plantas = CFG.plantas || [];
   var pautas = PG.pautas.map(function (p) { return { id: p.ID, n: p.CODIGO + ' v' + p.VERSION + ' · ' + p.NOMBRE, sub: pl(+p.ITEMS, 'ítem', 'ítems') }; });
@@ -2611,6 +2676,7 @@ A.pgpasoadd = function () { var t = String(PN.paso || '').trim(); if (!t) { var 
 A.pgpasorm = function (d) { PN.pasos.splice(+d.v, 1); panel(); };
 A.pgpasomv = function (d) { var i = +d.v, j = i + (+d.d); if (j < 0 || j >= PN.pasos.length) return; var x = PN.pasos[i]; PN.pasos[i] = PN.pasos[j]; PN.pasos[j] = x; panel(); };
 PANELS.tar = function () {
+  if (PN.ejv && !PN.cargando) return ejPanel();
   if (PN.cargando) return { t: PN.id ? 'Tarea recurrente' : 'Nueva tarea recurrente', s: 'Planificación · tareas', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:300px;margin-top:12px"></div>' };
   var e = PN.err, base = PN.eq ? pgAct(PN.eq) : null;
   var cats = PG.categorias.map(function (c) { return { id: c.ID, n: c.NOMBRE }; });

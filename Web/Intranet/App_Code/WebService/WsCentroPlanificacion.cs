@@ -1328,6 +1328,19 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         });
     }
 
+    /// <summary>428 · Lo ejecutado de una inspección o tarea (para verlo en su mismo cajón): últimas 30 ocurrencias con algo registrado.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Ejecutadas(string tipo, int id)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            if (tipo != "INS" && tipo != "TAR") throw new Exception("Tipo no válido.");
+            return new { filas = SoporteDatos.Filas("SEL_PLAN_EJECUTADAS", "@CLIENTE", Cli(), "@TIPO", tipo, "@ID", id) };
+        });
+    }
+
     private static void ExigirAgenda()
     {
         if (!Token.Puede(P_VER) && !Token.Puede(P_OT) && !Token.Puede("VER ORDENES TRABAJO")) throw new Exception("No tienes permiso para esta acción.");
