@@ -48,3 +48,15 @@
 .sg-combo-lista li.es-tipado.es-n1 { padding-left: 22px }
 .sg-combo-lista li.es-tipado.es-n2 { padding-left: 36px }
 .sg-combo-lista li.es-tipado.es-n3 { padding-left: 50px }
+
+/* Árbol de objeto mantenible (activo › subactivo › componente): etiqueta compacta, nombre legible
+   y una línea guía a la izquierda de los hijos para ver de quién cuelgan. */
+.sg-combo-lista li.es-tipado { gap: 10px; align-items: center }
+.sg-combo-lista li.es-tipado .cb-tag { min-width: 0; padding: 2px 7px; font-size: 9.5px; border-radius: 6px }
+.sg-combo-lista li.es-tipado .cb-t { min-width: 0; flex: 1 }
+.sg-combo-lista li.es-tipado .cb-t b { white-space: normal; overflow: visible; text-overflow: clip; line-height: 1.3; font-weight: 600 }
+.sg-combo-lista li.es-tipado.es-n1, .sg-combo-lista li.es-tipado.es-n2, .sg-combo-lista li.es-tipado.es-n3 { position: relative }
+.sg-combo-lista li.es-tipado.es-n1::before, .sg-combo-lista li.es-tipado.es-n2::before, .sg-combo-lista li.es-tipado.es-n3::before { content: ''; position: absolute; top: 0; bottom: 0; width: 1px; background: #E2E7F0 }
+.sg-combo-lista li.es-tipado.es-n1::before { left: 14px }
+.sg-combo-lista li.es-tipado.es-n2::before { left: 28px }
+.sg-combo-lista li.es-tipado.es-n3::before { left: 42px }

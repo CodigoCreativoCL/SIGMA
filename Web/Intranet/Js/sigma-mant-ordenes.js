@@ -16,6 +16,34 @@
   var K = window.MantKit, L = window.MantLugar, CFG = K.CFG;
   var esc = K.esc, ic = K.ic, pl = K.pl, nrm = K.nrm, $ = K.$;
   var api = function (m, d) { return K.llamar(CFG.ws, m, d); };
+  /* 413 · Choques de horario: mientras dura el trabajo el equipo está parado; otra OT, inspección, tarea o
+     plan sobre el mismo activo, subactivo o componente en esa ventana se advierte antes de guardar. */
+  var apiCP = function (m, d) { return K.llamar(CFG.base_ + 'WebService/WsCentroPlanificacion.asmx/', m, d); };
+  var TIPN = { PLAN: 'Plan', INS: 'Inspección', TAR: 'Tarea', OT: 'OT' };
+  /* 420 · carga laboral de quien está asignado a la OT (persona o empresa externa). */
+  function cargaOT(a, nombre, sub, fecha) {
+    var cl = +a.ota_usuario ? 'U:' + a.ota_usuario : +a.ota_proveedor ? 'E:' + a.ota_proveedor : +a.ota_grupo_trabajo ? 'G:' + a.ota_grupo_trabajo : '';
+    return cl && window.SigmaCarga ? '<span class="cp-carga">' + SigmaCarga.chipDe(cl) + SigmaCarga.boton(cl, nombre, sub, null, fecha || '') + '</span>' : '';
+  }
+  function choquesHTML(l) {
+    if (!l || !l.length) return '';
+    return '<div class="cp-bnr cp-w" style="margin-top:12px">' + ic('alert', 18) + '<span><b>Choque de horario</b>: en esa ventana el equipo, o quienes la ejecutan, ya tienen otro trabajo.' +
+      '<ul class="cp-olst" style="margin-top:6px">' + l.slice(0, 5).map(function (c) {
+        return '<li>' + (c.CLASE === 'RECURSO' ? '<span class="cp-tg">Ocupado</span> ' : '') + '<b>' + esc(c.OBJETO) + '</b> · ' + (TIPN[c.CON_TIPO] || '') + ' ' + esc(c.CON_CODIGO) + ' · ' + esc(c.CON_NOMBRE) + '<small>' + K.fD(K.dIso(c.CON_INICIO)) + ' ' + K.hIso(c.CON_INICIO) + '–' + K.hIso(c.CON_FIN) + '</small>' + (c.CLASE === 'RECURSO' && c.CLAVE && window.SigmaCarga ? ' ' + SigmaCarga.boton(c.CLAVE, String(c.OBJETO).replace(/\s*\(grupo.*$/, ''), '', null, c.CON_INICIO) : '') + '</li>';
+      }).join('') + (l.length > 5 ? '<li><small>y ' + (l.length - 5) + ' más</small></li>' : '') + '</ul><small style="display:block;margin-top:6px">Si es intencional, guarda igual; si no, cambia la fecha, la hora o la duración.</small></span></div>';
+  }
+  /* true = esperar (revisando o mostrando choques); false = seguir guardando. */
+  function choquesAntes(st, ref, activo, componente, fechaHora, durMin, seguir, recursos) {
+    if (st.choqOk || !fechaHora || !(+activo)) return false;
+    st.busy = true; K.Panel.paint();
+    apiCP('ChoquesCandidato', { datos: JSON.stringify({ tipo: 'OT', ref: ref || 0, objetos: [{ activo: +activo, componente: +componente || 0 }], fechas: [fechaHora.replace(' ', 'T')], duracion: durMin || 60, recursos: recursos || [] }) }).then(function (r) {
+      if (K.Panel.state() !== st) return;
+      st.busy = false; st.choq = r.choques || [];
+      if (!st.choq.length) { st.choqOk = true; seguir(); return; }
+      K.Panel.paint(); var b = $('#cpLayer .cp-pnl-b'); if (b) b.scrollTop = b.scrollHeight;
+    }).catch(function () { if (K.Panel.state() !== st) return; st.busy = false; st.choqOk = true; seguir(); });
+    return true;
+  }
 
   var ESTADOS = { 1: ['Por iniciar', 'a'], 2: ['En ejecución', 'e'], 3: ['En espera de cierre', 'w'], 4: ['Cerrada', 'c'] };
   var TIPOS = { 1: 'Preventiva', 2: 'Correctiva', 3: 'Predictiva' };
@@ -183,8 +211,8 @@
         '<div class="cp-fld"><label for="edDu">Duración estimada (horas)</label><input id="edDu" class="cp-inp" data-pv="ed_dur" value="' + esc(e.dur) + '" inputmode="decimal" placeholder="Ej.: 2"></div></div>' +
         '<div class="cp-fld2"><div class="cp-fld"><label>Fecha programada</label>' + K.fecha('ed_fecha', K.deDN(e.fecha), { ph: 'dd-mm-aaaa' }) + '</div><div class="cp-fld"><label>Hora</label>' + K.combo('edHora', HORAS.map(function (h) { return { id: h, n: h }; }), e.hora, { etiqueta: 'Hora', ph: '08:00' }) + '</div></div>' +
         '<label class="cp-sw"><input type="checkbox" data-pv="ed_permiso"' + (e.permiso ? ' checked' : '') + '><i></i>Requiere permiso de trabajo</label>' +
-        '<div class="cp-fld" style="margin-top:12px"><label for="edN">Notas</label><textarea id="edN" class="cp-inp" rows="2" data-pv="ed_notas">' + esc(e.notas) + '</textarea></div>',
-      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (e.busy ? ' cp-load' : '') + '" data-a="otguardar">Guardar cambios</button></span>' };
+        '<div class="cp-fld" style="margin-top:12px"><label for="edN">Notas</label><textarea id="edN" class="cp-inp" rows="2" data-pv="ed_notas">' + esc(e.notas) + '</textarea></div>' + choquesHTML(e.choq),
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (e.busy ? ' cp-load' : '') + '" data-a="otguardar">' + (e.choq && e.choq.length ? ic('alert', 16) + 'Guardar igual' : 'Guardar cambios') + '</button></span>' };
   };
   var PQ = function (a) {
     var c = U.cat, ya = U.ficha.asignaciones.map(function (x) { return +x.ota_usuario; });
@@ -192,7 +220,8 @@
     var lista = a.tipo === 1 ? c.personas.filter(function (p) { return ya.indexOf(+p.ID) < 0; }).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; }) : c.proveedores.map(function (p) { return { id: p.ID, n: p.NOMBRE }; });
     return { t: a.resp ? 'Agregar responsable' : 'Agregar al equipo', s: otTxt(U.ficha.ot.otr_correlativo) + ' · queda en la bitácora', w: 'n',
       b: '<div class="cp-segc" style="margin-bottom:12px"><button type="button" data-a="otatipo" data-v="1" aria-pressed="' + (a.tipo === 1) + '">Persona</button><button type="button" data-a="otatipo" data-v="2" aria-pressed="' + (a.tipo === 2) + '">Empresa externa</button></div>' +
-        '<div class="cp-fld"><label>' + (a.tipo === 1 ? 'Persona' : 'Empresa externa') + '</label>' + K.combo('otaQuien', lista, a.quien || '', { etiqueta: a.tipo === 1 ? 'Persona' : 'Empresa externa', ph: a.tipo === 1 ? 'Elige la persona…' : 'Elige la empresa…' }) + '</div>' +
+        '<div class="cp-fld"><label>' + (a.tipo === 1 ? 'Persona' : 'Empresa externa') + '</label>' + K.combo('otaQuien', lista, a.quien || '', { etiqueta: a.tipo === 1 ? 'Persona' : 'Empresa externa', ph: a.tipo === 1 ? 'Elige la persona…' : 'Elige la empresa…' }) +
+          (a.quien && window.SigmaCarga ? '<div class="cp-carga-row">' + SigmaCarga.chipDe((a.tipo === 1 ? 'U:' : 'E:') + a.quien) + ' ' + SigmaCarga.boton((a.tipo === 1 ? 'U:' : 'E:') + a.quien, (lista.filter(function (x) { return String(x.id) === String(a.quien); })[0] || {}).n || '', '', null, U.ficha.ot.otr_fecha_programada_utc || '') + '</div>' : '') + '</div>' +
         '<div class="cp-fld"><label>Grupo de trabajo</label>' + K.combo('otaGrupo', [{ id: 0, n: 'Sin grupo' }].concat(c.grupos.map(function (g) { return { id: g.ID, n: g.NOMBRE }; })), a.grupo || 0, { etiqueta: 'Grupo de trabajo', ph: 'Sin grupo' }) + '</div>' +
         '<label class="cp-sw"><input type="checkbox" data-pv="oa_resp"' + (a.resp ? ' checked' : '') + '><i></i>Queda como responsable</label>' +
         '<div class="cp-fld" style="margin-top:12px"><label for="oaO">Observación</label><input id="oaO" class="cp-inp" data-pv="oa_obs" value="' + esc(a.obs) + '" placeholder="Opcional"></div>',
@@ -208,6 +237,7 @@
       var av = pr && pr.FOTO ? '<img class="cp-av cp-avi cp-lg" src="' + esc(pr.FOTO) + '" alt="" loading="lazy">' : K.avatar(nombre).replace('class="cp-av"', 'class="cp-av cp-lg"');
       var sub = pr ? [pr.PERFIL, pr.ESPECIALIDAD].filter(Boolean).join(' · ') : (a.ROL_NOMBRE || '');
       return '<div class="cp-rp">' + av + '<span class="cp-s"><b>' + esc(nombre) + (a.PROVEEDOR_NOMBRE && !a.USUARIO_NOMBRE ? ' <span class="cp-tg">Empresa externa</span>' : '') + '</b><small>' + esc(sub || 'Sin perfil') + (a.GRUPO_NOMBRE && a.USUARIO_NOMBRE ? ' · ' + esc(a.GRUPO_NOMBRE) : '') + '</small></span>' +
+        cargaOT(a, nombre, sub, o.otr_fecha_programada_utc || o.otr_fecha_programada) +
         (puede ? (esResp ? '' : '<button type="button" class="cp-btn cp-plain cp-xs" data-a="otresp" data-v="' + a.ota_id + '">Hacer responsable</button>') + '<button type="button" class="cp-ibx" data-a="otquitar" data-v="' + a.ota_id + '" aria-label="Quitar a ' + esc(nombre) + '">' + ic('x', 13) + '</button>' : '') + '</div>';
     };
     var asig = '<section class="cp-card" id="asig"><div class="cp-sc-h"><h3>Asignación</h3>' + (e === 4 ? '<small>OT cerrada</small>' : !tieneAsignado(F) ? '<small style="color:var(--amber)">Elige al menos un responsable para pasarla a Asignada</small>' : '<small>Puede haber más de un responsable</small>') + '</div>' +
@@ -414,6 +444,9 @@
     var e = U.ed; if (!e) return;
     if (!e.titulo.trim()) { e.err = true; K.Panel.paint(); return; }
     var f = e.fecha ? K.deDN(e.fecha) : '', dur = parseFloat(String(e.dur || '').replace(',', '.')) || 0;
+    var o = U.ficha.ot;
+    var rec = (U.ficha.asignaciones || []).map(function (x) { return +x.ota_usuario ? 'U:' + x.ota_usuario : +x.ota_proveedor ? 'E:' + x.ota_proveedor : +x.ota_grupo_trabajo ? 'G:' + x.ota_grupo_trabajo : ''; }).filter(Boolean);
+    if (choquesAntes(e, +o.otr_id, o.otr_activo, o.otr_activo_componente, f ? f + ' ' + (e.hora || '08:00') : '', Math.round(dur * 60), A.otguardar, rec)) return;
     e.busy = true; K.Panel.paint();
     llamar('Guardar', { titulo: e.titulo.trim(), descripcion: e.desc, notas: e.notas, prioridad: e.prio, estrategia: e.estr, fecha: f ? f + ' ' + (e.hora || '08:00') : '', duracionMin: Math.round(dur * 60), requierePermiso: !!e.permiso }, 'Cambios guardados.').then(function () { U.ed = null; K.Panel.close(); }).catch(function () { e.busy = false; K.Panel.paint(); });
   };
@@ -503,8 +536,8 @@
         '<div class="cp-fld"><label>Prioridad</label>' + seg(PRIO, 'otn', 'prio', st.prio) + '</div>' +
         '<div class="cp-fld2"><div class="cp-fld"><label>Fecha programada</label>' + K.fecha('n_fecha', K.deDN(st.fecha || ''), { ph: 'dd-mm-aaaa' }) + '</div><div class="cp-fld"><label>Hora</label>' + K.combo('nHora', HORAS.slice(10, 46).map(function (h) { return { id: h, n: h }; }), st.hora || '08:00', { etiqueta: 'Hora', ph: '08:00' }) + '</div></div>' +
         '<div class="cp-fld2"><div class="cp-fld"><label>Responsable</label>' + K.combo('nResp', pers, st.resp || 0, { etiqueta: 'Responsable', ph: 'Sin asignar' }) + '</div><div class="cp-fld"><label for="nD">Duración (horas)</label><input id="nD" class="cp-inp" data-pv="n_dur" value="' + esc(st.dur || '') + '" inputmode="decimal" placeholder="Ej.: 2"></div></div>' +
-        '<div class="cp-fld"><label for="nDe">Descripción</label><textarea id="nDe" class="cp-inp" rows="3" data-pv="n_desc" placeholder="Detalle del trabajo">' + esc(st.desc || '') + '</textarea></div>',
-      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="nuevaok">Crear OT</button></span>' };
+        '<div class="cp-fld"><label for="nDe">Descripción</label><textarea id="nDe" class="cp-inp" rows="3" data-pv="n_desc" placeholder="Detalle del trabajo">' + esc(st.desc || '') + '</textarea></div>' + choquesHTML(st.choq),
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="nuevaok">' + (st.choq && st.choq.length ? ic('alert', 16) + 'Crear igual' : 'Crear OT') + '</button></span>' };
   };
   A.otnueva = function () {
     var st = { cat: null, act: '', comp: 0, t: '', tipo: 2, prio: 2, fecha: '', hora: '08:00', resp: 0, dur: '', desc: '', err: false, busy: false };
@@ -515,8 +548,10 @@
   A.nuevaok = function () {
     var st = K.Panel.state(); if (!st) return;
     if (!st.act || (st.t || '').trim().length < 5) { st.err = true; K.Panel.paint(); return; }
-    var f = st.fecha ? K.deDN(st.fecha) : ''; st.busy = true; K.Panel.paint();
+    var f = st.fecha ? K.deDN(st.fecha) : '';
     var dur = parseFloat(String(st.dur || '').replace(',', '.')) || 0;
+    if (choquesAntes(st, 0, st.act, st.comp, f ? f + ' ' + (st.hora || '08:00') : '', Math.round(dur * 60), A.nuevaok, +st.resp ? ['U:' + st.resp] : [])) return;
+    st.busy = true; K.Panel.paint();
     api('Nueva', { activo: +st.act, componente: +st.comp || 0, titulo: st.t.trim(), descripcion: st.desc || '', tipo: +st.tipo, prioridad: +st.prio, fecha: f ? f + ' ' + (st.hora || '08:00') : '', duracionMin: Math.round(dur * 60), responsable: +st.resp || 0 }).then(function (r) {
       K.Panel.close(); K.toast(otTxt(r.ot) + ' creada.'); cargarLista(); abrir(r.q);
     }).catch(function (e) { st.busy = false; K.Panel.paint(); K.toastError(e); });
@@ -525,6 +560,7 @@
   /* ---------------------------------------------------------------- campos y combos */
   L.on({
     pv: function (k, v) {
+      var cst = K.Panel.state(); if (cst && (k === 'ed_dur' || k === 'n_dur')) { cst.choq = null; cst.choqOk = false; }
       if (k === 'otq') { U.q = v; var f = $('#otFilas'); if (f) f.innerHTML = ordenada().slice(0, 100).map(filaOt).join(''); return; }
       var fc = U.formCierre, st = K.Panel.state(), e = U.ed, fr = U.fr || (U.fr = { obs: '', err: '', busy: '' });
       if (k === 'ci_informe') { fc.informe = v; return; }
@@ -545,6 +581,7 @@
     },
     fecha: function (el) {
       var k = el.getAttribute('data-fe'), st = K.Panel.state();
+      if (st && (k === 'n_fecha' || k === 'ed_fecha')) { st.choq = null; st.choqOk = false; }
       if (k === 'n_fecha' && st) st.fecha = el.value;
       if (k === 'ed_fecha' && U.ed) U.ed.fecha = el.value;
       if (k === 'in_ini' && U.ind) U.ind.ini = el.value;
@@ -552,6 +589,7 @@
     },
     combo: function (span, v) {
       var n = span.getAttribute('data-cb'), st = K.Panel.state();
+      if (st && /^(nAct|nComp|nHora|edHora|nResp)$/.test(n)) { st.choq = null; st.choqOk = false; }
       if (n === 'otOrigen') { U.o = +v || 0; pintar(); return; }
       if (n === 'otTipo') { U.t = +v || 0; pintar(); return; }
       if (n === 'ciMotivo') { U.formCierre.motivo = +v || 1; return; }

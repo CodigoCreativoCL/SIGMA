@@ -14,6 +14,7 @@
     <script type="text/javascript">window.MantLugarConfig = <%=ConfigJson %>;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-comun.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-lugar.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-recursos.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
@@ -27,7 +28,7 @@
                 </div>
                 <div class="cp-hero-actions" id="mlAcc"></div>
             </header>
-            <section class="cp-panel">
+            <section class="cp-panel cp-bare">
                 <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Recursos" id="mlTabs"></nav>
                 <div id="mlBody" role="tabpanel" aria-live="polite"></div>
             </section>

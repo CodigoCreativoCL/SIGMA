@@ -75,7 +75,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
     /* El permiso de la pagina y, para las que dependen del plan (la ticketera de Soporte), que el plan del cliente las incluya. */
     private static bool Puede(Menus m)
     {
-        return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link);
+        return SitioBase.Token.PuedeMenu(m.mnu_id) && SitioBase.Controller.SoportePlan.PermiteMenu(m.mnu_link) && SitioBase.Controller.PlanFuncion.PermiteMenu(m.mnu_link);
     }
 
     private static string Ico(string k, int n)

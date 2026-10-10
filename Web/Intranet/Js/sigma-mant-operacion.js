@@ -78,6 +78,8 @@
   var KD = { PLAN: ['k-plan', 'Plan'], INSPECCION: ['k-ron', 'Inspección'], TAREA: ['k-tar', 'Tarea'], OT: ['k-otx', 'OT'] };
   function agAct(x) {
     if (x.OT_NUMERO) return '<a class="cp-btn cp-out cp-sm" href="' + esc(URL_OT + '#ordenes&ot=' + (x.QOT || '')) + '">OT-' + x.OT_NUMERO + '</a>';
+    /* 418 · la inspección pendiente se registra desde aquí (cajón de Ejecuciones). */
+    if (x.TIPO === 'INSPECCION' && +x.ESTADO >= 1 && +x.ESTADO <= 3) return '<button type="button" class="cp-btn cp-out cp-sm" data-a="exreg" data-k="INSPECCION-' + x.ID + '">Registrar</button>';
     if (x.TIPO === 'PLAN' && x.Q && !(+x.ESTADO === 4)) return '<button type="button" class="cp-btn cp-sec cp-sm" data-a="opgen" data-q="' + esc(x.Q) + '">Generar OT</button>';
     return '';
   }
@@ -115,11 +117,18 @@
       (cats.length ? '<div class="cp-aql">' + cats.map(function (c) { return '<details class="cp-aq ' + c.cls + '" data-aq="' + c.k + '"' + (c.k === openK ? ' open' : '') + '><summary><span class="cp-ar-i">' + ic(c.ico, 15) + '</span><b class="cp-tn cp-aq-n">' + c.n + '</b><span class="cp-aq-t"><b>' + c.t + '</b><small>' + esc(c.p || '') + (c.n > 1 ? ' y ' + (c.n - 1) + ' más' : '') + '</small></span><span class="cp-aq-c">' + ic('chev', 15) + '</span></summary><ul>' + c.l.join('') + '</ul>' + (c.cta ? '<div class="cp-aq-f">' + c.cta + '</div>' : '') + '</details>'; }).join('') + '</div>'
         : '<div class="cp-empty" style="border:0"><span class="cp-ei">' + ic('check', 20) + '</span><b>Nada requiere atención</b>Todo lo programado está al día.</div>') + '</section>';
   }
+  /* 419 · tarjeta SIGMA AI como el mockup: confianza, componente, ventana de falla y acciones (Ver análisis, Crear OT). */
   function iaHTML(H) {
-    var a = (H.avisos || []).filter(function (x) { return +x.ORIGEN === 5; })[0];
-    if (!a) return '';
-    return '<section class="cp-sai"><div class="cp-sai-h"><b class="cp-sai-k">' + ic('spark', 14) + 'Recomendación de SIGMA AI</b></div><p>' + esc(a.TITULO) + '</p><small>' + esc(a.ACTIVO_CODIGO) + ' · ' + esc(a.AVISO) + '</small><div class="cp-sai-a"><a class="cp-btn cp-plain cp-sm" href="' + esc(URL_AV) + '#avisos">Ver aviso</a></div></section>';
+    var l = (H.ia || []).length ? H.ia : (H.avisos || []).filter(function (x) { return +x.ORIGEN === 5; });
+    var a = l[0]; if (!a) return '';
+    var ref = a.REF || String(a.AVISO || '').replace(/^\D+-/, ''), dias = a.DIAS_RESTANTES != null ? Math.max(0, Math.round(+a.DIAS_RESTANTES)) : null;
+    var ventana = dias != null ? (dias === 0 ? 'falla probable hoy' : 'falla probable en ' + pl(dias, 'día', 'días')) : a.EVENTO ? 'falla probable el ' + K.fDL(K.dIso(a.EVENTO)) : '';
+    var meta = [a.ACTIVO || a.ACTIVO_CODIGO, a.COMPONENTE, ventana].filter(Boolean).map(esc).join(' · ');
+    return '<section class="cp-sai"><div class="cp-sai-h"><b class="cp-sai-k">' + ic('spark', 14) + 'SIGMA AI · Recomendación</b>' + (a.CONFIANZA != null ? '<span class="cp-sai-p2" title="Confianza del modelo">' + (+a.CONFIANZA) + ' %</span>' : '') + '</div>' +
+      '<p>' + esc(a.TITULO) + '</p>' + (a.DETALLE && a.DETALLE !== a.TITULO ? '<small style="color:#B7BED6">' + esc(String(a.DETALLE).slice(0, 220)) + '</small>' : '') + '<small>' + meta + (l.length > 1 ? ' · y ' + pl(l.length - 1, 'recomendación más', 'recomendaciones más') : '') + '</small>' +
+      '<div class="cp-sai-a"><a class="cp-btn cp-plain cp-sm" href="' + esc(URL_AV + '#avisos&aviso=5-' + ref) + '">Ver análisis</a>' + (H.puedeOt ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="opiaot" data-r="' + esc(ref) + '">' + ic('plus', 14) + 'Crear OT</button>' : '') + '</div></section>';
   }
+
 
   /* ---------------------------------------------------------------- estado por área */
   function areas(H) {
@@ -211,6 +220,14 @@
   };
   A.opot = function (d) { location.href = URL_OT + '#ordenes&ot=' + d.q; };
   A.opav = function () { location.href = URL_AV + '#avisos'; };
+  /* 419 · «Crear OT» desde la recomendación: la misma regla de Avisos (no duplica; si ya tenía OT, la muestra). */
+  A.opiaot = function (d, el) {
+    if (el.classList.contains('cp-load')) return; el.classList.add('cp-load');
+    K.llamar(CFG.base_ + 'WebService/WsAvisos.asmx/', 'Generar', { origen: 5, refId: +d.r }).then(function (r) {
+      K.toastA((r.ya ? 'La recomendación ya tenía la ' : 'Se creó la ') + 'OT-' + r.ot + '.', 'Abrir OT', function () { if (r.url) location.href = r.url; });
+      cargar();
+    }).catch(function (e) { el.classList.remove('cp-load'); K.toastError(e); });
+  };
   A.opriesgo = function () { };
   /* generar la OT de una ejecución de plan (el mismo servicio de Planificación; nunca en silencio) */
   A.opgen = function (d) {

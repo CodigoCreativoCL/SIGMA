@@ -620,6 +620,10 @@
                  pantallas, y las pantallas de View/Soporte. --%>
             <% if (SitioBase.Token.TokenSeguridad()) { %>
             <script type="text/javascript">window.SIGMA_SOPORTE = <%= SoporteConfig() %>;</script>
+            <%-- 428: SIGMA AI y SIGMA Twin según el plan comercial (lanzador flotante y widgets). --%>
+            <script type="text/javascript">window.SIGMA_PLAN = <%= SitioBase.Controller.PlanFuncion.Json() %>;(function(p,h){if(!p.ai)h.classList.add("sg-sin-ai");if(!p.twin)h.classList.add("sg-sin-twin");})(window.SIGMA_PLAN,document.documentElement);</script>
+            <link href="<%=ResolveUrl("~/Css/LookAndFeel/sigma-lanzador.css") %>?v=<%=System.IO.File.GetLastWriteTime(Server.MapPath("~/Css/LookAndFeel/sigma-lanzador.css")).Ticks %>" rel="stylesheet" />
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-lanzador.js") %>?v=<%=System.IO.File.GetLastWriteTime(Server.MapPath("~/Js/sigma-lanzador.js")).Ticks %>"></script>
             <script type="text/javascript" src="<%= SoporteAsset("~/Js/sigma-soporte.js") %>"></script>
             <% } %>
           

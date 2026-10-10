@@ -7,9 +7,9 @@ using System.Linq;
 using System.Web.Script.Serialization;
 
 /// <summary>
-/// Recursos: cáscara con las pestañas del lugar (rediseño de Mantenimiento en
-/// cinco lugares). El servidor solo entrega la configuración; cada pestaña se
-/// pinta en el navegador (Js/sigma-mant-lugar.js y el JS de su parte).
+/// Recursos: Procedimientos · Pautas de inspección · Calendarios compartidos · Ajustes
+/// (rediseño de Mantenimiento en cinco lugares, parte e). El servidor solo entrega la
+/// configuración; todo se pinta en el navegador (Js/sigma-mant-recursos.js, WsRecursos.asmx).
 /// </summary>
 public partial class View_Mantenimiento_Biblioteca_Biblioteca : System.Web.UI.Page
 {
@@ -29,16 +29,16 @@ public partial class View_Mantenimiento_Biblioteca_Biblioteca : System.Web.UI.Pa
             lugar = "biblioteca",
             titulo = "Recursos",
             base_ = ResolveUrl("~/"),
-            ws = ResolveUrl("~/WebService/"),
+            ws = ResolveUrl("~/WebService/WsRecursos.asmx/"),
             hoy = Hora.Hoy.ToString("yyyy-MM-dd"),
             plantas = plantas.OrderBy(p => p.cin_nombre).Select(p => new { id = p.cin_id, n = p.cin_nombre }).ToList(),
             cliente = SitioBase.Session.ClienteId(),
             usuario = SitioBase.Session.UsuarioId(),
             tabs = new object[] {
-                new { k = "procedimientos", n = "Procedimientos", parte = "e", hace = "Los procedimientos reutilizables de los planes.", enlaces = new object[] { new { n = "Abrir procedimientos", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=biblioteca&lib=proc") } } },
-                new { k = "pautas", n = "Pautas de inspección", parte = "e", hace = "Pautas con secciones, ítems críticos, umbrales y versiones.", enlaces = new object[] { new { n = "Pautas de inspección", url = ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistCentro.aspx?legacy=1") } } },
-                new { k = "calendarios", n = "Calendarios compartidos", parte = "e", hace = "Calendarios compartidos entre planes, inspecciones y tareas.", enlaces = new object[] { new { n = "Abrir calendarios", url = ResolveUrl("~/View/Mantenimiento/Planificacion.aspx#tab=biblioteca&lib=cal") } } },
-                new { k = "ajustes", n = "Ajustes", parte = "e", hace = "Categorías de tarea, tipos de OT y motivos de descarte, con su conteo de uso.", enlaces = new object[] { new { n = "Categorías de tarea", url = ResolveUrl("~/View/Mantenimiento/Tareas/TareaCategorias.aspx?legacy=1") } } }
+                new { k = "procedimientos", n = "Procedimientos" },
+                new { k = "pautas", n = "Pautas de inspección" },
+                new { k = "calendarios", n = "Calendarios compartidos" },
+                new { k = "ajustes", n = "Ajustes" }
             }
         }).Replace("</", "<\\/");
     }

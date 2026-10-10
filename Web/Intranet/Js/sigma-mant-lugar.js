@@ -15,13 +15,21 @@
   var plantas = CFG.plantas || [];
   var planta = (function () { try { var v = +sessionStorage.getItem('mantPlanta') || 0; return plantas.some(function (p) { return p.id === v; }) ? v : 0; } catch (e) { return 0; } })();
 
+  /* Barra de secciones: icono y una línea que dice para qué sirve cada pestaña. */
+  var TABI = {
+    hoy: ['clock', 'El día: agenda, atención y riesgo'], monitoreo: ['monitor', 'Áreas en mantención ahora'], ejecuciones: ['layers', 'Todo lo programado, en una lista'], cumplimiento: ['trend', 'Qué se hizo de lo planificado'],
+    ordenes: ['wrench', 'Órdenes de trabajo y su ficha'], avisos: ['bell', 'Fallas, hallazgos y alertas por tratar'],
+    procedimientos: ['book', 'Pasos estándar de cada trabajo'], pautas: ['clip', 'Listas de verificación'], calendarios: ['calw', 'Frecuencias que se comparten'], ajustes: ['cog', 'Catálogos y jornada']
+  };
   function hashTab() { var h = String(location.hash || '').replace(/^#/, '').split('&')[0]; return CFG.tabs.some(function (t) { return t.k === h; }) ? h : CFG.tabs[0].k; }
   function pintarTabs() {
     var nav = $('#mlTabs');
     nav.style.display = CFG.tabs.length > 1 ? '' : 'none';
     nav.innerHTML = CFG.tabs.map(function (t) {
       var b = badges[t.k];
-      return '<button type="button" role="tab" id="mlTab-' + t.k + '" aria-selected="' + (cur === t.k) + '" tabindex="' + (cur === t.k ? 0 : -1) + '" data-a="mltab" data-t="' + t.k + '">' + esc(t.n) + (b != null ? '<span class="cp-ct">' + b + '</span>' : '') + '</button>';
+      var m = TABI[t.k] || ['grid', ''];
+      return '<button type="button" role="tab" id="mlTab-' + t.k + '" aria-selected="' + (cur === t.k) + '" tabindex="' + (cur === t.k ? 0 : -1) + '" data-a="mltab" data-t="' + t.k + '">' +
+        '<span class="cp-mt-i">' + K.ic(m[0], 18) + '</span><span class="cp-mt-t"><span class="cp-mt-n">' + esc(t.n) + (b != null ? '<span class="cp-ct">' + b + '</span>' : '') + '</span>' + (m[1] ? '<small>' + m[1] + '</small>' : '') + '</span></button>';
     }).join('');
   }
   function pintarHero() {

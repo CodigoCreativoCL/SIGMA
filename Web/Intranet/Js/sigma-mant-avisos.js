@@ -117,7 +117,10 @@
         '<span class="cp-bnr-a">' + dups.slice(0, 2).map(function (o) { return '<button type="button" class="cp-btn cp-out cp-xs" data-a="avlinkto" data-o="' + a.ORIGEN + '" data-r="' + a.REF + '" data-ot="' + o.OT_ID + '">Vincular a ' + otTxt(o.OT_NUMERO) + '</button>'; }).join('') + '</span></span></div>' : '') +
       (st.dsc ? '<div class="cp-blk" id="dscf"><h4>Descartar el aviso</h4><div class="cp-chips" style="margin-bottom:8px">' + U.motivos.map(function (m) { return '<button type="button" class="cp-fc" data-a="avmot" data-v="' + esc(m.NOMBRE) + '" aria-pressed="' + (st.mot === m.NOMBRE) + '">' + esc(m.NOMBRE) + '</button>'; }).join('') + '</div>' +
         '<div class="cp-fld"><label for="avm">Motivo <small>obligatorio · mínimo 10 caracteres</small></label><textarea id="avm" class="cp-inp' + (st.err ? ' cp-err' : '') + '" rows="2" data-pv="mot" placeholder="Por qué este aviso no necesita trabajo" data-autofocus="1">' + esc(st.mot || '') + '</textarea>' + (st.err ? '<div class="cp-msg">' + ic('alert', 13) + '<span>Escribe el motivo (mínimo 10 caracteres): queda en el historial del aviso.</span></div>' : '') + '</div></div>' : '');
-    var f = !nuevo || !U.perm.generar ? '<span></span><span class="cp-r"><button type="button" class="cp-btn cp-plain" data-a="pclose">Cerrar</button></span>'
+    // «Abrir OT» solo si el aviso de verdad quedó con una OT (estado OT, con su id y su enlace).
+    var tieneOt = a.ESTADO === 'OT' && +a.OT_ID > 0 && !!a.OT_URL;
+    var f = tieneOt ? '<span></span><span class="cp-r"><button type="button" class="cp-btn cp-plain" data-a="pclose">Cerrar</button><a class="cp-btn cp-out" href="' + esc(a.OT_URL) + '">' + ic('arrow', 16) + 'Abrir ' + otTxt(a.OT_NUMERO) + '</a></span>'
+      : !nuevo || !U.perm.generar ? '<span></span><span class="cp-r"><button type="button" class="cp-btn cp-plain" data-a="pclose">Cerrar</button></span>'
       : st.dsc ? '<button type="button" class="cp-btn cp-ghost" data-a="avdsc">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="avdscok">Confirmar descarte</button></span>'
       : '<button type="button" class="cp-btn cp-plain" data-a="avdsc">Descartar</button><span class="cp-r"><button type="button" class="cp-btn cp-out" data-a="avlink" data-o="' + a.ORIGEN + '" data-r="' + a.REF + '">' + ic('link', 16) + 'Vincular a OT</button><button type="button" class="cp-btn cp-sec' + (st.busy ? ' cp-load' : '') + '" data-a="avgen" data-o="' + a.ORIGEN + '" data-r="' + a.REF + '">' + ic('plus', 16) + 'Generar OT</button></span>';
     return { t: esc(a.TITULO), s: esc(a.AVISO) + ' · ' + esc(ORG[a.ORIGEN] ? ORG[a.ORIGEN][0] : ''), b: b, f: f, w: 'n' };
@@ -256,7 +259,7 @@
 
   /* ------------------------------------------------------------ registro de la pestaña */
   L.tab('avisos', {
-    mount: function (body) { body.innerHTML = '<div id="avRoot"></div>'; var abrir = /[#&]nuevo=1/.test(location.hash); cargar().then(function () { if (abrir && U.perm.reportar) { try { history.replaceState(null, '', '#avisos'); } catch (e) { } panelFalla(); } }); },
+    mount: function (body) { body.innerHTML = '<div id="avRoot"></div>'; var abrir = /[#&]nuevo=1/.test(location.hash); var va = /[#&]aviso=(\d+)-(\d+)/.exec(location.hash); cargar().then(function () { if (abrir && U.perm.reportar) { try { history.replaceState(null, '', '#avisos'); } catch (e) { } panelFalla(); } else if (va) { try { history.replaceState(null, '', '#avisos'); } catch (e) { } panelAviso(va[1], va[2], false); } }); },
     hero: function () { return U.perm.reportar ? '<button type="button" class="cp-btn cp-pri" data-a="falla">' + ic('alert', 16) + 'Reportar falla</button>' : ''; },
     planta: function () { cargar(); }
   });

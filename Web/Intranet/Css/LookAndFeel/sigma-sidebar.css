@@ -19,7 +19,7 @@
 .sgnav .nv-a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 40px; padding: 5px 42px 5px 13px; margin-bottom: 2px; border-radius: 11px; color: #C3C8DA; font-size: 12.5px; font-weight: 500; line-height: 1.25; transition: background-color .12s, color .12s }
 .sgnav .nv-a:hover { background: rgba(255,255,255,.06); color: #fff }
 .sgnav .nv-a:focus-visible, .sgnav .sbl:focus-visible, .sgnav .nv-find:focus-visible, .sgnav .rc:focus-visible { outline: 3px solid rgba(22,198,201,.55); outline-offset: -2px }
-.sgnav .nv-a .nv-n { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere }
+.sgnav .nv-a .nv-n { flex: 1 1 auto; min-width: 0; overflow-wrap: normal; word-break: normal; hyphens: none }
 .sgnav .nv-a.on { background-image: linear-gradient(100deg, #6C5CFF, #7B3FF2); color: #fff; font-weight: 600; box-shadow: 0 8px 20px rgba(91,56,235,.35) }
 .sgnav .nv-a.on::before { content: ""; position: absolute; left: -14px; top: 10px; bottom: 10px; width: 3px; border-radius: 0 3px 3px 0; background: #00E0C2 }
 .sgnav .nv-li.open > .nv-a:not(.on) { color: #fff }
@@ -146,3 +146,13 @@ body.enlarged .left-side-menu, body.enlarged .left-side-menu .slimscroll-menu { 
 .sgnav .sub-sep { margin: 7px 12px 3px 55px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,.08); font-size: 10px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: #6F7694 }
 .sgnav .sbl:has(> .nb) { display: flex; align-items: center; gap: 8px }
 .sgnav .sbl > .nb { margin-left: auto }
+
+/* Carpetas (llevan chevron): el contador va en la esquina del icono, para que el nombre
+   («Mantenimiento») no se parta en dos líneas. Las hojas lo siguen llevando junto al nombre. */
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb { position: absolute; left: 32px; top: 2px; margin: 0; min-width: 17px; height: 17px; padding: 0 4px; font-size: 9.5px; border-radius: 9px; box-shadow: 0 0 0 2px #121630; color: #fff }
+body:not(.enlarged) .sgnav .nv-a.on:has(> .chev) > .nb { box-shadow: 0 0 0 2px #6047F0 }
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.r { background: #E8467A }
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.a { background: #D98A1E }
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.n { background: #00A893 }
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.g { background: #5A6280 }
+body:not(.enlarged) .sgnav .nv-a:has(> .chev) { padding-right: 34px }

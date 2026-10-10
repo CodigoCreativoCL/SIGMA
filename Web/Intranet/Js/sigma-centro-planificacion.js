@@ -39,6 +39,14 @@ var pl = function (n, s, p) { return n + ' ' + (n === 1 ? s : p); };
 /* ------------------------------------------------------------ íconos */
 var P = {
   search: '<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+  spark: '<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/><path d="M19 16l.7 1.8 1.8.7-1.8.7L19 21l-.7-1.8-1.8-.7 1.8-.7z"/>',
+  repeat: '<path d="M4 11V9a3 3 0 0 1 3-3h12M16 3l3 3-3 3"/><path d="M20 13v2a3 3 0 0 1-3 3H5M8 21l-3-3 3-3"/>',
+  book: '<path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19"/>',
+  layers: '<path d="M12 3l9 5-9 5-9-5z"/><path d="M3 13l9 5 9-5"/>',
+  users: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.2A6.5 6.5 0 0 1 21.5 20"/>',
+  monitor: '<rect x="3" y="4" width="18" height="12" rx="2"/><path d="M8 20h8M12 16v4"/>',
+  grid: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
   calw: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="M9 15.5l2 2 4-4"/>',
   chev: '<path d="M9 6l6 6-6 6"/>', chevl: '<path d="M15 6l-6 6 6 6"/>', chevd: '<path d="M6 9l6 6 6-6"/>',
   plus: '<path d="M12 5v14M5 12h14"/>', arrow: '<path d="M5 12h14M13 6l6 6-6 6"/>',
@@ -109,7 +117,7 @@ var p360 = function (seccion, extra) {
 
 /* ------------------------------------------------------------ estado */
 var EST = { BORRADOR: ['draft', 'Borrador'], ACTIVO: ['active', 'Activo'], CAMBIOS: ['changes', 'Activo · cambios sin aplicar'], INACTIVO: ['inactive', 'Inactivo'] };
-var TABS = [['planes', 'Planes'], ['inspecciones', 'Inspecciones'], ['tareas', 'Tareas recurrentes'], ['cobertura', 'Cobertura']];
+var TABS = [['planes', 'Planes', 'calw', 'Qué se mantiene y cada cuánto'], ['inspecciones', 'Inspecciones', 'clip', 'Rondas con pauta de verificación'], ['tareas', 'Tareas recurrentes', 'repeat', 'Trabajos simples que se repiten'], ['cobertura', 'Cobertura', 'shield', 'Activos sin plan que los cuide']];
 var U = {
   tab: 'planes', planta: 0, periodo: CFG.periodo, plan: null, pf: 'all', q: '', multi: {},
   lista: null, conteos: null, permisos: {}, cat: null, kpis: null,
@@ -306,8 +314,8 @@ function tabsHTML() {
   var n = { planes: c.todos, inspecciones: INS.filas ? INS.filas.length : null, tareas: TAR.filas ? TAR.filas.length : null, cobertura: sin };
   return TABS.map(function (t) {
     var k = t[0], v = n[k];
-    return '<button type="button" role="tab" id="cpTab-' + k + '" aria-selected="' + (U.tab === k) + '" tabindex="' + (U.tab === k ? 0 : -1) + '" data-a="tab" data-t="' + k + '">' + t[1] +
-      (v != null ? '<b class="' + (k === 'cobertura' && v ? 'cp-r' : '') + '">' + v + '</b>' : '') + '</button>';
+    return '<button type="button" role="tab" id="cpTab-' + k + '" aria-selected="' + (U.tab === k) + '" tabindex="' + (U.tab === k ? 0 : -1) + '" data-a="tab" data-t="' + k + '">' +
+      '<span class="cp-mt-i">' + ic(t[2], 18) + '</span><span class="cp-mt-t"><span class="cp-mt-n">' + t[1] + (v != null ? '<b class="' + (k === 'cobertura' && v ? 'cp-r' : '') + '">' + v + '</b>' : '') + '</span><small>' + t[3] + '</small></span></button>';
   }).join('');
 }
 function pintarCascara() {
@@ -346,6 +354,8 @@ Object.assign(P, {
 var vistaKey = function () { return 'cpVista:' + (CFG.usuario || 0); };
 U.pv = (function () { try { var v = localStorage.getItem(vistaKey()); return v === 'cards' || v === 'cal' ? v : 'list'; } catch (e) { return 'list'; } })();
 
+/* 414 · «N choques»: fechas que chocan con otro trabajo (mismo activo o mismas personas) en 90 días. */
+function choqChip(x) { var n = +x.CHOQUES || 0; return n ? ' <span class="cp-tg cp-w" title="' + pl(n, 'fecha choca', 'fechas chocan') + ' con otro trabajo: mismo activo, subactivo o componente, o las mismas personas">' + ic('clock', 11) + pl(n, 'choque', 'choques') + '</span>' : ''; }
 function planAttn(p) {
   var venc = +p.VENCIDAS || 0, atr = +p.ATRASADAS || 0, e = estado(p)[0];
   if (venc || atr) return '<span class="cp-atn ' + (venc ? 'cp-r' : 'cp-a') + '"><i></i>' + (venc ? pl(venc, 'vencida', 'vencidas') : '') + (venc && atr ? ' · ' : '') + (atr ? pl(atr, 'atrasada', 'atrasadas') : '') + '</span>';
@@ -357,6 +367,15 @@ function planAttn(p) {
 var respDe = function (p) { return String(p.RESPONSABLES || p.RESPONSABLE || '').split('|').filter(Boolean); };
 var proxTxt = function (p) { return p.PROXIMA_FECHA ? '<b>' + fD(dIso(p.PROXIMA_FECHA)) + '</b>' : ''; };
 
+/* 407 · Qué cubre el plan: cada objeto mantenible con su tipo (activo completo, subactivo
+   o componente). Hasta tres en la tarjeta; el resto como «+N más» con la lista en el título. */
+var OBJK = { ACT: ['Activo', 'cog'], SUB: ['Subactivo', 'box'], COMP: ['Componente', 'wrench'] };
+function objetosCard(p) {
+  var os = p.OBJETOS || []; if (!os.length) return '';
+  var txt = function (o) { return o.c + ' · ' + (o.t === 'COMP' ? o.n + ' › ' + o.comp : o.t === 'SUB' && o.padre ? o.padre + ' › ' + o.n : o.n); };
+  var fila = function (o) { var k = OBJK[o.t] || OBJK.ACT; return '<span class="cp-pc-ob" title="' + esc(k[0] + ': ' + txt(o)) + '"><i class="cp-obk cp-obk-' + o.t.toLowerCase() + '">' + ic(k[1], 11) + k[0] + '</i><span><b>' + esc(o.c) + '</b> ' + esc(o.t === 'COMP' ? o.comp : o.n) + '</span></span>'; };
+  return '<li class="cp-pc-obl"><span class="cp-pc-obs">' + os.slice(0, 3).map(fila).join('') + (os.length > 3 ? '<small title="' + esc(os.slice(3).map(txt).join(' · ')) + '">+' + (os.length - 3) + ' más</small>' : '') + '</span></li>';
+}
 function cardsBody(ps) {
   return ps.map(function (p) {
     var e = estado(p)[0], fq = String(p.FRECUENCIAS || ''), resp = respDe(p), sel = !!U.multi[p.PLAN_ID];
@@ -366,9 +385,9 @@ function cardsBody(ps) {
     return '<div class="cp-pcard' + (sel ? ' cp-rsel' : '') + ' cp-st-' + e + '" data-a="open" data-p="' + p.PLAN_ID + '" role="button" tabindex="0" aria-label="Abrir ' + esc(p.NOMBRE) + '">' +
       '<div class="cp-pc-top"><div class="cp-pc-t"><b title="' + esc(p.NOMBRE) + '">' + (esc(p.NOMBRE) || '<em class="cp-miss">Sin nombre</em>') + '</b><small>' + esc(p.CODIGO) + ' · ' + esc(p.PLANTA || 'Sin planta') + '</small></div><input type="checkbox" class="cp-cbx" data-a="mul" data-p="' + p.PLAN_ID + '"' + (sel ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(p.NOMBRE) + '"></div>' +
       '<div class="cp-pc-s">' + stChip(p) + '</div>' +
-      '<ul class="cp-pc-m"><li>' + ic('cog', 15) + '<span>' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + ' · ' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</span></li>' +
+      '<ul class="cp-pc-m"><li>' + ic('cog', 15) + '<span>' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + ' · ' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</span></li>' + objetosCard(p) +
       '<li>' + ic('clock', 15) + '<span title="' + esc(fq) + '">' + (fq ? esc(fq) : '<span class="cp-muted2">Frecuencia sin definir</span>') + '</span></li>' + nx + '</ul>' +
-      '<div class="cp-pc-f"><span class="cp-pc-at">' + planAttn(p) + '</span><span class="cp-pc-av">' + resp.slice(0, 3).map(avatar).join('') + (resp.length > 3 ? '<span class="cp-av cp-more">+' + (resp.length - 3) + '</span>' : '') + '</span></div></div>';
+      '<div class="cp-pc-f"><span class="cp-pc-at">' + planAttn(p) + choqChip(p) + '</span><span class="cp-pc-av">' + resp.slice(0, 3).map(avatar).join('') + (resp.length > 3 ? '<span class="cp-av cp-more">+' + (resp.length - 3) + '</span>' : '') + '</span></div></div>';
   }).join('');
 }
 function listBody() {
@@ -385,7 +404,7 @@ function listBody() {
       '<span class="cp-s cp-c-al"><b style="font-weight:600">' + pl(+p.ACTIVOS || 0, 'activo', 'activos') + '</b><small>' + pl(+p.INTERVENCIONES || 0, 'intervención', 'intervenciones') + '</small></span>' +
       '<span class="cp-s cp-c-fq"><b style="font-weight:600">' + (fq.slice(0, 2).join(' · ') || '<span class="cp-muted2">Sin definir</span>') + '</b>' + (fq.length > 2 ? '<small>y ' + (fq.length - 2) + ' más</small>' : '') + '</span>' +
       '<span class="cp-dt cp-c-nx">' + (p.PROXIMA_FECHA ? proxTxt(p) + '<small>' + (p.PROXIMA_PROYECCION ? 'Proyección · ' : '') + esc(p.PROXIMA_ACTIVO || '') + '</small>' : '<small>' + (e === 'inactive' ? 'No genera ejecuciones' : 'Sin próximas') + '</small>') + '</span>' +
-      '<span class="cp-c-at">' + planAttn(p) + '</span><span class="cp-c-go">' + ic('chev', 15) + '</span></div>';
+      '<span class="cp-c-at">' + planAttn(p) + choqChip(p) + '</span><span class="cp-c-go">' + ic('chev', 15) + '</span></div>';
   }).join('');
 }
 function listHTML() {
@@ -432,7 +451,7 @@ var STEPS = {
   1: ['Activos', '¿Qué activos se mantienen?', 'Elige los activos que recibirán este mantenimiento. Puedes agregar varios a la vez.'],
   2: ['Trabajo', '¿Qué trabajo se hace?', 'Cada intervención es un trabajo que se repite y genera su propia orden de trabajo, por ejemplo «Mantención 2.000 h» o «Inspección mensual».'],
   3: ['Frecuencia', '¿Cada cuánto se hace?', 'Define cuándo toca cada intervención. Las fechas se recalculan mientras editas.'],
-  4: ['Responsable', '¿Quién lo ejecuta?', 'Cada orden de trabajo nacerá asignada a esta persona y grupo. El detalle se ajusta después en la OT.'],
+  4: ['Responsable', '¿Quién lo ejecuta?', 'Cada orden de trabajo nace asignada a estas personas, grupo o empresa externa. Sin nadie, queda disponible: en la app la toma quien llegue primero.'],
   5: ['Revisar', '', '']
 };
 Object.assign(U, { step: {}, vis: {}, t5: {}, nx: {}, tried: {} });
@@ -458,6 +477,14 @@ function intIssue(i) {
   return !String(i.NOMBRE || '').trim() || !(+i.DURACION > 0) || (i.ACTIVIDADES || []).some(function (a) { return !String(a.NOMBRE || '').trim() || permPend(i, a); });
 }
 
+/* 413 · Los choques de horario del plan (sus ocurrencias generadas contra las de otros), una vez por plan abierto. */
+var CHQ = {};
+function choqBotonPlan() { var l = planChoques(); return l && l.length ? '<button type="button" class="cp-btn cp-sec cp-sm" style="margin-top:10px" data-a="choqabrir" data-t="PLAN" data-r="' + F.plan.PLAN_ID + '" data-n="' + esc(F.plan.CODIGO) + '">' + ic('clock', 15) + 'Resolver choques de horario</button>' : ''; }
+function planChoques() {
+  var k = F && F.plan ? F.plan.PLAN_ID : 0; if (!k) return null;
+  if (CHQ[k] === undefined) { CHQ[k] = null; api('Choques', { tipo: 'PLAN', refId: k }).then(function (r) { CHQ[k] = r.choques || []; render(); }).catch(function () { CHQ[k] = []; }); }
+  return CHQ[k];
+}
 function checks() {
   var B = [], W = [], act = F.activos, en = enab(), nm = function (i) { return i.NOMBRE || i.CODIGO; };
   B.push({ ok: act.length > 0, step: 1, t: act.length ? pl(act.length, 'activo', 'activos') : 'La planificación necesita al menos un activo' });
@@ -474,12 +501,17 @@ function checks() {
     var f = fqDe2(i);
     if (f.t && !freqIssue(f) && f.t !== 'med' && f.t !== 'cond' && !(i.FECHAS || []).some(function (x) { return !x.DESCARTADA && dIso(x.FECHA) <= addD(TODAY, 90); })) W.push({ step: 3, t: nm(i) + ': no tiene fechas en los próximos 90 días', int: i.HITO_ID });
     if (f.t === 'med') { var sin = act.filter(function (a) { return !a.MEDIDOR_ID; }); if (sin.length) W.push({ step: 3, t: nm(i) + ': ' + sin.map(function (a) { return a.CODIGO; }).join(', ') + ' no ' + (sin.length === 1 ? 'tiene medidor y nunca generará' : 'tienen medidor y nunca generarán'), int: i.HITO_ID }); }
-    if (!i.RESPONSABLE_ID && !i.GRUPO_ID) W.push({ step: 4, t: nm(i) + ': sin responsable, las OT nacerán sin asignar', int: i.HITO_ID });
   });
   act.forEach(function (a) {
     if (a.FUERA_ALCANCE) W.push({ step: 1, t: a.CODIGO + ' queda fuera del alcance del plan: no generará trabajo' });
     if (a.OTROS_PLANES) W.push({ step: 1, t: a.CODIGO + ' ya está en ' + a.OTROS_PLANES });
   });
+  /* 413 · Choques de horario con inspecciones, tareas u otros planes sobre el mismo objeto mantenible. */
+  var ch = planChoques();
+  if (ch && ch.length) {
+    var g = {}; ch.forEach(function (c) { var k = c.OBJETO + '|' + c.CON_TIPO + c.CON_REF; (g[k] = g[k] || { c: c, n: 0 }).n++; });
+    Object.keys(g).forEach(function (k) { var x = g[k], c = x.c; W.push({ step: c.CLASE === 'RECURSO' ? 4 : 3, t: (c.CLASE === 'RECURSO' ? c.OBJETO + ' ya está ocupado en ' : c.OBJETO + ' coincide en horario con ') +  + (TIPN[c.CON_TIPO] || '').toLowerCase() + ' ' + c.CON_CODIGO + ' · ' + c.CON_NOMBRE + ' (' + (x.n === 1 ? 'el ' + fD(dIso(c.FECHA)) + ' ' + hIso(c.FECHA) : x.n + ' veces, la primera el ' + fD(dIso(c.FECHA)) + ' ' + hIso(c.FECHA)) + ')' }); });
+  }
   var okNombre = !!String(F.plan.NOMBRE || '').trim();
   return { B: B, W: W, ok: B.every(function (b) { return b.ok; }) && okNombre };
 }
@@ -577,6 +609,21 @@ function stepHTML(E, info, k) {
 }
 
 /* ---- paso 1 · activos ---- */
+/* 408 · El objeto mantenible de un activo del plan: activo completo, subactivo o componente (del activo o del subactivo).
+   Editable, es el combo de SIGMA con el árbol; cambiarlo quita el vínculo y lo vuelve a agregar con el objeto nuevo. */
+function eqObjHTML(a, E) {
+  if (!PG) { pgCatalogo().then(function () { render(); }).catch(function () { }); return '<span class="cp-tg">' + (a.COMPONENTE ? esc(a.COMPONENTE) : 'Activo completo') + '</span>'; }
+  var o = pgObjDesde(a.ACTIVO_ID, a.COMPONENTE_ID), base = pgBase(pgAct(a.ACTIVO_ID));
+  if (!E || !base) return '<span class="cp-tg">' + esc(pgObjTxt(o) || (a.COMPONENTE ? a.COMPONENTE : 'Activo completo')) + '</span>';
+  return '<span class="cp-eq-obj">' + combo('cpPlObj' + a.VINCULO_ID, pgObjOpts(base), o, { etiqueta: 'Objeto mantenible de ' + a.CODIGO, data: ' data-pg="plaeq:' + a.VINCULO_ID + '"' }) + '</span>';
+}
+function cambiarObjPlan(vinculo, v) {
+  var a = (F.activos || []).filter(function (x) { return x.VINCULO_ID === +vinculo; })[0], o = pgObjDe(v); if (!a || !o) return;
+  if (o.activo === +a.ACTIVO_ID && (o.componente || 0) === (+a.COMPONENTE_ID || 0)) return;
+  escribir('QuitarActivo', { plan: pid(), vinculo: +vinculo }).then(function () {
+    return escribir('AgregarActivos', { plan: pid(), items: JSON.stringify([{ activo: o.activo, componente: o.componente || null, medidor: a.MEDIDOR_ID || null }]) });
+  }).then(function () { delete SUG[pid()]; toast(a.CODIGO + ': ' + pgObjTxt(v) + '.'); }).catch(toastError);
+}
 function s1HTML(E) {
   var p = F.plan, act = F.activos, fuera = act.filter(function (a) { return a.FUERA_ALCANCE; });
   var modelos = (U.cat.modelos || []).filter(function (m) { return p.TIPO_ID && m.TIPO_ID === p.TIPO_ID; }).map(function (m) { return { id: m.ID, n: m.NOMBRE }; });
@@ -586,20 +633,24 @@ function s1HTML(E) {
     (act.length ? '<div class="cp-s-row"><b>' + pl(act.length, 'activo en el plan', 'activos en el plan') + '</b>' + (E ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="addeq">' + ic('plus', 15) + 'Agregar activos</button>' : '') + '</div>' +
       (fuera.length ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + esc(fuera.map(function (a) { return a.CODIGO; }).join(', ')) + '</b> ' + (fuera.length === 1 ? 'queda' : 'quedan') + ' fuera del alcance y no generará trabajo. Ajusta el alcance o quítalos.</span></div>' : '') +
       '<div class="cp-eqs">' + act.map(function (a) {
-        return '<div class="cp-eq' + (a.FUERA_ALCANCE ? ' cp-outx' : '') + '"><span class="cp-ph">' + (a.FOTO ? '<img class="cp-ph-img" src="' + esc(a.FOTO) + '" alt="">' : ic('cog', 20)) + '</span><div style="min-width:0"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + (a.AREA ? ' · ' + esc(a.AREA) : '') + '</small><div class="cp-tgs"><span class="cp-tg">' + (a.COMPONENTE ? esc(a.COMPONENTE) : 'Activo completo') + '</span>' + (a.MEDIDOR_ID ? '<span class="cp-tg cp-c">' + ic('gauge', 11) + fN(a.MEDIDOR_VALOR) + ' ' + esc(a.MEDIDOR_UNIDAD || '') + '</span>' : '') + (a.FUERA_ALCANCE ? '<span class="cp-tg cp-w">Fuera del alcance</span>' : '') + (a.OTROS_PLANES ? '<span class="cp-tg cp-w" title="También en ' + esc(a.OTROS_PLANES) + '">También en ' + esc(a.OTROS_PLANES) + '</span>' : '') + '</div></div>' +
+        return '<div class="cp-eq' + (a.FUERA_ALCANCE ? ' cp-outx' : '') + '"><span class="cp-ph">' + (a.FOTO ? '<img class="cp-ph-img" src="' + esc(a.FOTO) + '" alt="">' : ic('cog', 20)) + '</span><div style="min-width:0"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + (a.AREA ? ' · ' + esc(a.AREA) : '') + '</small><div class="cp-tgs">' + (E ? '' : eqObjHTML(a, E)) + (a.MEDIDOR_ID ? '<span class="cp-tg cp-c">' + ic('gauge', 11) + fN(a.MEDIDOR_VALOR) + ' ' + esc(a.MEDIDOR_UNIDAD || '') + '</span>' : '') + (a.FUERA_ALCANCE ? '<span class="cp-tg cp-w">Fuera del alcance</span>' : '') + (a.OTROS_PLANES ? '<span class="cp-tg cp-w" title="También en ' + esc(a.OTROS_PLANES) + '">También en ' + esc(a.OTROS_PLANES) + '</span>' : '') + '</div></div>' +
+          (E ? '<div class="cp-eq-ob"><span class="cp-eq-obl">Objeto mantenible</span>' + eqObjHTML(a, E) + '</div>' : '') +
           '<div class="cp-x"><a class="cp-ibx" href="' + esc(a.URL) + '" target="_blank" rel="noopener" aria-label="Ver ficha del activo ' + esc(a.CODIGO) + '">' + ic('arrow', 15) + '</a>' + (E ? '<button type="button" class="cp-ibx cp-dn" data-a="rmeq" data-v="' + a.VINCULO_ID + '" data-c="' + esc(a.CODIGO) + '" aria-label="Quitar ' + esc(a.CODIGO) + ' del plan">' + ic('x', 15) + '</button>' : '') + '</div></div>';
       }).join('') + '</div>'
       : '<div class="cp-empty cp-big' + (U.tried[F.plan.PLAN_ID] ? ' cp-err' : '') + '"><span class="cp-ei">' + ic('cog', 22) + '</span><b>Todavía no hay activos</b><span>Agrega los activos' + (p.PLANTA ? ' de ' + esc(p.PLANTA) : '') + ' que recibirán este mantenimiento.</span>' + (E ? '<button type="button" class="cp-btn cp-pri" data-a="addeq">' + ic('plus', 16) + 'Agregar activos</button>' : '') + '</div>');
 }
 
 /* ---- selector de intervención (pasos 2 y 3) ---- */
+/* Mockup v5 · tarjetas de intervención: código, tipo de OT y estado arriba; nombre; actividades, duración y parada. */
 function intTabs(cur, E, mode) {
-  return '<div class="cp-itabs" role="tablist" aria-label="Intervenciones">' + ints().map(function (i) {
+  return '<div class="cp-itabs2" role="tablist" aria-label="Intervenciones">' + ints().map(function (i) {
     var bad = mode === 2 ? intIssue(i) : !!freqIssue(fqDe2(i));
-    return '<button type="button" role="tab" class="cp-itab' + (i === cur ? ' cp-on' : '') + (i.HABILITADO ? '' : ' cp-off') + '" data-a="isel" data-i="' + i.HITO_ID + '" aria-selected="' + (i === cur) + '"><span class="cp-cd">' + esc(i.CODIGO) + '</span><span class="cp-nm">' + (esc(i.NOMBRE) || '<em>Sin nombre</em>') +
-      (mode === 3 ? '<small>' + (i.HABILITADO && !bad ? esc(freqCorta(fqDe2(i))) : i.HABILITADO ? 'Sin frecuencia' : 'Deshabilitada') + '</small>' : '<small>' + (i.HABILITADO ? pl((i.ACTIVIDADES || []).length, 'actividad', 'actividades') : 'Deshabilitada') + '</small>') + '</span>' +
-      (!i.HABILITADO ? '' : bad ? '<span class="cp-ix" title="Falta completar">!</span>' : '<span class="cp-iok">' + ic('check', 12) + '</span>') + '</button>';
-  }).join('') + (mode === 2 && E ? '<button type="button" class="cp-itab cp-add" data-a="addint">' + ic('plus', 15) + 'Agregar intervención</button>' : '') + '</div>';
+    var meta = !i.HABILITADO ? 'Deshabilitada' : mode === 3 ? (bad ? 'Sin frecuencia' : esc(freqCorta(fqDe2(i)))) : pl((i.ACTIVIDADES || []).length, 'actividad', 'actividades') + ' · ' + fH(i.DURACION);
+    return '<button type="button" role="tab" class="cp-itc' + (i === cur ? ' cp-on' : '') + (i.HABILITADO ? '' : ' cp-off') + (i.HABILITADO && bad ? ' cp-bad' : '') + '" data-a="isel" data-i="' + i.HITO_ID + '" aria-selected="' + (i === cur) + '">' +
+      '<span class="cp-itc-t"><span class="cp-icd">' + esc(i.CODIGO) + '</span><span class="cp-itc-tp">' + esc(i.OT_TIPO || '') + '</span>' +
+      (!i.HABILITADO ? '<span class="cp-itc-s cp-off">Pausada</span>' : bad ? '<span class="cp-itc-s cp-bad" title="Falta completar">Falta un dato</span>' : '<span class="cp-itc-s cp-ok" title="Completa">' + ic('check', 11) + '</span>') + '</span>' +
+      '<span class="cp-itc-n">' + (esc(i.NOMBRE) || '<em>Sin nombre</em>') + '</span><small class="cp-itc-m">' + meta + (i.PARADA && i.HABILITADO ? ' · <span class="cp-pz2">parada</span>' : '') + '</small></button>';
+  }).join('') + (mode === 2 && E ? '<button type="button" class="cp-itc cp-add" data-a="addint"><span class="cp-itc-plus">' + ic('plus', 18) + '</span><span class="cp-itc-n">Agregar intervención</span><small class="cp-itc-m">Otra tarea del plan con su frecuencia</small></button>' : '') + '</div>';
 }
 
 /* ---- paso 2 · trabajo ---- */
@@ -636,27 +687,34 @@ function s4HTML(E) {
   var same = firmas.every(function (x) { return x === firmas[0]; }) && respIds(list[0]).length === 1 ? respIds(list[0])[0] : '';
   var grupos = [{ id: '', n: 'Sin grupo' }].concat((U.cat && U.cat.grupos || []).map(function (g) { var n = integrantes(g.ID).length; return { id: g.ID, n: g.NOMBRE, sub: n ? pl(n, 'integrante', 'integrantes') : 'Sin integrantes' }; }));
   return (E && list.length > 1 ? '<div class="cp-allr"><span>' + ic('users', 16) + 'Asignar todas las intervenciones a</span><span style="min-width:280px">' + combo('cpAllResp', persItems(), same, { etiqueta: 'Responsable para todas', ph: 'Elegir persona…', data: ' data-ar="1"', clave: 'cpAllResps' }) + '</span></div>' : '') +
-    '<div class="cp-rtbl cp-rtbl2"><div class="cp-rh"><span>Intervención</span><span>Responsables <small>uno o más</small></span><span>Grupo de trabajo <small>opcional</small></span></div>' +
+    '<div class="cp-rtbl cp-rtbl2 cp-rtbl3"><div class="cp-rh"><span>Intervención</span><span>Responsables <small>uno o más</small></span><span>Grupo de trabajo <small>opcional</small></span><span>Empresa externa <small>opcional</small></span></div>' +
     list.map(function (i) {
       var f = fqDe2(i), ids = respIds(i), id = i.HITO_ID, nom = i.NOMBRE || i.CODIGO;
       var resp = ids.map(function (u, k) {
         var p = persona(u) || { NOMBRE: 'Usuario ' + u };
         return persFila(p, k === 0 && ids.length > 1 ? ' <span class="cp-tg cp-p">Principal</span>' : '',
-          E ? '<button type="button" class="cp-ibx" data-a="rrm" data-i="' + id + '" data-v="' + u + '" aria-label="Quitar a ' + esc(p.NOMBRE) + '">' + ic('x', 13) + '</button>' : '');
+          E ? '<button type="button" class="cp-ibx" data-a="rrm" data-i="' + id + '" data-v="' + u + '" aria-label="Quitar a ' + esc(p.NOMBRE) + '">' + ic('x', 13) + '</button>' : '') +
+          '<div class="cp-carga-row cp-carga-sm">' + cargaUI('U:' + u, p.NOMBRE, persSub(p)) + '</div>';
       }).join('') +
         (E ? combo('cpIvResp' + id, persItems(ids), '', { etiqueta: 'Agregar responsable a ' + nom, ph: ids.length ? 'Agregar otro responsable…' : 'Elegir responsable…', data: ' data-radd="' + id + '"', clave: 'cpRespAdd' + id })
-          : ids.length ? '' : '<small class="cp-mut">Sin responsable</small>');
+          : ids.length ? '' : '<small class="cp-mut">Sin responsable</small>') +
+        (!ids.length && !i.GRUPO_ID && !i.PROVEEDOR_ID ? '<span class="cp-tg cp-c" style="align-self:flex-start" title="Sin asignar: en la app cualquiera la toma">Disponible</span>' : '');
+      /* 411 · Empresa externa: responsable de la OT si no hay persona; si la hay, entra de apoyo. */
+      if (!PG) pgCatalogo().then(function () { render(); }).catch(function () { });
+      var empresa = PG ? combo('cpIvProv' + id, [{ id: '', n: 'Sin empresa' }].concat((PG.proveedores || []).map(function (x) { return { id: x.ID, n: x.NOMBRE }; })), i.PROVEEDOR_ID || '', { etiqueta: 'Empresa externa de ' + nom, ph: 'Sin empresa', dis: dis, data: ' data-iv="proveedor" data-i="' + id + '"', clave: 'cpProvs' })
+        : '<span class="cp-sk" style="height:38px;display:block"></span>';
+      if (PG && i.PROVEEDOR_ID) empresa += '<div class="cp-carga-row cp-carga-sm">' + cargaUI('E:' + i.PROVEEDOR_ID, ((PG.proveedores || []).filter(function (x) { return +x.ID === +i.PROVEEDOR_ID; })[0] || {}).NOMBRE || 'Empresa', 'Empresa externa') + '</div>';
       var miembros = i.GRUPO_ID ? integrantes(i.GRUPO_ID) : [];
       var grupo = combo('cpIvGrupo' + id, grupos, i.GRUPO_ID || '', { etiqueta: 'Grupo de ' + nom, ph: 'Sin grupo', dis: dis, data: ' data-iv="grupo" data-i="' + id + '"', clave: 'cpGrupos' }) +
         (i.GRUPO_ID ? '<div class="cp-gm"><span class="cp-lb2">Integrantes · ' + miembros.length + '</span>' + (miembros.length ? miembros.map(function (m) {
           var p = persona(m.USUARIO_ID) || { NOMBRE: 'Usuario ' + m.USUARIO_ID };
           return persFila(p, m.LIDER ? ' <span class="cp-tg cp-c">Líder</span>' : '');
-        }).join('') : '<small class="cp-mut">El grupo no tiene integrantes vigentes.</small>') + '</div>' : '');
+        }).join('') : '<small class="cp-mut">El grupo no tiene integrantes vigentes.</small>') + '</div><div class="cp-carga-row cp-carga-sm">' + cargaUI('G:' + i.GRUPO_ID, ((U.cat && U.cat.grupos || []).filter(function (g) { return +g.ID === +i.GRUPO_ID; })[0] || {}).NOMBRE || 'Grupo', 'Grupo de trabajo') + '</div>' : '');
       return '<div class="cp-rr' + (i.HABILITADO ? '' : ' cp-off') + '"><span class="cp-s"><b>' + esc(i.CODIGO) + ' · ' + (esc(i.NOMBRE) || 'Sin nombre') + '</b><small>' + (freqIssue(f) ? 'Sin frecuencia' : esc(freqCorta(f))) + ' · ' + fH(i.DURACION) + '</small></span>' +
-        '<div class="cp-rps">' + resp + '</div><div class="cp-rps">' + grupo + '</div></div>';
+        '<div class="cp-rps">' + resp + '</div><div class="cp-rps">' + grupo + '</div><div class="cp-rps">' + empresa + '</div></div>';
     }).join('') + '</div>' +
-    (enab().some(function (i) { return !i.RESPONSABLE_ID && !i.GRUPO_ID; }) ? mc('w', 'Sin responsable, las OT nacerán sin asignar y habrá que asignarlas una por una. Puedes activar igual.')
-      : mc('i', 'Al generar cada OT, SIGMA la asigna al responsable principal; los demás responsables entran como apoyo.', 'help'));
+    mc('i', 'Al generar cada OT, SIGMA la asigna al responsable principal; los demás responsables entran como apoyo.' +
+      (enab().some(function (i) { return !i.RESPONSABLE_ID && !i.GRUPO_ID && !i.PROVEEDOR_ID; }) ? ' Una intervención sin responsable, grupo ni empresa queda <b>disponible</b>: en la app la ve quien puede ejecutarla y la toma quien llegue primero; ahí puede sumar integrantes, un grupo o una empresa externa.' : ''), 'help');
 }
 
 /* ---- paso 5 · revisar / activar / aplicar / resumen ---- */
@@ -686,7 +744,7 @@ function s5HTML(E, info) {
   if (est === 'draft' || est === 'changes') {
     var nb = ck.B.filter(function (b) { return b.ok; }).length;
     return seg + '<div class="cp-rv"><div class="cp-rv-l"><div class="cp-pgx"><div class="cp-pg' + (ck.ok ? ' cp-ok' : '') + '"><i style="width:' + Math.round(nb / ck.B.length * 100) + '%"></i></div><span>' + nb + ' de ' + ck.B.length + ' obligatorios</span></div>' +
-      '<div class="cp-chk">' + ck.B.map(function (b) { return item(b, b.ok ? 'ok' : 'no'); }).join('') + '</div>' + (ck.W.length ? '<h5>Conviene revisar <small>no impide ' + (est === 'draft' ? 'activar' : 'aplicar') + '</small></h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '') + '</div>' +
+      '<div class="cp-chk">' + ck.B.map(function (b) { return item(b, b.ok ? 'ok' : 'no'); }).join('') + '</div>' + (ck.W.length ? '<h5>Conviene revisar <small>no impide ' + (est === 'draft' ? 'activar' : 'aplicar') + '</small></h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '') + choqBotonPlan() + '</div>' +
       '<div class="cp-rv-r"><h5>Así funcionará</h5>' + (planStory() || '<p class="cp-miss2">Cuando agregues intervenciones, aquí verás en palabras simples qué hará el plan.</p>') +
       (est === 'draft' ? '<div class="cp-imp">' + (ck.ok ? (im.CREAN != null ? 'Al activar se generarán <b>' + pl(+im.CREAN, 'ejecución', 'ejecuciones') + '</b> entre hoy y el ' + fDY(dIso(im.HASTA) || addD(TODAY, 90)) + ' para <b>' + pl(F.activos.length, 'activo', 'activos') + '</b>.' : 'Al activar, SIGMA programa las ejecuciones de los próximos 90 días.') : 'Cuando completes lo obligatorio, aquí verás cuántas ejecuciones se generarán.') + '</div>'
         : '<h5>Al aplicar, desde hoy</h5>' + imp4(im)) + '</div></div>';
@@ -694,7 +752,7 @@ function s5HTML(E, info) {
   var nProg = (F.proximas || []).filter(function (o) { return dIso(o.FECHA) >= TODAY; }).length, nx = proxima(), aten = (+p.VENCIDAS || 0) + (+p.ATRASADAS || 0);
   return seg + '<div class="cp-rv"><div class="cp-rv-l"><h5>Así funciona</h5>' + planStory() + '</div><div class="cp-rv-r">' + (est === 'inactive'
     ? '<div class="cp-bnr cp-i">' + ic('alert', 18) + '<span>' + esc(p.RETIRO_MOTIVO || '') + '<br><small style="color:var(--muted)">' + esc(p.RETIRO_USUARIO || '') + ' · ' + fDN(p.RETIRO_FECHA) + '</small></span></div>'
-    : '<div class="cp-facts"><div><span>Próxima ejecución</span><b>' + (nx ? fDL(nx.d) : '—') + '</b></div><div><span>Pendientes · próximos 90 días</span><b>' + (im.DESACTIVAR_CANCELAN != null ? im.DESACTIVAR_CANCELAN : nProg) + '</b></div><div><span>Requieren atención</span><b style="' + (aten ? 'color:var(--red)' : '') + '">' + aten + '</b></div><div><span>Versión</span><b>v' + p.VERSION_VIGENTE + '</b><small>desde ' + fDN(p.VERSION_DESDE) + '</small></div></div>' + (ck.W.length ? '<h5>Conviene revisar</h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '')) + '</div></div>';
+    : '<div class="cp-facts"><div><span>Próxima ejecución</span><b>' + (nx ? fDL(nx.d) : '—') + '</b></div><div><span>Pendientes · próximos 90 días</span><b>' + (im.DESACTIVAR_CANCELAN != null ? im.DESACTIVAR_CANCELAN : nProg) + '</b></div><div><span>Requieren atención</span><b style="' + (aten ? 'color:var(--red)' : '') + '">' + aten + '</b></div><div><span>Versión</span><b>v' + p.VERSION_VIGENTE + '</b><small>desde ' + fDN(p.VERSION_DESDE) + '</small></div></div>' + (ck.W.length ? '<h5>Conviene revisar</h5><div class="cp-chk">' + ck.W.map(function (w) { return item(w, 'wa'); }).join('') + '</div>' : '') + choqBotonPlan()) + '</div></div>';
 }
 
 /* ---- cuándo (editor de frecuencia, §15) ---- */
@@ -879,8 +937,9 @@ function acHTML(i, a, k, E, open) {
           (pasos ? (pasos === 'cargando' ? '<div class="cp-sk" style="height:60px;margin-top:6px"></div>' : '<ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px">' + pasos.map(function (s) { return '<li>' + esc(s.n) + (s.ctrl ? ' <span class="cp-tg cp-p">Control</span>' : '') + (s.med ? ' <span class="cp-tg cp-c">Medición</span>' : '') + (s.ev ? ' <span class="cp-tg">Evidencia</span>' : '') + '</li>'; }).join('') + '</ol><p class="cp-msg cp-i" style="margin-top:6px">' + ic('help', 13) + '<span>Al generar la OT, cada paso se copia: si cambias el procedimiento después, las OT ya generadas no cambian.</span></p>') : '')
         : E ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="cp-btn cp-out cp-xs" data-a="pickproc" data-i="' + i.HITO_ID + '" data-c="' + id + '">' + ic('search', 14) + 'Elegir procedimiento</button></div>' : '<span style="font-size:12.5px;color:var(--muted)">Sin procedimiento</span>') + '</div>' +
       '<div class="cp-fld"><span class="cp-lb">Repuestos planificados</span><div class="cp-reps">' + (a.REPUESTOS || []).map(function (r) {
-        return '<div class="cp-rp"><span><b style="font-weight:600">' + esc(r.NOMBRE) + '</b> <code>' + esc(r.CODIGO) + '</code></span><input class="cp-inp" type="number" min="0" step="any" data-rq="' + r.ID + '" data-c="' + id + '" data-rep="' + r.REPUESTO_ID + '" value="' + (+r.CANTIDAD) + '"' + dis + ' aria-label="Cantidad"><span class="cp-un" style="color:var(--muted)">' + esc(r.UNIDAD || '') + '</span>' + (E ? '<button type="button" class="cp-ibx cp-dn" data-a="rmrep" data-v="' + r.ID + '" aria-label="Quitar repuesto">' + ic('x', 14) + '</button>' : '<span></span>') + '</div>';
+        return repFila(r, id, E, dis);
       }).join('') +
+      (E ? sugReps(a, id) : '') +
       (E ? '<label class="cp-srch2" style="height:34px;max-width:360px">' + ic('plus', 14) + '<input data-repq="' + id + '" placeholder="Agregar repuesto: busca por nombre o código" aria-label="Agregar repuesto" autocomplete="off" aria-haspopup="listbox"></label>' : '') + (!(a.REPUESTOS || []).length && !E ? '<span style="font-size:12.5px;color:var(--muted)">Sin repuestos</span>' : '') + '</div></div>' +
       (E ? '<div style="display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap"><span style="display:flex;gap:6px"><button type="button" class="cp-btn cp-plain cp-xs" data-a="mvact" data-i="' + i.HITO_ID + '" data-c="' + id + '" data-v="-1"' + (k === 0 ? ' disabled' : '') + '>Subir</button><button type="button" class="cp-btn cp-plain cp-xs" data-a="mvact" data-i="' + i.HITO_ID + '" data-c="' + id + '" data-v="1"' + (k === acts.length - 1 ? ' disabled' : '') + '>Bajar</button></span><button type="button" class="cp-btn cp-dano cp-xs" data-a="rmact" data-c="' + id + '">' + ic('x', 14) + 'Quitar actividad</button></div>' : '') +
       '</div>' : '') + '</div>';
@@ -949,6 +1008,7 @@ function escribir(metodo, datos, o) {
   guardando();
   var pr = cola.then(function () { return api(metodo, datos); }).then(function (r) {
     guardado();
+    if (/Repuesto$/.test(metodo)) delete SUG[pid()];   // 422: el stock de lo planificado se vuelve a leer
     if (o.sinFicha) return r;
     return recargarFicha().then(function () { recargarLista(); return r; });
   }, function (e) {
@@ -991,7 +1051,7 @@ function abrirPlan(id, o) {
 /* =====================================================================
    Pintar: foco, lo escrito y el scroll sobreviven al repintado
    ===================================================================== */
-var FKEYS = ['pf', 'iv', 'act', 'fk', 'fe', 'xv', 'xp', 'rq', 'repq', 'pv', 'pp', 'mv', 'ppv'];
+var FKEYS = ['pf', 'iv', 'act', 'fk', 'fe', 'xv', 'xp', 'rq', 'repq', 'pv', 'pp', 'mv', 'ppv', 'pg'];
 function grabFocus(root) {
   var a = document.activeElement; if (!a || !root || !root.contains(a) || a === document.body) return null;
   var sel = null, cb = a.closest('[data-cb]');
@@ -1026,6 +1086,7 @@ function render() {
   if (Math.abs(window.scrollY - sy) > 2) window.scrollTo(0, sy);
   pintarGuardado();
   conectarFechas(body);
+  if (window.SigmaCarga) SigmaCarga.pintarResumen(body);
   $$('#cpTabs [role=tab]').forEach(function (b) { var on = b.getAttribute('data-t') === U.tab; b.setAttribute('aria-selected', on); b.tabIndex = on ? 0 : -1; });
   if (U.tab !== 'planes' && TABR[U.tab] && TABR[U.tab].despues) TABR[U.tab].despues();
 }
@@ -1073,6 +1134,7 @@ function panel() {
   else L.innerHTML = '<div class="cp-scr" data-a="pclose"></div><aside class="cp-pnl ' + (r.w ? 'cp-' + r.w : '') + '" role="dialog" aria-modal="true" aria-labelledby="cpPnlT">' + inner + '</aside>';
   var nb = $('#cpLayer .cp-pnl-b'); if (nb) nb.scrollTop = st;
   putFocus(fo, L); conectarFechas(L);
+  if (window.SigmaCarga) SigmaCarga.pintarResumen(L);
 }
 
 /* ---- agregar activos (CA-07: resultado por fila) ---- */
@@ -1083,14 +1145,15 @@ PANELS.addeq = function () {
     return { t: ttl, s: sub, b: '<div class="cp-bnr cp-' + (ok === PN.res.length ? 'ok' : 'w') + '">' + ic(ok === PN.res.length ? 'check' : 'alert', 18) + '<span><b>' + ok + ' de ' + PN.res.length + '</b> ' + (ok === 1 ? 'activo agregado' : 'activos agregados') + ' al plan.</span></div><div class="cp-res">' + PN.res.map(function (r) { var a = (PN.lista || []).filter(function (x) { return x.ACTIVO_ID === r.activo; })[0] || {}; return '<div class="cp-' + (r.ok ? 'ok' : 'no') + '">' + ic(r.ok ? 'check' : 'x', 15) + '<span><b>' + esc(a.CODIGO || r.activo) + '</b> · ' + esc(a.NOMBRE || '') + '<small style="display:block;color:' + (r.ok ? 'var(--muted)' : 'var(--red)') + '">' + esc(r.ok ? (a.PLANES ? 'Agregado · también está en ' + a.PLANES_CODIGOS : 'Agregado') : r.detalle) + '</small></span><span></span></div>'; }).join('') + '</div>', f: '<span class="cp-r"><button type="button" class="cp-btn cp-pri" data-a="pclose">Listo</button></span>' };
   }
   if (!PN.lista) return { t: ttl, s: sub, b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:300px"></div>' };
-  var q = nrm(PN.q), pool = PN.lista.filter(function (a) { return !a.YA_EN_PLAN && (!q || nrm(a.CODIGO + ' ' + a.NOMBRE + ' ' + (a.AREA || '') + ' ' + (a.TIPO || '')).indexOf(q) >= 0) && (!PN.fa || a.AREA === PN.fa); });
+  /* Los subactivos no van como fila propia: se eligen desde su activo, en «Objeto mantenible». */
+  var q = nrm(PN.q), pool = PN.lista.filter(function (a) { return !a.YA_EN_PLAN && !(pgAct(a.ACTIVO_ID) || {}).PADRE_ID && (!q || nrm(a.CODIGO + ' ' + a.NOMBRE + ' ' + (a.AREA || '') + ' ' + (a.TIPO || '')).indexOf(q) >= 0) && (!PN.fa || a.AREA === PN.fa); });
   var ok2 = pool.filter(function (a) { return !a.MOTIVO; }), no = pool.filter(function (a) { return a.MOTIVO; });
   var areas = {}; PN.lista.forEach(function (a) { if (a.AREA) areas[a.AREA] = 1; });
   var n = Object.keys(PN.sel).length;
   var row = function (a) {
     var s = PN.sel[a.ACTIVO_ID], comps = (PN.comp || []).filter(function (c) { return c.ACTIVO_ID === a.ACTIVO_ID; }), meds = (PN.med || []).filter(function (m) { return m.ACTIVO_ID === a.ACTIVO_ID; });
     return '<div class="cp-pk-r' + (a.MOTIVO ? ' cp-dis' : '') + '"><input type="checkbox" class="cp-cbx" data-a="eqpick" data-v="' + a.ACTIVO_ID + '"' + (s ? ' checked' : '') + (a.MOTIVO ? ' disabled' : '') + ' aria-label="Elegir ' + esc(a.CODIGO) + '"><span class="cp-ph2">' + ic('cog', 18) + '</span><span class="cp-s"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + (a.AREA ? ' · ' + esc(a.AREA) : '') + (a.MODELO ? ' · ' + esc(a.MODELO) : a.TIPO ? ' · ' + esc(a.TIPO) : '') + '</small></span><span style="text-align:right">' + (a.MOTIVO ? '<span class="cp-tg">' + esc(a.MOTIVO) + '</span>' : a.PLANES ? '<span class="cp-tg cp-w" title="' + esc(a.PLANES_CODIGOS) + '">En ' + pl(+a.PLANES, 'plan', 'planes') + '</span>' : '<span class="cp-tg cp-c">Sin plan</span>') + '</span>' +
-      (s && (comps.length || meds.length) ? '<div class="cp-eqo">' + combo('cpEqComp' + a.ACTIVO_ID, [{ id: '', n: 'Activo completo' }].concat(comps.map(function (c) { return { id: c.ID, n: c.NOMBRE }; })), s.componente || '', { etiqueta: 'Componente', ph: 'Activo completo', data: ' data-pq="componente" data-v="' + a.ACTIVO_ID + '"' }) + combo('cpEqMed' + a.ACTIVO_ID, meds.length ? meds.map(function (m) { return { id: m.ID, n: m.NOMBRE + ' · ' + fN(m.VALOR) + ' ' + (m.UNIDAD || '') }; }) : [{ id: '', n: 'Sin medidor' }], s.medidor || (meds[0] ? meds[0].ID : ''), { etiqueta: 'Medidor', dis: !meds.length, data: ' data-pq="medidor" data-v="' + a.ACTIVO_ID + '"' }) + '</div>' : '') + '</div>';
+      (s && pgAct(a.ACTIVO_ID) ? '<div class="cp-eqo">' + combo('cpEqObj' + a.ACTIVO_ID, pgObjOpts(pgAct(a.ACTIVO_ID)), s.o || 'a:' + a.ACTIVO_ID, { etiqueta: 'Objeto mantenible de ' + a.CODIGO, data: ' data-pg="addeq:' + a.ACTIVO_ID + '"' }) + combo('cpEqMed' + a.ACTIVO_ID, meds.length ? meds.map(function (m) { return { id: m.ID, n: m.NOMBRE + ' · ' + fN(m.VALOR) + ' ' + (m.UNIDAD || '') }; }) : [{ id: '', n: 'Sin medidor' }], s.medidor || (meds[0] ? meds[0].ID : ''), { etiqueta: 'Medidor', dis: !meds.length, data: ' data-pq="medidor" data-v="' + a.ACTIVO_ID + '"' }) + '</div>' : '') + '</div>';
   };
   return { t: ttl, s: sub,
     b: '<div class="cp-bnr cp-i">' + ic('help', 18) + '<span>Filtrado por el alcance del plan: <b>' + esc(p.PLANTA || 'Cualquier planta') + (p.TIPO ? ' · ' + esc(p.TIPO) : '') + (p.MODELO ? ' · ' + esc(p.MODELO) : '') + '</b>. Los que no calzan aparecen al final, deshabilitados.</span></div>' +
@@ -1314,8 +1377,10 @@ A.discard = function () { openModal({ t: 'discard' }); };
 A.reactivate = function () { openModal({ t: 'react' }); };
 A.more = function (d, t) { t.setAttribute('aria-expanded', 'true'); openPop(t, { t: 'more', right: true }); };
 A.mdup = function () { cerrarPop(); var p = F.plan; openPanel({ t: 'dup', pid: p.PLAN_ID, codigo: p.CODIGO, nombre: p.NOMBRE, n: 'Copia de ' + p.NOMBRE, inc: true }); };
-A.mhist = function () { cerrarPop(); goEl('#cpSecHist'); };
-A.mexec = function () { cerrarPop(); switchTab('ejecuciones', { plan: pid(), f: 'all' }); };
+/* El historial es una pestaña del paso 5 (Revisar y activar). */
+A.mhist = function () { cerrarPop(); A.stp({ v: 5, t5: 'hist' }); setTimeout(function () { goEl('#cpSecHist'); }, 60); };
+/* Las ejecuciones viven en Operación › Ejecuciones: se abre filtrada por este plan. */
+A.mexec = function () { cerrarPop(); location.href = CFG.base_ + 'View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones&plan=' + encodeURIComponent(F.plan.CODIGO); };
 A.mdeactq = function () {
   cerrarPop(); var lp = U.lista.filter(function (x) { return x.PLAN_ID === pid(); })[0] || F.plan;
   openModal({ t: 'deact', planes: [lp], mot: '', im: U.imp });
@@ -1406,7 +1471,7 @@ A.mdel = function () {
 /* ---- activos ---- */
 A.addeq = function () {
   openPanel({ t: 'addeq', q: '', fa: '', sel: {}, res: null, lista: null });
-  api('Candidatos', { plan: pid(), filtro: '' }).then(function (r) { if (!PN || PN.t !== 'addeq') return; PN.lista = r.activos; PN.comp = r.componentes; PN.med = r.medidores; panel(); }).catch(function (e) { closePanel(); toastError(e); });
+  Promise.all([api('Candidatos', { plan: pid(), filtro: '' }), pgCatalogo()]).then(function (x) { var r = x[0]; if (!PN || PN.t !== 'addeq') return; PN.lista = r.activos; PN.comp = r.componentes; PN.med = r.medidores; panel(); }).catch(function (e) { closePanel(); toastError(e); });
 };
 A.eqpick = function (d) { var id = +d.v; if (PN.sel[id]) delete PN.sel[id]; else PN.sel[id] = {}; panel(); };
 A.eqall = function () {
@@ -1417,11 +1482,11 @@ A.eqall = function () {
 };
 A.eqok = function (d, t) {
   var items = Object.keys(PN.sel).map(function (id) {
-    var s = PN.sel[id], meds = (PN.med || []).filter(function (m) { return m.ACTIVO_ID === +id; });
-    return { activo: +id, componente: s.componente ? +s.componente : null, medidor: s.medidor ? +s.medidor : (meds[0] ? meds[0].ID : null) };
+    var s = PN.sel[id], o = pgObjDe(s.o) || { activo: +id, componente: 0 }, meds = (PN.med || []).filter(function (m) { return m.ACTIVO_ID === o.activo; });
+    return { activo: o.activo, componente: o.componente || null, medidor: s.medidor ? +s.medidor : (meds[0] ? meds[0].ID : null) };
   });
   t.classList.add('cp-load');
-  escribir('AgregarActivos', { plan: pid(), items: JSON.stringify(items) }).then(function (r) { if (PN && PN.t === 'addeq') { PN.res = r.resultados; PN.sel = {}; panel(); } }).catch(function (e) { t.classList.remove('cp-load'); toastError(e); });
+  escribir('AgregarActivos', { plan: pid(), items: JSON.stringify(items) }).then(function (r) { delete SUG[pid()]; if (PN && PN.t === 'addeq') { PN.res = r.resultados; PN.sel = {}; panel(); } }).catch(function (e) { t.classList.remove('cp-load'); toastError(e); });
 };
 A.rmeq = function (d) {
   var cod = d.c, a = F.activos.filter(function (x) { return x.VINCULO_ID === +d.v; })[0];
@@ -1587,6 +1652,61 @@ A.addrep = function (d) {
   escribir('AgregarRepuesto', { plan: pid(), actividad: act, repuesto: +d.v, cantidad: 1 }).catch(toastError);
 };
 A.rmrep = function (d) { escribir('QuitarRepuesto', { plan: pid(), id: +d.v }).catch(toastError); };
+/* 409 · Repuestos sugeridos por compatibilidad con los activos, subactivos y componentes del plan. */
+var SUG = {};
+/* 422 · Parte f · repuestos dentro de la actividad, como repsHTML del mockup: compatibilidad con lo que mantiene
+   el plan, «cantidad × N activos = total», stock en bodega y sugerencias por nivel. */
+var NIVN = { 1: ['Del objeto mantenible', 'Calzan exactamente en el activo, subactivo o componente que mantiene el plan'], 2: ['De sus componentes', 'Se instalan en piezas que forman parte de lo que se mantiene'], 3: ['Del activo', 'Consumibles y filtros del modelo o tipo de activo'] };
+function repSug() {
+  var k = pid(), x = SUG[k];
+  if (x === undefined) { SUG[k] = null; api('RepuestosSugeridos', { plan: k }).then(function (r) { SUG[k] = { l: r.repuestos || [], st: r.stock || [], n: +r.objetos || 0 }; render(); }).catch(function () { SUG[k] = { l: [], st: [], n: 0 }; }); return null; }
+  return x;
+}
+function repStock(x, repId) { if (!x) return null; return x.l.filter(function (r) { return +r.ID === +repId; })[0] || x.st.filter(function (r) { return +r.ID === +repId; })[0] || null; }
+function stkHTML(s, need, un) {
+  if (!s) return '';
+  if (!s.CON_REGISTRO) return '<span class="cp-stk cp-s-na">Sin registro de stock</span>';
+  var d = +s.STOCK || 0, mn = s.MINIMO == null ? null : +s.MINIMO;
+  if (d <= 0) return '<span class="cp-stk cp-s-0" title="' + esc(s.BODEGA || '') + '">Sin stock</span>';
+  if (d < need || (mn != null && d <= mn)) return '<span class="cp-stk cp-s-lo" title="' + (mn != null ? 'Mínimo ' + fN(mn) + ' ' + esc(un) : '') + (s.BODEGA ? ' · ' + esc(s.BODEGA) : '') + '">Stock bajo · ' + fN(d) + ' ' + esc(un) + '</span>';
+  return '<span class="cp-stk cp-s-ok" title="' + esc(s.BODEGA || '') + '">' + fN(d) + ' ' + esc(un) + ' en bodega</span>';
+}
+function repFila(r, actId, E, dis) {
+  var x = repSug(), n = x ? x.n : 0, cf = x ? x.l.filter(function (c) { return +c.ID === +r.REPUESTO_ID; })[0] : null, un = r.UNIDAD || (cf && cf.UNIDAD) || 'un';
+  var nEq = cf ? +cf.FITS : n || 1, q = +r.CANTIDAD || 0;
+  var fit = !x || !n ? '' : !cf ? '<span class="cp-cpt cp-c-no" title="No está registrado como compatible con los activos del plan">' + ic('alert', 11) + 'Sin compatibilidad registrada</span>'
+    : +cf.FITS >= n ? '<span class="cp-cpt cp-c-ok" title="' + esc(cf.DONDE || '') + '">' + ic('check', 11) + (n > 1 ? 'Compatible con los ' + n + ' activos' : 'Compatible') + '</span>'
+    : '<span class="cp-cpt cp-c-pt" title="' + esc(cf.DONDE || '') + '">Compatible con ' + cf.FITS + ' de ' + n + ' activos</span>';
+  return '<div class="cp-rp2"><span class="cp-s"><b>' + esc(r.NOMBRE) + '</b><small><code>' + esc(r.CODIGO) + '</code>' + fit + '</small></span>' +
+    '<span class="cp-rp2-q"><input class="cp-inp" type="number" min="0" step="any" data-rq="' + r.ID + '" data-c="' + actId + '" data-rep="' + r.REPUESTO_ID + '" value="' + q + '"' + dis + ' aria-label="Cantidad por ejecución de ' + esc(r.NOMBRE) + '"><span class="cp-un">' + esc(un) + '</span></span>' +
+    '<span class="cp-rp2-t">' + (nEq > 1 ? '× ' + nEq + ' activos = <b>' + fN(q * nEq) + ' ' + esc(un) + '</b>' : '<span class="cp-mut">por ejecución</span>') + '</span>' + stkHTML(repStock(x, r.REPUESTO_ID), q * nEq, un) +
+    (E ? '<button type="button" class="cp-ibx cp-dn" data-a="rmrep" data-v="' + r.ID + '" aria-label="Quitar ' + esc(r.NOMBRE) + '">' + ic('x', 14) + '</button>' : '<span></span>') + '</div>';
+}
+function sugReps(a, actId) {
+  var x = repSug();
+  if (!x) return '<div class="cp-sk" style="height:40px"></div>';
+  if (!x.n) return '<div class="cp-rpc-e">' + ic('help', 15) + 'Agrega activos en el paso 1 para ver sus repuestos compatibles.</div>';
+  var ya = (a.REPUESTOS || []).map(function (r) { return +r.REPUESTO_ID; }), key = 'rc' + actId, todos = !!U.vp[key];
+  if (!x.l.length) return '<div class="cp-rpc-e">' + ic('box', 15) + 'No hay repuestos registrados como compatibles con los activos del plan. Puedes buscarlos abajo; para que aparezcan aquí, regístralos en la compatibilidad del repuesto.</div>';
+  var lista = todos ? x.l : x.l.slice(0, 6), nAdd = x.l.filter(function (c) { return +c.NIVEL === 1 && ya.indexOf(+c.ID) < 0; });
+  var fila = function (c) {
+    var on = ya.indexOf(+c.ID) >= 0, f = +c.FITS;
+    return '<div class="cp-rc' + (on ? ' cp-on' : '') + '"><span class="cp-s"><b>' + esc(c.NOMBRE) + '</b><small><code>' + esc(c.CODIGO) + '</code> · ' + esc(c.DONDE || c.POR || '') + '</small></span>' +
+      '<span>' + (f >= x.n ? '<span class="cp-cpt cp-c-ok">' + ic('check', 11) + (x.n > 1 ? 'Los ' + x.n + ' activos' : 'Compatible') + '</span>' : '<span class="cp-cpt cp-c-pt">' + f + ' de ' + x.n + ' activos</span>') + '</span>' +
+      stkHTML(c, f, c.UNIDAD || 'un') +
+      (on ? '<span class="cp-rc-ok">' + ic('check', 14) + 'Agregado</span>' : '<button type="button" class="cp-btn cp-out cp-xs" data-a="addsug" data-c="' + actId + '" data-v="' + c.ID + '">' + ic('plus', 13) + 'Agregar</button>') + '</div>';
+  };
+  var grupos = [1, 2, 3].map(function (t) { var g = lista.filter(function (c) { return +c.NIVEL === t; }); return g.length ? '<div class="cp-rc-g"><div class="cp-rc-gh"><b>' + NIVN[t][0] + '</b><small>' + NIVN[t][1] + '</small></div>' + g.map(fila).join('') + '</div>' : ''; }).join('');
+  return '<div class="cp-rpc"><div class="cp-rpc-h"><span class="cp-rpc-t">' + ic('box', 15) + '<b>Compatibles con lo que mantiene este plan</b></span>' +
+    (nAdd.length > 1 ? '<button type="button" class="cp-lnk" data-a="addsugall" data-c="' + actId + '" data-v="' + nAdd.map(function (c) { return c.ID; }).join(',') + '">Agregar los ' + nAdd.length + ' del objeto mantenible</button>' : '') + '</div>' + grupos +
+    (x.l.length > 6 ? '<button type="button" class="cp-lnk" style="margin-top:6px" data-a="sugmas" data-c="' + actId + '">' + (todos ? 'Ver menos' : 'Ver los ' + x.l.length + ' compatibles') + '</button>' : '') + '</div>';
+}
+A.sugmas = function (d) { var k = 'rc' + d.c; U.vp[k] = !U.vp[k]; render(); };
+A.addsugall = function (d) {
+  var ids = String(d.v || '').split(',').filter(Boolean), k = 0;
+  (function sig() { if (k >= ids.length) { toast(pl(ids.length, 'repuesto agregado', 'repuestos agregados') + ' a la actividad.'); return; } escribir('AgregarRepuesto', { plan: pid(), actividad: +d.c, repuesto: +ids[k++], cantidad: 1 }).then(sig).catch(toastError); })();
+};
+A.addsug = function (d) { escribir('AgregarRepuesto', { plan: pid(), actividad: +d.c, repuesto: +d.v, cantidad: 1 }).catch(toastError); };
 
 /* ---- duplicar y carga masiva ---- */
 A.dupok = function (d, t) {
@@ -1617,6 +1737,7 @@ function alCambiar(e) {
   if (t.id === 'cpPeriodo') { var pv = t.getAttribute('data-valor'); if (pv && pv !== U.periodo) { U.periodo = pv; if (TABR[U.tab] && TABR[U.tab].periodo) TABR[U.tab].periodo(); } return; }
   var span = t.closest('[data-cb]');
   if (span && t.type === 'text') return comboCambio(span);
+  if (t.hasAttribute('data-pg')) return pgCampo(t.getAttribute('data-pg'), t.value, false);
   if (t.hasAttribute('data-fe')) return fechaCambio(t);
   if (t.hasAttribute('data-pf')) return planCampo(t.getAttribute('data-pf'), t.value);
   if (t.hasAttribute('data-pp') && PN && PN.d) return setPP(t, t.type === 'checkbox' ? t.checked : t.value);
@@ -1634,6 +1755,7 @@ function comboCambio(span) {
   if (nombre === 'cpPlanta') { if (+v !== U.planta) { U.planta = +v || 0; pintarCascara(); recargarTodo(); } return; }
   if (span.hasAttribute('data-ar')) return asignarTodas(v);
   if (span.hasAttribute('data-radd')) return respAgregar(span.getAttribute('data-radd'), v);
+  if (span.hasAttribute('data-pg')) return pgCampo(span.getAttribute('data-pg'), v, false);
   if (span.hasAttribute('data-pp') && PN && PN.d) return setPP(span, v);
   if (span.hasAttribute('data-pf')) return planCampo(span.getAttribute('data-pf'), v);
   if (span.hasAttribute('data-iv')) return ivCampo(span, span.getAttribute('data-iv'), v);
@@ -1677,7 +1799,7 @@ function planCampo(campo, v) {
 }
 function ivCampo(el, campo, v) {
   var id = +el.getAttribute('data-i'), h = hById(id); if (!h) return;
-  var actual = { nombre: h.NOMBRE, descripcion: h.DESCRIPCION, habilitado: h.HABILITADO ? '1' : '0', parada: h.PARADA ? '1' : '0', overhaul: h.OVERHAUL ? '1' : '0', tipo: h.OT_TIPO_ID, prioridad: h.OT_PRIORIDAD_ID, responsable: h.RESPONSABLE_ID, grupo: h.GRUPO_ID, duracion: h.DURACION }[campo];
+  var actual = { nombre: h.NOMBRE, descripcion: h.DESCRIPCION, habilitado: h.HABILITADO ? '1' : '0', parada: h.PARADA ? '1' : '0', overhaul: h.OVERHAUL ? '1' : '0', tipo: h.OT_TIPO_ID, prioridad: h.OT_PRIORIDAD_ID, responsable: h.RESPONSABLE_ID, grupo: h.GRUPO_ID, proveedor: h.PROVEEDOR_ID, duracion: h.DURACION }[campo];
   if (campo === 'duracion') { var hh = parseFloat(String(v).replace(',', '.')); if (!(hh > 0)) { el.classList.add('cp-err'); noGuardado('La duración debe ser mayor que 0.'); return; } v = String(Math.round(hh * 60)); }
   if (campo === 'nombre' && !String(v).trim()) { el.classList.add('cp-err'); noGuardado('La intervención necesita un nombre.'); return; }
   if (sinCambio(actual, v)) return;
@@ -1742,6 +1864,7 @@ function alEscribir(e) {
     repT = setTimeout(function () { api('Repuestos', { filtro: q }).then(function (r) { if (POP && POP.t === 'rep' && POP.q === q) { POP.lista = r.repuestos; POP.cargando = false; paintPop(); } }).catch(function () { }); }, 250);
     return;
   }
+  if (t.hasAttribute('data-pg') && !t.closest('[data-cb]')) { pgCampo(t.getAttribute('data-pg'), t.value, true); return; }
   if (t.hasAttribute('data-pp') && PN && PN.d && t.type !== 'checkbox') { setPP(t, t.value); return; }
   if (t.hasAttribute('data-xp') && PN && PN.xf) { PN.xf[t.getAttribute('data-xp')] = t.value; return; }
   if (t.hasAttribute('data-cf')) { cfCampo(t.getAttribute('data-i'), t.getAttribute('data-cf'), t.value); return; }
@@ -1764,13 +1887,14 @@ function alClic(e) {
   var a = t.getAttribute('data-a'), fn = A[a] || (TABR[U.tab] && TABR[U.tab].A && TABR[U.tab].A[a]);
   if (!fn) return;
   if (t.tagName === 'A' && t.getAttribute('href')) return;
-  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1, calpers: 1, cpl: 1 };
+  var esCbx = { mul: 1, eqpick: 1, eqall: 1, exsel: 1, exall: 1, covtg: 1, covall: 1, calpers: 1, cpl: 1, pgeq: 1 };
   if (t.type === 'checkbox' && !esCbx[a]) return;
   if (!(t.type === 'checkbox' && esCbx[a])) e.preventDefault();
   fn(t.dataset, t, e);
 }
 function alTeclado(e) {
   var root = $('#cpRoot'); if (!root) return;
+  if (e.key === 'Enter' && e.target && e.target.id === 'cpPgPaso') { e.preventDefault(); A.pgpasoadd(); return; }
   if (e.key === 'Escape') {
     if (document.getElementById('sgComboLista') && !document.getElementById('sgComboLista').hidden) return;
     if (POP) { var el = POP.el; cerrarPop(); if (el && el.focus) el.focus(); e.preventDefault(); return; }
@@ -2022,7 +2146,10 @@ function cumHTML() {
 /* =====================================================================
    COBERTURA (§10.6)
    ===================================================================== */
-var CB = U.cob = { lista: null, f: 'sin', tipo: '', q: '', sel: {}, sinPlan: null, cargando: false };
+/* Cobertura muestra de a COB_PAG filas en una caja con scroll propio: con cientos de activos
+   la barra de selección (Crear plan / Agregar a un plan) sigue a la vista. */
+var COB_PAG = 50;
+var CB = U.cob = { lista: null, f: 'sin', tipo: '', q: '', sel: {}, sinPlan: null, cargando: false, lim: COB_PAG };
 function cobCargar() {
   CB.cargando = true; if (U.tab === 'cobertura') render();
   return api('Cobertura', { planta: U.planta }).then(function (r) {
@@ -2041,16 +2168,17 @@ function covHTML() {
   var tipos = {}; all.forEach(function (a) { if (a.TIPO) tipos[a.TIPO] = 1; });
   var cols = 'grid-template-columns:24px minmax(0,1.3fr) minmax(0,1fr) minmax(0,.9fr) minmax(0,1fr)';
   return '<div class="cp-card cp-cov"><svg width="92" height="92" viewBox="0 0 92 92" role="img" aria-label="' + pc + ' % de los activos con plan"><circle cx="46" cy="46" r="' + R + '" fill="none" stroke="var(--line3)" stroke-width="10"/><circle cx="46" cy="46" r="' + R + '" fill="none" stroke="var(--sigma-cyan-dark)" stroke-width="10" stroke-linecap="round" stroke-dasharray="' + (C * pc / 100) + ' ' + C + '" transform="rotate(-90 46 46)"/><text x="46" y="51" text-anchor="middle" font-size="17" font-weight="800" fill="var(--ink)">' + pc + '%</text></svg>' +
-    '<div style="min-width:0"><h3 style="font-size:16px;font-weight:800">' + (sin ? sin + ' ' + (sin === 1 ? 'activo no tiene' : 'activos no tienen') + ' plan preventivo' : 'Todos los activos tienen plan preventivo') + '</h3><p style="font-size:13px;color:var(--muted);margin-top:4px;max-width:70ch">' + (all.length - sin) + ' de ' + all.length + ' activos ' + (U.planta ? 'de ' + esc(plantaN(U.planta)) : 'de todas las plantas') + ' están en al menos un plan activo. Selecciona varios para crear un plan con ellos o sumarlos a uno existente.</p></div></div>' +
+    '<div style="min-width:0"><h3 style="font-size:16px;font-weight:800">' + (sin ? sin + ' ' + (sin === 1 ? 'activo no tiene' : 'activos no tienen') + ' plan preventivo' : 'Todos los activos tienen plan preventivo') + '</h3><p style="font-size:13px;color:var(--muted);margin-top:4px;max-width:70ch">' + (all.length - sin) + ' de ' + all.length + ' activos ' + (U.planta ? 'de ' + esc(plantaN(U.planta)) : (CFG.plantas || []).length === 1 ? 'de ' + esc(CFG.plantas[0].n) : 'de todas las plantas') + ' están en al menos un plan activo. Selecciona varios para crear un plan con ellos o sumarlos a uno existente.</p></div></div>' +
     '<div class="cp-card" style="padding:8px 10px"><div class="cp-ex-bar" style="padding:6px 6px 10px"><div class="cp-chips">' + [['sin', 'Sin plan'], ['con', 'Con plan'], ['all', 'Todos']].map(function (x) { return '<button type="button" class="cp-fc" data-a="covf" data-v="' + x[0] + '" aria-pressed="' + (CB.f === x[0]) + '">' + (x[0] === 'sin' ? '<i style="background:var(--red)"></i>' : '') + x[1] + '<b>' + (x[0] === 'sin' ? sin : x[0] === 'con' ? all.length - sin : all.length) + '</b></button>'; }).join('') + '</div>' +
     '<div class="cp-ex-f"><span style="min-width:200px">' + combo('cpCvTipo', [{ id: '', n: 'Cualquier tipo' }].concat(Object.keys(tipos).sort().map(function (t) { return { id: t, n: t }; })), CB.tipo, { etiqueta: 'Tipo de activo', ph: 'Cualquier tipo', data: ' data-cvf="tipo"' }) + '</span><label class="cp-srch2" style="height:34px;min-width:200px">' + ic('search', 14) + '<input id="cpCvq" value="' + esc(CB.q) + '" placeholder="Código, nombre o área" aria-label="Buscar activos" autocomplete="off"></label></div></div>' +
-    '<div class="cp-rows"><div class="cp-rw cp-h" style="' + cols + '"><span>' + (list.length ? '<input type="checkbox" class="cp-cbx" data-a="covall"' + (allSel ? ' checked' : '') + ' aria-label="Seleccionar todos">' : '') + '</span><span>Activo</span><span>Tipo · modelo</span><span>Ubicación</span><span>Cobertura</span></div>' +
-    (list.slice(0, 200).map(function (a) {
+    (nSel ? '<div class="cp-exbulk cp-exbulk-top"><b>' + pl(nSel, 'activo seleccionado', 'activos seleccionados') + '</b><span style="flex:1"></span><button type="button" class="cp-btn cp-plain cp-sm" data-a="covclr">Quitar selección</button><button type="button" class="cp-btn cp-out cp-sm" data-a="covadd">Agregar a un plan existente</button><button type="button" class="cp-btn cp-pri cp-sm" data-a="covnew">' + ic('plus', 15) + 'Crear plan con estos activos</button></div>' : '') +
+    '<div class="cp-rows cp-cov-rows"><div class="cp-rw cp-h" style="' + cols + '"><span>' + (list.length ? '<input type="checkbox" class="cp-cbx" data-a="covall"' + (allSel ? ' checked' : '') + ' aria-label="Seleccionar todos">' : '') + '</span><span>Activo</span><span>Tipo · modelo</span><span>Ubicación</span><span>Cobertura</span></div>' +
+    (list.slice(0, CB.lim).map(function (a) {
       return '<div class="cp-rw cp-click' + (CB.sel[a.ACTIVO_ID] ? ' cp-rsel' : '') + '" style="' + cols + '" data-a="covtg" data-v="' + a.ACTIVO_ID + '" role="button" tabindex="0"><span><input type="checkbox" class="cp-cbx" data-a="covtg" data-v="' + a.ACTIVO_ID + '"' + (CB.sel[a.ACTIVO_ID] ? ' checked' : '') + ' aria-label="Seleccionar ' + esc(a.CODIGO) + '"></span><span class="cp-s"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + '</small></span><span class="cp-s"><b style="font-weight:600">' + esc(a.TIPO || '—') + '</b><small>' + esc(a.MODELO || '') + '</small></span><span class="cp-s"><b style="font-weight:600">' + esc(a.AREA || '—') + '</b><small>' + esc(a.PLANTA || '') + '</small></span>' +
         '<span>' + (+a.PLANES ? String(a.PLANES_CODIGOS || '').split(', ').map(function (c) { return '<span class="cp-tg cp-c" style="margin-right:4px">' + esc(c) + '</span>'; }).join('') : '<span class="cp-atn cp-r"><i></i>Sin plan</span>') + '</span></div>';
-    }).join('') || '<div class="cp-empty" style="margin:10px">' + ic('check', 18) + '<b>Nada que mostrar</b>Ningún activo coincide con estos filtros.</div>') + '</div>' +
-    (list.length > 200 ? '<p class="cp-more-n">Mostrando 200 de ' + list.length + '. Afina con los filtros.</p>' : '') +
-    (nSel ? '<div class="cp-exbulk"><b>' + pl(nSel, 'activo seleccionado', 'activos seleccionados') + '</b><span style="flex:1"></span><button type="button" class="cp-btn cp-plain cp-sm" data-a="covclr">Quitar selección</button><button type="button" class="cp-btn cp-out cp-sm" data-a="covadd">Agregar a un plan existente</button><button type="button" class="cp-btn cp-pri cp-sm" data-a="covnew">' + ic('plus', 15) + 'Crear plan con estos activos</button></div>' : '') + '</div>';
+    }).join('') || '<div class="cp-empty" style="margin:10px">' + ic('check', 18) + '<b>Nada que mostrar</b>Ningún activo coincide con estos filtros.</div>') +
+    (list.length > CB.lim ? '<div class="cp-cov-more"><span>Mostrando ' + CB.lim + ' de ' + list.length + '</span><button type="button" class="cp-btn cp-out cp-xs" data-a="covmas">Mostrar ' + Math.min(COB_PAG, list.length - CB.lim) + ' más</button></div>' : '') + '</div>' +
+    '</div>';
 }
 POPS.addto = function () {
   var ids = Object.keys(CB.sel), pls = (U.lista || []).filter(function (p) { return p.ESTADO !== 'INACTIVO'; });
@@ -2137,22 +2265,30 @@ function ultCell(x) {
   var p = Math.round(100 * h / t);
   return '<span class="cp-mbar"><i class="' + (p < 90 ? 'cp-low' : '') + '" style="width:' + p + '%"></i></span><small>' + h + ' de ' + t + '</small>';
 }
+/* La asignación en la lista: el avatar de la persona (con «+N» si hay más) o una etiqueta para Disponible, grupo o empresa. */
+function quienCell(x) {
+  var t = x.ASIGNA_TXT || '';
+  if (!t || t === 'Disponible') return '<span class="cp-tg cp-c" title="Sin asignar: cualquiera la toma desde la app">Disponible</span>';
+  if (/^(Grupo|Externa) · /.test(t)) return '<span class="cp-tg" title="' + esc(t) + '">' + ic(/^Grupo/.test(t) ? 'cog' : 'box', 11) + esc(t.replace(/^(Grupo|Externa) · /, '')) + '</span>';
+  var mas = /\+(\d+)$/.exec(t);
+  return avatar(x.RESPONSABLE) + (mas ? '<span class="cp-av cp-more">+' + mas[1] + '</span>' : '');
+}
 function ayudaHTML(t) { return '<div class="cp-hint2">' + ic('help', 15) + '<span>' + t + '</span></div>'; }
 function insHTML() {
   var f = INS.filas;
   if (!f) return skel();
   var q = lNorm(INS.q), l = f.filter(function (x) { return !q || lNorm([x.NOMBRE, x.CODIGO, x.PAUTA, x.DONDE, x.DONDE_CODIGO].join(' ')).indexOf(q) >= 0; });
-  var cols = 'minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.1fr) 130px minmax(0,1fr) 22px';
+  var cols = 'minmax(0,1.5fr) minmax(0,1.2fr) minmax(0,1.2fr) minmax(0,1.1fr) minmax(190px,1fr) minmax(0,1fr) 22px';
   var rows = l.map(function (x) {
-    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="insabrir" data-q="' + esc(x.Q) + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + '</b><small>' + esc(x.CODIGO) + (x.PLANTA ? ' · ' + esc(x.PLANTA) : '') + '</small></span>' +
+    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="insabrir" data-id="' + x.ID + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + choqChip(x) + '</b><small>' + esc(x.CODIGO) + (x.PLANTA ? ' · ' + esc(x.PLANTA) : '') + '</small></span>' +
       '<span class="cp-s"><b>' + esc(x.PAUTA) + '</b><small>' + pl(+x.ITEMS, 'ítem', 'ítems') + ' · ' + esc(x.PAUTA_NOMBRE) + '</small></span>' +
       '<span class="cp-s"><b>' + esc(x.DONDE) + '</b><small>' + esc(x.DONDE_CODIGO) + '</small></span>' +
       '<span class="cp-s"><b>' + esc(x.FRECUENCIA) + '</b></span>' +
-      '<span class="cp-who">' + avatar(x.RESPONSABLE) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
+      '<span class="cp-who">' + quienCell(x) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
       '<span class="cp-ult">' + ultCell(x) + '</span><span class="cp-go">' + ic('chev', 15) + '</span></div>';
   }).join('');
   return ayudaHTML('Una inspección recorre activos con una <b>pauta</b>. Se programa aquí, se registra en <a class="cp-lnk" href="' + esc(CFG.base_ + 'View/Mantenimiento/Operacion/Operacion.aspx#ejecuciones') + '">Operación › Ejecuciones</a> y lo que no cumple llega a <a class="cp-lnk" href="' + esc(CFG.base_ + 'View/Mantenimiento/Avisos/Avisos.aspx') + '">Avisos</a>.') +
-    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpInsQ" value="' + esc(INS.q) + '" placeholder="Inspección, código o activo" aria-label="Buscar inspección" autocomplete="off"></div>' +
+    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpInsQ" value="' + esc(INS.q) + '" placeholder="Inspección, código o activo" aria-label="Buscar inspección" autocomplete="off"></label>' +
     (l.length ? '<div class="cp-rows"><div class="cp-rw cp-h" style="grid-template-columns:' + cols + '"><span>Inspección</span><span>Pauta</span><span>Activos</span><span>Frecuencia</span><span>Próxima</span><span>Últimos 30 días</span><span></span></div>' + rows + '</div>'
       : '<div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('clip', 22) + '</span><b>' + (f.length ? 'Ninguna inspección coincide' : 'Todavía no hay inspecciones programadas') + '</b>' + (INS.error ? esc(INS.error) : 'Crea la primera con «Nueva inspección».') + '</div>') + '</div>';
 }
@@ -2160,29 +2296,480 @@ function tarHTML() {
   var f = TAR.filas;
   if (!f) return skel();
   var q = lNorm(TAR.q), l = f.filter(function (x) { return !q || lNorm([x.NOMBRE, x.CODIGO, x.CATEGORIA, x.DONDE, x.DONDE_CODIGO].join(' ')).indexOf(q) >= 0; });
-  var cols = 'minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.1fr) 130px minmax(0,1fr) 22px';
+  var cols = 'minmax(0,1.5fr) minmax(0,1fr) minmax(0,1.2fr) minmax(0,1.1fr) minmax(190px,1fr) minmax(0,1fr) 22px';
   var rows = l.map(function (x) {
-    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="tarabrir" data-q="' + esc(x.Q) + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + '</b><small>' + esc(x.CODIGO) + (+x.ESCALADAS ? ' · <span class="cp-lnk">' + pl(+x.ESCALADAS, 'escalada a OT', 'escaladas a OT') + '</span>' : '') + '</small></span>' +
+    return '<div class="cp-rw cp-click" style="grid-template-columns:' + cols + '" data-a="tarabrir" data-id="' + x.ID + '" role="button" tabindex="0"><span class="cp-s"><b>' + esc(x.NOMBRE) + choqChip(x) + '</b><small>' + esc(x.CODIGO) + (+x.ESCALADAS ? ' · <span class="cp-lnk">' + pl(+x.ESCALADAS, 'escalada a OT', 'escaladas a OT') + '</span>' : '') + '</small></span>' +
       '<span class="cp-s"><b class="cp-cat"><i style="background:' + esc(x.COLOR) + '"></i>' + esc(x.CATEGORIA) + '</b></span>' +
       '<span class="cp-s"><b>' + esc(x.DONDE) + '</b><small>' + esc(x.DONDE_CODIGO) + '</small></span>' +
       '<span class="cp-s"><b>' + esc(x.FRECUENCIA) + '</b></span>' +
-      '<span class="cp-who">' + avatar(x.RESPONSABLE) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
+      '<span class="cp-who">' + quienCell(x) + '<span class="cp-s">' + proxCell(x) + '</span></span>' +
       '<span class="cp-ult">' + ultCell(x) + '</span><span class="cp-go">' + ic('chev', 15) + '</span></div>';
   }).join('');
   return ayudaHTML('Una tarea es trabajo rutinario y breve: <b>no es una OT</b>. Si al hacerla aparece un problema, se escala a OT desde Operación › Ejecuciones.') +
-    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpTarQ" value="' + esc(TAR.q) + '" placeholder="Tarea, categoría o activo" aria-label="Buscar tarea" autocomplete="off"></div>' +
+    '<div class="cp-card cp-plt"><label class="cp-srch2" style="max-width:360px;margin-bottom:8px">' + ic('search', 15) + '<input id="cpTarQ" value="' + esc(TAR.q) + '" placeholder="Tarea, categoría o activo" aria-label="Buscar tarea" autocomplete="off"></label>' +
     (l.length ? '<div class="cp-rows"><div class="cp-rw cp-h" style="grid-template-columns:' + cols + '"><span>Tarea</span><span>Categoría</span><span>Dónde</span><span>Frecuencia</span><span>Próxima</span><span>Últimos 30 días</span><span></span></div>' + rows + '</div>'
       : '<div class="cp-empty cp-big" style="border:0"><span class="cp-ei">' + ic('check', 22) + '</span><b>' + (f.length ? 'Ninguna tarea coincide' : 'Todavía no hay tareas recurrentes') + '</b>' + (TAR.error ? esc(TAR.error) : 'Crea la primera con «Nueva tarea».') + '</div>') + '</div>';
 }
 var URL_INS = function (q) { return CFG.base_ + 'View/Mantenimiento/Checklist/ChecklistProgramacion.aspx' + (q ? '?query=' + q : ''); };
 var URL_TAR = function (q) { return CFG.base_ + 'View/Mantenimiento/Tareas/Tarea.aspx' + (q ? '?query=' + q : ''); };
+/* =====================================================================
+   408 · CAJONES «INSPECCIÓN» Y «TAREA RECURRENTE» (mockup PANELS.rone / PANELS.tare)
+   Reemplazan el modal ChecklistProgramacion.aspx y la página Tarea.aspx. Una inspección recorre
+   varios activos en orden; cada uno (y el «dónde» de una tarea) puede ser el activo completo,
+   un subactivo o un componente. Frecuencia propia (semanal / mensual) o un calendario compartido.
+   Los campos llevan data-pg="clave" (sus propios manejadores: pgCampo).
+   ===================================================================== */
+var PG = null;   // catálogo de los cajones (WsCentroPlanificacion.ProgramaCatalogo)
+function pgCatalogo() { return PG ? Promise.resolve(PG) : api('ProgramaCatalogo', {}).then(function (c) { PG = c; return c; }); }
+var pgAct = function (id) { return (PG && PG.activos || []).filter(function (a) { return +a.ID === +id; })[0]; };
+var pgComp = function (id) { return (PG && PG.componentes || []).filter(function (c) { return +c.ID === +id; })[0]; };
+var pgCrit = function (n) { return +n >= 4 ? 'A' : +n === 3 ? 'B' : 'C'; };   // nivel de criticidad (1–4) → color del mockup (A alta · B media · C baja)
+var pgBase = function (a) { return a && a.PADRE_ID ? pgAct(a.PADRE_ID) || a : a; };
+/* Las opciones del objeto mantenible de un activo: él completo, sus subactivos y los componentes de cada uno. */
+function pgObjOpts(base) {
+  var comps = function (actId, nivel) {
+    var cs = PG.componentes.filter(function (c) { return +c.ACTIVO_ID === +actId; }), out = [];
+    var rama = function (padre, n) { cs.filter(function (c) { return (+c.PADRE_ID || 0) === padre; }).forEach(function (c) { out.push({ id: 'c:' + c.ID, n: c.NOMBRE, tag: { k: 'c', t: 'Componente' }, nivel: Math.min(n, 3), img: c.IMG || '', ini: 'C' }); rama(+c.ID, n + 1); }); };
+    rama(0, nivel); return out;
+  };
+  var l = [{ id: 'a:' + base.ID, n: 'Activo completo', sub: base.CODIGO + ' · ' + base.NOMBRE, txt: base.CODIGO + ' ' + base.NOMBRE, tag: { k: 'a', t: 'Activo' }, nivel: 0, img: base.IMG || '', ini: 'A' }].concat(comps(base.ID, 1));
+  PG.activos.filter(function (s) { return +s.PADRE_ID === +base.ID; }).forEach(function (s) { l.push({ id: 'a:' + s.ID, n: s.NOMBRE, sub: s.CODIGO, tag: { k: 's', t: 'Subactivo' }, nivel: 1, img: s.IMG || '', ini: 'S' }); l = l.concat(comps(s.ID, 2)); });
+  return l;
+}
+/* «a:12» / «c:5» → { activo, componente } para guardar. */
+function pgObjDe(o) { var m = /^([ac]):(\d+)$/.exec(o || ''); if (!m) return null; if (m[1] === 'a') return { activo: +m[2], componente: 0 }; var c = pgComp(m[2]); return c ? { activo: +c.ACTIVO_ID, componente: +c.ID } : null; }
+function pgObjTxt(o) {
+  var m = /^([ac]):(\d+)$/.exec(o || ''); if (!m) return '';
+  if (m[1] === 'c') { var c = pgComp(m[2]); return c ? 'Componente · ' + c.NOMBRE : ''; }
+  var a = pgAct(m[2]); return a && a.PADRE_ID ? 'Subactivo · ' + a.NOMBRE : 'Activo completo';
+}
+var pgObjDesde = function (act, comp) { return +comp ? 'c:' + comp : 'a:' + act; };
+function pgPersonas() { return (PG.personas || []).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · '), img: p.FOTO || '', ini: ini(p.NOMBRE) }; }); }
+function pgFreqVacia() { return { modo: 'w', dias: [wday(TODAY)], diaMes: +TODAY.slice(8, 10), hora: '08:00', sh: '', pro: 0 }; }
+function pgFreqDesde(r) {
+  var f = pgFreqVacia(); if (!r) return f;
+  f.pro = +r.ID || 0;
+  if (!r.PRIVADA) { f.modo = 'sh'; f.sh = r.ID; return f; }
+  f.modo = r.FRECUENCIA === 'MENSUAL' ? 'm' : 'w'; f.hora = r.HORA || '08:00';
+  f.dias = String(r.DIAS || '').split(',').filter(Boolean).map(Number); if (!f.dias.length) f.dias = [1];
+  f.diaMes = +r.DIA_MES || 1; return f;
+}
+/* Las próximas fechas de la frecuencia propia (la vista previa del mockup). */
+function pgProximas(f, n) {
+  var out = [], d = TODAY;
+  for (var k = 0; k < 400 && out.length < n; k++, d = addD(d, 1)) {
+    if (f.modo === 'w' && f.dias.indexOf(wday(d)) >= 0) out.push(d);
+    if (f.modo === 'm') { var y = +d.slice(0, 4), m = +d.slice(5, 7), last = new Date(y, m, 0).getDate(); if (+d.slice(8, 10) === Math.min(+f.diaMes || 1, last)) out.push(d); }
+  }
+  return out;
+}
+function pgFreqHTML(f, e) {
+  var seg = '<div class="cp-segc" role="group" aria-label="Cada cuánto">' + [['w', 'Semanal'], ['m', 'Mensual'], ['sh', 'Calendario compartido']].map(function (o) { return '<button type="button" data-a="pgfq" data-v="' + o[0] + '" aria-pressed="' + (f.modo === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  var cuerpo = f.modo === 'w' ? '<div class="cp-fld"><span class="cp-lb">Días</span><div class="cp-days">' + [1, 2, 3, 4, 5, 6, 7].map(function (x) { return '<button type="button" data-a="pgday" data-v="' + x + '" aria-pressed="' + (f.dias.indexOf(x) >= 0) + '" aria-label="' + DIA[x] + '">' + DIAC[x] + '</button>'; }).join('') + '</div>' + (!f.dias.length ? mc('', 'Elige al menos un día.') : '') + '</div>'
+    : f.modo === 'm' ? '<div class="cp-fld" style="max-width:200px"><label>Día del mes</label>' + combo('cpPgDm', DIAS31, f.diaMes, { etiqueta: 'Día del mes', data: ' data-pg="f.diaMes"' }) + '</div>'
+    : '<div class="cp-fld"><label>Calendario</label>' + combo('cpPgSh', PG.calendarios.map(function (c) { return { id: c.ID, n: c.NOMBRE, sub: c.TIPO }; }), f.sh, { etiqueta: 'Calendario compartido', ph: 'Elige un calendario', err: e && !f.sh, data: ' data-pg="f.sh"' }) +
+      mc('i', 'Si alguien cambia el calendario en Recursos, cambia aquí también.', 'help') + '</div>';
+  var hora = f.modo !== 'sh' ? '<div class="cp-fld" style="max-width:200px"><label>Hora</label>' + combo('cpPgH', HORAS, f.hora, { etiqueta: 'Hora', data: ' data-pg="f.hora"' }) + '</div>' : '';
+  var nx = f.modo === 'sh' ? '' : '<div class="cp-nxd"><span class="cp-lb2">Próximas fechas</span><div>' + (pgProximas(f, 5).map(function (d) { return '<span class="cp-tg">' + fD(d) + '</span>'; }).join(' ') || '<small style="color:var(--muted)">Sin fechas</small>') + '</div></div>';
+  return '<div class="cp-fld"><label>Cada cuánto</label>' + seg + '</div>' + cuerpo + hora + nx;
+}
+function pgFacts(h) { var t = +h.TOTAL || 0; return '<div class="cp-facts">' + '<div><span>Cumplimiento 30 días</span><b>' + (t ? (+h.HECHAS || 0) + ' de ' + t : 'Sin registros aún') + '</b></div>' + (h.ESCALADAS != null ? '<div><span>Escaladas a OT</span><b>' + (+h.ESCALADAS || 0) + '</b></div>' : '<div><span>Activos</span><b>' + (+h.ACTIVOS || 0) + '</b></div>') + '</div>'; }
+/* Quién la ejecuta: Disponible (nadie asignado: en la app la ve quien puede ejecutarla y la toma quien
+   llegue primero; ahí puede sumar integrantes, un grupo o una empresa externa), una o varias personas,
+   un grupo de trabajo o una empresa externa. */
+var ASM = [['D', 'Disponible'], ['P', 'Personas'], ['G', 'Grupo de trabajo'], ['E', 'Empresa externa']];
+function pgAsDesde(cod) { var m = /^([PGE]):(.+)$/.exec(cod || ''); return m ? { modo: m[1], ids: m[2].split(',').filter(Boolean).map(Number) } : { modo: 'D', ids: [] }; }
+/* 420 · Carga laboral: chip con las horas de los próximos 30 días y «Ver carga» (calendario mensual). */
+function cargaUI(clave, nombre, detalle) { return window.SigmaCarga ? '<span class="cp-carga">' + SigmaCarga.chipDe(clave) + SigmaCarga.boton(clave, nombre, detalle) + '</span>' : ''; }
+function cargaBtn(clave, nombre, fechaIso, txt) { return window.SigmaCarga && clave ? SigmaCarga.boton(clave, nombre, '', txt, fechaIso) : ''; }
+/* 421 · Quién choca: una fila por persona, grupo o empresa ocupada, con el trabajo que ya tiene y «Ver carga». */
+function quienesChocan(l) {
+  var vis = {}, r = (l || []).filter(function (c) { if (c.CLASE !== 'RECURSO' || !c.CLAVE || vis[c.CLAVE]) return false; vis[c.CLAVE] = 1; return true; });
+  if (!r.length) return '';
+  return '<div class="cp-qch"><span class="cp-qch-t">Quién tiene el choque</span>' + r.map(function (c) {
+    var n = (l || []).filter(function (x) { return x.CLAVE === c.CLAVE; }).length;
+    return '<div class="cp-qch-r">' + (c.CLAVE.charAt(0) === 'U' ? avatar(String(c.OBJETO).replace(/\s*\(grupo.*$/, '')) : '<span class="cp-av" style="background:#E8FBFB;color:#007F8A">' + ic(c.CLAVE.charAt(0) === 'G' ? 'users' : 'box', 14) + '</span>') +
+      '<span class="cp-s"><b>' + esc(c.OBJETO) + '</b><small>Ya está en ' + (TIPN[c.CON_TIPO] || '').toLowerCase() + ' ' + esc(c.CON_CODIGO) + ' · ' + fD(dIso(c.CON_INICIO)) + ' ' + hIso(c.CON_INICIO) + '–' + hIso(c.CON_FIN) + (n > 1 ? ' · ' + pl(n, 'fecha', 'fechas') + ' con choque' : '') + '</small></span>' +
+      cargaBtn(c.CLAVE, String(c.OBJETO).replace(/\s*\(grupo.*$/, ''), c.CON_INICIO) + '</div>';
+  }).join('') + '</div>';
+}
+function pgAsHTML(as, e) {
+  var seg = '<div class="cp-segc" role="group" aria-label="Quién la ejecuta">' + ASM.map(function (o) { return '<button type="button" data-a="pgas" data-v="' + o[0] + '" aria-pressed="' + (as.modo === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+  var falta = e && as.modo !== 'D' && !as.ids.length, b = '';
+  if (as.modo === 'D') b = mc('i', 'Queda <b>disponible</b>: en la app la ve quien puede ejecutarla y la toma quien llegue primero. Ahí puede sumar integrantes, un grupo o una empresa externa.', 'help');
+  if (as.modo === 'P') {
+    var gente = pgPersonas(), sel = as.ids.map(function (id) { return gente.filter(function (p) { return +p.id === +id; })[0]; }).filter(Boolean);
+    b = (sel.length ? '<div class="cp-avl">' + sel.map(function (p, i) { return '<div class="cp-rp">' + (p.img ? '<img class="cp-av cp-avi cp-lg" src="' + esc(p.img) + '" alt="">' : avatar(p.n).replace('class="cp-av"', 'class="cp-av cp-lg"')) + '<span class="cp-s"><b>' + esc(p.n) + (i === 0 ? ' <span class="cp-tg cp-p">Responsable</span>' : ' <span class="cp-tg">Apoyo</span>') + '</b><small>' + esc(p.sub || 'Sin perfil') + '</small></span>' + cargaUI('U:' + p.id, p.n, p.sub) + '<button type="button" class="cp-ibx cp-dn" data-a="pgasrm" data-v="' + p.id + '" aria-label="Quitar ' + esc(p.n) + '">' + ic('x', 14) + '</button></div>'; }).join('') + '</div>' : '') +
+      combo('cpPgAsP', gente.filter(function (p) { return as.ids.indexOf(+p.id) < 0; }), '', { etiqueta: 'Agregar persona', ph: sel.length ? 'Agregar otra persona' : 'Elige quién la ejecuta', err: falta, data: ' data-pg="asadd"' });
+  }
+  if (as.modo === 'G') {
+    var g = as.ids[0], ints = (PG.integrantes || []).filter(function (x) { return +x.GRUPO_ID === +g; });
+    var gN = ((PG.grupos || []).filter(function (x) { return +x.ID === +g; })[0] || {}).NOMBRE || '';
+    b = combo('cpPgAsG', (PG.grupos || []).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }), g || '', { etiqueta: 'Grupo de trabajo', ph: 'Elige el grupo', err: falta, data: ' data-pg="asone"' }) +
+      (g ? '<div class="cp-carga-row">' + cargaUI('G:' + g, gN, 'Grupo de trabajo') + '</div>' : '') +
+      (g ? '<small style="display:block;margin-top:6px;color:var(--muted);font-size:12px">' + (ints.length ? pl(ints.length, 'integrante', 'integrantes') + ': ' + esc(ints.map(function (x) { var p = (PG.personas || []).filter(function (y) { return +y.ID === +x.USUARIO_ID; })[0]; return p ? p.NOMBRE : ''; }).filter(Boolean).join(', ')) : 'El grupo no tiene integrantes vigentes.') + '</small>' : '');
+  }
+  if (as.modo === 'E') b = combo('cpPgAsE', (PG.proveedores || []).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }), as.ids[0] || '', { etiqueta: 'Empresa externa', ph: 'Elige la empresa', err: falta, data: ' data-pg="asone"' }) +
+    (as.ids[0] ? '<div class="cp-carga-row">' + cargaUI('E:' + as.ids[0], ((PG.proveedores || []).filter(function (x) { return +x.ID === +as.ids[0]; })[0] || {}).NOMBRE || '', 'Empresa externa') + '</div>' : '') +
+    ((PG.proveedores || []).length ? '' : mc('i', 'No hay empresas contratistas registradas en Terceros.', 'help'));
+  return '<div class="cp-fld"><label>Quién la ejecuta</label>' + seg + '</div><div class="cp-fld">' + b + (falta ? mc('', as.modo === 'P' ? 'Elige al menos una persona o déjala disponible.' : as.modo === 'G' ? 'Elige el grupo.' : 'Elige la empresa.') : '') + '</div>';
+}
+var pgRespDur = function (as, dur, e) {
+  return pgAsHTML(as, e) + '<div class="cp-fld" style="max-width:220px"><label for="cpPgDu">Duración</label><div class="cp-unit"><input id="cpPgDu" class="cp-inp" type="number" step="0.25" min="0.25" data-pg="dur" value="' + esc(dur) + '"><span class="cp-u">horas</span></div></div>';
+};
+
+/* ---- inspección ---- */
+function abrirIns(id) {
+  var plantas = CFG.plantas || [];
+  openPanel({ t: 'ins', pg: true, id: id || 0, cargando: true, err: false, busy: false, err2: '', n: '', pau: '', pl: U.planta || (plantas[0] || {}).id || 0, eqs: [], aq: '', as: { modo: 'D', ids: [] }, dur: 1, f: pgFreqVacia(), fila: (INS.filas || []).filter(function (x) { return +x.ID === +id; })[0] || null });
+  Promise.all([pgCatalogo(), id ? api('Inspeccion', { id: id }) : null]).then(function (x) {
+    if (!PN || PN.t !== 'ins') return;
+    var r = x[1];
+    if (r) {
+      var h = r.cabecera; PN.n = h.NOMBRE || ''; PN.pau = h.PLANTILLA; PN.as = pgAsDesde(h.ASIGNACION); PN.dur = h.DURACION ? Math.round(h.DURACION / 60 * 100) / 100 : 1; PN.pl = h.PLANTA_ID || PN.pl;
+      PN.eqs = (r.activos || []).map(function (a) { var b = pgBase(pgAct(a.ACTIVO)); return { a: b ? +b.ID : +a.ACTIVO, o: pgObjDesde(a.ACTIVO, a.COMPONENTE) }; });
+      PN.f = pgFreqDesde(r.frecuencia);
+    } else if (PG.pautas.length) PN.pau = PG.pautas[0].ID;
+    PN.cargando = false; panel();
+  }).catch(function (e) { closePanel(); toastError(e); });
+}
+/* Las otras inspecciones que ya recorren un activo (mockup: «En RON-002»), sin contar la que se edita. */
+function pgEnOtras(actId) { return (PG.enInspeccion || []).filter(function (x) { return +x.ACTIVO_ID === +actId && +x.INSPECCION !== +PN.id; }); }
+function pgEnTag(actId) { var l = pgEnOtras(actId); return l.length ? '<span class="cp-tg" title="Ya lo recorre ' + esc(l.map(function (x) { return x.CODIGO + ' · ' + x.NOMBRE; }).join(', ')) + '">En ' + esc(l.map(function (x) { return x.CODIGO; }).join(', ')) + '</span>' : ''; }
+/* 427 · Un solo listado: al marcar un activo, en su misma fila aparecen el orden, el objeto mantenible y las flechas.
+   Arriba, el resumen del recorrido y «Solo los elegidos» (antes se marcaba abajo y aparecía arriba). */
+function pgPicker(e) {
+  var sel = PN.eqs, q = nrm(PN.aq || ''), pool = PG.activos.filter(function (a) { return !a.PADRE_ID && (!PN.pl || +a.PLANTA_ID === +PN.pl); });
+  var pos = function (id) { for (var k = 0; k < sel.length; k++) if (+sel[k].a === +id) return k; return -1; };
+  if (PN.solo && !sel.length) PN.solo = false;
+  var areas = []; pool.forEach(function (a) { if (areas.indexOf(a.AREA) < 0) areas.push(a.AREA); });
+  var fila = function (a) {
+    var k = pos(a.ID), on = k >= 0, x = on ? sel[k] : null, subs = PG.activos.filter(function (s2) { return +s2.PADRE_ID === +a.ID; }).length, cs = PG.componentes.filter(function (c) { return +c.ACTIVO_ID === +a.ID; }).length;
+    return '<div class="cp-apr2' + (on ? ' cp-on' : '') + '">' +
+      '<button type="button" class="cp-apr2-h" data-a="pgeq" data-v="' + a.ID + '" aria-pressed="' + on + '">' +
+      '<span class="cp-cbx2' + (on ? ' cp-on' : '') + '"></span>' +
+      '<span class="cp-apr2-img">' + (a.IMG ? '<img src="' + esc(a.IMG) + '" alt="" loading="lazy">' : ic('box', 16)) + '</span>' +
+      '<span class="cp-s"><b>' + esc(a.NOMBRE) + '</b><small>' + esc(a.CODIGO) + ' · ' + esc(a.TIPO || 'Sin tipo') + (subs ? ' · ' + pl(subs, 'subactivo', 'subactivos') : '') + (cs ? ' · ' + pl(cs, 'componente', 'componentes') : '') + '</small></span>' +
+      pgEnTag(a.ID) + (+a.CRITICIDAD ? '<span class="cp-crit cp-c-' + pgCrit(a.CRITICIDAD) + '" title="Criticidad ' + a.CRITICIDAD + '">' + a.CRITICIDAD + '</span>' : '') +
+      (on ? '<span class="cp-apr2-n" title="Orden en el recorrido">' + (k + 1) + '</span>' : '') + '</button>' +
+      (on ? '<div class="cp-apr2-b"><span class="cp-apr2-l">Se inspecciona</span><span class="cp-apr2-o">' + combo('cpPgO' + k, pgObjOpts(a), x.o, { etiqueta: 'Objeto mantenible de ' + a.CODIGO, data: ' data-pg="o:' + k + '"' }) + '</span>' +
+        '<span class="cp-apr2-a"><button type="button" class="cp-ibx" data-a="pgmv" data-v="' + k + '" data-d="-1"' + (k ? '' : ' disabled') + ' aria-label="Antes en el recorrido" title="Antes en el recorrido">' + ic('chev', 14).replace('<svg', '<svg style="transform:rotate(-90deg)"') + '</button>' +
+        '<button type="button" class="cp-ibx" data-a="pgmv" data-v="' + k + '" data-d="1"' + (k < sel.length - 1 ? '' : ' disabled') + ' aria-label="Después en el recorrido" title="Después en el recorrido">' + ic('chev', 14).replace('<svg', '<svg style="transform:rotate(90deg)"') + '</button></span></div>' : '') + '</div>';
+  };
+  var lista;
+  if (PN.solo) lista = '<div class="cp-apg">' + sel.map(function (x) { return fila(pgAct(x.a) || { ID: x.a, NOMBRE: 'Activo ' + x.a }); }).join('') + '</div>';
+  else lista = areas.map(function (ar) {
+    var all = pool.filter(function (a) { return a.AREA === ar; }), as = all.filter(function (a) { return !q || nrm(a.CODIGO + ' ' + a.NOMBRE + ' ' + a.TIPO).indexOf(q) >= 0; });
+    if (!as.length) return '';
+    var n = all.filter(function (a) { return pos(a.ID) >= 0; }).length;
+    return '<div class="cp-apg"><button type="button" class="cp-apg-h" data-a="pgarea" data-v="' + esc(ar) + '"><span class="cp-cbx2 ' + (n === all.length ? 'cp-on' : n ? 'cp-mx' : '') + '"></span><b>' + esc(ar) + '</b><small>' + n + ' de ' + all.length + '</small></button>' + as.map(fila).join('') + '</div>';
+  }).join('');
+  var resumen = '<div class="cp-apk-r' + (e && !sel.length ? ' cp-err' : '') + '">' + ic('clip', 16) + '<span>' + (sel.length ? '<b>' + pl(sel.length, 'activo', 'activos') + ' en el recorrido</b> · ~' + sel.length * 10 + ' min (10 por activo). El número es el orden.' : '<b>Marca los activos que recorre.</b> Al marcarlo eliges ahí mismo qué se inspecciona y su orden.') + '</span>' +
+    (sel.length ? '<button type="button" class="cp-btn cp-plain cp-xs" data-a="pgsolo" aria-pressed="' + !!PN.solo + '">' + (PN.solo ? 'Ver todos' : 'Solo los elegidos') + '</button>' : '') + '</div>';
+  return '<div class="cp-fld"><label>Activos que recorre <small>' + (sel.length ? pl(sel.length, 'activo', 'activos') : 'obligatorio') + '</small></label>' + resumen +
+    '<div class="cp-apk">' + (PN.solo ? '' : '<label class="cp-srch2">' + ic('search', 14) + '<input data-pg="aq" value="' + esc(PN.aq || '') + '" placeholder="Buscar por código, nombre o tipo" aria-label="Buscar activos" autocomplete="off"></label>') +
+    '<div class="cp-apk-l">' + (lista || '<div class="cp-empty" style="border:0">' + ic('search', 18) + '<b>Ningún activo coincide</b></div>') + '</div></div></div>';
+}
+A.pgsolo = function () { PN.solo = !PN.solo; panel(); };
+
+/* 427 · La pauta elegida: qué contiene y, si hace falta, editarla aquí mismo (publica una versión nueva en Recursos). */
+var PV = {}, WSR = function (m, d) { return llamar(CFG.base_ + 'WebService/WsRecursos.asmx/', m, d); };
+var PITT = { ok: 'Cumple / no cumple', num: 'Medición con rango', txt: 'Texto', foto: 'Foto' }, PTIPO = { 5: 'ok', 4: 'num', 3: 'num', 1: 'txt', 2: 'txt', 12: 'foto' };
+function pvCargar(id) {
+  PV[id] = { cargando: true };
+  WSR('Pauta', { id: +id }).then(function (r) {
+    var secs = (r.secciones || []).map(function (x) { return { codigo: x.CODIGO, n: x.NOMBRE, items: [] }; });
+    (r.items || []).forEach(function (i) {
+      var sc = secs.filter(function (z) { return z.codigo === i.SECCION; })[0]; if (!sc) { sc = { codigo: i.SECCION || '', n: 'General', items: [] }; secs.push(sc); }
+      sc.items.push({ k: i.CODIGO, codigo: i.CODIGO, tipoId: i.TIPO, n: i.TEXTO, t: PTIPO[i.TIPO] || 'txt', min: i.MINIMO == null ? '' : i.MINIMO, max: i.MAXIMO == null ? '' : i.MAXIMO, unidad: i.UNIDAD || 0, u: i.UNIDAD_SIMBOLO || '', crit: !!i.CRITICO });
+    });
+    if (!secs.length) secs.push({ codigo: '', n: 'General', items: [] });
+    PV[id] = { cab: r.cabecera, secs: secs, deps: (r.dependencias || []).length, usos: r.usos || [] };
+    if (PN && PN.t === 'ins') panel();
+  }).catch(function (e) { PV[id] = { error: e.message }; if (PN && PN.t === 'ins') panel(); });
+}
+function pvRango(it) { var a = it.min !== '' && it.min != null, b = it.max !== '' && it.max != null, u = it.u ? ' ' + it.u : ''; return a && b ? fN(+it.min) + '–' + fN(+it.max) + u : a ? '≥ ' + fN(+it.min) + u : b ? '≤ ' + fN(+it.max) + u : ''; }
+function pgPautaHTML() {
+  if (!PN.pau) return '';
+  var v = PV[PN.pau]; if (!v) { pvCargar(PN.pau); v = PV[PN.pau]; }
+  if (v.cargando) return '<div class="cp-pv"><div class="cp-sk" style="height:70px"></div></div>';
+  if (v.error) return mc('', 'No se pudo leer la pauta: ' + esc(v.error));
+  var ed = !!PN.pved, n = v.secs.reduce(function (t, z) { return t + z.items.length; }, 0), a = PN.pva || (PN.pva = { n: '', t: 'ok', s: 0, min: '', max: '', crit: false });
+  var abierto = ed || PN.pvo;
+  var h = '<div class="cp-pv"><div class="cp-pv-h"><button type="button" class="cp-pv-t" data-a="pvtog" aria-expanded="' + !!abierto + '">' + ic('clip', 16) + '<b>Qué contiene la pauta</b><small>' + pl(n, 'ítem', 'ítems') + ' · ' + pl(v.secs.length, 'sección', 'secciones') + (v.deps ? ' · ' + pl(v.deps, 'dependencia', 'dependencias') : '') + '</small>' + ic('chev', 14).replace('<svg', '<svg style="margin-left:auto;transition:transform .15s;' + (abierto ? 'transform:rotate(90deg)' : '') + '"') + '</button>' +
+    (ed ? '' : '<button type="button" class="cp-btn cp-out cp-xs" data-a="pved">' + ic('pencil', 13) + 'Editar pauta</button>') + '</div>';
+  if (!abierto) return h + '</div>';
+  h += v.secs.map(function (sc, si) {
+    return '<div class="cp-pv-s"><h5>' + esc(sc.n) + '</h5><ul>' + (sc.items.map(function (it, ii) {
+      return '<li><span class="cp-pv-n"><b>' + esc(it.n) + '</b><small>' + PITT[it.t] + (it.t === 'num' && pvRango(it) ? ' · ' + esc(pvRango(it)) : '') + '</small></span>' + (it.crit ? '<span class="cp-tg cp-w">Crítico</span>' : '') +
+        (ed ? '<button type="button" class="cp-ibx cp-sm" data-a="pvrm" data-s="' + si + '" data-v="' + ii + '" aria-label="Quitar ' + esc(it.n) + '">' + ic('x', 13) + '</button>' : '') + '</li>';
+    }).join('') || '<li class="cp-muted2">Sin ítems</li>') + '</ul></div>';
+  }).join('');
+  if (ed) {
+    h += '<div class="cp-pv-add"><div class="cp-grid2c"><div class="cp-fld" style="grid-column:1/-1"><label for="cpPvN">Agregar ítem · qué se revisa</label><input id="cpPvN" class="cp-inp" data-pg="pva.n" value="' + esc(a.n) + '" placeholder="Ej.: Temperatura del rodamiento" maxlength="500" autocomplete="off"></div>' +
+      '<div class="cp-fld"><label>Tipo de respuesta</label>' + combo('cpPvT', Object.keys(PITT).map(function (k) { return { id: k, n: PITT[k] }; }), a.t, { etiqueta: 'Tipo de respuesta', data: ' data-pg="pva.t"' }) + '</div>' +
+      '<div class="cp-fld"><label>Sección</label>' + combo('cpPvS', v.secs.map(function (z, i) { return { id: i, n: z.n }; }), a.s, { etiqueta: 'Sección', ph: 'Elige o escribe una sección nueva', crear: true, data: ' data-pg="pva.s"' }) + '</div>' +
+      (a.t === 'num' ? '<div class="cp-fld"><label for="cpPvMn">Mínimo</label><input id="cpPvMn" class="cp-inp" type="number" step="any" data-pg="pva.min" value="' + esc(a.min) + '"></div><div class="cp-fld"><label for="cpPvMx">Máximo</label><input id="cpPvMx" class="cp-inp" type="number" step="any" data-pg="pva.max" value="' + esc(a.max) + '"></div>' : '') + '</div>' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><label class="cp-sw"><input type="checkbox" data-pg="pva.crit"' + (a.crit ? ' checked' : '') + '><i></i>Ítem crítico</label><button type="button" class="cp-btn cp-out cp-xs" data-a="pvadd">' + ic('plus', 13) + 'Agregar ítem</button></div></div>' +
+      '<div class="cp-pv-f">' + (v.usos.length ? '<small>' + ic('help', 12) + 'La usan ' + pl(v.usos.length, 'inspección', 'inspecciones') + ': la versión nueva rige para todas desde su próxima fecha.</small>' : '<small>' + ic('help', 12) + 'Se publica como versión nueva en Recursos › Pautas.</small>') +
+      '<span><button type="button" class="cp-btn cp-ghost cp-xs" data-a="pvcan">Descartar</button><button type="button" class="cp-btn cp-pri cp-xs' + (PN.pvbusy ? ' cp-load' : '') + '" data-a="pvpub"' + (PN.pvdirty ? '' : ' disabled') + '>' + ic('check', 13) + 'Publicar v' + ((+(v.cab && v.cab.VERSION_PUBLICADA) || 0) + 1) + '</button></span></div>';
+  }
+  return h + '</div>';
+}
+A.pvtog = function () { PN.pvo = !PN.pvo; panel(); };
+A.pved = function () { PN.pved = true; PN.pvo = true; PN.pvdirty = false; panel(); };
+A.pvcan = function () { PN.pved = false; PN.pvdirty = false; PN.pva = null; delete PV[PN.pau]; panel(); };
+A.pvrm = function (d) { var v = PV[PN.pau]; v.secs[+d.s].items.splice(+d.v, 1); PN.pvdirty = true; panel(); };
+A.pvadd = function () {
+  var v = PV[PN.pau], a = PN.pva; if (!String(a.n).trim()) { var el = $('#cpPvN'); if (el) el.focus(); return; }
+  v.secs[+a.s || 0].items.push({ k: 'n' + Date.now(), codigo: '', n: String(a.n).trim(), t: a.t, min: a.t === 'num' ? a.min : '', max: a.t === 'num' ? a.max : '', unidad: 0, u: '', crit: !!a.crit });
+  PN.pva = { n: '', t: a.t, s: a.s, min: '', max: '', crit: false }; PN.pvdirty = true; panel(); var e2 = $('#cpPvN'); if (e2) { e2.value = ''; e2.focus(); }
+};
+A.pvpub = function (d, el) {
+  if (el && el.disabled) return;
+  var v = PV[PN.pau], st = PN, id = +PN.pau;
+  if (!v.secs.some(function (z) { return z.items.length; })) { toastError('La pauta necesita al menos un ítem.'); return; }
+  PN.pvbusy = true; panel();
+  WSR('GuardarPauta', { datos: JSON.stringify({ id: id, nombre: v.cab ? v.cab.NOMBRE : '', secciones: v.secs.filter(function (z) { return z.items.length || z.codigo; }).map(function (z) { return { codigo: z.codigo, nombre: z.n, items: z.items.map(function (i) { return { k: i.k || '', codigo: i.codigo || '', tipoId: i.tipoId || 0, texto: i.n, tipo: i.t, min: i.min, max: i.max, unidad: i.unidad || 0, crit: !!i.crit }; }) }; }) }) })
+    .then(function (r) {
+      if (PN !== st) return;
+      PN.pvbusy = false; PN.pved = false; PN.pvdirty = false; PN.pva = null; delete PV[id];
+      var pa = (PG.pautas || []).filter(function (x) { return +x.ID === id; })[0]; if (pa) { pa.VERSION = r.version; pa.ITEMS = v.secs.reduce(function (t, z) { return t + z.items.length; }, 0); }
+      panel(); toast(r.codigo + ' v' + r.version + ' publicada. Rige desde la próxima fecha de cada inspección que la usa.');
+    }).catch(function (e) { if (PN !== st) return; PN.pvbusy = false; panel(); toastError(e); });
+};
+
+PANELS.ins = function () {
+  if (PN.cargando) return { t: PN.id ? 'Inspección' : 'Nueva inspección', s: 'Planificación · inspecciones', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:300px;margin-top:12px"></div>' };
+  var e = PN.err, plantas = CFG.plantas || [];
+  var pautas = PG.pautas.map(function (p) { return { id: p.ID, n: p.CODIGO + ' v' + p.VERSION + ' · ' + p.NOMBRE, sub: pl(+p.ITEMS, 'ítem', 'ítems') }; });
+  var b = (PN.id && PN.fila ? pgFacts(PN.fila) : '') +
+    '<div class="cp-fld"><label for="cpPgN">Nombre <small>obligatorio</small></label><input id="cpPgN" class="cp-inp' + (e && !PN.n.trim() ? ' cp-err' : '') + '" data-pg="n" value="' + esc(PN.n) + '" placeholder="Ej.: Inspección sala de bombas" maxlength="200" autocomplete="off"' + (PN.id ? '' : ' data-autofocus="1"') + '>' + (e && !PN.n.trim() ? mc('', 'La inspección necesita un nombre.') : '') + '</div>' +
+    '<div class="cp-fld"><label>Pauta de inspección</label>' + (pautas.length ? combo('cpPgPau', pautas, PN.pau, { etiqueta: 'Pauta de inspección', ph: 'Elige la pauta', err: e && !PN.pau, data: ' data-pg="pau"' })
+      : mc('', 'No hay pautas publicadas. Créala en <a class="cp-lnk" href="' + esc(CFG.base_ + 'View/Mantenimiento/Biblioteca/Biblioteca.aspx#pautas') + '">Recursos › Pautas de inspección</a>.')) + '</div>' +
+    pgPautaHTML() +
+    (plantas.length > 1 ? '<div class="cp-fld"><label>Planta</label><div class="cp-segc">' + plantas.map(function (p) { return '<button type="button" data-a="pgpl" data-v="' + p.id + '" aria-pressed="' + (+PN.pl === +p.id) + '">' + esc(p.n) + '</button>'; }).join('') + '</div></div>' : '') +
+    pgPicker(e) + (e && !PN.eqs.length ? mc('', 'Elige al menos un activo.') : '') +
+    pgChoqGuardados() + pgFreqHTML(PN.f, e) + pgRespDur(PN.as, PN.dur, e) + choquesHTML(PN.choq, 'Si es intencional, guarda igual; si no, cambia la hora, la frecuencia, el objeto mantenible o quién la ejecuta.') + (PN.err2 ? mc('', esc(PN.err2)) : '');
+  return { t: PN.id ? esc(PN.n || 'Inspección') : 'Nueva inspección', s: PN.id ? (PN.fila ? esc(PN.fila.CODIGO) + ' · ' : '') + 'programación' : 'Planificación · inspecciones', w: 'w', b: b,
+    f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (PN.busy ? ' cp-load' : '') + '" data-a="pginsok">' + ic(PN.choq && PN.choq.length ? 'alert' : 'check', 16) + (PN.choq && PN.choq.length ? 'Guardar igual' : (PN.id ? 'Guardar cambios' : 'Crear inspección')) + '</button></span>' };
+};
+
+/* ---- tarea recurrente ---- */
+function abrirTar(id) {
+  openPanel({ t: 'tar', pg: true, id: id || 0, cargando: true, err: false, busy: false, err2: '', n: '', cat: '', eq: '', o: '', desc: '', proc: '', pasos: [], paso: '', as: { modo: 'D', ids: [] }, dur: .5, f: pgFreqVacia(), fila: (TAR.filas || []).filter(function (x) { return +x.ID === +id; })[0] || null });
+  Promise.all([pgCatalogo(), id ? api('Tarea', { id: id }) : null]).then(function (x) {
+    if (!PN || PN.t !== 'tar') return;
+    var r = x[1];
+    if (r) {
+      var h = r.cabecera, b = pgBase(pgAct(h.ACTIVO));
+      PN.n = h.NOMBRE || ''; PN.cat = h.CATEGORIA || ''; PN.eq = b ? b.ID : ''; PN.o = h.ACTIVO ? pgObjDesde(h.ACTIVO, h.COMPONENTE) : ''; PN.desc = h.DESCRIPCION || '';
+      PN.as = pgAsDesde(h.ASIGNACION); PN.dur = h.DURACION ? Math.round(h.DURACION / 60 * 100) / 100 : .5; PN.f = pgFreqDesde(r.frecuencia);
+      PN.proc = r.procedimiento ? String(r.procedimiento.ID) : ''; PN.pasos = r.pasos || [];
+      if (PN.fila) PN.fila.ESCALADAS = h.ESCALADAS;
+    } else if (PG.categorias.length) PN.cat = PG.categorias[0].ID;
+    PN.cargando = false; panel();
+  }).catch(function (e) { closePanel(); toastError(e); });
+}
+/* 426 · «Qué hacer» de la tarea: instrucción, un procedimiento ya creado (primero los del tipo del activo) y/o pasos. */
+var durMin = function (m) { m = +m || 0; return m < 60 ? m + ' min' : fH(m / 60); };
+function tarQueHacerHTML(base) {
+  var tipo = base ? base.TIPO_ID : null, tipoN = base ? base.TIPO : '';
+  var procs = (PG.procedimientos || []).slice().sort(function (a, b) { var x = +(+a.ACTIVO_TIPO_ID === +tipo && tipo), y = +(+b.ACTIVO_TIPO_ID === +tipo && tipo); return y - x || String(a.CODIGO).localeCompare(b.CODIGO); })
+    .map(function (p) { var rec = tipo && +p.ACTIVO_TIPO_ID === +tipo; return { id: p.ID, n: p.CODIGO + ' v' + (p.VERSION || 1) + ' · ' + p.NOMBRE, sub: (rec ? '★ Para ' + tipoN + ' · ' : (p.TIPO ? p.TIPO + ' · ' : 'General · ')) + pl(+p.PASOS || 0, 'paso', 'pasos') + (p.DURACION ? ' · ' + durMin(p.DURACION) : ''), tag: rec ? { k: 'a', t: 'Recomendado' } : null }; });
+  var sel = (PG.procedimientos || []).filter(function (p) { return String(p.ID) === String(PN.proc); })[0];
+  var nRec = tipo ? (PG.procedimientos || []).filter(function (p) { return +p.ACTIVO_TIPO_ID === +tipo; }).length : 0;
+  return '<div class="cp-blk"><div class="cp-blk-h"><h4>Qué hacer</h4><small>Instrucción, procedimiento y/o pasos: lo ve quien la ejecuta en la app</small></div>' +
+    '<div class="cp-fld"><label for="cpPgD">Instrucción <small>opcional</small></label><textarea id="cpPgD" class="cp-inp" rows="2" data-pg="desc" placeholder="Ej.: Revisar que no haya fugas y que el manómetro marque entre 4 y 6 bar">' + esc(PN.desc) + '</textarea></div>' +
+    '<div class="cp-fld"><label>Procedimiento <small>' + (nRec ? nRec + ' recomendado' + (nRec > 1 ? 's' : '') + ' para ' + esc(tipoN) : 'opcional') + '</small></label>' +
+    combo('cpPgProc', [{ id: '', n: 'Sin procedimiento' }].concat(procs), PN.proc || '', { etiqueta: 'Procedimiento', ph: procs.length ? 'Elige un procedimiento ya creado' : 'No hay procedimientos en Recursos', data: ' data-pg="proc"' }) +
+    (sel ? '<div class="cp-prc" style="margin-top:8px"><span class="cp-pci">' + ic('clip', 17) + '</span><div style="min-width:0"><b>' + esc(sel.CODIGO) + ' v' + (sel.VERSION || 1) + ' · ' + esc(sel.NOMBRE) + '</b><small>' + pl(+sel.PASOS || 0, 'paso', 'pasos') + (sel.DURACION ? ' · ' + durMin(sel.DURACION) : '') + ' · se ejecuta tal cual está en Recursos</small></div></div>' : '') + '</div>' +
+    '<div class="cp-fld"><label>Pasos <small>' + (PN.pasos.length ? pl(PN.pasos.length, 'paso', 'pasos') : 'opcional · se marcan en la app') + '</small></label>' +
+    (PN.pasos.length ? '<ol class="cp-tps">' + PN.pasos.map(function (x, i) { return '<li><span class="cp-tps-n">' + (i + 1) + '</span><span class="cp-tps-t">' + esc(x) + '</span><span class="cp-tps-a"><button type="button" class="cp-ibx cp-sm" data-a="pgpasomv" data-v="' + i + '" data-d="-1"' + (i ? '' : ' disabled') + ' aria-label="Subir paso">' + ic('chev', 13).replace('<svg ', '<svg style="transform:rotate(-90deg)" ') + '</button><button type="button" class="cp-ibx cp-sm" data-a="pgpasorm" data-v="' + i + '" aria-label="Quitar paso">' + ic('x', 13) + '</button></span></li>'; }).join('') + '</ol>' : '') +
+    '<div class="cp-tps-add"><input id="cpPgPaso" class="cp-inp" data-pg="paso" value="' + esc(PN.paso) + '" placeholder="Ej.: Cerrar la válvula de entrada" maxlength="300" autocomplete="off"><button type="button" class="cp-btn cp-out cp-sm" data-a="pgpasoadd">' + ic('plus', 14) + 'Agregar paso</button></div></div></div>';
+}
+A.pgpasoadd = function () { var t = String(PN.paso || '').trim(); if (!t) { var el = $('#cpPgPaso'); if (el) el.focus(); return; } PN.pasos.push(t); PN.paso = ''; panel(); var e2 = $('#cpPgPaso'); if (e2) { e2.value = ''; e2.focus(); } };
+A.pgpasorm = function (d) { PN.pasos.splice(+d.v, 1); panel(); };
+A.pgpasomv = function (d) { var i = +d.v, j = i + (+d.d); if (j < 0 || j >= PN.pasos.length) return; var x = PN.pasos[i]; PN.pasos[i] = PN.pasos[j]; PN.pasos[j] = x; panel(); };
+PANELS.tar = function () {
+  if (PN.cargando) return { t: PN.id ? 'Tarea recurrente' : 'Nueva tarea recurrente', s: 'Planificación · tareas', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:300px;margin-top:12px"></div>' };
+  var e = PN.err, base = PN.eq ? pgAct(PN.eq) : null;
+  var cats = PG.categorias.map(function (c) { return { id: c.ID, n: c.NOMBRE }; });
+  if (/^nuevo:/.test(String(PN.cat))) cats.push({ id: PN.cat, n: String(PN.cat).slice(6), sub: 'Nueva · se crea al guardar' });
+  var acts = PG.activos.filter(function (a) { return !a.PADRE_ID && (!U.planta || +a.PLANTA_ID === +U.planta); }).map(function (a) { return { id: a.ID, n: a.CODIGO + ' · ' + a.NOMBRE, sub: [a.AREA, a.TIPO].filter(Boolean).join(' · '), txt: a.AREA + ' ' + a.TIPO, img: a.IMG || '', ini: String(a.CODIGO || '?').replace(/^ACT-/, '').slice(0, 2) }; });
+  var b = (PN.id && PN.fila ? pgFacts(PN.fila) : '') +
+    '<div class="cp-fld"><label for="cpPgN">Nombre <small>obligatorio</small></label><input id="cpPgN" class="cp-inp' + (e && !PN.n.trim() ? ' cp-err' : '') + '" data-pg="n" value="' + esc(PN.n) + '" placeholder="Ej.: Revisión de duchas de emergencia" maxlength="400" autocomplete="off"' + (PN.id ? '' : ' data-autofocus="1"') + '>' + (e && !PN.n.trim() ? mc('', 'La tarea necesita un nombre.') : '') + '</div>' +
+    '<div class="cp-grid2c"><div class="cp-fld"><label>Categoría</label>' + combo('cpPgCat', cats, PN.cat, { etiqueta: 'Categoría', ph: 'Sin categoría · escribe para crear una', crear: true, data: ' data-pg="cat"' }) + '</div>' +
+    '<div class="cp-fld"><label>Dónde</label>' + combo('cpPgEq', acts, PN.eq, { etiqueta: 'Dónde', ph: 'Elige el activo', err: e && !PN.eq, data: ' data-pg="eq"' }) + (e && !PN.eq ? mc('', 'Elige dónde se hace.') : '') + '</div></div>' +
+    (base ? '<div class="cp-fld"><label>Objeto mantenible <small>sobre qué se trabaja</small></label>' + combo('cpPgObj', pgObjOpts(base), PN.o || 'a:' + base.ID, { etiqueta: 'Objeto mantenible', data: ' data-pg="o"' }) + '</div>' : '') +
+    tarQueHacerHTML(base) +
+    pgChoqGuardados() + pgFreqHTML(PN.f, e) + pgRespDur(PN.as, PN.dur, e) + choquesHTML(PN.choq, 'Si es intencional, guarda igual; si no, cambia la hora, la frecuencia, el objeto mantenible o quién la ejecuta.') + (PN.err2 ? mc('', esc(PN.err2)) : '');
+  return { t: PN.id ? esc(PN.n || 'Tarea') : 'Nueva tarea recurrente', s: PN.id ? (PN.fila ? esc(PN.fila.CODIGO) + ' · ' : '') + 'programación' : 'Planificación · tareas', w: 'w', b: b,
+    f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (PN.busy ? ' cp-load' : '') + '" data-a="pgtarok">' + ic(PN.choq && PN.choq.length ? 'alert' : 'check', 16) + (PN.choq && PN.choq.length ? 'Guardar igual' : (PN.id ? 'Guardar cambios' : 'Crear tarea')) + '</button></span>' };
+};
+
+/* ---- campos y acciones ---- */
+function pgCampo(k, v, escribiendo) {
+  var m;
+  if (PN && PN.pg) { PN.choq = null; PN.choqOk = false; }
+  if ((m = /^chqh:(.+)$/.exec(k))) { if (PN && PN.otra && PN.otra[m[1]]) PN.otra[m[1]].hora = v; return; }
+  if ((m = /^addeq:(\d+)$/.exec(k))) { if (PN && PN.sel && PN.sel[m[1]]) PN.sel[m[1]].o = v; return; }
+  if ((m = /^plaeq:(\d+)$/.exec(k))) { cambiarObjPlan(m[1], v); return; }
+  if (!PN || !PN.pg) return;
+  if ((m = /^f\.(\w+)$/.exec(k))) { PN.f[m[1]] = m[1] === 'hora' ? v : m[1] === 'sh' ? v : +v || 0; panel(); return; }
+  if ((m = /^o:(\d+)$/.exec(k))) { if (PN.eqs[+m[1]]) PN.eqs[+m[1]].o = v; return; }
+  if (k === 'eq') { PN.eq = v; PN.o = v ? 'a:' + v : ''; panel(); return; }
+  if ((m = /^pva\.(\w+)$/.exec(k))) { PN.pva = PN.pva || { n: '', t: 'ok', s: 0, min: '', max: '', crit: false }; if (m[1] === 's' && /^nuevo:/.test(String(v))) { var pvv = PV[PN.pau], nom = String(v).slice(6).trim(); if (pvv && nom) { var ex = -1; pvv.secs.forEach(function (z, i) { if (nrm(z.n) === nrm(nom)) ex = i; }); if (ex < 0) { pvv.secs.push({ codigo: '', n: nom, items: [] }); ex = pvv.secs.length - 1; } PN.pva.s = ex; PN.pvdirty = true; } panel(); return; }
+  PN.pva[m[1]] = m[1] === 's' ? +v || 0 : v; if (m[1] === 't') panel(); return; }
+  if (k === 'pau') { if (PN.pved && PN.pvdirty && !confirm('Hay cambios sin publicar en la pauta. ¿Descartarlos?')) { panel(); return; } PN.pau = v; PN.pved = false; PN.pvdirty = false; PN.pva = null; panel(); return; }
+  if (k === 'asadd') { if (+v && PN.as.ids.indexOf(+v) < 0) PN.as.ids.push(+v); panel(); return; }
+  if (k === 'asone') { PN.as.ids = +v ? [+v] : []; panel(); return; }
+  PN[k] = v;
+  if (k === 'aq') { panel(); return; }
+  if (k === 'cat' && /^nuevo:/.test(String(v))) { panel(); return; }
+  if (k === 'proc') { panel(); return; }
+  if (!escribiendo && (k === 'pau' || k === 'cat')) return;
+  if (PN.err && k === 'n' && String(v).trim()) { PN.err = false; }
+}
+function pgFreqDatos(f) { return { modo: f.modo, dias: f.dias, diaMes: +f.diaMes || 1, hora: f.hora, sh: +f.sh || 0, pro: f.modo === 'sh' ? 0 : f.pro }; }
+function pgFreqMala(f) { return f.modo === 'w' ? !f.dias.length : f.modo === 'sh' ? !f.sh : !(+f.diaMes >= 1); }
+/* Lo ya guardado: si sus fechas chocan, un aviso con «Resolver choques» (mueve solo las que chocan). */
+function pgChoqGuardados() {
+  if (!PN.id) return '';
+  var tipo = PN.t === 'ins' ? 'INS' : 'TAR', k = tipo + PN.id;
+  if (PG_CHQ[k] === undefined) { PG_CHQ[k] = null; api('Choques', { tipo: tipo, refId: PN.id }).then(function (r) { PG_CHQ[k] = r.choques || []; if (PN && PN.pg) panel(); }).catch(function () { PG_CHQ[k] = []; }); }
+  var l = PG_CHQ[k]; if (!l || !l.length) return '';
+  return '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + pl(l.length, 'choque de horario', 'choques de horario') + '</b> con otro trabajo sobre el mismo activo, subactivo o componente, o con las mismas personas, grupo o empresa.<span class="cp-bnr-a"><button type="button" class="cp-btn cp-out cp-xs" data-a="choqabrir" data-t="' + tipo + '" data-r="' + PN.id + '" data-n="' + esc(PN.n) + '">' + ic('clock', 13) + 'Resolver choques</button></span></span></div>' + quienesChocan(l);
+}
+var PG_CHQ = {};
+/* true = hay que esperar (se está revisando o se muestran choques); false = se puede guardar. */
+function pgChoquesAntes(tipo, objetos, dur) {
+  /* «Guardar igual»: los choques ya están a la vista y no se cambió nada (cualquier cambio borra PN.choq). */
+  if (PN.choqOk || (PN.choq && PN.choq.length)) return false;
+  var f = PN.f, st = PN;
+  PN.busy = true; PN.err2 = ''; panel();
+  api('ChoquesCandidato', { datos: JSON.stringify({ tipo: tipo, ref: PN.id, objetos: objetos, fechas: pgFechasCand(f), programacion: f.modo === 'sh' ? +f.sh : 0, duracion: dur, recursos: pgRecursos(PN.as) }) }).then(function (r) {
+    if (PN !== st) return;
+    PN.busy = false; PN.choq = r.choques || [];
+    if (!PN.choq.length) { PN.choqOk = true; A[tipo === 'INS' ? 'pginsok' : 'pgtarok'](); return; }
+    panel(); var b = $('#cpLayer .cp-pnl-b'); if (b) b.scrollTop = b.scrollHeight;
+  }).catch(function () { if (PN !== st) return; PN.busy = false; PN.choqOk = true; A[tipo === 'INS' ? 'pginsok' : 'pgtarok'](); });
+  return true;
+}
+A.choqmov = function (d) { choqMover(d.k, d.v.replace(' ', 'T')); };
+A.choqotra = function (d) { var st = PN, c = (st.lista || []).filter(function (x) { return x.TIPO + x.OCURRENCIA === d.k; })[0]; st.otra[d.k] = st.otra[d.k] ? null : { fecha: dIso(c.FECHA), hora: hIso(c.FECHA) || '08:00' }; panel(); };
+A.choqok = function (d) { var o = PN.otra[d.k]; if (!o || !o.fecha) { toastError('Elige la nueva fecha.'); return; } choqMover(d.k, o.fecha + 'T' + (o.hora || '08:00')); };
+/* 413 · CA-6 · «Resolver choques»: cada ocurrencia que choca se mueve sola (a una hora libre sugerida o a
+   una fecha y hora elegidas); las de los demás activos siguen a su hora. */
+function abrirChoques(tipo, ref, titulo) {
+  openPanel({ t: 'choq', tipo: tipo, ref: ref, titulo: titulo || '', lista: null, huecos: {}, otra: {}, busy: '', fecha: function (b, v) { var k = b.slice(2); if (PN.otra[k]) PN.otra[k].fecha = v; } });
+  choqCargar();
+}
+function choqCargar() {
+  var st = PN; if (!st || st.t !== 'choq') return;
+  api('Choques', { tipo: st.tipo, refId: st.ref }).then(function (r) {
+    if (PN !== st) return;
+    st.lista = r.choques || []; panel();
+    st.lista.filter(function (c) { return +c.MOVIBLE; }).slice(0, 25).forEach(function (c) {
+      var k = c.TIPO + c.OCURRENCIA; if (st.huecos[k]) return; st.huecos[k] = 'cargando';
+      api('Huecos', { tipo: c.TIPO, ocurrencia: c.OCURRENCIA }).then(function (h) { st.huecos[k] = h.huecos || []; if (PN === st) panel(); }).catch(function () { st.huecos[k] = []; });
+    });
+  }).catch(function (e) { closePanel(); toastError(e); });
+}
+PANELS.choq = function () {
+  var st = PN, l = st.lista;
+  var t = 'Resolver choques de horario', s = (st.titulo ? esc(st.titulo) + ' · ' : '') + 'solo se mueve lo que choca';
+  if (!l) return { t: t, s: s, w: 'w', b: '<div class="cp-sk" style="height:60px"></div><div class="cp-sk" style="height:60px;margin-top:10px"></div>' };
+  if (!l.length) return { t: t, s: s, w: 'w', b: '<div class="cp-bnr cp-ok">' + ic('check', 18) + '<span><b>Sin choques.</b> Ni los activos ni quienes los ejecutan tienen otro trabajo a la misma hora en los próximos 90 días.</span></div>', f: '<span class="cp-r"><button type="button" class="cp-btn cp-ghost" data-a="pclose">Cerrar</button></span>' };
+  var vistos = {}, filas = l.filter(function (c) { var k = c.TIPO + c.OCURRENCIA; if (vistos[k]) { vistos[k].push(c); return false; } vistos[k] = [c]; return true; });
+  var b = mc('i', 'Mientras dura un trabajo el equipo está parado y quienes lo ejecutan están ocupados: no se les asigna otra inspección, tarea ni OT. Mueve <b>solo</b> la fecha que choca; las de los otros activos siguen a su hora.', 'help') +
+    '<div class="cp-chql">' + filas.map(function (c) {
+      var k = c.TIPO + c.OCURRENCIA, con = vistos[k], hs = st.huecos[k], ot = st.otra[k];
+      var acc = !+c.MOVIBLE ? '<small class="cp-mut">' + (c.OT_ID ? 'Ya tiene OT en curso: cámbiala desde su ficha.' : 'Ya está en ejecución: no se mueve.') + '</small>'
+        : (hs === 'cargando' || !hs ? '<span class="cp-sk" style="height:30px;width:220px;display:inline-block"></span>'
+          : (hs.length ? hs.map(function (h) { return '<button type="button" class="cp-btn cp-sec cp-xs" data-a="choqmov" data-k="' + k + '" data-v="' + esc(String(h.INICIO).slice(0, 16)) + '"' + (st.busy === k ? ' disabled' : '') + '>' + ic('clock', 13) + 'Mover a ' + fD(dIso(h.INICIO)) + ' ' + hIso(h.INICIO) + '</button>'; }).join('') : '<small class="cp-mut">Sin horas libres en 3 días: elige otra fecha.</small>')) +
+          '<button type="button" class="cp-btn cp-plain cp-xs" data-a="choqotra" data-k="' + k + '">Otra fecha…</button>' +
+          (ot ? '<div class="cp-chq-otra">' + fecha('q:' + k, ot.fecha, { etiqueta: 'Nueva fecha' }) + combo('cpChqH' + c.OCURRENCIA, HORAS, ot.hora, { etiqueta: 'Hora', data: ' data-pg="chqh:' + k + '"' }) + '<button type="button" class="cp-btn cp-pri cp-xs" data-a="choqok" data-k="' + k + '">Mover</button></div>' : '');
+      var obj = con.filter(function (x) { return x.CLASE !== 'RECURSO'; })[0];
+      return '<div class="cp-chq"><div class="cp-chq-h"><b>' + fD(dIso(c.FECHA)) + ' ' + hIso(c.FECHA) + '</b><span>' + esc(obj ? obj.OBJETO : 'Mismas personas o equipo') + '</span><small>' + (TIPN[c.TIPO] || '') + ' · ' + fH(c.DURACION) + '</small></div>' +
+        '<ul class="cp-olst">' + con.map(function (x) { return '<li>' + (x.CLASE === 'RECURSO' ? '<span class="cp-tg">Ocupado</span> <b>' + esc(x.OBJETO) + '</b> ya está en ' : 'Choca con ') + (TIPN[x.CON_TIPO] || '').toLowerCase() + ' <b>' + esc(x.CON_CODIGO) + '</b> · ' + esc(x.CON_NOMBRE) + '<small>' + hIso(x.CON_INICIO) + '–' + hIso(x.CON_FIN) + '</small>' + (x.CLASE === 'RECURSO' ? ' ' + cargaBtn(x.CLAVE, String(x.OBJETO).replace(/\s*\(grupo.*$/, ''), x.CON_INICIO) : '') + '</li>'; }).join('') + '</ul>' +
+        '<div class="cp-chq-a">' + acc + '</div></div>';
+    }).join('') + '</div>';
+  return { t: t, s: s, w: 'w', b: b, f: '<span class="cp-msg cp-i">' + ic('help', 13) + '<span>' + pl(filas.length, 'fecha choca', 'fechas chocan') + '. Cada movimiento queda en el historial con su motivo.</span></span><span class="cp-r"><button type="button" class="cp-btn cp-ghost" data-a="pclose">Listo</button></span>' };
+};
+function choqMover(k, fechaHora) {
+  var st = PN, c = (st.lista || []).filter(function (x) { return x.TIPO + x.OCURRENCIA === k; })[0]; if (!c) return;
+  st.busy = k; panel();
+  api('ReprogramarAgenda', { tipo: c.TIPO, ocurrencia: +c.OCURRENCIA, fecha: fechaHora, motivo: 'Choque de horario con ' + c.CON_CODIGO }).then(function () {
+    if (PN !== st) return; st.busy = ''; st.huecos = {}; st.otra = {}; toast(c.OBJETO + ' movido al ' + fD(fechaHora.slice(0, 10)) + ' ' + fechaHora.slice(11, 16) + '. Lo demás sigue igual.');
+    delete CHQ[st.ref]; choqCargar(); if (st.tipo === 'INS') insCargar(); if (st.tipo === 'TAR') tarCargar();
+  }).catch(function (e) { if (PN !== st) return; st.busy = ''; panel(); toastError(e); });
+}
+A.choqabrir = function (d) { abrirChoques(d.t, +d.r, d.n); };
+A.pgfq = function (d) { PN.f.modo = d.v; PN.choq = null; PN.choqOk = false; panel(); };
+A.pgas = function (d) { if (PN.as.modo !== d.v) PN.as = { modo: d.v, ids: [] }; panel(); };
+A.pgasrm = function (d) { PN.as.ids = PN.as.ids.filter(function (x) { return +x !== +d.v; }); panel(); };
+A.pgday = function (d) { PN.choq = null; PN.choqOk = false; var f = PN.f, x = +d.v, i = f.dias.indexOf(x); if (i >= 0) f.dias.splice(i, 1); else f.dias.push(x); f.dias.sort(); panel(); };
+A.pgpl = function (d) { if (+PN.pl !== +d.v) { PN.pl = +d.v; PN.eqs = []; } panel(); };
+A.pgeq = function (d, t, ev) {
+  if (ev) ev.stopPropagation(); PN.choq = null; PN.choqOk = false;
+  var id = +d.v, i = -1; PN.eqs.forEach(function (x, k) { if (+x.a === id) i = k; });
+  if (i >= 0) PN.eqs.splice(i, 1); else PN.eqs.push({ a: id, o: 'a:' + id });
+  panel();
+};
+A.pgarea = function (d) { PN.choq = null; PN.choqOk = false;
+  var ids = PG.activos.filter(function (a) { return !a.PADRE_ID && a.AREA === d.v && (!PN.pl || +a.PLANTA_ID === +PN.pl); }).map(function (a) { return +a.ID; });
+  var todos = ids.every(function (id) { return PN.eqs.some(function (x) { return +x.a === id; }); });
+  if (todos) PN.eqs = PN.eqs.filter(function (x) { return ids.indexOf(+x.a) < 0; });
+  else ids.forEach(function (id) { if (!PN.eqs.some(function (x) { return +x.a === id; })) PN.eqs.push({ a: id, o: 'a:' + id }); });
+  panel();
+};
+A.pgmv = function (d) { PN.choq = null; PN.choqOk = false; var l = PN.eqs, i = +d.v, j = i + (+d.d); if (j < 0 || j >= l.length) return; var x = l[i]; l[i] = l[j]; l[j] = x; panel(); };
+/* 413 · Choques de horario: antes de guardar se revisan las fechas que tendría (90 días) contra los planes,
+   inspecciones y tareas del mismo objeto mantenible. Hay choque → se listan y el botón pasa a «Guardar igual». */
+var TIPN = { PLAN: 'Plan', INS: 'Inspección', TAR: 'Tarea' };
+function pgFechasCand(f) { if (f.modo === 'sh') return []; var lim = addD(TODAY, 90); return pgProximas(f, 200).filter(function (d) { return d <= lim; }).map(function (d) { return d + 'T' + (f.hora || '08:00'); }); }
+/* CA-7 · Quién la ejecutaría, como claves de recurso: personas U:, grupo G:, empresa E:. Disponible = nadie. */
+function pgRecursos(as) { return !as || as.modo === 'D' ? [] : as.ids.map(function (id) { return ({ P: 'U:', G: 'G:', E: 'E:' })[as.modo] + id; }); }
+function choquesHTML(l, verbo) {
+  if (!l || !l.length) return '';
+  var otros = {}; l.forEach(function (c) { otros[c.CON_TIPO + c.CON_REF] = 1; });
+  var nObj = l.filter(function (c) { return c.CLASE !== 'RECURSO'; }).length, nRec = l.length - nObj;
+  return '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span><b>' + pl(l.length, 'choque de horario', 'choques de horario') + '</b> con ' + pl(Object.keys(otros).length, 'otra programación', 'otras programaciones') + ': ' + [nObj ? pl(nObj, 'sobre el mismo activo, subactivo o componente', 'sobre el mismo activo, subactivo o componente') : '', nRec ? pl(nRec, 'con la misma persona, grupo o empresa', 'con las mismas personas, grupos o empresas') : ''].filter(Boolean).join(' y ') + '.' +
+    '<ul class="cp-olst" style="margin-top:6px">' + l.slice(0, 5).map(function (c) {
+      return '<li><b>' + fD(dIso(c.FECHA)) + ' ' + hIso(c.FECHA) + '</b> · ' + (c.CLASE === 'RECURSO' ? '<span class="cp-tg">Ocupado</span> ' : '') + esc(c.OBJETO) + '<small>' + (TIPN[c.CON_TIPO] || '') + ' ' + esc(c.CON_CODIGO) + ' · ' + esc(c.CON_NOMBRE) + ' · ' + hIso(c.CON_INICIO) + '–' + hIso(c.CON_FIN) + '</small></li>';
+    }).join('') + (l.length > 5 ? '<li><small>y ' + (l.length - 5) + ' más</small></li>' : '') + '</ul>' + quienesChocan(l) + (verbo ? '<small style="display:block;margin-top:6px">' + verbo + '</small>' : '') + '</span></div>';
+}
+function pgGuardar(metodo, datos, recargar, msg) {
+  var habia = PN.choq && PN.choq.length, tipo = PN.t === 'ins' ? 'INS' : 'TAR', nom = PN.n;
+  PN.busy = true; PN.err2 = ''; panel();
+  api(metodo, { datos: JSON.stringify(datos) }).then(function (r) { delete PG_CHQ[tipo + r.id]; closePanel(); recargar(); if (habia && r.id) { abrirChoques(tipo, r.id, nom); toast(msg + ' Mueve aquí solo las fechas que chocan.'); } else toast(msg); })
+    .catch(function (e) { if (PN) { PN.busy = false; PN.err2 = e.message; panel(); } });
+}
+A.pginsok = function () {
+  if (!PN.n.trim() || !PN.pau || !PN.eqs.length || pgFreqMala(PN.f) || (PN.as.modo !== 'D' && !PN.as.ids.length)) { PN.err = true; panel(); return; }
+  var dur = parseFloat(String(PN.dur).replace(',', '.'));
+  if (pgChoquesAntes('INS', PN.eqs.map(function (x) { return pgObjDe(x.o) || { activo: x.a, componente: 0 }; }), Math.round(dur * 60))) return;
+  pgGuardar('GuardarInspeccion', { id: PN.id, nombre: PN.n.trim(), pauta: +PN.pau, asignacion: PN.as, duracion: dur > 0 ? Math.round(dur * 60) : 0,
+    activos: PN.eqs.map(function (x) { return pgObjDe(x.o) || { activo: x.a, componente: 0 }; }), frecuencia: pgFreqDatos(PN.f) }, insCargar,
+    PN.id ? 'Inspección actualizada. Las fechas pendientes se reprogramaron.' : 'Inspección creada. Sus fechas ya aparecen en Operación.');
+};
+A.pgtarok = function () {
+  if (!PN.n.trim() || !PN.eq || pgFreqMala(PN.f) || (PN.as.modo !== 'D' && !PN.as.ids.length)) { PN.err = true; panel(); return; }
+  var o = pgObjDe(PN.o) || { activo: +PN.eq, componente: 0 }, dur = parseFloat(String(PN.dur).replace(',', '.'));
+  if (pgChoquesAntes('TAR', [o], Math.round(dur * 60))) return;
+  if (String(PN.paso || '').trim()) { PN.pasos.push(String(PN.paso).trim()); PN.paso = ''; }
+  pgGuardar('GuardarTarea', { id: PN.id, nombre: PN.n.trim(), categoria: /^nuevo:/.test(String(PN.cat)) ? String(PN.cat) : +PN.cat || 0, activo: o.activo, componente: o.componente, descripcion: PN.desc || '', procedimiento: +PN.proc || 0, pasos: PN.pasos,
+    asignacion: PN.as, duracion: dur > 0 ? Math.round(dur * 60) : 0, frecuencia: pgFreqDatos(PN.f) }, tarCargar,
+    PN.id ? 'Tarea actualizada. Las fechas pendientes se reprogramaron.' : 'Tarea creada. Sus fechas ya aparecen en Operación.');
+};
 TABR.inspecciones = {
   html: insHTML, entrar: function () { if (!INS.filas) insCargar(); },
   planta: function () { INS.filas = null; insCargar(); },
   escribir: function (t) { if (t.id === 'cpInsQ') { INS.q = t.value; render(); } },
   A: {
-    insabrir: function (d) { abrirModalSitio(URL_INS(d.q), 'Inspección programada', insCargar); },
-    insnueva: function () { abrirModalSitio(URL_INS(''), 'Nueva inspección', insCargar); }
+    insabrir: function (d) { abrirIns(+d.id); },
+    insnueva: function () { abrirIns(0); }
   }
 };
 TABR.tareas = {
@@ -2190,17 +2777,18 @@ TABR.tareas = {
   planta: function () { TAR.filas = null; tarCargar(); },
   escribir: function (t) { if (t.id === 'cpTarQ') { TAR.q = t.value; render(); } },
   A: {
-    tarabrir: function (d) { location.href = URL_TAR(d.q); },
-    tarnueva: function () { location.href = URL_TAR(''); }
+    tarabrir: function (d) { abrirTar(+d.id); },
+    tarnueva: function () { abrirTar(0); }
   }
 };
 TABR.cobertura = {
   html: covHTML, entrar: function () { setTimeout(function () { cobCargar(); }, 0); },
   planta: function () { CB.lista = null; CB.sel = {}; cobCargar(); },
-  escribir: function (t) { if (t.id === 'cpCvq') { CB.q = t.value; render(); } },
-  combo: function (span, v) { if (span.hasAttribute('data-cvf')) { CB.tipo = v; render(); } },
+  escribir: function (t) { if (t.id === 'cpCvq') { CB.q = t.value; CB.lim = COB_PAG; render(); } },
+  combo: function (span, v) { if (span.hasAttribute('data-cvf')) { CB.tipo = v; CB.lim = COB_PAG; render(); } },
   A: {
-    covf: function (d) { CB.f = d.v; render(); },
+    covf: function (d) { CB.f = d.v; CB.lim = COB_PAG; render(); },
+    covmas: function () { CB.lim += COB_PAG; render(); },
     covtg: function (d, t, e) { if (e && e.target.closest('.cp-cbx') && t.tagName !== 'INPUT') return; var id = +d.v; if (CB.sel[id]) delete CB.sel[id]; else CB.sel[id] = 1; render(); },
     covall: function () { var l = cobFiltrada(), all = l.every(function (a) { return CB.sel[a.ACTIVO_ID]; }); l.forEach(function (a) { if (all) delete CB.sel[a.ACTIVO_ID]; else CB.sel[a.ACTIVO_ID] = 1; }); render(); },
     covclr: function () { CB.sel = {}; render(); },
@@ -2284,7 +2872,9 @@ function abrirModalSitio(url, titulo, alCerrar) {
 var PROC_URL = function (q) { return CFG.base_ + 'View/Mantenimiento/Procedimientos/Procedimiento.aspx' + (q ? '?query=' + q : ''); };
 TABR.biblioteca = {
   html: libHTML,
-  entrar: function (x) { if (x.lib) LB.v = x.lib; setTimeout(function () { libCargar(); }, 0); },
+  /* La Biblioteca del Centro pasó a Recursos (Biblioteca.aspx): los enlaces viejos #tab=biblioteca llevan allá.
+     Ahí el calendario compartido no tiene responsables: quién ejecuta se define en el plan, la inspección o la tarea. */
+  entrar: function (x) { location.replace(CFG.base_ + 'View/Mantenimiento/Biblioteca/Biblioteca.aspx#' + ((x.lib || LB.v) === 'cal' ? 'calendarios' : 'procedimientos')); },
   escribir: function (t) { if (t.id === 'cpLq') { LB.q = t.value; render(); } },
   combo: function (span, v) { if (span.hasAttribute('data-lbf')) { LB[span.getAttribute('data-lbf')] = v; render(); } },
   A: {

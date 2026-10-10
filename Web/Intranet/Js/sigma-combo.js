@@ -147,7 +147,9 @@
     function posicionar() {
         var inp = CB.inp, ul = document.getElementById('sgComboLista'); if (!inp || !ul || ul.hidden) return;
         var r = inp.getBoundingClientRect(), abajo = innerHeight - r.bottom - 12, arriba = r.top - 12;
-        ul.style.left = r.left + 'px'; ul.style.width = Math.max(r.width, 220) + 'px';
+        /* Con etiquetas (árbol de activo, subactivo y componente) la lista necesita aire para leer los nombres. */
+        var ancho = Math.min(innerWidth - 24, Math.max(r.width, ul.querySelector('.es-tipado') ? 380 : 220));
+        ul.style.left = Math.max(12, Math.min(r.left, innerWidth - ancho - 12)) + 'px'; ul.style.width = ancho + 'px';
         if (abajo < 240 && arriba > abajo) { ul.style.top = ''; ul.style.bottom = (innerHeight - r.top + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, arriba)) + 'px'; }
         else { ul.style.bottom = ''; ul.style.top = (r.bottom + 4) + 'px'; ul.style.maxHeight = Math.max(140, Math.min(320, abajo)) + 'px'; }
     }

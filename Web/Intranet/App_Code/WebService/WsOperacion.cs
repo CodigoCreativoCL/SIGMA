@@ -51,6 +51,8 @@ public class WsOperacion : System.Web.Services.WebService
                 riesgo = SoporteDatos.Del(c, 6),
                 activos = SoporteDatos.Del(c, 7),
                 tendencia = SoporteDatos.Del(c, 8),
+                ia = SoporteDatos.Del(c, 9),
+                puedeOt = Token.Puede("CREAR ORDEN TRABAJO"),
                 urlOt = System.Web.VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/Ordenes.aspx")
             };
         });
@@ -85,9 +87,16 @@ public class WsOperacion : System.Web.Services.WebService
             List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_OPERACION_EJECUCIONES", "@CLIENTE", Cli(),
                 "@INSTALACION", planta > 0 ? (object)planta : null, "@AREA", area > 0 ? (object)area : null,
                 "@RESPONSABLE", responsable > 0 ? (object)responsable : null, "@CRITICIDAD", criticidad > 0 ? (object)criticidad : null, "@DESDE", dd, "@HASTA", hh);
+            // 414 · choques de horario (BD/413): la ejecución que choca lleva su detalle.
+            Dictionary<string, string> choq = new Dictionary<string, string>();
+            foreach (Dictionary<string, object> x in SoporteDatos.Del(SoporteDatos.Conjuntos("SEL_AGENDA_CHOQUES_RESUMEN", "@CLIENTE", Cli()), 0))
+                choq[Convert.ToString(x["TIPO"]) + "-" + Convert.ToString(x["OCURRENCIA"])] = Convert.ToString(x["DETALLE"]);
+            Dictionary<string, string> tipoAgenda = new Dictionary<string, string> { { "PLAN", "PLAN" }, { "INSPECCION", "INS" }, { "TAREA", "TAR" } };
             foreach (Dictionary<string, object> f in l)
             {
                 f["KEY"] = Convert.ToString(f["TIPO"]) + "-" + Convert.ToString(f["ID"]);
+                string ta, ch;
+                if (tipoAgenda.TryGetValue(Convert.ToString(f["TIPO"]), out ta) && choq.TryGetValue(ta + "-" + Convert.ToString(f["ID"]), out ch)) f["CHOQUE"] = ch;
                 if (Convert.ToString(f["TIPO"]) == "PLAN") f["Q"] = Q(Convert.ToInt32(f["ID"]));
                 if (f["OT_ID"] != null && f["OT_ID"] != DBNull.Value) f["QOT"] = Q(Convert.ToInt32(f["OT_ID"]));
             }
@@ -148,6 +157,95 @@ public class WsOperacion : System.Web.Services.WebService
                 if (f["OT_ID"] != null && f["OT_ID"] != DBNull.Value) f["QOT"] = Q(Convert.ToInt32(f["OT_ID"]));
             }
             return new { filas = filas, areas = SoporteDatos.Del(c, 1) };
+        });
+    }
+
+    /// <summary>418 · Una inspección para el cajón de Operación: cabecera, ítems de la pauta y, si ya se hizo, sus hallazgos.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Inspeccion(int ocurrencia)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OPERACION_INSPECCION", "@CLIENTE", Cli(), "@OCURRENCIA", ocurrencia);
+            List<Dictionary<string, object>> cab = SoporteDatos.Del(c, 0);
+            if (cab.Count == 0) throw new Exception("Esta inspección ya no está programada.");
+            // 425: lo que se registró (app o web): respuestas, fotos y datos de la ejecución.
+            List<Dictionary<string, object>> fotos = SoporteDatos.Del(c, 4);
+            foreach (Dictionary<string, object> f in fotos) f["URL"] = SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["ARCHIVO"]));
+            List<Dictionary<string, object>> ej = SoporteDatos.Del(c, 5);
+            return new { cab = cab[0], items = SoporteDatos.Del(c, 1), hallazgos = SoporteDatos.Del(c, 2), respuestas = SoporteDatos.Del(c, 3), fotos = fotos, ejecucion = ej.Count > 0 ? ej[0] : null, puede = Token.Puede(P_EJECUTAR) };
+        });
+    }
+
+    /// <summary>418 · Registra una inspección desde la web con los mismos SP de la app: abre la ejecución,
+    /// guarda cada respuesta (lo que no cumple o sale de rango abre su hallazgo, que llega a Avisos) y la cierra.
+    /// datos = { ocurrencia, observacion, respuestas: [{ item, tipo: ok|num|txt|foto, v }] } (ok: si|no|na).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RegistrarInspeccion(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede(P_EJECUTAR)) throw new Exception("No tienes permiso para registrar inspecciones.");
+            Dictionary<string, object> d = new System.Web.Script.Serialization.JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            int cli = Cli(), usu = SoporteDatos.Usuario(), ocu = Convert.ToInt32(d.ContainsKey("ocurrencia") ? d["ocurrencia"] : 0);
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OPERACION_INSPECCION", "@CLIENTE", cli, "@OCURRENCIA", ocu);
+            List<Dictionary<string, object>> cab = SoporteDatos.Del(c, 0);
+            if (cab.Count == 0) throw new Exception("Esta inspección ya no está programada.");
+            if (!Convert.ToBoolean(cab[0]["PUEDE"])) throw new Exception("Esta inspección ya se registró o todavía no está disponible.");
+            HashSet<int> items = new HashSet<int>(SoporteDatos.Del(c, 1).Select(x => Convert.ToInt32(x["ID"])));
+
+            List<Dictionary<string, object>> ej = SoporteDatos.Filas("API_INS_CHECKLIST_EJECUCION", "@UUID", Guid.NewGuid(), "@USUARIO", usu, "@CLIENTE", cli, "@OCURRENCIA", ocu, "@DISPOSITIVO", "Web · Operación");
+            if (ej.Count == 0 || ej[0]["cej_id"] == null || ej[0]["cej_id"] == DBNull.Value) throw new Exception("No se pudo abrir la inspección.");
+            int cej = Convert.ToInt32(ej[0]["cej_id"]);
+
+            System.Collections.ArrayList rs = d.ContainsKey("respuestas") ? d["respuestas"] as System.Collections.ArrayList : null;
+            foreach (object o in rs ?? new System.Collections.ArrayList())
+            {
+                Dictionary<string, object> r = o as Dictionary<string, object>; if (r == null) continue;
+                int item = Convert.ToInt32(r.ContainsKey("item") ? r["item"] : 0); if (!items.Contains(item)) continue;
+                string tipo = Convert.ToString(r.ContainsKey("tipo") ? r["tipo"] : ""), v = Convert.ToString(r.ContainsKey("v") ? r["v"] : "").Trim();
+                object texto = null, numero = null, booleano = null; bool na = false; string com = null;
+                if (tipo == "ok") { if (v == "si") booleano = true; else if (v == "no") booleano = false; else na = true; }
+                else if (tipo == "num")
+                {
+                    decimal n;
+                    if (v.Length == 0) na = true;
+                    else if (decimal.TryParse(v.Replace(',', '.'), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out n)) numero = n;
+                    else throw new Exception("Una medición no es un número válido.");
+                }
+                else if (tipo == "foto") { na = true; com = "Registrada desde la web: la foto se adjunta desde la app."; }
+                else { if (v.Length == 0) na = true; else texto = v; }
+                SoporteDatos.Filas("API_UPS_CHECKLIST_RESPUESTA", "@CEJ_ID", cej, "@USUARIO", usu, "@CLIENTE", cli, "@ITEM", item,
+                    "@VALOR_TEXTO", texto, "@VALOR_NUMERO", numero, "@VALOR_BOOLEANO", booleano, "@NO_APLICA", na, "@COMENTARIO", com);
+            }
+            string obs = Convert.ToString(d.ContainsKey("observacion") ? d["observacion"] : "").Trim();
+            SoporteDatos.Filas("API_UPD_CHECKLIST_CERRAR", "@CEJ_ID", cej, "@USUARIO", usu, "@CLIENTE", cli, "@OBSERVACION", obs.Length > 0 ? (object)obs : null);
+            List<Dictionary<string, object>> hz = SoporteDatos.Del(SoporteDatos.Conjuntos("SEL_OPERACION_INSPECCION", "@CLIENTE", cli, "@OCURRENCIA", ocu), 2);
+            return new { ok = true, hallazgos = hz.Count };
+        });
+    }
+
+    private const string P_EJECUTAR = "EJECUTAR CHECKLIST";
+
+    /// <summary>425 · Una ocurrencia de tarea con lo que se registró en terreno: quién, cuándo, duración, resultado y fotos.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Tarea(int ocurrencia)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir();
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OPERACION_TAREA", "@CLIENTE", Cli(), "@OCURRENCIA", ocurrencia);
+            List<Dictionary<string, object>> cab = SoporteDatos.Del(c, 0);
+            if (cab.Count == 0) throw new Exception("Esta tarea ya no está programada.");
+            List<Dictionary<string, object>> fotos = SoporteDatos.Del(c, 2);
+            foreach (Dictionary<string, object> f in fotos) f["URL"] = SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["ARCHIVO"]));
+            object ot = cab[0]["OT_ID"];
+            if (ot != null) cab[0]["QOT"] = Q(Convert.ToInt32(ot));
+            return new { cab = cab[0], ejecuciones = SoporteDatos.Del(c, 1), fotos = fotos };
         });
     }
 

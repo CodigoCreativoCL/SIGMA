@@ -7,10 +7,12 @@
          Plan: MD/PLAN_MODERNIZACION_MANTENIMIENTO.md --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-modal.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-carga.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-centro-planificacion.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-mant-lugares.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-mant-ot.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-carga.js") %>'></script>
     <script type="text/javascript">window.MantLugarConfig = <%=ConfigJson %>;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-comun.js") %>'></script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-lugar.js") %>'></script>
@@ -28,7 +30,7 @@
                 </div>
                 <div class="cp-hero-actions" id="mlAcc"></div>
             </header>
-            <section class="cp-panel">
+            <section class="cp-panel cp-bare">
                 <nav class="cp-mtabs" role="tablist" aria-label="Secciones de Órdenes de trabajo" id="mlTabs"></nav>
                 <div id="mlBody" role="tabpanel" aria-live="polite"></div>
             </section>

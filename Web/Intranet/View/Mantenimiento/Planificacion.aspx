@@ -8,8 +8,10 @@
          alcance: MD/CENTRO_PLANIFICACION_ALCANCE.md. --%>
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-modal.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-carga.css") %>' rel="stylesheet" />
     <link href='<%=Asset("~/Css/LookAndFeel/sigma-centro-planificacion.css") %>' rel="stylesheet" />
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-carga.js") %>'></script>
     <script type="text/javascript">window.CentroPlanificacionConfig = <%=ConfigJson %>;</script>
     <script type="text/javascript" src='<%=Asset("~/Js/sigma-centro-planificacion.js") %>'></script>
 </asp:Content>
@@ -34,7 +36,7 @@
 
             <section class="cp-kpis" id="cpKpis" aria-label="Resumen de la planificación" hidden></section>
 
-            <section class="cp-panel">
+            <section class="cp-panel cp-bare">
                 <nav class="cp-mtabs" role="tablist" aria-label="Secciones del Centro de Planificación" id="cpTabs"></nav>
                 <div id="cpBody" role="tabpanel" aria-live="polite"></div>
             </section>

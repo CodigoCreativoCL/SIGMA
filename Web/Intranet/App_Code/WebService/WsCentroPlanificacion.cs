@@ -60,7 +60,16 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         {
             Exigir(P_VER);
             List<Dictionary<string, object>> planes = SoporteDatos.Filas("SEL_PLAN_CENTRO", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
-            foreach (Dictionary<string, object> p in planes) p["Q"] = Q(Entero(p, "PLAN_ID"));
+            // 407: los objetos mantenibles de cada plan (activo, subactivo o componente) para la tarjeta.
+            ILookup<int, Dictionary<string, object>> objetos = SoporteDatos.Filas("SEL_PLAN_CENTRO_OBJETOS", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null)
+                .ToLookup(o => Entero(o, "PLAN_ID"));
+            Dictionary<string, int> choq = ChoquesPorRef();
+            foreach (Dictionary<string, object> p in planes)
+            {
+                p["Q"] = Q(Entero(p, "PLAN_ID"));
+                int nch; if (choq.TryGetValue("PLAN-" + Entero(p, "PLAN_ID"), out nch)) p["CHOQUES"] = nch;
+                p["OBJETOS"] = objetos[Entero(p, "PLAN_ID")].Select(o => new { t = Texto(o, "TIPO"), c = Texto(o, "CODIGO"), n = Texto(o, "NOMBRE"), comp = Texto(o, "COMPONENTE"), padre = Texto(o, "PADRE") }).ToList();
+            }
             return new
             {
                 planes = planes,
@@ -172,6 +181,21 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         {
             if (!Token.Puede(P_PROC_VER) && !Token.Puede(P_EDITAR)) throw new Exception("No tienes permiso para ver procedimientos.");
             return new { pasos = SoporteDatos.Filas("SEL_PROCEDIMIENTO_PASO", "@CLIENTE", Cli(), "@PROCEDIMIENTO", procedimiento, "@HABILITADO", true) };
+        });
+    }
+
+    /// <summary>409 · Repuestos compatibles (Repuesto_Compatibilidad) con lo que mantiene el plan: activo, subactivo, componente, modelo o tipo.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RepuestosSugeridos(int plan)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            // 422: compatibles por nivel con stock, stock de lo ya planificado y cuántos objetos tiene el plan.
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_PLAN_REPUESTOS_SUGERIDOS", "@CLIENTE", Cli(), "@PLAN", plan);
+            List<Dictionary<string, object>> n = SoporteDatos.Del(c, 2);
+            return new { repuestos = SoporteDatos.Del(c, 0), stock = SoporteDatos.Del(c, 1), objetos = n.Count > 0 ? Entero(n[0], "N") : 0 };
         });
     }
 
@@ -350,6 +374,10 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                     SoporteDatos.Conjuntos("UPS_PLAN_HITO_RESPONSABLE", "@CLIENTE", Cli(), "@HITO", h, "@USUARIOS", vacio ? "" : valor, "@USUARIO", U());
                     return new { ok = true, hito = h, recargar = Bool(m, "CREADO") };
                 case "grupo": if (!vacio && int.TryParse(valor, out n)) p.AddRange(new object[] { "@GRUPO_TRABAJO", n }); else p.AddRange(new object[] { "@QUITA_GRUPO", true }); break;
+                case "proveedor":
+                    // 411: la empresa externa de la intervención (vacío = sin empresa).
+                    SoporteDatos.Conjuntos("UPS_PLAN_HITO_PROVEEDOR", "@CLIENTE", Cli(), "@HITO", h, "@PROVEEDOR", !vacio && int.TryParse(valor, out n) ? (object)n : null, "@USUARIO", U());
+                    return new { ok = true, hito = h, recargar = Bool(m, "CREADO") };
                 case "orden": if (int.TryParse(valor, out n)) p.AddRange(new object[] { "@ORDEN", n }); break;
                 default: throw new Exception("El campo no existe.");
             }
@@ -1013,7 +1041,8 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         {
             Exigir(P_VER);
             List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_INSPECCIONES", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
-            foreach (Dictionary<string, object> f in l) f["Q"] = Q(Convert.ToInt32(f["ID"]));
+            Dictionary<string, int> choq = ChoquesPorRef();
+            foreach (Dictionary<string, object> f in l) { f["Q"] = Q(Convert.ToInt32(f["ID"])); int nch; if (choq.TryGetValue("INS-" + Convert.ToInt32(f["ID"]), out nch)) f["CHOQUES"] = nch; }
             return new { filas = l };
         });
     }
@@ -1027,10 +1056,285 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         {
             Exigir(P_VER);
             List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_PLAN_TAREAS", "@CLIENTE", Cli(), "@INSTALACION", planta > 0 ? (object)planta : null);
-            foreach (Dictionary<string, object> f in l) f["Q"] = Q(Convert.ToInt32(f["ID"]));
+            Dictionary<string, int> choq = ChoquesPorRef();
+            foreach (Dictionary<string, object> f in l) { f["Q"] = Q(Convert.ToInt32(f["ID"])); int nch; if (choq.TryGetValue("TAR-" + Convert.ToInt32(f["ID"]), out nch)) f["CHOQUES"] = nch; }
             return new { filas = l };
         });
     }
+
+    // =====================================================================
+    // 408 · CAJONES «INSPECCIÓN» Y «TAREA RECURRENTE» (mockup PANELS.rone / PANELS.tare)
+    // =====================================================================
+
+    /// <summary>Los combos de los cajones: activos (con subactivos), componentes, pautas publicadas, categorías, calendarios compartidos y personas.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ProgramaCatalogo()
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_PLAN_PROGRAMA_CATALOGO", "@CLIENTE", Cli());
+            // Empresas externas: los proveedores marcados como contratistas (igual que la ficha de OT).
+            List<object> proveedores = new List<object>();
+            List<Proveedor> prv = new ProveedorController().GetProveedores(new Proveedor { filtro_habilitado = true, filtro_es_contratista = true });
+            if (prv != null) foreach (Proveedor x in prv) proveedores.Add(new { ID = x.prv_id, NOMBRE = x.prv_razon_social });
+            // 426: la foto del activo y del componente para el selector «Dónde».
+            foreach (int k in new[] { 0, 1 })
+                foreach (Dictionary<string, object> f in SoporteDatos.Del(c, k))
+                    f["IMG"] = f.ContainsKey("FOTO") && f["FOTO"] != null ? SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["FOTO"])) : "";
+            return new
+            {
+                activos = SoporteDatos.Del(c, 0), componentes = SoporteDatos.Del(c, 1), pautas = SoporteDatos.Del(c, 2), procedimientos = SoporteDatos.Del(c, 6),
+                categorias = SoporteDatos.Del(c, 3), calendarios = SoporteDatos.Del(c, 4), personas = Personas(),
+                enInspeccion = SoporteDatos.Del(c, 5),
+                grupos = SoporteDatos.Del(SoporteDatos.Conjuntos("SEL_PLAN_CENTRO_CATALOGO", "@CLIENTE", Cli()), 4),
+                integrantes = SoporteDatos.Filas("SEL_PLAN_CENTRO_GRUPO_INTEGRANTE", "@CLIENTE", Cli()), proveedores = proveedores,
+                permisos = new { inspeccion = PuedeInspeccion(), tarea = PuedeTarea() }
+            };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Inspeccion(int id)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_PLAN_INSPECCION", "@CLIENTE", Cli(), "@ID", id);
+            Dictionary<string, object> h = SoporteDatos.Del(c, 0).FirstOrDefault();
+            if (h == null) throw new Exception("La inspección ya no existe.");
+            return new { cabecera = h, activos = SoporteDatos.Del(c, 1), frecuencia = SoporteDatos.Fila("SEL_PROGRAMACION_SIMPLE", "@CLIENTE", Cli(), "@PRO", Entero(h, "PROGRAMACION")) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Tarea(int id)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            Dictionary<string, object> h = SoporteDatos.Fila("SEL_PLAN_TAREA", "@CLIENTE", Cli(), "@ID", id);
+            if (h == null) throw new Exception("La tarea ya no existe.");
+            List<List<Dictionary<string, object>>> qh = SoporteDatos.Conjuntos("SEL_TAREA_QUE_HACER", "@CLIENTE", Cli(), "@TAREA", id);
+            List<Dictionary<string, object>> qp = SoporteDatos.Del(qh, 0);
+            return new { cabecera = h, frecuencia = Entero(h, "PROGRAMACION") > 0 ? SoporteDatos.Fila("SEL_PROGRAMACION_SIMPLE", "@CLIENTE", Cli(), "@PRO", Entero(h, "PROGRAMACION")) : null,
+                procedimiento = qp.Count > 0 ? qp[0] : null, pasos = SoporteDatos.Del(qh, 1).Select(x => Texto(x, "NOMBRE")).ToList() };
+        });
+    }
+
+    /// <summary>413 · Choques de horario de algo ya guardado (PLAN, INS, TAR) con otros planes, inspecciones o tareas sobre el mismo objeto mantenible.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Choques(string tipo, int refId)
+    {
+        return Ejecutar(() =>
+        {
+            ExigirAgenda();
+            return new { choques = SoporteDatos.Filas("SEL_PLAN_CHOQUES", "@CLIENTE", Cli(), "@TIPO", (tipo ?? "").ToUpperInvariant(), "@REF", refId) };
+        });
+    }
+
+    /// <summary>413 · Choques de lo que se está por guardar: objetos («activo:componente»), fechas o calendario compartido y duración.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ChoquesCandidato(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            ExigirAgenda();
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            return new
+            {
+                choques = SoporteDatos.Filas("SEL_PLAN_CHOQUES_CANDIDATO", "@CLIENTE", Cli(), "@TIPO", Texto(d, "tipo").ToUpperInvariant(), "@REF", Entero(d, "ref") > 0 ? (object)Entero(d, "ref") : null,
+                    "@OBJETOS", string.Join(",", Lista(d, "objetos").Select(o => Entero(o, "activo") + ":" + Entero(o, "componente"))),
+                    "@FECHAS", Nulo(string.Join(",", ListaTexto(d, "fechas"))), "@PROGRAMACION", Entero(d, "programacion") > 0 ? (object)Entero(d, "programacion") : null,
+                    "@DURACION", Entero(d, "duracion") > 0 ? (object)Entero(d, "duracion") : null,
+                    // CA-7: quién lo ejecutaría ('U:1', 'G:3', 'E:7'): la misma persona, grupo o empresa no puede estar en dos trabajos a la vez.
+                    "@RECURSOS", Nulo(string.Join(",", ListaTexto(d, "recursos").Where(x => System.Text.RegularExpressions.Regex.IsMatch(x, "^[UGE]:\\d+$")))))
+            };
+        });
+    }
+
+    /// <summary>Crea o edita una inspección: nombre, pauta, activos en orden (con su objeto mantenible), frecuencia, responsable y duración.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarInspeccion(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            if (!PuedeInspeccion()) throw new Exception("No tienes permiso para programar inspecciones.");
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            string nombre = Texto(d, "nombre");
+            if (nombre.Length == 0) throw new Exception("La inspección necesita un nombre.");
+            List<Dictionary<string, object>> act = Lista(d, "activos");
+            if (act.Count == 0) throw new Exception("Elige al menos un activo.");
+            int pro = ProgramacionDe(Dicc(d, "frecuencia"), nombre);
+            int id = Entero(d, "id");
+            id = ExecId("UPS_PLAN_INSPECCION", "@ID", id > 0 ? (object)id : null, "@CLIENTE", Cli(), "@NOMBRE", nombre, "@PLANTILLA", Entero(d, "pauta"), "@PROGRAMACION", pro,
+                "@RESPONSABLE", PrimeraPersona(d), "@DURACION", Entero(d, "duracion") > 0 ? (object)Entero(d, "duracion") : null,
+                "@ACTIVOS", string.Join(",", act.Select(a => Entero(a, "activo") + ":" + Entero(a, "componente"))), "@ASIGNACION", Asignacion(d), "@USUARIO", U());
+            return new { id = id };
+        });
+    }
+
+    /// <summary>Crea o edita una tarea recurrente: nombre, categoría, dónde (activo, subactivo o componente), qué hacer, frecuencia, responsable y duración.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarTarea(string datos)
+    {
+        return Ejecutar(() =>
+        {
+            if (!PuedeTarea()) throw new Exception("No tienes permiso para programar tareas.");
+            Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
+            string nombre = Texto(d, "nombre");
+            if (nombre.Length == 0) throw new Exception("La tarea necesita un nombre.");
+            if (Entero(d, "activo") <= 0) throw new Exception("Elige dónde se hace la tarea.");
+            int pro = ProgramacionDe(Dicc(d, "frecuencia"), nombre);
+            int id = Entero(d, "id");
+            // 426: «nuevo:<nombre>» = categoría creada desde el combo.
+            string catTxt = Texto(d, "categoria"); int cat = Entero(d, "categoria");
+            if (catTxt.StartsWith("nuevo:")) cat = ExecId("UPS_TAREA_CATEGORIA_NOMBRE", "@CLIENTE", Cli(), "@NOMBRE", catTxt.Substring(6).Trim(), "@USUARIO", U());
+            id = ExecId("UPS_PLAN_TAREA", "@ID", id > 0 ? (object)id : null, "@CLIENTE", Cli(), "@NOMBRE", nombre, "@CATEGORIA", cat > 0 ? (object)cat : null,
+                "@ACTIVO", Entero(d, "activo"), "@COMPONENTE", Entero(d, "componente") > 0 ? (object)Entero(d, "componente") : null, "@DESCRIPCION", Texto(d, "descripcion"),
+                "@PROGRAMACION", pro, "@RESPONSABLE", PrimeraPersona(d),
+                "@DURACION", Entero(d, "duracion") > 0 ? (object)Entero(d, "duracion") : null, "@ASIGNACION", Asignacion(d), "@USUARIO", U());
+            // 426: qué hacer = procedimiento ya creado y/o pasos escritos.
+            SoporteDatos.Conjuntos("UPS_TAREA_QUE_HACER", "@CLIENTE", Cli(), "@TAREA", id, "@PROCEDIMIENTO", Entero(d, "procedimiento") > 0 ? (object)Entero(d, "procedimiento") : null,
+                "@PASOS", new JavaScriptSerializer().Serialize(ListaTexto(d, "pasos")), "@USUARIO", U());
+            return new { id = id, categoria = cat };
+        });
+    }
+
+    /// <summary>
+    /// La programación de una inspección o tarea: un calendario compartido (modo «sh») o la frecuencia
+    /// propia semanal o mensual, que se guarda en su programación privada (la reutiliza si ya tenía una).
+    /// </summary>
+    private int ProgramacionDe(Dictionary<string, object> f, string nombre)
+    {
+        string modo = Texto(f, "modo");
+        if (modo == "sh")
+        {
+            if (Entero(f, "sh") <= 0) throw new Exception("Elige el calendario compartido.");
+            return Entero(f, "sh");
+        }
+        if (modo != "w" && modo != "m") throw new Exception("Elige cada cuánto se hace.");
+        List<string> dias = ListaTexto(f, "dias");
+        if (modo == "w" && dias.Count == 0) throw new Exception("Elige al menos un día de la semana.");
+        TimeSpan hora; if (!TimeSpan.TryParse(Texto(f, "hora"), out hora)) hora = new TimeSpan(8, 0, 0);
+        return ExecId("UPS_PROGRAMACION_SIMPLE", "@ID", Entero(f, "pro") > 0 ? (object)Entero(f, "pro") : null, "@CLIENTE", Cli(), "@NOMBRE", nombre, "@MODO", modo,
+            "@DIAS", modo == "w" ? string.Join(",", dias) : null, "@DIA_MES", modo == "m" ? (object)Math.Max(1, Entero(f, "diaMes")) : null, "@HORA", hora, "@USUARIO", U());
+    }
+
+    /// <summary>
+    /// Quién la ejecuta: «D» disponible (nadie asignado; desde la app cualquiera la toma), «P:1,5» una o
+    /// varias personas, «G:3» un grupo de trabajo o «E:7» una empresa externa. Lo valida el SP.
+    /// </summary>
+    private static string Asignacion(Dictionary<string, object> d)
+    {
+        Dictionary<string, object> a = Dicc(d, "asignacion");
+        string modo = Texto(a, "modo");
+        List<string> ids = ListaTexto(a, "ids").Where(x => { int n; return int.TryParse(x, out n) && n > 0; }).ToList();
+        if (modo == "P" || modo == "G" || modo == "E")
+        {
+            if (ids.Count == 0) throw new Exception(modo == "P" ? "Elige al menos una persona o déjala disponible." : modo == "G" ? "Elige el grupo de trabajo." : "Elige la empresa externa.");
+            return modo + ":" + string.Join(",", modo == "P" ? ids : ids.Take(1));
+        }
+        return "D";
+    }
+    private static object PrimeraPersona(Dictionary<string, object> d)
+    {
+        string a = Asignacion(d);
+        int n; return a.StartsWith("P:") && int.TryParse(a.Substring(2).Split(',')[0], out n) ? (object)n : null;
+    }
+
+    /// <summary>413 · CA-6: las próximas horas libres para UNA ocurrencia que choca (plan, inspección, tarea u OT).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Huecos(string tipo, int ocurrencia)
+    {
+        return Ejecutar(() =>
+        {
+            ExigirAgenda();
+            return new { huecos = SoporteDatos.Filas("SEL_AGENDA_HUECOS", "@CLIENTE", Cli(), "@TIPO", (tipo ?? "").ToUpperInvariant(), "@OCURRENCIA", ocurrencia) };
+        });
+    }
+
+    /// <summary>413 · CA-6: reprograma SOLO esa ocurrencia (las de los otros activos siguen a su hora).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ReprogramarAgenda(string tipo, int ocurrencia, string fecha, string motivo)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.Puede(P_EDITAR) && !Token.Puede(P_OT) && !PuedeInspeccion() && !PuedeTarea()) throw new Exception("No tienes permiso para reprogramar.");
+            DateTime f;
+            if (!DateTime.TryParseExact(fecha ?? "", new[] { "yyyy-MM-ddTHH:mm", "yyyy-MM-dd HH:mm", "yyyy-MM-ddTHH:mm:ss" }, CultureInfo.InvariantCulture, DateTimeStyles.None, out f))
+                throw new Exception("Indica la nueva fecha y hora.");
+            SoporteDatos.Conjuntos("UPS_AGENDA_REPROGRAMAR", "@CLIENTE", Cli(), "@TIPO", (tipo ?? "").ToUpperInvariant(), "@OCURRENCIA", ocurrencia, "@FECHA", f, "@MOTIVO", Nulo(motivo), "@USUARIO", U());
+            return new { ok = true };
+        });
+    }
+
+    /// <summary>414 · Cuántas ocurrencias chocan por plan, inspección o tarea («PLAN-1» → 3), próximos 90 días.</summary>
+    private static Dictionary<string, int> ChoquesPorRef()
+    {
+        Dictionary<string, int> r = new Dictionary<string, int>();
+        foreach (Dictionary<string, object> x in SoporteDatos.Del(SoporteDatos.Conjuntos("SEL_AGENDA_CHOQUES_RESUMEN", "@CLIENTE", Cli()), 1))
+            r[Texto(x, "TIPO") + "-" + Entero(x, "REF")] = Entero(x, "N");
+        return r;
+    }
+
+    /// <summary>Los choques de horario los consultan el Centro y también quien ve o crea OT (ficha de OT).</summary>
+    /// <summary>420 · Carga laboral de una persona («U:5»), grupo («G:3») o empresa («E:7») entre dos fechas
+    /// (calendario mensual): sus trabajos con activo y si chocan entre sí.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CargaMes(string clave, string desde, string hasta)
+    {
+        return Ejecutar(() =>
+        {
+            ExigirAgenda();
+            DateTime d, h;
+            if (!System.Text.RegularExpressions.Regex.IsMatch(clave ?? "", @"^[UGE]:\d+$")) throw new Exception("No se reconoce a quién mirar.");
+            if (!DateTime.TryParseExact(desde ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out d) ||
+                !DateTime.TryParseExact(hasta ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out h) || h < d || (h - d).TotalDays > 62)
+                throw new Exception("El rango de fechas no es válido.");
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_AGENDA_CARGA_MES", "@CLIENTE", Cli(), "@CLAVE", clave, "@DESDE", d, "@HASTA", h);
+            List<Dictionary<string, object>> cab = SoporteDatos.Del(c, 0), l = SoporteDatos.Del(c, 1);
+            string urlOt = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/Ordenes.aspx") + "#ordenes&ot=";
+            foreach (Dictionary<string, object> f in l)
+                if (f["OT_ID"] != null && f["OT_ID"] != DBNull.Value) f["URL"] = urlOt + Q(Convert.ToInt32(f["OT_ID"]));
+            return new { recurso = cab.Count > 0 ? cab[0] : null, trabajos = l };
+        });
+    }
+
+    /// <summary>420 · Resumen de carga para los selectores de responsables: minutos, trabajos, choques y días sobre 8 h.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string CargaResumen(string claves, string desde, string hasta)
+    {
+        return Ejecutar(() =>
+        {
+            ExigirAgenda();
+            DateTime d, h;
+            if (!DateTime.TryParseExact(desde ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out d) ||
+                !DateTime.TryParseExact(hasta ?? "", "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out h) || h < d || (h - d).TotalDays > 62)
+                throw new Exception("El rango de fechas no es válido.");
+            string limpias = string.Join(",", (claves ?? "").Split(',').Select(x => x.Trim()).Where(x => System.Text.RegularExpressions.Regex.IsMatch(x, @"^[UGE]:\d+$")).Distinct().Take(200));
+            return new { filas = limpias.Length == 0 ? new List<Dictionary<string, object>>() : SoporteDatos.Filas("SEL_AGENDA_CARGA_RESUMEN", "@CLIENTE", Cli(), "@CLAVES", limpias, "@DESDE", d, "@HASTA", h) };
+        });
+    }
+
+    private static void ExigirAgenda()
+    {
+        if (!Token.Puede(P_VER) && !Token.Puede(P_OT) && !Token.Puede("VER ORDENES TRABAJO")) throw new Exception("No tienes permiso para esta acción.");
+    }
+
+    private static bool PuedeInspeccion() { return Token.Puede(P_EDITAR) || Token.Puede("CREAR EDITAR PROGRAMACIONES") || Token.Puede("CREAR EDITAR PAUTAS"); }
+    private static bool PuedeTarea() { return Token.Puede(P_EDITAR) || Token.Puede("CREAR EDITAR TAREAS"); }
 
     /// <summary>Calendarios compartidos de la Biblioteca: próximas fechas y dónde se usan (§10.7).</summary>
     [WebMethod(EnableSession = true)]
@@ -1365,6 +1669,8 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         ILookup<int, Dictionary<string, object>> proxPorHito = SoporteDatos.Del(c, 15).ToLookup(r => Entero(r, "HITO_ID"));
         // 391: los responsables de cada intervención (ids en orden; el primero es el principal).
         ILookup<int, int> respPorHito = SoporteDatos.Filas("SEL_PLAN_HITO_RESPONSABLE", "@CLIENTE", cli, "@PLAN", plan).ToLookup(r => Entero(r, "HITO_ID"), r => Entero(r, "USUARIO_ID"));
+        // 411: la empresa externa de cada intervención.
+        Dictionary<int, Dictionary<string, object>> provPorHito = SoporteDatos.Filas("SEL_PLAN_HITO_PROVEEDOR", "@CLIENTE", cli, "@PLAN", plan).GroupBy(r => Entero(r, "HITO_ID")).ToDictionary(g => g.Key, g => g.First());
 
         foreach (Dictionary<string, object> h in hitos)
         {
@@ -1380,6 +1686,8 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             List<int> resp = respPorHito[Entero(h, "HITO_ID")].ToList();
             if (resp.Count == 0 && Entero(h, "RESPONSABLE_ID") > 0) resp.Add(Entero(h, "RESPONSABLE_ID"));
             h["RESPONSABLES"] = resp;
+            Dictionary<string, object> pv;
+            if (provPorHito.TryGetValue(Entero(h, "HITO_ID"), out pv)) { h["PROVEEDOR_ID"] = Entero(pv, "PROVEEDOR_ID"); h["PROVEEDOR"] = Texto(pv, "PROVEEDOR"); }
         }
 
         ActivoImagenController imagenes = new ActivoImagenController();
@@ -1563,7 +1871,11 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             id.Direction = ParameterDirection.InputOutput;
             id.Value = DBNull.Value;
             for (int i = 0; i + 1 < p.Length; i += 2)
+            {
+                // Un «@ID» entre los parámetros es el valor inicial (editar): va en el mismo parámetro de salida.
+                if ((string)p[i] == "@ID") { id.Value = p[i + 1] ?? DBNull.Value; continue; }
                 cmd.Parameters.AddWithValue((string)p[i], p[i + 1] ?? DBNull.Value);
+            }
             using (SqlDataReader dr = cmd.ExecuteReader())
             {
                 do { while (dr.Read()) { } } while (dr.NextResult());

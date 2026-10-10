@@ -23,7 +23,9 @@
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
     <%-- Todo se dibuja en el navegador con lo que devuelve WsAiCentro (BD/379): ninguna cifra esta escrita aqui. --%>
-    <div class="sgai" id="sgai" data-ws='<%=ResolveUrl("~/WebService/WsAiCentro.asmx") %>' data-img='<%=ResolveUrl("~/Imagen/") %>' data-js3d='<%=ResolveUrl("~/Js/sigma-ai-planta3d.js") %>?v=<%=System.IO.File.GetLastWriteTime(Server.MapPath("~/Js/sigma-ai-planta3d.js")).Ticks %>'>
+    <%-- 428: ?solo=chat = solo el chat (lo abre el lanzador flotante en un panel lateral de cualquier pantalla). --%>
+    <script type="text/javascript">if (/[?&]solo=chat/.test(location.search)) { document.documentElement.classList.add('sgai-solo'); document.body.classList.add('sgai-solo'); }</script>
+    <div class="sgai" id="sgai" data-chat='<%= ChatIncluido ? "1" : "0" %>' data-ws='<%=ResolveUrl("~/WebService/WsAiCentro.asmx") %>' data-img='<%=ResolveUrl("~/Imagen/") %>' data-js3d='<%=ResolveUrl("~/Js/sigma-ai-planta3d.js") %>?v=<%=System.IO.File.GetLastWriteTime(Server.MapPath("~/Js/sigma-ai-planta3d.js")).Ticks %>'>
         <div class="cc">
             <div class="ccm" id="ccm"><div class="xskel"></div><div class="xskel"></div></div>
             <aside class="rail" id="rail" aria-label="SIGMA AI Chat"></aside>

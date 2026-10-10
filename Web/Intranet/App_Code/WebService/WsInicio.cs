@@ -80,6 +80,9 @@ public class WsInicio : System.Web.Services.WebService
             List<object> catalogo = new List<object>();
             foreach (string[] m in MODULOS)
             {
+                // 428: SIGMA Twin y SIGMA AI solo si el plan comercial los incluye.
+                if (m[0] == "twin" && !SitioBase.Controller.PlanFuncion.Incluye(SitioBase.Controller.PlanFuncion.TWIN)) continue;
+                if (m[0] == "ai" && !SitioBase.Controller.PlanFuncion.Incluye(SitioBase.Controller.PlanFuncion.AI_CHAT)) continue;
                 string s = "", s0 = "", dot = "";
                 switch (m[0])
                 {
