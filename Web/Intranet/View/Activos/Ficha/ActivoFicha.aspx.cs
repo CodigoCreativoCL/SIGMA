@@ -4596,10 +4596,21 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   pierde el dia que alguien puede arreglar lo que escribio ayer, asi
     ///   que esta pantalla solo agrega.
     /// </summary>
+    /// <summary>
+    /// Las rectificaciones del activo (HU-131), agrupadas por entrada. Se carga
+    /// una vez y lo lee <see cref="Nota"/> para pintar, bajo cada entrada
+    /// rectificada, el original tachado y la correccion con su motivo.
+    /// </summary>
+    private ILookup<int, ActivoBitacoraRectificacion> _bitRects;
+
     private void BitacoraYTrazabilidad(Activo a, List<ActivoFichaEvento> eventos)
     {
         List<ActivoBitacora> registros = new ActivoCentroController().GetBitacora(a.act_id)
                                          ?? new List<ActivoBitacora>();
+
+        _bitRects = (new ActivoCentroController().GetRectificaciones(a.act_id)
+                     ?? new List<ActivoBitacoraRectificacion>())
+                    .ToLookup(x => x.bitacora);
 
         List<ActivoFichaEvento> cambios = eventos
             .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO"
@@ -4712,8 +4723,44 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (nivel == 0 && !string.IsNullOrEmpty(b.etiqueta) && b.etiqueta != b.texto)
             s.Append("<h4>").Append(Server.HtmlEncode(b.etiqueta)).Append("</h4>");
-        s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>")
-         .Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+
+        /* RECTIFICACIONES (HU-131): el original no se reescribe. Si la entrada
+           tiene correcciones, se muestra el texto original TACHADO y, encima,
+           la cadena de rectificaciones con su motivo —la ultima es la que vale—.
+           Asi se lee por que cambio el texto, que es justo lo que se perderia
+           si solo se mostrara la version vigente. Solo en las notas principales:
+           las respuestas del hilo no se rectifican, se responden. */
+        List<ActivoBitacoraRectificacion> rects = (nivel == 0 && _bitRects != null)
+            ? _bitRects[b.bit_id].OrderBy(x => x.bre_id).ToList()
+            : new List<ActivoBitacoraRectificacion>();
+
+        if (rects.Count > 0)
+        {
+            s.Append("<p class=\"sg-bn-original\"><del>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</del></p>")
+             .Append("<div class=\"sg-bn-rects\">");
+            for (int i = 0; i < rects.Count; i++)
+            {
+                ActivoBitacoraRectificacion x = rects[i];
+                bool vigente = (i == rects.Count - 1);
+                s.Append("<div class=\"sg-bn-rect").Append(vigente ? " es-vigente" : "").Append("\">")
+                 .Append("<span class=\"sg-ot-chip es-tipo\"><i class=\"mdi mdi-pencil-outline\"></i>")
+                 .Append(vigente ? "Rectificada" : "Rectificación").Append("</span>")
+                 .Append("<p>").Append(Server.HtmlEncode(Texto(x.texto))).Append("</p>")
+                 .Append("<span class=\"sg-bn-rect-motivo\"><i class=\"mdi mdi-information-outline\"></i>Motivo: ")
+                 .Append(Server.HtmlEncode(Texto(x.motivo))).Append("</span>")
+                 .Append("<span class=\"sg-bn-meta\">")
+                 .Append(string.IsNullOrEmpty(x.usuario) ? "Sin usuario" : Server.HtmlEncode(x.usuario))
+                 .Append(x.fecha == null ? "" : " · " + x.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+                 .Append("</span></div>");
+            }
+            s.Append("</div>");
+        }
+        else
+        {
+            s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>");
+        }
+
+        s.Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
         if (resp.Count > 0)
             s.Append("<button type=\"button\" class=\"sg-bn-btn es-hilo\" data-bit-hilo=\"").Append(b.bit_id).Append("\" aria-expanded=\"true\"><i class=\"mdi mdi-chevron-up\"></i>")
              .Append(resp.Count).Append(resp.Count == 1 ? " respuesta" : " respuestas").Append("</button>");

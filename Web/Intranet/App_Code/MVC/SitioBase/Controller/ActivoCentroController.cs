@@ -304,6 +304,22 @@ namespace SitioBase.Controller
     }
 
     /// <summary>
+    /// Una rectificacion de una entrada de bitacora (HU-131). La entrada
+    /// original no se toca: esto es una fila nueva con el texto corregido y el
+    /// motivo, obligatorio. Se encadenan: vale la ultima, se ven todas.
+    /// </summary>
+    [Serializable]
+    public class ActivoBitacoraRectificacion
+    {
+        public int bitacora { get; set; }
+        public int bre_id { get; set; }
+        public string texto { get; set; }
+        public string motivo { get; set; }
+        public string usuario { get; set; }
+        public DateTime? fecha { get; set; }
+    }
+
+    /// <summary>
     /// Lo que la lista de equipos necesita saber de cada uno y no esta en su
     /// ficha: cuanto trabajo tiene encima y cuando le toca lo proximo.
     /// </summary>
@@ -1155,6 +1171,52 @@ namespace SitioBase.Controller
                         if (dr["FECHA_REGISTRO"] != DBNull.Value) b.registro = (DateTime)dr["FECHA_REGISTRO"];
 
                         lista.Add(b);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Las rectificaciones de las entradas del activo (HU-131), agrupables
+        /// por entrada. La ficha pinta, bajo cada entrada rectificada, el
+        /// original tachado y encima la ultima version con su motivo.
+        /// </summary>
+        public List<ActivoBitacoraRectificacion> GetRectificaciones(int activo)
+        {
+            List<ActivoBitacoraRectificacion> lista = new List<ActivoBitacoraRectificacion>();
+
+            if (activo <= 0 || !Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_BITACORA_RECTIFICACION";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoBitacoraRectificacion x = new ActivoBitacoraRectificacion();
+                        x.bitacora = int.Parse(dr["BITACORA"].ToString());
+                        x.bre_id = int.Parse(dr["BRE_ID"].ToString());
+                        x.texto = dr["TEXTO"].ToString();
+                        x.motivo = dr["MOTIVO"].ToString();
+                        x.usuario = dr["USUARIO_NOMBRE"].ToString();
+                        if (dr["FECHA"] != DBNull.Value) x.fecha = (DateTime)dr["FECHA"];
+                        lista.Add(x);
                     }
                 }
 

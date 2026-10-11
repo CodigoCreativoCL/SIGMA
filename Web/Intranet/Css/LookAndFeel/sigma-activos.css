@@ -1557,6 +1557,23 @@ body:has(.sg-a3--v3) .sg-page-head{display:none}
 .sg-a3--v3 .sg-bn-form textarea:focus{outline:3px solid rgba(22,198,201,.27);border-color:#007F8A}
 .sg-a3--v3 .sg-bn-form.es-falta textarea{border-color:#C7352B}
 .sg-a3--v3 .sg-bn-form>div{display:flex;justify-content:flex-end;gap:8px}
+/* rectificaciones (HU-131): el original tachado y, encima, la correccion con su motivo */
+.sg-a3--v3 .sg-bn-original{opacity:.7}
+.sg-a3--v3 .sg-bn-original del{color:#68738A;text-decoration-color:#B65C00}
+.sg-a3--v3 .sg-bn-rects{display:flex;flex-direction:column;gap:8px;margin:6px 0 2px}
+.sg-a3--v3 .sg-bn-rect{padding:8px 12px;border-left:3px solid #E2E7F0;border-radius:0 12px 12px 0;background:#F4F6FA}
+.sg-a3--v3 .sg-bn-rect.es-vigente{border-left-color:#6732F4;background:#F2EFFF}
+.sg-a3--v3 .sg-bn-rect>p{margin:6px 0}
+.sg-a3--v3 .sg-bn-rect-motivo{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:#68738A}
+.sg-a3--v3 .sg-bn-rect .sg-bn-meta{display:block;margin-top:4px}
+/* el formulario de rectificar: dos campos (texto corregido y motivo obligatorio) */
+.sg-a3--v3 .sg-bn-rect-form{display:flex;flex-direction:column;gap:8px;margin-top:8px}
+.sg-a3--v3 .sg-bn-rect-form[hidden]{display:none}
+.sg-a3--v3 .sg-bn-rect-form textarea,.sg-a3--v3 .sg-bn-rect-form input{width:100%;padding:10px 12px;border:1px solid #CFD6E3;border-radius:12px;background:#fff;font:inherit;font-size:14px;color:#17223B}
+.sg-a3--v3 .sg-bn-rect-form textarea{min-height:64px;resize:vertical}
+.sg-a3--v3 .sg-bn-rect-form textarea:focus,.sg-a3--v3 .sg-bn-rect-form input:focus{outline:3px solid rgba(22,198,201,.27);border-color:#007F8A}
+.sg-a3--v3 .sg-bn-rect-form.es-falta textarea,.sg-a3--v3 .sg-bn-rect-form.es-falta input{border-color:#C7352B}
+.sg-a3--v3 .sg-bn-rect-form>div{display:flex;justify-content:flex-end;gap:8px}
 /* el cuadro para escribir una nota nueva */
 .sg-a3--v3 .sg-a3-obs{display:flex;flex-direction:column;gap:10px;margin-top:16px;padding:14px;border-radius:16px;background:#fff;border:1px solid #E2E7F0}
 .sg-a3--v3 .sg-a3-obs textarea.sg-ot-textarea{width:100%;min-height:84px;padding:12px 14px;border:1px solid #CFD6E3;border-radius:12px;font:inherit;font-size:14px;color:#17223B;resize:vertical;background:#fff}
