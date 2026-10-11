@@ -4,16 +4,16 @@
 
    Qué deja (cliente 1, Hamburgo):
      · OT 1 (ACT-10, 08-10): una foto de la orden y fotos en sus 4 pasos con los tres
-       momentos (Antes, Durante, Después), un video, una FIRMA y una foto DESHABILITADA.
+       momentos (Antes, Durante, Después), una FIRMA y una foto DESHABILITADA.
        → Criterio 1: agrupadas por paso y por momento; la firma y la deshabilitada no salen.
      · OT 5 (ACT-10, 09-10): Antes en el paso 1, Después en el paso 4 y un PDF.
        → Criterio 2: la galería de ACT-10 junta las dos órdenes ordenadas por fecha.
      · OT 2 (ACT-4): una foto de falla que NO debe aparecer en la galería de ACT-10.
 
-   Los archivos reutilizan blobs que ya existen (fotos de ACT-10, un video, un PDF y
-   una firma), así que se ven en VerArchivo.aspx sin subir nada. La web no borra
+   Los archivos reutilizan blobs que ya existen (fotos de ACT-10, un PDF y una firma), así que se ven en VerArchivo.aspx sin subir nada. La web no borra
    blobs (Almacenamiento.Eliminar no tiene llamadas), así que compartir la ruta no
-   pone en riesgo la foto original.
+   pone en riesgo la foto original. Sin video: los dos de la base (archivos 19 y 20)
+   no están en el almacenamiento (VerArchivo responde 500), así que no sirven de fuente.
    Se reconocen por arc_nombre_original LIKE 'PRUEBA_HU142_%'. Para quitarlas, el
    bloque comentado del final. Idempotente: si ya están, no hace nada.
    ============================================================================ */
@@ -40,7 +40,7 @@ DECLARE @S TABLE (n INT, ot INT, paso INT NULL, fuente INT, categoria VARCHAR(20
 INSERT @S VALUES
  ( 1, 1, NULL,  8, 'ANTES',     N'Vista general antes de intervenir',     30, 1),
  ( 2, 1,    1, 10, 'ANTES',     N'Tablero desenergizado y bloqueado',     40, 1),
- ( 3, 1,    2, 19, 'DURANTE',   N'Video del drenaje de aceite',           55, 1),
+ ( 3, 1,    2, 14, 'DURANTE',   N'Drenaje del aceite usado',              55, 1),
  ( 4, 1,    2, 11, 'DURANTE',   N'Aceite usado en el recipiente',         60, 1),
  ( 5, 1,    3, 12, 'DURANTE',   N'Nivel de aceite nuevo en el visor',     75, 1),
  ( 6, 1,    4,  8, 'DESPUES',   N'Equipo energizado y en marcha',         90, 1),
