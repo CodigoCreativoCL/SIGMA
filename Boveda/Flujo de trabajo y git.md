@@ -7,4 +7,5 @@
 - **Al cerrar cada bloque:** skill `sigma-cerrar-bloque` (regenera `Boveda/Estado automatico.md`, actualiza la nota afectada y la bitácora de `MD/SIGMA_ESTADO_DESARROLLO.md`).
 - **Reparto:** por historia completa (desde el Sprint 5, quien la toma hace todo: código, pruebas y validación). Se agrupan historias que tocan el mismo código.
 - **Cierre de sprint:** las validaciones de la PO se marcan Terminadas; la retro incluye el feedback del cliente. Entregables Fase 2: ver MD §Entregables.
-- **Migraciones SQL:** número correlativo en `BD/`; avisar al equipo cuál aplicar tras el pull.
+- **Migraciones SQL:** antes de crear una, `git fetch` y `python -I Dev/siguiente_migracion.py` (mira master y todas las ramas: evita que dos personas usen el mismo número). Avisar al equipo cuál aplicar tras el pull.
+- **Antes de empezar cada día:** `git fetch && git merge origin/master` en tu rama personal. Si choca el MD de estado o la bóveda, conservar ambos lados.

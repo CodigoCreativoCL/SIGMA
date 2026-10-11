@@ -6,7 +6,7 @@ Punto de entrada del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md` (estado, decision
 
 ## Estándar de UI — obligatorio en toda vista, modal, ficha o componente nuevo
 
-**Fuente:** `Fase 2/Diseno/2_Diseno_Web/Planificacion360/SIGMA-Paleta-UI-Propuesta.html` (paleta extraída del logo). Antes de diseñar o modificar una pantalla, léela; si algo de esta sección no alcanza, manda ese archivo.
+**Fuente:** `Fase 2/Diseno/2_Diseno_Web/Redisenos/Planificacion360/SIGMA-Paleta-UI-Propuesta.html` (paleta extraída del logo). Antes de diseñar o modificar una pantalla, léela; si algo de esta sección no alcanza, manda ese archivo.
 
 ### Tokens (no repetir hex sueltos: declarar estas variables y usarlas)
 

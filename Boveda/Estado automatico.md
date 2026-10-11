@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:48 · rama: `BryanChavez` · HEAD `fea7e0f4`
+Generado: 2026-10-11 16:52 · rama: `BryanChavez` · HEAD `afa73185`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,8 @@ Generado: 2026-10-11 16:48 · rama: `BryanChavez` · HEAD `fea7e0f4`
 
 ## Últimos commits
 
+- afa73185 2026-10-11 Nessgod: Bóveda: reglas del equipo (acuerdos comunes para las tres sesiones)
+- 59fd61f1 2026-10-11 Nessgod: Herramientas compartidas en Dev (bom.py, sql_aplicar.py); referencias de la bóveda al día
 - fea7e0f4 2026-10-11 Nessgod: Rutas de rediseños actualizadas en prompts
 - 46b48ef0 2026-10-11 Nessgod: Diseño ordenado: Esquema BD, Diseño Web (arquitectura, UML, rediseños) y Diseño App; docs/ y capturas/ reubicadas
 - 93098eb5 2026-10-11 Nessgod: BD ordenada por contexto: índice generado en la bóveda, semillas y respaldos en subcarpetas
@@ -23,8 +25,6 @@ Generado: 2026-10-11 16:48 · rama: `BryanChavez` · HEAD `fea7e0f4`
 - 2b49959a 2026-10-11 Nessgod: Bóveda: flujo de git pensado para el equipo de 3
 - d8806ebe 2026-10-11 Nessgod: Bóveda: mapa de código por flujo
 - 8830a6f9 2026-10-11 Nessgod: Cerebro compartido: skills sigma-cerebro y sigma-cerrar-bloque, estado automático de la bóveda
-- 443d9315 2026-10-11 Nessgod: Bóveda Obsidian de SIGMA (segundo cerebro para ahorrar tokens)
-- a8f623ea 2026-10-11 Nessgod: Rendimiento: Min Pool Size=20 y cadena mas corta en la ficha de activo
 
 ## Módulos y pantallas
 

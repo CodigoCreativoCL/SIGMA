@@ -33,7 +33,7 @@ Regla visible en la interfaz: «¿Te importa esa pieza en particular? → subact
 
 ## Sistema visual (obligatorio)
 
-Sigue el **Estándar de UI de `CLAUDE.md`** y su fuente `Fase 2/Diseno/2_Diseno_Web/Planificacion360/SIGMA-Paleta-UI-Propuesta.html`: tokens `--sigma-purple` #6732F4, `--sigma-blue` #087BEA, `--sigma-cyan` #16C6C9 / `--sigma-cyan-dark` #007F8A, `--ink`, `--muted`, `--line`, `--canvas`, y los semánticos `--success` / `--warning` / `--danger`. Nada de hex sueltos.
+Sigue el **Estándar de UI de `CLAUDE.md`** y su fuente `Fase 2/Diseno/2_Diseno_Web/Redisenos/Planificacion360/SIGMA-Paleta-UI-Propuesta.html`: tokens `--sigma-purple` #6732F4, `--sigma-blue` #087BEA, `--sigma-cyan` #16C6C9 / `--sigma-cyan-dark` #007F8A, `--ink`, `--muted`, `--line`, `--canvas`, y los semánticos `--success` / `--warning` / `--danger`. Nada de hex sueltos.
 
 - **Botones por función:** primario morado (Guardar, Crear OT, Nuevo activo) · secundario turquesa oscuro con texto blanco (Ubicaciones, acción paralela) · contorno azul (Abrir 360°, ver/navegar) · ghost morado suave (Cancelar) · rojo solo para eliminar. Máximo una morada y una turquesa por grupo.
 - **Pestañas del módulo:** texto morado + subrayado de 3 px, contador en chip morado suave.
