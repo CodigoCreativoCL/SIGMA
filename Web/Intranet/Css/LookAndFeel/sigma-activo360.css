@@ -1304,6 +1304,7 @@ a.sg-cond-card.es-oculta { display: none; }
 }
 .sg-doc-badge.es-evidencia { background: rgba(37, 99, 235, .85); }
 .sg-doc-badge.es-fotografia { background: rgba(0, 191, 174, .9); }
+.sg-doc-badge.es-referencia { background: rgba(103, 50, 244, .88); } /* --sigma-purple: la referencia (HU-143) */
 
 .sg-ot-ev-card { position: relative; }
 .sg-ot-ev-card.es-oculta { display: none; }

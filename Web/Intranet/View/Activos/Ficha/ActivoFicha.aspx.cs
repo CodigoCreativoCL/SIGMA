@@ -3643,14 +3643,18 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         List<ActivoArchivoOrigen> archivos = new ActivoArchivoController().GetTodos(a.act_id, _cliente)
                                              ?? new List<ActivoArchivoOrigen>();
 
+        /* La referencia (HU-143) es su propia vista: mezclada con las fotos del activo o con
+           las de terreno, no se sabe si se mira el modelo o lo que se encontró. */
         int evidencias = archivos.Count(x => x.es_evidencia);
-        int fotos = archivos.Count(x => x.es_imagen && !x.es_evidencia);
-        int documentos = archivos.Count(x => !x.es_imagen && !x.es_evidencia);
+        int referencias = archivos.Count(x => x.es_referencia);
+        int fotos = archivos.Count(x => x.es_imagen && !x.es_evidencia && !x.es_referencia);
+        int documentos = archivos.Count(x => !x.es_imagen && !x.es_evidencia && !x.es_referencia);
 
         litEvTodas.Text = archivos.Count.ToString();
         litEvDocs.Text = documentos.ToString();
         litEvFotos.Text = fotos.ToString();
         litEvEvidencias.Text = evidencias.ToString();
+        litEvRefs.Text = referencias.ToString();
 
         pnlSinArchivos.Visible = archivos.Count == 0;
 
@@ -3675,7 +3679,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         foreach (ActivoArchivoOrigen f in archivos)
         {
-            string clase = f.es_evidencia ? "evidencia" : (f.es_imagen ? "fotografia" : "documento");
+            string clase = f.es_evidencia ? "evidencia" : f.es_referencia ? "referencia" : (f.es_imagen ? "fotografia" : "documento");
             string url = UrlArchivo.Ver(f.arc_id);
             string buscar = (Texto(f.nombre) + " " + Texto(f.origen_etiqueta) + " " + Texto(f.usuario)).ToLower();
 
@@ -3720,7 +3724,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                de doce fotos, leer doce pies para encontrar la de la OT es
                justo lo que se quiere evitar. */
             s.Append("<span class=\"sg-doc-badge es-").Append(clase).Append("\">")
-             .Append(clase == "evidencia" ? "Terreno" : (clase == "fotografia" ? "Foto" : "Documento"))
+             .Append(clase == "evidencia" ? "Terreno" : clase == "referencia" ? "Referencia" : (clase == "fotografia" ? "Foto" : "Documento"))
              .Append("</span>");
 
             s.Append("</span>");
@@ -3741,9 +3745,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                  .Append("<span>").Append(Server.HtmlEncode(Texto(f.descripcion))).Append("</span></span>")
 
                  .Append("<span class=\"c-dato\"><span class=\"sg-ot-chip ")
-                 .Append(clase == "evidencia" ? "es-info" : (clase == "fotografia" ? "es-tarea" : "es-neutro"))
+                 .Append(clase == "evidencia" ? "es-info" : clase == "referencia" ? "es-tipo" : (clase == "fotografia" ? "es-tarea" : "es-neutro"))
                  .Append("\">")
-                 .Append(clase == "evidencia" ? "Evidencia" : (clase == "fotografia" ? "Fotografía" : "Documento"))
+                 .Append(clase == "evidencia" ? "Evidencia" : clase == "referencia" ? "Referencia" : (clase == "fotografia" ? "Fotografía" : "Documento"))
                  .Append("</span></span>")
 
                  .Append("<span class=\"c-dato\">").Append(Server.HtmlEncode(Texto(f.origen_etiqueta))).Append("</span>")

@@ -16,24 +16,92 @@ namespace Tools
     public static class Crypto
     {
 
-        //Codificar Base 64
-        public static string Encrypt(string str)
+        /* ------------------------------------------------------------------------------------
+           IDS DE URL FIRMADOS (11-10-2026)
+           Encrypt/Decrypt protegen lo que viaja en ?query= y en los tokens de los WebMethod
+           ("Id=1", "IdCliente=3&TipoPerfil=2", ...). Hasta esta fecha eran solo base64: "Id=1"
+           salía como SWQ9MQ== y cualquiera podía armar el id de otro registro cambiando el número.
+
+           Ahora el texto va FIRMADO con HMAC-SHA256 y una clave secreta (appSettings «IdFirma»):
+               base64url(texto) + "." + base64url(primeros 16 bytes del HMAC)
+           El contenido sigue legible, pero alterarlo invalida la firma y Decrypt devuelve "",
+           igual que antes con un texto mal formado: quien llama ya trata "" como «no vino».
+           Es determinista (la misma URL para el mismo registro) y usa base64url, así que no lleva
+           '+', '/' ni '=' y no se rompe con o sin UrlEncode/UrlDecode.
+           Los enlaces viejos (base64 sin firma) dejan de abrir a propósito: aceptarlos dejaría
+           el hueco abierto. Decisión de Catalina, 11-10-2026.
+           ------------------------------------------------------------------------------------ */
+        private const int BytesFirma = 16;
+        private static byte[] _claveFirma;
+
+        private static byte[] ClaveFirma()
         {
-            byte[] encbuff = System.Text.Encoding.UTF8.GetBytes(str);
-            return Convert.ToBase64String(encbuff);
+            if (_claveFirma != null) return _claveFirma;
+            string clave = ConfigurationManager.AppSettings["IdFirma"];
+            if (string.IsNullOrEmpty(clave) || clave.Length < 32)
+                throw new ConfigurationErrorsException("Falta la clave «IdFirma» (32 caracteres o más) en appSettings: sin ella no se pueden firmar los ids de las URL.");
+            _claveFirma = Encoding.UTF8.GetBytes(clave);
+            return _claveFirma;
         }
 
-        //Decodificar Base 64
+        private static byte[] Firma(string datos)
+        {
+            using (HMACSHA256 h = new HMACSHA256(ClaveFirma()))
+            {
+                byte[] completa = h.ComputeHash(Encoding.ASCII.GetBytes(datos));
+                byte[] corta = new byte[BytesFirma];
+                Buffer.BlockCopy(completa, 0, corta, 0, BytesFirma);
+                return corta;
+            }
+        }
+
+        private static string B64Url(byte[] b)
+        {
+            return Convert.ToBase64String(b).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        }
+
+        private static byte[] DeB64Url(string s)
+        {
+            string b = s.Replace('-', '+').Replace('_', '/');
+            switch (b.Length % 4) { case 2: b += "=="; break; case 3: b += "="; break; case 1: throw new FormatException(); }
+            return Convert.FromBase64String(b);
+        }
+
+        /// <summary>Compara en tiempo constante: el tiempo de respuesta no revela cuántos bytes de la firma acertó.</summary>
+        private static bool Iguales(byte[] a, byte[] b)
+        {
+            if (a == null || b == null || a.Length != b.Length) return false;
+            int dif = 0;
+            for (int i = 0; i < a.Length; i++) dif |= a[i] ^ b[i];
+            return dif == 0;
+        }
+
+        /// <summary>Firma el texto para la URL: base64url(texto).firma.</summary>
+        public static string Encrypt(string str)
+        {
+            string datos = B64Url(Encoding.UTF8.GetBytes(str ?? ""));
+            return datos + "." + B64Url(Firma(datos));
+        }
+
+        /// <summary>Devuelve el texto si la firma es válida; "" si falta, está mal formado o fue alterado.</summary>
         public static string Decrypt(string str)
         {
             try
             {
-                byte[] decbuff = Convert.FromBase64String(str);
-                return System.Text.Encoding.UTF8.GetString(decbuff);
+                if (string.IsNullOrEmpty(str)) return "";
+                int punto = str.LastIndexOf('.');
+                if (punto <= 0 || punto == str.Length - 1) return "";
+                string datos = str.Substring(0, punto);
+                if (!Iguales(DeB64Url(str.Substring(punto + 1)), Firma(datos))) return "";
+                return Encoding.UTF8.GetString(DeB64Url(datos));
+            }
+            catch (ConfigurationErrorsException)
+            {
+                throw;
             }
             catch
             {
-                { return ""; }
+                return "";
             }
         }
 
