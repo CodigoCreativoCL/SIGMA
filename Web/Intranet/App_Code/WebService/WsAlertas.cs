@@ -108,7 +108,7 @@ public class WsAlertas : System.Web.Services.WebService
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Leer(string datos)
     {
-        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista");
+        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista"); SitioBase.CacheSesion.BorrarSesion("alertas_200");
         Respuesta respuesta = new Respuesta();
 
         try
@@ -159,7 +159,7 @@ public class WsAlertas : System.Web.Services.WebService
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Revisar()
     {
-        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista");
+        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista"); SitioBase.CacheSesion.BorrarSesion("alertas_200");
         Respuesta respuesta = SesionValida();
         if (respuesta.error) return Serializar(respuesta);
 
@@ -183,7 +183,7 @@ public class WsAlertas : System.Web.Services.WebService
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string CambiarEstado(int alerta, string estado, string motivo)
     {
-        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista");
+        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista"); SitioBase.CacheSesion.BorrarSesion("alertas_200");
         Respuesta respuesta = SesionValida();
         if (!respuesta.error)
             respuesta = new AlertaController().CambiarEstado(alerta, estado, motivo);
@@ -196,7 +196,7 @@ public class WsAlertas : System.Web.Services.WebService
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Asignar(int alerta, int responsable)
     {
-        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista");
+        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista"); SitioBase.CacheSesion.BorrarSesion("alertas_200");
         Respuesta respuesta = SesionValida();
         if (!respuesta.error)
             respuesta = new AlertaController().AsignarResponsable(alerta, responsable);
@@ -209,7 +209,7 @@ public class WsAlertas : System.Web.Services.WebService
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string GenerarOrden(int alerta)
     {
-        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista");
+        SitioBase.CacheSesion.BorrarSesion("alertas_resumen"); SitioBase.CacheSesion.BorrarSesion("alertas_lista"); SitioBase.CacheSesion.BorrarSesion("alertas_200");
         Respuesta respuesta = SesionValida();
         if (!respuesta.error)
             respuesta = new AlertaController().GenerarOrdenTrabajo(alerta);

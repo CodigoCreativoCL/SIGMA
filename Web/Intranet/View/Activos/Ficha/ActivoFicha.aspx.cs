@@ -2515,20 +2515,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         Dictionary<int, List<DgUbic>> res = new Dictionary<int, List<DgUbic>>();
         try
         {
-            BodegaMapaController bm = new BodegaMapaController();
-            System.Data.DataTable est = bm.GetEstructura(0), sal = bm.GetSaldos(0);
+            /* RENDIMIENTO (11-10-2026): estructura de bodegas, saldos y posiciones eran tres
+               lecturas en fila (~0,7 s); son independientes y salen a la vez. */
+            int cliBm = _cliente;
+            var tEst = SitioBase.Paralelo.Pedir(() => new BodegaMapaController().GetEstructura(0));
+            var tSal = SitioBase.Paralelo.Pedir(() => new BodegaMapaController().GetSaldos(0));
+            var tPos = SitioBase.Paralelo.Pedir(() =>
+            {
+                System.Data.SqlClient.SqlCommand c = new System.Data.SqlClient.SqlCommand();
+                c.CommandText = "SEL_BODEGA_MAPA_POSICIONES";
+                c.Parameters.AddWithValue("@CLIENTE", cliBm);
+                c.Parameters.AddWithValue("@INSTALACION", DBNull.Value);
+                return Conexion.GetDataTable(c);
+            });
+            System.Data.DataTable est = tEst.Result, sal = tSal.Result;
             Dictionary<int, string[]> bod = new Dictionary<int, string[]>(), ubi = new Dictionary<int, string[]>();
             foreach (System.Data.DataRow f in est.Rows)
             {
                 bod[Convert.ToInt32(f["BOD_ID"])] = new[] { Convert.ToString(f["BOD_NOMBRE"]), Convert.ToString(f["CIN_NOMBRE"]) };
                 if (f["BUB_ID"] != DBNull.Value) ubi[Convert.ToInt32(f["BUB_ID"])] = new[] { Convert.ToString(f["BUB_CODIGO"]), Convert.ToString(f["BUB_NOMBRE"]) };
             }
-            System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
-            cmd.CommandText = "SEL_BODEGA_MAPA_POSICIONES";
-            cmd.Parameters.AddWithValue("@CLIENTE", _cliente);
-            cmd.Parameters.AddWithValue("@INSTALACION", DBNull.Value);
             Dictionary<string, System.Data.DataRow> pos = new Dictionary<string, System.Data.DataRow>();
-            foreach (System.Data.DataRow f in Conexion.GetDataTable(cmd).Rows) pos[f["BUB_ID"] + "_" + f["REP_ID"]] = f;
+            foreach (System.Data.DataRow f in tPos.Result.Rows) pos[f["BUB_ID"] + "_" + f["REP_ID"]] = f;
 
             foreach (System.Data.DataRow f in sal.Rows)
             {
@@ -4323,7 +4331,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         /* RENDIMIENTO (11-10-2026): alertas y variables no dependen una de otra; despues, la
            prediccion y la serie de cada variable salen a la vez (antes eran ~9 lecturas en fila). */
         int cliAi = _cliente, actAi = a.act_id;
-        var tAlertas = SitioBase.Paralelo.Pedir(() => new AlertaController().GetAlertas(false, 200));
+        var tAlertas = SitioBase.Paralelo.Pedir(() => SitioBase.CacheSesion.Sesion("alertas_200", 1, () => new AlertaController().GetAlertas(false, 200)));
         var tVars = SitioBase.Paralelo.Pedir(() => new ActivoVariableController().GetVariables(
             new ActivoVariable { ava_cliente = cliAi, filtro_activo = actAi, filtro_habilitado = true }));
         List<Alerta> alertas = tAlertas.Result ?? new List<Alerta>();
