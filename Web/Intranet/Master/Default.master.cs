@@ -12,7 +12,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
 {
     protected void Page_Load(object sender, EventArgs e)
     {
-        CargarAlertas();
+        using (SitioBase.Medida.Tramo("alertas")) CargarAlertas();
 
         if (!SitioBase.Token.TokenSeguridad())
         {
@@ -21,14 +21,14 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         // El permiso de la pagina sale de su propia URL contra Menus.mnu_link.
         // Por eso ninguna pagina bajo este master declara su permiso.
-        SitioBase.Token.ExigirPagina();
+        using (SitioBase.Medida.Tramo("permisos")) SitioBase.Token.ExigirPagina();
 
         /* Alimentador de la UF (ANEXO F §4).
            Se llama en cada visita pero solo trabaja una vez al dia, y nunca
            lanza: si la fuente esta caida, arrastra el ultimo valor conocido
            y sigue. Va aqui porque este hosting no da SQL Agent; el dia que
            lo haya, se programa el job y esta linea se retira. */
-        UfController.AsegurarValorDeHoy();
+        using (SitioBase.Medida.Tramo("uf")) UfController.AsegurarValorDeHoy();
 
         /* Compuerta de suscripcion (ANEXO F §6.6 · HU-193).
            Va DESPUES de ExigirPagina: primero se resuelve si la persona
@@ -36,7 +36,7 @@ public partial class Master_Default : System.Web.UI.MasterPage
            dia. Al reves, un cliente vencido veria la pagina de renovacion
            al pedir una pantalla que igual tenia prohibida.
            No aplica a las cuentas de plataforma, que no tienen cliente. */
-        SitioBase.SuscripcionAcceso.Exigir();
+        using (SitioBase.Medida.Tramo("suscripcion")) SitioBase.SuscripcionAcceso.Exigir();
     }
 
     /* ================= SOPORTE =================
@@ -105,6 +105,13 @@ public partial class Master_Default : System.Web.UI.MasterPage
         return new JavaScriptSerializer().Serialize(c).Replace("</", "<\\/");
     }
 
+    /// <summary>La cabecera Server-Timing con lo que tardó cada parte (SitioBase.Medida), justo antes de pintar.</summary>
+    protected override void Render(System.Web.UI.HtmlTextWriter writer)
+    {
+        SitioBase.Medida.Emitir();
+        base.Render(writer);
+    }
+
     protected void Page_PreRender(object sender, EventArgs e)
     {
         if (SitioBase.Token.TokenSeguridad() && Page.Header != null)
@@ -117,8 +124,8 @@ public partial class Master_Default : System.Web.UI.MasterPage
 
         if (SitioBase.Token.TokenSeguridad())
         {
-            PintarClienteActual();
-            PintarAvisoSuscripcion();
+            using (SitioBase.Medida.Tramo("cliente")) PintarClienteActual();
+            using (SitioBase.Medida.Tramo("aviso")) PintarAvisoSuscripcion();
 
             /* LA FOTO VIENE POR URL, NO INCRUSTADA (bloque 100).
 
@@ -172,8 +179,9 @@ public partial class Master_Default : System.Web.UI.MasterPage
         int idCliente = SitioBase.Session.ClienteId();
 
         ClienteSesionController controller = new ClienteSesionController();
-        System.Collections.Generic.List<SitioBase.Model.Cliente> clientes =
-            controller.GetClientesElegibles(int.Parse(SitioBase.Session.UsuarioId()));
+        // Las empresas de la persona casi no cambian: 10 minutos (el cambio de empresa vuelve a validar contra la base).
+        System.Collections.Generic.List<SitioBase.Model.Cliente> clientes = SitioBase.CacheSesion.Sesion("clientes_elegibles", 10,
+            () => controller.GetClientesElegibles(int.Parse(SitioBase.Session.UsuarioId())));
 
         int cuantos = clientes != null ? clientes.Count : 0;
 
@@ -364,9 +372,9 @@ public partial class Master_Default : System.Web.UI.MasterPage
         lnkVerTodas.NavigateUrl = ResolveUrl("~/View/Comun/Notificaciones/Notificaciones.aspx");
 
         AlertaController controller = new AlertaController();
-        AlertaResumen resumen = controller.GetResumen();
+        AlertaResumen resumen = SitioBase.CacheSesion.Sesion("alertas_resumen", 1, () => controller.GetResumen());
 
-        List<Alerta> lista = controller.GetAlertas(false, 60);
+        List<Alerta> lista = SitioBase.CacheSesion.Sesion("alertas_lista", 1, () => controller.GetAlertas(false, 60));
         if (lista == null) lista = new List<Alerta>();
 
         DateTime ahora = SitioBase.Hora.Ahora;
