@@ -209,6 +209,7 @@ namespace API.Controllers
                 int nuevo = Datos.Ejecutar("API_INS_BITACORA_RECTIFICACION",
                     new Dictionary<string, object>
                     {
+                        { "@UUID", dto.uuid },
                         { "@BITACORA", id },
                         { "@USUARIO", SesionApi.UsuarioId() },
                         { "@CLIENTE", SesionApi.ClienteId() },

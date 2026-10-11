@@ -1513,6 +1513,11 @@ namespace API.MVC.Model
 
     public class BitacoraRectificacionAltaDto
     {
+        /// <summary>Generado en el telefono al **empezar a escribir**, no al
+        /// enviar: un reintento de la cola no puede dejar dos rectificaciones
+        /// iguales. Si no viene, no hay proteccion contra el reenvio.</summary>
+        public Guid? uuid { get; set; }
+
         public string texto { get; set; }
 
         /// <summary>Obligatorio. Sin el, nadie puede saber despues si el texto
