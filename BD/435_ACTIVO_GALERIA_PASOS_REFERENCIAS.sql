@@ -1,5 +1,5 @@
 ﻿/* ============================================================================
-   431 · La galería del activo con las fotos de los pasos y las referencias (10-10-2026)
+   435 · La galería del activo con las fotos de los pasos y las referencias (10-10-2026)
    HU-142 criterio 2 y HU-143 criterio 3. Autora: Catalina Pescio.
 
    SEL_ACTIVO_ARCHIVO_TODO alimenta «Documentos y galería» de la ficha del activo.
@@ -21,7 +21,7 @@
         («OT-1 · Paso 2»); sin la categoría FIRMA.
      5. Nuevo: las referencias de la actividad del plan de la que nacen los pasos de
         sus órdenes (ORIGEN 'REFERENCIA', una vez por vínculo). Se reconocen por el
-        destino avi_plan_mantenimiento_actividad, no por avi_es_referencia (BD/429).
+        destino avi_plan_mantenimiento_actividad, no por avi_es_referencia (BD/433).
    1, 3 y 4 quedan iguales. Mismas columnas y mismo orden (FECHA DESC): la ficha no
    cambia de contrato. Aplicar con -I. Idempotente.
    ============================================================================ */
@@ -174,5 +174,5 @@ SET NOCOUNT ON
 
     ORDER BY u.FECHA DESC, u.ARC_ID DESC
 GO
-PRINT '431_ACTIVO_GALERIA_PASOS_REFERENCIAS aplicado.'
+PRINT '435_ACTIVO_GALERIA_PASOS_REFERENCIAS aplicado.'
 GO

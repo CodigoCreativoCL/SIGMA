@@ -769,3 +769,102 @@ Un repuesto aparece una sola vez, con el mejor nivel, el máximo de cantidad sug
 27. Al elegir un componente en el paso 1, la actividad propone primero sus repuestos («Del objeto mantenible») y luego los consumibles del activo.
 28. Agregar un repuesto compatible usa la cantidad sugerida. Uno no compatible queda marcado «Sin compatibilidad registrada».
 29. El stock bajo o en cero se ve antes de activar el plan.
+
+---
+
+# Anexo v8 · Ficha de OT: pestañas internas (reemplaza las pestañas anteriores)
+
+**Problema que resuelve.** La pestaña «Pasos» apilaba tarjetas sin fin:
+- Tareas;
+- Agregar desde procedimiento;
+- Mano de obra;
+- Servicios contratados;
+- Indisponibilidad;
+- un formulario de detención abierto en la página;
+- Evidencias.
+
+El técnico perdía el hilo y «Cierre» aparecía vacío.
+
+## Pestañas (5)
+
+Cada pestaña muestra título y resumen; la activa va en violeta.
+
+| Pestaña | Resumen visible | Contiene |
+|---|---|---|
+| **Resumen** | Qué, dónde y quién | Qué hay que hacer, objeto mantenible, asignación, avisos vinculados, comentarios con caja para escribir |
+| **Ejecución** | «n de m hechos» y barra de avance | Tareas, inspecciones, evidencias, y un riel lateral |
+| **Recursos** | «n repuestos · X h» | Repuestos · Mano de obra · Servicios |
+| **Cierre** | «Al terminar» (candado), «Informe y firmas», «Firmas 1/3» o «Cerrada ✓» | Informe, firmas y acta |
+| **Historial** | «N eventos» | Bitácora completa |
+
+## Ejecución (reemplaza «Pasos»)
+
+**Columna principal**
+
+Tres tarjetas, nada más:
+
+1. **Tareas:** filas compactas con:
+   - casilla y número;
+   - nombre;
+   - Obligatoria u Opcional;
+   - duración;
+   - procedimiento;
+   - chip «Foto requerida» o «N fotos».
+
+   Al tocar una fila se despliegan solo sus pasos del procedimiento (control, medición, foto), con «Foto de esta tarea» y «Marcar como hecha». Una sola fila abierta a la vez. «Agregar desde procedimiento» abre un **panel lateral**: eliges el procedimiento, ves sus pasos y se copian como tareas opcionales.
+2. **Inspecciones:** mediciones con rango y estado Normal, Advertencia o Crítico, con sus acciones (sin cambios).
+3. **Evidencias:** tira horizontal de miniaturas y «Agregar foto». La foto tomada desde una tarea queda asociada a esa tarea.
+
+**Riel lateral** (fijo al hacer scroll; en tablet pasa arriba como fila de tarjetas; en móvil va después del contenido):
+- **Avance:**
+  - anillo de porcentaje (tareas e inspecciones);
+  - tiempo registrado contra el estimado;
+  - el botón del estado («Iniciar trabajo» o «Completar y firmar»).
+- **Estado del activo:**
+  - «Detenido desde las HH:MM · N h sin operar», en rojo, o «Operando» / «Entregado a producción»;
+  - la lista de detenciones;
+  - «Registrar detención» / «Registrar fin de la detención».
+
+  El formulario va en un **panel lateral**, con:
+  - inicio y término (el término vacío significa «sigue detenido»);
+  - Planificada o No planificada;
+  - motivo;
+  - «Detuvo la producción»;
+  - detalle.
+
+  La detención alimenta la disponibilidad (MTTR/MTBF), no el tiempo de la OT.
+- **Acciones rápidas** (2 × 2): Registrar horas · Agregar repuesto · Reportar hallazgo · Comentar.
+
+## Recursos
+
+**Selector** arriba: **Repuestos (n) · Mano de obra (X h) · Servicios ($)**. Se ve una tabla a la vez.
+
+| Vista | Columnas | Registrar |
+|---|---|---|
+| Repuestos | Código, repuesto con chip de compatibilidad, planificado, **usado** (editable durante la ejecución), bodega (Reservado o Entregado) | «Agregar repuesto» abre un panel con buscador; los compatibles salen primero, con su stock. Debajo, atajos a los compatibles que faltan. |
+| Mano de obra | Persona, fecha, horas, tipo (Normal o Extra), nota, con fila de total | «Registrar horas» abre un panel |
+| Servicios | Proveedor, descripción, orden de compra, monto | «Registrar servicio» abre un panel |
+
+## Cierre
+
+- Antes de iniciar ya no aparece vacío: muestra **«Para cerrar esta OT»**, la lista de lo que se pedirá:
+  - tareas obligatorias;
+  - inspecciones;
+  - informe;
+  - firma del técnico;
+  - recepción de producción, si hay parada;
+  - firma del supervisor.
+
+  Junto a la lista va el botón para asignar o iniciar.
+- Después aplica el flujo de firmas del anexo v5.
+
+## Reglas generales
+
+- **Ningún formulario abierto dentro de la página:** registrar algo siempre abre un panel lateral y vuelve a la misma vista.
+- **Los recuentos de cada pestaña se actualizan en vivo.**
+
+## Criterios adicionales
+
+30. En Ejecución no hay más de 3 tarjetas en la columna principal. Detención, horas, servicios y repuestos se registran desde paneles laterales.
+31. El riel muestra el estado del activo en tiempo real y permite cerrar la detención con un clic.
+32. Antes de iniciar, Cierre muestra la lista de requisitos, nunca una pantalla vacía.

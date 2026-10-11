@@ -1,5 +1,5 @@
 ﻿/* ============================================================================
-   429 · Galería de evidencias: revisión del modelo e índices de apoyo (10-10-2026)
+   433 · Galería de evidencias: revisión del modelo e índices de apoyo (10-10-2026)
    HU-142 (T-5250, T-5252) y base de HU-143 (T-5261). Autora: Catalina Pescio.
 
    REVISIÓN DEL MODELO (Archivo_Vinculo) — lo que no se deduce mirando la tabla
@@ -46,5 +46,5 @@ IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE object_id = OBJECT_ID('dbo.Archiv
     CREATE NONCLUSTERED INDEX IX_AVI_CPI ON [dbo].[Archivo_Vinculo] (avi_checklist_plantilla_item)
         INCLUDE (avi_archivo, avi_orden, avi_habilitado) WHERE avi_checklist_plantilla_item IS NOT NULL
 GO
-PRINT '429_GALERIA_EVIDENCIAS_MODELO aplicado.'
+PRINT '433_GALERIA_EVIDENCIAS_MODELO aplicado.'
 GO

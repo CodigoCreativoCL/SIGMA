@@ -2175,6 +2175,98 @@ body.enlarged .side.v2 .sub-sep{margin-left:10px}
 .rpc-cat{height:34px;max-width:420px}
 @media (max-width:900px){.rp2{grid-template-columns:minmax(0,1fr) auto 32px}.rp2 .s{grid-column:1/-1}.rp2-t{grid-column:1/3}.rc{grid-template-columns:minmax(0,1fr) auto}.rc .s{grid-column:1/-1}.rc-f,.rc-q{display:none}}
 
+/* v8 · ficha de OT: pestañas y ejecución */
+.ott2{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;padding:4px;border-radius:16px;background:#fff;box-shadow:var(--e1)}
+.ott2 button{position:relative;border:0;background:transparent;text-align:left;padding:10px 14px 12px;border-radius:12px;display:flex;flex-direction:column;gap:2px;color:inherit;min-width:0;overflow:hidden}
+.ott2 button:hover{background:var(--surface-2)}
+.ott2 button[aria-selected="true"]{background:var(--sigma-purple-soft);box-shadow:inset 0 0 0 1.5px var(--sigma-purple)}
+.ott2 b{display:flex;align-items:center;gap:6px;font-size:14px;font-weight:800}
+.ott2 button[aria-selected="true"] b{color:var(--sigma-purple)}
+.ott2 small{font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ottp{position:absolute;left:14px;right:14px;bottom:6px;height:3px;border-radius:3px;background:var(--line3);overflow:hidden}
+.ottp i{display:block;height:100%;background:var(--sigma-purple);border-radius:3px}
+.cst{display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%}
+.cst.c-ok{background:var(--ok);color:#fff} .cst.c-lock{background:var(--chip);color:var(--muted)} .cst.c-w{background:var(--amber);width:8px;height:8px} .cst.c-p{background:var(--sigma-cyan);width:8px;height:8px}
+.otb{display:flex;flex-direction:column;gap:14px}
+.exg{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:14px;align-items:start}
+.exg-m{display:flex;flex-direction:column;gap:14px;min-width:0}
+.xbn{margin:0}
+.xbn .btn{margin-left:auto;flex:none}
+.trl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.tr{border-radius:12px;box-shadow:inset 0 0 0 1px var(--line3);background:#fff}
+.tr.open{box-shadow:inset 0 0 0 1.5px #CFC2FC}
+.tr.ok{background:#F6FBF8}
+.tr-r{display:flex;align-items:center;gap:6px;padding:4px 8px 4px 12px}
+.tr-b{flex:1;display:flex;align-items:center;gap:10px;border:0;background:transparent;text-align:left;padding:8px 4px;color:inherit;min-width:0}
+.tr-n{width:24px;height:24px;border-radius:50%;background:var(--chip);color:var(--ink-2);font-size:11.5px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none}
+.tr.ok .tr-n{background:var(--ok);color:#fff}
+.tr-t{flex:1;min-width:0}
+.tr-t b{display:block;font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr.ok .tr-t b{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--faint)}
+.tr-t small{display:block;font-size:11.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tr-m{display:flex;align-items:center;gap:8px;color:var(--faint);flex:none}
+.tr.open .tr-m .ic:last-child{transform:rotate(180deg)}
+.tr-x{padding:0 14px 12px 74px;display:flex;flex-direction:column;gap:10px}
+.tr-s{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:6px;font-size:12.5px;color:var(--ink-2)}
+.tr-s li span:first-child{margin-right:6px}
+.tr-e{font-size:12.5px;color:var(--muted)}
+.tr-a{display:flex;gap:6px;flex-wrap:wrap}
+.evs{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+.evs figure{margin:0;flex:none;width:150px;border-radius:12px;overflow:hidden;box-shadow:inset 0 0 0 1px var(--line3);background:var(--surface-2)}
+.evs svg,.evs img{display:block;width:100%;aspect-ratio:3/2;object-fit:cover}
+.evs figcaption{padding:6px 8px}
+.evs b{display:block;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.evs small{font-size:10.5px;color:var(--muted)}
+.rail{position:sticky;top:84px;display:flex;flex-direction:column;gap:12px}
+.rl-c{background:#fff;border-radius:16px;box-shadow:var(--e1);padding:14px;display:flex;flex-direction:column;gap:10px}
+.rl-av{display:flex;align-items:center;gap:12px}
+.rl-av b{display:block;font-size:13.5px}
+.rl-av small{display:block;font-size:11.5px;color:var(--muted)}
+.btn.wide{width:100%}
+.rl-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.rl-h b{font-size:13px;font-weight:800}
+.rl-st{display:flex;gap:10px;align-items:flex-start;padding:10px;border-radius:12px}
+.rl-st i{width:10px;height:10px;border-radius:50%;margin-top:4px;flex:none}
+.rl-st b{display:block;font-size:13px} .rl-st small{display:block;font-size:11.5px;color:var(--muted)}
+.rl-st.s-stop{background:var(--red-soft)} .rl-st.s-stop i{background:var(--red);box-shadow:0 0 0 4px rgba(199,53,43,.15)} .rl-st.s-stop b{color:var(--red)}
+.rl-st.s-run{background:#E7F5EE} .rl-st.s-run i{background:var(--ok)}
+.dtl{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:6px}
+.dtl li{display:flex;gap:8px;align-items:flex-start;font-size:12px}
+.dt-d{width:8px;height:8px;border-radius:50%;background:var(--faint);margin-top:5px;flex:none} .dt-d.on{background:var(--red)}
+.dtl li > span:nth-child(2){flex:1;min-width:0}
+.dtl b{display:block;font-size:12.5px} .dtl small{display:block;color:var(--muted);font-size:11px}
+.dtl em{font-style:normal;font-weight:700;color:var(--ink-2);font-size:12px}
+.qa{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.qa button{border:0;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line3);border-radius:10px;padding:10px;display:flex;flex-direction:column;align-items:flex-start;gap:6px;font-size:12px;font-weight:700;color:var(--ink-2);text-align:left}
+.qa button:hover{box-shadow:inset 0 0 0 1px #C5CDDB;background:#fff}
+.qa .ic{color:var(--sigma-purple)}
+.rseg{display:flex;gap:6px;flex-wrap:wrap}
+.rseg button{display:inline-flex;align-items:center;gap:8px;height:40px;padding:0 14px;border:0;border-radius:12px;background:#fff;box-shadow:var(--e1);font-size:13px;font-weight:700;color:var(--ink-2)}
+.rseg button b{font-size:12px;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.rseg button[aria-selected="true"]{background:var(--ink);color:#fff;box-shadow:none} .rseg button[aria-selected="true"] b{background:rgba(255,255,255,.15);color:#fff}
+.rseg .ic{color:inherit;opacity:.8}
+.rtb .rw .s small{display:flex;gap:6px;margin-top:2px}
+.rw.tot{border-top:1.5px solid var(--line);background:var(--surface-2);border-radius:0 0 10px 10px}
+.rsug{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid var(--line3);font-size:12px}
+.rsug > b{display:inline-flex;align-items:center;gap:5px;color:var(--ink-2);margin-right:4px}
+.rsug .tg{border:0;cursor:pointer}
+.rsug .tg:hover{background:var(--sigma-cyan-soft);color:var(--sigma-cyan-dark)}
+.cmc-r{display:flex;gap:8px;align-items:flex-end}
+.cmc-r textarea{flex:1}
+.cpre-h{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.cpre-h .ei{width:40px;height:40px;border-radius:12px;background:var(--surface-2);display:flex;align-items:center;justify-content:center;color:var(--muted)}
+.cpre-h > div{flex:1;min-width:220px}
+.cpre-h h3{font-size:15px;font-weight:800} .cpre-h p{font-size:12.5px;color:var(--muted)}
+.ckl{list-style:none;margin:14px 0 0;padding:0;display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:8px}
+.ckl li{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:12px;background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--line3)}
+.ck-i{width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:inset 0 0 0 1px var(--line);display:flex;align-items:center;justify-content:center;color:var(--faint);flex:none}
+.ckl b{display:block;font-size:13px} .ckl small{display:block;font-size:11.5px;color:var(--muted)}
+.mini-r.on{box-shadow:inset 0 0 0 1.5px var(--sigma-purple);background:var(--sigma-purple-soft)}
+.mini-r:disabled{opacity:.5}
+@media (max-width:1100px){.exg{grid-template-columns:minmax(0,1fr)}.rail{position:static;order:-1;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}}
+@media (max-width:900px){.ott2{grid-template-columns:repeat(5,minmax(120px,1fr));overflow-x:auto}.tr-x{padding-left:14px}}
+@media (max-width:640px){.rail{order:1}}
+
 .nb.g{background:rgba(255,255,255,.1);color:#D3D8E8}
 body.enlarged .side.v2 .nb.g{background:#C9CFE0}
 [hidden]{display:none!important}
@@ -5570,6 +5662,183 @@ NA.addcompall = d => { const p = curPlan(), cands = compatFor(planScope(p)).filt
 NA.rcmore = d => { U.vp[d.v] = !U.vp[d.v]; render(); };
 document.addEventListener('input', e => { const t = e.target; if (t.dataset.rcq) { U.vp[t.dataset.rcq + 'q'] = t.value; renderSoon(); } }, true);
 FKEYS.push('rcq');
+
+/* =====================================================================
+   v8 · Ficha de OT: pestañas limpias
+   Resumen · Ejecución · Recursos · Cierre · Historial
+   - Ejecución: tareas compactas desplegables + inspecciones + evidencias,
+     con un riel lateral (avance, estado del activo, acciones rápidas)
+   - Recursos: repuestos · mano de obra · servicios en una sola vista
+   - Registrar detención / horas / servicio / tareas: en paneles laterales
+   ===================================================================== */
+Object.assign(U, { trx: null, rct: 'rep' });
+// tareas agregadas en terreno desde un procedimiento y repuestos agregados a la OT
+otSteps = (f => o => f(o).concat(((OTM[o.id] || {}).xt || []).map((t, i) => ({ k: 'X' + i, n: t.n, sub: null, oblig: false, reps: [], dur: t.dur, from: t.from }))))(otSteps);
+otReps = (f => o => { const m = Object.fromEntries(f(o)); ((OTM[o.id] || {}).xr || []).forEach(([c, q]) => { m[c] = (m[c] || 0) + q; }); return Object.entries(m); })(otReps);
+// semillas: horas y detención de la OT en curso
+const LSEED = { 'OT-4688': [{ p: 'bc', d: TODAY, h: 2, t: 'Normal', n: 'Desmontaje y cambio de sello' }, { p: 'jp', d: TODAY, h: .5, t: 'Normal', n: 'Supervisión y prueba' }], 'OT-4685': [{ p: 'ar', d: addD(TODAY, -24), h: 3.5, t: 'Normal', n: '' }], 'OT-4695': [{ p: 'jp', d: addD(TODAY, -3), h: 1.2, t: 'Normal', n: '' }] };
+const dAgo = mins => { const n = new Date(Date.now() - mins * 6e4); return `${iso(n)}T${pad(n.getHours())}:${pad(n.getMinutes())}`; };
+const DSEED = { 'OT-4688': [{ a: dAgo(100), b: null, tipo: 'No planificada', mot: 'Falla del activo', prod: true, det: 'Línea 2 detenida por fuga en PH-205' }] };
+const SSEED = { 'OT-4685': [{ prov: 'Contratista Atlas Copco Service', desc: 'Análisis de vibraciones posterior', oc: 'OC-22817', m: 185000 }] };
+const otm = id => OTM[id] = OTM[id] || {};
+const labOf = id => { const m = otm(id); if (!m.lab) m.lab = clone(LSEED[id] || []); return m.lab; };
+const detOf = id => { const m = otm(id); if (!m.det) m.det = clone(DSEED[id] || []); return m.det; };
+const srvOf = id => { const m = otm(id); if (!m.srv) m.srv = clone(SSEED[id] || []); return m.srv; };
+const hmOf = s => s ? s.slice(11, 16) : '';
+const detHrs = d => { const a = new Date(d.a), b = d.b ? new Date(d.b) : new Date(); return Math.max(0, (b - a) / 36e5); };
+const clp = n => '$' + fN(n);
+const nowLocal = () => { const n = new Date(); return `${TODAY}T${pad(n.getHours())}:${pad(n.getMinutes())}`; };
+
+/* ---------- pestañas ---------- */
+const otPage1 = otPageHTML;
+otPageHTML = function () {
+  const o = otGet(U.ot); if (!o) return otPage1();
+  if (U.ott === 'pas' || U.ott === 'evi') U.ott = 'eje'; if (U.ott === 'rep') U.ott = 'rec';
+  const cur = U.ott, reuse = ['res', 'cie', 'his'].includes(cur);
+  U.ott = reuse ? cur : 'his'; const html = otPage1(); U.ott = cur;
+  const i = html.indexOf('<div class="tabs" role="tablist">'), rest = html.slice(i), j = rest.indexOf('</div>') + 6;
+  const prefix = html.slice(0, i), body = reuse ? rest.slice(j) : cur === 'eje' ? otExecHTML(o) : otResHTML(o);
+  const b2 = cur === 'res' ? body.replace('data-a="ottab" data-v="evi">Ver todos', 'data-a="cmfocus">Escribir') + `<section class="card cmc"><div class="sc-h"><h3>Nuevo comentario</h3><small>Lo ve todo el activo de la OT</small></div><div class="cmc-r"><textarea id="cmt" class="inp" rows="2" placeholder="Escribe para el activo de la OT"></textarea><button type="button" class="btn out sm" data-a="cmtadd">${ic('send', 14)}Publicar</button></div></section>` : body;
+  return prefix + otTabs(o) + `<div class="otb">${b2}</div>`;
+};
+function otTabs(o) {
+  const m = otm(o.id), steps = otSteps(o), ins = otInsp(o), iv = m.iv || {}, done = (m.sd || (['w', 'c'].includes(o.st) ? steps.map(s => s.k) : [])).filter(k => steps.some(s => s.k === k)).length;
+  const nIv = ins.filter((x, k) => iv[k] != null && iv[k] !== '').length, tot = steps.length + ins.length, dn = done + nIv;
+  const reps = otReps(o).length, hrs = labOf(o.id).reduce((s, l) => s + l.h, 0), sigs = sigsOf(o), need = ['ej', 'sup'].concat(needRec(o) ? ['rec'] : []), ns = need.filter(r => sigs[r]).length;
+  const cie = o.st === 'c' ? ['ok', 'Cerrada'] : ['n', 'a'].includes(o.st) ? ['lock', 'Al terminar'] : o.st === 'w' ? ['w', `Firmas ${ns}/${need.length}`] : ['p', 'Informe y firmas'];
+  const T = [['res', 'Resumen', 'Qué, dónde y quién', ''], ['eje', 'Ejecución', tot ? `${dn} de ${tot} hechos` : 'Sin tareas', tot ? `<span class="ottp"><i style="width:${Math.round(dn / tot * 100)}%"></i></span>` : ''], ['rec', 'Recursos', `${pl(reps, 'repuesto', 'repuestos')} · ${fH(Math.round(hrs * 10) / 10)}`, ''], ['cie', 'Cierre', cie[1], `<span class="cst c-${cie[0]}">${cie[0] === 'ok' ? ic('check', 11) : cie[0] === 'lock' ? ic('clock', 11) : ''}</span>`], ['his', 'Historial', `${(m.log || []).length + otBaseLog(o).length} eventos`, '']];
+  return `<nav class="ott2" role="tablist" aria-label="Secciones de la OT">${T.map(([k, l, s, x]) => `<button type="button" role="tab" aria-selected="${U.ott === k}" data-a="ottab" data-v="${k}"><b>${l}${k === 'cie' ? x : ''}</b><small>${s}</small>${k === 'eje' ? x : ''}</button>`).join('')}</nav>`;
+}
+
+/* ---------- Ejecución ---------- */
+function otExecHTML(o) {
+  const m = otm(o.id), steps = otSteps(o), done = new Set(m.sd || (['w', 'c'].includes(o.st) ? steps.map(s => s.k) : [])), can = o.st === 'e', ins = otInsp(o), iv = m.iv || {};
+  const evs = (m.ev || []).concat(EVS[o.id] || []), nIv = ins.filter((x, k) => iv[k] != null && iv[k] !== '').length;
+  const dn = steps.filter(s => done.has(s.k)).length + nIv, tot = steps.length + ins.length, pc = tot ? Math.round(dn / tot * 100) : 0;
+  const lock = !can ? `<div class="bnr ${o.st === 'p' ? 'w' : 'p'} xbn">${ic(o.st === 'p' ? 'clock' : 'help', 18)}<span>${o.st === 'p' ? 'OT pausada: reanúdala para seguir marcando.' : o.st === 'n' ? 'Asigna un responsable e inicia el trabajo para marcar tareas y registrar mediciones.' : ['w', 'c'].includes(o.st) ? 'El trabajo ya se completó: esta vista queda de solo lectura.' : 'Inicia el trabajo para marcar tareas y registrar mediciones.'}</span>${o.st === 'a' ? '<button type="button" class="btn pri sm" data-a="otgo" data-v="e">Iniciar trabajo</button>' : o.st === 'p' ? '<button type="button" class="btn pri sm" data-a="otgo" data-v="e">Reanudar</button>' : ''}</div>` : '';
+  const row = (s, k) => { const ok = done.has(s.k), op = U.trx === s.k, evq = s.sub && s.sub.steps.some(x => x.ev), nEv = evs.filter(e => e.task === s.k).length;
+    return `<li class="tr${ok ? ' ok' : ''}${op ? ' open' : ''}"><div class="tr-r"><input type="checkbox" class="cbx" data-a="otstep" data-v="${s.k}" ${ok ? 'checked' : ''} ${can ? '' : 'disabled'} aria-label="Marcar tarea ${k + 1}">
+      <button type="button" class="tr-b" data-a="trtog" data-v="${s.k}" aria-expanded="${op}"><span class="tr-n">${k + 1}</span><span class="tr-t"><b>${esc2(s.n)}</b><small>${s.oblig === false ? 'Opcional' : 'Obligatoria'}${s.dur ? ' · ' + fH(s.dur) : ''}${s.sub ? ` · ${s.sub.id} · ${pl(s.sub.steps.length, 'paso', 'pasos')}` : ''}${s.from ? ` · agregada desde ${s.from}` : ''}</small></span>
+      <span class="tr-m">${evq ? `<span class="tg ${nEv ? 'c' : 'w'}">${ic('clip', 11)}${nEv ? pl(nEv, 'foto', 'fotos') : 'Foto requerida'}</span>` : nEv ? `<span class="tg c">${ic('clip', 11)}${nEv}</span>` : ''}${ic('chevd', 15)}</span></button></div>
+      ${op ? `<div class="tr-x">${s.sub ? `<ol class="tr-s">${s.sub.steps.map(x => `<li><span>${esc2(x.n)}</span>${x.ctrl ? '<span class="tg w">Control</span>' : ''}${x.med ? `<span class="tg c">${ic('gauge', 11)}${esc2(x.med)}</span>` : ''}${x.ev ? '<span class="tg">Foto</span>' : ''}</li>`).join('')}</ol>` : '<p class="tr-e">Sin procedimiento: la tarea se marca al hacerla.</p>'}
+        <div class="tr-a"><label class="btn plain xs fileb">${ic('plus', 13)}Foto de esta tarea<input type="file" accept="image/*" data-a2="evfile" data-task="${s.k}" ${o.st === 'c' ? 'disabled' : ''}></label>${can && !ok ? `<button type="button" class="btn out xs" data-a="otstep" data-v="${s.k}">${ic('check', 13)}Marcar como hecha</button>` : ''}</div></div>` : ''}</li>`; };
+  const work = otWorkHTML(o, m, steps, done, ins, iv), ix = work.indexOf('<section class="card"><div class="sc-h"><h3>Inspecciones</h3>'), insp = ix >= 0 ? work.slice(ix) : '';
+  const ph = e => e.src ? `<img src="${e.src}" alt="${esc2(e.t)}">` : `<svg viewBox="0 0 120 80" aria-hidden="true"><rect width="120" height="80" fill="${e.c}" opacity=".14"/><path d="M0 62 L32 38 L52 54 L78 28 L120 60 V80 H0Z" fill="${e.c}" opacity=".3"/></svg>`;
+  const main = `${lock}
+    <section class="card"><div class="sc-h"><h3>Tareas</h3><small>${steps.filter(s => done.has(s.k)).length} de ${steps.length} hechas · toca una para ver su procedimiento</small><div class="r">${o.st !== 'c' ? `<button type="button" class="btn plain sm" data-a="xtadd">${ic('plus', 14)}Agregar desde procedimiento</button>` : ''}</div></div>
+      <ol class="trl">${steps.map(row).join('')}</ol></section>
+    ${insp}
+    <section class="card"><div class="sc-h"><h3>Evidencias</h3><small>${evs.length ? pl(evs.length, 'archivo', 'archivos') : 'Fotos del antes y el después'}</small><div class="r"><label class="btn plain sm fileb">${ic('plus', 14)}Agregar foto<input type="file" accept="image/*" data-a2="evfile" ${o.st === 'c' ? 'disabled' : ''}></label></div></div>
+      ${evs.length ? `<div class="evs">${evs.map(e => `<figure>${ph(e)}<figcaption><b>${esc2(e.t)}</b><small>${esc2(e.by)} · ${esc2(e.at)}</small></figcaption></figure>`).join('')}</div>` : `<p class="foot" style="margin:0">Aún no hay fotos. También se pueden subir desde el teléfono del técnico.</p>`}</section>`;
+  return `<div class="exg"><div class="exg-m">${main}</div>${otRail(o, pc, dn, tot)}</div>`;
+}
+function otRail(o, pc, dn, tot) {
+  const R = 30, C = 2 * Math.PI * R, det = detOf(o.id), open = det.find(d => !d.b), hrs = otTime(o.id, o);
+  const dRow = d => `<li><span class="dt-d ${d.b ? '' : 'on'}"></span><span><b>${hmOf(d.a)}–${d.b ? hmOf(d.b) : 'en curso'}</b><small>${esc2(d.tipo)} · ${esc2(d.mot)}${d.prod ? ' · detuvo producción' : ''}</small></span><em>${fHM(detHrs(d))}</em></li>`;
+  return `<aside class="rail">
+    <section class="rl-c"><div class="rl-av"><svg width="76" height="76" viewBox="0 0 76 76" role="img" aria-label="Avance ${pc} %"><circle cx="38" cy="38" r="${R}" fill="none" stroke="var(--line3)" stroke-width="7"/><circle cx="38" cy="38" r="${R}" fill="none" stroke="${pc === 100 ? 'var(--ok)' : 'var(--sigma-purple)'}" stroke-width="7" stroke-linecap="round" stroke-dasharray="${C * pc / 100} ${C}" transform="rotate(-90 38 38)"/><text x="38" y="43" text-anchor="middle" font-size="15" font-weight="800" fill="var(--ink)">${pc}%</text></svg>
+      <div><b>Avance del trabajo</b><small>${dn} de ${tot} tareas e inspecciones</small><small>${fHM(hrs)} registradas de ${fH(o.dur)}</small></div></div>
+      ${o.st === 'e' ? `<button type="button" class="btn pri sm wide" data-a="ottab" data-v="cie">${ic('check', 15)}Completar y firmar</button>` : o.st === 'a' ? `<button type="button" class="btn pri sm wide" data-a="otgo" data-v="e">${ic('bolt', 15)}Iniciar trabajo</button>` : ''}</section>
+    <section class="rl-c"><div class="rl-h"><b>Estado del activo</b>${o.parada ? '<span class="tg w">Requiere parada</span>' : ''}</div>
+      ${open ? `<div class="rl-st s-stop"><i></i><span><b>Detenido desde las ${hmOf(open.a)}</b><small>${fHM(detHrs(open))} sin operar${open.prod ? ' · producción detenida' : ''}</small></span></div>` : `<div class="rl-st s-run"><i></i><span><b>${['w', 'c'].includes(o.st) ? 'Entregado a producción' : 'Operando'}</b><small>${det.length ? `Detenciones: ${fHM(det.reduce((s, d) => s + detHrs(d), 0))}` : 'Sin detenciones registradas'}</small></span></div>`}
+      ${det.length ? `<ul class="dtl">${det.map(dRow).join('')}</ul>` : ''}
+      ${o.st !== 'c' ? (open ? `<button type="button" class="btn out sm wide" data-a="detend">${ic('check', 14)}Registrar fin de la detención</button>` : `<button type="button" class="btn ${o.parada && !det.length && o.st === 'e' ? 'out' : 'plain'} sm wide" data-a="detnew">${ic('clock', 14)}Registrar detención</button>`) : ''}</section>
+    ${o.st !== 'c' ? `<section class="rl-c"><div class="rl-h"><b>Acciones rápidas</b></div><div class="qa">
+      <button type="button" data-a="labnew">${ic('user', 15)}<span>Registrar horas</span></button><button type="button" data-a="orepnew">${ic('box', 15)}<span>Agregar repuesto</span></button>
+      <button type="button" data-a="hotnew">${ic('bell', 15)}<span>Reportar hallazgo</span></button><button type="button" data-a="ottab" data-v="res" data-cm="1">${ic('send', 15)}<span>Comentar</span></button></div></section>` : ''}
+  </aside>`;
+}
+NA.trtog = d => { U.trx = U.trx === d.v ? null : d.v; render(); };
+NA.xtadd = () => openPanel({ t: 'xt', q: '', sel: null });
+PANELS.xt = () => { const o = otGet(U.ot), a = asset(o.eq), q = nrm(PN.q), l = PROCS.filter(p => (!p.tipo || p.tipo === a.tipo || p.glob) && (!q || nrm(p.id + ' ' + p.n).includes(q)));
+  return { t: 'Agregar tareas desde un procedimiento', s: `${o.id} · ${esc2(a.n)}`, w: 'n',
+    b: `<p class="foot" style="margin:0">Se copia el nombre de cada paso como tarea opcional de esta OT. El procedimiento original no cambia.</p><label class="srch2">${ic('search', 14)}<input id="xtq" data-pv="q" value="${esc2(PN.q)}" placeholder="Buscar procedimiento" aria-label="Buscar procedimiento" data-autofocus="1"></label>
+      <div class="mini">${l.map(p => `<button type="button" class="mini-r${PN.sel === p.id ? ' on' : ''}" data-a="xtsel" data-v="${p.id}"><span class="tg p">${p.id}</span><span><b>${esc2(p.n)}</b><small>${pl(p.steps.length, 'paso', 'pasos')} · ${fH(p.dur)}${p.tipo ? ' · ' + esc2(p.tipo) : ' · sistema'}</small></span>${PN.sel === p.id ? ic('check', 15) : ''}</button>`).join('') || '<div class="empty">Ningún procedimiento para este tipo de activo.</div>'}</div>
+      ${PN.sel ? `<div class="blk"><div class="blk-h"><h4>Se agregarán ${proc(PN.sel).steps.length} tareas</h4></div><ol class="olst">${proc(PN.sel).steps.map(s => `<li>${esc2(s.n)}</li>`).join('')}</ol></div>` : ''}`,
+    f: `<button type="button" class="btn ghost" data-a="pclose">Cancelar</button><span class="r"><button type="button" class="btn pri" data-a="xtok" ${PN.sel ? '' : 'disabled'}>${ic('plus', 16)}Agregar tareas</button></span>` }; };
+NA.xtsel = d => { PN.sel = d.v; panel(); };
+NA.xtok = () => { const p = proc(PN.sel), m = otm(U.ot); (m.xt = m.xt || []).push(...p.steps.map(s => ({ n: s.n, dur: s.dur / 60, from: p.id }))); otLog(U.ot, `${pl(p.steps.length, 'tarea agregada', 'tareas agregadas')} desde ${p.id}`); closePanel(); render(); toastU(`${pl(p.steps.length, 'tarea agregada', 'tareas agregadas')} desde ${p.id}.`); };
+
+/* detenciones del activo */
+NA.detnew = () => { const o = otGet(U.ot); openPanel({ t: 'det', a: nowLocal(), b: '', tipo: o.tipo === 'Correctiva' ? 'No planificada' : 'Planificada', mot: o.tipo === 'Correctiva' ? 'Falla del activo' : 'Mantención programada', prod: false, det: '', err: false }); };
+PANELS.det = () => { const o = otGet(U.ot), e = PN.err;
+  return { t: 'Registrar detención del activo', s: `${o.eq} · ${esc2(asset(o.eq).n)}`, w: 'n',
+    b: `<div class="grid2c"><div class="fld"><label for="dta">Comenzó</label><input id="dta" class="inp${e && !PN.a ? ' err' : ''}" type="datetime-local" data-pv="a" value="${PN.a}"></div><div class="fld"><label for="dtb">Terminó <small>vacío si sigue detenido</small></label><input id="dtb" class="inp${e && PN.b && PN.b < PN.a ? ' err' : ''}" type="datetime-local" data-pv="b" value="${PN.b}"></div></div>
+      ${e && PN.b && PN.b < PN.a ? mc('', 'El término debe ser posterior al inicio.') : ''}
+      <div class="fld"><label>Tipo</label><div class="segc">${['Planificada', 'No planificada'].map(t => `<button type="button" data-a="dtset" data-k="tipo" data-v="${t}" aria-pressed="${PN.tipo === t}">${t}</button>`).join('')}</div></div>
+      <div class="fld"><label for="dtm">Motivo</label><select id="dtm" class="sel" data-pv="mot">${['Mantención programada', 'Falla del activo', 'Espera de repuesto', 'Seguridad', 'Falta de operador'].map(x => `<option${PN.mot === x ? ' selected' : ''}>${x}</option>`).join('')}</select></div>
+      <label class="sw"><input type="checkbox" data-pv="prod" ${PN.prod ? 'checked' : ''}><i></i>Detuvo la producción</label>
+      <div class="fld"><label for="dtd">Detalle <small>opcional</small></label><textarea id="dtd" class="inp" rows="2" data-pv="det">${esc2(PN.det)}</textarea></div>
+      ${mc('i', 'La detención alimenta la disponibilidad del activo (indicador MTTR/MTBF) y no el tiempo de trabajo de la OT.', 'help')}`,
+    f: `<button type="button" class="btn ghost" data-a="pclose">Cancelar</button><span class="r"><button type="button" class="btn pri" data-a="detok">${ic('check', 16)}Registrar</button></span>` }; };
+NA.dtset = d => { PN[d.k] = d.v; panel(); };
+NA.detok = () => { if (!PN.a || (PN.b && PN.b < PN.a)) { PN.err = true; panel(); return; } detOf(U.ot).push({ a: PN.a, b: PN.b || null, tipo: PN.tipo, mot: PN.mot, prod: PN.prod, det: PN.det }); otLog(U.ot, `Detención registrada desde las ${hmOf(PN.a)}${PN.b ? ' hasta las ' + hmOf(PN.b) : ' (en curso)'}`); closePanel(); render(); toastU('Detención registrada.'); };
+NA.detend = () => { const d = detOf(U.ot).find(x => !x.b); if (!d) return; d.b = nowLocal(); otLog(U.ot, `Fin de la detención: ${fHM(detHrs(d))} detenido`); render(); toastU(`El activo vuelve a operar tras ${fHM(detHrs(d))}.`); };
+
+/* ---------- Recursos ---------- */
+function otResHTML(o) {
+  const reps = otReps(o), lab = labOf(o.id), srv = srvOf(o.id), m = otm(o.id), used = m.ru || {}, t = U.rct, ro = o.st === 'c';
+  const hrs = lab.reduce((s, l) => s + l.h, 0), mon = srv.reduce((s, x) => s + (+x.m || 0), 0), cands = compatFor([{ a: asset(o.eq), v: o.comp || '' }]);
+  const seg = `<div class="rseg" role="tablist">${[['rep', 'Repuestos', `${reps.length}`, 'box'], ['lab', 'Mano de obra', fH(Math.round(hrs * 10) / 10), 'user'], ['srv', 'Servicios', srv.length ? clp(mon) : '0', 'link']].map(([k, l, n, i2]) => `<button type="button" role="tab" aria-selected="${t === k}" data-a="rct" data-v="${k}">${ic(i2, 15)}<span>${l}</span><b>${n}</b></button>`).join('')}</div>`;
+  let b = '';
+  if (t === 'rep') b = `<div class="sc-h"><h3>Repuestos de la OT</h3><small>Planificado contra lo realmente usado</small><div class="r">${ro ? '' : `<button type="button" class="btn out sm" data-a="orepnew">${ic('plus', 14)}Agregar repuesto</button>`}</div></div>
+    ${reps.length ? `<div class="rows rtb"><div class="rw h" style="grid-template-columns:90px minmax(0,1fr) 92px 110px minmax(0,150px)"><span>Código</span><span>Repuesto</span><span>Planificado</span><span>Usado</span><span>Bodega</span></div>${reps.map(([c, q]) => { const r = rep(c) || [c, c, 'un'], cf = cands.find(x => x.r === c); return `<div class="rw" style="grid-template-columns:90px minmax(0,1fr) 92px 110px minmax(0,150px)"><span class="mono">${c}</span><span class="s"><b>${esc2(r[1])}</b><small>${cf ? `<span class="cpt c-ok">${ic('check', 10)}Compatible</span>` : '<span class="cpt c-no">Sin compatibilidad registrada</span>'}</small></span><span class="tn">${fN(q)} ${r[2]}</span><span class="rp2-q"><input class="inp" type="number" min="0" step="any" data-ru="${c}" value="${used[c] != null ? used[c] : ''}" placeholder="${fN(q)}" ${ro || !['e', 'p', 'w'].includes(o.st) ? 'disabled' : ''} aria-label="Cantidad usada de ${c}"><span class="un">${r[2]}</span></span><span>${['n', 'a'].includes(o.st) ? `<span class="stk s-ok">Reservado</span>` : `<span class="stk s-ok">Entregado</span>`}</span></div>`; }).join('')}</div>` : `<div class="empty" style="border:0"><span class="ei">${ic('box', 20)}</span><b>Esta OT no lleva repuestos</b>${ro ? '' : '<button type="button" class="btn out sm" data-a="orepnew">Agregar repuesto</button>'}</div>`}
+    ${cands.filter(c => !reps.some(r => r[0] === c.r)).length && !ro ? `<div class="rsug"><b>${ic('box', 13)}Compatibles con ${esc2(o.comp ? objPath(asset(o.eq), o.comp) : o.eq)}</b>${cands.filter(c => !reps.some(r => r[0] === c.r)).slice(0, 4).map(c => `<button type="button" class="tg" data-a="orepadd" data-v="${c.r}" data-q="${c.q}">${ic('plus', 11)}${esc2((rep(c.r) || [c.r, c.r])[1])}</button>`).join('')}</div>` : ''}`;
+  else if (t === 'lab') b = `<div class="sc-h"><h3>Mano de obra</h3><small>Horas registradas por quienes ejecutan · ${fH(Math.round(hrs * 10) / 10)} de ${fH(o.dur)} estimadas</small><div class="r">${ro ? '' : `<button type="button" class="btn out sm" data-a="labnew">${ic('plus', 14)}Registrar horas</button>`}</div></div>
+    ${lab.length ? `<div class="rows rtb"><div class="rw h" style="grid-template-columns:minmax(0,1.2fr) 100px 80px 90px minmax(0,1fr)"><span>Persona</span><span>Fecha</span><span>Horas</span><span>Tipo</span><span>Nota</span></div>${lab.map(l => `<div class="rw" style="grid-template-columns:minmax(0,1.2fr) 100px 80px 90px minmax(0,1fr)"><span class="s" style="display:flex;gap:8px;align-items:center">${avatar(l.p)}<span><b>${esc2(person(l.p).n)}</b><small>${esc2(person(l.p).r)}</small></span></span><span class="tn">${fD(l.d)}</span><span class="tn"><b>${fH(l.h)}</b></span><span>${l.t === 'Extra' ? '<span class="tg w">Extra</span>' : '<span class="tg">Normal</span>'}</span><span class="s"><small>${esc2(l.n || '—')}</small></span></div>`).join('')}<div class="rw tot" style="grid-template-columns:minmax(0,1.2fr) 100px 80px 90px minmax(0,1fr)"><span><b>Total</b></span><span></span><span class="tn"><b>${fH(Math.round(hrs * 10) / 10)}</b></span><span></span><span></span></div></div>` : `<div class="empty" style="border:0"><span class="ei">${ic('user', 20)}</span><b>Todavía no hay horas registradas</b>Quien ejecuta registra sus horas al terminar cada jornada.</div>`}`;
+  else b = `<div class="sc-h"><h3>Servicios contratados</h3><small>Lo que se paga a terceros por esta intervención</small><div class="r">${ro ? '' : `<button type="button" class="btn out sm" data-a="srvnew">${ic('plus', 14)}Registrar servicio</button>`}</div></div>
+    ${srv.length ? `<div class="rows rtb"><div class="rw h" style="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 100px 110px"><span>Proveedor</span><span>Descripción</span><span>OC</span><span>Monto</span></div>${srv.map(x => `<div class="rw" style="grid-template-columns:minmax(0,1fr) minmax(0,1.2fr) 100px 110px"><span class="s"><b>${esc2(x.prov)}</b></span><span class="s"><small style="color:var(--ink-2)">${esc2(x.desc)}</small></span><span class="mono">${esc2(x.oc || '—')}</span><span class="tn"><b>${clp(x.m)}</b></span></div>`).join('')}</div>` : `<div class="empty" style="border:0"><span class="ei">${ic('link', 20)}</span><b>Sin servicios contratados</b>Registra aquí el trabajo de contratistas, con su orden de compra.</div>`}`;
+  return `${seg}<section class="card">${b}</section>`;
+}
+NA.rct = d => { U.rct = d.v; render(); };
+NA.orepnew = () => { if (U.ott !== 'rec') { U.ott = 'rec'; U.rct = 'rep'; render(); } const o = otGet(U.ot); openPanel({ t: 'orep', q: '', cands: compatFor([{ a: asset(o.eq), v: o.comp || '' }]) }); };
+PANELS.orep = () => { const o = otGet(U.ot), q = nrm(PN.q), ok = c => PN.cands.find(x => x.r === c), have = new Set(otReps(o).map(r => r[0]));
+  const l = REPS.filter(r => !q || nrm(r[0] + ' ' + r[1]).includes(q)).sort((x, y) => (!ok(x[0])) - (!ok(y[0])));
+  return { t: 'Agregar repuesto a la OT', s: `${o.eq}${o.comp ? ' › ' + esc2(objPath(asset(o.eq), o.comp)) : ''}`, w: 'n',
+    b: `<label class="srch2">${ic('search', 14)}<input id="orq" data-pv="q" value="${esc2(PN.q)}" placeholder="Buscar por código o nombre" aria-label="Buscar repuesto" data-autofocus="1"></label>
+      <div class="mini">${l.slice(0, 14).map(r => `<button type="button" class="mini-r" data-a="orepadd" data-v="${r[0]}" data-q="${ok(r[0]) ? ok(r[0]).q : 1}" ${have.has(r[0]) ? 'disabled' : ''}><span class="mono" style="font-size:11px">${r[0]}</span><span><b>${esc2(r[1])}</b><small>${ok(r[0]) ? `<span class="cpt c-ok">${ic('check', 10)}Compatible</span>` : '<span class="cpt c-no">Sin compatibilidad</span>'} ${stkHTML(r[0], 1)}</small></span>${have.has(r[0]) ? '<small>En la OT</small>' : ic('plus', 15)}</button>`).join('')}</div>`,
+    f: `<button type="button" class="btn plain" data-a="pclose">Listo</button>` }; };
+NA.orepadd = d => { const m = otm(U.ot); (m.xr = m.xr || []).push([d.v, +d.q || 1]); otLog(U.ot, `Repuesto agregado: ${d.v}`); if (PN && PN.t === 'orep') panel(); render(); toastU(`${d.v} agregado a la OT.`); };
+NA.labnew = () => { const o = otGet(U.ot); openPanel({ t: 'lab', p: o.resp || 'bc', d: TODAY, h: '', tt: 'Normal', n: '', err: false }); };
+PANELS.lab = () => ({ t: 'Registrar horas', s: U.ot, w: 'n',
+  b: `<div class="fld"><label for="lbp">Persona</label><select id="lbp" class="sel" data-pv="p">${PEOPLE.map(p => `<option value="${p.id}"${PN.p === p.id ? ' selected' : ''}>${esc2(p.n)} · ${esc2(p.r)}</option>`).join('')}</select></div>
+    <div class="grid2c"><div class="fld"><label for="lbd">Fecha</label><input id="lbd" class="inp" type="date" data-pv="d" value="${PN.d}" max="${TODAY}"></div><div class="fld"><label for="lbh">Horas <small>obligatorio</small></label><div class="unit"><input id="lbh" class="inp${PN.err ? ' err' : ''}" type="number" min="0.25" step="0.25" data-pv="h" value="${PN.h}" data-autofocus="1"><span class="u">horas</span></div></div></div>
+    ${PN.err ? mc('', 'Indica las horas trabajadas.') : ''}
+    <div class="fld"><label>Tipo</label><div class="segc">${['Normal', 'Extra'].map(x => `<button type="button" data-a="dtset" data-k="tt" data-v="${x}" aria-pressed="${PN.tt === x}">${x}</button>`).join('')}</div></div>
+    <div class="fld"><label for="lbn">Nota <small>opcional</small></label><input id="lbn" class="inp" data-pv="n" value="${esc2(PN.n)}" placeholder="Qué hizo en ese tiempo"></div>`,
+  f: `<button type="button" class="btn ghost" data-a="pclose">Cancelar</button><span class="r"><button type="button" class="btn pri" data-a="labok">${ic('check', 16)}Registrar</button></span>` });
+NA.labok = () => { if (!(+PN.h > 0)) { PN.err = true; panel(); return; } labOf(U.ot).push({ p: PN.p, d: PN.d, h: +PN.h, t: PN.tt, n: PN.n }); otLog(U.ot, `${fH(+PN.h)} registradas por ${person(PN.p).n}`); closePanel(); U.ott = 'rec'; U.rct = 'lab'; render(); toastU('Horas registradas.'); };
+NA.srvnew = () => openPanel({ t: 'srv', prov: GROUPS[4].n, desc: '', oc: '', m: '', err: false });
+PANELS.srv = () => ({ t: 'Registrar servicio contratado', s: U.ot, w: 'n',
+  b: `<div class="fld"><label for="svp">Proveedor</label><input id="svp" class="inp" data-pv="prov" value="${esc2(PN.prov)}" list="svpl"><datalist id="svpl">${GROUPS.filter(g => /Contratista/.test(g.n)).map(g => `<option>${esc2(g.n)}</option>`).join('')}<option>Termografía Industrial Ltda.</option><option>Servicios Hidráulicos del Sur</option></datalist></div>
+    <div class="fld"><label for="svd">Descripción <small>obligatorio</small></label><input id="svd" class="inp${PN.err && !PN.desc.trim() ? ' err' : ''}" data-pv="desc" value="${esc2(PN.desc)}" placeholder="Qué hizo el contratista"></div>
+    <div class="grid2c"><div class="fld"><label for="svo">Orden de compra</label><input id="svo" class="inp" data-pv="oc" value="${esc2(PN.oc)}" placeholder="OC-"></div><div class="fld"><label for="svm">Monto</label><div class="unit"><input id="svm" class="inp" type="number" min="0" step="1000" data-pv="m" value="${PN.m}"><span class="u">CLP</span></div></div></div>`,
+  f: `<button type="button" class="btn ghost" data-a="pclose">Cancelar</button><span class="r"><button type="button" class="btn pri" data-a="srvok">${ic('check', 16)}Registrar</button></span>` });
+NA.srvok = () => { if (!PN.desc.trim()) { PN.err = true; panel(); return; } srvOf(U.ot).push({ prov: PN.prov, desc: PN.desc.trim(), oc: PN.oc, m: +PN.m || 0 }); otLog(U.ot, `Servicio registrado: ${PN.prov}`); closePanel(); U.ott = 'rec'; U.rct = 'srv'; render(); toastU('Servicio registrado.'); };
+/* hallazgo desde el riel */
+NA.hotnew = () => { const o = otGet(U.ot); openPanel({ t: 'hotp', eq: o.eq, comp: o.comp || '', t2: '', sev: 'Media', err: false }); };
+PANELS.hotp = () => ({ t: 'Reportar hallazgo en la OT', s: `Se crea un aviso «Hallazgo en OT» enlazado a ${U.ot}`, w: 'n',
+  b: `<div class="fld"><label for="hpt">Qué viste <small>obligatorio</small></label><input id="hpt" class="inp${PN.err ? ' err' : ''}" data-pv="t2" value="${esc2(PN.t2)}" placeholder="Ej.: Rodamiento del tambor de cola con juego" data-autofocus="1"></div>
+    ${objPickFld(asset(PN.eq), PN.comp)}
+    <div class="fld"><label>Severidad</label><div class="segc">${Object.keys(SEV).map(s => `<button type="button" data-a="dtset" data-k="sev" data-v="${s}" aria-pressed="${PN.sev === s}">${s}</button>`).join('')}</div></div>`,
+  f: `<button type="button" class="btn ghost" data-a="pclose">Cancelar</button><span class="r"><button type="button" class="btn pri" data-a="hotok">${ic('bell', 16)}Crear aviso</button></span>` });
+NA.hotok = () => { if ((PN.t2 || '').trim().length < 5) { PN.err = true; panel(); return; } const id = 'AV-' + (AVN++); AVISOS.unshift({ id, o: 'hot', t: PN.t2.trim(), eq: PN.eq, comp: PN.comp, sev: PN.sev, d: TODAY, hour: nowHM(), by: 'Valentina Rojas', srcOT: U.ot, det: `Detectado durante la ${U.ot}.`, st: 'new' }); otLog(U.ot, `Hallazgo reportado: ${id}`); closePanel(); render(); toastA(`${id} creado en Avisos.`, 'Ver aviso', () => NA.avopen({ v: id })); };
+
+/* ---------- Cierre antes de terminar: lista de lo que falta ---------- */
+const otClose2 = otCloseHTML;
+otCloseHTML = function (o, m) {
+  if (!['n', 'a'].includes(o.st)) return otClose2(o, m);
+  const steps = otSteps(o), ob = steps.filter(s => s.oblig !== false).length, ins = otInsp(o).length;
+  const item = (t, s) => `<li><span class="ck-i">${ic('clock', 13)}</span><span><b>${t}</b><small>${s}</small></span></li>`;
+  return `<section class="card cpre"><div class="cpre-h"><span class="ei">${ic('check', 20)}</span><div><h3>Para cerrar esta OT</h3><p>El cierre se habilita al terminar el trabajo. Esto es lo que se pedirá:</p></div>${o.st === 'n' ? '<button type="button" class="btn pri sm" data-a="otassign">Asignar responsable</button>' : '<button type="button" class="btn pri sm" data-a="otgo" data-v="e">Iniciar trabajo</button>'}</div>
+    <ol class="ckl">${item(`${pl(ob, 'tarea obligatoria', 'tareas obligatorias')} hechas`, `0 de ${ob} por ahora`)}${ins ? item(`${pl(ins, 'inspección registrada', 'inspecciones registradas')}`, 'Con su valor y estado') : ''}${item('Informe de cierre', 'Trabajo realizado, horas reales y estado del activo')}${item('Firma del técnico', 'Al completar el trabajo')}${needRec(o) ? item('Recepción de producción', 'La OT detiene el activo: producción firma que lo recibe') : ''}${item('Firma del supervisor', 'Aprueba y cierra la OT')}</ol></section>`;
+};
+// comentarios: el atajo del riel lleva al cuadro de comentario en Resumen
+const ottab0 = NA.ottab; NA.ottab = d => { ottab0(d); if (d.cm) NA.cmfocus(); };
+NA.cmfocus = () => setTimeout(() => { const el = $('#cmt'); if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.focus({ preventScroll: true }); } }, 60);
+document.addEventListener('input', e => { const t = e.target; if (t.dataset.ru && U.ot) { const m = otm(U.ot); (m.ru = m.ru || {})[t.dataset.ru] = t.value; } }, true);
+document.addEventListener('change', e => { const t = e.target; if (t.dataset.a2 === 'evfile' && t.dataset.task && U.ot) { const task = t.dataset.task; setTimeout(() => { const m = otm(U.ot); if (m.ev && m.ev[0] && !m.ev[0].task) { m.ev[0].task = task; render(); } }, 400); } }, true);
+FKEYS.push('ru');
 
 /* =====================================================================
    Centro de Planificación · orquestación, edición y eventos

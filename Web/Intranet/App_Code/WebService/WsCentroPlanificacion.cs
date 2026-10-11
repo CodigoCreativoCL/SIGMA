@@ -1428,7 +1428,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             Dictionary<string, object> d = new JavaScriptSerializer().Deserialize<Dictionary<string, object>>(datos ?? "{}");
             string nombre = Texto(d, "nombre").Trim(), tipoCod = Texto(d, "tipo").ToUpperInvariant();
             if (nombre.Length == 0) throw new Exception("Indica el nombre del calendario.");
-            if (tipoCod != "CALENDARIO" && tipoCod != "INTERVALO TIEMPO" && tipoCod != "FECHA UNICA") throw new Exception("Elige el tipo de frecuencia.");
+            if (tipoCod != "CALENDARIO" && tipoCod != "INTERVALO TIEMPO" && tipoCod != "FECHA UNICA" && tipoCod != "MEDIDOR" && tipoCod != "CONDICION") throw new Exception("Elige el tipo de frecuencia.");
+            // Las condiciones se agregan en la intervención que las mide: aquí solo se edita un calendario por condición que ya existe.
+            if (tipoCod == "CONDICION" && Entero(d, "id") <= 0) throw new Exception("Un calendario por condición se crea desde la intervención que lo usa.");
             object desde = Fecha(d, "desde");
             if (desde == null) throw new Exception("Indica desde cuándo es vigente.");
             ValidarFrecuencia(tipoCod, d);
@@ -1510,6 +1512,20 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                             SoporteDatos.Conjuntos("INS_PROGRAMACION_FECHA", "@ID", null, "@PROGRAMACION", pro, "@CLIENTE", cli, "@FECHA", Fecha(f, "fecha"), "@HORA", hora, "@INCLUIDA", true, "@USUARIO", usu);
                         }
                         break;
+                    case "MEDIDOR":
+                        {
+                            Dictionary<string, object> c = Dicc(d, "medidor");
+                            // CK_PME_ANTICIPACION: el aviso es NULL o mayor que 0; «0» = sin aviso.
+                            object aviso = Decimal(c, "aviso");
+                            if (aviso is decimal && (decimal)aviso <= 0) aviso = null;
+                            // Se conserva el medidor fijo si lo tenía; sin él, cada equipo dispara con su propio medidor.
+                            Dictionary<string, object> m0 = id > 0 ? SoporteDatos.Filas("SEL_PROGRAMACION_MEDIDOR", "@PROGRAMACION", pro, "@CLIENTE", cli).FirstOrDefault() : null;
+                            object medidor = m0 != null && Entero(m0, "pme_activo_medidor") > 0 ? (object)Entero(m0, "pme_activo_medidor") : null;
+                            SoporteDatos.Conjuntos("UPS_PROGRAMACION_MEDIDOR", "@PROGRAMACION", pro, "@CLIENTE", cli,
+                                "@ACTIVO_MEDIDOR", medidor, "@VALOR_INICIAL", Decimal(c, "inicial"), "@CADA_CANTIDAD", Decimal(c, "cada"),
+                                "@AVISO_ANTICIPACION", aviso, "@USUARIO", usu);
+                            break;
+                        }
                 }
                 foreach (Dictionary<string, object> x in Lista(d, "exclusiones"))
                     SoporteDatos.Conjuntos("INS_PROGRAMACION_EXCLUSION", "@ID", null, "@PROGRAMACION", pro, "@CLIENTE", cli,
@@ -1538,6 +1554,8 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
             ProgramacionIntervalo i = p.tipo_codigo == "INTERVALO TIEMPO" ? pc.GetIntervalo(id) : null;
             List<ProgramacionFecha> fe = p.tipo_codigo == "FECHA UNICA" ? pc.GetFechas(id) : new List<ProgramacionFecha>();
             List<ProgramacionExclusion> ex = pc.GetExclusiones(id) ?? new List<ProgramacionExclusion>();
+            Dictionary<string, object> me = p.tipo_codigo == "MEDIDOR" ? SoporteDatos.Filas("SEL_PROGRAMACION_MEDIDOR", "@PROGRAMACION", id, "@CLIENTE", Cli()).FirstOrDefault() : null;
+            List<Dictionary<string, object>> co = p.tipo_codigo == "CONDICION" ? CondicionesDe(id) : new List<Dictionary<string, object>>();
             int usos = (new Planificacion360Controller().GetUsosProgramacion() ?? new List<PlanificacionProgramacionUso>()).Count(x => x.programacion_id == id);
             return new
             {
@@ -1551,7 +1569,11 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
                     hora = c.pca_hora_local.HasValue ? c.pca_hora_local.Value.ToString(@"hh\:mm") : "08:00", dias = (c.dias ?? "").Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries).Select(x => x.Trim()).ToList() },
                 intervalo = i == null ? null : new { unidad = i.pin_unidad_tiempo, cantidad = i.pin_cantidad, ancla = i.pin_fecha_ancla_utc.HasValue ? i.pin_fecha_ancla_utc.Value.ToString("yyyy-MM-ddTHH:mm") : "" },
                 fechas = fe.Select(x => new { fecha = x.pfe_fecha.ToString("yyyy-MM-dd"), hora = x.pfe_hora.HasValue ? x.pfe_hora.Value.ToString(@"hh\:mm") : "" }).ToList(),
-                exclusiones = ex.Select(x => new { desde = x.pxc_fecha_inicio_utc.ToString("yyyy-MM-dd"), hasta = x.pxc_fecha_fin_utc.ToString("yyyy-MM-dd"), motivo = x.pxc_motivo, desplaza = x.pxc_desplaza }).ToList()
+                exclusiones = ex.Select(x => new { desde = x.pxc_fecha_inicio_utc.ToString("yyyy-MM-dd"), hasta = x.pxc_fecha_fin_utc.ToString("yyyy-MM-dd"), motivo = x.pxc_motivo, desplaza = x.pxc_desplaza }).ToList(),
+                // 429: la regla por medidor; sin medidor fijo, «medidorNombre» va vacío (cada equipo usa el suyo).
+                medidor = me == null ? null : new { cada = Valor(me, "pme_cada_cantidad"), inicial = Valor(me, "pme_valor_inicial"), aviso = Valor(me, "pme_aviso_anticipacion"),
+                    medidorNombre = Texto(me, "MEDIDOR_NOMBRE"), activoNombre = Texto(me, "ACTIVO_NOMBRE") },
+                condiciones = co.Select(x => new { texto = (Texto(x, "VARIABLE_NOMBRE") + " " + Texto(x, "REGLA")).Trim(), activo = Texto(x, "ACTIVO_NOMBRE"), severidad = Texto(x, "SEVERIDAD_NOMBRE") }).ToList()
             };
         });
     }

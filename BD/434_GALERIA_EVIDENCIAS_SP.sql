@@ -1,5 +1,5 @@
 ﻿/* ============================================================================
-   430 · Galería de evidencias: SEL_ARCHIVO_VINCULO (10-10-2026)
+   434 · Galería de evidencias: SEL_ARCHIVO_VINCULO (10-10-2026)
    HU-142 (T-5251) y la distinción de HU-143 (criterio 3). Autora: Catalina Pescio.
 
    Un solo SP para las dos galerías de la historia. Se elige por parámetro:
@@ -8,7 +8,7 @@
      · @ACTIVO        → criterio 2: las fotos de TODAS las órdenes del equipo,
        de la más nueva a la más antigua. Sale por Orden_Trabajo.otr_activo, no por
        avi_activo: CK_AVI_UN_PADRE no deja que una foto de OT traiga el activo, y
-       avi_activo son las fotos de catálogo (BD/429).
+       avi_activo son las fotos de catálogo (BD/433).
    Si llegan los dos, manda la orden. Si no llega ninguno, no devuelve filas.
 
    Lo que la galería deja fuera, aquí y no en la pantalla:
@@ -141,5 +141,5 @@ ORDER BY fi.ES_REFERENCIA DESC,
 OFFSET (@PAGINA - 1) * @TAMANO ROWS FETCH NEXT @TAMANO ROWS ONLY
 RETURN 0
 GO
-PRINT '430_GALERIA_EVIDENCIAS_SP aplicado.'
+PRINT '434_GALERIA_EVIDENCIAS_SP aplicado.'
 GO

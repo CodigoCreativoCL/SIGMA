@@ -190,11 +190,14 @@
        crea (si se permite) o se vuelve a lo que estaba. */
     function salir(inp) {
         var def = defDe(inp); if (!def) return;
-        var hid = oculto(inp), t = inp.value.trim(), its = items(def);
+        var hid = oculto(inp), t = inp.value.trim(), its = items(def), antes = hid ? hid.value : null;
+        /* Si al salir cambió lo elegido (por ejemplo, se borró el texto para dejarlo vacío),
+           se avisa igual que al elegir de la lista: si no, la pantalla nunca se entera. */
+        var avisar = function () { if (hid && hid.value !== antes) inp.dispatchEvent(new Event('change', { bubbles: true })); };
         var igual = its.filter(function (x) { return norm(x.n) === norm(t); })[0];
-        if (!t) { inp.value = ''; if (hid) hid.value = ''; inp.classList.remove('is-nuevo'); return; }
-        if (igual) { inp.value = igual.n; if (hid) hid.value = igual.id; inp.classList.remove('is-nuevo'); return; }
-        if (def.crear) { inp.value = t; if (hid) hid.value = def.texto ? t : 'nuevo:' + t; inp.classList.add('is-nuevo'); return; }
+        if (!t) { inp.value = ''; if (hid) hid.value = ''; inp.classList.remove('is-nuevo'); avisar(); return; }
+        if (igual) { inp.value = igual.n; if (hid) hid.value = igual.id; inp.classList.remove('is-nuevo'); avisar(); return; }
+        if (def.crear) { inp.value = t; if (hid) hid.value = def.texto ? t : 'nuevo:' + t; inp.classList.add('is-nuevo'); avisar(); return; }
         var prev = hid ? its.filter(function (x) { return String(x.id) === hid.value; })[0] : null;
         inp.value = prev ? prev.n : '';
     }
