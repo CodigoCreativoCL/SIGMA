@@ -8,3 +8,5 @@ Estándar del grupo: `Boveda/Patrones/` (CONVENCIONES.md siempre; luego BaseDato
 - App móvil copia la arquitectura de FacilityGes/ControlGate, no su dominio.
 
 Ver [[Estandar UI]], [[Trampas conocidas]].
+
+- Estándar de programación: carpeta [[Patrones/README|Patrones]] (CONVENCIONES, BaseDatos, Desarrollo, Funcionalidades).
