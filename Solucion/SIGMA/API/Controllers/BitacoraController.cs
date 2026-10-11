@@ -187,6 +187,55 @@ namespace API.Controllers
         }
 
         /// <summary>
+        /// GET /bitacora/{id}/rectificaciones — las correcciones de una entrada.
+        ///
+        /// De la más vieja a la más nueva: se lee como lo que es, la historia
+        /// de las correcciones. El texto original va en la ficha de la entrada,
+        /// no acá: esto es solo la cadena de rectificaciones.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/rectificaciones")]
+        public IHttpActionResult Rectificaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER BITACORA");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<BitacoraRectificacionDto>(
+                    "API_SEL_BITACORA", Parametros(4, id)));
+            });
+        }
+
+        /// <summary>
+        /// GET /bitacora/rectificaciones/{bre} — una rectificación por su id.
+        /// </summary>
+        /// <response code="404">No existe o no es de una planta de tu cliente.</response>
+        [HttpGet]
+        [Route("rectificaciones/{bre:int}")]
+        public IHttpActionResult Rectificacion(int bre)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER BITACORA");
+                ExigirCliente();
+
+                List<BitacoraRectificacionDto> fila = Datos.Listar<BitacoraRectificacionDto>(
+                    "API_SEL_BITACORA_RECTIFICACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@BRE", bre },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+
+                if (fila.Count == 0) return NoEncontrado("La rectificación");
+
+                return Ok(fila[0]);
+            });
+        }
+
+        /// <summary>
         /// POST /bitacora/{id}/rectificaciones — corrige, sin borrar.
         ///
         /// El motivo es obligatorio. Sin él, quien lea la bitácora después no
