@@ -1,11 +1,11 @@
 # Prompt para Claude Code — Rediseño módulo de Activos (SIGMA)
 
-1. Copia el archivo `sigma-activos-referencia.html` dentro del repositorio, en `docs/rediseno-activos/`. Es la **única referencia** para las vistas de la planta.
+1. Copia el archivo `Referencia_Visual_Activos.html` dentro del repositorio, en `docs/rediseno-activos/`. Es la **única referencia** para las vistas de la planta.
 2. Copia todo lo que está debajo de la línea y pégalo en la sesión de Claude Code abierta en el repositorio de SIGMA.
 
 ---
 
-Vamos a implementar el rediseño del módulo **Activos** de SIGMA (sistema web de gestión de mantenimiento industrial). El diseño aprobado está en este lienzo: https://claude.ai/artifact/QFTGMAEwZEajB8wNqJjXCQ (pantallas A1–A3, B1–B3, C1–C4, D2 y E1–E2). Si no puedes abrirlo, trabaja con esta especificación. Para las vistas de la sección 6 la única fuente de verdad es `docs/rediseno-activos/sigma-activos-referencia.html`.
+Vamos a implementar el rediseño del módulo **Activos** de SIGMA (sistema web de gestión de mantenimiento industrial). El diseño aprobado está en este lienzo: https://claude.ai/artifact/QFTGMAEwZEajB8wNqJjXCQ (pantallas A1–A3, B1–B3, C1–C4, D2 y E1–E2). Si no puedes abrirlo, trabaja con esta especificación. Para las vistas de la sección 6 la única fuente de verdad es `Fase 2/Diseno/2_Diseno_Web/Redisenos/Activos/Referencia_Visual_Activos.html`.
 
 **Vocabulario:** en la interfaz siempre se dice **activo**, nunca "equipo".
 
@@ -33,7 +33,7 @@ Regla visible en la interfaz: «¿Te importa esa pieza en particular? → subact
 
 ## Sistema visual (obligatorio)
 
-Sigue el **Estándar de UI de `CLAUDE.md`** y su fuente `Fase 2/Diseno/Planificacion360/SIGMA-Paleta-UI-Propuesta.html`: tokens `--sigma-purple` #6732F4, `--sigma-blue` #087BEA, `--sigma-cyan` #16C6C9 / `--sigma-cyan-dark` #007F8A, `--ink`, `--muted`, `--line`, `--canvas`, y los semánticos `--success` / `--warning` / `--danger`. Nada de hex sueltos.
+Sigue el **Estándar de UI de `CLAUDE.md`** y su fuente `Fase 2/Diseno/2_Diseno_Web/Planificacion360/SIGMA-Paleta-UI-Propuesta.html`: tokens `--sigma-purple` #6732F4, `--sigma-blue` #087BEA, `--sigma-cyan` #16C6C9 / `--sigma-cyan-dark` #007F8A, `--ink`, `--muted`, `--line`, `--canvas`, y los semánticos `--success` / `--warning` / `--danger`. Nada de hex sueltos.
 
 - **Botones por función:** primario morado (Guardar, Crear OT, Nuevo activo) · secundario turquesa oscuro con texto blanco (Ubicaciones, acción paralela) · contorno azul (Abrir 360°, ver/navegar) · ghost morado suave (Cancelar) · rojo solo para eliminar. Máximo una morada y una turquesa por grupo.
 - **Pestañas del módulo:** texto morado + subrayado de 3 px, contador en chip morado suave.
@@ -133,7 +133,7 @@ En el archivo de referencia, «Abrir 360°» (lista, tarjetas, explorador) abre 
 ## 6. Vistas de la planta y explorador del activo (E1–E4)
 
 ### Una sola referencia
-Todo lo de esta sección sale de **un solo archivo**: `docs/rediseno-activos/sigma-activos-referencia.html`. Ábrelo con doble clic en el navegador (necesita internet para GSAP y three.js) y úsalo como fuente de verdad visual y de comportamiento:
+Todo lo de esta sección sale de **un solo archivo**: `Fase 2/Diseno/2_Diseno_Web/Redisenos/Activos/Referencia_Visual_Activos.html`. Ábrelo con doble clic en el navegador (necesita internet para GSAP y three.js) y úsalo como fuente de verdad visual y de comportamiento:
 
 | Pantalla | Dónde verla en el archivo |
 |---|---|
@@ -218,7 +218,7 @@ Cámara de frío 1 · ACT-CAMARA-1 · Operativo · Crítica · Planta Renca › 
 - Una sola acción morada por grupo; tokens usados como variables, no hex sueltos.
 - Funciona bien a 1366 px, 1920 px, en el modal de ~1060 px y en móvil (apilado).
 - Navegable con teclado, foco visible turquesa, contraste AA.
-- Las cuatro vistas y el explorador se ven y se comportan igual que `sigma-activos-referencia.html`, incluida la navegación con el Navegador de ubicaciones (buscador, filtros, teclado y `/`) y el recorrido de avisos.
+- Las cuatro vistas y el explorador se ven y se comportan igual que `Referencia_Visual_Activos.html`, incluida la navegación con el Navegador de ubicaciones (buscador, filtros, teclado y `/`) y el recorrido de avisos.
 - Ningún texto dice "equipo" ni asume que existen líneas.
 
 Empieza por el paso 1 de "Cómo quiero que trabajes": explora el repo y tráeme el plan.

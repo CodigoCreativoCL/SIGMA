@@ -1,6 +1,6 @@
 # Prompt para Claude Code — Mapa por ubicación por niveles (Centro de repuestos)
 
-Rediseña la vista **«Mapa por ubicación»** del Centro de repuestos de SIGMA según la referencia `docs/rediseno-repuestos/sigma-mapa-ubicaciones-referencia.html`. Ábrela en el navegador y pruébala antes de tocar código.
+Rediseña la vista **«Mapa por ubicación»** del Centro de repuestos de SIGMA según la referencia `Fase 2/Diseno/2_Diseno_Web/Redisenos/Repuestos - Mapa de Ubicaciones/Referencia_Visual_Mapa_Ubicaciones.html`. Ábrela en el navegador y pruébala antes de tocar código.
 
 ## Cómo quiero que trabajes
 

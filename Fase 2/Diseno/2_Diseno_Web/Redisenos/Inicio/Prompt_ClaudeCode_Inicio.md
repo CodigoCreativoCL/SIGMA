@@ -1,6 +1,6 @@
 # Prompt para Claude Code — Inicio de SIGMA (Default.aspx)
 
-Rediseña el contenido de la página de inicio de SIGMA según la referencia `docs/rediseno-inicio/sigma-inicio-referencia.html`. Ábrela en el navegador y pruébala antes de tocar código. En la esquina inferior derecha tiene un control para cambiar entre «Propuesta 1 / Propuesta 2», comparar «Sidebar nuevo / Actual» y ver los dos escenarios: «Con datos» y «Sin órdenes aún».
+Rediseña el contenido de la página de inicio de SIGMA según la referencia `Fase 2/Diseno/2_Diseno_Web/Redisenos/Inicio/Referencia_Visual_Inicio.html`. Ábrela en el navegador y pruébala antes de tocar código. En la esquina inferior derecha tiene un control para cambiar entre «Propuesta 1 / Propuesta 2», comparar «Sidebar nuevo / Actual» y ver los dos escenarios: «Con datos» y «Sin órdenes aún».
 
 **Antes de empezar, pregúntame cuál propuesta del inicio implementamos.** La 1 está descrita en «Estructura del contenido»; la 2, en la sección «Propuesta 2» al final.
 

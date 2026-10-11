@@ -1,6 +1,6 @@
 # Prompt para Claude Code — SIGMA AI · Centro de monitoreo
 
-Crea la vista principal de SIGMA AI como un **centro de monitoreo** según la referencia `docs/rediseno-sigma-ai/sigma-ai-centro-referencia.html`. Ábrela en el navegador y pruébala completa antes de tocar código: la planta 3D, la cola de predicciones, el copiloto, confirmar una foto y pedir un repuesto.
+Crea la vista principal de SIGMA AI como un **centro de monitoreo** según la referencia `Fase 2/Diseno/2_Diseno_Web/Redisenos/SIGMA AI - Centro/Referencia_Visual_SIGMA_AI_Centro.html`. Ábrela en el navegador y pruébala completa antes de tocar código: la planta 3D, la cola de predicciones, el copiloto, confirmar una foto y pedir un repuesto.
 
 Hoy `View/SigmaAI/` solo tiene `Experimentos.aspx`, el laboratorio de Azure ML. Esta vista nueva es lo que ve el equipo de mantenimiento todos los días. El laboratorio se mantiene y se enlaza desde aquí.
 

@@ -1,6 +1,6 @@
 ﻿# Prompt para Claude Code · Rediseño del menú Mantenimiento (5 lugares)
 
-> Referencia visual y de comportamiento: `docs/rediseno-mantenimiento/sigma-mantenimiento-referencia.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo).
+> Referencia visual y de comportamiento: `Fase 2/Diseno/2_Diseno_Web/Redisenos/Mantenimiento/Referencia_Visual_Mantenimiento.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo).
 
 > Análisis previo: Claude Doc «SIGMA · Blueprint funcional del menú Mantenimiento».
 
@@ -342,7 +342,7 @@ Cada parte va con una prueba manual descrita paso a paso.
 
 # Anexo v2 · Experiencia operacional (prevalece sobre lo anterior donde haya diferencia)
 
-> La referencia `sigma-mantenimiento-referencia.html` ya incluye la versión 2. Para ver cada flujo de punta a punta, usa el botón **Recorridos** en Operación.
+> La referencia `Referencia_Visual_Mantenimiento.html` ya incluye la versión 2. Para ver cada flujo de punta a punta, usa el botón **Recorridos** en Operación.
 
 ## A. Operación › Hoy (centro de control, pestaña por defecto)
 

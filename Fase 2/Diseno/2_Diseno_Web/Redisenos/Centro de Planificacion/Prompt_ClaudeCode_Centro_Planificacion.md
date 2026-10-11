@@ -7,7 +7,7 @@ Trabajas con dos fuentes, y cada una manda en lo suyo:
 | Fuente | Qué define | Si hay conflicto |
 |---|---|---|
 | `MD/CENTRO_PLANIFICACION_ALCANCE.md` | Qué hace el Centro: reglas (RE-*, RP-*), estados, SP, permisos y criterios CA-01 a CA-29. | **Manda siempre.** |
-| `docs/rediseno-planificacion/sigma-centro-planificacion-referencia.html` | Cómo se ve y cómo se usa: layout, componentes, textos, estados vacíos, validaciones y flujo sin modales. | Manda en lo visual y en la interacción. |
+| `Fase 2/Diseno/2_Diseno_Web/Redisenos/Centro de Planificacion/Referencia_Visual_Centro_Planificacion.html` | Cómo se ve y cómo se usa: layout, componentes, textos, estados vacíos, validaciones y flujo sin modales. | Manda en lo visual y en la interacción. |
 
 Antes de tocar código, abre la referencia en el navegador y recorre el flujo completo:
 

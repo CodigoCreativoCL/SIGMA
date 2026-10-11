@@ -1,10 +1,10 @@
 # Prompt para Claude Code — Inicio de SIGMA · Propuesta 1 (Default.aspx)
 
-Implementa la **Propuesta 1** del inicio de SIGMA según la referencia `docs/rediseno-inicio/sigma-inicio-referencia.html`.
+Implementa la **Propuesta 1** del inicio de SIGMA según la referencia `Fase 2/Diseno/2_Diseno_Web/Redisenos/Inicio/Referencia_Visual_Inicio.html`.
 
 Ábrela en el navegador. En el control de abajo a la derecha elige **«Propuesta 1»** y **«Actual»** en el selector de sidebar. Pruébala en los dos escenarios: «Con datos» y «Sin órdenes aún».
 
-Este trabajo es **solo el contenido de `Default.aspx`**. La Propuesta 2 y el sidebar nuevo quedan fuera; tienen su propia sección en `prompt-claude-code-inicio-sigma.md`.
+Este trabajo es **solo el contenido de `Default.aspx`**. La Propuesta 2 y el sidebar nuevo quedan fuera; tienen su propia sección en `Prompt_ClaudeCode_Inicio.md`.
 
 ## Lo que NO se toca
 

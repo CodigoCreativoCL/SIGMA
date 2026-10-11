@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:41 · rama: `BryanChavez` · HEAD `6b13e4db`
+Generado: 2026-10-11 16:46 · rama: `BryanChavez` · HEAD `93098eb5`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-11 16:41 · rama: `BryanChavez` · HEAD `6b13e4db`
 
 ## Últimos commits
 
+- 93098eb5 2026-10-11 Nessgod: BD ordenada por contexto: índice generado en la bóveda, semillas y respaldos en subcarpetas
 - 6b13e4db 2026-10-11 Nessgod: Referencias a Boveda/Patrones en MD y Docker
 - dccfb4a4 2026-10-11 Nessgod: PATRONES/ASP pasa a Boveda/Patrones: cerebro centralizado
 - efb50ccc 2026-10-11 Nessgod: Se elimina INFRAESTRUCTURA (plan Hyper-V descartado)
@@ -24,7 +25,6 @@ Generado: 2026-10-11 16:41 · rama: `BryanChavez` · HEAD `6b13e4db`
 - a8f623ea 2026-10-11 Nessgod: Rendimiento: Min Pool Size=20 y cadena mas corta en la ficha de activo
 - 8fc89318 2026-10-11 Nessgod: Merge master en BryanChavez: rendimiento + evidencias y firma de ids
 - 9d690a21 2026-10-11 Nessgod: Rendimiento: inicio en paralelo, estructura y SIGMA AI de la ficha de activo
-- ab5ba267 2026-10-11 Catalina Pescio: Merge pull request #78 from CodigoCreativoCL/CatalinaPescio
 
 ## Módulos y pantallas
 

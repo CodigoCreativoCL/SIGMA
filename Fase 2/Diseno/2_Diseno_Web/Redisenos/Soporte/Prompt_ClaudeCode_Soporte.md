@@ -1,13 +1,13 @@
 # Prompt para Claude Code — Módulo Soporte (SIGMA)
 
-1. Copia `sigma-soporte-referencia.html` en el repositorio, en `docs/rediseno-soporte/`. Es la **única referencia visual y de comportamiento** del módulo.
+1. Copia `Referencia_Visual_Soporte.html` en el repositorio, en `docs/rediseno-soporte/`. Es la **única referencia visual y de comportamiento** del módulo.
 2. Copia todo lo que está debajo de la línea y pégalo en la sesión de Claude Code abierta en el repositorio de SIGMA.
 
 ---
 
 Vamos a implementar el módulo **Soporte** de SIGMA: mesa de ayuda (tickets) + campañas + centro de ayuda (cápsulas, documentos, videos) + ayuda contextual + encuestas + analítica, como **un solo ecosistema**: usuario → ayuda → soporte → conocimiento → campañas → usuario.
 
-La fuente de verdad es `docs/rediseno-soporte/sigma-soporte-referencia.html`. Ábrelo con doble clic. Arriba hay un selector **«Equipo de soporte / Usuario de planta»** para ver las dos experiencias, y abajo a la derecha **«Ver estados vacíos»** muestra cada pantalla sin datos. Lee su código para entender el comportamiento, pero reescríbelo con la arquitectura, los componentes y los tokens del proyecto. Los datos del archivo son de ejemplo y en SIGMA vienen de la base de datos.
+La fuente de verdad es `Fase 2/Diseno/2_Diseno_Web/Redisenos/Soporte/Referencia_Visual_Soporte.html`. Ábrelo con doble clic. Arriba hay un selector **«Equipo de soporte / Usuario de planta»** para ver las dos experiencias, y abajo a la derecha **«Ver estados vacíos»** muestra cada pantalla sin datos. Lee su código para entender el comportamiento, pero reescríbelo con la arquitectura, los componentes y los tokens del proyecto. Los datos del archivo son de ejemplo y en SIGMA vienen de la base de datos.
 
 **Vocabulario:** siempre «activo», nunca «equipo». El módulo de SIGMA se llama **Activos**.
 
@@ -150,7 +150,7 @@ Usa el **Estándar de UI de `CLAUDE.md`**: tokens `--sigma-purple` #6732F4, `--s
 
 ## Criterios de aceptación
 
-- Las pantallas se ven y se comportan como en `sigma-soporte-referencia.html`, en escritorio, tablet y móvil.
+- Las pantallas se ven y se comportan como en `Referencia_Visual_Soporte.html`, en escritorio, tablet y móvil.
 - Un usuario de planta puede:
   - reportar desde cualquier pantalla sin escribir el contexto;
   - ver la sugerencia de ayuda;
