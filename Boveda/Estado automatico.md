@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:46 · rama: `BryanChavez` · HEAD `93098eb5`
+Generado: 2026-10-11 16:48 · rama: `BryanChavez` · HEAD `fea7e0f4`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,8 @@ Generado: 2026-10-11 16:46 · rama: `BryanChavez` · HEAD `93098eb5`
 
 ## Últimos commits
 
+- fea7e0f4 2026-10-11 Nessgod: Rutas de rediseños actualizadas en prompts
+- 46b48ef0 2026-10-11 Nessgod: Diseño ordenado: Esquema BD, Diseño Web (arquitectura, UML, rediseños) y Diseño App; docs/ y capturas/ reubicadas
 - 93098eb5 2026-10-11 Nessgod: BD ordenada por contexto: índice generado en la bóveda, semillas y respaldos en subcarpetas
 - 6b13e4db 2026-10-11 Nessgod: Referencias a Boveda/Patrones en MD y Docker
 - dccfb4a4 2026-10-11 Nessgod: PATRONES/ASP pasa a Boveda/Patrones: cerebro centralizado
@@ -23,8 +25,6 @@ Generado: 2026-10-11 16:46 · rama: `BryanChavez` · HEAD `93098eb5`
 - 8830a6f9 2026-10-11 Nessgod: Cerebro compartido: skills sigma-cerebro y sigma-cerrar-bloque, estado automático de la bóveda
 - 443d9315 2026-10-11 Nessgod: Bóveda Obsidian de SIGMA (segundo cerebro para ahorrar tokens)
 - a8f623ea 2026-10-11 Nessgod: Rendimiento: Min Pool Size=20 y cadena mas corta en la ficha de activo
-- 8fc89318 2026-10-11 Nessgod: Merge master en BryanChavez: rendimiento + evidencias y firma de ids
-- 9d690a21 2026-10-11 Nessgod: Rendimiento: inicio en paralelo, estructura y SIGMA AI de la ficha de activo
 
 ## Módulos y pantallas
 

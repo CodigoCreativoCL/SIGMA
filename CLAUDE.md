@@ -57,7 +57,7 @@ Punto de entrada del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md` (estado, decision
 Mismas reglas: la ficha en `Simple.master` (vía `SigmaModal.open`) usa cards blancas, un primario morado para guardar, secundario turquesa si hay acción paralela y ghost para cancelar.
 
 ## Convenciones técnicas que no se deben romper
-- Archivos en **UTF-8 con BOM y CRLF** (`_scratch/bom.py`), o los acentos salen rotos.
+- Archivos en **UTF-8 con BOM y CRLF** (`Dev/bom.py`), o los acentos salen rotos.
 - Dentro del `<form>` del master, **todo `<button>` lleva `type="button"`** salvo que deba enviar.
-- Compilar con `aspnet_compiler -v /Check -p Web/Intranet …` tras tocar C#; SQL con `_scratch/aplicar_sql.py` (con `-I` si el SP usa `FOR XML` o índices filtrados).
+- Compilar con `aspnet_compiler -v /Check -p Web/Intranet …` tras tocar C#; SQL con `Dev/sql_aplicar.py` (con `-I` si el SP usa `FOR XML` o índices filtrados).
 - Menús nunca se borran: `mnu_visible = 0`.
