@@ -8,4 +8,3 @@
 
 Ver [[Seguridad por datos]], [[Modulos/Indice de modulos]].
 - **Docker**: `Docker/` (compose, Dockerfiles de Intranet y API, `.env.example`, README). Se ejecuta con `cd Docker && docker compose up -d --build`; el contexto es la raíz del repo. Hay que dockerizar web y app (requisito del cliente).
-- Infra del servidor Hyper-V: `INFRAESTRUCTURA/`.
