@@ -1209,6 +1209,19 @@ namespace SitioBase.Controller
                 return r;
             }
 
+            /* LA POTESTAD SE COMPRUEBA EN EL SERVIDOR (T-5323), no escondiendo
+               el botón: quien manda el postback a mano se salta el esconderlo.
+               Escribir en la bitácora —rectificar es escribir— pide REGISTRAR
+               BITACORA. Quién puede rectificar ESA entrada (solo su autor) y el
+               filtro por cliente en sesión los impone además el SP, por si se
+               le llama por otro camino. */
+            if (!Token.Puede("REGISTRAR BITACORA"))
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "Tu perfil no tiene permiso para escribir en la bitácora.";
+                return r;
+            }
+
             if (string.IsNullOrWhiteSpace(texto))
             {
                 r.error = true; r.codigo = -1; r.detalle = "Escribe el texto corregido.";
@@ -1266,6 +1279,10 @@ namespace SitioBase.Controller
         {
             List<ActivoBitacoraRectificacion> lista = new List<ActivoBitacoraRectificacion>();
 
+            /* Igual que GetBitacora: basta la sesión válida para leer, y el
+               cliente de la sesión acota la consulta en el SP para no mostrar
+               lo de otra empresa (T-5323). El permiso de ESCRITURA se exige en
+               RectificarBitacora, que es donde hay potestad que proteger. */
             if (activo <= 0 || !Token.TokenSeguridad()) return lista;
 
             SqlCommand cmd = new SqlCommand();
