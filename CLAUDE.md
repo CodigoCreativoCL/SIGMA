@@ -1,5 +1,7 @@
 ﻿# SIGMA — instrucciones para Claude
 
+**Cerebro compartido (ahorra tokens):** al iniciar cualquier tarea usa la skill `sigma-cerebro` (lee `Boveda/00 Inicio.md` y solo la nota que aplique, sin recorrer el repo) y al terminar usa `sigma-cerrar-bloque` (regenera `Boveda/Estado automatico.md` y actualiza la nota afectada). Es el mismo flujo para Bryan, Emilio y Catalina; se sincroniza por git.
+
 Punto de entrada del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md` (estado, decisiones, trampas y bitácora). Se lee antes de escribir código y se actualiza al cerrar cada bloque.
 
 ## Estándar de UI — obligatorio en toda vista, modal, ficha o componente nuevo
