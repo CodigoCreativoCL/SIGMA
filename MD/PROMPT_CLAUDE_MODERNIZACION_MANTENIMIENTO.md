@@ -4,7 +4,7 @@
 
 > Análisis previo: Claude Doc «SIGMA · Blueprint funcional del menú Mantenimiento».
 
-> Este prompt **no reemplaza** a `docs/rediseno-planificacion/prompt-claude-code-planes-por-pasos.md`: la ficha de plan por pasos se mantiene tal cual y queda dentro de **Planificación › Planes**.
+> Este prompt **no reemplaza** a `Fase 2/Diseno/2_Diseno_Web/Redisenos/Centro de Planificacion/prompt-claude-code-planes-por-pasos.md`: la ficha de plan por pasos se mantiene tal cual y queda dentro de **Planificación › Planes**.
 
 ---
 

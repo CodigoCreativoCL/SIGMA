@@ -1,6 +1,6 @@
 # Prompt para Claude Code — Rediseño módulo de Activos (SIGMA)
 
-1. Copia el archivo `Referencia_Visual_Activos.html` dentro del repositorio, en `docs/rediseno-activos/`. Es la **única referencia** para las vistas de la planta.
+1. Copia el archivo `Referencia_Visual_Activos.html` dentro del repositorio, en `Fase 2/Diseno/2_Diseno_Web/Redisenos/Activos/`. Es la **única referencia** para las vistas de la planta.
 2. Copia todo lo que está debajo de la línea y pégalo en la sesión de Claude Code abierta en el repositorio de SIGMA.
 
 ---

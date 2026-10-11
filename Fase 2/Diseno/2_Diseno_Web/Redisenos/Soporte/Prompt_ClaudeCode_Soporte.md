@@ -1,6 +1,6 @@
 # Prompt para Claude Code — Módulo Soporte (SIGMA)
 
-1. Copia `Referencia_Visual_Soporte.html` en el repositorio, en `docs/rediseno-soporte/`. Es la **única referencia visual y de comportamiento** del módulo.
+1. Copia `Referencia_Visual_Soporte.html` en el repositorio, en `Fase 2/Diseno/2_Diseno_Web/Redisenos/Soporte/`. Es la **única referencia visual y de comportamiento** del módulo.
 2. Copia todo lo que está debajo de la línea y pégalo en la sesión de Claude Code abierta en el repositorio de SIGMA.
 
 ---
