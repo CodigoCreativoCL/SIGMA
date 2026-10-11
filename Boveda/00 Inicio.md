@@ -15,6 +15,7 @@ Sistema Integrado de Gestión de Mantenimiento Industrial. Capstone Duoc UC, equ
 - [[Web services]]
 - [[Modulos/Indice de modulos]]
 - [[Estado y sprints]]
+- [[Mapa de codigo]] — archivos clave por flujo (ir directo)
 - [[Estado automatico]] — generado por `Dev/actualizar_boveda.py`
 
 **Equipo:** Bryan, Emilio y Catalina comparten esta bóveda vía git (`git pull`). Skills en `.claude/skills/`: `sigma-cerebro` (inicio) y `sigma-cerrar-bloque` (cierre).

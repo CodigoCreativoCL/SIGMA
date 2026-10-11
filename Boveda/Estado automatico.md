@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:21 · rama: `BryanChavez` · HEAD `443d9315`
+Generado: 2026-10-11 16:23 · rama: `BryanChavez` · HEAD `8830a6f9`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-11 16:21 · rama: `BryanChavez` · HEAD `443d9315`
 
 ## Últimos commits
 
+- 8830a6f9 2026-10-11 Nessgod: Cerebro compartido: skills sigma-cerebro y sigma-cerrar-bloque, estado automático de la bóveda
 - 443d9315 2026-10-11 Nessgod: Bóveda Obsidian de SIGMA (segundo cerebro para ahorrar tokens)
 - a8f623ea 2026-10-11 Nessgod: Rendimiento: Min Pool Size=20 y cadena mas corta en la ficha de activo
 - 8fc89318 2026-10-11 Nessgod: Merge master en BryanChavez: rendimiento + evidencias y firma de ids
@@ -24,7 +25,6 @@ Generado: 2026-10-11 16:21 · rama: `BryanChavez` · HEAD `443d9315`
 - 836917bd 2026-10-11 Catalina Pescio: Merge pull request #77 from CodigoCreativoCL/CatalinaPescio
 - 2618af73 2026-10-11 pescio666: Merge master en CatalinaPescio: ficha de OT v8 con la galería de evidencias
 - 55d63aa8 2026-10-11 pescio666: Seguridad: los ids de URL van firmados con HMAC (Tools.Crypto)
-- 99ef5985 2026-10-11 pescio666: Evidencias: la semilla sin el video roto y bitácora del paso 3
 
 ## Módulos y pantallas
 
