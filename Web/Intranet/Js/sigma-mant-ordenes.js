@@ -339,12 +339,54 @@
   }
 
   /* ---------------------------------------------------------------- Evidencias, Repuestos, Historial */
+  /* HU-142 · Galería de evidencias de la orden (criterio 1): agrupada por paso y por momento, con las
+     imágenes de referencia de HU-143 en su propio bloque (criterio 3). Datos: F.galeria (WsOrdenes,
+     SEL_ARCHIVO_VINCULO · BD/434). Tocar una tarjeta abre K.Visor con lo que está a la vista. */
+  var MOMENTOS = [['ANTES', 'Antes'], ['DURANTE', 'Durante'], ['DESPUES', 'Después'], ['OTRO', 'Otros archivos']];
+  var MOM_N = { ANTES: 'Antes', DURANTE: 'Durante', DESPUES: 'Después', OTRO: 'Otro', REFERENCIA: 'Referencia' };
+  function galFilas(F) { return (F.galeria && F.galeria.filas) || []; }
+  function galVisibles(F) {
+    var m = U.gm || 'todos';
+    return galFilas(F).filter(function (a) { return m === 'todos' || a.MOMENTO === m; });
+  }
+  function galMeta(a) {
+    return [a.ES_REFERENCIA ? (a.ACTIVIDAD_NOMBRE || 'Actividad del plan') : (a.PASO_ORDEN ? 'Paso ' + a.PASO_ORDEN + ' · ' + (a.PASO_NOMBRE || '') : 'De la orden'),
+      a.ES_REFERENCIA ? '' : MOM_N[a.MOMENTO], a.QUIEN, a.FECHA ? f2(a.FECHA) : ''].filter(Boolean).join(' · ');
+  }
+  function galTarjeta(a, i) {
+    var cuerpo = a.ES_IMAGEN ? '<img src="' + esc(a.URL) + '" alt="' + esc(a.TITULO) + '" loading="lazy">'
+      : '<span class="cp-ev-i">' + ic(a.ES_VIDEO ? 'play' : 'doc', 28) + '</span>';
+    return '<button type="button" class="cp-ev2 cp-gal-t" data-a="otvis" data-i="' + i + '" aria-label="Ver ' + esc(a.TITULO) + '"><figure style="margin:0">' + cuerpo +
+      (a.ES_REFERENCIA ? '<span class="cp-gal-ref cp-gal-sobre">Referencia</span>' : '') +
+      '<figcaption><b>' + esc(a.TITULO) + '</b><small>' + esc([a.QUIEN, a.FECHA ? f2(a.FECHA) : ''].filter(Boolean).join(' · ')) + '</small></figcaption></figure></button>';
+  }
   function evidenciasHTML(F) {
-    var ev = (F.evidencias || []).filter(function (a) { return !a.ES_FIRMA; });
-    return '<section class="cp-card"><div class="cp-sc-h"><h3>Evidencias</h3><small>' + pl(ev.length, 'archivo', 'archivos') + '</small></div>' + (ev.length ? '<div class="cp-evg">' + ev.map(function (a) {
-      var cuerpo = a.IMAGEN ? '<img src="' + esc(a.URL) + '" alt="' + esc(a.NOMBRE) + '" loading="lazy">' : '<span class="cp-ev-i">' + ic(a.VIDEO ? 'gauge' : 'clip', 26) + '</span>';
-      return '<a class="cp-ev2" href="' + esc(a.URL) + '" target="_blank" rel="noopener"><figure style="margin:0">' + cuerpo + '<figcaption><b>' + esc(a.NOMBRE) + '</b><small>' + (a.PASO ? esc(a.PASO) + ' · ' : '') + esc(a.QUIEN || '') + '</small></figcaption></figure></a>';
-    }).join('') + '</div>' : '<div class="cp-empty" style="border:0"><span class="cp-ei">' + ic('clip', 20) + '</span><b>Sin evidencias aún</b>Las fotos, videos y documentos de respaldo se adjuntan desde la app al ejecutar el trabajo.</div>') + '</section>';
+    var todas = galFilas(F), vis = galVisibles(F), m = U.gm || 'todos', total = (F.galeria && F.galeria.total) || 0;
+    var cuenta = function (k) { return todas.filter(function (a) { return a.MOMENTO === k; }).length; };
+    var chips = [['todos', 'Todas', todas.length]].concat(MOMENTOS.map(function (x) { return [x[0], x[1], cuenta(x[0])]; }), [['REFERENCIA', 'Referencias', cuenta('REFERENCIA')]])
+      .filter(function (x) { return x[0] === 'todos' || x[2] > 0 || x[0] === m; });
+    var cab = '<div class="cp-sc-h"><h3>Galería de evidencias</h3><small>' + pl(total, 'archivo', 'archivos') + ' · por paso y momento</small></div>' +
+      (todas.length ? '<div class="cp-chips cp-gal-f" role="group" aria-label="Filtrar por momento">' + chips.map(function (x) { return '<button type="button" class="cp-fc" data-a="otgalm" data-v="' + x[0] + '" aria-pressed="' + (m === x[0]) + '">' + x[1] + '<b>' + x[2] + '</b></button>'; }).join('') + '</div>' : '');
+    if (!todas.length) return '<section class="cp-card">' + cab + '<div class="cp-empty" style="border:0"><span class="cp-ei">' + ic('img', 20) + '</span><b>Sin evidencias aún</b>Las fotos, videos y documentos de respaldo se adjuntan desde la app al ejecutar el trabajo.</div></section>';
+    /* Las referencias primero y aparte: el técnico tiene que saber si mira el modelo o lo que se encontró. */
+    var refs = vis.filter(function (a) { return a.ES_REFERENCIA; }), ev = vis.filter(function (a) { return !a.ES_REFERENCIA; });
+    var idx = function (a) { return vis.indexOf(a); };
+    var h = '';
+    if (refs.length) h += '<div class="cp-gal-g cp-gal-refs"><div class="cp-gal-gh"><span class="cp-gal-ref">Referencia</span><b>Cómo debe quedar</b><small>Imágenes modelo del plan, no son evidencia de esta orden</small></div>' +
+      '<div class="cp-evg">' + refs.map(function (a) { return galTarjeta(a, idx(a)); }).join('') + '</div></div>';
+    var grupos = [];
+    ev.forEach(function (a) { var k = a.PASO_ID || 0, g = grupos.filter(function (x) { return x.k === k; })[0]; if (!g) { g = { k: k, a: a, l: [] }; grupos.push(g); } g.l.push(a); });
+    h += grupos.map(function (g) {
+      var t = g.k ? 'Paso ' + g.a.PASO_ORDEN + ' · ' + esc(g.a.PASO_NOMBRE || '') : 'De la orden';
+      return '<div class="cp-gal-g"><div class="cp-gal-gh"><b>' + t + '</b><small>' + pl(g.l.length, 'archivo', 'archivos') + '</small></div>' +
+        MOMENTOS.map(function (x) {
+          var l = g.l.filter(function (a) { return a.MOMENTO === x[0]; });
+          return l.length ? '<div class="cp-gal-m"><span class="cp-gal-ml">' + x[1] + '</span><div class="cp-evg">' + l.map(function (a) { return galTarjeta(a, idx(a)); }).join('') + '</div></div>' : '';
+        }).join('') + '</div>';
+    }).join('');
+    if (!vis.length) h = '<p class="cp-muted2" style="margin:6px 0 0">No hay archivos en este momento.</p>';
+    var mas = todas.length < total ? '<div style="display:flex;justify-content:center;margin-top:12px"><button type="button" class="cp-btn cp-out' + (U.gcarga ? ' cp-load' : '') + '" data-a="otgalmas">Cargar más (' + (total - todas.length) + ')</button></div>' : '';
+    return '<section class="cp-card cp-gal">' + cab + h + mas + '</section>';
   }
   function repuestosHTML(F) {
     var e = +F.ot.otr_orden_trabajo_estado, cols = '96px minmax(0,1fr) 90px 90px 90px 90px';
@@ -456,10 +498,8 @@
     }).join('');
     var tareas = '<section class="cp-card"><div class="cp-sc-h"><h3>Tareas</h3><small>' + (F.pasos.length ? hechosDe(F) + ' de ' + F.pasos.length + ' hechas' : 'Sin tareas') + '</small>' + (editable(F) ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otprocnew">' + ic('plus', 13) + 'Agregar desde procedimiento</button></div>' : '') + '</div>' +
       (filas ? '<ol class="cp-trl">' + filas + '</ol>' : '<p class="cp-foot" style="margin:0">Esta OT no tiene tareas. Agrégalas desde un procedimiento.</p>') + '</section>';
-    var evid = '<section class="cp-card"><div class="cp-sc-h"><h3>Evidencias</h3><small>' + pl(ev.length, 'archivo', 'archivos') + '</small></div>' + (ev.length ? '<div class="cp-evs">' + ev.map(function (a) {
-      return '<a href="' + esc(a.URL) + '" target="_blank" rel="noopener"><figure>' + (a.IMAGEN ? '<img src="' + esc(a.URL) + '" alt="' + esc(a.NOMBRE) + '" loading="lazy">' : '<span class="cp-ev-i">' + ic('clip', 24) + '</span>') + '<figcaption><b>' + esc(a.PASO || a.NOMBRE) + '</b><small>' + esc(a.QUIEN || '') + '</small></figcaption></figure></a>';
-    }).join('') + '</div>' : '<p class="cp-foot" style="margin:0">Las fotos, videos y documentos se adjuntan desde la app al ejecutar el trabajo.</p>') + '</section>';
-    return '<div class="cp-exg"><div class="cp-exg-m">' + lock + tareas + evid + '</div>' + rielHTML(F) + '</div>';
+    /* HU-142 (merge con la ficha v8): la galería por paso y momento, con visor y referencias, en lugar de la lista plana. */
+    return '<div class="cp-exg"><div class="cp-exg-m">' + lock + tareas + evidenciasHTML(F) + '</div>' + rielHTML(F) + '</div>';
   }
   function rielHTML(F) {
     var o = F.ot, e = +o.otr_orden_trabajo_estado, np = F.pasos.length, pc = np ? Math.round(hechosDe(F) / np * 100) : (e >= 3 ? 100 : 0);
@@ -629,7 +669,7 @@
   }
   function reiniciarFormularios() { U.ed = null; U.asig = null; U.ind = null; U.fr = null; U.hf = null; U.confirma = false; U.proc = ''; FIRMAS.ej = ''; FIRMAS.rec = ''; FIRMAS.sup = ''; U.formCierre = { informe: '', horas: '', post: 0, causa: '', motivo: 1 }; }
   function abrir(q, tab) {
-    U.cargandoFicha = true; U.ficha = null; U.tab = tab || 'resumen'; pintar();
+    U.cargandoFicha = true; U.ficha = null; U.tab = tab || 'resumen'; U.gm = 'todos'; U.gcarga = false; pintar();
     return Promise.all([api('Ficha', { token: q }), catalogos().catch(function () { return null; })]).then(function (r) {
       U.cargandoFicha = false; U.ficha = r[0]; reiniciarFormularios();
       hashOt(q, U.tab); document.title = otTxt(U.ficha.ot.otr_correlativo) + ' · Órdenes de trabajo · SIGMA'; pintar(); window.scrollTo(0, 0);
@@ -650,6 +690,20 @@
   A.otabrir = function (d) { if (d.q) abrir(d.q); };
   A.otlista = function () { U.ficha = null; hashOt(''); document.title = 'Órdenes de trabajo · SIGMA'; pintar(); };
   A.ottab = function (d) { U.tab = tabN(d.v); hashOt(U.ficha.q, U.tab); pintar(); window.scrollTo(0, 0); };
+  /* HU-142 · galería: filtrar por momento, ampliar en el visor y traer la página siguiente. */
+  A.otgalm = function (d) { U.gm = d.v; pintar(); };
+  A.otvis = function (d) {
+    var vis = galVisibles(U.ficha);
+    K.Visor.open(vis.map(function (a) { return { url: a.URL, bajar: a.BAJAR, titulo: a.TITULO, meta: galMeta(a), imagen: !!a.ES_IMAGEN, video: !!a.ES_VIDEO, ref: !!a.ES_REFERENCIA }; }), +d.i);
+  };
+  A.otgalmas = function () {
+    var F = U.ficha, g = F.galeria; if (U.gcarga || !g) return;
+    U.gcarga = true; pintar();
+    api('Galeria', { token: F.q, pagina: (g.pagina || 1) + 1 }).then(function (r) {
+      if (U.ficha !== F) return;
+      U.gcarga = false; g.filas = g.filas.concat(r.filas || []); g.pagina = r.pagina; g.total = r.total; pintar();
+    }).catch(function (e) { U.gcarga = false; K.toastError(e); pintar(); });
+  };
   A.otiniciar = function () { llamar('Iniciar', {}, 'Trabajo iniciado. Ya puedes marcar las tareas.').then(function () { U.tab = 'pasos'; hashOt(U.ficha.q, 'pasos'); pintar(); }).catch(nada); };
   /* tareas: la casilla es «conforme» (volver a marcarla la deja pendiente); No conforme y No aplica van aparte */
   A.otstep = function (d) {

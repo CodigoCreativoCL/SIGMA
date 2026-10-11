@@ -233,7 +233,11 @@
         }
         if (!explicitRecordId && recordId && !/^\d+$/.test(recordId)) {
             try {
-                var decoded = window.atob(recordId);
+                /* Desde el 11-10-2026 el query va firmado: base64url(texto) + "." + firma
+                   (Tools.Crypto.Encrypt). Para mostrar el número basta la parte de antes del punto. */
+                var datos = recordId.split('.')[0].replace(/-/g, '+').replace(/_/g, '/');
+                while (datos.length % 4) datos += '=';
+                var decoded = window.atob(datos);
                 var decodedId = /(?:^|\b)id\s*[:=_-]?\s*(\d+)$/i.exec(decoded);
                 recordId = decodedId ? decodedId[1] : '';
             } catch (ignoreDecode) { recordId = ''; }

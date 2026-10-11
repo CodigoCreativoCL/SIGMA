@@ -62,6 +62,18 @@ public class WsOrdenes : System.Web.Services.WebService
     }
 
     /// <summary>Personas, activos y componentes para «Nueva OT» y para asignar responsables.</summary>
+    /// <summary>Una página más de la galería de evidencias (HU-142), cuando la orden trae más de las que llegan con la ficha.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Galeria(string token, int pagina)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            return ArmarGaleria(IdDe(token), pagina);
+        });
+    }
+
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Catalogos(int planta)
@@ -608,7 +620,7 @@ public class WsOrdenes : System.Web.Services.WebService
             comentarios = null, indisp = null, asignaciones = null, motivos = null;
         List<List<Dictionary<string, object>>> ex = null;
         List<object> evidencias = null, firmas = null;
-        object tipos = null, permisos = null;
+        object tipos = null, permisos = null, galeria = null;
         bool puedeCerrar = false;
         SitioBase.Paralelo.Todos(
             () => cab = SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", cli),
@@ -621,6 +633,7 @@ public class WsOrdenes : System.Web.Services.WebService
             () => comentarios = SoporteDatos.Filas("SEL_OT_COMENTARIO", "@CLIENTE", cli, "@ORDEN", id),
             () => indisp = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", cli, "@ORDEN", id),
             () => evidencias = Evidencias(id),
+            () => galeria = ArmarGaleria(id, 1),   // HU-142 (Catalina): la galería de evidencias
             () => firmas = Firmas(id),
             () => tipos = SitioBase.CacheSesion.Global("ot_tipos_firma", 30, () => (object)new OrdenTrabajoValidacionController().GetTipos().Select(t => new { ID = t.id, CODIGO = t.codigo, NOMBRE = t.nombre }).ToList()),
             () => asignaciones = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", cli, "@ORDEN", id),
@@ -646,6 +659,7 @@ public class WsOrdenes : System.Web.Services.WebService
             imprimirUrl = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajoImprimir.aspx") + "?query=" + Q(id),
             indisponibilidades = indisp,
             evidencias = evidencias,
+            galeria = galeria,
             firmas = firmas,
             tiposFirma = tipos,
             asignaciones = asignaciones,
@@ -667,6 +681,28 @@ public class WsOrdenes : System.Web.Services.WebService
         foreach (OrdenTrabajoArchivo a in new OrdenTrabajoArchivoController().GetEvidencias(id))
             l.Add(new { ID = a.arc_id, NOMBRE = a.etiqueta, URL = SitioBase.UrlArchivo.Ver(a.arc_id), IMAGEN = a.es_imagen, VIDEO = a.es_video, AUDIO = a.es_audio, PASO = a.paso_nombre, QUIEN = a.usuario, FECHA = a.fecha.HasValue ? a.fecha.Value.ToString("yyyy-MM-ddTHH:mm:ss") : "", CATEGORIA = a.categoria_nombre, ES_FIRMA = a.categoria_codigo == "FIRMA" });
         return l;
+    }
+
+    private const int GALERIA_TAMANO = 120;
+
+    /// <summary>
+    /// La galería de evidencias de la orden (HU-142 criterio 1): SEL_ARCHIVO_VINCULO (BD/434) ya trae
+    /// lo de la orden y sus pasos agrupable por paso y momento, sin la firma, con las referencias de
+    /// HU-143 marcadas y filtrado por el cliente de la sesión. Aquí solo se suman las dos URL: ver
+    /// (VerArchivo vuelve a exigir que el archivo sea del cliente) y bajar.
+    /// </summary>
+    private static object ArmarGaleria(int id, int pagina)
+    {
+        if (pagina < 1) pagina = 1;
+        List<Dictionary<string, object>> filas = SoporteDatos.Filas("SEL_ARCHIVO_VINCULO", "@CLIENTE", Cli(), "@ORDEN_TRABAJO", id,
+            "@PAGINA", pagina, "@TAMANO", GALERIA_TAMANO);
+        foreach (Dictionary<string, object> f in filas)
+        {
+            int arc = Entero(f, "ARCHIVO_ID");
+            f["URL"] = SitioBase.UrlArchivo.Ver(arc);
+            f["BAJAR"] = SitioBase.UrlArchivo.Descargar(arc);
+        }
+        return new { filas = filas, total = filas.Count > 0 ? Entero(filas[0], "TOTAL") : 0, pagina = pagina, tamano = GALERIA_TAMANO };
     }
 
     /// <summary>El historial de firmas (aceptación, ejecución, validación) con la imagen de cada una.</summary>

@@ -568,3 +568,17 @@
 .cp-root .cp-facts .cp-objv .cp-objt{display:block;font-size:13.5px;font-weight:700;color:var(--ink);text-transform:none;letter-spacing:0}
 .cp-root .cp-facts .cp-objv .cp-objk{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:800;padding:1px 7px;border-radius:6px;background:var(--sigma-cyan-soft);color:var(--sigma-cyan-dark);letter-spacing:.04em}
 .cp-root .cp-facts .cp-objv .cp-objt small{margin-top:1px}
+/* ---- Galería de evidencias de la OT (HU-142 criterio 1; referencias de HU-143 aparte) ---- */
+.cp-root .cp-gal-f{margin:0 0 12px}
+.cp-root .cp-gal-g{padding:12px 0 2px;border-top:1px solid var(--line3)}
+.cp-root .cp-gal-g:first-of-type{border-top:0;padding-top:4px}
+.cp-root .cp-gal-gh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:8px}
+.cp-root .cp-gal-gh b{font-size:13px;color:var(--ink)}
+.cp-root .cp-gal-gh small{font-size:11.5px;color:var(--muted)}
+.cp-root .cp-gal-refs{padding:12px;margin-bottom:6px;border:1px solid var(--line3);border-radius:12px;background:var(--surface-2)}
+.cp-root .cp-gal-m{margin:0 0 10px}
+.cp-root .cp-gal-ml{display:block;margin:0 0 6px;font-size:11px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.cp-root button.cp-gal-t{display:block;width:100%;padding:0;border:0;text-align:left;font:inherit;color:inherit;cursor:pointer;position:relative}
+.cp-root button.cp-gal-t:hover{box-shadow:inset 0 0 0 1px var(--sigma-cyan),0 6px 16px rgba(15,23,42,.08)}
+.cp-root .cp-gal-t .cp-ev-i{display:grid;place-items:center;aspect-ratio:3/2;height:auto;background:var(--surface-2);color:var(--muted)}
+.cp-root .cp-gal-sobre{position:absolute;left:8px;top:8px;box-shadow:0 1px 4px rgba(15,23,42,.18)}
