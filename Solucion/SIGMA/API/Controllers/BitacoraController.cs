@@ -242,8 +242,12 @@ namespace API.Controllers
         /// puede saber si el texto cambió porque estaba mal escrito, porque se
         /// supo algo nuevo, o porque a alguien no le gustó cómo sonaba: las
         /// tres cosas se leen muy distinto.
+        ///
+        /// Idempotente por `uuid` (en el cuerpo), generado en el teléfono al
+        /// empezar a escribir: un reintento de la cola no crea una segunda
+        /// rectificación, devuelve la que ya estaba.
         /// </summary>
-        /// <response code="201">Rectificada. El original sigue disponible.</response>
+        /// <response code="201">Rectificada, o la que ya estaba si era un reenvío (mismo uuid). El original sigue disponible.</response>
         /// <response code="400">Falta el motivo, el texto es el mismo, o no eres quien la escribió.</response>
         [HttpPost]
         [Route("{id:int}/rectificaciones")]

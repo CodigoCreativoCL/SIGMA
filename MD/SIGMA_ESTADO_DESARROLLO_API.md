@@ -388,6 +388,33 @@ documentadas. `TokenValidationHandler` **no** bloquea las rutas de Swagger:
 deja pasar la petición sin token (no la rechaza), así que no hubo que abrir
 nada.
 
+### Rectificar una entrada de bitácora: nested, no un recurso suelto (HU-131, 10-10-2026)
+
+La rectificación es una **sub-entidad de la entrada**, no un recurso de primer
+nivel: vive bajo `POST /bitacora/{id}/rectificaciones`, `GET
+/bitacora/{id}/rectificaciones` (la cadena de una entrada) y `GET
+/bitacora/rectificaciones/{bre}` (una por su id). El backlog la describía como
+`/api/bitacora-rectificaciones`; se dejó anidada a propósito —una rectificación
+sin su entrada no significa nada— y así no hay dos caminos para lo mismo.
+
+Lo que **no se deduce del código**:
+
+- **Idempotente por `uuid`** (bloque `BD/431`): se agregó `bre_uuid` a
+  `Bitacora_Rectificacion` con índice único filtrado, y
+  `API_INS_BITACORA_RECTIFICACION` recibe `@UUID`; un reenvío del mismo uuid
+  devuelve la rectificación que ya estaba (`YA_ESTABA = 1`) en vez de duplicar.
+  Mismo criterio que `bit_uuid` en la entrada (HU-130): el uuid nace en el
+  teléfono al empezar a escribir, no al enviar.
+- **El detalle usa un SP chico aparte** (`API_SEL_BITACORA_RECTIFICACION`,
+  `BD/432`) en vez de sumar un modo al `API_SEL_BITACORA` grande: es una fila,
+  autocontenida, y deja el SEL de la sábana sin tocar. El listado sí reusa el
+  modo 4 del SEL.
+- **La validación del cuerpo se hace antes del SP** (texto y motivo
+  obligatorios, motivo ≤ 500 = el largo de `bre_motivo`): el 400 llega con el
+  nombre del campo y sin viaje a la base. El SP vuelve a comprobarlo igual —solo
+  el autor rectifica, motivo obligatorio, texto distinto del vigente—, porque la
+  API no es el único que puede llamarlo (también lo llama la web).
+
 ---
 
 ## 6. Pendientes y cosas que hay que saber
