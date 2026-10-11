@@ -5,7 +5,7 @@ Las migraciones viven en `BD/` con número correlativo (= orden de ejecución). 
 | Contexto | Migraciones | Primera | Última |
 |---|---|---|---|
 | [[App móvil y API]] | 77 | `55_SPLIT_Y_APP.sql` | `436_GALERIA_RUTA_API.sql` |
-| [[Seguridad, menús y permisos]] | 93 | `02_MENUS_PERMISOS.sql` | `421_CHOQUES_CLAVE.sql` |
+| [[Seguridad, menús y permisos]] | 95 | `02_MENUS_PERMISOS.sql` | `438_MENU_TERCEROS_PERMISOS_UNA_VISTA.sql` |
 | [[Suscripción y comercial]] | 7 | `08_SUSCRIPCION.sql` | `228_PLAN_COMERCIAL_SIN_PRECIO.sql` |
 | [[Alertas e inteligencia (SIGMA AI)]] | 29 | `19_TERCEROS_ALERTAS.sql` | `423_FUNCIONALIDAD_AI_CHAT_TWIN.sql` |
 | [[Planificación y programación]] | 62 | `13_PROGRAMACION.sql` | `429_CALENDARIO_MEDIDOR_EDITABLE.sql` |

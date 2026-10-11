@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:52 · rama: `BryanChavez` · HEAD `afa73185`
+Generado: 2026-10-11 16:54 · rama: `BryanChavez` · HEAD `560b3fd7`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-11 16:52 · rama: `BryanChavez` · HEAD `afa73185`
 
 ## Últimos commits
 
+- 560b3fd7 2026-10-11 Nessgod: Diseño: Planificacion360 dentro de Redisenos; Dev/siguiente_migracion.py evita choques de numeración
 - afa73185 2026-10-11 Nessgod: Bóveda: reglas del equipo (acuerdos comunes para las tres sesiones)
 - 59fd61f1 2026-10-11 Nessgod: Herramientas compartidas en Dev (bom.py, sql_aplicar.py); referencias de la bóveda al día
 - fea7e0f4 2026-10-11 Nessgod: Rutas de rediseños actualizadas en prompts
@@ -24,7 +25,6 @@ Generado: 2026-10-11 16:52 · rama: `BryanChavez` · HEAD `afa73185`
 - baa92879 2026-10-11 Nessgod: Orden del repo: Docker en su carpeta, se eliminan SIGMA-Pautas-360 y ENTRENAMIENTO
 - 2b49959a 2026-10-11 Nessgod: Bóveda: flujo de git pensado para el equipo de 3
 - d8806ebe 2026-10-11 Nessgod: Bóveda: mapa de código por flujo
-- 8830a6f9 2026-10-11 Nessgod: Cerebro compartido: skills sigma-cerebro y sigma-cerrar-bloque, estado automático de la bóveda
 
 ## Módulos y pantallas
 
