@@ -597,12 +597,39 @@ public class WsOrdenes : System.Web.Services.WebService
 
     // ---------------------------------------------------------------------
 
+    /// <summary>
+    /// Todo lo que la ficha pinta. Las ~15 lecturas son independientes: van en paralelo
+    /// (SitioBase.Paralelo), así la ficha tarda lo que la consulta más lenta y no la suma.
+    /// </summary>
     private object ArmarFicha(int id)
     {
-        List<Dictionary<string, object>> cab = SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", Cli());
+        int cli = Cli();
+        List<Dictionary<string, object>> cab = null, pasos = null, repuestos = null, manoObra = null, servicios = null, serviciosTotal = null,
+            comentarios = null, indisp = null, asignaciones = null, motivos = null;
+        List<List<Dictionary<string, object>>> ex = null;
+        List<object> evidencias = null, firmas = null;
+        object tipos = null, permisos = null;
+        bool puedeCerrar = false;
+        SitioBase.Paralelo.Todos(
+            () => cab = SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", cli),
+            () => ex = SoporteDatos.Conjuntos("SEL_OT_FICHA_EXTRA", "@CLIENTE", cli, "@ID", id),
+            () => pasos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_PASO", "@CLIENTE", cli, "@ORDEN", id),
+            () => repuestos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_REPUESTO", "@CLIENTE", cli, "@ORDEN", id),
+            () => manoObra = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_MANO_OBRA", "@CLIENTE", cli, "@ORDEN", id),
+            () => servicios = Servicios(id),
+            () => serviciosTotal = SoporteDatos.Filas("SEL_OT_SERVICIO_TOTAL", "@CLIENTE", cli, "@ORDEN", id),
+            () => comentarios = SoporteDatos.Filas("SEL_OT_COMENTARIO", "@CLIENTE", cli, "@ORDEN", id),
+            () => indisp = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", cli, "@ORDEN", id),
+            () => evidencias = Evidencias(id),
+            () => firmas = Firmas(id),
+            () => tipos = SitioBase.CacheSesion.Global("ot_tipos_firma", 30, () => (object)new OrdenTrabajoValidacionController().GetTipos().Select(t => new { ID = t.id, CODIGO = t.codigo, NOMBRE = t.nombre }).ToList()),
+            () => asignaciones = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", cli, "@ORDEN", id),
+            () => motivos = SitioBase.CacheSesion.Global("ot_motivos_cierre", 30, () => SoporteDatos.Filas("SEL_OT_CIERRE_MOTIVO")),
+            () => puedeCerrar = PuedeCerrar());
+        // Los permisos se leen en el hilo de la petición: Token guarda su caché en HttpContext.Items (ver Paralelo).
+        permisos = Permisos(puedeCerrar);
         if (cab.Count == 0) throw new Exception("La orden de trabajo no existe.");
         Dictionary<string, object> ot = cab[0];
-        List<List<Dictionary<string, object>>> ex = SoporteDatos.Conjuntos("SEL_OT_FICHA_EXTRA", "@CLIENTE", Cli(), "@ID", id);
         List<Dictionary<string, object>> origen = SoporteDatos.Del(ex, 0);
         int estado = Entero(ot, "otr_orden_trabajo_estado");
         return new
@@ -610,25 +637,25 @@ public class WsOrdenes : System.Web.Services.WebService
             q = Q(id),
             yo = SitioBase.Session.UsuarioNombre(),
             ot = ot,
-            pasos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_PASO", "@CLIENTE", Cli(), "@ORDEN", id),
-            repuestos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_REPUESTO", "@CLIENTE", Cli(), "@ORDEN", id),
-            manoObra = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_MANO_OBRA", "@CLIENTE", Cli(), "@ORDEN", id),
-            servicios = Servicios(id),
-            serviciosTotal = SoporteDatos.Filas("SEL_OT_SERVICIO_TOTAL", "@CLIENTE", Cli(), "@ORDEN", id),
-            comentarios = SoporteDatos.Filas("SEL_OT_COMENTARIO", "@CLIENTE", Cli(), "@ORDEN", id),
+            pasos = pasos,
+            repuestos = repuestos,
+            manoObra = manoObra,
+            servicios = servicios,
+            serviciosTotal = serviciosTotal,
+            comentarios = comentarios,
             imprimirUrl = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajoImprimir.aspx") + "?query=" + Q(id),
-            indisponibilidades = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", Cli(), "@ORDEN", id),
-            evidencias = Evidencias(id),
-            firmas = Firmas(id),
-            tiposFirma = new OrdenTrabajoValidacionController().GetTipos().Select(t => new { ID = t.id, CODIGO = t.codigo, NOMBRE = t.nombre }).ToList(),
-            asignaciones = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", Cli(), "@ORDEN", id),
+            indisponibilidades = indisp,
+            evidencias = evidencias,
+            firmas = firmas,
+            tiposFirma = tipos,
+            asignaciones = asignaciones,
             origen = origen.Count > 0 ? origen[0] : null,
             avisos = SoporteDatos.Del(ex, 1),
             bitacora = SoporteDatos.Del(ex, 2),
             planUrl = Entero(origen.Count > 0 ? origen[0] : null, "PLAN_ID") > 0 ? VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Planificacion.aspx") + "#tab=planes&plan=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt("Id=" + Entero(origen[0], "PLAN_ID"))) : null,
             fichaCompleta = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?legacy=1&query=" + Q(id),
-            motivos = SoporteDatos.Filas("SEL_OT_CIERRE_MOTIVO"),
-            permisos = Permisos(),
+            motivos = motivos,
+            permisos = permisos,
             estado = estado
         };
     }
@@ -651,13 +678,15 @@ public class WsOrdenes : System.Web.Services.WebService
         return l;
     }
 
-    private static object Permisos()
+    private static object Permisos() { return Permisos(PuedeCerrar()); }
+
+    private static object Permisos(bool puedeCerrar)
     {
         return new
         {
             crear = Token.Puede(P_CREAR),
             ejecutar = Token.Puede(P_EJECUTAR),
-            cerrar = PuedeCerrar(),
+            cerrar = puedeCerrar,
             validar = Token.Puede(P_VALIDAR),
             reportar = Token.Puede(P_FALLA)
         };

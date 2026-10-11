@@ -52,5 +52,22 @@ namespace SitioBase
         {
             return Pedir(() => { try { return f(); } catch (Exception) { return siFalla; } });
         }
+
+        /// <summary>
+        /// Corre varias lecturas a la vez y espera a todas. Si una falla, se lanza su
+        /// excepción tal cual, como si hubieran ido en fila. Lo usa la ficha de OT
+        /// (~15 lecturas: de ~4 s a lo que tarda la más lenta).
+        /// </summary>
+        public static void Todos(params Action[] lecturas)
+        {
+            Task[] t = new Task[lecturas.Length];
+            for (int i = 0; i < lecturas.Length; i++)
+            {
+                Action a = lecturas[i];
+                t[i] = Pedir(() => { a(); return true; });
+            }
+            try { Task.WaitAll(t); }
+            catch (AggregateException e) { throw e.Flatten().InnerExceptions[0]; }
+        }
     }
 }

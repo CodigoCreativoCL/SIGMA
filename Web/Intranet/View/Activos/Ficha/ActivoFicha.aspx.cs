@@ -1170,45 +1170,52 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
-        Cabecera(a);
+        using (SitioBase.Medida.Tramo("f_Cabecera")) Cabecera(a);
 
         // Lo que varias secciones comparten se lee UNA vez.
-        List<OrdenTrabajo> ordenes = new OrdenTrabajoController().GetOrdenes(
-            new OrdenTrabajo { filtro_activo = a.act_id }) ?? new List<OrdenTrabajo>();
+        IDisposable _m = SitioBase.Medida.Tramo("f_compartido");
+        /* RENDIMIENTO (11-10-2026): estas lecturas iban en fila (~2,6 s); son
+           independientes y ahora van a la vez (SitioBase.Paralelo). */
+        int aid = a.act_id;
+        var pOrd = SitioBase.Paralelo.Pedir(() => new OrdenTrabajoController().GetOrdenes(new OrdenTrabajo { filtro_activo = aid }));
+        var pFal = SitioBase.Paralelo.Pedir(() => new FallaController().GetFallas(new Falla { filtro_activo = aid }));
+        var pDet = SitioBase.Paralelo.Pedir(() => new IndisponibilidadController().Get(new ActivoIndisponibilidad { filtro_activo = aid }));
+        var pOcu = SitioBase.Paralelo.Pedir(() => new PlanOcurrenciaController().GetCalendario(new PlanOcurrencia { filtro_activo = aid }));
+        var pRev = SitioBase.Paralelo.Pedir(() => new ActivoCentroController().GetRevisiones(aid));
+        var pCon = SitioBase.Paralelo.Pedir(() => new ActivoCentroController().GetConsumos(aid));
+        var pEve = SitioBase.Paralelo.Pedir(() => LeerCambios(aid));
 
-        List<Falla> fallas = new FallaController().GetFallas(
-            new Falla { filtro_activo = a.act_id }) ?? new List<Falla>();
-
-        List<ActivoIndisponibilidad> detenciones = new IndisponibilidadController().Get(
-            new ActivoIndisponibilidad { filtro_activo = a.act_id }) ?? new List<ActivoIndisponibilidad>();
-
-        List<PlanOcurrencia> ocurrencias = new PlanOcurrenciaController().GetCalendario(
-            new PlanOcurrencia { filtro_activo = a.act_id }) ?? new List<PlanOcurrencia>();
+        List<OrdenTrabajo> ordenes = pOrd.Result ?? new List<OrdenTrabajo>();
+        List<Falla> fallas = pFal.Result ?? new List<Falla>();
+        List<ActivoIndisponibilidad> detenciones = pDet.Result ?? new List<ActivoIndisponibilidad>();
+        List<PlanOcurrencia> ocurrencias = pOcu.Result ?? new List<PlanOcurrencia>();
 
         /* Las revisiones y los consumos se leian dentro de su pestaña. Ahora
            los necesita tambien el historial, asi que se leen aca una vez y se
            pasan: dos consultas, no cuatro. */
-        List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
-                                          ?? new List<ActivoRevision>();
+        List<ActivoRevision> revisiones = pRev.Result ?? new List<ActivoRevision>();
+        List<ActivoConsumo> consumos = pCon.Result ?? new List<ActivoConsumo>();
+        List<ActivoFichaEvento> eventos = pEve.Result;
+        _m.Dispose();
 
-        List<ActivoConsumo> consumos = new ActivoCentroController().GetConsumos(a.act_id)
-                                       ?? new List<ActivoConsumo>();
-
-        List<ActivoFichaEvento> eventos = LeerCambios(a.act_id);
-
-        Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos);
-        Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos);
-        Ordenes(ordenes);
-        Mantenimiento(a, ocurrencias);
+        /* RENDIMIENTO (11-10-2026): las secciones se arman a la vez. Cada una escribe en sus
+           propios controles y solo LEE datos (los permisos ya estan en HttpContext.Items desde
+           el master). Ficha tecnica va despues: la arma el control frmFicha en su PreRender. */
+        using (SitioBase.Medida.Tramo("f_secciones"))
+            SitioBase.Paralelo.Todos(
+                () => Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos),
+                () => Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos),
+                () => Ordenes(ordenes),
+                () => Mantenimiento(a, ocurrencias),
+                () => Estructura(a),
+                () => FallasYDetenciones(a, fallas, detenciones),
+                () => Condicion(a),
+                () => Documentos(a),
+                () => InspeccionesYTareas(a, revisiones),
+                () => RepuestosYCostos(a, consumos),
+                () => SigmaAi(a, ordenes, fallas),
+                () => BitacoraYTrazabilidad(a, eventos));
         FichaTecnica(a);
-        Estructura(a);
-        FallasYDetenciones(a, fallas, detenciones);
-        Condicion(a);
-        Documentos(a);
-        InspeccionesYTareas(a, revisiones);
-        RepuestosYCostos(a, consumos);
-        SigmaAi(a, ordenes, fallas);
-        BitacoraYTrazabilidad(a, eventos);
     }
 
     private void Cabecera(Activo a)
@@ -2429,7 +2436,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                                             arc_mime = foto.ContentType, contenido = bytes };
                 ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
                 Respuesta ra = new ArchivoController().InsertArchivo(arc, "activos");
-                if (!ra.error && ra.codigo > 0) new ActivoComponenteImagenController().VincularImagen(r.codigo, ra.codigo);
+                if (!ra.error && ra.codigo > 0) { new ActivoComponenteImagenController().VincularImagen(r.codigo, ra.codigo); SitioBase.CacheSesion.BorrarGlobal("activo_fotos_" + _cliente); }
             }
 
             Tools.tools.ClientAlert("Listo: «" + nombre + "» quedó agregado como componente de " + a.act_nombre + ".", "ok");
@@ -2467,17 +2474,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     private Dictionary<int, int> _dgFotoComp = new Dictionary<int, int>();
     private Dictionary<int, int> _dgFotoAct = new Dictionary<int, int>();
 
+    /* RENDIMIENTO (11-10-2026): la foto de cada pieza costaba una consulta (~250 ms cada una).
+       Ahora salen todas de SEL_ACTIVO_IMAGENES_LISTA, la misma lectura en bloque de la lista,
+       cacheada 2 minutos por cliente; subir una foto desde esta ficha la olvida. */
+    private Dictionary<string, int> FotosCliente()
+    {
+        int cli = _cliente;
+        return SitioBase.CacheSesion.Global("activo_fotos_" + cli, 2, () => new ActivoImagenController().GetImagenesLista(cli) ?? new Dictionary<string, int>());
+    }
+
     private int DgFotoComp(int id)
     {
-        int f; if (_dgFotoComp.TryGetValue(id, out f)) return f;
-        f = new ActivoComponenteImagenController().GetImagenId(id, _cliente);
-        _dgFotoComp[id] = f; return f;
+        int f; return FotosCliente().TryGetValue("C" + id, out f) ? f : 0;
     }
     private int DgFotoAct(int id)
     {
-        int f; if (_dgFotoAct.TryGetValue(id, out f)) return f;
-        f = new ActivoImagenController().GetImagenId(id, _cliente);
-        _dgFotoAct[id] = f; return f;
+        int f; return FotosCliente().TryGetValue("A" + id, out f) ? f : 0;
     }
     private int DgFotoRep(int id)
     {
@@ -2749,11 +2761,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         try { _dgFotoRep = new RepuestoFotoController().GetPortadas() ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
         ActivoEstructuraController ec = new ActivoEstructuraController();
         ActivoController ac = new ActivoController();
+        /* Cada subactivo pedía su estructura y sus datos en fila (2 consultas por subactivo):
+           ahora van todos a la vez (SitioBase.Paralelo). */
         List<DgSub> subs = new List<DgSub>();
+        List<System.Threading.Tasks.Task<ActivoEstructura>> tEst = new List<System.Threading.Tasks.Task<ActivoEstructura>>();
+        List<System.Threading.Tasks.Task<Activo>> tAct = new List<System.Threading.Tasks.Task<Activo>>();
         foreach (ActivoEstructuraItem x in e.subactivos)
         {
-            DgSub d = new DgSub { item = x, est = ec.GetEstructura(x.id) ?? new ActivoEstructura() };
-            Activo sa = ac.GetActivo(x.id);
+            int sid = x.id;
+            tEst.Add(SitioBase.Paralelo.Pedir(() => new ActivoEstructuraController().GetEstructura(sid)));
+            tAct.Add(SitioBase.Paralelo.Pedir(() => new ActivoController().GetActivo(sid)));
+        }
+        for (int i = 0; i < e.subactivos.Count; i++)
+        {
+            ActivoEstructuraItem x = e.subactivos[i];
+            DgSub d = new DgSub { item = x, est = tEst[i].Result ?? new ActivoEstructura() };
+            Activo sa = tAct[i].Result;
             d.desc = sa != null ? Texto(sa.act_descripcion) : "";
             d.foto = DgFotoAct(x.id);
             subs.Add(d);
@@ -2943,7 +2966,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (nota != null) det = (det == "" ? "" : det + " · ") + "«" + nota + "»";
 
         /* La foto del componente, si tiene: en la tarjeta se reconoce la pieza sin abrirla. */
-        int foto = new ActivoComponenteImagenController().GetImagenId(x.id, _cliente);
+        int foto = DgFotoComp(x.id);
         string html = Item("es-comp" + (hijo ? " es-hijo" : "") + (retirada ? " es-retirada" : "") + (foto > 0 ? " con-foto" : ""),
                     Det("comp", x.id, x.nombre, estado, tono, nota, datos, reps, q, null, null),
                     x.nombre, det, estado, tono, "");
