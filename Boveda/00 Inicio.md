@@ -6,7 +6,7 @@ Sistema Integrado de Gestión de Mantenimiento Industrial. Capstone Duoc UC, equ
 
 - [[Arquitectura]] — stack, carpetas, dónde vive cada cosa
 - [[Seguridad por datos]] — Menus/Token, sin Paginas.cs
-- [[Patrones y convenciones]] — PATRONES/ASP, BOM+CRLF, SP-first
+- [[Patrones y convenciones]] — Boveda/Patrones, BOM+CRLF, SP-first
 - [[Estandar UI]] — paleta, botones, drawer, sin modales
 - [[Rendimiento]] — Paralelo, CacheSesion, Medida, pool
 - [[Base de datos y entornos]] — SQL, Azure, scripts

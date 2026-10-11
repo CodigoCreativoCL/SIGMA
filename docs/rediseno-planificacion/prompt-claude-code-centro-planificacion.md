@@ -43,7 +43,7 @@ La vista **Componentes** de la barra del prototipo muestra todos los estados de 
 
 1. **Lee primero:**
    - `CLAUDE.md` (estándar de UI y colores por función);
-   - los **PATRONES/ASP** del proyecto;
+   - los **Boveda/Patrones** del proyecto;
    - el documento de alcance **completo**, con atención a §8 a §17, §21, §25 y §26;
    - `WsPlanificacion360` y la página actual de Planificación 360.
 2. **Revisa** los SP que ya existen y que el Centro reutiliza:

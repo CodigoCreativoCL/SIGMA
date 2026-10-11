@@ -1369,7 +1369,7 @@ Centro de Mantenimiento
 
 ### 26.4 Convenciones del proyecto que aplican
 
-- Leer los **PATRONES/ASP** del proyecto antes de la primera línea de SQL o C#.
+- Leer los **Boveda/Patrones** del proyecto antes de la primera línea de SQL o C#.
 - Archivos en UTF-8 con BOM y CRLF; todo `<button>` dentro del form lleva `type="button"`.
 - Compilar con `aspnet_compiler` después de tocar C#. Aplicar SQL con `_scratch/aplicar_sql.py`, usando `-I` cuando el SP use `FOR XML` o índices filtrados (QUOTED_IDENTIFIER).
 - Fechas con el calendario de SIGMA (`.sigma-modal-fecha` + `SigmaCalendario.conectar()` tras pintar), nunca `type=date` o `type=time`.
