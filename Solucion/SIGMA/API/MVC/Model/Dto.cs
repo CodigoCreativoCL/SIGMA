@@ -2222,6 +2222,48 @@ namespace API.MVC.Model
         public DateTime arc_fecha_creacion { get; set; }
     }
 
+    /// <summary>
+    /// Un archivo de la galería de evidencias (HU-142): una fila de SEL_ARCHIVO_VINCULO
+    /// (BD/434, con la RUTA desde BD/436). Mismos nombres que el SP, como el resto de los DTO.
+    /// La imagen se pide después por /archivo/ver?ruta=RUTA.
+    /// </summary>
+    public class ArchivoVinculoDto
+    {
+        public int ARCHIVO_ID { get; set; }
+        public int VINCULO_ID { get; set; }
+        public string NOMBRE { get; set; }
+        public string TITULO { get; set; }
+        public string DESCRIPCION { get; set; }
+        public string MIME { get; set; }
+        public long BYTES { get; set; }
+
+        /// <summary>Hora de la planta: la de captura si el teléfono la mandó; si no, la de subida.</summary>
+        public DateTime? FECHA { get; set; }
+
+        /// <summary>ANTES | DURANTE | DESPUES | OTRO | REFERENCIA.</summary>
+        public string MOMENTO { get; set; }
+        public int MOMENTO_ORDEN { get; set; }
+        public string CATEGORIA_CODIGO { get; set; }
+        public string CATEGORIA_NOMBRE { get; set; }
+
+        /// <summary>Imagen modelo de la actividad del plan (HU-143), no evidencia de terreno.</summary>
+        public bool ES_REFERENCIA { get; set; }
+        public int? OT_ID { get; set; }
+        public int? OT_NUMERO { get; set; }
+        public string OT_TITULO { get; set; }
+        public int? PASO_ID { get; set; }
+        public int? PASO_ORDEN { get; set; }
+        public string PASO_NOMBRE { get; set; }
+        public int? ACTIVIDAD_ID { get; set; }
+        public string ACTIVIDAD_NOMBRE { get; set; }
+        public string QUIEN { get; set; }
+        public bool ES_IMAGEN { get; set; }
+        public bool ES_VIDEO { get; set; }
+        public bool ES_AUDIO { get; set; }
+        public string RUTA { get; set; }
+        public int TOTAL { get; set; }
+    }
+
 
     // =======================================================================
     //  SIGMA AI                                            HU-173 y HU-175
