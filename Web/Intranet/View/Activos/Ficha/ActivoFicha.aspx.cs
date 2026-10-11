@@ -4815,6 +4815,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = r.error
             ? "<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-alert-outline\"></i><span>" + Server.HtmlEncode(r.detalle) + "</span></div>"
             : "";
+
+        // Si fallo, un popup visible: el usuario tiene que enterarse del error.
+        if (r.error) Tools.tools.ClientAlert(r.detalle, "alerta");
     }
 
     /// <summary>
@@ -4828,7 +4831,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         int bitacora;
         if (!int.TryParse(Request.Form["bit_rect_id"], out bitacora) || bitacora <= 0) return;
-        if (ActivoSeleccionado() == 0) return;
+        if (ActivoSeleccionado() == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
 
         Respuesta r = new ActivoCentroController().RectificarBitacora(
             bitacora, Request.Form["bit_rect_texto"], Request.Form["bit_rect_motivo"]);
@@ -4836,6 +4839,9 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
                            "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
                            "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        // Popup visible ademas del aviso en linea: que el usuario se entere del resultado.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
     }
 
     /// <summary>
@@ -4915,10 +4921,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hdnSeccion.Value = "bitacora";
 
         int id = ActivoSeleccionado();
-        if (id == 0) return;
+        if (id == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
 
         Activo a = new ActivoController().GetActivo(id);
-        if (a == null || a.act_id == 0 || a.act_cliente != _cliente) return;
+        if (a == null || a.act_id == 0 || a.act_cliente != _cliente)
+        {
+            Tools.tools.ClientAlert("No se pudo cargar el activo, o no pertenece al cliente seleccionado.", "alerta");
+            return;
+        }
 
         Respuesta r = new ActivoCentroController().AgregarObservacion(
             a.act_id, a.act_cliente_instalacion, a.act_instalacion_area, txtObservacion.Text);
@@ -4926,6 +4936,10 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
                            "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
                            "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        // Un popup ademas del aviso en linea: el panel puede estar en otra vista
+        // y el usuario tiene que enterarse de lo que paso pase lo que pase.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
 
         if (!r.error) txtObservacion.Text = "";
     }
