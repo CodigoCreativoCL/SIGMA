@@ -4761,6 +4761,12 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         }
 
         s.Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+        /* Rectificar solo las notas principales: una respuesta del hilo no se
+           rectifica, se responde. Se muestra a todos; quien no la escribio
+           recibe el rechazo del servidor —la potestad la valida el SP, no el
+           que el boton este o no—. */
+        if (nivel == 0)
+            s.Append("<button type=\"button\" class=\"sg-bn-btn\" data-bit-rectificar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-pencil-outline\"></i>Rectificar</button>");
         if (resp.Count > 0)
             s.Append("<button type=\"button\" class=\"sg-bn-btn es-hilo\" data-bit-hilo=\"").Append(b.bit_id).Append("\" aria-expanded=\"true\"><i class=\"mdi mdi-chevron-up\"></i>")
              .Append(resp.Count).Append(resp.Count == 1 ? " respuesta" : " respuestas").Append("</button>");
@@ -4768,8 +4774,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<div class=\"sg-bn-form\" data-bit-form=\"").Append(b.bit_id).Append("\" hidden>")
          .Append("<textarea rows=\"2\" maxlength=\"2000\" placeholder=\"Responde a ").Append(Server.HtmlEncode(quien.Split(' ')[0])).Append("…\"></textarea>")
          .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
-         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>")
-         .Append("</div></article>");
+         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>");
+
+        /* Formulario de rectificación (HU-131, T-5320): texto corregido
+           —prellenado con el vigente— y motivo OBLIGATORIO. La validacion dura
+           la hace el servidor; esto solo adelanta el aviso. */
+        if (nivel == 0)
+        {
+            string vigente = rects.Count > 0 ? rects[rects.Count - 1].texto : b.texto;
+            s.Append("<div class=\"sg-bn-rect-form\" data-bit-rect-form=\"").Append(b.bit_id).Append("\" hidden>")
+             .Append("<textarea rows=\"3\" maxlength=\"4000\" data-rect-texto placeholder=\"Texto corregido…\">").Append(Server.HtmlEncode(Texto(vigente))).Append("</textarea>")
+             .Append("<input type=\"text\" maxlength=\"500\" data-rect-motivo placeholder=\"Motivo de la rectificación (obligatorio)\" />")
+             .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-rect-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
+             .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-rect-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-check\"></i>Rectificar</button></div></div>");
+        }
+
+        s.Append("</div></article>");
 
         if (resp.Count > 0)
         {
@@ -4795,6 +4815,27 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = r.error
             ? "<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-alert-outline\"></i><span>" + Server.HtmlEncode(r.detalle) + "</span></div>"
             : "";
+    }
+
+    /// <summary>
+    /// Rectifica una entrada de bitácora (HU-131). La potestad la valida el
+    /// servidor —el permiso acá y el SP después (solo el autor, motivo
+    /// obligatorio, cliente en sesión)—, no el que el botón esté o no.
+    /// </summary>
+    protected void lnkRectificar_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "bitacora";
+
+        int bitacora;
+        if (!int.TryParse(Request.Form["bit_rect_id"], out bitacora) || bitacora <= 0) return;
+        if (ActivoSeleccionado() == 0) return;
+
+        Respuesta r = new ActivoCentroController().RectificarBitacora(
+            bitacora, Request.Form["bit_rect_texto"], Request.Form["bit_rect_motivo"]);
+
+        litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
+                           "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
+                           "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
     }
 
     /// <summary>

@@ -1187,6 +1187,77 @@ namespace SitioBase.Controller
         }
 
         /// <summary>
+        /// Rectifica una entrada de bitácora (HU-131): no la edita, agrega una
+        /// fila con el texto corregido y el motivo, obligatorio.
+        ///
+        /// Se escribe por el MISMO procedimiento que la app —
+        /// API_INS_BITACORA_RECTIFICACION— para que la bitácora no tenga dos
+        /// caminos de escritura. El SP impone las reglas en el servidor y no la
+        /// pantalla: solo el autor rectifica, el motivo es obligatorio, el texto
+        /// no puede ir vacío ni igual al vigente, y el cliente sale de la sesión
+        /// —un bit_id escrito a mano no alcanza para tocar la entrada de otra
+        /// empresa—. El uuid lo pone la web: un doble clic no deja dos.
+        /// </summary>
+        public Respuesta RectificarBitacora(int bitacora, string texto, string motivo)
+        {
+            Respuesta r = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "La sesión no es válida o expiró. Vuelve a entrar y repite la operación.";
+                return r;
+            }
+
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                r.error = true; r.codigo = -1; r.detalle = "Escribe el texto corregido.";
+                return r;
+            }
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "Para rectificar hay que decir por qué: el motivo es obligatorio.";
+                return r;
+            }
+
+            if (motivo.Trim().Length > 500)
+            {
+                r.error = true; r.codigo = -1; r.detalle = "El motivo no puede superar los 500 caracteres.";
+                return r;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("API_INS_BITACORA_RECTIFICACION");
+                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@BITACORA", bitacora);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@TEXTO", texto.Trim());
+                cmd.Parameters.AddWithValue("@MOTIVO", motivo.Trim());
+
+                // El SP devuelve bre_id en la primera columna.
+                object id = cmd.ExecuteScalar();
+                cmd.Connection.Close();
+
+                r.error = false;
+                r.codigo = id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+                r.detalle = "Entrada rectificada. El texto original se conserva.";
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.error = true; r.codigo = -1; r.detalle = ex.Message;
+            }
+
+            return r;
+        }
+
+        /// <summary>
         /// Las rectificaciones de las entradas del activo (HU-131), agrupables
         /// por entrada. La ficha pinta, bajo cada entrada rectificada, el
         /// original tachado y encima la ultima version con su motivo.
