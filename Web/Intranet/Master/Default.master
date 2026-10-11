@@ -295,6 +295,46 @@
                          no tiene como saber donde esta cargando los datos.
                          Solo es un enlace cuando hay mas de uno entre los
                          que elegir. -->
+                    <%-- Cupo gratuito de Azure SQL: cuántos segundos de vCore quedan este mes.
+                         Solo aparece si existe ~/azure.config (Dev\conectar_azure.ps1). --%>
+                    <li class="sg-azcupo" id="sgAzCupo" hidden>
+                        <span class="sg-azcupo-chip" tabindex="0"><i class="mdi mdi-database-outline" aria-hidden="true"></i><b></b><small></small></span>
+                    </li>
+                    <style>
+                        .sg-azcupo{display:flex;align-items:center;margin-right:8px}
+                        .sg-azcupo-chip{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:999px;font:700 12px/1 inherit;background:#E7F5EE;color:#16855B;white-space:nowrap;cursor:default}
+                        .sg-azcupo-chip small{font-weight:600;opacity:.85}
+                        .sg-azcupo-chip.is-w{background:#FFF4E6;color:#B65C00}
+                        .sg-azcupo-chip.is-d{background:#FDECEA;color:#C7352B}
+                        .sg-azcupo-chip.is-x{background:#F4F6FA;color:#68738A}
+                        @media (max-width:900px){.sg-azcupo-chip small{display:none}}
+                    </style>
+                    <script>
+                        (function () {
+                            /* Indicador del cupo de Azure SQL: verde sobre 30 %, ámbar entre 10 y 30 %, rojo bajo 10 %. */
+                            function pintar() {
+                                var x = new XMLHttpRequest();
+                                x.open('POST', '<%= ResolveUrl("~/WebService/WsAzureCupo.asmx/Cupo") %>');
+                                x.setRequestHeader('Content-Type', 'application/json; charset=utf-8');
+                                x.onload = function () {
+                                    var r; try { r = JSON.parse(JSON.parse(x.responseText).d); } catch (e) { return; }
+                                    var li = document.getElementById('sgAzCupo'); if (!li || !r || !r.activo) return;
+                                    var c = li.querySelector('.sg-azcupo-chip'), n = function (v) { return Math.round(+v || 0).toLocaleString('es-CL'); };
+                                    if (!r.ok) { c.className = 'sg-azcupo-chip is-x'; c.querySelector('b').textContent = 'Azure SQL'; c.querySelector('small').textContent = 'sin dato'; c.title = r.mensaje || ''; li.hidden = false; return; }
+                                    c.className = 'sg-azcupo-chip' + (r.pct < 10 ? ' is-d' : r.pct < 30 ? ' is-w' : '');
+                                    c.querySelector('b').textContent = r.pct + '% libre';
+                                    c.querySelector('small').textContent = n(r.restante) + ' s vCore';
+                                    c.title = 'Cupo gratuito de Azure SQL este mes: quedan ' + n(r.restante) + ' de ' + n(r.limite) + ' segundos de vCore (≈ ' + n(r.restante / 3600) + ' h).\n' +
+                                        'Ritmo: ' + n(r.porDia) + ' s por día' + (r.alcanzaHasta ? ' · a este ritmo se agota el ' + r.alcanzaHasta : ' · alcanza hasta fin de mes') + '.\n' +
+                                        'Se renueva el ' + r.renueva + '. Leído a las ' + r.leido + '.';
+                                    li.hidden = false;
+                                };
+                                x.send('{}');
+                            }
+                            if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', pintar); else pintar();
+                            setInterval(pintar, 10 * 60 * 1000);
+                        })();
+                    </script>
                     <li class="sg-cliente-actual dropdown">
                         <asp:PlaceHolder ID="phCliente" runat="server" />
 

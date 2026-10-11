@@ -391,3 +391,6 @@ BD/Reinicio/_datos/
 
 # Copia local de videos de soporte (VerArchivo los sirve por rangos)
 Web/Intranet/App_Data/cache-video/
+
+# Credencial de solo lectura del indicador del cupo de Azure SQL (Dev/conectar_azure.ps1)
+Web/Intranet/azure.config
