@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:23 · rama: `BryanChavez` · HEAD `8830a6f9`
+Generado: 2026-10-11 16:34 · rama: `BryanChavez` · HEAD `2b49959a`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,8 @@ Generado: 2026-10-11 16:23 · rama: `BryanChavez` · HEAD `8830a6f9`
 
 ## Últimos commits
 
+- 2b49959a 2026-10-11 Nessgod: Bóveda: flujo de git pensado para el equipo de 3
+- d8806ebe 2026-10-11 Nessgod: Bóveda: mapa de código por flujo
 - 8830a6f9 2026-10-11 Nessgod: Cerebro compartido: skills sigma-cerebro y sigma-cerrar-bloque, estado automático de la bóveda
 - 443d9315 2026-10-11 Nessgod: Bóveda Obsidian de SIGMA (segundo cerebro para ahorrar tokens)
 - a8f623ea 2026-10-11 Nessgod: Rendimiento: Min Pool Size=20 y cadena mas corta en la ficha de activo
@@ -23,8 +25,6 @@ Generado: 2026-10-11 16:23 · rama: `BryanChavez` · HEAD `8830a6f9`
 - d99721e6 2026-10-11 pescio666: API: GET /archivo-vinculos, la galería de evidencias para la app (HU-142)
 - 74805dd0 2026-10-11 pescio666: Evidencias: SEL_ARCHIVO_VINCULO devuelve la ruta del blob (BD 436)
 - 836917bd 2026-10-11 Catalina Pescio: Merge pull request #77 from CodigoCreativoCL/CatalinaPescio
-- 2618af73 2026-10-11 pescio666: Merge master en CatalinaPescio: ficha de OT v8 con la galería de evidencias
-- 55d63aa8 2026-10-11 pescio666: Seguridad: los ids de URL van firmados con HMAC (Tools.Crypto)
 
 ## Módulos y pantallas
 
