@@ -182,7 +182,7 @@
     var prog = o.otr_fecha_programada_utc ? K.dIso(o.otr_fecha_programada_utc) : '';
     return '<section class="cp-card cp-oth"><div class="cp-oth-t"><div style="min-width:0"><div class="cp-oth-id"><span class="cp-mono">' + otTxt(o.otr_correlativo) + '</span>' + estChip(e, tieneAsignado(F)) + '<span class="cp-tg">' + (TIPOS[o.otr_orden_trabajo_tipo] || '') + '</span><span class="cp-tg' + (+o.otr_orden_trabajo_prioridad >= 3 ? ' cp-w' : '') + '">Prioridad ' + (PRIO[o.otr_orden_trabajo_prioridad] || '').toLowerCase() + '</span>' + (parada ? '<span class="cp-tg cp-w">Con parada</span>' : '') + '</div>' +
       '<h2>' + esc(o.otr_titulo) + '</h2><p class="cp-oth-a">' + ic('cog', 15) + '<span><b>' + esc(o.ACTIVO_NOMBRE) + '</b> <span class="cp-cmpp">' + esc(o.ACTIVO_CODIGO) + (o.COMPONENTE_NOMBRE ? ' › ' + esc(o.COMPONENTE_NOMBRE) : '') + '</span> · ' + esc(o.AREA_NOMBRE || '') + (o.PLANTA_NOMBRE ? ' · ' + esc(o.PLANTA_NOMBRE) : '') + '</span></p></div>' +
-      '<div class="cp-oth-r">' + accionPrincipal(F) + '</div></div>' +
+      '<div class="cp-oth-r">' + (F.imprimirUrl ? '<a class="cp-btn cp-out" href="' + esc(F.imprimirUrl) + '" target="_blank" rel="noopener">' + ic('clip', 16) + 'Imprimir</a>' : '') + accionPrincipal(F) + '</div></div>' +
       '<div class="cp-otm"><div><span>' + (nResp > 1 ? 'Responsables' : 'Responsable') + '</span><b>' + (nombreResp ? K.avatar(nombreResp) + esc(nombreResp) + (nResp > 1 ? ' <span class="cp-tg">+' + (nResp - 1) + '</span>' : '') : '<span style="color:var(--amber)">Sin asignar</span>') + '</b><small>' + (resp && resp.GRUPO_NOMBRE ? esc(resp.GRUPO_NOMBRE) : resp ? esc(resp.ROL_NOMBRE || '') : 'Elige un responsable') + '</small></div>' +
       '<div><span>Programada</span><b>' + (prog ? K.fD(prog) : '—') + '</b><small>' + (prog ? (e === 4 ? 'cerrada' : K.rel(prog)) : 'Sin fecha') + '</small></div>' +
       '<div><span>Duración estimada</span><b>' + (est ? K.fH(est) : '—') + '</b><small>' + (+o.otr_requiere_permiso ? 'Requiere permiso de trabajo' : 'Sin permiso especial') + '</small></div>' +
@@ -267,10 +267,63 @@
     }).join('') + '</ol>' : '<p class="cp-foot" style="margin:0">Esta OT no tiene tareas. Agrégalas desde un procedimiento.</p>';
     var agregar = editable(F) && c && c.procedimientos.length ? '<div class="cp-sc-h" style="margin:14px 0 6px"><h3 style="font-size:13px">Agregar tareas desde un procedimiento</h3></div><div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span style="flex:1;min-width:240px">' + K.combo('otProc', c.procedimientos.map(function (p) { return { id: p.ID, n: p.NOMBRE }; }), U.proc || '', { etiqueta: 'Procedimiento', ph: 'Elige un procedimiento…' }) + '</span><button type="button" class="cp-btn cp-out cp-sm" data-a="otproc"' + (U.proc ? '' : ' disabled') + '>' + ic('plus', 15) + 'Agregar tareas</button></div><small class="cp-muted2" style="display:block;margin-top:6px">Se copian el nombre y la instrucción de cada paso. Volver a agregarlo no duplica la lista.</small>' : '';
     var mo = tabla('minmax(0,1.6fr) minmax(0,1fr) 150px 80px 110px', ['Quién', 'Especialidad', 'Inicio', 'Horas', 'Costo'], F.manoObra.map(function (m) { return '<div class="cp-rw" style="grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) 150px 80px 110px"><span class="cp-s"><b>' + esc(m.USUARIO_NOMBRE || m.PROVEEDOR_NOMBRE || '—') + '</b>' + (+m.HORA_EXTRA ? '<small>Hora extra</small>' : '') + '</span><span>' + esc(m.ESPECIALIDAD || '—') + '</span><span>' + f2(m.omo_fecha_inicio_utc) + '</span><span>' + K.fN((+m.MINUTOS || 0) / 60, 1) + ' h</span><span>' + (m.COSTO != null ? esc(m.MONEDA || '') + ' ' + K.fN(m.COSTO, 0) : '—') + '</span></div>'; }), 'Todavía no hay horas registradas por quienes ejecutan.');
-    var sv = tabla('minmax(0,1.4fr) minmax(0,1.6fr) 70px 110px', ['Proveedor', 'Servicio', 'Cant.', 'Costo'], F.servicios.map(function (s) { return '<div class="cp-rw" style="grid-template-columns:minmax(0,1.4fr) minmax(0,1.6fr) 70px 110px"><span class="cp-s"><b>' + esc(s.PROVEEDOR_NOMBRE || '—') + '</b>' + (s.DOCUMENTO ? '<small>' + esc(s.DOCUMENTO) + '</small>' : '') + '</span><span>' + esc(s.DESCRIPCION || s.TIPO || '') + '</span><span>' + K.fN(s.CANTIDAD, 0) + '</span><span>' + (s.COSTO != null ? esc(s.MONEDA || '') + ' ' + K.fN(s.COSTO, 0) : '—') + '</span></div>'; }), 'Sin servicios contratados.');
     return aviso + '<section class="cp-card"><div class="cp-sc-h"><h3>Tareas</h3><small>Acciones concretas que alguien realiza</small></div>' + lista + agregar + '</section>' +
       '<section class="cp-card"><div class="cp-sc-h"><h3>Mano de obra</h3><small>Horas registradas por quienes ejecutan</small></div>' + mo + '</section>' +
-      '<section class="cp-card"><div class="cp-sc-h"><h3>Servicios contratados</h3></div>' + sv + '</section>' + indispHTML(F) + evidenciasHTML(F);
+      serviciosHTML(F) + indispHTML(F) + evidenciasHTML(F);
+  }
+  /* HU-117 · Lo que se le pagó a un tercero. El monto se suma al costo de terceros SEPARADO POR MONEDA
+     (nunca UF con pesos) y cada servicio necesita el informe del proveedor para poder cerrar la OT. */
+  var dec = function (m) { return m === 'UF' ? 2 : 0; };
+  function svPuede(F) { return F.permisos.crear && +F.ot.otr_orden_trabajo_estado < 4; }
+  function serviciosHTML(F) {
+    var puede = svPuede(F), cols = 'minmax(0,1.3fr) minmax(0,1.7fr) 130px minmax(0,1fr)' + (puede ? ' 76px' : '');
+    var filas = F.servicios.map(function (s) {
+      var inf = s.INFORME_URL ? '<a class="cp-tg cp-c" href="' + esc(s.INFORME_URL) + '" target="_blank" rel="noopener">' + ic('check', 11) + 'Informe</a>'
+        : puede ? '<label class="cp-btn cp-out cp-xs" style="cursor:pointer">' + ic('plus', 12) + 'Adjuntar informe<input type="file" accept="application/pdf,image/*" data-svinf="' + s.ots_id + '" hidden></label>' : '<span class="cp-tg cp-w">Sin informe</span>';
+      return '<div class="cp-rw" style="grid-template-columns:' + cols + '"><span class="cp-s"><b>' + esc(s.PROVEEDOR_NOMBRE || '—') + '</b>' + (s.DOCUMENTO ? '<small>Doc. ' + esc(s.DOCUMENTO) + '</small>' : '') + '</span>' +
+        '<span class="cp-s"><b>' + esc(s.TIPO || '') + '</b><small>' + esc(s.DESCRIPCION || '') + '</small></span>' +
+        '<span style="font-weight:800">' + esc(s.MONEDA || '') + ' ' + K.fN(s.COSTO, dec(s.MONEDA)) + '</span><span>' + inf + '</span>' +
+        (puede ? '<span style="display:flex;gap:4px;justify-content:flex-end"><button type="button" class="cp-ibx" data-a="otsvedit" data-v="' + s.ots_id + '" aria-label="Editar servicio">' + ic('pencil', 13) + '</button><button type="button" class="cp-ibx" data-a="otsvdel" data-v="' + s.ots_id + '" aria-label="Quitar servicio">' + ic('x', 13) + '</button></span>' : '') + '</div>';
+    });
+    var tot = (F.serviciosTotal || []).map(function (x) { return '<span class="cp-tg cp-p" style="font-size:12px">' + esc(x.MONEDA) + ' ' + K.fN(x.TOTAL, dec(x.MONEDA)) + '</span>'; }).join(' ');
+    var sinInf = F.servicios.filter(function (s) { return !s.INFORME_URL; }).length;
+    return '<section class="cp-card" id="otServicios"><div class="cp-sc-h"><h3>Servicios contratados</h3><small>' + (tot ? 'Costo de terceros ' + tot : 'Lo que se le pagó a un tercero por esta intervención') + '</small>' +
+      (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otsvnew">' + ic('plus', 13) + 'Registrar servicio</button></div>' : '') + '</div>' +
+      tabla(cols, ['Proveedor', 'Servicio', 'Monto', 'Informe'].concat(puede ? [''] : []), filas, 'Sin servicios contratados.') +
+      (sinInf ? '<p class="cp-foot" style="margin:8px 0 0;color:var(--warning)">' + ic('alert', 13) + ' ' + (sinInf === 1 ? 'Un servicio no tiene' : sinInf + ' servicios no tienen') + ' el informe del proveedor: es obligatorio para cerrar la OT.</p>' : '') + '</section>';
+  }
+  /* El cajón del servicio: todo en una página, con el informe opcional en el mismo paso. */
+  var PSV = function (s) {
+    var c = U.svCat, prov = (U.cat && U.cat.proveedores || []).map(function (p) { return { id: p.ID, n: p.NOMBRE }; });
+    if (!c || !U.cat) return { t: s.id ? 'Editar servicio' : 'Registrar servicio', w: 'n', b: '<div class="cp-sk" style="height:46px"></div><div class="cp-sk" style="height:46px;margin-top:10px"></div>' };
+    var e = s.err;
+    return { t: s.id ? 'Editar servicio' : 'Registrar servicio', s: otTxt(U.ficha.ot.otr_correlativo) + ' · costo de terceros', w: 'n',
+      b: '<div class="cp-fld"><label>Proveedor</label>' + K.combo('svProv', prov, s.prov || '', { etiqueta: 'Proveedor', ph: prov.length ? 'Elige el proveedor…' : 'No hay contratistas registrados', err: e && !s.prov }) + '</div>' +
+        '<div class="cp-fld"><label>Tipo de servicio</label>' + K.combo('svTipo', c.tipos.map(function (x) { return { id: x.ID, n: x.NOMBRE }; }), s.tipo || '', { etiqueta: 'Tipo de servicio', ph: 'Elige el tipo…', err: e && !s.tipo }) + '</div>' +
+        '<div class="cp-fld"><label for="svD">Descripción</label><textarea id="svD" class="cp-inp' + (e && !String(s.desc).trim() ? ' cp-err' : '') + '" rows="2" data-pv="sv_desc" placeholder="Qué hizo el proveedor">' + esc(s.desc) + '</textarea></div>' +
+        '<div class="cp-fld2"><div class="cp-fld"><label for="svM">Monto</label><input id="svM" class="cp-inp' + (e && !(numero(s.monto) > 0) ? ' cp-err' : '') + '" data-pv="sv_monto" value="' + esc(s.monto) + '" inputmode="decimal" placeholder="Ej.: 350.000"></div>' +
+        '<div class="cp-fld"><label>Moneda</label>' + K.combo('svMon', c.monedas.map(function (x) { return { id: x.ID, n: x.CODIGO + ' · ' + x.NOMBRE }; }), s.mon || '', { etiqueta: 'Moneda', ph: 'Moneda', err: e && !s.mon }) + '</div></div>' +
+        '<div class="cp-fld2"><div class="cp-fld"><label for="svDoc">N.º de factura u orden de compra <small>opcional</small></label><input id="svDoc" class="cp-inp" data-pv="sv_doc" value="' + esc(s.doc) + '" maxlength="100"></div>' +
+        '<div class="cp-fld"><label>Fecha del servicio</label>' + K.fecha('sv_fecha', K.deDN(s.fecha), { ph: 'dd-mm-aaaa' }) + '</div></div>' +
+        (s.id ? '' : '<div class="cp-fld"><label>Informe del proveedor <small>PDF o imagen · puedes adjuntarlo después</small></label><input type="file" class="cp-inp" accept="application/pdf,image/*" data-svnuevo="1">' + (s.archivo ? '<small class="cp-muted2">' + esc(s.archivo.name) + '</small>' : '') + '</div>') +
+        (e ? '<div class="cp-bnr cp-w" style="margin-top:10px">' + ic('alert', 16) + '<span>Completa proveedor, tipo, descripción, monto mayor que cero y moneda.</span></div>' : ''),
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (s.busy ? ' cp-load' : '') + '" data-a="otsvsave">' + ic('check', 16) + (s.id ? 'Guardar cambios' : 'Registrar servicio') + '</button></span>' };
+  };
+  var numero = function (v) { var s = String(v || '').trim(); if (s.indexOf(',') >= 0) s = s.replace(/\./g, '').replace(',', '.'); else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, ''); var n = parseFloat(s); return isNaN(n) ? 0 : n; };
+  var leerArchivo = function (f) { return new Promise(function (ok, mal) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { mal(new Error('No se pudo leer el archivo.')); }; r.readAsDataURL(f); }); };
+  function subirInforme(servicio, f) {
+    if (!f) return Promise.resolve();
+    if (f.size > 10 * 1024 * 1024) return Promise.reject(new Error('El informe supera los 10 MB.'));
+    return leerArchivo(f).then(function (d) { return llamar('InformeServicio', { servicio: +servicio, nombre: f.name, datos: d }, 'Informe adjuntado.'); });
+  }
+  function abrirServicio(s0) {
+    var s = { id: s0 ? +s0.ots_id : 0, prov: s0 ? s0.PROVEEDOR_ID : '', tipo: s0 ? s0.TIPO_ID : '', desc: s0 ? s0.DESCRIPCION : '', monto: s0 ? String(s0.COSTO).replace('.', ',') : '', mon: s0 ? s0.MONEDA_ID : '', doc: s0 ? s0.DOCUMENTO : '', fecha: s0 && s0.ots_fecha_servicio_utc ? K.fDN(K.dIso(s0.ots_fecha_servicio_utc)) : K.fDN(K.TODAY), archivo: null, err: false, busy: false };
+    if (!s.mon && U.svCat) { var clp = U.svCat.monedas.filter(function (m) { return m.CODIGO === 'CLP'; })[0]; if (clp) s.mon = clp.ID; }
+    U.sv = s; K.Panel.open({ render: function () { return PSV(U.sv); }, st: s, onclose: function () { U.sv = null; } });
+    var pide = [];
+    if (!U.svCat) pide.push(api('ServicioCatalogos', {}).then(function (c) { U.svCat = c; if (!s.mon) { var clp = c.monedas.filter(function (m) { return m.CODIGO === 'CLP'; })[0]; if (clp) s.mon = clp.ID; } }));
+    if (!U.cat) pide.push(api('Catalogos', { planta: 0 }).then(function (c) { U.cat = c; }));
+    if (pide.length) Promise.all(pide).then(function () { if (K.Panel.state() === s) K.Panel.paint(); }).catch(function (e) { K.Panel.close(); K.toastError(e); });
   }
   function indispHTML(F) {
     var puede = F.permisos.reportar && +F.ot.otr_orden_trabajo_estado < 4 && +F.ot.otr_activo > 0;
@@ -346,11 +399,12 @@
         '<p class="cp-foot" style="margin:10px 0 0">' + (+o.otr_orden_trabajo_origen === 2 ? 'La ejecución del plan cuenta como cumplida. ' : '') + (F.avisos.some(function (a) { return a.RESUELTO_AQUI; }) ? 'Los avisos vinculados quedaron resueltos.' : '') + '</p><h4 class="cp-acta-t">Firmas</h4>' + sigs(function () { return false; }) + '</section>';
     }
     if (e === 3) {
-      var miss = faltan(F);
+      var miss = faltan(F), svMiss = F.servicios.filter(function (s) { return !s.INFORME_URL; }).length;
       return '<section class="cp-card">' + steps + '<div class="cp-sc-h"><h3>Informe de cierre</h3></div><div class="cp-facts"><div style="grid-column:1/-1"><span>Trabajo realizado</span><b style="font-weight:600">' + esc(o.otr_resultado || 'Sin informe.') + '</b></div>' + fact('Horas reales', (+o.otr_duracion_real_minuto || minutosReg(F)) ? fHM(+o.otr_duracion_real_minuto || minutosReg(F)) : '—') + (o.otr_notas ? fact('Notas', esc(o.otr_notas)) : '') + '</div></section>' +
+        (svMiss ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span>Falta el informe del proveedor en ' + (svMiss === 1 ? 'un servicio contratado' : svMiss + ' servicios contratados') + '. Es obligatorio para cerrar. <button type="button" class="cp-lnk" data-a="otsvir">Adjuntarlo</button></span></div>' : '') +
         '<section class="cp-card"><div class="cp-sc-h"><h3>Firmas</h3><small>' + (miss.length ? (miss.length === 1 ? 'Falta una firma' : 'Faltan ' + miss.length + ' firmas') + ' para cerrar' : 'Todo firmado: ya se puede cerrar') + '</small></div>' + sigs(function (r) { return r !== 'ej' && p.validar && (r !== 'sup' || p.cerrar); }) +
         (p.cerrar ? '<div class="cp-fld" style="margin-top:12px"><label>Motivo de cierre</label>' + K.combo('ciMotivo', (F.motivos || []).map(function (m) { return { id: m.ID, n: m.NOMBRE }; }), fc.motivo || 1, { etiqueta: 'Motivo de cierre', ph: 'Trabajo realizado' }) + '</div>' : '') +
-        '<div class="cp-sg-end">' + (p.cerrar ? '<button type="button" class="cp-btn cp-plain" data-a="otdev">Devolver a ejecución</button><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otcerrar"' + (miss.length ? ' aria-disabled="true"' : '') + '>' + ic('check', 16) + 'Cerrar OT</button>' : '<span class="cp-sg-why">Esperando que alguien con la facultad de cerrar OT revise el informe y la cierre.</span>') + '</div></section>' + hallazgoHTML(F);
+        '<div class="cp-sg-end">' + (p.cerrar ? '<button type="button" class="cp-btn cp-plain" data-a="otdev">Devolver a ejecución</button><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otcerrar"' + (miss.length || svMiss ? ' aria-disabled="true"' : '') + '>' + ic('check', 16) + 'Cerrar OT</button>' : '<span class="cp-sg-why">Esperando que alguien con la facultad de cerrar OT revise el informe y la cierre.</span>') + '</div></section>' + hallazgoHTML(F);
     }
     /* en ejecución */
     var causas = CAUSAS.map(function (x) { return { id: x, n: x }; });
@@ -492,10 +546,40 @@
   };
   A.otcerrar = function () {
     var fc = U.formCierre, F = U.ficha, miss = faltan(F);
+    if (F.servicios.some(function (s) { return !s.INFORME_URL; })) { K.toastError(new Error('Falta el informe del proveedor en los servicios contratados.')); A.otsvir(); return; }
     if (miss.length) { U.fr = U.fr || {}; U.fr.err = miss[0]; pintar(); var b = document.getElementById('sgb-' + miss[0]); if (b) b.scrollIntoView({ block: 'center', behavior: 'smooth' }); K.toastError(new Error(miss.length > 1 ? 'Faltan las firmas de recepción del área y de quien aprueba el cierre.' : 'Falta la firma ' + (miss[0] === 'sup' ? 'de quien aprueba el cierre.' : 'de recepción del área.'))); return; }
     fc.busy = true; pintar();
     llamar('Cerrar', { motivo: +fc.motivo || 1, resultado: F.ot.otr_resultado || '', firma: '' }, otTxt(F.ot.otr_correlativo) + ' cerrada.').then(function () { fc.busy = false; pintar(); }).catch(function () { fc.busy = false; pintar(); });
   };
+  /* HU-117 · servicios contratados (cajón) */
+  A.otsvnew = function () { abrirServicio(null); };
+  A.otsvedit = function (d) { abrirServicio(U.ficha.servicios.filter(function (s) { return String(s.ots_id) === String(d.v); })[0]); };
+  A.otsvir = function () { U.tab = 'pasos'; hashOt(U.ficha.q, 'pasos'); pintar(); var el = document.getElementById('otServicios'); if (el) el.scrollIntoView({ block: 'start', behavior: 'smooth' }); };
+  A.otsvdel = function (d) {
+    var F = U.ficha, s = F.servicios.filter(function (x) { return String(x.ots_id) === String(d.v); })[0]; if (!s) return;
+    /* Se ve al instante; si el servidor lo rechaza, la ficha vuelve con lo que hay en la base. */
+    F.servicios = F.servicios.filter(function (x) { return x !== s; }); pintar();
+    llamar('QuitarServicio', { servicio: +s.ots_id }, 'Servicio quitado.').catch(nada);
+  };
+  A.otsvsave = function () {
+    var s = U.sv; if (!s || s.busy) return;
+    if (!s.prov || !s.tipo || !String(s.desc).trim() || !(numero(s.monto) > 0) || !s.mon) { s.err = true; K.Panel.paint(); return; }
+    s.busy = true; K.Panel.paint();
+    var arch = s.archivo;
+    llamar('GuardarServicio', { servicio: s.id, proveedor: +s.prov, tipo: +s.tipo, descripcion: String(s.desc).trim(), cantidad: '1', monto: String(numero(s.monto)), moneda: +s.mon, documento: s.doc || '', fecha: s.fecha ? K.deDN(s.fecha) : '' }, s.id ? 'Servicio actualizado.' : 'Servicio registrado.')
+      .then(function (r) {
+        if (!arch) return;
+        var f = (r.ficha || r).servicios || [], nuevo = f.reduce(function (m, x) { return +x.ots_id > m ? +x.ots_id : m; }, 0);
+        return subirInforme(nuevo, arch);
+      })
+      .then(function () { U.sv = null; K.Panel.close(); })
+      .catch(function (e) { s.busy = false; K.Panel.paint(); if (e && e.message) K.toastError(e); });
+  };
+  document.addEventListener('change', function (ev) {
+    var t = ev.target; if (!t || t.type !== 'file') return;
+    if (t.hasAttribute('data-svinf') && U.ficha) { var f = t.files && t.files[0]; if (f) subirInforme(t.getAttribute('data-svinf'), f).catch(function (e) { K.toastError(e); }); return; }
+    if (t.hasAttribute('data-svnuevo') && U.sv) { U.sv.archivo = t.files && t.files[0] || null; K.Panel.paint(); }
+  });
   /* hallazgo encontrado al ejecutar */
   A.othsev = function (d) { if (U.hf) { U.hf.sev = +d.v; pintar(); } };
   A.othok = function () {
@@ -571,6 +655,7 @@
       if (k === 'in_detuvo' && U.ind) { U.ind.detuvo = !!v; return; }
       if (k === 'in_det' && U.ind) { U.ind.det = v; return; }
       if (e && k.indexOf('ed_') === 0) { if (k === 'ed_titulo') e.titulo = v; else if (k === 'ed_desc') e.desc = v; else if (k === 'ed_notas') e.notas = v; else if (k === 'ed_dur') e.dur = v; else if (k === 'ed_permiso') e.permiso = !!v; return; }
+      if (U.sv && k.indexOf('sv_') === 0) { U.sv[{ sv_desc: 'desc', sv_monto: 'monto', sv_doc: 'doc' }[k]] = v; return; }
       if (U.asig && k === 'oa_resp') { U.asig.resp = !!v; return; }
       if (U.asig && k === 'oa_obs') { U.asig.obs = v; return; }
       if (!st) return;
@@ -584,6 +669,7 @@
       if (st && (k === 'n_fecha' || k === 'ed_fecha')) { st.choq = null; st.choqOk = false; }
       if (k === 'n_fecha' && st) st.fecha = el.value;
       if (k === 'ed_fecha' && U.ed) U.ed.fecha = el.value;
+      if (k === 'sv_fecha' && U.sv) U.sv.fecha = el.value;
       if (k === 'in_ini' && U.ind) U.ind.ini = el.value;
       if (k === 'in_fin' && U.ind) U.ind.fin = el.value;
     },
@@ -603,6 +689,7 @@
       if (n === 'edHora' && U.ed) { U.ed.hora = v; return; }
       if (n === 'otaQuien' && U.asig) { U.asig.quien = +v || 0; K.Panel.paint(); return; }
       if (n === 'otaGrupo' && U.asig) { U.asig.grupo = +v || 0; return; }
+      if (U.sv && (n === 'svProv' || n === 'svTipo' || n === 'svMon')) { U.sv[{ svProv: 'prov', svTipo: 'tipo', svMon: 'mon' }[n]] = +v || ''; return; }
       if (!st) return;
       if (n === 'nAct') { st.act = v; st.comp = 0; K.Panel.paint(); }
       if (n === 'nComp') st.comp = +v || 0;
