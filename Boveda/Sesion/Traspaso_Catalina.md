@@ -20,5 +20,8 @@ Rama: `CatalinaPescio` (sin commits propios pendientes: está solo atrasada resp
 - **rutas-nuevas-repo** (reference): las rutas del punto 2.
 - Si tu memoria cita `PATRONES\ASP`, `C:\Capstone\MD\...` o `_scratch/bom.py`, corrígelas a `Boveda/Patrones`, `C:\Capstone\SIGMA\MD\...` y `Dev/bom.py`.
 
+## 4. Lee también `Boveda/Sesion/Traspaso_Bryan.md`
+Zonas de trabajo de Bryan, archivos «calientes» y cómo resolver los conflictos frecuentes (MD de estado, archivos generados de la bóveda).
+
 ## Registro
 <!-- Añade una línea al terminar: «Leído y memoria actualizada — Catalina — AAAA-MM-DD» -->
