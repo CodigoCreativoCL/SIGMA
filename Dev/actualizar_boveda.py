@@ -25,3 +25,5 @@ out = ['# Estado automático (generado, no editar a mano)', '',
       ['', '## Módulos y pantallas', ''] + mods + ['', '## Web services', '', ', '.join(ws), '']
 open(os.path.join(R, 'Boveda', 'Estado automatico.md'), 'w', encoding='utf-8', newline='\n').write('\n'.join(out))
 print('Boveda/Estado automatico.md actualizado (%d migraciones, %d ws)' % (len(sql), len(ws)))
+import runpy
+runpy.run_path(os.path.join(R, 'Dev', 'indexar_bd.py'), run_name='__main__')

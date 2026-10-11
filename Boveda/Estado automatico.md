@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:38 · rama: `BryanChavez` · HEAD `dccfb4a4`
+Generado: 2026-10-11 16:41 · rama: `BryanChavez` · HEAD `6b13e4db`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-11 16:38 · rama: `BryanChavez` · HEAD `dccfb4a4`
 
 ## Últimos commits
 
+- 6b13e4db 2026-10-11 Nessgod: Referencias a Boveda/Patrones en MD y Docker
 - dccfb4a4 2026-10-11 Nessgod: PATRONES/ASP pasa a Boveda/Patrones: cerebro centralizado
 - efb50ccc 2026-10-11 Nessgod: Se elimina INFRAESTRUCTURA (plan Hyper-V descartado)
 - baa92879 2026-10-11 Nessgod: Orden del repo: Docker en su carpeta, se eliminan SIGMA-Pautas-360 y ENTRENAMIENTO
@@ -24,7 +25,6 @@ Generado: 2026-10-11 16:38 · rama: `BryanChavez` · HEAD `dccfb4a4`
 - 8fc89318 2026-10-11 Nessgod: Merge master en BryanChavez: rendimiento + evidencias y firma de ids
 - 9d690a21 2026-10-11 Nessgod: Rendimiento: inicio en paralelo, estructura y SIGMA AI de la ficha de activo
 - ab5ba267 2026-10-11 Catalina Pescio: Merge pull request #78 from CodigoCreativoCL/CatalinaPescio
-- 7d8c93b7 2026-10-11 pescio666: Evidencias: usuario de prueba de la app en Hamburgo y bitácora del paso 4
 
 ## Módulos y pantallas
 

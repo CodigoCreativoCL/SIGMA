@@ -671,7 +671,7 @@ rebotaban. La regla vive en el CHECK; el SP ahora traduce en vez de competir.
 `Activo_Componente`, `Activo_Medidor` y `Activo_Medidor_Lectura` estaban en
 **cero**, así que las pantallas no se podían ni mirar: una lista vacía se ve
 igual estando bien que estando rota.
-`BD/_SEMILLA_COMPONENTES_Y_LECTURAS.sql` mete tres componentes con estados y
+`BD/Semillas/_SEMILLA_COMPONENTES_Y_LECTURAS.sql` mete tres componentes con estados y
 criticidades distintas, un horómetro y doce lecturas mensuales con un mes de
 parada y un salto grande. Es idempotente y va con guion bajo porque **no es
 una migración**.

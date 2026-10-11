@@ -27,7 +27,7 @@ Rutas relativas a `Web/Intranet/`. Cada pantalla `X.aspx` trae su `X.aspx.cs`. V
 - **Componentes UI:** `Js/sigma-combo.js` (SigmaCombo), `sigma-calendario.js` (SigmaCalendario), `sigma-dialog.js`, `sigma-popover.js`, `sigma-paginador.js`; estilos `Css/LookAndFeel/sigma-*.css` → [[Estandar UI]]
 - **Controladores/modelos:** `App_Code/MVC/` (un `*Controller` por entidad)
 - **Web.config / data.config:** raíz de `Web/Intranet` (cadenas con `Min Pool Size=20`)
-- **API móvil:** `Solucion/SIGMA/API/` · **BD:** `BD/NNN_*.sql` → [[Base de datos y entornos]]
+- **API móvil:** `Solucion/SIGMA/API/` · **BD:** `BD/NNN_*.sql` → [[Indice de base de datos]] (por contexto) y [[Base de datos y entornos]]
 
 ## Cómo encontrar algo que no está aquí
 `grep -rn "NombreDelSP" BD/ Web/Intranet/App_Code` (SP) · `grep -rln "id_o_clase" Web/Intranet/Js` (JS). No abrir carpetas enteras.
