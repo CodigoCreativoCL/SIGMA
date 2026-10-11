@@ -394,3 +394,7 @@ Web/Intranet/App_Data/cache-video/
 
 # Credencial de solo lectura del indicador del cupo de Azure SQL (Dev/conectar_azure.ps1)
 Web/Intranet/azure.config
+
+# Obsidian
+Boveda/.obsidian/workspace*.json
+Boveda/.obsidian/cache
