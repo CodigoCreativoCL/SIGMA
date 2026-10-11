@@ -1201,20 +1201,23 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         /* RENDIMIENTO (11-10-2026): las secciones se arman a la vez. Cada una escribe en sus
            propios controles y solo LEE datos (los permisos ya estan en HttpContext.Items desde
            el master). Ficha tecnica va despues: la arma el control frmFicha en su PreRender. */
+        long[] _t = new long[12];
+        Action<int, Action> T = (k, f) => { var sw = System.Diagnostics.Stopwatch.StartNew(); f(); _t[k] = sw.ElapsedMilliseconds; };
         using (SitioBase.Medida.Tramo("f_secciones"))
             SitioBase.Paralelo.Todos(
-                () => Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos),
-                () => Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos),
-                () => Ordenes(ordenes),
-                () => Mantenimiento(a, ocurrencias),
-                () => Estructura(a),
-                () => FallasYDetenciones(a, fallas, detenciones),
-                () => Condicion(a),
-                () => Documentos(a),
-                () => InspeccionesYTareas(a, revisiones),
-                () => RepuestosYCostos(a, consumos),
-                () => SigmaAi(a, ordenes, fallas),
-                () => BitacoraYTrazabilidad(a, eventos));
+                () => T(0, () => Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos)),
+                () => T(1, () => Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos)),
+                () => T(2, () => Ordenes(ordenes)),
+                () => T(3, () => Mantenimiento(a, ocurrencias)),
+                () => T(4, () => Estructura(a)),
+                () => T(5, () => FallasYDetenciones(a, fallas, detenciones)),
+                () => T(6, () => Condicion(a)),
+                () => T(7, () => Documentos(a)),
+                () => T(8, () => InspeccionesYTareas(a, revisiones)),
+                () => T(9, () => RepuestosYCostos(a, consumos)),
+                () => T(10, () => SigmaAi(a, ordenes, fallas)),
+                () => T(11, () => BitacoraYTrazabilidad(a, eventos)));
+        Response.AppendHeader("X-Sigma-Secciones", string.Join(",", new[] { "Resumen","Historial","Ordenes","Mantenim","Estructura","Fallas","Condicion","Docs","Inspecc","Repuestos","SigmaAi","Bitacora" }.Select((n, k) => n + "=" + _t[k])));
         FichaTecnica(a);
     }
 
@@ -2298,10 +2301,18 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         bool puedeAgregar = Token.Puede("CREAR EDITAR ACTIVOS");
         pnlEsAgregar.Visible = puedeAgregar;
+        /* RENDIMIENTO (11-10-2026): esta seccion encadenaba ~12 lecturas (~3 s). Las que no
+           dependen unas de otras salen a la vez: componentes, estados, fotos de repuestos y
+           ubicaciones con stock (de toda la bodega: 1 min de cache por cliente). */
+        int actId = a.act_id, cliId = _cliente;
+        var tLista = SitioBase.Paralelo.Pedir(() => new ActivoComponenteController().GetComponentes(
+            new ActivoComponente { aco_cliente = cliId, filtro_activo = actId }));
+        var tEstados = SitioBase.Paralelo.Pedir(() => new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }));
+        _tPortadas = SitioBase.Paralelo.Pedir(() => new RepuestoFotoController().GetPortadas());
+        _tUbic = SitioBase.Paralelo.Pedir(() => SitioBase.CacheSesion.Global("dg_ubicaciones_" + cliId, 1, () => DgUbicaciones()));
         ActivoEstructura e = new ActivoEstructuraController().GetEstructura(a.act_id);
 
-        List<ActivoComponente> lista = new ActivoComponenteController().GetComponentes(
-            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id }) ?? new List<ActivoComponente>();
+        List<ActivoComponente> lista = tLista.Result ?? new List<ActivoComponente>();
         Dictionary<int, ActivoComponente> porId = new Dictionary<int, ActivoComponente>();
         foreach (ActivoComponente c in lista) porId[c.aco_id] = c;
 
@@ -2359,7 +2370,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 s.Append(opcion("c:" + h.id, Texto(h.nombre), "c", "2", "Parte del subactivo «" + Texto(x.nombre) + "»"));
         }
         s.Append("</select><select data-estados=\"1\">");
-        foreach (ActivoComponenteEstado st in new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>())
+        foreach (ActivoComponenteEstado st in tEstados.Result ?? new List<ActivoComponenteEstado>())
             s.Append("<option value=\"").Append(st.ace_id).Append("\"").Append(st.ace_id == 1 ? " selected=\"selected\"" : "").Append(">")
              .Append(Server.HtmlEncode(st.ace_nombre)).Append("</option>");
         s.Append("</select></div>");
@@ -2470,6 +2481,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         public decimal cant;
     }
     private Dictionary<int, List<DgUbic>> _dgU = new Dictionary<int, List<DgUbic>>();
+    private System.Threading.Tasks.Task<Dictionary<int, List<DgUbic>>> _tUbic;
+    private System.Threading.Tasks.Task<Dictionary<int, int>> _tPortadas;
     private Dictionary<int, int> _dgFotoRep = new Dictionary<int, int>();
     private Dictionary<int, int> _dgFotoComp = new Dictionary<int, int>();
     private Dictionary<int, int> _dgFotoAct = new Dictionary<int, int>();
@@ -2757,8 +2770,8 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     private string Diagrama(Activo a, ActivoEstructura e, Dictionary<int, ActivoComponente> porId, List<ActivoComponente> retirados, bool puedeAgregar)
     {
-        _dgU = DgUbicaciones();
-        try { _dgFotoRep = new RepuestoFotoController().GetPortadas() ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
+        _dgU = _tUbic != null ? _tUbic.Result : DgUbicaciones();
+        try { _dgFotoRep = (_tPortadas != null ? _tPortadas.Result : new RepuestoFotoController().GetPortadas()) ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
         ActivoEstructuraController ec = new ActivoEstructuraController();
         ActivoController ac = new ActivoController();
         /* Cada subactivo pedía su estructura y sus datos en fila (2 consultas por subactivo):
@@ -4303,7 +4316,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         System.Globalization.CultureInfo cl = new System.Globalization.CultureInfo("es-CL");
         AlertaController ctlAlerta = new AlertaController();
-        List<Alerta> alertas = ctlAlerta.GetAlertas(false, 200) ?? new List<Alerta>();
+        /* RENDIMIENTO (11-10-2026): alertas y variables no dependen una de otra; despues, la
+           prediccion y la serie de cada variable salen a la vez (antes eran ~9 lecturas en fila). */
+        int cliAi = _cliente, actAi = a.act_id;
+        var tAlertas = SitioBase.Paralelo.Pedir(() => new AlertaController().GetAlertas(false, 200));
+        var tVars = SitioBase.Paralelo.Pedir(() => new ActivoVariableController().GetVariables(
+            new ActivoVariable { ava_cliente = cliAi, filtro_activo = actAi, filtro_habilitado = true }));
+        List<Alerta> alertas = tAlertas.Result ?? new List<Alerta>();
 
         List<Alerta> predicciones = alertas
             .Where(x => x.ES_PREDICCION && x.ale_activo == a.act_id)
@@ -4311,14 +4330,26 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             .ToList();
 
         Alerta p = predicciones.FirstOrDefault();
-        AlertaPrediccion pred = p == null ? null : ctlAlerta.GetPrediccion(p.ale_id);
+        // la prediccion de cada una de las 5 que se muestran, a la vez
+        Dictionary<int, System.Threading.Tasks.Task<AlertaPrediccion>> tPreds = new Dictionary<int, System.Threading.Tasks.Task<AlertaPrediccion>>();
+        foreach (Alerta xa in predicciones.Take(5))
+        {
+            int aid = xa.ale_id;
+            tPreds[aid] = SitioBase.Paralelo.Pedir(() => new AlertaController().GetPrediccion(aid));
+        }
+        AlertaPrediccion pred = p == null ? null : tPreds[p.ale_id].Result;
 
         // ---- las senales que alimentan el modelo: las variables del activo ----
-        List<ActivoVariable> variables = new ActivoVariableController().GetVariables(
-            new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
-            ?? new List<ActivoVariable>();
+        List<ActivoVariable> variables = tVars.Result ?? new List<ActivoVariable>();
 
         DateTime hoy = global::SitioBase.Hora.Hoy;
+        List<System.Threading.Tasks.Task<MedicionSerieResumen>> tRes = new List<System.Threading.Tasks.Task<MedicionSerieResumen>>();
+        foreach (ActivoVariable vr in variables.Take(6))
+        {
+            int vid = vr.ava_id;
+            tRes.Add(SitioBase.Paralelo.Pedir(() => new ActivoVariableController().GetSerieResumen(vid, hoy.AddDays(-30), null)));
+        }
+        int vi = 0;
         ActivoVariableController ctlVar = new ActivoVariableController();
         List<FuenteIa> fuentes = new List<FuenteIa>();
         string vivoNombre = "";
@@ -4327,7 +4358,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         foreach (ActivoVariable v in variables.Take(6))
         {
-            MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-30), null) ?? new MedicionSerieResumen();
+            MedicionSerieResumen r = tRes[vi++].Result ?? new MedicionSerieResumen();
             bool hay = r.ultimo_valor != null;
             if (hay) conDatos++;
             lecturas30 += r.puntos;
@@ -4485,7 +4516,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("<p>Todavía no hay predicciones para este activo</p><span>Aparecen aquí cuando el modelo encuentra un patrón en sus lecturas u órdenes.</span></div>");
         foreach (Alerta x in predicciones.Take(5))
         {
-            AlertaPrediccion px = x == p ? pred : ctlAlerta.GetPrediccion(x.ale_id);
+            AlertaPrediccion px = x == p ? pred : (tPreds.ContainsKey(x.ale_id) ? tPreds[x.ale_id].Result : ctlAlerta.GetPrediccion(x.ale_id));
             decimal? pr = px == null || px.pre_probabilidad == null ? (decimal?)null : (px.pre_probabilidad.Value <= 1 ? px.pre_probabilidad.Value * 100 : px.pre_probabilidad.Value);
             string rx = Riesgo(pr, x.sev_nombre);
             s.Append("<article class=\"sgx-pred\"><span class=\"av\">").Append(SvgIa("status-prediction", "sgx-anim es-pred", 44)).Append("</span>")

@@ -121,10 +121,14 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         CargarDatos();
         // Las secciones nuevas van blindadas: si algo falla, no debe colgar ni
         // romper el modal del activo.
-        try { CargarArchivos(); } catch { }        // documentos adjuntos
-        try { CargarDatosTecnicos(); } catch { }   // valores de atributos (edición)
-        try { CargarComponentes(); } catch { }     // los componentes que ya tiene
-        try { CargarVariablesMedidores(); } catch { }   // lo que ya mide y cuenta
+        /* RENDIMIENTO (11-10-2026): las cuatro leen y pintan en controles propios; a la vez
+           (SitioBase.Paralelo) cuestan lo que la mas lenta y no la suma (~1 s menos por ficha). */
+        SitioBase.Paralelo.Todos(
+            () => { try { CargarArchivos(); } catch { } },          // documentos adjuntos
+            () => { try { CargarDatosTecnicos(); } catch { } },     // valores de atributos (edición)
+            () => { try { CargarComponentes(); } catch { } },       // los componentes que ya tiene
+            () => { try { CargarVariablesMedidores(); } catch { } } // lo que ya mide y cuenta
+        );
         SobreEstructura();
         Confirmacion();
         Bloqueo();
