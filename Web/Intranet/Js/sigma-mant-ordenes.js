@@ -606,11 +606,40 @@
   };
 
   /* nueva OT */
+  /* «Quién la ejecuta»: el mismo bloque que inspección, tarea y planes. Disponible (sin nadie: en la
+     app la toma quien llegue primero), una o varias personas (la primera es la responsable, el resto
+     apoyo), un grupo de trabajo (queda a cargo de su líder) o una empresa externa. Cada uno con su carga. */
+  var ASM = [['D', 'Disponible'], ['P', 'Personas'], ['G', 'Grupo de trabajo'], ['E', 'Empresa externa']];
+  function quienHTML(c, as, fecha) {
+    var seg = '<div class="cp-segc" role="group" aria-label="Quién la ejecuta">' + ASM.map(function (o) { return '<button type="button" data-a="otnas" data-v="' + o[0] + '" aria-pressed="' + (as.modo === o[0]) + '">' + o[1] + '</button>'; }).join('') + '</div>';
+    var b = '', carga = function (cl, n, sub) { return window.SigmaCarga ? '<div class="cp-carga-row">' + SigmaCarga.chipDe(cl) + ' ' + SigmaCarga.boton(cl, n, sub || '', null, fecha || '') + '</div>' : ''; };
+    if (as.modo === 'D') b = '<div class="cp-bnr cp-p">' + ic('help', 16) + '<span>Queda <b>disponible</b>: en la app la ve quien puede ejecutarla y la toma quien llegue primero.</span></div>';
+    if (as.modo === 'P') {
+      var gente = c.personas.map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; });
+      var sel = as.ids.map(function (id) { return gente.filter(function (p) { return +p.id === +id; })[0]; }).filter(Boolean);
+      b = (sel.length ? '<div class="cp-avl">' + sel.map(function (p, i) {
+        return '<div class="cp-rp">' + (p.img ? '<img class="cp-av cp-avi cp-lg" src="' + esc(p.img) + '" alt="">' : K.avatar(p.n).replace('class="cp-av"', 'class="cp-av cp-lg"')) + '<span class="cp-s"><b>' + esc(p.n) + (i === 0 ? ' <span class="cp-tg cp-p">Responsable</span>' : ' <span class="cp-tg">Apoyo</span>') + '</b><small>' + esc(p.sub) + '</small></span>' +
+          (window.SigmaCarga ? '<span class="cp-carga">' + SigmaCarga.chipDe('U:' + p.id) + SigmaCarga.boton('U:' + p.id, p.n, p.sub, null, fecha || '') + '</span>' : '') +
+          '<button type="button" class="cp-ibx" data-a="otnasrm" data-v="' + p.id + '" aria-label="Quitar a ' + esc(p.n) + '">' + ic('x', 13) + '</button></div>';
+      }).join('') + '</div>' : '') +
+        K.combo('nAsP', gente.filter(function (p) { return as.ids.indexOf(+p.id) < 0; }), '', { etiqueta: 'Agregar persona', ph: sel.length ? 'Agregar otra persona' : 'Elige quién la ejecuta' });
+    }
+    if (as.modo === 'G') {
+      var g = as.ids[0], gN = ((c.grupos || []).filter(function (x) { return +x.ID === +g; })[0] || {}).NOMBRE || '';
+      b = K.combo('nAsG', (c.grupos || []).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }), g || '', { etiqueta: 'Grupo de trabajo', ph: 'Elige el grupo' }) + (g ? carga('G:' + g, gN, 'Grupo de trabajo') + '<small class="cp-muted2" style="display:block;margin-top:6px">La OT queda a cargo del líder del grupo.</small>' : '');
+    }
+    if (as.modo === 'E') {
+      var e0 = as.ids[0], eN = ((c.proveedores || []).filter(function (x) { return +x.ID === +e0; })[0] || {}).NOMBRE || '';
+      b = K.combo('nAsE', (c.proveedores || []).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }), e0 || '', { etiqueta: 'Empresa externa', ph: 'Elige la empresa' }) + (e0 ? carga('E:' + e0, eN, 'Empresa externa') : '') +
+        ((c.proveedores || []).length ? '' : '<small class="cp-muted2">No hay empresas contratistas registradas en Terceros.</small>');
+    }
+    return '<div class="cp-fld"><label>Quién la ejecuta</label>' + seg + '</div><div class="cp-fld">' + b + '</div>';
+  }
+  var recursosDe = function (as) { return as.modo === 'P' ? as.ids.map(function (x) { return 'U:' + x; }) : as.modo === 'G' && as.ids[0] ? ['G:' + as.ids[0]] : as.modo === 'E' && as.ids[0] ? ['E:' + as.ids[0]] : []; };
   var PN_ = function (st) {
     var c = st.cat; if (!c) return { t: 'Nueva orden de trabajo', s: 'OT manual · sin plan ni aviso de origen', b: '<div class="cp-sk" style="height:46px"></div><div class="cp-sk" style="height:46px;margin-top:12px"></div><div class="cp-sk" style="height:120px;margin-top:12px"></div>', w: 'n' };
     var activos = c.activos.map(function (a) { return { id: a.ID, n: a.CODIGO + ' · ' + a.NOMBRE, sub: a.AREA }; });
     var comps = [{ id: 0, n: 'Activo completo' }].concat(c.componentes.filter(function (x) { return +x.ACTIVO_ID === +st.act; }).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }));
-    var pers = [{ id: 0, n: 'Sin asignar' }].concat(c.personas.map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; }));
     var e = st.err;
     return { t: 'Nueva orden de trabajo', s: 'OT manual · sin plan ni aviso de origen', w: 'n',
       b: '<div class="cp-fld"><label>Activo <small>obligatorio</small></label>' + K.combo('nAct', activos, st.act || '', { etiqueta: 'Activo', ph: 'Elige el activo', err: e && !st.act }) + '</div>' +
@@ -619,24 +648,36 @@
         '<div class="cp-fld"><label>Tipo</label>' + seg(TIPOS, 'otn', 'tipo', st.tipo) + '</div>' +
         '<div class="cp-fld"><label>Prioridad</label>' + seg(PRIO, 'otn', 'prio', st.prio) + '</div>' +
         '<div class="cp-fld2"><div class="cp-fld"><label>Fecha programada</label>' + K.fecha('n_fecha', K.deDN(st.fecha || ''), { ph: 'dd-mm-aaaa' }) + '</div><div class="cp-fld"><label>Hora</label>' + K.combo('nHora', HORAS.slice(10, 46).map(function (h) { return { id: h, n: h }; }), st.hora || '08:00', { etiqueta: 'Hora', ph: '08:00' }) + '</div></div>' +
-        '<div class="cp-fld2"><div class="cp-fld"><label>Responsable</label>' + K.combo('nResp', pers, st.resp || 0, { etiqueta: 'Responsable', ph: 'Sin asignar' }) + '</div><div class="cp-fld"><label for="nD">Duración (horas)</label><input id="nD" class="cp-inp" data-pv="n_dur" value="' + esc(st.dur || '') + '" inputmode="decimal" placeholder="Ej.: 2"></div></div>' +
+        quienHTML(c, st.as, st.fecha ? K.deDN(st.fecha) : '') +
+        '<div class="cp-fld" style="max-width:220px"><label for="nD">Duración</label><div class="cp-unit"><input id="nD" class="cp-inp" data-pv="n_dur" value="' + esc(st.dur || '') + '" inputmode="decimal" placeholder="Ej.: 2"><span class="cp-u">horas</span></div></div>' +
         '<div class="cp-fld"><label for="nDe">Descripción</label><textarea id="nDe" class="cp-inp" rows="3" data-pv="n_desc" placeholder="Detalle del trabajo">' + esc(st.desc || '') + '</textarea></div>' + choquesHTML(st.choq),
       f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="nuevaok">' + (st.choq && st.choq.length ? ic('alert', 16) + 'Crear igual' : 'Crear OT') + '</button></span>' };
   };
   A.otnueva = function () {
-    var st = { cat: null, act: '', comp: 0, t: '', tipo: 2, prio: 2, fecha: '', hora: '08:00', resp: 0, dur: '', desc: '', err: false, busy: false };
+    var st = { cat: null, act: '', comp: 0, t: '', tipo: 2, prio: 2, fecha: '', hora: '08:00', as: { modo: 'D', ids: [] }, dur: '', desc: '', err: false, busy: false };
     K.Panel.open({ render: PN_, st: st });
     catalogos().then(function () { st.cat = U.cat; if (K.Panel.state() === st) K.Panel.paint(); }).catch(function (e) { K.Panel.close(); K.toastError(e); });
   };
   A.otn = function (d) { var st = K.Panel.state(); st[d.k] = +d.v; K.Panel.paint(); };
+  A.otnas = function (d) { var st = K.Panel.state(); if (st.as.modo !== d.v) { st.as = { modo: d.v, ids: [] }; st.choq = null; st.choqOk = false; } K.Panel.paint(); };
+  A.otnasrm = function (d) { var st = K.Panel.state(); st.as.ids = st.as.ids.filter(function (x) { return +x !== +d.v; }); st.choq = null; st.choqOk = false; K.Panel.paint(); };
   A.nuevaok = function () {
     var st = K.Panel.state(); if (!st) return;
     if (!st.act || (st.t || '').trim().length < 5) { st.err = true; K.Panel.paint(); return; }
     var f = st.fecha ? K.deDN(st.fecha) : '';
     var dur = parseFloat(String(st.dur || '').replace(',', '.')) || 0;
-    if (choquesAntes(st, 0, st.act, st.comp, f ? f + ' ' + (st.hora || '08:00') : '', Math.round(dur * 60), A.nuevaok, +st.resp ? ['U:' + st.resp] : [])) return;
+    var as = st.as;
+    if (as.modo !== 'D' && !as.ids.length) { K.toastError(new Error(as.modo === 'P' ? 'Elige al menos una persona o déjala disponible.' : as.modo === 'G' ? 'Elige el grupo de trabajo.' : 'Elige la empresa externa.')); return; }
+    if (choquesAntes(st, 0, st.act, st.comp, f ? f + ' ' + (st.hora || '08:00') : '', Math.round(dur * 60), A.nuevaok, recursosDe(as))) return;
     st.busy = true; K.Panel.paint();
-    api('Nueva', { activo: +st.act, componente: +st.comp || 0, titulo: st.t.trim(), descripcion: st.desc || '', tipo: +st.tipo, prioridad: +st.prio, fecha: f ? f + ' ' + (st.hora || '08:00') : '', duracionMin: Math.round(dur * 60), responsable: +st.resp || 0 }).then(function (r) {
+    /* La OT nace con la primera persona como responsable; el apoyo, el grupo o la empresa se asignan
+       en seguida, de a uno, con el mismo SP que usa la ficha (queda en la bitácora). */
+    api('Nueva', { activo: +st.act, componente: +st.comp || 0, titulo: st.t.trim(), descripcion: st.desc || '', tipo: +st.tipo, prioridad: +st.prio, fecha: f ? f + ' ' + (st.hora || '08:00') : '', duracionMin: Math.round(dur * 60), responsable: as.modo === 'P' ? +as.ids[0] : 0 }).then(function (r) {
+      var resto = as.modo === 'P' ? as.ids.slice(1).map(function (u) { return { usuario: +u, proveedor: 0, grupo: 0, responsable: false }; })
+        : as.modo === 'G' ? [{ usuario: 0, proveedor: 0, grupo: +as.ids[0], responsable: true }]
+        : as.modo === 'E' ? [{ usuario: 0, proveedor: +as.ids[0], grupo: 0, responsable: true }] : [];
+      return resto.reduce(function (pr, x) { return pr.then(function () { x.token = r.q; x.observacion = ''; return api('Asignar', x); }); }, Promise.resolve()).then(function () { return r; }, function (e) { K.toastError(e); return r; });
+    }).then(function (r) {
       K.Panel.close(); K.toast(otTxt(r.ot) + ' creada.'); cargarLista(); abrir(r.q);
     }).catch(function (e) { st.busy = false; K.Panel.paint(); K.toastError(e); });
   };
@@ -675,7 +716,7 @@
     },
     combo: function (span, v) {
       var n = span.getAttribute('data-cb'), st = K.Panel.state();
-      if (st && /^(nAct|nComp|nHora|edHora|nResp)$/.test(n)) { st.choq = null; st.choqOk = false; }
+      if (st && /^(nAct|nComp|nHora|edHora|nAsP|nAsG|nAsE)$/.test(n)) { st.choq = null; st.choqOk = false; }
       if (n === 'otOrigen') { U.o = +v || 0; pintar(); return; }
       if (n === 'otTipo') { U.t = +v || 0; pintar(); return; }
       if (n === 'ciMotivo') { U.formCierre.motivo = +v || 1; return; }
@@ -694,7 +735,8 @@
       if (n === 'nAct') { st.act = v; st.comp = 0; K.Panel.paint(); }
       if (n === 'nComp') st.comp = +v || 0;
       if (n === 'nHora') st.hora = v;
-      if (n === 'nResp') st.resp = +v || 0;
+      if (n === 'nAsP' && st.as && +v) { if (st.as.ids.indexOf(+v) < 0) st.as.ids.push(+v); K.Panel.paint(); }
+      if ((n === 'nAsG' || n === 'nAsE') && st.as) { st.as.ids = +v ? [+v] : []; K.Panel.paint(); }
     }
   });
 

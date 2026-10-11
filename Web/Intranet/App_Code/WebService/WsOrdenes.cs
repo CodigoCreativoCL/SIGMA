@@ -253,7 +253,8 @@ public class WsOrdenes : System.Web.Services.WebService
             Exigir(P_CREAR);
             int id = IdDe(token);
             Propia(id);
-            if (usuario <= 0 && proveedor <= 0) throw new Exception("Elige la persona o la empresa externa que vas a asignar.");
+            // Un grupo solo también vale: el SP asigna la OT a su líder vigente.
+            if (usuario <= 0 && proveedor <= 0 && grupo <= 0) throw new Exception("Elige la persona, el grupo o la empresa externa que vas a asignar.");
             SoporteDatos.Filas("INS_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", Cli(), "@ORDEN", id,
                 "@USUARIO_ASIG", usuario > 0 ? (object)usuario : null, "@PROVEEDOR", proveedor > 0 ? (object)proveedor : null,
                 "@GRUPO_TRABAJO", grupo > 0 ? (object)grupo : null, "@ES_RESPONSABLE", responsable, "@ROL_EJECUCION", responsable ? 1 : 2,
