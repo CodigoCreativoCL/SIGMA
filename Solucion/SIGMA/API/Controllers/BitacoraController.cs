@@ -255,6 +255,17 @@ namespace API.Controllers
                 ExigirCliente();
                 ExigirCuerpo(dto);
 
+                /* Se valida el cuerpo acá, antes de la base: un 400 con el
+                   nombre del campo se lee mejor que el RAISERROR del SP, y
+                   evita el viaje. El SP vuelve a comprobarlo igual —es su
+                   backstop—, porque la API no es el único que puede llamarlo. */
+                ExigirTexto(dto.texto, "texto");
+                ExigirTexto(dto.motivo, "motivo");
+
+                // bre_motivo es NVARCHAR(500): pasarse rebota en la base; mejor decirlo acá.
+                if (dto.motivo.Trim().Length > 500)
+                    throw new ArgumentException("El motivo no puede superar los 500 caracteres.");
+
                 int nuevo = Datos.Ejecutar("API_INS_BITACORA_RECTIFICACION",
                     new Dictionary<string, object>
                     {
