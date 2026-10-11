@@ -1,0 +1,51 @@
+﻿/* ============================================================================
+   SIGMA · Terceros — barra de pestañas de las vistas unificadas
+   ----------------------------------------------------------------------------
+   Proveedores (Maestro + Historial de servicios) y, más adelante, Permisos de
+   trabajo, viven cada uno en una sola pantalla con pestañas. La pestaña activa
+   va en morado con subrayado de 3 px; las inactivas en texto atenuado. Mismo
+   criterio que el resto de SIGMA: el morado marca la ubicación, el turquesa el
+   foco. Usa los tokens oficiales (--sg-*) declarados en sigma-brand.css.
+   ========================================================================= */
+.sg-ter-tabs {
+    display: flex;
+    gap: 4px;
+    margin: 0 0 16px;
+    border-bottom: 1px solid var(--sg-border);
+}
+
+.sg-ter-tab {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 14px;
+    margin-bottom: -1px;
+    border: 0;
+    background: transparent;
+    border-bottom: 3px solid transparent;
+    border-radius: 9px 9px 0 0;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--sg-text-muted);
+    text-decoration: none;
+    cursor: pointer;
+    transition: color .12s, border-color .12s, background-color .12s;
+}
+
+.sg-ter-tab i { font-size: 16px; line-height: 1; }
+
+.sg-ter-tab:hover, .sg-ter-tab:focus {
+    color: var(--sg-text-primary);
+    text-decoration: none;
+    background: var(--sg-surface-subtle);
+}
+
+.sg-ter-tab.is-activa {
+    color: var(--sg-purple);
+    border-bottom-color: var(--sg-purple);
+}
+
+.sg-ter-tab:focus-visible {
+    outline: 3px solid rgba(22, 198, 201, .27);
+    outline-offset: -2px;
+}
