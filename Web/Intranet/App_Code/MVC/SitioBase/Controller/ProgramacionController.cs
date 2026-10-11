@@ -701,7 +701,8 @@ namespace SitioBase.Controller
                             item = new ProgramacionMedidor();
                             item.pme_id = int.Parse(dr["pme_id"].ToString());
                             item.pme_programacion = int.Parse(dr["pme_programacion"].ToString());
-                            item.pme_activo_medidor = int.Parse(dr["pme_activo_medidor"].ToString());
+                            // 429: sin medidor fijo (cada equipo usa el suyo) las columnas del medidor vienen vacías.
+                            item.pme_activo_medidor = dr["pme_activo_medidor"] != DBNull.Value ? int.Parse(dr["pme_activo_medidor"].ToString()) : 0;
                             item.pme_valor_inicial = decimal.Parse(dr["pme_valor_inicial"].ToString());
                             item.pme_cada_cantidad = decimal.Parse(dr["pme_cada_cantidad"].ToString());
 
@@ -711,8 +712,10 @@ namespace SitioBase.Controller
                             item.pme_habilitado = Convert.ToBoolean(dr["pme_habilitado"]);
                             item.medidor_codigo = dr["MEDIDOR_CODIGO"].ToString();
                             item.medidor_nombre = dr["MEDIDOR_NOMBRE"].ToString();
-                            item.medidor_valor_actual = decimal.Parse(dr["MEDIDOR_VALOR_ACTUAL"].ToString());
-                            item.ame_activo = int.Parse(dr["ame_activo"].ToString());
+                            if (dr["MEDIDOR_VALOR_ACTUAL"] != DBNull.Value)
+                                item.medidor_valor_actual = decimal.Parse(dr["MEDIDOR_VALOR_ACTUAL"].ToString());
+                            if (dr["ame_activo"] != DBNull.Value)
+                                item.ame_activo = int.Parse(dr["ame_activo"].ToString());
                             item.activo_nombre = dr["ACTIVO_NOMBRE"].ToString();
 
                             if (dr["PROXIMO_VALOR"] != DBNull.Value)

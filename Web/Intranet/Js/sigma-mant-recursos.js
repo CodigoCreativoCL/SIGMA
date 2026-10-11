@@ -258,13 +258,14 @@
 
   /* ---- cajón del calendario (PANELS.scal del mockup): una sola página con las próximas fechas al lado ---- */
   var REP = { DIARIA: 'd', SEMANAL: 'w', MENSUAL: 'm', ANUAL: 'y' }, REPC = { d: 'DIARIA', w: 'SEMANAL', m: 'MENSUAL', y: 'ANUAL' };
-  var TIPOC = { cal: 'CALENDARIO', int: 'INTERVALO TIEMPO', fec: 'FECHA UNICA' }, TIPOF = { CALENDARIO: 'cal', 'INTERVALO TIEMPO': 'int', 'FECHA UNICA': 'fec' };
+  var TIPOC = { cal: 'CALENDARIO', int: 'INTERVALO TIEMPO', fec: 'FECHA UNICA', med: 'MEDIDOR', cond: 'CONDICION' }, TIPOF = { CALENDARIO: 'cal', 'INTERVALO TIEMPO': 'int', 'FECHA UNICA': 'fec', MEDIDOR: 'med', CONDICION: 'cond' };
   var UNI = { HORA: ['hora', 'horas'], DIA: ['día', 'días'], SEMANA: ['semana', 'semanas'], MES: ['mes', 'meses'], ANIO: ['año', 'años'] };
   var HORAS = (function () { var l = []; for (var k = 0; k < 48; k++) { var h = pad(Math.floor(k / 2)) + ':' + (k % 2 ? '30' : '00'); l.push({ id: h, n: h }); } return l; })();
   var DIAS31 = (function () { var l = []; for (var k = 1; k <= 31; k++) l.push({ id: k, n: String(k) }); return l; })();
   var ORD = [{ id: 1, n: 'Primer' }, { id: 2, n: 'Segundo' }, { id: 3, n: 'Tercer' }, { id: 4, n: 'Cuarto' }, { id: -1, n: 'Último' }];
   var DIA = ['', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado', 'domingo'], DIAC = ['', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb', 'dom'];
   var MES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  var num = function (v) { return (+v || 0).toLocaleString('es-CL'); };
   var uniCod = function (id) { var u = (U.cat && U.cat.unidades || []).filter(function (x) { return +x.ID === +id; })[0]; return u ? u.CODIGO : ''; };
   var uniId = function (cod) { var u = (U.cat && U.cat.unidades || []).filter(function (x) { return x.CODIGO === cod; })[0]; return u ? u.ID : 0; };
   var frecId = function (rep) { var u = (U.cat && U.cat.frecuencias || []).filter(function (x) { return x.CODIGO === REPC[rep]; })[0]; return u ? u.ID : 0; };
@@ -287,6 +288,9 @@
     }
     if (i) { f.n = +i.cantidad || 1; f.iu = +i.unidad; f.anchor = String(i.ancla || '').slice(0, 10) || K.TODAY; f.hour = String(i.ancla || '').slice(11, 16) || f.hour; }
     f.dates = (r.fechas || []).map(function (x) { return { fecha: x.fecha, hora: x.hora || '' }; });
+    /* 429 · por medidor: la regla; sin medidor fijo, cada equipo dispara con el suyo. Por condición: sus reglas, de solo lectura. */
+    if (r.medidor) { f.mn = +r.medidor.cada || 0; f.mstart = +r.medidor.inicial || 0; f.mwarn = +r.medidor.aviso || 0; f.mnom = r.medidor.medidorNombre || ''; f.mact = r.medidor.activoNombre || ''; }
+    d.conds = r.condiciones || [];
     d.excl = (r.exclusiones || []).map(function (x) { return { a: x.desde, b: x.hasta, why: x.motivo || '', shift: !!x.desplaza }; });
     return d;
   }
@@ -301,6 +305,8 @@
       return s + ' a las ' + f.hour;
     }
     if (f.t === 'int') { var u = UNI[uniCod(f.iu)] || ['', '']; return 'Cada ' + n + ' ' + (n === 1 ? u[0] : u[1]) + ' desde el ' + K.fDY(f.anchor); }
+    if (f.t === 'med') return 'Cada ' + num(f.mn) + ' del medidor' + (+f.mwarn > 0 ? ' · avisa ' + num(f.mwarn) + ' antes' : '');
+    if (f.t === 'cond') return 'Cuando se cumple la condición';
     var fs = f.dates.map(function (x) { return x.fecha; }).sort();
     return fs.length ? 'En ' + pl(fs.length, 'fecha puntual', 'fechas puntuales') : 'Fechas puntuales (sin fechas)';
   }
@@ -344,8 +350,9 @@
     Promise.all([catalogos(), id ? apiCP('CalendarioDetalle', { id: id }) : null]).then(function (x) {
       var r = x[1];
       if (r) {
-        if (!r.calendario && !r.intervalo && r.tipoCodigo !== 'FECHA UNICA') { K.Panel.close(); K.toast('Este calendario es por medidor o por condición: se edita en Programaciones.'); return; }
         st.d = calDesde(r);
+        /* Un calendario por condición no se duplica: sus condiciones viven en la intervención que las mide. */
+        if (duplicar && st.d.f.t === 'cond') { K.Panel.close(); K.toast('Un calendario por condición no se puede duplicar: créalo desde la intervención que lo usa.'); return; }
         if (duplicar) { st.d.id = 0; st.d.usos = 0; st.d.nombre = 'Copia de ' + st.d.nombre; }
       } else st.d.f.iu = uniId('MES');
       st.cargando = false; if (K.Panel.state() === st) K.Panel.paint();
@@ -379,15 +386,27 @@
         (ed ? '<span style="width:170px">' + K.fecha('sc:fadd', '', { ph: 'Agregar fecha', etiqueta: 'Agregar fecha' }) + '</span>' : '') + '</div>' + (e && !f.dates.length ? mc('', 'Agrega al menos una fecha.') : '') + '</div>' +
         '<div class="cp-grid3c"><div class="cp-fld"><label>Hora</label>' + cb('hour', HORAS, f.hour, 'Hora') + '</div></div>';
     }
-    var ds = proximas(f, d.excl, 6);
+    if (f.t === 'med') {
+      regla = '<div class="cp-grid3c"><div class="cp-fld"><label>Cada <small>unidades del medidor</small></label><input class="cp-inp' + (e && !(+f.mn > 0) ? ' cp-err' : '') + '" type="number" min="1" data-pv="f.mn" value="' + esc(f.mn || '') + '" aria-label="Cada cuántas unidades del medidor"' + dis + '></div>' +
+        '<div class="cp-fld"><label>Desde la lectura</label><input class="cp-inp" type="number" min="0" data-pv="f.mstart" value="' + esc(f.mstart || 0) + '" aria-label="Lectura de partida"' + dis + '></div>' +
+        '<div class="cp-fld"><label>Avisar antes <small>opcional</small></label><input class="cp-inp" type="number" min="0" data-pv="f.mwarn" value="' + esc(f.mwarn || 0) + '" aria-label="Avisar antes"' + dis + '></div></div>' +
+        (e && !(+f.mn > 0) ? mc('', 'Indica cada cuántas unidades del medidor.') : '') +
+        mc('i', f.mnom ? 'Usa el medidor «' + esc(f.mnom) + '»' + (f.mact ? ' de ' + esc(f.mact) : '') + '.' : 'Sin medidor fijo: cada equipo que lo usa dispara con su propio medidor (por ejemplo, su horómetro).', 'help');
+    }
+    if (f.t === 'cond') {
+      regla = '<div class="cp-fld"><span class="cp-lb">Condiciones</span>' + ((d.conds || []).map(function (x) { return '<div class="cp-d">' + ic('alert', 14) + '<span>' + esc(x.texto) + (x.activo ? ' <small>· ' + esc(x.activo) + '</small>' : '') + (x.severidad ? ' <span class="cp-tg">' + esc(x.severidad) + '</span>' : '') + '</span></div>'; }).join('') || '<span style="font-size:12.5px;color:var(--muted)">Sin condiciones.</span>') + '</div>' +
+        mc('i', 'Las condiciones se agregan o quitan en la intervención que las mide (Planificación › Frecuencia). Aquí se editan el nombre y la tolerancia.', 'help');
+    }
+    var ds = f.t === 'med' || f.t === 'cond' ? [] : proximas(f, d.excl, 6);
     var b = (n ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span>Lo usan <b>' + pl(cuenta('Plan'), 'plan', 'planes') + ', ' + pl(cuenta('Tarea'), 'tarea', 'tareas') + ' y ' + pl(n - cuenta('Plan') - cuenta('Tarea'), 'inspección', 'inspecciones') + '</b>. Un cambio aquí cambia las fechas de todos, sin versión nueva.</span></div>' : '') +
       '<div class="cp-fq-ed"><div class="cp-fq-f">' +
       '<div class="cp-fld"><label>Nombre</label><input class="cp-inp' + (malN ? ' cp-err' : '') + '" data-pv="c.nombre" value="' + esc(d.nombre) + '" data-autofocus="1" maxlength="400" placeholder="Ej.: Inspección semanal de bombas" autocomplete="off"' + dis + '>' + (malN ? mc('', 'Falta el nombre.') : '') + '</div>' +
-      (d.id ? '' : '<div class="cp-fld"><span class="cp-lb">Tipo</span>' + seg('t', [['cal', 'Calendario'], ['int', 'Intervalo'], ['fec', 'Fechas puntuales']]) + '</div>') +
+      (d.id ? '' : '<div class="cp-fld"><span class="cp-lb">Tipo</span>' + seg('t', [['cal', 'Calendario'], ['int', 'Intervalo'], ['fec', 'Fechas puntuales'], ['med', 'Por medidor']]) + '</div>') +
       regla +
       '<div class="cp-grid2c"><div class="cp-fld"><label>Puede hacerse antes</label><div class="cp-unit"><input class="cp-inp" type="number" min="0" data-pv="f.tb" value="' + esc(f.tb) + '"' + dis + '><span class="cp-u">días</span></div></div><div class="cp-fld"><label>Vence después de</label><div class="cp-unit"><input class="cp-inp" type="number" min="0" data-pv="f.ta" value="' + esc(f.ta) + '"' + dis + '><span class="cp-u">días</span></div></div></div></div>' +
       '<div class="cp-pv"><h5>Próximas fechas</h5><div class="cp-nl">' + esc(freqText(f)) + '</div>' +
-      (ds.map(function (x) { return x.ex ? '<div class="cp-d cp-x">' + ic('x', 14) + '<span><s>' + cap(K.fDL(x.d)) + '</s><small>' + esc(x.ex.why || 'Exclusión') + (x.ex.shift ? ' · se corre' : ' · se omite') + '</small></span></div>' : '<div class="cp-d">' + ic('check', 14) + '<span>' + cap(K.fDL(x.d)) + '</span></div>'; }).join('') || '<div class="cp-d cp-x"><span></span><span>Sin fechas</span></div>') +
+      (f.t === 'med' || f.t === 'cond' ? '<div class="cp-d">' + ic('gauge', 14) + '<span>' + (f.t === 'med' ? 'Se dispara al llegar a cada ' + num(f.mn) + ' del medidor de cada equipo' : 'Se dispara cuando se cumple la condición') + '</span></div>' : '') +
+      (f.t === 'med' || f.t === 'cond' ? '' : ds.map(function (x) { return x.ex ? '<div class="cp-d cp-x">' + ic('x', 14) + '<span><s>' + cap(K.fDL(x.d)) + '</s><small>' + esc(x.ex.why || 'Exclusión') + (x.ex.shift ? ' · se corre' : ' · se omite') + '</small></span></div>' : '<div class="cp-d">' + ic('check', 14) + '<span>' + cap(K.fDL(x.d)) + '</span></div>'; }).join('') || '<div class="cp-d cp-x"><span></span><span>Sin fechas</span></div>') +
       (d.excl.length ? '<div class="cp-ft">' + pl(d.excl.length, 'exclusión', 'exclusiones') + ' · se editan en Programaciones</div>' : '') + '</div></div>' +
       (n && ed ? '<label class="cp-cfm"><input type="checkbox" class="cp-cbx" data-pv="c.ok"' + (st.ok ? ' checked' : '') + '><span>Entiendo que el cambio aplica a los <b>' + n + ' usos</b> de este calendario.</span></label>' : '') + (st.err2 ? mc('', esc(st.err2)) : '');
     var f2 = ed ? '<span class="cp-r"><button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><button type="button" class="cp-btn cp-pri' + (st.busy ? ' cp-load' : '') + '" data-a="scok"' + (n && !st.ok ? ' disabled' : '') + '>' + ic('check', 16) + (d.id ? 'Guardar calendario' : 'Crear calendario') + '</button></span>'
@@ -400,6 +419,7 @@
     if (f.t === 'cal' && f.rep === 'w' && !f.days.length) return 'Elige al menos un día de la semana.';
     if ((f.t === 'cal' || f.t === 'int') && !(+f.n >= 1)) return 'Indica cada cuánto (1 o más).';
     if (f.t === 'fec' && !f.dates.length) return 'Agrega al menos una fecha.';
+    if (f.t === 'med' && !(+f.mn > 0)) return 'Indica cada cuántas unidades del medidor.';
     return '';
   }
   function calDatos(d) {
@@ -417,6 +437,7 @@
     }
     if (f.t === 'int') x.intervalo = { cantidad: Math.max(1, +f.n || 1), unidad: +f.iu, ancla: (f.anchor || K.TODAY) + 'T' + (f.hour || '08:00') };
     if (f.t === 'fec') x.fechas = f.dates.map(function (z) { return { fecha: z.fecha, hora: z.hora || f.hour || '' }; });
+    if (f.t === 'med') x.medidor = { cada: +f.mn, inicial: +f.mstart || 0, aviso: +f.mwarn || 0 };
     return x;
   }
 
