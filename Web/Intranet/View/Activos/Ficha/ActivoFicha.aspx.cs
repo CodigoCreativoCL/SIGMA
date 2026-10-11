@@ -4930,8 +4930,11 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
+        // El uuid lo genera la pantalla, una vez por observacion: asi un doble
+        // clic no deja la misma nota dos veces (el SP deduplica por uuid).
         Respuesta r = new ActivoCentroController().AgregarObservacion(
-            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area, txtObservacion.Text);
+            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area,
+            txtObservacion.Text, Request.Form["bit_obs_uuid"]);
 
         litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
                            "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
@@ -4941,7 +4944,14 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         // y el usuario tiene que enterarse de lo que paso pase lo que pase.
         Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
 
-        if (!r.error) txtObservacion.Text = "";
+        if (!r.error)
+        {
+            txtObservacion.Text = "";
+            /* Se limpia el uuid usado: la proxima observacion necesita uno
+               nuevo (bit_uuid es unico; reusarlo devolveria la nota anterior). */
+            ScriptManager.RegisterStartupScript(this, GetType(), "sgLimpiaObsUuid",
+                "var e=document.getElementById('bitObsUuid'); if(e) e.value='';", true);
+        }
     }
 
     #endregion

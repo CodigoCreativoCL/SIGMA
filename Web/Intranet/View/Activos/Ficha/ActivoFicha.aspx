@@ -353,6 +353,36 @@
             __doPostBack('<%=lnkRectificar.UniqueID %>', '');
         });
 
+        /* ---- Bitacora: una observacion = un uuid (idempotente ante doble clic) ----
+           El uuid lo genera el navegador al empezar a escribir, no el servidor
+           en cada postback: asi varios clics en «Publicar» del mismo texto
+           guardan UNA sola nota (el SP deduplica por uuid). Se limpia al vaciar
+           el cuadro y despues de publicar (el servidor pide uno nuevo). */
+        function sgObsUuid() {
+            try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+        function sgWireObs() {
+            var ta = document.getElementById('<%=txtObservacion.ClientID %>');
+            var uu = document.getElementById('bitObsUuid');
+            if (!ta || !uu || ta.getAttribute('data-sg-wired') === '1') return;
+            ta.setAttribute('data-sg-wired', '1');
+            ta.addEventListener('input', function () {
+                if (ta.value.trim()) { if (!uu.value) uu.value = sgObsUuid(); }
+                else uu.value = '';
+            });
+            var btn = document.getElementById('<%=lnkPublicar.ClientID %>');
+            if (btn) btn.addEventListener('click', function () {
+                if (ta.value.trim() && !uu.value) uu.value = sgObsUuid();
+            });
+        }
+        if (document.readyState !== 'loading') sgWireObs();
+        else document.addEventListener('DOMContentLoaded', sgWireObs);
+        if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager)
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(sgWireObs);
+
         /* Todo se agrega dentro del mismo asistente: no se abre otra ventana. */
         function esAgregar(que) {
             var a = document.getElementById('sgEsAsistente');
@@ -2091,6 +2121,9 @@
                             </div>
 
                             <asp:Literal ID="litObsAviso" runat="server" />
+                            <%-- Idempotencia de la observacion (HU-130/131): el uuid lo genera el
+                                 navegador una vez por nota, para que un doble clic no la guarde dos veces. --%>
+                            <input type="hidden" name="bit_obs_uuid" id="bitObsUuid" />
                             <%-- Responder una nota (bloque 352): el hilo escribe aca y envia lnkResponder. --%>
                             <input type="hidden" name="bit_padre" id="bitPadre" />
                             <input type="hidden" name="bit_respuesta" id="bitRespuesta" />

@@ -1051,7 +1051,18 @@ namespace SitioBase.Controller
             return r;
         }
 
-        public Respuesta AgregarObservacion(int activo, int instalacion, int? area, string texto)
+        /// <summary>
+        /// Deja una observación en la bitácora del equipo.
+        ///
+        /// EL UUID LO PONE EL CLIENTE, NO EL SERVIDOR
+        ///   Antes se generaba un Guid.NewGuid() acá, en cada postback: por eso
+        ///   un doble clic en «Publicar» dejaba la misma observación dos (o
+        ///   diez) veces —cada clic era un uuid distinto y la idempotencia del
+        ///   SP nunca podía deduplicar—. Ahora el uuid viaja desde la pantalla,
+        ///   generado una vez por observación: repetir el envío devuelve la que
+        ///   ya estaba. Si no llega (cliente viejo), se genera uno como respaldo.
+        /// </summary>
+        public Respuesta AgregarObservacion(int activo, int instalacion, int? area, string texto, string uuid = null)
         {
             Respuesta r = new Respuesta();
 
@@ -1062,6 +1073,9 @@ namespace SitioBase.Controller
                 r.error = true;
                 return r;
             }
+
+            Guid uuidObs;
+            if (!Guid.TryParse(uuid, out uuidObs)) uuidObs = Guid.NewGuid();
 
             if (string.IsNullOrEmpty(texto) || texto.Trim().Length == 0)
             {
@@ -1077,7 +1091,7 @@ namespace SitioBase.Controller
             {
                 cmd = Conexion.GetCommand("API_INS_BITACORA");
                 cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
-                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@UUID", uuidObs);
                 cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                 cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
                 cmd.Parameters.AddWithValue("@INSTALACION", instalacion);
