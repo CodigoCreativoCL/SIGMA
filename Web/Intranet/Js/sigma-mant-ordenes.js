@@ -190,11 +190,6 @@
       '<div class="cp-vd">' + vieneDe(F) + '</div>' +
       '<ol class="cp-flow cp-f5" aria-label="Estado de la OT">' + FLUJO.map(function (l, i) { return '<li class="' + (i < fi ? 'cp-ok' : i === fi ? 'cp-on' : '') + '"><i>' + (i < fi ? ic('check', 12) : i + 1) + '</i><span>' + l + '</span></li>'; }).join('') + '</ol></section>';
   }
-  function tabsF(F) {
-    var np = F.pasos.length, hechos = F.pasos.filter(function (p) { return +p.otp_resultado_paso !== 4; }).length, ne = (F.evidencias || []).filter(function (a) { return !a.ES_FIRMA; }).length;
-    var T = [['resumen', 'Resumen', null], ['pasos', 'Pasos', np ? hechos + '/' + np : null], ['rep', 'Repuestos', F.repuestos.length], ['cierre', 'Cierre', null]];
-    return '<div class="cp-tabs" role="tablist">' + T.map(function (t) { return '<button type="button" role="tab" aria-selected="' + (U.tab === t[0]) + '" data-a="ottab" data-v="' + t[0] + '">' + t[1] + (t[2] != null ? '<em>' + t[2] + '</em>' : '') + '</button>'; }).join('') + '</div>';
-  }
   var fact = function (k, v) { return '<div><span>' + k + '</span><b>' + v + '</b></div>'; };
 
   /* ---------------------------------------------------------------- Resumen */
@@ -253,7 +248,7 @@
       '<div class="cp-facts" style="margin-top:12px">' + fact('Objeto mantenible', objChip(o)) + fact('Duración estimada', o.otr_duracion_estimada_minuto ? K.fH(o.otr_duracion_estimada_minuto) : '—') +
       fact('Requiere parada', necesitaRec(F) ? '<span style="color:var(--amber)">Sí, detiene el activo</span>' : 'No') + fact('Creada', f2(o.otr_fecha_creacion)) + (o.otr_notas ? fact('Notas', esc(o.otr_notas)) : '') + '</div>' +
       '<div class="cp-otsum"><button type="button" data-a="ottab" data-v="pasos">' + ic('check', 15) + '<b>' + hechos + '/' + np + '</b>tareas</button><button type="button" data-a="ottab" data-v="pasos">' + ic('clip', 15) + '<b>' + ne + '</b>evidencias</button><button type="button" data-a="ottab" data-v="rep">' + ic('box', 15) + '<b>' + F.repuestos.length + '</b>repuestos</button><button type="button" data-a="ottab" data-v="pasos">' + ic('clock', 15) + '<b>' + F.indisponibilidades.length + '</b>detenciones</button></div></section>' + asig + '</div>' + COL +
-      '<section class="cp-card"><div class="cp-sc-h"><h3>Avisos vinculados</h3><small>' + (F.avisos.length ? pl(F.avisos.length, 'aviso', 'avisos') : 'Ninguno') + '</small></div>' + av + '</section>' + historialHTML(F) + '</div></div>';
+      '<section class="cp-card"><div class="cp-sc-h"><h3>Avisos vinculados</h3><small>' + (F.avisos.length ? pl(F.avisos.length, 'aviso', 'avisos') : 'Ninguno') + '</small></div>' + av + '</section>' + comentariosHTML(F, true) + '</div></div>';
   }
 
   /* ---------------------------------------------------------------- Trabajo (tareas, mano de obra, servicios, indisponibilidad) */
@@ -390,7 +385,7 @@
     var informado = !!(o.otr_resultado || '').trim() && e >= 3;
     var pasos = [['Informe', informado || (e === 2 && okTxt)], ['Firma de quien ejecutó', !!firmaDe(F, 'ej')]].concat(rec ? [['Recepción del área', !!firmaDe(F, 'rec')]] : [], [['Firma de quien aprueba', !!firmaDe(F, 'sup')], ['Cerrada', e === 4]]);
     var steps = '<ol class="cp-cstep">' + pasos.map(function (x, i) { return '<li class="' + (x[1] ? 'cp-ok' : '') + '"><i>' + (x[1] ? ic('check', 11) : i + 1) + '</i>' + x[0] + '</li>'; }).join('') + '</ol>';
-    if (e === 1) return '<section class="cp-card"><div class="cp-empty" style="border:0"><span class="cp-ei">' + ic('clock', 20) + '</span><b>El cierre se registra al terminar el trabajo</b>' + (tieneAsignado(F) ? 'Inicia la OT, marca las tareas y luego vuelve aquí para el informe y las firmas.' : 'Primero asigna un responsable; luego inicia la OT.') + (p.ejecutar && tieneAsignado(F) ? '<button type="button" class="cp-btn cp-pri cp-sm" data-a="otiniciar">Iniciar trabajo</button>' : '') + '</div></section>';
+    if (e === 1) return paraCerrarHTML(F);
     var sigs = function (puede) { return '<div class="cp-sgg">' + ['ej'].concat(rec ? ['rec'] : [], ['sup']).map(function (r) { return sigBox(F, r, puede(r)); }).join('') + '</div>'; };
     if (e === 4) {
       var hrs = +o.otr_duracion_real_minuto || minutosReg(F);
@@ -404,7 +399,7 @@
         (svMiss ? '<div class="cp-bnr cp-w">' + ic('alert', 18) + '<span>Falta el informe del proveedor en ' + (svMiss === 1 ? 'un servicio contratado' : svMiss + ' servicios contratados') + '. Es obligatorio para cerrar. <button type="button" class="cp-lnk" data-a="otsvir">Adjuntarlo</button></span></div>' : '') +
         '<section class="cp-card"><div class="cp-sc-h"><h3>Firmas</h3><small>' + (miss.length ? (miss.length === 1 ? 'Falta una firma' : 'Faltan ' + miss.length + ' firmas') + ' para cerrar' : 'Todo firmado: ya se puede cerrar') + '</small></div>' + sigs(function (r) { return r !== 'ej' && p.validar && (r !== 'sup' || p.cerrar); }) +
         (p.cerrar ? '<div class="cp-fld" style="margin-top:12px"><label>Motivo de cierre</label>' + K.combo('ciMotivo', (F.motivos || []).map(function (m) { return { id: m.ID, n: m.NOMBRE }; }), fc.motivo || 1, { etiqueta: 'Motivo de cierre', ph: 'Trabajo realizado' }) + '</div>' : '') +
-        '<div class="cp-sg-end">' + (p.cerrar ? '<button type="button" class="cp-btn cp-plain" data-a="otdev">Devolver a ejecución</button><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otcerrar"' + (miss.length || svMiss ? ' aria-disabled="true"' : '') + '>' + ic('check', 16) + 'Cerrar OT</button>' : '<span class="cp-sg-why">Esperando que alguien con la facultad de cerrar OT revise el informe y la cierre.</span>') + '</div></section>' + hallazgoHTML(F);
+        '<div class="cp-sg-end">' + (p.cerrar ? '<button type="button" class="cp-btn cp-plain" data-a="otdev">Devolver a ejecución</button><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otcerrar"' + (miss.length || svMiss ? ' aria-disabled="true"' : '') + '>' + ic('check', 16) + 'Cerrar OT</button>' : '<span class="cp-sg-why">Esperando que alguien con la facultad de cerrar OT revise el informe y la cierre.</span>') + '</div></section>';
     }
     /* en ejecución */
     var causas = CAUSAS.map(function (x) { return { id: x, n: x }; });
@@ -414,13 +409,188 @@
       (corr ? '<div class="cp-fld"><label>Causa de la falla</label>' + K.combo('ciCausa', causas, fc.causa || '', { etiqueta: 'Causa de la falla', ph: 'Elige la causa', err: fc.err && !(fc.causa || '').trim() }) + '</div>' : '<div></div>') +
       '<div class="cp-fld" style="grid-column:1/-1"><label>Estado del activo al terminar</label><div class="cp-segc">' + [1, 2, 3].map(function (k) { return '<button type="button" data-a="otpost" data-v="' + k + '" aria-pressed="' + (+fc.post === k) + '">' + POST[k] + '</button>'; }).join('') + '</div></div></div></section>' +
       '<section class="cp-card"><div class="cp-sc-h"><h3>Firmas</h3><small>Quien ejecutó firma al completar; ' + (rec ? 'producción recibe el activo y ' : '') + 'quien tiene la facultad de cerrar aprueba el cierre</small></div>' + sigs(function (r) { return r === 'ej' && p.validar && p.ejecutar; }) +
-      '<div class="cp-sg-end"><span class="cp-sg-why">' + (!okTxt ? 'Falta el informe' : !firmaDe(F, 'ej') ? 'Falta la firma de quien ejecutó' : 'Listo para completar') + '</span><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otenviar"' + (okTxt && firmaDe(F, 'ej') ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Firmar y completar</button></div></section>' + hallazgoHTML(F);
+      '<div class="cp-sg-end"><span class="cp-sg-why">' + (!okTxt ? 'Falta el informe' : !firmaDe(F, 'ej') ? 'Falta la firma de quien ejecutó' : 'Listo para completar') + '</span><button type="button" class="cp-btn cp-pri' + (fc.busy ? ' cp-load' : '') + '" data-a="otenviar"' + (okTxt && firmaDe(F, 'ej') ? '' : ' aria-disabled="true"') + '>' + ic('check', 16) + 'Firmar y completar</button></div></section>';
   }
+
+  /* =====================================================================
+     FICHA V8 (anexo v8 del rediseño): cinco pestañas que dicen lo que tienen
+     Resumen · Ejecución · Recursos · Cierre · Historial
+     Ningún formulario queda abierto en la página: registrar algo abre un
+     cajón y vuelve a la misma vista.
+     ===================================================================== */
+  var TABN = { pasos: 'eje', evi: 'eje', rep: 'rec' };
+  var tabN = function (t) { return TABN[t] || t || 'resumen'; };
+  var hechosDe = function (F) { return F.pasos.filter(function (p) { return +p.otp_resultado_paso !== 4; }).length; };
+  var detAbierta = function (F) { return F.indisponibilidades.filter(function (i) { return !i.ain_fecha_fin_utc; })[0] || null; };
+  var horasReg = function (F) { return F.manoObra.reduce(function (a, x) { return a + (+x.MINUTOS || 0); }, 0); };
+  function tabsF(F) {
+    var o = F.ot, e = +o.otr_orden_trabajo_estado, np = F.pasos.length, hc = hechosDe(F), rec = necesitaRec(F);
+    var need = ['ej', 'sup'].concat(rec ? ['rec'] : []), ns = need.filter(function (r) { return !!firmaDe(F, r); }).length;
+    var cie = e === 4 ? ['ok', 'Cerrada'] : e === 1 ? ['lock', 'Al terminar'] : e === 3 ? ['w', 'Firmas ' + ns + '/' + need.length] : ['p', 'Informe y firmas'];
+    var cieIc = cie[0] === 'ok' ? '<span class="cp-cst cp-c-ok">' + ic('check', 10) + '</span>' : cie[0] === 'lock' ? '<span class="cp-cst cp-c-lock">' + ic('lock', 10) + '</span>' : '<span class="cp-cst cp-c-' + cie[0] + '"></span>';
+    var nRep = F.repuestos.length, hrs = horasReg(F), nEv = (F.bitacora || []).length + (F.comentarios || []).length;
+    var T = [['resumen', 'Resumen', 'Qué, dónde y quién', ''],
+      ['eje', 'Ejecución', np ? hc + ' de ' + np + ' hechos' : 'Sin tareas', np ? '<span class="cp-ottp"><i style="width:' + Math.round(hc / np * 100) + '%"></i></span>' : ''],
+      ['rec', 'Recursos', pl(nRep, 'repuesto', 'repuestos') + ' · ' + K.fN(hrs / 60, 1) + ' h', ''],
+      ['cierre', 'Cierre', cie[1], ''],
+      ['his', 'Historial', pl(nEv, 'evento', 'eventos'), '']];
+    var cur = tabN(U.tab);
+    return '<nav class="cp-ott2" role="tablist" aria-label="Secciones de la OT">' + T.map(function (x) {
+      return '<button type="button" role="tab" aria-selected="' + (cur === x[0]) + '" data-a="ottab" data-v="' + x[0] + '"><b>' + x[1] + (x[0] === 'cierre' ? cieIc : '') + '</b><small>' + x[2] + '</small>' + x[3] + '</button>';
+    }).join('') + '</nav>';
+  }
+
+  /* ---------------------------------------------------------------- Ejecución */
+  function ejecucionHTML(F) {
+    var e = +F.ot.otr_orden_trabajo_estado, can = e === 2 && F.permisos.ejecutar, ev = (F.evidencias || []).filter(function (a) { return !a.ES_FIRMA; });
+    var lock = !can ? '<div class="cp-bnr cp-p">' + ic('help', 18) + '<span>' + (e === 1 ? (tieneAsignado(F) ? 'Inicia el trabajo para marcar las tareas.' : 'Asigna un responsable e inicia el trabajo para marcar las tareas.') : e === 4 ? 'OT cerrada: lo registrado queda de solo lectura.' : 'OT completada: espera el cierre.') + '</span></div>' : '';
+    var filas = F.pasos.map(function (p, i) {
+      var r = +p.otp_resultado_paso, ok = r !== 4, op = String(U.trx) === String(p.otp_id), nf = ev.filter(function (a) { return a.PASO && a.PASO === p.otp_nombre; }).length;
+      var est = r === 2 ? '<span class="cp-tg cp-w">No conforme</span>' : r === 3 ? '<span class="cp-tg">No aplica</span>' : '';
+      return '<li class="cp-tr' + (ok ? ' cp-tr-ok' : '') + (op ? ' cp-tr-open' : '') + '"><div class="cp-tr-r"><input type="checkbox" class="cp-cbx" data-a="otstep" data-p="' + p.otp_id + '"' + (r === 1 ? ' checked' : '') + (can ? '' : ' disabled') + ' aria-label="Marcar tarea ' + (i + 1) + '">' +
+        '<button type="button" class="cp-tr-b" data-a="ottrx" data-v="' + p.otp_id + '" aria-expanded="' + op + '"><span class="cp-tr-n">' + (i + 1) + '</span><span class="cp-tr-t"><b>' + esc(p.otp_nombre) + '</b><small>' + (+p.otp_obligatorio ? 'Obligatoria' : 'Opcional') + (ok && p.EJECUTOR_NOMBRE ? ' · ' + esc(p.EJECUTOR_NOMBRE) : '') + '</small></span>' +
+        '<span class="cp-tr-m">' + est + (nf ? '<span class="cp-tg cp-c">' + ic('clip', 11) + pl(nf, 'foto', 'fotos') + '</span>' : '') + ic('chev', 15) + '</span></button></div>' +
+        (op ? '<div class="cp-tr-x">' + (p.otp_descripcion ? '<p class="cp-tr-e">' + esc(p.otp_descripcion) + '</p>' : '<p class="cp-tr-e">Sin instrucción escrita.</p>') + (p.otp_resultado ? '<p class="cp-tr-e"><b>Resultado:</b> ' + esc(p.otp_resultado) + '</p>' : '') +
+          (can ? '<div class="cp-tr-a"><button type="button" class="cp-btn cp-pri cp-xs" data-a="otpaso" data-p="' + p.otp_id + '" data-v="1">' + ic('check', 13) + (r === 1 ? 'Volver a pendiente' : 'Marcar como hecha') + '</button><button type="button" class="cp-btn cp-plain cp-xs" data-a="otpaso" data-p="' + p.otp_id + '" data-v="2">No conforme</button><button type="button" class="cp-btn cp-plain cp-xs" data-a="otpaso" data-p="' + p.otp_id + '" data-v="3">No aplica</button></div>' : '') +
+          '<small class="cp-muted2">Las fotos de la tarea se toman desde la app y quedan asociadas a ella.</small></div>' : '') + '</li>';
+    }).join('');
+    var tareas = '<section class="cp-card"><div class="cp-sc-h"><h3>Tareas</h3><small>' + (F.pasos.length ? hechosDe(F) + ' de ' + F.pasos.length + ' hechas' : 'Sin tareas') + '</small>' + (editable(F) ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otprocnew">' + ic('plus', 13) + 'Agregar desde procedimiento</button></div>' : '') + '</div>' +
+      (filas ? '<ol class="cp-trl">' + filas + '</ol>' : '<p class="cp-foot" style="margin:0">Esta OT no tiene tareas. Agrégalas desde un procedimiento.</p>') + '</section>';
+    var evid = '<section class="cp-card"><div class="cp-sc-h"><h3>Evidencias</h3><small>' + pl(ev.length, 'archivo', 'archivos') + '</small></div>' + (ev.length ? '<div class="cp-evs">' + ev.map(function (a) {
+      return '<a href="' + esc(a.URL) + '" target="_blank" rel="noopener"><figure>' + (a.IMAGEN ? '<img src="' + esc(a.URL) + '" alt="' + esc(a.NOMBRE) + '" loading="lazy">' : '<span class="cp-ev-i">' + ic('clip', 24) + '</span>') + '<figcaption><b>' + esc(a.PASO || a.NOMBRE) + '</b><small>' + esc(a.QUIEN || '') + '</small></figcaption></figure></a>';
+    }).join('') + '</div>' : '<p class="cp-foot" style="margin:0">Las fotos, videos y documentos se adjuntan desde la app al ejecutar el trabajo.</p>') + '</section>';
+    return '<div class="cp-exg"><div class="cp-exg-m">' + lock + tareas + evid + '</div>' + rielHTML(F) + '</div>';
+  }
+  function rielHTML(F) {
+    var o = F.ot, e = +o.otr_orden_trabajo_estado, np = F.pasos.length, pc = np ? Math.round(hechosDe(F) / np * 100) : (e >= 3 ? 100 : 0);
+    var est = +o.otr_duracion_estimada_minuto || 0, reg = horasReg(F) || minutosReg(F), p = F.permisos;
+    var boton = e === 1 && p.ejecutar && tieneAsignado(F) ? '<button type="button" class="cp-btn cp-pri cp-wide" data-a="otiniciar">Iniciar trabajo</button>'
+      : e === 1 && p.crear && !tieneAsignado(F) ? '<button type="button" class="cp-btn cp-pri cp-wide" data-a="ottab" data-v="resumen">Asignar</button>'
+      : e === 2 && p.ejecutar ? '<button type="button" class="cp-btn cp-pri cp-wide" data-a="ottab" data-v="cierre">' + ic('check', 15) + 'Completar y firmar</button>' : '';
+    var ring = '<svg width="54" height="54" viewBox="0 0 36 36" aria-hidden="true"><circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--line)" stroke-width="4"/><circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--sigma-purple)" stroke-width="4" stroke-linecap="round" stroke-dasharray="' + (pc * 0.974).toFixed(1) + ' 97.4" transform="rotate(-90 18 18)"/><text x="18" y="21.5" text-anchor="middle" font-size="9" font-weight="800" fill="var(--ink)">' + pc + '%</text></svg>';
+    var avance = '<div class="cp-rl-c"><div class="cp-rl-av">' + ring + '<span><b>Avance</b><small>' + fHM(reg) + ' registradas' + (est ? ' de ' + K.fH(est) + ' estimadas' : '') + '</small></span></div>' + boton + '</div>';
+    var abierta = detAbierta(F), activo = +o.otr_activo > 0, puedeDet = p.reportar && e < 4 && activo;
+    var st = abierta ? '<div class="cp-rl-st cp-s-stop"><i></i><span><b>Detenido desde las ' + K.hIso(abierta.ain_fecha_inicio_utc) + '</b><small>' + K.fH(Math.max(0, Math.round((Date.now() - new Date(abierta.ain_fecha_inicio_utc).getTime()) / 60000))) + ' sin operar' + (abierta.MOTIVO_NOMBRE ? ' · ' + esc(abierta.MOTIVO_NOMBRE) : '') + '</small></span></div>'
+      : '<div class="cp-rl-st cp-s-run"><i></i><span><b>' + (e === 4 ? 'Entregado a producción' : 'Operando') + '</b><small>' + (F.indisponibilidades.length ? pl(F.indisponibilidades.length, 'detención registrada', 'detenciones registradas') : 'Sin detenciones por esta OT') + '</small></span></div>';
+    var lista = F.indisponibilidades.length ? '<ul class="cp-dtl">' + F.indisponibilidades.map(function (i) {
+      return '<li><span class="cp-dt-d' + (i.ain_fecha_fin_utc ? '' : ' cp-on') + '"></span><span><b>' + esc(i.MOTIVO_NOMBRE || 'Detención') + '</b><small>' + f2(i.ain_fecha_inicio_utc) + (i.ain_fecha_fin_utc ? ' – ' + K.hIso(i.ain_fecha_fin_utc) : ' · sigue detenido') + (i.ain_planificada ? ' · planificada' : '') + '</small></span><em>' + K.fH(i.MINUTOS_ACUMULADOS || i.ain_minuto || 0) + '</em></li>';
+    }).join('') + '</ul>' : '';
+    var detBtn = !puedeDet ? '' : abierta ? '<button type="button" class="cp-btn cp-sec cp-wide" data-a="otdetfin" data-v="' + abierta.ain_id + '">Registrar fin de la detención</button>' : '<button type="button" class="cp-btn cp-out cp-wide" data-a="otdetnew">Registrar detención</button>';
+    var estado = activo ? '<div class="cp-rl-c"><div class="cp-rl-h"><b>Estado del activo</b></div>' + st + lista + detBtn + '</div>' : '';
+    var qa = e < 4 ? '<div class="cp-rl-c"><div class="cp-rl-h"><b>Acciones rápidas</b></div><div class="cp-qa">' +
+      (p.ejecutar ? '<button type="button" data-a="othrsnew">' + ic('clock', 16) + 'Registrar horas</button>' : '') +
+      (p.ejecutar ? '<button type="button" data-a="otrepnew">' + ic('box', 16) + 'Agregar repuesto</button>' : '') +
+      (p.reportar ? '<button type="button" data-a="othalnew">' + ic('alert', 16) + 'Reportar hallazgo</button>' : '') +
+      '<button type="button" data-a="otcomir">' + ic('pencil', 16) + 'Comentar</button></div></div>' : '';
+    return '<aside class="cp-orail">' + avance + estado + qa + '</aside>';
+  }
+
+  /* ---------------------------------------------------------------- Recursos */
+  function recursosHTML(F) {
+    var v = U.rct || 'rep', hrs = horasReg(F), tot = (F.serviciosTotal || []).map(function (x) { return esc(x.MONEDA) + ' ' + K.fN(x.TOTAL, x.MONEDA === 'UF' ? 2 : 0); }).join(' · ');
+    var S = [['rep', 'box', 'Repuestos', F.repuestos.length], ['mo', 'clock', 'Mano de obra', K.fN(hrs / 60, 1) + ' h'], ['sv', 'users', 'Servicios', tot || F.servicios.length]];
+    var sel = '<div class="cp-rseg" role="tablist">' + S.map(function (x) { return '<button type="button" role="tab" aria-selected="' + (v === x[0]) + '" data-a="otrct" data-v="' + x[0] + '">' + ic(x[1], 15) + x[2] + '<b>' + x[3] + '</b></button>'; }).join('') + '</div>';
+    var cuerpo = v === 'mo' ? manoObraHTML(F) : v === 'sv' ? serviciosHTML(F) : repuestosV8(F);
+    return sel + cuerpo;
+  }
+  function repuestosV8(F) {
+    var e = +F.ot.otr_orden_trabajo_estado, puede = F.permisos.ejecutar && e < 4, cols = '96px minmax(0,1fr) 92px 92px 92px';
+    var compat = U.compat && U.compat.q === U.ficha.q ? U.compat.l : null, ya = F.repuestos.map(function (r) { return String(r.REPUESTO_CODIGO); });
+    if (puede && !compat && !U.compatPide) { U.compatPide = true; api('RepuestosCompatibles', { token: F.q }).then(function (r) { U.compat = { q: F.q, l: r.repuestos || [] }; U.compatPide = false; pintar(); }).catch(function () { U.compatPide = false; }); }
+    var faltan2 = (compat || []).filter(function (c) { return ya.indexOf(String(c.CODIGO)) < 0 && +c.EXISTENCIA > 0; }).slice(0, 6);
+    var filas = F.repuestos.map(function (r) {
+      return '<div class="cp-rw" style="grid-template-columns:' + cols + '"><span class="cp-mono">' + esc(r.REPUESTO_CODIGO) + '</span><span class="cp-s"><b>' + esc(r.REPUESTO_NOMBRE) + '</b><small>' + esc(r.UNIDAD || '') + (r.LOTE ? ' · lote ' + esc(r.LOTE) : '') + ((compat || []).some(function (c) { return String(c.CODIGO) === String(r.REPUESTO_CODIGO); }) ? ' · <span class="cp-tg cp-c">Compatible</span>' : '') + '</small></span>' +
+        '<span>' + K.fN(r.PLANIFICADA, 0) + '</span><span style="font-weight:800">' + K.fN(r.CONSUMIDA, 0) + '</span><span>' + (+r.CONSUMIDA > 0 ? '<span class="cp-tg cp-c">Entregado</span>' : +r.RESERVADA > 0 ? '<span class="cp-tg">Reservado</span>' : '—') + '</span></div>';
+    });
+    return '<section class="cp-card"><div class="cp-sc-h"><h3>Repuestos</h3><small>Planificado contra usado</small>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="otrepnew">' + ic('plus', 13) + 'Agregar repuesto</button></div>' : '') + '</div>' +
+      tabla(cols, ['Código', 'Repuesto', 'Planificado', 'Usado', 'Bodega'], filas, 'Esta OT no lleva repuestos.') +
+      (faltan2.length ? '<div class="cp-rsug"><b>' + ic('box', 13) + 'Compatibles con este activo:</b>' + faltan2.map(function (c) { return '<button type="button" class="cp-tg" data-a="otrepnew" data-v="' + c.REPUESTO_ID + '">' + esc(c.CODIGO) + ' · ' + K.fN(c.EXISTENCIA, 0) + ' en stock</button>'; }).join('') + '</div>' : '') + '</section>';
+  }
+  function manoObraHTML(F) {
+    var puede = F.permisos.ejecutar && +F.ot.otr_orden_trabajo_estado < 4, cols = 'minmax(0,1.4fr) 140px 80px 90px minmax(0,1fr)', tot = horasReg(F);
+    var filas = F.manoObra.map(function (m) { return '<div class="cp-rw" style="grid-template-columns:' + cols + '"><span class="cp-s"><b>' + esc(m.USUARIO_NOMBRE || m.PROVEEDOR_NOMBRE || '—') + '</b>' + (m.ESPECIALIDAD ? '<small>' + esc(m.ESPECIALIDAD) + '</small>' : '') + '</span><span>' + f2(m.omo_fecha_inicio_utc) + '</span><span style="font-weight:800">' + K.fN((+m.MINUTOS || 0) / 60, 1) + ' h</span><span>' + (+m.HORA_EXTRA ? '<span class="cp-tg cp-w">Extra</span>' : 'Normal') + '</span><span class="cp-muted2">' + esc(m.OBSERVACION || m.omo_observacion || '') + '</span></div>'; });
+    if (filas.length) filas.push('<div class="cp-rw cp-tot" style="grid-template-columns:' + cols + '"><span><b>Total</b></span><span></span><span style="font-weight:800">' + K.fN(tot / 60, 1) + ' h</span><span></span><span></span></div>');
+    return '<section class="cp-card"><div class="cp-sc-h"><h3>Mano de obra</h3><small>Horas de quienes ejecutan</small>' + (puede ? '<div class="cp-r"><button type="button" class="cp-btn cp-out cp-xs" data-a="othrsnew">' + ic('plus', 13) + 'Registrar horas</button></div>' : '') + '</div>' +
+      tabla(cols, ['Persona', 'Fecha', 'Horas', 'Tipo', 'Nota'], filas, 'Todavía no hay horas registradas.') + '</section>';
+  }
+
+  /* ---------------------------------------------------------------- Cierre antes de iniciar: lo que se pedirá */
+  function paraCerrarHTML(F) {
+    var rec = necesitaRec(F), oblig = F.pasos.filter(function (p) { return +p.otp_obligatorio; }).length, p = F.permisos;
+    var L = [['check', 'Tareas obligatorias', oblig ? pl(oblig, 'tarea obligatoria', 'tareas obligatorias') + ' marcadas' : 'Sin tareas obligatorias'],
+      ['pencil', 'Informe', 'Qué se hizo, qué se cambió y cómo quedó'],
+      ['users', 'Firma de quien ejecutó', 'Al completar el trabajo']].concat(rec ? [['alert', 'Recepción del área', 'La OT detiene el activo: producción lo recibe']] : [], [['check', 'Firma de quien aprueba', 'Quien tiene la facultad de cerrar OT']]);
+    if (F.servicios.length) L.splice(2, 0, ['clip', 'Informe de los proveedores', pl(F.servicios.length, 'servicio contratado', 'servicios contratados')]);
+    var boton = !tieneAsignado(F) && p.crear ? '<button type="button" class="cp-btn cp-pri" data-a="ottab" data-v="resumen">Asignar</button>' : p.ejecutar ? '<button type="button" class="cp-btn cp-pri" data-a="otiniciar">Iniciar trabajo</button>' : '';
+    return '<section class="cp-card"><div class="cp-cpre-h"><span class="cp-ei">' + ic('lock', 20) + '</span><div><h3>Para cerrar esta OT</h3><p>Esto es lo que se pedirá al terminar el trabajo.</p></div>' + boton + '</div>' +
+      '<ul class="cp-ckl">' + L.map(function (x) { return '<li><span class="cp-ck-i">' + ic(x[0], 13) + '</span><span><b>' + x[1] + '</b><small>' + x[2] + '</small></span></li>'; }).join('') + '</ul></section>';
+  }
+
+  /* ---------------------------------------------------------------- Comentarios (Resumen e Historial) */
+  function comentariosHTML(F, caja) {
+    var l = F.comentarios || [];
+    return '<section class="cp-card"><div class="cp-sc-h"><h3>Comentarios</h3><small>' + (l.length ? pl(l.length, 'comentario', 'comentarios') : 'Ninguno') + '</small></div>' +
+      (caja ? '<div class="cp-cmc-r"><textarea id="otCom" class="cp-inp" rows="2" data-pv="ot_com" placeholder="Escribe un comentario para quienes ven esta OT">' + esc(U.com || '') + '</textarea><button type="button" class="cp-btn cp-pri cp-sm' + (U.comBusy ? ' cp-load' : '') + '" data-a="otcomok">Publicar</button></div>' : '') +
+      (l.length ? '<ol class="cp-tl cp-tl2" style="margin-top:10px">' + l.map(function (c) { return '<li><b>' + esc(c.TEXTO) + '</b><small>' + f2(c.FECHA) + (c.QUIEN ? ' · ' + esc(c.QUIEN) : '') + '</small></li>'; }).join('') + '</ol>' : '') + '</section>';
+  }
+
+  /* ---------------------------------------------------------------- Cajones de la ficha */
+  var PDET = function (d) {
+    return { t: 'Registrar detención', s: otTxt(U.ficha.ot.otr_correlativo) + ' · alimenta la disponibilidad del activo', w: 'n',
+      b: '<div class="cp-fld2"><div class="cp-fld"><label>Empezó</label>' + K.fecha('in_ini', K.deDN(d.ini), { ph: 'dd-mm-aaaa', err: d.err && !d.ini }) + '</div><div class="cp-fld"><label>Hora</label>' + K.combo('inHIni', HORAS.map(function (h) { return { id: h, n: h }; }), d.hini, { etiqueta: 'Hora de inicio', ph: '08:00' }) + '</div></div>' +
+        '<div class="cp-fld2"><div class="cp-fld"><label>Terminó <small>vacío si sigue detenido</small></label>' + K.fecha('in_fin', K.deDN(d.fin), { ph: 'dd-mm-aaaa' }) + '</div><div class="cp-fld"><label>Hora</label>' + K.combo('inHFin', HORAS.map(function (h) { return { id: h, n: h }; }), d.hfin, { etiqueta: 'Hora de término', ph: '—' }) + '</div></div>' +
+        '<div class="cp-fld"><label>Tipo</label><div class="cp-segc"><button type="button" data-a="otind" data-k="plan" data-v="1" aria-pressed="' + (+d.plan === 1) + '">Planificada</button><button type="button" data-a="otind" data-k="plan" data-v="0" aria-pressed="' + (+d.plan === 0) + '">No planificada</button></div></div>' +
+        '<div class="cp-fld"><label>Motivo</label>' + K.combo('inMotivo', [{ id: 0, n: 'Sin motivo' }].concat(Object.keys(MOTIVOS_IND).map(function (k) { return { id: +k, n: MOTIVOS_IND[k] }; })), d.motivo, { etiqueta: 'Motivo', ph: 'Sin motivo' }) + '</div>' +
+        '<label class="cp-sw"><input type="checkbox" data-pv="in_detuvo"' + (d.detuvo ? ' checked' : '') + '><i></i>Detuvo la producción</label>' +
+        '<div class="cp-fld" style="margin-top:12px"><label for="inD">Detalle</label><textarea id="inD" class="cp-inp" rows="2" data-pv="in_det">' + esc(d.det) + '</textarea></div>' + (d.err ? msgErr('Indica el día en que empezó la detención.') : ''),
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (d.busy ? ' cp-load' : '') + '" data-a="otindok">Registrar detención</button></span>' };
+  };
+  var PHRS = function (h) {
+    var gente = (U.cat && U.cat.personas || []).map(function (p) { return { id: p.ID, n: p.NOMBRE, sub: [p.PERFIL, p.ESPECIALIDAD].filter(Boolean).join(' · ') || 'Sin perfil', img: p.FOTO || '', ini: K.ini(p.NOMBRE) }; });
+    if (!U.cat) return { t: 'Registrar horas', w: 'n', b: '<div class="cp-sk" style="height:46px"></div>' };
+    return { t: 'Registrar horas', s: otTxt(U.ficha.ot.otr_correlativo) + ' · mano de obra', w: 'n',
+      b: '<div class="cp-fld"><label>Persona</label>' + K.combo('hrPer', gente, h.per || '', { etiqueta: 'Persona', ph: 'Quién trabajó', err: h.err && !h.per }) + '</div>' +
+        '<div class="cp-fld2"><div class="cp-fld"><label>Día</label>' + K.fecha('hr_dia', K.deDN(h.dia), { ph: 'dd-mm-aaaa', err: h.err && !h.dia }) + '</div><div class="cp-fld"><label>Desde</label>' + K.combo('hrIni', HORAS.map(function (x) { return { id: x, n: x }; }), h.ini, { etiqueta: 'Hora de inicio', ph: '08:00' }) + '</div></div>' +
+        '<div class="cp-fld2"><div class="cp-fld"><label for="hrH">Horas</label><div class="cp-unit"><input id="hrH" class="cp-inp' + (h.err && !(parseFloat(String(h.h).replace(',', '.')) > 0) ? ' cp-err' : '') + '" data-pv="hr_h" value="' + esc(h.h) + '" inputmode="decimal" placeholder="Ej.: 1,5"><span class="cp-u">horas</span></div></div>' +
+        '<div class="cp-fld"><label>Tipo</label><div class="cp-segc"><button type="button" data-a="othrx" data-v="0" aria-pressed="' + !h.extra + '">Normal</button><button type="button" data-a="othrx" data-v="1" aria-pressed="' + !!h.extra + '">Extra</button></div></div></div>' +
+        '<div class="cp-fld"><label for="hrN">Nota <small>opcional</small></label><input id="hrN" class="cp-inp" data-pv="hr_n" value="' + esc(h.n) + '" placeholder="Qué hizo"></div>',
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (h.busy ? ' cp-load' : '') + '" data-a="othrsok">Registrar horas</button></span>' };
+  };
+  var PREP = function (r) {
+    var l = U.compat && U.compat.q === U.ficha.q ? U.compat.l : null;
+    if (!l) return { t: 'Agregar repuesto', w: 'n', b: '<div class="cp-sk" style="height:46px"></div><div class="cp-sk" style="height:200px;margin-top:10px"></div>' };
+    var q = nrm(r.q || ''), vis = l.filter(function (c) { return !q || nrm(c.CODIGO + ' ' + c.NOMBRE).indexOf(q) >= 0; }).sort(function (a, b) { return (+b.EXISTENCIA > 0) - (+a.EXISTENCIA > 0); }).slice(0, 40);
+    return { t: 'Agregar repuesto', s: otTxt(U.ficha.ot.otr_correlativo) + ' · sale de la bodega con más stock', w: 'n',
+      b: '<label class="cp-srch2" style="height:38px">' + ic('search', 14) + '<input data-pv="rp_q" data-live="1" value="' + esc(r.q || '') + '" placeholder="Buscar por código o nombre" aria-label="Buscar repuesto" autocomplete="off"></label>' +
+        '<div class="cp-mini" style="margin-top:10px">' + (vis.map(function (c) { return '<button type="button" class="cp-mini-r' + (+r.id === +c.REPUESTO_ID ? ' cp-on' : '') + '" data-a="otrepsel" data-v="' + c.REPUESTO_ID + '"' + (+c.EXISTENCIA > 0 ? '' : ' disabled') + '><span class="cp-s"><b>' + esc(c.CODIGO) + ' · ' + esc(c.NOMBRE) + '</b><small>' + (+c.EXISTENCIA > 0 ? K.fN(c.EXISTENCIA, 0) + ' ' + esc((c.UNIDAD || '').toLowerCase()) + ' en ' + esc(c.DONDE || 'bodega') : 'Sin stock') + '</small></span><span class="cp-tg cp-c">Compatible</span></button>'; }).join('') || '<p class="cp-foot">No hay repuestos compatibles con este activo que coincidan.</p>') + '</div>' +
+        (r.id ? '<div class="cp-fld" style="margin-top:12px;max-width:200px"><label for="rpC">Cantidad usada</label><input id="rpC" class="cp-inp' + (r.err ? ' cp-err' : '') + '" data-pv="rp_c" value="' + esc(r.c) + '" inputmode="decimal"></div>' : ''),
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (r.busy ? ' cp-load' : '') + '" data-a="otrepok"' + (r.id ? '' : ' disabled') + '>Agregar repuesto</button></span>' };
+  };
+  var PHAL = function (hf) {
+    var c = U.cat, comps = [{ id: 0, n: 'Activo completo' }].concat(((c && c.componentes) || []).filter(function (x) { return +x.ACTIVO_ID === +U.ficha.ot.otr_activo; }).map(function (x) { return { id: x.ID, n: x.NOMBRE }; }));
+    return { t: 'Reportar hallazgo', s: 'Se crea un aviso «Hallazgo en OT» para evaluar', w: 'n',
+      b: '<div class="cp-fld"><label for="hft">Qué viste</label><input id="hft" class="cp-inp' + (hf.err && (hf.t || '').trim().length < 5 ? ' cp-err' : '') + '" data-pv="hf_t" value="' + esc(hf.t) + '" placeholder="Ej.: Rodamiento del tambor de cola con ruido"></div>' +
+        '<div class="cp-fld"><label>Objeto mantenible</label>' + K.combo('hfComp', comps, hf.comp || 0, { etiqueta: 'Componente', ph: 'Activo completo' }) + '</div>' +
+        '<div class="cp-fld"><label>Severidad</label>' + seg(PRIO, 'othsev', 'sev', hf.sev) + '</div>' +
+        '<div class="cp-fld"><label for="hfd">Detalle <small>opcional</small></label><textarea id="hfd" class="cp-inp" rows="3" data-pv="hf_d">' + esc(hf.d || '') + '</textarea></div>',
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (hf.busy ? ' cp-load' : '') + '" data-a="othok">' + ic('bell', 15) + 'Crear aviso</button></span>' };
+  };
+  var PPROC = function (s) {
+    var c = U.cat;
+    if (!c) return { t: 'Agregar desde procedimiento', w: 'n', b: '<div class="cp-sk" style="height:46px"></div>' };
+    return { t: 'Agregar desde procedimiento', s: 'Sus pasos se copian como tareas de esta OT', w: 'n',
+      b: '<div class="cp-fld"><label>Procedimiento</label>' + K.combo('otProc', c.procedimientos.map(function (p) { return { id: p.ID, n: p.NOMBRE }; }), U.proc || '', { etiqueta: 'Procedimiento', ph: 'Elige un procedimiento…' }) + '</div>' +
+        '<small class="cp-muted2" style="display:block">Se copian el nombre y la instrucción de cada paso. Volver a agregarlo no duplica la lista.</small>',
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><span class="cp-r"><button type="button" class="cp-btn cp-pri' + (s.busy ? ' cp-load' : '') + '" data-a="otproc"' + (U.proc ? '' : ' disabled') + '>' + ic('plus', 15) + 'Agregar tareas</button></span>' };
+  };
+  var conCat = function (st, render) { K.Panel.open({ render: render, st: st }); if (!U.cat) catalogos().then(function () { if (K.Panel.state() === st) K.Panel.paint(); }).catch(function (e) { K.Panel.close(); K.toastError(e); }); };
+  var repintar = function () { if (K.Panel.state()) K.Panel.paint(); else pintar(); };
+
   function fichaHTML() {
     var F = U.ficha; if (!F) return '';
-    var t = U.tab === 'evi' ? 'pasos' : U.tab === 'his' ? 'resumen' : U.tab;
-    var cuerpo = t === 'pasos' ? '<div class="cp-otb">' + trabajoHTML(F) + '</div>' : t === 'rep' ? '<div class="cp-otb">' + repuestosHTML(F) + '</div>' : t === 'cierre' ? '<div class="cp-otb">' + cierreHTML(F) + '</div>' : resumenHTML(F);
-    return bc(F.ot) + cabecera(F) + tabsF(F) + cuerpo;
+    var t = tabN(U.tab);
+    var cuerpo = t === 'eje' ? ejecucionHTML(F) : t === 'rec' ? recursosHTML(F) : t === 'cierre' ? cierreHTML(F) : t === 'his' ? historialHTML(F) + comentariosHTML(F, false) : resumenHTML(F);
+    return bc(F.ot) + cabecera(F) + tabsF(F) + '<div class="cp-otb">' + cuerpo + '</div>';
   }
 
   /* ---------------------------------------------------------------- firmas dibujadas (como el mockup: canvas por rol) */
@@ -479,7 +649,7 @@
   A.otf = function (d) { U.f = d.v; pintar(); };
   A.otabrir = function (d) { if (d.q) abrir(d.q); };
   A.otlista = function () { U.ficha = null; hashOt(''); document.title = 'Órdenes de trabajo · SIGMA'; pintar(); };
-  A.ottab = function (d) { U.tab = d.v; hashOt(U.ficha.q, U.tab); pintar(); window.scrollTo(0, 0); };
+  A.ottab = function (d) { U.tab = tabN(d.v); hashOt(U.ficha.q, U.tab); pintar(); window.scrollTo(0, 0); };
   A.otiniciar = function () { llamar('Iniciar', {}, 'Trabajo iniciado. Ya puedes marcar las tareas.').then(function () { U.tab = 'pasos'; hashOt(U.ficha.q, 'pasos'); pintar(); }).catch(nada); };
   /* tareas: la casilla es «conforme» (volver a marcarla la deja pendiente); No conforme y No aplica van aparte */
   A.otstep = function (d) {
@@ -514,15 +684,18 @@
   };
   A.otresp = function (d) { llamar('HacerResponsable', { asignacion: +d.v }, 'Responsable actualizado.').catch(nada); };
   A.otquitar = function (d) { llamar('QuitarAsignacion', { asignacion: +d.v }, 'Asignación quitada.').catch(nada); };
-  A.otproc = function () { if (!U.proc) return; llamar('PasosDeProcedimiento', { procedimiento: +U.proc }).then(function () { U.proc = ''; pintar(); }).catch(nada); };
+  A.otproc = function () {
+    if (!U.proc) return; var s = K.Panel.state(); if (s) { s.busy = true; K.Panel.paint(); }
+    llamar('PasosDeProcedimiento', { procedimiento: +U.proc }, 'Tareas agregadas desde el procedimiento.').then(function () { U.proc = ''; K.Panel.close(); }).catch(function () { if (s) { s.busy = false; K.Panel.paint(); } });
+  };
   /* indisponibilidad */
-  A.otind = function (d) { U.ind[d.k] = +d.v; pintar(); };
+  A.otind = function (d) { U.ind[d.k] = +d.v; repintar(); };
   A.otindok = function () {
     var d = U.ind; if (!d) return;
-    if (!d.ini) { d.err = true; pintar(); return; }
+    if (!d.ini) { d.err = true; repintar(); return; }
     var i = K.deDN(d.ini), fi = d.fin ? K.deDN(d.fin) : '';
-    d.busy = true; pintar();
-    llamar('Indisponibilidad', { inicio: i + ' ' + (d.hini || '08:00'), fin: fi ? fi + ' ' + (d.hfin || '00:00') : '', planificada: +d.plan === 1, detuvo: !!d.detuvo, motivo: +d.motivo || 0, detalle: d.det }, 'Indisponibilidad registrada.').then(function () { U.ind = null; pintar(); }).catch(function () { d.busy = false; pintar(); });
+    d.busy = true; repintar();
+    llamar('Indisponibilidad', { inicio: i + ' ' + (d.hini || '08:00'), fin: fi ? fi + ' ' + (d.hfin || '00:00') : '', planificada: +d.plan === 1, detuvo: !!d.detuvo, motivo: +d.motivo || 0, detalle: d.det }, 'Detención registrada.').then(function () { U.ind = null; K.Panel.close(); }).catch(function () { d.busy = false; repintar(); });
   };
   /* firmas */
   A.otsigclr = function (d) { FIRMAS[d.v] = ''; var cv = document.querySelector('canvas[data-sig=' + d.v + ']'); if (cv) { cv.getContext('2d').clearRect(0, 0, cv.width, cv.height); var ph = cv.parentElement.querySelector('.cp-sg-ph'); if (ph) ph.hidden = false; } var b = document.querySelector('[data-a=otsigok][data-v=' + d.v + ']'); if (b) b.disabled = true; };
@@ -550,6 +723,43 @@
     if (miss.length) { U.fr = U.fr || {}; U.fr.err = miss[0]; pintar(); var b = document.getElementById('sgb-' + miss[0]); if (b) b.scrollIntoView({ block: 'center', behavior: 'smooth' }); K.toastError(new Error(miss.length > 1 ? 'Faltan las firmas de recepción del área y de quien aprueba el cierre.' : 'Falta la firma ' + (miss[0] === 'sup' ? 'de quien aprueba el cierre.' : 'de recepción del área.'))); return; }
     fc.busy = true; pintar();
     llamar('Cerrar', { motivo: +fc.motivo || 1, resultado: F.ot.otr_resultado || '', firma: '' }, otTxt(F.ot.otr_correlativo) + ' cerrada.').then(function () { fc.busy = false; pintar(); }).catch(function () { fc.busy = false; pintar(); });
+  };
+  /* Ficha v8 · cajones y acciones del riel */
+  A.ottrx = function (d) { U.trx = String(U.trx) === String(d.v) ? null : d.v; pintar(); };
+  A.otrct = function (d) { U.rct = d.v; pintar(); };
+  A.otprocnew = function () { U.proc = ''; conCat({ busy: false }, PPROC); };
+  A.otdetnew = function () { U.ind = { ini: K.fDN(K.TODAY), hini: '08:00', fin: '', hfin: '', plan: 0, detuvo: false, motivo: 0, det: '', err: false, busy: false }; K.Panel.open({ render: function () { return PDET(U.ind); }, st: U.ind, onclose: function () { U.ind = null; } }); };
+  A.otdetfin = function (d) {
+    var n = new Date(), hh = K.TODAY + ' ' + ('0' + n.getHours()).slice(-2) + ':' + ('0' + n.getMinutes()).slice(-2);
+    llamar('FinDetencion', { detencion: +d.v, fin: hh }, 'Detención terminada: el activo vuelve a operar.').catch(nada);
+  };
+  A.othrsnew = function () { var n = new Date(); U.hrs = { per: CFG.usuario || '', dia: K.fDN(K.TODAY), ini: ('0' + n.getHours()).slice(-2) + ':' + (n.getMinutes() < 30 ? '00' : '30'), h: '', extra: false, n: '', err: false, busy: false }; conCat(U.hrs, function () { return PHRS(U.hrs); }); };
+  A.othrx = function (d) { if (U.hrs) { U.hrs.extra = d.v === '1'; K.Panel.paint(); } };
+  A.othrsok = function () {
+    var h = U.hrs; if (!h || h.busy) return;
+    var hv = parseFloat(String(h.h).replace(',', '.'));
+    if (!h.per || !h.dia || !(hv > 0)) { h.err = true; K.Panel.paint(); return; }
+    h.busy = true; K.Panel.paint();
+    llamar('Horas', { persona: +h.per, fecha: K.deDN(h.dia) + ' ' + (h.ini || '08:00'), horas: String(hv), extra: !!h.extra, nota: h.n || '' }, 'Horas registradas.').then(function () { U.hrs = null; K.Panel.close(); }).catch(function () { h.busy = false; K.Panel.paint(); });
+  };
+  A.otrepnew = function (d) {
+    U.rp = { q: '', id: d && d.v ? +d.v : 0, c: '1', err: false, busy: false };
+    K.Panel.open({ render: function () { return PREP(U.rp); }, st: U.rp, onclose: function () { U.rp = null; } });
+    if (!(U.compat && U.compat.q === U.ficha.q)) api('RepuestosCompatibles', { token: U.ficha.q }).then(function (r) { U.compat = { q: U.ficha.q, l: r.repuestos || [] }; if (K.Panel.state() === U.rp) K.Panel.paint(); }).catch(function (e) { K.Panel.close(); K.toastError(e); });
+  };
+  A.otrepsel = function (d) { if (U.rp) { U.rp.id = +d.v; K.Panel.paint(); var c = document.getElementById('rpC'); if (c) c.focus(); } };
+  A.otrepok = function () {
+    var r = U.rp; if (!r || !r.id || r.busy) return;
+    if (!(parseFloat(String(r.c).replace(',', '.')) > 0)) { r.err = true; K.Panel.paint(); return; }
+    r.busy = true; K.Panel.paint();
+    llamar('UsarRepuesto', { repuesto: r.id, cantidad: String(r.c).replace(',', '.') }, 'Repuesto agregado a la OT.').then(function () { U.rp = null; U.compat = null; K.Panel.close(); }).catch(function () { r.busy = false; K.Panel.paint(); });
+  };
+  A.othalnew = function () { U.hf = { t: '', comp: 0, sev: 2, d: '', err: false, busy: false }; conCat(U.hf, function () { return PHAL(U.hf); }); };
+  A.otcomir = function () { U.tab = 'resumen'; hashOt(U.ficha.q, 'resumen'); pintar(); var c = document.getElementById('otCom'); if (c) { c.scrollIntoView({ block: 'center', behavior: 'smooth' }); c.focus(); } };
+  A.otcomok = function () {
+    var txt = String(U.com || '').trim(); if (!txt || U.comBusy) { var c = document.getElementById('otCom'); if (c) c.focus(); return; }
+    U.comBusy = true; pintar();
+    llamar('Comentar', { texto: txt }, 'Comentario publicado.').then(function () { U.com = ''; U.comBusy = false; pintar(); }).catch(function () { U.comBusy = false; pintar(); });
   };
   /* HU-117 · servicios contratados (cajón) */
   A.otsvnew = function () { abrirServicio(null); };
@@ -581,15 +791,15 @@
     if (t.hasAttribute('data-svnuevo') && U.sv) { U.sv.archivo = t.files && t.files[0] || null; K.Panel.paint(); }
   });
   /* hallazgo encontrado al ejecutar */
-  A.othsev = function (d) { if (U.hf) { U.hf.sev = +d.v; pintar(); } };
+  A.othsev = function (d) { if (U.hf) { U.hf.sev = +d.v; repintar(); } };
   A.othok = function () {
     var hf = U.hf; if (!hf) return;
-    if ((hf.t || '').trim().length < 5) { hf.err = true; pintar(); return; }
-    hf.busy = true; pintar();
+    if ((hf.t || '').trim().length < 5) { hf.err = true; repintar(); return; }
+    hf.busy = true; repintar();
     api('HallazgoEnOt', { token: U.ficha.q, titulo: hf.t.trim(), componente: +hf.comp || 0, severidad: +hf.sev, detalle: hf.d || '' }).then(function (r) {
-      U.hf = null; aplicar(r.ficha);
+      U.hf = null; K.Panel.close(); aplicar(r.ficha);
       K.toastA('HAL-' + r.hallazgo + ' creado en Avisos para evaluar.', 'Ver aviso', function () { location.href = CFG.base_ + 'View/Mantenimiento/Avisos/Avisos.aspx#avisos'; });
-    }).catch(function (e) { hf.busy = false; pintar(); K.toastError(e); });
+    }).catch(function (e) { hf.busy = false; repintar(); K.toastError(e); });
   };
 
   var PD = function (st) {
@@ -696,6 +906,12 @@
       if (k === 'in_detuvo' && U.ind) { U.ind.detuvo = !!v; return; }
       if (k === 'in_det' && U.ind) { U.ind.det = v; return; }
       if (e && k.indexOf('ed_') === 0) { if (k === 'ed_titulo') e.titulo = v; else if (k === 'ed_desc') e.desc = v; else if (k === 'ed_notas') e.notas = v; else if (k === 'ed_dur') e.dur = v; else if (k === 'ed_permiso') e.permiso = !!v; return; }
+      if (k === 'ot_com') { U.com = v; return; }
+      if (k === 'hf_d' && U.hf) { U.hf.d = v; return; }
+      if (U.hrs && k === 'hr_h') { U.hrs.h = v; return; }
+      if (U.hrs && k === 'hr_n') { U.hrs.n = v; return; }
+      if (U.rp && k === 'rp_c') { U.rp.c = v; U.rp.err = false; return; }
+      if (U.rp && k === 'rp_q') { U.rp.q = v; K.Panel.paint(); var qi = document.querySelector('#cpLayer [data-pv=rp_q]'); if (qi) { qi.focus(); qi.setSelectionRange(v.length, v.length); } return; }
       if (U.sv && k.indexOf('sv_') === 0) { U.sv[{ sv_desc: 'desc', sv_monto: 'monto', sv_doc: 'doc' }[k]] = v; return; }
       if (U.asig && k === 'oa_resp') { U.asig.resp = !!v; return; }
       if (U.asig && k === 'oa_obs') { U.asig.obs = v; return; }
@@ -711,6 +927,7 @@
       if (k === 'n_fecha' && st) st.fecha = el.value;
       if (k === 'ed_fecha' && U.ed) U.ed.fecha = el.value;
       if (k === 'sv_fecha' && U.sv) U.sv.fecha = el.value;
+      if (k === 'hr_dia' && U.hrs) U.hrs.dia = el.value;
       if (k === 'in_ini' && U.ind) U.ind.ini = el.value;
       if (k === 'in_fin' && U.ind) U.ind.fin = el.value;
     },
@@ -721,7 +938,9 @@
       if (n === 'otTipo') { U.t = +v || 0; pintar(); return; }
       if (n === 'ciMotivo') { U.formCierre.motivo = +v || 1; return; }
       if (n === 'ciCausa') { U.formCierre.causa = v; return; }
-      if (n === 'otProc') { U.proc = v; pintar(); return; }
+      if (n === 'otProc') { U.proc = v; repintar(); return; }
+      if (n === 'hrPer' && U.hrs) { U.hrs.per = +v || ''; return; }
+      if (n === 'hrIni' && U.hrs) { U.hrs.ini = v; return; }
       if (n === 'inHIni' && U.ind) { U.ind.hini = v; return; }
       if (n === 'inHFin' && U.ind) { U.ind.hfin = v; return; }
       if (n === 'inMotivo' && U.ind) { U.ind.motivo = +v || 0; return; }

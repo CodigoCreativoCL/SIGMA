@@ -476,6 +476,104 @@ public class WsOrdenes : System.Web.Services.WebService
 
     private const int CATEGORIA_DOCUMENTO = 9;
 
+    // =====================================================================
+    // FICHA V8 · acciones del riel (horas, detención, repuesto, comentario)
+    // =====================================================================
+
+    /// <summary>Registra horas de una persona en la OT (mano de obra). Normal o extra.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Horas(string token, int persona, string fecha, string horas, bool extra, string nota)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EJECUTAR);
+            int id = IdDe(token);
+            Propia(id);
+            object h = Numero(horas);
+            if (h == null || (decimal)h <= 0) throw new Exception("Indica las horas trabajadas (más que cero).");
+            if ((decimal)h > 24) throw new Exception("Un registro no puede pasar de 24 horas.");
+            DateTime ini;
+            if (!DateTime.TryParseExact(fecha ?? "", "yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out ini)) throw new Exception("Indica el día y la hora en que empezó.");
+            int min = (int)Math.Round((decimal)h * 60);
+            SoporteDatos.Filas("API_INS_ORDEN_TRABAJO_MANO_OBRA", "@ID", null, "@OTR_ID", id, "@USUARIO", U(), "@CLIENTE", Cli(),
+                "@FECHA_INICIO", ini, "@FECHA_FIN", ini.AddMinutes(min), "@MINUTOS", min, "@ESPECIALIDAD", null, "@ES_HORA_EXTRA", extra,
+                "@OBSERVACION", string.IsNullOrWhiteSpace(nota) ? null : nota.Trim(), "@USUARIO_TRAMO", persona > 0 ? (object)persona : U(), "@UUID", Guid.NewGuid());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Cierra la detención que sigue abierta: «Registrar fin de la detención» en un clic.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string FinDetencion(string token, int detencion, string fin)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_FALLA);
+            int id = IdDe(token);
+            Propia(id);
+            Dictionary<string, object> d = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", Cli(), "@ORDEN", id).FirstOrDefault(x => Entero(x, "ain_id") == detencion);
+            if (d == null) throw new Exception("La detención no existe en esta OT.");
+            DateTime f;
+            DateTime cuando = DateTime.TryParseExact(fin ?? "", "yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out f) ? f : Hora.Ahora;
+            SoporteDatos.Filas("UPD_ACTIVO_INDISPONIBILIDAD", "@ID", detencion, "@CLIENTE", Cli(), "@FECHA_FIN_UTC", cuando,
+                "@PLANIFICADA", Valor(d, "ain_planificada"), "@DETUVO_PRODUCCION", Valor(d, "ain_detuvo_produccion"),
+                "@MOTIVO_CATALOGO", Valor(d, "ain_indisponibilidad_motivo"), "@MOTIVO", Valor(d, "ain_motivo"), "@HABILITADO", true, "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Los repuestos compatibles con el activo de la OT, con su existencia (los que faltan van primero en el panel).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RepuestosCompatibles(string token)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            int id = IdDe(token);
+            int activo = Entero(SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", Cli()).FirstOrDefault(), "otr_activo");
+            return new { repuestos = activo > 0 ? SoporteDatos.Filas("SEL_ACTIVO_REPUESTO_COMPATIBLE", "@CLIENTE", Cli(), "@ACTIVO", activo) : new List<Dictionary<string, object>>() };
+        });
+    }
+
+    /// <summary>Registra el uso de un repuesto en la OT. Sale de la bodega con más disponible (SEL_OT_REPUESTO_BODEGA).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string UsarRepuesto(string token, int repuesto, string cantidad)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EJECUTAR);
+            int id = IdDe(token);
+            Propia(id);
+            object c = Numero(cantidad);
+            if (c == null || (decimal)c <= 0) throw new Exception("La cantidad tiene que ser mayor que cero.");
+            Dictionary<string, object> b = SoporteDatos.Filas("SEL_OT_REPUESTO_BODEGA", "@CLIENTE", Cli(), "@REPUESTO", repuesto).FirstOrDefault();
+            if (b == null) throw new Exception("No hay stock disponible de este repuesto en ninguna bodega.");
+            if (Convert.ToDecimal(Valor(b, "DISPONIBLE")) < (decimal)c) throw new Exception("La bodega con más stock solo tiene " + Convert.ToDecimal(Valor(b, "DISPONIBLE")).ToString("0.##") + " disponibles.");
+            SoporteDatos.Filas("API_INS_ORDEN_TRABAJO_REPUESTO", "@OTR_ID", id, "@USUARIO", U(), "@CLIENTE", Cli(), "@REPUESTO", repuesto, "@BODEGA", Entero(b, "BODEGA"),
+                "@CANTIDAD", c, "@UBICACION", Valor(b, "UBICACION"), "@LOTE", null, "@ES_DEVOLUCION", false, "@OBSERVACION", "Agregado desde la ficha de la OT", "@UUID", Guid.NewGuid());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Un comentario en la OT (queda en la bitácora del activo).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Comentar(string token, string texto)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            int id = IdDe(token);
+            Propia(id);
+            SoporteDatos.Filas("INS_OT_COMENTARIO", "@ID", null, "@CLIENTE", Cli(), "@ORDEN", id, "@TEXTO", texto ?? "", "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
     /// <summary>Los servicios de la OT, con la URL del informe adjunto.</summary>
     private static List<Dictionary<string, object>> Servicios(int id)
     {
@@ -517,6 +615,7 @@ public class WsOrdenes : System.Web.Services.WebService
             manoObra = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_MANO_OBRA", "@CLIENTE", Cli(), "@ORDEN", id),
             servicios = Servicios(id),
             serviciosTotal = SoporteDatos.Filas("SEL_OT_SERVICIO_TOTAL", "@CLIENTE", Cli(), "@ORDEN", id),
+            comentarios = SoporteDatos.Filas("SEL_OT_COMENTARIO", "@CLIENTE", Cli(), "@ORDEN", id),
             imprimirUrl = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajoImprimir.aspx") + "?query=" + Q(id),
             indisponibilidades = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", Cli(), "@ORDEN", id),
             evidencias = Evidencias(id),
