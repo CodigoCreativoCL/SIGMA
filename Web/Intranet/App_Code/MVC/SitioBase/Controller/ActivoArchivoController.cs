@@ -47,6 +47,9 @@ namespace SitioBase.Controller
         /// <summary>Lo que el terreno adjunto, contra lo que vive en la ficha.</summary>
         public bool es_evidencia { get { return origen == "ORDEN" || origen == "INSPECCION" || origen == "TAREA"; } }
 
+        /// <summary>Cómo debe quedar el trabajo (HU-143): ni foto del activo ni evidencia (BD/431).</summary>
+        public bool es_referencia { get { return origen == "REFERENCIA"; } }
+
         public string etiqueta { get { return !string.IsNullOrEmpty(titulo) ? titulo : nombre; } }
 
         public string origen_etiqueta
