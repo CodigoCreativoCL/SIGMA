@@ -45,5 +45,31 @@ namespace API.Controllers
                 return Ok(lista);
             });
         }
+
+        /// <summary>
+        /// GET /usuario-accesibilidades/{id} — una fila por su id.
+        ///
+        /// Sólo si es de quien llama: pedir el id de otro responde 404, no se
+        /// revela que existe ni qué tiene.
+        /// </summary>
+        /// <response code="404">No existe, o no es tuya.</response>
+        [HttpGet]
+        [Route("{id:int}")]
+        public IHttpActionResult Detalle(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirUsuario();
+
+                List<UsuarioAccesibilidadDto> lista = Datos.Listar<UsuarioAccesibilidadDto>(
+                    "SEL_USUARIO_ACCESIBILIDAD",
+                    new Dictionary<string, object> { { "@ID", id } });
+
+                if (lista.Count == 0 || lista[0].uac_usuario != SesionApi.UsuarioId())
+                    return NoEncontrado("Las opciones de accesibilidad");
+
+                return Ok(lista[0]);
+            });
+        }
     }
 }
