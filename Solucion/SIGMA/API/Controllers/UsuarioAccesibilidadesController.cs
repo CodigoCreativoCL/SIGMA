@@ -87,7 +87,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("CONFIGURAR ACCESIBILIDAD");
                 ExigirCuerpo(dto);
 
                 if (dto.volumen < 0 || dto.volumen > 1)
@@ -131,7 +131,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("CONFIGURAR ACCESIBILIDAD");
                 ExigirCuerpo(dto);
 
                 if (!EsMia(id)) return NoEncontrado("Las opciones de accesibilidad");
@@ -176,7 +176,7 @@ namespace API.Controllers
         {
             return Ejecutar(() =>
             {
-                ExigirUsuario();
+                ExigirPermiso("CONFIGURAR ACCESIBILIDAD");
 
                 if (!EsMia(id)) return NoEncontrado("Las opciones de accesibilidad");
 

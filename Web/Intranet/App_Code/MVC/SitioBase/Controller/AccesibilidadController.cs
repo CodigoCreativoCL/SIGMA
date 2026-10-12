@@ -111,6 +111,18 @@ namespace SitioBase.Controller
                 return r;
             }
 
+            /* LA POTESTAD SE COMPRUEBA EN EL SERVIDOR (T-5340), no escondiendo el
+               botón: quien manda el postback a mano no se la salta. Y se escribe
+               SOLO lo propio: el uac_id sale de GetMisOpciones() —la fila de la
+               persona en sesión—, nunca de un id del cliente, así nadie corrige
+               las opciones de otro. */
+            if (!Token.Puede("CONFIGURAR ACCESIBILIDAD"))
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "Tu perfil no tiene permiso para configurar la accesibilidad.";
+                return r;
+            }
+
             int usuario = Convert.ToInt32(Session.UsuarioId());
             SqlCommand cmd = null;
 
