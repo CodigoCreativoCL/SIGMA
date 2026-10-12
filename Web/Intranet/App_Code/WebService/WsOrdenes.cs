@@ -62,6 +62,18 @@ public class WsOrdenes : System.Web.Services.WebService
     }
 
     /// <summary>Personas, activos y componentes para «Nueva OT» y para asignar responsables.</summary>
+    /// <summary>Una página más de la galería de evidencias (HU-142), cuando la orden trae más de las que llegan con la ficha.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Galeria(string token, int pagina)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            return ArmarGaleria(IdDe(token), pagina);
+        });
+    }
+
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Catalogos(int planta)
@@ -158,6 +170,10 @@ public class WsOrdenes : System.Web.Services.WebService
             if (!PuedeCerrar()) throw new Exception("Tu perfil no tiene la facultad de cerrar órdenes de trabajo.");
             int id = IdDe(token);
             Propia(id);
+            // HU-117 · criterio 2: una OT con servicios de terceros no se cierra sin el informe de cada proveedor.
+            List<Dictionary<string, object>> sinInforme = SoporteDatos.Filas("SEL_OT_SERVICIO_SIN_INFORME", "@CLIENTE", Cli(), "@ORDEN", id);
+            if (sinInforme.Count > 0)
+                throw new Exception("Falta el informe del proveedor en " + (sinInforme.Count == 1 ? "el servicio de " + Convert.ToString(Valor(sinInforme[0], "PROVEEDOR_NOMBRE")) : sinInforme.Count + " servicios") + ". Adjúntalo en Consumo › Servicios contratados antes de cerrar.");
             if (string.IsNullOrEmpty(firma))
             {
                 // sin firma nueva: tiene que existir la de quien aprueba el cierre (validación aprobada) y la de recepción si el activo estuvo detenido
@@ -249,7 +265,8 @@ public class WsOrdenes : System.Web.Services.WebService
             Exigir(P_CREAR);
             int id = IdDe(token);
             Propia(id);
-            if (usuario <= 0 && proveedor <= 0) throw new Exception("Elige la persona o la empresa externa que vas a asignar.");
+            // Un grupo solo también vale: el SP asigna la OT a su líder vigente.
+            if (usuario <= 0 && proveedor <= 0 && grupo <= 0) throw new Exception("Elige la persona, el grupo o la empresa externa que vas a asignar.");
             SoporteDatos.Filas("INS_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", Cli(), "@ORDEN", id,
                 "@USUARIO_ASIG", usuario > 0 ? (object)usuario : null, "@PROVEEDOR", proveedor > 0 ? (object)proveedor : null,
                 "@GRUPO_TRABAJO", grupo > 0 ? (object)grupo : null, "@ES_RESPONSABLE", responsable, "@ROL_EJECUCION", responsable ? 1 : 2,
@@ -380,14 +397,252 @@ public class WsOrdenes : System.Web.Services.WebService
         });
     }
 
+    // =====================================================================
+    // HU-117 · SERVICIOS CONTRATADOS
+    // =====================================================================
+
+    /// <summary>Tipos de servicio y monedas para el formulario del servicio.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ServicioCatalogos()
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_OT_SERVICIO_CATALOGO", "@CLIENTE", Cli());
+            return new { tipos = SoporteDatos.Del(c, 0), monedas = SoporteDatos.Del(c, 1) };
+        });
+    }
+
+    /// <summary>Registra (servicio = 0) o corrige un servicio de un tercero. El SP valida que la OT no esté cerrada.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarServicio(string token, int servicio, int proveedor, int tipo, string descripcion, string cantidad, string monto, int moneda, string documento, string fecha)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_CREAR);
+            int id = IdDe(token);
+            Propia(id);
+            object cant = Numero(cantidad) ?? 1m, mto = Numero(monto);
+            if (mto == null) throw new Exception("Indica el monto del servicio.");
+            DateTime f; object fs = DateTime.TryParseExact(fecha ?? "", "yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out f) ? (object)f : null;
+            object doc = string.IsNullOrWhiteSpace(documento) ? null : documento.Trim();
+            if (servicio > 0)
+                SoporteDatos.Filas("UPD_ORDEN_TRABAJO_SERVICIO", "@ID", servicio, "@CLIENTE", Cli(), "@PROVEEDOR", proveedor, "@SERVICIO_TIPO", tipo, "@DESCRIPCION", descripcion ?? "",
+                    "@CANTIDAD", cant, "@MONTO_UNITARIO", null, "@MONTO", mto, "@MONEDA", moneda, "@DOCUMENTO", doc, "@FECHA_SERVICIO", fs, "@USUARIO", U());
+            else
+                SoporteDatos.Filas("INS_ORDEN_TRABAJO_SERVICIO", "@ID", null, "@CLIENTE", Cli(), "@ORDEN", id, "@PROVEEDOR", proveedor, "@SERVICIO_TIPO", tipo, "@DESCRIPCION", descripcion ?? "",
+                    "@CANTIDAD", cant, "@MONTO_UNITARIO", null, "@MONTO", mto, "@MONEDA", moneda, "@DOCUMENTO", doc, "@FECHA_SERVICIO", fs, "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarServicio(string token, int servicio)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_CREAR);
+            int id = IdDe(token);
+            Propia(id);
+            SoporteDatos.Filas("DEL_ORDEN_TRABAJO_SERVICIO", "@ID", servicio, "@CLIENTE", Cli(), "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>
+    /// Adjunta el informe que entregó el proveedor (PDF o imagen, en base64). Se guarda como un archivo
+    /// más de la OT (categoría DOCUMENTO, así sale entre sus respaldos) y queda ligado a la línea del servicio.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string InformeServicio(string token, int servicio, string nombre, string datos)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_CREAR);
+            int id = IdDe(token);
+            Propia(id);
+            if (string.IsNullOrEmpty(datos)) throw new Exception("Elige el archivo del informe.");
+            int coma = datos.IndexOf(',');
+            string cab = coma > 0 ? datos.Substring(0, coma) : "", mime = cab.StartsWith("data:") ? cab.Substring(5).Split(';')[0] : "application/octet-stream";
+            if (mime != "application/pdf" && !mime.StartsWith("image/")) throw new Exception("El informe debe ser un PDF o una imagen.");
+            byte[] bytes = Convert.FromBase64String(coma >= 0 ? datos.Substring(coma + 1) : datos);
+            if (bytes.Length == 0) throw new Exception("El archivo llegó vacío.");
+            if (bytes.Length > 10 * 1024 * 1024) throw new Exception("El informe supera los 10 MB.");
+            Archivo a = new Archivo();
+            a.arc_cliente = Cli();
+            a.arc_archivo_categoria = CATEGORIA_DOCUMENTO;
+            a.arc_nombre_original = string.IsNullOrWhiteSpace(nombre) ? "informe-proveedor-ot-" + id + (mime == "application/pdf" ? ".pdf" : ".jpg") : System.IO.Path.GetFileName(nombre);
+            a.arc_mime = mime;
+            a.contenido = bytes;
+            Respuesta sub = new ArchivoController().InsertArchivo(a, "informes");
+            if (sub.error) throw new Exception(sub.detalle);
+            SoporteDatos.Filas("UPD_ORDEN_TRABAJO_SERVICIO_INFORME", "@ID", servicio, "@CLIENTE", Cli(), "@ARCHIVO", sub.codigo, "@USUARIO", U());
+            SoporteDatos.Filas("VIN_ORDEN_TRABAJO_ARCHIVO", "@ORDEN", id, "@ARCHIVO", sub.codigo, "@PASO", null, "@TITULO", "Informe del proveedor", "@DESCRIPCION", null, "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    private const int CATEGORIA_DOCUMENTO = 9;
+
+    // =====================================================================
+    // FICHA V8 · acciones del riel (horas, detención, repuesto, comentario)
+    // =====================================================================
+
+    /// <summary>Registra horas de una persona en la OT (mano de obra). Normal o extra.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Horas(string token, int persona, string fecha, string horas, bool extra, string nota)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EJECUTAR);
+            int id = IdDe(token);
+            Propia(id);
+            object h = Numero(horas);
+            if (h == null || (decimal)h <= 0) throw new Exception("Indica las horas trabajadas (más que cero).");
+            if ((decimal)h > 24) throw new Exception("Un registro no puede pasar de 24 horas.");
+            DateTime ini;
+            if (!DateTime.TryParseExact(fecha ?? "", "yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out ini)) throw new Exception("Indica el día y la hora en que empezó.");
+            int min = (int)Math.Round((decimal)h * 60);
+            SoporteDatos.Filas("API_INS_ORDEN_TRABAJO_MANO_OBRA", "@ID", null, "@OTR_ID", id, "@USUARIO", U(), "@CLIENTE", Cli(),
+                "@FECHA_INICIO", ini, "@FECHA_FIN", ini.AddMinutes(min), "@MINUTOS", min, "@ESPECIALIDAD", null, "@ES_HORA_EXTRA", extra,
+                "@OBSERVACION", string.IsNullOrWhiteSpace(nota) ? null : nota.Trim(), "@USUARIO_TRAMO", persona > 0 ? (object)persona : U(), "@UUID", Guid.NewGuid());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Cierra la detención que sigue abierta: «Registrar fin de la detención» en un clic.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string FinDetencion(string token, int detencion, string fin)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_FALLA);
+            int id = IdDe(token);
+            Propia(id);
+            Dictionary<string, object> d = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", Cli(), "@ORDEN", id).FirstOrDefault(x => Entero(x, "ain_id") == detencion);
+            if (d == null) throw new Exception("La detención no existe en esta OT.");
+            DateTime f;
+            DateTime cuando = DateTime.TryParseExact(fin ?? "", "yyyy-MM-dd HH:mm", System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out f) ? f : Hora.Ahora;
+            SoporteDatos.Filas("UPD_ACTIVO_INDISPONIBILIDAD", "@ID", detencion, "@CLIENTE", Cli(), "@FECHA_FIN_UTC", cuando,
+                "@PLANIFICADA", Valor(d, "ain_planificada"), "@DETUVO_PRODUCCION", Valor(d, "ain_detuvo_produccion"),
+                "@MOTIVO_CATALOGO", Valor(d, "ain_indisponibilidad_motivo"), "@MOTIVO", Valor(d, "ain_motivo"), "@HABILITADO", true, "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Los repuestos compatibles con el activo de la OT, con su existencia (los que faltan van primero en el panel).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RepuestosCompatibles(string token)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            int id = IdDe(token);
+            int activo = Entero(SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", Cli()).FirstOrDefault(), "otr_activo");
+            return new { repuestos = activo > 0 ? SoporteDatos.Filas("SEL_ACTIVO_REPUESTO_COMPATIBLE", "@CLIENTE", Cli(), "@ACTIVO", activo) : new List<Dictionary<string, object>>() };
+        });
+    }
+
+    /// <summary>Registra el uso de un repuesto en la OT. Sale de la bodega con más disponible (SEL_OT_REPUESTO_BODEGA).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string UsarRepuesto(string token, int repuesto, string cantidad)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EJECUTAR);
+            int id = IdDe(token);
+            Propia(id);
+            object c = Numero(cantidad);
+            if (c == null || (decimal)c <= 0) throw new Exception("La cantidad tiene que ser mayor que cero.");
+            Dictionary<string, object> b = SoporteDatos.Filas("SEL_OT_REPUESTO_BODEGA", "@CLIENTE", Cli(), "@REPUESTO", repuesto).FirstOrDefault();
+            if (b == null) throw new Exception("No hay stock disponible de este repuesto en ninguna bodega.");
+            if (Convert.ToDecimal(Valor(b, "DISPONIBLE")) < (decimal)c) throw new Exception("La bodega con más stock solo tiene " + Convert.ToDecimal(Valor(b, "DISPONIBLE")).ToString("0.##") + " disponibles.");
+            SoporteDatos.Filas("API_INS_ORDEN_TRABAJO_REPUESTO", "@OTR_ID", id, "@USUARIO", U(), "@CLIENTE", Cli(), "@REPUESTO", repuesto, "@BODEGA", Entero(b, "BODEGA"),
+                "@CANTIDAD", c, "@UBICACION", Valor(b, "UBICACION"), "@LOTE", null, "@ES_DEVOLUCION", false, "@OBSERVACION", "Agregado desde la ficha de la OT", "@UUID", Guid.NewGuid());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Un comentario en la OT (queda en la bitácora del activo).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Comentar(string token, string texto)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            int id = IdDe(token);
+            Propia(id);
+            SoporteDatos.Filas("INS_OT_COMENTARIO", "@ID", null, "@CLIENTE", Cli(), "@ORDEN", id, "@TEXTO", texto ?? "", "@USUARIO", U());
+            return ArmarFicha(id);
+        });
+    }
+
+    /// <summary>Los servicios de la OT, con la URL del informe adjunto.</summary>
+    private static List<Dictionary<string, object>> Servicios(int id)
+    {
+        List<Dictionary<string, object>> l = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_SERVICIO", "@CLIENTE", Cli(), "@ORDEN", id);
+        foreach (Dictionary<string, object> s in l)
+        {
+            int arc = Entero(s, "INFORME_ID");
+            s["INFORME_URL"] = arc > 0 ? SitioBase.UrlArchivo.Ver(arc) : "";
+        }
+        return l;
+    }
+
+    /// <summary>«1.250.000,5» o «1250000.5» → decimal (null si no es un número).</summary>
+    private static object Numero(string s)
+    {
+        decimal n;
+        string v = (s ?? "").Trim();
+        if (v.IndexOf(',') >= 0) v = v.Replace(".", "").Replace(',', '.');
+        return decimal.TryParse(v, System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out n) ? (object)n : null;
+    }
+
     // ---------------------------------------------------------------------
 
+    /// <summary>
+    /// Todo lo que la ficha pinta. Las ~15 lecturas son independientes: van en paralelo
+    /// (SitioBase.Paralelo), así la ficha tarda lo que la consulta más lenta y no la suma.
+    /// </summary>
     private object ArmarFicha(int id)
     {
-        List<Dictionary<string, object>> cab = SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", Cli());
+        int cli = Cli();
+        List<Dictionary<string, object>> cab = null, pasos = null, repuestos = null, manoObra = null, servicios = null, serviciosTotal = null,
+            comentarios = null, indisp = null, asignaciones = null, motivos = null;
+        List<List<Dictionary<string, object>>> ex = null;
+        List<object> evidencias = null, firmas = null;
+        object tipos = null, permisos = null, galeria = null;
+        bool puedeCerrar = false;
+        SitioBase.Paralelo.Todos(
+            () => cab = SoporteDatos.Filas("SEL_ORDEN_TRABAJO", "@ID", id, "@CLIENTE", cli),
+            () => ex = SoporteDatos.Conjuntos("SEL_OT_FICHA_EXTRA", "@CLIENTE", cli, "@ID", id),
+            () => pasos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_PASO", "@CLIENTE", cli, "@ORDEN", id),
+            () => repuestos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_REPUESTO", "@CLIENTE", cli, "@ORDEN", id),
+            () => manoObra = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_MANO_OBRA", "@CLIENTE", cli, "@ORDEN", id),
+            () => servicios = Servicios(id),
+            () => serviciosTotal = SoporteDatos.Filas("SEL_OT_SERVICIO_TOTAL", "@CLIENTE", cli, "@ORDEN", id),
+            () => comentarios = SoporteDatos.Filas("SEL_OT_COMENTARIO", "@CLIENTE", cli, "@ORDEN", id),
+            () => indisp = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", cli, "@ORDEN", id),
+            () => evidencias = Evidencias(id),
+            () => galeria = ArmarGaleria(id, 1),   // HU-142 (Catalina): la galería de evidencias
+            () => firmas = Firmas(id),
+            () => tipos = SitioBase.CacheSesion.Global("ot_tipos_firma", 30, () => (object)new OrdenTrabajoValidacionController().GetTipos().Select(t => new { ID = t.id, CODIGO = t.codigo, NOMBRE = t.nombre }).ToList()),
+            () => asignaciones = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", cli, "@ORDEN", id),
+            () => motivos = SitioBase.CacheSesion.Global("ot_motivos_cierre", 30, () => SoporteDatos.Filas("SEL_OT_CIERRE_MOTIVO")),
+            () => puedeCerrar = PuedeCerrar());
+        // Los permisos se leen en el hilo de la petición: Token guarda su caché en HttpContext.Items (ver Paralelo).
+        permisos = Permisos(puedeCerrar);
         if (cab.Count == 0) throw new Exception("La orden de trabajo no existe.");
         Dictionary<string, object> ot = cab[0];
-        List<List<Dictionary<string, object>>> ex = SoporteDatos.Conjuntos("SEL_OT_FICHA_EXTRA", "@CLIENTE", Cli(), "@ID", id);
         List<Dictionary<string, object>> origen = SoporteDatos.Del(ex, 0);
         int estado = Entero(ot, "otr_orden_trabajo_estado");
         return new
@@ -395,22 +650,26 @@ public class WsOrdenes : System.Web.Services.WebService
             q = Q(id),
             yo = SitioBase.Session.UsuarioNombre(),
             ot = ot,
-            pasos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_PASO", "@CLIENTE", Cli(), "@ORDEN", id),
-            repuestos = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_REPUESTO", "@CLIENTE", Cli(), "@ORDEN", id),
-            manoObra = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_MANO_OBRA", "@CLIENTE", Cli(), "@ORDEN", id),
-            servicios = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_SERVICIO", "@CLIENTE", Cli(), "@ORDEN", id),
-            indisponibilidades = SoporteDatos.Filas("SEL_ACTIVO_INDISPONIBILIDAD", "@CLIENTE", Cli(), "@ORDEN", id),
-            evidencias = Evidencias(id),
-            firmas = Firmas(id),
-            tiposFirma = new OrdenTrabajoValidacionController().GetTipos().Select(t => new { ID = t.id, CODIGO = t.codigo, NOMBRE = t.nombre }).ToList(),
-            asignaciones = SoporteDatos.Filas("SEL_ORDEN_TRABAJO_ASIGNACION", "@CLIENTE", Cli(), "@ORDEN", id),
+            pasos = pasos,
+            repuestos = repuestos,
+            manoObra = manoObra,
+            servicios = servicios,
+            serviciosTotal = serviciosTotal,
+            comentarios = comentarios,
+            imprimirUrl = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajoImprimir.aspx") + "?query=" + Q(id),
+            indisponibilidades = indisp,
+            evidencias = evidencias,
+            galeria = galeria,
+            firmas = firmas,
+            tiposFirma = tipos,
+            asignaciones = asignaciones,
             origen = origen.Count > 0 ? origen[0] : null,
             avisos = SoporteDatos.Del(ex, 1),
             bitacora = SoporteDatos.Del(ex, 2),
             planUrl = Entero(origen.Count > 0 ? origen[0] : null, "PLAN_ID") > 0 ? VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Planificacion.aspx") + "#tab=planes&plan=" + HttpUtility.UrlEncode(Tools.Crypto.Encrypt("Id=" + Entero(origen[0], "PLAN_ID"))) : null,
             fichaCompleta = VirtualPathUtility.ToAbsolute("~/View/Mantenimiento/Ordenes/OrdenTrabajo.aspx") + "?legacy=1&query=" + Q(id),
-            motivos = SoporteDatos.Filas("SEL_OT_CIERRE_MOTIVO"),
-            permisos = Permisos(),
+            motivos = motivos,
+            permisos = permisos,
             estado = estado
         };
     }
@@ -424,6 +683,28 @@ public class WsOrdenes : System.Web.Services.WebService
         return l;
     }
 
+    private const int GALERIA_TAMANO = 120;
+
+    /// <summary>
+    /// La galería de evidencias de la orden (HU-142 criterio 1): SEL_ARCHIVO_VINCULO (BD/434) ya trae
+    /// lo de la orden y sus pasos agrupable por paso y momento, sin la firma, con las referencias de
+    /// HU-143 marcadas y filtrado por el cliente de la sesión. Aquí solo se suman las dos URL: ver
+    /// (VerArchivo vuelve a exigir que el archivo sea del cliente) y bajar.
+    /// </summary>
+    private static object ArmarGaleria(int id, int pagina)
+    {
+        if (pagina < 1) pagina = 1;
+        List<Dictionary<string, object>> filas = SoporteDatos.Filas("SEL_ARCHIVO_VINCULO", "@CLIENTE", Cli(), "@ORDEN_TRABAJO", id,
+            "@PAGINA", pagina, "@TAMANO", GALERIA_TAMANO);
+        foreach (Dictionary<string, object> f in filas)
+        {
+            int arc = Entero(f, "ARCHIVO_ID");
+            f["URL"] = SitioBase.UrlArchivo.Ver(arc);
+            f["BAJAR"] = SitioBase.UrlArchivo.Descargar(arc);
+        }
+        return new { filas = filas, total = filas.Count > 0 ? Entero(filas[0], "TOTAL") : 0, pagina = pagina, tamano = GALERIA_TAMANO };
+    }
+
     /// <summary>El historial de firmas (aceptación, ejecución, validación) con la imagen de cada una.</summary>
     private static List<object> Firmas(int id)
     {
@@ -433,13 +714,15 @@ public class WsOrdenes : System.Web.Services.WebService
         return l;
     }
 
-    private static object Permisos()
+    private static object Permisos() { return Permisos(PuedeCerrar()); }
+
+    private static object Permisos(bool puedeCerrar)
     {
         return new
         {
             crear = Token.Puede(P_CREAR),
             ejecutar = Token.Puede(P_EJECUTAR),
-            cerrar = PuedeCerrar(),
+            cerrar = puedeCerrar,
             validar = Token.Puede(P_VALIDAR),
             reportar = Token.Puede(P_FALLA)
         };

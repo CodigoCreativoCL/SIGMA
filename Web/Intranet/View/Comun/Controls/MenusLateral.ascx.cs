@@ -39,14 +39,14 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 
     protected void Page_Load(object sender, EventArgs e)
     {
-        CargarMenus();
+        using (SitioBase.Medida.Tramo("menu")) CargarMenus();
     }
 
     private void CargarMeta()
     {
         try
         {
-            foreach (Dictionary<string, object> f in SoporteDatos.Filas("SEL_MENUS_SIDEBAR"))
+            foreach (Dictionary<string, object> f in SitioBase.CacheSesion.Global("menus_sidebar", 5, () => SoporteDatos.Filas("SEL_MENUS_SIDEBAR")))
                 _meta[Convert.ToInt32(f["ID"])] = new Meta
                 {
                     Grupo = f["GRUPO"] as string,
@@ -59,7 +59,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
 
         try
         {
-            Dictionary<string, object> c = SoporteDatos.Fila("SEL_MENU_CONTADORES", "@CLIENTE", SitioBase.Session.ClienteId(), "@USUARIO", SoporteDatos.Usuario());
+            Dictionary<string, object> c = SitioBase.CacheSesion.Sesion("menu_contadores", 1, () => SoporteDatos.Fila("SEL_MENU_CONTADORES", "@CLIENTE", SitioBase.Session.ClienteId(), "@USUARIO", SoporteDatos.Usuario()));
             foreach (KeyValuePair<string, object> kv in c)
                 _cont[kv.Key.ToLowerInvariant()] = kv.Value == null ? 0 : Convert.ToInt32(kv.Value);
         }
@@ -103,7 +103,7 @@ public partial class View_Comun_Controls_MenusLateral : System.Web.UI.UserContro
         CargarMeta();
         _actual = Request.Url.AbsolutePath.ToLowerInvariant();
 
-        List<Menus> menus = menusController.GetMenus(new Menus());
+        List<Menus> menus = SitioBase.CacheSesion.Global("menus_arbol", 5, () => menusController.GetMenus(new Menus()));
 
         /* Los modulos: cada opcion de nivel 2, y cualquiera con grupo propio. Los de grupo «~» no van. */
         List<Menus> modulos = menus.Where(x => x.mnu_visible && (x.mnu_nivel == 2 || MetaDe(x.mnu_id).Grupo != null))

@@ -6,7 +6,7 @@ Punto de entrada general del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md`. Este arc
 ## Regla de oro
 
 **Todo el módulo debe quedar tal cual el mockup.**
-Referencia visual y de comportamiento: `docs/rediseno-mantenimiento/sigma-mantenimiento-referencia.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo). Prompt y plan: `MD/PROMPT_CLAUDE_MODERNIZACION_MANTENIMIENTO.md` (+ Anexo v3 de Catalina) y `MD/PLAN_MODERNIZACION_MANTENIMIENTO.md`.
+Referencia visual y de comportamiento: `Fase 2/Diseno/2_Diseno_Web/Redisenos/Mantenimiento/Referencia_Visual_Mantenimiento.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo). Prompt y plan: `MD/PROMPT_CLAUDE_MODERNIZACION_MANTENIMIENTO.md` (+ Anexo v3 de Catalina) y `MD/PLAN_MODERNIZACION_MANTENIMIENTO.md`.
 
 Reglas que el usuario repite (no olvidarlas):
 - Cabecera del Centro de Planificación (`cp-hero`), combos de SIGMA (`SigmaCombo`) y calendario de SIGMA (`SigmaCalendario`, también en modo mes y año con `data-sgcal-modo="mes"`). Nunca `type=date/time`.

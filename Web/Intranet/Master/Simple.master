@@ -142,7 +142,7 @@
                              masiva de usuarios lo hace—, y el componente soporta
                              instancias anidadas. Sin esto, esa llamada revienta con
                              "SigmaModal is not defined". --%>
-                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=2" />
+                        <asp:ScriptReference Path="~/Js/sigma-dialog.js?vrs=3" />
                         <%-- GSAP va ANTES del calendario: el componente
                              comprueba `window.gsap` y si no esta, se abre sin
                              animacion. En los modales quedaba sin ella. --%>

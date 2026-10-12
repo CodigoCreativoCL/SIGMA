@@ -808,7 +808,7 @@ repuesto no aparece nunca y los chips de especialidad salen vacíos.
 
 ## 5. Convenciones que no se negocian
 
-1. **Leer el patrón antes de escribir la primera línea.** `PATRONES/ASP/BaseDatos/PATRON_SP.md`
+1. **Leer el patrón antes de escribir la primera línea.** `Boveda/Patrones/BaseDatos/PATRON_SP.md`
    y `PATRON_TABLAS.md`: prefijo `API_` para SP de la app, `Pascal_Snake_Case` en
    tablas, prefijo de tres letras en columnas, `CREATE OR ALTER`, scripts idempotentes.
 2. **Compilar la API siempre** tras cada cambio en C#.

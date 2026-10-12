@@ -240,10 +240,72 @@ function bind(o) {
   window.addEventListener('resize', function () { Pop.pos(); });
 }
 
+/* ------------------------------------------------------------ visor de evidencias (HU-142)
+   Visor.open(items, i): una foto se amplía, un video se reproduce y un documento se ofrece para
+   abrir; con flechas (y ← →) se recorre la lista que se le pasó, que es lo que la pantalla tiene a
+   la vista. Cada item: { url, bajar, titulo, meta, imagen, video, ref }. Vive dentro de #cpRoot para
+   heredar los estilos cp-; Esc lo cierra antes que el panel o el popover de abajo. */
+Object.assign(P, {
+  img: '<rect x="3.5" y="4.5" width="17" height="15" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="M20.5 16l-5-5-8.5 8.5"/>',
+  play: '<circle cx="12" cy="12" r="8.5"/><path d="M10 8.8l5 3.2-5 3.2z"/>',
+  down: '<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 19.5h14"/>',
+  doc: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4M9.5 12h5M9.5 15.5h5"/>'
+});
+var Visor = (function () {
+  var L = null, I = 0, EL = null, VOLVER = null;
+  function pintar() {
+    var it = L[I], n = L.length;
+    var cuerpo = it.imagen ? '<img src="' + esc(it.url) + '" alt="' + esc(it.titulo) + '">'
+      : it.video ? '<video src="' + esc(it.url) + '" controls autoplay playsinline></video>'
+      : '<div class="cp-vis-doc">' + ic('doc', 46) + '<b>' + esc(it.titulo) + '</b><a class="cp-btn cp-out" href="' + esc(it.url) + '" target="_blank" rel="noopener">Abrir el archivo</a></div>';
+    EL.innerHTML = '<div class="cp-vis-box" role="dialog" aria-modal="true" aria-label="' + esc(it.titulo) + '">' +
+      '<div class="cp-vis-top"><span class="cp-vis-n">' + (I + 1) + ' de ' + n + '</span>' +
+      '<button type="button" class="cp-vis-x" data-vis="x" aria-label="Cerrar">' + ic('x', 20) + '</button></div>' +
+      '<div class="cp-vis-stage">' + (n > 1 ? '<button type="button" class="cp-vis-nav cp-l" data-vis="p" aria-label="Anterior">' + ic('chevl', 26) + '</button>' : '') +
+      '<figure class="cp-vis-fig">' + cuerpo + '</figure>' +
+      (n > 1 ? '<button type="button" class="cp-vis-nav cp-r" data-vis="n" aria-label="Siguiente">' + ic('chev', 26) + '</button>' : '') + '</div>' +
+      '<div class="cp-vis-pie"><div class="cp-vis-txt">' + (it.ref ? '<span class="cp-gal-ref">Referencia</span>' : '') + '<b>' + esc(it.titulo) + '</b><small>' + esc(it.meta || '') + '</small></div>' +
+      '<div class="cp-vis-acc"><button type="button" class="cp-btn cp-plain" data-vis="x">Cerrar</button>' +
+      (it.bajar ? '<a class="cp-btn cp-out" href="' + esc(it.bajar) + '">' + ic('down', 16) + 'Descargar</a>' : '') + '</div></div></div>';
+    var x = EL.querySelector('.cp-vis-x'); if (x) x.focus({ preventScroll: true });
+  }
+  function cerrar() {
+    if (!EL) return;
+    var v = EL.querySelector('video'); if (v) v.pause();
+    EL.remove(); EL = null; L = null;
+    document.removeEventListener('keydown', tecla, true);
+    if (VOLVER && document.body.contains(VOLVER)) VOLVER.focus({ preventScroll: true });
+  }
+  function mover(d) { var v = EL.querySelector('video'); if (v) v.pause(); I = (I + d + L.length) % L.length; pintar(); }
+  function tecla(e) {
+    if (!EL) return;
+    if (e.key === 'Escape') { e.preventDefault(); e.stopImmediatePropagation(); cerrar(); }
+    else if (e.key === 'ArrowLeft' && L.length > 1) { e.preventDefault(); mover(-1); }
+    else if (e.key === 'ArrowRight' && L.length > 1) { e.preventDefault(); mover(1); }
+  }
+  return {
+    open: function (items, i) {
+      if (!items || !items.length) return;
+      cerrar();
+      L = items; I = Math.max(0, Math.min(i || 0, items.length - 1)); VOLVER = document.activeElement;
+      EL = document.createElement('div'); EL.className = 'cp-vis';
+      EL.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-vis]');
+        if (b) { var a = b.getAttribute('data-vis'); if (a === 'x') cerrar(); else mover(a === 'n' ? 1 : -1); return; }
+        if (e.target === EL) cerrar();
+      });
+      ($('#cpRoot') || document.body).appendChild(EL);
+      document.addEventListener('keydown', tecla, true);
+      pintar();
+    },
+    close: cerrar
+  };
+})();
+
 window.MantKit = {
   CFG: CFG, $: $, $$: $$, esc: esc, nrm: nrm, pl: pl, ic: ic, iso: iso, D: D, TODAY: TODAY, addD: addD, diffD: diffD, wday: wday,
   fD: fD, fDY: fDY, fDL: fDL, fDN: fDN, deDN: deDN, dIso: dIso, hIso: hIso, rel: rel, fN: fN, fH: fH,
   llamar: llamar, ini: ini, avatar: avatar, combo: combo, fecha: fecha, conectarFechas: conectarFechas,
-  toast: toast, toastA: toastA, toastError: toastError, Panel: Panel, Pop: Pop, bind: bind, grabFocus: grabFocus, putFocus: putFocus
+  toast: toast, toastA: toastA, toastError: toastError, Panel: Panel, Pop: Pop, Visor: Visor, bind: bind, grabFocus: grabFocus, putFocus: putFocus
 };
 })();

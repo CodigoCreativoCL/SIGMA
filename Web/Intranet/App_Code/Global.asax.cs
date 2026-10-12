@@ -12,6 +12,13 @@ public class Global_asax : System.Web.HttpApplication
 
 	public void Application_Start(object sender, EventArgs e)
 	{
+        /* RENDIMIENTO (11-10-2026): las lecturas en paralelo (SitioBase.Paralelo) esperan a la
+           base sin hacer nada; con el minimo por defecto (un hilo por nucleo) el pool las encola
+           y crea hilos de a uno cada ~0,5 s, y el paralelo termina corriendo casi en fila. */
+        int w, io;
+        System.Threading.ThreadPool.GetMinThreads(out w, out io);
+        System.Threading.ThreadPool.SetMinThreads(Math.Max(w, 64), Math.Max(io, 64));
+
         //// Code that runs on application startup
         //Application["app_inicio"] = DateTime.Now;
         //Application["app_sesiones"] = 0;

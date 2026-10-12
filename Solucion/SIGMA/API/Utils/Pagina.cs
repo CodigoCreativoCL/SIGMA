@@ -101,5 +101,20 @@ namespace API.Utils
 
             return r;
         }
+
+        /// <summary>
+        /// Para cuando el SP ya pagina (OFFSET/FETCH) y trae el total: la lista que llega
+        /// ES la página. Armar() volvería a recortarla y, desde la página 2, la dejaría vacía.
+        /// </summary>
+        public static Paginado<T> DeServidor(List<T> pagina, int total, Pagina p)
+        {
+            Paginado<T> r = new Paginado<T>();
+            r.pagina = p.pagina;
+            r.tamano = p.tamano;
+            r.total = total;
+            r.paginas = (total + p.tamano - 1) / p.tamano;
+            r.datos = pagina ?? new List<T>();
+            return r;
+        }
     }
 }

@@ -1,7 +1,7 @@
 # SIGMA App — Alertas y notificaciones push (Firebase)
 
 > **Normativo.** Define cómo el sistema avisa al teléfono. Complementa
-> `PATRONES/ASP/NOTIFICACIONES.md`, que es el documento del **dato** (la tabla
+> `Boveda/Patrones/NOTIFICACIONES.md`, que es el documento del **dato** (la tabla
 > `Alerta`); este es el del **transporte** y el de la app.
 >
 > Cubre **HU-077** (que el sistema avise lo que encuentra) en su superficie

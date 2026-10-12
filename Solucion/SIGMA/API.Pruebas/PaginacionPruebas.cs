@@ -161,5 +161,30 @@ namespace API.Pruebas
             Assert.Equal(Pagina.TAMANO_MAXIMO, r.datos.Count);
             Assert.Equal(5000, r.total);
         }
+
+        // ------------------------------------------------ cuando el SP ya pagina (HU-142)
+
+        [Fact]
+        public void DeServidor_no_vuelve_a_recortar_la_pagina_que_ya_llego_paginada()
+        {
+            // La página 2 de 9 de a 4 llega del SP con 4 filas. Armar() la recortaría
+            // desde la fila 4 y la dejaría vacía; DeServidor la entrega tal cual.
+            var r = Paginado<int>.DeServidor(new List<int> { 5, 6, 7, 8 }, 9, new Pagina { pagina = 2, tamano = 4 });
+
+            Assert.Equal(new List<int> { 5, 6, 7, 8 }, r.datos);
+            Assert.Equal(9, r.total);
+            Assert.Equal(3, r.paginas);
+            Assert.Equal(2, r.pagina);
+        }
+
+        [Fact]
+        public void DeServidor_con_pagina_vacia_entrega_lista_vacia_y_no_null()
+        {
+            var r = Paginado<int>.DeServidor(null, 0, new Pagina { pagina = 5, tamano = 10 });
+
+            Assert.NotNull(r.datos);
+            Assert.Empty(r.datos);
+            Assert.Equal(0, r.paginas);
+        }
     }
 }

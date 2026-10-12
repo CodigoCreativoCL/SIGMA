@@ -1927,6 +1927,8 @@
                             <a href="#" class="sg-a3-chip" data-doc="documento"><i class="mdi mdi-file-document-outline"></i>Documentos <b><asp:Literal ID="litEvDocs" runat="server" Text="0" /></b></a>
                             <a href="#" class="sg-a3-chip" data-doc="fotografia"><i class="mdi mdi-camera-outline"></i>Fotografías <b><asp:Literal ID="litEvFotos" runat="server" Text="0" /></b></a>
                             <a href="#" class="sg-a3-chip" data-doc="evidencia"><i class="mdi mdi-cellphone-link"></i>Evidencias <b><asp:Literal ID="litEvEvidencias" runat="server" Text="0" /></b></a>
+                            <%-- HU-143: cómo debe quedar el trabajo, aparte de lo que llegó del terreno. --%>
+                            <a href="#" class="sg-a3-chip" data-doc="referencia"><i class="mdi mdi-image-filter-center-focus"></i>Referencias <b><asp:Literal ID="litEvRefs" runat="server" Text="0" /></b></a>
                         </div>
 
                         <div class="sg-ot-ev-filtros">

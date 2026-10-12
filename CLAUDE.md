@@ -1,10 +1,14 @@
 ﻿# SIGMA — instrucciones para Claude
 
+**Cerebro compartido (ahorra tokens):** al iniciar cualquier tarea usa la skill `sigma-cerebro` (lee `Boveda/00 Inicio.md` y solo la nota que aplique, sin recorrer el repo) y al terminar usa `sigma-cerrar-bloque` (regenera `Boveda/Estado automatico.md` y actualiza la nota afectada). Es el mismo flujo para Bryan, Emilio y Catalina; se sincroniza por git.
+
+**Traspaso de sesión:** al empezar, tras `git fetch && git merge origin/master`, si existe `Boveda/Sesion/Traspaso_<tu nombre>.md` sin tu confirmación en su «Registro», léelo, haz lo que pide y actualiza tu memoria local (ver `Boveda/Sesion/LEEME.md`).
+
 Punto de entrada del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md` (estado, decisiones, trampas y bitácora). Se lee antes de escribir código y se actualiza al cerrar cada bloque.
 
 ## Estándar de UI — obligatorio en toda vista, modal, ficha o componente nuevo
 
-**Fuente:** `Fase 2/Diseno/Planificacion360/SIGMA-Paleta-UI-Propuesta.html` (paleta extraída del logo). Antes de diseñar o modificar una pantalla, léela; si algo de esta sección no alcanza, manda ese archivo.
+**Fuente:** `Fase 2/Diseno/2_Diseno_Web/Redisenos/Planificacion360/SIGMA-Paleta-UI-Propuesta.html` (paleta extraída del logo). Antes de diseñar o modificar una pantalla, léela; si algo de esta sección no alcanza, manda ese archivo.
 
 ### Tokens (no repetir hex sueltos: declarar estas variables y usarlas)
 
@@ -55,7 +59,7 @@ Punto de entrada del proyecto: `MD/SIGMA_ESTADO_DESARROLLO.md` (estado, decision
 Mismas reglas: la ficha en `Simple.master` (vía `SigmaModal.open`) usa cards blancas, un primario morado para guardar, secundario turquesa si hay acción paralela y ghost para cancelar.
 
 ## Convenciones técnicas que no se deben romper
-- Archivos en **UTF-8 con BOM y CRLF** (`_scratch/bom.py`), o los acentos salen rotos.
+- Archivos en **UTF-8 con BOM y CRLF** (`Dev/bom.py`), o los acentos salen rotos.
 - Dentro del `<form>` del master, **todo `<button>` lleva `type="button"`** salvo que deba enviar.
-- Compilar con `aspnet_compiler -v /Check -p Web/Intranet …` tras tocar C#; SQL con `_scratch/aplicar_sql.py` (con `-I` si el SP usa `FOR XML` o índices filtrados).
+- Compilar con `aspnet_compiler -v /Check -p Web/Intranet …` tras tocar C#; SQL con `Dev/sql_aplicar.py` (con `-I` si el SP usa `FOR XML` o índices filtrados).
 - Menús nunca se borran: `mnu_visible = 0`.

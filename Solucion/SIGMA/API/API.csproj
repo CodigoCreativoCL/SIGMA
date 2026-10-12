@@ -230,6 +230,7 @@
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\ActivoEstadosController.cs" />
     <Compile Include="Controllers\UsuarioAccesibilidadesController.cs" />
+    <Compile Include="Controllers\ArchivoVinculosController.cs" />
     <Compile Include="Controllers\ActivosController.cs" />
     <Compile Include="Controllers\FavoritosController.cs" />
     <Compile Include="Controllers\PosicionesController.cs" />

@@ -59,22 +59,37 @@ public class WsInicio : System.Web.Services.WebService
         return WsSoporte.Ejecutar(() =>
         {
             int cli = Cliente(), usu = U();
-            Dictionary<string, object> r = SoporteDatos.Fila("SEL_INICIO_RESUMEN", "@CLIENTE", cli, "@USUARIO", usu);
+            /* RENDIMIENTO (11-10-2026): el inicio tardaba ~5 s en pintar sus tarjetas porque pedia
+               nueve lecturas independientes una detras de otra (~250 ms cada una contra la base
+               remota). Ahora salen a la vez (SitioBase.Paralelo) y los permisos se cargan en el
+               hilo de la peticion mientras tanto: Token guarda su cache en HttpContext.Items, que
+               no es seguro entre hilos. */
+            var tRes = SitioBase.Paralelo.Pedir(() => SoporteDatos.Fila("SEL_INICIO_RESUMEN", "@CLIENTE", cli, "@USUARIO", usu));
             /* el widget SIGMA AI se puede filtrar por planta: sus cifras pisan a las de toda la empresa */
-            foreach (KeyValuePair<string, object> kv in SoporteDatos.Fila("SEL_INICIO_AI", "@CLIENTE", cli, "@PLANTAS", AiPlantas.Filtro(planta))) r[kv.Key] = kv.Value;
-            List<Dictionary<string, object>> guardados = SoporteDatos.Filas("SEL_INICIO_ACCESOS", "@CLIENTE", cli, "@USUARIO", usu);
+            var tAi = SitioBase.Paralelo.Pedir(() => SoporteDatos.Fila("SEL_INICIO_AI", "@CLIENTE", cli, "@PLANTAS", AiPlantas.Filtro(planta)));
+            var tAcc = SitioBase.Paralelo.Pedir(() => SoporteDatos.Filas("SEL_INICIO_ACCESOS", "@CLIENTE", cli, "@USUARIO", usu));
+            var tInd = SitioBase.Paralelo.Pedir(() => SoporteDatos.Conjuntos("SEL_INICIO_INDICADORES", "@CLIENTE", cli, "@USUARIO", usu));
+            var tOt = SitioBase.Paralelo.Pedir(() => SoporteDatos.Filas("SEL_INICIO_ORDENES", "@CLIENTE", cli, "@USUARIO", usu));
+            var tHoy = SitioBase.Paralelo.Pedir(() => SoporteDatos.Filas("SEL_INICIO_HOY", "@CLIENTE", cli, "@USUARIO", usu));
+            var tAten = SitioBase.Paralelo.Pedir(() => ArmarAtencion());
+            var tPlantas = SitioBase.Paralelo.Pedir(() => AiPlantas.Lista());
+            Token.Permisos();   // en este hilo, mientras las demas lecturas corren
+
+            Dictionary<string, object> r = tRes.Result;
+            foreach (KeyValuePair<string, object> kv in tAi.Result) r[kv.Key] = kv.Value;
+            List<Dictionary<string, object>> guardados = tAcc.Result;
 
             List<Dictionary<string, object>> ind = null;
-            List<List<Dictionary<string, object>>> indSets = SoporteDatos.Conjuntos("SEL_INICIO_INDICADORES", "@CLIENTE", cli, "@USUARIO", usu);
+            List<List<Dictionary<string, object>>> indSets = tInd.Result;
             Dictionary<string, object> indicadores = indSets.Count > 0 && indSets[0].Count > 0 ? indSets[0][0] : new Dictionary<string, object>();
             ind = SoporteDatos.Del(indSets, 1);
 
-            List<Dictionary<string, object>> ordenes = SoporteDatos.Filas("SEL_INICIO_ORDENES", "@CLIENTE", cli, "@USUARIO", usu);
+            List<Dictionary<string, object>> ordenes = tOt.Result;
             foreach (Dictionary<string, object> o in ordenes)
                 o["URL"] = Url(URL_OT) + "?query=" + Server.UrlEncode(Tools.Crypto.Encrypt("Id=" + Convert.ToString(o["ID"])));
-            List<Dictionary<string, object>> hoy = SoporteDatos.Filas("SEL_INICIO_HOY", "@CLIENTE", cli, "@USUARIO", usu);
+            List<Dictionary<string, object>> hoy = tHoy.Result;
 
-            Atencion a = ArmarAtencion();
+            Atencion a = tAten.Result;
 
             /* Las tarjetas de acceso: texto de estado en vivo y si la persona puede abrirlas. */
             List<object> catalogo = new List<object>();
@@ -121,7 +136,7 @@ public class WsInicio : System.Web.Services.WebService
                 pins = pins,
                 personalizado = guardados.Count > 0,
                 cifras = r,
-                plantas = AiPlantas.Lista(),
+                plantas = tPlantas.Result,
                 planta = planta,
                 indicadores = indicadores,
                 semanas = ind,

@@ -2,7 +2,7 @@
 
 > **Normativo.** Define cómo se estructura el código de la aplicación móvil de
 > SIGMA. Se lee **antes** de la primera línea de Dart, igual que
-> `PATRONES/ASP/CONVENCIONES.md` se lee antes de la primera línea de C#.
+> `Boveda/Patrones/CONVENCIONES.md` se lee antes de la primera línea de C#.
 >
 > Lo que hay que construir está en
 > [`SIGMA_APP_FLUTTER.md`](SIGMA_APP_FLUTTER.md). Cómo se ve, en

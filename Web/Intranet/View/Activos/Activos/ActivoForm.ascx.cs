@@ -121,10 +121,14 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         CargarDatos();
         // Las secciones nuevas van blindadas: si algo falla, no debe colgar ni
         // romper el modal del activo.
-        try { CargarArchivos(); } catch { }        // documentos adjuntos
-        try { CargarDatosTecnicos(); } catch { }   // valores de atributos (edición)
-        try { CargarComponentes(); } catch { }     // los componentes que ya tiene
-        try { CargarVariablesMedidores(); } catch { }   // lo que ya mide y cuenta
+        /* RENDIMIENTO (11-10-2026): las cuatro leen y pintan en controles propios; a la vez
+           (SitioBase.Paralelo) cuestan lo que la mas lenta y no la suma (~1 s menos por ficha). */
+        SitioBase.Paralelo.Todos(
+            () => { try { CargarArchivos(); } catch { } },          // documentos adjuntos
+            () => { try { CargarDatosTecnicos(); } catch { } },     // valores de atributos (edición)
+            () => { try { CargarComponentes(); } catch { } },       // los componentes que ya tiene
+            () => { try { CargarVariablesMedidores(); } catch { } } // lo que ya mide y cuenta
+        );
         SobreEstructura();
         Confirmacion();
         Bloqueo();
@@ -206,7 +210,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     private System.Collections.Generic.List<UnidadMedida> Unidades()
     {
         if (_unidades == null)
-            _unidades = new UnidadMedidaController().GetUnidades()
+            _unidades = SitioBase.CacheSesion.Global("af_unidades", 10, () => new UnidadMedidaController().GetUnidades())
                         ?? new System.Collections.Generic.List<UnidadMedida>();
         return _unidades;
     }
@@ -336,15 +340,15 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     private List<ActivoTipo> _tiposActivo;
     private List<ActivoTipo> TiposActivo()
     {
-        return _tiposActivo ?? (_tiposActivo = new ActivoTipoController().GetActivoTipos(
-            new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoTipo>());
+        return _tiposActivo ?? (_tiposActivo = SitioBase.CacheSesion.Sesion("af_tipos", 2, () => new ActivoTipoController().GetActivoTipos(
+            new ActivoTipo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true })) ?? new List<ActivoTipo>());
     }
 
     private List<ActivoModelo> _modelosActivo;
     private List<ActivoModelo> ModelosActivo()
     {
-        return _modelosActivo ?? (_modelosActivo = new ActivoModeloController().GetModelos(
-            new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true }) ?? new List<ActivoModelo>());
+        return _modelosActivo ?? (_modelosActivo = SitioBase.CacheSesion.Sesion("af_modelos", 2, () => new ActivoModeloController().GetModelos(
+            new ActivoModelo { filtro_cliente = SitioBase.Session.ClienteId(), filtro_habilitado = true })) ?? new List<ActivoModelo>());
     }
 
     /* ---- Combos de lista cerrada (SigmaCombo con id) ----
@@ -372,31 +376,31 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
             switch (clave)
             {
                 case "estados":
-                    foreach (ActivoEstado x in new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true }) ?? new List<ActivoEstado>())
+                    foreach (ActivoEstado x in SitioBase.CacheSesion.Global("af_estados", 10, () => new ActivoEstadoController().GetActivoEstados(new ActivoEstado { filtro_habilitado = true })) ?? new List<ActivoEstado>())
                         l.Add(new Opcion(x.aes_id, x.aes_nombre));
                     break;
                 case "criticidades":
-                    foreach (CriticidadNivel x in new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true }) ?? new List<CriticidadNivel>())
+                    foreach (CriticidadNivel x in SitioBase.CacheSesion.Global("af_criticidad", 10, () => new CriticidadNivelController().GetCriticidadNiveles(new CriticidadNivel { filtro_habilitado = true })) ?? new List<CriticidadNivel>())
                         l.Add(new Opcion(x.crn_id, x.crn_nombre));
                     break;
                 case "plantas":
                     // Este modelo trae los filtros como string (convención heredada de ClienteInstalacion).
-                    foreach (ClienteInstalacion x in new ClienteInstalacionController().GetClienteInstalaciones(
-                                 new ClienteInstalacion { filtro_cliente = cliente.ToString(), filtro_habilitado = "1" }) ?? new List<ClienteInstalacion>())
+                    foreach (ClienteInstalacion x in SitioBase.CacheSesion.Sesion("af_plantas", 2, () => new ClienteInstalacionController().GetClienteInstalaciones(
+                                 new ClienteInstalacion { filtro_cliente = cliente.ToString(), filtro_habilitado = "1" })) ?? new List<ClienteInstalacion>())
                         l.Add(new Opcion(x.cin_id, x.cin_nombre));
                     break;
                 case "areas":
-                    foreach (InstalacionArea x in new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true }) ?? new List<InstalacionArea>())
+                    foreach (InstalacionArea x in SitioBase.CacheSesion.Sesion("af_areas", 2, () => new InstalacionAreaController().GetInstalacionAreas(new InstalacionArea { iar_cliente = cliente, filtro_habilitado = true })) ?? new List<InstalacionArea>())
                         l.Add(new Opcion(x.iar_id, x.ruta));
                     break;
                 case "centros":
-                    foreach (CentroCosto x in new CentroCostoController().GetCentrosCosto(new CentroCosto { cco_cliente = cliente, filtro_habilitado = true }) ?? new List<CentroCosto>())
+                    foreach (CentroCosto x in SitioBase.CacheSesion.Sesion("af_centros", 2, () => new CentroCostoController().GetCentrosCosto(new CentroCosto { cco_cliente = cliente, filtro_habilitado = true })) ?? new List<CentroCosto>())
                         l.Add(new Opcion(x.cco_id, x.ruta));
                     break;
                 case "padres":
                     // Un activo no puede ser su propio padre: se quita de la
                     // lista al editar. Los descendientes los rechaza el SP.
-                    foreach (Activo x in new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true }) ?? new List<Activo>())
+                    foreach (Activo x in SitioBase.CacheSesion.Sesion("af_activos", 2, () => new ActivoController().GetActivos(new Activo { act_cliente = cliente, filtro_habilitado = true })) ?? new List<Activo>())
                         if (x.act_id != ActivoId) l.Add(new Opcion(x.act_id, x.act_codigo + " — " + x.act_nombre));
                     break;
                 case "anios":
@@ -487,7 +491,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     private List<ComponenteTipo> _tiposComp;
     private List<ComponenteTipo> TiposComponente()
     {
-        return _tiposComp ?? (_tiposComp = new ComponenteTipoController().GetTipos(new ComponenteTipo()) ?? new List<ComponenteTipo>());
+        return _tiposComp ?? (_tiposComp = SitioBase.CacheSesion.Global("af_tipos_comp", 10, () => new ComponenteTipoController().GetTipos(new ComponenteTipo())) ?? new List<ComponenteTipo>());
     }
 
     /// <summary>
@@ -508,7 +512,7 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
     public string OpcionesComponenteLado()
     {
         System.Text.StringBuilder b = new System.Text.StringBuilder();
-        foreach (ComponentePosicion p in new ComponentePosicionController().GetPosiciones(new ComponentePosicion()) ?? new List<ComponentePosicion>())
+        foreach (ComponentePosicion p in SitioBase.CacheSesion.Global("af_posiciones", 10, () => new ComponentePosicionController().GetPosiciones(new ComponentePosicion())) ?? new List<ComponentePosicion>())
             if (p.cpn_habilitado)
                 b.Append("<option value=\"").Append(p.cpn_id).Append("\">").Append(Server.HtmlEncode(p.cpn_nombre)).Append("</option>");
         return b.ToString().Replace("'", "&#39;");
@@ -751,9 +755,9 @@ public partial class View_Activos_Activos_ActivoForm : System.Web.UI.UserControl
         {
             foreach (ComponenteTipo t in TiposComponente())
                 if (t.cto_habilitado && (Convert.ToInt32(t.cto_cliente) == 0 || Convert.ToInt32(t.cto_cliente) == cli) && !tipos.Contains(t.cto_nombre)) tipos.Add(t.cto_nombre);
-            foreach (ComponentePosicion p in new ComponentePosicionController().GetPosiciones(new ComponentePosicion()) ?? new List<ComponentePosicion>())
+            foreach (ComponentePosicion p in SitioBase.CacheSesion.Global("af_posiciones", 10, () => new ComponentePosicionController().GetPosiciones(new ComponentePosicion())) ?? new List<ComponentePosicion>())
                 if (p.cpn_habilitado && (Convert.ToInt32(p.cpn_cliente) == 0 || Convert.ToInt32(p.cpn_cliente) == cli) && !lados.Contains(p.cpn_nombre)) lados.Add(p.cpn_nombre);
-            foreach (VariableMedicion v in new VariableMedicionController().GetVariables(cli) ?? new List<VariableMedicion>())
+            foreach (VariableMedicion v in SitioBase.CacheSesion.Sesion("af_variables", 2, () => new VariableMedicionController().GetVariables(cli)) ?? new List<VariableMedicion>())
                 if (!vars.Contains(v.vme_nombre)) vars.Add(v.vme_nombre);
         }
         catch (Exception) { }

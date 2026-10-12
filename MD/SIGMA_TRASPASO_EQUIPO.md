@@ -24,7 +24,7 @@ que enlaza.
 | Investigación Azure ML | `Fase 2/SIGMA_Investigacion_Azure_ML.docx` (informe) · `MD/SIGMA_INVESTIGACION_AZURE_ML.md` (detalle técnico y guía) |
 | Evidencia de pruebas | `Fase 2/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx` + `Fase 2/Pruebas/capturas/S1..S6, AzureML` |
 
-**Reglas que no se negocian:** leer `MD/PATRONES` antes de escribir SQL o C#; archivos UTF-8 con BOM y CRLF;
+**Reglas que no se negocian:** leer `Boveda/Patrones` antes de escribir SQL o C#; archivos UTF-8 con BOM y CRLF;
 la seguridad de pantallas es un INSERT en `Menus`, no código; las claves nunca viajan por chat ni por
 correo (van a `Web.config` o a `ML/.env`, que está en `.gitignore`); lo móvil no se marca como
 entregado antes del Sprint 6.

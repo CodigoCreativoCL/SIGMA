@@ -783,8 +783,8 @@ function whenHTML(i, E) {
     (E && (U.cat.calendarios || []).length ? '<button type="button" class="cp-lnk" data-a="useshared" data-i="' + id + '">' + ic('link', 14) + 'O usar un calendario compartido de la Biblioteca</button>' : '') + '</div></div>';
   if (!i.PRIVADA) {
     return '<div class="cp-blk" id="cpWhen' + id + '"><div class="cp-blk-h"><h4>Cuándo</h4></div><div class="cp-fq-ed"><div class="cp-fq-f"><div class="cp-shrd"><span class="cp-pci2">' + ic('link', 18) + '</span><div style="flex:1;min-width:0"><b style="font-size:13px">Calendario compartido «' + esc(i.PROGRAMACION) + '»</b><div style="font-size:12px;color:var(--muted)">' + esc(freqText(f, true, unidadMedidor())) + ' · ' + pl(+i.OTROS_USOS || 0, 'otro uso', 'otros usos') + '</div></div></div>' +
-      mc('i', 'Es de solo lectura aquí. Si lo cambias en la Biblioteca, cambia para todos los que lo usan.') +
-      (E ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="cp-btn cp-out cp-xs" data-a="tab" data-t="biblioteca" data-lib="cal">Editar en Biblioteca</button><button type="button" class="cp-btn cp-ghost cp-xs" data-a="ownfreq" data-i="' + id + '">Convertir en propia</button></div>' : '') + '</div>' + pvHTML(i, f) + '</div></div>';
+      mc('i', 'Es un calendario compartido: si lo editas, cambia para ' + (+i.OTROS_USOS ? 'todos los que lo usan' : 'quien lo use') + '.') +
+      (E ? '<div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="cp-btn cp-out cp-xs" data-a="libcal" data-id="' + i.PROGRAMACION_ID + '">Editar calendario</button><button type="button" class="cp-btn cp-ghost cp-xs" data-a="ownfreq" data-i="' + id + '">Convertir en propia</button></div>' : '') + '</div>' + pvHTML(i, f) + '</div></div>';
   }
   var seg = function (k, opts) { return '<div class="cp-segc" role="group">' + opts.map(function (o) { return '<button type="button" data-a="fset" data-i="' + id + '" data-k="' + k + '" data-v="' + o[0] + '" aria-pressed="' + (String(f[k]) === String(o[0])) + '"' + dis + '>' + o[1] + '</button>'; }).join('') + '</div>'; };
   var fc = function (k, lista, val, etq, ph) { return combo('cpF' + k + id, lista, val, { etiqueta: etq, ph: ph, dis: !E, data: ' data-fk="' + k + '" data-i="' + id + '"', clave: 'cpF' + k }); };
@@ -1015,16 +1015,26 @@ var aById = function (id) { var r = null; (F ? F.intervenciones : []).forEach(fu
    la primera y las siguientes ya lo encuentran. Después se pide la ficha
    de nuevo: el estado (Activo → con cambios), los ids del borrador, el
    conteo de cambios y las fechas los decide la base. */
+/* 429 · Con varios cambios seguidos, la ficha se pide una sola vez, al terminar el último:
+   si cada uno la pidiera, la del primero llegaría antes de enviar el segundo y devolvería
+   a la pantalla lo que la persona ya quitó (el responsable o el grupo «reaparecían»). */
+var enCola = 0, fichaPendiente = false;
 function escribir(metodo, datos, o) {
   o = o || {};
   if (U.plan) delete U.flash[U.plan];
   guardando();
+  enCola++;
+  if (!o.sinFicha) fichaPendiente = true;
   var pr = cola.then(function () { return api(metodo, datos); }).then(function (r) {
+    enCola--;
     guardado();
     if (/Repuesto$/.test(metodo)) delete SUG[pid()];   // 422: el stock de lo planificado se vuelve a leer
-    if (o.sinFicha) return r;
+    if (enCola > 0 || !fichaPendiente) return r;
+    fichaPendiente = false;
     return recargarFicha().then(function () { recargarLista(); return r; });
   }, function (e) {
+    enCola--;
+    if (enCola === 0 && fichaPendiente) { fichaPendiente = false; recargarFicha().catch(function () { }); }   // vuelve a lo que guardó la base
     noGuardado(e.message);
     if (e.sesion) toastError(e);
     throw e;
@@ -1136,7 +1146,9 @@ var mismoQ = function (a, b) { try { return decodeURIComponent(a) === decodeURIC
    ===================================================================== */
 var PANELS = {};
 function openPanel(o) { PN = o; cerrarPop(); panel(); setTimeout(function () { var f = $('#cpLayer [data-autofocus]') || $('#cpLayer .cp-pnl-h .cp-ibx'); if (f) f.focus(); }, 30); }
-function closePanel() { PN = null; $('#cpLayer').innerHTML = ''; }
+/* 429 · Un cajón puede abrirse sobre otro (el calendario compartido desde una inspección o tarea):
+   al cerrarlo vuelve el de abajo con lo que tenía escrito. */
+function closePanel() { var prev = PN && PN.prev; PN = prev || null; if (prev) panel(); else $('#cpLayer').innerHTML = ''; }
 function panel() {
   var L = $('#cpLayer'); if (!PN) { L.innerHTML = ''; return; }
   var fo = grabFocus(L), sb = $('#cpLayer .cp-pnl-b'), st = sb ? sb.scrollTop : 0;
@@ -1786,11 +1798,18 @@ function comboCambio(span) {
 function asignarTodas(v) {
   var list = ints().filter(function (i) { return respIds(i).join(',') !== String(v || ''); });
   if (!v || !list.length) return;
+  list.forEach(function (i) { i.RESPONSABLES = [+v]; i.RESPONSABLE_ID = +v; }); render();   // 429: se ve al instante
   list.forEach(function (i, k) { escribir('GuardarIntervencion', { plan: pid(), hito: i.HITO_ID, campo: 'responsable', valor: String(v) }, k < list.length - 1 ? { sinFicha: true } : {}).catch(toastError); });
 }
 /* 391 · responsables: la lista completa viaja en cada cambio (ids en orden). */
+/* 429 · Agregar o quitar un responsable se ve al instante: se pinta antes de guardar y,
+   si el servidor lo rechaza, vuelve a como estaba. */
 function respGuardar(h, ids, msg) {
-  escribir('GuardarIntervencion', { plan: pid(), hito: h.HITO_ID, campo: 'responsable', valor: ids.join(',') }).then(function () { if (msg) toast(msg); }).catch(toastError);
+  var antes = { r: h.RESPONSABLES, id: h.RESPONSABLE_ID };
+  h.RESPONSABLES = ids.slice(); h.RESPONSABLE_ID = ids[0] || null; render();
+  if (msg) toast(msg);
+  escribir('GuardarIntervencion', { plan: pid(), hito: h.HITO_ID, campo: 'responsable', valor: ids.join(',') })
+    .catch(function (e) { h.RESPONSABLES = antes.r; h.RESPONSABLE_ID = antes.id; render(); toastError(e); });
 }
 function respAgregar(hid, v) {
   var h = hById(hid); if (!h || !v) return;
@@ -1816,9 +1835,14 @@ function ivCampo(el, campo, v) {
   if (campo === 'duracion') { var hh = parseFloat(String(v).replace(',', '.')); if (!(hh > 0)) { el.classList.add('cp-err'); noGuardado('La duración debe ser mayor que 0.'); return; } v = String(Math.round(hh * 60)); }
   if (campo === 'nombre' && !String(v).trim()) { el.classList.add('cp-err'); noGuardado('La intervención necesita un nombre.'); return; }
   if (sinCambio(actual, v)) return;
+  /* 429 · Los combos se ven al instante: el valor elegido entra en la intervención antes de
+     guardar, para que ningún repintado intermedio lo devuelva al anterior. Si falla, vuelve. */
+  var col = { tipo: 'OT_TIPO_ID', prioridad: 'OT_PRIORIDAD_ID', responsable: 'RESPONSABLE_ID', grupo: 'GRUPO_ID', proveedor: 'PROVEEDOR_ID' }[campo];
+  var nuevoTipo = campo === 'tipo' && /^nuevo:/i.test(String(v)), antes = col ? h[col] : null;
+  if (col && !nuevoTipo) { h[col] = v === '' || v == null ? null : +v; render(); }
   escribir('GuardarIntervencion', { plan: pid(), hito: id, campo: campo, valor: String(v == null ? '' : v) }).then(function () {
-    if (campo === 'tipo' && /^nuevo:/i.test(String(v))) return recargarCatalogos().then(function () { render(); toast('Tipo de OT creado: ya está disponible para todas las intervenciones.'); });
-  }).catch(toastError);
+    if (nuevoTipo) return recargarCatalogos().then(function () { render(); toast('Tipo de OT creado: ya está disponible para todas las intervenciones.'); });
+  }).catch(function (e) { if (col && !nuevoTipo) { h[col] = antes; render(); } toastError(e); });
 }
 function actCampo(el, campo, v) {
   var id = +el.getAttribute('data-c'), ac = aById(id); if (!ac) return;
@@ -2381,7 +2405,8 @@ function pgFreqHTML(f, e) {
   var cuerpo = f.modo === 'w' ? '<div class="cp-fld"><span class="cp-lb">Días</span><div class="cp-days">' + [1, 2, 3, 4, 5, 6, 7].map(function (x) { return '<button type="button" data-a="pgday" data-v="' + x + '" aria-pressed="' + (f.dias.indexOf(x) >= 0) + '" aria-label="' + DIA[x] + '">' + DIAC[x] + '</button>'; }).join('') + '</div>' + (!f.dias.length ? mc('', 'Elige al menos un día.') : '') + '</div>'
     : f.modo === 'm' ? '<div class="cp-fld" style="max-width:200px"><label>Día del mes</label>' + combo('cpPgDm', DIAS31, f.diaMes, { etiqueta: 'Día del mes', data: ' data-pg="f.diaMes"' }) + '</div>'
     : '<div class="cp-fld"><label>Calendario</label>' + combo('cpPgSh', PG.calendarios.map(function (c) { return { id: c.ID, n: c.NOMBRE, sub: c.TIPO }; }), f.sh, { etiqueta: 'Calendario compartido', ph: 'Elige un calendario', err: e && !f.sh, data: ' data-pg="f.sh"' }) +
-      mc('i', 'Si alguien cambia el calendario en Recursos, cambia aquí también.', 'help') + '</div>';
+      mc('i', 'Si alguien cambia el calendario en Recursos, cambia aquí también.', 'help') +
+      (f.sh ? '<button type="button" class="cp-btn cp-out cp-xs" style="align-self:flex-start" data-a="libcal" data-id="' + f.sh + '">' + ic('link', 14) + 'Editar calendario</button>' : '') + '</div>';
   var hora = f.modo !== 'sh' ? '<div class="cp-fld" style="max-width:200px"><label>Hora</label>' + combo('cpPgH', HORAS, f.hora, { etiqueta: 'Hora', data: ' data-pg="f.hora"' }) + '</div>' : '';
   var nx = f.modo === 'sh' ? '' : '<div class="cp-nxd"><span class="cp-lb2">Próximas fechas</span><div>' + (pgProximas(f, 5).map(function (d) { return '<span class="cp-tg">' + fD(d) + '</span>'; }).join(' ') || '<small style="color:var(--muted)">Sin fechas</small>') + '</div></div>';
   return '<div class="cp-fld"><label>Cada cuánto</label>' + seg + '</div>' + cuerpo + hora + nx;
@@ -2973,6 +2998,8 @@ TABR.biblioteca = {
 };
 function recargarCatalogos() { return api('Catalogos', {}).then(function (c) { U.cat = c; }).catch(function () { }); }
 A.newproc = TABR.biblioteca.A.newproc;
+/* 429 · El calendario compartido se edita en el mismo cajón desde la intervención del plan, sin salir a Recursos. */
+A.libcal = TABR.biblioteca.A.libcal;
 
 /* =====================================================================
    Nuevo / editar procedimiento y nuevo calendario: paneles laterales,
@@ -3045,7 +3072,7 @@ A.prsave = function (d, t) {
    Exclusiones · Revisar), en un panel lateral del Centro.
    ===================================================================== */
 var CAL_PASOS = ['Información general', 'Alcance', 'Asignación', 'Frecuencia', 'Exclusiones', 'Revisar'];
-var CAL_TIPOS = [{ id: 'cal', n: 'Calendario (días y horas fijas)' }, { id: 'int', n: 'Intervalo de tiempo' }, { id: 'fec', n: 'Fechas puntuales' }];
+var CAL_TIPOS = [{ id: 'cal', n: 'Calendario (días y horas fijas)' }, { id: 'int', n: 'Intervalo de tiempo' }, { id: 'fec', n: 'Fechas puntuales' }, { id: 'med', n: 'Por medidor' }];
 var CAL_ASIG = [['nadie', 'Sin asignar'], ['persona', 'Personas'], ['grupo', 'Grupo de trabajo']];
 var calCat = null;
 var calCat = null;
@@ -3061,7 +3088,10 @@ function calDesdeDetalle(r) {
   d.anticipada = !!r.anticipada; d.atrasada = !!r.atrasada; d.genera = !!r.genera;
   (r.personas || []).forEach(function (x) { d.personas[x] = 1; });
   d.modo = (r.personas || []).length ? 'persona' : r.grupo ? 'grupo' : 'nadie';
-  f.t = { 'CALENDARIO': 'cal', 'INTERVALO TIEMPO': 'int', 'FECHA UNICA': 'fec' }[r.tipoCodigo];
+  f.t = { 'CALENDARIO': 'cal', 'INTERVALO TIEMPO': 'int', 'FECHA UNICA': 'fec', 'MEDIDOR': 'med', 'CONDICION': 'cond' }[r.tipoCodigo];
+  /* 429 · por medidor: la regla (sin medidor fijo, cada equipo usa el suyo). Por condición: sus reglas, de solo lectura. */
+  if (r.medidor) { f.mn = +r.medidor.cada || 0; f.mstart = +r.medidor.inicial || 0; f.mwarn = +r.medidor.aviso || 0; f.mnom = r.medidor.medidorNombre || ''; f.mact = r.medidor.activoNombre || ''; }
+  d.conds = r.condiciones || [];
   f.from = r.desde || TODAY; f.to = r.hasta || ''; f.tb = Math.round((+r.tolAntes || 0) / 1440); f.ta = Math.round((+r.tolDespues || 0) / 1440);
   if (c) {
     var fc = (U.cat.frecuencias || []).filter(function (x) { return x.ID === c.frecuencia; })[0];
@@ -3077,7 +3107,7 @@ function calDesdeDetalle(r) {
 /* Nuevo (id = 0) o editar (id > 0): el mismo asistente de seis pasos, en el cajón. */
 function abrirCal(id) {
   id = +id || 0;
-  openPanel({ t: 'cal', paso: 1, err: false, alc: null, xf: null, cargando: id > 0, d: calVacio(),
+  openPanel({ t: 'cal', prev: PN && PN.t !== 'cal' ? PN : null, paso: 1, err: false, alc: null, xf: null, cargando: id > 0, d: calVacio(),
     fecha: function (b, v) {
       var k = b.slice(2), x = PN.xf;
       if (k === 'xa' || k === 'xb') { if (x) x[k.slice(1)] = v; }
@@ -3087,7 +3117,6 @@ function abrirCal(id) {
   var listo = function (r) {
     if (!PN || PN.t !== 'cal') return;
     if (r) {
-      if (!r.calendario && !r.intervalo && r.tipoCodigo !== 'FECHA UNICA') { closePanel(); toast('Este calendario es por medidor o por condición: se edita en Programaciones.'); return; }
       PN.d = calDesdeDetalle(r); PN.cargando = false;
     }
     panel(); calAlcance();
@@ -3149,7 +3178,7 @@ PANELS.cal = function () {
   var b = '';
   if (paso === 1) {
     b = (d.id && d.usos ? mc('w', 'Lo usan <b>' + pl(d.usos, 'plan, tarea o pauta', 'planes, tareas o pautas') + '</b>: un cambio aquí cambia las fechas de todos.') : '') + '<div class="cp-fld"><label>Nombre del calendario</label>' + ppTxt('nombre', d.nombre, { err: e && !String(d.nombre).trim(), af: true, max: 400, ph: 'Ej.: Inspección semanal de bombas', lbl: 'Nombre del calendario' }) + (e && !String(d.nombre).trim() ? mc('', 'Falta el nombre.') : '') + '</div>' +
-      '<div class="cp-fld"><label>Tipo</label>' + combo('cpCalTipo', CAL_TIPOS, f.t, { etiqueta: 'Tipo', ph: 'Elige el tipo', dis: !!d.id, data: ' data-pp="f.t"', clave: 'cpCalTipos' }) + '<small style="color:var(--muted);font-size:11.5px">' + (d.id ? 'El tipo no se puede cambiar una vez guardado.' : 'Por medidor o por condición se crean en Programaciones.') + '</small></div>' +
+      '<div class="cp-fld"><label>Tipo</label>' + combo('cpCalTipo', CAL_TIPOS.concat(f.t === 'cond' ? [{ id: 'cond', n: 'Por condición' }] : []), f.t, { etiqueta: 'Tipo', ph: 'Elige el tipo', dis: !!d.id, data: ' data-pp="f.t"', clave: 'cpCalTipos' }) + '<small style="color:var(--muted);font-size:11.5px">' + (d.id ? 'El tipo no se puede cambiar una vez guardado.' : 'Por condición se crea desde la intervención que mide la variable.') + '</small></div>' +
       '<div class="cp-grid2c"><div class="cp-fld"><label>Vigente desde</label>' + fecha('p:from', f.from, { etiqueta: 'Vigente desde', err: e && !f.from }) + '</div><div class="cp-fld"><label>Hasta <small>opcional</small></label>' + fecha('p:to', f.to, { ph: 'Sin fin', etiqueta: 'Hasta', err: f.to && f.to < f.from }) + '</div></div>' +
       '<div class="cp-fld"><label>Zona horaria <small>opcional</small></label>' + calCombo('zona', [{ id: '', n: '(sin definir)' }].concat(cat.zonas), d.zona, 'Zona horaria', '(sin definir)') + '<small style="color:var(--muted);font-size:11.5px">La hora se guarda en UTC y se muestra en esta zona. Sin ella, el horario de verano corre las ocurrencias una hora dos veces al año.</small></div>';
   }
@@ -3186,6 +3215,12 @@ PANELS.cal = function () {
     }
     if (f.t === 'int') regla = '<div class="cp-grid3c"><div class="cp-fld"><label>Cada</label><input class="cp-inp" type="number" min="1" data-pp="f.n" value="' + esc(f.n) + '" aria-label="Cada cuánto"></div><div class="cp-fld"><label>Unidad</label>' + fc('iu', unis, f.iu, 'Unidad') + '</div><div class="cp-fld"><label>A partir de</label>' + fecha('p:anchor', f.anchor, { etiqueta: 'A partir de' }) + '</div></div><div class="cp-grid3c"><div class="cp-fld"><label>Hora</label>' + fc('hour', HORAS, f.hour, 'Hora') + '</div></div>';
     if (f.t === 'fec') regla = '<div class="cp-fld"><span class="cp-lb">Fechas</span><div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + f.dates.slice().sort(function (a, c) { return a.fecha.localeCompare(c.fecha); }).map(function (x) { return '<span class="cp-fc" style="cursor:default">' + fDY(x.fecha) + '<button type="button" class="cp-ibx" style="width:22px;height:22px" data-a="calrmdate" data-v="' + x.fecha + '" aria-label="Quitar ' + fDY(x.fecha) + '">' + ic('x', 12) + '</button></span>'; }).join('') + '<span style="width:170px">' + fecha('p:fadd', '', { ph: 'Agregar fecha', etiqueta: 'Agregar fecha' }) + '</span></div></div><div class="cp-grid3c"><div class="cp-fld"><label>Hora</label>' + fc('hour', HORAS, f.hour, 'Hora') + '</div></div>';
+    if (f.t === 'med') regla = '<div class="cp-grid3c"><div class="cp-fld"><label>Cada <small>unidades del medidor</small></label><input class="cp-inp" type="number" min="1" data-pp="f.mn" value="' + esc(f.mn || '') + '" aria-label="Cada cuántas unidades del medidor"></div>' +
+      '<div class="cp-fld"><label>Desde la lectura</label><input class="cp-inp" type="number" min="0" data-pp="f.mstart" value="' + esc(f.mstart || 0) + '" aria-label="Lectura de partida"></div>' +
+      '<div class="cp-fld"><label>Avisar antes <small>opcional</small></label><input class="cp-inp" type="number" min="0" data-pp="f.mwarn" value="' + esc(f.mwarn || 0) + '" aria-label="Avisar antes"></div></div>' +
+      mc('i', f.mnom ? 'Usa el medidor «' + esc(f.mnom) + '»' + (f.mact ? ' de ' + esc(f.mact) : '') + '.' : 'Sin medidor fijo: cada equipo que lo usa dispara con su propio medidor (por ejemplo, su horómetro).', 'help');
+    if (f.t === 'cond') regla = '<div class="cp-fld"><span class="cp-lb">Condiciones</span>' + ((d.conds || []).map(function (x) { return '<div class="cp-rw" style="grid-template-columns:18px minmax(0,1fr)">' + ic('alert', 14) + '<span>' + esc(x.texto) + (x.activo ? ' <small>· ' + esc(x.activo) + '</small>' : '') + (x.severidad ? ' <span class="cp-tg">' + esc(x.severidad) + '</span>' : '') + '</span></div>'; }).join('') || '<span style="font-size:12.5px;color:var(--muted)">Sin condiciones.</span>') + '</div>' +
+      mc('i', 'Las condiciones se agregan o quitan en la intervención que las mide (paso «¿Cada cuánto se hace?»). Aquí se editan los datos generales y el cumplimiento.', 'help');
     b = regla + (e && errDe(4).length ? mc('', esc(errDe(4)[0][1])) : '') +
       '<div class="cp-blk-h" style="margin-top:6px"><h4>Cumplimiento</h4></div><div class="cp-grid2c"><div class="cp-fld"><label>Puede hacerse antes</label><div class="cp-unit"><input class="cp-inp" type="number" min="0" data-pp="f.tb" value="' + esc(f.tb) + '" aria-label="Puede hacerse antes"><span class="cp-u">días</span></div></div><div class="cp-fld"><label>Vence después de</label><div class="cp-unit"><input class="cp-inp" type="number" min="0" data-pp="f.ta" value="' + esc(f.ta) + '" aria-label="Vence después de"><span class="cp-u">días</span></div></div></div>' +
       '<div style="display:flex;gap:18px;flex-wrap:wrap"><label class="cp-sw"><input type="checkbox" data-pp="anticipada"' + (d.anticipada ? ' checked' : '') + '><i></i>Permite hacerla antes de tiempo</label><label class="cp-sw"><input type="checkbox" data-pp="atrasada"' + (d.atrasada ? ' checked' : '') + '><i></i>Permite hacerla atrasada</label><label class="cp-sw"><input type="checkbox" data-pp="genera"' + (d.genera ? ' checked' : '') + '><i></i>Genera automáticamente</label></div>' +
@@ -3237,7 +3272,7 @@ A.calsave = function (d, t) {
   var datos = datosDe(f); datos.nombre = String(x.nombre).trim(); datos.tipo = TIPOFC[f.t]; datos.zona = +x.zona || 0; datos.planta = +x.planta || 0; datos.area = +x.area || 0; datos.activo = +x.activo || 0; datos.modo = x.modo; datos.id = x.id || 0;
   datos.personas = Object.keys(x.personas); datos.grupo = +x.grupo || 0; datos.politica = +x.politica || 0; datos.anticipada = !!x.anticipada; datos.atrasada = !!x.atrasada; datos.genera = !!x.genera;
   api('CrearCalendario', { datos: JSON.stringify(datos) }).then(function () {
-    closePanel(); toast(x.id ? 'Calendario guardado.' : 'Calendario creado. Ya se puede usar desde cualquier intervención.'); LB.cals = null; U.fq = {}; return Promise.all([libCargar(), recargarCatalogos()]);
+    closePanel(); toast(x.id ? 'Calendario guardado.' : 'Calendario creado. Ya se puede usar desde cualquier intervención.'); LB.cals = null; U.fq = {}; return Promise.all([libCargar(), recargarCatalogos(), recargarFicha()]);
   }).catch(function (e) { t.classList.remove('cp-load'); PN.err2 = e.message; PN.paso = 6; panel(); });
 };
 /* =====================================================================

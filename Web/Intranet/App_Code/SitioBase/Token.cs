@@ -277,6 +277,8 @@ namespace SitioBase
         /// <summary>El mantenedor de menus llama aca despues de guardar.</summary>
         public static void RefrescarMapa()
         {
+            CacheSesion.BorrarGlobal("menus_arbol");
+            CacheSesion.BorrarGlobal("menus_sidebar");
             lock (_candado)
             {
                 _codigoPorId = null;
