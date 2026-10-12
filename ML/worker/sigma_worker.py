@@ -64,11 +64,26 @@ def env_num(nombre, defecto, tipo=float):
         return tipo(defecto)
 
 
+def cargar_cuentas():
+    """Una cuenta de servicio por EMPRESA con plan SIGMA AI. Variables:
+       SIGMA_USUARIO / SIGMA_CLAVE            (una sola empresa)
+       SIGMA_USUARIO_1 / SIGMA_CLAVE_1 ...    (varias; hasta _20)
+    La sesion queda ligada a la empresa del usuario: cada empresa se puntua y se
+    entrena con SUS datos y nunca se mezclan."""
+    c = []
+    if os.environ.get('SIGMA_USUARIO'):
+        c.append({'login': os.environ['SIGMA_USUARIO'], 'clave': os.environ.get('SIGMA_CLAVE', '')})
+    for n in range(1, 21):
+        u = os.environ.get('SIGMA_USUARIO_%d' % n)
+        if u:
+            c.append({'login': u, 'clave': os.environ.get('SIGMA_CLAVE_%d' % n, '')})
+    return c
+
+
 class Config:
     def __init__(self):
         self.api = os.environ.get('SIGMA_API', 'http://localhost/SIGMA/Servicio/API')
-        self.usuario = os.environ.get('SIGMA_USUARIO', '')
-        self.clave = os.environ.get('SIGMA_CLAVE', '')
+        self.cuentas = cargar_cuentas()
         self.minutos_puntuar = env_num('WORKER_PUNTUAR_MIN', 15, int)
         self.hora_entrenar = env_num('WORKER_HORA_ENTRENAR', 3, int)       # 0-23, respaldo diario
         self.minutos_senal = env_num('WORKER_SENAL_MIN', 2, int)           # cada cuanto mira si se cerro una OT
@@ -154,10 +169,22 @@ def mejora(cfg, modelo, nueva, version_vigente):
 
 # ---------------------------------------------------------------- acciones contra la API
 
-def entrar(cfg):
-    if not cfg.usuario or not cfg.clave:
-        raise SystemExit('Faltan SIGMA_USUARIO y/o SIGMA_CLAVE (variables de entorno o ML/.env).')
-    return Api(cfg.api, cfg.usuario, cfg.clave)
+class Cuenta:
+    """Una empresa: su usuario de servicio, su sesion y lo que el worker lleva anotado de ella."""
+    def __init__(self, login, clave):
+        self.login = login
+        self.clave = clave
+        self.api = None
+        self.visto = None          # ultima senal de cierres procesada (linea base al arrancar)
+        self.pendiente = False
+        self.ultimo_dia = None
+        self.proximo_puntuar = 0.0
+
+    def entrar(self, cfg):
+        if not self.login or not self.clave:
+            raise SystemExit('Falta la clave de la cuenta %r (SIGMA_CLAVE / SIGMA_CLAVE_n).' % self.login)
+        self.api = Api(cfg.api, self.login, self.clave)
+        return self.api
 
 
 def puntuar(api):
@@ -169,37 +196,38 @@ def puntuar(api):
             log('ERROR al puntuar %s: %s' % (modelo, e))
 
 
-def reentrenar(cfg, api, modelo, seco):
+def reentrenar(cfg, cuenta, modelo, seco):
+    api = cuenta.api
     m = MODELOS[modelo]
     versiones = api.get('/sigma-ai/versiones?modelo=' + modelo).json()
     vig = vigente(versiones)
     ds = api.post('/sigma-ai/datasets?modelo=' + modelo, {'paso_dias': 7, 'observacion': 'worker automatico'})
     ok, motivo = hay_datos_nuevos(cfg, modelo, ds, vig)
     if not ok:
-        log('%s: no se reentrena: %s' % (modelo, motivo))
+        log('[%s] %s: no se reentrena: %s' % (cuenta.login, modelo, motivo))
         return
-    log('%s: reentrenando con el dataset %s (%s filas, %s positivas)' % (modelo, ds.get('codigo'), ds.get('filas'), ds.get('positivas')))
-    entorno = dict(os.environ, SIGMA_API=cfg.api, SIGMA_CLAVE=cfg.clave)
-    cmd = [sys.executable, os.path.join(ML, m['script']), '--usuario', cfg.usuario,
+    log('[%s] %s: reentrenando con el dataset %s (%s filas, %s positivas)' % (cuenta.login, modelo, ds.get('codigo'), ds.get('filas'), ds.get('positivas')))
+    entorno = dict(os.environ, SIGMA_API=cfg.api, SIGMA_CLAVE=cuenta.clave)
+    cmd = [sys.executable, os.path.join(ML, m['script']), '--usuario', cuenta.login,
            '--dataset', str(ds['id']), '--sin-azure']
     r = subprocess.run(cmd, env=entorno, capture_output=True, text=True, timeout=3600)
     if r.returncode != 0:
-        log('%s: el entrenador fallo (codigo %s); no se publica. %s' % (modelo, r.returncode, (r.stdout + r.stderr)[-400:].replace('\n', ' | ')))
+        log('[%s] %s: el entrenador fallo (codigo %s); no se publica. %s' % (cuenta.login, modelo, r.returncode, (r.stdout + r.stderr)[-400:].replace(chr(10), ' | ')))
         return
     versiones = api.get('/sigma-ai/versiones?modelo=' + modelo).json()
     nueva = mas_nueva_borrador(versiones)
     if nueva is None:
-        log('%s: el entrenador termino pero no dejo ningun BORRADOR; no se publica.' % modelo)
+        log('[%s] %s: el entrenador termino pero no dejo ningun BORRADOR; no se publica.' % (cuenta.login, modelo))
         return
     ok, motivo = mejora(cfg, modelo, nueva, vigente(versiones))
     if not ok:
-        log('%s: la v%s queda en BORRADOR: %s' % (modelo, nueva.get('mpv_numero'), motivo))
+        log('[%s] %s: la v%s queda en BORRADOR: %s' % (cuenta.login, modelo, nueva.get('mpv_numero'), motivo))
         return
     if seco or not cfg.publicar_auto:
-        log('%s: publicaria la v%s (%s) pero PUBLICAR_AUTO/--seco lo impide.' % (modelo, nueva.get('mpv_numero'), motivo))
+        log('[%s] %s: publicaria la v%s (%s) pero PUBLICAR_AUTO/--seco lo impide.' % (cuenta.login, modelo, nueva.get('mpv_numero'), motivo))
         return
     api.post('/sigma-ai/versiones/%s/publicar' % nueva['mpv_id'], {})
-    log('%s: PUBLICADA la v%s (%s)' % (modelo, nueva.get('mpv_numero'), motivo))
+    log('[%s] %s: PUBLICADA la v%s (%s)' % (cuenta.login, modelo, nueva.get('mpv_numero'), motivo))
     puntuar(api)   # las predicciones salen ya con el modelo nuevo
 
 
@@ -213,64 +241,82 @@ def leer_senal(api):
         return None
 
 
-def ciclo_entrenamiento(cfg, api, seco):
+def ciclo_entrenamiento(cfg, cuenta, seco):
     for modelo in MODELOS:
         try:
-            reentrenar(cfg, api, modelo, seco)
+            reentrenar(cfg, cuenta, modelo, seco)
         except (SystemExit, requests.RequestException, subprocess.SubprocessError) as e:
-            log('ERROR reentrenando %s: %s' % (modelo, e))
+            log('[%s] ERROR reentrenando %s: %s' % (cuenta.login, modelo, e))
+
+
+def turno(cfg, cuenta, seco):
+    """Un vistazo a una empresa: puntua si toca, mira la senal de cierres y reentrena si corresponde."""
+    from datetime import datetime
+    if time.time() >= cuenta.proximo_puntuar:
+        puntuar(cuenta.api)
+        cuenta.proximo_puntuar = time.time() + cfg.minutos_puntuar * 60
+    senal = leer_senal(cuenta.api)
+    if senal_cambio(senal, cuenta.visto):
+        cuenta.pendiente = True
+        log('[%s] cierre de OT detectado (%s cierres, ultimo %s): reentrenamiento pendiente' % (cuenta.login, senal.get('CIERRES'), senal.get('ULTIMO_CIERRE')))
+        cuenta.visto = senal
+    elif cuenta.visto is None:
+        cuenta.visto = senal
+    if cuenta.pendiente and cierre_estable(senal, datetime.utcnow(), cfg.espera_cierre_min):
+        ciclo_entrenamiento(cfg, cuenta, seco)
+        cuenta.pendiente = False
+    ahora = time.localtime()
+    hoy = time.strftime('%Y-%m-%d', ahora)
+    if ahora.tm_hour == cfg.hora_entrenar and cuenta.ultimo_dia != hoy:
+        ciclo_entrenamiento(cfg, cuenta, seco)
+        cuenta.ultimo_dia = hoy
 
 
 def main():
     cargar_env()
     ap = argparse.ArgumentParser(description='Worker automatico de SIGMA AI')
-    ap.add_argument('--una-vez', action='store_true', help='un ciclo completo y sale')
+    ap.add_argument('--una-vez', action='store_true', help='un ciclo completo por empresa y sale')
     ap.add_argument('--solo-puntuar', action='store_true')
     ap.add_argument('--seco', action='store_true', help='no publica nada')
     a = ap.parse_args()
     cfg = Config()
-    api = entrar(cfg)
+    if not cfg.cuentas:
+        raise SystemExit('No hay cuentas: defina SIGMA_USUARIO/SIGMA_CLAVE (o SIGMA_USUARIO_1/SIGMA_CLAVE_1 ...) en el entorno o en ML/.env.')
+    cuentas = [Cuenta(c['login'], c['clave']) for c in cfg.cuentas]
+    for c in cuentas:
+        try:
+            c.entrar(cfg)
+        except SystemExit as e:
+            log('[%s] no se pudo entrar: %s' % (c.login, e))
 
     if a.una_vez or a.solo_puntuar:
-        puntuar(api)
-        if not a.solo_puntuar:
-            ciclo_entrenamiento(cfg, api, a.seco)
+        for c in cuentas:
+            if c.api is None:
+                continue
+            puntuar(c.api)
+            if not a.solo_puntuar:
+                ciclo_entrenamiento(cfg, c, a.seco)
         return
 
-    log('worker en marcha: mira cierres de OT cada %d min (espera %d min tras el ultimo); puntua cada %d min; respaldo diario a las %02d:00'
-        % (cfg.minutos_senal, cfg.espera_cierre_min, cfg.minutos_puntuar, cfg.hora_entrenar))
-    from datetime import datetime
-    visto = leer_senal(api)            # linea base: no se reentrena por lo que ya estaba cerrado
-    pendiente = False
-    ultimo_dia = None
-    proximo_puntuar = 0.0
+    log('worker en marcha para %d empresa(s): mira cierres de OT cada %d min (espera %d min tras el ultimo); puntua cada %d min; respaldo diario a las %02d:00'
+        % (len(cuentas), cfg.minutos_senal, cfg.espera_cierre_min, cfg.minutos_puntuar, cfg.hora_entrenar))
+    for c in cuentas:
+        if c.api is not None:
+            c.visto = leer_senal(c.api)    # linea base: no se reentrena por lo que ya estaba cerrado
     while True:
-        try:
-            if time.time() >= proximo_puntuar:
-                puntuar(api)
-                proximo_puntuar = time.time() + cfg.minutos_puntuar * 60
-            senal = leer_senal(api)
-            if senal_cambio(senal, visto):
-                pendiente = True
-                log('se detecto un cierre de OT (%s cierres, ultimo %s): reentrenamiento pendiente' % (senal.get('CIERRES'), senal.get('ULTIMO_CIERRE')))
-                visto = senal
-            elif visto is None:
-                visto = senal
-            if pendiente and cierre_estable(senal, datetime.utcnow(), cfg.espera_cierre_min):
-                ciclo_entrenamiento(cfg, api, a.seco)
-                pendiente = False
-            ahora = time.localtime()
-            hoy = time.strftime('%Y-%m-%d', ahora)
-            if ahora.tm_hour == cfg.hora_entrenar and ultimo_dia != hoy:
-                ciclo_entrenamiento(cfg, api, a.seco)
-                ultimo_dia = hoy
-        except SystemExit as e:
-            log('sesion perdida o error de la API (%s); se vuelve a entrar' % e)
+        for c in cuentas:
             try:
-                api = entrar(cfg)
-            except SystemExit as e2:
-                log('no se pudo volver a entrar: %s' % e2)
+                if c.api is None:
+                    c.entrar(cfg)
+                turno(cfg, c, a.seco)
+            except SystemExit as e:
+                log('[%s] sesion perdida o error de la API (%s); se vuelve a entrar' % (c.login, e))
+                try:
+                    c.entrar(cfg)
+                except SystemExit as e2:
+                    log('[%s] no se pudo volver a entrar: %s' % (c.login, e2))
         time.sleep(cfg.minutos_senal * 60)
+
 
 if __name__ == '__main__':
     main()

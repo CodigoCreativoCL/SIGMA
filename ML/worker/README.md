@@ -5,7 +5,8 @@
 | Variable | Defecto | Qué es |
 |---|---|---|
 | `SIGMA_API` | `http://localhost/SIGMA/Servicio/API` | URL de la API |
-| `SIGMA_USUARIO` / `SIGMA_CLAVE` | — | Usuario de servicio (permisos `VER PREDICCIONES` y `ENTRENAR MODELOS`). La clave **nunca** por chat ni al repo |
+| `SIGMA_USUARIO` / `SIGMA_CLAVE` | — | Usuario de servicio de **una** empresa (permisos `VER PREDICCIONES` y `ENTRENAR MODELOS`). La clave **nunca** por chat ni al repo |
+| `SIGMA_USUARIO_1` / `SIGMA_CLAVE_1` … `_20` | — | Una cuenta por **cada empresa con plan SIGMA AI**. Cada sesión queda ligada a su empresa: se puntúa y entrena con sus datos, sin mezclar |
 | `WORKER_PUNTUAR_MIN` | 15 | Cada cuántos minutos recalcula predicciones |
 | `WORKER_SENAL_MIN` | 2 | Cada cuántos minutos mira si se cerró una OT |
 | `WORKER_ESPERA_CIERRE_MIN` | 5 | Calma tras el último cierre antes de reentrenar |
@@ -24,6 +25,13 @@ python ML/worker/sigma_worker.py --solo-puntuar
 python ML/worker/sigma_worker.py --seco       # no publica nada
 ```
 Si pierde la sesión (token vencido) vuelve a entrar solo. Todo queda en el log y en `Entrenamiento_Ejecucion`.
+
+## Una cuenta por empresa con plan SIGMA AI
+La API puntúa y reentrena con la empresa de la sesión. Por eso se crea **un usuario de servicio por cada empresa que tenga el plan SIGMA AI** (la función `SIGMA AI CHAT` del plan) y se agrega como `SIGMA_USUARIO_n`. Una empresa nueva con el plan = un usuario nuevo + dos variables; sin tocar código. Si una empresa pierde el plan, se desactiva su usuario.
+Cuidados al crear cada usuario:
+- Su perfil debe **operar en la app** (`POST /sesion` entra con ámbito 2): un perfil solo-web recibe 403.
+- Si la suscripción de la empresa no está vigente, el login responde 402 y el worker deja ese error en el log y sigue con las demás.
+- Solo los dos permisos de arriba; nada más.
 
 ## Requisito de despliegue
 El worker llama a `GET /sigma-ai/senal`, que existe solo desde la migración **453** y la API compilada con ese endpoint: hay que aplicarlas en el entorno donde corra (hoy solo en desarrollo).
