@@ -14,10 +14,17 @@ if ($listo) {
     exit 0
 }
 
-$f = Get-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All
-if ($f.State -ne 'Enabled') {
-    Write-Host 'Habilitando Hyper-V (puede tardar un par de minutos)...'
-    Enable-WindowsOptionalFeature -Online -FeatureName Microsoft-Hyper-V-All -All -NoRestart | Out-Null
+# Ojo: "Microsoft-Hyper-V-All" puede figurar Enabled mientras sus piezas reales
+# (hipervisor, servicios, herramientas de PowerShell) siguen deshabilitadas. Se
+# habilita cada pieza por nombre.
+$piezas = 'Microsoft-Hyper-V', 'Microsoft-Hyper-V-Hypervisor', 'Microsoft-Hyper-V-Services',
+          'Microsoft-Hyper-V-Management-Clients', 'Microsoft-Hyper-V-Management-PowerShell'
+foreach ($n in $piezas) {
+    $f = Get-WindowsOptionalFeature -Online -FeatureName $n -ErrorAction SilentlyContinue
+    if ($f -and $f.State -ne 'Enabled') {
+        Write-Host "Habilitando $n ..."
+        Enable-WindowsOptionalFeature -Online -FeatureName $n -All -NoRestart | Out-Null
+    }
 }
 Write-Host ''
 Write-Host 'Hyper-V esta habilitado pero FALTA REINICIAR para que funcione.' -ForegroundColor Yellow
