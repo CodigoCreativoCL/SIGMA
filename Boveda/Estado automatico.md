@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:54 · rama: `BryanChavez` · HEAD `560b3fd7`
+Generado: 2026-10-12 14:11 · rama: `BryanChavez` · HEAD `91b3ca25`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,25 +13,25 @@ Generado: 2026-10-11 16:54 · rama: `BryanChavez` · HEAD `560b3fd7`
 
 ## Últimos commits
 
-- 560b3fd7 2026-10-11 Nessgod: Diseño: Planificacion360 dentro de Redisenos; Dev/siguiente_migracion.py evita choques de numeración
-- afa73185 2026-10-11 Nessgod: Bóveda: reglas del equipo (acuerdos comunes para las tres sesiones)
-- 59fd61f1 2026-10-11 Nessgod: Herramientas compartidas en Dev (bom.py, sql_aplicar.py); referencias de la bóveda al día
-- fea7e0f4 2026-10-11 Nessgod: Rutas de rediseños actualizadas en prompts
-- 46b48ef0 2026-10-11 Nessgod: Diseño ordenado: Esquema BD, Diseño Web (arquitectura, UML, rediseños) y Diseño App; docs/ y capturas/ reubicadas
-- 93098eb5 2026-10-11 Nessgod: BD ordenada por contexto: índice generado en la bóveda, semillas y respaldos en subcarpetas
-- 6b13e4db 2026-10-11 Nessgod: Referencias a Boveda/Patrones en MD y Docker
-- dccfb4a4 2026-10-11 Nessgod: PATRONES/ASP pasa a Boveda/Patrones: cerebro centralizado
-- efb50ccc 2026-10-11 Nessgod: Se elimina INFRAESTRUCTURA (plan Hyper-V descartado)
-- baa92879 2026-10-11 Nessgod: Orden del repo: Docker en su carpeta, se eliminan SIGMA-Pautas-360 y ENTRENAMIENTO
-- 2b49959a 2026-10-11 Nessgod: Bóveda: flujo de git pensado para el equipo de 3
-- d8806ebe 2026-10-11 Nessgod: Bóveda: mapa de código por flujo
+- 91b3ca25 2026-10-12 Emilio Fuentes: Merge pull request #79 from CodigoCreativoCL/EmilioFuentes
+- 96809b2b 2026-10-12 EmilioFuentesS: Merge master en EmilioFuentes (reorg del repo, evidencias, rendimiento, HMAC)
+- de25c101 2026-10-12 EmilioFuentesS: HU-162: seguimiento en el Sprint Backlog (tareas y criterios)
+- 5d066d57 2026-10-12 EmilioFuentesS: HU-162 T-5342: Swagger y decisiones en el MD de estado
+- e762b540 2026-10-12 EmilioFuentesS: HU-162 T-5341: pruebas de los criterios de accesibilidad
+- 410181d6 2026-10-12 EmilioFuentesS: HU-162 T-5340: la accion se autoriza en el servidor y solo toca lo propio
+- fb4c87bb 2026-10-12 EmilioFuentesS: HU-162 T-5338: permiso y menu de Accesibilidad (BD 441)
+- 49362955 2026-10-12 EmilioFuentesS: HU-162 T-5337: guardar las opciones y aplicarlas en todas las pantallas
+- bb96bb0d 2026-10-12 EmilioFuentesS: HU-162 T-5336: pantalla Accesibilidad del usuario (web)
+- d63f4c05 2026-10-12 EmilioFuentesS: HU-162 T-5335: PUT y DELETE /usuario-accesibilidades/{id}
+- 6b64e033 2026-10-12 EmilioFuentesS: HU-162 T-5334: POST /usuario-accesibilidades (alta)
+- ce78dfb4 2026-10-12 EmilioFuentesS: HU-162 T-5333: GET /usuario-accesibilidades/{id} (detalle)
 
 ## Módulos y pantallas
 
 - **Activos**: Activos, Atributos, Componentes, Estado, Ficha, Medidores, Modelos, Posiciones, Tipos, Variables
 - **Clientes**: Cliente, Perfiles
 - **Comercial**: Clientes, Suscripciones
-- **Comun**: Archivos, CargaDatos, Clientes, Controls, Impresion, MiCuenta, Notificaciones
+- **Comun**: Accesibilidad, Archivos, CargaDatos, Clientes, Controls, Impresion, MiCuenta, Notificaciones
 - **Inventario**: Bodegas, Compatibilidades, Existencias, Movimientos, Repuestos
 - **Mantenimiento**: Avisos, Biblioteca, Checklist, Fallas, Hallazgos, Operacion, Ordenes, Planes, Procedimientos, Programaciones, Tareas
 - **Organizacion**: Areas, CentrosCosto, Especialidades, Grupos, Plantas
