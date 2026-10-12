@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-12 15:36 · rama: `BryanChavez` · HEAD `c28de630`
+Generado: 2026-10-12 16:08 · rama: `BryanChavez` · HEAD `cd19d69a`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-12 15:36 · rama: `BryanChavez` · HEAD `c28de630`
 
 ## Últimos commits
 
+- cd19d69a 2026-10-12 Nessgod: SIGMA AI worker: una cuenta de servicio por empresa con plan SIGMA AI
 - c28de630 2026-10-12 Nessgod: SIGMA AI: reentrenar solo por cada cierre de OT (BD 453, GET /sigma-ai/senal, worker por eventos)
 - c0fd034d 2026-10-12 Nessgod: SIGMA AI: worker automático (puntuar y reentrenar con compuertas) y diseño actualizado
 - d507b7e6 2026-10-12 Nessgod: Bóveda: diseño de SIGMA AI automático (worker, reentrenamiento y publicación con compuertas)
@@ -24,7 +25,6 @@ Generado: 2026-10-12 15:36 · rama: `BryanChavez` · HEAD `c28de630`
 - 5d066d57 2026-10-12 EmilioFuentesS: HU-162 T-5342: Swagger y decisiones en el MD de estado
 - e762b540 2026-10-12 EmilioFuentesS: HU-162 T-5341: pruebas de los criterios de accesibilidad
 - 410181d6 2026-10-12 EmilioFuentesS: HU-162 T-5340: la accion se autoriza en el servidor y solo toca lo propio
-- fb4c87bb 2026-10-12 EmilioFuentesS: HU-162 T-5338: permiso y menu de Accesibilidad (BD 441)
 
 ## Módulos y pantallas
 
