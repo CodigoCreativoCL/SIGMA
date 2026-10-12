@@ -1,11 +1,11 @@
-# Traspaso para Emilio Fuentes — 11-10-2026
+# Traspaso para Emilio Fuentes — 11-10-2026 (actualizado 12-10-2026)
 Rama: `EmilioFuentes`. Tu trabajo (Terceros en una vista con pestañas + scroll del sidebar) **ya está integrado en `master`** (commit `f39504f3`).
 
-## 1. Qué hacer en tu rama (en este orden)
-1. `git fetch && git merge origin/master` — ya no habrá conflictos con tu trabajo; si el MD de estado o la bóveda chocan, conserva ambos lados.
-2. Tus migraciones se **renumeraron**: `429_MENU_TERCEROS_PROVEEDORES_UNA_VISTA.sql` → `437_...` y `430_MENU_TERCEROS_PERMISOS_UNA_VISTA.sql` → `438_...` (429 y 430 ya estaban usados por calendarios de medidor y HU-117). Si ya las aplicaste en la base, **no las repitas** (son menús, mismo contenido).
-3. Siguiente número libre: `python -I Dev/siguiente_migracion.py` (mira master y todas las ramas). Úsalo antes de crear cada migración.
-4. Abre `Boveda/` en Obsidian (opcional) y lee `Boveda/00 Inicio.md`.
+## 1. Estado (actualizado 12-10-2026)
+- Tu trabajo (Terceros en una vista, HU-131 rectificación de bitácora, HU-162 Accesibilidad) **ya está en `master`** (PR #79). Tus migraciones ya van como 442–449: **no hay choques de numeración pendientes**.
+- Si no lo hiciste hoy: `git fetch && git merge origin/master` (te faltan 2 commits de bóveda/estado; sin conflictos esperados).
+- Siguiente número libre: `python -I Dev/siguiente_migracion.py` (hoy 453). Úsalo antes de crear cada migración.
+- Abre `Boveda/` en Obsidian (opcional) y lee `Boveda/00 Inicio.md`.
 
 ## 2. Qué cambió en el repo (para no buscar donde ya no está)
 - `PATRONES/ASP` → `Boveda/Patrones/`. `ENTRENAMIENTO`, `SIGMA-Pautas-360`, `INFRAESTRUCTURA`, `docs/` y `Fase 2/Diseno/capturas` ya no existen.
