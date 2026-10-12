@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-12 14:11 · rama: `BryanChavez` · HEAD `91b3ca25`
+Generado: 2026-10-12 15:22 · rama: `BryanChavez` · HEAD `1ecab593`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,8 @@ Generado: 2026-10-12 14:11 · rama: `BryanChavez` · HEAD `91b3ca25`
 
 ## Últimos commits
 
+- 1ecab593 2026-10-12 Nessgod: Bóveda: traspasos al día tras integrar a Emilio (migraciones hasta 452, siguiente 453)
+- 8b406e2f 2026-10-12 Nessgod: Bóveda: estado e índice de BD regenerados tras integrar a Emilio
 - 91b3ca25 2026-10-12 Emilio Fuentes: Merge pull request #79 from CodigoCreativoCL/EmilioFuentes
 - 96809b2b 2026-10-12 EmilioFuentesS: Merge master en EmilioFuentes (reorg del repo, evidencias, rendimiento, HMAC)
 - de25c101 2026-10-12 EmilioFuentesS: HU-162: seguimiento en el Sprint Backlog (tareas y criterios)
@@ -23,8 +25,6 @@ Generado: 2026-10-12 14:11 · rama: `BryanChavez` · HEAD `91b3ca25`
 - 49362955 2026-10-12 EmilioFuentesS: HU-162 T-5337: guardar las opciones y aplicarlas en todas las pantallas
 - bb96bb0d 2026-10-12 EmilioFuentesS: HU-162 T-5336: pantalla Accesibilidad del usuario (web)
 - d63f4c05 2026-10-12 EmilioFuentesS: HU-162 T-5335: PUT y DELETE /usuario-accesibilidades/{id}
-- 6b64e033 2026-10-12 EmilioFuentesS: HU-162 T-5334: POST /usuario-accesibilidades (alta)
-- ce78dfb4 2026-10-12 EmilioFuentesS: HU-162 T-5333: GET /usuario-accesibilidades/{id} (detalle)
 
 ## Módulos y pantallas
 

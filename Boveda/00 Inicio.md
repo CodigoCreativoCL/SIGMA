@@ -11,6 +11,7 @@ Sistema Integrado de Gestión de Mantenimiento Industrial. Capstone Duoc UC, equ
 - [[Rendimiento]] — Paralelo, CacheSesion, Medida, pool
 - [[Base de datos y entornos]] — SQL, Azure, scripts
 - [[Indice de base de datos]] — migraciones por contexto (qué número toca cada tema)
+- [[SIGMA AI automatico]] — diseño del entrenamiento/predicción sin botones
 - [[Reglas del equipo]] — acuerdos comunes (código, UI, proceso, entorno)
 - [[Trampas conocidas]]
 - [[Flujo de trabajo y git]]
