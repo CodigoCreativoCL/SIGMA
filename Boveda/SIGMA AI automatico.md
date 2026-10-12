@@ -22,3 +22,8 @@ Requisito de Bryan: **nadie ejecuta un botón**. Datos entran → se predice →
 Servicio liviano (FastAPI + APScheduler) en una instancia Linux pequeña (AWS t3.micro u Oracle Always Free). Los datos son pequeños (decenas de filas hoy): entrenar toma segundos.
 
 Relacionado: [[Rendimiento]], [[Base de datos y entornos]], [[Base de datos/Indice de base de datos]].
+
+## Estado de la implementación (12-10-2026)
+- **Hecho:** `ML/worker/sigma_worker.py` (+ README): puntúa FALLA/RUL cada N min, reentrena de noche con compuertas (datos mínimos, datos nuevos, mejora de AUC/MAE) y publica solo. Reutiliza `sigma_ml.Api` y los entrenadores; la API ya trae `predecir`, `versiones`, `publicar`. Compuertas probadas con datos simulados; **no probado contra una API real**.
+- **Recomendaciones (paso 2):** ya existen en la página SIGMA AI: el Copiloto (`WsAiCentro.Copiloto`) responde con **reglas** sobre la cola de predicciones, sus razones (`SEL_AI_DETALLE`) y RUL, y ofrece acciones (Crear OT, Pedir repuesto). No usa modelo de lenguaje: es gratis y auditable. Falta que se generen **solas** (hoy salen al preguntar).
+- **Pendiente:** usuario de servicio, reversión automática, recomendaciones proactivas.

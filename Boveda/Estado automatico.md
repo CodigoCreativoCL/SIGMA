@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-12 15:22 · rama: `BryanChavez` · HEAD `1ecab593`
+Generado: 2026-10-12 15:29 · rama: `BryanChavez` · HEAD `d507b7e6`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-12 15:22 · rama: `BryanChavez` · HEAD `1ecab593`
 
 ## Últimos commits
 
+- d507b7e6 2026-10-12 Nessgod: Bóveda: diseño de SIGMA AI automático (worker, reentrenamiento y publicación con compuertas)
 - 1ecab593 2026-10-12 Nessgod: Bóveda: traspasos al día tras integrar a Emilio (migraciones hasta 452, siguiente 453)
 - 8b406e2f 2026-10-12 Nessgod: Bóveda: estado e índice de BD regenerados tras integrar a Emilio
 - 91b3ca25 2026-10-12 Emilio Fuentes: Merge pull request #79 from CodigoCreativoCL/EmilioFuentes
@@ -24,7 +25,6 @@ Generado: 2026-10-12 15:22 · rama: `BryanChavez` · HEAD `1ecab593`
 - fb4c87bb 2026-10-12 EmilioFuentesS: HU-162 T-5338: permiso y menu de Accesibilidad (BD 441)
 - 49362955 2026-10-12 EmilioFuentesS: HU-162 T-5337: guardar las opciones y aplicarlas en todas las pantallas
 - bb96bb0d 2026-10-12 EmilioFuentesS: HU-162 T-5336: pantalla Accesibilidad del usuario (web)
-- d63f4c05 2026-10-12 EmilioFuentesS: HU-162 T-5335: PUT y DELETE /usuario-accesibilidades/{id}
 
 ## Módulos y pantallas
 
