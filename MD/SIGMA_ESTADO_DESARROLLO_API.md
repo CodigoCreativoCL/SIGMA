@@ -415,6 +415,28 @@ Lo que **no se deduce del código**:
   el autor rectifica, motivo obligatorio, texto distinto del vigente—, porque la
   API no es el único que puede llamarlo (también lo llama la web).
 
+### Accesibilidad: cada uno las suyas, no un CRUD de admin (HU-162, 11-10-2026)
+
+`Usuario_Accesibilidad` es **una fila por persona** (índice único `UX_UAC_USUARIO`).
+Por eso `usuario-accesibilidades` **no recibe nunca un id de usuario** por
+parámetro: trabaja siempre contra `SesionApi.UsuarioId()`.
+
+- `GET /usuario-accesibilidades` devuelve las opciones de **quien llama** (0 o 1
+  fila), no un listado de todos. `GET /{id}` y el `EsMia(id)` de `PUT`/`DELETE`
+  responden **404 si el id no es tuyo**: no se revela que existe ni qué tiene.
+- Las escrituras (`POST`/`PUT`/`DELETE`) exigen **CONFIGURAR ACCESIBILIDAD**
+  (`ExigirPermiso`), concedido a todos los perfiles; las lecturas sólo exigen
+  identidad. El dueño es la persona, así que eso **ocupa el lugar del filtro por
+  cliente** del resto de la API.
+- `DELETE` es **baja lógica** (`uac_habilitado = 0`) y la interfaz vuelve a los
+  valores por defecto; no borra la fila.
+
+Lo que **no se deduce del código**: el backlog pedía un recurso tipo catálogo
+con «código único por cliente» (`BD`-task T-5326); no aplica —esta tabla no tiene
+código y es por usuario—, y se dejó registrado así. Las columnas de sonido
+(`uac_volumen`, `uac_silenciar_alertas`) se agregaron para CA-4 (`BD/435`); el
+«movimiento reducido» no se guarda, lo respeta el CSS vía `prefers-reduced-motion`.
+
 ---
 
 ## 6. Pendientes y cosas que hay que saber
