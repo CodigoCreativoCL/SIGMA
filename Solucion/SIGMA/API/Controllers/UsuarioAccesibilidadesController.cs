@@ -71,5 +71,49 @@ namespace API.Controllers
                 return Ok(lista[0]);
             });
         }
+
+        /// <summary>
+        /// POST /usuario-accesibilidades — crea las opciones de quien llama.
+        ///
+        /// Son del usuario del token, no de un id del cuerpo. Si ya tiene una
+        /// fila, el SP lo rechaza y se corrige con PUT. El cuerpo se valida acá
+        /// antes de la base; el RAISERROR del SP sale como 400 legible.
+        /// </summary>
+        /// <response code="201">Creadas.</response>
+        /// <response code="400">Valores fuera de rango, o ya existían (usa PUT).</response>
+        [HttpPost]
+        [Route("")]
+        public IHttpActionResult Crear(UsuarioAccesibilidadAltaDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                if (dto.volumen < 0 || dto.volumen > 1)
+                    throw new System.ArgumentException("El volumen va de 0 a 1.");
+                if (dto.velocidad_voz <= 0 || dto.velocidad_voz > 3)
+                    throw new System.ArgumentException("La velocidad de voz va de 0 a 3.");
+
+                int id = Datos.Ejecutar("INS_USUARIO_ACCESIBILIDAD",
+                    new Dictionary<string, object>
+                    {
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@ENTRADA_VOZ", dto.entrada_voz },
+                        { "@LECTURA_VOZ", dto.lectura_voz },
+                        { "@CONFIRMACION_HABLADA", dto.confirmacion_hablada },
+                        { "@VELOCIDAD_VOZ", dto.velocidad_voz },
+                        { "@TEXTO_GRANDE", dto.texto_grande },
+                        { "@ALTO_CONTRASTE", dto.alto_contraste },
+                        { "@ICONOS_GRANDES", dto.iconos_grandes },
+                        { "@IDIOMA", dto.idioma },
+                        { "@VOLUMEN", dto.volumen },
+                        { "@SILENCIAR_ALERTAS", dto.silenciar_alertas },
+                        { "@USUARIO_CREACION", SesionApi.UsuarioId() }
+                    }, true);
+
+                return Creado(id);
+            });
+        }
     }
 }
