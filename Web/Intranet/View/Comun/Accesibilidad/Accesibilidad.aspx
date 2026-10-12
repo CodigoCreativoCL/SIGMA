@@ -129,6 +129,12 @@
                 </div>
             </div>
 
+            <div class="sigma-acciones-barra">
+                <asp:LinkButton ID="btnGuardar" runat="server" CssClass="sigma-accion is-primaria" OnClick="btnGuardar_Click">
+                    <i class="mdi mdi-content-save-outline"></i><span>Guardar</span>
+                </asp:LinkButton>
+            </div>
+
             <div class="sg-acc-nota card-box">
                 <i class="mdi mdi-information-outline"></i>
                 <span>El <strong>movimiento reducido</strong> lo toma SIGMA de tu sistema operativo: si lo activas ahí,

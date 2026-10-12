@@ -1,6 +1,7 @@
 ﻿using SitioBase.Controller;
 using System;
 using System.Globalization;
+using System.Web.UI;
 using Telerik.Web.UI;
 
 /// <summary>
@@ -45,4 +46,51 @@ public partial class View_Comun_Accesibilidad_Accesibilidad : System.Web.UI.Page
         if (item != null) item.Selected = true;
         else if (combo.Items.Count > 0) combo.Items[0].Selected = true;
     }
+
+    /// <summary>Guarda lo elegido. La validación dura la hacen los SP; acá sólo se arma el modelo.</summary>
+    protected void btnGuardar_Click(object sender, EventArgs e)
+    {
+        AccesibilidadController ctrl = new AccesibilidadController();
+
+        // Se parte de lo guardado para conservar el uac_id (crear vs corregir).
+        UsuarioAccesibilidad o = ctrl.GetMisOpciones();
+
+        o.texto_grande = chkTextoGrande.Checked;
+        o.alto_contraste = chkAltoContraste.Checked;
+        o.iconos_grandes = chkIconosGrandes.Checked;
+        o.entrada_voz = chkEntradaVoz.Checked;
+        o.lectura_voz = chkLecturaVoz.Checked;
+        o.confirmacion_hablada = chkConfirmacionHablada.Checked;
+        o.silenciar_alertas = chkSilenciar.Checked;
+        o.velocidad_voz = ADecimal(cboVelocidad.SelectedValue, 1.00m);
+        o.volumen = ADecimal(cboVolumen.SelectedValue, 1.00m);
+
+        Respuesta r = ctrl.GuardarMisOpciones(o);
+
+        litAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\" style=\"margin-bottom:14px\">" +
+                        "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
+                        "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        if (!r.error)
+        {
+            /* Que el cambio se vea YA, sin recargar: se ajustan las clases del
+               body en el cliente. En las demás pantallas las pone el master
+               desde la sesión. */
+            string js = "var b=document.body;" +
+                        "b.classList.toggle('sg-acc-texto-grande'," + Js(o.texto_grande) + ");" +
+                        "b.classList.toggle('sg-acc-alto-contraste'," + Js(o.alto_contraste) + ");" +
+                        "b.classList.toggle('sg-acc-iconos-grandes'," + Js(o.iconos_grandes) + ");";
+            ScriptManager.RegisterStartupScript(this, GetType(), "accAplica", js, true);
+        }
+
+        udPanel.Update();
+    }
+
+    private static decimal ADecimal(string v, decimal def)
+    {
+        decimal d;
+        return decimal.TryParse(v, NumberStyles.Any, CultureInfo.InvariantCulture, out d) ? d : def;
+    }
+
+    private static string Js(bool b) { return b ? "true" : "false"; }
 }

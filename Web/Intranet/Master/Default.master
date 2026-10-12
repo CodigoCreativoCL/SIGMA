@@ -61,6 +61,12 @@
     <!-- SIGMA: tokens de marca y tipografia Sora -->
     <link href="../Css/LookAndFeel/sigma-brand.css?vrs=3" rel="stylesheet" />
 
+    <!-- SIGMA: accesibilidad (HU-162). Las clases del body (texto grande, alto
+         contraste, iconos grandes) las pone AccesibilidadController.ClasesBody()
+         desde las preferencias de la persona; aca viven sus reglas y el respeto
+         del movimiento reducido del sistema operativo. -->
+    <link href="../Css/LookAndFeel/sigma-accesibilidad-global.css?vrs=1" rel="stylesheet" />
+
     <!-- SIGMA: componentes (Telerik, formularios, modales) -->
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
@@ -122,7 +128,7 @@
     <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
 </head>
 
-<body data-sidebar="dark">
+<body data-sidebar="dark" class="<%= SitioBase.Controller.AccesibilidadController.ClasesBody() %>">
     <form id="form1" runat="server">
 
         <%-- POR QUE ESTE SCRIPT VIVE ACA Y NO EN EL <head>
