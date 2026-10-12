@@ -24,6 +24,7 @@ Servicio liviano (FastAPI + APScheduler) en una instancia Linux pequeña (AWS t3
 Relacionado: [[Rendimiento]], [[Base de datos y entornos]], [[Base de datos/Indice de base de datos]].
 
 ## Estado de la implementación (12-10-2026)
+- **Reentrenar por cada cierre de OT, sin botón:** BD 453 `API_SEL_ML_SENAL` + `GET /sigma-ai/senal` (cuenta OT cerradas y último cierre). El worker lo consulta cada 2 min; al ver un cierre nuevo espera 5 min de calma y reentrena (compuertas intactas). Al arrancar toma una línea base: no reentrena por lo que ya estaba cerrado. Hay un respaldo diario a las 3:00.
 - **Hecho:** `ML/worker/sigma_worker.py` (+ README): puntúa FALLA/RUL cada N min, reentrena de noche con compuertas (datos mínimos, datos nuevos, mejora de AUC/MAE) y publica solo. Reutiliza `sigma_ml.Api` y los entrenadores; la API ya trae `predecir`, `versiones`, `publicar`. Compuertas probadas con datos simulados; **no probado contra una API real**.
 - **Recomendaciones (paso 2):** ya existen en la página SIGMA AI: el Copiloto (`WsAiCentro.Copiloto`) responde con **reglas** sobre la cola de predicciones, sus razones (`SEL_AI_DETALLE`) y RUL, y ofrece acciones (Crear OT, Pedir repuesto). No usa modelo de lenguaje: es gratis y auditable. Falta que se generen **solas** (hoy salen al preguntar).
 - **Pendiente:** usuario de servicio, reversión automática, recomendaciones proactivas.

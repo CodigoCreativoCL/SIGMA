@@ -7,10 +7,13 @@ Es un proceso que se deja encendido y hace solo lo que hoy exige apretar botones
   CADA N MINUTOS   Puntua (POST /sigma-ai/predecir) FALLA y RUL: las predicciones,
                    sus razones y las alertas se mantienen al dia aunque nadie
                    tenga la web abierta.
-  UNA VEZ AL DIA   Reentrena cada modelo SOLO si hay datos nuevos suficientes,
+  CADA CIERRE DE   Consulta cada pocos minutos GET /sigma-ai/senal (cuantas OT hay
+  OT               cerradas y cuando fue la ultima). Si cambio, espera unos minutos
+                   (por si cierran varias seguidas), y reentrena cada modelo,
                    compara la version nueva con la vigente y la PUBLICA sola
                    unicamente si pasa las compuertas. Si no, queda en BORRADOR y
                    el motivo se escribe en el log.
+  RESPALDO DIARIO  Una vez al dia revisa igual, por si se perdio alguna senal.
 
 COMPUERTAS PARA PUBLICAR (todas deben cumplirse)
   1. Datos minimos del modelo (positivas FALLA / filas RUL).
@@ -67,10 +70,12 @@ class Config:
         self.usuario = os.environ.get('SIGMA_USUARIO', '')
         self.clave = os.environ.get('SIGMA_CLAVE', '')
         self.minutos_puntuar = env_num('WORKER_PUNTUAR_MIN', 15, int)
-        self.hora_entrenar = env_num('WORKER_HORA_ENTRENAR', 3, int)       # 0-23, hora del servidor
+        self.hora_entrenar = env_num('WORKER_HORA_ENTRENAR', 3, int)       # 0-23, respaldo diario
+        self.minutos_senal = env_num('WORKER_SENAL_MIN', 2, int)           # cada cuanto mira si se cerro una OT
+        self.espera_cierre_min = env_num('WORKER_ESPERA_CIERRE_MIN', 5, int)  # tranquilidad tras el ultimo cierre
         self.min_positivas = {'FALLA': env_num('WORKER_MIN_POSITIVAS_FALLA', 10, int),
                               'RUL': env_num('WORKER_MIN_FILAS_RUL', 30, int)}
-        self.nuevas_min = env_num('WORKER_NUEVAS_MIN', 3, int)              # positivas nuevas para reentrenar
+        self.nuevas_min = env_num('WORKER_NUEVAS_MIN', 0, int)              # positivas nuevas exigidas (0 = basta con un cierre)
         self.margen_auc = env_num('WORKER_MARGEN_AUC', 0.01)
         self.margen_mae = env_num('WORKER_MARGEN_MAE', 0.02)                # 2 % de mejora relativa
         self.auc_minimo_primera = env_num('WORKER_AUC_MIN_PRIMERA', 0.65)
@@ -89,13 +94,36 @@ def mas_nueva_borrador(versiones):
     return max(bor, key=lambda v: v.get('mpv_numero') or 0) if bor else None
 
 
+def senal_cambio(senal, visto):
+    """True si hubo un cierre de OT posterior al ultimo que el worker ya proceso.
+    senal / visto: {'CIERRES': n, 'ULTIMO_CIERRE': 'texto', 'ULTIMO_ID': n}."""
+    if not senal:
+        return False
+    if visto is None:
+        return False   # primer vistazo: se toma como linea base, no se reentrena al arrancar
+    return (senal.get('CIERRES'), senal.get('ULTIMO_CIERRE'), senal.get('ULTIMO_ID')) !=            (visto.get('CIERRES'), visto.get('ULTIMO_CIERRE'), visto.get('ULTIMO_ID'))
+
+
+def cierre_estable(senal, ahora_utc, espera_min):
+    """El ultimo cierre tiene al menos `espera_min` minutos: no se reentrena en medio de una racha."""
+    from datetime import datetime
+    txt = (senal or {}).get('ULTIMO_CIERRE')
+    if not txt:
+        return True
+    try:
+        t = datetime.strptime(txt[:19].replace('T', ' '), '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return True
+    return (ahora_utc - t).total_seconds() >= espera_min * 60
+
+
 def hay_datos_nuevos(cfg, modelo, dataset, version_vigente):
     """Compuertas 1 y 2: datos minimos y datos nuevos desde la vigente."""
     positivas = int(dataset.get('positivas') or 0)
     minimo = cfg.min_positivas[modelo]
     if positivas < minimo:
         return False, 'solo %d casos positivos (minimo %d)' % (positivas, minimo)
-    if version_vigente is not None:
+    if version_vigente is not None and cfg.nuevas_min > 0:
         previas = int(version_vigente.get('DATASET_POSITIVAS') or 0)
         if positivas - previas < cfg.nuevas_min:
             return False, 'solo %d casos nuevos desde la v%s (se piden %d)' % (positivas - previas, version_vigente.get('mpv_numero'), cfg.nuevas_min)
@@ -177,6 +205,14 @@ def reentrenar(cfg, api, modelo, seco):
 
 # ---------------------------------------------------------------- bucle
 
+def leer_senal(api):
+    try:
+        return api.get('/sigma-ai/senal').json()
+    except SystemExit as e:
+        log('no se pudo leer la senal de cierres: %s' % e)
+        return None
+
+
 def ciclo_entrenamiento(cfg, api, seco):
     for modelo in MODELOS:
         try:
@@ -201,24 +237,40 @@ def main():
             ciclo_entrenamiento(cfg, api, a.seco)
         return
 
-    log('worker en marcha: puntua cada %d min; reentrena a las %02d:00 (hora del servidor)' % (cfg.minutos_puntuar, cfg.hora_entrenar))
-    ultimo_dia_entrenado = None
+    log('worker en marcha: mira cierres de OT cada %d min (espera %d min tras el ultimo); puntua cada %d min; respaldo diario a las %02d:00'
+        % (cfg.minutos_senal, cfg.espera_cierre_min, cfg.minutos_puntuar, cfg.hora_entrenar))
+    from datetime import datetime
+    visto = leer_senal(api)            # linea base: no se reentrena por lo que ya estaba cerrado
+    pendiente = False
+    ultimo_dia = None
+    proximo_puntuar = 0.0
     while True:
         try:
-            puntuar(api)
+            if time.time() >= proximo_puntuar:
+                puntuar(api)
+                proximo_puntuar = time.time() + cfg.minutos_puntuar * 60
+            senal = leer_senal(api)
+            if senal_cambio(senal, visto):
+                pendiente = True
+                log('se detecto un cierre de OT (%s cierres, ultimo %s): reentrenamiento pendiente' % (senal.get('CIERRES'), senal.get('ULTIMO_CIERRE')))
+                visto = senal
+            elif visto is None:
+                visto = senal
+            if pendiente and cierre_estable(senal, datetime.utcnow(), cfg.espera_cierre_min):
+                ciclo_entrenamiento(cfg, api, a.seco)
+                pendiente = False
             ahora = time.localtime()
             hoy = time.strftime('%Y-%m-%d', ahora)
-            if ahora.tm_hour == cfg.hora_entrenar and ultimo_dia_entrenado != hoy:
+            if ahora.tm_hour == cfg.hora_entrenar and ultimo_dia != hoy:
                 ciclo_entrenamiento(cfg, api, a.seco)
-                ultimo_dia_entrenado = hoy
+                ultimo_dia = hoy
         except SystemExit as e:
             log('sesion perdida o error de la API (%s); se vuelve a entrar' % e)
             try:
                 api = entrar(cfg)
             except SystemExit as e2:
                 log('no se pudo volver a entrar: %s' % e2)
-        time.sleep(cfg.minutos_puntuar * 60)
-
+        time.sleep(cfg.minutos_senal * 60)
 
 if __name__ == '__main__':
     main()

@@ -1,6 +1,6 @@
 # BD — Alertas e inteligencia (SIGMA AI)
 
-29 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+30 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -33,3 +33,4 @@
 | `383_CAMPANA_DE_ALERTA.sql` |  |
 | `419_OPERACION_HOY_SIGMA_AI.sql` |  |
 | `423_FUNCIONALIDAD_AI_CHAT_TWIN.sql` |  |
+| `453_ML_SENAL_CIERRE_OT.sql` |  |

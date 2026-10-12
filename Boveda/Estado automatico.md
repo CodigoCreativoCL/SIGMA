@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-12 15:29 · rama: `BryanChavez` · HEAD `d507b7e6`
+Generado: 2026-10-12 15:33 · rama: `BryanChavez` · HEAD `c0fd034d`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,6 +13,7 @@ Generado: 2026-10-12 15:29 · rama: `BryanChavez` · HEAD `d507b7e6`
 
 ## Últimos commits
 
+- c0fd034d 2026-10-12 Nessgod: SIGMA AI: worker automático (puntuar y reentrenar con compuertas) y diseño actualizado
 - d507b7e6 2026-10-12 Nessgod: Bóveda: diseño de SIGMA AI automático (worker, reentrenamiento y publicación con compuertas)
 - 1ecab593 2026-10-12 Nessgod: Bóveda: traspasos al día tras integrar a Emilio (migraciones hasta 452, siguiente 453)
 - 8b406e2f 2026-10-12 Nessgod: Bóveda: estado e índice de BD regenerados tras integrar a Emilio
@@ -24,7 +25,6 @@ Generado: 2026-10-12 15:29 · rama: `BryanChavez` · HEAD `d507b7e6`
 - 410181d6 2026-10-12 EmilioFuentesS: HU-162 T-5340: la accion se autoriza en el servidor y solo toca lo propio
 - fb4c87bb 2026-10-12 EmilioFuentesS: HU-162 T-5338: permiso y menu de Accesibilidad (BD 441)
 - 49362955 2026-10-12 EmilioFuentesS: HU-162 T-5337: guardar las opciones y aplicarlas en todas las pantallas
-- bb96bb0d 2026-10-12 EmilioFuentesS: HU-162 T-5336: pantalla Accesibilidad del usuario (web)
 
 ## Módulos y pantallas
 

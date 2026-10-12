@@ -7,7 +7,7 @@ Las migraciones viven en `BD/` con número correlativo (= orden de ejecución). 
 | [[App móvil y API]] | 77 | `55_SPLIT_Y_APP.sql` | `436_GALERIA_RUTA_API.sql` |
 | [[Seguridad, menús y permisos]] | 102 | `02_MENUS_PERMISOS.sql` | `452_MENU_ACCESIBILIDAD.sql` |
 | [[Suscripción y comercial]] | 7 | `08_SUSCRIPCION.sql` | `228_PLAN_COMERCIAL_SIN_PRECIO.sql` |
-| [[Alertas e inteligencia (SIGMA AI)]] | 29 | `19_TERCEROS_ALERTAS.sql` | `423_FUNCIONALIDAD_AI_CHAT_TWIN.sql` |
+| [[Alertas e inteligencia (SIGMA AI)]] | 30 | `19_TERCEROS_ALERTAS.sql` | `453_ML_SENAL_CIERRE_OT.sql` |
 | [[Planificación y programación]] | 62 | `13_PROGRAMACION.sql` | `429_CALENDARIO_MEDIDOR_EDITABLE.sql` |
 | [[Órdenes y operación]] | 58 | `15_CHECKLIST.sql` | `435_ACTIVO_GALERIA_PASOS_REFERENCIAS.sql` |
 | [[Inventario y bodegas]] | 41 | `12_REPUESTOS_INVENTARIO.sql` | `375_BODEGA_AREA_TIPO.sql` |
