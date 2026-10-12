@@ -115,5 +115,92 @@ namespace API.Controllers
                 return Creado(id);
             });
         }
+
+        /// <summary>
+        /// PUT /usuario-accesibilidades/{id} — cambia las opciones.
+        ///
+        /// Sólo las propias (si el id no es tuyo, 404). Lo que no venga en el
+        /// cuerpo no se toca (ISNULL en el SP): una pantalla parcial no borra lo
+        /// que no muestra.
+        /// </summary>
+        /// <response code="200">Actualizadas.</response>
+        /// <response code="404">No existe, o no es tuya.</response>
+        [HttpPut]
+        [Route("{id:int}")]
+        public IHttpActionResult Editar(int id, UsuarioAccesibilidadEdicionDto dto)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirUsuario();
+                ExigirCuerpo(dto);
+
+                if (!EsMia(id)) return NoEncontrado("Las opciones de accesibilidad");
+
+                if (dto.volumen.HasValue && (dto.volumen < 0 || dto.volumen > 1))
+                    throw new System.ArgumentException("El volumen va de 0 a 1.");
+                if (dto.velocidad_voz.HasValue && (dto.velocidad_voz <= 0 || dto.velocidad_voz > 3))
+                    throw new System.ArgumentException("La velocidad de voz va de 0 a 3.");
+
+                Datos.Ejecutar("UPD_USUARIO_ACCESIBILIDAD",
+                    new Dictionary<string, object>
+                    {
+                        { "@ID", id },
+                        { "@ENTRADA_VOZ", dto.entrada_voz },
+                        { "@LECTURA_VOZ", dto.lectura_voz },
+                        { "@CONFIRMACION_HABLADA", dto.confirmacion_hablada },
+                        { "@VELOCIDAD_VOZ", dto.velocidad_voz },
+                        { "@TEXTO_GRANDE", dto.texto_grande },
+                        { "@ALTO_CONTRASTE", dto.alto_contraste },
+                        { "@ICONOS_GRANDES", dto.iconos_grandes },
+                        { "@IDIOMA", dto.idioma },
+                        { "@VOLUMEN", dto.volumen },
+                        { "@SILENCIAR_ALERTAS", dto.silenciar_alertas },
+                        { "@USUARIO_ACTUALIZACION", SesionApi.UsuarioId() }
+                    });
+
+                return Ok(new { id = id });
+            });
+        }
+
+        /// <summary>
+        /// DELETE /usuario-accesibilidades/{id} — baja lógica.
+        ///
+        /// No borra la fila: la deshabilita (uac_habilitado = 0) y la interfaz
+        /// vuelve a sus valores por defecto. Sólo las propias.
+        /// </summary>
+        /// <response code="200">Deshabilitadas.</response>
+        /// <response code="404">No existe, o no es tuya.</response>
+        [HttpDelete]
+        [Route("{id:int}")]
+        public IHttpActionResult Eliminar(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirUsuario();
+
+                if (!EsMia(id)) return NoEncontrado("Las opciones de accesibilidad");
+
+                Datos.Ejecutar("DEL_USUARIO_ACCESIBILIDAD",
+                    new Dictionary<string, object>
+                    {
+                        { "@ID", id },
+                        { "@USUARIO_ACTUALIZACION", SesionApi.UsuarioId() }
+                    });
+
+                return Ok(new { id = id });
+            });
+        }
+
+        // ------------------------------------------------------------------
+
+        /// <summary>True si esa fila es de quien llama. Evita tocar lo de otro.</summary>
+        private bool EsMia(int id)
+        {
+            List<UsuarioAccesibilidadDto> lista = Datos.Listar<UsuarioAccesibilidadDto>(
+                "SEL_USUARIO_ACCESIBILIDAD",
+                new Dictionary<string, object> { { "@ID", id } });
+
+            return lista.Count > 0 && lista[0].uac_usuario == SesionApi.UsuarioId();
+        }
     }
 }
