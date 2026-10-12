@@ -1,0 +1,41 @@
+﻿/* ============================================================================
+   SIGMA · Accesibilidad — la pantalla donde la persona configura sus opciones
+   ----------------------------------------------------------------------------
+   Diseño estándar: cards blancas, cada opción en una fila (texto a la izquierda,
+   control a la derecha). El color va en los iconos y en el control, no en el
+   fondo. Tokens oficiales (--sg-*). La APLICACIÓN global de las preferencias
+   (texto grande, alto contraste, etc.) vive en sigma-accesibilidad-global.css.
+   ========================================================================= */
+.sg-acc-grupo { margin-bottom: 16px; }
+.sg-acc-grupo-tit {
+    display: flex; align-items: center; gap: 8px;
+    margin: 0 0 10px; font-size: 14px; font-weight: 800; color: var(--sg-text-primary);
+}
+.sg-acc-grupo-tit i { color: var(--sg-purple); font-size: 18px; }
+
+.sg-acc-opcion {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    padding: 12px 4px; border-top: 1px solid var(--sg-border);
+}
+.sg-acc-opcion:first-of-type { border-top: 0; }
+.sg-acc-op-txt { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sg-acc-op-txt strong { font-size: 13.5px; color: var(--sg-text-primary); font-weight: 700; }
+.sg-acc-op-txt small { font-size: 12px; color: var(--sg-text-muted); line-height: 1.35; }
+
+/* El check como un control claro y grande; el foco en turquesa. */
+.sg-acc-switch input[type="checkbox"] {
+    width: 22px; height: 22px; accent-color: var(--sg-purple); cursor: pointer; flex: none;
+}
+.sg-acc-switch input[type="checkbox"]:focus-visible {
+    outline: 3px solid rgba(22, 198, 201, .27); outline-offset: 2px;
+}
+
+.sg-acc-nota {
+    display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12.5px; color: var(--sg-text-muted);
+}
+.sg-acc-nota i { color: var(--sg-blue); font-size: 18px; flex: none; }
+
+@media (max-width: 640px) {
+    .sg-acc-opcion { flex-direction: column; align-items: stretch; }
+}

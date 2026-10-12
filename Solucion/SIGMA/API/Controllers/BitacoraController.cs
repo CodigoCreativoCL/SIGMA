@@ -187,14 +187,67 @@ namespace API.Controllers
         }
 
         /// <summary>
+        /// GET /bitacora/{id}/rectificaciones — las correcciones de una entrada.
+        ///
+        /// De la más vieja a la más nueva: se lee como lo que es, la historia
+        /// de las correcciones. El texto original va en la ficha de la entrada,
+        /// no acá: esto es solo la cadena de rectificaciones.
+        /// </summary>
+        [HttpGet]
+        [Route("{id:int}/rectificaciones")]
+        public IHttpActionResult Rectificaciones(int id)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER BITACORA");
+                ExigirCliente();
+
+                return Ok(Datos.Listar<BitacoraRectificacionDto>(
+                    "API_SEL_BITACORA", Parametros(4, id)));
+            });
+        }
+
+        /// <summary>
+        /// GET /bitacora/rectificaciones/{bre} — una rectificación por su id.
+        /// </summary>
+        /// <response code="404">No existe o no es de una planta de tu cliente.</response>
+        [HttpGet]
+        [Route("rectificaciones/{bre:int}")]
+        public IHttpActionResult Rectificacion(int bre)
+        {
+            return Ejecutar(() =>
+            {
+                ExigirPermiso("VER BITACORA");
+                ExigirCliente();
+
+                List<BitacoraRectificacionDto> fila = Datos.Listar<BitacoraRectificacionDto>(
+                    "API_SEL_BITACORA_RECTIFICACION",
+                    new Dictionary<string, object>
+                    {
+                        { "@BRE", bre },
+                        { "@USUARIO", SesionApi.UsuarioId() },
+                        { "@CLIENTE", SesionApi.ClienteId() }
+                    });
+
+                if (fila.Count == 0) return NoEncontrado("La rectificación");
+
+                return Ok(fila[0]);
+            });
+        }
+
+        /// <summary>
         /// POST /bitacora/{id}/rectificaciones — corrige, sin borrar.
         ///
         /// El motivo es obligatorio. Sin él, quien lea la bitácora después no
         /// puede saber si el texto cambió porque estaba mal escrito, porque se
         /// supo algo nuevo, o porque a alguien no le gustó cómo sonaba: las
         /// tres cosas se leen muy distinto.
+        ///
+        /// Idempotente por `uuid` (en el cuerpo), generado en el teléfono al
+        /// empezar a escribir: un reintento de la cola no crea una segunda
+        /// rectificación, devuelve la que ya estaba.
         /// </summary>
-        /// <response code="201">Rectificada. El original sigue disponible.</response>
+        /// <response code="201">Rectificada, o la que ya estaba si era un reenvío (mismo uuid). El original sigue disponible.</response>
         /// <response code="400">Falta el motivo, el texto es el mismo, o no eres quien la escribió.</response>
         [HttpPost]
         [Route("{id:int}/rectificaciones")]
@@ -206,9 +259,21 @@ namespace API.Controllers
                 ExigirCliente();
                 ExigirCuerpo(dto);
 
+                /* Se valida el cuerpo acá, antes de la base: un 400 con el
+                   nombre del campo se lee mejor que el RAISERROR del SP, y
+                   evita el viaje. El SP vuelve a comprobarlo igual —es su
+                   backstop—, porque la API no es el único que puede llamarlo. */
+                ExigirTexto(dto.texto, "texto");
+                ExigirTexto(dto.motivo, "motivo");
+
+                // bre_motivo es NVARCHAR(500): pasarse rebota en la base; mejor decirlo acá.
+                if (dto.motivo.Trim().Length > 500)
+                    throw new ArgumentException("El motivo no puede superar los 500 caracteres.");
+
                 int nuevo = Datos.Ejecutar("API_INS_BITACORA_RECTIFICACION",
                     new Dictionary<string, object>
                     {
+                        { "@UUID", dto.uuid },
                         { "@BITACORA", id },
                         { "@USUARIO", SesionApi.UsuarioId() },
                         { "@CLIENTE", SesionApi.ClienteId() },

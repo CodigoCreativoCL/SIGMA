@@ -4662,10 +4662,21 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   pierde el dia que alguien puede arreglar lo que escribio ayer, asi
     ///   que esta pantalla solo agrega.
     /// </summary>
+    /// <summary>
+    /// Las rectificaciones del activo (HU-131), agrupadas por entrada. Se carga
+    /// una vez y lo lee <see cref="Nota"/> para pintar, bajo cada entrada
+    /// rectificada, el original tachado y la correccion con su motivo.
+    /// </summary>
+    private ILookup<int, ActivoBitacoraRectificacion> _bitRects;
+
     private void BitacoraYTrazabilidad(Activo a, List<ActivoFichaEvento> eventos)
     {
         List<ActivoBitacora> registros = new ActivoCentroController().GetBitacora(a.act_id)
                                          ?? new List<ActivoBitacora>();
+
+        _bitRects = (new ActivoCentroController().GetRectificaciones(a.act_id)
+                     ?? new List<ActivoBitacoraRectificacion>())
+                    .ToLookup(x => x.bitacora);
 
         List<ActivoFichaEvento> cambios = eventos
             .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO"
@@ -4778,8 +4789,50 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (nivel == 0 && !string.IsNullOrEmpty(b.etiqueta) && b.etiqueta != b.texto)
             s.Append("<h4>").Append(Server.HtmlEncode(b.etiqueta)).Append("</h4>");
-        s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>")
-         .Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+
+        /* RECTIFICACIONES (HU-131): el original no se reescribe. Si la entrada
+           tiene correcciones, se muestra el texto original TACHADO y, encima,
+           la cadena de rectificaciones con su motivo —la ultima es la que vale—.
+           Asi se lee por que cambio el texto, que es justo lo que se perderia
+           si solo se mostrara la version vigente. Solo en las notas principales:
+           las respuestas del hilo no se rectifican, se responden. */
+        List<ActivoBitacoraRectificacion> rects = (nivel == 0 && _bitRects != null)
+            ? _bitRects[b.bit_id].OrderBy(x => x.bre_id).ToList()
+            : new List<ActivoBitacoraRectificacion>();
+
+        if (rects.Count > 0)
+        {
+            s.Append("<p class=\"sg-bn-original\"><del>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</del></p>")
+             .Append("<div class=\"sg-bn-rects\">");
+            for (int i = 0; i < rects.Count; i++)
+            {
+                ActivoBitacoraRectificacion x = rects[i];
+                bool vigente = (i == rects.Count - 1);
+                s.Append("<div class=\"sg-bn-rect").Append(vigente ? " es-vigente" : "").Append("\">")
+                 .Append("<span class=\"sg-ot-chip es-tipo\"><i class=\"mdi mdi-pencil-outline\"></i>")
+                 .Append(vigente ? "Rectificada" : "Rectificación").Append("</span>")
+                 .Append("<p>").Append(Server.HtmlEncode(Texto(x.texto))).Append("</p>")
+                 .Append("<span class=\"sg-bn-rect-motivo\"><i class=\"mdi mdi-information-outline\"></i>Motivo: ")
+                 .Append(Server.HtmlEncode(Texto(x.motivo))).Append("</span>")
+                 .Append("<span class=\"sg-bn-meta\">")
+                 .Append(string.IsNullOrEmpty(x.usuario) ? "Sin usuario" : Server.HtmlEncode(x.usuario))
+                 .Append(x.fecha == null ? "" : " · " + x.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+                 .Append("</span></div>");
+            }
+            s.Append("</div>");
+        }
+        else
+        {
+            s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>");
+        }
+
+        s.Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+        /* Rectificar solo las notas principales: una respuesta del hilo no se
+           rectifica, se responde. Se muestra a todos; quien no la escribio
+           recibe el rechazo del servidor —la potestad la valida el SP, no el
+           que el boton este o no—. */
+        if (nivel == 0)
+            s.Append("<button type=\"button\" class=\"sg-bn-btn\" data-bit-rectificar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-pencil-outline\"></i>Rectificar</button>");
         if (resp.Count > 0)
             s.Append("<button type=\"button\" class=\"sg-bn-btn es-hilo\" data-bit-hilo=\"").Append(b.bit_id).Append("\" aria-expanded=\"true\"><i class=\"mdi mdi-chevron-up\"></i>")
              .Append(resp.Count).Append(resp.Count == 1 ? " respuesta" : " respuestas").Append("</button>");
@@ -4787,8 +4840,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<div class=\"sg-bn-form\" data-bit-form=\"").Append(b.bit_id).Append("\" hidden>")
          .Append("<textarea rows=\"2\" maxlength=\"2000\" placeholder=\"Responde a ").Append(Server.HtmlEncode(quien.Split(' ')[0])).Append("…\"></textarea>")
          .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
-         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>")
-         .Append("</div></article>");
+         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>");
+
+        /* Formulario de rectificación (HU-131, T-5320): texto corregido
+           —prellenado con el vigente— y motivo OBLIGATORIO. La validacion dura
+           la hace el servidor; esto solo adelanta el aviso. */
+        if (nivel == 0)
+        {
+            string vigente = rects.Count > 0 ? rects[rects.Count - 1].texto : b.texto;
+            s.Append("<div class=\"sg-bn-rect-form\" data-bit-rect-form=\"").Append(b.bit_id).Append("\" hidden>")
+             .Append("<textarea rows=\"3\" maxlength=\"4000\" data-rect-texto placeholder=\"Texto corregido…\">").Append(Server.HtmlEncode(Texto(vigente))).Append("</textarea>")
+             .Append("<input type=\"text\" maxlength=\"500\" data-rect-motivo placeholder=\"Motivo de la rectificación (obligatorio)\" />")
+             .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-rect-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
+             .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-rect-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-check\"></i>Rectificar</button></div></div>");
+        }
+
+        s.Append("</div></article>");
 
         if (resp.Count > 0)
         {
@@ -4814,6 +4881,33 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = r.error
             ? "<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-alert-outline\"></i><span>" + Server.HtmlEncode(r.detalle) + "</span></div>"
             : "";
+
+        // Si fallo, un popup visible: el usuario tiene que enterarse del error.
+        if (r.error) Tools.tools.ClientAlert(r.detalle, "alerta");
+    }
+
+    /// <summary>
+    /// Rectifica una entrada de bitácora (HU-131). La potestad la valida el
+    /// servidor —el permiso acá y el SP después (solo el autor, motivo
+    /// obligatorio, cliente en sesión)—, no el que el botón esté o no.
+    /// </summary>
+    protected void lnkRectificar_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "bitacora";
+
+        int bitacora;
+        if (!int.TryParse(Request.Form["bit_rect_id"], out bitacora) || bitacora <= 0) return;
+        if (ActivoSeleccionado() == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
+
+        Respuesta r = new ActivoCentroController().RectificarBitacora(
+            bitacora, Request.Form["bit_rect_texto"], Request.Form["bit_rect_motivo"]);
+
+        litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
+                           "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
+                           "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        // Popup visible ademas del aviso en linea: que el usuario se entere del resultado.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
     }
 
     /// <summary>
@@ -4893,19 +4987,37 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hdnSeccion.Value = "bitacora";
 
         int id = ActivoSeleccionado();
-        if (id == 0) return;
+        if (id == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
 
         Activo a = new ActivoController().GetActivo(id);
-        if (a == null || a.act_id == 0 || a.act_cliente != _cliente) return;
+        if (a == null || a.act_id == 0 || a.act_cliente != _cliente)
+        {
+            Tools.tools.ClientAlert("No se pudo cargar el activo, o no pertenece al cliente seleccionado.", "alerta");
+            return;
+        }
 
+        // El uuid lo genera la pantalla, una vez por observacion: asi un doble
+        // clic no deja la misma nota dos veces (el SP deduplica por uuid).
         Respuesta r = new ActivoCentroController().AgregarObservacion(
-            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area, txtObservacion.Text);
+            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area,
+            txtObservacion.Text, Request.Form["bit_obs_uuid"]);
 
         litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
                            "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
                            "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
 
-        if (!r.error) txtObservacion.Text = "";
+        // Un popup ademas del aviso en linea: el panel puede estar en otra vista
+        // y el usuario tiene que enterarse de lo que paso pase lo que pase.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+
+        if (!r.error)
+        {
+            txtObservacion.Text = "";
+            /* Se limpia el uuid usado: la proxima observacion necesita uno
+               nuevo (bit_uuid es unico; reusarlo devolveria la nota anterior). */
+            ScriptManager.RegisterStartupScript(this, GetType(), "sgLimpiaObsUuid",
+                "var e=document.getElementById('bitObsUuid'); if(e) e.value='';", true);
+        }
     }
 
     #endregion

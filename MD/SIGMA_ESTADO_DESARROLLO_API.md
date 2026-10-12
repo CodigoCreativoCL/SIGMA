@@ -388,6 +388,55 @@ documentadas. `TokenValidationHandler` **no** bloquea las rutas de Swagger:
 deja pasar la petición sin token (no la rechaza), así que no hubo que abrir
 nada.
 
+### Rectificar una entrada de bitácora: nested, no un recurso suelto (HU-131, 10-10-2026)
+
+La rectificación es una **sub-entidad de la entrada**, no un recurso de primer
+nivel: vive bajo `POST /bitacora/{id}/rectificaciones`, `GET
+/bitacora/{id}/rectificaciones` (la cadena de una entrada) y `GET
+/bitacora/rectificaciones/{bre}` (una por su id). El backlog la describía como
+`/api/bitacora-rectificaciones`; se dejó anidada a propósito —una rectificación
+sin su entrada no significa nada— y así no hay dos caminos para lo mismo.
+
+Lo que **no se deduce del código**:
+
+- **Idempotente por `uuid`** (bloque `BD/431`): se agregó `bre_uuid` a
+  `Bitacora_Rectificacion` con índice único filtrado, y
+  `API_INS_BITACORA_RECTIFICACION` recibe `@UUID`; un reenvío del mismo uuid
+  devuelve la rectificación que ya estaba (`YA_ESTABA = 1`) en vez de duplicar.
+  Mismo criterio que `bit_uuid` en la entrada (HU-130): el uuid nace en el
+  teléfono al empezar a escribir, no al enviar.
+- **El detalle usa un SP chico aparte** (`API_SEL_BITACORA_RECTIFICACION`,
+  `BD/432`) en vez de sumar un modo al `API_SEL_BITACORA` grande: es una fila,
+  autocontenida, y deja el SEL de la sábana sin tocar. El listado sí reusa el
+  modo 4 del SEL.
+- **La validación del cuerpo se hace antes del SP** (texto y motivo
+  obligatorios, motivo ≤ 500 = el largo de `bre_motivo`): el 400 llega con el
+  nombre del campo y sin viaje a la base. El SP vuelve a comprobarlo igual —solo
+  el autor rectifica, motivo obligatorio, texto distinto del vigente—, porque la
+  API no es el único que puede llamarlo (también lo llama la web).
+
+### Accesibilidad: cada uno las suyas, no un CRUD de admin (HU-162, 11-10-2026)
+
+`Usuario_Accesibilidad` es **una fila por persona** (índice único `UX_UAC_USUARIO`).
+Por eso `usuario-accesibilidades` **no recibe nunca un id de usuario** por
+parámetro: trabaja siempre contra `SesionApi.UsuarioId()`.
+
+- `GET /usuario-accesibilidades` devuelve las opciones de **quien llama** (0 o 1
+  fila), no un listado de todos. `GET /{id}` y el `EsMia(id)` de `PUT`/`DELETE`
+  responden **404 si el id no es tuyo**: no se revela que existe ni qué tiene.
+- Las escrituras (`POST`/`PUT`/`DELETE`) exigen **CONFIGURAR ACCESIBILIDAD**
+  (`ExigirPermiso`), concedido a todos los perfiles; las lecturas sólo exigen
+  identidad. El dueño es la persona, así que eso **ocupa el lugar del filtro por
+  cliente** del resto de la API.
+- `DELETE` es **baja lógica** (`uac_habilitado = 0`) y la interfaz vuelve a los
+  valores por defecto; no borra la fila.
+
+Lo que **no se deduce del código**: el backlog pedía un recurso tipo catálogo
+con «código único por cliente» (`BD`-task T-5326); no aplica —esta tabla no tiene
+código y es por usuario—, y se dejó registrado así. Las columnas de sonido
+(`uac_volumen`, `uac_silenciar_alertas`) se agregaron para CA-4 (`BD/435`); el
+«movimiento reducido» no se guarda, lo respeta el CSS vía `prefers-reduced-motion`.
+
 ---
 
 ## 6. Pendientes y cosas que hay que saber
