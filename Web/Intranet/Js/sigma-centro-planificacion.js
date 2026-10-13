@@ -928,6 +928,21 @@ function actsHTML(i, E) {
     (acts.length ? '<div class="cp-acts">' + acts.map(function (a, k) { return acHTML(i, a, k, E, open === a.CODIGO); }).join('') + '</div>' + dsum
       : '<div class="cp-empty" style="padding:16px">' + ic('wrench', 18) + '<span>Sin actividades, la OT tendrá un solo paso: «' + esc(i.NOMBRE) + '». Agrega actividades para guiar al técnico.</span></div>') + '</div>';
 }
+/* 454 · HU-143 · imágenes de referencia de la actividad: la foto de cómo debe quedar el trabajo.
+   La ve quien ejecuta el paso de la OT, marcada como referencia (no como evidencia). Se suben y se
+   quitan en el momento, sin pasar por «Aplicar cambios»: no cambian la estructura del plan. */
+function refsHTML(a, E) {
+  var id = a.ACTIVIDAD_ID, rs = a.REFERENCIAS || [], up = U.refUp === id;
+  return '<div class="cp-fld"><span class="cp-lb">Imagen de referencia <small>cómo debe quedar · la ve quien ejecuta el paso</small></span><div class="cp-refs">' +
+    rs.map(function (r) {
+      var t = r.TITULO || '';
+      return '<figure class="cp-ref"><a href="' + esc(r.URL) + '" target="_blank" rel="noopener" title="Ver en grande"><img src="' + esc(r.URL) + '" alt="' + esc(t || 'Imagen de referencia') + '" loading="lazy"></a><span class="cp-tg cp-p">Referencia</span>' +
+        (E ? '<input class="cp-inp" data-refti="' + r.ID + '" value="' + esc(t) + '" placeholder="Qué debe verse" maxlength="200" aria-label="Qué debe verse en la imagen de referencia"><button type="button" class="cp-ibx cp-dn" data-a="rmref" data-v="' + r.ID + '" aria-label="Quitar la imagen de referencia">' + ic('x', 14) + '</button>'
+          : (t ? '<figcaption>' + esc(t) + '</figcaption>' : '')) + '</figure>';
+    }).join('') +
+    (E && rs.length < 6 ? '<label class="cp-btn cp-out cp-xs cp-refadd' + (up ? ' cp-load' : '') + '">' + ic('plus', 14) + (up ? 'Subiendo…' : rs.length ? 'Agregar otra' : 'Agregar imagen') + '<input type="file" accept="image/jpeg,image/png,image/webp" data-refup="' + id + '" hidden' + (up ? ' disabled' : '') + '></label>' : '') +
+    (!rs.length && !E ? '<span style="font-size:12.5px;color:var(--muted)">Sin imagen de referencia</span>' : '') + '</div></div>';
+}
 function acHTML(i, a, k, E, open) {
   var id = a.ACTIVIDAD_ID, dis = E ? '' : ' disabled', acts = i.ACTIVIDADES;
   var permOn = a.PERMISO || U.pend['perm' + i.CODIGO + a.CODIGO], permErr = !!U.pend['perm' + i.CODIGO + a.CODIGO];
@@ -936,7 +951,7 @@ function acHTML(i, a, k, E, open) {
   return '<div class="cp-ac' + (open ? ' cp-open' : '') + '" data-ac="' + id + '">' +
     '<div class="cp-ac-h" data-a="toggleact" data-i="' + i.HITO_ID + '" data-c="' + id + '" role="button" tabindex="0" aria-expanded="' + open + '">' +
     '<span class="cp-gr" aria-hidden="true">' + ic('dots', 15) + '</span><code>' + esc(a.CODIGO) + '</code>' +
-    '<div class="cp-nm"><b>' + (nombre ? esc(nombre) : '<span style="color:var(--red)">Sin nombre</span>') + '</b><small>' + (a.PROCEDIMIENTO_ID ? '<span class="cp-tg cp-p">' + ic('clip', 11) + esc(a.PROCEDIMIENTO_CODIGO || '') + ' v' + (a.PROCEDIMIENTO_VERSION || 1) + ' · ' + pl(+a.PASOS || 0, 'paso', 'pasos') + '</span>' : '<span>Sin procedimiento</span>') + ((a.REPUESTOS || []).length ? '<span>· ' + pl(a.REPUESTOS.length, 'repuesto', 'repuestos') + '</span>' : '') + '</small></div>' +
+    '<div class="cp-nm"><b>' + (nombre ? esc(nombre) : '<span style="color:var(--red)">Sin nombre</span>') + '</b><small>' + (a.PROCEDIMIENTO_ID ? '<span class="cp-tg cp-p">' + ic('clip', 11) + esc(a.PROCEDIMIENTO_CODIGO || '') + ' v' + (a.PROCEDIMIENTO_VERSION || 1) + ' · ' + pl(+a.PASOS || 0, 'paso', 'pasos') + '</span>' : '<span>Sin procedimiento</span>') + ((a.REPUESTOS || []).length ? '<span>· ' + pl(a.REPUESTOS.length, 'repuesto', 'repuestos') + '</span>' : '') + ((a.REFERENCIAS || []).length ? '<span>· ' + pl(a.REFERENCIAS.length, 'referencia', 'referencias') + '</span>' : '') + '</small></div>' +
     '<span class="cp-du">' + (a.DURACION ? fH(a.DURACION) : '—') + '</span>' +
     '<span class="cp-fl">' + (a.OBLIGATORIA ? '' : '<span class="cp-tg">Opcional</span>') + (a.PARADA ? '<span class="cp-tg cp-w">Parada</span>' : '') + (permOn ? '<span class="cp-tg' + (permErr ? ' cp-w' : '') + '">' + (permErr ? ic('alert', 11) : '') + 'Permiso</span>' : '') + '</span>' +
     '<span class="cp-chev" style="color:var(--muted);transition:transform .2s;' + (open ? 'transform:rotate(90deg)' : '') + '">' + ic('chev', 15) + '</span></div>' +
@@ -945,6 +960,7 @@ function acHTML(i, a, k, E, open) {
       '<div style="display:flex;gap:18px;flex-wrap:wrap"><label class="cp-sw" title="Sin resultado no deja cerrar la OT"><input type="checkbox" data-act="obligatoria" data-c="' + id + '"' + (a.OBLIGATORIA ? ' checked' : '') + dis + '><i></i>Obligatoria</label><label class="cp-sw"><input type="checkbox" data-act="parada" data-c="' + id + '"' + (a.PARADA ? ' checked' : '') + dis + '><i></i>Requiere parada</label><label class="cp-sw"><input type="checkbox" data-act="permisoOn" data-c="' + id + '"' + (permOn ? ' checked' : '') + dis + '><i></i>Requiere permiso de trabajo</label></div>' +
       (permOn ? '<div class="cp-grid2c"><div class="cp-fld"><label>Tipo de permiso</label>' + combo('cpAcPerm' + id, catL('permisos'), a.PERMISO_TIPO_ID || '', { etiqueta: 'Tipo de permiso', ph: 'Elige el tipo', err: permErr, dis: !E, data: ' data-act="permiso" data-c="' + id + '"', clave: 'cpPermisos' }) + (permErr ? mc('', 'Indica el tipo de permiso: la OT lo exigirá antes de empezar.') : '') + '</div></div>' : '') +
       '<div class="cp-fld"><label>Descripción <small>opcional</small></label><textarea class="cp-inp" rows="2" data-act="descripcion" data-c="' + id + '"' + dis + ' placeholder="Instrucciones breves para el técnico">' + esc(a.DESCRIPCION || '') + '</textarea></div>' +
+      refsHTML(a, E) +
       '<div class="cp-fld"><span class="cp-lb">Procedimiento</span>' + (a.PROCEDIMIENTO_ID
         ? '<div class="cp-prc"><span class="cp-pci">' + ic('clip', 17) + '</span><div style="min-width:0"><b>' + esc(a.PROCEDIMIENTO_CODIGO || '') + ' v' + (a.PROCEDIMIENTO_VERSION || 1) + ' · ' + esc(a.PROCEDIMIENTO || '') + '</b><small>' + pl(+a.PASOS || 0, 'paso', 'pasos') + '</small></div><div class="cp-r"><button type="button" class="cp-btn cp-plain cp-xs" data-a="vsteps" data-c="' + id + '" data-pr="' + a.PROCEDIMIENTO_ID + '">' + (pasos ? 'Ocultar pasos' : 'Ver pasos') + '</button>' + (E ? '<button type="button" class="cp-btn cp-plain cp-xs" data-a="pickproc" data-i="' + i.HITO_ID + '" data-c="' + id + '">Cambiar</button><button type="button" class="cp-ibx cp-dn" data-a="rmproc" data-c="' + id + '" aria-label="Quitar procedimiento">' + ic('x', 14) + '</button>' : '') + '</div></div>' +
           (pasos ? (pasos === 'cargando' ? '<div class="cp-sk" style="height:60px;margin-top:6px"></div>' : '<ol style="margin:6px 0 0;padding-left:20px;font-size:12.5px;color:var(--ink-2);display:flex;flex-direction:column;gap:4px">' + pasos.map(function (s) { return '<li>' + esc(s.n) + (s.ctrl ? ' <span class="cp-tg cp-p">Control</span>' : '') + (s.med ? ' <span class="cp-tg cp-c">Medición</span>' : '') + (s.ev ? ' <span class="cp-tg">Evidencia</span>' : '') + '</li>'; }).join('') + '</ol><p class="cp-msg cp-i" style="margin-top:6px">' + ic('help', 13) + '<span>Al generar la OT, cada paso se copia: si cambias el procedimiento después, las OT ya generadas no cambian.</span></p>') : '')
@@ -1665,6 +1681,26 @@ A.pkok = function (d, t) {
     toast(o.c ? 'Procedimiento vinculado a la actividad.' : 'Actividad agregada desde el procedimiento.');
   }).catch(function (e) { t.classList.remove('cp-load'); toastError(e); });
 };
+/* 454 · HU-143 · imágenes de referencia de la actividad */
+var leerImagen = function (f) { return new Promise(function (ok, mal) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { mal(new Error('No se pudo leer la imagen.')); }; r.readAsDataURL(f); }); };
+function subirRef(t) {
+  var act = +t.getAttribute('data-refup'), f = t.files && t.files[0];
+  t.value = '';
+  if (!f || !act) return;
+  if (!/^image\/(jpeg|png|webp)$/i.test(f.type)) { toastError(new Error('La referencia debe ser una foto JPG, PNG o WEBP.')); return; }
+  if (f.size > 8 * 1024 * 1024) { toastError(new Error('La imagen supera los 8 MB.')); return; }
+  U.refUp = act; render();
+  leerImagen(f).then(function (d) { return escribir('AgregarReferencia', { plan: pid(), actividad: act, nombre: f.name, datos: d, titulo: '' }); })
+    .then(function () { toast('Imagen de referencia agregada.'); }).catch(toastError)
+    .then(function () { if (U.refUp === act) { U.refUp = 0; render(); } });
+}
+function refTitulo(t) {
+  var id = +t.getAttribute('data-refti'), v = String(t.value || '').trim();
+  escribir('TituloReferencia', { plan: pid(), id: id, titulo: v }, { sinFicha: true }).then(function () {
+    (F ? F.intervenciones : []).forEach(function (h) { (h.ACTIVIDADES || []).forEach(function (a) { (a.REFERENCIAS || []).forEach(function (r) { if (+r.ID === id) r.TITULO = v; }); }); });
+  }).catch(toastError);
+}
+A.rmref = function (d) { escribir('QuitarReferencia', { plan: pid(), id: +d.v }).then(function () { toast('Imagen de referencia quitada.'); }).catch(toastError); };
 A.rmproc = function (d) { escribir('GuardarActividad', { plan: pid(), actividad: +d.c, campo: 'procedimiento', valor: '' }).catch(toastError); };
 A.vsteps = function (d) {
   var ac = aById(d.c); if (!ac) return; var k = 'st' + ac.h.CODIGO + ac.a.CODIGO;
@@ -1767,6 +1803,8 @@ function alCambiar(e) {
   if (t.hasAttribute('data-pf')) return planCampo(t.getAttribute('data-pf'), t.value);
   if (t.hasAttribute('data-pp') && PN && PN.d) return setPP(t, t.type === 'checkbox' ? t.checked : t.value);
   if (t.hasAttribute('data-iv')) return ivCampo(t, t.getAttribute('data-iv'), t.type === 'checkbox' ? (t.checked ? '1' : '0') : t.value);
+  if (t.hasAttribute('data-refup')) return subirRef(t);
+  if (t.hasAttribute('data-refti')) return refTitulo(t);
   if (t.hasAttribute('data-act')) return actCampo(t, t.getAttribute('data-act'), t.type === 'checkbox' ? t.checked : t.value);
   if (t.hasAttribute('data-fk')) return fqCampo(t.getAttribute('data-i'), t.getAttribute('data-fk'), t.value);
   if (t.hasAttribute('data-cf')) return cfCampo(t.getAttribute('data-i'), t.getAttribute('data-cf'), t.value);

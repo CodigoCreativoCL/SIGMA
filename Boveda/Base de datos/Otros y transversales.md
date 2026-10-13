@@ -1,6 +1,6 @@
 # BD — Otros y transversales
 
-14 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+15 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -18,3 +18,4 @@
 | `235_CAPTURA_REGLAS_HU043_HU044.sql` | LAS REGLAS QUE FALTABAN DE HU-043 Y HU-044 EN LA CAPTURA |
 | `249_SPRINT1_REGLAS.sql` |  |
 | `321_HU090_PLANTILLA_NACE_CON_VERSION_1.sql` |  |
+| `454_IMAGENES_REFERENCIA.sql` | SELECT REFERENCIAS DE ACTIVIDADES DEL PLAN O DE ÍTEMS DE PAUTA |

@@ -220,8 +220,43 @@ public class WsRecursos : System.Web.Services.WebService
             List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_RECURSOS_PAUTA", "@CLIENTE", Cli(), "@PLANTILLA", id);
             Dictionary<string, object> h = SoporteDatos.Del(c, 0).FirstOrDefault();
             if (h == null) throw new Exception("La pauta no existe para este cliente.");
-            return new { cabecera = h, secciones = SoporteDatos.Del(c, 1), items = SoporteDatos.Del(c, 2), dependencias = SoporteDatos.Del(c, 3), usos = SoporteDatos.Del(c, 4) };
+            return new { cabecera = h, secciones = SoporteDatos.Del(c, 1), items = SoporteDatos.Del(c, 2), dependencias = SoporteDatos.Del(c, 3), usos = SoporteDatos.Del(c, 4),
+                referencias = ArchivoReferencias.Listar("@PLANTILLA", id) };   // 454 (HU-143): por ITEM_CODIGO
         });
+    }
+
+    /// <summary>
+    /// 454 (HU-143) · Pega una imagen de referencia al ítem de la pauta. El ítem viaja por su código
+    /// (el id cambia con cada versión); el SP lo busca en la versión que muestra el cajón y rechaza
+    /// el ítem que todavía no se guarda. No publica una versión nueva: la referencia no cambia la pauta.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string AgregarReferenciaItem(int plantilla, string codigo, string nombre, string datos, string titulo)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PAU_EDITAR);
+            if (string.IsNullOrWhiteSpace(codigo)) throw new Exception("Guarda la pauta antes de adjuntar la referencia a este ítem.");
+            int id = ArchivoReferencias.Agregar(nombre, datos, titulo, null, plantilla, codigo);
+            return new { id = id, referencias = ArchivoReferencias.Listar("@PLANTILLA", plantilla) };
+        });
+    }
+
+    /// <summary>454 (HU-143) · El texto «qué debe verse» de la referencia de un ítem.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string TituloReferenciaItem(int plantilla, int id, string titulo)
+    {
+        return Ejecutar(() => { Exigir(P_PAU_EDITAR); ArchivoReferencias.Titulo(id, titulo); return new { referencias = ArchivoReferencias.Listar("@PLANTILLA", plantilla) }; });
+    }
+
+    /// <summary>454 (HU-143) · Quita la referencia de un ítem (baja lógica).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarReferenciaItem(int plantilla, int id)
+    {
+        return Ejecutar(() => { Exigir(P_PAU_EDITAR); ArchivoReferencias.Quitar(id); return new { referencias = ArchivoReferencias.Listar("@PLANTILLA", plantilla) }; });
     }
 
     /// <summary>
