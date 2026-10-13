@@ -178,6 +178,20 @@
     if (t !== 'num' || v === '' || v == null || isNaN(+String(v).replace(',', '.'))) return false;
     var n = +String(v).replace(',', '.'); return (it.MINIMO != null && n < +it.MINIMO) || (it.MAXIMO != null && n > +it.MAXIMO);
   }
+  /* 454 · HU-143 · la imagen de referencia del ítem, junto a la pregunta: cómo debe verse. Marcada
+     «Referencia» para no confundirla con la foto que se toma en terreno; se amplía en el visor. */
+  function refsEj(it) {
+    var rs = it.REFERENCIAS || [];
+    if (!rs.length) return '';
+    return '<div class="cp-refs cp-refs-sm">' + rs.map(function (r, i) {
+      return '<button type="button" class="cp-ref" data-a="exrefver" data-i="' + it.ID + '" data-n="' + i + '" aria-label="Ver la imagen de referencia' + (r.TITULO ? ': ' + esc(r.TITULO) : '') + '"><span class="cp-ref-img"><img src="' + esc(r.URL) + '" alt="" loading="lazy"></span><span class="cp-tg cp-p">Referencia</span>' + (r.TITULO ? '<small class="cp-ref-t">' + esc(r.TITULO) + '</small>' : '') + '</button>';
+    }).join('') + '</div>';
+  }
+  A.exrefver = function (d) {
+    var s = K.Panel.state(), it = s && s.r ? (s.r.items || []).filter(function (x) { return +x.ID === +d.i; })[0] : null;
+    if (!it || !(it.REFERENCIAS || []).length) return;
+    K.Visor.open(it.REFERENCIAS.map(function (r) { return { url: r.URL, bajar: r.DESCARGA, titulo: r.TITULO || 'Imagen de referencia', meta: 'Referencia · ' + it.TEXTO, imagen: true, ref: true }; }), +d.n || 0);
+  };
   var PREG = function (st) {
     if (st.cargando) return { t: 'Inspección', s: 'Operación · Registrar', w: 'n', b: '<div class="cp-sk" style="height:60px"></div><div class="cp-sk" style="height:260px;margin-top:12px"></div>' };
     var c = st.r.cab, its = st.r.items || [], can = !!c.PUEDE && st.r.puede, n = 0;
@@ -191,7 +205,7 @@
           : t === 'foto' ? '<small class="cp-muted2">La foto se adjunta desde la app</small>'
           : '<input id="rg' + it.ID + '" class="cp-inp" style="max-width:240px" data-pv="rg_' + it.ID + '" value="' + esc(v || '') + '" placeholder="Opcional" aria-label="' + esc(it.TEXTO) + '">';
         n++;
-        return '<div class="cp-rgr' + (bad ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (t === 'num' && rango(it) ? '<small>Rango ' + esc(rango(it)) + '</small>' : '') + (bad ? '<small class="cp-rgf">' + ic('bell', 12) + 'Pasa a Avisos como hallazgo' + (it.CRITICO ? ' de severidad alta' : '') + '</small>' : '') + '</div>' + ctl + '</div>';
+        return '<div class="cp-rgr' + (bad ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (t === 'num' && rango(it) ? '<small>Rango ' + esc(rango(it)) + '</small>' : '') + (bad ? '<small class="cp-rgf">' + ic('bell', 12) + 'Pasa a Avisos como hallazgo' + (it.CRITICO ? ' de severidad alta' : '') + '</small>' : '') + refsEj(it) + '</div>' + ctl + '</div>';
       }).join('') + '</div>';
     }).join('');
     var hecha = c.EJECUCION ? '<div class="cp-bnr cp-ok">' + ic('check', 18) + '<span><b>Registrada' + (c.HECHA_POR ? ' por ' + esc(c.HECHA_POR) : '') + '</b>' + (c.HECHA_EL ? ' el ' + K.fDL(K.dIso(c.HECHA_EL)) : '') + '. ' + ((st.r.hallazgos || []).length ? pl(st.r.hallazgos.length, 'hallazgo pasó', 'hallazgos pasaron') + ' a Avisos.' : 'Sin hallazgos.') + '</span></div>' +
@@ -242,7 +256,7 @@
     return ejecFacts(r.ejecucion, r.cab.HECHA_POR) + trazaHTML(r.traza) + '<div class="cp-rgf2">' + secs.map(function (sc) {
       return '<div class="cp-rgs"><h5>' + esc(sc.n) + '</h5>' + sc.items.map(function (it) {
         var x = res[it.ID];
-        return '<div class="cp-rgr' + (x && x.FUERA ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (x && x.COMENTARIO ? '<small>«' + esc(x.COMENTARIO) + '»' + (x.VOZ ? ' · dictado por voz' : '') + '</small>' : '') + fotosHTML(fot[it.ID]) + '</div>' +
+        return '<div class="cp-rgr' + (x && x.FUERA ? ' cp-bad' : '') + '"><div class="cp-rgn"><b>' + esc(it.TEXTO) + '</b>' + (it.CRITICO ? ' <span class="cp-tg cp-w">Crítico</span>' : '') + (x && x.COMENTARIO ? '<small>«' + esc(x.COMENTARIO) + '»' + (x.VOZ ? ' · dictado por voz' : '') + '</small>' : '') + fotosHTML(fot[it.ID]) + refsEj(it) + '</div>' +
           '<span class="cp-rgv' + (x && x.FUERA ? ' cp-bad' : x && x.NA ? ' cp-na' : '') + '">' + (x ? esc(x.VALOR || '—') : '<span class="cp-muted2">Sin respuesta</span>') + (x && x.FUERA ? '<small>' + ic('bell', 11) + 'Fuera de rango</small>' : '') + '</span></div>';
       }).join('') + '</div>';
     }).join('') + '</div>';

@@ -166,7 +166,7 @@
   var paAdd = function (s, t) { return { n: '', t: t || 'ok', s: s || 0, min: '', max: '', u: '', crit: false, err: false }; };
   var rng = function (it) { var a = it.min !== '' && it.min != null, b = it.max !== '' && it.max != null, u = it.u ? ' ' + it.u : ''; return a && b ? fN(+it.min, 2).replace(/,00$/, '') + '–' + fN(+it.max, 2).replace(/,00$/, '') + u : a ? '≥ ' + it.min + u : b ? '≤ ' + it.max + u : 'sin rango'; };
   function abrirPauta(id) {
-    var st = { t: 'pau', id: id || 0, d: { n: '', secs: [{ codigo: '', n: 'General', items: [] }], deps: [] }, usos: [], cab: null, add: paAdd(), dep: depNueva(), edit: null, dirty: false, err: false, err2: '', busy: false, cargando: true, nsec: false, secN: '' };
+    var st = { t: 'pau', refs: [], refK: '', refUp: '', id: id || 0, d: { n: '', secs: [{ codigo: '', n: 'General', items: [] }], deps: [] }, usos: [], cab: null, add: paAdd(), dep: depNueva(), edit: null, dirty: false, err: false, err2: '', busy: false, cargando: true, nsec: false, secN: '' };
     K.Panel.open({ render: PPAU, st: st });
     Promise.all([catalogos(), id ? api('Pauta', { id: id }) : null]).then(function (x) {
       var r = x[1];
@@ -181,6 +181,7 @@
         if (!secs.length) secs.push({ codigo: '', n: 'General', items: [] });
         st.d = { n: st.cab.NOMBRE, secs: secs, deps: (r.dependencias || []).map(function (z) { return { item: z.ITEM, cond: z.COND, accion: +z.ACCION || 1, op: +z.OPERADOR || 1, valor: z.VALOR || '', opcion: z.OPCION || '' }; }) };
         st.usos = r.usos || [];
+        st.refs = r.referencias || [];   // 454 · HU-143
       }
       st.cargando = false; if (K.Panel.state() === st) K.Panel.paint();
     }).catch(function (e) { K.Panel.close(); K.toastError(e); });
@@ -212,6 +213,22 @@
           : '<div class="cp-fld"><label>Condición</label>' + K.combo('rcDo', c.t === 'num' ? DOPN : DOPT, x.op, { etiqueta: 'Comparación' }) + '</div><div class="cp-fld"><label for="rcDval">Valor</label><input id="rcDval" class="cp-inp' + (x.err && !String(x.valor).trim() ? ' cp-err' : '') + '"' + (c.t === 'num' ? ' type="number" step="any"' : '') + ' data-pv="pa.dep.valor" value="' + esc(x.valor) + '" autocomplete="off"></div>') : '') +
         '<div class="cp-pa-dfb"><button type="button" class="cp-btn cp-out cp-sm" data-a="paudadd">' + ic('plus', 15) + 'Agregar dependencia</button></div></div>' + (x.err ? mc('', esc(x.err)) : '') : '') + '</div>';
   }
+  /* 454 · HU-143 · imagen de referencia del ítem: se muestra junto a la pregunta al ejecutar la
+     inspección. Va por el CÓDIGO del ítem (el id cambia con cada versión) y se guarda en el momento,
+     sin publicar una versión nueva: no cambia lo que se pregunta. */
+  function refsDe(s, cod) { return (s.refs || []).filter(function (r) { return r.ITEM_CODIGO === cod; }); }
+  function refItemHTML(s, it, ed) {
+    var rs = refsDe(s, it.codigo), up = s.refUp === it.codigo, cab = s.cab;
+    return '<li class="cp-pa-ref"><p class="cp-hint2">' + ic('help', 13) + '<span>' + (cab && cab.ES_BORRADOR && cab.VERSION_PUBLICADA ? 'Hay cambios sin publicar: la referencia se verá en las inspecciones cuando publiques.' : 'Se muestra junto a la pregunta al ejecutar la inspección. Se guarda al tiro, sin publicar otra versión.') + '</span></p><div class="cp-refs">' +
+      rs.map(function (r) {
+        var t = r.TITULO || '';
+        return '<figure class="cp-ref"><a href="' + esc(r.URL) + '" target="_blank" rel="noopener" title="Ver en grande"><img src="' + esc(r.URL) + '" alt="' + esc(t || 'Imagen de referencia') + '" loading="lazy"></a><span class="cp-tg cp-p">Referencia</span>' +
+          (ed ? '<input class="cp-inp" data-pareft="' + r.ID + '" value="' + esc(t) + '" placeholder="Qué debe verse" maxlength="200" aria-label="Qué debe verse en la imagen de referencia"><button type="button" class="cp-ibx cp-dn" data-a="paurefrm" data-v="' + r.ID + '" aria-label="Quitar la imagen de referencia">' + ic('x', 14) + '</button>'
+            : (t ? '<figcaption>' + esc(t) + '</figcaption>' : '')) + '</figure>';
+      }).join('') +
+      (ed && rs.length < 6 ? '<label class="cp-btn cp-out cp-xs cp-refadd' + (up ? ' cp-load' : '') + '">' + ic('plus', 14) + (up ? 'Subiendo…' : rs.length ? 'Agregar otra' : 'Agregar imagen') + '<input type="file" accept="image/jpeg,image/png,image/webp" data-paref="' + esc(it.codigo) + '" hidden' + (up ? ' disabled' : '') + '></label>' : '') +
+      (!rs.length && !ed ? '<span class="cp-muted2">Sin imagen de referencia</span>' : '') + '</div></li>';
+  }
   var PPAU = function (st) {
     if (st.cargando) return { t: 'Pauta de inspección', s: 'Recursos · Pautas', w: 'w', b: '<div class="cp-sk" style="height:40px"></div><div class="cp-sk" style="height:260px;margin-top:12px"></div>' };
     var d = st.d, a = st.add, e = st.err, ed = !!U.perm.pauEd, cab = st.cab, vPub = cab && cab.VERSION_PUBLICADA ? +cab.VERSION_PUBLICADA : 0;
@@ -221,8 +238,11 @@
       (cab && cab.ES_BORRADOR && vPub ? mc('i', 'Hay cambios guardados sin publicar: se muestran aquí y se publican junto con lo que agregues.', 'help') : '') +
       d.secs.map(function (sc, si) {
         return '<div class="cp-pa-s"><h5>' + esc(sc.n) + '<small>' + pl(sc.items.length, 'ítem', 'ítems') + '</small></h5><ul>' + (sc.items.map(function (it, ii) {
+          var nr = it.codigo ? refsDe(st, it.codigo).length : 0, abierta = !!it.codigo && st.refK === it.codigo;
           return '<li><span class="cp-pa-n"><b>' + esc(it.n) + '</b><small>' + (ITT[it.t] || it.tipoN || '') + (it.t === 'num' ? ' · ' + esc(rng(it)) : '') + '</small></span>' + (it.crit ? '<span class="cp-tg cp-w">Crítico</span>' : '') +
-            (ed ? '<button type="button" class="cp-ibx cp-sm" data-a="pauedit" data-s="' + si + '" data-v="' + ii + '" aria-label="Editar ' + esc(it.n) + '" title="Editar">' + ic('pencil', 14) + '</button><button type="button" class="cp-ibx cp-sm" data-a="paurm" data-s="' + si + '" data-v="' + ii + '" aria-label="Quitar ' + esc(it.n) + '">' + ic('x', 14) + '</button>' : '') + '</li>';
+            (nr ? '<span class="cp-tg cp-p">' + pl(nr, 'referencia', 'referencias') + '</span>' : '') +
+            (it.codigo && st.id && (ed || nr) ? '<button type="button" class="cp-ibx cp-sm" data-a="pauref" data-k="' + esc(it.codigo) + '" aria-expanded="' + abierta + '" aria-label="Imagen de referencia de ' + esc(it.n) + '" title="Imagen de referencia">' + ic('img', 14) + '</button>' : '') +
+            (ed ? '<button type="button" class="cp-ibx cp-sm" data-a="pauedit" data-s="' + si + '" data-v="' + ii + '" aria-label="Editar ' + esc(it.n) + '" title="Editar">' + ic('pencil', 14) + '</button><button type="button" class="cp-ibx cp-sm" data-a="paurm" data-s="' + si + '" data-v="' + ii + '" aria-label="Quitar ' + esc(it.n) + '">' + ic('x', 14) + '</button>' : '') + '</li>' + (abierta ? refItemHTML(st, it, ed) : '');
         }).join('') || '<li class="cp-pa-e">Sin ítems</li>') + '</ul></div>';
       }).join('') +
       depsHTML(st, ed) +
@@ -520,6 +540,29 @@
     s.add = { n: it.n, t: it.t, s: +d.s, min: it.min, max: it.max, u: it.unidad ? String(it.unidad) : '', crit: !!it.crit, err: false };
     K.Panel.paint(); var f = $('#rcPaForm'); if (f) f.scrollIntoView({ block: 'nearest' }); var el = $('#rcPai'); if (el) el.focus();
   };
+  /* 454 · HU-143 · referencias del ítem */
+  A.pauref = function (d) { var s = st(); if (!s || s.t !== 'pau') return; s.refK = s.refK === d.k ? '' : d.k; K.Panel.paint(); };
+  A.paurefrm = function (d) {
+    var s = st(); if (!s || s.t !== 'pau') return;
+    api('QuitarReferenciaItem', { plantilla: s.id, id: +d.v }).then(function (r) { s.refs = r.referencias || []; if (K.Panel.state() === s) K.Panel.paint(); K.toast('Imagen de referencia quitada.'); }).catch(K.toastError);
+  };
+  var leerImagen = function (f) { return new Promise(function (ok, mal) { var r = new FileReader(); r.onload = function () { ok(r.result); }; r.onerror = function () { mal(new Error('No se pudo leer la imagen.')); }; r.readAsDataURL(f); }); };
+  document.addEventListener('change', function (e) {
+    var t = e.target, s = st();
+    if (!s || s.t !== 'pau' || !t.closest || !t.closest('#cpLayer')) return;
+    if (t.hasAttribute('data-paref')) {
+      var cod = t.getAttribute('data-paref'), f = t.files && t.files[0]; t.value = '';
+      if (!f) return;
+      if (!/^image\/(jpeg|png|webp)$/i.test(f.type)) { K.toastError(new Error('La referencia debe ser una foto JPG, PNG o WEBP.')); return; }
+      if (f.size > 8 * 1024 * 1024) { K.toastError(new Error('La imagen supera los 8 MB.')); return; }
+      s.refUp = cod; K.Panel.paint();
+      leerImagen(f).then(function (d) { return api('AgregarReferenciaItem', { plantilla: s.id, codigo: cod, nombre: f.name, datos: d, titulo: '' }); })
+        .then(function (r) { s.refs = r.referencias || []; K.toast('Imagen de referencia agregada.'); }).catch(K.toastError)
+        .then(function () { s.refUp = ''; if (K.Panel.state() === s) K.Panel.paint(); });
+    } else if (t.hasAttribute('data-pareft')) {
+      api('TituloReferenciaItem', { plantilla: s.id, id: +t.getAttribute('data-pareft'), titulo: String(t.value || '').trim() }).then(function (r) { s.refs = r.referencias || []; }).catch(K.toastError);
+    }
+  });
   A.paucan = function () { var s = st(); s.edit = null; s.add = paAdd(); K.Panel.paint(); };
   /* 417 · dependencias */
   A.paudadd = function () {

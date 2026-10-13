@@ -175,7 +175,11 @@ public class WsOperacion : System.Web.Services.WebService
             List<Dictionary<string, object>> fotos = SoporteDatos.Del(c, 4);
             foreach (Dictionary<string, object> f in fotos) f["URL"] = SitioBase.UrlArchivo.Ver(Convert.ToInt32(f["ARCHIVO"]));
             List<Dictionary<string, object>> ej = SoporteDatos.Del(c, 5);
-            return new { cab = cab[0], items = SoporteDatos.Del(c, 1), hallazgos = SoporteDatos.Del(c, 2), respuestas = SoporteDatos.Del(c, 3), fotos = fotos, ejecucion = ej.Count > 0 ? ej[0] : null, traza = Traza("INS", ocurrencia), puede = Token.Puede(P_EJECUTAR) };
+            // 454 (HU-143): la imagen de referencia de cada ítem va junto a la pregunta.
+            List<Dictionary<string, object>> items = SoporteDatos.Del(c, 1);
+            ILookup<int, Dictionary<string, object>> refs = ArchivoReferencias.PorItem(items.Select(x => Convert.ToInt32(x["ID"])));
+            foreach (Dictionary<string, object> it in items) it["REFERENCIAS"] = refs[Convert.ToInt32(it["ID"])].ToList();
+            return new { cab = cab[0], items = items, hallazgos = SoporteDatos.Del(c, 2), respuestas = SoporteDatos.Del(c, 3), fotos = fotos, ejecucion = ej.Count > 0 ? ej[0] : null, traza = Traza("INS", ocurrencia), puede = Token.Puede(P_EJECUTAR) };
         });
     }
 

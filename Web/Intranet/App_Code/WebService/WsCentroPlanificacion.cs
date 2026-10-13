@@ -753,6 +753,39 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         });
     }
 
+    /// <summary>
+    /// 454 (HU-143) · Pega una imagen de referencia a la actividad que muestra la ficha. No abre el
+    /// borrador: la referencia no cambia la estructura del plan, y pegada a la versión publicada la ve
+    /// de inmediato quien ejecute el paso. Si hay borrador, la ficha ya muestra sus actividades.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string AgregarReferencia(int plan, int actividad, string nombre, string datos, string titulo)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_EDITAR);
+            DelCliente(plan);
+            return new { id = ArchivoReferencias.Agregar(nombre, datos, titulo, actividad, null, null) };
+        });
+    }
+
+    /// <summary>454 (HU-143) · El texto «qué debe verse» de una referencia.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string TituloReferencia(int plan, int id, string titulo)
+    {
+        return Ejecutar(() => { Exigir(P_EDITAR); DelCliente(plan); ArchivoReferencias.Titulo(id, titulo); return new { ok = true }; });
+    }
+
+    /// <summary>454 (HU-143) · Quita una referencia (baja lógica).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarReferencia(int plan, int id)
+    {
+        return Ejecutar(() => { Exigir(P_EDITAR); DelCliente(plan); ArchivoReferencias.Quitar(id); return new { ok = true }; });
+    }
+
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string AgregarRepuesto(int plan, int actividad, int repuesto, decimal cantidad)
@@ -1706,6 +1739,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         ILookup<int, Dictionary<string, object>> rep = SoporteDatos.Del(c, 9).ToLookup(r => Entero(r, "ACTIVIDAD_ID"));
         List<Dictionary<string, object>> acts = SoporteDatos.Del(c, 8);
         foreach (Dictionary<string, object> a in acts) a["REPUESTOS"] = rep[Entero(a, "ACTIVIDAD_ID")].ToList();
+        // 454 (HU-143): las imágenes de referencia de cada actividad («cómo debe quedar»).
+        ILookup<int, Dictionary<string, object>> refs = ArchivoReferencias.PorActividad(acts.Select(a => Entero(a, "ACTIVIDAD_ID")));
+        foreach (Dictionary<string, object> a in acts) a["REFERENCIAS"] = refs[Entero(a, "ACTIVIDAD_ID")].ToList();
         ILookup<int, Dictionary<string, object>> actPorHito = acts.ToLookup(r => Entero(r, "HITO_ID"));
         ILookup<int, Dictionary<string, object>> proxPorHito = SoporteDatos.Del(c, 15).ToLookup(r => Entero(r, "HITO_ID"));
         // 391: los responsables de cada intervención (ids en orden; el primero es el principal).
