@@ -21,7 +21,8 @@ param(
     [string]$VmIp = '192.168.77.10',
     [string]$Salida = 'C:\HyperV\export',
     [string]$BaseDestino = 'SIGMA',
-    [switch]$SoloExportar
+    [switch]$SoloExportar,
+    [string]$Bacpac
 )
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
@@ -38,16 +39,22 @@ function Sql($cadena, $texto) {
 $sqlpackage = (Get-Command sqlpackage -ErrorAction SilentlyContinue).Source
 if (-not $sqlpackage) { throw 'No encuentro sqlpackage (dotnet tool install -g microsoft.sqlpackage).' }
 
-# ---------------------------------------------------------------- 1. exportar
-$xml = [xml](Get-Content (Join-Path $repo 'Web\Intranet\data.config') -Raw)
-$origen = ($xml.connectionStrings.add | Where-Object name -eq 'SIGMA').connectionString
-New-Item -ItemType Directory -Force -Path $Salida | Out-Null
-$bacpac = Join-Path $Salida ('SIGMA-' + (Get-Date -Format 'yyyyMMdd-HHmm') + '.bacpac')
-Write-Host 'Exportando la base de desarrollo (puede tardar; depende del tamano y de la distancia)...'
-& $sqlpackage /Action:Export "/SourceConnectionString:$origen" "/TargetFile:$bacpac" /p:VerifyExtraction=False | Select-Object -Last 3
-if ($LASTEXITCODE -ne 0) { throw "La exportacion fallo (codigo $LASTEXITCODE)." }
-Write-Host ("Exportado: {0} ({1:N0} MB)" -f $bacpac, ((Get-Item $bacpac).Length / 1MB)) -ForegroundColor Green
-if ($SoloExportar) { exit 0 }
+# ---------------------------------------------------------------- 1. exportar (o usar un .bacpac ya hecho con -Bacpac)
+if ($Bacpac) {
+    if (-not (Test-Path $Bacpac)) { throw "No existe $Bacpac" }
+    $bacpac = $Bacpac
+    Write-Host "Usando el .bacpac existente: $bacpac"
+} else {
+    $xml = [xml](Get-Content (Join-Path $repo 'Web\Intranet\data.config') -Raw)
+    $origen = ($xml.connectionStrings.add | Where-Object name -eq 'SIGMA').connectionString
+    New-Item -ItemType Directory -Force -Path $Salida | Out-Null
+    $bacpac = Join-Path $Salida ('SIGMA-' + (Get-Date -Format 'yyyyMMdd-HHmm') + '.bacpac')
+    Write-Host 'Exportando la base de desarrollo (puede tardar; depende del tamano y de la distancia)...'
+    & $sqlpackage /Action:Export "/SourceConnectionString:$origen" "/TargetFile:$bacpac" /p:VerifyExtraction=False | Select-Object -Last 3
+    if ($LASTEXITCODE -ne 0) { throw "La exportacion fallo (codigo $LASTEXITCODE)." }
+    Write-Host ("Exportado: {0} ({1:N0} MB)" -f $bacpac, ((Get-Item $bacpac).Length / 1MB)) -ForegroundColor Green
+    if ($SoloExportar) { exit 0 }
+}
 
 # ---------------------------------------------------------------- 2. importar en la VM
 $sa = Plano (Read-Host 'Clave de sa del SQL Server de la VM' -AsSecureString)

@@ -54,7 +54,8 @@ New-VM -Name $Nombre -Generation 2 -MemoryStartupBytes ($MemInicioGB * 1GB) -VHD
 Set-VMMemory -VMName $Nombre -DynamicMemoryEnabled $true -MinimumBytes 2GB -StartupBytes ($MemInicioGB * 1GB) -MaximumBytes ($MemMaxGB * 1GB)
 Set-VMProcessor -VMName $Nombre -Count $Cpu
 Set-VM -Name $Nombre -CheckpointType Disabled -AutomaticStopAction ShutDown -AutomaticStartAction Start -AutomaticStartDelay 30
-Enable-VMIntegrationService -VMName $Nombre -Name 'Guest Service Interface'
+# Por Id, no por nombre: en Windows en espanol el servicio se llama distinto.
+Get-VMIntegrationService -VMName $Nombre | Where-Object { $_.Id -match '6C09BB55-D683-4DA0-8931-C9BF705F6480' } | Enable-VMIntegrationService
 Add-VMDvdDrive -VMName $Nombre -Path $Iso
 Set-VMFirmware -VMName $Nombre -FirstBootDevice (Get-VMDvdDrive -VMName $Nombre)
 Start-VM -Name $Nombre

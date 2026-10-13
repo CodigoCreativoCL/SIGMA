@@ -8,9 +8,9 @@ Rama: `EmilioFuentes`. Tu trabajo (Terceros en una vista con pestañas + scroll 
 - Abre `Boveda/` en Obsidian (opcional) y lee `Boveda/00 Inicio.md`.
 
 ## 2. Qué cambió en el repo (para no buscar donde ya no está)
-- `PATRONES/ASP` → `Boveda/Patrones/`. `ENTRENAMIENTO`, `SIGMA-Pautas-360`, `INFRAESTRUCTURA`, `docs/` y `Fase 2/Diseno/capturas` ya no existen.
+- `PATRONES/ASP` → `Boveda/Patrones/`. `ENTRENAMIENTO`, `SIGMA-Pautas-360`, `INFRAESTRUCTURA`, `docs/` y `Fase 2/Evidencias Proyecto/Diseno/capturas` ya no existen.
 - Docker → `Docker/` (`cd Docker && docker compose up -d --build`).
-- Diseño → `Fase 2/Diseno/{1_Esquema_BD,2_Diseno_Web,3_Diseno_App}`; prompts y referencias visuales de cada rediseño en `2_Diseno_Web/Redisenos/<módulo>/`.
+- Diseño → `Fase 2/Evidencias Proyecto/Diseno/{1_Esquema_BD,2_Diseno_Web,3_Diseno_App}`; prompts y referencias visuales de cada rediseño en `2_Diseno_Web/Redisenos/<módulo>/`.
 - BD: las migraciones siguen en `BD/NNN_*.sql`; el índice por tema está en `Boveda/Base de datos/Indice de base de datos.md`. Semillas → `BD/Semillas/`, respaldos → `BD/Respaldos/`.
 - Herramientas compartidas en `Dev/`: `bom.py`, `sql_aplicar.py`, `siguiente_migracion.py`, `actualizar_boveda.py`.
 - `C:\Capstone` debe contener solo `SIGMA`; borradores y evidencia personal van fuera (p. ej. `C:\Capstone_Archivo`).

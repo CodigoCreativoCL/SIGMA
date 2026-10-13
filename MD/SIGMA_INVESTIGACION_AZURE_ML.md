@@ -72,7 +72,7 @@ Entra a la API, baja el dataset registrado (o `--csv`, o `--demo N` sintético),
 | Publicar | v1 PUBLICADO. |
 | Puntuar | 22 equipos: ACT‑40 99,8 % (crítica, alerta #81), ACT‑35 77,7 %, ACT‑37 73,1 %, ACT‑34 66,0 % (alta) … con sus razones. |
 | Simular | `{FALLAS_90D:3, MED_30D_RATIO_CRITICO:1.2, TENDENCIA_30D:0.05}` → 99,05 %. |
-| Pantalla | KPIs, plan, muestra, registro, corridas, versiones, puntuar y «Azure ML no está configurado: faltan ClientId, ClientSecret». Capturas en `Fase 2/Pruebas/capturas/AzureML/`. |
+| Pantalla | KPIs, plan, muestra, registro, corridas, versiones, puntuar y «Azure ML no está configurado: faltan ClientId, ClientSecret». Capturas en `Fase 2/Evidencias Proyecto/Pruebas/capturas/AzureML/`. |
 | **Azure ML real** | `az login` por código de dispositivo con la cuenta de Bryan; `--demo 800` con `MLFLOW_TRACKING_URI` del área: corrida `319576fc-5bc5-4422-b5cc-ca9f799c8bcf` en el experimento `SIGMA_FAILURE_30D` (métricas, parámetros, `.onnx` y JSON como artefactos) y modelo **SIGMA_FAILURE_30D v1** (`az ml model show`: tipo `mlflow_model`, ruta en `workspaceartifactstore`). `az ml compute list` vacío: no se creó cómputo. Versión v2 en SIGMA con la ruta `azureml://…/models/SIGMA_FAILURE_30D/versions/1`, publicada; 22 equipos puntuados con v2. |
 
 > La versión v1 publicada viene de un **dataset sintético** y está marcada así en `mpv_observacion`. Sirve para que el camino esté vivo, **no para decidir sobre una máquina**. El modelo de línea base (Tendencia de variable medida) sigue operando en paralelo.

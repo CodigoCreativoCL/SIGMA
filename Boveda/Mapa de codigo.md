@@ -33,5 +33,5 @@ Rutas relativas a `Web/Intranet/`. Cada pantalla `X.aspx` trae su `X.aspx.cs`. V
 `grep -rn "NombreDelSP" BD/ Web/Intranet/App_Code` (SP) · `grep -rln "id_o_clase" Web/Intranet/Js` (JS). No abrir carpetas enteras.
 
 ## Diseño y documentación
-- `Fase 2/Diseno/` → `1_Esquema_BD` (ER/MER), `2_Diseno_Web` (arquitectura, UML, Planificación 360, `Redisenos/<módulo>/` con prompt y referencia visual), `3_Diseno_App`.
-- Para rehacer una pantalla rediseñada: leer su `Prompt_ClaudeCode_*.md` y `Referencia_Visual_*.html` en `Fase 2/Diseno/2_Diseno_Web/Redisenos/<módulo>/`.
+- `Fase 2/Evidencias Proyecto/Diseno/` → `1_Esquema_BD` (ER/MER), `2_Diseno_Web` (arquitectura, UML, Planificación 360, `Redisenos/<módulo>/` con prompt y referencia visual), `3_Diseno_App`.
+- Para rehacer una pantalla rediseñada: leer su `Prompt_ClaudeCode_*.md` y `Referencia_Visual_*.html` en `Fase 2/Evidencias Proyecto/Diseno/2_Diseno_Web/Redisenos/<módulo>/`.

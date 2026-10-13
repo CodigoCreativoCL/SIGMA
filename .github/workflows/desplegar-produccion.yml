@@ -1,0 +1,143 @@
+# Prueba del pipeline: 12-10-2026.
+# Despliegue de SIGMA a HostChile en cada push a master (mismo esquema del pipeline anterior de PRODUCCION).
+#   Web  -> https://sigma.codigocreativo.tech
+#   API  -> https://sigma-api.codigocreativo.tech
+# Guia completa y lista de secretos/variables: Dev/ci/LEEME.md
+#
+# El job NO corre hasta que exista la variable HC_SERVER (Settings > Secrets and variables > Actions > Variables):
+# mientras no este configurada, los push a master no intentan desplegar.
+name: Deploy produccion (HostChile)
+
+on:
+  push:
+    branches: [master]
+    paths-ignore:
+      - 'Boveda/**'
+      - 'MD/**'
+      - 'Fase 2/**'
+      - '**.md'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-produccion
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.HC_SERVER != '' }}
+    runs-on: windows-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: microsoft/setup-msbuild@v2
+
+      - uses: NuGet/setup-nuget@v2
+
+      - name: Instalar Web Deploy
+        shell: pwsh
+        run: |
+          choco install webdeploy -y --no-progress
+          if (-not (Test-Path "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe")) { throw "Web Deploy no quedó instalado" }
+
+      - name: Restaurar paquetes de la solución
+        run: nuget restore Solucion\SIGMA\SIGMA.sln
+
+      # Library arrastra las ~43 DLL de terceros (Telerik, EPPlus...): todas van al bin de la web.
+      - name: Compilar Library y dejarla en el bin de la web
+        shell: pwsh
+        run: |
+          msbuild Librerias\Library\Library.csproj /p:Configuration=Release /v:minimal /nologo
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          New-Item -ItemType Directory -Force -Path Web\Intranet\bin | Out-Null
+          Copy-Item Librerias\Library\bin\Release\* Web\Intranet\bin\ -Recurse -Force
+
+      - name: Precompilar la web
+        shell: pwsh
+        run: |
+          & "C:\Windows\Microsoft.NET\Framework64\v4.0.30319\aspnet_compiler.exe" -v / -p "$pwd\Web\Intranet" -u "$pwd\_publicar\web" -f
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          Remove-Item "_publicar\web\website.publishproj" -ErrorAction SilentlyContinue
+
+      - name: Compilar la API
+        shell: pwsh
+        run: |
+          msbuild Solucion\SIGMA\API\API.csproj /p:Configuration=Release /p:SolutionDir="$pwd\Solucion\SIGMA\" /v:minimal /nologo
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+          robocopy Solucion\SIGMA\API _publicar\api /E /XD obj Properties Controllers Models App_Start Servicios .vs .postman postman /XF *.cs *.csproj *.user *.pdb packages.config
+          if ($LASTEXITCODE -ge 8) { exit 1 } else { exit 0 }
+
+      # Produccion necesita valores distintos a desarrollo (modo Integrado, sesion InProc, machineKey fija,
+      # URLs publicas, conexion). Se aplican SOLO a la copia que se sube; el Web.config del repo no cambia.
+      - name: Aplicar la configuración de producción
+        shell: pwsh
+        env:
+          URL_SITIO: ${{ vars.URL_SITIO }}
+          URL_API: ${{ vars.URL_API }}
+          DB_CONNECTION_PROD: ${{ secrets.DB_CONNECTION_PROD }}
+          MACHINE_VALIDATION_KEY: ${{ secrets.MACHINE_VALIDATION_KEY }}
+          MACHINE_DECRYPTION_KEY: ${{ secrets.MACHINE_DECRYPTION_KEY }}
+          INTRANET_APPSETTINGS_JSON: ${{ secrets.INTRANET_APPSETTINGS_JSON }}
+          API_APPSETTINGS_JSON: ${{ secrets.API_APPSETTINGS_JSON }}
+        run: ./Dev/ci/configurar_produccion.ps1 -Web "$pwd\_publicar\web" -Api "$pwd\_publicar\api"
+
+      # Una publicacion anterior (por archivos fuente) dejo la carpeta App_Code en el servidor; un sitio
+      # PRECOMPILADO no la admite ("The directory '/App_Code/' is not allowed because the application is precompiled").
+      - name: Quitar App_Code heredado del servidor
+        shell: pwsh
+        continue-on-error: true
+        env:
+          PASS: ${{ secrets.HC_WEB_DEPLOY_PASSWORD }}
+          SERVIDOR: ${{ vars.HC_SERVER }}
+          SITIO: ${{ vars.HC_WEB_SITE }}
+          USUARIO: ${{ vars.HC_WEB_USER }}
+        run: |
+          $s = $env:SITIO.Trim(); $srv = $env:SERVIDOR.Trim(); $u = $env:USUARIO.Trim()
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:delete `
+            "-dest:contentPath=$s/App_Code,computerName=https://$($srv):8172/msdeploy.axd?site=$s,userName=$u,password=$($env:PASS),authType=Basic" `
+            -allowUntrusted
+          exit 0
+
+      - name: Publicar la web (sigma.codigocreativo.tech)
+        shell: pwsh
+        env:
+          PASS: ${{ secrets.HC_WEB_DEPLOY_PASSWORD }}
+          SERVIDOR: ${{ vars.HC_SERVER }}
+          SITIO: ${{ vars.HC_WEB_SITE }}
+          USUARIO: ${{ vars.HC_WEB_USER }}
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync `
+            -source:contentPath="$pwd\_publicar\web" `
+            "-dest:contentPath=$($env:SITIO),computerName=https://$($env:SERVIDOR):8172/msdeploy.axd?site=$($env:SITIO),userName=$($env:USUARIO),password=$($env:PASS),authType=Basic" `
+            -allowUntrusted -enableRule:DoNotDeleteRule -enableRule:AppOffline -retryAttempts:3
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Publicar la API (sigma-api.codigocreativo.tech)
+        shell: pwsh
+        env:
+          PASS: ${{ secrets.HC_API_DEPLOY_PASSWORD }}
+          SERVIDOR: ${{ vars.HC_SERVER }}
+          SITIO: ${{ vars.HC_API_SITE }}
+          USUARIO: ${{ vars.HC_API_USER }}
+        run: |
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync `
+            -source:contentPath="$pwd\_publicar\api" `
+            "-dest:contentPath=$($env:SITIO),computerName=https://$($env:SERVIDOR):8172/msdeploy.axd?site=$($env:SITIO),userName=$($env:USUARIO),password=$($env:PASS),authType=Basic" `
+            -allowUntrusted -enableRule:AppOffline -retryAttempts:3
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Verificar que respondan
+        shell: pwsh
+        env:
+          URL_SITIO: ${{ vars.URL_SITIO }}
+          URL_API: ${{ vars.URL_API }}
+        run: |
+          $sitio = $env:URL_SITIO.Trim().TrimEnd('/'); $api = $env:URL_API.Trim().TrimEnd('/')
+          foreach ($u in "$sitio/Login.aspx", "$api/") {
+            $ok = $false
+            foreach ($i in 1..6) {
+              try { $r = Invoke-WebRequest $u -UseBasicParsing -TimeoutSec 120; if ($r.StatusCode -eq 200) { $ok = $true; break } } catch { Start-Sleep 10 }
+            }
+            if (-not $ok) { throw "$u no respondió 200" }
+            "$u OK"
+          }

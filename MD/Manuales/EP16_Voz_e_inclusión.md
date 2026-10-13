@@ -113,4 +113,4 @@ No hay reglas de rechazo declaradas en los criterios de este modulo.
 
 ---
 
-*Generado desde `Fase 2/SIGMA_Product_Backlog_por_Sprint.xlsx`, la tabla `Menus` y las pestanas declaradas en los .aspx. Para actualizarlo: `python _scratch/gen_manuales.py`.*
+*Generado desde `Fase 2/Evidencias Proyecto/SIGMA_Product_Backlog_por_Sprint.xlsx`, la tabla `Menus` y las pestanas declaradas en los .aspx. Para actualizarlo: `python _scratch/gen_manuales.py`.*
