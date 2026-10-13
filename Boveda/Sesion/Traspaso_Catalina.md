@@ -25,3 +25,4 @@ Zonas de trabajo de Bryan, archivos «calientes» y cómo resolver los conflicto
 
 ## Registro
 <!-- Añade una línea al terminar: «Leído y memoria actualizada — Catalina — AAAA-MM-DD» -->
+- Leído y memoria actualizada — Catalina — 2026-10-12
