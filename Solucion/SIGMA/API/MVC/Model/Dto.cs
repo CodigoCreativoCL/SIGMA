@@ -2896,6 +2896,13 @@ namespace API.MVC.Model
         public string DATASET_CODIGO { get; set; }
     }
 
+    public class MlSenalDto
+    {
+        public int CIERRES { get; set; }
+        public DateTime? ULTIMO_CIERRE { get; set; }
+        public int? ULTIMO_ID { get; set; }
+    }
+
     public class MlVersionDto
     {
         public int mpv_id { get; set; }

@@ -1,9 +1,9 @@
-# Traspaso para Catalina Pescio — 11-10-2026
-Rama: `CatalinaPescio` (sin commits propios pendientes: está solo atrasada respecto a `master`).
+# Traspaso para Catalina Pescio — 11-10-2026 (actualizado 12-10-2026)
+Rama: `CatalinaPescio` (sin commits propios; al 12-10-2026 está 58 commits atrás de `master`).
 
 ## 1. Qué hacer en tu rama
 1. `git fetch && git merge origin/master` — avance directo, sin conflictos.
-2. Antes de crear una migración SQL: `python -I Dev/siguiente_migracion.py` (mira master y todas las ramas; hoy el siguiente libre es 439).
+2. Antes de crear una migración SQL: `python -I Dev/siguiente_migracion.py` (mira master y todas las ramas; hoy el siguiente libre es 453).
 3. Abre `Boveda/` en Obsidian (opcional) y lee `Boveda/00 Inicio.md`.
 
 ## 2. Qué cambió en el repo (para no buscar donde ya no está)
@@ -11,7 +11,7 @@ Rama: `CatalinaPescio` (sin commits propios pendientes: está solo atrasada resp
 - Docker → `Docker/`. Diseño → `Fase 2/Evidencias Proyecto/Diseno/{1_Esquema_BD,2_Diseno_Web,3_Diseno_App}` (rediseños en `2_Diseno_Web/Redisenos/<módulo>/`).
 - BD: migraciones en `BD/NNN_*.sql`; índice por tema en `Boveda/Base de datos/Indice de base de datos.md`; semillas en `BD/Semillas/`, respaldos en `BD/Respaldos/`.
 - Herramientas compartidas en `Dev/`: `bom.py`, `sql_aplicar.py`, `siguiente_migracion.py`, `actualizar_boveda.py`.
-- Entran a tu rama: calendarios por medidor editables, HU-117/HU-125 (S5), ficha de OT v8, plan de sopladores Hamburgo, mejoras de rendimiento (`Min Pool Size=20`, caché por sesión, lecturas en paralelo) y el trabajo de Terceros de Emilio (BD 437/438).
+- Entran a tu rama: calendarios por medidor editables, HU-117/HU-125 (S5), ficha de OT v8, plan de sopladores Hamburgo, mejoras de rendimiento (`Min Pool Size=20`, caché por sesión, lecturas en paralelo) el trabajo de Terceros de Emilio (BD 437/438) y sus HU-131 (rectificación de bitácora) y HU-162 (Accesibilidad del usuario, BD 442–449).
 - `C:\Capstone` debe contener solo `SIGMA`; borradores y evidencia personal fuera (p. ej. `C:\Capstone_Archivo`).
 
 ## 3. Memoria local de Claude a guardar (créala en tu memoria; no la copies al repo)

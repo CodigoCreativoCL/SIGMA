@@ -1,5 +1,5 @@
 # Traspaso de Bryan Chávez — 11-10-2026 (para que Emilio y Catalina no tengan conflictos)
-Rama: `BryanChavez` (= `master` al momento de escribir, commit `13273f18`). Todo lo de abajo ya está en `master`.
+Rama: `BryanChavez` (= `master`; actualizado 12-10-2026 tras integrar el PR #79 de Emilio). Todo lo de abajo ya está en `master`.
 
 ## 1. Qué hizo Bryan (ya integrado)
 - **Mantenimiento:** HU-117 (servicios contratados en OT), HU-125 (imprimir OT), «Quién la ejecuta» en Nueva OT, ficha de OT v8, calendarios por medidor editables, plan anual de sopladores Hamburgo por horómetro (cargas en `BD/Carga masiva/`).
@@ -17,8 +17,8 @@ Rama: `BryanChavez` (= `master` al momento de escribir, commit `13273f18`). Todo
 - CRLF/BOM: usa `Dev/bom.py` en archivos de texto nuevos o editados; los avisos «LF will be replaced by CRLF» de git son normales.
 
 ## 4. Numeración y estado de la base
-- Migraciones hasta la **438**; siguiente libre → `python -I Dev/siguiente_migracion.py` (revisa todas las ramas).
-- **En producción faltan** las migraciones 429–438, `Min Pool Size=20` e `IdFirma`; la publicación la hace Bryan (Web Deploy). No apliques migraciones en producción por tu cuenta.
+- Migraciones hasta la **452** (Emilio: 437–438 Terceros, 442–449 HU-131/HU-162); siguiente libre → `python -I Dev/siguiente_migracion.py` (revisa todas las ramas).
+- **En producción faltan** las migraciones 429–452, `Min Pool Size=20` e `IdFirma`; la publicación la hace Bryan (Web Deploy). No apliques migraciones en producción por tu cuenta.
 - `data.config` y `azure.config` no se versionan ni se comparten por chat.
 
 ## 5. Acuerdos de trabajo

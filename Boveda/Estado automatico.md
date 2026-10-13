@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-11 16:54 · rama: `BryanChavez` · HEAD `560b3fd7`
+Generado: 2026-10-12 22:59 · rama: `BryanChavez` · HEAD `0b3046f8`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,25 +13,25 @@ Generado: 2026-10-11 16:54 · rama: `BryanChavez` · HEAD `560b3fd7`
 
 ## Últimos commits
 
-- 560b3fd7 2026-10-11 Nessgod: Diseño: Planificacion360 dentro de Redisenos; Dev/siguiente_migracion.py evita choques de numeración
-- afa73185 2026-10-11 Nessgod: Bóveda: reglas del equipo (acuerdos comunes para las tres sesiones)
-- 59fd61f1 2026-10-11 Nessgod: Herramientas compartidas en Dev (bom.py, sql_aplicar.py); referencias de la bóveda al día
-- fea7e0f4 2026-10-11 Nessgod: Rutas de rediseños actualizadas en prompts
-- 46b48ef0 2026-10-11 Nessgod: Diseño ordenado: Esquema BD, Diseño Web (arquitectura, UML, rediseños) y Diseño App; docs/ y capturas/ reubicadas
-- 93098eb5 2026-10-11 Nessgod: BD ordenada por contexto: índice generado en la bóveda, semillas y respaldos en subcarpetas
-- 6b13e4db 2026-10-11 Nessgod: Referencias a Boveda/Patrones en MD y Docker
-- dccfb4a4 2026-10-11 Nessgod: PATRONES/ASP pasa a Boveda/Patrones: cerebro centralizado
-- efb50ccc 2026-10-11 Nessgod: Se elimina INFRAESTRUCTURA (plan Hyper-V descartado)
-- baa92879 2026-10-11 Nessgod: Orden del repo: Docker en su carpeta, se eliminan SIGMA-Pautas-360 y ENTRENAMIENTO
-- 2b49959a 2026-10-11 Nessgod: Bóveda: flujo de git pensado para el equipo de 3
-- d8806ebe 2026-10-11 Nessgod: Bóveda: mapa de código por flujo
+- 0b3046f8 2026-10-12 Nessgod: Dev/hyperv: habilitar cada pieza de Hyper-V por nombre (el padre -All puede figurar habilitado con los hijos apagados)
+- 3d145185 2026-10-12 Nessgod: Dev/hyperv: el paso 1 exige reiniciar de verdad (vmms/New-VM) antes de dar Hyper-V por listo
+- 808d219b 2026-10-12 Nessgod: Dev/hyperv: scripts para montar la VM Windows Server (IIS, SQL Server Express, web y API)
+- cd19d69a 2026-10-12 Nessgod: SIGMA AI worker: una cuenta de servicio por empresa con plan SIGMA AI
+- c28de630 2026-10-12 Nessgod: SIGMA AI: reentrenar solo por cada cierre de OT (BD 453, GET /sigma-ai/senal, worker por eventos)
+- c0fd034d 2026-10-12 Nessgod: SIGMA AI: worker automático (puntuar y reentrenar con compuertas) y diseño actualizado
+- d507b7e6 2026-10-12 Nessgod: Bóveda: diseño de SIGMA AI automático (worker, reentrenamiento y publicación con compuertas)
+- 1ecab593 2026-10-12 Nessgod: Bóveda: traspasos al día tras integrar a Emilio (migraciones hasta 452, siguiente 453)
+- 8b406e2f 2026-10-12 Nessgod: Bóveda: estado e índice de BD regenerados tras integrar a Emilio
+- 91b3ca25 2026-10-12 Emilio Fuentes: Merge pull request #79 from CodigoCreativoCL/EmilioFuentes
+- 96809b2b 2026-10-12 EmilioFuentesS: Merge master en EmilioFuentes (reorg del repo, evidencias, rendimiento, HMAC)
+- de25c101 2026-10-12 EmilioFuentesS: HU-162: seguimiento en el Sprint Backlog (tareas y criterios)
 
 ## Módulos y pantallas
 
 - **Activos**: Activos, Atributos, Componentes, Estado, Ficha, Medidores, Modelos, Posiciones, Tipos, Variables
 - **Clientes**: Cliente, Perfiles
 - **Comercial**: Clientes, Suscripciones
-- **Comun**: Archivos, CargaDatos, Clientes, Controls, Impresion, MiCuenta, Notificaciones
+- **Comun**: Accesibilidad, Archivos, CargaDatos, Clientes, Controls, Impresion, MiCuenta, Notificaciones
 - **Inventario**: Bodegas, Compatibilidades, Existencias, Movimientos, Repuestos
 - **Mantenimiento**: Avisos, Biblioteca, Checklist, Fallas, Hallazgos, Operacion, Ordenes, Planes, Procedimientos, Programaciones, Tareas
 - **Organizacion**: Areas, CentrosCosto, Especialidades, Grupos, Plantas

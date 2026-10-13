@@ -212,6 +212,21 @@ namespace API.Controllers
             });
         }
 
+        /// <summary>GET /sigma-ai/senal — cuántas OT cerradas hay y cuándo fue la última: el worker reentrena cuando cambia.</summary>
+        [HttpGet]
+        [Route("senal")]
+        public IHttpActionResult Senal()
+        {
+            return Ejecutar(() =>
+            {
+                Entrar(null);
+                ExigirPermiso("VER PREDICCIONES");
+                ExigirCliente();
+                List<MlSenalDto> s = Datos.Listar<MlSenalDto>("API_SEL_ML_SENAL", new Dictionary<string, object> { { "@CLIENTE", SesionApi.ClienteId() } });
+                return Ok(s.Count > 0 ? s[0] : new MlSenalDto());
+            });
+        }
+
         [HttpGet]
         [Route("datasets")]
         public IHttpActionResult Datasets(string modelo = null)

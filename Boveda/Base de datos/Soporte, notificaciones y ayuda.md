@@ -1,6 +1,6 @@
 # BD — Soporte, notificaciones y ayuda
 
-18 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+20 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -22,3 +22,5 @@
 | `377_INICIO.sql` | INICIO DE SIGMA (Default.aspx) · PROPUESTA 1: ACCESOS DIRECTOS POR USUARIO Y DATOS EN VIVO. |
 | `380_AYUDA_PANTALLAS_JERARQUIA.sql` |  |
 | `381_CAMPANA_CARD_PERSISTE.sql` |  |
+| `442_BITACORA_RECTIFICACION_UUID.sql` |  |
+| `445_BITACORA_RECTIFICACION_DEMO.sql` |  |
