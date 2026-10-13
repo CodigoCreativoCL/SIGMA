@@ -115,6 +115,6 @@ pantalla.
 
 ## 4. Evidencia
 
-Cada bloque cierra con capturas en `Fase 2/Pruebas/capturas/S3` y una fila en
+Cada bloque cierra con capturas en `Fase 2/Evidencias Proyecto/Pruebas/capturas/S3` y una fila en
 `MD/SIGMA_ESTADO_DESARROLLO.md`. El script de Selenium vive en `_scratch` y
 no se versiona; lo que se versiona es la captura y lo que dice el commit.

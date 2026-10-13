@@ -7,8 +7,8 @@ Rama: `CatalinaPescio` (sin commits propios pendientes: está solo atrasada resp
 3. Abre `Boveda/` en Obsidian (opcional) y lee `Boveda/00 Inicio.md`.
 
 ## 2. Qué cambió en el repo (para no buscar donde ya no está)
-- `PATRONES/ASP` → `Boveda/Patrones/`. `ENTRENAMIENTO`, `SIGMA-Pautas-360`, `INFRAESTRUCTURA`, `docs/` y `Fase 2/Diseno/capturas` ya no existen.
-- Docker → `Docker/`. Diseño → `Fase 2/Diseno/{1_Esquema_BD,2_Diseno_Web,3_Diseno_App}` (rediseños en `2_Diseno_Web/Redisenos/<módulo>/`).
+- `PATRONES/ASP` → `Boveda/Patrones/`. `ENTRENAMIENTO`, `SIGMA-Pautas-360`, `INFRAESTRUCTURA`, `docs/` y `Fase 2/Evidencias Proyecto/Diseno/capturas` ya no existen.
+- Docker → `Docker/`. Diseño → `Fase 2/Evidencias Proyecto/Diseno/{1_Esquema_BD,2_Diseno_Web,3_Diseno_App}` (rediseños en `2_Diseno_Web/Redisenos/<módulo>/`).
 - BD: migraciones en `BD/NNN_*.sql`; índice por tema en `Boveda/Base de datos/Indice de base de datos.md`; semillas en `BD/Semillas/`, respaldos en `BD/Respaldos/`.
 - Herramientas compartidas en `Dev/`: `bom.py`, `sql_aplicar.py`, `siguiente_migracion.py`, `actualizar_boveda.py`.
 - Entran a tu rama: calendarios por medidor editables, HU-117/HU-125 (S5), ficha de OT v8, plan de sopladores Hamburgo, mejoras de rendimiento (`Min Pool Size=20`, caché por sesión, lecturas en paralelo) y el trabajo de Terceros de Emilio (BD 437/438).

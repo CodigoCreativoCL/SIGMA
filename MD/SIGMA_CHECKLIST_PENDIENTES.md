@@ -1340,13 +1340,13 @@ por sprint; si encuentras errores los solucionas y lo documentas».
 
 **Cómo se hizo.** `_scratch/evidencia.py` maneja Chrome headless (Selenium)
 contra la intranet y contra el Swagger de la API, y anota cada caso en
-`Fase 2/Pruebas/capturas/<S>/manifiesto.json` (usuario, pasos, esperado,
+`Fase 2/Evidencias Proyecto/Pruebas/capturas/<S>/manifiesto.json` (usuario, pasos, esperado,
 obtenido, veredicto, capturas). Los guiones por sprint son `ev_s1.py`…
 `ev_s5b.py`; `generar_docx.py` arma un Word por sprint con portada, entorno,
 resumen, un caso por criterio con sus capturas y la lista de defectos;
 `marcar_criterios.py` pone Sí/No en la hoja *Criterios de aceptación* de cada
 Sprint Backlog. Resultado: **S1 26 casos (22 ✓), S2 18 (17 ✓), S3 22 (21 ✓),
-S4 23 (20 ✓), S5 48 (48 ✓)**, en `Fase 2/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx`.
+S4 23 (20 ✓), S5 48 (48 ✓)**, en `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx`.
 Los «no cumple» son criterios sin construir (HU-014 #2/#3, HU-004 #2/#3 sin
 SMTP, HU-076 #4, HU-083 #3, HU-102 #2, HU-095 #4, HU-193 #4 app), no fallas.
 
@@ -1624,7 +1624,7 @@ configuración base tiene que existir antes de poner la app en manos de los
 técnicos); la app se entrega **completa en el Sprint 6**, renombrado «App
 móvil, inteligencia y cierre».
 
-- Actas Scrum en `Fase 2/Ceremonias/`: `SIGMA_Sprint_Review_Sprint_1.docx`
+- Actas Scrum en `Fase 2/Evidencias Proyecto/Ceremonias/`: `SIGMA_Sprint_Review_Sprint_1.docx`
   y `SIGMA_Sprint_Retrospective_Sprint_1.docx` (Guía Scrum 2020: asistentes,
   incremento, feedback, decisiones sobre el Product Backlog, riesgos,
   próximos pasos; retro con qué salió bien / mal / acuerdos con dueño y
@@ -1901,7 +1901,7 @@ S3 87 / 87.
   (parte móvil) agregada al S6 con T-6306.
 - **Tareas**: quedan «Por hacer» solo las validaciones funcionales con la
   Product Owner (S1 2, S2 1, S3 3) y T-3928 (imprimir una plancha real).
-- **Burndown y Burnup con datos** (`Fase 2/SIGMA_Burndown_Burnup.xlsx`): la
+- **Burndown y Burnup con datos** (`Fase 2/Evidencias Proyecto/SIGMA_Burndown_Burnup.xlsx`): la
   columna amarilla de los Sprints 1, 2 y 3 se llenó desde la Bitácora de
   Daily Scrum —cada historia quema sus puntos el último día en que el
   registro diario la nombra trabajada, sin contar el día de la Sprint Review,
@@ -1913,7 +1913,7 @@ S3 87 / 87.
   S5 y S6 quedan vacíos: sus dailies todavía no tienen registro y ninguna de
   sus historias está Terminada. Release y Resumen son fórmulas y se recalculan
   solos al abrir.
-- **Bitácora de Daily Scrum completa hasta el Sprint 5** (`Fase 2/SIGMA_Bitacora_Daily_Scrum.xlsx`):
+- **Bitácora de Daily Scrum completa hasta el Sprint 5** (`Fase 2/Evidencias Proyecto/SIGMA_Bitacora_Daily_Scrum.xlsx`):
   se escribieron las 57 participaciones que faltaban de los Sprints 4 y 5 (150 de 180 en total). Cada
   daily está anclado a lo que existe en el repositorio —las 65 tareas Terminada del S4 y las 89 del S5,
   con su historia y su rango de tareas— y lo no hecho se registra como no hecho: las 10 tareas de Bryan

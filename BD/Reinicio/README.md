@@ -2,7 +2,7 @@
 
 Borra **el cliente y todo lo que arrastra**, y conserva **el sistema**: los catálogos, los menús, los permisos, los perfiles y las tres cuentas de Código Creativo, que son las que vuelven a crear el cliente desde el perfil comercial.
 
-Sirve para recorrer el sistema de cero siguiendo los manuales de `Fase 2/Manuales`, encontrar lo que falta y repetirlo cuantas veces haga falta.
+Sirve para recorrer el sistema de cero siguiendo los manuales de `Fase 2/Evidencias Proyecto/Manuales`, encontrar lo que falta y repetirlo cuantas veces haga falta.
 
 ## Cómo se usa
 

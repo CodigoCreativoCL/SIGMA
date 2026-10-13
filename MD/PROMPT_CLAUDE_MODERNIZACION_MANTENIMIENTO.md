@@ -1,10 +1,10 @@
 ﻿# Prompt para Claude Code · Rediseño del menú Mantenimiento (5 lugares)
 
-> Referencia visual y de comportamiento: `Fase 2/Diseno/2_Diseno_Web/Redisenos/Mantenimiento/Referencia_Visual_Mantenimiento.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo).
+> Referencia visual y de comportamiento: `Fase 2/Evidencias Proyecto/Diseno/2_Diseno_Web/Redisenos/Mantenimiento/Referencia_Visual_Mantenimiento.html` (ábrela en el navegador; todo es navegable y con datos de ejemplo).
 
 > Análisis previo: Claude Doc «SIGMA · Blueprint funcional del menú Mantenimiento».
 
-> Este prompt **no reemplaza** a `Fase 2/Diseno/2_Diseno_Web/Redisenos/Centro de Planificacion/prompt-claude-code-planes-por-pasos.md`: la ficha de plan por pasos se mantiene tal cual y queda dentro de **Planificación › Planes**.
+> Este prompt **no reemplaza** a `Fase 2/Evidencias Proyecto/Diseno/2_Diseno_Web/Redisenos/Centro de Planificacion/prompt-claude-code-planes-por-pasos.md`: la ficha de plan por pasos se mantiene tal cual y queda dentro de **Planificación › Planes**.
 
 ---
 
