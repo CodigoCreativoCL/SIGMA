@@ -1,3 +1,4 @@
+# Prueba del pipeline: 12-10-2026.
 # Despliegue de SIGMA a HostChile en cada push a master (mismo esquema del pipeline anterior de PRODUCCION).
 #   Web  -> https://sigma.codigocreativo.tech
 #   API  -> https://sigma-api.codigocreativo.tech
