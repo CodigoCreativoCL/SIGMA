@@ -24,7 +24,7 @@ Fecha: 03-09-2026 · Código Creativo · Bryan Chávez
 
 | Qué | Fuente leída |
 |---|---|
-| Las 20 historias con App | `Fase 2/SIGMA_Product_Backlog_por_Sprint.xlsx`, hojas Sprint 1–3 |
+| Las 20 historias con App | `Fase 2/Evidencias Proyecto/SIGMA_Product_Backlog_por_Sprint.xlsx`, hojas Sprint 1–3 |
 | Perfiles, ámbito y reglas de alcance | `MD/SIGMA_ALCANCE_APP.md` (normativo) |
 | Los 52 endpoints | `Solucion/SIGMA/API/Controllers/*.cs`, leídos uno por uno |
 | Los tokens | `Web/Intranet/Css/LookAndFeel/sigma-brand.css` |

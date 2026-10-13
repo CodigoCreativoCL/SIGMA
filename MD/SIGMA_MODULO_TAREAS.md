@@ -1,7 +1,7 @@
 # Módulo Tareas — Estado y decisiones (Sprint 4)
 
 Épica **EP-11**. Historias HU-100, HU-101, HU-102, HU-104. Documento de estado
-que acompaña a los informes de prueba (`Fase 2/Pruebas/SIGMA_Pruebas_HU-1xx.docx`).
+que acompaña a los informes de prueba (`Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-1xx.docx`).
 
 Ambiente de verificación: Intranet local, BD `db_acd593_sigma`, cliente
 **Hamburgo SA** (`cli_id = 1`), usuario `catalina@codigocreativo.cl` (Root).
@@ -59,7 +59,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   programación, no genera ocurrencias ni OT, por lo que no se contabiliza en los
   indicadores del plan (que se calculan sobre ocurrencias/órdenes de trabajo).
 - **Sin endpoint de API** propio para el alta web; la documentación es este MD y
-  el informe `Fase 2/Pruebas/SIGMA_Pruebas_HU-101.docx`.
+  el informe `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-101.docx`.
 
 ---
 
@@ -80,7 +80,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   se generaron exactamente 4 ocurrencias (05-oct, 19-oct, 09-nov, 14-dic 2026),
   cada una con `toc_uuid` propio, estado propio y su panel de ejecución/
   evidencias/conversación.
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-102.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-102.docx`.
 
 ---
 
@@ -100,7 +100,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   idempotente por dictado_uuid) y el detalle de la tarea incluyen la
   conversación. Documentados con comentarios XML de Swagger (summary/response)
   en `API/Controllers/TareasController.cs`.
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-104.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-104.docx`.
 
 ---
 
@@ -122,7 +122,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
   el hallazgo queda Procesado y sale de la bandeja.
 - **CA-3** (descartar con motivo): verificado. Motivo < 10 caracteres se rechaza;
   con motivo válido se registra el descarte con usuario y fecha.
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-096.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-096.docx`.
 
 ---
 
@@ -148,7 +148,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
 - **CA-2** (área → ocurrencia para el área): verificado (91 ocurrencias diarias
   con `coc_instalacion_area`).
 - **CA-3** (sin objetivo → rechazo): verificado.
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-094.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-094.docx`.
 
 ---
 
@@ -171,7 +171,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
 - **CA-2** (detalle de una ejecución): verificado. Cada pregunta de la versión
   ejecutada con su respuesta, severidad (Conforme / Fuera de rango) y sus
   fotografías, agrupadas por sección.
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-097.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-097.docx`.
 
 ---
 
@@ -195,7 +195,7 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
 - **CA-4** (genera hallazgo): el mantenedor define `civ_genera_hallazgo`; el alta
   de respuesta (`API_UPS_CHECKLIST_RESPUESTA`) crea un `Checklist_Hallazgo`
   pendiente y no crea una orden por sí solo (la OT se genera aparte, HU-096).
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-091.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-091.docx`.
 
 ---
 
@@ -223,4 +223,4 @@ propio mantenedor (`TareaCategorias.aspx` / `TareaCategoria.aspx`).
 - **CA-3** (ítem oculto y obligatorio no bloquea): un ítem oculto por una
   dependencia no participa de la obligatoriedad y queda como «no aplicable» al
   cerrar la pauta (enforcement en terreno).
-- Informe: `Fase 2/Pruebas/SIGMA_Pruebas_HU-092.docx`.
+- Informe: `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Pruebas_HU-092.docx`.

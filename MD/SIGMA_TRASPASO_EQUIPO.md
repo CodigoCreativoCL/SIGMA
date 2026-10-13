@@ -19,10 +19,10 @@ que enlaza.
 | App Flutter | `App/sigma_app` · **MVP de Bryan**, no oficial hasta el Sprint 6 (no se marca como realizado) |
 | Base de datos | `sql5112.site4now.net` · `db_acd593_sigma` · scripts numerados en `BD/` (último: **248**) · clave solo en `API/Web.config` |
 | Entrenadores SIGMA AI | `ML/` (`sigma_ml.py`, `entrenar_falla.py`, `entrenar_rul.py`, `entrenar_vision.py`, `.env.ejemplo`) |
-| Gestión Scrum | `Fase 2/`: Product Backlog por Sprint, Sprint Backlogs S1–S6, Burndown, Bitácora Daily, Ceremonias, Pruebas |
+| Gestión Scrum | `Fase 2/Evidencias Proyecto/`: Product Backlog por Sprint, Sprint Backlogs S1–S6, Burndown, Bitácora Daily, Ceremonias, Pruebas |
 | Estado técnico e historia | `MD/SIGMA_ESTADO_DESARROLLO.md` (bitácora §9) · `MD/SIGMA_CHECKLIST_PENDIENTES.md` (§10.x por bloque) |
-| Investigación Azure ML | `Fase 2/SIGMA_Investigacion_Azure_ML.docx` (informe) · `MD/SIGMA_INVESTIGACION_AZURE_ML.md` (detalle técnico y guía) |
-| Evidencia de pruebas | `Fase 2/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx` + `Fase 2/Pruebas/capturas/S1..S6, AzureML` |
+| Investigación Azure ML | `Fase 2/Evidencias Proyecto/SIGMA_Investigacion_Azure_ML.docx` (informe) · `MD/SIGMA_INVESTIGACION_AZURE_ML.md` (detalle técnico y guía) |
+| Evidencia de pruebas | `Fase 2/Evidencias Proyecto/Pruebas/SIGMA_Informe_Pruebas_Sprint_N.docx` + `Fase 2/Evidencias Proyecto/Pruebas/capturas/S1..S6, AzureML` |
 
 **Reglas que no se negocian:** leer `Boveda/Patrones` antes de escribir SQL o C#; archivos UTF-8 con BOM y CRLF;
 la seguridad de pantallas es un INSERT en `Menus`, no código; las claves nunca viajan por chat ni por
