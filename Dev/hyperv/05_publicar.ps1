@@ -18,6 +18,7 @@
 # =============================================================================
 #Requires -RunAsAdministrator
 param(
+    [string]$Usuario = 'Administrador',
     [string]$Nombre = 'SIGMA-SRV',
     [string]$VmIp = '192.168.77.10',
     [string]$Base = 'SIGMA',
@@ -50,14 +51,14 @@ if (-not $SoloConfigurar) {
     foreach ($f in 'Web.config', 'Global.asax') { Copy-Item (Join-Path $apiSrc $f) $api -Force }
 
     # ------------------------------------------------------------ copiar a la VM
-    $cred = Get-Credential -UserName "$Nombre\Administrator" -Message 'Administrador de la VM (el de la instalacion de Windows Server)'
+    $cred = Get-Credential -UserName "$Nombre\$Usuario" -Message 'Administrador de la VM (el de la instalacion de Windows Server)'
     $s = New-PSSession -VMName $Nombre -Credential $cred
     Write-Host 'Copiando a la VM...'
     Invoke-Command -Session $s { Remove-Item 'C:\inetpub\SIGMA\Intranet\*', 'C:\inetpub\SIGMA\Servicio\API\*' -Recurse -Force -ErrorAction SilentlyContinue }
     Copy-Item -Path "$web\*" -Destination 'C:\inetpub\SIGMA\Intranet' -ToSession $s -Recurse -Force
     Copy-Item -Path "$api\*" -Destination 'C:\inetpub\SIGMA\Servicio\API' -ToSession $s -Recurse -Force
 } else {
-    $cred = Get-Credential -UserName "$Nombre\Administrator" -Message 'Administrador de la VM'
+    $cred = Get-Credential -UserName "$Nombre\$Usuario" -Message 'Administrador de la VM'
     $s = New-PSSession -VMName $Nombre -Credential $cred
 }
 
