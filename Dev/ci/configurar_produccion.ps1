@@ -1,4 +1,4 @@
-# =============================================================================
+﻿# =============================================================================
 # SIGMA · CI — aplica la CONFIGURACION DE PRODUCCION a los paquetes ya compilados
 #
 # Lo corre el pipeline (.github/workflows/desplegar-produccion.yml) despues de precompilar la web y
@@ -24,7 +24,7 @@ $ErrorActionPreference = 'Stop'
 function Requerida([string]$n) {
     $v = [Environment]::GetEnvironmentVariable($n)
     if ([string]::IsNullOrWhiteSpace($v)) { throw "Falta el secreto o variable $n" }
-    return $v
+    return $v.Trim()
 }
 $urlSitio = (Requerida 'URL_SITIO').TrimEnd('/')
 $urlApi = (Requerida 'URL_API').TrimEnd('/')

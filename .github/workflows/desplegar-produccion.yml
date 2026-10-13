@@ -81,6 +81,23 @@ jobs:
           API_APPSETTINGS_JSON: ${{ secrets.API_APPSETTINGS_JSON }}
         run: ./Dev/ci/configurar_produccion.ps1 -Web "$pwd\_publicar\web" -Api "$pwd\_publicar\api"
 
+      # Una publicacion anterior (por archivos fuente) dejo la carpeta App_Code en el servidor; un sitio
+      # PRECOMPILADO no la admite ("The directory '/App_Code/' is not allowed because the application is precompiled").
+      - name: Quitar App_Code heredado del servidor
+        shell: pwsh
+        continue-on-error: true
+        env:
+          PASS: ${{ secrets.HC_WEB_DEPLOY_PASSWORD }}
+          SERVIDOR: ${{ vars.HC_SERVER }}
+          SITIO: ${{ vars.HC_WEB_SITE }}
+          USUARIO: ${{ vars.HC_WEB_USER }}
+        run: |
+          $s = $env:SITIO.Trim(); $srv = $env:SERVIDOR.Trim(); $u = $env:USUARIO.Trim()
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:delete `
+            "-dest:contentPath=$s/App_Code,computerName=https://$($srv):8172/msdeploy.axd?site=$s,userName=$u,password=$($env:PASS),authType=Basic" `
+            -allowUntrusted
+          exit 0
+
       - name: Publicar la web (sigma.codigocreativo.tech)
         shell: pwsh
         env:
@@ -115,7 +132,8 @@ jobs:
           URL_SITIO: ${{ vars.URL_SITIO }}
           URL_API: ${{ vars.URL_API }}
         run: |
-          foreach ($u in "$($env:URL_SITIO)/Login.aspx", "$($env:URL_API)/") {
+          $sitio = $env:URL_SITIO.Trim().TrimEnd('/'); $api = $env:URL_API.Trim().TrimEnd('/')
+          foreach ($u in "$sitio/Login.aspx", "$api/") {
             $ok = $false
             foreach ($i in 1..6) {
               try { $r = Invoke-WebRequest $u -UseBasicParsing -TimeoutSec 120; if ($r.StatusCode -eq 200) { $ok = $true; break } } catch { Start-Sleep 10 }
