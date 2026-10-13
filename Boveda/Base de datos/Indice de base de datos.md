@@ -15,7 +15,7 @@ Las migraciones viven en `BD/` con número correlativo (= orden de ejecución). 
 | [[Terceros y clientes]] | 7 | `29_SPRINT1_CLIENTE_PLANTA.sql` | `424_ARREGLOS_PRUEBAS_CLIENTE.sql` |
 | [[Soporte, notificaciones y ayuda]] | 20 | `07_VOZ_INCLUSION.sql` | `445_BITACORA_RECTIFICACION_DEMO.sql` |
 | [[Organización, catálogos y cargas]] | 39 | `00_MAESTRO.sql` | `420_CARGA_LABORAL.sql` |
-| [[Otros y transversales]] | 14 | `27_SPRINT1_ORGANIZACION.sql` | `321_HU090_PLANTILLA_NACE_CON_VERSION_1.sql` |
+| [[Otros y transversales]] | 15 | `27_SPRINT1_ORGANIZACION.sql` | `454_IMAGENES_REFERENCIA.sql` |
 
 **Otros directorios de BD/**: `Semillas/` (datos de demo y pruebas), `Respaldos/` (copias y propuestas), `Carga masiva/`, `Reinicio/`.
 
