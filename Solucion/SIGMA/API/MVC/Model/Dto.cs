@@ -1513,6 +1513,11 @@ namespace API.MVC.Model
 
     public class BitacoraRectificacionAltaDto
     {
+        /// <summary>Generado en el telefono al **empezar a escribir**, no al
+        /// enviar: un reintento de la cola no puede dejar dos rectificaciones
+        /// iguales. Si no viene, no hay proteccion contra el reenvio.</summary>
+        public Guid? uuid { get; set; }
+
         public string texto { get; set; }
 
         /// <summary>Obligatorio. Sin el, nadie puede saber despues si el texto
@@ -2891,6 +2896,13 @@ namespace API.MVC.Model
         public string DATASET_CODIGO { get; set; }
     }
 
+    public class MlSenalDto
+    {
+        public int CIERRES { get; set; }
+        public DateTime? ULTIMO_CIERRE { get; set; }
+        public int? ULTIMO_ID { get; set; }
+    }
+
     public class MlVersionDto
     {
         public int mpv_id { get; set; }
@@ -3030,5 +3042,68 @@ namespace API.MVC.Model
         public int deteccion { get; set; }
         /// <summary>Vacío = confirma la etiqueta que puso el modelo.</summary>
         public string etiqueta { get; set; }
+    }
+
+    // ======================================================================
+    // Accesibilidad (HU-162): las preferencias de interfaz de la PERSONA.
+    // No describen lo que le falta al usuario; describen lo que hace la app.
+    // ======================================================================
+
+    /// <summary>Lo que la app lee de las opciones de accesibilidad de la persona.</summary>
+    public class UsuarioAccesibilidadDto
+    {
+        public int uac_id { get; set; }
+        public int uac_usuario { get; set; }
+        public string USUARIO_NOMBRE { get; set; }
+        public bool uac_entrada_voz { get; set; }
+        public bool uac_lectura_voz { get; set; }
+        public bool uac_confirmacion_hablada { get; set; }
+        public decimal uac_velocidad_voz { get; set; }
+        public bool uac_texto_grande { get; set; }
+        public bool uac_alto_contraste { get; set; }
+        public bool uac_iconos_grandes { get; set; }
+        public int? uac_idioma { get; set; }
+        public decimal uac_volumen { get; set; }
+        public bool uac_silenciar_alertas { get; set; }
+        public bool uac_habilitado { get; set; }
+        public DateTime uac_fecha_creacion { get; set; }
+        public DateTime? uac_fecha_actualizacion { get; set; }
+    }
+
+    /// <summary>
+    /// Alta de las preferencias (POST). Los valores omitidos quedan en su por
+    /// defecto: nada activo, voz y volumen al 100%.
+    /// </summary>
+    public class UsuarioAccesibilidadAltaDto
+    {
+        public bool entrada_voz { get; set; }
+        public bool lectura_voz { get; set; }
+        public bool confirmacion_hablada { get; set; }
+        public decimal velocidad_voz { get; set; }
+        public bool texto_grande { get; set; }
+        public bool alto_contraste { get; set; }
+        public bool iconos_grandes { get; set; }
+        public int? idioma { get; set; }
+        public decimal volumen { get; set; }
+        public bool silenciar_alertas { get; set; }
+    }
+
+    /// <summary>
+    /// Edición de las preferencias (PUT). Cada campo es anulable: lo que no
+    /// venga NO se cambia (ISNULL en el SP), así una pantalla parcial no borra
+    /// lo que no muestra.
+    /// </summary>
+    public class UsuarioAccesibilidadEdicionDto
+    {
+        public bool? entrada_voz { get; set; }
+        public bool? lectura_voz { get; set; }
+        public bool? confirmacion_hablada { get; set; }
+        public decimal? velocidad_voz { get; set; }
+        public bool? texto_grande { get; set; }
+        public bool? alto_contraste { get; set; }
+        public bool? iconos_grandes { get; set; }
+        public int? idioma { get; set; }
+        public decimal? volumen { get; set; }
+        public bool? silenciar_alertas { get; set; }
     }
 }

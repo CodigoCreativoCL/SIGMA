@@ -89,6 +89,21 @@
     }
     var kb = nav.querySelector('.nv-find kbd'); if (kb) kb.textContent = MAC ? '⌘ K' : 'Ctrl K';
 
+    /* ------------------------------------------------------------ scroll con la rueda
+       Adminto corre slimScroll sobre «.slimscroll-menu» (app.min.js). Su manejador de la
+       rueda hace preventDefault y, como el CSS deja ese contenedor en overflow:hidden y el
+       scroll real vive en «.sgnav», la rueda quedaba cancelada sin mover nada. Cortamos el
+       evento en captura antes de que slimScroll lo vea; asi el scroll nativo de .sgnav va. */
+    (function () {
+        var menu = nav.closest ? nav.closest('.slimscroll-menu') : null;
+        if (!menu) return;
+        menu.addEventListener('wheel', function (e) {
+            if (document.body.classList.contains('enlarged')) return;   // colapsado: no hay scroll vertical del menu
+            if (!nav.contains(e.target)) return;
+            e.stopPropagation();                                        // que no llegue al manejador de slimScroll
+        }, true);
+    })();
+
     /* ------------------------------------------------------------ recientes */
     function actual() {
         var p = location.pathname.toLowerCase();

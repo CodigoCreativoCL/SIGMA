@@ -35,7 +35,7 @@ Siete, y cada uno responde una pregunta distinta. Leerlos en este orden:
 
 Y dos normativos que no son de la app pero la gobiernan:
 [`SIGMA_ALCANCE_APP.md`](SIGMA_ALCANCE_APP.md) —qué entra y qué no— y
-`PATRONES/ASP/CONVENCIONES.md` —cómo se nombra todo—.
+`Boveda/Patrones/CONVENCIONES.md` —cómo se nombra todo—.
 
 ---
 

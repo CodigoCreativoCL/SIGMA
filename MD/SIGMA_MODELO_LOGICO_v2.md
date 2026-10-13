@@ -38,12 +38,12 @@ Y la omisión más visible: `Checklist_Asignacion_Tipo` incluye el valor `GRUPO`
 | `MATRIZ OT.xlsx` | adjunto | **7.043 filas reales**, 24 columnas, OT 1 a 23.164, años 2025–2026 |
 | `HAM006 PLAN ANUAL DE MANTENIMIENTO DE BLOWERS.xlsx` | adjunto | 12 hojas: plan por horas, ficha técnica, calendario anual 2020–2025, histórico, compras |
 | `OT 23074.pdf` | adjunto | Formato real de OT cerrada (SOP-09-R11) |
-| `PATRON_TABLAS.md` | `C:\Capstone\PATRONES\ASP\BaseDatos` | **Convención definitiva** de tablas |
-| `PATRON_SP.md`, `CONVENCIONES.md` | `C:\Capstone\PATRONES\ASP` | Nomenclatura, tipos, prohibiciones, encoding |
+| `PATRON_TABLAS.md` | `C:\Capstone\SIGMA\Boveda\Patrones\BaseDatos` | **Convención definitiva** de tablas |
+| `PATRON_SP.md`, `CONVENCIONES.md` | `C:\Capstone\SIGMA\Boveda\Patrones` | Nomenclatura, tipos, prohibiciones, encoding |
 
 ### 1.2 NO verificado — supuestos abiertos
 
-> **Importante.** En `C:\Capstone\PATRONES` hay patrones, pero **no está el DDL real de la base SIGMA**. En `CAPSTONE\SIGMA` solo hay un README. Por lo tanto lo siguiente son **supuestos** tomados del contexto §6/§74/§75 y deben verificarse antes de ejecutar cualquier DDL:
+> **Importante.** En `C:\Capstone\SIGMA\Boveda\Patrones` hay patrones, pero **no está el DDL real de la base SIGMA**. En `CAPSTONE\SIGMA` solo hay un README. Por lo tanto lo siguiente son **supuestos** tomados del contexto §6/§74/§75 y deben verificarse antes de ejecutar cualquier DDL:
 
 | Supuesto | Verificación (§14 de este documento) |
 |---|---|
@@ -2020,4 +2020,4 @@ Cada bloque produce, en el mismo cambio (PATRON_TABLAS §9.9): los `.sql` de tab
 
 ---
 
-*Documento generado a partir del análisis directo de los tres archivos de Hamburgo, del contexto funcional y de los patrones del grupo en `C:\Capstone\PATRONES\ASP`.*
+*Documento generado a partir del análisis directo de los tres archivos de Hamburgo, del contexto funcional y de los patrones del grupo en `C:\Capstone\SIGMA\Boveda\Patrones`.*

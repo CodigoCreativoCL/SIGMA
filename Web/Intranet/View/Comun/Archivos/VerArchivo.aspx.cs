@@ -67,8 +67,20 @@ public partial class View_Comun_Archivos_VerArchivo : System.Web.UI.Page
                 return;
             }
 
-            ArchivoController controller = new ArchivoController();
-            Archivo archivo = controller.GetArchivo(new Archivo { arc_id = id });
+            /* RENDIMIENTO (11-10-2026)
+               - La pagina abre la sesion en SOLO LECTURA (EnableSessionState): con
+                 la sesion exclusiva, las fotos de una ficha se servian de a una.
+               - Los datos del archivo y las imagenes chicas quedan 30 min en la
+                 memoria del servidor: el archivo de un id no cambia.
+               - El navegador la guarda un dia (la URL de un id es siempre la misma)
+                 y, si ya la tiene, se responde 304 sin bajar nada. */
+            Archivo archivo = HttpRuntime.Cache["SIGMA_ARC_META_" + id] as Archivo;
+            if (archivo == null)
+            {
+                archivo = new ArchivoController().GetArchivo(new Archivo { arc_id = id });
+                if (archivo != null && archivo.arc_id > 0)
+                    HttpRuntime.Cache.Insert("SIGMA_ARC_META_" + id, archivo, null, DateTime.UtcNow.AddMinutes(30), System.Web.Caching.Cache.NoSlidingExpiration);
+            }
 
             if (archivo == null || archivo.arc_id == 0)
             {
@@ -107,12 +119,32 @@ public partial class View_Comun_Archivos_VerArchivo : System.Web.UI.Page
                 return;
             }
 
+            string etag = "\"arc-" + id + "\"";
+            if (verlo && Request.Headers["If-None-Match"] == etag)
+            {
+                Response.StatusCode = 304;
+                Response.SuppressContent = true;
+                HttpContext.Current.ApplicationInstance.CompleteRequest();
+                return;
+            }
+
             Response.Clear();
             Response.Buffer = true;
 
             if (verlo)
             {
-                ArchivoVisto visto = ServicioArchivos.Ver(archivo.arc_ruta);
+                ArchivoVisto visto = HttpRuntime.Cache["SIGMA_ARC_VER_" + id] as ArchivoVisto;
+                if (visto == null)
+                {
+                    visto = ServicioArchivos.Ver(archivo.arc_ruta);
+                    if (visto != null && visto.contenido != null && visto.contenido.Length <= 2 * 1024 * 1024)
+                        HttpRuntime.Cache.Insert("SIGMA_ARC_VER_" + id, visto, null, DateTime.UtcNow.AddMinutes(30), System.Web.Caching.Cache.NoSlidingExpiration);
+                }
+
+                /* Privada: es del cliente en sesion, no la guarda un proxy compartido. */
+                Response.Cache.SetCacheability(HttpCacheability.Private);
+                Response.Cache.SetMaxAge(TimeSpan.FromDays(1));
+                Response.Cache.SetETag(etag);
 
                 /* Si la API dijo que este tipo no se muestra inline, se ofrece
                    como descarga en vez de forzarlo: el usuario igual accede al

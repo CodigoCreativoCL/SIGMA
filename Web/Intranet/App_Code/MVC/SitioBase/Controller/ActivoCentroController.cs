@@ -304,6 +304,22 @@ namespace SitioBase.Controller
     }
 
     /// <summary>
+    /// Una rectificacion de una entrada de bitacora (HU-131). La entrada
+    /// original no se toca: esto es una fila nueva con el texto corregido y el
+    /// motivo, obligatorio. Se encadenan: vale la ultima, se ven todas.
+    /// </summary>
+    [Serializable]
+    public class ActivoBitacoraRectificacion
+    {
+        public int bitacora { get; set; }
+        public int bre_id { get; set; }
+        public string texto { get; set; }
+        public string motivo { get; set; }
+        public string usuario { get; set; }
+        public DateTime? fecha { get; set; }
+    }
+
+    /// <summary>
     /// Lo que la lista de equipos necesita saber de cada uno y no esta en su
     /// ficha: cuanto trabajo tiene encima y cuando le toca lo proximo.
     /// </summary>
@@ -1035,7 +1051,18 @@ namespace SitioBase.Controller
             return r;
         }
 
-        public Respuesta AgregarObservacion(int activo, int instalacion, int? area, string texto)
+        /// <summary>
+        /// Deja una observación en la bitácora del equipo.
+        ///
+        /// EL UUID LO PONE EL CLIENTE, NO EL SERVIDOR
+        ///   Antes se generaba un Guid.NewGuid() acá, en cada postback: por eso
+        ///   un doble clic en «Publicar» dejaba la misma observación dos (o
+        ///   diez) veces —cada clic era un uuid distinto y la idempotencia del
+        ///   SP nunca podía deduplicar—. Ahora el uuid viaja desde la pantalla,
+        ///   generado una vez por observación: repetir el envío devuelve la que
+        ///   ya estaba. Si no llega (cliente viejo), se genera uno como respaldo.
+        /// </summary>
+        public Respuesta AgregarObservacion(int activo, int instalacion, int? area, string texto, string uuid = null)
         {
             Respuesta r = new Respuesta();
 
@@ -1046,6 +1073,9 @@ namespace SitioBase.Controller
                 r.error = true;
                 return r;
             }
+
+            Guid uuidObs;
+            if (!Guid.TryParse(uuid, out uuidObs)) uuidObs = Guid.NewGuid();
 
             if (string.IsNullOrEmpty(texto) || texto.Trim().Length == 0)
             {
@@ -1061,7 +1091,7 @@ namespace SitioBase.Controller
             {
                 cmd = Conexion.GetCommand("API_INS_BITACORA");
                 cmd.Parameters.AddWithValue("@ID", 0).Direction = System.Data.ParameterDirection.Output;
-                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@UUID", uuidObs);
                 cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
                 cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
                 cmd.Parameters.AddWithValue("@INSTALACION", instalacion);
@@ -1155,6 +1185,140 @@ namespace SitioBase.Controller
                         if (dr["FECHA_REGISTRO"] != DBNull.Value) b.registro = (DateTime)dr["FECHA_REGISTRO"];
 
                         lista.Add(b);
+                    }
+                }
+
+                cmd.Connection.Close();
+                cmd.Dispose();
+            }
+            catch (Exception)
+            {
+                if (cmd.Connection != null) cmd.Connection.Close();
+                cmd.Dispose();
+            }
+
+            return lista;
+        }
+
+        /// <summary>
+        /// Rectifica una entrada de bitácora (HU-131): no la edita, agrega una
+        /// fila con el texto corregido y el motivo, obligatorio.
+        ///
+        /// Se escribe por el MISMO procedimiento que la app —
+        /// API_INS_BITACORA_RECTIFICACION— para que la bitácora no tenga dos
+        /// caminos de escritura. El SP impone las reglas en el servidor y no la
+        /// pantalla: solo el autor rectifica, el motivo es obligatorio, el texto
+        /// no puede ir vacío ni igual al vigente, y el cliente sale de la sesión
+        /// —un bit_id escrito a mano no alcanza para tocar la entrada de otra
+        /// empresa—. El uuid lo pone la web: un doble clic no deja dos.
+        /// </summary>
+        public Respuesta RectificarBitacora(int bitacora, string texto, string motivo)
+        {
+            Respuesta r = new Respuesta();
+
+            if (!Token.TokenSeguridad())
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "La sesión no es válida o expiró. Vuelve a entrar y repite la operación.";
+                return r;
+            }
+
+            /* LA POTESTAD SE COMPRUEBA EN EL SERVIDOR (T-5323), no escondiendo
+               el botón: quien manda el postback a mano se salta el esconderlo.
+               Escribir en la bitácora —rectificar es escribir— pide REGISTRAR
+               BITACORA. Quién puede rectificar ESA entrada (solo su autor) y el
+               filtro por cliente en sesión los impone además el SP, por si se
+               le llama por otro camino. */
+            if (!Token.Puede("REGISTRAR BITACORA"))
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "Tu perfil no tiene permiso para escribir en la bitácora.";
+                return r;
+            }
+
+            if (string.IsNullOrWhiteSpace(texto))
+            {
+                r.error = true; r.codigo = -1; r.detalle = "Escribe el texto corregido.";
+                return r;
+            }
+
+            if (string.IsNullOrWhiteSpace(motivo))
+            {
+                r.error = true; r.codigo = -1;
+                r.detalle = "Para rectificar hay que decir por qué: el motivo es obligatorio.";
+                return r;
+            }
+
+            if (motivo.Trim().Length > 500)
+            {
+                r.error = true; r.codigo = -1; r.detalle = "El motivo no puede superar los 500 caracteres.";
+                return r;
+            }
+
+            SqlCommand cmd = null;
+
+            try
+            {
+                cmd = Conexion.GetCommand("API_INS_BITACORA_RECTIFICACION");
+                cmd.Parameters.AddWithValue("@UUID", Guid.NewGuid());
+                cmd.Parameters.AddWithValue("@BITACORA", bitacora);
+                cmd.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@TEXTO", texto.Trim());
+                cmd.Parameters.AddWithValue("@MOTIVO", motivo.Trim());
+
+                // El SP devuelve bre_id en la primera columna.
+                object id = cmd.ExecuteScalar();
+                cmd.Connection.Close();
+
+                r.error = false;
+                r.codigo = id == null || id == DBNull.Value ? 0 : Convert.ToInt32(id);
+                r.detalle = "Entrada rectificada. El texto original se conserva.";
+            }
+            catch (Exception ex)
+            {
+                if (cmd != null && cmd.Connection != null) cmd.Connection.Close();
+                r.error = true; r.codigo = -1; r.detalle = ex.Message;
+            }
+
+            return r;
+        }
+
+        /// <summary>
+        /// Las rectificaciones de las entradas del activo (HU-131), agrupables
+        /// por entrada. La ficha pinta, bajo cada entrada rectificada, el
+        /// original tachado y encima la ultima version con su motivo.
+        /// </summary>
+        public List<ActivoBitacoraRectificacion> GetRectificaciones(int activo)
+        {
+            List<ActivoBitacoraRectificacion> lista = new List<ActivoBitacoraRectificacion>();
+
+            /* Igual que GetBitacora: basta la sesión válida para leer, y el
+               cliente de la sesión acota la consulta en el SP para no mostrar
+               lo de otra empresa (T-5323). El permiso de ESCRITURA se exige en
+               RectificarBitacora, que es donde hay potestad que proteger. */
+            if (activo <= 0 || !Token.TokenSeguridad()) return lista;
+
+            SqlCommand cmd = new SqlCommand();
+
+            try
+            {
+                cmd.CommandText = "SEL_ACTIVO_BITACORA_RECTIFICACION";
+                cmd.Parameters.AddWithValue("@CLIENTE", Session.ClienteId());
+                cmd.Parameters.AddWithValue("@ACTIVO", activo);
+
+                using (SqlDataReader dr = Conexion.GetDataReader(cmd))
+                {
+                    while (dr.Read())
+                    {
+                        ActivoBitacoraRectificacion x = new ActivoBitacoraRectificacion();
+                        x.bitacora = int.Parse(dr["BITACORA"].ToString());
+                        x.bre_id = int.Parse(dr["BRE_ID"].ToString());
+                        x.texto = dr["TEXTO"].ToString();
+                        x.motivo = dr["MOTIVO"].ToString();
+                        x.usuario = dr["USUARIO_NOMBRE"].ToString();
+                        if (dr["FECHA"] != DBNull.Value) x.fecha = (DateTime)dr["FECHA"];
+                        lista.Add(x);
                     }
                 }
 

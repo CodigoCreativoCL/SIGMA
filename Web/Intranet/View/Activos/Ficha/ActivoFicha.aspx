@@ -327,6 +327,62 @@
             __doPostBack('<%=lnkResponder.UniqueID %>', '');
         });
 
+        /* ---- Bitacora: rectificar una entrada (HU-131) ---- */
+        document.addEventListener('click', function (e) {
+            var t = e.target.closest ? e.target.closest('[data-bit-rectificar],[data-bit-rect-cancelar],[data-bit-rect-enviar]') : null;
+            if (!t) return;
+            e.preventDefault();
+            var id = t.getAttribute('data-bit-rectificar') || t.getAttribute('data-bit-rect-cancelar') || t.getAttribute('data-bit-rect-enviar');
+            var f = document.querySelector('[data-bit-rect-form="' + id + '"]');
+            if (!f) return;
+            if (t.hasAttribute('data-bit-rectificar')) {
+                document.querySelectorAll('[data-bit-rect-form]').forEach(function (x) { if (x !== f) x.hidden = true; });
+                f.hidden = false; f.classList.remove('es-falta'); f.querySelector('[data-rect-texto]').focus(); return;
+            }
+            if (t.hasAttribute('data-bit-rect-cancelar')) { f.hidden = true; return; }
+            /* El motivo es OBLIGATORIO: sin el, no se envia. La regla la impone
+               igual el servidor; esto solo evita el viaje. */
+            var texto = f.querySelector('[data-rect-texto]').value.trim();
+            var motivo = f.querySelector('[data-rect-motivo]').value.trim();
+            if (!texto) { f.querySelector('[data-rect-texto]').focus(); f.classList.add('es-falta'); return; }
+            if (!motivo) { f.querySelector('[data-rect-motivo]').focus(); f.classList.add('es-falta'); return; }
+            document.getElementById('bitRectId').value = id;
+            document.getElementById('bitRectTexto').value = texto;
+            document.getElementById('bitRectMotivo').value = motivo;
+            t.disabled = true;
+            __doPostBack('<%=lnkRectificar.UniqueID %>', '');
+        });
+
+        /* ---- Bitacora: una observacion = un uuid (idempotente ante doble clic) ----
+           El uuid lo genera el navegador al empezar a escribir, no el servidor
+           en cada postback: asi varios clics en «Publicar» del mismo texto
+           guardan UNA sola nota (el SP deduplica por uuid). Se limpia al vaciar
+           el cuadro y despues de publicar (el servidor pide uno nuevo). */
+        function sgObsUuid() {
+            try { if (window.crypto && crypto.randomUUID) return crypto.randomUUID(); } catch (e) { }
+            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0; return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+        }
+        function sgWireObs() {
+            var ta = document.getElementById('<%=txtObservacion.ClientID %>');
+            var uu = document.getElementById('bitObsUuid');
+            if (!ta || !uu || ta.getAttribute('data-sg-wired') === '1') return;
+            ta.setAttribute('data-sg-wired', '1');
+            ta.addEventListener('input', function () {
+                if (ta.value.trim()) { if (!uu.value) uu.value = sgObsUuid(); }
+                else uu.value = '';
+            });
+            var btn = document.getElementById('<%=lnkPublicar.ClientID %>');
+            if (btn) btn.addEventListener('click', function () {
+                if (ta.value.trim() && !uu.value) uu.value = sgObsUuid();
+            });
+        }
+        if (document.readyState !== 'loading') sgWireObs();
+        else document.addEventListener('DOMContentLoaded', sgWireObs);
+        if (window.Sys && Sys.WebForms && Sys.WebForms.PageRequestManager)
+            Sys.WebForms.PageRequestManager.getInstance().add_endRequest(sgWireObs);
+
         /* Todo se agrega dentro del mismo asistente: no se abre otra ventana. */
         function esAgregar(que) {
             var a = document.getElementById('sgEsAsistente');
@@ -2067,10 +2123,18 @@
                             </div>
 
                             <asp:Literal ID="litObsAviso" runat="server" />
+                            <%-- Idempotencia de la observacion (HU-130/131): el uuid lo genera el
+                                 navegador una vez por nota, para que un doble clic no la guarde dos veces. --%>
+                            <input type="hidden" name="bit_obs_uuid" id="bitObsUuid" />
                             <%-- Responder una nota (bloque 352): el hilo escribe aca y envia lnkResponder. --%>
                             <input type="hidden" name="bit_padre" id="bitPadre" />
                             <input type="hidden" name="bit_respuesta" id="bitRespuesta" />
                             <asp:LinkButton ID="lnkResponder" runat="server" OnClick="lnkResponder_Click" CausesValidation="false" style="display:none" />
+                            <%-- Rectificar una entrada (HU-131): el texto corregido y el motivo viajan aca y envia lnkRectificar. --%>
+                            <input type="hidden" name="bit_rect_id" id="bitRectId" />
+                            <input type="hidden" name="bit_rect_texto" id="bitRectTexto" />
+                            <input type="hidden" name="bit_rect_motivo" id="bitRectMotivo" />
+                            <asp:LinkButton ID="lnkRectificar" runat="server" OnClick="lnkRectificar_Click" CausesValidation="false" style="display:none" />
                         </div>
 
                         <div class="sg-cond-vista es-oculta" data-bit-vista="auditoria">

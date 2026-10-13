@@ -667,4 +667,4 @@ Cada script: `USE [db_acd593_sigma]`, `SET ANSI_NULLS ON`, `SET QUOTED_IDENTIFIE
 
 ---
 
-*Anexo generado sobre el DDL real de `db_acd593_sigma` verificado el 19-08-2026, los tres archivos de Hamburgo y los patrones del grupo en `C:\Capstone\PATRONES\ASP`.*
+*Anexo generado sobre el DDL real de `db_acd593_sigma` verificado el 19-08-2026, los tres archivos de Hamburgo y los patrones del grupo en `C:\Capstone\SIGMA\Boveda\Patrones`.*

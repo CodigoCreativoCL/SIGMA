@@ -1,0 +1,47 @@
+﻿/* ============================================================================
+   SIGMA · Accesibilidad GLOBAL (HU-162)
+   ----------------------------------------------------------------------------
+   Lo que hace que TODAS las pantallas respeten las preferencias de la persona.
+   Las clases del <body> las pone el master (AccesibilidadController.ClasesBody)
+   según lo que cada quien guardó. Acá viven sus efectos. Pensado para "sólo
+   incluir esto nuevo": sin una clase activa, nada cambia.
+   ========================================================================= */
+
+/* ---- CA-1  Texto más grande ----
+   Un aumento moderado del tamaño base; el contenido crece por herencia sin
+   romper el ancho de las cards. */
+body.sg-acc-texto-grande { font-size: 112.5%; }
+body.sg-acc-texto-grande .sg-page-head h1 { font-size: 1.15em; }
+
+/* ---- CA-2  Alto contraste ----
+   Se redefinen los tokens de texto, borde y superficie: todo lo que usa
+   var(--sg-*) pasa a una paleta de mayor contraste sin tocar cada componente.
+   Enlaces subrayados y bordes marcados para que no dependan sólo del color. */
+body.sg-acc-alto-contraste {
+    --sg-text-primary: #000000;
+    --sg-text-muted:   #1f1f1f;
+    --sg-border:       #2b2b2b;
+    --sg-surface:      #ffffff;
+    --sg-surface-subtle: #f0f0f0;
+}
+body.sg-acc-alto-contraste a:not(.sigma-accion):not(.nv-a):not(.sg-ter-tab) { text-decoration: underline; }
+body.sg-acc-alto-contraste .card-box,
+body.sg-acc-alto-contraste .sg-ot-card { border-color: #2b2b2b !important; }
+
+/* ---- Iconos grandes ----
+   Agranda los iconos de Material Design, que es con lo que se dibuja casi todo
+   en SIGMA. Moderado, para no descuadrar las filas. */
+body.sg-acc-iconos-grandes .mdi { font-size: 1.2em; }
+
+/* ---- CA-3  Movimiento reducido ----
+   Lo pide el SISTEMA OPERATIVO. Cuando está activo, las animaciones se vuelven
+   transiciones instantáneas y nada se mueve en continuo: ni spinners infinitos
+   ni desplazamientos animados. No depende de ninguna preferencia guardada. */
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+    }
+}

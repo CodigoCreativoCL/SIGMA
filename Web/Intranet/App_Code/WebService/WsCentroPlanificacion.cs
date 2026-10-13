@@ -1687,7 +1687,13 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
     private object ArmarFicha(int plan)
     {
         int cli = Cli();
-        List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_PLAN_FICHA", "@CLIENTE", cli, "@PLAN", plan);
+        // La ficha, los responsables y las empresas externas van a la vez (SitioBase.Paralelo): suman 1 viaje y no 3.
+        List<List<Dictionary<string, object>>> c = null;
+        List<Dictionary<string, object>> respFilas = null, provFilas = null;
+        SitioBase.Paralelo.Todos(
+            () => c = SoporteDatos.Conjuntos("SEL_PLAN_FICHA", "@CLIENTE", cli, "@PLAN", plan),
+            () => respFilas = SoporteDatos.Filas("SEL_PLAN_HITO_RESPONSABLE", "@CLIENTE", cli, "@PLAN", plan),
+            () => provFilas = SoporteDatos.Filas("SEL_PLAN_HITO_PROVEEDOR", "@CLIENTE", cli, "@PLAN", plan));
         Dictionary<string, object> cab = SoporteDatos.Del(c, 0).FirstOrDefault() ?? new Dictionary<string, object>();
         List<Dictionary<string, object>> hitos = SoporteDatos.Del(c, 1);
 
@@ -1703,9 +1709,9 @@ public class WsCentroPlanificacion : System.Web.Services.WebService
         ILookup<int, Dictionary<string, object>> actPorHito = acts.ToLookup(r => Entero(r, "HITO_ID"));
         ILookup<int, Dictionary<string, object>> proxPorHito = SoporteDatos.Del(c, 15).ToLookup(r => Entero(r, "HITO_ID"));
         // 391: los responsables de cada intervención (ids en orden; el primero es el principal).
-        ILookup<int, int> respPorHito = SoporteDatos.Filas("SEL_PLAN_HITO_RESPONSABLE", "@CLIENTE", cli, "@PLAN", plan).ToLookup(r => Entero(r, "HITO_ID"), r => Entero(r, "USUARIO_ID"));
+        ILookup<int, int> respPorHito = respFilas.ToLookup(r => Entero(r, "HITO_ID"), r => Entero(r, "USUARIO_ID"));
         // 411: la empresa externa de cada intervención.
-        Dictionary<int, Dictionary<string, object>> provPorHito = SoporteDatos.Filas("SEL_PLAN_HITO_PROVEEDOR", "@CLIENTE", cli, "@PLAN", plan).GroupBy(r => Entero(r, "HITO_ID")).ToDictionary(g => g.Key, g => g.First());
+        Dictionary<int, Dictionary<string, object>> provPorHito = provFilas.GroupBy(r => Entero(r, "HITO_ID")).ToDictionary(g => g.Key, g => g.First());
 
         foreach (Dictionary<string, object> h in hitos)
         {

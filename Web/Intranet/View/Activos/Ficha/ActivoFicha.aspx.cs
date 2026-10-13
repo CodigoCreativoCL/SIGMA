@@ -1170,45 +1170,55 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             return;
         }
 
-        Cabecera(a);
+        using (SitioBase.Medida.Tramo("f_Cabecera")) Cabecera(a);
 
         // Lo que varias secciones comparten se lee UNA vez.
-        List<OrdenTrabajo> ordenes = new OrdenTrabajoController().GetOrdenes(
-            new OrdenTrabajo { filtro_activo = a.act_id }) ?? new List<OrdenTrabajo>();
+        IDisposable _m = SitioBase.Medida.Tramo("f_compartido");
+        /* RENDIMIENTO (11-10-2026): estas lecturas iban en fila (~2,6 s); son
+           independientes y ahora van a la vez (SitioBase.Paralelo). */
+        int aid = a.act_id;
+        var pOrd = SitioBase.Paralelo.Pedir(() => new OrdenTrabajoController().GetOrdenes(new OrdenTrabajo { filtro_activo = aid }));
+        var pFal = SitioBase.Paralelo.Pedir(() => new FallaController().GetFallas(new Falla { filtro_activo = aid }));
+        var pDet = SitioBase.Paralelo.Pedir(() => new IndisponibilidadController().Get(new ActivoIndisponibilidad { filtro_activo = aid }));
+        var pOcu = SitioBase.Paralelo.Pedir(() => new PlanOcurrenciaController().GetCalendario(new PlanOcurrencia { filtro_activo = aid }));
+        var pRev = SitioBase.Paralelo.Pedir(() => new ActivoCentroController().GetRevisiones(aid));
+        var pCon = SitioBase.Paralelo.Pedir(() => new ActivoCentroController().GetConsumos(aid));
+        var pEve = SitioBase.Paralelo.Pedir(() => LeerCambios(aid));
 
-        List<Falla> fallas = new FallaController().GetFallas(
-            new Falla { filtro_activo = a.act_id }) ?? new List<Falla>();
-
-        List<ActivoIndisponibilidad> detenciones = new IndisponibilidadController().Get(
-            new ActivoIndisponibilidad { filtro_activo = a.act_id }) ?? new List<ActivoIndisponibilidad>();
-
-        List<PlanOcurrencia> ocurrencias = new PlanOcurrenciaController().GetCalendario(
-            new PlanOcurrencia { filtro_activo = a.act_id }) ?? new List<PlanOcurrencia>();
+        List<OrdenTrabajo> ordenes = pOrd.Result ?? new List<OrdenTrabajo>();
+        List<Falla> fallas = pFal.Result ?? new List<Falla>();
+        List<ActivoIndisponibilidad> detenciones = pDet.Result ?? new List<ActivoIndisponibilidad>();
+        List<PlanOcurrencia> ocurrencias = pOcu.Result ?? new List<PlanOcurrencia>();
 
         /* Las revisiones y los consumos se leian dentro de su pestaña. Ahora
            los necesita tambien el historial, asi que se leen aca una vez y se
            pasan: dos consultas, no cuatro. */
-        List<ActivoRevision> revisiones = new ActivoCentroController().GetRevisiones(a.act_id)
-                                          ?? new List<ActivoRevision>();
+        List<ActivoRevision> revisiones = pRev.Result ?? new List<ActivoRevision>();
+        List<ActivoConsumo> consumos = pCon.Result ?? new List<ActivoConsumo>();
+        List<ActivoFichaEvento> eventos = pEve.Result;
+        _m.Dispose();
 
-        List<ActivoConsumo> consumos = new ActivoCentroController().GetConsumos(a.act_id)
-                                       ?? new List<ActivoConsumo>();
-
-        List<ActivoFichaEvento> eventos = LeerCambios(a.act_id);
-
-        Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos);
-        Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos);
-        Ordenes(ordenes);
-        Mantenimiento(a, ocurrencias);
+        /* RENDIMIENTO (11-10-2026): las secciones se arman a la vez. Cada una escribe en sus
+           propios controles y solo LEE datos (los permisos ya estan en HttpContext.Items desde
+           el master). Ficha tecnica va despues: la arma el control frmFicha en su PreRender. */
+        long[] _t = new long[12];
+        Action<int, Action> T = (k, f) => { var sw = System.Diagnostics.Stopwatch.StartNew(); f(); _t[k] = sw.ElapsedMilliseconds; };
+        using (SitioBase.Medida.Tramo("f_secciones"))
+            SitioBase.Paralelo.Todos(
+                () => T(0, () => Resumen(a, ordenes, fallas, detenciones, ocurrencias, eventos)),
+                () => T(1, () => Historial(a, ordenes, fallas, detenciones, revisiones, consumos, eventos)),
+                () => T(2, () => Ordenes(ordenes)),
+                () => T(3, () => Mantenimiento(a, ocurrencias)),
+                () => T(4, () => Estructura(a)),
+                () => T(5, () => FallasYDetenciones(a, fallas, detenciones)),
+                () => T(6, () => Condicion(a)),
+                () => T(7, () => Documentos(a)),
+                () => T(8, () => InspeccionesYTareas(a, revisiones)),
+                () => T(9, () => RepuestosYCostos(a, consumos)),
+                () => T(10, () => SigmaAi(a, ordenes, fallas)),
+                () => T(11, () => BitacoraYTrazabilidad(a, eventos)));
+        Response.AppendHeader("X-Sigma-Secciones", string.Join(",", new[] { "Resumen","Historial","Ordenes","Mantenim","Estructura","Fallas","Condicion","Docs","Inspecc","Repuestos","SigmaAi","Bitacora" }.Select((n, k) => n + "=" + _t[k])));
         FichaTecnica(a);
-        Estructura(a);
-        FallasYDetenciones(a, fallas, detenciones);
-        Condicion(a);
-        Documentos(a);
-        InspeccionesYTareas(a, revisiones);
-        RepuestosYCostos(a, consumos);
-        SigmaAi(a, ordenes, fallas);
-        BitacoraYTrazabilidad(a, eventos);
     }
 
     private void Cabecera(Activo a)
@@ -2291,10 +2301,18 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         bool puedeAgregar = Token.Puede("CREAR EDITAR ACTIVOS");
         pnlEsAgregar.Visible = puedeAgregar;
+        /* RENDIMIENTO (11-10-2026): esta seccion encadenaba ~12 lecturas (~3 s). Las que no
+           dependen unas de otras salen a la vez: componentes, estados, fotos de repuestos y
+           ubicaciones con stock (de toda la bodega: 1 min de cache por cliente). */
+        int actId = a.act_id, cliId = _cliente;
+        var tLista = SitioBase.Paralelo.Pedir(() => new ActivoComponenteController().GetComponentes(
+            new ActivoComponente { aco_cliente = cliId, filtro_activo = actId }));
+        var tEstados = SitioBase.Paralelo.Pedir(() => new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }));
+        _tPortadas = SitioBase.Paralelo.Pedir(() => new RepuestoFotoController().GetPortadas());
+        _tUbic = SitioBase.Paralelo.Pedir(() => SitioBase.CacheSesion.Global("dg_ubicaciones_" + cliId, 1, () => DgUbicaciones()));
         ActivoEstructura e = new ActivoEstructuraController().GetEstructura(a.act_id);
 
-        List<ActivoComponente> lista = new ActivoComponenteController().GetComponentes(
-            new ActivoComponente { aco_cliente = _cliente, filtro_activo = a.act_id }) ?? new List<ActivoComponente>();
+        List<ActivoComponente> lista = tLista.Result ?? new List<ActivoComponente>();
         Dictionary<int, ActivoComponente> porId = new Dictionary<int, ActivoComponente>();
         foreach (ActivoComponente c in lista) porId[c.aco_id] = c;
 
@@ -2352,7 +2370,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                 s.Append(opcion("c:" + h.id, Texto(h.nombre), "c", "2", "Parte del subactivo «" + Texto(x.nombre) + "»"));
         }
         s.Append("</select><select data-estados=\"1\">");
-        foreach (ActivoComponenteEstado st in new ActivoComponenteEstadoController().GetEstados(new ActivoComponenteEstado { filtro_habilitado = true }) ?? new List<ActivoComponenteEstado>())
+        foreach (ActivoComponenteEstado st in tEstados.Result ?? new List<ActivoComponenteEstado>())
             s.Append("<option value=\"").Append(st.ace_id).Append("\"").Append(st.ace_id == 1 ? " selected=\"selected\"" : "").Append(">")
              .Append(Server.HtmlEncode(st.ace_nombre)).Append("</option>");
         s.Append("</select></div>");
@@ -2429,7 +2447,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
                                             arc_mime = foto.ContentType, contenido = bytes };
                 ArchivoController.Alivianar(arc);   // la foto llega liviana al blob
                 Respuesta ra = new ArchivoController().InsertArchivo(arc, "activos");
-                if (!ra.error && ra.codigo > 0) new ActivoComponenteImagenController().VincularImagen(r.codigo, ra.codigo);
+                if (!ra.error && ra.codigo > 0) { new ActivoComponenteImagenController().VincularImagen(r.codigo, ra.codigo); SitioBase.CacheSesion.BorrarGlobal("activo_fotos_" + _cliente); }
             }
 
             Tools.tools.ClientAlert("Listo: «" + nombre + "» quedó agregado como componente de " + a.act_nombre + ".", "ok");
@@ -2463,21 +2481,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         public decimal cant;
     }
     private Dictionary<int, List<DgUbic>> _dgU = new Dictionary<int, List<DgUbic>>();
+    private System.Threading.Tasks.Task<Dictionary<int, List<DgUbic>>> _tUbic;
+    private System.Threading.Tasks.Task<Dictionary<int, int>> _tPortadas;
     private Dictionary<int, int> _dgFotoRep = new Dictionary<int, int>();
     private Dictionary<int, int> _dgFotoComp = new Dictionary<int, int>();
     private Dictionary<int, int> _dgFotoAct = new Dictionary<int, int>();
 
+    /* RENDIMIENTO (11-10-2026): la foto de cada pieza costaba una consulta (~250 ms cada una).
+       Ahora salen todas de SEL_ACTIVO_IMAGENES_LISTA, la misma lectura en bloque de la lista,
+       cacheada 2 minutos por cliente; subir una foto desde esta ficha la olvida. */
+    private Dictionary<string, int> FotosCliente()
+    {
+        int cli = _cliente;
+        return SitioBase.CacheSesion.Global("activo_fotos_" + cli, 2, () => new ActivoImagenController().GetImagenesLista(cli) ?? new Dictionary<string, int>());
+    }
+
     private int DgFotoComp(int id)
     {
-        int f; if (_dgFotoComp.TryGetValue(id, out f)) return f;
-        f = new ActivoComponenteImagenController().GetImagenId(id, _cliente);
-        _dgFotoComp[id] = f; return f;
+        int f; return FotosCliente().TryGetValue("C" + id, out f) ? f : 0;
     }
     private int DgFotoAct(int id)
     {
-        int f; if (_dgFotoAct.TryGetValue(id, out f)) return f;
-        f = new ActivoImagenController().GetImagenId(id, _cliente);
-        _dgFotoAct[id] = f; return f;
+        int f; return FotosCliente().TryGetValue("A" + id, out f) ? f : 0;
     }
     private int DgFotoRep(int id)
     {
@@ -2490,20 +2515,28 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         Dictionary<int, List<DgUbic>> res = new Dictionary<int, List<DgUbic>>();
         try
         {
-            BodegaMapaController bm = new BodegaMapaController();
-            System.Data.DataTable est = bm.GetEstructura(0), sal = bm.GetSaldos(0);
+            /* RENDIMIENTO (11-10-2026): estructura de bodegas, saldos y posiciones eran tres
+               lecturas en fila (~0,7 s); son independientes y salen a la vez. */
+            int cliBm = _cliente;
+            var tEst = SitioBase.Paralelo.Pedir(() => new BodegaMapaController().GetEstructura(0));
+            var tSal = SitioBase.Paralelo.Pedir(() => new BodegaMapaController().GetSaldos(0));
+            var tPos = SitioBase.Paralelo.Pedir(() =>
+            {
+                System.Data.SqlClient.SqlCommand c = new System.Data.SqlClient.SqlCommand();
+                c.CommandText = "SEL_BODEGA_MAPA_POSICIONES";
+                c.Parameters.AddWithValue("@CLIENTE", cliBm);
+                c.Parameters.AddWithValue("@INSTALACION", DBNull.Value);
+                return Conexion.GetDataTable(c);
+            });
+            System.Data.DataTable est = tEst.Result, sal = tSal.Result;
             Dictionary<int, string[]> bod = new Dictionary<int, string[]>(), ubi = new Dictionary<int, string[]>();
             foreach (System.Data.DataRow f in est.Rows)
             {
                 bod[Convert.ToInt32(f["BOD_ID"])] = new[] { Convert.ToString(f["BOD_NOMBRE"]), Convert.ToString(f["CIN_NOMBRE"]) };
                 if (f["BUB_ID"] != DBNull.Value) ubi[Convert.ToInt32(f["BUB_ID"])] = new[] { Convert.ToString(f["BUB_CODIGO"]), Convert.ToString(f["BUB_NOMBRE"]) };
             }
-            System.Data.SqlClient.SqlCommand cmd = new System.Data.SqlClient.SqlCommand();
-            cmd.CommandText = "SEL_BODEGA_MAPA_POSICIONES";
-            cmd.Parameters.AddWithValue("@CLIENTE", _cliente);
-            cmd.Parameters.AddWithValue("@INSTALACION", DBNull.Value);
             Dictionary<string, System.Data.DataRow> pos = new Dictionary<string, System.Data.DataRow>();
-            foreach (System.Data.DataRow f in Conexion.GetDataTable(cmd).Rows) pos[f["BUB_ID"] + "_" + f["REP_ID"]] = f;
+            foreach (System.Data.DataRow f in tPos.Result.Rows) pos[f["BUB_ID"] + "_" + f["REP_ID"]] = f;
 
             foreach (System.Data.DataRow f in sal.Rows)
             {
@@ -2745,15 +2778,26 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
     private string Diagrama(Activo a, ActivoEstructura e, Dictionary<int, ActivoComponente> porId, List<ActivoComponente> retirados, bool puedeAgregar)
     {
-        _dgU = DgUbicaciones();
-        try { _dgFotoRep = new RepuestoFotoController().GetPortadas() ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
+        _dgU = _tUbic != null ? _tUbic.Result : DgUbicaciones();
+        try { _dgFotoRep = (_tPortadas != null ? _tPortadas.Result : new RepuestoFotoController().GetPortadas()) ?? new Dictionary<int, int>(); } catch { _dgFotoRep = new Dictionary<int, int>(); }
         ActivoEstructuraController ec = new ActivoEstructuraController();
         ActivoController ac = new ActivoController();
+        /* Cada subactivo pedía su estructura y sus datos en fila (2 consultas por subactivo):
+           ahora van todos a la vez (SitioBase.Paralelo). */
         List<DgSub> subs = new List<DgSub>();
+        List<System.Threading.Tasks.Task<ActivoEstructura>> tEst = new List<System.Threading.Tasks.Task<ActivoEstructura>>();
+        List<System.Threading.Tasks.Task<Activo>> tAct = new List<System.Threading.Tasks.Task<Activo>>();
         foreach (ActivoEstructuraItem x in e.subactivos)
         {
-            DgSub d = new DgSub { item = x, est = ec.GetEstructura(x.id) ?? new ActivoEstructura() };
-            Activo sa = ac.GetActivo(x.id);
+            int sid = x.id;
+            tEst.Add(SitioBase.Paralelo.Pedir(() => new ActivoEstructuraController().GetEstructura(sid)));
+            tAct.Add(SitioBase.Paralelo.Pedir(() => new ActivoController().GetActivo(sid)));
+        }
+        for (int i = 0; i < e.subactivos.Count; i++)
+        {
+            ActivoEstructuraItem x = e.subactivos[i];
+            DgSub d = new DgSub { item = x, est = tEst[i].Result ?? new ActivoEstructura() };
+            Activo sa = tAct[i].Result;
             d.desc = sa != null ? Texto(sa.act_descripcion) : "";
             d.foto = DgFotoAct(x.id);
             subs.Add(d);
@@ -2943,7 +2987,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         if (nota != null) det = (det == "" ? "" : det + " · ") + "«" + nota + "»";
 
         /* La foto del componente, si tiene: en la tarjeta se reconoce la pieza sin abrirla. */
-        int foto = new ActivoComponenteImagenController().GetImagenId(x.id, _cliente);
+        int foto = DgFotoComp(x.id);
         string html = Item("es-comp" + (hijo ? " es-hijo" : "") + (retirada ? " es-retirada" : "") + (foto > 0 ? " con-foto" : ""),
                     Det("comp", x.id, x.nombre, estado, tono, nota, datos, reps, q, null, null),
                     x.nombre, det, estado, tono, "");
@@ -4284,7 +4328,13 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     {
         System.Globalization.CultureInfo cl = new System.Globalization.CultureInfo("es-CL");
         AlertaController ctlAlerta = new AlertaController();
-        List<Alerta> alertas = ctlAlerta.GetAlertas(false, 200) ?? new List<Alerta>();
+        /* RENDIMIENTO (11-10-2026): alertas y variables no dependen una de otra; despues, la
+           prediccion y la serie de cada variable salen a la vez (antes eran ~9 lecturas en fila). */
+        int cliAi = _cliente, actAi = a.act_id;
+        var tAlertas = SitioBase.Paralelo.Pedir(() => SitioBase.CacheSesion.Sesion("alertas_200", 1, () => new AlertaController().GetAlertas(false, 200)));
+        var tVars = SitioBase.Paralelo.Pedir(() => new ActivoVariableController().GetVariables(
+            new ActivoVariable { ava_cliente = cliAi, filtro_activo = actAi, filtro_habilitado = true }));
+        List<Alerta> alertas = tAlertas.Result ?? new List<Alerta>();
 
         List<Alerta> predicciones = alertas
             .Where(x => x.ES_PREDICCION && x.ale_activo == a.act_id)
@@ -4292,14 +4342,26 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
             .ToList();
 
         Alerta p = predicciones.FirstOrDefault();
-        AlertaPrediccion pred = p == null ? null : ctlAlerta.GetPrediccion(p.ale_id);
+        // la prediccion de cada una de las 5 que se muestran, a la vez
+        Dictionary<int, System.Threading.Tasks.Task<AlertaPrediccion>> tPreds = new Dictionary<int, System.Threading.Tasks.Task<AlertaPrediccion>>();
+        foreach (Alerta xa in predicciones.Take(5))
+        {
+            int aid = xa.ale_id;
+            tPreds[aid] = SitioBase.Paralelo.Pedir(() => new AlertaController().GetPrediccion(aid));
+        }
+        AlertaPrediccion pred = p == null ? null : tPreds[p.ale_id].Result;
 
         // ---- las senales que alimentan el modelo: las variables del activo ----
-        List<ActivoVariable> variables = new ActivoVariableController().GetVariables(
-            new ActivoVariable { ava_cliente = _cliente, filtro_activo = a.act_id, filtro_habilitado = true })
-            ?? new List<ActivoVariable>();
+        List<ActivoVariable> variables = tVars.Result ?? new List<ActivoVariable>();
 
         DateTime hoy = global::SitioBase.Hora.Hoy;
+        List<System.Threading.Tasks.Task<MedicionSerieResumen>> tRes = new List<System.Threading.Tasks.Task<MedicionSerieResumen>>();
+        foreach (ActivoVariable vr in variables.Take(6))
+        {
+            int vid = vr.ava_id;
+            tRes.Add(SitioBase.Paralelo.Pedir(() => new ActivoVariableController().GetSerieResumen(vid, hoy.AddDays(-30), null)));
+        }
+        int vi = 0;
         ActivoVariableController ctlVar = new ActivoVariableController();
         List<FuenteIa> fuentes = new List<FuenteIa>();
         string vivoNombre = "";
@@ -4308,7 +4370,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         foreach (ActivoVariable v in variables.Take(6))
         {
-            MedicionSerieResumen r = ctlVar.GetSerieResumen(v.ava_id, hoy.AddDays(-30), null) ?? new MedicionSerieResumen();
+            MedicionSerieResumen r = tRes[vi++].Result ?? new MedicionSerieResumen();
             bool hay = r.ultimo_valor != null;
             if (hay) conDatos++;
             lecturas30 += r.puntos;
@@ -4466,7 +4528,7 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
              .Append("<p>Todavía no hay predicciones para este activo</p><span>Aparecen aquí cuando el modelo encuentra un patrón en sus lecturas u órdenes.</span></div>");
         foreach (Alerta x in predicciones.Take(5))
         {
-            AlertaPrediccion px = x == p ? pred : ctlAlerta.GetPrediccion(x.ale_id);
+            AlertaPrediccion px = x == p ? pred : (tPreds.ContainsKey(x.ale_id) ? tPreds[x.ale_id].Result : ctlAlerta.GetPrediccion(x.ale_id));
             decimal? pr = px == null || px.pre_probabilidad == null ? (decimal?)null : (px.pre_probabilidad.Value <= 1 ? px.pre_probabilidad.Value * 100 : px.pre_probabilidad.Value);
             string rx = Riesgo(pr, x.sev_nombre);
             s.Append("<article class=\"sgx-pred\"><span class=\"av\">").Append(SvgIa("status-prediction", "sgx-anim es-pred", 44)).Append("</span>")
@@ -4600,10 +4662,21 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
     ///   pierde el dia que alguien puede arreglar lo que escribio ayer, asi
     ///   que esta pantalla solo agrega.
     /// </summary>
+    /// <summary>
+    /// Las rectificaciones del activo (HU-131), agrupadas por entrada. Se carga
+    /// una vez y lo lee <see cref="Nota"/> para pintar, bajo cada entrada
+    /// rectificada, el original tachado y la correccion con su motivo.
+    /// </summary>
+    private ILookup<int, ActivoBitacoraRectificacion> _bitRects;
+
     private void BitacoraYTrazabilidad(Activo a, List<ActivoFichaEvento> eventos)
     {
         List<ActivoBitacora> registros = new ActivoCentroController().GetBitacora(a.act_id)
                                          ?? new List<ActivoBitacora>();
+
+        _bitRects = (new ActivoCentroController().GetRectificaciones(a.act_id)
+                     ?? new List<ActivoBitacoraRectificacion>())
+                    .ToLookup(x => x.bitacora);
 
         List<ActivoFichaEvento> cambios = eventos
             .Where(x => (x.tipo_evento ?? "").ToUpperInvariant() == "ESTADO"
@@ -4716,8 +4789,50 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
 
         if (nivel == 0 && !string.IsNullOrEmpty(b.etiqueta) && b.etiqueta != b.texto)
             s.Append("<h4>").Append(Server.HtmlEncode(b.etiqueta)).Append("</h4>");
-        s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>")
-         .Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+
+        /* RECTIFICACIONES (HU-131): el original no se reescribe. Si la entrada
+           tiene correcciones, se muestra el texto original TACHADO y, encima,
+           la cadena de rectificaciones con su motivo —la ultima es la que vale—.
+           Asi se lee por que cambio el texto, que es justo lo que se perderia
+           si solo se mostrara la version vigente. Solo en las notas principales:
+           las respuestas del hilo no se rectifican, se responden. */
+        List<ActivoBitacoraRectificacion> rects = (nivel == 0 && _bitRects != null)
+            ? _bitRects[b.bit_id].OrderBy(x => x.bre_id).ToList()
+            : new List<ActivoBitacoraRectificacion>();
+
+        if (rects.Count > 0)
+        {
+            s.Append("<p class=\"sg-bn-original\"><del>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</del></p>")
+             .Append("<div class=\"sg-bn-rects\">");
+            for (int i = 0; i < rects.Count; i++)
+            {
+                ActivoBitacoraRectificacion x = rects[i];
+                bool vigente = (i == rects.Count - 1);
+                s.Append("<div class=\"sg-bn-rect").Append(vigente ? " es-vigente" : "").Append("\">")
+                 .Append("<span class=\"sg-ot-chip es-tipo\"><i class=\"mdi mdi-pencil-outline\"></i>")
+                 .Append(vigente ? "Rectificada" : "Rectificación").Append("</span>")
+                 .Append("<p>").Append(Server.HtmlEncode(Texto(x.texto))).Append("</p>")
+                 .Append("<span class=\"sg-bn-rect-motivo\"><i class=\"mdi mdi-information-outline\"></i>Motivo: ")
+                 .Append(Server.HtmlEncode(Texto(x.motivo))).Append("</span>")
+                 .Append("<span class=\"sg-bn-meta\">")
+                 .Append(string.IsNullOrEmpty(x.usuario) ? "Sin usuario" : Server.HtmlEncode(x.usuario))
+                 .Append(x.fecha == null ? "" : " · " + x.fecha.Value.ToString("dd MMM yyyy · HH:mm"))
+                 .Append("</span></div>");
+            }
+            s.Append("</div>");
+        }
+        else
+        {
+            s.Append("<p>").Append(Server.HtmlEncode(Texto(b.texto))).Append("</p>");
+        }
+
+        s.Append("<footer><button type=\"button\" class=\"sg-bn-btn\" data-bit-responder=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-reply-outline\"></i>Responder</button>");
+        /* Rectificar solo las notas principales: una respuesta del hilo no se
+           rectifica, se responde. Se muestra a todos; quien no la escribio
+           recibe el rechazo del servidor —la potestad la valida el SP, no el
+           que el boton este o no—. */
+        if (nivel == 0)
+            s.Append("<button type=\"button\" class=\"sg-bn-btn\" data-bit-rectificar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-pencil-outline\"></i>Rectificar</button>");
         if (resp.Count > 0)
             s.Append("<button type=\"button\" class=\"sg-bn-btn es-hilo\" data-bit-hilo=\"").Append(b.bit_id).Append("\" aria-expanded=\"true\"><i class=\"mdi mdi-chevron-up\"></i>")
              .Append(resp.Count).Append(resp.Count == 1 ? " respuesta" : " respuestas").Append("</button>");
@@ -4725,8 +4840,22 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
          .Append("<div class=\"sg-bn-form\" data-bit-form=\"").Append(b.bit_id).Append("\" hidden>")
          .Append("<textarea rows=\"2\" maxlength=\"2000\" placeholder=\"Responde a ").Append(Server.HtmlEncode(quien.Split(' ')[0])).Append("…\"></textarea>")
          .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
-         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>")
-         .Append("</div></article>");
+         .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-send-outline\"></i>Responder</button></div></div>");
+
+        /* Formulario de rectificación (HU-131, T-5320): texto corregido
+           —prellenado con el vigente— y motivo OBLIGATORIO. La validacion dura
+           la hace el servidor; esto solo adelanta el aviso. */
+        if (nivel == 0)
+        {
+            string vigente = rects.Count > 0 ? rects[rects.Count - 1].texto : b.texto;
+            s.Append("<div class=\"sg-bn-rect-form\" data-bit-rect-form=\"").Append(b.bit_id).Append("\" hidden>")
+             .Append("<textarea rows=\"3\" maxlength=\"4000\" data-rect-texto placeholder=\"Texto corregido…\">").Append(Server.HtmlEncode(Texto(vigente))).Append("</textarea>")
+             .Append("<input type=\"text\" maxlength=\"500\" data-rect-motivo placeholder=\"Motivo de la rectificación (obligatorio)\" />")
+             .Append("<div><button type=\"button\" class=\"sg-ot-btn es-fantasma\" data-bit-rect-cancelar=\"").Append(b.bit_id).Append("\">Cancelar</button>")
+             .Append("<button type=\"button\" class=\"sg-ot-btn es-primario\" data-bit-rect-enviar=\"").Append(b.bit_id).Append("\"><i class=\"mdi mdi-check\"></i>Rectificar</button></div></div>");
+        }
+
+        s.Append("</div></article>");
 
         if (resp.Count > 0)
         {
@@ -4752,6 +4881,33 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         litObsAviso.Text = r.error
             ? "<div class=\"sg-ot-nota es-aviso\"><i class=\"mdi mdi-alert-outline\"></i><span>" + Server.HtmlEncode(r.detalle) + "</span></div>"
             : "";
+
+        // Si fallo, un popup visible: el usuario tiene que enterarse del error.
+        if (r.error) Tools.tools.ClientAlert(r.detalle, "alerta");
+    }
+
+    /// <summary>
+    /// Rectifica una entrada de bitácora (HU-131). La potestad la valida el
+    /// servidor —el permiso acá y el SP después (solo el autor, motivo
+    /// obligatorio, cliente en sesión)—, no el que el botón esté o no.
+    /// </summary>
+    protected void lnkRectificar_Click(object sender, EventArgs e)
+    {
+        hdnSeccion.Value = "bitacora";
+
+        int bitacora;
+        if (!int.TryParse(Request.Form["bit_rect_id"], out bitacora) || bitacora <= 0) return;
+        if (ActivoSeleccionado() == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
+
+        Respuesta r = new ActivoCentroController().RectificarBitacora(
+            bitacora, Request.Form["bit_rect_texto"], Request.Form["bit_rect_motivo"]);
+
+        litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
+                           "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
+                           "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
+
+        // Popup visible ademas del aviso en linea: que el usuario se entere del resultado.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
     }
 
     /// <summary>
@@ -4831,19 +4987,37 @@ public partial class View_Activos_Ficha_ActivoFicha : System.Web.UI.Page
         hdnSeccion.Value = "bitacora";
 
         int id = ActivoSeleccionado();
-        if (id == 0) return;
+        if (id == 0) { Tools.tools.ClientAlert("Primero elige un activo.", "alerta"); return; }
 
         Activo a = new ActivoController().GetActivo(id);
-        if (a == null || a.act_id == 0 || a.act_cliente != _cliente) return;
+        if (a == null || a.act_id == 0 || a.act_cliente != _cliente)
+        {
+            Tools.tools.ClientAlert("No se pudo cargar el activo, o no pertenece al cliente seleccionado.", "alerta");
+            return;
+        }
 
+        // El uuid lo genera la pantalla, una vez por observacion: asi un doble
+        // clic no deja la misma nota dos veces (el SP deduplica por uuid).
         Respuesta r = new ActivoCentroController().AgregarObservacion(
-            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area, txtObservacion.Text);
+            a.act_id, a.act_cliente_instalacion, a.act_instalacion_area,
+            txtObservacion.Text, Request.Form["bit_obs_uuid"]);
 
         litObsAviso.Text = "<div class=\"sg-ot-nota " + (r.error ? "es-aviso" : "es-ok") + "\">" +
                            "<i class=\"mdi " + (r.error ? "mdi-alert-outline" : "mdi-check-circle-outline") + "\"></i>" +
                            "<span>" + Server.HtmlEncode(r.detalle) + "</span></div>";
 
-        if (!r.error) txtObservacion.Text = "";
+        // Un popup ademas del aviso en linea: el panel puede estar en otra vista
+        // y el usuario tiene que enterarse de lo que paso pase lo que pase.
+        Tools.tools.ClientAlert(r.detalle, r.error ? "alerta" : "ok");
+
+        if (!r.error)
+        {
+            txtObservacion.Text = "";
+            /* Se limpia el uuid usado: la proxima observacion necesita uno
+               nuevo (bit_uuid es unico; reusarlo devolveria la nota anterior). */
+            ScriptManager.RegisterStartupScript(this, GetType(), "sgLimpiaObsUuid",
+                "var e=document.getElementById('bitObsUuid'); if(e) e.value='';", true);
+        }
     }
 
     #endregion
