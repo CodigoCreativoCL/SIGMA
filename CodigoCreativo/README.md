@@ -14,7 +14,8 @@ Abrir http://localhost:5180 (`?lang=en` para inglés). En local no hay PHP: el f
 ## Publicar (GitHub Actions → HostChile)
 
 Se publica sola: cada push a la rama **`landing-codigocreativo`** que toque `CodigoCreativo/` ejecuta
-`.github/workflows/desplegar-landing.yml` (Web Deploy, mismas credenciales de HostChile que SIGMA).
+`.github/workflows/desplegar-landing.yml` (Web Deploy al servidor de HostChile; el dominio principal usa sus propias
+credenciales `HC_LANDING_USER` / `HC_LANDING_DEPLOY_PASSWORD`, porque las del subdominio `sigma` no tienen permiso sobre él).
 Detalle y secretos: `Dev/ci/LEEME.md` → «Landing codigocreativo.tech».
 
 - La contraseña del buzón `comercial@` va **solo** en el secreto de GitHub `CC_SMTP_PASSWORD`; el pipeline la deja en
