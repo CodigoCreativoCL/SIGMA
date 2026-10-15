@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /deploy/
+
+Sitemap: https://codigocreativo.tech/sitemap.xml

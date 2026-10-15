@@ -16,6 +16,8 @@ on:
       - 'MD/**'
       - 'Fase 2/**'
       - '**.md'
+      - 'CodigoCreativo/**'                       # la landing tiene su propio pipeline (desplegar-landing.yml)
+      - '.github/workflows/desplegar-landing.yml'
   workflow_dispatch:
 
 concurrency:

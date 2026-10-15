@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml"
+        xmlns:image="http://www.google.com/schemas/sitemap-image/1.1"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1">
+  <url>
+    <loc>https://codigocreativo.tech/</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codigocreativo.tech/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codigocreativo.tech/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://codigocreativo.tech/"/>
+    <image:image>
+      <image:loc>https://codigocreativo.tech/assets/og/og-image.jpg</image:loc>
+    </image:image>
+    <video:video>
+      <video:thumbnail_loc>https://codigocreativo.tech/assets/video/sigma-ai-poster.jpg</video:thumbnail_loc>
+      <video:title>SIGMA AI — módulo de inteligencia predictiva de SIGMA</video:title>
+      <video:description>Spot de SIGMA AI: predice la falla antes de que detenga la línea.</video:description>
+      <video:content_loc>https://codigocreativo.tech/assets/video/sigma-ai.mp4</video:content_loc>
+      <video:duration>30</video:duration>
+      <video:publication_date>2026-10-15</video:publication_date>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://codigocreativo.tech/assets/video/sigma-twin-poster.jpg</video:thumbnail_loc>
+      <video:title>SIGMA TWIN — gemelo digital de SIGMA</video:title>
+      <video:description>Spot de SIGMA TWIN: la planta replicada en 3D y conectada a sus datos en tiempo real.</video:description>
+      <video:content_loc>https://codigocreativo.tech/assets/video/sigma-twin.mp4</video:content_loc>
+      <video:duration>30</video:duration>
+      <video:publication_date>2026-10-15</video:publication_date>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://codigocreativo.tech/?lang=en</loc>
+    <lastmod>2026-10-15</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+    <xhtml:link rel="alternate" hreflang="es" href="https://codigocreativo.tech/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://codigocreativo.tech/?lang=en"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://codigocreativo.tech/"/>
+  </url>
+</urlset>

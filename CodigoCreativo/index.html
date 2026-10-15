@@ -1,0 +1,580 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Código Creativo — Software, IA y experiencias digitales | Creadores de SIGMA</title>
+  <meta name="description" content="Código Creativo crea software, inteligencia artificial y experiencias digitales. Creadores de SIGMA, la plataforma de mantenimiento industrial con los módulos SIGMA AI y SIGMA TWIN.">
+  <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1">
+  <meta name="author" content="Código Creativo">
+  <meta name="theme-color" content="#05070D">
+  <meta name="color-scheme" content="dark">
+
+  <!-- Verificación de propiedad -->
+  <meta name="google-site-verification" content="RoQG38eem7kOrKnAo-ZaJYmhljFCr8JeHV4EksXd1BU">
+  <!-- Meta (Facebook/Instagram): pegar aquí el código de Business Suite → Seguridad de la marca → Dominios
+  <meta name="facebook-domain-verification" content="CODIGO_DE_META"> -->
+
+  <link rel="canonical" href="https://codigocreativo.tech/">
+  <link rel="alternate" hreflang="es" href="https://codigocreativo.tech/">
+  <link rel="alternate" hreflang="en" href="https://codigocreativo.tech/?lang=en">
+  <link rel="alternate" hreflang="x-default" href="https://codigocreativo.tech/">
+
+  <!-- Open Graph (Meta, LinkedIn, WhatsApp) -->
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Código Creativo">
+  <meta property="og:url" content="https://codigocreativo.tech/">
+  <meta property="og:title" content="Código Creativo — Creamos soluciones. Impulsamos el futuro.">
+  <meta property="og:description" content="Software, inteligencia artificial y experiencias digitales. Creadores de SIGMA, con sus módulos SIGMA AI y SIGMA TWIN.">
+  <meta property="og:image" content="https://codigocreativo.tech/assets/og/og-image.jpg">
+  <meta property="og:image:type" content="image/jpeg">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Código Creativo — Creamos soluciones. Impulsamos el futuro.">
+  <meta property="og:locale" content="es_CL">
+  <meta property="og:locale:alternate" content="en_US">
+  <!-- X / Twitter -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Código Creativo — Creamos soluciones. Impulsamos el futuro.">
+  <meta name="twitter:description" content="Software, inteligencia artificial y experiencias digitales. Creadores de SIGMA.">
+  <meta name="twitter:image" content="https://codigocreativo.tech/assets/og/og-image.jpg">
+
+  <link rel="icon" href="assets/logo.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon-32.png" type="image/png" sizes="32x32">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="manifest" href="site.webmanifest">
+
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://codigocreativo.tech/#org",
+        "name": "Código Creativo",
+        "url": "https://codigocreativo.tech/",
+        "logo": "https://codigocreativo.tech/assets/brand/logo-512.png",
+        "image": "https://codigocreativo.tech/assets/og/og-image.jpg",
+        "slogan": "Creamos soluciones. Impulsamos el futuro.",
+        "email": "comercial@codigocreativo.tech",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "contactType": "sales",
+          "email": "comercial@codigocreativo.tech",
+          "availableLanguage": ["es", "en"]
+        }
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://codigocreativo.tech/#website",
+        "url": "https://codigocreativo.tech/",
+        "name": "Código Creativo",
+        "inLanguage": ["es", "en"],
+        "publisher": { "@id": "https://codigocreativo.tech/#org" }
+      },
+      {
+        "@type": "SoftwareApplication",
+        "@id": "https://sigma.codigocreativo.tech/#app",
+        "name": "SIGMA",
+        "url": "https://sigma.codigocreativo.tech/",
+        "applicationCategory": "BusinessApplication",
+        "operatingSystem": "Web, Android, iOS",
+        "description": "Plataforma de mantenimiento industrial con los módulos de inteligencia SIGMA AI (mantenimiento predictivo) y SIGMA TWIN (gemelo digital).",
+        "publisher": { "@id": "https://codigocreativo.tech/#org" }
+      },
+      {
+        "@type": "VideoObject",
+        "name": "SIGMA AI — módulo de inteligencia predictiva de SIGMA",
+        "description": "Spot de SIGMA AI: predice la falla antes de que detenga la línea.",
+        "thumbnailUrl": "https://codigocreativo.tech/assets/video/sigma-ai-poster.jpg",
+        "contentUrl": "https://codigocreativo.tech/assets/video/sigma-ai.mp4",
+        "uploadDate": "2026-10-15",
+        "duration": "PT30S",
+        "inLanguage": "es",
+        "publisher": { "@id": "https://codigocreativo.tech/#org" }
+      },
+      {
+        "@type": "VideoObject",
+        "name": "SIGMA TWIN — gemelo digital de SIGMA",
+        "description": "Spot de SIGMA TWIN: la planta replicada en 3D y conectada a sus datos en tiempo real.",
+        "thumbnailUrl": "https://codigocreativo.tech/assets/video/sigma-twin-poster.jpg",
+        "contentUrl": "https://codigocreativo.tech/assets/video/sigma-twin.mp4",
+        "uploadDate": "2026-10-15",
+        "duration": "PT30S",
+        "inLanguage": "es",
+        "publisher": { "@id": "https://codigocreativo.tech/#org" }
+      }
+    ]
+  }
+  </script>
+
+  <!-- Splash: estilos críticos en línea para que tape la página desde el primer pintado -->
+  <script>document.documentElement.classList.add('js', 'is-loading');</script>
+  <style>
+    .splash { display: none; }
+    .js .splash {
+      position: fixed; inset: 0; z-index: 200;
+      display: grid; place-items: center; align-content: center; gap: 46px;
+      background: #05070D; color: #F2F4F8;
+      transition: opacity .9s cubic-bezier(.16,1,.3,1), visibility .9s;
+    }
+    .js.is-loading body { overflow: hidden; }
+    .splash__stage { position: relative; width: 132px; height: 132px; perspective: 900px; }
+    .splash__logo {
+      position: absolute; inset: 0; transform-style: preserve-3d;
+      animation: splash-turn 3.4s cubic-bezier(.45,0,.55,1) infinite;
+      transition: transform 1s cubic-bezier(.16,1,.3,1), filter 1s;
+    }
+    .splash__logo svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+    .splash__logo svg:first-child { filter: drop-shadow(0 0 16px rgba(247,169,40,.55)); }
+    .splash__ring {
+      position: absolute; inset: -46px; border-radius: 50%;
+      border: 1px solid rgba(61,214,245,.32);
+      transform: rotateX(72deg); transform-style: preserve-3d;
+      animation: splash-ring 2.6s linear infinite;
+    }
+    .splash__ring::after {
+      content: ''; position: absolute; left: 50%; top: -4px; width: 8px; height: 8px; margin-left: -4px;
+      border-radius: 50%; background: #3DD6F5; box-shadow: 0 0 12px #3DD6F5;
+    }
+    .splash__name {
+      font: 600 12px/1 ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+      letter-spacing: .5em; text-indent: .5em; color: rgba(242,244,248,.7);
+    }
+    .splash__bar { width: 160px; height: 1px; background: rgba(242,244,248,.12); overflow: hidden; }
+    .splash__bar i {
+      display: block; height: 100%; background: #F7A928;
+      transform-origin: left; transform: scaleX(.06); transition: transform .5s cubic-bezier(.16,1,.3,1);
+    }
+    .splash.is-out { opacity: 0; visibility: hidden; }
+    .splash.is-out .splash__logo { transform: scale(1.8) rotateY(0); filter: blur(8px); animation-play-state: paused; }
+    @keyframes splash-turn {
+      0%, 100% { transform: rotateY(-38deg) rotateX(10deg); }
+      50% { transform: rotateY(38deg) rotateX(-8deg); }
+    }
+    @keyframes splash-ring { to { transform: rotateX(72deg) rotateZ(360deg); } }
+    @media (prefers-reduced-motion: reduce) { .splash__logo, .splash__ring { animation: none; } }
+  </style>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500&display=swap">
+
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/global.css">
+  <link rel="stylesheet" href="styles/sections.css">
+  <link rel="stylesheet" href="styles/contact.css">
+
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <!-- Fuente única del isotipo: la usan el HTML (<use>) y el sistema de partículas. -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="logo-mark" viewBox="0 0 100 100">
+      <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+        <path stroke-width="5.5" d="M38 72c0-8-4-12-8.5-17.5C25.5 49.6 23 44 23 37.5 23 22.3 35.1 10 50 10s27 12.3 27 27.5c0 6.5-2.5 12.1-6.5 17C66 60 62 64 62 72z"/>
+        <path stroke-width="5.5" d="M39 81h22M42 88.5h16"/>
+        <path stroke-width="4.5" d="M41 30l-7 7 7 7M59 30l7 7-7 7M53.5 27l-7 20"/>
+        <path fill="currentColor" stroke="none" d="M43 94h14a7 5 0 0 1-14 0z"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <!-- Splash 3D: isotipo extruido en capas mientras cargan fuentes y la escena WebGL -->
+  <div class="splash" id="splash" aria-hidden="true">
+    <div class="splash__stage">
+      <div class="splash__ring"></div>
+      <div class="splash__logo"></div>
+    </div>
+    <div class="splash__name">CÓDIGO CREATIVO</div>
+    <div class="splash__bar"><i></i></div>
+  </div>
+  <script>
+    (function () {
+      // 14 capas del isotipo desplazadas en Z: de ámbar brillante (frente) a ámbar oscuro (fondo).
+      var logo = document.querySelector('.splash__logo'), html = '';
+      for (var i = 0; i < 14; i++) {
+        var k = 1 - i / 16, c = 'rgb(' + Math.round(247 * k) + ',' + Math.round(169 * k * k) + ',' + Math.round(40 * k * k) + ')';
+        html += '<svg viewBox="0 0 100 100" style="color:' + c + ';transform:translateZ(' + (-i * 1.5) + 'px)"><use href="#logo-mark"/></svg>';
+      }
+      logo.innerHTML = html;
+
+      var t0 = performance.now(), gone = false, bar = document.querySelector('.splash__bar i');
+      function set(p) { if (bar) bar.style.transform = 'scaleX(' + Math.max(.06, Math.min(1, p)) + ')'; }
+      function hide() {
+        return new Promise(function (resolve) {
+          if (gone) return resolve();
+          gone = true;
+          var el = document.getElementById('splash');
+          setTimeout(function () {
+            set(1);
+            setTimeout(function () {
+              el.classList.add('is-out');
+              document.documentElement.classList.remove('is-loading');
+              setTimeout(resolve, 220);
+              setTimeout(function () { el.remove(); }, 1000);
+            }, 260);
+          }, Math.max(0, 1100 - (performance.now() - t0)));
+        });
+      }
+      window.__splash = { set: set, hide: hide };
+      setTimeout(hide, 9000); // seguro: nunca bloquear la página si algo falla en la carga
+    })();
+  </script>
+
+  <canvas id="gl" aria-hidden="true"></canvas>
+  <div class="cursor" aria-hidden="true"></div>
+
+  <header class="nav">
+    <a class="nav__brand" href="#inicio" aria-label="Código Creativo">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logo-mark"/></svg>
+      <span>CÓDIGO<br>CREATIVO</span>
+    </a>
+    <nav class="nav__links" aria-label="Secciones">
+      <a href="#ecosistema" data-i18n="nav.eco">Ecosistema</a>
+      <a href="#sigma">SIGMA</a>
+      <a href="#laboratorio" data-i18n="nav.lab">Laboratorio</a>
+      <a href="#proyectos" data-i18n="nav.work">Proyectos</a>
+    </nav>
+    <div class="nav__end">
+      <div class="lang" role="group" aria-label="Idioma / Language">
+        <button type="button" data-lang="es" aria-pressed="true">ES</button>
+        <button type="button" data-lang="en" aria-pressed="false">EN</button>
+      </div>
+      <a class="nav__cta" href="mailto:comercial@codigocreativo.tech" data-contact-open data-i18n="nav.cta">Iniciar proyecto</a>
+    </div>
+  </header>
+
+  <aside class="hud" aria-hidden="true">
+    <span class="hud__num">01</span><span class="hud__sep"></span><span class="hud__name">Inicio</span>
+  </aside>
+  <div class="hud__bar" aria-hidden="true"><i></i></div>
+
+  <main>
+    <!-- 01 — Entrada -->
+    <section id="inicio" class="sec sec--hero" style="--len:320" data-i18n-label="label.hero">
+      <div class="stage">
+        <div class="hero__intro">
+          <p class="eyebrow" data-i18n="hero.eyebrow">Software · Inteligencia artificial · Experiencias digitales</p>
+          <h1 class="hero__title display" aria-label="Código Creativo">
+            <span class="hero__line">CÓDIGO</span>
+            <span class="hero__line">CREATIVO</span>
+          </h1>
+          <p class="hero__sub" data-i18n="hero.sub">Creamos soluciones.<br>Impulsamos el futuro.</p>
+        </div>
+        <div class="hero__words display" aria-hidden="true">
+          <span data-i18n="hero.w1">CONSTRUIR</span>
+          <span data-i18n="hero.w2">CREAR</span>
+          <span data-i18n="hero.w3">TRANSFORMAR</span>
+        </div>
+        <div class="scroll-hint" aria-hidden="true"><span data-i18n="hero.scroll">Desliza</span><i></i></div>
+      </div>
+    </section>
+
+    <!-- 02 — Filosofía -->
+    <section id="filosofia" class="sec sec--phil" style="--len:420" data-i18n-label="label.phil">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.phil">02 — Filosofía</span>
+        <div class="phrases">
+          <h2 class="phrase display" data-i18n="phil.p1">NO SOLO HACEMOS SOFTWARE.</h2>
+          <h2 class="phrase display" data-i18n="phil.p2">CREAMOS <em>EXPERIENCIAS.</em></h2>
+          <h2 class="phrase display" data-i18n="phil.p3">CREAMOS <em>SISTEMAS.</em></h2>
+          <h2 class="phrase display" data-i18n="phil.p4">CREAMOS <em>EL FUTURO.</em></h2>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 — Ecosistema -->
+    <section id="ecosistema" class="sec sec--eco" style="--len:420" data-i18n-label="label.eco">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.eco">03 — Ecosistema</span>
+        <h2 class="eco__title display" data-i18n="eco.title">Un núcleo.<br>Muchas soluciones.</h2>
+        <div class="eco__labels">
+          <div class="node-label node-label--core" data-anchor="core"><div class="node-label__in"><b>CÓDIGO CREATIVO</b></div></div>
+          <a class="node-label node-label--link" data-anchor="sigma" href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><div class="node-label__in"><small>01</small><img class="node-logo" src="assets/products/sigma-logo-horizontal-dark.svg" alt="SIGMA"><span data-i18n="eco.sigma">Plataforma de mantenimiento</span><em class="node-go" data-i18n="eco.go">Visitar ↗</em></div></a>
+          <div class="node-label" data-anchor="ai"><div class="node-label__in"><small data-i18n="eco.module">MÓDULO DE SIGMA</small><img class="node-logo" src="assets/products/sigma-ai-logo-horizontal-dark.svg" alt="SIGMA AI"><span data-i18n="eco.ai">Inteligencia predictiva</span></div></div>
+          <div class="node-label" data-anchor="twin"><div class="node-label__in"><small data-i18n="eco.module">MÓDULO DE SIGMA</small><img class="node-logo" src="assets/products/sigma-twin-logo-horizontal-dark.svg" alt="SIGMA TWIN"><span data-i18n="eco.twin">Gemelo digital</span></div></div>
+          <div class="node-label" data-anchor="soft"><div class="node-label__in"><small>02</small><b>SOFTWARE</b><span data-i18n="eco.soft">A la medida</span></div></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 04 — SIGMA -->
+    <section id="sigma" class="sec sec--sigma" style="--len:440" data-i18n-label="label.sigma">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.sigma">04 — Producto</span>
+        <div class="sigma__head">
+          <h2 class="sigma__logo"><a href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><img src="assets/products/sigma-logo-horizontal-dark.svg" alt="SIGMA"></a></h2>
+          <p data-i18n="sigma.line">Toda la planta, en un solo sistema.</p>
+          <a class="go-link" href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><span data-i18n="sigma.go">Ir a SIGMA</span><i aria-hidden="true">↗</i></a>
+        </div>
+        <ul class="sigma__modules">
+          <li data-i18n="sigma.m1">ACTIVOS</li>
+          <li data-i18n="sigma.m2">ÓRDENES DE TRABAJO</li>
+          <li data-i18n="sigma.m3">MANTENIMIENTO</li>
+          <li data-i18n="sigma.m4">ANALÍTICA</li>
+          <li class="is-module"><img src="assets/products/sigma-ai-symbol-gradient.svg" alt="">SIGMA AI</li>
+          <li class="is-module"><img src="assets/products/sigma-twin-symbol-gradient.svg" alt="">SIGMA TWIN</li>
+        </ul>
+        <div class="sigma__readout" data-i18n="sigma.readout">ACTIVOS EN LÍNEA ▸ 15<br>ÓRDENES ABIERTAS ▸ 6<br>PLAN PREVENTIVO ▸ AL DÍA</div>
+        <ol class="sigma__phases">
+          <li data-i18n="sigma.f1">Caos</li>
+          <li data-i18n="sigma.f2">Organización</li>
+          <li data-i18n="sigma.f3">Información</li>
+          <li data-i18n="sigma.f4">Predicción</li>
+        </ol>
+        <div class="anchor-tip sigma__alert" data-anchor="press">
+          <div class="anchor-tip__in"><i></i><span data-i18n="sigma.alert">PRENSA-07 · Falla probable</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 05 — SIGMA AI -->
+    <section id="sigma-ai" class="sec sec--ai" style="--len:480" data-i18n-label="label.ai">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.ai">05 — Módulo de inteligencia de SIGMA</span>
+        <img class="ai__logo" src="assets/products/sigma-ai-logo-horizontal-dark.svg" alt="SIGMA AI">
+        <ol class="ai__steps">
+          <li><small>01</small><span data-i18n="ai.s1">DATOS</span></li>
+          <li><small>02</small><span data-i18n="ai.s2">ANÁLISIS</span></li>
+          <li><small>03</small><span data-i18n="ai.s3">PREDICCIÓN</span></li>
+          <li><small>04</small><span data-i18n="ai.s4">ACCIÓN</span></li>
+        </ol>
+        <pre class="ai__stream" aria-hidden="true"></pre>
+        <div class="ai__prediction">
+          <div class="stat stat--main">
+            <div class="stat__value display"><span class="stat__num" data-count="87">0</span><span class="stat__unit">%</span></div>
+            <span class="stat__label" data-i18n="ai.l1">PROBABILIDAD DE FALLA</span>
+          </div>
+          <div class="stat stat--side">
+            <div class="stat__value display"><span class="stat__num" data-count="12">0</span><span class="stat__unit" data-i18n="ai.days">DÍAS</span></div>
+            <span class="stat__label" data-i18n="ai.l2">VENTANA ESTIMADA</span>
+          </div>
+        </div>
+        <h2 class="ai__final display" data-i18n="ai.final">ACTÚA ANTES<br>DE LA FALLA.</h2>
+      </div>
+    </section>
+
+    <!-- 06 — Laboratorio -->
+    <section id="laboratorio" class="sec sec--light sec--lab" style="--len:380" data-i18n-label="label.lab">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.lab">06 — Laboratorio</span>
+        <div class="lab__words">
+          <h2 class="display" data-i18n="lab.w1">EXPERIMENTAMOS.</h2>
+          <h2 class="display" data-i18n="lab.w2">DISEÑAMOS.</h2>
+          <h2 class="display" data-i18n="lab.w3">CREAMOS.</h2>
+        </div>
+        <div class="lab__field" aria-label="Capacidades">
+          <span class="chip" style="--x:17%;--xm:20%;--y:26%"><span class="chip__in">WEB</span></span>
+          <span class="chip" style="--x:79%;--xm:74%;--y:23%"><span class="chip__in" data-i18n="lab.mobile">MÓVIL</span></span>
+          <span class="chip chip--accent" style="--x:50%;--y:20%"><span class="chip__in" data-i18n="lab.ai">IA</span></span>
+          <span class="chip" style="--x:12%;--xm:16%;--y:66%"><span class="chip__in">3D</span></span>
+          <span class="chip" style="--x:87%;--xm:64%;--y:63%"><span class="chip__in" data-i18n="lab.auto">AUTOMATIZACIÓN</span></span>
+          <span class="chip" style="--x:31%;--y:81%"><span class="chip__in">CLOUD</span></span>
+          <span class="chip" style="--x:69%;--y:81%"><span class="chip__in" data-i18n="lab.data">DATOS</span></span>
+        </div>
+      </div>
+    </section>
+
+    <!-- 07 — Proyectos (scroll horizontal) -->
+    <section id="proyectos" class="sec sec--showcase" data-i18n-label="label.work">
+      <div class="stage">
+        <span class="sec__tag" data-i18n="tag.work">07 — Proyectos</span>
+        <div class="track">
+          <article class="panel">
+            <div class="panel__text">
+              <span class="panel__num">01</span>
+              <h3 class="panel__title panel__title--logo"><a href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><img src="assets/products/sigma-logo-horizontal-dark.svg" alt="SIGMA"></a></h3>
+              <p class="panel__line" data-i18n="work.p1">Plataforma de mantenimiento industrial de punta a punta, con módulos de inteligencia integrados.</p>
+              <ul class="panel__tags"><li>CMMS</li><li>WEB</li><li data-i18n="work.mobile">MÓVIL</li></ul>
+              <a class="go-link" href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><span data-i18n="work.goSigma">Ir a SIGMA</span><i aria-hidden="true">↗</i></a>
+            </div>
+            <div class="panel__visual">
+              <div class="vhead"><span data-i18n="work.v1a">PLANTA · 40 ACTIVOS</span><span class="is-amber" data-i18n="work.v1b">1 CRÍTICO</span></div>
+              <div class="vgrid" data-grid></div>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel__text">
+              <span class="panel__num">01<small>A</small></span>
+              <span class="panel__eyebrow" data-i18n="work.module">Módulo de inteligencia de SIGMA</span>
+              <h3 class="panel__title panel__title--logo"><a href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><img src="assets/products/sigma-ai-logo-horizontal-dark.svg" alt="SIGMA AI"></a></h3>
+              <p class="panel__line" data-i18n="work.p2">Predice la falla antes de que detenga la línea.</p>
+              <ul class="panel__tags"><li>MACHINE LEARNING</li><li>AZURE</li><li data-i18n="work.analytics">ANALÍTICA</li></ul>
+              <a class="go-link" href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><span data-i18n="work.goModule">Verlo en SIGMA</span><i aria-hidden="true">↗</i></a>
+            </div>
+            <div class="panel__visual panel__visual--video">
+              <video class="spot" data-spot muted loop playsinline preload="none"
+                     poster="assets/video/sigma-ai-poster.jpg" data-src="assets/video/sigma-ai.mp4"
+                     aria-label="Spot de SIGMA AI"></video>
+              <button type="button" class="spot__sound" data-spot-sound aria-pressed="false">
+                <i aria-hidden="true"></i><span class="spot__on" data-i18n="video.sound">Activar voz</span><span class="spot__off" data-i18n="video.mute">Silenciar</span>
+              </button>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel__text">
+              <span class="panel__num">01<small>B</small></span>
+              <span class="panel__eyebrow" data-i18n="work.module">Módulo de inteligencia de SIGMA</span>
+              <h3 class="panel__title panel__title--logo"><a href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><img src="assets/products/sigma-twin-logo-horizontal-dark.svg" alt="SIGMA TWIN"></a></h3>
+              <p class="panel__line" data-i18n="work.p3">La planta replicada en 3D y conectada a sus datos en tiempo real.</p>
+              <ul class="panel__tags"><li>3D</li><li data-i18n="work.realtime">TIEMPO REAL</li><li>IoT</li></ul>
+              <a class="go-link" href="https://sigma.codigocreativo.tech" target="_blank" rel="noopener"><span data-i18n="work.goModule">Verlo en SIGMA</span><i aria-hidden="true">↗</i></a>
+            </div>
+            <div class="panel__visual panel__visual--video">
+              <video class="spot" data-spot muted loop playsinline preload="none"
+                     poster="assets/video/sigma-twin-poster.jpg" data-src="assets/video/sigma-twin.mp4"
+                     aria-label="Spot de SIGMA TWIN"></video>
+              <button type="button" class="spot__sound" data-spot-sound aria-pressed="false">
+                <i aria-hidden="true"></i><span class="spot__on" data-i18n="video.sound">Activar voz</span><span class="spot__off" data-i18n="video.mute">Silenciar</span>
+              </button>
+            </div>
+          </article>
+          <article class="panel">
+            <div class="panel__text">
+              <span class="panel__num">02</span>
+              <h3 class="panel__title display" data-i18n="work.t4">SOLUCIONES DIGITALES</h3>
+              <p class="panel__line" data-i18n="work.p4">Producto digital a la medida: web, móvil, automatización y nube.</p>
+              <ul class="panel__tags"><li>WEB</li><li data-i18n="work.mobile">MÓVIL</li><li>CLOUD</li></ul>
+            </div>
+            <div class="panel__visual">
+              <div class="vhead"><span>futuro.js</span><span class="is-cyan">● RUN</span></div>
+<pre class="vcode" data-i18n="work.code"><span class="k">const</span> futuro = <span class="k">await</span> <span class="f">crear</span>({
+  idea:  <span class="s">'tuya'</span>,
+  web:   <span class="b">true</span>,
+  movil: <span class="b">true</span>,
+  ia:    <span class="s">'predictiva'</span>,
+});
+
+futuro.<span class="f">lanzar</span>(); <span class="c">// ✓ listo</span></pre>
+            </div>
+          </article>
+        </div>
+        <div class="track__progress" aria-hidden="true"><i></i></div>
+      </div>
+    </section>
+
+    <!-- 08 — La gran transición -->
+    <section id="transicion" class="sec sec--trans" style="--len:440" data-i18n-label="label.trans">
+      <div class="stage">
+        <p class="trans__cap" data-i18n="trans.cap">Todo empieza con un punto.</p>
+        <p class="trans__q display" data-i18n="trans.q">¿LISTO PARA CONSTRUIR<br>LO QUE SIGUE?</p>
+      </div>
+    </section>
+
+    <!-- 09 — CTA -->
+    <section id="contacto" class="sec--cta" data-i18n-label="label.cta">
+      <div class="cta__inner">
+        <h2 class="cta__title display" data-i18n="cta.title">CONSTRUYAMOS<br>LO QUE SIGUE.</h2>
+        <p class="cta__sub" data-i18n="cta.sub">¿Tienes una idea?<br>Hagámosla realidad.</p>
+        <div class="magnet-zone">
+          <a class="magnet" href="mailto:comercial@codigocreativo.tech" data-magnetic data-contact-open>
+            <span class="magnet__label" data-i18n="cta.btn">INICIA UN PROYECTO</span>
+            <span class="magnet__arrow" aria-hidden="true">→</span>
+          </a>
+        </div>
+        <p class="cta__mail"><span data-i18n="cta.or">o escríbenos a</span> <a href="mailto:comercial@codigocreativo.tech">comercial@codigocreativo.tech</a></p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <div class="foot__brand">
+      <svg viewBox="0 0 100 100" aria-hidden="true"><use href="#logo-mark"/></svg>
+      <span>© <span data-year>2026</span> Código Creativo</span>
+    </div>
+    <span class="foot__tag" data-i18n="foot.tag">Creamos soluciones. Impulsamos el futuro.</span>
+    <a href="#inicio" class="foot__top" data-i18n="foot.top">Volver arriba ↑</a>
+  </footer>
+
+  <!-- Cajón de contacto: arma el mensaje y lo abre en el correo hacia comercial@codigocreativo.tech -->
+  <div class="contact" id="contact" hidden>
+    <div class="contact__scrim" data-contact-close></div>
+    <aside class="contact__panel" role="dialog" aria-modal="true" aria-labelledby="contact-title" data-lenis-prevent>
+      <header class="contact__head">
+        <span class="contact__tag mono" data-i18n="form.tag">Nuevo proyecto</span>
+        <button type="button" class="contact__close" data-contact-close data-i18n-aria="form.close" aria-label="Cerrar">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
+        </button>
+      </header>
+
+      <form class="contact__form" novalidate>
+        <h2 class="contact__title display" id="contact-title" data-i18n="form.title">Hablemos.</h2>
+        <p class="contact__lead" data-i18n="form.lead">Cuéntanos tu idea y nuestro equipo comercial se pondrá en contacto contigo.</p>
+
+        <fieldset class="contact__topics">
+          <legend class="mono" data-i18n="form.topic">¿Qué necesitas?</legend>
+          <div class="topics">
+            <label class="topic"><input type="checkbox" name="topic" value="SIGMA"><span>SIGMA</span></label>
+            <label class="topic"><input type="checkbox" name="topic" value="Web"><span>WEB</span></label>
+            <label class="topic"><input type="checkbox" name="topic" value="Móvil"><span data-i18n="lab.mobile">MÓVIL</span></label>
+            <label class="topic"><input type="checkbox" name="topic" value="IA"><span data-i18n="lab.ai">IA</span></label>
+            <label class="topic"><input type="checkbox" name="topic" value="Automatización"><span data-i18n="lab.auto">AUTOMATIZACIÓN</span></label>
+            <label class="topic"><input type="checkbox" name="topic" value="Software a la medida"><span data-i18n="form.custom">A LA MEDIDA</span></label>
+          </div>
+        </fieldset>
+
+        <div class="field">
+          <input id="cf-name" name="name" type="text" autocomplete="name" required placeholder=" ">
+          <label for="cf-name" data-i18n="form.name">Nombre</label>
+          <small class="field__err" data-i18n="form.errName">Cuéntanos cómo te llamas.</small>
+        </div>
+        <div class="field">
+          <input id="cf-email" name="email" type="email" autocomplete="email" required placeholder=" ">
+          <label for="cf-email" data-i18n="form.email">Correo</label>
+          <small class="field__err" data-i18n="form.errEmail">Revisa el correo: parece incompleto.</small>
+        </div>
+        <div class="field">
+          <input id="cf-company" name="company" type="text" autocomplete="organization" placeholder=" ">
+          <label for="cf-company" data-i18n="form.company">Empresa (opcional)</label>
+        </div>
+        <div class="field">
+          <textarea id="cf-msg" name="message" rows="4" required placeholder=" "></textarea>
+          <label for="cf-msg" data-i18n="form.msg">Tu idea, en pocas líneas</label>
+          <small class="field__err" data-i18n="form.errMsg">Escribe al menos una frase sobre tu proyecto.</small>
+        </div>
+
+        <!-- trampa para bots: los humanos no la ven -->
+        <div class="contact__hp" aria-hidden="true">
+          <label for="cf-website">Website</label>
+          <input id="cf-website" name="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button type="submit" class="contact__send">
+          <span class="contact__send-label" data-i18n="form.send">ENVIAR</span>
+          <span class="contact__send-busy" data-i18n="form.sending">ENVIANDO…</span>
+          <span class="contact__send-icon" aria-hidden="true">→</span>
+        </button>
+        <p class="contact__error" role="alert" hidden>
+          <span data-i18n="form.error">No pudimos enviar tu mensaje. Inténtalo de nuevo o escríbenos a</span>
+          <a href="mailto:comercial@codigocreativo.tech">comercial@codigocreativo.tech</a>
+        </p>
+        <p class="contact__note mono" data-i18n="form.note">Usamos tus datos solo para responderte.</p>
+      </form>
+
+      <div class="contact__done" hidden>
+        <span class="contact__check" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <h2 class="display" data-i18n="form.doneTitle">¡Listo!</h2>
+        <p data-i18n="form.doneText">Recibimos tu mensaje. Nuestro equipo comercial te escribirá pronto.</p>
+        <p class="contact__fallback mono">
+          <span data-i18n="form.doneFallback">¿Algo más? Escríbenos a</span>
+          <button type="button" class="contact__copy" data-copy="comercial@codigocreativo.tech">comercial@codigocreativo.tech <em data-i18n="form.copy">copiar</em></button>
+        </p>
+        <button type="button" class="contact__again" data-contact-close data-i18n="form.closeBtn">Cerrar</button>
+      </div>
+    </aside>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
+  <script src="https://unpkg.com/lenis@1.1.13/dist/lenis.min.js"></script>
+  <script type="module" src="src/main.js"></script>
+</body>
+</html>

@@ -40,6 +40,23 @@ Generar una clave: `python -c "import secrets;print(secrets.token_hex(64).upper(
 
 Los secretos `WEB_DEPLOY_PASSWORD` y `API_DEPLOY_PASSWORD` que ya existen son de **MonsterASP** (sitios `site96410` y `site96413`) y no sirven aquí; se dejan mientras MonsterASP siga de respaldo.
 
+## Landing codigocreativo.tech (`desplegar-landing.yml`)
+
+La web de la empresa vive en `CodigoCreativo/` (sitio estático + `api/contact.php`) y tiene **su propio pipeline**: corre con cada push a la rama `landing-codigocreativo` (o a `master`) que toque esa carpeta. El pipeline de SIGMA la ignora.
+
+1. Copia `CodigoCreativo/` sin `deploy/` ni los `.md`.
+2. Si existe el secreto `CC_SMTP_PASSWORD`, genera `App_Data/contact-config.php` (IIS nunca sirve `App_Data`) para que el formulario envíe por SMTP a comercial@codigocreativo.tech.
+3. Publica por Web Deploy en el sitio `codigocreativo.tech` con `DoNotDeleteRule`.
+4. Comprueba que `/`, `/sitemap.xml` y `/robots.txt` respondan, y avisa si `api/contact.php` no tiene PHP.
+
+**Reutiliza** `HC_SERVER`, `HC_WEB_USER` y `HC_WEB_DEPLOY_PASSWORD` (usuario de la suscripción de Plesk). Si el dominio principal llegara a usar otro usuario de Web Deploy, crear `HC_LANDING_USER` (variable) y `HC_LANDING_DEPLOY_PASSWORD` (secreto): tienen prioridad. `HC_LANDING_SITE` cambia el nombre del sitio si no es `codigocreativo.tech`.
+
+| Nuevo | Tipo | Qué es |
+|---|---|---|
+| `CC_SMTP_PASSWORD` | Secreto | Contraseña del buzón comercial@codigocreativo.tech |
+
+En Plesk, el dominio `codigocreativo.tech` necesita **PHP 8+** activado (Hosting → PHP) para el formulario.
+
 ## Por qué la configuración de producción va en el pipeline
 Producción necesita valores distintos a desarrollo: `validateIntegratedModeConfiguration=false` (500.22 en modo Integrado), sesión `InProc` (el hosting no tiene el servicio ASP.NET State), `machineKey` fija (si no, «Validation of viewstate MAC failed») y las URL públicas. El script los aplica **solo a la copia publicada**, no al `Web.config` del repo.
 

@@ -1,0 +1,102 @@
+# Despliegue de la landing de Código Creativo (carpeta CodigoCreativo/) a HostChile.
+#   Sitio -> https://codigocreativo.tech
+# Corre en cada push a la rama landing-codigocreativo (y a master, si la landing llega ahí) que toque la landing.
+# Reutiliza las credenciales de Web Deploy de HostChile del pipeline de SIGMA (HC_SERVER, HC_WEB_USER,
+# HC_WEB_DEPLOY_PASSWORD): en Plesk son las del usuario de la suscripción, que también publica el dominio principal.
+# Si algún día el dominio principal usa otro usuario, basta con crear HC_LANDING_USER / HC_LANDING_DEPLOY_PASSWORD.
+# Guía: Dev/ci/LEEME.md («Landing codigocreativo.tech»).
+name: Deploy landing (codigocreativo.tech)
+
+on:
+  push:
+    branches: [landing-codigocreativo, master]
+    paths:
+      - 'CodigoCreativo/**'
+      - '.github/workflows/desplegar-landing.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-landing
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    if: ${{ vars.HC_SERVER != '' }}
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: CodigoCreativo
+
+      - name: Instalar Web Deploy
+        shell: pwsh
+        run: |
+          choco install webdeploy -y --no-progress
+          if (-not (Test-Path "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe")) { throw "Web Deploy no quedó instalado" }
+
+      # Sitio estático + api/contact.php. deploy/ y los .md no se publican.
+      - name: Preparar la copia a publicar
+        shell: pwsh
+        run: |
+          robocopy CodigoCreativo _publicar\landing /E /XD deploy App_Data /XF *.md
+          if ($LASTEXITCODE -ge 8) { exit 1 }
+          "{0} archivos listos" -f (Get-ChildItem _publicar\landing -Recurse -File).Count
+          exit 0
+
+      # La contraseña del buzón comercial@ vive solo en el secreto CC_SMTP_PASSWORD: se escribe en
+      # App_Data (IIS nunca la sirve) únicamente en la copia que se sube. Sin el secreto, se conserva
+      # la configuración que ya tenga el servidor (DoNotDeleteRule).
+      - name: Configuración SMTP del formulario
+        shell: pwsh
+        env:
+          CC_SMTP_PASSWORD: ${{ secrets.CC_SMTP_PASSWORD }}
+        run: |
+          if (-not $env:CC_SMTP_PASSWORD) { Write-Host "::warning::Falta el secreto CC_SMTP_PASSWORD: el formulario usará la configuración que ya exista en el servidor."; exit 0 }
+          $pass = $env:CC_SMTP_PASSWORD.Replace('\', '\\').Replace("'", "\'")
+          New-Item -ItemType Directory -Force _publicar\landing\App_Data | Out-Null
+          $php = "<?php`n// Generado por GitHub Actions (desplegar-landing.yml). No editar en el servidor.`nreturn [`n    'pass' => '$pass',`n];`n"
+          [IO.File]::WriteAllText("$pwd\_publicar\landing\App_Data\contact-config.php", $php, (New-Object Text.UTF8Encoding($false)))
+          "Configuración SMTP incluida"
+
+      - name: Publicar (codigocreativo.tech)
+        shell: pwsh
+        env:
+          PASS: ${{ secrets.HC_LANDING_DEPLOY_PASSWORD || secrets.HC_WEB_DEPLOY_PASSWORD }}
+          SERVIDOR: ${{ vars.HC_SERVER }}
+          SITIO: ${{ vars.HC_LANDING_SITE || 'codigocreativo.tech' }}
+          USUARIO: ${{ vars.HC_LANDING_USER || vars.HC_WEB_USER }}
+        run: |
+          $s = $env:SITIO.Trim(); $srv = $env:SERVIDOR.Trim(); $u = $env:USUARIO.Trim()
+          & "C:\Program Files\IIS\Microsoft Web Deploy V3\msdeploy.exe" -verb:sync `
+            -source:contentPath="$pwd\_publicar\landing" `
+            "-dest:contentPath=$s,computerName=https://$($srv):8172/msdeploy.axd?site=$s,userName=$u,password=$($env:PASS),authType=Basic" `
+            -allowUntrusted -enableRule:DoNotDeleteRule -retryAttempts:3
+          if ($LASTEXITCODE -ne 0) { exit 1 }
+
+      - name: Verificar que responda
+        shell: pwsh
+        run: |
+          $base = 'https://codigocreativo.tech'
+          $checks = @(
+            @{ Url = "$base/";            Debe = 'google-site-verification' },
+            @{ Url = "$base/sitemap.xml"; Debe = '<urlset' },
+            @{ Url = "$base/robots.txt";  Debe = 'Sitemap:' }
+          )
+          foreach ($c in $checks) {
+            $ok = $false
+            foreach ($i in 1..6) {
+              try {
+                $r = Invoke-WebRequest $c.Url -UseBasicParsing -TimeoutSec 60 -Headers @{ 'Cache-Control' = 'no-cache' }
+                if ($r.StatusCode -eq 200 -and $r.Content -match [regex]::Escape($c.Debe)) { $ok = $true; break }
+              } catch { }
+              Start-Sleep 10
+            }
+            if (-not $ok) { throw "$($c.Url) no respondió con el contenido esperado" }
+            "$($c.Url) OK"
+          }
+          # El formulario: un GET debe responder 405 en JSON (PHP activo). Si devuelve el HTML de IIS, falta activar PHP.
+          try { Invoke-WebRequest "$base/api/contact.php" -UseBasicParsing -TimeoutSec 60 | Out-Null } catch {
+            $code = [int]$_.Exception.Response.StatusCode
+            if ($code -eq 405) { "api/contact.php OK (PHP activo)" } else { Write-Host "::warning::api/contact.php respondió $($code); revisar que PHP esté activo en el dominio." }
+          }

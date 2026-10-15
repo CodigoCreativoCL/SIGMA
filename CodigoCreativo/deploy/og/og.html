@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..900&family=JetBrains+Mono:wght@400;500&display=block">
+<style>
+  html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; background: #05070D; }
+  body {
+    position: relative; font-family: 'Archivo', sans-serif; color: #F2F4F8;
+    background:
+      radial-gradient(520px 420px at 900px 300px, rgba(247,169,40,.16), transparent 70%),
+      #05070D;
+  }
+  .grid { position: absolute; inset: 0; opacity: .5;
+    background-image: radial-gradient(rgba(61,214,245,.28) 1px, transparent 1.4px); background-size: 26px 26px;
+    -webkit-mask-image: radial-gradient(700px 500px at 900px 320px, #000, transparent 75%); mask-image: radial-gradient(700px 500px at 900px 320px, #000, transparent 75%); }
+  .bulb { position: absolute; right: 70px; top: 110px; width: 410px; height: 410px; color: #F7A928;
+    filter: drop-shadow(0 0 26px rgba(247,169,40,.6)) drop-shadow(0 0 80px rgba(247,169,40,.3)); }
+  .copy { position: absolute; left: 80px; top: 0; bottom: 0; display: flex; flex-direction: column; justify-content: center; }
+  .eyebrow { font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: .18em; color: rgba(242,244,248,.6); text-transform: uppercase; }
+  h1 { margin: 26px 0 0; font-weight: 800; font-stretch: 125%; font-size: 88px; line-height: .9; letter-spacing: -.01em; }
+  p { margin: 30px 0 0; font-size: 30px; line-height: 1.3; color: rgba(242,244,248,.78); }
+  .url { position: absolute; left: 80px; bottom: 54px; font-family: 'JetBrains Mono', monospace; font-size: 18px; letter-spacing: .12em; color: #F7A928; }
+</style>
+</head>
+<body>
+  <div class="grid"></div>
+  <svg class="bulb" viewBox="0 0 100 100">
+    <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke-width="4.6" d="M38 72c0-8-4-12-8.5-17.5C25.5 49.6 23 44 23 37.5 23 22.3 35.1 10 50 10s27 12.3 27 27.5c0 6.5-2.5 12.1-6.5 17C66 60 62 64 62 72z"/>
+      <path stroke-width="4.6" d="M39 81h22M42 88.5h16"/>
+      <path stroke-width="3.8" d="M41 30l-7 7 7 7M59 30l7 7-7 7M53.5 27l-7 20"/>
+      <path fill="currentColor" stroke="none" d="M43 94h14a7 5 0 0 1-14 0z"/>
+    </g>
+  </svg>
+  <div class="copy">
+    <div class="eyebrow">Software · IA · Experiencias digitales</div>
+    <h1>CÓDIGO<br>CREATIVO</h1>
+    <p>Creamos soluciones.<br>Impulsamos el futuro.</p>
+  </div>
+  <div class="url">codigocreativo.tech</div>
+</body>
+</html>

@@ -398,3 +398,7 @@ Web/Intranet/azure.config
 # Obsidian
 Boveda/.obsidian/workspace*.json
 Boveda/.obsidian/cache
+
+# Landing Código Creativo: la configuración SMTP la genera el pipeline; nunca se versiona
+CodigoCreativo/App_Data/
+
