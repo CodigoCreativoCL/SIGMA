@@ -187,6 +187,8 @@ namespace SitioBase.Controller
                     if (cmdExecute.Parameters["@ID"].Value.ToString() != "")
                         id = (int)cmdExecute.Parameters["@ID"].Value;
 
+                    global::SitioBase.Notificaciones.Bienvenida(usuario.usu_correo, usuario.usu_nombres, usuario.usu_login, Session.ClienteNombre());
+
                     respuesta.codigo = id;
                     respuesta.detalle = "Usuario creado con éxito.";
                     respuesta.error = false;

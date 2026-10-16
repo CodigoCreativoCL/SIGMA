@@ -118,29 +118,10 @@ namespace SitioBase.Controller
 
                 string enlace = urlSitio.TrimEnd('/') + "/RestablecerClave.aspx?t=" + HttpUtility.UrlEncode(token);
 
-                string cuerpo =
-                    "<div style=\"font-family:'Segoe UI',Arial,sans-serif;color:#0B0F1A;\">" +
-                    "<p>Recibimos una solicitud para restablecer su contraseña de SIGMA.</p>" +
-                    "<p><a href=\"" + enlace + "\" " +
-                    "style=\"display:inline-block;background:#6C5CFF;color:#ffffff;text-decoration:none;" +
-                    "padding:12px 22px;border-radius:8px;font-weight:600;\">Restablecer mi contraseña</a></p>" +
-                    "<p style=\"color:#475569;font-size:13px;\">El enlace vence en 60 minutos y sirve una sola vez.<br/>" +
-                    "Si usted no pidió este cambio, ignore este correo: su contraseña no cambia.</p>" +
-                    "</div>";
+                string cuerpo = global::SitioBase.Notificaciones.HtmlRecuperacion(enlace);
 
-                using (MailMessage mensaje = new MailMessage())
-                {
-                    mensaje.From = new MailAddress(remitente, remitenteNombre);
-                    mensaje.To.Add(correo);
-                    mensaje.Subject = "SIGMA - Restablecer su contraseña";
-                    mensaje.Body = cuerpo;
-                    mensaje.IsBodyHtml = true;
-
-                    using (SmtpClient smtp = new SmtpClient())
-                    {
-                        smtp.Send(mensaje);
-                    }
-                }
+                // Sale por la cola de correo, con el mismo remitente y servidor que el resto de los correos de SIGMA.
+                global::SitioBase.Correo.Encolar("RECUPERAR_CLAVE", new[] { correo }, null, "SIGMA · Restablece tu contraseña", cuerpo);
             }
             catch (Exception ex)
             {

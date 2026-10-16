@@ -91,6 +91,7 @@ public class WsSoporte : System.Web.Services.WebService
                 "@SUGERIDO", Entero(d, "sugerido") > 0 ? (object)Entero(d, "sugerido") : null,
                 "@SUGERIDO_VISTO", Entero(d, "sugeridoVisto") > 0);
             SoportePlan.Olvidar();
+            Notificaciones.SoporteNuevo(Convert.ToInt32(f["stk_id"]));   // acuse a quien reporta y aviso al equipo
             return new { id = f["stk_id"], folio = f["stk_folio"] };
         });
     }
@@ -145,6 +146,8 @@ public class WsSoporte : System.Web.Services.WebService
         {
             SoporteDatos.Fila("INS_SOPORTE_EVENTO", "@TICKET", ticket, "@USUARIO", U(), "@TIPO", tipo, "@TEXTO", texto,
                               "@CONTENIDO", contenido > 0 ? (object)contenido : null);
+            // Las respuestas con responsable salen por la alerta (job ALERTAS_CORREO); sin responsable se avisa al equipo.
+            if (tipo == "com") Notificaciones.SoporteRespuestaSinResponsable(ticket, U(), texto);
             return new { ok = true };
         });
     }

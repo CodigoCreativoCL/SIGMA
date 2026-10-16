@@ -19,6 +19,8 @@ public class Global_asax : System.Web.HttpApplication
         System.Threading.ThreadPool.GetMinThreads(out w, out io);
         System.Threading.ThreadPool.SetMinThreads(Math.Max(w, 64), Math.Max(io, 64));
 
+        IniciarJobs();
+
         //// Code that runs on application startup
         //Application["app_inicio"] = DateTime.Now;
         //Application["app_sesiones"] = 0;
@@ -27,8 +29,33 @@ public class Global_asax : System.Web.HttpApplication
 
 	public void Application_End(object sender, EventArgs e)
 	{
-		// Code that runs on application shutdown
+		if (_jobs != null) { _jobs.Dispose(); _jobs = null; }
 	}
+
+    /* JOBS PROGRAMADOS (16-10-2026). SQL Express no trae Agent y la tarea de Plesk puede no estar
+       configurada: mientras el sitio esté encendido, él mismo pide cada 2 minutos los jobs que tocan
+       (Job.job_proxima) y los corre. El candado está en la base (SEL_JOB_PENDIENTES marca «en ejecución»
+       en la misma sentencia), así que si además llama Jobs.aspx o hay dos servidores, un job no corre dos
+       veces. Se apaga con appSettings JobsInterno = false. */
+    private static System.Threading.Timer _jobs;
+    private static int _jobsCorriendo;
+
+    private static void IniciarJobs()
+    {
+        try
+        {
+            string cfg = System.Configuration.ConfigurationManager.AppSettings["JobsInterno"];
+            if (string.Equals((cfg ?? "").Trim(), "false", StringComparison.OrdinalIgnoreCase)) return;
+            _jobs = new System.Threading.Timer(delegate
+            {
+                if (System.Threading.Interlocked.Exchange(ref _jobsCorriendo, 1) == 1) return;   // el turno anterior sigue corriendo
+                try { SitioBase.Jobs.Ejecutar(null); }
+                catch (Exception ex) { try { SitioBase.Correo.Registrar("Jobs internos", ex.Message); } catch (Exception) { } }
+                finally { System.Threading.Interlocked.Exchange(ref _jobsCorriendo, 0); }
+            }, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(2));
+        }
+        catch (Exception ex) { try { SitioBase.Correo.Registrar("Jobs internos al iniciar", ex.Message); } catch (Exception) { } }
+    }
 
 	public void Application_Error(object sender, EventArgs e)
 	{

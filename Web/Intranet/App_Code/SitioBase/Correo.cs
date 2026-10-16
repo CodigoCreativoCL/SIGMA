@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Net.Mail;
+using System.Linq;
 using System.Net.Mime;
 using System.Text;
+using SitioBase.Controller;
 
 namespace SitioBase
 {
@@ -81,6 +83,43 @@ namespace SitioBase
             return string.IsNullOrEmpty(u) ? "" : u.TrimEnd('/');
         }
 
+        /// <summary>El motivo del último envío fallido en este hilo (lo guarda la cola para reintentar y mostrar por qué).</summary>
+        [ThreadStatic] public static string UltimoError;
+
+        /// <summary>
+        /// Deja un correo en la cola (Correo_Cola) y lo intenta enviar de inmediato. Si el SMTP falla queda
+        /// pendiente y el job CORREOS_COLA lo reintenta. Devuelve el id de la cola (0 si no había destinatario).
+        /// </summary>
+        public static int Encolar(string origen, IEnumerable<string> para, IEnumerable<string> copia, string asunto, string html, bool enviarYa = true)
+        {
+            string p = string.Join(",", (para ?? new string[0]).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()));
+            if (p == "") return 0;
+            string c = string.Join(",", (copia ?? new string[0]).Where(x => !string.IsNullOrWhiteSpace(x)).Select(x => x.Trim()));
+            Dictionary<string, object> o = Cobros.SpSalida("INS_CORREO_COLA", "@ID", "@ORIGEN", origen, "@PARA", p, "@COPIA", c == "" ? null : c, "@ASUNTO", asunto, "@HTML", html);
+            int id = Convert.ToInt32(o["@ID"]);
+            if (enviarYa) { try { ProcesarCola(1, id); } catch (Exception ex) { Registrar("Correo.Encolar envío inmediato id=" + id, ex.Message); } }
+            return id;
+        }
+
+        /// <summary>Envía lo que toca de la cola (o solo un id). Cada resultado queda anotado; los fallos se reintentan solos.</summary>
+        public static int ProcesarCola(int tope, int? soloId)
+        {
+            int enviados = 0;
+            foreach (Dictionary<string, object> f in SoporteDatos.Filas("SEL_CORREO_COLA_PENDIENTES", "@TOPE", tope, "@ID", soloId))
+            {
+                int id = Convert.ToInt32(f["ID"]);
+                string[] para = Convert.ToString(f["PARA"]).Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                string copiaTxt = f["COPIA"] == null ? "" : Convert.ToString(f["COPIA"]);
+                string[] copia = copiaTxt.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
+                UltimoError = null;
+                bool ok = Enviar(para, copia.Length > 0 ? copia : null, Convert.ToString(f["ASUNTO"]), Convert.ToString(f["HTML"]));
+                try { Cobros.Ejecutar("UPD_CORREO_COLA_RESULTADO", "@ID", id, "@OK", ok, "@ERROR", ok ? null : (UltimoError ?? "No se pudo enviar.")); }
+                catch (Exception ex) { Registrar("Correo.ProcesarCola resultado id=" + id, ex.Message); }
+                if (ok) enviados++;
+            }
+            return enviados;
+        }
+
         public static bool Enviar(string para, string asunto, string html, params Adjunto[] adjuntos)
         {
             return Enviar(new[] { para }, null, asunto, html, adjuntos);
@@ -105,6 +144,16 @@ namespace SitioBase
                     foreach (string p in para ?? new string[0]) if (!string.IsNullOrWhiteSpace(p)) m.To.Add(p.Trim());
                     if (copia != null) foreach (string c in copia) if (!string.IsNullOrWhiteSpace(c)) m.CC.Add(c.Trim());
                     if (m.To.Count == 0) return false;
+                    /* MODO DE PRUEBA DE CORREO: con appSettings CorreoRedirigirA todo el correo del sitio llega
+                       a esa casilla (con los destinatarios reales en el asunto) y a nadie más. Es lo que se
+                       usa en desarrollo, que comparte la base con el equipo y con clientes reales. */
+                    string desvio = (ConfigurationManager.AppSettings["CorreoRedirigirA"] ?? "").Trim();
+                    if (desvio != "")
+                    {
+                        string originales = string.Join(", ", m.To.Select(x => x.Address).Concat(m.CC.Select(x => x.Address)));
+                        m.To.Clear(); m.CC.Clear(); m.To.Add(desvio);
+                        asunto = "[→ " + originales + "] " + asunto;
+                    }
                     m.Subject = asunto;
                     m.SubjectEncoding = Encoding.UTF8;
                     m.Body = html;
@@ -124,6 +173,7 @@ namespace SitioBase
             }
             catch (Exception ex)
             {
+                UltimoError = ex.Message;
                 Registrar("Correo.Enviar para=" + destino + " asunto=" + asunto, ex.Message);
                 /* Si el rechazo vino de la COPIA (por ejemplo, el buzón del ejecutivo no existe en este
                    servidor), el mensaje no se pierde: se reintenta una vez solo para el destinatario. */
