@@ -1,6 +1,6 @@
 # BD — Órdenes y operación
 
-58 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+59 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -62,3 +62,4 @@
 | `433_GALERIA_EVIDENCIAS_MODELO.sql` |  |
 | `434_GALERIA_EVIDENCIAS_SP.sql` |  |
 | `435_ACTIVO_GALERIA_PASOS_REFERENCIAS.sql` |  |
+| `472_JOBS_FRECUENTES_OT_AUTOMATICA.sql` |  |

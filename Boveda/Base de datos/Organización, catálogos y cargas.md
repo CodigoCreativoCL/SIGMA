@@ -1,6 +1,6 @@
 # BD — Organización, catálogos y cargas
 
-39 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+40 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -43,3 +43,4 @@
 | `415_PLANTA_JORNADA.sql` |  |
 | `416_AREA_HIJAS.sql` |  |
 | `420_CARGA_LABORAL.sql` |  |
+| `473_CARGA_MANTENIMIENTO.sql` |  |
