@@ -176,7 +176,7 @@ function pintar() {
   if (!S.ini) return;
   pintarTabs();
   var b = $('#ccBody');
-  if (S.tab === 'clientes') { b.innerHTML = S.sub.clientes === 'empresas' ? vistaAdm('empresas') : vistaClientes(); return; }
+  if (S.tab === 'clientes') { b.innerHTML = S.sub.clientes === 'empresas' ? (COB ? COB.vista('empresas') : vistaAdm('empresas')) : vistaClientes(); return; }
   if (S.tab === 'suscripciones') {
     var sv = S.sub.suscripciones || subVistas('suscripciones')[0][0];
     b.innerHTML = COB && COB.maneja(sv) ? COB.vista(sv) : vistaAdm(sv);

@@ -30,6 +30,8 @@ namespace SitioBase.Model
         public int pcp_periodicidad_cobro { get; set; }
         public string pcb_codigo { get; set; }
         public string pcb_nombre { get; set; }
+        /// <summary>UF o USD (BD/463). pcp_valor_uf es el valor en esa moneda.</summary>
+        public string pcp_moneda { get; set; }
         public decimal pcp_valor_uf { get; set; }
         public decimal? pcp_descuento_porcentaje { get; set; }
         public DateTime pcp_vigencia_desde { get; set; }

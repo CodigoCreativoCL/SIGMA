@@ -37,6 +37,8 @@ public class WsCobros : System.Web.Services.WebService
     private const string P_CAMBIAR_PLAN = "CAMBIAR PLAN SUSCRIPCION";
     private const string P_REEMITIR = "REEMITIR KEY SUSCRIPCION";
     private const string P_EMITIR = "EMITIR PERIODOS SUSCRIPCION";
+    private const string P_MONEDA = "CAMBIAR MONEDA COBRO CLIENTE";
+    private const string P_PLANES ="CREAR EDITAR PLANES COMERCIALES";
     private const string P_VERIFICAR = "VERIFICAR PAGOS SUSCRIPCION";
     private const string P_DECLARAR = "DECLARAR PAGO SUSCRIPCION";
 
@@ -60,10 +62,31 @@ public class WsCobros : System.Web.Services.WebService
                 case "periodos":
                     ExigirPagina("~/View/Comercial/Suscripciones/Periodos.aspx", "ver períodos");
                     return new { filas = Limpia(SoporteDatos.Filas("SEL_SUSCRIPCION_PERIODO")), emitir = Token.Puede(P_EMITIR) };
+                case "empresas":
+                    ExigirPagina("~/View/Comercial/Clientes/Clientes.aspx", "ver clientes");
+                    return new { filas = ListaClientes(), crear = Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx") };
+                case "planes":
+                    ExigirPagina("~/View/Comercial/Suscripciones/Planes.aspx", "ver planes");
+                    return new { filas = ListaPlanes(), crear = Token.Puede(P_PLANES) };
                 default:
                     throw new Exception("Esa vista todavía no está disponible.");
             }
         });
+    }
+
+    /// <summary>Planes con su mensualidad vigente en UF y en USD (cada plan tiene las dos).</summary>
+    private static object ListaPlanes()
+    {
+        List<Dictionary<string, object>> precios = Limpia(SoporteDatos.Filas("SEL_PLAN_COMERCIAL_PRECIO", "@SOLO_VIGENTES", true, "@PERIODICIDAD", 1));
+        Func<int, string, object> precio = (plan, mon) =>
+        {
+            Dictionary<string, object> f = precios.FirstOrDefault(x => Convert.ToInt32(x["PCP_PLAN_COMERCIAL"]) == plan && Convert.ToString(x["PCP_MONEDA"]) == mon);
+            return f == null ? null : f["PCP_VALOR_UF"];
+        };
+        return (new PlanComercialController().GetPlanesDistintos(false) ?? new List<SitioBase.Model.PlanComercial>())
+            .Select(p => new { id = p.plc_id, codigo = p.plc_codigo, nombre = p.plc_nombre, descripcion = p.plc_descripcion, publico = p.plc_publico, habilitado = p.plc_habilitado,
+                               gracia = p.plc_dias_gracia, orden = p.plc_orden, uf = precio(p.plc_id, "UF"), usd = precio(p.plc_id, "USD") })
+            .OrderBy(x => x.orden).ThenBy(x => x.nombre).ToList();
     }
 
     private static object ListaSuscripciones()
@@ -234,6 +257,257 @@ public class WsCobros : System.Web.Services.WebService
             Respuesta r = new SuscripcionPeriodoController().EmitirPeriodo(e);
             if (r.error) throw new Exception(r.detalle);
             return new { mensaje = r.detalle, id = r.codigo, ficha = FichaPeriodo(r.codigo) };
+        });
+    }
+
+    // =====================================================================
+    // CLIENTE
+    // =====================================================================
+
+    private static object ListaClientes()
+    {
+        Dictionary<string, Dictionary<string, object>> extra = new Dictionary<string, Dictionary<string, object>>();
+        foreach (Dictionary<string, object> c in SoporteDatos.Filas("SEL_CLIENTE_COMERCIAL_LISTA")) extra[Convert.ToString(c["ID"])] = c;
+        return (new ClienteController().GetClientes(new SitioBase.Model.Cliente { filtro_paises = SitioBase.Session.UsuarioIdPaises(), tipo_perfil = 1 }) ?? new List<SitioBase.Model.Cliente>())
+            .Select(c =>
+            {
+                Dictionary<string, object> e;
+                extra.TryGetValue(c.cli_id.ToString(), out e);
+                return new
+                {
+                    id = c.cli_id, nombre = c.cli_nombre, razon = c.cli_razon_social, identificador = c.cli_identificador, habilitado = c.cli_habilitado,
+                    desde = c.cli_fecha_creacion == DateTime.MinValue ? null : c.cli_fecha_creacion.ToString("yyyy-MM-dd"),
+                    pais = e != null ? e["PAIS"] : null, moneda = e != null ? e["MONEDA_COBRO"] : "UF"
+                };
+            }).OrderBy(x => x.nombre).ToList();
+    }
+
+    private static object OpcionesCliente()
+    {
+        CatalogoController cat = new CatalogoController();
+        Func<string, object> catalogo = cod => (cat.GetValoresPorCodigo(cod, 0) ?? new List<SitioBase.Model.CatalogoValor>()).Select(v => new { id = v.valor_id, n = v.valor_nombre }).ToList();
+        return new
+        {
+            paises = Limpia(SoporteDatos.Filas("SEL_COBRO_PAISES")).Select(p => new { id = p["ID"], n = p["NOMBRE"], etiqueta = p["ETIQUETA"], validacion = p["VALIDACION"], largo = p["LARGO"], moneda = p["MONEDA"] }).ToList(),
+            zonas = catalogo("ZONA_HORARIA"), idiomas = catalogo("IDIOMA"), monedas = catalogo("MONEDA")
+        };
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Cliente(int id)
+    {
+        return Ejecutar(() => { Exigir(P_VER); return FichaCliente(id); });
+    }
+
+    private static object FichaCliente(int id)
+    {
+        if (id <= 0)
+            return new { opciones = OpcionesCliente(), cliente = (object)null, suscripcion = (object)null, contactos = new List<object>(), usuarios = new List<object>(), plantas = new List<object>(),
+                         permisos = new { editar = Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx"), cambiarMoneda = Token.Puede(P_MONEDA) } };
+        List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_CLIENTE_COMERCIAL", "@ID", id);
+        Dictionary<string, object> cli = Limpia(SoporteDatos.Del(c, 0)).FirstOrDefault();
+        if (cli == null) throw new Exception("El cliente no existe.");
+        return new
+        {
+            opciones = OpcionesCliente(), cliente = cli, suscripcion = Limpia(SoporteDatos.Del(c, 1)).FirstOrDefault(),
+            contactos = Limpia(SoporteDatos.Del(c, 2)).Where(x => Convert.ToBoolean(x["ccn_habilitado"])).ToList(),
+            usuarios = Limpia(SoporteDatos.Filas("SEL_CLIENTE_USUARIO", "@CLIENTE", id)).Select(u => new { id = u["USU_ID"], nombre = (Convert.ToString(u["USU_NOMBRE"]) + " " + Convert.ToString(u["USU_APELLIDO_PATERNO"])).Trim(), correo = u["USU_CORREO"], perfiles = u["PERFILES"], habilitado = u["USU_HABILITADO"] }).ToList(),
+            plantas = Limpia(SoporteDatos.Filas("SEL_CLIENTE_INSTALACION", "@CLIENTE", id)).Select(p => new { id = p["CIN_ID"], nombre = p["CIN_NOMBRE"], direccion = p["CIN_DIRECCION"], codigo = p["CIN_CODIGO"], habilitada = p["CIN_HABILITADO"] }).ToList(),
+            permisos = new { editar = Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx"), cambiarMoneda = Token.Puede(P_MONEDA) }
+        };
+    }
+
+    /// <summary>
+    /// Crea o actualiza la identidad del cliente. La moneda de cobro nace del país (Chile = UF, el
+    /// resto = USD) y no cambia sola: cambiarla exige la facultad y un motivo, y queda auditado.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarCliente(int id, string nombre, string razon, int pais, string identificador, string fantasia, int? zona, int? idioma, int? moneda, bool habilitado, string monedaCobro, string motivo)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para crear o editar clientes.");
+            if (pais <= 0) throw new Exception("Indica el país del cliente.");
+            SitioBase.Model.Cliente e = new SitioBase.Model.Cliente
+            {
+                cli_id = id, cli_nombre = (nombre ?? "").Trim(), cli_razon_social = (razon ?? "").Trim(), cli_pais = pais, cli_identificador = (identificador ?? "").Trim(),
+                cli_nombre_fantasia = (fantasia ?? "").Trim(), cli_zona_horaria = zona, cli_idioma = idioma, cli_moneda = moneda, cli_habilitado = habilitado
+            };
+            ClienteController c = new ClienteController();
+            int destino = id;
+            string cobro = monedaCobro == "USD" ? "USD" : "UF";
+            if (id > 0)
+            {
+                string actual = Convert.ToString(Limpia(SoporteDatos.Filas("SEL_CLIENTE_COMERCIAL_LISTA")).First(x => Convert.ToInt32(x["ID"]) == id)["MONEDA_COBRO"]);
+                if (cobro != actual)
+                {
+                    if (!Token.Puede(P_MONEDA)) throw new Exception("No tienes la facultad para cambiar la moneda de cobro.");
+                    if (string.IsNullOrWhiteSpace(motivo)) throw new Exception("Indica el motivo del cambio de moneda de cobro.");
+                }
+                Respuesta r = c.UpdateCliente(e);
+                if (r.error) throw new Exception(r.detalle);
+                if (cobro != actual) SpSalida("UPS_CLIENTE_MONEDA_COBRO", null, "@ID", id, "@MONEDA", cobro, "@MOTIVO", motivo.Trim(), "@USUARIO", SoporteDatos.Usuario());
+                return new { mensaje = r.detalle, id = id, ficha = FichaCliente(id) };
+            }
+            Respuesta ins = c.InsertCliente(e);
+            if (ins.error) throw new Exception(ins.detalle);
+            destino = ins.codigo;
+            // Moneda inicial según el país (el formulario ya la propuso; aquí se asegura).
+            SpSalida("UPS_CLIENTE_MONEDA_COBRO", null, "@ID", destino, "@MONEDA", pais == 1 ? "UF" : "USD", "@MOTIVO", null, "@USUARIO", SoporteDatos.Usuario());
+            return new { mensaje = ins.detalle, id = destino, ficha = FichaCliente(destino) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarContacto(int cliente, string nombre, string cargo, string correo, string telefono, bool principal)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para editar clientes.");
+            if (string.IsNullOrWhiteSpace(nombre)) throw new Exception("Indica el nombre del contacto.");
+            SpSalida("INS_CLIENTE_CONTACTO", new[] { "@ID" }, "@CLIENTE", cliente, "@NOMBRE", nombre.Trim(), "@CARGO", Nulo(cargo), "@EMPRESA", null, "@RUBRO", null, "@EMAIL", Nulo(correo),
+                "@TELEFONO", Nulo(telefono), "@DIRECCION", null, "@NOTAS", null, "@PRINCIPAL", principal, "@USUARIO", SoporteDatos.Usuario());
+            return new { mensaje = "Contacto agregado.", ficha = FichaCliente(cliente) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string QuitarContacto(int cliente, int contacto)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para editar clientes.");
+            SpSalida("DEL_CLIENTE_CONTACTO", null, "@ID", contacto, "@CLIENTE", cliente, "@USUARIO", SoporteDatos.Usuario());
+            return new { mensaje = "Contacto quitado.", ficha = FichaCliente(cliente) };
+        });
+    }
+
+    private static object Nulo(string s) { return string.IsNullOrWhiteSpace(s) ? null : s.Trim(); }
+
+    // =====================================================================
+    // PLAN
+    // =====================================================================
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string Plan(int id)
+    {
+        return Ejecutar(() => { Exigir(P_VER); return FichaPlan(id); });
+    }
+
+    private static object FichaPlan(int id)
+    {
+        PlanComercialController pc = new PlanComercialController();
+        SitioBase.Model.PlanComercial p = id > 0 ? pc.GetPlan(new SitioBase.Model.PlanComercial { plc_id = id }) : new SitioBase.Model.PlanComercial { plc_habilitado = true, plc_dias_gracia = 5, plc_orden = 10 };
+        if (id > 0 && (p == null || p.plc_id == 0)) throw new Exception("El plan no existe.");
+        Dictionary<string, string> modulo = new Dictionary<string, string>();
+        foreach (Dictionary<string, object> m in SoporteDatos.Filas("SEL_COMERCIAL_MODULO_FUNCIONALIDAD")) modulo[Convert.ToString(m["FUN_CODIGO"])] = Convert.ToString(m["MODULO"]);
+        CatalogoController cat = new CatalogoController();
+        return new
+        {
+            plan = new { id = p.plc_id, codigo = p.plc_codigo, nombre = p.plc_nombre, descripcion = p.plc_descripcion, orden = p.plc_orden, gracia = p.plc_dias_gracia, publico = p.plc_publico, habilitado = p.plc_habilitado },
+            precios = id > 0 ? Limpia(SoporteDatos.Filas("SEL_PLAN_COMERCIAL_PRECIO", "@PLAN", id)) : new List<Dictionary<string, object>>(),
+            funcionalidades = id > 0
+                ? (pc.GetFuncionalidades(id) ?? new List<SitioBase.Model.PlanFuncionalidad>()).Select(f => (object)new
+                {
+                    id = f.fun_id, codigo = f.fun_codigo, nombre = f.fun_nombre, modulo = (f.EsLimite || f.fun_codigo.StartsWith("LIMITE ")) ? "LIMITES" : (modulo.ContainsKey(f.fun_codigo) ? modulo[f.fun_codigo] : "OTROS"),
+                    limite = f.EsLimite || f.fun_codigo.StartsWith("LIMITE "), incluida = f.pcf_incluida && !f.caducada, tope = f.pcf_limite, origen = (f.origen ?? "").Trim(), caduca = f.pcf_vigencia_hasta.HasValue ? f.pcf_vigencia_hasta.Value.ToString("yyyy-MM-dd") : null
+                }).ToList()
+                : new List<object>(),
+            modulos = Comercial.MODULOS.Select(m => new { id = m[0], n = m[1] }).ToList(),
+            periodicidades = (cat.GetValoresPorCodigo("PERIODICIDAD_COBRO", SitioBase.Session.ClienteId()) ?? new List<SitioBase.Model.CatalogoValor>()).Select(v => new { id = v.valor_id, n = v.valor_nombre }).ToList(),
+            editar = Token.Puede(P_PLANES)
+        };
+    }
+
+    /// <summary>
+    /// Crea o actualiza el plan. Dar de baja (habilitado = false) pasa PRIMERO por
+    /// DeletePlan, que tiene guarda: un plan que clientes están pagando no cae.
+    /// </summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarPlan(int id, string codigo, string nombre, string descripcion, int orden, int gracia, bool publico, bool habilitado)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PLANES);
+            PlanComercialController c = new PlanComercialController();
+            SitioBase.Model.PlanComercial e = new SitioBase.Model.PlanComercial
+            {
+                plc_id = id, plc_codigo = SitioBase.CodigoModulo.Componer("Plan_Comercial", codigo), plc_nombre = (nombre ?? "").Trim(), plc_descripcion = (descripcion ?? "").Trim(),
+                plc_orden = orden, plc_dias_gracia = gracia, plc_publico = publico, plc_habilitado = id == 0 ? true : habilitado
+            };
+            if (id > 0 && !habilitado)
+            {
+                Respuesta baja = c.DeletePlan(id);
+                if (baja.error) throw new Exception(baja.detalle);
+            }
+            Respuesta r = id > 0 ? c.UpdatePlan(e) : c.InsertPlan(e);
+            if (r.error) throw new Exception(r.detalle);
+            int nuevo = id > 0 ? id : r.codigo;
+            return new { mensaje = r.detalle, id = nuevo, ficha = FichaPlan(nuevo) };
+        });
+    }
+
+    /// <summary>Un precio vigente no se edita: se fija uno nuevo y el anterior queda cerrado. UF o USD.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string FijarPrecio(int plan, int periodicidad, string moneda, string valor, string descuento, string desde)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PLANES);
+            decimal? v = Monto(valor);
+            if (!v.HasValue || v.Value <= 0) throw new Exception("El valor debe ser mayor que cero.");
+            DateTime d; DateTime? dd = DateTime.TryParseExact((desde ?? "").Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out d) ? (DateTime?)d.Date : null;
+            SitioBase.Model.PlanComercialPrecio e = new SitioBase.Model.PlanComercialPrecio
+            {
+                pcp_plan_comercial = plan, pcp_periodicidad_cobro = periodicidad, pcp_moneda = moneda == "USD" ? "USD" : "UF",
+                pcp_valor_uf = v.Value, pcp_descuento_porcentaje = Monto(descuento), vigencia_desde = dd
+            };
+            Respuesta r = new PlanComercialController().FijarPrecio(e);
+            if (r.error) throw new Exception(r.detalle);
+            return new { mensaje = r.detalle, ficha = FichaPlan(plan) };
+        });
+    }
+
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string RetirarPrecio(int plan, int precio)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PLANES);
+            Respuesta r = new PlanComercialController().RetirarPrecio(new SitioBase.Model.PlanComercialPrecio { pcp_id = precio });
+            if (r.error) throw new Exception(r.detalle);
+            return new { mensaje = r.detalle, ficha = FichaPlan(plan) };
+        });
+    }
+
+    /// <summary>Qué incluye el plan. Tope vacío con la casilla marcada = sin límite; cero es no poder crear ninguno.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string GuardarFuncionalidades(int plan, List<Dictionary<string, object>> filas)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_PLANES);
+            PlanComercialController c = new PlanComercialController();
+            int n = 0; string errores = "";
+            foreach (Dictionary<string, object> f in filas ?? new List<Dictionary<string, object>>())
+            {
+                SitioBase.Model.PlanFuncionalidad e = new SitioBase.Model.PlanFuncionalidad { fun_id = Convert.ToInt32(f["id"]), pcf_incluida = Convert.ToBoolean(f["incluida"]) };
+                string tope = f.ContainsKey("tope") && f["tope"] != null ? Convert.ToString(f["tope"]) : null;
+                if (!string.IsNullOrWhiteSpace(tope)) e.pcf_limite = Monto(tope);
+                Respuesta r = c.GuardarFuncionalidad(plan, e);
+                if (r.error) errores += r.detalle + " "; else n++;
+            }
+            if (errores.Length > 0) throw new Exception(errores.Trim());
+            return new { mensaje = "Contenido del plan actualizado: " + n + " funcionalidades.", ficha = FichaPlan(plan) };
         });
     }
 

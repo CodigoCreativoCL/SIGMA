@@ -52,7 +52,7 @@ function recargar() {
 function cargarAtencion() {
   return call('Atencion').then(function (r) { C.atencion = r; if (S.tab === 'resumen') X.pintar(); }).catch(function () { C.atencion = null; });
 }
-var VISTAS = ['suscripciones', 'periodos', 'pagos'];
+var VISTAS = ['suscripciones', 'periodos', 'pagos', 'planes', 'empresas'];
 
 /* ------------------------------------------------------------ componentes del drawer (DrawerComponentes) */
 /* Sección colapsable en tarjeta blanca; la de la tarea actual va abierta. */
@@ -186,10 +186,10 @@ function vistaPagos(d) {
 function vista(v) {
   var d = C.lista[v];
   if (!d) { cargar(v); d = C.lista[v]; }
-  var cab = X.segSub('suscripciones');
+  var cab = X.segSub(v === 'empresas' ? 'clientes' : 'suscripciones');
   if (d.cargando) return cab + '<div class="cc-cargando">Cargando…</div>';
   if (d.error) return cab + '<div class="cc-vacio">' + esc(d.error) + '</div>';
-  return cab + (v === 'periodos' ? vistaPeriodos(d) : v === 'pagos' ? vistaPagos(d) : vistaSuscripciones(d));
+  return cab + (v === 'periodos' ? vistaPeriodos(d) : v === 'pagos' ? vistaPagos(d) : v === 'planes' ? vistaPlanes(d) : v === 'empresas' ? vistaEmpresas(d) : vistaSuscripciones(d));
 }
 
 /* Grupo «Cobros» al inicio de «Requiere atención» del Resumen. item(...) lo arma el Centro. */
@@ -220,6 +220,8 @@ function boton() {
     if (puede) return '<button type="button" class="cp-btn cp-pri" data-a="cemitir">' + ic('plus', 20) + 'Emitir período</button>';
     void sub;
   }
+  /* «Nuevo cliente», nunca «Nueva empresa» (prompt V2 §1). */
+  if (S.tab === 'clientes') return '<button type="button" class="cp-btn cp-pri" data-a="cclientenuevo">' + ic('plus', 20) + 'Nuevo cliente</button>';
   return null;
 }
 
@@ -489,6 +491,206 @@ document.addEventListener('dragover', function (e) { var z = e.target.closest &&
 document.addEventListener('dragleave', function (e) { var z = e.target.closest && e.target.closest('#ccDrop'); if (z) z.classList.remove('cc-sobre'); });
 document.addEventListener('drop', function (e) { var z = e.target.closest && e.target.closest('#ccDrop'); if (z && D) { e.preventDefault(); leerArchivo(e.dataTransfer.files[0]); } });
 
+/* ------------------------------------------------------------ PLANES: lista y drawer (760 px) */
+function vistaPlanes(d) {
+  var q = K.nrm(S.aq.trim());
+  var rows = d.filas.filter(function (x) { return !q || K.nrm([x.codigo, x.nombre, x.descripcion].join(' ')).indexOf(q) >= 0; });
+  var tarjeta = function (x) {
+    return '<button type="button" class="cc-pcard" data-a="cplanver" data-id="' + x.id + '"><span class="cc-wrap" style="justify-content:space-between"><span style="font-size:11px;font-weight:800;letter-spacing:.06em;color:var(--muted)">' + esc(x.codigo) + '</span>' +
+      chip(!x.habilitado ? 'Deshabilitado' : x.publico ? 'Público' : 'No público', !x.habilitado ? 'gr' : x.publico ? 'ok' : 'bl') + '</span>' +
+      '<h3>' + esc(x.nombre) + '</h3><p>' + esc(x.descripcion || 'Sin descripción') + '</p>' +
+      '<span class="cc-precio"><strong>' + (x.uf != null ? money(x.uf, 'UF') : '—') + '</strong><span>/ mes · Chile</span></span>' +
+      '<span class="cc-precio"><strong>' + (x.usd != null ? money(x.usd, 'USD') : '—') + '</strong><span>/ mes · exterior</span></span>' +
+      '<span class="cc-nota">' + K.pl(+x.gracia, 'día de gracia', 'días de gracia') + '</span></button>';
+  };
+  return '<section class="cc-panel"><div class="cc-bar"><label class="cc-buscar">' + ic('search', 20) + '<input type="search" id="ccAQ" value="' + esc(S.aq) + '" placeholder="Código o nombre" aria-label="Buscar"></label>' +
+    (d.crear ? '<button type="button" class="cp-btn cp-pri" data-a="cplanver" data-id="0">' + ic('plus') + 'Nuevo plan</button>' : '') + '</div>' +
+    '<div class="cc-pcards">' + (rows.length ? rows.map(tarjeta).join('') : '<div class="cc-vacio">Sin resultados.</div>') + '</div></section>';
+}
+
+function abrirPlan(id) {
+  D = { tipo: 'plan', id: +id, data: null, modo: 'ver', open: { datos: true, precio: true, incluye: true }, f: {}, fun: {}, pr: { abierto: false, moneda: 'UF', per: '', valor: '', desc: '', desde: '' }, hist: false, busy: false };
+  K.Panel.open({ st: D, render: render, onclose: function () { D = null; recargar(); } });
+  call('Plan', { id: +id }).then(function (d) { if (D && D.tipo === 'plan') { cargarPlan(d); K.Panel.paint(); } }).catch(function (e) { K.toastError(e); K.Panel.close(); });
+}
+function cargarPlan(d) {
+  D.data = d; D.id = d.plan.id;
+  D.f = { codigo: d.plan.codigo || '', nombre: d.plan.nombre || '', descripcion: d.plan.descripcion || '', orden: String(d.plan.orden), gracia: String(d.plan.gracia), publico: !!d.plan.publico, habilitado: d.plan.habilitado !== false };
+  D.fun = {};
+  d.funcionalidades.forEach(function (x) { D.fun[x.id] = { incluida: !!x.incluida, tope: x.tope == null ? '' : String(x.tope) }; });
+  if (!D.pr.per && d.periodicidades.length) D.pr.per = String(d.periodicidades[0].id);
+}
+var MODN = { LIMITES: 'Límites', OTROS: 'Otras' };
+function renderPlan(st) {
+  var d = st.data, dis = st.busy ? ' disabled' : '';
+  if (!d) return { w: 'w', s: 'Planes', t: 'Plan', b: '<div class="cc-cargando">Cargando el plan…</div>' };
+  var f = st.f, ed = d.editar, ro = ed ? '' : ' readonly', nuevo = st.id === 0;
+  var tog = function (k, t, h) { return '<label class="cc-acu"><input type="checkbox" data-pv="c.' + k + '"' + (f[k] ? ' checked' : '') + (ed ? '' : ' disabled') + '><span style="font-size:13px"><b>' + t + '</b>' + (h ? ' <span style="color:var(--muted)">' + h + '</span>' : '') + '</span></label>'; };
+  var datos = '<div class="cc-grid2"><div class="cp-fld"><label for="cc_codigo">Código</label><input class="cp-inp" id="cc_codigo" data-pv="c.codigo" value="' + esc(f.codigo) + '"' + (nuevo ? ' placeholder="Automático"' : ' readonly') + '></div>' +
+    '<div class="cp-fld"><label for="cc_nombre">Nombre</label><input class="cp-inp" id="cc_nombre" data-pv="c.nombre" value="' + esc(f.nombre) + '"' + ro + (nuevo ? ' data-autofocus="1"' : '') + '></div>' +
+    '<div class="cp-fld cc-full"><label for="cc_descripcion">Descripción</label><textarea class="cp-inp" id="cc_descripcion" data-pv="c.descripcion"' + ro + '>' + esc(f.descripcion) + '</textarea></div>' +
+    '<div class="cp-fld"><label for="cc_orden">Orden</label><input class="cp-inp" id="cc_orden" inputmode="numeric" data-pv="c.orden" value="' + esc(f.orden) + '"' + ro + '></div>' +
+    '<div class="cp-fld"><label for="cc_gracia">Días de gracia</label><input class="cp-inp" id="cc_gracia" inputmode="numeric" data-pv="c.gracia" value="' + esc(f.gracia) + '"' + ro + '></div></div>' +
+    tog('publico', 'Público', 'se ofrece en las propuestas estándar') + (nuevo ? '' : tog('habilitado', 'Habilitado', 'un plan con clientes activos no se puede deshabilitar'));
+
+  /* Precio versionado: nunca se edita el vigente; se fija uno nuevo (UF o USD). */
+  var P = d.precios, vig = P.filter(function (x) { return x.ESTADO === 'VIGENTE' || x.ESTADO === 'PROGRAMADO'; });
+  var filaP = function (x) {
+    var m = x.PCP_MONEDA === 'USD' ? 'USD' : 'UF';
+    return '<div class="cc-li" style="grid-template-columns:70px minmax(0,1fr) 150px 110px 70px"><span>' + chip(m, m === 'USD' ? 'pu' : 'bl') + '</span><span><b>' + esc(x.PCB_NOMBRE) + '</b> <span class="cc-m">desde ' + dmy(x.PCP_VIGENCIA_DESDE) + (x.PCP_VIGENCIA_HASTA ? ' hasta ' + dmy(x.PCP_VIGENCIA_HASTA) : '') + '</span></span>' +
+      '<b>' + money(x.PCP_VALOR_UF, m) + (x.PCP_DESCUENTO_PORCENTAJE ? ' <span class="cc-m">−' + fn(x.PCP_DESCUENTO_PORCENTAJE, 0) + '%</span>' : '') + '</b>' +
+      '<span>' + chip(x.ESTADO, x.ESTADO === 'VIGENTE' ? 'ok' : x.ESTADO === 'PROGRAMADO' ? 'cy' : 'gr') + '</span>' +
+      (ed && (x.ESTADO === 'VIGENTE' || x.ESTADO === 'PROGRAMADO') ? '<button type="button" class="cc-lnk" data-a="cpreciorety" data-id="' + x.PCP_ID + '">Retirar</button>' : '<span></span>') + '</div>';
+  };
+  var pr = st.pr;
+  var form = '<div class="cc-correo" style="display:flex;flex-direction:column;gap:12px"><b>Fijar precio nuevo</b>' +
+    '<div class="cc-seg cc-full" role="group" aria-label="Moneda"><button type="button" aria-pressed="' + (pr.moneda === 'UF') + '" data-a="cprmon" data-v="UF">UF · Chile</button><button type="button" aria-pressed="' + (pr.moneda === 'USD') + '" data-a="cprmon" data-v="USD">USD · exterior</button></div>' +
+    '<div class="cc-grid2"><div class="cp-fld"><label>Periodicidad</label>' + K.combo('ccPrPer', d.periodicidades.map(function (x) { return { id: String(x.id), n: x.n }; }), pr.per, { etiqueta: 'Periodicidad' }) + '</div>' +
+    '<div class="cp-fld"><label for="cc_pr_valor">Valor en ' + pr.moneda + '</label><input class="cp-inp" id="cc_pr_valor" inputmode="decimal" data-pv="c.pr_valor" value="' + esc(pr.valor) + '"></div>' +
+    '<div class="cp-fld"><label for="cc_pr_desc">Descuento % (opcional)</label><input class="cp-inp" id="cc_pr_desc" inputmode="decimal" data-pv="c.pr_desc" value="' + esc(pr.desc) + '"></div>' +
+    '<div class="cp-fld"><span class="cp-lb">Rige desde</span>' + K.fecha('plan.desde', pr.desde, { etiqueta: 'Rige desde' }) + '</div></div>' +
+    '<div class="cc-acc"><span class="cc-nota" style="flex:1">El precio anterior queda cerrado, no borrado. Vacío = rige desde hoy.</span>' + btn('cp-ghost cp-sm', 'cprecioabrir', 'Cancelar') + btn('cp-sec cp-sm', 'cpreciook', 'Fijar precio', dis) + '</div></div>';
+  var precio = (vig.length ? vig.map(filaP).join('') : '<div class="cc-nota">Este plan todavía no tiene precio: sin precio no se vende.</div>') +
+    (ed ? (pr.abierto ? form : '<div class="cc-acc">' + btn('cp-out cp-sm', 'cprecioabrir', 'Fijar precio nuevo', '', 'plus') + '</div>') : '') +
+    (P.length > vig.length ? '<button type="button" class="cc-lnk" data-a="chist">' + (st.hist ? 'Ocultar el historial' : 'Ver el historial de precios (' + (P.length - vig.length) + ')') + '</button>' +
+      (st.hist ? P.filter(function (x) { return !(x.ESTADO === 'VIGENTE' || x.ESTADO === 'PROGRAMADO'); }).map(filaP).join('') : '') : '');
+
+  /* Qué incluye: funcionalidades por módulo comercial, con «incluida» y «tope». */
+  var orden = ['LIMITES'].concat(d.modulos.map(function (m) { return m.id; })).concat(['OTROS']);
+  var nombreMod = function (id) { var m = d.modulos.filter(function (x) { return x.id === id; })[0]; return m ? m.n : (MODN[id] || id); };
+  var tabla = '<table class="cc-func"><thead><tr><th>Funcionalidad</th><th style="width:80px">Incluida</th><th style="width:130px">Tope</th></tr></thead><tbody>' +
+    orden.map(function (mo) {
+      var fs = d.funcionalidades.filter(function (x) { return x.modulo === mo; }); if (!fs.length) return '';
+      return '<tr class="cc-mod-h"><td colspan="3">' + esc(nombreMod(mo)) + '</td></tr>' + fs.map(function (x) {
+        var s = st.fun[x.id] || {};
+        return '<tr><td>' + esc(x.nombre) + (x.origen === 'EXCEPCIÓN' ? ' ' + chip('Excepción', 'bl') : '') + (x.caduca ? ' ' + chip('Hasta ' + dmy(x.caduca), 'wa') : '') + '</td>' +
+          '<td><input type="checkbox" data-pv="c.fun_' + x.id + '"' + (s.incluida ? ' checked' : '') + (ed ? '' : ' disabled') + ' aria-label="Incluida"></td>' +
+          '<td>' + (x.limite ? '<input class="cp-inp" inputmode="decimal" data-pv="c.top_' + x.id + '" value="' + esc(s.tope) + '" placeholder="sin límite"' + (ed ? '' : ' readonly') + '>' : '') + '</td></tr>';
+      }).join('');
+    }).join('') + '</tbody></table>';
+  var incluidas = d.funcionalidades.filter(function (x) { return (st.fun[x.id] || {}).incluida; }).length;
+  return { w: 'w', s: nuevo ? 'Planes' : esc(f.codigo) + ' · Plan', t: (nuevo ? 'Nuevo plan' : esc(f.nombre)) + ' ' + (nuevo ? chip('Sin crear', 'gr') : chip(f.habilitado ? (f.publico ? 'Público' : 'No público') : 'Deshabilitado', f.habilitado ? (f.publico ? 'ok' : 'bl') : 'gr')),
+    b: sec(st, 'datos', 'badge', 'pu', 'Datos', '', datos) +
+      (nuevo ? aviso('Guarda el plan para fijarle precio y elegir lo que incluye. Un plan sin precio no se vende.', '') :
+        sec(st, 'precio', 'wallet', 'cy', 'Precio versionado', '<small>UF y USD</small>', precio) +
+        sec(st, 'incluye', 'list', 'ok', 'Qué incluye', '<small>' + incluidas + ' de ' + d.funcionalidades.length + '</small>', tabla)),
+    f: btn('cp-ghost', 'pclose', 'Cerrar') + '<div class="cp-r">' + (ed ? btn('cp-pri', 'cplanguardar', st.busy ? 'Guardando…' : 'Guardar', dis) : '') + '</div>' };
+}
+A.cplanver = function (ds) { abrirPlan(ds.id); };
+A.cprecioabrir = function () { D.pr.abierto = !D.pr.abierto; K.Panel.paint(); };
+A.cprmon = function (ds) { D.pr.moneda = ds.v; K.Panel.paint(); };
+A.chist = function () { D.hist = !D.hist; K.Panel.paint(); };
+A.cpreciook = function () {
+  var p = D.pr;
+  ocupado(call('FijarPrecio', { plan: D.id, periodicidad: +p.per, moneda: p.moneda, valor: p.valor, descuento: p.desc, desde: p.desde }))
+    .then(function (r) { cargarPlan(r.ficha); D.pr.abierto = false; D.pr.valor = ''; D.pr.desc = ''; D.pr.desde = ''; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); recargar(); }).catch(function () { });
+};
+A.cpreciorety = function (ds) {
+  ocupado(call('RetirarPrecio', { plan: D.id, precio: +ds.id })).then(function (r) { cargarPlan(r.ficha); D.busy = false; K.Panel.paint(); K.toast(r.mensaje); recargar(); }).catch(function () { });
+};
+A.cplanguardar = function () {
+  var f = D.f, nuevo = D.id === 0;
+  ocupado(call('GuardarPlan', { id: D.id, codigo: f.codigo, nombre: f.nombre, descripcion: f.descripcion, orden: +f.orden || 0, gracia: +f.gracia || 0, publico: !!f.publico, habilitado: !!f.habilitado }))
+    .then(function (r) {
+      if (nuevo) { cargarPlan(r.ficha); D.busy = false; K.Panel.paint(); K.toast(r.mensaje); recargar(); return; }
+      var filas = r.ficha.funcionalidades.map(function (x) { var s = D.fun[x.id] || {}; return { id: x.id, incluida: !!s.incluida, tope: x.limite ? s.tope : null }; });
+      return call('GuardarFuncionalidades', { plan: D.id, filas: filas }).then(function (r2) { cargarPlan(r2.ficha); D.busy = false; K.Panel.paint(); K.toast('Plan guardado'); recargar(); });
+    }).catch(function (e) { if (D) { D.busy = false; K.Panel.paint(); } K.toastError(e); });
+};
+
+/* ------------------------------------------------------------ CLIENTES: lista y drawer (600 px) */
+function vistaEmpresas(d) {
+  var q = K.nrm(S.aq.trim());
+  var rows = d.filas.filter(function (x) { return !q || K.nrm([x.nombre, x.razon, x.identificador, x.pais].join(' ')).indexOf(q) >= 0; });
+  var cols = 'grid-template-columns:minmax(200px,2fr) minmax(160px,1.4fr) 120px 150px 150px 100px 120px';
+  var fila = function (x) {
+    return '<div class="cc-crow" role="button" tabindex="0" style="' + cols + '" data-a="ccli" data-id="' + x.id + '">' +
+      '<span class="cc-c2"><b>' + esc(x.nombre) + '</b></span><span class="cc-c2"><span>' + esc(x.razon || '') + '</span></span>' +
+      '<span style="font-size:13px">' + esc(x.pais || '—') + '</span><span class="cc-num">' + esc(x.identificador || '') + '</span><span>' + chipCobro(x.moneda) + '</span>' +
+      '<span class="cc-num">' + (x.desde ? dmy(x.desde) : '') + '</span><span>' + chip(x.habilitado ? 'Habilitada' : 'Deshabilitada', x.habilitado ? 'ok' : 'gr') + '</span></div>';
+  };
+  var th = ['Empresa', 'Razón social', 'País', 'Identificador', 'Cobro', 'Desde', 'Estado'];
+  return '<section class="cc-panel"><div class="cc-bar"><label class="cc-buscar">' + ic('search', 20) + '<input type="search" id="ccAQ" value="' + esc(S.aq) + '" placeholder="Empresa, razón social, país o identificador" aria-label="Buscar"></label></div>' +
+    '<div class="cc-scroll"><div class="cc-tabla" style="min-width:1040px"><div class="cc-th" style="' + cols + '">' + th.map(function (h) { return '<span>' + h + '</span>'; }).join('') + '</div>' +
+    '<div class="cc-filas">' + (rows.length ? rows.map(fila).join('') : '<div class="cc-vacio">Sin resultados.</div>') + '</div></div></div>' +
+    '<div class="cc-pie"><span>' + rows.length + ' de ' + d.filas.length + '</span><span>Clic en una fila para abrir su ficha</span></div></section>';
+}
+
+function formCli(d) {
+  var c = d.cliente || {};
+  return { nombre: c.NOMBRE || '', razon: c.RAZON_SOCIAL || '', fantasia: c.FANTASIA || '', pais: c.PAIS_ID ? String(c.PAIS_ID) : '1', identificador: c.IDENTIFICADOR || '',
+    zona: c.ZONA_HORARIA ? String(c.ZONA_HORARIA) : '', idioma: c.IDIOMA ? String(c.IDIOMA) : '', moneda: c.MONEDA_ID ? String(c.MONEDA_ID) : '', habilitado: c.HABILITADO !== false,
+    cobro: c.MONEDA_COBRO || 'UF', motivo: '' };
+}
+function abrirCliente(id) {
+  D = { tipo: 'cli', id: +id, data: null, open: { ident: true, cont: false, usu: false, pla: false }, f: {}, nc: { nombre: '', cargo: '', correo: '', telefono: '', principal: false }, busy: false };
+  K.Panel.open({ st: D, render: render, onclose: function () { D = null; if (C.lista.empresas) cargar('empresas'); } });
+  call('Cliente', { id: +id }).then(function (d) { if (D && D.tipo === 'cli') { D.data = d; D.f = formCli(d); if (+id === 0) D.f.cobro = 'UF'; K.Panel.paint(); } }).catch(function (e) { K.toastError(e); K.Panel.close(); });
+}
+function paisDe(st) { return st.data.opciones.paises.filter(function (p) { return String(p.id) === String(st.f.pais); })[0]; }
+function renderCli(st) {
+  var d = st.data, dis = st.busy ? ' disabled' : '';
+  if (!d) return { w: 'c', s: 'Clientes', t: 'Cliente', b: '<div class="cc-cargando">Cargando el cliente…</div>' };
+  var f = st.f, o = d.opciones, p = d.permisos, nuevo = st.id === 0, ed = p.editar, c = d.cliente || {}, pa = paisDe(st) || { etiqueta: 'Identificador tributario', moneda: 'UF' };
+  var resumen = nuevo ? '' : '<div class="cc-mini"><div><small>Suscripción</small><b>' + (d.suscripcion && d.suscripcion.SUSCRIPCION ? esc(cod('SUS', d.suscripcion.SUSCRIPCION)) : '—') + '</b></div>' +
+    '<div><small>Plan</small><b>' + esc(d.suscripcion && d.suscripcion.PLAN_NOMBRE || '—') + '</b></div><div><small>Ejecutivo</small><b>' + esc(d.suscripcion && d.suscripcion.EJECUTIVO || '—') + '</b></div></div>';
+  var cat = function (k, lista, ph, t) { return '<div class="cp-fld"><label>' + t + '</label>' + K.combo('ccCli_' + k, [{ id: '', n: ph }].concat(lista.map(function (x) { return { id: String(x.id), n: x.n }; })), f[k], { ph: ph, etiqueta: t }) + '</div>'; };
+  var explica = f.cobro === 'USD'
+    ? 'Se cotiza y se cobra en <b>dólares (USD)</b>. Se paga por <b>transferencia internacional (SWIFT)</b>; los gastos bancarios corren por cuenta del cliente. La tarjeta en USD queda «próximamente».'
+    : 'Se cotiza en <b>UF</b> y se cobra en <b>pesos (CLP)</b> con la UF del día de emisión. Se paga con <b>Webpay Plus</b> o transferencia nacional.';
+  var cambia = !nuevo && c.MONEDA_COBRO && f.cobro !== c.MONEDA_COBRO;
+  var ident = '<div class="cc-grid2"><div class="cp-fld cc-full"><label for="cc_nombre">Nombre</label><input class="cp-inp" id="cc_nombre" data-pv="c.nombre" value="' + esc(f.nombre) + '"' + (ed ? '' : ' readonly') + (nuevo ? ' data-autofocus="1"' : '') + '></div>' +
+    fld('razon', 'Razón social', { ro: !ed }) + fld('fantasia', 'Nombre de fantasía', { ro: !ed }) +
+    '<div class="cp-fld"><label>País</label>' + K.combo('ccCli_pais', o.paises.map(function (x) { return { id: String(x.id), n: x.n }; }), f.pais, { ph: 'Elige el país', etiqueta: 'País' }) + '</div>' +
+    fld('identificador', pa.etiqueta, { ro: !ed, ph: pa.id === 1 ? '12.345.678-9' : '' }) +
+    cat('zona', o.zonas, 'Sin definir', 'Zona horaria') + cat('idioma', o.idiomas, 'Sin definir', 'Idioma') + cat('moneda', o.monedas, 'Sin definir', 'Moneda operativa') +
+    '<div class="cp-fld"><label for="cc_hab">Habilitada</label><label class="cc-acu" style="height:40px"><input type="checkbox" id="cc_hab" data-pv="c.habilitado"' + (f.habilitado ? ' checked' : '') + (ed ? '' : ' disabled') + '><span style="font-size:13px">' + (f.habilitado ? 'Sí' : 'No') + '</span></label></div></div>' +
+    '<div class="cp-fld"><label>Moneda de cobro</label><div class="cc-seg cc-full" role="group" aria-label="Moneda de cobro"><button type="button" aria-pressed="' + (f.cobro === 'UF') + '" data-a="ccobro" data-v="UF"' + (nuevo || p.cambiarMoneda ? '' : ' disabled') + '>UF · Chile</button>' +
+    '<button type="button" aria-pressed="' + (f.cobro === 'USD') + '" data-a="ccobro" data-v="USD"' + (nuevo || p.cambiarMoneda ? '' : ' disabled') + '>USD · exterior</button></div></div>' +
+    '<div class="cc-info">' + ic('light') + '<span>' + explica + '</span></div>' +
+    (!nuevo && !p.cambiarMoneda ? '<div class="cc-nota">La moneda de cobro se fijó al crear el cliente. Cambiarla exige una facultad especial y queda auditado; los períodos ya emitidos conservan su moneda.</div>' : '') +
+    (cambia ? '<div class="cp-fld"><label for="cc_motivo">Motivo del cambio de moneda (queda auditado)</label><textarea class="cp-inp" id="cc_motivo" data-pv="c.motivo">' + esc(f.motivo) + '</textarea></div>' : '');
+  var cs = d.contactos.map(function (x) {
+    return '<div class="cc-li" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1.4fr) auto auto"><span class="cc-c2"><b style="font-size:13px">' + esc(x.ccn_nombre) + '</b><span>' + esc(x.ccn_cargo || '') + '</span></span>' +
+      '<span class="cc-c2"><span style="color:var(--ink);font-size:13px">' + esc(x.ccn_email || '—') + '</span><span>' + esc(x.ccn_telefono || '') + '</span></span><span>' + (x.ccn_principal ? chip('Principal', 'pu') : '') + '</span>' +
+      (ed ? '<button type="button" class="cc-lnk" data-a="cconquitar" data-id="' + x.ccn_id + '">Quitar</button>' : '<span></span>') + '</div>';
+  }).join('') || '<div class="cc-nota">Sin contactos.</div>';
+  var nc = st.nc;
+  var alta = ed && !nuevo ? '<div class="cc-correo" style="display:flex;flex-direction:column;gap:10px"><b>Agregar contacto</b><div class="cc-grid2">' +
+    ['nombre:Nombre', 'cargo:Cargo', 'correo:Correo', 'telefono:Teléfono'].map(function (z) { var k = z.split(':')[0]; return '<div class="cp-fld"><label for="cc_nc_' + k + '">' + z.split(':')[1] + '</label><input class="cp-inp" id="cc_nc_' + k + '" data-pv="c.nc_' + k + '" value="' + esc(nc[k]) + '"></div>'; }).join('') + '</div>' +
+    '<div class="cc-acc"><label class="cc-acu" style="flex:1"><input type="checkbox" data-pv="c.nc_principal"' + (nc.principal ? ' checked' : '') + '><span style="font-size:13px">Contacto principal</span></label>' + btn('cp-out cp-sm', 'cconagregar', 'Agregar', dis, 'plus') + '</div></div>' : '';
+  var us = d.usuarios.map(function (x) {
+    return '<div class="cc-li" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) auto"><span class="cc-c2"><b style="font-size:13px">' + esc(x.nombre) + '</b><span>' + esc(x.correo || '') + '</span></span><span style="font-size:12.5px;color:var(--cc-lab)">' + esc(x.perfiles || 'Sin perfil') + '</span>' + chip(x.habilitado ? 'Activo' : 'Deshabilitado', x.habilitado ? 'ok' : 'gr') + '</div>';
+  }).join('') || '<div class="cc-nota">Sin usuarios.</div>';
+  var pl = d.plantas.map(function (x) {
+    return '<div class="cc-li" style="grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto"><b style="font-size:13px">' + esc(x.nombre) + '</b><span class="cc-m">' + esc(x.direccion || '—') + '</span>' + chip(x.habilitada ? 'Habilitada' : 'Deshabilitada', x.habilitada ? 'ok' : 'gr') + '</div>';
+  }).join('') || '<div class="cc-nota">Sin plantas.</div>';
+  return { w: 'c', s: nuevo ? 'Clientes' : esc(c.IDENT_ETIQUETA || 'ID') + ' ' + esc(c.IDENTIFICADOR || ''), t: (nuevo ? 'Nuevo cliente' : esc(c.NOMBRE)) + ' ' + (nuevo ? chip('Sin crear', 'gr') : chipCobro(c.MONEDA_COBRO)),
+    b: resumen + sec(st, 'ident', 'badge', 'pu', 'Identidad', '', ident) +
+      (nuevo ? aviso('Guarda el cliente para agregar contactos. Sus usuarios y plantas se administran desde Cliente.', '') :
+        sec(st, 'cont', 'users', 'bl', 'Contactos', '<small>' + d.contactos.length + '</small>', cs + alta) +
+        sec(st, 'usu', 'person', 'cy', 'Usuarios', '<small>' + d.usuarios.length + '</small>', us + '<div class="cc-nota">Para invitar o cambiar perfiles, el cliente usa Cliente › Usuarios.</div>') +
+        sec(st, 'pla', 'pin', 'ok', 'Plantas', '<small>' + d.plantas.length + '</small>', pl)),
+    f: btn('cp-ghost', 'pclose', 'Cerrar') + '<div class="cp-r">' + (ed ? btn('cp-pri', 'cclientok', st.busy ? 'Guardando…' : (nuevo ? 'Crear cliente' : 'Guardar'), dis + (f.nombre.trim() && f.identificador.trim() ? '' : ' disabled')) : '') + '</div>' };
+}
+A.ccli = function (ds) { abrirCliente(ds.id); };
+A.cclientenuevo = function () { abrirCliente(0); };
+A.ccobro = function (ds) { D.f.cobro = ds.v; K.Panel.paint(); };
+A.cclientok = function () {
+  var f = D.f, nuevo = D.id === 0;
+  ocupado(call('GuardarCliente', { id: D.id, nombre: f.nombre, razon: f.razon || f.nombre, pais: +f.pais, identificador: f.identificador, fantasia: f.fantasia, zona: f.zona ? +f.zona : null, idioma: f.idioma ? +f.idioma : null,
+    moneda: f.moneda ? +f.moneda : null, habilitado: !!f.habilitado, monedaCobro: f.cobro, motivo: f.motivo }))
+    .then(function (r) { D.id = r.id; D.data = r.ficha; D.f = formCli(r.ficha); D.busy = false; K.Panel.paint(); K.toast(r.mensaje); if (C.lista.empresas) cargar('empresas'); void nuevo; }).catch(function () { });
+};
+A.cconagregar = function () {
+  var n = D.nc;
+  ocupado(call('GuardarContacto', { cliente: D.id, nombre: n.nombre, cargo: n.cargo, correo: n.correo, telefono: n.telefono, principal: !!n.principal }))
+    .then(function (r) { D.data = r.ficha; D.nc = { nombre: '', cargo: '', correo: '', telefono: '', principal: false }; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); }).catch(function () { });
+};
+A.cconquitar = function (ds) {
+  ocupado(call('QuitarContacto', { cliente: D.id, contacto: +ds.id })).then(function (r) { D.data = r.ficha; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); }).catch(function () { });
+};
+
 /* ------------------------------------------------------------ DRAWER · DATOS PARA TRANSFERIR (Configuración) */
 function abrirBanco() {
   D = { tipo: 'banco', data: null, open: {}, busy: false, f: {} };
@@ -510,7 +712,7 @@ function renderBanco(st) {
     f: btn('cp-ghost', 'pclose', 'Cancelar') + '<div class="cp-r">' + (st.data.editar ? btn('cp-pri', 'cbancook', st.busy ? 'Guardando…' : 'Guardar', st.busy ? ' disabled' : '') : '') + '</div>' };
 }
 
-function render(st) { return st.tipo === 'per' ? renderPer(st) : st.tipo === 'pago' ? renderPago(st) : st.tipo === 'banco' ? renderBanco(st) : renderSus(st); }
+function render(st) { return st.tipo === 'per' ? renderPer(st) : st.tipo === 'pago' ? renderPago(st) : st.tipo === 'banco' ? renderBanco(st) : st.tipo === 'plan' ? renderPlan(st) : st.tipo === 'cli' ? renderCli(st) : renderSus(st); }
 
 /* ------------------------------------------------------------ acciones */
 A.cfiltro = function (ds) { C.filtro = ds.v; X.pintar(); };
@@ -575,6 +777,14 @@ A.cemitirok = function () {
 function pv(clave, valor) {
   if (clave.indexOf('c.') !== 0 || !D) return false;
   var k = clave.slice(2);
+  if (D.tipo === 'cli' && k.indexOf('nc_') === 0) { D.nc[k.slice(3)] = valor; return true; }
+  if (D.tipo === 'plan') {
+    /* Funcionalidades y formulario de precio van aparte del resto de los campos del plan. */
+    if (k.indexOf('fun_') === 0) { var fi = D.fun[k.slice(4)] || (D.fun[k.slice(4)] = {}); fi.incluida = !!valor; return true; }
+    if (k.indexOf('top_') === 0) { var ti = D.fun[k.slice(4)] || (D.fun[k.slice(4)] = {}); ti.tope = valor; return true; }
+    if (k === 'pr_valor') { D.pr.valor = valor; return true; }
+    if (k === 'pr_desc') { D.pr.desc = valor; return true; }
+  }
   D.f[k] = valor;
   if (k === 'habilitado') K.Panel.paint();
   /* Sin repintar el cajón: un repintado entre el clic y el soltar perdería el botón. */
@@ -583,9 +793,11 @@ function pv(clave, valor) {
   return true;
 }
 function fecha(el) {
-  if (!D || el.getAttribute('data-fe') !== 'pago.fecha') return false;
-  D.f.fecha = K.deDN(el.value);
-  return true;
+  if (!D) return false;
+  var b = el.getAttribute('data-fe');
+  if (b === 'pago.fecha') { D.f.fecha = K.deDN(el.value); return true; }
+  if (b === 'plan.desde') { D.pr.desde = K.deDN(el.value); return true; }
+  return false;
 }
 function combo(n, valor) {
   if (!D) return false;
@@ -595,6 +807,14 @@ function combo(n, valor) {
   if (n === 'ccEmSus') { D.f.sus = valor; K.Panel.paint(); return true; }
   if (n === 'ccEmPer') { D.f.per = valor; K.Panel.paint(); return true; }
   if (n === 'ccEmPlan') { D.f.plan = valor; return true; }
+  if (n.indexOf('ccCli_') === 0) {
+    var kc = n.slice(6); D.f[kc] = valor;
+    // En un cliente nuevo la moneda de cobro sigue al país (Chile = UF, el resto = USD).
+    if (kc === 'pais' && D.id === 0) { var pa = D.data.opciones.paises.filter(function (x) { return String(x.id) === String(valor); })[0]; if (pa) D.f.cobro = pa.moneda; }
+    if (kc === 'pais') K.Panel.paint();
+    return true;
+  }
+  if (n === 'ccPrPer') { D.pr.per = valor; return true; }
   if (n === 'ccPagoPer') {
     D.f.periodo = valor;
     var p = D.op.periodos.filter(function (x) { return String(x.SPE_ID) === String(valor); })[0];

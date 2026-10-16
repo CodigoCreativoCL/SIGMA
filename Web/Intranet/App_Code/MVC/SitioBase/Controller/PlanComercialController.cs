@@ -439,6 +439,7 @@ namespace SitioBase.Controller
                     cmdExecute.Parameters.AddWithValue("@DESCUENTO", (object)entidad.pcp_descuento_porcentaje ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@DESDE", (object)entidad.vigencia_desde ?? DBNull.Value);
                     cmdExecute.Parameters.AddWithValue("@USUARIO", Session.UsuarioId());
+                    cmdExecute.Parameters.AddWithValue("@MONEDA", string.IsNullOrEmpty(entidad.pcp_moneda) ? "UF" : entidad.pcp_moneda);
                     cmdExecute.ExecuteNonQuery();
                     cmdExecute.Connection.Close();
 
