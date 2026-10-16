@@ -1,147 +1,35 @@
 ﻿<%@ Page Language="C#" MasterPageFile="~/Master/Default.master" AutoEventWireup="true" CodeFile="Renovar.aspx.cs" Inherits="Renovar" %>
 
 <asp:Content ID="ContenHeder" ContentPlaceHolderID="cphHeder" runat="server">
-</asp:Content>
-
-<asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
-    <script type="text/javascript">
-        /* Antes abria un RadWindow2 que vivia dentro del panel de pagos.
-           Como "Declarar pago" es un postback parcial, al volver la
-           respuesta el RadWindow ya no existia para $find y la funcion
-           reventaba en setUrl: el administrador del cliente apretaba el
-           boton y no pasaba nada (encontrado en las pruebas de HU-194,
-           15-09-2026). Ahora abre el mismo SigmaModal que usa Pagos.aspx. */
-        function abrirPago(query) {
-            return SigmaModal.open({
-                url: '<%=ResolveUrl("~/View/Comercial/Suscripciones/Pago.aspx") %>?query=' + query,
-                title: 'Pago',
-                width: 900,
-                initialHeight: 620
-            });
-        }
-
-        function refresh() {
-            __doPostBack("<%=GridPagos.ClientID %>", '')
-        }
-    </script>
-</asp:Content>
-
-<asp:Content ID="ContentEyebrow" ContentPlaceHolderID="cphEyebrow" runat="Server">
-    Suscripción
-</asp:Content>
-
-<asp:Content ID="ContentTitulo" ContentPlaceHolderID="cphTitulo" runat="Server">
-    Mi suscripción
-</asp:Content>
-
-<asp:Content ID="ContentSubtitulo" ContentPlaceHolderID="cphSubtitulo" runat="Server">
-    El estado de tu plan y lo que necesitas para seguir trabajando.
+    <%-- Mi suscripción (P6, Centro Comercial V2). Es la única pantalla que sigue abierta cuando la
+         suscripción venció (SuscripcionAcceso.EXENTAS y Token.EXENTAS): el drawer se abre solo y todo
+         lo pide al servicio WsMiSuscripcion, que trabaja siempre con el cliente en sesión.
+         Diseño: Redisenos/CentroComercial/artefacto/MiSuscripcion.dc.html. --%>
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-combo.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-centro-planificacion.css") %>' rel="stylesheet" />
+    <link href='<%=Asset("~/Css/LookAndFeel/sigma-centro-comercial.css") %>' rel="stylesheet" />
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-combo.js") %>'></script>
+    <script type="text/javascript">window.MantLugarConfig = <%=ConfigJson %>;</script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mant-comun.js") %>'></script>
+    <script type="text/javascript" src='<%=Asset("~/Js/sigma-mi-suscripcion.js") %>'></script>
 </asp:Content>
 
 <asp:Content ID="ContentBody" ContentPlaceHolderID="cphBody" runat="Server">
-
-    <%-- El estado, primero y grande: es a lo que se viene. --%>
-    <div class="card-box">
-        <div class="sg-renovar-estado">
-            <span class="grid-estado-chip"><asp:Literal ID="litChipEstado" runat="server" /></span>
-            <h2><asp:Literal ID="litTitulo" runat="server" /></h2>
-            <p><asp:Literal ID="litMensaje" runat="server" /></p>
+    <div class="cp-root cc-root" id="cpRoot">
+        <div class="cp-wrap">
+            <header class="cp-hero">
+                <div class="cp-hero-title">
+                    <span class="cp-hero-eyebrow">Suscripción</span>
+                    <h1>Mi suscripción</h1>
+                    <p>El estado de tu plan y lo que necesitas para seguir trabajando.</p>
+                </div>
+                <div class="cp-hero-actions"><button type="button" class="cp-btn cp-pri" data-a="abrir">Ver mi suscripción</button></div>
+            </header>
+            <div id="msBody" aria-live="polite"><div class="cc-cargando">Cargando tu suscripción…</div></div>
+            <noscript><div class="cc-vacio">Esta pantalla necesita JavaScript. Escribe a comercial@codigocreativo.tech y te ayudamos.</div></noscript>
         </div>
-
-        <div class="row col-lg-12 col-md-12 col-xs-12">
-            <div class="col-lg-4 col-md-4 col-xs-12 identidad-readonly-item">
-                <label>Plan</label>
-                <div class="identidad-readonly-chip-sm"><asp:Label ID="lblPlan" runat="server" /></div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 identidad-readonly-item">
-                <label>Vigente hasta</label>
-                <div class="identidad-readonly-chip-sm"><asp:Label ID="lblVigencia" runat="server" /></div>
-            </div>
-            <div class="col-lg-4 col-md-4 col-xs-12 identidad-readonly-item">
-                <label>Saldo pendiente</label>
-                <div class="identidad-readonly-chip-sm"><asp:Label ID="lblSaldo" runat="server" /></div>
-            </div>
-        </div>
+        <div id="cpLayer"></div>
+        <div id="cpPop"></div>
+        <div class="cp-toasts" id="cpToasts" aria-live="polite"></div>
     </div>
-
-    <%-- Los períodos impagos: lo concreto que hay que pagar. --%>
-    <asp:Panel ID="pnlPeriodos" runat="server" Visible="false">
-        <div class="SubTitulos">Períodos pendientes de pago</div>
-        <rad:RadGrid2 ID="GridPeriodos" runat="server">
-            <MasterTableView CommandItemDisplay="None" DataKeyNames="spe_id">
-            </MasterTableView>
-        </rad:RadGrid2>
-        <br />
-    </asp:Panel>
-
-    <%-- El consumo del plan. Sirve tanto para el que está al día como para
-         el que se está preguntando por qué no puede crear una planta más. --%>
-    <asp:Panel ID="pnlLimites" runat="server" Visible="false">
-        <div class="SubTitulos">Uso de tu plan</div>
-        <%-- HU-192 #2: cuando un limite pasa del 80 % se dice arriba, antes de
-             que la persona tenga que leer la grilla fila por fila. --%>
-        <asp:Literal ID="litAvisoLimites" runat="server" />
-        <rad:RadGrid2 ID="GridLimites" runat="server" OnItemDataBound="GridLimites_ItemDataBound">
-            <MasterTableView CommandItemDisplay="None" DataKeyNames="fun_codigo">
-            </MasterTableView>
-        </rad:RadGrid2>
-        <br />
-    </asp:Panel>
-
-    <%-- HU-192 #1: que incluye el plan. Lo que se tiene y lo que no, en dos
-         listas: es la pregunta que se hace antes de decidir si subir de plan. --%>
-    <asp:Panel ID="pnlIncluye" runat="server" Visible="false">
-        <div class="SubTitulos">Qué incluye tu plan</div>
-        <div class="sg-renovar-incluye">
-            <div>
-                <div class="sg-renovar-incluye-titulo"><i class="mdi mdi-check-circle"></i>Incluido</div>
-                <asp:Literal ID="litIncluidas" runat="server" />
-            </div>
-            <div>
-                <div class="sg-renovar-incluye-titulo is-no"><i class="mdi mdi-minus-circle-outline"></i>No incluido en tu plan</div>
-                <asp:Literal ID="litNoIncluidas" runat="server" />
-            </div>
-        </div>
-        <br />
-    </asp:Panel>
-
-    <%-- Declarar un pago.
-
-         La funcion vivia en Comercial > Pagos, que es la vista de TODAS las
-         suscripciones y dejo de ser del cliente cuando se le quitaron los
-         permisos de plataforma. Aqui es donde corresponde: el cliente ve su
-         saldo, declara contra el, y sigue el estado de lo declarado.
-
-         El cliente NO verifica su propio pago -eso lo hace SIGMA-, asi que
-         esta grilla es de solo lectura salvo por el boton. --%>
-    <asp:Panel ID="pnlPagos" runat="server" Visible="false">
-        <div class="SubTitulos">Mis pagos declarados</div>
-
-        <rad:RadGrid2 ID="GridPagos" runat="server" OnItemDataBound="GridPagos_ItemDataBound">
-            <MasterTableView CommandItemDisplay="Top" DataKeyNames="spa_id">
-                <CommandItemTemplate>
-                    <div>
-                        <asp:LinkButton ID="lnkDeclarar" runat="server" Text="Declarar pago"
-                            CssClass="icono_guardar" OnClick="lnkDeclarar_Click" />
-                    </div>
-                </CommandItemTemplate>
-            </MasterTableView>
-        </rad:RadGrid2>
-        <br />
-    </asp:Panel>
-
-    <div class="card-box">
-        <div class="sg-renovar-contacto">
-            <i class="mdi mdi-lifebuoy"></i>
-            <div>
-                <strong>¿Necesitas ayuda para regularizar?</strong>
-                <p>
-                    Escríbenos a <a href="mailto:contacto@sigma.cl">contacto@sigma.cl</a>
-                    indicando el nombre de tu empresa. Tus datos están completos y
-                    se recuperan íntegros al renovar: <strong>nada se borra por falta de pago</strong>.
-                </p>
-            </div>
-        </div>
-    </div>
-
 </asp:Content>
