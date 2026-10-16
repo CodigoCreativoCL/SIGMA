@@ -23,6 +23,9 @@ public partial class View_Comercial_Suscripciones_Periodos : System.Web.UI.Page
 {
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Centro Comercial V2: esta pantalla ahora vive en un cajón del Centro. Se conserva la dirección por los enlaces antiguos.
+        Response.Redirect("~/View/Comercial/CentroComercial.aspx?tab=suscripciones&sub=periodos", true);
+
         if (!IsPostBack)
         {
             Grid.AddColumn("SPE_ID", "", Width: "3%");

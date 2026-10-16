@@ -483,7 +483,7 @@ function render(st) {
 /* ---------------------------------------------------------------- la ficha */
 function vFicha(st, d) {
   var l = d.lead, idx = etapa(d), pm = S.ini.permisos, demo = d.demo, uso = d.uso, pv = propVigente(d), ct = contUltimo(d);
-  if (!st.open) st.open = { info: idx === 0, demo: idx === 1, prop: idx === 2, cont: idx >= 3, reu: false };
+  if (!st.open) st.open = { info: idx === 0, demo: idx === 1, prop: idx === 2, cont: idx >= 3 && idx < 4, sus: idx === 4, reu: false };
 
   var pasos = ['Lead', 'Demo', 'Propuesta', 'Contrato', 'Cliente'];
   var fechas = [l.FECHA_CREACION, demo && demo.INICIO, pv && (pv.ENVIADA || pv.CREADA), ct && ct.CREADO, ct && ct.FIRMADO];
@@ -501,7 +501,7 @@ function vFicha(st, d) {
 
   var b = top + stepper + '<div class="cc-sig ' + sig[2] + '">' + ic(sig[1], 20) + '<span>' + sig[0] + '</span></div>' +
     secInfo(st, d) + (demo ? secDemo(st, d, demo, uso) : '') + (d.propuestas.length ? secProp(st, d) : '') +
-    (d.contratos.length ? secCont(st, d) : '') + (d.reuniones.length ? secReu(st, d) : '') + secTimeline(st, d);
+    (d.contratos.length ? secCont(st, d) : '') + (l.ESTADO === 'CONCRETADO' && COB ? COB.secSuscripcion(st, d) : '') + (d.reuniones.length ? secReu(st, d) : '') + secTimeline(st, d);
 
   return { w: 'c', s: esc(l.CODIGO) + ' · ' + (l.ORIGEN === 'FORM_WEB' ? 'Formulario web' : 'Creado a mano') + ' · ' + dmy(l.FECHA_CREACION),
     t: esc(l.EMPRESA) + ' ' + stChip(l.ESTADO), b: b, f: pie(st, d, idx) };
@@ -1118,8 +1118,9 @@ function fecha(el) {
   if (b === 'rg.fecha') F.f.proxFecha = v;
 }
 
+if (CFG.sub) { if (CFG.sub === 'empresas' || CFG.sub === 'concretados') S.sub.clientes = CFG.sub; else S.sub.suscripciones = CFG.sub; }
 if (window.CCCobros && CFG.wsCobros) {
-  COB = window.CCCobros({ K: K, S: S, A: A, ic: ic, icb: icb, chip: chip, dmy: dmy, hoyIso: hoyIso, ws: CFG.wsCobros, pintar: pintar, segSub: segSub,
+  COB = window.CCCobros({ K: K, S: S, A: A, ic: ic, icb: icb, sec: sec, chip: chip, dmy: dmy, hoyIso: hoyIso, ws: CFG.wsCobros, pintar: pintar, segSub: segSub,
     subPorDefecto: function (t) { return subVistas(t)[0][0]; } });
 }
 K.bind({ A: A, pv: pv, combo: combo, fecha: fecha });
@@ -1137,6 +1138,7 @@ call('Iniciar').then(function (ini) {
   return cargar();
 }).then(function () {
   if (CFG.lead) abrirFicha(CFG.lead);
+  if (CFG.abrir && COB) COB.abrirDe(CFG.abrir);
 }).catch(function (e) {
   $('#ccBody').innerHTML = '<div class="cc-vacio">' + esc(e.message || 'No se pudo abrir el Centro Comercial.') + '</div>';
   K.toastError(e);

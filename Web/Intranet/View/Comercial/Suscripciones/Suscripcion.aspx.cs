@@ -31,6 +31,10 @@ public partial class View_Comercial_Suscripciones_Suscripcion : System.Web.UI.Pa
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Centro Comercial V2: esta pantalla ahora vive en un cajón del Centro. Se conserva la dirección por los enlaces antiguos.
+        int idDestino = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+        Response.Redirect("~/View/Comercial/CentroComercial.aspx?tab=suscripciones&sub=suscripciones&abrir=sus:" + idDestino, true);
+
         /* Querystring.Entero y no Crypto.Decrypt directo: el listado abre
            esta ficha con abrirSuscripcion(0) para "Nueva", asi que llega
            literalmente ?query=0, que no es texto cifrado valido.

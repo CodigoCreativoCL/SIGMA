@@ -33,6 +33,10 @@ public partial class View_Comercial_Suscripciones_Plan : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Centro Comercial V2: esta pantalla ahora vive en un cajón del Centro. Se conserva la dirección por los enlaces antiguos.
+        int idDestino = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+        Response.Redirect("~/View/Comercial/CentroComercial.aspx?tab=suscripciones&sub=planes&abrir=plan:" + idDestino, true);
+
         if (!IsPostBack)
         {
             Id = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");

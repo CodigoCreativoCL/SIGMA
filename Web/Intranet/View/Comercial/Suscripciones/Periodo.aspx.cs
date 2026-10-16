@@ -31,6 +31,10 @@ public partial class View_Comercial_Suscripciones_Periodo : System.Web.UI.Page
 
     protected void Page_Load(object sender, EventArgs e)
     {
+        // Centro Comercial V2: esta pantalla ahora vive en un cajón del Centro. Se conserva la dirección por los enlaces antiguos.
+        int idDestino = SitioBase.Querystring.Entero(Request.QueryString["query"], "Id");
+        Response.Redirect("~/View/Comercial/CentroComercial.aspx?tab=suscripciones&sub=periodos&abrir=per:" + idDestino, true);
+
         if (!IsPostBack)
         {
             /* Querystring.Entero y no Crypto.Decrypt directo: el listado

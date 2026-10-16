@@ -26,6 +26,10 @@ public partial class View_Comercial_CentroComercial : System.Web.UI.Page
         int.TryParse(Request.QueryString["lead"], out lead);
         string tab = (Request.QueryString["tab"] ?? "").ToLowerInvariant();
         if (tab != "pipeline" && tab != "clientes" && tab != "suscripciones") tab = "resumen";
+        string sub = (Request.QueryString["sub"] ?? "").ToLowerInvariant();
+        if (sub != "suscripciones" && sub != "periodos" && sub != "pagos" && sub != "planes" && sub != "empresas" && sub != "concretados") sub = "";
+        // ?abrir=sus:12 | per:5 | pago:3 | plan:2 | cli:1 | emitir:0 abre el cajón (enlaces de correos y de las pantallas antiguas).
+        string abrir = System.Text.RegularExpressions.Regex.IsMatch(Request.QueryString["abrir"] ?? "", @"^(sus|per|pago|plan|cli|emitir):\d{1,9}$") ? Request.QueryString["abrir"] : "";
 
         ConfigJson = new JavaScriptSerializer().Serialize(new
         {
@@ -34,6 +38,8 @@ public partial class View_Comercial_CentroComercial : System.Web.UI.Page
             base_ = ResolveUrl("~/"),
             hoy = Hora.Hoy.ToString("yyyy-MM-dd"),
             tab = tab,
+            sub = sub,
+            abrir = abrir,
             lead = lead > 0 ? (int?)lead : null,
             usuario = SitioBase.Session.UsuarioId()
         }).Replace("</", "<\\/");

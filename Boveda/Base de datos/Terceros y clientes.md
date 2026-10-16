@@ -1,6 +1,6 @@
 # BD — Terceros y clientes
 
-7 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+8 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -11,3 +11,4 @@
 | `126_PROVEEDOR_SERVICIO.sql` |  |
 | `325_CLIENTE_CONTACTO_CAMPOS_EXTRA.sql` | Extiende los contactos del cliente (Cliente_Contacto) con los |
 | `424_ARREGLOS_PRUEBAS_CLIENTE.sql` |  |
+| `468_CLIENTE_COBRO_DRAWER.sql` |  |

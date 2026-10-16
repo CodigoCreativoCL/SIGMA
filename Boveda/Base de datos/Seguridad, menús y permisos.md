@@ -1,6 +1,6 @@
 # BD — Seguridad, menús y permisos
 
-102 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+104 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -106,3 +106,5 @@
 | `450_DEL_USUARIO_ACCESIBILIDAD.sql` |  |
 | `451_USUARIO_ACCESIBILIDAD_DEMO.sql` |  |
 | `452_MENU_ACCESIBILIDAD.sql` |  |
+| `459_MENU_COMERCIAL_CENTRALIZADO.sql` |  |
+| `460_PERFIL_EJECUTIVO_COMERCIAL.sql` |  |

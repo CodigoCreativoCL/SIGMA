@@ -1,6 +1,6 @@
 # BD — Otros y transversales
 
-15 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+23 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -19,3 +19,11 @@
 | `249_SPRINT1_REGLAS.sql` |  |
 | `321_HU090_PLANTILLA_NACE_CON_VERSION_1.sql` |  |
 | `454_IMAGENES_REFERENCIA.sql` | SELECT REFERENCIAS DE ACTIVIDADES DEL PLAN O DE ÍTEMS DE PAUTA |
+| `458_CORREO_REMITENTE.sql` |  |
+| `461_JOBS_PROGRAMADOS.sql` |  |
+| `462_COBROS_WEBPAY.sql` |  |
+| `464_COBRO_INTERNACIONAL_SP.sql` |  |
+| `465_PRECIOS_USD_SEMILLA.sql` |  |
+| `466_COBROS_DRAWERS_SP.sql` |  |
+| `469_LEAD_DOMINIO.sql` |  |
+| `470_COBRO_PUBLICO.sql` | 0 · la suscripción y a quién se le escribe |

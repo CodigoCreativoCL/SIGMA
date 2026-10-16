@@ -7,3 +7,5 @@
 - Lecturas paralelas lentas por conexiones nuevas → Min Pool Size.
 - Planes y pautas se versionan clonando actividades e ítems con ids nuevos (`INS_PLAN_VERSION_NUEVA`, `INS_PLAN_DUPLICAR`, `GET_CHECKLIST_BORRADOR`): todo lo que cuelgue de una actividad o un ítem debe copiarse ahí, y quitarse en los borrados físicos de borradores. Las imágenes de referencia ya lo hacen (BD/454).
 - `LIMPIAR_CHECKLIST_BORRADOR` no lo llama nadie y falla por `FK_CID_OPCION` (no borra dependencias). No usarlo sin arreglarlo.
+- **Orden de las migraciones del Centro Comercial:** `456` → `462` → `463` → `464` → `470`. Re-aplicar `456` deja `UPD_CONTRATO_FIRMAR` sin el parche de `462`, y `462` pisa la vista y `SEL_COBRO_SUSCRIPCION` de `464`; si se re-aplica una, se re-aplican las siguientes en ese orden.
+- **Moneda de cobro:** `pcp_valor_uf` y `spe_monto_clp` guardan el valor en la moneda de su fila (`pcp_moneda` / `spe_moneda`: UF o USD). En USD `spe_valor_uf_dia` es NULL; nunca se suman montos de monedas distintas. Ver [[Modulos/Indice de modulos]].

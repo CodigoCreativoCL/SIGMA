@@ -119,6 +119,20 @@ public class WsCobros : System.Web.Services.WebService
     // SUSCRIPCIÓN
     // =====================================================================
 
+    /// <summary>La suscripción de un cliente en pocas líneas (sección «Suscripción» de la ficha del lead concretado).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string ResumenSuscripcion(int cliente)
+    {
+        return Ejecutar(() =>
+        {
+            Exigir(P_VER);
+            ExigirPagina("~/View/Comercial/Suscripciones/Suscripciones.aspx", "ver suscripciones");
+            Dictionary<string, object> f = ((IEnumerable<Dictionary<string, object>>)ListaSuscripciones()).FirstOrDefault(x => Convert.ToInt32(x["clienteId"]) == cliente);
+            return new { suscripcion = f };
+        });
+    }
+
     [WebMethod(EnableSession = true)]
     [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
     public string Suscripcion(int id)

@@ -54,6 +54,27 @@ function cargarAtencion() {
 }
 var VISTAS = ['suscripciones', 'periodos', 'pagos', 'planes', 'empresas'];
 
+/* Sección «Suscripción» de la ficha del lead concretado (etapa cliente): estado del cobro de un vistazo. */
+var RS = {};
+function secSuscripcion(st, d) {
+  var cli = d.lead.CLIENTE; if (!cli) return '';
+  var r = RS[cli];
+  if (r === undefined) {
+    RS[cli] = null;
+    call('ResumenSuscripcion', { cliente: +cli }).then(function (x) { RS[cli] = x.suscripcion || false; K.Panel.paint(); }).catch(function () { RS[cli] = false; });
+  }
+  var cuerpo;
+  if (r === undefined || r === null) cuerpo = '<div class="cc-cargando" style="padding:12px">Cargando…</div>';
+  else if (r === false) cuerpo = '<div class="cc-nota">No hay una suscripción visible para tu usuario.</div>';
+  else {
+    var e = chipEstadoCobro(r);
+    cuerpo = '<div class="cc-mini"><div><small>Plan</small><b>' + esc(r.plan || '—') + '</b></div><div><small>Vigente hasta</small><b>' + (r.hasta ? dmy(r.hasta) : '—') + '</b></div><div><small>Cobro</small><b>' + (r.moneda === 'USD' ? 'USD' : 'UF · CLP') + '</b></div></div>' +
+      '<div class="cc-acc"><span>' + chip(e[0] === 'Sin cobros' ? 'Al día' : e[0], e[0] === 'Sin cobros' ? 'ok' : e[1]) + '</span><span class="cc-sp"></span>' + btn('cp-out cp-sm', 'csus', 'Abrir suscripción', ' data-id="' + r.id + '"', 'open') + '</div>';
+  }
+  var e2 = r ? chipEstadoCobro(r) : null;
+  return X.sec('sus', 'wallet', 'cy', 'Suscripción', e2 ? chip(e2[0] === 'Sin cobros' ? 'AL DÍA' : e2[0].toUpperCase(), e2[0] === 'Sin cobros' ? 'ok' : e2[1]) : '', cuerpo, st);
+}
+
 /* ------------------------------------------------------------ componentes del drawer (DrawerComponentes) */
 /* Sección colapsable en tarjeta blanca; la de la tarea actual va abierta. */
 function sec(st, k, icono, tono, titulo, resumen, cuerpo) {
@@ -825,7 +846,17 @@ function combo(n, valor) {
 }
 
 cargarAtencion();
-return { maneja: function (v) { return VISTAS.indexOf(v) >= 0; }, vista: vista, boton: boton, pv: pv, combo: combo, fecha: fecha, recargar: recargar, grupoCobros: grupoCobros,
+/* Abre un cajón desde un enlace: «sus:12», «per:5», «pago:3», «plan:2», «cli:1», «emitir:0». */
+function abrirDe(s) {
+  var p = String(s).split(':'), id = +p[1] || 0;
+  if (p[0] === 'sus' && id) abrirSuscripcion(id);
+  else if (p[0] === 'per' && id) abrirPeriodo(id);
+  else if (p[0] === 'per' || p[0] === 'emitir') abrirEmitir(null);
+  else if (p[0] === 'pago' && id) abrirPago(id);
+  else if (p[0] === 'plan') abrirPlan(id);
+  else if (p[0] === 'cli') abrirCliente(id);
+}
+return { maneja: function (v) { return VISTAS.indexOf(v) >= 0; }, abrirDe: abrirDe, vista: vista, secSuscripcion: secSuscripcion, boton: boton, pv: pv, combo: combo, fecha: fecha, recargar: recargar, grupoCobros: grupoCobros,
   K: { money: money, cod: cod, sec: sec, barra: barra, btn: btn, consumo: consumo, cajaClave: cajaClave, aviso: aviso, chipCobro: chipCobro, tonoPeriodo: tonoPeriodo, tonoPago: tonoPago, MEDIO: MEDIO } };
 };
 })();

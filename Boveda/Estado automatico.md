@@ -1,6 +1,6 @@
 # Estado automático (generado, no editar a mano)
 
-Generado: 2026-10-12 23:39 · rama: `CatalinaPescio` · HEAD `b3e3015e`
+Generado: 2026-10-16 14:53 · rama: `BryanChavez` · HEAD `1469c0c4`
 
 ## Últimas migraciones SQL (BD/)
 
@@ -13,18 +13,18 @@ Generado: 2026-10-12 23:39 · rama: `CatalinaPescio` · HEAD `b3e3015e`
 
 ## Últimos commits
 
+- 1469c0c4 2026-10-16 Nessgod: Centro Comercial V2 bloque 10: Mi suscripcion (P6) en cajon, con pagar ahora e informar transferencia
+- 7ff3b38c 2026-10-16 Nessgod: Centro Comercial V2 bloque 9: correos de cobro en CLP y USD, verificacion y rechazo con correo y comprobante, marca de agua de prueba
+- 42a54070 2026-10-16 Nessgod: Centro Comercial V2 bloque 8: Pagar.aspx con transferencia, variante USD, estado informado; Firma con Pagar ahora y descarga
+- 45719512 2026-10-16 Nessgod: Centro Comercial V2 bloque 7: Nuevo lead con pais, identificador y moneda; propuesta, contrato y firma en la moneda del lead
+- 2ddb7aa0 2026-10-16 Nessgod: Centro Comercial V2 bloques 5-6: drawers Plan (precio UF/USD versionado, funcionalidades) y Cliente (pais, moneda de cobro auditada)
+- a3513531 2026-10-16 Nessgod: Centro Comercial V2 bloques 2-4: drawers de Suscripcion, Periodo y Pago, bandeja Por verificar y grupo Cobros
+- 774a249e 2026-10-16 Nessgod: Centro Comercial V2 bloque 1: capa internacional en BD (pais, moneda de cobro, USD, datos bancarios)
+- f79242a5 2026-10-13 Catalina Pescio: Merge pull request #80 from CodigoCreativoCL/CatalinaPescio
+- ed4141a1 2026-10-12 pescio666: MD: BD/454 aplicada en la base compartida de HostChile (HU-143)
+- 28aaa3a9 2026-10-12 pescio666: Merge remote-tracking branch 'origin/master' into CatalinaPescio
 - b3e3015e 2026-10-12 pescio666: Sprint Backlog S4: HU-091 y HU-097 con criterios verificados y horas reales
 - bb062a2b 2026-10-12 pescio666: Planillas: HU-143 terminada y en revisión (S5, Product Backlog, Pendientes y bitácora)
-- 375afacb 2026-10-12 pescio666: MD y bóveda: cierre de HU-143 (imágenes de referencia, BD 454)
-- fe736262 2026-10-12 pescio666: Referencias: imagen de referencia en la actividad del plan, el ítem de pauta y la inspección (HU-143)
-- 4198949c 2026-10-12 pescio666: Referencias: SP de imágenes de referencia y copia al versionar planes y pautas (BD 454, HU-143)
-- 865e46c3 2026-10-12 pescio666: Bóveda: traspaso de Catalina leído y memoria actualizada
-- 309f1a3d 2026-10-12 pescio666: Merge remote-tracking branch 'origin/master' into CatalinaPescio
-- a601f67f 2026-10-12 pescio666: Planillas sincronizadas con el avance de Catalina en el Sprint 5
-- 05e0e65a 2026-10-12 pescio666: Sprint Backlog S5: tareas de HU-142 y T-5261 de HU-143 terminadas
-- 0b3046f8 2026-10-12 Nessgod: Dev/hyperv: habilitar cada pieza de Hyper-V por nombre (el padre -All puede figurar habilitado con los hijos apagados)
-- 3d145185 2026-10-12 Nessgod: Dev/hyperv: el paso 1 exige reiniciar de verdad (vmms/New-VM) antes de dar Hyper-V por listo
-- 808d219b 2026-10-12 Nessgod: Dev/hyperv: scripts para montar la VM Windows Server (IIS, SQL Server Express, web y API)
 
 ## Módulos y pantallas
 
@@ -43,4 +43,4 @@ Generado: 2026-10-12 23:39 · rama: `CatalinaPescio` · HEAD `b3e3015e`
 
 ## Web services
 
-AiPlantas, WsActivos, WsAiCentro, WsAlertas, WsAvisos, WsAyuda, WsAzureCupo, WsBodegaMapa, WsBuscar, WsCampanas, WsCargaDatos, WsCentroPlanificacion, WsDetalle, WsInicio, WsOperacion, WsOrdenes, WsPlanificacion360, WsProgramacion, WsRecursos, WsRepuestoCentro, WsSoporte
+AiPlantas, WsActivos, WsAiCentro, WsAlertas, WsAvisos, WsAyuda, WsAzureCupo, WsBodegaMapa, WsBuscar, WsCampanas, WsCargaDatos, WsCentroPlanificacion, WsCobros, WsComercial, WsDetalle, WsInicio, WsMiSuscripcion, WsOperacion, WsOrdenes, WsPlanificacion360, WsProgramacion, WsRecursos, WsRepuestoCentro, WsSoporte

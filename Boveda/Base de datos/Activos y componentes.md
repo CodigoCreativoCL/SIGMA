@@ -1,6 +1,6 @@
 # BD — Activos y componentes
 
-72 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+73 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -76,3 +76,4 @@
 | `376_CARGA_RACKS_TIPO_AREA.sql` | 376: la carga masiva de RACKS lee TIPO_AREA (Pasillo, Sala, Zona...) y lo guarda en el rack (BD 375). Sin la columna, Pasillo. |
 | `443_BITACORA_RECTIFICACION_DETALLE.sql` |  |
 | `444_ACTIVO_BITACORA_RECTIFICACION_WEB.sql` |  |
+| `463_COBRO_INTERNACIONAL_MODELO.sql` | Los clientes de fuera de Chile ya existentes cobran en USD; los chilenos quedan en UF. |
