@@ -1,0 +1,286 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Suscripción</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <!-- Cabecera -->
+  <div style="flex: 0 0 auto; display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 16px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #68738A">SUS-0012 · Hamburgo S.A.</span>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700">{{titulo}}</h2>
+        <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #E8F6EF; color: #12704C; font-size: 11px; font-weight: 800">ACTIVA</span>
+        <span style="display: inline-flex; align-items: center; gap: 4px; height: 22px; padding: 0 9px; border-radius: 999px; background: #E8FBFB; color: #006B74; font-size: 11px; font-weight: 800"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">credit_card</span>PAGADO EN LÍNEA</span>
+      </div>
+    </div>
+    <button type="button" aria-label="Cerrar" onClick="{{close}}" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #68738A; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">close</span></button>
+  </div>
+
+  <!-- Cuerpo -->
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 12px">
+
+    <!-- Resumen -->
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+      <div style="padding: 12px 14px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E2E7F0; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Plan</span>
+        <b style="font-size: 15px">Full · mensual</b>
+        <span style="font-size: 12px; color: #68738A; font-variant-numeric: tabular-nums">45,00 UF/mes</span>
+      </div>
+      <div style="padding: 12px 14px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E2E7F0; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Acceso pagado hasta</span>
+        <b style="font-size: 15px; font-variant-numeric: tabular-nums">01/11/2026</b>
+        <span style="font-size: 12px; color: #68738A">quedan 16 días</span>
+      </div>
+      <div style="padding: 12px 14px; border-radius: 14px; background: #FFFFFF; border: 1px solid #E2E7F0; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Próximo cobro</span>
+        <b style="font-size: 15px">Noviembre 2026</b>
+        <span style="font-size: 12px; color: #68738A">se emite el 27/10 · automático</span>
+      </div>
+    </div>
+
+    <!-- Cambiar de plan (modo plan) -->
+    <sc-if value="{{isPlan}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1.5px solid #6732F4; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 14px; box-shadow: 0 0 0 3px #F2EFFF">
+        <div style="display: flex; align-items: center; gap: 10px"><span class="material-symbols-rounded" style="font-size: 20px; color: #5426D9" aria-hidden="true">swap_horiz</span><b style="flex: 1">Cambiar de plan</b></div>
+        <div role="radiogroup" aria-label="Plan nuevo" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{planes}}" as="p" hint-placeholder-count="3">
+            <button type="button" onClick="{{p.go}}" style="{{p.st}}">
+              <span style="display: flex; align-items: center; justify-content: space-between; width: 100%"><b style="font-size: 14px">{{p.t}}</b><span class="material-symbols-rounded" style="{{p.radSt}}" aria-hidden="true">{{p.rad}}</span></span>
+              <span style="font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums">{{p.precio}}</span>
+              <span style="font-size: 11px; color: #68738A">{{p.nota}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Periodicidad</span>
+          <div role="group" aria-label="Periodicidad" style="display: inline-flex; align-self: flex-start; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px">
+            <sc-for list="{{pers}}" as="x" hint-placeholder-count="3"><button type="button" onClick="{{x.go}}" style="{{x.st}}">{{x.t}}</button></sc-for>
+          </div>
+        </div>
+        <div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: #E8FBFB; color: #006B74; font-size: 13px; line-height: 1.5"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">info</span><span>{{cambioTxt}}</span></div>
+      </section>
+    </sc-if>
+
+    <!-- Reemitir clave (modo clave) -->
+    <sc-if value="{{isClave}}" hint-placeholder-val="{{false}}">
+      <section style="background: #FFFFFF; border: 1.5px solid #6732F4; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 0 0 3px #F2EFFF">
+        <div style="display: flex; align-items: center; gap: 10px"><span class="material-symbols-rounded" style="font-size: 20px; color: #5426D9" aria-hidden="true">key</span><b style="flex: 1">Reemitir clave de suscripción</b></div>
+        <sc-if value="{{claveAntes}}" hint-placeholder-val="{{true}}">
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Motivo (queda en el historial)</span>
+            <textarea rows="2" style="box-sizing: border-box; padding: 10px 12px; border: 1px solid #16C6C9; box-shadow: 0 0 0 3px rgba(22,198,201,.27); border-radius: 9px; font: inherit; font-size: 14px; line-height: 1.5; color: #17223B; resize: vertical">El cliente cambió de servidor y perdió la clave.</textarea>
+          </label>
+          <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">La clave actual deja de funcionar apenas emitas la nueva. La nueva se muestra una sola vez.</p>
+        </sc-if>
+        <sc-if value="{{claveDespues}}" hint-placeholder-val="{{false}}">
+          <div style="border-radius: 12px; border: 1.5px dashed #6732F4; background: #F2EFFF; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #5426D9">Clave nueva · se muestra una sola vez</span>
+            <div style="display: flex; align-items: center; gap: 10px">
+              <code style="flex: 1; min-width: 0; padding: 12px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #E2E7F0; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 15px; font-weight: 700; letter-spacing: .04em; overflow-wrap: anywhere">SGK-7F3A-K29Q-M4XD-81PL</code>
+              <button type="button" onClick="{{copiar}}" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border: 0; border-radius: 10px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{copIc}}</span>{{copT}}</button>
+            </div>
+            <span style="font-size: 12px; color: #4A556D; line-height: 1.5">Cópiala y entrégala al cliente por un canal seguro. Al cerrar este drawer no se puede volver a ver: habría que reemitirla.</span>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <!-- Uso del plan -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tUso}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #007F8A" aria-hidden="true">data_usage</span>
+        <b style="flex: 1">Uso contra topes del plan</b>
+        <span style="font-size: 12px; color: #68738A">1 cerca del tope</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{usoChev}}</span>
+      </button>
+      <sc-if value="{{oUso}}" hint-placeholder-val="{{true}}">
+        <div style="padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px">
+          <sc-for list="{{uso}}" as="u" hint-placeholder-count="4">
+            <div style="display: flex; flex-direction: column; gap: 5px">
+              <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 600">{{u.t}}</span><span style="{{u.nSt}}">{{u.v}}</span></div>
+              <div role="meter" aria-label="{{u.t}}" style="height: 8px; border-radius: 999px; background: #F4F6FA; overflow: hidden"><span style="{{u.barSt}}"></span></div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Datos -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tDatos}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">tune</span>
+        <b style="flex: 1">Datos de la suscripción</b>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{datosChev}}</span>
+      </button>
+      <sc-if value="{{oDatos}}" hint-placeholder-val="{{true}}">
+        <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+          <div style="display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 12px">
+            <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">ID</span><div style="height: 42px; display: flex; align-items: center; padding: 0 12px; border-radius: 9px; background: #F4F6FA; font-weight: 700">12</div></div>
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 11px; font-weight: 800; color: #4A556D">Clave de suscripción</span>
+              <div style="height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 12px; border-radius: 9px; background: #F4F6FA">
+                <code style="flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; font-weight: 700">SGK-2B91-••••-••••-••••</code>
+                <button type="button" onClick="{{toClave}}" style="height: 32px; padding: 0 10px; border: 1.5px solid #087BEA; border-radius: 8px; background: #FFFFFF; color: #0565C2; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Reemitir</button>
+              </div>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Plan</span>
+            <div style="height: 42px; display: flex; align-items: center; gap: 10px; padding: 0 6px 0 12px; border-radius: 9px; border: 1px solid #CFD6E3">
+              <span style="flex: 1; font-weight: 600">Full · mensual · 45,00 UF</span>
+              <button type="button" onClick="{{toPlan}}" style="height: 32px; padding: 0 10px; border: 1.5px solid #087BEA; border-radius: 8px; background: #FFFFFF; color: #0565C2; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Cambiar de plan</button>
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: end">
+            <div style="display: flex; flex-direction: column; gap: 6px">
+              <span style="font-size: 11px; font-weight: 800; color: #4A556D">Estado</span>
+              <div role="group" aria-label="Estado" style="display: inline-flex; align-self: flex-start; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px">
+                <sc-for list="{{estados}}" as="e" hint-placeholder-count="3"><button type="button" onClick="{{e.go}}" style="{{e.st}}">{{e.t}}</button></sc-for>
+              </div>
+            </div>
+            <button type="button" role="switch" aria-checked="{{hab}}" onClick="{{toggleHab}}" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 4px; border: 0; background: transparent; font: inherit; font-size: 13px; font-weight: 700; color: #17223B; cursor: pointer"><span style="{{habTrack}}"><span style="{{habKnob}}"></span></span>Habilitada</button>
+          </div>
+          <span style="font-size: 12px; color: #68738A">«Vencida» no se elige: SIGMA la calcula cuando pasan los días de gracia sin pago (Full: 10 días).</span>
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Observación</span>
+            <textarea rows="2" placeholder="Visible solo para el equipo comercial" style="box-sizing: border-box; padding: 10px 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B; resize: vertical"></textarea>
+          </label>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Contacto -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tCont}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">contact_mail</span>
+        <b style="flex: 1">Contacto de cobro</b>
+        <span style="font-size: 12px; color: #68738A">Juan Pérez · recibe los correos</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{contChev}}</span>
+      </button>
+      <sc-if value="{{oCont}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <label style="display: flex; flex-direction: column; gap: 6px; grid-column: 1 / -1"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Nombre</span><input type="text" value="Juan Pérez" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Correo</span><input type="email" value="juan.perez@hamburgo.cl" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Teléfono</span><input type="tel" value="+56 9 8765 4321" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <span style="grid-column: 1 / -1; font-size: 12px; color: #68738A">Los correos de cobro llegan aquí con copia a Camila Rojas, ejecutiva a cargo.</span>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Cobros -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tCob}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">receipt_long</span>
+        <b style="flex: 1">Períodos y pagos</b>
+        <span style="font-size: 12px; color: #68738A">al día</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{cobChev}}</span>
+      </button>
+      <sc-if value="{{oCob}}" hint-placeholder-val="{{true}}">
+        <div style="padding: 0 16px 14px; display: flex; flex-direction: column">
+          <sc-for list="{{periodos}}" as="r" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 12px; align-items: center; padding: 10px 0; border-top: 1px solid #E2E7F0; font-size: 13px">
+              <span style="display: flex; flex-direction: column; gap: 2px"><b>{{r.t}}</b><span style="font-size: 12px; color: #68738A">{{r.s}}</span></span>
+              <span style="font-weight: 700; font-variant-numeric: tabular-nums; text-align: right">{{r.m}}</span>
+              <span style="{{r.chSt}}">{{r.ch}}</span>
+            </div>
+          </sc-for>
+          <div style="display: flex; gap: 14px; padding-top: 8px; font-size: 13px; font-weight: 700">
+            <span style="color: #0565C2; display: inline-flex; align-items: center; gap: 4px">Ver todos los períodos<span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">chevron_right</span></span>
+            <span style="color: #0565C2; display: inline-flex; align-items: center; gap: 4px">Ver pagos<span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">chevron_right</span></span>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+  </div>
+
+  <!-- Barra inferior -->
+  <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; background: #FFFFFF; border-top: 1px solid #E2E7F0">
+    <sc-if value="{{isVer}}" hint-placeholder-val="{{true}}">
+      <button type="button" style="height: 42px; padding: 0 14px; border: 1.5px solid #C7352B; border-radius: 10px; background: transparent; color: #A92C23; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Suspender</button>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px; border: 1.5px solid #087BEA; border-radius: 10px; background: transparent; color: #0565C2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">domain</span>Ver cliente</button>
+      <button type="button" style="height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Guardar</button>
+    </sc-if>
+    <sc-if value="{{noVer}}" hint-placeholder-val="{{false}}">
+      <button type="button" onClick="{{toVer}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">{{cancelT}}</button>
+      <span style="flex: 1"></span>
+      <sc-if value="{{showPri}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{pri}}" style="height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">{{priT}}</button>
+      </sc-if>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"modo":{"editor":"enum","options":["ver","plan","clave","clave-emitida"],"default":"ver"},"ancho":{"editor":null,"default":"600px"},"alto":{"editor":null,"default":"1000px"},"onClose":{"editor":null},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const modo = s.modo ?? p.modo ?? 'ver';
+    const seg = (on) => 'height: 32px; padding: 0 12px; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (on ? 'background: #FFFFFF; color: #5426D9; box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: #4A556D;');
+    const chip = (bg, fg) => 'display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; background: ' + bg + '; color: ' + fg + ';';
+    const op = s.op || { uso: true, datos: true, cont: false, cob: true };
+    const tog = (k) => () => this.setState({ op: { ...op, [k]: !op[k] } });
+    const plan = s.plan ?? 'medio';
+    const per = s.per ?? 'Mensual';
+    const PL = { basico: ['Básico', 15], medio: ['Medio', 30], full: ['Full', 45] };
+    const factor = { Mensual: 1, Trimestral: 3, Anual: 12 }[per];
+    const est = s.est ?? 'Activa';
+    const hab = s.hab ?? true;
+    const copied = !!s.copied;
+    const uso = [['Usuarios', 9, 15, ''], ['Activos', 14, 300, ''], ['Plantas', 1, 3, ''], ['Almacenamiento', 41, 50, ' GB']].map(([t, v, max, u]) => {
+      const pct = Math.round(v / max * 100), hi = pct >= 80;
+      return { t, v: v + u + ' de ' + max + u, barSt: 'display: block; height: 100%; width: ' + pct + '%; border-radius: 999px; background: ' + (hi ? '#B65C00' : '#16C6C9') + ';', nSt: 'font-weight: 800; font-variant-numeric: tabular-nums; color: ' + (hi ? '#9A4E00' : '#17223B') + ';' };
+    });
+    return {
+      ancho: p.ancho ?? '600px', alto: p.alto ?? '1000px',
+      titulo: modo === 'plan' ? 'Cambiar de plan' : (modo.indexOf('clave') === 0 ? 'Reemitir clave' : 'Suscripción'),
+      isVer: modo === 'ver', noVer: modo !== 'ver', isPlan: modo === 'plan', isClave: modo.indexOf('clave') === 0,
+      claveAntes: modo === 'clave', claveDespues: modo === 'clave-emitida',
+      showPri: modo !== 'clave-emitida',
+      cancelT: modo === 'clave-emitida' ? 'Listo, ya la copié' : 'Cancelar',
+      priT: modo === 'plan' ? 'Confirmar cambio' : 'Reemitir clave',
+      pri: () => this.setState({ modo: modo === 'plan' ? 'ver' : 'clave-emitida' }),
+      toVer: () => this.setState({ modo: 'ver', copied: false }), toPlan: () => this.setState({ modo: 'plan' }), toClave: () => this.setState({ modo: 'clave' }),
+      planes: Object.keys(PL).map(k => ({ t: PL[k][0], precio: PL[k][1].toFixed(2).replace('.', ',') + ' UF/mes', nota: k === 'full' ? 'Plan actual' : (PL[k][1] < 45 ? 'Bajar de plan' : 'Subir de plan'),
+        rad: k === plan ? 'radio_button_checked' : 'radio_button_unchecked', radSt: 'font-size: 20px; color: ' + (k === plan ? '#6732F4' : '#68738A') + ';',
+        go: () => this.setState({ plan: k }),
+        st: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px; padding: 12px; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; color: #17223B; background: #FFFFFF; ' + (k === plan ? 'border: 1.5px solid #6732F4;' : 'border: 1px solid #CFD6E3;') })),
+      pers: ['Mensual', 'Trimestral', 'Anual'].map(t => ({ t, st: seg(t === per), go: () => this.setState({ per: t }) })),
+      cambioTxt: plan === 'full' ? 'Es el plan actual: solo cambiaría la periodicidad.' : 'Rige desde el próximo período (01/11/2026): ' + PL[plan][0] + ' · ' + per.toLowerCase() + ' · ' + (PL[plan][1] * factor).toFixed(2).replace('.', ',') + ' UF por período. ' + (PL[plan][1] < 45 ? 'Si usa más de lo que permite el plan nuevo, SIGMA avisa antes de confirmar.' : ''),
+      estados: ['Activa', 'Suspendida', 'Cancelada'].map(t => ({ t, st: seg(t === est), go: () => this.setState({ est: t }) })),
+      hab, toggleHab: () => this.setState({ hab: !hab }),
+      habTrack: 'position: relative; width: 40px; height: 22px; border-radius: 999px; background: ' + (hab ? '#6732F4' : '#CFD6E3') + ';',
+      habKnob: 'position: absolute; top: 3px; left: ' + (hab ? '21px' : '3px') + '; width: 16px; height: 16px; border-radius: 50%; background: #FFFFFF;',
+      uso,
+      oUso: op.uso, tUso: tog('uso'), usoChev: op.uso ? 'expand_less' : 'expand_more',
+      oDatos: op.datos, tDatos: tog('datos'), datosChev: op.datos ? 'expand_less' : 'expand_more',
+      oCont: op.cont, tCont: tog('cont'), contChev: op.cont ? 'expand_less' : 'expand_more',
+      oCob: op.cob, tCob: tog('cob'), cobChev: op.cob ? 'expand_less' : 'expand_more',
+      periodos: [
+        { t: 'Noviembre 2026', s: 'se emite el 27/10 · vence el 01/11', m: '45,00 UF', ch: 'PROGRAMADO', chSt: chip('#EEF1F6', '#5A6478') },
+        { t: 'Octubre 2026', s: '02/10 – 01/11 · pagado el 02/10 con Webpay', m: '$1.839.201', ch: 'PAGADO EN LÍNEA', chSt: chip('#E8F6EF', '#12704C') },
+        { t: 'Implementación', s: 'pagada el 02/10 con Webpay', m: '$1.226.134', ch: 'PAGADO EN LÍNEA', chSt: chip('#E8F6EF', '#12704C') }
+      ],
+      copT: copied ? 'Copiada' : 'Copiar', copIc: copied ? 'check' : 'content_copy',
+      copiar: () => this.setState({ copied: true }),
+      close: () => { if (p.onClose) p.onClose(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

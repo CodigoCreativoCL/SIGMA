@@ -1,0 +1,468 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Ficha del lead</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="{{vars}} width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: var(--sf); color: var(--ink); font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <!-- Cabecera (patrón K.Panel) -->
+  <div style="flex: 0 0 auto; padding: 18px 22px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 12px">
+    <div style="display: flex; align-items: flex-start; gap: 12px">
+      <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+        <span style="font-size: 12px; color: var(--mut)">{{code}}</span>
+        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+          <h2 style="margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -.01em">{{lead.emp}}</h2>
+          <span style="{{stSt}}">{{stL}}</span>
+        </div>
+      </div>
+      <button type="button" onClick="{{meet}}" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: var(--cyd); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">event</span>Agendar reunión</button>
+      <button type="button" aria-label="Cerrar ficha" onClick="{{close}}" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: var(--mut); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">close</span></button>
+    </div>
+    <div style="display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--lab)">
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">person</span><b style="color: var(--ink)">{{lead.ct}}</b> · {{lead.cargo}}</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">mail</span>{{lead.mail}}<button type="button" aria-label="Copiar correo" style="border: 0; background: transparent; color: var(--blt); cursor: pointer; display: inline-flex; padding: 0"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">content_copy</span></button></span>
+      <span style="display: inline-flex; align-items: center; gap: 6px"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">call</span>{{lead.tel}}</span>
+    </div>
+
+    <!-- Stepper -->
+    <ol aria-label="Etapa comercial" style="list-style: none; margin: 4px 0 0; padding: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr))">
+      <sc-for list="{{steps}}" as="st" hint-placeholder-count="5">
+        <li style="display: flex; flex-direction: column; align-items: center; gap: 6px; position: relative">
+          <span style="{{st.lineSt}}"></span>
+          <span style="{{st.dotSt}}">
+            <sc-if value="{{st.done}}" hint-placeholder-val="{{false}}"><span class="material-symbols-rounded" style="font-size: 16px; font-weight: 700" aria-hidden="true">check</span></sc-if>
+            <sc-if value="{{st.notDone}}" hint-placeholder-val="{{true}}">{{st.n}}</sc-if>
+          </span>
+          <span style="{{st.lblSt}}">{{st.t}}</span>
+          <span style="font-size: 11px; color: var(--mut); font-variant-numeric: tabular-nums">{{st.d}}</span>
+        </li>
+      </sc-for>
+    </ol>
+
+    <div style="{{nextSt}}">
+      <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{nextIc}}</span>
+      <span style="flex: 1">{{next}}</span>
+    </div>
+  </div>
+
+  <!-- Cuerpo -->
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 22px 22px; display: flex; flex-direction: column; gap: 10px; background: var(--sf)">
+
+    <!-- Información -->
+    <section style="border: 1px solid var(--line); border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tInfo}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: var(--lab)" aria-hidden="true">badge</span>
+        <b style="flex: 1; font-size: 14px">Información</b>
+        <span style="font-size: 12px; color: var(--mut)">{{infoSum}}</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">{{infoChev}}</span>
+      </button>
+      <sc-if value="{{oInfo}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
+          <dl style="margin: 0; display: grid; grid-template-columns: 140px minmax(0, 1fr); gap: 8px 14px; padding: 14px 16px; border-radius: 12px; background: var(--sf2); font-size: 13px">
+            <sc-for list="{{info}}" as="f" hint-placeholder-count="6">
+              <dt style="color: var(--mut); font-weight: 600">{{f.k}}</dt>
+              <dd style="margin: 0; font-weight: 600">{{f.v}}</dd>
+            </sc-for>
+          </dl>
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 12px; color: var(--mut)">Interés:
+            <sc-for list="{{interes}}" as="i" hint-placeholder-count="3"><span style="{{chipPu}}">{{i}}</span></sc-for>
+          </div>
+          <blockquote style="margin: 0; padding: 12px 14px; border-radius: 12px; border: 1px dashed var(--inp); font-size: 13px; line-height: 1.55; color: var(--lab)">{{mensaje}}</blockquote>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Demo (solo si existe) -->
+    <sc-if value="{{hasDemo}}" hint-placeholder-val="{{true}}">
+      <section style="border: 1px solid var(--line); border-radius: 14px; overflow: hidden">
+        <button type="button" onClick="{{tDemo}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--put)" aria-hidden="true">rocket_launch</span>
+          <b style="flex: 1; font-size: 14px">Demo</b>
+          <span style="{{demoChipSt}}">{{demoChip}}</span>
+          <sc-if value="{{demoActiva}}" hint-placeholder-val="{{true}}"><span style="{{chipWa}}">Vence en 3 días</span></sc-if>
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">{{demoChev}}</span>
+        </button>
+        <sc-if value="{{oDemo}}" hint-placeholder-val="{{true}}">
+          <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 14px">
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px">
+              <div style="padding: 10px 12px; border-radius: 10px; background: var(--sf2)"><div style="font-size: 11px; font-weight: 800; color: var(--lab)">Inicio</div><div style="font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums">17/10/2026</div></div>
+              <div style="padding: 10px 12px; border-radius: 10px; background: var(--sf2)"><div style="font-size: 11px; font-weight: 800; color: var(--lab)">Expira</div><div style="font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums">24/10/2026</div></div>
+              <div style="padding: 10px 12px; border-radius: 10px; background: var(--sf2)"><div style="font-size: 11px; font-weight: 800; color: var(--lab)">Último acceso</div><div style="font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums">20/10/2026 18:42</div></div>
+            </div>
+
+            <div>
+              <div style="display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px">
+                <span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lab)">Uso vs. límites</span>
+                <span style="font-size: 12px; color: var(--mut)">Plan demo Industrial</span>
+              </div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 18px">
+                <sc-for list="{{uso}}" as="u" hint-placeholder-count="8">
+                  <div style="display: flex; flex-direction: column; gap: 5px">
+                    <div style="display: flex; justify-content: space-between; font-size: 12px">
+                      <span style="font-weight: 600">{{u.t}}</span>
+                      <span style="{{u.nSt}}">{{u.v}} / {{u.max}}</span>
+                    </div>
+                    <div role="meter" aria-label="{{u.t}}" aria-valuenow="{{u.v}}" aria-valuemin="0" aria-valuemax="{{u.max}}" style="height: 8px; border-radius: 999px; background: var(--sf2); overflow: hidden"><span style="{{u.barSt}}"></span></div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 8px">
+              <span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lab)">Actividad en la demo</span>
+              <div style="display: flex; flex-wrap: wrap; gap: 6px; align-items: center; font-size: 12px; color: var(--mut)">9 ingresos · módulos:
+                <span style="{{chipCy}}">Mantenimiento</span><span style="{{chipCy}}">Órdenes de trabajo</span><span style="{{chipCy}}">Planificación</span><span style="{{chipGr}}">SIGMA AI · sin usar</span>
+              </div>
+              <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; font-size: 13px">
+                <li style="display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)"><span style="width: 92px; flex: 0 0 92px; color: var(--mut); font-variant-numeric: tabular-nums">20/10 18:42</span><span>Cerró 3 OT y completó 1 checklist</span></li>
+                <li style="display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)"><span style="width: 92px; flex: 0 0 92px; color: var(--mut); font-variant-numeric: tabular-nums">18/10 11:05</span><span>Creó 9 OT desde 2 programaciones</span></li>
+                <li style="display: flex; gap: 10px; padding: 7px 0; border-top: 1px solid var(--line)"><span style="width: 92px; flex: 0 0 92px; color: var(--mut); font-variant-numeric: tabular-nums">17/10 16:20</span><span>Primer ingreso · cargó 7 activos</span></li>
+              </ul>
+            </div>
+
+            <sc-if value="{{demoActiva}}" hint-placeholder-val="{{true}}">
+              <div style="display: flex; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--cys); color: var(--cyt); font-size: 12px; line-height: 1.5">
+                <span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">lightbulb</span>
+                <span>SIGMA AI viene en la demo, pero aún no lo abre. Muéstralo en la llamada de hoy a las 10:00.</span>
+              </div>
+              <div style="display: flex; flex-wrap: wrap; gap: 8px">
+                <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--cyd); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">more_time</span>Extender demo</button>
+                <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 1.5px solid var(--bl); border-radius: 10px; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">forward_to_inbox</span>Reenviar credenciales</button>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <!-- Propuesta (solo si existe) -->
+    <sc-if value="{{hasProp}}" hint-placeholder-val="{{false}}">
+      <section style="border: 1px solid var(--line); border-radius: 14px; overflow: hidden">
+        <button type="button" onClick="{{tProp}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--put)" aria-hidden="true">request_quote</span>
+          <b style="flex: 1; font-size: 14px">Propuesta</b>
+          <span style="font-size: 12px; color: var(--mut)">Enterprise · 16,2 UF/mes</span>
+          <span style="{{propChipSt}}">{{propChip}}</span>
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">{{propChev}}</span>
+        </button>
+        <sc-if value="{{oProp}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+            <div style="display: flex; flex-wrap: wrap; gap: 6px">
+              <span style="{{chipPu}}">Mantenimiento</span><span style="{{chipPu}}">Órdenes de trabajo</span><span style="{{chipPu}}">Planificación</span><span style="{{chipPu}}">Inspección</span><span style="{{chipPu}}">SIGMA AI</span>
+            </div>
+            <div style="font-size: 13px; color: var(--lab)">15 usuarios · 150 activos · 2 plantas · 2 bodegas · 50 GB</div>
+            <dl style="margin: 0; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 14px; padding: 14px 16px; border-radius: 12px; background: var(--sf2); font-size: 13px; font-variant-numeric: tabular-nums">
+              <dt style="color: var(--mut)">Implementación</dt><dd style="margin: 0; text-align: right; font-weight: 700">45,0 UF</dd>
+              <dt style="color: var(--mut)">Mensualidad (18,0 UF − 10 %)</dt><dd style="margin: 0; text-align: right; font-weight: 700">16,2 UF</dd>
+              <dt style="color: var(--mut)">Vigencia</dt><dd style="margin: 0; text-align: right; font-weight: 700">12 meses</dd>
+              <dt style="font-weight: 800; padding-top: 8px; border-top: 1px solid var(--line)">Total primer año</dt><dd style="margin: 0; text-align: right; font-weight: 800; padding-top: 8px; border-top: 1px solid var(--line)">239,4 UF</dd>
+            </dl>
+            <div style="display: flex; align-items: center; gap: 10px; font-size: 12px; color: var(--mut)"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--dat)" aria-hidden="true">picture_as_pdf</span>propuesta-hamburgo-v1.pdf · enviada el 22/10/2026 · abierta 2 veces</div>
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 1.5px solid var(--bl); border-radius: 10px; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">visibility</span>Ver PDF</button>
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--cyd); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">content_copy</span>Nueva versión</button>
+            </div>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <!-- Contrato (solo si existe) -->
+    <sc-if value="{{hasCont}}" hint-placeholder-val="{{false}}">
+      <section style="border: 1px solid var(--line); border-radius: 14px; overflow: hidden">
+        <button type="button" onClick="{{tCont}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--wat)" aria-hidden="true">draw</span>
+          <b style="flex: 1; font-size: 14px">Contrato</b>
+          <span style="font-size: 12px; color: var(--mut)">Versión 2</span>
+          <span style="{{contChipSt}}">{{contChip}}</span>
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">{{contChev}}</span>
+        </button>
+        <sc-if value="{{oCont}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+            <ol aria-label="Estado del contrato" style="list-style: none; margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--sf2); display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; font-size: 11px; font-weight: 800; letter-spacing: .04em">
+              <li style="display: flex; flex-direction: column; gap: 6px; color: var(--okt)"><span style="height: 4px; border-radius: 999px; background: var(--ok)"></span>BORRADOR</li>
+              <li style="display: flex; flex-direction: column; gap: 6px; color: var(--okt)"><span style="height: 4px; border-radius: 999px; background: var(--ok)"></span>ENVIADO</li>
+              <li style="display: flex; flex-direction: column; gap: 6px; color: var(--cyt)"><span style="height: 4px; border-radius: 999px; background: var(--cy)"></span>VISUALIZADO</li>
+              <li style="{{firmLiSt}}"><span style="{{firmBarSt}}"></span>FIRMADO</li>
+            </ol>
+            <div style="{{contBanSt}}">
+              <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{contBanIc}}</span>{{contBan}}
+            </div>
+            <div style="font-size: 12px; color: var(--mut)">{{contNota}}</div>
+            <div style="display: flex; flex-direction: column">
+              <span style="font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lab); padding-bottom: 6px">Versiones</span>
+              <div style="display: grid; grid-template-columns: 40px 96px 112px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px">
+                <b>v2</b><span style="font-variant-numeric: tabular-nums">26/10/2026</span><span style="{{contChipSt}}">{{contChip}}</span><span style="color: var(--mut); font-size: 12px">Actual</span>
+                <button type="button" style="border: 0; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Ver PDF</button>
+              </div>
+              <div style="display: grid; grid-template-columns: 40px 96px 112px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px">
+                <b style="color: var(--mut)">v1</b><span style="font-variant-numeric: tabular-nums; color: var(--mut)">24/10/2026</span><span style="{{chipDa}}">ANULADO</span><span style="color: var(--mut); font-size: 12px">Corrección de razón social</span>
+                <button type="button" style="border: 0; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Ver PDF</button>
+              </div>
+            </div>
+            <sc-if value="{{contAcc}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center">
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--cyd); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">note_add</span>Nueva versión</button>
+              <span style="flex: 1"></span>
+              <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 1.5px solid var(--da); border-radius: 10px; background: transparent; color: var(--dat); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">block</span>Anular contrato</button>
+            </div>
+            </sc-if>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <!-- Suscripción (cliente) -->
+    <sc-if value="{{hasSus}}" hint-placeholder-val="{{false}}">
+      <section style="border: 1px solid var(--line); border-radius: 14px; overflow: hidden">
+        <button type="button" onClick="{{tSus}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--okt)" aria-hidden="true">autorenew</span>
+          <b style="flex: 1; font-size: 14px">Suscripción</b>
+          <span style="font-size: 12px; color: var(--mut)">SUS-0012 · Full · mensual</span>
+          <span style="{{chipOk}}">AL DÍA</span>
+          <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">{{susChev}}</span>
+        </button>
+        <sc-if value="{{oSus}}" hint-placeholder-val="{{true}}">
+          <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 10px">
+            <div style="display: flex; flex-direction: column">
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 150px; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px"><span><b>Implementación</b><br><span style="font-size: 12px; color: var(--mut)">pagada el 27/10 con Webpay</span></span><b style="text-align: right; font-variant-numeric: tabular-nums">$1.226.134</b><span><span style="{{chipOk}}">PAGADO EN LÍNEA</span></span></div>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 150px; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px"><span><b>Octubre 2026</b><br><span style="font-size: 12px; color: var(--mut)">pagado el 27/10 con Webpay</span></span><b style="text-align: right; font-variant-numeric: tabular-nums">$1.839.201</b><span><span style="{{chipOk}}">PAGADO EN LÍNEA</span></span></div>
+              <div style="display: grid; grid-template-columns: minmax(0, 1fr) 110px 150px; gap: 10px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); font-size: 13px"><span><b>Noviembre 2026</b><br><span style="font-size: 12px; color: var(--mut)">se emite el 27/10 · vence el 01/11</span></span><b style="text-align: right; font-variant-numeric: tabular-nums">45,00 UF</b><span><span style="{{chipGr}}">PROGRAMADO</span></span></div>
+            </div>
+            <span style="font-size: 12px; color: var(--mut)">Acceso hasta el 01/11/2026. Los correos de cobro van a Juan Pérez con copia a ti.</span>
+          </div>
+        </sc-if>
+      </section>
+    </sc-if>
+
+    <!-- Timeline + actividad en línea -->
+    <section style="padding: 6px 2px 0; display: flex; flex-direction: column; gap: 12px">
+      <h3 style="margin: 6px 0 0; font-size: 15px; font-weight: 700">Actividad</h3>
+      <div style="border: 1px solid var(--inp); border-radius: 12px; padding: 10px; display: flex; flex-direction: column; gap: 10px; background: var(--sf)">
+        <div role="group" aria-label="Tipo de actividad" style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{tipos}}" as="tp" hint-placeholder-count="4">
+            <button type="button" onClick="{{tp.go}}" style="{{tp.st}}"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">{{tp.ic}}</span>{{tp.t}}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; gap: 8px">
+          <label style="flex: 1; min-width: 0; display: flex">
+            <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0)">Detalle de la actividad</span>
+            <input type="text" value="{{txt}}" onChange="{{setTxt}}" placeholder="Qué pasó y qué sigue…" style="flex: 1; min-width: 0; height: 38px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--inp); border-radius: 9px; background: var(--sf); color: var(--ink); font: inherit; font-size: 13px">
+          </label>
+          <button type="button" onClick="{{add}}" style="{{addSt}}">Registrar</button>
+        </div>
+      </div>
+
+      <ol style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column">
+        <sc-for list="{{tl}}" as="e" hint-placeholder-count="5">
+          <li style="display: grid; grid-template-columns: 52px 34px minmax(0, 1fr); gap: 10px; align-items: start">
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: .04em; color: var(--mut); padding-top: 8px; font-variant-numeric: tabular-nums">{{e.d}}</span>
+            <span style="display: flex; flex-direction: column; align-items: center; align-self: stretch">
+              <span style="{{e.icSt}}"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">{{e.ic}}</span></span>
+              <span style="flex: 1; width: 2px; min-height: 12px; background: var(--line)"></span>
+            </span>
+            <span style="display: flex; flex-direction: column; gap: 2px; padding: 6px 0 14px">
+              <b style="font-size: 13px">{{e.t}}</b>
+              <span style="font-size: 12px; color: var(--lab); line-height: 1.5">{{e.s}}</span>
+              <span style="font-size: 11px; color: var(--mut)">{{e.who}}</span>
+            </span>
+          </li>
+        </sc-for>
+      </ol>
+    </section>
+  </div>
+
+  <!-- Marcar perdido en línea -->
+  <sc-if value="{{perd}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 0 0 auto; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--das); display: flex; flex-direction: column; gap: 10px">
+      <b style="font-size: 13px; color: var(--dat)">¿Por qué se pierde este lead?</b>
+      <div style="display: flex; flex-wrap: wrap; gap: 6px">
+        <sc-for list="{{motivos}}" as="m" hint-placeholder-count="4">
+          <button type="button" onClick="{{m.go}}" style="{{m.st}}">{{m.t}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <!-- Barra de acciones -->
+  <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--sf)">
+    <sc-if value="{{notPerd}}" hint-placeholder-val="{{true}}">
+      <sc-if value="{{showPerdBtn}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{askPerd}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px; border: 1.5px solid var(--da); border-radius: 10px; background: transparent; color: var(--dat); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Marcar perdido</button></sc-if>
+      <span style="flex: 1"></span>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border: 1.5px solid var(--bl); border-radius: 10px; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{secIc}}</span>{{secT}}</button>
+      <sc-if value="{{hasPri}}" hint-placeholder-val="{{true}}"><button type="button" onClick="{{primary}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--pu); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{priIc}}</span>{{priT}}</button></sc-if>
+    </sc-if>
+    <sc-if value="{{perd}}" hint-placeholder-val="{{false}}">
+      <button type="button" onClick="{{cancelPerd}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--pus); color: var(--put); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button>
+      <span style="flex: 1"></span>
+      <button type="button" onClick="{{confirmPerd}}" style="{{confPerdSt}}">Confirmar: marcar perdido</button>
+    </sc-if>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"etapa":{"editor":"enum","options":["lead","demo","propuesta","contrato","cliente","perdido"],"default":"demo"},"marcando":{"editor":"boolean","default":false},"lead":{"editor":null},"ancho":{"editor":null,"default":"600px"},"alto":{"editor":null,"default":"1000px"},"onClose":{"editor":null},"onDemo":{"editor":null},"onProp":{"editor":null},"onMeet":{"editor":null},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  vars(dark) {
+    const L = { bg:'#F4F6FA', sf:'#FFFFFF', sf2:'#F4F6FA', ink:'#17223B', mut:'#68738A', lab:'#4A556D', line:'#E2E7F0', inp:'#CFD6E3', pu:'#6732F4', pus:'#F2EFFF', put:'#5426D9', bl:'#087BEA', bls:'#EAF4FF', blt:'#0565C2', cy:'#16C6C9', cyd:'#007F8A', cys:'#E8FBFB', cyt:'#006B74', ok:'#16855B', oks:'#E8F6EF', okt:'#12704C', wa:'#B65C00', was:'#FFF3E4', wat:'#9A4E00', da:'#C7352B', das:'#FDEDEB', dat:'#A92C23', gr:'#EEF1F6', grt:'#5A6478' };
+    const D = { bg:'#0B0F1E', sf:'#131930', sf2:'#1A2140', ink:'#E8ECF8', mut:'#98A1BC', lab:'#B3BAD0', line:'#252D4B', inp:'#353E62', pu:'#7347FF', pus:'rgba(115,71,255,.18)', put:'#BBA6FF', bl:'#4CA2FF', bls:'rgba(8,123,234,.18)', blt:'#7DBBFF', cy:'#16C6C9', cyd:'#0A8F99', cys:'rgba(22,198,201,.13)', cyt:'#52DADC', ok:'#3CCB8E', oks:'rgba(22,133,91,.22)', okt:'#5FDCA6', wa:'#F0A04B', was:'rgba(182,92,0,.24)', wat:'#F6B56E', da:'#FF6E63', das:'rgba(199,53,43,.24)', dat:'#FF8C83', gr:'rgba(255,255,255,.08)', grt:'#A9B1C9' };
+    const t = dark ? D : L;
+    return Object.keys(t).map(k => '--' + k + ':' + t[k]).join('; ') + ';' + (dark ? ' color-scheme: dark;' : '');
+  }
+  tone(t) {
+    const m = { bl:['--bls','--blt'], cy:['--cys','--cyt'], pu:['--pus','--put'], wa:['--was','--wat'], ok:['--oks','--okt'], da:['--das','--dat'], gr:['--gr','--grt'] }[t];
+    return 'display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; background: var(' + m[0] + '); color: var(' + m[1] + ');';
+  }
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const dark = p.dark ?? false;
+    const lead = p.lead || { id:'L-0142', emp:'Hamburgo S.A.', ct:'Juan Pérez', cargo:'Jefe de Mantenimiento', mail:'juan.perez@hamburgo.cl', tel:'+56 9 8765 4321', st:'demo', ej:'Camila Rojas' };
+    const isH = lead.id === 'L-0142';
+    const etapa = p.etapa ?? 'demo';
+    const idx = { lead: 0, demo: 1, propuesta: 2, contrato: 3, cliente: 4, perdido: 0 }[etapa] ?? 1;
+    const lostMot = s.lost || (etapa === 'perdido' ? 'Precio' : '');
+    const lost = !!lostMot;
+    const first = lead.ct.split(' ')[0];
+
+    const ST = { nuevo:['NUEVO','bl'], contactado:['CONTACTADO','cy'], calificado:['CALIFICADO','cy'], demo:['DEMO','pu'], propuesta:['PROPUESTA','pu'], negociacion:['NEGOCIACIÓN','pu'], contrato:['CONTRATO','wa'], perdido:['PERDIDO','gr'], concretado:['CONCRETADO','ok'] };
+    const stKey = lost ? 'perdido' : (isH ? ['calificado','demo','propuesta','contrato','concretado'][idx] : lead.st);
+
+    const dates = isH ? ['15/10', '17/10', '22/10', '26/10', '27/10'] : ['hoy', '—', '—', '—', '—'];
+    const steps = ['Lead', 'Demo', 'Propuesta', 'Contrato', 'Cliente'].map((t, i) => {
+      const done = !lost && (i < idx || idx === 4), cur = !lost && i === idx && idx !== 4;
+      return { t, n: String(i + 1), d: dates[i], done, notDone: !done,
+        dotSt: 'position: relative; z-index: 1; width: 28px; height: 28px; border-radius: 50%; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; ' + (done ? 'background: var(--pu); color: #FFFFFF;' : cur ? 'background: var(--sf); border: 2px solid var(--pu); color: var(--put); box-shadow: 0 0 0 4px var(--pus);' : 'background: var(--sf); border: 2px solid var(--line); color: var(--mut);'),
+        lblSt: 'font-size: 12px; font-weight: ' + (cur ? '800' : '600') + '; color: ' + (cur ? 'var(--put)' : done ? 'var(--ink)' : 'var(--mut)') + ';',
+        lineSt: i === 0 ? 'display: none' : 'position: absolute; top: 13px; right: 50%; width: 100%; height: 2px; background: ' + (!lost && i <= idx ? 'var(--pu)' : 'var(--line)') + ';' };
+    });
+
+    const nextTxt = [
+      isH ? 'Siguiente paso: crear la demo. Juan quiere probar órdenes de trabajo y SIGMA AI.' : 'Siguiente paso: calificar la necesidad y crear la demo.',
+      'La demo vence en 3 días. Juan ya creó 12 OT: buen momento para enviar la propuesta.',
+      'Propuesta enviada el 22/10 y abierta 2 veces. Si la acepta, genera el contrato.',
+      'Contrato v2 visualizado el 26/10 a las 16:05. Falta la firma de Juan Pérez.',
+      'Cliente desde el 27/10: firmó y pagó con Webpay la implementación y octubre. Suscripción al día.'
+    ][idx];
+    const nextLost = 'Perdido el 21/10 · motivo: ' + lostMot + '. Si vuelve a escribir, puedes reabrirlo y conserva todo su historial.';
+    const nextTone = lost ? ['--gr', '--grt'] : idx === 1 ? ['--was', '--wat'] : idx === 4 ? ['--oks', '--okt'] : ['--cys', '--cyt'];
+
+    const op = s.open || { info: idx === 0, demo: idx === 1, prop: idx === 2, cont: idx === 3, sus: idx === 4 };
+    const tog = (k) => () => this.setState({ open: { ...op, [k]: !op[k] } });
+    const chev = (o) => o ? 'expand_less' : 'expand_more';
+
+    const info = isH ? [
+      { k:'Empresa', v:'Hamburgo S.A.' }, { k:'RUT', v:'96.512.340-K' }, { k:'Rubro', v:'Alimentos · panificación industrial' },
+      { k:'Plantas', v:'Planta Renca' }, { k:'Origen', v:'Formulario web (inicio.aspx) · 15/10/2026 09:41' }, { k:'Ejecutivo', v:'Camila Rojas' }
+    ] : [
+      { k:'Empresa', v: lead.emp }, { k:'RUT', v:'[por completar]' }, { k:'Rubro', v:'[por completar]' },
+      { k:'Origen', v:'Formulario web (inicio.aspx)' }, { k:'Ejecutivo', v: lead.ej || 'Sin asignar' }
+    ];
+
+    const tipoK = s.tipo ?? 'call';
+    const tipos = [['call','Llamada'],['mail','Email'],['groups','Reunión'],['sticky_note_2','Nota']].map(([ic, t]) => ({ ic, t, go: () => this.setState({ tipo: ic }),
+      st: 'display: inline-flex; align-items: center; gap: 5px; height: 30px; padding: 0 10px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; ' + (ic === tipoK ? 'border: 1px solid var(--pu); background: var(--pus); color: var(--put);' : 'border: 1px solid var(--line); background: var(--sf); color: var(--lab);') }));
+
+    const sys = (d, ic, t, sub, who, stage) => ({ d, ic, t, s: sub, who, stage, man: false });
+    const man = (d, ic, t, sub, who, stage) => ({ d, ic, t, s: sub, who, stage, man: true });
+    const ej = lead.ej || 'Sin ejecutivo';
+    const base = isH ? [
+      sys('27 OCT', 'verified', 'Cliente activado', 'Suscripción SUS-0012 · plan Full · acceso hasta el 01/11/2026', 'Sistema', 4),
+      sys('27 OCT', 'credit_card', 'Pago con Webpay · $3.065.335', 'Implementación + octubre · verificado solo · comprobante enviado', 'Sistema', 4),
+      sys('27 OCT', 'draw', 'Contrato firmado', 'Juan Pérez · RUT 12.345.678-5 · huella SHA-256 9f2c…e81a', 'Sistema', 4),
+      sys('26 OCT', 'visibility', 'Contrato visualizado', 'Juan abrió el enlace de firma a las 16:05', 'Sistema', 3),
+      sys('26 OCT', 'draw', 'Contrato v2 generado', 'Enviado para firma · v1 anulado por corrección de razón social', 'Camila Rojas', 3),
+      man('23 OCT', 'groups', 'Reunión por Jitsi Meet · 32 min', 'Acuerdo: 10 % de descuento con 12 meses; Juan lo presenta al gerente de planta el jueves · notas adjuntas', 'Camila Rojas · 3 participantes', 2),
+      sys('22 OCT', 'request_quote', 'Propuesta enviada', 'Plan Enterprise · propuesta-hamburgo-v1.pdf', 'Camila Rojas', 2),
+      sys('18 OCT', 'monitoring', 'Demo utilizada', 'Cargó 7 activos y creó 9 OT desde 2 programaciones', 'Sistema', 1),
+      sys('17 OCT', 'rocket_launch', 'Demo creada', '7 días · credenciales enviadas a juan.perez@hamburgo.cl', 'Camila Rojas', 1),
+      man('16 OCT', 'call', 'Primer contacto (llamada)', 'Lleva los preventivos en Excel; quiere probar OT y SIGMA AI', 'Camila Rojas', 0),
+      sys('15 OCT', 'person_check', 'Ejecutivo asignado', 'Camila Rojas', 'Sistema', 0),
+      sys('15 OCT', 'mail', 'Email a comercial', 'Aviso automático a comercial@codigocreativo.cl', 'Sistema', 0),
+      sys('15 OCT', 'language', 'Lead recibido', 'Formulario web · inicio.aspx · 09:41', 'Sistema', 0)
+    ] : [
+      sys('HOY', 'mail', 'Email a comercial', 'Aviso automático a comercial@codigocreativo.cl', 'Sistema', 0),
+      sys('HOY', 'language', 'Lead recibido', 'Formulario web · inicio.aspx · contacto: ' + lead.ct, 'Sistema', 0)
+    ];
+    const added = s.acts || [];
+    const lostEv = lost ? [man(s.lost ? 'HOY' : '21 OCT', 'block', 'Marcado perdido', 'Motivo: ' + lostMot, 'Camila Rojas', 0)] : [];
+    const tl = [...lostEv, ...added, ...base.filter(e => e.stage <= idx)].map(e => ({ ...e,
+      icSt: 'width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; ' + (e.man ? 'background: var(--pus); color: var(--put);' : 'background: var(--sf2); color: var(--lab);') }));
+
+    const txt = s.txt ?? '';
+    const tipoName = { call:'Llamada', mail:'Email', groups:'Reunión', sticky_note_2:'Nota' }[tipoK];
+    const can = txt.trim().length > 0;
+
+    const motivoSel = s.motivo ?? (p.marcando ? 'Precio' : '');
+    const perdOn = s.perd ?? !!p.marcando;
+    const motivos = ['Precio', 'Eligió otra solución', 'Sin presupuesto este año', 'No responde'].map(t => ({ t, go: () => this.setState({ motivo: t }),
+      st: 'height: 30px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; ' + (t === motivoSel ? 'border: 1px solid var(--da); background: var(--sf); color: var(--dat);' : 'border: 1px solid var(--line); background: var(--sf); color: var(--lab);') }));
+
+    const pri = [
+      { t:'Crear demo', ic:'rocket_launch', fn: p.onDemo },
+      { t:'Crear propuesta', ic:'request_quote', fn: p.onProp },
+      { t:'Generar contrato', ic:'draw', fn: null },
+      { t:'Reenviar para firma', ic:'send', fn: null },
+      null
+    ][idx];
+    const priF = lost ? { t:'Reabrir lead', ic:'undo', fn: () => this.setState({ lost: '' }) } : pri;
+    const sec = lost ? ['description','Ver formulario'] : [['description','Ver formulario'], ['open_in_new','Entrar a la demo'], ['picture_as_pdf','Ver propuesta'], ['picture_as_pdf','Ver contrato'], ['autorenew','Ver suscripción']][idx];
+
+    return {
+      vars: this.vars(dark), ancho: p.ancho ?? '600px', alto: p.alto ?? '1000px',
+      lead, code: lead.id.replace('L-', 'LEAD-') + ' · Formulario web · ' + (isH ? '15/10/2026' : 'hoy'),
+      stL: ST[stKey][0], stSt: this.tone(ST[stKey][1]),
+      steps, next: lost ? nextLost : nextTxt, nextIc: lost ? 'block' : idx === 1 ? 'timer' : idx === 4 ? 'verified' : 'flag',
+      nextSt: 'display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; line-height: 1.45; background: var(' + nextTone[0] + '); color: var(' + nextTone[1] + ');',
+      info, infoSum: lead.ct + ' · ' + (lead.ej || 'sin ejecutivo'), interes: isH ? ['Mantenimiento', 'OT', 'SIGMA AI'] : ['Mantenimiento'],
+      mensaje: isH ? '«Tenemos dos líneas de producción y llevamos los preventivos en Excel. Queremos ver cómo funciona la predicción de fallas.»' : '«Queremos conocer SIGMA para ordenar el mantenimiento de la planta.»',
+      oInfo: op.info, tInfo: tog('info'), infoChev: chev(op.info),
+      hasDemo: idx >= 1, oDemo: op.demo, tDemo: tog('demo'), demoChev: chev(op.demo), demoActiva: idx === 1,
+      demoChip: idx === 1 ? 'ACTIVA' : 'FINALIZADA', demoChipSt: this.tone(idx === 1 ? 'ok' : 'gr'),
+      uso: [['Usuarios',1,2],['Activos',7,10],['OT',12,20],['Programaciones',2,5],['Checklists',3,5],['Repuestos',6,20],['Bodegas',1,1],['Plantas',1,1]].map(([t, v, max]) => {
+        const pct = Math.round(v / max * 100), hi = pct >= 80;
+        return { t, v: String(v), max: String(max), barSt: 'display: block; height: 100%; width: ' + pct + '%; border-radius: 999px; background: ' + (hi ? 'var(--wa)' : 'var(--cy)') + ';',
+          nSt: 'font-weight: 800; font-variant-numeric: tabular-nums; color: ' + (hi ? 'var(--wat)' : 'var(--ink)') + ';' };
+      }),
+      hasProp: idx >= 2, oProp: op.prop, tProp: tog('prop'), propChev: chev(op.prop),
+      propChip: idx === 2 ? 'ENVIADA' : 'ACEPTADA', propChipSt: this.tone(idx === 2 ? 'bl' : 'ok'),
+      hasCont: idx >= 3, oCont: op.cont, tCont: tog('cont'), contChev: chev(op.cont),
+      contAcc: idx === 3, hasSus: idx === 4, oSus: op.sus, tSus: tog('sus'), susChev: chev(op.sus), chipOk: this.tone('ok'),
+      contChip: idx === 4 ? 'FIRMADO' : 'VISUALIZADO', contChipSt: this.tone(idx === 4 ? 'ok' : 'cy'),
+      firmLiSt: 'display: flex; flex-direction: column; gap: 6px; color: ' + (idx === 4 ? 'var(--okt)' : 'var(--mut)') + ';',
+      firmBarSt: 'height: 4px; border-radius: 999px; background: ' + (idx === 4 ? 'var(--ok)' : 'var(--line)') + ';',
+      contBan: idx === 4 ? 'Firmado por Juan Pérez el 27/10/2026 a las 10:14' : 'Visualizado por el cliente el 26/10/2026 a las 16:05',
+      contBanIc: idx === 4 ? 'task_alt' : 'visibility',
+      contBanSt: 'display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: 10px; font-size: 13px; font-weight: 600; ' + (idx === 4 ? 'background: var(--oks); color: var(--okt);' : 'background: var(--cys); color: var(--cyt);'),
+      contNota: idx === 4 ? 'Evidencia guardada: huella SHA-256 del PDF, IP y navegador. Copia firmada enviada a juan.perez@hamburgo.cl.' : 'Enlace personal de firma enviado a juan.perez@hamburgo.cl · vence el 02/11/2026',
+      chipPu: this.tone('pu'), chipCy: this.tone('cy'), chipGr: this.tone('gr'), chipWa: this.tone('wa'), chipDa: this.tone('da'),
+      tipos, txt, tl,
+      setTxt: (e) => this.setState({ txt: e.target.value }),
+      addSt: 'height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--cyd); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; opacity: ' + (can ? '1' : '.42') + ';',
+      add: () => { if (!can) return; this.setState({ txt: '', acts: [man('HOY', tipoK, tipoName, txt.trim(), 'Camila Rojas · recién', 0), ...added] }); },
+      perd: perdOn, notPerd: !perdOn, motivos,
+      askPerd: () => this.setState({ perd: true }),
+      cancelPerd: () => this.setState({ perd: false, motivo: '' }),
+      confirmPerd: () => { if (!motivoSel) return; this.setState({ perd: false, lost: motivoSel, motivo: '' }); },
+      confPerdSt: 'height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--da); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; opacity: ' + (motivoSel ? '1' : '.42') + ';',
+      hasPri: !!priF, showPerdBtn: !lost && idx !== 4,
+      priT: priF ? priF.t : '', priIc: priF ? priF.ic : '', primary: () => { if (priF && priF.fn) priF.fn(); },
+      secT: sec[1], secIc: sec[0],
+      meet: () => { if (p.onMeet) p.onMeet(); },
+      close: () => { if (p.onClose) p.onClose(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

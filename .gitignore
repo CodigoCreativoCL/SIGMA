@@ -398,3 +398,4 @@ Web/Intranet/azure.config
 # Obsidian
 Boveda/.obsidian/workspace*.json
 Boveda/.obsidian/cache
+Web/Intranet/secretos.local.config

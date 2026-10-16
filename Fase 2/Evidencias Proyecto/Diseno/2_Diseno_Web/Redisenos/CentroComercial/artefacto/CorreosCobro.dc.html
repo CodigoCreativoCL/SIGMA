@@ -1,0 +1,105 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Correos de cobro y comprobante</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1960px; min-height: 2760px; box-sizing: border-box; padding: 40px; background: #E9ECF2; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: grid; grid-template-columns: repeat(3, 600px); justify-content: space-between; gap: 36px 40px; align-content: start">
+  <sc-for list="{{mails}}" as="m" hint-placeholder-count="7">
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px">
+      <figcaption style="font-size: 13px; font-weight: 800; color: #4A556D">{{m.n}}</figcaption>
+      <div style="border-radius: 12px; background: #FFFFFF; padding: 12px 16px; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 10px; font-size: 12px; box-shadow: 0 1px 2px rgba(23,34,59,.06)">
+        <span style="color: #68738A">De</span><span>SIGMA · Código Creativo &lt;cobros@codigocreativo.cl&gt;</span>
+        <span style="color: #68738A">Para</span><span>{{m.para}}</span>
+        <span style="color: #68738A">CC</span><span>{{m.cc}}</span>
+        <span style="color: #68738A">Asunto</span><b>{{m.asunto}}</b>
+      </div>
+      <article style="width: 600px; background: #FFFFFF; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(23,34,59,.1)">
+        <div style="padding: 22px 32px; border-bottom: 1px solid #E2E7F0; display: flex; align-items: center; justify-content: space-between">
+          <span style="font-size: 20px; font-weight: 800; letter-spacing: .16em; color: #17223B">SIGMA</span>
+          <span style="font-size: 11px; color: #68738A">Código Creativo</span>
+        </div>
+        <sc-if value="{{m.prueba}}" hint-placeholder-val="{{false}}">
+          <div style="padding: 8px 32px; background: #FFF3E4; color: #9A4E00; font-size: 11px; line-height: 1.5"><b style="letter-spacing: .06em">MODO DE PRUEBA</b> · no se cobra dinero real · tarjeta 4051 8856 0044 6623 · CVV 123</div>
+        </sc-if>
+        <div style="padding: 28px 32px 24px; display: flex; flex-direction: column; gap: 16px">
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">{{m.pre}}</span>
+          <h2 style="margin: -8px 0 0; font-size: 22px; line-height: 1.3; font-weight: 700">{{m.h}}</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4A556D">{{m.p}}</p>
+          <div style="display: flex; flex-direction: column; border-radius: 10px; background: #F4F6FA; padding: 4px 0; font-size: 13px; font-variant-numeric: tabular-nums">
+            <sc-for list="{{m.det}}" as="d" hint-placeholder-count="4">
+              <div style="{{d.st}}"><span style="color: #68738A">{{d.k}}</span><span style="text-align: right">{{d.v}}</span></div>
+            </sc-for>
+          </div>
+          <sc-if value="{{m.adj}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E2E7F0; font-size: 13px"><span style="display: inline-flex; align-items: center; justify-content: center; width: 30px; height: 30px; border-radius: 6px; background: #FDEDEB; color: #C7352B; font-size: 10px; font-weight: 800">PDF</span><b>comprobante-PAG-0046.pdf</b><span style="color: #68738A">84 KB</span></div>
+          </sc-if>
+          <a href="#" style="align-self: flex-start; display: inline-block; padding: 13px 22px; border-radius: 10px; background: #6732F4; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none">{{m.btn}}</a>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #68738A">{{m.cierre}}</p>
+        </div>
+        <div style="padding: 16px 32px 22px; background: #F4F6FA; font-size: 11px; line-height: 1.6; color: #68738A">Código Creativo SpA · Santiago, Chile<br>{{m.pie}}</div>
+      </article>
+    </figure>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1960,"height":2760}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const row = (k, v, total) => ({ k, v, st: 'display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 12px; padding: 9px 16px; ' + (total ? 'border-top: 1px solid #E2E7F0; font-weight: 800; font-size: 14px;' : 'font-weight: 700;') });
+    const ham = 'juan.perez@hamburgo.cl, msoto@hamburgo.cl';
+    const cc = 'Camila Rojas <camila.rojas@codigocreativo.cl>';
+    const pieH = 'Recibes este correo porque eres contacto de cobro de Hamburgo S.A. en SIGMA.';
+    return {
+      mails: [
+        { n: 'P1 · Cobro emitido', para: ham, cc, prueba: false, adj: false,
+          asunto: 'SIGMA · Cobro de noviembre 2026 · $1.840.658', pre: 'Cobro de suscripción', h: 'Tu cobro de noviembre está listo',
+          p: 'Juan, emitimos el cobro de noviembre de Hamburgo S.A. Al pagarlo, el acceso a SIGMA se extiende hasta el 01/12/2026.',
+          det: [row('Período', '02/11/2026 al 01/12/2026'), row('Plan', 'Full · mensual'), row('Monto', '45,00 UF × $40.903,52'), row('Vence', 'domingo 01/11/2026'), row('Total', '$1.840.658', true)],
+          btn: 'Pagar $1.840.658', cierre: '¿Prefieres transferir? Responde este correo con el comprobante. Si ya pagaste, no tienes que hacer nada.', pie: pieH },
+        { n: 'P1 · Recordatorio: vence en 3 días', para: ham, cc, prueba: false, adj: false,
+          asunto: 'Recordatorio: tu cobro de noviembre vence en 3 días', pre: 'Recordatorio', h: 'Tu cobro vence el domingo 01/11',
+          p: 'Te lo recordamos con tiempo para que tus usuarios no pierdan el acceso a SIGMA. Pagar toma menos de un minuto.',
+          det: [row('Período', 'noviembre 2026'), row('Vence', 'domingo 01/11/2026 · en 3 días'), row('Total', '$1.840.658', true)],
+          btn: 'Pagar $1.840.658', cierre: 'Este es el único recordatorio antes del vencimiento.', pie: pieH },
+        { n: 'P1 · Recordatorio: vence hoy', para: ham, cc, prueba: false, adj: false,
+          asunto: 'Tu cobro de SIGMA vence hoy', pre: 'Vence hoy', h: 'Hoy vence tu cobro de noviembre',
+          p: 'Si lo pagas hoy, el acceso sigue sin interrupciones hasta el 01/12/2026.',
+          det: [row('Período', 'noviembre 2026'), row('Vence', 'hoy, 01/11/2026'), row('Total', '$1.840.658', true)],
+          btn: 'Pagar hoy $1.840.658', cierre: 'Si ya transferiste, responde este correo con el comprobante y lo verificamos.', pie: pieH },
+        { n: 'P1 · En mora (otro cliente)', para: 'rbravo@quimicaaustral.cl', cc: 'Valentina Paredes <valentina.paredes@codigocreativo.cl>', prueba: false, adj: false,
+          asunto: 'Cobro vencido: el acceso de Química Austral se suspende el 21/10', pre: 'Cobro vencido', h: 'Tu cobro de octubre está vencido',
+          p: 'El cobro de octubre venció el 05/10. Tienes días de gracia hasta el 21/10; después, el acceso de tus usuarios a SIGMA se suspende. Tus datos se conservan.',
+          det: [row('Período', 'octubre 2026'), row('Venció', '05/10/2026 · hace 11 días'), row('Se suspende', 'martes 21/10/2026'), row('Total', '$1.839.201', true)],
+          btn: 'Pagar $1.839.201', cierre: 'Si tienes un problema con el pago, responde este correo y lo vemos con tu ejecutiva.', pie: 'Recibes este correo porque eres contacto de cobro de Química Austral Ltda. en SIGMA.' },
+        { n: 'P4 · Comprobante de pago', para: ham, cc, prueba: false, adj: true,
+          asunto: 'Recibimos tu pago · comprobante PAG-0046', pre: 'Pago recibido', h: 'Gracias, recibimos tu pago',
+          p: 'Adjuntamos el comprobante. El pago se verificó automáticamente y el acceso a SIGMA queda activo hasta el 01/11/2026.',
+          det: [row('Conceptos', 'Implementación + octubre 2026'), row('Medio', 'Webpay · crédito •••• 6623'), row('Autorización', '1213'), row('Fecha', '02/10/2026 20:53'), row('Total pagado', '$3.065.335', true)],
+          btn: 'Ir a SIGMA', cierre: 'Guarda este correo: incluye tu comprobante. La factura electrónica llega por separado.', pie: pieH },
+        { n: 'P1 · Cobro al firmar, en modo de prueba', para: ham, cc, prueba: true, adj: false,
+          asunto: '[PRUEBA] Activa SIGMA: implementación y octubre', pre: 'Bienvenido a SIGMA', h: 'Falta un paso para activar SIGMA',
+          p: 'Firmaste el contrato. Paga la implementación y la primera mensualidad y tus usuarios entran hoy mismo.',
+          det: [row('Implementación', '30,00 UF · $1.226.134'), row('Octubre 2026', '45,00 UF · $1.839.201'), row('UF del día', '$40.871,14'), row('Total', '$3.065.335', true)],
+          btn: 'Pagar $3.065.335 con Webpay', cierre: 'También puedes pagar por transferencia: responde este correo y te enviamos los datos.', pie: pieH },
+        { n: 'P1 · Cobro en USD (cliente fuera de Chile)', para: 'pagos@mineraandina.pe', cc: 'Valentina Paredes <valentina.paredes@codigocreativo.cl>', prueba: false, adj: false,
+          asunto: 'SIGMA · Cobro de noviembre 2026 · USD 1.950,00', pre: 'Cobro de suscripción', h: 'Tu cobro de noviembre está listo',
+          p: 'Emitimos el cobro de noviembre de Minera Andina Perú S.A.C. Como tu empresa está fuera de Chile, el cobro es en dólares y se paga por transferencia internacional.',
+          det: [row('Período', '02/11/2026 al 01/12/2026'), row('Plan', 'Full · mensual'), row('Vence', 'domingo 01/11/2026'), row('Referencia', 'SUS-0014-NOV26'), row('Total', 'USD 1.950,00', true)],
+          btn: 'Ver datos e informar el pago', cierre: 'Los costos de tu banco por la transferencia corren por tu cuenta. Cuando transfieras, infórmalo desde el botón y te enviamos el comprobante.', pie: 'Recibes este correo porque eres contacto de cobro de Minera Andina Perú S.A.C. en SIGMA.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -66,6 +66,19 @@ public partial class Login : System.Web.UI.Page
             return;
         }
 
+        /* Centro Comercial (J). Una cuenta con clave temporal (demo o cliente
+           recién firmado) no entra hasta cambiarla: la sesión se descarta y
+           solo queda el id pendiente, que CambiarClave.aspx usa y nada más. */
+        int pendiente;
+        if (int.TryParse(SitioBase.Session.UsuarioId(), out pendiente) && DebeCambiarClave(pendiente))
+        {
+            Session.Clear();
+            System.Web.Security.FormsAuthentication.SignOut();
+            Session[CambiarClave.CLAVE_SESION] = pendiente;
+            Response.Redirect("~/CambiarClave.aspx");
+            return;
+        }
+
         // HU-002. Adonde va depende de a cuantos clientes pertenece:
         // con uno se elige solo y no ve el selector; con varios tiene que
         // elegir antes de continuar.
@@ -75,6 +88,20 @@ public partial class Login : System.Web.UI.Page
         string destino = clienteSesion.ResolverClienteInicial(respuesta.codigo);
 
         Response.Redirect(destino);
+    }
+
+    /// <summary>Si la cuenta entró con una clave temporal (SEL_USUARIO_DEBE_CAMBIAR, bloque 456).</summary>
+    private static bool DebeCambiarClave(int usuario)
+    {
+        try
+        {
+            System.Collections.Generic.Dictionary<string, object> f = SoporteDatos.Fila("SEL_USUARIO_DEBE_CAMBIAR", "@USUARIO", usuario);
+            object v; return f.TryGetValue("DEBE", out v) && v != null && Convert.ToBoolean(v);
+        }
+        catch (Exception)
+        {
+            return false;
+        }
     }
 
     private void MostrarError(string mensaje)

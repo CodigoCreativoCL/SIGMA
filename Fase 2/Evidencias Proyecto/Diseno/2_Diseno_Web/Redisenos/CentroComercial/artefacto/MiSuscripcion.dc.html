@@ -1,0 +1,173 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Mi suscripción</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <div style="flex: 0 0 auto; display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 16px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+      <sc-if value="{{informar}}" hint-placeholder-val="{{false}}">
+        <button type="button" onClick="{{volver}}" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; margin-bottom: 4px; border: 0; border-radius: 8px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">arrow_back</span>Volver a mi suscripción</button>
+      </sc-if>
+      <span style="font-size: 12px; color: #68738A">SUS-0012 · Hamburgo S.A.</span>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700">{{titulo}}</h2>
+        <sc-if value="{{ver}}" hint-placeholder-val="{{true}}"><span style="{{estSt}}">{{est}}</span></sc-if>
+      </div>
+    </div>
+    <button type="button" aria-label="Cerrar" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #68738A; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">close</span></button>
+  </div>
+
+  <!-- ===== Vista ===== -->
+  <sc-if value="{{ver}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 12px">
+
+      <section style="{{cobroCard}}">
+        <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: {{cobroAccent}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{cobroIc}}</span>{{cobroEy}}</div>
+        <div style="display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+          <div style="display: flex; flex-direction: column; gap: 2px">
+            <b style="font-size: 15px">{{cobroT}}</b>
+            <span style="font-size: 30px; line-height: 1.1; font-weight: 800; font-variant-numeric: tabular-nums">{{cobroM}}</span>
+            <span style="font-size: 13px; color: #68738A; font-variant-numeric: tabular-nums">{{cobroUF}}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 2px; font-size: 13px">
+            <span style="color: #68738A">{{venceK}}</span>
+            <b style="font-size: 16px; font-variant-numeric: tabular-nums">{{venceV}}</b>
+            <span style="{{venceSt}}">{{venceS}}</span>
+          </div>
+        </div>
+        <span style="font-size: 12px; color: #4A556D; line-height: 1.5">{{cobroNota}}</span>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px 18px">
+        <div style="grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between"><b style="font-size: 14px">Plan Full · mensual</b><span style="font-size: 12px; color: #68738A">Acceso hasta el {{hasta}}</span></div>
+        <sc-for list="{{uso}}" as="u" hint-placeholder-count="4">
+          <div style="display: flex; flex-direction: column; gap: 5px">
+            <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 600">{{u.t}}</span><span style="{{u.nSt}}">{{u.v}}</span></div>
+            <div role="meter" aria-label="{{u.t}}" style="height: 8px; border-radius: 999px; background: #F4F6FA; overflow: hidden"><span style="{{u.barSt}}"></span></div>
+          </div>
+        </sc-for>
+      </section>
+
+      <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 13px 16px"><span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">receipt_long</span><b style="flex: 1">Historial de cobros</b></div>
+        <div style="padding: 0 16px 8px">
+          <sc-for list="{{hist}}" as="h" hint-placeholder-count="3">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 120px 180px 32px; gap: 10px; align-items: center; padding: 11px 0; border-top: 1px solid #E2E7F0">
+              <span style="display: flex; flex-direction: column; gap: 2px"><b style="font-size: 13px">{{h.t}}</b><span style="font-size: 12px; color: #68738A">{{h.s}}</span></span>
+              <b style="font-size: 13px; text-align: right; font-variant-numeric: tabular-nums">{{h.m}}</b>
+              <span><span style="{{h.chSt}}">{{h.ch}}</span></span>
+              <sc-if value="{{h.pdf}}" hint-placeholder-val="{{true}}"><button type="button" aria-label="Descargar comprobante" style="width: 32px; height: 32px; border: 0; border-radius: 8px; background: transparent; color: #0565C2; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">download</span></button></sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+
+      <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #E8FBFB; color: #006B74; font-size: 12px; line-height: 1.55"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">mail</span><span>Los avisos de cobro y los comprobantes llegan a <b>juan.perez@hamburgo.cl</b> y <b>msoto@hamburgo.cl</b>. Tu ejecutiva es Camila Rojas · comercial@codigocreativo.cl.</span></div>
+    </div>
+    <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; background: #FFFFFF; border-top: 1px solid #E2E7F0">
+      <span style="flex: 1"></span>
+      <sc-if value="{{puedePagar}}" hint-placeholder-val="{{true}}">
+        <button type="button" onClick="{{irInformar}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px; border: 0; border-radius: 10px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">account_balance</span>Informar transferencia</button>
+        <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">credit_card</span>Pagar ahora</button>
+      </sc-if>
+      <sc-if value="{{alDia}}" hint-placeholder-val="{{false}}">
+        <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px; border: 1.5px solid #087BEA; border-radius: 10px; background: transparent; color: #0565C2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">picture_as_pdf</span>Último comprobante</button>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <!-- ===== Informar transferencia ===== -->
+  <sc-if value="{{informar}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 12px">
+      <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+        <b style="font-size: 14px">Datos para transferir</b>
+        <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr) auto; gap: 8px 12px; align-items: center; padding: 12px 14px; border-radius: 12px; background: #F4F6FA; font-size: 13px">
+          <span style="color: #68738A">Titular</span><b>Código Creativo SpA</b><span></span>
+          <span style="color: #68738A">RUT</span><b>[RUT de Código Creativo]</b><span></span>
+          <span style="color: #68738A">Banco</span><b>[Banco]</b><span></span>
+          <span style="color: #68738A">Cuenta corriente</span><b>[N.° de cuenta]</b><button type="button" style="border: 0; background: transparent; color: #0565C2; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer">Copiar</button>
+          <span style="color: #68738A">Correo</span><b>pagos@codigocreativo.cl</b><span></span>
+        </div>
+      </section>
+      <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 12px">
+        <b style="font-size: 14px">Lo que transferiste</b>
+        <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Cobro que pagas</span><button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left"><span style="flex: 1">Noviembre 2026 · $1.839.201</span><span class="material-symbols-rounded" style="font-size: 18px; color: #68738A" aria-hidden="true">expand_more</span></button></div>
+        <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Monto transferido</span><input type="text" value="$1.839.201" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; font-weight: 700; color: #17223B; font-variant-numeric: tabular-nums"></label>
+          <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Fecha</span><button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px; color: #6732F4" aria-hidden="true">calendar_month</span>28/10/2026</button></div>
+          <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Banco de origen</span><button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left"><span style="flex: 1">Banco de Chile</span><span class="material-symbols-rounded" style="font-size: 18px; color: #68738A" aria-hidden="true">expand_more</span></button></div>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">N.° de operación</span><input type="text" placeholder="Del comprobante del banco" style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+        </div>
+        <button type="button" onClick="{{subir}}" style="{{dropSt}}">
+          <span class="material-symbols-rounded" style="font-size: 28px" aria-hidden="true">{{dropIc}}</span>
+          <b style="font-size: 13px">{{dropT}}</b>
+          <span style="font-size: 12px; color: #68738A">{{dropS}}</span>
+        </button>
+      </section>
+      <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 12px; background: #E8FBFB; color: #006B74; font-size: 12px; line-height: 1.55"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">schedule</span><span>Tu ejecutiva lo revisa en horario hábil. Mientras tanto el cobro queda «Por verificar» y no se te envían recordatorios.</span></div>
+    </div>
+    <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; background: #FFFFFF; border-top: 1px solid #E2E7F0">
+      <button type="button" onClick="{{volver}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button>
+      <span style="flex: 1"></span>
+      <button type="button" style="{{informarSt}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">send</span>Informar pago</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["pendiente","aldia","mora"],"default":"pendiente"},"modo":{"editor":"enum","options":["ver","informar"],"default":"ver"},"ancho":{"editor":null,"default":"600px"},"alto":{"editor":null,"default":"1000px"},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const estado = p.estado ?? 'pendiente';
+    const modo = s.modo ?? p.modo ?? 'ver';
+    const subido = !!s.subido;
+    const chip = (bg, fg) => 'display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; white-space: nowrap; background: ' + bg + '; color: ' + fg + ';';
+    const card = (bd, bg) => 'border-radius: 14px; padding: 18px; display: flex; flex-direction: column; gap: 12px; border: 1.5px solid ' + bd + '; background: ' + bg + ';';
+    const E = {
+      pendiente: { est: 'COBRO PENDIENTE', estSt: chip('#FFF3E4', '#9A4E00'), card: card('#6732F4', '#FFFFFF'), acc: '#5426D9', ic: 'receipt_long', ey: 'Cobro emitido', t: 'Noviembre 2026', m: '$1.839.201', uf: '45,00 UF × $40.871,14 (UF del 27/10)', vk: 'Vence el', vv: '01/11/2026', vs: 'en 6 días', vst: 'font-size: 12px; font-weight: 700; color: #9A4E00;', nota: 'Al pagar, el acceso se extiende hasta el 30/11/2026. Si pagas con Webpay se confirma al instante.', pagar: true, hasta: '01/11/2026' },
+      aldia: { est: 'AL DÍA', estSt: chip('#E8F6EF', '#12704C'), card: card('#E2E7F0', '#FFFFFF'), acc: '#12704C', ic: 'check_circle', ey: 'Estás al día', t: 'Próximo cobro: noviembre 2026', m: '45,00 UF', uf: 'En pesos según la UF del día en que se emita', vk: 'Se emite el', vv: '27/10/2026', vs: 'te avisamos por correo', vst: 'font-size: 12px; color: #68738A;', nota: 'Octubre está pagado. No tienes que hacer nada hasta que llegue el correo de cobro.', pagar: false, hasta: '01/11/2026' },
+      mora: { est: 'EN MORA', estSt: chip('#FDEDEB', '#A92C23'), card: card('#C7352B', '#FFFFFF'), acc: '#A92C23', ic: 'warning', ey: 'Cobro vencido', t: 'Noviembre 2026', m: '$1.839.201', uf: '45,00 UF × $40.871,14 (UF del 27/10)', vk: 'Venció el', vv: '01/11/2026', vs: 'el acceso se suspende el 11/11', vst: 'font-size: 12px; font-weight: 700; color: #A92C23;', nota: 'Tienes 10 días de gracia desde el vencimiento. Paga ahora para no perder el acceso de tus usuarios.', pagar: true, hasta: '01/11/2026 · gracia hasta 11/11' }
+    }[estado];
+    const chipOk = chip('#E8F6EF', '#12704C');
+    const hist = [
+      ...(estado === 'aldia' ? [] : [{ t: 'Noviembre 2026', s: 'emitido el 27/10 · vence el 01/11', m: '$1.839.201', ch: estado === 'mora' ? 'EN MORA' : 'PENDIENTE', chSt: estado === 'mora' ? chip('#FDEDEB', '#A92C23') : chip('#FFF3E4', '#9A4E00'), pdf: false }]),
+      { t: 'Octubre 2026', s: 'pagado el 02/10 con Webpay', m: '$1.839.201', ch: 'PAGADO EN LÍNEA', chSt: chipOk, pdf: true },
+      { t: 'Implementación', s: 'pagada el 02/10 con Webpay', m: '$1.226.134', ch: 'PAGADO EN LÍNEA', chSt: chipOk, pdf: true }
+    ];
+    return {
+      ancho: p.ancho ?? '600px', alto: p.alto ?? '1000px',
+      ver: modo === 'ver', informar: modo === 'informar',
+      titulo: modo === 'ver' ? 'Mi suscripción' : 'Informar transferencia',
+      est: E.est, estSt: E.estSt, cobroCard: E.card, cobroAccent: E.acc, cobroIc: E.ic, cobroEy: E.ey, cobroT: E.t, cobroM: E.m, cobroUF: E.uf,
+      venceK: E.vk, venceV: E.vv, venceS: E.vs, venceSt: E.vst, cobroNota: E.nota, hasta: E.hasta,
+      puedePagar: E.pagar, alDia: !E.pagar,
+      uso: [['Usuarios', 9, 15, ''], ['Activos', 14, 300, ''], ['Plantas', 1, 3, ''], ['Almacenamiento', 41, 50, ' GB']].map(([t, v, max, u]) => {
+        const pct = Math.round(v / max * 100), hi = pct >= 80;
+        return { t, v: v + u + ' de ' + max + u, barSt: 'display: block; height: 100%; width: ' + Math.max(pct, 2) + '%; border-radius: 999px; background: ' + (hi ? '#B65C00' : '#16C6C9') + ';', nSt: 'font-weight: 800; font-variant-numeric: tabular-nums; color: ' + (hi ? '#9A4E00' : '#17223B') + ';' };
+      }),
+      hist,
+      irInformar: () => this.setState({ modo: 'informar' }), volver: () => this.setState({ modo: 'ver' }),
+      subir: () => this.setState({ subido: true }),
+      dropIc: subido ? 'task' : 'upload_file', dropT: subido ? 'comprobante-28-10.pdf · 186 KB' : 'Adjunta el comprobante', dropS: subido ? 'Listo. Toca para cambiarlo.' : 'PDF o foto · arrastra aquí o toca para elegir',
+      dropSt: 'display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 18px; border-radius: 12px; font: inherit; cursor: pointer; ' + (subido ? 'border: 1.5px solid #16855B; background: #E8F6EF; color: #12704C;' : 'border: 1.5px dashed #CFD6E3; background: #FFFFFF; color: #4A556D;'),
+      informarSt: 'display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: ' + (subido ? 'pointer' : 'not-allowed') + '; opacity: ' + (subido ? '1' : '.42') + ';'
+    };
+  }
+}
+</script>
+</body>
+</html>

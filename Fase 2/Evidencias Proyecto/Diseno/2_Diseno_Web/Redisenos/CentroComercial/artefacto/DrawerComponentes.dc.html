@@ -1,0 +1,195 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Componentes del drawer</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1440px; min-height: 1700px; box-sizing: border-box; padding: 44px 48px; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: flex; flex-direction: column; gap: 24px">
+  <header style="display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; flex-wrap: wrap">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">Centro Comercial · iteración 2</span>
+      <h1 style="margin: 0; font-size: 28px; font-weight: 700">Componentes del drawer</h1>
+    </div>
+    <div style="display: flex; gap: 8px; flex-wrap: wrap; font-size: 12px; color: #4A556D">
+      <span style="padding: 6px 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E2E7F0"><b>600 px</b> por defecto</span>
+      <span style="padding: 6px 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E2E7F0"><b>760 px</b> con tabla o comprobante</span>
+      <span style="padding: 6px 10px; border-radius: 8px; background: #FFFFFF; border: 1px solid #E2E7F0">márgenes <b>22 px</b> · radio <b>14</b></span>
+    </div>
+  </header>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start">
+
+    <!-- 1 Cabecera -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">1 · Cabecera</h2>
+      <div style="border: 1px solid #E2E7F0; border-radius: 12px; overflow: hidden">
+        <div style="display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 16px; background: #FFFFFF">
+          <div style="flex: 1; display: flex; flex-direction: column; gap: 4px"><span style="font-size: 12px; color: #68738A">SUS-0012 · Hamburgo S.A.</span><div style="display: flex; align-items: center; gap: 8px"><h3 style="margin: 0; font-size: 20px; font-weight: 700">Suscripción</h3><span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #E8F6EF; color: #12704C; font-size: 11px; font-weight: 800">ACTIVA</span></div></div>
+          <span style="width: 36px; height: 36px; border-radius: 10px; color: #68738A; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">close</span></span>
+        </div>
+      </div>
+      <div style="border: 1px solid #E2E7F0; border-radius: 12px; overflow: hidden">
+        <div style="display: flex; flex-direction: column; gap: 6px; padding: 16px 22px 14px; background: #FFFFFF">
+          <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border-radius: 8px; background: #F2EFFF; color: #5426D9; font-size: 12px; font-weight: 700"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">arrow_back</span>Volver a la ficha</span>
+          <span style="font-size: 12px; color: #68738A; padding-top: 4px">LEAD-0142 · Hamburgo S.A.</span>
+          <h3 style="margin: 0; font-size: 20px; font-weight: 700">Crear propuesta</h3>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">Antetítulo con código · título · chip de estado · cerrar. Los drawers que reemplazan a otro llevan «Volver a…» y no cierran el panel.</p>
+    </section>
+
+    <!-- 2 Sección colapsable -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">2 · Sección colapsable</h2>
+      <div style="padding: 14px; border-radius: 12px; background: #F4F6FA; display: flex; flex-direction: column; gap: 10px">
+        <div style="border: 1px solid #E2E7F0; border-radius: 14px; background: #FFFFFF; overflow: hidden">
+          <button type="button" onClick="{{tSec}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">contact_mail</span><b style="flex: 1">Contacto de cobro</b><span style="font-size: 12px; color: #68738A">Juan Pérez</span><span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{secChev}}</span></button>
+          <sc-if value="{{secOpen}}" hint-placeholder-val="{{true}}">
+            <div style="padding: 0 16px 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; font-size: 13px">
+              <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Correo</span><div style="height: 40px; display: flex; align-items: center; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px">juan.perez@hamburgo.cl</div></div>
+              <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Teléfono</span><div style="height: 40px; display: flex; align-items: center; padding: 0 12px; border: 1px solid #16C6C9; box-shadow: 0 0 0 3px rgba(22,198,201,.27); border-radius: 9px">+56 9 8765 4321</div></div>
+            </div>
+          </sc-if>
+        </div>
+        <div style="border: 1px solid #E2E7F0; border-radius: 14px; background: #FFFFFF; display: flex; align-items: center; gap: 10px; padding: 13px 16px"><span class="material-symbols-rounded" style="font-size: 20px; color: #5426D9" aria-hidden="true">swap_horiz</span><b style="flex: 1">Cambiar de plan</b><span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">expand_more</span></div>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">Cuerpo gris claro, tarjetas blancas. Cerrada muestra un resumen a la derecha; la sección de la tarea actual viene abierta. Toca la primera para probar.</p>
+    </section>
+
+    <!-- 3 Barra inferior -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">3 · Barra inferior fija</h2>
+      <span style="font-size: 11px; font-weight: 800; color: #4A556D">Ver y editar</span>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 1px solid #E2E7F0; border-radius: 12px">
+        <span style="height: 40px; padding: 0 14px; border: 1.5px solid #C7352B; border-radius: 10px; color: #A92C23; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Cancelar suscripción</span><span style="flex: 1"></span>
+        <span style="height: 40px; padding: 0 14px; border: 1.5px solid #087BEA; border-radius: 10px; color: #0565C2; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Ver cliente</span>
+        <span style="height: 40px; padding: 0 18px; border-radius: 10px; background: #6732F4; color: #FFFFFF; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Guardar</span>
+      </div>
+      <span style="font-size: 11px; font-weight: 800; color: #4A556D">Crear</span>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 1px solid #E2E7F0; border-radius: 12px">
+        <span style="height: 40px; padding: 0 16px; border-radius: 10px; background: #F2EFFF; color: #5426D9; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Cancelar</span><span style="flex: 1; font-size: 12px; color: #68738A; text-align: right">Falta: correo</span>
+        <span style="height: 40px; padding: 0 18px; border-radius: 10px; background: #6732F4; color: #FFFFFF; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center; opacity: .42">Crear lead</span>
+      </div>
+      <span style="font-size: 11px; font-weight: 800; color: #4A556D">Confirmar algo destructivo (en línea, sin modal)</span>
+      <div style="display: flex; align-items: center; gap: 10px; padding: 14px 16px; border: 1px solid #E2E7F0; border-radius: 12px; background: #FDEDEB">
+        <span style="height: 40px; padding: 0 16px; border-radius: 10px; background: #F2EFFF; color: #5426D9; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Cancelar</span><span style="flex: 1"></span>
+        <span style="height: 40px; padding: 0 16px; border-radius: 10px; background: #C7352B; color: #FFFFFF; font-size: 13px; font-weight: 700; display: inline-flex; align-items: center">Confirmar: rechazar pago</span>
+      </div>
+    </section>
+
+    <!-- 4 Clave visible una vez -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">4 · Clave visible una sola vez</h2>
+      <div role="status" style="display: flex; flex-direction: column; gap: 10px; padding: 16px; border-radius: 12px; border: 2px solid #16C6C9; background: #E8FBFB">
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 800; color: #006B74"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">visibility</span>NUEVA CLAVE · SE MUESTRA UNA SOLA VEZ</span>
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #FFFFFF; border: 1px solid #CFD6E3">
+          <span style="flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 17px; font-weight: 800; letter-spacing: .06em">SGM-9XQ2-H7MV-4KTP-RW8D</span>
+          <button type="button" onClick="{{copiar}}" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 9px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{copIc}}</span>{{copT}}</button>
+        </div>
+        <span style="font-size: 12px; color: #006B74; line-height: 1.5">Al cerrar el drawer solo queda el prefijo. Para reemitir se pide motivo, y la clave anterior deja de funcionar.</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 12px; border-radius: 9px; background: #F4F6FA"><span class="material-symbols-rounded" style="font-size: 18px; color: #68738A" aria-hidden="true">key</span><span style="flex: 1; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 13px; font-weight: 700">SGM-9XQ2-••••-••••-••••</span><span style="font-size: 12px; font-weight: 700; color: #0565C2">Reemitir clave</span></div>
+    </section>
+
+    <!-- 5 Visor de comprobante -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">5 · Visor de comprobante</h2>
+      <div style="display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 16px">
+        <div style="border: 1px solid #E2E7F0; border-radius: 12px; overflow: hidden; display: flex; flex-direction: column">
+          <div style="display: flex; align-items: center; gap: 4px; padding: 6px 8px; border-bottom: 1px solid #E2E7F0; font-size: 11px; color: #68738A"><span class="material-symbols-rounded" style="font-size: 16px; color: #C7352B" aria-hidden="true">picture_as_pdf</span><span style="flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">comprobante-0048213377.pdf</span><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">zoom_in</span><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">rotate_right</span><span class="material-symbols-rounded" style="font-size: 18px; color: #0565C2" aria-hidden="true">download</span></div>
+          <div style="height: 240px; background: #E9ECF2; padding: 14px; box-sizing: border-box">
+            <div style="height: 100%; background: #FFFFFF; box-shadow: 0 1px 4px rgba(23,34,59,.12); padding: 14px; box-sizing: border-box; display: flex; flex-direction: column; gap: 7px">
+              <span style="font-size: 9px; font-weight: 800; color: #4A556D">BANCO DE CHILE · Comprobante de transferencia</span>
+              <span style="height: 6px; width: 80%; border-radius: 3px; background: #E2E7F0"></span><span style="height: 6px; width: 60%; border-radius: 3px; background: #E2E7F0"></span>
+              <span style="font-size: 16px; font-weight: 800; padding-top: 6px">$449.583</span>
+              <span style="height: 6px; width: 70%; border-radius: 3px; background: #E2E7F0"></span><span style="height: 6px; width: 50%; border-radius: 3px; background: #E2E7F0"></span>
+              <span style="font-size: 9px; color: #68738A; padding-top: 6px">Operación 0048213377 · 15/10/2026</span>
+            </div>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; font-size: 13px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Lo que informó el cliente</span>
+          <div style="display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 6px 10px; padding: 12px; border-radius: 10px; background: #F4F6FA">
+            <span style="color: #68738A">Monto</span><b>$449.583</b><span style="color: #68738A">Banco</span><b>Banco de Chile</b><span style="color: #68738A">Operación</span><b>0048213377</b><span style="color: #68738A">Fecha</span><b>15/10/2026</b>
+          </div>
+          <div style="display: flex; gap: 8px; align-items: center; padding: 8px 10px; border-radius: 9px; background: #E8F6EF; color: #12704C; font-size: 12px; font-weight: 700"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">check</span>El monto calza con el período</div>
+        </div>
+      </div>
+      <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">El comprobante va a la izquierda y los datos a la derecha, para comparar sin cambiar de pantalla (drawer de 760 px).</p>
+    </section>
+
+    <!-- 6 Tabla de funcionalidades -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 12px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">6 · Tabla de funcionalidades</h2>
+      <div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px; gap: 10px; padding: 6px 10px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #68738A"><span>Funcionalidad</span><span style="text-align: center">Incluida</span><span>Tope</span></div>
+        <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; background: #F4F6FA; font-size: 12px; font-weight: 800; color: #4A556D"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">inventory_2</span>Inventario<span style="flex: 1"></span><span style="font-weight: 600; color: #68738A">2 de 3</span></div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #E2E7F0; font-size: 13px"><span>Repuestos</span><span style="text-align: center"><span class="material-symbols-rounded" style="font-size: 22px; color: #6732F4" aria-hidden="true">check_box</span></span><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border: 1px solid #CFD6E3; border-radius: 9px; font-weight: 700">2.000</span></div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #E2E7F0; font-size: 13px"><span>Movimientos de stock</span><span style="text-align: center"><span class="material-symbols-rounded" style="font-size: 22px; color: #6732F4" aria-hidden="true">check_box</span></span><span style="display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border: 1px solid #CFD6E3; border-radius: 9px; font-weight: 700">Sin tope</span></div>
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 90px 140px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #E2E7F0; font-size: 13px; color: #68738A"><span>Mapa de bodega 3D</span><span style="text-align: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">check_box_outline_blank</span></span><span style="font-size: 12px">No incluida</span></div>
+      </div>
+    </section>
+
+    <!-- 7 Barra de consumo -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">7 · Barra de consumo</h2>
+      <sc-for list="{{barras}}" as="b" hint-placeholder-count="3">
+        <div style="display: grid; grid-template-columns: minmax(0, 1fr) 200px; gap: 16px; align-items: center">
+          <div style="display: flex; flex-direction: column; gap: 5px">
+            <div style="display: flex; justify-content: space-between; font-size: 12px"><span style="font-weight: 600">{{b.t}}</span><span style="{{b.nSt}}">{{b.v}}</span></div>
+            <div style="height: 8px; border-radius: 999px; background: #F4F6FA; overflow: hidden"><span style="{{b.barSt}}"></span></div>
+          </div>
+          <span style="font-size: 12px; color: #68738A">{{b.nota}}</span>
+        </div>
+      </sc-for>
+    </section>
+
+    <!-- 8 Chips de cobro -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; padding: 22px; display: flex; flex-direction: column; gap: 14px">
+      <h2 style="margin: 0; font-size: 16px; font-weight: 700">8 · Chips de estado de cobro</h2>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <sc-for list="{{chips}}" as="c" hint-placeholder-count="8"><span style="{{c.st}}"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">{{c.ic}}</span>{{c.t}}</span></sc-for>
+      </div>
+      <span style="font-size: 11px; font-weight: 800; color: #4A556D">Origen del pago</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: #E8FBFB; color: #006B74; font-size: 11px; font-weight: 800"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">credit_card</span>PAGADO EN LÍNEA (WEBPAY)</span>
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: #EAF4FF; color: #0565C2; font-size: 11px; font-weight: 800"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">account_balance</span>TRANSFERENCIA</span>
+      </div>
+      <span style="font-size: 11px; font-weight: 800; color: #4A556D">Aviso de modo de prueba</span>
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; padding: 9px 14px; border-radius: 10px; background: #FFF3E4; color: #9A4E00; font-size: 12px"><b style="display: inline-flex; align-items: center; gap: 6px; letter-spacing: .06em"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">science</span>MODO DE PRUEBA</b><span>No se cobra dinero real</span></div>
+      <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">Pagado en verde, por resolver en ámbar, vencido o rechazado en rojo, programado y anulado en gris. El morado nunca marca un estado de cobro.</p>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const open = s.open ?? true, cop = !!s.cop;
+    const chip = (bg, fg) => 'display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .03em; background: ' + bg + '; color: ' + fg + ';';
+    const ok = ['#E8F6EF', '#12704C'], wa = ['#FFF3E4', '#9A4E00'], da = ['#FDEDEB', '#A92C23'], gr = ['#EEF1F6', '#5A6478'];
+    return {
+      secOpen: open, secChev: open ? 'expand_less' : 'expand_more', tSec: () => this.setState({ open: !open }),
+      copIc: cop ? 'check' : 'content_copy', copT: cop ? 'Copiada' : 'Copiar', copiar: () => this.setState({ cop: true }),
+      barras: [['Usuarios', 9, 15, 'Bajo 80 %: turquesa'], ['Almacenamiento', 41, 50, 'Desde 80 %: ámbar y número ámbar'], ['Plantas', 3, 3, 'En el tope: ámbar']].map(([t, v, max, nota]) => {
+        const pct = Math.round(v / max * 100), hi = pct >= 80;
+        return { t, nota, v: v + ' de ' + max, barSt: 'display: block; height: 100%; width: ' + pct + '%; border-radius: 999px; background: ' + (hi ? '#B65C00' : '#16C6C9') + ';', nSt: 'font-weight: 800; color: ' + (hi ? '#9A4E00' : '#17223B') + ';' };
+      }),
+      chips: [['PAGADO EN LÍNEA', ok, 'credit_card'], ['TRANSFERENCIA VERIFICADA', ok, 'account_balance'], ['POR VERIFICAR', wa, 'pending_actions'], ['PENDIENTE', wa, 'schedule'], ['EN MORA', da, 'warning'], ['RECHAZADO', da, 'block'], ['PROGRAMADO', gr, 'event'], ['ANULADO', gr, 'cancel']].map(([t, c, ic]) => ({ t, ic, st: chip(c[0], c[1]) }))
+    };
+  }
+}
+</script>
+</body>
+</html>

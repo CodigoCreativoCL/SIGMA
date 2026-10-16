@@ -1,0 +1,222 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Reunión con el lead</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: #FFFFFF; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <div style="flex: 0 0 auto; padding: 16px 22px 14px; border-bottom: 1px solid #E2E7F0; display: flex; flex-direction: column; gap: 6px">
+    <button type="button" onClick="{{close}}" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border: 0; border-radius: 8px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">arrow_back</span>Volver a la ficha</button>
+    <span style="font-size: 12px; color: #68738A; padding-top: 4px">{{code}} · {{lead.emp}}</span>
+    <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">{{titulo}}</h2>
+      <sc-if value="{{registrar}}" hint-placeholder-val="{{false}}">
+        <span style="display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; background: #EAF4FF; color: #0565C2; font-size: 11px; font-weight: 800">JUE 23/10 · 10:00 · JITSI MEET</span>
+      </sc-if>
+    </div>
+  </div>
+
+  <!-- ===== AGENDAR ===== -->
+  <sc-if value="{{agendar}}" hint-placeholder-val="{{true}}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 18px">
+      <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr) minmax(0, 1.2fr); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Fecha</span>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px; color: #6732F4" aria-hidden="true">calendar_month</span>jue 23/10/2026</button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Hora</span>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px; color: #68738A" aria-hidden="true">schedule</span>10:00<span style="flex: 1"></span><span class="material-symbols-rounded" style="font-size: 18px; color: #68738A" aria-hidden="true">expand_more</span></button>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Duración</span>
+          <div role="group" aria-label="Duración" style="display: flex; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px">
+            <sc-for list="{{durs}}" as="d" hint-placeholder-count="3"><button type="button" onClick="{{d.go}}" style="{{d.st}}">{{d.t}}</button></sc-for>
+          </div>
+        </div>
+      </div>
+
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Participantes</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 8px; padding: 8px; border: 1px solid #CFD6E3; border-radius: 9px">
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 4px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 12px; font-weight: 700"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">JP</span>Juan Pérez<span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">close</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 6px 0 4px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 12px; font-weight: 700"><span style="width: 22px; height: 22px; border-radius: 50%; background: #FFFFFF; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">PL</span>Pedro Lagos<span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">close</span></span>
+          <span style="display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px; color: #68738A; font-size: 12px"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">person_add</span>Agregar por nombre o correo</span>
+        </div>
+        <span style="font-size: 12px; color: #68738A">Organiza: Camila Rojas · también te llega la invitación.</span>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Dónde</span>
+        <div role="tablist" aria-label="Dónde" style="display: inline-flex; align-self: flex-start; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px">
+          <sc-for list="{{lugares}}" as="l" hint-placeholder-count="3"><button type="button" onClick="{{l.go}}" style="{{l.st}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{l.ic}}</span>{{l.t}}</button></sc-for>
+        </div>
+        <sc-if value="{{isLink}}" hint-placeholder-val="{{true}}">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Sala de Jitsi Meet (gratis)</span>
+            <div style="display: flex; gap: 8px">
+              <input type="url" value="{{enlace}}" onChange="{{setEnlace}}" placeholder="Pega el enlace de Meet, Zoom u otro" aria-label="Enlace de la videollamada" style="flex: 1; min-width: 0; height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 13px; color: #17223B">
+              <button type="button" onClick="{{generar}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 12px; border: 0; border-radius: 10px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; white-space: nowrap"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">autorenew</span>Nueva sala</button>
+            </div>
+            <span style="font-size: 12px; color: #68738A; line-height: 1.5">SIGMA crea una sala de Jitsi Meet para esta reunión: el cliente entra desde el navegador, sin cuenta ni instalar nada. Para abrir la sala, quien organiza inicia sesión en Jitsi (por ejemplo, con Google). ¿Prefieres Meet o Zoom? Pega su enlace aquí.</span>
+          </div>
+        </sc-if>
+        <sc-if value="{{isTel}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; gap: 10px; padding: 12px 14px; border-radius: 10px; background: #F4F6FA; font-size: 13px; line-height: 1.5"><span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">call</span><span>Llamarás a Juan Pérez al <b>+56 9 8765 4321</b>. La invitación queda en su calendario igual.</span></div>
+        </sc-if>
+        <sc-if value="{{isPres}}" hint-placeholder-val="{{false}}">
+          <label style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Dirección</span>
+            <input type="text" placeholder="Planta Renca, Av. … " style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B">
+          </label>
+        </sc-if>
+      </section>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Motivo (va en el correo)</span>
+        <textarea rows="3" style="box-sizing: border-box; padding: 10px 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; line-height: 1.5; color: #17223B; resize: vertical">Revisar cómo les fue con la demo y conversar la propuesta.</textarea>
+      </label>
+
+      <div style="border: 1px solid #E2E7F0; border-radius: 12px; overflow: hidden">
+        <div style="padding: 10px 14px; background: #F4F6FA; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #4A556D">Vista previa del correo</div>
+        <div style="padding: 12px 14px; display: grid; grid-template-columns: 70px minmax(0, 1fr); gap: 6px 10px; font-size: 13px">
+          <span style="color: #68738A">Para</span><span>juan.perez@hamburgo.cl, pedro.lagos@hamburgo.cl</span>
+          <span style="color: #68738A">Asunto</span><b>Reunión SIGMA · Hamburgo S.A. · jue 23/10 10:00</b>
+          <span style="color: #68738A">Adjunto</span><span style="display: inline-flex; align-items: center; gap: 6px"><span class="material-symbols-rounded" style="font-size: 18px; color: #087BEA" aria-hidden="true">event</span>invitacion.ics (se agrega a su calendario)</span>
+        </div>
+      </div>
+    </div>
+    <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-top: 1px solid #E2E7F0">
+      <button type="button" onClick="{{close}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button>
+      <span style="flex: 1"></span>
+      <button type="button" onClick="{{enviar}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">send</span>Enviar invitación</button>
+    </div>
+  </sc-if>
+
+  <!-- ===== REGISTRAR (después de la reunión) ===== -->
+  <sc-if value="{{registrar}}" hint-placeholder-val="{{false}}">
+    <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 18px">
+      <section style="border: 1px solid #E2E7F0; border-radius: 12px; overflow: hidden">
+        <div style="display: flex; align-items: center; gap: 10px; padding: 12px 14px; background: #F4F6FA">
+          <span class="material-symbols-rounded" style="font-size: 20px; color: #007F8A" aria-hidden="true">edit_note</span>
+          <b style="flex: 1; font-size: 13px">Notas o transcripción (opcional, pegada)</b>
+          <span style="font-size: 12px; color: #68738A">32 min · 3 participantes</span>
+        </div>
+        <ol style="list-style: none; margin: 0; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; max-height: 210px; overflow-y: auto">
+          <sc-for list="{{tr}}" as="t" hint-placeholder-count="4">
+            <li style="display: flex; flex-direction: column; gap: 2px">
+              <span style="display: flex; align-items: center; gap: 6px; font-size: 12px"><span style="{{t.dotSt}}"></span><b>{{t.who}}</b><span style="color: #68738A; font-variant-numeric: tabular-nums">{{t.h}}</span></span>
+              <span style="font-size: 13px; line-height: 1.5; color: #232B40">{{t.txt}}</span>
+            </li>
+          </sc-for>
+        </ol>
+        <div style="padding: 10px 14px; border-top: 1px solid #E2E7F0; font-size: 12px; color: #68738A">Si tu herramienta entrega transcripción, pégala aquí; si no, basta con tus notas.</div>
+      </section>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Resumen</span>
+        <textarea rows="3" style="box-sizing: border-box; padding: 10px 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; line-height: 1.5; color: #17223B; resize: vertical">La demo funcionó: cargaron 7 activos y cierran OT desde el celular. Lo más valorado: las programaciones. Objeción: precio de lista.</textarea>
+      </label>
+
+      <section style="display: flex; flex-direction: column; gap: 8px">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Acuerdos</span>
+        <sc-for list="{{acuerdos}}" as="a" hint-placeholder-count="2">
+          <button type="button" onClick="{{a.go}}" style="display: flex; align-items: center; gap: 10px; padding: 9px 12px; border: 1px solid #E2E7F0; border-radius: 10px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; text-align: left; cursor: pointer"><span class="material-symbols-rounded" style="{{a.icSt}}" aria-hidden="true">{{a.ic}}</span>{{a.t}}</button>
+        </sc-for>
+        <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 700; color: #0565C2"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">add</span>Agregar acuerdo</span>
+      </section>
+
+      <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Objeción principal</span>
+          <div style="display: flex; flex-wrap: wrap; gap: 6px">
+            <sc-for list="{{objs}}" as="o" hint-placeholder-count="4"><button type="button" onClick="{{o.go}}" style="{{o.st}}">{{o.t}}</button></sc-for>
+          </div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Próxima acción</span>
+          <button type="button" style="display: flex; align-items: center; gap: 8px; height: 42px; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; text-align: left"><span class="material-symbols-rounded" style="font-size: 18px; color: #6732F4" aria-hidden="true">call</span>Llamada de cierre · jue 29/10</button>
+        </div>
+      </section>
+
+      <section style="display: flex; flex-direction: column; gap: 8px; padding: 14px; border-radius: 12px; background: #F4F6FA">
+        <span style="font-size: 11px; font-weight: 800; color: #4A556D">Datos para la propuesta</span>
+        <div style="display: flex; flex-wrap: wrap; gap: 6px">
+          <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 11px; font-weight: 800">DESCUENTO 10 %</span>
+          <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 11px; font-weight: 800">VIGENCIA 12 MESES</span>
+          <span style="display: inline-flex; align-items: center; height: 24px; padding: 0 10px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 11px; font-weight: 800">+ INSPECCIÓN</span>
+        </div>
+        <button type="button" onClick="{{aplicar}}" style="{{aplicarSt}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{aplicarIc}}</span>{{aplicarT}}</button>
+      </section>
+      <p style="margin: 0; font-size: 12px; color: #68738A; line-height: 1.5">El resumen automático con SIGMA AI queda para cuando se active SIGMA AI Chat (tiene costo por uso). Mientras, el resumen y los acuerdos se completan a mano.</p>
+    </div>
+    <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-top: 1px solid #E2E7F0">
+      <button type="button" onClick="{{close}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button>
+      <span style="flex: 1"></span>
+      <button type="button" onClick="{{save}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">save</span>Guardar en la ficha</button>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"fase":{"editor":"enum","options":["agendar","registrar"],"default":"agendar"},"lead":{"editor":null},"ancho":{"editor":null,"default":"600px"},"alto":{"editor":null,"default":"1000px"},"onClose":{"editor":null},"onSend":{"editor":null},"onSave":{"editor":null},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const lead = p.lead || { id: 'L-0142', emp: 'Hamburgo S.A.' };
+    const fase = p.fase === 'registrar' ? 'registrar' : 'agendar';
+    const seg = (on) => 'display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; height: 32px; padding: 0 12px; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; ' + (on ? 'background: #FFFFFF; color: #5426D9; box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: #4A556D;');
+    const dur = s.dur ?? 30;
+    const lugar = s.lugar ?? 'link';
+    const enlace = s.enlace ?? 'https://meet.jit.si/SIGMA-Hamburgo-7Q4K2M';
+    const C = { cr: '#6732F4', jp: '#16C6C9', pl: '#087BEA' };
+    const line = (k, who, h, txt) => ({ who, h, txt, dotSt: 'width: 8px; height: 8px; border-radius: 50%; background: ' + C[k] + ';' });
+    const ac = s.ac || { a: true, b: true };
+    const obj = s.obj ?? 'Precio';
+    const ap = !!s.ap;
+    return {
+      ancho: p.ancho ?? '600px', alto: p.alto ?? '1000px',
+      lead, code: (lead.id || 'L-0142').replace('L-', 'LEAD-'),
+      agendar: fase === 'agendar', registrar: fase === 'registrar',
+      titulo: fase === 'agendar' ? 'Agendar reunión' : 'Registrar reunión',
+      durs: [30, 45, 60].map(d => ({ t: d + ' min', st: seg(d === dur), go: () => this.setState({ dur: d }) })),
+      lugares: [['link', 'videocam', 'Videollamada'], ['pres', 'location_on', 'Presencial'], ['tel', 'call', 'Teléfono']].map(([k, ic, t]) => ({ ic, t, st: seg(k === lugar), go: () => this.setState({ lugar: k }) })),
+      isLink: lugar === 'link', isPres: lugar === 'pres', isTel: lugar === 'tel',
+      enlace,
+      setEnlace: (e) => this.setState({ enlace: e.target.value }),
+      generar: () => this.setState({ enlace: 'https://meet.jit.si/SIGMA-Hamburgo-' + Math.random().toString(36).slice(2, 8).toUpperCase() }),
+      tr: [
+        line('cr', 'Camila Rojas', '10:02', 'Juan, gracias por el tiempo. ¿Cómo les fue con la demo?'),
+        line('jp', 'Juan Pérez', '10:02', 'Bien. Cargamos los siete activos de la línea 1 y los técnicos ya cierran OT desde el celular.'),
+        line('pl', 'Pedro Lagos', '10:03', 'Lo que más nos sirvió fueron las programaciones.'),
+        line('jp', 'Juan Pérez', '10:05', 'El precio de lista se nos escapa. ¿Hay margen si firmamos por un año?'),
+        line('cr', 'Camila Rojas', '10:05', 'Con 12 meses puedo dejar la mensualidad con un 10 % de descuento.')
+      ],
+      acuerdos: [['a', '10 % de descuento sobre la mensualidad con 12 meses de vigencia'], ['b', 'Enviar hoy la propuesta actualizada con Inspección']].map(([k, t]) => ({ t,
+        ic: ac[k] ? 'check_box' : 'check_box_outline_blank', icSt: 'font-size: 20px; color: ' + (ac[k] ? '#6732F4' : '#68738A') + ';',
+        go: () => this.setState({ ac: { ...ac, [k]: !ac[k] } }) })),
+      objs: ['Precio', 'Plazo', 'Funcionalidad', 'Otra'].map(t => ({ t, go: () => this.setState({ obj: t }),
+        st: 'height: 30px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; ' + (t === obj ? 'border: 1px solid #6732F4; background: #F2EFFF; color: #5426D9;' : 'border: 1px solid #CFD6E3; background: #FFFFFF; color: #4A556D;') })),
+      aplicarT: ap ? 'Aplicado a la propuesta' : 'Aplicar a la propuesta', aplicarIc: ap ? 'check' : 'input',
+      aplicarSt: 'align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; opacity: ' + (ap ? '.7' : '1') + ';',
+      aplicar: () => this.setState({ ap: true }),
+      close: () => { if (p.onClose) p.onClose(); },
+      enviar: () => { if (p.onSend) p.onSend(); },
+      save: () => { if (p.onSave) p.onSave(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

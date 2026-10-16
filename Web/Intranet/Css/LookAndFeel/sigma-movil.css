@@ -1,0 +1,137 @@
+﻿/* =============================================================
+   SIGMA - PULIDO MOVIL (16-10-2026)
+   Hoja unica de ajustes tactiles que aplican bajo 992 px.
+   Se carga DESPUES de sigma-layout.css y de las hojas de cada pantalla.
+   ============================================================= */
+
+@media (max-width: 991.98px) {
+
+    /* El backdrop-filter convierte a la barra en el "bloque contenedor" de
+       todo lo fixed que lleva dentro: el panel de notificaciones (una hoja
+       inferior fixed; bottom:0) quedaba anclado a los 70 px de la barra y
+       salia de pantalla por arriba. En movil la barra va opaca. */
+    .navbar-custom {
+        background: #fff;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+
+    /* Que el boton flotante (SIGMA AI) no tape el final del contenido. */
+    .content-page {
+        padding-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Tablas Telerik: se desplazan en horizontal dentro de su tarjeta en
+       vez de cortar columnas (p. ej. «VER» en Accesos). */
+    .RadGrid, .RadGrid .rgDataDiv, .RadGrid_Default {
+        overflow-x: auto !important;
+        -webkit-overflow-scrolling: touch;
+        max-width: 100%;
+    }
+
+
+    /* Separadores de Telerik (arbol + grilla): su ancho lo fija el script
+       con el del contenedor y en un telefono dejan la grilla en 210 px.
+       Se les da un ancho de trabajo y el .table-responsive que los envuelve
+       los desplaza en horizontal. */
+    .table-responsive > .RadSplitter,
+    .table-responsive > div > .RadSplitter,
+    .table-responsive .RadSplitter {
+        min-width: 640px;
+    }
+    .RadSplitter [id*="RAD_SPLITTER_PANE_CONTENT"],
+    .RadSplitter [id*="RAD_SPLITTER_PANE_CONTENT"] > .RadGrid {
+        width: 100% !important;
+    }
+
+
+    /* La celda de comandos abarca todo el ancho de la tabla (mas ancha que
+       la pantalla) y el boton «Nuevo» se estiraba con ella: su rotulo
+       quedaba centrado fuera de la vista. El boton toma su propio ancho y
+       se queda a la izquierda aunque la tabla se desplace. */
+    .RadGrid .rgCommandCell > div,
+    .RadGrid .rgCommandCell > div > a {
+        width: auto !important;
+        max-width: 100%;
+    }
+    .RadGrid .rgCommandCell > div {
+        position: sticky;
+        left: 0;
+        display: inline-block;
+    }
+
+    /* Objetivos tactiles: minimo ~36 px en lo que se toca en listas. */
+    .RadGrid input[type="checkbox"],
+    .RadGrid input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        margin: 8px;
+    }
+    .RadGrid td > a,
+    .RadGrid td > input[type="image"],
+    .RadGrid .rgEditRow a {
+        display: inline-block;
+        min-width: 36px;
+        min-height: 36px;
+        line-height: 36px;
+        text-align: center;
+    }
+    .RadGrid .rgPager a,
+    .RadGrid .rgPager input[type="button"] {
+        min-width: 38px;
+        min-height: 38px;
+    }
+    .sg-arbol-toggle {
+        min-width: 36px;
+        min-height: 36px;
+    }
+    .sg-arbol-fila a,
+    [id$="lnkEditar"],
+    [id$="lnkEliminar"] {
+        min-width: 36px;
+        min-height: 36px;
+    }
+
+
+    /* Hoja de notificaciones: una regla heredada daba height:100% a cada
+       bloque del panel (cabecera, chips, pie = 724 px cada uno) y el
+       cuerpo quedaba aplastado. Cada bloque toma su alto; el cuerpo, el resto. */
+    .sg-notif-panel[data-np].show > * {
+        height: auto !important;
+    }
+    .sg-notif-panel[data-np].show > .np-cuerpo {
+        flex: 1 1 auto;
+        min-height: 120px;
+        overflow-y: auto;
+    }
+    .sg-notif-panel[data-np].show > .sg-notif-pie {
+        margin-top: auto;
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+
+    /* El lanzador de SIGMA AI sube sobre la barra inferior de Soporte (la
+       quinta pestana quedaba tapada) y baja de capa con el cajon abierto. */
+    body:has(.sgs-bnav) .sgl {
+        bottom: calc(84px + env(safe-area-inset-bottom, 0px));
+    }
+    body.sidebar-enable .sgl {
+        z-index: 1030;
+    }
+
+    /* Campos a 16 px: por debajo, iOS hace zoom al enfocarlos. */
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="button"]):not([type="submit"]),
+    select,
+    textarea {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 575.98px) {
+    /* Hojas inferiores y cajones: nunca mas anchos que la pantalla. */
+    .sgx-drawer,
+    .sg-drawer,
+    [class*="-drawer"] {
+        max-width: 100vw;
+    }
+}

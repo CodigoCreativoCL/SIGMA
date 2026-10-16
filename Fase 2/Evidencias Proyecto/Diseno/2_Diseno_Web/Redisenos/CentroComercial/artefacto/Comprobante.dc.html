@@ -1,0 +1,95 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Comprobante de pago PAG-0046</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="position: relative; width: 816px; height: 1056px; box-sizing: border-box; padding: 56px 64px; background: #FFFFFF; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 12px; overflow: hidden; display: flex; flex-direction: column; gap: 26px">
+
+  <sc-if value="{{prueba}}" hint-placeholder-val="{{true}}">
+    <div aria-hidden="true" style="position: absolute; top: 470px; left: -40px; width: 900px; transform: rotate(-24deg); text-align: center; font-size: 76px; font-weight: 800; letter-spacing: .08em; color: rgba(182,92,0,.09)">MODO DE PRUEBA</div>
+  </sc-if>
+
+  <header style="display: flex; justify-content: space-between; align-items: flex-start; gap: 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <span style="font-size: 26px; font-weight: 800; letter-spacing: .14em; color: #17223B">SIGMA</span>
+      <span style="font-size: 11px; color: #68738A; line-height: 1.6">Código Creativo SpA · RUT [RUT de Código Creativo]<br>Santiago, Chile · comercial@codigocreativo.cl</span>
+    </div>
+    <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px; text-align: right">
+      <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">Comprobante de pago</span>
+      <span style="font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums">PAG-0046</span>
+      <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 10px; border-radius: 999px; background: #E8F6EF; color: #12704C; font-size: 11px; font-weight: 800">PAGADO</span>
+    </div>
+  </header>
+
+  <sc-if value="{{prueba}}" hint-placeholder-val="{{true}}">
+    <div style="padding: 8px 12px; border-radius: 8px; background: #FFF3E4; color: #9A4E00; font-size: 11px; font-weight: 700">MODO DE PRUEBA · Este comprobante corresponde a una transacción de integración de Webpay. No se cobró dinero real.</div>
+  </sc-if>
+
+  <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; padding: 18px 20px; border-radius: 12px; background: #F4F6FA">
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #68738A">Cliente</span>
+      <b style="font-size: 14px">Hamburgo S.A.</b>
+      <span style="line-height: 1.6; color: #4A556D">RUT 96.512.340-K<br>Juan Pérez · juan.perez@hamburgo.cl</span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #68738A">Suscripción</span>
+      <b style="font-size: 14px">SUS-0012 · Plan Full · mensual</b>
+      <span style="line-height: 1.6; color: #4A556D">Acceso pagado hasta el 01/11/2026<br>Fecha de pago: 02/10/2026 20:53</span>
+    </div>
+  </section>
+
+  <table style="width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums">
+    <thead>
+      <tr style="text-align: left; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #68738A">
+        <th style="padding: 8px 6px; border-bottom: 1.5px solid #17223B">Concepto</th>
+        <th style="padding: 8px 6px; border-bottom: 1.5px solid #17223B">Período</th>
+        <th style="padding: 8px 6px; border-bottom: 1.5px solid #17223B; text-align: right">UF</th>
+        <th style="padding: 8px 6px; border-bottom: 1.5px solid #17223B; text-align: right">Valor UF</th>
+        <th style="padding: 8px 6px; border-bottom: 1.5px solid #17223B; text-align: right">Monto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0"><b>Implementación</b><br><span style="color: #68738A">PER-0030 · cobro único</span></td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0">—</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right">30,00</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right">$40.871,14</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right; font-weight: 700">$1.226.134</td></tr>
+      <tr><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0"><b>Mensualidad plan Full</b><br><span style="color: #68738A">PER-0031</span></td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0">02/10/2026 al 01/11/2026</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right">45,00</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right">$40.871,14</td><td style="padding: 12px 6px; border-bottom: 1px solid #E2E7F0; text-align: right; font-weight: 700">$1.839.201</td></tr>
+      <tr><td colspan="4" style="padding: 14px 6px 0; text-align: right; font-size: 13px; font-weight: 800">Total pagado</td><td style="padding: 14px 6px 0; text-align: right; font-size: 18px; font-weight: 800">$3.065.335</td></tr>
+    </tbody>
+  </table>
+
+  <section style="display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #68738A">Medio de pago</span>
+    <div style="display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 6px 14px; line-height: 1.5">
+      <span style="color: #68738A">Medio</span><b>Webpay Plus · Transbank</b>
+      <span style="color: #68738A">Tarjeta</span><b>Crédito •••• 6623</b>
+      <span style="color: #68738A">Autorización</span><b>1213</b>
+      <span style="color: #68738A">Orden de compra</span><b>SG4-261002205301</b>
+      <span style="color: #68738A">Verificación</span><b>Automática al recibir la respuesta de Webpay</b>
+    </div>
+  </section>
+
+  <div style="flex: 1"></div>
+
+  <footer style="display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; padding-top: 16px; border-top: 1px solid #E2E7F0; font-size: 10px; line-height: 1.6; color: #68738A">
+    <span>Este comprobante acredita el pago de la suscripción. No reemplaza a la factura electrónica, que se emite por separado.<br>Emitido el 02/10/2026 20:56 · Código de verificación SG4-7F2A-91C0</span>
+    <span style="white-space: nowrap">Página 1 de 1</span>
+  </footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"prueba":{"editor":"boolean","default":true},"$preview":{"width":816,"height":1056}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return { prueba: this.props.prueba ?? true };
+  }
+}
+</script>
+</body>
+</html>

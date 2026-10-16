@@ -1,0 +1,636 @@
+﻿{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "B-Pipeline.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "B · Pipeline (lista)",
+      "w": 1440,
+      "x": 1520,
+      "y": 0,
+      "page": "v1"
+    },
+    "B-Tablero.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "B · Pipeline (tablero)",
+      "w": 1440,
+      "x": 3040,
+      "y": 0,
+      "page": "v1"
+    },
+    "C-Ficha.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "C + E · Ficha del lead con seguimiento de demo",
+      "w": 1440,
+      "x": 0,
+      "y": 1400,
+      "page": "v1"
+    },
+    "Componentes.dc.html": {
+      "h": 1720,
+      "is_interactive": true,
+      "title": "Hoja de componentes",
+      "w": 1440,
+      "x": 0,
+      "y": 4900,
+      "page": "v1"
+    },
+    "CrearDemo.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "Fuente · Crear demo (drawer)",
+      "w": 600,
+      "x": 680,
+      "y": 7200,
+      "page": "v1"
+    },
+    "CrearPropuesta.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "Fuente · Crear propuesta (drawer)",
+      "w": 600,
+      "x": 1360,
+      "y": 7200,
+      "page": "v1"
+    },
+    "D-CrearDemo.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "D · Crear demo",
+      "w": 1440,
+      "x": 1520,
+      "y": 1400,
+      "page": "v1"
+    },
+    "F-Propuesta.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "F · Crear propuesta",
+      "w": 1440,
+      "x": 3040,
+      "y": 1400,
+      "page": "v1"
+    },
+    "Ficha.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "Fuente · Ficha del lead (drawer)",
+      "w": 600,
+      "x": 0,
+      "y": 7200,
+      "page": "v1"
+    },
+    "Firma.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "H · Firma pública (escritorio)",
+      "w": 1440,
+      "x": 0,
+      "y": 2800,
+      "page": "v1"
+    },
+    "G-Contrato.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "G · Contrato en la ficha",
+      "w": 1440,
+      "x": 4560,
+      "y": 1400,
+      "page": "v1"
+    },
+    "H-FirmaMovil.dc.html": {
+      "h": 1700,
+      "is_interactive": true,
+      "title": "H · Firma pública (375 px)",
+      "w": 375,
+      "x": 1520,
+      "y": 2800,
+      "page": "v1"
+    },
+    "I-EstadosFirma.dc.html": {
+      "h": 1160,
+      "title": "I · Estados de la firma",
+      "w": 1440,
+      "x": 1975,
+      "y": 2800,
+      "page": "v1"
+    },
+    "J-Clave.dc.html": {
+      "h": 900,
+      "is_interactive": true,
+      "title": "J · Cambio obligatorio de contraseña",
+      "w": 1440,
+      "x": 3495,
+      "y": 2800,
+      "page": "v1"
+    },
+    "K-Clientes.dc.html": {
+      "h": 1000,
+      "is_interactive": true,
+      "title": "K · Clientes",
+      "w": 1440,
+      "x": 4560,
+      "y": 0,
+      "page": "v1"
+    },
+    "L-Correos.dc.html": {
+      "h": 1900,
+      "title": "L · Correos HTML (5)",
+      "w": 1960,
+      "x": 1520,
+      "y": 4900,
+      "page": "v1"
+    },
+    "Main.dc.html": {
+      "expand": "fill",
+      "h": 1000,
+      "is_interactive": true,
+      "title": "A · Resumen",
+      "w": 1440,
+      "x": 0,
+      "y": 0,
+      "page": "v1"
+    },
+    "Reunion.dc.html": {
+      "x": 2040,
+      "y": 7200,
+      "w": 600,
+      "h": 1000,
+      "title": "Fuente · Reunión: agendar y registrar (drawer)",
+      "is_interactive": true,
+      "page": "v1"
+    },
+    "M-Reunion.dc.html": {
+      "x": 0,
+      "y": 8700,
+      "w": 1440,
+      "h": 1000,
+      "title": "M · Agendar reunión (Jitsi Meet + invitación por correo)",
+      "is_interactive": true,
+      "page": "v1"
+    },
+    "M-Resumen.dc.html": {
+      "x": 1520,
+      "y": 8700,
+      "w": 1440,
+      "h": 1000,
+      "title": "M · Registrar reunión (notas y acuerdos)",
+      "is_interactive": true,
+      "page": "v1"
+    },
+    "S1-Suscripcion.dc.html": {
+      "x": 0,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "Suscripciones › lista con chips de cobro + drawer Suscripción",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S2-Periodo.dc.html": {
+      "x": 1520,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "Períodos › drawer Período emitido",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S3-PorVerificar.dc.html": {
+      "x": 3040,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "P7 · Pagos › Por verificar + drawer Verificar transferencia",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S4-Plan.dc.html": {
+      "x": 4560,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "Planes › drawer Plan (760 px)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S5-Cliente.dc.html": {
+      "x": 6080,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "Clientes › drawer Cliente",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S6-NuevoLead.dc.html": {
+      "x": 7600,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "Nuevo lead",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "S7-Resumen.dc.html": {
+      "x": 9120,
+      "y": 0,
+      "w": 1440,
+      "h": 1000,
+      "title": "P8 · Resumen con alertas de cobro",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "DSuscripcion.dc.html": {
+      "x": 0,
+      "y": 1400,
+      "w": 600,
+      "h": 1000,
+      "title": "Suscripción",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "DPeriodo.dc.html": {
+      "x": 680,
+      "y": 1400,
+      "w": 600,
+      "h": 1000,
+      "title": "Período de cobro",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "DPago.dc.html": {
+      "x": 1360,
+      "y": 1400,
+      "w": 760,
+      "h": 1000,
+      "title": "Pago · verificar (760 px)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "DPlan.dc.html": {
+      "x": 2200,
+      "y": 1400,
+      "w": 760,
+      "h": 1000,
+      "title": "Plan comercial (760 px)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "DCliente.dc.html": {
+      "x": 3040,
+      "y": 1400,
+      "w": 600,
+      "h": 1000,
+      "title": "Cliente (empresa)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "NuevoLead.dc.html": {
+      "x": 3720,
+      "y": 1400,
+      "w": 600,
+      "h": 1000,
+      "title": "Nuevo lead",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "MiSuscripcion.dc.html": {
+      "x": 4400,
+      "y": 1400,
+      "w": 600,
+      "h": 1000,
+      "title": "P6 · Mi suscripción (administrador del cliente)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "EstadosDrawers.dc.html": {
+      "x": 5080,
+      "y": 1400,
+      "w": 3880,
+      "h": 1100,
+      "title": "Estados: cambiar plan · clave emitida · emitir período · informar pago · corregir pago · pago Webpay",
+      "page": "v2"
+    },
+    "FichaEtapas.dc.html": {
+      "x": 0,
+      "y": 2900,
+      "w": 4536,
+      "h": 1100,
+      "title": "Ficha del lead: lead · demo · propuesta · contrato · cliente · marcar perdido · perdido",
+      "page": "v2"
+    },
+    "P2-Firmado.dc.html": {
+      "x": 0,
+      "y": 4400,
+      "w": 1440,
+      "h": 1000,
+      "title": "P2 · Contrato firmado → Pagar ahora",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "PagoPublico.dc.html": {
+      "x": 1520,
+      "y": 4400,
+      "w": 1440,
+      "h": 1000,
+      "title": "P3 · Página de pago (modo de prueba)",
+      "expand": "fill",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "P3-Produccion.dc.html": {
+      "x": 3040,
+      "y": 4400,
+      "w": 1440,
+      "h": 1000,
+      "title": "P3 · Página de pago (producción)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "P3-Movil.dc.html": {
+      "x": 4560,
+      "y": 4400,
+      "w": 375,
+      "h": 1500,
+      "title": "P3 · Página de pago (375 px)",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "P3-Estados.dc.html": {
+      "x": 5015,
+      "y": 4400,
+      "w": 1440,
+      "h": 2100,
+      "title": "P3 · Estados del pago",
+      "page": "v2"
+    },
+    "Comprobante.dc.html": {
+      "x": 6535,
+      "y": 4400,
+      "w": 816,
+      "h": 1056,
+      "title": "P5 · Comprobante de pago (PDF carta)",
+      "page": "v2"
+    },
+    "CorreosCobro.dc.html": {
+      "x": 0,
+      "y": 6460,
+      "w": 1960,
+      "h": 2760,
+      "title": "P1 + P4 · Correos de cobro y comprobante",
+      "page": "v2"
+    },
+    "DrawerComponentes.dc.html": {
+      "x": 2040,
+      "y": 6460,
+      "w": 1440,
+      "h": 1700,
+      "title": "Hoja de componentes del drawer",
+      "is_interactive": true,
+      "page": "v2"
+    },
+    "P3-USD.dc.html": {
+      "x": 7971,
+      "y": 4400,
+      "w": 1440,
+      "h": 1000,
+      "title": "P3 · Página de pago · cliente fuera de Chile (USD)",
+      "is_interactive": true,
+      "page": "v2"
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-15T23:50:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "view": "canvas",
+    "page": "v2"
+  },
+  "notes": {
+    "n1": {
+      "size": 24,
+      "page": "v1",
+      "text": "Qué abre cada clic\n\n• KPI (Leads, Demos, Propuestas, Contratos) → Pipeline filtrado por ese estado. Concretados → pestaña Clientes.\n• Ítem de «Requiere atención» → ficha del lead en drawer (1 clic).\n• Fila o tarjeta del pipeline → ficha del lead; la lista queda visible detrás.\n• Chips de estado → filtran al instante; el contador no cambia.\n• Lista / Tablero → misma data, otra vista; se recuerda por usuario.\n• Nuevo lead → drawer de alta manual (mismo patrón que Crear demo).",
+      "w": 420,
+      "x": 6080,
+      "y": 0
+    },
+    "n2": {
+      "size": 24,
+      "page": "v1",
+      "text": "Ficha del lead\n\n• Stepper Lead → Demo → Propuesta → Contrato → Cliente: marca dónde está y qué falta.\n• Una sola acción morada, según el estado: Crear demo · Crear propuesta · Generar contrato · Reenviar para firma.\n• Las secciones Demo, Propuesta y Contrato aparecen solo cuando existen; la del estado actual viene abierta.\n• Crear demo / Crear propuesta reemplazan la ficha con «Volver a la ficha»; al confirmar, vuelve a la ficha y la lista se actualiza.\n• «Agregar actividad» vive en el timeline: tipo + texto + Registrar, sin modal.\n• Marcar perdido (rojo) pide motivo en línea antes de confirmar.",
+      "w": 420,
+      "x": 6080,
+      "y": 1400
+    },
+    "n4": {
+      "size": 24,
+      "page": "v1",
+      "text": "Firma pública\n\n• Sin sidebar ni menú: una sola tarea.\n• «Firmar contrato» se habilita al aceptar los términos.\n• Al firmar: se registra hash SHA-256 del PDF, IP y navegador; el cliente ve el estado Firmado y recibe el PDF por correo.\n• Enlace vencido, ya usado o inválido muestran un estado propio con la salida correcta (pedir nuevo enlace, descargar copia, revisar el enlace).\n\nCambio de contraseña\n\n• Las reglas se marcan en vivo; «Guardar y entrar» se habilita solo cuando se cumplen todas. No hay forma de saltar el paso.",
+      "w": 420,
+      "x": 5015,
+      "y": 2800
+    },
+    "n5": {
+      "size": 24,
+      "page": "v1",
+      "text": "Correos\n\n• 600 px, fondo blanco, un solo botón morado por correo, sin imágenes pesadas (solo el logo).\n• El botón siempre lleva a una pantalla con contexto: Centro Comercial, login de la demo o página de firma.",
+      "w": 420,
+      "x": 3560,
+      "y": 4900
+    },
+    "t1": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 6000,
+      "text": "Centro Comercial · un solo menú, tres pestañas",
+      "w": 240,
+      "x": 0,
+      "y": -280
+    },
+    "t2": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 6000,
+      "text": "Ficha del lead · todo en drawer, sin modales",
+      "w": 240,
+      "x": 0,
+      "y": 1120
+    },
+    "t4": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 4935,
+      "text": "Firma pública y primer ingreso",
+      "w": 240,
+      "x": 0,
+      "y": 2520
+    },
+    "t5": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 3480,
+      "text": "Componentes nuevos y correos",
+      "w": 240,
+      "x": 0,
+      "y": 4620
+    },
+    "t6": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 3000,
+      "text": "Drawers por separado (fuente reutilizable)",
+      "w": 240,
+      "x": 0,
+      "y": 6920
+    },
+    "t7": {
+      "kind": "title1",
+      "page": "v1",
+      "maxW": 2960,
+      "text": "Reuniones sin costo: invitación por correo y registro en la ficha",
+      "x": 0,
+      "y": 8420
+    },
+    "n6": {
+      "size": 24,
+      "page": "v1",
+      "w": 440,
+      "x": 3040,
+      "y": 8700,
+      "text": "Reuniones con Jitsi Meet (sin costo)\n\n• «Agendar reunión» en la ficha: fecha con el calendario SIGMA, participantes y dónde (videollamada, presencial o teléfono). Envía a cada participante un correo con .ics para su calendario.\n• Videollamada = Jitsi Meet: SIGMA crea una sala única (meet.jit.si/SIGMA-…) al abrir el drawer; «Nueva sala» la cambia. Si prefieren Meet o Zoom, se pega ese enlace en el mismo campo.\n• El cliente entra desde el navegador, sin cuenta. Para abrir la sala, quien organiza inicia sesión en Jitsi.\n• «Registrar reunión»: notas (o transcripción pegada), resumen, acuerdos, objeción, próxima acción y datos para la propuesta. «Aplicar a la propuesta» precarga descuento, vigencia y módulos.\n• Sin Teams, sin video incrustado y sin resumen automático: todo eso tiene costo."
+    },
+    "v2t1": {
+      "kind": "title1",
+      "page": "v2",
+      "maxW": 10560,
+      "text": "Centro Comercial · todo en drawers nativos, cuatro pestañas",
+      "x": 0,
+      "y": -280
+    },
+    "v2t2": {
+      "kind": "title1",
+      "page": "v2",
+      "maxW": 8960,
+      "text": "Cada drawer y sus estados",
+      "x": 0,
+      "y": 1120
+    },
+    "v2t3": {
+      "kind": "title1",
+      "page": "v2",
+      "maxW": 4536,
+      "text": "Ficha del lead en cada etapa",
+      "x": 0,
+      "y": 2620
+    },
+    "v2t4": {
+      "kind": "title1",
+      "page": "v2",
+      "maxW": 9411,
+      "text": "Cobros y pagos con Webpay",
+      "x": 0,
+      "y": 4120
+    },
+    "v2t5": {
+      "kind": "title1",
+      "page": "v2",
+      "maxW": 3480,
+      "text": "Correos de cobro y componentes",
+      "x": 0,
+      "y": 6180
+    },
+    "v2n1": {
+      "size": 24,
+      "page": "v2",
+      "w": 460,
+      "x": 10640,
+      "y": 0,
+      "fill": "yellow",
+      "text": "Reglas del drawer\n\n• Nada de modales ni iframes: cada ficha antigua (suscripción, período, pago, plan, cliente) es un drawer nativo.\n• 600 px; 760 px solo para Plan (tabla de funcionalidades) y Verificar pago (comprobante al lado de los datos).\n• Cabecera: antetítulo con código · título · chip de estado · cerrar.\n• Cuerpo gris claro con secciones colapsables en tarjetas blancas; la de la tarea actual viene abierta.\n• Barra inferior fija: rojo de contorno (destructivo) · espacio · contorno azul (ver) · una sola acción morada.\n• Cambiar de plan y Reemitir clave no abren otro drawer: se despliegan arriba del mismo, con borde morado."
+    },
+    "v2n2": {
+      "size": 24,
+      "page": "v2",
+      "w": 460,
+      "x": 7431,
+      "y": 4400,
+      "fill": "yellow",
+      "text": "Flujo de pago, sin clics del ejecutivo\n\n1. Al firmar se emiten implementación + primera mensualidad: la página de firma ofrece «Pagar ahora con Webpay».\n2. Página pública de pago → Transbank → vuelve con el resultado.\n3. El pago se verifica solo, se genera el comprobante PDF y el acceso se extiende hasta el fin del mes pagado.\n4. Cada mes se emite el cobro unos días antes y llega el correo con el botón de pago.\n5. Recordatorios: 3 días antes, el día que vence y en mora; cada uno una sola vez.\n6. Todos los correos van al contacto con copia al ejecutivo.\n7. Alternativa: transferencia informada por el cliente → bandeja «Por verificar».\n\nModo de prueba: aviso ámbar discreto con la tarjeta de prueba. En producción desaparece."
+    },
+    "v2n3": {
+      "size": 24,
+      "page": "v2",
+      "w": 460,
+      "x": 11180,
+      "y": 0,
+      "fill": "yellow",
+      "text": "Clientes de otros países\n\n• El país se pregunta al crear el lead y queda en la identidad del cliente (con su identificador: RUT, RUC, NIT, RFC…).\n• El país define la moneda de cobro: Chile → precios en UF, cobro en pesos con la UF del día de emisión. Otro país → precios y cobros en USD.\n• Cada plan tiene precio en UF y precio en USD, ambos versionados.\n• Webpay solo cobra en pesos: los clientes en USD pagan por transferencia internacional y la informan desde la página de pago; la tarjeta en USD queda como «próximamente» hasta elegir un procesador que cobre en dólares.\n• Correos, comprobante y Mi suscripción muestran la moneda del cliente."
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "B-Pipeline.dc.html",
+    "B-Tablero.dc.html",
+    "K-Clientes.dc.html",
+    "C-Ficha.dc.html",
+    "D-CrearDemo.dc.html",
+    "F-Propuesta.dc.html",
+    "G-Contrato.dc.html",
+    "Firma.dc.html",
+    "H-FirmaMovil.dc.html",
+    "I-EstadosFirma.dc.html",
+    "J-Clave.dc.html",
+    "Componentes.dc.html",
+    "L-Correos.dc.html",
+    "Ficha.dc.html",
+    "CrearDemo.dc.html",
+    "CrearPropuesta.dc.html",
+    "Reunion.dc.html",
+    "M-Reunion.dc.html",
+    "M-Resumen.dc.html",
+    "S1-Suscripcion.dc.html",
+    "S2-Periodo.dc.html",
+    "S3-PorVerificar.dc.html",
+    "S4-Plan.dc.html",
+    "S5-Cliente.dc.html",
+    "S6-NuevoLead.dc.html",
+    "S7-Resumen.dc.html",
+    "DSuscripcion.dc.html",
+    "DPeriodo.dc.html",
+    "DPago.dc.html",
+    "DPlan.dc.html",
+    "DCliente.dc.html",
+    "NuevoLead.dc.html",
+    "MiSuscripcion.dc.html",
+    "EstadosDrawers.dc.html",
+    "FichaEtapas.dc.html",
+    "P2-Firmado.dc.html",
+    "PagoPublico.dc.html",
+    "P3-Produccion.dc.html",
+    "P3-Movil.dc.html",
+    "P3-Estados.dc.html",
+    "Comprobante.dc.html",
+    "CorreosCobro.dc.html",
+    "DrawerComponentes.dc.html",
+    "P3-USD.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "v1",
+      "name": "Iteración 1 · flujo comercial"
+    },
+    {
+      "id": "v2",
+      "name": "Iteración 2 · drawers y pagos"
+    }
+  ],
+  "title": "Centro Comercial SIGMA"
+}

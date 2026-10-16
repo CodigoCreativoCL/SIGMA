@@ -1,0 +1,32 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Estados de los drawers</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 3880px; height: 1100px; box-sizing: border-box; padding-top: 30px; background: #FFFFFF; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; display: grid; grid-template-columns: repeat(6, 600px); gap: 0 56px">
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Suscripción · cambiar de plan</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DSuscripcion" modo="plan" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Suscripción · clave reemitida (se ve una vez)</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DSuscripcion" modo="clave-emitida" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Período · emitir</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DPeriodo" modo="emitir" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Pago · informar transferencia</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DPago" modo="informar" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Pago · corregir</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DPago" modo="corregir" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+  <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px"><figcaption style="font-size: 14px; font-weight: 700">Pago · en línea con Webpay (solo lectura)</figcaption><div style="width: 600px; height: 1000px; border-radius: 14px; border: 1px solid #E2E7F0; overflow: hidden"><dc-import name="DPago" modo="webpay" ancho="600px" alto="1000px" hint-size="600px,1000px"></dc-import></div></figure>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":3880,"height":1100}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

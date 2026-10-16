@@ -1,0 +1,105 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Cambia tu contraseña · SIGMA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; display: flex; flex-wrap: wrap; background: #F8F9FC; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <section style="flex: 1 1 480px; min-height: 360px; box-sizing: border-box; background: #0B0F1E; color: #FFFFFF; padding: 56px; display: flex; flex-direction: column; justify-content: space-between; gap: 40px">
+    <img src="/_blob/061d77222d80befc67b3b21c57eba425" alt="SIGMA" style="height: 64px; width: auto; align-self: flex-start">
+    <div style="display: flex; flex-direction: column; gap: 18px; max-width: 460px">
+      <h2 style="margin: 0; font-size: 32px; line-height: 1.2; font-weight: 800; text-wrap: balance">El mantenimiento industrial, bajo control.</h2>
+      <p style="margin: 0; font-size: 15px; line-height: 1.6; color: #B9C0D6">Órdenes de trabajo, activos, checklists, inventario e indicadores en un solo lugar. Del escritorio a la planta, y de vuelta.</p>
+      <ul style="list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; font-size: 14px; color: #E3E7F3">
+        <li style="display: flex; gap: 10px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: #16C6C9"></span>Trabajo planificado y correctivo en un mismo flujo</li>
+        <li style="display: flex; gap: 10px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: #16C6C9"></span>Registro en terreno, incluso sin cobertura</li>
+        <li style="display: flex; gap: 10px; align-items: center"><span style="width: 8px; height: 8px; border-radius: 50%; background: #16C6C9"></span>SIGMA AI para voz, predicción de fallas y recomendaciones</li>
+      </ul>
+    </div>
+    <span style="font-size: 12px; color: #68738A">Código Creativo · SIGMA 2026</span>
+  </section>
+
+  <section style="flex: 1 1 480px; box-sizing: border-box; padding: 48px 24px; display: flex; align-items: center; justify-content: center">
+    <form style="width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 16px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 24px; padding: 0 10px; border-radius: 999px; background: #F2EFFF; color: #5426D9; font-size: 11px; font-weight: 800; letter-spacing: .03em">PRIMER INGRESO</span>
+        <h1 style="margin: 6px 0 0; font-size: 24px; font-weight: 700">Crea tu contraseña</h1>
+        <p style="margin: 0; font-size: 14px; line-height: 1.55; color: #4A556D">Entraste con la clave temporal que enviamos a <b style="color: #17223B">juan.perez@hamburgo.cl</b>. Para seguir, reemplázala por una propia.</p>
+      </div>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 700">Nueva contraseña</span>
+        <span style="position: relative; display: flex">
+          <input type="{{inType}}" value="{{pw}}" onChange="{{setPw}}" autocomplete="new-password" style="flex: 1; height: 46px; box-sizing: border-box; padding: 0 46px 0 14px; border: 1px solid #6732F4; box-shadow: 0 0 0 3px rgba(22,198,201,.27); border-radius: 9px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17223B">
+          <button type="button" aria-label="Mostrar u ocultar contraseña" onClick="{{toggleVer}}" style="position: absolute; right: 6px; top: 6px; width: 34px; height: 34px; border: 0; border-radius: 8px; background: transparent; color: #68738A; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{verIc}}</span></button>
+        </span>
+      </label>
+      <div aria-hidden="true" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px">
+        <sc-for list="{{meter}}" as="m" hint-placeholder-count="4"><span style="{{m.st}}"></span></sc-for>
+      </div>
+
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 13px; font-weight: 700">Repite la contraseña</span>
+        <input type="{{inType}}" value="{{pw2}}" onChange="{{setPw2}}" autocomplete="new-password" placeholder="Escríbela otra vez" style="height: 46px; box-sizing: border-box; padding: 0 14px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; font: inherit; font-size: 14px; color: #17223B">
+      </label>
+
+      <ul aria-label="Requisitos" style="list-style: none; margin: 0; padding: 14px 16px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E2E7F0; display: flex; flex-direction: column; gap: 8px">
+        <sc-for list="{{rules}}" as="r" hint-placeholder-count="6">
+          <li style="{{r.st}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{r.ic}}</span>{{r.t}}</li>
+        </sc-for>
+      </ul>
+
+      <button type="button" onClick="{{guardar}}" style="{{btnSt}}">{{btnT}}</button>
+      <p style="margin: 0; text-align: center; font-size: 12px; color: #68738A">Este paso es obligatorio para entrar a SIGMA. ¿No eres Juan? <button type="button" style="border: 0; background: transparent; padding: 0; color: #0565C2; font: inherit; font-weight: 700; cursor: pointer">Cerrar sesión</button></p>
+    </form>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const pw = s.pw ?? 'Hamburgo2026';
+    const pw2 = s.pw2 ?? '';
+    const temp = 'X7q!Rm42pL';
+    const checks = [
+      ['Al menos 10 caracteres', pw.length >= 10],
+      ['Una mayúscula y una minúscula', /[A-Z]/.test(pw) && /[a-z]/.test(pw)],
+      ['Al menos un número', /[0-9]/.test(pw)],
+      ['Al menos un símbolo (por ejemplo ! # $ %)', /[^A-Za-z0-9]/.test(pw)],
+      ['Distinta a la clave temporal', pw.length > 0 && pw !== temp],
+      ['Ambas contraseñas coinciden', pw2.length > 0 && pw === pw2]
+    ];
+    const ok = checks.filter(c => c[1]).length;
+    const strength = checks.slice(0, 4).filter(c => c[1]).length;
+    const all = ok === checks.length;
+    const col = strength >= 4 ? '#16855B' : strength >= 3 ? '#16C6C9' : strength >= 2 ? '#B65C00' : '#C7352B';
+    const ver = !!s.ver;
+    return {
+      pw, pw2, inType: ver ? 'text' : 'password', verIc: ver ? 'visibility_off' : 'visibility',
+      toggleVer: () => this.setState({ ver: !ver }),
+      setPw: (e) => this.setState({ pw: e.target.value }),
+      setPw2: (e) => this.setState({ pw2: e.target.value }),
+      meter: [0, 1, 2, 3].map(i => ({ st: 'height: 5px; border-radius: 999px; background: ' + (i < strength ? col : '#E2E7F0') + ';' })),
+      rules: checks.map(([t, v]) => ({ t, ic: v ? 'check_circle' : 'radio_button_unchecked',
+        st: 'display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: ' + (v ? '700' : '500') + '; color: ' + (v ? '#16855B' : '#68738A') + ';' })),
+      btnT: s.done ? 'Contraseña guardada · entrando…' : 'Guardar y entrar',
+      guardar: () => { if (all) this.setState({ done: true }); },
+      btnSt: 'height: 48px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 700; cursor: ' + (all ? 'pointer' : 'not-allowed') + '; opacity: ' + (all ? '1' : '.42') + ';'
+    };
+  }
+}
+</script>
+</body>
+</html>

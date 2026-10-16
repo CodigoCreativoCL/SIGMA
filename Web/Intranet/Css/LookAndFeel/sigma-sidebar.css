@@ -156,3 +156,11 @@ body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.a { background: #D98A1E }
 body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.n { background: #00A893 }
 body:not(.enlarged) .sgnav .nv-a:has(> .chev) > .nb.g { background: #5A6280 }
 body:not(.enlarged) .sgnav .nv-a:has(> .chev) { padding-right: 34px }
+
+/* ---- Movil / tablet (<992 px): el menu es un cajon, cerrado por defecto ----
+   La regla de arriba (display:flex) ganaba a la de Adminto que lo oculta y el menu quedaba siempre a la vista. */
+@media (max-width: 991.98px) {
+    body:not(.sidebar-enable) .left-side-menu { display: none }
+    body.sidebar-enable .left-side-menu { display: flex; top: 70px; bottom: 0; max-width: 86vw; z-index: 1050 !important }
+    .content-page, .enlarged .content-page { margin-left: 0 !important }
+}

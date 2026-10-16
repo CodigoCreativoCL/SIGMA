@@ -1,0 +1,104 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Unirse a la reunión · SIGMA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 900px; box-sizing: border-box; display: flex; flex-direction: column; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 24px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0">
+    <img src="/_blob/d423df6503155aa9758087a1775938ba" alt="SIGMA" style="height: 34px; width: auto">
+    <span style="width: 1px; height: 26px; background: #E2E7F0"></span>
+    <span style="font-size: 13px; font-weight: 700; color: #4A556D">Código Creativo</span>
+    <span style="flex: 1"></span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #16855B"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">lock</span>Enlace personal</span>
+  </header>
+
+  <main style="flex: 1; width: 100%; max-width: 1100px; margin: 0 auto; box-sizing: border-box; padding: 32px 16px; display: flex; flex-wrap: wrap; align-items: center; gap: 28px">
+    <section aria-label="Vista previa de tu cámara" style="flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 12px">
+      <div style="position: relative; aspect-ratio: 16 / 10; max-width: 100%; border-radius: 18px; background: #10152B; display: flex; align-items: center; justify-content: center; overflow: hidden">
+        <sc-if value="{{cam}}" hint-placeholder-val="{{true}}">
+          <span style="width: 120px; height: 120px; border-radius: 50%; background: #2B3360; color: #FFFFFF; font-size: 38px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">JP</span>
+        </sc-if>
+        <sc-if value="{{noCam}}" hint-placeholder-val="{{false}}">
+          <span style="display: inline-flex; flex-direction: column; align-items: center; gap: 8px; color: #9FA7C2; font-size: 13px"><span class="material-symbols-rounded" style="font-size: 40px" aria-hidden="true">videocam_off</span>Cámara apagada</span>
+        </sc-if>
+        <span style="position: absolute; left: 14px; bottom: 12px; color: #FFFFFF; font-size: 13px; font-weight: 600">Juan Pérez</span>
+        <sc-if value="{{dentro}}" hint-placeholder-val="{{false}}">
+          <span style="position: absolute; left: 14px; top: 12px; display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px; border-radius: 999px; background: #FDEDEB; color: #A92C23; font-size: 11px; font-weight: 800"><span style="width: 8px; height: 8px; border-radius: 50%; background: #C7352B"></span>Grabando y transcribiendo</span>
+        </sc-if>
+      </div>
+      <div style="display: flex; justify-content: center; gap: 10px">
+        <button type="button" aria-label="Micrófono" onClick="{{toggleMic}}" style="{{micSt}}"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">{{micIc}}</span></button>
+        <button type="button" aria-label="Cámara" onClick="{{toggleCam}}" style="{{camSt}}"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">{{camIc}}</span></button>
+        <sc-if value="{{dentro}}" hint-placeholder-val="{{false}}">
+          <button type="button" onClick="{{salir}}" style="display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 20px; border: 0; border-radius: 999px; background: #C7352B; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">call_end</span>Salir</button>
+        </sc-if>
+      </div>
+    </section>
+
+    <section style="flex: 1 1 340px; max-width: 100%; box-sizing: border-box; border-radius: 16px; border: 1px solid #E2E7F0; background: #FFFFFF; padding: 26px; display: flex; flex-direction: column; gap: 16px">
+      <sc-if value="{{fuera}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 4px">
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">Reunión con Código Creativo</span>
+          <h1 style="margin: 0; font-size: 22px; font-weight: 700; text-wrap: balance">Camila Rojas te invita a revisar tu demo de SIGMA</h1>
+          <span style="font-size: 13px; color: #68738A">Hoy, jueves 23/10/2026 · 10:00 · 30 min</span>
+        </div>
+        <label style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; color: #4A556D">Tu nombre</span>
+          <input type="text" placeholder="Juan Pérez" autocomplete="name" style="height: 44px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B">
+        </label>
+        <label style="display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 12px; border: 1px solid #CFD6E3; cursor: pointer; font-size: 13px; line-height: 1.5">
+          <input type="checkbox" checked="{{acepto}}" onChange="{{toggleAcepto}}" style="width: 18px; height: 18px; margin: 1px 0 0; accent-color: #6732F4">
+          <span>Acepto que la reunión se grabe y se transcriba para el registro comercial de Código Creativo.</span>
+        </label>
+        <button type="button" onClick="{{entrar}}" style="{{btnSt}}"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">login</span>Unirme a la reunión</button>
+        <p style="margin: 0; font-size: 12px; line-height: 1.55; color: #68738A">No necesitas cuenta ni instalar nada. Si prefieres que no se transcriba, avísale a Camila al entrar: la reunión sigue igual, sin transcripción.</p>
+      </sc-if>
+      <sc-if value="{{dentro}}" hint-placeholder-val="{{false}}">
+        <div style="display: flex; flex-direction: column; gap: 6px">
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #12704C">Estás en la reunión</span>
+          <h1 style="margin: 0; font-size: 20px; font-weight: 700">Con Camila Rojas y Pedro Lagos</h1>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 10px">
+          <div style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 50%; background: #F2EFFF; color: #5426D9; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">CR</span><span style="flex: 1">Camila Rojas · Código Creativo</span><span class="material-symbols-rounded" style="font-size: 18px; color: #16C6C9" aria-hidden="true">graphic_eq</span></div>
+          <div style="display: flex; align-items: center; gap: 10px"><span style="width: 34px; height: 34px; border-radius: 50%; background: #EAF4FF; color: #0565C2; font-size: 12px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">PL</span><span style="flex: 1">Pedro Lagos · Hamburgo</span></div>
+        </div>
+        <p style="margin: 0; padding: 10px 12px; border-radius: 10px; background: #E8FBFB; color: #006B74; font-size: 12px; line-height: 1.5">Al terminar, Camila te enviará el resumen y los acuerdos por correo.</p>
+      </sc-if>
+    </section>
+  </main>
+  <footer style="padding: 14px 24px 20px; text-align: center; font-size: 11px; color: #68738A">Código Creativo · SIGMA 2026</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const mic = s.mic ?? true, cam = s.cam ?? true, acepto = !!s.acepto, dentro = !!s.dentro;
+    const round = (on) => 'width: 48px; height: 48px; border-radius: 50%; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; ' + (on ? 'border: 1px solid #CFD6E3; background: #FFFFFF; color: #17223B;' : 'border: 0; background: #FDEDEB; color: #A92C23;');
+    return {
+      cam, noCam: !cam, acepto, dentro, fuera: !dentro,
+      micIc: mic ? 'mic' : 'mic_off', camIc: cam ? 'videocam' : 'videocam_off',
+      micSt: round(mic), camSt: round(cam),
+      toggleMic: () => this.setState({ mic: !mic }),
+      toggleCam: () => this.setState({ cam: !cam }),
+      toggleAcepto: () => this.setState({ acepto: !acepto }),
+      entrar: () => { if (acepto) this.setState({ dentro: true }); },
+      salir: () => this.setState({ dentro: false }),
+      btnSt: 'display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 48px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 14px; font-weight: 700; cursor: ' + (acepto ? 'pointer' : 'not-allowed') + '; opacity: ' + (acepto ? '1' : '.42') + ';'
+    };
+  }
+}
+</script>
+</body>
+</html>

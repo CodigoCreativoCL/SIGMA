@@ -17,7 +17,7 @@
          Con runat="server" en el propio link, HtmlLink resuelve el ~/
          del lado del servidor y funciona a cualquier profundidad. --%>
     <link href="../Css/LookAndFeel/sigma-scroll.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-sidebar.css?vrs=1" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-sidebar.css?vrs=2" rel="stylesheet" />
     <link id="favicon" rel="icon" type="image/svg+xml" href="~/Imagen/sigma-favicon.svg" runat="server" />
 
     <!-- Bootstrap Css -->
@@ -71,7 +71,7 @@
     <link href="../Css/LookAndFeel/sigma-components.css?vrs=10" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-avatares.css?vrs=2" rel="stylesheet" />
     <!-- SIGMA: estructura (sidebar, topbar, area de trabajo) -->
-    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=8" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-layout.css?vrs=9" rel="stylesheet" />
 
     <!-- Telerik CSS -->
     <link href="../Css/UI/Telerik/Bootstrap/Grid.css?vrs=6" rel="stylesheet" />
@@ -126,6 +126,7 @@
     <script type="text/javascript">window.PopCalendar = window.PopCalendar || { newCalendar: function () { return { forcedToday: function () { }, initCalendar: function () { } }; } };</script>
     <%-- El calendario de SIGMA: reemplaza el panel de PopCalendar. --%>
     <link href="../Css/LookAndFeel/sigma-calendario.css?vrs=3" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-movil.css?vrs=3" rel="stylesheet" />
 </head>
 
 <body data-sidebar="dark" class="<%= SitioBase.Controller.AccesibilidadController.ClasesBody() %>">
@@ -652,7 +653,7 @@
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=10"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=1"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=2"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-calendario.js") %>?vrs=6"></script>
 
             <%-- Mejora progresiva de las vistas maestras: conserva RadGrid,

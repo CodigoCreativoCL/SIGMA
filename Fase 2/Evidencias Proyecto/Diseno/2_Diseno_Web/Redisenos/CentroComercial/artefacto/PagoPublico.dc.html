@@ -1,0 +1,180 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Pago de suscripción · SIGMA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: {{minH}}; box-sizing: border-box; display: flex; flex-direction: column; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <header style="display: flex; flex-wrap: wrap; align-items: center; gap: 14px; padding: 14px 24px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0">
+    <img src="/_blob/d423df6503155aa9758087a1775938ba" alt="SIGMA" style="height: 34px; width: auto">
+    <span style="width: 1px; height: 26px; background: #E2E7F0"></span>
+    <span style="font-size: 13px; font-weight: 700; color: #4A556D">Código Creativo</span>
+    <span style="flex: 1"></span>
+    <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700; color: #16855B"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">lock</span>Pago seguro</span>
+  </header>
+
+  <sc-if value="{{prueba}}" hint-placeholder-val="{{true}}">
+    <div role="note" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 14px; padding: 9px 16px; background: #FFF3E4; border-bottom: 1px solid #F5D9B5; color: #9A4E00; font-size: 12px; line-height: 1.5; text-align: center">
+      <b style="display: inline-flex; align-items: center; gap: 6px; letter-spacing: .06em"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">science</span>MODO DE PRUEBA</b>
+      <span>No se cobra dinero real. Tarjeta de prueba <b style="font-family: ui-monospace, Menlo, Consolas, monospace">4051 8856 0044 6623</b> · CVV 123 · cualquier fecha futura · RUT 11.111.111-1 · clave 123</span>
+    </div>
+  </sc-if>
+
+  <main style="flex: 1; display: flex; justify-content: center; align-items: flex-start; padding: 32px 16px 24px">
+
+    <!-- ===== Pendiente ===== -->
+    <sc-if value="{{pendCLP}}" hint-placeholder-val="{{true}}">
+      <section style="width: 100%; max-width: 560px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+        <div style="border-radius: 16px; border: 1px solid #E2E7F0; background: #FFFFFF; padding: 26px; display: flex; flex-direction: column; gap: 18px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">Pago de suscripción SIGMA</span>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700">Hamburgo S.A.</h1>
+            <span style="font-size: 13px; color: #68738A">Plan Full · mensual · SUS-0012</span>
+          </div>
+          <div style="display: flex; flex-direction: column">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 12px 0; border-top: 1px solid #E2E7F0; font-variant-numeric: tabular-nums">
+              <b style="font-size: 14px">Implementación</b><b style="font-size: 15px; text-align: right">$1.226.134</b>
+              <span style="font-size: 12px; color: #68738A">Cobro único</span><span style="font-size: 12px; color: #68738A; text-align: right">30,00 UF</span>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 12px 0; border-top: 1px solid #E2E7F0; font-variant-numeric: tabular-nums">
+              <b style="font-size: 14px">Octubre 2026</b><b style="font-size: 15px; text-align: right">$1.839.201</b>
+              <span style="font-size: 12px; color: #68738A">Acceso del 02/10 al 01/11</span><span style="font-size: 12px; color: #68738A; text-align: right">45,00 UF</span>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: baseline; padding: 14px 0 0; border-top: 1.5px solid #17223B; font-variant-numeric: tabular-nums">
+              <b style="font-size: 15px">Total</b><b style="font-size: 26px; text-align: right">$3.065.335</b>
+              <span style="font-size: 12px; color: #68738A; grid-column: 1 / -1">UF del 02/10/2026: $40.871,14 · montos fijados al emitir el cobro</span>
+            </div>
+          </div>
+          <button type="button" onClick="{{pagar}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 54px; border: 0; border-radius: 12px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">credit_card</span>Pagar $3.065.335 con Webpay</button>
+          <p style="margin: 0; display: flex; gap: 8px; font-size: 12px; line-height: 1.55; color: #68738A"><span class="material-symbols-rounded" style="font-size: 16px; color: #007F8A" aria-hidden="true">shield_lock</span><span>Te llevamos a Webpay Plus de Transbank para pagar con débito o crédito. SIGMA no ve ni guarda los datos de tu tarjeta.</span></p>
+        </div>
+
+        <div style="border-radius: 16px; border: 1px solid #E2E7F0; background: #FFFFFF; overflow: hidden">
+          <button type="button" onClick="{{tTransf}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 14px 18px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">account_balance</span><b style="flex: 1; font-size: 13px">¿Prefieres pagar por transferencia?</b><span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{transfChev}}</span></button>
+          <sc-if value="{{oTransf}}" hint-placeholder-val="{{false}}">
+            <div style="padding: 0 18px 16px; display: flex; flex-direction: column; gap: 10px">
+              <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 6px 12px; padding: 12px 14px; border-radius: 12px; background: #F4F6FA; font-size: 13px">
+                <span style="color: #68738A">Titular</span><b>Código Creativo SpA</b>
+                <span style="color: #68738A">RUT</span><b>[RUT de Código Creativo]</b>
+                <span style="color: #68738A">Banco</span><b>[Banco]</b>
+                <span style="color: #68738A">Cuenta corriente</span><b>[N.° de cuenta]</b>
+              </div>
+              <span style="font-size: 12px; color: #68738A; line-height: 1.5">Después de transferir, informa el pago en SIGMA › Mi suscripción, o responde el correo de cobro con el comprobante. Lo verificamos en horario hábil.</span>
+            </div>
+          </sc-if>
+        </div>
+        <p style="margin: 0; text-align: center; font-size: 12px; color: #68738A">Enlace personal · vence el 09/10/2026 · ¿Dudas? Camila Rojas · comercial@codigocreativo.cl</p>
+      </section>
+    </sc-if>
+
+    <!-- ===== Pendiente en USD (cliente fuera de Chile) ===== -->
+    <sc-if value="{{pendUSD}}" hint-placeholder-val="{{false}}">
+      <section style="width: 100%; max-width: 560px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px">
+        <div style="border-radius: 16px; border: 1px solid #E2E7F0; background: #FFFFFF; padding: 26px; display: flex; flex-direction: column; gap: 18px">
+          <div style="display: flex; flex-direction: column; gap: 4px">
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">Pago de suscripción SIGMA</span>
+            <h1 style="margin: 0; font-size: 24px; font-weight: 700">Minera Andina Perú S.A.C.</h1>
+            <span style="font-size: 13px; color: #68738A">Plan Full · mensual · SUS-0014 · Perú</span>
+          </div>
+          <div style="display: flex; flex-direction: column">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; padding: 12px 0; border-top: 1px solid #E2E7F0; font-variant-numeric: tabular-nums">
+              <b style="font-size: 14px">Noviembre 2026</b><b style="font-size: 15px; text-align: right">USD 1.950,00</b>
+              <span style="font-size: 12px; color: #68738A">Acceso del 02/11 al 01/12</span><span style="font-size: 12px; color: #68738A; text-align: right">precio del plan en USD</span>
+            </div>
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 14px; align-items: baseline; padding: 14px 0 0; border-top: 1.5px solid #17223B; font-variant-numeric: tabular-nums">
+              <b style="font-size: 15px">Total</b><b style="font-size: 26px; text-align: right">USD 1.950,00</b>
+              <span style="font-size: 12px; color: #68738A; grid-column: 1 / -1">Vence el 01/11/2026 · los costos de tu banco por la transferencia corren por tu cuenta</span>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 8px">
+            <span style="font-size: 11px; font-weight: 800; color: #4A556D">Transferencia internacional</span>
+            <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 6px 12px; padding: 12px 14px; border-radius: 12px; background: #F4F6FA; font-size: 13px">
+              <span style="color: #68738A">Beneficiario</span><b>Código Creativo SpA</b>
+              <span style="color: #68738A">Banco</span><b>[Banco en Chile]</b>
+              <span style="color: #68738A">SWIFT</span><b>[Código SWIFT]</b>
+              <span style="color: #68738A">Cuenta en USD</span><b>[N.° de cuenta en dólares]</b>
+              <span style="color: #68738A">Referencia</span><b>SUS-0014-NOV26</b>
+            </div>
+          </div>
+          <button type="button" onClick="{{informar}}" style="display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; border: 0; border-radius: 12px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">upload_file</span>Ya transferí: informar el pago</button>
+          <button type="button" disabled style="display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 44px; border: 1.5px solid #087BEA; border-radius: 10px; background: transparent; color: #0565C2; font: inherit; font-size: 13px; font-weight: 700; opacity: .42; cursor: not-allowed"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">credit_card</span>Pagar con tarjeta en USD · próximamente</button>
+          <p style="margin: 0; display: flex; gap: 8px; font-size: 12px; line-height: 1.55; color: #68738A"><span class="material-symbols-rounded" style="font-size: 16px; color: #007F8A" aria-hidden="true">public</span><span>Como tu empresa está fuera de Chile, SIGMA te cobra en dólares. Webpay solo cobra en pesos chilenos, por eso el pago es por transferencia.</span></p>
+        </div>
+        <p style="margin: 0; text-align: center; font-size: 12px; color: #68738A">Enlace personal · vence el 08/11/2026 · ¿Dudas? Valentina Paredes · comercial@codigocreativo.cl</p>
+      </section>
+    </sc-if>
+
+    <!-- ===== Resultado y estados ===== -->
+    <sc-if value="{{res}}" hint-placeholder-val="{{false}}">
+      <section style="width: 100%; max-width: 520px; box-sizing: border-box; border-radius: 16px; border: 1px solid #E2E7F0; background: #FFFFFF; padding: 30px 26px; display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center">
+        <span style="{{e.icSt}}"><span class="material-symbols-rounded" style="font-size: 34px" aria-hidden="true">{{e.ic}}</span></span>
+        <h1 style="margin: 4px 0 0; font-size: 22px; font-weight: 700; text-wrap: balance">{{e.t}}</h1>
+        <sc-if value="{{e.hasMonto}}" hint-placeholder-val="{{false}}"><span style="font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums">$3.065.335</span></sc-if>
+        <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #4A556D; max-width: 420px">{{e.p}}</p>
+        <sc-if value="{{e.hasDet}}" hint-placeholder-val="{{false}}">
+          <dl style="margin: 4px 0 0; width: 100%; display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; padding: 14px 16px; border-radius: 12px; background: #F4F6FA; font-size: 13px; text-align: left; font-variant-numeric: tabular-nums">
+            <dt style="color: #68738A">Tarjeta</dt><dd style="margin: 0; font-weight: 700">Crédito •••• 6623</dd>
+            <dt style="color: #68738A">Autorización</dt><dd style="margin: 0; font-weight: 700">1213</dd>
+            <dt style="color: #68738A">Orden</dt><dd style="margin: 0; font-weight: 700">SG4-261002205301</dd>
+            <dt style="color: #68738A">Fecha</dt><dd style="margin: 0; font-weight: 700">02/10/2026 20:53</dd>
+          </dl>
+        </sc-if>
+        <div style="display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; padding-top: 6px">
+          <sc-if value="{{e.hasSec}}" hint-placeholder-val="{{false}}">
+            <button type="button" onClick="{{e.secGo}}" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border: 1.5px solid #087BEA; border-radius: 10px; background: transparent; color: #0565C2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{e.secIc}}</span>{{e.sec}}</button>
+          </sc-if>
+          <sc-if value="{{e.hasPri}}" hint-placeholder-val="{{true}}">
+            <button type="button" onClick="{{e.priGo}}" style="display: inline-flex; align-items: center; gap: 6px; height: 44px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{e.priIc}}</span>{{e.pri}}</button>
+          </sc-if>
+        </div>
+        <p style="margin: 4px 0 0; font-size: 12px; color: #68738A">{{e.pie}}</p>
+      </section>
+    </sc-if>
+  </main>
+
+  <footer style="padding: 14px 24px 20px; text-align: center; font-size: 11px; color: #68738A">Código Creativo SpA · Santiago, Chile</footer>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"estado":{"editor":"enum","options":["pendiente","pagado","rechazado","anulado","aldia","vencido","invalido","informado"],"default":"pendiente"},"prueba":{"editor":"boolean","default":true},"moneda":{"editor":"enum","options":["clp","usd"],"default":"clp"},"minH":{"editor":null,"default":"1000px"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const estado = s.estado ?? p.estado ?? 'pendiente';
+    const oT = !!s.oT;
+    const usd = p.moneda === 'usd';
+    const box = (bg, fg) => 'width: 68px; height: 68px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: ' + bg + '; color: ' + fg + ';';
+    const reintentar = () => this.setState({ estado: 'pendiente' });
+    const nada = () => {};
+    const E = {
+      pagado: { ic: 'check_circle', icSt: box('#E8F6EF', '#16855B'), t: 'Pago recibido', hasMonto: true, p: 'Gracias. Te enviamos el comprobante a juan.perez@hamburgo.cl. El acceso a SIGMA queda activo hasta el 01/11/2026.', hasDet: true, hasSec: true, sec: 'Descargar comprobante', secIc: 'download', secGo: nada, hasPri: true, pri: 'Ir a SIGMA', priIc: 'arrow_forward', priGo: nada, pie: 'El pago se verificó solo: no tienes que enviar nada más.' },
+      rechazado: { ic: 'credit_card_off', icSt: box('#FDEDEB', '#C7352B'), t: 'El pago fue rechazado', hasMonto: false, p: 'Tu banco no autorizó el cargo y no se cobró nada. Puedes intentarlo con otra tarjeta o pagar por transferencia.', hasDet: false, hasSec: true, sec: 'Pagar por transferencia', secIc: 'account_balance', secGo: reintentar, hasPri: true, pri: 'Intentar de nuevo', priIc: 'refresh', priGo: reintentar, pie: 'Si el problema sigue, escribe a comercial@codigocreativo.cl.' },
+      anulado: { ic: 'cancel', icSt: box('#FFF3E4', '#B65C00'), t: 'El pago quedó anulado', hasMonto: false, p: 'Saliste de Webpay antes de terminar, así que no se cobró nada. El cobro sigue pendiente.', hasDet: false, hasSec: false, sec: '', secIc: '', secGo: nada, hasPri: true, pri: 'Intentar de nuevo', priIc: 'refresh', priGo: reintentar, pie: 'El enlace sigue vigente hasta el 09/10/2026.' },
+      aldia: { ic: 'verified', icSt: box('#E8F6EF', '#16855B'), t: 'Estás al día', hasMonto: false, p: 'Hamburgo S.A. no tiene cobros pendientes. El próximo se emite el 27/10 y te llegará por correo.', hasDet: false, hasSec: false, sec: '', secIc: '', secGo: nada, hasPri: true, pri: 'Ir a SIGMA', priIc: 'arrow_forward', priGo: nada, pie: 'Puedes revisar tus comprobantes en SIGMA › Mi suscripción.' },
+      vencido: { ic: 'event_busy', icSt: box('#FFF3E4', '#B65C00'), t: 'Este enlace de pago venció', hasMonto: false, p: 'Por seguridad, los enlaces de pago duran 7 días. Pide uno nuevo y te llegará a juan.perez@hamburgo.cl.', hasDet: false, hasSec: false, sec: '', secIc: '', secGo: nada, hasPri: true, pri: 'Enviarme un enlace nuevo', priIc: 'forward_to_inbox', priGo: nada, pie: 'El cobro sigue pendiente: los montos no cambian.' },
+      informado: { ic: 'schedule_send', icSt: box('#EAF4FF', '#0565C2'), t: 'Recibimos tu aviso de pago', hasMonto: false, p: 'Vamos a revisar la transferencia de USD 1.950,00 en horario hábil y te enviaremos el comprobante a pagos@mineraandina.pe. Mientras tanto no recibirás recordatorios.', hasDet: false, hasSec: false, sec: '', secIc: '', secGo: nada, hasPri: true, pri: 'Ir a SIGMA', priIc: 'arrow_forward', priGo: nada, pie: 'Tu acceso a SIGMA sigue activo mientras lo verificamos.' },
+      invalido: { ic: 'link_off', icSt: box('#FDEDEB', '#C7352B'), t: 'Enlace no válido', hasMonto: false, p: 'Revisa que abriste el enlace completo desde el correo de cobro. Si sigue sin funcionar, escríbenos.', hasDet: false, hasSec: false, sec: '', secIc: '', secGo: nada, hasPri: false, pri: '', priIc: '', priGo: nada, pie: 'comercial@codigocreativo.cl' }
+    };
+    return {
+      minH: p.minH ?? '1000px', prueba: p.prueba ?? true,
+      pendCLP: estado === 'pendiente' && !usd, pendUSD: estado === 'pendiente' && usd, res: estado !== 'pendiente', e: E[estado] || E.pagado,
+      informar: () => this.setState({ estado: 'informado' }),
+      pagar: () => this.setState({ estado: 'pagado' }),
+      oTransf: oT, transfChev: oT ? 'expand_less' : 'expand_more', tTransf: () => this.setState({ oT: !oT })
+    };
+  }
+}
+</script>
+</body>
+</html>

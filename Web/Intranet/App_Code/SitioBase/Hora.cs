@@ -34,5 +34,11 @@ namespace SitioBase
         {
             get { return Ahora.Date; }
         }
+
+        /// <summary>Una hora de Santiago llevada a UTC (invitaciones .ics del Centro Comercial).</summary>
+        public static DateTime AUtc(DateTime santiago)
+        {
+            return TimeZoneInfo.ConvertTimeToUtc(DateTime.SpecifyKind(santiago, DateTimeKind.Unspecified), Santiago);
+        }
     }
 }

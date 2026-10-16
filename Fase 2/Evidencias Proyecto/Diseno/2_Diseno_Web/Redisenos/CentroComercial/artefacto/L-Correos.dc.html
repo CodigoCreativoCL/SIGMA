@@ -1,0 +1,91 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Correos del Centro Comercial</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: 1960px; min-height: 1900px; box-sizing: border-box; padding: 40px; background: #E9ECF2; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px; display: grid; grid-template-columns: repeat(3, 600px); justify-content: space-between; gap: 32px 40px; align-content: start">
+  <sc-for list="{{mails}}" as="m" hint-placeholder-count="4">
+    <figure style="margin: 0; display: flex; flex-direction: column; gap: 10px">
+      <figcaption style="font-size: 13px; font-weight: 800; color: #4A556D">{{m.n}}</figcaption>
+      <div style="border-radius: 12px; background: #FFFFFF; padding: 12px 16px; display: grid; grid-template-columns: 60px minmax(0, 1fr); gap: 4px 10px; font-size: 12px; box-shadow: 0 1px 2px rgba(23,34,59,.06)">
+        <span style="color: #68738A">De</span><span>{{m.de}}</span>
+        <span style="color: #68738A">Para</span><span>{{m.para}}</span>
+        <span style="color: #68738A">Asunto</span><b>{{m.asunto}}</b>
+      </div>
+      <article style="width: 600px; background: #FFFFFF; border-radius: 4px; overflow: hidden; box-shadow: 0 1px 3px rgba(23,34,59,.1)">
+        <div style="padding: 22px 32px; border-bottom: 1px solid #E2E7F0; display: flex; align-items: center; justify-content: space-between">
+          <span style="font-size: 20px; font-weight: 800; letter-spacing: .16em; color: #17223B">SIGMA</span>
+          <span style="font-size: 11px; color: #68738A">Código Creativo</span>
+        </div>
+        <div style="padding: 30px 32px 26px; display: flex; flex-direction: column; gap: 16px">
+          <span style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: #5426D9">{{m.pre}}</span>
+          <h2 style="margin: -8px 0 0; font-size: 22px; line-height: 1.3; font-weight: 700">{{m.h}}</h2>
+          <p style="margin: 0; font-size: 14px; line-height: 1.65; color: #4A556D">{{m.p1}}</p>
+          <sc-if value="{{m.hasDet}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; flex-direction: column; padding: 4px 0; border-radius: 10px; background: #F4F6FA; font-size: 13px">
+              <sc-for list="{{m.det}}" as="d" hint-placeholder-count="4">
+                <div style="display: grid; grid-template-columns: 130px minmax(0, 1fr); gap: 12px; padding: 9px 14px"><span style="color: #68738A">{{d.k}}</span><b>{{d.v}}</b></div>
+              </sc-for>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.hasCred}}" hint-placeholder-val="{{false}}">
+            <div style="border: 1px solid #E2E7F0; border-radius: 10px; padding: 14px 16px; display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 8px 12px; font-size: 13px">
+              <span style="color: #68738A">Usuario</span><b>juan.perez@hamburgo.cl</b>
+              <span style="color: #68738A">Clave temporal</span><b style="font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: .04em">X7q!Rm42pL</b>
+              <span style="grid-column: 1 / -1; font-size: 12px; color: #68738A">Al entrar te pediremos crear tu propia contraseña.</span>
+            </div>
+          </sc-if>
+          <sc-if value="{{m.hasAdj}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-radius: 10px; border: 1px solid #E2E7F0; font-size: 13px"><span class="material-symbols-rounded" style="font-size: 22px; color: #C7352B" aria-hidden="true">picture_as_pdf</span><b>contrato-hamburgo-v2-firmado.pdf</b><span style="color: #68738A">412 KB</span></div>
+          </sc-if>
+          <a href="#" style="align-self: flex-start; display: inline-block; padding: 13px 22px; border-radius: 10px; background: #6732F4; color: #FFFFFF; font-size: 14px; font-weight: 700; text-decoration: none">{{m.btn}}</a>
+          <p style="margin: 0; font-size: 13px; line-height: 1.6; color: #68738A">{{m.p2}}</p>
+        </div>
+        <div style="padding: 16px 32px 22px; background: #F4F6FA; font-size: 11px; line-height: 1.6; color: #68738A">Código Creativo SpA · Santiago, Chile<br>{{m.pie}}</div>
+      </article>
+    </figure>
+  </sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1960,"height":1900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const de = 'SIGMA · Código Creativo <notificaciones@codigocreativo.cl>';
+    return {
+      mails: [
+        { n: 'L1 · Lead nuevo (a comercial)', de, para: 'comercial@codigocreativo.cl', asunto: 'Nuevo lead: Hamburgo S.A. (formulario web)',
+          pre: 'Centro Comercial', h: 'Llegó un lead nuevo', p1: 'Hamburgo S.A. completó el formulario de inicio.aspx el 15/10/2026 a las 09:41. Todavía no tiene ejecutivo asignado.',
+          hasDet: true, det: [{ k: 'Contacto', v: 'Juan Pérez · Jefe de Mantenimiento' }, { k: 'Correo', v: 'juan.perez@hamburgo.cl' }, { k: 'Teléfono', v: '+56 9 8765 4321' }, { k: 'Interés', v: 'Mantenimiento, OT, SIGMA AI' }],
+          hasCred: false, hasAdj: false, btn: 'Abrir en Centro Comercial', p2: 'Asígnale un ejecutivo para que deje de aparecer en «Requiere atención».', pie: 'Aviso interno del Centro Comercial de SIGMA.' },
+        { n: 'L2 · Credenciales de la demo (al lead)', de, para: 'juan.perez@hamburgo.cl', asunto: 'Tu demo de SIGMA está lista',
+          pre: 'Demo SIGMA · 7 días', h: 'Hola, Juan: tu demo está lista', p1: 'Camila Rojas preparó una demo de SIGMA para Hamburgo S.A. con los módulos que te interesan. Puedes usarla hasta el 24/10/2026.',
+          hasDet: false, det: [], hasCred: true, hasAdj: false, btn: 'Entrar a SIGMA', p2: 'Incluye 2 usuarios, 10 activos, 20 OT, 5 programaciones y 5 checklists. ¿Dudas? Responde este correo y te llamamos.', pie: 'Recibes este correo porque pediste una demo en codigocreativo.cl.' },
+        { n: 'L3 · Contrato para firmar (al cliente)', de, para: 'juan.perez@hamburgo.cl', asunto: 'Revisa y firma tu contrato SIGMA',
+          pre: 'Contrato · versión 2', h: 'Tu contrato está listo para firmar', p1: 'Juan, preparamos el contrato de suscripción de Hamburgo S.A. Revísalo y fírmalo en línea; toma menos de dos minutos.',
+          hasDet: true, det: [{ k: 'Plan', v: 'Full' }, { k: 'Mensualidad', v: '45,00 UF' }, { k: 'Implementación', v: '30,00 UF' }, { k: 'Vigencia', v: '12 meses' }],
+          hasCred: false, hasAdj: false, btn: 'Revisar y firmar', p2: 'El enlace es personal y vence el 02/11/2026. Por seguridad, no lo reenvíes.', pie: 'Este enlace de firma es de un solo uso.' },
+        { n: 'L4 · Contrato firmado (al cliente)', de, para: 'juan.perez@hamburgo.cl', asunto: 'Contrato firmado: bienvenido a SIGMA',
+          pre: 'Contrato firmado', h: 'Listo, Juan: Hamburgo S.A. ya es cliente SIGMA', p1: 'Firmaste el contrato el 27/10/2026 a las 10:14. Adjuntamos el PDF firmado para tus registros. Tu suscripción Full queda activa en cuanto pagues la implementación y el primer mes.',
+          hasDet: false, det: [], hasCred: false, hasAdj: true, btn: 'Ir a SIGMA', p2: 'Camila Rojas te escribirá para coordinar la implementación.', pie: 'Guarda este correo: incluye tu copia del contrato.' },
+        { n: 'L5 · Invitación a reunión (al lead)', de, para: 'juan.perez@hamburgo.cl, pedro.lagos@hamburgo.cl', asunto: 'Reunión SIGMA · Hamburgo S.A. · jue 23/10 10:00',
+          pre: 'Reunión', h: 'Conversemos sobre tu demo', p1: 'Juan, Camila Rojas te invita a revisar cómo les fue con la demo de SIGMA y a conversar la propuesta.',
+          hasDet: true, det: [{ k: 'Cuándo', v: 'jueves 23/10/2026 · 10:00 a 10:30' }, { k: 'Dónde', v: 'Jitsi Meet (desde el navegador, sin cuenta ni instalar nada)' }, { k: 'Con', v: 'Camila Rojas · Código Creativo' }],
+          hasCred: false, hasAdj: false, btn: 'Unirme a la reunión', p2: 'Adjuntamos la invitación (.ics) para tu calendario. ¿No puedes? Responde este correo y buscamos otro horario.', pie: 'Recibes este correo porque estás en conversaciones con Código Creativo.' }
+      ]
+    };
+  }
+}
+</script>
+</body>
+</html>

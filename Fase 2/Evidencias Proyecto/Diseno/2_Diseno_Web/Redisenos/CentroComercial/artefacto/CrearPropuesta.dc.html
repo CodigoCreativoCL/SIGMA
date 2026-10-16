@@ -1,0 +1,203 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Crear propuesta</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="{{vars}} width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: var(--sf); color: var(--ink); font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <div style="flex: 0 0 auto; padding: 16px 22px 14px; border-bottom: 1px solid var(--line); display: flex; flex-direction: column; gap: 6px">
+    <button type="button" onClick="{{back}}" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 10px 0 6px; border: 0; border-radius: 8px; background: var(--pus); color: var(--put); font: inherit; font-size: 12px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">arrow_back</span>Volver a la ficha</button>
+    <span style="font-size: 12px; color: var(--mut); padding-top: 4px">{{code}} · {{lead.emp}} · para {{lead.ct}}</span>
+    <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">Crear propuesta</h2>
+      <div role="tablist" aria-label="Tipo de propuesta" style="display: inline-flex; padding: 4px; border-radius: 12px; background: var(--sf2); gap: 4px">
+        <button type="button" role="tab" aria-selected="{{isStd}}" onClick="{{toStd}}" style="{{segStd}}">Estándar</button>
+        <button type="button" role="tab" aria-selected="{{isPer}}" onClick="{{toPer}}" style="{{segPer}}">Personalizado</button>
+      </div>
+    </div>
+  </div>
+
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 18px 22px 22px; display: flex; flex-direction: column; gap: 20px">
+
+    <sc-if value="{{isStd}}" hint-placeholder-val="{{false}}">
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 700">Plan de lista</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <sc-for list="{{planes}}" as="pl" hint-placeholder-count="3">
+            <button type="button" onClick="{{pl.go}}" style="{{pl.st}}">
+              <span style="display: flex; align-items: center; justify-content: space-between; width: 100%"><b style="font-size: 14px">{{pl.t}}</b><span class="material-symbols-rounded" style="{{pl.radSt}}" aria-hidden="true">{{pl.rad}}</span></span>
+              <span style="font-size: 18px; font-weight: 800; font-variant-numeric: tabular-nums">{{pl.precio}}</span>
+              <span style="font-size: 12px; color: var(--mut); line-height: 1.5; white-space: pre-line">{{pl.inc}}</span>
+            </button>
+          </sc-for>
+        </div>
+        <p style="margin: 0; font-size: 12px; color: var(--mut)">Los planes de lista salen de Configuración › Comercial. Para cambiar módulos o límites usa Personalizado.</p>
+      </section>
+    </sc-if>
+
+    <sc-if value="{{isPer}}" hint-placeholder-val="{{true}}">
+      <label style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Nombre del plan</span>
+        <input type="text" readonly value="Enterprise Hamburgo" style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid var(--inp); border-radius: 9px; background: var(--sf); color: var(--ink); font: inherit; font-size: 14px; font-weight: 600">
+      </label>
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <div style="display: flex; align-items: baseline; justify-content: space-between">
+          <h3 style="margin: 0; font-size: 14px; font-weight: 700">Módulos de SIGMA</h3>
+          <span style="font-size: 12px; color: var(--mut)">{{nMod}} incluidos</span>
+        </div>
+        <div role="group" aria-label="Módulos" style="display: flex; flex-wrap: wrap; gap: 8px">
+          <sc-for list="{{mods}}" as="m" hint-placeholder-count="7">
+            <button type="button" aria-pressed="{{m.on}}" onClick="{{m.go}}" style="{{m.st}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{m.ic}}</span>{{m.t}}</button>
+          </sc-for>
+        </div>
+      </section>
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 700">Límites</h3>
+        <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px">
+          <sc-for list="{{lims}}" as="l" hint-placeholder-count="5">
+            <div style="display: flex; flex-direction: column; gap: 6px; padding: 10px; border-radius: 10px; border: 1px solid var(--inp)">
+              <span style="font-size: 11px; font-weight: 800; color: var(--lab)">{{l.t}}</span>
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px">
+                <button type="button" aria-label="Menos" onClick="{{l.dn}}" style="width: 24px; height: 24px; border: 0; border-radius: 7px; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">remove</span></button>
+                <b style="font-size: 15px; font-variant-numeric: tabular-nums">{{l.v}}</b>
+                <button type="button" aria-label="Más" onClick="{{l.up}}" style="width: 24px; height: 24px; border: 0; border-radius: 7px; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 16px" aria-hidden="true">add</span></button>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </section>
+      <section style="display: flex; flex-direction: column; gap: 10px">
+        <h3 style="margin: 0; font-size: 14px; font-weight: 700">Precios</h3>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Implementación (UF)</span>
+            <div style="display: flex; align-items: center; height: 42px; border: 1px solid var(--inp); border-radius: 9px; overflow: hidden">
+              <button type="button" aria-label="Menos" onClick="{{implDn}}" style="width: 36px; height: 100%; border: 0; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">remove</span></button>
+              <b style="flex: 1; text-align: center; font-variant-numeric: tabular-nums">{{implT}}</b>
+              <button type="button" aria-label="Más" onClick="{{implUp}}" style="width: 36px; height: 100%; border: 0; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">add</span></button>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Mensual (UF)</span>
+            <div style="display: flex; align-items: center; height: 42px; border: 1px solid var(--inp); border-radius: 9px; overflow: hidden">
+              <button type="button" aria-label="Menos" onClick="{{mensDn}}" style="width: 36px; height: 100%; border: 0; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">remove</span></button>
+              <b style="flex: 1; text-align: center; font-variant-numeric: tabular-nums">{{mensT}}</b>
+              <button type="button" aria-label="Más" onClick="{{mensUp}}" style="width: 36px; height: 100%; border: 0; background: var(--sf2); color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">add</span></button>
+            </div>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px">
+            <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Anual (UF, calculado)</span>
+            <div style="display: flex; align-items: center; justify-content: center; height: 42px; border-radius: 9px; background: var(--sf2); font-weight: 800; font-variant-numeric: tabular-nums">{{anualT}}</div>
+          </div>
+        </div>
+      </section>
+    </sc-if>
+
+    <section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px">
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Descuento sobre la mensualidad</span>
+        <div role="group" aria-label="Descuento" style="display: flex; flex-wrap: wrap; gap: 6px">
+          <sc-for list="{{descs}}" as="d" hint-placeholder-count="5">
+            <button type="button" onClick="{{d.go}}" style="{{d.st}}">{{d.t}}</button>
+          </sc-for>
+        </div>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 6px">
+        <span style="font-size: 11px; font-weight: 800; color: var(--lab)">Vigencia</span>
+        <div role="group" aria-label="Vigencia" style="display: inline-flex; align-self: flex-start; padding: 4px; border-radius: 12px; background: var(--sf2); gap: 4px">
+          <sc-for list="{{vigs}}" as="v" hint-placeholder-count="4">
+            <button type="button" onClick="{{v.go}}" style="{{v.st}}">{{v.t}}</button>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- Total en vivo -->
+  <div aria-live="polite" style="flex: 0 0 auto; margin: 0 22px 14px; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--sf2); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; font-size: 13px; font-variant-numeric: tabular-nums">
+    <span style="color: var(--mut)">Implementación</span><b style="text-align: right">{{implT}} UF</b>
+    <span style="color: var(--mut)">Mensualidad {{mensT}} UF − {{descT}}</span><b style="text-align: right">{{mensDescT}} UF</b>
+    <span style="color: var(--mut)">× {{vigT}} meses</span><b style="text-align: right">{{periodoT}} UF</b>
+    <span style="font-size: 15px; font-weight: 800; padding-top: 8px; border-top: 1px solid var(--line)">Total del contrato</span><span style="font-size: 20px; font-weight: 800; text-align: right; padding-top: 6px; border-top: 1px solid var(--line); color: var(--ink)">{{totalT}} UF</span>
+    <span style="grid-column: 1 / -1; font-size: 11px; color: var(--mut)">En pesos chilenos según el valor de la UF del día de facturación.</span>
+  </div>
+
+  <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line)">
+    <button type="button" onClick="{{back}}" style="height: 42px; padding: 0 16px; border: 0; border-radius: 10px; background: var(--pus); color: var(--put); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button>
+    <span style="flex: 1"></span>
+    <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 16px; border: 1.5px solid var(--bl); border-radius: 10px; background: transparent; color: var(--blt); font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">picture_as_pdf</span>Generar PDF</button>
+    <button type="button" onClick="{{done}}" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: var(--pu); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">send</span>Enviar propuesta</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"dark":{"editor":"boolean","default":false},"modo":{"editor":"enum","options":["personalizado","estandar"],"default":"personalizado"},"lead":{"editor":null},"ancho":{"editor":null,"default":"600px"},"alto":{"editor":null,"default":"1000px"},"onBack":{"editor":null},"onDone":{"editor":null},"$preview":{"width":600,"height":1000}}'>
+class Component extends DCLogic {
+  vars(dark) {
+    const L = { sf:'#FFFFFF', sf2:'#F4F6FA', ink:'#17223B', mut:'#68738A', lab:'#4A556D', line:'#E2E7F0', inp:'#CFD6E3', pu:'#6732F4', pus:'#F2EFFF', put:'#5426D9', bl:'#087BEA', blt:'#0565C2' };
+    const D = { sf:'#131930', sf2:'#1A2140', ink:'#E8ECF8', mut:'#98A1BC', lab:'#B3BAD0', line:'#252D4B', inp:'#353E62', pu:'#7347FF', pus:'rgba(115,71,255,.18)', put:'#BBA6FF', bl:'#4CA2FF', blt:'#7DBBFF' };
+    const t = dark ? D : L;
+    return Object.keys(t).map(k => '--' + k + ':' + t[k]).join('; ') + ';' + (dark ? ' color-scheme: dark;' : '');
+  }
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const lead = p.lead || { id:'L-0142', emp:'Hamburgo S.A.', ct:'Juan Pérez', mail:'juan.perez@hamburgo.cl' };
+    const modo = s.modo ?? p.modo ?? 'personalizado';
+    const f1 = (n) => n.toFixed(1).replace('.', ',');
+    const plan = s.plan ?? 'ent';
+    const impl = s.impl ?? 45, mens = s.mens ?? 18, desc = s.desc ?? 10, vig = s.vig ?? 12;
+    const mensDesc = Math.round(mens * (1 - desc / 100) * 10) / 10;
+    const periodo = Math.round(mensDesc * vig * 10) / 10;
+    const total = Math.round((impl + periodo) * 10) / 10;
+    const seg = (on) => 'height: 32px; padding: 0 14px; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (on ? 'background: var(--sf); color: var(--put); box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: var(--lab);');
+    const pill = (on) => 'height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; font-variant-numeric: tabular-nums; ' + (on ? 'border: 1px solid var(--pu); background: var(--pus); color: var(--put);' : 'border: 1px solid var(--inp); background: var(--sf); color: var(--lab);');
+    const planes = [
+      ['bas', 'Básico', '[UF/mes de lista]', '5 usuarios · 50 activos\n1 planta · Mantenimiento y OT'],
+      ['pro', 'Profesional', '[UF/mes de lista]', '10 usuarios · 100 activos\n2 plantas · + Planificación e Inspección'],
+      ['ent', 'Enterprise', '18,0 UF/mes', '15 usuarios · 150 activos\n2 plantas · + Inventario y SIGMA AI']
+    ].map(([k, t, precio, inc]) => ({ t, precio, inc, rad: k === plan ? 'radio_button_checked' : 'radio_button_unchecked',
+      radSt: 'font-size: 20px; color: ' + (k === plan ? 'var(--pu)' : 'var(--mut)') + ';',
+      go: () => this.setState({ plan: k }),
+      st: 'display: flex; flex-direction: column; align-items: flex-start; gap: 8px; padding: 14px; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; color: var(--ink); background: var(--sf); ' + (k === plan ? 'border: 1.5px solid var(--pu); box-shadow: 0 0 0 3px var(--pus);' : 'border: 1px solid var(--inp);') }));
+    const sel = s.mods || { mant: true, ot: true, plan: true, insp: true, inv: false, ai: true, twin: false };
+    const mods = [['mant','build','Mantenimiento'],['ot','assignment','Órdenes de trabajo'],['plan','event_repeat','Planificación'],['insp','fact_check','Inspección'],['inv','inventory_2','Inventario'],['ai','auto_awesome','SIGMA AI'],['twin','view_in_ar','SIGMA Twin']].map(([k, ic, t]) => ({ t, ic, on: !!sel[k],
+      go: () => this.setState({ mods: { ...sel, [k]: !sel[k] } }),
+      st: 'display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (sel[k] ? 'border: 1px solid var(--pu); background: var(--pus); color: var(--put);' : 'border: 1px solid var(--inp); background: var(--sf); color: var(--lab);') }));
+    const DEF = { Usuarios: 15, Activos: 150, Plantas: 2, Bodegas: 2, 'Almac. (GB)': 50 };
+    const STEP = { Usuarios: 1, Activos: 10, Plantas: 1, Bodegas: 1, 'Almac. (GB)': 10 };
+    const lim = s.lim || DEF;
+    const lims = Object.keys(DEF).map(k => ({ t: k, v: String(lim[k]),
+      up: () => this.setState({ lim: { ...lim, [k]: lim[k] + STEP[k] } }),
+      dn: () => this.setState({ lim: { ...lim, [k]: Math.max(STEP[k], lim[k] - STEP[k]) } }) }));
+    return {
+      vars: this.vars(p.dark ?? false), ancho: p.ancho ?? '600px', alto: p.alto ?? '1000px',
+      lead, code: lead.id.replace('L-', 'LEAD-'),
+      isStd: modo === 'estandar', isPer: modo !== 'estandar',
+      segStd: seg(modo === 'estandar'), segPer: seg(modo !== 'estandar'),
+      toStd: () => this.setState({ modo: 'estandar' }), toPer: () => this.setState({ modo: 'personalizado' }),
+      planes, mods, lims, nMod: String(Object.values(sel).filter(Boolean).length) + ' de 7',
+      implT: f1(impl), mensT: f1(mens), anualT: f1(mens * 12), descT: desc + ' %', vigT: String(vig),
+      mensDescT: f1(mensDesc), periodoT: f1(periodo), totalT: f1(total),
+      implUp: () => this.setState({ impl: impl + 5 }), implDn: () => this.setState({ impl: Math.max(0, impl - 5) }),
+      mensUp: () => this.setState({ mens: mens + 0.5 }), mensDn: () => this.setState({ mens: Math.max(0.5, mens - 0.5) }),
+      descs: [0, 5, 10, 15, 20].map(d => ({ t: d + ' %', st: pill(d === desc), go: () => this.setState({ desc: d }) })),
+      vigs: [6, 12, 24, 36].map(v => ({ t: v + ' meses', st: seg(v === vig), go: () => this.setState({ vig: v }) })),
+      back: () => { if (p.onBack) p.onBack(); },
+      done: () => { if (p.onDone) p.onDone(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,774 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Centro Comercial · SIGMA</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="{{vars}} position: relative; display: flex; width: 100%; height: 1000px; overflow: hidden; background: var(--bg); color: var(--ink); font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <!-- ============ SIDEBAR ============ -->
+  <aside style="flex: 0 0 240px; height: 100%; box-sizing: border-box; background: var(--sb); display: flex; flex-direction: column; padding: 14px 14px 0; gap: 10px; color: #D3D8E8">
+    <img src="/_blob/061d77222d80befc67b3b21c57eba425" alt="SIGMA" style="height: 50px; width: auto; align-self: flex-start; margin: 2px 0 6px 2px">
+    <div style="display: flex; align-items: center; gap: 8px; height: 38px; padding: 0 10px; border-radius: 10px; border: 1px solid rgba(255,255,255,.12); background: rgba(255,255,255,.04); font-size: 13px; color: #9AA3BF">
+      <span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">search</span>
+      <span style="flex: 1">Ir a…</span>
+      <span style="font-size: 11px; font-weight: 700; padding: 2px 6px; border-radius: 6px; background: rgba(255,255,255,.1); color: #D3D8E8">Ctrl K</span>
+    </div>
+    <nav aria-label="Menú principal" style="flex: 1; display: flex; flex-direction: column; gap: 2px; overflow: hidden">
+      <sc-for list="{{nav}}" as="g" hint-placeholder-count="4">
+        <sc-if value="{{g.hasSec}}" hint-placeholder-val="{{true}}">
+          <div style="font-size: 11px; font-weight: 800; letter-spacing: .08em; color: #8C95B2; padding: 14px 12px 6px">{{g.sec}}</div>
+        </sc-if>
+        <sc-for list="{{g.items}}" as="it" hint-placeholder-count="2">
+          <button type="button" style="{{it.st}}">
+            <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{it.ic}}</span>
+            <span style="flex: 1; text-align: left">{{it.t}}</span>
+            <sc-if value="{{it.hasBadge}}" hint-placeholder-val="{{false}}">
+              <span style="min-width: 20px; height: 20px; padding: 0 6px; box-sizing: border-box; border-radius: 999px; background: #E5484D; color: #fff; font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">{{it.badge}}</span>
+            </sc-if>
+            <span class="material-symbols-rounded" style="font-size: 18px; opacity: .7" aria-hidden="true">{{it.chev}}</span>
+          </button>
+          <sc-if value="{{it.open}}" hint-placeholder-val="{{false}}">
+            <div style="margin: 4px 0 4px 26px; padding-left: 14px; border-left: 1px solid rgba(255,255,255,.14); display: flex; flex-direction: column; gap: 2px">
+              <button type="button" style="display: flex; align-items: center; gap: 10px; height: 36px; padding: 0 12px; border: 0; border-radius: 10px; background: rgba(255,255,255,.08); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">
+                <span style="width: 7px; height: 7px; border-radius: 50%; background: #16C6C9"></span>Centro Comercial
+              </button>
+            </div>
+          </sc-if>
+        </sc-for>
+      </sc-for>
+    </nav>
+    <div style="display: flex; align-items: center; gap: 8px; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #9AA3BF">
+      <span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">keyboard_double_arrow_left</span>Contraer menú
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px; padding: 14px 4px 16px; border-top: 1px solid rgba(255,255,255,.1)">
+      <span style="width: 38px; height: 38px; border-radius: 50%; background: #2B3360; color: #fff; font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center">CR</span>
+      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column">
+        <b style="color: #fff; font-size: 14px">Camila Rojas</b>
+        <span style="font-size: 12px; color: #9AA3BF">Comercial</span>
+      </span>
+      <span class="material-symbols-rounded" style="font-size: 20px; color: #9AA3BF" aria-hidden="true">logout</span>
+    </div>
+  </aside><div style="flex: 1; min-width: 0; height: 100%; display: flex; flex-direction: column">
+    <header style="height: 70px; flex: 0 0 70px; box-sizing: border-box; display: flex; align-items: center; gap: 18px; padding: 0 28px; background: var(--tb); border-bottom: 1px solid var(--line)">
+      <button type="button" aria-label="Menú" style="border: 0; background: transparent; color: var(--ink); cursor: pointer; display: inline-flex"><span class="material-symbols-rounded" style="font-size: 24px" aria-hidden="true">menu</span></button>
+      <div style="flex: 0 1 360px; display: flex; align-items: center; gap: 10px; height: 40px; padding: 0 16px; border-radius: 999px; background: var(--sf2); color: var(--mut); font-size: 14px">
+        <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">search</span>Buscar… (Ctrl K)
+      </div>
+      <div style="flex: 1"></div>
+      <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--line); background: var(--sf); color: var(--ink); font: inherit; font-weight: 700; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 18px; color: var(--pu)" aria-hidden="true">domain</span>Código Creativo<span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">expand_more</span>
+      </button>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ink)"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--da)" aria-hidden="true">report</span>Reportar problema</span>
+      <span style="display: inline-flex; align-items: center; gap: 6px; font-weight: 700; color: var(--ink)"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--pu)" aria-hidden="true">help</span>Ayuda</span>
+      <span style="position: relative; display: inline-flex; color: var(--pu)"><span class="material-symbols-rounded" style="font-size: 24px" aria-hidden="true">notifications</span><span style="position: absolute; top: -4px; right: -6px; min-width: 16px; height: 16px; border-radius: 999px; background: var(--pu); color: #fff; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">4</span></span>
+      <span style="width: 34px; height: 34px; border-radius: 50%; background: var(--pus); color: var(--put); font-weight: 800; font-size: 12px; display: inline-flex; align-items: center; justify-content: center">CR</span>
+    </header>
+
+    <main style="flex: 1; min-height: 0; overflow-y: auto; padding: 14px 28px 40px; display: flex; flex-direction: column; gap: 16px">
+
+      <!-- Header del Centro: banda oscura sin degradado -->
+      <section style="background: var(--hd); border: 1px solid var(--hdb); border-radius: 18px; padding: 26px 30px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 20px">
+        <div style="min-width: 0">
+          <div style="font-size: 13px; font-weight: 700; color: #4FD8DB">Comercial</div>
+          <h1 style="margin: 4px 0 6px; font-size: 30px; line-height: 1.15; font-weight: 700; color: #FFFFFF; letter-spacing: -.01em">Centro Comercial</h1>
+          <p style="margin: 0; font-size: 15px; color: var(--hdm)">Del formulario web al cliente activo: leads, demos, propuestas y contratos en un solo lugar.</p>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+          <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,.2); background: transparent; color: #B9C0D6; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer">Ejecutivo <b style="color: #FFFFFF">Todos</b><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">expand_more</span></button>
+          <button type="button" onClick="{{hdrGo}}" style="display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 10px; border: 0; background: var(--pu); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{hdrIc}}</span>{{hdrT}}</button>
+        </div>
+      </section>
+
+      <!-- Pestañas con icono + subtítulo -->
+      <nav aria-label="Secciones del Centro Comercial" style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; padding: 6px; border-radius: 14px; background: var(--sf); border: 1px solid var(--line)">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="3">
+          <button type="button" onClick="{{t.go}}" style="{{t.st}}">
+            <span style="{{t.icSt}}"><span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">{{t.ic}}</span></span>
+            <span style="display: flex; flex-direction: column; align-items: flex-start; min-width: 0">
+              <b style="{{t.tSt}}">{{t.t}}</b>
+              <span style="font-size: 12px; color: var(--mut); font-weight: 500">{{t.s}}</span>
+            </span>
+          </button>
+        </sc-for>
+      </nav>
+
+      <!-- ============ RESUMEN ============ -->
+      <sc-if value="{{isResumen}}" hint-placeholder-val="{{true}}">
+        <div style="display: flex; flex-direction: column; gap: 16px">
+          <div style="display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px">
+            <sc-for list="{{kpis}}" as="k" hint-placeholder-count="5">
+              <button type="button" onClick="{{k.go}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                <span style="display: flex; align-items: center; justify-content: space-between; width: 100%">
+                  <span style="{{k.icSt}}"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">{{k.ic}}</span></span>
+                  <span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">arrow_forward</span>
+                </span>
+                <span style="display: flex; flex-direction: column; gap: 2px">
+                  <span style="font-size: 13px; font-weight: 700; color: var(--mut)">{{k.t}}</span>
+                  <span style="font-size: 30px; line-height: 1.1; font-weight: 800; color: var(--ink); font-variant-numeric: tabular-nums">{{k.n}}</span>
+                  <span style="font-size: 12px; color: var(--mut)">{{k.s}}</span>
+                </span>
+              </button>
+            </sc-for>
+          </div>
+
+          <div style="display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 16px; align-items: start">
+            <section style="border-radius: 14px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); padding: 20px 20px 10px">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 6px">
+                <h2 style="margin: 0; font-size: 17px; font-weight: 700">Requiere atención</h2>
+                <span style="font-size: 12px; color: var(--mut)">10 pendientes · ordenados por urgencia</span>
+              </div>
+              <sc-for list="{{att}}" as="g" hint-placeholder-count="3">
+                <div style="padding-top: 12px">
+                  <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lab); padding: 0 0 6px">
+                    <span class="material-symbols-rounded" style="font-size: 16px; color: var(--mut)" aria-hidden="true">{{g.ic}}</span>{{g.t}}<span style="font-weight: 800; color: var(--mut)">{{g.n}}</span>
+                  </div>
+                  <sc-for list="{{g.items}}" as="a" hint-placeholder-count="2">
+                    <button type="button" onClick="{{a.go}}" style="display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 10px; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                      <span style="{{a.icSt}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{a.ic}}</span></span>
+                      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                        <b style="font-size: 14px">{{a.emp}}</b>
+                        <span style="font-size: 12px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{a.sub}}</span>
+                      </span>
+                      <span style="{{a.chSt}}">{{a.ch}}</span>
+                      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--blt)">{{a.cta}}<span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">chevron_right</span></span>
+                    </button>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </section>
+
+            <section style="border-radius: 14px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); padding: 20px">
+              <div style="font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--put)">Miércoles 21 de octubre</div>
+              <h2 style="margin: 4px 0 12px; font-size: 17px; font-weight: 700">Tus próximas acciones</h2>
+              <div style="display: flex; flex-direction: column">
+                <sc-for list="{{agenda}}" as="x" hint-placeholder-count="4">
+                  <button type="button" onClick="{{x.go}}" style="display: grid; grid-template-columns: 54px 32px minmax(0, 1fr); align-items: center; gap: 10px; padding: 11px 0; border: 0; border-top: 1px solid var(--line); background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                    <span style="font-size: 13px; font-weight: 800; font-variant-numeric: tabular-nums">{{x.h}}</span>
+                    <span style="width: 32px; height: 32px; border-radius: 9px; background: var(--sf2); color: var(--lab); display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{x.ic}}</span></span>
+                    <span style="min-width: 0; display: flex; flex-direction: column; gap: 1px">
+                      <b style="font-size: 13px">{{x.t}}</b>
+                      <span style="font-size: 12px; color: var(--mut)">{{x.emp}}</span>
+                    </span>
+                  </button>
+                </sc-for>
+              </div>
+              <div style="margin-top: 10px; padding: 12px 14px; border-radius: 10px; background: var(--cys); color: var(--cyt); font-size: 12px; line-height: 1.5; display: flex; gap: 10px">
+                <span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">info</span>
+                <span>Las acciones salen de la «próxima acción» que registras en cada lead. Si un lead no tiene una, aparece en «Requiere atención».</span>
+              </div>
+            </section>
+          </div>
+        </div>
+      </sc-if>
+
+      <!-- ============ PIPELINE ============ -->
+      <sc-if value="{{isPipeline}}" hint-placeholder-val="{{false}}">
+        <section style="border-radius: 16px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+            <label style="flex: 1 1 320px; display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-radius: 10px; background: var(--sf2); color: var(--mut)">
+              <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">search</span>
+              <input type="search" placeholder="Empresa, contacto o correo" aria-label="Buscar lead" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14px">
+            </label>
+            <button type="button" style="display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 10px; border: 1px solid var(--inp); background: var(--sf); color: var(--ink); font: inherit; font-size: 13px; font-weight: 600; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">person</span>Ejecutivo: <b>Todos</b><span class="material-symbols-rounded" style="font-size: 18px; color: var(--mut)" aria-hidden="true">expand_more</span></button>
+            <div role="group" aria-label="Vista" style="display: inline-flex; padding: 4px; border-radius: 12px; background: var(--sf2); gap: 4px">
+              <button type="button" onClick="{{toLista}}" style="{{vLista}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">format_list_bulleted</span>Lista</button>
+              <button type="button" onClick="{{toTablero}}" style="{{vTablero}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">view_kanban</span>Tablero</button>
+            </div>
+          </div>
+          <div style="display: flex; flex-wrap: wrap; gap: 8px">
+            <sc-for list="{{chips}}" as="c" hint-placeholder-count="7">
+              <button type="button" onClick="{{c.go}}" style="{{c.st}}">
+                <sc-if value="{{c.dot}}" hint-placeholder-val="{{false}}"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--wa)"></span></sc-if>
+                {{c.t}}<span style="font-weight: 800; opacity: .75">{{c.n}}</span>
+              </button>
+            </sc-for>
+          </div>
+
+          <sc-if value="{{isLista}}" hint-placeholder-val="{{true}}">
+            <div style="overflow-x: auto; min-width: 0">
+              <div style="min-width: 1040px">
+                <div style="display: grid; grid-template-columns: minmax(230px, 2.1fr) 128px 150px minmax(170px, 1.3fr) minmax(180px, 1.4fr) 80px 24px; gap: 14px; padding: 6px 14px 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--mut)">
+                  <span>Empresa · contacto</span><span>Estado</span><span>Ejecutivo</span><span>Última actividad</span><span>Próxima acción</span><span style="text-align: right">Días</span><span></span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+                    <button type="button" onClick="{{r.go}}" style="{{r.rowSt}}">
+                      <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                        <b style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.emp}}</b>
+                        <span style="font-size: 12px; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.ct}} · {{r.cargo}}</span>
+                      </span>
+                      <span style="display: flex; flex-direction: column; align-items: flex-start; gap: 4px">
+                        <span style="{{r.stSt}}">{{r.stL}}</span>
+                        <sc-if value="{{r.hasFlag}}" hint-placeholder-val="{{false}}"><span style="{{r.flagSt}}">{{r.flag}}</span></sc-if>
+                      </span>
+                      <span style="display: flex; align-items: center; gap: 8px; min-width: 0">
+                        <sc-if value="{{r.hasEj}}" hint-placeholder-val="{{true}}">
+                          <span style="width: 28px; height: 28px; flex: 0 0 28px; border-radius: 50%; background: var(--pus); color: var(--put); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">{{r.ini}}</span>
+                          <span style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.ej}}</span>
+                        </sc-if>
+                        <sc-if value="{{r.noEj}}" hint-placeholder-val="{{false}}">
+                          <span style="display: inline-flex; align-items: center; gap: 4px; font-size: 13px; font-weight: 700; color: var(--wat)"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">person_add</span>Asignar</span>
+                        </sc-if>
+                      </span>
+                      <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                        <span style="font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.ult}}</span>
+                        <span style="font-size: 12px; color: var(--mut)">{{r.ultT}}</span>
+                      </span>
+                      <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px">
+                        <span style="font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.prox}}</span>
+                        <span style="{{r.proxSt}}">{{r.proxT}}</span>
+                      </span>
+                      <span style="text-align: right; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums">{{r.dias}}</span>
+                      <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">chevron_right</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--mut); padding: 2px 4px">
+              <span>Mostrando {{shown}} de {{total}} leads</span>
+              <span>Ordenado por próxima acción</span>
+            </div>
+          </sc-if>
+
+          <sc-if value="{{isTablero}}" hint-placeholder-val="{{false}}">
+            <div style="overflow-x: auto; min-width: 0; padding-bottom: 6px">
+              <div style="display: flex; gap: 12px; align-items: flex-start; min-width: max-content">
+                <sc-for list="{{cols}}" as="col" hint-placeholder-count="7">
+                  <div style="width: 236px; flex: 0 0 236px; border-radius: 14px; background: var(--sf2); padding: 10px; display: flex; flex-direction: column; gap: 8px">
+                    <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 4px 6px">
+                      <span style="{{col.chSt}}">{{col.t}}</span>
+                      <span style="font-size: 13px; font-weight: 800; color: var(--mut)">{{col.n}}</span>
+                    </div>
+                    <sc-for list="{{col.cards}}" as="r" hint-placeholder-count="2">
+                      <button type="button" onClick="{{r.go}}" style="{{r.cardSt}}">
+                        <b style="font-size: 13px">{{r.emp}}</b>
+                        <span style="font-size: 12px; color: var(--mut)">{{r.ct}}</span>
+                        <sc-if value="{{r.hasFlag}}" hint-placeholder-val="{{false}}"><span style="{{r.flagSt}}">{{r.flag}}</span></sc-if>
+                        <span style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 6px; border-top: 1px solid var(--line); font-size: 12px; color: var(--mut)">
+                          <span style="display: inline-flex; align-items: center; gap: 6px">
+                            <span style="{{r.avSt}}">{{r.ini}}</span>{{r.proxT}}
+                          </span>
+                          <span style="font-weight: 700">{{r.dias}} d</span>
+                        </span>
+                      </button>
+                    </sc-for>
+                    <sc-if value="{{col.more}}" hint-placeholder-val="{{false}}">
+                      <span style="font-size: 12px; font-weight: 700; color: var(--blt); padding: 4px 6px">+ {{col.moreN}} más</span>
+                    </sc-if>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+
+      <!-- ============ CLIENTES ============ -->
+      <sc-if value="{{isClientes}}" hint-placeholder-val="{{false}}">
+        <section style="border-radius: 16px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+            <label style="flex: 1 1 320px; display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-radius: 10px; background: var(--sf2); color: var(--mut)">
+              <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">search</span>
+              <input type="search" placeholder="Cliente, plan o RUT" aria-label="Buscar cliente" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14px">
+            </label>
+            <div style="display: flex; gap: 8px">
+              <span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; background: var(--ink); color: var(--bg); font-size: 13px; font-weight: 700">Activas <span style="opacity: .75">9</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--sf); font-size: 13px; font-weight: 700"><span style="width: 7px; height: 7px; border-radius: 50%; background: var(--wa)"></span>Renuevan en 60 días <span style="opacity: .75">3</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--sf); font-size: 13px; font-weight: 700">Todas <span style="opacity: .75">10</span></span>
+            </div>
+          </div>
+          <div style="overflow-x: auto; min-width: 0">
+            <div style="min-width: 1040px">
+              <div style="display: grid; grid-template-columns: minmax(220px, 2fr) 150px 150px 110px 110px 120px minmax(130px, 1fr) 140px; gap: 14px; padding: 6px 14px 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--mut)">
+                <span>Cliente</span><span>Plan</span><span>Suscripción</span><span>Desde</span><span>Renueva</span><span style="text-align: right">Mensualidad</span><span>Usuarios</span><span>Ejecutivo</span>
+              </div>
+              <div style="display: flex; flex-direction: column; gap: 6px">
+                <sc-for list="{{clientes}}" as="c" hint-placeholder-count="8">
+                  <button type="button" onClick="{{c.go}}" style="display: grid; grid-template-columns: minmax(220px, 2fr) 150px 150px 110px 110px 120px minmax(130px, 1fr) 140px; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                    <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px"><b style="font-size: 14px">{{c.emp}}</b><span style="font-size: 12px; color: var(--mut)">{{c.rut}}</span></span>
+                    <span style="font-size: 13px; font-weight: 600">{{c.plan}}</span>
+                    <span><span style="{{c.stSt}}">{{c.st}}</span></span>
+                    <span style="font-size: 13px; font-variant-numeric: tabular-nums">{{c.desde}}</span>
+                    <span style="font-size: 13px; font-variant-numeric: tabular-nums">{{c.ren}}</span>
+                    <span style="font-size: 13px; font-weight: 700; text-align: right; font-variant-numeric: tabular-nums">{{c.mens}}</span>
+                    <span style="display: flex; flex-direction: column; gap: 5px">
+                      <span style="font-size: 12px; color: var(--mut); font-variant-numeric: tabular-nums">{{c.uso}}</span>
+                      <span style="height: 6px; border-radius: 999px; background: var(--sf2); overflow: hidden"><span style="{{c.barSt}}"></span></span>
+                    </span>
+                    <span style="display: flex; align-items: center; gap: 8px"><span style="width: 28px; height: 28px; border-radius: 50%; background: var(--pus); color: var(--put); font-size: 11px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center">{{c.ini}}</span><span style="font-size: 13px">{{c.ej}}</span></span>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </div>
+        </section>
+      </sc-if>
+      <!-- ============ SUSCRIPCIONES (cobros, pagos y planes) ============ -->
+      <sc-if value="{{isSus}}" hint-placeholder-val="{{false}}">
+        <section style="border-radius: 16px; border: 1px solid var(--line); background: var(--sf); box-shadow: var(--sh); padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0">
+          <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px">
+            <div role="tablist" aria-label="Vista" style="display: inline-flex; padding: 4px; border-radius: 12px; background: var(--sf2); gap: 4px">
+              <sc-for list="{{subs}}" as="sb" hint-placeholder-count="4">
+                <button type="button" role="tab" aria-selected="{{sb.on}}" onClick="{{sb.go}}" style="{{sb.st}}"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{sb.ic}}</span>{{sb.t}}<sc-if value="{{sb.hasN}}" hint-placeholder-val="{{false}}"><span style="{{sb.nSt}}">{{sb.n}}</span></sc-if></button>
+              </sc-for>
+            </div>
+            <label style="flex: 1 1 280px; display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border-radius: 10px; background: var(--sf2); color: var(--mut)">
+              <span class="material-symbols-rounded" style="font-size: 20px" aria-hidden="true">search</span>
+              <input type="search" placeholder="{{subPh}}" aria-label="Buscar" style="flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; font-size: 14px">
+            </label>
+          </div>
+          <sc-if value="{{hasSubChips}}" hint-placeholder-val="{{true}}">
+            <div style="display: flex; flex-wrap: wrap; gap: 8px">
+              <sc-for list="{{subChips}}" as="c" hint-placeholder-count="5">
+                <button type="button" onClick="{{c.go}}" style="{{c.st}}"><sc-if value="{{c.hasDot}}" hint-placeholder-val="{{false}}"><span style="{{c.dotSt}}"></span></sc-if>{{c.t}}<span style="font-weight: 800; opacity: .75">{{c.n}}</span></button>
+              </sc-for>
+            </div>
+          </sc-if>
+
+          <!-- Suscripciones -->
+          <sc-if value="{{isSubS}}" hint-placeholder-val="{{true}}">
+            <div style="overflow-x: auto; min-width: 0">
+              <div style="min-width: 1040px">
+                <div style="display: grid; grid-template-columns: minmax(220px, 2fr) 90px 120px 220px 130px minmax(170px, 1.3fr) 24px; gap: 14px; padding: 6px 14px 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--mut)">
+                  <span>Cliente</span><span>Plan</span><span>Estado</span><span>Cobro</span><span>Acceso hasta</span><span>Próximo cobro</span><span></span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <sc-for list="{{susRows}}" as="r" hint-placeholder-count="8">
+                    <button type="button" onClick="{{r.go}}" style="{{r.rowSt}}">
+                      <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px"><b style="font-size: 14px">{{r.emp}}</b><span style="font-size: 12px; color: var(--mut)">{{r.cod}} · {{r.ej}}</span></span>
+                      <span style="font-size: 13px; font-weight: 700">{{r.plan}}</span>
+                      <span><span style="{{r.estSt}}">{{r.est}}</span></span>
+                      <span><span style="{{r.cobSt}}"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">{{r.cobIc}}</span>{{r.cob}}</span></span>
+                      <span style="font-size: 13px; font-variant-numeric: tabular-nums">{{r.hasta}}</span>
+                      <span style="display: flex; flex-direction: column; gap: 2px; min-width: 0"><span style="font-size: 13px; font-weight: 600">{{r.prox}}</span><span style="{{r.proxSt}}">{{r.proxS}}</span></span>
+                      <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">chevron_right</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Períodos -->
+          <sc-if value="{{isSubP}}" hint-placeholder-val="{{false}}">
+            <div style="overflow-x: auto; min-width: 0">
+              <div style="min-width: 1040px">
+                <div style="display: grid; grid-template-columns: 96px minmax(200px, 1.6fr) 150px 100px 120px 190px minmax(130px, 1fr) 24px; gap: 14px; padding: 6px 14px 10px; font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--mut)">
+                  <span>Período</span><span>Cliente</span><span>Concepto</span><span style="text-align: right">Base</span><span style="text-align: right">Monto</span><span>Estado</span><span>Fecha</span><span></span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px">
+                  <sc-for list="{{perRows}}" as="r" hint-placeholder-count="7">
+                    <button type="button" onClick="{{r.go}}" style="display: grid; grid-template-columns: 96px minmax(200px, 1.6fr) 150px 100px 120px 190px minmax(130px, 1fr) 24px; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                      <span style="font-size: 12px; font-weight: 800; color: var(--put); font-variant-numeric: tabular-nums">{{r.cod}}</span>
+                      <b style="font-size: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{r.emp}}</b>
+                      <span style="font-size: 13px">{{r.con}}</span>
+                      <span style="font-size: 13px; text-align: right; font-variant-numeric: tabular-nums">{{r.uf}}</span>
+                      <b style="font-size: 13px; text-align: right; font-variant-numeric: tabular-nums">{{r.clp}}</b>
+                      <span><span style="{{r.estSt}}">{{r.est}}</span></span>
+                      <span style="{{r.fSt}}">{{r.f}}</span>
+                      <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">chevron_right</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Pagos -->
+          <sc-if value="{{isSubG}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 10px">
+              <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--wat)"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">pending_actions</span>Por verificar · transferencias informadas por el cliente</div>
+              <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+                <sc-for list="{{porVer}}" as="v" hint-placeholder-count="2">
+                  <div style="display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; border: 1px solid var(--line); background: var(--sf)">
+                    <div style="display: flex; align-items: flex-start; gap: 12px">
+                      <span style="width: 40px; height: 40px; flex: 0 0 40px; border-radius: 12px; background: var(--was); color: var(--wat); display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">account_balance</span></span>
+                      <span style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px"><b style="font-size: 14px">{{v.emp}}</b><span style="font-size: 12px; color: var(--mut)">{{v.cod}} · {{v.per}}</span></span>
+                      <b style="font-size: 18px; font-variant-numeric: tabular-nums">{{v.monto}}</b>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; padding: 10px 12px; border-radius: 10px; background: var(--sf2); font-size: 12px">
+                      <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: var(--mut)">Banco</span><b>{{v.banco}}</b></span>
+                      <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: var(--mut)">N.° de operación</span><b style="font-variant-numeric: tabular-nums">{{v.op}}</b></span>
+                      <span style="display: flex; flex-direction: column; gap: 2px"><span style="color: var(--mut)">Informado</span><b>{{v.cuando}}</b></span>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px">
+                      <span style="display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--mut)"><span class="material-symbols-rounded" style="font-size: 18px; color: var(--dat)" aria-hidden="true">picture_as_pdf</span>{{v.arch}}</span>
+                      <span style="flex: 1"></span>
+                      <button type="button" onClick="{{v.go}}" style="display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: var(--pu); color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">fact_check</span>Verificar</button>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+              <div style="display: flex; align-items: center; gap: 8px; padding-top: 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--lab)"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">history</span>Últimos pagos</div>
+              <div style="overflow-x: auto; min-width: 0">
+                <div style="min-width: 960px; display: flex; flex-direction: column; gap: 6px">
+                  <sc-for list="{{pagRows}}" as="r" hint-placeholder-count="4">
+                    <button type="button" onClick="{{r.go}}" style="display: grid; grid-template-columns: 96px minmax(200px, 1.6fr) 200px 130px 120px 170px 24px; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line); background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                      <span style="font-size: 12px; font-weight: 800; color: var(--put)">{{r.cod}}</span>
+                      <span style="min-width: 0; display: flex; flex-direction: column; gap: 2px"><b style="font-size: 14px">{{r.emp}}</b><span style="font-size: 12px; color: var(--mut)">{{r.per}}</span></span>
+                      <span><span style="{{r.oriSt}}"><span class="material-symbols-rounded" style="font-size: 14px" aria-hidden="true">{{r.oriIc}}</span>{{r.ori}}</span></span>
+                      <b style="font-size: 13px; text-align: right; font-variant-numeric: tabular-nums">{{r.monto}}</b>
+                      <span style="font-size: 13px; font-variant-numeric: tabular-nums">{{r.f}}</span>
+                      <span><span style="{{r.estSt}}">{{r.est}}</span></span>
+                      <span class="material-symbols-rounded" style="font-size: 20px; color: var(--mut)" aria-hidden="true">chevron_right</span>
+                    </button>
+                  </sc-for>
+                </div>
+              </div>
+            </div>
+          </sc-if>
+
+          <!-- Planes -->
+          <sc-if value="{{isSubL}}" hint-placeholder-val="{{false}}">
+            <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px">
+              <sc-for list="{{planRows}}" as="pl" hint-placeholder-count="3">
+                <button type="button" onClick="{{pl.go}}" style="display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 18px; border-radius: 14px; border: 1px solid var(--line); background: var(--sf); color: var(--ink); font: inherit; text-align: left; cursor: pointer">
+                  <span style="display: flex; align-items: center; justify-content: space-between; width: 100%"><span style="font-size: 12px; font-weight: 800; color: var(--put)">{{pl.cod}}</span><span style="display: flex; gap: 6px"><span style="{{pl.pubSt}}">{{pl.pub}}</span><span style="{{pl.habSt}}">HABILITADO</span></span></span>
+                  <b style="font-size: 18px">{{pl.t}}</b>
+                  <span style="display: flex; align-items: baseline; gap: 6px"><span style="font-size: 26px; font-weight: 800; font-variant-numeric: tabular-nums">{{pl.uf}}</span><span style="font-size: 13px; color: var(--mut)">UF / mes · rige desde {{pl.desde}}</span></span>
+                  <span style="font-size: 12px; color: var(--mut)">Clientes fuera de Chile: <b style="color: var(--ink)">{{pl.usd}} / mes</b></span>
+                  <span style="font-size: 12px; color: var(--mut); line-height: 1.5">{{pl.inc}}</span>
+                  <span style="display: flex; align-items: center; justify-content: space-between; width: 100%; padding-top: 10px; border-top: 1px solid var(--line); font-size: 12px; color: var(--mut)"><span>{{pl.n}} suscripciones</span><span style="display: inline-flex; align-items: center; gap: 4px; font-weight: 700; color: var(--blt)">Abrir plan<span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">chevron_right</span></span></span>
+                </button>
+              </sc-for>
+            </div>
+          </sc-if>
+        </section>
+      </sc-if>
+    </main>
+  </div>
+
+  <!-- ============ COLUMNA PRINCIPAL ============ -->
+  
+
+  <!-- ============ DRAWER (sin modales: la lista sigue visible) ============ -->
+  <sc-if value="{{anyDrawer}}" hint-placeholder-val="{{false}}">
+    <div onClick="{{closeDrawer}}" style="position: absolute; inset: 0; background: var(--scrim)"></div>
+    <div style="{{drawerSt}}">
+      <sc-if value="{{dFicha}}" hint-placeholder-val="{{false}}">
+        <dc-import name="Ficha" dark="{{dark}}" lead="{{lead}}" etapa="{{etapa}}" ancho="600px" alto="1000px" on-close="{{closeDrawer}}" on-demo="{{openDemo}}" on-prop="{{openProp}}" on-meet="{{openMeet}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dDemo}}" hint-placeholder-val="{{false}}">
+        <dc-import name="CrearDemo" dark="{{dark}}" lead="{{lead}}" ancho="600px" alto="1000px" on-back="{{backFicha}}" on-done="{{demoDone}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dProp}}" hint-placeholder-val="{{false}}">
+        <dc-import name="CrearPropuesta" dark="{{dark}}" lead="{{lead}}" ancho="600px" alto="1000px" on-back="{{backFicha}}" on-done="{{propDone}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dReunion}}" hint-placeholder-val="{{false}}">
+        <dc-import name="Reunion" lead="{{lead}}" fase="{{fase}}" ancho="600px" alto="1000px" on-close="{{backFicha}}" on-send="{{meetSend}}" on-save="{{meetSave}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dSus}}" hint-placeholder-val="{{false}}">
+        <dc-import name="DSuscripcion" modo="{{modoSus}}" ancho="600px" alto="1000px" on-close="{{closeDrawer}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dPer}}" hint-placeholder-val="{{false}}">
+        <dc-import name="DPeriodo" modo="{{modoPer}}" ancho="600px" alto="1000px" on-close="{{closeDrawer}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dPago}}" hint-placeholder-val="{{false}}">
+        <dc-import name="DPago" modo="{{modoPago}}" ancho="{{pagoW}}" alto="1000px" on-close="{{closeDrawer}}" hint-size="760px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dPlan}}" hint-placeholder-val="{{false}}">
+        <dc-import name="DPlan" ancho="760px" alto="1000px" on-close="{{closeDrawer}}" hint-size="760px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dCli}}" hint-placeholder-val="{{false}}">
+        <dc-import name="DCliente" modo="{{modoCli}}" ancho="600px" alto="1000px" on-close="{{closeDrawer}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+      <sc-if value="{{dNL}}" hint-placeholder-val="{{false}}">
+        <dc-import name="NuevoLead" ancho="600px" alto="1000px" on-close="{{closeDrawer}}" on-save="{{nlSave}}" hint-size="600px,1000px"></dc-import>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+    <div role="status" style="position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; background: #17223B; color: #FFFFFF; font-size: 13px; font-weight: 600; box-shadow: 0 12px 32px rgba(10,14,30,.3)">
+      <span class="material-symbols-rounded" style="font-size: 20px; color: #3CCB8E" aria-hidden="true">check_circle</span>{{toast}}
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"tab":{"editor":"enum","options":["resumen","pipeline","clientes","suscripciones"],"default":"resumen","section":"Vista"},"view":{"editor":"enum","options":["lista","tablero"],"default":"lista","section":"Vista"},"filt":{"editor":"enum","options":["todos","leads","demo","propuesta","contrato","perdido","atencion"],"default":"todos","section":"Vista"},"sub":{"editor":"enum","options":["suscripciones","periodos","pagos","planes"],"default":"suscripciones","section":"Vista"},"drawer":{"editor":"enum","options":["none","ficha","demo","propuesta","reunion","nuevolead","suscripcion","periodo","pago","plan","cliente"],"default":"none","section":"Drawer"},"modo":{"editor":"text","default":"","section":"Drawer"},"fase":{"editor":"enum","options":["agendar","registrar"],"default":"agendar","section":"Drawer"},"lead":{"editor":"text","default":"L-0142","section":"Drawer"},"etapa":{"editor":"enum","options":["auto","lead","demo","propuesta","contrato"],"default":"auto","section":"Drawer"},"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  vars(dark) {
+    const L = { bg:'#F4F6FA', sf:'#FFFFFF', sf2:'#F4F6FA', ink:'#17223B', mut:'#68738A', lab:'#4A556D', line:'#E2E7F0', inp:'#CFD6E3', pu:'#6732F4', pud:'#4820C9', pus:'#F2EFFF', put:'#5426D9', bl:'#087BEA', bls:'#EAF4FF', blt:'#0565C2', cy:'#16C6C9', cyd:'#007F8A', cys:'#E8FBFB', cyt:'#006B74', ok:'#16855B', oks:'#E8F6EF', okt:'#12704C', wa:'#B65C00', was:'#FFF3E4', wat:'#9A4E00', da:'#C7352B', das:'#FDEDEB', dat:'#A92C23', gr:'#EEF1F6', grt:'#5A6478', hd:'#151A33', hdb:'#151A33', hdm:'#B9C0D6', tb:'#FFFFFF', sb:'#10152B', scrim:'rgba(16,21,43,.34)', sh:'0 1px 2px rgba(23,34,59,.04), 0 6px 18px rgba(23,34,59,.05)' };
+    const D = { bg:'#0B0F1E', sf:'#131930', sf2:'#1A2140', ink:'#E8ECF8', mut:'#98A1BC', lab:'#B3BAD0', line:'#252D4B', inp:'#353E62', pu:'#7347FF', pud:'#8C67FF', pus:'rgba(115,71,255,.18)', put:'#BBA6FF', bl:'#4CA2FF', bls:'rgba(8,123,234,.18)', blt:'#7DBBFF', cy:'#16C6C9', cyd:'#0A8F99', cys:'rgba(22,198,201,.13)', cyt:'#52DADC', ok:'#3CCB8E', oks:'rgba(22,133,91,.22)', okt:'#5FDCA6', wa:'#F0A04B', was:'rgba(182,92,0,.24)', wat:'#F6B56E', da:'#FF6E63', das:'rgba(199,53,43,.24)', dat:'#FF8C83', gr:'rgba(255,255,255,.08)', grt:'#A9B1C9', hd:'#070A16', hdb:'#252D4B', hdm:'#9FA7C2', tb:'#0F1428', sb:'#080B18', scrim:'rgba(0,0,0,.55)', sh:'0 1px 2px rgba(0,0,0,.3)' };
+    const t = dark ? D : L;
+    return Object.keys(t).map(k => '--' + k + ':' + t[k]).join('; ') + ';' + (dark ? ' color-scheme: dark;' : '');
+  }
+  tone(t) {
+    const m = { bl:['--bls','--blt'], cy:['--cys','--cyt'], pu:['--pus','--put'], wa:['--was','--wat'], ok:['--oks','--okt'], da:['--das','--dat'], gr:['--gr','--grt'] }[t];
+    return 'display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; letter-spacing: .03em; white-space: nowrap; background: var(' + m[0] + '); color: var(' + m[1] + ');';
+  }
+  icBox(t, size) {
+    const m = { bl:['--bls','--blt'], cy:['--cys','--cyt'], pu:['--pus','--put'], wa:['--was','--wat'], ok:['--oks','--okt'], da:['--das','--dat'], gr:['--gr','--grt'] }[t];
+    const s = size || 40;
+    return 'width: ' + s + 'px; height: ' + s + 'px; flex: 0 0 ' + s + 'px; border-radius: ' + Math.round(s / 3.4) + 'px; display: inline-flex; align-items: center; justify-content: center; background: var(' + m[0] + '); color: var(' + m[1] + ');';
+  }
+  leads() {
+    return [
+      { id:'L-0142', emp:'Hamburgo S.A.', ct:'Juan Pérez', cargo:'Jefe de Mantenimiento', mail:'juan.perez@hamburgo.cl', tel:'+56 9 8765 4321', st:'demo', ej:'Camila Rojas', ini:'CR', ult:'Demo utilizada: 12 OT', ultT:'ayer 18:42', prox:'Llamada de seguimiento', proxT:'hoy 10:00', dias:4, flag:'Vence en 3 días', ft:'wa', att:true },
+      { id:'L-0151', emp:'Envases del Sur SpA', ct:'Rodrigo Fuentes', cargo:'Gerente de Planta', mail:'rfuentes@envasesdelsur.cl', tel:'+56 9 6612 0934', st:'nuevo', ej:'', ini:'', ult:'Formulario web', ultT:'hace 40 min', prox:'Asignar ejecutivo', proxT:'hoy', dias:0, flag:'', ft:'', att:true },
+      { id:'L-0150', emp:'Agroindustrial Colchagua', ct:'Paula Herrera', cargo:'Jefa de Operaciones', mail:'pherrera@agrocolchagua.cl', tel:'+56 9 7720 4481', st:'nuevo', ej:'', ini:'', ult:'Formulario web', ultT:'hace 3 h', prox:'Asignar ejecutivo', proxT:'hoy', dias:0, flag:'', ft:'', att:true },
+      { id:'L-0149', emp:'Panificadora Los Andes', ct:'Sergio Navarro', cargo:'Encargado de Mantención', mail:'snavarro@panlosandes.cl', tel:'+56 9 5531 2287', st:'nuevo', ej:'', ini:'', ult:'Formulario web', ultT:'ayer 19:20', prox:'Asignar ejecutivo', proxT:'hoy', dias:1, flag:'', ft:'', att:true },
+      { id:'L-0139', emp:'Pesquera Bahía Austral', ct:'Claudia Muñoz', cargo:'Gerenta de Mantenimiento', mail:'cmunoz@bahiaaustral.cl', tel:'+56 9 9043 1176', st:'demo', ej:'Tomás Aravena', ini:'TA', ult:'Email de seguimiento', ultT:'hace 3 días', prox:'Llamar: demo vencida', proxT:'vencida', dias:8, flag:'Vencida', ft:'da', att:true },
+      { id:'L-0147', emp:'Lácteos Llanquihue S.A.', ct:'Andrés Vidal', cargo:'Jefe de Confiabilidad', mail:'avidal@lacteosllanquihue.cl', tel:'+56 9 8122 6650', st:'demo', ej:'Tomás Aravena', ini:'TA', ult:'Último acceso a la demo', ultT:'hace 5 días', prox:'Extender o cerrar demo', proxT:'mañana', dias:6, flag:'Vence mañana', ft:'wa', att:true },
+      { id:'L-0135', emp:'Molinos Cordillera S.A.', ct:'Felipe Contreras', cargo:'Subgerente de Operaciones', mail:'fcontreras@molinoscordillera.cl', tel:'+56 9 7310 5528', st:'contrato', ej:'Camila Rojas', ini:'CR', ult:'Contrato v1 enviado', ultT:'hace 2 días', prox:'Confirmar recepción', proxT:'hoy 17:00', dias:2, flag:'Sin abrir', ft:'wa', att:true },
+      { id:'L-0148', emp:'Plásticos Andinos Ltda.', ct:'María José Soto', cargo:'Supervisora de Mantenimiento', mail:'mjsoto@plasticosandinos.cl', tel:'+56 9 6455 9012', st:'calificado', ej:'Camila Rojas', ini:'CR', ult:'Reunión de diagnóstico', ultT:'ayer', prox:'Crear demo', proxT:'hoy 11:30', dias:1, flag:'', ft:'', att:false },
+      { id:'L-0131', emp:'Viña Santa Aurora', ct:'Ignacio Rivas', cargo:'Jefe de Bodega y Planta', mail:'irivas@santaaurora.cl', tel:'+56 9 9876 1200', st:'negociacion', ej:'Valentina Paredes', ini:'VP', ult:'Reunión', ultT:'ayer', prox:'Enviar ajuste de descuento', proxT:'hoy 15:00', dias:4, flag:'', ft:'', att:false },
+      { id:'L-0128', emp:'Frigorífico del Maule SpA', ct:'Carolina Lagos', cargo:'Jefa de Mantenimiento', mail:'clagos@frigomaule.cl', tel:'+56 9 5120 7743', st:'propuesta', ej:'Valentina Paredes', ini:'VP', ult:'Propuesta enviada', ultT:'hace 3 días', prox:'Llamada de cierre', proxT:'23 oct', dias:3, flag:'', ft:'', att:false },
+      { id:'L-0144', emp:'Cementos Pacífico', ct:'Héctor Salinas', cargo:'Superintendente de Mantención', mail:'hsalinas@cementospacifico.cl', tel:'+56 9 8890 3321', st:'contactado', ej:'Tomás Aravena', ini:'TA', ult:'Llamada', ultT:'hoy 09:12', prox:'Calificar necesidad', proxT:'22 oct', dias:1, flag:'', ft:'', att:false },
+      { id:'L-0145', emp:'Transportes Ruta Cinco', ct:'Daniela Ortiz', cargo:'Jefa de Flota', mail:'dortiz@rutacinco.cl', tel:'+56 9 7004 8815', st:'contactado', ej:'Camila Rojas', ini:'CR', ult:'Email', ultT:'ayer', prox:'Agendar reunión', proxT:'23 oct', dias:2, flag:'', ft:'', att:false },
+      { id:'L-0120', emp:'Textiles Biobío S.A.', ct:'Marcelo Pino', cargo:'Jefe de Planta', mail:'mpino@textilesbiobio.cl', tel:'+56 9 6678 2290', st:'perdido', ej:'Valentina Paredes', ini:'VP', ult:'Marcado perdido: precio', ultT:'hace 9 días', prox:'Sin próxima acción', proxT:'—', dias:9, flag:'', ft:'', att:false }
+    ];
+  }
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const dark = p.dark ?? false;
+    const tab = s.tab ?? p.tab ?? 'resumen';
+    const view = s.view ?? p.view ?? 'lista';
+    const filt = s.filt ?? p.filt ?? 'todos';
+    const drawer = s.drawer ?? p.drawer ?? 'none';
+    const leadId = s.lead ?? p.lead ?? 'L-0142';
+    const ST = { nuevo:['NUEVO','bl'], contactado:['CONTACTADO','cy'], calificado:['CALIFICADO','cy'], demo:['DEMO','pu'], propuesta:['PROPUESTA','pu'], negociacion:['NEGOCIACIÓN','pu'], contrato:['CONTRATO','wa'], concretado:['CONCRETADO','ok'], perdido:['PERDIDO','gr'] };
+    const etOv0 = s.etapa ?? ((p.etapa && p.etapa !== 'auto') ? p.etapa : null);
+    const all = this.leads().map(l => {
+      if (l.id !== 'L-0142' || !etOv0 || etOv0 === 'demo') return l;
+      if (etOv0 === 'lead') return { ...l, st:'calificado', flag:'', ft:'', ult:'Reunión de diagnóstico', ultT:'ayer', prox:'Crear demo', proxT:'hoy 10:00', dias:1 };
+      if (etOv0 === 'propuesta') return { ...l, st:'propuesta', flag:'Abierta 2 veces', ft:'cy', ult:'Propuesta enviada', ultT:'hace 2 días', prox:'Llamada de cierre', proxT:'hoy 10:00', dias:2 };
+      return { ...l, st:'contrato', flag:'Visualizado', ft:'cy', ult:'Contrato v2 visualizado', ultT:'ayer 16:05', prox:'Recordar firma', proxT:'hoy 10:00', dias:1 };
+    });
+    const open = (id) => () => this.setState({ drawer: 'ficha', lead: id });
+    const go = (patch) => () => this.setState(patch);
+
+    const navItem = (ic, t, o) => {
+      o = o || {};
+      const base = 'display: flex; align-items: center; gap: 12px; width: 100%; height: 42px; padding: 0 12px; border: 0; border-radius: 12px; font: inherit; font-size: 14px; font-weight: 600; cursor: pointer; ';
+      return { ic, t, hasBadge: !!o.badge, badge: o.badge || '', chev: o.leaf ? '' : (o.open ? 'expand_more' : 'chevron_right'), open: !!o.open,
+        st: base + (o.active ? 'background: #6732F4; color: #FFFFFF;' : 'background: transparent; color: #D3D8E8;') };
+    };
+    const nav = [
+      { hasSec: false, sec: '', items: [navItem('home', 'Inicio', { leaf: true })] },
+      { hasSec: true, sec: 'CONFIGURACIÓN', items: [navItem('settings', 'Sistema'), navItem('work', 'Comercial', { active: true, open: true })] },
+      { hasSec: true, sec: 'GESTIÓN', items: [navItem('groups', 'Cliente'), navItem('handshake', 'Terceros')] },
+      { hasSec: true, sec: 'OPERACIÓN', items: [navItem('inventory_2', 'Inventario', { badge: '63' }), navItem('precision_manufacturing', 'Activos', { leaf: true }), navItem('build', 'Mantenimiento', { badge: '2' })] }
+    ];
+
+    const tabs = [
+      { k:'resumen', ic:'space_dashboard', t:'Resumen', s:'Qué requiere atención hoy' },
+      { k:'pipeline', ic:'view_kanban', t:'Pipeline', s:'Leads por estado y próxima acción' },
+      { k:'clientes', ic:'handshake', t:'Clientes', s:'Empresas con suscripción' },
+      { k:'suscripciones', ic:'autorenew', t:'Suscripciones', s:'Cobros, pagos y planes' }
+    ].map(x => {
+      const on = x.k === tab;
+      return { ...x, go: go({ tab: x.k }),
+        st: 'display: flex; align-items: center; gap: 12px; padding: 10px 14px; border: 0; border-radius: 10px; font: inherit; text-align: left; cursor: pointer; color: var(--ink); ' + (on ? 'background: var(--pus); box-shadow: inset 0 -3px 0 var(--pu);' : 'background: transparent;'),
+        icSt: 'width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px; display: inline-flex; align-items: center; justify-content: center; ' + (on ? 'background: var(--sf); color: var(--pu);' : 'background: var(--sf2); color: var(--lab);'),
+        tSt: 'font-size: 14px; font-weight: 700; color: ' + (on ? 'var(--put)' : 'var(--ink)') + ';' };
+    });
+
+    const kpis = [
+      { ic:'person_add', tn:'bl', t:'Leads', n:'24', s:'9 nuevos · 3 sin ejecutivo', to:{ tab:'pipeline', filt:'leads' } },
+      { ic:'rocket_launch', tn:'pu', t:'Demos activas', n:'7', s:'3 vencen esta semana', to:{ tab:'pipeline', filt:'demo' } },
+      { ic:'request_quote', tn:'pu', t:'Propuestas', n:'5', s:'2 en negociación', to:{ tab:'pipeline', filt:'propuesta' } },
+      { ic:'draw', tn:'wa', t:'Contratos', n:'3', s:'1 enviado sin abrir', to:{ tab:'pipeline', filt:'contrato' } },
+      { ic:'verified', tn:'ok', t:'Concretados', n:'12', s:'2 este mes', to:{ tab:'clientes' } }
+    ].map(k => ({ ...k, icSt: this.icBox(k.tn, 42), go: go(k.to) }));
+
+    const byId = {}; all.forEach(l => { byId[l.id] = l; });
+    const attItem = (id, ic, tn, sub, ch, cht) => ({ emp: byId[id].emp, ic, sub, ch, cta: 'Ver ficha', icSt: this.icBox(tn, 36), chSt: this.tone(cht), go: open(id) });
+    const cobItem = (emp, ic, tn, sub, ch, cht, cta, patch) => ({ emp, ic, sub, ch, cta, icSt: this.icBox(tn, 36), chSt: this.tone(cht), go: go(patch) });
+    const att = [
+      { ic:'payments', t:'Cobros', n:'3', items: [
+        cobItem('Cecinas Valdivia S.A.', 'account_balance', 'wa', 'Transferencia de $449.583 informada hace 2 h · comprobante adjunto', 'POR VERIFICAR', 'wa', 'Verificar', { drawer: 'pago', modo: 'verificar' }),
+        cobItem('Metalmecánica Quilicura', 'account_balance', 'wa', 'Transferencia de $1.226.134 informada ayer 18:20', 'POR VERIFICAR', 'wa', 'Verificar', { drawer: 'pago', modo: 'verificar' }),
+        cobItem('Química Austral Ltda.', 'warning', 'da', 'Octubre impago · 45,00 UF · venció el 05/10 · recordatorios enviados', 'Se suspende en 5 días', 'da', 'Ver suscripción', { drawer: 'suscripcion', modo: 'ver' }) ] },
+      { ic:'timer', t:'Demos por vencer', n:'3', items: [
+        attItem('L-0142', 'rocket_launch', 'pu', 'Juan Pérez · demo desde el 17/10 · 12 OT creadas', 'Vence en 3 días', 'wa'),
+        attItem('L-0147', 'rocket_launch', 'pu', 'Andrés Vidal · sin entrar a la demo hace 5 días', 'Vence mañana', 'wa'),
+        attItem('L-0139', 'rocket_launch', 'pu', 'Claudia Muñoz · venció el 20/10, sin propuesta', 'Vencida', 'da') ] },
+      { ic:'person_off', t:'Leads nuevos sin ejecutivo', n:'3', items: [
+        attItem('L-0151', 'person_add', 'bl', 'Rodrigo Fuentes · formulario web hace 40 min', 'NUEVO', 'bl'),
+        attItem('L-0150', 'person_add', 'bl', 'Paula Herrera · formulario web hace 3 h', 'NUEVO', 'bl'),
+        attItem('L-0149', 'person_add', 'bl', 'Sergio Navarro · formulario web ayer 19:20', 'NUEVO', 'bl') ] },
+      { ic:'mark_email_unread', t:'Contratos enviados sin abrir', n:'1', items: [
+        attItem('L-0135', 'draw', 'wa', 'Enviado el 19/10 a fcontreras@molinoscordillera.cl', 'Sin abrir · 2 días', 'wa') ] }
+    ];
+
+    const agenda = [
+      { h:'10:00', ic:'call', t:'Llamada de seguimiento de la demo', emp:'Hamburgo S.A.', id:'L-0142' },
+      { h:'11:30', ic:'groups', t:'Reunión: crear demo', emp:'Plásticos Andinos Ltda.', id:'L-0148' },
+      { h:'15:00', ic:'mail', t:'Enviar ajuste de descuento', emp:'Viña Santa Aurora', id:'L-0131' },
+      { h:'17:00', ic:'call', t:'Confirmar recepción del contrato', emp:'Molinos Cordillera S.A.', id:'L-0135' }
+    ].map(x => ({ ...x, go: open(x.id) }));
+
+    const inF = (l) => {
+      if (filt === 'todos') return l.st !== 'perdido';
+      if (filt === 'leads') return ['nuevo','contactado','calificado'].includes(l.st);
+      if (filt === 'propuesta') return ['propuesta','negociacion'].includes(l.st);
+      if (filt === 'atencion') return l.att;
+      return l.st === filt;
+    };
+    const chipDefs = [['todos','Todos','39'],['leads','Leads','24'],['demo','Demo','7'],['propuesta','Propuesta','5'],['contrato','Contrato','3'],['perdido','Perdidos','4'],['atencion','Requieren atención','7']];
+    const chips = chipDefs.map(([k, t, n]) => ({ t, n, dot: k === 'atencion', go: go({ filt: k }),
+      st: 'display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (k === filt ? 'border: 1px solid var(--ink); background: var(--ink); color: var(--bg);' : 'border: 1px solid var(--line); background: var(--sf); color: var(--ink);') }));
+    const totals = { todos: 39, leads: 24, demo: 7, propuesta: 5, contrato: 3, perdido: 4, atencion: 7 };
+
+    const deco = (l) => ({ ...l,
+      stL: ST[l.st][0], stSt: this.tone(ST[l.st][1]), hasFlag: !!l.flag, flagSt: l.ft ? this.tone(l.ft) : '',
+      hasEj: !!l.ej, noEj: !l.ej, go: open(l.id),
+      proxSt: 'font-size: 12px; font-weight: ' + (l.proxT === 'vencida' || l.proxT.indexOf('hoy') === 0 ? '700' : '500') + '; color: ' + (l.proxT === 'vencida' ? 'var(--dat)' : (l.proxT.indexOf('hoy') === 0 ? 'var(--put)' : 'var(--mut)')) + ';',
+      rowSt: 'display: grid; grid-template-columns: minmax(230px, 2.1fr) 128px 150px minmax(170px, 1.3fr) minmax(180px, 1.4fr) 80px 24px; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; color: var(--ink); ' + (drawer !== 'none' && l.id === leadId ? 'border: 1px solid var(--pu); background: var(--pus);' : 'border: 1px solid var(--line); background: var(--sf);'),
+      cardSt: 'display: flex; flex-direction: column; align-items: flex-start; gap: 4px; width: 100%; padding: 12px; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; color: var(--ink); background: var(--sf); ' + (drawer !== 'none' && l.id === leadId ? 'border: 1px solid var(--pu);' : 'border: 1px solid var(--line);'),
+      avSt: 'width: 22px; height: 22px; border-radius: 50%; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center; ' + (l.ej ? 'background: var(--pus); color: var(--put);' : 'background: var(--was); color: var(--wat);'),
+      ini: l.ini || '?' });
+    const rows = all.filter(inF).map(deco);
+
+    const colDefs = [['nuevo',9],['contactado',8],['calificado',7],['demo',7],['propuesta',3],['negociacion',2],['contrato',3]];
+    const cols = colDefs.map(([k, n]) => {
+      const cards = all.filter(l => l.st === k && (filt === 'todos' || inF(l))).map(deco);
+      return { t: ST[k][0], chSt: this.tone(ST[k][1]), n: String(n), cards, more: n > cards.length, moreN: String(n - cards.length) };
+    });
+
+    const cli = [
+      ['Hamburgo S.A.', '96.512.340-K', 'Full', 'Activa', 'ok', '10/2026', '10/2027', '45,0 UF', 9, 15, 'Camila Rojas', 'CR'],
+      ['Conservas Pacífico Sur', '76.432.118-3', 'Full', 'Activa', 'ok', '03/2025', '03/2027', '45,0 UF', 14, 15, 'Camila Rojas', 'CR'],
+      ['Cecinas Valdivia S.A.', '96.871.220-K', 'Medio', 'Activa', 'ok', '06/2025', '06/2026', '11,0 UF', 9, 10, 'Tomás Aravena', 'TA'],
+      ['Química Austral Ltda.', '77.105.664-1', 'Full', 'En mora', 'da', '12/2024', '12/2026', '45,0 UF', 13, 15, 'Valentina Paredes', 'VP'],
+      ['Metalmecánica Quilicura', '76.990.341-7', 'Medio', 'Activa', 'ok', '01/2026', '01/2027', '30,0 UF', 6, 10, 'Camila Rojas', 'CR'],
+      ['Aceites del Valle SpA', '77.341.002-5', 'Básico', 'Activa', 'ok', '04/2026', '04/2027', '15,0 UF', 4, 5, 'Tomás Aravena', 'TA'],
+      ['Harinas San Fernando', '96.554.870-2', 'Medio', 'Activa', 'ok', '12/2025', '12/2026', '30,0 UF', 10, 10, 'Valentina Paredes', 'VP'],
+      ['Packaging Maipo S.A.', '76.208.995-4', 'Full', 'Activa', 'ok', '08/2026', '08/2027', '45,0 UF', 11, 15, 'Camila Rojas', 'CR'],
+      ['Bebidas del Limarí', '77.620.418-9', 'Medio', 'Suspendida', 'gr', '09/2026', '09/2027', '30,0 UF', 3, 10, 'Tomás Aravena', 'TA'],
+      ['Minera Andina Perú S.A.C.', 'Perú · RUC 20512345678 · cobra en USD', 'Full', 'Activa', 'ok', '09/2026', '09/2027', 'USD 1.950', 7, 15, 'Valentina Paredes', 'VP']
+    ].map(c => {
+      const pct = Math.round(c[8] / c[9] * 100);
+      return { emp: c[0], rut: c[1], plan: c[2], st: c[3], stSt: this.tone(c[4]), desde: c[5], ren: c[6], mens: c[7], uso: c[8] + ' de ' + c[9], ej: c[10], ini: c[11], go: go({ drawer: 'cliente', modo: 'ver' }),
+        barSt: 'display: block; height: 100%; width: ' + pct + '%; border-radius: 999px; background: ' + (pct >= 80 ? 'var(--wa)' : 'var(--cy)') + ';' };
+    });
+
+    const seg = (on) => 'display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (on ? 'background: var(--sf); color: var(--put); box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: var(--lab);');
+
+    const lead = byId[leadId] || all[0];
+    const etMap = { nuevo:'lead', contactado:'lead', calificado:'lead', demo:'demo', propuesta:'propuesta', negociacion:'propuesta', contrato:'contrato', perdido:'lead' };
+    const etOverride = s.etapa ?? ((p.etapa && p.etapa !== 'auto') ? p.etapa : null);
+    const etapa = (lead.id === 'L-0142' && etOverride) ? etOverride : etMap[lead.st];
+    // ---- Suscripciones: cobros, pagos y planes ----
+    const dmodo = s.modo ?? (p.modo || '');
+    const sub = s.sub ?? p.sub ?? 'suscripciones';
+    const cobF = s.cobF ?? 'todas';
+    const wide = drawer === 'plan' || (drawer === 'pago' && (dmodo || 'verificar') === 'verificar');
+    const hdr = tab === 'clientes' ? ['Nuevo cliente', 'domain_add', { drawer: 'cliente', modo: 'nuevo' }]
+      : tab === 'suscripciones' ? ['Emitir período', 'receipt_long', { drawer: 'periodo', modo: 'emitir' }]
+      : ['Nuevo lead', 'add', { drawer: 'nuevolead', modo: '' }];
+    const subSeg = (on) => 'display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 12px; border: 0; border-radius: 9px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (on ? 'background: var(--sf); color: var(--put); box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: var(--lab);');
+    const subs = [['suscripciones', 'autorenew', 'Suscripciones', ''], ['periodos', 'receipt_long', 'Períodos', ''], ['pagos', 'payments', 'Pagos', '2'], ['planes', 'workspace_premium', 'Planes', '']].map(([k, ic, t, n]) => ({ t, ic, n, hasN: !!n, on: k === sub,
+      st: subSeg(k === sub), go: go({ sub: k }),
+      nSt: 'min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 999px; background: var(--wa); color: #FFFFFF; font-size: 10px; font-weight: 800; display: inline-flex; align-items: center; justify-content: center' }));
+    const chipBtn = (on) => 'display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; ' + (on ? 'border: 1px solid var(--ink); background: var(--ink); color: var(--bg);' : 'border: 1px solid var(--line); background: var(--sf); color: var(--ink);');
+    const dot = (c) => 'width: 7px; height: 7px; border-radius: 50%; background: ' + c + ';';
+    const COB = { linea: ['PAGADO EN LÍNEA', 'ok', 'credit_card'], transfer: ['TRANSFERENCIA VERIFICADA', 'ok', 'account_balance'], pendiente: ['PENDIENTE', 'wa', 'schedule'], verificar: ['POR VERIFICAR', 'wa', 'pending_actions'], mora: ['EN MORA', 'da', 'warning'] };
+    const susData = [
+      ['Hamburgo S.A.', 'SUS-0012', 'Full', 'Activa', 'ok', 'linea', '01/11/2026', 'Noviembre · 45,00 UF', 'se emite el 27/10', '', 'Camila Rojas'],
+      ['Cecinas Valdivia S.A.', 'SUS-0007', 'Medio', 'Activa', 'ok', 'verificar', '31/10/2026', 'Octubre · 11,00 UF', 'transferencia informada hace 2 h', 'wa', 'Tomás Aravena'],
+      ['Química Austral Ltda.', 'SUS-0005', 'Full', 'Activa', 'ok', 'mora', '05/10/2026', 'Octubre · 45,00 UF', 'se suspende en 5 días', 'da', 'Valentina Paredes'],
+      ['Metalmecánica Quilicura', 'SUS-0009', 'Medio', 'Activa', 'ok', 'verificar', '31/10/2026', 'Noviembre · 30,00 UF', 'transferencia informada ayer', 'wa', 'Camila Rojas'],
+      ['Conservas Pacífico Sur', 'SUS-0003', 'Full', 'Activa', 'ok', 'transfer', '30/11/2026', 'Diciembre · 45,00 UF', 'se emite el 25/11', '', 'Camila Rojas'],
+      ['Aceites del Valle SpA', 'SUS-0010', 'Básico', 'Activa', 'ok', 'linea', '30/11/2026', 'Diciembre · 15,00 UF', 'se emite el 25/11', '', 'Tomás Aravena'],
+      ['Harinas San Fernando', 'SUS-0006', 'Medio', 'Activa', 'ok', 'transfer', '30/11/2026', 'Diciembre · 30,00 UF', 'se emite el 25/11', '', 'Valentina Paredes'],
+      ['Packaging Maipo S.A.', 'SUS-0011', 'Full', 'Activa', 'ok', 'linea', '30/11/2026', 'Diciembre · 45,00 UF', 'se emite el 25/11', '', 'Camila Rojas'],
+      ['Bebidas del Limarí', 'SUS-0013', 'Medio', 'Suspendida', 'gr', 'mora', '12/09/2026', 'Septiembre · 30,00 UF', 'suspendida el 12/10', 'da', 'Tomás Aravena'],
+      ['Minera Andina Perú S.A.C.', 'SUS-0014', 'Full', 'Activa', 'ok', 'pendiente', '01/11/2026', 'Noviembre · USD 1.950,00', 'transferencia internacional · vence 01/11', 'wa', 'Valentina Paredes · Perú · USD']
+    ];
+    const cat = (k) => k === 'verificar' ? 'pendiente' : k;
+    const susRows = susData.filter(r => cobF === 'todas' || cat(r[5]) === cobF).map(r => ({ emp: r[0], cod: r[1], plan: r[2], est: r[3].toUpperCase(), estSt: this.tone(r[4]),
+      cob: COB[r[5]][0], cobSt: this.tone(COB[r[5]][1]), cobIc: COB[r[5]][2], hasta: r[6], prox: r[7], proxS: r[8], ej: r[10],
+      proxSt: 'font-size: 12px; font-weight: ' + (r[9] ? '700' : '500') + '; color: ' + (r[9] === 'da' ? 'var(--dat)' : r[9] === 'wa' ? 'var(--wat)' : 'var(--mut)') + ';',
+      go: go({ drawer: 'suscripcion', modo: 'ver' }),
+      rowSt: 'display: grid; grid-template-columns: minmax(220px, 2fr) 90px 120px 220px 130px minmax(170px, 1.3fr) 24px; gap: 14px; align-items: center; width: 100%; padding: 12px 14px; border-radius: 12px; font: inherit; text-align: left; cursor: pointer; color: var(--ink); ' + (drawer === 'suscripcion' && r[1] === 'SUS-0012' ? 'border: 1px solid var(--pu); background: var(--pus);' : 'border: 1px solid var(--line); background: var(--sf);') }));
+    const chipSets = {
+      suscripciones: [['todas', 'Todas', '10', ''], ['linea', 'Pagado en línea', '3', 'var(--ok)'], ['transfer', 'Transferencia verificada', '2', 'var(--ok)'], ['pendiente', 'Pendiente', '3', 'var(--wa)'], ['mora', 'En mora', '2', 'var(--da)']],
+      periodos: [['todas', 'Todos', '8', ''], ['pendiente', 'Pendientes', '3', 'var(--wa)'], ['pagado', 'Pagados', '3', 'var(--ok)'], ['mora', 'En mora', '2', 'var(--da)']],
+      pagos: [['verificar', 'Por verificar', '2', 'var(--wa)'], ['ok', 'Verificados', '3', 'var(--ok)'], ['rech', 'Rechazados', '1', 'var(--da)']],
+      planes: []
+    };
+    const chipOn = sub === 'suscripciones' ? cobF : (sub === 'pagos' ? 'verificar' : 'todas');
+    const subChips = chipSets[sub].map(([k, t, n, c]) => ({ t, n, hasDot: !!c, dotSt: dot(c), st: chipBtn(k === chipOn), go: sub === 'suscripciones' ? go({ cobF: k }) : (() => {}) }));
+    const perRows = [
+      ['PER-0034', 'Minera Andina Perú S.A.C.', 'Noviembre 2026', 'USD', 'USD 1.950,00', 'pendiente', 'vence el 01/11 · transferencia internacional', 'wa', 'emitido'],
+      ['PER-0033', 'Metalmecánica Quilicura', 'Noviembre 2026', '30,00', '$1.226.134', 'verificar', 'informado ayer 18:20', 'wa', 'emitido'],
+      ['PER-0032', 'Cecinas Valdivia S.A.', 'Octubre 2026', '11,00', '$449.583', 'verificar', 'informado hace 2 h', 'wa', 'emitido'],
+      ['PER-0031', 'Hamburgo S.A.', 'Octubre 2026', '45,00', '$1.839.201', 'linea', 'pagado el 02/10', '', 'emitido'],
+      ['PER-0030', 'Hamburgo S.A.', 'Implementación', '30,00', '$1.226.134', 'linea', 'pagado el 02/10', '', 'emitido'],
+      ['PER-0027', 'Química Austral Ltda.', 'Octubre 2026', '45,00', '$1.839.201', 'mora', 'venció el 05/10 · 11 días', 'da', 'emitido'],
+      ['PER-0026', 'Harinas San Fernando', 'Octubre 2026', '30,00', '$1.226.134', 'transfer', 'verificado el 04/10', '', 'emitido'],
+      ['PER-0019', 'Bebidas del Limarí', 'Septiembre 2026', '30,00', '$1.201.884', 'mora', 'venció el 12/09 · 34 días', 'da', 'emitido']
+    ].map(r => ({ cod: r[0], emp: r[1], con: r[2], uf: r[3] === 'USD' ? 'en USD' : r[3] + ' UF', clp: r[4], est: COB[r[5]][0], estSt: this.tone(COB[r[5]][1]), f: r[6],
+      fSt: 'font-size: 12px; font-weight: ' + (r[7] ? '700' : '500') + '; color: ' + (r[7] === 'da' ? 'var(--dat)' : r[7] === 'wa' ? 'var(--wat)' : 'var(--mut)') + ';',
+      go: go({ drawer: 'periodo', modo: r[8] }) }));
+    const porVer = [
+      { emp: 'Cecinas Valdivia S.A.', cod: 'PAG-0047', per: 'Octubre 2026 · 11,00 UF', monto: '$449.583', banco: 'Banco de Chile', op: '0048213377', cuando: 'hace 2 h', arch: 'comprobante-0048213377.pdf', go: go({ drawer: 'pago', modo: 'verificar' }) },
+      { emp: 'Metalmecánica Quilicura', cod: 'PAG-0048', per: 'Noviembre 2026 · 30,00 UF', monto: '$1.226.134', banco: 'BancoEstado', op: '7712009', cuando: 'ayer 18:20', arch: 'transferencia-nov.jpg', go: go({ drawer: 'pago', modo: 'verificar' }) }
+    ];
+    const ORI = { web: ['WEBPAY', 'cy', 'credit_card'], tr: ['TRANSFERENCIA', 'bl', 'account_balance'] };
+    const pagRows = [
+      ['PAG-0046', 'Hamburgo S.A.', 'Octubre 2026', 'web', '$1.839.201', '02/10/2026', 'VERIFICADO SOLO', 'ok', 'webpay'],
+      ['PAG-0045', 'Hamburgo S.A.', 'Implementación', 'web', '$1.226.134', '02/10/2026', 'VERIFICADO SOLO', 'ok', 'webpay'],
+      ['PAG-0044', 'Harinas San Fernando', 'Octubre 2026', 'tr', '$1.226.134', '04/10/2026', 'VERIFICADO', 'ok', 'corregir'],
+      ['PAG-0041', 'Bebidas del Limarí', 'Septiembre 2026', 'tr', '$1.100.000', '20/09/2026', 'RECHAZADO · MONTO DISTINTO', 'da', 'corregir']
+    ].map(r => ({ cod: r[0], emp: r[1], per: r[2], ori: ORI[r[3]][0], oriSt: this.tone(ORI[r[3]][1]), oriIc: ORI[r[3]][2], monto: r[4], f: r[5], est: r[6], estSt: this.tone(r[7]), go: go({ drawer: 'pago', modo: r[8] }) }));
+    const planRows = [
+      ['PLN-BAS', 'Básico', '15,00', '01/01/2026', 'Mantenimiento y OT · 5 usuarios · 50 activos · 1 planta', '1', 'USD 650'],
+      ['PLN-MED', 'Medio', '30,00', '01/01/2026', '+ Planificación e Inspección · 10 usuarios · 150 activos · 2 plantas', '4', 'USD 1.300'],
+      ['PLN-FUL', 'Full', '45,00', '01/07/2026', 'Todos los módulos, SIGMA AI incluido · 15 usuarios · 300 activos · 3 plantas', '5', 'USD 1.950']
+    ].map(r => ({ cod: r[0], t: r[1], uf: r[2], desde: r[3], inc: r[4], n: r[5], usd: r[6], pub: 'PÚBLICO', pubSt: this.tone('bl'), habSt: this.tone('ok'), go: go({ drawer: 'plan', modo: '' }) }));
+    const susVals = {
+      subs, subChips, hasSubChips: subChips.length > 0, susRows, perRows, porVer, pagRows, planRows,
+      isSubS: sub === 'suscripciones', isSubP: sub === 'periodos', isSubG: sub === 'pagos', isSubL: sub === 'planes',
+      subPh: { suscripciones: 'Cliente, plan o código SUS', periodos: 'Cliente o código PER', pagos: 'Cliente, N.° de operación o código PAG', planes: 'Nombre o código del plan' }[sub]
+    };
+    const flash = (msg, patch) => {
+      this.setState({ ...patch, toast: msg });
+      clearTimeout(this._tt);
+      this._tt = setTimeout(() => this.setState({ toast: '' }), 3600);
+    };
+
+    return {
+      vars: this.vars(dark), dark, nav, tabs, kpis, att, agenda, chips, rows, cols, clientes: cli,
+      isResumen: tab === 'resumen', isPipeline: tab === 'pipeline', isClientes: tab === 'clientes', isSus: tab === 'suscripciones',
+      ...susVals,
+      isLista: view === 'lista', isTablero: view === 'tablero',
+      vLista: seg(view === 'lista'), vTablero: seg(view === 'tablero'),
+      toLista: go({ view: 'lista' }), toTablero: go({ view: 'tablero' }),
+      shown: String(rows.length), total: String(totals[filt] ?? rows.length),
+      anyDrawer: drawer !== 'none', dFicha: drawer === 'ficha', dDemo: drawer === 'demo', dProp: drawer === 'propuesta', dReunion: drawer === 'reunion', fase: p.fase ?? 'agendar',
+      drawerSt: 'position: absolute; top: 0; right: 0; bottom: 0; width: ' + (wide ? '760px' : '600px') + '; max-width: 100%; background: var(--sf); box-shadow: -18px 0 48px rgba(10,14,30,.22); overflow: hidden',
+      openMeet: go({ drawer: 'reunion' }),
+      meetSave: () => flash('Reunión registrada en la ficha con notas y acuerdos', { drawer: 'ficha' }),
+      meetSend: () => flash('Invitación enviada a 2 participantes · queda en tus próximas acciones', { drawer: 'ficha' }),
+      lead, etapa,
+      closeDrawer: go({ drawer: 'none' }),
+      openDemo: go({ drawer: 'demo' }), openProp: go({ drawer: 'propuesta' }), backFicha: go({ drawer: 'ficha' }),
+      demoDone: () => flash('Demo creada · credenciales enviadas a ' + lead.mail, { drawer: 'ficha', etapa: 'demo' }),
+      propDone: () => flash('Propuesta enviada a ' + lead.mail, { drawer: 'ficha', etapa: 'propuesta' }),
+      hasToast: !!s.toast, toast: s.toast || '',
+      dSus: drawer === 'suscripcion', dPer: drawer === 'periodo', dPago: drawer === 'pago', dPlan: drawer === 'plan', dCli: drawer === 'cliente', dNL: drawer === 'nuevolead',
+      modoSus: dmodo || 'ver', modoPer: dmodo || 'emitido', modoPago: dmodo || 'verificar', modoCli: dmodo || 'ver', pagoW: (dmodo || 'verificar') === 'verificar' ? '760px' : '600px',
+      hdrT: hdr[0], hdrIc: hdr[1], hdrGo: go(hdr[2]),
+      nlSave: () => flash('Lead creado · aparece en Nuevos y en «Requiere atención» si no tiene ejecutivo', { drawer: 'none' })
+    };
+  }
+}
+</script>
+</body>
+</html>

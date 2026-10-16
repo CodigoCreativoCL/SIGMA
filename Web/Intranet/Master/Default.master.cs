@@ -269,7 +269,10 @@ public partial class Master_Default : System.Web.UI.MasterPage
     /// </summary>
     private void PintarSelectorCliente(List<Cliente> clientes)
     {
-        bool hayQueElegir = clientes != null && clientes.Count > 1 && SitioBase.Session.ClienteId() == 0;
+        /* El Centro Comercial es de la plataforma (Código Creativo), no de un
+           cliente: no se le exige elegir empresa para usarlo. */
+        bool dePlataforma = string.Equals(SitioBase.Token.PaginaActual(), "~/View/Comercial/CentroComercial.aspx", StringComparison.OrdinalIgnoreCase);
+        bool hayQueElegir = !dePlataforma && clientes != null && clientes.Count > 1 && SitioBase.Session.ClienteId() == 0;
 
         pnlSelectorCliente.Visible = hayQueElegir;
         if (!hayQueElegir) return;

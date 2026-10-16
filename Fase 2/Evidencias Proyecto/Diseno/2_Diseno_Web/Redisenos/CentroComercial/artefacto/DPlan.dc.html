@@ -1,0 +1,199 @@
+﻿<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<title>Plan comercial</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sora:wght@400;500;600;700;800&amp;display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&amp;display=block">
+<style>
+body{margin:0}
+</style>
+</helmet>
+<div style="width: {{ancho}}; height: {{alto}}; box-sizing: border-box; display: flex; flex-direction: column; background: #F4F6FA; color: #17223B; font-family: Sora, 'Segoe UI', system-ui, sans-serif; font-size: 14px">
+
+  <div style="flex: 0 0 auto; display: flex; align-items: flex-start; gap: 12px; padding: 18px 22px 16px; background: #FFFFFF; border-bottom: 1px solid #E2E7F0">
+    <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 12px; color: #68738A">PLN-FUL · 4 suscripciones activas</span>
+      <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap">
+        <h2 style="margin: 0; font-size: 20px; font-weight: 700">Plan Full</h2>
+        <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #E8F6EF; color: #12704C; font-size: 11px; font-weight: 800">HABILITADO</span>
+        <span style="display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; background: #EAF4FF; color: #0565C2; font-size: 11px; font-weight: 800">PÚBLICO</span>
+      </div>
+    </div>
+    <button type="button" aria-label="Cerrar" onClick="{{close}}" style="width: 36px; height: 36px; border: 0; border-radius: 10px; background: transparent; color: #68738A; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="font-size: 22px" aria-hidden="true">close</span></button>
+  </div>
+
+  <div style="flex: 1; min-height: 0; overflow-y: auto; padding: 16px 22px 22px; display: flex; flex-direction: column; gap: 12px">
+
+    <!-- Datos -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tDatos}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #4A556D" aria-hidden="true">badge</span>
+        <b style="flex: 1">Datos del plan</b>
+        <span style="font-size: 12px; color: #68738A">Orden 3 · 10 días de gracia</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{datosChev}}</span>
+      </button>
+      <sc-if value="{{oDatos}}" hint-placeholder-val="{{false}}">
+        <div style="padding: 0 16px 16px; display: grid; grid-template-columns: 140px minmax(0, 1fr) 110px 150px; gap: 12px">
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Código</span><input type="text" value="PLN-FUL" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Nombre</span><input type="text" value="Full" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Orden</span><input type="text" value="3" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Días de gracia</span><input type="text" value="10" readonly style="height: 42px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+          <label style="grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Descripción (se muestra en la propuesta y en la landing)</span><textarea rows="2" style="box-sizing: border-box; padding: 10px 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 13px; line-height: 1.5; color: #17223B; resize: vertical">Todos los módulos de SIGMA para plantas con varias líneas: mantenimiento, OT, planificación, inspección, inventario y SIGMA AI.</textarea></label>
+          <div style="grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 10px">
+            <sc-for list="{{toggles}}" as="tg" hint-placeholder-count="2">
+              <button type="button" role="switch" aria-checked="{{tg.on}}" onClick="{{tg.go}}" style="display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer"><span style="{{tg.track}}"><span style="{{tg.knob}}"></span></span>{{tg.t}}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Precio versionado -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tPrecio}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #5426D9" aria-hidden="true">sell</span>
+        <b style="flex: 1">Precio</b>
+        <span style="font-size: 12px; color: #68738A">45,00 UF · USD 1.950 al mes</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{precioChev}}</span>
+      </button>
+      <sc-if value="{{oPrecio}}" hint-placeholder-val="{{true}}">
+        <div style="padding: 0 16px 16px; display: flex; flex-direction: column; gap: 12px">
+          <sc-if value="{{nuevo}}" hint-placeholder-val="{{false}}">
+            <div style="display: flex; flex-direction: column; gap: 12px; padding: 14px; border-radius: 12px; border: 1.5px solid #6732F4; background: #FFFFFF">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap"><b style="font-size: 13px; color: #5426D9">Fijar un precio nuevo</b>
+                <div role="group" aria-label="Moneda" style="display: inline-flex; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px"><sc-for list="{{monedas}}" as="mo" hint-placeholder-count="2"><button type="button" onClick="{{mo.go}}" style="{{mo.st}}">{{mo.t}}</button></sc-for></div></div>
+              <div style="display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, .8fr) minmax(0, .7fr) minmax(0, 1fr); gap: 10px">
+                <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Periodicidad</span>
+                  <div role="group" aria-label="Periodicidad" style="display: flex; padding: 4px; border-radius: 12px; background: #F4F6FA; gap: 4px"><sc-for list="{{pers}}" as="x" hint-placeholder-count="3"><button type="button" onClick="{{x.go}}" style="{{x.st}}">{{x.t}}</button></sc-for></div>
+                </div>
+                <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">{{valLabel}}</span><input type="text" value="{{valNuevo}}" readonly style="height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #16C6C9; box-shadow: 0 0 0 3px rgba(22,198,201,.27); border-radius: 9px; font: inherit; font-size: 14px; font-weight: 700; color: #17223B"></label>
+                <label style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Descuento</span><input type="text" value="0 %" readonly style="height: 40px; box-sizing: border-box; padding: 0 12px; border: 1px solid #CFD6E3; border-radius: 9px; font: inherit; font-size: 14px; color: #17223B"></label>
+                <div style="display: flex; flex-direction: column; gap: 6px"><span style="font-size: 11px; font-weight: 800; color: #4A556D">Rige desde</span><button type="button" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 10px; border: 1px solid #CFD6E3; border-radius: 9px; background: #FFFFFF; color: #17223B; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px; color: #6732F4" aria-hidden="true">calendar_month</span>01/01/2027</button></div>
+              </div>
+              <span style="font-size: 12px; color: #4A556D; line-height: 1.5">El precio vigente no se edita. Este nuevo rige desde el 01/01/2027; cada suscripción lo toma en su primer período desde esa fecha. Los clientes en Chile usan el precio en UF; los de otros países, el precio en USD. Se avisa a los clientes del plan.</span>
+              <div style="display: flex; gap: 8px; justify-content: flex-end"><button type="button" onClick="{{cancelNuevo}}" style="height: 36px; padding: 0 14px; border: 0; border-radius: 10px; background: #F2EFFF; color: #5426D9; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Cancelar</button></div>
+            </div>
+          </sc-if>
+          <div style="display: flex; flex-direction: column; font-size: 13px; font-variant-numeric: tabular-nums">
+            <div style="display: grid; grid-template-columns: minmax(0, 1fr) 120px 60px minmax(0, 1.3fr) 100px; gap: 10px; padding: 6px 8px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #68738A"><span>Moneda · periodicidad</span><span style="text-align: right">Valor</span><span style="text-align: right">Desc.</span><span>Vigencia</span><span>Estado</span></div>
+            <sc-for list="{{precios}}" as="pr" hint-placeholder-count="6">
+              <div style="{{pr.rowSt}}"><b>{{pr.per}}</b><b style="text-align: right">{{pr.uf}}</b><span style="text-align: right">{{pr.d}}</span><span>{{pr.vig}}</span><span><span style="{{pr.chSt}}">{{pr.ch}}</span></span></div>
+            </sc-for>
+          </div>
+          <sc-if value="{{noNuevo}}" hint-placeholder-val="{{true}}">
+            <button type="button" onClick="{{abrirNuevo}}" style="align-self: flex-start; display: inline-flex; align-items: center; gap: 6px; height: 38px; padding: 0 14px; border: 0; border-radius: 10px; background: #007F8A; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">add</span>Fijar precio nuevo</button>
+          </sc-if>
+        </div>
+      </sc-if>
+    </section>
+
+    <!-- Funcionalidades -->
+    <section style="background: #FFFFFF; border: 1px solid #E2E7F0; border-radius: 14px; overflow: hidden">
+      <button type="button" onClick="{{tFun}}" style="display: flex; align-items: center; gap: 10px; width: 100%; padding: 13px 16px; border: 0; background: transparent; color: #17223B; font: inherit; text-align: left; cursor: pointer">
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #007F8A" aria-hidden="true">widgets</span>
+        <b style="flex: 1">Qué incluye</b>
+        <span style="font-size: 12px; color: #68738A">{{nInc}} de {{nTot}} funcionalidades</span>
+        <span class="material-symbols-rounded" style="font-size: 20px; color: #68738A" aria-hidden="true">{{funChev}}</span>
+      </button>
+      <sc-if value="{{oFun}}" hint-placeholder-val="{{true}}">
+        <div style="padding: 0 16px 16px">
+          <div style="display: grid; grid-template-columns: minmax(0, 1fr) 96px 150px; gap: 10px; padding: 6px 10px; font-size: 11px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: #68738A"><span>Funcionalidad</span><span style="text-align: center">Incluida</span><span>Tope</span></div>
+          <sc-for list="{{grupos}}" as="g" hint-placeholder-count="5">
+            <div style="margin-top: 6px">
+              <div style="display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: 9px; background: #F4F6FA; font-size: 12px; font-weight: 800; color: #4A556D"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">{{g.ic}}</span>{{g.t}}<span style="flex: 1"></span><span style="font-weight: 600; color: #68738A">{{g.res}}</span></div>
+              <sc-for list="{{g.items}}" as="it" hint-placeholder-count="2">
+                <div style="display: grid; grid-template-columns: minmax(0, 1fr) 96px 150px; gap: 10px; align-items: center; padding: 8px 10px; border-bottom: 1px solid #E2E7F0">
+                  <span style="{{it.tSt}}">{{it.t}}</span>
+                  <span style="display: flex; justify-content: center"><button type="button" role="checkbox" aria-checked="{{it.on}}" aria-label="{{it.t}}" onClick="{{it.go}}" style="width: 34px; height: 34px; border: 0; background: transparent; cursor: pointer; display: inline-flex; align-items: center; justify-content: center"><span class="material-symbols-rounded" style="{{it.icSt}}" aria-hidden="true">{{it.ic}}</span></button></span>
+                  <span style="{{it.topeSt}}">{{it.tope}}</span>
+                </div>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+    </section>
+  </div>
+
+  <div style="flex: 0 0 auto; display: flex; align-items: center; gap: 10px; padding: 14px 22px; background: #FFFFFF; border-top: 1px solid #E2E7F0">
+    <button type="button" style="height: 42px; padding: 0 14px; border: 1.5px solid #C7352B; border-radius: 10px; background: transparent; color: #A92C23; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer">Deshabilitar plan</button>
+    <span style="flex: 1"></span>
+    <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 14px; border: 1.5px solid #087BEA; border-radius: 10px; background: transparent; color: #0565C2; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">autorenew</span>Ver suscripciones</button>
+    <button type="button" style="display: inline-flex; align-items: center; gap: 6px; height: 42px; padding: 0 18px; border: 0; border-radius: 10px; background: #6732F4; color: #FFFFFF; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer"><span class="material-symbols-rounded" style="font-size: 18px" aria-hidden="true">save</span>Guardar</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"precioNuevo":{"editor":"boolean","default":false},"ancho":{"editor":null,"default":"760px"},"alto":{"editor":null,"default":"1000px"},"onClose":{"editor":null},"$preview":{"width":760,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const s = this.state || {};
+    const p = this.props;
+    const op = s.op || { datos: false, precio: true, fun: true };
+    const tog = (k) => () => this.setState({ op: { ...op, [k]: !op[k] } });
+    const chev = (o) => o ? 'expand_less' : 'expand_more';
+    const nuevo = s.nuevo ?? p.precioNuevo ?? false;
+    const per = s.per ?? 'Mensual';
+    const mon = s.mon ?? 'UF';
+    const seg = (on) => 'flex: 1; height: 30px; padding: 0 6px; border: 0; border-radius: 9px; font: inherit; font-size: 11px; font-weight: 700; cursor: pointer; ' + (on ? 'background: #FFFFFF; color: #5426D9; box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: #4A556D;');
+    const chip = (bg, fg) => 'display: inline-flex; align-items: center; height: 22px; padding: 0 9px; border-radius: 999px; font-size: 11px; font-weight: 800; background: ' + bg + '; color: ' + fg + ';';
+    const sw = (on) => ({ track: 'position: relative; width: 36px; height: 20px; border-radius: 999px; background: ' + (on ? '#6732F4' : '#CFD6E3') + ';', knob: 'position: absolute; top: 2px; left: ' + (on ? '18px' : '2px') + '; width: 16px; height: 16px; border-radius: 50%; background: #FFFFFF;' });
+    const pub = s.pub ?? true, hab = s.hab ?? true;
+    const precios = [
+      ['UF · Mensual', '45,00 UF', '0 %', 'desde 01/07/2026', 'VIGENTE', true],
+      ['UF · Trimestral', '128,25 UF', '5 %', 'desde 01/07/2026', 'VIGENTE', true],
+      ['UF · Anual', '486,00 UF', '10 %', 'desde 01/07/2026', 'VIGENTE', true],
+      ['USD · Mensual', 'USD 1.950,00', '0 %', 'desde 01/07/2026', 'VIGENTE', true],
+      ['USD · Anual', 'USD 21.060,00', '10 %', 'desde 01/07/2026', 'VIGENTE', true],
+      ['UF · Mensual', '42,00 UF', '0 %', '01/01/2026 – 30/06/2026', 'HISTÓRICO', false]
+    ].map(r => ({ per: r[0], uf: r[1], d: r[2], vig: r[3], ch: r[4], chSt: r[5] ? chip('#E8F6EF', '#12704C') : chip('#EEF1F6', '#5A6478'),
+      rowSt: 'display: grid; grid-template-columns: minmax(0, 1fr) 120px 60px minmax(0, 1.3fr) 100px; gap: 10px; align-items: center; padding: 10px 8px; border-top: 1px solid #E2E7F0; ' + (r[5] ? '' : 'color: #68738A;') }));
+    const inc = s.inc || {};
+    const G = [
+      ['tune', 'Topes generales', [['usr', 'Usuarios', '15'], ['act', 'Activos', '300'], ['pla', 'Plantas', '3'], ['gb', 'Almacenamiento', '50 GB']]],
+      ['build', 'Mantenimiento', [['av', 'Avisos y fallas', 'Sin tope'], ['pm', 'Planes de mantenimiento', 'Sin tope']]],
+      ['assignment', 'Órdenes de trabajo', [['ot', 'Órdenes de trabajo', 'Sin tope'], ['fi', 'Cierre con firmas', 'Sin tope']]],
+      ['event_repeat', 'Planificación', [['pr', 'Programaciones', 'Sin tope']]],
+      ['fact_check', 'Inspección', [['ck', 'Checklists', '200'], ['ro', 'Rondas', 'Sin tope']]],
+      ['inventory_2', 'Inventario', [['rp', 'Repuestos', '2.000'], ['bo', 'Bodegas', '3']]],
+      ['auto_awesome', 'SIGMA AI', [['pf', 'Predicción de fallas', 'Sin tope'], ['ch', 'Chat con modelo de lenguaje', 'Costo por uso']]],
+      ['view_in_ar', 'SIGMA Twin', [['tw', 'Gemelo digital de planta', '—']]]
+    ];
+    const OFF = { ch: true, tw: true };
+    let nInc = 0, nTot = 0;
+    const grupos = G.map(([ic, t, items]) => {
+      let gi = 0;
+      const its = items.map(([k, n, tope]) => {
+        const on = inc[k] ?? !OFF[k];
+        nTot++; if (on) { nInc++; gi++; }
+        return { t: n, on, tope: on ? tope : 'No incluida',
+          tSt: 'font-size: 13px; ' + (on ? 'color: #17223B;' : 'color: #68738A;'),
+          ic: on ? 'check_box' : 'check_box_outline_blank', icSt: 'font-size: 22px; color: ' + (on ? '#6732F4' : '#68738A') + ';',
+          topeSt: on ? 'display: inline-flex; align-items: center; height: 32px; padding: 0 10px; border: 1px solid #CFD6E3; border-radius: 9px; font-size: 13px; font-weight: 700; font-variant-numeric: tabular-nums' : 'font-size: 12px; color: #68738A',
+          go: () => this.setState({ inc: { ...inc, [k]: !on } }) };
+      });
+      return { ic, t, items: its, res: gi + ' de ' + items.length };
+    });
+    return {
+      ancho: p.ancho ?? '760px', alto: p.alto ?? '1000px',
+      oDatos: op.datos, tDatos: tog('datos'), datosChev: chev(op.datos),
+      oPrecio: op.precio, tPrecio: tog('precio'), precioChev: chev(op.precio),
+      oFun: op.fun, tFun: tog('fun'), funChev: chev(op.fun),
+      toggles: [{ t: pub ? 'Público: aparece en la landing' : 'Privado: solo por propuesta', on: pub, ...sw(pub), go: () => this.setState({ pub: !pub }) }, { t: hab ? 'Habilitado' : 'Deshabilitado', on: hab, ...sw(hab), go: () => this.setState({ hab: !hab }) }],
+      nuevo, noNuevo: !nuevo, abrirNuevo: () => this.setState({ nuevo: true }), cancelNuevo: () => this.setState({ nuevo: false }),
+      pers: ['Mensual', 'Trimestral', 'Anual'].map(t => ({ t, st: seg(t === per), go: () => this.setState({ per: t }) })),
+      monedas: ['UF', 'USD'].map(t => ({ t: t === 'UF' ? 'UF (Chile)' : 'USD (otros países)', st: 'height: 30px; padding: 0 12px; border: 0; border-radius: 9px; font: inherit; font-size: 12px; font-weight: 700; cursor: pointer; ' + (t === mon ? 'background: #FFFFFF; color: #5426D9; box-shadow: 0 1px 3px rgba(23,34,59,.12);' : 'background: transparent; color: #4A556D;'), go: () => this.setState({ mon: t }) })),
+      valLabel: mon === 'UF' ? 'Valor (UF)' : 'Valor (USD)', valNuevo: mon === 'UF' ? '48,00' : '2.050,00',
+      precios, grupos, nInc: String(nInc), nTot: String(nTot),
+      close: () => { if (p.onClose) p.onClose(); }
+    };
+  }
+}
+</script>
+</body>
+</html>

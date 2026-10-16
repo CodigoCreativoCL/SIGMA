@@ -915,6 +915,7 @@ a.sg-cliente-chip:focus {
     .sidebar-enable .left-side-menu {
         width: 268px !important;
         box-shadow: 0 0 60px rgba(8, 12, 23, 0.55);
+        z-index: 1050 !important; /* por encima de barras fijas de pantalla (pestañas, FAB) */
     }
 
     /* Fondo oscuro detras del cajon: separa el menu del contenido y
@@ -924,7 +925,7 @@ a.sg-cliente-chip:focus {
         position: fixed;
         inset: 0;
         background-color: rgba(8, 12, 23, 0.45);
-        z-index: 9;
+        z-index: 1040;
     }
 
     /* Con el cajon abierto los items respiran: en pantalla tactil el
