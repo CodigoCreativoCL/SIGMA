@@ -84,6 +84,11 @@ namespace SitioBase.Controller
                             if (dr["SPE_FECHA_FIN"] != DBNull.Value)
                                 item.spe_fecha_fin = DateTime.Parse(dr["SPE_FECHA_FIN"].ToString());
 
+                            // BD/463: moneda y medio del pago (WEBPAY, TRANSFERENCIA_NACIONAL o _INTERNACIONAL).
+                            item.spa_moneda = dr["SPA_MONEDA"] == DBNull.Value ? "CLP" : dr["SPA_MONEDA"].ToString();
+                            item.spa_medio = dr["SPA_MEDIO"] == DBNull.Value ? "TRANSFERENCIA_NACIONAL" : dr["SPA_MEDIO"].ToString();
+                            item.spe_moneda = dr["SPE_MONEDA"] == DBNull.Value ? "UF" : dr["SPE_MONEDA"].ToString();
+
                             lista.Add(item);
                         }
                     }

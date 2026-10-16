@@ -27,6 +27,8 @@ namespace SitioBase.Model
         public int? spe_plan_comercial { get; set; }
         public string plc_nombre { get; set; }
         public int spe_periodicidad_cobro { get; set; }
+        /// <summary>UF (se cobra en CLP con la UF del día) o USD (se cobra en dólares, sin UF).</summary>
+        public string spe_moneda { get; set; }
         public string pcb_nombre { get; set; }
         public DateTime spe_fecha_inicio { get; set; }
         public DateTime spe_fecha_fin { get; set; }

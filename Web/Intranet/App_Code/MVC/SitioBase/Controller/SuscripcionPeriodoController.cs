@@ -61,7 +61,9 @@ namespace SitioBase.Controller
                             item.spe_fecha_inicio = DateTime.Parse(dr["SPE_FECHA_INICIO"].ToString());
                             item.spe_fecha_fin = DateTime.Parse(dr["SPE_FECHA_FIN"].ToString());
                             item.spe_valor_uf_plan = decimal.Parse(dr["SPE_VALOR_UF_PLAN"].ToString());
-                            item.spe_valor_uf_dia = decimal.Parse(dr["SPE_VALOR_UF_DIA"].ToString());
+                            // En USD no hay UF: el valor del día es NULL (BD/463).
+                            item.spe_valor_uf_dia = dr["SPE_VALOR_UF_DIA"] == DBNull.Value ? 0 : decimal.Parse(dr["SPE_VALOR_UF_DIA"].ToString());
+                            item.spe_moneda = dr["SPE_MONEDA"] == DBNull.Value ? "UF" : dr["SPE_MONEDA"].ToString();
 
                             if (dr["SPE_FECHA_VALOR_UF"] != DBNull.Value)
                                 item.spe_fecha_valor_uf = DateTime.Parse(dr["SPE_FECHA_VALOR_UF"].ToString());

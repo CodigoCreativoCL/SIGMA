@@ -20,6 +20,9 @@ namespace SitioBase.Model
     public class SuscripcionPago
     {
         public int spa_id { get; set; }
+        public string spa_moneda { get; set; }
+        public string spa_medio { get; set; }
+        public string spe_moneda { get; set; }
         public int spa_periodo { get; set; }
         public int sus_cliente { get; set; }
         public string cli_nombre { get; set; }

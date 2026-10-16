@@ -106,7 +106,7 @@ END
 GO
 -- Los pagos que entraron por Webpay quedan marcados como tales.
 UPDATE Suscripcion_Pago SET spa_medio = 'WEBPAY'
-WHERE spa_medio = 'TRANSFERENCIA_NACIONAL' AND spa_banco = N'Webpay Plus'
+WHERE spa_medio = 'TRANSFERENCIA_NACIONAL' AND spa_banco LIKE N'Webpay Plus%'
 GO
 
 /* ---- Config_Comercial: datos bancarios editables ---- */
