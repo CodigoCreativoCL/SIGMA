@@ -324,7 +324,7 @@ public class WsCobros : System.Web.Services.WebService
         if (cli == null) throw new Exception("El cliente no existe.");
         return new
         {
-            opciones = OpcionesCliente(), cliente = cli, suscripcion = Limpia(SoporteDatos.Del(c, 1)).FirstOrDefault(),
+            opciones = OpcionesCliente(), cliente = cli, logoUrl = cli["LOGO"] != null ? UrlArchivo.Ver(Convert.ToInt32(cli["LOGO"])) : null, suscripcion = Limpia(SoporteDatos.Del(c, 1)).FirstOrDefault(),
             contactos = Limpia(SoporteDatos.Del(c, 2)).Where(x => Convert.ToBoolean(x["ccn_habilitado"])).ToList(),
             usuarios = Limpia(SoporteDatos.Filas("SEL_CLIENTE_USUARIO", "@CLIENTE", id)).Select(u => new { id = u["USU_ID"], nombre = (Convert.ToString(u["USU_NOMBRE"]) + " " + Convert.ToString(u["USU_APELLIDO_PATERNO"])).Trim(), correo = u["USU_CORREO"], perfiles = u["PERFILES"], habilitado = u["USU_HABILITADO"] }).ToList(),
             plantas = Limpia(SoporteDatos.Filas("SEL_CLIENTE_INSTALACION", "@CLIENTE", id)).Select(p => new { id = p["CIN_ID"], nombre = p["CIN_NOMBRE"], direccion = p["CIN_DIRECCION"], codigo = p["CIN_CODIGO"], habilitada = p["CIN_HABILITADO"] }).ToList(),
@@ -397,6 +397,38 @@ public class WsCobros : System.Web.Services.WebService
             if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para editar clientes.");
             SpSalida("DEL_CLIENTE_CONTACTO", null, "@ID", contacto, "@CLIENTE", cliente, "@USUARIO", SoporteDatos.Usuario());
             return new { mensaje = "Contacto quitado.", ficha = FichaCliente(cliente) };
+        });
+    }
+
+    /// <summary>Logo del cliente (JPG o PNG, hasta 2 MB), con el mismo guardado de la ficha de siempre.</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string SubirLogo(int cliente, string nombre, string mime, string base64)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para editar clientes.");
+            string ext = System.IO.Path.GetExtension(nombre ?? "").ToLowerInvariant();
+            if (ext != ".jpg" && ext != ".jpeg" && ext != ".png") throw new Exception("El logo debe ser JPG o PNG.");
+            byte[] bytes = Convert.FromBase64String(base64 ?? "");
+            if (bytes.Length == 0 || bytes.Length > 2 * 1024 * 1024) throw new Exception("El logo debe pesar entre 1 byte y 2 MB.");
+            new ClienteController().GuardarLogo(cliente, System.IO.Path.GetFileName(nombre), bytes, string.IsNullOrEmpty(mime) ? "image/png" : mime);
+            return new { mensaje = "Logo actualizado.", ficha = FichaCliente(cliente) };
+        });
+    }
+
+    /// <summary>Alta en línea de una planta (nombre, dirección y código opcional).</summary>
+    [WebMethod(EnableSession = true)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string AgregarPlanta(int cliente, string nombre, string direccion, string codigo)
+    {
+        return Ejecutar(() =>
+        {
+            if (!Token.PuedePagina("~/View/Comercial/Clientes/Cliente.aspx")) throw new Exception("No tienes la facultad para editar clientes.");
+            if (string.IsNullOrWhiteSpace(nombre)) throw new Exception("Indica el nombre de la planta.");
+            SpSalida("INS_CLIENTE_INSTALACION", new[] { "@ID" }, "@CLIENTE", cliente, "@NOMBRE", nombre.Trim(), "@DESCRIPCION", null, "@DIRECCION", Nulo(direccion), "@CODIGO", Nulo(codigo),
+                "@ZONA_HORARIA", null, "@LATITUD", null, "@LONGITUD", null, "@HABILITADO", true, "@USUARIO", SoporteDatos.Usuario());
+            return new { mensaje = "Planta agregada.", ficha = FichaCliente(cliente) };
         });
     }
 

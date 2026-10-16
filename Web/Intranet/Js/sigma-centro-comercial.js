@@ -510,7 +510,7 @@ function vFicha(st, d) {
 function siguiente(d, idx) {
   var l = d.lead, pv = propVigente(d), ct = contUltimo(d), demo = d.demo, prim = K.ini(l.CONTACTO) ? l.CONTACTO.split(' ')[0] : l.CONTACTO;
   if (l.ESTADO === 'PERDIDO') return ['Lead perdido' + (l.MOTIVO_PERDIDA ? ': ' + esc(l.MOTIVO_PERDIDA) : '') + '. Puedes reabrirlo si retoma el interés.', 'block', 'cc-da'];
-  if (l.ESTADO === 'CONCRETADO') return ['Cliente activo desde el ' + dmy(ct && ct.FIRMADO) + '. Su suscripción, cobros y pagos están en Clientes › Administración comercial.', 'ok', 'cc-ok'];
+  if (l.ESTADO === 'CONCRETADO') return ['Cliente activo desde el ' + dmy(ct && ct.FIRMADO) + '. Su suscripción, cobros y pagos están en la pestaña Suscripciones.', 'ok', 'cc-ok'];
   if (!l.EJECUTIVO_ID) return ['Siguiente paso: asígnale un ejecutivo en «Información» y haz el primer contacto.', 'personadd', 'cc-wa'];
   if (idx === 0) return ['Siguiente paso: calificar la necesidad y crear la demo' + (l.INTERESES || l.PLAN_INTERES ? ' (' + esc(l.PLAN_INTERES || l.INTERESES) + ')' : '') + '.', 'flag', ''];
   if (idx === 1 && demo) {

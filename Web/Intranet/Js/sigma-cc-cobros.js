@@ -644,7 +644,7 @@ function formCli(d) {
     cobro: c.MONEDA_COBRO || 'UF', motivo: '' };
 }
 function abrirCliente(id) {
-  D = { tipo: 'cli', id: +id, data: null, open: { ident: true, cont: false, usu: false, pla: false }, f: {}, nc: { nombre: '', cargo: '', correo: '', telefono: '', principal: false }, busy: false };
+  D = { tipo: 'cli', id: +id, data: null, open: { ident: true, cont: false, usu: false, pla: false }, f: {}, nc: { nombre: '', cargo: '', correo: '', telefono: '', principal: false }, np: { nombre: '', direccion: '' }, busy: false };
   K.Panel.open({ st: D, render: render, onclose: function () { D = null; if (C.lista.empresas) cargar('empresas'); } });
   call('Cliente', { id: +id }).then(function (d) { if (D && D.tipo === 'cli') { D.data = d; D.f = formCli(d); if (+id === 0) D.f.cobro = 'UF'; K.Panel.paint(); } }).catch(function (e) { K.toastError(e); K.Panel.close(); });
 }
@@ -660,7 +660,9 @@ function renderCli(st) {
     ? 'Se cotiza y se cobra en <b>dólares (USD)</b>. Se paga por <b>transferencia internacional (SWIFT)</b>; los gastos bancarios corren por cuenta del cliente. La tarjeta en USD queda «próximamente».'
     : 'Se cotiza en <b>UF</b> y se cobra en <b>pesos (CLP)</b> con la UF del día de emisión. Se paga con <b>Webpay Plus</b> o transferencia nacional.';
   var cambia = !nuevo && c.MONEDA_COBRO && f.cobro !== c.MONEDA_COBRO;
-  var ident = '<div class="cc-grid2"><div class="cp-fld cc-full"><label for="cc_nombre">Nombre</label><input class="cp-inp" id="cc_nombre" data-pv="c.nombre" value="' + esc(f.nombre) + '"' + (ed ? '' : ' readonly') + (nuevo ? ' data-autofocus="1"' : '') + '></div>' +
+  var logo = nuevo ? '' : '<div class="cc-acc" style="align-items:center">' + (c.LOGO ? '<img src="' + esc(d.logoUrl || '') + '" alt="Logo de ' + esc(c.NOMBRE) + '" style="height:44px;max-width:140px;object-fit:contain;border:1px solid var(--line);border-radius:8px;padding:4px;background:#fff">' : '<span class="cc-nota">Sin logo</span>') +
+    (ed ? '<label class="cp-btn cp-out cp-sm" style="cursor:pointer">' + ic('upload') + 'Cambiar logo<input type="file" id="ccLogo" accept="image/png,image/jpeg" style="display:none"></label>' : '') + '</div>';
+  var ident = logo + '<div class="cc-grid2"><div class="cp-fld cc-full"><label for="cc_nombre">Nombre</label><input class="cp-inp" id="cc_nombre" data-pv="c.nombre" value="' + esc(f.nombre) + '"' + (ed ? '' : ' readonly') + (nuevo ? ' data-autofocus="1"' : '') + '></div>' +
     fld('razon', 'Razón social', { ro: !ed }) + fld('fantasia', 'Nombre de fantasía', { ro: !ed }) +
     '<div class="cp-fld"><label>País</label>' + K.combo('ccCli_pais', o.paises.map(function (x) { return { id: String(x.id), n: x.n }; }), f.pais, { ph: 'Elige el país', etiqueta: 'País' }) + '</div>' +
     fld('identificador', pa.etiqueta, { ro: !ed, ph: pa.id === 1 ? '12.345.678-9' : '' }) +
@@ -683,6 +685,7 @@ function renderCli(st) {
   var us = d.usuarios.map(function (x) {
     return '<div class="cc-li" style="grid-template-columns:minmax(0,1.3fr) minmax(0,1.2fr) auto"><span class="cc-c2"><b style="font-size:13px">' + esc(x.nombre) + '</b><span>' + esc(x.correo || '') + '</span></span><span style="font-size:12.5px;color:var(--cc-lab)">' + esc(x.perfiles || 'Sin perfil') + '</span>' + chip(x.habilitado ? 'Activo' : 'Deshabilitado', x.habilitado ? 'ok' : 'gr') + '</div>';
   }).join('') || '<div class="cc-nota">Sin usuarios.</div>';
+  var altaPl = ed && !nuevo ? '<div class="cc-correo" style="display:flex;flex-direction:column;gap:10px"><b>Agregar planta</b><div class="cc-grid2">' + ['nombre:Nombre', 'direccion:Dirección'].map(function (z) { var k = z.split(':')[0]; return '<div class="cp-fld"><label for="cc_np_' + k + '">' + z.split(':')[1] + '</label><input class="cp-inp" id="cc_np_' + k + '" data-pv="c.np_' + k + '" value="' + esc(st.np[k]) + '"></div>'; }).join('') + '</div><div class="cc-acc"><span class="cc-sp"></span>' + btn('cp-out cp-sm', 'cplantaagregar', 'Agregar', dis, 'plus') + '</div></div>' : '';
   var pl = d.plantas.map(function (x) {
     return '<div class="cc-li" style="grid-template-columns:minmax(0,1fr) minmax(0,1.4fr) auto"><b style="font-size:13px">' + esc(x.nombre) + '</b><span class="cc-m">' + esc(x.direccion || '—') + '</span>' + chip(x.habilitada ? 'Habilitada' : 'Deshabilitada', x.habilitada ? 'ok' : 'gr') + '</div>';
   }).join('') || '<div class="cc-nota">Sin plantas.</div>';
@@ -691,7 +694,7 @@ function renderCli(st) {
       (nuevo ? aviso('Guarda el cliente para agregar contactos. Sus usuarios y plantas se administran desde Cliente.', '') :
         sec(st, 'cont', 'users', 'bl', 'Contactos', '<small>' + d.contactos.length + '</small>', cs + alta) +
         sec(st, 'usu', 'person', 'cy', 'Usuarios', '<small>' + d.usuarios.length + '</small>', us + '<div class="cc-nota">Para invitar o cambiar perfiles, el cliente usa Cliente › Usuarios.</div>') +
-        sec(st, 'pla', 'pin', 'ok', 'Plantas', '<small>' + d.plantas.length + '</small>', pl)),
+        sec(st, 'pla', 'pin', 'ok', 'Plantas', '<small>' + d.plantas.length + '</small>', pl + altaPl)),
     f: btn('cp-ghost', 'pclose', 'Cerrar') + '<div class="cp-r">' + (ed ? btn('cp-pri', 'cclientok', st.busy ? 'Guardando…' : (nuevo ? 'Crear cliente' : 'Guardar'), dis + (f.nombre.trim() && f.identificador.trim() ? '' : ' disabled')) : '') + '</div>' };
 }
 A.ccli = function (ds) { abrirCliente(ds.id); };
@@ -708,6 +711,21 @@ A.cconagregar = function () {
   ocupado(call('GuardarContacto', { cliente: D.id, nombre: n.nombre, cargo: n.cargo, correo: n.correo, telefono: n.telefono, principal: !!n.principal }))
     .then(function (r) { D.data = r.ficha; D.nc = { nombre: '', cargo: '', correo: '', telefono: '', principal: false }; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); }).catch(function () { });
 };
+A.cplantaagregar = function () {
+  ocupado(call('AgregarPlanta', { cliente: D.id, nombre: D.np.nombre, direccion: D.np.direccion, codigo: '' }))
+    .then(function (r) { D.data = r.ficha; D.np = { nombre: '', direccion: '' }; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); }).catch(function () { });
+};
+document.addEventListener('change', function (e) {
+  if (!e.target || e.target.id !== 'ccLogo' || !D || D.tipo !== 'cli') return;
+  var f = e.target.files[0]; if (!f) return;
+  if (f.size > 2 * 1024 * 1024) { K.toastError('El logo pesa más de 2 MB.'); return; }
+  var r = new FileReader();
+  r.onload = function () {
+    ocupado(call('SubirLogo', { cliente: D.id, nombre: f.name, mime: f.type, base64: String(r.result).split(',')[1] }))
+      .then(function (x) { D.data = x.ficha; D.busy = false; K.Panel.paint(); K.toast(x.mensaje); }).catch(function () { });
+  };
+  r.readAsDataURL(f);
+});
 A.cconquitar = function (ds) {
   ocupado(call('QuitarContacto', { cliente: D.id, contacto: +ds.id })).then(function (r) { D.data = r.ficha; D.busy = false; K.Panel.paint(); K.toast(r.mensaje); }).catch(function () { });
 };
@@ -799,6 +817,7 @@ function pv(clave, valor) {
   if (clave.indexOf('c.') !== 0 || !D) return false;
   var k = clave.slice(2);
   if (D.tipo === 'cli' && k.indexOf('nc_') === 0) { D.nc[k.slice(3)] = valor; return true; }
+  if (D.tipo === 'cli' && k.indexOf('np_') === 0) { D.np[k.slice(3)] = valor; return true; }
   if (D.tipo === 'plan') {
     /* Funcionalidades y formulario de precio van aparte del resto de los campos del plan. */
     if (k.indexOf('fun_') === 0) { var fi = D.fun[k.slice(4)] || (D.fun[k.slice(4)] = {}); fi.incluida = !!valor; return true; }

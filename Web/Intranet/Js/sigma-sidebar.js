@@ -68,24 +68,31 @@
 
     /* ------------------------------------------------------------ contraer */
     var col = document.querySelector('[data-sg-collapse]');
+    function movil() { return window.innerWidth < 992; }
+    /* bajo 992 px el menu es un cajon (body.sidebar-enable): «enlarged» no aplica y lo dejaria roto */
+    function cajonMovil() { if (movil()) document.body.classList.remove('enlarged'); }
     function pintarCol() {
         if (!col) return;
-        var c = document.body.classList.contains('enlarged');
-        col.setAttribute('aria-label', c ? 'Expandir menú' : 'Contraer menú'); col.title = c ? 'Expandir menú' : 'Contraer menú';
-        var s = col.querySelector('span'); if (s) s.textContent = c ? 'Expandir menú' : 'Contraer menú';
+        var m = movil(), c = !m && document.body.classList.contains('enlarged'), t = m ? 'Cerrar menú' : (c ? 'Expandir menú' : 'Contraer menú');
+        col.setAttribute('aria-label', t); col.title = t;
+        var s = col.querySelector('span'); if (s) s.textContent = t;
     }
     if (col) {
         var guardado = ls('col', null);
-        if (guardado === 1 && window.innerWidth >= 992) document.body.classList.add('enlarged');
-        else if (guardado === 0 && window.innerWidth >= 992) document.body.classList.remove('enlarged');
-        pintarCol();
+        if (guardado === 1 && !movil()) document.body.classList.add('enlarged');
+        else if (guardado === 0 && !movil()) document.body.classList.remove('enlarged');
+        cajonMovil(); pintarCol();
         col.addEventListener('click', function () {
+            if (movil()) { document.body.classList.remove('sidebar-enable', 'enlarged'); pintarCol(); return; }
             document.body.classList.toggle('enlarged'); guardar('col', document.body.classList.contains('enlarged') ? 1 : 0); pintarCol();
         });
-        /* el boton de hamburguesa de la barra superior tambien contrae: se recuerda igual */
+        /* el boton de hamburguesa de la barra superior tambien contrae: se recuerda igual (solo en escritorio) */
         document.addEventListener('click', function (e) {
-            if (e.target.closest && e.target.closest('.button-menu-mobile')) setTimeout(function () { guardar('col', document.body.classList.contains('enlarged') ? 1 : 0); pintarCol(); }, 60);
+            if (e.target.closest && e.target.closest('.button-menu-mobile')) setTimeout(function () {
+                cajonMovil(); if (!movil()) guardar('col', document.body.classList.contains('enlarged') ? 1 : 0); pintarCol();
+            }, 60);
         });
+        window.addEventListener('resize', function () { cajonMovil(); pintarCol(); });
     }
     var kb = nav.querySelector('.nv-find kbd'); if (kb) kb.textContent = MAC ? '⌘ K' : 'Ctrl K';
 

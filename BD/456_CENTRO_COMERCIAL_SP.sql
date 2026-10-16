@@ -730,9 +730,10 @@ BEGIN TRANSACTION
                                  ppt_fecha_actualizacion = [dbo].[FNC_AHORA]() WHERE ppt_id = @ID
     UPDATE [dbo].[Lead] SET lea_estado = 'PROPUESTA', lea_fecha_estado = [dbo].[FNC_AHORA](), lea_ejecutivo = ISNULL(lea_ejecutivo, @USUARIO)
      WHERE lea_id = @LEAD AND lea_estado IN ('NUEVO', 'CONTACTADO', 'CALIFICADO', 'DEMO')
-    DECLARE @DET NVARCHAR(400) = @NOMBRE + N' · v' + CAST(@V AS NVARCHAR(5)) + N' · '
-          + REPLACE(CONVERT(NVARCHAR(20), ROUND(@MENSUAL * (100 - @DESC) / 100, 2)), '.', ',') + N' UF/mes · total '
-          + REPLACE(CONVERT(NVARCHAR(20), @TOTAL), '.', ',') + N' UF'
+    DECLARE @USD BIT = CASE WHEN (SELECT ppt_moneda FROM [dbo].[Propuesta] WHERE ppt_id = @ID) = 'USD' THEN 1 ELSE 0 END
+    DECLARE @DET NVARCHAR(400) = @NOMBRE + N' · v' + CAST(@V AS NVARCHAR(5)) + N' · ' + CASE WHEN @USD = 1 THEN N'USD ' ELSE N'' END
+          + REPLACE(CONVERT(NVARCHAR(20), CAST(ROUND(@MENSUAL * (100 - @DESC) / 100, 2) AS DECIMAL(18,2))), '.', ',') + CASE WHEN @USD = 1 THEN N'' ELSE N' UF' END + N'/mes · total '
+          + CASE WHEN @USD = 1 THEN N'USD ' ELSE N'' END + REPLACE(CONVERT(NVARCHAR(20), @TOTAL), '.', ',') + CASE WHEN @USD = 1 THEN N'' ELSE N' UF' END
     EXEC [dbo].[INS_LEAD_ACTIVIDAD] @LEAD = @LEAD, @TIPO = 'SISTEMA', @ICONO = 'quote', @TITULO = N'Propuesta enviada', @DETALLE = @DET, @USUARIO = @USUARIO
 COMMIT TRANSACTION
 RETURN 0
@@ -1055,7 +1056,7 @@ BEGIN TRANSACTION
     DECLARE @D1 NVARCHAR(2000) = N'Firmó ' + LTRIM(RTRIM(@NOMBRE)) + N' (' + UPPER(@RUT) + N') desde ' + ISNULL(@IP, N'?') + N' · SHA-256 ' + LEFT(LOWER(@PDF_FIRMADO_SHA256), 16) + N'…'
     DECLARE @T1 NVARCHAR(200) = N'Contrato v' + CAST(@V AS NVARCHAR(5)) + N' firmado'
     EXEC [dbo].[INS_LEAD_ACTIVIDAD] @LEAD = @LEAD, @TIPO = 'SISTEMA', @ICONO = 'sign', @TITULO = @T1, @DETALLE = @D1
-    DECLARE @D2 NVARCHAR(2000) = LEFT(@NOMBRE_PLAN, 100) + N' · suscripción activa hasta el ' + CONVERT(NVARCHAR(10), @FIN, 103)
+    DECLARE @D2 NVARCHAR(2000) = LEFT(@NOMBRE_PLAN, 100) + N' · contrato por ' + CAST(@VIG AS NVARCHAR(5)) + N' meses (hasta el ' + CONVERT(NVARCHAR(10), @FIN, 103) + N'); el acceso se extiende con cada mes pagado'
     EXEC [dbo].[INS_LEAD_ACTIVIDAD] @LEAD = @LEAD, @TIPO = 'SISTEMA', @ICONO = 'check', @TITULO = N'Cliente activado', @DETALLE = @D2
 COMMIT TRANSACTION
 END TRY
