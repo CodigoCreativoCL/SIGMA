@@ -123,6 +123,7 @@ namespace SitioBase
             string enlace = EnlacePago(suscripcion);
             string empresa = Comercial.Txt(h, "EMPRESA"), contacto = Comercial.Primero(Comercial.Txt(h, "CONTACTO"));
             DateTime vence; DateTime.TryParse(Convert.ToString(e.Pendientes[0]["DESDE"]), out vence);
+            bool usd = e.EsUsd, prueba = !usd && Webpay.EsPrueba();
             string[] titulos =
             {
                 tipo == "PREVIO" ? "Tu cobro de SIGMA vence en 3 días" :
@@ -130,25 +131,27 @@ namespace SitioBase
                 tipo == "MORA" ? "Tienes un cobro de SIGMA pendiente" : "Tu cobro de SIGMA está listo"
             };
             List<string> det = new List<string>();
-            foreach (Dictionary<string, object> p in e.Pendientes) { det.Add(Periodo(p)); det.Add(Clp(p["SALDO"]) + " · " + Comercial.UF2(p["UF"])); }
-            det.Add("Total a pagar"); det.Add(Clp(e.Total));
-            string transferir = Comercial.Parametro("COBROS_DATOS_TRANSFERENCIA", "");
+            foreach (Dictionary<string, object> p in e.Pendientes) { det.Add(Periodo(p)); det.Add(usd ? Monto(p["SALDO"], true) : Clp(p["SALDO"]) + " · " + Comercial.UF2(p["UF"])); }
+            det.Add("Total a pagar"); det.Add(Monto(e.Total, usd));
+            List<KeyValuePair<string, string>> banco = DatosTransferencia(usd);
+            string transferir = string.Join(" · ", banco.Select(b => b.Key + ": " + b.Value));
             string html = Correo.Plantilla(new Correo.Pieza
             {
-                Pre = (Webpay.EsPrueba() ? "MODO DE PRUEBA · " : "") + "Cobro SIGMA · " + empresa,
+                Pre = (prueba ? "MODO DE PRUEBA · " : "") + "Cobro SIGMA · " + empresa,
                 Titulo = titulos[0],
                 Texto = (contacto != "" ? Correo.Html(contacto) + ", " : "") + (tipo == "MORA"
                         ? "el cobro de tu suscripción SIGMA está vencido. Págalo para que tu equipo siga usando SIGMA sin interrupciones."
-                        : "este es el cobro de tu suscripción SIGMA" + (vence != DateTime.MinValue ? ", que vence el " + vence.ToString("dd/MM/yyyy", Comercial.CL) : "") + ". Puedes pagarlo en línea con Webpay."),
+                        : "este es el cobro de tu suscripción SIGMA" + (vence != DateTime.MinValue ? ", que vence el " + vence.ToString("dd/MM/yyyy", Comercial.CL) : "") + (usd ? ". Se paga por transferencia internacional." : ". Puedes pagarlo en línea con Webpay.")),
                 Detalles = det.ToArray(),
-                Boton = "Pagar con Webpay", Enlace = enlace,
-                Cierre = "Pagas con tarjeta de crédito o débito en el sitio seguro de Transbank y el pago se registra solo." +
-                         (transferir != "" ? "<br><br>¿Prefieres transferir? " + Correo.Html(transferir) : "") +
-                         (Webpay.EsPrueba() ? "<br><br><b>Modo de prueba:</b> no se cobra dinero real; usa las tarjetas de prueba de Transbank." : ""),
-                Pie = "Montos en pesos según la UF del día de emisión. Ejecutivo a cargo: " + (Comercial.Txt(h, "EJECUTIVO") == "" ? "Código Creativo" : Comercial.Txt(h, "EJECUTIVO")) + "."
+                Boton = usd ? "Ver datos e informar el pago" : "Pagar con Webpay", Enlace = enlace,
+                Cierre = (usd ? "Transfiere en dólares a la cuenta indicada en el enlace, con la referencia que ahí aparece, y informa el pago subiendo el comprobante. Los gastos bancarios de la transferencia internacional corren por cuenta de tu empresa."
+                              : "Pagas con tarjeta de crédito o débito en el sitio seguro de Transbank y el pago se registra solo.") +
+                         (!usd && transferir != "" ? "<br><br>¿Prefieres transferir? " + Correo.Html(transferir) : "") +
+                         (prueba ? "<br><br><b>Modo de prueba:</b> no se cobra dinero real; usa la tarjeta de prueba de Transbank (4051 8856 0044 6623, CVV 123, RUT 11.111.111-1, clave 123)." : ""),
+                Pie = (usd ? "Montos en dólares estadounidenses, sin conversión. " : "Montos en pesos según la UF del día de emisión. ") + "Ejecutivo a cargo: " + (Comercial.Txt(h, "EJECUTIVO") == "" ? "Código Creativo" : Comercial.Txt(h, "EJECUTIVO")) + "."
             });
             bool ok = Correo.Enviar(new[] { Comercial.Txt(h, "CORREO") }, Copia(h),
-                (Webpay.EsPrueba() ? "[Prueba] " : "") + titulos[0] + " · " + empresa, html);
+                (prueba ? "[Prueba] " : "") + titulos[0] + " · " + empresa, html);
             foreach (Dictionary<string, object> p in e.Pendientes)
                 try { Ejecutar("INS_COBRO_RECORDATORIO", "@PERIODO", Convert.ToInt32(p["ID"]), "@TIPO", tipo, "@ENVIADO", ok); } catch (Exception) { }
             return ok;
@@ -280,7 +283,9 @@ namespace SitioBase
             string html = "<html><head><meta charset='utf-8'><style>body{font-family:'Segoe UI',Arial,sans-serif;color:#17223B;font-size:12.5px}" +
                 "h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:7px 10px;border-bottom:1px solid #EEF1F6}" +
                 "td.k{color:#68738A}td.v{text-align:right;font-weight:700}.tot td{border-top:2px solid #17223B;font-weight:800}.mut{color:#68738A;font-size:11px}" +
-                ".cab{border-bottom:3px solid #6732F4;padding-bottom:10px;margin-bottom:14px}.marca{font-size:18px;font-weight:800;letter-spacing:.06em}</style></head><body>" +
+                ".cab{border-bottom:3px solid #6732F4;padding-bottom:10px;margin-bottom:14px}.marca{font-size:18px;font-weight:800;letter-spacing:.06em}" +
+                ".agua{position:absolute;top:330px;left:40px;font-size:84px;font-weight:800;color:rgba(182,92,0,.12);transform:rotate(-24deg);letter-spacing:.08em;white-space:nowrap}</style></head><body>" +
+                (Webpay.EsPrueba() ? "<div class='agua'>MODO DE PRUEBA</div>" : "") +
                 "<div class='cab'><div class='marca'>SIGMA <span class='mut'>· Código Creativo</span></div><h1>Comprobante de pago" + (Webpay.EsPrueba() ? " (MODO DE PRUEBA)" : "") + "</h1>" +
                 "<div class='mut'>" + Correo.Html(Comercial.Txt(h, "EMPRESA")) + " · " + Hora.Ahora.ToString("dd/MM/yyyy HH:mm", Comercial.CL) + "</div></div>" +
                 "<table>" + filas + "<tr class='tot'><td>Total pagado</td><td class='v'>" + Clp(pago["MONTO"]) + "</td></tr></table>" +
@@ -328,6 +333,74 @@ namespace SitioBase
                 "@NOMBRE_ALMACENADO", s.nombre_almacenado, "@RUTA", s.ruta, "@MIME", s.mime, "@EXTENSION", s.extension, "@BYTE", s.tamano,
                 "@HASH", s.hash, "@USUARIO", USUARIO_SISTEMA);
             return Convert.ToInt32(o["@ID"]);
+        }
+
+        // ------------------------------------------------------------ verificación de una transferencia
+        /// <summary>
+        /// Al verificar una transferencia: comprobante PDF (sin «Valor UF» si es en USD) y correo al contacto
+        /// de cobro con copia al ejecutivo. Un correo que falla no deshace la verificación.
+        /// </summary>
+        public static bool CorreoPagoVerificado(int pagoId)
+        {
+            Dictionary<string, object> pg = SoporteDatos.Filas("SEL_SUSCRIPCION_PAGO", "@ID", pagoId).FirstOrDefault();
+            if (pg == null) return false;
+            Dictionary<string, object> per = SoporteDatos.Filas("SEL_SUSCRIPCION_PERIODO", "@ID", Convert.ToInt32(pg["SPA_PERIODO"])).FirstOrDefault();
+            if (per == null) return false;
+            Estado e = Leer(Convert.ToInt32(per["SPE_SUSCRIPCION"]));
+            if (!e.Cabecera.ContainsKey("CORREO")) return false;
+            bool usd = Convert.ToString(pg["SPA_MONEDA"]) == "USD";
+            string medio = usd ? "Transferencia internacional" : "Transferencia nacional";
+            string ver = Monto(pg["SPA_MONTO_VERIFICADO_CLP"] ?? pg["SPA_MONTO_DECLARADO_CLP"], usd);
+            string concepto = Convert.ToBoolean(per["SPE_ES_IMPLANTACION"]) ? "Implementación" : "Mensualidad " + Convert.ToDateTime(per["SPE_FECHA_INICIO"]).ToString("MMMM yyyy", Comercial.CL);
+            string prueba = Webpay.EsPrueba() && Convert.ToString(pg["SPA_MEDIO"]) == "WEBPAY" ? " (MODO DE PRUEBA)" : "";
+            string filas = "<tr><td class='k'>" + Correo.Html(concepto) + "</td><td class='v'>" + Correo.Html(ver) + "</td></tr>" +
+                (usd ? "" : "<tr><td class='k'>Precio del plan</td><td class='v'>" + Correo.Html(Comercial.UF2(per["SPE_VALOR_UF_PLAN"])) + "</td></tr>" +
+                            (per["SPE_VALOR_UF_DIA"] != null ? "<tr><td class='k'>Valor de la UF al emitir</td><td class='v'>" + Correo.Html(Clp(per["SPE_VALOR_UF_DIA"])) + "</td></tr>" : ""));
+            string html = "<html><head><meta charset='utf-8'><style>body{font-family:'Segoe UI',Arial,sans-serif;color:#17223B;font-size:12.5px}" +
+                "h1{font-size:20px;margin:0 0 4px}table{width:100%;border-collapse:collapse;margin:10px 0}td{padding:7px 10px;border-bottom:1px solid #EEF1F6}" +
+                "td.k{color:#68738A}td.v{text-align:right;font-weight:700}.tot td{border-top:2px solid #17223B;font-weight:800}.mut{color:#68738A;font-size:11px}" +
+                ".cab{border-bottom:3px solid #6732F4;padding-bottom:10px;margin-bottom:14px}.marca{font-size:18px;font-weight:800;letter-spacing:.06em}</style></head><body>" +
+                "<div class='cab'><div class='marca'>SIGMA <span class='mut'>· Código Creativo</span></div><h1>Comprobante de pago" + prueba + "</h1>" +
+                "<div class='mut'>" + Correo.Html(Comercial.Txt(e.Cabecera, "EMPRESA")) + " · " + Hora.Ahora.ToString("dd/MM/yyyy HH:mm", Comercial.CL) + "</div></div>" +
+                "<table>" + filas + "<tr class='tot'><td>Total verificado</td><td class='v'>" + Correo.Html(ver) + "</td></tr></table>" +
+                "<table><tr><td class='k'>Medio de pago</td><td class='v'>" + medio + "</td></tr>" +
+                "<tr><td class='k'>Banco</td><td class='v'>" + Correo.Html(Convert.ToString(pg["SPA_BANCO"])) + "</td></tr>" +
+                "<tr><td class='k'>N.° de operación</td><td class='v'>" + Correo.Html(Convert.ToString(pg["SPA_NUMERO_OPERACION"])) + "</td></tr>" +
+                "<tr><td class='k'>Transferida el</td><td class='v'>" + Convert.ToDateTime(pg["SPA_FECHA_TRANSFERENCIA"]).ToString("dd/MM/yyyy", Comercial.CL) + "</td></tr></table>" +
+                "<p class='mut'>Este comprobante no reemplaza a la factura electrónica, que se emite por separado. Código Creativo SpA · comercial@codigocreativo.tech</p></body></html>";
+            byte[] pdf = ConvertHtml.PdfConverterBinario(html);
+            string archivo = "Comprobante_SIGMA_" + Convert.ToString(pg["SPA_ID"]) + ".pdf";
+            string cuerpo = Correo.Plantilla(new Correo.Pieza
+            {
+                Pre = "Pago verificado", Titulo = "Verificamos tu pago, " + Comercial.Primero(Comercial.Txt(e.Cabecera, "CONTACTO")),
+                Texto = "Gracias. Verificamos la transferencia de " + Correo.Html(Comercial.Txt(e.Cabecera, "EMPRESA")) + " contra nuestra cartola y tu acceso a SIGMA quedó al día.",
+                Detalles = new[] { "Monto verificado", ver, "Medio", medio, "N.° de operación", Convert.ToString(pg["SPA_NUMERO_OPERACION"]) },
+                Adjunto = archivo, AdjuntoKb = (int)Math.Ceiling(pdf.Length / 1024.0),
+                Boton = "Ir a SIGMA", Enlace = Correo.UrlSitio() + "/Login.aspx", Cierre = "Guarda este correo: incluye tu comprobante.",
+                Pie = "Ejecutivo a cargo: " + (Comercial.Txt(e.Cabecera, "EJECUTIVO") == "" ? "Código Creativo" : Comercial.Txt(e.Cabecera, "EJECUTIVO")) + "."
+            });
+            return Correo.Enviar(new[] { Comercial.Txt(e.Cabecera, "CORREO") }, Copia(e.Cabecera), "Pago verificado · SIGMA", cuerpo, new Correo.Adjunto(archivo, "application/pdf", pdf));
+        }
+
+        public static bool CorreoPagoRechazado(int pagoId, string motivo)
+        {
+            Dictionary<string, object> pg = SoporteDatos.Filas("SEL_SUSCRIPCION_PAGO", "@ID", pagoId).FirstOrDefault();
+            if (pg == null) return false;
+            Dictionary<string, object> per = SoporteDatos.Filas("SEL_SUSCRIPCION_PERIODO", "@ID", Convert.ToInt32(pg["SPA_PERIODO"])).FirstOrDefault();
+            if (per == null) return false;
+            Estado e = Leer(Convert.ToInt32(per["SPE_SUSCRIPCION"]));
+            if (!e.Cabecera.ContainsKey("CORREO")) return false;
+            bool usd = Convert.ToString(pg["SPA_MONEDA"]) == "USD";
+            string html = Correo.Plantilla(new Correo.Pieza
+            {
+                Pre = "No pudimos verificar tu pago", Titulo = "No pudimos verificar tu pago",
+                Texto = Correo.Html(Comercial.Primero(Comercial.Txt(e.Cabecera, "CONTACTO"))) + ", revisamos la transferencia de " + Correo.Html(Comercial.Txt(e.Cabecera, "EMPRESA")) + " y no pudimos darla por pagada.",
+                Detalles = new[] { "Monto informado", Monto(pg["SPA_MONTO_DECLARADO_CLP"], usd), "N.° de operación", Convert.ToString(pg["SPA_NUMERO_OPERACION"]), "Motivo", motivo },
+                Boton = "Revisar y volver a informar", Enlace = EnlacePago(Convert.ToInt32(per["SPE_SUSCRIPCION"])),
+                Cierre = "Puedes corregir los datos o subir otro comprobante desde el enlace. Si crees que es un error, responde este correo.",
+                Pie = "Ejecutivo a cargo: " + (Comercial.Txt(e.Cabecera, "EJECUTIVO") == "" ? "Código Creativo" : Comercial.Txt(e.Cabecera, "EJECUTIVO")) + "."
+            });
+            return Correo.Enviar(new[] { Comercial.Txt(e.Cabecera, "CORREO") }, Copia(e.Cabecera), "No pudimos verificar tu pago · SIGMA", html);
         }
 
         // ------------------------------------------------------------ transferencia informada por el cliente

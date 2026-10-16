@@ -688,7 +688,9 @@ public class WsCobros : System.Web.Services.WebService
             Exigir(P_VERIFICAR);
             decimal? m = Monto(montoVerificado);
             SpSalida("UPD_SUSCRIPCION_PAGO_VERIFICAR", null, "@ID", id, "@VERIFICADO", true, "@MONTO_VERIFICADO", m, "@MOTIVO_RECHAZO", null, "@USUARIO", SoporteDatos.Usuario());
-            return new { mensaje = "Pago verificado. El período queda al día y el acceso se extiende.", ficha = FichaPago(id) };
+            bool correo = false;
+            try { correo = Cobros.CorreoPagoVerificado(id); } catch (Exception ex) { Correo.Registrar("WsCobros.VerificarPago correo", ex.Message); }
+            return new { mensaje = "Pago verificado. El período queda al día y el acceso se extiende." + (correo ? " Se envió el comprobante al contacto de cobro." : " El correo no salió: revisa la configuración de correo."), ficha = FichaPago(id) };
         });
     }
 
@@ -701,7 +703,9 @@ public class WsCobros : System.Web.Services.WebService
             Exigir(P_VERIFICAR);
             if (string.IsNullOrWhiteSpace(motivo) || motivo.Trim().Length < 5) throw new Exception("Indica el motivo del rechazo (al menos 5 letras).");
             SpSalida("UPD_SUSCRIPCION_PAGO_VERIFICAR", null, "@ID", id, "@VERIFICADO", false, "@MONTO_VERIFICADO", null, "@MOTIVO_RECHAZO", motivo.Trim(), "@USUARIO", SoporteDatos.Usuario());
-            return new { mensaje = "Pago rechazado. El cliente puede corregirlo y volver a informarlo.", ficha = FichaPago(id) };
+            bool correo = false;
+            try { correo = Cobros.CorreoPagoRechazado(id, motivo.Trim()); } catch (Exception ex) { Correo.Registrar("WsCobros.RechazarPago correo", ex.Message); }
+            return new { mensaje = "Pago rechazado. El cliente puede corregirlo y volver a informarlo." + (correo ? " Se le avisó por correo." : " El correo no salió: avísale tú."), ficha = FichaPago(id) };
         });
     }
 
