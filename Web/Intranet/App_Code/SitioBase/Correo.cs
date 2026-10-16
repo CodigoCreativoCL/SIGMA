@@ -85,6 +85,7 @@ namespace SitioBase
 
         /// <summary>El motivo del último envío fallido en este hilo (lo guarda la cola para reintentar y mostrar por qué).</summary>
         [ThreadStatic] public static string UltimoError;
+        [ThreadStatic] static bool _sinMonitor;
 
         /// <summary>
         /// Deja un correo en la cola (Correo_Cola) y lo intenta enviar de inmediato. Si el SMTP falla queda
@@ -154,6 +155,12 @@ namespace SitioBase
                         m.To.Clear(); m.CC.Clear(); m.To.Add(desvio);
                         asunto = "[→ " + originales + "] " + asunto;
                     }
+                    /* MONITOREO: con appSettings CorreoMonitorearA esa casilla recibe copia oculta de TODO lo que
+                       sale, y los destinatarios reales reciben el correo normalmente. Si la copia oculta es
+                       rechazada, el mensaje se reintenta sin ella (ver el catch). */
+                    string monitor = (ConfigurationManager.AppSettings["CorreoMonitorearA"] ?? "").Trim();
+                    if (monitor != "" && !m.To.Concat(m.CC).Any(x => string.Equals(x.Address, monitor, StringComparison.OrdinalIgnoreCase)) && !_sinMonitor)
+                        m.Bcc.Add(monitor);
                     m.Subject = asunto;
                     m.SubjectEncoding = Encoding.UTF8;
                     m.Body = html;
@@ -179,6 +186,11 @@ namespace SitioBase
                    servidor), el mensaje no se pierde: se reintenta una vez solo para el destinatario. */
                 if (copia != null && System.Linq.Enumerable.Any(copia, c => !string.IsNullOrWhiteSpace(c)))
                     return Enviar(para, null, asunto, html, adjuntos);
+                if (!_sinMonitor && (ConfigurationManager.AppSettings["CorreoMonitorearA"] ?? "").Trim() != "")
+                {
+                    _sinMonitor = true;
+                    try { return Enviar(para, null, asunto, html, adjuntos); } finally { _sinMonitor = false; }
+                }
                 return false;
             }
         }
