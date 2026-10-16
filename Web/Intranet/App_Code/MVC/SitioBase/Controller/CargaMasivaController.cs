@@ -39,7 +39,7 @@ namespace SitioBase.Controller
         public const int MAX_FILAS = 100000;
 
         // ================================================================ definiciones
-        public enum Tipo { Texto, Numero, Entero, Fecha, SiNo, Lista }
+        public enum Tipo { Texto, Numero, Entero, Fecha, SiNo, Lista, Hora }
 
         public class Columna
         {
@@ -274,8 +274,144 @@ namespace SitioBase.Controller
                         } }
                 }
             });
-            m.Add(new Modulo { clave = "MANTENIMIENTO", nombre = "Mantenimiento", icono = "mdi-calendar-check", color = "#007F8A",
-                descripcion = "Tareas, checklists con sus ítems, planes y su programación sobre cada equipo.", procedimiento = "PRC_CARGA_MANTENIMIENTO", hojas = new List<Hoja>() });
+            /* MANTENIMIENTO (bloque 473): frecuencias, tareas, checklists con sus campos, planes con sus
+               hitos, actividades y equipos. Las hojas van en el orden en que se necesitan unas a otras. */
+            string[] UNIDADES_FREC = { "HORA", "DIA", "SEMANA", "MES", "AÑO" };
+            m.Add(new Modulo
+            {
+                clave = "MANTENIMIENTO",
+                nombre = "Mantenimiento",
+                descripcion = "Frecuencias, tareas recurrentes, checklists con sus campos, planes con sus intervenciones y actividades, y los equipos que cubre cada plan.",
+                icono = "mdi-calendar-check",
+                color = "#007F8A",
+                procedimiento = "PRC_CARGA_MANTENIMIENTO",
+                disponible = true,
+                ayudas = new[] { "PLANTAS", "AREAS", "ACTIVOS", "TIPOS ACTIVO", "TIPOS Y MODELOS", "UNIDADES", "FRECUENCIAS EXISTENTES", "TAREAS EXISTENTES", "CHECKLISTS EXISTENTES",
+                                 "PLANES EXISTENTES", "PERSONAS", "GRUPOS", "PRIORIDADES", "CATEGORIAS TAREA", "TIPOS ITEM", "TIPOS OT", "PRIORIDADES OT" },
+                hojas = new List<Hoja>
+                {
+                    new Hoja { clave = "FRECUENCIAS", titulo = "FRECUENCIAS", icono = "mdi-calendar-sync",
+                        descripcion = "Cada cuánto se hace algo. SEMANAL (días de la semana), MENSUAL (día del mes) o CADA (cada N horas, días, semanas, meses o años). Se nombran en las hojas de tareas, checklists e hitos. Si el nombre ya existe y es propio de una intervención, se actualiza; las compartidas se editan en Programaciones.",
+                        columnas = new List<Columna> {
+                            C("NOMBRE", "NOMBRE", true, "Cómo se llamará la frecuencia. Es lo que se escribe en las otras hojas.", "EJEMPLO-LUN-JUE", Tipo.Texto, 26),
+                            C("TIPO", "TIPO", true, "SEMANAL, MENSUAL o CADA.", "SEMANAL", Tipo.Lista, 12, new[] { "SEMANAL", "MENSUAL", "CADA" }),
+                            C("DIAS", "DIAS", false, "Solo SEMANAL: LUN, MAR, MIE, JUE, VIE, SAB, DOM (o 1 a 7), separados por coma.", "LUN,JUE", Tipo.Texto, 16),
+                            C("DIA_MES", "DIA MES", false, "Solo MENSUAL: el día del mes (1 a 31).", "", Tipo.Entero, 10),
+                            C("CADA", "CADA", false, "Solo CADA: la cantidad (cada 15 días, cada 3 meses…).", "", Tipo.Entero, 8),
+                            C("UNIDAD", "UNIDAD", false, "Solo CADA: HORA, DIA, SEMANA, MES o AÑO.", "", Tipo.Lista, 10, UNIDADES_FREC),
+                            C("HORA", "HORA", false, "A qué hora (08:00). Vacío: 08:00.", "08:00", Tipo.Hora, 9),
+                            C("DESDE", "DESDE", false, "Desde cuándo rige (dd-mm-aaaa). Vacío: hoy.", "", Tipo.Fecha, 13)
+                        } },
+                    new Hoja { clave = "TAREAS", titulo = "TAREAS", icono = "mdi-checkbox-marked-circle-outline",
+                        descripcion = "Una fila por tarea recurrente. Con el mismo código (o el mismo título, si no lleva código) se actualiza: las celdas vacías conservan lo que había.",
+                        columnas = new List<Columna> {
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (TAR-<n>).", "EJEMPLO-ACEITE", Tipo.Texto, 18),
+                            C("TITULO", "TITULO", true, "Qué se hace.", "Revisar nivel de aceite del reductor", Tipo.Texto, 36),
+                            C("DESCRIPCION", "DESCRIPCION", false, "El detalle de cómo hacerla.", "Verificar por la mirilla que el nivel quede entre las marcas.", Tipo.Texto, 40),
+                            C("PRIORIDAD", "PRIORIDAD", false, "Baja, Media, Alta o Crítica.", "Media", Tipo.Lista, 12, null, "PRIORIDADES"),
+                            C("DURACION_MIN", "DURACION MIN", false, "Minutos estimados.", "10", Tipo.Entero, 13, null, null, "DURACION"),
+                            C("REQUIERE_EVIDENCIA", "REQUIERE EVIDENCIA", false, "SI: pide foto o archivo al cerrarla.", "NO", Tipo.SiNo, 16, SINO),
+                            C("CATEGORIA", "CATEGORIA", false, "Como en la hoja CATEGORIAS TAREA (o una nueva).", "", Tipo.Lista, 18, null, "CATEGORIAS TAREA"),
+                            C("PLANTA", "PLANTA", false, "Como en la hoja PLANTAS.", "", Tipo.Lista, 18, null, "PLANTAS"),
+                            C("AREA", "AREA", false, "Como en la hoja AREAS.", "", Tipo.Lista, 18, null, "AREAS"),
+                            C("EQUIPO", "EQUIPO", false, "Código o nombre del activo, como en la hoja ACTIVOS EXISTENTES.", "", Tipo.Lista, 18, null, "ACTIVOS", "ACTIVO"),
+                            C("HABILITADA", "HABILITADA", false, "NO la deja deshabilitada. Vacío: SI.", "SI", Tipo.SiNo, 12, SINO)
+                        } },
+                    new Hoja { clave = "TAREAS_PROGRAMADAS", titulo = "TAREAS PROGRAMADAS", icono = "mdi-calendar-clock",
+                        descripcion = "Cada cuánto se hace cada tarea y quién la hace. La tarea puede ser de la hoja TAREAS o una que ya exista; las ocurrencias las genera el job de ocurrencias cada hora.",
+                        columnas = new List<Columna> {
+                            C("TAREA", "TAREA", true, "Código o título de la tarea.", "EJEMPLO-ACEITE", Tipo.Lista, 24, null, "TAREAS EXISTENTES"),
+                            C("FRECUENCIA", "FRECUENCIA", true, "Nombre de una frecuencia (de la hoja FRECUENCIAS o de FRECUENCIAS EXISTENTES).", "EJEMPLO-LUN-JUE", Tipo.Lista, 26, null, "FRECUENCIAS EXISTENTES"),
+                            C("RESPONSABLE", "RESPONSABLE", false, "Correo de la persona, como en la hoja PERSONAS.", "", Tipo.Lista, 28, null, "PERSONAS"),
+                            C("GRUPO", "GRUPO", false, "Grupo de trabajo, como en la hoja GRUPOS.", "", Tipo.Lista, 18, null, "GRUPOS")
+                        } },
+                    new Hoja { clave = "CHECKLISTS", titulo = "CHECKLISTS", icono = "mdi-clipboard-check-outline",
+                        descripcion = "Una fila por pauta. Las pautas NUEVAS se publican al terminar (si tienen campos en la hoja CHECKLIST ITEMS); una pauta ya publicada no se modifica desde aquí.",
+                        columnas = new List<Columna> {
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (PAU-<nnn>).", "EJEMPLO-RONDA", Tipo.Texto, 18),
+                            C("NOMBRE", "NOMBRE", true, "Cómo se llama la pauta.", "Ronda de refrigeración", Tipo.Texto, 32),
+                            C("DESCRIPCION", "DESCRIPCION", false, "Para qué sirve.", "", Tipo.Texto, 36),
+                            C("PLANTA", "PLANTA", false, "Como en la hoja PLANTAS. Vacío: sirve para cualquier planta.", "", Tipo.Lista, 18, null, "PLANTAS"),
+                            C("TIPO_ACTIVO", "TIPO ACTIVO", false, "Si es solo para un tipo de equipo (hoja TIPOS ACTIVO).", "", Tipo.Lista, 18, null, "TIPOS ACTIVO", "TIPO"),
+                            C("PUBLICAR", "PUBLICAR", false, "NO la deja en borrador. Vacío: SI.", "SI", Tipo.SiNo, 11, SINO)
+                        } },
+                    new Hoja { clave = "CHECKLIST_ITEMS", titulo = "CHECKLIST ITEMS", icono = "mdi-format-list-checks",
+                        descripcion = "Los campos de cada pauta, agrupados en secciones (la sección se crea si no existe). Solo a pautas nuevas o en borrador; un campo que ya existe se omite.",
+                        columnas = new List<Columna> {
+                            C("CHECKLIST", "CHECKLIST", true, "Código o nombre de la pauta (de la hoja CHECKLISTS o de CHECKLISTS EXISTENTES).", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "CHECKLISTS EXISTENTES", "PAUTA"),
+                            C("SECCION", "SECCION", false, "Agrupa los campos (Motor, Seguridad…). Vacío: sin sección.", "Motor", Tipo.Texto, 18),
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (C001…).", "", Tipo.Texto, 12),
+                            C("TEXTO", "TEXTO", true, "La pregunta o lo que se revisa.", "¿El motor hace ruido anormal?", Tipo.Texto, 42),
+                            C("TIPO", "TIPO", false, "Como en la hoja TIPOS ITEM. Vacío: texto corto.", "Sí / No", Tipo.Lista, 18, null, "TIPOS ITEM"),
+                            C("ORDEN", "ORDEN", false, "Vacío: al final.", "", Tipo.Entero, 9),
+                            C("OBLIGATORIO", "OBLIGATORIO", false, "NO lo hace opcional. Vacío: SI.", "SI", Tipo.SiNo, 13, SINO),
+                            C("COMENTARIO", "COMENTARIO", false, "NO no permite comentar. Vacío: SI.", "SI", Tipo.SiNo, 12, SINO),
+                            C("EVIDENCIA", "EVIDENCIA", false, "SI: pide foto o archivo.", "NO", Tipo.SiNo, 11, SINO),
+                            C("UNIDAD", "UNIDAD", false, "Solo para Medición, como en la hoja UNIDADES.", "", Tipo.Lista, 11, null, "UNIDADES")
+                        } },
+                    new Hoja { clave = "CHECKLISTS_PROGRAMADOS", titulo = "CHECKLISTS PROGRAMADOS", icono = "mdi-calendar-check-outline",
+                        descripcion = "Dónde y cada cuánto se hace cada pauta: en un equipo o en un área (al menos uno). La pauta debe estar publicada (las de esta carga se publican antes).",
+                        columnas = new List<Columna> {
+                            C("CHECKLIST", "CHECKLIST", true, "Código o nombre de la pauta.", "EJEMPLO-RONDA", Tipo.Lista, 24, null, "CHECKLISTS EXISTENTES", "PAUTA"),
+                            C("FRECUENCIA", "FRECUENCIA", true, "Nombre de una frecuencia.", "EJEMPLO-LUN-JUE", Tipo.Lista, 26, null, "FRECUENCIAS EXISTENTES"),
+                            C("EQUIPO", "EQUIPO", false, "Código o nombre del activo.", "", Tipo.Lista, 18, null, "ACTIVOS", "ACTIVO"),
+                            C("AREA", "AREA", false, "Área de la planta (si no es un equipo).", "", Tipo.Lista, 18, null, "AREAS"),
+                            C("GRUPO", "GRUPO", false, "Grupo de trabajo.", "", Tipo.Lista, 18, null, "GRUPOS"),
+                            C("RESPONSABLE", "RESPONSABLE", false, "Correo de la persona.", "", Tipo.Lista, 28, null, "PERSONAS"),
+                            C("NOMBRE", "NOMBRE", false, "Vacío: «pauta · equipo».", "", Tipo.Texto, 28)
+                        } },
+                    new Hoja { clave = "PLANES", titulo = "PLANES", icono = "mdi-clipboard-text-clock-outline",
+                        descripcion = "Una fila por plan de mantenimiento. ACTIVAR = SI publica el plan y genera sus ocurrencias (necesita equipos e intervenciones con frecuencia). Los planes ya activos se actualizan.",
+                        columnas = new List<Columna> {
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (PMA-<n>).", "EJEMPLO-L1", Tipo.Texto, 16),
+                            C("NOMBRE", "NOMBRE", true, "Cómo se llama el plan.", "Plan preventivo de hornos", Tipo.Texto, 32),
+                            C("DESCRIPCION", "DESCRIPCION", false, "", "", Tipo.Texto, 34),
+                            C("PLANTA", "PLANTA", false, "Acota el plan a una planta (hoja PLANTAS).", "", Tipo.Lista, 18, null, "PLANTAS"),
+                            C("PLANIFICADOR", "PLANIFICADOR", false, "Correo de quien planifica (hoja PERSONAS).", "", Tipo.Lista, 28, null, "PERSONAS"),
+                            C("TIPO_ACTIVO", "TIPO ACTIVO", false, "Acota el plan a un tipo de equipo (hoja TIPOS Y MODELOS).", "", Tipo.Lista, 18, null, "TIPOS ACTIVO", "TIPO"),
+                            C("MODELO", "MODELO", false, "Solo con tipo de activo.", "", Tipo.Texto, 16),
+                            C("ACTIVAR", "ACTIVAR", false, "SI lo deja activo y genera las ocurrencias. Vacío: queda en borrador.", "NO", Tipo.SiNo, 10, SINO)
+                        } },
+                    new Hoja { clave = "HITOS", titulo = "HITOS", icono = "mdi-flag-checkered",
+                        descripcion = "Las intervenciones de cada plan, cada una con su frecuencia. Un hito con el mismo código en ese plan se omite.",
+                        columnas = new List<Columna> {
+                            C("PLAN", "PLAN", true, "Código o nombre del plan (de la hoja PLANES o de PLANES EXISTENTES).", "EJEMPLO-L1", Tipo.Lista, 20, null, "PLANES EXISTENTES"),
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (INT-nn). Escríbalo si las actividades lo van a nombrar.", "H1", Tipo.Texto, 12),
+                            C("NOMBRE", "NOMBRE", true, "Qué intervención es.", "Engrase de cadena", Tipo.Texto, 30),
+                            C("ORDEN", "ORDEN", false, "Vacío: al final.", "", Tipo.Entero, 9),
+                            C("FRECUENCIA", "FRECUENCIA", true, "Nombre de una frecuencia.", "EJEMPLO-LUN-JUE", Tipo.Lista, 26, null, "FRECUENCIAS EXISTENTES"),
+                            C("DURACION_MIN", "DURACION MIN", false, "Minutos estimados.", "90", Tipo.Entero, 13, null, null, "DURACION"),
+                            C("PARADA", "PARADA", false, "SI: requiere parar el equipo.", "NO", Tipo.SiNo, 9, SINO, null, "REQUIERE PARADA"),
+                            C("OVERHAUL", "OVERHAUL", false, "SI: es una revisión mayor.", "NO", Tipo.SiNo, 11, SINO),
+                            C("TIPO_OT", "TIPO OT", false, "Como en la hoja TIPOS OT. Vacío: Preventiva.", "", Tipo.Lista, 14, null, "TIPOS OT"),
+                            C("PRIORIDAD_OT", "PRIORIDAD OT", false, "Como en la hoja PRIORIDADES OT. Vacío: Media.", "", Tipo.Lista, 14, null, "PRIORIDADES OT"),
+                            C("RESPONSABLE", "RESPONSABLE", false, "Correo de la persona.", "", Tipo.Lista, 28, null, "PERSONAS"),
+                            C("GRUPO", "GRUPO", false, "Grupo de trabajo.", "", Tipo.Lista, 18, null, "GRUPOS"),
+                            C("DESCRIPCION", "DESCRIPCION", false, "", "", Tipo.Texto, 34)
+                        } },
+                    new Hoja { clave = "ACTIVIDADES", titulo = "ACTIVIDADES", icono = "mdi-format-list-numbered",
+                        descripcion = "Los pasos de cada hito. El hito se nombra por su código (de la hoja HITOS o de un plan que ya existe).",
+                        columnas = new List<Columna> {
+                            C("PLAN", "PLAN", true, "Código o nombre del plan.", "EJEMPLO-L1", Tipo.Lista, 20, null, "PLANES EXISTENTES"),
+                            C("HITO", "HITO", true, "Código del hito.", "H1", Tipo.Texto, 12),
+                            C("CODIGO", "CODIGO", false, "Vacío: se numera solo (ACT-nn).", "", Tipo.Texto, 12),
+                            C("NOMBRE", "NOMBRE", true, "Qué se hace.", "Engrasar cadena de transporte", Tipo.Texto, 34),
+                            C("DESCRIPCION", "DESCRIPCION", false, "", "", Tipo.Texto, 34),
+                            C("ORDEN", "ORDEN", false, "Vacío: al final.", "", Tipo.Entero, 9),
+                            C("DURACION_MIN", "DURACION MIN", false, "Minutos estimados.", "", Tipo.Entero, 13, null, null, "DURACION"),
+                            C("OBLIGATORIA", "OBLIGATORIA", false, "NO la hace opcional. Vacío: SI.", "SI", Tipo.SiNo, 13, SINO),
+                            C("PARADA", "PARADA", false, "SI: requiere parar el equipo.", "NO", Tipo.SiNo, 9, SINO, null, "REQUIERE PARADA")
+                        } },
+                    new Hoja { clave = "EQUIPOS", titulo = "EQUIPOS", icono = "mdi-robot-industrial",
+                        descripcion = "Los equipos (y si hace falta, un componente o un medidor) que cubre cada plan. Si ya está en el plan, se omite.",
+                        columnas = new List<Columna> {
+                            C("PLAN", "PLAN", true, "Código o nombre del plan.", "EJEMPLO-L1", Tipo.Lista, 20, null, "PLANES EXISTENTES"),
+                            C("EQUIPO", "EQUIPO", true, "Código o nombre del activo, como en la hoja ACTIVOS EXISTENTES.", "", Tipo.Lista, 22, null, "ACTIVOS", "ACTIVO"),
+                            C("COMPONENTE", "COMPONENTE", false, "Si el plan es de una pieza: su nombre.", "", Tipo.Texto, 22),
+                            C("MEDIDOR", "MEDIDOR", false, "Si el plan va por horómetro: su nombre.", "", Tipo.Texto, 18)
+                        } }
+                }
+            });
 
             _modulos = m;
             return m;
@@ -389,6 +525,7 @@ namespace SitioBase.Controller
                         }
                         if (col.tipo == Tipo.Texto) w.Column(c + 1).Style.Numberformat.Format = "@";
                         if (col.tipo == Tipo.Fecha) w.Column(c + 1).Style.Numberformat.Format = "dd-mm-yyyy";
+                        else if (col.tipo == Tipo.Hora) w.Column(c + 1).Style.Numberformat.Format = "@";
 
                         // listas desplegables
                         string rango = ExcelCellBase.GetAddress(2, c + 1, MAX_FILAS, c + 1);
@@ -512,11 +649,12 @@ namespace SitioBase.Controller
         {
             object v = celda.Value;
             if (v == null) return "";
-            if (v is DateTime) return ((DateTime)v).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            if (v is DateTime) return tipo == Tipo.Hora ? ((DateTime)v).ToString("HH:mm", CultureInfo.InvariantCulture) : ((DateTime)v).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
             if (v is bool) return (bool)v ? "SI" : "NO";
             if (v is double || v is decimal || v is int || v is long || v is float)
             {
                 double d = Convert.ToDouble(v, CultureInfo.InvariantCulture);
+                if (tipo == Tipo.Hora && d >= 0 && d < 1) return TimeSpan.FromDays(d).ToString(@"hh\:mm");
                 if (tipo == Tipo.Fecha) { try { return DateTime.FromOADate(d).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture); } catch { } }
                 return d.ToString("0.############", CultureInfo.InvariantCulture);
             }

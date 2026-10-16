@@ -191,12 +191,13 @@ public class WsCargaDatos : System.Web.Services.WebService
         }
     }
 
-    /// <summary>Sin el permiso de cargas: ACTIVOS para quien crea activos e INVENTARIO para quien crea repuestos.</summary>
+    /// <summary>Sin el permiso de cargas: ACTIVOS para quien crea activos, INVENTARIO para quien crea repuestos y MANTENIMIENTO para quien edita planes.</summary>
     private static void ExigirModulo(string modulo)
     {
         if (Token.Puede(CargaMasivaController.PERMISO)) return;
         if (string.Equals(modulo, "ACTIVOS", StringComparison.OrdinalIgnoreCase) && Token.Puede("CREAR EDITAR ACTIVOS")) return;
         if (string.Equals(modulo, "INVENTARIO", StringComparison.OrdinalIgnoreCase) && Token.Puede(PERMISO_REPUESTOS)) return;
+        if (string.Equals(modulo, "MANTENIMIENTO", StringComparison.OrdinalIgnoreCase) && Token.Puede("CREAR EDITAR PLANES MANTENIMIENTO")) return;
         throw new Exception("No tienes permiso para cargar datos de ese módulo.");
     }
 
