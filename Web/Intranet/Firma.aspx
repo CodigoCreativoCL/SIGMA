@@ -15,7 +15,7 @@
     <%-- Página pública de firma (diseño H/I del Centro Comercial). Sin master
          ni sidebar: solo el contrato y la firma. El token viaja en la URL y
          el servidor lo busca por su SHA-256; el id del contrato nunca aparece. --%>
-    <link href="Css/sigma-publico.css?v=2" rel="stylesheet" />
+    <link href="Css/sigma-publico.css?v=3" rel="stylesheet" />
 </head>
 <body>
     <header>
@@ -32,7 +32,7 @@
         'use strict';
         var T = <%= TokenJson %>, WS = '<%= ResolveUrl("~/WebService/WsComercial.asmx/") %>';
         var PDF = location.pathname + '?t=' + encodeURIComponent(T) + '&pdf=1';
-        var app = document.getElementById('app'), PAGAR = null;
+        var app = document.getElementById('app'), PAGAR = null, PAGAR_TXT = '', PAGAR_USD = false;
         var esc = function (s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); };
         var I = {
             pdf: '<path d="M7 3h7l4 4v14H7z"/><path d="M14 3v4h4"/>', down: '<path d="M12 4v11M7 10.5l5 5 5-5"/><path d="M5 19.5h14"/>',
@@ -86,7 +86,7 @@
                 if (b.disabled) return;
                 b.disabled = true; b.innerHTML = ic('sign') + 'Firmando…'; e.style.display = 'none';
                 ws('FirmarContrato', { t: T, nombre: n.value.trim(), rut: r.value.trim(), acepto: a.checked })
-                    .then(function (x) { PAGAR = x.pagar || null; pintar(x.estado); })
+                    .then(function (x) { PAGAR = x.pagar || null; PAGAR_TXT = x.pagarTexto || ''; PAGAR_USD = !!x.pagarUsd; pintar(x.estado); })
                     .catch(function (er) { e.textContent = er.message; e.style.display = 'block'; b.innerHTML = ic('sign') + 'Firmar contrato'; revisar(); });
             });
         }
@@ -100,9 +100,9 @@
             if (!c || c.estado === 'invalido')
                 return estado('x', '#FDEDEB', '#C7352B', 'Este enlace no es válido', 'Puede que esté incompleto o que el contrato se haya reemplazado por una versión nueva. Revisa el último correo que te enviamos.', '', '', c);
             if (c.estado === 'firmado')
-                return estado('ok', '#E8F6EF', '#16855B', 'Contrato firmado', esc(c.empresa) + ' ya es cliente SIGMA. Te enviamos una copia del contrato firmado' + (c.correo ? ' a ' + esc(c.correo) : '') + '.' + (PAGAR ? ' Último paso: paga la implementación y la primera mensualidad para activar el servicio.' : ''),
+                return estado('ok', '#E8F6EF', '#16855B', 'Contrato firmado', esc(c.empresa) + ' ya es cliente SIGMA. Te enviamos una copia del contrato firmado' + (c.correo ? ' a ' + esc(c.correo) : '') + '.' + (PAGAR ? ' Último paso: ' + (PAGAR_USD ? 'transfiere' : 'paga') + ' la implementación y la primera mensualidad para activar el servicio.' : ''),
                     '<dl><dt>Firmado por</dt><dd>' + esc(c.firmante) + '</dd><dt>Fecha</dt><dd>' + esc(c.firmado) + '</dd><dt>Huella SHA-256</dt><dd style="font-family:Consolas,monospace;font-size:12px">' + esc(c.sha.slice(0, 8)) + '…' + esc(c.sha.slice(-8)) + '</dd></dl>',
-                    PAGAR ? '<a class="btn" href="' + esc(PAGAR) + '">' + ic('sign') + 'Pagar ahora con Webpay</a><a class="btn out" href="<%= ResolveUrl("~/Login.aspx") %>">Entrar a SIGMA</a>'
+                    PAGAR ? '<a class="btn" href="' + esc(PAGAR) + '">' + ic('sign') + (PAGAR_USD ? 'Ver datos e informar el pago' : 'Pagar ' + esc(PAGAR_TXT) + ' con Webpay') + '</a><a class="btn out" href="' + PDF + '&bajar=1">' + ic('down') + 'Descargar contrato firmado</a>'
                           : '<a class="btn" href="<%= ResolveUrl("~/Login.aspx") %>">Ir a SIGMA</a>', c);
             if (c.estado === 'usado')
                 return estado('alert', '#FFF3E4', '#B65C00', 'Este enlace ya se usó', 'Los enlaces de firma sirven una sola vez. Si necesitas firmar de nuevo, pide un enlace nuevo a tu ejecutivo.', '', '', c);

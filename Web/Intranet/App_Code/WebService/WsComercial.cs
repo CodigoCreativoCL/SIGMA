@@ -671,7 +671,7 @@ public class WsComercial : System.Web.Services.WebService
                implementación y la primera mensualidad, sale el correo de cobro
                (con copia al ejecutivo) y la página ofrece «Pagar ahora». Si algo
                de esto falla, la firma ya quedó hecha: se registra y sigue. */
-            string pagar = null;
+            string pagar = null, pagarTexto = null; bool pagarUsd = false;
             try
             {
                 int sus = Cobros.SuscripcionDeCliente(Convert.ToInt32(o["@CLIENTE"]));
@@ -679,11 +679,13 @@ public class WsComercial : System.Web.Services.WebService
                 {
                     Cobros.EmitirInicial(sus);
                     pagar = Cobros.EnlacePago(sus);
+                    Cobros.Estado est = Cobros.Leer(sus);
+                    pagarUsd = est.EsUsd; pagarTexto = Cobros.Monto(est.Total, est.EsUsd);
                     Cobros.CorreoCobro(sus, "COBRO");
                 }
             }
             catch (Exception ex) { Correo.Registrar("WsComercial.FirmarContrato cobro inicial", ex.Message); }
-            return WsSoporte.Json(new { ok = true, correo = correo, estado = EstadoFirma(t, false), pagar = pagar });
+            return WsSoporte.Json(new { ok = true, correo = correo, estado = EstadoFirma(t, false), pagar = pagar, pagarTexto = pagarTexto, pagarUsd = pagarUsd });
         }
         catch (Exception ex)
         {
@@ -710,6 +712,39 @@ public class WsComercial : System.Web.Services.WebService
         {
             return WsSoporte.Json(new { error = true, detalle = Limpio(ex.Message) });
         }
+    }
+
+    /// <summary>
+    /// Pagar.aspx: el cliente informa una transferencia (nacional o internacional) con su comprobante.
+    /// Público: lo protege el enlace de pago. Queda por verificar; el ejecutivo recibe el aviso.
+    /// </summary>
+    [WebMethod(EnableSession = false)]
+    [ScriptMethod(ResponseFormat = ResponseFormat.Json)]
+    public string InformarPagoPublico(string t, string monto, string fecha, string banco, string operacion, string archivoNombre, string archivoMime, string archivoBase64)
+    {
+        try
+        {
+            decimal m = ParseMonto(monto);
+            DateTime f;
+            if (!DateTime.TryParseExact((fecha ?? "").Trim(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out f)) throw new Exception("Indica la fecha de la transferencia.");
+            int n = Cobros.InformarTransferencia(t, m, f, Corta(banco, 100), Corta(operacion, 100), Corta(archivoNombre, 200), Corta(archivoMime, 100), string.IsNullOrEmpty(archivoBase64) ? null : Convert.FromBase64String(archivoBase64));
+            return WsSoporte.Json(new { ok = true, pagos = n });
+        }
+        catch (Exception ex)
+        {
+            return WsSoporte.Json(new { error = true, detalle = Limpio(ex.Message) });
+        }
+    }
+
+    /// <summary>Monto escrito a la chilena: «1.950,50», «3.065.335» o «1950.5». La coma es decimal; un punto seguido de 3 dígitos, miles.</summary>
+    private static decimal ParseMonto(string s)
+    {
+        s = (s ?? "").Trim().Replace(" ", "").Replace("$", "");
+        if (s.IndexOf(',') >= 0) s = s.Replace(".", "").Replace(",", ".");
+        else if (System.Text.RegularExpressions.Regex.IsMatch(s, @"^\d{1,3}(\.\d{3})+$")) s = s.Replace(".", "");
+        decimal v;
+        if (!decimal.TryParse(s, NumberStyles.Float, CultureInfo.InvariantCulture, out v)) throw new Exception("El monto no es un número válido.");
+        return v;
     }
 
     /// <summary>Enlace vencido: avisa al ejecutivo para que reenvíe. No revela nada del contrato.</summary>

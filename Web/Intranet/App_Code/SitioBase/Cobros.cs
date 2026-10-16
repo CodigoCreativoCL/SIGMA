@@ -53,12 +53,19 @@ namespace SitioBase
             public Dictionary<string, object> Cabecera;
             public List<Dictionary<string, object>> Pendientes;
             public decimal Total { get { return Pendientes.Sum(p => Convert.ToDecimal(p["SALDO"])); } }
+            /// <summary>UF (se paga en CLP) o USD (transferencia internacional). Sale del cliente.</summary>
+            public string Moneda { get { return Comercial.Txt(Cabecera, "MONEDA") == "USD" ? "USD" : "UF"; } }
+            public bool EsUsd { get { return Moneda == "USD"; } }
+            /// <summary>Transferencias ya informadas que esperan verificación (cantidad y monto).</summary>
+            public int PorVerificarN; public decimal PorVerificarMonto;
         }
 
         public static Estado Leer(int suscripcion)
         {
             List<List<Dictionary<string, object>>> c = SoporteDatos.Conjuntos("SEL_COBRO_SUSCRIPCION", "@SUSCRIPCION", suscripcion);
-            return new Estado { Cabecera = SoporteDatos.Del(c, 0).FirstOrDefault() ?? new Dictionary<string, object>(), Pendientes = SoporteDatos.Del(c, 1) };
+            Dictionary<string, object> pv = SoporteDatos.Del(c, 2).FirstOrDefault();
+            return new Estado { Cabecera = SoporteDatos.Del(c, 0).FirstOrDefault() ?? new Dictionary<string, object>(), Pendientes = SoporteDatos.Del(c, 1),
+                                PorVerificarN = pv != null ? Convert.ToInt32(pv["N"]) : 0, PorVerificarMonto = pv != null ? Convert.ToDecimal(pv["MONTO"]) : 0 };
         }
 
         public static int SuscripcionDeEnlace(string t, out bool vencido)
@@ -78,6 +85,29 @@ namespace SitioBase
         }
 
         public static string Clp(object v) { return "$" + Convert.ToDecimal(v ?? 0).ToString("N0", Comercial.CL); }
+
+        /// <summary>Monto de cobro en su moneda: «$1.839.201» en pesos o «USD 1.950,00» en dólares. Nunca se suman.</summary>
+        public static string Monto(object v, bool usd) { return usd ? string.Format(Comercial.CL, "USD {0:N2}", Convert.ToDecimal(v ?? 0)) : Clp(v); }
+
+        /// <summary>Lo que el cliente ve como «base» de un período: «45,00 UF» o «USD 1.950,00».</summary>
+        public static string Base(object v, bool usd) { return usd ? string.Format(Comercial.CL, "USD {0:N2}", Convert.ToDecimal(v ?? 0)) : Comercial.UF2(v); }
+
+        /// <summary>Datos para transferir según la moneda; salen de Configuración (Config_Comercial), no del código.</summary>
+        public static List<KeyValuePair<string, string>> DatosTransferencia(bool usd)
+        {
+            List<KeyValuePair<string, string>> r = new List<KeyValuePair<string, string>>();
+            foreach (Dictionary<string, object> f in SoporteDatos.Filas("SEL_CONFIG_COMERCIAL", "@GRUPO", usd ? "BANCO_INTERNACIONAL" : "BANCO_NACIONAL"))
+                if (!string.IsNullOrWhiteSpace(Comercial.Txt(f, "VALOR"))) r.Add(new KeyValuePair<string, string>(Comercial.Txt(f, "ETIQUETA"), Comercial.Txt(f, "VALOR")));
+            return r;
+        }
+
+        /// <summary>Referencia para la glosa de la transferencia: SUS-0014-NOV26.</summary>
+        public static string Referencia(Estado e)
+        {
+            DateTime d;
+            string mes = e.Pendientes.Count > 0 && DateTime.TryParse(Convert.ToString(e.Pendientes[0]["DESDE"]), out d) ? d.ToString("MMMyy", Comercial.CL).Replace(".", "").ToUpperInvariant() : "";
+            return "SUS-" + Convert.ToInt32(e.Cabecera["SUSCRIPCION"]).ToString("0000") + (mes != "" ? "-" + mes : "");
+        }
 
         // ------------------------------------------------------------ correos
         /// <summary>
@@ -138,6 +168,7 @@ namespace SitioBase
             if (sus == 0) throw new Exception("El enlace de pago no es válido.");
             if (vencido) throw new Exception("El enlace de pago venció. Pide uno nuevo a tu ejecutivo.");
             Estado e = Leer(sus);
+            if (e.EsUsd) throw new Exception("Tu cobro es en dólares: se paga por transferencia internacional. El pago con tarjeta en USD llegará pronto.");
             if (e.Pendientes.Count == 0 || e.Total <= 0) throw new Exception("No tienes cobros pendientes. ¡Gracias!");
             string orden = "SG" + sus + "-" + Hora.Ahora.ToString("yyMMddHHmmss");      // ≤ 26 caracteres
             string sesion = "S" + sus + "-" + Guid.NewGuid().ToString("N").Substring(0, 12);
@@ -281,7 +312,9 @@ namespace SitioBase
         }
 
         /// <summary>El comprobante al almacenamiento del sitio, como cualquier archivo, a nombre del sistema.</summary>
-        private static int SubirComprobante(int cliente, string empresa, string nombre, byte[] pdf)
+        private static int SubirComprobante(int cliente, string empresa, string nombre, byte[] pdf) { return SubirComprobante(cliente, empresa, nombre, pdf, "application/pdf"); }
+
+        private static int SubirComprobante(int cliente, string empresa, string nombre, byte[] pdf, string mime)
         {
             /* El almacenamiento nombra la carpeta consultando el cliente con un
                controlador que exige sesión (y sin ella redirige al login). Aquí
@@ -290,11 +323,84 @@ namespace SitioBase
             if (HttpContext.Current != null) HttpContext.Current.Items["sigma-cliente-nombre-" + cliente] = empresa ?? "";
             IAlmacenamiento alm = Almacenamiento.Actual();
             if (!alm.Disponible) throw new Exception(alm.Motivo);
-            ResultadoSubida s = alm.Subir(cliente, "pagos", nombre, pdf, "application/pdf");
+            ResultadoSubida s = alm.Subir(cliente, "pagos", nombre, pdf, mime);
             Dictionary<string, object> o = SpSalida("INS_ARCHIVO", "@ID", "@CLIENTE", cliente, "@CATEGORIA", 9, "@NOMBRE_ORIGINAL", nombre,
                 "@NOMBRE_ALMACENADO", s.nombre_almacenado, "@RUTA", s.ruta, "@MIME", s.mime, "@EXTENSION", s.extension, "@BYTE", s.tamano,
                 "@HASH", s.hash, "@USUARIO", USUARIO_SISTEMA);
             return Convert.ToInt32(o["@ID"]);
+        }
+
+        // ------------------------------------------------------------ transferencia informada por el cliente
+        /// <summary>
+        /// El cliente informa una transferencia desde Pagar.aspx (sin sesión: lo protege el enlace). El
+        /// monto se reparte sobre los períodos pendientes en orden, un Suscripcion_Pago por período con el
+        /// mismo comprobante; queda DECLARADO y alguien lo verifica contra la cartola. Avisa al ejecutivo.
+        /// </summary>
+        public static int InformarTransferencia(string t, decimal monto, DateTime fecha, string banco, string operacion, string nombre, string mime, byte[] archivo)
+        {
+            bool vencido; int sus = SuscripcionDeEnlace(t, out vencido);
+            if (sus == 0) throw new Exception("El enlace de pago no es válido.");
+            if (vencido) throw new Exception("El enlace de pago venció. Pide uno nuevo a tu ejecutivo.");
+            if (monto <= 0) throw new Exception("El monto transferido debe ser mayor que cero.");
+            if (fecha.Date > Hora.Hoy.Date) throw new Exception("La fecha de la transferencia no puede ser futura.");
+            if (archivo == null || archivo.Length == 0) throw new Exception("Adjunta el comprobante de la transferencia.");
+            if (archivo.Length > 8 * 1024 * 1024) throw new Exception("El comprobante pesa más de 8 MB.");
+            Estado e = Leer(sus);
+            if (e.Pendientes.Count == 0) throw new Exception("No tienes cobros pendientes. ¡Gracias!");
+            string medio = e.EsUsd ? "TRANSFERENCIA_INTERNACIONAL" : "TRANSFERENCIA_NACIONAL";
+            int cliente = Convert.ToInt32(e.Cabecera["CLIENTE"]);
+            int arc = SubirComprobante(cliente, Comercial.Txt(e.Cabecera, "EMPRESA"), System.IO.Path.GetFileName(string.IsNullOrEmpty(nombre) ? "comprobante" : nombre), archivo,
+                                       string.IsNullOrEmpty(mime) ? "application/octet-stream" : mime);
+            decimal resto = monto; int n = 0;
+            try
+            {
+                foreach (Dictionary<string, object> p in e.Pendientes)
+                {
+                    if (resto <= 0) break;
+                    decimal parte = Math.Min(resto, Convert.ToDecimal(p["SALDO"]));
+                    // Lo que sobra (si transfirió de más) queda en el último período, para que se vea la diferencia al verificar.
+                    bool ultimo = p == e.Pendientes[e.Pendientes.Count - 1];
+                    if (ultimo) parte = resto;
+                    string op = string.IsNullOrWhiteSpace(operacion) ? null : (n == 0 ? operacion.Trim() : operacion.Trim() + " · P" + Convert.ToString(p["ID"]));
+                    SpSalida("INS_SUSCRIPCION_PAGO", "@ID", "@PERIODO", Convert.ToInt32(p["ID"]), "@MONTO_DECLARADO", parte, "@FECHA_TRANSFERENCIA", fecha.Date,
+                        "@BANCO", string.IsNullOrWhiteSpace(banco) ? null : banco.Trim(), "@NUMERO_OPERACION", op, "@ARCHIVO", arc, "@USUARIO", USUARIO_SISTEMA, "@MEDIO", medio);
+                    resto -= parte; n++;
+                }
+            }
+            catch (Exception)
+            {
+                try { Ejecutar("DEL_ARCHIVO", "@ID", arc, "@USUARIO", USUARIO_SISTEMA); } catch (Exception) { }
+                throw;
+            }
+            if (e.Cabecera.ContainsKey("LEAD") && e.Cabecera["LEAD"] != null)
+                try
+                {
+                    Ejecutar("INS_LEAD_ACTIVIDAD", "@LEAD", Convert.ToInt32(e.Cabecera["LEAD"]), "@TIPO", "SISTEMA", "@ICONO", "wallet",
+                        "@TITULO", "Transferencia informada por el cliente", "@DETALLE", Monto(monto, e.EsUsd) + (string.IsNullOrWhiteSpace(banco) ? "" : " · " + banco.Trim()) + " · por verificar");
+                }
+                catch (Exception) { }
+            CorreoPorVerificar(e, monto, fecha, banco);
+            return n;
+        }
+
+        /// <summary>Aviso interno al ejecutivo: hay una transferencia esperando verificación.</summary>
+        private static void CorreoPorVerificar(Estado e, decimal monto, DateTime fecha, string banco)
+        {
+            try
+            {
+                string para = Comercial.Txt(e.Cabecera, "EJECUTIVO_CORREO");
+                if (para == "") para = Comercial.Parametro("COMERCIAL_CORREO_AVISO", "comercial@codigocreativo.tech");
+                string html = Correo.Plantilla(new Correo.Pieza
+                {
+                    Pre = "Cobros · " + Comercial.Txt(e.Cabecera, "EMPRESA"), Titulo = "Transferencia por verificar",
+                    Texto = Correo.Html(Comercial.Txt(e.Cabecera, "EMPRESA")) + " informó una transferencia. Revisa el comprobante y verifícala contra la cartola.",
+                    Detalles = new[] { "Monto", Monto(monto, e.EsUsd), "Transferida el", fecha.ToString("dd/MM/yyyy", Comercial.CL), "Banco", string.IsNullOrWhiteSpace(banco) ? "—" : banco.Trim() },
+                    Boton = "Verificar en el Centro Comercial", Enlace = Correo.UrlSitio() + "/View/Comercial/CentroComercial.aspx?tab=suscripciones",
+                    Pie = "Aviso interno del Centro Comercial de SIGMA."
+                });
+                Correo.Enviar(new[] { para }, null, "Transferencia por verificar · " + Comercial.Txt(e.Cabecera, "EMPRESA"), html);
+            }
+            catch (Exception) { }
         }
 
         // ------------------------------------------------------------ SQL

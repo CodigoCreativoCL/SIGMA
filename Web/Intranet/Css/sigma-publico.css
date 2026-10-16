@@ -1,0 +1,74 @@
+﻿/* Páginas públicas de SIGMA (Firma.aspx, Pagar.aspx): sin master ni sidebar. */
+        :root{--ink:#17223B;--mut:#68738A;--lab:#4A556D;--line:#E2E7F0;--inp:#CFD6E3;--canvas:#F4F6FA;--pu:#6732F4;--pu-d:#4820C9;--pus:#F2EFFF;--put:#5426D9;--bl:#087BEA;--blt:#0565C2;--cyd:#007F8A;--ok:#16855B;--oks:#E8F6EF;--wa:#B65C00;--was:#FFF3E4;--da:#C7352B;--das:#FDEDEB}
+        *{box-sizing:border-box}
+        body{margin:0;background:var(--canvas);color:var(--ink);font-family:Sora,'Segoe UI',system-ui,sans-serif;font-size:14px;min-height:100vh;display:flex;flex-direction:column}
+        svg.i{width:18px;height:18px;flex:none}
+        header{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:14px 24px;background:#fff;border-bottom:1px solid var(--line)}
+        header img{height:34px;width:auto}
+        header .sep{width:1px;height:26px;background:var(--line)}
+        header .cc{font-size:13px;font-weight:700;color:var(--lab)}
+        header .seg{margin-left:auto;display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--ok)}
+        main{flex:1;width:100%}
+        .pend{max-width:1320px;margin:0 auto;padding:20px 16px 28px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:20px}
+        .doc{flex:999 1 560px;min-width:0;border-radius:14px;border:1px solid var(--line);background:#fff;overflow:hidden}
+        .doc-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--line);font-size:13px}
+        .doc-bar b{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .doc-bar .pdf{color:var(--da)}
+        .ibtn{width:34px;height:34px;border:1.5px solid var(--bl);border-radius:9px;background:transparent;color:var(--blt);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;text-decoration:none}
+        .visor{height:clamp(420px,62vh,820px);background:#E9ECF2}
+        .visor iframe{width:100%;height:100%;border:0;display:block}
+        .visor .alt{display:none;padding:28px 18px;text-align:center;color:var(--lab);font-size:13px;line-height:1.6}
+        .firma{flex:1 1 340px;max-width:100%;border-radius:14px;border:1px solid var(--line);background:#fff;padding:22px;display:flex;flex-direction:column;gap:16px}
+        .eyebrow{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--put)}
+        h1{margin:4px 0 2px;font-size:22px;font-weight:700;line-height:1.25}
+        .sub{font-size:13px;color:var(--mut)}
+        dl.res{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 12px;padding:14px 16px;border-radius:12px;background:var(--canvas);font-size:13px;font-variant-numeric:tabular-nums}
+        dl.res dt{color:var(--mut)} dl.res dd{margin:0;text-align:right;font-weight:700}
+        .acepto{display:flex;gap:10px;align-items:flex-start;padding:12px;border-radius:12px;border:1px solid var(--inp);cursor:pointer;font-size:13px;line-height:1.5}
+        .acepto input{width:18px;height:18px;margin:1px 0 0;accent-color:var(--pu)}
+        .fld{display:flex;flex-direction:column;gap:6px}
+        .fld span{font-size:11px;font-weight:800;color:var(--lab)}
+        .fld input{height:44px;padding:0 12px;border:1px solid var(--inp);border-radius:9px;font:inherit;font-size:14px;color:var(--ink);background:#fff}
+        .fld input:focus,.acepto:focus-within{outline:3px solid rgba(22,198,201,.27);border-color:var(--cyd)}
+        .fld.err input{border-color:var(--da)}
+        .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:48px;padding:0 18px;border:0;border-radius:10px;background:var(--pu);color:#fff;font:inherit;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none}
+        .btn:hover{background:var(--pu-d)}
+        .btn[disabled]{opacity:.42;cursor:not-allowed;background:var(--pu)}
+        .btn.out{background:transparent;border:1.5px solid var(--bl);color:var(--blt);height:44px}
+        .nota{margin:0;display:flex;gap:8px;font-size:12px;line-height:1.55;color:var(--mut)}
+        .nota svg{color:var(--cyd)}
+        .error{display:none;padding:10px 12px;border-radius:10px;background:var(--das);color:#A92C23;font-size:13px;font-weight:600}
+        .estado{display:flex;align-items:center;justify-content:center;padding:28px 16px;min-height:60vh}
+        .estado section{width:100%;max-width:520px;border-radius:16px;border:1px solid var(--line);background:#fff;padding:32px 28px;display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+        .estado .ic{width:64px;height:64px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center}
+        .estado .ic svg{width:32px;height:32px}
+        .estado p{margin:0;font-size:14px;line-height:1.6;color:var(--lab);max-width:420px}
+        .estado dl{margin:6px 0 0;width:100%;display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;padding:14px 16px;border-radius:12px;background:var(--canvas);font-size:13px;text-align:left}
+        .estado dt{color:var(--mut)} .estado dd{margin:0;font-weight:700;word-break:break-all}
+        .estado .acc{display:flex;flex-wrap:wrap;justify-content:center;gap:10px;padding-top:6px}
+        .estado small{font-size:12px;color:var(--mut)}
+        footer{padding:14px 24px 20px;text-align:center;font-size:11px;color:var(--mut)}
+        .cargando{padding:80px 16px;text-align:center;color:var(--mut)}
+        @media (max-width:640px){header{padding:12px 16px}header .cc{display:none}.visor{height:auto}.visor iframe{display:none}.visor .alt{display:block}.firma{padding:18px}}
+    
+        /* pago (Pagar.aspx) */
+        .pago{max-width:620px;margin:0 auto;padding:24px 16px 32px}
+        .pago section{border-radius:16px;border:1px solid var(--line);background:#fff;padding:26px 24px;display:flex;flex-direction:column;gap:16px}
+        .prueba{display:flex;gap:10px;align-items:flex-start;padding:10px 12px;border-radius:10px;background:var(--was);color:#9A4E00;font-size:12.5px;line-height:1.5;font-weight:600}
+        .items{margin:0;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:9px 12px;padding:14px 16px;border-radius:12px;background:var(--canvas);font-size:13px;font-variant-numeric:tabular-nums}
+        .items dt{color:var(--lab)} .items dt small{display:block;color:var(--mut);font-size:11.5px}
+        .items dd{margin:0;text-align:right;font-weight:700}
+        .items .tot{padding-top:10px;border-top:1px solid var(--line);font-weight:800;color:var(--ink);font-size:15px}
+
+        /* Transferencia (bloque 8 de Centro Comercial V2): datos plegables, formulario de comprobante y acción turquesa */
+        .btn.sec{background:var(--cyd)} .btn.sec:hover{background:#006872}
+        .transf{border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;flex-direction:column;gap:12px;background:#fff}
+        .transf summary{display:flex;align-items:center;gap:10px;cursor:pointer;list-style:none;font-size:14px}
+        .transf summary::-webkit-details-marker{display:none}
+        .transf summary small{margin-left:auto;color:var(--mut);font-size:12px}
+        .transf-h{display:flex;align-items:center;gap:10px;font-size:14px}
+        .datos{margin:0;display:grid;grid-template-columns:minmax(0,.8fr) minmax(0,1.4fr);gap:8px 12px;padding:12px 14px;border-radius:10px;background:var(--canvas);font-size:13px}
+        .datos dt{color:var(--lab)} .datos dd{margin:0;font-weight:700;word-break:break-word}
+        .fila2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+        .fld input[type=file]{height:auto;padding:10px 12px}
+        @media (max-width:560px){.fila2{grid-template-columns:minmax(0,1fr)}.datos{grid-template-columns:minmax(0,1fr)}}
