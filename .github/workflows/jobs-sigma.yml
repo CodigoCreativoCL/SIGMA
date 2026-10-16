@@ -1,0 +1,39 @@
+name: Jobs programados de SIGMA
+
+# Despierta la puerta de jobs (Web/Intranet/Jobs.aspx) cada 5 minutos. Cada llamada corre solo los
+# jobs que ya les toca (correos, alertas, cobros, ocurrencias y OT, mesa de ayuda...), asi que llamar
+# de mas no duplica nada. La clave vive en el secreto JOBS_CLAVE del repositorio (Settings > Secrets
+# and variables > Actions) y debe ser la misma que appSettings JobsClave en el servidor.
+# GitHub solo ejecuta los workflows programados de la rama por defecto (master).
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      job:
+        description: 'Codigo de un job para forzarlo (vacio = los que toquen)'
+        required: false
+        default: ''
+
+concurrency:
+  group: jobs-sigma
+  cancel-in-progress: false
+
+jobs:
+  ejecutar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Llamar a Jobs.aspx
+        env:
+          JOBS_CLAVE: ${{ secrets.JOBS_CLAVE }}
+          JOB: ${{ github.event.inputs.job }}
+        run: |
+          if [ -z "$JOBS_CLAVE" ]; then echo "Falta el secreto JOBS_CLAVE."; exit 1; fi
+          url="https://sigma.codigocreativo.tech/Jobs.aspx"
+          if [ -n "$JOB" ]; then url="$url?job=$JOB"; fi
+          codigo=$(curl -sS --max-time 600 -o respuesta.txt -w '%{http_code}' -H "X-Sigma-Jobs: $JOBS_CLAVE" "$url")
+          echo "HTTP $codigo"
+          cat respuesta.txt
+          test "$codigo" = "200"
