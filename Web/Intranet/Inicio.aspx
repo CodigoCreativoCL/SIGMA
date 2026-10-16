@@ -217,8 +217,25 @@
                                 <span class="err">Ingresa el nombre de tu empresa.</span>
                             </div>
                             <div class="sg-field2">
+                                <label for="asCargo">Cargo</label>
+                                <input type="text" id="asCargo" name="cargo" autocomplete="organization-title" placeholder="Jefe de Mantenimiento" />
+                            </div>
+                            <div class="sg-field2">
                                 <label for="asPais">País</label>
-                                <input type="text" id="asPais" name="pais" autocomplete="country-name" placeholder="Chile" />
+                                <select id="asPais" name="pais" autocomplete="country-name">
+                                    <option value="Chile" data-id="RUT" selected>Chile</option>
+                                    <option value="Perú" data-id="RUC">Perú</option>
+                                    <option value="Colombia" data-id="NIT">Colombia</option>
+                                    <option value="México" data-id="RFC">México</option>
+                                    <option value="Argentina" data-id="CUIT">Argentina</option>
+                                    <option value="Ecuador" data-id="RUC">Ecuador</option>
+                                    <option value="Otro" data-id="Identificador tributario">Otro país…</option>
+                                </select>
+                            </div>
+                            <div class="sg-field2">
+                                <label for="asIdent" id="asIdentLbl">RUT de tu empresa</label>
+                                <input type="text" id="asIdent" name="identificador" autocomplete="off" maxlength="30" placeholder="76.123.456-7" />
+                                <span class="hint" id="asMoneda">Se cotiza en UF y se cobra en pesos (CLP).</span>
                             </div>
                             <div class="sg-field2">
                                 <label for="asActivos">N.° de activos aprox.</label>
@@ -244,10 +261,16 @@
                                 <label for="asMensaje">Cuéntanos de tu operación</label>
                                 <textarea id="asMensaje" name="mensaje" placeholder="Tipo de planta, cantidad de técnicos, qué buscas resolver…"></textarea>
                             </div>
+                            <%-- Honeypot: invisible para las personas; un robot lo llena y el servidor lo descarta. --%>
+                            <div style="position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden" aria-hidden="true">
+                                <label for="asWeb">Sitio web</label>
+                                <input type="text" id="asWeb" name="web" tabindex="-1" autocomplete="off" />
+                            </div>
                             <label class="sg-consent" id="asConsentWrap">
                                 <input type="checkbox" id="asConsent" name="consent" />
                                 <span>Autorizo a Código Creativo a contactarme para orientarme sobre SIGMA. <span class="req" style="color:var(--sg-purple)">*</span></span>
                             </label>
+                            <p class="sg-lead-err" id="asErr" role="alert" style="display:none;margin:0;color:var(--sg-danger);font-weight:600;font-size:14px"></p>
                             <button type="submit" class="sg-btn sg-btn-primary">
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
                                 Solicitar asesoría
@@ -258,7 +281,7 @@
                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
                             <div>
                                 <h4>¡Solicitud lista!</h4>
-                                <p>Se abrió tu correo con los datos para enviar. Un especialista te responderá dentro de 1 día hábil.</p>
+                                <p>Recibimos tus datos. Un especialista te responderá dentro de 1 día hábil.</p>
                             </div>
                         </div>
                     </form>
@@ -603,25 +626,46 @@
                     return;
                 }
 
-                var L = [
-                    'Nombre: ' + nombre + ' ' + val('asApellido'),
-                    'Correo: ' + correo,
-                    'Teléfono: ' + val('asTelefono'),
-                    'Empresa: ' + val('asEmpresa'),
-                    'País: ' + val('asPais'),
-                    'N.° de activos: ' + val('asActivos'),
-                    'Plan de interés: ' + val('asPlan'),
-                    '',
-                    'Mensaje:',
-                    val('asMensaje')
-                ];
-                var cuerpo = encodeURIComponent(L.join('\n'));
-                var asunto = encodeURIComponent('Solicitud de asesoría SIGMA — ' + empresa);
-                window.location.href = 'mailto:contacto@codigocreativo.cl?subject=' + asunto + '&body=' + cuerpo;
-
-                ok.classList.add('is-visible');
-                ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                /* Centro Comercial: el formulario crea el lead en SIGMA y avisa a
+                   comercial (WsComercial.CrearLeadPublico). Ya no abre el correo. */
+                var btn = form.querySelector('button[type=submit]');
+                var errBox = document.getElementById('asErr');
+                btn.disabled = true;
+                if (errBox) errBox.style.display = 'none';
+                fetch('WebService/WsComercial.asmx/CrearLeadPublico', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json; charset=utf-8' },
+                    body: JSON.stringify({
+                        nombre: nombre, apellido: val('asApellido'), empresa: empresa, cargo: val('asCargo'), correo: correo,
+                        telefono: val('asTelefono'), pais: val('asPais'), identificador: val('asIdent'), activos: val('asActivos'), plan: val('asPlan'),
+                        mensaje: val('asMensaje'), consentimiento: consent, web: val('asWeb')
+                    })
+                }).then(function (r) {
+                    if (!r.ok) throw new Error('No pudimos enviar tu solicitud. Inténtalo de nuevo en unos minutos.');
+                    return r.json();
+                }).then(function (j) {
+                    var x = typeof j.d === 'string' ? JSON.parse(j.d) : j.d;
+                    if (x && x.error) throw new Error(x.detalle || 'No pudimos enviar tu solicitud.');
+                    form.querySelector('.sg-form-grid').style.display = 'none';
+                    ok.classList.add('is-visible');
+                    ok.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }).catch(function (er) {
+                    btn.disabled = false;
+                    if (errBox) { errBox.textContent = er.message; errBox.style.display = 'block'; }
+                });
             });
+
+            /* El país decide qué se pide y en qué moneda se cotiza: Chile en UF y pesos; el resto, en dólares. */
+            (function () {
+                var sel = document.getElementById('asPais'), lbl = document.getElementById('asIdentLbl'), inp = document.getElementById('asIdent'), chip = document.getElementById('asMoneda');
+                if (!sel) return;
+                function pais() {
+                    var o = sel.options[sel.selectedIndex], chile = sel.value === 'Chile', nom = o.getAttribute('data-id');
+                    lbl.textContent = (chile ? 'RUT' : nom) + ' de tu empresa';
+                    inp.placeholder = chile ? '76.123.456-7' : '';
+                    chip.textContent = chile ? 'Se cotiza en UF y se cobra en pesos (CLP).' : 'Se cotiza y se cobra en dólares (USD).';
+                }
+                sel.addEventListener('change', pais); pais();
+            })();
 
             form.addEventListener('input', function (e) {
                 var t = e.target;
