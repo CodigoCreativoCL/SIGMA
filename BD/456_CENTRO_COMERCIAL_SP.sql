@@ -116,13 +116,14 @@ BEGIN RAISERROR('3.- EL CORREO NO ES VÁLIDO.', 16, 1) RETURN -1 END
 -- País: por id, o por nombre si solo llegó el texto; Chile por defecto. La moneda sale del país.
 IF @PAIS_ID IS NULL AND NULLIF(LTRIM(RTRIM(@PAIS)), N'') IS NOT NULL
     SET @PAIS_ID = (SELECT TOP 1 pai_id FROM [dbo].[Paises] WHERE pai_nombre = LTRIM(RTRIM(@PAIS)) AND pai_habilItado = 1)
-SET @PAIS_ID = ISNULL(@PAIS_ID, 1)
-IF NOT EXISTS (SELECT 1 FROM [dbo].[Paises] WHERE pai_id = @PAIS_ID AND pai_habilItado = 1)
+-- Un país que no está en el catálogo («Otro…») queda sin id: se cotiza en USD y el ejecutivo lo precisa en la ficha.
+IF @PAIS_ID IS NULL AND NULLIF(LTRIM(RTRIM(@PAIS)), N'') IS NULL SET @PAIS_ID = 1
+IF @PAIS_ID IS NOT NULL AND NOT EXISTS (SELECT 1 FROM [dbo].[Paises] WHERE pai_id = @PAIS_ID AND pai_habilItado = 1)
 BEGIN RAISERROR('5.- EL PAÍS NO ES VÁLIDO.', 16, 1) RETURN -1 END
 SET @IDENTIFICADOR = NULLIF(UPPER(LTRIM(RTRIM(@IDENTIFICADOR))), N'')
-IF @IDENTIFICADOR IS NOT NULL AND [dbo].[FNC_IDENTIFICADOR_VALIDO](@PAIS_ID, @IDENTIFICADOR) = 0
+IF @PAIS_ID IS NOT NULL AND @IDENTIFICADOR IS NOT NULL AND [dbo].[FNC_IDENTIFICADOR_VALIDO](@PAIS_ID, @IDENTIFICADOR) = 0
 BEGIN RAISERROR('6.- EL IDENTIFICADOR TRIBUTARIO NO ES VÁLIDO PARA ESE PAÍS.', 16, 1) RETURN -1 END
-SET @PAIS = (SELECT pai_nombre FROM [dbo].[Paises] WHERE pai_id = @PAIS_ID)
+IF @PAIS_ID IS NOT NULL SET @PAIS = (SELECT pai_nombre FROM [dbo].[Paises] WHERE pai_id = @PAIS_ID)
 IF @ORIGEN = 'FORM_WEB' AND @IP IS NOT NULL AND ISNULL(@TOPE, 5) > 0
    AND (SELECT COUNT(*) FROM [dbo].[Lead] WHERE lea_ip = @IP AND lea_fecha_creacion > DATEADD(HOUR, -1, @AHORA)) >= ISNULL(@TOPE, 5)
 BEGIN RAISERROR('4.- RECIBIMOS VARIAS SOLICITUDES DESDE ESTA CONEXIÓN. INTÉNTALO EN UNA HORA O ESCRÍBENOS A COMERCIAL@CODIGOCREATIVO.TECH.', 16, 1) RETURN -1 END
@@ -754,11 +755,12 @@ CREATE OR ALTER PROCEDURE [dbo].[INS_CONTRATO]
 @ID INT = NULL OUTPUT, @VERSION INT = NULL OUTPUT, @LEAD INT, @PROPUESTA INT, @USUARIO INT
 AS
 SET NOCOUNT ON
-DECLARE @ESTADO VARCHAR(20), @RUT VARCHAR(20)
-SELECT @ESTADO = lea_estado, @RUT = lea_rut FROM [dbo].[Lead] WHERE lea_id = @LEAD AND lea_habilitado = 1
+DECLARE @ESTADO VARCHAR(20), @RUT VARCHAR(30)
+SELECT @ESTADO = lea_estado, @RUT = ISNULL(lea_identificador, lea_rut) FROM [dbo].[Lead] WHERE lea_id = @LEAD AND lea_habilitado = 1
 IF @ESTADO IS NULL BEGIN RAISERROR('1.- EL LEAD NO EXISTE.', 16, 1) RETURN -1 END
 IF @ESTADO IN ('CONCRETADO', 'PERDIDO') BEGIN RAISERROR('2.- ESTE LEAD ESTÁ CERRADO.', 16, 1) RETURN -1 END
-IF @RUT IS NULL BEGIN RAISERROR('3.- FALTA EL RUT DE LA EMPRESA. COMPLÉTALO EN «INFORMACIÓN» ANTES DE GENERAR EL CONTRATO.', 16, 1) RETURN -1 END
+IF @RUT IS NULL BEGIN RAISERROR('3.- FALTA EL IDENTIFICADOR TRIBUTARIO DE LA EMPRESA. COMPLÉTALO EN «INFORMACIÓN» ANTES DE GENERAR EL CONTRATO.', 16, 1) RETURN -1 END
+IF EXISTS (SELECT 1 FROM [dbo].[Lead] WHERE lea_id = @LEAD AND lea_pais_id IS NULL) BEGIN RAISERROR('3.- FALTA EL PAÍS DE LA EMPRESA. ELÍGELO EN «INFORMACIÓN» ANTES DE GENERAR EL CONTRATO.', 16, 1) RETURN -1 END
 IF EXISTS (SELECT 1 FROM [dbo].[Cliente] C WHERE C.cli_identificador = @RUT
             AND NOT EXISTS (SELECT 1 FROM [dbo].[Lead_Demo] D WHERE D.ldm_lead = @LEAD AND D.ldm_cliente = C.cli_id))
 BEGIN RAISERROR('4.- YA EXISTE UN CLIENTE SIGMA CON ESE RUT.', 16, 1) RETURN -1 END
@@ -855,7 +857,8 @@ SELECT  C.ctt_id AS ID, C.ctt_version AS VERSION, C.ctt_estado AS ESTADO, C.ctt_
         CASE WHEN C.ctt_token_expira < [dbo].[FNC_AHORA]() THEN 1 ELSE 0 END AS VENCIDO,
         C.ctt_pdf_sha256 AS PDF_SHA256, CONVERT(VARCHAR(16), C.ctt_firmado_fecha, 120) AS FIRMADO,
         C.ctt_firmante_nombre AS FIRMANTE, C.ctt_pdf_firmado_sha256 AS PDF_FIRMADO_SHA256,
-        L.lea_id AS LEAD, L.lea_empresa AS EMPRESA, L.lea_rut AS RUT_EMPRESA, L.lea_contacto_nombre AS CONTACTO, L.lea_correo AS CORREO,
+        L.lea_id AS LEAD, L.lea_empresa AS EMPRESA, ISNULL(L.lea_identificador, L.lea_rut) AS RUT_EMPRESA, L.lea_moneda AS MONEDA, ISNULL(L.lea_pais_id, 1) AS PAIS_ID,
+        (SELECT pai_identificador_nombre FROM [dbo].[Paises] WHERE pai_id = ISNULL(L.lea_pais_id, 1)) AS IDENT_ETIQUETA, L.lea_contacto_nombre AS CONTACTO, L.lea_correo AS CORREO,
         P.ppt_nombre_plan AS PLAN_NOMBRE, P.ppt_mensual_uf AS MENSUAL_UF, P.ppt_descuento_pct AS DESCUENTO_PCT,
         P.ppt_implementacion_uf AS IMPLEMENTACION_UF, P.ppt_vigencia_meses AS VIGENCIA_MESES, P.ppt_total_uf AS TOTAL_UF,
         LTRIM(RTRIM(ISNULL(U.usu_nombre, '') + ' ' + ISNULL(U.usu_apellido_paterno, ''))) AS EJECUTIVO, U.usu_correo AS EJECUTIVO_CORREO

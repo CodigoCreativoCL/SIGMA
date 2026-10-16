@@ -70,8 +70,10 @@ function icb(k, tono, n) { return '<span class="cc-icb cc-t-' + tono + (n === 36
 function av(nombre, chico) { return '<span class="cc-av' + (chico ? ' cc-22' : '') + (nombre ? '' : ' cc-no') + '">' + esc(nombre ? K.ini(nombre) : '?') + '</span>'; }
 function nombreMod(id) { var m = (S.ini && S.ini.modulos || []).filter(function (x) { return x.id === id; })[0]; return m ? m.n : id; }
 function mods(lista) { return String(lista || '').split(',').map(function (x) { return x.trim(); }).filter(Boolean); }
-function uf(v, d) { return K.fN(v || 0, d == null ? 1 : d) + ' UF'; }
-function clp(v) { return S.ini && S.ini.uf ? '$' + K.fN(Math.round((v || 0) * S.ini.uf)) : ''; }
+/* Moneda del lead que está abierto: UF (se cobra en CLP) o USD (sin UF). Nunca se mezclan. */
+var CUR = 'UF';
+function uf(v, d, m) { m = m || CUR; return m === 'USD' ? 'USD ' + K.fN(v || 0, d == null ? 2 : d) : K.fN(v || 0, d == null ? 1 : d) + ' UF'; }
+function clp(v) { return CUR !== 'USD' && S.ini && S.ini.uf ? '$' + K.fN(Math.round((v || 0) * S.ini.uf)) : ''; }
 
 /* ------------------------------------------------------------ fechas «AAAA-MM-DD HH:mm» */
 function dt(s) { if (!s) return null; var m = /^(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/.exec(s); return m ? new Date(+m[1], +m[2] - 1, +m[3], +(m[4] || 0), +(m[5] || 0)) : null; }
@@ -327,7 +329,7 @@ function vistaClientes() {
     return '<button type="button" class="cc-crow" data-a="ficha" data-id="' + c.LEAD + '"><span class="cc-c2"><b>' + esc(c.EMPRESA) + '</b><span>' + esc(c.RUT || '') + '</span></span>' +
       '<span style="font-size:13px;font-weight:600">' + esc(c.PLAN_NOMBRE || '—') + '</span><span>' + chip(st[0], st[1]) + '</span>' +
       '<span class="cc-num">' + (c.DESDE ? dm(c.DESDE) + '/' + c.DESDE.slice(2, 4) : '—') + '</span><span class="cc-num">' + (c.RENUEVA ? dmy(c.RENUEVA) : '—') + '</span>' +
-      '<span class="cc-num cc-r">' + (c.MENSUAL_UF != null ? uf(c.MENSUAL_UF) : '—') + '</span>' +
+      '<span class="cc-num cc-r">' + (c.MENSUAL_UF != null ? uf(c.MENSUAL_UF, 1, c.MONEDA === 'USD' ? 'USD' : 'UF') : '—') + '</span>' +
       '<span style="display:flex;flex-direction:column;gap:5px"><span style="font-size:12px;color:var(--muted)">' + uso + (tope ? ' de ' + tope : ' · sin tope') + '</span>' +
       (tope ? '<span class="cc-meter cc-6"><span class="' + (pct >= 80 ? 'cc-alto' : '') + '" style="width:' + pct + '%"></span></span>' : '') + '</span>' +
       '<span class="cc-ej">' + av(c.EJECUTIVO) + '<span>' + esc(c.EJECUTIVO || '—') + '</span></span></button>';
@@ -447,11 +449,11 @@ function abrirFicha(id) {
   F = { id: +id, data: null, modo: 'ficha', open: null, tipo: 'LLAMADA', txt: '', perd: false, motivo: '', edit: false, f: {}, ext: false, anular: null, motivoAn: '', prox: null };
   K.Panel.open({ render: render, st: F, onclose: function () { F = null; S.sel = null; pintar(); } });
   pintar();
-  call('Ficha', { lead: +id }).then(function (d) { if (F && F.id === +id) { F.data = d; K.Panel.paint(); } }).catch(function (e) { K.toastError(e); K.Panel.close(); });
+  call('Ficha', { lead: +id }).then(function (d) { if (F && F.id === +id) { F.data = d; CUR = (d.lead && d.lead.MONEDA) || 'UF'; K.Panel.paint(); } }).catch(function (e) { K.toastError(e); K.Panel.close(); });
 }
 function recibir(d, msg) {
   if (!F) return;
-  F.data = d.ficha || d; F.modo = 'ficha'; F.busy = false; F.perd = false; F.edit = false; F.ext = false; F.anular = null;
+  F.data = d.ficha || d; CUR = (F.data.lead && F.data.lead.MONEDA) || 'UF'; F.modo = 'ficha'; F.busy = false; F.perd = false; F.edit = false; F.ext = false; F.anular = null;
   K.Panel.paint(); refrescarLead(F.data);
   if (msg) K.toast(msg);
 }
@@ -519,7 +521,7 @@ function siguiente(d, idx) {
   }
   if (idx === 2 && pv) {
     if (pv.ESTADO === 'BORRADOR') return ['La propuesta v' + pv.VERSION + ' está en borrador. Revísala y envíala.', 'quote', 'cc-wa'];
-    if (!l.RUT) return ['Propuesta enviada el ' + dmy(pv.ENVIADA) + '. Para generar el contrato, completa antes el RUT de la empresa en «Información».', 'flag', 'cc-wa'];
+    if (!(l.IDENTIFICADOR || l.RUT) || !l.PAIS_ID) return ['Propuesta enviada el ' + dmy(pv.ENVIADA) + '. Para generar el contrato, completa antes el país y el ' + (l.IDENTIFICADOR_NOMBRE || 'RUT') + ' de la empresa en «Información».', 'flag', 'cc-wa'];
     return ['Propuesta v' + pv.VERSION + ' enviada el ' + dmy(pv.ENVIADA) + '. Si la acepta, genera el contrato.', 'flag', ''];
   }
   if (idx === 3 && ct) {
@@ -544,16 +546,16 @@ function secInfo(st, d) {
   var cuerpo;
   if (st.edit) {
     var f = st.f, fld = function (k, t, o) { o = o || {}; return '<div class="cp-fld' + (o.full ? ' cc-full' : '') + '"><label for="cf_' + k + '">' + t + '</label><input class="cp-inp" id="cf_' + k + '" data-pv="f.' + k + '" value="' + esc(f[k] || '') + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '></div>'; };
-    cuerpo = '<div class="cc-grid2">' + fld('EMPRESA', 'Empresa') + fld('RUT', 'RUT de la empresa', { ph: '76.123.456-7' }) + fld('RUBRO', 'Rubro', { ph: 'Alimentos, minería…' }) +
+    cuerpo = '<div class="cc-grid2">' + fld('EMPRESA', 'Empresa') + '<div class="cp-fld"><label>País</label>' + K.combo('ccFPais', (S.ini.paises || []).map(function (x) { return { id: String(x.ID), n: x.NOMBRE }; }), String(f.PAIS_ID || ''), { ph: 'Elige el país', etiqueta: 'País' }) + '</div>' + fld('RUT', etiquetaPais(f.PAIS_ID) + ' de la empresa', { ph: String(f.PAIS_ID) === '1' ? '76.123.456-7' : '' }) + fld('RUBRO', 'Rubro', { ph: 'Alimentos, minería…' }) +
       fld('CONTACTO', 'Contacto') + fld('CARGO', 'Cargo') + fld('CORREO', 'Correo') + fld('TELEFONO', 'Teléfono') + '</div>' +
       '<div class="cp-fld"><span class="cp-lb">Interés</span>' + modChips(mods(f.INTERESES), 'intmod') + '</div>' +
       '<div class="cc-acc"><button type="button" class="cp-btn cp-ghost cp-sm" data-a="infox">Cancelar</button><span class="cc-sp"></span><button type="button" class="cp-btn cp-pri cp-sm" data-a="infook"' + (st.busy ? ' disabled' : '') + '>Guardar datos</button></div>';
   } else {
     var ejs = (S.ini.ejecutivos || []).map(function (e) { return { id: String(e.ID), n: e.NOMBRE }; });
-    var dl = [['Empresa', esc(l.EMPRESA)], ['RUT', l.RUT ? esc(l.RUT) : '<span class="cc-falta">Por completar · lo pide el contrato</span>'], ['Rubro', l.RUBRO ? esc(l.RUBRO) : '—'],
+    var dl = [['Empresa', esc(l.EMPRESA)], [l.IDENTIFICADOR_NOMBRE || 'RUT', (l.IDENTIFICADOR || l.RUT) ? esc(l.IDENTIFICADOR || l.RUT) : '<span class="cc-falta">Por completar · lo pide el contrato</span>'], ['Rubro', l.RUBRO ? esc(l.RUBRO) : '—'],
       ['Origen', (l.ORIGEN === 'FORM_WEB' ? 'Formulario web (inicio.aspx)' : 'Registrado a mano') + ' · ' + dmyh(l.FECHA_CREACION)]];
     if (l.N_ACTIVOS) dl.push(['Activos', esc(l.N_ACTIVOS)]);
-    if (l.PAIS) dl.push(['País', esc(l.PAIS)]);
+    dl.push(['País', l.PAIS_ID ? esc(l.PAIS || '') + ' · ' + (l.MONEDA === 'USD' ? chip('USD · transferencia internacional', 'pu') : chip('UF · CLP', 'bl')) : '<span class="cc-falta">Por elegir · define la moneda de la propuesta</span>']);
     cuerpo = '<dl class="cc-dl">' + dl.map(function (x) { return '<dt>' + x[0] + '</dt><dd>' + x[1] + '</dd>'; }).join('') + '</dl>' +
       (l.INTERESES || l.PLAN_INTERES ? '<div class="cc-wrap">Interés: ' + (mods(l.INTERESES).filter(function (m) { return nombreMod(m) !== m; }).map(function (m) { return chip(nombreMod(m), 'pu'); }).join('') || chip(l.PLAN_INTERES || l.INTERESES, 'pu')) + '</div>' : '') +
       (l.MENSAJE ? '<blockquote class="cc-cita">«' + esc(l.MENSAJE) + '»</blockquote>' : '') +
@@ -635,7 +637,7 @@ function secProp(st, d) {
   var cuerpo = '<div class="cc-mods">' + mods(p.MODULOS).map(function (m) { return chip(nombreMod(m), 'pu'); }).join('') + '</div>' +
     (caps ? '<div class="cc-nota" style="color:var(--cc-lab);font-size:13px">' + caps + '</div>' : '') +
     '<dl class="cc-dl2"><dt>Implementación</dt><dd>' + uf(p.IMPLEMENTACION_UF) + '</dd>' +
-    '<dt>Mensualidad' + (p.DESCUENTO_PCT ? ' (' + uf(p.MENSUAL_UF) + ' − ' + K.fN(p.DESCUENTO_PCT) + ' %)' : '') + '</dt><dd>' + neta + ' UF</dd>' +
+    '<dt>Mensualidad' + (p.DESCUENTO_PCT ? ' (' + uf(p.MENSUAL_UF) + ' − ' + K.fN(p.DESCUENTO_PCT) + ' %)' : '') + '</dt><dd>' + uf(mensualNeta(p.MENSUAL_UF, p.DESCUENTO_PCT), 2) + '</dd>' +
     '<dt>Vigencia</dt><dd>' + p.VIGENCIA_MESES + ' meses</dd><dt class="cc-tot">Total del período</dt><dd class="cc-tot">' + uf(p.TOTAL_UF) + '</dd></dl>' +
     '<div class="cc-wrap">' + ic('pdf', 18) + 'Propuesta v' + p.VERSION + ' · ' + (p.ENVIADA ? 'enviada el ' + dmy(p.ENVIADA) : 'creada el ' + dmy(p.CREADA) + ' · sin enviar') + '</div>' +
     '<div class="cc-acc">' + (p.TIENE_PDF ? '<button type="button" class="cp-btn cp-out cp-sm" data-a="pdf" data-t="propuesta" data-id="' + p.ID + '">' + ic('eye') + 'Ver PDF</button>' : '') +
@@ -645,7 +647,7 @@ function secProp(st, d) {
       return '<div class="cc-li" style="grid-template-columns:40px 96px 120px minmax(0,1fr) auto"><b>v' + x.VERSION + '</b><span>' + dmy(x.ENVIADA || x.CREADA) + '</span>' + chip(x.ESTADO, PT[x.ESTADO] || 'gr') +
         '<span class="cc-m">' + esc(x.NOMBRE_PLAN) + ' · ' + uf(x.TOTAL_UF) + '</span>' + (x.TIENE_PDF ? '<button type="button" class="cc-lnk" data-a="pdf" data-t="propuesta" data-id="' + x.ID + '">Ver PDF</button>' : '<span></span>') + '</div>';
     }).join('') + '</div>' : '');
-  return sec('prop', 'quote', 'put', 'Propuesta', '<small>' + esc(p.NOMBRE_PLAN) + ' · ' + neta + ' UF/mes</small>' + chip(p.ESTADO, PT[p.ESTADO] || 'gr'), cuerpo, st);
+  return sec('prop', 'quote', 'put', 'Propuesta', '<small>' + esc(p.NOMBRE_PLAN) + ' · ' + uf(mensualNeta(p.MENSUAL_UF, p.DESCUENTO_PCT), 2) + '/mes</small>' + chip(p.ESTADO, PT[p.ESTADO] || 'gr'), cuerpo, st);
 }
 function mensualNeta(m, d) { return Math.round((+m || 0) * (100 - (+d || 0))) / 100; }
 
@@ -770,7 +772,7 @@ function abrirProp(base) {
   F.f = p ? { tipo: p.TIPO, plan: p.PLAN_COMERCIAL || est.ID, nombre: p.NOMBRE_PLAN, mods: mods(p.MODULOS), usuarios: p.LIM_USUARIOS, activos: p.LIM_ACTIVOS, plantas: p.LIM_PLANTAS,
               bodegas: p.LIM_BODEGAS, gb: p.LIM_GB, implementacion: p.IMPLEMENTACION_UF, mensual: p.MENSUAL_UF, descuento: p.DESCUENTO_PCT, vigencia: p.VIGENCIA_MESES, condiciones: p.CONDICIONES || '' }
     : { tipo: 'ESTANDAR', plan: est.ID, nombre: '', mods: mods(est.MODULOS), usuarios: est.LIM_USUARIOS, activos: est.LIM_ACTIVOS, plantas: est.LIM_PLANTAS, bodegas: null, gb: est.LIM_GB,
-        implementacion: 30, mensual: est.MENSUAL_UF, descuento: 0, vigencia: 12, condiciones: '' };
+        implementacion: CUR === 'USD' ? 1300 : 30, mensual: CUR === 'USD' ? est.MENSUAL_USD : est.MENSUAL_UF, descuento: 0, vigencia: 12, condiciones: '' };
   if (pre.descuento != null && pre.descuento !== '') F.f.descuento = +pre.descuento;
   if (pre.vigencia) F.f.vigencia = +pre.vigencia;
   if (pre.mods && pre.mods.length) { F.f.mods = pre.mods.slice(); if (F.f.tipo === 'ESTANDAR') F.f.tipo = 'PERSONALIZADA'; }
@@ -785,7 +787,7 @@ function vProp(st, d) {
     '<div class="cc-seg cc-full" role="group" aria-label="Tipo de plan"><button type="button" aria-pressed="' + est + '" data-a="ptipo" data-v="ESTANDAR">Plan estándar</button><button type="button" aria-pressed="' + !est + '" data-a="ptipo" data-v="PERSONALIZADA">Plan personalizado</button></div>';
   if (est) {
     b += '<div class="cc-planes">' + planes.map(function (p) {
-      return '<button type="button" class="cc-plan" aria-pressed="' + (String(f.plan) === String(p.ID)) + '" data-a="pplan" data-v="' + p.ID + '"><b>' + esc(p.NOMBRE) + '</b><strong>' + uf(p.MENSUAL_UF) + '<small style="font-size:11px;font-weight:600;color:var(--muted)"> /mes</small></strong>' +
+      return '<button type="button" class="cc-plan" aria-pressed="' + (String(f.plan) === String(p.ID)) + '" data-a="pplan" data-v="' + p.ID + '"><b>' + esc(p.NOMBRE) + '</b><strong>' + (CUR === 'USD' ? uf(p.MENSUAL_USD) : uf(p.MENSUAL_UF)) + '<small style="font-size:11px;font-weight:600;color:var(--muted)"> /mes</small></strong>' +
         '<span>' + (p.LIM_USUARIOS != null ? K.fN(p.LIM_USUARIOS) + ' usuarios · ' + K.fN(p.LIM_ACTIVOS) + ' activos' : 'Usuarios y activos sin tope') + '</span><span>' + esc(p.DESCRIPCION || '') + '</span></button>';
     }).join('') + '</div><div class="cc-mods">' + f.mods.map(function (m) { return chip(nombreMod(m), 'pu'); }).join('') + '</div>';
   } else {
@@ -794,12 +796,12 @@ function vProp(st, d) {
       '<div class="cp-fld"><span class="cp-lb">Límites <small>· vacío = sin tope</small></span><div class="cc-grid3">' + num('usuarios', 'Usuarios', { step: 1 }) + num('activos', 'Activos', { step: 1 }) + num('plantas', 'Plantas', { step: 1 }) +
       num('bodegas', 'Bodegas', { step: 1 }) + num('gb', 'Almacenamiento (GB)', { step: 1 }) + '</div></div>';
   }
-  b += '<div class="cp-fld"><span class="cp-lb">Precio <small>· UF más IVA</small></span><div class="cc-grid2">' + num('implementacion', 'Implementación (UF, pago único)') + (est ? '<div class="cp-fld"><label>Mensualidad de lista</label><input class="cp-inp" value="' + uf(f.mensual, 2) + '" disabled></div>' : num('mensual', 'Mensualidad (UF)')) +
+  b += '<div class="cp-fld"><span class="cp-lb">Precio <small>· ' + (CUR === 'USD' ? 'USD, sin conversión' : 'UF más IVA') + '</small></span><div class="cc-grid2">' + num('implementacion', 'Implementación (' + (CUR === 'USD' ? 'USD' : 'UF') + ', pago único)') + (est ? '<div class="cp-fld"><label>Mensualidad de lista</label><input class="cp-inp" value="' + uf(f.mensual, 2) + '" disabled></div>' : num('mensual', 'Mensualidad (' + (CUR === 'USD' ? 'USD' : 'UF') + ')')) +
     num('descuento', 'Descuento (%)', { step: 0.5 }) + '<div class="cp-fld"><label for="pp_vig">Vigencia</label>' + K.combo('ccVig', [{ id: '6', n: '6 meses' }, { id: '12', n: '12 meses' }, { id: '24', n: '24 meses' }, { id: '36', n: '36 meses' }], String(f.vigencia || 12), { etiqueta: 'Vigencia' }) + '</div></div></div>' +
     '<div class="cp-fld"><label for="pp_cond">Condiciones comerciales <small>· opcional, se suman a las estándar</small></label><textarea class="cp-inp" id="pp_cond" data-pv="f.condiciones" placeholder="Por ejemplo: capacitación adicional en terreno incluida">' + esc(f.condiciones) + '</textarea></div>';
   var t = totalProp(f);
-  b += '<div class="cc-total"><div><small>Mensualidad con descuento</small><b id="ccNeta" style="font-variant-numeric:tabular-nums">' + K.fN(t.neta, 2) + ' UF</b></div>' +
-    '<div><small>Total del período (' + (f.vigencia || 12) + ' meses + implementación)</small><strong id="ccTot">' + K.fN(t.total, 2) + ' UF</strong> <small id="ccClp">' + (clp(t.total) ? '≈ ' + clp(t.total) + ' + IVA' : '') + '</small></div></div>';
+  b += '<div class="cc-total"><div><small>Mensualidad con descuento</small><b id="ccNeta" style="font-variant-numeric:tabular-nums">' + uf(t.neta, 2) + '</b></div>' +
+    '<div><small>Total del período (' + (f.vigencia || 12) + ' meses + implementación)</small><strong id="ccTot">' + uf(t.total, 2) + '</strong> <small id="ccClp">' + (clp(t.total) ? '≈ ' + clp(t.total) + ' + IVA' : '') + '</small></div></div>';
   return { w: 'c', s: esc(l.CODIGO) + ' · ' + esc(l.EMPRESA), t: 'Crear propuesta', b: b,
     f: '<button type="button" class="cp-btn cp-ghost" data-a="volver">Cancelar</button><div class="cp-r"><button type="button" class="cp-btn cp-out" data-a="propok" data-v="0"' + (st.busy ? ' disabled' : '') + '>Guardar borrador</button>' +
        '<button type="button" class="cp-btn cp-pri" data-a="propok" data-v="1"' + (st.busy ? ' disabled' : '') + '>' + ic('send') + (st.busy ? 'Generando…' : 'Enviar propuesta') + '</button></div>' };
@@ -807,7 +809,7 @@ function vProp(st, d) {
 function actualizarTotal() {
   if (!F || F.modo !== 'prop') return;
   var t = totalProp(F.f), a = $('#ccNeta'), b = $('#ccTot'), c = $('#ccClp');
-  if (a) a.textContent = K.fN(t.neta, 2) + ' UF'; if (b) b.textContent = K.fN(t.total, 2) + ' UF'; if (c) c.textContent = clp(t.total) ? '≈ ' + clp(t.total) + ' + IVA' : '';
+  if (a) a.textContent = uf(t.neta, 2); if (b) b.textContent = uf(t.total, 2); if (c) c.textContent = clp(t.total) ? '≈ ' + clp(t.total) + ' + IVA' : '';
 }
 
 /* ---------------------------------------------------------------- reuniones */
@@ -874,15 +876,44 @@ function vReuReg(st, d) {
 
 /* ---------------------------------------------------------------- nuevo lead */
 var N = null;
+function paisN(id) { return (S.ini.paises || []).filter(function (p) { return String(p.ID) === String(id); })[0] || { ETIQUETA: 'Identificador tributario', MONEDA: 'UF' }; }
+function etiquetaPais(id) { var p = (S.ini.paises || []).filter(function (x) { return String(x.ID) === String(id); })[0]; return p ? p.ETIQUETA : 'Identificador tributario'; }
+var ACTIVOS = ['Menos de 150', 'Entre 150 y 750', 'Más de 750', 'Aún no lo sé'];
+var ORIGENES = ['Llamada', 'Referido', 'Evento', 'Redes sociales', 'Otro'];
 function abrirNuevo() {
-  N = { f: { empresa: '', contacto: '', cargo: '', correo: '', telefono: '', mensaje: '' }, busy: false };
+  N = { f: { empresa: '', contacto: '', cargo: '', correo: '', telefono: '', mensaje: '', pais: '1', ident: '', activos: '', mods: [], origen: '', ejecutivo: String(CFG.usuario || ''), proxTipo: 'LLAMADA', proxTexto: '', proxFecha: '' }, busy: false, dup: [] };
   K.Panel.open({ st: N, render: function (st) {
-    var f = st.f, fld = function (k, t, o) { o = o || {}; return '<div class="cp-fld' + (o.full ? ' cc-full' : '') + '"><label for="nl_' + k + '">' + t + '</label><input class="cp-inp" id="nl_' + k + '" data-pv="n.' + k + '" value="' + esc(f[k]) + '"' + (o.af ? ' data-autofocus="1"' : '') + '></div>'; };
-    return { w: 'c', s: 'Centro Comercial', t: 'Nuevo lead', b: '<div class="cc-grid2">' + fld('empresa', 'Empresa', { af: 1 }) + fld('contacto', 'Contacto') + fld('cargo', 'Cargo') + fld('correo', 'Correo') + fld('telefono', 'Teléfono') + '</div>' +
+    var f = st.f, p = paisN(f.pais), usd = p.MONEDA === 'USD';
+    var fld = function (k, t, o) { o = o || {}; return '<div class="cp-fld' + (o.full ? ' cc-full' : '') + '"><label for="nl_' + k + '">' + t + (o.req ? ' <span style="color:var(--cc-da)">*</span>' : '') + '</label><input class="cp-inp" id="nl_' + k + '" data-pv="n.' + k + '" value="' + esc(f[k]) + '"' + (o.af ? ' data-autofocus="1"' : '') + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + '></div>'; };
+    var cmb = function (id, lista, v, t, ph) { return '<div class="cp-fld"><label>' + t + '</label>' + K.combo(id, lista, v, { ph: ph || 'Elige', etiqueta: t }) + '</div>'; };
+    var ejs = [{ id: '', n: 'Sin asignar' }].concat((S.ini.ejecutivos || []).map(function (e) { return { id: String(e.ID), n: e.NOMBRE }; }));
+    var dup = st.dup && st.dup.length ? '<div class="cc-info cc-wa">' + ic('flag') + '<span>El dominio de este correo ya está en <b>' + st.dup.slice(0, 3).map(function (x) { return esc(x.EMPRESA) + ' (' + esc(x.CODIGO || x.TIPO) + ')'; }).join(', ') + '</b>' + (st.dup.length > 3 ? ' y ' + (st.dup.length - 3) + ' más' : '') + '. Revisa que no sea un duplicado; si es otra persona de la misma empresa, puedes seguir.</span></div>' : '';
+    var ok = f.empresa.trim().length >= 2 && f.contacto.trim().length >= 2 && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(f.correo.trim());
+    var b = '<div class="cc-grid2">' + fld('empresa', 'Empresa', { af: 1, req: 1 }) + fld('contacto', 'Contacto', { req: 1 }) + fld('correo', 'Correo', { req: 1 }) + fld('telefono', 'Teléfono') + fld('cargo', 'Cargo') + '</div>' + dup +
+      '<div class="cc-grid2">' + cmb('ccNPais', (S.ini.paises || []).map(function (x) { return { id: String(x.ID), n: x.NOMBRE }; }), f.pais, 'País') + fld('ident', p.ETIQUETA + ' de la empresa', { ph: String(f.pais) === '1' ? '76.123.456-7' : '' }) + '</div>' +
+      '<div class="cc-wrap">' + (usd ? chip('USD', 'pu') + '<span>Se cotiza y se cobra en dólares (USD). Se paga por transferencia internacional.</span>' : chip('UF', 'bl') + '<span>Se cotiza en UF y se cobra en pesos (CLP).</span>') + '</div>' +
+      '<div class="cc-grid2">' + cmb('ccNActivos', ACTIVOS.map(function (x) { return { id: x, n: x }; }), f.activos, 'Rango de activos', 'Sin definir') + cmb('ccNOrigen', ORIGENES.map(function (x) { return { id: x, n: x }; }), f.origen, 'Origen', 'Sin definir') + '</div>' +
+      '<div class="cp-fld"><span class="cp-lb">Módulos de interés</span>' + modChips(f.mods, 'nmod') + '</div>' +
+      cmb('ccNEj', ejs, f.ejecutivo, 'Ejecutivo', 'Sin asignar') +
+      '<div class="cp-fld"><span class="cp-lb">Próxima acción</span><div class="cc-grid3">' + K.combo('ccNProx', PROX.map(function (x) { return { id: x.id, n: x.n }; }), f.proxTipo, { etiqueta: 'Tipo' }) + K.fecha('n.fecha', f.proxFecha, { etiqueta: 'Fecha de la próxima acción' }) + fld('proxTexto', '', { ph: 'Qué sigue' }).replace('<label for="nl_proxTexto"></label>', '') + '</div></div>' +
       '<div class="cp-fld"><label for="nl_msg">Nota</label><textarea class="cp-inp" id="nl_msg" data-pv="n.mensaje">' + esc(f.mensaje) + '</textarea></div>' +
-      '<div class="cc-nota">Queda asignado a ti, en estado CONTACTADO y con origen «registrado a mano».</div>',
-      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><div class="cp-r"><button type="button" class="cp-btn cp-pri" data-a="nuevook"' + (st.busy ? ' disabled' : '') + '>Crear lead</button></div>' };
+      '<div class="cc-nota">Queda en estado CONTACTADO y con origen «registrado a mano».</div>';
+    return { w: 'c', s: 'Centro Comercial', t: 'Nuevo lead', b: b,
+      f: '<button type="button" class="cp-btn cp-ghost" data-a="pclose">Cancelar</button><div class="cp-r"><button type="button" class="cp-btn cp-pri" data-a="nuevook"' + (st.busy || !ok ? ' disabled' : '') + '>Crear lead</button></div>' };
   }, onclose: function () { N = null; } });
+}
+function nCombo(n, v) {
+  var f = N.f;
+  if (n === 'ccNPais') { f.pais = v; K.Panel.paint(); }
+  else if (n === 'ccNActivos') f.activos = v;
+  else if (n === 'ccNOrigen') f.origen = v;
+  else if (n === 'ccNEj') f.ejecutivo = v;
+  else if (n === 'ccNProx') f.proxTipo = v;
+}
+/* Aviso (no bloqueo) si el dominio del correo ya está en otro lead o cliente. */
+function dominio(correo) {
+  if (!N || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(correo).trim())) { if (N) { N.dup = []; K.Panel.paint(); } return; }
+  call('DominioExistente', { correo: correo }).then(function (r) { if (N) { N.dup = r.filas || []; K.Panel.paint(); } }).catch(function () { });
 }
 
 /* =====================================================================
@@ -915,9 +946,12 @@ var A = {
   vermas: function (ds) { S.verMas[ds.v] = 1; pintar(); },
   ficha: function (ds) { abrirFicha(ds.id); },
   nuevo: function () { abrirNuevo(); },
+  nmod: function (ds) { toggle(N.f.mods, ds.v); K.Panel.paint(); },
   nuevook: function () {
     var f = N.f; N.busy = true; K.Panel.paint();
-    call('CrearLead', { empresa: f.empresa, contacto: f.contacto, cargo: f.cargo, correo: f.correo, telefono: f.telefono, mensaje: f.mensaje })
+    call('CrearLead', { empresa: f.empresa, contacto: f.contacto, cargo: f.cargo, correo: f.correo, telefono: f.telefono, mensaje: f.mensaje,
+      pais: +f.pais || null, identificador: f.ident, activos: f.activos, intereses: f.mods.join(','), origen: f.origen, ejecutivo: f.ejecutivo ? +f.ejecutivo : null,
+      proxTipo: f.proxFecha ? f.proxTipo : null, proxTexto: f.proxTexto, proxFecha: f.proxFecha ? f.proxFecha + ' 10:00' : null })
       .then(function (r) { K.Panel.close(); K.toast('Lead ' + r.codigo + ' creado'); cargar().then(function () { abrirFicha(r.lead); }); })
       .catch(function (e) { if (N) { N.busy = false; K.Panel.paint(); } K.toastError(e); });
   },
@@ -925,12 +959,12 @@ var A = {
   sec: function (ds) { F.open[ds.v] = !F.open[ds.v]; K.Panel.paint(); },
   volver: function () { F.modo = 'ficha'; F.busy = false; K.Panel.paint(); },
   /* información */
-  infoed: function () { var l = F.data.lead; F.f = { EMPRESA: l.EMPRESA, RUT: l.RUT, RUBRO: l.RUBRO, CONTACTO: l.CONTACTO, CARGO: l.CARGO, CORREO: l.CORREO, TELEFONO: l.TELEFONO, INTERESES: l.INTERESES || '' }; F.edit = true; F.open.info = true; K.Panel.paint(); },
+  infoed: function () { var l = F.data.lead; F.f = { EMPRESA: l.EMPRESA, PAIS_ID: l.PAIS_ID || '', RUT: l.IDENTIFICADOR || l.RUT, RUBRO: l.RUBRO, CONTACTO: l.CONTACTO, CARGO: l.CARGO, CORREO: l.CORREO, TELEFONO: l.TELEFONO, INTERESES: l.INTERESES || '' }; F.edit = true; F.open.info = true; K.Panel.paint(); },
   infox: function () { F.edit = false; K.Panel.paint(); },
   intmod: function (ds) { var m = mods(F.f.INTERESES); toggle(m, ds.v); F.f.INTERESES = m.join(','); K.Panel.paint(); },
   infook: function () {
     var f = F.f;
-    ocupado(call('GuardarDatos', { lead: F.id, empresa: f.EMPRESA, rut: f.RUT, rubro: f.RUBRO, contacto: f.CONTACTO, cargo: f.CARGO, correo: f.CORREO, telefono: f.TELEFONO, intereses: f.INTERESES }))
+    ocupado(call('GuardarDatos', { lead: F.id, empresa: f.EMPRESA, rut: f.RUT, rubro: f.RUBRO, contacto: f.CONTACTO, cargo: f.CARGO, correo: f.CORREO, telefono: f.TELEFONO, intereses: f.INTERESES, pais: f.PAIS_ID ? +f.PAIS_ID : null }))
       .then(function (d) { recibir(d, 'Datos del lead guardados'); }).catch(function () { });
   },
   estado: function (ds) { ocupado(call('CambiarEstado', { lead: F.id, estado: ds.v, motivo: null })).then(function (d) { recibir(d, ds.v === 'CONTACTADO' && F && F.data.lead.ESTADO === 'CONTACTADO' ? 'Lead actualizado' : 'Estado actualizado'); }).catch(function () { }); },
@@ -970,7 +1004,7 @@ var A = {
   ptipo: function (ds) { F.f.tipo = ds.v; if (ds.v === 'PERSONALIZADA' && !F.f.nombre) F.f.nombre = 'Plan ' + F.data.lead.EMPRESA; if (ds.v === 'ESTANDAR') A.pplan({ v: F.f.plan }); else K.Panel.paint(); },
   pplan: function (ds) {
     var p = (S.ini.planes || []).filter(function (x) { return String(x.ID) === String(ds.v); })[0]; if (!p) { K.Panel.paint(); return; }
-    Object.assign(F.f, { plan: p.ID, mods: mods(p.MODULOS), mensual: p.MENSUAL_UF, usuarios: p.LIM_USUARIOS, activos: p.LIM_ACTIVOS, plantas: p.LIM_PLANTAS, gb: p.LIM_GB, bodegas: null });
+    Object.assign(F.f, { plan: p.ID, mods: mods(p.MODULOS), mensual: CUR === 'USD' ? p.MENSUAL_USD : p.MENSUAL_UF, usuarios: p.LIM_USUARIOS, activos: p.LIM_ACTIVOS, plantas: p.LIM_PLANTAS, gb: p.LIM_GB, bodegas: null });
     K.Panel.paint();
   },
   pmod: function (ds) { toggle(F.f.mods, ds.v); K.Panel.paint(); },
@@ -987,7 +1021,7 @@ var A = {
   /* contrato */
   contrato: function () {
     var d = F.data, pv = d.propuestas.filter(function (p) { return p.ESTADO === 'ENVIADA' || p.ESTADO === 'ACEPTADA'; })[0];
-    if (!d.lead.RUT) { F.open.info = true; A.infoed(); K.toastError('Completa el RUT de la empresa antes de generar el contrato.'); return; }
+    if (!(d.lead.IDENTIFICADOR || d.lead.RUT) || !d.lead.PAIS_ID) { F.open.info = true; A.infoed(); K.toastError('Completa el país y el ' + (d.lead.IDENTIFICADOR_NOMBRE || 'RUT') + ' de la empresa antes de generar el contrato.'); return; }
     if (!pv) { K.toastError('Primero envía una propuesta.'); return; }
     ocupado(call('GenerarContrato', { lead: F.id, propuesta: pv.ID })).then(function (r) {
       F.open = null; recibir(r, avisoCorreo(r, 'Contrato generado y enviado para firma', 'Contrato generado, pero el correo no salió. Usa «Reenviar para firma».'));
@@ -1041,7 +1075,7 @@ var A = {
 
 function pv(clave, valor, el) {
   if (COB && COB.pv(clave, valor)) return;
-  if (N && clave.indexOf('n.') === 0) { N.f[clave.slice(2)] = valor; return; }
+  if (N && clave.indexOf('n.') === 0) { N.f[clave.slice(2)] = valor; if (clave === 'n.correo') dominio(valor); return; }
   if (!F) return;
   if (clave === 'txt') { F.txt = valor; var b = $('#cpLayer [data-a=act]'); if (b) b.disabled = !valor.trim() || F.busy; return; }
   if (clave === 'motivoAn') { F.motivoAn = valor; return; }
@@ -1060,6 +1094,8 @@ function combo(span, valor) {
   var n = span.getAttribute('data-cb');
   if (n === 'ccEjFiltro') { S.ej = valor || ''; pintar(); return; }
   if (COB && COB.combo(n, valor)) return;
+  if (N && n.indexOf('ccN') === 0) { nCombo(n, valor); return; }
+  if (n === 'ccFPais' && F && F.f) { F.f.PAIS_ID = valor; K.Panel.paint(); return; }
   if (!F) return;
   if (n === 'ccEjFicha' && valor && String(valor) !== String(F.data.lead.EJECUTIVO_ID || '')) {
     ocupado(call('AsignarEjecutivo', { lead: F.id, ejecutivo: +valor })).then(function (d) { recibir(d, 'Ejecutivo asignado'); }).catch(function () { });
@@ -1074,6 +1110,7 @@ function combo(span, valor) {
 }
 function fecha(el) {
   if (COB && COB.fecha(el)) return;
+  if (N && el.getAttribute('data-fe') === 'n.fecha') { N.f.fecha = K.deDN(el.value); return; }
   if (!F) return;
   var b = el.getAttribute('data-fe'), v = K.deDN(el.value);
   if (b === 'prox.fecha') F.prox.fecha = v;
