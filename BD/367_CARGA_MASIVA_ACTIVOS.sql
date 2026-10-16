@@ -320,7 +320,7 @@ BEGIN
         IF @f IS NULL BREAK
         BEGIN TRY
             DECLARE @dAct INT, @dNom NVARCHAR(200), @dVal NVARCHAR(400), @dUni INT
-            SELECT @dAct = activo_id, @dNom = dato, @dVal = valor, @dUni = ISNULL(unidad_id, 0) FROM #dat WHERE fila = @f
+            SELECT @dAct = activo_id, @dNom = dato, @dVal = valor, @dUni = NULLIF(unidad_id, 0) FROM #dat WHERE fila = @f
             IF @dAct IS NULL RAISERROR(N'El activo no se pudo crear.', 16, 1)
             EXEC [dbo].[GRABAR_DATO_ACTIVO] @ACTIVO = @dAct, @ATRIBUTO = NULL, @NOMBRE = @dNom, @UNIDAD = @dUni, @VALOR = @dVal, @USUARIO = @USUARIO
             UPDATE [dbo].[Carga_Masiva_Fila] SET cmf_resultado = (SELECT res FROM #dat WHERE fila = @f), cmf_id = @dAct
