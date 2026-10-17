@@ -53,7 +53,8 @@ public class WsComercial : System.Web.Services.WebService
         foreach (Dictionary<string, object> f in l)
         {
             int foto = f["FOTO_ID"] == null ? 0 : Convert.ToInt32(f["FOTO_ID"]);
-            f["FOTO"] = foto > 0 ? SitioBase.UrlArchivo.Ver(foto) : "";
+            // Sin foto propia: el avatar de ejecutivo (Imagen/avatares/ejecutivo.png) hasta que la persona suba la suya en Cliente › Usuarios.
+            f["FOTO"] = foto > 0 ? SitioBase.UrlArchivo.Ver(foto) : System.Web.VirtualPathUtility.ToAbsolute("~/Imagen/avatares/ejecutivo.png");
         }
         return l;
     }

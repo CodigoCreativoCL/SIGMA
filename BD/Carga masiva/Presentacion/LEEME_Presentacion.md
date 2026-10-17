@@ -1,4 +1,4 @@
-﻿# Libros para la presentación del miércoles — Utilidades › Carga de datos
+﻿# Libros para la presentación del miércoles 21-10-2026 — Utilidades › Carga de datos
 
 Datos de demostración: **ampliación de la Línea 2 de Planta Renca (Hamburgo SA)**. Todos los códigos llevan el prefijo `L2-` para no chocar con lo que ya existe. Los libros están hechos sobre las plantillas oficiales de SIGMA (con sus hojas de ayuda y desplegables).
 
