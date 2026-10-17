@@ -83,7 +83,6 @@
     </div>
     <h1 id="sg-h1" class="sg-h1">
       <span class="sg-line"><span>El mantenimiento</span></span>
-      <span class="sg-line"><span>industrial,</span></span>
       <span class="sg-line"><span class="sg-grad">bajo control.</span></span>
     </h1>
     <div class="sg-hero-row">
