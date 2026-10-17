@@ -41,7 +41,7 @@
                     <div class="sg-grain" aria-hidden="true"></div>
                     <a class="lg-logo lg-in" href="Inicio.aspx" aria-label="SIGMA, volver al inicio"><img src="Imagen/sigma-logo-horizontal-dark.svg" alt="SIGMA" width="157" height="52" /></a>
                     <div class="lg-copy">
-                        <h1><span class="sg-line"><span>El mantenimiento</span></span><span class="sg-line"><span class="sg-grad">bajo control.</span></span></h1>
+                        <h1><span class="sg-line"><span>Mantenimiento</span></span><span class="sg-line"><span class="sg-grad">bajo control.</span></span></h1>
                         <p class="lg-in">Órdenes de trabajo, activos, checklists, inventario e indicadores en un solo lugar. Del escritorio a la planta, y de vuelta.</p>
                         <ul class="lg-points lg-in">
                             <li><span class="sg-mono">01</span>Trabajo planificado y correctivo en un mismo flujo</li>

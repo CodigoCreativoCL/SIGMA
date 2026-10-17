@@ -82,7 +82,7 @@
       <span class="sg-mono" style="color: rgba(255,255,255,.4)">Web · App móvil · SIGMA AI · SIGMA Twin</span>
     </div>
     <h1 id="sg-h1" class="sg-h1">
-      <span class="sg-line"><span>El mantenimiento</span></span>
+      <span class="sg-line"><span>Mantenimiento</span></span>
       <span class="sg-line"><span class="sg-grad">bajo control.</span></span>
     </h1>
     <div class="sg-hero-row">
