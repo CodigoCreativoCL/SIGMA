@@ -9,7 +9,7 @@
     <meta name="robots" content="noindex" />
     <meta name="theme-color" content="#0B0F1A" />
     <link href="Imagen/sigma-favicon.svg" rel="icon" type="image/svg+xml" />
-    <link href="Css/Login/sigma-login.css?vrs=1" rel="stylesheet" />
+    <link href="Css/Login/sigma-acceso.css?vrs=1" rel="stylesheet" />
     <%-- Diseño J del Centro Comercial (artefacto/J-Clave.dc.html): la misma
          cáscara del Login, con las reglas de la clave a la vista. --%>
     <style>

@@ -13,7 +13,7 @@
 
     <link href="Css/SweetAlert/sweetalert.css" rel="stylesheet" />
     <link href="Css/SweetAlert/sweetalert2.min.css" rel="stylesheet" />
-    <link href="Css/Login/sigma-login.css?vrs=1" rel="stylesheet" />
+    <link href="Css/Login/sigma-acceso.css?vrs=1" rel="stylesheet" />
 
     <script src="Js/jquery-1.9.1.js"></script>
     <script src="Css/SweetAlert/sweetalert2.min.js"></script>
