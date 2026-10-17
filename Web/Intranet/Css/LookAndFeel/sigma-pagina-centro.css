@@ -1,0 +1,66 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA · PÁGINAS DE LISTA CON EL DISEÑO DE LOS CENTROS (17-10-2026)
+
+   Las páginas WebForms de lista (las que tienen grilla Telerik) toman la cabecera y las superficies de los Centros
+   (sigma-centro-planificacion.css: .cp-hero, .cp-card, .cp-kpi): cabecera navy sólida #141B33 de radio 24 con antetítulo
+   turquesa claro y título blanco, sin degradado; filtros y lista en tarjetas blancas de radio 20 con la sombra --e1, sobre
+   el lienzo #F3F4F8. Los Centros, el Inicio, SIGMA AI y las vistas maestras (sgx-page) tienen su propio diseño y se excluyen.
+   ============================================================================ */
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) {
+    --sgp-e1: 0 0 0 1px rgba(15, 23, 42, .04), 0 1px 2px rgba(15, 23, 42, .04), 0 6px 16px rgba(15, 23, 42, .04);
+    background: #F3F4F8;
+}
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .content-page { background: #F3F4F8; }
+
+/* ---- cabecera = .cp-hero ---- */
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .sg-page-head {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+    margin: 0 0 16px;
+    padding: 24px 28px;
+    border-radius: 24px;
+    background: #141B33;
+    color: #C9D0E3;
+}
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .sg-page-head > :not(h1) {
+    margin: 0;
+    color: #C9D0E3;
+    font-size: 15px;
+}
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .sg-page-head > :first-child:not(h1) {
+    color: #8FE3E5;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0;
+    text-transform: none;
+}
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .sg-page-head h1 {
+    margin: 0;
+    color: #FFFFFF;
+    font-size: clamp(26px, 3.2vw, 32px);
+    font-weight: 800;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+}
+
+/* ---- superficies = .cp-card ---- */
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .content-page .card-box {
+    margin-left: 0;
+    margin-right: 0;
+    padding: 16px 18px;
+    border: 0;
+    border-radius: 20px;
+    background: #FFFFFF;
+    box-shadow: var(--sgp-e1);
+}
+/* La lista vive sobre la tarjeta: sus filas-tarjeta se separan del blanco con el gris del bloque (.cp-blk). */
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .content-page .card-box .RadGrid .rgRow > td,
+html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .content-page .card-box .RadGrid .rgAltRow > td { background: #FFFFFF; }
+
+@media (max-width: 680px) {
+    html:not(.sgx-page) body:has(.RadGrid):not(:has(.cp-root, .cc-root, .sgai, .sgin, #cpRoot)) .sg-page-head { padding: 18px 20px; border-radius: 18px; }
+}
