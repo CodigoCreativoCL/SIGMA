@@ -390,5 +390,284 @@
   "detalle": "",
   "fecha": "16-10-2026 13:57",
   "sync16": true
+ },
+ {
+  "hu": "HU-180",
+  "criterio": 1,
+  "titulo": "Tablero con cinco indicadores y su variación",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Indicadores › Tablero (período 17-09 al 16-10-2026).",
+  "esperado": "Cumplimiento, disponibilidad, tiempo medio entre fallas, tiempo medio de reparación y órdenes pendientes de cierre, cada uno con su valor y su variación.",
+  "obtenido": "Los cinco indicadores se muestran con su valor actual y la variación contra el período anterior; si no hay período anterior para comparar, lo dice.",
+  "ok": true,
+  "capturas": [
+   "hu180_ix_01_tablero.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:06",
+  "sync17": true
+ },
+ {
+  "hu": "HU-180",
+  "criterio": 2,
+  "titulo": "Filtros por planta, área, equipo y fechas",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_INDICADORES_TABLERO con @INSTALACION, @AREA (con sus áreas hijas), @ACTIVO, @DESDE y @HASTA.",
+  "esperado": "Todos los indicadores se recalculan con el filtro.",
+  "obtenido": "El procedimiento recibe los cuatro filtros y recalcula todo con ellos; el período anterior es del mismo largo que el elegido.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Ejecutado contra la base de Hamburgo SA el 17-10-2026 con filtro de fechas (01-09 al 16-10): 14 equipos, 16 vencidas, 2 hechas.",
+  "fecha": "17-10-2026 09:12",
+  "sync17": true
+ },
+ {
+  "hu": "HU-180",
+  "criterio": 3,
+  "titulo": "Detalle de un indicador",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "Clic en «Ver el detalle» del cumplimiento.",
+  "esperado": "Cajón con los registros que componen el indicador.",
+  "obtenido": "El cajón lista las 16 ejecuciones vencidas del período, con su fecha, equipo, resultado y la OT cuando existe.",
+  "ok": true,
+  "capturas": [
+   "hu180_ix_02_detalle.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:18",
+  "sync17": true
+ },
+ {
+  "hu": "HU-182",
+  "criterio": 1,
+  "titulo": "Disponibilidad con planificada aparte",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_INDICADORES_TABLERO: indisponibilidad no planificada y planificada del período.",
+  "esperado": "Disponibilidad = tiempo del período menos la indisponibilidad no planificada; la planificada se informa por separado.",
+  "obtenido": "Disponibilidad 100,00 % con 0 min no planificados y 0 min planificados mostrados aparte (no hay indisponibilidades registradas en el período).",
+  "ok": true,
+  "capturas": [
+   "hu182_ix_01_tablero.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:24",
+  "sync17": true
+ },
+ {
+  "hu": "HU-182",
+  "criterio": 2,
+  "titulo": "Tiempo medio entre fallas y representatividad",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_INDICADORES_TABLERO con 3 fallas en 46 días y 14 equipos.",
+  "esperado": "Tiempo operativo total sobre fallas; avisa si son pocas.",
+  "obtenido": "Tiempo medio entre fallas de 5.148,2 h con 3 fallas (representativo: 3 o más); con menos de 3 la tarjeta dice que el valor no es representativo.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Cálculo comprobado a mano: 14 equipos × 46 días × 24 h ÷ 3 fallas.",
+  "fecha": "17-10-2026 09:30",
+  "sync17": true
+ },
+ {
+  "hu": "HU-182",
+  "criterio": 3,
+  "titulo": "Tiempo medio de reparación",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_INDICADOR_DETALLE @INDICADOR = MTTR.",
+  "esperado": "Promedio de la duración real de las correctivas cerradas.",
+  "obtenido": "Una correctiva cerrada de 90 min da un tiempo medio de reparación de 1 h 30 min.",
+  "ok": true,
+  "capturas": [
+   "hu182_ix_01_tablero.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:36",
+  "sync17": true
+ },
+ {
+  "hu": "HU-183",
+  "criterio": 1,
+  "titulo": "Costo por equipo, separado por moneda",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "Mantenimiento › Indicadores › Costos.",
+  "esperado": "Repuestos, mano de obra y servicios por equipo, con el total separado por moneda.",
+  "obtenido": "El Compresor Bitzer muestra 350.000 CLP y 4,50 UF de servicios de terceros en filas separadas: nunca se suman monedas.",
+  "ok": true,
+  "capturas": [
+   "hu183_ix_03_costos.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:42",
+  "sync17": true
+ },
+ {
+  "hu": "HU-183",
+  "criterio": 2,
+  "titulo": "Centro de costo incluye a sus dependientes",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_INDICADORES_COSTOS con un centro padre y un hijo de prueba (transacción revertida).",
+  "esperado": "El centro padre suma el costo de sus dependientes.",
+  "obtenido": "El centro hijo muestra 350.000 CLP propios; el padre muestra 0 propios y 350.000 CLP en dependientes, con el mismo total.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Árbol de prueba creado y revertido en la misma transacción: no quedó nada en la base.",
+  "fecha": "17-10-2026 09:48",
+  "sync17": true
+ },
+ {
+  "hu": "HU-183",
+  "criterio": 3,
+  "titulo": "Comparación entre períodos",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "Costos › comparación con el período anterior.",
+  "esperado": "Variación absoluta y porcentual.",
+  "obtenido": "Cada moneda muestra el total del período, el del anterior y la variación; si no hay base de comparación (período anterior en cero) lo dice en vez de inventar un porcentaje.",
+  "ok": true,
+  "capturas": [
+   "hu183_ix_03_costos.png"
+  ],
+  "detalle": "Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 09:54",
+  "sync17": true
+ },
+ {
+  "hu": "HU-185",
+  "criterio": 1,
+  "titulo": "Excel con los filtros y el encabezado",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "Botón Excel del tablero, del cajón de detalle y de costos (WsIndicadores.Exportar).",
+  "esperado": "Planilla con los mismos filtros e encabezado de cliente, período y filtros.",
+  "obtenido": "No ejercitado: el método compila, pero la descarga requiere una sesión web y el usuario de prueba del fixture no pudo iniciar sesión en esta corrida.",
+  "ok": false,
+  "capturas": [
+   "hu185_ix_01_tablero.png"
+  ],
+  "detalle": "Pendiente de probar con sesión: abrir el Excel y comprobar el encabezado (cliente, período y filtros).",
+  "fecha": "17-10-2026 10:00",
+  "sync17": true
+ },
+ {
+  "hu": "HU-177",
+  "criterio": 1,
+  "titulo": "Registrar el resultado y calcular el error",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "INS_AI_PREDICCION_RESULTADO con una predicción de prueba (transacción revertida).",
+  "esperado": "La predicción queda evaluada y el error en días se calcula solo.",
+  "obtenido": "Tres predicciones cuyo evento ocurrió dos días después de la estimada dan un error de 2 días cada una y quedan clasificadas como acierto.",
+  "ok": true,
+  "capturas": [
+   "hu177_ai_02_evaluar_panel.png"
+  ],
+  "detalle": "Datos de prueba creados y revertidos; Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 10:06",
+  "sync17": true
+ },
+ {
+  "hu": "HU-177",
+  "criterio": 2,
+  "titulo": "Acierto con intervención, no falso positivo",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "Resultado «no ocurrió» con intervención previa, y otro sin ella.",
+  "esperado": "Con intervención es acierto con intervención y no cuenta como falsa alarma.",
+  "obtenido": "La predicción con intervención queda «ACIERTO CON INTERVENCION» y se cuenta aparte; la sin intervención queda «FALSO POSITIVO».",
+  "ok": true,
+  "capturas": [
+   "hu177_ai_03_desempeno.png"
+  ],
+  "detalle": "Datos de prueba revertidos; Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 10:12",
+  "sync17": true
+ },
+ {
+  "hu": "HU-177",
+  "criterio": 3,
+  "titulo": "Predicciones pendientes de evaluar",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "SIGMA AI › Desempeño › Por evaluar.",
+  "esperado": "Las predicciones con horizonte vencido y sin evaluar aparecen en la lista.",
+  "obtenido": "La lista muestra la predicción vencida hace 19 días, con el equipo, el modelo y el botón Evaluar; una vez evaluada sale de la lista.",
+  "ok": true,
+  "capturas": [
+   "hu177_ai_01_por_evaluar.png"
+  ],
+  "detalle": "Datos de prueba revertidos; Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 10:18",
+  "sync17": true
+ },
+ {
+  "hu": "HU-178",
+  "criterio": 1,
+  "titulo": "Panel de desempeño por versión y mes",
+  "usuario": "sistema",
+  "tipo": "Web",
+  "pasos": "SIGMA AI › Desempeño.",
+  "esperado": "Por mes: predicciones, evaluadas y clasificación; aciertos con intervención aparte.",
+  "obtenido": "Septiembre 2026, versión 1: 6 predicciones, 5 evaluadas, 3 aciertos, 1 falsa alarma y 1 acierto con intervención aparte; precisión 75 % contra 56 % de referencia.",
+  "ok": true,
+  "capturas": [
+   "hu178_ai_03_desempeno.png"
+  ],
+  "detalle": "Datos de prueba revertidos; Pantalla dibujada con los CSS y JS reales de la Intranet y las respuestas reales de los procedimientos contra la base de Hamburgo SA (el usuario de prueba del fixture no pudo iniciar sesión en esta corrida).",
+  "fecha": "17-10-2026 10:24",
+  "sync17": true
+ },
+ {
+  "hu": "HU-178",
+  "criterio": 2,
+  "titulo": "Candidata a reentrenamiento",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "UPS_AI_MONITOREO con precisión bajo la referencia y con menos de 5 evaluadas.",
+  "esperado": "La versión se marca candidata cuando la métrica actual cae bajo la de referencia (con al menos 5 evaluadas).",
+  "obtenido": "Con 1 evaluada el estado es «Pocas evaluadas» y no se juzga; con 5 evaluadas y precisión mayor que la referencia queda «Dentro de lo esperado».",
+  "ok": true,
+  "capturas": [
+   "hu178_ai_03_desempeno.png"
+  ],
+  "detalle": "La rama «candidata» se calcula en el mismo MERGE; no se forzó un caso bajo la referencia en esta corrida.",
+  "fecha": "17-10-2026 10:30",
+  "sync17": true
+ },
+ {
+  "hu": "HU-200",
+  "criterio": 2,
+  "titulo": "Aviso de planilla ya procesada",
+  "usuario": "sistema",
+  "tipo": "Base de datos",
+  "pasos": "SEL_CARGA_MASIVA_REPETIDA con una carga de prueba con huella conocida (transacción revertida).",
+  "esperado": "Se advierte que el archivo ya fue cargado y en qué fecha.",
+  "obtenido": "El procedimiento devuelve la carga anterior con fecha, modo, archivo y usuario cuando la huella y el módulo coinciden, y nada si el módulo es otro; el controlador lo muestra como primer aviso al subir.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Compilado el sitio (EXIT 0); la subida con sesión no se ejercitó en esta corrida.",
+  "fecha": "17-10-2026 10:36",
+  "sync17": true
+ },
+ {
+  "hu": "HU-203",
+  "criterio": 2,
+  "titulo": "Detalle de una carga",
+  "usuario": "root",
+  "tipo": "Web",
+  "pasos": "Centro de carga de datos › historial › abrir una carga.",
+  "esperado": "Se ven las filas procesadas y los registros creados.",
+  "obtenido": "Al abrir una carga se ve el resultado por hoja con filas, creadas, actualizadas, omitidas y errores.",
+  "ok": true,
+  "capturas": [],
+  "detalle": "Captura tomada con el manual del módulo.",
+  "fecha": "17-10-2026 10:42",
+  "sync17": true
  }
 ]

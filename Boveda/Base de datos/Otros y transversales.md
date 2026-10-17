@@ -1,6 +1,6 @@
 # BD — Otros y transversales
 
-24 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
+25 migraciones (generado por `Dev/indexar_bd.py`; no editar). Ruta: `BD/<archivo>`. Ver [[Indice de base de datos]].
 
 | Archivo | Qué hace |
 |---|---|
@@ -28,3 +28,4 @@
 | `469_LEAD_DOMINIO.sql` |  |
 | `470_COBRO_PUBLICO.sql` | 0 · la suscripción y a quién se le escribe |
 | `471_CORREO_COLA_Y_JOBS.sql` |  |
+| `474_INDICADORES.sql` |  |
