@@ -369,7 +369,7 @@ function cargarAdm(v) {
 }
 /* La ficha de siempre (Simple.master) en el cajón lateral, no en un modal.
    Las fichas cierran y refrescan por window.frameElement.radWindow: aquí se
-   les da el mismo contrato que les da SigmaModal (close, BrowserWindow.refresh),
+   les da el mismo contrato que les da SigmaDrawer (close, BrowserWindow.refresh),
    así que funcionan sin tocarlas. Al cerrar el cajón la lista se vuelve a pedir. */
 function abrirFichaSitio(url, titulo, v) {
   K.Panel.open({ st: { url: url }, onclose: function () { cargarAdm(v); }, render: function (st) {

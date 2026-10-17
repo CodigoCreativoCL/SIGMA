@@ -1,0 +1,44 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA · DRAWER GLOBAL (17-10-2026)
+   El panel lateral de los Centros (K.Panel: .cp-scr + .cp-pnl) para TODA ficha del sitio. Las reglas son las mismas de
+   sigma-centro-planificacion.css (mismas clases, mismos valores); se repiten aquí porque esa hoja solo se carga en los Centros.
+   Reemplaza a SigmaModal (sigma-dialog.js/.css, ya retirados).
+   ============================================================================ */
+html.sg-drawer-locked,
+html.sg-drawer-locked body { overflow: hidden !important; }
+
+.cp-root.sg-drawer-host {
+  --sigma-purple:#6732F4; --sigma-purple-soft:#F2EFFF; --sigma-cyan:#16C6C9;
+  --ink:#17223B; --muted:#68738A; --line:#E2E7F0; --chip:#F3F5F8; --line3:#E6EAF1;
+  padding: 0; margin: 0; display: block; gap: 0; min-width: 0;
+  font-family: "Inter", "Segoe UI", Arial, sans-serif;
+}
+
+@keyframes cpfade { from { opacity: 0 } }
+@keyframes cpslin { from { transform: translateX(30px); opacity: 0 } }
+
+.cp-root.sg-drawer-host .cp-scr { position: fixed; inset: 0; background: rgba(11,15,26,.32); z-index: 1040; animation: cpfade .15s; border: 0; padding: 0; }
+.cp-root.sg-drawer-host .cp-pnl { position: fixed; top: 0; right: 0; bottom: 0; width: min(520px, 100vw); z-index: 1041; background: #fff; box-shadow: -20px 0 50px rgba(15,23,42,.18); display: flex; flex-direction: column; animation: cpslin .22s ease-out; }
+.cp-root.sg-drawer-host .cp-pnl.cp-w { width: min(760px, 100vw); }
+.cp-root.sg-drawer-host .cp-pnl.cp-xw { width: min(980px, 100vw); }
+.cp-root.sg-drawer-host .cp-pnl-h { display: flex; align-items: flex-start; gap: 12px; padding: 18px 20px 14px; border-bottom: 1px solid var(--line3); }
+.cp-root.sg-drawer-host .cp-pnl-h .cp-t { flex: 1; min-width: 0; }
+.cp-root.sg-drawer-host .cp-pnl-h .cp-t small { display: block; font-size: 12px; color: var(--muted); }
+.cp-root.sg-drawer-host .cp-pnl-h h3 { margin: 0; font-size: 17px; font-weight: 800; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+.cp-root.sg-drawer-host .cp-ibx { width: 32px; height: 32px; border: 0; border-radius: 9px; background: transparent; color: var(--muted); display: inline-flex; align-items: center; justify-content: center; flex: none; cursor: pointer; padding: 0; }
+.cp-root.sg-drawer-host .cp-ibx:hover { background: var(--chip); color: var(--ink); }
+.cp-root.sg-drawer-host .cp-ibx:focus-visible { outline: 3px solid rgba(22,198,201,.27); outline-offset: 1px; }
+.cp-root.sg-drawer-host .cp-ibx svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* El cuerpo es el iframe de la ficha (igual que abrirFichaSitio del Centro Comercial: cc-ficha-b). */
+.cp-root.sg-drawer-host .cp-pnl-b { flex: 1; overflow: hidden; padding: 0; display: flex; flex-direction: column; position: relative; }
+.cp-root.sg-drawer-host .sg-drawer-frame { flex: 1; width: 100%; min-height: 0; height: 100%; border: 0; display: block; background: #fff; opacity: 0; transition: opacity .15s ease; }
+.cp-root.sg-drawer-host .is-ready .sg-drawer-frame { opacity: 1; }
+.cp-root.sg-drawer-host .sg-drawer-load { position: absolute; inset: 0; display: grid; place-items: center; background: #fff; color: var(--muted); font-size: 13px; font-weight: 600; transition: opacity .15s ease; }
+.cp-root.sg-drawer-host .is-ready .sg-drawer-load { opacity: 0; pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  .cp-root.sg-drawer-host .cp-scr, .cp-root.sg-drawer-host .cp-pnl { animation: none; }
+}

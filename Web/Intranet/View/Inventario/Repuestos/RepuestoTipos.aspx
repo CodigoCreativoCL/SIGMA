@@ -9,7 +9,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirTipo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/RepuestoTipo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo tipo de repuesto' : 'Editar tipo de repuesto',
                 width: 720,

@@ -11,7 +11,7 @@
      · «info»    → diálogo con icono azul (los avisos sin tipo).
      · confirmar → diálogo con «Cancelar» (ghost) y la acción en morado, o en rojo si es destructiva.
 
-   Dentro de una ficha (iframe de SigmaModal) el aviso se pinta en la ventana más alta que lo permita, para que no muera
+   Dentro de una ficha (iframe de SigmaDrawer) el aviso se pinta en la ventana más alta que lo permita, para que no muera
    cuando la ficha se cierra con `cerrar`.
 
    API:  SigmaAviso.mostrar(mensaje, tipo, { titulo, cerrar, alAceptar })

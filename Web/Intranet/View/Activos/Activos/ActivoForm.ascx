@@ -79,7 +79,7 @@
     // Crear un modelo al vuelo, sin ir al catálogo.
     function nuevoModelo() {
         var url = '<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=0';
-        var M = (window.parent && window.parent.SigmaModal) ? window.parent.SigmaModal : window.SigmaModal;
+        var M = (window.parent && window.parent.SigmaDrawer) ? window.parent.SigmaDrawer : window.SigmaDrawer;
         if (M && M.open) { M.open({ url: url, title: 'Nuevo modelo', width: 820, initialHeight: 560 }); }
         else { window.open(url, '_blank'); }
         return false;
@@ -328,7 +328,7 @@
                 if (!l || !f) return;
                 var alto = Math.ceil(l.getBoundingClientRect().bottom + (window.pageYOffset || 0)) + 16;
                 f.style.height = Math.max(alto, 250) + 'px';
-                try { if (parent.SigmaModal && parent.SigmaModal.resize) parent.SigmaModal.resize(); } catch (e) { }
+                try { if (parent.SigmaDrawer && parent.SigmaDrawer.resize) parent.SigmaDrawer.resize(); } catch (e) { }
             }
             if (document.readyState === 'complete') setTimeout(ajustar, 0); else window.addEventListener('load', ajustar);
         })();

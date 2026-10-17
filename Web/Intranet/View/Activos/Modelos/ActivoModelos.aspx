@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirModelo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo modelo' : 'Editar modelo',
                 width: 860,

@@ -54,7 +54,7 @@
             /* El modal de SIGMA. La comprobacion de existencia ya no hace
                falta: el componente se crea al primer uso, no es un control
                que pueda no haberse renderizado. */
-            SigmaModal.open({
+            SigmaDrawer.open({
                 url: query ? url + "?query=" + query : url,
                 title: 'Detalle de la alerta',
                 width: 1000,

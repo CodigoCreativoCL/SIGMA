@@ -1,7 +1,7 @@
 ﻿<%@ Control Language="C#" AutoEventWireup="true" CodeFile="Instalaciones.ascx.cs" Inherits="View_Comun_Controls_Cliente_Instalaciones" %>
 <script type="text/javascript">
     function abrirClienteInstalacion(query) {
-        return SigmaModal.open({
+        return SigmaDrawer.open({
             url: '<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query,
             title: 'Planta',
             width: 1000,

@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPeriodo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Comercial/Suscripciones/Periodo.aspx") %>?query=' + query,
                 title: 'Periodo',
                 width: 900,

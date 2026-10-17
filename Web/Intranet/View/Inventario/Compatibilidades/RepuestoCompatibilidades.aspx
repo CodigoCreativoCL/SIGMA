@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirCompatibilidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva compatibilidad' : 'Editar compatibilidad',
                 width: 940,

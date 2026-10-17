@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirTareaCategoria(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Tareas/TareaCategoria.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva categoría de tarea' : 'Editar categoría de tarea',
                 width: 720,

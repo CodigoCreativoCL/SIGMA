@@ -6,7 +6,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirValor(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Sistema/Catalogos/CatalogoValor.aspx") %>?query=' + query,
                 title: 'Catalogo valor',
                 width: 900,

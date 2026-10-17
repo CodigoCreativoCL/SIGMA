@@ -233,12 +233,12 @@ public partial class View_Inventario_Repuestos_RepuestoCentro : System.Web.UI.Pa
         lnkCargaMasiva.Visible = puedeCrear;
         lnkClasificar.Visible = puedeCrear;
         lnkCargaMasiva.OnClientClick =
-            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") +
+            "return SigmaDrawer.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") +
             "',title:'Carga masiva de repuestos',width:1080,initialHeight:640,onClose:refresh});";
         // La clasificacion masiva necesita seleccion multiple: eso vive en el
         // listado clasico, que sigue existiendo. El centro no la pierde.
         lnkClasificar.OnClientClick =
-            "return SigmaModal.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/ClasificarRepuestos.aspx") +
+            "return SigmaDrawer.open({url:'" + ResolveUrl("~/View/Inventario/Repuestos/ClasificarRepuestos.aspx") +
             "',title:'Clasificar repuestos',width:760,initialHeight:620,onClose:refresh});";
         // Etiquetas de todo lo que hay en el catalogo: el centro de etiquetas, ya en REPUESTO.
         hlEtiquetas.Visible = SitioBase.Token.Puede("IMPRIMIR ETIQUETAS");

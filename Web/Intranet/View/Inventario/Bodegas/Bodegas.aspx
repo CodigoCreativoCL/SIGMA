@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirBodega(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Bodegas/Bodega.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva bodega' : 'Editar bodega',
                 width: 960,

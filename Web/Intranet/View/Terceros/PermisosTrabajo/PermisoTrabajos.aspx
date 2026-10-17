@@ -15,7 +15,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPermiso(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Terceros/PermisosTrabajo/PermisoTrabajo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo permiso de trabajo' : 'Permiso de trabajo',
                 width: 1040,

@@ -10,7 +10,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirProgramacion(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Programaciones/Programacion.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva programación' : 'Editar programación',
                 width: 1240,

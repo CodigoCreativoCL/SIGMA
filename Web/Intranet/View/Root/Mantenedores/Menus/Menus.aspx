@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirMenu(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Root/Mantenedores/Menus/Menu.aspx") %>?query=' + query,
                 title: 'Menu',
                 width: 1000,
@@ -17,7 +17,7 @@
         }
 
         function abrirFunciones(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Root/Mantenedores/Menus/MenuFuncion.aspx") %>?query=' + query,
                 title: 'Menu funcion',
                 width: 1000,

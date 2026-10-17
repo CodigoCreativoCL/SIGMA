@@ -23,7 +23,7 @@
         }
 
         function abrirReprogramar(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanOcurrenciaReprogramar.aspx") %>?query=' + query,
                 title: 'Reprogramar la mantención',
                 width: 720,

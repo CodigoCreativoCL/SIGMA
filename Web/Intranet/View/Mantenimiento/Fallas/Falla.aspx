@@ -15,7 +15,7 @@
     <script type="text/javascript">
         var queryNuevaIndisponibilidad = '<%=QueryNuevaIndisponibilidad %>';
         function abrirIndisponibilidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Fallas/ActivoIndisponibilidad.aspx") %>?query=' + query,
                 title: query === queryNuevaIndisponibilidad ? 'Registrar indisponibilidad' : 'Indisponibilidad', width: 860, initialHeight: 560
             });

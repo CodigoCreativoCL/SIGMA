@@ -27,7 +27,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirGrupo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Organizacion/Grupos/Grupo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo grupo de trabajo' : 'Editar grupo de trabajo',
                 width: 1060,

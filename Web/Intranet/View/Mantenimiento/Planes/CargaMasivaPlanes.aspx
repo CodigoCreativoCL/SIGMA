@@ -20,7 +20,7 @@
         }
         function closeWindow() {
             try {
-                if (window.parent && window.parent.SigmaModal) { window.parent.SigmaModal.close(); return; }
+                if (window.parent && window.parent.SigmaDrawer) { window.parent.SigmaDrawer.close(); return; }
             } catch (e) { }
             var w = getRadWindow();
             if (w) { if (w.BrowserWindow && w.BrowserWindow.refresh) w.BrowserWindow.refresh(); w.close(); }

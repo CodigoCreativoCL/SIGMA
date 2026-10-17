@@ -540,7 +540,7 @@
     // ------------------------------------------------------------- acciones
     function modal(tipo, url, titulo) {
         var t = { reprogramar: 'Reprogramar ocurrencia', programacion: titulo || 'Programación', carga: 'Carga masiva de planes', pauta: 'Programación de pauta' }[tipo] || titulo;
-        SigmaModal.open({ url: url, title: t, width: tipo === 'programacion' ? 1240 : tipo === 'carga' ? 860 : 900, initialHeight: tipo === 'programacion' ? 760 : 620, minHeight: 480 });
+        SigmaDrawer.open({ url: url, title: t, width: tipo === 'programacion' ? 1240 : tipo === 'carga' ? 860 : 900, initialHeight: tipo === 'programacion' ? 760 : 620, minHeight: 480 });
     }
     function generarUna(btn) {
         if (!confirm('¿Generar la orden de trabajo para esta ocurrencia?')) return;

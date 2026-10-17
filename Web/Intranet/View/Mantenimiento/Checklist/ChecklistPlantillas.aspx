@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirChecklistPlantilla(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistPlantilla.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva pauta de inspección' : 'Editar pauta de inspección',
                 width: 860,
@@ -17,7 +17,7 @@
         }
         // Previsualización de solo lectura (clic en la fila, sin entrar a editar).
         function verChecklist(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistPlantillaVista.aspx") %>?query=' + query,
                 title: 'Vista de la pauta',
                 width: 820,
@@ -32,7 +32,7 @@
         }
         // Publicar / historial de versiones de la pauta.
         function abrirVersiones(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistVersion.aspx") %>?query=' + query,
                 title: 'Versiones de la pauta',
                 width: 720,

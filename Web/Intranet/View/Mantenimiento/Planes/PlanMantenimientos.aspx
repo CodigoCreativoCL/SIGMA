@@ -17,7 +17,7 @@
         }
 
         function abrirCargaMasiva() {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/CargaMasivaPlanes.aspx") %>',
                 title: 'Carga masiva de planes',
                 width: 860,

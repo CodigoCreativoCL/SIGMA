@@ -114,7 +114,7 @@
     <link href="../Css/LookAndFeel/sigma-notificaciones.css?vrs=30" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-notificaciones-np.css?vrs=3" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-toast.css?vrs=1" rel="stylesheet" />
-    <link href="../Css/LookAndFeel/sigma-dialog.css?vrs=10" rel="stylesheet" />
+    <link href="../Css/LookAndFeel/sigma-drawer.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-aviso.css?vrs=1" rel="stylesheet" />
     <link href="../Css/LookAndFeel/sigma-listas.css?vrs=14" rel="stylesheet" />
     <%-- Los botones del sitio. Va DESPUES de todas las demas: redefine
@@ -173,7 +173,7 @@
                comprobacion de existencia ya no hace falta: el componente se
                crea al primer uso, no es un control que pueda no haberse
                renderizado. */
-            SigmaModal.open({
+            SigmaDrawer.open({
                 url: query ? url + "?query=" + query : url,
                 title: 'Detalle de la alerta',
                 width: 1000,
@@ -652,7 +652,7 @@
                  pero el marco, el responsive y el ciclo de vida ya no dependen
                  de RadWindow. Debe cargarse antes de las aperturas de cada vista. --%>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/gsap/gsap.min.js") %>"></script>
-            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-dialog.js") %>?vrs=12"></script>
+            <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-drawer.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-aviso.js") %>?vrs=1"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-notificaciones-panel.js") %>?vrs=7"></script>
             <script type="text/javascript" src="<%=ResolveUrl("~/Js/sigma-sidebar.js") %>?vrs=2"></script>

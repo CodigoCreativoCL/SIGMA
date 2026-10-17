@@ -12,7 +12,7 @@
         var queryNueva = '<%=QueryNueva %>';
 
         function abrirPlanActividad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanActividad.aspx") %>?query=' + query,
                 title: query === queryNueva ? 'Nueva actividad' : 'Editar actividad',
                 width: 960,

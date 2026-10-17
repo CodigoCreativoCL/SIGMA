@@ -36,7 +36,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirProveedor(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Terceros/Proveedores/Proveedor.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo proveedor' : 'Proveedor',
                 width: 1000,

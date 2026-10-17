@@ -376,21 +376,21 @@
         /* Las altas y ediciones siguen en su ficha modal de siempre: el centro
            reúne la información, no reemplaza los mantenedores. */
         function abrirRepuesto(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo repuesto' : 'Editar repuesto',
                 width: 1080, initialHeight: 680, onClose: refresh
             });
         }
         function abrirCompatibilidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Compatibilidades/RepuestoCompatibilidad.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva compatibilidad' : 'Editar compatibilidad',
                 width: 820, initialHeight: 520, onClose: refresh
             });
         }
         function abrirMovimiento(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Movimientos/Movimiento.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo movimiento' : 'Movimiento de inventario',
                 width: 880, initialHeight: 600, onClose: refresh
@@ -398,20 +398,20 @@
         }
         /* La ficha de la bodega, donde se crean y editan sus ubicaciones. */
         function abrirBodega(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Bodegas/Bodega.aspx") %>?query=' + query,
                 title: 'Bodega y sus ubicaciones', width: 900, initialHeight: 620, onClose: refresh
             });
         }
         function abrirTipoRepuesto(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/RepuestoTipo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo tipo de repuesto' : 'Editar tipo de repuesto',
                 width: 720, initialHeight: 470, onClose: refresh
             });
         }
         function abrirExistencia(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Existencias/Existencia.aspx") %>?query=' + query,
                 title: 'Existencia en bodega', width: 820, initialHeight: 520, onClose: refresh
             });

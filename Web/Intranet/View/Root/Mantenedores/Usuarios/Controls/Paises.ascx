@@ -2,7 +2,7 @@
 
 <script type="text/javascript">
     function abrirPaises(query) {
-        return SigmaModal.open({
+        return SigmaDrawer.open({
             url: '<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/UsuarioPaises.aspx") %>?query=' + query,
             title: 'Usuario paises',
             width: 1000,

@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPlanta(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Organizacion/Plantas/Planta.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva planta' : 'Editar planta',
                 width: 960,

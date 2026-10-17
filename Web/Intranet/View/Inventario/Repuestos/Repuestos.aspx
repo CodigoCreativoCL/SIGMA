@@ -9,7 +9,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirCargaMasiva() {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/CargaMasivaRepuestos.aspx") %>',
                 title: 'Carga masiva de repuestos',
                 width: 1080,
@@ -18,7 +18,7 @@
         }
 
         function abrirRepuesto(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Inventario/Repuestos/Repuesto.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo repuesto' : 'Editar repuesto',
                 width: 1040,

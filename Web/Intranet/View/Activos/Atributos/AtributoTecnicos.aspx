@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirAtributo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Atributos/AtributoTecnico.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo atributo técnico' : 'Editar atributo técnico',
                 width: 860,

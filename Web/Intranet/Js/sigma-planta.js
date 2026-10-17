@@ -229,13 +229,13 @@ const SIGMA = {
     if (window.abrirCargaMasiva) window.abrirCargaMasiva();
   },
   nuevoComponente(id){
-    const a = S.activos[id]; if (!a || !window.SigmaModal) return;
-    window.SigmaModal.open({ url:CFG.urlComponente + '?query=' + a.qComp, title:'Nuevo componente de ' + a.nombre, width:1040, initialHeight:620 });
+    const a = S.activos[id]; if (!a || !window.SigmaDrawer) return;
+    window.SigmaDrawer.open({ url:CFG.urlComponente + '?query=' + a.qComp, title:'Nuevo componente de ' + a.nombre, width:1040, initialHeight:620 });
   },
   /* La ficha del activo con el padre ya elegido (Padre= -> ActivoForm.PadreFijo), como en el centro 360. */
   nuevoSubactivo(id){
-    const a = S.activos[id]; if (!a || !a.qSub || !CFG.urlActivo || !window.SigmaModal) return;
-    window.SigmaModal.open({ url:CFG.urlActivo + '?query=' + a.qSub, title:'Nuevo subactivo de ' + a.nombre, width:1060, initialHeight:620 });
+    const a = S.activos[id]; if (!a || !a.qSub || !CFG.urlActivo || !window.SigmaDrawer) return;
+    window.SigmaDrawer.open({ url:CFG.urlActivo + '?query=' + a.qSub, title:'Nuevo subactivo de ' + a.nombre, width:1060, initialHeight:620 });
   },
   /* Cambiar el estado pide decir por que, como en la ficha: queda en la historia. */
   pedirMotivo(kind, id, idx, select){

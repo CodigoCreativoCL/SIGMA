@@ -1782,8 +1782,8 @@ A.bulkload = function () { openPanel({ t: 'bulk' }); };
 A.bulkgo = function () {
   closePanel();
   var url = CFG.base_ + 'View/Mantenimiento/Planes/CargaMasivaPlanes.aspx';
-  if (window.SigmaModal) {
-    SigmaModal.open({ url: url, title: 'Carga masiva de planes', width: 1100, initialHeight: 720 });
+  if (window.SigmaDrawer) {
+    SigmaDrawer.open({ url: url, title: 'Carga masiva de planes', width: 1100, initialHeight: 720 });
     var al = function () { document.removeEventListener('sigma:modalclosed', al); recargarLista(); };
     document.addEventListener('sigma:modalclosed', al);
   } else window.open(url, '_blank');
@@ -3011,8 +3011,8 @@ function calLibHTML() {
     }).join('') || '<div class="cp-empty">' + ic('link', 18) + '<b>Aún no hay calendarios compartidos</b>Se crean en Programaciones y se pueden usar desde cualquier intervención.</div>');
 }
 function abrirModalSitio(url, titulo, alCerrar) {
-  if (window.SigmaModal) {
-    SigmaModal.open({ url: url, title: titulo, width: 1000, initialHeight: 700 });
+  if (window.SigmaDrawer) {
+    SigmaDrawer.open({ url: url, title: titulo, width: 1000, initialHeight: 700 });
     var al = function () { document.removeEventListener('sigma:modalclosed', al); alCerrar(); };
     document.addEventListener('sigma:modalclosed', al);
   } else window.open(url, '_blank');

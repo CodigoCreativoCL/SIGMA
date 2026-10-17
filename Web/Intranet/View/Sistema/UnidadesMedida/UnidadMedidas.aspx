@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirUnidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Sistema/UnidadesMedida/UnidadMedida.aspx") %>?query=' + query,
                 title: 'Unidad medida',
                 width: 820,

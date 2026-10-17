@@ -9,7 +9,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirCentroCosto(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Organizacion/CentrosCosto/CentroCosto.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo centro de costo' : 'Editar centro de costo',
                 width: 900,

@@ -6,7 +6,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPerfil(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Root/Mantenedores/Perfiles/Perfil.aspx") %>?query=' + query,
                 title: 'Perfil',
                 width: 1000,

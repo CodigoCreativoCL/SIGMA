@@ -22,7 +22,7 @@
         var queryNuevaProgramacion = '<%=QueryNuevaProgramacion %>';
 
         function abrirTareaProgramacion(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Tareas/TareaProgramacion.aspx") %>?query=' + query,
                 title: query === queryNuevaProgramacion ? 'Programar tarea' : 'Programación de la tarea',
                 width: 860,

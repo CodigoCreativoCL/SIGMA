@@ -30,7 +30,7 @@
            esta no lo tenía: el botón no hacía nada.
 
            Se piden las dos puertas porque conviven dos marcos: el RadWindow
-           de siempre y el SigmaModal nuevo, que es el que abre la campana. */
+           de siempre y el SigmaDrawer nuevo, que es el que abre la campana. */
         function getRadWindow() {
             var oWindow = null;
             if (window.radWindow) oWindow = window.radWindow;
@@ -48,7 +48,7 @@
             }
 
             try {
-                if (window.parent && window.parent.SigmaModal) window.parent.SigmaModal.close();
+                if (window.parent && window.parent.SigmaDrawer) window.parent.SigmaDrawer.close();
             } catch (e) { }
         }
     </script>

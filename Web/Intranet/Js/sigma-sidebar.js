@@ -217,7 +217,7 @@
     }
     function irA(x) {
         if (!x) return; var url = x.url; cerrarCk();
-        if (x.modal && window.SigmaModal) { SigmaModal.open({ url: url, title: x.t, width: 1000, initialHeight: 680 }); return; }
+        if (x.modal && window.SigmaDrawer) { SigmaDrawer.open({ url: url, title: x.t, width: 1000, initialHeight: 680 }); return; }
         location.href = url;
     }
     document.addEventListener('keydown', function (e) {

@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPermiso(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Root/Mantenedores/PermisosUsuario/PermisoUsuario.aspx") %>?query=' + query,
                 title: 'Permiso usuario',
                 width: 960,

@@ -2,7 +2,7 @@
 
 <script type="text/javascript">
     function abrirPerfil(query) {
-        return SigmaModal.open({
+        return SigmaDrawer.open({
             url: '<%=ResolveUrl("~/View/Root/Mantenedores/Usuarios/UsuarioPerfiles.aspx") %>?query=' + query,
             title: 'Usuario perfiles',
             width: 1000,

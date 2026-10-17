@@ -15,7 +15,7 @@
     <script type="text/javascript">
         var CID_NUEVO = '<%= NuevoQuery %>';
         function abrirDependencia(query, esNuevo) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemDependencia.aspx") %>?query=' + query,
                 title: esNuevo ? 'Nueva dependencia entre ítems' : 'Editar dependencia entre ítems',
                 width: 900,

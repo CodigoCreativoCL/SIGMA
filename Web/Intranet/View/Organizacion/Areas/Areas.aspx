@@ -9,7 +9,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirArea(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Organizacion/Areas/Area.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva área' : 'Editar área',
                 width: 960,

@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirActivoMedidor(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo medidor' : 'Editar medidor',
                 width: 920,

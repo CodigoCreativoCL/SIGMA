@@ -239,7 +239,7 @@
 
         /* Alta/edición de la pauta en el mismo modal de siempre. */
         function abrirPauta(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistPlantilla.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva pauta de inspección' : 'Editar pauta de inspección',
                 width: 860, initialHeight: 560
@@ -247,20 +247,20 @@
         }
         /* Umbrales y dependencias de la pauta, en modal, filtrados al borrador. */
         function abrirUmbrales(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemValidacions.aspx") %>?query=' + query,
                 title: 'Umbrales de la pauta', width: 980, initialHeight: 640
             });
         }
         function abrirDependencias(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemDependencias.aspx") %>?query=' + query,
                 title: 'Dependencias entre ítems', width: 980, initialHeight: 640
             });
         }
         /* Alta/edición de una programación de la pauta, en modal. */
         function abrirProgramacion(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistProgramacion.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nueva programación de pauta' : 'Editar programación de pauta',
                 width: 860, initialHeight: 560

@@ -37,7 +37,7 @@
     padding: 4px 4px 8px;
 }
 
-/* SigmaModal ya comunica la accion en su barra. Al embeber una ficha se
+/* SigmaDrawer ya comunica la accion en su barra. Al embeber una ficha se
    elimina el segundo titulo de pagina y el contenido comienza en el resumen
    o en la primera seccion: una sola jerarquia, no una pagina dentro de otra. */
 html.sigma-dialog-child .sigma-modal {

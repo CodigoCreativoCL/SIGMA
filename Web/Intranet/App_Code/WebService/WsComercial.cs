@@ -135,7 +135,7 @@ public class WsComercial : System.Web.Services.WebService
     /// <summary>
     /// Las vistas de «Suscripciones» y «Clientes» del Centro (lo que antes eran
     /// seis menús, bloque 459). Reutiliza los controladores de esas pantallas;
-    /// cada fila trae el query cifrado de su ficha, que se abre con SigmaModal
+    /// cada fila trae el query cifrado de su ficha, que se abre con SigmaDrawer
     /// igual que en el Centro de Planificación. Sin filtro por cliente en
     /// sesión: el Centro Comercial es de la plataforma.
     /// </summary>

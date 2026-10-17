@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirEspecialidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Organizacion/Especialidades/UsuarioEspecialidad.aspx") %>?query=' + query,
                 title: 'Usuario especialidad',
                 width: 900,

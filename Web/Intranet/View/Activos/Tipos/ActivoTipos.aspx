@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirActivoTipo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo tipo de activo' : 'Editar tipo de activo',
                 width: 860,

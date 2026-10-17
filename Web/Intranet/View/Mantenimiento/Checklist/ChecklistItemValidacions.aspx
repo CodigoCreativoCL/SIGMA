@@ -15,7 +15,7 @@
     <script type="text/javascript">
         var CIV_NUEVO = '<%= NuevoQuery %>';
         function abrirValidacion(query, esNuevo) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Checklist/ChecklistItemValidacion.aspx") %>?query=' + query,
                 title: esNuevo ? 'Nueva validación de ítem' : 'Editar validación de ítem',
                 width: 900,

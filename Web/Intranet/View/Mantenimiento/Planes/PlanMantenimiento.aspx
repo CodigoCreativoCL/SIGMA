@@ -31,7 +31,7 @@
 
         function abrirPlanHito(query) {
             seccionPendiente = 'hitos';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanHito.aspx") %>?query=' + query,
                 title: query === queryNuevoHito ? 'Nuevo hito' : 'Editar hito',
                 width: 960,
@@ -41,7 +41,7 @@
 
         function abrirPlanActivo(query) {
             seccionPendiente = 'equipos';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanActivo.aspx") %>?query=' + query,
                 title: query === queryNuevoActivo ? 'Asociar equipo' : 'Equipo del plan',
                 width: 900,
@@ -56,7 +56,7 @@
             seccionPendiente = 'hitos';
             var h = document.getElementById('hdnHitoAbierto');
             if (h) h.value = hito;
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Mantenimiento/Planes/PlanActividad.aspx") %>?query=' + query,
                 title: nueva ? 'Nueva actividad' : 'Actividad del hito',
                 width: 960,

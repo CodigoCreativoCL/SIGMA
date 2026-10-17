@@ -295,7 +295,7 @@
         function abrirTimer() {
             var fileUpload = $('#<%=fldDocumento.ClientID %>');
             if (fileUpload[0].files[0] != null) {
-                return SigmaModal.open({
+                return SigmaDrawer.open({
                     url: '<%=ResolveUrl("~/View/Comun/Procesamiento.aspx") %>',
                     title: 'Procesamiento',
                     width: 1000,
@@ -306,12 +306,12 @@
             return false;
         }
 
-        /* La ventana de procesamiento ahora la abre SigmaModal, asi que el
+        /* La ventana de procesamiento ahora la abre SigmaDrawer, asi que el
            cierre tiene que ir por el mismo lado. El code-behind llama a esta
            funcion al terminar la carga; con el $find viejo apuntaba a un
            control que ya nadie abre y la ventana no se cerraba nunca. */
         function closeWindowProcesamiento() {
-            if (window.SigmaModal) SigmaModal.close();
+            if (window.SigmaDrawer) SigmaDrawer.close();
         }
 
         $(document).ready(function () {

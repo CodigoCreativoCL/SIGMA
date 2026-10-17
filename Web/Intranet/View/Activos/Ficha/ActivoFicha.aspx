@@ -39,7 +39,7 @@
            aca, en el mismo modal que usa la edicion. */
         function abrirActivo(query) {
             seccionPendiente = null;
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Activos/Activo.aspx") %>?query=' + query,
                 title: String(query) === '0' ? 'Nuevo activo' : 'Editar activo',
                 width: 1060,
@@ -52,7 +52,7 @@
            equipo que se esta mirando es perder el lugar. */
         function abrirComponente(query) {
             seccionPendiente = 'componentes';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Componentes/ActivoComponente.aspx") %>?query=' + query,
                 title: query === queryNuevoComponente ? 'Nuevo componente' : 'Editar componente',
                 width: 1040,
@@ -62,7 +62,7 @@
 
         function abrirVariable(query) {
             seccionPendiente = 'condicion';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Variables/ActivoVariable.aspx") %>?query=' + query,
                 title: query === queryNuevaVariable ? 'Nueva variable de condición' : 'Editar variable',
                 width: 940,
@@ -72,7 +72,7 @@
 
         function abrirMedidor(query) {
             seccionPendiente = 'condicion';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Medidores/ActivoMedidor.aspx") %>?query=' + query,
                 title: query === queryNuevoMedidor ? 'Nuevo contador' : 'Editar contador',
                 width: 920,
@@ -85,7 +85,7 @@
            de arriba trae solo el equipo. */
         function abrirLectura(query) {
             seccionPendiente = 'condicion';
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Ficha/RegistrarLectura.aspx") %>?query=' + (query || queryLecturaSuelta),
                 title: 'Registrar lectura',
                 width: 860,
@@ -96,7 +96,7 @@
         /* Un cliente que parte con SIGMA llega con su catalogo en una
            planilla: doscientos equipos de a uno son doscientos modales. */
         function abrirCargaMasiva() {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Activos/Ficha/CargaMasivaActivos.aspx") %>',
                 title: 'Carga masiva de activos',
                 width: 1080,
@@ -170,7 +170,7 @@
             m.onload = function () {
                 try {
                     m.contentWindow.radWindow = m.radWindow;
-                    /* Como en SigmaModal: sin el titulo propio de la pagina, que aca ya lo dice la cabecera. */
+                    /* Como en SigmaDrawer: sin el titulo propio de la pagina, que aca ya lo dice la cabecera. */
                     m.contentDocument.documentElement.classList.add('sigma-dialog-child');
                 } catch (e) { }
             };
@@ -534,7 +534,7 @@
             }
             if (d.k === 'rep' && d.url)
                 acc.appendChild(esBoton('es-contorno', 'mdi-open-in-new', 'Ver ficha del repuesto', function () {
-                    SigmaModal.open({ url: d.url, title: 'Repuesto', width: 1000, initialHeight: 620 });
+                    SigmaDrawer.open({ url: d.url, title: 'Repuesto', width: 1000, initialHeight: 620 });
                 }));
             if (acc.children.length) det.appendChild(acc);
             if (d.pie) det.appendChild(esNodo('p', 'sg-es-det-pie', d.pie));
@@ -614,7 +614,7 @@
                 modelo: ['<%=ResolveUrl("~/View/Activos/Modelos/ActivoModelo.aspx") %>?query=0', 'Nuevo modelo', 820, 560]
             }[que];
             if (que === 'tipos') { window.location.href = '<%=ResolveUrl("~/View/Activos/Tipos/ActivoTipos.aspx") %>'; return false; }
-            if (u) SigmaModal.open({ url: u[0], title: u[1], width: u[2], initialHeight: u[3] });
+            if (u) SigmaDrawer.open({ url: u[0], title: u[1], width: u[2], initialHeight: u[3] });
             return false;
         }
         function sgListaVista(v) {

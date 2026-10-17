@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirModulo(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%= ResolveUrl("~/View/Root/ModulosSistema/NuevoModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
             oWin.set_title(!query ? 'Nuevo Módulo' : 'Editar Módulo',
                 title: 'Nuevo modulo sistema',

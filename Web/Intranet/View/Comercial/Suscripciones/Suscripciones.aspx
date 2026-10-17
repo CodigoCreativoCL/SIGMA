@@ -6,7 +6,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirSuscripcion(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%=ResolveUrl("~/View/Comercial/Suscripciones/Suscripcion.aspx") %>?query=' + query,
                 title: 'Suscripcion',
                 width: 960,

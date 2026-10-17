@@ -8,7 +8,7 @@
 <asp:Content ID="ContentScript" ContentPlaceHolderID="chpScript" runat="server">
     <script type="text/javascript">
         function abrirPrivacidad(query) {
-            return SigmaModal.open({
+            return SigmaDrawer.open({
                 url: '<%= ResolveUrl("~/View/Root/PrivacidadModuloSistema/NuevaPrivacidadModuloSistema.aspx") %>?query=' + encodeURIComponent(query));
             oWin.set_title(!query ? 'Nueva Política de Privacidad' : 'Editar Política de Privacidad',
                 title: 'Nueva privacidad modulo sistema',
