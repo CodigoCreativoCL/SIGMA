@@ -15,7 +15,7 @@
     <link href="Imagen/landing/poster-ai.jpg" rel="preload" as="image" />
     <script src="Js/gsap/gsap.min.js" defer></script>
     <script src="Js/gsap/ScrollTrigger.min.js" defer></script>
-    <script src="Js/Inicio/sigma-inicio.js?vrs=1" type="module"></script>
+    <script src="Js/Inicio/sigma-inicio.js?vrs=2" type="module"></script>
 </head>
 <body>
 <div id="sg-root" class="sg" style="font-family: 'Sora', 'Segoe UI', system-ui, sans-serif; color: #17223B; background: #070A14">
@@ -533,7 +533,7 @@
             <tr class="sg-group"><th scope="colgroup" colspan="4">Límites</th></tr>
             <tr><th scope="row">Plantas</th><td><span>1</span></td><td class="is-feat"><span>3</span></td><td><span>Ilimitadas</span></td></tr>
             <tr><th scope="row">Usuarios</th><td><span>5</span></td><td class="is-feat"><span>25</span></td><td><span>Ilimitados</span></td></tr>
-            <tr><th scope="row">Activos</th><td><span>150</span></td><td class="is-feat"><span>750</span></td><td><span class="sg-tbd">[POR CONFIRMAR]</span></td></tr>
+            <tr><th scope="row">Activos</th><td><span>150</span></td><td class="is-feat"><span>750</span></td><td><span>Ilimitados</span></td></tr>
             <tr><th scope="row">Almacenamiento</th><td><span>5 GB</span></td><td class="is-feat"><span>50 GB</span></td><td><span>500 GB</span></td></tr>
             <tr class="sg-group"><th scope="colgroup" colspan="4">Operación</th></tr>
             <tr><th scope="row">Gestión de activos y componentes</th><td><span class="sg-yes" role="img" aria-label="Incluido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td class="is-feat"><span class="sg-yes" role="img" aria-label="Incluido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td><td><span class="sg-yes" role="img" aria-label="Incluido"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="20 6 9 17 4 12"></polyline></svg></span></td></tr>

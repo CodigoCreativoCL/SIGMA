@@ -575,7 +575,7 @@ function bindMods() {
   });
 }
 
-const PRICES = { basico: [9, 90], medio: [22, 220], full: [45, 450] };
+const PRICES = { basico: [9, 90, 25.7], medio: [22, 220, 62.7], full: [45, 450, 128.3] }; /* UF/mes, UF/año, UF/trimestre (−5 %, Anexo F) */
 let billing = 'mensual';
 function setBilling(b) {
   if (b === billing) return;
@@ -585,7 +585,7 @@ function setBilling(b) {
     const m = PRICES[k][0], a = PRICES[k][1];
     let big, per, sub;
     if (b === 'anual') { big = String(a); per = '/ año'; sub = 'Equivale a ' + (a / 12).toFixed(1).replace('.', ',') + ' UF al mes · ahorras 17%'; }
-    else if (b === 'trimestral') { big = '[—]'; per = '/ trimestre'; sub = 'Base ' + m + ' UF/mes · descuento trimestral [POR DEFINIR]'; }
+    else if (b === 'trimestral') { const q = PRICES[k][2]; big = String(q).replace('.', ','); per = '/ trimestre'; sub = 'Equivale a ' + (q / 3).toFixed(1).replace('.', ',') + ' UF al mes · ahorras 5%'; }
     else { big = String(m); per = '/ mes'; sub = 'o ' + a + ' UF al año (ahorra 17%)'; }
     $('[data-pb="' + k + '"]').textContent = big; $('[data-pp="' + k + '"]').textContent = per; $('[data-ps="' + k + '"]').textContent = sub;
   });
