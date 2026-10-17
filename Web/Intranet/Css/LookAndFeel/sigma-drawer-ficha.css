@@ -1,0 +1,145 @@
+﻿@charset "utf-8";
+
+/* ============================================================================
+   SIGMA · FICHA DENTRO DEL DRAWER (17-10-2026)
+
+   Patrón de los drawers de Redisenos/CentroComercial/artefacto (DPlan, DCliente, DSuscripcion, DrawerComponentes):
+     · cuerpo gris #F4F6FA con margen 16/22 px y separación de 12 px;
+     · cada bloque es una tarjeta blanca (borde #E2E7F0, radio 14, relleno 16) — la sección lleva su título arriba;
+     · campos: etiqueta 11 px peso 800 #4A556D, control de 42 px, borde #CFD6E3, radio 9, foco turquesa;
+     · barra inferior fija y blanca: Cancelar (ghost) a la izquierda y la acción principal morada a la derecha.
+   Solo aplica cuando la página vive en el drawer (SigmaDrawer agrega html.sigma-dialog-child): abierta sola no cambia.
+   ============================================================================ */
+html.sigma-dialog-child,
+html.sigma-dialog-child body { background: #F4F6FA !important; }
+html.sigma-dialog-child body { font-family: Sora, "Segoe UI", system-ui, sans-serif; color: #17223B; }
+
+html.sigma-dialog-child .sigma-modal {
+    padding: 16px 22px 0 !important;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ---- tarjetas ---- */
+html.sigma-dialog-child .sigma-modal .sigma-modal-grid,
+html.sigma-dialog-child .sigma-modal .sigma-form-seccion,
+html.sigma-dialog-child .sigma-modal .sigma-modal-section,
+html.sigma-dialog-child .sigma-modal .card-box {
+    margin: 0 !important;
+    padding: 16px !important;
+    border: 1px solid #E2E7F0 !important;
+    border-radius: 14px !important;
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+}
+html.sigma-dialog-child .sigma-modal .sigma-modal-grid .sigma-modal-grid { padding: 0 !important; border: 0 !important; }
+
+/* Título de sección: la cabecera de la tarjeta que sigue (13 px peso 700, tinta). */
+html.sigma-dialog-child .sigma-modal .sigma-modal-seccion {
+    margin: 6px 0 -4px !important;
+    padding: 0 4px !important;
+    border: 0 !important;
+    color: #17223B !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+html.sigma-dialog-child .sigma-modal .sigma-modal-seccion > i { color: #4A556D !important; font-size: 18px !important; }
+
+/* El resumen de arriba (hero) es una tarjeta neutra: el color va en el ícono, nunca de fondo. */
+html.sigma-dialog-child .sigma-modal .sigma-modal-hero {
+    margin: 0 !important;
+    padding: 16px !important;
+    border: 1px solid #E2E7F0;
+    border-radius: 14px !important;
+    background: #FFFFFF !important;
+}
+
+/* ---- campos ---- */
+html.sigma-dialog-child .sigma-modal .sigma-modal-field > label,
+html.sigma-dialog-child .sigma-modal .sigma-modal-label {
+    color: #4A556D !important;
+    font-size: 11px !important;
+    font-weight: 800 !important;
+    letter-spacing: 0 !important;
+    text-transform: none !important;
+}
+html.sigma-dialog-child .sigma-modal input[type="text"],
+html.sigma-dialog-child .sigma-modal input[type="password"],
+html.sigma-dialog-child .sigma-modal input[type="number"],
+html.sigma-dialog-child .sigma-modal input[type="email"],
+html.sigma-dialog-child .sigma-modal select {
+    min-height: 42px;
+    box-sizing: border-box;
+    padding: 0 12px;
+    border: 1px solid #CFD6E3 !important;
+    border-radius: 9px !important;
+    background-color: #FFFFFF;
+    color: #17223B;
+    font-family: inherit;
+    font-size: 14px;
+    box-shadow: none;
+}
+html.sigma-dialog-child .sigma-modal textarea {
+    box-sizing: border-box;
+    padding: 10px 12px;
+    border: 1px solid #CFD6E3 !important;
+    border-radius: 9px !important;
+    font-family: inherit;
+    font-size: 13px;
+    line-height: 1.5;
+    color: #17223B;
+}
+html.sigma-dialog-child .sigma-modal input:focus,
+html.sigma-dialog-child .sigma-modal select:focus,
+html.sigma-dialog-child .sigma-modal textarea:focus {
+    border-color: #16C6C9 !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 3px rgba(22, 198, 201, .27) !important;
+}
+html.sigma-dialog-child .sigma-modal input[readonly],
+html.sigma-dialog-child .sigma-modal input:disabled { background-color: #F4F6FA; color: #4A556D; }
+
+/* ---- barra inferior fija ---- */
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 4px -22px 0 !important;
+    padding: 14px 22px !important;
+    border-top: 1px solid #E2E7F0 !important;
+    background: #FFFFFF;
+    justify-content: flex-end;
+    gap: 10px !important;
+}
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .Button,
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .ButtonCerrar,
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .sg-btn {
+    height: 40px !important;
+    min-height: 40px !important;
+    padding: 0 18px !important;
+    border: 0 !important;
+    border-radius: 10px !important;
+    font: 700 13px/1 Sora, "Segoe UI", system-ui, sans-serif !important;
+    box-shadow: none !important;
+    background-image: none !important;
+    cursor: pointer;
+}
+/* Acción principal: morado, a la derecha */
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .Button { order: 2; background: #6732F4 !important; color: #FFFFFF !important; }
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .Button:hover { background: #4820C9 !important; }
+/* Cerrar / Cancelar: ghost, a la izquierda */
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .ButtonCerrar { order: 0; margin-right: auto; background: #F2EFFF !important; color: #5426D9 !important; }
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .ButtonCerrar:hover { background: #E7E1FF !important; }
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .Button:focus-visible,
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .ButtonCerrar:focus-visible { outline: 3px solid rgba(22, 198, 201, .27) !important; outline-offset: 1px; }
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .Button:disabled,
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .aspNetDisabled { opacity: .42; cursor: not-allowed; }
+html.sigma-dialog-child .sigma-modal .sigma-modal-actions .sigma-modal-actions-nota { order: 1; margin-right: auto; }
+
+@media (max-width: 680px) {
+    html.sigma-dialog-child .sigma-modal { padding: 12px 14px 0 !important; }
+    html.sigma-dialog-child .sigma-modal .sigma-modal-actions { margin: 4px -14px 0 !important; padding: 12px 14px !important; }
+}
