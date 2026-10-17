@@ -1,319 +1,78 @@
-﻿/* =============================================================
-   SIGMA — PANTALLA DE ACCESO
-   Sistema de diseño SIGMA 2026.1 · Código Creativo
+﻿/* SIGMA · Login — misma familia visual que la landing (tokens en sigma-landing.css, clase .sg). */
 
-   La clase fg-login-body que traia el markup no estaba definida en
-   ninguna hoja: el login se venia mostrando sin estilo. Esta hoja lo
-   reconstruye completo.
+.lg { min-height: 100vh; display: grid; grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); background: var(--canvas); }
+.lg-film { position: absolute; left: 0; right: 0; top: 0; height: 3px; z-index: 5; background: linear-gradient(90deg, var(--sigma-cyan), var(--sigma-blue), var(--sigma-purple), #FF5C8A); }
 
-   ESTRUCTURA
-     Dos paneles. A la izquierda la marca sobre navy, con el degradado
-     de identidad como acento. A la derecha el formulario sobre fondo
-     claro, que es lo que la marca pide para web.
+/* Panel de marca */
+.lg-brand { position: relative; overflow: hidden; isolation: isolate; background: var(--night); color: #fff; display: flex; flex-direction: column; padding: 56px 64px 40px; min-height: 640px; }
+.lg-brand::before { content: ""; position: absolute; z-index: -1; width: 900px; height: 900px; right: -320px; bottom: -380px; border-radius: 50%; background: radial-gradient(closest-side, rgba(103,50,244,.42), rgba(103,50,244,0)); }
+.lg-brand::after { content: ""; position: absolute; z-index: -1; width: 600px; height: 600px; left: -260px; top: -260px; border-radius: 50%; background: radial-gradient(closest-side, rgba(22,198,201,.2), rgba(22,198,201,0)); }
+.lg-gl { position: absolute; inset: 0; width: 100%; height: 100%; z-index: -1; display: block; }
+.lg-logo img { height: 52px; width: auto; display: block; }
+.lg-copy { margin-top: auto; max-width: 560px; position: relative; }
+.lg-copy h1 { font-size: clamp(40px, 4.4vw, 68px); line-height: .94; font-weight: 800; letter-spacing: -.055em; }
+.lg-copy p { margin-top: 20px; color: var(--on-night); font-size: 16px; max-width: 470px; }
+.lg-points { margin-top: 28px; display: flex; flex-direction: column; border-top: 1px solid var(--night-line); }
+.lg-points li { display: flex; align-items: center; gap: 14px; padding: 13px 0; border-bottom: 1px solid var(--night-line); font-size: 14px; color: rgba(255,255,255,.86); }
+.lg-points li img { height: 18px; width: auto; display: block; }
+.lg-points li .sg-mono { color: var(--sigma-cyan); font-size: 11px; width: 22px; }
+.lg-news { margin-top: 30px; display: flex; align-items: center; gap: 14px; padding: 10px 16px 10px 10px; border-radius: 16px; background: rgba(255,255,255,.05); border: 1px solid var(--night-line); text-decoration: none; color: #fff; max-width: 440px; transition: background .25s, border-color .25s; }
+.sg a.lg-news { color: #fff; }
+.sg a.lg-news:hover { background: rgba(255,255,255,.09); border-color: rgba(22,198,201,.4); color: #fff; }
+.lg-news-thumb { position: relative; width: 108px; aspect-ratio: 16 / 9; border-radius: 10px; overflow: hidden; flex: none; }
+.lg-news-thumb img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.lg-news-thumb i { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(7,10,20,.35); }
+.lg-news-thumb svg { width: 20px; height: 20px; color: #fff; }
+.lg-news b { display: block; font-size: 13.5px; }
+.lg-news small { display: block; font-size: 12px; color: rgba(255,255,255,.6); }
+.lg-brand-foot { margin-top: 44px; display: flex; align-items: center; justify-content: space-between; gap: 16px; color: rgba(255,255,255,.5); }
+.lg-brand-foot img { height: 30px; width: auto; display: block; opacity: .9; }
 
-     Bajo 992px el panel de marca se pliega a una franja superior: en un
-     telefono el formulario tiene que quedar arriba, no empujado.
-   ============================================================= */
+/* Panel del formulario */
+.lg-side { position: relative; display: flex; flex-direction: column; padding: 32px 48px; }
+.lg-top { display: flex; justify-content: space-between; align-items: center; }
+.sg a.lg-back { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; color: var(--muted); font-size: 13px; font-weight: 600; text-decoration: none; }
+.sg a.lg-back:hover { color: var(--sigma-blue); }
+.lg-back svg { width: 16px; height: 16px; }
+.lg-card { margin: auto; width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 22px; padding: 32px 0; }
+.lg-card h2 { font-size: 40px; font-weight: 800; letter-spacing: -.045em; line-height: 1; }
+.lg-card > p { color: var(--muted); font-size: 15px; margin-top: -10px; }
+.lg-field { display: flex; flex-direction: column; gap: 7px; }
+.lg-field label { font-size: 11px; font-weight: 800; color: var(--label); letter-spacing: .06em; text-transform: uppercase; }
+.lg-input-wrap { position: relative; display: flex; align-items: center; }
+.lg-input-wrap > svg { position: absolute; left: 14px; width: 18px; height: 18px; color: #8C96AA; pointer-events: none; }
+.lg-input-wrap .sg-input { min-height: 52px; padding-left: 44px; font-size: 15px; border-radius: 10px; }
+.lg-eye { position: absolute; right: 4px; width: 44px; height: 44px; border: 0; background: transparent; color: var(--muted); border-radius: 8px; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+.lg-eye:hover { color: var(--sigma-blue); background: var(--sigma-blue-soft); }
+.lg-eye svg { width: 18px; height: 18px; }
+.lg-field.is-error .sg-input { border-color: var(--danger); background: #FFFBFA; }
+.lg-caps { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; color: var(--warning); }
+.lg-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+.lg-remember { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--ink); cursor: pointer; min-height: 44px; }
+.lg-remember input { width: 18px; height: 18px; accent-color: var(--sigma-purple); margin: 0; }
+.sg a.lg-link { font-size: 13px; font-weight: 700; color: var(--sigma-blue); text-decoration: none; }
+.sg a.lg-link:hover { color: var(--sigma-blue-dark); text-decoration: underline; }
+.lg-submit { min-height: 56px; font-size: 15px; border-radius: 12px; }
+.lg-help { font-size: 13px; color: var(--muted); text-align: center; }
+.lg-secure { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 11.5px; color: var(--muted); }
+.lg-secure svg { width: 14px; height: 14px; color: var(--success); }
+.lg-ok { display: flex; align-items: center; gap: 12px; padding: 14px 16px; border-radius: 12px; background: var(--success-soft); color: var(--success); font-weight: 700; font-size: 14px; }
+.lg-ok svg { width: 20px; height: 20px; }
+.lg-foot { display: flex; justify-content: center; gap: 18px; flex-wrap: wrap; font-size: 12px; color: var(--muted); }
 
-@font-face {
-    font-family: 'Sora';
-    font-style: normal;
-    font-weight: 100 800;
-    font-display: swap;
-    src: url('../LookAndFeel/Fonts/Sora/Sora-Variable.woff2') format('woff2');
+@media (max-width: 980px) {
+  .lg { grid-template-columns: minmax(0,1fr); }
+  .lg-brand { min-height: 0; padding: 28px 22px 30px; }
+  .lg-logo img { height: 38px; }
+  .lg-copy { margin-top: 48px; }
+  .lg-copy h1 { font-size: 36px; }
+  .lg-points, .lg-news, .lg-brand-foot { display: none; }
+  .lg-side { padding: 12px 20px 28px; }
+  .lg-card { padding: 20px 0; margin: 0 auto; }
+  .lg-card h2 { font-size: 32px; }
 }
 
-:root {
-    --sg-navy: #0B0F1A;
-    --sg-purple: #6C5CFF;
-    --sg-purple-hover: #5847E8;
-    --sg-teal: #00E0C2;
-    --sg-background: #F8FAFC;
-    --sg-surface: #FFFFFF;
-    --sg-text-primary: #0B0F1A;
-    --sg-text-secondary: #475569;
-    --sg-text-muted: #64748B;
-    --sg-border: #E2E8F0;
-    --sg-border-strong: #CBD5E1;
-    --sg-danger: #DC2626;
-    --sg-gradient: linear-gradient(135deg, #00E0C2 0%, #2563EB 42%, #6C5CFF 72%, #FF4D9D 100%);
-    --sg-font: 'Sora', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-}
-
-html, body {
-    height: 100%;
-}
-
-body.sg-login {
-    margin: 0;
-    font-family: var(--sg-font);
-    color: var(--sg-text-primary);
-    background-color: var(--sg-background);
-    -webkit-font-smoothing: antialiased;
-}
-
-body.sg-login form {
-    min-height: 100vh;
-}
-
-.sg-login-layout {
-    display: flex;
-    min-height: 100vh;
-}
-
-/* ---------- Panel de marca ---------- */
-
-.sg-login-brand {
-    position: relative;
-    flex: 0 0 44%;
-    max-width: 44%;
-    background-color: var(--sg-navy);
-    color: #fff;
-    padding: 56px 56px 40px;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    overflow: hidden;
-}
-
-/* El degradado entra como acento, no como fondo. */
-.sg-login-brand::before {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: var(--sg-gradient);
-}
-
-/* Halo tenue: da profundidad sin competir con el logotipo. */
-.sg-login-brand::after {
-    content: "";
-    position: absolute;
-    right: -180px;
-    bottom: -180px;
-    width: 520px;
-    height: 520px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(108, 92, 255, 0.28) 0%, rgba(108, 92, 255, 0) 70%);
-    pointer-events: none;
-}
-
-.sg-login-brand > * {
-    position: relative;
-    z-index: 1;
-}
-
-.sg-brand-logo img {
-    width: 260px;   /* minimo de marca para la version con descriptor */
-    max-width: 100%;
-    height: auto;
-    display: block;
-}
-
-.sg-brand-copy {
-    max-width: 460px;
-}
-
-.sg-brand-copy h1 {
-    font-size: 32px;
-    line-height: 1.2;
-    font-weight: 700;
-    letter-spacing: -0.02em;
-    margin: 0 0 16px;
-    color: #fff;
-}
-
-.sg-brand-copy p {
-    font-size: 15px;
-    line-height: 1.6;
-    color: #A8B2C3;
-    margin: 0;
-}
-
-.sg-brand-points {
-    list-style: none;
-    padding: 0;
-    margin: 28px 0 0;
-    display: grid;
-    gap: 12px;
-}
-
-.sg-brand-points li {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-size: 14px;
-    color: #D6DCEA;
-}
-
-.sg-brand-points li::before {
-    content: "";
-    flex: 0 0 auto;
-    width: 6px;
-    height: 6px;
-    border-radius: 50%;
-    background: var(--sg-teal);
-    box-shadow: 0 0 0 3px rgba(0, 224, 194, 0.18);
-}
-
-.sg-brand-footer {
-    font-size: 12px;
-    color: #64748B;
-    letter-spacing: 0.02em;
-}
-
-/* ---------- Panel del formulario ---------- */
-
-.sg-login-form-panel {
-    flex: 1 1 auto;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 48px 24px;
-}
-
-.sg-login-card {
-    width: 100%;
-    max-width: 400px;
-}
-
-.sg-login-card h2 {
-    font-size: 24px;
-    font-weight: 700;
-    letter-spacing: -0.01em;
-    margin: 0 0 6px;
-}
-
-.sg-login-card .sg-sub {
-    font-size: 14px;
-    color: var(--sg-text-secondary);
-    margin: 0 0 32px;
-}
-
-.sg-field {
-    margin-bottom: 20px;
-}
-
-.sg-field label {
-    display: block;
-    font-size: 13px;
-    font-weight: 600;
-    color: var(--sg-text-primary);
-    margin-bottom: 8px;
-}
-
-.sg-field input[type="text"],
-.sg-field input[type="password"],
-.sg-field input[type="email"] {
-    width: 100%;
-    box-sizing: border-box;
-    height: 46px;
-    padding: 0 14px;
-    font-family: var(--sg-font);
-    font-size: 14px;
-    color: var(--sg-text-primary);
-    background-color: var(--sg-surface);
-    border: 1px solid var(--sg-border-strong);
-    border-radius: var(--sg-radius-sm, 8px);
-    outline: none;
-    transition: border-color var(--sg-duration-fast, 120ms) ease,
-                box-shadow var(--sg-duration-fast, 120ms) ease;
-}
-
-.sg-field input::placeholder {
-    color: var(--sg-text-muted);
-}
-
-.sg-field input:focus {
-    border-color: var(--sg-purple);
-    box-shadow: 0 0 0 3px rgba(108, 92, 255, 0.16);
-}
-
-.sg-btn-login {
-    width: 100%;
-    height: 46px;
-    border: 0;
-    border-radius: 8px;
-    background-color: var(--sg-purple);
-    color: #fff;
-    font-family: var(--sg-font);
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: background-color 120ms ease, transform 120ms ease;
-}
-
-.sg-btn-login:hover {
-    background-color: var(--sg-purple-hover);
-}
-
-.sg-btn-login:active {
-    transform: translateY(1px);
-}
-
-.sg-btn-login:focus-visible {
-    outline: 3px solid rgba(108, 92, 255, 0.4);
-    outline-offset: 2px;
-}
-
-/* Error inline: el rojo es estado operativo, no identidad. */
-.sg-login-error {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    background-color: #FEE2E2;
-    color: #991B1B;
-    border: 1px solid #FCA5A5;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 13px;
-    line-height: 1.45;
-    margin-bottom: 20px;
-}
-
-.sg-login-foot {
-    margin-top: 28px;
-    font-size: 12px;
-    color: var(--sg-text-muted);
-    text-align: center;
-}
-
-/* Logo compacto: solo se ve cuando el panel de marca se pliega. */
-.sg-login-logo-compact {
-    display: none;
-    margin-bottom: 28px;
-}
-
-.sg-login-logo-compact img {
-    height: 40px;
-    width: auto;
-}
-
-/* ---------- Adaptacion ---------- */
-
-@media (max-width: 991.98px) {
-    .sg-login-layout {
-        flex-direction: column;
-    }
-
-    .sg-login-brand {
-        display: none;
-    }
-
-    .sg-login-logo-compact {
-        display: block;
-    }
-
-    .sg-login-form-panel {
-        padding: 40px 20px;
-        align-items: flex-start;
-    }
-}
-
-@media (max-width: 420px) {
-    .sg-login-card h2 {
-        font-size: 21px;
-    }
-}
+/* ---------- Ajustes de la implementación en WebForms ---------- */
+.sg [hidden] { display: none !important; }
+.lg-submit { text-decoration: none; cursor: pointer; }
+.lg-submit.is-busy { pointer-events: none; opacity: .8; }
